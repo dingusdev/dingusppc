@@ -1,10 +1,10 @@
 OBJS	= main.o macioserial.o macscsi.o macswim3.o mpc106.o openpic.o poweropcodes.o ppcfpopcodes.o ppcgekkoopcodes.o ppcmemory.o ppcopcodes.o viacuda.o
 SOURCE	= main.c macioserial.cpp macscsi.cpp macswim3.cpp mpc106.cpp openpic.cpp poweropcodes.cpp ppcfpopcodes.cpp ppcgekkoopcodes.cpp ppcmemory.cpp ppcopcodes.cpp viacuda.cpp
 HEADER	= macioserial.h macscsi.h macswim3.h mpc106.h openpic.h ppcemumain.h ppcmemory.h viacuda.h
-OUT	= dingusppc
-CC	 = g++
-FLAGS	 = -g -c -Wall
-LFLAGS	 = 
+OUT	    = dingusppc
+CC	    = g++
+FLAGS	= -g -c -Wall -std=c++11
+LFLAGS	=
 
 all: $(OBJS)
 	$(CC) -g $(OBJS) -o $(OUT) $(LFLAGS)
