@@ -637,7 +637,7 @@ void ppc_fcmpo(){
 
     if ((db_test_a == snan) || (db_test_b == snan)){
         ppc_state.ppc_fpscr |= 0x1000000;
-        if (ppc_state.ppc_fpscr && 0x80){
+        if (ppc_state.ppc_fpscr & 0x80){
             ppc_state.ppc_fpscr |= 0x80000;
         }
     }

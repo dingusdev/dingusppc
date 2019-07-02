@@ -111,7 +111,7 @@ void msr_status_update(){
 void ibat_update(){
     uint8_t tlb_place = 0;
     uint32_t ref_area = 0;
-    bool msr_pr = ppc_state.ppc_msr && 4000; //This is for problem mode; make sure that supervisor mode does not touch this!
+    bool msr_pr = ppc_state.ppc_msr & 4000; //This is for problem mode; make sure that supervisor mode does not touch this!
     for (int bat_srch = 528; bat_srch < 535; bat_srch += 2){
         ref_area = ((ppc_state.ppc_spr[bat_srch] & 0x1FFC) > 0) ? ((ppc_state.ppc_spr[bat_srch] & 0x1FFC) << 16): 131072;
         bepi_chk|= (ppc_effective_address & 0xFFFE0000) & ~ref_area;
@@ -132,7 +132,7 @@ void ibat_update(){
 void dbat_update(){
     uint8_t tlb_place = 0;
     uint32_t ref_area = 0;
-    bool msr_pr = ppc_state.ppc_msr && 4000; //This is for problem mode; make sure that supervisor mode does not touch this!
+    bool msr_pr = ppc_state.ppc_msr & 4000; //This is for problem mode; make sure that supervisor mode does not touch this!
     for (int bat_srch = 536; bat_srch < 543; bat_srch += 2){
         ref_area = (ppc_state.ppc_spr[bat_srch] & 0x1FFC) > 0? ((ppc_state.ppc_spr[bat_srch] & 0x1FFC) << 16): 131072;
         bepi_chk|= (ppc_effective_address & 0xFFFE0000) & ~ref_area;
@@ -334,7 +334,7 @@ void primary_hash_check(uint32_t vpid_known){
 
         check_vpid = (check_vpid >> 7) & 0xFFFFFF;
 
-        if ((check_vpid >> 31) && 0x01){
+        if ((check_vpid >> 31) & 0x01){
             if (vpid_known == check_vpid){
                 hash_found = true;
                 pteg_answer |= grab_pteg1_ptr[pte_word1++] << 24;
@@ -376,7 +376,7 @@ void secondary_hash_check(uint32_t vpid_known){
 
         check_vpid = (check_vpid >> 7) & 0xFFFFFF;
 
-        if ((check_vpid >> 31) && 0x01){
+        if ((check_vpid >> 31) & 0x01){
             if (vpid_known == check_vpid){
                 hash_found = true;
                 pteg_answer |= grab_pteg2_ptr[pte_word2++] << 24;
@@ -444,7 +444,7 @@ void address_quickinsert_translate(uint32_t address_grab, uint32_t value_insert,
         pteg_to_go = 1;
 
         for (uint32_t grab_loop = 0; grab_loop < 4; grab_loop++){
-            if ((dbat_array_map[grab_loop][0] >> 1) && 0x1){
+            if ((dbat_array_map[grab_loop][0] >> 1) & 0x1){
                 min_val = dbat_array_map[grab_loop][1];
                 max_val = dbat_array_map[grab_loop][2];
                 if ((address_grab >= min_val) && (address_grab < max_val) && (max_val != 0)){
@@ -666,7 +666,7 @@ void address_quickgrab_translate(uint32_t address_grab, uint32_t value_extract, 
         pteg_to_go = 1;
 
         for (uint32_t grab_loop = 0; grab_loop < 4; grab_loop++){
-            if (dbat_array_map[grab_loop][0] && 0x1){
+            if (dbat_array_map[grab_loop][0] & 0x1){
                 min_val = dbat_array_map[grab_loop][1];
                 max_val = dbat_array_map[grab_loop][2];
                 if ((address_grab >= min_val) && (address_grab <= max_val) && (max_val != 0)){
@@ -870,7 +870,7 @@ void quickinstruction_translate(uint32_t address_grab){
         pteg_to_go = 1;
 
         for (uint32_t grab_loop = 0; grab_loop < 4; grab_loop++){
-            if (ibat_array_map[grab_loop][0] && 0x1){
+            if (ibat_array_map[grab_loop][0] & 0x1){
                 min_val = ibat_array_map[grab_loop][1];
                 max_val = ibat_array_map[grab_loop][2];
                 if ((address_grab >= min_val) && (address_grab <= max_val) && (max_val != 0)){

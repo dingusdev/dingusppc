@@ -27,7 +27,7 @@ bool via_cuda_signal_read;
 bool via_cuda_signal_write;
 
 void via_ifr_update(){
-    if ((machine_iocontrolmem_mem[VIACUDA_IFR] && 127) && (machine_iocontrolmem_mem[VIACUDA_IER] && 127)){
+    if ((machine_iocontrolmem_mem[VIACUDA_IFR] & 127) && (machine_iocontrolmem_mem[VIACUDA_IER] & 127)){
         machine_iocontrolmem_mem[VIACUDA_IFR] |= 128;
     }
     else{
