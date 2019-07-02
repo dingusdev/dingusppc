@@ -584,7 +584,7 @@ static std::map<uint8_t, PPCOpcode> OpcodeGrabber =
      {28, &ppc_andidot},   {29, &ppc_andisdot},  {30, &ppc_illegalop}, {31, &ppc_opcode31},
      {32, &ppc_lwz},       {33, &ppc_lwzu},      {34, &ppc_lbz},       {35, &ppc_lbzu},
      {36, &ppc_stw},       {37, &ppc_stwu},      {38, &ppc_stb},       {39, &ppc_stbu},
-     {40, &ppc_lhz},       {41, &ppc_lhzu},      {42, &ppc_lha},       {42, &ppc_lhau},
+     {40, &ppc_lhz},       {41, &ppc_lhzu},      {42, &ppc_lha},       {43, &ppc_lhau},
      {44, &ppc_sth},       {45, &ppc_sthu},      {46, &ppc_lmw},       {47, &ppc_stmw},
      {48, &ppc_lfs},       {49, &ppc_lfsu},      {50, &ppc_lfd},       {51, &ppc_lfdu},
      {52, &ppc_stfs},      {53, &ppc_stfsu},     {54, &ppc_stfd},      {55, &ppc_stfdu},
