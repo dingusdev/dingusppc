@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="dingusppc" />
+		<Option makefile="makefile" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/dingusppc" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-std=c++14" />
+					<Add option="-m32" />
+					<Add option="-g" />
+				</Compiler>
+				<Linker>
+					<Add option="-m32" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/dingusppc" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-std=c++14" />
+					<Add option="-m32" />
+				</Compiler>
+				<Linker>
+					<Add option="-O3" />
+					<Add option="-m32" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-std=c++11" />
+			<Add option="-fexceptions" />
+		</Compiler>
+		<Unit filename="macioserial.cpp" />
+		<Unit filename="macioserial.h" />
+		<Unit filename="macscsi.cpp" />
+		<Unit filename="macscsi.h" />
+		<Unit filename="macswim3.cpp" />
+		<Unit filename="macswim3.h" />
+		<Unit filename="main.cpp" />
+		<Unit filename="mpc106.cpp" />
+		<Unit filename="mpc106.h" />
+		<Unit filename="openpic.cpp" />
+		<Unit filename="openpic.h" />
+		<Unit filename="poweropcodes.cpp" />
+		<Unit filename="ppcemumain.h" />
+		<Unit filename="ppcfpopcodes.cpp" />
+		<Unit filename="ppcgekkoopcodes.cpp" />
+		<Unit filename="ppcmemory.cpp" />
+		<Unit filename="ppcmemory.h" />
+		<Unit filename="ppcopcodes.cpp" />
+		<Unit filename="viacuda.cpp" />
+		<Unit filename="viacuda.h" />
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
