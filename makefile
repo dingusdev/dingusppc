@@ -9,8 +9,8 @@ LFLAGS	 =
 all: $(OBJS)
 	$(CC) -g $(OBJS) -o $(OUT) $(LFLAGS)
 
-main.o: main.c
-	$(CC) $(FLAGS) main.c 
+main.o: main.cpp
+	$(CC) $(FLAGS) main.cpp
 
 macioserial.o: macioserial.cpp
 	$(CC) $(FLAGS) macioserial.cpp 
