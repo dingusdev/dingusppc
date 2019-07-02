@@ -486,14 +486,16 @@ int main(int argc, char **argv)
         {"TNT ", "Power Mac 7xxxx/8xxx series"},           //Trinitrotoluene :-)
         {"Zanz", "A complete engima."}                     //Zanzibar (mentioned in Sheepshaver's code, but no match to any known ROM)
     };
-
+   
+    char configGrab = 0;
     uint32_t configInfoOffset = 0;
 
     if (grab_sysrom_size == 0x400000){
 
     romFile.seekg (0x300082, ios::beg); //This is where the place to get the offset is
-    romFile.read(configInfoOffset, 1);
-    uint32_t configInfoAddr = 0x300000 + (configInfoOffset << 8);
+    romFile.get(configGrab); //just one byte to determine where the identifier string is
+    configInfoOffset = (uint32_t)(configGrab & 0xff);
+    uint32_t configInfoAddr = 0x300000 + (configInfoOffset << 8) + 0x69; //address to check the identifier string
     romFile.seekg (configInfoAddr, ios::beg);
     romFile.read(memPPCBlock, sizeof(uint32_t)); //Only four chars needed to distinguish between codenames
 
@@ -504,7 +506,7 @@ int main(int argc, char **argv)
 
         string redo_me = iter->first;
 
-        if (!string_test.compare(redo_me)){
+        if (string_test.compare(redo_me) == 0){
             cout << "The machine is identified as..." << iter->second << endl;
             romFile.seekg (0x0, ios::beg);
 
@@ -524,9 +526,11 @@ int main(int argc, char **argv)
             openpic_init();
             break;
         }
+        else{
+            iter++;
+        }
     }
     }
-
 
     //Copy the contents of the IO data and the ROM to memory appropriate locations.
     romFile.read ((char *)machine_sysrom_mem,grab_sysrom_size);
