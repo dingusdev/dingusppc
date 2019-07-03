@@ -150,7 +150,7 @@ void ppc_expection_handler(uint32_t exception_type, uint32_t handle_args){
     printf("MSR VALUE: %x \n Exception Type: %x", ppc_state.ppc_msr, exception_type);
 
     //Check ROM Exception Prefix
-    if (ppc_state.ppc_msr && 0x40){
+    if (ppc_state.ppc_msr & 0x40){
         ppc_next_instruction_address |= 0xFFF00000;
     }
     else{
