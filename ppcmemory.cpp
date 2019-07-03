@@ -111,7 +111,7 @@ void msr_status_update(){
 void ibat_update(){
     uint8_t tlb_place = 0;
     uint32_t ref_area = 0;
-    bool msr_pr = ppc_state.ppc_msr & 4000; //This is for problem mode; make sure that supervisor mode does not touch this!
+    bool msr_pr = ppc_state.ppc_msr & 0x4000; //This is for problem mode; make sure that supervisor mode does not touch this!
     for (int bat_srch = 528; bat_srch < 535; bat_srch += 2){
         ref_area = ((ppc_state.ppc_spr[bat_srch] & 0x1FFC) > 0) ? ((ppc_state.ppc_spr[bat_srch] & 0x1FFC) << 16): 131072;
         bepi_chk|= (ppc_effective_address & 0xFFFE0000) & ~ref_area;
@@ -132,7 +132,7 @@ void ibat_update(){
 void dbat_update(){
     uint8_t tlb_place = 0;
     uint32_t ref_area = 0;
-    bool msr_pr = ppc_state.ppc_msr & 4000; //This is for problem mode; make sure that supervisor mode does not touch this!
+    bool msr_pr = ppc_state.ppc_msr & 0x4000; //This is for problem mode; make sure that supervisor mode does not touch this!
     for (int bat_srch = 536; bat_srch < 543; bat_srch += 2){
         ref_area = (ppc_state.ppc_spr[bat_srch] & 0x1FFC) > 0? ((ppc_state.ppc_spr[bat_srch] & 0x1FFC) << 16): 131072;
         bepi_chk|= (ppc_effective_address & 0xFFFE0000) & ~ref_area;
