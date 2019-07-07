@@ -26,9 +26,15 @@ void openpic_init(){
 }
 
 void openpic_read(){
-    machine_upperiocontrol_mem[openpic_address] = openpic_read_word;
+    openpic_read_word = (uint32_t)(machine_upperiocontrol_mem[openpic_address++]);
+    openpic_read_word = (uint32_t)((machine_upperiocontrol_mem[openpic_address++]) << 8);
+    openpic_read_word = (uint32_t)((machine_upperiocontrol_mem[openpic_address++]) << 16);
+    openpic_read_word = (uint32_t)((machine_upperiocontrol_mem[openpic_address]) << 24);
 }
 
 void openpic_write(){
-    openpic_write_word = machine_upperiocontrol_mem[openpic_address];
+    machine_upperiocontrol_mem[openpic_address++] = (uint8_t)(openpic_write_word);
+    machine_upperiocontrol_mem[openpic_address++] = (uint8_t)((openpic_write_word) >> 8);
+    machine_upperiocontrol_mem[openpic_address++] = (uint8_t)((openpic_write_word) >> 16);
+    machine_upperiocontrol_mem[openpic_address] = (uint8_t)((openpic_write_word) >> 24);
 }

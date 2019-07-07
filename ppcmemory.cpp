@@ -21,6 +21,7 @@
 #include "ppcmemory.h"
 #include "openpic.h"
 #include "mpc106.h"
+#include "davbus.h"
 
 std::vector<uint32_t> pte_storage;
 uint64_t ppc_virtual_address; //It's 52 bits, but 64 bits more than covers the range needed.
@@ -427,7 +428,7 @@ void pteg_translate(uint32_t address_grab){
 void address_quickinsert_translate(uint32_t address_grab, uint32_t value_insert, uint8_t bit_num){
     //Insert a value into memory from a register
 
-    printf("Inserting into address %x with %x", address_grab, value_insert);
+    printf("Inserting into address %x with %x \n", address_grab, value_insert);
 
     uint32_t storage_area = 0;
     uint32_t grab_batl = 537;
@@ -550,6 +551,13 @@ void address_quickinsert_translate(uint32_t address_grab, uint32_t value_insert,
                 mac_serial_write();
                 return;
             }
+            else if ((address_grab >= 0xF3014000) && (address_grab < 0xF3015000)){
+                davbus_address = storage_area;
+                davbus_write_word = value_insert;
+                printf("\nWriting to DAVBus: %x \n", return_value);
+                davbus_write();
+                return;
+            }
             else if ((address_grab >= 0xF3015000) && (address_grab < 0xF3016000)){
                 mac_swim3_address = storage_area;
                 swim3_write_byte = (uint8_t)value_insert;
@@ -562,6 +570,13 @@ void address_quickinsert_translate(uint32_t address_grab, uint32_t value_insert,
                 via_write_byte = (uint8_t)value_insert;
                 printf("Writing byte to CUDA address %x ... %x \n", address_grab, via_write_byte);
                 via_cuda_write();
+                return;
+            }
+            else if ((address_grab >= 0xF3040000) && (address_grab < 0xF3080000)){
+                openpic_address = storage_area - 0x3000000;
+                openpic_write_word = value_insert;
+                printf("Writing byte to OpenPIC address %x ... %x \n", address_grab, openpic_write_word);
+                openpic_write();
                 return;
             }
             else if (address_grab > 0xF3FFFFFF){
@@ -578,8 +593,9 @@ void address_quickinsert_translate(uint32_t address_grab, uint32_t value_insert,
             grab_macmem_ptr = machine_f8xxxx_mem;
         }
         else if (address_grab < 0xFEC00000){
-            storage_area = address_grab % 65536;
-            grab_macmem_ptr = machine_fexxxx_mem;
+            mpc106_address = address_grab % 65536;
+            mpc106_write(value_insert);
+            return;
         }
         else if (address_grab < 0xFEE00000){
             storage_area = 0x0CF8;  //CONFIG_ADDR
@@ -590,10 +606,11 @@ void address_quickinsert_translate(uint32_t address_grab, uint32_t value_insert,
             printf("ADDRESS SET FOR GRACKLE \n");
             printf("Device Number: %d ", dev_num);
             printf("Register Number: %d \n", reg_num);
-            mpc106_address = value_insert;
+            mpc_config_addr = value_insert;
         }
         else if (address_grab < 0xFF000000){
             storage_area = 0x0CFC;  //CONFIG_DATA
+            mpc106_write_device(mpc_config_addr, value_insert, bit_num);
             grab_macmem_ptr = machine_feexxx_mem;
         }
         else if (address_grab < 0xFF800000){
@@ -647,7 +664,7 @@ void address_quickinsert_translate(uint32_t address_grab, uint32_t value_insert,
 void address_quickgrab_translate(uint32_t address_grab, uint32_t value_extract, uint8_t bit_num){
     //Grab a value from memory into a register
 
-    printf("Grabbing from address %x", address_grab);
+    printf("Grabbing from address %x \n", address_grab);
 
     uint32_t storage_area = 0;
     uint32_t grab_batl = 537;
@@ -757,6 +774,13 @@ void address_quickgrab_translate(uint32_t address_grab, uint32_t value_extract, 
                 printf("\n Read from Serial: %x \n", return_value);
                 return;
             }
+            else if ((address_grab >= 0xF3014000) && (address_grab < 0xF3015000)){
+                davbus_address = storage_area;
+                davbus_read();
+                return_value = davbus_read_word;
+                printf("\n Read from DAVBus: %x \n", return_value);
+                return;
+            }
             else if ((address_grab >= 0xF3015000) && (address_grab < 0xF3016000)){
                 mac_swim3_address = storage_area;
                 mac_swim3_read();
@@ -771,9 +795,9 @@ void address_quickgrab_translate(uint32_t address_grab, uint32_t value_extract, 
                 printf("\n Read from CUDA: %x \n", return_value);
                 return;
             }
-            if ((address_grab >= 0xF3040000) && (address_grab < 0xF3080000)){
-                openpic_address = address_grab - 0x80000000;
-                openpic_write();
+            else if ((address_grab >= 0xF3040000) && (address_grab < 0xF3080000)){
+                openpic_address = storage_area - 0x3000000;
+                openpic_read();
                 return_value = openpic_write_word;
                 return;
             }
@@ -790,16 +814,18 @@ void address_quickgrab_translate(uint32_t address_grab, uint32_t value_extract, 
             grab_macmem_ptr = machine_f8xxxx_mem;
         }
         else if (address_grab < 0xFEC00000){
-            storage_area = address_grab % 65536;
-            grab_macmem_ptr = machine_fexxxx_mem;
+            mpc106_address = address_grab % 65536;
+            mpc106_read();
+            return_value = mpc106_read_word;
+            return;
         }
         else if (address_grab < 0xFEE00000){
             return_value = (bit_num == 1)? (mpc106_address & 0xFF):(bit_num == 2)?(mpc106_address & 0xFFFF):mpc106_address;
             return;
         }
         else if (address_grab < 0xFF000000){
-            storage_area = 0x0CFC;  //CONFIG_DATA
-            grab_macmem_ptr = machine_feexxx_mem;
+            return_value = mpc106_read_device(mpc_config_addr, bit_num);
+            return;
         }
         else if (address_grab < 0xFF800000){
             storage_area = address_grab % 4096;

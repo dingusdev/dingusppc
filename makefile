@@ -1,5 +1,5 @@
-OBJS	= main.o macioserial.o macscsi.o macswim3.o mpc106.o openpic.o poweropcodes.o ppcfpopcodes.o ppcgekkoopcodes.o ppcmemory.o ppcopcodes.o viacuda.o
-SOURCE	= main.cpp macioserial.cpp macscsi.cpp macswim3.cpp mpc106.cpp openpic.cpp poweropcodes.cpp ppcfpopcodes.cpp ppcgekkoopcodes.cpp ppcmemory.cpp ppcopcodes.cpp viacuda.cpp
+OBJS	= main.o macioserial.o macscsi.o macswim3.o mpc106.o openpic.o poweropcodes.o ppcfpopcodes.o ppcgekkoopcodes.o ppcmemory.o ppcopcodes.o viacuda.o davbus.o
+SOURCE	= main.cpp macioserial.cpp macscsi.cpp macswim3.cpp mpc106.cpp openpic.cpp poweropcodes.cpp ppcfpopcodes.cpp ppcgekkoopcodes.cpp ppcmemory.cpp ppcopcodes.cpp viacuda.cpp davbus.cpp
 HEADER	= macioserial.h macscsi.h macswim3.h mpc106.h openpic.h ppcemumain.h ppcmemory.h viacuda.h
 OUT	    = dingusppc
 CC	    = g++
@@ -45,6 +45,8 @@ ppcopcodes.o: ppcopcodes.cpp
 viacuda.o: viacuda.cpp
 	$(CC) $(FLAGS) viacuda.cpp 
 
+davbus.o: davbus.cpp
+	$(CC) $(FLAGS) davbus.cpp 
 
 clean:
 	rm -f $(OBJS) $(OUT)

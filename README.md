@@ -27,11 +27,11 @@ Run the emulator in runtime
 
 Load an ELF file into memory
 
--eso
+-stepi
 
 Execute a single opcode
 
--epo
+-stepp
 
 Execute a page of opcodes (256 instructions at a time)
 

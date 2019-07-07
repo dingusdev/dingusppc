@@ -745,7 +745,7 @@ static std::map<uint16_t, PPCOpcode> SubOpcode63Grabber=
      {1266, &ppc_fmult}, {1272, &ppc_fmsub}, {1274, &ppc_fmadd}, {1276, &ppc_fnmsub},   {1278, &ppc_fnmadd},
      {1330, &ppc_fmult}, {1336, &ppc_fmsub}, {1338, &ppc_fmadd}, {1340, &ppc_fnmsub},   {1342, &ppc_fnmadd},
      {1394, &ppc_fmult}, {1400, &ppc_fmsub}, {1402, &ppc_fmadd}, {1404, &ppc_fnmsub},   {1406, &ppc_fnmadd},
-     {1422, &ppc_mffs},
+     {1422, &ppc_mtfsf},
      {1458, &ppc_fmult}, {1464, &ppc_fmsub}, {1466, &ppc_fmadd}, {1468, &ppc_fnmsub},   {1470, &ppc_fnmadd},
      {1522, &ppc_fmult}, {1528, &ppc_fmsub}, {1530, &ppc_fmadd}, {1532, &ppc_fnmsub},   {1534, &ppc_fnmadd},
      {1586, &ppc_fmult}, {1592, &ppc_fmsub}, {1594, &ppc_fmadd}, {1596, &ppc_fnmsub},   {1598, &ppc_fnmadd},

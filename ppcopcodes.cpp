@@ -1437,9 +1437,10 @@ void ppc_bc(){
         ppc_next_instruction_address = (ppc_state.ppc_pc + br_bd);
         grab_branch = 1;
     }
+    /*
     else{
         printf("BRANCH FAILED: %d %d", ctr_ok, cnd_ok);
-    }
+    }*/
 }
 
 void ppc_bca(){
@@ -1947,7 +1948,7 @@ void ppc_lbz(){
     grab_d = (uint32_t)((int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF)));
     ppc_effective_address = (reg_a == 0)?grab_d:(ppc_result_a + grab_d);
     address_quickgrab_translate(ppc_effective_address, ppc_result_d, 1);
-    printf("LBZ Storage Area: %x \n",ppc_effective_address);
+    //printf("LBZ Storage Area: %x \n",ppc_effective_address);
     ppc_result_d = return_value;
     return_value = 0;
     ppc_store_result_regd();

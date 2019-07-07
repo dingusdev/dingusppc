@@ -16,9 +16,9 @@
 
 bool mpc106_address_map;
 
-uint32_t mpc106_address;
-uint32_t mpc_config_addr;
-uint32_t mpc_config_dat;
+uint32_t mpc106_address;  // For fe000000 - fe00ffff
+uint32_t mpc_config_addr; // Device No. and Reg No. included
+uint32_t mpc_config_dat;  // Value to write to the device
 
 uint32_t mpc106_write_word;
 uint32_t mpc106_read_word;
@@ -26,39 +26,82 @@ uint16_t mpc106_write_half;
 uint16_t mpc106_read_half;
 uint8_t mpc106_write_byte;
 uint8_t mpc106_read_byte;
-unsigned char* mpc106_regs;
 
 void mpc106_init(){
-    mpc106_regs = (unsigned char*) calloc (256, 1);
-    memset(mpc106_regs, 0x0, 256);
+    mpc_config_addr = 0;
+    mpc_config_dat = 0;
 
     //Initialize Vendor & Device IDs
-    mpc106_regs[0] = 0x57;
-    mpc106_regs[1] = 0x10;
+    machine_fexxxx_mem[0] = 0x57;
+    machine_fexxxx_mem[1] = 0x10;
 
-    mpc106_regs[2] = 0x02;
+    machine_fexxxx_mem[2] = 0x02;
 
     //PCI command + status
-    mpc106_regs[4] = 0x06;
-    mpc106_regs[6] = 0x80;
+    machine_fexxxx_mem[4] = 0x06;
+    machine_fexxxx_mem[6] = 0x80;
 
-    mpc106_regs[115] = 0xCD;
+    machine_fexxxx_mem[115] = 0xCD;
 
-    mpc106_regs[168] = 0x10;
-    mpc106_regs[169] = 0x00;
-    mpc106_regs[170] = 0x00;
-    mpc106_regs[171] = 0xFF;
+    machine_fexxxx_mem[168] = 0x10;
+    machine_fexxxx_mem[169] = 0x00;
+    machine_fexxxx_mem[170] = 0x00;
+    machine_fexxxx_mem[171] = 0xFF;
 
-    mpc106_regs[172] = 0x0C;
-    mpc106_regs[173] = 0x06;
-    mpc106_regs[174] = 0x0C;
-    mpc106_regs[175] = 0x00;
+    machine_fexxxx_mem[172] = 0x0C;
+    machine_fexxxx_mem[173] = 0x06;
+    machine_fexxxx_mem[174] = 0x0C;
+    machine_fexxxx_mem[175] = 0x00;
 }
 
-void mpc106_write_device(uint32_t value){
+uint32_t mpc106_write_device(uint32_t device_addr, uint32_t insert_to_device, uint8_t bit_length){
+    //Write to the specified device - Invoked when a write is made to 0xFEExxxxx.
+    //device_addr is what's stored in 0xFEC00CF8.
+
+    uint32_t reg_num  = (device_addr & 0x07FC) >> 2;
+    uint32_t dev_num  = (device_addr & 0xF800) >> 11;
+    uint32_t location = reg_num + (dev_num << 11) + 0x3000000;
+
+    switch (bit_length){
+    case 1:
+        machine_iocontrolmem_mem[location] = (uint8_t)insert_to_device;
+    case 2:
+        machine_iocontrolmem_mem[location++] = (uint8_t)insert_to_device;
+        machine_iocontrolmem_mem[location] = (uint8_t)(insert_to_device >> 8);
+    case 4:
+        machine_iocontrolmem_mem[location++] = (uint8_t)insert_to_device;
+        machine_iocontrolmem_mem[location++] = (uint8_t)(insert_to_device >> 8);
+        machine_iocontrolmem_mem[location++] = (uint8_t)(insert_to_device >> 16);
+        machine_iocontrolmem_mem[location] = (uint8_t)(insert_to_device >> 24);
+    }
+
+    return 0;
 }
 
-void mpc106_read_device(uint32_t value, uint8_t bit_length){
+uint32_t mpc106_read_device(uint32_t device_addr, uint8_t bit_length){
+    //Read to the specified device - Invoked when a read is made to 0xFEExxxxx.
+    //device_addr is what's stored in 0xFEC00CF8.
+
+    uint32_t reg_num = (device_addr & 0x07FC) >> 2;
+    uint32_t dev_num = (device_addr & 0xF800) >> 11;
+    uint32_t location = reg_num + (dev_num << 11) + 0x3000000;
+
+    uint32_t grab_value = 0;
+
+    switch (bit_length){
+    case 1:
+        grab_value |= ((uint32_t)(machine_iocontrolmem_mem[location++]));
+    case 2:
+        grab_value |= ((uint32_t)(machine_iocontrolmem_mem[location++]));
+        grab_value |= ((uint32_t)(machine_iocontrolmem_mem[location++])) << 8;
+    case 4:
+        grab_value |= ((uint32_t)(machine_iocontrolmem_mem[location++]));
+        grab_value |= ((uint32_t)(machine_iocontrolmem_mem[location++])) << 8;
+        grab_value |= ((uint32_t)(machine_iocontrolmem_mem[location++])) << 16;
+        grab_value |= ((uint32_t)(machine_iocontrolmem_mem[location])) << 24;
+    }
+
+    return grab_value;
 }
 
 void mpc106_read(){

@@ -39,14 +39,17 @@ using namespace std;
 
 SetPRS ppc_state;
 
+bool power_on = 1;
+
 bool grab_branch;
 bool grab_exception;
 bool grab_return;
+bool grab_breakpoint;
 
-uint32_t ppc_cur_instruction;
+uint32_t ppc_cur_instruction; //Current instruction for the PPC
 uint32_t ppc_effective_address;
 uint32_t ppc_real_address;
-uint32_t ppc_next_instruction_address;
+uint32_t ppc_next_instruction_address; //Used for branching, setting up the NIA
 uint32_t temp_address; //used for determining where memory ends up.
 
 uint32_t return_value;
@@ -286,27 +289,27 @@ void reg_init(){
 //Debugging Functions
 uint32_t reg_print(){
     for (uint32_t i = 0; i < 32; i++){
-        printf("FPR %d : %I64u", i, ppc_state.ppc_fpr[i]);
+        printf("FPR %d : %" PRIx64 "", i, ppc_state.ppc_fpr[i]);
     }
     ppc_state.ppc_pc = 0;
     for (uint32_t i = 0; i < 32; i++){
-        printf("GPR %d : %d", i, ppc_state.ppc_gpr[i]);
+        printf("GPR %d : %x", i, ppc_state.ppc_gpr[i]);
     }
-    printf("CR : %d", ppc_state.ppc_cr);
-    printf("FPSCR : %d", ppc_state.ppc_fpscr);
-    printf("TBR 0 : %d", ppc_state.ppc_tbr[0]);
-    printf("TBR 1 : %d", ppc_state.ppc_tbr[1]);
+    printf("CR : %x", ppc_state.ppc_cr);
+    printf("FPSCR : %x", ppc_state.ppc_fpscr);
+    printf("TBR 0 : %x", ppc_state.ppc_tbr[0]);
+    printf("TBR 1 : %x", ppc_state.ppc_tbr[1]);
 
     for (uint32_t i = 0; i < 1024; i++){
-        printf("SPR %d  : %d", i, ppc_state.ppc_spr[i]);
+        printf("SPR %d  : %x", i, ppc_state.ppc_spr[i]);
     }
 
-    printf("CR  : %d", ppc_state.ppc_cr);
+    printf("CR  : %x", ppc_state.ppc_cr);
 
-    printf("MSR : %d", ppc_state.ppc_msr);
+    printf("MSR : %x", ppc_state.ppc_msr);
 
     for (uint32_t i = 0; i < 16; i++){
-        printf("SR %d : %d", i, ppc_state.ppc_sr[i]);
+        printf("SR %d : %x", i, ppc_state.ppc_sr[i]);
     }
 
     return 0;
@@ -332,6 +335,62 @@ uint32_t reg_write(){
         printf("GPR value: %d", ppc_state.ppc_gpr[grab_me]);
     }
     return 0;
+}
+
+void execute_interpreter(){
+    //Main execution loop for the interpreter.
+
+    while (power_on){
+        //printf("PowerPC Address: %x \n", ppc_state.ppc_pc);
+        quickinstruction_translate(ppc_state.ppc_pc);
+        ppc_main_opcode();
+        if (grab_branch & !grab_exception){
+            ppc_state.ppc_pc = ppc_next_instruction_address;
+            grab_branch = 0;
+            ppc_tbr_update();
+        }
+        else if (grab_return | grab_exception){
+            ppc_state.ppc_pc = ppc_next_instruction_address;
+            grab_exception = 0;
+            grab_return = 0;
+            ppc_tbr_update();
+        }
+        else{
+            ppc_state.ppc_pc += 4;
+            ppc_tbr_update();
+        }
+        ppc_cur_instruction = 0;
+    }
+}
+
+void execute_interpreter_bp (uint32_t ppc_break_addr){
+    //Main loop like the above, with the only big difference
+    //being that this stops on reaching the desired address.
+
+    //It then prints the regs at the time it stopped.
+
+    while (ppc_state.ppc_pc != ppc_break_addr){
+        quickinstruction_translate(ppc_state.ppc_pc);
+        ppc_main_opcode();
+        if (grab_branch & !grab_exception){
+            ppc_state.ppc_pc = ppc_next_instruction_address;
+            grab_branch = 0;
+            ppc_tbr_update();
+        }
+        else if (grab_return | grab_exception){
+            ppc_state.ppc_pc = ppc_next_instruction_address;
+            grab_exception = 0;
+            grab_return = 0;
+            ppc_tbr_update();
+        }
+        else{
+            ppc_state.ppc_pc += 4;
+            ppc_tbr_update();
+        }
+        ppc_cur_instruction = 0;
+    }
+
+    reg_print();
 }
 
 int main(int argc, char **argv)
@@ -361,7 +420,6 @@ int main(int argc, char **argv)
     }
     **/
 
-    bool power_on = 1;
     uint32_t opcode_entered = 0; //used for testing opcodes in playground
 
     std::cout << "DingusPPC - Prototype 5bf3 (6/9/2019)        " << endl;
@@ -486,7 +544,7 @@ int main(int argc, char **argv)
         {"TNT ", "Power Mac 7xxxx/8xxx series"},           //Trinitrotoluene :-)
         {"Zanz", "A complete engima."}                     //Zanzibar (mentioned in Sheepshaver's code, but no match to any known ROM)
     };
-   
+
     char configGrab = 0;
     uint32_t configInfoOffset = 0;
 
@@ -578,26 +636,7 @@ int main(int argc, char **argv)
             }
         }
         else if ((checker=="1")|(checker=="realtime")|(checker=="/realtime")|(checker=="-realtime")){
-            while (power_on){
-                cout << "PowerPC PC Address: " << hex << ppc_state.ppc_pc << endl;
-                quickinstruction_translate(ppc_state.ppc_pc);
-                ppc_main_opcode();
-                if (grab_branch & !grab_exception){
-                    ppc_state.ppc_pc = ppc_next_instruction_address;
-                    grab_branch = 0;
-                    ppc_tbr_update();
-                }
-                else if (grab_return | grab_exception){
-                    ppc_state.ppc_pc = ppc_next_instruction_address;
-                    grab_exception = 0;
-                    grab_return = 0;
-                    ppc_tbr_update();
-                }
-                else{
-                    ppc_state.ppc_pc += 4;
-                    ppc_tbr_update();
-                }
-                ppc_cur_instruction = 0;
+            execute_interpreter();
                 /*
                 if (disk_inserted){
                     if (disk_word == 32768){
@@ -621,7 +660,6 @@ int main(int argc, char **argv)
                     }
                 }
                 */
-            }
         }
         else if ((checker=="e")|(checker=="loadelf")|(checker=="/loadelf")|(checker=="-loadelf")){
             ifstream elfFile;
@@ -684,32 +722,17 @@ int main(int argc, char **argv)
 
             ppc_state.ppc_pc = atoi(elf_memoffset);
 
-            while (power_on){
-                quickinstruction_translate(ppc_state.ppc_pc);
-                ppc_main_opcode();
-                if (grab_branch & !grab_exception){
-                    ppc_state.ppc_pc = ppc_effective_address;
-                    grab_branch = 0;
-                    ppc_tbr_update();
-                }
-                else if (grab_return | grab_exception){
-                    ppc_state.ppc_pc = ppc_next_instruction_address;
-                    grab_exception = 0;
-                    grab_return = 0;
-                    ppc_tbr_update();
-                }
-                else if (ppc_cur_instruction == 0){
-                    cout << "Opcode 0 executed. Shutting off the power before the flood even starts. \n" << endl;
-                    power_on = 0; //Hack - Prevent flooding the log.
-                }
-                else{
-                    ppc_state.ppc_pc += 4;
-                    ppc_tbr_update();
-                }
-                ppc_cur_instruction = 0;
-            }
+            execute_interpreter();
         }
-        else if (checker=="assemble"){
+        else if ((checker=="until")|(checker=="/until")|(checker=="-until")){
+            uint32_t grab_bp = 0x0;
+
+            std::cout << hex << "Enter the address in hex for where to stop execution." << endl;
+            cin >> hex >> opcode_entered;
+
+            execute_interpreter_bp(grab_bp);
+        }
+        else if (checker=="disas"){
             if (argc > 2){
                 checker = argv[1];
             }
@@ -721,11 +744,8 @@ int main(int argc, char **argv)
                 cerr << "Unable to open file for assembling.";
                 exit(1);
             }
-
-            cout << "Insert Assembler Here! - TODO" << endl;
-
         }
-        else if ((checker=="eso")|(checker=="/eso")|(checker=="-eso")){
+        else if ((checker=="stepi")|(checker=="/stepi")|(checker=="-stepi")){
             std::cout << hex << "Ready to execute an opcode?" << endl;
 
             string check_q;
@@ -753,7 +773,7 @@ int main(int argc, char **argv)
                 ppc_cur_instruction = 0;
             }
         }
-        else if ((checker=="epo")|(checker=="/epo")|(checker=="-epo")){
+        else if ((checker=="stepp")|(checker=="/stepp")|(checker=="-stepp")){
             std::cout << hex << "Ready to execute a page of opcodes?" << endl;
 
             string check_q;
@@ -829,17 +849,18 @@ int main(int argc, char **argv)
     }
     else{
         std::cout << "                    " << endl;
-        std::cout << "Please enter one of the following commands when" << endl;
-        std::cout << "booting up DingusPPC...                        " << endl;
+        std::cout << "Please enter one of the following commands when " << endl;
+        std::cout << "booting up DingusPPC...                         " << endl;
         std::cout << "                    " << endl;
         std::cout << "                    " << endl;
-        std::cout << "realtime - Run the emulator in real-time.      " << endl;
-        std::cout << "loadelf - Load an ELF file to run from RAM.    " << endl;
-        std::cout << "fuzzer - Test every single PPC opcode.         " << endl;
-        std::cout << "eso - Execute a single opcode per key press.   " << endl;
-        std::cout << "epo - Execute a page of opcodes per key press. " << endl;
-        std::cout << "playground - Mess around with and opcodes.     " << endl;
-        //std::cout << "assembler - NOT YET IMPLEMENTED                " << endl;
+        std::cout << "realtime - Run the emulator in real-time.       " << endl;
+        std::cout << "loadelf - Load an ELF file to run from RAM.     " << endl;
+        std::cout << "until - Runs until hitting a specified address. " << endl;
+        std::cout << "fuzzer - Test every single PPC opcode.          " << endl;
+        std::cout << "stepi - Execute a single opcode per key press.  " << endl;
+        std::cout << "stepp - Execute a page of opcodes per key press." << endl;
+        std::cout << "playground - Mess around with and opcodes.      " << endl;
+        //std::cout << "disas - NOT YET IMPLEMENTED                " << endl;
     }
 
     romFile.close();
