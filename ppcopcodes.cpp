@@ -1029,8 +1029,22 @@ void ppc_mulli(){
     ppc_store_result_regd();
 }
 
+
 void ppc_divw(){
     ppc_grab_regsdab();
+
+    //handle division by zero cases
+    if (ppc_result_b == 0){
+        ppc_result_d = 0;
+        ppc_store_result_regd();
+        return;
+    }
+    else if ((ppc_result_a == 0x80000000) & (ppc_result_b == 0xFFFFFFFF)){
+        ppc_result_d = 0;
+        ppc_store_result_regd();
+        return;
+    }
+
     sidiv_result = (int32_t) ppc_result_a / (int32_t) ppc_result_b;
     ppc_result_d = (uint32_t) sidiv_result;
     ppc_store_result_regd();
@@ -1038,6 +1052,21 @@ void ppc_divw(){
 
 void ppc_divwdot(){
     ppc_grab_regsdab();
+
+    //handle division by zero cases
+    if (ppc_result_b == 0){
+        ppc_result_d = 0;
+        ppc_store_result_regd();
+        ppc_state.ppc_cr &= 0x1FFFFFFF;
+        return;
+    }
+    else if ((ppc_result_a == 0x80000000) & (ppc_result_b == 0xFFFFFFFF)){
+        ppc_result_d = 0;
+        ppc_store_result_regd();
+        ppc_state.ppc_cr &= 0x1FFFFFFF;
+        return;
+    }
+
     sidiv_result = (int32_t) ppc_result_a / (int32_t) ppc_result_b;
     ppc_result_d = (uint32_t) sidiv_result;
     ppc_changecrf0(ppc_result_d);
@@ -1046,6 +1075,21 @@ void ppc_divwdot(){
 
 void ppc_divwo(){
     ppc_grab_regsdab();
+
+    //handle division by zero cases
+    if (ppc_result_b == 0){
+        ppc_result_d = 0;
+        ppc_state.ppc_cr |= 0x10000000;
+        ppc_store_result_regd();
+        return;
+    }
+    else if ((ppc_result_a == 0x80000000) & (ppc_result_b == 0xFFFFFFFF)){
+        ppc_result_d = 0;
+        ppc_state.ppc_cr |= 0x10000000;
+        ppc_store_result_regd();
+        return;
+    }
+
     ppc_setsoov(ppc_result_a, ppc_result_b);
     sidiv_result = (int32_t) ppc_result_a / (int32_t) ppc_result_b;
     ppc_result_d = (uint32_t) sidiv_result;
@@ -1054,6 +1098,23 @@ void ppc_divwo(){
 
 void ppc_divwodot(){
     ppc_grab_regsdab();
+
+    //handle division by zero cases
+    if (ppc_result_b == 0){
+        ppc_result_d = 0;
+        ppc_store_result_regd();
+        ppc_state.ppc_cr &= 0x1FFFFFFF;
+        ppc_state.ppc_cr |= 0x10000000;
+        return;
+    }
+    else if ((ppc_result_a == 0x80000000) & (ppc_result_b == 0xFFFFFFFF)){
+        ppc_result_d = 0;
+        ppc_store_result_regd();
+        ppc_state.ppc_cr &= 0x1FFFFFFF;
+        ppc_state.ppc_cr |= 0x10000000;
+        return;
+    }
+
     ppc_setsoov(ppc_result_a, ppc_result_b);
     sidiv_result = (int32_t) ppc_result_a / (int32_t) ppc_result_b;
     ppc_result_d = (uint32_t) sidiv_result;
@@ -1063,6 +1124,14 @@ void ppc_divwodot(){
 
 void ppc_divwu(){
     ppc_grab_regsdab();
+
+    //handle division by zero cases
+    if (ppc_result_b == 0){
+        ppc_result_d = 0;
+        ppc_store_result_regd();
+        return;
+    }
+
     uidiv_result = ppc_result_a / ppc_result_b;
     ppc_result_d = uidiv_result;
     ppc_store_result_regd();
@@ -1070,6 +1139,15 @@ void ppc_divwu(){
 
 void ppc_divwudot(){
     ppc_grab_regsdab();
+
+    //handle division by zero cases
+    if (ppc_result_b == 0){
+        ppc_result_d = 0;
+        ppc_store_result_regd();
+        ppc_state.ppc_cr &= 0x1FFFFFFF;
+        return;
+    }
+
     uidiv_result = ppc_result_a / ppc_result_b;
     ppc_result_d = uidiv_result;
     ppc_changecrf0(ppc_result_d);
@@ -1078,6 +1156,15 @@ void ppc_divwudot(){
 
 void ppc_divwuo(){
     ppc_grab_regsdab();
+
+    //handle division by zero cases
+    if (ppc_result_b == 0){
+        ppc_result_d = 0;
+        ppc_state.ppc_cr |= 0x10000000;
+        ppc_store_result_regd();
+        return;
+    }
+
     ppc_setsoov(ppc_result_a, ppc_result_b);
     uidiv_result = ppc_result_a / ppc_result_b;
     ppc_result_d = uidiv_result;
@@ -1086,6 +1173,16 @@ void ppc_divwuo(){
 
 void ppc_divwuodot(){
     ppc_grab_regsdab();
+
+    //handle division by zero cases
+    if (ppc_result_b == 0){
+        ppc_result_d = 0;
+        ppc_store_result_regd();
+        ppc_state.ppc_cr &= 0x1FFFFFFF;
+        ppc_state.ppc_cr |= 0x10000000;
+        return;
+    }
+
     ppc_setsoov(ppc_result_a, ppc_result_b);
     uidiv_result = ppc_result_a / ppc_result_b;
     ppc_result_d = uidiv_result;

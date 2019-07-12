@@ -501,9 +501,9 @@ void address_quickinsert_translate(uint32_t address_grab, uint32_t value_insert,
             grab_macmem_ptr = machine_fecxxx_mem;
             uint32_t reg_num = (value_insert & 0x07FC) >> 2;
             uint32_t dev_num = (value_insert & 0xF800) >> 11;
-            printf("ADDRESS SET FOR GRACKLE \n");
-            printf("Device Number: %d ", dev_num);
-            printf("Register Number: %d \n", reg_num);
+            printf("ADDRESS SET FOR GRACKLE: ");
+            printf("Device Number: %d  ", dev_num);
+            printf("Hex Register Number: %x \n", reg_num);
             mpc106_address = value_insert;
         }
         else{
@@ -605,7 +605,7 @@ void address_quickinsert_translate(uint32_t address_grab, uint32_t value_insert,
             uint32_t dev_num = (value_insert & 0xF800) >> 11;
             printf("ADDRESS SET FOR GRACKLE \n");
             printf("Device Number: %d ", dev_num);
-            printf("Register Number: %d \n", reg_num);
+            printf("Hex Register Number: %x \n", reg_num);
             mpc_config_addr = value_insert;
         }
         else if (address_grab < 0xFF000000){
@@ -825,6 +825,7 @@ void address_quickgrab_translate(uint32_t address_grab, uint32_t value_extract, 
         }
         else if (address_grab < 0xFF000000){
             return_value = mpc106_read_device(mpc_config_addr, bit_num);
+            return_value = rev_endian32(return_value);
             return;
         }
         else if (address_grab < 0xFF800000){

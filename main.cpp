@@ -422,7 +422,7 @@ int main(int argc, char **argv)
 
     uint32_t opcode_entered = 0; //used for testing opcodes in playground
 
-    std::cout << "DingusPPC - Prototype 5bf3 (6/9/2019)        " << endl;
+    std::cout << "DingusPPC - Prototype 5bf4 (7/14/2019)       " << endl;
     std::cout << "Written by divingkatae, (c) 2019.            " << endl;
     std::cout << "This is not intended for general use.        " << endl;
     std::cout << "Use at your own discretion.                  " << endl;
@@ -542,7 +542,8 @@ int main(int argc, char **argv)
         {"Spar", "20th Anniversay Mac, you lucky thing."}, //Spartacus
         {"Tanz", "Power Mac 4400"},                        //Tanzania
         {"TNT ", "Power Mac 7xxxx/8xxx series"},           //Trinitrotoluene :-)
-        {"Zanz", "A complete engima."}                     //Zanzibar (mentioned in Sheepshaver's code, but no match to any known ROM)
+        {"Zanz", "A complete engima."},                    //Zanzibar (mentioned in Sheepshaver's code, but no match to any known ROM)
+        {"????", "A clone, perhaps?"}                      //N/A (Placeholder ID)
     };
 
     char configGrab = 0;
