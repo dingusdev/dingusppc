@@ -479,18 +479,23 @@ void address_quickinsert_translate(uint32_t address_grab, uint32_t value_insert,
 
     //regular grabbing
     if (address_grab < 0x80000000){
-        if (address_grab > 0x03ffffff){ //for debug purposes
-            storage_area = address_grab;
-            grab_macmem_ptr = machine_sysram_mem;
-        }
-        else if ((address_grab >= 0x5fffe000) && (address_grab <= 0x5fffffff)){
-            storage_area = address_grab % 0x2000;
-            grab_macmem_ptr = machine_sysconfig_mem;
+        if (mpc106_check_membound(address_grab)){
+            if (address_grab > 0x03ffffff){ //for debug purposes
+                storage_area = address_grab;
+                grab_macmem_ptr = machine_sysram_mem;
+            }
+            else if ((address_grab >= 0x5fffe000) && (address_grab <= 0x5fffffff)){
+                storage_area = address_grab % 0x2000;
+                grab_macmem_ptr = machine_sysconfig_mem;
+            }
+            else{
+                storage_area = address_grab % 0x04000000;
+                grab_macmem_ptr = machine_sysram_mem;
+                printf("Uncharted territory: %x \n", address_grab);
+            }
         }
         else{
-            storage_area = address_grab % 0x04000000;
-            grab_macmem_ptr = machine_sysram_mem;
-            printf("Uncharted territory: %x \n", address_grab);
+            return;
         }
     }
     else if (address_grab < 0x80800000){
@@ -610,6 +615,7 @@ void address_quickinsert_translate(uint32_t address_grab, uint32_t value_insert,
         }
         else if (address_grab < 0xFF000000){
             storage_area = 0x0CFC;  //CONFIG_DATA
+            mpc106_word_custom_size = bit_num;
             mpc106_write_device(mpc_config_addr, value_insert, bit_num);
             grab_macmem_ptr = machine_feexxx_mem;
         }
@@ -717,15 +723,22 @@ void address_quickgrab_translate(uint32_t address_grab, uint32_t value_extract, 
 
     //regular grabbing
     if (address_grab < 0x80000000){
-        if (address_grab > 0x03ffffff){ //for debug purposes
-            storage_area = address_grab;
-            grab_macmem_ptr = machine_sysram_mem;
-        }
-        else if ((address_grab >= 0x5fffe000) && (address_grab <= 0x5fffffff)){
-            storage_area = address_grab % 0x2000;
-            grab_macmem_ptr = machine_sysconfig_mem;
+        if (mpc106_check_membound(address_grab)){
+            if (address_grab > 0x03ffffff){ //for debug purposes
+                storage_area = address_grab;
+                grab_macmem_ptr = machine_sysram_mem;
+            }
+            else if ((address_grab >= 0x5fffe000) && (address_grab <= 0x5fffffff)){
+                storage_area = address_grab % 0x2000;
+                grab_macmem_ptr = machine_sysconfig_mem;
+            }
+            else{
+                return_value = (bit_num == 1)?0xFF:(bit_num == 2)?0xFFFF:0xFFFFFFFF;
+                return;
+            }
         }
         else{
+            //The address is not within the ROM banks
             return_value = (bit_num == 1)?0xFF:(bit_num == 2)?0xFFFF:0xFFFFFFFF;
             return;
         }
@@ -824,6 +837,7 @@ void address_quickgrab_translate(uint32_t address_grab, uint32_t value_extract, 
             return;
         }
         else if (address_grab < 0xFF000000){
+            mpc106_word_custom_size = bit_num;
             return_value = mpc106_read_device(mpc_config_addr, bit_num);
             return_value = rev_endian32(return_value);
             return;
@@ -1011,8 +1025,11 @@ void quickinstruction_translate(uint32_t address_grab){
         grab_macmem_ptr = machine_sysrom_mem;
     }
 
-    ppc_cur_instruction += (grab_macmem_ptr[(storage_area++)]) << 24;
-    ppc_cur_instruction += (grab_macmem_ptr[(storage_area++)]) << 16;
-    ppc_cur_instruction += (grab_macmem_ptr[(storage_area++)]) << 8;
+    ppc_cur_instruction += (grab_macmem_ptr[storage_area]) << 24;
+    ++storage_area;
+    ppc_cur_instruction += (grab_macmem_ptr[storage_area]) << 16;
+    ++storage_area;
+    ppc_cur_instruction += (grab_macmem_ptr[storage_area]) << 8;
+    ++storage_area;
     ppc_cur_instruction += (grab_macmem_ptr[(storage_area)]);
 }

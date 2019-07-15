@@ -52,8 +52,9 @@ Future versions will include SDL 2 as a requirement.
 ## Intended Minimum Requirements
  
 - Windows 7 or newer (64-bit), Linux 4.4 or newer, Mac OS X 10.9 or newer (64-bit)
-- 2 GB of RAM
 - Intel Core 2 Duo or better
+- 2 GB of RAM
+- 2 GB of Hard Disk Space
 - Graphics Card with a minimum resolution of 800*600
  
 ## Compiler Requirements

@@ -23,12 +23,16 @@ extern uint16_t mpc106_write_half;
 extern uint16_t mpc106_read_half;
 extern uint8_t mpc106_write_byte;
 extern uint8_t mpc106_read_byte;
+extern uint8_t mpc106_word_custom_size;
+
 extern unsigned char* mpc106_regs;
 
+extern void change_membound_time();
 extern void mpc106_init();
 extern void mpc106_read();
 extern void mpc106_write(uint32_t write_word);
 extern uint32_t mpc106_write_device(uint32_t device_addr, uint32_t insert_to_device, uint8_t bit_length);
 extern uint32_t mpc106_read_device(uint32_t device_addr, uint8_t bit_length);
+extern bool mpc106_check_membound(uint32_t attempted_address);
 
 #endif
