@@ -1272,7 +1272,7 @@ void ppc_rlwimi(){
     rot_sh = (ppc_cur_instruction >> 11) & 31;
     rot_mb = (ppc_cur_instruction >> 6) & 31;
     rot_me = (ppc_cur_instruction >> 1) & 31;
-    uint32_t step1 = (0xFFFFFFFFUL << (rot_me + 1)) ^ (0xFFFFFFFFUL >> rot_mb);
+    uint32_t step1 = (0xFFFFFFFFUL << (31 - rot_me)) & (0xFFFFFFFFUL >> rot_mb);
     uint32_t step2 = (rot_me < rot_mb)? ~step1 : step1;
     uint32_t step3 = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32-rot_sh)));
     ppc_result_a = (ppc_result_a & ~step2) | (step3 & step2);
@@ -1287,7 +1287,7 @@ void ppc_rlwinm(){
     rot_sh = (ppc_cur_instruction >> 11) & 31;
     rot_mb = (ppc_cur_instruction >> 6) & 31;
     rot_me = (ppc_cur_instruction >> 1) & 31;
-    uint32_t step1 = (0xFFFFFFFFUL << (rot_me + 1)) ^ (0xFFFFFFFFUL >> rot_mb);
+    uint32_t step1 = (0xFFFFFFFFUL << (31 - rot_me)) & (0xFFFFFFFFUL >> rot_mb);
     uint32_t step2 = (rot_me < rot_mb)? ~step1 : step1;
     uint32_t step3 = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32-rot_sh)));
     ppc_result_a = step2 & step3;
@@ -1301,7 +1301,7 @@ void ppc_rlwnm(){
     ppc_grab_regssab();
     rot_mb = (ppc_cur_instruction >> 6) & 31;
     rot_me = (ppc_cur_instruction >> 1) & 31;
-    uint32_t step1 = (0xFFFFFFFFUL << (rot_me + 1)) ^ (0xFFFFFFFFUL >> rot_mb);
+    uint32_t step1 = (0xFFFFFFFFUL << (31 - rot_me)) & (0xFFFFFFFFUL >> rot_mb);
     uint32_t step2 = (rot_me < rot_mb)? ~step1 : step1;
     uint32_t step3 = ((ppc_result_d << ppc_result_b) | (ppc_result_d >> (32-ppc_result_b)));
     ppc_result_a = step2 & step3;
