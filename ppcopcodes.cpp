@@ -1355,7 +1355,6 @@ void ppc_mfmsr(){
     if ((ppc_state.ppc_msr & 0x4000) == 0){
         reg_d = (ppc_cur_instruction >> 21) & 31;
         ppc_state.ppc_gpr[reg_d] = ppc_state.ppc_msr;
-        ppc_store_result_regd();
     }
 }
 
