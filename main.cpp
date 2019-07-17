@@ -25,6 +25,7 @@
 #include "viacuda.h"
 #include "mpc106.h"
 #include "openpic.h"
+#include "debugger.h"
 //#include <vector>
 
 #define max_16b_int 65535
@@ -846,6 +847,8 @@ int main(int argc, char **argv)
                     ppc_cur_instruction = 0;
                 }
             }
+        } else if (checker == "debugger") {
+            enter_debugger();
         }
     }
     else{

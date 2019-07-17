@@ -21,6 +21,7 @@ set(SOURCE_FILES
         viacuda.cpp
         main.cpp
         davbus.cpp
+        debugger.cpp
         )
  
 set(HEADER_FILES
@@ -33,6 +34,7 @@ set(HEADER_FILES
         ppcmemory.h
         viacuda.h
         davbus.h
+        debugger.h
         )
  
 add_executable(dingusppc ${SOURCE_FILES} ${HEADER_FILES})
