@@ -163,7 +163,7 @@ void get_pointer_pteg1(uint32_t address_grab){
             grab_pteg1_ptr = machine_sysconfig_mem;
         }
         else{
-            printf("Uncharted territory: %x", address_grab);
+            printf("Uncharted territory: %x \n", address_grab);
         }
     }
     else if (address_grab < 0x80800000){
@@ -240,7 +240,7 @@ void get_pointer_pteg2(uint32_t address_grab){
             grab_pteg2_ptr = machine_sysconfig_mem;
         }
         else{
-            printf("Uncharted territory: %x", address_grab);
+            printf("Uncharted territory: %x \n", address_grab);
         }
     }
     else if (address_grab < 0x80800000){
@@ -959,7 +959,7 @@ void quickinstruction_translate(uint32_t address_grab){
         else{
             storage_area = address_grab % 0x04000000;
             grab_macmem_ptr = machine_sysram_mem;
-            printf("Uncharted territory: %x", address_grab);
+            printf("Uncharted territory: %x \n", address_grab);
         }
     }
     else if (address_grab < 0x80800000){
