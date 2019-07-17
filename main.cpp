@@ -729,7 +729,7 @@ int main(int argc, char **argv)
             uint32_t grab_bp = 0x0;
 
             std::cout << hex << "Enter the address in hex for where to stop execution." << endl;
-            cin >> hex >> opcode_entered;
+            cin >> hex >> grab_bp;
 
             execute_interpreter_bp(grab_bp);
         }
@@ -757,7 +757,7 @@ int main(int argc, char **argv)
                 quickinstruction_translate(ppc_state.ppc_pc);
                 ppc_main_opcode();
                 if (grab_branch & !grab_exception){
-                    ppc_state.ppc_pc = ppc_effective_address;
+                    ppc_state.ppc_pc = ppc_next_instruction_address;
                     grab_branch = 0;
                     ppc_tbr_update();
                 }
