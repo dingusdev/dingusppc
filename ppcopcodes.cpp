@@ -168,7 +168,7 @@ void ppc_changecrf0(uint32_t set_result){
 
 //Affects the XER register's Carry Bit
 void ppc_carry(uint32_t a, uint32_t b){
-    if (b > ~a){
+    if (b < a){ // TODO: ensure it works everywhere
         ppc_state.ppc_spr[1] |= 0x20000000;
     }
     else{
@@ -384,9 +384,9 @@ void ppc_addcodot(){
 
 void ppc_adde(){
     ppc_grab_regsdab();
-    uint32_t grab_xer = ppc_state.ppc_spr[1] & 0x20000000;
-    ppc_result_d = ppc_result_a + ppc_result_b + grab_xer;
-    if (((grab_xer != 0) && (grab_xer > (~(ppc_result_b + ppc_result_a)))) || (ppc_result_d > ~ppc_result_a)){
+    uint32_t xer_ca = !!(ppc_state.ppc_spr[1] & 0x20000000);
+    ppc_result_d = ppc_result_a + ppc_result_b + xer_ca;
+    if ((ppc_result_d < ppc_result_a) || (xer_ca && (ppc_result_d == ppc_result_a))){
         ppc_state.ppc_spr[1] |= 0x20000000;
     }
     else{
@@ -646,7 +646,7 @@ void ppc_subfic(){
     ppc_grab_regsdasimm();
     not_this = ~ppc_result_a;
     ppc_result_d = not_this + simm + 1;
-    if (ppc_result_d < (not_this + 1)){
+    if (ppc_result_d <= not_this) {
         ppc_state.ppc_spr[1] |= 0x20000000;
     }
     else{
@@ -1272,7 +1272,7 @@ void ppc_rlwimi(){
     rot_sh = (ppc_cur_instruction >> 11) & 31;
     rot_mb = (ppc_cur_instruction >> 6) & 31;
     rot_me = (ppc_cur_instruction >> 1) & 31;
-    uint32_t step1 = (0xFFFFFFFF >> (rot_me + 1)) ^ (0xFFFFFFFF >> rot_mb);
+    uint32_t step1 = (0xFFFFFFFFUL << (31 - rot_me)) & (0xFFFFFFFFUL >> rot_mb);
     uint32_t step2 = (rot_me < rot_mb)? ~step1 : step1;
     uint32_t step3 = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32-rot_sh)));
     ppc_result_a = (ppc_result_a & ~step2) | (step3 & step2);
@@ -1287,7 +1287,7 @@ void ppc_rlwinm(){
     rot_sh = (ppc_cur_instruction >> 11) & 31;
     rot_mb = (ppc_cur_instruction >> 6) & 31;
     rot_me = (ppc_cur_instruction >> 1) & 31;
-    uint32_t step1 = (0xFFFFFFFF >> (rot_me + 1)) ^ (0xFFFFFFFF >> rot_mb);
+    uint32_t step1 = (0xFFFFFFFFUL << (31 - rot_me)) & (0xFFFFFFFFUL >> rot_mb);
     uint32_t step2 = (rot_me < rot_mb)? ~step1 : step1;
     uint32_t step3 = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32-rot_sh)));
     ppc_result_a = step2 & step3;
@@ -1301,7 +1301,7 @@ void ppc_rlwnm(){
     ppc_grab_regssab();
     rot_mb = (ppc_cur_instruction >> 6) & 31;
     rot_me = (ppc_cur_instruction >> 1) & 31;
-    uint32_t step1 = (0xFFFFFFFF >> (rot_me + 1)) ^ (0xFFFFFFFF >> rot_mb);
+    uint32_t step1 = (0xFFFFFFFFUL << (31 - rot_me)) & (0xFFFFFFFFUL >> rot_mb);
     uint32_t step2 = (rot_me < rot_mb)? ~step1 : step1;
     uint32_t step3 = ((ppc_result_d << ppc_result_b) | (ppc_result_d >> (32-ppc_result_b)));
     ppc_result_a = step2 & step3;
@@ -1355,7 +1355,6 @@ void ppc_mfmsr(){
     if ((ppc_state.ppc_msr & 0x4000) == 0){
         reg_d = (ppc_cur_instruction >> 21) & 31;
         ppc_state.ppc_gpr[reg_d] = ppc_state.ppc_msr;
-        ppc_store_result_regd();
     }
 }
 
