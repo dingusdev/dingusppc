@@ -109,7 +109,7 @@ void msr_status_update(){
 }
 
 void ppc_set_cur_instruction(uint32_t mem_index){
-    ppc_cur_instruction += (grab_macmem_ptr[mem_index]) << 24;
+    ppc_cur_instruction  = (grab_macmem_ptr[mem_index]) << 24;
     ++mem_index;
     ppc_cur_instruction += (grab_macmem_ptr[mem_index]) << 16;
     ++mem_index;

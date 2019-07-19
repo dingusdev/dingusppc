@@ -54,7 +54,6 @@ void execute_single_instr()
         ppc_state.ppc_pc += 4;
         ppc_tbr_update();
     }
-    ppc_cur_instruction = 0;
 }
 
 void execute_until(uint32_t goal_addr)

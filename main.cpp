@@ -358,7 +358,6 @@ void execute_interpreter(){
             ppc_state.ppc_pc += 4;
             ppc_tbr_update();
         }
-        ppc_cur_instruction = 0;
     }
 }
 
@@ -775,7 +774,6 @@ int main(int argc, char **argv)
                     ppc_state.ppc_pc += 4;
                     ppc_tbr_update();
                 }
-                ppc_cur_instruction = 0;
             }
         }
         else if ((checker=="stepp")|(checker=="/stepp")|(checker=="-stepp")){
@@ -804,7 +802,6 @@ int main(int argc, char **argv)
                         ppc_state.ppc_pc += 4;
                         ppc_tbr_update();
                     }
-                    ppc_cur_instruction = 0;
                 }
             }
         }
@@ -847,7 +844,6 @@ int main(int argc, char **argv)
                         ppc_state.ppc_pc += 4;
                         ppc_tbr_update();
                     }
-                    ppc_cur_instruction = 0;
                 }
             }
         } else if (checker == "debugger") {
