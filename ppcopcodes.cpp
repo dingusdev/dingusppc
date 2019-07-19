@@ -224,26 +224,30 @@ void ppc_opcode4(){
 }
 
 void ppc_opcode16(){
-    //printf("Reading from Opcode 16 table \n");
     uint8_t subop_grab = ppc_cur_instruction & 3;
-    //uint32_t regrab = (uint32_t)subop_grab;
-    //printf("Executing subopcode entry %d \n", regrab);
+
+    #ifdef EXHAUSTIVE_DEBUG
+    uint32_t regrab = (uint32_t)subop_grab;
+    printf("Executing Opcode 16 table subopcode entry %d \n", regrab);
     SubOpcode16Grabber[subop_grab]();
+    #else
+    SubOpcode16Grabber[subop_grab]();
+    #endif // EXHAUSTIVE_DEBUG
 }
 
 void ppc_opcode18(){
-    //printf("Reading from Opcode 18 table \n");
     uint8_t subop_grab = ppc_cur_instruction & 3;
+    //printf("Reading from Opcode 18 table \n");
     //uint32_t regrab = (uint32_t)subop_grab;
     //printf("Executing subopcode entry %d \n", regrab);
     SubOpcode18Grabber[subop_grab]();
 }
 
 void ppc_opcode19(){
-    //printf("Reading from Opcode 19 table \n");
     uint16_t subop_grab = ppc_cur_instruction & 2047;
-    //uint32_t regrab = (uint32_t)subop_grab;
-    //printf("Executing subopcode entry %d \n", regrab);
+    #ifdef EXHAUSTIVE_DEBUG
+    uint32_t regrab = (uint32_t)subop_grab;
+    printf("Executing Opcode 19 table supopcode entry %d \n", regrab);
     if (SubOpcode19Grabber.count(subop_grab) == 1){
         SubOpcode19Grabber[subop_grab]();
     }
@@ -251,13 +255,16 @@ void ppc_opcode19(){
         std::cout << "ILLEGAL SUBOPCODE: " << subop_grab << std::endl;
         ppc_expection_handler(0x0700, 0x80000);
     }
+    #else
+    SubOpcode19Grabber[subop_grab]();
+    #endif // EXHAUSTIVE_DEBUG
 }
 
 void ppc_opcode31(){
-    //printf("Reading from Opcode 31 table \n");
     uint16_t subop_grab = ppc_cur_instruction & 2047;
-    //uint32_t regrab = (uint32_t)subop_grab;
-    //printf("Executing subopcode entry %d \n", regrab);
+    #ifdef EXHAUSTIVE_DEBUG
+    uint32_t regrab = (uint32_t)subop_grab;
+    printf("Executing Opcode 31 table supopcode entry %d \n", regrab);
     if (SubOpcode31Grabber.count(subop_grab) == 1){
         SubOpcode31Grabber[subop_grab]();
     }
@@ -265,20 +272,43 @@ void ppc_opcode31(){
         std::cout << "ILLEGAL SUBOPCODE: " << subop_grab << std::endl;
         ppc_expection_handler(0x0700, 0x80000);
     }
+    #else
+    SubOpcode31Grabber[subop_grab]();
+    #endif // EXHAUSTIVE_DEBUG
+}
+
+void ppc_opcode59(){
+    uint16_t subop_grab = ppc_cur_instruction & 2047;
+    #ifdef EXHAUSTIVE_DEBUG
+    uint32_t regrab = (uint32_t)subop_grab;
+    printf("Executing Opcode 59 table supopcode entry %d \n", regrab);
+    if (SubOpcode59Grabber.count(subop_grab) == 1){
+        SubOpcode59Grabber[subop_grab]();
+    }
+    else{
+        std::cout << "ILLEGAL SUBOPCODE: " << subop_grab << std::endl;
+        ppc_expection_handler(0x0700, 0x80000);
+    }
+    #else
+    SubOpcode59Grabber[subop_grab]();
+    #endif // EXHAUSTIVE_DEBUG
 }
 
 void ppc_opcode63(){
-    //printf("Reading from Opcode 63 table \n");
     uint16_t subop_grab = ppc_cur_instruction & 2047;
-    //uint32_t regrab = (uint32_t)subop_grab;
-    //std::cout << "Executing subopcode entry " << regrab << std::endl;
+    #ifdef EXHAUSTIVE_DEBUG
+    uint32_t regrab = (uint32_t)subop_grab;
+    std::cout << "Executing Opcode 63 table subopcode entry " << regrab << std::endl;
     if (SubOpcode63Grabber.count(subop_grab) == 1){
         SubOpcode63Grabber[subop_grab]();
     }
     else{
-        //std::cout << "ILLEGAL SUBOPCODE: " << subop_grab << std::endl;
+        std::cout << "ILLEGAL SUBOPCODE: " << subop_grab << std::endl;
         ppc_expection_handler(0x0700, 0x80000);
     }
+    #else
+    SubOpcode63Grabber[subop_grab]();
+    #endif // EXHAUSTIVE_DEBUG
 }
 
 void ppc_main_opcode(){
@@ -1906,7 +1936,9 @@ void ppc_stb(){
     ppc_grab_regssa();
     grab_d = (uint32_t)((int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF)));
     ppc_effective_address = (reg_a == 0)?grab_d:(ppc_result_a + grab_d);
+    #ifdef EXHAUSTIVE_DEBUG
     printf("STB Storage Area: %x \n",ppc_effective_address);
+    #endif // EXHAUSTIVE_DEBUG
     address_quickinsert_translate(ppc_result_d, ppc_effective_address, 1);
 }
 

@@ -730,7 +730,7 @@ void address_quickinsert_translate(uint32_t value_insert, uint32_t address_grab,
 void address_quickgrab_translate(uint32_t address_grab, uint8_t bit_num){
     //Grab a value from memory into a register
 
-    printf("Grabbing from address %x \n", address_grab);
+    //printf("Grabbing from address %x \n", address_grab);
 
     uint32_t storage_area = 0;
     uint32_t grab_batl = 537;
@@ -782,7 +782,7 @@ void address_quickgrab_translate(uint32_t address_grab, uint8_t bit_num){
     }
 
     if (address_grab >= 0xFFC00000){
-        printf("Charting ROM Area: %x \n", address_grab);
+        //printf("Charting ROM Area: %x \n", address_grab);
         storage_area = address_grab % rom_file_setsize;
         grab_macmem_ptr = machine_sysrom_mem;
         ppc_set_return_val(storage_area, bit_num);

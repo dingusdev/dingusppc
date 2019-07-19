@@ -10,6 +10,12 @@
 
 #include <map>
 
+//Uncomment this to help debug the emulator further
+//#define EXHAUSTIVE_DEBUG 1
+
+//Uncomment this to have a more graceful approach to illegal opcodes
+//#define ILLEGAL_OP_SAFE 1
+
 enum endian_switch {big_end = 0, little_end = 1};
 
 typedef void (*PPCOpcode)(void);
@@ -616,7 +622,7 @@ static std::map<uint8_t, PPCOpcode> OpcodeGrabber =
      {44, &ppc_sth},       {45, &ppc_sthu},      {46, &ppc_lmw},       {47, &ppc_stmw},
      {48, &ppc_lfs},       {49, &ppc_lfsu},      {50, &ppc_lfd},       {51, &ppc_lfdu},
      {52, &ppc_stfs},      {53, &ppc_stfsu},     {54, &ppc_stfd},      {55, &ppc_stfdu},
-     {56, &ppc_psq_l},     {57, &ppc_psq_lu},    {58, &ppc_illegalop}, {59, &ppc_illegalop},
+     {56, &ppc_psq_l},     {57, &ppc_psq_lu},    {58, &ppc_illegalop}, {59, &ppc_opcode59},
      {60, &ppc_psq_st},    {61, &ppc_psq_stu},   {62, &ppc_illegalop}, {63, &ppc_opcode63}};
 
 //All of the opcodes possible are generated from the first 6 bits
