@@ -43,6 +43,8 @@
 		</Compiler>
 		<Unit filename="davbus.cpp" />
 		<Unit filename="davbus.h" />
+		<Unit filename="debugger.cpp" />
+		<Unit filename="debugger.h" />
 		<Unit filename="macioserial.cpp" />
 		<Unit filename="macioserial.h" />
 		<Unit filename="macscsi.cpp" />

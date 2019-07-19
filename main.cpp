@@ -41,6 +41,7 @@ using namespace std;
 SetPRS ppc_state;
 
 bool power_on = 1;
+bool is_nubus = 0;
 
 bool grab_branch;
 bool grab_exception;
@@ -51,11 +52,8 @@ uint32_t ppc_cur_instruction; //Current instruction for the PPC
 uint32_t ppc_effective_address;
 uint32_t ppc_real_address;
 uint32_t ppc_next_instruction_address; //Used for branching, setting up the NIA
-uint32_t temp_address; //used for determining where memory ends up.
 
 uint32_t return_value;
-
-uint32_t pc_return_value;
 
 
 //A pointer to a pointer, used for quick movement to one of the following
@@ -555,6 +553,11 @@ int main(int argc, char **argv)
     romFile.seekg (0x300082, ios::beg); //This is where the place to get the offset is
     romFile.get(configGrab); //just one byte to determine where the identifier string is
     configInfoOffset = (uint32_t)(configGrab & 0xff);
+
+    if (configInfoOffset == 0xC0){
+        is_nubus = 1;
+    }
+
     uint32_t configInfoAddr = 0x300000 + (configInfoOffset << 8) + 0x69; //address to check the identifier string
     romFile.seekg (configInfoAddr, ios::beg);
     romFile.read(memPPCBlock, sizeof(uint32_t)); //Only four chars needed to distinguish between codenames
@@ -859,12 +862,10 @@ int main(int argc, char **argv)
         std::cout << "                    " << endl;
         std::cout << "realtime - Run the emulator in real-time.       " << endl;
         std::cout << "loadelf - Load an ELF file to run from RAM.     " << endl;
-        std::cout << "until - Runs until hitting a specified address. " << endl;
+        std::cout << "debugger - Enter the interactive debugger.      " << endl;
         std::cout << "fuzzer - Test every single PPC opcode.          " << endl;
-        std::cout << "stepi - Execute a single opcode per key press.  " << endl;
         std::cout << "stepp - Execute a page of opcodes per key press." << endl;
         std::cout << "playground - Mess around with and opcodes.      " << endl;
-        //std::cout << "disas - NOT YET IMPLEMENTED                " << endl;
     }
 
     romFile.close();

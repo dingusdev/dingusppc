@@ -35,8 +35,8 @@ extern void dbat_update();
 
 extern void msr_status_update();
 
-extern void address_quickinsert_translate(uint32_t address_grab, uint32_t value_insert, uint8_t bit_num);
-extern void address_quickgrab_translate(uint32_t address_grab, uint32_t value_extract, uint8_t bit_num);
+extern void address_quickinsert_translate(uint32_t value_insert, uint32_t address_grab, uint8_t bit_num);
+extern void address_quickgrab_translate(uint32_t address_grab, uint8_t bit_num);
 extern void quickinstruction_translate(uint32_t address_grab);
 
 #endif // PPCMEMORY_H

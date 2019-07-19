@@ -849,7 +849,7 @@ void ppc_lfs(){
     ppc_grab_regsfpdia();
     grab_d = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
     ppc_effective_address = (reg_a == 0)?grab_d:ppc_result_a + grab_d;
-    address_quickgrab_translate(ppc_effective_address, ppc_state.ppc_fpr[reg_d], 4);
+    address_quickgrab_translate(ppc_effective_address, 4);
     ppc_result64_d = (uint64_t)return_value;
     ppc_store_dfpresult();
 }
@@ -859,7 +859,7 @@ void ppc_lfsu(){
     ppc_grab_regsfpdia();
     grab_d = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
     ppc_effective_address = (reg_a == 0)?grab_d:ppc_result_a + grab_d;
-    address_quickgrab_translate(ppc_effective_address, ppc_state.ppc_fpr[reg_d], 4);
+    address_quickgrab_translate(ppc_effective_address, 4);
     ppc_result64_d = (uint64_t)return_value;
     ppc_result_a = ppc_effective_address;
     ppc_store_dfpresult();
@@ -869,7 +869,7 @@ void ppc_lfsu(){
 void ppc_lfsx(){
     ppc_grab_regsfpdiab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:ppc_result_a + ppc_result_b;
-    address_quickgrab_translate(ppc_effective_address, ppc_state.ppc_fpr[reg_d], 4);
+    address_quickgrab_translate(ppc_effective_address, 4);
     ppc_result64_d = (uint64_t)return_value;
     ppc_store_dfpresult();
 }
@@ -878,7 +878,7 @@ void ppc_lfsx(){
 void ppc_lfsux(){
     ppc_grab_regsfpdiab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:ppc_result_a + ppc_result_b;
-    address_quickgrab_translate(ppc_effective_address, ppc_state.ppc_fpr[reg_d], 4);
+    address_quickgrab_translate(ppc_effective_address, 4);
     ppc_result64_d = (uint64_t)return_value;
     ppc_result_a = ppc_effective_address;
     ppc_store_dfpresult();
@@ -889,9 +889,9 @@ void ppc_lfd(){
     ppc_grab_regsfpdia();
     grab_d = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
     ppc_effective_address = (reg_a == 0)?grab_d:ppc_result_a + grab_d;
-    address_quickgrab_translate(ppc_effective_address, ppc_state.ppc_fpr[reg_d], 4);
+    address_quickgrab_translate(ppc_effective_address, 4);
     uint64_t combine_result1 = (uint64_t)(return_value);
-    address_quickgrab_translate((ppc_effective_address + 4), ppc_state.ppc_fpr[reg_d], 4);
+    address_quickgrab_translate((ppc_effective_address + 4), 4);
     uint64_t combine_result2 = (uint64_t)(return_value);
     ppc_result64_d = (combine_result1 << 32) | combine_result2;
     ppc_store_dfpresult();
@@ -902,9 +902,9 @@ void ppc_lfdu(){
     ppc_grab_regsfpdia();
     grab_d = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
     ppc_effective_address = (reg_a == 0)?grab_d:ppc_result_a + grab_d;
-    address_quickgrab_translate(ppc_effective_address, ppc_state.ppc_fpr[reg_d], 4);
+    address_quickgrab_translate(ppc_effective_address, 4);
     uint64_t combine_result1 = (uint64_t)(return_value);
-    address_quickgrab_translate((ppc_effective_address + 4), ppc_state.ppc_fpr[reg_d], 4);
+    address_quickgrab_translate((ppc_effective_address + 4), 4);
     uint64_t combine_result2 = (uint64_t)(return_value);
     ppc_result64_d = (combine_result1 << 32) | combine_result2;
     ppc_store_dfpresult();

@@ -17,23 +17,23 @@ There are a few command line arguments one can enter when starting the program.
 
 -fuzzer
 
-Processor fuzzer, very unfinished
+Processor fuzzer, very unfinished.
 
 -realtime
 
-Run the emulator in runtime
+Run the emulator in runtime.
 
 -loadelf
 
-Load an ELF file into memory
+Load an ELF file into memory.
 
--stepi
+-debugger
 
-Execute a single opcode
+Enter the interactive debugger.
 
 -stepp
 
-Execute a page of opcodes (256 instructions at a time)
+Execute a page of opcodes (256 instructions at a time).
 
 -playground
 

@@ -84,8 +84,6 @@ SUPERVISOR MODEL
 
 extern uint32_t return_value; //used for loading from memory
 
-extern uint32_t pc_return_value; //used for getting instructions
-
 extern uint32_t opcode_value; //used for interpreting opcodes
 extern uint32_t ram_size_set;
 
@@ -154,20 +152,18 @@ extern bool grab_branch;
 extern bool grab_exception;
 extern bool grab_return;
 
+extern bool is_nubus; //For early Power Mac Emulation
+
 extern bool is_601; //For PowerPC 601 Emulation
 extern bool is_gekko; //For GameCube Emulation
 extern bool is_altivec; //For Altivec Emulation
 extern bool is_64bit; //For PowerPC G5 Emulation
 
-//uint64_t virtual_address;
-
 //Important Addressing Integers
-extern uint64_t ppc_virtual_address; //It's 52 bits
 extern uint32_t ppc_cur_instruction;
 extern uint32_t ppc_effective_address;
 extern uint32_t ppc_real_address;
 extern uint32_t ppc_next_instruction_address;
-extern uint32_t temp_address; //used for determining where memory ends up.
 
 //Function prototypes
 void reg_init();
