@@ -129,7 +129,7 @@ void ppc_grab_regssa(){
 
 void ppc_grab_regssb(){
     reg_s = (ppc_cur_instruction >> 21) & 31;
-    reg_b = (ppc_cur_instruction >> 16) & 31;
+    reg_b = (ppc_cur_instruction >> 11) & 31;
     ppc_result_d = ppc_state.ppc_gpr[reg_s];
     ppc_result_b = ppc_state.ppc_gpr[reg_b];
 }
@@ -1358,7 +1358,7 @@ void ppc_mtsr(){
 void ppc_mtsrin(){
     if ((ppc_state.ppc_msr & 0x4000) == 0){
         ppc_grab_regssb();
-        grab_sr = ppc_result_b & 15;
+        grab_sr = ppc_result_b >> 28;
         ppc_state.ppc_sr[grab_sr] = ppc_result_d;
     }
 }
@@ -1368,16 +1368,14 @@ void ppc_mfsr(){
         reg_d = (ppc_cur_instruction >> 21) & 31;
         grab_sr = (ppc_cur_instruction >> 16) & 15;
         ppc_state.ppc_gpr[reg_d] = ppc_state.ppc_sr[grab_sr];
-        ppc_store_result_regd();
     }
 }
 
 void ppc_mfsrin(){
     if ((ppc_state.ppc_msr & 0x4000) == 0){
         ppc_grab_regssb();
-        grab_sr = ppc_result_b & 15;
+        grab_sr = ppc_result_b >> 28;
         ppc_state.ppc_gpr[reg_d] = ppc_state.ppc_sr[grab_sr];
-        ppc_store_result_regd();
     }
 }
 
@@ -1391,7 +1389,7 @@ void ppc_mfmsr(){
 void ppc_mtmsr(){
     //if ((ppc_state.ppc_msr && 0x4000) == 0){
         reg_s = (ppc_cur_instruction >> 21) & 31;
-        ppc_state.ppc_msr = ppc_state.ppc_spr[reg_s];
+        ppc_state.ppc_msr = ppc_state.ppc_gpr[reg_s];
         msr_status_update();
     //}
 }

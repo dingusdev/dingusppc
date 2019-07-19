@@ -358,7 +358,6 @@ void execute_interpreter(){
             ppc_state.ppc_pc += 4;
             ppc_tbr_update();
         }
-        ppc_cur_instruction = 0;
     }
 }
 
@@ -775,7 +774,6 @@ int main(int argc, char **argv)
                     ppc_state.ppc_pc += 4;
                     ppc_tbr_update();
                 }
-                ppc_cur_instruction = 0;
             }
         }
         else if ((checker=="stepp")|(checker=="/stepp")|(checker=="-stepp")){
@@ -790,7 +788,7 @@ int main(int argc, char **argv)
                     quickinstruction_translate(ppc_state.ppc_pc);
                     ppc_main_opcode();
                     if (grab_branch & !grab_exception){
-                        ppc_state.ppc_pc = ppc_effective_address;
+                        ppc_state.ppc_pc = ppc_next_instruction_address;
                         grab_branch = 0;
                         ppc_tbr_update();
                     }
@@ -804,7 +802,6 @@ int main(int argc, char **argv)
                         ppc_state.ppc_pc += 4;
                         ppc_tbr_update();
                     }
-                    ppc_cur_instruction = 0;
                 }
             }
         }
@@ -833,7 +830,7 @@ int main(int argc, char **argv)
                     quickinstruction_translate(ppc_state.ppc_pc);
                     ppc_main_opcode();
                     if (grab_branch & !grab_exception){
-                        ppc_state.ppc_pc = ppc_effective_address;
+                        ppc_state.ppc_pc = ppc_next_instruction_address;
                         grab_branch = 0;
                         ppc_tbr_update();
                     }
@@ -847,7 +844,6 @@ int main(int argc, char **argv)
                         ppc_state.ppc_pc += 4;
                         ppc_tbr_update();
                     }
-                    ppc_cur_instruction = 0;
                 }
             }
         } else if (checker == "debugger") {
