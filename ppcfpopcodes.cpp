@@ -917,7 +917,7 @@ void ppc_stfs(){
     ppc_grab_regsfpsia();
     grab_d = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
     ppc_effective_address = (reg_a == 0)?grab_d:ppc_result_a + grab_d;
-    address_quickinsert_translate(ppc_effective_address, ppc_state.ppc_fpr[reg_s], 4);
+    address_quickinsert_translate(ppc_state.ppc_fpr[reg_s], ppc_effective_address, 4);
 }
 
 void ppc_stfsu(){
@@ -925,7 +925,7 @@ void ppc_stfsu(){
     grab_d = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
     ppc_effective_address = (reg_a == 0)?grab_d:ppc_result_a + grab_d;
     uint32_t split_result1 = (uint32_t)((float)(ppc_state.ppc_fpr[reg_s]));
-    address_quickinsert_translate(ppc_effective_address, split_result1, 4);
+    address_quickinsert_translate(split_result1, ppc_effective_address, 4);
     ppc_result_a = ppc_effective_address;
     ppc_store_result_rega();
 }
@@ -934,7 +934,7 @@ void ppc_stfsux(){
     ppc_grab_regsfpsiab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:ppc_result_a + ppc_result_b;
     uint32_t split_result1 = (uint32_t)((float)(ppc_state.ppc_fpr[reg_s]));
-    address_quickinsert_translate(ppc_effective_address, split_result1, 4);
+    address_quickinsert_translate(split_result1, ppc_effective_address, 4);
     ppc_result_a = ppc_effective_address;
     ppc_store_result_rega();
 }
@@ -944,9 +944,9 @@ void ppc_stfd(){
     grab_d = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
     ppc_effective_address = (reg_a == 0)?grab_d:ppc_result_a + grab_d;
     uint32_t split_result1 = (uint32_t)(ppc_state.ppc_fpr[reg_s] >> 32);
-    address_quickinsert_translate(ppc_effective_address, split_result1, 4);
+    address_quickinsert_translate(split_result1, ppc_effective_address, 4);
     uint32_t split_result2 = (uint32_t)(ppc_state.ppc_fpr[reg_s]);
-    address_quickinsert_translate(ppc_effective_address, split_result2, 4);
+    address_quickinsert_translate(split_result2, ppc_effective_address, 4);
 }
 
 void ppc_stfdu(){
@@ -954,9 +954,9 @@ void ppc_stfdu(){
     grab_d = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
     ppc_effective_address = (reg_a == 0)?grab_d:ppc_result_a + grab_d;
     uint32_t split_result1 = (uint32_t)(ppc_state.ppc_fpr[reg_s] >> 32);
-    address_quickinsert_translate(ppc_effective_address, split_result1, 4);
+    address_quickinsert_translate(split_result1, ppc_effective_address, 4);
     uint32_t split_result2 = (uint32_t)(ppc_state.ppc_fpr[reg_s]);
-    address_quickinsert_translate(ppc_effective_address, split_result2, 4);
+    address_quickinsert_translate(split_result2, ppc_effective_address, 4);
     ppc_result_a = ppc_effective_address;
     ppc_store_result_rega();
 }
@@ -965,18 +965,18 @@ void ppc_stfdx(){
     ppc_grab_regsfpsiab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:ppc_result_a + ppc_result_b;
     uint32_t split_result1 = (uint32_t)(ppc_state.ppc_fpr[reg_s] >> 32);
-    address_quickinsert_translate(ppc_effective_address, split_result1, 4);
+    address_quickinsert_translate(split_result1, ppc_effective_address, 4);
     uint32_t split_result2 = (uint32_t)(ppc_state.ppc_fpr[reg_s]);
-    address_quickinsert_translate(ppc_effective_address, split_result2, 4);
+    address_quickinsert_translate(split_result2, ppc_effective_address, 4);
 }
 
 void ppc_stfdux(){
     ppc_grab_regsfpsiab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:ppc_result_a + ppc_result_b;
     uint32_t split_result1 = (uint32_t)(ppc_state.ppc_fpr[reg_s] >> 32);
-    address_quickinsert_translate(ppc_effective_address, split_result1, 4);
+    address_quickinsert_translate(split_result1, ppc_effective_address, 4);
     uint32_t split_result2 = (uint32_t)(ppc_state.ppc_fpr[reg_s]);
-    address_quickinsert_translate(ppc_effective_address, split_result2, 4);
+    address_quickinsert_translate(split_result2, ppc_effective_address, 4);
     ppc_result_a = ppc_effective_address;
     ppc_store_result_rega();
 }
@@ -985,7 +985,7 @@ void ppc_stfiwx(){
     ppc_grab_regsfpsiab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:ppc_result_a + ppc_result_b;
     uint32_t split_result1 = (uint32_t)(ppc_state.ppc_fpr[reg_s] & 0xFFFFFFFF);
-    address_quickinsert_translate(ppc_effective_address, split_result1, 4);
+    address_quickinsert_translate(split_result1, ppc_effective_address, 4);
 }
 //Floating Point Register Transfer
 

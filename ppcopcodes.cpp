@@ -1886,14 +1886,14 @@ void ppc_dcbz(){
     if (!(ppc_state.ppc_pc % 32) && (ppc_state.ppc_pc < 0xFFFFFFE0)){
         ppc_grab_regsdab();
         ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
-        address_quickinsert_translate(ppc_effective_address, 0, 4);
-        address_quickinsert_translate((ppc_effective_address + 4), 0, 4);
-        address_quickinsert_translate((ppc_effective_address + 8), 0, 4);
-        address_quickinsert_translate((ppc_effective_address + 12), 0, 4);
-        address_quickinsert_translate((ppc_effective_address + 16), 0, 4);
-        address_quickinsert_translate((ppc_effective_address + 20), 0, 4);
-        address_quickinsert_translate((ppc_effective_address + 24), 0, 4);
-        address_quickinsert_translate((ppc_effective_address + 28), 0, 4);
+        address_quickinsert_translate(0, ppc_effective_address, 4);
+        address_quickinsert_translate(0, (ppc_effective_address + 4), 4);
+        address_quickinsert_translate(0, (ppc_effective_address + 8), 4);
+        address_quickinsert_translate(0, (ppc_effective_address + 12), 4);
+        address_quickinsert_translate(0, (ppc_effective_address + 16), 4);
+        address_quickinsert_translate(0, (ppc_effective_address + 20), 4);
+        address_quickinsert_translate(0, (ppc_effective_address + 24), 4);
+        address_quickinsert_translate(0, (ppc_effective_address + 28), 4);
     }
     else{
         ppc_expection_handler(0x0600, 0x00000);
@@ -1907,13 +1907,13 @@ void ppc_stb(){
     grab_d = (uint32_t)((int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF)));
     ppc_effective_address = (reg_a == 0)?grab_d:(ppc_result_a + grab_d);
     printf("STB Storage Area: %x \n",ppc_effective_address);
-    address_quickinsert_translate(ppc_effective_address, ppc_result_d, 1);
+    address_quickinsert_translate(ppc_result_d, ppc_effective_address, 1);
 }
 
 void ppc_stbx(){
     ppc_grab_regssab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
-    address_quickinsert_translate(ppc_effective_address, ppc_result_d, 1);
+    address_quickinsert_translate(ppc_result_d, ppc_effective_address, 1);
 }
 
 void ppc_stbu(){
@@ -1921,7 +1921,7 @@ void ppc_stbu(){
     grab_d = (uint32_t)((int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF)));
     if (reg_a != 0){
         ppc_effective_address = (reg_a == 0)?grab_d:(ppc_result_a + grab_d);
-        address_quickinsert_translate(ppc_effective_address, ppc_result_d, 1);
+        address_quickinsert_translate(ppc_result_d, ppc_effective_address, 1);
     }
 }
 
@@ -1929,7 +1929,7 @@ void ppc_stbux(){
     ppc_grab_regssab();
     if (reg_a != 0){
         ppc_effective_address = ppc_result_a + reg_b;
-        address_quickinsert_translate(ppc_effective_address, ppc_result_d, 1);
+        address_quickinsert_translate(ppc_result_d, ppc_effective_address, 1);
     }
     else{
         ppc_expection_handler(0x07000, 0x20000);
@@ -1942,20 +1942,20 @@ void ppc_sth(){
     ppc_grab_regssa();
     grab_d = (uint32_t)((int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF)));
     ppc_effective_address = (reg_a == 0)?grab_d:(ppc_result_a + grab_d);
-    address_quickinsert_translate(ppc_effective_address, ppc_result_d, 2);
+    address_quickinsert_translate(ppc_result_d, ppc_effective_address, 2);
 }
 
 void ppc_sthu(){
     ppc_grab_regssa();
     grab_d = (uint32_t)((int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF)));
     ppc_effective_address = (reg_a == 0)?grab_d:(ppc_result_a + grab_d);
-    address_quickinsert_translate(ppc_effective_address, ppc_result_d, 2);
+    address_quickinsert_translate(ppc_result_d, ppc_effective_address, 2);
 }
 
 void ppc_sthux(){
     ppc_grab_regssab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
-    address_quickinsert_translate(ppc_effective_address, ppc_result_d, 2);
+    address_quickinsert_translate(ppc_result_d, ppc_effective_address, 2);
     ppc_result_a = ppc_effective_address;
     ppc_store_result_rega();
 }
@@ -1965,27 +1965,27 @@ void ppc_sthx(){
     if (reg_a != 0){
         ppc_effective_address = ppc_result_a + ppc_result_b;
     }
-    address_quickinsert_translate(ppc_effective_address, ppc_result_d, 2);
+    address_quickinsert_translate(ppc_result_d, ppc_effective_address, 2);
 }
 
 void ppc_sthbrx(){
     ppc_grab_regssab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
     ppc_result_d = (uint32_t)(rev_endian16((uint16_t)ppc_result_d));
-    address_quickinsert_translate(ppc_effective_address, ppc_result_d, 2);
+    address_quickinsert_translate(ppc_result_d, ppc_effective_address, 2);
 }
 
 void ppc_stw(){
     ppc_grab_regssa();
     grab_d = (uint32_t)((int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF)));
     ppc_effective_address = (reg_a == 0)?grab_d:(ppc_result_a + grab_d);
-    address_quickinsert_translate(ppc_effective_address, ppc_result_d, 4);
+    address_quickinsert_translate(ppc_result_d, ppc_effective_address, 4);
 }
 
 void ppc_stwx(){
     ppc_grab_regssab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
-    address_quickinsert_translate(ppc_effective_address, ppc_result_d, 4);
+    address_quickinsert_translate(ppc_result_d, ppc_effective_address, 4);
 }
 
 void ppc_stwcx(){
@@ -1993,7 +1993,7 @@ void ppc_stwcx(){
     ppc_grab_regssab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
     if (ppc_state.ppc_reserve){
-        address_quickinsert_translate(ppc_effective_address, ppc_result_d, 4);
+        address_quickinsert_translate(ppc_result_d, ppc_effective_address, 4);
         ppc_state.ppc_cr |= (ppc_state.ppc_spr[1] & 0x80000000) ? 0x30000000 : 0x20000000;
         ppc_state.ppc_reserve = false;
     }
@@ -2006,7 +2006,7 @@ void ppc_stwu(){
     ppc_grab_regssa();
     grab_d = (uint32_t)((int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF)));
     ppc_effective_address = (reg_a == 0)?grab_d:(ppc_result_a + grab_d);
-    address_quickinsert_translate(ppc_effective_address, ppc_result_d, 4);
+    address_quickinsert_translate(ppc_result_d, ppc_effective_address, 4);
     ppc_result_a = ppc_effective_address;
     ppc_store_result_rega();
 }
@@ -2014,7 +2014,7 @@ void ppc_stwu(){
 void ppc_stwux(){
     ppc_grab_regssab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
-    address_quickinsert_translate(ppc_effective_address, ppc_result_d, 4);
+    address_quickinsert_translate(ppc_result_d, ppc_effective_address, 4);
     ppc_result_a = ppc_effective_address;
     ppc_store_result_rega();
 }
@@ -2024,7 +2024,7 @@ void ppc_stwbrx(){
     ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
     printf("STWBRX Storage Area: %x \n",ppc_effective_address);
     ppc_result_d = rev_endian32(ppc_result_d);
-    address_quickinsert_translate(ppc_effective_address, ppc_result_d, 4);
+    address_quickinsert_translate(ppc_result_d, ppc_effective_address, 4);
 }
 
 void ppc_stmw(){
@@ -2033,7 +2033,7 @@ void ppc_stmw(){
     ppc_effective_address = (reg_a == 0)?grab_d:(ppc_result_a + grab_d);
     //How many words to store in memory - using a do-while for this
     do{
-        address_quickinsert_translate(ppc_effective_address, ppc_result_d, 4);
+        address_quickinsert_translate(ppc_result_d, ppc_effective_address, 4);
         ppc_effective_address +=4;
         reg_d++;
     }while (reg_d < 32);
@@ -2416,19 +2416,19 @@ void ppc_stswi(){
         switch(shift_times){
         case 0:
             strwrd_replace_value = (ppc_result_d >> 24);
-            address_quickinsert_translate(ppc_effective_address, strwrd_replace_value, 1);
+            address_quickinsert_translate(strwrd_replace_value, ppc_effective_address, 1);
             break;
         case 1:
             strwrd_replace_value = (ppc_result_d >> 16);
-            address_quickinsert_translate(ppc_effective_address, strwrd_replace_value, 1);
+            address_quickinsert_translate(strwrd_replace_value, ppc_effective_address, 1);
             break;
         case 2:
             strwrd_replace_value = (ppc_result_d >> 8);
-            address_quickinsert_translate(ppc_effective_address, strwrd_replace_value, 1);
+            address_quickinsert_translate(strwrd_replace_value, ppc_effective_address, 1);
             break;
         case 3:
             strwrd_replace_value = (ppc_result_d);
-            address_quickinsert_translate(ppc_effective_address, strwrd_replace_value, 1);
+            address_quickinsert_translate(strwrd_replace_value, ppc_effective_address, 1);
             break;
         default:
             printf("Something really horrible happened with stswi.");
@@ -2455,19 +2455,19 @@ void ppc_stswx(){
         switch(shift_times){
         case 0:
             strwrd_replace_value = (ppc_result_d >> 24);
-            address_quickinsert_translate(ppc_effective_address, strwrd_replace_value, 1);
+            address_quickinsert_translate(strwrd_replace_value, ppc_effective_address, 1);
             break;
         case 1:
             strwrd_replace_value = (ppc_result_d >> 16);
-            address_quickinsert_translate(ppc_effective_address, strwrd_replace_value, 1);
+            address_quickinsert_translate(strwrd_replace_value, ppc_effective_address, 1);
             break;
         case 2:
             strwrd_replace_value = (ppc_result_d >> 8);
-            address_quickinsert_translate(ppc_effective_address, strwrd_replace_value, 1);
+            address_quickinsert_translate(strwrd_replace_value, ppc_effective_address, 1);
             break;
         case 3:
             strwrd_replace_value = (ppc_result_d);
-            address_quickinsert_translate(ppc_effective_address, strwrd_replace_value, 1);
+            address_quickinsert_translate(strwrd_replace_value, ppc_effective_address, 1);
             break;
         default:
             printf("Something really horrible happened with stswx.");
