@@ -1396,17 +1396,17 @@ void ppc_mtmsr(){
 
 void ppc_mfspr(){
     uint32_t ref_spr = (((ppc_cur_instruction >> 11) & 31) << 5) | ((ppc_cur_instruction >> 16) & 31);
-    printf("MFSPR SPR REF: %d \n", ref_spr);
+    //printf("MFSPR SPR REF: %d \n", ref_spr);
     reg_d = (ppc_cur_instruction >> 21) & 31;
     ppc_state.ppc_gpr[reg_d] = ppc_state.ppc_spr[ref_spr];
-    printf("Contained inside Reg %d: %x \n", reg_d, ppc_state.ppc_gpr[reg_d]);
+    //printf("Contained inside Reg %d: %x \n", reg_d, ppc_state.ppc_gpr[reg_d]);
 }
 
 void ppc_mtspr(){
     uint32_t ref_spr = (((ppc_cur_instruction >> 11) & 31) << 5) | ((ppc_cur_instruction >> 16) & 31);
-    printf("MTSPR SPR REF: %d \n", ref_spr);
+    //printf("MTSPR SPR REF: %d \n", ref_spr);
     reg_s = (ppc_cur_instruction >> 21) & 31;
-    printf("Contained inside Reg %d: %x \n", reg_s, ppc_state.ppc_gpr[reg_s]);
+    //printf("Contained inside Reg %d: %x \n", reg_s, ppc_state.ppc_gpr[reg_s]);
 
     if (ref_spr != 287){
         ppc_state.ppc_spr[ref_spr] = ppc_state.ppc_gpr[reg_s];
@@ -1766,7 +1766,7 @@ void ppc_crand(){
 }
 void ppc_crandc(){
     ppc_grab_regsdab();
-    if ((ppc_state.ppc_cr && (0x80000000 >> reg_a)) & ~(ppc_state.ppc_cr && (0x80000000 >> reg_b))){
+    if ((ppc_state.ppc_cr && (0x80000000 >> reg_a)) & !(ppc_state.ppc_cr && (0x80000000 >> reg_b))){
         ppc_state.ppc_cr |= (0x80000000 >> reg_d);
     }
     else{
@@ -1775,7 +1775,7 @@ void ppc_crandc(){
 }
 void ppc_creqv(){
     ppc_grab_regsdab();
-    if (!((ppc_state.ppc_cr && (0x80000000 >> reg_a)) ^ !(ppc_state.ppc_cr && (0x80000000 >> reg_b)))){
+    if (!((ppc_state.ppc_cr && (0x80000000 >> reg_a)) ^ (ppc_state.ppc_cr && (0x80000000 >> reg_b)))){
         ppc_state.ppc_cr |= (0x80000000 >> reg_d);
     }
     else{
@@ -1793,7 +1793,7 @@ void ppc_crnand(){
 }
 void ppc_crnor(){
     ppc_grab_regsdab();
-    if (!((ppc_state.ppc_cr && (0x80000000 >> reg_a)) | ~(ppc_state.ppc_cr && (0x80000000 >> reg_b)))){
+    if (!((ppc_state.ppc_cr && (0x80000000 >> reg_a)) | (ppc_state.ppc_cr && (0x80000000 >> reg_b)))){
         ppc_state.ppc_cr |= (0x80000000 >> reg_d);
     }
     else{
@@ -1812,7 +1812,7 @@ void ppc_cror(){
 }
 void ppc_crorc(){
     ppc_grab_regsdab();
-    if ((ppc_state.ppc_cr && (0x80000000 >> reg_a)) | ~(ppc_state.ppc_cr && (0x80000000 >> reg_b))){
+    if ((ppc_state.ppc_cr && (0x80000000 >> reg_a)) | !(ppc_state.ppc_cr && (0x80000000 >> reg_b))){
         ppc_state.ppc_cr |= (0x80000000 >> reg_d);
     }
     else{
