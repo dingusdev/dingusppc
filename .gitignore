@@ -1,0 +1,13 @@
+# Ignore binary files
+*.bin
+
+# Ignore compiled object files
+*.o
+
+# Ignore generated executables
+dingusppc
+dingusppc.exe
+
+# Ignore system files
+.DS_Store
+Thumb.db
