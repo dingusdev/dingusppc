@@ -145,7 +145,7 @@ void ppc_tbr_update()
     }
 }
 
-void ppc_expection_handler(uint32_t exception_type, uint32_t handle_args){
+void ppc_exception_handler(uint32_t exception_type, uint32_t handle_args){
     ppc_next_instruction_address = 0x0; //used to construct a new address
     grab_exception = true;
 

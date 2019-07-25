@@ -217,7 +217,7 @@ void ppc_setsoov(uint32_t a, uint32_t b);
 void ppc_changecrf0(uint32_t set_result);
 
 void ppc_tbr_update();
-void ppc_expection_handler(uint32_t exception_type, uint32_t handle_args);
+void ppc_exception_handler(uint32_t exception_type, uint32_t handle_args);
 
 //MEMORY DECLARATIONS
 extern unsigned char * machine_sysram_mem;

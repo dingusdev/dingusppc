@@ -206,7 +206,7 @@ void ppc_illegalop(){
     uint32_t grab_it = (uint32_t) illegal_code;
     printf("Illegal opcode reported: %d Report this! \n", grab_it);
     exit(-1);
-    //ppc_expection_handler(0x0700, 0x80000);
+    //ppc_exception_handler(0x0700, 0x80000);
 }
 
 void ppc_illegalsubop31(){
@@ -253,7 +253,7 @@ void ppc_opcode19(){
     }
     else{
         std::cout << "ILLEGAL SUBOPCODE: " << subop_grab << std::endl;
-        ppc_expection_handler(0x0700, 0x80000);
+        ppc_exception_handler(0x0700, 0x80000);
     }
     #else
     SubOpcode19Grabber[subop_grab]();
@@ -270,7 +270,7 @@ void ppc_opcode31(){
     }
     else{
         std::cout << "ILLEGAL SUBOPCODE: " << subop_grab << std::endl;
-        ppc_expection_handler(0x0700, 0x80000);
+        ppc_exception_handler(0x0700, 0x80000);
     }
     #else
     SubOpcode31Grabber[subop_grab]();
@@ -287,7 +287,7 @@ void ppc_opcode59(){
     }
     else{
         std::cout << "ILLEGAL SUBOPCODE: " << subop_grab << std::endl;
-        ppc_expection_handler(0x0700, 0x80000);
+        ppc_exception_handler(0x0700, 0x80000);
     }
     #else
     SubOpcode59Grabber[subop_grab]();
@@ -304,7 +304,7 @@ void ppc_opcode63(){
     }
     else{
         std::cout << "ILLEGAL SUBOPCODE: " << subop_grab << std::endl;
-        ppc_expection_handler(0x0700, 0x80000);
+        ppc_exception_handler(0x0700, 0x80000);
     }
     #else
     SubOpcode63Grabber[subop_grab]();
@@ -1841,7 +1841,7 @@ void ppc_rfi(){
 }
 
 void ppc_sc(){
-    ppc_expection_handler(0x0C00, 0x20000);
+    ppc_exception_handler(0x0C00, 0x20000);
 }
 
 void ppc_tw(){
@@ -1853,7 +1853,7 @@ void ppc_tw(){
        (((int32_t)ppc_state.ppc_gpr[reg_a] == (int32_t)ppc_state.ppc_gpr[reg_b]) & (ppc_to & 0x04)) || \
        ((ppc_state.ppc_gpr[reg_a] < ppc_state.ppc_gpr[reg_b]) & (ppc_to & 0x02)) || \
        ((ppc_state.ppc_gpr[reg_a] > ppc_state.ppc_gpr[reg_b]) & (ppc_to & 0x01))){
-        ppc_expection_handler(0x0700, 0x20000);
+        ppc_exception_handler(0x0700, 0x20000);
     }
 }
 
@@ -1866,7 +1866,7 @@ void ppc_twi(){
        (((int32_t)ppc_state.ppc_gpr[reg_a] == simm) & (ppc_to & 0x04)) || \
        ((ppc_state.ppc_gpr[reg_a] < (uint32_t)simm) & (ppc_to & 0x02)) || \
        ((ppc_state.ppc_gpr[reg_a] > (uint32_t)simm) & (ppc_to & 0x01))){
-        ppc_expection_handler(0x0700, 0x20000);
+        ppc_exception_handler(0x0700, 0x20000);
     }
 }
 
@@ -1924,7 +1924,7 @@ void ppc_dcbz(){
         address_quickinsert_translate(0, (ppc_effective_address + 28), 4);
     }
     else{
-        ppc_expection_handler(0x0600, 0x00000);
+        ppc_exception_handler(0x0600, 0x00000);
     }
 }
 
@@ -1962,7 +1962,7 @@ void ppc_stbux(){
         address_quickinsert_translate(ppc_result_d, ppc_effective_address, 1);
     }
     else{
-        ppc_expection_handler(0x07000, 0x20000);
+        ppc_exception_handler(0x07000, 0x20000);
     }
     ppc_result_a = ppc_effective_address;
     ppc_store_result_rega();
@@ -2087,7 +2087,7 @@ void ppc_lbzu(){
         ppc_effective_address = ppc_result_a + grab_d;
     }
     else{
-        ppc_expection_handler(0x0700, 0x20000);
+        ppc_exception_handler(0x0700, 0x20000);
     }
     address_quickgrab_translate(ppc_effective_address, 1);
     ppc_result_d = return_value;
@@ -2112,7 +2112,7 @@ void ppc_lbzux(){
         ppc_effective_address = ppc_result_a + ppc_result_b;
     }
     else{
-        ppc_expection_handler(0x0700, 0x20000);
+        ppc_exception_handler(0x0700, 0x20000);
     }
     address_quickgrab_translate(ppc_effective_address, 1);
     ppc_result_d = return_value;
@@ -2271,7 +2271,7 @@ void ppc_lwzu(){
         ppc_effective_address = ppc_result_a + grab_d;
     }
     else{
-        ppc_expection_handler(0x0700, 0x20000);
+        ppc_exception_handler(0x0700, 0x20000);
     }
     address_quickgrab_translate(ppc_effective_address, 4);
     ppc_result_d = return_value;
@@ -2296,7 +2296,7 @@ void ppc_lwzux(){
         ppc_effective_address = ppc_result_a + ppc_result_b;
     }
     else{
-        ppc_expection_handler(0x0700, 0x20000);
+        ppc_exception_handler(0x0700, 0x20000);
     }
     address_quickgrab_translate(ppc_effective_address, 4);
     ppc_result_d = return_value;
@@ -2385,10 +2385,10 @@ void ppc_lswx(){
     ppc_grab_regsdab();
     //Invalid instruction forms
     if ((ppc_result_d == 0) && (ppc_result_a == 0)){
-        ppc_expection_handler(0x0700, 0x100000);
+        ppc_exception_handler(0x0700, 0x100000);
     }
     if ((ppc_result_d == ppc_result_a) || (ppc_result_a == ppc_result_b)){
-        ppc_expection_handler(0x0700, 0x100000);
+        ppc_exception_handler(0x0700, 0x100000);
     }
     ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
     grab_inb = ppc_state.ppc_spr[1] & 127;
