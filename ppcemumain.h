@@ -624,13 +624,6 @@ extern void ppc_main_opcode();
      table, partially due to instructions that use either 6 or 11 bits
      for the instruction.
      **/
-static std::map<uint8_t, PPCOpcode> SubOpcode16Grabber=
-    {{0, &ppc_bc}, {1, &ppc_bcl}, {2, &ppc_bca}, {3, &ppc_bcla}
-    };
-
-static std::map<uint8_t, PPCOpcode> SubOpcode18Grabber=
-    {{0, &ppc_b}, {1, &ppc_bl}, {2, &ppc_ba}, {3, &ppc_bla}
-    };
 
 static std::map<uint16_t, PPCOpcode> SubOpcode19Grabber=
     {{32, &ppc_bclr},    {33, &ppc_bclrl},  {66, &ppc_crnor},   {100, &ppc_rfi},

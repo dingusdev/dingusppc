@@ -77,6 +77,15 @@ static PPCOpcode OpcodeGrabber[] = {
     ppc_psq_st,    ppc_psq_stu,   ppc_illegalop, ppc_opcode63
 };
 
+/** Lookup tables for branch instructions. */
+static PPCOpcode SubOpcode16Grabber[] = {
+    ppc_bc, ppc_bcl, ppc_bca, ppc_bcla
+};
+
+static PPCOpcode SubOpcode18Grabber[] = {
+    ppc_b, ppc_bl, ppc_ba, ppc_bla
+};
+
 /**
 Extract the registers desired and the values of the registers
 This also takes the MSR into account, mainly to determine
@@ -243,23 +252,11 @@ void ppc_opcode4(){
 }
 
 void ppc_opcode16(){
-    uint8_t subop_grab = ppc_cur_instruction & 3;
-
-    #ifdef EXHAUSTIVE_DEBUG
-    uint32_t regrab = (uint32_t)subop_grab;
-    printf("Executing Opcode 16 table subopcode entry %d \n", regrab);
-    SubOpcode16Grabber[subop_grab]();
-    #else
-    SubOpcode16Grabber[subop_grab]();
-    #endif // EXHAUSTIVE_DEBUG
+    SubOpcode16Grabber[ppc_cur_instruction & 3]();
 }
 
 void ppc_opcode18(){
-    uint8_t subop_grab = ppc_cur_instruction & 3;
-    //printf("Reading from Opcode 18 table \n");
-    //uint32_t regrab = (uint32_t)subop_grab;
-    //printf("Executing subopcode entry %d \n", regrab);
-    SubOpcode18Grabber[subop_grab]();
+    SubOpcode18Grabber[ppc_cur_instruction & 3]();
 }
 
 void ppc_opcode19(){
