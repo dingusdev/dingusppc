@@ -58,6 +58,25 @@
 
  uint32_t strwrd_replace_value;
 
+/** Lookup tables. */
+
+/** Primary opcode (bits 0...5) lookup table. */
+static PPCOpcode OpcodeGrabber[] = {
+    ppc_illegalop, ppc_illegalop, ppc_illegalop, ppc_twi,       ppc_opcode4,
+    ppc_illegalop, ppc_illegalop, ppc_mulli,     ppc_subfic,    power_dozi,
+    ppc_cmpli,     ppc_cmpi,      ppc_addic,     ppc_addicdot,  ppc_addi,
+    ppc_addis,     ppc_opcode16,  ppc_sc,        ppc_opcode18,  ppc_opcode19,
+    ppc_rlwimi,    ppc_rlwinm,    power_rlmi,    ppc_rlwnm,     ppc_ori,
+    ppc_oris,      ppc_xori,      ppc_xoris,     ppc_andidot,   ppc_andisdot,
+    ppc_illegalop, ppc_opcode31,  ppc_lwz,       ppc_lwzu,      ppc_lbz,
+    ppc_lbzu,      ppc_stw,       ppc_stwu,      ppc_stb,       ppc_stbu,
+    ppc_lhz,       ppc_lhzu,      ppc_lha,       ppc_lhau,      ppc_sth,
+    ppc_sthu,      ppc_lmw,       ppc_stmw,      ppc_lfs,       ppc_lfsu,
+    ppc_lfd,       ppc_lfdu,      ppc_stfs,      ppc_stfsu,     ppc_stfd,
+    ppc_stfdu,     ppc_psq_l,     ppc_psq_lu,    ppc_illegalop, ppc_illegalop,
+    ppc_psq_st,    ppc_psq_stu,   ppc_illegalop, ppc_opcode63
+};
+
 /**
 Extract the registers desired and the values of the registers
 This also takes the MSR into account, mainly to determine
