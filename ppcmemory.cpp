@@ -545,7 +545,7 @@ void address_quickinsert_translate(uint32_t value_insert, uint32_t address_grab,
         final_grab |= (address_grab & 0x1FFFF);
         //Check the PP Tags in the batl
         //if (!(ppc_state.ppc_spr[grab_batl] == 0x2)){
-        //    ppc_expection_handler(0x0300, 0x0);
+        //    ppc_exception_handler(0x0300, 0x0);
         // }
         address_grab = final_grab;
     }
@@ -769,7 +769,7 @@ void address_quickgrab_translate(uint32_t address_grab, uint8_t bit_num){
         final_grab |= (address_grab & 0x1FFFF);
         //Check the PP Tags in the batl
         //if ((ppc_state.ppc_spr[grab_batl] & 0x3) == 0x0){
-        //    ppc_expection_handler(0x0300, 0x0);
+        //    ppc_exception_handler(0x0300, 0x0);
         //}
         address_grab = final_grab;
     }
@@ -974,7 +974,7 @@ void quickinstruction_translate(uint32_t address_grab){
         final_grab |= (((address_grab & 0x0FFE0000) & blocklen) | (ppc_state.ppc_spr[grab_batl] & 0xFFFE0000));
         final_grab |= (address_grab & 0x1FFFF);
         //if ((ppc_state.ppc_spr[grab_batl] & 0x3) == 0x0){
-        //    ppc_expection_handler(0x0400, 0x0);
+        //    ppc_exception_handler(0x0400, 0x0);
         //}
         address_grab = final_grab;
     }

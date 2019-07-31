@@ -217,7 +217,7 @@ void ppc_setsoov(uint32_t a, uint32_t b);
 void ppc_changecrf0(uint32_t set_result);
 
 void ppc_tbr_update();
-void ppc_expection_handler(uint32_t exception_type, uint32_t handle_args);
+void ppc_exception_handler(uint32_t exception_type, uint32_t handle_args);
 
 //MEMORY DECLARATIONS
 extern unsigned char * machine_sysram_mem;
@@ -605,26 +605,6 @@ extern void ppc_psq_stu();
 
 extern void ppc_main_opcode();
 
-//A listing of all of the available opcodes on the PPC.
-
-static std::map<uint8_t, PPCOpcode> OpcodeGrabber =
-    {{0, &ppc_illegalop},  {1, &ppc_illegalop},  {2, &ppc_illegalop},  {3, &ppc_twi},
-     {4, &ppc_opcode4},    {5, &ppc_illegalop},  {6, &ppc_illegalop},  {7, &ppc_mulli},
-     {8, &ppc_subfic},     {9, &power_dozi},     {10, &ppc_cmpli},     {11, &ppc_cmpi},
-     {12, &ppc_addic},     {13, &ppc_addicdot},  {14, &ppc_addi},      {15, &ppc_addis},
-     {16, &ppc_opcode16},  {17, &ppc_sc},        {18, &ppc_opcode18},  {19, &ppc_opcode19},
-     {20, &ppc_rlwimi},    {21, &ppc_rlwinm},    {22, &power_rlmi},    {23, &ppc_rlwnm},
-     {24, &ppc_ori},       {25, &ppc_oris},      {26, &ppc_xori},      {27, &ppc_xoris},
-     {28, &ppc_andidot},   {29, &ppc_andisdot},  {30, &ppc_illegalop}, {31, &ppc_opcode31},
-     {32, &ppc_lwz},       {33, &ppc_lwzu},      {34, &ppc_lbz},       {35, &ppc_lbzu},
-     {36, &ppc_stw},       {37, &ppc_stwu},      {38, &ppc_stb},       {39, &ppc_stbu},
-     {40, &ppc_lhz},       {41, &ppc_lhzu},      {42, &ppc_lha},       {43, &ppc_lhau},
-     {44, &ppc_sth},       {45, &ppc_sthu},      {46, &ppc_lmw},       {47, &ppc_stmw},
-     {48, &ppc_lfs},       {49, &ppc_lfsu},      {50, &ppc_lfd},       {51, &ppc_lfdu},
-     {52, &ppc_stfs},      {53, &ppc_stfsu},     {54, &ppc_stfd},      {55, &ppc_stfdu},
-     {56, &ppc_psq_l},     {57, &ppc_psq_lu},    {58, &ppc_illegalop}, {59, &ppc_opcode59},
-     {60, &ppc_psq_st},    {61, &ppc_psq_stu},   {62, &ppc_illegalop}, {63, &ppc_opcode63}};
-
 //All of the opcodes possible are generated from the first 6 bits
 //of each instruction given by the processor.
 
@@ -644,13 +624,6 @@ static std::map<uint8_t, PPCOpcode> OpcodeGrabber =
      table, partially due to instructions that use either 6 or 11 bits
      for the instruction.
      **/
-static std::map<uint8_t, PPCOpcode> SubOpcode16Grabber=
-    {{0, &ppc_bc}, {1, &ppc_bcl}, {2, &ppc_bca}, {3, &ppc_bcla}
-    };
-
-static std::map<uint8_t, PPCOpcode> SubOpcode18Grabber=
-    {{0, &ppc_b}, {1, &ppc_bl}, {2, &ppc_ba}, {3, &ppc_bla}
-    };
 
 static std::map<uint16_t, PPCOpcode> SubOpcode19Grabber=
     {{32, &ppc_bclr},    {33, &ppc_bclrl},  {66, &ppc_crnor},   {100, &ppc_rfi},
