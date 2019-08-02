@@ -13,6 +13,15 @@
 #include <vector>
 #include <array>
 
+/** generic PowerPC BAT descriptor (MMU internal state) */
+typedef struct PPC_BAT_entry {
+    uint8_t     access;   /* copy of Vs | Vp bits */
+    uint8_t     prot;     /* copy of PP bits */
+    uint32_t    phys_hi;  /* high-order bits for physical address generation */
+    uint32_t    lo_mask;  /* mask for low-order logical address bits */
+    uint32_t    bepi;     /* copy of Block effective page index */
+} PPC_BAT_entry;
+
 extern uint32_t bat_srch;
 extern uint32_t bepi_chk;
 
@@ -31,7 +40,7 @@ struct pte {
 **/
 
 extern void ibat_update();
-extern void dbat_update();
+extern void dbat_update(uint32_t bat_reg);
 
 extern void msr_status_update();
 

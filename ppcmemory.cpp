@@ -61,6 +61,8 @@ unsigned char * grab_pteg2_ptr;
 
 std::atomic<bool> hash_found (false);
 
+PPC_BAT_entry dbat_array[4];
+
 uint32_t dbat_array_map [4][3]={
       //flg  ea begin     ea end
         {0x00,0x00000000,0x00000000},
@@ -191,11 +193,11 @@ void ppc_memstore_value(uint32_t value_insert, uint32_t mem_index, uint8_t bit_n
 }
 void ibat_update(){
     uint8_t tlb_place = 0;
-    uint32_t ref_area = 0;
+    uint32_t area_len = 0;
     bool msr_pr = ppc_state.ppc_msr & 0x4000; //This is for problem mode; make sure that supervisor mode does not touch this!
     for (int bat_srch = 528; bat_srch < 535; bat_srch += 2){
-        ref_area = ((ppc_state.ppc_spr[bat_srch] & 0x1FFC) > 0) ? ((ppc_state.ppc_spr[bat_srch] & 0x1FFC) << 16): 131072;
-        bepi_chk|= (ppc_effective_address & 0xFFFE0000) & ~ref_area;
+        area_len = ((ppc_state.ppc_spr[bat_srch] & 0x1FFC) + 4) << 15;
+        bepi_chk|= (ppc_effective_address & 0xFFFE0000) & ~area_len;
         bool supervisor_on = (ppc_state.ppc_spr[bat_srch] & 0x00000002);
         bool problem_on = (ppc_state.ppc_spr[bat_srch] & 0x00000001);
         if (((ppc_state.ppc_spr[bat_srch] & 0xFFFE0000) == bepi_chk) &&
@@ -203,31 +205,31 @@ void ibat_update(){
             //Set write/read flags, beginning of transfer area, and end of transfer area
             ibat_array_map[tlb_place][0] = (ppc_state.ppc_spr[bat_srch] & 0x3);
             ibat_array_map[tlb_place][1] = (ppc_state.ppc_spr[bat_srch] & 0xFFFE0000);
-            ibat_array_map[tlb_place][2] = ((ppc_state.ppc_spr[bat_srch] & 0xFFFE0000) + ref_area) - 1;
+            ibat_array_map[tlb_place][2] = ((ppc_state.ppc_spr[bat_srch] & 0xFFFE0000) + area_len) - 1;
             break;
         }
         tlb_place++;
     }
 }
 
-void dbat_update(){
-    uint8_t tlb_place = 0;
-    uint32_t ref_area = 0;
-    bool msr_pr = ppc_state.ppc_msr & 0x4000; //This is for problem mode; make sure that supervisor mode does not touch this!
-    for (int bat_srch = 536; bat_srch < 543; bat_srch += 2){
-        ref_area = (ppc_state.ppc_spr[bat_srch] & 0x1FFC) > 0? ((ppc_state.ppc_spr[bat_srch] & 0x1FFC) << 16): 131072;
-        bepi_chk|= (ppc_effective_address & 0xFFFE0000) & ~ref_area;
-        bool supervisor_on = (ppc_state.ppc_spr[bat_srch] & 0x00000002);
-        bool problem_on = (ppc_state.ppc_spr[bat_srch] & 0x00000001);
-        if (((ppc_state.ppc_spr[bat_srch] & 0xFFFE0000) == bepi_chk) &&
-            ((problem_on && (msr_pr != 0)) || (supervisor_on && (msr_pr == 0)))){
-            //Set write/read flags, beginning of transfer area, and end of transfer area
-            dbat_array_map[tlb_place][0] = (ppc_state.ppc_spr[bat_srch] & 0x3);
-            dbat_array_map[tlb_place][1] = (ppc_state.ppc_spr[bat_srch] & 0xFFFE0000);
-            dbat_array_map[tlb_place][2] = ((ppc_state.ppc_spr[bat_srch] & 0xFFFE0000) + ref_area) - 1;
-            break;
-        }
-    tlb_place++;
+void dbat_update(uint32_t bat_reg)
+{
+    int upper_reg_num;
+    uint32_t bl, lo_mask;
+    PPC_BAT_entry *bat_entry;
+
+    upper_reg_num = bat_reg & 0xFFFFFFFE;
+
+    if (ppc_state.ppc_spr[upper_reg_num] & 3) { // is that BAT pair valid?
+        bat_entry = &dbat_array[(bat_reg - 536) >> 1];
+        bl = (ppc_state.ppc_spr[upper_reg_num] >> 2) & 0x7FF;
+        lo_mask = (bl << 17) | 0x1FFFF;
+
+        bat_entry->access  = ppc_state.ppc_spr[upper_reg_num] & 3;
+        bat_entry->prot    = ppc_state.ppc_spr[upper_reg_num + 1] & 3;
+        bat_entry->lo_mask = lo_mask;
+        bat_entry->phys_hi = ppc_state.ppc_spr[upper_reg_num + 1] & ~lo_mask;
+        bat_entry->bepi    = ppc_state.ppc_spr[upper_reg_num] & ~lo_mask;
     }
 }
 
@@ -505,55 +507,47 @@ void pteg_translate(uint32_t address_grab){
     secondary_pteg_check.join();
 }
 
-void address_quickinsert_translate(uint32_t value_insert, uint32_t address_grab, uint8_t bit_num){
-    //Insert a value into memory from a register
+/** Insert a value into memory from a register. */
+void address_quickinsert_translate(uint32_t value_insert, uint32_t address_grab,
+            uint8_t bit_num)
+{
+    uint32_t storage_area = 0;
 
     printf("Inserting into address %x with %x \n", address_grab, value_insert);
 
-    uint32_t storage_area = 0;
-    uint32_t grab_batl = 537;
-    uint32_t blocklen = 0;
-    bool bat_to_go=0;
-    bool pteg_to_go=0;
-
-    //data bat
+    // data address translation if enabled
     if ((ppc_state.ppc_msr >> 4) & 0x1){
         printf("DATA RELOCATION GO! - INSERTING \n");
-        uint32_t min_val;
-        uint32_t max_val;
 
-        pteg_to_go = 1;
+        bool bat_hit = false;
+        unsigned msr_pr = !!(ppc_state.ppc_msr & 0x4000);
 
-        for (uint32_t grab_loop = 0; grab_loop < 4; grab_loop++){
-            if ((dbat_array_map[grab_loop][0] >> 1) & 0x1){
-                min_val = dbat_array_map[grab_loop][1];
-                max_val = dbat_array_map[grab_loop][2];
-                if ((address_grab >= min_val) && (address_grab < max_val) && (max_val != 0)){
-                    blocklen = max_val - min_val;
-                    bat_to_go = 1;
-                    pteg_to_go = 0;
-                    break;
-                }
+        // Format: %XY
+        // X - supervisor access bit, Y - problem/user access bit
+        // Those bits are mutually exclusive
+        unsigned access_bits = (~msr_pr << 1) | msr_pr;
+
+        for (int bat_index = 0; bat_index < 4; bat_index++){
+            PPC_BAT_entry *bat_entry = &dbat_array[bat_index];
+
+            if ((bat_entry->access & access_bits) &&
+                ((address_grab & ~bat_entry->lo_mask) == bat_entry->bepi)) {
+                bat_hit = true;
+                // TODO: check access
+
+                // logical to physical translation
+                address_grab = bat_entry->phys_hi | (address_grab & bat_entry->lo_mask);
+                break;
             }
-            grab_batl += 2;
         }
-    }
 
-    if (bat_to_go){
-        uint32_t final_grab = 0;
-        final_grab |= (((address_grab & 0x0FFE0000) & blocklen) | (ppc_state.ppc_spr[grab_batl] & 0xFFFE0000));
-        final_grab |= (address_grab & 0x1FFFF);
-        //Check the PP Tags in the batl
-        //if (!(ppc_state.ppc_spr[grab_batl] == 0x2)){
-        //    ppc_exception_handler(0x0300, 0x0);
-        // }
-        address_grab = final_grab;
-    }
-    else if (pteg_to_go){
-        pteg_translate(address_grab);
-        if (hash_found == true){
-            address_grab &= 0xFFF;
-            address_grab |= (pteg_answer & 0xFFFFF000);
+        // Segment registers & page table translation
+        if (!bat_hit){
+            pteg_translate(address_grab);
+            if (hash_found == true){
+                address_grab &= 0xFFF;
+                address_grab |= (pteg_answer & 0xFFFFF000);
+            }
         }
     }
 

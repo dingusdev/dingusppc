@@ -1455,7 +1455,7 @@ void ppc_mtspr(){
         case 541:
         case 542:
         case 543:
-            dbat_update();
+            dbat_update(ref_spr);
             std::cout << "DBAT CHANGED!" <<std::endl;
     }
 }
