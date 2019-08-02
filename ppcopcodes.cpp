@@ -1444,7 +1444,7 @@ void ppc_mtspr(){
         case 533:
         case 534:
         case 535:
-            ibat_update();
+            ibat_update(ref_spr);
             std::cout << "IBAT CHANGED!" <<std::endl;
             break;
         case 536:

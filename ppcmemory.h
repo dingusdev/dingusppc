@@ -39,7 +39,7 @@ struct pte {
 } PTE;
 **/
 
-extern void ibat_update();
+extern void ibat_update(uint32_t bat_reg);
 extern void dbat_update(uint32_t bat_reg);
 
 extern void msr_status_update();

@@ -25,9 +25,6 @@
 
 std::vector<uint32_t> pte_storage;
 
-uint32_t bat_srch;
-uint32_t bepi_chk;
-
 uint32_t pte_word1;
 uint32_t pte_word2;
 
@@ -61,23 +58,10 @@ unsigned char * grab_pteg2_ptr;
 
 std::atomic<bool> hash_found (false);
 
-PPC_BAT_entry dbat_array[4];
+/** PowerPC-style MMU BAT arrays (NULL initialization isn't prescribed). */
+PPC_BAT_entry ibat_array[4] = {{0}};
+PPC_BAT_entry dbat_array[4] = {{0}};
 
-uint32_t dbat_array_map [4][3]={
-      //flg  ea begin     ea end
-        {0x00,0x00000000,0x00000000},
-        {0x00,0x00000000,0x00000000},
-        {0x00,0x00000000,0x00000000},
-        {0x00,0x00000000,0x00000000}
-    };
-
-uint32_t ibat_array_map [4][3]={
-      //flg  ea begin     ea end
-        {0x00,0x00000000,0x00000000},
-        {0x00,0x00000000,0x00000000},
-        {0x00,0x00000000,0x00000000},
-        {0x00,0x00000000,0x00000000}
-    };
 
 /**
 Quickly map to memory - sort of.
@@ -191,24 +175,25 @@ void ppc_memstore_value(uint32_t value_insert, uint32_t mem_index, uint8_t bit_n
         break;
     }
 }
-void ibat_update(){
-    uint8_t tlb_place = 0;
-    uint32_t area_len = 0;
-    bool msr_pr = ppc_state.ppc_msr & 0x4000; //This is for problem mode; make sure that supervisor mode does not touch this!
-    for (int bat_srch = 528; bat_srch < 535; bat_srch += 2){
-        area_len = ((ppc_state.ppc_spr[bat_srch] & 0x1FFC) + 4) << 15;
-        bepi_chk|= (ppc_effective_address & 0xFFFE0000) & ~area_len;
-        bool supervisor_on = (ppc_state.ppc_spr[bat_srch] & 0x00000002);
-        bool problem_on = (ppc_state.ppc_spr[bat_srch] & 0x00000001);
-        if (((ppc_state.ppc_spr[bat_srch] & 0xFFFE0000) == bepi_chk) &&
-            ((problem_on && msr_pr) || (supervisor_on && !msr_pr))){
-            //Set write/read flags, beginning of transfer area, and end of transfer area
-            ibat_array_map[tlb_place][0] = (ppc_state.ppc_spr[bat_srch] & 0x3);
-            ibat_array_map[tlb_place][1] = (ppc_state.ppc_spr[bat_srch] & 0xFFFE0000);
-            ibat_array_map[tlb_place][2] = ((ppc_state.ppc_spr[bat_srch] & 0xFFFE0000) + area_len) - 1;
-            break;
-        }
-        tlb_place++;
+
+void ibat_update(uint32_t bat_reg)
+{
+    int upper_reg_num;
+    uint32_t bl, lo_mask;
+    PPC_BAT_entry *bat_entry;
+
+    upper_reg_num = bat_reg & 0xFFFFFFFE;
+
+    if (ppc_state.ppc_spr[upper_reg_num] & 3) { // is that BAT pair valid?
+        bat_entry = &ibat_array[(bat_reg - 528) >> 1];
+        bl = (ppc_state.ppc_spr[upper_reg_num] >> 2) & 0x7FF;
+        lo_mask = (bl << 17) | 0x1FFFF;
+
+        bat_entry->access  = ppc_state.ppc_spr[upper_reg_num] & 3;
+        bat_entry->prot    = ppc_state.ppc_spr[upper_reg_num + 1] & 3;
+        bat_entry->lo_mask = lo_mask;
+        bat_entry->phys_hi = ppc_state.ppc_spr[upper_reg_num + 1] & ~lo_mask;
+        bat_entry->bepi    = ppc_state.ppc_spr[upper_reg_num] & ~lo_mask;
     }
 }
 
@@ -507,6 +492,83 @@ void pteg_translate(uint32_t address_grab){
     secondary_pteg_check.join();
 }
 
+/** PowerPC-style MMU instruction address translation. */
+uint32_t ppc_mmu_instr_translate(uint32_t la)
+{
+    uint32_t pa; /* translated physical address */
+
+    bool bat_hit = false;
+    unsigned msr_pr = !!(ppc_state.ppc_msr & 0x4000);
+
+    // Format: %XY
+    // X - supervisor access bit, Y - problem/user access bit
+    // Those bits are mutually exclusive
+    unsigned access_bits = (~msr_pr << 1) | msr_pr;
+
+    for (int bat_index = 0; bat_index < 4; bat_index++){
+        PPC_BAT_entry *bat_entry = &ibat_array[bat_index];
+
+        if ((bat_entry->access & access_bits) &&
+            ((la & ~bat_entry->lo_mask) == bat_entry->bepi)) {
+            bat_hit = true;
+            // TODO: check access
+
+            // logical to physical translation
+            pa = bat_entry->phys_hi | (la & bat_entry->lo_mask);
+            break;
+        }
+    }
+
+    // Segment registers & page table translation
+    if (!bat_hit){
+        pteg_translate(la);
+        if (hash_found == true){
+            pa = (la & 0xFFF) | (pteg_answer & 0xFFFFF000);
+        }
+    }
+
+    return pa;
+}
+
+/** PowerPC-style MMU data address translation. */
+uint32_t ppc_mmu_addr_translate(uint32_t la, uint32_t access_type)
+{
+    uint32_t pa; /* translated physical address */
+
+    bool bat_hit = false;
+    unsigned msr_pr = !!(ppc_state.ppc_msr & 0x4000);
+
+    // Format: %XY
+    // X - supervisor access bit, Y - problem/user access bit
+    // Those bits are mutually exclusive
+    unsigned access_bits = (~msr_pr << 1) | msr_pr;
+
+    for (int bat_index = 0; bat_index < 4; bat_index++){
+        PPC_BAT_entry *bat_entry = &dbat_array[bat_index];
+
+        if ((bat_entry->access & access_bits) &&
+            ((la & ~bat_entry->lo_mask) == bat_entry->bepi)) {
+            bat_hit = true;
+            // TODO: check access
+
+            // logical to physical translation
+            pa = bat_entry->phys_hi | (la & bat_entry->lo_mask);
+            break;
+        }
+    }
+
+    // Segment registers & page table translation
+    if (!bat_hit){
+        pteg_translate(la);
+        if (hash_found == true){
+            pa = (la & 0xFFF) | (pteg_answer & 0xFFFFF000);
+        }
+    }
+
+    return pa;
+}
+
+
 /** Insert a value into memory from a register. */
 void address_quickinsert_translate(uint32_t value_insert, uint32_t address_grab,
             uint8_t bit_num)
@@ -516,39 +578,10 @@ void address_quickinsert_translate(uint32_t value_insert, uint32_t address_grab,
     printf("Inserting into address %x with %x \n", address_grab, value_insert);
 
     // data address translation if enabled
-    if ((ppc_state.ppc_msr >> 4) & 0x1){
+    if (ppc_state.ppc_msr & 0x10) {
         printf("DATA RELOCATION GO! - INSERTING \n");
 
-        bool bat_hit = false;
-        unsigned msr_pr = !!(ppc_state.ppc_msr & 0x4000);
-
-        // Format: %XY
-        // X - supervisor access bit, Y - problem/user access bit
-        // Those bits are mutually exclusive
-        unsigned access_bits = (~msr_pr << 1) | msr_pr;
-
-        for (int bat_index = 0; bat_index < 4; bat_index++){
-            PPC_BAT_entry *bat_entry = &dbat_array[bat_index];
-
-            if ((bat_entry->access & access_bits) &&
-                ((address_grab & ~bat_entry->lo_mask) == bat_entry->bepi)) {
-                bat_hit = true;
-                // TODO: check access
-
-                // logical to physical translation
-                address_grab = bat_entry->phys_hi | (address_grab & bat_entry->lo_mask);
-                break;
-            }
-        }
-
-        // Segment registers & page table translation
-        if (!bat_hit){
-            pteg_translate(address_grab);
-            if (hash_found == true){
-                address_grab &= 0xFFF;
-                address_grab |= (pteg_answer & 0xFFFFF000);
-            }
-        }
+        address_grab = ppc_mmu_addr_translate(address_grab, 0);
     }
 
     //regular grabbing
@@ -721,58 +754,20 @@ void address_quickinsert_translate(uint32_t value_insert, uint32_t address_grab,
     ppc_memstore_value(value_insert, storage_area, bit_num);
 }
 
-void address_quickgrab_translate(uint32_t address_grab, uint8_t bit_num){
-    //Grab a value from memory into a register
+/** Grab a value from memory into a register */
+void address_quickgrab_translate(uint32_t address_grab, uint8_t bit_num)
+{
+    uint32_t storage_area = 0;
 
     //printf("Grabbing from address %x \n", address_grab);
 
-    uint32_t storage_area = 0;
-    uint32_t grab_batl = 537;
-    uint32_t blocklen = 0;
-    bool bat_to_go=0;
-    bool pteg_to_go=0;
-
     return_value = 0; //reset this before going into the real fun.
 
-    //data bat
-    if ((ppc_state.ppc_msr >> 4) & 0x1){
+    /* data address translation if enabled */
+    if (ppc_state.ppc_msr & 0x10) {
         printf("DATA RELOCATION GO! - GRABBING \n");
-        uint32_t min_val;
-        uint32_t max_val;
 
-        pteg_to_go = 1;
-
-        for (uint32_t grab_loop = 0; grab_loop < 4; grab_loop++){
-            if (dbat_array_map[grab_loop][0] & 0x1){
-                min_val = dbat_array_map[grab_loop][1];
-                max_val = dbat_array_map[grab_loop][2];
-                if ((address_grab >= min_val) && (address_grab <= max_val) && (max_val != 0)){
-                    blocklen = max_val - min_val;
-                    bat_to_go = 1;
-                    pteg_to_go = 0;
-                    break;
-                }
-            }
-            grab_batl += 2;
-        }
-    }
-
-    if (bat_to_go){
-        uint32_t final_grab = 0;
-        final_grab |= (((address_grab & 0x0FFE0000) & blocklen) | (ppc_state.ppc_spr[grab_batl] & 0xFFFE0000));
-        final_grab |= (address_grab & 0x1FFFF);
-        //Check the PP Tags in the batl
-        //if ((ppc_state.ppc_spr[grab_batl] & 0x3) == 0x0){
-        //    ppc_exception_handler(0x0300, 0x0);
-        //}
-        address_grab = final_grab;
-    }
-    else if (pteg_to_go){
-        pteg_translate(address_grab);
-        if (hash_found == true){
-            address_grab &= 0xFFF;
-            address_grab |= (pteg_answer & 0xFFFFF000);
-        }
+        address_grab = ppc_mmu_addr_translate(address_grab, 0);
     }
 
     if (address_grab >= 0xFFC00000){
@@ -930,58 +925,17 @@ void address_quickgrab_translate(uint32_t address_grab, uint8_t bit_num){
 
 }
 
-void quickinstruction_translate(uint32_t address_grab){
+void quickinstruction_translate(uint32_t address_grab)
+{
     uint32_t storage_area = 0;
-    uint32_t grab_batl = 537;
-    uint32_t blocklen = 0;
-    bool bat_to_go=0;
-    bool pteg_to_go=0;
 
     return_value = 0; //reset this before going into the real fun.
 
-    //instruction bat
-    if ((ppc_state.ppc_msr >> 5) & 0x1) {
+    /* instruction address translation if enabled */
+    if (ppc_state.ppc_msr & 0x20) {
         printf("INSTRUCTION RELOCATION GO! \n");
 
-        uint32_t min_val;
-        uint32_t max_val;
-
-        pteg_to_go = 1;
-
-        for (uint32_t grab_loop = 0; grab_loop < 4; grab_loop++){
-            if (ibat_array_map[grab_loop][0] & 0x1){
-                min_val = ibat_array_map[grab_loop][1];
-                max_val = ibat_array_map[grab_loop][2];
-                if ((address_grab >= min_val) && (address_grab <= max_val) && (max_val != 0)){
-                    blocklen = max_val - min_val;
-                    bat_to_go = 1;
-                    pteg_to_go = 0;
-                    break;
-                }
-            }
-            grab_batl += 2;
-        }
-    }
-
-    if (bat_to_go){
-        uint32_t final_grab = 0;
-        final_grab |= (((address_grab & 0x0FFE0000) & blocklen) | (ppc_state.ppc_spr[grab_batl] & 0xFFFE0000));
-        final_grab |= (address_grab & 0x1FFFF);
-        //if ((ppc_state.ppc_spr[grab_batl] & 0x3) == 0x0){
-        //    ppc_exception_handler(0x0400, 0x0);
-        //}
-        address_grab = final_grab;
-    }
-    else if (pteg_to_go){
-        pteg_translate(address_grab);
-        if (hash_found == true){
-            address_grab &= 0xFFF;
-            address_grab |= (pteg_answer & 0xFFFFF000);
-        }
-    }
-
-    if ((address_grab < 0x100000) && ((ppc_state.ppc_msr >> 6) & 1)){
-        address_grab |= 0xFFF00000;
+        address_grab = ppc_mmu_instr_translate(address_grab);
     }
 
     //grab opcode from memory area
