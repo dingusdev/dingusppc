@@ -94,85 +94,77 @@ void msr_status_update(){
     msr_dr_test = (ppc_state.ppc_msr >> 4) & 1;
 }
 
-void ppc_set_cur_instruction(uint32_t mem_index){
-    ppc_cur_instruction  = (grab_macmem_ptr[mem_index]) << 24;
-    ++mem_index;
-    ppc_cur_instruction += (grab_macmem_ptr[mem_index]) << 16;
-    ++mem_index;
-    ppc_cur_instruction += (grab_macmem_ptr[mem_index]) << 8;
-    ++mem_index;
-    ppc_cur_instruction += (grab_macmem_ptr[(mem_index)]);
+inline void ppc_set_cur_instruction(uint32_t mem_index)
+{
+    ppc_cur_instruction  = (grab_macmem_ptr[mem_index]   << 24) |
+                           (grab_macmem_ptr[mem_index+1] << 16) |
+                           (grab_macmem_ptr[mem_index+2] << 8)  |
+                            grab_macmem_ptr[mem_index+3];
 }
 
-void ppc_set_return_val(uint32_t mem_index, uint8_t bit_num){
+void ppc_set_return_val(uint32_t mem_index, int num_size)
+{
     //Put the final result in return_value here
     //This is what gets put back into the register
 
-    switch (ppc_state.ppc_msr & 0x1){
-    case 0:
-        if (bit_num == 1){
-            return_value |= ((uint32_t)(grab_macmem_ptr[mem_index]));
+    if (ppc_state.ppc_msr & 1) { /* little-endian byte ordering */
+        if (num_size == 1) { // BYTE
+            return_value = grab_macmem_ptr[mem_index];
         }
-        else if (bit_num == 2){
-            return_value |= ((uint32_t)(grab_macmem_ptr[mem_index++])) << 8;
-            return_value |= ((uint32_t)(grab_macmem_ptr[mem_index]));
+        else if (num_size == 2) { // WORD
+            return_value = grab_macmem_ptr[mem_index] |
+                          (grab_macmem_ptr[mem_index+1] << 8);
         }
-        else if (bit_num == 4){
-            return_value |= ((uint32_t)(grab_macmem_ptr[mem_index++])) << 24;
-            return_value |= ((uint32_t)(grab_macmem_ptr[mem_index++])) << 16;
-            return_value |= ((uint32_t)(grab_macmem_ptr[mem_index++])) << 8;
-            return_value |= ((uint32_t)(grab_macmem_ptr[mem_index]));
+        else if (num_size == 4) { // DWORD
+            return_value = grab_macmem_ptr[mem_index]          |
+                          (grab_macmem_ptr[mem_index+1] << 8)  |
+                          (grab_macmem_ptr[mem_index+2] << 16) |
+                          (grab_macmem_ptr[mem_index+3] << 24);
         }
-        break;
-    case 1:
-        if (bit_num == 1){
-            return_value |= ((uint32_t)(grab_macmem_ptr[mem_index]));
+    } else { /* big-endian byte ordering */
+        if (num_size == 1) { // BYTE
+            return_value = grab_macmem_ptr[mem_index];
         }
-        else if (bit_num == 2){
-            return_value |= ((uint32_t)(grab_macmem_ptr[mem_index++])) ;
-            return_value |= ((uint32_t)(grab_macmem_ptr[mem_index])) << 8;
+        else if (num_size == 2) { // WORD
+            return_value = (grab_macmem_ptr[mem_index] << 8) |
+                            grab_macmem_ptr[mem_index+1];
         }
-        else if (bit_num == 4){
-            return_value |= ((uint32_t)(grab_macmem_ptr[mem_index++])) ;
-            return_value |= ((uint32_t)(grab_macmem_ptr[mem_index++])) << 8;
-            return_value |= ((uint32_t)(grab_macmem_ptr[mem_index++])) << 16;
-            return_value |= ((uint32_t)(grab_macmem_ptr[mem_index])) << 24;
+        else if (num_size == 4) { // DWORD
+            return_value = (grab_macmem_ptr[mem_index]   << 24) |
+                           (grab_macmem_ptr[mem_index+1] << 16) |
+                           (grab_macmem_ptr[mem_index+2] << 8)  |
+                            grab_macmem_ptr[mem_index+3];
         }
     }
 }
 
-void ppc_memstore_value(uint32_t value_insert, uint32_t mem_index, uint8_t bit_num){
-        switch (ppc_state.ppc_msr & 0x1){
-    case 0:
-        if (bit_num == 1){
-            grab_macmem_ptr[mem_index] = (uint8_t)value_insert;
+void ppc_memstore_value(uint32_t value_insert, uint32_t mem_index, int num_size)
+{
+    if (ppc_state.ppc_msr & 1) { /* little-endian byte ordering */
+        if (num_size >= 1) { // BYTE
+            grab_macmem_ptr[mem_index] = value_insert & 0xFF;
         }
-        else if (bit_num == 2){
-            grab_macmem_ptr[mem_index++] = (uint8_t)(value_insert >> 8);
-            grab_macmem_ptr[mem_index] = (uint8_t)value_insert;
+        if (num_size >= 2) { // WORD
+            grab_macmem_ptr[mem_index+1] = (value_insert >> 8) & 0xFF;
         }
-        else if (bit_num == 4){
-            grab_macmem_ptr[mem_index++] = (uint8_t)(value_insert >> 24);
-            grab_macmem_ptr[mem_index++] = (uint8_t)(value_insert >> 16);
-            grab_macmem_ptr[mem_index++] = (uint8_t)(value_insert >> 8);
-            grab_macmem_ptr[mem_index] = (uint8_t)value_insert;
+        if (num_size == 4) { // DWORD
+            grab_macmem_ptr[mem_index+2] = (value_insert >> 16) & 0xFF;
+            grab_macmem_ptr[mem_index+3] = (value_insert >> 24) & 0xFF;
         }
-        break;
-    case 1:
-        if (bit_num == 1){
-            grab_macmem_ptr[mem_index] = (uint8_t)value_insert;
+    } else { /* big-endian byte ordering */
+        if (num_size == 1) { // BYTE
+            grab_macmem_ptr[mem_index] = value_insert & 0xFF;
         }
-        else if (bit_num == 2){
-            grab_macmem_ptr[mem_index++] = (uint8_t)value_insert;
-            grab_macmem_ptr[mem_index] = (uint8_t)(value_insert >> 8);
+        else if (num_size == 2) { // WORD
+            grab_macmem_ptr[mem_index]   = (value_insert >> 8) & 0xFF;
+            grab_macmem_ptr[mem_index+1] = value_insert & 0xFF;
         }
-        else if (bit_num == 4){
-            grab_macmem_ptr[mem_index++] = (uint8_t)value_insert;
-            grab_macmem_ptr[mem_index++] = (uint8_t)(value_insert >> 8);
-            grab_macmem_ptr[mem_index++] = (uint8_t)(value_insert >> 16);
-            grab_macmem_ptr[mem_index] = (uint8_t)(value_insert >> 24);
+        else if (num_size == 4) { // DWORD
+            grab_macmem_ptr[mem_index]   = (value_insert >> 24) & 0xFF;
+            grab_macmem_ptr[mem_index+1] = (value_insert >> 16) & 0xFF;
+            grab_macmem_ptr[mem_index+2] = (value_insert >> 8)  & 0xFF;
+            grab_macmem_ptr[mem_index+3] = value_insert & 0xFF;
         }
-        break;
     }
 }
 
@@ -571,7 +563,7 @@ uint32_t ppc_mmu_addr_translate(uint32_t la, uint32_t access_type)
 
 /** Insert a value into memory from a register. */
 void address_quickinsert_translate(uint32_t value_insert, uint32_t address_grab,
-            uint8_t bit_num)
+            uint8_t num_bytes)
 {
     uint32_t storage_area = 0;
 
@@ -595,7 +587,7 @@ void address_quickinsert_translate(uint32_t value_insert, uint32_t address_grab,
                 if (is_nubus){
                     storage_area = address_grab % rom_file_setsize;
                     grab_macmem_ptr = machine_sysrom_mem;
-                    ppc_memstore_value(value_insert, storage_area, bit_num);
+                    ppc_memstore_value(value_insert, storage_area, num_bytes);
                     return;
                 }
                 else{
@@ -733,8 +725,8 @@ void address_quickinsert_translate(uint32_t value_insert, uint32_t address_grab,
         }
         else if (address_grab < 0xFF000000){
             storage_area = 0x0CFC;  //CONFIG_DATA
-            mpc106_word_custom_size = bit_num;
-            mpc106_write_device(mpc_config_addr, value_insert, bit_num);
+            mpc106_word_custom_size = num_bytes;
+            mpc106_write_device(mpc_config_addr, value_insert, num_bytes);
             grab_macmem_ptr = machine_feexxx_mem;
         }
         else if (address_grab < 0xFF800000){
@@ -751,11 +743,11 @@ void address_quickinsert_translate(uint32_t value_insert, uint32_t address_grab,
         grab_macmem_ptr = machine_sysrom_mem;
     }
 
-    ppc_memstore_value(value_insert, storage_area, bit_num);
+    ppc_memstore_value(value_insert, storage_area, num_bytes);
 }
 
 /** Grab a value from memory into a register */
-void address_quickgrab_translate(uint32_t address_grab, uint8_t bit_num)
+void address_quickgrab_translate(uint32_t address_grab, uint8_t num_bytes)
 {
     uint32_t storage_area = 0;
 
@@ -774,7 +766,7 @@ void address_quickgrab_translate(uint32_t address_grab, uint8_t bit_num)
         //printf("Charting ROM Area: %x \n", address_grab);
         storage_area = address_grab % rom_file_setsize;
         grab_macmem_ptr = machine_sysrom_mem;
-        ppc_set_return_val(storage_area, bit_num);
+        ppc_set_return_val(storage_area, num_bytes);
         return;
     }
 
@@ -789,7 +781,7 @@ void address_quickgrab_translate(uint32_t address_grab, uint8_t bit_num)
                 if (is_nubus){
                     storage_area = address_grab % rom_file_setsize;
                     grab_macmem_ptr = machine_sysrom_mem;
-                    ppc_set_return_val(storage_area, bit_num);
+                    ppc_set_return_val(storage_area, num_bytes);
                     return;
                 }
                 else{
@@ -802,13 +794,13 @@ void address_quickgrab_translate(uint32_t address_grab, uint8_t bit_num)
                 grab_macmem_ptr = machine_sysconfig_mem;
             }
             else{
-                return_value = (bit_num == 1)?0xFF:(bit_num == 2)?0xFFFF:0xFFFFFFFF;
+                return_value = (num_bytes == 1)?0xFF:(num_bytes == 2)?0xFFFF:0xFFFFFFFF;
                 return;
             }
         }
         else{
             //The address is not within the ROM banks
-            return_value = (bit_num == 1)?0xFF:(bit_num == 2)?0xFFFF:0xFFFFFFFF;
+            return_value = (num_bytes == 1)?0xFF:(num_bytes == 2)?0xFFFF:0xFFFFFFFF;
             return;
         }
     }
@@ -827,7 +819,7 @@ void address_quickgrab_translate(uint32_t address_grab, uint8_t bit_num)
     else if (address_grab < 0x81000000){
         storage_area = address_grab;
         if (address_grab > 0x83FFFFFF){
-            return_value = (bit_num == 1)?0xFF:(bit_num == 2)?0xFFFF:0xFFFFFFFF;
+            return_value = (num_bytes == 1)?0xFF:(num_bytes == 2)?0xFFFF:0xFFFFFFFF;
             return;
         }
         printf("Uncharted territory: %x \n", address_grab);
@@ -844,7 +836,7 @@ void address_quickgrab_translate(uint32_t address_grab, uint8_t bit_num)
         grab_macmem_ptr = machine_interruptack_mem;
     }
     else if (address_grab < 0xF0000000){
-        return_value = (bit_num == 1)?0xFF:(bit_num == 2)?0xFFFF:0xFFFFFFFF;
+        return_value = (num_bytes == 1)?0xFF:(num_bytes == 2)?0xFFFF:0xFFFFFFFF;
         return;
     }
     else if (address_grab < 0xF8000000){
@@ -884,7 +876,7 @@ void address_quickgrab_translate(uint32_t address_grab, uint8_t bit_num)
                 return;
             }
             else if (address_grab > 0xF3FFFFFF){
-                return_value = (bit_num == 1)?0xFF:(bit_num == 2)?0xFFFF:0xFFFFFFFF;
+                return_value = (num_bytes == 1)?0xFF:(num_bytes == 2)?0xFFFF:0xFFFFFFFF;
                 return;
             }
         grab_macmem_ptr = machine_iocontrolmem_mem;
@@ -902,12 +894,12 @@ void address_quickgrab_translate(uint32_t address_grab, uint8_t bit_num)
             return;
         }
         else if (address_grab < 0xFEE00000){
-            return_value = (bit_num == 1)? (mpc106_address & 0xFF):(bit_num == 2)?(mpc106_address & 0xFFFF):mpc106_address;
+            return_value = (num_bytes == 1)? (mpc106_address & 0xFF):(num_bytes == 2)?(mpc106_address & 0xFFFF):mpc106_address;
             return;
         }
         else if (address_grab < 0xFF000000){
-            mpc106_word_custom_size = bit_num;
-            return_value = mpc106_read_device(mpc_config_addr, bit_num);
+            mpc106_word_custom_size = num_bytes;
+            return_value = mpc106_read_device(mpc_config_addr, num_bytes);
             return_value = rev_endian32(return_value);
             return;
         }
@@ -921,7 +913,7 @@ void address_quickgrab_translate(uint32_t address_grab, uint8_t bit_num)
         }
     }
 
-    ppc_set_return_val(storage_area, bit_num);
+    ppc_set_return_val(storage_area, num_bytes);
 
 }
 
