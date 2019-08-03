@@ -115,12 +115,10 @@ void ppc_grab_regsdauimm(){
     ppc_result_a = ppc_state.ppc_gpr[reg_a];
 }
 
-void ppc_grab_regssasimm(){
-    reg_s = (ppc_cur_instruction >> 21) & 31;
+void ppc_grab_regsasimm(){
     reg_a = (ppc_cur_instruction >> 16) & 31;
-    simm = (int32_t)((int16_t)((ppc_cur_instruction) & 65535));
+    simm = (int32_t)((int16_t)(ppc_cur_instruction & 65535));
     ppc_result_a = ppc_state.ppc_gpr[reg_a];
-    ppc_result_d = ppc_state.ppc_gpr[reg_s];
 }
 
 void ppc_grab_regssauimm(){
@@ -1728,45 +1726,51 @@ void ppc_cmp(){
 }
 
 void ppc_cmpi(){
-    //if (!((ppc_cur_instruction >> 21) && 0x1)){
-        crf_d = (ppc_cur_instruction >> 23) & 7;
-        crf_d = crf_d << 2;
-        ppc_grab_regssasimm();
-        xercon = (ppc_state.ppc_spr[1] & 0x80000000) >> 3;
-        cmp_c = (((int32_t)ppc_result_a) == simm) ? 0x20000000 : (((int32_t)ppc_result_a) > simm) ? 0x40000000 : 0x80000000;
-        ppc_state.ppc_cr = ((ppc_state.ppc_cr & ~(0xf0000000 >>  crf_d)) | ((cmp_c + xercon) >> crf_d));
-   // }
-    //else{
-    //    printf("Warning: Invalid CMP Instruction.");
-    //}
+    #ifdef CHECK_INVALID
+    if (ppc_cur_instruction & 0x200000) {
+        printf("WARNING: invalid CMPI instruction form (L=1)!\n");
+        return;
+    }
+    #endif
+
+    crf_d = (ppc_cur_instruction >> 23) & 7;
+    crf_d = crf_d << 2;
+    ppc_grab_regsasimm();
+    xercon = (ppc_state.ppc_spr[1] & 0x80000000) >> 3;
+    cmp_c = (((int32_t)ppc_result_a) == simm) ? 0x20000000 : (((int32_t)ppc_result_a) > simm) ? 0x40000000 : 0x80000000;
+    ppc_state.ppc_cr = ((ppc_state.ppc_cr & ~(0xf0000000 >>  crf_d)) | ((cmp_c + xercon) >> crf_d));
 }
 
 void ppc_cmpl(){
-    //if (!((ppc_cur_instruction >> 21) && 0x1)){
-        crf_d = (ppc_cur_instruction >> 23) & 7;
-        crf_d = crf_d << 2;
-        ppc_grab_regssab();
-        xercon = (ppc_state.ppc_spr[1] & 0x80000000) >> 3;
-        cmp_c = (ppc_result_a == ppc_result_b) ? 0x20000000 : (ppc_result_a > ppc_result_b) ? 0x40000000 : 0x80000000;
-        ppc_state.ppc_cr = ((ppc_state.ppc_cr & ~(0xf0000000 >>  crf_d)) | ((cmp_c + xercon) >> crf_d));
-    //}
-    //else{
-    //    printf("Warning: Invalid CMP Instruction.");
-    //}
+    #ifdef CHECK_INVALID
+    if (ppc_cur_instruction & 0x200000) {
+        printf("WARNING: invalid CMPL instruction form (L=1)!\n");
+        return;
+    }
+    #endif
+
+    crf_d = (ppc_cur_instruction >> 23) & 7;
+    crf_d = crf_d << 2;
+    ppc_grab_regssab();
+    xercon = (ppc_state.ppc_spr[1] & 0x80000000) >> 3;
+    cmp_c = (ppc_result_a == ppc_result_b) ? 0x20000000 : (ppc_result_a > ppc_result_b) ? 0x40000000 : 0x80000000;
+    ppc_state.ppc_cr = ((ppc_state.ppc_cr & ~(0xf0000000 >>  crf_d)) | ((cmp_c + xercon) >> crf_d));
 }
 
 void ppc_cmpli(){
-   // if (!((ppc_cur_instruction >> 21) && 0x1)){
-        crf_d = (ppc_cur_instruction >> 23) & 7;
-        crf_d = crf_d << 2;
-        ppc_grab_regssauimm();
-        xercon = (ppc_state.ppc_spr[1] & 0x80000000) >> 3;
-        cmp_c = (ppc_result_a == uimm) ? 0x20000000 : (ppc_result_a > uimm) ? 0x40000000 : 0x80000000;
-        ppc_state.ppc_cr = ((ppc_state.ppc_cr & ~(0xf0000000 >>  crf_d)) | ((cmp_c + xercon) >> crf_d));
-   // }
-    //else{
-     //   printf("Warning: Invalid CMP Instruction.");
-   // }
+    #ifdef CHECK_INVALID
+    if (ppc_cur_instruction & 0x200000) {
+        printf("WARNING: invalid CMPLI instruction form (L=1)!\n");
+        return;
+    }
+    #endif
+
+    crf_d = (ppc_cur_instruction >> 23) & 7;
+    crf_d = crf_d << 2;
+    ppc_grab_regssauimm();
+    xercon = (ppc_state.ppc_spr[1] & 0x80000000) >> 3;
+    cmp_c = (ppc_result_a == uimm) ? 0x20000000 : (ppc_result_a > uimm) ? 0x40000000 : 0x80000000;
+    ppc_state.ppc_cr = ((ppc_state.ppc_cr & ~(0xf0000000 >>  crf_d)) | ((cmp_c + xercon) >> crf_d));
 }
 
 //Condition Register Changes

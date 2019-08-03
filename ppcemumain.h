@@ -197,7 +197,7 @@ extern void ppc_grab_regssab();
 
 extern void ppc_grab_regsdasimm();
 extern void ppc_grab_regsdauimm();
-extern void ppc_grab_regssasimm();
+extern void ppc_grab_regsasimm();
 extern void ppc_grab_regssauimm();
 
 extern void ppc_grab_regsfpdb();
