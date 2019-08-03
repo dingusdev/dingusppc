@@ -772,22 +772,21 @@ void address_quickgrab_translate(uint32_t address_grab, uint8_t num_bytes)
 
     //regular grabbing
     else if (address_grab < 0x80000000){
+        if ((address_grab >= 0x40000000) && (address_grab < 0x40400000) && is_nubus){
+            storage_area = address_grab % rom_file_setsize;
+            grab_macmem_ptr = machine_sysrom_mem;
+            ppc_set_return_val(storage_area, num_bytes);
+            return;
+        }
+
         if (mpc106_check_membound(address_grab)){
             if (address_grab > 0x03ffffff){ //for debug purposes
                 storage_area = address_grab;
                 grab_macmem_ptr = machine_sysram_mem;
             }
             else if ((address_grab >= 0x40000000) && (address_grab < 0x40400000)){
-                if (is_nubus){
-                    storage_area = address_grab % rom_file_setsize;
-                    grab_macmem_ptr = machine_sysrom_mem;
-                    ppc_set_return_val(storage_area, num_bytes);
-                    return;
-                }
-                else{
-                    storage_area = address_grab;
-                    grab_macmem_ptr = machine_sysram_mem;
-                }
+                storage_area = address_grab;
+                grab_macmem_ptr = machine_sysram_mem;
             }
             else if ((address_grab >= 0x5fffe000) && (address_grab <= 0x5fffffff)){
                 storage_area = address_grab % 0x2000;
