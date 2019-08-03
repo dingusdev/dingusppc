@@ -30,8 +30,6 @@
  uint32_t xercon;
  uint32_t cmp_c;
  uint32_t crm;
- uint32_t br_bo;
- uint32_t br_bi;
  uint32_t rot_sh;
  uint32_t rot_mb;
  uint32_t rot_me;
@@ -43,7 +41,6 @@
  uint32_t ppc_to;
  int32_t simm;
  int32_t adr_li;
- int32_t br_bd;
 
 //Used for GP calcs
  uint32_t ppc_result_a = 0;
@@ -1558,41 +1555,39 @@ void ppc_bla(){
     grab_branch = 1;
 }
 
-void ppc_bc(){
-    br_bo = (ppc_cur_instruction >> 21) & 31;
-    br_bi = (ppc_cur_instruction >> 16) & 31;
-    br_bd = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFC));
-    uint32_t ctr_ok = 1;
-    uint32_t cnd_ok = 1;
+void ppc_bc()
+{
+    uint32_t ctr_ok;
+    uint32_t cnd_ok;
+    uint32_t br_bo = (ppc_cur_instruction >> 21) & 31;
+    uint32_t br_bi = (ppc_cur_instruction >> 16) & 31;
+    int32_t  br_bd = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFC));
 
     if (!(br_bo & 0x04)){
-        (ppc_state.ppc_spr[9])--;
+        (ppc_state.ppc_spr[9])--; /* decrement CTR */
     }
-    ctr_ok = ((br_bo & 0x04) || ((ppc_state.ppc_spr[9] != 0) ^ (br_bo & 0x02)));
-    cnd_ok = ((br_bo & 0x10) || !((ppc_state.ppc_cr & (0x80000000 >>  br_bi)) ^ (br_bo & 0x08)));
+    ctr_ok = (br_bo & 0x04) || ((ppc_state.ppc_spr[9] != 0) == !(br_bo & 0x02));
+    cnd_ok = (br_bo & 0x10) || (!(ppc_state.ppc_cr & (0x80000000 >> br_bi)) == !(br_bo & 0x08));
 
     if (ctr_ok && cnd_ok){
         ppc_next_instruction_address = (ppc_state.ppc_pc + br_bd);
         grab_branch = 1;
     }
-    /*
-    else{
-        printf("BRANCH FAILED: %d %d", ctr_ok, cnd_ok);
-    }*/
 }
 
-void ppc_bca(){
-    br_bo = (ppc_cur_instruction >> 21) & 31;
-    br_bi = (ppc_cur_instruction >> 16) & 31;
-    br_bd = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFC));
-    uint32_t ctr_ok = 1;
-    uint32_t cnd_ok = 1;
+void ppc_bca()
+{
+    uint32_t ctr_ok;
+    uint32_t cnd_ok;
+    uint32_t br_bo = (ppc_cur_instruction >> 21) & 31;
+    uint32_t br_bi = (ppc_cur_instruction >> 16) & 31;
+    int32_t  br_bd = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFC));
 
     if (!(br_bo & 0x04)){
-        (ppc_state.ppc_spr[9])--;
+        (ppc_state.ppc_spr[9])--; /* decrement CTR */
     }
-    ctr_ok = ((br_bo & 0x04) || ((ppc_state.ppc_spr[9] != 0) ^ (br_bo & 0x02)));
-    cnd_ok = ((br_bo & 0x10) || !((ppc_state.ppc_cr & (0x80000000 >>  br_bi)) ^ (br_bo & 0x08)));
+    ctr_ok = (br_bo & 0x04) || ((ppc_state.ppc_spr[9] != 0) == !(br_bo & 0x02));
+    cnd_ok = (br_bo & 0x10) || (!(ppc_state.ppc_cr & (0x80000000 >> br_bi)) == !(br_bo & 0x08));
 
     if (ctr_ok && cnd_ok){
         ppc_next_instruction_address = br_bd;
@@ -1600,19 +1595,19 @@ void ppc_bca(){
     }
 }
 
-void ppc_bcl(){
-
-    br_bo = (ppc_cur_instruction >> 21) & 31;
-    br_bi = (ppc_cur_instruction >> 16) & 31;
-    br_bd = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFC));
-    uint32_t ctr_ok = 1;
-    uint32_t cnd_ok = 1;
+void ppc_bcl()
+{
+    uint32_t ctr_ok;
+    uint32_t cnd_ok;
+    uint32_t br_bo = (ppc_cur_instruction >> 21) & 31;
+    uint32_t br_bi = (ppc_cur_instruction >> 16) & 31;
+    int32_t  br_bd = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFC));
 
     if (!(br_bo & 0x04)){
-        (ppc_state.ppc_spr[9])--;
+        (ppc_state.ppc_spr[9])--; /* decrement CTR */
     }
-    ctr_ok = ((br_bo & 0x04) || ((ppc_state.ppc_spr[9] != 0) ^ (br_bo & 0x02)));
-    cnd_ok = ((br_bo & 0x10) || !((ppc_state.ppc_cr & (0x80000000 >>  br_bi)) ^ (br_bo & 0x08)));
+    ctr_ok = (br_bo & 0x04) || ((ppc_state.ppc_spr[9] != 0) == !(br_bo & 0x02));
+    cnd_ok = (br_bo & 0x10) || (!(ppc_state.ppc_cr & (0x80000000 >> br_bi)) == !(br_bo & 0x08));
 
     if (ctr_ok && cnd_ok){
         ppc_next_instruction_address = (ppc_state.ppc_pc + br_bd);
@@ -1621,19 +1616,19 @@ void ppc_bcl(){
     ppc_state.ppc_spr[8] = ppc_state.ppc_pc + 4;
 }
 
-void ppc_bcla(){
-
-    br_bo = (ppc_cur_instruction >> 21) & 31;
-    br_bi = (ppc_cur_instruction >> 16) & 31;
-    br_bd = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFC));
-    uint32_t ctr_ok = 1;
-    uint32_t cnd_ok = 1;
+void ppc_bcla()
+{
+    uint32_t ctr_ok;
+    uint32_t cnd_ok;
+    uint32_t br_bo = (ppc_cur_instruction >> 21) & 31;
+    uint32_t br_bi = (ppc_cur_instruction >> 16) & 31;
+    int32_t  br_bd = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFC));
 
     if (!(br_bo & 0x04)){
-        (ppc_state.ppc_spr[9])--;
+        (ppc_state.ppc_spr[9])--; /* decrement CTR */
     }
-    ctr_ok = ((br_bo & 0x04) || ((ppc_state.ppc_spr[9] != 0) ^ (br_bo & 0x02)));
-    cnd_ok = ((br_bo & 0x10) || !((ppc_state.ppc_cr & (0x80000000 >>  br_bi)) ^ (br_bo & 0x08)));
+    ctr_ok = (br_bo & 0x04) || ((ppc_state.ppc_spr[9] != 0) == !(br_bo & 0x02));
+    cnd_ok = (br_bo & 0x10) || (!(ppc_state.ppc_cr & (0x80000000 >> br_bi)) == !(br_bo & 0x08));
 
     if (ctr_ok && cnd_ok){
         ppc_next_instruction_address = br_bd;
@@ -1642,66 +1637,64 @@ void ppc_bcla(){
     ppc_state.ppc_spr[8] = ppc_state.ppc_pc + 4;
 }
 
-void ppc_bcctr(){
-    br_bo = (ppc_cur_instruction >> 21) & 31;
-    br_bi = (ppc_cur_instruction >> 16) & 31;
+void ppc_bcctr()
+{
+    uint32_t br_bo = (ppc_cur_instruction >> 21) & 31;
+    uint32_t br_bi = (ppc_cur_instruction >> 16) & 31;
 
-    uint32_t cnd_ok = 1;
-    cnd_ok = ((br_bo & 0x10) || !((ppc_state.ppc_cr & (0x80000000 >>  br_bi)) ^ (br_bo & 0x08)));
+    uint32_t cnd_ok = (br_bo & 0x10) || (!(ppc_state.ppc_cr & (0x80000000 >> br_bi)) == !(br_bo & 0x08));
 
     if (cnd_ok){
-        adr_li = (ppc_state.ppc_spr[9] & 0xFFFFFFFC);
-        ppc_next_instruction_address = adr_li;
+        ppc_next_instruction_address = (ppc_state.ppc_spr[9] & 0xFFFFFFFC);
         grab_branch = 1;
     }
 }
 
-void ppc_bcctrl(){
-    br_bo = (ppc_cur_instruction >> 21) & 31;
-    br_bi = (ppc_cur_instruction >> 16) & 31;
+void ppc_bcctrl()
+{
+    uint32_t br_bo = (ppc_cur_instruction >> 21) & 31;
+    uint32_t br_bi = (ppc_cur_instruction >> 16) & 31;
 
-    uint32_t cnd_ok = 1;
-    cnd_ok = ((br_bo & 0x10) || !((ppc_state.ppc_cr & (0x80000000 >>  br_bi)) ^ (br_bo & 0x08)));
+    uint32_t cnd_ok = (br_bo & 0x10) || (!(ppc_state.ppc_cr & (0x80000000 >> br_bi)) == !(br_bo & 0x08));
 
     if (cnd_ok){
-        adr_li = (ppc_state.ppc_spr[9] & 0xFFFFFFFC);
-        ppc_next_instruction_address = adr_li;
+        ppc_next_instruction_address = (ppc_state.ppc_spr[9] & 0xFFFFFFFC);
         grab_branch = 1;
     }
     ppc_state.ppc_spr[8] = ppc_state.ppc_pc + 4;
 }
 
-void ppc_bclr(){
-    br_bo = (ppc_cur_instruction >> 21) & 31;
-    br_bi = (ppc_cur_instruction >> 16) & 31;
-    uint32_t ctr_ok = 1;
-    uint32_t cnd_ok = 1;
+void ppc_bclr()
+{
+    uint32_t br_bo = (ppc_cur_instruction >> 21) & 31;
+    uint32_t br_bi = (ppc_cur_instruction >> 16) & 31;
+    uint32_t ctr_ok;
+    uint32_t cnd_ok;
 
     if (!(br_bo & 0x04)){
-        (ppc_state.ppc_spr[9])--;
+        (ppc_state.ppc_spr[9])--; /* decrement CTR */
     }
-    ctr_ok = ((br_bo & 0x04) | ((ppc_state.ppc_spr[9] != 0) ^ (br_bo & 0x02)));
-    cnd_ok = ((br_bo & 0x10) || !((ppc_state.ppc_cr & (0x80000000 >>  br_bi)) ^ (br_bo & 0x08)));
+    ctr_ok = (br_bo & 0x04) || ((ppc_state.ppc_spr[9] != 0) == !(br_bo & 0x02));
+    cnd_ok = (br_bo & 0x10) || (!(ppc_state.ppc_cr & (0x80000000 >> br_bi)) == !(br_bo & 0x08));
 
     if (ctr_ok && cnd_ok){
         ppc_next_instruction_address = (ppc_state.ppc_spr[8] & 0xFFFFFFFC);
         grab_branch = 1;
     }
-    else{
-        printf("Branch failed. \n");
-    }
 }
 
-void ppc_bclrl(){
-    br_bo = (ppc_cur_instruction >> 21) & 31;
-    br_bi = (ppc_cur_instruction >> 16) & 31;
-    uint32_t ctr_ok = 1;
-    uint32_t cnd_ok = 1;
+void ppc_bclrl()
+{
+    uint32_t br_bo = (ppc_cur_instruction >> 21) & 31;
+    uint32_t br_bi = (ppc_cur_instruction >> 16) & 31;
+    uint32_t ctr_ok;
+    uint32_t cnd_ok;
+
     if (!(br_bo & 0x04)){
-        (ppc_state.ppc_spr[9])--;
+        (ppc_state.ppc_spr[9])--; /* decrement CTR */
     }
-    ctr_ok = ((br_bo & 0x04) | ((ppc_state.ppc_spr[9] != 0) ^ (br_bo & 0x02)));
-    cnd_ok = ((br_bo & 0x10) || !((ppc_state.ppc_cr & (0x80000000 >>  br_bi)) ^ (br_bo & 0x08)));
+    ctr_ok = (br_bo & 0x04) || ((ppc_state.ppc_spr[9] != 0) == !(br_bo & 0x02));
+    cnd_ok = (br_bo & 0x10) || (!(ppc_state.ppc_cr & (0x80000000 >> br_bi)) == !(br_bo & 0x08));
 
     if (ctr_ok && cnd_ok){
         ppc_next_instruction_address = (ppc_state.ppc_spr[8] & 0xFFFFFFFC);
