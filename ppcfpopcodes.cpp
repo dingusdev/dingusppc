@@ -1017,13 +1017,13 @@ void ppc_mtfsf(){
     reg_b = (ppc_cur_instruction >> 11) & 31;
     uint32_t fm_mask = (ppc_cur_instruction >> 17) & 255;
     crm += ((fm_mask & 1) == 1)? 0xF0000000 : 0x00000000;
-    crm += ((fm_mask & 2) == 1)? 0x0F000000 : 0x00000000;
-    crm += ((fm_mask & 4) == 1)? 0x00F00000 : 0x00000000;
-    crm += ((fm_mask & 8) == 1)? 0x000F0000 : 0x00000000;
-    crm += ((fm_mask & 16) == 1)? 0x0000F000 : 0x00000000;
-    crm += ((fm_mask & 32) == 1)? 0x00000F00 : 0x00000000;
-    crm += ((fm_mask & 64) == 1)? 0x000000F0 : 0x00000000;
-    crm += ((fm_mask & 128) == 1)? 0x0000000F : 0x00000000;
+    crm += (((fm_mask >> 1) & 1) == 1)? 0x0F000000 : 0x00000000;
+    crm += (((fm_mask >> 2) & 1) == 1)? 0x00F00000 : 0x00000000;
+    crm += (((fm_mask >> 3) & 1) == 1)? 0x000F0000 : 0x00000000;
+    crm += (((fm_mask >> 4) & 1) == 1)? 0x0000F000 : 0x00000000;
+    crm += (((fm_mask >> 5) & 1) == 1)? 0x00000F00 : 0x00000000;
+    crm += (((fm_mask >> 6) & 1) == 1)? 0x000000F0 : 0x00000000;
+    crm += (((fm_mask >> 7) & 1) == 1)? 0x0000000F : 0x00000000;
     uint32_t quickfprval = (uint32_t)ppc_state.ppc_fpr[reg_b];
     ppc_state.ppc_fpscr = (quickfprval & crm) | (quickfprval & ~(crm));
 }
@@ -1032,13 +1032,13 @@ void ppc_mtfsfdot(){
     reg_b = (ppc_cur_instruction >> 11) & 31;
     uint32_t fm_mask = (ppc_cur_instruction >> 17) & 255;
     crm += ((fm_mask & 1) == 1)? 0xF0000000 : 0x00000000;
-    crm += ((fm_mask & 2) == 1)? 0x0F000000 : 0x00000000;
-    crm += ((fm_mask & 4) == 1)? 0x00F00000 : 0x00000000;
-    crm += ((fm_mask & 8) == 1)? 0x000F0000 : 0x00000000;
-    crm += ((fm_mask & 16) == 1)? 0x0000F000 : 0x00000000;
-    crm += ((fm_mask & 32) == 1)? 0x00000F00 : 0x00000000;
-    crm += ((fm_mask & 64) == 1)? 0x000000F0 : 0x00000000;
-    crm += ((fm_mask & 128) == 1)? 0x0000000F : 0x00000000;
+    crm += (((fm_mask >> 1) & 1) == 1)? 0x0F000000 : 0x00000000;
+    crm += (((fm_mask >> 2) & 1) == 1)? 0x00F00000 : 0x00000000;
+    crm += (((fm_mask >> 3) & 1) == 1)? 0x000F0000 : 0x00000000;
+    crm += (((fm_mask >> 4) & 1) == 1)? 0x0000F000 : 0x00000000;
+    crm += (((fm_mask >> 5) & 1) == 1)? 0x00000F00 : 0x00000000;
+    crm += (((fm_mask >> 6) & 1) == 1)? 0x000000F0 : 0x00000000;
+    crm += (((fm_mask >> 7) & 1) == 1)? 0x0000000F : 0x00000000;
     uint32_t quickfprval = (uint32_t)ppc_state.ppc_fpr[reg_b];
     ppc_state.ppc_fpscr = (quickfprval & crm) | (quickfprval & ~(crm));
 }
