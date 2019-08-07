@@ -403,8 +403,8 @@ void power_nabsodot(){
 
 void power_rlmi(){
     ppc_grab_regssab();
-    rot_mb = (ppc_cur_instruction >> 6) & 31;
-    rot_me = (ppc_cur_instruction >> 1) & 31;
+    unsigned rot_mb = (ppc_cur_instruction >> 6) & 31;
+    unsigned rot_me = (ppc_cur_instruction >> 1) & 31;
     uint32_t rot_amt = ppc_result_b & 31;
     uint32_t insert_mask = 0;
 
@@ -526,7 +526,7 @@ void power_sleqdot(){
 void power_sliq(){
     ppc_grab_regssa();
     uint32_t insert_mask = 0;
-    rot_sh = (ppc_cur_instruction >> 11) & 31;
+    unsigned rot_sh = (ppc_cur_instruction >> 11) & 31;
     for (uint32_t i = 31; i > rot_sh; i--){
         insert_mask |= (1 << i);
     }
@@ -548,7 +548,7 @@ void power_sliq(){
 void power_sliqdot(){
     ppc_grab_regssa();
     uint32_t insert_mask = 0;
-    rot_sh = (ppc_cur_instruction >> 11) & 31;
+    unsigned rot_sh = (ppc_cur_instruction >> 11) & 31;
     for (uint32_t i = 31; i > rot_sh; i--){
         insert_mask |= (1 << i);
     }
@@ -571,7 +571,7 @@ void power_sliqdot(){
 void power_slliq(){
     ppc_grab_regssa();
     uint32_t insert_mask = 0;
-    rot_sh = (ppc_cur_instruction >> 11) & 31;
+    unsigned rot_sh = (ppc_cur_instruction >> 11) & 31;
     for (uint32_t i = 31; i > rot_sh; i--){
         insert_mask |= (1 << i);
     }
@@ -593,7 +593,7 @@ void power_slliq(){
 void power_slliqdot(){
     ppc_grab_regssa();
     uint32_t insert_mask = 0;
-    rot_sh = (ppc_cur_instruction >> 11) & 31;
+    unsigned rot_sh = (ppc_cur_instruction >> 11) & 31;
     for (uint32_t i = 31; i > rot_sh; i--){
         insert_mask |= (1 << i);
     }
@@ -683,7 +683,7 @@ void power_sreadot(){
 void power_sreq(){
     ppc_grab_regssa();
     uint32_t insert_mask = 0;
-    rot_sh = ppc_result_b & 31;
+    unsigned rot_sh = ppc_result_b & 31;
     for (uint32_t i = 31; i > rot_sh; i--){
         insert_mask |= (1 << i);
     }
@@ -705,7 +705,7 @@ void power_sreq(){
 void power_sreqdot(){
     ppc_grab_regssa();
     uint32_t insert_mask = 0;
-    rot_sh = ppc_result_b & 31;
+    unsigned rot_sh = ppc_result_b & 31;
     for (uint32_t i = 31; i > rot_sh; i--){
         insert_mask |= (1 << i);
     }
@@ -728,7 +728,7 @@ void power_sreqdot(){
 void power_sriq(){
     ppc_grab_regssa();
     uint32_t insert_mask = 0;
-    rot_sh = (ppc_cur_instruction >> 11) & 31;
+    unsigned rot_sh = (ppc_cur_instruction >> 11) & 31;
     for (uint32_t i = 31; i > rot_sh; i--){
         insert_mask |= (1 << i);
     }
@@ -750,7 +750,7 @@ void power_sriq(){
 void power_sriqdot(){
     ppc_grab_regssa();
     uint32_t insert_mask = 0;
-    rot_sh = (ppc_cur_instruction >> 11) & 31;
+    unsigned rot_sh = (ppc_cur_instruction >> 11) & 31;
     for (uint32_t i = 31; i > rot_sh; i--){
         insert_mask |= (1 << i);
     }

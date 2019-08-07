@@ -30,9 +30,6 @@
  uint32_t xercon;
  uint32_t cmp_c;
  uint32_t crm;
- uint32_t rot_sh;
- uint32_t rot_mb;
- uint32_t rot_me;
  uint32_t uimm;
  uint32_t not_this;
  uint32_t grab_sr;
@@ -1289,7 +1286,7 @@ void ppc_srawdot(){
 
 void ppc_srawi(){
     ppc_grab_regssa();
-    rot_sh = (ppc_cur_instruction >> 11) & 31;
+    unsigned rot_sh = (ppc_cur_instruction >> 11) & 31;
 
     ppc_result_a = (uint32_t)((int32_t)ppc_result_d >> rot_sh);
     ppc_state.ppc_spr[1] = (ppc_state.ppc_spr[1] & 0xDFFFFFFF) | (((ppc_result_d) > 0x7FFFFFFF)?0x20000000:0x0);
@@ -1299,7 +1296,7 @@ void ppc_srawi(){
 
 void ppc_srawidot(){
     ppc_grab_regssa();
-    rot_sh = (ppc_cur_instruction >> 11) & 31;
+    unsigned rot_sh = (ppc_cur_instruction >> 11) & 31;
 
     ppc_result_a = (uint32_t)((int32_t)ppc_result_d >> rot_sh);
     ppc_state.ppc_spr[1] = (ppc_state.ppc_spr[1] & 0xDFFFFFFF) | (((ppc_result_d) > 0x7FFFFFFF)?0x20000000:0x0);
@@ -1308,15 +1305,22 @@ void ppc_srawidot(){
     ppc_store_result_rega();
 }
 
+/** mask generator for rotate and shift instructions (§ 4.2.1.4 PowerpC PEM) */
+static inline uint32_t rot_mask(unsigned rot_mb, unsigned rot_me)
+{
+    uint32_t m1 = 0xFFFFFFFFUL >> rot_mb;
+    uint32_t m2 = 0xFFFFFFFFUL << (31 - rot_me);
+    return ((rot_mb <= rot_me) ? m2 & m1 : m1 | m2);
+}
+
 void ppc_rlwimi(){
     ppc_grab_regssa();
-    rot_sh = (ppc_cur_instruction >> 11) & 31;
-    rot_mb = (ppc_cur_instruction >> 6) & 31;
-    rot_me = (ppc_cur_instruction >> 1) & 31;
-    uint32_t step1 = (0xFFFFFFFFUL << (31 - rot_me)) & (0xFFFFFFFFUL >> rot_mb);
-    uint32_t step2 = (rot_me < rot_mb)? ~step1 : step1;
-    uint32_t step3 = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32-rot_sh)));
-    ppc_result_a = (ppc_result_a & ~step2) | (step3 & step2);
+    unsigned rot_sh = (ppc_cur_instruction >> 11) & 31;
+    unsigned rot_mb = (ppc_cur_instruction >> 6) & 31;
+    unsigned rot_me = (ppc_cur_instruction >> 1) & 31;
+    uint32_t mask = rot_mask(rot_mb, rot_me);
+    uint32_t r = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32-rot_sh)));
+    ppc_result_a = (ppc_result_a & ~mask) | (r & mask);
     if ((ppc_cur_instruction & 0x01) == 1){
         ppc_changecrf0(ppc_result_a);
     }
@@ -1325,13 +1329,12 @@ void ppc_rlwimi(){
 
 void ppc_rlwinm(){
     ppc_grab_regssa();
-    rot_sh = (ppc_cur_instruction >> 11) & 31;
-    rot_mb = (ppc_cur_instruction >> 6) & 31;
-    rot_me = (ppc_cur_instruction >> 1) & 31;
-    uint32_t step1 = (0xFFFFFFFFUL << (31 - rot_me)) & (0xFFFFFFFFUL >> rot_mb);
-    uint32_t step2 = (rot_me < rot_mb)? ~step1 : step1;
-    uint32_t step3 = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32-rot_sh)));
-    ppc_result_a = step2 & step3;
+    unsigned rot_sh = (ppc_cur_instruction >> 11) & 31;
+    unsigned rot_mb = (ppc_cur_instruction >> 6) & 31;
+    unsigned rot_me = (ppc_cur_instruction >> 1) & 31;
+    uint32_t mask = rot_mask(rot_mb, rot_me);
+    uint32_t r = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32-rot_sh)));
+    ppc_result_a = r & mask;
     if ((ppc_cur_instruction & 0x01) == 1){
         ppc_changecrf0(ppc_result_a);
     }
@@ -1340,12 +1343,11 @@ void ppc_rlwinm(){
 
 void ppc_rlwnm(){
     ppc_grab_regssab();
-    rot_mb = (ppc_cur_instruction >> 6) & 31;
-    rot_me = (ppc_cur_instruction >> 1) & 31;
-    uint32_t step1 = (0xFFFFFFFFUL << (31 - rot_me)) & (0xFFFFFFFFUL >> rot_mb);
-    uint32_t step2 = (rot_me < rot_mb)? ~step1 : step1;
-    uint32_t step3 = ((ppc_result_d << ppc_result_b) | (ppc_result_d >> (32-ppc_result_b)));
-    ppc_result_a = step2 & step3;
+    unsigned rot_mb = (ppc_cur_instruction >> 6) & 31;
+    unsigned rot_me = (ppc_cur_instruction >> 1) & 31;
+    uint32_t mask = rot_mask(rot_mb, rot_me);
+    uint32_t r = ((ppc_result_d << ppc_result_b) | (ppc_result_d >> (32-ppc_result_b)));
+    ppc_result_a = r & mask;
     if ((ppc_cur_instruction & 0x01) == 1){
         ppc_changecrf0(ppc_result_a);
     }
