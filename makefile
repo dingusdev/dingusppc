@@ -1,11 +1,11 @@
 OBJS	= main.o macioserial.o macscsi.o macswim3.o mpc106.o openpic.o poweropcodes.o  \
           ppcfpopcodes.o ppcgekkoopcodes.o ppcmemory.o ppcopcodes.o viacuda.o davbus.o \
-          debugger.o addressmap.o
+          debugger.o addressmap.o pmac6100hw.o
 SOURCE	= main.cpp macioserial.cpp macscsi.cpp macswim3.cpp mpc106.cpp openpic.cpp \
           poweropcodes.cpp ppcfpopcodes.cpp ppcgekkoopcodes.cpp ppcmemory.cpp      \
-          ppcopcodes.cpp viacuda.cpp davbus.cpp debugger.cpp addressmap.cpp
+          ppcopcodes.cpp viacuda.cpp davbus.cpp debugger.cpp addressmap.cpp pmac6100hw.cpp
 HEADER	= macioserial.h macscsi.h macswim3.h mpc106.h openpic.h ppcemumain.h ppcmemory.h \
-          viacuda.h debugger.h addressmap.h
+          viacuda.h debugger.h addressmap.h pmac6100hw.h
 OUT	    = dingusppc
 CC	    = g++
 FLAGS	= -g -c -Wall -std=c++11
@@ -58,6 +58,9 @@ debugger.o: debugger.cpp
 
 addressmap.o: addressmap.cpp
 	$(CC) $(FLAGS) addressmap.cpp
+
+pmac6100hw.o: pmac6100hw.cpp
+	$(CC) $(FLAGS) pmac6100hw.cpp
 
 clean:
 	rm -f $(OBJS) $(OUT)
