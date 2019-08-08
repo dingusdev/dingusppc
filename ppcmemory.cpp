@@ -22,7 +22,6 @@
 #include "openpic.h"
 #include "mpc106.h"
 #include "davbus.h"
-#include "addressmap.h"
 
 std::vector<uint32_t> pte_storage;
 
@@ -56,8 +55,6 @@ unsigned char * grab_tempmem_ptr4;
 unsigned char * grab_macmem_ptr;
 unsigned char * grab_pteg1_ptr;
 unsigned char * grab_pteg2_ptr;
-
-AddressMap *machine_phys_map = 0;
 
 std::atomic<bool> hash_found (false);
 
@@ -97,70 +94,76 @@ void msr_status_update(){
     msr_dr_test = (ppc_state.ppc_msr >> 4) & 1;
 }
 
-static inline void ppc_set_cur_instruction(unsigned char *ptr, uint32_t offset)
+inline void ppc_set_cur_instruction(uint32_t mem_index)
 {
-    ppc_cur_instruction  = (ptr[offset]  << 24) | (ptr[offset+1] << 16) |
-                           (ptr[offset+2] << 8) |  ptr[offset+3];
+    ppc_cur_instruction  = (grab_macmem_ptr[mem_index]   << 24) |
+                           (grab_macmem_ptr[mem_index+1] << 16) |
+                           (grab_macmem_ptr[mem_index+2] << 8)  |
+                            grab_macmem_ptr[mem_index+3];
 }
 
-static inline void ppc_set_return_val(unsigned char *ptr, uint32_t offset,
-                                      int num_size)
+void ppc_set_return_val(uint32_t mem_index, int num_size)
 {
     //Put the final result in return_value here
     //This is what gets put back into the register
 
     if (ppc_state.ppc_msr & 1) { /* little-endian byte ordering */
         if (num_size == 1) { // BYTE
-            return_value = ptr[offset];
+            return_value = grab_macmem_ptr[mem_index];
         }
         else if (num_size == 2) { // WORD
-            return_value = ptr[offset] | (ptr[offset+1] << 8);
+            return_value = grab_macmem_ptr[mem_index] |
+                          (grab_macmem_ptr[mem_index+1] << 8);
         }
         else if (num_size == 4) { // DWORD
-            return_value = ptr[offset] | (ptr[offset+1] << 8) |
-                          (ptr[offset+2] << 16) | (ptr[offset+3] << 24);
+            return_value = grab_macmem_ptr[mem_index]          |
+                          (grab_macmem_ptr[mem_index+1] << 8)  |
+                          (grab_macmem_ptr[mem_index+2] << 16) |
+                          (grab_macmem_ptr[mem_index+3] << 24);
         }
     } else { /* big-endian byte ordering */
         if (num_size == 1) { // BYTE
-            return_value = ptr[offset];
+            return_value = grab_macmem_ptr[mem_index];
         }
         else if (num_size == 2) { // WORD
-            return_value = (ptr[offset] << 8) | ptr[offset+1];
+            return_value = (grab_macmem_ptr[mem_index] << 8) |
+                            grab_macmem_ptr[mem_index+1];
         }
         else if (num_size == 4) { // DWORD
-            return_value = (ptr[offset]  << 24) | (ptr[offset+1] << 16) |
-                           (ptr[offset+2] << 8) | ptr[offset+3];
+            return_value = (grab_macmem_ptr[mem_index]   << 24) |
+                           (grab_macmem_ptr[mem_index+1] << 16) |
+                           (grab_macmem_ptr[mem_index+2] << 8)  |
+                            grab_macmem_ptr[mem_index+3];
         }
     }
 }
 
-static inline void ppc_memstore_value(unsigned char *ptr, uint32_t value,
-                                      uint32_t offset, int num_size)
+void ppc_memstore_value(uint32_t value_insert, uint32_t mem_index, int num_size)
 {
     if (ppc_state.ppc_msr & 1) { /* little-endian byte ordering */
         if (num_size >= 1) { // BYTE
-            ptr[offset] = value & 0xFF;
+            grab_macmem_ptr[mem_index] = value_insert & 0xFF;
         }
         if (num_size >= 2) { // WORD
-            ptr[offset+1] = (value >> 8) & 0xFF;
+            grab_macmem_ptr[mem_index+1] = (value_insert >> 8) & 0xFF;
         }
         if (num_size == 4) { // DWORD
-            ptr[offset+2] = (value >> 16) & 0xFF;
-            ptr[offset+3] = (value >> 24) & 0xFF;
+            grab_macmem_ptr[mem_index+2] = (value_insert >> 16) & 0xFF;
+            grab_macmem_ptr[mem_index+3] = (value_insert >> 24) & 0xFF;
         }
     } else { /* big-endian byte ordering */
         if (num_size == 1) { // BYTE
-            ptr[offset] = value & 0xFF;
+            grab_macmem_ptr[mem_index] = value_insert & 0xFF;
         }
         else if (num_size == 2) { // WORD
-            ptr[offset]   = (value >> 8) & 0xFF;
-            ptr[offset+1] = value & 0xFF;
+            grab_macmem_ptr[mem_index]   = (value_insert >> 8) & 0xFF;
+            grab_macmem_ptr[mem_index+1] = value_insert & 0xFF;
         }
         else if (num_size == 4) { // DWORD
-            ptr[offset]   = (value >> 24) & 0xFF;
-            ptr[offset+1] = (value >> 16) & 0xFF;
-            ptr[offset+2] = (value >> 8)  & 0xFF;
-            ptr[offset+3] = value & 0xFF;
+            grab_macmem_ptr[mem_index]   = (value_insert >> 24) & 0xFF;
+            grab_macmem_ptr[mem_index+1] = (value_insert >> 16) & 0xFF;
+            grab_macmem_ptr[mem_index+2] = (value_insert >> 8)  & 0xFF;
+            grab_macmem_ptr[mem_index+3] = value_insert & 0xFF;
         }
     }
 }
@@ -557,7 +560,7 @@ uint32_t ppc_mmu_addr_translate(uint32_t la, uint32_t access_type)
     return pa;
 }
 
-#if 0
+
 /** Insert a value into memory from a register. */
 void address_quickinsert_translate(uint32_t value_insert, uint32_t address_grab,
             uint8_t num_bytes)
@@ -742,45 +745,7 @@ void address_quickinsert_translate(uint32_t value_insert, uint32_t address_grab,
 
     ppc_memstore_value(value_insert, storage_area, num_bytes);
 }
-#endif
 
-#if 1
-uint32_t write_last_pa_start  = 0;
-uint32_t write_last_pa_end    = 0;
-unsigned char *write_last_ptr = 0;
-
-void address_quickinsert_translate(uint32_t value, uint32_t addr, uint8_t num_bytes)
-{
-    /* data address translation if enabled */
-    if (ppc_state.ppc_msr & 0x10) {
-        //printf("DATA RELOCATION GO! - INSERTING \n");
-
-        addr = ppc_mmu_addr_translate(addr, 0);
-    }
-
-    if (addr >= write_last_pa_start && addr <= write_last_pa_end) {
-        ppc_memstore_value(write_last_ptr, value, addr - write_last_pa_start, num_bytes);
-    } else {
-        AddressMapEntry *entry = machine_phys_map->get_range(addr);
-        if (entry) {
-            if (entry->type & RT_RAM) {
-                write_last_pa_start = entry->start;
-                write_last_pa_end   = entry->end;
-                write_last_ptr = entry->mem_ptr;
-                ppc_memstore_value(write_last_ptr, value, addr - entry->start, num_bytes);
-            } else if (entry->type & RT_MMIO) {
-                entry->devobj->write(addr - entry->start, value, num_bytes);
-            } else {
-                printf("Please check your address map!\n");
-            }
-        } else {
-            printf("WARNING: write attempt to unmapped memory at 0x%08X!\n", addr);
-        }
-    }
-}
-#endif
-
-#if 0
 /** Grab a value from memory into a register */
 void address_quickgrab_translate(uint32_t address_grab, uint8_t num_bytes)
 {
@@ -950,50 +915,7 @@ void address_quickgrab_translate(uint32_t address_grab, uint8_t num_bytes)
     ppc_set_return_val(storage_area, num_bytes);
 
 }
-#endif
 
-#if 1
-uint32_t read_last_pa_start  = 0;
-uint32_t read_last_pa_end    = 0;
-unsigned char *read_last_ptr = 0;
-
-/** Grab a value from memory into a register */
-void address_quickgrab_translate(uint32_t addr, uint8_t num_bytes)
-{
-    /* data address translation if enabled */
-    if (ppc_state.ppc_msr & 0x10) {
-        //printf("DATA RELOCATION GO! - GRABBING \n");
-
-        addr = ppc_mmu_addr_translate(addr, 0);
-    }
-
-    if (addr >= read_last_pa_start && addr <= read_last_pa_end) {
-        ppc_set_return_val(read_last_ptr, addr - read_last_pa_start, num_bytes);
-    } else {
-        AddressMapEntry *entry = machine_phys_map->get_range(addr);
-        if (entry) {
-            if (entry->type & (RT_ROM | RT_RAM)) {
-                read_last_pa_start = entry->start;
-                read_last_pa_end   = entry->end;
-                read_last_ptr = entry->mem_ptr;
-                ppc_set_return_val(read_last_ptr, addr - entry->start, num_bytes);
-            } else if (entry->type & RT_MMIO) {
-                return_value = entry->devobj->read(addr - entry->start, num_bytes);
-            } else {
-                printf("Please check your address map!\n");
-            }
-        } else {
-            printf("WARNING: read attempt from unmapped memory at 0x%08X!\n", addr);
-
-            /* reading from unmapped memory will return unmapped value */
-            for (return_value = 0xFF; --num_bytes > 0;)
-                return_value = (return_value << 8) | 0xFF;
-        }
-    }
-}
-#endif
-
-#if 0
 void quickinstruction_translate(uint32_t address_grab)
 {
     uint32_t storage_area = 0;
@@ -1101,34 +1023,3 @@ void quickinstruction_translate(uint32_t address_grab)
 
     ppc_set_cur_instruction(storage_area);
 }
-#endif
-
-#if 1
-uint32_t exec_last_pa_start  = 0;
-uint32_t exec_last_pa_end    = 0;
-unsigned char *exec_last_ptr = 0;
-
-void quickinstruction_translate(uint32_t addr)
-{
-    /* instruction address translation if enabled */
-    if (ppc_state.ppc_msr & 0x20) {
-        printf("INSTRUCTION RELOCATION GO! \n");
-
-        addr = ppc_mmu_instr_translate(addr);
-    }
-
-    if (addr >= exec_last_pa_start && addr <= exec_last_pa_end) {
-        ppc_set_cur_instruction(exec_last_ptr, addr - exec_last_pa_start);
-    } else {
-        AddressMapEntry *entry = machine_phys_map->get_range(addr);
-        if (entry && entry->type & (RT_ROM | RT_RAM)) {
-            exec_last_pa_start = entry->start;
-            exec_last_pa_end   = entry->end;
-            exec_last_ptr = entry->mem_ptr;
-            ppc_set_cur_instruction(exec_last_ptr, addr - exec_last_pa_start);
-        } else {
-            printf("WARNING: attempt to execute code at %08X!\n", addr);
-        }
-    }
-}
-#endif

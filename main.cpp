@@ -26,7 +26,6 @@
 #include "mpc106.h"
 #include "openpic.h"
 #include "debugger.h"
-#include "pmac6100hw.h"
 //#include <vector>
 
 #define max_16b_int 65535
@@ -597,8 +596,6 @@ int main(int argc, char **argv)
 
     //Copy the contents of the IO data and the ROM to memory appropriate locations.
     romFile.read ((char *)machine_sysrom_mem,grab_sysrom_size);
-    if (is_nubus)
-        pmac6100_init();
 
     /*
     //Open the Disk File.
@@ -870,9 +867,6 @@ int main(int argc, char **argv)
     romFile.close();
 
     //Free memory after the emulation is completed.
-    if (machine_phys_map)
-        delete(machine_phys_map);
-
     free(machine_sysram_mem);
     free(machine_upperiocontrol_mem);
     free(machine_iocontrolcdma_mem);

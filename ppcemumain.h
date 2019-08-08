@@ -9,7 +9,6 @@
 #define PPCEMUMAIN_H_
 
 #include <map>
-#include "addressmap.h"
 
 //Uncomment this to help debug the emulator further
 //#define EXHAUSTIVE_DEBUG 1
@@ -88,8 +87,6 @@ SUPERVISOR MODEL
 528 - 535 are the Instruction BAT registers
 536 - 543 are the Data BAT registers
 **/
-
-extern AddressMap *machine_phys_map;
 
 extern uint32_t return_value; //used for loading from memory
 
