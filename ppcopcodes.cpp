@@ -841,6 +841,7 @@ void ppc_nanddot(){
 void ppc_or(){
     ppc_grab_regssab();
     ppc_result_a = ppc_result_d | ppc_result_b;
+    printf("OR Result: %x in Reg %d from Regs %d and %d \n", ppc_result_a, reg_a, reg_s, reg_b);
     ppc_store_result_rega();
 }
 
@@ -1441,6 +1442,7 @@ void ppc_mtspr(){
         case 534:
         case 535:
             ibat_update(ref_spr);
+            std::cout << "IBAT CHANGED!" <<std::endl;
             break;
         case 536:
         case 537:
@@ -1451,6 +1453,7 @@ void ppc_mtspr(){
         case 542:
         case 543:
             dbat_update(ref_spr);
+            std::cout << "DBAT CHANGED!" <<std::endl;
     }
 }
 
@@ -1883,7 +1886,7 @@ void ppc_twi(){
 }
 
 void ppc_eieio(){
-    //std::cout << "Oops. Placeholder for eieio." << std::endl;
+    std::cout << "Oops. Placeholder for eieio." << std::endl;
 }
 
 void ppc_isync(){
