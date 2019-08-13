@@ -1818,11 +1818,11 @@ void ppc_crnor(){
 
 void ppc_cror(){
     ppc_grab_regsdab();
-    if ((ppc_state.ppc_cr && (0x80000000 >> reg_a)) | (ppc_state.ppc_cr && (0x80000000 >> reg_b))){
-        ppc_state.ppc_cr |= (0x80000000 >> reg_d);
+    if ((ppc_state.ppc_cr & (0x80000000UL >> reg_a)) || (ppc_state.ppc_cr & (0x80000000UL >> reg_b))){
+        ppc_state.ppc_cr |= (0x80000000UL >> reg_d);
     }
     else{
-        ppc_state.ppc_cr &= ~(0x80000000 >> reg_d);
+        ppc_state.ppc_cr &= ~(0x80000000UL >> reg_d);
     }
 }
 void ppc_crorc(){
