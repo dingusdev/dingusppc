@@ -1780,7 +1780,7 @@ void ppc_cmpli(){
 
 void ppc_crand(){
     ppc_grab_regsdab();
-    if ((ppc_state.ppc_cr & (0x80000000UL >> reg_a)) & (ppc_state.ppc_cr & (0x80000000UL >> reg_b))){
+    if ((ppc_state.ppc_cr & (0x80000000UL >> reg_a)) && (ppc_state.ppc_cr & (0x80000000UL >> reg_b))){
         ppc_state.ppc_cr |= (0x80000000UL >> reg_d);
     }
     else{
@@ -1789,7 +1789,7 @@ void ppc_crand(){
 }
 void ppc_crandc(){
     ppc_grab_regsdab();
-    if ((ppc_state.ppc_cr & (0x80000000UL >> reg_a)) & !(ppc_state.ppc_cr & (0x80000000UL >> reg_b))){
+    if ((ppc_state.ppc_cr & (0x80000000UL >> reg_a)) && !(ppc_state.ppc_cr & (0x80000000UL >> reg_b))){
         ppc_state.ppc_cr |= (0x80000000UL >> reg_d);
     }
     else{
@@ -1807,7 +1807,7 @@ void ppc_creqv(){
 }
 void ppc_crnand(){
     ppc_grab_regsdab();
-    if (!((ppc_state.ppc_cr & (0x80000000UL >> reg_a)) & (ppc_state.ppc_cr & (0x80000000UL >> reg_b)))){
+    if (!((ppc_state.ppc_cr & (0x80000000UL >> reg_a)) && (ppc_state.ppc_cr & (0x80000000UL >> reg_b)))){
         ppc_state.ppc_cr |= (0x80000000UL >> reg_d);
     }
     else{
@@ -1816,7 +1816,7 @@ void ppc_crnand(){
 }
 void ppc_crnor(){
     ppc_grab_regsdab();
-    if (!((ppc_state.ppc_cr & (0x80000000UL >> reg_a)) | (ppc_state.ppc_cr & (0x80000000UL >> reg_b)))){
+    if (!((ppc_state.ppc_cr & (0x80000000UL >> reg_a)) || (ppc_state.ppc_cr & (0x80000000UL >> reg_b)))){
         ppc_state.ppc_cr |= (0x80000000UL >> reg_d);
     }
     else{
@@ -1835,7 +1835,7 @@ void ppc_cror(){
 }
 void ppc_crorc(){
     ppc_grab_regsdab();
-    if ((ppc_state.ppc_cr & (0x80000000UL >> reg_a)) | !(ppc_state.ppc_cr & (0x80000000UL >> reg_b))){
+    if ((ppc_state.ppc_cr & (0x80000000UL >> reg_a)) || !(ppc_state.ppc_cr & (0x80000000UL >> reg_b))){
         ppc_state.ppc_cr |= (0x80000000UL >> reg_d);
     }
     else{
