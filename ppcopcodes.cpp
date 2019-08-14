@@ -1072,92 +1072,100 @@ void ppc_divw(){
     ppc_grab_regsdab();
 
     //handle division by zero cases
-    if (ppc_result_b == 0){
+    switch (ppc_result_b){
+    case 0:
         ppc_result_d = 0;
         ppc_store_result_regd();
         return;
-    }
-    else if ((ppc_result_a == 0x80000000) & (ppc_result_b == 0xFFFFFFFF)){
-        ppc_result_d = 0;
+    case 0xFFFFFFFF:
+        if (ppc_result_a == 0x80000000){
+            ppc_result_d = 0;
+            ppc_store_result_regd();
+            return;
+        }
+     default:
+        sidiv_result = (int32_t) ppc_result_a / (int32_t) ppc_result_b;
+        ppc_result_d = (uint32_t) sidiv_result;
         ppc_store_result_regd();
-        return;
     }
-
-    sidiv_result = (int32_t) ppc_result_a / (int32_t) ppc_result_b;
-    ppc_result_d = (uint32_t) sidiv_result;
-    ppc_store_result_regd();
 }
 
 void ppc_divwdot(){
     ppc_grab_regsdab();
 
     //handle division by zero cases
-    if (ppc_result_b == 0){
+    switch (ppc_result_b){
+    case 0:
         ppc_result_d = 0;
         ppc_store_result_regd();
         ppc_state.ppc_cr &= 0x1FFFFFFF;
         return;
-    }
-    else if ((ppc_result_a == 0x80000000) & (ppc_result_b == 0xFFFFFFFF)){
-        ppc_result_d = 0;
+    case 0xFFFFFFFF:
+        if (ppc_result_a == 0x80000000){
+            ppc_result_d = 0;
+            ppc_store_result_regd();
+            ppc_state.ppc_cr &= 0x1FFFFFFF;
+            return;
+        }
+    default:
+        sidiv_result = (int32_t) ppc_result_a / (int32_t) ppc_result_b;
+        ppc_result_d = (uint32_t) sidiv_result;
+        ppc_changecrf0(ppc_result_d);
         ppc_store_result_regd();
-        ppc_state.ppc_cr &= 0x1FFFFFFF;
-        return;
     }
-
-    sidiv_result = (int32_t) ppc_result_a / (int32_t) ppc_result_b;
-    ppc_result_d = (uint32_t) sidiv_result;
-    ppc_changecrf0(ppc_result_d);
-    ppc_store_result_regd();
 }
 
 void ppc_divwo(){
     ppc_grab_regsdab();
-
+ 
     //handle division by zero cases
-    if (ppc_result_b == 0){
+    switch (ppc_result_b){
+    case 0:
         ppc_result_d = 0;
         ppc_state.ppc_cr |= 0x10000000;
         ppc_store_result_regd();
         return;
-    }
-    else if ((ppc_result_a == 0x80000000) & (ppc_result_b == 0xFFFFFFFF)){
-        ppc_result_d = 0;
-        ppc_state.ppc_cr |= 0x10000000;
+    case 0xFFFFFFFF:
+        if (ppc_result_a == 0x80000000){
+            ppc_result_d = 0;
+            ppc_state.ppc_cr |= 0x10000000;
+            ppc_store_result_regd();
+            return;
+        }
+     default:
+        ppc_setsoov(ppc_result_a, ppc_result_b);
+        sidiv_result = (int32_t) ppc_result_a / (int32_t) ppc_result_b;
+        ppc_result_d = (uint32_t) sidiv_result;
         ppc_store_result_regd();
-        return;
     }
-
-    ppc_setsoov(ppc_result_a, ppc_result_b);
-    sidiv_result = (int32_t) ppc_result_a / (int32_t) ppc_result_b;
-    ppc_result_d = (uint32_t) sidiv_result;
-    ppc_store_result_regd();
 }
 
 void ppc_divwodot(){
     ppc_grab_regsdab();
 
-    //handle division by zero cases
-    if (ppc_result_b == 0){
+     //handle division by zero cases
+    switch (ppc_result_b){
+    case 0:
         ppc_result_d = 0;
         ppc_store_result_regd();
         ppc_state.ppc_cr &= 0x1FFFFFFF;
         ppc_state.ppc_cr |= 0x10000000;
         return;
-    }
-    else if ((ppc_result_a == 0x80000000) & (ppc_result_b == 0xFFFFFFFF)){
-        ppc_result_d = 0;
+    case 0xFFFFFFFF:
+        if (ppc_result_a == 0x80000000){
+            ppc_result_d = 0;
+            ppc_store_result_regd();
+            ppc_state.ppc_cr &= 0x1FFFFFFF;
+            ppc_state.ppc_cr |= 0x10000000;
+            return;
+        }
+     default:
+        ppc_setsoov(ppc_result_a, ppc_result_b);
+        sidiv_result = (int32_t) ppc_result_a / (int32_t) ppc_result_b;
+        ppc_result_d = (uint32_t) sidiv_result;
+        ppc_changecrf0(ppc_result_d);
         ppc_store_result_regd();
-        ppc_state.ppc_cr &= 0x1FFFFFFF;
-        ppc_state.ppc_cr |= 0x10000000;
-        return;
     }
-
-    ppc_setsoov(ppc_result_a, ppc_result_b);
-    sidiv_result = (int32_t) ppc_result_a / (int32_t) ppc_result_b;
-    ppc_result_d = (uint32_t) sidiv_result;
-    ppc_changecrf0(ppc_result_d);
-    ppc_store_result_regd();
 }
 
 void ppc_divwu(){
@@ -1731,9 +1739,9 @@ void ppc_cmpi(){
     crf_d = (ppc_cur_instruction >> 23) & 7;
     crf_d = crf_d << 2;
     ppc_grab_regsasimm();
-    xercon = (ppc_state.ppc_spr[1] & 0x80000000) >> 3;
-    cmp_c = (((int32_t)ppc_result_a) == simm) ? 0x20000000 : (((int32_t)ppc_result_a) > simm) ? 0x40000000 : 0x80000000;
-    ppc_state.ppc_cr = ((ppc_state.ppc_cr & ~(0xf0000000 >>  crf_d)) | ((cmp_c + xercon) >> crf_d));
+    xercon = (ppc_state.ppc_spr[1] & 0x80000000UL) >> 3;
+    cmp_c = (((int32_t)ppc_result_a) == simm) ? 0x20000000UL : (((int32_t)ppc_result_a) > simm) ? 0x40000000UL : 0x80000000UL;
+    ppc_state.ppc_cr = ((ppc_state.ppc_cr & ~(0xf0000000UL >>  crf_d)) | ((cmp_c + xercon) >> crf_d));
 }
 
 void ppc_cmpl(){
@@ -1747,9 +1755,9 @@ void ppc_cmpl(){
     crf_d = (ppc_cur_instruction >> 23) & 7;
     crf_d = crf_d << 2;
     ppc_grab_regssab();
-    xercon = (ppc_state.ppc_spr[1] & 0x80000000) >> 3;
-    cmp_c = (ppc_result_a == ppc_result_b) ? 0x20000000 : (ppc_result_a > ppc_result_b) ? 0x40000000 : 0x80000000;
-    ppc_state.ppc_cr = ((ppc_state.ppc_cr & ~(0xf0000000 >>  crf_d)) | ((cmp_c + xercon) >> crf_d));
+    xercon = (ppc_state.ppc_spr[1] & 0x80000000UL) >> 3;
+    cmp_c = (ppc_result_a == ppc_result_b) ? 0x20000000UL : (ppc_result_a > ppc_result_b) ? 0x40000000UL : 0x80000000UL;
+    ppc_state.ppc_cr = ((ppc_state.ppc_cr & ~(0xf0000000UL >>  crf_d)) | ((cmp_c + xercon) >> crf_d));
 }
 
 void ppc_cmpli(){
@@ -1763,56 +1771,56 @@ void ppc_cmpli(){
     crf_d = (ppc_cur_instruction >> 23) & 7;
     crf_d = crf_d << 2;
     ppc_grab_regssauimm();
-    xercon = (ppc_state.ppc_spr[1] & 0x80000000) >> 3;
-    cmp_c = (ppc_result_a == uimm) ? 0x20000000 : (ppc_result_a > uimm) ? 0x40000000 : 0x80000000;
-    ppc_state.ppc_cr = ((ppc_state.ppc_cr & ~(0xf0000000 >>  crf_d)) | ((cmp_c + xercon) >> crf_d));
+    xercon = (ppc_state.ppc_spr[1] & 0x80000000UL) >> 3;
+    cmp_c = (ppc_result_a == uimm) ? 0x20000000UL : (ppc_result_a > uimm) ? 0x40000000UL : 0x80000000UL;
+    ppc_state.ppc_cr = ((ppc_state.ppc_cr & ~(0xf0000000UL >>  crf_d)) | ((cmp_c + xercon) >> crf_d));
 }
 
 //Condition Register Changes
 
 void ppc_crand(){
     ppc_grab_regsdab();
-    if ((ppc_state.ppc_cr && (0x80000000 >> reg_a)) & (ppc_state.ppc_cr && (0x80000000 >> reg_b))){
-        ppc_state.ppc_cr |= (0x80000000 >> reg_d);
+    if ((ppc_state.ppc_cr & (0x80000000UL >> reg_a)) & (ppc_state.ppc_cr & (0x80000000UL >> reg_b))){
+        ppc_state.ppc_cr |= (0x80000000UL >> reg_d);
     }
     else{
-        ppc_state.ppc_cr &= ~(0x80000000 >> reg_d);
+        ppc_state.ppc_cr &= ~(0x80000000UL >> reg_d);
     }
 }
 void ppc_crandc(){
     ppc_grab_regsdab();
-    if ((ppc_state.ppc_cr && (0x80000000 >> reg_a)) & !(ppc_state.ppc_cr && (0x80000000 >> reg_b))){
-        ppc_state.ppc_cr |= (0x80000000 >> reg_d);
+    if ((ppc_state.ppc_cr & (0x80000000UL >> reg_a)) & !(ppc_state.ppc_cr & (0x80000000UL >> reg_b))){
+        ppc_state.ppc_cr |= (0x80000000UL >> reg_d);
     }
     else{
-        ppc_state.ppc_cr &= ~(0x80000000 >> reg_d);
+        ppc_state.ppc_cr &= ~(0x80000000UL >> reg_d);
     }
 }
 void ppc_creqv(){
     ppc_grab_regsdab();
-    if (!((ppc_state.ppc_cr && (0x80000000 >> reg_a)) ^ (ppc_state.ppc_cr && (0x80000000 >> reg_b)))){
-        ppc_state.ppc_cr |= (0x80000000 >> reg_d);
+    if (!((ppc_state.ppc_cr & (0x80000000UL >> reg_a)) ^ (ppc_state.ppc_cr & (0x80000000UL >> reg_b)))){
+        ppc_state.ppc_cr |= (0x80000000UL >> reg_d);
     }
     else{
-        ppc_state.ppc_cr &= ~(0x80000000 >> reg_d);
+        ppc_state.ppc_cr &= ~(0x80000000UL >> reg_d);
     }
 }
 void ppc_crnand(){
     ppc_grab_regsdab();
-    if (!((ppc_state.ppc_cr && (0x80000000 >> reg_a)) & (ppc_state.ppc_cr && (0x80000000 >> reg_b)))){
-        ppc_state.ppc_cr |= (0x80000000 >> reg_d);
+    if (!((ppc_state.ppc_cr & (0x80000000UL >> reg_a)) & (ppc_state.ppc_cr & (0x80000000UL >> reg_b)))){
+        ppc_state.ppc_cr |= (0x80000000UL >> reg_d);
     }
     else{
-        ppc_state.ppc_cr &= ~(0x80000000 >> reg_d);
+        ppc_state.ppc_cr &= ~(0x80000000UL >> reg_d);
     }
 }
 void ppc_crnor(){
     ppc_grab_regsdab();
-    if (!((ppc_state.ppc_cr && (0x80000000 >> reg_a)) | (ppc_state.ppc_cr && (0x80000000 >> reg_b)))){
-        ppc_state.ppc_cr |= (0x80000000 >> reg_d);
+    if (!((ppc_state.ppc_cr & (0x80000000UL >> reg_a)) | (ppc_state.ppc_cr & (0x80000000UL >> reg_b)))){
+        ppc_state.ppc_cr |= (0x80000000UL >> reg_d);
     }
     else{
-        ppc_state.ppc_cr &= ~(0x80000000 >> reg_d);
+        ppc_state.ppc_cr &= ~(0x80000000UL >> reg_d);
     }
 }
 
@@ -1827,20 +1835,20 @@ void ppc_cror(){
 }
 void ppc_crorc(){
     ppc_grab_regsdab();
-    if ((ppc_state.ppc_cr && (0x80000000 >> reg_a)) | !(ppc_state.ppc_cr && (0x80000000 >> reg_b))){
-        ppc_state.ppc_cr |= (0x80000000 >> reg_d);
+    if ((ppc_state.ppc_cr & (0x80000000UL >> reg_a)) | !(ppc_state.ppc_cr & (0x80000000UL >> reg_b))){
+        ppc_state.ppc_cr |= (0x80000000UL >> reg_d);
     }
     else{
-        ppc_state.ppc_cr &= ~(0x80000000 >> reg_d);
+        ppc_state.ppc_cr &= ~(0x80000000UL >> reg_d);
     }
 }
 void ppc_crxor(){
     ppc_grab_regsdab();
-    if ((ppc_state.ppc_cr && (0x80000000 >> reg_a)) ^ (ppc_state.ppc_cr && (0x80000000 >> reg_b))){
-        ppc_state.ppc_cr |= (0x80000000 >> reg_d);
+    if ((ppc_state.ppc_cr & (0x80000000UL >> reg_a)) ^ (ppc_state.ppc_cr & (0x80000000UL >> reg_b))){
+        ppc_state.ppc_cr |= (0x80000000UL >> reg_d);
     }
     else{
-        ppc_state.ppc_cr &= ~(0x80000000 >> reg_d);
+        ppc_state.ppc_cr &= ~(0x80000000UL >> reg_d);
     }
 }
 
