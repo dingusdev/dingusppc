@@ -20,7 +20,7 @@
 #include "ppcemumain.h"
 #include "ppcmemory.h"
 #include "openpic.h"
-#include "mpc106.h"
+#include "devices/mpc106.h"
 #include "davbus.h"
 
 std::vector<uint32_t> pte_storage;

@@ -10,10 +10,10 @@
 #include <iostream>
 #include <cstring>
 #include <cinttypes>
-#include "viacuda.h"
+#include "../viacuda.h"
 #include "mpc106.h"
-#include "ppcemumain.h"
-#include "ppcmemory.h"
+#include "../ppcemumain.h"
+#include "../ppcmemory.h"
 
 bool mpc106_membound_change;
 bool mpc106_mem_approve; //Confirm memory transaction

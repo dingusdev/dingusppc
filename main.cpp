@@ -23,7 +23,7 @@
 #include "macswim3.h"
 #include "ppcmemory.h"
 #include "viacuda.h"
-#include "mpc106.h"
+#include "devices/mpc106.h"
 #include "openpic.h"
 #include "debugger.h"
 //#include <vector>
