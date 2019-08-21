@@ -38,6 +38,33 @@
 
 using namespace std;
 
+/**
+    Power Macintosh ROM identification string
+
+    is located in the ConfigInfo structure starting at 0x30D064 (PCI Macs)
+    or 0x30C064 (Nubus Macs). This helps a lot to determine which
+    hardware is to be used.
+*/
+static const map<string,string> PPCMac_ROMIdentity = { //Codename Abbreviation for...
+    {"Alch", "Performa 6400"},                         //Alchemy
+    {"Come", "PowerBook 2400"},                        //Comet
+    {"Cord", "Power Mac 5200/6200 series"},            //Cordyceps
+    {"Gaze", "Power Mac 6500"},                        //Gazelle
+    {"Goss", "Power Mac G3 Beige"},                    //Gossamer
+    {"GRX ", "PowerBook G3 Wallstreet"},               //(Unknown)
+    {"Hoop", "PowerBook 3400"},                        //Hooper
+    {"PBX ", "PowerBook Pre-G3"},                      //(Unknown)
+    {"PDM ", "Nubus Power Mac or WGS"},                //Piltdown Man (6100/7100/8100)
+    {"Pip ", "Pippin... uh... yeah..."},               //Pippin
+    {"Powe", "Generic Power Mac"},                     //PowerMac?
+    {"Spar", "20th Anniversay Mac, you lucky thing."}, //Spartacus
+    {"Tanz", "Power Mac 4400"},                        //Tanzania
+    {"TNT ", "Power Mac 7xxxx/8xxx series"},           //Trinitrotoluene :-)
+    {"Zanz", "A complete engima."},                    //Zanzibar (mentioned in Sheepshaver's code, but no match to any known ROM)
+    {"????", "A clone, perhaps?"}                      //N/A (Placeholder ID)
+};
+
+
 SetPRS ppc_state;
 
 bool power_on = 1;
@@ -55,6 +82,7 @@ uint32_t ppc_next_instruction_address; //Used for branching, setting up the NIA
 
 uint32_t return_value;
 
+MemCtrlBase *mem_ctrl_instance = 0;
 
 //A pointer to a pointer, used for quick movement to one of the following
 //memory areas. These are listed right below.
@@ -90,7 +118,7 @@ bool msr_es_change; //Check Endian
 uint32_t rom_file_begin; //where to start storing ROM files in memory
 uint32_t pci_io_end;
 
-uint32_t rom_file_setsize;
+uint32_t rom_filesize;
 
 clock_t clock_test_begin; //Used to make sure the TBR does not increment so quickly.
 
@@ -397,26 +425,14 @@ int main(int argc, char **argv)
 
     rom_file_begin = 0xFFF00000; //where to start storing ROM files in memory
     pci_io_end = 0x83FFFFFF;
-    rom_file_setsize = 0x400000;
+    rom_filesize = 0x400000;
 
+    //Init virtual CPU.
     reg_init();
 
-    /**
-    uint16_t test_endianness = 0x1234;
-
-    //Test for endianess before beginning
-    uint8_t grab_result = (uint8_t) (test_endianness >> 8);
-    endian_switch endis;
-
-    //Special case for little-endian machines
-    switch(unsigned(grab_result)){
-    case 18:
-        endis = little_end;
-        break;
-    default:
-        endis = big_end;
-    }
-    **/
+    //0xFFF00100 is where the reset vector is.
+    //In other words, begin executing code here.
+    ppc_state.ppc_pc = 0xFFF00100;
 
     uint32_t opcode_entered = 0; //used for testing opcodes in playground
 
@@ -431,38 +447,25 @@ int main(int argc, char **argv)
     romFile.open("rom.bin", ios::in|ios::binary);
 
     if (romFile.fail()){
-        cerr << "rom.bin not present. Creating it right now. Please restart this program.\n";
-        std::ofstream outfile ("rom.bin", ios::binary);
+        cerr << "rom.bin not present. Please provide an appropriate ROM file"
+             << "and restart this program.\n";
 
-        outfile << "Testing!" << std::endl;
-
-        outfile.close();
-
+        romFile.close();
         return 1;
     }
 
-    //Allocate memory for ROM, RAM, and I/O.
+    //Calculate and validate ROM file size.
     romFile.seekg(0, romFile.end);
-    rom_file_setsize = romFile.tellg();
-    printf("Rom SIZE: %d \n", rom_file_setsize);
+    rom_filesize = romFile.tellg();
+    printf("Rom SIZE: %d \n", rom_filesize);
     romFile.seekg (0, romFile.beg);
 
-    /**
-    Allocate memory wisely.
+    if (rom_filesize != 0x400000){
+        cerr << "Unsupported ROM File size. Expected size is 4 megabytes.\n";
+        romFile.close();
+        return 1;
+    }
 
-    Corresponds (mostly) to the follow memory patterns seen in
-    https://www.nxp.com/docs/en/reference-manual/MPC106UM.pdf
-
-    machine_sysram_mem         -  0x00000000 to 0x7FFFFFFF
-    machine_upperiocontrol_mem -  0x80000000 to 0x807FFFFF
-    machine_iocontrolcdma_mem  -  0x80800000 to 0x80FFFFFF
-    machine_loweriocontrol_mem -  0x81000000 to 0xBF7FFFFF
-    machine_interruptack_mem   -  0xBFFFFFF0 to 0xBFFFFFFF
-    machine_iocontrolmem_mem   -  0xC0000000 to 0xFFBFFFFF
-    machine_sysrom_mem         -  0xFFC00000 to 0xFFFFFFFF
-    **/
-
-    //grab_disk_buf = (unsigned char*) calloc (32768, 1);
     machine_sysram_mem = (unsigned char*) calloc (67108864, 1);
     machine_sysconfig_mem = (unsigned char*) calloc (2048, 1);
     machine_upperiocontrol_mem = (unsigned char*) calloc (8388608, 1);
@@ -476,7 +479,7 @@ int main(int argc, char **argv)
     machine_feexxx_mem = (unsigned char*) calloc (4096, 1);
     machine_ff00xx_mem = (unsigned char*) calloc (4096, 1);
     machine_ff80xx_mem = (unsigned char*) calloc (1048576, 1);
-    machine_sysrom_mem = (unsigned char*) calloc (rom_file_setsize, 1);
+    machine_sysrom_mem = (unsigned char*) calloc (rom_filesize, 1);
 
     memset(machine_sysram_mem, 0x0, 67108864);
     memset(machine_sysconfig_mem, 0x0, 2048);
@@ -492,19 +495,10 @@ int main(int argc, char **argv)
     memset(machine_ff80xx_mem, 0x0, 1048576);
 
     grab_sysram_size = sizeof(machine_sysram_mem);
-    grab_sysrom_size = rom_file_setsize;
+    grab_sysrom_size = rom_filesize;
 
     //Sanity checks - Prevent the input files being too small or too big.
     //Also prevent the ROM area from overflow.
-    if (grab_sysrom_size < 0x100000){
-        cerr << "ROM File is too small. Must be at least 1 megabyte.\n";
-        return 1;
-    }
-    else if (grab_sysrom_size > 0x400000){
-        cerr << "ROM File is too big. Must be no more than 4 megabytes.\n";
-        return 1;
-    }
-
     if (ram_size_set < 0x800000){
         cerr << "The RAM size must be at least 8 MB to function.\n";
         return 1;
@@ -516,41 +510,11 @@ int main(int argc, char **argv)
 
     rom_file_begin = 0xFFFFFFFF - grab_sysrom_size + 1;
 
-    /**
-    Test for PowerPC Mac ROMS
-
-    Starting at 0x30D064 (0x30C064 in older ROMS), there is a boot
-    identifier string in the ROM. This helps a lot to determine which
-    setup is to by used.
-    **/
-    char * memPPCBlock = new char[5];
-
-    map<string,string> PPCMac_ROMIdentity = {              //Codename Abbreviation for...
-        {"Alch", "Performa 6400"},                         //Alchemy
-        {"Come", "PowerBook 2400"},                        //Comet
-        {"Cord", "Power Mac 5200/6200 series"},            //Cordyceps
-        {"Gaze", "Power Mac 6500"},                        //Gazelle
-        {"Goss", "Power Mac G3 Beige"},                    //Gossamer
-        {"GRX ", "PowerBook G3 Wallstreet"},               //(Unknown)
-        {"Hoop", "PowerBook 3400"},                        //Hooper
-        {"PBX ", "PowerBook Pre-G3"},                      //(Unknown)
-        {"PDM ", "Power Mac G1 or WGS"},                   //(Unknown)
-        {"Pip ", "Pippin... uh... yeah..."},               //Pippin
-        {"Powe", "Generic Power Mac"},                     //PowerMac?
-        {"Spar", "20th Anniversay Mac, you lucky thing."}, //Spartacus
-        {"Tanz", "Power Mac 4400"},                        //Tanzania
-        {"TNT ", "Power Mac 7xxxx/8xxx series"},           //Trinitrotoluene :-)
-        {"Zanz", "A complete engima."},                    //Zanzibar (mentioned in Sheepshaver's code, but no match to any known ROM)
-        {"????", "A clone, perhaps?"}                      //N/A (Placeholder ID)
-    };
-
     char configGrab = 0;
     uint32_t configInfoOffset = 0;
 
-    if (grab_sysrom_size == 0x400000){
-
     romFile.seekg (0x300082, ios::beg); //This is where the place to get the offset is
-    romFile.get(configGrab); //just one byte to determine where the identifier string is
+    romFile.get(configGrab); //just one byte to determine ConfigInfo location
     configInfoOffset = (uint32_t)(configGrab & 0xff);
 
     if (configInfoOffset == 0xC0){
@@ -558,8 +522,11 @@ int main(int argc, char **argv)
     }
 
     uint32_t configInfoAddr = 0x300000 + (configInfoOffset << 8) + 0x69; //address to check the identifier string
+    char memPPCBlock[5]; //First four chars are enough to distinguish between codenames
     romFile.seekg (configInfoAddr, ios::beg);
-    romFile.read(memPPCBlock, sizeof(uint32_t)); //Only four chars needed to distinguish between codenames
+    romFile.read(memPPCBlock, 4);
+    memPPCBlock[4] = 0;
+    uint32_t rom_id = (memPPCBlock[0] << 24) | (memPPCBlock[1] << 16) | (memPPCBlock[2] << 8) | memPPCBlock[3];
 
     std::string string_test = std::string(memPPCBlock);
 
@@ -571,58 +538,35 @@ int main(int argc, char **argv)
         if (string_test.compare(redo_me) == 0){
             cout << "The machine is identified as..." << iter->second << endl;
             romFile.seekg (0x0, ios::beg);
-
-            //This is where the first real instruction is in the ROM
-            //0xFFF00000 - 0xFFF02FFF is for the exception table,
-            //which is stored in all PPC ROMs here, btw.
-
-            //0xFFF00100 is where the reset vector is.
-            //In other words, begin executing code here.
-
-            ppc_state.ppc_pc = 0xFFF00100;//Please don't move this from here.
-                                          //A strange bug will happen where this will prevent proper branching
-            mpc106_init();
-            mac_serial_init();
-            mac_swim3_init();
-            via_cuda_init();
-            openpic_init();
             break;
         }
         else{
             iter++;
         }
     }
+
+    switch(rom_id) {
+    case 0x476F7373:
+        cout << "Initialize Gossamer hardware...";
+        mem_ctrl_instance = new MPC106();
+        if (!mem_ctrl_instance->add_rom_region(0xFFC00000, 0x400000) ||
+            !mem_ctrl_instance->add_ram_region(0x00000000, 0x800000)) {
+            cout << "failure!\n" << endl;
+            delete(mem_ctrl_instance);
+            romFile.close();
+            return 1;
+        }
+        cout << "done" << endl;
+        break;
+    default:
+        cout << "This machine not supported yet." << endl;
+        return 1;
     }
 
-    //Copy the contents of the IO data and the ROM to memory appropriate locations.
+    //Read ROM file content and transfer it to the dedicated ROM region
     romFile.read ((char *)machine_sysrom_mem,grab_sysrom_size);
-
-    /*
-    //Open the Disk File.
-    uint64_t disk_file_setsize = 0;
-    ifstream diskFile;
-
-    diskFile.open("disk.img", ios::in|ios::binary);
-
-    if (diskFile){
-        diskFile.seekg(0, romFile.end);
-        disk_file_setsize = romFile.tellg();
-        diskFile.seekg(0, romFile.beg);
-
-        if (disk_file_setsize % 32678 != 0){
-            cout << "WARNING - Disk file has improper offsets. Make sure the disk image has even 32 KB sectors." << endl;
-        }
-        else{
-            //Copy the contents of the IO data and the ROM to memory appropriate locations.
-            diskFile.read ((char *)machine_sysram_mem,(sizeof(uint8_t)*0x8000));
-            disk_inserted = 1;
-            disk_offset = 0;
-        }
-    }
-    else{
-        disk_inserted = 0;
-    }
-    */
+    mem_ctrl_instance->set_data(0xFFC00000, machine_sysrom_mem, rom_filesize);
+    romFile.close();
 
     clock_test_begin = clock();
 
@@ -641,29 +585,6 @@ int main(int argc, char **argv)
         }
         else if ((checker=="1")|(checker=="realtime")|(checker=="/realtime")|(checker=="-realtime")){
             execute_interpreter();
-                /*
-                if (disk_inserted){
-                    if (disk_word == 32768){
-                        if (disk_offset < disk_file_setsize){
-                            disk_offset += 32768;
-                            diskFile.seekg(disk_offset, romFile.beg);
-                            char *ptr = ((char*)machine_iocontrolmem_mem + (0xF3008000 % 0x4000000));
-                            diskFile.read (ptr,(sizeof(uint8_t)*0x8000));
-                            disk_word = 0;
-                        }
-                        else{
-                            disk_offset = 0;
-                            diskFile.seekg(0, romFile.beg);
-                            char *ptr = ((char*)machine_iocontrolmem_mem + (0xF3008000 % 0x4000000));
-                            diskFile.read (ptr,(sizeof(uint8_t)*0x8000));
-                            disk_word = 0;
-                        }
-                    }
-                    else{
-                        disk_word += 4;
-                    }
-                }
-                */
         }
         else if ((checker=="e")|(checker=="loadelf")|(checker=="/loadelf")|(checker=="-loadelf")){
             ifstream elfFile;
@@ -864,7 +785,7 @@ int main(int argc, char **argv)
         std::cout << "playground - Mess around with and opcodes.      " << endl;
     }
 
-    romFile.close();
+    delete(mem_ctrl_instance);
 
     //Free memory after the emulation is completed.
     free(machine_sysram_mem);
