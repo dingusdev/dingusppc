@@ -9,7 +9,7 @@
 
     Author: Max Poliakovski
 
-    Grackle IC is a combined memory and PCI controller manufactored by Motorola.
+    Grackle IC is a combined memory and PCI controller manufactured by Motorola.
     It's the central device in the Gossamer architecture.
     Manual: https://www.nxp.com/docs/en/reference-manual/MPC106UM.pdf
 
@@ -23,11 +23,14 @@
 #define MPC106_H_
 
 #include <cinttypes>
+#include <unordered_map>
 #include "memctrlbase.h"
 #include "mmiodevice.h"
+#include "pcidevice.h"
+#include "pcihost.h"
 
 
-class MPC106 : public MemCtrlBase, public MMIODevice
+class MPC106 : public MemCtrlBase, public PCIDevice, public PCIHost
 {
 public:
     using MemCtrlBase::name;
@@ -37,14 +40,23 @@ public:
     uint32_t read(uint32_t offset, int size);
     void write(uint32_t offset, uint32_t value, int size);
 
+    /* PCI host bridge API */
+    bool pci_register_device(int dev_num, PCIDevice *dev_instance);
+
 protected:
     /* PCI access */
     uint32_t pci_read(uint32_t size);
     void pci_write(uint32_t value, uint32_t size);
 
-    /* my own registers access */
-    uint32_t myself_read(int reg_num, uint32_t size);
-    void myself_write(int reg_num, uint32_t value, uint32_t size);
+    /* my own PCI configuration registers access */
+    uint32_t pci_cfg_read(uint32_t reg_offs, uint32_t size);
+    void pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size);
+
+    void set_host(PCIHost *host_instance) {}; // unimplemented for now
+
+    /* PCI host bridge API */
+    //bool pci_register_device(int dev_num, PCIDevice *dev_instance);
+    bool pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIDevice *obj);
 
 private:
     uint8_t my_pci_cfg_hdr[256] = {
@@ -54,8 +66,8 @@ private:
         0x80, 0x00, // PCI status
         0x40,       // revision ID: 4.0
         0x00,       // standard programming
-        0x00,       // subclass code
-        0x06,       // class code
+        0x00,       // subclass code: host bridge
+        0x06,       // class code: bridge device
         [0x73] = 0xCD, // default value for ODCR
         [0xA8] = 0x10, 0x00, 0x00, 0xFF, // PICR1
         [0xAC] = 0x0C, 0x06, 0x0C, 0x00, // PICR2
@@ -70,6 +82,8 @@ private:
 
     uint32_t config_addr;
     //uint32_t config_data;
+
+    std::unordered_map<int, PCIDevice*> pci_0_bus;
 };
 
 #endif
