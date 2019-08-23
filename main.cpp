@@ -26,7 +26,8 @@
 #include "devices/mpc106.h"
 #include "openpic.h"
 #include "debugger.h"
-//#include <vector>
+#include "devices/macio.h"
+#include "devices/mpc106.h"
 
 #define max_16b_int 65535
 #define max_32b_int 4294967295
@@ -83,6 +84,7 @@ uint32_t ppc_next_instruction_address; //Used for branching, setting up the NIA
 uint32_t return_value;
 
 MemCtrlBase *mem_ctrl_instance = 0;
+HeathrowIC  *heathrow = 0;
 
 //A pointer to a pointer, used for quick movement to one of the following
 //memory areas. These are listed right below.
@@ -546,17 +548,22 @@ int main(int argc, char **argv)
     }
 
     switch(rom_id) {
-    case 0x476F7373:
-        cout << "Initialize Gossamer hardware...";
-        mem_ctrl_instance = new MPC106();
-        if (!mem_ctrl_instance->add_rom_region(0xFFC00000, 0x400000) ||
-            !mem_ctrl_instance->add_ram_region(0x00000000, 0x800000)) {
-            cout << "failure!\n" << endl;
-            delete(mem_ctrl_instance);
-            romFile.close();
-            return 1;
+    case 0x476F7373: {
+            cout << "Initialize Gossamer hardware...";
+            MPC106 *mpc106 = new MPC106();
+            mem_ctrl_instance = mpc106;
+            if (!mem_ctrl_instance->add_rom_region(0xFFC00000, 0x400000) ||
+                !mem_ctrl_instance->add_ram_region(0x00000000, 0x800000)) {
+                cout << "failure!\n" << endl;
+                delete(mem_ctrl_instance);
+                romFile.close();
+                return 1;
+            }
+            heathrow = new HeathrowIC();
+            assert(heathrow != 0);
+            mpc106->pci_register_device(16, heathrow);
+            cout << "done" << endl;
         }
-        cout << "done" << endl;
         break;
     default:
         cout << "This machine not supported yet." << endl;
@@ -785,6 +792,7 @@ int main(int argc, char **argv)
         std::cout << "playground - Mess around with and opcodes.      " << endl;
     }
 
+    delete(heathrow);
     delete(mem_ctrl_instance);
 
     //Free memory after the emulation is completed.
