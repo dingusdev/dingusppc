@@ -22,7 +22,6 @@
 #include "macioserial.h"
 #include "macswim3.h"
 #include "ppcmemory.h"
-#include "viacuda.h"
 #include "devices/mpc106.h"
 #include "openpic.h"
 #include "debugger.h"

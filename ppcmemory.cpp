@@ -14,7 +14,6 @@
 #include <array>
 #include <thread>
 #include <atomic>
-#include "viacuda.h"
 #include "macioserial.h"
 #include "macswim3.h"
 #include "ppcemumain.h"

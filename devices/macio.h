@@ -35,6 +35,7 @@
 #include "memctrlbase.h"
 #include "mmiodevice.h"
 #include "pcihost.h"
+#include "viacuda.h"
 
 /**
     Heathrow ASIC emulation
@@ -65,8 +66,8 @@ class HeathrowIC : public PCIDevice
 public:
     using PCIDevice::name;
 
-    HeathrowIC() : PCIDevice("mac-io/heathrow") {};
-    ~HeathrowIC() = default;
+    HeathrowIC();
+    ~HeathrowIC();
 
     void set_host(PCIHost *host_instance) {this->host_instance = host_instance;};
 
@@ -77,6 +78,10 @@ public:
     /* MMIO device methods */
     uint32_t read(uint32_t offset, int size);
     void write(uint32_t offset, uint32_t value, int size);
+
+protected:
+    uint32_t mio_ctrl_read(uint32_t offset, int size);
+    void mio_ctrl_write(uint32_t offset, uint32_t value, int size);
 
 private:
     uint8_t pci_cfg_hdr[256] = {
@@ -92,6 +97,13 @@ private:
         0x00, 0x00, // unknown defaults
         0x00, 0x00  // unknown defaults
     };
+
+    uint32_t int_mask1;
+    uint32_t int_clear1;
+    uint32_t feat_ctrl;  // features control register
+
+    /* device cells */
+    ViaCuda *viacuda; /* VIA cell with Cuda MCU attached to it */
 };
 
 #endif /* MACIO_H */
