@@ -13,7 +13,7 @@
     It's the central device in the Gossamer architecture.
     Manual: https://www.nxp.com/docs/en/reference-manual/MPC106UM.pdf
 
-    This code emulate as much functionality as needed to run PowerMac Beige G3.
+    This code emulates as much functionality as needed to run PowerMac Beige G3.
     This implies that
     - we only support address map B
     - our virtual device reports revision 4.0 as expected by machine firmware

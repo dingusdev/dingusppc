@@ -5,7 +5,6 @@
 //if you want to distribute this.
 //(divingkatae#1017 on Discord)
 
-//Functionality for the VIA CUDA
 
 #include <iostream>
 #include <cinttypes>

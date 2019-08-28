@@ -10,7 +10,7 @@
     - Macintosh Enhanced SCSI Hardware (MESH)
 
     In the 68k Macintosh era, all this hardware was implemented using several
-    custom chips. In PCI-compatible Power Macintosh, the above devices are part
+    custom chips. In a PCI-compatible Power Macintosh, the above devices are part
     of the MIO chip itself. MIO's functional blocks implementing virtual devices
     are called "cells", i.e. "VIA cell", "SWIM cell" etc.
 
