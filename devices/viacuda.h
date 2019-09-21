@@ -20,7 +20,7 @@
     - Apple Desktop Bus (ADB) master
     - I2C bus master
     - Realtime clock (RTC)
-    - parameter RAM
+    - parameter RAM (first generation of the Power Macintosh)
     - power management
 
     MC68HC05 doesn't provide any dedicated hardware for serial communication
@@ -51,6 +51,21 @@ enum {
     VIA_ANH  = 0x0F, /* input/output register A, no handshake */
 };
 
+/** Cuda communication signals. */
+enum {
+    CUDA_TIP     = 0x20, /* transaction in progress: 0 - true, 1 - false */
+    CUDA_BYTEACK = 0x10, /* byte acknowledge: 0 - true, 1 - false */
+    CUDA_TREQ    = 0x08  /* Cuda requests transaction from host */
+};
+
+/** Cuda pseudo commands. */
+enum {
+    CUDA_READ_WRITE_I2C = 0x22, /* read/write I2C device */
+    CUDA_COMB_FMT_I2C   = 0x25, /* combined format I2C transaction */
+    CUDA_OUT_PB0        = 0x26, /* output one bit to Cuda's PB0 line */
+};
+
+
 class ViaCuda
 {
 public:
@@ -63,7 +78,25 @@ public:
 private:
     uint8_t via_regs[16]; /* VIA virtual registers */
 
+    /* Cuda state. */
+    uint8_t old_tip;
+    uint8_t old_byteack;
+    uint8_t treq;
+    uint8_t in_buf[16];
+    int32_t in_count;
+    uint8_t out_buf[16];
+    int32_t out_count;
+    int32_t out_pos;
+
     void print_enabled_ints(); /* print enabled VIA interrupts and their sources */
+
+    void cuda_init();
+    bool cuda_ready();
+    void assert_sr_int();
+    void cuda_write(uint8_t new_state);
+    void cuda_null_response(uint32_t pkt_type, uint32_t pkt_flag, uint32_t cmd);
+    void cuda_process_packet();
+    void cuda_pseudo_command(int cmd, int data_count);
 };
 
 #endif /* VIACUDA_H */
