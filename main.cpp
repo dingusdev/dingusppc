@@ -551,8 +551,7 @@ int main(int argc, char **argv)
             cout << "Initialize Gossamer hardware...";
             MPC106 *mpc106 = new MPC106();
             mem_ctrl_instance = mpc106;
-            if (!mem_ctrl_instance->add_rom_region(0xFFC00000, 0x400000) ||
-                !mem_ctrl_instance->add_ram_region(0x00000000, 0x800000)) {
+            if (!mem_ctrl_instance->add_rom_region(0xFFC00000, 0x400000)) {
                 cout << "failure!\n" << endl;
                 delete(mem_ctrl_instance);
                 romFile.close();

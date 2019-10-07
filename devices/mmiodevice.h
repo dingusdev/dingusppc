@@ -6,6 +6,7 @@
 
 #define READ_WORD_BE(addr)  ((addr)[0] << 16) | (addr)[1]
 #define READ_DWORD_BE(addr) ((addr)[0] << 24) | ((addr)[1] << 16) | ((addr)[2] << 8) | (addr)[3]
+#define READ_DWORD_LE(addr) ((addr)[3] << 24) | ((addr)[2] << 16) | ((addr)[1] << 8) | (addr)[0]
 
 /** Abstract class representing a simple, memory-mapped I/O device */
 class MMIODevice {

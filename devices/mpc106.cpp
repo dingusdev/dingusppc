@@ -160,6 +160,13 @@ void MPC106::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
         std::cout << "MPC106 read error: invalid size parameter " << size
             << std::endl;
     }
+
+    if (this->my_pci_cfg_hdr[0xF2] & 8) {
+#ifdef MPC106_DEBUG
+        std::cout << "MPC106: MCCR1[MEMGO] was set! " << std::endl;
+#endif
+        setup_ram();
+    }
 }
 
 bool MPC106::pci_register_device(int dev_num, PCIDevice *dev_instance)
@@ -178,4 +185,39 @@ bool MPC106::pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIDev
 {
     // FIXME: add sanity checks!
     return this->add_mmio_region(start_addr, size, obj);
+}
+
+void MPC106::setup_ram()
+{
+    uint32_t mem_start, mem_end, ext_mem_start, ext_mem_end, bank_start, bank_end;
+    uint32_t ram_size = 0;
+
+    uint8_t  bank_en = this->my_pci_cfg_hdr[0xA0];
+
+    for (int bank = 0; bank < 8; bank++) {
+        if (bank_en & (1 << bank)) {
+            if (bank < 4) {
+                mem_start = READ_DWORD_LE(&this->my_pci_cfg_hdr[0x80]);
+                ext_mem_start = READ_DWORD_LE(&this->my_pci_cfg_hdr[0x88]);
+                mem_end = READ_DWORD_LE(&this->my_pci_cfg_hdr[0x90]);
+                ext_mem_end = READ_DWORD_LE(&this->my_pci_cfg_hdr[0x98]);
+            } else {
+                mem_start = READ_DWORD_LE(&this->my_pci_cfg_hdr[0x84]);
+                ext_mem_start = READ_DWORD_LE(&this->my_pci_cfg_hdr[0x8C]);
+                mem_end = READ_DWORD_LE(&this->my_pci_cfg_hdr[0x94]);
+                ext_mem_end = READ_DWORD_LE(&this->my_pci_cfg_hdr[0x9C]);
+            }
+            bank_start = (((ext_mem_start >> bank * 8) & 3) << 30) |
+                (((mem_start >> bank * 8) & 0xFF) << 20);
+            bank_end = (((ext_mem_end >> bank * 8) & 3) << 30) |
+                (((mem_end >> bank * 8) & 0xFF) << 20) | 0xFFFFFUL;
+            if (bank && bank_start != ram_size)
+                std::cout << "MPC106 error: RAM not contiguous!" << std::endl;
+            ram_size += bank_end + 1;
+        }
+    }
+
+    if (!this->add_ram_region(0, ram_size)) {
+        std::cout << "MPC106 RAM allocation failed!" << std::endl;
+    }
 }

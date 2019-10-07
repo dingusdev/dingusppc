@@ -58,6 +58,8 @@ protected:
     //bool pci_register_device(int dev_num, PCIDevice *dev_instance);
     bool pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIDevice *obj);
 
+    void setup_ram(void);
+
 private:
     uint8_t my_pci_cfg_hdr[256] = {
         0x57, 0x10, // vendor ID: Motorola
