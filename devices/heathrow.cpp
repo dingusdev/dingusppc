@@ -3,6 +3,11 @@
 #include "macio.h"
 #include "viacuda.h"
 
+/** Heathrow Mac I/O device emulation.
+
+    Author: Max Poliakovski 2019
+*/
+
 using namespace std;
 
 HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow")
@@ -112,6 +117,9 @@ uint32_t HeathrowIC::mio_ctrl_read(uint32_t offset, int size)
     case 0x28:
         cout << "read from MIO:Int_Clear1 register" << endl;
         res = this->int_clear1;
+        break;
+    case 0x34: /* heathrowIDs / HEATHROW_MBCR (Linux): media bay config reg? */
+        res = 0xF0700000UL;
         break;
     case 0x38:
         cout << "read from MIO:Feat_Ctrl register" << endl;

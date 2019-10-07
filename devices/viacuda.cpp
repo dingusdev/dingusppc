@@ -5,6 +5,10 @@
 //if you want to distribute this.
 //(divingkatae#1017 on Discord)
 
+/** VIA-CUDA combo device emulation.
+
+    Author: Max Poliakovski 2019
+*/
 
 #include <iostream>
 #include <cinttypes>
@@ -187,12 +191,22 @@ void ViaCuda::cuda_write(uint8_t new_state)
     }
 }
 
-void ViaCuda::cuda_null_response(uint32_t pkt_type, uint32_t pkt_flag, uint32_t cmd)
+void ViaCuda::cuda_response_header(uint32_t pkt_type, uint32_t pkt_flag)
 {
     this->out_buf[0] = pkt_type;
     this->out_buf[1] = pkt_flag;
-    this->out_buf[2] = cmd;
+    this->out_buf[2] = this->in_buf[1]; /* copy original cmd */
     this->out_count = 3;
+    this->out_pos = 0;
+}
+
+void ViaCuda::cuda_error_response(uint32_t error)
+{
+    this->out_buf[0] = CUDA_PKT_ERROR;
+    this->out_buf[1] = error;
+    this->out_buf[2] = this->in_buf[0];
+    this->out_buf[3] = this->in_buf[1]; /* copy original cmd */
+    this->out_count = 4;
     this->out_pos = 0;
 }
 
@@ -204,10 +218,10 @@ void ViaCuda::cuda_process_packet()
     }
 
     switch(this->in_buf[0]) {
-    case 0:
+    case CUDA_PKT_ADB:
         cout << "Cuda: ADB packet received" << endl;
         break;
-    case 1:
+    case CUDA_PKT_PSEUDO:
         cout << "Cuda: pseudo command packet received" << endl;
         cout << "Command: " << hex << (uint32_t)(this->in_buf[1]) << endl;
         cout << "Data count: " << dec << this->in_count << endl;
@@ -226,21 +240,87 @@ void ViaCuda::cuda_pseudo_command(int cmd, int data_count)
 {
     switch(cmd) {
     case CUDA_READ_WRITE_I2C:
-        cuda_null_response(1, 0, cmd);
+        cuda_response_header(CUDA_PKT_PSEUDO, 0);
         /* bit 0 of the I2C address byte indicates operation kind:
            0 - write to device, 1 - read from device
            In the case of reading, Cuda will append one-byte result
            to the response packet header */
-        if (this->in_buf[2] & 1) {
-            this->out_buf[3] = 0xDD; /* send dummy byte for now */
-            this->out_count++;
+        i2c_simple_transaction(this->in_buf[2], &this->in_buf[3], this->in_count - 3);
+        break;
+    case CUDA_COMB_FMT_I2C:
+        /* HACK:
+           This command performs the so-called open-ended transaction, i.e.
+           Cuda will continue to send data as long as handshaking is completed
+           for each byte. To support that, we'd need another emulation approach.
+           Fortunately, HWInit is known to read/write max. 4 bytes at once
+           so we're going to use a prefilled buffer to make it work.
+        */
+        cuda_response_header(CUDA_PKT_PSEUDO, 0);
+        if (this->in_count >= 5) {
+            i2c_comb_transaction(this->in_buf[2], this->in_buf[3], this->in_buf[4],
+                &this->in_buf[5], this->in_count - 5);
         }
         break;
     case CUDA_OUT_PB0: /* undocumented call! */
         cout << "Cuda: send " << dec << (int)(this->in_buf[2]) << " to PB0" << endl;
-        cuda_null_response(1, 0, cmd);
+        cuda_response_header(CUDA_PKT_PSEUDO, 0);
         break;
     default:
         cout << "Cuda: unsupported pseudo command 0x" << hex << cmd << endl;
+        cuda_error_response(CUDA_ERR_BAD_CMD);
+    }
+}
+
+void ViaCuda::i2c_simple_transaction(uint8_t dev_addr, const uint8_t *in_buf,
+                                     int in_bytes)
+{
+    int tr_type = dev_addr & 1;
+
+    switch(dev_addr & 0xFE) {
+    case 0x50: /* unknown device on the Gossamer board */
+        if (tr_type) { /* read */
+            /* send dummy byte for now */
+            this->out_buf[this->out_count++] = 0xDD;
+        } else {
+            /* ignore writes */
+        }
+        break;
+    default:
+        cout << "Unsupported I2C device 0x" << hex << (int)dev_addr << endl;
+        cuda_error_response(CUDA_ERR_I2C);
+    }
+}
+
+void ViaCuda::i2c_comb_transaction(uint8_t dev_addr, uint8_t sub_addr,
+    uint8_t dev_addr1, const uint8_t *in_buf, int in_bytes)
+{
+    int tr_type = dev_addr1 & 1;
+
+    if ((dev_addr & 0xFE) != (dev_addr1 & 0xFE)) {
+        cout << "I2C combined, dev_addr mismatch!" << endl;
+        return;
+    }
+
+    switch(dev_addr1 & 0xFE) {
+    case 0xAE: /* SDRAM EEPROM, no clue which one */
+        if (tr_type) { /* read */
+            if (sub_addr != 2) {
+                cout << "Unsupported read position 0x" << hex << (int)sub_addr
+                     << " in SDRAM EEPROM 0x" << hex << (int)dev_addr1;
+                return;
+            }
+            /* FIXME: hardcoded SPD EEPROM values! This should be a proper
+               I2C device with user-configurable params */
+            this->out_buf[this->out_count++] = 0x04; /* memory type = SDRAM */
+            this->out_buf[this->out_count++] = 0x0B; /* row address bits per bank */
+            this->out_buf[this->out_count++] = 0x09; /* col address bits per bank */
+            this->out_buf[this->out_count++] = 0x02; /* num of RAM banks */
+        } else {
+            /* ignore writes */
+        }
+        break;
+    default:
+        cout << "Unsupported I2C device 0x" << hex << (int)dev_addr1 << endl;
+        cuda_error_response(CUDA_ERR_I2C);
     }
 }
