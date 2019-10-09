@@ -16,6 +16,12 @@
 //Uncomment this to have a more graceful approach to illegal opcodes
 //#define ILLEGAL_OP_SAFE 1
 
+//Uncomment this to use GCC built-in functions.
+//#define USE_GCC_BUILTINS 1
+
+//Uncomment this to use Visual Studio built-in functions.
+//#define USE_VS_BUILTINS 1
+
 enum endian_switch {big_end = 0, little_end = 1};
 
 typedef void (*PPCOpcode)(void);

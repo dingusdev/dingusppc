@@ -172,17 +172,17 @@ void ppc_changecrf0(uint32_t set_result){
     ppc_state.ppc_cr &= 0x0FFFFFFF;
 
     if (set_result == 0){
-        ppc_state.ppc_cr |= 0x20000000;
+        ppc_state.ppc_cr |= 0x20000000UL;
     }
     else if (set_result & 0x80000000){
-        ppc_state.ppc_cr |= 0x80000000;
+        ppc_state.ppc_cr |= 0x80000000UL;
     }
     else{
-        ppc_state.ppc_cr |= 0x40000000;
+        ppc_state.ppc_cr |= 0x40000000UL;
     }
 
     if (ppc_state.ppc_spr[1] & 0x80000000){
-        ppc_state.ppc_cr |= 0x10000000;
+        ppc_state.ppc_cr |= 0x10000000UL;
     }
 }
 
@@ -192,7 +192,7 @@ void ppc_carry(uint32_t a, uint32_t b){
         ppc_state.ppc_spr[1] |= 0x20000000;
     }
     else{
-        ppc_state.ppc_spr[1] &= 0xDFFFFFFF;
+        ppc_state.ppc_spr[1] &= 0xDFFFFFFFUL;
     }
 }
 
@@ -201,18 +201,18 @@ void ppc_setsoov(uint32_t a, uint32_t b){
     uint64_t a64b = (uint64_t)a;
     uint64_t b64b = (uint64_t)b;
 
-    if ((a64b + b64b) > 0xFFFFFFFF){
-        ppc_state.ppc_spr[1] |= 0x40000000;
+    if ((a64b + b64b) > 0xFFFFFFFFUL){
+        ppc_state.ppc_spr[1] |= 0x40000000UL;
     }
     else{
-        ppc_state.ppc_spr[1] &= 0xBFFFFFFF;
+        ppc_state.ppc_spr[1] &= 0xBFFFFFFFUL;
     }
 
-    if (((a64b + b64b) < 0x80000000) || (ppc_state.ppc_spr[1] & 0x40000000)){
-        ppc_state.ppc_spr[1] |= 0x80000000;
+    if (((a64b + b64b) < 0x80000000UL) || (ppc_state.ppc_spr[1] & 0x40000000UL)){
+        ppc_state.ppc_spr[1] |= 0x80000000UL;
     }
     else{
-        ppc_state.ppc_spr[1] &= 0x7FFFFFFF;
+        ppc_state.ppc_spr[1] &= 0x7FFFFFFFUL;
     }
 }
 
@@ -424,10 +424,10 @@ void ppc_adde(){
     uint32_t xer_ca = !!(ppc_state.ppc_spr[1] & 0x20000000);
     ppc_result_d = ppc_result_a + ppc_result_b + xer_ca;
     if ((ppc_result_d < ppc_result_a) || (xer_ca && (ppc_result_d == ppc_result_a))){
-        ppc_state.ppc_spr[1] |= 0x20000000;
+        ppc_state.ppc_spr[1] |= 0x20000000UL;
     }
     else{
-        ppc_state.ppc_spr[1] &= 0xDFFFFFFF;
+        ppc_state.ppc_spr[1] &= 0xDFFFFFFFUL;
     }
     ppc_store_result_regd();
 }
@@ -437,10 +437,10 @@ void ppc_addedot(){
     uint32_t xer_ca = !!(ppc_state.ppc_spr[1] & 0x20000000);
     ppc_result_d = ppc_result_a + ppc_result_b + xer_ca;
     if ((ppc_result_d < ppc_result_a) || (xer_ca && (ppc_result_d == ppc_result_a))){
-        ppc_state.ppc_spr[1] |= 0x20000000;
+        ppc_state.ppc_spr[1] |= 0x20000000UL;
     }
     else{
-        ppc_state.ppc_spr[1] &= 0xDFFFFFFF;
+        ppc_state.ppc_spr[1] &= 0xDFFFFFFFUL;
     }
     ppc_changecrf0(ppc_result_d);
     ppc_store_result_regd();
@@ -451,10 +451,10 @@ void ppc_addeo(){
     uint32_t xer_ca = !!(ppc_state.ppc_spr[1] & 0x20000000);
     ppc_result_d = ppc_result_a + ppc_result_b + xer_ca;
     if ((ppc_result_d < ppc_result_a) || (xer_ca && (ppc_result_d == ppc_result_a))){
-        ppc_state.ppc_spr[1] |= 0x20000000;
+        ppc_state.ppc_spr[1] |= 0x20000000UL;
     }
     else{
-        ppc_state.ppc_spr[1] &= 0xDFFFFFFF;
+        ppc_state.ppc_spr[1] &= 0xDFFFFFFFUL;
     }
     ppc_changecrf0(ppc_result_d);
     ppc_store_result_regd();
@@ -466,10 +466,10 @@ void ppc_addeodot(){
     ppc_setsoov(ppc_result_a, (ppc_result_b + xer_ca));
     ppc_result_d = ppc_result_a + ppc_result_b + xer_ca;
     if ((ppc_result_d < ppc_result_a) || (xer_ca && (ppc_result_d == ppc_result_a))){
-        ppc_state.ppc_spr[1] |= 0x20000000;
+        ppc_state.ppc_spr[1] |= 0x20000000UL;
     }
     else{
-        ppc_state.ppc_spr[1] &= 0xDFFFFFFF;
+        ppc_state.ppc_spr[1] &= 0xDFFFFFFFUL;
     }
     ppc_changecrf0(ppc_result_d);
     ppc_store_result_regd();
@@ -479,11 +479,11 @@ void ppc_addme(){
     ppc_grab_regsda();
     uint32_t xer_ca = !!(ppc_state.ppc_spr[1] & 0x20000000);
     ppc_result_d = ppc_result_a + xer_ca - 1;
-    if  (((xer_ca - 1) < 0xFFFFFFFF) | (ppc_result_d < ppc_result_a)){
-        ppc_state.ppc_spr[1] |= 0x20000000;
+    if  (((xer_ca - 1) < 0xFFFFFFFFUL) | (ppc_result_d < ppc_result_a)){
+        ppc_state.ppc_spr[1] |= 0x20000000UL;
     }
     else{
-        ppc_state.ppc_spr[1] &= 0xDFFFFFFF;
+        ppc_state.ppc_spr[1] &= 0xDFFFFFFFUL;
     }
     ppc_store_result_regd();
 }
@@ -492,11 +492,11 @@ void ppc_addmedot(){
     ppc_grab_regsda();
     uint32_t xer_ca = !!(ppc_state.ppc_spr[1] & 0x20000000);
     ppc_result_d = ppc_result_a + xer_ca - 1;
-    if  (((xer_ca - 1) < 0xFFFFFFFF) | (ppc_result_d < ppc_result_a)){
-        ppc_state.ppc_spr[1] |= 0x20000000;
+    if  (((xer_ca - 1) < 0xFFFFFFFFUL) | (ppc_result_d < ppc_result_a)){
+        ppc_state.ppc_spr[1] |= 0x20000000UL;
     }
     else{
-        ppc_state.ppc_spr[1] &= 0xDFFFFFFF;
+        ppc_state.ppc_spr[1] &= 0xDFFFFFFFUL;
     }
     ppc_changecrf0(ppc_result_d);
     ppc_store_result_regd();
@@ -507,11 +507,11 @@ void ppc_addmeo(){
     uint32_t xer_ca = !!(ppc_state.ppc_spr[1] & 0x20000000);
     ppc_setsoov(ppc_result_a, xer_ca);
     ppc_result_d = ppc_result_a + xer_ca - 1;
-    if  (((xer_ca - 1) < 0xFFFFFFFF) | (ppc_result_d < ppc_result_a)){
-        ppc_state.ppc_spr[1] |= 0x20000000;
+    if  (((xer_ca - 1) < 0xFFFFFFFFUL) | (ppc_result_d < ppc_result_a)){
+        ppc_state.ppc_spr[1] |= 0x20000000UL;
     }
     else{
-        ppc_state.ppc_spr[1] &= 0xDFFFFFFF;
+        ppc_state.ppc_spr[1] &= 0xDFFFFFFFUL;
     }
     ppc_store_result_regd();
 }
@@ -522,11 +522,11 @@ void ppc_addmeodot(){
     ppc_setsoov(ppc_result_a, xer_ca);
     ppc_result_d = ppc_result_a + xer_ca - 1;
     ppc_changecrf0(ppc_result_d);
-    if  (((xer_ca - 1) < 0xFFFFFFFF) | (ppc_result_d < ppc_result_a)){
-        ppc_state.ppc_spr[1] |= 0x20000000;
+    if  (((xer_ca - 1) < 0xFFFFFFFFUL) | (ppc_result_d < ppc_result_a)){
+        ppc_state.ppc_spr[1] |= 0x20000000UL;
     }
     else{
-        ppc_state.ppc_spr[1] &= 0xDFFFFFFF;
+        ppc_state.ppc_spr[1] &= 0xDFFFFFFFUL;
     }
     ppc_store_result_regd();
 }
@@ -536,10 +536,10 @@ void ppc_addze(){
     uint32_t grab_xer = (ppc_state.ppc_spr[1] & 0x20000000);
     ppc_result_d = ppc_result_a + grab_xer;
     if (ppc_result_d < ppc_result_a){
-        ppc_state.ppc_spr[1] |= 0x20000000;
+        ppc_state.ppc_spr[1] |= 0x20000000UL;
     }
     else{
-        ppc_state.ppc_spr[1] &= 0xDFFFFFFF;
+        ppc_state.ppc_spr[1] &= 0xDFFFFFFFUL;
     }
     ppc_store_result_regd();
 }
@@ -549,10 +549,10 @@ void ppc_addzedot(){
     uint32_t grab_xer = (ppc_state.ppc_spr[1] & 0x20000000);
     ppc_result_d = ppc_result_a + grab_xer;
     if (ppc_result_d < ppc_result_a){
-        ppc_state.ppc_spr[1] |= 0x20000000;
+        ppc_state.ppc_spr[1] |= 0x20000000UL;
     }
     else{
-        ppc_state.ppc_spr[1] &= 0xDFFFFFFF;
+        ppc_state.ppc_spr[1] &= 0xDFFFFFFFUL;
     }
     ppc_changecrf0(ppc_result_d);
     ppc_store_result_regd();
@@ -564,10 +564,10 @@ void ppc_addzeo(){
     ppc_setsoov(ppc_result_a, grab_xer);
     ppc_result_d = ppc_result_a + grab_xer;
     if (ppc_result_d < ppc_result_a){
-        ppc_state.ppc_spr[1] |= 0x20000000;
+        ppc_state.ppc_spr[1] |= 0x20000000UL;
     }
     else{
-        ppc_state.ppc_spr[1] &= 0xDFFFFFFF;
+        ppc_state.ppc_spr[1] &= 0xDFFFFFFFUL;
     }
     ppc_store_result_regd();
 }
@@ -578,10 +578,10 @@ void ppc_addzeodot(){
     ppc_setsoov(ppc_result_a, grab_xer);
     ppc_result_d = ppc_result_a + grab_xer;
     if (ppc_result_d < ppc_result_a){
-        ppc_state.ppc_spr[1] |= 0x20000000;
+        ppc_state.ppc_spr[1] |= 0x20000000UL;
     }
     else{
-        ppc_state.ppc_spr[1] &= 0xDFFFFFFF;
+        ppc_state.ppc_spr[1] &= 0xDFFFFFFFUL;
     }
     ppc_changecrf0(ppc_result_d);
     ppc_store_result_regd();
@@ -624,10 +624,10 @@ void ppc_subfc(){
     not_this = ~ppc_result_a;
     ppc_result_d = not_this + ppc_result_b + 1;
     if (ppc_result_d <= not_this){
-        ppc_state.ppc_spr[1] |= 0x20000000;
+        ppc_state.ppc_spr[1] |= 0x20000000UL;
     }
     else{
-        ppc_state.ppc_spr[1] &= 0xDFFFFFFF;
+        ppc_state.ppc_spr[1] &= 0xDFFFFFFFUL;
     }
     ppc_carry(ppc_result_a, ppc_result_d);
     ppc_store_result_regd();
@@ -638,10 +638,10 @@ void ppc_subfcdot(){
     not_this = ~ppc_result_a;
     ppc_result_d = not_this + ppc_result_b + 1;
     if (ppc_result_d <= not_this){
-        ppc_state.ppc_spr[1] |= 0x20000000;
+        ppc_state.ppc_spr[1] |= 0x20000000UL;
     }
     else{
-        ppc_state.ppc_spr[1] &= 0xDFFFFFFF;
+        ppc_state.ppc_spr[1] &= 0xDFFFFFFFUL;
     }
     ppc_carry(ppc_result_a, ppc_result_d);
     ppc_changecrf0(ppc_result_d);
@@ -654,10 +654,10 @@ void ppc_subfco(){
     not_this = ~ppc_result_a;
     ppc_result_d = not_this + ppc_result_b + 1;
     if (ppc_result_d <= not_this){
-        ppc_state.ppc_spr[1] |= 0x20000000;
+        ppc_state.ppc_spr[1] |= 0x20000000UL;
     }
     else{
-        ppc_state.ppc_spr[1] &= 0xDFFFFFFF;
+        ppc_state.ppc_spr[1] &= 0xDFFFFFFFUL;
     }
     ppc_carry(ppc_result_a, ppc_result_d);
     ppc_store_result_regd();
@@ -669,10 +669,10 @@ void ppc_subfcodot(){
     not_this = ~ppc_result_a;
     ppc_result_d = not_this + ppc_result_b + 1;
     if (ppc_result_d <= not_this){
-        ppc_state.ppc_spr[1] |= 0x20000000;
+        ppc_state.ppc_spr[1] |= 0x20000000UL;
     }
     else{
-        ppc_state.ppc_spr[1] &= 0xDFFFFFFF;
+        ppc_state.ppc_spr[1] &= 0xDFFFFFFFUL;
     }
     ppc_carry(ppc_result_a, ppc_result_d);
     ppc_changecrf0(ppc_result_d);
@@ -684,10 +684,10 @@ void ppc_subfic(){
     not_this = ~ppc_result_a;
     ppc_result_d = not_this + simm + 1;
     if (ppc_result_d <= not_this) {
-        ppc_state.ppc_spr[1] |= 0x20000000;
+        ppc_state.ppc_spr[1] |= 0x20000000UL;
     }
     else{
-        ppc_state.ppc_spr[1] &= 0xDFFFFFFF;
+        ppc_state.ppc_spr[1] &= 0xDFFFFFFFUL;
     }
     ppc_store_result_regd();
 }
@@ -698,10 +698,10 @@ void ppc_subfe(){
     not_this = ~ppc_result_a;
     ppc_result_d = not_this + ppc_result_b + (ppc_state.ppc_spr[1] & 0x20000000);
     if (ppc_result_d <= (not_this + grab_xer)){
-        ppc_state.ppc_spr[1] |= 0x20000000;
+        ppc_state.ppc_spr[1] |= 0x20000000UL;
     }
     else{
-        ppc_state.ppc_spr[1] &= 0xDFFFFFFF;
+        ppc_state.ppc_spr[1] &= 0xDFFFFFFFUL;
     }
     ppc_carry(ppc_result_a, ppc_result_d);
     ppc_store_result_regd();
@@ -713,13 +713,12 @@ void ppc_subfedot(){
     not_this = ~ppc_result_a;
     ppc_result_d = not_this + ppc_result_b + grab_xer;
     if (ppc_result_d <= (not_this + grab_xer)){
-        ppc_state.ppc_spr[1] |= 0x20000000;
+        ppc_state.ppc_spr[1] |= 0x20000000UL;
     }
     else{
-        ppc_state.ppc_spr[1] &= 0xDFFFFFFF;
+        ppc_state.ppc_spr[1] &= 0xDFFFFFFFUL;
     }
     ppc_carry(ppc_result_a, ppc_result_d);
-    ppc_state.ppc_spr[1] &= 0xDFFFFFFF;
     ppc_changecrf0(ppc_result_d);
     ppc_store_result_regd();
 }
@@ -730,10 +729,10 @@ void ppc_subfme(){
     uint32_t grab_xer = (ppc_state.ppc_spr[1] & 0x20000000);
     ppc_result_d = not_this + grab_xer - 1;
     if (ppc_result_a || grab_xer){
-        ppc_state.ppc_spr[1] |= 0x20000000;
+        ppc_state.ppc_spr[1] |= 0x20000000UL;
     }
     else{
-        ppc_state.ppc_spr[1] &= 0xDFFFFFFF;
+        ppc_state.ppc_spr[1] &= 0xDFFFFFFFUL;
     }
     ppc_carry(ppc_result_a, grab_xer);
     ppc_store_result_regd();
@@ -745,10 +744,10 @@ void ppc_subfmedot(){
     uint32_t grab_xer = (ppc_state.ppc_spr[1] & 0x20000000);
     ppc_result_d = not_this + grab_xer - 1;
     if (ppc_result_d <= (not_this + grab_xer)){
-        ppc_state.ppc_spr[1] |= 0x20000000;
+        ppc_state.ppc_spr[1] |= 0x20000000UL;
     }
     else{
-        ppc_state.ppc_spr[1] &= 0xDFFFFFFF;
+        ppc_state.ppc_spr[1] &= 0xDFFFFFFFUL;
     }
     ppc_carry(ppc_result_a, grab_xer);
     ppc_changecrf0(ppc_result_d);
@@ -760,10 +759,10 @@ void ppc_subfze(){
     not_this = ~ppc_result_a;
     ppc_result_d = not_this + (ppc_state.ppc_spr[1] & 0x20000000);
     if (ppc_result_d <= not_this){
-        ppc_state.ppc_spr[1] |= 0x20000000;
+        ppc_state.ppc_spr[1] |= 0x20000000UL;
     }
     else{
-        ppc_state.ppc_spr[1] &= 0xDFFFFFFF;
+        ppc_state.ppc_spr[1] &= 0xDFFFFFFFUL;
     }
     ppc_carry(ppc_result_a, (ppc_state.ppc_spr[1] & 0x20000000));
     ppc_store_result_regd();
@@ -774,10 +773,10 @@ void ppc_subfzedot(){
     not_this = ~ppc_result_a;
     ppc_result_d = not_this + (ppc_state.ppc_spr[1] & 0x20000000);
     if (ppc_result_d <= not_this){
-        ppc_state.ppc_spr[1] |= 0x20000000;
+        ppc_state.ppc_spr[1] |= 0x20000000UL;
     }
     else{
-        ppc_state.ppc_spr[1] &= 0xDFFFFFFF;
+        ppc_state.ppc_spr[1] &= 0xDFFFFFFFUL;
     }
     ppc_carry(ppc_result_a, (ppc_state.ppc_spr[1] & 0x20000000));
     ppc_changecrf0(ppc_result_d);
@@ -942,7 +941,7 @@ void ppc_negdot(){
 void ppc_nego(){
     ppc_grab_regsda();
     ppc_result_d = ~(ppc_result_a) + 1;
-    ppc_state.ppc_spr[1] |= 0x40000000;
+    ppc_state.ppc_spr[1] |= 0x40000000UL;
     ppc_setsoov(ppc_result_d, 1);
     ppc_store_result_regd();
 }
@@ -951,38 +950,49 @@ void ppc_negodot(){
     ppc_grab_regsda();
     ppc_result_d = ~(ppc_result_a) + 1;
     ppc_changecrf0(ppc_result_d);
-    ppc_state.ppc_spr[1] |= 0x40000000;
+    ppc_state.ppc_spr[1] |= 0x40000000UL;
     ppc_setsoov(ppc_result_d, 1);
     ppc_store_result_regd();
 }
 
 void ppc_cntlzw(){
     ppc_grab_regssa();
-    uint32_t trail = 0;
-    uint32_t bit_set = 0x80000000;
+
+    uint32_t lead = 0;
+    uint32_t bit_check = ppc_result_d;
+
+    #ifdef USE_GCC_BUILTINS
+    lead = __builtin_clz(bit_check);
+    #elifdef USE_VS_BUILTINS
+    lead = __lzcnt(bit_check);
+    #else
     do{
-        if ((ppc_result_d && bit_set) == 1){
-            break;
-        }
-        bit_set = bit_set >> 1;
-        trail++;
-    } while (trail < 32);
-    ppc_result_a = trail;
+        bit_check >>= 1;
+        ++lead;
+    } while (bit_check > 0);
+    #endif
+    ppc_result_a = lead;
     ppc_store_result_rega();
 }
 
 void ppc_cntlzwdot(){
     ppc_grab_regssa();
-    uint32_t trail = 0;
-    uint32_t bit_set = 0xF0000000;
+
+    uint32_t lead = 0;
+    uint32_t bit_check = ppc_result_d;
+
+    #ifdef USE_GCC_BUILTINS
+    lead = __builtin_clz(bit_check);
+    #elifdef USE_VS_BUILTINS
+    lead = __lzcnt(bit_check);
+    #else
     do{
-        if ((ppc_result_d && bit_set) == 1){
-            break;
-        }
-        bit_set = bit_set >> 1;
-        trail++;
-    } while (trail < 32);
-    ppc_result_a = trail;
+        bit_check >>= 1;
+        ++lead;
+    } while (bit_check > 0);
+    #endif
+
+    ppc_result_a = lead;
     ppc_changecrf0(ppc_result_a);
     ppc_store_result_rega();
 }
@@ -1115,7 +1125,7 @@ void ppc_divwdot(){
 
 void ppc_divwo(){
     ppc_grab_regsdab();
- 
+
     //handle division by zero cases
     switch (ppc_result_b){
     case 0:
@@ -1850,10 +1860,10 @@ void ppc_crxor(){
 //Processor MGMT Fns.
 
 void ppc_rfi(){
-    uint32_t new_srr1_val = (ppc_state.ppc_spr[27] & 0x87C0FF73);
-    uint32_t new_msr_val = (ppc_state.ppc_msr & ~(0x87C0FF73));
-    ppc_state.ppc_msr = (new_msr_val | new_srr1_val) & 0xFFFBFFFF;
-    ppc_next_instruction_address = ppc_state.ppc_spr[26] & 0xFFFFFFFC;
+    uint32_t new_srr1_val = (ppc_state.ppc_spr[27] & 0x87C0FF73UL);
+    uint32_t new_msr_val = (ppc_state.ppc_msr & ~(0x87C0FF73UL));
+    ppc_state.ppc_msr = (new_msr_val | new_srr1_val) & 0xFFFBFFFFUL;
+    ppc_next_instruction_address = ppc_state.ppc_spr[26] & 0xFFFFFFFCUL;
 
     grab_return = true;
 }
@@ -1929,17 +1939,17 @@ void ppc_dcbtst(){
 void ppc_dcbz(){
     ppc_grab_regsdab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
-    if (!(ppc_state.ppc_pc % 32) && (ppc_state.ppc_pc < 0xFFFFFFE0UL)){
+    if (!(ppc_state.ppc_pc & 32) && (ppc_state.ppc_pc < 0xFFFFFFE0UL)){
         ppc_grab_regsdab();
         ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
-        address_quickinsert_translate(0, ppc_effective_address, 4);
-        address_quickinsert_translate(0, (ppc_effective_address + 4), 4);
-        address_quickinsert_translate(0, (ppc_effective_address + 8), 4);
-        address_quickinsert_translate(0, (ppc_effective_address + 12), 4);
-        address_quickinsert_translate(0, (ppc_effective_address + 16), 4);
-        address_quickinsert_translate(0, (ppc_effective_address + 20), 4);
-        address_quickinsert_translate(0, (ppc_effective_address + 24), 4);
-        address_quickinsert_translate(0, (ppc_effective_address + 28), 4);
+        ppc_data_page_insert(0, ppc_effective_address, 4);
+        ppc_data_page_insert(0, (ppc_effective_address + 4), 4);
+        ppc_data_page_insert(0, (ppc_effective_address + 8), 4);
+        ppc_data_page_insert(0, (ppc_effective_address + 12), 4);
+        ppc_data_page_insert(0, (ppc_effective_address + 16), 4);
+        ppc_data_page_insert(0, (ppc_effective_address + 20), 4);
+        ppc_data_page_insert(0, (ppc_effective_address + 24), 4);
+        ppc_data_page_insert(0, (ppc_effective_address + 28), 4);
     }
     else{
         ppc_exception_handler(0x0600, 0x00000);
@@ -1952,13 +1962,13 @@ void ppc_stb(){
     ppc_grab_regssa();
     grab_d = (uint32_t)((int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF)));
     ppc_effective_address = (reg_a == 0)?grab_d:(ppc_result_a + grab_d);
-    address_quickinsert_translate(ppc_result_d, ppc_effective_address, 1);
+    ppc_data_page_insert(ppc_result_d, ppc_effective_address, 1);
 }
 
 void ppc_stbx(){
     ppc_grab_regssab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
-    address_quickinsert_translate(ppc_result_d, ppc_effective_address, 1);
+    ppc_data_page_insert(ppc_result_d, ppc_effective_address, 1);
 }
 
 void ppc_stbu(){
@@ -1966,7 +1976,7 @@ void ppc_stbu(){
     grab_d = (uint32_t)((int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF)));
     if (reg_a != 0){
         ppc_effective_address = (reg_a == 0)?grab_d:(ppc_result_a + grab_d);
-        address_quickinsert_translate(ppc_result_d, ppc_effective_address, 1);
+        ppc_data_page_insert(ppc_result_d, ppc_effective_address, 1);
     }
 }
 
@@ -1974,7 +1984,7 @@ void ppc_stbux(){
     ppc_grab_regssab();
     if (reg_a != 0){
         ppc_effective_address = ppc_result_a + reg_b;
-        address_quickinsert_translate(ppc_result_d, ppc_effective_address, 1);
+        ppc_data_page_insert(ppc_result_d, ppc_effective_address, 1);
     }
     else{
         ppc_exception_handler(0x07000, 0x20000);
@@ -1987,20 +1997,20 @@ void ppc_sth(){
     ppc_grab_regssa();
     grab_d = (uint32_t)((int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF)));
     ppc_effective_address = (reg_a == 0)?grab_d:(ppc_result_a + grab_d);
-    address_quickinsert_translate(ppc_result_d, ppc_effective_address, 2);
+    ppc_data_page_insert(ppc_result_d, ppc_effective_address, 2);
 }
 
 void ppc_sthu(){
     ppc_grab_regssa();
     grab_d = (uint32_t)((int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF)));
     ppc_effective_address = (reg_a == 0)?grab_d:(ppc_result_a + grab_d);
-    address_quickinsert_translate(ppc_result_d, ppc_effective_address, 2);
+    ppc_data_page_insert(ppc_result_d, ppc_effective_address, 2);
 }
 
 void ppc_sthux(){
     ppc_grab_regssab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
-    address_quickinsert_translate(ppc_result_d, ppc_effective_address, 2);
+    ppc_data_page_insert(ppc_result_d, ppc_effective_address, 2);
     ppc_result_a = ppc_effective_address;
     ppc_store_result_rega();
 }
@@ -2010,27 +2020,27 @@ void ppc_sthx(){
     if (reg_a != 0){
         ppc_effective_address = ppc_result_a + ppc_result_b;
     }
-    address_quickinsert_translate(ppc_result_d, ppc_effective_address, 2);
+    ppc_data_page_insert(ppc_result_d, ppc_effective_address, 2);
 }
 
 void ppc_sthbrx(){
     ppc_grab_regssab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
     ppc_result_d = (uint32_t)(rev_endian16((uint16_t)ppc_result_d));
-    address_quickinsert_translate(ppc_result_d, ppc_effective_address, 2);
+    ppc_data_page_insert(ppc_result_d, ppc_effective_address, 2);
 }
 
 void ppc_stw(){
     ppc_grab_regssa();
     grab_d = (uint32_t)((int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF)));
     ppc_effective_address = (reg_a == 0)?grab_d:(ppc_result_a + grab_d);
-    address_quickinsert_translate(ppc_result_d, ppc_effective_address, 4);
+    ppc_data_page_insert(ppc_result_d, ppc_effective_address, 4);
 }
 
 void ppc_stwx(){
     ppc_grab_regssab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
-    address_quickinsert_translate(ppc_result_d, ppc_effective_address, 4);
+    ppc_data_page_insert(ppc_result_d, ppc_effective_address, 4);
 }
 
 void ppc_stwcx(){
@@ -2038,7 +2048,7 @@ void ppc_stwcx(){
     ppc_grab_regssab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
     if (ppc_state.ppc_reserve){
-        address_quickinsert_translate(ppc_result_d, ppc_effective_address, 4);
+        ppc_data_page_insert(ppc_result_d, ppc_effective_address, 4);
         ppc_state.ppc_cr |= (ppc_state.ppc_spr[1] & 0x80000000) ? 0x30000000 : 0x20000000;
         ppc_state.ppc_reserve = false;
     }
@@ -2051,7 +2061,7 @@ void ppc_stwu(){
     ppc_grab_regssa();
     grab_d = (uint32_t)((int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF)));
     ppc_effective_address = (reg_a == 0)?grab_d:(ppc_result_a + grab_d);
-    address_quickinsert_translate(ppc_result_d, ppc_effective_address, 4);
+    ppc_data_page_insert(ppc_result_d, ppc_effective_address, 4);
     ppc_result_a = ppc_effective_address;
     ppc_store_result_rega();
 }
@@ -2059,7 +2069,7 @@ void ppc_stwu(){
 void ppc_stwux(){
     ppc_grab_regssab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
-    address_quickinsert_translate(ppc_result_d, ppc_effective_address, 4);
+    ppc_data_page_insert(ppc_result_d, ppc_effective_address, 4);
     ppc_result_a = ppc_effective_address;
     ppc_store_result_rega();
 }
@@ -2068,7 +2078,7 @@ void ppc_stwbrx(){
     ppc_grab_regssab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
     ppc_result_d = rev_endian32(ppc_result_d);
-    address_quickinsert_translate(ppc_result_d, ppc_effective_address, 4);
+    ppc_data_page_insert(ppc_result_d, ppc_effective_address, 4);
 }
 
 void ppc_stmw(){
@@ -2077,7 +2087,7 @@ void ppc_stmw(){
     ppc_effective_address = (reg_a == 0)?grab_d:(ppc_result_a + grab_d);
     //How many words to store in memory - using a do-while for this
     do{
-        address_quickinsert_translate(ppc_result_d, ppc_effective_address, 4);
+        ppc_data_page_insert(ppc_result_d, ppc_effective_address, 4);
         ppc_effective_address +=4;
         reg_d++;
     }while (reg_d < 32);
@@ -2087,7 +2097,7 @@ void ppc_lbz(){
     ppc_grab_regsda();
     grab_d = (uint32_t)((int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF)));
     ppc_effective_address = (reg_a == 0)?grab_d:(ppc_result_a + grab_d);
-    address_quickgrab_translate(ppc_effective_address, 1);
+    ppc_data_page_store(ppc_effective_address, 1);
     ppc_result_d = return_value;
     return_value = 0;
     ppc_store_result_regd();
@@ -2102,7 +2112,7 @@ void ppc_lbzu(){
     else{
         ppc_exception_handler(0x0700, 0x20000);
     }
-    address_quickgrab_translate(ppc_effective_address, 1);
+    ppc_data_page_store(ppc_effective_address, 1);
     ppc_result_d = return_value;
     return_value = 0;
     ppc_result_a = ppc_effective_address;
@@ -2113,7 +2123,7 @@ void ppc_lbzu(){
 void ppc_lbzx(){
     ppc_grab_regsdab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
-    address_quickgrab_translate(ppc_effective_address, 1);
+    ppc_data_page_store(ppc_effective_address, 1);
     ppc_result_d = return_value;
     return_value = 0;
     ppc_store_result_regd();
@@ -2127,7 +2137,7 @@ void ppc_lbzux(){
     else{
         ppc_exception_handler(0x0700, 0x20000);
     }
-    address_quickgrab_translate(ppc_effective_address, 1);
+    ppc_data_page_store(ppc_effective_address, 1);
     ppc_result_d = return_value;
     return_value = 0;
     ppc_result_a = ppc_effective_address;
@@ -2140,7 +2150,7 @@ void ppc_lhz(){
     ppc_grab_regsda();
     grab_d = (uint32_t)((int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF)));
     ppc_effective_address = (reg_a == 0)?grab_d:(ppc_result_a + grab_d);
-    address_quickgrab_translate(ppc_effective_address, 2);
+    ppc_data_page_store(ppc_effective_address, 2);
     ppc_result_d = return_value;
     return_value = 0;
     ppc_store_result_regd();
@@ -2150,7 +2160,7 @@ void ppc_lhzu(){
     ppc_grab_regsda();
     grab_d = (uint32_t)((int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF)));
     ppc_effective_address = ppc_result_a + grab_d;
-    address_quickgrab_translate(ppc_effective_address, 2);
+    ppc_data_page_store(ppc_effective_address, 2);
     ppc_result_d = return_value;
     return_value = 0;
     ppc_result_a = ppc_effective_address;
@@ -2161,7 +2171,7 @@ void ppc_lhzu(){
 void ppc_lhzx(){
     ppc_grab_regsdab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
-    address_quickgrab_translate(ppc_effective_address, 2);
+    ppc_data_page_store(ppc_effective_address, 2);
     ppc_result_d = return_value;
     return_value = 0;
     ppc_store_result_regd();
@@ -2170,7 +2180,7 @@ void ppc_lhzx(){
 void ppc_lhzux(){
     ppc_grab_regsdab();
     ppc_effective_address = ppc_result_a + ppc_result_b;
-    address_quickgrab_translate(ppc_effective_address, 2);
+    ppc_data_page_store(ppc_effective_address, 2);
     ppc_result_d = return_value;
     return_value = 0;
     ppc_result_a = ppc_effective_address;
@@ -2182,7 +2192,7 @@ void ppc_lha(){
     ppc_grab_regsda();
     grab_d = (uint32_t)((int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF)));
     ppc_effective_address = (reg_a == 0)?grab_d:(uint32_t)(ppc_result_a + grab_d);
-    address_quickgrab_translate(ppc_effective_address, 2);
+    ppc_data_page_store(ppc_effective_address, 2);
     uint16_t go_this = (uint16_t)return_value;
     if (go_this & 0x8000){
         ppc_result_d = 0xFFFF0000UL | (uint32_t)return_value;
@@ -2199,7 +2209,7 @@ void ppc_lhau(){
     ppc_grab_regsda();
     grab_d = (uint32_t)((int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF)));
     ppc_effective_address = (reg_a == 0)?grab_d:(uint32_t)(ppc_result_a + grab_d);
-    address_quickgrab_translate(ppc_effective_address, 2);
+    ppc_data_page_store(ppc_effective_address, 2);
     uint16_t go_this = (uint16_t)return_value;
     if (go_this & 0x8000){
         ppc_result_d = 0xFFFF0000UL | (uint32_t)return_value;
@@ -2217,7 +2227,7 @@ void ppc_lhau(){
 void ppc_lhaux(){
     ppc_grab_regsdab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
-    address_quickgrab_translate(ppc_effective_address, 2);
+    ppc_data_page_store(ppc_effective_address, 2);
     uint16_t go_this = (uint16_t)return_value;
     if (go_this & 0x8000){
         ppc_result_d = 0xFFFF0000UL | (uint32_t)return_value;
@@ -2235,7 +2245,7 @@ void ppc_lhaux(){
 void ppc_lhax(){
     ppc_grab_regsdab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
-    address_quickgrab_translate(ppc_effective_address, 2);
+    ppc_data_page_store(ppc_effective_address, 2);
     uint16_t go_this = (uint16_t)return_value;
     if (go_this & 0x8000){
         ppc_result_d = 0xFFFF0000UL | (uint32_t)return_value;
@@ -2251,7 +2261,7 @@ void ppc_lhax(){
 void ppc_lhbrx(){
     ppc_grab_regsdab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
-    address_quickgrab_translate(ppc_effective_address, 2);
+    ppc_data_page_store(ppc_effective_address, 2);
     ppc_result_d = (uint32_t)(rev_endian16((uint16_t)ppc_result_d));
     return_value = 0;
     ppc_store_result_regd();
@@ -2261,7 +2271,7 @@ void ppc_lwz(){
     ppc_grab_regsda();
     grab_d = (uint32_t)((int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF)));
     ppc_effective_address = (reg_a == 0)?grab_d:(ppc_result_a + grab_d);
-    address_quickgrab_translate(ppc_effective_address, 4);
+    ppc_data_page_store(ppc_effective_address, 4);
     ppc_result_d = return_value;
     return_value = 0;
     ppc_store_result_regd();
@@ -2270,7 +2280,7 @@ void ppc_lwz(){
 void ppc_lwbrx(){
     ppc_grab_regsdab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
-    address_quickgrab_translate(ppc_effective_address, 4);
+    ppc_data_page_store(ppc_effective_address, 4);
     ppc_result_d = rev_endian32(return_value);
     return_value = 0;
     ppc_store_result_regd();
@@ -2285,7 +2295,7 @@ void ppc_lwzu(){
     else{
         ppc_exception_handler(0x0700, 0x20000);
     }
-    address_quickgrab_translate(ppc_effective_address, 4);
+    ppc_data_page_store(ppc_effective_address, 4);
     ppc_result_d = return_value;
     return_value = 0;
     ppc_store_result_regd();
@@ -2296,7 +2306,7 @@ void ppc_lwzu(){
 void ppc_lwzx(){
     ppc_grab_regsdab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
-    address_quickgrab_translate(ppc_effective_address, 4);
+    ppc_data_page_store(ppc_effective_address, 4);
     ppc_result_d = return_value;
     return_value = 0;
     ppc_store_result_regd();
@@ -2310,7 +2320,7 @@ void ppc_lwzux(){
     else{
         ppc_exception_handler(0x0700, 0x20000);
     }
-    address_quickgrab_translate(ppc_effective_address, 4);
+    ppc_data_page_store(ppc_effective_address, 4);
     ppc_result_d = return_value;
     return_value = 0;
     ppc_result_a = ppc_effective_address;
@@ -2323,7 +2333,7 @@ void ppc_lwarx(){
     ppc_grab_regsdab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
     ppc_state.ppc_reserve = true;
-    address_quickgrab_translate(ppc_effective_address, 4);
+    ppc_data_page_store(ppc_effective_address, 4);
     ppc_result_d = return_value;
     return_value = 0;
     ppc_store_result_regd();
@@ -2335,7 +2345,7 @@ void ppc_lmw(){
     ppc_effective_address = (reg_a == 0)?grab_d:(ppc_result_a + grab_d);
     //How many words to load in memory - using a do-while for this
     do{
-        address_quickgrab_translate(ppc_effective_address, 4);
+        ppc_data_page_store(ppc_effective_address, 4);
         ppc_state.ppc_gpr[reg_d] = return_value;
         return_value = 0;
         ppc_effective_address +=4;
@@ -2347,32 +2357,32 @@ void ppc_lswi(){
     ppc_grab_regsda();
     ppc_effective_address = ppc_result_a;
     grab_inb = (ppc_cur_instruction >> 11) & 31;
-    grab_inb = grab_inb % 32 == 0 ? 32 : grab_inb;
+    grab_inb = (grab_inb & 32) == 0 ? 32 : grab_inb;
 
     uint32_t shift_times = 0;
 
     while (grab_inb > 0){
         switch(shift_times){
         case 0:
-            address_quickgrab_translate(ppc_effective_address, 1);
+            ppc_data_page_store(ppc_effective_address, 1);
             ppc_state.ppc_gpr[reg_d] = (ppc_result_d & 0x00FFFFFFUL) | (return_value << 24);
             ppc_store_result_regd();
             return_value = 0;
             break;
         case 1:
-            address_quickgrab_translate(ppc_effective_address, 1);
+            ppc_data_page_store(ppc_effective_address, 1);
             ppc_result_d = (ppc_result_d & 0xFF00FFFFUL) | (return_value << 16);
             ppc_store_result_regd();
             return_value = 0;
             break;
         case 2:
-            address_quickgrab_translate(ppc_effective_address, 1);
+            ppc_data_page_store(ppc_effective_address, 1);
             ppc_result_d = (ppc_result_d & 0xFFFF00FFUL) | (return_value << 8);
             ppc_store_result_regd();
             return_value = 0;
             break;
         case 3:
-            address_quickgrab_translate(ppc_effective_address, 1);
+            ppc_data_page_store(ppc_effective_address, 1);
             ppc_result_d = (ppc_result_d & 0xFFFFFF00UL) | return_value;
             ppc_store_result_regd();
             return_value = 0;
@@ -2408,25 +2418,25 @@ void ppc_lswx(){
     while (grab_inb > 0){
         switch(shift_times){
         case 0:
-            address_quickgrab_translate(ppc_effective_address, 1);
+            ppc_data_page_store(ppc_effective_address, 1);
             ppc_result_d = (ppc_result_d & 0x00FFFFFFUL) | (return_value << 24);
             ppc_store_result_regd();
             return_value = 0;
             break;
         case 1:
-            address_quickgrab_translate(ppc_effective_address, 1);
+            ppc_data_page_store(ppc_effective_address, 1);
             ppc_result_d = (ppc_result_d & 0xFF00FFFFUL) | (return_value << 16);
             ppc_store_result_regd();
             return_value = 0;
             break;
         case 2:
-            address_quickgrab_translate(ppc_effective_address, 1);
+            ppc_data_page_store(ppc_effective_address, 1);
             ppc_result_d = (ppc_result_d & 0xFFFF00FFUL) | (return_value << 8);
             ppc_store_result_regd();
             return_value = 0;
             break;
         case 3:
-            address_quickgrab_translate(ppc_effective_address, 1);
+            ppc_data_page_store(ppc_effective_address, 1);
             ppc_result_d = (ppc_result_d & 0xFFFFFF00UL) | return_value;
             ppc_store_result_regd();
             return_value = 0;
@@ -2452,25 +2462,25 @@ void ppc_stswi(){
     ppc_grab_regssa();
     ppc_effective_address = (reg_a == 0)?0:ppc_result_a;
     grab_inb = (ppc_cur_instruction >> 11) & 31;
-    grab_inb = grab_inb % 32 == 0 ? 32 : grab_inb;
+    grab_inb = (grab_inb & 32) == 0 ? 32 : grab_inb;
     uint32_t shift_times = 0;
     while (grab_inb > 0){
         switch(shift_times){
         case 0:
             strwrd_replace_value = (ppc_result_d >> 24);
-            address_quickinsert_translate(strwrd_replace_value, ppc_effective_address, 1);
+            ppc_data_page_insert(strwrd_replace_value, ppc_effective_address, 1);
             break;
         case 1:
             strwrd_replace_value = (ppc_result_d >> 16);
-            address_quickinsert_translate(strwrd_replace_value, ppc_effective_address, 1);
+            ppc_data_page_insert(strwrd_replace_value, ppc_effective_address, 1);
             break;
         case 2:
             strwrd_replace_value = (ppc_result_d >> 8);
-            address_quickinsert_translate(strwrd_replace_value, ppc_effective_address, 1);
+            ppc_data_page_insert(strwrd_replace_value, ppc_effective_address, 1);
             break;
         case 3:
             strwrd_replace_value = (ppc_result_d);
-            address_quickinsert_translate(strwrd_replace_value, ppc_effective_address, 1);
+            ppc_data_page_insert(strwrd_replace_value, ppc_effective_address, 1);
             break;
         default:
             printf("Something really horrible happened with stswi.");
@@ -2497,19 +2507,19 @@ void ppc_stswx(){
         switch(shift_times){
         case 0:
             strwrd_replace_value = (ppc_result_d >> 24);
-            address_quickinsert_translate(strwrd_replace_value, ppc_effective_address, 1);
+            ppc_data_page_insert(strwrd_replace_value, ppc_effective_address, 1);
             break;
         case 1:
             strwrd_replace_value = (ppc_result_d >> 16);
-            address_quickinsert_translate(strwrd_replace_value, ppc_effective_address, 1);
+            ppc_data_page_insert(strwrd_replace_value, ppc_effective_address, 1);
             break;
         case 2:
             strwrd_replace_value = (ppc_result_d >> 8);
-            address_quickinsert_translate(strwrd_replace_value, ppc_effective_address, 1);
+            ppc_data_page_insert(strwrd_replace_value, ppc_effective_address, 1);
             break;
         case 3:
             strwrd_replace_value = (ppc_result_d);
-            address_quickinsert_translate(strwrd_replace_value, ppc_effective_address, 1);
+            ppc_data_page_insert(strwrd_replace_value, ppc_effective_address, 1);
             break;
         default:
             printf("Something really horrible happened with stswx.");

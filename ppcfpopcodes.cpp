@@ -219,7 +219,8 @@ void ppc_fadd(){
 
     double testd3 = testd1 + testd2;
 
-    ppc_result64_d = (uint64_t)testd3;
+    uint64_t *pre_final = (uint64_t *)&testd3;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
 }
 
@@ -242,7 +243,8 @@ void ppc_fsub(){
 
     double testd3 = testd1 - testd2;
 
-    ppc_result64_d = (uint64_t)testd3;
+    uint64_t *pre_final = (uint64_t *)&testd3;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
 }
 
@@ -253,7 +255,8 @@ void ppc_fsubdot(){
 
     double testd3 = testd1 - testd2;
 
-    ppc_result64_d = (uint64_t)testd3;
+    uint64_t *pre_final = (uint64_t *)&testd3;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
     ppc_changecrf1();
 }
@@ -265,7 +268,8 @@ void ppc_fdiv(){
 
     double testd3 = testd1 / testd2;
 
-    ppc_result64_d = (uint64_t)testd3;
+    uint64_t *pre_final = (uint64_t *)&testd3;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
 }
 
@@ -276,7 +280,8 @@ void ppc_fdivdot(){
 
     double testd3 = testd1 / testd2;
 
-    ppc_result64_d = (uint64_t)testd3;
+    uint64_t *pre_final = (uint64_t *)&testd3;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
     ppc_changecrf1();
 }
@@ -288,7 +293,8 @@ void ppc_fmult(){
 
     double testd3 = testd1 * testd2;
 
-    ppc_result64_d = (uint64_t)testd3;
+    uint64_t *pre_final = (uint64_t *)&testd3;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
 }
 
@@ -299,7 +305,8 @@ void ppc_fmultdot(){
 
     double testd3 = testd1 * testd2;
 
-    ppc_result64_d = (uint64_t)testd3;
+    uint64_t *pre_final = (uint64_t *)&testd3;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
     ppc_changecrf1();
 }
@@ -313,7 +320,8 @@ void ppc_fmadd(){
     double testd4 = (testd1 * testd3);
     testd4 += testd2;
 
-    ppc_result64_d = (uint64_t)testd4;
+    uint64_t *pre_final = (uint64_t *)&testd4;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
 }
 
@@ -326,7 +334,8 @@ void ppc_fmadddot(){
     double testd4 = (testd1 * testd3);
     testd4 += testd2;
 
-    ppc_result64_d = (uint64_t)testd4;
+    uint64_t *pre_final = (uint64_t *)&testd4;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
     ppc_changecrf1();
 }
@@ -340,7 +349,8 @@ void ppc_fmsub(){
     double testd4 = (testd1 * testd3);
     testd4 -= testd2;
 
-    ppc_result64_d = (uint64_t)testd4;
+    uint64_t *pre_final = (uint64_t *)&testd4;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
 }
 
@@ -353,7 +363,8 @@ void ppc_fmsubdot(){
     double testd4 = (testd1 * testd3);
     testd4 -= testd2;
 
-    ppc_result64_d = (uint64_t)testd4;
+    uint64_t *pre_final = (uint64_t *)&testd4;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
     ppc_changecrf1();
 }
@@ -368,7 +379,8 @@ void ppc_fnmadd(){
     testd4 += testd2;
     testd4 = -testd4;
 
-    ppc_result64_d = (uint64_t)testd4;
+    uint64_t *pre_final = (uint64_t *)&testd4;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
 }
 
@@ -382,7 +394,8 @@ void ppc_fnmadddot(){
     testd4 += testd2;
     testd4 = -testd4;
 
-    ppc_result64_d = (uint64_t)testd4;
+    uint64_t *pre_final = (uint64_t *)&testd4;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
     ppc_changecrf1();
 }
@@ -397,7 +410,8 @@ void ppc_fnmsub(){
     testd4 -= testd2;
     testd4 = -testd4;
 
-    ppc_result64_d = (uint64_t)testd4;
+    uint64_t *pre_final = (uint64_t *)&testd4;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
 }
 
@@ -411,53 +425,58 @@ void ppc_fnmsubdot(){
     testd4 -= testd2;
     testd4 = -testd4;
 
-    ppc_result64_d = (uint64_t)testd4;
+    uint64_t *pre_final = (uint64_t *)&testd4;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
     ppc_changecrf1();
 }
 
 void ppc_fadds(){
     ppc_grab_regsfpdab();
-    float testd1 = (float)ppc_result64_a;
-    float testd2 = (float)ppc_result64_b;
+    float testf1 = (float)ppc_result64_a;
+    float testf2 = (float)ppc_result64_b;
 
-    float testd3 = testd1 + testd2;
+    float testf3 = testf1 + testf2;
 
-    ppc_result64_d = (uint64_t)testd3;
+    uint64_t *pre_final = (uint64_t *)&testf3;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
 }
 
 void ppc_faddsdot(){
     ppc_grab_regsfpdab();
-    float testd1 = (float)ppc_result64_a;
-    float testd2 = (float)ppc_result64_b;
+    float testf1 = (float)ppc_result64_a;
+    float testf2 = (float)ppc_result64_b;
 
-    float testd3 = testd1 + testd2;
+    float testf3 = testf1 + testf2;
 
-    ppc_result64_d = (uint64_t)testd3;
+    uint64_t *pre_final = (uint64_t *)&testf3;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
     ppc_changecrf1();
 }
 
 void ppc_fsubs(){
     ppc_grab_regsfpdab();
-    float testd1 = (float)ppc_result64_a;
-    float testd2 = (float)ppc_result64_b;
+    float testf1 = (float)ppc_result64_a;
+    float testf2 = (float)ppc_result64_b;
 
-    float testd3 = testd1 - testd2;
+    float testf3 = testf1 - testf2;
 
-    ppc_result64_d = (uint64_t)testd3;
+    uint64_t *pre_final = (uint64_t *)&testf3;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
 }
 
 void ppc_fsubsdot(){
     ppc_grab_regsfpdab();
-    float testd1 = (float)ppc_result64_a;
-    float testd2 = (float)ppc_result64_b;
+    float testf1 = (float)ppc_result64_a;
+    float testf2 = (float)ppc_result64_b;
 
-    float testd3 = testd1 - testd2;
+    float testf3 = testf1 - testf2;
 
-    ppc_result64_d = (uint64_t)testd3;
+    uint64_t *pre_final = (uint64_t *)&testf3;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
     ppc_changecrf1();
 }
@@ -480,7 +499,8 @@ void ppc_fmultsdot(){
 
     float testf3 = testf1 * testf2;
 
-    ppc_result64_d = (uint64_t)testf3;
+    uint64_t *pre_final = (uint64_t *)&testf3;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
     ppc_changecrf1();
 }
@@ -492,7 +512,8 @@ void ppc_fdivs(){
 
     float testf3 = testf1 / testf2;
 
-    ppc_result64_d = (uint64_t)testf3;
+    uint64_t *pre_final = (uint64_t *)&testf3;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
 }
 
@@ -503,7 +524,8 @@ void ppc_fdivsdot(){
 
     float testf3 = testf1 / testf2;
 
-    ppc_result64_d = (uint64_t)testf3;
+    uint64_t *pre_final = (uint64_t *)&testf3;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
     ppc_changecrf1();
 }
@@ -517,7 +539,8 @@ void ppc_fmadds(){
     float testf4 = (testf1 * testf3);
     testf4 += testf2;
 
-    ppc_result64_d = (uint64_t)testf4;
+    uint64_t *pre_final = (uint64_t *)&testf4;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
 }
 
@@ -530,7 +553,8 @@ void ppc_fmaddsdot(){
     float testf4 = (testf1 * testf3);
     testf4 += testf2;
 
-    ppc_result64_d = (uint64_t)testf4;
+    uint64_t *pre_final = (uint64_t *)&testf4;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
     ppc_changecrf1();
 }
@@ -544,7 +568,8 @@ void ppc_fmsubs(){
     float testf4 = (testf1 * testf3);
     testf4 -= testf2;
 
-    ppc_result64_d = (uint64_t)testf4;
+    uint64_t *pre_final = (uint64_t *)&testf4;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
 }
 
@@ -557,7 +582,8 @@ void ppc_fmsubsdot(){
     float testf4 = (testf1 * testf3);
     testf4 -= testf2;
 
-    ppc_result64_d = (uint64_t)testf4;
+    uint64_t *pre_final = (uint64_t *)&testf4;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
     ppc_changecrf1();
 }
@@ -572,7 +598,8 @@ void ppc_fnmadds(){
     testf4 += testf2;
     testf4 = -testf4;
 
-    ppc_result64_d = (uint64_t)testf4;
+    uint64_t *pre_final = (uint64_t *)&testf4;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
 }
 
@@ -586,7 +613,8 @@ void ppc_fnmaddsdot(){
     testf4 += testf2;
     testf4 = -testf4;
 
-    ppc_result64_d = (uint64_t)testf4;
+    uint64_t *pre_final = (uint64_t *)&testf4;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
     ppc_changecrf1();
 }
@@ -601,7 +629,8 @@ void ppc_fnmsubs(){
     testf4 -= testf2;
     testf4 = -testf4;
 
-    ppc_result64_d = (uint64_t)testf4;
+    uint64_t *pre_final = (uint64_t *)&testf4;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
 }
 
@@ -615,7 +644,8 @@ void ppc_fnmsubsdot(){
     testf4 -= testf2;
     testf4 = -testf4;
 
-    ppc_result64_d = (uint64_t)testf4;
+    uint64_t *pre_final = (uint64_t *)&testf4;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
     ppc_changecrf1();
 }
@@ -714,7 +744,8 @@ void ppc_fsqrt(){
     ppc_grab_regsfpdb();
     double test = (double)ppc_result64_b;
     std::sqrt(test);
-    ppc_result64_d = (uint64_t)test;
+    uint64_t *pre_final = (uint64_t *)&test;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
 }
 
@@ -722,7 +753,8 @@ void ppc_fsqrtdot(){
     ppc_grab_regsfpdb();
     double test = (double)ppc_result64_b;
     std::sqrt(test);
-    ppc_result64_d = (uint64_t)test;
+    uint64_t *pre_final = (uint64_t *)&test;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
     ppc_changecrf1();
 }
@@ -732,7 +764,8 @@ void ppc_fsqrts(){
     uint32_t test = (uint32_t)ppc_result64_b;
     test += 127 << 23;
     test >>= 1;
-    ppc_result64_d = (uint64_t)test;
+    uint64_t *pre_final = (uint64_t *)&test;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
 }
 
@@ -741,7 +774,8 @@ void ppc_fsqrtsdot(){
     uint32_t test = (uint32_t)ppc_result64_b;
     test += 127 << 23;
     test >>= 1;
-    ppc_result64_d = (uint64_t)test;
+    uint64_t *pre_final = (uint64_t *)&test;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
     ppc_changecrf1();
 }
@@ -752,7 +786,8 @@ void ppc_frsqrte(){
     for (int i = 0; i < 10; i++){
         testd2 = testd2 * (1.5 - (testd2 * .5) * testd2 * testd2);
     }
-    ppc_result64_d = (uint64_t) testd2;
+    uint64_t *pre_final = (uint64_t *)&testd2;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
 }
 
@@ -762,7 +797,8 @@ void ppc_frsqrtedot(){
     for (int i = 0; i < 10; i++){
         testd2 = testd2 * (1.5 - (testd2 * .5) * testd2 * testd2);
     }
-    ppc_result64_d = (uint64_t) testd2;
+    uint64_t *pre_final = (uint64_t *)&testd2;
+    ppc_result64_d = *pre_final;
     ppc_store_dfpresult();
     ppc_changecrf1();
 }
