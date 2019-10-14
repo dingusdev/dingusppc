@@ -21,7 +21,6 @@
 #include "ppcemumain.h"
 #include "ppcmemory.h"
 #include "devices/mpc106.h"
-#include "openpic.h"
 #include "debugger.h"
 #include "devices/machineid.h"
 #include "devices/macio.h"
