@@ -19,8 +19,6 @@
 #include <ctime>
 #include <stdexcept>
 #include "ppcemumain.h"
-#include "macioserial.h"
-#include "macswim3.h"
 #include "ppcmemory.h"
 #include "devices/mpc106.h"
 #include "openpic.h"
