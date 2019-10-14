@@ -25,6 +25,7 @@
 #include "devices/mpc106.h"
 #include "openpic.h"
 #include "debugger.h"
+#include "devices/machineid.h"
 #include "devices/macio.h"
 #include "devices/mpc106.h"
 
@@ -84,6 +85,7 @@ uint32_t return_value;
 
 MemCtrlBase *mem_ctrl_instance = 0;
 HeathrowIC  *heathrow = 0;
+GossamerID  *machine_id;
 
 //A pointer to a pointer, used for quick movement to one of the following
 //memory areas. These are listed right below.
@@ -557,6 +559,10 @@ int main(int argc, char **argv)
                 romFile.close();
                 return 1;
             }
+            machine_id = new GossamerID(0x3d8c);
+            assert(machine_id != 0);
+            mpc106->add_mmio_region(0xFF000004, 4096, machine_id);
+
             heathrow = new HeathrowIC();
             assert(heathrow != 0);
             mpc106->pci_register_device(16, heathrow);
@@ -791,6 +797,7 @@ int main(int argc, char **argv)
     }
 
     delete(heathrow);
+    delete(machine_id);
     delete(mem_ctrl_instance);
 
     //Free memory after the emulation is completed.
