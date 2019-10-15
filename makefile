@@ -1,17 +1,26 @@
-OBJS	 = main.o macioserial.o macscsi.o macswim3.o mpc106.o openpic.o poweropcodes.o  \
-           ppcfpopcodes.o ppcgekkoopcodes.o ppcmemory.o ppcopcodes.o viacuda.o davbus.o \
-           debugger.o
+EXE	 := dingusppc
+MODULES := . devices
+SRCS := $(foreach sdir,$(MODULES),$(wildcard $(sdir)/*.cpp))
+#SRCS = $(wildcard *.cpp)
+OBJS := $(patsubst %.cpp, %.o, $(SRCS))
 
-OUT	     = dingusppc
 CXX	     = g++
 CXXFLAGS = -g -c -Wall -std=c++11
 LFLAGS	 =
 
-all: $(OBJS)
-	$(CXX) -g $(OBJS) -o $(OUT) $(LFLAGS)
+VPATH := devices
 
-*.o : *.cpp
-	$(CXX) $(CXXFLAGS) -c $(input) -o $(output)
+DEPS = $(OBJS:.o=.d)
+
+all: $(EXE)
+
+$(EXE) : $(OBJS)
+	$(CXX) -o $@ $^
+
+%.o : %.cpp
+	$(CXX) $(CXXFLAGS) -MMD -o $@ $<
 
 clean:
-	rm -f *.o $(OUT)
+	rm -rf *.o *.d devices/*.o devices/*.d $(EXE)
+
+-include $(DEPS)

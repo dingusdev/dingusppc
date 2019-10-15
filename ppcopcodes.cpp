@@ -1899,15 +1899,15 @@ void ppc_twi(){
 }
 
 void ppc_eieio(){
-    std::cout << "Oops. Placeholder for eieio." << std::endl;
+    //std::cout << "Oops. Placeholder for eieio." << std::endl;
 }
 
 void ppc_isync(){
-    std::cout << "Oops. Placeholder for isync." << std::endl;
+    //std::cout << "Oops. Placeholder for isync." << std::endl;
 }
 
 void ppc_sync(){
-    std::cout << "Oops. Placeholder for sync." << std::endl;
+    //std::cout << "Oops. Placeholder for sync." << std::endl;
 }
 
 void ppc_icbi(){

@@ -14,14 +14,11 @@
 #include <array>
 #include <thread>
 #include <atomic>
-#include "viacuda.h"
-#include "macioserial.h"
-#include "macswim3.h"
 #include "ppcemumain.h"
 #include "ppcmemory.h"
-#include "openpic.h"
-#include "mpc106.h"
-#include "davbus.h"
+#include "devices/memctrlbase.h"
+#include "devices/mmiodevice.h"
+#include "devices/mpc106.h"
 
 std::vector<uint32_t> pte_storage;
 
@@ -94,76 +91,70 @@ void msr_status_update(){
     msr_dr_test = (ppc_state.ppc_msr >> 4) & 1;
 }
 
-inline void ppc_set_cur_instruction(uint32_t mem_index)
+static inline void ppc_set_cur_instruction(unsigned char *ptr, uint32_t offset)
 {
-    ppc_cur_instruction  = (grab_macmem_ptr[mem_index]   << 24) |
-                           (grab_macmem_ptr[mem_index+1] << 16) |
-                           (grab_macmem_ptr[mem_index+2] << 8)  |
-                            grab_macmem_ptr[mem_index+3];
+    ppc_cur_instruction  = (ptr[offset]  << 24) | (ptr[offset+1] << 16) |
+                           (ptr[offset+2] << 8) |  ptr[offset+3];
 }
 
-void ppc_set_return_val(uint32_t mem_index, int num_size)
+static inline void ppc_set_return_val(unsigned char *ptr, uint32_t offset,
+                                      int num_size)
 {
     //Put the final result in return_value here
     //This is what gets put back into the register
 
     if (ppc_state.ppc_msr & 1) { /* little-endian byte ordering */
         if (num_size == 1) { // BYTE
-            return_value = grab_macmem_ptr[mem_index];
+            return_value = ptr[offset];
         }
         else if (num_size == 2) { // WORD
-            return_value = grab_macmem_ptr[mem_index] |
-                          (grab_macmem_ptr[mem_index+1] << 8);
+            return_value = ptr[offset] | (ptr[offset+1] << 8);
         }
         else if (num_size == 4) { // DWORD
-            return_value = grab_macmem_ptr[mem_index]          |
-                          (grab_macmem_ptr[mem_index+1] << 8)  |
-                          (grab_macmem_ptr[mem_index+2] << 16) |
-                          (grab_macmem_ptr[mem_index+3] << 24);
+            return_value = ptr[offset] | (ptr[offset+1] << 8) |
+                          (ptr[offset+2] << 16) | (ptr[offset+3] << 24);
         }
     } else { /* big-endian byte ordering */
         if (num_size == 1) { // BYTE
-            return_value = grab_macmem_ptr[mem_index];
+            return_value = ptr[offset];
         }
         else if (num_size == 2) { // WORD
-            return_value = (grab_macmem_ptr[mem_index] << 8) |
-                            grab_macmem_ptr[mem_index+1];
+            return_value = (ptr[offset] << 8) | ptr[offset+1];
         }
         else if (num_size == 4) { // DWORD
-            return_value = (grab_macmem_ptr[mem_index]   << 24) |
-                           (grab_macmem_ptr[mem_index+1] << 16) |
-                           (grab_macmem_ptr[mem_index+2] << 8)  |
-                            grab_macmem_ptr[mem_index+3];
+            return_value = (ptr[offset]  << 24) | (ptr[offset+1] << 16) |
+                           (ptr[offset+2] << 8) | ptr[offset+3];
         }
     }
 }
 
-void ppc_memstore_value(uint32_t value_insert, uint32_t mem_index, int num_size)
+static inline void ppc_memstore_value(unsigned char *ptr, uint32_t value,
+                                      uint32_t offset, int num_size)
 {
     if (ppc_state.ppc_msr & 1) { /* little-endian byte ordering */
         if (num_size >= 1) { // BYTE
-            grab_macmem_ptr[mem_index] = value_insert & 0xFF;
+            ptr[offset] = value & 0xFF;
         }
         if (num_size >= 2) { // WORD
-            grab_macmem_ptr[mem_index+1] = (value_insert >> 8) & 0xFF;
+            ptr[offset+1] = (value >> 8) & 0xFF;
         }
         if (num_size == 4) { // DWORD
-            grab_macmem_ptr[mem_index+2] = (value_insert >> 16) & 0xFF;
-            grab_macmem_ptr[mem_index+3] = (value_insert >> 24) & 0xFF;
+            ptr[offset+2] = (value >> 16) & 0xFF;
+            ptr[offset+3] = (value >> 24) & 0xFF;
         }
     } else { /* big-endian byte ordering */
         if (num_size == 1) { // BYTE
-            grab_macmem_ptr[mem_index] = value_insert & 0xFF;
+            ptr[offset] = value & 0xFF;
         }
         else if (num_size == 2) { // WORD
-            grab_macmem_ptr[mem_index]   = (value_insert >> 8) & 0xFF;
-            grab_macmem_ptr[mem_index+1] = value_insert & 0xFF;
+            ptr[offset]   = (value >> 8) & 0xFF;
+            ptr[offset+1] = value & 0xFF;
         }
         else if (num_size == 4) { // DWORD
-            grab_macmem_ptr[mem_index]   = (value_insert >> 24) & 0xFF;
-            grab_macmem_ptr[mem_index+1] = (value_insert >> 16) & 0xFF;
-            grab_macmem_ptr[mem_index+2] = (value_insert >> 8)  & 0xFF;
-            grab_macmem_ptr[mem_index+3] = value_insert & 0xFF;
+            ptr[offset]   = (value >> 24) & 0xFF;
+            ptr[offset+1] = (value >> 16) & 0xFF;
+            ptr[offset+2] = (value >> 8)  & 0xFF;
+            ptr[offset+3] = value & 0xFF;
         }
     }
 }
@@ -282,7 +273,7 @@ void get_pointer_pteg1(uint32_t address_grab){
         }
     }
     else{
-        pte_word1 = address_grab % rom_file_setsize;
+        pte_word1 = address_grab % rom_filesize;
         grab_pteg1_ptr = machine_sysrom_mem;
     }
 }
@@ -359,7 +350,7 @@ void get_pointer_pteg2(uint32_t address_grab){
         }
     }
     else{
-        pte_word2 = address_grab % rom_file_setsize;
+        pte_word2 = address_grab % rom_filesize;
         grab_pteg2_ptr = machine_sysrom_mem;
     }
 }
@@ -561,465 +552,101 @@ uint32_t ppc_mmu_addr_translate(uint32_t la, uint32_t access_type)
 }
 
 
-/** Insert a value into memory from a register. */
-void address_quickinsert_translate(uint32_t value_insert, uint32_t address_grab,
-            uint8_t num_bytes)
+uint32_t write_last_pa_start  = 0;
+uint32_t write_last_pa_end    = 0;
+unsigned char *write_last_ptr = 0;
+
+void address_quickinsert_translate(uint32_t value, uint32_t addr, uint8_t num_bytes)
 {
-    uint32_t storage_area = 0;
-
-    printf("Inserting into address %x with %x \n", address_grab, value_insert);
-
-    // data address translation if enabled
-    if (ppc_state.ppc_msr & 0x10) {
-        printf("DATA RELOCATION GO! - INSERTING \n");
-
-        address_grab = ppc_mmu_addr_translate(address_grab, 0);
-    }
-
-    //regular grabbing
-    if (address_grab < 0x80000000){
-        if (mpc106_check_membound(address_grab)){
-            if (address_grab > 0x03ffffff){ //for debug purposes
-                storage_area = address_grab;
-                grab_macmem_ptr = machine_sysram_mem;
-            }
-            else if ((address_grab >= 0x40000000) && (address_grab < 0x40400000)){
-                if (is_nubus){
-                    storage_area = address_grab % rom_file_setsize;
-                    grab_macmem_ptr = machine_sysrom_mem;
-                    ppc_memstore_value(value_insert, storage_area, num_bytes);
-                    return;
-                }
-                else{
-                    return;
-                }
-            }
-            else if ((address_grab >= 0x5fffe000) && (address_grab <= 0x5fffffff)){
-                storage_area = address_grab % 0x2000;
-                grab_macmem_ptr = machine_sysconfig_mem;
-            }
-            else{
-                storage_area = address_grab % 0x04000000;
-                grab_macmem_ptr = machine_sysram_mem;
-                printf("Uncharted territory: %x \n", address_grab);
-            }
-        }
-        else{
-            return;
-        }
-    }
-    else if (address_grab < 0x80800000){
-        storage_area = address_grab % 0x800000;
-        if (address_grab == 0x80000CF8){
-            storage_area = 0x0CF8;  //CONFIG_ADDR
-            value_insert = rev_endian32(value_insert);
-            grab_macmem_ptr = machine_fecxxx_mem;
-            uint32_t reg_num = (value_insert & 0x07FC) >> 2;
-            uint32_t dev_num = (value_insert & 0xF800) >> 11;
-            printf("ADDRESS SET FOR GRACKLE: ");
-            printf("Device Number: %d  ", dev_num);
-            printf("Hex Register Number: %x \n", reg_num);
-            mpc106_address = value_insert;
-        }
-        else{
-            grab_macmem_ptr = machine_upperiocontrol_mem;
-        }
-
-
-        if ((address_grab >= 0x80040000) && (address_grab < 0x80080000)){
-            openpic_address = address_grab - 0x80000000;
-            openpic_read_word = value_insert;
-            openpic_read();
-            return;
-        }
-
-        printf("Uncharted territory: %x \n", address_grab);
-    }
-    else if (address_grab < 0x81000000){
-        if (address_grab > 0x83FFFFFF){
-            return;
-        }
-        storage_area = address_grab;
-        printf("Uncharted territory: %x \n", address_grab);
-        grab_macmem_ptr = machine_iocontrolcdma_mem;
-    }
-    else if (address_grab < 0xBF800000){
-        storage_area = address_grab % 33554432;
-        printf("Uncharted territory: %x \n", address_grab);
-        grab_macmem_ptr = machine_loweriocontrol_mem;
-    }
-    else if (address_grab < 0xC0000000){
-        storage_area = address_grab % 16;
-        printf("Uncharted territory: %x \n", address_grab);
-        grab_macmem_ptr = machine_interruptack_mem;
-    }
-    else if (address_grab < 0xF0000000){
-        printf("Invalid Memory Attempt: %x \n", address_grab);
-        return;
-    }
-    else if (address_grab < 0xF8000000){
-        storage_area = address_grab % 67108864;
-            if ((address_grab >= 0xF3013000) && (address_grab < 0xF3013040)){
-                mac_serial_address = storage_area;
-                serial_write_byte = (uint8_t)value_insert;
-                printf("Writing byte to Serial address %x ... %x \n", address_grab, via_write_byte);
-                mac_serial_write();
-                return;
-            }
-            else if ((address_grab >= 0xF3014000) && (address_grab < 0xF3015000)){
-                davbus_address = storage_area;
-                davbus_write_word = value_insert;
-                printf("\nWriting to DAVBus: %x \n", return_value);
-                davbus_write();
-                return;
-            }
-            else if ((address_grab >= 0xF3015000) && (address_grab < 0xF3016000)){
-                mac_swim3_address = storage_area;
-                swim3_write_byte = (uint8_t)value_insert;
-                printf("Writing byte to SWIM3 address %x ... %x \n", address_grab, swim3_write_byte);
-                mac_swim3_write();
-                return;
-            }
-            else if ((address_grab >= 0xF3016000) && (address_grab < 0xF3018000)){
-                via_cuda_address = storage_area;
-                via_write_byte = (uint8_t)value_insert;
-                printf("Writing byte to CUDA address %x ... %x \n", address_grab, via_write_byte);
-                via_cuda_write();
-                return;
-            }
-            else if ((address_grab >= 0xF3040000) && (address_grab < 0xF3080000)){
-                openpic_address = storage_area - 0x3000000;
-                openpic_write_word = value_insert;
-                printf("Writing byte to OpenPIC address %x ... %x \n", address_grab, openpic_write_word);
-                openpic_write();
-                return;
-            }
-            else if (address_grab > 0xF3FFFFFF){
-                printf("Uncharted territory: %x", address_grab);
-                return;
-            }
-        grab_macmem_ptr = machine_iocontrolmem_mem;
-    }
-    else if (address_grab < rom_file_begin){
-        //Get back to this! (weeny1)
-
-        if (address_grab < 0xFE000000){
-            storage_area = address_grab % 4096;
-            grab_macmem_ptr = machine_f8xxxx_mem;
-        }
-        else if (address_grab < 0xFEC00000){
-            mpc106_address = address_grab % 65536;
-            mpc106_write(value_insert);
-            return;
-        }
-        else if (address_grab < 0xFEE00000){
-            storage_area = 0x0CF8;  //CONFIG_ADDR
-            grab_macmem_ptr = machine_fecxxx_mem;
-            value_insert = rev_endian32(value_insert);
-            uint32_t reg_num = (value_insert & 0x07FC) >> 2;
-            uint32_t dev_num = (value_insert & 0xF800) >> 11;
-            printf("ADDRESS SET FOR GRACKLE \n");
-            printf("Device Number: %d ", dev_num);
-            printf("Hex Register Number: %x \n", reg_num);
-            mpc_config_addr = value_insert;
-        }
-        else if (address_grab < 0xFF000000){
-            storage_area = 0x0CFC;  //CONFIG_DATA
-            mpc106_word_custom_size = num_bytes;
-            mpc106_write_device(mpc_config_addr, value_insert, num_bytes);
-            grab_macmem_ptr = machine_feexxx_mem;
-        }
-        else if (address_grab < 0xFF800000){
-            storage_area = address_grab % 4096;
-            grab_macmem_ptr = machine_ff00xx_mem;
-        }
-        else{
-            storage_area = (address_grab % 1048576) + 0x400000;
-            grab_macmem_ptr = machine_sysram_mem;
-        }
-    }
-    else{
-        storage_area = address_grab % rom_file_setsize;
-        grab_macmem_ptr = machine_sysrom_mem;
-    }
-
-    ppc_memstore_value(value_insert, storage_area, num_bytes);
-}
-
-/** Grab a value from memory into a register */
-void address_quickgrab_translate(uint32_t address_grab, uint8_t num_bytes)
-{
-    uint32_t storage_area = 0;
-
-    //printf("Grabbing from address %x \n", address_grab);
-
-    return_value = 0; //reset this before going into the real fun.
-
     /* data address translation if enabled */
     if (ppc_state.ppc_msr & 0x10) {
-        printf("DATA RELOCATION GO! - GRABBING \n");
-
-        address_grab = ppc_mmu_addr_translate(address_grab, 0);
+        addr = ppc_mmu_addr_translate(addr, 0);
     }
 
-    if (address_grab >= 0xFFC00000){
-        //printf("Charting ROM Area: %x \n", address_grab);
-        storage_area = address_grab % rom_file_setsize;
-        grab_macmem_ptr = machine_sysrom_mem;
-        ppc_set_return_val(storage_area, num_bytes);
-        return;
-    }
-
-    //regular grabbing
-    else if (address_grab < 0x80000000){
-        if ((address_grab >= 0x40000000) && (address_grab < 0x40400000) && is_nubus){
-            storage_area = address_grab % rom_file_setsize;
-            grab_macmem_ptr = machine_sysrom_mem;
-            ppc_set_return_val(storage_area, num_bytes);
-            return;
-        }
-
-        if (mpc106_check_membound(address_grab)){
-            if (address_grab > 0x03ffffff){ //for debug purposes
-                storage_area = address_grab;
-                grab_macmem_ptr = machine_sysram_mem;
+    if (addr >= write_last_pa_start && addr <= write_last_pa_end) {
+        ppc_memstore_value(write_last_ptr, value, addr - write_last_pa_start, num_bytes);
+    } else {
+        AddressMapEntry *entry = mem_ctrl_instance->find_range(addr);
+        if (entry) {
+            if (entry->type & RT_RAM) {
+                write_last_pa_start = entry->start;
+                write_last_pa_end   = entry->end;
+                write_last_ptr = entry->mem_ptr;
+                ppc_memstore_value(write_last_ptr, value, addr - entry->start, num_bytes);
+            } else if (entry->type & RT_MMIO) {
+                entry->devobj->write(addr - entry->start, value, num_bytes);
+            } else {
+                printf("Please check your address map!\n");
             }
-            else if ((address_grab >= 0x40000000) && (address_grab < 0x40400000)){
-                storage_area = address_grab;
-                grab_macmem_ptr = machine_sysram_mem;
-            }
-            else if ((address_grab >= 0x5fffe000) && (address_grab <= 0x5fffffff)){
-                storage_area = address_grab % 0x2000;
-                grab_macmem_ptr = machine_sysconfig_mem;
-            }
-            else{
-                return_value = (num_bytes == 1)?0xFF:(num_bytes == 2)?0xFFFF:0xFFFFFFFF;
-                return;
-            }
-        }
-        else{
-            //The address is not within the ROM banks
-            return_value = (num_bytes == 1)?0xFF:(num_bytes == 2)?0xFFFF:0xFFFFFFFF;
-            return;
+        } else {
+            printf("WARNING: write attempt to unmapped memory at 0x%08X!\n", addr);
         }
     }
-    else if (address_grab < 0x80800000){
-        if ((address_grab >= 0x80040000) && (address_grab < 0x80080000)){
-            openpic_address = address_grab - 0x80000000;
-            openpic_write();
-            return_value = openpic_write_word;
-            return;
-        }
-
-        storage_area = address_grab % 0x800000;
-        printf("Uncharted territory: %x \n", address_grab);
-        grab_macmem_ptr = machine_upperiocontrol_mem;
-    }
-    else if (address_grab < 0x81000000){
-        storage_area = address_grab;
-        if (address_grab > 0x83FFFFFF){
-            return_value = (num_bytes == 1)?0xFF:(num_bytes == 2)?0xFFFF:0xFFFFFFFF;
-            return;
-        }
-        printf("Uncharted territory: %x \n", address_grab);
-        grab_macmem_ptr = machine_iocontrolcdma_mem;
-    }
-    else if (address_grab < 0xBF800000){
-        storage_area = address_grab % 33554432;
-        printf("Uncharted territory: %x \n", address_grab);
-        grab_macmem_ptr = machine_loweriocontrol_mem;
-    }
-    else if (address_grab < 0xC0000000){
-        storage_area = address_grab % 16;
-        printf("Uncharted territory: %x \n", address_grab);
-        grab_macmem_ptr = machine_interruptack_mem;
-    }
-    else if (address_grab < 0xF0000000){
-        return_value = (num_bytes == 1)?0xFF:(num_bytes == 2)?0xFFFF:0xFFFFFFFF;
-        return;
-    }
-    else if (address_grab < 0xF8000000){
-        storage_area = address_grab % 67108864;
-            if ((address_grab >= 0xF3013000) && (address_grab < 0xF3013040)){
-                mac_serial_address = storage_area;
-                mac_serial_read();
-                return_value = serial_read_byte;
-                printf("\n Read from Serial: %x \n", return_value);
-                return;
-            }
-            else if ((address_grab >= 0xF3014000) && (address_grab < 0xF3015000)){
-                davbus_address = storage_area;
-                davbus_read();
-                return_value = davbus_read_word;
-                printf("\n Read from DAVBus: %x \n", return_value);
-                return;
-            }
-            else if ((address_grab >= 0xF3015000) && (address_grab < 0xF3016000)){
-                mac_swim3_address = storage_area;
-                mac_swim3_read();
-                return_value = swim3_read_byte;
-                printf("\n Read from Swim3: %x \n", return_value);
-                return;
-            }
-            else if ((address_grab >= 0xF3016000) && (address_grab < 0xF3018000)){
-                via_cuda_address = storage_area;
-                via_cuda_read();
-                return_value = via_read_byte;
-                printf("\n Read from CUDA: %x \n", return_value);
-                return;
-            }
-            else if ((address_grab >= 0xF3040000) && (address_grab < 0xF3080000)){
-                openpic_address = storage_area - 0x3000000;
-                openpic_read();
-                return_value = openpic_write_word;
-                return;
-            }
-            else if (address_grab > 0xF3FFFFFF){
-                return_value = (num_bytes == 1)?0xFF:(num_bytes == 2)?0xFFFF:0xFFFFFFFF;
-                return;
-            }
-        grab_macmem_ptr = machine_iocontrolmem_mem;
-    }
-    else if (address_grab < rom_file_begin){
-        //Get back to this! (weeny1)
-        if (address_grab < 0xFE000000){
-            storage_area = address_grab % 4096;
-            grab_macmem_ptr = machine_f8xxxx_mem;
-        }
-        else if (address_grab < 0xFEC00000){
-            mpc106_address = address_grab % 65536;
-            mpc106_read();
-            return_value = mpc106_read_word;
-            return;
-        }
-        else if (address_grab < 0xFEE00000){
-            return_value = (num_bytes == 1)? (mpc106_address & 0xFF):(num_bytes == 2)?(mpc106_address & 0xFFFF):mpc106_address;
-            return;
-        }
-        else if (address_grab < 0xFF000000){
-            mpc106_word_custom_size = num_bytes;
-            return_value = mpc106_read_device(mpc_config_addr, num_bytes);
-            return_value = rev_endian32(return_value);
-            return;
-        }
-        else if (address_grab < 0xFF800000){
-            storage_area = address_grab % 4096;
-            grab_macmem_ptr = machine_ff00xx_mem;
-        }
-        else{
-            storage_area = (address_grab % 1048576) + 0x400000;
-            grab_macmem_ptr = machine_sysram_mem;
-        }
-    }
-
-    ppc_set_return_val(storage_area, num_bytes);
-
 }
 
-void quickinstruction_translate(uint32_t address_grab)
+
+uint32_t read_last_pa_start  = 0;
+uint32_t read_last_pa_end    = 0;
+unsigned char *read_last_ptr = 0;
+
+/** Grab a value from memory into a register */
+void address_quickgrab_translate(uint32_t addr, uint8_t num_bytes)
 {
-    uint32_t storage_area = 0;
+    /* data address translation if enabled */
+    if (ppc_state.ppc_msr & 0x10) {
+        //printf("DATA RELOCATION GO! - GRABBING \n");
 
-    return_value = 0; //reset this before going into the real fun.
+        addr = ppc_mmu_addr_translate(addr, 0);
+    }
 
+    if (addr >= read_last_pa_start && addr <= read_last_pa_end) {
+        ppc_set_return_val(read_last_ptr, addr - read_last_pa_start, num_bytes);
+    } else {
+        AddressMapEntry *entry = mem_ctrl_instance->find_range(addr);
+        if (entry) {
+            if (entry->type & (RT_ROM | RT_RAM)) {
+                read_last_pa_start = entry->start;
+                read_last_pa_end   = entry->end;
+                read_last_ptr = entry->mem_ptr;
+                ppc_set_return_val(read_last_ptr, addr - entry->start, num_bytes);
+            } else if (entry->type & RT_MMIO) {
+                return_value = entry->devobj->read(addr - entry->start, num_bytes);
+            } else {
+                printf("Please check your address map!\n");
+            }
+        } else {
+            printf("WARNING: read attempt from unmapped memory at 0x%08X!\n", addr);
+
+            /* reading from unmapped memory will return unmapped value */
+            for (return_value = 0xFF; --num_bytes > 0;)
+                return_value = (return_value << 8) | 0xFF;
+        }
+    }
+}
+
+
+uint32_t exec_last_pa_start  = 0;
+uint32_t exec_last_pa_end    = 0;
+unsigned char *exec_last_ptr = 0;
+
+void quickinstruction_translate(uint32_t addr)
+{
     /* instruction address translation if enabled */
     if (ppc_state.ppc_msr & 0x20) {
-        printf("INSTRUCTION RELOCATION GO! \n");
-
-        address_grab = ppc_mmu_instr_translate(address_grab);
+        addr = ppc_mmu_instr_translate(addr);
     }
 
-    //grab opcode from memory area
-    if (address_grab >= 0xFFC00000){
-        storage_area = address_grab % rom_file_setsize;
-        grab_macmem_ptr = machine_sysrom_mem;
-        ppc_set_cur_instruction(storage_area);
-        return;
-    }
-    else if (address_grab < 0x80000000){
-        if (address_grab < 0x040000000){ //for debug purposes
-            storage_area = address_grab;
-            grab_macmem_ptr = machine_sysram_mem;
-        }
-            else if ((address_grab >= 0x40000000) && (address_grab < 0x40400000)){
-                if (is_nubus){
-                    storage_area = address_grab % rom_file_setsize;
-                    grab_macmem_ptr = machine_sysrom_mem;
-                    ppc_set_cur_instruction(storage_area);
-                    return;
-                }
-                else{
-                    storage_area = address_grab;
-                    grab_macmem_ptr = machine_sysram_mem;
-                }
-            }
-        else if ((address_grab >= 0x5fffe000) && (address_grab <= 0x5fffffff)){
-            storage_area = address_grab % 0x2000;
-            grab_macmem_ptr = machine_sysconfig_mem;
-        }
-        else{
-            storage_area = address_grab % 0x04000000;
-            grab_macmem_ptr = machine_sysram_mem;
-            printf("Uncharted territory: %x \n", address_grab);
+    if (addr >= exec_last_pa_start && addr <= exec_last_pa_end) {
+        ppc_set_cur_instruction(exec_last_ptr, addr - exec_last_pa_start);
+    } else {
+        AddressMapEntry *entry = mem_ctrl_instance->find_range(addr);
+        if (entry && entry->type & (RT_ROM | RT_RAM)) {
+            exec_last_pa_start = entry->start;
+            exec_last_pa_end   = entry->end;
+            exec_last_ptr = entry->mem_ptr;
+            ppc_set_cur_instruction(exec_last_ptr, addr - exec_last_pa_start);
+        } else {
+            printf("WARNING: attempt to execute code at %08X!\n", addr);
         }
     }
-    else if (address_grab < 0x80800000){
-        storage_area = address_grab % 0x800000;
-        grab_macmem_ptr = machine_upperiocontrol_mem;
-
-    }
-    else if (address_grab < 0x81000000){
-        storage_area = address_grab % 0x800000;
-        grab_macmem_ptr = machine_iocontrolcdma_mem;
-
-    }
-    else if (address_grab < 0xBF80000){
-        storage_area = address_grab % 33554432;
-        grab_macmem_ptr = machine_loweriocontrol_mem;
-
-    }
-    else if (address_grab < 0xC0000000){
-        storage_area = address_grab % 16;
-        grab_macmem_ptr = machine_interruptack_mem;
-
-    }
-    else if (address_grab < 0xF0000000){
-        printf("Invalid Memory Attempt: %x \n", address_grab);
-        return;
-    }
-    else if (address_grab < 0xF8000000){
-        storage_area = address_grab % 67108864;
-        grab_macmem_ptr = machine_iocontrolmem_mem;
-
-    }
-    else if (address_grab < rom_file_begin){
-        //Get back to this! (weeny1)
-
-        if (address_grab < 0xFE000000){
-            storage_area = address_grab % 4096;
-            grab_macmem_ptr = machine_f8xxxx_mem;
-        }
-        else if (address_grab < 0xFEC00000){
-            storage_area = address_grab % 65536;
-            grab_macmem_ptr = machine_fexxxx_mem;
-        }
-        else if (address_grab < 0xFEE00000){
-            storage_area = 0x0CF8;  //CONFIG_ADDR
-            grab_macmem_ptr = machine_fecxxx_mem;
-        }
-        else if (address_grab < 0xFF000000){
-            storage_area = 0x0CFC;  //CONFIG_DATA
-            grab_macmem_ptr = machine_feexxx_mem;
-        }
-        else if (address_grab < 0xFF800000){
-            storage_area = address_grab % 4096;
-            grab_macmem_ptr = machine_ff00xx_mem;
-        }
-        else{
-            storage_area = (address_grab % 1048576) + 0x400000;
-            grab_macmem_ptr = machine_sysram_mem;
-        }
-    }
-
-    ppc_set_cur_instruction(storage_area);
 }

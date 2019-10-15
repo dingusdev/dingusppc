@@ -10,6 +10,8 @@
 
 #include <map>
 
+#include "devices/memctrlbase.h"
+
 //Uncomment this to help debug the emulator further
 //#define EXHAUSTIVE_DEBUG 1
 
@@ -102,7 +104,7 @@ extern uint32_t ram_size_set;
 extern uint32_t rom_file_begin; //where to start storing ROM files in memory
 extern uint32_t pci_io_end;
 
-extern uint32_t rom_file_setsize;
+extern uint32_t rom_filesize;
 
 //Additional steps to prevent overflow?
 extern int32_t add_result;
@@ -226,6 +228,8 @@ void ppc_tbr_update();
 void ppc_exception_handler(uint32_t exception_type, uint32_t handle_args);
 
 //MEMORY DECLARATIONS
+extern MemCtrlBase *mem_ctrl_instance;
+
 extern unsigned char * machine_sysram_mem;
 extern unsigned char * machine_sysconfig_mem;
 //Mapped to 0x68000000 - extern unsigned char * machine_68kemu_mem;

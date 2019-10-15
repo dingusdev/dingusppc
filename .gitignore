@@ -3,6 +3,7 @@
 
 # Ignore compiled object files
 *.o
+*.d
 
 # Ignore generated executables
 dingusppc
