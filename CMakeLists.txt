@@ -8,32 +8,31 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-c -Wall -O3 -s")
  
 set(SOURCE_FILES
-        macioserial.cpp
-        macscsi.cpp
-        macswim3.cpp
-        mpc106.cpp
-        openpic.cpp
+        devices/heathrow.cpp
+        devices/memctrlbase.cpp
+        devices/mpc106.cpp
+        devices/viacuda.cpp
         poweropcodes.cpp
         ppcfpopcodes.cpp
         ppcgekkoopcodes.cpp
         ppcmemory.cpp
         ppcopcodes.cpp
-        viacuda.cpp
         main.cpp
-        davbus.cpp
         debugger.cpp
         )
  
 set(HEADER_FILES
-        macioserial.h
-        macscsi.h
-        macswim3.h
-        mpc106.h
-        openpic.h
+        devices/heathrow.cpp
+        devices/machineid.h
+        devices/macio.h
+        devices/memctrlbase.h
+        devices/mmiodevice.h
+        devices/mpc106.h
+        devices/pcidevice.h
+        devices/pcihost.h
+        devices/viacuda.h
         ppcemumain.h
         ppcmemory.h
-        viacuda.h
-        davbus.h
         debugger.h
         )
  

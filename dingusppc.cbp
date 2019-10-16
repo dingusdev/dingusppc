@@ -45,21 +45,21 @@
 			<Add option="-std=c++11" />
 			<Add option="-fexceptions" />
 		</Compiler>
-		<Unit filename="davbus.cpp" />
-		<Unit filename="davbus.h" />
 		<Unit filename="debugger.cpp" />
 		<Unit filename="debugger.h" />
-		<Unit filename="macioserial.cpp" />
-		<Unit filename="macioserial.h" />
-		<Unit filename="macscsi.cpp" />
-		<Unit filename="macscsi.h" />
-		<Unit filename="macswim3.cpp" />
-		<Unit filename="macswim3.h" />
+		<Unit filename="devices/heathrow.cpp" />
+		<Unit filename="devices/machineid.h" />
+		<Unit filename="devices/macio.h" />
+		<Unit filename="devices/memctrlbase.cpp" />
+		<Unit filename="devices/memctrlbase.h" />
+		<Unit filename="devices/mmiodevice.h" />
+		<Unit filename="devices/mpc106.cpp" />
+		<Unit filename="devices/mpc106.h" />
+		<Unit filename="devices/pcidevice.h" />
+		<Unit filename="devices/pcihost.h" />
+		<Unit filename="devices/viacuda.cpp" />
+		<Unit filename="devices/viacuda.h" />
 		<Unit filename="main.cpp" />
-		<Unit filename="mpc106.cpp" />
-		<Unit filename="mpc106.h" />
-		<Unit filename="openpic.cpp" />
-		<Unit filename="openpic.h" />
 		<Unit filename="poweropcodes.cpp" />
 		<Unit filename="ppcemumain.h" />
 		<Unit filename="ppcfpopcodes.cpp" />
@@ -67,8 +67,6 @@
 		<Unit filename="ppcmemory.cpp" />
 		<Unit filename="ppcmemory.h" />
 		<Unit filename="ppcopcodes.cpp" />
-		<Unit filename="viacuda.cpp" />
-		<Unit filename="viacuda.h" />
 		<Extensions>
 			<code_completion />
 			<envvars />
