@@ -3,8 +3,8 @@
 #include <sstream>
 #include <iostream>
 #include <map>
-#include "ppcemumain.h"
-#include "ppcmemory.h"
+#include "../ppcemumain.h"
+#include "../ppcmemory.h"
 
 
 using namespace std;

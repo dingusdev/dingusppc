@@ -1,5 +1,5 @@
 EXE	 := dingusppc
-MODULES := . devices
+MODULES := . devices debugger
 SRCS := $(foreach sdir,$(MODULES),$(wildcard $(sdir)/*.cpp))
 #SRCS = $(wildcard *.cpp)
 OBJS := $(patsubst %.cpp, %.o, $(SRCS))
@@ -22,5 +22,6 @@ $(EXE) : $(OBJS)
 
 clean:
 	rm -rf *.o *.d devices/*.o devices/*.d $(EXE)
+	rm -rf *.o *.d debugger/*.o debugger/*.d $(EXE)
 
 -include $(DEPS)

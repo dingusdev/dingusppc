@@ -22,7 +22,7 @@
 #include "ppcemumain.h"
 #include "ppcmemory.h"
 #include "devices/mpc106.h"
-#include "debugger.h"
+#include "debugger/debugger.h"
 #include "devices/machineid.h"
 #include "devices/macio.h"
 #include "devices/mpc106.h"
