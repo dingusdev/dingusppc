@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-c -Wall -O3 -s")
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
  
 set(SOURCE_FILES
         devices/heathrow.cpp
@@ -35,4 +36,4 @@ set(HEADER_FILES
         )
  
 add_executable(dingusppc ${SOURCE_FILES} ${HEADER_FILES})
-install (TARGETS dingusppc DESTINATION bin)
+install (TARGETS dingusppc DESTINATION ${EXECUTABLE_OUTPUT_PATH})
