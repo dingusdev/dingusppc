@@ -1,39 +1,17 @@
 cmake_minimum_required(VERSION 3.1)
 project(dingusppc)
- 
+
 set(CMAKE_CXX_STANDARD 11)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-c -Wall -O3 -s")
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
- 
-set(SOURCE_FILES
-        devices/heathrow.cpp
-        devices/memctrlbase.cpp
-        devices/mpc106.cpp
-        devices/viacuda.cpp
-        debugger/debugger.cpp
-        poweropcodes.cpp
-        ppcfpopcodes.cpp
-        ppcgekkoopcodes.cpp
-        ppcmemory.cpp
-        ppcopcodes.cpp
-        main.cpp
-        )
- 
-set(HEADER_FILES
-        devices/machineid.h
-        devices/macio.h
-        devices/memctrlbase.h
-        devices/mmiodevice.h
-        devices/mpc106.h
-        devices/pcidevice.h
-        devices/pcihost.h
-        devices/viacuda.h
-        debugger/debugger.h
-        ppcemumain.h
-        ppcmemory.h
-        )
- 
-add_executable(dingusppc ${SOURCE_FILES} ${HEADER_FILES})
+
+include_directories("${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/devices"
+                    "${PROJECT_SOURCE_DIR}/debugger")
+
+file(GLOB SOURCES "${PROJECT_SOURCE_DIR}/*.cpp" "${PROJECT_SOURCE_DIR}/devices/*.cpp"
+                  "${PROJECT_SOURCE_DIR}/debugger/*.cpp")
+
+add_executable(dingusppc ${SOURCES})
 install (TARGETS dingusppc DESTINATION ${EXECUTABLE_OUTPUT_PATH})
