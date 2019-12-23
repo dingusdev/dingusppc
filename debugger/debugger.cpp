@@ -4,7 +4,7 @@
 #include <iostream>
 #include <map>
 #include "../ppcemumain.h"
-#include "../ppcmemory.h"
+#include "../cpu/ppc/ppcmemory.h"
 
 
 using namespace std;
