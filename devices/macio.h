@@ -1,7 +1,7 @@
 /** MacIO device family emulation
 
     Mac I/O (MIO) is a family of ASICs to bring support for Apple legacy
-    I/O hardware to PCI-based Power Macintosh. That legacy hardware has
+    I/O hardware to the PCI-based Power Macintosh. That legacy hardware has
     existed long before Power Macintosh was introduced. It includes:
     - versatile interface adapter (VIA)
     - Sander-Woz integrated machine (SWIM) that is a floppy disk controller
@@ -15,8 +15,8 @@
     are called "cells", i.e. "VIA cell", "SWIM cell" etc.
 
     MIO itself is PCI compliant while the legacy hardware it emulates isn't.
-    MIO occupies 512Kb of PCI memory space divided into registers space and DMA
-    space. Access to emulated legacy devices is accomplished by reading from/
+    MIO occupies 512Kb of the PCI memory space divided into registers space and
+    DMA space. Access to emulated legacy devices is accomplished by reading from/
     writing to MIO's PCI address space at predefined offsets.
 
     MIO includes a DMA controller that offers 15 DMA channels implementing

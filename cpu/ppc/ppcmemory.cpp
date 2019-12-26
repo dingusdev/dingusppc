@@ -59,32 +59,6 @@ std::atomic<bool> hash_found (false);
 PPC_BAT_entry ibat_array[4] = {{0}};
 PPC_BAT_entry dbat_array[4] = {{0}};
 
-
-/**
-Quickly map to memory - sort of.
-
-0x00000000 - 0x7FFFFFFF - Macintosh system memory
-(Because this emulator is trying to emulate a Mac with a Grackle motherboard,
- the most memory that can ever be allocated to the system is 2 Gigs.)
-
-0x80000000 - 0xFF7FFFFF - PCI memory
-This memory is allocated to things like the memory controller, video, and audio.
-
-0xF3000000 - Mac OS I/O Device area
-0xF3013000 - Serial Printer Port (0x20 bytes)
-0xF3013020 - Serial Modem Port (0x20 bytes)
-0xF3011000 - BMAC Ethernet (0x1000 bytes)
-0xF3014000 - DAVAudio Sound Bus (0x1000 bytes)
-0xF3015000 - Swim 3 Floppy Disk Drive (0x1000 bytes)
-0xF3016000 - Cuda (0x2000 bytes)
-0xF3020000 - Heathrow ATA (Hard Drive Interface)
-
-0xFF800000 - 0xFFFFFFFF - ROM memory
-This memory is for storing the ROM needed to boot up the computer.
-
-This could definitely be refactored better - TODO
-**/
-
 void msr_status_update(){
     msr_ip_test = (ppc_state.ppc_msr >> 6) & 1;
     msr_ir_test = (ppc_state.ppc_msr >> 5) & 1;
@@ -594,8 +568,6 @@ void address_quickgrab_translate(uint32_t addr, uint8_t num_bytes)
 {
     /* data address translation if enabled */
     if (ppc_state.ppc_msr & 0x10) {
-        //printf("DATA RELOCATION GO! - GRABBING \n");
-
         addr = ppc_mmu_addr_translate(addr, 0);
     }
 

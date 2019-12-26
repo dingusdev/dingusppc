@@ -449,7 +449,7 @@ int main(int argc, char **argv)
 
     if (romFile.fail()){
         cerr << "rom.bin not present. Please provide an appropriate ROM file"
-             << "and restart this program.\n";
+             << " and restart this program.\n";
 
         romFile.close();
         return 1;

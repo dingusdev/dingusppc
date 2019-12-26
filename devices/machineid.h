@@ -18,7 +18,7 @@
     It contains a 16-bit value revealing machine's capabilities like bus speed,
     ROM speed, I/O configuration etc.
     Because the meaning of these bits is poorly documented, the code below
-    simply return raw values obtained from real hardware.
+    simply return a raw value obtained from real hardware.
  */
 class GossamerID : public MMIODevice {
 public:
