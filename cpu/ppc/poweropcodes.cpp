@@ -12,7 +12,7 @@
 #include <array>
 #include <stdio.h>
 #include <stdexcept>
-#include "ppcemumain.h"
+#include "ppcemu.h"
 #include "ppcmmu.h"
 #include <cmath>
 #include <limits>

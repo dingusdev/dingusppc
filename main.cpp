@@ -19,7 +19,7 @@
 #include <chrono>
 #include <ctime>
 #include <stdexcept>
-#include "ppcemumain.h"
+#include "ppcemu.h"
 #include "ppcmmu.h"
 #include "devices/mpc106.h"
 #include "debugger/debugger.h"

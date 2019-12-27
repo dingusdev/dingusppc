@@ -17,7 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdexcept>
-#include "ppcemumain.h"
+#include "ppcemu.h"
 #include "ppcmmu.h"
 
  uint32_t crf_d;

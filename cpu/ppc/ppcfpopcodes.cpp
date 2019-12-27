@@ -14,7 +14,7 @@
 #include <array>
 #include <stdio.h>
 #include <stdexcept>
-#include "ppcemumain.h"
+#include "ppcemu.h"
 #include "ppcmmu.h"
 #include <cfenv>
 #include <cmath>

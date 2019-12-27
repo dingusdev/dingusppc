@@ -14,7 +14,7 @@
 #include <array>
 #include <thread>
 #include <atomic>
-#include "ppcemumain.h"
+#include "ppcemu.h"
 #include "ppcmmu.h"
 #include "devices/memctrlbase.h"
 #include "devices/mmiodevice.h"

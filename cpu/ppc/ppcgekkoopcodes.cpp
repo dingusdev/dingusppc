@@ -9,7 +9,7 @@
 
 #include <iostream>
 #include <stdio.h>
-#include "ppcemumain.h"
+#include "ppcemu.h"
 
 void ppc_psq_l(){
     printf("Hello. There's no GameCube emulation...yet. Goodbye.");

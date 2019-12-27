@@ -3,7 +3,7 @@
 #include <sstream>
 #include <iostream>
 #include <map>
-#include "../ppcemumain.h"
+#include "ppcemu.h"
 #include "../cpu/ppc/ppcmmu.h"
 
 
