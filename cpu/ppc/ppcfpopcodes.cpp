@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <stdexcept>
 #include "ppcemumain.h"
-#include "ppcmemory.h"
+#include "ppcmmu.h"
 #include <cfenv>
 #include <cmath>
 #include <limits>

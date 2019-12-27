@@ -15,7 +15,7 @@
 #include <thread>
 #include <atomic>
 #include "ppcemumain.h"
-#include "ppcmemory.h"
+#include "ppcmmu.h"
 #include "devices/memctrlbase.h"
 #include "devices/mmiodevice.h"
 #include "devices/mpc106.h"
