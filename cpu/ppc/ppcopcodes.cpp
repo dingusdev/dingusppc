@@ -8,8 +8,6 @@
 // General opcodes for the processor - ppcopcodes.cpp
 
 #include <iostream>
-#include <map>
-#include <unordered_map>
 #include <cstring>
 #include <cinttypes>
 #include <array>
@@ -51,34 +49,6 @@
  int64_t siproduct;
 
  uint32_t strwrd_replace_value;
-
-/** Lookup tables. */
-
-/** Primary opcode (bits 0...5) lookup table. */
-static PPCOpcode OpcodeGrabber[] = {
-    ppc_illegalop, ppc_illegalop, ppc_illegalop, ppc_twi,       ppc_opcode4,
-    ppc_illegalop, ppc_illegalop, ppc_mulli,     ppc_subfic,    power_dozi,
-    ppc_cmpli,     ppc_cmpi,      ppc_addic,     ppc_addicdot,  ppc_addi,
-    ppc_addis,     ppc_opcode16,  ppc_sc,        ppc_opcode18,  ppc_opcode19,
-    ppc_rlwimi,    ppc_rlwinm,    power_rlmi,    ppc_rlwnm,     ppc_ori,
-    ppc_oris,      ppc_xori,      ppc_xoris,     ppc_andidot,   ppc_andisdot,
-    ppc_illegalop, ppc_opcode31,  ppc_lwz,       ppc_lwzu,      ppc_lbz,
-    ppc_lbzu,      ppc_stw,       ppc_stwu,      ppc_stb,       ppc_stbu,
-    ppc_lhz,       ppc_lhzu,      ppc_lha,       ppc_lhau,      ppc_sth,
-    ppc_sthu,      ppc_lmw,       ppc_stmw,      ppc_lfs,       ppc_lfsu,
-    ppc_lfd,       ppc_lfdu,      ppc_stfs,      ppc_stfsu,     ppc_stfd,
-    ppc_stfdu,     ppc_psq_l,     ppc_psq_lu,    ppc_illegalop, ppc_illegalop,
-    ppc_psq_st,    ppc_psq_stu,   ppc_illegalop, ppc_opcode63
-};
-
-/** Lookup tables for branch instructions. */
-static PPCOpcode SubOpcode16Grabber[] = {
-    ppc_bc, ppc_bcl, ppc_bca, ppc_bcla
-};
-
-static PPCOpcode SubOpcode18Grabber[] = {
-    ppc_b, ppc_bl, ppc_ba, ppc_bla
-};
 
 /**
 Extract the registers desired and the values of the registers
@@ -214,115 +184,6 @@ void ppc_setsoov(uint32_t a, uint32_t b){
     else{
         ppc_state.ppc_spr[1] &= 0x7FFFFFFFUL;
     }
-}
-
-/**
-Avoid some tedious steps to breaking down the opcodes,
-allowing for some nice maps to cleanly organize each opcode.
-**/
-
-void ppc_illegalop(){
-    uint8_t illegal_code = ppc_cur_instruction >> 26;
-    uint32_t grab_it = (uint32_t) illegal_code;
-    printf("Illegal opcode reported: %d Report this! \n", grab_it);
-    exit(-1);
-    //ppc_exception_handler(0x0700, 0x80000);
-}
-
-void ppc_illegalsubop31(){
-    uint16_t illegal_subcode = ppc_cur_instruction & 2047;
-    uint32_t grab_it = (uint32_t) illegal_subcode;
-    printf("Illegal subopcode for 31 reported: %d Report this! \n", grab_it);
-}
-
-void ppc_opcode4(){
-    printf("Reading from Opcode 4 table \n");
-    uint8_t subop_grab = ppc_cur_instruction & 3;
-    uint32_t regrab = (uint32_t)subop_grab;
-    printf("Executing subopcode entry %d \n .. or would if I bothered to implement it. SORRY!", regrab);
-    exit(0);
-}
-
-void ppc_opcode16(){
-    SubOpcode16Grabber[ppc_cur_instruction & 3]();
-}
-
-void ppc_opcode18(){
-    SubOpcode18Grabber[ppc_cur_instruction & 3]();
-}
-
-void ppc_opcode19(){
-    uint16_t subop_grab = ppc_cur_instruction & 2047;
-    #ifdef EXHAUSTIVE_DEBUG
-    uint32_t regrab = (uint32_t)subop_grab;
-    printf("Executing Opcode 19 table supopcode entry %d \n", regrab);
-    if (SubOpcode19Grabber.count(subop_grab) == 1){
-        SubOpcode19Grabber[subop_grab]();
-    }
-    else{
-        std::cout << "ILLEGAL SUBOPCODE: " << subop_grab << std::endl;
-        ppc_exception_handler(0x0700, 0x80000);
-    }
-    #else
-    SubOpcode19Grabber[subop_grab]();
-    #endif // EXHAUSTIVE_DEBUG
-}
-
-void ppc_opcode31(){
-    uint16_t subop_grab = ppc_cur_instruction & 2047;
-    #ifdef EXHAUSTIVE_DEBUG
-    uint32_t regrab = (uint32_t)subop_grab;
-    printf("Executing Opcode 31 table supopcode entry %d \n", regrab);
-    if (SubOpcode31Grabber.count(subop_grab) == 1){
-        SubOpcode31Grabber[subop_grab]();
-    }
-    else{
-        std::cout << "ILLEGAL SUBOPCODE: " << subop_grab << std::endl;
-        ppc_exception_handler(0x0700, 0x80000);
-    }
-    #else
-    SubOpcode31Grabber[subop_grab]();
-    #endif // EXHAUSTIVE_DEBUG
-}
-
-void ppc_opcode59(){
-    uint16_t subop_grab = ppc_cur_instruction & 2047;
-    #ifdef EXHAUSTIVE_DEBUG
-    uint32_t regrab = (uint32_t)subop_grab;
-    printf("Executing Opcode 59 table supopcode entry %d \n", regrab);
-    if (SubOpcode59Grabber.count(subop_grab) == 1){
-        SubOpcode59Grabber[subop_grab]();
-    }
-    else{
-        std::cout << "ILLEGAL SUBOPCODE: " << subop_grab << std::endl;
-        ppc_exception_handler(0x0700, 0x80000);
-    }
-    #else
-    SubOpcode59Grabber[subop_grab]();
-    #endif // EXHAUSTIVE_DEBUG
-}
-
-void ppc_opcode63(){
-    uint16_t subop_grab = ppc_cur_instruction & 2047;
-    #ifdef EXHAUSTIVE_DEBUG
-    uint32_t regrab = (uint32_t)subop_grab;
-    std::cout << "Executing Opcode 63 table subopcode entry " << regrab << std::endl;
-    if (SubOpcode63Grabber.count(subop_grab) == 1){
-        SubOpcode63Grabber[subop_grab]();
-    }
-    else{
-        std::cout << "ILLEGAL SUBOPCODE: " << subop_grab << std::endl;
-        ppc_exception_handler(0x0700, 0x80000);
-    }
-    #else
-    SubOpcode63Grabber[subop_grab]();
-    #endif // EXHAUSTIVE_DEBUG
-}
-
-void ppc_main_opcode(){
-    //Grab the main opcode
-    uint8_t ppc_mainop = (ppc_cur_instruction >> 26) & 63;
-    OpcodeGrabber[ppc_mainop]();
 }
 
 /**
