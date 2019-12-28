@@ -1,6 +1,12 @@
 #include <unordered_map>
+#include <chrono>
 
 #include "ppcemu.h"
+#include "ppcmmu.h"
+
+bool power_on = 1;
+
+clock_t clock_test_begin; //Used to make sure the TBR does not increment so quickly.
 
 /** Opcode lookup tables. */
 
@@ -473,4 +479,107 @@ void ppc_main_opcode(){
     //Grab the main opcode
     uint8_t ppc_mainop = (ppc_cur_instruction >> 26) & 63;
     OpcodeGrabber[ppc_mainop]();
+}
+
+/** Old time base register (TBR) update code. */
+void ppc_tbr_update()
+{
+    clock_t clock_test_current = clock();
+    uint32_t test_clock = ((uint32_t) (clock_test_current - clock_test_begin)) / CLOCKS_PER_SEC;
+    if (test_clock){
+        if (ppc_state.ppc_tbr[0] != 0xFFFFFFFF){
+            ppc_state.ppc_tbr[0]++;
+        }
+        else{
+            ppc_state.ppc_tbr[0] = 0;
+            if (ppc_state.ppc_tbr[1] !=0xFFFFFFFF){
+                ppc_state.ppc_tbr[1]++;
+            }
+            else{
+                ppc_state.ppc_tbr[1] = 0;
+            }
+        }
+        clock_test_begin = clock();
+        //Placeholder Decrementing Code
+        if(ppc_state.ppc_spr[22] > 0){
+            ppc_state.ppc_spr[22]--;
+        }
+    }
+}
+
+/** Execute PPC code as long as power is on. */
+void ppc_exec()
+{
+    while (power_on){
+        //printf("PowerPC Address: %x \n", ppc_state.ppc_pc);
+        quickinstruction_translate(ppc_state.ppc_pc);
+        ppc_main_opcode();
+        if (grab_branch & !grab_exception){
+            ppc_state.ppc_pc = ppc_next_instruction_address;
+            grab_branch = 0;
+            ppc_tbr_update();
+        }
+        else if (grab_return | grab_exception){
+            ppc_state.ppc_pc = ppc_next_instruction_address;
+            grab_exception = 0;
+            grab_return = 0;
+            ppc_tbr_update();
+        }
+        else{
+            ppc_state.ppc_pc += 4;
+            ppc_tbr_update();
+        }
+    }
+}
+
+/** Execute one PPC instruction. */
+void ppc_exec_single()
+{
+    quickinstruction_translate(ppc_state.ppc_pc);
+    ppc_main_opcode();
+    if (grab_branch && !grab_exception) {
+        ppc_state.ppc_pc = ppc_next_instruction_address;
+        grab_branch = 0;
+        ppc_tbr_update();
+    }
+    else if (grab_return || grab_exception) {
+        ppc_state.ppc_pc = ppc_next_instruction_address;
+        grab_exception = 0;
+        grab_return = 0;
+        ppc_tbr_update();
+    }
+    else {
+        ppc_state.ppc_pc += 4;
+        ppc_tbr_update();
+    }
+}
+
+/** Execute PPC code until goal_addr is reached. */
+void ppc_exec_until(uint32_t goal_addr)
+{
+    while (ppc_state.ppc_pc != goal_addr) {
+        quickinstruction_translate(ppc_state.ppc_pc);
+        ppc_main_opcode();
+        if (grab_branch && !grab_exception) {
+            ppc_state.ppc_pc = ppc_next_instruction_address;
+            grab_branch = 0;
+            ppc_tbr_update();
+        }
+        else if (grab_return || grab_exception) {
+            ppc_state.ppc_pc = ppc_next_instruction_address;
+            grab_exception = 0;
+            grab_return = 0;
+            ppc_tbr_update();
+        }
+        else {
+            ppc_state.ppc_pc += 4;
+            ppc_tbr_update();
+        }
+        ppc_cur_instruction = 0;
+    }
+}
+
+void ppc_init()
+{
+    clock_test_begin = clock();
 }

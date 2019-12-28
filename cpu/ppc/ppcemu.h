@@ -164,6 +164,8 @@ extern bool grab_branch;
 extern bool grab_exception;
 extern bool grab_return;
 
+extern bool power_on;
+
 extern bool is_nubus; //For early Power Mac Emulation
 
 extern bool is_601; //For PowerPC 601 Emulation
@@ -611,6 +613,9 @@ extern void ppc_psq_stu();
 
 //G5+ instructions
 
-extern void ppc_main_opcode();
+extern void ppc_main_opcode(void);
+extern void ppc_exec(void);
+extern void ppc_exec_single(void);
+extern void ppc_exec_until(uint32_t goal_addr);
 
 #endif /* PPCEMU_H */

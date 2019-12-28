@@ -16,8 +16,6 @@
 #include <array>
 #include <stdio.h>
 #include <fstream>
-#include <chrono>
-#include <ctime>
 #include <stdexcept>
 #include "ppcemu.h"
 #include "ppcmmu.h"
@@ -66,7 +64,6 @@ static const map<string,string> PPCMac_ROMIdentity = { //Codename Abbreviation f
 
 SetPRS ppc_state;
 
-bool power_on = 1;
 bool is_nubus = 0;
 
 bool grab_branch;
@@ -121,8 +118,6 @@ uint32_t pci_io_end;
 
 uint32_t rom_filesize;
 
-clock_t clock_test_begin; //Used to make sure the TBR does not increment so quickly.
-
 uint32_t write_opcode;
 uint8_t write_char;
 
@@ -145,33 +140,6 @@ uint32_t rev_endian32(uint32_t insert_int){
 
 uint64_t rev_endian64(uint64_t insert_int){
     return ENDIAN_REVERSE64(insert_int);
-}
-
-//Time Base Register Update Code
-//TODO - Make this a bit less hacky somehow.
-void ppc_tbr_update()
-{
-    clock_t clock_test_current = clock();
-    uint32_t test_clock = ((uint32_t) (clock_test_current - clock_test_begin)) / CLOCKS_PER_SEC;
-    if (test_clock){
-        if (ppc_state.ppc_tbr[0] != 0xFFFFFFFF){
-            ppc_state.ppc_tbr[0]++;
-        }
-        else{
-            ppc_state.ppc_tbr[0] = 0;
-            if (ppc_state.ppc_tbr[1] !=0xFFFFFFFF){
-                ppc_state.ppc_tbr[1]++;
-            }
-            else{
-                ppc_state.ppc_tbr[1] = 0;
-            }
-        }
-        clock_test_begin = clock();
-        //Placeholder Decrementing Code
-        if(ppc_state.ppc_spr[22] > 0){
-            ppc_state.ppc_spr[22]--;
-        }
-    }
 }
 
 void ppc_exception_handler(uint32_t exception_type, uint32_t handle_args){
@@ -365,61 +333,6 @@ uint32_t reg_write(){
     return 0;
 }
 
-void execute_interpreter(){
-    //Main execution loop for the interpreter.
-
-    while (power_on){
-        //printf("PowerPC Address: %x \n", ppc_state.ppc_pc);
-        quickinstruction_translate(ppc_state.ppc_pc);
-        ppc_main_opcode();
-        if (grab_branch & !grab_exception){
-            ppc_state.ppc_pc = ppc_next_instruction_address;
-            grab_branch = 0;
-            ppc_tbr_update();
-        }
-        else if (grab_return | grab_exception){
-            ppc_state.ppc_pc = ppc_next_instruction_address;
-            grab_exception = 0;
-            grab_return = 0;
-            ppc_tbr_update();
-        }
-        else{
-            ppc_state.ppc_pc += 4;
-            ppc_tbr_update();
-        }
-    }
-}
-
-void execute_interpreter_bp (uint32_t ppc_break_addr){
-    //Main loop like the above, with the only big difference
-    //being that this stops on reaching the desired address.
-
-    //It then prints the regs at the time it stopped.
-
-    while (ppc_state.ppc_pc != ppc_break_addr){
-        quickinstruction_translate(ppc_state.ppc_pc);
-        ppc_main_opcode();
-        if (grab_branch & !grab_exception){
-            ppc_state.ppc_pc = ppc_next_instruction_address;
-            grab_branch = 0;
-            ppc_tbr_update();
-        }
-        else if (grab_return | grab_exception){
-            ppc_state.ppc_pc = ppc_next_instruction_address;
-            grab_exception = 0;
-            grab_return = 0;
-            ppc_tbr_update();
-        }
-        else{
-            ppc_state.ppc_pc += 4;
-            ppc_tbr_update();
-        }
-        ppc_cur_instruction = 0;
-    }
-
-    reg_print();
-}
-
 int main(int argc, char **argv)
 {
     ram_size_set = 0x4000000; //64 MB of RAM for the Mac
@@ -577,8 +490,6 @@ int main(int argc, char **argv)
     mem_ctrl_instance->set_data(0xFFC00000, machine_sysrom_mem, rom_filesize);
     romFile.close();
 
-    clock_test_begin = clock();
-
     if (argc > 1){
         string checker = argv[1];
         cout << checker << endl;
@@ -593,7 +504,7 @@ int main(int argc, char **argv)
             }
         }
         else if ((checker=="1")|(checker=="realtime")|(checker=="/realtime")|(checker=="-realtime")){
-            execute_interpreter();
+            ppc_exec();
         }
         else if ((checker=="e")|(checker=="loadelf")|(checker=="/loadelf")|(checker=="-loadelf")){
             ifstream elfFile;
@@ -656,7 +567,7 @@ int main(int argc, char **argv)
 
             ppc_state.ppc_pc = atoi(elf_memoffset);
 
-            execute_interpreter();
+            ppc_exec();
         }
         else if ((checker=="until")|(checker=="/until")|(checker=="-until")){
             uint32_t grab_bp = 0x0;
@@ -664,7 +575,7 @@ int main(int argc, char **argv)
             std::cout << hex << "Enter the address in hex for where to stop execution." << endl;
             cin >> hex >> grab_bp;
 
-            execute_interpreter_bp(grab_bp);
+            ppc_exec_until(grab_bp);
         }
         else if (checker=="disas"){
             if (argc > 2){

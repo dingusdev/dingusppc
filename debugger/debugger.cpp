@@ -33,35 +33,6 @@ void dump_regs()
     cout << "MSR: " << hex << ppc_state.ppc_msr    << endl;
 }
 
-void execute_single_instr()
-{
-    quickinstruction_translate(ppc_state.ppc_pc);
-    //cout << "Current instruction: " << hex << ppc_cur_instruction << endl;
-    ppc_main_opcode();
-    if (grab_branch && !grab_exception) {
-        //cout << "Grab branch, EA: " << hex << ppc_next_instruction_address << endl;
-        ppc_state.ppc_pc = ppc_next_instruction_address;
-        grab_branch = 0;
-        ppc_tbr_update();
-    }
-    else if (grab_return || grab_exception) {
-        ppc_state.ppc_pc = ppc_next_instruction_address;
-        grab_exception = 0;
-        grab_return = 0;
-        ppc_tbr_update();
-    }
-    else {
-        ppc_state.ppc_pc += 4;
-        ppc_tbr_update();
-    }
-}
-
-void execute_until(uint32_t goal_addr)
-{
-    while(ppc_state.ppc_pc != goal_addr)
-        execute_single_instr();
-}
-
 void enter_debugger()
 {
     string inp, cmd, addr_str, last_cmd;
@@ -94,11 +65,11 @@ void enter_debugger()
         } else if (cmd == "regs") {
             dump_regs();
         } else if (cmd == "step") {
-            execute_single_instr();
+            ppc_exec_single();
         } else if (cmd == "until") {
             ss >> addr_str;
             addr = stol(addr_str, NULL, 16);
-            execute_until(addr);
+            ppc_exec_until(addr);
         } else if (cmd == "disas") {
             cout << "Disassembling not implemented yet. Sorry!" << endl;
         } else {
