@@ -1,5 +1,6 @@
 #include <cinttypes>
 #include <iostream>
+#include <cassert>
 #include "macio.h"
 #include "viacuda.h"
 

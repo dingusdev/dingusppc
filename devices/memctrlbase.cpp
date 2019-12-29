@@ -1,5 +1,6 @@
 #include <string>
 #include <vector>
+#include <algorithm> // to shut up MSVC errors (:
 
 #include "memctrlbase.h"
 
