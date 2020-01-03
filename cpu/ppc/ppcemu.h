@@ -231,19 +231,6 @@ void ppc_exception_handler(uint32_t exception_type, uint32_t handle_args);
 extern MemCtrlBase *mem_ctrl_instance;
 
 extern unsigned char * machine_sysram_mem;
-extern unsigned char * machine_sysconfig_mem;
-//Mapped to 0x68000000 - extern unsigned char * machine_68kemu_mem;
-extern unsigned char * machine_upperiocontrol_mem;
-extern unsigned char * machine_iocontrolcdma_mem;
-extern unsigned char * machine_loweriocontrol_mem;
-extern unsigned char * machine_interruptack_mem;
-extern unsigned char * machine_iocontrolmem_mem;
-extern unsigned char * machine_f8xxxx_mem;
-extern unsigned char * machine_fexxxx_mem;
-extern unsigned char * machine_fecxxx_mem;
-extern unsigned char * machine_feexxx_mem;
-extern unsigned char * machine_ff00xx_mem;
-extern unsigned char * machine_ff80xx_mem;
 extern unsigned char * machine_sysrom_mem;
 
 //The functions used by the PowerPC processor

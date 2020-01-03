@@ -82,23 +82,7 @@ MemCtrlBase *mem_ctrl_instance = 0;
 HeathrowIC  *heathrow = 0;
 GossamerID  *machine_id;
 
-//A pointer to a pointer, used for quick movement to one of the following
-//memory areas. These are listed right below.
-unsigned char * grab_array_ptr;
-
 unsigned char * machine_sysram_mem;
-unsigned char * machine_sysconfig_mem;
-unsigned char * machine_upperiocontrol_mem;
-unsigned char * machine_iocontrolcdma_mem;
-unsigned char * machine_loweriocontrol_mem;
-unsigned char * machine_interruptack_mem;
-unsigned char * machine_iocontrolmem_mem;
-unsigned char * machine_f8xxxx_mem;
-unsigned char * machine_fexxxx_mem;
-unsigned char * machine_fecxxx_mem;
-unsigned char * machine_feexxx_mem;
-unsigned char * machine_ff00xx_mem;
-unsigned char * machine_ff80xx_mem;
 unsigned char * machine_sysrom_mem;
 
 uint32_t grab_sysram_size;
@@ -381,32 +365,9 @@ int main(int argc, char **argv)
     }
 
     machine_sysram_mem = (unsigned char*) calloc (67108864, 1);
-    machine_sysconfig_mem = (unsigned char*) calloc (2048, 1);
-    machine_upperiocontrol_mem = (unsigned char*) calloc (8388608, 1);
-    machine_iocontrolcdma_mem = (unsigned char*) calloc (8388608, 1);
-    machine_loweriocontrol_mem = (unsigned char*) calloc (33554432, 1);
-    machine_interruptack_mem = (unsigned char*) calloc (16, 1);
-    machine_iocontrolmem_mem = (unsigned char*) calloc (67108864, 1);
-    machine_f8xxxx_mem = (unsigned char*) calloc (4096, 1);
-    machine_fexxxx_mem = (unsigned char*) calloc (262144, 1);
-    machine_fecxxx_mem = (unsigned char*) calloc (4096, 1);
-    machine_feexxx_mem = (unsigned char*) calloc (4096, 1);
-    machine_ff00xx_mem = (unsigned char*) calloc (4096, 1);
-    machine_ff80xx_mem = (unsigned char*) calloc (1048576, 1);
     machine_sysrom_mem = (unsigned char*) calloc (rom_filesize, 1);
 
     memset(machine_sysram_mem, 0x0, 67108864);
-    memset(machine_sysconfig_mem, 0x0, 2048);
-    memset(machine_upperiocontrol_mem, 0x0, 8388607);
-    memset(machine_iocontrolcdma_mem, 0x0, 8388607);
-    memset(machine_interruptack_mem, 0x0, 16);
-    memset(machine_iocontrolmem_mem, 0x0, 67108864);
-    memset(machine_f8xxxx_mem, 0x0, 4096);
-    memset(machine_fexxxx_mem, 0x0, 262144);
-    memset(machine_fecxxx_mem, 0x0, 4096);
-    memset(machine_feexxx_mem, 0x0, 4096);
-    memset(machine_ff00xx_mem, 0x0, 4096);
-    memset(machine_ff80xx_mem, 0x0, 1048576);
 
     grab_sysram_size = sizeof(machine_sysram_mem);
     grab_sysrom_size = rom_filesize;
@@ -711,17 +672,6 @@ int main(int argc, char **argv)
 
     //Free memory after the emulation is completed.
     free(machine_sysram_mem);
-    free(machine_upperiocontrol_mem);
-    free(machine_iocontrolcdma_mem);
-    free(machine_loweriocontrol_mem);
-    free(machine_interruptack_mem);
-    free(machine_iocontrolmem_mem);
-    free(machine_f8xxxx_mem);
-    free(machine_fexxxx_mem);
-    free(machine_fecxxx_mem);
-    free(machine_feexxx_mem);
-    free(machine_ff00xx_mem);
-    free(machine_ff80xx_mem);
     free(machine_sysrom_mem);
 
     return 0;

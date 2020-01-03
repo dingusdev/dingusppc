@@ -22,10 +22,6 @@ typedef struct PPC_BAT_entry {
     uint32_t    bepi;     /* copy of Block effective page index */
 } PPC_BAT_entry;
 
-extern uint32_t bat_srch;
-extern uint32_t bepi_chk;
-
-extern unsigned char * grab_macmem_ptr;
 
 extern void ibat_update(uint32_t bat_reg);
 extern void dbat_update(uint32_t bat_reg);

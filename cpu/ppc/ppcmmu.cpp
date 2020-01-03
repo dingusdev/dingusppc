@@ -12,8 +12,6 @@
 #include <cinttypes>
 #include <string>
 #include <array>
-#include <thread>
-#include <atomic>
 #include "memreadwrite.h"
 #include "ppcemu.h"
 #include "ppcmmu.h"
@@ -21,40 +19,6 @@
 #include "devices/mmiodevice.h"
 #include "devices/mpc106.h"
 
-std::vector<uint32_t> pte_storage;
-
-uint32_t pte_word1;
-uint32_t pte_word2;
-
-uint32_t msr_ir_test;
-uint32_t msr_dr_test;
-uint32_t msr_ip_test;
-
-uint32_t choose_sr;
-uint32_t pteg_hash1;
-uint32_t pteg_hash2;
-uint32_t pteg_answer;
-
-uint32_t pteg_address1;
-uint32_t pteg_temp1;
-uint32_t pteg_address2;
-uint32_t pteg_temp2;
-
-uint32_t pteg_check1;
-uint32_t rev_pteg_check1;
-uint32_t pteg_check2;
-uint32_t rev_pteg_check2;
-
-unsigned char * grab_tempmem_ptr1;
-unsigned char * grab_tempmem_ptr2;
-unsigned char * grab_tempmem_ptr3;
-unsigned char * grab_tempmem_ptr4;
-
-unsigned char * grab_macmem_ptr;
-unsigned char * grab_pteg1_ptr;
-unsigned char * grab_pteg2_ptr;
-
-std::atomic<bool> hash_found (false);
 
 /** PowerPC-style MMU BAT arrays (NULL initialization isn't prescribed). */
 PPC_BAT_entry ibat_array[4] = {{0}};
@@ -221,7 +185,7 @@ static bool search_pteg(uint8_t *pteg_addr, uint8_t **ret_pte_addr,
 static uint32_t page_address_translate(uint32_t la, bool is_instr_fetch,
                                        unsigned msr_pr, bool is_write)
 {
-    uint32_t sr_val, page_index, vsid, pte_word2;
+    uint32_t sr_val, page_index, pteg_hash1, vsid, pte_word2;
     unsigned key, pp;
     uint8_t *pte_addr;
 
