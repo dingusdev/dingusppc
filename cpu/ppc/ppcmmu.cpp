@@ -5,7 +5,16 @@
 //if you want to distribute this.
 //(divingkatae#1017 on Discord)
 
-// The memory operations - ppcmemory.cpp
+/** @file PowerPC Memory management unit emulation. */
+
+/* TODO:
+    - implement TLB
+    - implement 601-style BATs
+    - implement BAT access check
+    - add proper error and exception handling
+    - clarify what to do in the case of unaligned memory accesses
+    - remove dependency on MPC106 (use generic memory controller interface instead)
+ */
 
 #include <iostream>
 #include <cstdint>
