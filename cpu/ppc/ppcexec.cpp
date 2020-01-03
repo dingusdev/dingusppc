@@ -6,6 +6,11 @@
 
 bool power_on = 1;
 
+bool bb_end = 0;       /* "true" means a basic block was terminated */
+BB_end_reason bb_kind; /* the reason for the termination of a basic block */
+
+uint64_t timebase_counter; /* internal timebase counter */
+
 clock_t clock_test_begin; //Used to make sure the TBR does not increment so quickly.
 
 /** Opcode lookup tables. */
@@ -508,6 +513,7 @@ void ppc_tbr_update()
 }
 
 /** Execute PPC code as long as power is on. */
+#if 0
 void ppc_exec()
 {
     while (power_on){
@@ -531,8 +537,47 @@ void ppc_exec()
         }
     }
 }
+#else
+void ppc_exec()
+{
+    uint32_t bb_start_la, page_start;
+    uint8_t *pc_real;
+
+    /* start new basic block */
+    bb_start_la = ppc_state.ppc_pc;
+    bb_end = false;
+
+    /* initial MMU translation for the current code page. */
+    pc_real = quickinstruction_translate(bb_start_la);
+
+    /* set current code page limits */
+    page_start = bb_start_la & 0xFFFFF000;
+
+    while (power_on) {
+        ppc_main_opcode();
+        if (bb_end) {
+            timebase_counter += (ppc_state.ppc_pc - bb_start_la) >> 2;
+            bb_start_la = ppc_next_instruction_address;
+            if ((ppc_next_instruction_address & 0xFFFFF000) != page_start) {
+                page_start = bb_start_la & 0xFFFFF000;
+                pc_real = quickinstruction_translate(bb_start_la);
+            } else {
+                pc_real += (int)bb_start_la - (int)ppc_state.ppc_pc;
+                ppc_set_cur_instruction(pc_real);
+            }
+            ppc_state.ppc_pc = bb_start_la;
+            bb_end = false;
+        } else {
+            ppc_state.ppc_pc += 4;
+            pc_real += 4;
+            ppc_set_cur_instruction(pc_real);
+        }
+    }
+}
+#endif
 
 /** Execute one PPC instruction. */
+#if 0
 void ppc_exec_single()
 {
     quickinstruction_translate(ppc_state.ppc_pc);
@@ -553,8 +598,23 @@ void ppc_exec_single()
         ppc_tbr_update();
     }
 }
+#else
+void ppc_exec_single()
+{
+    quickinstruction_translate(ppc_state.ppc_pc);
+    ppc_main_opcode();
+    if (bb_end) {
+        ppc_state.ppc_pc = ppc_next_instruction_address;
+        bb_end = false;
+    } else {
+        ppc_state.ppc_pc += 4;
+    }
+    timebase_counter += 1;
+}
+#endif
 
 /** Execute PPC code until goal_addr is reached. */
+#if 0
 void ppc_exec_until(uint32_t goal_addr)
 {
     while (ppc_state.ppc_pc != goal_addr) {
@@ -578,8 +638,47 @@ void ppc_exec_until(uint32_t goal_addr)
         ppc_cur_instruction = 0;
     }
 }
+#else
+void ppc_exec_until(uint32_t goal_addr)
+{
+    uint32_t bb_start_la, page_start;
+    uint8_t *pc_real;
+
+    /* start new basic block */
+    bb_start_la = ppc_state.ppc_pc;
+    bb_end = false;
+
+    /* initial MMU translation for the current code page. */
+    pc_real = quickinstruction_translate(bb_start_la);
+
+    /* set current code page limits */
+    page_start = bb_start_la & 0xFFFFF000;
+
+    while (ppc_state.ppc_pc != goal_addr) {
+        ppc_main_opcode();
+        if (bb_end) {
+            timebase_counter += (ppc_state.ppc_pc - bb_start_la) >> 2;
+            bb_start_la = ppc_next_instruction_address;
+            if ((ppc_next_instruction_address & 0xFFFFF000) != page_start) {
+                page_start = bb_start_la & 0xFFFFF000;
+                pc_real = quickinstruction_translate(bb_start_la);
+            } else {
+                pc_real += (int)bb_start_la - (int)ppc_state.ppc_pc;
+                ppc_set_cur_instruction(pc_real);
+            }
+            ppc_state.ppc_pc = bb_start_la;
+            bb_end = false;
+        } else {
+            ppc_state.ppc_pc += 4;
+            pc_real += 4;
+            ppc_set_cur_instruction(pc_real);
+        }
+    }
+}
+#endif
 
 void ppc_init()
 {
     clock_test_begin = clock();
+    timebase_counter = 0;
 }

@@ -29,6 +29,7 @@ typedef struct PPC_BAT_entry {
 extern void ibat_update(uint32_t bat_reg);
 extern void dbat_update(uint32_t bat_reg);
 
+extern void ppc_set_cur_instruction(const uint8_t *ptr);
 extern void address_quickinsert_translate(uint32_t value_insert, uint32_t address_grab, uint8_t num_bytes);
 extern void address_quickgrab_translate(uint32_t address_grab, uint8_t num_bytes);
 extern uint8_t *quickinstruction_translate(uint32_t address_grab);

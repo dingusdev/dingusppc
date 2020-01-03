@@ -33,7 +33,7 @@
 PPC_BAT_entry ibat_array[4] = {{0}};
 PPC_BAT_entry dbat_array[4] = {{0}};
 
-static inline void ppc_set_cur_instruction(const uint8_t *ptr)
+void ppc_set_cur_instruction(const uint8_t *ptr)
 {
     ppc_cur_instruction = READ_DWORD_BE(ptr);
 }

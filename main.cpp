@@ -129,6 +129,8 @@ uint64_t rev_endian64(uint64_t insert_int){
 void ppc_exception_handler(uint32_t exception_type, uint32_t handle_args){
     ppc_next_instruction_address = 0x0; //used to construct a new address
     grab_exception = true;
+    bb_end = 0;
+    bb_kind = BB_EXCEPTION;
 
     printf("MSR VALUE: %x \n Exception Type: %x", ppc_state.ppc_msr, exception_type);
 
