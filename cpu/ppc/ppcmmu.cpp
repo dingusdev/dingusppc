@@ -14,6 +14,7 @@
 #include <array>
 #include <thread>
 #include <atomic>
+#include "memreadwrite.h"
 #include "ppcemu.h"
 #include "ppcmmu.h"
 #include "devices/memctrlbase.h"
@@ -65,10 +66,9 @@ void msr_status_update(){
     msr_dr_test = (ppc_state.ppc_msr >> 4) & 1;
 }
 
-static inline void ppc_set_cur_instruction(unsigned char *ptr, uint32_t offset)
+static inline void ppc_set_cur_instruction(const uint8_t *ptr)
 {
-    ppc_cur_instruction  = (ptr[offset]  << 24) | (ptr[offset+1] << 16) |
-                           (ptr[offset+2] << 8) |  ptr[offset+3];
+    ppc_cur_instruction = READ_DWORD_BE(ptr);
 }
 
 static inline void ppc_set_return_val(unsigned char *ptr, uint32_t offset,

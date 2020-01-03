@@ -14,6 +14,7 @@
 #include <cstring>
 #include <cinttypes>
 
+#include "memreadwrite.h"
 #include "memctrlbase.h"
 #include "mmiodevice.h"
 #include "mpc106.h"
