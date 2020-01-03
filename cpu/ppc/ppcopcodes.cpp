@@ -1283,7 +1283,6 @@ void ppc_mtmsr(){
     //if ((ppc_state.ppc_msr && 0x4000) == 0){
         reg_s = (ppc_cur_instruction >> 21) & 31;
         ppc_state.ppc_msr = ppc_state.ppc_gpr[reg_s];
-        msr_status_update();
     //}
 }
 

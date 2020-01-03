@@ -25,27 +25,13 @@ typedef struct PPC_BAT_entry {
 extern uint32_t bat_srch;
 extern uint32_t bepi_chk;
 
-extern uint32_t msr_ir_test;
-extern uint32_t msr_dr_test;
-extern uint32_t msr_ip_test;
-
 extern unsigned char * grab_macmem_ptr;
-
-/**
-struct pte {
-    uint32_t page_index_no;
-    uint32_t entry[];
-    pte *next;
-} PTE;
-**/
 
 extern void ibat_update(uint32_t bat_reg);
 extern void dbat_update(uint32_t bat_reg);
 
-extern void msr_status_update();
-
 extern void address_quickinsert_translate(uint32_t value_insert, uint32_t address_grab, uint8_t num_bytes);
 extern void address_quickgrab_translate(uint32_t address_grab, uint8_t num_bytes);
-extern void quickinstruction_translate(uint32_t address_grab);
+extern uint8_t *quickinstruction_translate(uint32_t address_grab);
 
 #endif // PPCMEMORY_H

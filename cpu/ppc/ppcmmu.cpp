@@ -60,12 +60,6 @@ std::atomic<bool> hash_found (false);
 PPC_BAT_entry ibat_array[4] = {{0}};
 PPC_BAT_entry dbat_array[4] = {{0}};
 
-void msr_status_update(){
-    msr_ip_test = (ppc_state.ppc_msr >> 6) & 1;
-    msr_ir_test = (ppc_state.ppc_msr >> 5) & 1;
-    msr_dr_test = (ppc_state.ppc_msr >> 4) & 1;
-}
-
 static inline void ppc_set_cur_instruction(const uint8_t *ptr)
 {
     ppc_cur_instruction = READ_DWORD_BE(ptr);
@@ -175,278 +169,115 @@ void dbat_update(uint32_t bat_reg)
     }
 }
 
-void get_pointer_pteg1(uint32_t address_grab){
-        //Grab the array pointer for the PTEG
-    if (address_grab < 0x80000000){
-        pte_word1 = address_grab % ram_size_set;
-        if (address_grab < 0x040000000){ //for debug purposes
-            grab_pteg1_ptr = machine_sysram_mem;
-        }
-        else if ((address_grab >= 0x5fffe000) && (address_grab <= 0x5fffffff)){
-            pte_word1 = address_grab % 0x2000;
-            grab_pteg1_ptr = machine_sysconfig_mem;
-        }
-        else{
-            printf("Uncharted territory: %x \n", address_grab);
-        }
-    }
-    else if (address_grab < 0x80800000){
-        pte_word1 = address_grab % 0x800000;
-        grab_pteg1_ptr = machine_upperiocontrol_mem;
+/* remember page table memory region for quicker translation. */
+uint32_t page_table_pa_start  = 0;
+uint32_t page_table_pa_end    = 0;
+unsigned char *page_table_ptr = 0;
 
-    }
-    else if (address_grab < 0x81000000){
-        pte_word1 = address_grab % 0x800000;
-        grab_pteg1_ptr = machine_iocontrolcdma_mem;
+static inline uint8_t *calc_pteg_addr(uint32_t hash)
+{
+    uint32_t sdr1_val, pteg_addr;
 
-    }
-    else if (address_grab < 0xBF80000){
-        pte_word1 = address_grab % 33554432;
-        grab_pteg1_ptr = machine_loweriocontrol_mem;
+    sdr1_val = ppc_state.ppc_spr[25];
 
-    }
-    else if (address_grab < 0xC0000000){
-        pte_word1 = address_grab % 16;
-        grab_pteg1_ptr = machine_interruptack_mem;
+    pteg_addr = sdr1_val & 0xFE000000;
+    pteg_addr |= (sdr1_val & 0x01FF0000) |
+                    (((sdr1_val & 0x1FF) << 16) & ((hash & 0x7FC00) << 6));
+    pteg_addr |= (hash & 0x3FF) << 6;
 
-    }
-    else if (address_grab < 0xF0000000){
-        printf("Invalid Memory Attempt: %x \n", address_grab);
-        return;
-    }
-    else if (address_grab < 0xF8000000){
-        pte_word1 = address_grab % 67108864;
-        grab_pteg1_ptr = machine_iocontrolmem_mem;
-
-    }
-    else if (address_grab < rom_file_begin){
-        //Get back to this! (weeny1)
-        if (address_grab < 0xFE000000){
-            pte_word1 = address_grab % 4096;
-            grab_pteg1_ptr = machine_f8xxxx_mem;
+    if (pteg_addr >= page_table_pa_start && pteg_addr <= page_table_pa_end) {
+        return page_table_ptr + (pteg_addr - page_table_pa_start);
+    } else {
+        AddressMapEntry *entry = mem_ctrl_instance->find_range(pteg_addr);
+        if (entry && entry->type & (RT_ROM | RT_RAM)) {
+            page_table_pa_start = entry->start;
+            page_table_pa_end   = entry->end;
+            page_table_ptr      = entry->mem_ptr;
+            return page_table_ptr + (pteg_addr - page_table_pa_start);
+        } else {
+            printf("SOS: no page table region was found at %08X!\n", pteg_addr);
+            exit(-1); // FIXME: ugly error handling, must be the proper exception!
         }
-        else if (address_grab < 0xFEC00000){
-            pte_word1 = address_grab % 65536;
-            grab_pteg1_ptr = machine_fexxxx_mem;
-        }
-        else if (address_grab < 0xFEE00000){
-            pte_word1 = 0x0CF8;  //CONFIG_ADDR
-            grab_pteg1_ptr = machine_fecxxx_mem;
-        }
-        else if (address_grab < 0xFF000000){
-            pte_word1 = 0x0CFC;  //CONFIG_DATA
-            grab_pteg1_ptr = machine_feexxx_mem;
-        }
-        else if (address_grab < 0xFF800000){
-            pte_word1 = address_grab % 4096;
-            grab_pteg1_ptr = machine_ff00xx_mem;
-        }
-        else{
-            pte_word1 = (address_grab % 1048576) + 0x400000;
-            grab_pteg1_ptr = machine_sysram_mem;
-        }
-    }
-    else{
-        pte_word1 = address_grab % rom_filesize;
-        grab_pteg1_ptr = machine_sysrom_mem;
     }
 }
 
-void get_pointer_pteg2(uint32_t address_grab){
-        //Grab the array pointer for the PTEG
-    if (address_grab < 0x80000000){
-        pte_word2 = address_grab % ram_size_set;
-        if (address_grab < 0x040000000){ //for debug purposes
-            grab_pteg2_ptr = machine_sysram_mem;
-        }
-        else if ((address_grab >= 0x5fffe000) && (address_grab <= 0x5fffffff)){
-            pte_word2 = address_grab % 0x2000;
-            grab_pteg2_ptr = machine_sysconfig_mem;
-        }
-        else{
-            printf("Uncharted territory: %x \n", address_grab);
-        }
-    }
-    else if (address_grab < 0x80800000){
-        pte_word2 = address_grab % 0x800000;
-        grab_pteg2_ptr = machine_upperiocontrol_mem;
+static bool search_pteg(uint8_t *pteg_addr, uint8_t **ret_pte_addr,
+                        uint32_t vsid, uint16_t page_index, uint8_t pteg_num)
+{
+    /* construct PTE matching word */
+    uint32_t pte_check = 0x80000000 | (vsid << 7) | (pteg_num << 6) |
+                        (page_index >> 10);
 
+    for (int i = 0; i < 8; i++, pteg_addr += 8) {
+        if (pte_check == READ_DWORD_BE(pteg_addr)) {
+            *ret_pte_addr = pteg_addr;
+            return true;
+        }
     }
-    else if (address_grab < 0x81000000){
-        pte_word2 = address_grab % 0x800000;
-        grab_pteg2_ptr = machine_iocontrolcdma_mem;
 
-    }
-    else if (address_grab < 0xBF80000){
-        pte_word2 = address_grab % 33554432;
-        grab_pteg2_ptr = machine_loweriocontrol_mem;
-
-    }
-    else if (address_grab < 0xC0000000){
-        pte_word2 = address_grab % 16;
-        grab_pteg2_ptr = machine_interruptack_mem;
-
-    }
-    else if (address_grab < 0xF0000000){
-        printf("Invalid Memory Attempt: %x \n", address_grab);
-        return;
-    }
-    else if (address_grab < 0xF8000000){
-        pte_word2 = address_grab % 67108864;
-        grab_pteg2_ptr = machine_iocontrolmem_mem;
-
-    }
-    else if (address_grab < rom_file_begin){
-        //Get back to this! (weeny1)
-        if (address_grab < 0xFE000000){
-            pte_word2 = address_grab % 4096;
-            grab_pteg2_ptr = machine_f8xxxx_mem;
-        }
-        else if (address_grab < 0xFEC00000){
-            pte_word2 = address_grab % 65536;
-            grab_pteg2_ptr = machine_fexxxx_mem;
-        }
-        else if (address_grab < 0xFEE00000){
-            pte_word2 = 0x0CF8;  //CONFIG_ADDR
-            grab_pteg2_ptr = machine_fecxxx_mem;
-        }
-        else if (address_grab < 0xFF000000){
-            pte_word2 = 0x0CFC;  //CONFIG_DATA
-            grab_pteg2_ptr = machine_feexxx_mem;
-        }
-        else if (address_grab < 0xFF800000){
-            pte_word2 = address_grab % 4096;
-            grab_pteg2_ptr = machine_ff00xx_mem;
-        }
-        else{
-            pte_word2 = (address_grab % 1048576) + 0x400000;
-            grab_pteg2_ptr = machine_sysram_mem;
-        }
-    }
-    else{
-        pte_word2 = address_grab % rom_filesize;
-        grab_pteg2_ptr = machine_sysrom_mem;
-    }
+    return false;
 }
 
-void primary_generate_pa(){
-    pteg_address1 |= ppc_state.ppc_spr[25] & 0xFE000000;
-    pteg_temp1 = (((ppc_state.ppc_spr[25] & 0x1FF) << 10) & (pteg_hash1 & 0x7FC00));
-    pteg_address1 |= ((ppc_state.ppc_spr[25] & 0x1FF0000) | pteg_temp1);
-    pteg_address1 |= (pteg_hash1 & 0x3FF) << 6;
-}
+static uint32_t page_address_translate(uint32_t la, bool is_instr_fetch,
+                                       unsigned msr_pr, bool is_write)
+{
+    uint32_t sr_val, page_index, vsid, pte_word2;
+    unsigned key, pp;
+    uint8_t *pte_addr;
 
-void secondary_generate_pa(){
-    pteg_address2 |= ppc_state.ppc_spr[25] & 0xFE000000;
-    pteg_temp2 = (((ppc_state.ppc_spr[25] & 0x1FF) << 10) & (pteg_hash2 & 0x7FC00));
-    pteg_address2 |= ((ppc_state.ppc_spr[25] & 0x1FF0000) | pteg_temp2);
-    pteg_address2 |= (pteg_hash2 & 0x3FF) << 6;
-}
+    sr_val = ppc_state.ppc_sr[(la >> 28) & 0x0F];
+    if (sr_val & 0x80000000) {
+        printf("Direct-store segments not supported, LA=%0xX\n", la);
+        exit(-1); // FIXME: ugly error handling, must be the proper exception!
+    }
 
-void primary_hash_check(uint32_t vpid_known){
+    /* instruction fetch from a no-execute segment will cause ISI exception */
+    if ((sr_val & 0x10000000) && is_instr_fetch) {
+        ppc_exception_handler(0x400, 0); // FIXME: proper exception handling!
+    }
 
-    uint32_t entries_size = ((ppc_state.ppc_spr[25] & 0x1FF) > 0)? ((ppc_state.ppc_spr[25] & 0x1FF) << 9): 65536;
-    uint32_t entries_area = pte_word1 + entries_size;
+    page_index = (la >> 12) & 0xFFFF;
+    pteg_hash1 = (sr_val & 0x7FFFF) ^ page_index;
+    vsid = sr_val & 0x0FFFFFF;
 
-    uint32_t check_vpid = 0;
-
-    do{
-        if (!hash_found){
-            check_vpid |= grab_pteg1_ptr[pte_word1++] << 24;
-            check_vpid |= grab_pteg1_ptr[pte_word1++] << 16;
-            check_vpid |= grab_pteg1_ptr[pte_word1++] << 8;
-            check_vpid |= grab_pteg1_ptr[pte_word1++];
-
-        check_vpid = (check_vpid >> 7) & 0xFFFFFF;
-
-        if ((check_vpid >> 31) & 0x01){
-            if (vpid_known == check_vpid){
-                hash_found = true;
-                pteg_answer |= grab_pteg1_ptr[pte_word1++] << 24;
-                pteg_answer |= grab_pteg1_ptr[pte_word1++] << 16;
-                pteg_answer |= grab_pteg1_ptr[pte_word1++] << 8;
-                pteg_answer |= grab_pteg1_ptr[pte_word1++];
-                break;
-            }
-            else{
-                pte_word1 += 4;
-                check_vpid = 0;
+    if (!search_pteg(calc_pteg_addr(pteg_hash1), &pte_addr, vsid, page_index, 0)) {
+        if (!search_pteg(calc_pteg_addr(~pteg_hash1), &pte_addr, vsid, page_index, 1)) {
+            if (is_instr_fetch) {
+                ppc_exception_handler(0x400, 0);
+            } else {
+                ppc_exception_handler(0x300, 0);
             }
         }
-        else{
-            pte_word1 += 4;
-            check_vpid = 0;
+    }
+
+    pte_word2 = READ_DWORD_BE(pte_addr + 4);
+
+    key = (((sr_val >> 29) & 1) & msr_pr) | (((sr_val >> 30) & 1) & (msr_pr ^ 1));
+
+    /* check page access */
+    pp = pte_word2 & 3;
+
+    // the following scenarios cause DSI/ISI exception:
+    // any access with key = 1 and PP = %00
+    // write access with key = 1 and PP = %01
+    // write access with PP = %11
+    if ((key && (!pp || (pp == 1 && is_write))) || (pp == 3 && is_write)) {
+        if (is_instr_fetch) {
+            ppc_exception_handler(0x400, 0);
+        } else {
+            ppc_exception_handler(0x300, 0);
         }
-        }
-        else{
-            pte_word1 = entries_area;
-        }
+    }
 
-    }while (pte_word1 < entries_area);
-}
+    /* update R and C bits */
+    /* For simplicity, R is set on each access, C is set only for writes */
+    pte_addr[6] |= 0x01;
+    if (is_write) {
+        pte_addr[7] |= 0x80;
+    }
 
-void secondary_hash_check(uint32_t vpid_known){
-
-    uint32_t entries_size = ((ppc_state.ppc_spr[25] & 0x1FF) > 0)? ((ppc_state.ppc_spr[25] & 0x1FF) << 9): 65536;
-    uint32_t entries_area = pte_word1 + entries_size;
-
-    uint32_t check_vpid = 0;
-
-    do{
-        if (!hash_found){
-            check_vpid |= grab_pteg2_ptr[pte_word2++] << 24;
-            check_vpid |= grab_pteg2_ptr[pte_word2++] << 16;
-            check_vpid |= grab_pteg2_ptr[pte_word2++] << 8;
-            check_vpid |= grab_pteg2_ptr[pte_word2++];
-
-        check_vpid = (check_vpid >> 7) & 0xFFFFFF;
-
-        if ((check_vpid >> 31) & 0x01){
-            if (vpid_known == check_vpid){
-                hash_found = true;
-                pteg_answer |= grab_pteg2_ptr[pte_word2++] << 24;
-                pteg_answer |= grab_pteg2_ptr[pte_word2++] << 16;
-                pteg_answer |= grab_pteg2_ptr[pte_word2++] << 8;
-                pteg_answer |= grab_pteg2_ptr[pte_word2++];
-                break;
-            }
-            else{
-                pte_word2 += 4;
-                check_vpid = 0;
-            }
-        }
-        else{
-            pte_word2 += 4;
-            check_vpid = 0;
-        }
-        }
-        else{
-            pte_word2 = entries_area;
-        }
-
-    }while (pte_word2 < entries_area);
-}
-
-void pteg_translate(uint32_t address_grab){
-    uint32_t choose_sr = (ppc_effective_address >> 28) & 0x0F;
-    pteg_hash1 = ppc_state.ppc_sr[choose_sr] & 0x7FFFF;
-    uint32_t page_index = (ppc_effective_address & 0xFFFF000) >> 12;
-    pteg_hash1 = (pteg_hash1 ^ page_index);
-    pteg_hash2 = ~pteg_hash1;
-
-    std::thread primary_pa_check(&primary_generate_pa);
-    std::thread secondary_pa_check(&secondary_generate_pa);
-
-    primary_pa_check.join();
-    secondary_pa_check.join();
-
-    uint32_t grab_val = ppc_state.ppc_sr[choose_sr] & 0xFFFFFF;
-
-    std::thread primary_pteg_check(&primary_hash_check, std::ref(grab_val));
-    std::thread secondary_pteg_check(&secondary_hash_check, std::ref(grab_val));
-
-    primary_pteg_check.join();
-    secondary_pteg_check.join();
+    /* return physical address */
+    return ((pte_word2 & 0xFFFFF000) | (la & 0x00000FFF));
 }
 
 /** PowerPC-style MMU instruction address translation. */
@@ -476,19 +307,16 @@ uint32_t ppc_mmu_instr_translate(uint32_t la)
         }
     }
 
-    // Segment registers & page table translation
-    if (!bat_hit){
-        pteg_translate(la);
-        if (hash_found == true){
-            pa = (la & 0xFFF) | (pteg_answer & 0xFFFFF000);
-        }
+    /* page address translation */
+    if (!bat_hit) {
+        pa = page_address_translate(la, true, msr_pr, false);
     }
 
     return pa;
 }
 
 /** PowerPC-style MMU data address translation. */
-uint32_t ppc_mmu_addr_translate(uint32_t la, uint32_t access_type)
+uint32_t ppc_mmu_addr_translate(uint32_t la, bool is_write)
 {
     uint32_t pa; /* translated physical address */
 
@@ -514,12 +342,9 @@ uint32_t ppc_mmu_addr_translate(uint32_t la, uint32_t access_type)
         }
     }
 
-    // Segment registers & page table translation
-    if (!bat_hit){
-        pteg_translate(la);
-        if (hash_found == true){
-            pa = (la & 0xFFF) | (pteg_answer & 0xFFFFF000);
-        }
+    /* page address translation */
+    if (!bat_hit) {
+        pa = page_address_translate(la, false, msr_pr, is_write);
     }
 
     return pa;
@@ -534,7 +359,7 @@ void address_quickinsert_translate(uint32_t value, uint32_t addr, uint8_t num_by
 {
     /* data address translation if enabled */
     if (ppc_state.ppc_msr & 0x10) {
-        addr = ppc_mmu_addr_translate(addr, 0);
+        addr = ppc_mmu_addr_translate(addr, true);
     }
 
     if (addr >= write_last_pa_start && addr <= write_last_pa_end) {
@@ -568,7 +393,7 @@ void address_quickgrab_translate(uint32_t addr, uint8_t num_bytes)
 {
     /* data address translation if enabled */
     if (ppc_state.ppc_msr & 0x10) {
-        addr = ppc_mmu_addr_translate(addr, 0);
+        addr = ppc_mmu_addr_translate(addr, false);
     }
 
     if (addr >= read_last_pa_start && addr <= read_last_pa_end) {
@@ -596,29 +421,36 @@ void address_quickgrab_translate(uint32_t addr, uint8_t num_bytes)
     }
 }
 
-
+/* remember recently used memory region for quicker translation. */
 uint32_t exec_last_pa_start  = 0;
 uint32_t exec_last_pa_end    = 0;
 unsigned char *exec_last_ptr = 0;
 
-void quickinstruction_translate(uint32_t addr)
+uint8_t *quickinstruction_translate(uint32_t addr)
 {
-    /* instruction address translation if enabled */
+    uint8_t *real_addr;
+
+    /* perform instruction address translation if enabled */
     if (ppc_state.ppc_msr & 0x20) {
         addr = ppc_mmu_instr_translate(addr);
     }
 
     if (addr >= exec_last_pa_start && addr <= exec_last_pa_end) {
-        ppc_set_cur_instruction(exec_last_ptr, addr - exec_last_pa_start);
+        real_addr = exec_last_ptr + (addr - exec_last_pa_start);
+        ppc_set_cur_instruction(real_addr);
     } else {
         AddressMapEntry *entry = mem_ctrl_instance->find_range(addr);
         if (entry && entry->type & (RT_ROM | RT_RAM)) {
             exec_last_pa_start = entry->start;
             exec_last_pa_end   = entry->end;
             exec_last_ptr = entry->mem_ptr;
-            ppc_set_cur_instruction(exec_last_ptr, addr - exec_last_pa_start);
+            real_addr = exec_last_ptr + (addr - exec_last_pa_start);
+            ppc_set_cur_instruction(real_addr);
         } else {
             printf("WARNING: attempt to execute code at %08X!\n", addr);
+            exit(-1); // FIXME: ugly error handling, must be the proper exception!
         }
     }
+
+    return real_addr;
 }
