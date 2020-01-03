@@ -172,12 +172,34 @@ static bool search_pteg(uint8_t *pteg_addr, uint8_t **ret_pte_addr,
     uint32_t pte_check = 0x80000000 | (vsid << 7) | (pteg_num << 6) |
                         (page_index >> 10);
 
+#ifdef MMU_INTEGRITY_CHECKS
+    /* PTEG integrity check that ensures that all matching PTEs have
+       identical RPN, WIMG and PP bits (PPC PEM 32-bit 7.6.2, rule 5). */
+    uint32_t pte_word2_check;
+    bool match_found = false;
+
+    for (int i = 0; i < 8; i++, pteg_addr += 8) {
+        if (pte_check == READ_DWORD_BE(pteg_addr)) {
+            if (match_found) {
+                if ((READ_DWORD_BE(pteg_addr) & 0xFFFFF07B) != pte_word2_check) {
+                    printf("Multiple PTEs with different RPN/WIMG/PP found!\n");
+                    exit(-1);
+                }
+            } else {
+                /* isolate RPN, WIMG and PP fields */
+                pte_word2_check = READ_DWORD_BE(pteg_addr) & 0xFFFFF07B;
+                *ret_pte_addr = pteg_addr;
+            }
+        }
+    }
+#else
     for (int i = 0; i < 8; i++, pteg_addr += 8) {
         if (pte_check == READ_DWORD_BE(pteg_addr)) {
             *ret_pte_addr = pteg_addr;
             return true;
         }
     }
+#endif
 
     return false;
 }

@@ -13,6 +13,9 @@
 #include <vector>
 #include <array>
 
+/* Uncomment this to exhaustive MMU integrity checks. */
+//#define MMU_INTEGRITY_CHECKS
+
 /** generic PowerPC BAT descriptor (MMU internal state) */
 typedef struct PPC_BAT_entry {
     uint8_t     access;   /* copy of Vs | Vp bits */
