@@ -1,9 +1,9 @@
 # Ignore binary files
-out
+out/
 *.bin
 
 # Ignore compiled object files
-.vs
+.vs/
 *.o
 *.d
 
