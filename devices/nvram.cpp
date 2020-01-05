@@ -52,11 +52,11 @@ void NVram::nvram_init() {
 }
 
 void NVram::nvram_save() {
-    std::ofstream outfile("nvram.bin");
+    NVram::nvram_savefile.open("nvram.bin", ios::out | ios::binary);
 
-    outfile.write((char*)nvram_storage, 8192);
+    NVram::nvram_savefile.write((char*)nvram_storage, 8192);
 
-    outfile.close();
+    NVram::nvram_savefile.close();
 }
 
 uint8_t NVram::nvram_read(uint32_t nvram_offset){
