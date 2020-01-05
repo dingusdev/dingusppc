@@ -862,7 +862,7 @@ void ppc_mulhwu(){
     ppc_grab_regsdab();
     uiproduct = (uint64_t) ppc_result_a * (uint64_t) ppc_result_b;
     uiproduct = uiproduct >> 32;
-    ppc_result_d = uiproduct;
+    ppc_result_d = (uint32_t) uiproduct;
     ppc_store_result_regd();
 }
 
@@ -870,7 +870,7 @@ void ppc_mulhwudot(){
     ppc_grab_regsdab();
     uiproduct = (uint64_t) ppc_result_a * (uint64_t) ppc_result_b;
     uiproduct = uiproduct >> 32;
-    ppc_result_d = uiproduct;
+    ppc_result_d = (uint32_t)uiproduct;
     ppc_changecrf0(ppc_result_d);
     ppc_store_result_regd();
 }
@@ -902,7 +902,7 @@ void ppc_mullw(){
 
 void ppc_mullwdot(){
     ppc_grab_regsdab();
-    siproduct = ppc_result_a * ppc_result_b;
+    siproduct = (int64_t)ppc_result_a * (int64_t)ppc_result_b;
     siproduct &= 4294967295;
     ppc_result_d = (uint32_t) siproduct;
     ppc_changecrf0(ppc_result_d);
@@ -912,7 +912,7 @@ void ppc_mullwdot(){
 void ppc_mullwo(){
     ppc_grab_regsdab();
     ppc_setsoov(ppc_result_a, ppc_result_b);
-    siproduct = ppc_result_a * ppc_result_b;
+    siproduct = (int64_t)ppc_result_a * (int64_t)ppc_result_b;
     siproduct &= 4294967295;
     ppc_result_d = (uint32_t) siproduct;
     ppc_store_result_regd();
@@ -921,7 +921,7 @@ void ppc_mullwo(){
 void ppc_mullwodot(){
     ppc_grab_regsdab();
     ppc_setsoov(ppc_result_a, ppc_result_b);
-    siproduct = ppc_result_a * ppc_result_b;
+    siproduct = (int64_t)ppc_result_a * (int64_t)ppc_result_b;
     siproduct &= 4294967295;
     ppc_result_d = (uint32_t) siproduct;
     ppc_changecrf0(ppc_result_d);
@@ -1406,7 +1406,7 @@ void ppc_b(){
     ppc_next_instruction_address = (uint32_t)(ppc_state.ppc_pc + adr_li);
     grab_branch = 1;
     bb_end = true;
-    bb_kind = BB_BRANCH;
+    bb_kind = BB_end_reason::BB_BRANCH;
 }
 
 void ppc_bl(){
@@ -1416,7 +1416,7 @@ void ppc_bl(){
     ppc_state.ppc_spr[8] = (uint32_t)(ppc_state.ppc_pc + 4);
     grab_branch = 1;
     bb_end = true;
-    bb_kind = BB_BRANCH;
+    bb_kind = BB_end_reason::BB_BRANCH;
 }
 
 void ppc_ba(){
@@ -1425,7 +1425,7 @@ void ppc_ba(){
     ppc_next_instruction_address = adr_li;
     grab_branch = 1;
     bb_end = true;
-    bb_kind = BB_BRANCH;
+    bb_kind = BB_end_reason::BB_BRANCH;
 }
 
 void ppc_bla(){
@@ -1435,7 +1435,7 @@ void ppc_bla(){
     ppc_state.ppc_spr[8] = ppc_state.ppc_pc + 4;
     grab_branch = 1;
     bb_end = true;
-    bb_kind = BB_BRANCH;
+    bb_kind = BB_end_reason::BB_BRANCH;
 }
 
 void ppc_bc()
@@ -1456,7 +1456,7 @@ void ppc_bc()
         ppc_next_instruction_address = (ppc_state.ppc_pc + br_bd);
         grab_branch = 1;
         bb_end = true;
-        bb_kind = BB_BRANCH;
+        bb_kind = BB_end_reason::BB_BRANCH;
     }
 }
 
@@ -1478,7 +1478,7 @@ void ppc_bca()
         ppc_next_instruction_address = br_bd;
         grab_branch = 1;
         bb_end = true;
-        bb_kind = BB_BRANCH;
+        bb_kind = BB_end_reason::BB_BRANCH;
     }
 }
 
@@ -1500,7 +1500,7 @@ void ppc_bcl()
         ppc_next_instruction_address = (ppc_state.ppc_pc + br_bd);
         grab_branch = 1;
         bb_end = true;
-        bb_kind = BB_BRANCH;
+        bb_kind = BB_end_reason::BB_BRANCH;
     }
     ppc_state.ppc_spr[8] = ppc_state.ppc_pc + 4;
 }
@@ -1523,7 +1523,7 @@ void ppc_bcla()
         ppc_next_instruction_address = br_bd;
         grab_branch = 1;
         bb_end = true;
-        bb_kind = BB_BRANCH;
+        bb_kind = BB_end_reason::BB_BRANCH;
     }
     ppc_state.ppc_spr[8] = ppc_state.ppc_pc + 4;
 }
@@ -1539,7 +1539,7 @@ void ppc_bcctr()
         ppc_next_instruction_address = (ppc_state.ppc_spr[9] & 0xFFFFFFFCUL);
         grab_branch = 1;
         bb_end = true;
-        bb_kind = BB_BRANCH;
+        bb_kind = BB_end_reason::BB_BRANCH;
     }
 }
 
@@ -1554,7 +1554,7 @@ void ppc_bcctrl()
         ppc_next_instruction_address = (ppc_state.ppc_spr[9] & 0xFFFFFFFCUL);
         grab_branch = 1;
         bb_end = true;
-        bb_kind = BB_BRANCH;
+        bb_kind = BB_end_reason::BB_BRANCH;
     }
     ppc_state.ppc_spr[8] = ppc_state.ppc_pc + 4;
 }
@@ -1576,7 +1576,7 @@ void ppc_bclr()
         ppc_next_instruction_address = (ppc_state.ppc_spr[8] & 0xFFFFFFFCUL);
         grab_branch = 1;
         bb_end = true;
-        bb_kind = BB_BRANCH;
+        bb_kind = BB_end_reason::BB_BRANCH;
     }
 }
 
@@ -1597,7 +1597,7 @@ void ppc_bclrl()
         ppc_next_instruction_address = (ppc_state.ppc_spr[8] & 0xFFFFFFFCUL);
         grab_branch = 1;
         bb_end = true;
-        bb_kind = BB_BRANCH;
+        bb_kind = BB_end_reason::BB_BRANCH;
     }
     ppc_state.ppc_spr[8] = ppc_state.ppc_pc + 4;
 }
@@ -1751,7 +1751,7 @@ void ppc_rfi(){
 
     grab_return = true;
     bb_end  = true;
-    bb_kind = BB_RFI;
+    bb_kind = BB_end_reason::BB_RFI;
 }
 
 void ppc_sc(){

@@ -130,7 +130,7 @@ void ppc_exception_handler(uint32_t exception_type, uint32_t handle_args){
     ppc_next_instruction_address = 0x0; //used to construct a new address
     grab_exception = true;
     bb_end = 0;
-    bb_kind = BB_EXCEPTION;
+    bb_kind = BB_end_reason::BB_EXCEPTION;
 
     printf("MSR VALUE: %x \n Exception Type: %x", ppc_state.ppc_msr, exception_type);
 
@@ -356,7 +356,7 @@ int main(int argc, char **argv)
 
     //Calculate and validate ROM file size.
     romFile.seekg(0, romFile.end);
-    rom_filesize = romFile.tellg();
+    rom_filesize = (uint32_t) romFile.tellg();
     printf("Rom SIZE: %d \n", rom_filesize);
     romFile.seekg (0, romFile.beg);
 
@@ -424,7 +424,7 @@ int main(int argc, char **argv)
 
     switch(rom_id) {
     case 0x476F7373: {
-            cout << "Initialize Gossamer hardware...";
+            cout << "Initialize Gossamer hardware..." << endl;
             MPC106 *mpc106 = new MPC106();
             mem_ctrl_instance = mpc106;
             if (!mem_ctrl_instance->add_rom_region(0xFFC00000, 0x400000)) {
@@ -479,7 +479,7 @@ int main(int argc, char **argv)
             char elf_memoffset [4];
 
             elfFile.seekg(0, elfFile.end);
-            elf_file_setsize = elfFile.tellg();
+            elf_file_setsize = (uint32_t) elfFile.tellg();
             elfFile.seekg (0, elfFile.beg);
 
             if (elf_file_setsize < 45){

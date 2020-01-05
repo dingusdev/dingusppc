@@ -14,7 +14,9 @@ using namespace std;
 HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow")
 {
     this->viacuda = new ViaCuda();
+    this->nvram = new NVram();
     assert(this->viacuda); // FIXME: do proper exception handling!
+    assert(this->nvram); // FIXME: do proper exception handling!
 }
 
 HeathrowIC::~HeathrowIC()
@@ -75,7 +77,7 @@ uint32_t HeathrowIC::read(uint32_t offset, int size)
         res = this->viacuda->read((offset - 0x16000) >> 9);
         break;
     default:
-        cout << "unmapped I/O space" << endl;
+        cout << "unmapped I/O space: " << sub_dev << endl;
     }
 
     return res;
@@ -102,7 +104,7 @@ void HeathrowIC::write(uint32_t offset, uint32_t value, int size)
         this->viacuda->write((offset - 0x16000) >> 9, value);
         break;
     default:
-        cout << "unmapped I/O space" << endl;
+        cout << "unmapped I/O space: " << sub_dev << endl;
     }
 }
 

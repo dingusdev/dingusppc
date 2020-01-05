@@ -36,6 +36,7 @@
 #include "mmiodevice.h"
 #include "pcihost.h"
 #include "viacuda.h"
+#include "nvram.h"
 
 /**
     Heathrow ASIC emulation
@@ -104,6 +105,7 @@ private:
 
     /* device cells */
     ViaCuda *viacuda; /* VIA cell with Cuda MCU attached to it */
+    NVram *nvram; /* NVRAM cell */
 };
 
 #endif /* MACIO_H */

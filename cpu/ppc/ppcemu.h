@@ -161,7 +161,7 @@ extern uint32_t rev_endian32(uint32_t insert_int);
 extern uint64_t rev_endian64(uint64_t insert_int);
 
 /* The precise reason for the termination of a basic block. */
-enum BB_end_reason {
+enum class BB_end_reason {
     BB_BRANCH = 1, /* a branch instruction is encountered */
     BB_EXCEPTION,  /* an exception is occured             */
     BB_RFI         /* the rfi instruction is encountered  */
