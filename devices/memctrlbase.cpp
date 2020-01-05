@@ -1,3 +1,10 @@
+//DingusPPC
+//Written by divingkatae and maximum
+//(c)2018-20 (theweirdo)     spatium
+//Please ask for permission
+//if you want to distribute this.
+//(divingkatae#1017 or powermax#2286 on Discord)
+
 #include <string>
 #include <vector>
 #include <algorithm> // to shut up MSVC errors (:

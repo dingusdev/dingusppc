@@ -16,6 +16,7 @@ public:
 
 private:
     std::fstream nvram_file; //NVRAM file for storing and reading values
+    std::ofstream nvram_savefile; //Save file when closing out DingusPPC
 
     /* NVRAM state. */
     uint32_t nvram_offset;

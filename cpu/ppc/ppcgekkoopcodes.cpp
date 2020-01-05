@@ -1,9 +1,9 @@
-//DingusPPC - Prototype 5bf2
-//Written by divingkatae
-//(c)2018-20 (theweirdo)
+//DingusPPC
+//Written by divingkatae and maximum
+//(c)2018-20 (theweirdo)     spatium
 //Please ask for permission
 //if you want to distribute this.
-//(divingkatae#1017 on Discord)
+//(divingkatae#1017 or powermax#2286 on Discord)
 
 // The uniquely Gekko opcodes for the processor - ppcgekkoopcodes.cpp
 

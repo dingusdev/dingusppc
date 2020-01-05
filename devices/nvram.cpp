@@ -1,3 +1,10 @@
+//DingusPPC
+//Written by divingkatae and maximum
+//(c)2018-20 (theweirdo)     spatium
+//Please ask for permission
+//if you want to distribute this.
+//(divingkatae#1017 or powermax#2286 on Discord)
+
 #include <iostream>
 #include <fstream>
 #include <cinttypes>
@@ -45,7 +52,11 @@ void NVram::nvram_init() {
 }
 
 void NVram::nvram_save() {
-    NVram::nvram_file.write((char*)nvram_storage, 8192);
+    std::ofstream outfile("nvram.bin");
+
+    outfile.write((char*)nvram_storage, 8192);
+
+    outfile.close();
 }
 
 uint8_t NVram::nvram_read(uint32_t nvram_offset){
