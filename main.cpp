@@ -19,6 +19,7 @@
 #include <stdexcept>
 #include "ppcemu.h"
 #include "ppcmmu.h"
+#include "memreadwrite.h"
 #include "devices/mpc106.h"
 #include "debugger/debugger.h"
 #include "devices/machineid.h"
@@ -403,7 +404,7 @@ int main(int argc, char **argv)
     romFile.seekg (configInfoAddr, ios::beg);
     romFile.read(memPPCBlock, 4);
     memPPCBlock[4] = 0;
-    uint32_t rom_id = (memPPCBlock[0] << 24) | (memPPCBlock[1] << 16) | (memPPCBlock[2] << 8) | memPPCBlock[3];
+    uint32_t rom_id = READ_DWORD_BE(memPPCBlock);
 
     std::string string_test = std::string(memPPCBlock);
 

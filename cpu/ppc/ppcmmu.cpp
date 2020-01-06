@@ -38,33 +38,28 @@ void ppc_set_cur_instruction(const uint8_t *ptr)
     ppc_cur_instruction = READ_DWORD_BE(ptr);
 }
 
-static inline void ppc_set_return_val(unsigned char *ptr, uint32_t offset,
-                                      int num_size)
+static inline void ppc_set_return_val(const uint8_t *ptr, int num_size)
 {
     //Put the final result in return_value here
     //This is what gets put back into the register
 
+    if (num_size == 1) { // BYTE
+        return_value = ptr[0];
+    }
+
     if (ppc_state.ppc_msr & 1) { /* little-endian byte ordering */
-        if (num_size == 1) { // BYTE
-            return_value = ptr[offset];
-        }
-        else if (num_size == 2) { // WORD
-            return_value = ptr[offset] | (ptr[offset+1] << 8);
+        if (num_size == 2) { // WORD
+            return_value = READ_WORD_LE(ptr);
         }
         else if (num_size == 4) { // DWORD
-            return_value = ptr[offset] | (ptr[offset+1] << 8) |
-                          (ptr[offset+2] << 16) | (ptr[offset+3] << 24);
+            return_value = READ_DWORD_LE(ptr);
         }
     } else { /* big-endian byte ordering */
-        if (num_size == 1) { // BYTE
-            return_value = ptr[offset];
-        }
-        else if (num_size == 2) { // WORD
-            return_value = (ptr[offset] << 8) | ptr[offset+1];
+        if (num_size == 2) { // WORD
+            return_value = READ_WORD_BE(ptr);
         }
         else if (num_size == 4) { // DWORD
-            return_value = (ptr[offset]  << 24) | (ptr[offset+1] << 16) |
-                           (ptr[offset+2] << 8) | ptr[offset+3];
+            return_value = READ_DWORD_BE(ptr);
         }
     }
 }
@@ -392,7 +387,7 @@ void address_quickgrab_translate(uint32_t addr, uint8_t num_bytes)
     }
 
     if (addr >= read_last_pa_start && addr <= read_last_pa_end) {
-        ppc_set_return_val(read_last_ptr, addr - read_last_pa_start, num_bytes);
+        ppc_set_return_val(read_last_ptr + (addr - read_last_pa_start), num_bytes);
     } else {
         AddressMapEntry *entry = mem_ctrl_instance->find_range(addr);
         if (entry) {
@@ -400,7 +395,7 @@ void address_quickgrab_translate(uint32_t addr, uint8_t num_bytes)
                 read_last_pa_start = entry->start;
                 read_last_pa_end   = entry->end;
                 read_last_ptr = entry->mem_ptr;
-                ppc_set_return_val(read_last_ptr, addr - entry->start, num_bytes);
+                ppc_set_return_val(read_last_ptr + (addr - entry->start), num_bytes);
             } else if (entry->type & RT_MMIO) {
                 return_value = entry->devobj->read(addr - entry->start, num_bytes);
             } else {
