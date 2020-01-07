@@ -50,8 +50,6 @@ bool MemCtrlBase::add_mem_region(uint32_t start_addr, uint32_t size,
         return false;
 
     uint8_t *reg_content = new uint8_t[size];
-    if (!reg_content)
-        return false;
 
     this->mem_regions.push_back(reg_content);
 

@@ -10,7 +10,6 @@
 
 #include <iostream>
 #include <map>
-#include <cassert>
 #include <cstring>
 #include <cinttypes>
 #include <array>
@@ -435,11 +434,9 @@ int main(int argc, char **argv)
                 return 1;
             }
             machine_id = new GossamerID(0x3d8c);
-            assert(machine_id != 0);
             mpc106->add_mmio_region(0xFF000004, 4096, machine_id);
 
             heathrow = new HeathrowIC();
-            assert(heathrow != 0);
             mpc106->pci_register_device(16, heathrow);
             cout << "done" << endl;
         }
