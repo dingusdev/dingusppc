@@ -6,6 +6,7 @@
 //(divingkatae#1017 or powermax#2286 on Discord)
 
 #include <string>
+#include <cstring>
 #include <vector>
 #include <algorithm> // to shut up MSVC errors (:
 
