@@ -10,60 +10,70 @@
 #include <cinttypes>
 #include "nvram.h"
 
+/** @file Non-volatile RAM implementation.
+ */
+
 using namespace std;
 
+/** the signature for NVRAM backing file identification. */
+static char NVRAM_FILE_ID[] = "DINGUSPPCNVRAM";
 
-NVram::NVram()
+NVram::NVram(std::string file_name, uint32_t ram_size)
 {
-    this->nvram_init();
+    this->file_name = file_name;
+    this->ram_size  = ram_size;
+
+    this->storage = new uint8_t[ram_size];
+
+    this->init();
 }
 
 NVram::~NVram()
 {
-    this->nvram_save();
+    this->save();
+    if (this->storage)
+        delete this->storage;
 }
 
-void NVram::nvram_init() {
-    NVram::nvram_file.open("nvram.bin", ios::in | ios::out | ios::binary);
+uint8_t NVram::read_byte(uint32_t offset)
+{
+    return (this->storage[offset]);
+}
 
-    if (nvram_file.fail()) {
-        std::cout << "Warning: Could not find the NVRAM file. This will be blank. \n" << endl;
-        NVram::nvram_file.write(0x00, 8192);
-        return;
-    }
+void NVram::write_byte(uint32_t offset, uint8_t val)
+{
+    this->storage[offset] = val;
+}
 
-    NVram::nvram_file.seekg(0, nvram_file.end);
-    NVram::nvram_filesize = nvram_file.tellg();
-    NVram::nvram_file.seekg(0, nvram_file.beg);
+void NVram::init() {
+    char     sig[sizeof(NVRAM_FILE_ID)];
+    uint16_t data_size;
 
-    if (NVram::nvram_filesize != 0x2000) {
-        NVram::nvram_file.write(0x00, 8192);
-    }
+    ifstream f(this->file_name, ios::in | ios::binary);
 
-    char temp_storage[8192];
-
-    NVram::nvram_file.read(temp_storage, 8192);
-
-    //hack copying to the NVRAM Array GO!
-    for (int i = 0; i < 8192; i++)
+    if (f.fail() || !f.read(sig, sizeof(NVRAM_FILE_ID))   ||
+        !f.read((char *)&data_size, sizeof(data_size))    ||
+        memcmp(sig, NVRAM_FILE_ID, sizeof(NVRAM_FILE_ID)) ||
+        data_size != this->ram_size                       ||
+        !f.read((char *)this->storage, this->ram_size))
     {
-        NVram::nvram_storage[i] = (uint8_t) temp_storage[i];
+        cout << "WARN: Could not restore NVRAM content from the given file." << endl;
+        memset(this->storage, 0, sizeof(this->ram_size));
     }
+
+    f.close();
 }
 
-void NVram::nvram_save() {
-    NVram::nvram_savefile.open("nvram.bin", ios::out | ios::binary);
+void NVram::save()
+{
+    ofstream f(this->file_name, ios::out | ios::binary);
 
-    NVram::nvram_savefile.write((char*)nvram_storage, 8192);
+    /* write file identification */
+    f.write(NVRAM_FILE_ID, sizeof(NVRAM_FILE_ID));
+    f.write((char *)&this->ram_size, sizeof(this->ram_size));
 
-    NVram::nvram_savefile.close();
-}
+    /* write NVRAM content */
+    f.write((char *)this->storage, this->ram_size);
 
-uint8_t NVram::nvram_read(uint32_t nvram_offset){
-    nvram_value = NVram::nvram_storage[nvram_offset];
-    return nvram_value;
-}
-
-void NVram::nvram_write(uint32_t nvram_offset, uint8_t write_val){
-    NVram::nvram_storage[nvram_offset] = write_val;
+    f.close();
 }

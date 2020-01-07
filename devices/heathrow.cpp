@@ -7,7 +7,6 @@
 
 #include <cinttypes>
 #include <iostream>
-#include <cassert>
 #include "macio.h"
 #include "viacuda.h"
 
@@ -21,13 +20,14 @@ using namespace std;
 HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow")
 {
     this->viacuda = new ViaCuda();
-    this->nvram = new NVram();
-    assert(this->viacuda); // FIXME: do proper exception handling!
-    assert(this->nvram); // FIXME: do proper exception handling!
+    this->nvram   = new NVram();
 }
 
 HeathrowIC::~HeathrowIC()
 {
+    if (this->nvram)
+        delete(this->nvram);
+
     if (this->viacuda)
         delete(this->viacuda);
 }
@@ -83,6 +83,9 @@ uint32_t HeathrowIC::read(uint32_t offset, int size)
     case 0x17:
         res = this->viacuda->read((offset - 0x16000) >> 9);
         break;
+    case 0x60:
+    case 0x70:
+        res = this->nvram->read_byte((offset - 0x60000) >> 4);
     default:
         cout << "unmapped I/O space: " << sub_dev << endl;
     }
