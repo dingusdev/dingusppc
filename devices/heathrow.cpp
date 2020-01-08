@@ -67,9 +67,9 @@ uint32_t HeathrowIC::read(uint32_t offset, int size)
 
     cout << this->name << ": reading from offset " << hex << offset << endl;
 
-    unsigned sub_dev = (offset >> 12) & 0x3F;
+    unsigned sub_addr = (offset >> 12) & 0x7F;
 
-    switch(sub_dev) {
+    switch(sub_addr) {
     case 0:
         res = mio_ctrl_read(offset, size);
         break;
@@ -83,11 +83,12 @@ uint32_t HeathrowIC::read(uint32_t offset, int size)
     case 0x17:
         res = this->viacuda->read((offset - 0x16000) >> 9);
         break;
-    case 0x60:
-    case 0x70:
-        res = this->nvram->read_byte((offset - 0x60000) >> 4);
     default:
-        cout << "unmapped I/O space: " << sub_dev << endl;
+        if (sub_addr >= 0x60) {
+            res = this->nvram->read_byte((offset - 0x60000) >> 4);
+        } else {
+            cout << "unmapped I/O space: " << hex << offset << endl;
+        }
     }
 
     return res;
@@ -97,9 +98,9 @@ void HeathrowIC::write(uint32_t offset, uint32_t value, int size)
 {
     cout << this->name << ": writing to offset " << hex << offset << endl;
 
-    unsigned sub_dev = (offset >> 12) & 0x3F;
+    unsigned sub_addr = (offset >> 12) & 0x7F;
 
-    switch(sub_dev) {
+    switch(sub_addr) {
     case 0:
         mio_ctrl_write(offset, value, size);
         break;
@@ -114,7 +115,11 @@ void HeathrowIC::write(uint32_t offset, uint32_t value, int size)
         this->viacuda->write((offset - 0x16000) >> 9, value);
         break;
     default:
-        cout << "unmapped I/O space: " << sub_dev << endl;
+        if (sub_addr >= 0x60) {
+            this->nvram->write_byte((offset - 0x60000) >> 4, value);
+        } else {
+            cout << "unmapped I/O space: " << hex << offset << endl;
+        }
     }
 }
 
