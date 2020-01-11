@@ -209,7 +209,7 @@ static bool search_pteg(uint8_t *pteg_addr, uint8_t **ret_pte_addr,
 }
 
 static uint32_t page_address_translate(uint32_t la, bool is_instr_fetch,
-                                       unsigned msr_pr, bool is_write)
+                                       unsigned msr_pr, int is_write)
 {
     uint32_t sr_val, page_index, pteg_hash1, vsid, pte_word2;
     unsigned key, pp;
@@ -223,7 +223,7 @@ static uint32_t page_address_translate(uint32_t la, bool is_instr_fetch,
 
     /* instruction fetch from a no-execute segment will cause ISI exception */
     if ((sr_val & 0x10000000) && is_instr_fetch) {
-        ppc_exception_handler(0x400, 0); // FIXME: proper exception handling!
+        ppc_exception_handler(Except_Type::EXC_ISI, 0x10000000);
     }
 
     page_index = (la >> 12) & 0xFFFF;
@@ -233,9 +233,11 @@ static uint32_t page_address_translate(uint32_t la, bool is_instr_fetch,
     if (!search_pteg(calc_pteg_addr(pteg_hash1), &pte_addr, vsid, page_index, 0)) {
         if (!search_pteg(calc_pteg_addr(~pteg_hash1), &pte_addr, vsid, page_index, 1)) {
             if (is_instr_fetch) {
-                ppc_exception_handler(0x400, 0);
+                ppc_exception_handler(Except_Type::EXC_ISI, 0x40000000);
             } else {
-                ppc_exception_handler(0x300, 0);
+                ppc_state.ppc_spr[18] = 0x40000000 | (is_write << 25);
+                ppc_state.ppc_spr[19] = la;
+                ppc_exception_handler(Except_Type::EXC_DSI, 0);
             }
         }
     }
@@ -253,9 +255,11 @@ static uint32_t page_address_translate(uint32_t la, bool is_instr_fetch,
     // write access with PP = %11
     if ((key && (!pp || (pp == 1 && is_write))) || (pp == 3 && is_write)) {
         if (is_instr_fetch) {
-            ppc_exception_handler(0x400, 0);
+            ppc_exception_handler(Except_Type::EXC_ISI, 0x08000000);
         } else {
-            ppc_exception_handler(0x300, 0);
+            ppc_state.ppc_spr[18] = 0x08000000 | (is_write << 25);
+            ppc_state.ppc_spr[19] = la;
+            ppc_exception_handler(Except_Type::EXC_DSI, 0);
         }
     }
 
@@ -271,7 +275,7 @@ static uint32_t page_address_translate(uint32_t la, bool is_instr_fetch,
 }
 
 /** PowerPC-style MMU instruction address translation. */
-uint32_t ppc_mmu_instr_translate(uint32_t la)
+static uint32_t ppc_mmu_instr_translate(uint32_t la)
 {
     uint32_t pa; /* translated physical address */
 
@@ -299,14 +303,14 @@ uint32_t ppc_mmu_instr_translate(uint32_t la)
 
     /* page address translation */
     if (!bat_hit) {
-        pa = page_address_translate(la, true, msr_pr, false);
+        pa = page_address_translate(la, true, msr_pr, 0);
     }
 
     return pa;
 }
 
 /** PowerPC-style MMU data address translation. */
-uint32_t ppc_mmu_addr_translate(uint32_t la, bool is_write)
+static uint32_t ppc_mmu_addr_translate(uint32_t la, int is_write)
 {
     uint32_t pa; /* translated physical address */
 
@@ -349,7 +353,7 @@ void address_quickinsert_translate(uint32_t value, uint32_t addr, uint8_t num_by
 {
     /* data address translation if enabled */
     if (ppc_state.ppc_msr & 0x10) {
-        addr = ppc_mmu_addr_translate(addr, true);
+        addr = ppc_mmu_addr_translate(addr, 1);
     }
 
     if (addr >= write_last_pa_start && addr <= write_last_pa_end) {
@@ -383,7 +387,7 @@ void address_quickgrab_translate(uint32_t addr, uint8_t num_bytes)
 {
     /* data address translation if enabled */
     if (ppc_state.ppc_msr & 0x10) {
-        addr = ppc_mmu_addr_translate(addr, false);
+        addr = ppc_mmu_addr_translate(addr, 0);
     }
 
     if (addr >= read_last_pa_start && addr <= read_last_pa_end) {

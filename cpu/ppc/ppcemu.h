@@ -8,6 +8,7 @@
 #ifndef PPCEMU_H
 #define PPCEMU_H
 
+#include <setjmp.h>
 #include "devices/memctrlbase.h"
 
 //Uncomment this to help debug the emulator further
@@ -160,15 +161,33 @@ extern int32_t simm_rev_endian16(int32_t insert_int);
 extern uint32_t rev_endian32(uint32_t insert_int);
 extern uint64_t rev_endian64(uint64_t insert_int);
 
-/* The precise reason for the termination of a basic block. */
-enum class BB_end_reason {
+/* The precise end of a basic block. */
+enum class BB_end_kind {
+    BB_NONE   = 0, /* no basic block end is reached       */
     BB_BRANCH = 1, /* a branch instruction is encountered */
     BB_EXCEPTION,  /* an exception is occured             */
     BB_RFI         /* the rfi instruction is encountered  */
 };
 
-extern bool bb_end;
-extern BB_end_reason bb_kind;
+/** PowerPC exception types. */
+enum class Except_Type {
+    EXC_SYSTEM_RESET = 1,
+    EXC_MACHINE_CHECK,
+    EXC_DSI,
+    EXC_ISI,
+    EXC_EXT_INT,
+    EXC_ALIGNMENT,
+    EXC_PROGRAM,
+    EXC_NO_FPU,
+    EXC_DECR,
+    EXC_SYSCALL = 12,
+    EXC_TRACE   = 13
+};
+
+//extern bool bb_end;
+extern BB_end_kind bb_kind;
+
+extern jmp_buf exc_env;
 
 extern bool grab_branch;
 extern bool grab_exception;
@@ -235,7 +254,8 @@ void ppc_setsoov(uint32_t a, uint32_t b);
 void ppc_changecrf0(uint32_t set_result);
 
 void ppc_tbr_update();
-void ppc_exception_handler(uint32_t exception_type, uint32_t handle_args);
+[[noreturn]] void ppc_exception_handler(Except_Type exception_type,
+                                        uint32_t srr1_bits);
 
 //MEMORY DECLARATIONS
 extern MemCtrlBase *mem_ctrl_instance;
