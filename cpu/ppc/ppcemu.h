@@ -189,6 +189,11 @@ extern uint32_t ppc_effective_address;
 extern uint32_t ppc_real_address;
 extern uint32_t ppc_next_instruction_address;
 
+//Profiling Stats
+extern uint32_t mmu_operations_num;
+extern uint32_t exceptions_performed;
+extern uint32_t supervisor_inst_num;
+
 //Function prototypes
 void reg_init();
 uint32_t reg_print();
@@ -233,6 +238,7 @@ extern void ppc_store_dfpresult();
 void ppc_carry(uint32_t a, uint32_t b);
 void ppc_setsoov(uint32_t a, uint32_t b);
 void ppc_changecrf0(uint32_t set_result);
+void ppc_fp_changecrf1();
 
 void ppc_tbr_update();
 void ppc_exception_handler(uint32_t exception_type, uint32_t handle_args);
@@ -409,7 +415,9 @@ extern void ppc_fmr();
 extern void ppc_mffs();
 extern void ppc_mffsdot();
 extern void ppc_mtfsf();
-extern void ppc_mtfsfdot();
+extern void ppc_mtfsfdot(); 
+extern void ppc_mtfsfi();
+extern void ppc_mtfsfidot();
 
 extern void ppc_addi();
 extern void ppc_addic();

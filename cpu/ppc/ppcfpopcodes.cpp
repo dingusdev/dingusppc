@@ -110,6 +110,10 @@ void ppc_grab_regsfpdabc(){
     ppc_result64_c = ppc_state.ppc_fpr[reg_c];
 }
 
+void ppc_fp_changecrf1() {
+    ppc_state.ppc_fpscr |= 0xf0000000;
+}
+
 void ppc_divbyzero(uint64_t input_a, uint64_t input_b, bool is_single){
     if (input_b == 0){
         ppc_state.ppc_fpscr |= 0x84000000;
@@ -1047,12 +1051,13 @@ void ppc_mffsdot(){
     fpstore1 |= fpstore2;
     ppc_state.ppc_fpr[reg_d] = fpstore1;
     ppc_store_sfpresult();
+    ppc_fp_changecrf1();
 }
 
 void ppc_mtfsf(){
     reg_b = (ppc_cur_instruction >> 11) & 31;
     uint32_t fm_mask = (ppc_cur_instruction >> 17) & 255;
-    crm += ((fm_mask & 1) == 1)? 0xF0000000 : 0x00000000;
+    crm = ((fm_mask & 1) == 1)? 0xF0000000 : 0x00000000;
     crm += (((fm_mask >> 1) & 1) == 1)? 0x0F000000 : 0x00000000;
     crm += (((fm_mask >> 2) & 1) == 1)? 0x00F00000 : 0x00000000;
     crm += (((fm_mask >> 3) & 1) == 1)? 0x000F0000 : 0x00000000;
@@ -1065,9 +1070,9 @@ void ppc_mtfsf(){
 }
 
 void ppc_mtfsfdot(){
-    reg_b = (ppc_cur_instruction >> 11) & 31;
-    uint32_t fm_mask = (ppc_cur_instruction >> 17) & 255;
-    crm += ((fm_mask & 1) == 1)? 0xF0000000 : 0x00000000;
+    uint32_t quickfprval = (ppc_cur_instruction >> 12) & 15;
+    ppc_result_d = (ppc_cur_instruction >> 23) & 7;
+    crm = ((fm_mask & 1) == 1)? 0xF0000000 : 0x00000000;
     crm += (((fm_mask >> 1) & 1) == 1)? 0x0F000000 : 0x00000000;
     crm += (((fm_mask >> 2) & 1) == 1)? 0x00F00000 : 0x00000000;
     crm += (((fm_mask >> 3) & 1) == 1)? 0x000F0000 : 0x00000000;
@@ -1077,6 +1082,22 @@ void ppc_mtfsfdot(){
     crm += (((fm_mask >> 7) & 1) == 1)? 0x0000000F : 0x00000000;
     uint32_t quickfprval = (uint32_t)ppc_state.ppc_fpr[reg_b];
     ppc_state.ppc_fpscr = (quickfprval & crm) | (quickfprval & ~(crm));
+    ppc_fp_changecrf1();
+}
+
+void ppc_mtfsfi() {
+    ppc_result_b = (ppc_cur_instruction >> 11) & 15;
+    crf_d = (ppc_cur_instruction >> 23) & 7;
+    crf_d = crf_d << 2;
+    ppc_state.ppc_fpscr = (ppc_state.ppc_cr & ~(0xF0000000UL >> crf_d)) | ((ppc_state.ppc_spr[1] & 0xF0000000UL) >> crf_d);
+}
+
+void ppc_mtfsfidot() {
+    ppc_result_b = (ppc_cur_instruction >> 11) & 15;
+    crf_d = (ppc_cur_instruction >> 23) & 7;
+    crf_d = crf_d << 2;
+    ppc_state.ppc_fpscr = (ppc_state.ppc_cr & ~(0xF0000000UL >> crf_d)) | ((ppc_state.ppc_spr[1] & 0xF0000000UL) >> crf_d);
+    ppc_fp_changecrf1();
 }
 
 void ppc_mtfsb0(){
@@ -1087,11 +1108,11 @@ void ppc_mtfsb0(){
 }
 
 void ppc_mtfsb0dot(){
-    //PLACEHOLDER
     crf_d = (ppc_cur_instruction >> 21) & 0x31;
     if ((crf_d == 0) || (crf_d > 2)){
         ppc_state.ppc_fpscr &= ~(1 << crf_d);
     }
+    ppc_fp_changecrf1();
 }
 
 void ppc_mtfsb1(){
@@ -1102,12 +1123,11 @@ void ppc_mtfsb1(){
 }
 
 void ppc_mtfsb1dot(){
-    //PLACEHOLDER
     crf_d = ~(ppc_cur_instruction >> 21) & 0x31;
     if ((crf_d == 0) || (crf_d > 2)){
         ppc_state.ppc_fpscr |= (1 << crf_d);
     }
-
+    ppc_fp_changecrf1();
 }
 
 void ppc_mcrfs(){
