@@ -7,14 +7,14 @@
 
 #include <unordered_map>
 #include <chrono>
+#include <setjmp.h>
 
 #include "ppcemu.h"
 #include "ppcmmu.h"
 
 bool power_on = 1;
 
-bool bb_end = 0;       /* "true" means a basic block was terminated */
-BB_end_reason bb_kind; /* the reason for the termination of a basic block */
+BB_end_kind bb_kind; /* basic block end */
 
 uint64_t timebase_counter; /* internal timebase counter */
 
@@ -395,7 +395,6 @@ void ppc_illegalop(){
     uint32_t grab_it = (uint32_t) illegal_code;
     printf("Illegal opcode reported: %d Report this! \n", grab_it);
     exit(-1);
-    //ppc_exception_handler(0x0700, 0x80000);
 }
 
 void ppc_illegalsubop31(){
@@ -430,7 +429,7 @@ void ppc_opcode19(){
     }
     else{
         std::cout << "ILLEGAL SUBOPCODE: " << subop_grab << std::endl;
-        ppc_exception_handler(0x0700, 0x80000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x80000);
     }
     #else
     SubOpcode19Grabber[subop_grab]();
@@ -447,7 +446,7 @@ void ppc_opcode31(){
     }
     else{
         std::cout << "ILLEGAL SUBOPCODE: " << subop_grab << std::endl;
-        ppc_exception_handler(0x0700, 0x80000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x80000);
     }
     #else
     SubOpcode31Grabber[subop_grab]();
@@ -464,7 +463,7 @@ void ppc_opcode59(){
     }
     else{
         std::cout << "ILLEGAL SUBOPCODE: " << subop_grab << std::endl;
-        ppc_exception_handler(0x0700, 0x80000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x80000);
     }
     #else
     SubOpcode59Grabber[subop_grab]();
@@ -481,7 +480,7 @@ void ppc_opcode63(){
     }
     else{
         std::cout << "ILLEGAL SUBOPCODE: " << subop_grab << std::endl;
-        ppc_exception_handler(0x0700, 0x80000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x80000);
     }
     #else
     SubOpcode63Grabber[subop_grab]();
@@ -553,7 +552,18 @@ void ppc_exec()
 
     /* start new basic block */
     bb_start_la = ppc_state.ppc_pc;
-    bb_end = false;
+    bb_kind = BB_end_kind::BB_NONE;
+
+    if (setjmp(exc_env)) {
+        /* reaching here means we got a low-level exception */
+        timebase_counter += (ppc_state.ppc_pc - bb_start_la) >> 2;
+        bb_start_la = ppc_next_instruction_address;
+        pc_real = quickinstruction_translate(bb_start_la);
+        page_start = bb_start_la & 0xFFFFF000;
+        ppc_state.ppc_pc = bb_start_la;
+        bb_kind = BB_end_kind::BB_NONE;
+        goto again;
+    }
 
     /* initial MMU translation for the current code page. */
     pc_real = quickinstruction_translate(bb_start_la);
@@ -561,9 +571,10 @@ void ppc_exec()
     /* set current code page limits */
     page_start = bb_start_la & 0xFFFFF000;
 
+again:
     while (power_on) {
         ppc_main_opcode();
-        if (bb_end) {
+        if (bb_kind != BB_end_kind::BB_NONE) {
             timebase_counter += (ppc_state.ppc_pc - bb_start_la) >> 2;
             bb_start_la = ppc_next_instruction_address;
             if ((ppc_next_instruction_address & 0xFFFFF000) != page_start) {
@@ -574,7 +585,7 @@ void ppc_exec()
                 ppc_set_cur_instruction(pc_real);
             }
             ppc_state.ppc_pc = bb_start_la;
-            bb_end = false;
+            bb_kind = BB_end_kind::BB_NONE;
         } else {
             ppc_state.ppc_pc += 4;
             pc_real += 4;
@@ -609,11 +620,19 @@ void ppc_exec_single()
 #else
 void ppc_exec_single()
 {
+    if (setjmp(exc_env)) {
+        /* reaching here means we got a low-level exception */
+        timebase_counter += 1;
+        ppc_state.ppc_pc = ppc_next_instruction_address;
+        bb_kind = BB_end_kind::BB_NONE;
+        return;
+    }
+
     quickinstruction_translate(ppc_state.ppc_pc);
     ppc_main_opcode();
-    if (bb_end) {
+    if (bb_kind != BB_end_kind::BB_NONE) {
         ppc_state.ppc_pc = ppc_next_instruction_address;
-        bb_end = false;
+        bb_kind = BB_end_kind::BB_NONE;
     } else {
         ppc_state.ppc_pc += 4;
     }
@@ -654,7 +673,18 @@ void ppc_exec_until(uint32_t goal_addr)
 
     /* start new basic block */
     bb_start_la = ppc_state.ppc_pc;
-    bb_end = false;
+    bb_kind = BB_end_kind::BB_NONE;
+
+    if (setjmp(exc_env)) {
+        /* reaching here means we got a low-level exception */
+        timebase_counter += (ppc_state.ppc_pc - bb_start_la) >> 2;
+        bb_start_la = ppc_next_instruction_address;
+        pc_real = quickinstruction_translate(bb_start_la);
+        page_start = bb_start_la & 0xFFFFF000;
+        ppc_state.ppc_pc = bb_start_la;
+        bb_kind = BB_end_kind::BB_NONE;
+        goto again;
+    }
 
     /* initial MMU translation for the current code page. */
     pc_real = quickinstruction_translate(bb_start_la);
@@ -662,9 +692,10 @@ void ppc_exec_until(uint32_t goal_addr)
     /* set current code page limits */
     page_start = bb_start_la & 0xFFFFF000;
 
+again:
     while (ppc_state.ppc_pc != goal_addr) {
         ppc_main_opcode();
-        if (bb_end) {
+        if (bb_kind != BB_end_kind::BB_NONE) {
             timebase_counter += (ppc_state.ppc_pc - bb_start_la) >> 2;
             bb_start_la = ppc_next_instruction_address;
             if ((ppc_next_instruction_address & 0xFFFFF000) != page_start) {
@@ -675,7 +706,7 @@ void ppc_exec_until(uint32_t goal_addr)
                 ppc_set_cur_instruction(pc_real);
             }
             ppc_state.ppc_pc = bb_start_la;
-            bb_end = false;
+            bb_kind = BB_end_kind::BB_NONE;
         } else {
             ppc_state.ppc_pc += 4;
             pc_real += 4;
