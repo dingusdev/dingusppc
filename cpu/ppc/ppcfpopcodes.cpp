@@ -126,7 +126,7 @@ void ppc_divbyzero(uint64_t input_a, uint64_t input_b, bool is_single){
 
 }
 
-void ppc_confirm_inf_nan(uint64_t input_a, uint64_t input_b, bool is_single, uint32_t op){
+bool ppc_confirm_inf_nan(uint64_t input_a, uint64_t input_b, bool is_single, uint32_t op){
     if (is_single){
         uint32_t exp_a = (input_a >> 23) & 0xff;
         uint32_t exp_b = (input_b >> 23) & 0xff;
@@ -137,19 +137,30 @@ void ppc_confirm_inf_nan(uint64_t input_a, uint64_t input_b, bool is_single, uin
             case 36:
                 if ((exp_a == 0xff) & (exp_b == 0xff)){
                     ppc_state.ppc_fpscr |= 0x80400000;
+                    return true;
                 }
                 else if ((input_a == 0) & (input_b == 0)){
                     ppc_state.ppc_fpscr |= 0x80200000;
+                    return true;
                 }
                 break;
             case 40:
                 if ((exp_a == 0xff) & (exp_b == 0xff)){
                     ppc_state.ppc_fpscr |= 0x80800000;
+                    return true;
                 }
                 break;
             case 50:
                 if (((exp_a == 0xff) & (input_b == 0)) | ((exp_b == 0xff) & (input_a == 0))){
                     ppc_state.ppc_fpscr |= 0x80100000;
+                    return true;
+                }
+                break;
+            case 56:
+            case 58:
+                if ((exp_a == 0xff) & (exp_b == 0xff)) {
+                    ppc_state.ppc_fpscr |= 0x80800000;
+                    return true;
                 }
                 break;
         }
@@ -164,19 +175,30 @@ void ppc_confirm_inf_nan(uint64_t input_a, uint64_t input_b, bool is_single, uin
             case 36:
                 if ((exp_a == 0x7ff) & (exp_b == 0x7ff)){
                     ppc_state.ppc_fpscr |= 0x80400000;
+                    return true;
                 }
                 else if ((input_a == 0) & (input_b == 0)){
                     ppc_state.ppc_fpscr |= 0x80200000;
+                    return true;
                 }
                 break;
             case 40:
                 if ((exp_a == 0x7ff) & (exp_b == 0x7ff)){
                     ppc_state.ppc_fpscr |= 0x80800000;
+                    return true;
                 }
                 break;
             case 50:
                 if (((exp_a == 0x7ff) & (input_b == 0)) | ((exp_b == 0x7ff) & (input_a == 0))){
                     ppc_state.ppc_fpscr |= 0x80100000;
+                    return true;
+                }
+                break;
+            case 56:
+            case 58:
+                if ((exp_a == 0xff) & (exp_b == 0xff)) {
+                    ppc_state.ppc_fpscr |= 0x80800000;
+                    return true;
                 }
                 break;
         }
@@ -216,16 +238,18 @@ void ppc_changecrf1(){
 }
 
 //Floating Point Arithmetic
-void ppc_fadd(){
+void ppc_fadd() {
     ppc_grab_regsfpdab();
     double testd1 = (double)ppc_result64_a;
     double testd2 = (double)ppc_result64_b;
 
-    double testd3 = testd1 + testd2;
+    if (!ppc_confirm_inf_nan(ppc_result64_a, ppc_result64_b, false, 58)) {
+         double testd3 = testd1 + testd2;
 
-    uint64_t *pre_final = (uint64_t *)&testd3;
-    ppc_result64_d = *pre_final;
-    ppc_store_dfpresult();
+        uint64_t* pre_final = (uint64_t*)&testd3;
+        ppc_result64_d = *pre_final;
+        ppc_store_dfpresult();
+    }
 }
 
 void ppc_fadddot(){
@@ -1070,8 +1094,8 @@ void ppc_mtfsf(){
 }
 
 void ppc_mtfsfdot(){
-    uint32_t quickfprval = (ppc_cur_instruction >> 12) & 15;
-    ppc_result_d = (ppc_cur_instruction >> 23) & 7;
+    reg_b = (ppc_cur_instruction >> 11) & 31;
+    uint32_t fm_mask = (ppc_cur_instruction >> 17) & 255;
     crm = ((fm_mask & 1) == 1)? 0xF0000000 : 0x00000000;
     crm += (((fm_mask >> 1) & 1) == 1)? 0x0F000000 : 0x00000000;
     crm += (((fm_mask >> 2) & 1) == 1)? 0x00F00000 : 0x00000000;
