@@ -1901,7 +1901,7 @@ void ppc_sthx(){
 void ppc_sthbrx(){
     ppc_grab_regssab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
-    ppc_result_d = (uint32_t)(rev_endian16((uint16_t)ppc_result_d));
+    ppc_result_d = (uint32_t)(BYTESWAP_16((uint16_t)ppc_result_d));
     address_quickinsert_translate(ppc_result_d, ppc_effective_address, 2);
 }
 
@@ -1952,7 +1952,7 @@ void ppc_stwux(){
 void ppc_stwbrx(){
     ppc_grab_regssab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
-    ppc_result_d = rev_endian32(ppc_result_d);
+    ppc_result_d = BYTESWAP_32(ppc_result_d);
     address_quickinsert_translate(ppc_result_d, ppc_effective_address, 4);
 }
 
@@ -2137,7 +2137,7 @@ void ppc_lhbrx(){
     ppc_grab_regsdab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
     address_quickgrab_translate(ppc_effective_address, 2);
-    ppc_result_d = (uint32_t)(rev_endian16((uint16_t)ppc_result_d));
+    ppc_result_d = (uint32_t)(BYTESWAP_16((uint16_t)ppc_result_d));
     return_value = 0;
     ppc_store_result_regd();
 }
@@ -2156,7 +2156,7 @@ void ppc_lwbrx(){
     ppc_grab_regsdab();
     ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
     address_quickgrab_translate(ppc_effective_address, 4);
-    ppc_result_d = rev_endian32(return_value);
+    ppc_result_d = BYTESWAP_32(return_value);
     return_value = 0;
     ppc_store_result_regd();
 }

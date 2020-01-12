@@ -25,14 +25,6 @@
 #include "devices/macio.h"
 #include "devices/mpc106.h"
 
-#define max_16b_int 65535
-#define max_32b_int 4294967295
-#define ENDIAN_REVERSE16(x) (x >> 8) | (((x) & 0x00FF) << 8)
-#define ENDIAN_REVERSE32(x) (x >> 24) | ((x & 0x00FF0000) >> 8) | ((x & 0x0000FF00) << 8) | (x << 24)
-#define ENDIAN_REVERSE64(x) (x >> 56) | ((x & 0x00FF000000000000) >> 48)  | ((x & 0x0000FF0000000000) >> 40) | ((x & 0x000000FF00000000) >> 32) | \
-                            ((x & 0x00000000FF000000) << 32) | ((x & 0x0000000000FF0000) << 40) | ((x & 0x000000000000FF00) << 48) | ((x & 0x00000000000000FF) << 56)
-
-
 using namespace std;
 
 /**
@@ -104,27 +96,6 @@ uint32_t rom_filesize;
 
 uint32_t write_opcode;
 uint8_t write_char;
-
-    /*
-//DISK VARIABLES
-unsigned char * grab_disk_buf;
-bool disk_inserted;
-uint64_t disk_offset = 0;
-uint32_t disk_word = 0;
-*/
-
-
-uint16_t rev_endian16(uint16_t insert_int){
-    return ENDIAN_REVERSE16(insert_int);
-}
-
-uint32_t rev_endian32(uint32_t insert_int){
-    return ENDIAN_REVERSE32(insert_int);
-}
-
-uint64_t rev_endian64(uint64_t insert_int){
-    return ENDIAN_REVERSE64(insert_int);
-}
 
 //Initialize the PPC's registers.
 void reg_init(){

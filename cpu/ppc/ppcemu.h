@@ -9,6 +9,7 @@
 #define PPCEMU_H
 
 #include <setjmp.h>
+#include "endianswap.h"
 #include "devices/memctrlbase.h"
 
 //Uncomment this to help debug the emulator further
@@ -155,11 +156,6 @@ extern uint64_t ppc_result64_b;
 extern uint64_t ppc_result64_c;
 extern uint64_t ppc_result64_d;
 
-extern uint16_t rev_endian16(uint16_t insert_int);
-extern uint32_t uimm_rev_endian16(uint32_t insert_int);
-extern int32_t simm_rev_endian16(int32_t insert_int);
-extern uint32_t rev_endian32(uint32_t insert_int);
-extern uint64_t rev_endian64(uint64_t insert_int);
 
 /* The precise end of a basic block. */
 enum class BB_end_kind {
@@ -435,7 +431,7 @@ extern void ppc_fmr();
 extern void ppc_mffs();
 extern void ppc_mffsdot();
 extern void ppc_mtfsf();
-extern void ppc_mtfsfdot(); 
+extern void ppc_mtfsfdot();
 extern void ppc_mtfsfi();
 extern void ppc_mtfsfidot();
 
