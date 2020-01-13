@@ -305,7 +305,7 @@ int main(int argc, char **argv)
     romFile.seekg (configInfoAddr, ios::beg);
     romFile.read(memPPCBlock, 4);
     memPPCBlock[4] = 0;
-    uint32_t rom_id = READ_DWORD_BE(memPPCBlock);
+    uint32_t rom_id = READ_DWORD_BE_A(memPPCBlock);
 
     std::string string_test = std::string(memPPCBlock);
 

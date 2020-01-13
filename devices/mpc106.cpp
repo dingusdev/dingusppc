@@ -123,10 +123,10 @@ uint32_t MPC106::pci_cfg_read(uint32_t reg_offs, uint32_t size)
         return this->my_pci_cfg_hdr[reg_offs];
         break;
     case 2:
-        return READ_WORD_BE(&this->my_pci_cfg_hdr[reg_offs]);
+        return READ_WORD_BE_A(&this->my_pci_cfg_hdr[reg_offs]);
         break;
     case 4:
-        return READ_DWORD_BE(&this->my_pci_cfg_hdr[reg_offs]);
+        return READ_DWORD_BE_A(&this->my_pci_cfg_hdr[reg_offs]);
         break;
     default:
         std::cout << "MPC106 read error: invalid size parameter " << size
@@ -198,15 +198,15 @@ void MPC106::setup_ram()
     for (int bank = 0; bank < 8; bank++) {
         if (bank_en & (1 << bank)) {
             if (bank < 4) {
-                mem_start = READ_DWORD_LE(&this->my_pci_cfg_hdr[0x80]);
-                ext_mem_start = READ_DWORD_LE(&this->my_pci_cfg_hdr[0x88]);
-                mem_end = READ_DWORD_LE(&this->my_pci_cfg_hdr[0x90]);
-                ext_mem_end = READ_DWORD_LE(&this->my_pci_cfg_hdr[0x98]);
+                mem_start = READ_DWORD_LE_A(&this->my_pci_cfg_hdr[0x80]);
+                ext_mem_start = READ_DWORD_LE_A(&this->my_pci_cfg_hdr[0x88]);
+                mem_end = READ_DWORD_LE_A(&this->my_pci_cfg_hdr[0x90]);
+                ext_mem_end = READ_DWORD_LE_A(&this->my_pci_cfg_hdr[0x98]);
             } else {
-                mem_start = READ_DWORD_LE(&this->my_pci_cfg_hdr[0x84]);
-                ext_mem_start = READ_DWORD_LE(&this->my_pci_cfg_hdr[0x8C]);
-                mem_end = READ_DWORD_LE(&this->my_pci_cfg_hdr[0x94]);
-                ext_mem_end = READ_DWORD_LE(&this->my_pci_cfg_hdr[0x9C]);
+                mem_start = READ_DWORD_LE_A(&this->my_pci_cfg_hdr[0x84]);
+                ext_mem_start = READ_DWORD_LE_A(&this->my_pci_cfg_hdr[0x8C]);
+                mem_end = READ_DWORD_LE_A(&this->my_pci_cfg_hdr[0x94]);
+                ext_mem_end = READ_DWORD_LE_A(&this->my_pci_cfg_hdr[0x9C]);
             }
             bank_start = (((ext_mem_start >> bank * 8) & 3) << 30) |
                 (((mem_start >> bank * 8) & 0xFF) << 20);

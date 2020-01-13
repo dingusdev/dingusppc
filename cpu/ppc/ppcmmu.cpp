@@ -35,7 +35,7 @@ PPC_BAT_entry dbat_array[4] = {{0}};
 
 void ppc_set_cur_instruction(const uint8_t *ptr)
 {
-    ppc_cur_instruction = READ_DWORD_BE(ptr);
+    ppc_cur_instruction = READ_DWORD_BE_A(ptr);
 }
 
 static inline void ppc_set_return_val(const uint8_t *ptr, int num_size)
@@ -49,17 +49,17 @@ static inline void ppc_set_return_val(const uint8_t *ptr, int num_size)
 
     if (ppc_state.ppc_msr & 1) { /* little-endian byte ordering */
         if (num_size == 2) { // WORD
-            return_value = READ_WORD_LE(ptr);
+            return_value = READ_WORD_LE_A(ptr);
         }
         else if (num_size == 4) { // DWORD
-            return_value = READ_DWORD_LE(ptr);
+            return_value = READ_DWORD_LE_A(ptr);
         }
     } else { /* big-endian byte ordering */
         if (num_size == 2) { // WORD
-            return_value = READ_WORD_BE(ptr);
+            return_value = READ_WORD_BE_A(ptr);
         }
         else if (num_size == 4) { // DWORD
-            return_value = READ_DWORD_BE(ptr);
+            return_value = READ_DWORD_BE_A(ptr);
         }
     }
 }
@@ -183,22 +183,22 @@ static bool search_pteg(uint8_t *pteg_addr, uint8_t **ret_pte_addr,
     bool match_found = false;
 
     for (int i = 0; i < 8; i++, pteg_addr += 8) {
-        if (pte_check == READ_DWORD_BE(pteg_addr)) {
+        if (pte_check == READ_DWORD_BE_A(pteg_addr)) {
             if (match_found) {
-                if ((READ_DWORD_BE(pteg_addr) & 0xFFFFF07B) != pte_word2_check) {
+                if ((READ_DWORD_BE_A(pteg_addr) & 0xFFFFF07B) != pte_word2_check) {
                     printf("Multiple PTEs with different RPN/WIMG/PP found!\n");
                     exit(-1);
                 }
             } else {
                 /* isolate RPN, WIMG and PP fields */
-                pte_word2_check = READ_DWORD_BE(pteg_addr) & 0xFFFFF07B;
+                pte_word2_check = READ_DWORD_BE_A(pteg_addr) & 0xFFFFF07B;
                 *ret_pte_addr = pteg_addr;
             }
         }
     }
 #else
     for (int i = 0; i < 8; i++, pteg_addr += 8) {
-        if (pte_check == READ_DWORD_BE(pteg_addr)) {
+        if (pte_check == READ_DWORD_BE_A(pteg_addr)) {
             *ret_pte_addr = pteg_addr;
             return true;
         }
@@ -242,7 +242,7 @@ static uint32_t page_address_translate(uint32_t la, bool is_instr_fetch,
         }
     }
 
-    pte_word2 = READ_DWORD_BE(pte_addr + 4);
+    pte_word2 = READ_DWORD_BE_A(pte_addr + 4);
 
     key = (((sr_val >> 29) & 1) & msr_pr) | (((sr_val >> 30) & 1) & (msr_pr ^ 1));
 
