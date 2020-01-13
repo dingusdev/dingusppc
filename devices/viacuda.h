@@ -69,6 +69,8 @@ enum {
 
 /** Cuda pseudo commands. */
 enum {
+    CUDA_READ_PRAM		= 0x07, /* read parameter RAM*/
+    CUDA_WRITE_PRAM     = 0x0C, /* write parameter RAM*/
     CUDA_READ_WRITE_I2C = 0x22, /* read/write I2C device */
     CUDA_COMB_FMT_I2C   = 0x25, /* combined format I2C transaction */
     CUDA_OUT_PB0        = 0x26, /* output one bit to Cuda's PB0 line */
@@ -84,8 +86,8 @@ enum {
 class ViaCuda
 {
 public:
-    ViaCuda();
-    ~ViaCuda() = default;
+    ViaCuda(std::string pram_file = "pram.bin", uint32_t pram_size = 256);
+    ~ViaCuda();
 
     uint8_t read(int reg);
     void write(int reg, uint8_t value);
@@ -103,6 +105,10 @@ private:
     int32_t out_count;
     int32_t out_pos;
 
+    std::string pram_file; /* file name for the PRAM file. */
+    uint8_t  pram_size;    /* PRAM size. */
+    uint8_t* pram_storage;
+
     void print_enabled_ints(); /* print enabled VIA interrupts and their sources */
 
     void cuda_init();
@@ -113,8 +119,11 @@ private:
     void cuda_error_response(uint32_t error);
     void cuda_process_packet();
     void cuda_pseudo_command(int cmd, int data_count);
+    void cuda_pram_save();
 
     /* I2C related methods */
+    uint8_t pram_read_value(uint8_t offset);
+    void pram_write_value(uint8_t offset, uint8_t new_state);
     void i2c_simple_transaction(uint8_t dev_addr, const uint8_t *in_buf, int in_bytes);
     void i2c_comb_transaction(uint8_t dev_addr, uint8_t sub_addr, uint8_t dev_addr1,
          const uint8_t *in_buf, int in_bytes);

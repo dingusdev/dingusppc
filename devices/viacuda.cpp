@@ -11,14 +11,17 @@
 */
 
 #include <iostream>
+#include <fstream>
 #include <cinttypes>
 #include <vector>
 #include "viacuda.h"
 
 using namespace std;
 
+/** the signature for PRAM backing file identification. */
+static char PRAM_FILE_ID[] = "DINGUSPPCP-RAM";
 
-ViaCuda::ViaCuda()
+ViaCuda::ViaCuda(std::string pram_file, uint32_t pram_size)
 {
     /* FIXME: is this the correct
        VIA initialization? */
@@ -28,6 +31,12 @@ ViaCuda::ViaCuda()
     this->via_regs[VIA_T1LL] = 0xFF;
     this->via_regs[VIA_T1LH] = 0xFF;
     this->via_regs[VIA_IER]  = 0x7F;
+
+    //PRAM Pre-Initialization
+    this->pram_file = pram_file;
+    this->pram_size = pram_size;
+
+    this->pram_storage = new uint8_t[pram_size];
 
     this->cuda_init();
 }
@@ -39,6 +48,31 @@ void ViaCuda::cuda_init()
     this->treq = 1;
     this->in_count = 0;
     this->out_count = 0;
+
+    //PRAM Initialization
+    char     sig[sizeof(PRAM_FILE_ID)];
+    uint16_t data_size;
+
+    ifstream f(this->pram_file, ios::in | ios::binary);
+
+    if (f.fail() || !f.read(sig, sizeof(PRAM_FILE_ID)) ||
+        !f.read((char*)&data_size, sizeof(data_size)) ||
+        memcmp(sig, PRAM_FILE_ID, sizeof(PRAM_FILE_ID)) ||
+        data_size != this->pram_size ||
+        !f.read((char*)this->pram_storage, this->pram_size))
+    {
+        cout << "WARN: Could not restore PRAM content from the given file." << endl;
+        memset(this->pram_storage, 0, sizeof(this->pram_size));
+    }
+
+    f.close();
+}
+
+ViaCuda::~ViaCuda()
+{
+    this->cuda_pram_save();
+    if (this->pram_storage)
+        delete this->pram_storage;
 }
 
 uint8_t ViaCuda::read(int reg)
@@ -239,6 +273,14 @@ void ViaCuda::cuda_process_packet()
 void ViaCuda::cuda_pseudo_command(int cmd, int data_count)
 {
     switch(cmd) {
+    case CUDA_READ_PRAM:
+        cuda_response_header(CUDA_PKT_PSEUDO, 0);
+        pram_read_value(this->in_buf[2]);
+        break;
+    case CUDA_WRITE_PRAM:
+        cuda_response_header(CUDA_PKT_PSEUDO, 0);
+        pram_write_value(this->in_buf[2], this->in_buf[3]);
+        break;
     case CUDA_READ_WRITE_I2C:
         cuda_response_header(CUDA_PKT_PSEUDO, 0);
         /* bit 0 of the I2C address byte indicates operation kind:
@@ -269,6 +311,14 @@ void ViaCuda::cuda_pseudo_command(int cmd, int data_count)
         cout << "Cuda: unsupported pseudo command 0x" << hex << cmd << endl;
         cuda_error_response(CUDA_ERR_BAD_CMD);
     }
+}
+
+uint8_t ViaCuda::pram_read_value(uint8_t offset) {
+    return pram_storage[offset];
+}
+
+void ViaCuda::pram_write_value(uint8_t offset, uint8_t new_state) {
+    pram_storage[offset] = new_state;
 }
 
 void ViaCuda::i2c_simple_transaction(uint8_t dev_addr, const uint8_t *in_buf,
@@ -323,4 +373,18 @@ void ViaCuda::i2c_comb_transaction(uint8_t dev_addr, uint8_t sub_addr,
         cout << "Unsupported I2C device 0x" << hex << (int)dev_addr1 << endl;
         cuda_error_response(CUDA_ERR_I2C);
     }
+}
+
+void ViaCuda::cuda_pram_save()
+{
+    ofstream f(this->pram_file, ios::out | ios::binary);
+
+    /* write file identification */
+    f.write(PRAM_FILE_ID, sizeof(PRAM_FILE_ID));
+    f.write((char*)&this->pram_size, sizeof(this->pram_size));
+
+    /* write PRAM content */
+    f.write((char*)this->pram_storage, this->pram_size);
+
+    f.close();
 }
