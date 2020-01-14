@@ -28,6 +28,8 @@
     firmware using bit banging (https://en.wikipedia.org/wiki/Bit_banging).
 */
 
+#include "nvram.h"
+
 #ifndef VIACUDA_H
 #define VIACUDA_H
 
@@ -87,7 +89,7 @@ class ViaCuda
 {
 public:
     ViaCuda(std::string pram_file = "pram.bin", uint32_t pram_size = 256);
-    ~ViaCuda();
+    ~ViaCuda() = default;
 
     uint8_t read(int reg);
     void write(int reg, uint8_t value);
@@ -105,9 +107,7 @@ private:
     int32_t out_count;
     int32_t out_pos;
 
-    std::string pram_file; /* file name for the PRAM file. */
-    uint8_t  pram_size;    /* PRAM size. */
-    uint8_t* pram_storage;
+    NVram pram_obj;
 
     void print_enabled_ints(); /* print enabled VIA interrupts and their sources */
 
@@ -122,8 +122,6 @@ private:
     void cuda_pram_save();
 
     /* I2C related methods */
-    uint8_t pram_read_value(uint8_t offset);
-    void pram_write_value(uint8_t offset, uint8_t new_state);
     void i2c_simple_transaction(uint8_t dev_addr, const uint8_t *in_buf, int in_bytes);
     void i2c_comb_transaction(uint8_t dev_addr, uint8_t sub_addr, uint8_t dev_addr1,
          const uint8_t *in_buf, int in_bytes);
