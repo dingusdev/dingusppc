@@ -35,6 +35,10 @@ ViaCuda::ViaCuda(std::string pram_file, uint32_t pram_size)
     this->cuda_init();
 }
 
+ViaCuda::~ViaCuda() {
+    this->pram_obj.~NVram();
+}
+
 void ViaCuda::cuda_init()
 {
     this->old_tip = 0;

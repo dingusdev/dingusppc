@@ -89,7 +89,7 @@ class ViaCuda
 {
 public:
     ViaCuda(std::string pram_file = "pram.bin", uint32_t pram_size = 256);
-    ~ViaCuda() = default;
+    ~ViaCuda();
 
     uint8_t read(int reg);
     void write(int reg, uint8_t value);
@@ -116,10 +116,10 @@ private:
     void assert_sr_int();
     void cuda_write(uint8_t new_state);
     void cuda_response_header(uint32_t pkt_type, uint32_t pkt_flag);
+    //void cuda_response_packet();
     void cuda_error_response(uint32_t error);
     void cuda_process_packet();
     void cuda_pseudo_command(int cmd, int data_count);
-    void cuda_pram_save();
 
     /* I2C related methods */
     void i2c_simple_transaction(uint8_t dev_addr, const uint8_t *in_buf, int in_bytes);
