@@ -88,7 +88,7 @@ enum {
 class ViaCuda
 {
 public:
-    ViaCuda(std::string pram_file = "pram.bin", uint32_t pram_size = 256);
+    ViaCuda();
     ~ViaCuda();
 
     uint8_t read(int reg);
@@ -107,7 +107,7 @@ private:
     int32_t out_count;
     int32_t out_pos;
 
-    NVram pram_obj;
+    NVram *pram_obj;
 
     void print_enabled_ints(); /* print enabled VIA interrupts and their sources */
 

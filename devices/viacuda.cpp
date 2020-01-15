@@ -18,7 +18,7 @@
 
 using namespace std;
 
-ViaCuda::ViaCuda(std::string pram_file, uint32_t pram_size)
+ViaCuda::ViaCuda()
 {
     /* FIXME: is this the correct
        VIA initialization? */
@@ -30,13 +30,15 @@ ViaCuda::ViaCuda(std::string pram_file, uint32_t pram_size)
     this->via_regs[VIA_IER]  = 0x7F;
 
     //PRAM Pre-Initialization
-    this->pram_obj = NVram("pram.bin", 256);
+    this->pram_obj = new NVram("pram.bin", 256);
 
     this->cuda_init();
 }
 
-ViaCuda::~ViaCuda() {
-    this->pram_obj.~NVram();
+ViaCuda::~ViaCuda()
+{
+    if (this->pram_obj)
+        delete (this->pram_obj);
 }
 
 void ViaCuda::cuda_init()
@@ -249,11 +251,11 @@ void ViaCuda::cuda_pseudo_command(int cmd, int data_count)
     switch(cmd) {
     case CUDA_READ_PRAM:
         cuda_response_header(CUDA_PKT_PSEUDO, 0);
-        this->pram_obj.read_byte(this->in_buf[2]);
+        this->pram_obj->read_byte(this->in_buf[2]);
         break;
     case CUDA_WRITE_PRAM:
         cuda_response_header(CUDA_PKT_PSEUDO, 0);
-        this->pram_obj.write_byte(this->in_buf[2], this->in_buf[3]);
+        this->pram_obj->write_byte(this->in_buf[2], this->in_buf[3]);
         break;
     case CUDA_READ_WRITE_I2C:
         cuda_response_header(CUDA_PKT_PSEUDO, 0);
