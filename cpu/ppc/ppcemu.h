@@ -205,7 +205,7 @@ extern uint32_t ppc_real_address;
 extern uint32_t ppc_next_instruction_address;
 
 //Profiling Stats
-extern uint32_t mmu_operations_num;
+extern uint32_t mmu_translations_num;
 extern uint32_t exceptions_performed;
 extern uint32_t supervisor_inst_num;
 

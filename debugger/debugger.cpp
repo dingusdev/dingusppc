@@ -24,6 +24,9 @@ void show_help()
     cout << "  until X   -- execute until address X is reached" << endl;
     cout << "  regs      -- dump content of the GRPs" << endl;
     cout << "  memdump   -- dump content of the system memory to memdump.bin" << endl;
+#ifdef PROFILER
+    cout << "  profiler  -- show stats related to the processor" << endl;
+#endif
     cout << "  disas X,n -- disassemble N instructions starting at address X" << endl;
     cout << "  quit      -- quit the debugger" << endl << endl;
     cout << "Pressing ENTER will repeat last command." << endl;
@@ -79,10 +82,16 @@ void enter_debugger()
             show_help();
         } else if (cmd == "quit") {
             break;
-        }
-        else if (cmd == "memdump") {
+        } else if (cmd == "memdump") {
             dump_mem_file();
         }
+#ifdef PROFILER
+        else if (cmd == "profiler") {
+            cout << "Number of Supervisor Instructions Executed:" << supervisor_inst_num << endl;
+            cout << "Exception Handler Ran:" << exceptions_performed << endl;
+            cout << "Number of MMU Translations:" << mmu_translations_num << endl;
+        } 
+#endif
         else if (cmd == "regs") {
             dump_regs();
         } else if (cmd == "step") {

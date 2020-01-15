@@ -9,6 +9,9 @@ jmp_buf exc_env; /* Global exception environment. */
                                         uint32_t srr1_bits)
 {
     grab_exception = true;
+    #ifdef PROFILER
+    exceptions_performed++;
+    #endif
     bb_kind = BB_end_kind::BB_EXCEPTION;
 
     switch(exception_type) {

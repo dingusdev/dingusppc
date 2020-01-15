@@ -1241,6 +1241,9 @@ void ppc_mfcr(){
 }
 
 void ppc_mtsr(){
+#ifdef PROFILER
+    supervisor_inst_num++;
+#endif
     if ((ppc_state.ppc_msr & 0x4000) == 0){
         reg_s = (ppc_cur_instruction >> 21) & 31;
         grab_sr = (ppc_cur_instruction >> 16) & 15;
@@ -1249,6 +1252,9 @@ void ppc_mtsr(){
 }
 
 void ppc_mtsrin(){
+#ifdef PROFILER
+    supervisor_inst_num++;
+#endif
     if ((ppc_state.ppc_msr & 0x4000) == 0){
         ppc_grab_regssb();
         grab_sr = ppc_result_b >> 28;
@@ -1257,6 +1263,9 @@ void ppc_mtsrin(){
 }
 
 void ppc_mfsr(){
+#ifdef PROFILER
+    supervisor_inst_num++;
+#endif
     if ((ppc_state.ppc_msr & 0x4000) == 0){
         reg_d = (ppc_cur_instruction >> 21) & 31;
         grab_sr = (ppc_cur_instruction >> 16) & 15;
@@ -1265,6 +1274,9 @@ void ppc_mfsr(){
 }
 
 void ppc_mfsrin(){
+#ifdef PROFILER
+    supervisor_inst_num++;
+#endif
     if ((ppc_state.ppc_msr & 0x4000) == 0){
         ppc_grab_regssb();
         grab_sr = ppc_result_b >> 28;
@@ -1273,6 +1285,9 @@ void ppc_mfsrin(){
 }
 
 void ppc_mfmsr(){
+#ifdef PROFILER
+    supervisor_inst_num++;
+#endif
     if (ppc_state.ppc_msr & 0x4000) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x00040000);
     }
@@ -1281,6 +1296,9 @@ void ppc_mfmsr(){
 }
 
 void ppc_mtmsr(){
+#ifdef PROFILER
+    supervisor_inst_num++;
+#endif
     if (ppc_state.ppc_msr & 0x4000) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x00040000);
     }
@@ -1290,6 +1308,12 @@ void ppc_mtmsr(){
 
 void ppc_mfspr(){
     uint32_t ref_spr = (((ppc_cur_instruction >> 11) & 31) << 5) | ((ppc_cur_instruction >> 16) & 31);
+
+#ifdef PROFILER    
+    if (ref_spr > 31) {
+        supervisor_inst_num++;
+    }
+#endif
     reg_d = (ppc_cur_instruction >> 21) & 31;
     ppc_state.ppc_gpr[reg_d] = ppc_state.ppc_spr[ref_spr];
 }
@@ -1297,6 +1321,12 @@ void ppc_mfspr(){
 void ppc_mtspr(){
     uint32_t ref_spr = (((ppc_cur_instruction >> 11) & 31) << 5) | ((ppc_cur_instruction >> 16) & 31);
     reg_s = (ppc_cur_instruction >> 21) & 31;
+
+#ifdef PROFILER    
+    if (ref_spr > 31) {
+        supervisor_inst_num++;
+    }
+#endif
 
     if (ref_spr != 287){
         ppc_state.ppc_spr[ref_spr] = ppc_state.ppc_gpr[reg_s];
@@ -1734,6 +1764,9 @@ void ppc_crxor(){
 //Processor MGMT Fns.
 
 void ppc_rfi(){
+#ifdef PROFILER
+    supervisor_inst_num++;
+#endif
     uint32_t new_srr1_val = (ppc_state.ppc_spr[27] & 0x87C0FF73UL);
     uint32_t new_msr_val = (ppc_state.ppc_msr & ~(0x87C0FF73UL));
     ppc_state.ppc_msr = (new_msr_val | new_srr1_val) & 0xFFFBFFFFUL;
@@ -1794,6 +1827,9 @@ void ppc_dcbf(){
 }
 
 void ppc_dcbi(){
+    #ifdef PROFILER
+    supervisor_inst_num++;
+    #endif
     std::cout << "Oops. Placeholder for dcbi." << std::endl;
 }
 
@@ -2415,6 +2451,9 @@ void ppc_stswx(){
 //TLB Instructions
 
 void ppc_tlbie(){
+#ifdef PROFILER
+    supervisor_inst_num++;
+#endif
     /**
     reg_b = (ppc_cur_instruction >> 11) & 31;
     uint32_t vps = ppc_state.ppc_gpr[reg_b] & 0xFFFF000;
@@ -2423,13 +2462,29 @@ void ppc_tlbie(){
 }
 
 void ppc_tlbia(){
+#ifdef PROFILER
+    supervisor_inst_num++;
+#endif
     printf("Placeholder for tlbia \n");
 }
 
 void ppc_tlbld(){
+#ifdef PROFILER
+    supervisor_inst_num++;
+#endif
     printf("Placeholder for tlbld - 603 only \n");
 }
 
 void ppc_tlbli(){
+#ifdef PROFILER
+    supervisor_inst_num++;
+#endif
     printf("Placeholder for tlbli - 603 only \n");
+}
+
+void ppc_tlbsync() {
+#ifdef PROFILER
+    supervisor_inst_num++;
+#endif
+    printf("Placeholder for tlbsync \n");
 }
