@@ -23,6 +23,7 @@ void show_help()
     cout << "  step      -- execute single instruction" << endl;
     cout << "  until X   -- execute until address X is reached" << endl;
     cout << "  regs      -- dump content of the GRPs" << endl;
+    cout << "  set R=X   -- assign value X to register R" << endl;
     cout << "  memdump   -- dump content of the system memory to memdump.bin" << endl;
 #ifdef PROFILER
     cout << "  profiler  -- show stats related to the processor" << endl;
@@ -55,7 +56,7 @@ void dump_mem_file()
 
 void enter_debugger()
 {
-    string inp, cmd, addr_str, last_cmd;
+    string inp, cmd, addr_str, expr_str, reg_expr, last_cmd;
     uint32_t addr;
     std::stringstream ss;
 
@@ -90,10 +91,20 @@ void enter_debugger()
             cout << "Number of Supervisor Instructions Executed:" << supervisor_inst_num << endl;
             cout << "Exception Handler Ran:" << exceptions_performed << endl;
             cout << "Number of MMU Translations:" << mmu_translations_num << endl;
-        } 
+        }
 #endif
         else if (cmd == "regs") {
             dump_regs();
+        } else if (cmd == "set") {
+            ss >> expr_str;
+            reg_expr = expr_str.substr(0, expr_str.find("="));
+            if (reg_expr == "pc") {
+                addr_str = expr_str.substr(expr_str.find("=") + 1);
+                addr = stol(addr_str, NULL, 0);
+                ppc_state.ppc_pc = addr;
+            } else {
+                cout << "Unknown register " << reg_expr << endl;
+            }
         } else if (cmd == "step") {
             ppc_exec_single();
         } else if (cmd == "until") {
