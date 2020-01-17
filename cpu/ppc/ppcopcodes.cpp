@@ -1278,7 +1278,7 @@ void ppc_mfsrin(){
     supervisor_inst_num++;
 #endif
     if ((ppc_state.ppc_msr & 0x4000) == 0){
-        ppc_grab_regssb();
+        ppc_grab_regsdb();
         grab_sr = ppc_result_b >> 28;
         ppc_state.ppc_gpr[reg_d] = ppc_state.ppc_sr[grab_sr];
     }
