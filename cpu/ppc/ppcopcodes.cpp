@@ -1886,7 +1886,7 @@ void ppc_stbu(){
     ppc_grab_regssa();
     grab_d = (uint32_t)((int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF)));
     if (reg_a != 0){
-        ppc_effective_address = (reg_a == 0)?grab_d:(ppc_result_a + grab_d);
+        ppc_effective_address = ppc_result_a + grab_d;
         address_quickinsert_translate(ppc_result_d, ppc_effective_address, 1);
         ppc_state.ppc_gpr[reg_a] = ppc_effective_address;
     }
@@ -1898,7 +1898,7 @@ void ppc_stbu(){
 void ppc_stbux(){
     ppc_grab_regssab();
     if (reg_a != 0){
-        ppc_effective_address = ppc_result_a + reg_b;
+        ppc_effective_address = ppc_result_a + ppc_result_b;
         address_quickinsert_translate(ppc_result_d, ppc_effective_address, 1);
         ppc_result_a = ppc_effective_address;
         ppc_state.ppc_gpr[reg_a] = ppc_effective_address;
@@ -1919,7 +1919,7 @@ void ppc_sthu(){
     ppc_grab_regssa();
     if (reg_a != 0) {
         grab_d = (uint32_t)((int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF)));
-        ppc_effective_address = (reg_a == 0)?grab_d:(ppc_result_a + grab_d);
+        ppc_effective_address = ppc_result_a + grab_d;
         address_quickinsert_translate(ppc_result_d, ppc_effective_address, 2);
         ppc_state.ppc_gpr[reg_a] = ppc_effective_address;
     }
@@ -1931,7 +1931,7 @@ void ppc_sthu(){
 void ppc_sthux(){
     ppc_grab_regssab();
     if (reg_a != 0) {
-        ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
+        ppc_effective_address = ppc_result_a + ppc_result_b;
         address_quickinsert_translate(ppc_result_d, ppc_effective_address, 2);
         ppc_state.ppc_gpr[reg_a] = ppc_effective_address;
     }
@@ -1996,7 +1996,7 @@ void ppc_stwu(){
 void ppc_stwux(){
     ppc_grab_regssab();
     if (reg_a != 0) {
-        ppc_effective_address = (reg_a == 0)?ppc_result_b:(ppc_result_a + ppc_result_b);
+        ppc_effective_address = ppc_result_a + ppc_result_b;
         address_quickinsert_translate(ppc_result_d, ppc_effective_address, 4);
         ppc_state.ppc_gpr[reg_a] = ppc_effective_address;
     }
