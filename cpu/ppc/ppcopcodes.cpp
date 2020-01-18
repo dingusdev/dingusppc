@@ -1871,7 +1871,7 @@ void ppc_dcbz(){
 
 void ppc_stb(){
     ppc_grab_regssa();
-    grab_d = (uint32_t)((int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF)));
+    grab_d = (uint32_t)((uint8_t)(ppc_cur_instruction & 0xFF));
     ppc_effective_address = (reg_a == 0)?grab_d:(ppc_result_a + grab_d);
     address_quickinsert_translate(ppc_result_d, ppc_effective_address, 1);
 }
@@ -1884,8 +1884,8 @@ void ppc_stbx(){
 
 void ppc_stbu(){
     ppc_grab_regssa();
-    grab_d = (uint32_t)((int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF)));
     if (reg_a != 0){
+        grab_d = (uint32_t)((uint8_t)(ppc_cur_instruction & 0xFF));
         ppc_effective_address = ppc_result_a + grab_d;
         address_quickinsert_translate(ppc_result_d, ppc_effective_address, 1);
         ppc_state.ppc_gpr[reg_a] = ppc_effective_address;
@@ -1900,7 +1900,6 @@ void ppc_stbux(){
     if (reg_a != 0){
         ppc_effective_address = ppc_result_a + ppc_result_b;
         address_quickinsert_translate(ppc_result_d, ppc_effective_address, 1);
-        ppc_result_a = ppc_effective_address;
         ppc_state.ppc_gpr[reg_a] = ppc_effective_address;
     }
     else{
@@ -1983,7 +1982,7 @@ void ppc_stwcx(){
 void ppc_stwu(){
     ppc_grab_regssa();
     if (reg_a != 0) {
-        grab_d = (uint32_t)((int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF)));
+        grab_d = (uint32_t)((int32_t)(ppc_cur_instruction));
         ppc_effective_address = ppc_result_a + grab_d;
         address_quickinsert_translate(ppc_result_d, ppc_effective_address, 4);
         ppc_state.ppc_gpr[reg_a] = ppc_effective_address;
