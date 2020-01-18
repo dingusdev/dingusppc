@@ -102,7 +102,7 @@ static std::unordered_map<uint16_t, PPCOpcode> SubOpcode31Grabber = {
     {1070, &ppc_lfsx},        {1072, &ppc_srw},        {1073, &ppc_srwdot},
     {1074, &power_rrib},      {1075, &power_rribdot},  {1082, &power_maskir},
     {1083, &power_maskirdot}, {1104, &ppc_subfo},      {1105, &ppc_subfodot},
-    {1105, &ppc_tlbsync},
+    {1132, &ppc_tlbsync},
     {1134, &ppc_lfsux},       {1190, &ppc_mfsr},       {1194, &ppc_lswi},
     {1196, &ppc_sync},        {1232, &ppc_nego},       {1233, &ppc_negodot},
     {1238, &power_mulo},      {1239, &power_mulodot},  {1300, &ppc_addeo},
