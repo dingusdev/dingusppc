@@ -5,7 +5,7 @@
 #include <string>
 
 typedef struct PPCDisasmContext {
-    uint32_t    instr_addr = 0;
+    uint32_t    instr_addr;
     uint32_t    instr_code;
     std::string instr_str;
     bool        simplified; /* true if we should output simplified mnemonics */
