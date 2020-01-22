@@ -28,6 +28,11 @@ enum endian_switch {big_end = 0, little_end = 1};
 
 typedef void (*PPCOpcode)(void);
 
+typedef union FPR_storage {
+    double    dbl64_r = 0.0; // double floating-point representation
+    uint64_t  int64_r; // double integer representation
+};
+
 /**
 Except for the floating-point registers, all registers require
 32 bits for representation. Floating-point registers need 64 bits.
@@ -43,7 +48,7 @@ fpscr = FP Status and Condition Register
 **/
 
 typedef struct struct_ppc_state {
-    uint64_t ppc_fpr [32];
+    FPR_storage ppc_fpr [32];
     uint32_t ppc_pc; //Referred as the CIA in the PPC manual
     uint32_t ppc_gpr [32];
     uint32_t ppc_cr;
@@ -59,7 +64,7 @@ extern SetPRS ppc_state;
 
 /**
 typedef struct struct_ppc64_state {
-    uint64_t ppc_fpr [32];
+    FPR_storage ppc_fpr [32];
     uint64_t ppc_pc; //Referred as the CIA in the PPC manual
     uint64_t ppc_gpr [32];
     uint32_t ppc_cr;
@@ -138,7 +143,6 @@ extern uint32_t uimm;
 extern uint32_t not_this;
 extern uint32_t grab_sr;
 extern uint32_t grab_inb; //This is for grabbing the number of immediate bytes for loading and storing
-extern uint32_t grab_d; //This is for grabbing d from Store and Load instructions
 extern uint32_t ppc_to;
 extern int32_t simm;
 extern int32_t adr_li;
@@ -224,6 +228,10 @@ void ppc_opcode31();
 void ppc_opcode59();
 void ppc_opcode63();
 
+extern bool ppc_confirm_inf_nan(uint64_t input_a, uint64_t input_b, bool is_single, uint32_t op);
+extern double fp_return_double(uint32_t reg);
+extern uint64_t fp_return_uint64(uint32_t reg);
+
 extern void ppc_grab_regsda();
 extern void ppc_grab_regsdb();
 
@@ -238,17 +246,17 @@ extern void ppc_grab_regsdauimm();
 extern void ppc_grab_regsasimm();
 extern void ppc_grab_regssauimm();
 
-extern void ppc_grab_regsfpdb();
-extern void ppc_grab_regsfpdab();
-extern void ppc_grab_regsfpdia();
-extern void ppc_grab_regsfpdiab();
-extern void ppc_grab_regsfpsia();
-extern void ppc_grab_regsfpsiab();
+extern void ppc_grab_regsfpdb(bool int_rep);
+extern void ppc_grab_regsfpdab(bool int_rep);
+extern void ppc_grab_regsfpdia(bool int_rep);
+extern void ppc_grab_regsfpdiab(bool int_rep);
+extern void ppc_grab_regsfpsia(bool int_rep);
+extern void ppc_grab_regsfpsiab(bool int_rep);
 
 extern void ppc_store_result_regd();
 extern void ppc_store_result_rega();
-extern void ppc_store_sfpresult();
-extern void ppc_store_dfpresult();
+extern void ppc_store_sfpresult(bool int_rep);
+extern void ppc_store_dfpresult(bool int_rep);
 
 void ppc_carry(uint32_t a, uint32_t b);
 void ppc_setsoov(uint32_t a, uint32_t b);

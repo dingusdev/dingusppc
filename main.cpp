@@ -100,7 +100,8 @@ uint8_t write_char;
 //Initialize the PPC's registers.
 void reg_init(){
     for (uint32_t i = 0; i < 32; i++){
-        ppc_state.ppc_fpr[i] = 0;
+        ppc_state.ppc_fpr[i].dbl64_r = 0.0;
+        ppc_state.ppc_fpr[i].int64_r = 0;
     }
     ppc_state.ppc_pc = 0;
     for (uint32_t i = 0; i < 32; i++){
