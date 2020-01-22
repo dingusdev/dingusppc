@@ -242,8 +242,6 @@ bool ppc_confirm_inf_nan(uint64_t input_a, uint64_t input_b, bool is_single, uin
                 return true;
             }
             break;
-        default:
-            return false;
         }
     }
     else {
@@ -282,10 +280,9 @@ bool ppc_confirm_inf_nan(uint64_t input_a, uint64_t input_b, bool is_single, uin
                 return true;
             }
             break;
-        default:
-            return false;
         }
     }
+    return false;
 }
 
 void ppc_fpresult_update(uint64_t set_result, bool confirm_arc) {

@@ -28,8 +28,8 @@ enum endian_switch {big_end = 0, little_end = 1};
 
 typedef void (*PPCOpcode)(void);
 
-typedef union FPR_storage {
-    double    dbl64_r = 0.0; // double floating-point representation
+union FPR_storage {
+    double    dbl64_r; // double floating-point representation
     uint64_t  int64_r; // double integer representation
 };
 
