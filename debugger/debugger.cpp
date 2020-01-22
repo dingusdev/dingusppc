@@ -13,6 +13,7 @@
 #include <map>
 #include "ppcemu.h"
 #include "../cpu/ppc/ppcmmu.h"
+#include "../cpu/ppc/ppcdisasm.h"
 
 
 using namespace std;
@@ -43,6 +44,18 @@ void dump_regs()
     cout << "CTR: " << hex << ppc_state.ppc_spr[SPR::CTR] << endl;
     cout << "XER: " << hex << ppc_state.ppc_spr[SPR::XER] << endl;
     cout << "MSR: " << hex << ppc_state.ppc_msr           << endl;
+}
+
+void disasm()
+{
+    PPCDisasmContext ctx;
+
+    quickinstruction_translate(ppc_state.ppc_pc);
+
+    ctx.instr_addr = ppc_state.ppc_pc;
+    ctx.instr_code = ppc_cur_instruction;
+    ctx.simplified = true;
+    cout << hex << ppc_state.ppc_pc << "    " << disassemble_single(&ctx) << endl;
 }
 
 void enter_debugger()
@@ -101,7 +114,7 @@ void enter_debugger()
             addr = stoul(addr_str, NULL, 16);
             ppc_exec_until(addr);
         } else if (cmd == "disas") {
-            cout << "Disassembling not implemented yet. Sorry!" << endl;
+            disasm();
         } else {
             cout << "Unknown command: " << cmd << endl;
             continue;
