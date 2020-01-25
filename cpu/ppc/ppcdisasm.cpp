@@ -54,6 +54,11 @@ const char *opc_muldivs[16] = { /* multiply and division instructions */
 
 
 /** various formatting helpers. */
+void fmt_oneop(string& buf, const char* opc, int src)
+{
+    buf = my_sprintf("%-8sr%d", opc, src);
+}
+
 void fmt_twoop(string& buf, const char *opc, int dst, int src)
 {
     buf = my_sprintf("%-8sr%d, r%d", opc, dst, src);
@@ -64,14 +69,24 @@ void fmt_twoop_imm(string& buf, const char *opc, int dst, int imm)
     buf = my_sprintf("%-8sr%d, 0x%04X", opc, dst, imm);
 }
 
+void fmt_twoop_spr(string& buf, const char* opc, int dst, int src)
+{
+    buf = my_sprintf("%-8sr%d, spr%d", opc, dst, src);
+}
+
 void fmt_threeop(string& buf, const char *opc, int dst, int src1, int src2)
 {
     buf = my_sprintf("%-8sr%d, r%d, r%d", opc, dst, src1, src2);
 }
 
-void fmt_threeop_imm(string& buf, const char *opc, int dst, int src1, int imm)
+void fmt_threeop_imm(string& buf, const char* opc, int dst, int src1, int imm)
 {
     buf = my_sprintf("%-8sr%d, r%d, 0x%04X", opc, dst, src1, imm);
+}
+
+void fmt_fourop(string& buf, const char* opc, int dst, int src1, int src2, int src3)
+{
+    buf = my_sprintf("%-8sr%d, r%d, r%d, r%d", opc, dst, src1, src2, src3);
 }
 
 void opc_illegal(PPCDisasmContext *ctx)
@@ -91,37 +106,75 @@ void opc_group4(PPCDisasmContext *ctx)
 
 void opc_mulli(PPCDisasmContext *ctx)
 {
-    //return "DEADBEEF";
+    auto ra = (ctx->instr_code >> 16) & 0x1F;
+    auto rd = (ctx->instr_code >> 21) & 0x1F;
+    auto imm = ctx->instr_code & 0xFFFF;
+
+    fmt_threeop_imm(ctx->instr_str, "mulli", rd, ra, imm);
 }
 
 void opc_subfic(PPCDisasmContext *ctx)
 {
-    //return "DEADBEEF";
+    auto ra = (ctx->instr_code >> 16) & 0x1F;
+    auto rd = (ctx->instr_code >> 21) & 0x1F;
+    auto imm = ctx->instr_code & 0xFFFF;
+
+    fmt_threeop_imm(ctx->instr_str, "subfic", rd, ra, imm);
 }
 
 void power_dozi(PPCDisasmContext *ctx)
 {
-    //return "DEADBEEF";
+    auto ra = (ctx->instr_code >> 16) & 0x1F;
+    auto rd = (ctx->instr_code >> 21) & 0x1F;
+    auto imm = ctx->instr_code & 0xFFFF;
+
+    fmt_threeop_imm(ctx->instr_str, "dozi", rd, ra, imm);
 }
 
 void opc_cmpli(PPCDisasmContext *ctx)
 {
-    //return "DEADBEEF";
+    auto ra = (ctx->instr_code >> 16) & 0x1F;
+    auto crfd = (ctx->instr_code >> 23) & 0x07;
+    auto imm = ctx->instr_code & 0xFFFF;
+
+    if (ctx->instr_code & 0x200000) {
+        opc_illegal(ctx);
+    }
+    else {
+        fmt_threeop_imm(ctx->instr_str, "cmpli", crfd, ra, imm);
+    }
 }
 
 void opc_cmpi(PPCDisasmContext *ctx)
 {
-    //return "DEADBEEF";
+    auto crfd = (ctx->instr_code >> 23) & 0x07;
+    auto ra = (ctx->instr_code >> 16) & 0x1F;
+    auto imm = ctx->instr_code & 0xFFFF;
+
+    if (ctx->instr_code & 0x200000) {
+        opc_illegal(ctx);
+    }
+    else {
+        fmt_threeop_imm(ctx->instr_str, "cmpi", crfd, ra, imm);
+    }
 }
 
 void opc_addic(PPCDisasmContext *ctx)
 {
-    //return "DEADBEEF";
+    auto ra = (ctx->instr_code >> 16) & 0x1F;
+    auto rd = (ctx->instr_code >> 21) & 0x1F;
+    auto imm = ctx->instr_code & 0xFFFF;
+
+    fmt_threeop_imm(ctx->instr_str, "addic", rd, ra, imm);
 }
 
 void opc_addicdot(PPCDisasmContext *ctx)
 {
-    //return "DEADBEEF";
+    auto ra = (ctx->instr_code >> 16) & 0x1F;
+    auto rd = (ctx->instr_code >> 21) & 0x1F;
+    auto imm = ctx->instr_code & 0xFFFF;
+
+    fmt_threeop_imm(ctx->instr_str, "addic.", rd, ra, imm);
 }
 
 void opc_addi(PPCDisasmContext *ctx)
@@ -134,6 +187,32 @@ void opc_addi(PPCDisasmContext *ctx)
         fmt_twoop_imm(ctx->instr_str, "li", rd, imm);
     else
         fmt_threeop_imm(ctx->instr_str, "addi", rd, ra, imm);
+}
+
+void opc_addis(PPCDisasmContext* ctx)
+{
+    auto ra = (ctx->instr_code >> 16) & 0x1F;
+    auto rd = (ctx->instr_code >> 21) & 0x1F;
+    auto imm = ctx->instr_code & 0xFFFF;
+
+    if (ra == 0 && ctx->simplified)
+        fmt_twoop_imm(ctx->instr_str, "lis", rd, imm);
+    else
+        fmt_threeop_imm(ctx->instr_str, "addis", rd, ra, imm);
+}
+
+void opc_lwz(PPCDisasmContext* ctx)
+{
+    auto ra = (ctx->instr_code >> 16) & 0x1F;
+    auto rd = (ctx->instr_code >> 21) & 0x1F;
+    auto offset = ctx->instr_code & 0xFFFF;
+
+    if (ra == 0) {
+        fmt_twoop_imm(ctx->instr_str, "lzw", rd, offset);
+    }
+    else {
+        fmt_threeop_imm(ctx->instr_str, "lzw", rd, ra, offset);
+    }
 }
 
 void generic_bcx(PPCDisasmContext *ctx, uint32_t bo, uint32_t bi, uint32_t dst)
@@ -227,6 +306,15 @@ void opc_ori(PPCDisasmContext *ctx)
         return;
     }
     fmt_threeop_imm(ctx->instr_str, "ori", ra, rs, imm);
+}
+
+void opc_oris(PPCDisasmContext* ctx)
+{
+    auto ra = (ctx->instr_code >> 16) & 0x1F;
+    auto rs = (ctx->instr_code >> 21) & 0x1F;
+    auto imm = ctx->instr_code & 0xFFFF;
+
+    fmt_threeop_imm(ctx->instr_str, "oris", ra, rs, imm);
 }
 
 void opc_group31(PPCDisasmContext *ctx)
@@ -329,12 +417,17 @@ void opc_group31(PPCDisasmContext *ctx)
         break;
     }
 
+    auto ref_spr = (((ctx->instr_code >> 11) & 31) << 5) | ((ctx->instr_code >> 16) & 31);
+
     switch(ext_opc) {
         case 4:
             if (rc_set)
                 opc_illegal(ctx);
             else
                 ctx->instr_str = my_sprintf("%-8s%d, r%d, r%d", "tw", rs, ra, rb);
+            break;
+        case 19: /* mfcr */
+            fmt_oneop(ctx->instr_str, "mfcr", rs);
             break;
         case 144: /* mtcrf */
             if (ctx->instr_code & 0x100801)
@@ -343,6 +436,15 @@ void opc_group31(PPCDisasmContext *ctx)
                 ctx->instr_str = my_sprintf("%-8s0x%02X, r%d", "mtcrf",
                                 (ctx->instr_code >> 12) & 0xFF, rs);
             }
+            break;
+        case 146: /* mtmsr */
+            fmt_oneop(ctx->instr_str, "mtmsr", rs);
+            break;
+        case 339: /* mfspr */
+            fmt_twoop_spr(ctx->instr_str, "mfspr", rs, ref_spr);
+            break;
+        case 467: /* mtspr */
+            fmt_twoop_spr(ctx->instr_str, "mtspr", ref_spr, rs);
             break;
         default:
             opc_illegal(ctx);
@@ -354,12 +456,12 @@ static std::function<void(PPCDisasmContext*)> OpcodeDispatchTable[64] = {
     opc_illegal,   opc_illegal,   opc_illegal,   opc_twi,
     opc_group4,    opc_illegal,   opc_illegal,   opc_mulli,
     opc_subfic,    power_dozi,    opc_cmpli,     opc_cmpi,
-    opc_addic,     opc_addicdot,  opc_addi,      opc_illegal,
+    opc_addic,     opc_addicdot,  opc_addi,      opc_addis,
     opc_bcx,       opc_illegal,   opc_bx,        opc_illegal,
     opc_illegal,   opc_illegal,   opc_illegal,   opc_illegal,
-    opc_ori,       opc_illegal,   opc_illegal,   opc_illegal,
+    opc_ori,       opc_oris,      opc_illegal,   opc_illegal,
     opc_illegal,   opc_illegal,   opc_illegal,   opc_group31,
-    opc_illegal,   opc_illegal,   opc_illegal,   opc_illegal,
+    opc_lwz,       opc_illegal,   opc_illegal,   opc_illegal,
     opc_illegal,   opc_illegal,   opc_illegal,   opc_illegal,
     opc_illegal,   opc_illegal,   opc_illegal,   opc_illegal,
     opc_illegal,   opc_illegal,   opc_illegal,   opc_illegal,
