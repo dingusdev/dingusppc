@@ -29,7 +29,7 @@ enum endian_switch { big_end = 0, little_end = 1 };
 typedef void (*PPCOpcode)(void);
 
 union FPR_storage {
-    double    dbl64_r = 0.0; // double floating-point representation
+    double    dbl64_r; // double floating-point representation
     uint64_t  int64_r; // double integer representation
 };
 
@@ -48,16 +48,16 @@ fpscr = FP Status and Condition Register
 **/
 
 typedef struct struct_ppc_state {
-    FPR_storage ppc_fpr[32] = { 0 };
-    uint32_t ppc_pc = 0; //Referred as the CIA in the PPC manual
-    uint32_t ppc_gpr[32] = { 0 };
-    uint32_t ppc_cr = 0;
-    uint32_t ppc_fpscr = 0;
-    uint32_t ppc_tbr[2] = { 0 };
-    uint32_t ppc_spr[1024] = { 0 };
-    uint32_t ppc_msr = 0;
-    uint32_t ppc_sr[16] = { 0 };
-    bool ppc_reserve = 0; //reserve bit used for lwarx and stcwx
+    FPR_storage ppc_fpr[32];
+    uint32_t ppc_pc; //Referred as the CIA in the PPC manual
+    uint32_t ppc_gpr[32];
+    uint32_t ppc_cr;
+    uint32_t ppc_fpscr;
+    uint32_t ppc_tbr[2];
+    uint32_t ppc_spr[1024];
+    uint32_t ppc_msr;
+    uint32_t ppc_sr[16];
+    bool ppc_reserve; //reserve bit used for lwarx and stcwx
 } SetPRS;
 
 extern SetPRS ppc_state;
