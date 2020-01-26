@@ -8,7 +8,7 @@
 #include <cinttypes>
 #include "endianswap.h"
 
- /* read an aligned big-endian WORD (16bit) */
+/* read an aligned big-endian WORD (16bit) */
 #define READ_WORD_BE_A(addr)  (BYTESWAP_16(*((uint16_t *)((addr)))))
 
 /* read an aligned big-endian DWORD (32bit) */
@@ -51,4 +51,15 @@
                               ((addr)[5] << 40) | ((addr)[4] << 32) | \
                               ((addr)[3] << 24) | ((addr)[2] << 16) | \
                               ((addr)[1] << 8)  |  (addr)[0])
+
+
+/* write an aligned big-endian WORD (16bit) */
+#define WRITE_WORD_BE_A(addr,val) (*((uint16_t *)((addr))) = BYTESWAP_16(val))
+
+/* write an aligned big-endian DWORD (32bit) */
+#define WRITE_DWORD_BE_A(addr,val) (*((uint32_t *)((addr))) = BYTESWAP_32(val))
+
+/* write an aligned big-endian QWORD (64bit) */
+#define WRITE_QWORD_BE_A(addr,val) (*((uint64_t *)((addr))) = BYTESWAP_64(val))
+
 #endif /* MEM_READ_WRITE_H */

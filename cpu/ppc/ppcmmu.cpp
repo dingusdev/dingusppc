@@ -33,36 +33,72 @@
 PPC_BAT_entry ibat_array[4] = { {0} };
 PPC_BAT_entry dbat_array[4] = { {0} };
 
+/** remember recently used physical memory regions for quicker translation. */
+AddressMapEntry last_read_area  = { 0 };
+AddressMapEntry last_write_area = { 0 };
+AddressMapEntry last_exec_area  = { 0 };
+AddressMapEntry last_ptab_area  = { 0 };
+
+
+/* macro for generating code reading from physical memory */
+#define READ_PHYS_MEM(ENTRY, ADDR, OP, SIZE, UNVAL)                            \
+{                                                                              \
+    if ((ADDR) >= (ENTRY).start && (ADDR) <= (ENTRY).end) {                    \
+        ret = OP((ENTRY).mem_ptr + ((ADDR) - (ENTRY).start));                  \
+    } else {                                                                   \
+        AddressMapEntry* entry = mem_ctrl_instance->find_range((ADDR));        \
+        if (entry) {                                                           \
+            if (entry->type & (RT_ROM | RT_RAM)) {                             \
+                (ENTRY).start   = entry->start;                                \
+                (ENTRY).end     = entry->end;                                  \
+                (ENTRY).mem_ptr = entry->mem_ptr;                              \
+                ret = OP((ENTRY).mem_ptr + ((ADDR) - (ENTRY).start));          \
+            }                                                                  \
+            else if (entry->type & RT_MMIO) {                                  \
+                ret = entry->devobj->read((ADDR) - entry->start, (SIZE));      \
+            }                                                                  \
+            else {                                                             \
+                printf("Please check your address map!\n");                    \
+                ret = (UNVAL);                                                 \
+            }                                                                  \
+        }                                                                      \
+        else {                                                                 \
+            printf("WARNING: read from unmapped memory at 0x%08X!\n", (ADDR)); \
+            ret = (UNVAL);                                                     \
+        }                                                                      \
+    }                                                                          \
+}
+
+/* macro for generating code writing to physical memory */
+#define WRITE_PHYS_MEM(ENTRY, ADDR, OP, VAL, SIZE)                             \
+{                                                                              \
+    if ((ADDR) >= (ENTRY).start && (ADDR) <= (ENTRY).end) {                    \
+        OP((ENTRY).mem_ptr + ((ADDR) - (ENTRY).start), (VAL));                 \
+    } else {                                                                   \
+        AddressMapEntry* entry = mem_ctrl_instance->find_range((ADDR));        \
+        if (entry) {                                                           \
+            if (entry->type & RT_RAM) {                                        \
+                (ENTRY).start   = entry->start;                                \
+                (ENTRY).end     = entry->end;                                  \
+                (ENTRY).mem_ptr = entry->mem_ptr;                              \
+                OP((ENTRY).mem_ptr + ((ADDR) - (ENTRY).start), (VAL));         \
+            }                                                                  \
+            else if (entry->type & RT_MMIO) {                                  \
+                entry->devobj->write((ADDR) - entry->start, (VAL), (SIZE));    \
+            }                                                                  \
+            else {                                                             \
+                printf("Please check your address map!\n");                    \
+            }                                                                  \
+        }                                                                      \
+        else {                                                                 \
+            printf("WARNING: write to unmapped memory at 0x%08X!\n", (ADDR));  \
+        }                                                                      \
+    }                                                                          \
+}
+
 void ppc_set_cur_instruction(const uint8_t* ptr)
 {
     ppc_cur_instruction = READ_DWORD_BE_A(ptr);
-}
-
-static inline void ppc_set_retval_16bit(const uint8_t* ptr) {
-    if (ppc_state.ppc_msr & 1) {
-        return_value = READ_WORD_LE_A(ptr);
-    }
-    else {
-        return_value = READ_WORD_BE_A(ptr);
-    }
-}
-
-static inline void ppc_set_retval_32bit(const uint8_t* ptr) {
-    if (ppc_state.ppc_msr & 1) {
-        return_value = READ_DWORD_LE_A(ptr);
-    }
-    else {
-        return_value = READ_DWORD_BE_A(ptr);
-    }
-}
-
-static inline void ppc_set_retval_64bit(const uint8_t* ptr) {
-    if (ppc_state.ppc_msr & 1) {
-        return_value = READ_QWORD_LE_A(ptr);
-    }
-    else {
-        return_value = READ_QWORD_BE_A(ptr);
-    }
 }
 
 static inline void ppc_memstore_16bit(unsigned char* ptr, uint16_t value, uint32_t offset) {
@@ -157,11 +193,6 @@ void dbat_update(uint32_t bat_reg)
     }
 }
 
-/* remember page table memory region for quicker translation. */
-uint32_t page_table_pa_start = 0;
-uint32_t page_table_pa_end = 0;
-unsigned char* page_table_ptr = 0;
-
 static inline uint8_t* calc_pteg_addr(uint32_t hash)
 {
     uint32_t sdr1_val, pteg_addr;
@@ -173,16 +204,16 @@ static inline uint8_t* calc_pteg_addr(uint32_t hash)
         (((sdr1_val & 0x1FF) << 16) & ((hash & 0x7FC00) << 6));
     pteg_addr |= (hash & 0x3FF) << 6;
 
-    if (pteg_addr >= page_table_pa_start && pteg_addr <= page_table_pa_end) {
-        return page_table_ptr + (pteg_addr - page_table_pa_start);
+    if (pteg_addr >= last_ptab_area.start && pteg_addr <= last_ptab_area.end) {
+        return last_ptab_area.mem_ptr + (pteg_addr - last_ptab_area.start);
     }
     else {
         AddressMapEntry* entry = mem_ctrl_instance->find_range(pteg_addr);
         if (entry && entry->type & (RT_ROM | RT_RAM)) {
-            page_table_pa_start = entry->start;
-            page_table_pa_end = entry->end;
-            page_table_ptr = entry->mem_ptr;
-            return page_table_ptr + (pteg_addr - page_table_pa_start);
+            last_ptab_area.start   = entry->start;
+            last_ptab_area.end     = entry->end;
+            last_ptab_area.mem_ptr = entry->mem_ptr;
+            return last_ptab_area.mem_ptr + (pteg_addr - last_ptab_area.start);
         }
         else {
             printf("SOS: no page table region was found at %08X!\n", pteg_addr);
@@ -373,17 +404,6 @@ static uint32_t ppc_mmu_addr_translate(uint32_t la, int is_write)
     return pa;
 }
 
-
-uint32_t write_last_pa_start = 0;
-uint32_t write_last_pa_end = 0;
-unsigned char* write_last_ptr = 0;
-
-void set_write_pa_ptr(AddressMapEntry* entry) {
-    write_last_pa_start = entry->start;
-    write_last_pa_end = entry->end;
-    write_last_ptr = entry->mem_ptr;
-}
-
 void address_insert8bit_translate(uint8_t value, uint32_t addr)
 {
     /* data address translation if enabled */
@@ -391,29 +411,9 @@ void address_insert8bit_translate(uint8_t value, uint32_t addr)
         addr = ppc_mmu_addr_translate(addr, 1);
     }
 
-    if (addr >= write_last_pa_start && addr <= write_last_pa_end) {
-        uint32_t offset = addr - write_last_pa_start;
-        write_last_ptr[offset] = value;
-    }
-    else {
-        AddressMapEntry* entry = mem_ctrl_instance->find_range(addr);
-        if (entry) {
-            if (entry->type & RT_RAM) {
-                set_write_pa_ptr(entry);
-                uint32_t offset = addr - entry->start;
-                write_last_ptr[offset] = value;
-            }
-            else if (entry->type & RT_MMIO) {
-                entry->devobj->write(addr - entry->start, (uint32_t)value, 1);
-            }
-            else {
-                printf("Please check your address map!\n");
-            }
-        }
-        else {
-            printf("WARNING: write attempt to unmapped memory at 0x%08X!\n", addr);
-        }
-    }
+    #define WRITE_BYTE(addr, val) (*(addr) = val)
+
+    WRITE_PHYS_MEM(last_write_area, addr, WRITE_BYTE, value, 1);
 }
 
 void address_insert16bit_translate(uint16_t value, uint32_t addr)
@@ -423,27 +423,7 @@ void address_insert16bit_translate(uint16_t value, uint32_t addr)
         addr = ppc_mmu_addr_translate(addr, 1);
     }
 
-    if (addr >= write_last_pa_start && addr <= write_last_pa_end) {
-        ppc_memstore_16bit(write_last_ptr, value, addr - write_last_pa_start);
-    }
-    else {
-        AddressMapEntry* entry = mem_ctrl_instance->find_range(addr);
-        if (entry) {
-            if (entry->type & RT_RAM) {
-                set_write_pa_ptr(entry);
-                ppc_memstore_16bit(write_last_ptr, value, addr - write_last_pa_start);
-            }
-            else if (entry->type & RT_MMIO) {
-                entry->devobj->write(addr - entry->start, (uint32_t)value, 2);
-            }
-            else {
-                printf("Please check your address map!\n");
-            }
-        }
-        else {
-            printf("WARNING: write attempt to unmapped memory at 0x%08X!\n", addr);
-        }
-    }
+    WRITE_PHYS_MEM(last_write_area, addr, WRITE_WORD_BE_A, value, 2);
 }
 
 void address_insert32bit_translate(uint32_t value, uint32_t addr)
@@ -453,27 +433,7 @@ void address_insert32bit_translate(uint32_t value, uint32_t addr)
         addr = ppc_mmu_addr_translate(addr, 1);
     }
 
-    if (addr >= write_last_pa_start && addr <= write_last_pa_end) {
-        ppc_memstore_32bit(write_last_ptr, value, addr - write_last_pa_start);
-    }
-    else {
-        AddressMapEntry* entry = mem_ctrl_instance->find_range(addr);
-        if (entry) {
-            if (entry->type & RT_RAM) {
-                set_write_pa_ptr(entry);
-                ppc_memstore_32bit(write_last_ptr, value, addr - write_last_pa_start);
-            }
-            else if (entry->type & RT_MMIO) {
-                entry->devobj->write(addr - entry->start, value, 4);
-            }
-            else {
-                printf("Please check your address map!\n");
-            }
-        }
-        else {
-            printf("WARNING: write attempt to unmapped memory at 0x%08X!\n", addr);
-        }
-    }
+    WRITE_PHYS_MEM(last_write_area, addr, WRITE_DWORD_BE_A, value, 4);
 }
 
 void address_insert64bit_translate(uint64_t value, uint32_t addr)
@@ -483,187 +443,61 @@ void address_insert64bit_translate(uint64_t value, uint32_t addr)
         addr = ppc_mmu_addr_translate(addr, 1);
     }
 
-    if (addr >= write_last_pa_start && addr <= write_last_pa_end) {
-        ppc_memstore_64bit(write_last_ptr, value, addr - write_last_pa_start);
-    }
-    else {
-        AddressMapEntry* entry = mem_ctrl_instance->find_range(addr);
-        if (entry) {
-            if (entry->type & RT_RAM) {
-                set_write_pa_ptr(entry);
-                ppc_memstore_64bit(write_last_ptr, value, addr - write_last_pa_start);
-            }
-            else if (entry->type & RT_MMIO) {
-                entry->devobj->write(addr - entry->start, (uint32_t)value, 4);
-            }
-            else {
-                printf("Please check your address map!\n");
-            }
-        }
-        else {
-            printf("WARNING: write attempt to unmapped memory at 0x%08X!\n", addr);
-        }
-    }
-}
-
-uint32_t read_last_pa_start = 0;
-uint32_t read_last_pa_end = 0;
-unsigned char* read_last_ptr = 0;
-
-void set_read_pa_ptr(AddressMapEntry* entry) {
-    read_last_pa_start = entry->start;
-    read_last_pa_end = entry->end;
-    read_last_ptr = entry->mem_ptr;
+    WRITE_PHYS_MEM(last_write_area, addr, WRITE_QWORD_BE_A, value, 8);
 }
 
 /** Grab a value from memory into a register */
 void address_grab8bit_translate(uint32_t addr)
 {
+    uint8_t ret;
+
     /* data address translation if enabled */
     if (ppc_state.ppc_msr & 0x10) {
         addr = ppc_mmu_addr_translate(addr, 0);
     }
 
-    if (addr >= read_last_pa_start && addr <= read_last_pa_end) {
-        uint8_t* pointer = (read_last_ptr + (addr - read_last_pa_start));
-        return_value = (*(uint8_t*)((pointer)));
-    }
-    else {
-        AddressMapEntry* entry = mem_ctrl_instance->find_range(addr);
-        if (entry) {
-            if (entry->type & (RT_ROM | RT_RAM)) {
-                set_read_pa_ptr(entry);
-                uint8_t* pointer = (read_last_ptr + (addr - entry->start));
-                return_value = (*(uint8_t*)((pointer)));
-            }
-            else if (entry->type & RT_MMIO) {
-                return_value = entry->devobj->read(addr - entry->start, 1);
-            }
-            else {
-                printf("Please check your address map!\n");
-            }
-        }
-        else {
-            printf("WARNING: read attempt from unmapped memory at 0x%08X!\n", addr);
-
-            /* reading from unmapped memory will return unmapped value */
-            return_value = 0xFF;
-        }
-    }
+    READ_PHYS_MEM(last_read_area, addr, *, 1, 0xFFU);
+    return_value = ret;
 }
 
 void address_grab16bit_translate(uint32_t addr)
 {
+    uint16_t ret;
+
     /* data address translation if enabled */
     if (ppc_state.ppc_msr & 0x10) {
         addr = ppc_mmu_addr_translate(addr, 0);
     }
 
-    if (addr >= read_last_pa_start && addr <= read_last_pa_end) {
-        ppc_set_retval_16bit(read_last_ptr + (addr - read_last_pa_start));
-    }
-    else {
-        AddressMapEntry* entry = mem_ctrl_instance->find_range(addr);
-        if (entry) {
-            if (entry->type & (RT_ROM | RT_RAM)) {
-                set_read_pa_ptr(entry);
-                ppc_set_retval_16bit(read_last_ptr + (addr - entry->start));
-            }
-            else if (entry->type & RT_MMIO) {
-                return_value = entry->devobj->read(addr - entry->start, 4);
-            }
-            else {
-                printf("Please check your address map!\n");
-            }
-        }
-        else {
-            printf("WARNING: read attempt from unmapped memory at 0x%08X!\n", addr);
-
-            /* reading from unmapped memory will return unmapped value */
-            uint8_t num_bytes = 2;
-
-            for (return_value = 0xFF; --num_bytes > 0;)
-                return_value = (return_value << 8) | 0xFF;
-        }
-    }
+    READ_PHYS_MEM(last_read_area, addr, READ_WORD_BE_A, 2, 0xFFFFU);
+    return_value = ret;
 }
 
 void address_grab32bit_translate(uint32_t addr)
 {
+    uint32_t ret;
+
     /* data address translation if enabled */
     if (ppc_state.ppc_msr & 0x10) {
         addr = ppc_mmu_addr_translate(addr, 0);
     }
 
-    if (addr >= read_last_pa_start && addr <= read_last_pa_end) {
-        ppc_set_retval_32bit(read_last_ptr + (addr - read_last_pa_start));
-    }
-    else {
-        AddressMapEntry* entry = mem_ctrl_instance->find_range(addr);
-        if (entry) {
-            if (entry->type & (RT_ROM | RT_RAM)) {
-                set_read_pa_ptr(entry);
-                ppc_set_retval_32bit(read_last_ptr + (addr - entry->start));
-            }
-            else if (entry->type & RT_MMIO) {
-                return_value = entry->devobj->read(addr - entry->start, 4);
-            }
-            else {
-                printf("Please check your address map!\n");
-            }
-        }
-        else {
-            printf("WARNING: read attempt from unmapped memory at 0x%08X!\n", addr);
-
-            /* reading from unmapped memory will return unmapped value */
-            uint8_t num_bytes = 4;
-
-            for (return_value = 0xFF; --num_bytes > 0;)
-                return_value = (return_value << 8) | 0xFF;
-        }
-    }
+    READ_PHYS_MEM(last_read_area, addr, READ_DWORD_BE_A, 4, 0xFFFFFFFFUL);
+    return_value = ret;
 }
 
 void address_grab64bit_translate(uint32_t addr)
 {
+    uint64_t ret;
+
     /* data address translation if enabled */
     if (ppc_state.ppc_msr & 0x10) {
         addr = ppc_mmu_addr_translate(addr, 0);
     }
 
-    if (addr >= read_last_pa_start && addr <= read_last_pa_end) {
-        ppc_set_retval_64bit(read_last_ptr + (addr - read_last_pa_start));
-    }
-    else {
-        AddressMapEntry* entry = mem_ctrl_instance->find_range(addr);
-        if (entry) {
-            if (entry->type & (RT_ROM | RT_RAM)) {
-                set_read_pa_ptr(entry);
-                ppc_set_retval_64bit(read_last_ptr + (addr - entry->start));
-            }
-            else if (entry->type & RT_MMIO) {
-                return_value = entry->devobj->read(addr - entry->start, 4);
-            }
-            else {
-                printf("Please check your address map!\n");
-            }
-        }
-        else {
-            printf("WARNING: read attempt from unmapped memory at 0x%08X!\n", addr);
-
-            /* reading from unmapped memory will return unmapped value */
-            uint8_t num_bytes = 8;
-
-            for (return_value = 0xFF; --num_bytes > 0;)
-                return_value = (return_value << 8) | 0xFF;
-        }
-    }
+    READ_PHYS_MEM(last_read_area, addr, READ_QWORD_BE_A, 8, 0xFFFFFFFFFFFFFFFFULL);
+    return_value = ret;
 }
-
-/* remember recently used memory region for quicker translation. */
-uint32_t exec_last_pa_start = 0;
-uint32_t exec_last_pa_end = 0;
-unsigned char* exec_last_ptr = 0;
 
 uint8_t* quickinstruction_translate(uint32_t addr)
 {
@@ -674,17 +508,17 @@ uint8_t* quickinstruction_translate(uint32_t addr)
         addr = ppc_mmu_instr_translate(addr);
     }
 
-    if (addr >= exec_last_pa_start && addr <= exec_last_pa_end) {
-        real_addr = exec_last_ptr + (addr - exec_last_pa_start);
+    if (addr >= last_exec_area.start && addr <= last_exec_area.end) {
+        real_addr = last_exec_area.mem_ptr + (addr - last_exec_area.start);
         ppc_set_cur_instruction(real_addr);
     }
     else {
         AddressMapEntry* entry = mem_ctrl_instance->find_range(addr);
         if (entry && entry->type & (RT_ROM | RT_RAM)) {
-            exec_last_pa_start = entry->start;
-            exec_last_pa_end = entry->end;
-            exec_last_ptr = entry->mem_ptr;
-            real_addr = exec_last_ptr + (addr - exec_last_pa_start);
+            last_exec_area.start   = entry->start;
+            last_exec_area.end     = entry->end;
+            last_exec_area.mem_ptr = entry->mem_ptr;
+            real_addr = last_exec_area.mem_ptr + (addr - last_exec_area.start);
             ppc_set_cur_instruction(real_addr);
         }
         else {
