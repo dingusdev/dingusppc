@@ -104,10 +104,13 @@ static std::unordered_map<uint16_t, PPCOpcode> SubOpcode31Grabber = {
     {1083, &power_maskirdot}, {1104, &ppc_subfo},      {1105, &ppc_subfodot},
     {1132, &ppc_tlbsync},
     {1134, &ppc_lfsux},       {1190, &ppc_mfsr},       {1194, &ppc_lswi},
-    {1196, &ppc_sync},        {1232, &ppc_nego},       {1233, &ppc_negodot},
-    {1238, &power_mulo},      {1239, &power_mulodot},  {1300, &ppc_addeo},
+    {1196, &ppc_sync},        {1198, &ppc_lfdx},
+    {1232, &ppc_nego},        {1233, &ppc_negodot},
+    {1238, &power_mulo},      {1239, &power_mulodot},
+    {1262, &ppc_lfdux},       {1300, &ppc_addeo},
     {1301, &ppc_addeodot},    {1318, &ppc_mfsrin},     {1322, &ppc_stswx},
-    {1324, &ppc_stwbrx},      {1328, &power_srq},      {1329, &power_srqdot},
+    {1324, &ppc_stwbrx},      {1326, &ppc_stfsx},
+    {1328, &power_srq},       {1329, &power_srqdot},
     {1330, &power_sre},       {1331, &power_sredot},   {1390, &ppc_stfsux},
     {1392, &power_sriq},      {1393, &power_sriqdot},  {1428, &ppc_addzeo},
     {1429, &ppc_addzeodot},   {1450, &ppc_stswi},      {1454, &ppc_stfdx},
@@ -270,7 +273,7 @@ static std::unordered_map<uint16_t, PPCOpcode> SubOpcode63Grabber = {
     { 239, &ppc_fseldot},    { 242, &ppc_fmult},      { 243, &ppc_fmultdot},
     { 248, &ppc_fmsub},      { 249, &ppc_fmsubdot},   { 250, &ppc_fmadd},
     { 251, &ppc_fmadddot},   { 252, &ppc_fnmsub},     { 253, &ppc_fnmsubdot},
-    { 254, &ppc_fnmadd},     { 255, &ppc_fnmadddot},  { 268, &ppc_mtfsfi}, 
+    { 254, &ppc_fnmadd},     { 255, &ppc_fnmadddot},  { 268, &ppc_mtfsfi},
     { 272, &ppc_fnabs},      { 273, &ppc_fnabsdot},
     { 302, &ppc_fsel},       { 303, &ppc_fseldot},
     { 306, &ppc_fmult},      { 307, &ppc_fmultdot},   { 312, &ppc_fmsub},
@@ -391,20 +394,20 @@ static std::unordered_map<uint16_t, PPCOpcode> SubOpcode63Grabber = {
 
 /** Opcode decoding functions. */
 
-void ppc_illegalop(){
+void ppc_illegalop() {
     uint8_t illegal_code = ppc_cur_instruction >> 26;
-    uint32_t grab_it = (uint32_t) illegal_code;
+    uint32_t grab_it = (uint32_t)illegal_code;
     printf("Illegal opcode reported: %d Report this! \n", grab_it);
     exit(-1);
 }
 
-void ppc_illegalsubop31(){
+void ppc_illegalsubop31() {
     uint16_t illegal_subcode = ppc_cur_instruction & 2047;
-    uint32_t grab_it = (uint32_t) illegal_subcode;
+    uint32_t grab_it = (uint32_t)illegal_subcode;
     printf("Illegal subopcode for 31 reported: %d Report this! \n", grab_it);
 }
 
-void ppc_opcode4(){
+void ppc_opcode4() {
     printf("Reading from Opcode 4 table \n");
     uint8_t subop_grab = ppc_cur_instruction & 3;
     uint32_t regrab = (uint32_t)subop_grab;
@@ -412,83 +415,83 @@ void ppc_opcode4(){
     exit(0);
 }
 
-void ppc_opcode16(){
+void ppc_opcode16() {
     SubOpcode16Grabber[ppc_cur_instruction & 3]();
 }
 
-void ppc_opcode18(){
+void ppc_opcode18() {
     SubOpcode18Grabber[ppc_cur_instruction & 3]();
 }
 
-void ppc_opcode19(){
+void ppc_opcode19() {
     uint16_t subop_grab = ppc_cur_instruction & 2047;
-    #ifdef EXHAUSTIVE_DEBUG
+#ifdef EXHAUSTIVE_DEBUG
     uint32_t regrab = (uint32_t)subop_grab;
     printf("Executing Opcode 19 table supopcode entry %d \n", regrab);
-    if (SubOpcode19Grabber.count(subop_grab) == 1){
+    if (SubOpcode19Grabber.count(subop_grab) == 1) {
         SubOpcode19Grabber[subop_grab]();
     }
-    else{
+    else {
         std::cout << "ILLEGAL SUBOPCODE: " << subop_grab << std::endl;
         ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x80000);
     }
-    #else
+#else
     SubOpcode19Grabber[subop_grab]();
-    #endif // EXHAUSTIVE_DEBUG
+#endif // EXHAUSTIVE_DEBUG
 }
 
-void ppc_opcode31(){
+void ppc_opcode31() {
     uint16_t subop_grab = ppc_cur_instruction & 2047;
-    #ifdef EXHAUSTIVE_DEBUG
+#ifdef EXHAUSTIVE_DEBUG
     uint32_t regrab = (uint32_t)subop_grab;
     printf("Executing Opcode 31 table supopcode entry %d \n", regrab);
-    if (SubOpcode31Grabber.count(subop_grab) == 1){
+    if (SubOpcode31Grabber.count(subop_grab) == 1) {
         SubOpcode31Grabber[subop_grab]();
     }
-    else{
+    else {
         std::cout << "ILLEGAL SUBOPCODE: " << subop_grab << std::endl;
         ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x80000);
     }
-    #else
+#else
     SubOpcode31Grabber[subop_grab]();
-    #endif // EXHAUSTIVE_DEBUG
+#endif // EXHAUSTIVE_DEBUG
 }
 
-void ppc_opcode59(){
+void ppc_opcode59() {
     uint16_t subop_grab = ppc_cur_instruction & 2047;
-    #ifdef EXHAUSTIVE_DEBUG
+#ifdef EXHAUSTIVE_DEBUG
     uint32_t regrab = (uint32_t)subop_grab;
     printf("Executing Opcode 59 table supopcode entry %d \n", regrab);
-    if (SubOpcode59Grabber.count(subop_grab) == 1){
+    if (SubOpcode59Grabber.count(subop_grab) == 1) {
         SubOpcode59Grabber[subop_grab]();
     }
-    else{
+    else {
         std::cout << "ILLEGAL SUBOPCODE: " << subop_grab << std::endl;
         ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x80000);
     }
-    #else
+#else
     SubOpcode59Grabber[subop_grab]();
-    #endif // EXHAUSTIVE_DEBUG
+#endif // EXHAUSTIVE_DEBUG
 }
 
-void ppc_opcode63(){
+void ppc_opcode63() {
     uint16_t subop_grab = ppc_cur_instruction & 2047;
-    #ifdef EXHAUSTIVE_DEBUG
+#ifdef EXHAUSTIVE_DEBUG
     uint32_t regrab = (uint32_t)subop_grab;
     std::cout << "Executing Opcode 63 table subopcode entry " << regrab << std::endl;
-    if (SubOpcode63Grabber.count(subop_grab) == 1){
+    if (SubOpcode63Grabber.count(subop_grab) == 1) {
         SubOpcode63Grabber[subop_grab]();
     }
-    else{
+    else {
         std::cout << "ILLEGAL SUBOPCODE: " << subop_grab << std::endl;
         ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x80000);
     }
-    #else
+#else
     SubOpcode63Grabber[subop_grab]();
-    #endif // EXHAUSTIVE_DEBUG
+#endif // EXHAUSTIVE_DEBUG
 }
 
-void ppc_main_opcode(){
+void ppc_main_opcode() {
     //Grab the main opcode
     uint8_t ppc_mainop = (ppc_cur_instruction >> 26) & 63;
     OpcodeGrabber[ppc_mainop]();
@@ -498,23 +501,23 @@ void ppc_main_opcode(){
 void ppc_tbr_update()
 {
     clock_t clock_test_current = clock();
-    uint32_t test_clock = ((uint32_t) (clock_test_current - clock_test_begin)) / CLOCKS_PER_SEC;
-    if (test_clock){
-        if (ppc_state.ppc_tbr[0] != 0xFFFFFFFF){
+    uint32_t test_clock = ((uint32_t)(clock_test_current - clock_test_begin)) / CLOCKS_PER_SEC;
+    if (test_clock) {
+        if (ppc_state.ppc_tbr[0] != 0xFFFFFFFF) {
             ppc_state.ppc_tbr[0]++;
         }
-        else{
+        else {
             ppc_state.ppc_tbr[0] = 0;
-            if (ppc_state.ppc_tbr[1] !=0xFFFFFFFF){
+            if (ppc_state.ppc_tbr[1] != 0xFFFFFFFF) {
                 ppc_state.ppc_tbr[1]++;
             }
-            else{
+            else {
                 ppc_state.ppc_tbr[1] = 0;
             }
         }
         clock_test_begin = clock();
         //Placeholder Decrementing Code
-        if(ppc_state.ppc_spr[22] > 0){
+        if (ppc_state.ppc_spr[22] > 0) {
             ppc_state.ppc_spr[22]--;
         }
     }
@@ -524,22 +527,22 @@ void ppc_tbr_update()
 #if 0
 void ppc_exec()
 {
-    while (power_on){
+    while (power_on) {
         //printf("PowerPC Address: %x \n", ppc_state.ppc_pc);
         quickinstruction_translate(ppc_state.ppc_pc);
         ppc_main_opcode();
-        if (grab_branch & !grab_exception){
+        if (grab_branch & !grab_exception) {
             ppc_state.ppc_pc = ppc_next_instruction_address;
             grab_branch = 0;
             ppc_tbr_update();
         }
-        else if (grab_return | grab_exception){
+        else if (grab_return | grab_exception) {
             ppc_state.ppc_pc = ppc_next_instruction_address;
             grab_exception = 0;
             grab_return = 0;
             ppc_tbr_update();
         }
-        else{
+        else {
             ppc_state.ppc_pc += 4;
             ppc_tbr_update();
         }
@@ -549,7 +552,7 @@ void ppc_exec()
 void ppc_exec()
 {
     uint32_t bb_start_la, page_start;
-    uint8_t *pc_real;
+    uint8_t* pc_real;
 
     /* start new basic block */
     bb_start_la = ppc_state.ppc_pc;
@@ -581,13 +584,15 @@ again:
             if ((ppc_next_instruction_address & 0xFFFFF000) != page_start) {
                 page_start = bb_start_la & 0xFFFFF000;
                 pc_real = quickinstruction_translate(bb_start_la);
-            } else {
+            }
+            else {
                 pc_real += (int)bb_start_la - (int)ppc_state.ppc_pc;
                 ppc_set_cur_instruction(pc_real);
             }
             ppc_state.ppc_pc = bb_start_la;
             bb_kind = BB_end_kind::BB_NONE;
-        } else {
+        }
+        else {
             ppc_state.ppc_pc += 4;
             pc_real += 4;
             ppc_set_cur_instruction(pc_real);
@@ -634,7 +639,8 @@ void ppc_exec_single()
     if (bb_kind != BB_end_kind::BB_NONE) {
         ppc_state.ppc_pc = ppc_next_instruction_address;
         bb_kind = BB_end_kind::BB_NONE;
-    } else {
+    }
+    else {
         ppc_state.ppc_pc += 4;
     }
     timebase_counter += 1;
@@ -670,7 +676,7 @@ void ppc_exec_until(uint32_t goal_addr)
 void ppc_exec_until(uint32_t goal_addr)
 {
     uint32_t bb_start_la, page_start;
-    uint8_t *pc_real;
+    uint8_t* pc_real;
 
     /* start new basic block */
     bb_start_la = ppc_state.ppc_pc;
@@ -702,13 +708,15 @@ again:
             if ((ppc_next_instruction_address & 0xFFFFF000) != page_start) {
                 page_start = bb_start_la & 0xFFFFF000;
                 pc_real = quickinstruction_translate(bb_start_la);
-            } else {
+            }
+            else {
                 pc_real += (int)bb_start_la - (int)ppc_state.ppc_pc;
                 ppc_set_cur_instruction(pc_real);
             }
             ppc_state.ppc_pc = bb_start_la;
             bb_kind = BB_end_kind::BB_NONE;
-        } else {
+        }
+        else {
             ppc_state.ppc_pc += 4;
             pc_real += 4;
             ppc_set_cur_instruction(pc_real);

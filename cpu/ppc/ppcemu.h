@@ -24,12 +24,12 @@
 //Uncomment this to use Visual Studio built-in functions.
 //#define USE_VS_BUILTINS 1
 
-enum endian_switch {big_end = 0, little_end = 1};
+enum endian_switch { big_end = 0, little_end = 1 };
 
 typedef void (*PPCOpcode)(void);
 
 union FPR_storage {
-    double    dbl64_r; // double floating-point representation
+    double    dbl64_r = 0.0; // double floating-point representation
     uint64_t  int64_r; // double integer representation
 };
 
@@ -48,16 +48,16 @@ fpscr = FP Status and Condition Register
 **/
 
 typedef struct struct_ppc_state {
-    FPR_storage ppc_fpr [32];
-    uint32_t ppc_pc; //Referred as the CIA in the PPC manual
-    uint32_t ppc_gpr [32];
-    uint32_t ppc_cr;
-    uint32_t ppc_fpscr;
-    uint32_t ppc_tbr [2];
-    uint32_t ppc_spr [1024];
-    uint32_t ppc_msr;
-    uint32_t ppc_sr [16];
-    bool ppc_reserve; //reserve bit used for lwarx and stcwx
+    FPR_storage ppc_fpr[32] = { 0 };
+    uint32_t ppc_pc = 0; //Referred as the CIA in the PPC manual
+    uint32_t ppc_gpr[32] = { 0 };
+    uint32_t ppc_cr = 0;
+    uint32_t ppc_fpscr = 0;
+    uint32_t ppc_tbr[2] = { 0 };
+    uint32_t ppc_spr[1024] = { 0 };
+    uint32_t ppc_msr = 0;
+    uint32_t ppc_sr[16] = { 0 };
+    bool ppc_reserve = 0; //reserve bit used for lwarx and stcwx
 } SetPRS;
 
 extern SetPRS ppc_state;
@@ -101,7 +101,7 @@ SUPERVISOR MODEL
 536 - 543 are the Data BAT registers
 **/
 
-extern uint32_t return_value; //used for loading from memory
+extern uint64_t return_value; //used for loading from memory
 
 extern uint32_t opcode_value; //used for interpreting opcodes
 extern uint32_t ram_size_set;
@@ -163,7 +163,7 @@ extern uint64_t ppc_result64_d;
 
 /* The precise end of a basic block. */
 enum class BB_end_kind {
-    BB_NONE   = 0, /* no basic block end is reached       */
+    BB_NONE = 0, /* no basic block end is reached       */
     BB_BRANCH = 1, /* a branch instruction is encountered */
     BB_EXCEPTION,  /* an exception is occured             */
     BB_RFI         /* the rfi instruction is encountered  */
@@ -181,7 +181,7 @@ enum class Except_Type {
     EXC_NO_FPU,
     EXC_DECR,
     EXC_SYSCALL = 12,
-    EXC_TRACE   = 13
+    EXC_TRACE = 13
 };
 
 //extern bool bb_end;
@@ -265,13 +265,13 @@ void ppc_fp_changecrf1();
 
 void ppc_tbr_update();
 [[noreturn]] void ppc_exception_handler(Except_Type exception_type,
-                                        uint32_t srr1_bits);
+    uint32_t srr1_bits);
 
 //MEMORY DECLARATIONS
-extern MemCtrlBase *mem_ctrl_instance;
+extern MemCtrlBase* mem_ctrl_instance;
 
-extern unsigned char * machine_sysram_mem;
-extern unsigned char * machine_sysrom_mem;
+extern unsigned char* machine_sysram_mem;
+extern unsigned char* machine_sysrom_mem;
 
 //The functions used by the PowerPC processor
 extern void ppc_bcctr();
@@ -490,12 +490,15 @@ extern void ppc_xoris();
 
 extern void ppc_lfs();
 extern void ppc_lfsu();
-extern void ppc_lfsux();
 extern void ppc_lfsx();
+extern void ppc_lfsux();
 extern void ppc_lfd();
 extern void ppc_lfdu();
+extern void ppc_lfdx();
+extern void ppc_lfdux();
 extern void ppc_stfs();
 extern void ppc_stfsu();
+extern void ppc_stfsx();
 extern void ppc_stfsux();
 extern void ppc_stfd();
 extern void ppc_stfdu();

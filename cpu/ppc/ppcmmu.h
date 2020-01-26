@@ -29,9 +29,15 @@ typedef struct PPC_BAT_entry {
 extern void ibat_update(uint32_t bat_reg);
 extern void dbat_update(uint32_t bat_reg);
 
-extern void ppc_set_cur_instruction(const uint8_t *ptr);
-extern void address_quickinsert_translate(uint32_t value_insert, uint32_t address_grab, uint8_t num_bytes);
-extern void address_quickgrab_translate(uint32_t address_grab, uint8_t num_bytes);
-extern uint8_t *quickinstruction_translate(uint32_t address_grab);
+extern void ppc_set_cur_instruction(const uint8_t* ptr);
+extern void address_insert8bit_translate(uint8_t value, uint32_t addr);
+extern void address_insert16bit_translate(uint16_t value, uint32_t addr);
+extern void address_insert32bit_translate(uint32_t value, uint32_t addr);
+extern void address_insert64bit_translate(uint64_t value, uint32_t addr);
+extern void address_grab8bit_translate(uint32_t addr);
+extern void address_grab16bit_translate(uint32_t addr);
+extern void address_grab32bit_translate(uint32_t addr);
+extern void address_grab64bit_translate(uint32_t addr);
+extern uint8_t* quickinstruction_translate(uint32_t address_grab);
 
 #endif // PPCMEMORY_H
