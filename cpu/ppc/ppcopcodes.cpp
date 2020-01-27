@@ -1308,7 +1308,7 @@ void ppc_mtmsr() {
 void ppc_mfspr() {
     uint32_t ref_spr = (((ppc_cur_instruction >> 11) & 31) << 5) | ((ppc_cur_instruction >> 16) & 31);
 
-#ifdef PROFILER    
+#ifdef PROFILER
     if (ref_spr > 31) {
         supervisor_inst_num++;
     }
@@ -1321,7 +1321,7 @@ void ppc_mtspr() {
     uint32_t ref_spr = (((ppc_cur_instruction >> 11) & 31) << 5) | ((ppc_cur_instruction >> 16) & 31);
     reg_s = (ppc_cur_instruction >> 21) & 31;
 
-#ifdef PROFILER    
+#ifdef PROFILER
     if (ref_spr > 31) {
         supervisor_inst_num++;
     }
@@ -1852,10 +1852,10 @@ void ppc_dcbz() {
     if (!(ppc_state.ppc_pc & 32) && (ppc_state.ppc_pc < 0xFFFFFFE0UL)) {
         ppc_grab_regsdab();
         ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
-        address_insert64bit_translate(0, ppc_effective_address);
-        address_insert64bit_translate(0, (ppc_effective_address + 8));
-        address_insert64bit_translate(0, (ppc_effective_address + 16));
-        address_insert64bit_translate(0, (ppc_effective_address + 24));
+        mem_write_qword(ppc_effective_address,        0);
+        mem_write_qword((ppc_effective_address +  8), 0);
+        mem_write_qword((ppc_effective_address + 16), 0);
+        mem_write_qword((ppc_effective_address + 24), 0);
     }
     else {
         ppc_exception_handler(Except_Type::EXC_ALIGNMENT, 0x00000);
@@ -1869,13 +1869,13 @@ void ppc_stb() {
     ppc_grab_regssa();
     ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
     ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
-    address_insert8bit_translate(ppc_result_d, ppc_effective_address);
+    mem_write_byte(ppc_effective_address, ppc_result_d);
 }
 
 void ppc_stbx() {
     ppc_grab_regssab();
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
-    address_insert8bit_translate(ppc_result_d, ppc_effective_address);
+    mem_write_byte(ppc_effective_address, ppc_result_d);
 }
 
 void ppc_stbu() {
@@ -1883,7 +1883,7 @@ void ppc_stbu() {
     if (reg_a != 0) {
         ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
         ppc_effective_address += ppc_result_a;
-        address_insert8bit_translate(ppc_result_d, ppc_effective_address);
+        mem_write_byte(ppc_effective_address, ppc_result_d);
         ppc_state.ppc_gpr[reg_a] = ppc_effective_address;
     }
     else {
@@ -1895,7 +1895,7 @@ void ppc_stbux() {
     ppc_grab_regssab();
     if (reg_a != 0) {
         ppc_effective_address = ppc_result_a + ppc_result_b;
-        address_insert8bit_translate(ppc_result_d, ppc_effective_address);
+        mem_write_byte(ppc_effective_address, ppc_result_d);
         ppc_state.ppc_gpr[reg_a] = ppc_effective_address;
     }
     else {
@@ -1907,7 +1907,7 @@ void ppc_sth() {
     ppc_grab_regssa();
     ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
     ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
-    address_insert16bit_translate(ppc_result_d, ppc_effective_address);
+    mem_write_word(ppc_effective_address, ppc_result_d);
 }
 
 void ppc_sthu() {
@@ -1915,7 +1915,7 @@ void ppc_sthu() {
     if (reg_a != 0) {
         ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
         ppc_effective_address += ppc_result_a;
-        address_insert16bit_translate(ppc_result_d, ppc_effective_address);
+        mem_write_word(ppc_effective_address, ppc_result_d);
         ppc_state.ppc_gpr[reg_a] = ppc_effective_address;
     }
     else {
@@ -1927,7 +1927,7 @@ void ppc_sthux() {
     ppc_grab_regssab();
     if (reg_a != 0) {
         ppc_effective_address = ppc_result_a + ppc_result_b;
-        address_insert16bit_translate(ppc_result_d, ppc_effective_address);
+        mem_write_word(ppc_effective_address, ppc_result_d);
         ppc_state.ppc_gpr[reg_a] = ppc_effective_address;
     }
     else {
@@ -1938,27 +1938,27 @@ void ppc_sthux() {
 void ppc_sthx() {
     ppc_grab_regssab();
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
-    address_insert16bit_translate(ppc_result_d, ppc_effective_address);
+    mem_write_word(ppc_effective_address, ppc_result_d);
 }
 
 void ppc_sthbrx() {
     ppc_grab_regssab();
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
     ppc_result_d = (uint32_t)(BYTESWAP_16((uint16_t)ppc_result_d));
-    address_insert16bit_translate(ppc_result_d, ppc_effective_address);
+    mem_write_word(ppc_effective_address, ppc_result_d);
 
 }
 void ppc_stw() {
     ppc_grab_regssa();
     ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
     ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
-    address_insert32bit_translate(ppc_result_d, ppc_effective_address);
+    mem_write_dword(ppc_effective_address, ppc_result_d);
 }
 
 void ppc_stwx() {
     ppc_grab_regssab();
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
-    address_insert32bit_translate(ppc_result_d, ppc_effective_address);
+    mem_write_dword(ppc_effective_address, ppc_result_d);
 }
 
 void ppc_stwcx() {
@@ -1966,7 +1966,7 @@ void ppc_stwcx() {
     ppc_grab_regssab();
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
     if (ppc_state.ppc_reserve) {
-        address_insert32bit_translate(ppc_result_d, ppc_effective_address);
+        mem_write_dword(ppc_effective_address, ppc_result_d);
         ppc_state.ppc_cr |= (ppc_state.ppc_spr[1] & 0x80000000) ? 0x30000000 : 0x20000000;
         ppc_state.ppc_reserve = false;
     }
@@ -1980,7 +1980,7 @@ void ppc_stwu() {
     if (reg_a != 0) {
         ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
         ppc_effective_address += ppc_result_a;
-        address_insert32bit_translate(ppc_result_d, ppc_effective_address);
+        mem_write_dword(ppc_effective_address, ppc_result_d);
         ppc_state.ppc_gpr[reg_a] = ppc_effective_address;
     }
     else {
@@ -1992,7 +1992,7 @@ void ppc_stwux() {
     ppc_grab_regssab();
     if (reg_a != 0) {
         ppc_effective_address = ppc_result_a + ppc_result_b;
-        address_insert32bit_translate(ppc_result_d, ppc_effective_address);
+        mem_write_dword(ppc_effective_address, ppc_result_d);
         ppc_state.ppc_gpr[reg_a] = ppc_effective_address;
     }
     else {
@@ -2004,7 +2004,7 @@ void ppc_stwbrx() {
     ppc_grab_regssab();
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
     ppc_result_d = BYTESWAP_32(ppc_result_d);
-    address_insert32bit_translate(ppc_result_d, ppc_effective_address);
+    mem_write_dword(ppc_effective_address, ppc_result_d);
 }
 
 void ppc_stmw() {
@@ -2013,7 +2013,7 @@ void ppc_stmw() {
     ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
     //How many words to store in memory - using a do-while for this
     do {
-        address_insert32bit_translate(ppc_result_d, ppc_effective_address);
+        mem_write_dword(ppc_effective_address, ppc_result_d);
         ppc_effective_address += 4;
         reg_d++;
     } while (reg_d < 32);
@@ -2023,9 +2023,7 @@ void ppc_lbz() {
     ppc_grab_regsda();
     ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
     ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
-    address_grab8bit_translate(ppc_effective_address);
-    ppc_result_d = (uint32_t)return_value;
-    return_value = 0;
+    ppc_result_d = mem_grab_byte(ppc_effective_address);
     ppc_store_result_regd();
 }
 
@@ -2034,9 +2032,7 @@ void ppc_lbzu() {
     ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
     if ((reg_a != reg_d) || reg_a != 0) {
         ppc_effective_address += ppc_result_a;
-        address_grab8bit_translate(ppc_effective_address);
-        ppc_result_d = (uint32_t)return_value;
-        return_value = 0;
+        ppc_result_d = mem_grab_byte(ppc_effective_address);
         ppc_result_a = ppc_effective_address;
         ppc_store_result_regd();
         ppc_store_result_rega();
@@ -2049,9 +2045,7 @@ void ppc_lbzu() {
 void ppc_lbzx() {
     ppc_grab_regsdab();
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
-    address_grab8bit_translate(ppc_effective_address);
-    ppc_result_d = (uint32_t)return_value;
-    return_value = 0;
+    ppc_result_d = mem_grab_byte(ppc_effective_address);
     ppc_store_result_regd();
 }
 
@@ -2059,9 +2053,7 @@ void ppc_lbzux() {
     ppc_grab_regsdab();
     if ((reg_a != reg_d) || reg_a != 0) {
         ppc_effective_address = ppc_result_a + ppc_result_b;
-        address_grab8bit_translate(ppc_effective_address);
-        ppc_result_d = (uint32_t)return_value;
-        return_value = 0;
+        ppc_result_d = mem_grab_byte(ppc_effective_address);
         ppc_result_a = ppc_effective_address;
         ppc_store_result_regd();
         ppc_store_result_rega();
@@ -2076,9 +2068,7 @@ void ppc_lhz() {
     ppc_grab_regsda();
     ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
     ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
-    address_grab16bit_translate(ppc_effective_address);
-    ppc_result_d = (uint32_t)return_value;
-    return_value = 0;
+    ppc_result_d = mem_grab_word(ppc_effective_address);
     ppc_store_result_regd();
 }
 
@@ -2087,9 +2077,7 @@ void ppc_lhzu() {
     if ((reg_a != reg_d) || reg_a != 0) {
         ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
         ppc_effective_address += ppc_result_a;
-        address_grab16bit_translate(ppc_effective_address);
-        ppc_result_d = (uint32_t)return_value;
-        return_value = 0;
+        ppc_result_d = mem_grab_word(ppc_effective_address);
         ppc_result_a = ppc_effective_address;
         ppc_store_result_regd();
         ppc_store_result_rega();
@@ -2102,9 +2090,7 @@ void ppc_lhzu() {
 void ppc_lhzx() {
     ppc_grab_regsdab();
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
-    address_grab16bit_translate(ppc_effective_address);
-    ppc_result_d = (uint32_t)return_value;
-    return_value = 0;
+    ppc_result_d = mem_grab_word(ppc_effective_address);
     ppc_store_result_regd();
 }
 
@@ -2112,9 +2098,7 @@ void ppc_lhzux() {
     ppc_grab_regsdab();
     if ((reg_a != reg_d) || reg_a != 0) {
         ppc_effective_address = ppc_result_a + ppc_result_b;
-        address_grab16bit_translate(ppc_effective_address);
-        ppc_result_d = (uint32_t)return_value;
-        return_value = 0;
+        ppc_result_d = mem_grab_word(ppc_effective_address);
         ppc_result_a = ppc_effective_address;
         ppc_store_result_regd();
         ppc_store_result_rega();
@@ -2128,17 +2112,14 @@ void ppc_lha() {
     ppc_grab_regsda();
     ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
     ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
-    address_grab16bit_translate(ppc_effective_address);
-    uint16_t go_this = (uint16_t)return_value;
-    if (go_this & 0x8000) {
-        ppc_result_d = 0xFFFF0000UL | (uint32_t)return_value;
-        ppc_store_result_regd();
+    uint16_t val = mem_grab_word(ppc_effective_address);
+    if (val & 0x8000) {
+        ppc_result_d = 0xFFFF0000UL | (uint32_t)val;
     }
     else {
-        ppc_result_d = (uint32_t)return_value;
-        ppc_store_result_regd();
+        ppc_result_d = (uint32_t)val;
     }
-    return_value = 0;
+    ppc_store_result_regd();
 }
 
 void ppc_lhau() {
@@ -2146,17 +2127,14 @@ void ppc_lhau() {
     if ((reg_a != reg_d) || reg_a != 0) {
         ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
         ppc_effective_address += ppc_result_a;
-        address_grab16bit_translate(ppc_effective_address);
-        uint16_t go_this = (uint16_t)return_value;
-        if (go_this & 0x8000) {
-            ppc_result_d = 0xFFFF0000UL | (uint32_t)return_value;
-            ppc_store_result_regd();
+        uint16_t val = mem_grab_word(ppc_effective_address);
+        if (val & 0x8000) {
+            ppc_result_d = 0xFFFF0000UL | (uint32_t)val;
         }
         else {
-            ppc_result_d = (uint32_t)return_value;
-            ppc_store_result_regd();
+            ppc_result_d = (uint32_t)val;
         }
-        return_value = 0;
+        ppc_store_result_regd();
         ppc_result_a = ppc_effective_address;
         ppc_store_result_rega();
     }
@@ -2168,17 +2146,14 @@ void ppc_lhau() {
 void ppc_lhaux() {
     ppc_grab_regsdab();
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
-    address_grab16bit_translate(ppc_effective_address);
-    uint16_t go_this = (uint16_t)return_value;
-    if (go_this & 0x8000) {
-        ppc_result_d = 0xFFFF0000UL | (uint32_t)return_value;
-        ppc_store_result_regd();
+    uint16_t val = mem_grab_word(ppc_effective_address);
+    if (val & 0x8000) {
+        ppc_result_d = 0xFFFF0000UL | (uint32_t)val;
     }
     else {
-        ppc_result_d = (uint32_t)return_value;
-        ppc_store_result_regd();
+        ppc_result_d = (uint32_t)val;
     }
-    return_value = 0;
+    ppc_store_result_regd();
     ppc_result_a = ppc_effective_address;
     ppc_store_result_rega();
 }
@@ -2186,25 +2161,20 @@ void ppc_lhaux() {
 void ppc_lhax() {
     ppc_grab_regsdab();
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
-    address_grab16bit_translate(ppc_effective_address);
-    uint16_t go_this = (uint16_t)return_value;
-    if (go_this & 0x8000) {
-        ppc_result_d = 0xFFFF0000UL | (uint32_t)return_value;
-        ppc_store_result_regd();
+    uint16_t val = mem_grab_word(ppc_effective_address);
+    if (val & 0x8000) {
+        ppc_result_d = 0xFFFF0000UL | (uint32_t)val;
     }
     else {
-        ppc_result_d = (uint32_t)return_value;
-        ppc_store_result_regd();
+        ppc_result_d = (uint32_t)val;
     }
-    return_value = 0;
+    ppc_store_result_regd();
 }
 
 void ppc_lhbrx() {
     ppc_grab_regsdab();
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
-    address_grab16bit_translate(ppc_effective_address);
-    ppc_result_d = (uint32_t)(BYTESWAP_16((uint16_t)ppc_result_d));
-    return_value = 0;
+    ppc_result_d = (uint32_t)(BYTESWAP_16(mem_grab_word(ppc_effective_address)));
     ppc_store_result_regd();
 }
 
@@ -2212,18 +2182,14 @@ void ppc_lwz() {
     ppc_grab_regsda();
     ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
     ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
-    address_grab32bit_translate(ppc_effective_address);
-    ppc_result_d = (uint32_t)return_value;
-    return_value = 0;
+    ppc_result_d = mem_grab_dword(ppc_effective_address);
     ppc_store_result_regd();
 }
 
 void ppc_lwbrx() {
     ppc_grab_regsdab();
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
-    address_grab32bit_translate(ppc_effective_address);
-    ppc_result_d = BYTESWAP_32((uint32_t)return_value);
-    return_value = 0;
+    ppc_result_d = BYTESWAP_32(mem_grab_dword(ppc_effective_address));
     ppc_store_result_regd();
 }
 
@@ -2232,9 +2198,7 @@ void ppc_lwzu() {
     ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
     if ((reg_a != reg_d) || reg_a != 0) {
         ppc_effective_address += ppc_result_a;
-        address_grab32bit_translate(ppc_effective_address);
-        ppc_result_d = (uint32_t)return_value;
-        return_value = 0;
+        ppc_result_d = mem_grab_dword(ppc_effective_address);
         ppc_store_result_regd();
         ppc_result_a = ppc_effective_address;
         ppc_store_result_rega();
@@ -2247,9 +2211,7 @@ void ppc_lwzu() {
 void ppc_lwzx() {
     ppc_grab_regsdab();
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
-    address_grab32bit_translate(ppc_effective_address);
-    ppc_result_d = (uint32_t)return_value;
-    return_value = 0;
+    ppc_result_d = mem_grab_dword(ppc_effective_address);
     ppc_store_result_regd();
 }
 
@@ -2261,9 +2223,7 @@ void ppc_lwzux() {
     else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
     }
-    address_grab32bit_translate(ppc_effective_address);
-    ppc_result_d = (uint32_t)return_value;
-    return_value = 0;
+    ppc_result_d = mem_grab_dword(ppc_effective_address);
     ppc_result_a = ppc_effective_address;
     ppc_store_result_regd();
     ppc_store_result_rega();
@@ -2274,9 +2234,7 @@ void ppc_lwarx() {
     ppc_grab_regsdab();
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
     ppc_state.ppc_reserve = true;
-    address_grab32bit_translate(ppc_effective_address);
-    ppc_result_d = (uint32_t)return_value;
-    return_value = 0;
+    ppc_result_d = mem_grab_dword(ppc_effective_address);
     ppc_store_result_regd();
 }
 
@@ -2286,9 +2244,7 @@ void ppc_lmw() {
     ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
     //How many words to load in memory - using a do-while for this
     do {
-        address_grab32bit_translate(ppc_effective_address);
-        ppc_state.ppc_gpr[reg_d] = (uint32_t)return_value;
-        return_value = 0;
+        ppc_state.ppc_gpr[reg_d] = mem_grab_dword(ppc_effective_address);
         ppc_effective_address += 4;
         reg_d++;
     } while (reg_d < 32);
@@ -2305,28 +2261,24 @@ void ppc_lswi() {
     while (grab_inb > 0) {
         switch (shift_times) {
         case 0:
-            address_grab8bit_translate(ppc_effective_address);;
-            ppc_state.ppc_gpr[reg_d] = (ppc_result_d & 0x00FFFFFFUL) | ((uint32_t)return_value << 24);
+            ppc_state.ppc_gpr[reg_d] = (ppc_result_d & 0x00FFFFFFUL) |
+                (mem_grab_byte(ppc_effective_address) << 24);
             ppc_store_result_regd();
-            return_value = 0;
             break;
         case 1:
-            address_grab8bit_translate(ppc_effective_address);;
-            ppc_result_d = (ppc_result_d & 0xFF00FFFFUL) | ((uint32_t)return_value << 16);
+            ppc_result_d = (ppc_result_d & 0xFF00FFFFUL) |
+                (mem_grab_byte(ppc_effective_address) << 16);
             ppc_store_result_regd();
-            return_value = 0;
             break;
         case 2:
-            address_grab8bit_translate(ppc_effective_address);;
-            ppc_result_d = (ppc_result_d & 0xFFFF00FFUL) | ((uint32_t)return_value << 8);
+            ppc_result_d = (ppc_result_d & 0xFFFF00FFUL) |
+                (mem_grab_byte(ppc_effective_address) << 8);
             ppc_store_result_regd();
-            return_value = 0;
             break;
         case 3:
-            address_grab8bit_translate(ppc_effective_address);;
-            ppc_result_d = (ppc_result_d & 0xFFFFFF00UL) | (uint32_t)return_value;
+            ppc_result_d = (ppc_result_d & 0xFFFFFF00UL) |
+                mem_grab_byte(ppc_effective_address);
             ppc_store_result_regd();
-            return_value = 0;
             break;
         default:
             printf("Something really horrible happened with lswi.");
@@ -2338,7 +2290,6 @@ void ppc_lswi() {
         else {
             shift_times++;
         }
-        return_value = 0;
         ppc_effective_address++;
         grab_inb--;
     }
@@ -2359,28 +2310,24 @@ void ppc_lswx() {
     while (grab_inb > 0) {
         switch (shift_times) {
         case 0:
-            address_grab8bit_translate(ppc_effective_address);;
-            ppc_result_d = (ppc_result_d & 0x00FFFFFFUL) | ((uint32_t)return_value << 24);
+            ppc_result_d = (ppc_result_d & 0x00FFFFFFUL) |
+                (mem_grab_byte(ppc_effective_address) << 24);
             ppc_store_result_regd();
-            return_value = 0;
             break;
         case 1:
-            address_grab8bit_translate(ppc_effective_address);;
-            ppc_result_d = (ppc_result_d & 0xFF00FFFFUL) | ((uint32_t)return_value << 16);
+            ppc_result_d = (ppc_result_d & 0xFF00FFFFUL) |
+                (mem_grab_byte(ppc_effective_address) << 16);
             ppc_store_result_regd();
-            return_value = 0;
             break;
         case 2:
-            address_grab8bit_translate(ppc_effective_address);;
-            ppc_result_d = (ppc_result_d & 0xFFFF00FFUL) | ((uint32_t)return_value << 8);
+            ppc_result_d = (ppc_result_d & 0xFFFF00FFUL) |
+                (mem_grab_byte(ppc_effective_address) << 8);
             ppc_store_result_regd();
-            return_value = 0;
             break;
         case 3:
-            address_grab8bit_translate(ppc_effective_address);;
-            ppc_result_d = (ppc_result_d & 0xFFFFFF00UL) | (uint32_t)return_value;
+            ppc_result_d = (ppc_result_d & 0xFFFFFF00UL) |
+                mem_grab_byte(ppc_effective_address);
             ppc_store_result_regd();
-            return_value = 0;
             break;
         default:
             printf("Something really horrible happened with lswx.");
@@ -2392,7 +2339,6 @@ void ppc_lswx() {
         else {
             shift_times++;
         }
-        return_value = 0;
         ppc_effective_address++;
         grab_inb--;
     }
@@ -2409,19 +2355,19 @@ void ppc_stswi() {
         switch (shift_times) {
         case 0:
             strwrd_replace_value = (ppc_result_d >> 24);
-            address_insert8bit_translate(strwrd_replace_value, ppc_effective_address);
+            mem_write_byte(ppc_effective_address, strwrd_replace_value);
             break;
         case 1:
             strwrd_replace_value = (ppc_result_d >> 16);
-            address_insert8bit_translate(strwrd_replace_value, ppc_effective_address);
+            mem_write_byte(ppc_effective_address, strwrd_replace_value);
             break;
         case 2:
             strwrd_replace_value = (ppc_result_d >> 8);
-            address_insert8bit_translate(strwrd_replace_value, ppc_effective_address);
+            mem_write_byte(ppc_effective_address, strwrd_replace_value);
             break;
         case 3:
             strwrd_replace_value = (ppc_result_d);
-            address_insert8bit_translate(strwrd_replace_value, ppc_effective_address);
+            mem_write_byte(ppc_effective_address, strwrd_replace_value);
             break;
         default:
             printf("Something really horrible happened with stswi.");
@@ -2433,7 +2379,6 @@ void ppc_stswi() {
         else {
             shift_times++;
         }
-        return_value = 0;
         ppc_effective_address++;
         grab_inb--;
     }
@@ -2448,19 +2393,19 @@ void ppc_stswx() {
         switch (shift_times) {
         case 0:
             strwrd_replace_value = (ppc_result_d >> 24);
-            address_insert8bit_translate(strwrd_replace_value, ppc_effective_address);
+            mem_write_byte(ppc_effective_address, strwrd_replace_value);
             break;
         case 1:
             strwrd_replace_value = (ppc_result_d >> 16);
-            address_insert8bit_translate(strwrd_replace_value, ppc_effective_address);
+            mem_write_byte(ppc_effective_address, strwrd_replace_value);
             break;
         case 2:
             strwrd_replace_value = (ppc_result_d >> 8);
-            address_insert8bit_translate(strwrd_replace_value, ppc_effective_address);
+            mem_write_byte(ppc_effective_address, strwrd_replace_value);
             break;
         case 3:
             strwrd_replace_value = (ppc_result_d);
-            address_insert8bit_translate(strwrd_replace_value, ppc_effective_address);
+            mem_write_byte(ppc_effective_address, strwrd_replace_value);
             break;
         default:
             printf("Something really horrible happened with stswx.");
@@ -2472,7 +2417,6 @@ void ppc_stswx() {
         else {
             shift_times++;
         }
-        return_value = 0;
         ppc_effective_address++;
         grab_inb--;
     }

@@ -10,6 +10,7 @@
 #ifndef PPCMEMORY_H
 #define PPCMEMORY_H
 
+#include <cinttypes>
 #include <vector>
 #include <array>
 
@@ -30,14 +31,14 @@ extern void ibat_update(uint32_t bat_reg);
 extern void dbat_update(uint32_t bat_reg);
 
 extern void ppc_set_cur_instruction(const uint8_t* ptr);
-extern void address_insert8bit_translate(uint8_t value, uint32_t addr);
-extern void address_insert16bit_translate(uint16_t value, uint32_t addr);
-extern void address_insert32bit_translate(uint32_t value, uint32_t addr);
-extern void address_insert64bit_translate(uint64_t value, uint32_t addr);
-extern void address_grab8bit_translate(uint32_t addr);
-extern void address_grab16bit_translate(uint32_t addr);
-extern void address_grab32bit_translate(uint32_t addr);
-extern void address_grab64bit_translate(uint32_t addr);
+extern void mem_write_byte(uint32_t addr, uint8_t value);
+extern void mem_write_word(uint32_t addr, uint16_t value);
+extern void mem_write_dword(uint32_t addr, uint32_t value);
+extern void mem_write_qword(uint32_t addr, uint64_t value);
+extern uint8_t  mem_grab_byte(uint32_t addr);
+extern uint16_t mem_grab_word(uint32_t addr);
+extern uint32_t mem_grab_dword(uint32_t addr);
+extern uint64_t mem_grab_qword(uint32_t addr);
 extern uint8_t* quickinstruction_translate(uint32_t address_grab);
 
 #endif // PPCMEMORY_H

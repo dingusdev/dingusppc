@@ -101,8 +101,6 @@ SUPERVISOR MODEL
 536 - 543 are the Data BAT registers
 **/
 
-extern uint64_t return_value; //used for loading from memory
-
 extern uint32_t opcode_value; //used for interpreting opcodes
 extern uint32_t ram_size_set;
 

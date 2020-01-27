@@ -404,7 +404,7 @@ static uint32_t ppc_mmu_addr_translate(uint32_t la, int is_write)
     return pa;
 }
 
-void address_insert8bit_translate(uint8_t value, uint32_t addr)
+void mem_write_byte(uint32_t addr, uint8_t value)
 {
     /* data address translation if enabled */
     if (ppc_state.ppc_msr & 0x10) {
@@ -416,7 +416,7 @@ void address_insert8bit_translate(uint8_t value, uint32_t addr)
     WRITE_PHYS_MEM(last_write_area, addr, WRITE_BYTE, value, 1);
 }
 
-void address_insert16bit_translate(uint16_t value, uint32_t addr)
+void mem_write_word(uint32_t addr, uint16_t value)
 {
     /* data address translation if enabled */
     if (ppc_state.ppc_msr & 0x10) {
@@ -426,7 +426,7 @@ void address_insert16bit_translate(uint16_t value, uint32_t addr)
     WRITE_PHYS_MEM(last_write_area, addr, WRITE_WORD_BE_A, value, 2);
 }
 
-void address_insert32bit_translate(uint32_t value, uint32_t addr)
+void mem_write_dword(uint32_t addr, uint32_t value)
 {
     /* data address translation if enabled */
     if (ppc_state.ppc_msr & 0x10) {
@@ -436,7 +436,7 @@ void address_insert32bit_translate(uint32_t value, uint32_t addr)
     WRITE_PHYS_MEM(last_write_area, addr, WRITE_DWORD_BE_A, value, 4);
 }
 
-void address_insert64bit_translate(uint64_t value, uint32_t addr)
+void mem_write_qword(uint32_t addr, uint64_t value)
 {
     /* data address translation if enabled */
     if (ppc_state.ppc_msr & 0x10) {
@@ -447,7 +447,7 @@ void address_insert64bit_translate(uint64_t value, uint32_t addr)
 }
 
 /** Grab a value from memory into a register */
-void address_grab8bit_translate(uint32_t addr)
+uint8_t mem_grab_byte(uint32_t addr)
 {
     uint8_t ret;
 
@@ -457,10 +457,10 @@ void address_grab8bit_translate(uint32_t addr)
     }
 
     READ_PHYS_MEM(last_read_area, addr, *, 1, 0xFFU);
-    return_value = ret;
+    return ret;
 }
 
-void address_grab16bit_translate(uint32_t addr)
+uint16_t mem_grab_word(uint32_t addr)
 {
     uint16_t ret;
 
@@ -470,10 +470,10 @@ void address_grab16bit_translate(uint32_t addr)
     }
 
     READ_PHYS_MEM(last_read_area, addr, READ_WORD_BE_A, 2, 0xFFFFU);
-    return_value = ret;
+    return ret;
 }
 
-void address_grab32bit_translate(uint32_t addr)
+uint32_t mem_grab_dword(uint32_t addr)
 {
     uint32_t ret;
 
@@ -483,10 +483,10 @@ void address_grab32bit_translate(uint32_t addr)
     }
 
     READ_PHYS_MEM(last_read_area, addr, READ_DWORD_BE_A, 4, 0xFFFFFFFFUL);
-    return_value = ret;
+    return ret;
 }
 
-void address_grab64bit_translate(uint32_t addr)
+uint64_t mem_grab_qword(uint32_t addr)
 {
     uint64_t ret;
 
@@ -496,7 +496,7 @@ void address_grab64bit_translate(uint32_t addr)
     }
 
     READ_PHYS_MEM(last_read_area, addr, READ_QWORD_BE_A, 8, 0xFFFFFFFFFFFFFFFFULL);
-    return_value = ret;
+    return ret;
 }
 
 uint8_t* quickinstruction_translate(uint32_t addr)

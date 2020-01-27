@@ -202,6 +202,7 @@ void power_lscbx() {
     uint32_t bytes_copied = 0;
     bool match_found = false;
     uint32_t shift_amount = 0;
+    uint8_t return_value;
     uint8_t byte_compared = (uint8_t)((ppc_state.ppc_spr[1] & 0xFF00) >> 8);
     if ((ppc_state.ppc_spr[1] & 0x7f) == 0) {
         return;
@@ -214,34 +215,32 @@ void power_lscbx() {
         if (match_found == false) {
             switch (shift_amount) {
             case 0:
-                address_grab8bit_translate(ppc_effective_address);
-                ppc_result_d = (ppc_result_d & 0x00FFFFFF) | ((uint32_t)return_value << 24);
+                return_value = mem_grab_byte(ppc_effective_address);
+                ppc_result_d = (ppc_result_d & 0x00FFFFFF) | (return_value << 24);
                 ppc_store_result_regd();
                 break;
             case 1:
-                address_grab8bit_translate(ppc_effective_address);
-                ppc_result_d = (ppc_result_d & 0xFF00FFFF) | ((uint32_t)return_value << 16);
+                return_value = mem_grab_byte(ppc_effective_address);
+                ppc_result_d = (ppc_result_d & 0xFF00FFFF) | (return_value << 16);
                 ppc_store_result_regd();
                 break;
             case 2:
-                address_grab8bit_translate(ppc_effective_address);
-                ppc_result_d = (ppc_result_d & 0xFFFF00FF) | ((uint32_t)return_value << 8);
+                return_value = mem_grab_byte(ppc_effective_address);
+                ppc_result_d = (ppc_result_d & 0xFFFF00FF) | (return_value << 8);
                 ppc_store_result_regd();
                 break;
             case 3:
-                address_grab8bit_translate(ppc_effective_address);
-                ppc_result_d = (ppc_result_d & 0xFFFFFF00) | (uint32_t)return_value;
+                return_value = mem_grab_byte(ppc_effective_address);
+                ppc_result_d = (ppc_result_d & 0xFFFFFF00) | return_value;
                 ppc_store_result_regd();
                 break;
             }
 
             bytes_copied++;
         }
-        if (((uint8_t)return_value) == byte_compared) {
+        if (return_value == byte_compared) {
             break;
         }
-
-        return_value = 0;
 
         if (shift_amount == 3) {
             shift_amount = 0;

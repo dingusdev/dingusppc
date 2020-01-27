@@ -68,8 +68,6 @@ uint32_t ppc_effective_address;
 uint32_t ppc_real_address;
 uint32_t ppc_next_instruction_address; //Used for branching, setting up the NIA
 
-uint64_t return_value;
-
 MemCtrlBase *mem_ctrl_instance = 0;
 HeathrowIC  *heathrow = 0;
 GossamerID  *machine_id;

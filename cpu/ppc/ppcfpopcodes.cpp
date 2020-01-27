@@ -879,8 +879,7 @@ void ppc_lfs() {
     ppc_grab_regsfpdia(true);
     ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
     ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
-    address_grab32bit_translate(ppc_effective_address);
-    ppc_result64_d = (uint64_t)return_value;
+    ppc_result64_d = mem_grab_dword(ppc_effective_address);
     ppc_store_dfpresult(true);
 }
 
@@ -890,8 +889,7 @@ void ppc_lfsu() {
     if (reg_a == 0) {
         ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
         ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
-        address_grab32bit_translate(ppc_effective_address);
-        ppc_result64_d = (uint64_t)return_value;
+        ppc_result64_d = mem_grab_dword(ppc_effective_address);
         ppc_result_a = ppc_effective_address;
         ppc_store_dfpresult(true);
         ppc_store_result_rega();
@@ -904,8 +902,7 @@ void ppc_lfsu() {
 void ppc_lfsx() {
     ppc_grab_regsfpdiab(true);
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : ppc_result_a + ppc_result_b;
-    address_grab32bit_translate(ppc_effective_address);
-    ppc_result64_d = (uint64_t)return_value;
+    ppc_result64_d = mem_grab_dword(ppc_effective_address);
     ppc_store_dfpresult(true);
 }
 
@@ -913,8 +910,7 @@ void ppc_lfsux() {
     ppc_grab_regsfpdiab(true);
     if (reg_a == 0) {
         ppc_effective_address = ppc_result_a + ppc_result_b;
-        address_grab32bit_translate(ppc_effective_address);
-        ppc_result64_d = (uint64_t)return_value;
+        ppc_result64_d = mem_grab_dword(ppc_effective_address);
         ppc_result_a = ppc_effective_address;
         ppc_store_dfpresult(true);
         ppc_store_result_rega();
@@ -928,8 +924,7 @@ void ppc_lfd() {
     ppc_grab_regsfpdia(true);
     ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
     ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
-    address_grab64bit_translate(ppc_effective_address);
-    ppc_result64_d = return_value;
+    ppc_result64_d = mem_grab_qword(ppc_effective_address);
     ppc_store_dfpresult(true);
 }
 
@@ -938,8 +933,7 @@ void ppc_lfdu() {
     if (reg_a == 0) {
         ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
         ppc_effective_address += ppc_result_a;
-        address_grab64bit_translate(ppc_effective_address);
-        ppc_result64_d = return_value;
+        ppc_result64_d = mem_grab_qword(ppc_effective_address);
         ppc_store_dfpresult(true);
         ppc_result_a = ppc_effective_address;
         ppc_store_result_rega();
@@ -952,8 +946,7 @@ void ppc_lfdu() {
 void ppc_lfdx() {
     ppc_grab_regsfpdia(true);
     ppc_effective_address += (reg_a > 0) ? ppc_result_a + ppc_result_b : ppc_result_b;
-    address_grab64bit_translate(ppc_effective_address);
-    ppc_result64_d = return_value;
+    ppc_result64_d = mem_grab_qword(ppc_effective_address);
     ppc_store_dfpresult(true);
 }
 
@@ -961,8 +954,7 @@ void ppc_lfdux() {
     ppc_grab_regsfpdiab(true);
     if (reg_a == 0) {
         ppc_effective_address = ppc_result_a + ppc_result_b;
-        address_grab64bit_translate(ppc_effective_address);
-        ppc_result64_d = return_value;
+        ppc_result64_d = mem_grab_qword(ppc_effective_address);
         ppc_store_dfpresult(true);
         ppc_result_a = ppc_effective_address;
         ppc_store_result_rega();
@@ -976,7 +968,7 @@ void ppc_stfs() {
     ppc_grab_regsfpsia(true);
     ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
     ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
-    address_insert32bit_translate(uint32_t(ppc_state.ppc_fpr[reg_s].int64_r), ppc_effective_address);
+    mem_write_dword(ppc_effective_address, uint32_t(ppc_state.ppc_fpr[reg_s].int64_r));
 }
 
 void ppc_stfsu() {
@@ -984,7 +976,7 @@ void ppc_stfsu() {
     if (reg_a == 0) {
         ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
         ppc_effective_address += ppc_result_a;
-        address_insert32bit_translate(uint32_t(ppc_state.ppc_fpr[reg_s].int64_r), ppc_effective_address);
+        mem_write_dword(ppc_effective_address, uint32_t(ppc_state.ppc_fpr[reg_s].int64_r));
         ppc_result_a = ppc_effective_address;
         ppc_store_result_rega();
     }
@@ -996,14 +988,14 @@ void ppc_stfsu() {
 void ppc_stfsx() {
     ppc_grab_regsfpsiab(true);
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : ppc_result_a + ppc_result_b;
-    address_insert32bit_translate(uint32_t(ppc_state.ppc_fpr[reg_s].int64_r), ppc_effective_address);
+    mem_write_dword(ppc_effective_address, uint32_t(ppc_state.ppc_fpr[reg_s].int64_r));
 }
 
 void ppc_stfsux() {
     ppc_grab_regsfpsiab(true);
     if (reg_a == 0) {
         ppc_effective_address = ppc_result_a + ppc_result_b;
-        address_insert32bit_translate(uint32_t(ppc_state.ppc_fpr[reg_s].int64_r), ppc_effective_address);
+        mem_write_dword(ppc_effective_address, uint32_t(ppc_state.ppc_fpr[reg_s].int64_r));
         ppc_result_a = ppc_effective_address;
         ppc_store_result_rega();
     }
@@ -1016,7 +1008,7 @@ void ppc_stfd() {
     ppc_grab_regsfpsia(true);
     ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
     ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
-    address_insert64bit_translate(ppc_state.ppc_fpr[reg_s].int64_r, ppc_effective_address);
+    mem_write_qword(ppc_effective_address, ppc_state.ppc_fpr[reg_s].int64_r);
 }
 
 void ppc_stfdu() {
@@ -1024,7 +1016,7 @@ void ppc_stfdu() {
     if (reg_a == 0) {
         ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
         ppc_effective_address += ppc_result_a;
-        address_insert64bit_translate(ppc_state.ppc_fpr[reg_s].int64_r, ppc_effective_address);
+        mem_write_qword(ppc_effective_address, ppc_state.ppc_fpr[reg_s].int64_r);
         ppc_result_a = ppc_effective_address;
         ppc_store_result_rega();
     }
@@ -1036,14 +1028,14 @@ void ppc_stfdu() {
 void ppc_stfdx() {
     ppc_grab_regsfpsiab(true);
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : ppc_result_a + ppc_result_b;
-    address_insert64bit_translate(ppc_state.ppc_fpr[reg_s].int64_r, ppc_effective_address);
+    mem_write_qword(ppc_effective_address, ppc_state.ppc_fpr[reg_s].int64_r);
 }
 
 void ppc_stfdux() {
     ppc_grab_regsfpsiab(true);
     if (reg_a == 0) {
         ppc_effective_address = ppc_result_a + ppc_result_b;
-        address_insert64bit_translate(ppc_state.ppc_fpr[reg_s].int64_r, ppc_effective_address);
+        mem_write_qword(ppc_effective_address, ppc_state.ppc_fpr[reg_s].int64_r);
         ppc_result_a = ppc_effective_address;
         ppc_store_result_rega();
     }
@@ -1055,7 +1047,7 @@ void ppc_stfdux() {
 void ppc_stfiwx() {
     ppc_grab_regsfpsiab(true);
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : ppc_result_a + ppc_result_b;
-    address_insert32bit_translate((uint32_t)(ppc_state.ppc_fpr[reg_s].int64_r), ppc_effective_address);
+    mem_write_dword(ppc_effective_address, (uint32_t)(ppc_state.ppc_fpr[reg_s].int64_r));
 }
 
 //Floating Point Register Transfer
