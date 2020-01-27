@@ -25,11 +25,8 @@
 #include "ppcemu.h"
 #include "ppcmmu.h"
 #include "devices/memctrlbase.h"
-#include "devices/mmiodevice.h"
-#include "devices/mpc106.h"
 
-
- /** PowerPC-style MMU BAT arrays (NULL initialization isn't prescribed). */
+/** PowerPC-style MMU BAT arrays (NULL initialization isn't prescribed). */
 PPC_BAT_entry ibat_array[4] = { {0} };
 PPC_BAT_entry dbat_array[4] = { {0} };
 
