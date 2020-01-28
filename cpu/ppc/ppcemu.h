@@ -65,6 +65,7 @@ extern SetPRS ppc_state;
 
 /** symbolic names for frequently used SPRs */
 enum SPR : int {
+    MQ    = 0,
     XER   = 1,
     LR    = 8,
     CTR   = 9,
@@ -75,6 +76,12 @@ enum SPR : int {
     SRR0  = 26,
     SRR1  = 27,
     PVR   = 287
+};
+
+/** symbolic names for frequently used SPRs */
+enum TBR : int {
+    TBL = 0,
+    TBU = 1
 };
 
 /** symbolic names for common PPC processors */

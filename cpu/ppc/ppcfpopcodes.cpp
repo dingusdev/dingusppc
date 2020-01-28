@@ -1111,14 +1111,14 @@ void ppc_mtfsfi() {
     ppc_result_b = (ppc_cur_instruction >> 11) & 15;
     crf_d = (ppc_cur_instruction >> 23) & 7;
     crf_d = crf_d << 2;
-    ppc_state.ppc_fpscr = (ppc_state.ppc_cr & ~(0xF0000000UL >> crf_d)) | ((ppc_state.ppc_spr[1] & 0xF0000000UL) >> crf_d);
+    ppc_state.ppc_fpscr = (ppc_state.ppc_cr & ~(0xF0000000UL >> crf_d)) | ((ppc_state.ppc_spr[SPR::XER] & 0xF0000000UL) >> crf_d);
 }
 
 void ppc_mtfsfidot() {
     ppc_result_b = (ppc_cur_instruction >> 11) & 15;
     crf_d = (ppc_cur_instruction >> 23) & 7;
     crf_d = crf_d << 2;
-    ppc_state.ppc_fpscr = (ppc_state.ppc_cr & ~(0xF0000000UL >> crf_d)) | ((ppc_state.ppc_spr[1] & 0xF0000000UL) >> crf_d);
+    ppc_state.ppc_fpscr = (ppc_state.ppc_cr & ~(0xF0000000UL >> crf_d)) | ((ppc_state.ppc_spr[SPR::XER] & 0xF0000000UL) >> crf_d);
     ppc_fp_changecrf1();
 }
 

@@ -194,7 +194,7 @@ static inline uint8_t* calc_pteg_addr(uint32_t hash)
 {
     uint32_t sdr1_val, pteg_addr;
 
-    sdr1_val = ppc_state.ppc_spr[25];
+    sdr1_val = ppc_state.ppc_spr[SPR::SDR1];
 
     pteg_addr = sdr1_val & 0xFE000000;
     pteg_addr |= (sdr1_val & 0x01FF0000) |
@@ -287,8 +287,8 @@ static uint32_t page_address_translate(uint32_t la, bool is_instr_fetch,
                 ppc_exception_handler(Except_Type::EXC_ISI, 0x40000000);
             }
             else {
-                ppc_state.ppc_spr[18] = 0x40000000 | (is_write << 25);
-                ppc_state.ppc_spr[19] = la;
+                ppc_state.ppc_spr[SPR::DSISR] = 0x40000000 | (is_write << 25);
+                ppc_state.ppc_spr[SPR::DAR] = la;
                 ppc_exception_handler(Except_Type::EXC_DSI, 0);
             }
         }
@@ -310,8 +310,8 @@ static uint32_t page_address_translate(uint32_t la, bool is_instr_fetch,
             ppc_exception_handler(Except_Type::EXC_ISI, 0x08000000);
         }
         else {
-            ppc_state.ppc_spr[18] = 0x08000000 | (is_write << 25);
-            ppc_state.ppc_spr[19] = la;
+            ppc_state.ppc_spr[SPR::DSISR] = 0x08000000 | (is_write << 25);
+            ppc_state.ppc_spr[SPR::DAR] = la;
             ppc_exception_handler(Except_Type::EXC_DSI, 0);
         }
     }

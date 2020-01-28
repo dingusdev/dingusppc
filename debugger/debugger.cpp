@@ -37,12 +37,12 @@ void dump_regs()
     for (uint32_t i = 0; i < 32; i++)
         cout << "GPR " << dec << i << " : " << hex << ppc_state.ppc_gpr[i] << endl;
 
-    cout << "PC: "  << hex << ppc_state.ppc_pc     << endl;
-    cout << "LR: "  << hex << ppc_state.ppc_spr[8] << endl;
-    cout << "CR: "  << hex << ppc_state.ppc_cr     << endl;
-    cout << "CTR: " << hex << ppc_state.ppc_spr[9] << endl;
-    cout << "XER: " << hex << ppc_state.ppc_spr[1] << endl;
-    cout << "MSR: " << hex << ppc_state.ppc_msr    << endl;
+    cout << "PC: "  << hex << ppc_state.ppc_pc            << endl;
+    cout << "LR: "  << hex << ppc_state.ppc_spr[SPR::LR]  << endl;
+    cout << "CR: "  << hex << ppc_state.ppc_cr            << endl;
+    cout << "CTR: " << hex << ppc_state.ppc_spr[SPR::CTR] << endl;
+    cout << "XER: " << hex << ppc_state.ppc_spr[SPR::XER] << endl;
+    cout << "MSR: " << hex << ppc_state.ppc_msr           << endl;
 }
 
 void enter_debugger()
