@@ -365,7 +365,7 @@ static uint32_t ppc_mmu_instr_translate(uint32_t la)
 /** PowerPC-style MMU data address translation. */
 static uint32_t ppc_mmu_addr_translate(uint32_t la, int is_write)
 {
-#if PROFILER
+#ifdef PROFILER
     mmu_translations_num++;
 #endif
 

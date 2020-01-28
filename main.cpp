@@ -53,106 +53,14 @@ static const map<string,string> PPCMac_ROMIdentity = { //Codename Abbreviation f
     {"????", "A clone, perhaps?"}                      //N/A (Placeholder ID)
 };
 
-
-SetPRS ppc_state;
-
-bool is_nubus = 0;
-
-bool grab_branch;
-bool grab_exception;
-bool grab_return;
-bool grab_breakpoint;
-
-uint32_t ppc_cur_instruction; //Current instruction for the PPC
-uint32_t ppc_effective_address;
-uint32_t ppc_real_address;
-uint32_t ppc_next_instruction_address; //Used for branching, setting up the NIA
-
 MemCtrlBase *mem_ctrl_instance = 0;
 HeathrowIC  *heathrow = 0;
 GossamerID  *machine_id;
 
-unsigned char * machine_sysram_mem;
-unsigned char * machine_sysrom_mem;
-
-uint32_t grab_sysram_size;
-uint32_t grab_iocont_size;
-uint32_t grab_sysrom_size;
-
-uint32_t ram_size_set;
-
-uint32_t prev_msr_state = 0;
-uint32_t cur_msr_state = 0;
-
-//MSR Flags
-bool msr_es_change; //Check Endian
-
-uint32_t rom_file_begin; //where to start storing ROM files in memory
-uint32_t pci_io_end;
-
-uint32_t rom_filesize;
-
-uint32_t write_opcode;
-uint8_t write_char;
-
-//Debugging Functions
-uint32_t reg_print(){
-    for (uint32_t i = 0; i < 32; i++){
-        printf("FPR %d : %" PRIx64 "", i, ppc_state.ppc_fpr[i].int64_r);
-    }
-    ppc_state.ppc_pc = 0;
-    for (uint32_t i = 0; i < 32; i++){
-        printf("GPR %d : %x", i, ppc_state.ppc_gpr[i]);
-    }
-    printf("CR : %x", ppc_state.ppc_cr);
-    printf("FPSCR : %x", ppc_state.ppc_fpscr);
-    printf("TBR 0 : %x", ppc_state.ppc_tbr[0]);
-    printf("TBR 1 : %x", ppc_state.ppc_tbr[1]);
-
-    for (uint32_t i = 0; i < 1024; i++){
-        printf("SPR %d  : %x", i, ppc_state.ppc_spr[i]);
-    }
-
-    printf("CR  : %x", ppc_state.ppc_cr);
-
-    printf("MSR : %x", ppc_state.ppc_msr);
-
-    for (uint32_t i = 0; i < 16; i++){
-        printf("SR %d : %x", i, ppc_state.ppc_sr[i]);
-    }
-
-    return 0;
-}
-
-uint32_t reg_read(){
-    uint32_t grab_me = 0;
-    std::cout << hex << "TODO: Decide which register to read from; for now, which GPR?" << endl;
-    //printf("Which register to read from? 0 - GPR, 1 = FPR, 2 = CR, 3 = FPSCR");
-    std::cin >> hex >> grab_me;
-    if (grab_me < 32){
-        printf("GPR value: %d", ppc_state.ppc_gpr[grab_me]);
-    }
-    return 0;
-}
-
-uint32_t reg_write(){
-    uint32_t grab_me = 0;
-    std::cout << hex << "TODO: Decide which register to write to; for now, which GPR?" << endl;
-    //printf("Which register to write to? 0 - GPR, 1 = FPR, 2 = CR, 3 = FPSCR");
-    std::cin >> hex >> grab_me;
-    if (grab_me < 32){
-        printf("GPR value: %d", ppc_state.ppc_gpr[grab_me]);
-    }
-    return 0;
-}
 
 int main(int argc, char **argv)
 {
-    ram_size_set = 0x4000000; //64 MB of RAM for the Mac
-
-    rom_file_begin = 0xFFF00000; //where to start storing ROM files in memory
-    pci_io_end = 0x83FFFFFF;
-    rom_filesize = 0x400000;
+    uint32_t rom_filesize;
 
     /* Init virtual CPU and request MPC750 CPU aka G3 */
     ppc_cpu_init(PPC_VER::MPC750);
@@ -189,37 +97,12 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    machine_sysram_mem = (unsigned char*) calloc (67108864, 1);
-    machine_sysrom_mem = (unsigned char*) calloc (rom_filesize, 1);
-
-    memset(machine_sysram_mem, 0x0, 67108864);
-
-    grab_sysram_size = sizeof(machine_sysram_mem);
-    grab_sysrom_size = rom_filesize;
-
-    //Sanity checks - Prevent the input files being too small or too big.
-    //Also prevent the ROM area from overflow.
-    if (ram_size_set < 0x800000){
-        cerr << "The RAM size must be at least 8 MB to function.\n";
-        return 1;
-    }
-    else if (ram_size_set > 0x20000000){
-        cerr << "RAM too big. Must be no more than 2 GB.\n";
-        return 1;
-    }
-
-    rom_file_begin = 0xFFFFFFFF - grab_sysrom_size + 1;
-
     char configGrab = 0;
     uint32_t configInfoOffset = 0;
 
     romFile.seekg (0x300082, ios::beg); //This is where the place to get the offset is
     romFile.get(configGrab); //just one byte to determine ConfigInfo location
     configInfoOffset = (uint32_t)(configGrab & 0xff);
-
-    if (configInfoOffset == 0xC0){
-        is_nubus = 1;
-    }
 
     uint32_t configInfoAddr = 0x300000 + (configInfoOffset << 8) + 0x69; //address to check the identifier string
     char memPPCBlock[5]; //First four chars are enough to distinguish between codenames
@@ -269,233 +152,39 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    //Read ROM file content and transfer it to the dedicated ROM region
-    romFile.read ((char *)machine_sysrom_mem,grab_sysrom_size);
-    mem_ctrl_instance->set_data(0xFFC00000, machine_sysrom_mem, rom_filesize);
+    /* Read ROM file content and transfer it to the dedicated ROM region */
+    unsigned char *sysrom_mem = new unsigned char[rom_filesize];
+    romFile.read ((char *)sysrom_mem, rom_filesize);
+    mem_ctrl_instance->set_data(0xFFC00000, sysrom_mem, rom_filesize);
     romFile.close();
+    delete[] sysrom_mem;
 
-    if (argc > 1){
+    if (argc > 1) {
         string checker = argv[1];
         cout << checker << endl;
-        if (checker == "fuzzer"){
-            //Brute force every instruction that the PPC can interpret.
-            //TODO: Change this so that this goes through user-specified instructions.
-            ppc_cur_instruction = 0xFFFFFFFF;
-            std::cout << "Testing Opcode: " << ppc_cur_instruction  << endl;
-            while (ppc_cur_instruction > 0x00000000){
-                ppc_main_opcode();
-                ppc_cur_instruction--;
-            }
-        }
-        else if ((checker=="1")|(checker=="realtime")|(checker=="/realtime")|(checker=="-realtime")){
+
+        if ((checker == "1") || (checker == "realtime") || (checker == "/realtime")
+            || (checker == "-realtime")) {
             ppc_exec();
-        }
-        else if ((checker=="e")|(checker=="loadelf")|(checker=="/loadelf")|(checker=="-loadelf")){
-            ifstream elfFile;
-            uint32_t elf_file_setsize = 0;
-
-            char elf_headerchk [4];
-            char elf_bformat [1];
-            char elf_machine [2];
-            char elf_memoffset [4];
-
-            elfFile.seekg(0, elfFile.end);
-            elf_file_setsize = (uint32_t) elfFile.tellg();
-            elfFile.seekg (0, elfFile.beg);
-
-            if (elf_file_setsize < 45){
-                cerr << "Elf File TOO SMALL. Please make sure it's a legitimate file.";
-
-                return 1;
-            }
-            else if (elf_file_setsize > ram_size_set){
-                cerr << "Elf File TOO BIG. Please make sure it fits within memory.";
-
-                return 1;
-            }
-
-            //There's got to be a better way to get fields of info from an ELF file.
-            elfFile.seekg(0x0, ios::beg); //ELF file begins here
-            elfFile.read(elf_headerchk, 4);
-            elfFile.seekg(0x4, ios::cur);
-            elfFile.read(elf_bformat, 1);
-            elfFile.seekg(0x8, ios::cur);
-            elfFile.read(elf_machine, 2);
-            elfFile.seekg(0x6, ios::cur);
-            elfFile.read(elf_memoffset, 4);
-            elfFile.seekg (0, elfFile.beg);
-
-            bool elf_valid_check = (atoi(elf_headerchk) == 0x7F454C46) && (atoi(elf_bformat) == 1) &&\
-                                   ((atoi(elf_machine) == 0) | (atoi(elf_machine) == 20));
-
-            if (!elf_valid_check){
-                cerr << "The ELF file inserted was not legitimate. Please try again." << endl;
-                return 1;
-            }
-
-            elfFile.read ((char *)machine_sysram_mem,ram_size_set);
-
-            if (argc > 2){
-                string elfname = string(argv[1]);
-                elfname = elfname + ".elf";
-                elfFile.open(elfname, ios::in|ios::binary);
-            }
-            else{
-                elfFile.open("test.elf", ios::in|ios::binary);
-            }
-            if (elfFile.fail()){
-                cerr << "Please insert the elf file before continuing.\n";
-
-                return 1;
-            }
-
-            ppc_state.ppc_pc = atoi(elf_memoffset);
-
-            ppc_exec();
-        }
-        else if ((checker=="until")|(checker=="/until")|(checker=="-until")){
-            uint32_t grab_bp = 0x0;
-
-            std::cout << hex << "Enter the address in hex for where to stop execution." << endl;
-            cin >> hex >> grab_bp;
-
-            ppc_exec_until(grab_bp);
-        }
-        else if (checker=="disas"){
-            if (argc > 2){
-                checker = argv[1];
-            }
-            else{
-                checker = "\\compile.txt";
-            }
-            ifstream inFile (checker, ios::binary | ios::ate);
-            if (!inFile) {
-                cerr << "Unable to open file for assembling.";
-                exit(1);
-            }
-        }
-        else if ((checker=="stepi")|(checker=="/stepi")|(checker=="-stepi")){
-            std::cout << hex << "Ready to execute an opcode?" << endl;
-
-            string check_q;
-            cin >> check_q;
-            getline (cin, check_q);
-
-            if (check_q != "No"){
-                quickinstruction_translate(ppc_state.ppc_pc);
-                ppc_main_opcode();
-                if (grab_branch & !grab_exception){
-                    ppc_state.ppc_pc = ppc_next_instruction_address;
-                    grab_branch = 0;
-                    ppc_tbr_update();
-                }
-                else if (grab_return | grab_exception){
-                    ppc_state.ppc_pc = ppc_next_instruction_address;
-                    grab_exception = 0;
-                    grab_return = 0;
-                    ppc_tbr_update();
-                }
-                else{
-                    ppc_state.ppc_pc += 4;
-                    ppc_tbr_update();
-                }
-            }
-        }
-        else if ((checker=="stepp")|(checker=="/stepp")|(checker=="-stepp")){
-            std::cout << hex << "Ready to execute a page of opcodes?" << endl;
-
-            string check_q;
-            cin >> check_q;
-            getline (cin, check_q);
-
-            if (check_q != "No"){
-                for (int instructions_to_do = 0; instructions_to_do < 256; instructions_to_do++){
-                    quickinstruction_translate(ppc_state.ppc_pc);
-                    ppc_main_opcode();
-                    if (grab_branch & !grab_exception){
-                        ppc_state.ppc_pc = ppc_next_instruction_address;
-                        grab_branch = 0;
-                        ppc_tbr_update();
-                    }
-                    else if (grab_return | grab_exception){
-                        ppc_state.ppc_pc = ppc_next_instruction_address;
-                        grab_exception = 0;
-                        grab_return = 0;
-                        ppc_tbr_update();
-                    }
-                    else{
-                        ppc_state.ppc_pc += 4;
-                        ppc_tbr_update();
-                    }
-                }
-            }
-        }
-        else if ((checker=="play")|(checker=="playground")|(checker=="/playground")|(checker=="-playground")){
-            std::cout << hex << "Enter any opcodes for the PPC you want here." << endl;
-
-            while (power_on){
-                cin >> hex >> opcode_entered;
-                //power off the PPC
-                if (opcode_entered == 0x00000000){
-                    power_on = 0;
-                }
-                //print registers
-                else if (opcode_entered == 0x00000001){
-                    reg_print();
-                }
-                else if (opcode_entered == 0x00000002){
-                    reg_read();
-                }
-                else if (opcode_entered == 0x00000003){
-                    reg_write();
-                }
-                //test another opcode
-                else{
-                    ppc_cur_instruction = opcode_entered;
-                    quickinstruction_translate(ppc_state.ppc_pc);
-                    ppc_main_opcode();
-                    if (grab_branch & !grab_exception){
-                        ppc_state.ppc_pc = ppc_next_instruction_address;
-                        grab_branch = 0;
-                        ppc_tbr_update();
-                    }
-                    else if (grab_return | grab_exception){
-                        ppc_state.ppc_pc = ppc_next_instruction_address;
-                        grab_exception = 0;
-                        grab_return = 0;
-                        ppc_tbr_update();
-                    }
-                    else{
-                        ppc_state.ppc_pc += 4;
-                        ppc_tbr_update();
-                    }
-                }
-            }
-        } else if (checker == "debugger") {
+        } else if ((checker == "debugger") || (checker == "/debugger") ||
+            (checker == "-debugger")) {
             enter_debugger();
         }
     }
-    else{
+    else {
         std::cout << "                    " << endl;
         std::cout << "Please enter one of the following commands when " << endl;
         std::cout << "booting up DingusPPC...                         " << endl;
         std::cout << "                    " << endl;
         std::cout << "                    " << endl;
         std::cout << "realtime - Run the emulator in real-time.       " << endl;
-        std::cout << "loadelf - Load an ELF file to run from RAM.     " << endl;
         std::cout << "debugger - Enter the interactive debugger.      " << endl;
-        std::cout << "fuzzer - Test every single PPC opcode.          " << endl;
-        std::cout << "stepp - Execute a page of opcodes per key press." << endl;
-        std::cout << "playground - Mess around with and opcodes.      " << endl;
     }
 
+    /* Free memory after the emulation is completed. */
     delete(heathrow);
     delete(machine_id);
     delete(mem_ctrl_instance);
-
-    //Free memory after the emulation is completed.
-    free(machine_sysram_mem);
-    free(machine_sysrom_mem);
 
     return 0;
 }

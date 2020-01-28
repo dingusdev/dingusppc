@@ -126,12 +126,6 @@ SUPERVISOR MODEL
 **/
 
 extern uint32_t opcode_value; //used for interpreting opcodes
-extern uint32_t ram_size_set;
-
-extern uint32_t rom_file_begin; //where to start storing ROM files in memory
-extern uint32_t pci_io_end;
-
-extern uint32_t rom_filesize;
 
 //Additional steps to prevent overflow?
 extern int32_t add_result;
@@ -217,8 +211,6 @@ extern bool grab_return;
 
 extern bool power_on;
 
-extern bool is_nubus; //For early Power Mac Emulation
-
 extern bool is_601; //For PowerPC 601 Emulation
 extern bool is_gekko; //For GameCube Emulation
 extern bool is_altivec; //For Altivec Emulation
@@ -227,7 +219,6 @@ extern bool is_64bit; //For PowerPC G5 Emulation
 //Important Addressing Integers
 extern uint32_t ppc_cur_instruction;
 extern uint32_t ppc_effective_address;
-extern uint32_t ppc_real_address;
 extern uint32_t ppc_next_instruction_address;
 
 //Profiling Stats
@@ -237,10 +228,6 @@ extern uint32_t supervisor_inst_num;
 
 //Function prototypes
 extern void ppc_cpu_init(uint32_t proc_version);
-
-uint32_t reg_print();
-uint32_t reg_read();
-uint32_t reg_write();
 
 void ppc_illegalop();
 void ppc_opcode4();
@@ -292,9 +279,6 @@ void ppc_tbr_update();
 
 //MEMORY DECLARATIONS
 extern MemCtrlBase* mem_ctrl_instance;
-
-extern unsigned char* machine_sysram_mem;
-extern unsigned char* machine_sysrom_mem;
 
 //The functions used by the PowerPC processor
 extern void ppc_bcctr();

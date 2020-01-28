@@ -11,33 +11,17 @@ including those of the PowerMac G3 Beige.
 
 ## HOW TO USE
 
-This program uses the command prompt to work.
+This program currently uses the command prompt to work.
 
-There are a few command line arguments one can enter when starting the program.
-
--fuzzer
-
-Processor fuzzer, very unfinished.
+There are a few command line arguments one must enter when starting the program.
 
 -realtime
 
 Run the emulator in runtime.
 
--loadelf
-
-Load an ELF file into memory.
-
 -debugger
 
 Enter the interactive debugger.
-
--stepp
-
-Execute a page of opcodes (256 instructions at a time).
-
--playground
-
-allows users to enter 32-bit hex opcodes to mess with the PPC processor.
 
 ## HOW TO COMPILE
 

@@ -24,7 +24,6 @@ void show_help()
     cout << "  until X   -- execute until address X is reached" << endl;
     cout << "  regs      -- dump content of the GRPs" << endl;
     cout << "  set R=X   -- assign value X to register R" << endl;
-    cout << "  memdump   -- dump content of the system memory to memdump.bin" << endl;
 #ifdef PROFILER
     cout << "  profiler  -- show stats related to the processor" << endl;
 #endif
@@ -44,14 +43,6 @@ void dump_regs()
     cout << "CTR: " << hex << ppc_state.ppc_spr[9] << endl;
     cout << "XER: " << hex << ppc_state.ppc_spr[1] << endl;
     cout << "MSR: " << hex << ppc_state.ppc_msr    << endl;
-}
-
-void dump_mem_file()
-{
-    std::ofstream memdumpfile;
-    memdumpfile.open("memdump.bin", std::ofstream::out | std::ofstream::binary);
-    memdumpfile.write((char *)&machine_sysram_mem, sizeof(char) * 67108864);
-    memdumpfile.close();
 }
 
 void enter_debugger()
@@ -83,8 +74,6 @@ void enter_debugger()
             show_help();
         } else if (cmd == "quit") {
             break;
-        } else if (cmd == "memdump") {
-            dump_mem_file();
         }
 #ifdef PROFILER
         else if (cmd == "profiler") {
