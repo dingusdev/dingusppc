@@ -110,7 +110,7 @@ static std::unordered_map<uint16_t, PPCOpcode> SubOpcode31Grabber = {
     {1324, &ppc_stwbrx},      {1326, &ppc_stfsx},      {1328, &power_srq},
     {1329, &power_srqdot},    {1330, &power_sre},      {1331, &power_sredot},
     {1390, &ppc_stfsux},      {1392, &power_sriq},     {1393, &power_sriqdot},
-    {1428, &ppc_addzeo},      {1429, &ppc_addzeodot},  {1450, &ppc_stswi}, 
+    {1428, &ppc_addzeo},      {1429, &ppc_addzeodot},  {1450, &ppc_stswi},
     {1454, &ppc_stfdx},       {1456, &power_srlq},     {1457, &power_srlqdot},
     {1458, &power_sreq},      {1459, &power_sreqdot},  {1492, &ppc_addmeo},
     {1493, &ppc_addmeodot},   {1494, &ppc_mullwo},     {1495, &ppc_mullwodot},
@@ -283,7 +283,7 @@ static std::unordered_map<uint16_t, PPCOpcode> SubOpcode63Grabber = {
     { 431, &ppc_fseldot},    { 434, &ppc_fmult},      { 435, &ppc_fmultdot},
     { 440, &ppc_fmsub},      { 441, &ppc_fmsubdot},   { 442, &ppc_fmadd},
     { 443, &ppc_fmadddot},   { 444, &ppc_fnmsub},     { 445, &ppc_fnmsubdot},
-    { 446, &ppc_fnmadd},     { 447, &ppc_fnmadddot},  { 494, &ppc_fsel}, 
+    { 446, &ppc_fnmadd},     { 447, &ppc_fnmadddot},  { 494, &ppc_fsel},
     { 495, &ppc_fseldot},    { 498, &ppc_fmult},      { 499, &ppc_fmultdot},
     { 504, &ppc_fmsub},      { 505, &ppc_fmsubdot},   { 506, &ppc_fmadd},
     { 507, &ppc_fmadddot},   { 508, &ppc_fnmsub},     { 509, &ppc_fnmsubdot},
@@ -294,7 +294,7 @@ static std::unordered_map<uint16_t, PPCOpcode> SubOpcode63Grabber = {
     { 571, &ppc_fmadddot},   { 572, &ppc_fnmsub},     { 573, &ppc_fnmsubdot},
     { 574, &ppc_fnmadd},     { 575, &ppc_fnmadddot},  { 622, &ppc_fsel},
     { 623, &ppc_fseldot},    { 626, &ppc_fmult},      { 627, &ppc_fmultdot},
-    { 632, &ppc_fmsub},      { 633, &ppc_fmsubdot},   { 634, &ppc_fmadd}, 
+    { 632, &ppc_fmsub},      { 633, &ppc_fmsubdot},   { 634, &ppc_fmadd},
     { 635, &ppc_fmadddot},   { 636, &ppc_fnmsub},     { 637, &ppc_fnmsubdot},
     { 638, &ppc_fnmadd},     { 639, &ppc_fnmadddot},  { 686, &ppc_fsel},
     { 687, &ppc_fseldot},    { 690, &ppc_fmult},      { 691, &ppc_fmultdot},
@@ -310,7 +310,7 @@ static std::unordered_map<uint16_t, PPCOpcode> SubOpcode63Grabber = {
     { 827, &ppc_fmadddot},   { 828, &ppc_fnmsub},     { 829, &ppc_fnmsubdot},
     { 830, &ppc_fnmadd},     { 831, &ppc_fnmadddot},  { 878, &ppc_fsel},
     { 879, &ppc_fseldot},    { 882, &ppc_fmult},      { 883, &ppc_fmultdot},
-    { 888, &ppc_fmsub},      { 889, &ppc_fmsubdot},   { 890, &ppc_fmadd}, 
+    { 888, &ppc_fmsub},      { 889, &ppc_fmsubdot},   { 890, &ppc_fmadd},
     { 891, &ppc_fmadddot},   { 892, &ppc_fnmsub},     { 893, &ppc_fnmsubdot},
     { 894, &ppc_fnmadd},     { 895, &ppc_fnmadddot},  { 942, &ppc_fsel},
     { 943, &ppc_fseldot},    { 946, &ppc_fmult},      { 947, &ppc_fmultdot},
@@ -336,53 +336,53 @@ static std::unordered_map<uint16_t, PPCOpcode> SubOpcode63Grabber = {
     {1215, &ppc_fnmadddot},  {1262, &ppc_fsel},       {1263, &ppc_fseldot},
     {1266, &ppc_fmult},      {1267, &ppc_fmultdot},   {1272, &ppc_fmsub},
     {1273, &ppc_fmsubdot},   {1274, &ppc_fmadd},      {1275, &ppc_fmadddot},
-    {1276, &ppc_fnmsub},     {1277, &ppc_fnmsubdot},  {1278, &ppc_fnmadd}, 
+    {1276, &ppc_fnmsub},     {1277, &ppc_fnmsubdot},  {1278, &ppc_fnmadd},
     {1279, &ppc_fnmadddot},  {1326, &ppc_fsel},       {1327, &ppc_fseldot},
     {1330, &ppc_fmult},      {1331, &ppc_fmultdot},   {1336, &ppc_fmsub},
     {1337, &ppc_fmsubdot},   {1338, &ppc_fmadd},      {1339, &ppc_fmadddot},
-    {1340, &ppc_fnmsub},     {1341, &ppc_fnmsubdot},  {1342, &ppc_fnmadd}, 
+    {1340, &ppc_fnmsub},     {1341, &ppc_fnmsubdot},  {1342, &ppc_fnmadd},
     {1343, &ppc_fnmadddot},  {1390, &ppc_fsel},       {1391, &ppc_fseldot},
-    {1394, &ppc_fmult},      {1395, &ppc_fmultdot},   {1400, &ppc_fmsub}, 
+    {1394, &ppc_fmult},      {1395, &ppc_fmultdot},   {1400, &ppc_fmsub},
     {1401, &ppc_fmsubdot},   {1402, &ppc_fmadd},      {1403, &ppc_fmadddot},
     {1404, &ppc_fnmsub},     {1405, &ppc_fnmsubdot},  {1406, &ppc_fnmadd},
     {1407, &ppc_fnmadddot},  {1422, &ppc_mtfsf},      {1423, &ppc_mtfsfdot},
-    {1454, &ppc_fsel},       {1455, &ppc_fseldot},    {1458, &ppc_fmult}, 
+    {1454, &ppc_fsel},       {1455, &ppc_fseldot},    {1458, &ppc_fmult},
     {1459, &ppc_fmultdot},   {1464, &ppc_fmsub},      {1465, &ppc_fmsubdot},
     {1466, &ppc_fmadd},      {1467, &ppc_fmadddot},   {1468, &ppc_fnmsub},
     {1469, &ppc_fnmsubdot},  {1470, &ppc_fnmadd},     {1471, &ppc_fnmadddot},
-    {1518, &ppc_fsel},       {1519, &ppc_fseldot},    {1522, &ppc_fmult}, 
+    {1518, &ppc_fsel},       {1519, &ppc_fseldot},    {1522, &ppc_fmult},
     {1523, &ppc_fmultdot},   {1528, &ppc_fmsub},      {1529, &ppc_fmsubdot},
-    {1530, &ppc_fmadd},      {1531, &ppc_fmadddot},   {1532, &ppc_fnmsub}, 
+    {1530, &ppc_fmadd},      {1531, &ppc_fmadddot},   {1532, &ppc_fnmsub},
     {1533, &ppc_fnmsubdot},  {1534, &ppc_fnmadd},     {1535, &ppc_fnmadddot},
-    {1582, &ppc_fsel},       {1583, &ppc_fseldot},    {1586, &ppc_fmult}, 
+    {1582, &ppc_fsel},       {1583, &ppc_fseldot},    {1586, &ppc_fmult},
     {1587, &ppc_fmultdot},   {1592, &ppc_fmsub},      {1593, &ppc_fmsubdot},
-    {1594, &ppc_fmadd},      {1595, &ppc_fmadddot},   {1596, &ppc_fnmsub}, 
+    {1594, &ppc_fmadd},      {1595, &ppc_fmadddot},   {1596, &ppc_fnmsub},
     {1597, &ppc_fnmsubdot},  {1598, &ppc_fnmadd},     {1599, &ppc_fnmadddot},
-    {1646, &ppc_fsel},       {1647, &ppc_fseldot},    {1650, &ppc_fmult},  
-    {1651, &ppc_fmultdot},   {1656, &ppc_fmsub},      {1657, &ppc_fmsubdot}, 
-    {1658, &ppc_fmadd},      {1659, &ppc_fmadddot},   {1660, &ppc_fnmsub}, 
-    {1661, &ppc_fnmsubdot},  {1662, &ppc_fnmadd},     {1663, &ppc_fnmadddot}, 
+    {1646, &ppc_fsel},       {1647, &ppc_fseldot},    {1650, &ppc_fmult},
+    {1651, &ppc_fmultdot},   {1656, &ppc_fmsub},      {1657, &ppc_fmsubdot},
+    {1658, &ppc_fmadd},      {1659, &ppc_fmadddot},   {1660, &ppc_fnmsub},
+    {1661, &ppc_fnmsubdot},  {1662, &ppc_fnmadd},     {1663, &ppc_fnmadddot},
     {1710, &ppc_fsel},       {1711, &ppc_fseldot},    {1714, &ppc_fmult},
-    {1715, &ppc_fmultdot},   {1720, &ppc_fmsub},      {1721, &ppc_fmsubdot}, 
-    {1722, &ppc_fmadd},      {1723, &ppc_fmadddot},   {1724, &ppc_fnmsub},  
-    {1725, &ppc_fnmsubdot},  {1726, &ppc_fnmadd},     {1727, &ppc_fnmadddot}, 
-    {1774, &ppc_fsel},       {1775, &ppc_fseldot},    {1778, &ppc_fmult},   
-    {1779, &ppc_fmultdot},   {1784, &ppc_fmsub},      {1785, &ppc_fmsubdot}, 
-    {1786, &ppc_fmadd},      {1787, &ppc_fmadddot},   {1788, &ppc_fnmsub},   
-    {1789, &ppc_fnmsubdot},  {1790, &ppc_fnmadd},     {1791, &ppc_fnmadddot}, 
-    {1838, &ppc_fsel},       {1839, &ppc_fseldot},    {1842, &ppc_fmult},   
-    {1843, &ppc_fmultdot},   {1848, &ppc_fmsub},      {1849, &ppc_fmsubdot}, 
-    {1850, &ppc_fmadd},      {1851, &ppc_fmadddot},   {1852, &ppc_fnmsub},    
+    {1715, &ppc_fmultdot},   {1720, &ppc_fmsub},      {1721, &ppc_fmsubdot},
+    {1722, &ppc_fmadd},      {1723, &ppc_fmadddot},   {1724, &ppc_fnmsub},
+    {1725, &ppc_fnmsubdot},  {1726, &ppc_fnmadd},     {1727, &ppc_fnmadddot},
+    {1774, &ppc_fsel},       {1775, &ppc_fseldot},    {1778, &ppc_fmult},
+    {1779, &ppc_fmultdot},   {1784, &ppc_fmsub},      {1785, &ppc_fmsubdot},
+    {1786, &ppc_fmadd},      {1787, &ppc_fmadddot},   {1788, &ppc_fnmsub},
+    {1789, &ppc_fnmsubdot},  {1790, &ppc_fnmadd},     {1791, &ppc_fnmadddot},
+    {1838, &ppc_fsel},       {1839, &ppc_fseldot},    {1842, &ppc_fmult},
+    {1843, &ppc_fmultdot},   {1848, &ppc_fmsub},      {1849, &ppc_fmsubdot},
+    {1850, &ppc_fmadd},      {1851, &ppc_fmadddot},   {1852, &ppc_fnmsub},
     {1853, &ppc_fnmsubdot},  {1854, &ppc_fnmadd},     {1855, &ppc_fnmadddot},
-    {1902, &ppc_fsel},       {1903, &ppc_fseldot},    {1906, &ppc_fmult},     
-    {1907, &ppc_fmultdot},   {1912, &ppc_fmsub},      {1913, &ppc_fmsubdot}, 
-    {1914, &ppc_fmadd},      {1915, &ppc_fmadddot},   {1916, &ppc_fnmsub},    
+    {1902, &ppc_fsel},       {1903, &ppc_fseldot},    {1906, &ppc_fmult},
+    {1907, &ppc_fmultdot},   {1912, &ppc_fmsub},      {1913, &ppc_fmsubdot},
+    {1914, &ppc_fmadd},      {1915, &ppc_fmadddot},   {1916, &ppc_fnmsub},
     {1917, &ppc_fnmsubdot},  {1918, &ppc_fnmadd},     {1919, &ppc_fnmadddot},
-    {1966, &ppc_fsel},       {1967, &ppc_fseldot},    {1970, &ppc_fmult},   
-    {1971, &ppc_fmultdot},   {1976, &ppc_fmsub},      {1977, &ppc_fmsubdot}, 
-    {1978, &ppc_fmadd},      {1979, &ppc_fmadddot},   {1980, &ppc_fnmsub},    
-    {1981, &ppc_fnmsubdot},  {1982, &ppc_fnmadd},     {1983, &ppc_fnmadddot},  
-    {2030, &ppc_fsel},       {2031, &ppc_fseldot},    {2034, &ppc_fmult},      
+    {1966, &ppc_fsel},       {1967, &ppc_fseldot},    {1970, &ppc_fmult},
+    {1971, &ppc_fmultdot},   {1976, &ppc_fmsub},      {1977, &ppc_fmsubdot},
+    {1978, &ppc_fmadd},      {1979, &ppc_fmadddot},   {1980, &ppc_fnmsub},
+    {1981, &ppc_fnmsubdot},  {1982, &ppc_fnmadd},     {1983, &ppc_fnmadddot},
+    {2030, &ppc_fsel},       {2031, &ppc_fseldot},    {2034, &ppc_fmult},
     {2035, &ppc_fmultdot},   {2040, &ppc_fmsub},      {2041, &ppc_fmsubdot},
     {2042, &ppc_fmadd},      {2043, &ppc_fmadddot},   {2044, &ppc_fnmsub},
     {2045, &ppc_fnmsubdot},  {2046, &ppc_fnmadd},     {2047, &ppc_fnmadddot}
@@ -721,8 +721,54 @@ again:
 }
 #endif
 
-void ppc_init()
+void ppc_cpu_init(uint32_t proc_version)
 {
+    int i;
+
     clock_test_begin = clock();
     timebase_counter = 0;
+
+    /* zero all GPRs as prescribed for MPC601 */
+    /* For later PPC CPUs, GPR content is undefined */
+    for (i = 0; i < 32; i++) {
+        ppc_state.ppc_gpr[i] = 0;
+    }
+
+    /* zero all FPRs as prescribed for MPC601 */
+    /* For later PPC CPUs, GPR content is undefined */
+    for (i = 0; i < 32; i++) {
+        ppc_state.ppc_fpr[i].int64_r = 0;
+    }
+
+    /* zero all segment registers as prescribed for MPC601 */
+    /* For later PPC CPUs, SR content is undefined */
+    for (i = 0; i < 16; i++) {
+        ppc_state.ppc_sr[i] = 0;
+    }
+
+    ppc_state.ppc_cr = 0;
+    ppc_state.ppc_fpscr = 0;
+
+    ppc_state.ppc_pc = 0;
+
+    ppc_state.ppc_tbr[0] = 0;
+    ppc_state.ppc_tbr[1] = 0;
+
+    /* zero all SPRs */
+    for (i = 0; i < 1024; i++) {
+        ppc_state.ppc_spr[i] = 0;
+    }
+
+    ppc_state.ppc_spr[SPR::PVR] = proc_version;
+
+    if ((proc_version & 0xFFFF0000) == 0x00010000) {
+        /* MPC601 sets MSR[ME] bit during hard reset / Power-On */
+        ppc_state.ppc_msr = 0x1040;
+    } else {
+        ppc_state.ppc_msr = 0x40;
+        ppc_state.ppc_spr[SPR::DEC] = 0xFFFFFFFFUL;
+    }
+
+    /* redirect code execution to reset vector */
+    ppc_state.ppc_pc = 0xFFF00100;
 }

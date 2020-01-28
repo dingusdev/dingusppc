@@ -95,79 +95,6 @@ uint32_t rom_filesize;
 uint32_t write_opcode;
 uint8_t write_char;
 
-//Initialize the PPC's registers.
-void reg_init(){
-    for (uint32_t i = 0; i < 32; i++){
-        ppc_state.ppc_fpr[i].int64_r = 0;
-    }
-    ppc_state.ppc_pc = 0;
-    for (uint32_t i = 0; i < 32; i++){
-        ppc_state.ppc_gpr[i] = 0;
-    }
-    ppc_state.ppc_cr = 0;
-    ppc_state.ppc_fpscr = 0;
-    ppc_state.ppc_tbr[0] = 0;
-    ppc_state.ppc_tbr[1] = 0;
-
-    for (uint32_t i = 0; i < 1024; i++){
-        switch(i){
-            case 287:
-               //Identify as a G3
-               //Processor IDS
-               // 601 v1  -  00010001
-               // 603 v1  -  00030001
-               // 604 v1  -  00040001
-               // 603e v1 -  00060101
-               // 750 v1  -  00080200
-                ppc_state.ppc_spr[i] = 0x00080200;
-                break;
-                /**
-            case 528:
-            case 536:
-                ppc_state.ppc_spr[i] = 0x00001FFE;
-                break;
-            case 530:
-            case 538:
-                ppc_state.ppc_spr[i] = 0xC0001FFE;
-                break;
-            case 532:
-            case 540:
-                ppc_state.ppc_spr[i] = 0xE0001FFE;
-                break;
-            case 534:
-            case 542:
-                ppc_state.ppc_spr[i] = 0xF0001FFE;
-                break;
-            case 529:
-            case 531:
-            case 537:
-            case 539:
-                ppc_state.ppc_spr[i] = 0x00000002;
-                break;
-            case 533:
-            case 541:
-                ppc_state.ppc_spr[i] = 0xE0000002;
-                break;
-            case 535:
-                ppc_state.ppc_spr[i] = 0xF0000002;
-                break;
-            case 543:
-                ppc_state.ppc_spr[i] = 0x00000002;
-                break;
-            **/
-            default:
-                ppc_state.ppc_spr[i] = 0;
-        }
-    }
-
-
-    //Only bit 25 of the MSR is initially set on bootup.
-    ppc_state.ppc_msr = 0x40;
-    for (uint32_t i = 0; i < 16; i++){
-        ppc_state.ppc_sr[i] = 0;
-    }
-}
-
 //Debugging Functions
 uint32_t reg_print(){
     for (uint32_t i = 0; i < 32; i++){
@@ -227,12 +154,8 @@ int main(int argc, char **argv)
     pci_io_end = 0x83FFFFFF;
     rom_filesize = 0x400000;
 
-    //Init virtual CPU.
-    reg_init();
-
-    //0xFFF00100 is where the reset vector is.
-    //In other words, begin executing code here.
-    ppc_state.ppc_pc = 0xFFF00100;
+    /* Init virtual CPU and request MPC750 CPU aka G3 */
+    ppc_cpu_init(PPC_VER::MPC750);
 
     uint32_t opcode_entered = 0; //used for testing opcodes in playground
 
