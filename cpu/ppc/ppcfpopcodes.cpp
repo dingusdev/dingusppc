@@ -47,7 +47,7 @@ uint64_t fp_return_uint64(uint32_t reg) {
 void ppc_store_sfpresult(bool int_rep) {
     if (int_rep) {
         ppc_state.ppc_fpr[reg_d].int64_r = ppc_result64_d;
-        ppc_state.ppc_fpr[reg_d].dbl64_r = static_cast<double>(ppc_result64_d);
+        ppc_state.ppc_fpr[reg_d].dbl64_r = *(double*)&ppc_result64_d;
     }
     else {
         ppc_state.ppc_fpr[reg_d].dbl64_r = ppc_dblresult64_d;
@@ -58,7 +58,7 @@ void ppc_store_sfpresult(bool int_rep) {
 void ppc_store_dfpresult(bool int_rep) {
     if (int_rep) {
         ppc_state.ppc_fpr[reg_d].int64_r = ppc_result64_d;
-        ppc_state.ppc_fpr[reg_d].dbl64_r = static_cast<double>(ppc_result64_d);
+        ppc_state.ppc_fpr[reg_d].dbl64_r = *(double*)&ppc_result64_d;
     }
     else {
         ppc_state.ppc_fpr[reg_d].dbl64_r = ppc_dblresult64_d;
