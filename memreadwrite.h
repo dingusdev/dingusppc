@@ -62,4 +62,20 @@
 /* write an aligned big-endian QWORD (64bit) */
 #define WRITE_QWORD_BE_A(addr,val) (*((uint64_t *)((addr))) = BYTESWAP_64(val))
 
+/* write an unaligned big-endian WORD (16bit) */
+#define WRITE_WORD_BE_U(addr, val)      \
+do {                                    \
+    (addr)[0] = ((val) >> 8) & 0xFF;    \
+    (addr)[1] = (val) & 0xFF;           \
+} while(0)
+
+/* write an unaligned big-endian DWORD (32bit) */
+#define WRITE_DWORD_BE_U(addr, val)     \
+do {                                    \
+    (addr)[0] = ((val) >> 24) & 0xFF;   \
+    (addr)[1] = ((val) >> 16) & 0xFF;   \
+    (addr)[2] = ((val) >> 8)  & 0xFF;   \
+    (addr)[3] = (val) & 0xFF;           \
+} while(0)
+
 #endif /* MEM_READ_WRITE_H */

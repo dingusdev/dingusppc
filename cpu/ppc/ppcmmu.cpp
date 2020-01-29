@@ -13,7 +13,6 @@
     - implement BAT access check
     - add proper error and exception handling
     - clarify what to do in the case of unaligned memory accesses
-    - remove dependency on MPC106 (use generic memory controller interface instead)
  */
 
 #include <iostream>
@@ -97,56 +96,6 @@ void ppc_set_cur_instruction(const uint8_t* ptr)
 {
     ppc_cur_instruction = READ_DWORD_BE_A(ptr);
 }
-
-static inline void ppc_memstore_16bit(unsigned char* ptr, uint16_t value, uint32_t offset) {
-    if (ppc_state.ppc_msr & 1) { /* little-endian byte ordering */
-        ptr[offset] = value & 0xFF;
-        ptr[offset + 1] = (value >> 8) & 0xFF;
-    }
-    else { /* big-endian byte ordering */
-        ptr[offset] = (value >> 8) & 0xFF;
-        ptr[offset + 1] = value & 0xFF;
-    }
-}
-
-static inline void ppc_memstore_32bit(unsigned char* ptr, uint32_t value, uint32_t offset) {
-    if (ppc_state.ppc_msr & 1) { /* little-endian byte ordering */
-        ptr[offset] = value & 0xFF;
-        ptr[offset + 1] = (value >> 8) & 0xFF;
-        ptr[offset + 2] = (value >> 16) & 0xFF;
-        ptr[offset + 3] = (value >> 24) & 0xFF;
-    }
-    else { /* big-endian byte ordering */
-        ptr[offset] = (value >> 24) & 0xFF;
-        ptr[offset + 1] = (value >> 16) & 0xFF;
-        ptr[offset + 2] = (value >> 8) & 0xFF;
-        ptr[offset + 3] = value & 0xFF;
-    }
-}
-
-static inline void ppc_memstore_64bit(unsigned char* ptr, uint64_t value, uint32_t offset) {
-    if (ppc_state.ppc_msr & 1) { /* little-endian byte ordering */
-        ptr[offset] = value & 0xFF;
-        ptr[offset + 1] = (value >> 8) & 0xFF;
-        ptr[offset + 2] = (value >> 16) & 0xFF;
-        ptr[offset + 3] = (value >> 24) & 0xFF;
-        ptr[offset + 4] = (value >> 32) & 0xFF;
-        ptr[offset + 5] = (value >> 40) & 0xFF;
-        ptr[offset + 6] = (value >> 48) & 0xFF;
-        ptr[offset + 7] = (value >> 56) & 0xFF;
-    }
-    else { /* big-endian byte ordering */
-        ptr[offset] = (value >> 56) & 0xFF;
-        ptr[offset + 1] = (value >> 48) & 0xFF;
-        ptr[offset + 2] = (value >> 40) & 0xFF;
-        ptr[offset + 3] = (value >> 32) & 0xFF;
-        ptr[offset + 4] = (value >> 24) & 0xFF;
-        ptr[offset + 5] = (value >> 16) & 0xFF;
-        ptr[offset + 6] = (value >> 8) & 0xFF;
-        ptr[offset + 7] = value & 0xFF;
-    }
-}
-
 
 void ibat_update(uint32_t bat_reg)
 {
@@ -401,6 +350,27 @@ static uint32_t ppc_mmu_addr_translate(uint32_t la, int is_write)
     return pa;
 }
 
+static void mem_write_unaligned(uint32_t addr, uint32_t value, uint32_t size)
+{
+    printf("WARNING! Attempt to write unaligned %d bytes to 0x%08X\n", size, addr);
+
+    if (((addr & 0xFFF) + size) > 0x1000) {
+        printf("SOS! Cross-page unaligned write, addr=%08X, size=%d\n", addr, size);
+        exit(-1); //FIXME!
+    } else {
+        /* data address translation if enabled */
+        if (ppc_state.ppc_msr & 0x10) {
+            addr = ppc_mmu_addr_translate(addr, 0);
+        }
+
+        if (size == 2) {
+            WRITE_PHYS_MEM(last_write_area, addr, WRITE_WORD_BE_U, value, 2);
+        } else {
+            WRITE_PHYS_MEM(last_write_area, addr, WRITE_DWORD_BE_U, value, 4);
+        }
+    }
+}
+
 void mem_write_byte(uint32_t addr, uint8_t value)
 {
     /* data address translation if enabled */
@@ -415,6 +385,10 @@ void mem_write_byte(uint32_t addr, uint8_t value)
 
 void mem_write_word(uint32_t addr, uint16_t value)
 {
+    if (addr & 1) {
+        mem_write_unaligned(addr, value, 2);
+    }
+
     /* data address translation if enabled */
     if (ppc_state.ppc_msr & 0x10) {
         addr = ppc_mmu_addr_translate(addr, 1);
@@ -425,6 +399,10 @@ void mem_write_word(uint32_t addr, uint16_t value)
 
 void mem_write_dword(uint32_t addr, uint32_t value)
 {
+    if (addr & 3) {
+        mem_write_unaligned(addr, value, 4);
+    }
+
     /* data address translation if enabled */
     if (ppc_state.ppc_msr & 0x10) {
         addr = ppc_mmu_addr_translate(addr, 1);
@@ -435,12 +413,42 @@ void mem_write_dword(uint32_t addr, uint32_t value)
 
 void mem_write_qword(uint32_t addr, uint64_t value)
 {
+    if (addr & 7) {
+        printf("SOS! Attempt to write unaligned QWORD to 0x%08X\n", addr);
+        exit(-1); //FIXME!
+    }
+
     /* data address translation if enabled */
     if (ppc_state.ppc_msr & 0x10) {
         addr = ppc_mmu_addr_translate(addr, 1);
     }
 
     WRITE_PHYS_MEM(last_write_area, addr, WRITE_QWORD_BE_A, value, 8);
+}
+
+static uint32_t mem_grab_unaligned(uint32_t addr, uint32_t size)
+{
+    uint32_t ret = 0;
+
+    printf("WARNING! Attempt to read unaligned %d bytes from 0x%08X\n", size, addr);
+
+    if (((addr & 0xFFF) + size) > 0x1000) {
+        printf("SOS! Cross-page unaligned read, addr=%08X, size=%d\n", addr, size);
+        exit(-1); //FIXME!
+    } else {
+        /* data address translation if enabled */
+        if (ppc_state.ppc_msr & 0x10) {
+            addr = ppc_mmu_addr_translate(addr, 0);
+        }
+
+        if (size == 2) {
+            READ_PHYS_MEM(last_read_area, addr, READ_WORD_BE_U, 2, 0xFFFFU);
+        } else {
+            READ_PHYS_MEM(last_read_area, addr, READ_DWORD_BE_U, 4, 0xFFFFFFFFUL);
+        }
+    }
+
+    return ret;
 }
 
 /** Grab a value from memory into a register */
@@ -461,6 +469,10 @@ uint16_t mem_grab_word(uint32_t addr)
 {
     uint16_t ret;
 
+    if (addr & 1) {
+        return mem_grab_unaligned(addr, 2);
+    }
+
     /* data address translation if enabled */
     if (ppc_state.ppc_msr & 0x10) {
         addr = ppc_mmu_addr_translate(addr, 0);
@@ -474,6 +486,10 @@ uint32_t mem_grab_dword(uint32_t addr)
 {
     uint32_t ret;
 
+    if (addr & 3) {
+        return mem_grab_unaligned(addr, 4);
+    }
+
     /* data address translation if enabled */
     if (ppc_state.ppc_msr & 0x10) {
         addr = ppc_mmu_addr_translate(addr, 0);
@@ -486,6 +502,11 @@ uint32_t mem_grab_dword(uint32_t addr)
 uint64_t mem_grab_qword(uint32_t addr)
 {
     uint64_t ret;
+
+    if (addr & 7) {
+        printf("SOS! Attempt to read unaligned QWORD at 0x%08X\n", addr);
+        exit(-1); //FIXME!
+    }
 
     /* data address translation if enabled */
     if (ppc_state.ppc_msr & 0x10) {
