@@ -10,7 +10,6 @@
 /* TODO:
     - implement TLB
     - implement 601-style BATs
-    - implement BAT access check
     - add proper error and exception handling
     - clarify what to do in the case of unaligned memory accesses
  */
@@ -295,7 +294,10 @@ static uint32_t ppc_mmu_instr_translate(uint32_t la)
         if ((bat_entry->access & access_bits) &&
             ((la & ~bat_entry->lo_mask) == bat_entry->bepi)) {
             bat_hit = true;
-            // TODO: check access
+
+            if (!bat_entry->prot) {
+                ppc_exception_handler(Except_Type::EXC_ISI, 0x08000000);
+            }
 
             // logical to physical translation
             pa = bat_entry->phys_hi | (la & bat_entry->lo_mask);
@@ -334,7 +336,12 @@ static uint32_t ppc_mmu_addr_translate(uint32_t la, int is_write)
         if ((bat_entry->access & access_bits) &&
             ((la & ~bat_entry->lo_mask) == bat_entry->bepi)) {
             bat_hit = true;
-            // TODO: check access
+
+            if (!bat_entry->prot || ((bat_entry->prot & 1) && is_write)) {
+                ppc_state.ppc_spr[SPR::DSISR] = 0x08000000 | (is_write << 25);
+                ppc_state.ppc_spr[SPR::DAR] = la;
+                ppc_exception_handler(Except_Type::EXC_DSI, 0);
+            }
 
             // logical to physical translation
             pa = bat_entry->phys_hi | (la & bat_entry->lo_mask);
