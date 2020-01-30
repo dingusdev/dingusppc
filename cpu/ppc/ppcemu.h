@@ -133,6 +133,7 @@ SUPERVISOR MODEL
 **/
 
 extern uint32_t opcode_value; //used for interpreting opcodes
+extern uint64_t timebase_counter; //used for storing time base value
 
 //Additional steps to prevent overflow?
 extern int32_t add_result;
