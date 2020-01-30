@@ -418,7 +418,8 @@ void ppc_opcode4() {
     printf("Reading from Opcode 4 table \n");
     uint8_t subop_grab = ppc_cur_instruction & 3;
     uint32_t regrab = (uint32_t)subop_grab;
-    printf("Executing subopcode entry %d \n .. or would if I bothered to implement it. SORRY!", regrab);
+    printf("Executing subopcode entry %d \n"
+           ".. or would if I bothered to implement it. SORRY!", regrab);
     exit(0);
 }
 
@@ -434,7 +435,7 @@ void ppc_opcode19() {
     uint16_t subop_grab = ppc_cur_instruction & 2047;
 #ifdef EXHAUSTIVE_DEBUG
     uint32_t regrab = (uint32_t)subop_grab;
-    printf("Executing Opcode 19 table supopcode entry %d \n", regrab);
+    printf("Executing Opcode 19 table subopcode entry %d \n", regrab);
     if (SubOpcode19Grabber.count(subop_grab) == 1) {
         SubOpcode19Grabber[subop_grab]();
     }
@@ -451,7 +452,7 @@ void ppc_opcode31() {
     uint16_t subop_grab = ppc_cur_instruction & 2047;
 #ifdef EXHAUSTIVE_DEBUG
     uint32_t regrab = (uint32_t)subop_grab;
-    printf("Executing Opcode 31 table supopcode entry %d \n", regrab);
+    printf("Executing Opcode 31 table subopcode entry %d \n", regrab);
     if (SubOpcode31Grabber.count(subop_grab) == 1) {
         SubOpcode31Grabber[subop_grab]();
     }
@@ -468,7 +469,7 @@ void ppc_opcode59() {
     uint16_t subop_grab = ppc_cur_instruction & 2047;
 #ifdef EXHAUSTIVE_DEBUG
     uint32_t regrab = (uint32_t)subop_grab;
-    printf("Executing Opcode 59 table supopcode entry %d \n", regrab);
+    printf("Executing Opcode 59 table subopcode entry %d \n", regrab);
     if (SubOpcode59Grabber.count(subop_grab) == 1) {
         SubOpcode59Grabber[subop_grab]();
     }
