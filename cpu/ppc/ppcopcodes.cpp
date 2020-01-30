@@ -1333,10 +1333,12 @@ void ppc_mtspr() {
 
     switch (ref_spr) {
         //Mirror the TBRs in the SPR range to the user-mode TBRs.
-    case 268:
+    case 284:
+        ppc_state.ppc_spr[284]      = ppc_state.ppc_gpr[reg_s];
         ppc_state.ppc_tbr[TBR::TBL] = ppc_state.ppc_gpr[reg_s];
         break;
-    case 269:
+    case 285:
+        ppc_state.ppc_spr[285]      = ppc_state.ppc_gpr[reg_s];
         ppc_state.ppc_tbr[TBR::TBU] = ppc_state.ppc_gpr[reg_s];
         break;
     case 528:
