@@ -14,5 +14,12 @@ file(GLOB SOURCES "${PROJECT_SOURCE_DIR}/*.cpp" "${PROJECT_SOURCE_DIR}/devices/*
                   "${PROJECT_SOURCE_DIR}/debugger/*.cpp"
                   "${PROJECT_SOURCE_DIR}/cpu/ppc/*.cpp")
 
+file(GLOB TEST_SOURCES "${PROJECT_SOURCE_DIR}/cpu/ppc/*.cpp"
+                       "${PROJECT_SOURCE_DIR}/devices/*.cpp"
+                       "${PROJECT_SOURCE_DIR}/cpu/ppc/test/*.cpp")
+
 add_executable(dingusppc ${SOURCES})
+
+add_executable(testppc ${TEST_SOURCES})
+
 install (TARGETS dingusppc DESTINATION ${EXECUTABLE_OUTPUT_PATH})
