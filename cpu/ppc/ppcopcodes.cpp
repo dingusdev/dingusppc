@@ -823,13 +823,13 @@ void ppc_cntlzw() {
 
 #ifdef USE_GCC_BUILTINS
     lead = __builtin_clz(bit_check);
-    #elifdef USE_VS_BUILTINS
-        lead = __lzcnt(bit_check);
+#elif defined USE_VS_BUILTINS
+    lead = __lzcnt(bit_check);
 #else
-    do {
-        bit_check >>= 1;
-        ++lead;
-    } while (bit_check > 0);
+    for (uint32_t mask = 0x80000000UL; mask; lead++, mask >>= 1) {
+        if (bit_check & mask)
+            break;
+    }
 #endif
     ppc_result_a = lead;
     ppc_store_result_rega();
@@ -843,15 +843,14 @@ void ppc_cntlzwdot() {
 
 #ifdef USE_GCC_BUILTINS
     lead = __builtin_clz(bit_check);
-    #elifdef USE_VS_BUILTINS
-        lead = __lzcnt(bit_check);
+#elif defined USE_VS_BUILTINS
+    lead = __lzcnt(bit_check);
 #else
-    do {
-        bit_check >>= 1;
-        ++lead;
-    } while (bit_check > 0);
+    for (uint32_t mask = 0x80000000UL; mask; lead++, mask >>= 1) {
+        if (bit_check & mask)
+            break;
+    }
 #endif
-
     ppc_result_a = lead;
     ppc_changecrf0(ppc_result_a);
     ppc_store_result_rega();
