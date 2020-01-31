@@ -53,7 +53,6 @@ static const map<string,string> PPCMac_ROMIdentity = { //Codename Abbreviation f
     {"????", "A clone, perhaps?"}                      //N/A (Placeholder ID)
 };
 
-MemCtrlBase *mem_ctrl_instance = 0;
 HeathrowIC  *heathrow = 0;
 GossamerID  *machine_id;
 

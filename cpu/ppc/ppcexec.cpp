@@ -12,6 +12,8 @@
 #include "ppcemu.h"
 #include "ppcmmu.h"
 
+MemCtrlBase *mem_ctrl_instance = 0;
+
 bool power_on = 1;
 
 SetPRS ppc_state;
