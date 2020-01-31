@@ -142,7 +142,7 @@ def gen_ppc_opcode(opc_str, imm):
     elif opc_str == "ORI":
         return (0x18 << 26) + (3 << 21) + (3 << 16) + (imm & 0xFFFF)
     elif opc_str == "ORIS":
-        return (0x18 << 26) + (3 << 21) + (3 << 16) + (imm & 0xFFFF)
+        return (0x19 << 26) + (3 << 21) + (3 << 16) + (imm & 0xFFFF)
 
 
 def find_imm(line):
