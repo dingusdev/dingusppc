@@ -45,6 +45,30 @@ def gen_ppc_opcode(opc_str, imm):
         return (0x1F << 26) + (3 << 21) + (3 << 16) + (0x2CA << 1)
     elif opc_str == "ADDZEO.":
         return (0x1F << 26) + (3 << 21) + (3 << 16) + (0x2CA << 1) + 1
+    elif opc_str == "AND":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x1C << 1)
+    elif opc_str == "AND.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x1C << 1) + 1
+    elif opc_str == "ANDC":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x3C << 1)
+    elif opc_str == "ANDC.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x3C << 1) + 1
+    elif opc_str == "ANDI.":
+        return (0x1C << 26) + (3 << 21) + (3 << 16) + (imm & 0xFFFF)
+    elif opc_str == "ANDIS.":
+        return (0x1D << 26) + (3 << 21) + (3 << 16) + (imm & 0xFFFF)
+    elif opc_str == "CMP":
+        return (0x1F << 26) + (3 << 16) + (4 << 11)
+    elif opc_str == "CMPI":
+        return (0x0B << 26) + (0 << 21) + (3 << 16) + (imm & 0xFFFF)
+    elif opc_str == "CMPL":
+        return (0x1F << 26) + (3 << 16) + (4 << 11) + (0x20 << 1)
+    elif opc_str == "CMPLI":
+        return (0x0A << 26) + (0 << 21) + (3 << 16) + (imm & 0xFFFF)
+    elif opc_str == "CNTLZW":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (0x1A << 1)
+    elif opc_str == "CNTLZW.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (0x1A << 1) + 1
 
 
 def find_imm(line):
@@ -102,5 +126,5 @@ with open("instruction_tests_console.txt", "r") as in_file:
             out_file.write("\n")
 
             lineno += 1
-            if lineno > 152:
+            if lineno > 266:
                 break

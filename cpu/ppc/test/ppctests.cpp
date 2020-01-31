@@ -4,7 +4,6 @@
 #include <iomanip>
 #include <vector>
 #include <string>
-//#include "ppcdisasm.h"
 #include "../ppcemu.h"
 
 using namespace std;
@@ -17,8 +16,6 @@ void read_test_data()
 {
     string  line, token;
     int     i, lineno;
-    //PPCDisasmContext ctx;
-    //vector<PPCDisasmContext> tstvec;
     uint32_t opcode, dest, src1, src2, check_xer, check_cr;
 
     ifstream    tfstream("ppcinttests.csv");
@@ -43,7 +40,7 @@ void read_test_data()
             tokens.push_back(token);
         }
 
-        if (tokens.size() < 6) {
+        if (tokens.size() < 5) {
             cout << "Too few values in line " << lineno << ". Skipping..." << endl;
             continue;
         }
@@ -85,7 +82,7 @@ void read_test_data()
 
         ntested++;
 
-        if ((ppc_state.ppc_gpr[3] != dest) ||
+        if ((tokens[0].rfind("CMP") && (ppc_state.ppc_gpr[3] != dest)) ||
             (ppc_state.ppc_spr[SPR::XER] != check_xer) ||
             (ppc_state.ppc_cr != check_cr)) {
             cout << "Mismatch: instr=" << tokens[0] << ", src1=0x" << hex << src1
@@ -94,7 +91,7 @@ void read_test_data()
                  << check_xer << ", CR=0x" << hex << check_cr << endl;
             cout << "got: dest=0x" << hex << ppc_state.ppc_gpr[3] << ", XER=0x"
                  << hex << ppc_state.ppc_spr[SPR::XER] << ", CR=0x" << hex
-                 << ppc_state.ppc_cr << endl;
+                 << ppc_state.ppc_cr << endl << endl;
 
             nfailed++;
         }
