@@ -277,7 +277,7 @@ extern void ppc_store_sfpresult(bool int_rep);
 extern void ppc_store_dfpresult(bool int_rep);
 
 void ppc_carry(uint32_t a, uint32_t b);
-void ppc_setsoov(uint32_t a, uint32_t b);
+void ppc_setsoov(uint32_t a, uint32_t b, uint32_t d);
 void ppc_changecrf0(uint32_t set_result);
 void ppc_fp_changecrf1();
 
