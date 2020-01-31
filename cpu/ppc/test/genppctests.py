@@ -69,6 +69,80 @@ def gen_ppc_opcode(opc_str, imm):
         return (0x1F << 26) + (3 << 21) + (3 << 16) + (0x1A << 1)
     elif opc_str == "CNTLZW.":
         return (0x1F << 26) + (3 << 21) + (3 << 16) + (0x1A << 1) + 1
+    elif opc_str == "DIVW":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x1EB << 1)
+    elif opc_str == "DIVW.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x1EB << 1) + 1
+    elif opc_str == "DIVWO":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x3EB << 1)
+    elif opc_str == "DIVWO.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x3EB << 1) + 1
+    elif opc_str == "DIVWU":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x1CB << 1)
+    elif opc_str == "DIVWU.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x1CB << 1) + 1
+    elif opc_str == "DIVWUO":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x3CB << 1)
+    elif opc_str == "DIVWUO.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x3CB << 1) + 1
+    elif opc_str == "EQV":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x11C << 1)
+    elif opc_str == "EQV.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x11C << 1) + 1
+    elif opc_str == "EXTSB":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (0x3BA << 1)
+    elif opc_str == "EXTSB.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (0x3BA << 1) + 1
+    elif opc_str == "EXTSH":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (0x39A << 1)
+    elif opc_str == "EXTSH.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (0x39A << 1) + 1
+    elif opc_str == "MULHW":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x4B << 1)
+    elif opc_str == "MULHW.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x4B << 1) + 1
+    elif opc_str == "MULHWU":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0xB << 1)
+    elif opc_str == "MULHWU.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0xB << 1) + 1
+    elif opc_str == "MULLI":
+        return (0x07 << 26) + (3 << 21) + (3 << 16) + (imm & 0xFFFF)
+    elif opc_str == "MULLW":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0xEB << 1)
+    elif opc_str == "MULLW.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0xEB << 1) + 1
+    elif opc_str == "MULLWO":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x2EB << 1)
+    elif opc_str == "MULLWO.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x2EB << 1) + 1
+    elif opc_str == "NAND":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x1DC << 1)
+    elif opc_str == "NAND.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x1DC << 1) + 1
+    elif opc_str == "NEG":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (0x68 << 1)
+    elif opc_str == "NEG.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (0x68 << 1) + 1
+    elif opc_str == "NEGO":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (0x268 << 1)
+    elif opc_str == "NEGO.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (0x268 << 1) + 1
+    elif opc_str == "NOR":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x7C << 1)
+    elif opc_str == "NOR.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x7C << 1) + 1
+    elif opc_str == "OR":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x1BC << 1)
+    elif opc_str == "OR.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x1BC << 1) + 1
+    elif opc_str == "ORC":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x19C << 1)
+    elif opc_str == "ORC.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x19C << 1) + 1
+    elif opc_str == "ORI":
+        return (0x18 << 26) + (3 << 21) + (3 << 16) + (imm & 0xFFFF)
+    elif opc_str == "ORIS":
+        return (0x18 << 26) + (3 << 21) + (3 << 16) + (imm & 0xFFFF)
 
 
 def find_imm(line):
@@ -126,5 +200,5 @@ with open("instruction_tests_console.txt", "r") as in_file:
             out_file.write("\n")
 
             lineno += 1
-            if lineno > 266:
+            if lineno > 534:
                 break
