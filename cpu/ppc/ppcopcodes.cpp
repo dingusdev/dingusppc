@@ -1008,7 +1008,8 @@ void ppc_divwo() {
     case 0:
         ppc_result_d = 0;
         ppc_store_result_regd();
-        ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
+        if ((ppc_result_a == 0) | (ppc_result_a == 0x7FFFFFFF))
+            ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
         return;
     case 0xFFFFFFFF:
         if (ppc_result_a == 0x80000000) {
@@ -1018,9 +1019,9 @@ void ppc_divwo() {
             return;
         }
     default:
-        ppc_setsoov(ppc_result_a, ppc_result_b, ppc_result_d);
         sidiv_result = (int32_t)ppc_result_a / (int32_t)ppc_result_b;
         ppc_result_d = sidiv_result;
+        ppc_setsoov(ppc_result_a, ppc_result_b, ppc_result_d);
         ppc_store_result_regd();
     }
 }
@@ -1038,14 +1039,16 @@ void ppc_divwodot() {
         return;
     case 0xFFFFFFFF:
         if (ppc_result_a == 0x80000000) {
-            ppc_result_d = 0;
+            ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
+            ppc_state.ppc_cr |= 0x90000000;
+            ppc_result_d = 0xFFFFFFFF;
             ppc_store_result_regd();
             return;
         }
     default:
-        ppc_setsoov(ppc_result_a, ppc_result_b, ppc_result_d);
         sidiv_result = (int32_t)ppc_result_a / (int32_t)ppc_result_b;
         ppc_result_d = (uint32_t)sidiv_result;
+        ppc_setsoov(ppc_result_a, ppc_result_b, ppc_result_d);
         ppc_changecrf0(ppc_result_d);
         ppc_store_result_regd();
     }
@@ -1112,6 +1115,7 @@ void ppc_divwuodot() {
         ppc_result_d = 0;
         ppc_store_result_regd();
         ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
+        ppc_state.ppc_cr |= 0x30000000;
         return;
     default:
         ppc_setsoov(ppc_result_a, ppc_result_b, ppc_result_d);
