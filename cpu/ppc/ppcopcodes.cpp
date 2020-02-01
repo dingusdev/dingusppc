@@ -891,15 +891,15 @@ void ppc_mulhwudot() {
 
 void ppc_mulhw() {
     ppc_grab_regsdab();
-    siproduct = (int64_t)ppc_result_a * (int64_t)ppc_result_b;
-    ppc_result_d = (uint32_t)(siproduct >> 32);
+    siproduct = (int64_t)(int32_t)ppc_result_a * (int64_t)(int32_t)ppc_result_b;
+    ppc_result_d = siproduct >> 32;
     ppc_store_result_regd();
 }
 
 void ppc_mulhwdot() {
     ppc_grab_regsdab();
-    siproduct = (int64_t)ppc_result_a * (int64_t)ppc_result_b;
-    ppc_result_d = (uint32_t)(siproduct >> 32);
+    siproduct = (int64_t)(int32_t)ppc_result_a * (int64_t)(int32_t)ppc_result_b;
+    ppc_result_d = siproduct >> 32;
     ppc_changecrf0(ppc_result_d);
     ppc_store_result_regd();
 }
