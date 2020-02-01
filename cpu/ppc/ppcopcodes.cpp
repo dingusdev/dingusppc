@@ -826,7 +826,7 @@ void ppc_negodot() {
     ppc_grab_regsda();
     ppc_result_d = ~(ppc_result_a)+1;
     if (ppc_result_a == 0x80000000)
-        ppc_state.ppc_spr[SPR::XER] |= 0x40000000;
+        ppc_state.ppc_spr[SPR::XER] |= 0xc0000000;
     else
         ppc_state.ppc_spr[SPR::XER] &= 0xBFFFFFFF;
     ppc_changecrf0(ppc_result_d);
@@ -969,7 +969,7 @@ void ppc_divw() {
         }
     default:
         sidiv_result = (int32_t)ppc_result_a / (int32_t)ppc_result_b;
-        ppc_result_d = (uint32_t)sidiv_result;
+        ppc_result_d = sidiv_result;
         ppc_store_result_regd();
     }
 }
@@ -994,7 +994,7 @@ void ppc_divwdot() {
         }
     default:
         sidiv_result = (int32_t)ppc_result_a / (int32_t)ppc_result_b;
-        ppc_result_d = (uint32_t)sidiv_result;
+        ppc_result_d = sidiv_result;
         ppc_changecrf0(ppc_result_d);
         ppc_store_result_regd();
     }
@@ -1012,15 +1012,15 @@ void ppc_divwo() {
         return;
     case 0xFFFFFFFF:
         if (ppc_result_a == 0x80000000) {
-            ppc_result_d = 0;
-            ppc_state.ppc_cr |= 0x10000000;
+            ppc_result_d = 0xFFFFFFFF;
             ppc_store_result_regd();
+            ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
             return;
         }
     default:
         ppc_setsoov(ppc_result_a, ppc_result_b, ppc_result_d);
         sidiv_result = (int32_t)ppc_result_a / (int32_t)ppc_result_b;
-        ppc_result_d = (uint32_t)sidiv_result;
+        ppc_result_d = sidiv_result;
         ppc_store_result_regd();
     }
 }
@@ -1033,14 +1033,13 @@ void ppc_divwodot() {
     case 0:
         ppc_result_d = 0;
         ppc_store_result_regd();
-        ppc_state.ppc_cr |= 0xC0000000;
+        ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
+        ppc_state.ppc_cr |= 0x30000000;
         return;
     case 0xFFFFFFFF:
         if (ppc_result_a == 0x80000000) {
             ppc_result_d = 0;
             ppc_store_result_regd();
-            ppc_state.ppc_cr &= 0x1FFFFFFF;
-            ppc_state.ppc_cr |= 0x10000000;
             return;
         }
     default:
@@ -1076,7 +1075,7 @@ void ppc_divwudot() {
     case 0:
         ppc_result_d = 0;
         ppc_store_result_regd();
-        ppc_state.ppc_cr &= 0x1FFFFFFF;
+        ppc_state.ppc_cr |= 0x20000000;
         return;
     default:
         uidiv_result = ppc_result_a / ppc_result_b;
@@ -1093,7 +1092,7 @@ void ppc_divwuo() {
     switch (ppc_result_b) {
     case 0:
         ppc_result_d = 0;
-        ppc_state.ppc_cr |= 0x10000000;
+        ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
         ppc_store_result_regd();
         return;
     default:
@@ -1112,8 +1111,7 @@ void ppc_divwuodot() {
     case 0:
         ppc_result_d = 0;
         ppc_store_result_regd();
-        ppc_state.ppc_cr &= 0x1FFFFFFF;
-        ppc_state.ppc_cr |= 0x10000000;
+        ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
         return;
     default:
         ppc_setsoov(ppc_result_a, ppc_result_b, ppc_result_d);
