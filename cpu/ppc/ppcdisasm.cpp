@@ -78,6 +78,9 @@ const char* opc_int_ldst[16] = { /* integer load and store instructions */
     "lha", "lhau", "sth", "sthu", "lmw", "stmw"
 };
 
+const char* opc_flt_ldst[8] = { /* integer load and store instructions */
+    "lfs", "lfsu", "lfd", "lfdu", "stfs", "stfsu", "sftd", "sftdu"
+};
 
 /** various formatting helpers. */
 void fmt_oneop(string& buf, const char* opc, int src)
@@ -726,6 +729,31 @@ void opc_intldst(PPCDisasmContext* ctx)
     }
 }
 
+void opc_fltldst(PPCDisasmContext* ctx)
+{
+    int32_t opcode = (ctx->instr_code >> 26) - 48;
+    int32_t ra = (ctx->instr_code >> 16) & 0x1F;
+    int32_t rd = (ctx->instr_code >> 21) & 0x1F;
+    int32_t imm = SIGNEXT(ctx->instr_code & 0xFFFF, 15);
+
+    /* ra = 0 is forbidden for loads and stores with update */
+    /* ra = rd is forbidden for loads with update */
+    if ((((opcode == 1) || (opcode == 3)) && ra == rd) || ((opcode & 1) && !ra))
+    {
+        opc_illegal(ctx);
+        return;
+    }
+
+    if (ra) {
+        ctx->instr_str = my_sprintf("%-8sfr%d, %s0x%X(r%d)", opc_flt_ldst[opcode],
+            rd, ((imm < 0) ? "-" : ""), abs(imm), ra);
+    }
+    else {
+        ctx->instr_str = my_sprintf("%-8sfr%d, %s0x%X", opc_flt_ldst[opcode],
+            rd, ((imm < 0) ? "-" : ""), abs(imm));
+    }
+}
+
 /** main dispatch table. */
 static std::function<void(PPCDisasmContext*)> OpcodeDispatchTable[64] = {
     opc_illegal,   opc_illegal,   opc_illegal,   opc_twi,
@@ -740,8 +768,8 @@ static std::function<void(PPCDisasmContext*)> OpcodeDispatchTable[64] = {
     opc_intldst,   opc_intldst,   opc_intldst,   opc_intldst,
     opc_intldst,   opc_intldst,   opc_intldst,   opc_intldst,
     opc_intldst,   opc_intldst,   opc_intldst,   opc_intldst,
-    opc_illegal,   opc_illegal,   opc_illegal,   opc_illegal,
-    opc_illegal,   opc_illegal,   opc_illegal,   opc_illegal,
+    opc_fltldst,   opc_fltldst,   opc_fltldst,   opc_fltldst,
+    opc_fltldst,   opc_fltldst,   opc_fltldst,   opc_fltldst,
     opc_illegal,   opc_illegal,   opc_illegal,   opc_illegal,
     opc_illegal,   opc_illegal,   opc_illegal,   opc_illegal
 
