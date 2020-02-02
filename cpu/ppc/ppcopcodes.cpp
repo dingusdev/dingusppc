@@ -350,8 +350,7 @@ void ppc_addeo() {
     else {
         ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
     }
-    ppc_setsoov(ppc_result_a, ppc_result_b, ppc_result_d);
-    ppc_changecrf0(ppc_result_d);
+    ppc_setsoov(ppc_result_a, (ppc_result_b + xer_ca), ppc_result_d);
     ppc_store_result_regd();
 }
 
