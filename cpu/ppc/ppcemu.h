@@ -65,17 +65,17 @@ extern SetPRS ppc_state;
 
 /** symbolic names for frequently used SPRs */
 enum SPR : int {
-    MQ    = 0,
-    XER   = 1,
-    LR    = 8,
-    CTR   = 9,
+    MQ = 0,
+    XER = 1,
+    LR = 8,
+    CTR = 9,
     DSISR = 18,
-    DAR   = 19,
-    DEC   = 22,
-    SDR1  = 25,
-    SRR0  = 26,
-    SRR1  = 27,
-    PVR   = 287
+    DAR = 19,
+    DEC = 22,
+    SDR1 = 25,
+    SRR0 = 26,
+    SRR1 = 27,
+    PVR = 287
 };
 
 /** symbolic names for frequently used SPRs */
@@ -86,11 +86,11 @@ enum TBR : int {
 
 /** symbolic names for common PPC processors */
 enum PPC_VER : uint32_t {
-    MPC601  = 0x00010001,
-    MPC603  = 0x00030001,
-    MPC604  = 0x00040001,
+    MPC601 = 0x00010001,
+    MPC603 = 0x00030001,
+    MPC604 = 0x00040001,
     MPC603E = 0x00060101,
-    MPC750  = 0x00080200
+    MPC750 = 0x00080200
 };
 
 /**

@@ -13,6 +13,7 @@
 #include <map>
 #include "ppcemu.h"
 #include "../cpu/ppc/ppcmmu.h"
+#include "../cpu/ppc/ppcdisasm.h"
 
 using namespace std;
 
@@ -38,9 +39,21 @@ void show_help()
 #ifdef PROFILER
     cout << "  profiler  -- show stats related to the processor" << endl;
 #endif
-    cout << "  disas X,n -- disassemble N instructions starting at address X" << endl;
+    cout << "  disas X,N -- disassemble N instructions starting at address X" << endl;
     cout << "  quit      -- quit the debugger" << endl << endl;
     cout << "Pressing ENTER will repeat last command." << endl;
+}
+
+bool find_gpr(string entry) {
+    for (int gpr_index = 0; gpr_index < 32; gpr_index++) {
+        string str_grab = array_gprs[gpr_index];
+        if (str_grab.compare(entry) == 0) {
+            gpr_num = gpr_index;
+            return 1;
+        }
+    }
+
+    return 0;
 }
 
 void dump_regs()
@@ -56,22 +69,25 @@ void dump_regs()
     cout << "MSR: " << hex << ppc_state.ppc_msr           << endl;
 }
 
-bool find_gpr(string entry) {
-    for (int gpr_index = 0; gpr_index < 32; gpr_index++) {
-        string str_grab = array_gprs[gpr_index];
-        if (str_grab.compare(entry) == 0) {
-            gpr_num = gpr_index;
-            return 1;
-        }
-    }
+void disasm(uint32_t inst_num = 1UL, uint32_t address = ppc_state.ppc_pc)
+{
+    PPCDisasmContext ctx;
 
-    return 0;
+    for (uint32_t inst_loop = 0; inst_loop < inst_num; inst_loop++) {
+        quickinstruction_translate(address);
+
+        ctx.instr_addr = address;
+        ctx.instr_code = ppc_cur_instruction;
+        ctx.simplified = true;
+        cout << hex << address << "    " << disassemble_single(&ctx) << endl;
+        address += 4;
+    }
 }
 
 void enter_debugger()
 {
-    string inp, cmd, addr_str, expr_str, reg_expr, last_cmd, reg_value_str;
-    uint32_t addr, reg_value;
+    string inp, cmd, addr_str, expr_str, reg_expr, last_cmd, reg_value_str, inst_string, inst_num_str;
+    uint32_t addr, reg_value, inst_grab;
     std::stringstream ss;
 
     cout << "Welcome to the PowerPC debugger." << endl;
@@ -129,8 +145,19 @@ void enter_debugger()
             ss >> addr_str;
             addr = stoul(addr_str, NULL, 16);
             ppc_exec_until(addr);
-        } else if (cmd == "disas") {
-            cout << "Disassembling not implemented yet. Sorry!" << endl;
+        }else if (cmd == "disas") {
+            ss >> expr_str;
+            if (expr_str.length() > 5){
+                printf("MAGIC");
+                inst_num_str = expr_str.substr(expr_str.find(" ") + 1, expr_str.find(","));
+                inst_grab = stoul(inst_num_str, NULL, 0);
+                addr_str = expr_str.substr(expr_str.find(",") + 1, expr_str.length() - 1);
+                addr = stoul(addr_str, NULL, 16);
+                disasm(inst_grab, addr);
+            }
+            else {
+                disasm();
+            }
         } else {
             cout << "Unknown command: " << cmd << endl;
             continue;
