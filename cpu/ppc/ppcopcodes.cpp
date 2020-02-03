@@ -573,6 +573,14 @@ void ppc_subfedot() {
     ppc_store_result_regd();
 }
 
+void ppc_subfeo() {
+    printf("SUBFEO placeholder, opcode = 0x%08X\n", ppc_cur_instruction);
+}
+
+void ppc_subfeodot() {
+    printf("SUBFEODOT placeholder, opcode = 0x%08X\n", ppc_cur_instruction);
+}
+
 void ppc_subfme() {
     ppc_grab_regsda();
     not_this = ~ppc_result_a;
@@ -604,6 +612,14 @@ void ppc_subfmedot() {
     ppc_store_result_regd();
 }
 
+void ppc_subfmeo() {
+    printf("SUBFMEO placeholder, opcode = 0x%08X\n", ppc_cur_instruction);
+}
+
+void ppc_subfmeodot() {
+    printf("SUBFMEODOT placeholder, opcode = 0x%08X\n", ppc_cur_instruction);
+}
+
 void ppc_subfze() {
     ppc_grab_regsda();
     not_this = ~ppc_result_a;
@@ -632,6 +648,15 @@ void ppc_subfzedot() {
     ppc_changecrf0(ppc_result_d);
     ppc_store_result_regd();
 }
+
+void ppc_subfzeo() {
+    printf("SUBFZEO placeholder, opcode = 0x%08X\n", ppc_cur_instruction);
+}
+
+void ppc_subfzeodot() {
+    printf("SUBFZEODOT placeholder, opcode = 0x%08X\n", ppc_cur_instruction);
+}
+
 
 void ppc_and() {
     ppc_grab_regssab();
