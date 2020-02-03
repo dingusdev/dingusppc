@@ -143,13 +143,34 @@ def gen_ppc_opcode(opc_str, imm):
         return (0x18 << 26) + (3 << 21) + (3 << 16) + (imm & 0xFFFF)
     elif opc_str == "ORIS":
         return (0x19 << 26) + (3 << 21) + (3 << 16) + (imm & 0xFFFF)
+    elif opc_str == "SLW":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x18 << 1)
+    elif opc_str == "SLW.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x18 << 1) + 1
+    elif opc_str == "SRAW":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x318 << 1)
+    elif opc_str == "SRAW.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x318 << 1) + 1
+    elif opc_str == "SRAWI":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + ((imm & 0x1F) << 11) + (0x338 << 1)
+    elif opc_str == "SRW":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x218 << 1)
+    elif opc_str == "SRW.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x218 << 1) + 1
 
+def gen_rot_opcode(opc_str, sh, mb, me):
+    if opc_str == "RLWIMI":
+        return (0x14 << 26) + (4 << 21) + (3 << 16) + (sh << 11) + (mb << 6) + (me << 1)
 
-def find_imm(line):
+def extract_imm(line):
     pos = 12
     while pos < len(line):
         reg_id = line[pos:pos+4]
-        if reg_id.startswith("rD") or reg_id.startswith("rA") or reg_id.startswith("rB"):
+        if reg_id.startswith("rD") or reg_id.startswith("rA"):
+            pos += 16
+        elif reg_id.startswith("rB"):
+            if opcode.startswith("SRAWI"):
+                return int(line[pos+3:pos+13], base=16)
             pos += 16
         elif reg_id.startswith("XER:"):
             pos += 18
@@ -159,18 +180,53 @@ def find_imm(line):
             return int(line[pos+4:pos+14], base=16)
     return 0
 
+def extract_rot_params(line):
+    pos = 12
+    sh = 0
+    mb = 0
+    me = 0
+    while pos < len(line):
+        reg_id = line[pos:pos+4]
+        if reg_id.startswith("rD") or reg_id.startswith("rA") or reg_id.startswith("rB") or reg_id.startswith("rS"):
+            pos += 16
+        elif reg_id.startswith("XER:"):
+            pos += 18
+        elif reg_id.startswith("CR:"):
+            pos += 17
+        elif reg_id.startswith("SH"):
+            sh = int(line[pos+3:pos+13], base=16)
+            pos += 16
+        elif reg_id.startswith("MB:"):
+            mb = int(line[pos+4:pos+14], base=16)
+            pos += 17
+        elif reg_id.startswith("ME:"):
+            me = int(line[pos+4:pos+14], base=16)
+            pos += 17
+    return (sh, mb, me)
+
 
 with open("instruction_tests_console.txt", "r") as in_file:
     with open("ppcinttests.csv", "w") as out_file:
         lineno = 0
         for line in in_file:
+            lineno += 1
+            if lineno >= 536 and lineno < 1688:
+                continue; # skip buggy rotation instructions tests
+            if lineno >= 2728 and lineno < 3248:
+                continue; # skip buggy srawi instructions tests
+            if lineno >= 3768:
+                break
+
             line = line.strip()
             opcode = (line[0:8]).rstrip()
             out_file.write(opcode + ",")
 
-            imm = find_imm(line)
-
-            out_file.write("0x{:X}".format(gen_ppc_opcode(opcode, imm)))
+            if opcode.startswith("RLWI"):
+                sh, mb, me = extract_rot_params(line)
+                out_file.write("0x{:X}".format(gen_rot_opcode(opcode, sh, mb, me)))
+            else:
+                imm = extract_imm(line)
+                out_file.write("0x{:X}".format(gen_ppc_opcode(opcode, imm)))
 
             pos = 12
 
@@ -179,11 +235,14 @@ with open("instruction_tests_console.txt", "r") as in_file:
                 if reg_id.startswith("rD"):
                     out_file.write(",rD=" + line[pos+3:pos+13])
                     pos += 16
-                elif reg_id.startswith("rA"):
+                elif reg_id.startswith("rA") or reg_id.startswith("rS"):
                     out_file.write(",rA=" + line[pos+3:pos+13])
                     pos += 16
                 elif reg_id.startswith("rB"):
-                    out_file.write(",rB=" + line[pos+3:pos+13])
+                    if opcode.startswith("SRAWI"):
+                        pass
+                    else:
+                        out_file.write(",rB=" + line[pos+3:pos+13])
                     pos += 16
                 elif reg_id.startswith("XER:"):
                     out_file.write(",XER=" + line[pos+5:pos+15])
@@ -193,12 +252,12 @@ with open("instruction_tests_console.txt", "r") as in_file:
                     pos += 17
                 elif reg_id.startswith("imm"):
                     pos += 17 # ignore immediate operands
+                elif reg_id.startswith("SH"):
+                    pos += 16
+                elif reg_id.startswith("MB:") or reg_id.startswith("ME:"):
+                    pos += 17
                 else:
                     out_file.write("Unknown reg ID" + reg_id)
                     break
 
             out_file.write("\n")
-
-            lineno += 1
-            if lineno > 534:
-                break

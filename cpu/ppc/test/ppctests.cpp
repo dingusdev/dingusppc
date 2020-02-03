@@ -91,7 +91,8 @@ void read_test_data()
                  << check_xer << ", CR=0x" << hex << check_cr << endl;
             cout << "got: dest=0x" << hex << ppc_state.ppc_gpr[3] << ", XER=0x"
                  << hex << ppc_state.ppc_spr[SPR::XER] << ", CR=0x" << hex
-                 << ppc_state.ppc_cr << endl << endl;
+                 << ppc_state.ppc_cr << endl;
+            cout << "Test file line #: " << dec << lineno << endl << endl;
 
             nfailed++;
         }
