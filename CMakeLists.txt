@@ -6,20 +6,26 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 
+add_subdirectory("${PROJECT_SOURCE_DIR}/cpu/ppc/")
+add_subdirectory("${PROJECT_SOURCE_DIR}/devices/")
+
 include_directories("${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/devices"
-                    "${PROJECT_SOURCE_DIR}/debugger"
-                    "${PROJECT_SOURCE_DIR}/cpu/ppc")
+                    "${PROJECT_SOURCE_DIR}/cpu/ppc"
+                    "${PROJECT_SOURCE_DIR}/debugger")
 
-file(GLOB SOURCES "${PROJECT_SOURCE_DIR}/*.cpp" "${PROJECT_SOURCE_DIR}/devices/*.cpp"
-                  "${PROJECT_SOURCE_DIR}/debugger/*.cpp"
-                  "${PROJECT_SOURCE_DIR}/cpu/ppc/*.cpp")
+file(GLOB SOURCES "${PROJECT_SOURCE_DIR}/*.cpp"
+                  "${PROJECT_SOURCE_DIR}/debugger/*.cpp")
 
-file(GLOB TEST_SOURCES "${PROJECT_SOURCE_DIR}/cpu/ppc/*.cpp"
-                       "${PROJECT_SOURCE_DIR}/devices/*.cpp"
-                       "${PROJECT_SOURCE_DIR}/cpu/ppc/test/*.cpp")
+file(GLOB TEST_SOURCES "${PROJECT_SOURCE_DIR}/cpu/ppc/test/*.cpp")
 
-add_executable(dingusppc ${SOURCES})
+add_executable(dingusppc ${SOURCES} $<TARGET_OBJECTS:cpu_ppc> $<TARGET_OBJECTS:devices>)
 
-add_executable(testppc ${TEST_SOURCES})
+add_executable(testppc ${TEST_SOURCES} $<TARGET_OBJECTS:cpu_ppc> $<TARGET_OBJECTS:devices>)
+
+add_custom_command(
+    TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy
+    "${PROJECT_SOURCE_DIR}/cpu/ppc/test/ppcinttests.csv"
+    $<TARGET_FILE_DIR:${PROJECT_NAME}>)
 
 install (TARGETS dingusppc DESTINATION ${EXECUTABLE_OUTPUT_PATH})
