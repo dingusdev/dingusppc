@@ -157,6 +157,48 @@ def gen_ppc_opcode(opc_str, imm):
         return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x218 << 1)
     elif opc_str == "SRW.":
         return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x218 << 1) + 1
+    elif opc_str == "SUBF":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x28 << 1)
+    elif opc_str == "SUBF.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x28 << 1) + 1
+    elif opc_str == "SUBFO":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x228 << 1)
+    elif opc_str == "SUBFO.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x228 << 1) + 1
+    elif opc_str == "SUBFC":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x8 << 1)
+    elif opc_str == "SUBFC.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x8 << 1) + 1
+    elif opc_str == "SUBFCO":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x208 << 1)
+    elif opc_str == "SUBFCO.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x208 << 1) + 1
+    elif opc_str == "SUBFE":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x88 << 1)
+    elif opc_str == "SUBFE.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x88 << 1) + 1
+    elif opc_str == "SUBFEO":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x288 << 1)
+    elif opc_str == "SUBFEO.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x288 << 1) + 1
+    elif opc_str == "SUBFIC":
+        return (0x08 << 26) + (3 << 21) + (3 << 16) + (imm & 0xFFFF)
+    elif opc_str == "SUBFME":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (0xE8 << 1)
+    elif opc_str == "SUBFME.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (0xE8 << 1) + 1
+    elif opc_str == "SUBFMEO":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (0x2E8 << 1)
+    elif opc_str == "SUBFMEO.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (0x2E8 << 1) + 1
+    elif opc_str == "SUBFZE":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (0xC8 << 1)
+    elif opc_str == "SUBFZE.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (0xC8 << 1) + 1
+    elif opc_str == "SUBFZEO":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (0x2C8 << 1)
+    elif opc_str == "SUBFZEO.":
+        return (0x1F << 26) + (3 << 21) + (3 << 16) + (0x2C8 << 1) + 1
 
 def gen_rot_opcode(opc_str, sh, mb, me):
     if opc_str == "RLWIMI":
@@ -214,7 +256,7 @@ with open("instruction_tests_console.txt", "r") as in_file:
                 continue; # skip buggy rotation instructions tests
             if lineno >= 2728 and lineno < 3248:
                 continue; # skip buggy srawi instructions tests
-            if lineno >= 3768:
+            if lineno >= 3886:
                 break
 
             line = line.strip()
