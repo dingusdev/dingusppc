@@ -89,7 +89,7 @@ void enter_debugger()
             reg_expr = expr_str.substr(0, expr_str.find("="));
             if (reg_expr == "pc") {
                 addr_str = expr_str.substr(expr_str.find("=") + 1);
-                addr = stol(addr_str, NULL, 0);
+                addr = stoul(addr_str, NULL, 0);
                 ppc_state.ppc_pc = addr;
             } else {
                 cout << "Unknown register " << reg_expr << endl;
@@ -98,7 +98,7 @@ void enter_debugger()
             ppc_exec_single();
         } else if (cmd == "until") {
             ss >> addr_str;
-            addr = stol(addr_str, NULL, 16);
+            addr = stoul(addr_str, NULL, 16);
             ppc_exec_until(addr);
         } else if (cmd == "disas") {
             cout << "Disassembling not implemented yet. Sorry!" << endl;
