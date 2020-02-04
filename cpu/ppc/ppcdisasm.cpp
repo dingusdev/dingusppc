@@ -34,7 +34,7 @@ const char* bx_mnem[4] = {
 
 const char* bclrx_mnem[2] = {
     "bclr", "bclrl"
-};
+}; 
 
 const char* bcctrx_mnem[2] = {
     "bcctr", "bcctrl"
@@ -46,7 +46,7 @@ const char* br_cond[8] = { /* simplified branch conditions */
 
 const char* bclrx_cond[8] = { /* simplified branch conditions */
     "gelr", "lelr", "nelr", "nslr", "ltlr", "gtlr", "eqlr", "solr"
-};
+}; 
 
 const char* bcctrx_cond[8] = { /* simplified branch conditions */
     "gectr", "lectr", "nectr", "nsctr", "ltctr", "gtctr", "eqctr", "soctr"
@@ -245,10 +245,10 @@ void generic_bcx(PPCDisasmContext* ctx, uint32_t bo, uint32_t bi, uint32_t dst)
     char opcode[10] = "bc";
 
     if (ctx->instr_code & 1) {
-        strcat(opcode, "l"); /* add suffix "l" if the LK bit is set */
+        strcat_s(opcode, "l"); /* add suffix "l" if the LK bit is set */
     }
     if (ctx->instr_code & 2) {
-        strcat(opcode, "a"); /* add suffix "a" if the AA bit is set */
+        strcat_s(opcode, "a"); /* add suffix "a" if the AA bit is set */
     }
     ctx->instr_str = my_sprintf("%-8s%d, %d, 0x%08X", opcode, bo, bi, dst);
 }
@@ -258,7 +258,7 @@ void generic_bcctrx(PPCDisasmContext* ctx, uint32_t bo, uint32_t bi)
     char opcode[10] = "bcctr";
 
     if (ctx->instr_code & 1) {
-        strcat(opcode, "l"); /* add suffix "l" if the LK bit is set */
+        strcat_s(opcode, "l"); /* add suffix "l" if the LK bit is set */
     }
 
     ctx->instr_str = my_sprintf("%-8s%d, %d, 0x%08X", opcode, bo, bi);
@@ -269,7 +269,7 @@ void generic_bclrx(PPCDisasmContext* ctx, uint32_t bo, uint32_t bi)
     char opcode[10] = "bclr";
 
     if (ctx->instr_code & 1) {
-        strcat(opcode, "l"); /* add suffix "l" if the LK bit is set */
+        strcat_s(opcode, "l"); /* add suffix "l" if the LK bit is set */
     }
 
     ctx->instr_str = my_sprintf("%-8s%d, %d, 0x%08X", opcode, bo, bi);
@@ -299,34 +299,34 @@ void opc_bcx(PPCDisasmContext* ctx)
     }
 
     if (!(bo & 4)) {
-        strcat(opcode, "d");
-        strcat(opcode, (bo & 2) ? "z" : "nz");
+        strcat_s(opcode, "d");
+        strcat_s(opcode, (bo & 2) ? "z" : "nz");
         if (!(bo & 0x10)) {
-            strcat(opcode, (bo & 8) ? "t" : "f");
+            strcat_s(opcode, (bo & 8) ? "t" : "f");
             if (cr) {
-                strcat(operands, "4*cr0+");
+                strcat_s(operands, "4*cr0+");
                 operands[4] = cr + '0';
             }
-            strcat(operands, br_cond[4 + (bi & 3)]);
-            strcat(operands, ", ");
+            strcat_s(operands, br_cond[4 + (bi & 3)]);
+            strcat_s(operands, ", ");
         }
     }
     else { /* CTR ignored */
-        strcat(opcode, br_cond[((bo >> 1) & 4) | (bi & 3)]);
+        strcat_s(opcode, br_cond[((bo >> 1) & 4) | (bi & 3)]);
         if (cr) {
-            strcat(operands, "cr0, ");
+            strcat_s(operands, "cr0, ");
             operands[2] = cr + '0';
         }
     }
 
     if (ctx->instr_code & 1) {
-        strcat(opcode, "l"); /* add suffix "l" if the LK bit is set */
+        strcat_s(opcode, "l"); /* add suffix "l" if the LK bit is set */
     }
     if (ctx->instr_code & 2) {
-        strcat(opcode, "a"); /* add suffix "a" if the AA bit is set */
+        strcat_s(opcode, "a"); /* add suffix "a" if the AA bit is set */
     }
     if (bo & 1) { /* incorporate prediction bit if set */
-        strcat(opcode, (ctx->instr_code & 0x8000) ? "-" : "+");
+        strcat_s(opcode, (ctx->instr_code & 0x8000) ? "-" : "+");
     }
 
     ctx->instr_str = my_sprintf("%-8s%s0x%08X", opcode, operands, dst);
@@ -354,31 +354,31 @@ void opc_bcctrx(PPCDisasmContext* ctx)
     }
 
     if (!(bo & 4)) {
-        strcat(opcode, "d");
-        strcat(opcode, (bo & 2) ? "z" : "nz");
+        strcat_s(opcode, "d");
+        strcat_s(opcode, (bo & 2) ? "z" : "nz");
         if (!(bo & 0x10)) {
-            strcat(opcode, (bo & 8) ? "t" : "f");
+            strcat_s(opcode, (bo & 8) ? "t" : "f");
             if (cr) {
-                strcat(operands, "4*cr0+");
+                strcat_s(operands, "4*cr0+");
                 operands[4] = cr + '0';
             }
-            strcat(operands, br_cond[4 + (bi & 3)]);
-            strcat(operands, ", ");
+            strcat_s(operands, br_cond[4 + (bi & 3)]);
+            strcat_s(operands, ", ");
         }
     }
     else { /* CTR ignored */
-        strcat(opcode, br_cond[((bo >> 1) & 4) | (bi & 3)]);
+        strcat_s(opcode, br_cond[((bo >> 1) & 4) | (bi & 3)]);
         if (cr) {
-            strcat(operands, "cr0, ");
+            strcat_s(operands, "cr0, ");
             operands[2] = cr + '0';
         }
     }
 
     if (ctx->instr_code & 1) {
-        strcat(opcode, "l"); /* add suffix "l" if the LK bit is set */
+        strcat_s(opcode, "l"); /* add suffix "l" if the LK bit is set */
     }
     if (bo & 1) { /* incorporate prediction bit if set */
-        strcat(opcode, (ctx->instr_code & 0x8000) ? "-" : "+");
+        strcat_s(opcode, (ctx->instr_code & 0x8000) ? "-" : "+");
     }
 
     ctx->instr_str = my_sprintf("%-8s%s0x%08X", opcode, operands);
@@ -406,31 +406,31 @@ void opc_bclrx(PPCDisasmContext* ctx)
     }
 
     if (!(bo & 4)) {
-        strcat(opcode, "d");
-        strcat(opcode, (bo & 2) ? "z" : "nz");
+        strcat_s(opcode, "d");
+        strcat_s(opcode, (bo & 2) ? "z" : "nz");
         if (!(bo & 0x10)) {
-            strcat(opcode, (bo & 8) ? "t" : "f");
+            strcat_s(opcode, (bo & 8) ? "t" : "f");
             if (cr) {
-                strcat(operands, "4*cr0+");
+                strcat_s(operands, "4*cr0+");
                 operands[4] = cr + '0';
             }
-            strcat(operands, br_cond[4 + (bi & 3)]);
-            strcat(operands, ", ");
+            strcat_s(operands, br_cond[4 + (bi & 3)]);
+            strcat_s(operands, ", ");
         }
     }
     else { /* CTR ignored */
-        strcat(opcode, br_cond[((bo >> 1) & 4) | (bi & 3)]);
+        strcat_s(opcode, br_cond[((bo >> 1) & 4) | (bi & 3)]);
         if (cr) {
-            strcat(operands, "cr0, ");
+            strcat_s(operands, "cr0, ");
             operands[2] = cr + '0';
         }
     }
 
     if (ctx->instr_code & 1) {
-        strcat(opcode, "l"); /* add suffix "l" if the LK bit is set */
+        strcat_s(opcode, "l"); /* add suffix "l" if the LK bit is set */
     }
     if (bo & 1) { /* incorporate prediction bit if set */
-        strcat(opcode, (ctx->instr_code & 0x8000) ? "-" : "+");
+        strcat_s(opcode, (ctx->instr_code & 0x8000) ? "-" : "+");
     }
 
     ctx->instr_str = my_sprintf("%-8s%s0x%08X", opcode, operands);
@@ -582,11 +582,11 @@ void opc_group31(PPCDisasmContext* ctx)
             opc_illegal(ctx);
         }
         else {
-            strcpy(opcode, opc_subs[index]);
+            strcpy_s(opcode, opc_subs[index]);
             if (ext_opc & 0x200) /* check OE bit */
-                strcat(opcode, "o");
+                strcat_s(opcode, "o");
             if (rc_set)
-                strcat(opcode, ".");
+                strcat_s(opcode, ".");
             if (index == 3 || index == 6 || index == 7 || index == 11 ||
                 index == 15) { /* ugly check for two-operands instructions */
                 if (rb != 0)
@@ -605,11 +605,11 @@ void opc_group31(PPCDisasmContext* ctx)
             opc_illegal(ctx);
         }
         else {
-            strcpy(opcode, opc_adds[index]);
+            strcpy_s(opcode, opc_adds[index]);
             if (ext_opc & 0x200) /* check OE bit */
-                strcat(opcode, "o");
+                strcat_s(opcode, "o");
             if (rc_set)
-                strcat(opcode, ".");
+                strcat_s(opcode, ".");
             if (index == 6 || index == 7) {
                 if (rb != 0)
                     opc_illegal(ctx);
@@ -627,11 +627,11 @@ void opc_group31(PPCDisasmContext* ctx)
             opc_illegal(ctx);
         }
         else {
-            strcpy(opcode, opc_muldivs[index]);
+            strcpy_s(opcode, opc_muldivs[index]);
             if (ext_opc & 0x200) /* check OE bit */
-                strcat(opcode, "o");
+                strcat_s(opcode, "o");
             if (rc_set)
-                strcat(opcode, ".");
+                strcat_s(opcode, ".");
             if ((!index || index == 2) && (ext_opc & 0x200))
                 opc_illegal(ctx);
             else
@@ -644,13 +644,13 @@ void opc_group31(PPCDisasmContext* ctx)
             fmt_twoop(ctx->instr_str, rc_set ? "mr." : "mr", ra, rs);
         }
         else {
-            strcpy(opcode, opc_logic[index]);
+            strcpy_s(opcode, opc_logic[index]);
             if (!strlen(opcode)) {
                 opc_illegal(ctx);
             }
             else {
                 if (rc_set)
-                    strcat(opcode, ".");
+                    strcat_s(opcode, ".");
                 fmt_threeop(ctx->instr_str, opcode, ra, rs, rb);
             }
         }
