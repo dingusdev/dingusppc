@@ -454,17 +454,17 @@ void ppc_subfdot() {
 
 void ppc_subfo() {
     ppc_grab_regsdab();
-    ppc_setsoov(ppc_result_a, ppc_result_b, ppc_result_d);
     not_this = ~ppc_result_a;
     ppc_result_d = not_this + ppc_result_b + 1;
+    ppc_setsoov(ppc_result_a, ppc_result_b, ppc_result_d);
     ppc_store_result_regd();
 }
 
 void ppc_subfodot() {
     ppc_grab_regsdab();
-    ppc_setsoov(ppc_result_a, ppc_result_b, ppc_result_d);
     not_this = ~ppc_result_a;
     ppc_result_d = not_this + ppc_result_b + 1;
+    ppc_setsoov(ppc_result_a, ppc_result_b, ppc_result_d);
     ppc_changecrf0(ppc_result_d);
     ppc_store_result_regd();
 }
