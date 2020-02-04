@@ -421,7 +421,7 @@ void ppc_opcode4() {
     uint8_t subop_grab = ppc_cur_instruction & 3;
     uint32_t regrab = (uint32_t)subop_grab;
     printf("Executing subopcode entry %d \n"
-           "... or would if I bothered to implement it. SORRY!", regrab);
+           ".. or would if I bothered to implement it. SORRY!", regrab);
     exit(0);
 }
 
@@ -778,8 +778,7 @@ void ppc_cpu_init(uint32_t proc_version)
     if ((proc_version & 0xFFFF0000) == 0x00010000) {
         /* MPC601 sets MSR[ME] bit during hard reset / Power-On */
         ppc_state.ppc_msr = 0x1040;
-    } 
-    else {
+    } else {
         ppc_state.ppc_msr = 0x40;
         ppc_state.ppc_spr[SPR::DEC] = 0xFFFFFFFFUL;
     }

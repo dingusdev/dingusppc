@@ -14,7 +14,7 @@ jmp_buf exc_env; /* Global exception environment. */
     #endif
     bb_kind = BB_end_kind::BB_EXCEPTION;
 
-    switch (exception_type) {
+    switch(exception_type) {
         case Except_Type::EXC_SYSTEM_RESET:
             ppc_state.ppc_spr[SPR::SRR0] = ppc_cur_instruction & 0xFFFFFFFC;
             ppc_next_instruction_address = 0x0100;

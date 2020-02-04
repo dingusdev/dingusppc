@@ -24,15 +24,15 @@
 #include "ppcmmu.h"
 #include "devices/memctrlbase.h"
 
- /** PowerPC-style MMU BAT arrays (NULL initialization isn't prescribed). */
+/** PowerPC-style MMU BAT arrays (NULL initialization isn't prescribed). */
 PPC_BAT_entry ibat_array[4] = { {0} };
 PPC_BAT_entry dbat_array[4] = { {0} };
 
 /** remember recently used physical memory regions for quicker translation. */
-AddressMapEntry last_read_area = { 0 };
+AddressMapEntry last_read_area  = { 0 };
 AddressMapEntry last_write_area = { 0 };
-AddressMapEntry last_exec_area = { 0 };
-AddressMapEntry last_ptab_area = { 0 };
+AddressMapEntry last_exec_area  = { 0 };
+AddressMapEntry last_ptab_area  = { 0 };
 
 
 /* macro for generating code reading from physical memory */
@@ -155,8 +155,8 @@ static inline uint8_t* calc_pteg_addr(uint32_t hash)
     else {
         AddressMapEntry* entry = mem_ctrl_instance->find_range(pteg_addr);
         if (entry && entry->type & (RT_ROM | RT_RAM)) {
-            last_ptab_area.start = entry->start;
-            last_ptab_area.end = entry->end;
+            last_ptab_area.start   = entry->start;
+            last_ptab_area.end     = entry->end;
             last_ptab_area.mem_ptr = entry->mem_ptr;
             return last_ptab_area.mem_ptr + (pteg_addr - last_ptab_area.start);
         }
@@ -364,8 +364,7 @@ static void mem_write_unaligned(uint32_t addr, uint32_t value, uint32_t size)
     if (((addr & 0xFFF) + size) > 0x1000) {
         printf("SOS! Cross-page unaligned write, addr=%08X, size=%d\n", addr, size);
         exit(-1); //FIXME!
-    }
-    else {
+    } else {
         /* data address translation if enabled */
         if (ppc_state.ppc_msr & 0x10) {
             addr = ppc_mmu_addr_translate(addr, 0);
@@ -373,8 +372,7 @@ static void mem_write_unaligned(uint32_t addr, uint32_t value, uint32_t size)
 
         if (size == 2) {
             WRITE_PHYS_MEM(last_write_area, addr, WRITE_WORD_BE_U, value, 2);
-        }
-        else {
+        } else {
             WRITE_PHYS_MEM(last_write_area, addr, WRITE_DWORD_BE_U, value, 4);
         }
     }
@@ -387,7 +385,7 @@ void mem_write_byte(uint32_t addr, uint8_t value)
         addr = ppc_mmu_addr_translate(addr, 1);
     }
 
-#define WRITE_BYTE(addr, val) (*(addr) = val)
+    #define WRITE_BYTE(addr, val) (*(addr) = val)
 
     WRITE_PHYS_MEM(last_write_area, addr, WRITE_BYTE, value, 1);
 }
@@ -444,8 +442,7 @@ static uint32_t mem_grab_unaligned(uint32_t addr, uint32_t size)
     if (((addr & 0xFFF) + size) > 0x1000) {
         printf("SOS! Cross-page unaligned read, addr=%08X, size=%d\n", addr, size);
         exit(-1); //FIXME!
-    }
-    else {
+    } else {
         /* data address translation if enabled */
         if (ppc_state.ppc_msr & 0x10) {
             addr = ppc_mmu_addr_translate(addr, 0);
@@ -453,8 +450,7 @@ static uint32_t mem_grab_unaligned(uint32_t addr, uint32_t size)
 
         if (size == 2) {
             READ_PHYS_MEM(last_read_area, addr, READ_WORD_BE_U, 2, 0xFFFFU);
-        }
-        else {
+        } else {
             READ_PHYS_MEM(last_read_area, addr, READ_DWORD_BE_U, 4, 0xFFFFFFFFUL);
         }
     }
