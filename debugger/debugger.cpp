@@ -14,19 +14,8 @@
 #include "ppcemu.h"
 #include "../cpu/ppc/ppcmmu.h"
 
+
 using namespace std;
-
-uint32_t gpr_num;
-
-const string array_gprs[32] =
-{"gpr0",  "gpr1",  "gpr2",  "gpr3",
- "gpr4",  "gpr5",  "gpr6",  "gpr7",
- "gpr8",  "gpr9",  "gpr10", "gpr11",
- "gpr12", "gpr13", "gpr14", "gpr15",
- "gpr16", "gpr17", "gpr18", "gpr19",
- "gpr20", "gpr21", "gpr22", "gpr23",
- "gpr24", "gpr25", "gpr26", "gpr27",
- "gpr28", "gpr29", "gpr30", "gpr31" };
 
 void show_help()
 {
@@ -56,22 +45,10 @@ void dump_regs()
     cout << "MSR: " << hex << ppc_state.ppc_msr           << endl;
 }
 
-bool find_gpr(string entry) {
-    for (int gpr_index = 0; gpr_index < 32; gpr_index++) {
-        string str_grab = array_gprs[gpr_index];
-        if (str_grab.compare(entry) == 0) {
-            gpr_num = gpr_index;
-            return 1;
-        }
-    }
-
-    return 0;
-}
-
 void enter_debugger()
 {
-    string inp, cmd, addr_str, expr_str, reg_expr, last_cmd, reg_value_str;
-    uint32_t addr, reg_value;
+    string inp, cmd, addr_str, expr_str, reg_expr, last_cmd;
+    uint32_t addr;
     std::stringstream ss;
 
     cout << "Welcome to the PowerPC debugger." << endl;
@@ -112,22 +89,16 @@ void enter_debugger()
             reg_expr = expr_str.substr(0, expr_str.find("="));
             if (reg_expr == "pc") {
                 addr_str = expr_str.substr(expr_str.find("=") + 1);
-                addr = stoul(addr_str, NULL, 0);
+                addr = stol(addr_str, NULL, 0);
                 ppc_state.ppc_pc = addr;
-            }
-            else if (find_gpr(reg_expr)){
-                reg_value_str = expr_str.substr(expr_str.find("=") + 1);
-                reg_value = stoul(addr_str, NULL, 0);
-                ppc_state.ppc_gpr[gpr_num] = reg_value;
-            }
-            else {
+            } else {
                 cout << "Unknown register " << reg_expr << endl;
             }
         } else if (cmd == "step") {
             ppc_exec_single();
         } else if (cmd == "until") {
             ss >> addr_str;
-            addr = stoul(addr_str, NULL, 16);
+            addr = stol(addr_str, NULL, 16);
             ppc_exec_until(addr);
         } else if (cmd == "disas") {
             cout << "Disassembling not implemented yet. Sorry!" << endl;
