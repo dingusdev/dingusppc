@@ -446,34 +446,30 @@ void ppc_subf() {
 
 void ppc_subfdot() {
     ppc_grab_regsdab();
-    not_this = ~ppc_result_a;
-    ppc_result_d = not_this + ppc_result_b + 1;
+    ppc_result_d = ppc_result_b - ppc_result_a;
     ppc_changecrf0(ppc_result_d);
     ppc_store_result_regd();
 }
 
 void ppc_subfo() {
     ppc_grab_regsdab();
-    not_this = ~ppc_result_a;
-    ppc_result_d = not_this + ppc_result_b + 1;
-    ppc_setsoov(ppc_result_a, ppc_result_b, ppc_result_d);
+    ppc_result_d = ppc_result_b - ppc_result_a;
+    ppc_setsoov(ppc_result_b, ppc_result_a, ppc_result_d);
     ppc_store_result_regd();
 }
 
 void ppc_subfodot() {
     ppc_grab_regsdab();
-    not_this = ~ppc_result_a;
-    ppc_result_d = not_this + ppc_result_b + 1;
-    ppc_setsoov(ppc_result_a, ppc_result_b, ppc_result_d);
+    ppc_result_d = ppc_result_b - ppc_result_a;
+    ppc_setsoov(ppc_result_b, ppc_result_a, ppc_result_d);
     ppc_changecrf0(ppc_result_d);
     ppc_store_result_regd();
 }
 
 void ppc_subfc() {
     ppc_grab_regsdab();
-    not_this = ~ppc_result_a;
-    ppc_result_d = not_this + ppc_result_b + 1;
-    if (ppc_result_d <= not_this) {
+    ppc_result_d = ppc_result_b - ppc_result_a;
+    if (ppc_result_d > ppc_result_a) {
         ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
     }
     else {
@@ -485,9 +481,8 @@ void ppc_subfc() {
 
 void ppc_subfcdot() {
     ppc_grab_regsdab();
-    not_this = ~ppc_result_a;
-    ppc_result_d = not_this + ppc_result_b + 1;
-    if (ppc_result_d <= not_this) {
+    ppc_result_d = ppc_result_b - ppc_result_a;
+    if (ppc_result_d > ppc_result_a) {
         ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
     }
     else {
@@ -500,9 +495,8 @@ void ppc_subfcdot() {
 
 void ppc_subfco() {
     ppc_grab_regsdab();
-    not_this = ~ppc_result_a;
-    ppc_result_d = not_this + ppc_result_b + 1;
-    ppc_setsoov(ppc_result_a, ppc_result_b, ppc_result_d);
+    ppc_result_d = ppc_result_b - ppc_result_a;
+    ppc_setsoov(ppc_result_b, ppc_result_a, ppc_result_d);
     if (ppc_result_d <= not_this) {
         ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
     }
@@ -515,9 +509,8 @@ void ppc_subfco() {
 
 void ppc_subfcodot() {
     ppc_grab_regsdab();
-    not_this = ~ppc_result_a;
-    ppc_result_d = not_this + ppc_result_b + 1;
-    ppc_setsoov(ppc_result_a, ppc_result_b, ppc_result_d);
+    ppc_result_d = ppc_result_b - ppc_result_a;
+    ppc_setsoov(ppc_result_b, ppc_result_a, ppc_result_d);
     if (ppc_result_d <= not_this) {
         ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
     }
@@ -531,8 +524,7 @@ void ppc_subfcodot() {
 
 void ppc_subfic() {
     ppc_grab_regsdasimm();
-    not_this = ~ppc_result_a;
-    ppc_result_d = not_this + simm + 1;
+    ppc_result_d = simm - ppc_result_a;
     if (ppc_result_d <= not_this) {
         ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
     }
@@ -545,8 +537,7 @@ void ppc_subfic() {
 void ppc_subfe() {
     ppc_grab_regsdab();
     uint32_t grab_xer = !!(ppc_state.ppc_spr[SPR::XER] & 0x20000000);
-    not_this = ~ppc_result_a;
-    ppc_result_d = not_this + ppc_result_b + (ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    ppc_result_d = ~ppc_result_a + ppc_result_b + grab_xer;
     if (ppc_result_d <= (not_this + grab_xer)) {
         ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
     }
@@ -560,8 +551,7 @@ void ppc_subfe() {
 void ppc_subfedot() {
     ppc_grab_regsdab();
     uint32_t grab_xer = !!(ppc_state.ppc_spr[SPR::XER] & 0x20000000);
-    not_this = ~ppc_result_a;
-    ppc_result_d = not_this + ppc_result_b + grab_xer;
+    ppc_result_d = ppc_result_b + grab_xer - ppc_result_a;
     if (ppc_result_d <= (not_this + grab_xer)) {
         ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
     }
@@ -574,11 +564,34 @@ void ppc_subfedot() {
 }
 
 void ppc_subfeo() {
-    printf("SUBFEO placeholder, opcode = 0x%08X\n", ppc_cur_instruction);
+    ppc_grab_regsdab();
+    uint32_t grab_xer = !!(ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    ppc_result_d = ~ppc_result_a + ppc_result_b + grab_xer;
+    ppc_setsoov(ppc_result_b, ppc_result_a, ppc_result_d);
+    if (ppc_result_d <= (not_this + grab_xer)) {
+        ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
+    }
+    else {
+        ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
+    }
+    ppc_carry(ppc_result_a, ppc_result_d);
+    ppc_store_result_regd();
 }
 
 void ppc_subfeodot() {
-    printf("SUBFEODOT placeholder, opcode = 0x%08X\n", ppc_cur_instruction);
+    ppc_grab_regsdab();
+    uint32_t grab_xer = !!(ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    ppc_result_d = ppc_result_b + grab_xer - ppc_result_a;
+    ppc_setsoov(ppc_result_b, ppc_result_a, ppc_result_d);
+    if (ppc_result_d <= (not_this + grab_xer)) {
+        ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
+    }
+    else {
+        ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
+    }
+    ppc_carry(ppc_result_a, ppc_result_d);
+    ppc_changecrf0(ppc_result_d);
+    ppc_store_result_regd();
 }
 
 void ppc_subfme() {
@@ -613,17 +626,41 @@ void ppc_subfmedot() {
 }
 
 void ppc_subfmeo() {
-    printf("SUBFMEO placeholder, opcode = 0x%08X\n", ppc_cur_instruction);
+    ppc_grab_regsda();
+    not_this = ~ppc_result_a;
+    uint32_t grab_xer = !!(ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    ppc_result_d = not_this + grab_xer - 1;
+    ppc_setsoov(ppc_result_b, ppc_result_a, ppc_result_d);
+    if (ppc_result_a || grab_xer) {
+        ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
+    }
+    else {
+        ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
+    }
+    ppc_carry(ppc_result_a, grab_xer);
+    ppc_store_result_regd();
 }
 
 void ppc_subfmeodot() {
-    printf("SUBFMEODOT placeholder, opcode = 0x%08X\n", ppc_cur_instruction);
+    ppc_grab_regsda();
+    not_this = ~ppc_result_a;
+    uint32_t grab_xer = !!(ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    ppc_result_d = not_this + grab_xer - 1;
+    ppc_setsoov(ppc_result_b, ppc_result_a, ppc_result_d);
+    if (ppc_result_a || grab_xer) {
+        ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
+    }
+    else {
+        ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
+    }
+    ppc_carry(ppc_result_a, grab_xer);
+    ppc_changecrf0(ppc_result_d);
+    ppc_store_result_regd();
 }
 
 void ppc_subfze() {
     ppc_grab_regsda();
-    not_this = ~ppc_result_a;
-    ppc_result_d = not_this + (ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    ppc_result_d = ~ppc_result_a + (ppc_state.ppc_spr[SPR::XER] & 0x20000000);
     if (ppc_result_d <= not_this) {
         ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
     }
@@ -650,11 +687,34 @@ void ppc_subfzedot() {
 }
 
 void ppc_subfzeo() {
-    printf("SUBFZEO placeholder, opcode = 0x%08X\n", ppc_cur_instruction);
+    ppc_grab_regsda();
+    not_this = ~ppc_result_a;
+    ppc_result_d = not_this + (ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    ppc_setsoov(ppc_result_b, ppc_result_a, ppc_result_d);
+    if (ppc_result_d <= not_this) {
+        ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
+    }
+    else {
+        ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
+    }
+    ppc_carry(ppc_result_a, (ppc_state.ppc_spr[SPR::XER] & 0x20000000));
+    ppc_store_result_regd();
 }
 
 void ppc_subfzeodot() {
-    printf("SUBFZEODOT placeholder, opcode = 0x%08X\n", ppc_cur_instruction);
+    ppc_grab_regsda();
+    not_this = ~ppc_result_a;
+    ppc_result_d = not_this + (ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    ppc_setsoov(ppc_result_b, ppc_result_a, ppc_result_d);
+    if (ppc_result_d <= not_this) {
+        ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
+    }
+    else {
+        ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
+    }
+    ppc_carry(ppc_result_a, (ppc_state.ppc_spr[SPR::XER] & 0x20000000));
+    ppc_changecrf0(ppc_result_d);
+    ppc_store_result_regd();
 }
 
 
