@@ -4,7 +4,6 @@
 
 #include <iostream>
 #include <string>
-#include <functional>  //Mandated by Visual Studio
 #include "ppcdisasm.h"
 
 using namespace std;
@@ -295,10 +294,10 @@ void generic_bcx(PPCDisasmContext* ctx, uint32_t bo, uint32_t bi, uint32_t dst)
     char opcode[10] = "bc";
 
     if (ctx->instr_code & 1) {
-        strcat_s(opcode, "l"); /* add suffix "l" if the LK bit is set */
+        strcat(opcode, "l"); /* add suffix "l" if the LK bit is set */
     }
     if (ctx->instr_code & 2) {
-        strcat_s(opcode, "a"); /* add suffix "a" if the AA bit is set */
+        strcat(opcode, "a"); /* add suffix "a" if the AA bit is set */
     }
     ctx->instr_str = my_sprintf("%-8s%d, %d, 0x%08X", opcode, bo, bi, dst);
 }
@@ -308,7 +307,7 @@ void generic_bcctrx(PPCDisasmContext* ctx, uint32_t bo, uint32_t bi)
     char opcode[10] = "bcctr";
 
     if (ctx->instr_code & 1) {
-        strcat_s(opcode, "l"); /* add suffix "l" if the LK bit is set */
+        strcat(opcode, "l"); /* add suffix "l" if the LK bit is set */
     }
 
     ctx->instr_str = my_sprintf("%-8s%d, %d, 0x%08X", opcode, bo, bi);
@@ -319,7 +318,7 @@ void generic_bclrx(PPCDisasmContext* ctx, uint32_t bo, uint32_t bi)
     char opcode[10] = "bclr";
 
     if (ctx->instr_code & 1) {
-        strcat_s(opcode, "l"); /* add suffix "l" if the LK bit is set */
+        strcat(opcode, "l"); /* add suffix "l" if the LK bit is set */
     }
 
     ctx->instr_str = my_sprintf("%-8s%d, %d, 0x%08X", opcode, bo, bi);
@@ -349,34 +348,34 @@ void opc_bcx(PPCDisasmContext* ctx)
     }
 
     if (!(bo & 4)) {
-        strcat_s(opcode, "d");
-        strcat_s(opcode, (bo & 2) ? "z" : "nz");
+        strcat(opcode, "d");
+        strcat(opcode, (bo & 2) ? "z" : "nz");
         if (!(bo & 0x10)) {
-            strcat_s(opcode, (bo & 8) ? "t" : "f");
+            strcat(opcode, (bo & 8) ? "t" : "f");
             if (cr) {
-                strcat_s(operands, "4*cr0+");
+                strcat(operands, "4*cr0+");
                 operands[4] = cr + '0';
             }
-            strcat_s(operands, br_cond[4 + (bi & 3)]);
-            strcat_s(operands, ", ");
+            strcat(operands, br_cond[4 + (bi & 3)]);
+            strcat(operands, ", ");
         }
     }
     else { /* CTR ignored */
-        strcat_s(opcode, br_cond[((bo >> 1) & 4) | (bi & 3)]);
+        strcat(opcode, br_cond[((bo >> 1) & 4) | (bi & 3)]);
         if (cr) {
-            strcat_s(operands, "cr0, ");
+            strcat(operands, "cr0, ");
             operands[2] = cr + '0';
         }
     }
 
     if (ctx->instr_code & 1) {
-        strcat_s(opcode, "l"); /* add suffix "l" if the LK bit is set */
+        strcat(opcode, "l"); /* add suffix "l" if the LK bit is set */
     }
     if (ctx->instr_code & 2) {
-        strcat_s(opcode, "a"); /* add suffix "a" if the AA bit is set */
+        strcat(opcode, "a"); /* add suffix "a" if the AA bit is set */
     }
     if (bo & 1) { /* incorporate prediction bit if set */
-        strcat_s(opcode, (ctx->instr_code & 0x8000) ? "-" : "+");
+        strcat(opcode, (ctx->instr_code & 0x8000) ? "-" : "+");
     }
 
     ctx->instr_str = my_sprintf("%-8s%s0x%08X", opcode, operands, dst);
@@ -404,31 +403,31 @@ void opc_bcctrx(PPCDisasmContext* ctx)
     }
 
     if (!(bo & 4)) {
-        strcat_s(opcode, "d");
-        strcat_s(opcode, (bo & 2) ? "z" : "nz");
+        strcat(opcode, "d");
+        strcat(opcode, (bo & 2) ? "z" : "nz");
         if (!(bo & 0x10)) {
-            strcat_s(opcode, (bo & 8) ? "t" : "f");
+            strcat(opcode, (bo & 8) ? "t" : "f");
             if (cr) {
-                strcat_s(operands, "4*cr0+");
+                strcat(operands, "4*cr0+");
                 operands[4] = cr + '0';
             }
-            strcat_s(operands, br_cond[4 + (bi & 3)]);
-            strcat_s(operands, ", ");
+            strcat(operands, br_cond[4 + (bi & 3)]);
+            strcat(operands, ", ");
         }
     }
     else { /* CTR ignored */
-        strcat_s(opcode, br_cond[((bo >> 1) & 4) | (bi & 3)]);
+        strcat(opcode, br_cond[((bo >> 1) & 4) | (bi & 3)]);
         if (cr) {
-            strcat_s(operands, "cr0, ");
+            strcat(operands, "cr0, ");
             operands[2] = cr + '0';
         }
     }
 
     if (ctx->instr_code & 1) {
-        strcat_s(opcode, "l"); /* add suffix "l" if the LK bit is set */
+        strcat(opcode, "l"); /* add suffix "l" if the LK bit is set */
     }
     if (bo & 1) { /* incorporate prediction bit if set */
-        strcat_s(opcode, (ctx->instr_code & 0x8000) ? "-" : "+");
+        strcat(opcode, (ctx->instr_code & 0x8000) ? "-" : "+");
     }
 
     ctx->instr_str = my_sprintf("%-8s%s0x%08X", opcode, operands);
@@ -456,31 +455,31 @@ void opc_bclrx(PPCDisasmContext* ctx)
     }
 
     if (!(bo & 4)) {
-        strcat_s(opcode, "d");
-        strcat_s(opcode, (bo & 2) ? "z" : "nz");
+        strcat(opcode, "d");
+        strcat(opcode, (bo & 2) ? "z" : "nz");
         if (!(bo & 0x10)) {
-            strcat_s(opcode, (bo & 8) ? "t" : "f");
+            strcat(opcode, (bo & 8) ? "t" : "f");
             if (cr) {
-                strcat_s(operands, "4*cr0+");
+                strcat(operands, "4*cr0+");
                 operands[4] = cr + '0';
             }
-            strcat_s(operands, br_cond[4 + (bi & 3)]);
-            strcat_s(operands, ", ");
+            strcat(operands, br_cond[4 + (bi & 3)]);
+            strcat(operands, ", ");
         }
     }
     else { /* CTR ignored */
-        strcat_s(opcode, br_cond[((bo >> 1) & 4) | (bi & 3)]);
+        strcat(opcode, br_cond[((bo >> 1) & 4) | (bi & 3)]);
         if (cr) {
-            strcat_s(operands, "cr0, ");
+            strcat(operands, "cr0, ");
             operands[2] = cr + '0';
         }
     }
 
     if (ctx->instr_code & 1) {
-        strcat_s(opcode, "l"); /* add suffix "l" if the LK bit is set */
+        strcat(opcode, "l"); /* add suffix "l" if the LK bit is set */
     }
     if (bo & 1) { /* incorporate prediction bit if set */
-        strcat_s(opcode, (ctx->instr_code & 0x8000) ? "-" : "+");
+        strcat(opcode, (ctx->instr_code & 0x8000) ? "-" : "+");
     }
 
     ctx->instr_str = my_sprintf("%-8s%s0x%08X", opcode, operands);
@@ -632,11 +631,11 @@ void opc_group31(PPCDisasmContext* ctx)
             opc_illegal(ctx);
         }
         else {
-            strcpy_s(opcode, opc_subs[index]);
+            strcpy(opcode, opc_subs[index]);
             if (ext_opc & 0x200) /* check OE bit */
-                strcat_s(opcode, "o");
+                strcat(opcode, "o");
             if (rc_set)
-                strcat_s(opcode, ".");
+                strcat(opcode, ".");
             if (index == 3 || index == 6 || index == 7 || index == 11 ||
                 index == 15) { /* ugly check for two-operands instructions */
                 if (rb != 0)
@@ -655,11 +654,11 @@ void opc_group31(PPCDisasmContext* ctx)
             opc_illegal(ctx);
         }
         else {
-            strcpy_s(opcode, opc_adds[index]);
+            strcpy(opcode, opc_adds[index]);
             if (ext_opc & 0x200) /* check OE bit */
-                strcat_s(opcode, "o");
+                strcat(opcode, "o");
             if (rc_set)
-                strcat_s(opcode, ".");
+                strcat(opcode, ".");
             if (index == 6 || index == 7) {
                 if (rb != 0)
                     opc_illegal(ctx);
@@ -677,11 +676,11 @@ void opc_group31(PPCDisasmContext* ctx)
             opc_illegal(ctx);
         }
         else {
-            strcpy_s(opcode, opc_muldivs[index]);
+            strcpy(opcode, opc_muldivs[index]);
             if (ext_opc & 0x200) /* check OE bit */
-                strcat_s(opcode, "o");
+                strcat(opcode, "o");
             if (rc_set)
-                strcat_s(opcode, ".");
+                strcat(opcode, ".");
             if ((!index || index == 2) && (ext_opc & 0x200))
                 opc_illegal(ctx);
             else
@@ -701,13 +700,13 @@ void opc_group31(PPCDisasmContext* ctx)
             fmt_twoop(ctx->instr_str, rc_set ? "mr." : "mr", ra, rs);
         }
         else {
-            strcpy_s(opcode, opc_logic[index]);
+            strcpy(opcode, opc_logic[index]);
             if (!strlen(opcode)) {
                 opc_illegal(ctx);
             }
             else {
                 if (rc_set)
-                    strcat_s(opcode, ".");
+                    strcat(opcode, ".");
                 fmt_threeop(ctx->instr_str, opcode, ra, rs, rb);
             }
         }
@@ -747,10 +746,10 @@ void opc_group31(PPCDisasmContext* ctx)
         fmt_oneop(ctx->instr_str, "mfcr", rs);
         break;
     case 26: /* cntlzw */
-        strcpy_s(opcode, "cntlzw");
+        strcpy(opcode, "cntlzw");
 
         if (rc_set)
-            strcat_s(opcode, ".");
+            strcat(opcode, ".");
 
         fmt_twoop(ctx->instr_str, opcode, rs, ra);
         break;
@@ -807,10 +806,10 @@ void opc_group59(PPCDisasmContext* ctx)
 
     switch (ext_opc & 0x1F) {
     case 18: /* floating point division */
-        strcpy_s(opcode, "fdivs");
+        strcpy(opcode, "fdivs");
 
         if (rc_set)
-            strcat_s(opcode, ".");
+            strcat(opcode, ".");
 
         if (rc != 0)
             opc_illegal(ctx);
@@ -820,10 +819,10 @@ void opc_group59(PPCDisasmContext* ctx)
         return;
 
     case 20: /* floating point subtract */
-        strcpy_s(opcode, "fsubs");
+        strcpy(opcode, "fsubs");
 
         if (rc_set)
-            strcat_s(opcode, ".");
+            strcat(opcode, ".");
 
         if (rc != 0)
             opc_illegal(ctx);
@@ -833,10 +832,10 @@ void opc_group59(PPCDisasmContext* ctx)
         return;
 
     case 21: /* floating point addition */
-        strcpy_s(opcode, "fadds");
+        strcpy(opcode, "fadds");
 
         if (rc_set)
-            strcat_s(opcode, ".");
+            strcat(opcode, ".");
 
         if (rc != 0)
             opc_illegal(ctx);
@@ -846,10 +845,10 @@ void opc_group59(PPCDisasmContext* ctx)
         return;
 
     case 22: /* floating point square root */
-        strcpy_s(opcode, "fsqrts");
+        strcpy(opcode, "fsqrts");
 
         if (rc_set)
-            strcat_s(opcode, ".");
+            strcat(opcode, ".");
 
         if ((rc != 0) | (ra != 0))
             opc_illegal(ctx);
@@ -859,10 +858,10 @@ void opc_group59(PPCDisasmContext* ctx)
         return;
 
     case 24: /* fres */
-        strcpy_s(opcode, "fres");
+        strcpy(opcode, "fres");
 
         if (rc_set)
-            strcat_s(opcode, ".");
+            strcat(opcode, ".");
 
         if ((rc != 0) | (ra != 0))
             opc_illegal(ctx);
@@ -873,11 +872,11 @@ void opc_group59(PPCDisasmContext* ctx)
 
     case 25: /* fmuls */
 
-        strcpy_s(opcode, opc_flt_ext_arith[25]);
-        strcat_s(opcode, "s");
+        strcpy(opcode, opc_flt_ext_arith[25]);
+        strcat(opcode, "s");
 
         if (rc_set)
-            strcat_s(opcode, ".");
+            strcat(opcode, ".");
 
         if (rb != 0)
             opc_illegal(ctx);
@@ -888,11 +887,11 @@ void opc_group59(PPCDisasmContext* ctx)
 
     case 28: /* fmsubs */
 
-        strcpy_s(opcode, opc_flt_ext_arith[28]);
-        strcat_s(opcode, "s");
+        strcpy(opcode, opc_flt_ext_arith[28]);
+        strcat(opcode, "s");
 
         if (rc_set)
-            strcat_s(opcode, ".");
+            strcat(opcode, ".");
 
         fmt_fourop_flt(ctx->instr_str, opcode, rs, ra, rb, rc);
 
@@ -900,11 +899,11 @@ void opc_group59(PPCDisasmContext* ctx)
 
     case 29: /* fmadds */
 
-        strcpy_s(opcode, opc_flt_ext_arith[29]);
-        strcat_s(opcode, "s");
+        strcpy(opcode, opc_flt_ext_arith[29]);
+        strcat(opcode, "s");
 
         if (rc_set)
-            strcat_s(opcode, ".");
+            strcat(opcode, ".");
 
         fmt_fourop_flt(ctx->instr_str, opcode, rs, ra, rb, rc);
 
@@ -912,11 +911,11 @@ void opc_group59(PPCDisasmContext* ctx)
 
     case 30: /* fnmsubs */
 
-        strcpy_s(opcode, opc_flt_ext_arith[30]);
-        strcat_s(opcode, "s");
+        strcpy(opcode, opc_flt_ext_arith[30]);
+        strcat(opcode, "s");
 
         if (rc_set)
-            strcat_s(opcode, ".");
+            strcat(opcode, ".");
 
         fmt_fourop_flt(ctx->instr_str, opcode, rs, ra, rb, rc);
 
@@ -924,11 +923,11 @@ void opc_group59(PPCDisasmContext* ctx)
 
     case 31: /* fnmadds */
 
-        strcpy_s(opcode, opc_flt_ext_arith[31]);
-        strcat_s(opcode, "s");
+        strcpy(opcode, opc_flt_ext_arith[31]);
+        strcat(opcode, "s");
 
         if (rc_set)
-            strcat_s(opcode, ".");
+            strcat(opcode, ".");
 
         fmt_fourop_flt(ctx->instr_str, opcode, rs, ra, rb, rc);
 
@@ -951,10 +950,10 @@ void opc_group63(PPCDisasmContext* ctx)
 
     switch (ext_opc & 0x1F) {
     case 18: /* floating point division */
-        strcpy_s(opcode, "fdiv");
+        strcpy(opcode, "fdiv");
 
         if (rc_set)
-            strcat_s(opcode, ".");
+            strcat(opcode, ".");
 
         if (rc != 0)
             opc_illegal(ctx);
@@ -964,9 +963,9 @@ void opc_group63(PPCDisasmContext* ctx)
         return;
 
     case 20: /* floating point subtract */
-        strcpy_s(opcode, "fsub");
+        strcpy(opcode, "fsub");
         if (rc_set)
-            strcat_s(opcode, ".");
+            strcat(opcode, ".");
 
         if (rc != 0)
             opc_illegal(ctx);
@@ -976,10 +975,10 @@ void opc_group63(PPCDisasmContext* ctx)
         return;
 
     case 21: /* floating point addition */
-        strcpy_s(opcode, "fadd");
+        strcpy(opcode, "fadd");
 
         if (rc_set)
-            strcat_s(opcode, ".");
+            strcat(opcode, ".");
 
         if (rc != 0)
             opc_illegal(ctx);
@@ -989,10 +988,10 @@ void opc_group63(PPCDisasmContext* ctx)
         return;
 
     case 22: /* floating point square root */
-        strcpy_s(opcode, "fsqrt");
+        strcpy(opcode, "fsqrt");
 
         if (rc_set)
-            strcat_s(opcode, ".");
+            strcat(opcode, ".");
 
         if ((rc != 0) | (ra != 0))
             opc_illegal(ctx);
@@ -1003,10 +1002,10 @@ void opc_group63(PPCDisasmContext* ctx)
 
     case 25: /* fmul */
 
-        strcpy_s(opcode, opc_flt_ext_arith[25]);
+        strcpy(opcode, opc_flt_ext_arith[25]);
 
         if (rc_set)
-            strcat_s(opcode, ".");
+            strcat(opcode, ".");
 
         if (rb != 0)
             opc_illegal(ctx);
@@ -1016,10 +1015,10 @@ void opc_group63(PPCDisasmContext* ctx)
         return;
 
     case 26: /* frsqrte */
-        strcpy_s(opcode, "frsqrte");
+        strcpy(opcode, "frsqrte");
 
         if (rc_set)
-            strcat_s(opcode, ".");
+            strcat(opcode, ".");
 
         if ((rc != 0) | (ra != 0))
             opc_illegal(ctx);
@@ -1029,40 +1028,40 @@ void opc_group63(PPCDisasmContext* ctx)
         return;
 
     case 28: /* fmsub */
-        strcpy_s(opcode, opc_flt_ext_arith[28]);
+        strcpy(opcode, opc_flt_ext_arith[28]);
 
         if (rc_set)
-            strcat_s(opcode, ".");
+            strcat(opcode, ".");
 
         fmt_fourop_flt(ctx->instr_str, opcode, rs, ra, rb, rc);
 
         return;
 
     case 29: /* fmadd */
-        strcpy_s(opcode, opc_flt_ext_arith[29]);
+        strcpy(opcode, opc_flt_ext_arith[29]);
 
         if (rc_set)
-            strcat_s(opcode, ".");
+            strcat(opcode, ".");
 
         fmt_fourop_flt(ctx->instr_str, opcode, rs, ra, rb, rc);
 
         return;
 
     case 30: /* fnmsub */
-        strcpy_s(opcode, opc_flt_ext_arith[30]);
+        strcpy(opcode, opc_flt_ext_arith[30]);
 
         if (rc_set)
-            strcat_s(opcode, ".");
+            strcat(opcode, ".");
 
         fmt_fourop_flt(ctx->instr_str, opcode, rs, ra, rb, rc);
 
         return;
 
     case 31: /* fnmadd */
-        strcpy_s(opcode, opc_flt_ext_arith[31]);
+        strcpy(opcode, opc_flt_ext_arith[31]);
 
         if (rc_set)
-            strcat_s(opcode, ".");
+            strcat(opcode, ".");
 
         fmt_fourop_flt(ctx->instr_str, opcode, rs, ra, rb, rc);
 
@@ -1103,10 +1102,10 @@ void opc_group63(PPCDisasmContext* ctx)
             ctx->instr_str = my_sprintf("%-8s%d, crf%d, r%d, r%d", "fcmpu", (rs >> 2), ra, rb);
         break;
     case 40: /* fneg */
-        strcpy_s(opcode, "fneg");
+        strcpy(opcode, "fneg");
 
         if (rc_set)
-            strcat_s(opcode, ".");
+            strcat(opcode, ".");
 
         if (ra != 0)
             opc_illegal(ctx);
