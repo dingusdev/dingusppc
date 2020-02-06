@@ -29,7 +29,7 @@ void show_help()
 #ifdef PROFILER
     cout << "  profiler  -- show stats related to the processor" << endl;
 #endif
-    cout << "  disas X,n -- disassemble N instructions starting at address X" << endl;
+    cout << "  disas N,X -- disassemble N instructions starting at address X" << endl;
     cout << "  quit      -- quit the debugger" << endl << endl;
     cout << "Pressing ENTER will repeat last command." << endl;
 }

@@ -1,3 +1,7 @@
+/** @file   Logic for the disassembler.
+    @author maximumspatium
+ */
+
 #include <iostream>
 #include <string>
 #include <functional>  //Mandated by Visual Studio
@@ -82,6 +86,13 @@ const char* opc_flt_ldst[8] = { /* integer load and store instructions */
     "lfs", "lfsu", "lfd", "lfdu", "stfs", "stfsu", "sftd", "sftdu"
 };
 
+const char* opc_flt_ext_arith[32] = { /* integer load and store instructions */
+    "", "", "", "", "", "", "", "",
+    "", "", "", "", "", "", "", "",
+    "", "", "", "", "", "", "", "fsel",
+    "", "fmul", "", "", "fmsub", "fmadd", "fnmsub", "fnmadd",
+};
+
 /** various formatting helpers. */
 void fmt_oneop(string& buf, const char* opc, int src)
 {
@@ -108,6 +119,11 @@ void fmt_twoop_tospr(string& buf, const char* opc, int dst, int src)
     buf = my_sprintf("%-8sr%d, spr%d", opc, dst, src);
 }
 
+void fmt_twoop_flt(string& buf, const char* opc, int dst, int src1)
+{
+    buf = my_sprintf("%-8sfr%d, fr%d", opc, dst, src1);
+}
+
 void fmt_threeop(string& buf, const char* opc, int dst, int src1, int src2)
 {
     buf = my_sprintf("%-8sr%d, r%d, r%d", opc, dst, src1, src2);
@@ -129,6 +145,16 @@ void fmt_threeop_simm(string& buf, const char* opc, int dst, int src1, int imm)
         (imm < 0) ? "-" : "", abs(imm));
 }
 
+void fmt_threeop_flt(string& buf, const char* opc, int dst, int src1, int src2)
+{
+    buf = my_sprintf("%-8sfr%d, fr%d, fr%d", opc, dst, src1, src2);
+}
+
+void fmt_fourop_flt(string& buf, const char* opc, int dst, int src1, int src2, int src3)
+{
+    buf = my_sprintf("%-8sfr%d, fr%d, fr%d, fr%d", opc, dst, src1, src2, src3);
+}
+
 void fmt_rotateop(string& buf, const char* opc, int dst, int src1, int sh, int mb, int me, bool imm)
 {
     if (imm)
@@ -145,7 +171,32 @@ void opc_illegal(PPCDisasmContext* ctx)
 
 void opc_twi(PPCDisasmContext* ctx)
 {
-    //return "DEADBEEF";
+    auto to = (ctx->instr_code >> 21) & 0x1F;
+    auto ra = (ctx->instr_code >> 16) & 0x1F;
+    int32_t imm = SIGNEXT(ctx->instr_code & 0xFFFF, 15);
+
+    if (ctx->simplified) {
+        switch (to) {
+        case 1:
+            ctx->instr_str = my_sprintf("%-8sr%d, 0x%08X", "twlgti", ra, imm);
+            break;
+        case 6:
+            ctx->instr_str = my_sprintf("%-8sr%d, 0x%08X", "twllei", ra, imm);
+            break;
+        case 8:
+            ctx->instr_str = my_sprintf("%-8sr%d, 0x%08X", "twgti", ra, imm);
+            break;
+        case 16:
+            ctx->instr_str = my_sprintf("%-8sr%d, 0x%08X", "twlti", ra, imm);
+            break;
+        case 20:
+            ctx->instr_str = my_sprintf("%-8sr%d, 0x%08X", "twlei", ra, imm);
+            break;
+        }
+    }
+    else {
+        ctx->instr_str = my_sprintf("%-8s%d, r%d, 0x%08X", "twi", to, ra, imm);
+    }
 }
 
 void opc_group4(PPCDisasmContext* ctx)
@@ -161,6 +212,9 @@ void opc_ar_im(PPCDisasmContext* ctx)
 
     if ((ctx->instr_code >> 26) == 0xE && !ra && ctx->simplified) {
         fmt_twoop_simm(ctx->instr_str, "li", rd, imm);
+    }
+    else if ((ctx->instr_code >> 26) == 0xF && !ra && ctx->simplified) {
+        fmt_twoop_simm(ctx->instr_str, "lis", rd, imm);
     }
     else {
         fmt_threeop_simm(ctx->instr_str, arith_im_mnem[(ctx->instr_code >> 26) - 7],
@@ -392,12 +446,12 @@ void opc_bclrx(PPCDisasmContext* ctx)
 
     if (!ctx->simplified || ((bo & 0x10) && bi) ||
         (((bo & 0x14) == 0x14) && (bo & 0xB) && bi)) {
-        generic_bcctrx(ctx, bo, bi);
+        generic_bclrx(ctx, bo, bi);
         return;
     }
 
     if ((bo & 0x14) == 0x14) {
-        ctx->instr_str = my_sprintf("%-8s0x%08X", bcctrx_mnem[0]);
+        ctx->instr_str = my_sprintf("%-8s0x%08X", bclrx_mnem[0]);
         return;
     }
 
@@ -664,19 +718,45 @@ void opc_group31(PPCDisasmContext* ctx)
                 opc_idx_ldst[index], rs, ra, rb);
         return;
         break;
+
+    case 0x1A: /* Byte sign extend instructions */
+        if (index == 28)
+            fmt_twoop(ctx->instr_str, "extsb", rs, ra);
+        else if (index == 29)
+            fmt_twoop(ctx->instr_str, "extsh", rs, ra);
     }
 
     auto ref_spr = (((ctx->instr_code >> 11) & 31) << 5) | ((ctx->instr_code >> 16) & 31);
 
     switch (ext_opc) {
+    case 0: /* cmp */
+        if (rc_set)
+            opc_illegal(ctx);
+        else
+            ctx->instr_str = my_sprintf("%-8sr%d, r%d, r%d", "cmp", rs, ra, rb);
+        break;
     case 4:
         if (rc_set)
             opc_illegal(ctx);
         else
-            ctx->instr_str = my_sprintf("%-8s%d, r%d, r%d", "tw", rs, ra, rb);
+            ctx->instr_str = my_sprintf("%-8sr%d, r%d, r%d", "tw", rs, ra, rb);
         break;
     case 19: /* mfcr */
         fmt_oneop(ctx->instr_str, "mfcr", rs);
+        break;
+    case 26: /* cntlzw */
+        strcpy_s(opcode, "cntlzw");
+
+        if (rc_set)
+            strcat_s(opcode, ".");
+
+        fmt_twoop(ctx->instr_str, opcode, rs, ra);
+        break;
+    case 64: /* cmpl */
+        if (rc_set)
+            opc_illegal(ctx);
+        else
+            ctx->instr_str = my_sprintf("%-8sr%d, r%d, r%d", "cmpl", rs, ra, rb);
         break;
     case 83: /* mfmsr */
         ctx->instr_str = my_sprintf("%-8s0x%02X, r%d", "mfmsr",
@@ -696,8 +776,373 @@ void opc_group31(PPCDisasmContext* ctx)
     case 339: /* mfspr */
         fmt_twoop_fromspr(ctx->instr_str, "mfspr", rs, ref_spr);
         break;
+    case 371: /* mftb */
+        fmt_twoop_tospr(ctx->instr_str, "mftb", ref_spr, rs);
+        break;
     case 467: /* mtspr */
         fmt_twoop_tospr(ctx->instr_str, "mtspr", ref_spr, rs);
+        break;
+    case 598: /* sync */
+        ctx->instr_str = my_sprintf("%-8s", "sync");
+        break;
+    default:
+        opc_illegal(ctx);
+    }
+}
+
+void opc_group59(PPCDisasmContext* ctx)
+{
+    char opcode[10] = "";
+
+    auto rc = (ctx->instr_code >> 6) & 0x1F;
+    auto rb = (ctx->instr_code >> 11) & 0x1F;
+    auto ra = (ctx->instr_code >> 16) & 0x1F;
+    auto rs = (ctx->instr_code >> 21) & 0x1F;
+
+    int  ext_opc = (ctx->instr_code >> 1) & 0x3FF; /* extract extended opcode */
+    int  index = ext_opc >> 5;
+    bool rc_set = ctx->instr_code & 1;
+
+    switch (ext_opc & 0x1F) {
+    case 18: /* floating point division */
+        strcpy_s(opcode, "fdivs");
+
+        if (rc_set)
+            strcat_s(opcode, ".");
+
+        if (rc != 0)
+            opc_illegal(ctx);
+        else
+            fmt_threeop_flt(ctx->instr_str, opcode, rs, ra, rb);
+
+        return;
+
+    case 20: /* floating point subtract */
+        strcpy_s(opcode, "fsubs");
+
+        if (rc_set)
+            strcat_s(opcode, ".");
+
+        if (rc != 0)
+            opc_illegal(ctx);
+        else
+            fmt_threeop_flt(ctx->instr_str, opcode, rs, ra, rb);
+
+        return;
+
+    case 21: /* floating point addition */
+        strcpy_s(opcode, "fadds");
+
+        if (rc_set)
+            strcat_s(opcode, ".");
+
+        if (rc != 0)
+            opc_illegal(ctx);
+        else
+            fmt_threeop_flt(ctx->instr_str, opcode, rs, ra, rb);
+
+        return;
+
+    case 22: /* floating point square root */
+        strcpy_s(opcode, "fsqrts");
+
+        if (rc_set)
+            strcat_s(opcode, ".");
+
+        if ((rc != 0) | (ra != 0))
+            opc_illegal(ctx);
+        else
+            fmt_twoop_flt(ctx->instr_str, "fsqrts", rs, rb);
+
+        return;
+
+    case 24: /* fres */
+        strcpy_s(opcode, "fres");
+
+        if (rc_set)
+            strcat_s(opcode, ".");
+
+        if ((rc != 0) | (ra != 0))
+            opc_illegal(ctx);
+        else
+            fmt_twoop_flt(ctx->instr_str, opcode, rs, rb);
+
+        return;
+
+    case 25: /* fmuls */
+
+        strcpy_s(opcode, opc_flt_ext_arith[25]);
+        strcat_s(opcode, "s");
+
+        if (rc_set)
+            strcat_s(opcode, ".");
+
+        if (rb != 0)
+            opc_illegal(ctx);
+        else
+            fmt_threeop_flt(ctx->instr_str, opcode, rs, ra, rc);
+
+        return;
+
+    case 28: /* fmsubs */
+
+        strcpy_s(opcode, opc_flt_ext_arith[28]);
+        strcat_s(opcode, "s");
+
+        if (rc_set)
+            strcat_s(opcode, ".");
+
+        fmt_fourop_flt(ctx->instr_str, opcode, rs, ra, rb, rc);
+
+        return;
+
+    case 29: /* fmadds */
+
+        strcpy_s(opcode, opc_flt_ext_arith[29]);
+        strcat_s(opcode, "s");
+
+        if (rc_set)
+            strcat_s(opcode, ".");
+
+        fmt_fourop_flt(ctx->instr_str, opcode, rs, ra, rb, rc);
+
+        return;
+
+    case 30: /* fnmsubs */
+
+        strcpy_s(opcode, opc_flt_ext_arith[30]);
+        strcat_s(opcode, "s");
+
+        if (rc_set)
+            strcat_s(opcode, ".");
+
+        fmt_fourop_flt(ctx->instr_str, opcode, rs, ra, rb, rc);
+
+        return;
+
+    case 31: /* fnmadds */
+
+        strcpy_s(opcode, opc_flt_ext_arith[31]);
+        strcat_s(opcode, "s");
+
+        if (rc_set)
+            strcat_s(opcode, ".");
+
+        fmt_fourop_flt(ctx->instr_str, opcode, rs, ra, rb, rc);
+
+        return;
+    }
+}
+
+void opc_group63(PPCDisasmContext* ctx)
+{
+    char opcode[10] = "";
+
+    auto rc = (ctx->instr_code >> 6) & 0x1F;
+    auto rb = (ctx->instr_code >> 11) & 0x1F;
+    auto ra = (ctx->instr_code >> 16) & 0x1F;
+    auto rs = (ctx->instr_code >> 21) & 0x1F;
+
+    int  ext_opc = (ctx->instr_code >> 1) & 0x3FF; /* extract extended opcode */
+    int  index = ext_opc >> 5;
+    bool rc_set = ctx->instr_code & 1;
+
+    switch (ext_opc & 0x1F) {
+    case 18: /* floating point division */
+        strcpy_s(opcode, "fdiv");
+
+        if (rc_set)
+            strcat_s(opcode, ".");
+
+        if (rc != 0)
+            opc_illegal(ctx);
+        else
+            fmt_threeop_flt(ctx->instr_str, opcode, rs, ra, rb);
+
+        return;
+
+    case 20: /* floating point subtract */
+        strcpy_s(opcode, "fsub");
+        if (rc_set)
+            strcat_s(opcode, ".");
+
+        if (rc != 0)
+            opc_illegal(ctx);
+        else
+            fmt_threeop_flt(ctx->instr_str, opcode, rs, ra, rb);
+
+        return;
+
+    case 21: /* floating point addition */
+        strcpy_s(opcode, "fadd");
+
+        if (rc_set)
+            strcat_s(opcode, ".");
+
+        if (rc != 0)
+            opc_illegal(ctx);
+        else
+            fmt_threeop_flt(ctx->instr_str, opcode, rs, ra, rb);
+
+        return;
+
+    case 22: /* floating point square root */
+        strcpy_s(opcode, "fsqrt");
+
+        if (rc_set)
+            strcat_s(opcode, ".");
+
+        if ((rc != 0) | (ra != 0))
+            opc_illegal(ctx);
+        else
+            fmt_threeop_flt(ctx->instr_str, opcode, rs, ra, rb);
+
+        return;
+
+    case 25: /* fmul */
+
+        strcpy_s(opcode, opc_flt_ext_arith[25]);
+
+        if (rc_set)
+            strcat_s(opcode, ".");
+
+        if (rb != 0)
+            opc_illegal(ctx);
+        else
+            fmt_threeop_flt(ctx->instr_str, opcode, rs, ra, rc);
+
+        return;
+
+    case 26: /* frsqrte */
+        strcpy_s(opcode, "frsqrte");
+
+        if (rc_set)
+            strcat_s(opcode, ".");
+
+        if ((rc != 0) | (ra != 0))
+            opc_illegal(ctx);
+        else
+            ctx->instr_str = my_sprintf("%-8s%d, fr%d, fr%d", opcode, rs, rb);
+
+        return;
+
+    case 28: /* fmsub */
+        strcpy_s(opcode, opc_flt_ext_arith[28]);
+
+        if (rc_set)
+            strcat_s(opcode, ".");
+
+        fmt_fourop_flt(ctx->instr_str, opcode, rs, ra, rb, rc);
+
+        return;
+
+    case 29: /* fmadd */
+        strcpy_s(opcode, opc_flt_ext_arith[29]);
+
+        if (rc_set)
+            strcat_s(opcode, ".");
+
+        fmt_fourop_flt(ctx->instr_str, opcode, rs, ra, rb, rc);
+
+        return;
+
+    case 30: /* fnmsub */
+        strcpy_s(opcode, opc_flt_ext_arith[30]);
+
+        if (rc_set)
+            strcat_s(opcode, ".");
+
+        fmt_fourop_flt(ctx->instr_str, opcode, rs, ra, rb, rc);
+
+        return;
+
+    case 31: /* fnmadd */
+        strcpy_s(opcode, opc_flt_ext_arith[31]);
+
+        if (rc_set)
+            strcat_s(opcode, ".");
+
+        fmt_fourop_flt(ctx->instr_str, opcode, rs, ra, rb, rc);
+
+        return;
+    }
+
+    auto fm = (ctx->instr_code >> 17) & 0xFF;
+
+    switch (ext_opc) {
+    case 0: /* fcmpu */
+        if (rs & 3)
+            opc_illegal(ctx);
+        else
+            ctx->instr_str = my_sprintf("%-8s%d, crf%d, r%d, r%d", "fcmpu", (rs >> 2), ra, rb);
+        break;
+    case 12: /* frsp */
+        if (ra != 0)
+            opc_illegal(ctx);
+        else
+            ctx->instr_str = my_sprintf("%-8s%d, r%d, r%d", "frsp", rs, rb);
+        break;
+    case 14: /* fctiw */
+        if (ra != 0)
+            opc_illegal(ctx);
+        else
+            ctx->instr_str = my_sprintf("%-8s%d, r%d, r%d", "fctiw", rs, rb);
+        break;
+    case 15: /* fctiwz */
+        if (ra != 0)
+            opc_illegal(ctx);
+        else
+            ctx->instr_str = my_sprintf("%-8s%d, r%d, r%d", "fctiwz", rs, rb);
+        break;
+    case 32: /* fcmpo */
+        if (rs & 3)
+            opc_illegal(ctx);
+        else
+            ctx->instr_str = my_sprintf("%-8s%d, crf%d, r%d, r%d", "fcmpu", (rs >> 2), ra, rb);
+        break;
+    case 40: /* fneg */
+        strcpy_s(opcode, "fneg");
+
+        if (rc_set)
+            strcat_s(opcode, ".");
+
+        if (ra != 0)
+            opc_illegal(ctx);
+        else
+            ctx->instr_str = my_sprintf("%-8sr%d, r%d", opcode, rs, rb);
+        break;
+    case 72: /* fmr */
+        if (ra != 0)
+            opc_illegal(ctx);
+        else
+            ctx->instr_str = my_sprintf("%-8sr%d, r%d", "fmr", rs, rb);
+        break;
+    case 134: /* mtfsfi */
+        if (ra != 0)
+            opc_illegal(ctx);
+        else
+            ctx->instr_str = my_sprintf("%-8scrf%d, r%d", "mtfsfi", (rs >> 2), (rb >> 1));
+        break;
+    case 136: /* fnabs */
+        if (ra != 0)
+            opc_illegal(ctx);
+        else
+            ctx->instr_str = my_sprintf("%-8s%d, fr%d, fr%d", "fnabs", rs, rb);
+        break;
+    case 264: /* fabs */
+        if (ra != 0)
+            opc_illegal(ctx);
+        else
+            ctx->instr_str = my_sprintf("%-8s%d, fr%d, fr%d", "fabs", rs, rb);
+        break;
+    case 467: /* mffs */
+        if ((ra != 0) | (rb != 0))
+            opc_illegal(ctx);
+        else
+            fmt_oneop(ctx->instr_str, "mffs", rs);
+        break;
+    case 711: /* mtfsf */
+        ctx->instr_str = my_sprintf("%-8sfm%d, r%d", "mtfsf", fm, rb);
         break;
     default:
         opc_illegal(ctx);
@@ -770,28 +1215,8 @@ static std::function<void(PPCDisasmContext*)> OpcodeDispatchTable[64] = {
     opc_intldst,   opc_intldst,   opc_intldst,   opc_intldst,
     opc_fltldst,   opc_fltldst,   opc_fltldst,   opc_fltldst,
     opc_fltldst,   opc_fltldst,   opc_fltldst,   opc_fltldst,
-    opc_illegal,   opc_illegal,   opc_illegal,   opc_illegal,
-    opc_illegal,   opc_illegal,   opc_illegal,   opc_illegal
-
-    /*
-    {15, &opc_addis},     {16, &opc_bcx},  {17, &opc_sc},
-    {18, &opc_bx},        {19, &opc_opcode19},  {20, &opc_rlwimi},
-    {21, &opc_rlwinm},    {22, &power_rlmi},    {23, &opc_rlwnm},
-    {24, &opc_ori},       {25, &opc_oris},      {26, &opc_xori},
-    {27, &opc_xoris},     {28, &opc_andidot},   {29, &opc_andisdot},
-    {30, &opc_illegal},   {31, &opc_group31},   {32, &opc_lwz},
-    {33, &opc_lwzu},      {34, &opc_lbz},       {35, &opc_lbzu},
-    {36, &opc_stw},       {37, &opc_stwu},      {38, &opc_stb},
-    {39, &opc_stbu},      {40, &opc_lhz},       {41, &opc_lhzu},
-    {42, &opc_lha},       {43, &opc_lhau},      {44, &opc_sth},
-    {45, &opc_sthu},      {46, &opc_lmw},       {47, &opc_stmw},
-    {48, &opc_lfs},       {49, &opc_lfsu},      {50, &opc_lfd},
-    {51, &opc_lfdu},      {52, &opc_stfs},      {53, &opc_stfsu},
-    {54, &opc_stfd},      {55, &opc_stfdu},     {56, &opc_psq_l},
-    {57, &opc_psq_lu},    {58, &opc_illegal},   {59, &opc_illegal},
-    {60, &opc_psq_st},    {61, &opc_psq_stu},   {62, &opc_illegal},
-    {63, &opc_opcode63}
-    */
+    opc_illegal,   opc_illegal,   opc_illegal,   opc_group59,
+    opc_illegal,   opc_illegal,   opc_illegal,   opc_group63
 };
 
 string disassemble_single(PPCDisasmContext* ctx)
