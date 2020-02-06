@@ -47,15 +47,7 @@ void dump_regs()
     cout << "MSR: " << hex << ppc_state.ppc_msr << endl;
 }
 
-void dump_mem_file()
-{
-    std::ofstream memdumpfile;
-    memdumpfile.open("memdump.bin", std::ofstream::out | std::ofstream::binary);
-    memdumpfile.write((char*)&machine_sysram_mem, sizeof(char) * 67108864);
-    memdumpfile.close();
-}
-
-void disasm()
+void disasm(uint32_t inst_num = 1UL, uint32_t address = ppc_state.ppc_pc)
 {
     PPCDisasmContext ctx;
 
@@ -69,8 +61,8 @@ void disasm()
 
 void enter_debugger()
 {
-    string inp, cmd, addr_str, expr_str, reg_expr, last_cmd;
-    uint32_t addr;
+    string inp, cmd, addr_str, expr_str, reg_expr, last_cmd, inst_num_str;
+    uint32_t addr, inst_grab;
     std::stringstream ss;
 
     cout << "Welcome to the PowerPC debugger." << endl;
@@ -132,7 +124,19 @@ void enter_debugger()
             ppc_exec_until(addr);
         }
         else if (cmd == "disas") {
-            disasm();
+            expr_str = "";
+            ss >> expr_str;
+            if (expr_str.length() > 0) {
+                cout << "Parsing disas params." << endl;
+                inst_num_str = expr_str.substr(expr_str.find(" ") + 1, expr_str.find(","));
+                inst_grab = stoul(inst_num_str, NULL, 0);
+                addr_str = expr_str.substr(expr_str.find(",") + 1, expr_str.length() - 1);
+                addr = stoul(addr_str, NULL, 16);
+                disasm(inst_grab, addr);
+            }
+            else {
+                disasm();
+            }
         }
         else {
             cout << "Unknown command: " << cmd << endl;
