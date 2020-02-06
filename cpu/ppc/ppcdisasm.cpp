@@ -2,8 +2,11 @@
     @author maximumspatium
  */
 
+#define _CRT_SECURE_NO_WARNINGS /* shut up MSVC regarding the unsafe strcpy/strcat */
+
 #include <iostream>
 #include <string>
+#include <functional> /* without this, MSVC doesn't understand std::function */
 #include "ppcdisasm.h"
 
 using namespace std;

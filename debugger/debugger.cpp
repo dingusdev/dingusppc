@@ -61,7 +61,7 @@ void disasm(uint32_t inst_num = 1UL, uint32_t address = ppc_state.ppc_pc)
 
 void enter_debugger()
 {
-    string inp, cmd, addr_str, expr_str, reg_expr, last_cmd, inst_num_str;
+    string inp, cmd, addr_str, expr_str, reg_expr, last_cmd, reg_value_str, inst_string, inst_num_str;
     uint32_t addr, inst_grab;
     std::stringstream ss;
 
@@ -89,9 +89,6 @@ void enter_debugger()
         }
         else if (cmd == "quit") {
             break;
-        }
-        else if (cmd == "memdump") {
-            dump_mem_file();
         }
 #ifdef PROFILER
         else if (cmd == "profiler") {
