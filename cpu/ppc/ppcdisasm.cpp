@@ -111,12 +111,12 @@ void fmt_twoop_simm(string& buf, const char* opc, int dst, int imm)
 
 void fmt_twoop_fromspr(string& buf, const char* opc, int dst, int src)
 {
-    buf = my_sprintf("%-8sspr%d, r%d", opc, dst, src);
+    buf = my_sprintf("%-8sr%d, spr%d", opc, dst, src);
 }
 
 void fmt_twoop_tospr(string& buf, const char* opc, int dst, int src)
 {
-    buf = my_sprintf("%-8sr%d, spr%d", opc, dst, src);
+    buf = my_sprintf("%-8sspr%d, r%d", opc, dst, src);
 }
 
 void fmt_twoop_flt(string& buf, const char* opc, int dst, int src1)
@@ -283,10 +283,10 @@ void opc_cmp_i_li(PPCDisasmContext* ctx)
         opc_illegal(ctx);
     }
     else {
-        if ((ctx->instr_code >> 26) & 0x2)
-            fmt_threeop_simm(ctx->instr_str, "cmpli", crfd, ra, imm);
-        else
+        if ((ctx->instr_code >> 26) & 0x1)
             fmt_threeop_uimm(ctx->instr_str, "cmpi", crfd, ra, imm);
+        else
+            fmt_threeop_simm(ctx->instr_str, "cmpli", crfd, ra, imm);
     }
 }
 
@@ -689,6 +689,13 @@ void opc_group31(PPCDisasmContext* ctx)
         }
         return;
 
+    case 0x1A: /* Byte sign extend instructions */
+        if (index == 28)
+            fmt_twoop(ctx->instr_str, "extsh", rs, ra);
+        else if (index == 29)
+            fmt_twoop(ctx->instr_str, "extsb", rs, ra);
+        return;
+
     case 0x1C: /* logical instructions */
         if (index == 13 && rs == rb && ctx->simplified) {
             fmt_twoop(ctx->instr_str, rc_set ? "mr." : "mr", ra, rs);
@@ -719,11 +726,6 @@ void opc_group31(PPCDisasmContext* ctx)
         return;
         break;
 
-    case 0x1A: /* Byte sign extend instructions */
-        if (index == 28)
-            fmt_twoop(ctx->instr_str, "extsb", rs, ra);
-        else if (index == 29)
-            fmt_twoop(ctx->instr_str, "extsh", rs, ra);
     }
 
     auto ref_spr = (((ctx->instr_code >> 11) & 31) << 5) | ((ctx->instr_code >> 16) & 31);
@@ -752,7 +754,7 @@ void opc_group31(PPCDisasmContext* ctx)
 
         fmt_twoop(ctx->instr_str, opcode, rs, ra);
         break;
-    case 64: /* cmpl */
+    case 32: /* cmpl */
         if (rc_set)
             opc_illegal(ctx);
         else
