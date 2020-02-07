@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <string>
+#include <cstring>
 #include <functional> /* without this, MSVC doesn't understand std::function */
 #include "ppcdisasm.h"
 
