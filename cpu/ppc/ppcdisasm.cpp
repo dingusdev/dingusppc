@@ -898,6 +898,9 @@ void opc_group31(PPCDisasmContext* ctx)
         }
         fmt_twoop_tospr(ctx->instr_str, "mtspr", ref_spr, rs);
         break;
+    case 512: /* mcrxr */
+        ctx->instr_str = my_sprintf("%-8scrf%d", "mcrxr", (rs >> 2));
+        break;
     case 533: /* lswx */
         fmt_threeop_simm(ctx->instr_str, "lswx", rs, ra, rb);
         break;
@@ -1251,6 +1254,11 @@ void opc_group63(PPCDisasmContext* ctx)
         else
             ctx->instr_str = my_sprintf("%-8sr%d, r%d", opcode, rs, rb);
         break;
+    case 64:
+        strcpy(opcode, "mcrfs");
+
+        ctx->instr_str = my_sprintf("%-8scrf%d, crf%d", opcode, (rs >> 2), (ra >> 2));
+        break;
     case 70: /* mtfsb0 */
         strcpy(opcode, "mtfsb0");
 
@@ -1283,11 +1291,16 @@ void opc_group63(PPCDisasmContext* ctx)
         else
             ctx->instr_str = my_sprintf("%-8s%d, fr%d, fr%d", "fabs", rs, rb);
         break;
-    case 467: /* mffs */
+    case 583: /* mffs */
+        strcpy(opcode, "mffs");
+
+        if (rc_set)
+            strcat(opcode, ".");
+
         if ((ra != 0) | (rb != 0))
             opc_illegal(ctx);
         else
-            fmt_oneop(ctx->instr_str, "mffs", rs);
+            ctx->instr_str = my_sprintf("%-8sfr%d", opcode, rs);
         break;
     case 711: /* mtfsf */
         ctx->instr_str = my_sprintf("%-8sfm%d, r%d", "mtfsf", fm, rb);
