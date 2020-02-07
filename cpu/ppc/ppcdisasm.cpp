@@ -85,6 +85,13 @@ const char* opc_int_ldst[16] = { /* integer load and store instructions */
     "lha", "lhau", "sth", "sthu", "lmw", "stmw"
 };
 
+const char* proc_mgmt_str[32] = { /* processor managment + byte reversed load and store*/
+    "", "dcbst", "dcbf", "", "stwcx.", "", "", "dcbtst",
+    "dcbt", "eciwx", "", "", "", "ecowx", "dcbi", "",
+    "lwbrx", "tlbsync", "sync", "", "stwbrx", "", "", "dcba",
+    "lhbrx", "", "eieio", "", "sthbrx", "", "icbi", "dcbz"
+};
+
 const char* opc_flt_ldst[8] = { /* integer load and store instructions */
     "lfs", "lfsu", "lfd", "lfdu", "stfs", "stfsu", "sftd", "sftdu"
 };
@@ -213,16 +220,36 @@ void opc_ar_im(PPCDisasmContext* ctx)
     auto rd = (ctx->instr_code >> 21) & 0x1F;
     int32_t imm = SIGNEXT(ctx->instr_code & 0xFFFF, 15);
 
-    if ((ctx->instr_code >> 26) == 0xE && !ra && ctx->simplified) {
-        fmt_twoop_simm(ctx->instr_str, "li", rd, imm);
+    if (ctx->simplified) {
+        if (((ctx->instr_code >> 26) == 0xE) & !ra) {
+            fmt_twoop_simm(ctx->instr_str, "li", rd, imm);
+            return;
+        }
+        else if (((ctx->instr_code >> 26) == 0xF) & !ra) {
+            fmt_twoop_simm(ctx->instr_str, "lis", rd, imm);
+            return;
+        }
+
+        if (imm > 0x7FFF) {
+            switch ((ctx->instr_code >> 26)) {
+            case 0xC:
+                fmt_threeop_simm(ctx->instr_str, "subic", rd, ra, imm);
+                return;
+            case 0xD:
+                fmt_threeop_simm(ctx->instr_str, "subic.", rd, ra, imm);
+                return;
+            case 0xE:
+                fmt_threeop_simm(ctx->instr_str, "subi", rd, ra, imm);
+                return;
+            case 0xF:
+                fmt_threeop_simm(ctx->instr_str, "subis", rd, ra, imm);
+                return;
+            }
+        }
     }
-    else if ((ctx->instr_code >> 26) == 0xF && !ra && ctx->simplified) {
-        fmt_twoop_simm(ctx->instr_str, "lis", rd, imm);
-    }
-    else {
-        fmt_threeop_simm(ctx->instr_str, arith_im_mnem[(ctx->instr_code >> 26) - 7],
-            rd, ra, imm);
-    }
+
+    fmt_threeop_simm(ctx->instr_str, arith_im_mnem[(ctx->instr_code >> 26) - 7],
+        rd, ra, imm);
 }
 
 void power_dozi(PPCDisasmContext* ctx)
@@ -270,6 +297,18 @@ void opc_rlwnm(PPCDisasmContext* ctx)
     auto mb = (ctx->instr_code >> 6) & 0x1F;
     auto me = (ctx->instr_code >> 1) & 0x1F;
 
+    if (ctx->simplified) {
+        if ((me == 31) & (mb == 0)) {
+            if (ctx->instr_code & 1) {
+                fmt_rotateop(ctx->instr_str, "rotlw.", rs, ra, rb, mb, me, false);
+                return;
+            }
+            else {
+                fmt_rotateop(ctx->instr_str, "rotlw", rs, ra, rb, mb, me, false);
+                return;
+            }
+        }
+    }
     if (ctx->instr_code & 1)
         fmt_rotateop(ctx->instr_str, "rlwnm.", rs, ra, rb, mb, me, false);
     else
@@ -462,7 +501,7 @@ void opc_bclrx(PPCDisasmContext* ctx)
         strcat(opcode, "d");
         strcat(opcode, (bo & 2) ? "z" : "nz");
         if (!(bo & 0x10)) {
-            strcat(opcode, (bo & 8) ? "t" : "f");
+            strcat(opcode, (bo & 8) ? "tlr" : "flr");
             if (cr) {
                 strcat(operands, "4*cr0+");
                 operands[4] = cr + '0';
@@ -592,7 +631,12 @@ void opc_group19(PPCDisasmContext* ctx)
         ctx->instr_str = my_sprintf("%-8sr%d", "isync");
         return;
     case 193:
-        fmt_threeop_crb(ctx->instr_str, "crxor", rs, ra, rb);
+        if (ctx->simplified && (rs == ra) && (rs == rb)) {
+            ctx->instr_str = my_sprintf("%-8scrb%d", "crclr", rs);
+        }
+        else {
+            fmt_threeop_crb(ctx->instr_str, "crxor", rs, ra, rb);
+        }
         return;
     case 225:
         fmt_threeop_crb(ctx->instr_str, "crnand", rs, ra, rb);
@@ -688,8 +732,29 @@ void opc_group31(PPCDisasmContext* ctx)
             if ((!index || index == 2) && (ext_opc & 0x200))
                 opc_illegal(ctx);
             else
-                fmt_threeop(ctx->instr_str, opcode, rs, ra, rb);
+                fmt_threeop_simm(ctx->instr_str, opcode, rs, ra, rb);
         }
+        return;
+
+    case 0x12: /* tlb instructions */
+
+        if (index == 11) {
+            ctx->instr_str = my_sprintf("%-8s", "tlbia");
+        }
+        else if (index == 18) {
+            ctx->instr_str = my_sprintf("%-8sr%s", "tlbie", rb);
+        }
+        return;
+
+    case 0x18: /* Shifting instructions */
+        if (index == 0)
+            fmt_threeop(ctx->instr_str, "slw", rs, ra, rb);
+        else if (index == 16)
+            fmt_threeop(ctx->instr_str, "srw", rs, ra, rb);
+        else if (index == 24)
+            fmt_threeop(ctx->instr_str, "sraw", rs, ra, rb);
+        else if (index == 25)
+            fmt_threeop_uimm(ctx->instr_str, "srawi", rs, ra, rb);
         return;
 
     case 0x1A: /* Byte sign extend instructions */
@@ -716,6 +781,7 @@ void opc_group31(PPCDisasmContext* ctx)
         }
         return;
 
+
     case 0x17: /* indexed load/store instructions */
         if (index > 23 || rc_set || strlen(opc_idx_ldst[index]) == 0) {
             opc_illegal(ctx);
@@ -726,6 +792,25 @@ void opc_group31(PPCDisasmContext* ctx)
         else
             ctx->instr_str = my_sprintf("%-8sfp%d, r%d, r%d",
                 opc_idx_ldst[index], rs, ra, rb);
+        return;
+
+    case 0x16: /* processor mgmt + byte reversed load and store instructions */
+        strcpy(opcode, proc_mgmt_str[index]);
+
+        if ((index == 4) | (index == 9) | (index == 13) | (index == 16) \
+            | (index == 20) | (index == 24) | (index == 28)) {
+            fmt_threeop(ctx->instr_str, opcode, rs, ra, rb);
+            return;
+            break;
+        }
+        else if ((index == 18)) {
+            ctx->instr_str = my_sprintf("%-8s", opcode);
+            return;
+        }
+        else {
+            fmt_twoop(ctx->instr_str, opcode, ra, rb);
+        }
+
         return;
         break;
 
@@ -764,7 +849,7 @@ void opc_group31(PPCDisasmContext* ctx)
             ctx->instr_str = my_sprintf("%-8sr%d, r%d, r%d", "cmpl", rs, ra, rb);
         break;
     case 83: /* mfmsr */
-        ctx->instr_str = my_sprintf("%-8s0x%02X, r%d", "mfmsr",
+        ctx->instr_str = my_sprintf("%-8sr%d", "mfmsr",
             (ctx->instr_code >> 21) & 0x1F);
         break;
     case 144: /* mtcrf */
@@ -779,16 +864,45 @@ void opc_group31(PPCDisasmContext* ctx)
         fmt_oneop(ctx->instr_str, "mtmsr", rs);
         break;
     case 339: /* mfspr */
+        if (ctx->simplified) {
+            switch (ref_spr) {
+            case 1:
+                ctx->instr_str = my_sprintf("%-8sr%d", "mfxer", rs);
+                return;
+            case 8:
+                ctx->instr_str = my_sprintf("%-8sr%d", "mflr", rs);
+                return;
+            case 9:
+                ctx->instr_str = my_sprintf("%-8sr%d", "mfctr", rs);
+                return;
+            }
+        }
         fmt_twoop_fromspr(ctx->instr_str, "mfspr", rs, ref_spr);
         break;
     case 371: /* mftb */
         fmt_twoop_tospr(ctx->instr_str, "mftb", ref_spr, rs);
         break;
     case 467: /* mtspr */
+        if (ctx->simplified) {
+            switch (ref_spr) {
+            case 1:
+                ctx->instr_str = my_sprintf("%-8sr%d", "mtxer", rs);
+                return;
+            case 8:
+                ctx->instr_str = my_sprintf("%-8sr%d", "mtlr", rs);
+                return;
+            case 9:
+                ctx->instr_str = my_sprintf("%-8sr%d", "mtctr", rs);
+                return;
+            }
+        }
         fmt_twoop_tospr(ctx->instr_str, "mtspr", ref_spr, rs);
         break;
-    case 598: /* sync */
-        ctx->instr_str = my_sprintf("%-8s", "sync");
+    case 533: /* lswx */
+        fmt_threeop_simm(ctx->instr_str, "lswx", rs, ra, rb);
+        break;
+    case 597: /* lswi */
+        fmt_threeop_simm(ctx->instr_str, "lswi", rs, ra, rb);
         break;
     default:
         opc_illegal(ctx);
@@ -1004,6 +1118,19 @@ void opc_group63(PPCDisasmContext* ctx)
 
         return;
 
+    case 23: /* fsel */
+        strcpy(opcode, "fsel");
+
+        if (rc_set)
+            strcat_s(opcode, ".");
+
+        if ((rc != 0) | (ra != 0))
+            opc_illegal(ctx);
+        else
+            fmt_fourop_flt(ctx->instr_str, opcode, rs, ra, rb, rc);
+
+        return;
+
     case 25: /* fmul */
 
         strcpy(opcode, opc_flt_ext_arith[25]);
@@ -1079,7 +1206,7 @@ void opc_group63(PPCDisasmContext* ctx)
         if (rs & 3)
             opc_illegal(ctx);
         else
-            ctx->instr_str = my_sprintf("%-8s%d, crf%d, r%d, r%d", "fcmpu", (rs >> 2), ra, rb);
+            ctx->instr_str = my_sprintf("%-8scrf%d, r%d, r%d,", "fcmpu", (rs >> 2), ra, rb);
         break;
     case 12: /* frsp */
         if (ra != 0)
@@ -1103,7 +1230,15 @@ void opc_group63(PPCDisasmContext* ctx)
         if (rs & 3)
             opc_illegal(ctx);
         else
-            ctx->instr_str = my_sprintf("%-8s%d, crf%d, r%d, r%d", "fcmpu", (rs >> 2), ra, rb);
+            ctx->instr_str = my_sprintf("%-8scrf%d, r%d, r%d,", "fcmpo", (rs >> 2), ra, rb);
+        break;
+    case 38: /* mtfsb1 */
+        strcpy(opcode, "mtfsb1");
+
+        if (rc_set)
+            strcat(opcode, ".");
+
+        ctx->instr_str = my_sprintf("%-8scrb%d", opcode, rs);
         break;
     case 40: /* fneg */
         strcpy(opcode, "fneg");
@@ -1115,6 +1250,14 @@ void opc_group63(PPCDisasmContext* ctx)
             opc_illegal(ctx);
         else
             ctx->instr_str = my_sprintf("%-8sr%d, r%d", opcode, rs, rb);
+        break;
+    case 70: /* mtfsb0 */
+        strcpy(opcode, "mtfsb0");
+
+        if (rc_set)
+            strcat(opcode, ".");
+
+        ctx->instr_str = my_sprintf("%-8scrb%d", opcode, rs);
         break;
     case 72: /* fmr */
         if (ra != 0)
