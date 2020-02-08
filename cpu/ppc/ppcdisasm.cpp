@@ -842,7 +842,7 @@ void opc_group31(PPCDisasmContext* ctx)
             return;
             break;
         }
-        else if ((index == 18)) {
+        else if (index == 18) {
             ctx->instr_str = my_sprintf("%-8s", opcode);
             return;
         }
@@ -1164,7 +1164,7 @@ void opc_group63(PPCDisasmContext* ctx)
         strcpy(opcode, "fsel");
 
         if (rc_set)
-            strcat_s(opcode, ".");
+            strcat(opcode, ".");
 
         if ((rc != 0) | (ra != 0))
             opc_illegal(ctx);
