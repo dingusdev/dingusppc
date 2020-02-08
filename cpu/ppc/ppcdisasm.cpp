@@ -61,6 +61,10 @@ const char* opc_idx_ldst[24] = { /* indexed load/store opcodes */
     "lfdux", "stfsx", "stfsux", "stfdx", "stfdux"
 };
 
+const char* opc_bim_str[6] = { /* boolean immediate instructions */
+    "ori", "oris", "xori", "xoris", "andi.", "andis."
+};
+
 const char* opc_logic[16] = { /* indexed load/store opcodes */
     "and", "andc", "", "nor", "", "", "", "", "eqv", "xor", "", "", "orc", "or",
     "nand", ""
@@ -330,6 +334,32 @@ void opc_cmp_i_li(PPCDisasmContext* ctx)
         else
             fmt_threeop_simm(ctx->instr_str, "cmpli", crfd, ra, imm);
     }
+}
+
+void opc_bool_im(PPCDisasmContext* ctx)
+{
+    char opcode[10];
+
+    auto ra = (ctx->instr_code >> 16) & 0x1F;
+    auto rs = (ctx->instr_code >> 21) & 0x1F;
+    auto index = ((ctx->instr_code >> 26) & 0x1F) - 24;
+    auto imm = ctx->instr_code & 0xFFFF;
+
+    if (ctx->simplified) {
+        if (index == 0) {
+            if (imm == 0) { /* unofficial, produced by IDA */
+                fmt_twoop(ctx->instr_str, "mr", ra, rs);
+                return;
+            }
+            else if (!ra && !rs && !imm) {
+                ctx->instr_str = "nop";
+                return;
+            }
+        }
+    }
+
+    strcpy(opcode, opc_bim_str[index]);
+    fmt_threeop_uimm(ctx->instr_str, opcode, ra, rs, imm);
 }
 
 void generic_bcx(PPCDisasmContext* ctx, uint32_t bo, uint32_t bi, uint32_t dst)
@@ -619,6 +649,9 @@ void opc_group19(PPCDisasmContext* ctx)
         opc_bclrx(ctx);
         return;
     case 33:
+        if (ctx->simplified && (ra == rb)) {
+            ctx->instr_str = my_sprintf("%-8scrb%d, crb%d", "crnot", rs, ra);
+        }
         fmt_threeop_crb(ctx->instr_str, "crnor", rs, ra, rb);
         return;
     case 50:
@@ -634,9 +667,7 @@ void opc_group19(PPCDisasmContext* ctx)
         if (ctx->simplified && (rs == ra) && (rs == rb)) {
             ctx->instr_str = my_sprintf("%-8scrb%d", "crclr", rs);
         }
-        else {
-            fmt_threeop_crb(ctx->instr_str, "crxor", rs, ra, rb);
-        }
+        fmt_threeop_crb(ctx->instr_str, "crxor", rs, ra, rb);
         return;
     case 225:
         fmt_threeop_crb(ctx->instr_str, "crnand", rs, ra, rb);
@@ -645,12 +676,20 @@ void opc_group19(PPCDisasmContext* ctx)
         fmt_threeop_crb(ctx->instr_str, "crand", rs, ra, rb);
         return;
     case 289:
+        if (ctx->simplified && (rs == ra) && (rs == rb)) {
+            ctx->instr_str = my_sprintf("%-8scrb%d", "crset", rs);
+            return;
+        }
         fmt_threeop_crb(ctx->instr_str, "creqv", rs, ra, rb);
         return;
     case 417:
         fmt_threeop_crb(ctx->instr_str, "crorc", rs, ra, rb);
         return;
     case 449:
+        if (ctx->simplified && (ra == rb)) {
+            ctx->instr_str = my_sprintf("%-8scrb%d, crb%d", "crmove", rs, ra);
+            return;
+        }
         fmt_threeop_crb(ctx->instr_str, "cror", rs, ra, rb);
         return;
     case 528:
@@ -732,7 +771,7 @@ void opc_group31(PPCDisasmContext* ctx)
             if ((!index || index == 2) && (ext_opc & 0x200))
                 opc_illegal(ctx);
             else
-                fmt_threeop_simm(ctx->instr_str, opcode, rs, ra, rb);
+                fmt_threeop(ctx->instr_str, opcode, rs, ra, rb);
         }
         return;
 
@@ -829,7 +868,7 @@ void opc_group31(PPCDisasmContext* ctx)
         if (rc_set)
             opc_illegal(ctx);
         else
-            ctx->instr_str = my_sprintf("%-8sr%d, r%d, r%d", "tw", rs, ra, rb);
+            ctx->instr_str = my_sprintf("%-8s%d, r%d, r%d", "tw", rs, ra, rb);
         break;
     case 19: /* mfcr */
         fmt_oneop(ctx->instr_str, "mfcr", rs);
@@ -1368,8 +1407,8 @@ static std::function<void(PPCDisasmContext*)> OpcodeDispatchTable[64] = {
     opc_ar_im,     opc_ar_im,     opc_ar_im,     opc_ar_im,
     opc_bcx,       opc_sc,        opc_bx,        opc_group19,
     opc_rlwimi,    opc_rlwinm,    opc_illegal,   opc_rlwnm,
-    opc_ori,       opc_oris,      opc_xori,      opc_xoris,
-    opc_andidot,   opc_andisdot,  opc_illegal,   opc_group31,
+    opc_bool_im,   opc_bool_im,   opc_bool_im,   opc_bool_im,
+    opc_bool_im,   opc_bool_im,   opc_illegal,   opc_group31,
     opc_intldst,   opc_intldst,   opc_intldst,   opc_intldst,
     opc_intldst,   opc_intldst,   opc_intldst,   opc_intldst,
     opc_intldst,   opc_intldst,   opc_intldst,   opc_intldst,
