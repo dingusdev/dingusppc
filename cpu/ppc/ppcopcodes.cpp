@@ -156,8 +156,8 @@ void ppc_changecrf0(uint32_t set_result) {
 }
 
 //Affects the XER register's Carry Bit
-void ppc_carry(uint32_t a, uint32_t b) {
-    if (b < a) { // TODO: ensure it works everywhere
+inline void ppc_carry(uint32_t a, uint32_t b) {
+    if (b < a) {
         ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
     }
     else {
@@ -166,7 +166,7 @@ void ppc_carry(uint32_t a, uint32_t b) {
 }
 
 inline void ppc_carry_sub(uint32_t a, uint32_t b) {
-    if (b >= a) { // TODO: ensure it works everywhere
+    if (b >= a) {
         ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
     }
     else {
