@@ -183,6 +183,15 @@ inline void ppc_setsoov(uint32_t a, uint32_t b, uint32_t d) {
     }
 }
 
+inline void ppc_setsoov_divwo(uint32_t a, uint32_t d) {
+    if (d > a) {
+        ppc_state.ppc_spr[SPR::XER] |= 0xC0000000UL;
+    }
+    else {
+        ppc_state.ppc_spr[SPR::XER] &= 0xBFFFFFFFUL;
+    }
+}
+
 /**
 The core functionality of this PPC emulation is within all of these void functions.
 This is where the opcode tables in the ppcemumain.h come into play - reducing the number of comparisons needed.
@@ -972,16 +981,21 @@ void ppc_divwo() {
             ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
         return;
     case 0xFFFFFFFF:
-        if (ppc_result_a == 0x80000000) {
+        if (ppc_result_a == 0x80000000UL) {
             ppc_result_d = 0xFFFFFFFF;
             ppc_store_result_regd();
             ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
             return;
         }
+        else if (ppc_result_a == 0x7FFFFFFFUL) {
+            ppc_result_d = 0x80000001;
+            ppc_store_result_regd();
+            return;
+        }
     default:
         sidiv_result = (int32_t)ppc_result_a / (int32_t)ppc_result_b;
         ppc_result_d = sidiv_result;
-        ppc_setsoov(ppc_result_a, ppc_result_b, ppc_result_d);
+        ppc_setsoov_divwo(ppc_result_a, ppc_result_d);
         ppc_store_result_regd();
     }
 }
@@ -998,17 +1012,23 @@ void ppc_divwodot() {
         ppc_state.ppc_cr |= 0x30000000;
         return;
     case 0xFFFFFFFF:
-        if (ppc_result_a == 0x80000000) {
+        if (ppc_result_a == 0x80000000UL) {
             ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
             ppc_state.ppc_cr |= 0x90000000;
             ppc_result_d = 0xFFFFFFFF;
             ppc_store_result_regd();
             return;
         }
+        else if (ppc_result_a == 0x7FFFFFFFUL) {
+            ppc_result_d = 0x80000001;
+            ppc_state.ppc_cr |= 0x80000000;
+            ppc_store_result_regd();
+            return;
+        }
     default:
         sidiv_result = (int32_t)ppc_result_a / (int32_t)ppc_result_b;
         ppc_result_d = (uint32_t)sidiv_result;
-        ppc_setsoov(ppc_result_a, ppc_result_b, ppc_result_d);
+        ppc_setsoov_divwo(ppc_result_a, ppc_result_d);
         ppc_changecrf0(ppc_result_d);
         ppc_store_result_regd();
     }
@@ -1059,9 +1079,9 @@ void ppc_divwuo() {
         ppc_store_result_regd();
         return;
     default:
-        ppc_setsoov(ppc_result_a, ppc_result_b, ppc_result_d);
         uidiv_result = ppc_result_a / ppc_result_b;
         ppc_result_d = uidiv_result;
+        ppc_setsoov_divwo(ppc_result_a, ppc_result_d);
         ppc_store_result_regd();
     }
 }
@@ -1078,9 +1098,9 @@ void ppc_divwuodot() {
         ppc_state.ppc_cr |= 0x30000000;
         return;
     default:
-        ppc_setsoov(ppc_result_a, ppc_result_b, ppc_result_d);
         uidiv_result = ppc_result_a / ppc_result_b;
         ppc_result_d = uidiv_result;
+        ppc_setsoov_divwo(ppc_result_a, ppc_result_d);
         ppc_changecrf0(ppc_result_d);
         ppc_store_result_regd();
     }
