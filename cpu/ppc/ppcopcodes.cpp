@@ -29,7 +29,6 @@ uint32_t xercon;
 uint32_t cmp_c;
 uint32_t crm;
 uint32_t uimm;
-uint32_t not_this;
 uint32_t grab_sr;
 uint32_t grab_inb; //This is for grabbing the number of immediate bytes for loading and storing
 uint32_t ppc_to;
@@ -448,8 +447,7 @@ void ppc_addzeodot() {
 
 void ppc_subf() {
     ppc_grab_regsdab();
-    not_this = ~ppc_result_a;
-    ppc_result_d = not_this + ppc_result_b + 1;
+    ppc_result_d = ppc_result_b - ppc_result_a;
     ppc_store_result_regd();
 }
 

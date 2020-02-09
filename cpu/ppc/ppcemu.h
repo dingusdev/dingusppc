@@ -164,7 +164,6 @@ extern uint32_t rot_sh;
 extern uint32_t rot_mb;
 extern uint32_t rot_me;
 extern uint32_t uimm;
-extern uint32_t not_this;
 extern uint32_t grab_sr;
 extern uint32_t grab_inb; //This is for grabbing the number of immediate bytes for loading and storing
 extern uint32_t ppc_to;
