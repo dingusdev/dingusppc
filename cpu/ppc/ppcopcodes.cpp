@@ -165,6 +165,15 @@ void ppc_carry(uint32_t a, uint32_t b) {
     }
 }
 
+inline void ppc_carry_sub(uint32_t a, uint32_t b) {
+    if (b >= a) { // TODO: ensure it works everywhere
+        ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
+    }
+    else {
+        ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
+    }
+}
+
 //Affects the XER register's SO and OV Bits
 
 inline void ppc_setsoov(uint32_t a, uint32_t b, uint32_t d) {
@@ -469,14 +478,14 @@ void ppc_subfodot() {
 void ppc_subfc() {
     ppc_grab_regsdab();
     ppc_result_d = ppc_result_b - ppc_result_a;
-    ppc_carry(~ppc_result_a, ppc_result_d);
+    ppc_carry_sub(ppc_result_a, ppc_result_b);
     ppc_store_result_regd();
 }
 
 void ppc_subfcdot() {
     ppc_grab_regsdab();
     ppc_result_d = ppc_result_b - ppc_result_a;
-    ppc_carry(~ppc_result_a, ppc_result_d);
+    ppc_carry_sub(ppc_result_a, ppc_result_b);
     ppc_changecrf0(ppc_result_d);
     ppc_store_result_regd();
 }
@@ -485,7 +494,7 @@ void ppc_subfco() {
     ppc_grab_regsdab();
     ppc_result_d = ppc_result_b - ppc_result_a;
     ppc_setsoov(ppc_result_b, ppc_result_a, ppc_result_d);
-    ppc_carry(~ppc_result_a, ppc_result_d);
+    ppc_carry_sub(ppc_result_a, ppc_result_b);
     ppc_store_result_regd();
 }
 
@@ -493,7 +502,7 @@ void ppc_subfcodot() {
     ppc_grab_regsdab();
     ppc_result_d = ppc_result_b - ppc_result_a;
     ppc_setsoov(ppc_result_b, ppc_result_a, ppc_result_d);
-    ppc_carry(~ppc_result_a, ppc_result_d);
+    ppc_carry_sub(ppc_result_a, ppc_result_b);
     ppc_changecrf0(ppc_result_d);
     ppc_store_result_regd();
 }
