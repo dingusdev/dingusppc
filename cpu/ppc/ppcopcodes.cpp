@@ -182,15 +182,6 @@ inline void ppc_setsoov(uint32_t a, uint32_t b, uint32_t d) {
     }
 }
 
-inline void ppc_setsoov_divwo(uint32_t a, uint32_t d) {
-    if (d > a) {
-        ppc_state.ppc_spr[SPR::XER] |= 0xC0000000UL;
-    }
-    else {
-        ppc_state.ppc_spr[SPR::XER] &= 0xBFFFFFFFUL;
-    }
-}
-
 /**
 The core functionality of this PPC emulation is within all of these void functions.
 This is where the opcode tables in the ppcemumain.h come into play - reducing the number of comparisons needed.
@@ -986,73 +977,52 @@ void ppc_divwodot() {
 void ppc_divwu() {
     ppc_grab_regsdab();
 
-    //handle division by zero cases
-    switch (ppc_result_b) {
-    case 0:
+    if (!ppc_result_b) { /* division by zero */
         ppc_result_d = 0;
-        ppc_store_result_regd();
-        return;
-    default:
-        uidiv_result = ppc_result_a / ppc_result_b;
-        ppc_result_d = uidiv_result;
-        ppc_store_result_regd();
+    } else {
+        ppc_result_d = ppc_result_a / ppc_result_b;
     }
+    ppc_store_result_regd();
 }
 
 void ppc_divwudot() {
     ppc_grab_regsdab();
 
-    //handle division by zero cases
-    switch (ppc_result_b) {
-    case 0:
+    if (!ppc_result_b) { /* division by zero */
         ppc_result_d = 0;
-        ppc_store_result_regd();
         ppc_state.ppc_cr |= 0x20000000;
-        return;
-    default:
-        uidiv_result = ppc_result_a / ppc_result_b;
-        ppc_result_d = uidiv_result;
+    } else {
+        ppc_result_d = ppc_result_a / ppc_result_b;
         ppc_changecrf0(ppc_result_d);
-        ppc_store_result_regd();
     }
+    ppc_store_result_regd();
 }
 
 void ppc_divwuo() {
     ppc_grab_regsdab();
 
-    //handle division by zero cases
-    switch (ppc_result_b) {
-    case 0:
+    if (!ppc_result_b) { /* division by zero */
         ppc_result_d = 0;
         ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
-        ppc_store_result_regd();
-        return;
-    default:
-        uidiv_result = ppc_result_a / ppc_result_b;
-        ppc_result_d = uidiv_result;
-        ppc_setsoov_divwo(ppc_result_a, ppc_result_d);
-        ppc_store_result_regd();
+    } else {
+        ppc_result_d = ppc_result_a / ppc_result_b;
+        ppc_state.ppc_spr[SPR::XER] &= 0xBFFFFFFFUL;
     }
+    ppc_store_result_regd();
 }
 
 void ppc_divwuodot() {
     ppc_grab_regsdab();
 
-    //handle division by zero cases
-    switch (ppc_result_b) {
-    case 0:
+    if (!ppc_result_b) { /* division by zero */
         ppc_result_d = 0;
-        ppc_store_result_regd();
         ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
-        ppc_state.ppc_cr |= 0x30000000;
-        return;
-    default:
-        uidiv_result = ppc_result_a / ppc_result_b;
-        ppc_result_d = uidiv_result;
-        ppc_setsoov_divwo(ppc_result_a, ppc_result_d);
-        ppc_changecrf0(ppc_result_d);
-        ppc_store_result_regd();
+    } else {
+        ppc_result_d = ppc_result_a / ppc_result_b;
+        ppc_state.ppc_spr[SPR::XER] &= 0xBFFFFFFFUL;
     }
+    ppc_changecrf0(ppc_result_d);
+    ppc_store_result_regd();
 }
 
 //Value shifting
