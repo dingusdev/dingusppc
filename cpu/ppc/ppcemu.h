@@ -137,7 +137,6 @@ extern uint64_t timebase_counter; //used for storing time base value
 
 //Additional steps to prevent overflow?
 extern int32_t add_result;
-extern int32_t sidiv_result;
 extern int32_t simult_result;
 extern uint32_t uiadd_result;
 extern uint32_t uidiv_result;

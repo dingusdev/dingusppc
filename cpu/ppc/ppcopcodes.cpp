@@ -41,7 +41,6 @@ uint32_t ppc_result_b = 0;
 uint32_t ppc_result_c = 0;
 uint32_t ppc_result_d = 0;
 
-int32_t sidiv_result;
 uint32_t uidiv_result;
 uint64_t uiproduct;
 int64_t siproduct;
@@ -923,115 +922,65 @@ void ppc_mulli() {
 void ppc_divw() {
     ppc_grab_regsdab();
 
-    //handle division by zero cases
-    switch (ppc_result_b) {
-    case 0:
-        ppc_result_d = 0;
-        ppc_store_result_regd();
-        return;
-    case 0xFFFFFFFF:
-        if (ppc_result_a == 0x80000000) {
-            ppc_result_d = 0xFFFFFFFF;
-            ppc_store_result_regd();
-            ppc_state.ppc_cr &= 0x1FFFFFFF;
-            return;
-        }
-    default:
-        sidiv_result = (int32_t)ppc_result_a / (int32_t)ppc_result_b;
-        ppc_result_d = sidiv_result;
-        ppc_store_result_regd();
+    if (!ppc_result_b) { /* handle the "anything / 0" case */
+        ppc_result_d = (ppc_result_a & 0x80000000) ? -1 : 0; /* UNDOCUMENTED! */
+    } else if (ppc_result_a == 0x80000000UL && ppc_result_b == 0xFFFFFFFFUL) {
+        ppc_result_d = 0xFFFFFFFF;
+    } else { /* normal signed devision */
+        ppc_result_d = (int32_t)ppc_result_a / (int32_t)ppc_result_b;
     }
+
+    ppc_store_result_regd();
 }
 
 void ppc_divwdot() {
     ppc_grab_regsdab();
 
-    //handle division by zero cases
-    switch (ppc_result_b) {
-    case 0:
-        ppc_result_d = 0;
-        ppc_store_result_regd();
-        if ((ppc_result_a == 0) | (ppc_result_a == 0x7FFFFFFF))
-            ppc_state.ppc_cr |= 0x20000000;
-        return;
-    case 0xFFFFFFFF:
-        if (ppc_result_a == 0x80000000) {
-            ppc_result_d = 0xFFFFFFFF;
-            ppc_store_result_regd();
-            ppc_state.ppc_cr |= 0x80000000;
-            return;
-        }
-    default:
-        sidiv_result = (int32_t)ppc_result_a / (int32_t)ppc_result_b;
-        ppc_result_d = sidiv_result;
-        ppc_changecrf0(ppc_result_d);
-        ppc_store_result_regd();
+    if (!ppc_result_b) { /* handle the "anything / 0" case */
+        ppc_result_d = (ppc_result_a & 0x80000000) ? -1 : 0; /* UNDOCUMENTED! */
+    } else if (ppc_result_a == 0x80000000UL && ppc_result_b == 0xFFFFFFFFUL) {
+        ppc_result_d = 0xFFFFFFFF;
+    } else { /* normal signed devision */
+        ppc_result_d = (int32_t)ppc_result_a / (int32_t)ppc_result_b;
     }
+
+    ppc_changecrf0(ppc_result_d);
+    ppc_store_result_regd();
 }
 
 void ppc_divwo() {
     ppc_grab_regsdab();
 
-    //handle division by zero cases
-    switch (ppc_result_b) {
-    case 0:
-        ppc_result_d = 0;
-        ppc_store_result_regd();
-        if ((ppc_result_a == 0) | (ppc_result_a == 0x7FFFFFFF))
-            ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
-        return;
-    case 0xFFFFFFFF:
-        if (ppc_result_a == 0x80000000UL) {
-            ppc_result_d = 0xFFFFFFFF;
-            ppc_store_result_regd();
-            ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
-            return;
-        }
-        else if (ppc_result_a == 0x7FFFFFFFUL) {
-            ppc_result_d = 0x80000001;
-            ppc_store_result_regd();
-            return;
-        }
-    default:
-        sidiv_result = (int32_t)ppc_result_a / (int32_t)ppc_result_b;
-        ppc_result_d = sidiv_result;
-        ppc_setsoov_divwo(ppc_result_a, ppc_result_d);
-        ppc_store_result_regd();
+    if (!ppc_result_b) { /* handle the "anything / 0" case */
+        ppc_result_d = (ppc_result_a & 0x80000000) ? -1 : 0; /* UNDOCUMENTED! */
+        ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
+    } else if (ppc_result_a == 0x80000000UL && ppc_result_b == 0xFFFFFFFFUL) {
+        ppc_result_d = 0xFFFFFFFF;
+        ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
+    } else { /* normal signed devision */
+        ppc_result_d = (int32_t)ppc_result_a / (int32_t)ppc_result_b;
+        ppc_state.ppc_spr[SPR::XER] &= 0xBFFFFFFFUL;
     }
+
+    ppc_store_result_regd();
 }
 
 void ppc_divwodot() {
     ppc_grab_regsdab();
 
-    //handle division by zero cases
-    switch (ppc_result_b) {
-    case 0:
-        ppc_result_d = 0;
-        ppc_store_result_regd();
+    if (!ppc_result_b) { /* handle the "anything / 0" case */
+        ppc_result_d = (ppc_result_a & 0x80000000) ? -1 : 0; /* UNDOCUMENTED! */
         ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
-        ppc_state.ppc_cr |= 0x30000000;
-        return;
-    case 0xFFFFFFFF:
-        if (ppc_result_a == 0x80000000UL) {
-            ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
-            ppc_state.ppc_cr |= 0x90000000;
-            ppc_result_d = 0xFFFFFFFF;
-            ppc_store_result_regd();
-            return;
-        }
-        else if (ppc_result_a == 0x7FFFFFFFUL) {
-            ppc_result_d = 0x80000001;
-            ppc_state.ppc_cr |= 0x80000000;
-            ppc_store_result_regd();
-            return;
-        }
-    default:
-        sidiv_result = (int32_t)ppc_result_a / (int32_t)ppc_result_b;
-        ppc_result_d = (uint32_t)sidiv_result;
-        ppc_setsoov_divwo(ppc_result_a, ppc_result_d);
-        ppc_changecrf0(ppc_result_d);
-        ppc_store_result_regd();
+    } else if (ppc_result_a == 0x80000000UL && ppc_result_b == 0xFFFFFFFFUL) {
+        ppc_result_d = 0xFFFFFFFF;
+        ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
+    } else { /* normal signed devision */
+        ppc_result_d = (int32_t)ppc_result_a / (int32_t)ppc_result_b;
+        ppc_state.ppc_spr[SPR::XER] &= 0xBFFFFFFFUL;
     }
+
+    ppc_changecrf0(ppc_result_d);
+    ppc_store_result_regd();
 }
 
 void ppc_divwu() {
