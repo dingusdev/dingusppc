@@ -132,21 +132,20 @@ void ppc_grab_regsdb() {
 
 //Affects CR Field 0 - For integer operations
 void ppc_changecrf0(uint32_t set_result) {
-    ppc_state.ppc_cr &= 0x0FFFFFFF;
+    ppc_state.ppc_cr &= 0x0FFFFFFFUL;
 
     if (set_result == 0) {
         ppc_state.ppc_cr |= 0x20000000UL;
-    }
-    else if (set_result & 0x80000000) {
-        ppc_state.ppc_cr |= 0x80000000UL;
-    }
-    else {
-        ppc_state.ppc_cr |= 0x40000000UL;
+    } else {
+        if (set_result & 0x80000000) {
+            ppc_state.ppc_cr |= 0x80000000UL;
+        } else {
+            ppc_state.ppc_cr |= 0x40000000UL;
+        }
     }
 
-    if (ppc_state.ppc_spr[SPR::XER] & 0x80000000UL) {
-        ppc_state.ppc_cr |= 0x10000000UL;
-    }
+    /* copy XER[SO] into CR0[SO]. */
+    ppc_state.ppc_cr |= (ppc_state.ppc_spr[SPR::XER] >> 3) & 0x10000000UL;
 }
 
 //Affects the XER register's Carry Bit
