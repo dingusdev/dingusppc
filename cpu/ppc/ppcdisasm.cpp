@@ -375,11 +375,7 @@ void opc_bool_im(PPCDisasmContext* ctx)
 
     if (ctx->simplified) {
         if (index == 0) {
-            if (imm == 0) { /* unofficial, produced by IDA */
-                fmt_twoop(ctx->instr_str, "mr", ra, rs);
-                return;
-            }
-            else if (!ra && !rs && !imm) {
+            if (imm == 0 && !ra && !rs && !imm) {  /* unofficial, produced by IDA */
                 ctx->instr_str = "nop";
                 return;
             }
