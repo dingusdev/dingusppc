@@ -139,10 +139,7 @@ extern uint64_t timebase_counter; //used for storing time base value
 extern int32_t add_result;
 extern int32_t simult_result;
 extern uint32_t uiadd_result;
-extern uint32_t uidiv_result;
 extern uint32_t uimult_result;
-extern uint64_t uiproduct;
-extern int64_t siproduct;
 
 extern int32_t word_copy_location;
 extern uint32_t strwrd_replace_value;
