@@ -287,6 +287,34 @@ void opc_rlwinm(PPCDisasmContext* ctx)
     auto mb = (ctx->instr_code >> 6) & 0x1F;
     auto me = (ctx->instr_code >> 1) & 0x1F;
 
+    if (ctx->simplified) {
+
+        if (mb == 0) {
+            if (me < 32) {
+                if (sh == (31 - me)) {
+                    fmt_threeop(ctx->instr_str, "slwi", rs, ra, sh);
+                    return;
+                }
+
+                if (sh == 0) {
+                    fmt_threeop(ctx->instr_str, "clrrwi", rs, ra, mb);
+                    return;
+                }
+            }
+
+            if (me == 31) {
+                fmt_threeop(ctx->instr_str, "rotlwi", rs, ra, sh);
+                return;
+            }
+
+            if (me > 0){
+                ctx->instr_str = my_sprintf("%-8sr%d, r%d, %d, %d", "extlwi", rs, ra, sh, me);
+                return;
+            }
+        }
+
+    }
+    
     if (ctx->instr_code & 1)
         fmt_rotateop(ctx->instr_str, "rlwinm.", rs, ra, sh, mb, me, true);
     else

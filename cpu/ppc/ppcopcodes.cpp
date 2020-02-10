@@ -136,10 +136,12 @@ void ppc_changecrf0(uint32_t set_result) {
 
     if (set_result == 0) {
         ppc_state.ppc_cr |= 0x20000000UL;
-    } else {
+    }
+    else {
         if (set_result & 0x80000000) {
             ppc_state.ppc_cr |= 0x80000000UL;
-        } else {
+        }
+        else {
             ppc_state.ppc_cr |= 0x40000000UL;
         }
     }
@@ -172,7 +174,8 @@ inline void ppc_carry_sub(uint32_t a, uint32_t b) {
 inline void ppc_setsoov(uint32_t a, uint32_t b, uint32_t d) {
     if ((a ^ b) & (a ^ d) & 0x80000000UL) {
         ppc_state.ppc_spr[SPR::XER] |= 0xC0000000UL;
-    } else {
+    }
+    else {
         ppc_state.ppc_spr[SPR::XER] &= 0xBFFFFFFFUL;
     }
 }
@@ -878,7 +881,8 @@ void ppc_mullwo() {
     int64_t product = (int64_t)(int32_t)ppc_result_a * (int64_t)(int32_t)ppc_result_b;
     if (product != (int64_t)(int32_t)product) {
         ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
-    } else {
+    }
+    else {
         ppc_state.ppc_spr[SPR::XER] &= 0xBFFFFFFFUL;
     }
     ppc_result_d = (uint32_t)product;
@@ -890,7 +894,8 @@ void ppc_mullwodot() {
     int64_t product = (int64_t)(int32_t)ppc_result_a * (int64_t)(int32_t)ppc_result_b;
     if (product != (int64_t)(int32_t)product) {
         ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
-    } else {
+    }
+    else {
         ppc_state.ppc_spr[SPR::XER] &= 0xBFFFFFFFUL;
     }
     ppc_result_d = (uint32_t)product;
@@ -911,9 +916,11 @@ void ppc_divw() {
 
     if (!ppc_result_b) { /* handle the "anything / 0" case */
         ppc_result_d = (ppc_result_a & 0x80000000) ? -1 : 0; /* UNDOCUMENTED! */
-    } else if (ppc_result_a == 0x80000000UL && ppc_result_b == 0xFFFFFFFFUL) {
+    }
+    else if (ppc_result_a == 0x80000000UL && ppc_result_b == 0xFFFFFFFFUL) {
         ppc_result_d = 0xFFFFFFFF;
-    } else { /* normal signed devision */
+    }
+    else { /* normal signed devision */
         ppc_result_d = (int32_t)ppc_result_a / (int32_t)ppc_result_b;
     }
 
@@ -925,9 +932,11 @@ void ppc_divwdot() {
 
     if (!ppc_result_b) { /* handle the "anything / 0" case */
         ppc_result_d = (ppc_result_a & 0x80000000) ? -1 : 0; /* UNDOCUMENTED! */
-    } else if (ppc_result_a == 0x80000000UL && ppc_result_b == 0xFFFFFFFFUL) {
+    }
+    else if (ppc_result_a == 0x80000000UL && ppc_result_b == 0xFFFFFFFFUL) {
         ppc_result_d = 0xFFFFFFFF;
-    } else { /* normal signed devision */
+    }
+    else { /* normal signed devision */
         ppc_result_d = (int32_t)ppc_result_a / (int32_t)ppc_result_b;
     }
 
@@ -941,10 +950,12 @@ void ppc_divwo() {
     if (!ppc_result_b) { /* handle the "anything / 0" case */
         ppc_result_d = (ppc_result_a & 0x80000000) ? -1 : 0; /* UNDOCUMENTED! */
         ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
-    } else if (ppc_result_a == 0x80000000UL && ppc_result_b == 0xFFFFFFFFUL) {
+    }
+    else if (ppc_result_a == 0x80000000UL && ppc_result_b == 0xFFFFFFFFUL) {
         ppc_result_d = 0xFFFFFFFF;
         ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
-    } else { /* normal signed devision */
+    }
+    else { /* normal signed devision */
         ppc_result_d = (int32_t)ppc_result_a / (int32_t)ppc_result_b;
         ppc_state.ppc_spr[SPR::XER] &= 0xBFFFFFFFUL;
     }
@@ -958,10 +969,12 @@ void ppc_divwodot() {
     if (!ppc_result_b) { /* handle the "anything / 0" case */
         ppc_result_d = (ppc_result_a & 0x80000000) ? -1 : 0; /* UNDOCUMENTED! */
         ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
-    } else if (ppc_result_a == 0x80000000UL && ppc_result_b == 0xFFFFFFFFUL) {
+    }
+    else if (ppc_result_a == 0x80000000UL && ppc_result_b == 0xFFFFFFFFUL) {
         ppc_result_d = 0xFFFFFFFF;
         ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
-    } else { /* normal signed devision */
+    }
+    else { /* normal signed devision */
         ppc_result_d = (int32_t)ppc_result_a / (int32_t)ppc_result_b;
         ppc_state.ppc_spr[SPR::XER] &= 0xBFFFFFFFUL;
     }
@@ -975,7 +988,8 @@ void ppc_divwu() {
 
     if (!ppc_result_b) { /* division by zero */
         ppc_result_d = 0;
-    } else {
+    }
+    else {
         ppc_result_d = ppc_result_a / ppc_result_b;
     }
     ppc_store_result_regd();
@@ -987,7 +1001,8 @@ void ppc_divwudot() {
     if (!ppc_result_b) { /* division by zero */
         ppc_result_d = 0;
         ppc_state.ppc_cr |= 0x20000000;
-    } else {
+    }
+    else {
         ppc_result_d = ppc_result_a / ppc_result_b;
         ppc_changecrf0(ppc_result_d);
     }
@@ -1000,7 +1015,8 @@ void ppc_divwuo() {
     if (!ppc_result_b) { /* division by zero */
         ppc_result_d = 0;
         ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
-    } else {
+    }
+    else {
         ppc_result_d = ppc_result_a / ppc_result_b;
         ppc_state.ppc_spr[SPR::XER] &= 0xBFFFFFFFUL;
     }
@@ -1013,7 +1029,8 @@ void ppc_divwuodot() {
     if (!ppc_result_b) { /* division by zero */
         ppc_result_d = 0;
         ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
-    } else {
+    }
+    else {
         ppc_result_d = ppc_result_a / ppc_result_b;
         ppc_state.ppc_spr[SPR::XER] &= 0xBFFFFFFFUL;
     }
@@ -1027,7 +1044,8 @@ void ppc_slw() {
     ppc_grab_regssab();
     if (ppc_result_b & 0x20) {
         ppc_result_a = 0;
-    } else {
+    }
+    else {
         ppc_result_a = ppc_result_d << (ppc_result_b & 0x1F);
     }
     ppc_store_result_rega();
@@ -1037,7 +1055,8 @@ void ppc_slwdot() {
     ppc_grab_regssab();
     if (ppc_result_b & 0x20) {
         ppc_result_a = 0;
-    } else {
+    }
+    else {
         ppc_result_a = ppc_result_d << (ppc_result_b & 0x1F);
     }
     ppc_changecrf0(ppc_result_a);
@@ -1048,7 +1067,8 @@ void ppc_srw() {
     ppc_grab_regssab();
     if (ppc_result_b & 0x20) {
         ppc_result_a = 0;
-    } else {
+    }
+    else {
         ppc_result_a = ppc_result_d >> (ppc_result_b & 0x1F);
     }
     ppc_store_result_rega();
@@ -1058,7 +1078,8 @@ void ppc_srwdot() {
     ppc_grab_regssab();
     if (ppc_result_b & 0x20) {
         ppc_result_a = 0;
-    } else {
+    }
+    else {
         ppc_result_a = ppc_result_d >> (ppc_result_b & 0x1F);
     }
     ppc_changecrf0(ppc_result_a);
@@ -1070,13 +1091,15 @@ void ppc_sraw() {
     if (ppc_result_b & 0x20) {
         ppc_result_a = (int32_t)ppc_result_d >> 31;
         ppc_state.ppc_spr[SPR::XER] |= (ppc_result_a & 1) << 29;
-    } else {
+    }
+    else {
         uint32_t shift = ppc_result_b & 0x1F;
-        uint32_t mask  = (1 << shift) - 1;
+        uint32_t mask = (1 << shift) - 1;
         ppc_result_a = (int32_t)ppc_result_d >> shift;
         if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & mask)) {
             ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
-        } else {
+        }
+        else {
             ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
         }
     }
@@ -1088,13 +1111,15 @@ void ppc_srawdot() {
     if (ppc_result_b & 0x20) {
         ppc_result_a = (int32_t)ppc_result_d >> 31;
         ppc_state.ppc_spr[SPR::XER] |= (ppc_result_a & 1) << 29;
-    } else {
+    }
+    else {
         uint32_t shift = ppc_result_b & 0x1F;
-        uint32_t mask  = (1 << shift) - 1;
+        uint32_t mask = (1 << shift) - 1;
         ppc_result_a = (int32_t)ppc_result_d >> shift;
         if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & mask)) {
             ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
-        } else {
+        }
+        else {
             ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
         }
     }
@@ -1105,11 +1130,12 @@ void ppc_srawdot() {
 void ppc_srawi() {
     ppc_grab_regssa();
     unsigned shift = (ppc_cur_instruction >> 11) & 0x1F;
-    uint32_t mask  = (1 << shift) - 1;
+    uint32_t mask = (1 << shift) - 1;
     ppc_result_a = (int32_t)ppc_result_d >> shift;
     if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & mask)) {
         ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
-    } else {
+    }
+    else {
         ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
     }
     ppc_store_result_rega();
@@ -1118,11 +1144,12 @@ void ppc_srawi() {
 void ppc_srawidot() {
     ppc_grab_regssa();
     unsigned shift = (ppc_cur_instruction >> 11) & 0x1F;
-    uint32_t mask  = (1 << shift) - 1;
+    uint32_t mask = (1 << shift) - 1;
     ppc_result_a = (int32_t)ppc_result_d >> shift;
     if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & mask)) {
         ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
-    } else {
+    }
+    else {
         ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
     }
     ppc_changecrf0(ppc_result_a);
@@ -1278,11 +1305,11 @@ void ppc_mtspr() {
     switch (ref_spr) {
         //Mirror the TBRs in the SPR range to the user-mode TBRs.
     case 284:
-        ppc_state.ppc_spr[284]      = (uint32_t)timebase_counter;
+        ppc_state.ppc_spr[284] = (uint32_t)timebase_counter;
         ppc_state.ppc_tbr[TBR::TBL] = (uint32_t)timebase_counter;
         break;
     case 285:
-        ppc_state.ppc_spr[285]      = (uint32_t)(timebase_counter >> 32);
+        ppc_state.ppc_spr[285] = (uint32_t)(timebase_counter >> 32);
         ppc_state.ppc_tbr[TBR::TBU] = (uint32_t)(timebase_counter >> 32);
         break;
     case 528:
@@ -1802,8 +1829,8 @@ void ppc_dcbz() {
     if (!(ppc_state.ppc_pc & 32) && (ppc_state.ppc_pc < 0xFFFFFFE0UL)) {
         ppc_grab_regsdab();
         ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
-        mem_write_qword(ppc_effective_address,        0);
-        mem_write_qword((ppc_effective_address +  8), 0);
+        mem_write_qword(ppc_effective_address, 0);
+        mem_write_qword((ppc_effective_address + 8), 0);
         mem_write_qword((ppc_effective_address + 16), 0);
         mem_write_qword((ppc_effective_address + 24), 0);
     }
