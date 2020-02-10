@@ -23,7 +23,7 @@ add_executable(dingusppc ${SOURCES} $<TARGET_OBJECTS:cpu_ppc> $<TARGET_OBJECTS:d
 add_executable(testppc ${TEST_SOURCES} $<TARGET_OBJECTS:cpu_ppc> $<TARGET_OBJECTS:devices>)
 
 add_custom_command(
-    TARGET ${PROJECT_NAME} POST_BUILD
+    TARGET testppc POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy
     "${PROJECT_SOURCE_DIR}/cpu/ppc/test/ppcinttests.csv"
     $<TARGET_FILE_DIR:${PROJECT_NAME}>)
