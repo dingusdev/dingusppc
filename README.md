@@ -35,13 +35,24 @@ the following commands in the OS terminal:
 mkdir build
 cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
-make
+make dingusppc
 ```
 You may specify another build type using the variable CMAKE_BUILD_TYPE.
 
 Due to the incomplete status of the program at this time, no additional libraries are required.
 
 Future versions will include SDL 2 as a requirement.
+
+## Testing
+
+DingusPPC includes a test suite for verifying the correctness of its PowerPC CPU
+emulation. To build the tests, use the following terminal commands:
+```
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make testppc
+```
 
 ## Intended Minimum Requirements
 

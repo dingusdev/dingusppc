@@ -137,13 +137,9 @@ extern uint64_t timebase_counter; //used for storing time base value
 
 //Additional steps to prevent overflow?
 extern int32_t add_result;
-extern int32_t sidiv_result;
 extern int32_t simult_result;
 extern uint32_t uiadd_result;
-extern uint32_t uidiv_result;
 extern uint32_t uimult_result;
-extern uint64_t uiproduct;
-extern int64_t siproduct;
 
 extern int32_t word_copy_location;
 extern uint32_t strwrd_replace_value;
@@ -164,7 +160,6 @@ extern uint32_t rot_sh;
 extern uint32_t rot_mb;
 extern uint32_t rot_me;
 extern uint32_t uimm;
-extern uint32_t not_this;
 extern uint32_t grab_sr;
 extern uint32_t grab_inb; //This is for grabbing the number of immediate bytes for loading and storing
 extern uint32_t ppc_to;
@@ -276,8 +271,6 @@ extern void ppc_store_result_rega();
 extern void ppc_store_sfpresult(bool int_rep);
 extern void ppc_store_dfpresult(bool int_rep);
 
-void ppc_carry(uint32_t a, uint32_t b);
-void ppc_setsoov(uint32_t a, uint32_t b);
 void ppc_changecrf0(uint32_t set_result);
 void ppc_fp_changecrf1();
 
@@ -415,10 +408,16 @@ extern void ppc_subfco();
 extern void ppc_subfcodot();
 extern void ppc_subfe();
 extern void ppc_subfedot();
+extern void ppc_subfeo();
+extern void ppc_subfeodot();
 extern void ppc_subfme();
 extern void ppc_subfmedot();
+extern void ppc_subfmeo();
+extern void ppc_subfmeodot();
 extern void ppc_subfze();
 extern void ppc_subfzedot();
+extern void ppc_subfzeo();
+extern void ppc_subfzeodot();
 extern void ppc_sync();
 extern void ppc_tlbia();
 extern void ppc_tlbie();
