@@ -425,7 +425,7 @@ void opc_bcx(PPCDisasmContext* ctx)
 {
     uint32_t bo, bi, dst, cr;
     char opcode[10] = "b";
-    char operands[10] = "";
+    char operands[12] = "";
 
     bo = (ctx->instr_code >> 21) & 0x1F;
     bi = (ctx->instr_code >> 16) & 0x1F;
