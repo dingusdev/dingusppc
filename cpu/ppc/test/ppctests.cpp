@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include "../ppcemu.h"
+#include "../ppcdisasm.h"
 
 using namespace std;
 
@@ -59,7 +60,7 @@ void xer_update_test()
 }
 
 /** testing vehicle */
-void read_test_data()
+static void read_test_data()
 {
     string  line, token;
     int     i, lineno;
@@ -165,7 +166,9 @@ int main()
 
     cout << "... completed." << endl;
     cout << "--> Tested instructions: " << dec << ntested << endl;
-    cout << "--> Failed: " << dec << nfailed << endl;
+    cout << "--> Failed: " << dec << nfailed << endl << endl;
 
-    return 0;
+    cout << "Running PPC disassembler tests..." << endl << endl;
+
+    return test_ppc_disasm();
 }

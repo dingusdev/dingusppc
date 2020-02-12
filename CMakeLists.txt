@@ -26,6 +26,7 @@ add_custom_command(
     TARGET testppc POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy
     "${PROJECT_SOURCE_DIR}/cpu/ppc/test/ppcinttests.csv"
+    "${PROJECT_SOURCE_DIR}/cpu/ppc/test/ppcdisasmtest.csv"
     $<TARGET_FILE_DIR:${PROJECT_NAME}>)
 
 install (TARGETS dingusppc DESTINATION ${EXECUTABLE_OUTPUT_PATH})
