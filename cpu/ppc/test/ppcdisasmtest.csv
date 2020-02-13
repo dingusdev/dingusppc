@@ -216,7 +216,9 @@
 0xFFF00100,0x7F8B63B9,nand.,r11,r28,r12
 
 # synchronization instructions
+0xFFF00100,0x7D201828,lwarx,r9,0,r3
 0xFFF00100,0x7D20192D,stwcx.,r9,0,r3
+0xFFF00100,0x7FAB052C,stwbrx,r29,r11,r0
 0xFFF03000,0x4C00012C,isync
 0xFFF00100,7C0006AC,eieio
 
