@@ -311,7 +311,10 @@ void opc_rlwinm(PPCDisasmContext* ctx)
         if (mb == 0) {
             if (me < 32) {
                 if (sh == (31 - me)) {
-                    fmt_threeop_simm(ctx->instr_str, "slwi", rs, ra, sh);
+                    if (ctx->instr_code & 1)
+                        fmt_threeop_simm(ctx->instr_str, "slwi.", rs, ra, sh);
+                    else
+                        fmt_threeop_simm(ctx->instr_str, "slwi", rs, ra, sh);
                     return;
                 }
 
@@ -918,11 +921,23 @@ void opc_group31(PPCDisasmContext* ctx)
     case 0x16: /* processor mgmt + byte reversed load and store instructions */
         strcpy(opcode, proc_mgmt_str[index]);
 
-        if ((index == 4) | (index == 9) | (index == 13) | (index == 16) \
+        if (index == 4){ /* stwcx. */
+            if (!rc_set) {
+                opc_illegal(ctx);
+                return;
+            }
+            else {
+                if (ra == 0)
+                    ctx->instr_str = my_sprintf("%-8sr%d, 0, r%d", opcode, rs, rb);
+                else
+                    fmt_threeop(ctx->instr_str, opcode, rs, ra, rb);
+                return;
+            }
+        }
+        else if ((index == 9) | (index == 13) | (index == 16) \
             | (index == 20) | (index == 24) | (index == 28)) {
             fmt_threeop(ctx->instr_str, opcode, rs, ra, rb);
             return;
-            break;
         }
         else if ((index == 18) | (index == 26)) {
             ctx->instr_str = my_sprintf("%-8s", opcode);
@@ -954,17 +969,13 @@ void opc_group31(PPCDisasmContext* ctx)
             if (ctx->simplified) {
                 strcpy(opcode, trap_cond[rs]);
 
-                if (strlen(opcode) == 0) {
-                    opc_illegal(ctx);
-                    return;
+                if (strlen(opcode) != 0) {
+                    ctx->instr_str = my_sprintf("%-8sr%d, r%d", opcode, ra, rb);
                 }
 
-                ctx->instr_str = my_sprintf("%-8sr%d, r%d", opcode, ra, rb);
+            }
 
-            }
-            else {
-                ctx->instr_str = my_sprintf("%-8s%d, r%d, r%d", "tw", rs, ra, rb);
-            }
+            ctx->instr_str = my_sprintf("%-8s%d, r%d, r%d", "tw", rs, ra, rb);
         }
         break;
     case 19: /* mfcr */
