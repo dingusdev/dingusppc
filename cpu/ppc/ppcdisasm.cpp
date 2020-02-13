@@ -123,6 +123,13 @@ const char* opc_flt_ext_arith[32] = { /* integer load and store instructions */
     "", "fmul", "", "", "fmsub", "fmadd", "fnmsub", "fnmadd",
 };
 
+const char* trap_cond[32] = { /*Trap conditions*/
+    "", "twlgt", "twllt", "",  "tweq", "twlge", "twlle", "",
+    "twgt", "", "", "", "twge", "", "", "",
+    "twlt", "", "", "", "twle", "", "", "",
+    "twne", "", "", "", "", "", "", ""
+};
+
 /** various formatting helpers. */
 void fmt_oneop(string& buf, const char* opc, int src)
 {
@@ -209,43 +216,17 @@ void opc_twi(PPCDisasmContext* ctx)
     int32_t imm = SIGNEXT(ctx->instr_code & 0xFFFF, 15);
 
     if (ctx->simplified) {
-        switch (to) {
-        case 1:
-            strcpy(opcode, "twlgti");
-            break;
-        case 2:
-            strcpy(opcode, "twllti");
-            break;
-        case 4:
-            strcpy(opcode, "tweqi");
-            break;
-        case 5:
-            strcpy(opcode, "twlgei");
-            break;
-        case 6:
-            strcpy(opcode, "twllei");
-            break;
-        case 8:
-            strcpy(opcode, "twgti");
-            break;
-        case 12:
-            strcpy(opcode, "twgei");
-            break;
-        case 16:
-            strcpy(opcode, "twlti");
-            break;
-        case 20:
-            strcpy(opcode, "twlei");
-            break;
-        case 24:
-            strcpy(opcode, "twnei");
-            break;
-        default:
+        strcpy(opcode, trap_cond[to]);
+
+        if (strlen(opcode) == 0) {
             opc_illegal(ctx);
             return;
         }
+        else {
+            strcat(opcode, "i");
+            ctx->instr_str = my_sprintf("%-8sr%d, 0x%08X", opcode, ra, imm);
+        }
 
-        ctx->instr_str = my_sprintf("%-8sr%d, 0x%08X", opcode, ra, imm);
     }
     else {
         ctx->instr_str = my_sprintf("%-8s%d, r%d, 0x%08X", "twi", to, ra, imm);
@@ -966,10 +947,25 @@ void opc_group31(PPCDisasmContext* ctx)
             ctx->instr_str = my_sprintf("%-8sr%d, r%d, r%d", "cmp", rs, ra, rb);
         break;
     case 4: /* tw */
-        if (rc_set)
+        if (rc_set) {
             opc_illegal(ctx);
-        else
-            ctx->instr_str = my_sprintf("%-8s%d, r%d, r%d", "tw", rs, ra, rb);
+        }
+        else {
+            if (ctx->simplified) {
+                strcpy(opcode, trap_cond[rs]);
+
+                if (strlen(opcode) == 0) {
+                    opc_illegal(ctx);
+                    return;
+                }
+
+                ctx->instr_str = my_sprintf("%-8sr%d, r%d", opcode, ra, rb);
+
+            }
+            else {
+                ctx->instr_str = my_sprintf("%-8s%d, r%d, r%d", "tw", rs, ra, rb);
+            }
+        }
         break;
     case 19: /* mfcr */
         fmt_oneop(ctx->instr_str, "mfcr", rs);
