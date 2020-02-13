@@ -97,14 +97,15 @@ const char* opc_shft_ext[32]{ /* Extended shift instructions (601 only) */
     "", "", "", "", "", "", "", "",
     "rrib", "", "", "", "sre", "", "sreq", "",
     "", "", "", "", "srea", "", "", ""
-}; 
+};
 
 const char* opc_int_ldst[16] = { /* integer load and store instructions */
     "lwz", "lwzu", "lbz", "lbzu", "stw", "stwu", "stb", "stbu", "lhz", "lhzu",
     "lha", "lhau", "sth", "sthu", "lmw", "stmw"
 };
 
-const char* proc_mgmt_str[32] = { /* processor managment + byte reversed load and store*/
+/* processor management + byte reversed load and store */
+const char* proc_mgmt_str[32] = {
     "", "dcbst", "dcbf", "", "stwcx.", "", "", "dcbtst",
     "dcbt", "eciwx", "", "", "", "ecowx", "dcbi", "",
     "lwbrx", "tlbsync", "sync", "", "stwbrx", "", "", "dcba",
@@ -184,12 +185,12 @@ void fmt_fourop_flt(string& buf, const char* opc, int dst, int src1, int src2, i
     buf = my_sprintf("%-8sfr%d, fr%d, fr%d, fr%d", opc, dst, src1, src2, src3);
 }
 
-void fmt_rotateop(string& buf, const char* opc, int dst, int src1, int sh, int mb, int me, bool imm)
+void fmt_rotateop(string& buf, const char* opc, int dst, int src, int sh, int mb, int me, bool imm)
 {
     if (imm)
-        buf = my_sprintf("%-8sr%d, r%d, sh%d, mb%d, me%d", opc, dst, src1, sh, mb, me);
+        buf = my_sprintf("%-8sr%d, r%d, %d, %d, %d", opc, dst, src, sh, mb, me);
     else
-        buf = my_sprintf("%-8sr%d, r%d, r%d, mb%d, me%d", opc, dst, src1, sh, mb, me);
+        buf = my_sprintf("%-8sr%d, r%d, r%d, %d, %d", opc, dst, src, sh, mb, me);
 }
 
 
@@ -312,9 +313,9 @@ void opc_rlwimi(PPCDisasmContext* ctx)
     auto me = (ctx->instr_code >> 1) & 0x1F;
 
     if (ctx->instr_code & 1)
-        fmt_rotateop(ctx->instr_str, "rlwimi.", rs, ra, sh, mb, me, true);
+        fmt_rotateop(ctx->instr_str, "rlwimi.", ra, rs, sh, mb, me, true);
     else
-        fmt_rotateop(ctx->instr_str, "rlwimi", rs, ra, sh, mb, me, true);
+        fmt_rotateop(ctx->instr_str, "rlwimi", ra, rs, sh, mb, me, true);
 }
 
 void opc_rlwinm(PPCDisasmContext* ctx)
@@ -326,11 +327,10 @@ void opc_rlwinm(PPCDisasmContext* ctx)
     auto me = (ctx->instr_code >> 1) & 0x1F;
 
     if (ctx->simplified) {
-
         if (mb == 0) {
             if (me < 32) {
                 if (sh == (31 - me)) {
-                    fmt_threeop(ctx->instr_str, "slwi", rs, ra, sh);
+                    fmt_threeop_simm(ctx->instr_str, "slwi", rs, ra, sh);
                     return;
                 }
 
@@ -352,11 +352,11 @@ void opc_rlwinm(PPCDisasmContext* ctx)
         }
 
     }
-    
+
     if (ctx->instr_code & 1)
-        fmt_rotateop(ctx->instr_str, "rlwinm.", rs, ra, sh, mb, me, true);
+        fmt_rotateop(ctx->instr_str, "rlwinm.", ra, rs, sh, mb, me, true);
     else
-        fmt_rotateop(ctx->instr_str, "rlwinm", rs, ra, sh, mb, me, true);
+        fmt_rotateop(ctx->instr_str, "rlwinm", ra, rs, sh, mb, me, true);
 }
 
 void opc_rlmi(PPCDisasmContext* ctx)
@@ -368,9 +368,9 @@ void opc_rlmi(PPCDisasmContext* ctx)
     auto me = (ctx->instr_code >> 1) & 0x1F;
 
     if (ctx->instr_code & 1)
-        fmt_rotateop(ctx->instr_str, "rlmi.", rs, ra, sh, mb, me, true);
+        fmt_rotateop(ctx->instr_str, "rlmi.", ra, rs, sh, mb, me, true);
     else
-        fmt_rotateop(ctx->instr_str, "rlmi", rs, ra, sh, mb, me, true);
+        fmt_rotateop(ctx->instr_str, "rlmi", ra, rs, sh, mb, me, true);
 }
 
 void opc_rlwnm(PPCDisasmContext* ctx)
@@ -384,19 +384,19 @@ void opc_rlwnm(PPCDisasmContext* ctx)
     if (ctx->simplified) {
         if ((me == 31) & (mb == 0)) {
             if (ctx->instr_code & 1) {
-                fmt_rotateop(ctx->instr_str, "rotlw.", rs, ra, rb, mb, me, false);
+                fmt_rotateop(ctx->instr_str, "rotlw.", ra, rs, rb, mb, me, false);
                 return;
             }
             else {
-                fmt_rotateop(ctx->instr_str, "rotlw", rs, ra, rb, mb, me, false);
+                fmt_rotateop(ctx->instr_str, "rotlw", ra, rs, rb, mb, me, false);
                 return;
             }
         }
     }
     if (ctx->instr_code & 1)
-        fmt_rotateop(ctx->instr_str, "rlwnm.", rs, ra, rb, mb, me, false);
+        fmt_rotateop(ctx->instr_str, "rlwnm.", ra, rs, rb, mb, me, false);
     else
-        fmt_rotateop(ctx->instr_str, "rlwnm", rs, ra, rb, mb, me, false);
+        fmt_rotateop(ctx->instr_str, "rlwnm", ra, rs, rb, mb, me, false);
 }
 
 void opc_cmp_i_li(PPCDisasmContext* ctx)
@@ -722,13 +722,13 @@ void opc_group19(PPCDisasmContext* ctx)
         fmt_threeop_crb(ctx->instr_str, "crnor", rs, ra, rb);
         return;
     case 50:
-        ctx->instr_str = my_sprintf("%-8sr%d", "rfi");
+        ctx->instr_str = my_sprintf("%-8s", "rfi");
         return;
     case 129:
         fmt_threeop_crb(ctx->instr_str, "crandc", rs, ra, rb);
         return;
     case 150:
-        ctx->instr_str = my_sprintf("%-8sr%d", "isync");
+        ctx->instr_str = my_sprintf("%-8s", "isync");
         return;
     case 193:
         if (ctx->simplified && (rs == ra) && (rs == rb)) {
