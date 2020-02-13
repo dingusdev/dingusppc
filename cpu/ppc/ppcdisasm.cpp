@@ -381,19 +381,15 @@ void opc_rlwnm(PPCDisasmContext* ctx)
 
 void opc_cmp_i_li(PPCDisasmContext* ctx)
 {
+    auto ls = (ctx->instr_code >> 21) & 0x1;
     auto ra = (ctx->instr_code >> 16) & 0x1F;
     auto crfd = (ctx->instr_code >> 23) & 0x07;
     auto imm = ctx->instr_code & 0xFFFF;
 
-    if (ctx->instr_code & 0x200000) {
-        opc_illegal(ctx);
-    }
-    else {
-        if ((ctx->instr_code >> 26) & 0x1)
-            fmt_threeop_uimm(ctx->instr_str, "cmpi", crfd, ra, imm);
-        else
-            fmt_threeop_simm(ctx->instr_str, "cmpli", crfd, ra, imm);
-    }
+    if ((ctx->instr_code >> 26) & 0x1)
+        ctx->instr_str = my_sprintf("%-8scr%d, %d, r%d, 0x%04X", "cmpi", crfd, ls, ra, imm);
+    else
+        ctx->instr_str = my_sprintf("%-8scr%d, %d, r%d, 0x%04X", "cmpli", crfd, ls, ra, imm);
 }
 
 void opc_bool_im(PPCDisasmContext* ctx)
@@ -690,7 +686,7 @@ void opc_group19(PPCDisasmContext* ctx)
 
     switch (ext_opc) {
     case 0:
-        ctx->instr_str = my_sprintf("%-8scrf%d, crf%d", "mcrf", (rs >> 2), (ra >> 2));
+        ctx->instr_str = my_sprintf("%-8scr%d, cr%d", "mcrf", (rs >> 2), (ra >> 2));
         return;
     case 16:
         opc_bclrx(ctx);
@@ -835,6 +831,18 @@ void opc_group31(PPCDisasmContext* ctx)
                 opc_illegal(ctx);
             else
                 ctx->instr_str = my_sprintf("%-8sr%s", "tlbie", rb);
+        }
+        else if (index == 30) { /* tlbld - 603 only */
+            if (!rs & !ra)
+                opc_illegal(ctx);
+            else
+                ctx->instr_str = my_sprintf("%-8sr%s", "tlbld", rb);
+        }
+        else if (index == 30) { /* tlbli - 603 only */
+            if (!rs & !ra)
+                opc_illegal(ctx);
+            else
+                ctx->instr_str = my_sprintf("%-8sr%s", "tlbli", rb);
         }
         return;
 
@@ -1090,6 +1098,9 @@ void opc_group31(PPCDisasmContext* ctx)
     case 339: /* mfspr */
         if (ctx->simplified) {
             switch (ref_spr) {
+            case 0: //case 0 is 601 only
+                ctx->instr_str = my_sprintf("%-8sr%d", "mfmq", rs);
+                return;
             case 1:
                 ctx->instr_str = my_sprintf("%-8sr%d", "mfxer", rs);
                 return;
@@ -1098,6 +1109,15 @@ void opc_group31(PPCDisasmContext* ctx)
                 return;
             case 9:
                 ctx->instr_str = my_sprintf("%-8sr%d", "mfctr", rs);
+                return;
+            case 18:
+                ctx->instr_str = my_sprintf("%-8sr%d", "mfdsisr", rs);
+                return;
+            case 19:
+                ctx->instr_str = my_sprintf("%-8sr%d", "mfdar", rs);
+                return;
+            case 22:
+                ctx->instr_str = my_sprintf("%-8sr%d", "mfdec", rs);
                 return;
             }
         }
@@ -1109,6 +1129,9 @@ void opc_group31(PPCDisasmContext* ctx)
     case 467: /* mtspr */
         if (ctx->simplified) {
             switch (ref_spr) {
+            case 0: //case 0 is 601 only
+                ctx->instr_str = my_sprintf("%-8sr%d", "mtmq", rs);
+                return;
             case 1:
                 ctx->instr_str = my_sprintf("%-8sr%d", "mtxer", rs);
                 return;
@@ -1118,12 +1141,21 @@ void opc_group31(PPCDisasmContext* ctx)
             case 9:
                 ctx->instr_str = my_sprintf("%-8sr%d", "mtctr", rs);
                 return;
+            case 18:
+                ctx->instr_str = my_sprintf("%-8sr%d", "mtdsisr", rs);
+                return;
+            case 19:
+                ctx->instr_str = my_sprintf("%-8sr%d", "mtdar", rs);
+                return;
+            case 27:
+                ctx->instr_str = my_sprintf("%-8sr%d", "mtdec", rs);
+                return;
             }
         }
         fmt_twoop_tospr(ctx->instr_str, "mtspr", ref_spr, rs);
         break;
     case 512: /* mcrxr */
-        ctx->instr_str = my_sprintf("%-8scrf%d", "mcrxr", (rs >> 2));
+        ctx->instr_str = my_sprintf("%-8scr%d", "mcrxr", (rs >> 2));
         break;
     case 531: /* clcs */
         strcpy(opcode, "clcs");
@@ -1204,7 +1236,6 @@ void opc_group59(PPCDisasmContext* ctx)
     auto rs = (ctx->instr_code >> 21) & 0x1F;
 
     int  ext_opc = (ctx->instr_code >> 1) & 0x3FF; /* extract extended opcode */
-    int  index = ext_opc >> 5;
     bool rc_set = ctx->instr_code & 1;
 
     switch (ext_opc & 0x1F) {
@@ -1348,7 +1379,6 @@ void opc_group63(PPCDisasmContext* ctx)
     auto rs = (ctx->instr_code >> 21) & 0x1F;
 
     int  ext_opc = (ctx->instr_code >> 1) & 0x3FF; /* extract extended opcode */
-    int  index = ext_opc >> 5;
     bool rc_set = ctx->instr_code & 1;
 
     switch (ext_opc & 0x1F) {
@@ -1491,7 +1521,7 @@ void opc_group63(PPCDisasmContext* ctx)
         if (rs & 3)
             opc_illegal(ctx);
         else
-            ctx->instr_str = my_sprintf("%-8scrf%d, r%d, r%d,", "fcmpu", (rs >> 2), ra, rb);
+            ctx->instr_str = my_sprintf("%-8scr%d, r%d, r%d,", "fcmpu", (rs >> 2), ra, rb);
         break;
     case 12: /* frsp */
         if (ra != 0)
@@ -1515,7 +1545,7 @@ void opc_group63(PPCDisasmContext* ctx)
         if (rs & 3)
             opc_illegal(ctx);
         else
-            ctx->instr_str = my_sprintf("%-8scrf%d, r%d, r%d,", "fcmpo", (rs >> 2), ra, rb);
+            ctx->instr_str = my_sprintf("%-8scr%d, r%d, r%d,", "fcmpo", (rs >> 2), ra, rb);
         break;
     case 38: /* mtfsb1 */
         strcpy(opcode, "mtfsb1");
@@ -1539,7 +1569,7 @@ void opc_group63(PPCDisasmContext* ctx)
     case 64:
         strcpy(opcode, "mcrfs");
 
-        ctx->instr_str = my_sprintf("%-8scrf%d, crf%d", opcode, (rs >> 2), (ra >> 2));
+        ctx->instr_str = my_sprintf("%-8scr%d, cr%d", opcode, (rs >> 2), (ra >> 2));
         break;
     case 70: /* mtfsb0 */
         strcpy(opcode, "mtfsb0");
@@ -1559,7 +1589,7 @@ void opc_group63(PPCDisasmContext* ctx)
         if (ra != 0)
             opc_illegal(ctx);
         else
-            ctx->instr_str = my_sprintf("%-8scrf%d, r%d", "mtfsfi", (rs >> 2), (rb >> 1));
+            ctx->instr_str = my_sprintf("%-8scr%d, r%d", "mtfsfi", (rs >> 2), (rb >> 1));
         break;
     case 136: /* fnabs */
         if (ra != 0)
