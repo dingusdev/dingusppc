@@ -6,6 +6,7 @@
 # unconditional branches
 0xFFF03008,0x48000355,bl,0xFFF0335C
 0xFFF03000,0x4280035C,b,0xFFF0335C
+0xFFF03000,0x48000802,ba,0x00000800
 
 # bcctr variants with simplified mnemonics
 0xFFF03000,0x4E800420,bctr
@@ -191,6 +192,11 @@
 0xFFF00100,0x7D080120,mtcrf,0x80,r8
 0xFFF00100,0x7E007120,mtcrf,0x07,r16
 
+# shift instructions, primary opcode 0x1F
+0xFFF00100,0x7C65FE70,srawi,r5,r3,0x1F
+0xFFF00100,0x7D6B1E70,srawi,r11,r11,0x3
+0xFFF00100,0x7C090E71,srawi.,r9,r0,0x1
+
 # logical instructions, primary opcode 0x1F
 0xFFF00100,0x7FC32838,and,r3,r30,r5
 0xFFF00100,0x7C672039,and.,r7,r3,r4
@@ -211,6 +217,7 @@
 
 # synchronization instructions
 0xFFF03000,0x4C00012C,isync
+0xFFF00100,7C0006AC,eieio
 
 # trap instructions
 0xFFF00100,0x7F800008,tw,28,r0,r0

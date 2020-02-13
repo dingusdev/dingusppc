@@ -858,13 +858,16 @@ void opc_group31(PPCDisasmContext* ctx)
         if (rc_set)
             strcat(opcode, ".");
 
+
         switch (index) {
         case 0:  case 4:  case 6:  case 16:
         case 20: case 22: case 24: case 28:
-            fmt_threeop(ctx->instr_str, opcode, rs, ra, rb);
+            fmt_threeop(ctx->instr_str, opcode, ra, rs, rb);
+            break;
         case 5:  case 7:  case 21:  case 23:
         case 25: case 29:
-            fmt_threeop_uimm(ctx->instr_str, opcode, rs, ra, rb);
+            fmt_threeop_simm(ctx->instr_str, opcode, ra, rs, rb);
+            break;
         default:
             opc_illegal(ctx);
         }
@@ -940,7 +943,7 @@ void opc_group31(PPCDisasmContext* ctx)
             return;
             break;
         }
-        else if (index == 18) {
+        else if ((index == 18) | (index == 26)) {
             ctx->instr_str = my_sprintf("%-8s", opcode);
             return;
         }
