@@ -219,19 +219,14 @@ void opc_twi(PPCDisasmContext* ctx)
     if (ctx->simplified) {
         strcpy(opcode, trap_cond[to]);
 
-        if (strlen(opcode) == 0) {
-            opc_illegal(ctx);
-            return;
-        }
-        else {
+        if (strlen(opcode) > 0) {
             strcat(opcode, "i");
             ctx->instr_str = my_sprintf("%-8sr%d, 0x%08X", opcode, ra, imm);
+            return;
         }
 
     }
-    else {
-        ctx->instr_str = my_sprintf("%-8s%d, r%d, 0x%08X", "twi", to, ra, imm);
-    }
+    ctx->instr_str = my_sprintf("%-8s%d, r%d, 0x%08X", "twi", to, ra, imm);
 }
 
 void opc_group4(PPCDisasmContext* ctx)
@@ -1025,6 +1020,7 @@ void opc_group31(PPCDisasmContext* ctx)
 
                 if (strlen(opcode) != 0) {
                     ctx->instr_str = my_sprintf("%-8sr%d, r%d", opcode, ra, rb);
+                    return;
                 }
 
             }

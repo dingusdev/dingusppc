@@ -192,6 +192,9 @@
 0xFFF00100,0x7D080120,mtcrf,0x80,r8
 0xFFF00100,0x7E007120,mtcrf,0x07,r16
 
+# rotation instructions
+0xFFF00100,0x5400EFFE,rlwinm,r0,r0,0x1D,0x1F,0x1F
+
 # shift instructions, primary opcode 0x1F
 0xFFF00100,0x7C65FE70,srawi,r5,r3,0x1F
 0xFFF00100,0x7D6B1E70,srawi,r11,r11,0x3
@@ -224,6 +227,7 @@
 
 # trap instructions
 0xFFF00100,0x7F800008,tw,28,r0,r0
+0xFFF00100,0C000000,twi,0,r0,0
 
 # integer load and stores
 0xFFF00100,0x80BF0808,lwz,r5,0x808(r31)
@@ -262,6 +266,10 @@
 0xFFF00100,0xBB41FFE8,lmw,r26,-0x18(r1)
 0xFFF00100,0xBC410008,stmw,r2,0x8(r1)
 0xFFF00100,0xBFC1FFF8,stmw,r30,-0x8(r1)
+
+# misc instructions
+0xFFF00100,0x7D453D2A,stswx,r10,r5,r7
+0xFFF00100,0x7D604828,lwarx,r11,0,r9
 
 # various simplified (extended) mnemonics
 0xFFF00100,0x60000000,nop
