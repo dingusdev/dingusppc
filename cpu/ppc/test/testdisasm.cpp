@@ -53,8 +53,7 @@ static vector<PPCDisasmContext> read_test_data()
 
         /* put instruction mnemonic padded with trailing spaces */
         idisasm << tokens[2];
-        if (tokens.size() > 3) // don't pad operand-less instructions
-            idisasm << setw(8 - tokens[2].length()) << "";
+        idisasm << setw(8 - tokens[2].length()) << "";
 
         /* now add comma-separated operands */
         for (i = 3; i < tokens.size(); i++) {
