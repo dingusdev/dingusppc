@@ -84,6 +84,21 @@ const char* opc_muldivs[16] = { /* multiply and division instructions */
     "", "", "divwu", "divw"
 };
 
+const char* opc_shft_reg[32]{ /* Regular shift instructions */
+    "slw", "", "", "", "slq", "sliq", "sllq", "slliq",
+    "", "", "", "", "", "", "", "",
+    "srw", "", "", "", "srq", "sriq", "srlq", "srliq",
+    "sraw", "srawi", "", "", "sraq", "sraiq", "", ""
+};
+
+
+const char* opc_shft_ext[32]{ /* Extended shift instructions (601 only) */
+    "", "", "", "", "sle", "", "sleq", "",
+    "", "", "", "", "", "", "", "",
+    "rrib", "", "", "", "sre", "", "sreq", "",
+    "", "", "", "", "srea", "", "", ""
+}; 
+
 const char* opc_int_ldst[16] = { /* integer load and store instructions */
     "lwz", "lwzu", "lbz", "lbzu", "stw", "stwu", "stb", "stbu", "lhz", "lhzu",
     "lha", "lhau", "sth", "sthu", "lmw", "stmw"
@@ -185,6 +200,9 @@ void opc_illegal(PPCDisasmContext* ctx)
 
 void opc_twi(PPCDisasmContext* ctx)
 {
+
+    char opcode[10] = "";
+
     auto to = (ctx->instr_code >> 21) & 0x1F;
     auto ra = (ctx->instr_code >> 16) & 0x1F;
     int32_t imm = SIGNEXT(ctx->instr_code & 0xFFFF, 15);
@@ -192,21 +210,41 @@ void opc_twi(PPCDisasmContext* ctx)
     if (ctx->simplified) {
         switch (to) {
         case 1:
-            ctx->instr_str = my_sprintf("%-8sr%d, 0x%08X", "twlgti", ra, imm);
+            strcpy(opcode, "twlgti");
+            break;
+        case 2:
+            strcpy(opcode, "twllti");
+            break;
+        case 4:
+            strcpy(opcode, "tweqi");
+            break;
+        case 5:
+            strcpy(opcode, "twlgei");
             break;
         case 6:
-            ctx->instr_str = my_sprintf("%-8sr%d, 0x%08X", "twllei", ra, imm);
+            strcpy(opcode, "twllei");
             break;
         case 8:
-            ctx->instr_str = my_sprintf("%-8sr%d, 0x%08X", "twgti", ra, imm);
+            strcpy(opcode, "twgti");
+            break;
+        case 12:
+            strcpy(opcode, "twgei");
             break;
         case 16:
-            ctx->instr_str = my_sprintf("%-8sr%d, 0x%08X", "twlti", ra, imm);
+            strcpy(opcode, "twlti");
             break;
         case 20:
-            ctx->instr_str = my_sprintf("%-8sr%d, 0x%08X", "twlei", ra, imm);
+            strcpy(opcode, "twlei");
             break;
+        case 24:
+            strcpy(opcode, "twnei");
+            break;
+        default:
+            opc_illegal(ctx);
+            return;
         }
+
+        ctx->instr_str = my_sprintf("%-8sr%d, 0x%08X", opcode, ra, imm);
     }
     else {
         ctx->instr_str = my_sprintf("%-8s%d, r%d, 0x%08X", "twi", to, ra, imm);
@@ -319,6 +357,20 @@ void opc_rlwinm(PPCDisasmContext* ctx)
         fmt_rotateop(ctx->instr_str, "rlwinm.", rs, ra, sh, mb, me, true);
     else
         fmt_rotateop(ctx->instr_str, "rlwinm", rs, ra, sh, mb, me, true);
+}
+
+void opc_rlmi(PPCDisasmContext* ctx)
+{
+    auto rs = (ctx->instr_code >> 21) & 0x1F;
+    auto ra = (ctx->instr_code >> 16) & 0x1F;
+    auto sh = (ctx->instr_code >> 11) & 0x1F;
+    auto mb = (ctx->instr_code >> 6) & 0x1F;
+    auto me = (ctx->instr_code >> 1) & 0x1F;
+
+    if (ctx->instr_code & 1)
+        fmt_rotateop(ctx->instr_str, "rlmi.", rs, ra, sh, mb, me, true);
+    else
+        fmt_rotateop(ctx->instr_str, "rlmi", rs, ra, sh, mb, me, true);
 }
 
 void opc_rlwnm(PPCDisasmContext* ctx)
@@ -801,21 +853,52 @@ void opc_group31(PPCDisasmContext* ctx)
         return;
 
     case 0x18: /* Shifting instructions */
-        if (index == 0)
-            fmt_threeop(ctx->instr_str, "slw", rs, ra, rb);
-        else if (index == 16)
-            fmt_threeop(ctx->instr_str, "srw", rs, ra, rb);
-        else if (index == 24)
-            fmt_threeop(ctx->instr_str, "sraw", rs, ra, rb);
-        else if (index == 25)
-            fmt_threeop_uimm(ctx->instr_str, "srawi", rs, ra, rb);
+        strcpy(opcode, opc_shft_reg[index]);
+
+        if (rc_set)
+            strcat(opcode, ".");
+
+        switch (index) {
+        case 0:  case 4:  case 6:  case 16:
+        case 20: case 22: case 24: case 28:
+            fmt_threeop(ctx->instr_str, opcode, rs, ra, rb);
+        case 5:  case 7:  case 21:  case 23:
+        case 25: case 29:
+            fmt_threeop_uimm(ctx->instr_str, opcode, rs, ra, rb);
+        default:
+            opc_illegal(ctx);
+        }
+
+        return;
+
+    case 0x19: /* (Extended) Shifting instructions - 601 only*/
+        strcpy(opcode, opc_shft_ext[index]);
+
+        if (rc_set)
+            strcat(opcode, ".");
+
+        switch (index) {
+        case 4:  case 6:  case 16:
+        case 20: case 22: case 28:
+            fmt_threeop(ctx->instr_str, opcode, rs, ra, rb);
+        default:
+            opc_illegal(ctx);
+        }
+
         return;
 
     case 0x1A: /* Byte sign extend instructions */
+
         if (index == 28)
-            fmt_twoop(ctx->instr_str, "extsh", rs, ra);
+            strcpy(opcode, "extsh");
         else if (index == 29)
-            fmt_twoop(ctx->instr_str, "extsb", rs, ra);
+            strcpy(opcode, "extsb");
+
+        if (rc_set)
+            strcat(opcode, ".");
+
+        fmt_twoop(ctx->instr_str, opcode, rs, ra);
+
         return;
 
     case 0x1C: /* logical instructions */
@@ -879,7 +962,7 @@ void opc_group31(PPCDisasmContext* ctx)
         else
             ctx->instr_str = my_sprintf("%-8sr%d, r%d, r%d", "cmp", rs, ra, rb);
         break;
-    case 4:
+    case 4: /* tw */
         if (rc_set)
             opc_illegal(ctx);
         else
@@ -895,6 +978,14 @@ void opc_group31(PPCDisasmContext* ctx)
             strcat(opcode, ".");
 
         fmt_twoop(ctx->instr_str, opcode, rs, ra);
+        break;
+    case 29: /* maskg */
+        strcpy(opcode, "maskg");
+
+        if (rc_set)
+            strcat(opcode, ".");
+
+        fmt_threeop(ctx->instr_str, opcode, rs, ra, rb);
         break;
     case 32: /* cmpl */
         if (rc_set)
@@ -916,6 +1007,14 @@ void opc_group31(PPCDisasmContext* ctx)
         break;
     case 146: /* mtmsr */
         fmt_oneop(ctx->instr_str, "mtmsr", rs);
+        break;
+    case 277: /* lscbx */
+        strcpy(opcode, "lscbx");
+
+        if (rc_set)
+            strcat(opcode, ".");
+
+        fmt_threeop(ctx->instr_str, opcode, rs, ra, rb);
         break;
     case 339: /* mfspr */
         if (ctx->simplified) {
@@ -955,9 +1054,25 @@ void opc_group31(PPCDisasmContext* ctx)
     case 512: /* mcrxr */
         ctx->instr_str = my_sprintf("%-8scrf%d", "mcrxr", (rs >> 2));
         break;
+    case 531: /* clcs */
+        strcpy(opcode, "clcs");
+
+        if (rc_set)
+            strcat(opcode, ".");
+
+        fmt_threeop(ctx->instr_str, opcode, rs, ra, rb);
+        break;
     case 533: /* lswx */
         fmt_threeop_simm(ctx->instr_str, "lswx", rs, ra, rb);
         break;
+    case 541: /* maskir */
+        strcpy(opcode, "maskir");
+
+        if (rc_set)
+            strcat(opcode, ".");
+
+        fmt_threeop(ctx->instr_str, opcode, rs, ra, rb);
+        return;
     case 597: /* lswi */
         fmt_threeop_simm(ctx->instr_str, "lswi", rs, ra, rb);
         break;
@@ -1421,7 +1536,7 @@ static std::function<void(PPCDisasmContext*)> OpcodeDispatchTable[64] = {
     opc_ar_im,     power_dozi,    opc_cmp_i_li,  opc_cmp_i_li,
     opc_ar_im,     opc_ar_im,     opc_ar_im,     opc_ar_im,
     opc_bcx,       opc_sc,        opc_bx,        opc_group19,
-    opc_rlwimi,    opc_rlwinm,    opc_illegal,   opc_rlwnm,
+    opc_rlwimi,    opc_rlwinm,    opc_rlmi,      opc_rlwnm,
     opc_bool_im,   opc_bool_im,   opc_bool_im,   opc_bool_im,
     opc_bool_im,   opc_bool_im,   opc_illegal,   opc_group31,
     opc_intldst,   opc_intldst,   opc_intldst,   opc_intldst,
