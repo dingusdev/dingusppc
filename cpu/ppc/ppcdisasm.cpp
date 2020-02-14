@@ -827,10 +827,7 @@ void opc_group31(PPCDisasmContext* ctx)
                 ctx->instr_str = my_sprintf("%-8s%d, r%d", "mtsr", ra, rs);
         }
         else if (index == 7) { /* mtsrin */
-            if (rb & 16)
-                opc_illegal(ctx);
-            else
-                ctx->instr_str = my_sprintf("%-8sr%d, r%d", "mtsrin", rs, rb);
+            ctx->instr_str = my_sprintf("%-8sr%d, r%d", "mtsrin", rs, rb);
         }
         else if (index == 9) {  /* tlbie */
             ctx->instr_str = my_sprintf("%-8sr%d", "tlbie", rb);
@@ -1185,6 +1182,12 @@ void opc_group31(PPCDisasmContext* ctx)
 
         fmt_threeop(ctx->instr_str, opcode, ra, rs, rb);
         return;
+    case 595: /* mfsr */
+        if (ra & 16)
+            opc_illegal(ctx);
+        else
+            ctx->instr_str = my_sprintf("%-8sr%d, %d", "mfsr", rs, ra);
+        break;
     case 597: /* lswi */
         if (rc_set) {
             opc_illegal(ctx);
@@ -1198,6 +1201,9 @@ void opc_group31(PPCDisasmContext* ctx)
             else
                 fmt_threeop_simm(ctx->instr_str, "lswi", rs, ra, rb);
         }
+        break;
+    case 659: /* mfsrin */
+        ctx->instr_str = my_sprintf("%-8sr%d, r%d", "mtsrin", rs, rb);
         break;
     case 661: /* stswx */
         if (rc_set) {
