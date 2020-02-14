@@ -818,19 +818,25 @@ void opc_group31(PPCDisasmContext* ctx)
         }
         return;
 
-    case 0x12: /* tlb instructions */
+    case 0x12: /* tlb & segment register instructions */
 
-        if (index == 11) {
-            if (!rs & !ra & !rb)
+        if (index == 6) { /* mtsr */
+            if (ra & 16)
                 opc_illegal(ctx);
             else
-                ctx->instr_str = my_sprintf("%-8s", "tlbia");
+                ctx->instr_str = my_sprintf("%-8s%d, r%d", "mtsr", ra, rs);
         }
-        else if (index == 18) {
-            if (!rs & !ra)
+        else if (index == 7) { /* mtsrin */
+            if (rb & 16)
                 opc_illegal(ctx);
             else
-                ctx->instr_str = my_sprintf("%-8sr%s", "tlbie", rb);
+                ctx->instr_str = my_sprintf("%-8sr%d, r%d", "mtsrin", rs, rb);
+        }
+        else if (index == 9) {  /* tlbie */
+            ctx->instr_str = my_sprintf("%-8sr%s", "tlbie", rb);
+        }
+        else if (index == 11) { /* tlbia */
+            ctx->instr_str = my_sprintf("%-8s", "tlbia");
         }
         else if (index == 30) { /* tlbld - 603 only */
             if (!rs & !ra)
@@ -884,9 +890,11 @@ void opc_group31(PPCDisasmContext* ctx)
 
         return;
 
-    case 0x1A: /* Byte sign extend instructions */
+    case 0x1A: /* Byte sign extend instructions (and cntlzw) */
 
-        if (index == 28)
+        if (index == 0)
+            strcpy(opcode, "cntlzw");
+        else if (index == 28)
             strcpy(opcode, "extsh");
         else if (index == 29)
             strcpy(opcode, "extsb");
@@ -996,10 +1004,7 @@ void opc_group31(PPCDisasmContext* ctx)
             }
         }
         else if (index == 30) { /* icbi */
-            if (rs == 0)
-                opc_illegal(ctx);
-            else
-                fmt_twoop(ctx->instr_str, opcode, ra, rb);
+            fmt_twoop(ctx->instr_str, opcode, ra, rb);
         }
         else if (index == 17) { /* tlbsync */
             ctx->instr_str = my_sprintf("%-8s", opcode);
@@ -1054,15 +1059,6 @@ void opc_group31(PPCDisasmContext* ctx)
                 fmt_threeop(ctx->instr_str, "lwarx", rs, ra, rb);
         }
         break;
-    case 26: /* cntlzw */
-        printf("CASE REACH! \n");
-
-        if (rc_set)
-            fmt_twoop(ctx->instr_str, "cntlzw.", rs, ra);
-        else
-            fmt_twoop(ctx->instr_str, "cntlzw", rs, ra);
-
-        break;
     case 29: /* maskg */
         strcpy(opcode, "maskg");
 
@@ -1091,18 +1087,6 @@ void opc_group31(PPCDisasmContext* ctx)
         break;
     case 146: /* mtmsr */
         fmt_oneop(ctx->instr_str, "mtmsr", rs);
-        break;
-    case 210: /* mtsr */
-        if (ra & 16)
-            opc_illegal(ctx);
-        else
-            ctx->instr_str = my_sprintf("%-8%d, r%d", "mtsr", ra, rs);
-        break;
-    case 242: /* mtsrin */
-        if (rb & 16)
-            opc_illegal(ctx);
-        else
-            ctx->instr_str = my_sprintf("%-8r%d, r%d", "mtsr", rs, rb);
         break;
     case 277: /* lscbx */
         strcpy(opcode, "lscbx");
