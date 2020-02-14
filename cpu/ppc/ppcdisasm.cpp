@@ -609,68 +609,6 @@ void opc_bx(PPCDisasmContext* ctx)
     ctx->instr_str = my_sprintf("%-8s0x%08X", bx_mnem[ctx->instr_code & 3], dst);
 }
 
-void opc_ori(PPCDisasmContext* ctx)
-{
-    auto ra = (ctx->instr_code >> 16) & 0x1F;
-    auto rs = (ctx->instr_code >> 21) & 0x1F;
-    auto imm = ctx->instr_code & 0xFFFF;
-
-    if (!ra && !rs && !imm && ctx->simplified) {
-        ctx->instr_str = my_sprintf("%-8s", "nop");
-        return;
-    }
-    if (imm == 0 && ctx->simplified) { /* inofficial, produced by IDA */
-        fmt_twoop(ctx->instr_str, "mr", ra, rs);
-        return;
-    }
-    fmt_threeop_uimm(ctx->instr_str, "ori", ra, rs, imm);
-}
-
-void opc_oris(PPCDisasmContext* ctx)
-{
-    auto ra = (ctx->instr_code >> 16) & 0x1F;
-    auto rs = (ctx->instr_code >> 21) & 0x1F;
-    auto imm = ctx->instr_code & 0xFFFF;
-
-    fmt_threeop_uimm(ctx->instr_str, "oris", ra, rs, imm);
-}
-
-void opc_xori(PPCDisasmContext* ctx)
-{
-    auto ra = (ctx->instr_code >> 16) & 0x1F;
-    auto rs = (ctx->instr_code >> 21) & 0x1F;
-    auto imm = ctx->instr_code & 0xFFFF;
-
-    fmt_threeop_uimm(ctx->instr_str, "xori", ra, rs, imm);
-}
-
-void opc_xoris(PPCDisasmContext* ctx)
-{
-    auto ra = (ctx->instr_code >> 16) & 0x1F;
-    auto rs = (ctx->instr_code >> 21) & 0x1F;
-    auto imm = ctx->instr_code & 0xFFFF;
-
-    fmt_threeop_uimm(ctx->instr_str, "xoris", ra, rs, imm);
-}
-
-void opc_andidot(PPCDisasmContext* ctx)
-{
-    auto ra = (ctx->instr_code >> 16) & 0x1F;
-    auto rs = (ctx->instr_code >> 21) & 0x1F;
-    auto imm = ctx->instr_code & 0xFFFF;
-
-    fmt_threeop_uimm(ctx->instr_str, "andi.", ra, rs, imm);
-}
-
-void opc_andisdot(PPCDisasmContext* ctx)
-{
-    auto ra = (ctx->instr_code >> 16) & 0x1F;
-    auto rs = (ctx->instr_code >> 21) & 0x1F;
-    auto imm = ctx->instr_code & 0xFFFF;
-
-    fmt_threeop_uimm(ctx->instr_str, "andis.", ra, rs, imm);
-}
-
 void opc_sc(PPCDisasmContext* ctx)
 {
     ctx->instr_str = my_sprintf("%-8s", "sc");
@@ -1447,15 +1385,12 @@ void opc_group63(PPCDisasmContext* ctx)
         return;
 
     case 23: /* fsel */
-        strcpy(opcode, "fsel");
+        strcpy(opcode, opc_flt_ext_arith[23]);
 
         if (rc_set)
             strcat(opcode, ".");
 
-        if ((rc != 0) | (ra != 0))
-            opc_illegal(ctx);
-        else
-            fmt_fourop_flt(ctx->instr_str, opcode, rs, ra, rb, rc);
+        fmt_fourop_flt(ctx->instr_str, opcode, rs, ra, rc, rb);
 
         return;
 
