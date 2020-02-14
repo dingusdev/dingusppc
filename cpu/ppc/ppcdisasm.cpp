@@ -833,7 +833,7 @@ void opc_group31(PPCDisasmContext* ctx)
                 ctx->instr_str = my_sprintf("%-8sr%d, r%d", "mtsrin", rs, rb);
         }
         else if (index == 9) {  /* tlbie */
-            ctx->instr_str = my_sprintf("%-8sr%s", "tlbie", rb);
+            ctx->instr_str = my_sprintf("%-8sr%d", "tlbie", rb);
         }
         else if (index == 11) { /* tlbia */
             ctx->instr_str = my_sprintf("%-8s", "tlbia");
