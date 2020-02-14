@@ -1,12 +1,13 @@
 # Test data for PowerPC disassembler supplied as comma-separated values
 # Data format:
 # instruction address (hex), instruction code (hex), expected disassembly: opcode, [operands...]
-# (lines starting with "#" will be treated as comments and ignored)
+# (lines starting with a hash sign (#) will be treated as comments and ignored)
 
 # unconditional branches
 0xFFF03008,0x48000355,bl,0xFFF0335C
 0xFFF03000,0x4280035C,b,0xFFF0335C
 0xFFF03000,0x48000802,ba,0x00000800
+0xFFF03000,0x48000803,bla,0x00000800
 
 # bcctr variants with simplified mnemonics
 0xFFF03000,0x4E800420,bctr
@@ -193,9 +194,16 @@
 0xFFF00100,0x7E007120,mtcrf,0x07,r16
 
 # rotation instructions
+0xFFF00100,0x5084442E,rlwimi,r4,r4,8,16,23
 0xFFF00100,0x5400EFFE,rlwinm,r0,r0,29,31,31
 
 # shift instructions, primary opcode 0x1F
+0xFFF00100,0x7C695830,slw,r9,r3,r11
+0xFFF00100,0x7C00F831,slw.,r0,r0,r31
+0xFFF00100,0x7FC4FC30,srw,r4,r30,r31
+0xFFF00100,0x7CE92C31,srw.,r9,r7,r5
+0xFFF00100,0x7D235E30,sraw,r3,r9,r11
+0xFFF00100,0x7D290631,sraw.,r9,r9,r0
 0xFFF00100,0x7C65FE70,srawi,r5,r3,0x1F
 0xFFF00100,0x7D6B1E70,srawi,r11,r11,0x3
 0xFFF00100,0x7C090E71,srawi.,r9,r0,0x1
@@ -218,16 +226,22 @@
 0xFFF00100,0x7C6023B8,nand,r0,r3,r4
 0xFFF00100,0x7F8B63B9,nand.,r11,r28,r12
 
+#logical immediate instructions
+0xFFF00100,0x60009BA5,ori,r0,r0,0x9BA5
+0xFFF00100,0x6744AAAA,oris,r4,r26,0xAAAA
+
 # synchronization instructions
 0xFFF00100,0x7D201828,lwarx,r9,0,r3
 0xFFF00100,0x7D20192D,stwcx.,r9,0,r3
 0xFFF00100,0x7FAB052C,stwbrx,r29,r11,r0
 0xFFF03000,0x4C00012C,isync
-0xFFF00100,7C0006AC,eieio
+0xFFF00100,0x7C0004AC,sync
+0xFFF00100,0x7C0006AC,eieio
+0xFFF00100,0x7C05272C,sthbrx,r0,r5,r4
 
 # trap instructions
 0xFFF00100,0x7F800008,tw,28,r0,r0
-0xFFF00100,0C000000,twi,0,r0,0
+0xFFF00100,0x0C000000,twi,0,r0,0
 
 # integer load and stores
 0xFFF00100,0x80BF0808,lwz,r5,0x808(r31)
@@ -266,13 +280,42 @@
 0xFFF00100,0xBB41FFE8,lmw,r26,-0x18(r1)
 0xFFF00100,0xBC410008,stmw,r2,0x8(r1)
 0xFFF00100,0xBFC1FFF8,stmw,r30,-0x8(r1)
+0xFFF00100,0xD58B0004,stfsu,f12,4(r11)
+
+#floating point operations 
+0xFFF00100,0xFC03282A,fadd,f0,f3,f5
+0xFFF00100,0xFDAD682B,fadd.,f13,f13,f13
+0xFFF00100,0xFC0D0024,fdiv,f0,f13,f0
+0xFFF00100,0xFC2B0025,fdiv.,f1,f11,f0
+0xFFF00100,0xFD8952FC,fnmsub,f12,f9,f11,f10
+0xFFF00100,0xFD600110,fnabs,f11,f0
+0xFFF00100,0xFD002034,frsqrte,f8,f4
+0xFFF00100,0x7FF957AE,stfiwx,f31,r25,r10
 
 #compare instructions
+0xFFF00100,0x7FBFB800,cmp,cr7,1,r31,r23
+0xFFF00100,0x7FA05840,cmpl,cr7,1,r0,r11
+0xFFF00100,0x2FA90000,cmpi,cr7,1,r9,0x0
 0xFFF00100,0x2AA3FFFF,cmpli,cr5,1,r3,0xFFFF
+0xFFF00100,0xFE17C840,fcmpo,cr4,f23,f25
+0xFFF00100,0xFF0C6800,fcmpu,cr6,f12,f13
 
 # misc instructions
-0xFFF00100,0x7D453D2A,stswx,r10,r5,r7
+0xFFF00100,0x7D290034,cntlzw,r9,r9
+0xFFF00100,0x7FFF0035,cntlzw.,r31,r31
+0xFFF00100,0x7C00D7AC,icbi,r0,r26
 0xFFF00100,0x7D604828,lwarx,r11,0,r9
+0xFFF00100,0x7CBC04AA,lswi,r5,r28,0x20
+0xFFF00100,0x7FEF2C2A,lswx,r31,r15,r5
+0xFFF00100,0x7E000400,mcrxr,cr4
+0xFFF00100,0xFFE0004C,mtfsb1,31
+0xFFF00100,0xFFE0048F,mffs.,f31
+0xFFF00100,0x7FEF01A4,mtsr,15,r31
+0xFFF00100,0x7C6021E4,mtsrin,r3,r4
+0xFFF00100,0x7CA305AA,stswi,r5,r3,0x20
+0xFFF00100,0x7D453D2A,stswx,r10,r5,r7
+0xFFF00100,0x7C0002E4,tlbia
+0xFFF00100,0x7C004A64,tlbie,r9
 
 # various simplified (extended) mnemonics
 0xFFF00100,0x60000000,nop
@@ -289,4 +332,7 @@
 0xFFF00100,0x7C642D90,dc.l,0x7C642D90
 
 # POWER/PPC601 specific instructions
-#0xFFF00100,0x7E3EE43A,maskir,r30,r17,r28
+0xFFF00100,0x7C440426,clcs,r2,r4
+0xFFF00100,0x24000800,dozi,r0,r0,0x800
+0xFFF00100,0x7C00003A,maskg,r0,r0,r0
+0xFFF00100,0x7E3EE43A,maskir,r30,r17,r28
