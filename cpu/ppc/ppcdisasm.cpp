@@ -304,20 +304,42 @@ void power_dozi(PPCDisasmContext* ctx)
 
 void opc_rlwimi(PPCDisasmContext* ctx)
 {
+    char opcode[10];
     auto rs = (ctx->instr_code >> 21) & 0x1F;
     auto ra = (ctx->instr_code >> 16) & 0x1F;
     auto sh = (ctx->instr_code >> 11) & 0x1F;
     auto mb = (ctx->instr_code >> 6) & 0x1F;
     auto me = (ctx->instr_code >> 1) & 0x1F;
 
+    if (ctx->simplified) {
+        if (sh > 0) {
+            if (((32 - mb) == sh) & ((mb + sh - 1) == me)) {
+                strcpy(opcode, "inslwi");
+                if (ctx->instr_code & 1)
+                    strcat(opcode, ".");
+
+                ctx->instr_str = my_sprintf("%-8sr%d, r%d, %d, %d", "inslwi", rs, ra, sh, me);
+            }
+            else if (((32 - (mb + sh)) == mb) & ((mb + sh - 1) == me)) {
+                strcpy(opcode, "insrwi");
+                if (ctx->instr_code & 1)
+                    strcat(opcode, ".");
+
+                ctx->instr_str = my_sprintf("%-8sr%d, r%d, %d, %d", "inslwi", rs, ra, sh, me);
+            }
+        }
+    }
+
+    strcpy(opcode, "rlwimi");
     if (ctx->instr_code & 1)
-        fmt_rotateop(ctx->instr_str, "rlwimi.", ra, rs, sh, mb, me, true);
-    else
-        fmt_rotateop(ctx->instr_str, "rlwimi", ra, rs, sh, mb, me, true);
+        strcat(opcode, ".");
+
+    fmt_rotateop(ctx->instr_str, opcode, ra, rs, sh, mb, me, true);
 }
 
 void opc_rlwinm(PPCDisasmContext* ctx)
 {
+    char opcode[10];
     auto rs = (ctx->instr_code >> 21) & 0x1F;
     auto ra = (ctx->instr_code >> 16) & 0x1F;
     auto sh = (ctx->instr_code >> 11) & 0x1F;
@@ -328,36 +350,94 @@ void opc_rlwinm(PPCDisasmContext* ctx)
         if (mb == 0) {
             if (me < 32) {
                 if (sh == (31 - me)) {
+                    strcpy(opcode, "slwi");
+
                     if (ctx->instr_code & 1)
-                        fmt_threeop_simm(ctx->instr_str, "slwi.", rs, ra, sh);
-                    else
-                        fmt_threeop_simm(ctx->instr_str, "slwi", rs, ra, sh);
+                        strcat(opcode, ".");
+                    
+                    fmt_threeop_simm(ctx->instr_str, "slwi", rs, ra, sh);
                     return;
                 }
 
                 if (sh == 0) {
-                    fmt_threeop(ctx->instr_str, "clrrwi", rs, ra, mb);
+                    strcpy(opcode, "clrrwi");
+
+                    if (ctx->instr_code & 1)
+                        strcat(opcode, ".");
+
+                    fmt_threeop(ctx->instr_str, opcode, rs, ra, mb);
                     return;
                 }
             }
 
             if (me == 31) {
-                fmt_threeop(ctx->instr_str, "rotlwi", rs, ra, sh);
+                strcpy(opcode, "rotlwi");
+
+                if (ctx->instr_code & 1)
+                    strcat(opcode, ".");
+
+                fmt_threeop(ctx->instr_str, opcode, rs, ra, sh);
                 return;
             }
 
             if (me > 0) {
-                ctx->instr_str = my_sprintf("%-8sr%d, r%d, %d, %d", "extlwi", rs, ra, sh, me);
+                strcpy(opcode, "extlwi");
+
+                if (ctx->instr_code & 1)
+                    strcat(opcode, ".");
+
+                ctx->instr_str = my_sprintf("%-8sr%d, r%d, %d, %d", opcode, rs, ra, sh, me);
+                return;
+            }
+        }
+        if (me == 31) {
+            if ((32 - sh) == mb) {
+                strcpy(opcode, "srwi");
+
+                if (ctx->instr_code & 1)
+                    strcat(opcode, ".");
+
+                ctx->instr_str = my_sprintf("%-8sr%d, r%d, %d, %d", opcode, rs, ra, sh, mb);
+                return;
+            }
+
+            if ((32 - sh) == (mb + sh)) {
+                strcpy(opcode, "extrwi");
+
+                if (ctx->instr_code & 1)
+                    strcat(opcode, ".");
+
+                ctx->instr_str = my_sprintf("%-8sr%d, r%d, %d, %d", opcode, rs, ra, sh, mb);
+                return;
+            }
+
+            if (sh == 0) {
+                strcpy(opcode, "rotrwi");
+
+                if (ctx->instr_code & 1)
+                    strcat(opcode, ".");
+
+                fmt_threeop(ctx->instr_str, opcode, rs, ra, mb);
                 return;
             }
         }
 
+        if ((sh == 0) & (me == 31)) {
+            strcpy(opcode, "clrlwi");
+
+            if (ctx->instr_code & 1)
+                strcat(opcode, ".");
+
+            fmt_threeop(ctx->instr_str, opcode, rs, ra, mb);
+            return;
+        }
     }
 
+    strcpy(opcode, "rlwinm");
     if (ctx->instr_code & 1)
-        fmt_rotateop(ctx->instr_str, "rlwinm.", ra, rs, sh, mb, me, true);
-    else
-        fmt_rotateop(ctx->instr_str, "rlwinm", ra, rs, sh, mb, me, true);
+        strcat(opcode, ".");
+    
+    fmt_rotateop(ctx->instr_str, "rlwinm", ra, rs, sh, mb, me, true);
 }
 
 void opc_rlmi(PPCDisasmContext* ctx)
@@ -376,6 +456,7 @@ void opc_rlmi(PPCDisasmContext* ctx)
 
 void opc_rlwnm(PPCDisasmContext* ctx)
 {
+    char opcode[10];
     auto rs = (ctx->instr_code >> 21) & 0x1F;
     auto ra = (ctx->instr_code >> 16) & 0x1F;
     auto rb = (ctx->instr_code >> 11) & 0x1F;
@@ -384,20 +465,20 @@ void opc_rlwnm(PPCDisasmContext* ctx)
 
     if (ctx->simplified) {
         if ((me == 31) & (mb == 0)) {
-            if (ctx->instr_code & 1) {
-                fmt_rotateop(ctx->instr_str, "rotlw.", ra, rs, rb, mb, me, false);
-                return;
-            }
-            else {
-                fmt_rotateop(ctx->instr_str, "rotlw", ra, rs, rb, mb, me, false);
-                return;
-            }
+            strcpy(opcode, "rotlw");
+
+            if (ctx->instr_code & 1)
+                strcat(opcode, ".");
+            
+             fmt_rotateop(ctx->instr_str, opcode, ra, rs, rb, mb, me, false);
+             return;
         }
     }
+    strcpy(opcode, "rlwnm");
     if (ctx->instr_code & 1)
-        fmt_rotateop(ctx->instr_str, "rlwnm.", ra, rs, rb, mb, me, false);
-    else
-        fmt_rotateop(ctx->instr_str, "rlwnm", ra, rs, rb, mb, me, false);
+        strcat(opcode, ".");
+    
+    fmt_rotateop(ctx->instr_str, "rlwnm", ra, rs, rb, mb, me, false);
 }
 
 void opc_cmp_i_li(PPCDisasmContext* ctx)
