@@ -56,9 +56,9 @@ const char* bcctrx_cond[8] = { /* simplified branch conditions */
 };
 
 const char* opc_idx_ldst[32] = { /* indexed load/store opcodes */
-    "lwzx", "lwzux", "lbzx", "lbzux", "stwx", "stwux", "stbx", "stbux", 
-    "lhzx", "lhzux", "lhax", "lhaux", "sthx", "sthux", "", "", 
-    "lfsx", "lfsux", "lfdx", "lfdux", "stfsx", "stfsux", "stfdx", "stfdux", 
+    "lwzx", "lwzux", "lbzx", "lbzux", "stwx", "stwux", "stbx", "stbux",
+    "lhzx", "lhzux", "lhax", "lhaux", "sthx", "sthux", "", "",
+    "lfsx", "lfsux", "lfdx", "lfdux", "stfsx", "stfsux", "stfdx", "stfdux",
     "", "", "", "", "", "", "stfiwx", ""
 };
 
@@ -174,7 +174,7 @@ void fmt_threeop_crb(string& buf, const char* opc, int dst, int src1, int src2)
 
 void fmt_threeop_uimm(string& buf, const char* opc, int dst, int src1, int imm)
 {
-    buf = my_sprintf("%-8sr%d, r%d, 0x%04X", opc, dst, src1, imm);
+    buf = my_sprintf("%-8sr%d, r%d, 0x%X", opc, dst, src1, imm);
 }
 
 void fmt_threeop_simm(string& buf, const char* opc, int dst, int src1, int imm)
@@ -221,12 +221,12 @@ void opc_twi(PPCDisasmContext* ctx)
 
         if (strlen(opcode) > 0) {
             strcat(opcode, "i");
-            ctx->instr_str = my_sprintf("%-8sr%d, 0x%08X", opcode, ra, imm);
+            ctx->instr_str = my_sprintf("%-8sr%d, 0x%X", opcode, ra, imm);
             return;
         }
 
     }
-    ctx->instr_str = my_sprintf("%-8s%d, r%d, 0x%08X", "twi", to, ra, imm);
+    ctx->instr_str = my_sprintf("%-8s%d, r%d, 0x%X", "twi", to, ra, imm);
 }
 
 void opc_group4(PPCDisasmContext* ctx)
@@ -325,7 +325,7 @@ void opc_rlwinm(PPCDisasmContext* ctx)
                 return;
             }
 
-            if (me > 0){
+            if (me > 0) {
                 ctx->instr_str = my_sprintf("%-8sr%d, r%d, %d, %d", "extlwi", rs, ra, sh, me);
                 return;
             }
@@ -343,14 +343,14 @@ void opc_rlmi(PPCDisasmContext* ctx)
 {
     auto rs = (ctx->instr_code >> 21) & 0x1F;
     auto ra = (ctx->instr_code >> 16) & 0x1F;
-    auto sh = (ctx->instr_code >> 11) & 0x1F;
+    auto rb = (ctx->instr_code >> 11) & 0x1F;
     auto mb = (ctx->instr_code >> 6) & 0x1F;
     auto me = (ctx->instr_code >> 1) & 0x1F;
 
     if (ctx->instr_code & 1)
-        fmt_rotateop(ctx->instr_str, "rlmi.", ra, rs, sh, mb, me, true);
+        fmt_rotateop(ctx->instr_str, "rlmi.", ra, rs, rb, mb, me, false);
     else
-        fmt_rotateop(ctx->instr_str, "rlmi", ra, rs, sh, mb, me, true);
+        fmt_rotateop(ctx->instr_str, "rlmi", ra, rs, rb, mb, me, false);
 }
 
 void opc_rlwnm(PPCDisasmContext* ctx)
@@ -387,7 +387,7 @@ void opc_cmp_i_li(PPCDisasmContext* ctx)
     auto imm = ctx->instr_code & 0xFFFF;
 
     if ((ctx->instr_code >> 26) & 0x1)
-        ctx->instr_str = my_sprintf("%-8scr%d, %d, r%d, 0x%04X", "cmpi", crfd, ls, ra, imm);
+        ctx->instr_str = my_sprintf("%-8scr%d, %d, r%d, 0x%X", "cmpi", crfd, ls, ra, imm);
     else
         ctx->instr_str = my_sprintf("%-8scr%d, %d, r%d, 0x%04X", "cmpli", crfd, ls, ra, imm);
 }
@@ -794,16 +794,15 @@ void opc_group31(PPCDisasmContext* ctx)
             strcat(opcode, ".");
 
 
-        switch (index) {
-        case 0:  case 4:  case 6:  case 16:
-        case 20: case 22: case 24: case 28:
+        if ((index == 0) | (index == 4) | (index == 6) | (index == 16) \
+            | (index == 20) | (index == 22) | (index == 24) | (index == 28)) {
             fmt_threeop(ctx->instr_str, opcode, ra, rs, rb);
-            break;
-        case 5:  case 7:  case 21:  case 23:
-        case 25: case 29:
+        }
+        else if ((index == 5) | (index == 7) | (index == 21) \
+            | (index == 23) | (index == 25) | (index == 29)) {
             fmt_threeop_simm(ctx->instr_str, opcode, ra, rs, rb);
-            break;
-        default:
+        }
+        else {
             opc_illegal(ctx);
         }
 
@@ -815,11 +814,11 @@ void opc_group31(PPCDisasmContext* ctx)
         if (rc_set)
             strcat(opcode, ".");
 
-        switch (index) {
-        case 4:  case 6:  case 16:
-        case 20: case 22: case 28:
-            fmt_threeop(ctx->instr_str, opcode, rs, ra, rb);
-        default:
+        if ((index == 4) | (index == 6) | (index == 16) \
+            | (index == 20) | (index == 22) | (index == 28)){
+            fmt_threeop(ctx->instr_str, opcode, ra, rs, rb);
+        }
+        else{
             opc_illegal(ctx);
         }
 
@@ -882,7 +881,7 @@ void opc_group31(PPCDisasmContext* ctx)
             fmt_threeop(ctx->instr_str, opc_idx_ldst[index], rs, ra, rb);
         }
         else {
-            ctx->instr_str = my_sprintf("%-8sfp%d, r%d, r%d", \
+            ctx->instr_str = my_sprintf("%-8sf%d, r%d, r%d", \
                 opc_idx_ldst[index], rs, ra, rb);
         }
         return;
@@ -890,7 +889,7 @@ void opc_group31(PPCDisasmContext* ctx)
     case 0x16: /* processor mgmt + byte reversed load and store instructions */
         strcpy(opcode, proc_mgmt_str[index]);
 
-        if (index == 4){ /* stwcx.*/
+        if (index == 4) { /* stwcx.*/
             if (!rc_set) {
                 opc_illegal(ctx);
                 return;
