@@ -141,8 +141,8 @@ const char* spr_index0[32] = {
 const char* spr_index8[32] = {
     "", "", "", "", "", "", "", "",
     "", "", "", "", "", "", "", "",
-    "sprg0", "sprg1", "sprg2", "sprg3", "", "", "", "",
-    "", "", "ear", "", "tbl", "tbu", "", ""
+    "sprg0", "sprg1", "sprg2", "sprg3", "sprg4", "sprg5", "sprg6", "sprg7",
+    "", "", "ear", "", "tbl", "tbu", "", "pvr"
 };
 
 const char* spr_index16[32] = {
@@ -318,14 +318,14 @@ void opc_rlwimi(PPCDisasmContext* ctx)
                 if (ctx->instr_code & 1)
                     strcat(opcode, ".");
 
-                ctx->instr_str = my_sprintf("%-8sr%d, r%d, %d, %d", "inslwi", rs, ra, sh, me);
+                ctx->instr_str = my_sprintf("%-8sr%d, r%d, %d, %d", opcode, rs, ra, sh, me);
             }
             else if (((32 - (mb + sh)) == mb) & ((mb + sh - 1) == me)) {
                 strcpy(opcode, "insrwi");
                 if (ctx->instr_code & 1)
                     strcat(opcode, ".");
 
-                ctx->instr_str = my_sprintf("%-8sr%d, r%d, %d, %d", "inslwi", rs, ra, sh, me);
+                ctx->instr_str = my_sprintf("%-8sr%d, r%d, %d, %d", opcode, rs, ra, sh, me);
             }
         }
     }
@@ -422,7 +422,7 @@ void opc_rlwinm(PPCDisasmContext* ctx)
             }
         }
 
-        if ((sh == 0) & (me == 31)) {
+        if ((sh == 0) & (me == 31) & (me < 32)) {
             strcpy(opcode, "clrlwi");
 
             if (ctx->instr_code & 1)
