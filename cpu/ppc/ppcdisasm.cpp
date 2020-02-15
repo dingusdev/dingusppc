@@ -131,6 +131,27 @@ const char* trap_cond[32] = { /*Trap conditions*/
     "twne", "", "", "", "", "", "", ""
 };
 
+const char* spr_index0[32] = {
+    "mq", "xer", "", "", "", "", "", "",
+    "lr", "ctr", "", "", "", "", "", "",
+    "", "", "dsisr", "dar", "rtcu", "rtcl", "dec", "",
+    "", "sdr1", "srr0", "srr1", "", "", "", ""
+};
+
+const char* spr_index8[32] = {
+    "", "", "", "", "", "", "", "",
+    "", "", "", "", "", "", "", "",
+    "sprg0", "sprg1", "sprg2", "sprg3", "", "", "", "",
+    "", "", "ear", "", "tbl", "tbu", "", ""
+};
+
+const char* spr_index16[32] = {
+    "", "", "", "", "", "", "", "",
+    "", "", "", "", "", "", "", "",
+    "ibat0u", "ibat0l", "ibat1u", "ibat1l","ibat2u", "ibat2l", "ibat3u", "ibat3l",
+    "dbat0u", "dbat0l", "dbat1u", "dbat1l","dbat2u", "dbat2l", "dbat3u", "dbat3l",
+};
+
 /** various formatting helpers. */
 void fmt_oneop(string& buf, const char* opc, int src)
 {
@@ -953,6 +974,8 @@ void opc_group31(PPCDisasmContext* ctx)
     }
 
     auto ref_spr = (((ctx->instr_code >> 11) & 31) << 5) | ((ctx->instr_code >> 16) & 31);
+    auto spr_high = (ctx->instr_code >> 11) & 31;
+    auto spr_low = (ctx->instr_code >> 16) & 31;
 
     switch (ext_opc) {
     case 0: /* cmp */
@@ -1032,58 +1055,55 @@ void opc_group31(PPCDisasmContext* ctx)
         break;
     case 339: /* mfspr */
         if (ctx->simplified) {
-            switch (ref_spr) {
-            case 0: //case 0 is 601 only
-                ctx->instr_str = my_sprintf("%-8sr%d", "mfmq", rs);
-                return;
-            case 1:
-                ctx->instr_str = my_sprintf("%-8sr%d", "mfxer", rs);
+            switch (spr_high) {
+            case 0:
+                strcpy(opcode, "mf");
+                strcat(opcode, spr_index0[spr_low]);
+                ctx->instr_str = my_sprintf("%-8sr%d", opcode, rs);
                 return;
             case 8:
-                ctx->instr_str = my_sprintf("%-8sr%d", "mflr", rs);
+                strcpy(opcode, "mf");
+                strcat(opcode, spr_index8[spr_low]);
+                ctx->instr_str = my_sprintf("%-8sr%d", opcode, rs);
                 return;
-            case 9:
-                ctx->instr_str = my_sprintf("%-8sr%d", "mfctr", rs);
-                return;
-            case 18:
-                ctx->instr_str = my_sprintf("%-8sr%d", "mfdsisr", rs);
-                return;
-            case 19:
-                ctx->instr_str = my_sprintf("%-8sr%d", "mfdar", rs);
-                return;
-            case 22:
-                ctx->instr_str = my_sprintf("%-8sr%d", "mfdec", rs);
+            case 16:
+                strcpy(opcode, "mf");
+                strcat(opcode, spr_index16[spr_low]);
+                ctx->instr_str = my_sprintf("%-8sr%d", opcode, rs);
                 return;
             }
         }
         fmt_twoop_fromspr(ctx->instr_str, "mfspr", rs, ref_spr);
         break;
     case 371: /* mftb */
-        fmt_twoop_tospr(ctx->instr_str, "mftb", ref_spr, rs);
+        if (ctx->simplified) {
+            if (ref_spr == 268) {
+                fmt_oneop(ctx->instr_str, "mftbl", rs);
+            }
+            else if (ref_spr == 269) {
+                fmt_oneop(ctx->instr_str, "mftbu", rs);
+            }
+            return;
+        }
+        ctx->instr_str = my_sprintf("%-8sr%d, %d", "mftb", rs, ref_spr);
         break;
     case 467: /* mtspr */
         if (ctx->simplified) {
-            switch (ref_spr) {
-            case 0: //case 0 is 601 only
-                ctx->instr_str = my_sprintf("%-8sr%d", "mtmq", rs);
-                return;
-            case 1:
-                ctx->instr_str = my_sprintf("%-8sr%d", "mtxer", rs);
+            switch (spr_high) {
+            case 0:
+                strcpy(opcode, "mt");
+                strcat(opcode, spr_index0[spr_low]);
+                ctx->instr_str = my_sprintf("%-8sr%d", opcode, rs);
                 return;
             case 8:
-                ctx->instr_str = my_sprintf("%-8sr%d", "mtlr", rs);
+                strcpy(opcode, "mt");
+                strcat(opcode, spr_index8[spr_low]);
+                ctx->instr_str = my_sprintf("%-8sr%d", opcode, rs);
                 return;
-            case 9:
-                ctx->instr_str = my_sprintf("%-8sr%d", "mtctr", rs);
-                return;
-            case 18:
-                ctx->instr_str = my_sprintf("%-8sr%d", "mtdsisr", rs);
-                return;
-            case 19:
-                ctx->instr_str = my_sprintf("%-8sr%d", "mtdar", rs);
-                return;
-            case 27:
-                ctx->instr_str = my_sprintf("%-8sr%d", "mtdec", rs);
+            case 16:
+                strcpy(opcode, "mt");
+                strcat(opcode, spr_index16[spr_low]);
+                ctx->instr_str = my_sprintf("%-8sr%d", opcode, rs);
                 return;
             }
         }
