@@ -132,9 +132,9 @@ const char* trap_cond[32] = { /*Trap conditions*/
 };
 
 const char* spr_index0[32] = {
-    "mq", "xer", "", "", "", "", "", "",
+    "mq", "xer", "", "", "rtcu", "rtcl", "", "",
     "lr", "ctr", "", "", "", "", "", "",
-    "", "", "dsisr", "dar", "rtcu", "rtcl", "dec", "",
+    "", "", "dsisr", "dar", "", "", "dec", "",
     "", "sdr1", "srr0", "srr1", "", "", "", ""
 };
 
@@ -148,8 +148,29 @@ const char* spr_index8[32] = {
 const char* spr_index16[32] = {
     "", "", "", "", "", "", "", "",
     "", "", "", "", "", "", "", "",
-    "ibat0u", "ibat0l", "ibat1u", "ibat1l","ibat2u", "ibat2l", "ibat3u", "ibat3l",
-    "dbat0u", "dbat0l", "dbat1u", "dbat1l","dbat2u", "dbat2l", "dbat3u", "dbat3l",
+    "ibat0u", "ibat0l", "ibat1u", "ibat1l", "ibat2u", "ibat2l", "ibat3u", "ibat3l",
+    "dbat0u", "dbat0l", "dbat1u", "dbat1l", "dbat2u", "dbat2l", "dbat3u", "dbat3l",
+};
+
+const char* spr_index29[32] = {
+    "", "", "", "", "", "", "", "",
+    "ummcr0", "upmc1", "upmc2", "usia", "ummcr1", "upmc3", "upmc4", "",
+    "", "", "", "", "", "", "", "",
+    "mmcr0", "pmc1", "pmc2", "sia", "mmcr1", "pmc3", "pmc4", "sda"
+};
+
+const char* spr_index30[32] = {
+    "", "", "", "", "", "", "", "",
+    "", "", "", "", "", "", "", "",
+    "dmiss", "dcmp", "hash1", "hash2", "imiss", "icmp", "rpa", "",
+    "", "", "", "", "", "", "", ""
+};
+
+const char* spr_index31[32] = {
+    "", "", "", "", "", "", "", "",
+    "", "", "", "", "", "", "", "",
+    "hid0", "hid1", "iabr", "", "", "dabr", "", "",
+    "", "l2cr", "", "ictc", "thrm1", "thrm2", "thrm3", "pir",
 };
 
 /** various formatting helpers. */
@@ -1184,6 +1205,21 @@ void opc_group31(PPCDisasmContext* ctx)
                 strcat(opcode, spr_index16[spr_low]);
                 ctx->instr_str = my_sprintf("%-8sr%d", opcode, rs);
                 return;
+            case 29:
+                strcpy(opcode, "mf");
+                strcat(opcode, spr_index29[spr_low]);
+                ctx->instr_str = my_sprintf("%-8sr%d", opcode, rs);
+                return;
+            case 30:
+                strcpy(opcode, "mf");
+                strcat(opcode, spr_index30[spr_low]);
+                ctx->instr_str = my_sprintf("%-8sr%d", opcode, rs);
+                return;
+            case 31:
+                strcpy(opcode, "mf");
+                strcat(opcode, spr_index31[spr_low]);
+                ctx->instr_str = my_sprintf("%-8sr%d", opcode, rs);
+                return;
             }
         }
         fmt_twoop_fromspr(ctx->instr_str, "mfspr", rs, ref_spr);
@@ -1216,6 +1252,21 @@ void opc_group31(PPCDisasmContext* ctx)
             case 16:
                 strcpy(opcode, "mt");
                 strcat(opcode, spr_index16[spr_low]);
+                ctx->instr_str = my_sprintf("%-8sr%d", opcode, rs);
+                return;
+            case 29:
+                strcpy(opcode, "mt");
+                strcat(opcode, spr_index29[spr_low]);
+                ctx->instr_str = my_sprintf("%-8sr%d", opcode, rs);
+                return;
+            case 30:
+                strcpy(opcode, "mt");
+                strcat(opcode, spr_index30[spr_low]);
+                ctx->instr_str = my_sprintf("%-8sr%d", opcode, rs);
+                return;
+            case 31:
+                strcpy(opcode, "mt");
+                strcat(opcode, spr_index31[spr_low]);
                 ctx->instr_str = my_sprintf("%-8sr%d", opcode, rs);
                 return;
             }
