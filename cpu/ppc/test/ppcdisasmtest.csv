@@ -185,9 +185,39 @@
 0xFFF00100,0x7D080120,mtcrf,0x80,r8
 0xFFF00100,0x7E007120,mtcrf,0x07,r16
 
-# rotation instructions
-0xFFF00100,0x5084442E,rlwimi,r4,r4,8,16,23
-0xFFF00100,0x5400EFFE,rlwinm,r0,r0,29,31,31
+# rotation instructions and their simplified mnemonics
+#0xFFF00100,0x5084442E,rlwimi,r4,r4,8,16,23
+0xFFF00100,0x54DF0FBC,clrlslwi,r31,r6,31,1
+0xFFF00100,0x54DFF042,clrlslwi,r31,r6,31,30
+0xFFF00100,0x54DF087C,clrlslwi,r31,r6,2,1
+0xFFF00100,0x54A30FBC,clrlslwi,r3,r5,31,1
+0xFFF00100,0x547AE884,clrlslwi,r26,r3,31,29
+0xFFF00100,0x5485007E,clrlwi,r5,r4,1
+0xFFF00100,0x572007FF,clrlwi.,r0,r25,31
+0xFFF00100,0x5404003C,clrrwi,r4,r0,1
+0xFFF00100,0x54000001,clrrwi.,r0,r0,31
+0xFFF00100,0x558C083A,extlwi,r12,r12,30,1
+0xFFF00100,0x55CEF839,extlwi.,r14,r14,29,31
+0xFFF00100,0x558CF83A,extlwi,r12,r12,30,31
+0xFFF00100,0x5486657F,extrwi.,r6,r4,11,1
+0xFFF00100,0x5400EFFE,extrwi,r0,r0,1,28
+0xFFF00100,0x5583FFFE,extrwi,r3,r12,1,30
+0xFFF00100,0x509E0FFE,inslwi,r30,r4,1,31
+0xFFF00100,0x5068F87F,inslwi.,r8,r3,31,1
+0xFFF00100,0x50A5402E,insrwi,r5,r5,24,0
+0xFFF00100,0x5084442E,insrwi,r4,r4,8,16
+0xFFF00100,0x514407FE,insrwi,r4,r10,1,31
+0xFFF00100,0x5C8B183E,rotlw,r11,r4,r3
+0xFFF00100,0x5EB5883F,rotlw.,r21,r21,r17
+0xFFF00100,0x55C4083E,rotlwi,r4,r14,1
+0xFFF00100,0x56BF783E,rotlwi,r31,r21,15
+0xFFF00100,0x56BF803E,rotrwi,r31,r21,16
+0xFFF00100,0x55C4F83F,rotrwi.,r4,r14,1
+0xFFF00100,0x574B083C,slwi,r11,r26,1
+0xFFF00100,0x55C4C00F,slwi.,r4,r14,24
+0xFFF00100,0x55E4F800,slwi,r4,r15,31
+0xFFF00100,0x5480F87E,srwi,r0,r4,1
+0xFFF00100,0x54060FFE,srwi,r6,r0,31
 
 # shift instructions, primary opcode 0x1F
 0xFFF00100,0x7C695830,slw,r9,r3,r11
@@ -218,7 +248,7 @@
 0xFFF00100,0x7C6023B8,nand,r0,r3,r4
 0xFFF00100,0x7F8B63B9,nand.,r11,r28,r12
 
-#logical immediate instructions
+# logical immediate instructions
 0xFFF00100,0x60009BA5,ori,r0,r0,0x9BA5
 0xFFF00100,0x6744AAAA,oris,r4,r26,0xAAAA
 0xFFF00100,0x6B24002D,xori,r4,r25,0x2D
@@ -231,6 +261,7 @@
 0xFFF00100,0x7C604C2C,lwbrx,r3,0,r9
 0xFFF00100,0x7D201828,lwarx,r9,0,r3
 0xFFF00100,0x7D20192D,stwcx.,r9,0,r3
+0xFFF00100,0x7EA1E12D,stwcx.,r21,r1,r28
 0xFFF00100,0x7FAB052C,stwbrx,r29,r11,r0
 0xFFF03000,0x4C00012C,isync
 0xFFF00100,0x7C0004AC,sync
@@ -279,7 +310,7 @@
 0xFFF00100,0xBC410008,stmw,r2,0x8(r1)
 0xFFF00100,0xBFC1FFF8,stmw,r30,-0x8(r1)
 
-#floating point load and stores
+# floating point load and stores
 0xFFF00100,0x7C0BF5AE,stfdx,f0,r11,r30
 0xFFF00100,0x7C0525EE,stfdux,f0,r5,r4
 0xFFF00100,0x7D89FD2E,stfsx,f12,r9,r31
@@ -306,7 +337,7 @@
 0xFFF00100,0x7C4325AE,stfdx,f2,r3,r4
 0xFFF00100,0x7C4325EE,stfdux,f2,r3,r4
 
-#floating point operations 
+# floating point operations
 0xFFF00100,0xFC03282A,fadd,f0,f3,f5
 0xFFF00100,0xFDAD682B,fadd.,f13,f13,f13
 0xFFF00100,0xFC0D6028,fsub,f0,f13,f12
@@ -323,7 +354,8 @@
 0xFFF00100,0xFD002034,frsqrte,f8,f4
 0xFFF00100,0x7FF957AE,stfiwx,f31,r25,r10
 
-#compare instructions
+# compare instructions
+0xFFF00100,0x7C15A000,cmpw,r21,r20
 0xFFF00100,0x7FBFB800,cmp,cr7,1,r31,r23
 0xFFF00100,0x7FA05840,cmpl,cr7,1,r0,r11
 0xFFF00100,0x2FA90000,cmpi,cr7,1,r9,0x0

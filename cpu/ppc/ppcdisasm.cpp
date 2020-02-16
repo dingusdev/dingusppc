@@ -248,138 +248,6 @@ void fmt_rotateop(string& buf, const char* opc, int dst, int src, int sh, int mb
         buf = my_sprintf("%-8sr%d, r%d, r%d, %d, %d", opc, dst, src, sh, mb, me);
 }
 
-/* Mnemonics for rlwinm */
-
-void opc_rotlwi(PPCDisasmContext* ctx, uint32_t ra, uint32_t rs, uint32_t field_n) {
-    char opcode[10];
-
-    strcpy(opcode, "rotlwi");
-
-    if (ctx->instr_code & 1)
-        strcat(opcode, ".");
-
-    fmt_threeop(ctx->instr_str, opcode, ra, rs, field_n);
-}
-
-void opc_rotrwi(PPCDisasmContext* ctx, uint32_t ra, uint32_t rs, uint32_t field_n) {
-    char opcode[10];
-
-    strcpy(opcode, "rotrwi");
-
-    if (ctx->instr_code & 1)
-        strcat(opcode, ".");
-
-    fmt_threeop(ctx->instr_str, opcode, ra, rs, field_n);
-}
-
-void opc_slwi(PPCDisasmContext* ctx, uint32_t ra, uint32_t rs, uint32_t field_n) {
-    char opcode[10];
-
-    strcpy(opcode, "slwi");
-
-    if (ctx->instr_code & 1)
-        strcat(opcode, ".");
-
-    fmt_threeop(ctx->instr_str, opcode, ra, rs, field_n);
-    return;
-}
-
-void opc_srwi(PPCDisasmContext* ctx, uint32_t ra, uint32_t rs, uint32_t field_n) {
-    char opcode[10];
-
-    strcpy(opcode, "clrlwi");
-
-    if (ctx->instr_code & 1)
-        strcat(opcode, ".");
-
-    fmt_threeop(ctx->instr_str, opcode, ra, rs, field_n);
-    return;
-}
-
-void opc_clrlwi(PPCDisasmContext* ctx, uint32_t ra, uint32_t rs, uint32_t field_n) {
-    char opcode[10];
-
-    strcpy(opcode, "clrlwi");
-
-    if (ctx->instr_code & 1)
-        strcat(opcode, ".");
-
-    fmt_threeop(ctx->instr_str, opcode, ra, rs, field_n);
-    return;
-}
-
-void opc_clrrwi(PPCDisasmContext* ctx, uint32_t ra, uint32_t rs, uint32_t field_n) {
-    char opcode[10];
-
-    strcpy(opcode, "clrrwi");
-
-    if (ctx->instr_code & 1)
-        strcat(opcode, ".");
-
-    fmt_threeop(ctx->instr_str, opcode, ra, rs, field_n);
-    return;
-}
-
-void opc_extlwi(PPCDisasmContext* ctx, uint32_t ra, uint32_t rs, uint32_t field_n, uint32_t field_b) {
-    char opcode[10];
-
-    strcpy(opcode, "extrwi");
-
-    if (ctx->instr_code & 1)
-        strcat(opcode, ".");
-
-    fmt_fourop(ctx->instr_str, opcode, ra, rs, field_n, field_b);
-    return;
-}
-
-void opc_extrwi(PPCDisasmContext* ctx, uint32_t ra, uint32_t rs, uint32_t field_n, uint32_t field_b) {
-    char opcode[10];
-
-    strcpy(opcode, "extrwi");
-
-    if (ctx->instr_code & 1)
-        strcat(opcode, ".");
-
-    fmt_fourop(ctx->instr_str, opcode, ra, rs, field_n, field_b);
-    return;
-}
-
-void opc_inslwi(PPCDisasmContext* ctx, uint32_t ra, uint32_t rs, uint32_t field_n, uint32_t field_b) {
-    char opcode[10];
-
-    strcpy(opcode, "inslwi");
-
-    if (ctx->instr_code & 1)
-        strcat(opcode, ".");
-
-    fmt_fourop(ctx->instr_str, opcode, ra, rs, field_n, field_b);
-    return;
-}
-
-void opc_insrwi(PPCDisasmContext* ctx, uint32_t ra, uint32_t rs, uint32_t field_n, uint32_t field_b) {
-    char opcode[10];
-
-    strcpy(opcode, "inslwi");
-
-    if (ctx->instr_code & 1)
-        strcat(opcode, ".");
-
-    fmt_fourop(ctx->instr_str, opcode, ra, rs, field_n, field_b);
-    return;
-}
-
-void opc_clrlslwi(PPCDisasmContext* ctx, uint32_t ra, uint32_t rs, uint32_t field_n, uint32_t field_b) {
-    char opcode[10];
-
-    strcpy(opcode, "clrlslwi");
-
-    if (ctx->instr_code & 1)
-        strcat(opcode, ".");
-
-    fmt_fourop(ctx->instr_str, opcode, ra, rs, field_n, field_b);
-    return;
-}
-
 /* Opcodes */
 
 void opc_illegal(PPCDisasmContext* ctx)
@@ -461,6 +329,29 @@ void power_dozi(PPCDisasmContext* ctx)
     fmt_threeop_simm(ctx->instr_str, "dozi", rd, ra, imm);
 }
 
+void fmt_rot_imm(PPCDisasmContext* ctx, const char* opc, int ra, int rs, int n)
+{
+    char opcode[10];
+
+    strcpy(opcode, opc);
+    if (ctx->instr_code & 1)
+        strcat(opcode, ".");
+
+    ctx->instr_str = my_sprintf("%-8sr%d, r%d, %d", opcode, ra, rs, n);
+}
+
+void fmt_rot_2imm(PPCDisasmContext* ctx, const char* opc, int ra, int rs, int n,
+    int b)
+{
+    char opcode[10];
+
+    strcpy(opcode, opc);
+    if (ctx->instr_code & 1)
+        strcat(opcode, ".");
+
+    ctx->instr_str = my_sprintf("%-8sr%d, r%d, %d, %d", opcode, ra, rs, n, b);
+}
+
 void opc_rlwimi(PPCDisasmContext* ctx)
 {
     char opcode[10];
@@ -471,25 +362,13 @@ void opc_rlwimi(PPCDisasmContext* ctx)
     auto me = (ctx->instr_code >> 1) & 0x1F;
 
     if (ctx->simplified) {
-        if (sh > 0) {
-            if ((32 - mb) == sh) {
-                strcpy(opcode, "inslwi");
-                if (ctx->instr_code & 1)
-                    strcat(opcode, ".");
-
-                uint32_t field_n = me + 1 - mb;
-
-                ctx->instr_str = my_sprintf("%-8sr%d, r%d, %d, %d", opcode, rs, ra, field_n, mb);
-            }
-            else if ((32 - (mb + sh)) == mb) {
-                strcpy(opcode, "insrwi");
-                if (ctx->instr_code & 1)
-                    strcat(opcode, ".");
-
-                uint32_t field_n = me + 1 - mb;
-
-                ctx->instr_str = my_sprintf("%-8sr%d, r%d, %d, %d", opcode, rs, ra, field_n, mb);
-            }
+        if ((32 - sh) == mb) {
+            fmt_rot_2imm(ctx, "inslwi", ra, rs, me + 1 - mb, mb);
+            return;
+        }
+        else if (sh == 32 - (me + 1)) {
+            fmt_rot_2imm(ctx, "insrwi", ra, rs, (me - mb + 1), mb);
+            return;
         }
     }
 
@@ -510,47 +389,37 @@ void opc_rlwinm(PPCDisasmContext* ctx)
     auto me = (ctx->instr_code >> 1) & 0x1F;
 
     if (ctx->simplified) {
-        if ((mb == 0) & (me == 31)) {
-            if (sh < 16){
-                opc_rotlwi(ctx, ra, rs, sh);
-                return;
+        if ((mb == 0) && (me == 31)) {
+            if (sh < 16) {
+                fmt_rot_imm(ctx, "rotlwi", ra, rs, sh);
+            } else {
+                fmt_rot_imm(ctx, "rotrwi", ra, rs, 32 - sh);
             }
-            else {
-                opc_rotrwi(ctx, ra, rs, 32 - sh);
-                return;
-            }
+            return;
         }
         else if (me == 31) {
             if ((32 - sh) == mb) {
-                opc_srwi(ctx, ra, rs, mb);
-                return;
+                fmt_rot_imm(ctx, "srwi", ra, rs, mb);
+            } else if (sh == 0) {
+                fmt_rot_imm(ctx, "clrlwi", ra, rs, mb);
+            } else {
+                fmt_rot_2imm(ctx, "extrwi", ra, rs, (32 - mb), (sh - (32 - mb)));
             }
-            else if (sh == 0) {
-                opc_clrlwi(ctx, ra, rs, mb);
-                return;
-            }
-            else {
-                opc_extrwi(ctx, ra, rs, (32 - mb), (sh - (32 - mb)));
-                return;
-            }
+            return;
         }
         else if (mb == 0) {
             if ((31 - me) == sh) {
-                opc_slwi(ctx, ra, rs, sh);
-                return;
+                fmt_rot_imm(ctx, "slwi", ra, rs, sh);
+            } else if (sh == 0) {
+                fmt_rot_imm(ctx, "clrrwi", ra, rs, (31 - me));
+            } else {
+                fmt_rot_2imm(ctx, "extlwi", ra, rs, (me + 1), sh);
             }
-            else if (sh == 0) {
-                opc_clrrwi(ctx, ra, rs, (31 - me));
-                return;
-            }
-            else {
-                opc_extlwi(ctx, ra, rs, (me + 1), sh);
-                return;
-            }
+            return;
         }
         else if (mb) {
             if ((31 - me) == sh) {
-                opc_clrlslwi(ctx, ra, rs, (mb + sh), sh);
+                fmt_rot_2imm(ctx, "clrlslwi", ra, rs, (mb + sh), sh);
                 return;
             }
         }
@@ -559,7 +428,7 @@ void opc_rlwinm(PPCDisasmContext* ctx)
     strcpy(opcode, "rlwinm");
     if (ctx->instr_code & 1)
         strcat(opcode, ".");
-    
+
     fmt_rotateop(ctx->instr_str, opcode, ra, rs, sh, mb, me, true);
 }
 
@@ -587,12 +456,12 @@ void opc_rlwnm(PPCDisasmContext* ctx)
     auto me = (ctx->instr_code >> 1) & 0x1F;
 
     if (ctx->simplified) {
-        if ((me == 31) & (mb == 0)) {
+        if ((me == 31) && (mb == 0)) {
             strcpy(opcode, "rotlw");
 
             if (ctx->instr_code & 1)
                 strcat(opcode, ".");
-            
+
              fmt_threeop(ctx->instr_str, opcode, ra, rs, rb);
              return;
         }
@@ -600,7 +469,7 @@ void opc_rlwnm(PPCDisasmContext* ctx)
     strcpy(opcode, "rlwnm");
     if (ctx->instr_code & 1)
         strcat(opcode, ".");
-    
+
     fmt_rotateop(ctx->instr_str, "rlwnm", ra, rs, rb, mb, me, false);
 }
 
@@ -618,7 +487,7 @@ void opc_cmp_i_li(PPCDisasmContext* ctx)
                 ctx->instr_str = my_sprintf("%-8scr%d, r%d, 0x%X", "cmpwi", crfd, ra, imm);
             else
                 ctx->instr_str = my_sprintf("%-8scr%d, r%d, 0x%04X", "cmplwi", crfd, ra, imm);
-            
+
             return;
         }
     }
@@ -1207,7 +1076,7 @@ void opc_group31(PPCDisasmContext* ctx)
                 return;
             }
         }
-        
+
         ctx->instr_str = my_sprintf("%-8scr%d, %d, r%d, r%d", "cmp", (rs >> 2), (rs & 1), ra, rb);
         break;
     case 4: /* tw */
