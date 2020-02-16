@@ -313,19 +313,19 @@ void opc_rlwimi(PPCDisasmContext* ctx)
 
     if (ctx->simplified) {
         if (sh > 0) {
-            if (((32 - mb) == sh) & ((mb + sh - 1) == me)) {
+            if (((32 - mb) == sh) & ((me - 1) == mb)) {
                 strcpy(opcode, "inslwi");
                 if (ctx->instr_code & 1)
                     strcat(opcode, ".");
 
-                ctx->instr_str = my_sprintf("%-8sr%d, r%d, %d, %d", opcode, rs, ra, sh, me);
+                ctx->instr_str = my_sprintf("%-8sr%d, r%d, %d, %d", opcode, rs, ra, sh, mb);
             }
-            else if (((32 - (mb + sh)) == mb) & ((mb + sh - 1) == me)) {
+            else if (((32 - (mb + sh)) == mb) & ((me - 1) == mb)) {
                 strcpy(opcode, "insrwi");
                 if (ctx->instr_code & 1)
                     strcat(opcode, ".");
 
-                ctx->instr_str = my_sprintf("%-8sr%d, r%d, %d, %d", opcode, rs, ra, sh, me);
+                ctx->instr_str = my_sprintf("%-8sr%d, r%d, %d, %d", opcode, rs, ra, sh, mb);
             }
         }
     }
@@ -487,6 +487,18 @@ void opc_cmp_i_li(PPCDisasmContext* ctx)
     auto ra = (ctx->instr_code >> 16) & 0x1F;
     auto crfd = (ctx->instr_code >> 23) & 0x07;
     auto imm = ctx->instr_code & 0xFFFF;
+
+
+    if (ctx->simplified) {
+        if (!ls) {
+            if ((ctx->instr_code >> 26) & 0x1)
+                ctx->instr_str = my_sprintf("%-8scr%d, r%d, 0x%X", "cmpwi", crfd, ra, imm);
+            else
+                ctx->instr_str = my_sprintf("%-8scr%d, r%d, 0x%04X", "cmplwi", crfd, ra, imm);
+            
+            return;
+        }
+    }
 
     if ((ctx->instr_code >> 26) & 0x1)
         ctx->instr_str = my_sprintf("%-8scr%d, %d, r%d, 0x%X", "cmpi", crfd, ls, ra, imm);
@@ -1060,10 +1072,20 @@ void opc_group31(PPCDisasmContext* ctx)
 
     switch (ext_opc) {
     case 0: /* cmp */
-        if (rc_set)
+        if (rc_set) {
             opc_illegal(ctx);
-        else
-            ctx->instr_str = my_sprintf("%-8scr%d, %d, r%d, r%d", "cmp", (rs >> 2), (rs & 1), ra, rb);
+            return;
+        }
+
+
+        if (ctx->simplified) {
+            if (!(rs & 1)) {
+                ctx->instr_str = my_sprintf("%-8scr%d, r%d, r%d", "cmpw", (rs >> 2), ra, rb);
+                return;
+            }
+        }
+        
+        ctx->instr_str = my_sprintf("%-8scr%d, %d, r%d, r%d", "cmp", (rs >> 2), (rs & 1), ra, rb);
         break;
     case 4: /* tw */
         if (rc_set) {
@@ -1106,8 +1128,18 @@ void opc_group31(PPCDisasmContext* ctx)
         fmt_threeop(ctx->instr_str, opcode, rs, ra, rb);
         break;
     case 32: /* cmpl */
-        if (rc_set)
+        if (rc_set) {
             opc_illegal(ctx);
+            return;
+        }
+
+        if (ctx->simplified) {
+            if (!(rs & 1)) {
+                ctx->instr_str = my_sprintf("%-8scr%d, r%d, r%d", "cmplw", (rs >> 2), ra, rb);
+                return;
+            }
+        }
+
         else
             ctx->instr_str = my_sprintf("%-8scr%d, %d, r%d, r%d", "cmpl", (rs >> 2), (rs & 1), ra, rb);
         break;
