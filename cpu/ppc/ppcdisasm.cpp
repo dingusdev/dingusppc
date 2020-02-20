@@ -230,11 +230,6 @@ void fmt_threeop_flt(string& buf, const char* opc, int dst, int src1, int src2)
     buf = my_sprintf("%-8sf%d, f%d, f%d", opc, dst, src1, src2);
 }
 
-void fmt_fourop(string& buf, const char* opc, int dst, int src1, int src2, int src3)
-{
-    buf = my_sprintf("%-8sr%d, r%d, %d, %d", opc, dst, src1, src2, src3);
-}
-
 void fmt_fourop_flt(string& buf, const char* opc, int dst, int src1, int src2, int src3)
 {
     buf = my_sprintf("%-8sf%d, f%d, f%d, f%d", opc, dst, src1, src2, src3);
