@@ -1078,7 +1078,7 @@ void opc_group31(PPCDisasmContext* ctx)
             }
         }
 
-        ctx->instr_str = my_sprintf("%-8scr%d, %d, r%d, r%d", "cmp", (rs >> 2), (rs & 1), ra, rb);
+        ctx->instr_str = my_sprintf("%-8scr%d, r%d, r%d", "cmp", (rs >> 2), ra, rb);
         break;
     case 4: /* tw */
         if (rc_set) {
