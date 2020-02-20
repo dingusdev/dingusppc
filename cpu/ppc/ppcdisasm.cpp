@@ -1025,14 +1025,14 @@ void opc_group31(PPCDisasmContext* ctx)
         /* dcba, dcbf, dcbi, dcbst, dcbt, dcbz, icbi */
         else if ((index == 1) | (index == 2) | (index == 7) \
             | (index == 8) | (index == 14) | (index == 23) \
-             | (index == 30) | (index == 31)) {
+            | (index == 30) | (index == 31)) {
             if (rc_set | (rs != 0)) {
                 opc_illegal(ctx);
                 return;
             }
             else {
                 if (ra == 0)
-                    ctx->instr_str = my_sprintf("%-8sr%d, 0, r%d", opcode, rb);
+                    ctx->instr_str = my_sprintf("%-8s0, r%d", opcode, rb);
                 else
                     fmt_twoop(ctx->instr_str, opcode, ra, rb);
                 return;
@@ -1040,6 +1040,7 @@ void opc_group31(PPCDisasmContext* ctx)
         }
         else if (index == 17) { /* tlbsync */
             ctx->instr_str = my_sprintf("%-8s", opcode);
+            return;
         }
         else {
             opc_illegal(ctx);
