@@ -473,7 +473,7 @@ void opc_cmp_i_li(PPCDisasmContext* ctx)
     auto ls = (ctx->instr_code >> 21) & 0x1;
     auto ra = (ctx->instr_code >> 16) & 0x1F;
     auto crfd = (ctx->instr_code >> 23) & 0x07;
-    auto imm = ctx->instr_code & 0xFFFF;
+    int imm = ctx->instr_code & 0xFFFF;
 
 
     if (ctx->simplified) {
@@ -481,7 +481,7 @@ void opc_cmp_i_li(PPCDisasmContext* ctx)
             if ((ctx->instr_code >> 26) & 0x1)
                 ctx->instr_str = my_sprintf("%-8scr%d, r%d, 0x%X", "cmpwi", crfd, ra, imm);
             else
-                ctx->instr_str = my_sprintf("%-8scr%d, r%d, 0x%04X", "cmplwi", crfd, ra, imm);
+                ctx->instr_str = my_sprintf("%-8scr%d, r%d, %s0x%X", "cmplwi", crfd, ra, (imm < 0) ? "-" : "", abs(imm));
 
             return;
         }
@@ -490,7 +490,7 @@ void opc_cmp_i_li(PPCDisasmContext* ctx)
     if ((ctx->instr_code >> 26) & 0x1)
         ctx->instr_str = my_sprintf("%-8scr%d, %d, r%d, 0x%X", "cmpi", crfd, ls, ra, imm);
     else
-        ctx->instr_str = my_sprintf("%-8scr%d, %d, r%d, 0x%04X", "cmpli", crfd, ls, ra, imm);
+        ctx->instr_str = my_sprintf("%-8scr%d, %d, r%d, %s0x%X", "cmpli", crfd, ls, ra, (imm < 0) ? "-" : "", abs(imm));
 }
 
 void opc_bool_im(PPCDisasmContext* ctx)
@@ -1067,8 +1067,14 @@ void opc_group31(PPCDisasmContext* ctx)
 
         if (ctx->simplified) {
             if (!(rs & 1)) {
-                ctx->instr_str = my_sprintf("%-8scr%d, r%d, r%d", "cmpw", (rs >> 2), ra, rb);
-                return;
+                if ((rs >> 2) == 0) {
+                    ctx->instr_str = my_sprintf("%-8sr%d, r%d", "cmpw", ra, rb);
+                    return;
+                }
+                else {
+                    ctx->instr_str = my_sprintf("%-8scr%d, r%d, r%d", "cmpw", (rs >> 2), ra, rb);
+                    return;
+                }
             }
         }
 
@@ -1127,8 +1133,9 @@ void opc_group31(PPCDisasmContext* ctx)
             }
         }
 
-        else
+        else {
             ctx->instr_str = my_sprintf("%-8scr%d, %d, r%d, r%d", "cmpl", (rs >> 2), (rs & 1), ra, rb);
+        }
         break;
     case 83: /* mfmsr */
         ctx->instr_str = my_sprintf("%-8sr%d", "mfmsr",
