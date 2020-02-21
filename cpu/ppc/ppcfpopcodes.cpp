@@ -225,7 +225,19 @@ int64_t round_to_neg_inf(double f) {
     return (int32_t)(floor(f));
 }
 
-bool ppc_confirm_inf_nan(uint64_t input_a, uint64_t input_b, bool is_single, uint32_t op) {
+void ppc_toggle_fpscr_fex() {
+    bool fex_result = ((ppc_state.ppc_fpscr & 0x20000000) & (ppc_state.ppc_fpscr & 0x80));
+    fex_result |= ((ppc_state.ppc_fpscr & 0x10000000) & (ppc_state.ppc_fpscr & 0x40));
+    fex_result |= ((ppc_state.ppc_fpscr & 0x8000000) & (ppc_state.ppc_fpscr & 0x20));
+    fex_result |= ((ppc_state.ppc_fpscr & 0x4000000) & (ppc_state.ppc_fpscr & 0x10));
+    fex_result |= ((ppc_state.ppc_fpscr & 0x2000000) & (ppc_state.ppc_fpscr & 0x8));
+    ppc_state.ppc_fpscr |= (fex_result << 30);
+}
+
+bool ppc_confirm_inf_nan(uint32_t chosen_reg_1, uint32_t chosen_reg_2, bool is_single, uint32_t op) {
+    uint64_t input_a = ppc_state.ppc_fpr[chosen_reg_1].int64_r;
+    uint64_t input_b = ppc_state.ppc_fpr[chosen_reg_2].int64_r;
+
     if (is_single) {
         uint32_t exp_a = (input_a >> 23) & 0xff;
         uint32_t exp_b = (input_b >> 23) & 0xff;
@@ -236,22 +248,26 @@ bool ppc_confirm_inf_nan(uint64_t input_a, uint64_t input_b, bool is_single, uin
         case 36:
             if ((exp_a == 0xff) & (exp_b == 0xff)) {
                 ppc_state.ppc_fpscr |= 0x80400000;
+                ppc_toggle_fpscr_fex();
                 return true;
             }
             else if ((input_a == 0) & (input_b == 0)) {
                 ppc_state.ppc_fpscr |= 0x80200000;
+                ppc_toggle_fpscr_fex();
                 return true;
             }
             break;
         case 40:
             if ((exp_a == 0xff) & (exp_b == 0xff)) {
                 ppc_state.ppc_fpscr |= 0x80800000;
+                ppc_toggle_fpscr_fex();
                 return true;
             }
             break;
         case 50:
             if (((exp_a == 0xff) & (input_b == 0)) | ((exp_b == 0xff) & (input_a == 0))) {
                 ppc_state.ppc_fpscr |= 0x80100000;
+                ppc_toggle_fpscr_fex();
                 return true;
             }
             break;
@@ -259,6 +275,7 @@ bool ppc_confirm_inf_nan(uint64_t input_a, uint64_t input_b, bool is_single, uin
         case 58:
             if ((exp_a == 0xff) & (exp_b == 0xff)) {
                 ppc_state.ppc_fpscr |= 0x80800000;
+                ppc_toggle_fpscr_fex();
                 return true;
             }
             break;
@@ -276,22 +293,26 @@ bool ppc_confirm_inf_nan(uint64_t input_a, uint64_t input_b, bool is_single, uin
         case 36:
             if ((exp_a == 0x7ff) & (exp_b == 0x7ff)) {
                 ppc_state.ppc_fpscr |= 0x80400000;
+                ppc_toggle_fpscr_fex();
                 return true;
             }
             else if ((input_a == 0) & (input_b == 0)) {
                 ppc_state.ppc_fpscr |= 0x80200000;
+                ppc_toggle_fpscr_fex();
                 return true;
             }
             break;
         case 40:
             if ((exp_a == 0x7ff) & (exp_b == 0x7ff)) {
                 ppc_state.ppc_fpscr |= 0x80800000;
+                ppc_toggle_fpscr_fex();
                 return true;
             }
             break;
         case 50:
             if (((exp_a == 0x7ff) & (input_b == 0)) | ((exp_b == 0x7ff) & (input_a == 0))) {
                 ppc_state.ppc_fpscr |= 0x80100000;
+                ppc_toggle_fpscr_fex();
                 return true;
             }
             break;
@@ -299,6 +320,7 @@ bool ppc_confirm_inf_nan(uint64_t input_a, uint64_t input_b, bool is_single, uin
         case 58:
             if ((exp_a == 0xff) & (exp_b == 0xff)) {
                 ppc_state.ppc_fpscr |= 0x80800000;
+                ppc_toggle_fpscr_fex();
                 return true;
             }
             break;
@@ -322,7 +344,7 @@ void ppc_fpresult_update(uint64_t set_result, bool confirm_arc) {
         ppc_state.ppc_fpscr |= 0x80010000;
         ppc_state.ppc_fpscr &= 0xFFFF0FFF;
 
-        
+
         if (set_result == 0) {
             ppc_state.ppc_fpscr |= 0x2000;
         }
@@ -356,7 +378,7 @@ void ppc_changecrf1() {
 void ppc_fadd() {
     ppc_grab_regsfpdab(false);
 
-    if (!ppc_confirm_inf_nan(ppc_result64_a, ppc_result64_b, false, 58)) {
+    if (!ppc_confirm_inf_nan(reg_a, reg_b, false, 58)) {
         ppc_dblresult64_d = ppc_dblresult64_a + ppc_dblresult64_b;
         ppc_store_dfpresult(false);
     }
@@ -365,7 +387,7 @@ void ppc_fadd() {
 void ppc_fadddot() {
     ppc_grab_regsfpdab(false);
 
-    if (!ppc_confirm_inf_nan(ppc_result64_a, ppc_result64_b, false, 58)) {
+    if (!ppc_confirm_inf_nan(reg_a, reg_b, false, 58)) {
         ppc_dblresult64_d = ppc_dblresult64_a + ppc_dblresult64_b;
         ppc_store_dfpresult(false);
     }
@@ -375,7 +397,7 @@ void ppc_fadddot() {
 void ppc_fsub() {
     ppc_grab_regsfpdab(false);
 
-    if (!ppc_confirm_inf_nan(ppc_result64_a, ppc_result64_b, false, 56)) {
+    if (!ppc_confirm_inf_nan(reg_a, reg_b, false, 56)) {
         ppc_dblresult64_d = ppc_dblresult64_a - ppc_dblresult64_b;
         ppc_store_dfpresult(false);
     }
@@ -384,7 +406,7 @@ void ppc_fsub() {
 void ppc_fsubdot() {
     ppc_grab_regsfpdab(false);
 
-    if (!ppc_confirm_inf_nan(ppc_result64_a, ppc_result64_b, false, 56)) {
+    if (!ppc_confirm_inf_nan(reg_a, reg_b, false, 56)) {
         ppc_dblresult64_d = ppc_dblresult64_a - ppc_dblresult64_b;
         ppc_store_dfpresult(false);
     }
@@ -394,7 +416,7 @@ void ppc_fsubdot() {
 void ppc_fdiv() {
     ppc_grab_regsfpdab(false);
 
-    if (!ppc_confirm_inf_nan(ppc_result64_a, ppc_result64_b, false, 36)) {
+    if (!ppc_confirm_inf_nan(reg_a, reg_b, false, 36)) {
         ppc_dblresult64_d = ppc_dblresult64_a / ppc_dblresult64_b;
         ppc_store_dfpresult(false);
     }
@@ -403,7 +425,7 @@ void ppc_fdiv() {
 void ppc_fdivdot() {
     ppc_grab_regsfpdab(false);
 
-    if (!ppc_confirm_inf_nan(ppc_result64_a, ppc_result64_b, false, 36)) {
+    if (!ppc_confirm_inf_nan(reg_a, reg_b, false, 36)) {
         ppc_dblresult64_d = ppc_dblresult64_a / ppc_dblresult64_b;
         ppc_store_dfpresult(false);
     }
@@ -413,7 +435,7 @@ void ppc_fdivdot() {
 void ppc_fmult() {
     ppc_grab_regsfpdac(false);
 
-    if (!ppc_confirm_inf_nan(ppc_result64_a, ppc_result64_b, false, 50)) {
+    if (!ppc_confirm_inf_nan(reg_a, reg_b, false, 50)) {
         ppc_dblresult64_d = ppc_dblresult64_a * ppc_dblresult64_b;
         ppc_store_dfpresult(false);
     }
@@ -422,7 +444,7 @@ void ppc_fmult() {
 void ppc_fmultdot() {
     ppc_grab_regsfpdac(false);
 
-    if (!ppc_confirm_inf_nan(ppc_result64_a, ppc_result64_b, false, 50)) {
+    if (!ppc_confirm_inf_nan(reg_a, reg_b, false, 50)) {
         ppc_dblresult64_d = ppc_dblresult64_a * ppc_dblresult64_b;
         ppc_store_dfpresult(false);
     }
@@ -433,8 +455,12 @@ void ppc_fmultdot() {
 void ppc_fmadd() {
     ppc_grab_regsfpdabc(false);
 
-    ppc_dblresult64_d = (ppc_dblresult64_a * ppc_dblresult64_c);
-    ppc_dblresult64_d += ppc_dblresult64_b;
+    if (!ppc_confirm_inf_nan(reg_a, reg_c, false, 50)) {
+        ppc_dblresult64_d = (ppc_dblresult64_a * ppc_dblresult64_c);
+        if (!ppc_confirm_inf_nan(reg_a, reg_b, false, 58)) {
+            ppc_dblresult64_d += ppc_dblresult64_b;
+        }
+    }
 
     ppc_store_dfpresult(false);
 }
@@ -442,8 +468,12 @@ void ppc_fmadd() {
 void ppc_fmadddot() {
     ppc_grab_regsfpdabc(false);
 
-    ppc_dblresult64_d = (ppc_dblresult64_a * ppc_dblresult64_c);
-    ppc_dblresult64_d += ppc_dblresult64_b;
+    if (!ppc_confirm_inf_nan(reg_a, reg_c, false, 50)) {
+        ppc_dblresult64_d = (ppc_dblresult64_a * ppc_dblresult64_c);
+        if (!ppc_confirm_inf_nan(reg_a, reg_b, false, 58)) {
+            ppc_dblresult64_d += ppc_dblresult64_b;
+        }
+    }
 
     ppc_store_dfpresult(false);
     ppc_changecrf1();
@@ -452,8 +482,12 @@ void ppc_fmadddot() {
 void ppc_fmsub() {
     ppc_grab_regsfpdabc(false);
 
-    ppc_dblresult64_d = (ppc_dblresult64_a * ppc_dblresult64_c);
-    ppc_dblresult64_d -= ppc_dblresult64_b;
+    if (!ppc_confirm_inf_nan(reg_a, reg_c, false, 50)) {
+        ppc_dblresult64_d = (ppc_dblresult64_a * ppc_dblresult64_c);
+        if (!ppc_confirm_inf_nan(reg_d, reg_b, false, 56)) {
+            ppc_dblresult64_d -= ppc_dblresult64_b;
+        }
+    }
 
     ppc_store_dfpresult(false);
 }
@@ -461,8 +495,12 @@ void ppc_fmsub() {
 void ppc_fmsubdot() {
     ppc_grab_regsfpdabc(false);
 
-    ppc_dblresult64_d = (ppc_dblresult64_a * ppc_dblresult64_c);
-    ppc_dblresult64_d -= ppc_dblresult64_b;
+    if (!ppc_confirm_inf_nan(reg_a, reg_c, false, 50)) {
+        ppc_dblresult64_d = (ppc_dblresult64_a * ppc_dblresult64_c);
+        if (!ppc_confirm_inf_nan(reg_d, reg_b, false, 56)) {
+            ppc_dblresult64_d -= ppc_dblresult64_b;
+        }
+    }
 
     ppc_store_dfpresult(false);
     ppc_changecrf1();
@@ -471,16 +509,27 @@ void ppc_fmsubdot() {
 void ppc_fnmadd() {
     ppc_grab_regsfpdabc(false);
 
-    ppc_dblresult64_d = ppc_dblresult64_a * ppc_result64_c;
-    ppc_dblresult64_d += -ppc_dblresult64_b;
+    if (!ppc_confirm_inf_nan(reg_a, reg_c, false, 50)) {
+        ppc_dblresult64_d = (ppc_dblresult64_a * ppc_dblresult64_c);
+        if (!ppc_confirm_inf_nan(reg_a, reg_b, false, 58)) {
+            ppc_dblresult64_d += ppc_dblresult64_b;
+        }
+    }
+
+    ppc_dblresult64_d = -ppc_dblresult64_d;
     ppc_store_dfpresult(false);
 }
 
 void ppc_fnmadddot() {
     ppc_grab_regsfpdabc(false);
 
-    ppc_dblresult64_d = ppc_dblresult64_a * ppc_result64_c;
-    ppc_dblresult64_d += ppc_dblresult64_b;
+    if (!ppc_confirm_inf_nan(reg_a, reg_c, false, 50)) {
+        ppc_dblresult64_d = (ppc_dblresult64_a * ppc_dblresult64_c);
+        if (!ppc_confirm_inf_nan(reg_a, reg_b, false, 58)) {
+            ppc_dblresult64_d += ppc_dblresult64_b;
+        }
+    }
+
     ppc_dblresult64_d = -ppc_dblresult64_d;
 
     ppc_store_dfpresult(false);
@@ -490,8 +539,12 @@ void ppc_fnmadddot() {
 void ppc_fnmsub() {
     ppc_grab_regsfpdabc(false);
 
-    ppc_dblresult64_d = ppc_dblresult64_a * ppc_result64_c;
-    ppc_dblresult64_d -= ppc_dblresult64_b;
+    if (!ppc_confirm_inf_nan(reg_a, reg_c, false, 50)) {
+        ppc_dblresult64_d = (ppc_dblresult64_a * ppc_dblresult64_c);
+        if (!ppc_confirm_inf_nan(reg_d, reg_b, false, 56)) {
+            ppc_dblresult64_d -= ppc_dblresult64_b;
+        }
+    }
     ppc_dblresult64_d = -ppc_dblresult64_d;
 
     ppc_store_dfpresult(false);
@@ -500,8 +553,12 @@ void ppc_fnmsub() {
 void ppc_fnmsubdot() {
     ppc_grab_regsfpdabc(false);
 
-    ppc_dblresult64_d = ppc_dblresult64_a * ppc_result64_c;
-    ppc_dblresult64_d -= ppc_dblresult64_b;
+    if (!ppc_confirm_inf_nan(reg_a, reg_c, false, 50)) {
+        ppc_dblresult64_d = (ppc_dblresult64_a * ppc_dblresult64_c);
+        if (!ppc_confirm_inf_nan(reg_d, reg_b, false, 56)) {
+            ppc_dblresult64_d -= ppc_dblresult64_b;
+        }
+    }
     ppc_dblresult64_d = -ppc_dblresult64_d;
 
     ppc_store_dfpresult(false);
@@ -511,7 +568,7 @@ void ppc_fnmsubdot() {
 void ppc_fadds() {
     ppc_grab_regsfpdab(false);
 
-    if (!ppc_confirm_inf_nan(ppc_result64_a, ppc_result64_b, true, 58)) {
+    if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 58)) {
         float intermediate = (float)ppc_dblresult64_a + (float)ppc_dblresult64_b;
         ppc_dblresult64_d = static_cast<double>(intermediate);
         ppc_store_dfpresult(false);
@@ -521,7 +578,7 @@ void ppc_fadds() {
 void ppc_faddsdot() {
     ppc_grab_regsfpdab(false);
 
-    if (!ppc_confirm_inf_nan(ppc_result64_a, ppc_result64_b, true, 58)) {
+    if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 58)) {
         float intermediate = (float)ppc_dblresult64_a + (float)ppc_dblresult64_b;
         ppc_dblresult64_d = static_cast<double>(intermediate);
         ppc_store_dfpresult(false);
@@ -533,7 +590,7 @@ void ppc_faddsdot() {
 void ppc_fsubs() {
     ppc_grab_regsfpdab(false);
 
-    if (!ppc_confirm_inf_nan(ppc_result64_a, ppc_result64_b, true, 56)) {
+    if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 56)) {
         float intermediate = (float)ppc_dblresult64_a - (float)ppc_dblresult64_b;
         ppc_dblresult64_d = static_cast<double>(intermediate);
         ppc_store_dfpresult(false);
@@ -543,7 +600,7 @@ void ppc_fsubs() {
 void ppc_fsubsdot() {
     ppc_grab_regsfpdab(false);
 
-    if (!ppc_confirm_inf_nan(ppc_result64_a, ppc_result64_b, true, 56)) {
+    if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 56)) {
         float intermediate = (float)ppc_dblresult64_a - (float)ppc_dblresult64_b;
         ppc_dblresult64_d = static_cast<double>(intermediate);
         ppc_store_dfpresult(false);
@@ -555,7 +612,7 @@ void ppc_fsubsdot() {
 void ppc_fmults() {
     ppc_grab_regsfpdac(false);
 
-    if (!ppc_confirm_inf_nan(ppc_result64_a, ppc_result64_b, true, 50)) {
+    if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 50)) {
         float intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_b;
         ppc_dblresult64_d = static_cast<double>(intermediate);
         ppc_store_dfpresult(false);
@@ -565,7 +622,7 @@ void ppc_fmults() {
 void ppc_fmultsdot() {
     ppc_grab_regsfpdac(false);
 
-    if (!ppc_confirm_inf_nan(ppc_result64_a, ppc_result64_b, true, 50)) {
+    if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 50)) {
 
         float intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_b;
         ppc_dblresult64_d = static_cast<double>(intermediate);
@@ -577,7 +634,7 @@ void ppc_fmultsdot() {
 void ppc_fdivs() {
     ppc_grab_regsfpdab(false);
 
-    if (!ppc_confirm_inf_nan(ppc_result64_a, ppc_result64_b, true, 36)) {
+    if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 36)) {
         float intermediate = (float)ppc_dblresult64_a / (float)ppc_dblresult64_b;
         ppc_dblresult64_d = static_cast<double>(intermediate);
         ppc_store_dfpresult(false);
@@ -587,7 +644,7 @@ void ppc_fdivs() {
 void ppc_fdivsdot() {
     ppc_grab_regsfpdab(false);
 
-    if (!ppc_confirm_inf_nan(ppc_result64_a, ppc_result64_b, true, 36)) {
+    if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 36)) {
         float intermediate = (float)ppc_dblresult64_a / (float)ppc_dblresult64_b;
         ppc_dblresult64_d = static_cast<double>(intermediate);
         ppc_store_dfpresult(false);
@@ -599,8 +656,15 @@ void ppc_fdivsdot() {
 void ppc_fmadds() {
     ppc_grab_regsfpdabc(false);
 
-    float intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
-    intermediate += (float)ppc_dblresult64_b;
+    float intermediate;
+
+    if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 58)) {
+        intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
+        if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 58)) {
+            intermediate += (float)ppc_dblresult64_b;
+        }
+    }
+
     ppc_dblresult64_d = static_cast<double>(intermediate);
 
     ppc_store_dfpresult(false);
@@ -609,8 +673,15 @@ void ppc_fmadds() {
 void ppc_fmaddsdot() {
     ppc_grab_regsfpdabc(false);
 
-    float intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
-    intermediate += (float)ppc_dblresult64_b;
+    float intermediate;
+
+    if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 58)) {
+        intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
+        if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 58)) {
+            intermediate += (float)ppc_dblresult64_b;
+        }
+    }
+
     ppc_dblresult64_d = static_cast<double>(intermediate);
 
     ppc_store_dfpresult(false);
@@ -620,8 +691,15 @@ void ppc_fmaddsdot() {
 void ppc_fmsubs() {
     ppc_grab_regsfpdabc(false);
 
-    float intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
-    intermediate -= (float)ppc_dblresult64_b;
+    float intermediate;
+
+    if (!ppc_confirm_inf_nan(reg_a, reg_c, false, 50)) {
+        intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
+        if (!ppc_confirm_inf_nan(reg_d, reg_b, false, 56)) {
+            intermediate -= (float)ppc_dblresult64_b;
+        }
+    }
+
     ppc_dblresult64_d = static_cast<double>(intermediate);
 
     ppc_store_dfpresult(false);
@@ -630,8 +708,15 @@ void ppc_fmsubs() {
 void ppc_fmsubsdot() {
     ppc_grab_regsfpdabc(false);
 
-    float intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
-    intermediate -= (float)ppc_dblresult64_b;
+    float intermediate;
+
+    if (!ppc_confirm_inf_nan(reg_a, reg_c, false, 50)) {
+        intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
+        if (!ppc_confirm_inf_nan(reg_d, reg_b, false, 56)) {
+            intermediate -= (float)ppc_dblresult64_b;
+        }
+    }
+
     ppc_dblresult64_d = static_cast<double>(intermediate);
 
     ppc_store_dfpresult(false);
@@ -641,8 +726,14 @@ void ppc_fmsubsdot() {
 void ppc_fnmadds() {
     ppc_grab_regsfpdabc(false);
 
-    float intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
-    intermediate += (float)ppc_dblresult64_b;
+    float intermediate;
+
+    if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 58)) {
+        intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
+        if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 58)) {
+            intermediate += (float)ppc_dblresult64_b;
+        }
+    }
     intermediate = -intermediate;
     ppc_dblresult64_d = static_cast<double>(intermediate);
 
@@ -652,8 +743,14 @@ void ppc_fnmadds() {
 void ppc_fnmaddsdot() {
     ppc_grab_regsfpdabc(false);
 
-    float intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
-    intermediate += (float)ppc_dblresult64_b;
+    float intermediate;
+
+    if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 58)) {
+        intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
+        if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 58)) {
+            intermediate += (float)ppc_dblresult64_b;
+        }
+    }
     intermediate = -intermediate;
     ppc_dblresult64_d = static_cast<double>(intermediate);
 
@@ -664,8 +761,14 @@ void ppc_fnmaddsdot() {
 void ppc_fnmsubs() {
     ppc_grab_regsfpdabc(false);
 
-    float intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
-    intermediate -= (float)ppc_dblresult64_b;
+    float intermediate;
+
+    if (!ppc_confirm_inf_nan(reg_a, reg_c, false, 50)) {
+        intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
+        if (!ppc_confirm_inf_nan(reg_d, reg_b, false, 56)) {
+            intermediate -= (float)ppc_dblresult64_b;
+        }
+    }
     intermediate = -intermediate;
     ppc_dblresult64_d = static_cast<double>(intermediate);
 
@@ -675,8 +778,14 @@ void ppc_fnmsubs() {
 void ppc_fnmsubsdot() {
     ppc_grab_regsfpdabc(false);
 
-    float intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
-    intermediate -= (float)ppc_dblresult64_b;
+    float intermediate;
+
+    if (!ppc_confirm_inf_nan(reg_a, reg_c, false, 50)) {
+        intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
+        if (!ppc_confirm_inf_nan(reg_d, reg_b, false, 56)) {
+            intermediate -= (float)ppc_dblresult64_b;
+        }
+    }
     intermediate = -intermediate;
     ppc_dblresult64_d = static_cast<double>(intermediate);
 
