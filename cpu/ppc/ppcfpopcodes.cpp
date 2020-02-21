@@ -120,6 +120,7 @@ void ppc_grab_regsfpsab(bool int_rep) {
         ppc_result64_b = ppc_state.ppc_fpr[reg_b].int64_r;
     }
     else {
+        ppc_dblresult64_d = fp_return_double(reg_s);
         ppc_dblresult64_a = fp_return_double(reg_a);
         ppc_dblresult64_c = fp_return_double(reg_c);
     }
