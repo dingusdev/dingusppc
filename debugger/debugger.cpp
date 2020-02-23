@@ -53,14 +53,14 @@ static void show_help()
     cout << "Pressing ENTER will repeat last command." << endl;
 }
 
-static void disasm(uint32_t inst_num = 1UL, uint32_t address = ppc_state.ppc_pc)
+static void disasm(uint32_t count, uint32_t address)
 {
     PPCDisasmContext ctx;
 
     ctx.instr_addr = address;
     ctx.simplified = true;
 
-    for (int i = 0; i < inst_num; i++) {
+    for (int i = 0; i < count; i++) {
         ctx.instr_code = mem_read_dbg(ctx.instr_addr, 4);
         cout << uppercase << hex << ctx.instr_addr << "    "
             << disassemble_single(&ctx) << endl;
@@ -258,7 +258,9 @@ void enter_debugger()
                 }
             }
             else {
-                disasm();
+                addr_str = "PC";
+                addr = get_reg(addr_str);
+                disasm(1, addr);
             }
         }
         else if (cmd == "dump") {
