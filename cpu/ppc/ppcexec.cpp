@@ -5,12 +5,19 @@
 //if you want to distribute this.
 //(divingkatae#1017 or powermax#2286 on Discord)
 
+#include <stdio.h>
+#include <string>
+#include <iostream>
+#include <stdexcept>
+#include <map>
 #include <unordered_map>
 #include <chrono>
 #include <setjmp.h>
 
 #include "ppcemu.h"
 #include "ppcmmu.h"
+
+using namespace std;
 
 MemCtrlBase *mem_ctrl_instance = 0;
 
@@ -787,4 +794,130 @@ void ppc_cpu_init(uint32_t proc_version)
 
     /* redirect code execution to reset vector */
     ppc_state.ppc_pc = 0xFFF00100;
+}
+
+void print_gprs()
+{
+    for (int i = 0; i < 32; i++)
+        cout << "GPR " << dec << i << " : " << hex << ppc_state.ppc_gpr[i] << endl;
+
+    cout << "PC: " << hex << ppc_state.ppc_pc << endl;
+    cout << "LR: " << hex << ppc_state.ppc_spr[SPR::LR] << endl;
+    cout << "CR: " << hex << ppc_state.ppc_cr << endl;
+    cout << "CTR: " << hex << ppc_state.ppc_spr[SPR::CTR] << endl;
+    cout << "XER: " << hex << ppc_state.ppc_spr[SPR::XER] << endl;
+    cout << "MSR: " << hex << ppc_state.ppc_msr << endl;
+}
+
+void print_fprs()
+{
+    for (int i = 0; i < 32; i++)
+        cout << "FPR " << dec << i << " : " << ppc_state.ppc_fpr[i].dbl64_r << endl;
+}
+
+static map<string, int> SPRName2Num = {
+    {"XER", SPR::XER}, {"LR", SPR::LR}, {"CTR", SPR::CTR}, {"DEC", SPR::DEC},
+    {"PVR", SPR::PVR}
+};
+
+uint64_t reg_op(string &reg_name, uint64_t val, bool is_write)
+{
+    string reg_name_u, reg_num_str;
+    unsigned reg_num;
+    map<string, int>::iterator spr;
+
+    if (reg_name.length() < 2)
+        goto bail_out;
+
+    reg_name_u = reg_name;
+
+    /* convert reg_name string to uppercase */
+    std::for_each(reg_name_u.begin(), reg_name_u.end(), [](char & c) {
+        c = ::toupper(c);
+    });
+
+    try {
+        if (reg_name_u == "PC") {
+            if (is_write)
+                ppc_state.ppc_pc = val;
+            return ppc_state.ppc_pc;
+        }
+        if (reg_name_u == "MSR") {
+            if (is_write)
+                ppc_state.ppc_msr = val;
+            return ppc_state.ppc_msr;
+        }
+        if (reg_name_u == "CR") {
+            if (is_write)
+                ppc_state.ppc_cr = val;
+            return ppc_state.ppc_cr;
+        }
+        if (reg_name_u == "FPSCR") {
+            if (is_write)
+                ppc_state.ppc_fpscr = val;
+            return ppc_state.ppc_fpscr;
+        }
+
+        if (reg_name_u.substr(0, 1) == "R") {
+            reg_num_str = reg_name_u.substr(1);
+            reg_num = stoul(reg_num_str, NULL, 0);
+            if (reg_num < 32) {
+                if (is_write)
+                    ppc_state.ppc_gpr[reg_num] = val;
+                return ppc_state.ppc_gpr[reg_num];
+            }
+        }
+
+        if (reg_name_u.substr(0, 1) == "FR") {
+            reg_num_str = reg_name_u.substr(2);
+            reg_num = stoul(reg_num_str, NULL, 0);
+            if (reg_num < 32) {
+                if (is_write)
+                    ppc_state.ppc_fpr[reg_num].int64_r = val;
+                return ppc_state.ppc_fpr[reg_num].int64_r;
+            }
+        }
+
+        if (reg_name_u.substr(0, 3) == "SPR") {
+            reg_num_str = reg_name_u.substr(3);
+            reg_num = stoul(reg_num_str, NULL, 0);
+            if (reg_num < 1024) {
+                if (is_write)
+                    ppc_state.ppc_spr[reg_num] = val;
+                return ppc_state.ppc_spr[reg_num];
+            }
+        }
+
+        if (reg_name_u.substr(0, 2) == "SR") {
+            reg_num_str = reg_name_u.substr(2);
+            reg_num = stoul(reg_num_str, NULL, 0);
+            if (reg_num < 16) {
+                if (is_write)
+                    ppc_state.ppc_sr[reg_num] = val;
+                return ppc_state.ppc_sr[reg_num];
+            }
+        }
+
+        spr = SPRName2Num.find(reg_name_u);
+        if (spr != SPRName2Num.end()) {
+            if (is_write)
+                ppc_state.ppc_spr[spr->second] = val;
+            return ppc_state.ppc_spr[spr->second];
+        }
+    }
+    catch (...) {
+    }
+
+bail_out:
+    throw std::invalid_argument(string("Unknown register ") + reg_name);
+}
+
+uint64_t get_reg(string &reg_name)
+{
+    return reg_op(reg_name, 0, false);
+}
+
+void set_reg(string &reg_name, uint64_t val)
+{
+    reg_op(reg_name, val, true);
 }

@@ -9,6 +9,7 @@
 #define PPCEMU_H
 
 #include <cinttypes>
+#include <string>
 #include <setjmp.h>
 #include "endianswap.h"
 #include "devices/memctrlbase.h"
@@ -663,5 +664,11 @@ extern void ppc_main_opcode(void);
 extern void ppc_exec(void);
 extern void ppc_exec_single(void);
 extern void ppc_exec_until(uint32_t goal_addr);
+
+/* debugging support API */
+void print_gprs(void); /* print content of the general purpose registers */
+void print_fprs(void); /* print content of the floating-point registers  */
+uint64_t get_reg(std::string &reg_name); /* get content of the register reg_name */
+void set_reg(std::string &reg_name, uint64_t val); /* set reg_name to val */
 
 #endif /* PPCEMU_H */

@@ -18,10 +18,24 @@
 
 using namespace std;
 
-void show_help()
+static uint32_t str2addr(string& addr_str)
+{
+    try {
+        return stoul(addr_str, NULL, 0);
+    }
+    catch (invalid_argument& exc) {
+        throw invalid_argument(string("Cannot convert ") + addr_str);
+    }
+}
+
+static void show_help()
 {
     cout << "Debugger commands:" << endl;
     cout << "  step      -- execute single instruction" << endl;
+    cout << "  si        -- shortcut for step" << endl;
+    cout << "  next      -- same as step but treats subroutine calls" << endl;
+    cout << "               as single instructions." << endl;
+    cout << "  ni        -- shortcut for next" << endl;
     cout << "  until X   -- execute until address X is reached" << endl;
     cout << "  regs      -- dump content of the GRPs" << endl;
     cout << "  set R=X   -- assign value X to register R" << endl;
@@ -30,33 +44,24 @@ void show_help()
     cout << "  profiler  -- show stats related to the processor" << endl;
 #endif
     cout << "  disas N,X -- disassemble N instructions starting at address X" << endl;
+    cout << "               X can be any number or a known register name" << endl;
+    cout << "               disas with no arguments defaults to disas 1,pc" << endl;
     cout << "  quit      -- quit the debugger" << endl << endl;
     cout << "Pressing ENTER will repeat last command." << endl;
 }
 
-void dump_regs()
-{
-    for (uint32_t i = 0; i < 32; i++)
-        cout << "GPR " << dec << i << " : " << hex << ppc_state.ppc_gpr[i] << endl;
-
-    cout << "PC: " << hex << ppc_state.ppc_pc << endl;
-    cout << "LR: " << hex << ppc_state.ppc_spr[8] << endl;
-    cout << "CR: " << hex << ppc_state.ppc_cr << endl;
-    cout << "CTR: " << hex << ppc_state.ppc_spr[9] << endl;
-    cout << "XER: " << hex << ppc_state.ppc_spr[1] << endl;
-    cout << "MSR: " << hex << ppc_state.ppc_msr << endl;
-}
-
-void disasm(uint32_t inst_num = 1UL, uint32_t address = ppc_state.ppc_pc)
+static void disasm(uint32_t inst_num = 1UL, uint32_t address = ppc_state.ppc_pc)
 {
     PPCDisasmContext ctx;
 
-    quickinstruction_translate(ppc_state.ppc_pc);
-
-    ctx.instr_addr = ppc_state.ppc_pc;
-    ctx.instr_code = ppc_cur_instruction;
+    ctx.instr_addr = address;
     ctx.simplified = true;
-    cout << hex << ppc_state.ppc_pc << "    " << disassemble_single(&ctx) << endl;
+
+    for (int i = 0; i < inst_num; i++) {
+        ctx.instr_code = mem_grab_dword(ctx.instr_addr);
+        cout << uppercase << hex << ctx.instr_addr << "    "
+            << disassemble_single(&ctx) << endl;
+    }
 }
 
 void enter_debugger()
@@ -65,7 +70,7 @@ void enter_debugger()
     uint32_t addr, inst_grab;
     std::stringstream ss;
 
-    cout << "Welcome to the PowerPC debugger." << endl;
+    cout << "Welcome to the DingusPPC command line debugger." << endl;
     cout << "Please enter a command or 'help'." << endl << endl;
 
     while (1) {
@@ -98,38 +103,64 @@ void enter_debugger()
         }
 #endif
         else if (cmd == "regs") {
-            dump_regs();
+            print_gprs();
         }
         else if (cmd == "set") {
             ss >> expr_str;
-            reg_expr = expr_str.substr(0, expr_str.find("="));
-            if (reg_expr == "pc") {
+            try {
+                reg_expr = expr_str.substr(0, expr_str.find("="));
                 addr_str = expr_str.substr(expr_str.find("=") + 1);
-                addr = stol(addr_str, NULL, 0);
-                ppc_state.ppc_pc = addr;
+                addr = str2addr(addr_str);
+                set_reg(reg_expr, addr);
             }
-            else {
-                cout << "Unknown register " << reg_expr << endl;
+            catch (invalid_argument& exc) {
+                cout << exc.what() << endl;
             }
         }
-        else if (cmd == "step") {
+        else if (cmd == "step" || cmd == "si") {
             ppc_exec_single();
+        }
+        else if (cmd == "next" || cmd == "ni") {
+            addr_str = "PC";
+            addr = get_reg(addr_str) + 4;
+            ppc_exec_until(addr);
         }
         else if (cmd == "until") {
             ss >> addr_str;
-            addr = stol(addr_str, NULL, 16);
-            ppc_exec_until(addr);
+            try {
+                addr = str2addr(addr_str);
+                ppc_exec_until(addr);
+            }
+            catch (invalid_argument& exc) {
+                cout << exc.what() << endl;
+            }
         }
         else if (cmd == "disas") {
             expr_str = "";
             ss >> expr_str;
             if (expr_str.length() > 0) {
-                cout << "Parsing disas params." << endl;
-                inst_num_str = expr_str.substr(expr_str.find(" ") + 1, expr_str.find(","));
-                inst_grab = stoul(inst_num_str, NULL, 0);
-                addr_str = expr_str.substr(expr_str.find(",") + 1, expr_str.length() - 1);
-                addr = stoul(addr_str, NULL, 16);
-                disasm(inst_grab, addr);
+                inst_num_str = expr_str.substr(0, expr_str.find(","));
+                inst_grab = stol(inst_num_str, NULL, 0);
+                addr_str = expr_str.substr(expr_str.find(",") + 1);
+                try {
+                    addr = str2addr(addr_str);
+                }
+                catch (invalid_argument& exc) {
+                    try {
+                        /* number conversion failed, trying reg name */
+                        addr = get_reg(addr_str);
+                    }
+                    catch (invalid_argument& exc) {
+                        cout << exc.what() << endl;
+                        continue;
+                    }
+                }
+                try {
+                    disasm(inst_grab, addr);
+                }
+                catch (invalid_argument& exc) {
+                    cout << exc.what() << endl;
+                }
             }
             else {
                 disasm();

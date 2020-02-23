@@ -7,6 +7,7 @@
 #include <iostream>
 #include <string>
 #include <cstring>
+#include <stdexcept>
 #include <functional> /* without this, MSVC doesn't understand std::function */
 #include "ppcdisasm.h"
 
@@ -1796,6 +1797,10 @@ static std::function<void(PPCDisasmContext*)> OpcodeDispatchTable[64] = {
 
 string disassemble_single(PPCDisasmContext* ctx)
 {
+    if (ctx->instr_addr & 3) {
+        throw std::invalid_argument(string("PPC instruction address must be a multiply of 4!"));
+    }
+
     OpcodeDispatchTable[ctx->instr_code >> 26](ctx);
 
     ctx->instr_addr += 4;
