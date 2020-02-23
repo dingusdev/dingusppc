@@ -62,8 +62,8 @@ static void disasm(uint32_t count, uint32_t address)
 
     for (int i = 0; i < count; i++) {
         ctx.instr_code = mem_read_dbg(ctx.instr_addr, 4);
-        cout << uppercase << hex << ctx.instr_addr << "    "
-            << disassemble_single(&ctx) << endl;
+        cout << uppercase << hex << ctx.instr_addr;
+        cout << "    " << disassemble_single(&ctx) << endl;
     }
 }
 
