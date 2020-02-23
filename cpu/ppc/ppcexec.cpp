@@ -9,6 +9,7 @@
 #include <string>
 #include <iostream>
 #include <stdexcept>
+#include <algorithm>
 #include <map>
 #include <unordered_map>
 #include <chrono>
@@ -791,6 +792,8 @@ void ppc_cpu_init(uint32_t proc_version)
         ppc_state.ppc_msr = 0x40;
         ppc_state.ppc_spr[SPR::DEC] = 0xFFFFFFFFUL;
     }
+
+    ppc_mmu_init();
 
     /* redirect code execution to reset vector */
     ppc_state.ppc_pc = 0xFFF00100;

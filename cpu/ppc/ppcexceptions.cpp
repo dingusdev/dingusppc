@@ -1,6 +1,8 @@
 /** @file Handling of low-level PPC exceptions. */
 
 #include <setjmp.h>
+#include <string>
+#include <stdexcept>
 #include "ppcemu.h"
 
 jmp_buf exc_env; /* Global exception environment. */
@@ -90,4 +92,65 @@ jmp_buf exc_env; /* Global exception environment. */
     }
 
     longjmp(exc_env, 2); /* return to the main execution loop. */
+}
+
+
+[[noreturn]] void dbg_exception_handler(Except_Type exception_type,
+                                        uint32_t srr1_bits)
+{
+    std::string exc_descriptor;
+
+    switch(exception_type) {
+        case Except_Type::EXC_SYSTEM_RESET:
+            exc_descriptor = "System reset exception occured";
+            break;
+
+        case Except_Type::EXC_MACHINE_CHECK:
+            exc_descriptor = "Machine check exception occured";
+            break;
+
+        case Except_Type::EXC_DSI:
+        case Except_Type::EXC_ISI:
+            if (ppc_state.ppc_spr[SPR::DSISR] & 0x40000000)
+                exc_descriptor = "DSI/ISI exception: unmapped memory access";
+            else if (ppc_state.ppc_spr[SPR::DSISR] & 0x08000000)
+                exc_descriptor = "DSI/ISI exception: access protection violation";
+            else {
+                if (exception_type == Except_Type::EXC_DSI)
+                    exc_descriptor = "DSI exception";
+                else
+                    exc_descriptor = "ISI exception";
+            }
+            break;
+
+        case Except_Type::EXC_EXT_INT:
+            exc_descriptor = "External interrupt exception occured";
+            break;
+
+        case Except_Type::EXC_ALIGNMENT:
+            exc_descriptor = "Alignment exception occured";
+            break;
+
+        case Except_Type::EXC_PROGRAM:
+            exc_descriptor = "Program exception occured";
+            break;
+
+        case Except_Type::EXC_NO_FPU:
+            exc_descriptor = "Floating-Point unavailable exception occured";
+            break;
+
+        case Except_Type::EXC_DECR:
+            exc_descriptor = "Decrementer exception occured";
+            break;
+
+        case Except_Type::EXC_SYSCALL:
+            exc_descriptor = "Syscall exception occured";
+            break;
+
+        case Except_Type::EXC_TRACE:
+            exc_descriptor = "Trace exception occured";
+            break;
+    }
+
+    throw std::invalid_argument(exc_descriptor);
 }

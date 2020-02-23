@@ -39,6 +39,7 @@ extern uint8_t  mem_grab_byte(uint32_t addr);
 extern uint16_t mem_grab_word(uint32_t addr);
 extern uint32_t mem_grab_dword(uint32_t addr);
 extern uint64_t mem_grab_qword(uint32_t addr);
+extern uint64_t mem_read_dbg(uint32_t virt_addr, uint32_t size);
 extern uint8_t* quickinstruction_translate(uint32_t address_grab);
 
 #endif // PPCMEMORY_H

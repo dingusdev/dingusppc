@@ -18,11 +18,15 @@
 #include <cstdint>
 #include <cinttypes>
 #include <string>
+#include <stdexcept>
 #include <array>
 #include "memreadwrite.h"
 #include "ppcemu.h"
 #include "ppcmmu.h"
 #include "devices/memctrlbase.h"
+
+/* pointer to exception handler to be called when a MMU exception is occured. */
+void (*mmu_exception_handler)(Except_Type exception_type, uint32_t srr1_bits);
 
 /** PowerPC-style MMU BAT arrays (NULL initialization isn't prescribed). */
 PPC_BAT_entry ibat_array[4] = { {0} };
@@ -222,7 +226,7 @@ static uint32_t page_address_translate(uint32_t la, bool is_instr_fetch,
 
     /* instruction fetch from a no-execute segment will cause ISI exception */
     if ((sr_val & 0x10000000) && is_instr_fetch) {
-        ppc_exception_handler(Except_Type::EXC_ISI, 0x10000000);
+        mmu_exception_handler(Except_Type::EXC_ISI, 0x10000000);
     }
 
     page_index = (la >> 12) & 0xFFFF;
@@ -232,12 +236,12 @@ static uint32_t page_address_translate(uint32_t la, bool is_instr_fetch,
     if (!search_pteg(calc_pteg_addr(pteg_hash1), &pte_addr, vsid, page_index, 0)) {
         if (!search_pteg(calc_pteg_addr(~pteg_hash1), &pte_addr, vsid, page_index, 1)) {
             if (is_instr_fetch) {
-                ppc_exception_handler(Except_Type::EXC_ISI, 0x40000000);
+                mmu_exception_handler(Except_Type::EXC_ISI, 0x40000000);
             }
             else {
                 ppc_state.ppc_spr[SPR::DSISR] = 0x40000000 | (is_write << 25);
                 ppc_state.ppc_spr[SPR::DAR] = la;
-                ppc_exception_handler(Except_Type::EXC_DSI, 0);
+                mmu_exception_handler(Except_Type::EXC_DSI, 0);
             }
         }
     }
@@ -255,12 +259,12 @@ static uint32_t page_address_translate(uint32_t la, bool is_instr_fetch,
     // write access with PP = %11
     if ((key && (!pp || (pp == 1 && is_write))) || (pp == 3 && is_write)) {
         if (is_instr_fetch) {
-            ppc_exception_handler(Except_Type::EXC_ISI, 0x08000000);
+            mmu_exception_handler(Except_Type::EXC_ISI, 0x08000000);
         }
         else {
             ppc_state.ppc_spr[SPR::DSISR] = 0x08000000 | (is_write << 25);
             ppc_state.ppc_spr[SPR::DAR] = la;
-            ppc_exception_handler(Except_Type::EXC_DSI, 0);
+            mmu_exception_handler(Except_Type::EXC_DSI, 0);
         }
     }
 
@@ -296,7 +300,7 @@ static uint32_t ppc_mmu_instr_translate(uint32_t la)
             bat_hit = true;
 
             if (!bat_entry->prot) {
-                ppc_exception_handler(Except_Type::EXC_ISI, 0x08000000);
+                mmu_exception_handler(Except_Type::EXC_ISI, 0x08000000);
             }
 
             // logical to physical translation
@@ -340,7 +344,7 @@ static uint32_t ppc_mmu_addr_translate(uint32_t la, int is_write)
             if (!bat_entry->prot || ((bat_entry->prot & 1) && is_write)) {
                 ppc_state.ppc_spr[SPR::DSISR] = 0x08000000 | (is_write << 25);
                 ppc_state.ppc_spr[SPR::DAR] = la;
-                ppc_exception_handler(Except_Type::EXC_DSI, 0);
+                mmu_exception_handler(Except_Type::EXC_DSI, 0);
             }
 
             // logical to physical translation
@@ -553,4 +557,55 @@ uint8_t* quickinstruction_translate(uint32_t addr)
     }
 
     return real_addr;
+}
+
+uint64_t mem_read_dbg(uint32_t virt_addr, uint32_t size)
+{
+    uint32_t save_dsisr, save_dar;
+    uint64_t ret_val;
+
+    /* save MMU-related CPU state */
+    save_dsisr = ppc_state.ppc_spr[SPR::DSISR];
+    save_dar   = ppc_state.ppc_spr[SPR::DAR];
+    mmu_exception_handler = dbg_exception_handler;
+
+    try {
+        switch(size) {
+            case 1:
+                ret_val = mem_grab_byte(virt_addr);
+                break;
+            case 2:
+                ret_val = mem_grab_word(virt_addr);
+                break;
+            case 4:
+                ret_val = mem_grab_dword(virt_addr);
+                break;
+            case 8:
+                ret_val = mem_grab_qword(virt_addr);
+                break;
+            default:
+                ret_val = mem_grab_byte(virt_addr);
+        }
+    }
+    catch (std::invalid_argument& exc) {
+        /* restore MMU-related CPU state */
+        mmu_exception_handler = ppc_exception_handler;
+        ppc_state.ppc_spr[SPR::DSISR] = save_dsisr;
+        ppc_state.ppc_spr[SPR::DAR] = save_dar;
+
+        /* rethrow MMU exception */
+        throw exc;
+    }
+
+    /* restore MMU-related CPU state */
+    mmu_exception_handler = ppc_exception_handler;
+    ppc_state.ppc_spr[SPR::DSISR] = save_dsisr;
+    ppc_state.ppc_spr[SPR::DAR] = save_dar;
+
+    return ret_val;
+}
+
+void ppc_mmu_init()
+{
+    mmu_exception_handler = ppc_exception_handler;
 }

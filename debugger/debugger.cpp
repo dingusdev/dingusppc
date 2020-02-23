@@ -58,7 +58,7 @@ static void disasm(uint32_t inst_num = 1UL, uint32_t address = ppc_state.ppc_pc)
     ctx.simplified = true;
 
     for (int i = 0; i < inst_num; i++) {
-        ctx.instr_code = mem_grab_dword(ctx.instr_addr);
+        ctx.instr_code = mem_read_dbg(ctx.instr_addr, 4);
         cout << uppercase << hex << ctx.instr_addr << "    "
             << disassemble_single(&ctx) << endl;
     }
