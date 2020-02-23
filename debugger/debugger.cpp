@@ -9,6 +9,7 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <map>
 #include "ppcemu.h"
@@ -39,7 +40,9 @@ static void show_help()
     cout << "  until X   -- execute until address X is reached" << endl;
     cout << "  regs      -- dump content of the GRPs" << endl;
     cout << "  set R=X   -- assign value X to register R" << endl;
-    cout << "  memdump   -- dump content of the system memory to memdump.bin" << endl;
+    cout << "  dump NT,X -- dump N memory cells of size T at address X" << endl;
+    cout << "               T can be b(byte), w(word), d(double)," << endl;
+    cout << "               q(quad) or c(character)." << endl;
 #ifdef PROFILER
     cout << "  profiler  -- show stats related to the processor" << endl;
 #endif
@@ -62,6 +65,98 @@ static void disasm(uint32_t inst_num = 1UL, uint32_t address = ppc_state.ppc_pc)
         cout << uppercase << hex << ctx.instr_addr << "    "
             << disassemble_single(&ctx) << endl;
     }
+}
+
+static void dump_mem(string& params)
+{
+    int cell_size, chars_per_line;
+    bool is_char;
+    uint32_t count, addr;
+    uint64_t val;
+    string num_type_str, addr_str;
+
+    num_type_str = params.substr(0, params.find(","));
+    addr_str = params.substr(params.find(",") + 1);
+
+    is_char = false;
+
+    switch(num_type_str.back()) {
+        case 'b':
+        case 'B':
+            cell_size = 1;
+            break;
+        case 'w':
+        case 'W':
+            cell_size = 2;
+            break;
+        case 'd':
+        case 'D':
+            cell_size = 4;
+            break;
+        case 'q':
+        case 'Q':
+            cell_size = 8;
+            break;
+        case 'c':
+        case 'C':
+            cell_size = 1;
+            is_char = true;
+            break;
+        default:
+            cout << "Invalid data type " << num_type_str << endl;
+            return;
+    }
+
+    try {
+        num_type_str = num_type_str.substr(0, num_type_str.length() - 1);
+        count = str2addr(num_type_str);
+    }
+    catch (invalid_argument& exc) {
+        cout << exc.what() << endl;
+        return;
+    }
+
+    try {
+        addr  = str2addr(addr_str);
+    }
+    catch (invalid_argument& exc) {
+        try {
+            /* number conversion failed, trying reg name */
+            addr = get_reg(addr_str);
+        }
+        catch (invalid_argument& exc) {
+            cout << exc.what() << endl;
+            return;
+        }
+    }
+
+    cout << "Dumping memory at address " << hex << addr << ":" << endl;
+
+    chars_per_line = 0;
+
+    try {
+        for (int i = 0; i < count; addr += cell_size, i++) {
+            if (chars_per_line + cell_size * 2 > 80) {
+                cout << endl;
+                chars_per_line = 0;
+            }
+            val = mem_read_dbg(addr, cell_size);
+            if (is_char) {
+                cout << (char)val;
+                chars_per_line += cell_size;
+            } else {
+                cout << setw(cell_size * 2) << setfill('0') << uppercase <<
+                    hex << val << "  ";
+                chars_per_line += cell_size * 2 + 2;
+            }
+        }
+    }
+    catch (invalid_argument& exc) {
+        cout << exc.what() << endl;
+        return;
+    }
+
+    cout << endl << endl;
 }
 
 void enter_debugger()
@@ -165,6 +260,11 @@ void enter_debugger()
             else {
                 disasm();
             }
+        }
+        else if (cmd == "dump") {
+            expr_str = "";
+            ss >> expr_str;
+            dump_mem(expr_str);
         }
         else {
             cout << "Unknown command: " << cmd << endl;
