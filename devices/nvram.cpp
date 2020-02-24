@@ -5,6 +5,7 @@
 //if you want to distribute this.
 //(divingkatae#1017 or powermax#2286 on Discord)
 
+#include <thirdparty/loguru.hpp>
 #include <iostream>
 #include <fstream>
 #include <cstring>
@@ -52,13 +53,13 @@ void NVram::init() {
 
     ifstream f(this->file_name, ios::in | ios::binary);
 
-    if (f.fail() || !f.read(sig, sizeof(NVRAM_FILE_ID))   ||
-        !f.read((char *)&data_size, sizeof(data_size))    ||
-        memcmp(sig, NVRAM_FILE_ID, sizeof(NVRAM_FILE_ID)) ||
-        data_size != this->ram_size                       ||
+    if (f.fail() || !f.read(sig, sizeof(NVRAM_FILE_ID))   || \
+        !f.read((char *)&data_size, sizeof(data_size))    || \
+        memcmp(sig, NVRAM_FILE_ID, sizeof(NVRAM_FILE_ID)) || \
+        data_size != this->ram_size                       || \
         !f.read((char *)this->storage, this->ram_size))
     {
-        cout << "WARN: Could not restore NVRAM content from the given file." << endl;
+        LOG_F(WARNING, "Could not restore NVRAM content from the given file. \n");
         memset(this->storage, 0, sizeof(this->ram_size));
     }
 

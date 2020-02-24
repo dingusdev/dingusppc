@@ -7,6 +7,7 @@
 
 // General opcodes for the processor - ppcopcodes.cpp
 
+#include <thirdparty/loguru.hpp>
 #include <iostream>
 #include <cstring>
 #include <cinttypes>
@@ -1795,22 +1796,22 @@ void ppc_sync() {
 }
 
 void ppc_icbi() {
-    std::cout << "Oops. Placeholder for icbi." << std::endl;
+    LOG_F(WARNING, "Placeholder for icbi. \n");
 }
 
 void ppc_dcbf() {
-    std::cout << "Oops. Placeholder for dcbf." << std::endl;
+    LOG_F(WARNING, "Placeholder for dcbf. \n");
 }
 
 void ppc_dcbi() {
 #ifdef PROFILER
     supervisor_inst_num++;
 #endif
-    std::cout << "Oops. Placeholder for dcbi." << std::endl;
+    LOG_F(WARNING, "Placeholder for dcbi. \n");
 }
 
 void ppc_dcbst() {
-    std::cout << "Oops. Placeholder for dcbst." << std::endl;
+    LOG_F(WARNING, "Placeholder for dcbst. \n");
 }
 
 void ppc_dcbt() {
@@ -2258,7 +2259,7 @@ void ppc_lswi() {
             ppc_store_result_regd();
             break;
         default:
-            printf("Something really horrible happened with lswi.");
+            LOG_F(ERROR, "Something really horrible happened with lswi. \n");
         }
         if (shift_times == 3) {
             shift_times = 0;
@@ -2307,7 +2308,7 @@ void ppc_lswx() {
             ppc_store_result_regd();
             break;
         default:
-            printf("Something really horrible happened with lswx.");
+            LOG_F(ERROR, "Something really horrible happened with lswx. \n");
         }
         if (shift_times == 3) {
             shift_times = 0;
@@ -2347,7 +2348,7 @@ void ppc_stswi() {
             mem_write_byte(ppc_effective_address, strwrd_replace_value);
             break;
         default:
-            printf("Something really horrible happened with stswi.");
+            LOG_F(ERROR, "Something really horrible happened with stswi. \n");
         }
         if (shift_times == 3) {
             shift_times = 0;
@@ -2385,7 +2386,7 @@ void ppc_stswx() {
             mem_write_byte(ppc_effective_address, strwrd_replace_value);
             break;
         default:
-            printf("Something really horrible happened with stswx.");
+            LOG_F(ERROR, "Something really horrible happened with stswx. \n");
         }
         if (shift_times == 3) {
             shift_times = 0;
@@ -2409,33 +2410,33 @@ void ppc_tlbie() {
     reg_b = (ppc_cur_instruction >> 11) & 31;
     uint32_t vps = ppc_state.ppc_gpr[reg_b] & 0xFFFF000;
     **/
-    printf("Placeholder for tlbie \n");
+    LOG_F(WARNING, "Placeholder for tlbie \n");
 }
 
 void ppc_tlbia() {
 #ifdef PROFILER
     supervisor_inst_num++;
 #endif
-    printf("Placeholder for tlbia \n");
+    LOG_F(WARNING, "Placeholder for tlbia \n");
 }
 
 void ppc_tlbld() {
 #ifdef PROFILER
     supervisor_inst_num++;
 #endif
-    printf("Placeholder for tlbld - 603 only \n");
+    LOG_F(WARNING, "Placeholder for tlbld - 603 only \n");
 }
 
 void ppc_tlbli() {
 #ifdef PROFILER
     supervisor_inst_num++;
 #endif
-    printf("Placeholder for tlbli - 603 only \n");
+    LOG_F(WARNING, "Placeholder for tlbli - 603 only \n");
 }
 
 void ppc_tlbsync() {
 #ifdef PROFILER
     supervisor_inst_num++;
 #endif
-    printf("Placeholder for tlbsync \n");
+    LOG_F(WARNING, "Placeholder for tlbsync \n");
 }

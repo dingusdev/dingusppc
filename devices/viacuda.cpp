@@ -223,18 +223,18 @@ void ViaCuda::cuda_error_response(uint32_t error)
 void ViaCuda::cuda_process_packet()
 {
     if (this->in_count < 2) {
-        cout << "Cuda: invalid packet (too few data)!" << endl;
+        LOG_F(ERROR, "Cuda: invalid packet (too few data)! \n");
         return;
     }
 
     switch(this->in_buf[0]) {
     case CUDA_PKT_ADB:
-        cout << "Cuda: ADB packet received" << endl;
+        LOG_F(INFO, "Cuda: ADB packet received \n");
         break;
     case CUDA_PKT_PSEUDO:
-        cout << "Cuda: pseudo command packet received" << endl;
-        cout << "Command: " << hex << (uint32_t)(this->in_buf[1]) << endl;
-        cout << "Data count: " << dec << this->in_count << endl;
+        LOG_F(INFO, "Cuda: pseudo command packet received \n");
+        LOG_F(INFO, "Command: %x \n", (uint32_t)(this->in_buf[1]));
+        LOG_F(INFO, "Data count: %d \n ", this->in_count);
         for (int i = 0; i < this->in_count; i++) {
             cout << hex << (uint32_t)(this->in_buf[i]) << ", ";
         }
@@ -242,7 +242,7 @@ void ViaCuda::cuda_process_packet()
         cuda_pseudo_command(this->in_buf[1], this->in_count - 2);
         break;
     default:
-        cout << "Cuda: unsupported packet type = " << dec << (uint32_t)(this->in_buf[0]) << endl;
+        LOG_F(ERROR, "Cuda: unsupported packet type = %d \n", (uint32_t)(this->in_buf[0]));
     }
 }
 
@@ -280,11 +280,11 @@ void ViaCuda::cuda_pseudo_command(int cmd, int data_count)
         }
         break;
     case CUDA_OUT_PB0: /* undocumented call! */
-        cout << "Cuda: send " << dec << (int)(this->in_buf[2]) << " to PB0" << endl;
+        LOG_F(INFO, "Cuda: send %d to PB0 \n", (int)(this->in_buf[2]));
         cuda_response_header(CUDA_PKT_PSEUDO, 0);
         break;
     default:
-        cout << "Cuda: unsupported pseudo command 0x" << hex << cmd << endl;
+        LOG_F(ERROR, "Cuda: unsupported pseudo command 0x%x \n", cmd);
         cuda_error_response(CUDA_ERR_BAD_CMD);
     }
 }
@@ -304,7 +304,7 @@ void ViaCuda::i2c_simple_transaction(uint8_t dev_addr, const uint8_t *in_buf,
         }
         break;
     default:
-        cout << "Unsupported I2C device 0x" << hex << (int)dev_addr << endl;
+        LOG_F(ERROR, "Unsupported I2C device 0x%x \n", (int)dev_addr);
         cuda_error_response(CUDA_ERR_I2C);
     }
 }
@@ -315,7 +315,7 @@ void ViaCuda::i2c_comb_transaction(uint8_t dev_addr, uint8_t sub_addr,
     int tr_type = dev_addr1 & 1;
 
     if ((dev_addr & 0xFE) != (dev_addr1 & 0xFE)) {
-        cout << "I2C combined, dev_addr mismatch!" << endl;
+        LOG_F(ERROR, "I2C combined, dev_addr mismatch! \n");
         return;
     }
 
@@ -323,8 +323,8 @@ void ViaCuda::i2c_comb_transaction(uint8_t dev_addr, uint8_t sub_addr,
     case 0xAE: /* SDRAM EEPROM, no clue which one */
         if (tr_type) { /* read */
             if (sub_addr != 2) {
-                cout << "Unsupported read position 0x" << hex << (int)sub_addr
-                     << " in SDRAM EEPROM 0x" << hex << (int)dev_addr1;
+                LOG_F(ERROR, "Unsupported read position 0x%x in SDRAM EEPROM 0x%x", \
+                    (int)sub_addr, (int)dev_addr1);
                 return;
             }
             /* FIXME: hardcoded SPD EEPROM values! This should be a proper
@@ -338,7 +338,7 @@ void ViaCuda::i2c_comb_transaction(uint8_t dev_addr, uint8_t sub_addr,
         }
         break;
     default:
-        cout << "Unsupported I2C device 0x" << hex << (int)dev_addr1 << endl;
+        LOG_F(ERROR, "Unsupported I2C device 0x%x \n", (int)dev_addr1);
         cuda_error_response(CUDA_ERR_I2C);
     }
 }

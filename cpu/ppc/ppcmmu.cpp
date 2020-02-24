@@ -14,6 +14,7 @@
     - clarify what to do in the case of unaligned memory accesses
  */
 
+#include <thirdparty/loguru.hpp>
 #include <iostream>
 #include <cstdint>
 #include <cinttypes>
@@ -57,12 +58,12 @@ AddressMapEntry last_ptab_area  = { 0 };
                 ret = entry->devobj->read((ADDR) - entry->start, (SIZE));      \
             }                                                                  \
             else {                                                             \
-                printf("Please check your address map!\n");                    \
+                LOG_F(ERROR, "Please check your address map! \n");             \
                 ret = (UNVAL);                                                 \
             }                                                                  \
         }                                                                      \
         else {                                                                 \
-            printf("WARNING: read from unmapped memory at 0x%08X!\n", (ADDR)); \
+            LOG_F(WARNING, "Read from unmapped memory at 0x%08X!\n", (ADDR));  \
             ret = (UNVAL);                                                     \
         }                                                                      \
     }                                                                          \
@@ -86,11 +87,11 @@ AddressMapEntry last_ptab_area  = { 0 };
                 entry->devobj->write((ADDR) - entry->start, (VAL), (SIZE));    \
             }                                                                  \
             else {                                                             \
-                printf("Please check your address map!\n");                    \
+                LOG_F(ERROR, "Please check your address map!\n");                    \
             }                                                                  \
         }                                                                      \
         else {                                                                 \
-            printf("WARNING: write to unmapped memory at 0x%08X!\n", (ADDR));  \
+            LOG_F(WARNING, "Write to unmapped memory at 0x%08X!\n", (ADDR));   \
         }                                                                      \
     }                                                                          \
 }
@@ -165,7 +166,7 @@ static inline uint8_t* calc_pteg_addr(uint32_t hash)
             return last_ptab_area.mem_ptr + (pteg_addr - last_ptab_area.start);
         }
         else {
-            printf("SOS: no page table region was found at %08X!\n", pteg_addr);
+            LOG_F(ERROR, "SOS: no page table region was found at %08X!\n", pteg_addr);
             exit(-1); // FIXME: ugly error handling, must be the proper exception!
         }
     }
@@ -188,7 +189,7 @@ static bool search_pteg(uint8_t* pteg_addr, uint8_t** ret_pte_addr,
         if (pte_check == READ_DWORD_BE_A(pteg_addr)) {
             if (match_found) {
                 if ((READ_DWORD_BE_A(pteg_addr) & 0xFFFFF07B) != pte_word2_check) {
-                    printf("Multiple PTEs with different RPN/WIMG/PP found!\n");
+                    LOG_F(ERROR, "Multiple PTEs with different RPN/WIMG/PP found!\n");
                     exit(-1);
                 }
             }
@@ -220,7 +221,7 @@ static uint32_t page_address_translate(uint32_t la, bool is_instr_fetch,
 
     sr_val = ppc_state.ppc_sr[(la >> 28) & 0x0F];
     if (sr_val & 0x80000000) {
-        printf("Direct-store segments not supported, LA=%0xX\n", la);
+        LOG_F(ERROR, "Direct-store segments not supported, LA=%0xX\n", la);
         exit(-1); // FIXME: ugly error handling, must be the proper exception!
     }
 
@@ -363,10 +364,10 @@ static uint32_t ppc_mmu_addr_translate(uint32_t la, int is_write)
 
 static void mem_write_unaligned(uint32_t addr, uint32_t value, uint32_t size)
 {
-    printf("WARNING! Attempt to write unaligned %d bytes to 0x%08X\n", size, addr);
+    LOG_F(WARNING, "Attempt to write unaligned %d bytes to 0x%08X\n", size, addr);
 
     if (((addr & 0xFFF) + size) > 0x1000) {
-        printf("SOS! Cross-page unaligned write, addr=%08X, size=%d\n", addr, size);
+        LOG_F(ERROR, "SOS! Cross-page unaligned write, addr=%08X, size=%d\n", addr, size);
         exit(-1); //FIXME!
     } else {
         /* data address translation if enabled */
@@ -425,7 +426,7 @@ void mem_write_dword(uint32_t addr, uint32_t value)
 void mem_write_qword(uint32_t addr, uint64_t value)
 {
     if (addr & 7) {
-        printf("SOS! Attempt to write unaligned QWORD to 0x%08X\n", addr);
+        LOG_F(ERROR, "SOS! Attempt to write unaligned QWORD to 0x%08X\n", addr);
         exit(-1); //FIXME!
     }
 
@@ -441,10 +442,10 @@ static uint32_t mem_grab_unaligned(uint32_t addr, uint32_t size)
 {
     uint32_t ret = 0;
 
-    printf("WARNING! Attempt to read unaligned %d bytes from 0x%08X\n", size, addr);
+    LOG_F(WARNING, "Attempt to read unaligned %d bytes from 0x%08X\n", size, addr);
 
     if (((addr & 0xFFF) + size) > 0x1000) {
-        printf("SOS! Cross-page unaligned read, addr=%08X, size=%d\n", addr, size);
+        LOG_F(ERROR, "SOS! Cross-page unaligned read, addr=%08X, size=%d\n", addr, size);
         exit(-1); //FIXME!
     } else {
         /* data address translation if enabled */
@@ -515,7 +516,7 @@ uint64_t mem_grab_qword(uint32_t addr)
     uint64_t ret;
 
     if (addr & 7) {
-        printf("SOS! Attempt to read unaligned QWORD at 0x%08X\n", addr);
+        LOG_F(ERROR, "SOS! Attempt to read unaligned QWORD at 0x%08X\n", addr);
         exit(-1); //FIXME!
     }
 
@@ -551,7 +552,7 @@ uint8_t* quickinstruction_translate(uint32_t addr)
             ppc_set_cur_instruction(real_addr);
         }
         else {
-            printf("WARNING: attempt to execute code at %08X!\n", addr);
+            LOG_F(WARNING, "attempt to execute code at %08X!\n", addr);
             exit(-1); // FIXME: ugly error handling, must be the proper exception!
         }
     }

@@ -10,6 +10,7 @@
     Author: Max Poliakovski
 */
 
+#include <thirdparty/loguru.hpp>
 #include <iostream>
 #include <cstring>
 #include <cinttypes>
