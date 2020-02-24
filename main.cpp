@@ -8,6 +8,7 @@
 //The main runfile - main.cpp
 //This is where the magic begins
 
+#include <thirdparty/loguru.hpp>
 #include <iostream>
 #include <map>
 #include <cstring>
@@ -59,17 +60,22 @@ GossamerID  *machine_id;
 
 int main(int argc, char **argv)
 {
+    loguru::g_preamble_date = false;
+    loguru::g_preamble_time = false;
+    loguru::g_preamble_thread = false;
+    loguru::init(argc, argv);
+    LOG_SCOPE_FUNCTION(INFO);
     uint32_t rom_filesize;
 
     /* Init virtual CPU and request MPC750 CPU aka G3 */
     ppc_cpu_init(PPC_VER::MPC750);
 
-    uint32_t opcode_entered = 0; //used for testing opcodes in playground
-
     std::cout << "DingusPPC - Prototype 5bf4 (7/14/2019)       " << endl;
     std::cout << "Written by divingkatae, (c) 2019.            " << endl;
     std::cout << "This is not intended for general use.        " << endl;
     std::cout << "Use at your own discretion.                  " << endl;
+
+    LOG_F(INFO, "Checking for ROM file");
 
     //Open the ROM File.
     ifstream romFile;
@@ -87,7 +93,7 @@ int main(int argc, char **argv)
     //Calculate and validate ROM file size.
     romFile.seekg(0, romFile.end);
     rom_filesize = (uint32_t) romFile.tellg();
-    printf("Rom SIZE: %d \n", rom_filesize);
+    LOG_F(INFO, "Rom SIZE: %d \n", rom_filesize);
     romFile.seekg (0, romFile.beg);
 
     if (rom_filesize != 0x400000){
@@ -118,7 +124,8 @@ int main(int argc, char **argv)
         string redo_me = iter->first;
 
         if (string_test.compare(redo_me) == 0){
-            cout << "The machine is identified as..." << iter->second << endl;
+            const char* check_me = iter->second.c_str();
+            LOG_F(INFO, "The machine is identified as... %s \n", check_me);
             romFile.seekg (0x0, ios::beg);
             break;
         }
@@ -129,11 +136,11 @@ int main(int argc, char **argv)
 
     switch(rom_id) {
     case 0x476F7373: {
-            cout << "Initialize Gossamer hardware..." << endl;
+            LOG_F(INFO, "Initialize Gossamer hardware... \n");
             MPC106 *mpc106 = new MPC106();
             mem_ctrl_instance = mpc106;
             if (!mem_ctrl_instance->add_rom_region(0xFFC00000, 0x400000)) {
-                cout << "failure!\n" << endl;
+                LOG_F(ERROR, "Failed to Gossamer hardware... \n");
                 delete(mem_ctrl_instance);
                 romFile.close();
                 return 1;
@@ -147,7 +154,7 @@ int main(int argc, char **argv)
         }
         break;
     default:
-        cout << "This machine not supported yet." << endl;
+        LOG_F(INFO, "This machine not supported yet. \n");
         return 1;
     }
 

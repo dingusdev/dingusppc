@@ -149,7 +149,6 @@ static void read_test_data()
 
 int main()
 {
-    int i;
 
     cout << "Running DingusPPC emulator tests..." << endl << endl;
 

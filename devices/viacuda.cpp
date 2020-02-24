@@ -10,6 +10,7 @@
     Author: Max Poliakovski 2019
 */
 
+#include <thirdparty/loguru.cpp>
 #include <iostream>
 #include <fstream>
 #include <cinttypes>
@@ -55,7 +56,7 @@ uint8_t ViaCuda::read(int reg)
 {
     uint8_t res;
 
-    cout << "Read VIA reg " << hex << (uint32_t)reg << endl;
+    LOG_F(INFO, "Read VIA reg %x \n", (uint32_t)reg);
 
     res = this->via_regs[reg & 0xF];
 
@@ -66,7 +67,7 @@ uint8_t ViaCuda::read(int reg)
         break;
     case VIA_A:
     case VIA_ANH:
-        cout << "WARNING: read attempt from VIA Port A!" << endl;
+        LOG_F(WARNING, "Attempted read from VIA Port A! \n");
         break;
     case VIA_IER:
         res |= 0x80; /* bit 7 always reads as "1" */
@@ -84,29 +85,28 @@ void ViaCuda::write(int reg, uint8_t value)
         break;
     case VIA_A:
     case VIA_ANH:
-        cout << "WARNING: write attempt to VIA Port A!" << endl;
+        LOG_F(WARNING, "Attempted read from VIA Port A! \n");
         break;
     case VIA_DIRB:
-        cout << "VIA_DIRB = " << hex << (uint32_t)value << endl;
+        LOG_F(INFO, "VIA_DIRB = %x \n", (uint32_t)value);
         this->via_regs[VIA_DIRB] = value;
         break;
     case VIA_DIRA:
-        cout << "VIA_DIRA = " << hex << (uint32_t)value << endl;
+        LOG_F(INFO, "VIA_DIRA = %x \n", (uint32_t)value);
         this->via_regs[VIA_DIRA] = value;
         break;
     case VIA_PCR:
-        cout << "VIA_PCR = " << hex << (uint32_t)value << endl;
+        LOG_F(INFO, "VIA_PCR =  %x \n", (uint32_t)value);
         this->via_regs[VIA_PCR] = value;
         break;
     case VIA_ACR:
-        cout << "VIA_ACR = " << hex << (uint32_t)value << endl;
+        LOG_F(INFO, "VIA_ACR =  %x \n", (uint32_t)value);
         this->via_regs[VIA_ACR] = value;
         break;
     case VIA_IER:
         this->via_regs[VIA_IER] = (value & 0x80) ? value & 0x7F
                                   : this->via_regs[VIA_IER] & ~value;
-        cout << "VIA_IER updated to " << hex << (uint32_t)this->via_regs[VIA_IER]
-             << endl;
+        LOG_F(INFO, "VIA_IER updated to %d \n", (uint32_t)this->via_regs[VIA_IER]);
         print_enabled_ints();
         break;
     default:
@@ -120,7 +120,7 @@ void ViaCuda::print_enabled_ints()
 
     for (int i = 0; i < 7; i++) {
         if (this->via_regs[VIA_IER] & (1 << i))
-            cout << "VIA " << via_int_src[i] << " interrupt enabled." << endl;
+            LOG_F(INFO, "VIA %s interrupt enabled \n", via_int_src[i].c_str());
     }
 }
 
@@ -137,7 +137,7 @@ inline void ViaCuda::assert_sr_int()
 void ViaCuda::cuda_write(uint8_t new_state)
 {
     if (!cuda_ready()) {
-        cout << "Cuda not ready!" << endl;
+        LOG_F(ERROR, "Cuda not ready! \n");
         return;
     }
 
@@ -148,7 +148,7 @@ void ViaCuda::cuda_write(uint8_t new_state)
     if (new_tip == this->old_tip && new_byteack == this->old_byteack)
         return;
 
-    cout << "Cuda state changed!" << endl;
+    LOG_F(INFO, "Cuda state changed! \n");
 
     this->old_tip = new_tip;
     this->old_byteack = new_byteack;
@@ -168,7 +168,7 @@ void ViaCuda::cuda_write(uint8_t new_state)
 
             this->in_count = 0;
         } else {
-            cout << "Cuda: enter sync state" << endl;
+            LOG_F(INFO, "Cuda: enter sync state \n");
             this->via_regs[VIA_B] &= ~CUDA_TREQ; /* assert TREQ */
             this->treq = 0;
             this->in_count = 0;
@@ -182,14 +182,14 @@ void ViaCuda::cuda_write(uint8_t new_state)
                 this->in_buf[this->in_count++] = this->via_regs[VIA_SR];
                 assert_sr_int(); /* tell the system we've read the data */
             } else {
-                cout << "Cuda input buffer exhausted!" << endl;
+                LOG_F(WARNING, "Cuda input buffer exhausted! \n");
             }
         } else { /* data transfer: Cuda --> Host */
             if (this->out_count) {
                 this->via_regs[VIA_SR] = this->out_buf[this->out_pos++];
 
                 if (this->out_pos >= this->out_count) {
-                    cout << "Cuda: sending last byte" << endl;
+                    LOG_F(INFO, "Cuda: sending last byte \n");
                     this->out_count = 0;
                     this->via_regs[VIA_B] |= CUDA_TREQ; /* negate TREQ */
                     this->treq = 1;
