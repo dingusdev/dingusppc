@@ -5,6 +5,7 @@
 //if you want to distribute this.
 //(divingkatae#1017 or powermax#2286 on Discord)
 
+#include <thirdparty/loguru.hpp>
 #include <stdio.h>
 #include <string>
 #include <iostream>
@@ -416,21 +417,21 @@ static std::unordered_map<uint16_t, PPCOpcode> SubOpcode63Grabber = {
 void ppc_illegalop() {
     uint8_t illegal_code = ppc_cur_instruction >> 26;
     uint32_t grab_it = (uint32_t)illegal_code;
-    printf("Illegal opcode reported: %d Report this! \n", grab_it);
+    LOG_F(ERROR, "Illegal opcode reported: %d Report this! \n", grab_it);
     exit(-1);
 }
 
 void ppc_illegalsubop31() {
     uint16_t illegal_subcode = ppc_cur_instruction & 2047;
     uint32_t grab_it = (uint32_t)illegal_subcode;
-    printf("Illegal subopcode for 31 reported: %d Report this! \n", grab_it);
+    LOG_F(ERROR, "Illegal subopcode for 31 reported: %d Report this! \n", grab_it);
 }
 
 void ppc_opcode4() {
-    printf("Reading from Opcode 4 table \n");
+    LOG_F(INFO, "Reading from Opcode 4 table \n");
     uint8_t subop_grab = ppc_cur_instruction & 3;
     uint32_t regrab = (uint32_t)subop_grab;
-    printf("Executing subopcode entry %d \n"
+    LOG_F(ERROR, "Executing subopcode entry %d \n"
            ".. or would if I bothered to implement it. SORRY!", regrab);
     exit(0);
 }

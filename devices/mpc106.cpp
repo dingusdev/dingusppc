@@ -62,8 +62,8 @@ uint32_t MPC106::pci_read(uint32_t size)
 
     bus_num = (this->config_addr >> 8) & 0xFF;
     if (bus_num) {
-        std::cout << this->name << " err: read attempt from non-local PCI bus, "
-            << "config_addr = " << std::hex << this->config_addr << std::endl;
+        LOG_F(ERROR, "%s err: read attempt from non-local PCI bus, config_addr = %x \n", \
+            this->name.c_str(), this->config_addr);
         return 0;
     }
 
@@ -77,8 +77,7 @@ uint32_t MPC106::pci_read(uint32_t size)
         if (this->pci_0_bus.count(dev_num)) {
             return this->pci_0_bus[dev_num]->pci_cfg_read(reg_offs, size);
         } else {
-            std::cout << this->name << " err: read attempt from non-existing PCI device "
-                << dev_num << std::endl;
+            LOG_F(ERROR, "%s err: read attempt from non-existing PCI device %d \n", this->name.c_str(), dev_num);
             return 0;
         }
     }
@@ -92,8 +91,8 @@ void MPC106::pci_write(uint32_t value, uint32_t size)
 
     bus_num = (this->config_addr >> 8) & 0xFF;
     if (bus_num) {
-        std::cout << this->name << " err: write attempt to non-local PCI bus, "
-            << "config_addr = " << std::hex << this->config_addr << std::endl;
+        LOG_F(ERROR, "%s err: write attempt to non-local PCI bus, config_addr = %x \n",
+            this->name.c_str(), this->config_addr);
         return;
     }
 
@@ -107,8 +106,8 @@ void MPC106::pci_write(uint32_t value, uint32_t size)
         if (this->pci_0_bus.count(dev_num)) {
             this->pci_0_bus[dev_num]->pci_cfg_write(reg_offs, value, size);
         } else {
-            std::cout << this->name << " err: write attempt to non-existing PCI device "
-                << dev_num << std::endl;
+            LOG_F(ERROR, "%s err: write attempt to non-existing PCI device %d \n", \
+                this->name.c_str(), dev_num);
         }
     }
 }
@@ -116,7 +115,7 @@ void MPC106::pci_write(uint32_t value, uint32_t size)
 uint32_t MPC106::pci_cfg_read(uint32_t reg_offs, uint32_t size)
 {
 #ifdef MPC106_DEBUG
-    printf("read from Grackle register %08X\n", reg_offs);
+    LOG_F(INFO, "read from Grackle register %08X\n", reg_offs);
 #endif
 
     switch(size) {
@@ -130,8 +129,7 @@ uint32_t MPC106::pci_cfg_read(uint32_t reg_offs, uint32_t size)
         return READ_DWORD_BE_A(&this->my_pci_cfg_hdr[reg_offs]);
         break;
     default:
-        std::cout << "MPC106 read error: invalid size parameter " << size
-            << std::endl;
+        LOG_F(ERROR, "MPC106 read error: invalid size parameter %d \n", size);
     }
 
     return 0;
@@ -140,7 +138,7 @@ uint32_t MPC106::pci_cfg_read(uint32_t reg_offs, uint32_t size)
 void MPC106::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
 {
 #ifdef MPC106_DEBUG
-    printf("write %08X to Grackle register %08X\n", value, reg_offs);
+    LOG_F(ERROR, "write %08X to Grackle register %08X\n", value, reg_offs);
 #endif
 
     // FIXME: implement write-protection for read-only registers
@@ -159,13 +157,12 @@ void MPC106::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
         this->my_pci_cfg_hdr[reg_offs+3] = value & 0xFF;
         break;
     default:
-        std::cout << "MPC106 read error: invalid size parameter " << size
-            << std::endl;
+        LOG_F(ERROR, "MPC106 read error: invalid size parameter %d \n", size);
     }
 
     if (this->my_pci_cfg_hdr[0xF2] & 8) {
 #ifdef MPC106_DEBUG
-        std::cout << "MPC106: MCCR1[MEMGO] was set! " << std::endl;
+        LOG_F(INFO, "MPC106: MCCR1[MEMGO] was set! \n");
 #endif
         setup_ram();
     }
@@ -214,12 +211,12 @@ void MPC106::setup_ram()
             bank_end = (((ext_mem_end >> bank * 8) & 3) << 30) |
                 (((mem_end >> bank * 8) & 0xFF) << 20) | 0xFFFFFUL;
             if (bank && bank_start != ram_size)
-                std::cout << "MPC106 error: RAM not contiguous!" << std::endl;
+                LOG_F(ERROR, "MPC106 error: RAM not contiguous! \n");
             ram_size += bank_end + 1;
         }
     }
 
     if (!this->add_ram_region(0, ram_size)) {
-        std::cout << "MPC106 RAM allocation failed!" << std::endl;
+        LOG_F(ERROR, "MPC106 RAM allocation failed! \n");
     }
 }
