@@ -663,12 +663,12 @@ void ppc_fmadds() {
         intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
         if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 58)) {
             intermediate += (float)ppc_dblresult64_b;
+            ppc_dblresult64_d = static_cast<double>(intermediate);
+
+            ppc_store_dfpresult(false);
         }
     }
 
-    ppc_dblresult64_d = static_cast<double>(intermediate);
-
-    ppc_store_dfpresult(false);
 }
 
 void ppc_fmaddsdot() {
@@ -680,12 +680,12 @@ void ppc_fmaddsdot() {
         intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
         if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 58)) {
             intermediate += (float)ppc_dblresult64_b;
+            ppc_dblresult64_d = static_cast<double>(intermediate);
+
+            ppc_store_dfpresult(false);
         }
     }
 
-    ppc_dblresult64_d = static_cast<double>(intermediate);
-
-    ppc_store_dfpresult(false);
     ppc_changecrf1();
 }
 
@@ -698,12 +698,13 @@ void ppc_fmsubs() {
         intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
         if (!ppc_confirm_inf_nan(reg_d, reg_b, false, 56)) {
             intermediate -= (float)ppc_dblresult64_b;
+            ppc_dblresult64_d = static_cast<double>(intermediate);
+
+            ppc_store_dfpresult(false);
         }
     }
 
-    ppc_dblresult64_d = static_cast<double>(intermediate);
 
-    ppc_store_dfpresult(false);
 }
 
 void ppc_fmsubsdot() {
@@ -715,12 +716,12 @@ void ppc_fmsubsdot() {
         intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
         if (!ppc_confirm_inf_nan(reg_d, reg_b, false, 56)) {
             intermediate -= (float)ppc_dblresult64_b;
+            ppc_dblresult64_d = static_cast<double>(intermediate);
+
+            ppc_store_dfpresult(false);
         }
     }
 
-    ppc_dblresult64_d = static_cast<double>(intermediate);
-
-    ppc_store_dfpresult(false);
     ppc_changecrf1();
 }
 
@@ -733,10 +734,11 @@ void ppc_fnmadds() {
         intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
         if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 58)) {
             intermediate += (float)ppc_dblresult64_b;
+            intermediate = -intermediate;
+
+            ppc_dblresult64_d = static_cast<double>(intermediate);
         }
     }
-    intermediate = -intermediate;
-    ppc_dblresult64_d = static_cast<double>(intermediate);
 
     ppc_store_dfpresult(false);
 }
@@ -750,12 +752,14 @@ void ppc_fnmaddsdot() {
         intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
         if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 58)) {
             intermediate += (float)ppc_dblresult64_b;
+            intermediate = -intermediate;
+
+            ppc_dblresult64_d = static_cast<double>(intermediate);
+
+            ppc_store_dfpresult(false);
         }
     }
-    intermediate = -intermediate;
-    ppc_dblresult64_d = static_cast<double>(intermediate);
 
-    ppc_store_dfpresult(false);
     ppc_changecrf1();
 }
 
@@ -768,12 +772,14 @@ void ppc_fnmsubs() {
         intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
         if (!ppc_confirm_inf_nan(reg_d, reg_b, false, 56)) {
             intermediate -= (float)ppc_dblresult64_b;
+            intermediate = -intermediate;
+
+            ppc_dblresult64_d = static_cast<double>(intermediate);
+
+            ppc_store_dfpresult(false);
         }
     }
-    intermediate = -intermediate;
-    ppc_dblresult64_d = static_cast<double>(intermediate);
 
-    ppc_store_dfpresult(false);
 }
 
 void ppc_fnmsubsdot() {
@@ -785,12 +791,13 @@ void ppc_fnmsubsdot() {
         intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
         if (!ppc_confirm_inf_nan(reg_d, reg_b, false, 56)) {
             intermediate -= (float)ppc_dblresult64_b;
+            intermediate = -intermediate;
+
+            ppc_dblresult64_d = static_cast<double>(intermediate);
+
+            ppc_store_dfpresult(false);
         }
     }
-    intermediate = -intermediate;
-    ppc_dblresult64_d = static_cast<double>(intermediate);
-
-    ppc_store_dfpresult(false);
     ppc_changecrf1();
 }
 
