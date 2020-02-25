@@ -1601,23 +1601,25 @@ void ppc_bclrl()
 //Compare Instructions
 
 void ppc_cmp() {
-    //if (!((ppc_cur_instruction >> 21) && 0x1)){
+#ifdef CHECK_INVALID
+    if (ppc_cur_instruction & 0x200000) {
+        LOG_F(WARNING, "Invalid CMP instruction form (L=1)!\n");
+        return;
+    }
+#endif
+
     crf_d = (ppc_cur_instruction >> 23) & 7;
     crf_d = crf_d << 2;
     ppc_grab_regssab();
     xercon = (ppc_state.ppc_spr[SPR::XER] & 0x80000000UL) >> 3;
     cmp_c = (((int32_t)ppc_result_a) == ((int32_t)ppc_result_b)) ? 0x20000000UL : (((int32_t)ppc_result_a) > ((int32_t)ppc_result_b)) ? 0x40000000UL : 0x80000000UL;
     ppc_state.ppc_cr = ((ppc_state.ppc_cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
-    //}
-    //else{
-     //   printf("Warning: Invalid CMP Instruction.");
-    //}
 }
 
 void ppc_cmpi() {
 #ifdef CHECK_INVALID
     if (ppc_cur_instruction & 0x200000) {
-        printf("WARNING: invalid CMPI instruction form (L=1)!\n");
+        LOG_F(WARNING, "Invalid CMPI instruction form (L=1)!\n");
         return;
     }
 #endif
@@ -1633,7 +1635,7 @@ void ppc_cmpi() {
 void ppc_cmpl() {
 #ifdef CHECK_INVALID
     if (ppc_cur_instruction & 0x200000) {
-        printf("WARNING: invalid CMPL instruction form (L=1)!\n");
+        LOG_F(WARNING, "Invalid CMPL instruction form (L=1)!\n");
         return;
     }
 #endif
@@ -1649,7 +1651,7 @@ void ppc_cmpl() {
 void ppc_cmpli() {
 #ifdef CHECK_INVALID
     if (ppc_cur_instruction & 0x200000) {
-        printf("WARNING: invalid CMPLI instruction form (L=1)!\n");
+        LOG_F(WARNING, "Invalid CMPLI instruction form (L=1)!\n");
         return;
     }
 #endif

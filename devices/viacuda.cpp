@@ -10,7 +10,7 @@
     Author: Max Poliakovski 2019
 */
 
-#include <thirdparty/loguru.cpp>
+#include <thirdparty/loguru.hpp>
 #include <iostream>
 #include <fstream>
 #include <cinttypes>
@@ -236,9 +236,9 @@ void ViaCuda::cuda_process_packet()
         LOG_F(INFO, "Command: %x \n", (uint32_t)(this->in_buf[1]));
         LOG_F(INFO, "Data count: %d \n ", this->in_count);
         for (int i = 0; i < this->in_count; i++) {
-            cout << hex << (uint32_t)(this->in_buf[i]) << ", ";
+            LOG_F(INFO, "%x ,", (uint32_t)(this->in_buf[i]));
         }
-        cout << endl;
+        LOG_F(INFO, "\n");
         cuda_pseudo_command(this->in_buf[1], this->in_count - 2);
         break;
     default:

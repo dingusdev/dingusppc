@@ -5,6 +5,7 @@
 //if you want to distribute this.
 //(divingkatae#1017 or powermax#2286 on Discord)
 
+#include <thirdparty/loguru.hpp>
 #include <cinttypes>
 #include <iostream>
 #include "macio.h"
@@ -44,18 +45,16 @@ void HeathrowIC::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
     case CFG_REG_BAR0: // base address register
         value =  LE2BE(value);
         if (value == 0xFFFFFFFF) {
-            cout << this->name << " err: BAR0 block size determination not "
-                 << "implemented yet" << endl;
+            LOG_F(ERROR, "%s err: BAR0 block size determination not \
+                implemented yet \n", this->name.c_str());
         } else if (value & 1) {
-            cout << this->name << " err: BAR0 I/O space not supported!" << endl;
+            LOG_F(ERROR, "%s err: BAR0 I/O space not supported! \n", this->name.c_str());
         } else if (value & 0x06) {
-            cout << this->name << " err: BAR0 64-bit I/O space not supported!"
-                 << endl;
+            LOG_F(ERROR, "%s err: BAR0 64-bit I/O space not supported! \n", this->name.c_str());
         } else {
             this->base_addr = value & 0xFFF80000;
             this->host_instance->pci_register_mmio_region(this->base_addr, 0x80000, this);
-            cout << this->name << " base address set to " << hex << this->base_addr
-                << endl;
+            LOG_F(ERROR, "%s base address set to %x \n", this->name.c_str(), this->base_addr);
         }
         break;
     }
@@ -65,7 +64,7 @@ uint32_t HeathrowIC::read(uint32_t offset, int size)
 {
     uint32_t res = 0;
 
-    cout << this->name << ": reading from offset " << hex << offset << endl;
+    LOG_F(INFO, "%s: reading from offset %x \n", this->name.c_str(), offset);
 
     unsigned sub_addr = (offset >> 12) & 0x7F;
 
@@ -74,10 +73,10 @@ uint32_t HeathrowIC::read(uint32_t offset, int size)
         res = mio_ctrl_read(offset, size);
         break;
     case 8:
-        cout << "DMA channel register space" << endl;
+        LOG_F(INFO, "Attempting to read DMA channel register space \n");
         break;
     case 0x14:
-        cout << "AWACS-Screamer register space" << endl;
+        LOG_F(INFO, "Attempting to read AWACS-Screamer register space \n");
         break;
     case 0x16:
     case 0x17:
@@ -87,7 +86,7 @@ uint32_t HeathrowIC::read(uint32_t offset, int size)
         if (sub_addr >= 0x60) {
             res = this->nvram->read_byte((offset - 0x60000) >> 4);
         } else {
-            cout << "unmapped I/O space: " << hex << offset << endl;
+            LOG_F(WARNING, "Attempting to read unmapped I/O space: %x \n", offset);
         }
     }
 
@@ -96,7 +95,7 @@ uint32_t HeathrowIC::read(uint32_t offset, int size)
 
 void HeathrowIC::write(uint32_t offset, uint32_t value, int size)
 {
-    cout << this->name << ": writing to offset " << hex << offset << endl;
+    LOG_F(INFO, "%s: writing to offset %x \n", this->name.c_str(), offset);
 
     unsigned sub_addr = (offset >> 12) & 0x7F;
 
@@ -105,10 +104,10 @@ void HeathrowIC::write(uint32_t offset, uint32_t value, int size)
         mio_ctrl_write(offset, value, size);
         break;
     case 8:
-        cout << "DMA channel register space" << endl;
+        LOG_F(INFO, "Attempting to write to DMA channel register space \n");
         break;
     case 0x14:
-        cout << "AWACS-Screamer register space" << endl;
+        LOG_F(INFO, "Attempting to write to AWACS-Screamer register space \n");
         break;
     case 0x16:
     case 0x17:
@@ -118,7 +117,7 @@ void HeathrowIC::write(uint32_t offset, uint32_t value, int size)
         if (sub_addr >= 0x60) {
             this->nvram->write_byte((offset - 0x60000) >> 4, value);
         } else {
-            cout << "unmapped I/O space: " << hex << offset << endl;
+            LOG_F(WARNING, "Attempting to write to unmapped I/O space: %x \n", offset);
         }
     }
 }
@@ -129,22 +128,22 @@ uint32_t HeathrowIC::mio_ctrl_read(uint32_t offset, int size)
 
     switch(offset & 0xFF) {
     case 0x24:
-        cout << "read from MIO:Int_Mask1 register" << endl;
+        LOG_F(INFO, "read from MIO:Int_Mask1 register \n");
         res = this->int_mask1;
         break;
     case 0x28:
-        cout << "read from MIO:Int_Clear1 register" << endl;
+        LOG_F(INFO, "read from MIO:Int_Clear1 register \n");
         res = this->int_clear1;
         break;
     case 0x34: /* heathrowIDs / HEATHROW_MBCR (Linux): media bay config reg? */
         res = 0xF0700000UL;
         break;
     case 0x38:
-        cout << "read from MIO:Feat_Ctrl register" << endl;
+        LOG_F(INFO, "read from MIO:Feat_Ctrl register \n");
         res = this->feat_ctrl;
         break;
     default:
-        cout << "unknown MIO register at " << hex << offset << endl;
+        LOG_F(WARNING, "unknown MIO register at %x \n", offset);
         break;
     }
 
@@ -155,19 +154,19 @@ void HeathrowIC::mio_ctrl_write(uint32_t offset, uint32_t value, int size)
 {
     switch(offset & 0xFF) {
     case 0x24:
-        cout << "write " << hex << value << " to MIO:Int_Mask1 register" << endl;
+        LOG_F(INFO, "write %x to MIO:Int_Mask1 register \n", value);
         this->int_mask1 = value;
         break;
     case 0x28:
-        cout << "write " << hex << value << " to MIO:Int_Clear1 register" << endl;
+        LOG_F(INFO, "write %x to MIO:Int_Clear1 register \n", value);
         this->int_clear1 = value;
         break;
     case 0x38:
-        cout << "write " << hex << value << " to MIO:Feat_Ctrl register" << endl;
+        LOG_F(INFO, "write %x to MIO:Feat_Ctrl register \n", value);
         this->feat_ctrl = value;
         break;
     default:
-        cout << "unknown MIO register at " << hex << offset << endl;
+        LOG_F(WARNING, "unknown MIO register at %x \n", offset);
         break;
     }
 }

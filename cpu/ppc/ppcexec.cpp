@@ -5,7 +5,7 @@
 //if you want to distribute this.
 //(divingkatae#1017 or powermax#2286 on Discord)
 
-#include <thirdparty/loguru.hpp>
+#include <thirdparty/loguru.cpp>
 #include <stdio.h>
 #include <string>
 #include <iostream>
@@ -448,12 +448,12 @@ void ppc_opcode19() {
     uint16_t subop_grab = ppc_cur_instruction & 2047;
 #ifdef EXHAUSTIVE_DEBUG
     uint32_t regrab = (uint32_t)subop_grab;
-    printf("Executing Opcode 19 table subopcode entry %d \n", regrab);
+    LOG_F(INFO, "Executing Opcode 19 table subopcode entry \n", regrab);
     if (SubOpcode19Grabber.count(subop_grab) == 1) {
         SubOpcode19Grabber[subop_grab]();
     }
     else {
-        std::cout << "ILLEGAL SUBOPCODE: " << subop_grab << std::endl;
+        LOG_F(ERROR, "ILLEGAL SUBOPCODE: %d \n", subop_grab);
         ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x80000);
     }
 #else
@@ -465,12 +465,12 @@ void ppc_opcode31() {
     uint16_t subop_grab = ppc_cur_instruction & 2047;
 #ifdef EXHAUSTIVE_DEBUG
     uint32_t regrab = (uint32_t)subop_grab;
-    printf("Executing Opcode 31 table subopcode entry %d \n", regrab);
+    LOG_F(INFO, "Executing Opcode 31 table subopcode entry \n", regrab);
     if (SubOpcode31Grabber.count(subop_grab) == 1) {
         SubOpcode31Grabber[subop_grab]();
     }
     else {
-        std::cout << "ILLEGAL SUBOPCODE: " << subop_grab << std::endl;
+        LOG_F(ERROR, "ILLEGAL SUBOPCODE: %d \n", subop_grab);
         ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x80000);
     }
 #else
@@ -482,12 +482,12 @@ void ppc_opcode59() {
     uint16_t subop_grab = ppc_cur_instruction & 2047;
 #ifdef EXHAUSTIVE_DEBUG
     uint32_t regrab = (uint32_t)subop_grab;
-    printf("Executing Opcode 59 table subopcode entry %d \n", regrab);
+    LOG_F(INFO, "Executing Opcode 59 table subopcode entry \n", regrab);
     if (SubOpcode59Grabber.count(subop_grab) == 1) {
         SubOpcode59Grabber[subop_grab]();
     }
     else {
-        std::cout << "ILLEGAL SUBOPCODE: " << subop_grab << std::endl;
+        LOG_F(ERROR, "ILLEGAL SUBOPCODE: %d \n", subop_grab);
         ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x80000);
     }
 #else
@@ -499,12 +499,12 @@ void ppc_opcode63() {
     uint16_t subop_grab = ppc_cur_instruction & 2047;
 #ifdef EXHAUSTIVE_DEBUG
     uint32_t regrab = (uint32_t)subop_grab;
-    std::cout << "Executing Opcode 63 table subopcode entry " << regrab << std::endl;
+    LOG_F(INFO, "Executing Opcode 63 table subopcode entry \n", regrab);
     if (SubOpcode63Grabber.count(subop_grab) == 1) {
         SubOpcode63Grabber[subop_grab]();
     }
     else {
-        std::cout << "ILLEGAL SUBOPCODE: " << subop_grab << std::endl;
+        LOG_F(ERROR, "ILLEGAL SUBOPCODE: %d \n", subop_grab);
         ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x80000);
     }
 #else

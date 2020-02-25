@@ -8,6 +8,7 @@
 // The Power-specific opcodes for the processor - ppcopcodes.cpp
 // Any shared opcodes are in ppcopcodes.cpp
 
+#include <thirdparty/loguru.hpp>
 #include <iostream>
 #include <array>
 #include <stdio.h>
@@ -613,35 +614,35 @@ void power_slliqdot() {
 }
 
 void power_sllq() {
-    printf("OOPS! Placeholder!!! \n");
+    LOG_F(WARNING, "OOPS! Placeholder for sllq!!! \n");
 }
 
 void power_sllqdot() {
-    printf("OOPS! Placeholder!!! \n");
+    LOG_F(WARNING, "OOPS! Placeholder for sllq.!!! \n");
 }
 
 void power_slq() {
-    printf("OOPS! Placeholder!!! \n");
+    LOG_F(WARNING, "OOPS! Placeholder for slq!!! \n");
 }
 
 void power_slqdot() {
-    printf("OOPS! Placeholder!!! \n");
+    LOG_F(WARNING, "OOPS! Placeholder for slq.!!! \n");
 }
 
 void power_sraiq() {
-    printf("OOPS! Placeholder!!! \n");
+    LOG_F(WARNING, "OOPS! Placeholder for sraiq!!! \n");
 }
 
 void power_sraiqdot() {
-    printf("OOPS! Placeholder!!! \n");
+    LOG_F(WARNING, "OOPS! Placeholder for sraiq.!!! \n");
 }
 
 void power_sraq() {
-    printf("OOPS! Placeholder!!! \n");
+    LOG_F(WARNING, "OOPS! Placeholder for sraq!!! \n");
 }
 
 void power_sraqdot() {
-    printf("OOPS! Placeholder!!! \n");
+    LOG_F(WARNING, "OOPS! Placeholder for sraq.!!! \n");
 }
 
 void power_sre() {
@@ -672,11 +673,11 @@ void power_sredot() {
 }
 
 void power_srea() {
-    printf("OOPS! Placeholder!!! \n");
+    LOG_F(WARNING, "OOPS! Placeholder for srea!!! \n");
 }
 
 void power_sreadot() {
-    printf("OOPS! Placeholder!!! \n");
+    LOG_F(WARNING, "OOPS! Placeholder for srea.!!! \n");
 }
 
 void power_sreq() {
@@ -770,25 +771,25 @@ void power_sriqdot() {
 }
 
 void power_srliq() {
-    printf("OOPS! Placeholder!!! \n");
+    LOG_F(WARNING, "OOPS! Placeholder for slriq!!! \n");
 }
 
 void power_srliqdot() {
-    printf("OOPS! Placeholder!!! \n");
+    LOG_F(WARNING, "OOPS! Placeholder for slriq.!!! \n");
 }
 
 void power_srlq() {
-    printf("OOPS! Placeholder!!! \n");
+    LOG_F(WARNING, "OOPS! Placeholder for slrq!!! \n");
 }
 
 void power_srlqdot() {
-    printf("OOPS! Placeholder!!! \n");
+    LOG_F(WARNING, "OOPS! Placeholder for slrq.!!! \n");
 }
 
 void power_srq() {
-    printf("OOPS! Placeholder!!! \n");
+    LOG_F(WARNING, "OOPS! Placeholder for srq!!! \n");
 }
 
 void power_srqdot() {
-    printf("OOPS! Placeholder!!! \n");
+    LOG_F(WARNING, "OOPS! Placeholder for srq.!!! \n");
 }

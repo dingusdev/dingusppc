@@ -138,7 +138,7 @@ uint32_t MPC106::pci_cfg_read(uint32_t reg_offs, uint32_t size)
 void MPC106::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
 {
 #ifdef MPC106_DEBUG
-    LOG_F(ERROR, "write %08X to Grackle register %08X\n", value, reg_offs);
+    LOG_F(INFO, "write %08X to Grackle register %08X\n", value, reg_offs);
 #endif
 
     // FIXME: implement write-protection for read-only registers
