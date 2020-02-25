@@ -137,7 +137,7 @@ inline void ViaCuda::assert_sr_int()
 void ViaCuda::cuda_write(uint8_t new_state)
 {
     if (!cuda_ready()) {
-        LOG_F(ERROR, "Cuda not ready! \n");
+        LOG_F(WARNING, "Cuda not ready! \n");
         return;
     }
 
