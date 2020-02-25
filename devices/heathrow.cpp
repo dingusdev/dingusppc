@@ -54,7 +54,7 @@ void HeathrowIC::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
         } else {
             this->base_addr = value & 0xFFF80000;
             this->host_instance->pci_register_mmio_region(this->base_addr, 0x80000, this);
-            LOG_F(ERROR, "%s base address set to %x \n", this->name.c_str(), this->base_addr);
+            LOG_F(INFO, "%s base address set to %x \n", this->name.c_str(), this->base_addr);
         }
         break;
     }
