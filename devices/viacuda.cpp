@@ -23,12 +23,12 @@ ViaCuda::ViaCuda()
 {
     /* FIXME: is this the correct
        VIA initialization? */
-    this->via_regs[VIA_A]    = 0x80;
+    this->via_regs[VIA_A] = 0x80;
     this->via_regs[VIA_DIRB] = 0xFF;
     this->via_regs[VIA_DIRA] = 0xFF;
     this->via_regs[VIA_T1LL] = 0xFF;
     this->via_regs[VIA_T1LH] = 0xFF;
-    this->via_regs[VIA_IER]  = 0x7F;
+    this->via_regs[VIA_IER] = 0x7F;
 
     //PRAM Pre-Initialization
     this->pram_obj = new NVram("pram.bin", 256);
@@ -56,12 +56,12 @@ uint8_t ViaCuda::read(int reg)
 {
     uint8_t res;
 
-    LOG_F(INFO, "Read VIA reg %x \n", (uint32_t)reg);
+    LOG_F(9, "Read VIA reg %x \n", (uint32_t)reg);
 
     res = this->via_regs[reg & 0xF];
 
     /* reading from some VIA registers triggers special actions */
-    switch(reg & 0xF) {
+    switch (reg & 0xF) {
     case VIA_B:
         res = this->via_regs[VIA_B];
         break;
@@ -78,7 +78,7 @@ uint8_t ViaCuda::read(int reg)
 
 void ViaCuda::write(int reg, uint8_t value)
 {
-    switch(reg & 0xF) {
+    switch (reg & 0xF) {
     case VIA_B:
         this->via_regs[VIA_B] = value;
         cuda_write(value);
@@ -88,24 +88,24 @@ void ViaCuda::write(int reg, uint8_t value)
         LOG_F(WARNING, "Attempted read from VIA Port A! \n");
         break;
     case VIA_DIRB:
-        LOG_F(INFO, "VIA_DIRB = %x \n", (uint32_t)value);
+        LOG_F(9, "VIA_DIRB = %x \n", (uint32_t)value);
         this->via_regs[VIA_DIRB] = value;
         break;
     case VIA_DIRA:
-        LOG_F(INFO, "VIA_DIRA = %x \n", (uint32_t)value);
+        LOG_F(9, "VIA_DIRA = %x \n", (uint32_t)value);
         this->via_regs[VIA_DIRA] = value;
         break;
     case VIA_PCR:
-        LOG_F(INFO, "VIA_PCR =  %x \n", (uint32_t)value);
+        LOG_F(9, "VIA_PCR =  %x \n", (uint32_t)value);
         this->via_regs[VIA_PCR] = value;
         break;
     case VIA_ACR:
-        LOG_F(INFO, "VIA_ACR =  %x \n", (uint32_t)value);
+        LOG_F(9, "VIA_ACR =  %x \n", (uint32_t)value);
         this->via_regs[VIA_ACR] = value;
         break;
     case VIA_IER:
         this->via_regs[VIA_IER] = (value & 0x80) ? value & 0x7F
-                                  : this->via_regs[VIA_IER] & ~value;
+            : this->via_regs[VIA_IER] & ~value;
         LOG_F(INFO, "VIA_IER updated to %d \n", (uint32_t)this->via_regs[VIA_IER]);
         print_enabled_ints();
         break;
@@ -116,7 +116,7 @@ void ViaCuda::write(int reg, uint8_t value)
 
 void ViaCuda::print_enabled_ints()
 {
-    vector<string> via_int_src = {"CA2", "CA1", "SR", "CB2", "CB1", "T2", "T1"};
+    vector<string> via_int_src = { "CA2", "CA1", "SR", "CB2", "CB1", "T2", "T1" };
 
     for (int i = 0; i < 7; i++) {
         if (this->via_regs[VIA_IER] & (1 << i))
@@ -148,7 +148,7 @@ void ViaCuda::cuda_write(uint8_t new_state)
     if (new_tip == this->old_tip && new_byteack == this->old_byteack)
         return;
 
-    LOG_F(INFO, "Cuda state changed! \n");
+    LOG_F(9, "Cuda state changed! \n");
 
     this->old_tip = new_tip;
     this->old_byteack = new_byteack;
@@ -167,8 +167,9 @@ void ViaCuda::cuda_write(uint8_t new_state)
             }
 
             this->in_count = 0;
-        } else {
-            LOG_F(INFO, "Cuda: enter sync state \n");
+        }
+        else {
+            LOG_F(9, "Cuda: enter sync state \n");
             this->via_regs[VIA_B] &= ~CUDA_TREQ; /* assert TREQ */
             this->treq = 0;
             this->in_count = 0;
@@ -176,20 +177,23 @@ void ViaCuda::cuda_write(uint8_t new_state)
         }
 
         assert_sr_int(); /* send dummy byte as idle acknowledge or attention */
-    } else {
+    }
+    else {
         if (this->via_regs[VIA_ACR] & 0x10) { /* data transfer: Host --> Cuda */
             if (this->in_count < 16) {
                 this->in_buf[this->in_count++] = this->via_regs[VIA_SR];
                 assert_sr_int(); /* tell the system we've read the data */
-            } else {
+            }
+            else {
                 LOG_F(WARNING, "Cuda input buffer exhausted! \n");
             }
-        } else { /* data transfer: Cuda --> Host */
+        }
+        else { /* data transfer: Cuda --> Host */
             if (this->out_count) {
                 this->via_regs[VIA_SR] = this->out_buf[this->out_pos++];
 
                 if (this->out_pos >= this->out_count) {
-                    LOG_F(INFO, "Cuda: sending last byte \n");
+                    LOG_F(9, "Cuda: sending last byte \n");
                     this->out_count = 0;
                     this->via_regs[VIA_B] |= CUDA_TREQ; /* negate TREQ */
                     this->treq = 1;
@@ -227,18 +231,17 @@ void ViaCuda::cuda_process_packet()
         return;
     }
 
-    switch(this->in_buf[0]) {
+    switch (this->in_buf[0]) {
     case CUDA_PKT_ADB:
-        LOG_F(INFO, "Cuda: ADB packet received \n");
+        LOG_F(9, "Cuda: ADB packet received \n");
         break;
     case CUDA_PKT_PSEUDO:
-        LOG_F(INFO, "Cuda: pseudo command packet received \n");
-        LOG_F(INFO, "Command: %x \n", (uint32_t)(this->in_buf[1]));
-        LOG_F(INFO, "Data count: %d \n ", this->in_count);
+        LOG_F(9, "Cuda: pseudo command packet received \n");
+        LOG_F(9, "Command: %x \n", (uint32_t)(this->in_buf[1]));
+        LOG_F(9, "Data count: %d \n ", this->in_count);
         for (int i = 0; i < this->in_count; i++) {
-            LOG_F(INFO, "%x ,", (uint32_t)(this->in_buf[i]));
+            LOG_F(9, "%x ,", (uint32_t)(this->in_buf[i]));
         }
-        LOG_F(INFO, "\n");
         cuda_pseudo_command(this->in_buf[1], this->in_count - 2);
         break;
     default:
@@ -248,7 +251,7 @@ void ViaCuda::cuda_process_packet()
 
 void ViaCuda::cuda_pseudo_command(int cmd, int data_count)
 {
-    switch(cmd) {
+    switch (cmd) {
     case CUDA_READ_PRAM:
         cuda_response_header(CUDA_PKT_PSEUDO, 0);
         this->pram_obj->read_byte(this->in_buf[2]);
@@ -289,17 +292,18 @@ void ViaCuda::cuda_pseudo_command(int cmd, int data_count)
     }
 }
 
-void ViaCuda::i2c_simple_transaction(uint8_t dev_addr, const uint8_t *in_buf,
-                                     int in_bytes)
+void ViaCuda::i2c_simple_transaction(uint8_t dev_addr, const uint8_t* in_buf,
+    int in_bytes)
 {
     int tr_type = dev_addr & 1;
 
-    switch(dev_addr & 0xFE) {
+    switch (dev_addr & 0xFE) {
     case 0x50: /* unknown device on the Gossamer board */
         if (tr_type) { /* read */
             /* send dummy byte for now */
             this->out_buf[this->out_count++] = 0xDD;
-        } else {
+        }
+        else {
             /* ignore writes */
         }
         break;
@@ -310,7 +314,7 @@ void ViaCuda::i2c_simple_transaction(uint8_t dev_addr, const uint8_t *in_buf,
 }
 
 void ViaCuda::i2c_comb_transaction(uint8_t dev_addr, uint8_t sub_addr,
-    uint8_t dev_addr1, const uint8_t *in_buf, int in_bytes)
+    uint8_t dev_addr1, const uint8_t* in_buf, int in_bytes)
 {
     int tr_type = dev_addr1 & 1;
 
@@ -319,7 +323,7 @@ void ViaCuda::i2c_comb_transaction(uint8_t dev_addr, uint8_t sub_addr,
         return;
     }
 
-    switch(dev_addr1 & 0xFE) {
+    switch (dev_addr1 & 0xFE) {
     case 0xAE: /* SDRAM EEPROM, no clue which one */
         if (tr_type) { /* read */
             if (sub_addr != 2) {
@@ -333,7 +337,8 @@ void ViaCuda::i2c_comb_transaction(uint8_t dev_addr, uint8_t sub_addr,
             this->out_buf[this->out_count++] = 0x0B; /* row address bits per bank */
             this->out_buf[this->out_count++] = 0x09; /* col address bits per bank */
             this->out_buf[this->out_count++] = 0x02; /* num of RAM banks */
-        } else {
+        }
+        else {
             /* ignore writes */
         }
         break;

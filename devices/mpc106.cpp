@@ -115,7 +115,7 @@ void MPC106::pci_write(uint32_t value, uint32_t size)
 uint32_t MPC106::pci_cfg_read(uint32_t reg_offs, uint32_t size)
 {
 #ifdef MPC106_DEBUG
-    LOG_F(INFO, "read from Grackle register %08X\n", reg_offs);
+    LOG_F(9, "read from Grackle register %08X\n", reg_offs);
 #endif
 
     switch(size) {
@@ -138,7 +138,7 @@ uint32_t MPC106::pci_cfg_read(uint32_t reg_offs, uint32_t size)
 void MPC106::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
 {
 #ifdef MPC106_DEBUG
-    LOG_F(INFO, "write %08X to Grackle register %08X\n", value, reg_offs);
+    LOG_F(9, "write %08X to Grackle register %08X\n", value, reg_offs);
 #endif
 
     // FIXME: implement write-protection for read-only registers
@@ -162,7 +162,7 @@ void MPC106::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
 
     if (this->my_pci_cfg_hdr[0xF2] & 8) {
 #ifdef MPC106_DEBUG
-        LOG_F(INFO, "MPC106: MCCR1[MEMGO] was set! \n");
+        LOG_F(9, "MPC106: MCCR1[MEMGO] was set! \n");
 #endif
         setup_ram();
     }
