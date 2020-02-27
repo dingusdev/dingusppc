@@ -171,7 +171,7 @@ int main(int argc, char **argv)
 
                 heathrow = new HeathrowIC();
                 mpc106->pci_register_device(16, heathrow);
-                cout << "done" << endl;
+                LOG_F(INFO, "Initialization complete. \n");
             }
             break;
         default:
