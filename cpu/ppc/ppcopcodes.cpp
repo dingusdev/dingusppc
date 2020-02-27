@@ -1786,34 +1786,34 @@ void ppc_twi() {
 }
 
 void ppc_eieio() {
-    //std::cout << "Oops. Placeholder for eieio." << std::endl;
+    /* placeholder */
 }
 
 void ppc_isync() {
-    //std::cout << "Oops. Placeholder for isync." << std::endl;
+    /* placeholder */
 }
 
 void ppc_sync() {
-    //std::cout << "Oops. Placeholder for sync." << std::endl;
+    /* placeholder */
 }
 
 void ppc_icbi() {
-    LOG_F(WARNING, "Placeholder for icbi. \n");
+    /* placeholder */
 }
 
 void ppc_dcbf() {
-    LOG_F(WARNING, "Placeholder for dcbf. \n");
+    /* placeholder */
 }
 
 void ppc_dcbi() {
 #ifdef PROFILER
     supervisor_inst_num++;
 #endif
-    LOG_F(WARNING, "Placeholder for dcbi. \n");
+    /* placeholder */
 }
 
 void ppc_dcbst() {
-    LOG_F(WARNING, "Placeholder for dcbst. \n");
+    /* placeholder */
 }
 
 void ppc_dcbt() {
@@ -2408,37 +2408,33 @@ void ppc_tlbie() {
 #ifdef PROFILER
     supervisor_inst_num++;
 #endif
-    /**
-    reg_b = (ppc_cur_instruction >> 11) & 31;
-    uint32_t vps = ppc_state.ppc_gpr[reg_b] & 0xFFFF000;
-    **/
-    LOG_F(WARNING, "Placeholder for tlbie \n");
+    /* placeholder */
 }
 
 void ppc_tlbia() {
 #ifdef PROFILER
     supervisor_inst_num++;
 #endif
-    LOG_F(WARNING, "Placeholder for tlbia \n");
+    /* placeholder */
 }
 
 void ppc_tlbld() {
 #ifdef PROFILER
     supervisor_inst_num++;
 #endif
-    LOG_F(WARNING, "Placeholder for tlbld - 603 only \n");
+    /* placeholder */
 }
 
 void ppc_tlbli() {
 #ifdef PROFILER
     supervisor_inst_num++;
 #endif
-    LOG_F(WARNING, "Placeholder for tlbli - 603 only \n");
+    /* placeholder */
 }
 
 void ppc_tlbsync() {
 #ifdef PROFILER
     supervisor_inst_num++;
 #endif
-    LOG_F(WARNING, "Placeholder for tlbsync \n");
+    /* placeholder */
 }
