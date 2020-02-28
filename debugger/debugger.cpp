@@ -74,9 +74,16 @@ static void dump_mem(string& params)
     uint32_t count, addr;
     uint64_t val;
     string num_type_str, addr_str;
+    size_t separator_pos;
 
-    num_type_str = params.substr(0, params.find(","));
-    addr_str = params.substr(params.find(",") + 1);
+    separator_pos = params.find_first_of(",");
+    if (separator_pos == std::string::npos) {
+        cout << "dump: not enough arguments specified." << endl;
+        return;
+    }
+
+    num_type_str = params.substr(0, params.find_first_of(","));
+    addr_str = params.substr(params.find_first_of(",") + 1);
 
     is_char = false;
 
@@ -161,9 +168,11 @@ static void dump_mem(string& params)
 
 void enter_debugger()
 {
-    string inp, cmd, addr_str, expr_str, reg_expr, last_cmd, reg_value_str, inst_string, inst_num_str;
+    string inp, cmd, addr_str, expr_str, reg_expr, last_cmd, reg_value_str,
+        inst_string, inst_num_str;
     uint32_t addr, inst_grab;
     std::stringstream ss;
+    size_t separator_pos;
 
     cout << "Welcome to the DingusPPC command line debugger." << endl;
     cout << "Please enter a command or 'help'." << endl << endl;
@@ -202,9 +211,16 @@ void enter_debugger()
         }
         else if (cmd == "set") {
             ss >> expr_str;
+
+            separator_pos = expr_str.find_first_of("=");
+            if (separator_pos == std::string::npos) {
+                cout << "set: not enough arguments specified." << endl;
+                continue;
+            }
+
             try {
-                reg_expr = expr_str.substr(0, expr_str.find("="));
-                addr_str = expr_str.substr(expr_str.find("=") + 1);
+                reg_expr = expr_str.substr(0, expr_str.find_first_of("="));
+                addr_str = expr_str.substr(expr_str.find_first_of("=") + 1);
                 addr = str2addr(addr_str);
                 set_reg(reg_expr, addr);
             }
@@ -234,9 +250,14 @@ void enter_debugger()
             expr_str = "";
             ss >> expr_str;
             if (expr_str.length() > 0) {
-                inst_num_str = expr_str.substr(0, expr_str.find(","));
+                separator_pos = expr_str.find_first_of(",");
+                if (separator_pos == std::string::npos) {
+                    cout << "disas: not enough arguments specified." << endl;
+                    continue;
+                }
+                inst_num_str = expr_str.substr(0, expr_str.find_first_of(","));
                 inst_grab = stol(inst_num_str, NULL, 0);
-                addr_str = expr_str.substr(expr_str.find(",") + 1);
+                addr_str = expr_str.substr(expr_str.find_first_of(",") + 1);
                 try {
                     addr = str2addr(addr_str);
                 }
@@ -258,6 +279,7 @@ void enter_debugger()
                 }
             }
             else {
+                /* disas without arguments defaults to disas 1,pc */
                 addr_str = "PC";
                 addr = get_reg(addr_str);
                 disasm(1, addr);
