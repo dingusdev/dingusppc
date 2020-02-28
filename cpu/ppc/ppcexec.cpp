@@ -817,14 +817,15 @@ void ppc_cpu_init(uint32_t proc_version)
 void print_gprs()
 {
     for (int i = 0; i < 32; i++)
-        cout << "GPR " << dec << i << " : " << hex << ppc_state.ppc_gpr[i] << endl;
+        cout << "GPR " << dec << i << " : " << uppercase << hex
+            << ppc_state.ppc_gpr[i] << endl;
 
-    cout << "PC: " << hex << ppc_state.ppc_pc << endl;
-    cout << "LR: " << hex << ppc_state.ppc_spr[SPR::LR] << endl;
-    cout << "CR: " << hex << ppc_state.ppc_cr << endl;
-    cout << "CTR: " << hex << ppc_state.ppc_spr[SPR::CTR] << endl;
-    cout << "XER: " << hex << ppc_state.ppc_spr[SPR::XER] << endl;
-    cout << "MSR: " << hex << ppc_state.ppc_msr << endl;
+    cout << "PC: " << uppercase << hex << ppc_state.ppc_pc << endl;
+    cout << "LR: " << uppercase << hex << ppc_state.ppc_spr[SPR::LR] << endl;
+    cout << "CR: " << uppercase << hex << ppc_state.ppc_cr << endl;
+    cout << "CTR: " << uppercase << hex << ppc_state.ppc_spr[SPR::CTR] << endl;
+    cout << "XER: " << uppercase << hex << ppc_state.ppc_spr[SPR::XER] << endl;
+    cout << "MSR: " << uppercase << hex << ppc_state.ppc_msr << endl;
 }
 
 void print_fprs()
