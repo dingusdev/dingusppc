@@ -10,7 +10,18 @@ Code
 
 * Make sure the code can compile for all target systems - Windows, Linux, and macOS/Mac OS X.
 * All code must be compatible with at least C++11.
-* Minimize the amount of redundant code
+* Minimize the amount of redundant code.
+* Avoid using absolute paths for the headers.
+* Code should maintain vertical alignment. An example of this is provided below:
+
+> one_hundred  =  100;
+> one_thousand = 1000;
+
+** The following should be avoided:
+
+> one_hundred = 100;
+> one_thousand = 1000;
+* CamelCase for class names, lowercase for variables, UPPERCASE for enumerations
 
 Issues
 =======

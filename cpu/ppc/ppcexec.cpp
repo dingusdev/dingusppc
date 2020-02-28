@@ -5,7 +5,7 @@
 //if you want to distribute this.
 //(divingkatae#1017 or powermax#2286 on Discord)
 
-#include <thirdparty/loguru.cpp>
+#include <thirdparty/loguru.hpp>
 #include <stdio.h>
 #include <string>
 #include <iostream>

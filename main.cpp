@@ -131,7 +131,7 @@ int main(int argc, char **argv)
         configInfoOffset = (uint32_t)(configGrab & 0xff);
 
         uint32_t configInfoAddr = 0x300000 + (configInfoOffset << 8) + 0x69; //address to check the identifier string
-        char memPPCBlock[5]; //First four chars are enough to distinguish between codenames
+        char memPPCBlock[5] = { 0 }; //First four chars are enough to distinguish between codenames
         romFile.seekg (configInfoAddr, ios::beg);
         romFile.read(memPPCBlock, 4);
         memPPCBlock[4] = 0;
