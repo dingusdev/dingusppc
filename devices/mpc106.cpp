@@ -144,7 +144,7 @@ void MPC106::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
     // FIXME: implement write-protection for read-only registers
     switch(size) {
     case 1:
-        this->my_pci_cfg_hdr[reg_offs] = value & 0xFF;
+        this->my_pci_cfg_hdr[reg_offs]   = value & 0xFF;
         break;
     case 2:
         this->my_pci_cfg_hdr[reg_offs]   = (value >> 8) & 0xFF;

@@ -23,12 +23,12 @@ ViaCuda::ViaCuda()
 {
     /* FIXME: is this the correct
        VIA initialization? */
-    this->via_regs[VIA_A] = 0x80;
+    this->via_regs[VIA_A]    = 0x80;
     this->via_regs[VIA_DIRB] = 0xFF;
     this->via_regs[VIA_DIRA] = 0xFF;
     this->via_regs[VIA_T1LL] = 0xFF;
     this->via_regs[VIA_T1LH] = 0xFF;
-    this->via_regs[VIA_IER] = 0x7F;
+    this->via_regs[VIA_IER]  = 0x7F;
 
     //PRAM Pre-Initialization
     this->pram_obj = new NVram("pram.bin", 256);
@@ -44,11 +44,11 @@ ViaCuda::~ViaCuda()
 
 void ViaCuda::cuda_init()
 {
-    this->old_tip = 0;
+    this->old_tip     = 0;
     this->old_byteack = 0;
-    this->treq = 1;
-    this->in_count = 0;
-    this->out_count = 0;
+    this->treq        = 1;
+    this->in_count    = 0;
+    this->out_count   = 0;
 
 }
 
@@ -171,8 +171,8 @@ void ViaCuda::cuda_write(uint8_t new_state)
         else {
             LOG_F(9, "Cuda: enter sync state \n");
             this->via_regs[VIA_B] &= ~CUDA_TREQ; /* assert TREQ */
-            this->treq = 0;
-            this->in_count = 0;
+            this->treq      = 0;
+            this->in_count  = 0;
             this->out_count = 0;
         }
 
@@ -210,8 +210,8 @@ void ViaCuda::cuda_response_header(uint32_t pkt_type, uint32_t pkt_flag)
     this->out_buf[0] = pkt_type;
     this->out_buf[1] = pkt_flag;
     this->out_buf[2] = this->in_buf[1]; /* copy original cmd */
-    this->out_count = 3;
-    this->out_pos = 0;
+    this->out_count  = 3;
+    this->out_pos    = 0;
 }
 
 void ViaCuda::cuda_error_response(uint32_t error)
@@ -220,8 +220,8 @@ void ViaCuda::cuda_error_response(uint32_t error)
     this->out_buf[1] = error;
     this->out_buf[2] = this->in_buf[0];
     this->out_buf[3] = this->in_buf[1]; /* copy original cmd */
-    this->out_count = 4;
-    this->out_pos = 0;
+    this->out_count  = 4;
+    this->out_pos    = 0;
 }
 
 void ViaCuda::cuda_process_packet()

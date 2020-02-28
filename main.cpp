@@ -73,9 +73,9 @@ int main(int argc, char **argv)
         if ((checker == "1") || (checker == "realtime") || \
             (checker == "-realtime") || (checker == "/realtime")) {
             loguru::g_stderr_verbosity = loguru::Verbosity_OFF;
-            loguru::g_preamble_date = false;
-            loguru::g_preamble_time = false;
-            loguru::g_preamble_thread = false;
+            loguru::g_preamble_date    = false;
+            loguru::g_preamble_time    = false;
+            loguru::g_preamble_thread  = false;
             loguru::init(argc, argv);
             loguru::add_file("dingusppc.log", loguru::Append, 0);
             //Replace the above line with this for maximum debugging detail:
@@ -83,11 +83,11 @@ int main(int argc, char **argv)
         }
         else if ((checker == "debugger") || (checker == "/debugger") ||
             (checker == "-debugger")) {
-            loguru::g_preamble_date = false;
-            loguru::g_preamble_time = false;
-            loguru::g_preamble_thread = false;
-            loguru::init(argc, argv);
             loguru::g_stderr_verbosity = 0;
+            loguru::g_preamble_date    = false;
+            loguru::g_preamble_time    = false;
+            loguru::g_preamble_thread  = false;
+            loguru::init(argc, argv);
         }
 
         uint32_t rom_filesize;
@@ -196,11 +196,11 @@ int main(int argc, char **argv)
         }
     }
     else {
-        std::cout << "                    " << endl;
+        std::cout << "                                                " << endl;
         std::cout << "Please enter one of the following commands when " << endl;
         std::cout << "booting up DingusPPC...                         " << endl;
-        std::cout << "                    " << endl;
-        std::cout << "                    " << endl;
+        std::cout << "                                                " << endl;
+        std::cout << "                                                " << endl;
         std::cout << "realtime - Run the emulator in real-time.       " << endl;
         std::cout << "debugger - Enter the interactive debugger.      " << endl;
     }
