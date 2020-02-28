@@ -39,7 +39,7 @@ make dingusppc
 ```
 You may specify another build type using the variable CMAKE_BUILD_TYPE.
 
-Due to the incomplete status of the program at this time, no additional libraries are required.
+Due to the incomplete status of the program at this time, only Loguru is needed to compile the program. It is already included in the thirdparty folder and compiled along with the rest of DingusPPC.
 
 Future versions will include SDL 2 as a requirement.
 
