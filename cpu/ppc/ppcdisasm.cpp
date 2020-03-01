@@ -744,6 +744,29 @@ void opc_group19(PPCDisasmContext* ctx)
     auto rs = (ctx->instr_code >> 21) & 0x1F;
 
     int ext_opc = (ctx->instr_code >> 1) & 0x3FF; /* extract extended opcode */
+    char operand1[12] = "";
+    char operand2[12] = "";
+    char operand3[12] = "";
+
+    if (rs > 4) {
+        strcat(operand1, "4*cr0+");
+        operand1[4] = (rs >> 2) + '0';
+    }
+    strcat(operand1, br_cond[((rs % 4) + 4)]);
+
+
+    if (ra > 4) {
+        strcat(operand2, "4*cr0+");
+        operand2[4] = (ra >> 2) + '0';
+    }
+    strcat(operand2, br_cond[((ra % 4) + 4)]);
+
+
+    if (rb > 4) {
+        strcat(operand3, "4*cr0+");
+        operand3[4] = (rb >> 2) + '0';
+    }
+    strcat(operand3, br_cond[((rb % 4) + 4)]);
 
     switch (ext_opc) {
     case 0:
@@ -754,15 +777,22 @@ void opc_group19(PPCDisasmContext* ctx)
         return;
     case 33:
         if (ctx->simplified && (ra == rb)) {
-            ctx->instr_str = my_sprintf("%-8scrb%d, crb%d", "crnot", rs, ra);
+            ctx->instr_str = my_sprintf("%-8s%s, %s, %s", "crnor", operand1, operand2, operand3);
         }
-        fmt_threeop_crb(ctx->instr_str, "crnor", rs, ra, rb);
+        else {
+            fmt_threeop_crb(ctx->instr_str, "crnor", rs, ra, rb);
+        }
         return;
     case 50:
         ctx->instr_str = my_sprintf("%-8s", "rfi");
         return;
     case 129:
-        fmt_threeop_crb(ctx->instr_str, "crandc", rs, ra, rb);
+        if (ctx->simplified) {
+            ctx->instr_str = my_sprintf("%-8s%s, %s, %s", "crandc", operand1, operand2, operand3);
+        }
+        else {
+            fmt_threeop_crb(ctx->instr_str, "crandc", rs, ra, rb);
+        }
         return;
     case 150:
         ctx->instr_str = my_sprintf("%-8s", "isync");
@@ -770,28 +800,56 @@ void opc_group19(PPCDisasmContext* ctx)
     case 193:
         if (ctx->simplified && (rs == ra) && (rs == rb)) {
             ctx->instr_str = my_sprintf("%-8scrb%d", "crclr", rs);
+            return;
+        }
+        else if (ctx->simplified && ((rs != ra) || (rs != rb))) {
+            ctx->instr_str = my_sprintf("%-8s%s, %s, %s", "crxor", operand1, operand2, operand3);
+            return;
         }
         fmt_threeop_crb(ctx->instr_str, "crxor", rs, ra, rb);
         return;
     case 225:
-        fmt_threeop_crb(ctx->instr_str, "crnand", rs, ra, rb);
+        if (ctx->simplified) {
+            ctx->instr_str = my_sprintf("%-8s%s, %s, %s", "crnand", operand1, operand2, operand3);
+        }
+        else {
+            fmt_threeop_crb(ctx->instr_str, "crnand", rs, ra, rb);
+        }
         return;
     case 257:
-        fmt_threeop_crb(ctx->instr_str, "crand", rs, ra, rb);
+        if (ctx->simplified) {
+            ctx->instr_str = my_sprintf("%-8s%s, %s, %s", "crand", operand1, operand2, operand3);
+        }
+        else {
+            fmt_threeop_crb(ctx->instr_str, "crand", rs, ra, rb);
+        }
         return;
     case 289:
         if (ctx->simplified && (rs == ra) && (rs == rb)) {
             ctx->instr_str = my_sprintf("%-8scrb%d", "crset", rs);
             return;
         }
+        else if (ctx->simplified && ((rs != ra) || (rs != rb))) {
+            ctx->instr_str = my_sprintf("%-8s%s, %s, %s", "creqv", operand1, operand2, operand3);
+            return;
+        }
         fmt_threeop_crb(ctx->instr_str, "creqv", rs, ra, rb);
         return;
     case 417:
-        fmt_threeop_crb(ctx->instr_str, "crorc", rs, ra, rb);
+        if (ctx->simplified) {
+            ctx->instr_str = my_sprintf("%-8s%s, %s, %s", "crorc", operand1, operand2, operand3);
+        }
+        else {
+            fmt_threeop_crb(ctx->instr_str, "crorc", rs, ra, rb);
+        }
         return;
     case 449:
         if (ctx->simplified && (ra == rb)) {
             ctx->instr_str = my_sprintf("%-8scrb%d, crb%d", "crmove", rs, ra);
+            return;
+        }
+        else if (ctx->simplified && (ra!= rb)) {
+            ctx->instr_str = my_sprintf("%-8s%s, %s, %s", "cror", operand1, operand2, operand3);
             return;
         }
         fmt_threeop_crb(ctx->instr_str, "cror", rs, ra, rb);
