@@ -748,21 +748,21 @@ void opc_group19(PPCDisasmContext* ctx)
     char operand2[12] = "";
     char operand3[12] = "";
 
-    if (rs > 4) {
+    if (rs > 3) {
         strcat(operand1, "4*cr0+");
         operand1[4] = (rs >> 2) + '0';
     }
     strcat(operand1, br_cond[((rs % 4) + 4)]);
 
 
-    if (ra > 4) {
+    if (ra > 3) {
         strcat(operand2, "4*cr0+");
         operand2[4] = (ra >> 2) + '0';
     }
     strcat(operand2, br_cond[((ra % 4) + 4)]);
 
 
-    if (rb > 4) {
+    if (rb > 3) {
         strcat(operand3, "4*cr0+");
         operand3[4] = (rb >> 2) + '0';
     }
