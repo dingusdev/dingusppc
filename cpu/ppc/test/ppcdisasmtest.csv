@@ -64,6 +64,8 @@
 
 # indexed load/store instructions, primary opcode 0x1F
 0xFFF00100,0x7D49F02E,lwzx,r10,r9,r30
+0xFFF00100,0x7C00002E,lwzx,r0,0,r0
+0xFFF00100,0x7C20082E,lwzx,r1,0,r1
 0xFFF00100,0x7FAB806E,lwzux,r29,r11,r16
 0xFFF00100,0x7C0820AE,lbzx,r0,r8,r4
 0xFFF00100,0x7F47E8EE,lbzux,r26,r7,r29
@@ -184,6 +186,16 @@
 0xFFF00100,0x7D838120,mtcrf,0x38,r12
 0xFFF00100,0x7D080120,mtcrf,0x80,r8
 0xFFF00100,0x7E007120,mtcrf,0x07,r16
+0xFFF00100,0x7C2FF120,mtcr,r1
+
+# logical operations with the condition register
+0xFFF00100,0x4C422A02,crand,eq,eq,4*cr1+gt
+0xFFF00100,0x4FCAF902,crandc,4*cr7+eq,4*cr2+eq,4*cr7+so
+0xFFF00100,0x4E756242,creqv,4*cr4+so,4*cr5+gt,4*cr3+lt
+0xFFF00100,0x4F58C9C2,crnand,4*cr6+eq,4*cr6+lt,4*cr6+gt
+0xFFF00100,0x4C411382,cror,eq,gt,eq
+0xFFF00100,0x4C402342,crorc,eq,lt,4*cr1+lt
+0xFFF00100,0x4C003982,crxor,lt,lt,4*cr1+so
 
 # rotation instructions and their simplified mnemonics
 #0xFFF00100,0x5084442E,rlwimi,r4,r4,8,16,23
@@ -357,6 +369,7 @@
 # compare instructions
 0xFFF00100,0x7C15A000,cmpw,r21,r20
 0xFFF00100,0x7FBFB800,cmp,cr7,r31,r23
+0xFFF00100,0x7C053040,cmplw,r5,r6
 0xFFF00100,0x7F804840,cmplw,cr7,r0,r9
 0xFFF00100,0x2F800000,cmpwi,cr7,r0,0x0
 0xFFF00100,0x298E0022,cmplwi,cr3,r14,0x22
@@ -373,6 +386,8 @@
 0xFFF00100,0x7E000400,mcrxr,cr4
 0xFFF00100,0xFFE0004C,mtfsb1,31
 0xFFF00100,0xFFE0048F,mffs.,f31
+0xFFF00100,0x7C2000A6,mfmsr,r1
+0xFFF00100,0x7C000124,mtmsr,r0
 0xFFF00100,0x7FEF01A4,mtsr,15,r31
 0xFFF00100,0x7C6021E4,mtsrin,r3,r4
 0xFFF00100,0x7CA305AA,stswi,r5,r3,0x20
