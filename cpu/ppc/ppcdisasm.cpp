@@ -881,7 +881,13 @@ void opc_group31(PPCDisasmContext* ctx)
 
     case 0x12: /* tlb & segment register instructions */
 
-        if (index == 6) { /* mtsr */
+        if (index == 4) { /* mtmsr */
+            if ((ra != 0) || (rb != 0) || rc_set)
+                opc_illegal(ctx);
+            else
+                ctx->instr_str = my_sprintf("%-8sr%d", "mtmsr", rs);
+        }
+        else if (index == 6) { /* mtsr */
             if (ra & 16)
                 opc_illegal(ctx);
             else
@@ -1001,7 +1007,12 @@ void opc_group31(PPCDisasmContext* ctx)
             return;
         }
         if (index < 16) {
-            fmt_threeop(ctx->instr_str, opc_idx_ldst[index], rs, ra, rb);
+            if (ra == 0)
+                ctx->instr_str = my_sprintf("%-8sr%d, 0, r%d", opc_idx_ldst[index], rs, rb);
+            else
+                fmt_threeop(ctx->instr_str, opc_idx_ldst[index], rs, ra, rb);
+
+            return;
         }
         else {
             ctx->instr_str = my_sprintf("%-8sf%d, r%d, r%d", \
@@ -1148,7 +1159,11 @@ void opc_group31(PPCDisasmContext* ctx)
 
         if (ctx->simplified) {
             if (!(rs & 1)) {
-                ctx->instr_str = my_sprintf("%-8scr%d, r%d, r%d", "cmplw", (rs >> 2), ra, rb);
+                if ((rs >> 2) == 0)
+                    ctx->instr_str = my_sprintf("%-8sr%d, r%d", "cmplw", ra, rb);
+                else
+                    ctx->instr_str = my_sprintf("%-8scr%d, r%d, r%d", "cmplw", (rs >> 2), ra, rb);
+
                 return;
             }
         }
@@ -1165,12 +1180,12 @@ void opc_group31(PPCDisasmContext* ctx)
         if (ctx->instr_code & 0x100801)
             opc_illegal(ctx);
         else {
+            if (((ctx->instr_code >> 12) & 0xFF) == 0xFF)
+                ctx->instr_str = my_sprintf("%-8sr%d", "mtcr", rs);
+            else
             ctx->instr_str = my_sprintf("%-8s0x%02X, r%d", "mtcrf",
                 (ctx->instr_code >> 12) & 0xFF, rs);
         }
-        break;
-    case 146: /* mtmsr */
-        fmt_oneop(ctx->instr_str, "mtmsr", rs);
         break;
     case 277: /* lscbx */
         strcpy(opcode, "lscbx");
