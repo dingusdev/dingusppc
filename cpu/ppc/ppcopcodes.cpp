@@ -1320,12 +1320,12 @@ void ppc_mtspr() {
     switch (ref_spr) {
         //Mirror the TBRs in the SPR range to the user-mode TBRs.
     case 284:
-        ppc_state.ppc_spr[284] = (uint32_t)timebase_counter;
-        ppc_state.ppc_tbr[TBR::TBL] = (uint32_t)timebase_counter;
+        timebase_counter = (timebase_counter & 0xFFFFFFFF00000000ULL) +
+            ppc_state.ppc_gpr[reg_s];
         break;
     case 285:
-        ppc_state.ppc_spr[285] = (uint32_t)(timebase_counter >> 32);
-        ppc_state.ppc_tbr[TBR::TBU] = (uint32_t)(timebase_counter >> 32);
+        timebase_counter = (timebase_counter & 0x00000000FFFFFFFFULL) +
+            (((uint64_t)(ppc_state.ppc_gpr[reg_s])) << 32);
         break;
     case 528:
     case 529:
@@ -1354,10 +1354,10 @@ void ppc_mftb() {
     reg_d = (ppc_cur_instruction >> 21) & 31;
     switch (ref_spr) {
     case 268:
-        ppc_state.ppc_gpr[reg_d] = ppc_state.ppc_tbr[TBR::TBL];
+        ppc_state.ppc_gpr[reg_d] = timebase_counter & 0xFFFFFFFFUL;
         break;
     case 269:
-        ppc_state.ppc_gpr[reg_d] = ppc_state.ppc_tbr[TBR::TBU];
+        ppc_state.ppc_gpr[reg_d] = (timebase_counter >> 32) & 0xFFFFFFFFUL;
         break;
     default:
         std::cout << "Invalid TBR access attempted!" << std::endl;
