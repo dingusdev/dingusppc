@@ -29,6 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ppcemu.h"
 #include "../cpu/ppc/ppcmmu.h"
 #include "../cpu/ppc/ppcdisasm.h"
+#include <thirdparty/loguru.hpp>
 
 
 using namespace std;
@@ -43,6 +44,16 @@ static uint32_t str2addr(string& addr_str)
     }
 }
 
+static uint32_t str2num(string& num_str)
+{
+    try {
+        return stol(num_str, NULL, 0);
+    }
+    catch (invalid_argument & exc) {
+        throw invalid_argument(string("Cannot convert ") + num_str);
+    }
+}
+
 static void show_help()
 {
     cout << "Debugger commands:" << endl;
@@ -54,6 +65,8 @@ static void show_help()
     cout << "  until X   -- execute until address X is reached" << endl;
     cout << "  regs      -- dump content of the GRPs" << endl;
     cout << "  set R=X   -- assign value X to register R" << endl;
+    cout << "               if R=loglevel, set the internal" << endl;
+    cout << "               log level to X whose range is -2...9" << endl;
     cout << "  dump NT,X -- dump N memory cells of size T at address X" << endl;
     cout << "               T can be b(byte), w(word), d(double)," << endl;
     cout << "               q(quad) or c(character)." << endl;
@@ -186,6 +199,7 @@ void enter_debugger()
         inst_string, inst_num_str;
     uint32_t addr, inst_grab;
     std::stringstream ss;
+    int log_level;
     size_t separator_pos;
 
     cout << "Welcome to the DingusPPC command line debugger." << endl;
@@ -235,8 +249,18 @@ void enter_debugger()
             try {
                 reg_expr = expr_str.substr(0, expr_str.find_first_of("="));
                 addr_str = expr_str.substr(expr_str.find_first_of("=") + 1);
-                addr = str2addr(addr_str);
-                set_reg(reg_expr, addr);
+                if (reg_expr == "loglevel") {
+                    log_level = str2num(addr_str);
+                    if (log_level < -2 || log_level > 9) {
+                        cout << "Log level must be in the range -2...9!" << endl;
+                        continue;
+                    }
+                    loguru::g_stderr_verbosity = log_level;
+                }
+                else {
+                    addr = str2addr(addr_str);
+                    set_reg(reg_expr, addr);
+                }
             }
             catch (invalid_argument& exc) {
                 cout << exc.what() << endl;
