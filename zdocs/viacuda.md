@@ -2,6 +2,29 @@ Using a combination of a 6522 along with some integrated circuits, the VIA Cuda 
 
 The usual offset for a VIA Cuda is IOBase (ex.: 0xF3000000 for Power Mac G3 Beige) + 0x16000. The registers are spaced out by 0x200 bytes on the Heathrow.
 
+# Registers
+
+Within the emulated CUDA, these registers are spaced apart by 0x200 bytes. Apple themselves recommended avoiding the usage of Handshake Data A.
+
+| Register Name             |Abbreviation| Offset |
+|:-------------------------:|:----------:|:------:|
+| Data B                    | ORB        | 0x0    |
+| Handshake Data A          | ORA(H)     | 0x1    |
+| Data Direction B          | DIRB       | 0x2    |
+| Data Direction A          | DIRA       | 0x3    |
+| Timer 1 Counter Low       | T1C        | 0x4    |
+| Timer 1 Counter High      | T1CH       | 0x5    |
+| Timer 1 Latch Low         | T1L        | 0x6    |
+| Timer 1 Latch High        | T1LH       | 0x7    |
+| Timer 2 Counter Low       | T2C        | 0x8    |
+| Timer 2 Counter High      | T2CH       | 0x9    |
+| Shift                     | SR         | 0xA    |
+| Auxiliary Control         | ACR        | 0xB    |
+| Peripheral Control        | PCR        | 0xC    |
+| Interrupt Flag            | IFE        | 0xD    |
+| Interrupt Enable          | IER        | 0xE    |
+| Data A                    | ORA        | 0xF    |
+
 # Usage
 
 The VIA Cuda is emulated in all Power Macs through an interrupt controller. Early Power Macs also used the Parameter RAM.

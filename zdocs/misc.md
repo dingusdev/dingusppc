@@ -2,6 +2,16 @@
 
 The Old World ROM is always 4 megabytes (MB). The first three MB are reserved for the 68k code, while the last MB is for the PowerPC boot-up code.
 
+# BMac
+
+The BMac is an ethernet controller.
+
+The max frame size is 0x5EE bytes.
+
+It resides on 0xF3011000, with Writing DMA on 0xF3008200 and Reading DMA on 0xF3008300.
+
+Swim3 is located at 0xF3015000.
+
 # Serial
 
 For serial, it replicates the functionality of a Zilog ESCC. There are two different ports - one located at 0xF3013000 for the printer, and the other at 0xF3013020 for the modem.
