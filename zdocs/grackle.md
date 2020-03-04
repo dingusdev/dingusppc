@@ -1,4 +1,4 @@
-The MPC106, codenamed "Grackle", is a memory controller and PCI host bridge. Its predecessor was the MPC105, codenamed "Bandit".
+The MPC106, codenamed "Grackle", is a PCI bridge/memory controller. Its predecessor was the MPC105, codenamed "Eagle".
 
 Unlike the CPU, which generally runs in big-endian mode, the Grackle runs in little-endian mode in compliance with the PCI standard. This usually means that to get the result in the correct endian, the PowerPC must load and store byte-reversed inputs and results.
 
