@@ -85,7 +85,7 @@ enum {
 
 /** Cuda pseudo commands. */
 enum {
-    CUDA_READ_PRAM		= 0x07, /* read parameter RAM*/
+    CUDA_READ_PRAM      = 0x07, /* read parameter RAM*/
     CUDA_WRITE_PRAM     = 0x0C, /* write parameter RAM*/
     CUDA_READ_WRITE_I2C = 0x22, /* read/write I2C device */
     CUDA_COMB_FMT_I2C   = 0x25, /* combined format I2C transaction */
@@ -121,24 +121,24 @@ private:
     int32_t out_count;
     int32_t out_pos;
 
-    NVram *pram_obj;
+    NVram* pram_obj;
 
     void print_enabled_ints(); /* print enabled VIA interrupts and their sources */
 
-    void cuda_init();
-    bool cuda_ready();
+    void init();
+    bool ready();
     void assert_sr_int();
-    void cuda_write(uint8_t new_state);
-    void cuda_response_header(uint32_t pkt_type, uint32_t pkt_flag);
+    void write(uint8_t new_state);
+    void response_header(uint32_t pkt_type, uint32_t pkt_flag);
     //void cuda_response_packet();
-    void cuda_error_response(uint32_t error);
-    void cuda_process_packet();
-    void cuda_pseudo_command(int cmd, int data_count);
+    void error_response(uint32_t error);
+    void process_packet();
+    void pseudo_command(int cmd, int data_count);
 
     /* I2C related methods */
-    void i2c_simple_transaction(uint8_t dev_addr, const uint8_t *in_buf, int in_bytes);
+    void i2c_simple_transaction(uint8_t dev_addr, const uint8_t* in_buf, int in_bytes);
     void i2c_comb_transaction(uint8_t dev_addr, uint8_t sub_addr, uint8_t dev_addr1,
-         const uint8_t *in_buf, int in_bytes);
+        const uint8_t* in_buf, int in_bytes);
 };
 
 #endif /* VIACUDA_H */

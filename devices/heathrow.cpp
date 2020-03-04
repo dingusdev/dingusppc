@@ -35,7 +35,7 @@ using namespace std;
 HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow")
 {
     this->viacuda = new ViaCuda();
-    this->nvram = new NVram();
+    this->nvram   = new NVram();
 }
 
 HeathrowIC::~HeathrowIC()

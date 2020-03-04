@@ -47,7 +47,7 @@ ViaCuda::ViaCuda()
     //PRAM Pre-Initialization
     this->pram_obj = new NVram("pram.bin", 256);
 
-    this->cuda_init();
+    this->init();
 }
 
 ViaCuda::~ViaCuda()
@@ -56,7 +56,7 @@ ViaCuda::~ViaCuda()
         delete (this->pram_obj);
 }
 
-void ViaCuda::cuda_init()
+void ViaCuda::init()
 {
     this->old_tip     = 0;
     this->old_byteack = 0;
@@ -95,7 +95,7 @@ void ViaCuda::write(int reg, uint8_t value)
     switch (reg & 0xF) {
     case VIA_B:
         this->via_regs[VIA_B] = value;
-        cuda_write(value);
+        write(value);
         break;
     case VIA_A:
     case VIA_ANH:
@@ -138,7 +138,7 @@ void ViaCuda::print_enabled_ints()
     }
 }
 
-inline bool ViaCuda::cuda_ready()
+inline bool ViaCuda::ready()
 {
     return ((this->via_regs[VIA_DIRB] & 0x38) == 0x30);
 }
@@ -148,9 +148,9 @@ inline void ViaCuda::assert_sr_int()
     this->via_regs[VIA_IFR] |= 0x84;
 }
 
-void ViaCuda::cuda_write(uint8_t new_state)
+void ViaCuda::write(uint8_t new_state)
 {
-    if (!cuda_ready()) {
+    if (!ready()) {
         LOG_F(WARNING, "Cuda not ready! \n");
         return;
     }
@@ -173,7 +173,7 @@ void ViaCuda::cuda_write(uint8_t new_state)
             this->treq = 1;
 
             if (this->in_count) {
-                cuda_process_packet();
+                process_packet();
 
                 /* start response transaction */
                 this->via_regs[VIA_B] &= ~CUDA_TREQ; /* assert TREQ */
@@ -219,7 +219,7 @@ void ViaCuda::cuda_write(uint8_t new_state)
     }
 }
 
-void ViaCuda::cuda_response_header(uint32_t pkt_type, uint32_t pkt_flag)
+void ViaCuda::response_header(uint32_t pkt_type, uint32_t pkt_flag)
 {
     this->out_buf[0] = pkt_type;
     this->out_buf[1] = pkt_flag;
@@ -228,7 +228,7 @@ void ViaCuda::cuda_response_header(uint32_t pkt_type, uint32_t pkt_flag)
     this->out_pos    = 0;
 }
 
-void ViaCuda::cuda_error_response(uint32_t error)
+void ViaCuda::error_response(uint32_t error)
 {
     this->out_buf[0] = CUDA_PKT_ERROR;
     this->out_buf[1] = error;
@@ -238,7 +238,7 @@ void ViaCuda::cuda_error_response(uint32_t error)
     this->out_pos    = 0;
 }
 
-void ViaCuda::cuda_process_packet()
+void ViaCuda::process_packet()
 {
     if (this->in_count < 2) {
         LOG_F(ERROR, "Cuda: invalid packet (too few data)! \n");
@@ -256,26 +256,26 @@ void ViaCuda::cuda_process_packet()
         for (int i = 0; i < this->in_count; i++) {
             LOG_F(9, "%x ,", (uint32_t)(this->in_buf[i]));
         }
-        cuda_pseudo_command(this->in_buf[1], this->in_count - 2);
+        pseudo_command(this->in_buf[1], this->in_count - 2);
         break;
     default:
         LOG_F(ERROR, "Cuda: unsupported packet type = %d \n", (uint32_t)(this->in_buf[0]));
     }
 }
 
-void ViaCuda::cuda_pseudo_command(int cmd, int data_count)
+void ViaCuda::pseudo_command(int cmd, int data_count)
 {
     switch (cmd) {
     case CUDA_READ_PRAM:
-        cuda_response_header(CUDA_PKT_PSEUDO, 0);
+        response_header(CUDA_PKT_PSEUDO, 0);
         this->pram_obj->read_byte(this->in_buf[2]);
         break;
     case CUDA_WRITE_PRAM:
-        cuda_response_header(CUDA_PKT_PSEUDO, 0);
+        response_header(CUDA_PKT_PSEUDO, 0);
         this->pram_obj->write_byte(this->in_buf[2], this->in_buf[3]);
         break;
     case CUDA_READ_WRITE_I2C:
-        cuda_response_header(CUDA_PKT_PSEUDO, 0);
+        response_header(CUDA_PKT_PSEUDO, 0);
         /* bit 0 of the I2C address byte indicates operation kind:
            0 - write to device, 1 - read from device
            In the case of reading, Cuda will append one-byte result
@@ -290,7 +290,7 @@ void ViaCuda::cuda_pseudo_command(int cmd, int data_count)
            Fortunately, HWInit is known to read/write max. 4 bytes at once
            so we're going to use a prefilled buffer to make it work.
         */
-        cuda_response_header(CUDA_PKT_PSEUDO, 0);
+        response_header(CUDA_PKT_PSEUDO, 0);
         if (this->in_count >= 5) {
             i2c_comb_transaction(this->in_buf[2], this->in_buf[3], this->in_buf[4],
                 &this->in_buf[5], this->in_count - 5);
@@ -298,11 +298,11 @@ void ViaCuda::cuda_pseudo_command(int cmd, int data_count)
         break;
     case CUDA_OUT_PB0: /* undocumented call! */
         LOG_F(INFO, "Cuda: send %d to PB0 \n", (int)(this->in_buf[2]));
-        cuda_response_header(CUDA_PKT_PSEUDO, 0);
+        response_header(CUDA_PKT_PSEUDO, 0);
         break;
     default:
         LOG_F(ERROR, "Cuda: unsupported pseudo command 0x%x \n", cmd);
-        cuda_error_response(CUDA_ERR_BAD_CMD);
+        error_response(CUDA_ERR_BAD_CMD);
     }
 }
 
@@ -323,7 +323,7 @@ void ViaCuda::i2c_simple_transaction(uint8_t dev_addr, const uint8_t* in_buf,
         break;
     default:
         LOG_F(ERROR, "Unsupported I2C device 0x%x \n", (int)dev_addr);
-        cuda_error_response(CUDA_ERR_I2C);
+        error_response(CUDA_ERR_I2C);
     }
 }
 
@@ -358,6 +358,6 @@ void ViaCuda::i2c_comb_transaction(uint8_t dev_addr, uint8_t sub_addr,
         break;
     default:
         LOG_F(ERROR, "Unsupported I2C device 0x%x \n", (int)dev_addr1);
-        cuda_error_response(CUDA_ERR_I2C);
+        error_response(CUDA_ERR_I2C);
     }
 }

@@ -126,7 +126,7 @@ private:
 
     /* device cells */
     ViaCuda *viacuda; /* VIA cell with Cuda MCU attached to it */
-    NVram *nvram; /* NVRAM cell */
+    NVram   *nvram;   /* NVRAM cell */
 };
 
 #endif /* MACIO_H */
