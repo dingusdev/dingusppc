@@ -22,7 +22,11 @@ The Description-Based Direct Memory Access relies on memory-based descriptions, 
 
 # SWIM 3
 
-The SWIM 3 (Sanders-Wozniak integrated machine 3) is the floppy drive.
+The SWIM 3 (Sanders-Wozniak integrated machine 3) is the floppy drive disk controller. As can be inferred by the name, the SWIM III chip is the improvement of a combination of floppy disk driver designs by Steve Wozniak (who worked on his own floppy drive controller for early Apple computers) and Wendell B. Sander (who worked on an MFM-compatible IBM floppy drive controller). 
+
+The SWIM chip is resided on the logic board. It sits between the I/O controller and the floppy disk connector. Its function is to translate the I/O commands to specialized signals to drive the floppy disk drive, i.e. disk spinning speed, head position, phase sync, etc.
+
+The floppy drives themselves were provided by Sony.
 
 # NVRAM
 
