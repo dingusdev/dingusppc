@@ -12,15 +12,14 @@ Code
 * All code must be compatible with at least C++11.
 * Minimize the amount of redundant code.
 * Avoid using absolute paths for the headers.
-* Code should maintain vertical alignment. An example of this is provided below:
+* Code should maintain vertical alignment for better readability, for example:
 
-> one_hundred  =  100;
-> one_thousand = 1000;
+```C
+one_hundred  =  100;
+one_thousand = 1000;
+two_thousand = 2000;
+```
 
-** The following should be avoided:
-
-> one_hundred = 100;
-> one_thousand = 1000;
 * CamelCase for class names, lowercase for variables, UPPERCASE for enumerations
 * Avoid redundancy in namespaces (i.e. use ViaCuda::read() instead of ViaCuda::cuda_read())
 
