@@ -14,11 +14,25 @@ Swim3 is located at 0xF3015000.
 
 # Serial
 
-For serial, it replicates the functionality of a Zilog ESCC. There are two different ports - one located at 0xF3013000 for the printer, and the other at 0xF3013020 for the modem.
+For serial, it replicates the functionality of a Zilog ESCC. There are two different ports - one located at (MacIOBase) + 0x13000 for the printer, and the other at (MacIOBase) + 0x13020 for the modem.
 
 # DBDMA
 
 The Description-Based Direct Memory Access relies on memory-based descriptions, minimizing CPU interrupts.
+
+| Channel           | Number |
+|:-----------------:|:------:|
+| SCSI0             | 0x0    | 
+| FLOPPY            | 0x1    |
+| ETHERNET TRANSMIT | 0x2    |
+| ETHERNET RECIEVE  | 0x3    |
+| SCC TRANSMIT A    | 0x4    |
+| SCC RECIEVE A     | 0x5    |
+| SCC TRANSMIT B    | 0x6    |
+| SCC RECIEVE B     | 0x7    |
+| AUDIO OUT         | 0x8    |
+| AUDIO IN          | 0x9    |
+| SCSI1             | 0xA    |
 
 # SWIM 3
 
@@ -31,6 +45,20 @@ The floppy drives themselves were provided by Sony.
 # NVRAM
 
 Mac OS relies on 8 KB of NVRAM at minimum to run properly. It's usually found at IOBase (ex.: 0xF3000000 for Power Mac G3 Beige) + 0x60000.
+
+# PMU
+
+| Command Name     | Number | Functionality                |
+|:----------------:|:------:|:----------------------------:|
+| PMUpMgrADB       | 0x20   | Send ADB command             |
+| PMUpMgrADBoff    | 0x21   |
+| PMUxPramWrite    | 0x32   |
+| PMUtimeRead      | 0x38   |
+| PMUxPramRead     | 0x3A   |
+| PMUmaskInts      | 0x70   |
+| PMUreadINT       | 0x78   |
+| PMUPmgrPWRoff    | 0x7E   |
+| PMUResetCPU      | 0xD0   |
 
 # Miscellaneous
 

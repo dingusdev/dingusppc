@@ -28,6 +28,18 @@
 | 0xF1000000     | 0xFFBFFFFF   | NuBus "standard slot" space  |
 | 0xFFC00000     | 0xFFFFFFFF   | ROM                          |
 
+### IO Bus
+
+| Address       | Area               |
+|:-------------:|:------------------:|
+| 0x50F00000    | IO Base Address    |
+| 0x50F04000    | SCC                |
+| 0x50F14000    | Sound Chip (AWACS) |
+| 0x50F24000    | CLUT Control       |
+| 0x50F28000    | Video Control      |
+| 0x50F2A000    | Interrupt Control  |
+
+
 ## PCI Power Macs
 
 ### Main Memory

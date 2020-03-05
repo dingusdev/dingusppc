@@ -2,6 +2,16 @@ Using a combination of a 6522 along with some integrated circuits, the VIA Cuda 
 
 The usual offset for a VIA Cuda is IOBase (ex.: 0xF3000000 for Power Mac G3 Beige) + 0x16000. The registers are spaced out by 0x200 bytes on the Heathrow.
 
+# Usage
+
+The VIA Cuda is emulated in all Power Macs through an interrupt controller. Early Power Macs also used the Parameter RAM.
+
+Additionally, nodes are included for ADB peripherals, Parameter RAM, Real-Time Clocks, and Power Management.
+
+It can be run either synchronously or asynchronously.
+
+However, the CUDA is also slower than the CPU, thus causing a delay that the OS expects.
+
 # Registers
 
 Within the emulated CUDA, these registers are spaced apart by 0x200 bytes. Apple themselves recommended avoiding the usage of Handshake Data A.
@@ -25,15 +35,35 @@ Within the emulated CUDA, these registers are spaced apart by 0x200 bytes. Apple
 | Interrupt Enable          | IER        | 0xE    |
 | Data A                    | ORA        | 0xF    |
 
-# Usage
+## Data A
 
-The VIA Cuda is emulated in all Power Macs through an interrupt controller. Early Power Macs also used the Parameter RAM.
+| Register Bit     | Bit Mask |
+|:----------------:|:--------:|
+| Drive Select     | 0x10     |
+| Disk Head Select | 0x20     |
 
-Additionally, nodes are included for ADB peripherals, Parameter RAM, Real-Time Clocks, and Power Management.
+## Auxiliary Contral
 
-It can be run either synchronously or asynchronously.
+| Register Bit                      | Bit Mask |
+|:---------------------------------:|:--------:|
+| Port A Latch                      | 0x1      |
+| Port B Latch                      | 0x2      |
+| Timer 2, control                  | 0x20     |
+| Timer 1, continuous counting      | 0x40     |
+| Timer 1, drives PB7               | 0x80     |
 
-However, the CUDA is also slower than the CPU, thus causing a delay that the OS expects.
+## Interrupt Enable
+
+| Register Bit   | Bit Mask |
+|:--------------:|:--------:|
+| CA2            | 0x1      |
+| CA1            | 0x2      |
+| Shift Register | 0x2      |
+| CB2            | 0x8      |
+| CB1            | 0x10     |
+| Timer 2        | 0x20     |
+| Timer 1        | 0x40     |
+| Set interrupt  | 0x80     |
 
 # Packet Types
 

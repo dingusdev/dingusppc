@@ -22,6 +22,7 @@ Code
 > one_hundred = 100;
 > one_thousand = 1000;
 * CamelCase for class names, lowercase for variables, UPPERCASE for enumerations
+* Avoid redundancy in namespaces (i.e. use ViaCuda::read() instead of ViaCuda::cuda_read())
 
 Issues
 =======

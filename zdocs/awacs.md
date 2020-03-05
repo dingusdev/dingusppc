@@ -1,11 +1,31 @@
-# Memory Map
-
 AWACS can usually be located at IOBase (ex.: 0xF3000000 for Power Mac G3 Beige) + 0x14000.
 
-# Registers
+# Register Maps
 
-Sound Control Register
-Codec Control Register
-Codec Status Register
-Clipping Count Register
-Byte Swapping Register
+## NuBus Macs
+| Register          | Offset | Length
+|:-----------------:|:------:|:------:|
+| Codec Control     | 0x0    | 3      |
+| Codec Status      | 0x4    | 3      |
+| Buffer Size       | 0x8    | 2      |
+| Phaser            | 0xA    | 4      |
+| Sound Control     | 0xE    | 2      |
+| DMA In            | 0x12   | 1      |
+| DMA Out           | 0x16   | 1      |
+
+## PCI Macs
+
+All registers are 32-bit here.
+
+| Register          | Offset |
+|:-----------------:|:------:|
+| Sound Control     | 0x0    | 
+| Codec Control     | 0x10   |
+| Codec Status      | 0x20   |
+| Clipping Count    | 0x30   |
+| Byte Swapping     | 0x40   |
+
+
+Separate volume controls exist for the CD drive and the microphone.
+
+The DMA buffer size is set to be 0x40000 bytes, while the DMA hardware buffer size is set to be 0x2000 bytes.
