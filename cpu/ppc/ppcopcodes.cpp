@@ -1426,7 +1426,7 @@ void ppc_extshdot() {
 void ppc_b() {
     uint32_t quick_test = (ppc_cur_instruction & 0x03FFFFFC);
     adr_li = (quick_test < 0x2000000) ? quick_test : (0xFC000000UL + quick_test);
-    ppc_next_instruction_address = (uint32_t)(ppc_state.prog_counter + adr_li);
+    ppc_next_instruction_address = (uint32_t)(ppc_state.pc + adr_li);
     grab_branch = 1;
     bb_kind = BB_end_kind::BB_BRANCH;
 }
@@ -1434,8 +1434,8 @@ void ppc_b() {
 void ppc_bl() {
     uint32_t quick_test = (ppc_cur_instruction & 0x03FFFFFC);
     adr_li = (quick_test < 0x2000000) ? quick_test : (0xFC000000UL + quick_test);
-    ppc_next_instruction_address = (uint32_t)(ppc_state.prog_counter + adr_li);
-    ppc_state.spr[SPR::LR] = (uint32_t)(ppc_state.prog_counter + 4);
+    ppc_next_instruction_address = (uint32_t)(ppc_state.pc + adr_li);
+    ppc_state.spr[SPR::LR] = (uint32_t)(ppc_state.pc + 4);
     grab_branch = 1;
     bb_kind = BB_end_kind::BB_BRANCH;
 }
@@ -1452,7 +1452,7 @@ void ppc_bla() {
     uint32_t quick_test = (ppc_cur_instruction & 0x03FFFFFC);
     adr_li = (quick_test < 0x2000000) ? quick_test : (0xFC000000UL + quick_test);
     ppc_next_instruction_address = adr_li;
-    ppc_state.spr[SPR::LR] = ppc_state.prog_counter + 4;
+    ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
     grab_branch = 1;
     bb_kind = BB_end_kind::BB_BRANCH;
 }
@@ -1472,7 +1472,7 @@ void ppc_bc()
     cnd_ok = (br_bo & 0x10) || (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
 
     if (ctr_ok && cnd_ok) {
-        ppc_next_instruction_address = (ppc_state.prog_counter + br_bd);
+        ppc_next_instruction_address = (ppc_state.pc + br_bd);
         grab_branch = 1;
         bb_kind = BB_end_kind::BB_BRANCH;
     }
@@ -1514,11 +1514,11 @@ void ppc_bcl()
     cnd_ok = (br_bo & 0x10) || (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
 
     if (ctr_ok && cnd_ok) {
-        ppc_next_instruction_address = (ppc_state.prog_counter + br_bd);
+        ppc_next_instruction_address = (ppc_state.pc + br_bd);
         grab_branch = 1;
         bb_kind = BB_end_kind::BB_BRANCH;
     }
-    ppc_state.spr[SPR::LR] = ppc_state.prog_counter + 4;
+    ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
 }
 
 void ppc_bcla()
@@ -1540,7 +1540,7 @@ void ppc_bcla()
         grab_branch = 1;
         bb_kind = BB_end_kind::BB_BRANCH;
     }
-    ppc_state.spr[SPR::LR] = ppc_state.prog_counter + 4;
+    ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
 }
 
 void ppc_bcctr()
@@ -1569,7 +1569,7 @@ void ppc_bcctrl()
         grab_branch = 1;
         bb_kind = BB_end_kind::BB_BRANCH;
     }
-    ppc_state.spr[SPR::LR] = ppc_state.prog_counter + 4;
+    ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
 }
 
 void ppc_bclr()
@@ -1610,7 +1610,7 @@ void ppc_bclrl()
         grab_branch = 1;
         bb_kind = BB_end_kind::BB_BRANCH;
     }
-    ppc_state.spr[SPR::LR] = ppc_state.prog_counter + 4;
+    ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
 }
 //Compare Instructions
 
@@ -1843,7 +1843,7 @@ void ppc_dcbtst() {
 void ppc_dcbz() {
     ppc_grab_regsdab();
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
-    if (!(ppc_state.prog_counter & 32) && (ppc_state.prog_counter < 0xFFFFFFE0UL)) {
+    if (!(ppc_state.pc & 32) && (ppc_state.pc < 0xFFFFFFE0UL)) {
         ppc_grab_regsdab();
         ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
         mem_write_qword(ppc_effective_address, 0);

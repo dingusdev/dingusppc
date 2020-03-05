@@ -39,7 +39,7 @@ jmp_buf exc_env; /* Global exception environment. */
 
     switch(exception_type) {
         case Except_Type::EXC_SYSTEM_RESET:
-            ppc_state.spr[SPR::SRR0] = ppc_state.prog_counter & 0xFFFFFFFC;
+            ppc_state.spr[SPR::SRR0] = ppc_state.pc & 0xFFFFFFFC;
             ppc_next_instruction_address = 0x0100;
             break;
 
@@ -47,12 +47,12 @@ jmp_buf exc_env; /* Global exception environment. */
             if (!(ppc_state.msr & 0x1000)) {
                 /* TODO: handle internal checkstop */
             }
-            ppc_state.spr[SPR::SRR0] = ppc_state.prog_counter & 0xFFFFFFFC;
+            ppc_state.spr[SPR::SRR0] = ppc_state.pc & 0xFFFFFFFC;
             ppc_next_instruction_address = 0x0200;
             break;
 
         case Except_Type::EXC_DSI:
-            ppc_state.spr[SPR::SRR0] = ppc_state.prog_counter & 0xFFFFFFFC;
+            ppc_state.spr[SPR::SRR0] = ppc_state.pc & 0xFFFFFFFC;
             ppc_next_instruction_address = 0x0300;
             break;
 
@@ -67,32 +67,32 @@ jmp_buf exc_env; /* Global exception environment. */
             break;
 
         case Except_Type::EXC_ALIGNMENT:
-            ppc_state.spr[SPR::SRR0] = ppc_state.prog_counter & 0xFFFFFFFC;
+            ppc_state.spr[SPR::SRR0] = ppc_state.pc & 0xFFFFFFFC;
             ppc_next_instruction_address = 0x0600;
             break;
 
         case Except_Type::EXC_PROGRAM:
-            ppc_state.spr[SPR::SRR0] = ppc_state.prog_counter & 0xFFFFFFFC;
+            ppc_state.spr[SPR::SRR0] = ppc_state.pc & 0xFFFFFFFC;
             ppc_next_instruction_address = 0x0700;
             break;
 
         case Except_Type::EXC_NO_FPU:
-            ppc_state.spr[SPR::SRR0] = ppc_state.prog_counter & 0xFFFFFFFC;
+            ppc_state.spr[SPR::SRR0] = ppc_state.pc & 0xFFFFFFFC;
             ppc_next_instruction_address = 0x0800;
             break;
 
         case Except_Type::EXC_DECR:
-            ppc_state.spr[SPR::SRR0] = (ppc_state.prog_counter & 0xFFFFFFFC) + 4;
+            ppc_state.spr[SPR::SRR0] = (ppc_state.pc & 0xFFFFFFFC) + 4;
             ppc_next_instruction_address = 0x0900;
             break;
 
         case Except_Type::EXC_SYSCALL:
-            ppc_state.spr[SPR::SRR0] = (ppc_state.prog_counter & 0xFFFFFFFC) + 4;
+            ppc_state.spr[SPR::SRR0] = (ppc_state.pc & 0xFFFFFFFC) + 4;
             ppc_next_instruction_address = 0x0C00;
             break;
 
         case Except_Type::EXC_TRACE:
-            ppc_state.spr[SPR::SRR0] = (ppc_state.prog_counter & 0xFFFFFFFC) + 4;
+            ppc_state.spr[SPR::SRR0] = (ppc_state.pc & 0xFFFFFFFC) + 4;
             ppc_next_instruction_address = 0x0D00;
             break;
 

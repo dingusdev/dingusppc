@@ -65,7 +65,7 @@ fpscr = FP Status and Condition Register
 
 typedef struct struct_ppc_state {
     FPR_storage fpr[32];
-    uint32_t prog_counter; //Referred as the CIA in the PPC manual
+    uint32_t pc; //Referred as the CIA in the PPC manual
     uint32_t gpr[32];
     uint32_t cr;
     uint32_t fpscr;
@@ -111,7 +111,7 @@ enum PPC_VER : uint32_t {
 /**
 typedef struct struct_ppc64_state {
     FPR_storage fpr [32];
-    uint64_t prog_counter; //Referred as the CIA in the PPC manual
+    uint64_t pc; //Referred as the CIA in the PPC manual
     uint64_t gpr [32];
     uint32_t cr;
     uint32_t fpscr;

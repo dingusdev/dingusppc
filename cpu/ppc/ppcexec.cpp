@@ -563,22 +563,22 @@ void tbr_update()
 void ppc_exec()
 {
     while (power_on) {
-        //printf("PowerPC Address: %x \n", ppc_state.prog_counter);
-        quickinstruction_translate(ppc_state.prog_counter);
+        //printf("PowerPC Address: %x \n", ppc_state.pc);
+        quickinstruction_translate(ppc_state.pc);
         ppc_main_opcode();
         if (grab_branch & !grab_exception) {
-            ppc_state.prog_counter = ppc_next_instruction_address;
+            ppc_state.pc = ppc_next_instruction_address;
             grab_branch = 0;
             tbr_update();
         }
         else if (grab_return | grab_exception) {
-            ppc_state.prog_counter = ppc_next_instruction_address;
+            ppc_state.pc = ppc_next_instruction_address;
             grab_exception = 0;
             grab_return = 0;
             tbr_update();
         }
         else {
-            ppc_state.prog_counter += 4;
+            ppc_state.pc += 4;
             tbr_update();
         }
     }
@@ -590,16 +590,16 @@ void ppc_exec()
     uint8_t* pc_real;
 
     /* start new basic block */
-    bb_start_la = ppc_state.prog_counter;
+    bb_start_la = ppc_state.pc;
     bb_kind = BB_end_kind::BB_NONE;
 
     if (setjmp(exc_env)) {
         /* reaching here means we got a low-level exception */
-        timebase_counter += (ppc_state.prog_counter - bb_start_la) >> 2;
+        timebase_counter += (ppc_state.pc - bb_start_la) >> 2;
         bb_start_la = ppc_next_instruction_address;
         pc_real = quickinstruction_translate(bb_start_la);
         page_start = bb_start_la & 0xFFFFF000;
-        ppc_state.prog_counter = bb_start_la;
+        ppc_state.pc = bb_start_la;
         bb_kind = BB_end_kind::BB_NONE;
         goto again;
     }
@@ -614,21 +614,21 @@ again:
     while (power_on) {
         ppc_main_opcode();
         if (bb_kind != BB_end_kind::BB_NONE) {
-            timebase_counter += (ppc_state.prog_counter - bb_start_la) >> 2;
+            timebase_counter += (ppc_state.pc - bb_start_la) >> 2;
             bb_start_la = ppc_next_instruction_address;
             if ((ppc_next_instruction_address & 0xFFFFF000) != page_start) {
                 page_start = bb_start_la & 0xFFFFF000;
                 pc_real = quickinstruction_translate(bb_start_la);
             }
             else {
-                pc_real += (int)bb_start_la - (int)ppc_state.prog_counter;
+                pc_real += (int)bb_start_la - (int)ppc_state.pc;
                 ppc_set_cur_instruction(pc_real);
             }
-            ppc_state.prog_counter = bb_start_la;
+            ppc_state.pc = bb_start_la;
             bb_kind = BB_end_kind::BB_NONE;
         }
         else {
-            ppc_state.prog_counter += 4;
+            ppc_state.pc += 4;
             pc_real += 4;
             ppc_set_cur_instruction(pc_real);
         }
@@ -640,21 +640,21 @@ again:
 #if 0
 void ppc_exec_single()
 {
-    quickinstruction_translate(ppc_state.prog_counter);
+    quickinstruction_translate(ppc_state.pc);
     ppc_main_opcode();
     if (grab_branch && !grab_exception) {
-        ppc_state.prog_counter = ppc_next_instruction_address;
+        ppc_state.pc = ppc_next_instruction_address;
         grab_branch = 0;
         tbr_update();
     }
     else if (grab_return || grab_exception) {
-        ppc_state.prog_counter = ppc_next_instruction_address;
+        ppc_state.pc = ppc_next_instruction_address;
         grab_exception = 0;
         grab_return = 0;
         tbr_update();
     }
     else {
-        ppc_state.prog_counter += 4;
+        ppc_state.pc += 4;
         tbr_update();
     }
 }
@@ -664,19 +664,19 @@ void ppc_exec_single()
     if (setjmp(exc_env)) {
         /* reaching here means we got a low-level exception */
         timebase_counter += 1;
-        ppc_state.prog_counter = ppc_next_instruction_address;
+        ppc_state.pc = ppc_next_instruction_address;
         bb_kind = BB_end_kind::BB_NONE;
         return;
     }
 
-    quickinstruction_translate(ppc_state.prog_counter);
+    quickinstruction_translate(ppc_state.pc);
     ppc_main_opcode();
     if (bb_kind != BB_end_kind::BB_NONE) {
-        ppc_state.prog_counter = ppc_next_instruction_address;
+        ppc_state.pc = ppc_next_instruction_address;
         bb_kind = BB_end_kind::BB_NONE;
     }
     else {
-        ppc_state.prog_counter += 4;
+        ppc_state.pc += 4;
     }
     timebase_counter += 1;
 }
@@ -686,22 +686,22 @@ void ppc_exec_single()
 #if 0
 void ppc_exec_until(uint32_t goal_addr)
 {
-    while (ppc_state.prog_counter != goal_addr) {
-        quickinstruction_translate(ppc_state.prog_counter);
+    while (ppc_state.pc != goal_addr) {
+        quickinstruction_translate(ppc_state.pc);
         ppc_main_opcode();
         if (grab_branch && !grab_exception) {
-            ppc_state.prog_counter = ppc_next_instruction_address;
+            ppc_state.pc = ppc_next_instruction_address;
             grab_branch = 0;
             tbr_update();
         }
         else if (grab_return || grab_exception) {
-            ppc_state.prog_counter = ppc_next_instruction_address;
+            ppc_state.pc = ppc_next_instruction_address;
             grab_exception = 0;
             grab_return = 0;
             tbr_update();
         }
         else {
-            ppc_state.prog_counter += 4;
+            ppc_state.pc += 4;
             tbr_update();
         }
         ppc_cur_instruction = 0;
@@ -714,16 +714,16 @@ void ppc_exec_until(uint32_t goal_addr)
     uint8_t* pc_real;
 
     /* start new basic block */
-    bb_start_la = ppc_state.prog_counter;
+    bb_start_la = ppc_state.pc;
     bb_kind = BB_end_kind::BB_NONE;
 
     if (setjmp(exc_env)) {
         /* reaching here means we got a low-level exception */
-        timebase_counter += (ppc_state.prog_counter - bb_start_la) >> 2;
+        timebase_counter += (ppc_state.pc - bb_start_la) >> 2;
         bb_start_la = ppc_next_instruction_address;
         pc_real = quickinstruction_translate(bb_start_la);
         page_start = bb_start_la & 0xFFFFF000;
-        ppc_state.prog_counter = bb_start_la;
+        ppc_state.pc = bb_start_la;
         bb_kind = BB_end_kind::BB_NONE;
         goto again;
     }
@@ -735,24 +735,24 @@ void ppc_exec_until(uint32_t goal_addr)
     page_start = bb_start_la & 0xFFFFF000;
 
 again:
-    while (ppc_state.prog_counter != goal_addr) {
+    while (ppc_state.pc != goal_addr) {
         ppc_main_opcode();
         if (bb_kind != BB_end_kind::BB_NONE) {
-            timebase_counter += (ppc_state.prog_counter - bb_start_la) >> 2;
+            timebase_counter += (ppc_state.pc - bb_start_la) >> 2;
             bb_start_la = ppc_next_instruction_address;
             if ((ppc_next_instruction_address & 0xFFFFF000) != page_start) {
                 page_start = bb_start_la & 0xFFFFF000;
                 pc_real = quickinstruction_translate(bb_start_la);
             }
             else {
-                pc_real += (int)bb_start_la - (int)ppc_state.prog_counter;
+                pc_real += (int)bb_start_la - (int)ppc_state.pc;
                 ppc_set_cur_instruction(pc_real);
             }
-            ppc_state.prog_counter = bb_start_la;
+            ppc_state.pc = bb_start_la;
             bb_kind = BB_end_kind::BB_NONE;
         }
         else {
-            ppc_state.prog_counter += 4;
+            ppc_state.pc += 4;
             pc_real += 4;
             ppc_set_cur_instruction(pc_real);
         }
@@ -788,7 +788,7 @@ void ppc_cpu_init(uint32_t proc_version)
     ppc_state.cr = 0;
     ppc_state.fpscr = 0;
 
-    ppc_state.prog_counter = 0;
+    ppc_state.pc = 0;
 
     ppc_state.tbr[0] = 0;
     ppc_state.tbr[1] = 0;
@@ -811,7 +811,7 @@ void ppc_cpu_init(uint32_t proc_version)
     ppc_mmu_init();
 
     /* redirect code execution to reset vector */
-    ppc_state.prog_counter = 0xFFF00100;
+    ppc_state.pc = 0xFFF00100;
 }
 
 void print_gprs()
@@ -820,7 +820,7 @@ void print_gprs()
         cout << "GPR " << dec << i << " : " << uppercase << hex
             << ppc_state.gpr[i] << endl;
 
-    cout << "PC: " << uppercase << hex << ppc_state.prog_counter << endl;
+    cout << "PC: " << uppercase << hex << ppc_state.pc << endl;
     cout << "LR: " << uppercase << hex << ppc_state.spr[SPR::LR] << endl;
     cout << "CR: " << uppercase << hex << ppc_state.cr << endl;
     cout << "CTR: " << uppercase << hex << ppc_state.spr[SPR::CTR] << endl;
@@ -858,8 +858,8 @@ uint64_t reg_op(string &reg_name, uint64_t val, bool is_write)
     try {
         if (reg_name_u == "PC") {
             if (is_write)
-                ppc_state.prog_counter = val;
-            return ppc_state.prog_counter;
+                ppc_state.pc = val;
+            return ppc_state.pc;
         }
         if (reg_name_u == "MSR") {
             if (is_write)
