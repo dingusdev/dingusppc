@@ -133,6 +133,7 @@ private:
     //void cuda_response_packet();
     void error_response(uint32_t error);
     void process_packet();
+    void process_adb_command(uint8_t cmd_byte, int data_count);
     void pseudo_command(int cmd, int data_count);
 
     /* I2C related methods */

@@ -248,6 +248,7 @@ void ViaCuda::process_packet()
     switch (this->in_buf[0]) {
     case CUDA_PKT_ADB:
         LOG_F(9, "Cuda: ADB packet received \n");
+        process_adb_command(this->in_buf[1], this->in_count - 2);
         break;
     case CUDA_PKT_PSEUDO:
         LOG_F(9, "Cuda: pseudo command packet received \n");
@@ -260,6 +261,32 @@ void ViaCuda::process_packet()
         break;
     default:
         LOG_F(ERROR, "Cuda: unsupported packet type = %d \n", (uint32_t)(this->in_buf[0]));
+    }
+}
+
+void ViaCuda::process_adb_command(uint8_t cmd_byte, int data_count)
+{
+    int cmd = cmd_byte & 0xF;
+
+    if(!cmd) {
+        LOG_F(9, "Cuda: ADB SendReset command requested\n");
+        response_header(CUDA_PKT_ADB, 0);
+    }
+    else if (cmd == 1) {
+        LOG_F(9, "Cuda: ADB Flush command requested\n");
+        response_header(CUDA_PKT_ADB, 0);
+    }
+    else if ((cmd & 0xC) == 8) {
+        LOG_F(9, "Cuda: ADB Listen command requested\n");
+        response_header(CUDA_PKT_ADB, 0);
+    }
+    else if ((cmd & 0xC) == 0xC) {
+        LOG_F(9, "Cuda: ADB Talk command requested\n");
+        response_header(CUDA_PKT_ADB, 0);
+    }
+    else {
+        LOG_F(ERROR, "Cuda: unsupported ADB command 0x%x \n", cmd);
+        error_response(CUDA_ERR_BAD_CMD);
     }
 }
 
