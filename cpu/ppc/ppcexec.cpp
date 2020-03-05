@@ -533,27 +533,27 @@ void ppc_main_opcode() {
 }
 
 /** Old time base register (TBR) update code. */
-void ppc_tbr_update()
+void tbr_update()
 {
     clock_t clock_test_current = clock();
     uint32_t test_clock = ((uint32_t)(clock_test_current - clock_test_begin)) / CLOCKS_PER_SEC;
     if (test_clock) {
-        if (ppc_state.ppc_tbr[0] != 0xFFFFFFFF) {
-            ppc_state.ppc_tbr[0]++;
+        if (ppc_state.tbr[0] != 0xFFFFFFFF) {
+            ppc_state.tbr[0]++;
         }
         else {
-            ppc_state.ppc_tbr[0] = 0;
-            if (ppc_state.ppc_tbr[1] != 0xFFFFFFFF) {
-                ppc_state.ppc_tbr[1]++;
+            ppc_state.tbr[0] = 0;
+            if (ppc_state.tbr[1] != 0xFFFFFFFF) {
+                ppc_state.tbr[1]++;
             }
             else {
-                ppc_state.ppc_tbr[1] = 0;
+                ppc_state.tbr[1] = 0;
             }
         }
         clock_test_begin = clock();
         //Placeholder Decrementing Code
-        if (ppc_state.ppc_spr[22] > 0) {
-            ppc_state.ppc_spr[22]--;
+        if (ppc_state.spr[22] > 0) {
+            ppc_state.spr[22]--;
         }
     }
 }
@@ -563,23 +563,23 @@ void ppc_tbr_update()
 void ppc_exec()
 {
     while (power_on) {
-        //printf("PowerPC Address: %x \n", ppc_state.ppc_pc);
-        quickinstruction_translate(ppc_state.ppc_pc);
+        //printf("PowerPC Address: %x \n", ppc_state.prog_counter);
+        quickinstruction_translate(ppc_state.prog_counter);
         ppc_main_opcode();
         if (grab_branch & !grab_exception) {
-            ppc_state.ppc_pc = ppc_next_instruction_address;
+            ppc_state.prog_counter = ppc_next_instruction_address;
             grab_branch = 0;
-            ppc_tbr_update();
+            tbr_update();
         }
         else if (grab_return | grab_exception) {
-            ppc_state.ppc_pc = ppc_next_instruction_address;
+            ppc_state.prog_counter = ppc_next_instruction_address;
             grab_exception = 0;
             grab_return = 0;
-            ppc_tbr_update();
+            tbr_update();
         }
         else {
-            ppc_state.ppc_pc += 4;
-            ppc_tbr_update();
+            ppc_state.prog_counter += 4;
+            tbr_update();
         }
     }
 }
@@ -590,16 +590,16 @@ void ppc_exec()
     uint8_t* pc_real;
 
     /* start new basic block */
-    bb_start_la = ppc_state.ppc_pc;
+    bb_start_la = ppc_state.prog_counter;
     bb_kind = BB_end_kind::BB_NONE;
 
     if (setjmp(exc_env)) {
         /* reaching here means we got a low-level exception */
-        timebase_counter += (ppc_state.ppc_pc - bb_start_la) >> 2;
+        timebase_counter += (ppc_state.prog_counter - bb_start_la) >> 2;
         bb_start_la = ppc_next_instruction_address;
         pc_real = quickinstruction_translate(bb_start_la);
         page_start = bb_start_la & 0xFFFFF000;
-        ppc_state.ppc_pc = bb_start_la;
+        ppc_state.prog_counter = bb_start_la;
         bb_kind = BB_end_kind::BB_NONE;
         goto again;
     }
@@ -614,21 +614,21 @@ again:
     while (power_on) {
         ppc_main_opcode();
         if (bb_kind != BB_end_kind::BB_NONE) {
-            timebase_counter += (ppc_state.ppc_pc - bb_start_la) >> 2;
+            timebase_counter += (ppc_state.prog_counter - bb_start_la) >> 2;
             bb_start_la = ppc_next_instruction_address;
             if ((ppc_next_instruction_address & 0xFFFFF000) != page_start) {
                 page_start = bb_start_la & 0xFFFFF000;
                 pc_real = quickinstruction_translate(bb_start_la);
             }
             else {
-                pc_real += (int)bb_start_la - (int)ppc_state.ppc_pc;
+                pc_real += (int)bb_start_la - (int)ppc_state.prog_counter;
                 ppc_set_cur_instruction(pc_real);
             }
-            ppc_state.ppc_pc = bb_start_la;
+            ppc_state.prog_counter = bb_start_la;
             bb_kind = BB_end_kind::BB_NONE;
         }
         else {
-            ppc_state.ppc_pc += 4;
+            ppc_state.prog_counter += 4;
             pc_real += 4;
             ppc_set_cur_instruction(pc_real);
         }
@@ -640,22 +640,22 @@ again:
 #if 0
 void ppc_exec_single()
 {
-    quickinstruction_translate(ppc_state.ppc_pc);
+    quickinstruction_translate(ppc_state.prog_counter);
     ppc_main_opcode();
     if (grab_branch && !grab_exception) {
-        ppc_state.ppc_pc = ppc_next_instruction_address;
+        ppc_state.prog_counter = ppc_next_instruction_address;
         grab_branch = 0;
-        ppc_tbr_update();
+        tbr_update();
     }
     else if (grab_return || grab_exception) {
-        ppc_state.ppc_pc = ppc_next_instruction_address;
+        ppc_state.prog_counter = ppc_next_instruction_address;
         grab_exception = 0;
         grab_return = 0;
-        ppc_tbr_update();
+        tbr_update();
     }
     else {
-        ppc_state.ppc_pc += 4;
-        ppc_tbr_update();
+        ppc_state.prog_counter += 4;
+        tbr_update();
     }
 }
 #else
@@ -664,19 +664,19 @@ void ppc_exec_single()
     if (setjmp(exc_env)) {
         /* reaching here means we got a low-level exception */
         timebase_counter += 1;
-        ppc_state.ppc_pc = ppc_next_instruction_address;
+        ppc_state.prog_counter = ppc_next_instruction_address;
         bb_kind = BB_end_kind::BB_NONE;
         return;
     }
 
-    quickinstruction_translate(ppc_state.ppc_pc);
+    quickinstruction_translate(ppc_state.prog_counter);
     ppc_main_opcode();
     if (bb_kind != BB_end_kind::BB_NONE) {
-        ppc_state.ppc_pc = ppc_next_instruction_address;
+        ppc_state.prog_counter = ppc_next_instruction_address;
         bb_kind = BB_end_kind::BB_NONE;
     }
     else {
-        ppc_state.ppc_pc += 4;
+        ppc_state.prog_counter += 4;
     }
     timebase_counter += 1;
 }
@@ -686,23 +686,23 @@ void ppc_exec_single()
 #if 0
 void ppc_exec_until(uint32_t goal_addr)
 {
-    while (ppc_state.ppc_pc != goal_addr) {
-        quickinstruction_translate(ppc_state.ppc_pc);
+    while (ppc_state.prog_counter != goal_addr) {
+        quickinstruction_translate(ppc_state.prog_counter);
         ppc_main_opcode();
         if (grab_branch && !grab_exception) {
-            ppc_state.ppc_pc = ppc_next_instruction_address;
+            ppc_state.prog_counter = ppc_next_instruction_address;
             grab_branch = 0;
-            ppc_tbr_update();
+            tbr_update();
         }
         else if (grab_return || grab_exception) {
-            ppc_state.ppc_pc = ppc_next_instruction_address;
+            ppc_state.prog_counter = ppc_next_instruction_address;
             grab_exception = 0;
             grab_return = 0;
-            ppc_tbr_update();
+            tbr_update();
         }
         else {
-            ppc_state.ppc_pc += 4;
-            ppc_tbr_update();
+            ppc_state.prog_counter += 4;
+            tbr_update();
         }
         ppc_cur_instruction = 0;
     }
@@ -714,16 +714,16 @@ void ppc_exec_until(uint32_t goal_addr)
     uint8_t* pc_real;
 
     /* start new basic block */
-    bb_start_la = ppc_state.ppc_pc;
+    bb_start_la = ppc_state.prog_counter;
     bb_kind = BB_end_kind::BB_NONE;
 
     if (setjmp(exc_env)) {
         /* reaching here means we got a low-level exception */
-        timebase_counter += (ppc_state.ppc_pc - bb_start_la) >> 2;
+        timebase_counter += (ppc_state.prog_counter - bb_start_la) >> 2;
         bb_start_la = ppc_next_instruction_address;
         pc_real = quickinstruction_translate(bb_start_la);
         page_start = bb_start_la & 0xFFFFF000;
-        ppc_state.ppc_pc = bb_start_la;
+        ppc_state.prog_counter = bb_start_la;
         bb_kind = BB_end_kind::BB_NONE;
         goto again;
     }
@@ -735,24 +735,24 @@ void ppc_exec_until(uint32_t goal_addr)
     page_start = bb_start_la & 0xFFFFF000;
 
 again:
-    while (ppc_state.ppc_pc != goal_addr) {
+    while (ppc_state.prog_counter != goal_addr) {
         ppc_main_opcode();
         if (bb_kind != BB_end_kind::BB_NONE) {
-            timebase_counter += (ppc_state.ppc_pc - bb_start_la) >> 2;
+            timebase_counter += (ppc_state.prog_counter - bb_start_la) >> 2;
             bb_start_la = ppc_next_instruction_address;
             if ((ppc_next_instruction_address & 0xFFFFF000) != page_start) {
                 page_start = bb_start_la & 0xFFFFF000;
                 pc_real = quickinstruction_translate(bb_start_la);
             }
             else {
-                pc_real += (int)bb_start_la - (int)ppc_state.ppc_pc;
+                pc_real += (int)bb_start_la - (int)ppc_state.prog_counter;
                 ppc_set_cur_instruction(pc_real);
             }
-            ppc_state.ppc_pc = bb_start_la;
+            ppc_state.prog_counter = bb_start_la;
             bb_kind = BB_end_kind::BB_NONE;
         }
         else {
-            ppc_state.ppc_pc += 4;
+            ppc_state.prog_counter += 4;
             pc_real += 4;
             ppc_set_cur_instruction(pc_real);
         }
@@ -770,68 +770,68 @@ void ppc_cpu_init(uint32_t proc_version)
     /* zero all GPRs as prescribed for MPC601 */
     /* For later PPC CPUs, GPR content is undefined */
     for (i = 0; i < 32; i++) {
-        ppc_state.ppc_gpr[i] = 0;
+        ppc_state.gpr[i] = 0;
     }
 
     /* zero all FPRs as prescribed for MPC601 */
     /* For later PPC CPUs, GPR content is undefined */
     for (i = 0; i < 32; i++) {
-        ppc_state.ppc_fpr[i].int64_r = 0;
+        ppc_state.fpr[i].int64_r = 0;
     }
 
     /* zero all segment registers as prescribed for MPC601 */
     /* For later PPC CPUs, SR content is undefined */
     for (i = 0; i < 16; i++) {
-        ppc_state.ppc_sr[i] = 0;
+        ppc_state.sr[i] = 0;
     }
 
-    ppc_state.ppc_cr = 0;
-    ppc_state.ppc_fpscr = 0;
+    ppc_state.cr = 0;
+    ppc_state.fpscr = 0;
 
-    ppc_state.ppc_pc = 0;
+    ppc_state.prog_counter = 0;
 
-    ppc_state.ppc_tbr[0] = 0;
-    ppc_state.ppc_tbr[1] = 0;
+    ppc_state.tbr[0] = 0;
+    ppc_state.tbr[1] = 0;
 
     /* zero all SPRs */
     for (i = 0; i < 1024; i++) {
-        ppc_state.ppc_spr[i] = 0;
+        ppc_state.spr[i] = 0;
     }
 
-    ppc_state.ppc_spr[SPR::PVR] = proc_version;
+    ppc_state.spr[SPR::PVR] = proc_version;
 
     if ((proc_version & 0xFFFF0000) == 0x00010000) {
         /* MPC601 sets MSR[ME] bit during hard reset / Power-On */
-        ppc_state.ppc_msr = 0x1040;
+        ppc_state.msr = 0x1040;
     } else {
-        ppc_state.ppc_msr = 0x40;
-        ppc_state.ppc_spr[SPR::DEC] = 0xFFFFFFFFUL;
+        ppc_state.msr = 0x40;
+        ppc_state.spr[SPR::DEC] = 0xFFFFFFFFUL;
     }
 
     ppc_mmu_init();
 
     /* redirect code execution to reset vector */
-    ppc_state.ppc_pc = 0xFFF00100;
+    ppc_state.prog_counter = 0xFFF00100;
 }
 
 void print_gprs()
 {
     for (int i = 0; i < 32; i++)
         cout << "GPR " << dec << i << " : " << uppercase << hex
-            << ppc_state.ppc_gpr[i] << endl;
+            << ppc_state.gpr[i] << endl;
 
-    cout << "PC: " << uppercase << hex << ppc_state.ppc_pc << endl;
-    cout << "LR: " << uppercase << hex << ppc_state.ppc_spr[SPR::LR] << endl;
-    cout << "CR: " << uppercase << hex << ppc_state.ppc_cr << endl;
-    cout << "CTR: " << uppercase << hex << ppc_state.ppc_spr[SPR::CTR] << endl;
-    cout << "XER: " << uppercase << hex << ppc_state.ppc_spr[SPR::XER] << endl;
-    cout << "MSR: " << uppercase << hex << ppc_state.ppc_msr << endl;
+    cout << "PC: " << uppercase << hex << ppc_state.prog_counter << endl;
+    cout << "LR: " << uppercase << hex << ppc_state.spr[SPR::LR] << endl;
+    cout << "CR: " << uppercase << hex << ppc_state.cr << endl;
+    cout << "CTR: " << uppercase << hex << ppc_state.spr[SPR::CTR] << endl;
+    cout << "XER: " << uppercase << hex << ppc_state.spr[SPR::XER] << endl;
+    cout << "MSR: " << uppercase << hex << ppc_state.msr << endl;
 }
 
 void print_fprs()
 {
     for (int i = 0; i < 32; i++)
-        cout << "FPR " << dec << i << " : " << ppc_state.ppc_fpr[i].dbl64_r << endl;
+        cout << "FPR " << dec << i << " : " << ppc_state.fpr[i].dbl64_r << endl;
 }
 
 static map<string, int> SPRName2Num = {
@@ -858,23 +858,23 @@ uint64_t reg_op(string &reg_name, uint64_t val, bool is_write)
     try {
         if (reg_name_u == "PC") {
             if (is_write)
-                ppc_state.ppc_pc = val;
-            return ppc_state.ppc_pc;
+                ppc_state.prog_counter = val;
+            return ppc_state.prog_counter;
         }
         if (reg_name_u == "MSR") {
             if (is_write)
-                ppc_state.ppc_msr = val;
-            return ppc_state.ppc_msr;
+                ppc_state.msr = val;
+            return ppc_state.msr;
         }
         if (reg_name_u == "CR") {
             if (is_write)
-                ppc_state.ppc_cr = val;
-            return ppc_state.ppc_cr;
+                ppc_state.cr = val;
+            return ppc_state.cr;
         }
         if (reg_name_u == "FPSCR") {
             if (is_write)
-                ppc_state.ppc_fpscr = val;
-            return ppc_state.ppc_fpscr;
+                ppc_state.fpscr = val;
+            return ppc_state.fpscr;
         }
 
         if (reg_name_u.substr(0, 1) == "R") {
@@ -882,8 +882,8 @@ uint64_t reg_op(string &reg_name, uint64_t val, bool is_write)
             reg_num = stoul(reg_num_str, NULL, 0);
             if (reg_num < 32) {
                 if (is_write)
-                    ppc_state.ppc_gpr[reg_num] = val;
-                return ppc_state.ppc_gpr[reg_num];
+                    ppc_state.gpr[reg_num] = val;
+                return ppc_state.gpr[reg_num];
             }
         }
 
@@ -892,8 +892,8 @@ uint64_t reg_op(string &reg_name, uint64_t val, bool is_write)
             reg_num = stoul(reg_num_str, NULL, 0);
             if (reg_num < 32) {
                 if (is_write)
-                    ppc_state.ppc_fpr[reg_num].int64_r = val;
-                return ppc_state.ppc_fpr[reg_num].int64_r;
+                    ppc_state.fpr[reg_num].int64_r = val;
+                return ppc_state.fpr[reg_num].int64_r;
             }
         }
 
@@ -902,8 +902,8 @@ uint64_t reg_op(string &reg_name, uint64_t val, bool is_write)
             reg_num = stoul(reg_num_str, NULL, 0);
             if (reg_num < 1024) {
                 if (is_write)
-                    ppc_state.ppc_spr[reg_num] = val;
-                return ppc_state.ppc_spr[reg_num];
+                    ppc_state.spr[reg_num] = val;
+                return ppc_state.spr[reg_num];
             }
         }
 
@@ -912,16 +912,16 @@ uint64_t reg_op(string &reg_name, uint64_t val, bool is_write)
             reg_num = stoul(reg_num_str, NULL, 0);
             if (reg_num < 16) {
                 if (is_write)
-                    ppc_state.ppc_sr[reg_num] = val;
-                return ppc_state.ppc_sr[reg_num];
+                    ppc_state.sr[reg_num] = val;
+                return ppc_state.sr[reg_num];
             }
         }
 
         spr = SPRName2Num.find(reg_name_u);
         if (spr != SPRName2Num.end()) {
             if (is_write)
-                ppc_state.ppc_spr[spr->second] = val;
-            return ppc_state.ppc_spr[spr->second];
+                ppc_state.spr[spr->second] = val;
+            return ppc_state.spr[spr->second];
         }
     }
     catch (...) {

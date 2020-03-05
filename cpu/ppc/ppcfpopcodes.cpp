@@ -51,32 +51,32 @@ double qnan = std::numeric_limits<double>::quiet_NaN();
 //Storage and register retrieval functions for the floating point functions.
 
 double fp_return_double(uint32_t reg) {
-    return ppc_state.ppc_fpr[reg].dbl64_r;
+    return ppc_state.fpr[reg].dbl64_r;
 }
 
 uint64_t fp_return_uint64(uint32_t reg) {
-    return ppc_state.ppc_fpr[reg].int64_r;
+    return ppc_state.fpr[reg].int64_r;
 }
 
 void ppc_store_sfpresult(bool int_rep) {
     if (int_rep) {
-        ppc_state.ppc_fpr[reg_d].int64_r = ppc_result64_d;
-        ppc_state.ppc_fpr[reg_d].dbl64_r = *(double*)&ppc_result64_d;
+        ppc_state.fpr[reg_d].int64_r = ppc_result64_d;
+        ppc_state.fpr[reg_d].dbl64_r = *(double*)&ppc_result64_d;
     }
     else {
-        ppc_state.ppc_fpr[reg_d].dbl64_r = ppc_dblresult64_d;
-        ppc_state.ppc_fpr[reg_d].int64_r = *(uint64_t*)&ppc_dblresult64_d;
+        ppc_state.fpr[reg_d].dbl64_r = ppc_dblresult64_d;
+        ppc_state.fpr[reg_d].int64_r = *(uint64_t*)&ppc_dblresult64_d;
     }
 }
 
 void ppc_store_dfpresult(bool int_rep) {
     if (int_rep) {
-        ppc_state.ppc_fpr[reg_d].int64_r = ppc_result64_d;
-        ppc_state.ppc_fpr[reg_d].dbl64_r = *(double*)&ppc_result64_d;
+        ppc_state.fpr[reg_d].int64_r = ppc_result64_d;
+        ppc_state.fpr[reg_d].dbl64_r = *(double*)&ppc_result64_d;
     }
     else {
-        ppc_state.ppc_fpr[reg_d].dbl64_r = ppc_dblresult64_d;
-        ppc_state.ppc_fpr[reg_d].int64_r = *(uint64_t*)&ppc_dblresult64_d;
+        ppc_state.fpr[reg_d].dbl64_r = ppc_dblresult64_d;
+        ppc_state.fpr[reg_d].int64_r = *(uint64_t*)&ppc_dblresult64_d;
     }
 }
 
@@ -84,10 +84,10 @@ void ppc_grab_regsfpdb(bool int_rep) {
     reg_d = (ppc_cur_instruction >> 21) & 31;
     reg_b = (ppc_cur_instruction >> 11) & 31;
     if (int_rep) {
-        ppc_result64_b = ppc_state.ppc_fpr[reg_b].int64_r;
+        ppc_result64_b = ppc_state.fpr[reg_b].int64_r;
     }
     else {
-        ppc_dblresult64_b = ppc_state.ppc_fpr[reg_b].dbl64_r;
+        ppc_dblresult64_b = ppc_state.fpr[reg_b].dbl64_r;
     }
 }
 
@@ -98,30 +98,30 @@ void ppc_grab_regsfpdiab(bool int_rep) {
     if (int_rep == true) {
 
     }
-    ppc_result_a = ppc_state.ppc_gpr[reg_a];
-    ppc_result_b = ppc_state.ppc_gpr[reg_b];
+    ppc_result_a = ppc_state.gpr[reg_a];
+    ppc_result_b = ppc_state.gpr[reg_b];
 }
 
 void ppc_grab_regsfpdia(bool int_rep) {
     reg_d = (ppc_cur_instruction >> 21) & 31;
     reg_a = (ppc_cur_instruction >> 16) & 31;
-    ppc_result_a = ppc_state.ppc_gpr[reg_a];
+    ppc_result_a = ppc_state.gpr[reg_a];
 }
 
 void ppc_grab_regsfpsia(bool int_rep) {
     reg_s = (ppc_cur_instruction >> 21) & 31;
     reg_a = (ppc_cur_instruction >> 16) & 31;
-    ppc_result_d = ppc_state.ppc_gpr[reg_s];
-    ppc_result_a = ppc_state.ppc_gpr[reg_a];
+    ppc_result_d = ppc_state.gpr[reg_s];
+    ppc_result_a = ppc_state.gpr[reg_a];
 }
 
 void ppc_grab_regsfpsiab(bool int_rep) {
     reg_s = (ppc_cur_instruction >> 21) & 31;
     reg_a = (ppc_cur_instruction >> 16) & 31;
     reg_b = (ppc_cur_instruction >> 11) & 31;
-    ppc_result64_d = ppc_state.ppc_fpr[reg_s].int64_r;
-    ppc_result_a = ppc_state.ppc_gpr[reg_a];
-    ppc_result_b = ppc_state.ppc_gpr[reg_b];
+    ppc_result64_d = ppc_state.fpr[reg_s].int64_r;
+    ppc_result_a = ppc_state.gpr[reg_a];
+    ppc_result_b = ppc_state.gpr[reg_b];
 }
 
 void ppc_grab_regsfpsab(bool int_rep) {
@@ -129,9 +129,9 @@ void ppc_grab_regsfpsab(bool int_rep) {
     reg_a = (ppc_cur_instruction >> 16) & 31;
     reg_b = (ppc_cur_instruction >> 11) & 31;
     if (int_rep) {
-        ppc_result64_d = ppc_state.ppc_fpr[reg_s].int64_r;
-        ppc_result64_a = ppc_state.ppc_fpr[reg_a].int64_r;
-        ppc_result64_b = ppc_state.ppc_fpr[reg_b].int64_r;
+        ppc_result64_d = ppc_state.fpr[reg_s].int64_r;
+        ppc_result64_a = ppc_state.fpr[reg_a].int64_r;
+        ppc_result64_b = ppc_state.fpr[reg_b].int64_r;
     }
     else {
         ppc_dblresult64_d = fp_return_double(reg_s);
@@ -186,35 +186,35 @@ void ppc_grab_regsfpdabc(bool int_rep) {
 }
 
 void fp_save_float(float entry) {
-    ppc_state.ppc_fpr[reg_d].dbl64_r = (double)entry;
-    ppc_state.ppc_fpr[reg_d].int64_r = (uint64_t)entry;
+    ppc_state.fpr[reg_d].dbl64_r = (double)entry;
+    ppc_state.fpr[reg_d].int64_r = (uint64_t)entry;
 }
 
 void fp_save_double(double entry) {
-    ppc_state.ppc_fpr[reg_d].dbl64_r = entry;
-    ppc_state.ppc_fpr[reg_d].int64_r = *(uint64_t*)&entry;
+    ppc_state.fpr[reg_d].dbl64_r = entry;
+    ppc_state.fpr[reg_d].int64_r = *(uint64_t*)&entry;
 }
 
 void fp_save_uint64(uint64_t entry) {
-    ppc_state.ppc_fpr[reg_d].int64_r = entry;
-    ppc_state.ppc_fpr[reg_d].dbl64_r = (double)entry;
+    ppc_state.fpr[reg_d].int64_r = entry;
+    ppc_state.fpr[reg_d].dbl64_r = (double)entry;
 }
 
 void fp_save_uint32(uint32_t entry) {
-    ppc_state.ppc_fpr[reg_d].int64_r = entry;
-    ppc_state.ppc_fpr[reg_d].dbl64_r = (double)entry;
+    ppc_state.fpr[reg_d].int64_r = entry;
+    ppc_state.fpr[reg_d].dbl64_r = (double)entry;
 
 }
 
 void ppc_fp_changecrf1() {
-    ppc_state.ppc_fpscr |= 0xf0000000;
+    ppc_state.fpscr |= 0xf0000000;
 }
 
 void ppc_divbyzero(uint64_t input_a, uint64_t input_b, bool is_single) {
     if (input_b == 0) {
-        ppc_state.ppc_fpscr |= 0x84000000;
+        ppc_state.fpscr |= 0x84000000;
         if (input_a == 0) {
-            ppc_state.ppc_fpscr |= 0x200000;
+            ppc_state.fpscr |= 0x200000;
         }
     }
 }
@@ -241,47 +241,47 @@ int64_t round_to_neg_inf(double f) {
 }
 
 void ppc_toggle_fpscr_fex() {
-    bool fex_result = ((ppc_state.ppc_fpscr & 0x20000000) & (ppc_state.ppc_fpscr & 0x80));
-    fex_result |= ((ppc_state.ppc_fpscr & 0x10000000) & (ppc_state.ppc_fpscr & 0x40));
-    fex_result |= ((ppc_state.ppc_fpscr & 0x8000000) & (ppc_state.ppc_fpscr & 0x20));
-    fex_result |= ((ppc_state.ppc_fpscr & 0x4000000) & (ppc_state.ppc_fpscr & 0x10));
-    fex_result |= ((ppc_state.ppc_fpscr & 0x2000000) & (ppc_state.ppc_fpscr & 0x8));
-    ppc_state.ppc_fpscr |= (fex_result << 30);
+    bool fex_result = ((ppc_state.fpscr & 0x20000000) & (ppc_state.fpscr & 0x80));
+    fex_result |= ((ppc_state.fpscr & 0x10000000) & (ppc_state.fpscr & 0x40));
+    fex_result |= ((ppc_state.fpscr & 0x8000000) & (ppc_state.fpscr & 0x20));
+    fex_result |= ((ppc_state.fpscr & 0x4000000) & (ppc_state.fpscr & 0x10));
+    fex_result |= ((ppc_state.fpscr & 0x2000000) & (ppc_state.fpscr & 0x8));
+    ppc_state.fpscr |= (fex_result << 30);
 }
 
 bool ppc_confirm_inf_nan(uint32_t chosen_reg_1, uint32_t chosen_reg_2, bool is_single, uint32_t op) {
-    uint64_t input_a = ppc_state.ppc_fpr[chosen_reg_1].int64_r;
-    uint64_t input_b = ppc_state.ppc_fpr[chosen_reg_2].int64_r;
+    uint64_t input_a = ppc_state.fpr[chosen_reg_1].int64_r;
+    uint64_t input_b = ppc_state.fpr[chosen_reg_2].int64_r;
 
     if (is_single) {
         uint32_t exp_a = (input_a >> 23) & 0xff;
         uint32_t exp_b = (input_b >> 23) & 0xff;
 
-        ppc_state.ppc_fpscr &= 0x7fbfffff;
+        ppc_state.fpscr &= 0x7fbfffff;
 
         switch (op) {
         case 36:
             if ((exp_a == 0xff) & (exp_b == 0xff)) {
-                ppc_state.ppc_fpscr |= 0x80400000;
+                ppc_state.fpscr |= 0x80400000;
                 ppc_toggle_fpscr_fex();
                 return true;
             }
             else if ((input_a == 0) & (input_b == 0)) {
-                ppc_state.ppc_fpscr |= 0x80200000;
+                ppc_state.fpscr |= 0x80200000;
                 ppc_toggle_fpscr_fex();
                 return true;
             }
             break;
         case 40:
             if ((exp_a == 0xff) & (exp_b == 0xff)) {
-                ppc_state.ppc_fpscr |= 0x80800000;
+                ppc_state.fpscr |= 0x80800000;
                 ppc_toggle_fpscr_fex();
                 return true;
             }
             break;
         case 50:
             if (((exp_a == 0xff) & (input_b == 0)) | ((exp_b == 0xff) & (input_a == 0))) {
-                ppc_state.ppc_fpscr |= 0x80100000;
+                ppc_state.fpscr |= 0x80100000;
                 ppc_toggle_fpscr_fex();
                 return true;
             }
@@ -289,7 +289,7 @@ bool ppc_confirm_inf_nan(uint32_t chosen_reg_1, uint32_t chosen_reg_2, bool is_s
         case 56:
         case 58:
             if ((exp_a == 0xff) & (exp_b == 0xff)) {
-                ppc_state.ppc_fpscr |= 0x80800000;
+                ppc_state.fpscr |= 0x80800000;
                 ppc_toggle_fpscr_fex();
                 return true;
             }
@@ -302,31 +302,31 @@ bool ppc_confirm_inf_nan(uint32_t chosen_reg_1, uint32_t chosen_reg_2, bool is_s
         uint32_t exp_a = (input_a >> 52) & 0x7ff;
         uint32_t exp_b = (input_b >> 52) & 0x7ff;
 
-        ppc_state.ppc_fpscr &= 0x7fbfffff;
+        ppc_state.fpscr &= 0x7fbfffff;
 
         switch (op) {
         case 36:
             if ((exp_a == 0x7ff) & (exp_b == 0x7ff)) {
-                ppc_state.ppc_fpscr |= 0x80400000;
+                ppc_state.fpscr |= 0x80400000;
                 ppc_toggle_fpscr_fex();
                 return true;
             }
             else if ((input_a == 0) & (input_b == 0)) {
-                ppc_state.ppc_fpscr |= 0x80200000;
+                ppc_state.fpscr |= 0x80200000;
                 ppc_toggle_fpscr_fex();
                 return true;
             }
             break;
         case 40:
             if ((exp_a == 0x7ff) & (exp_b == 0x7ff)) {
-                ppc_state.ppc_fpscr |= 0x80800000;
+                ppc_state.fpscr |= 0x80800000;
                 ppc_toggle_fpscr_fex();
                 return true;
             }
             break;
         case 50:
             if (((exp_a == 0x7ff) & (input_b == 0)) | ((exp_b == 0x7ff) & (input_a == 0))) {
-                ppc_state.ppc_fpscr |= 0x80100000;
+                ppc_state.fpscr |= 0x80100000;
                 ppc_toggle_fpscr_fex();
                 return true;
             }
@@ -334,7 +334,7 @@ bool ppc_confirm_inf_nan(uint32_t chosen_reg_1, uint32_t chosen_reg_2, bool is_s
         case 56:
         case 58:
             if ((exp_a == 0xff) & (exp_b == 0xff)) {
-                ppc_state.ppc_fpscr |= 0x80800000;
+                ppc_state.fpscr |= 0x80800000;
                 ppc_toggle_fpscr_fex();
                 return true;
             }
@@ -347,31 +347,31 @@ bool ppc_confirm_inf_nan(uint32_t chosen_reg_1, uint32_t chosen_reg_2, bool is_s
     return false;
 }
 
-void ppc_fpresult_update(uint64_t set_result, bool confirm_arc) {
+void fpresult_update(uint64_t set_result, bool confirm_arc) {
 
     bool confirm_ov = (bool)std::fetestexcept(FE_OVERFLOW);
 
     if (confirm_ov) {
-        ppc_state.ppc_fpscr |= 0x80001000;
+        ppc_state.fpscr |= 0x80001000;
     }
 
     if (confirm_arc) {
-        ppc_state.ppc_fpscr |= 0x80010000;
-        ppc_state.ppc_fpscr &= 0xFFFF0FFF;
+        ppc_state.fpscr |= 0x80010000;
+        ppc_state.fpscr &= 0xFFFF0FFF;
 
 
         if (set_result == 0) {
-            ppc_state.ppc_fpscr |= 0x2000;
+            ppc_state.fpscr |= 0x2000;
         }
         else {
             if (set_result < 0) {
-                ppc_state.ppc_fpscr |= 0x8000;
+                ppc_state.fpscr |= 0x8000;
             }
             else if (set_result > 0) {
-                ppc_state.ppc_fpscr |= 0x4000;
+                ppc_state.fpscr |= 0x4000;
             }
             else {
-                ppc_state.ppc_fpscr |= 0x1000;
+                ppc_state.fpscr |= 0x1000;
             }
         }
     }
@@ -385,8 +385,8 @@ void ppc_frsqrte_result() {
 }
 
 void ppc_changecrf1() {
-    ppc_state.ppc_cr &= 0xF0FFFFFF;
-    ppc_state.ppc_cr |= (ppc_state.ppc_fpscr & 0xF0000000) >> 4;
+    ppc_state.cr &= 0xF0FFFFFF;
+    ppc_state.cr |= (ppc_state.fpscr & 0xF0000000) >> 4;
 }
 
 //Floating Point Arithmetic
@@ -989,7 +989,7 @@ void ppc_fresdot() {
 void ppc_fctiw() {
     ppc_grab_regsfpdb(false);
 
-    switch (ppc_state.ppc_fpscr & 0x3) {
+    switch (ppc_state.fpscr & 0x3) {
     case 0:
         ppc_result64_d = round_to_nearest(ppc_dblresult64_b);
     case 1:
@@ -1007,7 +1007,7 @@ void ppc_fctiw() {
 void ppc_fctiwdot() {
     ppc_grab_regsfpdb(false);
 
-    switch (ppc_state.ppc_fpscr & 0x3) {
+    switch (ppc_state.fpscr & 0x3) {
     case 0:
         ppc_result64_d = round_to_nearest(ppc_dblresult64_b);
     case 1:
@@ -1132,7 +1132,7 @@ void ppc_stfs() {
     ppc_grab_regsfpsia(true);
     ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
     ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
-    mem_write_dword(ppc_effective_address, uint32_t(ppc_state.ppc_fpr[reg_s].int64_r));
+    mem_write_dword(ppc_effective_address, uint32_t(ppc_state.fpr[reg_s].int64_r));
 }
 
 void ppc_stfsu() {
@@ -1140,7 +1140,7 @@ void ppc_stfsu() {
     if (reg_a == 0) {
         ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
         ppc_effective_address += ppc_result_a;
-        mem_write_dword(ppc_effective_address, uint32_t(ppc_state.ppc_fpr[reg_s].int64_r));
+        mem_write_dword(ppc_effective_address, uint32_t(ppc_state.fpr[reg_s].int64_r));
         ppc_result_a = ppc_effective_address;
         ppc_store_result_rega();
     }
@@ -1152,14 +1152,14 @@ void ppc_stfsu() {
 void ppc_stfsx() {
     ppc_grab_regsfpsiab(true);
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : ppc_result_a + ppc_result_b;
-    mem_write_dword(ppc_effective_address, uint32_t(ppc_state.ppc_fpr[reg_s].int64_r));
+    mem_write_dword(ppc_effective_address, uint32_t(ppc_state.fpr[reg_s].int64_r));
 }
 
 void ppc_stfsux() {
     ppc_grab_regsfpsiab(true);
     if (reg_a == 0) {
         ppc_effective_address = ppc_result_a + ppc_result_b;
-        mem_write_dword(ppc_effective_address, uint32_t(ppc_state.ppc_fpr[reg_s].int64_r));
+        mem_write_dword(ppc_effective_address, uint32_t(ppc_state.fpr[reg_s].int64_r));
         ppc_result_a = ppc_effective_address;
         ppc_store_result_rega();
     }
@@ -1172,7 +1172,7 @@ void ppc_stfd() {
     ppc_grab_regsfpsia(true);
     ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
     ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
-    mem_write_qword(ppc_effective_address, ppc_state.ppc_fpr[reg_s].int64_r);
+    mem_write_qword(ppc_effective_address, ppc_state.fpr[reg_s].int64_r);
 }
 
 void ppc_stfdu() {
@@ -1180,7 +1180,7 @@ void ppc_stfdu() {
     if (reg_a == 0) {
         ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
         ppc_effective_address += ppc_result_a;
-        mem_write_qword(ppc_effective_address, ppc_state.ppc_fpr[reg_s].int64_r);
+        mem_write_qword(ppc_effective_address, ppc_state.fpr[reg_s].int64_r);
         ppc_result_a = ppc_effective_address;
         ppc_store_result_rega();
     }
@@ -1192,14 +1192,14 @@ void ppc_stfdu() {
 void ppc_stfdx() {
     ppc_grab_regsfpsiab(true);
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : ppc_result_a + ppc_result_b;
-    mem_write_qword(ppc_effective_address, ppc_state.ppc_fpr[reg_s].int64_r);
+    mem_write_qword(ppc_effective_address, ppc_state.fpr[reg_s].int64_r);
 }
 
 void ppc_stfdux() {
     ppc_grab_regsfpsiab(true);
     if (reg_a == 0) {
         ppc_effective_address = ppc_result_a + ppc_result_b;
-        mem_write_qword(ppc_effective_address, ppc_state.ppc_fpr[reg_s].int64_r);
+        mem_write_qword(ppc_effective_address, ppc_state.fpr[reg_s].int64_r);
         ppc_result_a = ppc_effective_address;
         ppc_store_result_rega();
     }
@@ -1211,30 +1211,30 @@ void ppc_stfdux() {
 void ppc_stfiwx() {
     ppc_grab_regsfpsiab(true);
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : ppc_result_a + ppc_result_b;
-    mem_write_dword(ppc_effective_address, (uint32_t)(ppc_state.ppc_fpr[reg_s].int64_r));
+    mem_write_dword(ppc_effective_address, (uint32_t)(ppc_state.fpr[reg_s].int64_r));
 }
 
 //Floating Point Register Transfer
 
 void ppc_fmr() {
     ppc_grab_regsfpdb(true);
-    ppc_state.ppc_fpr[reg_d] = ppc_state.ppc_fpr[reg_b];
+    ppc_state.fpr[reg_d] = ppc_state.fpr[reg_b];
     ppc_store_dfpresult(true);
 }
 
 
 void ppc_mffs() {
     ppc_grab_regsda();
-    uint64_t fpstore1 = ppc_state.ppc_fpr[reg_d].int64_r & 0xFFFFFFFF00000000;
-    uint64_t fpstore2 = ppc_state.ppc_fpscr & 0x00000000FFFFFFFF;
+    uint64_t fpstore1 = ppc_state.fpr[reg_d].int64_r & 0xFFFFFFFF00000000;
+    uint64_t fpstore2 = ppc_state.fpscr & 0x00000000FFFFFFFF;
     fpstore1 |= fpstore2;
     fp_save_uint64(fpstore1);
 }
 
 void ppc_mffsdot() {
     ppc_grab_regsda();
-    uint64_t fpstore1 = ppc_state.ppc_fpr[reg_d].int64_r & 0xFFFFFFFF00000000;
-    uint64_t fpstore2 = ppc_state.ppc_fpscr & 0x00000000FFFFFFFF;
+    uint64_t fpstore1 = ppc_state.fpr[reg_d].int64_r & 0xFFFFFFFF00000000;
+    uint64_t fpstore2 = ppc_state.fpscr & 0x00000000FFFFFFFF;
     fpstore1 |= fpstore2;
     fp_save_uint64(fpstore1);
     ppc_fp_changecrf1();
@@ -1251,8 +1251,8 @@ void ppc_mtfsf() {
     crm += (((fm_mask >> 5) & 1) == 1) ? 0x00000F00 : 0x00000000;
     crm += (((fm_mask >> 6) & 1) == 1) ? 0x000000F0 : 0x00000000;
     crm += (((fm_mask >> 7) & 1) == 1) ? 0x0000000F : 0x00000000;
-    uint32_t quickfprval = (uint32_t)ppc_state.ppc_fpr[reg_b].int64_r;
-    ppc_state.ppc_fpscr = (quickfprval & crm) | (quickfprval & ~(crm));
+    uint32_t quickfprval = (uint32_t)ppc_state.fpr[reg_b].int64_r;
+    ppc_state.fpscr = (quickfprval & crm) | (quickfprval & ~(crm));
 }
 
 void ppc_mtfsfdot() {
@@ -1266,8 +1266,8 @@ void ppc_mtfsfdot() {
     crm += (((fm_mask >> 5) & 1) == 1) ? 0x00000F00 : 0x00000000;
     crm += (((fm_mask >> 6) & 1) == 1) ? 0x000000F0 : 0x00000000;
     crm += (((fm_mask >> 7) & 1) == 1) ? 0x0000000F : 0x00000000;
-    uint32_t quickfprval = (uint32_t)ppc_state.ppc_fpr[reg_b].int64_r;
-    ppc_state.ppc_fpscr = (quickfprval & crm) | (quickfprval & ~(crm));
+    uint32_t quickfprval = (uint32_t)ppc_state.fpr[reg_b].int64_r;
+    ppc_state.fpscr = (quickfprval & crm) | (quickfprval & ~(crm));
     ppc_fp_changecrf1();
 }
 
@@ -1275,28 +1275,28 @@ void ppc_mtfsfi() {
     ppc_result_b = (ppc_cur_instruction >> 11) & 15;
     crf_d = (ppc_cur_instruction >> 23) & 7;
     crf_d = crf_d << 2;
-    ppc_state.ppc_fpscr = (ppc_state.ppc_cr & ~(0xF0000000UL >> crf_d)) | ((ppc_state.ppc_spr[SPR::XER] & 0xF0000000UL) >> crf_d);
+    ppc_state.fpscr = (ppc_state.cr & ~(0xF0000000UL >> crf_d)) | ((ppc_state.spr[SPR::XER] & 0xF0000000UL) >> crf_d);
 }
 
 void ppc_mtfsfidot() {
     ppc_result_b = (ppc_cur_instruction >> 11) & 15;
     crf_d = (ppc_cur_instruction >> 23) & 7;
     crf_d = crf_d << 2;
-    ppc_state.ppc_fpscr = (ppc_state.ppc_cr & ~(0xF0000000UL >> crf_d)) | ((ppc_state.ppc_spr[SPR::XER] & 0xF0000000UL) >> crf_d);
+    ppc_state.fpscr = (ppc_state.cr & ~(0xF0000000UL >> crf_d)) | ((ppc_state.spr[SPR::XER] & 0xF0000000UL) >> crf_d);
     ppc_fp_changecrf1();
 }
 
 void ppc_mtfsb0() {
     crf_d = (ppc_cur_instruction >> 21) & 0x31;
     if ((crf_d == 0) || (crf_d > 2)) {
-        ppc_state.ppc_fpscr &= ~(1 << (31 - crf_d));
+        ppc_state.fpscr &= ~(1 << (31 - crf_d));
     }
 }
 
 void ppc_mtfsb0dot() {
     crf_d = (ppc_cur_instruction >> 21) & 0x31;
     if ((crf_d == 0) || (crf_d > 2)) {
-        ppc_state.ppc_fpscr &= ~(1 << crf_d);
+        ppc_state.fpscr &= ~(1 << crf_d);
     }
     ppc_fp_changecrf1();
 }
@@ -1304,14 +1304,14 @@ void ppc_mtfsb0dot() {
 void ppc_mtfsb1() {
     crf_d = (ppc_cur_instruction >> 21) & 0x31;
     if ((crf_d == 0) || (crf_d > 2)) {
-        ppc_state.ppc_fpscr |= (1 << crf_d);
+        ppc_state.fpscr |= (1 << crf_d);
     }
 }
 
 void ppc_mtfsb1dot() {
     crf_d = ~(ppc_cur_instruction >> 21) & 0x31;
     if ((crf_d == 0) || (crf_d > 2)) {
-        ppc_state.ppc_fpscr |= (1 << crf_d);
+        ppc_state.fpscr |= (1 << crf_d);
     }
     ppc_fp_changecrf1();
 }
@@ -1321,7 +1321,7 @@ void ppc_mcrfs() {
     crf_d = crf_d << 2;
     crf_s = (ppc_cur_instruction >> 18) & 7;
     crf_s = crf_d << 2;
-    ppc_state.ppc_cr = ~(ppc_state.ppc_cr & ((15 << (28 - crf_d)))) & (ppc_state.ppc_fpscr & (15 << (28 - crf_s)));
+    ppc_state.cr = ~(ppc_state.cr & ((15 << (28 - crf_d)))) & (ppc_state.fpscr & (15 << (28 - crf_s)));
 }
 
 //Floating Point Comparisons
@@ -1335,7 +1335,7 @@ void ppc_fcmpo() {
     double db_test_a = (double)ppc_result64_a;
     double db_test_b = (double)ppc_result64_b;
 
-    ppc_state.ppc_fpscr &= 0xFFFF0FFF;
+    ppc_state.fpscr &= 0xFFFF0FFF;
 
     if (std::isnan(db_test_a) || std::isnan(db_test_b)) {
         cmp_c |= 0x01;
@@ -1350,17 +1350,17 @@ void ppc_fcmpo() {
         cmp_c |= 0x02;
     }
 
-    ppc_state.ppc_fpscr |= (cmp_c << 12);
-    ppc_state.ppc_cr = ((ppc_state.ppc_cr & ~(0xf0000000 >> crf_d)) | ((cmp_c + xercon) >> crf_d));
+    ppc_state.fpscr |= (cmp_c << 12);
+    ppc_state.cr = ((ppc_state.cr & ~(0xf0000000 >> crf_d)) | ((cmp_c + xercon) >> crf_d));
 
     if ((db_test_a == snan) || (db_test_b == snan)) {
-        ppc_state.ppc_fpscr |= 0x1000000;
-        if (ppc_state.ppc_fpscr & 0x80) {
-            ppc_state.ppc_fpscr |= 0x80000;
+        ppc_state.fpscr |= 0x1000000;
+        if (ppc_state.fpscr & 0x80) {
+            ppc_state.fpscr |= 0x80000;
         }
     }
     else if ((db_test_a == qnan) || (db_test_b == qnan)) {
-        ppc_state.ppc_fpscr |= 0x80000;
+        ppc_state.fpscr |= 0x80000;
     }
 
 }
@@ -1374,7 +1374,7 @@ void ppc_fcmpu() {
     double db_test_a = (double)ppc_result64_a;
     double db_test_b = (double)ppc_result64_b;
 
-    ppc_state.ppc_fpscr &= 0xFFFF0FFF;
+    ppc_state.fpscr &= 0xFFFF0FFF;
 
     if (std::isnan(db_test_a) || std::isnan(db_test_b)) {
         cmp_c |= 0x01;
@@ -1389,10 +1389,10 @@ void ppc_fcmpu() {
         cmp_c |= 0x02;
     }
 
-    ppc_state.ppc_fpscr |= (cmp_c << 12);
-    ppc_state.ppc_cr = ((ppc_state.ppc_cr & ~(0xf0000000 >> crf_d)) | ((cmp_c + xercon) >> crf_d));
+    ppc_state.fpscr |= (cmp_c << 12);
+    ppc_state.cr = ((ppc_state.cr & ~(0xf0000000 >> crf_d)) | ((cmp_c + xercon) >> crf_d));
 
     if ((db_test_a == snan) || (db_test_b == snan)) {
-        ppc_state.ppc_fpscr |= 0x1000000;
+        ppc_state.fpscr |= 0x1000000;
     }
 }

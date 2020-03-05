@@ -64,16 +64,16 @@ fpscr = FP Status and Condition Register
 **/
 
 typedef struct struct_ppc_state {
-    FPR_storage ppc_fpr[32];
-    uint32_t ppc_pc; //Referred as the CIA in the PPC manual
-    uint32_t ppc_gpr[32];
-    uint32_t ppc_cr;
-    uint32_t ppc_fpscr;
-    uint32_t ppc_tbr[2];
-    uint32_t ppc_spr[1024];
-    uint32_t ppc_msr;
-    uint32_t ppc_sr[16];
-    bool ppc_reserve; //reserve bit used for lwarx and stcwx
+    FPR_storage fpr[32];
+    uint32_t prog_counter; //Referred as the CIA in the PPC manual
+    uint32_t gpr[32];
+    uint32_t cr;
+    uint32_t fpscr;
+    uint32_t tbr[2];
+    uint32_t spr[1024];
+    uint32_t msr;
+    uint32_t sr[16];
+    bool reserve; //reserve bit used for lwarx and stcwx
 } SetPRS;
 
 extern SetPRS ppc_state;
@@ -110,16 +110,16 @@ enum PPC_VER : uint32_t {
 
 /**
 typedef struct struct_ppc64_state {
-    FPR_storage ppc_fpr [32];
-    uint64_t ppc_pc; //Referred as the CIA in the PPC manual
-    uint64_t ppc_gpr [32];
-    uint32_t ppc_cr;
-    uint32_t ppc_fpscr;
-    uint32_t ppc_tbr [2];
-    uint64_t ppc_spr [1024];
-    uint32_t ppc_msr;
-    uint32_t ppc_sr [16];
-    bool ppc_reserve; //reserve bit used for lwarx and stcwx
+    FPR_storage fpr [32];
+    uint64_t prog_counter; //Referred as the CIA in the PPC manual
+    uint64_t gpr [32];
+    uint32_t cr;
+    uint32_t fpscr;
+    uint32_t tbr [2];
+    uint64_t spr [1024];
+    uint32_t msr;
+    uint32_t sr [16];
+    bool reserve; //reserve bit used for lwarx and stcwx
 } SetPRS64;
 
 extern SetPRS64 ppc_state64;

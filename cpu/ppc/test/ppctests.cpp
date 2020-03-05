@@ -14,12 +14,12 @@ int nfailed; /* number of failed instructions */
 
 void xer_ov_test(string mnem, uint32_t opcode)
 {
-    ppc_state.ppc_gpr[3] = 2;
-    ppc_state.ppc_gpr[4] = 2;
-    ppc_state.ppc_spr[SPR::XER] = 0xFFFFFFFF;
+    ppc_state.gpr[3] = 2;
+    ppc_state.gpr[4] = 2;
+    ppc_state.spr[SPR::XER] = 0xFFFFFFFF;
     ppc_cur_instruction = opcode;
     ppc_main_opcode();
-    if (ppc_state.ppc_spr[SPR::XER] & 0x40000000UL) {
+    if (ppc_state.spr[SPR::XER] & 0x40000000UL) {
         cout << "Invalid " << mnem << " emulation! XER[OV] should not be set."
             << endl;
         nfailed++;
@@ -119,10 +119,10 @@ static void read_test_data()
             }
         }
 
-        ppc_state.ppc_gpr[3] = src1;
-        ppc_state.ppc_gpr[4] = src2;
-        ppc_state.ppc_spr[SPR::XER] = 0;
-        ppc_state.ppc_cr = 0;
+        ppc_state.gpr[3] = src1;
+        ppc_state.gpr[4] = src2;
+        ppc_state.spr[SPR::XER] = 0;
+        ppc_state.cr = 0;
 
         ppc_cur_instruction = opcode;
 
@@ -130,16 +130,16 @@ static void read_test_data()
 
         ntested++;
 
-        if ((tokens[0].rfind("CMP") && (ppc_state.ppc_gpr[3] != dest)) ||
-            (ppc_state.ppc_spr[SPR::XER] != check_xer) ||
-            (ppc_state.ppc_cr != check_cr)) {
+        if ((tokens[0].rfind("CMP") && (ppc_state.gpr[3] != dest)) ||
+            (ppc_state.spr[SPR::XER] != check_xer) ||
+            (ppc_state.cr != check_cr)) {
             cout << "Mismatch: instr=" << tokens[0] << ", src1=0x" << hex << src1
                  << ", src2=0x" << hex << src2 << endl;
             cout << "expected: dest=0x" << hex << dest << ", XER=0x" << hex
                  << check_xer << ", CR=0x" << hex << check_cr << endl;
-            cout << "got: dest=0x" << hex << ppc_state.ppc_gpr[3] << ", XER=0x"
-                 << hex << ppc_state.ppc_spr[SPR::XER] << ", CR=0x" << hex
-                 << ppc_state.ppc_cr << endl;
+            cout << "got: dest=0x" << hex << ppc_state.gpr[3] << ", XER=0x"
+                 << hex << ppc_state.spr[SPR::XER] << ", CR=0x" << hex
+                 << ppc_state.cr << endl;
             cout << "Test file line #: " << dec << lineno << endl << endl;
 
             nfailed++;

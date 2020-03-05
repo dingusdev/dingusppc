@@ -123,16 +123,16 @@ void ibat_update(uint32_t bat_reg)
 
     upper_reg_num = bat_reg & 0xFFFFFFFE;
 
-    if (ppc_state.ppc_spr[upper_reg_num] & 3) { // is that BAT pair valid?
+    if (ppc_state.spr[upper_reg_num] & 3) { // is that BAT pair valid?
         bat_entry = &ibat_array[(bat_reg - 528) >> 1];
-        bl = (ppc_state.ppc_spr[upper_reg_num] >> 2) & 0x7FF;
+        bl = (ppc_state.spr[upper_reg_num] >> 2) & 0x7FF;
         lo_mask = (bl << 17) | 0x1FFFF;
 
-        bat_entry->access = ppc_state.ppc_spr[upper_reg_num] & 3;
-        bat_entry->prot = ppc_state.ppc_spr[upper_reg_num + 1] & 3;
+        bat_entry->access = ppc_state.spr[upper_reg_num] & 3;
+        bat_entry->prot = ppc_state.spr[upper_reg_num + 1] & 3;
         bat_entry->lo_mask = lo_mask;
-        bat_entry->phys_hi = ppc_state.ppc_spr[upper_reg_num + 1] & ~lo_mask;
-        bat_entry->bepi = ppc_state.ppc_spr[upper_reg_num] & ~lo_mask;
+        bat_entry->phys_hi = ppc_state.spr[upper_reg_num + 1] & ~lo_mask;
+        bat_entry->bepi = ppc_state.spr[upper_reg_num] & ~lo_mask;
     }
 }
 
@@ -144,16 +144,16 @@ void dbat_update(uint32_t bat_reg)
 
     upper_reg_num = bat_reg & 0xFFFFFFFE;
 
-    if (ppc_state.ppc_spr[upper_reg_num] & 3) { // is that BAT pair valid?
+    if (ppc_state.spr[upper_reg_num] & 3) { // is that BAT pair valid?
         bat_entry = &dbat_array[(bat_reg - 536) >> 1];
-        bl = (ppc_state.ppc_spr[upper_reg_num] >> 2) & 0x7FF;
+        bl = (ppc_state.spr[upper_reg_num] >> 2) & 0x7FF;
         lo_mask = (bl << 17) | 0x1FFFF;
 
-        bat_entry->access = ppc_state.ppc_spr[upper_reg_num] & 3;
-        bat_entry->prot = ppc_state.ppc_spr[upper_reg_num + 1] & 3;
+        bat_entry->access = ppc_state.spr[upper_reg_num] & 3;
+        bat_entry->prot = ppc_state.spr[upper_reg_num + 1] & 3;
         bat_entry->lo_mask = lo_mask;
-        bat_entry->phys_hi = ppc_state.ppc_spr[upper_reg_num + 1] & ~lo_mask;
-        bat_entry->bepi = ppc_state.ppc_spr[upper_reg_num] & ~lo_mask;
+        bat_entry->phys_hi = ppc_state.spr[upper_reg_num + 1] & ~lo_mask;
+        bat_entry->bepi = ppc_state.spr[upper_reg_num] & ~lo_mask;
     }
 }
 
@@ -161,7 +161,7 @@ static inline uint8_t* calc_pteg_addr(uint32_t hash)
 {
     uint32_t sdr1_val, pteg_addr;
 
-    sdr1_val = ppc_state.ppc_spr[SPR::SDR1];
+    sdr1_val = ppc_state.spr[SPR::SDR1];
 
     pteg_addr = sdr1_val & 0xFE000000;
     pteg_addr |= (sdr1_val & 0x01FF0000) |
@@ -233,7 +233,7 @@ static uint32_t page_address_translate(uint32_t la, bool is_instr_fetch,
     unsigned key, pp;
     uint8_t* pte_addr;
 
-    sr_val = ppc_state.ppc_sr[(la >> 28) & 0x0F];
+    sr_val = ppc_state.sr[(la >> 28) & 0x0F];
     if (sr_val & 0x80000000) {
         LOG_F(ERROR, "Direct-store segments not supported, LA=%0xX\n", la);
         exit(-1); // FIXME: ugly error handling, must be the proper exception!
@@ -254,8 +254,8 @@ static uint32_t page_address_translate(uint32_t la, bool is_instr_fetch,
                 mmu_exception_handler(Except_Type::EXC_ISI, 0x40000000);
             }
             else {
-                ppc_state.ppc_spr[SPR::DSISR] = 0x40000000 | (is_write << 25);
-                ppc_state.ppc_spr[SPR::DAR] = la;
+                ppc_state.spr[SPR::DSISR] = 0x40000000 | (is_write << 25);
+                ppc_state.spr[SPR::DAR] = la;
                 mmu_exception_handler(Except_Type::EXC_DSI, 0);
             }
         }
@@ -277,8 +277,8 @@ static uint32_t page_address_translate(uint32_t la, bool is_instr_fetch,
             mmu_exception_handler(Except_Type::EXC_ISI, 0x08000000);
         }
         else {
-            ppc_state.ppc_spr[SPR::DSISR] = 0x08000000 | (is_write << 25);
-            ppc_state.ppc_spr[SPR::DAR] = la;
+            ppc_state.spr[SPR::DSISR] = 0x08000000 | (is_write << 25);
+            ppc_state.spr[SPR::DAR] = la;
             mmu_exception_handler(Except_Type::EXC_DSI, 0);
         }
     }
@@ -300,7 +300,7 @@ static uint32_t ppc_mmu_instr_translate(uint32_t la)
     uint32_t pa; /* translated physical address */
 
     bool bat_hit = false;
-    unsigned msr_pr = !!(ppc_state.ppc_msr & 0x4000);
+    unsigned msr_pr = !!(ppc_state.msr & 0x4000);
 
     // Format: %XY
     // X - supervisor access bit, Y - problem/user access bit
@@ -342,7 +342,7 @@ static uint32_t ppc_mmu_addr_translate(uint32_t la, int is_write)
     uint32_t pa; /* translated physical address */
 
     bool bat_hit = false;
-    unsigned msr_pr = !!(ppc_state.ppc_msr & 0x4000);
+    unsigned msr_pr = !!(ppc_state.msr & 0x4000);
 
     // Format: %XY
     // X - supervisor access bit, Y - problem/user access bit
@@ -357,8 +357,8 @@ static uint32_t ppc_mmu_addr_translate(uint32_t la, int is_write)
             bat_hit = true;
 
             if (!bat_entry->prot || ((bat_entry->prot & 1) && is_write)) {
-                ppc_state.ppc_spr[SPR::DSISR] = 0x08000000 | (is_write << 25);
-                ppc_state.ppc_spr[SPR::DAR] = la;
+                ppc_state.spr[SPR::DSISR] = 0x08000000 | (is_write << 25);
+                ppc_state.spr[SPR::DAR] = la;
                 mmu_exception_handler(Except_Type::EXC_DSI, 0);
             }
 
@@ -385,7 +385,7 @@ static void mem_write_unaligned(uint32_t addr, uint32_t value, uint32_t size)
         exit(-1); //FIXME!
     } else {
         /* data address translation if enabled */
-        if (ppc_state.ppc_msr & 0x10) {
+        if (ppc_state.msr & 0x10) {
             addr = ppc_mmu_addr_translate(addr, 0);
         }
 
@@ -400,7 +400,7 @@ static void mem_write_unaligned(uint32_t addr, uint32_t value, uint32_t size)
 void mem_write_byte(uint32_t addr, uint8_t value)
 {
     /* data address translation if enabled */
-    if (ppc_state.ppc_msr & 0x10) {
+    if (ppc_state.msr & 0x10) {
         addr = ppc_mmu_addr_translate(addr, 1);
     }
 
@@ -416,7 +416,7 @@ void mem_write_word(uint32_t addr, uint16_t value)
     }
 
     /* data address translation if enabled */
-    if (ppc_state.ppc_msr & 0x10) {
+    if (ppc_state.msr & 0x10) {
         addr = ppc_mmu_addr_translate(addr, 1);
     }
 
@@ -430,7 +430,7 @@ void mem_write_dword(uint32_t addr, uint32_t value)
     }
 
     /* data address translation if enabled */
-    if (ppc_state.ppc_msr & 0x10) {
+    if (ppc_state.msr & 0x10) {
         addr = ppc_mmu_addr_translate(addr, 1);
     }
 
@@ -445,7 +445,7 @@ void mem_write_qword(uint32_t addr, uint64_t value)
     }
 
     /* data address translation if enabled */
-    if (ppc_state.ppc_msr & 0x10) {
+    if (ppc_state.msr & 0x10) {
         addr = ppc_mmu_addr_translate(addr, 1);
     }
 
@@ -463,7 +463,7 @@ static uint32_t mem_grab_unaligned(uint32_t addr, uint32_t size)
         exit(-1); //FIXME!
     } else {
         /* data address translation if enabled */
-        if (ppc_state.ppc_msr & 0x10) {
+        if (ppc_state.msr & 0x10) {
             addr = ppc_mmu_addr_translate(addr, 0);
         }
 
@@ -483,7 +483,7 @@ uint8_t mem_grab_byte(uint32_t addr)
     uint8_t ret;
 
     /* data address translation if enabled */
-    if (ppc_state.ppc_msr & 0x10) {
+    if (ppc_state.msr & 0x10) {
         addr = ppc_mmu_addr_translate(addr, 0);
     }
 
@@ -500,7 +500,7 @@ uint16_t mem_grab_word(uint32_t addr)
     }
 
     /* data address translation if enabled */
-    if (ppc_state.ppc_msr & 0x10) {
+    if (ppc_state.msr & 0x10) {
         addr = ppc_mmu_addr_translate(addr, 0);
     }
 
@@ -517,7 +517,7 @@ uint32_t mem_grab_dword(uint32_t addr)
     }
 
     /* data address translation if enabled */
-    if (ppc_state.ppc_msr & 0x10) {
+    if (ppc_state.msr & 0x10) {
         addr = ppc_mmu_addr_translate(addr, 0);
     }
 
@@ -535,7 +535,7 @@ uint64_t mem_grab_qword(uint32_t addr)
     }
 
     /* data address translation if enabled */
-    if (ppc_state.ppc_msr & 0x10) {
+    if (ppc_state.msr & 0x10) {
         addr = ppc_mmu_addr_translate(addr, 0);
     }
 
@@ -548,7 +548,7 @@ uint8_t* quickinstruction_translate(uint32_t addr)
     uint8_t* real_addr;
 
     /* perform instruction address translation if enabled */
-    if (ppc_state.ppc_msr & 0x20) {
+    if (ppc_state.msr & 0x20) {
         addr = ppc_mmu_instr_translate(addr);
     }
 
@@ -580,8 +580,8 @@ uint64_t mem_read_dbg(uint32_t virt_addr, uint32_t size)
     uint64_t ret_val;
 
     /* save MMU-related CPU state */
-    save_dsisr = ppc_state.ppc_spr[SPR::DSISR];
-    save_dar   = ppc_state.ppc_spr[SPR::DAR];
+    save_dsisr = ppc_state.spr[SPR::DSISR];
+    save_dar   = ppc_state.spr[SPR::DAR];
     mmu_exception_handler = dbg_exception_handler;
 
     try {
@@ -605,8 +605,8 @@ uint64_t mem_read_dbg(uint32_t virt_addr, uint32_t size)
     catch (std::invalid_argument& exc) {
         /* restore MMU-related CPU state */
         mmu_exception_handler = ppc_exception_handler;
-        ppc_state.ppc_spr[SPR::DSISR] = save_dsisr;
-        ppc_state.ppc_spr[SPR::DAR] = save_dar;
+        ppc_state.spr[SPR::DSISR] = save_dsisr;
+        ppc_state.spr[SPR::DAR] = save_dar;
 
         /* rethrow MMU exception */
         throw exc;
@@ -614,8 +614,8 @@ uint64_t mem_read_dbg(uint32_t virt_addr, uint32_t size)
 
     /* restore MMU-related CPU state */
     mmu_exception_handler = ppc_exception_handler;
-    ppc_state.ppc_spr[SPR::DSISR] = save_dsisr;
-    ppc_state.ppc_spr[SPR::DAR] = save_dar;
+    ppc_state.spr[SPR::DSISR] = save_dsisr;
+    ppc_state.spr[SPR::DAR] = save_dar;
 
     return ret_val;
 }

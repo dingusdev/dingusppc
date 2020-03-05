@@ -66,121 +66,121 @@ what endian the numbers are to be stored in.
 
 //Storage and register retrieval functions for the integer functions.
 void ppc_store_result_regd() {
-    ppc_state.ppc_gpr[reg_d] = ppc_result_d;
+    ppc_state.gpr[reg_d] = ppc_result_d;
 }
 
 void ppc_store_result_rega() {
-    ppc_state.ppc_gpr[reg_a] = ppc_result_a;
+    ppc_state.gpr[reg_a] = ppc_result_a;
 }
 
 void ppc_grab_regsdasimm() {
     reg_d = (ppc_cur_instruction >> 21) & 31;
     reg_a = (ppc_cur_instruction >> 16) & 31;
     simm = (int32_t)((int16_t)((ppc_cur_instruction) & 65535));
-    ppc_result_a = ppc_state.ppc_gpr[reg_a];
+    ppc_result_a = ppc_state.gpr[reg_a];
 }
 
 void ppc_grab_regsdauimm() {
     reg_d = (ppc_cur_instruction >> 21) & 31;
     reg_a = (ppc_cur_instruction >> 16) & 31;
     uimm = (uint32_t)((uint16_t)((ppc_cur_instruction) & 65535));
-    ppc_result_a = ppc_state.ppc_gpr[reg_a];
+    ppc_result_a = ppc_state.gpr[reg_a];
 }
 
 void ppc_grab_regsasimm() {
     reg_a = (ppc_cur_instruction >> 16) & 31;
     simm = (int32_t)((int16_t)(ppc_cur_instruction & 65535));
-    ppc_result_a = ppc_state.ppc_gpr[reg_a];
+    ppc_result_a = ppc_state.gpr[reg_a];
 }
 
 void ppc_grab_regssauimm() {
     reg_s = (ppc_cur_instruction >> 21) & 31;
     reg_a = (ppc_cur_instruction >> 16) & 31;
     uimm = (uint32_t)((uint16_t)((ppc_cur_instruction) & 65535));
-    ppc_result_d = ppc_state.ppc_gpr[reg_s];
-    ppc_result_a = ppc_state.ppc_gpr[reg_a];
+    ppc_result_d = ppc_state.gpr[reg_s];
+    ppc_result_a = ppc_state.gpr[reg_a];
 }
 
 void ppc_grab_regsdab() {
     reg_d = (ppc_cur_instruction >> 21) & 31;
     reg_a = (ppc_cur_instruction >> 16) & 31;
     reg_b = (ppc_cur_instruction >> 11) & 31;
-    ppc_result_a = ppc_state.ppc_gpr[reg_a];
-    ppc_result_b = ppc_state.ppc_gpr[reg_b];
+    ppc_result_a = ppc_state.gpr[reg_a];
+    ppc_result_b = ppc_state.gpr[reg_b];
 }
 
 void ppc_grab_regssab() {
     reg_s = (ppc_cur_instruction >> 21) & 31;
     reg_a = (ppc_cur_instruction >> 16) & 31;
     reg_b = (ppc_cur_instruction >> 11) & 31;
-    ppc_result_d = ppc_state.ppc_gpr[reg_s];
-    ppc_result_a = ppc_state.ppc_gpr[reg_a];
-    ppc_result_b = ppc_state.ppc_gpr[reg_b];
+    ppc_result_d = ppc_state.gpr[reg_s];
+    ppc_result_a = ppc_state.gpr[reg_a];
+    ppc_result_b = ppc_state.gpr[reg_b];
 }
 
 void ppc_grab_regssa() {
     reg_s = (ppc_cur_instruction >> 21) & 31;
     reg_a = (ppc_cur_instruction >> 16) & 31;
-    ppc_result_d = ppc_state.ppc_gpr[reg_s];
-    ppc_result_a = ppc_state.ppc_gpr[reg_a];
+    ppc_result_d = ppc_state.gpr[reg_s];
+    ppc_result_a = ppc_state.gpr[reg_a];
 }
 
 void ppc_grab_regssb() {
     reg_s = (ppc_cur_instruction >> 21) & 31;
     reg_b = (ppc_cur_instruction >> 11) & 31;
-    ppc_result_d = ppc_state.ppc_gpr[reg_s];
-    ppc_result_b = ppc_state.ppc_gpr[reg_b];
+    ppc_result_d = ppc_state.gpr[reg_s];
+    ppc_result_b = ppc_state.gpr[reg_b];
 }
 
 void ppc_grab_regsda() {
     reg_d = (ppc_cur_instruction >> 21) & 31;
     reg_a = (ppc_cur_instruction >> 16) & 31;
-    ppc_result_a = ppc_state.ppc_gpr[reg_a];
+    ppc_result_a = ppc_state.gpr[reg_a];
 }
 
 void ppc_grab_regsdb() {
     reg_d = (ppc_cur_instruction >> 21) & 31;
     reg_b = (ppc_cur_instruction >> 11) & 31;
-    ppc_result_b = ppc_state.ppc_gpr[reg_b];
+    ppc_result_b = ppc_state.gpr[reg_b];
 }
 
 
 //Affects CR Field 0 - For integer operations
 void ppc_changecrf0(uint32_t set_result) {
-    ppc_state.ppc_cr &= 0x0FFFFFFFUL;
+    ppc_state.cr &= 0x0FFFFFFFUL;
 
     if (set_result == 0) {
-        ppc_state.ppc_cr |= 0x20000000UL;
+        ppc_state.cr |= 0x20000000UL;
     }
     else {
         if (set_result & 0x80000000) {
-            ppc_state.ppc_cr |= 0x80000000UL;
+            ppc_state.cr |= 0x80000000UL;
         }
         else {
-            ppc_state.ppc_cr |= 0x40000000UL;
+            ppc_state.cr |= 0x40000000UL;
         }
     }
 
     /* copy XER[SO] into CR0[SO]. */
-    ppc_state.ppc_cr |= (ppc_state.ppc_spr[SPR::XER] >> 3) & 0x10000000UL;
+    ppc_state.cr |= (ppc_state.spr[SPR::XER] >> 3) & 0x10000000UL;
 }
 
 //Affects the XER register's Carry Bit
 inline void ppc_carry(uint32_t a, uint32_t b) {
     if (b < a) {
-        ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
+        ppc_state.spr[SPR::XER] |= 0x20000000UL;
     }
     else {
-        ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
     }
 }
 
 inline void ppc_carry_sub(uint32_t a, uint32_t b) {
     if (b >= a) {
-        ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
+        ppc_state.spr[SPR::XER] |= 0x20000000UL;
     }
     else {
-        ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
     }
 }
 
@@ -188,10 +188,10 @@ inline void ppc_carry_sub(uint32_t a, uint32_t b) {
 
 inline void ppc_setsoov(uint32_t a, uint32_t b, uint32_t d) {
     if ((a ^ b) & (a ^ d) & 0x80000000UL) {
-        ppc_state.ppc_spr[SPR::XER] |= 0xC0000000UL;
+        ppc_state.spr[SPR::XER] |= 0xC0000000UL;
     }
     else {
-        ppc_state.ppc_spr[SPR::XER] &= 0xBFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= 0xBFFFFFFFUL;
     }
 }
 
@@ -291,26 +291,26 @@ void ppc_addcodot() {
 
 void ppc_adde() {
     ppc_grab_regsdab();
-    uint32_t xer_ca = !!(ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    uint32_t xer_ca = !!(ppc_state.spr[SPR::XER] & 0x20000000);
     ppc_result_d = ppc_result_a + ppc_result_b + xer_ca;
     if ((ppc_result_d < ppc_result_a) || (xer_ca && (ppc_result_d == ppc_result_a))) {
-        ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
+        ppc_state.spr[SPR::XER] |= 0x20000000UL;
     }
     else {
-        ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
     }
     ppc_store_result_regd();
 }
 
 void ppc_addedot() {
     ppc_grab_regsdab();
-    uint32_t xer_ca = !!(ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    uint32_t xer_ca = !!(ppc_state.spr[SPR::XER] & 0x20000000);
     ppc_result_d = ppc_result_a + ppc_result_b + xer_ca;
     if ((ppc_result_d < ppc_result_a) || (xer_ca && (ppc_result_d == ppc_result_a))) {
-        ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
+        ppc_state.spr[SPR::XER] |= 0x20000000UL;
     }
     else {
-        ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
     }
     ppc_changecrf0(ppc_result_d);
     ppc_store_result_regd();
@@ -318,13 +318,13 @@ void ppc_addedot() {
 
 void ppc_addeo() {
     ppc_grab_regsdab();
-    uint32_t xer_ca = !!(ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    uint32_t xer_ca = !!(ppc_state.spr[SPR::XER] & 0x20000000);
     ppc_result_d = ppc_result_a + ppc_result_b + xer_ca;
     if ((ppc_result_d < ppc_result_a) || (xer_ca && (ppc_result_d == ppc_result_a))) {
-        ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
+        ppc_state.spr[SPR::XER] |= 0x20000000UL;
     }
     else {
-        ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
     }
     ppc_setsoov(ppc_result_a, ~ppc_result_b, ppc_result_d);
     ppc_store_result_regd();
@@ -332,13 +332,13 @@ void ppc_addeo() {
 
 void ppc_addeodot() {
     ppc_grab_regsdab();
-    uint32_t xer_ca = !!(ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    uint32_t xer_ca = !!(ppc_state.spr[SPR::XER] & 0x20000000);
     ppc_result_d = ppc_result_a + ppc_result_b + xer_ca;
     if ((ppc_result_d < ppc_result_a) || (xer_ca && (ppc_result_d == ppc_result_a))) {
-        ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
+        ppc_state.spr[SPR::XER] |= 0x20000000UL;
     }
     else {
-        ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
     }
     ppc_setsoov(ppc_result_a, ~ppc_result_b, ppc_result_d);
     ppc_changecrf0(ppc_result_d);
@@ -347,26 +347,26 @@ void ppc_addeodot() {
 
 void ppc_addme() {
     ppc_grab_regsda();
-    uint32_t xer_ca = !!(ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    uint32_t xer_ca = !!(ppc_state.spr[SPR::XER] & 0x20000000);
     ppc_result_d = ppc_result_a + xer_ca - 1;
     if (((xer_ca - 1) < 0xFFFFFFFFUL) | (ppc_result_d < ppc_result_a)) {
-        ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
+        ppc_state.spr[SPR::XER] |= 0x20000000UL;
     }
     else {
-        ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
     }
     ppc_store_result_regd();
 }
 
 void ppc_addmedot() {
     ppc_grab_regsda();
-    uint32_t xer_ca = !!(ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    uint32_t xer_ca = !!(ppc_state.spr[SPR::XER] & 0x20000000);
     ppc_result_d = ppc_result_a + xer_ca - 1;
     if (((xer_ca - 1) < 0xFFFFFFFFUL) | (ppc_result_d < ppc_result_a)) {
-        ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
+        ppc_state.spr[SPR::XER] |= 0x20000000UL;
     }
     else {
-        ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
     }
     ppc_changecrf0(ppc_result_d);
     ppc_store_result_regd();
@@ -374,55 +374,55 @@ void ppc_addmedot() {
 
 void ppc_addmeo() {
     ppc_grab_regsda();
-    uint32_t xer_ca = !!(ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    uint32_t xer_ca = !!(ppc_state.spr[SPR::XER] & 0x20000000);
     ppc_result_d = ppc_result_a + xer_ca - 1;
     ppc_setsoov(ppc_result_a, 0, ppc_result_d);
     if (((xer_ca - 1) < 0xFFFFFFFFUL) | (ppc_result_d < ppc_result_a)) {
-        ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
+        ppc_state.spr[SPR::XER] |= 0x20000000UL;
     }
     else {
-        ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
     }
     ppc_store_result_regd();
 }
 
 void ppc_addmeodot() {
     ppc_grab_regsda();
-    uint32_t xer_ca = !!(ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    uint32_t xer_ca = !!(ppc_state.spr[SPR::XER] & 0x20000000);
     ppc_result_d = ppc_result_a + xer_ca - 1;
     ppc_setsoov(ppc_result_a, 0, ppc_result_d);
     ppc_changecrf0(ppc_result_d);
     if (((xer_ca - 1) < 0xFFFFFFFFUL) | (ppc_result_d < ppc_result_a)) {
-        ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
+        ppc_state.spr[SPR::XER] |= 0x20000000UL;
     }
     else {
-        ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
     }
     ppc_store_result_regd();
 }
 
 void ppc_addze() {
     ppc_grab_regsda();
-    uint32_t grab_xer = !!(ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    uint32_t grab_xer = !!(ppc_state.spr[SPR::XER] & 0x20000000);
     ppc_result_d = ppc_result_a + grab_xer;
     if (ppc_result_d < ppc_result_a) {
-        ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
+        ppc_state.spr[SPR::XER] |= 0x20000000UL;
     }
     else {
-        ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
     }
     ppc_store_result_regd();
 }
 
 void ppc_addzedot() {
     ppc_grab_regsda();
-    uint32_t grab_xer = !!(ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    uint32_t grab_xer = !!(ppc_state.spr[SPR::XER] & 0x20000000);
     ppc_result_d = ppc_result_a + grab_xer;
     if (ppc_result_d < ppc_result_a) {
-        ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
+        ppc_state.spr[SPR::XER] |= 0x20000000UL;
     }
     else {
-        ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
     }
     ppc_changecrf0(ppc_result_d);
     ppc_store_result_regd();
@@ -430,28 +430,28 @@ void ppc_addzedot() {
 
 void ppc_addzeo() {
     ppc_grab_regsda();
-    uint32_t grab_xer = !!(ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    uint32_t grab_xer = !!(ppc_state.spr[SPR::XER] & 0x20000000);
     ppc_result_d = ppc_result_a + grab_xer;
     ppc_setsoov(ppc_result_a, 0xFFFFFFFFUL, ppc_result_d);
     if (ppc_result_d < ppc_result_a) {
-        ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
+        ppc_state.spr[SPR::XER] |= 0x20000000UL;
     }
     else {
-        ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
     }
     ppc_store_result_regd();
 }
 
 void ppc_addzeodot() {
     ppc_grab_regsda();
-    uint32_t grab_xer = !!(ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    uint32_t grab_xer = !!(ppc_state.spr[SPR::XER] & 0x20000000);
     ppc_result_d = ppc_result_a + grab_xer;
     ppc_setsoov(ppc_result_a, 0xFFFFFFFFUL, ppc_result_d);
     if (ppc_result_d < ppc_result_a) {
-        ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
+        ppc_state.spr[SPR::XER] |= 0x20000000UL;
     }
     else {
-        ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
     }
     ppc_changecrf0(ppc_result_d);
     ppc_store_result_regd();
@@ -526,7 +526,7 @@ void ppc_subfic() {
 
 void ppc_subfe() {
     ppc_grab_regsdab();
-    uint32_t grab_xer = !!(ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    uint32_t grab_xer = !!(ppc_state.spr[SPR::XER] & 0x20000000);
     ppc_result_d = ~ppc_result_a + ppc_result_b + grab_xer;
     ppc_carry(~ppc_result_a, ppc_result_d);
     ppc_store_result_regd();
@@ -534,7 +534,7 @@ void ppc_subfe() {
 
 void ppc_subfedot() {
     ppc_grab_regsdab();
-    uint32_t grab_xer = !!(ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    uint32_t grab_xer = !!(ppc_state.spr[SPR::XER] & 0x20000000);
     ppc_result_d = ~ppc_result_a + ppc_result_b + grab_xer;
     ppc_carry(~ppc_result_a, ppc_result_d);
     ppc_changecrf0(ppc_result_d);
@@ -543,7 +543,7 @@ void ppc_subfedot() {
 
 void ppc_subfeo() {
     ppc_grab_regsdab();
-    uint32_t grab_xer = !!(ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    uint32_t grab_xer = !!(ppc_state.spr[SPR::XER] & 0x20000000);
     ppc_result_d = ~ppc_result_a + ppc_result_b + grab_xer;
     ppc_setsoov(ppc_result_b, ppc_result_a, ppc_result_d);
     ppc_carry(~ppc_result_a, ppc_result_d);
@@ -552,7 +552,7 @@ void ppc_subfeo() {
 
 void ppc_subfeodot() {
     ppc_grab_regsdab();
-    uint32_t grab_xer = !!(ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    uint32_t grab_xer = !!(ppc_state.spr[SPR::XER] & 0x20000000);
     ppc_result_d = ~ppc_result_a + ppc_result_b + grab_xer;
     ppc_setsoov(ppc_result_b, ppc_result_a, ppc_result_d);
     ppc_carry(~ppc_result_a, ppc_result_d);
@@ -562,7 +562,7 @@ void ppc_subfeodot() {
 
 void ppc_subfme() {
     ppc_grab_regsda();
-    uint32_t grab_xer = !!(ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    uint32_t grab_xer = !!(ppc_state.spr[SPR::XER] & 0x20000000);
     ppc_result_d = ~ppc_result_a + grab_xer - 1;
     ppc_carry(~ppc_result_a, ppc_result_d);
     ppc_store_result_regd();
@@ -570,7 +570,7 @@ void ppc_subfme() {
 
 void ppc_subfmedot() {
     ppc_grab_regsda();
-    uint32_t grab_xer = !!(ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    uint32_t grab_xer = !!(ppc_state.spr[SPR::XER] & 0x20000000);
     ppc_result_d = ~ppc_result_a + grab_xer - 1;
     ppc_carry(~ppc_result_a, ppc_result_d);
     ppc_changecrf0(ppc_result_d);
@@ -579,7 +579,7 @@ void ppc_subfmedot() {
 
 void ppc_subfmeo() {
     ppc_grab_regsda();
-    uint32_t grab_xer = !!(ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    uint32_t grab_xer = !!(ppc_state.spr[SPR::XER] & 0x20000000);
     ppc_result_d = ~ppc_result_a + grab_xer - 1;
     ppc_setsoov(ppc_result_b, ppc_result_a, ppc_result_d);
     ppc_carry(~ppc_result_a, ppc_result_d);
@@ -588,7 +588,7 @@ void ppc_subfmeo() {
 
 void ppc_subfmeodot() {
     ppc_grab_regsda();
-    uint32_t grab_xer = !!(ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    uint32_t grab_xer = !!(ppc_state.spr[SPR::XER] & 0x20000000);
     ppc_result_d = ~ppc_result_a + grab_xer - 1;
     ppc_setsoov(ppc_result_b, ppc_result_a, ppc_result_d);
     ppc_carry(~ppc_result_a, ppc_result_d);
@@ -598,14 +598,14 @@ void ppc_subfmeodot() {
 
 void ppc_subfze() {
     ppc_grab_regsda();
-    ppc_result_d = ~ppc_result_a + (ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    ppc_result_d = ~ppc_result_a + (ppc_state.spr[SPR::XER] & 0x20000000);
     ppc_carry(~ppc_result_a, ppc_result_d);
     ppc_store_result_regd();
 }
 
 void ppc_subfzedot() {
     ppc_grab_regsda();
-    ppc_result_d = ~ppc_result_a + (ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    ppc_result_d = ~ppc_result_a + (ppc_state.spr[SPR::XER] & 0x20000000);
     ppc_carry(~ppc_result_a, ppc_result_d);
     ppc_changecrf0(ppc_result_d);
     ppc_store_result_regd();
@@ -613,7 +613,7 @@ void ppc_subfzedot() {
 
 void ppc_subfzeo() {
     ppc_grab_regsda();
-    ppc_result_d = ~ppc_result_a + (ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    ppc_result_d = ~ppc_result_a + (ppc_state.spr[SPR::XER] & 0x20000000);
     ppc_setsoov(ppc_result_b, ppc_result_a, ppc_result_d);
     ppc_carry(~ppc_result_a, ppc_result_d);
     ppc_store_result_regd();
@@ -621,7 +621,7 @@ void ppc_subfzeo() {
 
 void ppc_subfzeodot() {
     ppc_grab_regsda();
-    ppc_result_d = ~ppc_result_a + (ppc_state.ppc_spr[SPR::XER] & 0x20000000);
+    ppc_result_d = ~ppc_result_a + (ppc_state.spr[SPR::XER] & 0x20000000);
     ppc_setsoov(ppc_result_b, ppc_result_a, ppc_result_d);
     ppc_carry(~ppc_result_a, ppc_result_d);
     ppc_changecrf0(ppc_result_d);
@@ -788,9 +788,9 @@ void ppc_nego() {
     ppc_grab_regsda();
     ppc_result_d = ~(ppc_result_a)+1;
     if (ppc_result_a == 0x80000000)
-        ppc_state.ppc_spr[SPR::XER] |= 0xc0000000;
+        ppc_state.spr[SPR::XER] |= 0xc0000000;
     else
-        ppc_state.ppc_spr[SPR::XER] &= 0xBFFFFFFF;
+        ppc_state.spr[SPR::XER] &= 0xBFFFFFFF;
     ppc_store_result_regd();
 }
 
@@ -798,9 +798,9 @@ void ppc_negodot() {
     ppc_grab_regsda();
     ppc_result_d = ~(ppc_result_a)+1;
     if (ppc_result_a == 0x80000000)
-        ppc_state.ppc_spr[SPR::XER] |= 0xc0000000;
+        ppc_state.spr[SPR::XER] |= 0xc0000000;
     else
-        ppc_state.ppc_spr[SPR::XER] &= 0xBFFFFFFF;
+        ppc_state.spr[SPR::XER] &= 0xBFFFFFFF;
     ppc_changecrf0(ppc_result_d);
     ppc_store_result_regd();
 }
@@ -895,10 +895,10 @@ void ppc_mullwo() {
     ppc_grab_regsdab();
     int64_t product = (int64_t)(int32_t)ppc_result_a * (int64_t)(int32_t)ppc_result_b;
     if (product != (int64_t)(int32_t)product) {
-        ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
+        ppc_state.spr[SPR::XER] |= 0xC0000000;
     }
     else {
-        ppc_state.ppc_spr[SPR::XER] &= 0xBFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= 0xBFFFFFFFUL;
     }
     ppc_result_d = (uint32_t)product;
     ppc_store_result_regd();
@@ -908,10 +908,10 @@ void ppc_mullwodot() {
     ppc_grab_regsdab();
     int64_t product = (int64_t)(int32_t)ppc_result_a * (int64_t)(int32_t)ppc_result_b;
     if (product != (int64_t)(int32_t)product) {
-        ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
+        ppc_state.spr[SPR::XER] |= 0xC0000000;
     }
     else {
-        ppc_state.ppc_spr[SPR::XER] &= 0xBFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= 0xBFFFFFFFUL;
     }
     ppc_result_d = (uint32_t)product;
     ppc_changecrf0(ppc_result_d);
@@ -964,15 +964,15 @@ void ppc_divwo() {
 
     if (!ppc_result_b) { /* handle the "anything / 0" case */
         ppc_result_d = (ppc_result_a & 0x80000000) ? -1 : 0; /* UNDOCUMENTED! */
-        ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
+        ppc_state.spr[SPR::XER] |= 0xC0000000;
     }
     else if (ppc_result_a == 0x80000000UL && ppc_result_b == 0xFFFFFFFFUL) {
         ppc_result_d = 0xFFFFFFFF;
-        ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
+        ppc_state.spr[SPR::XER] |= 0xC0000000;
     }
     else { /* normal signed devision */
         ppc_result_d = (int32_t)ppc_result_a / (int32_t)ppc_result_b;
-        ppc_state.ppc_spr[SPR::XER] &= 0xBFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= 0xBFFFFFFFUL;
     }
 
     ppc_store_result_regd();
@@ -983,15 +983,15 @@ void ppc_divwodot() {
 
     if (!ppc_result_b) { /* handle the "anything / 0" case */
         ppc_result_d = (ppc_result_a & 0x80000000) ? -1 : 0; /* UNDOCUMENTED! */
-        ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
+        ppc_state.spr[SPR::XER] |= 0xC0000000;
     }
     else if (ppc_result_a == 0x80000000UL && ppc_result_b == 0xFFFFFFFFUL) {
         ppc_result_d = 0xFFFFFFFF;
-        ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
+        ppc_state.spr[SPR::XER] |= 0xC0000000;
     }
     else { /* normal signed devision */
         ppc_result_d = (int32_t)ppc_result_a / (int32_t)ppc_result_b;
-        ppc_state.ppc_spr[SPR::XER] &= 0xBFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= 0xBFFFFFFFUL;
     }
 
     ppc_changecrf0(ppc_result_d);
@@ -1015,7 +1015,7 @@ void ppc_divwudot() {
 
     if (!ppc_result_b) { /* division by zero */
         ppc_result_d = 0;
-        ppc_state.ppc_cr |= 0x20000000;
+        ppc_state.cr |= 0x20000000;
     }
     else {
         ppc_result_d = ppc_result_a / ppc_result_b;
@@ -1029,11 +1029,11 @@ void ppc_divwuo() {
 
     if (!ppc_result_b) { /* division by zero */
         ppc_result_d = 0;
-        ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
+        ppc_state.spr[SPR::XER] |= 0xC0000000;
     }
     else {
         ppc_result_d = ppc_result_a / ppc_result_b;
-        ppc_state.ppc_spr[SPR::XER] &= 0xBFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= 0xBFFFFFFFUL;
     }
     ppc_store_result_regd();
 }
@@ -1043,11 +1043,11 @@ void ppc_divwuodot() {
 
     if (!ppc_result_b) { /* division by zero */
         ppc_result_d = 0;
-        ppc_state.ppc_spr[SPR::XER] |= 0xC0000000;
+        ppc_state.spr[SPR::XER] |= 0xC0000000;
     }
     else {
         ppc_result_d = ppc_result_a / ppc_result_b;
-        ppc_state.ppc_spr[SPR::XER] &= 0xBFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= 0xBFFFFFFFUL;
     }
     ppc_changecrf0(ppc_result_d);
     ppc_store_result_regd();
@@ -1105,17 +1105,17 @@ void ppc_sraw() {
     ppc_grab_regssab();
     if (ppc_result_b & 0x20) {
         ppc_result_a = (int32_t)ppc_result_d >> 31;
-        ppc_state.ppc_spr[SPR::XER] |= (ppc_result_a & 1) << 29;
+        ppc_state.spr[SPR::XER] |= (ppc_result_a & 1) << 29;
     }
     else {
         uint32_t shift = ppc_result_b & 0x1F;
         uint32_t mask = (1 << shift) - 1;
         ppc_result_a = (int32_t)ppc_result_d >> shift;
         if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & mask)) {
-            ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
+            ppc_state.spr[SPR::XER] |= 0x20000000UL;
         }
         else {
-            ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
+            ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
         }
     }
     ppc_store_result_rega();
@@ -1125,17 +1125,17 @@ void ppc_srawdot() {
     ppc_grab_regssab();
     if (ppc_result_b & 0x20) {
         ppc_result_a = (int32_t)ppc_result_d >> 31;
-        ppc_state.ppc_spr[SPR::XER] |= (ppc_result_a & 1) << 29;
+        ppc_state.spr[SPR::XER] |= (ppc_result_a & 1) << 29;
     }
     else {
         uint32_t shift = ppc_result_b & 0x1F;
         uint32_t mask = (1 << shift) - 1;
         ppc_result_a = (int32_t)ppc_result_d >> shift;
         if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & mask)) {
-            ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
+            ppc_state.spr[SPR::XER] |= 0x20000000UL;
         }
         else {
-            ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
+            ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
         }
     }
     ppc_changecrf0(ppc_result_a);
@@ -1148,10 +1148,10 @@ void ppc_srawi() {
     uint32_t mask = (1 << shift) - 1;
     ppc_result_a = (int32_t)ppc_result_d >> shift;
     if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & mask)) {
-        ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
+        ppc_state.spr[SPR::XER] |= 0x20000000UL;
     }
     else {
-        ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
     }
     ppc_store_result_rega();
 }
@@ -1162,10 +1162,10 @@ void ppc_srawidot() {
     uint32_t mask = (1 << shift) - 1;
     ppc_result_a = (int32_t)ppc_result_d >> shift;
     if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & mask)) {
-        ppc_state.ppc_spr[SPR::XER] |= 0x20000000UL;
+        ppc_state.spr[SPR::XER] |= 0x20000000UL;
     }
     else {
-        ppc_state.ppc_spr[SPR::XER] &= 0xDFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
     }
     ppc_changecrf0(ppc_result_a);
     ppc_store_result_rega();
@@ -1222,17 +1222,17 @@ void ppc_rlwnm() {
 
 void ppc_mfcr() {
     reg_d = (ppc_cur_instruction >> 21) & 31;
-    ppc_state.ppc_gpr[reg_d] = ppc_state.ppc_cr;
+    ppc_state.gpr[reg_d] = ppc_state.cr;
 }
 
 void ppc_mtsr() {
 #ifdef PROFILER
     supervisor_inst_num++;
 #endif
-    if ((ppc_state.ppc_msr & 0x4000) == 0) {
+    if ((ppc_state.msr & 0x4000) == 0) {
         reg_s = (ppc_cur_instruction >> 21) & 31;
         grab_sr = (ppc_cur_instruction >> 16) & 15;
-        ppc_state.ppc_sr[grab_sr] = ppc_state.ppc_gpr[reg_s];
+        ppc_state.sr[grab_sr] = ppc_state.gpr[reg_s];
     }
 }
 
@@ -1240,10 +1240,10 @@ void ppc_mtsrin() {
 #ifdef PROFILER
     supervisor_inst_num++;
 #endif
-    if ((ppc_state.ppc_msr & 0x4000) == 0) {
+    if ((ppc_state.msr & 0x4000) == 0) {
         ppc_grab_regssb();
         grab_sr = ppc_result_b >> 28;
-        ppc_state.ppc_sr[grab_sr] = ppc_result_d;
+        ppc_state.sr[grab_sr] = ppc_result_d;
     }
 }
 
@@ -1251,10 +1251,10 @@ void ppc_mfsr() {
 #ifdef PROFILER
     supervisor_inst_num++;
 #endif
-    if ((ppc_state.ppc_msr & 0x4000) == 0) {
+    if ((ppc_state.msr & 0x4000) == 0) {
         reg_d = (ppc_cur_instruction >> 21) & 31;
         grab_sr = (ppc_cur_instruction >> 16) & 15;
-        ppc_state.ppc_gpr[reg_d] = ppc_state.ppc_sr[grab_sr];
+        ppc_state.gpr[reg_d] = ppc_state.sr[grab_sr];
     }
 }
 
@@ -1262,10 +1262,10 @@ void ppc_mfsrin() {
 #ifdef PROFILER
     supervisor_inst_num++;
 #endif
-    if ((ppc_state.ppc_msr & 0x4000) == 0) {
+    if ((ppc_state.msr & 0x4000) == 0) {
         ppc_grab_regsdb();
         grab_sr = ppc_result_b >> 28;
-        ppc_state.ppc_gpr[reg_d] = ppc_state.ppc_sr[grab_sr];
+        ppc_state.gpr[reg_d] = ppc_state.sr[grab_sr];
     }
 }
 
@@ -1273,22 +1273,22 @@ void ppc_mfmsr() {
 #ifdef PROFILER
     supervisor_inst_num++;
 #endif
-    if (ppc_state.ppc_msr & 0x4000) {
+    if (ppc_state.msr & 0x4000) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x00040000);
     }
     reg_d = (ppc_cur_instruction >> 21) & 31;
-    ppc_state.ppc_gpr[reg_d] = ppc_state.ppc_msr;
+    ppc_state.gpr[reg_d] = ppc_state.msr;
 }
 
 void ppc_mtmsr() {
 #ifdef PROFILER
     supervisor_inst_num++;
 #endif
-    if (ppc_state.ppc_msr & 0x4000) {
+    if (ppc_state.msr & 0x4000) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x00040000);
     }
     reg_s = (ppc_cur_instruction >> 21) & 31;
-    ppc_state.ppc_msr = ppc_state.ppc_gpr[reg_s];
+    ppc_state.msr = ppc_state.gpr[reg_s];
 }
 
 void ppc_mfspr() {
@@ -1300,7 +1300,7 @@ void ppc_mfspr() {
     }
 #endif
     reg_d = (ppc_cur_instruction >> 21) & 31;
-    ppc_state.ppc_gpr[reg_d] = ppc_state.ppc_spr[ref_spr];
+    ppc_state.gpr[reg_d] = ppc_state.spr[ref_spr];
 }
 
 void ppc_mtspr() {
@@ -1314,18 +1314,18 @@ void ppc_mtspr() {
 #endif
 
     if (ref_spr != 287) {
-        ppc_state.ppc_spr[ref_spr] = ppc_state.ppc_gpr[reg_s];
+        ppc_state.spr[ref_spr] = ppc_state.gpr[reg_s];
     }
 
     switch (ref_spr) {
         //Mirror the TBRs in the SPR range to the user-mode TBRs.
     case 284:
         timebase_counter = (timebase_counter & 0xFFFFFFFF00000000ULL) +
-            ppc_state.ppc_gpr[reg_s];
+            ppc_state.gpr[reg_s];
         break;
     case 285:
         timebase_counter = (timebase_counter & 0x00000000FFFFFFFFULL) +
-            (((uint64_t)(ppc_state.ppc_gpr[reg_s])) << 32);
+            (((uint64_t)(ppc_state.gpr[reg_s])) << 32);
         break;
     case 528:
     case 529:
@@ -1354,10 +1354,10 @@ void ppc_mftb() {
     reg_d = (ppc_cur_instruction >> 21) & 31;
     switch (ref_spr) {
     case 268:
-        ppc_state.ppc_gpr[reg_d] = timebase_counter & 0xFFFFFFFFUL;
+        ppc_state.gpr[reg_d] = timebase_counter & 0xFFFFFFFFUL;
         break;
     case 269:
-        ppc_state.ppc_gpr[reg_d] = (timebase_counter >> 32) & 0xFFFFFFFFUL;
+        ppc_state.gpr[reg_d] = (timebase_counter >> 32) & 0xFFFFFFFFUL;
         break;
     default:
         std::cout << "Invalid TBR access attempted!" << std::endl;
@@ -1377,14 +1377,14 @@ void ppc_mtcrf() {
     cr_mask += (crm & 4) ? 0x00000F00 : 0x00000000;
     cr_mask += (crm & 2) ? 0x000000F0 : 0x00000000;
     cr_mask += (crm & 1) ? 0x0000000F : 0x00000000;
-    ppc_state.ppc_cr = (ppc_result_d & cr_mask) | (ppc_state.ppc_cr & ~(cr_mask));
+    ppc_state.cr = (ppc_result_d & cr_mask) | (ppc_state.cr & ~(cr_mask));
 }
 
 void ppc_mcrxr() {
     crf_d = (ppc_cur_instruction >> 23) & 7;
     crf_d = crf_d << 2;
-    ppc_state.ppc_cr = (ppc_state.ppc_cr & ~(0xF0000000UL >> crf_d)) | ((ppc_state.ppc_spr[SPR::XER] & 0xF0000000UL) >> crf_d);
-    ppc_state.ppc_spr[SPR::XER] &= 0x0FFFFFFF;
+    ppc_state.cr = (ppc_state.cr & ~(0xF0000000UL >> crf_d)) | ((ppc_state.spr[SPR::XER] & 0xF0000000UL) >> crf_d);
+    ppc_state.spr[SPR::XER] &= 0x0FFFFFFF;
 }
 
 void ppc_extsb() {
@@ -1426,7 +1426,7 @@ void ppc_extshdot() {
 void ppc_b() {
     uint32_t quick_test = (ppc_cur_instruction & 0x03FFFFFC);
     adr_li = (quick_test < 0x2000000) ? quick_test : (0xFC000000UL + quick_test);
-    ppc_next_instruction_address = (uint32_t)(ppc_state.ppc_pc + adr_li);
+    ppc_next_instruction_address = (uint32_t)(ppc_state.prog_counter + adr_li);
     grab_branch = 1;
     bb_kind = BB_end_kind::BB_BRANCH;
 }
@@ -1434,8 +1434,8 @@ void ppc_b() {
 void ppc_bl() {
     uint32_t quick_test = (ppc_cur_instruction & 0x03FFFFFC);
     adr_li = (quick_test < 0x2000000) ? quick_test : (0xFC000000UL + quick_test);
-    ppc_next_instruction_address = (uint32_t)(ppc_state.ppc_pc + adr_li);
-    ppc_state.ppc_spr[SPR::LR] = (uint32_t)(ppc_state.ppc_pc + 4);
+    ppc_next_instruction_address = (uint32_t)(ppc_state.prog_counter + adr_li);
+    ppc_state.spr[SPR::LR] = (uint32_t)(ppc_state.prog_counter + 4);
     grab_branch = 1;
     bb_kind = BB_end_kind::BB_BRANCH;
 }
@@ -1452,7 +1452,7 @@ void ppc_bla() {
     uint32_t quick_test = (ppc_cur_instruction & 0x03FFFFFC);
     adr_li = (quick_test < 0x2000000) ? quick_test : (0xFC000000UL + quick_test);
     ppc_next_instruction_address = adr_li;
-    ppc_state.ppc_spr[SPR::LR] = ppc_state.ppc_pc + 4;
+    ppc_state.spr[SPR::LR] = ppc_state.prog_counter + 4;
     grab_branch = 1;
     bb_kind = BB_end_kind::BB_BRANCH;
 }
@@ -1466,13 +1466,13 @@ void ppc_bc()
     int32_t  br_bd = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFC));
 
     if (!(br_bo & 0x04)) {
-        (ppc_state.ppc_spr[SPR::CTR])--; /* decrement CTR */
+        (ppc_state.spr[SPR::CTR])--; /* decrement CTR */
     }
-    ctr_ok = (br_bo & 0x04) || ((ppc_state.ppc_spr[SPR::CTR] != 0) == !(br_bo & 0x02));
-    cnd_ok = (br_bo & 0x10) || (!(ppc_state.ppc_cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
+    ctr_ok = (br_bo & 0x04) || ((ppc_state.spr[SPR::CTR] != 0) == !(br_bo & 0x02));
+    cnd_ok = (br_bo & 0x10) || (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
 
     if (ctr_ok && cnd_ok) {
-        ppc_next_instruction_address = (ppc_state.ppc_pc + br_bd);
+        ppc_next_instruction_address = (ppc_state.prog_counter + br_bd);
         grab_branch = 1;
         bb_kind = BB_end_kind::BB_BRANCH;
     }
@@ -1487,10 +1487,10 @@ void ppc_bca()
     int32_t  br_bd = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFC));
 
     if (!(br_bo & 0x04)) {
-        (ppc_state.ppc_spr[SPR::CTR])--; /* decrement CTR */
+        (ppc_state.spr[SPR::CTR])--; /* decrement CTR */
     }
-    ctr_ok = (br_bo & 0x04) || ((ppc_state.ppc_spr[SPR::CTR] != 0) == !(br_bo & 0x02));
-    cnd_ok = (br_bo & 0x10) || (!(ppc_state.ppc_cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
+    ctr_ok = (br_bo & 0x04) || ((ppc_state.spr[SPR::CTR] != 0) == !(br_bo & 0x02));
+    cnd_ok = (br_bo & 0x10) || (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
 
     if (ctr_ok && cnd_ok) {
         ppc_next_instruction_address = br_bd;
@@ -1508,17 +1508,17 @@ void ppc_bcl()
     int32_t  br_bd = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFC));
 
     if (!(br_bo & 0x04)) {
-        (ppc_state.ppc_spr[SPR::CTR])--; /* decrement CTR */
+        (ppc_state.spr[SPR::CTR])--; /* decrement CTR */
     }
-    ctr_ok = (br_bo & 0x04) || ((ppc_state.ppc_spr[SPR::CTR] != 0) == !(br_bo & 0x02));
-    cnd_ok = (br_bo & 0x10) || (!(ppc_state.ppc_cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
+    ctr_ok = (br_bo & 0x04) || ((ppc_state.spr[SPR::CTR] != 0) == !(br_bo & 0x02));
+    cnd_ok = (br_bo & 0x10) || (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
 
     if (ctr_ok && cnd_ok) {
-        ppc_next_instruction_address = (ppc_state.ppc_pc + br_bd);
+        ppc_next_instruction_address = (ppc_state.prog_counter + br_bd);
         grab_branch = 1;
         bb_kind = BB_end_kind::BB_BRANCH;
     }
-    ppc_state.ppc_spr[SPR::LR] = ppc_state.ppc_pc + 4;
+    ppc_state.spr[SPR::LR] = ppc_state.prog_counter + 4;
 }
 
 void ppc_bcla()
@@ -1530,17 +1530,17 @@ void ppc_bcla()
     int32_t  br_bd = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFC));
 
     if (!(br_bo & 0x04)) {
-        (ppc_state.ppc_spr[SPR::CTR])--; /* decrement CTR */
+        (ppc_state.spr[SPR::CTR])--; /* decrement CTR */
     }
-    ctr_ok = (br_bo & 0x04) || ((ppc_state.ppc_spr[SPR::CTR] != 0) == !(br_bo & 0x02));
-    cnd_ok = (br_bo & 0x10) || (!(ppc_state.ppc_cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
+    ctr_ok = (br_bo & 0x04) || ((ppc_state.spr[SPR::CTR] != 0) == !(br_bo & 0x02));
+    cnd_ok = (br_bo & 0x10) || (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
 
     if (ctr_ok && cnd_ok) {
         ppc_next_instruction_address = br_bd;
         grab_branch = 1;
         bb_kind = BB_end_kind::BB_BRANCH;
     }
-    ppc_state.ppc_spr[SPR::LR] = ppc_state.ppc_pc + 4;
+    ppc_state.spr[SPR::LR] = ppc_state.prog_counter + 4;
 }
 
 void ppc_bcctr()
@@ -1548,10 +1548,10 @@ void ppc_bcctr()
     uint32_t br_bo = (ppc_cur_instruction >> 21) & 31;
     uint32_t br_bi = (ppc_cur_instruction >> 16) & 31;
 
-    uint32_t cnd_ok = (br_bo & 0x10) || (!(ppc_state.ppc_cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
+    uint32_t cnd_ok = (br_bo & 0x10) || (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
 
     if (cnd_ok) {
-        ppc_next_instruction_address = (ppc_state.ppc_spr[SPR::CTR] & 0xFFFFFFFCUL);
+        ppc_next_instruction_address = (ppc_state.spr[SPR::CTR] & 0xFFFFFFFCUL);
         grab_branch = 1;
         bb_kind = BB_end_kind::BB_BRANCH;
     }
@@ -1562,14 +1562,14 @@ void ppc_bcctrl()
     uint32_t br_bo = (ppc_cur_instruction >> 21) & 31;
     uint32_t br_bi = (ppc_cur_instruction >> 16) & 31;
 
-    uint32_t cnd_ok = (br_bo & 0x10) || (!(ppc_state.ppc_cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
+    uint32_t cnd_ok = (br_bo & 0x10) || (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
 
     if (cnd_ok) {
-        ppc_next_instruction_address = (ppc_state.ppc_spr[SPR::CTR] & 0xFFFFFFFCUL);
+        ppc_next_instruction_address = (ppc_state.spr[SPR::CTR] & 0xFFFFFFFCUL);
         grab_branch = 1;
         bb_kind = BB_end_kind::BB_BRANCH;
     }
-    ppc_state.ppc_spr[SPR::LR] = ppc_state.ppc_pc + 4;
+    ppc_state.spr[SPR::LR] = ppc_state.prog_counter + 4;
 }
 
 void ppc_bclr()
@@ -1580,13 +1580,13 @@ void ppc_bclr()
     uint32_t cnd_ok;
 
     if (!(br_bo & 0x04)) {
-        (ppc_state.ppc_spr[SPR::CTR])--; /* decrement CTR */
+        (ppc_state.spr[SPR::CTR])--; /* decrement CTR */
     }
-    ctr_ok = (br_bo & 0x04) || ((ppc_state.ppc_spr[SPR::CTR] != 0) == !(br_bo & 0x02));
-    cnd_ok = (br_bo & 0x10) || (!(ppc_state.ppc_cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
+    ctr_ok = (br_bo & 0x04) || ((ppc_state.spr[SPR::CTR] != 0) == !(br_bo & 0x02));
+    cnd_ok = (br_bo & 0x10) || (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
 
     if (ctr_ok && cnd_ok) {
-        ppc_next_instruction_address = (ppc_state.ppc_spr[SPR::LR] & 0xFFFFFFFCUL);
+        ppc_next_instruction_address = (ppc_state.spr[SPR::LR] & 0xFFFFFFFCUL);
         grab_branch = 1;
         bb_kind = BB_end_kind::BB_BRANCH;
     }
@@ -1600,17 +1600,17 @@ void ppc_bclrl()
     uint32_t cnd_ok;
 
     if (!(br_bo & 0x04)) {
-        (ppc_state.ppc_spr[SPR::CTR])--; /* decrement CTR */
+        (ppc_state.spr[SPR::CTR])--; /* decrement CTR */
     }
-    ctr_ok = (br_bo & 0x04) || ((ppc_state.ppc_spr[SPR::CTR] != 0) == !(br_bo & 0x02));
-    cnd_ok = (br_bo & 0x10) || (!(ppc_state.ppc_cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
+    ctr_ok = (br_bo & 0x04) || ((ppc_state.spr[SPR::CTR] != 0) == !(br_bo & 0x02));
+    cnd_ok = (br_bo & 0x10) || (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
 
     if (ctr_ok && cnd_ok) {
-        ppc_next_instruction_address = (ppc_state.ppc_spr[SPR::LR] & 0xFFFFFFFCUL);
+        ppc_next_instruction_address = (ppc_state.spr[SPR::LR] & 0xFFFFFFFCUL);
         grab_branch = 1;
         bb_kind = BB_end_kind::BB_BRANCH;
     }
-    ppc_state.ppc_spr[SPR::LR] = ppc_state.ppc_pc + 4;
+    ppc_state.spr[SPR::LR] = ppc_state.prog_counter + 4;
 }
 //Compare Instructions
 
@@ -1625,9 +1625,9 @@ void ppc_cmp() {
     crf_d = (ppc_cur_instruction >> 23) & 7;
     crf_d = crf_d << 2;
     ppc_grab_regssab();
-    xercon = (ppc_state.ppc_spr[SPR::XER] & 0x80000000UL) >> 3;
+    xercon = (ppc_state.spr[SPR::XER] & 0x80000000UL) >> 3;
     cmp_c = (((int32_t)ppc_result_a) == ((int32_t)ppc_result_b)) ? 0x20000000UL : (((int32_t)ppc_result_a) > ((int32_t)ppc_result_b)) ? 0x40000000UL : 0x80000000UL;
-    ppc_state.ppc_cr = ((ppc_state.ppc_cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
+    ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
 }
 
 void ppc_cmpi() {
@@ -1641,9 +1641,9 @@ void ppc_cmpi() {
     crf_d = (ppc_cur_instruction >> 23) & 7;
     crf_d = crf_d << 2;
     ppc_grab_regsasimm();
-    xercon = (ppc_state.ppc_spr[SPR::XER] & 0x80000000UL) >> 3;
+    xercon = (ppc_state.spr[SPR::XER] & 0x80000000UL) >> 3;
     cmp_c = (((int32_t)ppc_result_a) == simm) ? 0x20000000UL : (((int32_t)ppc_result_a) > simm) ? 0x40000000UL : 0x80000000UL;
-    ppc_state.ppc_cr = ((ppc_state.ppc_cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
+    ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
 }
 
 void ppc_cmpl() {
@@ -1657,9 +1657,9 @@ void ppc_cmpl() {
     crf_d = (ppc_cur_instruction >> 23) & 7;
     crf_d = crf_d << 2;
     ppc_grab_regssab();
-    xercon = (ppc_state.ppc_spr[SPR::XER] & 0x80000000UL) >> 3;
+    xercon = (ppc_state.spr[SPR::XER] & 0x80000000UL) >> 3;
     cmp_c = (ppc_result_a == ppc_result_b) ? 0x20000000UL : (ppc_result_a > ppc_result_b) ? 0x40000000UL : 0x80000000UL;
-    ppc_state.ppc_cr = ((ppc_state.ppc_cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
+    ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
 }
 
 void ppc_cmpli() {
@@ -1673,84 +1673,84 @@ void ppc_cmpli() {
     crf_d = (ppc_cur_instruction >> 23) & 7;
     crf_d = crf_d << 2;
     ppc_grab_regssauimm();
-    xercon = (ppc_state.ppc_spr[SPR::XER] & 0x80000000UL) >> 3;
+    xercon = (ppc_state.spr[SPR::XER] & 0x80000000UL) >> 3;
     cmp_c = (ppc_result_a == uimm) ? 0x20000000UL : (ppc_result_a > uimm) ? 0x40000000UL : 0x80000000UL;
-    ppc_state.ppc_cr = ((ppc_state.ppc_cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
+    ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
 }
 
 //Condition Register Changes
 
 void ppc_crand() {
     ppc_grab_regsdab();
-    if ((ppc_state.ppc_cr & (0x80000000UL >> reg_a)) && (ppc_state.ppc_cr & (0x80000000UL >> reg_b))) {
-        ppc_state.ppc_cr |= (0x80000000UL >> reg_d);
+    if ((ppc_state.cr & (0x80000000UL >> reg_a)) && (ppc_state.cr & (0x80000000UL >> reg_b))) {
+        ppc_state.cr |= (0x80000000UL >> reg_d);
     }
     else {
-        ppc_state.ppc_cr &= ~(0x80000000UL >> reg_d);
+        ppc_state.cr &= ~(0x80000000UL >> reg_d);
     }
 }
 void ppc_crandc() {
     ppc_grab_regsdab();
-    if ((ppc_state.ppc_cr & (0x80000000UL >> reg_a)) && !(ppc_state.ppc_cr & (0x80000000UL >> reg_b))) {
-        ppc_state.ppc_cr |= (0x80000000UL >> reg_d);
+    if ((ppc_state.cr & (0x80000000UL >> reg_a)) && !(ppc_state.cr & (0x80000000UL >> reg_b))) {
+        ppc_state.cr |= (0x80000000UL >> reg_d);
     }
     else {
-        ppc_state.ppc_cr &= ~(0x80000000UL >> reg_d);
+        ppc_state.cr &= ~(0x80000000UL >> reg_d);
     }
 }
 void ppc_creqv() {
     ppc_grab_regsdab();
-    if (!((ppc_state.ppc_cr & (0x80000000UL >> reg_a)) ^ (ppc_state.ppc_cr & (0x80000000UL >> reg_b)))) {
-        ppc_state.ppc_cr |= (0x80000000UL >> reg_d);
+    if (!((ppc_state.cr & (0x80000000UL >> reg_a)) ^ (ppc_state.cr & (0x80000000UL >> reg_b)))) {
+        ppc_state.cr |= (0x80000000UL >> reg_d);
     }
     else {
-        ppc_state.ppc_cr &= ~(0x80000000UL >> reg_d);
+        ppc_state.cr &= ~(0x80000000UL >> reg_d);
     }
 }
 void ppc_crnand() {
     ppc_grab_regsdab();
-    if (!((ppc_state.ppc_cr & (0x80000000UL >> reg_a)) && (ppc_state.ppc_cr & (0x80000000UL >> reg_b)))) {
-        ppc_state.ppc_cr |= (0x80000000UL >> reg_d);
+    if (!((ppc_state.cr & (0x80000000UL >> reg_a)) && (ppc_state.cr & (0x80000000UL >> reg_b)))) {
+        ppc_state.cr |= (0x80000000UL >> reg_d);
     }
     else {
-        ppc_state.ppc_cr &= ~(0x80000000UL >> reg_d);
+        ppc_state.cr &= ~(0x80000000UL >> reg_d);
     }
 }
 void ppc_crnor() {
     ppc_grab_regsdab();
-    if (!((ppc_state.ppc_cr & (0x80000000UL >> reg_a)) || (ppc_state.ppc_cr & (0x80000000UL >> reg_b)))) {
-        ppc_state.ppc_cr |= (0x80000000UL >> reg_d);
+    if (!((ppc_state.cr & (0x80000000UL >> reg_a)) || (ppc_state.cr & (0x80000000UL >> reg_b)))) {
+        ppc_state.cr |= (0x80000000UL >> reg_d);
     }
     else {
-        ppc_state.ppc_cr &= ~(0x80000000UL >> reg_d);
+        ppc_state.cr &= ~(0x80000000UL >> reg_d);
     }
 }
 
 void ppc_cror() {
     ppc_grab_regsdab();
-    if ((ppc_state.ppc_cr & (0x80000000UL >> reg_a)) || (ppc_state.ppc_cr & (0x80000000UL >> reg_b))) {
-        ppc_state.ppc_cr |= (0x80000000UL >> reg_d);
+    if ((ppc_state.cr & (0x80000000UL >> reg_a)) || (ppc_state.cr & (0x80000000UL >> reg_b))) {
+        ppc_state.cr |= (0x80000000UL >> reg_d);
     }
     else {
-        ppc_state.ppc_cr &= ~(0x80000000UL >> reg_d);
+        ppc_state.cr &= ~(0x80000000UL >> reg_d);
     }
 }
 void ppc_crorc() {
     ppc_grab_regsdab();
-    if ((ppc_state.ppc_cr & (0x80000000UL >> reg_a)) || !(ppc_state.ppc_cr & (0x80000000UL >> reg_b))) {
-        ppc_state.ppc_cr |= (0x80000000UL >> reg_d);
+    if ((ppc_state.cr & (0x80000000UL >> reg_a)) || !(ppc_state.cr & (0x80000000UL >> reg_b))) {
+        ppc_state.cr |= (0x80000000UL >> reg_d);
     }
     else {
-        ppc_state.ppc_cr &= ~(0x80000000UL >> reg_d);
+        ppc_state.cr &= ~(0x80000000UL >> reg_d);
     }
 }
 void ppc_crxor() {
     ppc_grab_regsdab();
-    if ((ppc_state.ppc_cr & (0x80000000UL >> reg_a)) ^ (ppc_state.ppc_cr & (0x80000000UL >> reg_b))) {
-        ppc_state.ppc_cr |= (0x80000000UL >> reg_d);
+    if ((ppc_state.cr & (0x80000000UL >> reg_a)) ^ (ppc_state.cr & (0x80000000UL >> reg_b))) {
+        ppc_state.cr |= (0x80000000UL >> reg_d);
     }
     else {
-        ppc_state.ppc_cr &= ~(0x80000000UL >> reg_d);
+        ppc_state.cr &= ~(0x80000000UL >> reg_d);
     }
 }
 
@@ -1760,10 +1760,10 @@ void ppc_rfi() {
 #ifdef PROFILER
     supervisor_inst_num++;
 #endif
-    uint32_t new_srr1_val = (ppc_state.ppc_spr[SPR::SRR1] & 0x87C0FF73UL);
-    uint32_t new_msr_val = (ppc_state.ppc_msr & ~(0x87C0FF73UL));
-    ppc_state.ppc_msr = (new_msr_val | new_srr1_val) & 0xFFFBFFFFUL;
-    ppc_next_instruction_address = ppc_state.ppc_spr[SPR::SRR0] & 0xFFFFFFFCUL;
+    uint32_t new_srr1_val = (ppc_state.spr[SPR::SRR1] & 0x87C0FF73UL);
+    uint32_t new_msr_val = (ppc_state.msr & ~(0x87C0FF73UL));
+    ppc_state.msr = (new_msr_val | new_srr1_val) & 0xFFFBFFFFUL;
+    ppc_next_instruction_address = ppc_state.spr[SPR::SRR0] & 0xFFFFFFFCUL;
 
     grab_return = true;
     bb_kind = BB_end_kind::BB_RFI;
@@ -1777,11 +1777,11 @@ void ppc_tw() {
     reg_a = (ppc_cur_instruction >> 11) & 31;
     reg_b = (ppc_cur_instruction >> 16) & 31;
     ppc_to = (ppc_cur_instruction >> 21) & 31;
-    if ((((int32_t)ppc_state.ppc_gpr[reg_a] < (int32_t)ppc_state.ppc_gpr[reg_b]) & (ppc_to & 0x10)) || \
-        (((int32_t)ppc_state.ppc_gpr[reg_a] > (int32_t)ppc_state.ppc_gpr[reg_b])& (ppc_to & 0x08)) || \
-        (((int32_t)ppc_state.ppc_gpr[reg_a] == (int32_t)ppc_state.ppc_gpr[reg_b]) & (ppc_to & 0x04)) || \
-        ((ppc_state.ppc_gpr[reg_a] < ppc_state.ppc_gpr[reg_b]) & (ppc_to & 0x02)) || \
-        ((ppc_state.ppc_gpr[reg_a] > ppc_state.ppc_gpr[reg_b])& (ppc_to & 0x01))) {
+    if ((((int32_t)ppc_state.gpr[reg_a] < (int32_t)ppc_state.gpr[reg_b]) & (ppc_to & 0x10)) || \
+        (((int32_t)ppc_state.gpr[reg_a] > (int32_t)ppc_state.gpr[reg_b])& (ppc_to & 0x08)) || \
+        (((int32_t)ppc_state.gpr[reg_a] == (int32_t)ppc_state.gpr[reg_b]) & (ppc_to & 0x04)) || \
+        ((ppc_state.gpr[reg_a] < ppc_state.gpr[reg_b]) & (ppc_to & 0x02)) || \
+        ((ppc_state.gpr[reg_a] > ppc_state.gpr[reg_b])& (ppc_to & 0x01))) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
     }
 }
@@ -1790,11 +1790,11 @@ void ppc_twi() {
     simm = (int32_t)((int16_t)((ppc_cur_instruction) & 65535));
     reg_b = (ppc_cur_instruction >> 16) & 31;
     ppc_to = (ppc_cur_instruction >> 21) & 31;
-    if ((((int32_t)ppc_state.ppc_gpr[reg_a] < simm) & (ppc_to & 0x10)) || \
-        (((int32_t)ppc_state.ppc_gpr[reg_a] > simm)& (ppc_to & 0x08)) || \
-        (((int32_t)ppc_state.ppc_gpr[reg_a] == simm) & (ppc_to & 0x04)) || \
-        ((ppc_state.ppc_gpr[reg_a] < (uint32_t)simm) & (ppc_to & 0x02)) || \
-        ((ppc_state.ppc_gpr[reg_a] > (uint32_t)simm)& (ppc_to & 0x01))) {
+    if ((((int32_t)ppc_state.gpr[reg_a] < simm) & (ppc_to & 0x10)) || \
+        (((int32_t)ppc_state.gpr[reg_a] > simm)& (ppc_to & 0x08)) || \
+        (((int32_t)ppc_state.gpr[reg_a] == simm) & (ppc_to & 0x04)) || \
+        ((ppc_state.gpr[reg_a] < (uint32_t)simm) & (ppc_to & 0x02)) || \
+        ((ppc_state.gpr[reg_a] > (uint32_t)simm)& (ppc_to & 0x01))) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
     }
 }
@@ -1843,7 +1843,7 @@ void ppc_dcbtst() {
 void ppc_dcbz() {
     ppc_grab_regsdab();
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
-    if (!(ppc_state.ppc_pc & 32) && (ppc_state.ppc_pc < 0xFFFFFFE0UL)) {
+    if (!(ppc_state.prog_counter & 32) && (ppc_state.prog_counter < 0xFFFFFFE0UL)) {
         ppc_grab_regsdab();
         ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
         mem_write_qword(ppc_effective_address, 0);
@@ -1878,7 +1878,7 @@ void ppc_stbu() {
         ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
         ppc_effective_address += ppc_result_a;
         mem_write_byte(ppc_effective_address, ppc_result_d);
-        ppc_state.ppc_gpr[reg_a] = ppc_effective_address;
+        ppc_state.gpr[reg_a] = ppc_effective_address;
     }
     else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
@@ -1890,7 +1890,7 @@ void ppc_stbux() {
     if (reg_a != 0) {
         ppc_effective_address = ppc_result_a + ppc_result_b;
         mem_write_byte(ppc_effective_address, ppc_result_d);
-        ppc_state.ppc_gpr[reg_a] = ppc_effective_address;
+        ppc_state.gpr[reg_a] = ppc_effective_address;
     }
     else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
@@ -1910,7 +1910,7 @@ void ppc_sthu() {
         ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
         ppc_effective_address += ppc_result_a;
         mem_write_word(ppc_effective_address, ppc_result_d);
-        ppc_state.ppc_gpr[reg_a] = ppc_effective_address;
+        ppc_state.gpr[reg_a] = ppc_effective_address;
     }
     else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
@@ -1922,7 +1922,7 @@ void ppc_sthux() {
     if (reg_a != 0) {
         ppc_effective_address = ppc_result_a + ppc_result_b;
         mem_write_word(ppc_effective_address, ppc_result_d);
-        ppc_state.ppc_gpr[reg_a] = ppc_effective_address;
+        ppc_state.gpr[reg_a] = ppc_effective_address;
     }
     else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
@@ -1959,13 +1959,13 @@ void ppc_stwcx() {
     //PLACEHOLDER CODE FOR STWCX - We need to check for reserve memory
     ppc_grab_regssab();
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
-    if (ppc_state.ppc_reserve) {
+    if (ppc_state.reserve) {
         mem_write_dword(ppc_effective_address, ppc_result_d);
-        ppc_state.ppc_cr |= (ppc_state.ppc_spr[SPR::XER] & 0x80000000) ? 0x30000000 : 0x20000000;
-        ppc_state.ppc_reserve = false;
+        ppc_state.cr |= (ppc_state.spr[SPR::XER] & 0x80000000) ? 0x30000000 : 0x20000000;
+        ppc_state.reserve = false;
     }
     else {
-        ppc_state.ppc_cr |= (ppc_state.ppc_spr[SPR::XER] & 0x80000000) ? 0x10000000 : 0;
+        ppc_state.cr |= (ppc_state.spr[SPR::XER] & 0x80000000) ? 0x10000000 : 0;
     }
 }
 
@@ -1975,7 +1975,7 @@ void ppc_stwu() {
         ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
         ppc_effective_address += ppc_result_a;
         mem_write_dword(ppc_effective_address, ppc_result_d);
-        ppc_state.ppc_gpr[reg_a] = ppc_effective_address;
+        ppc_state.gpr[reg_a] = ppc_effective_address;
     }
     else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
@@ -1987,7 +1987,7 @@ void ppc_stwux() {
     if (reg_a != 0) {
         ppc_effective_address = ppc_result_a + ppc_result_b;
         mem_write_dword(ppc_effective_address, ppc_result_d);
-        ppc_state.ppc_gpr[reg_a] = ppc_effective_address;
+        ppc_state.gpr[reg_a] = ppc_effective_address;
     }
     else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
@@ -2227,7 +2227,7 @@ void ppc_lwarx() {
     //Placeholder - Get the reservation of memory implemented!
     ppc_grab_regsdab();
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
-    ppc_state.ppc_reserve = true;
+    ppc_state.reserve = true;
     ppc_result_d = mem_grab_dword(ppc_effective_address);
     ppc_store_result_regd();
 }
@@ -2238,7 +2238,7 @@ void ppc_lmw() {
     ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
     //How many words to load in memory - using a do-while for this
     do {
-        ppc_state.ppc_gpr[reg_d] = mem_grab_dword(ppc_effective_address);
+        ppc_state.gpr[reg_d] = mem_grab_dword(ppc_effective_address);
         ppc_effective_address += 4;
         reg_d++;
     } while (reg_d < 32);
@@ -2255,7 +2255,7 @@ void ppc_lswi() {
     while (grab_inb > 0) {
         switch (shift_times) {
         case 0:
-            ppc_state.ppc_gpr[reg_d] = (ppc_result_d & 0x00FFFFFFUL) |
+            ppc_state.gpr[reg_d] = (ppc_result_d & 0x00FFFFFFUL) |
                 (mem_grab_byte(ppc_effective_address) << 24);
             ppc_store_result_regd();
             break;
@@ -2299,7 +2299,7 @@ void ppc_lswx() {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x100000);
     }
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
-    grab_inb = ppc_state.ppc_spr[SPR::XER] & 127;
+    grab_inb = ppc_state.spr[SPR::XER] & 127;
     uint32_t shift_times = 0;
     while (grab_inb > 0) {
         switch (shift_times) {
@@ -2381,7 +2381,7 @@ void ppc_stswi() {
 void ppc_stswx() {
     ppc_grab_regssab();
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
-    grab_inb = ppc_state.ppc_spr[SPR::XER] & 127;
+    grab_inb = ppc_state.spr[SPR::XER] & 127;
     uint32_t shift_times = 0;
     while (grab_inb > 0) {
         switch (shift_times) {
