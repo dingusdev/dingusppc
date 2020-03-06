@@ -42,7 +42,7 @@ Within the emulated CUDA, these registers are spaced apart by 0x200 bytes. Apple
 | Drive Select     | 0x10     |
 | Disk Head Select | 0x20     |
 
-## Auxiliary Contral
+## Auxiliary Control
 
 | Register Bit                      | Bit Mask |
 |:---------------------------------:|:--------:|

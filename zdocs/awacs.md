@@ -1,4 +1,4 @@
-AWACS can usually be located at IOBase (ex.: 0xF3000000 for Power Mac G3 Beige) + 0x14000.
+AWACS is an audio controller present on several Old World Macs and can usually be located at IOBase (ex.: 0xF3000000 for Power Mac G3 Beige) + 0x14000.
 
 # Register Maps
 

@@ -3,14 +3,32 @@
 The Old World ROM is always 4 megabytes (MB). The first three MB are reserved for the 68k code, while the last MB is for the PowerPC boot-up code.
 
 # BMac
-
-The BMac is an ethernet controller.
-
+ 
+BMac is an Ethernet controller featured in G3 and early G4 Macs. As described by a Linux contributor, this controller "appears to have some parts in common with the Sun "Happy Meal" (HME) controller".
+ 
 The max frame size is 0x5EE bytes.
 
 It resides on 0xF3011000, with Writing DMA on 0xF3008200 and Reading DMA on 0xF3008300.
 
-Swim3 is located at 0xF3015000.
+## Register Map
+
+| Register Name | Offset |
+|:-------------:|:------:|
+| XIFC          | 0x000  |
+| TXFIFOCSR     | 0x100  |
+| TXTH          | 0x110  |
+| RXFIFOCSR     | 0x120  |
+| MEMADD        | 0x130  |
+| XCVRIF        | 0x160  |
+| CHIPID        | 0x170  |
+| TXPNTR        | 0x1A0  |
+| RXPNTR        | 0x1B0  |
+| STATUS        | 0x200  |
+| INTDISABLE    | 0x210  |
+| TXRST         | 0x420  |
+| TXCFG         | 0x430  |
+| RXRST         | 0x620  |
+| RXCFG         | 0x630  |
 
 # Serial
 
@@ -34,13 +52,38 @@ The Description-Based Direct Memory Access relies on memory-based descriptions, 
 | AUDIO IN          | 0x9    |
 | SCSI1             | 0xA    |
 
+# NCR 53C94
+
+The NCR 53C94 is the SCSI controller.
+ 
+# Register Map
+ 
+| Offset | Read functionality       |Write functionality        |
+|:------:|:------------------------:|:-------------------------:|
+| 0x0    | Transfer counter LSB     | Transfer counter LSB      |
+| 0x1    | Transfer counter MSB     | Transfer counter MSB      |
+| 0x2    | FIFO                     | FIFO                      |
+| 0x3    | Command                  | Command                   |
+| 0x4    | Status                   | Destination Bus ID        |
+| 0x5    | Interrupt                | Select/reselect timeout   |
+| 0x6    | Sequence step            | Synch period              |
+| 0x7    | FIFO flags/sequence step | Synch offset              |
+| 0x8    | Configuration 1          | Configuration 1           |
+| 0x9    |                          | Clock conversion factor   |
+| 0xA    |                          | Test mode                 |
+| 0xB    | Configuration 2          | Configuration 2           |
+| 0xC    | Configuration 3          | Configuration 3           |
+| 0xF    |                          | Reserve FIFO Byte (Cfg 2) |
+
 # SWIM 3
 
 The SWIM 3 (Sanders-Wozniak integrated machine 3) is the floppy drive disk controller. As can be inferred by the name, the SWIM III chip is the improvement of a combination of floppy disk driver designs by Steve Wozniak (who worked on his own floppy drive controller for early Apple computers) and Wendell B. Sander (who worked on an MFM-compatible IBM floppy drive controller). 
 
-The SWIM chip is resided on the logic board. It sits between the I/O controller and the floppy disk connector. Its function is to translate the I/O commands to specialized signals to drive the floppy disk drive, i.e. disk spinning speed, head position, phase sync, etc.
+The SWIM chip is resided on the logic board physically and is located at IOBase + 0x15000 in the device tree. It sits between the I/O controller and the floppy disk connector. Its function is to translate the I/O commands to specialized signals to drive the floppy disk drive, i.e. disk spinning speed, head position, phase sync, etc.
 
 The floppy drives themselves were provided by Sony.
+
+Some New World Macs do have a SWIM 3 driver present, but this normally goes unused due to no floppy drive being connected.
 
 # NVRAM
 

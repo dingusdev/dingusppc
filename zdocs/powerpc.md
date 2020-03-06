@@ -10,6 +10,10 @@ Code execution generally begins at 0xFFF00100, which the reset exception vector.
 
 The 601 BATs are emulated by the OpenFirmware.
 
+# TLBs
+
+Up to 128 instruction entries and 128 data entries can be stored at a time.
+
 # Processor Revisions
 
 | Model         | PVR Number  | Notable Aspects             |
@@ -33,3 +37,9 @@ The 601 BATs are emulated by the OpenFirmware.
 | Condition Register                | 1                      | Stores conditions based on the results of fixed-point operations |
 | Floating Point Condition Register | 1                      | Stores conditions based on the results of floating-point operations |
 | Machine State Register            | 1                      |                                                       |
+
+# Eccentricities
+
+* The HW Init routine used in the ROMs uses the DEC (decrement; SPR 22) register to measure CPU speed. With a PowerPC 601, the DEC register operates on the same frequency as RTC - 7.8125 MHz but uses only 25 most significant bits. In other words, it decrements by 128 at 1/7.8125 MHz.
+
+* Apple's memcpy routine uses double floating-point registers rather than general purpose registers to load and store 2 32-bit values at once. As the PowerPC usually operates on at least a 64-bit bus and floating-point processing comes with the processors by default, this saves some instructions and results in slightly faster speeds.
