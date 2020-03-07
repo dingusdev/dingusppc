@@ -38,8 +38,22 @@ Up to 128 instruction entries and 128 data entries can be stored at a time.
 | Floating Point Condition Register | 1                      | Stores conditions based on the results of floating-point operations |
 | Machine State Register            | 1                      |                                                       |
 
+# HID 0
+
+| Model         | Bits Enabled        |
+| :------------ | :------------------ |
+| 601           | (NOT PRESENT)       |
+| 603           | NHR, DOZE/NAP/SLEEP |
+| 604           | NHR                 |
+| 603E          | NHR, DOZE/NAP/SLEEP |
+| 603EV         | NHR, DOZE/NAP/SLEEP |
+| 604E          | NHR                 |
+| 750 (G3)      | NHR, DOZE/NAP/SLEEP |
+
 # Eccentricities
 
 * The HW Init routine used in the ROMs uses the DEC (decrement; SPR 22) register to measure CPU speed. With a PowerPC 601, the DEC register operates on the same frequency as RTC - 7.8125 MHz but uses only 25 most significant bits. In other words, it decrements by 128 at 1/7.8125 MHz.
 
 * Apple's memcpy routine uses double floating-point registers rather than general purpose registers to load and store 2 32-bit values at once. As the PowerPC usually operates on at least a 64-bit bus and floating-point processing comes with the processors by default, this saves some instructions and results in slightly faster speeds.
+
+* As the PowerPC does not have an instruction to load an immediate 32-bit value, it's common to see a lis/ori coding pattern.

@@ -2,34 +2,6 @@
 
 The Old World ROM is always 4 megabytes (MB). The first three MB are reserved for the 68k code, while the last MB is for the PowerPC boot-up code.
 
-# BMac
- 
-BMac is an Ethernet controller featured in G3 and early G4 Macs. As described by a Linux contributor, this controller "appears to have some parts in common with the Sun "Happy Meal" (HME) controller".
- 
-The max frame size is 0x5EE bytes.
-
-It resides on 0xF3011000, with Writing DMA on 0xF3008200 and Reading DMA on 0xF3008300.
-
-## Register Map
-
-| Register Name | Offset |
-|:-------------:|:------:|
-| XIFC          | 0x000  |
-| TXFIFOCSR     | 0x100  |
-| TXTH          | 0x110  |
-| RXFIFOCSR     | 0x120  |
-| MEMADD        | 0x130  |
-| XCVRIF        | 0x160  |
-| CHIPID        | 0x170  |
-| TXPNTR        | 0x1A0  |
-| RXPNTR        | 0x1B0  |
-| STATUS        | 0x200  |
-| INTDISABLE    | 0x210  |
-| TXRST         | 0x420  |
-| TXCFG         | 0x430  |
-| RXRST         | 0x620  |
-| RXCFG         | 0x630  |
-
 # Serial
 
 For serial, it replicates the functionality of a Zilog ESCC. There are two different ports - one located at (MacIOBase) + 0x13000 for the printer, and the other at (MacIOBase) + 0x13020 for the modem.
@@ -80,6 +52,8 @@ The NCR 53C94 is the SCSI controller.
 The SWIM 3 (Sanders-Wozniak integrated machine 3) is the floppy drive disk controller. As can be inferred by the name, the SWIM III chip is the improvement of a combination of floppy disk driver designs by Steve Wozniak (who worked on his own floppy drive controller for early Apple computers) and Wendell B. Sander (who worked on an MFM-compatible IBM floppy drive controller). 
 
 The SWIM chip is resided on the logic board physically and is located at IOBase + 0x15000 in the device tree. It sits between the I/O controller and the floppy disk connector. Its function is to translate the I/O commands to specialized signals to drive the floppy disk drive, i.e. disk spinning speed, head position, phase sync, etc.
+
+Unlike its predecessor, it allowed some DMA capability.
 
 The floppy drives themselves were provided by Sony.
 
