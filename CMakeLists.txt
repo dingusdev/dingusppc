@@ -9,6 +9,7 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/cpu/ppc/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/devices/")
+add_subdirectory("${PROJECT_SOURCE_DIR}/machines/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/thirdparty/")
 
 include_directories("${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/devices"
@@ -21,10 +22,13 @@ file(GLOB SOURCES "${PROJECT_SOURCE_DIR}/*.cpp"
 
 file(GLOB TEST_SOURCES "${PROJECT_SOURCE_DIR}/cpu/ppc/test/*.cpp")
 
-add_executable(dingusppc ${SOURCES} $<TARGET_OBJECTS:cpu_ppc> $<TARGET_OBJECTS:devices>
+add_executable(dingusppc ${SOURCES} $<TARGET_OBJECTS:cpu_ppc>
+                                    $<TARGET_OBJECTS:devices>
+                                    $<TARGET_OBJECTS:machines>
                                     $<TARGET_OBJECTS:loguru>)
 
-add_executable(testppc ${TEST_SOURCES} $<TARGET_OBJECTS:cpu_ppc> $<TARGET_OBJECTS:devices>
+add_executable(testppc ${TEST_SOURCES} $<TARGET_OBJECTS:cpu_ppc>
+                                       $<TARGET_OBJECTS:devices>
                                        $<TARGET_OBJECTS:loguru>)
 
 add_custom_command(

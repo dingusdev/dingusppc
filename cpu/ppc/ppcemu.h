@@ -245,8 +245,8 @@ extern uint32_t exceptions_performed;
 extern uint32_t supervisor_inst_num;
 
 //Function prototypes
-extern void ppc_cpu_init(uint32_t proc_version);
-extern void ppc_mmu_init(void);
+extern void ppc_cpu_init(MemCtrlBase *mem_ctrl, uint32_t proc_version);
+extern void ppc_mmu_init();
 
 void ppc_illegalop();
 void ppc_opcode4();

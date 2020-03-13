@@ -760,9 +760,11 @@ again:
 }
 #endif
 
-void ppc_cpu_init(uint32_t proc_version)
+void ppc_cpu_init(MemCtrlBase *mem_ctrl, uint32_t proc_version)
 {
     int i;
+
+    mem_ctrl_instance = mem_ctrl;
 
     clock_test_begin = clock();
     timebase_counter = 0;
