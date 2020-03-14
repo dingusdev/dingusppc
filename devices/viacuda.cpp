@@ -25,10 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <thirdparty/loguru.hpp>
-#include <iostream>
-#include <fstream>
 #include <cinttypes>
-#include <vector>
 #include "viacuda.h"
 
 using namespace std;
@@ -132,11 +129,11 @@ void ViaCuda::write(int reg, uint8_t value)
 
 void ViaCuda::print_enabled_ints()
 {
-    vector<string> via_int_src = { "CA2", "CA1", "SR", "CB2", "CB1", "T2", "T1" };
+    static char *via_int_src[] = { "CA2", "CA1", "SR", "CB2", "CB1", "T2", "T1" };
 
     for (int i = 0; i < 7; i++) {
         if (this->via_regs[VIA_IER] & (1 << i))
-            LOG_F(INFO, "VIA %s interrupt enabled \n", via_int_src[i].c_str());
+            LOG_F(INFO, "VIA %s interrupt enabled \n", via_int_src[i]);
     }
 }
 
