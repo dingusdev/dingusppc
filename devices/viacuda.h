@@ -47,6 +47,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "hwcomponent.h"
 #include "nvram.h"
+#include "i2c.h"
 
 /** VIA register offsets. */
 enum {
@@ -100,7 +101,7 @@ enum {
 };
 
 
-class ViaCuda : public HWComponent
+class ViaCuda : public HWComponent, public I2CBus
 {
 public:
     ViaCuda();

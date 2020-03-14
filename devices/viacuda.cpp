@@ -129,7 +129,7 @@ void ViaCuda::write(int reg, uint8_t value)
 
 void ViaCuda::print_enabled_ints()
 {
-    static char *via_int_src[] = { "CA2", "CA1", "SR", "CB2", "CB1", "T2", "T1" };
+    const char *via_int_src[] = { "CA2", "CA1", "SR", "CB2", "CB1", "T2", "T1" };
 
     for (int i = 0; i < 7; i++) {
         if (this->via_regs[VIA_IER] & (1 << i))
