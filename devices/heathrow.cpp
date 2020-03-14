@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <iostream>
 #include "macio.h"
 #include "viacuda.h"
+#include "machines/machinebase.h"
 
 /** Heathrow Mac I/O device emulation.
 
@@ -36,6 +37,8 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow")
 {
     this->viacuda = new ViaCuda();
     this->nvram   = new NVram();
+
+    gMachineObj->add_subdevice("ViaCuda", this->viacuda);
 }
 
 HeathrowIC::~HeathrowIC()

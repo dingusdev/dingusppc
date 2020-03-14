@@ -45,20 +45,19 @@ int create_gossamer()
     gMachineObj.reset(new MachineBase("Gossamer"));
 
     /* register MPC106 aka Grackle as memory controller and PCI host */
-    gMachineObj->add_component("Grackle", HWCompType::MEM_CTRL, new MPC106);
-    gMachineObj->add_alias("Grackle", "PCI_Host", HWCompType::PCI_HOST);
+    gMachineObj->add_component("Grackle", new MPC106);
+    gMachineObj->add_alias("Grackle", "PCI_Host");
 
     /* get raw pointer to MPC106 object */
     MPC106 *grackle_obj = dynamic_cast<MPC106 *>(gMachineObj->get_comp_by_name("Grackle"));
 
     /* add the machine ID register */
-    gMachineObj->add_component("MachineID", HWCompType::MMIO_DEV,
-        new GossamerID(0x3d8c));
+    gMachineObj->add_component("MachineID", new GossamerID(0x3d8c));
     grackle_obj->add_mmio_region(0xFF000004, 4096,
         dynamic_cast<MMIODevice *>(gMachineObj->get_comp_by_name("MachineID")));
 
     /* add the Heathrow I/O controller */
-    gMachineObj->add_component("Heathrow", HWCompType::MMIO_DEV, new HeathrowIC);
+    gMachineObj->add_component("Heathrow", new HeathrowIC);
     grackle_obj->pci_register_device(16,
         dynamic_cast<PCIDevice *>(gMachineObj->get_comp_by_name("Heathrow")));
 

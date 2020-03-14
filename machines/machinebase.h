@@ -38,14 +38,16 @@ public:
     MachineBase(std::string name);
     ~MachineBase();
 
-    bool add_component(std::string name, HWCompType type, HWComponent *dev_obj);
-    void add_alias(std::string name, std::string alias, HWCompType type);
+    bool add_component(std::string name, HWComponent *dev_obj);
+    bool add_subdevice(std::string name, HWComponent *dev_obj);
+    void add_alias(std::string name, std::string alias);
     HWComponent *get_comp_by_name(std::string name);
     HWComponent *get_comp_by_type(HWCompType type);
 
 private:
     std::string name;
     std::map<std::string, HWComponent *>comp_map;
+    std::map<std::string, HWComponent *>subdev_map;
     std::map<std::string, std::string> aliases;
 };
 

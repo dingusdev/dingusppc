@@ -29,6 +29,7 @@ add_executable(dingusppc ${SOURCES} $<TARGET_OBJECTS:cpu_ppc>
 
 add_executable(testppc ${TEST_SOURCES} $<TARGET_OBJECTS:cpu_ppc>
                                        $<TARGET_OBJECTS:devices>
+                                       $<TARGET_OBJECTS:machines>
                                        $<TARGET_OBJECTS:loguru>)
 
 add_custom_command(
