@@ -35,6 +35,8 @@ using namespace std;
 
 ViaCuda::ViaCuda()
 {
+    this->name = "ViaCuda";
+
     /* FIXME: is this the correct
        VIA initialization? */
     this->via_regs[VIA_A]    = 0x80;

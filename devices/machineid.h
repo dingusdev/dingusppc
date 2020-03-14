@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define MACHINE_ID_H
 
 #include <cinttypes>
+#include "hwcomponent.h"
 #include "mmiodevice.h"
 
 /**
@@ -45,6 +46,10 @@ class GossamerID : public MMIODevice {
 public:
     GossamerID(const uint16_t id) { this->id = id, this->name = "Machine-id"; };
     ~GossamerID() = default;
+
+    bool supports_type(HWCompType type) {
+        return type == HWCompType::MMIO_DEV;
+    };
 
     uint32_t read(uint32_t offset, int size) {
          return ((!offset && size == 2) ? this->id : 0); };

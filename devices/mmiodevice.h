@@ -24,16 +24,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 #include <string>
+#include "hwcomponent.h"
 
 /** Abstract class representing a simple, memory-mapped I/O device */
-class MMIODevice {
+class MMIODevice : public HWComponent {
 public:
     virtual uint32_t read(uint32_t offset, int size) = 0;
     virtual void     write(uint32_t offset, uint32_t value, int size) = 0;
     virtual ~MMIODevice() = default;
-
-protected:
-    std::string name;
 };
 
 #endif /* MMIO_DEVICE_H */

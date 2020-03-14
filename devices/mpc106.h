@@ -37,6 +37,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 #include <unordered_map>
+#include "hwcomponent.h"
 #include "memctrlbase.h"
 #include "mmiodevice.h"
 #include "pcidevice.h"
@@ -46,10 +47,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 class MPC106 : public MemCtrlBase, public PCIDevice, public PCIHost
 {
 public:
-    using MemCtrlBase::name;
-
     MPC106();
     ~MPC106();
+
+    bool supports_type(HWCompType type);
+
     uint32_t read(uint32_t offset, int size);
     void write(uint32_t offset, uint32_t value, int size);
 

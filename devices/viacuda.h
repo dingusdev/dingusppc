@@ -42,10 +42,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     firmware using bit banging (https://en.wikipedia.org/wiki/Bit_banging).
 */
 
-#include "nvram.h"
-
 #ifndef VIACUDA_H
 #define VIACUDA_H
+
+#include "hwcomponent.h"
+#include "nvram.h"
 
 /** VIA register offsets. */
 enum {
@@ -99,11 +100,15 @@ enum {
 };
 
 
-class ViaCuda
+class ViaCuda : public HWComponent
 {
 public:
     ViaCuda();
     ~ViaCuda();
+
+    bool supports_type(HWCompType type) {
+        return (type == HWCompType::ADB_HOST || type == HWCompType::I2C_HOST);
+    };
 
     uint8_t read(int reg);
     void write(int reg, uint8_t value);

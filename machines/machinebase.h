@@ -30,20 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memory>
 #include <string>
 #include <map>
-#include "devices/mmiodevice.h"
-
-/** types of different HW components */
-enum HWCompType : int {
-    UNKNOWN     = 0, /* unknown component type */
-    MEM_CTRL    = 1, /* memory controller */
-    ROM         = 2, /* read-only memory */
-    RAM         = 3, /* random access memory */
-    MMIO_DEV    = 4, /* memory mapped I/O device */
-    PCI_HOST    = 5, /* PCI host */
-    PCI_DEV     = 6, /* PCI device */
-    I2C_DEV     = 7, /* I2C device */
-    ADB_DEV     = 8  /* ADB device */
-};
+#include "devices/hwcomponent.h"
 
 class MachineBase
 {
@@ -51,15 +38,14 @@ public:
     MachineBase(std::string name);
     ~MachineBase();
 
-    bool add_component(std::string name, HWCompType type, MMIODevice *dev_obj);
+    bool add_component(std::string name, HWCompType type, HWComponent *dev_obj);
     void add_alias(std::string name, std::string alias, HWCompType type);
-    MMIODevice *get_comp_by_name(std::string name);
-    MMIODevice *get_comp_by_type(HWCompType type);
+    HWComponent *get_comp_by_name(std::string name);
+    HWComponent *get_comp_by_type(HWCompType type);
 
 private:
     std::string name;
-    std::map<std::string, MMIODevice *>comp_map;
-    std::map<std::string, int> name_to_type;
+    std::map<std::string, HWComponent *>comp_map;
     std::map<std::string, std::string> aliases;
 };
 

@@ -32,11 +32,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "memreadwrite.h"
 #include "memctrlbase.h"
 #include "mmiodevice.h"
+#include "hwcomponent.h"
 #include "mpc106.h"
 
 
-MPC106::MPC106() : MemCtrlBase("Grackle"), PCIDevice("Grackle PCI host bridge")
+MPC106::MPC106() : MemCtrlBase(), PCIDevice("Grackle PCI host bridge")
 {
+    this->name = "Grackle";
+
     /* add memory mapped I/O region for MPC106 registers */
     add_mmio_region(0xFEC00000, 0x300000, this);
 
@@ -46,6 +49,16 @@ MPC106::MPC106() : MemCtrlBase("Grackle"), PCIDevice("Grackle PCI host bridge")
 MPC106::~MPC106()
 {
     this->pci_0_bus.clear();
+}
+
+bool MPC106::supports_type(HWCompType type)
+{
+    if (type == HWCompType::MEM_CTRL || type == HWCompType::MMIO_DEV ||
+        type == HWCompType::PCI_HOST || type == HWCompType::PCI_DEV) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 uint32_t MPC106::read(uint32_t offset, int size)

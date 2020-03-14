@@ -27,12 +27,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "memctrlbase.h"
 
 
-MemCtrlBase::MemCtrlBase(std::string name)
-{
-    this->name = name;
-}
-
-
 MemCtrlBase::~MemCtrlBase()
 {
     for (auto &reg : mem_regions) {

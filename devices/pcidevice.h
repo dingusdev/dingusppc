@@ -37,7 +37,7 @@ enum {
 
 class PCIDevice : public MMIODevice {
 public:
-    PCIDevice(std::string name) {this->name = name;};
+    PCIDevice(std::string name) { this->pci_name = name; };
     virtual ~PCIDevice() = default;
 
     /* configuration space access methods */
@@ -47,9 +47,9 @@ public:
     virtual void set_host(PCIHost *host_instance) = 0;
 
 protected:
-    std::string   name; // human-readable device name
+    std::string   pci_name; // human-readable device name
     PCIHost *host_instance; // host bridge instance to call back
-    uint32_t base_addr; // base address register 0
+    uint32_t base_addr;     // base address register 0
 };
 
 #endif /* PCI_DEVICE_H */

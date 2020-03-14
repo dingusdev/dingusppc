@@ -25,7 +25,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <string>
 #include <vector>
-
 #include "mmiodevice.h"
 
 enum RangeType {
@@ -49,7 +48,7 @@ typedef struct AddressMapEntry {
 /** Base class for memory controllers. */
 class MemCtrlBase {
 public:
-    MemCtrlBase(std::string name);
+    MemCtrlBase() = default;
     virtual ~MemCtrlBase();
     virtual bool add_rom_region(uint32_t start_addr, uint32_t size);
     virtual bool add_ram_region(uint32_t start_addr, uint32_t size);
@@ -62,9 +61,8 @@ public:
     AddressMapEntry *find_range(uint32_t addr);
 
 protected:
-    bool add_mem_region(uint32_t start_addr, uint32_t size, uint32_t dest_addr, uint32_t type, uint8_t init_val);
-
-    std::string name;
+    bool add_mem_region(uint32_t start_addr, uint32_t size, uint32_t dest_addr,
+        uint32_t type, uint8_t init_val);
 
 private:
     std::vector<uint8_t *> mem_regions;

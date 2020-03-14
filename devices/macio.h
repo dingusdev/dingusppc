@@ -52,6 +52,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define MACIO_H
 
 #include <cinttypes>
+#include "hwcomponent.h"
 #include "pcidevice.h"
 #include "memctrlbase.h"
 #include "mmiodevice.h"
@@ -86,10 +87,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 class HeathrowIC : public PCIDevice
 {
 public:
-    using PCIDevice::name;
-
     HeathrowIC();
     ~HeathrowIC();
+
+    bool supports_type(HWCompType type) { return type == HWCompType::MMIO_DEV; };
 
     void set_host(PCIHost *host_instance) {this->host_instance = host_instance;};
 

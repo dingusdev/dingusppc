@@ -26,11 +26,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <thirdparty/loguru.hpp>
 #include "machinebase.h"
+#include "cpu/ppc/ppcemu.h"
 #include "devices/mpc106.h"
 #include "devices/machineid.h"
 #include "devices/macio.h"
-#include "cpu/ppc/ppcemu.h"
-#include "machinebase.h"
+#include "devices/viacuda.h"
 
 int create_gossamer()
 {
@@ -55,7 +55,7 @@ int create_gossamer()
     gMachineObj->add_component("MachineID", HWCompType::MMIO_DEV,
         new GossamerID(0x3d8c));
     grackle_obj->add_mmio_region(0xFF000004, 4096,
-        gMachineObj->get_comp_by_name("MachineID"));
+        dynamic_cast<MMIODevice *>(gMachineObj->get_comp_by_name("MachineID")));
 
     /* add the Heathrow I/O controller */
     gMachineObj->add_component("Heathrow", HWCompType::MMIO_DEV, new HeathrowIC);
