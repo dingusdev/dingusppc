@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <iostream>
 #include "macio.h"
 #include "viacuda.h"
+#include "awacs.h"
 #include "machines/machinebase.h"
 
 /** Heathrow Mac I/O device emulation.
@@ -35,10 +36,12 @@ using namespace std;
 
 HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow")
 {
-    this->viacuda = new ViaCuda();
-    this->nvram   = new NVram();
+    this->nvram    = new NVram();
 
+    this->viacuda  = new ViaCuda();
     gMachineObj->add_subdevice("ViaCuda", this->viacuda);
+
+    this->screamer = new AWACDevice();
 }
 
 HeathrowIC::~HeathrowIC()
@@ -93,10 +96,10 @@ uint32_t HeathrowIC::read(uint32_t offset, int size)
         res = mio_ctrl_read(offset, size);
         break;
     case 8:
-        LOG_F(9, "Attempting to read DMA channel register space \n");
+        LOG_F(WARNING, "Attempting to read DMA channel register space \n");
         break;
     case 0x14:
-        LOG_F(9, "Attempting to read AWACS-Screamer register space \n");
+        res = this->screamer->snd_ctrl_read(offset - 0x14000, size);
         break;
     case 0x16:
     case 0x17:
@@ -125,10 +128,10 @@ void HeathrowIC::write(uint32_t offset, uint32_t value, int size)
         mio_ctrl_write(offset, value, size);
         break;
     case 8:
-        LOG_F(9, "Attempting to write to DMA channel register space \n");
+        LOG_F(WARNING, "Attempting to write to DMA channel register space \n");
         break;
     case 0x14:
-        LOG_F(9, "Attempting to write to AWACS-Screamer register space \n");
+        this->screamer->snd_ctrl_write(offset - 0x14000, value, size);
         break;
     case 0x16:
     case 0x17:

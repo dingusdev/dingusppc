@@ -59,6 +59,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "pcihost.h"
 #include "viacuda.h"
 #include "nvram.h"
+#include "awacs.h"
 
 /**
     Heathrow ASIC emulation
@@ -126,8 +127,9 @@ private:
     uint32_t feat_ctrl;  // features control register
 
     /* device cells */
-    ViaCuda *viacuda; /* VIA cell with Cuda MCU attached to it */
-    NVram   *nvram;   /* NVRAM cell */
+    ViaCuda *viacuda;     /* VIA cell with Cuda MCU attached to it */
+    NVram   *nvram;       /* NVRAM cell */
+    AWACDevice *screamer; /* Screamer audio codec instance */
 };
 
 #endif /* MACIO_H */
