@@ -57,7 +57,7 @@ AddressMapEntry last_ptab_area  = { 0 };
 /* macro for generating code reading from physical memory */
 #define READ_PHYS_MEM(ENTRY, ADDR, OP, SIZE, UNVAL)                            \
 {                                                                              \
-    if ((ADDR) >= (ENTRY).start && (ADDR) <= (ENTRY).end) {                    \
+    if ((ADDR) >= (ENTRY).start && ((ADDR) + (SIZE)) <= (ENTRY).end) {         \
         ret = OP((ENTRY).mem_ptr + ((ADDR) - (ENTRY).start));                  \
     } else {                                                                   \
         AddressMapEntry* entry = mem_ctrl_instance->find_range((ADDR));        \
@@ -86,7 +86,7 @@ AddressMapEntry last_ptab_area  = { 0 };
 /* macro for generating code writing to physical memory */
 #define WRITE_PHYS_MEM(ENTRY, ADDR, OP, VAL, SIZE)                             \
 {                                                                              \
-    if ((ADDR) >= (ENTRY).start && (ADDR) <= (ENTRY).end) {                    \
+    if ((ADDR) >= (ENTRY).start && ((ADDR) + (SIZE)) <= (ENTRY).end) {         \
         OP((ENTRY).mem_ptr + ((ADDR) - (ENTRY).start), (VAL));                 \
     } else {                                                                   \
         AddressMapEntry* entry = mem_ctrl_instance->find_range((ADDR));        \
