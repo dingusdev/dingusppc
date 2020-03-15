@@ -55,9 +55,8 @@ static const map<uint32_t, string> rom_identity = {
     {0x50697020, "Bandai Pippin"},                  //Pippin
     //{"Powe", "Generic Power Mac"},                //PowerMac?
     //{"Spar", "20th Anniversay Mac"},              //Spartacus
-    //{"Tanz", "Power Mac 4400"},                   //Tanzania
     {0x544E5420, "Power Mac 7xxxx/8xxx series"},    //Trinitrotoluene :-)
-    //{"Zanz", "A complete engima."},               //Zanzibar (mentioned in Sheepshaver's code, but no match to any known ROM)
+    {0x5A616E7A, "Power Mac 4400/7220"},            //Zanzibar
     //{"????", "A clone, perhaps?"}                 //N/A (Placeholder ID)
 };
 
