@@ -96,8 +96,10 @@ enum {
 
 /** Cuda error codes. */
 enum {
-    CUDA_ERR_BAD_CMD = 2, /* invalid pseudo command */
-    CUDA_ERR_I2C     = 5  /* invalid I2C data or no acknowledge */
+    CUDA_ERR_BAD_PKT  = 1, /* invalid packet type */
+    CUDA_ERR_BAD_CMD  = 2, /* invalid pseudo command */
+    CUDA_ERR_BAD_SIZE = 3, /* invalid packet size */
+    CUDA_ERR_I2C      = 5  /* invalid I2C data or no acknowledge */
 };
 
 
@@ -127,6 +129,12 @@ private:
     int32_t out_count;
     int32_t out_pos;
 
+    bool    is_open_ended;
+    uint8_t curr_i2c_addr;
+
+    void (ViaCuda::*out_handler)(void);
+    void (ViaCuda::*next_out_handler)(void);
+
     NVram* pram_obj;
 
     void print_enabled_ints(); /* print enabled VIA interrupts and their sources */
@@ -141,6 +149,10 @@ private:
     void process_packet();
     void process_adb_command(uint8_t cmd_byte, int data_count);
     void pseudo_command(int cmd, int data_count);
+
+    void null_out_handler(void);
+    void out_buf_handler(void);
+    void i2c_handler(void);
 
     /* I2C related methods */
     void i2c_simple_transaction(uint8_t dev_addr, const uint8_t* in_buf, int in_bytes);

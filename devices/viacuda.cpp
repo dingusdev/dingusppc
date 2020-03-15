@@ -202,19 +202,36 @@ void ViaCuda::write(uint8_t new_state)
             }
         }
         else { /* data transfer: Cuda --> Host */
-            if (this->out_count) {
-                this->via_regs[VIA_SR] = this->out_buf[this->out_pos++];
-
-                if (this->out_pos >= this->out_count) {
-                    LOG_F(9, "Cuda: sending last byte \n");
-                    this->out_count = 0;
-                    this->via_regs[VIA_B] |= CUDA_TREQ; /* negate TREQ */
-                    this->treq = 1;
-                }
-
-                assert_sr_int(); /* tell the system we've written the data */
-            }
+            (this->*out_handler)();
+            assert_sr_int(); /* tell the system we've written the data */
         }
+    }
+}
+
+/* sends zeros to host at infinitum */
+void ViaCuda::null_out_handler()
+{
+    this->via_regs[VIA_SR] = 0;
+}
+
+/* sends data from out_buf until exhausted, then switches to next_out_handler */
+void ViaCuda::out_buf_handler()
+{
+    if (this->out_pos < this->out_count) {
+        LOG_F(9, "OutBufHandler: sending next byte 0x%X", this->out_buf[this->out_pos]);
+        this->via_regs[VIA_SR] = this->out_buf[this->out_pos++];
+    }
+    else if (this->is_open_ended) {
+        LOG_F(9, "OutBufHandler: switching to next handler");
+        this->out_handler = this->next_out_handler;
+        this->next_out_handler = &ViaCuda::null_out_handler;
+        (this->*out_handler)();
+    }
+    else {
+        LOG_F(9, "Sending last byte");
+        this->out_count = 0;
+        this->via_regs[VIA_B] |= CUDA_TREQ; /* negate TREQ */
+        this->treq = 1;
     }
 }
 
@@ -225,6 +242,9 @@ void ViaCuda::response_header(uint32_t pkt_type, uint32_t pkt_flag)
     this->out_buf[2] = this->in_buf[1]; /* copy original cmd */
     this->out_count  = 3;
     this->out_pos    = 0;
+    this->out_handler = &ViaCuda::out_buf_handler;
+    this->next_out_handler = &ViaCuda::null_out_handler;
+    this->is_open_ended = false;
 }
 
 void ViaCuda::error_response(uint32_t error)
@@ -235,12 +255,16 @@ void ViaCuda::error_response(uint32_t error)
     this->out_buf[3] = this->in_buf[1]; /* copy original cmd */
     this->out_count  = 4;
     this->out_pos    = 0;
+    this->out_handler = &ViaCuda::out_buf_handler;
+    this->next_out_handler = &ViaCuda::null_out_handler;
+    this->is_open_ended = false;
 }
 
 void ViaCuda::process_packet()
 {
     if (this->in_count < 2) {
-        LOG_F(ERROR, "Cuda: invalid packet (too few data)! \n");
+        LOG_F(ERROR, "Cuda: invalid packet (too few data)!\n");
+        error_response(CUDA_ERR_BAD_SIZE);
         return;
     }
 
@@ -260,6 +284,7 @@ void ViaCuda::process_packet()
         break;
     default:
         LOG_F(ERROR, "Cuda: unsupported packet type = %d \n", (uint32_t)(this->in_buf[0]));
+        error_response(CUDA_ERR_BAD_PKT);
     }
 }
 
@@ -302,20 +327,9 @@ void ViaCuda::pseudo_command(int cmd, int data_count)
         break;
     case CUDA_READ_WRITE_I2C:
         response_header(CUDA_PKT_PSEUDO, 0);
-        /* bit 0 of the I2C address byte indicates operation kind:
-           0 - write to device, 1 - read from device
-           In the case of reading, Cuda will append one-byte result
-           to the response packet header */
         i2c_simple_transaction(this->in_buf[2], &this->in_buf[3], this->in_count - 3);
         break;
     case CUDA_COMB_FMT_I2C:
-        /* HACK:
-           This command performs the so-called open-ended transaction, i.e.
-           Cuda will continue to send data as long as handshaking is completed
-           for each byte. To support that, we'd need another emulation approach.
-           Fortunately, HWInit is known to read/write max. 4 bytes at once
-           so we're going to use a prefilled buffer to make it work.
-        */
         response_header(CUDA_PKT_PSEUDO, 0);
         if (this->in_count >= 5) {
             i2c_comb_transaction(this->in_buf[2], this->in_buf[3], this->in_buf[4],
@@ -332,58 +346,84 @@ void ViaCuda::pseudo_command(int cmd, int data_count)
     }
 }
 
+/* sends data from the current I2C to host ad infinitum */
+void ViaCuda::i2c_handler()
+{
+    this->receive_byte(this->curr_i2c_addr, &this->via_regs[VIA_SR]);
+}
+
 void ViaCuda::i2c_simple_transaction(uint8_t dev_addr, const uint8_t* in_buf,
     int in_bytes)
 {
-    int tr_type = dev_addr & 1;
+    int op_type = dev_addr & 1; /* 0 - write to device, 1 - read from device */
 
-    switch (dev_addr & 0xFE) {
-    case 0x50: /* unknown device on the Gossamer board */
-        if (tr_type) { /* read */
-            /* send dummy byte for now */
-            this->out_buf[this->out_count++] = 0xDD;
-        }
-        else {
-            /* ignore writes */
-        }
-        break;
-    default:
-        LOG_F(ERROR, "Unsupported I2C device 0x%x \n", (int)dev_addr);
+    dev_addr >>= 1; /* strip RD/WR bit */
+
+    if (!this->start_transaction(dev_addr)) {
+        LOG_F(WARNING, "Unsupported I2C device 0x%X \n", (int)(dev_addr));
         error_response(CUDA_ERR_I2C);
+        return;
+    }
+
+    /* send data to the target I2C device until there is no more data to send
+       or the target device doesn't acknowledge that indicates an error */
+    for (int i = 0; i < in_bytes; i++) {
+        if (!this->send_byte(dev_addr, in_buf[i])) {
+            LOG_F(WARNING, "NO_ACK during sending, device 0x%X \n", (int)(dev_addr));
+            error_response(CUDA_ERR_I2C);
+            return;
+        }
+    }
+
+    if (op_type) { /* read request initiate an open ended transaction */
+        this->curr_i2c_addr = dev_addr;
+        this->out_handler = &ViaCuda::out_buf_handler;
+        this->next_out_handler = &ViaCuda::i2c_handler;
+        this->is_open_ended = true;
     }
 }
 
 void ViaCuda::i2c_comb_transaction(uint8_t dev_addr, uint8_t sub_addr,
     uint8_t dev_addr1, const uint8_t* in_buf, int in_bytes)
 {
-    int tr_type = dev_addr1 & 1;
+    int op_type = dev_addr1 & 1; /* 0 - write to device, 1 - read from device */
 
     if ((dev_addr & 0xFE) != (dev_addr1 & 0xFE)) {
-        LOG_F(ERROR, "I2C combined, dev_addr mismatch! \n");
+        LOG_F(ERROR, "Combined I2C: dev_addr mismatch!\n");
+        error_response(CUDA_ERR_I2C);
         return;
     }
 
-    switch (dev_addr1 & 0xFE) {
-    case 0xAE: /* SDRAM EEPROM, no clue which one */
-        if (tr_type) { /* read */
-            if (sub_addr != 2) {
-                LOG_F(ERROR, "Unsupported read position 0x%x in SDRAM EEPROM 0x%x", \
-                    (int)sub_addr, (int)dev_addr1);
-                return;
-            }
-            /* FIXME: hardcoded SPD EEPROM values! This should be a proper
-               I2C device with user-configurable params */
-            this->out_buf[this->out_count++] = 0x04; /* memory type = SDRAM */
-            this->out_buf[this->out_count++] = 0x0B; /* row address bits per bank */
-            this->out_buf[this->out_count++] = 0x09; /* col address bits per bank */
-            this->out_buf[this->out_count++] = 0x02; /* num of RAM banks */
-        }
-        else {
-            /* ignore writes */
-        }
-        break;
-    default:
-        LOG_F(ERROR, "Unsupported I2C device 0x%x \n", (int)dev_addr1);
+    dev_addr >>= 1; /* strip RD/WR bit */
+
+    if (!this->start_transaction(dev_addr)) {
+        LOG_F(WARNING, "Unsupported I2C device 0x%X \n", (int)(dev_addr));
         error_response(CUDA_ERR_I2C);
+        return;
+    }
+
+    if (!this->send_subaddress(dev_addr, sub_addr)) {
+        LOG_F(WARNING, "NO_ACK while sending subaddress, device 0x%X \n", (int)(dev_addr));
+        error_response(CUDA_ERR_I2C);
+        return;
+    }
+
+    /* send data to the target I2C device until there is no more data to send
+       or the target device doesn't acknowledge that indicates an error */
+    for (int i = 0; i < in_bytes; i++) {
+        if (!this->send_byte(dev_addr, in_buf[i])) {
+            LOG_F(WARNING, "NO_ACK during sending, device 0x%X \n", (int)(dev_addr));
+            error_response(CUDA_ERR_I2C);
+            return;
+        }
+    }
+
+    if (!op_type) { /* return dummy response for writes */
+        LOG_F(WARNING, "Combined I2C - write request!");
+    } else {
+        this->curr_i2c_addr = dev_addr;
+        this->out_handler = &ViaCuda::out_buf_handler;
+        this->next_out_handler = &ViaCuda::i2c_handler;
+        this->is_open_ended = true;
     }
 }

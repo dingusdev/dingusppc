@@ -27,12 +27,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef I2C_H
 #define I2C_H
 
-#include <vector>
+#include <thirdparty/loguru.hpp>
+#include <string>
+#include <stdexcept>
 
 /** Base class for I2C devices */
 class I2CDevice {
 public:
     virtual void start_transaction() = 0;
+    virtual bool send_subaddress(uint8_t sub_addr) = 0;
     virtual bool send_byte(uint8_t data) = 0;
     virtual bool receive_byte(uint8_t *p_data) = 0;
 };
@@ -40,21 +43,31 @@ public:
 /** Base class for I2C hosts */
 class I2CBus {
 public:
-    I2CBus()  { this->dev_list.clear(); };
-    ~I2CBus() { this->dev_list.clear(); };
+    I2CBus()  { std::memset(this->dev_list, 0, sizeof(this->dev_list)); };
+    ~I2CBus() { std::memset(this->dev_list, 0, sizeof(this->dev_list)); };
 
-    virtual bool register_device(uint8_t dev_addr, I2CDevice *dev_obj) {
-        if (!this->dev_list[dev_addr]) {
-            return false; /* device address already taken */
+    virtual void register_device(uint8_t dev_addr, I2CDevice *dev_obj) {
+        if (this->dev_list[dev_addr]) {
+            throw std::invalid_argument(std::string("I2C address already taken!"));
         }
         this->dev_list[dev_addr] = dev_obj;
-        return true;
+        LOG_F(INFO, "New I2C device, address = 0x%X", dev_addr);
     };
 
-    virtual void start_transaction(uint8_t dev_addr) {
+    virtual bool start_transaction(uint8_t dev_addr) {
         if (this->dev_list[dev_addr]) {
             this->dev_list[dev_addr]->start_transaction();
+            return true;
+        } else {
+            return false;
         }
+    };
+
+    virtual bool send_subaddress(uint8_t dev_addr, uint8_t sub_addr) {
+        if (!this->dev_list[dev_addr]) {
+            return false; /* no device -> no acknowledge */
+        }
+        return this->dev_list[dev_addr]->send_subaddress(sub_addr);
     };
 
     virtual bool send_byte(uint8_t dev_addr, uint8_t data) {
@@ -72,7 +85,7 @@ public:
     };
 
 protected:
-    std::vector<I2CDevice *> dev_list; /* list of registered I2C devices */
+    I2CDevice *dev_list[128]; /* list of registered I2C devices */
 };
 
 #endif /* I2C_H */
