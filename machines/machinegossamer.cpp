@@ -31,6 +31,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "devices/machineid.h"
 #include "devices/macio.h"
 #include "devices/viacuda.h"
+#include "devices/spdram.h"
+
+static void setup_ram_slot(std::string name, int i2c_addr, int capacity_megs)
+{
+    if (!capacity_megs)
+        return;
+
+    gMachineObj->add_component(name, new SpdSdram168(i2c_addr));
+    SpdSdram168 *ram_dimm = dynamic_cast<SpdSdram168 *>(gMachineObj->get_comp_by_name(name));
+    ram_dimm->set_capacity(capacity_megs);
+
+    /* register RAM DIMM with the I2C bus */
+    I2CBus *i2c_bus = dynamic_cast<I2CBus *>(gMachineObj->get_comp_by_type(HWCompType::I2C_HOST));
+    i2c_bus->register_device(i2c_addr, ram_dimm);
+}
+
 
 int create_gossamer()
 {
@@ -66,6 +82,11 @@ int create_gossamer()
         LOG_F(ERROR, "Could not allocate ROM region!\n");
         return -1;
     }
+
+    /* configure RAM slots */
+    setup_ram_slot("RAM_DIMM_1", 0x57,  64); /* RAM slot 1 ->  64MB by default */
+    setup_ram_slot("RAM_DIMM_2", 0x56,   0); /* RAM slot 2 -> empty by default */
+    setup_ram_slot("RAM_DIMM_3", 0x55,   0); /* RAM slot 3 -> empty by default */
 
     /* Init virtual CPU and request MPC750 CPU aka G3 */
     ppc_cpu_init(grackle_obj, PPC_VER::MPC750);
