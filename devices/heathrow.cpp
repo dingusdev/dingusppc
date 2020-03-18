@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "macio.h"
 #include "viacuda.h"
 #include "awacs.h"
+#include "dbdma.h"
 #include "machines/machinebase.h"
 
 /** Heathrow Mac I/O device emulation.
@@ -42,6 +43,7 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow")
     gMachineObj->add_subdevice("ViaCuda", this->viacuda);
 
     this->screamer = new AWACDevice();
+    this->snd_out_dma = new DMAChannel();
 }
 
 HeathrowIC::~HeathrowIC()
@@ -83,6 +85,33 @@ void HeathrowIC::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
     }
 }
 
+uint32_t HeathrowIC::dma_read(uint32_t offset, int size)
+{
+    uint32_t res = 0;
+
+    switch(offset >> 8) {
+    case 8:
+        res = this->snd_out_dma->reg_read(offset & 0xFF, size);
+        break;
+    default:
+        LOG_F(WARNING, "Unsupported DMA channel read, offset=0x%X", offset);
+    }
+
+    return res;
+}
+
+void HeathrowIC::dma_write(uint32_t offset, uint32_t value, int size)
+{
+    switch(offset >> 8) {
+    case 8:
+        this->snd_out_dma->reg_write(offset & 0xFF, value, size);
+        break;
+    default:
+        LOG_F(WARNING, "Unsupported DMA channel write, offset=0x%X, val=0x%X", offset, value);
+    }
+}
+
+
 uint32_t HeathrowIC::read(uint32_t offset, int size)
 {
     uint32_t res = 0;
@@ -96,7 +125,7 @@ uint32_t HeathrowIC::read(uint32_t offset, int size)
         res = mio_ctrl_read(offset, size);
         break;
     case 8:
-        LOG_F(WARNING, "Attempting to read DMA channel register space \n");
+        res = dma_read(offset - 0x8000, size);
         break;
     case 0x14:
         res = this->screamer->snd_ctrl_read(offset - 0x14000, size);
@@ -128,7 +157,7 @@ void HeathrowIC::write(uint32_t offset, uint32_t value, int size)
         mio_ctrl_write(offset, value, size);
         break;
     case 8:
-        LOG_F(WARNING, "Attempting to write to DMA channel register space \n");
+        dma_write(offset - 0x8000, value, size);
         break;
     case 0x14:
         this->screamer->snd_ctrl_write(offset - 0x14000, value, size);

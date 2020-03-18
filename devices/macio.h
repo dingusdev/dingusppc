@@ -60,6 +60,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "viacuda.h"
 #include "nvram.h"
 #include "awacs.h"
+#include "dbdma.h"
 
 /**
     Heathrow ASIC emulation
@@ -104,6 +105,9 @@ public:
     void write(uint32_t offset, uint32_t value, int size);
 
 protected:
+    uint32_t dma_read(uint32_t offset, int size);
+    void dma_write(uint32_t offset, uint32_t value, int size);
+
     uint32_t mio_ctrl_read(uint32_t offset, int size);
     void mio_ctrl_write(uint32_t offset, uint32_t value, int size);
 
@@ -130,6 +134,8 @@ private:
     ViaCuda *viacuda;     /* VIA cell with Cuda MCU attached to it */
     NVram   *nvram;       /* NVRAM cell */
     AWACDevice *screamer; /* Screamer audio codec instance */
+
+    DMAChannel  *snd_out_dma;
 };
 
 #endif /* MACIO_H */
