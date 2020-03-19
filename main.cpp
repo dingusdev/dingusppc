@@ -30,6 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ppcemu.h"
 #include "debugger/debugger.h"
 #include "machines/machinefactory.h"
+#include "SDL.h"
 
 using namespace std;
 
@@ -68,6 +69,11 @@ int main(int argc, char **argv)
         uint32_t rom_filesize;
 
         if (create_machine_for_rom("rom.bin")) {
+            goto bail;
+        }
+
+        if (SDL_Init(SDL_INIT_AUDIO)){
+            LOG_F(ERROR, "SDL_Init error: %s", SDL_GetError());
             goto bail;
         }
 

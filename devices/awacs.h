@@ -30,6 +30,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 #include "i2c.h"
+#include "dbdma.h"
+#include "SDL.h"
 
 /** AWAC registers offsets. */
 enum {
@@ -98,7 +100,7 @@ private:
 };
 
 
-class AWACDevice {
+class AWACDevice : public DMACallback {
 public:
     AWACDevice();
     ~AWACDevice();
@@ -106,11 +108,26 @@ public:
     uint32_t snd_ctrl_read(uint32_t offset, int size);
     void     snd_ctrl_write(uint32_t offset, uint32_t value, int size);
 
+    /* DMACallback methods */
+    void dma_start();
+    void dma_end();
+    void dma_push(uint8_t *buf, int size);
+    void dma_pull(uint8_t *buf, int size);
+
+protected:
+    uint32_t convert_data(const uint8_t *data, int len);
+
 private:
     uint32_t snd_ctrl_reg = {0};
     uint16_t control_regs[8] = {0}; /* control registers, each 12-bits wide */
     uint8_t  is_busy = 0;
     AudioProcessor *audio_proc;
+
+    SDL_AudioDeviceID snd_out_dev = 0;
+    bool wake_up = false;
+
+    uint8_t*    snd_buf = 0;
+    uint32_t    buf_len = 0;
 };
 
 

@@ -52,8 +52,9 @@ uint8_t DMAChannel::interpret_cmd()
             LOG_F(ERROR, "non-zero i/b/w not implemented");
             break;
         }
-        LOG_F(INFO, "Transfer data, addr = 0x%X, length = 0x%X",
-            cmd_struct.address, cmd_struct.req_count);
+        this->dma_cb->dma_push(
+            mmu_get_dma_mem(cmd_struct.address, cmd_struct.req_count),
+            cmd_struct.req_count);
         this->cmd_ptr += 16;
         break;
     case 1:
@@ -66,8 +67,9 @@ uint8_t DMAChannel::interpret_cmd()
             LOG_F(ERROR, "non-zero i/b/w not implemented");
             break;
         }
-        LOG_F(INFO, "Transfer data, addr = 0x%X, length = 0x%X",
-            cmd_struct.address, cmd_struct.req_count);
+        this->dma_cb->dma_push(
+            mmu_get_dma_mem(cmd_struct.address, cmd_struct.req_count),
+            cmd_struct.req_count);
         this->cmd_ptr += 16;
         break;
     case 2:
@@ -190,6 +192,8 @@ void DMAChannel::start()
 
     LOG_F(INFO, "Starting DMA channel, stat = 0x%X", this->ch_stat);
 
+    this->dma_cb->dma_start();
+
     while (this->interpret_cmd() != 7) {
     }
 }
@@ -212,4 +216,5 @@ void DMAChannel::abort()
 void DMAChannel::pause()
 {
     LOG_F(INFO, "Pausing DMA channel");
+    this->dma_cb->dma_end();
 }

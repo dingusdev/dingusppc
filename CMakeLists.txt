@@ -7,6 +7,9 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 
+find_package(SDL2 REQUIRED)
+include_directories(${SDL2_INCLUDE_DIRS})
+
 add_subdirectory("${PROJECT_SOURCE_DIR}/cpu/ppc/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/devices/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/machines/")
@@ -15,7 +18,8 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/thirdparty/")
 include_directories("${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/devices"
                     "${PROJECT_SOURCE_DIR}/cpu/ppc"
                     "${PROJECT_SOURCE_DIR}/debugger"
-					"${PROJECT_SOURCE_DIR}/thirdparty")
+					"${PROJECT_SOURCE_DIR}/thirdparty"
+                    ${SDL2_LIBRARIES})
 
 file(GLOB SOURCES "${PROJECT_SOURCE_DIR}/*.cpp"
                   "${PROJECT_SOURCE_DIR}/debugger/*.cpp")
@@ -27,10 +31,14 @@ add_executable(dingusppc ${SOURCES} $<TARGET_OBJECTS:cpu_ppc>
                                     $<TARGET_OBJECTS:machines>
                                     $<TARGET_OBJECTS:loguru>)
 
+target_link_libraries(dingusppc ${SDL2_LIBRARIES})
+
 add_executable(testppc ${TEST_SOURCES} $<TARGET_OBJECTS:cpu_ppc>
                                        $<TARGET_OBJECTS:devices>
                                        $<TARGET_OBJECTS:machines>
                                        $<TARGET_OBJECTS:loguru>)
+
+target_link_libraries(testppc ${SDL2_LIBRARIES})
 
 add_custom_command(
     TARGET testppc POST_BUILD

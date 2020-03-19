@@ -59,9 +59,17 @@ typedef struct DMACmd {
     uint16_t    xfer_stat;
 } DMACmd;
 
+class DMACallback {
+public:
+    virtual void dma_start(void) = 0;
+    virtual void dma_end(void)   = 0;
+    virtual void dma_push(uint8_t *buf, int size) = 0;
+    virtual void dma_pull(uint8_t *buf, int size)  = 0;
+};
+
 class DMAChannel {
 public:
-    DMAChannel() = default;
+    DMAChannel(DMACallback *cb) { this->dma_cb = cb; };
     ~DMAChannel() = default;
 
     uint32_t reg_read(uint32_t offset, int size);
@@ -77,6 +85,7 @@ protected:
     void pause(void);
 
 private:
+    DMACallback *dma_cb = 0;
     uint16_t    ch_stat = 0;
     uint32_t    cmd_ptr = 0;
 };
