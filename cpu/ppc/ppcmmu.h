@@ -44,6 +44,8 @@ typedef struct PPC_BAT_entry {
 extern void ibat_update(uint32_t bat_reg);
 extern void dbat_update(uint32_t bat_reg);
 
+extern uint8_t *mmu_get_dma_mem(uint32_t addr, uint32_t size);
+
 extern void ppc_set_cur_instruction(const uint8_t* ptr);
 extern void mem_write_byte(uint32_t addr, uint8_t value);
 extern void mem_write_word(uint32_t addr, uint16_t value);

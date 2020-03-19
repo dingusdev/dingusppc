@@ -68,6 +68,7 @@ void AWACDevice::snd_ctrl_write(uint32_t offset, uint32_t value, int size)
     switch(offset) {
     case AWAC_SOUND_CTRL_REG:
         this->snd_ctrl_reg = value;
+        LOG_F(INFO, "New sound control value = 0x%X", this->snd_ctrl_reg);
         break;
     case AWAC_CODEC_CTRL_REG:
         subframe = (value >> 14) & 3;

@@ -25,6 +25,79 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <thirdparty/loguru.hpp>
 #include "dbdma.h"
 #include "endianswap.h"
+#include "cpu/ppc/ppcmmu.h"
+
+void DMAChannel::get_next_cmd(uint32_t cmd_addr, DMACmd *p_cmd)
+{
+    /* load DMACmd from physical memory */
+    memcpy((uint8_t *)p_cmd, mmu_get_dma_mem(cmd_addr, 16), 16);
+}
+
+uint8_t DMAChannel::interpret_cmd()
+{
+    DMACmd cmd_struct;
+
+    get_next_cmd(this->cmd_ptr, &cmd_struct);
+
+    this->ch_stat &= ~CH_STAT_WAKE; /* clear wake bit (DMA spec, 5.5.3.4) */
+
+    switch(cmd_struct.cmd_key >> 4) {
+    case 0:
+        LOG_F(INFO, "Executing DMA Command OUTPUT_MORE");
+        if (cmd_struct.cmd_key & 7) {
+            LOG_F(ERROR, "Key > 0 not implemented");
+            break;
+        }
+        if (cmd_struct.cmd_bits & 0x3F) {
+            LOG_F(ERROR, "non-zero i/b/w not implemented");
+            break;
+        }
+        LOG_F(INFO, "Transfer data, addr = 0x%X, length = 0x%X",
+            cmd_struct.address, cmd_struct.req_count);
+        this->cmd_ptr += 16;
+        break;
+    case 1:
+        LOG_F(INFO, "Executing DMA Command OUTPUT_LAST");
+        if (cmd_struct.cmd_key & 7) {
+            LOG_F(ERROR, "Key > 0 not implemented");
+            break;
+        }
+        if (cmd_struct.cmd_bits & 0x3F) {
+            LOG_F(ERROR, "non-zero i/b/w not implemented");
+            break;
+        }
+        LOG_F(INFO, "Transfer data, addr = 0x%X, length = 0x%X",
+            cmd_struct.address, cmd_struct.req_count);
+        this->cmd_ptr += 16;
+        break;
+    case 2:
+        LOG_F(ERROR, "Unsupported DMA Command INPUT_MORE");
+        break;
+    case 3:
+        LOG_F(ERROR, "Unsupported DMA Command INPUT_LAST");
+        break;
+    case 4:
+        LOG_F(ERROR, "Unsupported DMA Command STORE_QUAD");
+        break;
+    case 5:
+        LOG_F(ERROR, "Unsupported DMA Command LOAD_QUAD");
+        break;
+    case 6:
+        LOG_F(INFO, "Unsupported DMA Command NOP");
+        break;
+    case 7:
+        LOG_F(INFO, "DMA Command: 7 (STOP)");
+        this->ch_stat &= ~CH_STAT_ACTIVE;
+        break;
+    default:
+        LOG_F(ERROR, "Unsupported DMA command 0x%X", cmd_struct.cmd_key >> 4);
+        this->ch_stat |= CH_STAT_DEAD;
+        this->ch_stat &= ~CH_STAT_ACTIVE;
+    }
+
+    return (cmd_struct.cmd_key >> 4);
+}
+
 
 uint32_t DMAChannel::reg_read(uint32_t offset, int size)
 {
@@ -99,7 +172,7 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size)
         break; /* ingore writes to ChannelStatus */
     case DMAReg::CMD_PTR_LO:
         if (!(this->ch_stat & CH_STAT_RUN) && !(this->ch_stat & CH_STAT_ACTIVE)) {
-            this->cmd_ptr = BYTESWAP_32(value);
+            this->cmd_ptr = value;
             LOG_F(INFO, "CommandPtrLo set to 0x%X", this->cmd_ptr);
         }
         break;
@@ -116,6 +189,9 @@ void DMAChannel::start()
     }
 
     LOG_F(INFO, "Starting DMA channel, stat = 0x%X", this->ch_stat);
+
+    while (this->interpret_cmd() != 7) {
+    }
 }
 
 void DMAChannel::resume()

@@ -48,6 +48,17 @@ enum {
     CH_STAT_RUN     = 0x8000
 };
 
+/** DBDMA command (DBDMA spec, 5.6.1) - all fields are little-endian! */
+typedef struct DMACmd {
+    uint16_t    req_count;
+    uint8_t     cmd_bits;
+    uint8_t     cmd_key;
+    uint32_t    address;
+    uint32_t    cmd_arg;
+    uint16_t    res_count;
+    uint16_t    xfer_stat;
+} DMACmd;
+
 class DMAChannel {
 public:
     DMAChannel() = default;
@@ -57,6 +68,9 @@ public:
     void reg_write(uint32_t offset, uint32_t value, int size);
 
 protected:
+    void get_next_cmd(uint32_t cmd_addr, DMACmd *p_cmd);
+    uint8_t interpret_cmd(void);
+
     void start(void);
     void resume(void);
     void abort(void);

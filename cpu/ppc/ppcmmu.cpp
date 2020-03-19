@@ -52,6 +52,7 @@ AddressMapEntry last_read_area  = { 0 };
 AddressMapEntry last_write_area = { 0 };
 AddressMapEntry last_exec_area  = { 0 };
 AddressMapEntry last_ptab_area  = { 0 };
+AddressMapEntry last_dma_area   = { 0 };
 
 
 /* macro for generating code reading from physical memory */
@@ -108,6 +109,26 @@ AddressMapEntry last_ptab_area  = { 0 };
             LOG_F(WARNING, "Write to unmapped memory at 0x%08X!\n", (ADDR));   \
         }                                                                      \
     }                                                                          \
+}
+
+uint8_t *mmu_get_dma_mem(uint32_t addr, uint32_t size)
+{
+    if (addr >= last_dma_area.start && (addr + size) <= last_dma_area.end) {
+        return last_dma_area.mem_ptr + (addr - last_dma_area.start);
+    }
+    else {
+        AddressMapEntry* entry = mem_ctrl_instance->find_range(addr);
+        if (entry && entry->type & (RT_ROM | RT_RAM)) {
+            last_dma_area.start   = entry->start;
+            last_dma_area.end     = entry->end;
+            last_dma_area.mem_ptr = entry->mem_ptr;
+            return last_dma_area.mem_ptr + (addr - last_dma_area.start);
+        }
+        else {
+            LOG_F(ERROR, "SOS: DMA access to unmapped memory %08X!\n", addr);
+            exit(-1); // FIXME: ugly error handling, must be the proper exception!
+        }
+    }
 }
 
 void ppc_set_cur_instruction(const uint8_t* ptr)
