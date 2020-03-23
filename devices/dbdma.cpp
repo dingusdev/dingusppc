@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @file Descriptor-based direct memory access emulation. */
 
 #include <cinttypes>
-#include <thirdparty/loguru.hpp>
+#include <thirdparty/loguru/loguru.hpp>
 #include "dbdma.h"
 #include "endianswap.h"
 #include "cpu/ppc/ppcmmu.h"

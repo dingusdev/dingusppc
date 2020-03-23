@@ -31,7 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include "i2c.h"
 #include "dbdma.h"
-#include "SDL.h"
+#include <thirdparty/SDL2/include/SDL.h>
 
 /** AWAC registers offsets. */
 enum {

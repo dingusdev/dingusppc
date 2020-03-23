@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //The main runfile - main.cpp
 //This is where the magic begins
 
-#include <thirdparty/loguru.hpp>
+#include <thirdparty/loguru/loguru.hpp>
 #include <iostream>
 #include <cstring>
 #include <cinttypes>
@@ -30,7 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ppcemu.h"
 #include "debugger/debugger.h"
 #include "machines/machinefactory.h"
-#include "SDL.h"
+#include <thirdparty/SDL2/include/SDL.h>
 
 using namespace std;
 

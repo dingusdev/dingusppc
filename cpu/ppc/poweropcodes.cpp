@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // The Power-specific opcodes for the processor - ppcopcodes.cpp
 // Any shared opcodes are in ppcopcodes.cpp
 
-#include <thirdparty/loguru.hpp>
+#include <thirdparty/loguru/loguru.hpp>
 #include <iostream>
 #include <array>
 #include <stdio.h>

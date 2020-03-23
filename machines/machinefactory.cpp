@@ -29,7 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cstring>
 #include <iostream>
 #include <fstream>
-#include <thirdparty/loguru.hpp>
+#include <thirdparty/loguru/loguru.hpp>
 #include "memreadwrite.h"
 #include "machinefactory.h"
 #include "devices/memctrlbase.h"

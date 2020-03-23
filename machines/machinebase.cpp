@@ -1,6 +1,6 @@
 #include <memory>
 #include <string>
-#include <thirdparty/loguru.hpp>
+#include <thirdparty/loguru/loguru.hpp>
 #include "machinebase.h"
 #include "devices/hwcomponent.h"
 

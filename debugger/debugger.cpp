@@ -29,7 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ppcemu.h"
 #include "../cpu/ppc/ppcmmu.h"
 #include "../cpu/ppc/ppcdisasm.h"
-#include <thirdparty/loguru.hpp>
+#include <thirdparty/loguru/loguru.hpp>
 
 
 using namespace std;

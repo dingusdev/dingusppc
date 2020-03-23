@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // General opcodes for the processor - ppcopcodes.cpp
 
-#include <thirdparty/loguru.hpp>
+#include <thirdparty/loguru/loguru.hpp>
 #include <iostream>
 #include <cstring>
 #include <cinttypes>

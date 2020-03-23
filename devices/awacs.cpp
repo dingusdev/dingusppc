@@ -24,11 +24,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     Author: Max Poliakovski 2019-20
 */
 
-#include <thirdparty/loguru.hpp>
+#include <thirdparty/loguru/loguru.hpp>
 #include "endianswap.h"
 #include "awacs.h"
 #include "machines/machinebase.h"
-#include "SDL.h"
+#include <thirdparty/SDL2/include/SDL.h>
 
 static int awac_freqs[8] = {44100, 29400, 22050, 17640, 14700, 11025, 8820, 7350};
 

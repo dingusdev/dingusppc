@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     Author: Max Poliakovski
 */
 
-#include <thirdparty/loguru.hpp>
+#include <thirdparty/loguru/loguru.hpp>
 #include <iostream>
 #include <cstring>
 #include <cinttypes>
