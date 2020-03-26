@@ -111,8 +111,6 @@ static void convert_data(const uint8_t *in, uint8_t *out, uint32_t len)
     p_out = (uint16_t *)out;
     len >>= 1;
 
-    LOG_F(INFO, "Converting %d samples", len);
-
     /* AWAC data comes as LLRR -> convert it to LRLR */
     for (int i = 0; i < len; i += 8) {
         p_out[i]   = p_in[i];
@@ -132,10 +130,10 @@ static void audio_out_callback(void *user_data, uint8_t *buf, int buf_len)
     for (rem_len = buf_len; rem_len > 0; rem_len -= got_len, buf += got_len) {
         if (!dma_ch->get_data(rem_len, &got_len, &p_in)) {
             convert_data(p_in, buf, got_len);
-            LOG_F(9, "Converted sound data, len = %d", got_len);
+            //LOG_F(9, "Converted sound data, len = %d", got_len);
         } else { /* no more data */
             memset(buf, 0, rem_len); /* fill the buffer with silence */
-            LOG_F(9, "Inserted silence, len = %d", rem_len);
+            //LOG_F(9, "Inserted silence, len = %d", rem_len);
             break;
         }
     }

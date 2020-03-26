@@ -43,7 +43,7 @@ uint8_t DMAChannel::interpret_cmd()
 
     switch(cmd_struct.cmd_key >> 4) {
     case 0:
-        LOG_F(INFO, "Executing DMA Command OUTPUT_MORE");
+        LOG_F(9, "Executing DMA Command OUTPUT_MORE");
         if (cmd_struct.cmd_key & 7) {
             LOG_F(ERROR, "Key > 0 not implemented");
             break;
@@ -60,7 +60,7 @@ uint8_t DMAChannel::interpret_cmd()
         this->cmd_ptr += 16;
         break;
     case 1:
-        LOG_F(INFO, "Executing DMA Command OUTPUT_LAST");
+        LOG_F(9, "Executing DMA Command OUTPUT_LAST");
         if (cmd_struct.cmd_key & 7) {
             LOG_F(ERROR, "Key > 0 not implemented");
             break;
