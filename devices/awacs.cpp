@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <thirdparty/loguru/loguru.hpp>
 #include "endianswap.h"
 #include "awacs.h"
+#include "dbdma.h"
 #include "machines/machinebase.h"
 #include <thirdparty/SDL2/include/SDL.h>
 
@@ -50,6 +51,11 @@ AWACDevice::~AWACDevice()
 
     if (this->snd_out_dev)
         SDL_CloseAudioDevice(snd_out_dev);
+}
+
+void AWACDevice::set_dma_out(DMAChannel *dma_out_ch)
+{
+    this->dma_out_ch = dma_out_ch;
 }
 
 uint32_t AWACDevice::snd_ctrl_read(uint32_t offset, int size)
@@ -93,6 +99,48 @@ void AWACDevice::snd_ctrl_write(uint32_t offset, uint32_t value, int size)
     }
 }
 
+static void convert_data(const uint8_t *in, uint8_t *out, uint32_t len)
+{
+    uint16_t *p_in, *p_out;
+
+    if (len & 7) {
+        LOG_F(WARNING, "AWAC sound buffer len not a multiply of 8, %d", len);
+    }
+
+    p_in  = (uint16_t *)in;
+    p_out = (uint16_t *)out;
+    len >>= 1;
+
+    LOG_F(INFO, "Converting %d samples", len);
+
+    /* AWAC data comes as LLRR -> convert it to LRLR */
+    for (int i = 0; i < len; i += 8) {
+        p_out[i]   = p_in[i];
+        p_out[i+1] = p_in[i+2];
+        p_out[i+2] = p_in[i+1];
+        p_out[i+3] = p_in[i+3];
+    }
+}
+
+static void audio_out_callback(void *user_data, uint8_t *buf, int buf_len)
+{
+    uint8_t *p_in;
+    uint32_t rem_len, got_len;
+
+    DMAChannel *dma_ch = (DMAChannel *)user_data; /* C API baby! */
+
+    for (rem_len = buf_len; rem_len > 0; rem_len -= got_len, buf += got_len) {
+        if (!dma_ch->get_data(rem_len, &got_len, &p_in)) {
+            convert_data(p_in, buf, got_len);
+            LOG_F(9, "Converted sound data, len = %d", got_len);
+        } else { /* no more data */
+            memset(buf, 0, rem_len); /* fill the buffer with silence */
+            LOG_F(9, "Inserted silence, len = %d", rem_len);
+            break;
+        }
+    }
+}
+
 uint32_t AWACDevice::convert_data(const uint8_t *data, int len)
 {
     int i;
@@ -127,7 +175,9 @@ void AWACDevice::dma_start()
     snd_spec.format = AUDIO_S16MSB; /* yes, AWAC accepts big-endian data */
     snd_spec.channels = 2;
     snd_spec.samples = 4096; /* buffer size, chosen empirically */
-    snd_spec.callback = NULL;
+    snd_spec.callback = audio_out_callback;
+    snd_spec.userdata = (void *)this->dma_out_ch;
+
 
     this->snd_out_dev = SDL_OpenAudioDevice(NULL, 0, &snd_spec, &snd_settings, 0);
     if (!this->snd_out_dev) {
@@ -136,6 +186,8 @@ void AWACDevice::dma_start()
         LOG_F(INFO, "Created audio output channel, sample rate = %d", snd_spec.freq);
         this->wake_up = true;
     }
+
+    SDL_PauseAudioDevice(this->snd_out_dev, 0); /* start audio playing */
 }
 
 void AWACDevice::dma_end()

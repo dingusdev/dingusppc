@@ -75,6 +75,8 @@ public:
     uint32_t reg_read(uint32_t offset, int size);
     void reg_write(uint32_t offset, uint32_t value, int size);
 
+    int get_data(uint32_t req_len, uint32_t *avail_len, uint8_t **p_data);
+
 protected:
     void get_next_cmd(uint32_t cmd_addr, DMACmd *p_cmd);
     uint8_t interpret_cmd(void);
@@ -88,6 +90,9 @@ private:
     DMACallback *dma_cb = 0;
     uint16_t    ch_stat = 0;
     uint32_t    cmd_ptr = 0;
+
+    uint32_t    queue_len;
+    uint8_t*    queue_data;
 };
 
 #endif /* DB_DMA_H */

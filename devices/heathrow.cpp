@@ -44,6 +44,7 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow")
 
     this->screamer = new AWACDevice();
     this->snd_out_dma = new DMAChannel(this->screamer);
+    this->screamer->set_dma_out(this->snd_out_dma);
 }
 
 HeathrowIC::~HeathrowIC()

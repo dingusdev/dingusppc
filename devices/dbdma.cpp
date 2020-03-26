@@ -52,9 +52,11 @@ uint8_t DMAChannel::interpret_cmd()
             LOG_F(ERROR, "non-zero i/b/w not implemented");
             break;
         }
-        this->dma_cb->dma_push(
-            mmu_get_dma_mem(cmd_struct.address, cmd_struct.req_count),
-            cmd_struct.req_count);
+        //this->dma_cb->dma_push(
+        //    mmu_get_dma_mem(cmd_struct.address, cmd_struct.req_count),
+        //    cmd_struct.req_count);
+        this->queue_data = mmu_get_dma_mem(cmd_struct.address, cmd_struct.req_count);
+        this->queue_len = cmd_struct.req_count;
         this->cmd_ptr += 16;
         break;
     case 1:
@@ -67,9 +69,11 @@ uint8_t DMAChannel::interpret_cmd()
             LOG_F(ERROR, "non-zero i/b/w not implemented");
             break;
         }
-        this->dma_cb->dma_push(
-            mmu_get_dma_mem(cmd_struct.address, cmd_struct.req_count),
-            cmd_struct.req_count);
+        //this->dma_cb->dma_push(
+        //    mmu_get_dma_mem(cmd_struct.address, cmd_struct.req_count),
+        //    cmd_struct.req_count);
+        this->queue_data = mmu_get_dma_mem(cmd_struct.address, cmd_struct.req_count);
+        this->queue_len = cmd_struct.req_count;
         this->cmd_ptr += 16;
         break;
     case 2:
@@ -183,6 +187,39 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size)
     }
 }
 
+int DMAChannel::get_data(uint32_t req_len, uint32_t *avail_len, uint8_t **p_data)
+{
+    if (this->ch_stat & CH_STAT_DEAD || !(this->ch_stat & CH_STAT_ACTIVE)) {
+        LOG_F(WARNING, "Dead/idle channel -> no more data");
+        *avail_len = 0;
+        return -1; /* dead or idle channel? -> no more data */
+    }
+
+    /* interpret DBDMA program until we get data or become idle  */
+    while ((this->ch_stat & CH_STAT_ACTIVE) && !this->queue_len) {
+        this->interpret_cmd();
+    }
+
+    /* dequeue data if any */
+    if (this->queue_len) {
+        if (this->queue_len >= req_len) {
+            LOG_F(9, "Return req_len = %d data", req_len);
+            *p_data = this->queue_data;
+            *avail_len = req_len;
+            this->queue_len  -= req_len;
+            this->queue_data += req_len;
+        } else { /* return less data than req_len */
+            LOG_F(9, "Return queue_len = %d data", this->queue_len);
+            *p_data = this->queue_data;
+            *avail_len = this->queue_len;
+            this->queue_len = 0;
+        }
+        return 0; /* tell the caller there is more data */
+    }
+
+    return -1; /* tell the caller there is no more data */
+}
+
 void DMAChannel::start()
 {
     if (this->ch_stat & CH_STAT_PAUSE) {
@@ -192,10 +229,12 @@ void DMAChannel::start()
 
     LOG_F(INFO, "Starting DMA channel, stat = 0x%X", this->ch_stat);
 
+    this->queue_len = 0;
+
     this->dma_cb->dma_start();
 
-    while (this->interpret_cmd() != 7) {
-    }
+    //while (this->interpret_cmd() != 7) {
+    //}
 }
 
 void DMAChannel::resume()

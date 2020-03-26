@@ -105,6 +105,8 @@ public:
     AWACDevice();
     ~AWACDevice();
 
+    void set_dma_out(DMAChannel *dma_out_ch);
+
     uint32_t snd_ctrl_read(uint32_t offset, int size);
     void     snd_ctrl_write(uint32_t offset, uint32_t value, int size);
 
@@ -125,6 +127,8 @@ private:
 
     SDL_AudioDeviceID snd_out_dev = 0;
     bool wake_up = false;
+
+    DMAChannel  *dma_out_ch;
 
     uint8_t*    snd_buf = 0;
     uint32_t    buf_len = 0;
