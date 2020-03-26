@@ -78,12 +78,14 @@ int main(int argc, char **argv)
         if (!config_input) {
             LOG_F(ERROR, "Could not open config.txt. Creating a dummy config.txt now.");
             std::ofstream config_output("config.txt");
+
             config_output.write("rompath=rom.bin\n", 17);
             config_output.write("diskpath=disk.img\n", 19);
             config_output.write("ramsize=64\n", 12);
             config_output.write("machine_gestalt=510\n", 21);
             config_output.write("video_vendor=0x1002\n", 21);
             config_output.write("video_card=0x4750\n", 19);
+
             config_output.close();
         }
         else {
@@ -110,8 +112,6 @@ int main(int argc, char **argv)
                 sin.clear();
             }
         }
-
-
 
         if (create_machine_for_rom(rom_file.c_str())) {
             goto bail;
