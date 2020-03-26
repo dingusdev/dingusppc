@@ -24,6 +24,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <thirdparty/loguru/loguru.hpp>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <cstring>
 #include <cinttypes>
 #include <stdio.h>
@@ -66,9 +68,52 @@ int main(int argc, char **argv)
             loguru::init(argc, argv);
         }
 
-        uint32_t rom_filesize;
+        std::string rom_file = "rom.bin", disk_file = "disk.img";
+        int ram_size = 64, machine_gestalt = 510, video_card_vendor = 0x1002, video_card_id = 0x4750;
 
-        if (create_machine_for_rom("rom.bin")) {
+        std::ifstream config_input("config.txt");
+        std::string line;
+        std::istringstream sin;
+
+        if (!config_input) {
+            LOG_F(ERROR, "Could not open config.txt. Creating a dummy config.txt now.");
+            std::ofstream config_output("config.txt");
+            config_output.write("rompath=rom.bin\n", 17);
+            config_output.write("diskpath=disk.img\n", 19);
+            config_output.write("ramsize=64\n", 12);
+            config_output.write("machine_gestalt=510\n", 21);
+            config_output.write("video_vendor=0x1002\n", 21);
+            config_output.write("video_card=0x4750\n", 19);
+            config_output.close();
+        }
+        else {
+            while (std::getline(config_input, line)) {
+                sin.str(line.substr(line.find("=") + 1));
+                if (line.find("rompath") != std::string::npos) {
+                    sin >> rom_file;
+                }
+                else if (line.find("diskpath") != std::string::npos) {
+                    sin >> disk_file;
+                }
+                else if (line.find("ramsize") != std::string::npos) {
+                    sin >> ram_size;
+                }
+                else if (line.find("machine_gestalt") != std::string::npos) {
+                    sin >> machine_gestalt;
+                }
+                else if (line.find("video_vendor") != std::string::npos) {
+                    sin >> video_card_vendor;
+                }
+                else if (line.find("video_card") != std::string::npos) {
+                    sin >> video_card_id;
+                }
+                sin.clear();
+            }
+        }
+
+
+
+        if (create_machine_for_rom(rom_file.c_str())) {
             goto bail;
         }
 
