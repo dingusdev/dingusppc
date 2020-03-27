@@ -30,10 +30,10 @@ ATIRage::ATIRage() {
 
 uint32_t ATIRage::read(int reg, int size) {
     LOG_F(INFO, "Reading reg=%X, size %d", reg, (size * 8));
-
+    return reg;
 }
 
-uint32_t ATIRage::write(int reg, uint32_t value, int size) {
+void ATIRage::write(int reg, uint32_t value, int size) {
     LOG_F(INFO, "Writing reg=%X, value=%X, size %d", reg, value, (size * 8));
 }
 
