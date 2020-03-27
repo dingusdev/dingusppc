@@ -1,15 +1,19 @@
-# DingusPPC by divingkatae
+# DingusPPC by divingkatae and maximumspatium
 
 Be warned the program is highly unfinished and could use a lot of testing. Any feedback is welcome.
 
-## PHILOSOPHY OF USE
+## Philosophy of Use
 
-Sheepshaver, while technically impressive, is becoming harder to compile and run. While many other PowerPC emus exist, none of them currently attempt emulation of PPC Macs (except for QEMU).
+While many other PowerPC emus exist (PearPC, Sheepshaver), none of them currently attempt emulation of PPC Macs accurately (except for QEMU).
 
-This program aims to not only improve upon what Sheepshaver has done, but also to provide a better debugging environment. This currently is designed to work best with PowerPC Old World ROMs,
+This program aims to not only improve upon what Sheepshaver, PearPC, and other PowerPC mac emulators have done, but also to provide a better debugging environment. This currently is designed to work best with PowerPC Old World ROMs,
 including those of the PowerMac G3 Beige.
 
-## HOW TO USE
+## Implemented Features
+
+This emulator has a debugging environment, complete with a disassembler. We also have implemented enough to allow OpenFirmware to boot, going so far as to allow audio playback of the boot-up jingles.
+
+## How to Use
 
 This program currently uses the command prompt to work.
 
@@ -23,7 +27,9 @@ Run the emulator in runtime.
 
 Enter the interactive debugger.
 
-## HOW TO COMPILE
+You must also provide config.txt.
+
+## How to Compile
 
 You'll need to install development tools first.
 
