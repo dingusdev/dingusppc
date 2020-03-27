@@ -1,4 +1,6 @@
-# DingusPPC by divingkatae and maximumspatium
+# DingusPPC
+
+Written by divingkatae and maximumspatium
 
 Be warned the program is highly unfinished and could use a lot of testing. Any feedback is welcome.
 
