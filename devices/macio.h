@@ -61,6 +61,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "nvram.h"
 #include "awacs.h"
 #include "dbdma.h"
+#include "atirage.h"
 
 /**
     Heathrow ASIC emulation
@@ -134,6 +135,7 @@ private:
     ViaCuda *viacuda;     /* VIA cell with Cuda MCU attached to it */
     NVram   *nvram;       /* NVRAM cell */
     AWACDevice *screamer; /* Screamer audio codec instance */
+    ATIRage *atirage; /* Screamer audio codec instance */
 
     DMAChannel  *snd_out_dma;
 };

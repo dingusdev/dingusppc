@@ -6,7 +6,13 @@ using namespace std;
 
 /** Mach registers offsets. */
 enum {
-    ATI_DSP_CONFIG = 0x0020, /*memory buffer registers*/
+    ATI_CTRC_H_TOTAL_DISP = 0x0000,
+    ATI_CRTC_H_SYNC_STRT_WID = 0x0004,
+    ATI_CTRC_V_TOTAL_DISP = 0x0008,
+    ATI_CRTC_V_SYNC_STRT_WID = 0x000C,
+    ATI_CTRC_INT_CNTL = 0x0018,
+    ATI_CTRC_GEN_CNTL = 0x001C,
+    ATI_DSP_CONFIG = 0x0020,
     ATI_DSP_TOGGLE = 0x0024,
     ATI_TIMER_CFG = 0x0028,
     ATI_MEM_BUF_CNTL = 0x002C,

@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "viacuda.h"
 #include "awacs.h"
 #include "dbdma.h"
+#include "atirage.h"
 #include "machines/machinebase.h"
 
 /** Heathrow Mac I/O device emulation.
@@ -41,6 +42,8 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow")
 
     this->viacuda  = new ViaCuda();
     gMachineObj->add_subdevice("ViaCuda", this->viacuda);
+
+    this->atirage = new ATIRage();
 
     this->screamer = new AWACDevice();
     this->snd_out_dma = new DMAChannel(this->screamer);
@@ -128,6 +131,9 @@ uint32_t HeathrowIC::read(uint32_t offset, int size)
     case 8:
         res = dma_read(offset - 0x8000, size);
         break;
+    case 0x12:
+        res = this->atirage->read(offset - 0x12000, size);
+        break;
     case 0x14:
         res = this->screamer->snd_ctrl_read(offset - 0x14000, size);
         break;
@@ -159,6 +165,9 @@ void HeathrowIC::write(uint32_t offset, uint32_t value, int size)
         break;
     case 8:
         dma_write(offset - 0x8000, value, size);
+        break;
+    case 0x12:
+        this->atirage->write(offset - 0x12000, value, size);
         break;
     case 0x14:
         this->screamer->snd_ctrl_write(offset - 0x14000, value, size);
