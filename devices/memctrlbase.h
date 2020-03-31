@@ -35,13 +35,14 @@ enum RangeType {
                        at some other address) */
 };
 
+/** Defines the format for the address map entry. */
 typedef struct AddressMapEntry {
     uint32_t        start;   /* first address of the corresponding range */
     uint32_t        end;     /* last  address of the corresponding range */
     uint32_t        mirror;  /* mirror address for RT_MIRROR */
     uint32_t        type;    /* range type */
-    MMIODevice     *devobj;  /* pointer to device object */
-    unsigned char  *mem_ptr; /* direct pointer to data for memory objects */
+    MMIODevice*     devobj;  /* pointer to device object */
+    unsigned char*  mem_ptr; /* direct pointer to data for memory objects */
 } AddressMapEntry;
 
 

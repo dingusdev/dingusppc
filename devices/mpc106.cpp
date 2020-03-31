@@ -61,7 +61,7 @@ bool MPC106::supports_type(HWCompType type)
     }
 }
 
-uint32_t MPC106::read(uint32_t offset, int size)
+uint32_t MPC106::read(uint32_t reg_start, uint32_t offset, int size)
 {
     if (offset >= 0x200000) {
         if (this->config_addr & 0x80) // process only if bit E (enable) is set
@@ -73,7 +73,7 @@ uint32_t MPC106::read(uint32_t offset, int size)
     return 0;
 }
 
-void MPC106::write(uint32_t offset, uint32_t value, int size)
+void MPC106::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
 {
     if (offset < 0x200000) {
         this->config_addr = value;

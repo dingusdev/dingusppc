@@ -116,7 +116,7 @@ void HeathrowIC::dma_write(uint32_t offset, uint32_t value, int size)
 }
 
 
-uint32_t HeathrowIC::read(uint32_t offset, int size)
+uint32_t HeathrowIC::read(uint32_t reg_start, uint32_t offset, int size)
 {
     uint32_t res = 0;
 
@@ -153,7 +153,7 @@ uint32_t HeathrowIC::read(uint32_t offset, int size)
     return res;
 }
 
-void HeathrowIC::write(uint32_t offset, uint32_t value, int size)
+void HeathrowIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
 {
     LOG_F(9, "%s: writing to offset %x \n", this->name.c_str(), offset);
 

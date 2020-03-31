@@ -52,8 +52,8 @@ public:
 
     bool supports_type(HWCompType type);
 
-    uint32_t read(uint32_t offset, int size);
-    void write(uint32_t offset, uint32_t value, int size);
+    uint32_t read(uint32_t reg_start, uint32_t offset, int size);
+    void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size);
 
     /* PCI host bridge API */
     bool pci_register_device(int dev_num, PCIDevice *dev_instance);

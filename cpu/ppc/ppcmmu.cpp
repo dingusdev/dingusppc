@@ -70,7 +70,8 @@ AddressMapEntry last_dma_area   = { 0 };
                 ret = OP((ENTRY).mem_ptr + ((ADDR) - (ENTRY).start));          \
             }                                                                  \
             else if (entry->type & RT_MMIO) {                                  \
-                ret = entry->devobj->read((ADDR) - entry->start, (SIZE));      \
+                ret = entry->devobj->read(entry->start, (ADDR) - entry->start, \
+                    (SIZE));                                                   \
             }                                                                  \
             else {                                                             \
                 LOG_F(ERROR, "Please check your address map! \n");             \
@@ -99,10 +100,11 @@ AddressMapEntry last_dma_area   = { 0 };
                 OP((ENTRY).mem_ptr + ((ADDR) - (ENTRY).start), (VAL));         \
             }                                                                  \
             else if (entry->type & RT_MMIO) {                                  \
-                entry->devobj->write((ADDR) - entry->start, (VAL), (SIZE));    \
+                entry->devobj->write(entry->start, (ADDR) - entry->start,      \
+                    (VAL), (SIZE));                                            \
             }                                                                  \
             else {                                                             \
-                LOG_F(ERROR, "Please check your address map!\n");                    \
+                LOG_F(ERROR, "Please check your address map!\n");              \
             }                                                                  \
         }                                                                      \
         else {                                                                 \

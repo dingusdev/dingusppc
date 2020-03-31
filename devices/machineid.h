@@ -51,10 +51,11 @@ public:
         return type == HWCompType::MMIO_DEV;
     };
 
-    uint32_t read(uint32_t offset, int size) {
+    uint32_t read(uint32_t reg_start, uint32_t offset, int size) {
          return ((!offset && size == 2) ? this->id : 0); };
 
-    void write(uint32_t offset, uint32_t value, int size) {}; /* not writable */
+    void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
+        {}; /* not writable */
 
 private:
     uint16_t id;
