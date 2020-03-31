@@ -40,10 +40,14 @@ MPC106::MPC106() : MemCtrlBase(), PCIDevice("Grackle PCI host bridge")
 {
     this->name = "Grackle";
 
+    /* add PCI/ISA I/O space, 64K for now */
+    add_mmio_region(0xFE000000, 0x10000, this);
+
     /* add memory mapped I/O region for MPC106 registers */
     add_mmio_region(0xFEC00000, 0x300000, this);
 
     this->pci_0_bus.clear();
+    this->io_space_devs.clear();
 }
 
 MPC106::~MPC106()
@@ -63,9 +67,23 @@ bool MPC106::supports_type(HWCompType type)
 
 uint32_t MPC106::read(uint32_t reg_start, uint32_t offset, int size)
 {
-    if (offset >= 0x200000) {
-        if (this->config_addr & 0x80) // process only if bit E (enable) is set
-            return pci_read(size);
+    uint32_t result;
+
+    if (reg_start == 0xFE000000) {
+        /* broadcast I/O request to devices that support I/O space
+           until a device returns true that means "request accepted" */
+        for (auto& dev : this->io_space_devs) {
+            if (dev->pci_io_read(offset, size, &result)) {
+                return result;
+            }
+        }
+        LOG_F(ERROR, "Attempt to read from unmapped PCI I/O space, offset=0x%X", offset);
+    }
+    else {
+        if (offset >= 0x200000) {
+            if (this->config_addr & 0x80) // process only if bit E (enable) is set
+                return pci_read(size);
+        }
     }
 
     /* FIXME: reading from CONFIG_ADDR is ignored for now */
@@ -75,11 +93,24 @@ uint32_t MPC106::read(uint32_t reg_start, uint32_t offset, int size)
 
 void MPC106::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
 {
-    if (offset < 0x200000) {
-        this->config_addr = value;
-    } else {
-        if (this->config_addr & 0x80) // process only if bit E (enable) is set
-            return pci_write(value, size);
+    if (reg_start == 0xFE000000) {
+        /* broadcast I/O request to devices that support I/O space
+           until a device returns true that means "request accepted" */
+        for (auto& dev : this->io_space_devs) {
+            if (dev->pci_io_write(offset, value, size)) {
+                return;
+            }
+        }
+        LOG_F(ERROR, "Attempt to write to unmapped PCI I/O space, offset=0x%X", offset);
+    }
+    else {
+        if (offset < 0x200000) {
+            this->config_addr = value;
+        }
+        else {
+            if (this->config_addr & 0x80) // process only if bit E (enable) is set
+                return pci_write(value, size);
+        }
     }
 }
 
@@ -203,6 +234,10 @@ bool MPC106::pci_register_device(int dev_num, PCIDevice *dev_instance)
     this->pci_0_bus[dev_num] = dev_instance;
 
     dev_instance->set_host(this);
+
+    if (dev_instance->supports_io_space()) {
+        this->io_space_devs.push_back(dev_instance);
+    }
 
     return true;
 }

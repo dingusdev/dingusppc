@@ -67,10 +67,8 @@ protected:
     uint32_t pci_cfg_read(uint32_t reg_offs, uint32_t size);
     void pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size);
 
-    void set_host(PCIHost *host_instance) {}; // unimplemented for now
+    bool supports_io_space(void) { return true; };
 
-    /* PCI host bridge API */
-    //bool pci_register_device(int dev_num, PCIDevice *dev_instance);
     bool pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIDevice *obj);
 
     void setup_ram(void);
@@ -175,6 +173,7 @@ private:
     //uint32_t config_data;
 
     std::unordered_map<int, PCIDevice*> pci_0_bus;
+    std::vector<PCIDevice*> io_space_devs;
 };
 
 #endif

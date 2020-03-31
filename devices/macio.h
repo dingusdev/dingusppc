@@ -94,9 +94,9 @@ public:
 
     bool supports_type(HWCompType type) { return type == HWCompType::MMIO_DEV; };
 
-    void set_host(PCIHost *host_instance) {this->host_instance = host_instance;};
-
     /* PCI device methods */
+    bool supports_io_space(void) { return false; };
+
     uint32_t pci_cfg_read(uint32_t reg_offs, uint32_t size);
     void     pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size);
 
