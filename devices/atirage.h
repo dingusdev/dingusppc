@@ -1,8 +1,17 @@
-#ifndef ATIRAGE_H
-#define ATIRAGE_H
+#ifndef ATI_RAGE_H
+#define ATI_RAGE_H
+
 #include <cinttypes>
+#include "pcidevice.h"
 
 using namespace std;
+
+/* PCI related definitions. */
+enum {
+    ATI_PCI_VENDOR_ID   = 0x1002,
+    ATI_RAGE_PRO_DEV_ID = 0x4750,
+    ATI_RAGE_GT_DEV_ID  = 0x4754,
+};
 
 /** Mach registers offsets. */
 enum {
@@ -34,14 +43,22 @@ enum {
     ATI_CONTEXT_MASK = 0x0320,
 };
 
-class ATIRage
+class ATIRage : public PCIDevice
 {
 public:
-    ATIRage();
+    ATIRage(uint16_t dev_id);
     ~ATIRage() = default;
 
-    uint32_t read(int reg, int size);
-    void write(int reg, uint32_t value, int size);
+    uint32_t read(uint32_t reg_start, uint32_t offset, int size);
+    void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size);
+
+    bool supports_type(HWCompType type) { return type == HWCompType::MMIO_DEV; };
+
+    void set_host(PCIHost* host_instance) { this->host_instance = host_instance; };
+
+    /* PCI device methods */
+    uint32_t pci_cfg_read(uint32_t reg_offs, uint32_t size);
+    void     pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size);
 
 private:
     uint32_t atirage_membuf_regs[9];    /* ATI Rage Memory Buffer Registers */
@@ -49,14 +66,6 @@ private:
     uint32_t atirage_cmdfifo_regs[3];   /* ATI Rage Command FIFO Registers */
     uint32_t atirage_datapath_regs[12]; /* ATI Rage Data Path Registers*/
 
-    uint8_t atirage_vid_mem[8242880];
-
-    uint8_t atirage_cfg[256] = {
-        0x02, 0x10, //Vendor: ATI Technologies
-        0x50, 0x47, //Device: 3D Rage Pro PCI
-
-    };
-
-    void atirage_init();
+    uint8_t pci_cfg[256] = { 0 }; /* PCI configuration space */
 };
-#endif /* ATIRAGE_H */
+#endif /* ATI_RAGE_H */

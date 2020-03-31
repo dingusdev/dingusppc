@@ -32,6 +32,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "devices/macio.h"
 #include "devices/viacuda.h"
 #include "devices/spdram.h"
+#include "devices/atirage.h"
 
 static void setup_ram_slot(std::string name, int i2c_addr, int capacity_megs)
 {
@@ -87,6 +88,11 @@ int create_gossamer()
     setup_ram_slot("RAM_DIMM_1", 0x57,  64); /* RAM slot 1 ->  64MB by default */
     setup_ram_slot("RAM_DIMM_2", 0x56,   0); /* RAM slot 2 -> empty by default */
     setup_ram_slot("RAM_DIMM_3", 0x55,   0); /* RAM slot 3 -> empty by default */
+
+    /* register ATI 3D Rage Pro video card with the PCI host bridge */
+    gMachineObj->add_component("ATIRage", new ATIRage(ATI_RAGE_PRO_DEV_ID));
+    grackle_obj->pci_register_device(18,
+      dynamic_cast<PCIDevice *>(gMachineObj->get_comp_by_name("ATIRage")));
 
     /* Init virtual CPU and request MPC750 CPU aka G3 */
     ppc_cpu_init(grackle_obj, PPC_VER::MPC750);

@@ -94,7 +94,6 @@ void load_rom(ifstream& rom_file, uint32_t file_size)
 int create_machine_for_rom(const char* rom_filepath)
 {
     ifstream rom_file;
-    int result;
     uint32_t file_size, config_info_offset, rom_id;
     char rom_id_str[17];
 
