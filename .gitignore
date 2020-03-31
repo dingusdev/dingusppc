@@ -7,6 +7,9 @@ out/
 *.o
 *.d
 
+# Ignore Visual Studio configuration files
+CMakeSettings.json
+
 # Ignore generated executables
 dingusppc
 dingusppc.exe
