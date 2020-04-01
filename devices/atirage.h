@@ -30,6 +30,7 @@ enum {
     ATI_VGA_DSP_TGL           = 0x0050,
     ATI_DSP2_CONFIG           = 0x0054,
     ATI_DSP2_TOGGLE           = 0x0058,
+    ATI_CLOCK_CNTL            = 0x0090,
     ATI_BUS_CNTL              = 0x00A0,
     ATI_EXT_MEM_CNTL          = 0x00AC,
     ATI_MEM_CNTL              = 0x00B0,
@@ -70,13 +71,18 @@ public:
     bool pci_io_write(uint32_t offset, uint32_t value, uint32_t size) ;
 
 protected:
+    uint32_t size_dep_read(uint8_t* buf, uint32_t size);
+    void size_dep_write(uint8_t* buf, uint32_t val, uint32_t size);
+    bool io_access_allowed(uint32_t offset, uint32_t* p_io_base);
     void write_reg(uint32_t offset, uint32_t value, uint32_t size);
 
 private:
-    uint32_t atirage_membuf_regs[9];    /* ATI Rage Memory Buffer Registers */
-    uint32_t atirage_scratch_regs[4];   /* ATI Rage Scratch Registers */
-    uint32_t atirage_cmdfifo_regs[3];   /* ATI Rage Command FIFO Registers */
-    uint32_t atirage_datapath_regs[12]; /* ATI Rage Data Path Registers*/
+    //uint32_t atirage_membuf_regs[9];    /* ATI Rage Memory Buffer Registers */
+    //uint32_t atirage_scratch_regs[4];   /* ATI Rage Scratch Registers */
+    //uint32_t atirage_cmdfifo_regs[3];   /* ATI Rage Command FIFO Registers */
+    //uint32_t atirage_datapath_regs[12]; /* ATI Rage Data Path Registers*/
+
+    uint8_t block_io_regs[256] = { 0 };
 
     uint8_t pci_cfg[256] = { 0 }; /* PCI configuration space */
 };
