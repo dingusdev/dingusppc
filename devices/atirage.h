@@ -1,8 +1,30 @@
+/*
+DingusPPC - The Experimental PowerPC Macintosh emulator
+Copyright (C) 2018-20 divingkatae and maximum
+                      (theweirdo)     spatium
+
+(Contact divingkatae#1017 or powermax#2286 on Discord for more info)
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 #ifndef ATI_RAGE_H
 #define ATI_RAGE_H
 
 #include <cinttypes>
 #include "pcidevice.h"
+#include "displayid.h"
 
 using namespace std;
 
@@ -19,10 +41,11 @@ enum {
     ATI_CRTC_H_SYNC_STRT_WID  = 0x0004,
     ATI_CRTC_V_TOTAL_DISP     = 0x0008,
     ATI_CRTC_V_SYNC_STRT_WID  = 0x000C,
+    ATI_CRTC_OFF_PITCH        = 0x0014,
     ATI_CRTC_INT_CNTL         = 0x0018,
     ATI_CRTC_GEN_CNTL         = 0x001C,
     ATI_DSP_CONFIG            = 0x0020,
-    ATI_DSP_TOGGLE            = 0x0024,
+    ATI_DSP_ON_OFF            = 0x0024,
     ATI_TIMER_CFG             = 0x0028,
     ATI_MEM_BUF_CNTL          = 0x002C,
     ATI_MEM_ADDR_CFG          = 0x0034,
@@ -83,7 +106,7 @@ class ATIRage : public PCIDevice
 {
 public:
     ATIRage(uint16_t dev_id);
-    ~ATIRage() = default;
+    ~ATIRage();
 
     /* MMIODevice methods */
     uint32_t read(uint32_t reg_start, uint32_t offset, int size);
@@ -104,7 +127,9 @@ public:
 protected:
     uint32_t size_dep_read(uint8_t* buf, uint32_t size);
     void size_dep_write(uint8_t* buf, uint32_t val, uint32_t size);
+    const char* get_reg_name(uint32_t reg_offset);
     bool io_access_allowed(uint32_t offset, uint32_t* p_io_base);
+    uint32_t read_reg(uint32_t offset, uint32_t size);
     void write_reg(uint32_t offset, uint32_t value, uint32_t size);
 
 private:
@@ -116,5 +141,7 @@ private:
     uint8_t block_io_regs[256] = { 0 };
 
     uint8_t pci_cfg[256] = { 0 }; /* PCI configuration space */
+
+    DisplayID* disp_id;
 };
 #endif /* ATI_RAGE_H */
