@@ -126,8 +126,12 @@ private:
         0x00, 0x00  // unknown defaults
     };
 
+    uint32_t int_mask2;
+    uint32_t int_clear2;
+    uint32_t int_levels2;
     uint32_t int_mask1;
     uint32_t int_clear1;
+    uint32_t int_levels1;
     uint32_t feat_ctrl;  // features control register
 
     /* device cells */
