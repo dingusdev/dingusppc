@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <iomanip>
 #include <fstream>
 #include <map>
-#include "ppcemu.h"
+#include "../cpu/ppc/ppcemu.h"
 #include "../cpu/ppc/ppcmmu.h"
 #include "../cpu/ppc/ppcdisasm.h"
 #include <thirdparty/loguru/loguru.hpp>

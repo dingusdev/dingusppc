@@ -13,6 +13,7 @@ include_directories(${SDL2_INCLUDE_DIRS})
 endif()
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/cpu/ppc/")
+add_subdirectory("${PROJECT_SOURCE_DIR}/debugger/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/devices/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/machines/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/thirdparty/loguru/")
@@ -26,12 +27,12 @@ include_directories("${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/devices"
 file(GLOB SOURCES "${PROJECT_SOURCE_DIR}/*.cpp"
                   "${PROJECT_SOURCE_DIR}/*.c"
                   "${PROJECT_SOURCE_DIR}/*.hpp"
-                  "${PROJECT_SOURCE_DIR}/*.h"
-                  "${PROJECT_SOURCE_DIR}/debugger/*.cpp")
+                  "${PROJECT_SOURCE_DIR}/*.h")
 
 file(GLOB TEST_SOURCES "${PROJECT_SOURCE_DIR}/cpu/ppc/test/*.cpp")
 
-add_executable(dingusppc ${SOURCES} $<TARGET_OBJECTS:cpu_ppc>
+add_executable(dingusppc ${SOURCES} $<TARGET_OBJECTS:debugger>
+                                    $<TARGET_OBJECTS:cpu_ppc>
                                     $<TARGET_OBJECTS:devices>
                                     $<TARGET_OBJECTS:machines>
                                     $<TARGET_OBJECTS:loguru>)
@@ -44,7 +45,8 @@ target_link_libraries(dingusppc ${SDL2_LIBRARIES})
 endif()
 
 
-add_executable(testppc ${TEST_SOURCES} $<TARGET_OBJECTS:cpu_ppc>
+add_executable(testppc ${TEST_SOURCES} $<TARGET_OBJECTS:debugger>
+                                       $<TARGET_OBJECTS:cpu_ppc>
                                        $<TARGET_OBJECTS:devices>
                                        $<TARGET_OBJECTS:machines>
                                        $<TARGET_OBJECTS:loguru>)
