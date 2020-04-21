@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <thirdparty/loguru/loguru.hpp>
 #include <cinttypes>
 #include "viacuda.h"
+#include "adb.h"
 
 using namespace std;
 
@@ -290,6 +291,7 @@ void ViaCuda::process_packet()
 
 void ViaCuda::process_adb_command(uint8_t cmd_byte, int data_count)
 {
+    int adb_dev = cmd_byte >> 4; //2 for keyboard, 3 for mouse
     int cmd = cmd_byte & 0xF;
 
     if(!cmd) {
@@ -302,11 +304,44 @@ void ViaCuda::process_adb_command(uint8_t cmd_byte, int data_count)
     }
     else if ((cmd & 0xC) == 8) {
         LOG_F(9, "Cuda: ADB Listen command requested\n");
-        response_header(CUDA_PKT_ADB, 0);
+        int adb_reg = cmd_byte & 0x3;
+        if (adb_dev == 2) {
+            if (adb_reg == 0 || adb_reg == 2)
+                response_header(CUDA_PKT_ADB, 0);
+            else
+                response_header(CUDA_PKT_ADB, 2);
+        }
+        else if (adb_dev == 3) {
+            if (adb_reg == 0)
+                response_header(CUDA_PKT_ADB, 0);
+            else
+                response_header(CUDA_PKT_ADB, 2);
+
+        }
+        else {
+            response_header(CUDA_PKT_ADB, 2);
+        }
     }
     else if ((cmd & 0xC) == 0xC) {
         LOG_F(9, "Cuda: ADB Talk command requested\n");
         response_header(CUDA_PKT_ADB, 0);
+        int adb_reg = cmd_byte & 0x3;
+        if (adb_dev == 2) {
+            if (adb_reg == 0 || adb_reg == 2)
+                response_header(CUDA_PKT_ADB, 0);
+            else
+                response_header(CUDA_PKT_ADB, 2);
+        }
+        else if (adb_dev == 3) {
+            if (adb_reg == 0)
+                response_header(CUDA_PKT_ADB, 0);
+            else
+                response_header(CUDA_PKT_ADB, 2);
+
+        }
+        else {
+            response_header(CUDA_PKT_ADB, 2);
+        }
     }
     else {
         LOG_F(ERROR, "Cuda: unsupported ADB command 0x%x \n", cmd);
