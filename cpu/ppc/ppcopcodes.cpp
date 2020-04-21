@@ -1786,15 +1786,16 @@ void ppc_tw() {
     }
 }
 
-void ppc_twi() {
-    simm = (int32_t)((int16_t)((ppc_cur_instruction) & 65535));
-    reg_b = (ppc_cur_instruction >> 16) & 31;
-    ppc_to = (ppc_cur_instruction >> 21) & 31;
-    if ((((int32_t)ppc_state.gpr[reg_a] < simm) & (ppc_to & 0x10)) || \
-        (((int32_t)ppc_state.gpr[reg_a] > simm)& (ppc_to & 0x08)) || \
-        (((int32_t)ppc_state.gpr[reg_a] == simm) & (ppc_to & 0x04)) || \
-        ((ppc_state.gpr[reg_a] < (uint32_t)simm) & (ppc_to & 0x02)) || \
-        ((ppc_state.gpr[reg_a] > (uint32_t)simm)& (ppc_to & 0x01))) {
+void ppc_twi()
+{
+    simm = (int32_t)((int16_t)((ppc_cur_instruction) & 0xFFFF));
+    reg_a  = (ppc_cur_instruction >> 16) & 0x1F;
+    ppc_to = (ppc_cur_instruction >> 21) & 0x1F;
+    if ((((int32_t)ppc_state.gpr[reg_a] < simm)  && (ppc_to & 0x10)) ||
+        (((int32_t)ppc_state.gpr[reg_a] > simm)  && (ppc_to & 0x08)) ||
+        (((int32_t)ppc_state.gpr[reg_a] == simm) && (ppc_to & 0x04)) ||
+        ((ppc_state.gpr[reg_a] < (uint32_t)simm) && (ppc_to & 0x02)) ||
+        ((ppc_state.gpr[reg_a] > (uint32_t)simm) && (ppc_to & 0x01))) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
     }
 }
