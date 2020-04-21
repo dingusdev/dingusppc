@@ -2002,16 +2002,21 @@ void ppc_stwbrx() {
     mem_write_dword(ppc_effective_address, ppc_result_d);
 }
 
-void ppc_stmw() {
+void ppc_stmw()
+{
     ppc_grab_regssa();
     ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
     ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
-    //How many words to store in memory - using a do-while for this
-    do {
-        mem_write_dword(ppc_effective_address, ppc_result_d);
+
+    /* what should we do if EA is unaligned? */
+    if (ppc_effective_address & 3) {
+        ppc_exception_handler(Except_Type::EXC_ALIGNMENT, 0x00000);
+    }
+
+    for (; reg_s <= 31; reg_s++) {
+        mem_write_dword(ppc_effective_address, ppc_state.gpr[reg_s]);
         ppc_effective_address += 4;
-        reg_d++;
-    } while (reg_d < 32);
+    }
 }
 
 void ppc_lbz() {
