@@ -38,8 +38,8 @@ public:
     ADB_Input();
     ~ADB_Input();
 
-    void adb_input_keybd();
-    void adb_input_mouse();
+    uint16_t adb_input_keybd(int reg);
+    uint16_t adb_input_mouse();
 
 private:
     SDL_Event adb_keybd_evt;

@@ -43,8 +43,10 @@ ADB_Input::ADB_Input() {
     this->ask_register2 = 0xFFFF;
 
 	while (SDL_PollEvent(&adb_keybd_evt)) {
-		this->adb_input_keybd();
-		SDL_Delay(20);
+		this->adb_input_keybd(2);
+		SDL_Delay(10);
+		this->adb_input_keybd(0);
+		SDL_Delay(10);
 	}
 
 	while (SDL_PollEvent(&adb_mouse_evt)) {
@@ -57,7 +59,7 @@ ADB_Input::~ADB_Input() {
 
 }
 
-void ADB_Input::adb_input_keybd() {
+uint16_t ADB_Input::adb_input_keybd(int reg) {
 	//Poll our SDL key event for any keystrokes.
 		switch (adb_keybd_evt.type) {
 		case SDL_KEYDOWN:
@@ -273,43 +275,43 @@ void ADB_Input::adb_input_keybd() {
 				ask_key_pressed = 0x5C;
 				break;
 			case SDLK_BACKSPACE:
-				//ask_key_pressed = 0x33;
+				ask_key_pressed = 0x33;
 				this->confirm_ask_reg_2 = true;
 				mod_key_pressed = 0x40;
 			case SDLK_CAPSLOCK:
-				//ask_key_pressed = 0x39;
+				ask_key_pressed = 0x39;
 				this->confirm_ask_reg_2 = true;
 				mod_key_pressed = 0x20;
 			case SDLK_LCTRL:
 			case SDLK_RCTRL:
-				//ask_key_pressed = 0x36;
+				ask_key_pressed = 0x36;
 				this->confirm_ask_reg_2 = true;
 				mod_key_pressed = 0x8;
 			case SDLK_LSHIFT:
 			case SDLK_RSHIFT:
-				//ask_key_pressed = 0x38;
+				ask_key_pressed = 0x38;
 				this->confirm_ask_reg_2 = true;
 				mod_key_pressed = 0x4;
 			case SDLK_LALT:
 			case SDLK_RALT:
-				//ask_key_pressed = 0x3A;
+				ask_key_pressed = 0x3A;
 				this->confirm_ask_reg_2 = true;
 				mod_key_pressed = 0x2;
 			case SDLK_HOME: //Temp key for the Command/Apple key
-				//ask_key_pressed = 0x37;
+				ask_key_pressed = 0x37;
 				this->confirm_ask_reg_2 = true;
 				mod_key_pressed = 0x1;
 			default:
 				break;
 			}
 
-			if (ask_register0 & 0x8000) {
-				ask_register0 &= 0x7FFF;
-				ask_register0 &= (ask_key_pressed << 8);
+			if (this->ask_register0 & 0x8000) {
+				this->ask_register0 &= 0x7FFF;
+				this->ask_register0 &= (ask_key_pressed << 8);
 			}
-			else if (ask_register0 & 0x80) {
-				ask_register0 &= 0xFF7F;
-				ask_register0 &= (ask_key_pressed);
+			else if (this->ask_register0 & 0x80) {
+				this->ask_register0 &= 0xFF7F;
+				this->ask_register0 &= (ask_key_pressed);
 			}
 
 			if (confirm_ask_reg_2) {
@@ -319,55 +321,68 @@ void ADB_Input::adb_input_keybd() {
 			break;
 
 		case SDL_KEYUP:
-			if (!(ask_register0 & 0x8000)) {
-				ask_register0 |= 0x8000;
+			if (!(this->ask_register0 & 0x8000)) {
+				this->ask_register0 |= 0x8000;
 			}
-			else if (ask_register0 & 0x80)
-				ask_register0 |= 0x0080;
+			else if (this->ask_register0 & 0x80)
+				this->ask_register0 |= 0x0080;
 
 			if (confirm_ask_reg_2) {
 				ask_register2 &= (mod_key_pressed << 8);
 				confirm_ask_reg_2 = false;
 			}
 		}
+
+		if (reg == 0) {
+			return this->ask_register0;
+		}
+		else if (reg == 2) {
+			return ask_register2;
+		}
+		else {
+			return 0;
+		}
 }
 
-void ADB_Input::adb_input_mouse() {
+uint16_t ADB_Input::adb_input_mouse() {
 	switch (adb_mouse_evt.motion.x) {
-		adb_mousereg0 &= 0x7F;
+		this->adb_mousereg0 &= 0x7F;
 
 		if (adb_mouse_evt.motion.xrel < 0) {
 			if (adb_mouse_evt.motion.xrel <= -64) {
-				adb_mousereg0 |= 0x7F;
+				this->adb_mousereg0 |= 0x7F;
 			}
 			else if (adb_mouse_evt.motion.xrel >= 63) {
-				adb_mousereg0 |= 0x3F;
+				this->adb_mousereg0 |= 0x3F;
 			}
 			else {
-				adb_mousereg0 |= adb_mouse_evt.motion.xrel;
+				this->adb_mousereg0 |= adb_mouse_evt.motion.xrel;
 			}
 		}
 	}
 	switch (adb_mouse_evt.motion.y) {
-		adb_mousereg0 &= 0x7F00;
+		this->adb_mousereg0 &= 0x7F00;
 
 		if (adb_mouse_evt.motion.yrel < 0) {
 			if (adb_mouse_evt.motion.yrel <= -64) {
-				adb_mousereg0 |= 0x7F00;
+				this->adb_mousereg0 |= 0x7F00;
 			}
 			else if (adb_mouse_evt.motion.yrel >= 63) {
-				adb_mousereg0 |= 0x3F00;
+				this->adb_mousereg0 |= 0x3F00;
 			}
 			else {
-				adb_mousereg0 |= (adb_mouse_evt.motion.yrel << 8);
+				this->adb_mousereg0 |= (adb_mouse_evt.motion.yrel << 8);
 			}
 		}
 
 	}
+
 	switch (adb_mouse_evt.type) {
-	case SDL_MOUSEBUTTONDOWN:
-		adb_mousereg0 &= 0x7FFF;
-	case SDL_MOUSEBUTTONUP:
-		adb_mousereg0 |= 0x8000;
+		case SDL_MOUSEBUTTONDOWN:
+			this->adb_mousereg0 &= 0x7FFF;
+		case SDL_MOUSEBUTTONUP:
+			this->adb_mousereg0 |= 0x8000;
 	}
+
+	return this->adb_mousereg0;
 }

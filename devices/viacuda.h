@@ -47,6 +47,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "hwcomponent.h"
 #include "nvram.h"
+#include "adb.h"
 #include "i2c.h"
 
 /** VIA register offsets. */
@@ -139,6 +140,7 @@ private:
     void (ViaCuda::*next_out_handler)(void);
 
     NVram* pram_obj;
+    ADB_Input* adb_obj;
 
     void print_enabled_ints(); /* print enabled VIA interrupts and their sources */
 
