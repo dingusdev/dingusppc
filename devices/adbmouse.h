@@ -19,40 +19,34 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef ADB_H
-#define ADB_H
+/** ADB input device definitions
+
+    Simulates Apple Desktop Bus (ADB) keyboard and mice
+
+ */
+
+#ifndef ADBMOUSE_H
+#define ADBMOUSE_H
 
 #include <array>
 #include <cinttypes>
 #include <thirdparty/SDL2/include/SDL.h>
 #include <thirdparty/SDL2/include/SDL_events.h>
-#include "adbkeybd.h"
-#include "adbmouse.h"
 
-class ADB_Bus
+class ADB_Mouse
 {
 public:
-    ADB_Bus();
-    ~ADB_Bus();
+    ADB_Mouse();
+    ~ADB_Mouse();
 
-    void add_adb_device(int type);
-    bool adb_verify_listen(int device, int reg);
-    bool adb_verify_talk(int device, int reg);
-
-    uint8_t get_input_byte(int offset);
-    uint8_t get_output_byte(int offset);
-
-    int get_input_len();
-    int get_output_len();
+    void input_mouse();
+    uint8_t copy_stream_byte(int offset);
 
 private:
-    ADB_Keybd* keyboard;
-    ADB_Mouse* mouse;
+    SDL_Event adb_mouse_evt;
 
-    uint8_t input_data_stream[16]; //temp buffer
-    int input_stream_len;
-    uint8_t output_data_stream[16]; //temp buffer
-    int output_stream_len;
+    uint16_t adb_mousereg0;
+    uint8_t reg_stream[2] = { 0 };
 };
 
 #endif /* ADB_H */

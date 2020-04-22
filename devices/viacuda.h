@@ -140,7 +140,7 @@ private:
     void (ViaCuda::*next_out_handler)(void);
 
     NVram* pram_obj;
-    ADB_Input* adb_obj;
+    ADB_Bus* adb_obj;
 
     void print_enabled_ints(); /* print enabled VIA interrupts and their sources */
 

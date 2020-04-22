@@ -47,7 +47,7 @@ ViaCuda::ViaCuda()
     //PRAM Pre-Initialization
     this->pram_obj = new NVram("pram.bin", 256);
 
-    this->adb_obj = new ADB_Input();
+    this->adb_obj = new ADB_Bus();
 
     this->init();
 }
@@ -307,33 +307,11 @@ void ViaCuda::process_adb_command(uint8_t cmd_byte, int data_count)
     else if ((cmd & 0xC) == 8) {
         LOG_F(9, "Cuda: ADB Listen command requested\n");
         int adb_reg = cmd_byte & 0x3;
-        if (adb_dev == 2) {
-            if (adb_reg == 0) {
-                uint16_t grab_keybd_0 = adb_obj->adb_input_keybd(0);
-                this->in_buf[2] = (uint8_t)(grab_keybd_0 >> 8);
-                this->in_buf[3] = (uint8_t)(grab_keybd_0 & 0xFF);
-                response_header(CUDA_PKT_ADB, 0);
+        if (adb_obj->adb_verify_listen(adb_dev, adb_reg)){
+            response_header(CUDA_PKT_ADB, 0);
+            for (int data_ptr = 0; data_ptr < adb_obj->get_output_len(); data_ptr++) {
+                this->in_buf[(2 + data_ptr)] = adb_obj->get_output_byte(data_ptr);
             }
-            else if (adb_reg == 2) {
-                uint16_t grab_keybd_2 = adb_obj->adb_input_keybd(2);
-                this->in_buf[2] = (uint8_t)(grab_keybd_2 >> 8);
-                this->in_buf[3] = (uint8_t)(grab_keybd_2 & 0xFF);
-                response_header(CUDA_PKT_ADB, 0);
-            }
-            else {
-                response_header(CUDA_PKT_ADB, 2);
-            }
-        }
-        else if (adb_dev == 3) {
-            if (adb_reg == 0) {
-                uint16_t grab_mouse_0 = adb_obj->adb_input_mouse();
-                this->in_buf[2] = (uint8_t)(grab_mouse_0 >> 8);
-                this->in_buf[3] = (uint8_t)(grab_mouse_0 & 0xFF);
-                response_header(CUDA_PKT_ADB, 0);
-            }
-            else
-                response_header(CUDA_PKT_ADB, 2);
-
         }
         else {
             response_header(CUDA_PKT_ADB, 2);
@@ -343,18 +321,8 @@ void ViaCuda::process_adb_command(uint8_t cmd_byte, int data_count)
         LOG_F(9, "Cuda: ADB Talk command requested\n");
         response_header(CUDA_PKT_ADB, 0);
         int adb_reg = cmd_byte & 0x3;
-        if (adb_dev == 2) {
-            if (adb_reg == 0 || adb_reg == 2)
-                response_header(CUDA_PKT_ADB, 0);
-            else
-                response_header(CUDA_PKT_ADB, 2);
-        }
-        else if (adb_dev == 3) {
-            if (adb_reg == 0)
-                response_header(CUDA_PKT_ADB, 0);
-            else
-                response_header(CUDA_PKT_ADB, 2);
-
+        if (adb_obj->adb_verify_talk(adb_dev, adb_reg)) {
+            response_header(CUDA_PKT_ADB, 0);
         }
         else {
             response_header(CUDA_PKT_ADB, 2);
