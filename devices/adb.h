@@ -22,12 +22,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef ADB_H
 #define ADB_H
 
-#include <array>
 #include <cinttypes>
 #include <thirdparty/SDL2/include/SDL.h>
 #include <thirdparty/SDL2/include/SDL_events.h>
-#include "adbkeybd.h"
-#include "adbmouse.h"
+
+enum adb_default_values { 
+    adb_reserved0, adb_reserved1, adb_encoded,   adb_relative,
+    adb_absolute,  adb_reserved5, adb_reserved6, adb_reserved7,
+    adb_other8,    adb_other9,    adb_other10,   adb_other11,
+    adb_other12,   adb_other13,   adb_other14,   adb_other15
+};
 
 class ADB_Bus
 {
@@ -35,9 +39,11 @@ public:
     ADB_Bus();
     ~ADB_Bus();
 
-    void add_adb_device(int type);
     bool adb_verify_listen(int device, int reg);
     bool adb_verify_talk(int device, int reg);
+
+    bool adb_keybd_listen(int reg);
+    bool adb_mouse_listen(int reg);
 
     uint8_t get_input_byte(int offset);
     uint8_t get_output_byte(int offset);
@@ -46,8 +52,27 @@ public:
     int get_output_len();
 
 private:
-    ADB_Keybd* keyboard;
-    ADB_Mouse* mouse;
+    int keyboard_access_no;
+    int mouse_access_no;
+
+    //Keyboard Variables
+
+    uint16_t adb_keybd_register0;
+    uint16_t adb_keybd_register2;
+    uint16_t adb_keybd_register3;
+
+    SDL_Event adb_keybd_evt;
+
+    uint8_t ask_key_pressed;
+    uint8_t mod_key_pressed;
+
+    bool confirm_ask_reg_2;
+
+    //Mouse Variables
+    SDL_Event adb_mouse_evt;
+
+    uint16_t adb_mouse_register0;
+    uint16_t adb_mouse_register3;
 
     uint8_t input_data_stream[16]; //temp buffer
     int input_stream_len;
