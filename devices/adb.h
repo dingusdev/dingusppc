@@ -39,8 +39,11 @@ public:
     ADB_Bus();
     ~ADB_Bus();
 
-    bool adb_verify_listen(int device, int reg);
-    bool adb_verify_talk(int device, int reg);
+    bool listen(int device, int reg);
+    bool talk(int device, int reg, uint16_t value);
+    bool bus_reset();
+    bool set_addr(int dev_addr, int new_addr);
+    bool flush(int dev_addr);
 
     bool adb_keybd_listen(int reg);
     bool adb_mouse_listen(int reg);

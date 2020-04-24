@@ -28,11 +28,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <cstring>
 #include "devices/adb.h"
+
 #include <thirdparty/SDL2/include/SDL.h>
 #include <thirdparty/SDL2/include/SDL_events.h>
 #include <thirdparty/SDL2/include/SDL_keycode.h>
 #include <thirdparty/SDL2/include/SDL_mouse.h>
 #include <thirdparty/SDL2/include/SDL_stdinc.h>
+
+#include <thirdparty/loguru/loguru.hpp>
 
 using namespace std;
 
@@ -54,7 +57,7 @@ ADB_Bus::~ADB_Bus() {
 
 }
 
-bool ADB_Bus::adb_verify_listen(int device, int reg) {
+bool ADB_Bus::listen(int device, int reg) {
 	if (device == keyboard_access_no) {
 		if (adb_keybd_listen(reg)) {
 			return true;
@@ -71,11 +74,28 @@ bool ADB_Bus::adb_verify_listen(int device, int reg) {
 			return false;
 		}
 	}
-	
+	else {
+
+		return false;
+	}
+}
+
+bool ADB_Bus::talk(int device, int reg, uint16_t value) {
+	//temp code
 	return false;
 }
 
-bool ADB_Bus::adb_verify_talk(int device, int reg) {
+bool ADB_Bus::bus_reset() {
+	//temp code
+	return true;
+}
+
+bool ADB_Bus::set_addr(int dev_addr, int new_addr) {
+	//temp code
+	return false;
+}
+
+bool ADB_Bus::flush(int dev_addr) {
 	//temp code
 	return false;
 }

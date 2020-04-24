@@ -307,7 +307,7 @@ void ViaCuda::process_adb_command(uint8_t cmd_byte, int data_count)
     else if ((cmd & 0xC) == 8) {
         LOG_F(9, "Cuda: ADB Listen command requested\n");
         int adb_reg = cmd_byte & 0x3;
-        if (adb_obj->adb_verify_listen(adb_dev, adb_reg)){
+        if (adb_obj->listen(adb_dev, adb_reg)){
             response_header(CUDA_PKT_ADB, 0);
             for (int data_ptr = 0; data_ptr < adb_obj->get_output_len(); data_ptr++) {
                 this->in_buf[(2 + data_ptr)] = adb_obj->get_output_byte(data_ptr);
@@ -321,7 +321,7 @@ void ViaCuda::process_adb_command(uint8_t cmd_byte, int data_count)
         LOG_F(9, "Cuda: ADB Talk command requested\n");
         response_header(CUDA_PKT_ADB, 0);
         int adb_reg = cmd_byte & 0x3;
-        if (adb_obj->adb_verify_talk(adb_dev, adb_reg)) {
+        if (adb_obj->talk(adb_dev, adb_reg, this->in_buf[2])) {
             response_header(CUDA_PKT_ADB, 0);
         }
         else {
