@@ -323,32 +323,37 @@ bool ADB_Bus::adb_keybd_listen(int reg) {
                 ask_key_pressed = 0x5C;
                 break;
             case SDLK_BACKSPACE:
-                ask_key_pressed = 0x33;
+                //ask_key_pressed = 0x33;
                 confirm_ask_reg_2 = true;
                 mod_key_pressed = 0x40;
+                break;
             case SDLK_CAPSLOCK:
-                ask_key_pressed = 0x39;
+                //ask_key_pressed = 0x39;
                 confirm_ask_reg_2 = true;
                 mod_key_pressed = 0x20;
-            case SDLK_LCTRL:
-            case SDLK_RCTRL:
-                ask_key_pressed = 0x36;
+                break;
+            case SDLK_RALT:
+            case SDLK_RCTRL: //Temp key for Control key
+                //ask_key_pressed = 0x36;
                 confirm_ask_reg_2 = true;
                 mod_key_pressed = 0x8;
+                break;
             case SDLK_LSHIFT:
             case SDLK_RSHIFT:
-                ask_key_pressed = 0x38;
+                //ask_key_pressed = 0x38;
                 confirm_ask_reg_2 = true;
                 mod_key_pressed = 0x4;
+                break;
             case SDLK_LALT:
-            case SDLK_RALT:
-                ask_key_pressed = 0x3A;
+                //ask_key_pressed = 0x3A;
                 confirm_ask_reg_2 = true;
                 mod_key_pressed = 0x2;
-            case SDLK_HOME: //Temp key for the Command/Apple key
-                ask_key_pressed = 0x37;
+                break;
+            case SDLK_LCTRL: //Temp key for the Command/Apple key
+                //ask_key_pressed = 0x37;
                 confirm_ask_reg_2 = true;
                 mod_key_pressed = 0x1;
+                break;
             default:
                 break;
             }
