@@ -88,11 +88,11 @@ enum {
 
 /** Cuda pseudo commands. */
 enum {
-    CUDA_START_STOP_AUTO_POLL = 0x01, /* start/stop device auto-polling */
+    CUDA_START_STOP_AUTOPOLL  = 0x01, /* start/stop device auto-polling */
     CUDA_READ_PRAM            = 0x07, /* read parameter RAM */
     CUDA_WRITE_PRAM           = 0x0C, /* write parameter RAM */
-    CUDA_SET_AUTO_RATE        = 0x14, /* set auto-polling rate */
-    CUDA_GET_AUTO_RATE        = 0x16, /* get auto-polling rate */
+    CUDA_SET_AUTOPOLL_RATE    = 0x14, /* set auto-polling rate */
+    CUDA_GET_AUTOPOLL_RATE    = 0x16, /* get auto-polling rate */
     CUDA_READ_WRITE_I2C       = 0x22, /* read/write I2C device */
     CUDA_COMB_FMT_I2C         = 0x25, /* combined format I2C transaction */
     CUDA_OUT_PB0              = 0x26, /* output one bit to Cuda's PB0 line */
@@ -132,6 +132,7 @@ private:
     uint8_t out_buf[16];
     int32_t out_count;
     int32_t out_pos;
+    uint8_t poll_rate;
 
     bool    is_open_ended;
     uint8_t curr_i2c_addr;

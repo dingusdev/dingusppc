@@ -65,7 +65,7 @@ void ViaCuda::init()
     this->treq        = 1;
     this->in_count    = 0;
     this->out_count   = 0;
-
+    this->poll_rate   = 11;
 }
 
 uint8_t ViaCuda::read(int reg)
@@ -337,17 +337,14 @@ void ViaCuda::process_adb_command(uint8_t cmd_byte, int data_count)
 void ViaCuda::pseudo_command(int cmd, int data_count)
 {
     switch (cmd) {
-    case CUDA_START_STOP_AUTO_POLL:
-        response_header(CUDA_PKT_PSEUDO, 0);
-        if (this->pram_obj->read_byte(this->in_buf[2])) {
-            if (this->via_regs[VIA_B] & 0x8) {
-                LOG_F(INFO, "Auto-polling started \n");
-                this->via_regs[VIA_ACR] |= 0x10;
-                this->via_regs[VIA_SR] |= CUDA_PKT_PSEUDO;
-                this->via_regs[VIA_B] &= ~0x20;
-            }
+    case CUDA_START_STOP_AUTOPOLL:
+        if (this->in_buf[2]) {
+            LOG_F(INFO, "Cuda: autopoll started, rate: %dms", this->poll_rate);
         }
-
+        else {
+            LOG_F(INFO, "Cuda: autopoll stopped");
+        }
+        response_header(CUDA_PKT_PSEUDO, 0);
         break;
     case CUDA_READ_PRAM:
         response_header(CUDA_PKT_PSEUDO, 0);
@@ -357,14 +354,15 @@ void ViaCuda::pseudo_command(int cmd, int data_count)
         response_header(CUDA_PKT_PSEUDO, 0);
         this->pram_obj->write_byte(this->in_buf[2], this->in_buf[3]);
         break;
-    case CUDA_SET_AUTO_RATE:
+    case CUDA_SET_AUTOPOLL_RATE:
+        this->poll_rate = this->in_buf[2];
+        LOG_F(INFO, "Cuda: autopoll rate set to: %d", this->poll_rate);
         response_header(CUDA_PKT_PSEUDO, 0);
-        this->pram_obj->write_byte(this->in_buf[2], this->in_buf[3]);
-        LOG_F(INFO, "Auto Rate set to: %d \n", this->in_buf[3]);
         break;
-    case CUDA_GET_AUTO_RATE:
+    case CUDA_GET_AUTOPOLL_RATE:
         response_header(CUDA_PKT_PSEUDO, 0);
-        this->pram_obj->read_byte(this->in_buf[2]);
+        this->out_buf[3] = this->poll_rate;
+        this->out_count++;
         break;
     case CUDA_READ_WRITE_I2C:
         response_header(CUDA_PKT_PSEUDO, 0);
