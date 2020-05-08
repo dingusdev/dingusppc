@@ -22,6 +22,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //The main runfile - main.cpp
 //This is where the magic begins
 
+//#define SDL
+
 #include <thirdparty/loguru/loguru.hpp>
 #include <iostream>
 #include <fstream>
@@ -32,7 +34,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ppcemu.h"
 #include "debugger/debugger.h"
 #include "machines/machinefactory.h"
+#ifdef SDL
 #include <thirdparty/SDL2/include/SDL.h>
+#endif
 
 using namespace std;
 
@@ -117,10 +121,12 @@ int main(int argc, char **argv)
             goto bail;
         }
 
+#ifdef SDL
         if (SDL_Init(SDL_INIT_AUDIO)){
             LOG_F(ERROR, "SDL_Init error: %s", SDL_GetError());
             goto bail;
         }
+#endif
 
         if ((checker == "1") || (checker == "realtime") || \
             (checker == "-realtime") || (checker == "/realtime")) {

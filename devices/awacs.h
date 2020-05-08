@@ -28,10 +28,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef AWAC_H
 #define AWAC_H
 
+//#define SDL
+
 #include <cinttypes>
 #include "i2c.h"
 #include "dbdma.h"
+#ifdef SDL
 #include <thirdparty/SDL2/include/SDL.h>
+//#else
+//#include "thirdparty/portaudio/include/portaudio.h"
+#endif
+//#include "libsoundio/soundio/soundio.h"
+#include <thirdparty/libsoundio/soundio/soundio.h>
 
 /** AWAC registers offsets. */
 enum {
@@ -113,11 +121,9 @@ public:
     /* DMACallback methods */
     void dma_start();
     void dma_end();
-    void dma_push(uint8_t *buf, int size);
-    void dma_pull(uint8_t *buf, int size);
 
 protected:
-    uint32_t convert_data(const uint8_t *data, int len);
+    void open_stream(int sample_rate);
 
 private:
     uint32_t snd_ctrl_reg = {0};
@@ -125,8 +131,10 @@ private:
     uint8_t  is_busy = 0;
     AudioProcessor *audio_proc;
 
-    SDL_AudioDeviceID snd_out_dev = 0;
-    bool wake_up = false;
+    SoundIoDevice *out_device;
+    SoundIoOutStream *out_stream;
+    bool out_stream_ready;
+    int out_sample_rate;
 
     DMAChannel  *dma_out_ch;
 

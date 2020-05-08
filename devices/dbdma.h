@@ -63,8 +63,8 @@ class DMACallback {
 public:
     virtual void dma_start(void) = 0;
     virtual void dma_end(void)   = 0;
-    virtual void dma_push(uint8_t *buf, int size) = 0;
-    virtual void dma_pull(uint8_t *buf, int size)  = 0;
+    //virtual void dma_push(uint8_t *buf, int size) = 0;
+    //virtual void dma_pull(uint8_t *buf, int size)  = 0;
 };
 
 class DMAChannel {

@@ -29,6 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "cpu/ppc/ppcemu.h"
 #include "devices/mpc106.h"
 #include "devices/machineid.h"
+#include "devices/soundserver.h"
 #include "devices/macio.h"
 #include "devices/viacuda.h"
 #include "devices/spdram.h"
@@ -72,6 +73,8 @@ int create_gossamer()
     gMachineObj->add_component("MachineID", new GossamerID(0x3d8c));
     grackle_obj->add_mmio_region(0xFF000004, 4096,
         dynamic_cast<MMIODevice *>(gMachineObj->get_comp_by_name("MachineID")));
+
+    gMachineObj->add_component("SoundServer", new SoundServer());
 
     /* add the Heathrow I/O controller */
     gMachineObj->add_component("Heathrow", new HeathrowIC);

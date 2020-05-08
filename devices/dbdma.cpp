@@ -232,9 +232,6 @@ void DMAChannel::start()
     this->queue_len = 0;
 
     this->dma_cb->dma_start();
-
-    //while (this->interpret_cmd() != 7) {
-    //}
 }
 
 void DMAChannel::resume()
