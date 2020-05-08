@@ -18,9 +18,10 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/devices/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/machines/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/thirdparty/loguru/")
 
-#option(BUILD_DYNAMIC_LIBS "Build libsoundio dynamic libraries" OFF)
-option(BUILD_EXAMPLE_PROGRAMS "Build libsoundio example programs" OFF)
-option(BUILD_TESTS "Build libsoundio tests" OFF)
+set(BUILD_EXAMPLE_PROGRAMS OFF CACHE BOOL "Build libsoundio example programs")
+set(BUILD_TESTS OFF CACHE BOOL "Build libsoundio tests")
+set(BUILD_DYNAMIC_LIBS OFF CACHE BOOL "Build libsoundio dynamic libs")
+
 add_subdirectory("${PROJECT_SOURCE_DIR}/thirdparty/libsoundio")
 
 include_directories("${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/devices"
@@ -35,6 +36,8 @@ file(GLOB SOURCES "${PROJECT_SOURCE_DIR}/*.cpp"
                   "${PROJECT_SOURCE_DIR}/*.hpp"
                   "${PROJECT_SOURCE_DIR}/*.h")
 
+get_directory_property(LIBSOUNDIO_LIBS DIRECTORY thirdparty/libsoundio DEFINITION LIBSOUNDIO_LIBS)
+
 file(GLOB TEST_SOURCES "${PROJECT_SOURCE_DIR}/cpu/ppc/test/*.cpp")
 
 add_executable(dingusppc ${SOURCES} $<TARGET_OBJECTS:debugger>
@@ -47,7 +50,7 @@ if (WIN32)
 target_link_libraries(dingusppc "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2.lib"
                                 "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2main.lib")
 else()
-target_link_libraries(dingusppc libsoundio_shared ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
+target_link_libraries(dingusppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
 endif()
 
 
@@ -61,7 +64,7 @@ if (WIN32)
 target_link_libraries(testppc "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2.lib"
                               "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2main.lib")
 else()
-target_link_libraries(testppc libsoundio_shared ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
+target_link_libraries(testppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
 endif()
 
 add_custom_command(
