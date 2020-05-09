@@ -4,7 +4,8 @@ project(dingusppc)
 set(CMAKE_CXX_STANDARD 11)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
+#set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 
 if (NOT WIN32)
@@ -20,7 +21,8 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/thirdparty/loguru/")
 
 set(BUILD_EXAMPLE_PROGRAMS OFF CACHE BOOL "Build libsoundio example programs")
 set(BUILD_TESTS OFF CACHE BOOL "Build libsoundio tests")
-set(BUILD_DYNAMIC_LIBS OFF CACHE BOOL "Build libsoundio dynamic libs")
+set(BUILD_DYNAMIC_LIBS ON CACHE BOOL "Build libsoundio dynamic libs")
+set(BUILD_STATIC_LIBS ON CACHE BOOL "Build libsoundio static libs")
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/thirdparty/libsoundio")
 
@@ -48,7 +50,8 @@ add_executable(dingusppc ${SOURCES} $<TARGET_OBJECTS:debugger>
 
 if (WIN32)
 target_link_libraries(dingusppc "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2.lib"
-                                "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2main.lib")
+                                "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2main.lib"
+                                libsoundio_static ${LIBSOUNDIO_LIBS})
 else()
 target_link_libraries(dingusppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
 endif()
@@ -62,7 +65,8 @@ add_executable(testppc ${TEST_SOURCES} $<TARGET_OBJECTS:debugger>
 
 if (WIN32)
 target_link_libraries(testppc "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2.lib"
-                              "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2main.lib")
+                              "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2main.lib"
+                              libsoundio_static ${LIBSOUNDIO_LIBS})
 else()
 target_link_libraries(testppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
 endif()

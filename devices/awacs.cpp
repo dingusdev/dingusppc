@@ -144,10 +144,23 @@ static void sound_out_callback(struct SoundIoOutStream *outstream,
     struct SoundIoChannelArea *areas;
     DMAChannel *dma_ch = (DMAChannel *)outstream->userdata; /* C API baby! */
     int n_channels = outstream->layout.channel_count;
-    bool stop = false;
+    //bool stop = false;
 
-    buf_len = (frame_count_max * n_channels) << 1;
-    frame_count = frame_count_max;
+    if (!dma_ch->is_active()) {
+        LOG_F(INFO, "pausing result: %s",
+            soundio_strerror(soundio_outstream_pause(outstream, true)));
+        return;
+    }
+
+    if (frame_count_max > 512) {
+        frame_count = 512;
+    }
+    else {
+        frame_count = frame_count_max;
+    }
+
+    buf_len = (frame_count * n_channels) << 1;
+    //frame_count = frame_count_max;
 
     //LOG_F(INFO, "frame_count_min=%d", frame_count_min);
     //LOG_F(INFO, "frame_count_max=%d", frame_count_max);
@@ -171,7 +184,7 @@ static void sound_out_callback(struct SoundIoOutStream *outstream,
             /* fill the buffer with silence */
             //LOG_F(ERROR, "rem_len=%d", rem_len);
             insert_silence(areas, rem_len >> 2);
-            stop = true;
+            //stop = true;
             break;
         }
     }
@@ -181,10 +194,10 @@ static void sound_out_callback(struct SoundIoOutStream *outstream,
         return;
     }
 
-    if (stop) {
-        LOG_F(INFO, "pausing result: %s",
-            soundio_strerror(soundio_outstream_pause(outstream, true)));
-    }
+    //if (stop) {
+    //    LOG_F(INFO, "pausing result: %s",
+    //        soundio_strerror(soundio_outstream_pause(outstream, true)));
+    //}
 }
 
 void AWACDevice::open_stream(int sample_rate)

@@ -220,6 +220,16 @@ int DMAChannel::get_data(uint32_t req_len, uint32_t *avail_len, uint8_t **p_data
     return -1; /* tell the caller there is no more data */
 }
 
+bool DMAChannel::is_active()
+{
+    if (this->ch_stat & CH_STAT_DEAD || !(this->ch_stat & CH_STAT_ACTIVE)) {
+        return false;
+    }
+    else {
+        return true;
+    }
+}
+
 void DMAChannel::start()
 {
     if (this->ch_stat & CH_STAT_PAUSE) {
