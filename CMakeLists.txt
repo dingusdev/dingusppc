@@ -53,7 +53,7 @@ target_link_libraries(dingusppc "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/S
                                 "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2main.lib"
                                 libsoundio_static ${LIBSOUNDIO_LIBS})
 else()
-target_link_libraries(dingusppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
+target_link_libraries(dingusppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES} ${CMAKE_DL_LIBS})
 endif()
 
 
@@ -68,7 +68,7 @@ target_link_libraries(testppc "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL
                               "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2main.lib"
                               libsoundio_static ${LIBSOUNDIO_LIBS})
 else()
-target_link_libraries(testppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
+target_link_libraries(testppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES} ${CMAKE_DL_LIBS})
 endif()
 
 add_custom_command(
