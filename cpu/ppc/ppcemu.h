@@ -22,22 +22,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef PPCEMU_H
 #define PPCEMU_H
 
-#include <cinttypes>
-#include <string>
-#include <setjmp.h>
-#include "endianswap.h"
 #include "devices/memctrlbase.h"
+#include "endianswap.h"
+#include <cinttypes>
+#include <setjmp.h>
+#include <string>
 
-//Uncomment this to help debug the emulator further
+// Uncomment this to help debug the emulator further
 //#define EXHAUSTIVE_DEBUG 1
 
-//Uncomment this to have a more graceful approach to illegal opcodes
+// Uncomment this to have a more graceful approach to illegal opcodes
 //#define ILLEGAL_OP_SAFE 1
 
-//Uncomment this to use GCC built-in functions.
+// Uncomment this to use GCC built-in functions.
 //#define USE_GCC_BUILTINS 1
 
-//Uncomment this to use Visual Studio built-in functions.
+// Uncomment this to use Visual Studio built-in functions.
 //#define USE_VS_BUILTINS 1
 
 enum endian_switch { big_end = 0, little_end = 1 };
@@ -45,8 +45,8 @@ enum endian_switch { big_end = 0, little_end = 1 };
 typedef void (*PPCOpcode)(void);
 
 union FPR_storage {
-    double    dbl64_r; // double floating-point representation
-    uint64_t  int64_r; // double integer representation
+    double dbl64_r;      // double floating-point representation
+    uint64_t int64_r;    // double integer representation
 };
 
 /**
@@ -65,7 +65,7 @@ fpscr = FP Status and Condition Register
 
 typedef struct struct_ppc_state {
     FPR_storage fpr[32];
-    uint32_t pc; //Referred as the CIA in the PPC manual
+    uint32_t pc;    // Referred as the CIA in the PPC manual
     uint32_t gpr[32];
     uint32_t cr;
     uint32_t fpscr;
@@ -73,7 +73,7 @@ typedef struct struct_ppc_state {
     uint32_t spr[1024];
     uint32_t msr;
     uint32_t sr[16];
-    bool reserve; //reserve bit used for lwarx and stcwx
+    bool reserve;    // reserve bit used for lwarx and stcwx
 } SetPRS;
 
 extern SetPRS ppc_state;
@@ -94,10 +94,7 @@ enum SPR : int {
 };
 
 /** symbolic names for frequently used SPRs */
-enum TBR : int {
-    TBL = 0,
-    TBU = 1
-};
+enum TBR : int { TBL = 0, TBU = 1 };
 
 /** symbolic names for common PPC processors */
 enum PPC_VER : uint32_t {
@@ -147,10 +144,10 @@ SUPERVISOR MODEL
 536 - 543 are the Data BAT registers
 **/
 
-extern uint32_t opcode_value; //used for interpreting opcodes
-extern uint64_t timebase_counter; //used for storing time base value
+extern uint32_t opcode_value;        // used for interpreting opcodes
+extern uint64_t timebase_counter;    // used for storing time base value
 
-//Additional steps to prevent overflow?
+// Additional steps to prevent overflow?
 extern int32_t add_result;
 extern int32_t simult_result;
 extern uint32_t uiadd_result;
@@ -176,19 +173,19 @@ extern uint32_t rot_mb;
 extern uint32_t rot_me;
 extern uint32_t uimm;
 extern uint32_t grab_sr;
-extern uint32_t grab_inb; //This is for grabbing the number of immediate bytes for loading and storing
+extern uint32_t grab_inb;    // This is for grabbing the number of immediate bytes for loading and storing
 extern uint32_t ppc_to;
 extern int32_t simm;
 extern int32_t adr_li;
 extern int32_t br_bd;
 
-//Used for GP calcs
+// Used for GP calcs
 extern uint32_t ppc_result_a;
 extern uint32_t ppc_result_b;
 extern uint32_t ppc_result_c;
 extern uint32_t ppc_result_d;
 
-//Used for FP calcs
+// Used for FP calcs
 extern uint64_t ppc_result64_a;
 extern uint64_t ppc_result64_b;
 extern uint64_t ppc_result64_c;
@@ -197,7 +194,7 @@ extern uint64_t ppc_result64_d;
 
 /* The precise end of a basic block. */
 enum class BB_end_kind {
-    BB_NONE = 0, /* no basic block end is reached       */
+    BB_NONE   = 0, /* no basic block end is reached       */
     BB_BRANCH = 1, /* a branch instruction is encountered */
     BB_EXCEPTION,  /* an exception is occured             */
     BB_RFI         /* the rfi instruction is encountered  */
@@ -215,10 +212,10 @@ enum class Except_Type {
     EXC_NO_FPU,
     EXC_DECR,
     EXC_SYSCALL = 12,
-    EXC_TRACE = 13
+    EXC_TRACE   = 13
 };
 
-//extern bool bb_end;
+// extern bool bb_end;
 extern BB_end_kind bb_kind;
 
 extern jmp_buf exc_env;
@@ -229,23 +226,23 @@ extern bool grab_return;
 
 extern bool power_on;
 
-extern bool is_601; //For PowerPC 601 Emulation
-extern bool is_gekko; //For GameCube Emulation
-extern bool is_altivec; //For Altivec Emulation
-extern bool is_64bit; //For PowerPC G5 Emulation
+extern bool is_601;        // For PowerPC 601 Emulation
+extern bool is_gekko;      // For GameCube Emulation
+extern bool is_altivec;    // For Altivec Emulation
+extern bool is_64bit;      // For PowerPC G5 Emulation
 
-//Important Addressing Integers
+// Important Addressing Integers
 extern uint32_t ppc_cur_instruction;
 extern uint32_t ppc_effective_address;
 extern uint32_t ppc_next_instruction_address;
 
-//Profiling Stats
+// Profiling Stats
 extern uint32_t mmu_translations_num;
 extern uint32_t exceptions_performed;
 extern uint32_t supervisor_inst_num;
 
-//Function prototypes
-extern void ppc_cpu_init(MemCtrlBase *mem_ctrl, uint32_t proc_version);
+// Function prototypes
+extern void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t proc_version);
 extern void ppc_mmu_init();
 
 void ppc_illegalop();
@@ -293,15 +290,13 @@ void ppc_fp_changecrf1();
 void ppc_tbr_update();
 
 /* Exception handlers. */
-[[noreturn]] void ppc_exception_handler(Except_Type exception_type,
-    uint32_t srr1_bits);
-[[noreturn]] void dbg_exception_handler(Except_Type exception_type,
-    uint32_t srr1_bits);
+[[noreturn]] void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits);
+[[noreturn]] void dbg_exception_handler(Except_Type exception_type, uint32_t srr1_bits);
 
-//MEMORY DECLARATIONS
+// MEMORY DECLARATIONS
 extern MemCtrlBase* mem_ctrl_instance;
 
-//The functions used by the PowerPC processor
+// The functions used by the PowerPC processor
 extern void ppc_bcctr();
 extern void ppc_bcctrl();
 extern void ppc_bclr();
@@ -599,7 +594,7 @@ extern void ppc_fsqrtsdot();
 extern void ppc_fcmpo();
 extern void ppc_fcmpu();
 
-//Power-specific instructions
+// Power-specific instructions
 extern void power_abs();
 extern void power_absdot();
 extern void power_abso();
@@ -667,17 +662,17 @@ extern void power_srlqdot();
 extern void power_srq();
 extern void power_srqdot();
 
-//Gekko instructions
+// Gekko instructions
 extern void ppc_psq_l();
 extern void ppc_psq_lu();
 extern void ppc_psq_st();
 extern void ppc_psq_stu();
 
-//AltiVec instructions
+// AltiVec instructions
 
-//64-bit instructions
+// 64-bit instructions
 
-//G5+ instructions
+// G5+ instructions
 
 extern void ppc_main_opcode(void);
 extern void ppc_exec(void);
@@ -685,9 +680,9 @@ extern void ppc_exec_single(void);
 extern void ppc_exec_until(uint32_t goal_addr);
 
 /* debugging support API */
-void print_gprs(void); /* print content of the general purpose registers */
-void print_fprs(void); /* print content of the floating-point registers  */
-uint64_t get_reg(std::string &reg_name); /* get content of the register reg_name */
-void set_reg(std::string &reg_name, uint64_t val); /* set reg_name to val */
+void print_gprs(void);                   /* print content of the general purpose registers */
+void print_fprs(void);                   /* print content of the floating-point registers  */
+uint64_t get_reg(std::string& reg_name); /* get content of the register reg_name */
+void set_reg(std::string& reg_name, uint64_t val); /* set reg_name to val */
 
 #endif /* PPCEMU_H */

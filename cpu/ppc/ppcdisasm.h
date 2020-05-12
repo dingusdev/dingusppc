@@ -26,17 +26,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 
 typedef struct PPCDisasmContext {
-    uint32_t    instr_addr;
-    uint32_t    instr_code;
+    uint32_t instr_addr;
+    uint32_t instr_code;
     std::string instr_str;
-    bool        simplified; /* true if we should output simplified mnemonics */
+    bool simplified; /* true if we should output simplified mnemonics */
 } PPCDisasmContext;
 
-std::string disassemble_single(PPCDisasmContext *ctx);
+std::string disassemble_single(PPCDisasmContext* ctx);
 
 int test_ppc_disasm(void);
 
 /** sign-extend an integer. */
-#define SIGNEXT(x, sb) ((x) | (((x) & (1 << (sb))) ? ~((1 << (sb))-1) : 0))
+#define SIGNEXT(x, sb) ((x) | (((x) & (1 << (sb))) ? ~((1 << (sb)) - 1) : 0))
 
 #endif /* PPCDISASM_H */

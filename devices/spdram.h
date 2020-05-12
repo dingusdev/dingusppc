@@ -47,31 +47,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SPD_EEPROM_H
 #define SPD_EEPROM_H
 
-#include <cinttypes>
-#include <string>
-#include <stdexcept>
-#include <thirdparty/loguru/loguru.hpp>
-#include "i2c.h"
 #include "hwcomponent.h"
+#include "i2c.h"
+#include <cinttypes>
+#include <stdexcept>
+#include <string>
+#include <thirdparty/loguru/loguru.hpp>
 
-enum RAMType : int {
-    SDRAM = 4
-};
+enum RAMType : int { SDRAM = 4 };
 
 
 class SpdSdram168 : public HWComponent, public I2CDevice {
 public:
     SpdSdram168(uint8_t addr) {
         this->dev_addr = addr;
-        this->pos = 0;
+        this->pos      = 0;
     };
 
     ~SpdSdram168() = default;
 
-    bool supports_type(HWCompType type) { return type == HWCompType::RAM; };
+    bool supports_type(HWCompType type) {
+        return type == HWCompType::RAM;
+    };
 
     void set_capacity(int capacity_megs) {
-        switch(capacity_megs) {
+        switch (capacity_megs) {
         case 32:
             this->eeprom_data[3] = 0xC; /* 12 rows    */
             this->eeprom_data[4] = 0x8; /* 8  columns */
@@ -95,11 +95,12 @@ public:
         default:
             throw std::invalid_argument(std::string("Unsupported capacity!"));
         }
-        LOG_F(INFO, "SDRAM capacity set to %dMB, I2C addr = 0x%X",
-            capacity_megs, this->dev_addr);
+        LOG_F(INFO, "SDRAM capacity set to %dMB, I2C addr = 0x%X", capacity_megs, this->dev_addr);
     };
 
-    void start_transaction() { this->pos = 0; };
+    void start_transaction() {
+        this->pos = 0;
+    };
 
     bool send_subaddress(uint8_t sub_addr) {
         this->pos = sub_addr;
@@ -112,7 +113,7 @@ public:
         return true;
     };
 
-    bool receive_byte(uint8_t *p_data) {
+    bool receive_byte(uint8_t* p_data) {
         if (this->pos >= this->eeprom_data[0]) {
             this->pos = 0; /* attempt to read past SPD data should wrap around */
         }
@@ -123,18 +124,18 @@ public:
 
 private:
     uint8_t dev_addr; /* I2C address */
-    int pos; /* actual read position */
+    int pos;          /* actual read position */
 
     /* EEPROM content */
     uint8_t eeprom_data[256] = {
-        128, /* number of bytes present */
-        8,   /* log2(EEPROM size) */
+        128,            /* number of bytes present */
+        8,              /* log2(EEPROM size) */
         RAMType::SDRAM, /* memory type */
 
         /* the following fields will be set up in set_capacity() */
         0, /* number of row addresses */
         0, /* number of column addresses */
-        0 /* number of banks */
+        0  /* number of banks */
     };
 };
 

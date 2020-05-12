@@ -28,9 +28,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef AWAC_H
 #define AWAC_H
 
-#include <cinttypes>
-#include "i2c.h"
 #include "dbdma.h"
+#include "i2c.h"
+#include <cinttypes>
 #include <thirdparty/SDL2/include/SDL.h>
 
 /** AWAC registers offsets. */
@@ -42,7 +42,7 @@ enum {
 
 /** AWAC manufacturer and revision. */
 #define AWAC_MAKER_CRYSTAL 1
-#define AWAC_REV_SCREAMER  3
+#define AWAC_REV_SCREAMER 3
 
 /** Apple source calls this kValidData but doesn't explain
     what it actually means. It seems like it's used to check
@@ -57,7 +57,9 @@ public:
     AudioProcessor()  = default;
     ~AudioProcessor() = default;
 
-    void start_transaction() { this->pos = 0; };
+    void start_transaction() {
+        this->pos = 0;
+    };
 
     bool send_subaddress(uint8_t sub_addr) {
         if ((sub_addr & 0xF) > 6)
@@ -65,8 +67,7 @@ public:
 
         this->sub_addr = sub_addr & 0xF;
         this->auto_inc = !!(sub_addr & 0x10);
-        LOG_F(INFO, "TDA7433 subaddress = 0x%X, auto increment = %d",
-            this->sub_addr, this->auto_inc);
+        LOG_F(INFO, "TDA7433 subaddress = 0x%X, auto increment = %d", this->sub_addr, this->auto_inc);
         this->pos++;
         return true;
     };
@@ -76,7 +77,7 @@ public:
             return send_subaddress(data);
         } else if (this->sub_addr <= 6) {
             LOG_F(INFO, "TDA7433 byte 0x%X received", data);
-            this->regs[this->sub_addr] =  data;
+            this->regs[this->sub_addr] = data;
             if (this->auto_inc) {
                 this->sub_addr++;
             }
@@ -86,17 +87,17 @@ public:
         }
     };
 
-    bool receive_byte(uint8_t *p_data) {
+    bool receive_byte(uint8_t* p_data) {
         *p_data = this->regs[this->sub_addr];
         LOG_F(INFO, "TDA7433 byte 0x%X sent", *p_data);
         return true;
     };
 
 private:
-    uint8_t regs[7];    /* control registers, see TDA7433 datasheet */
+    uint8_t regs[7]; /* control registers, see TDA7433 datasheet */
     uint8_t sub_addr;
-    int     pos;
-    int     auto_inc;
+    int pos;
+    int auto_inc;
 };
 
 
@@ -105,33 +106,33 @@ public:
     AWACDevice();
     ~AWACDevice();
 
-    void set_dma_out(DMAChannel *dma_out_ch);
+    void set_dma_out(DMAChannel* dma_out_ch);
 
     uint32_t snd_ctrl_read(uint32_t offset, int size);
-    void     snd_ctrl_write(uint32_t offset, uint32_t value, int size);
+    void snd_ctrl_write(uint32_t offset, uint32_t value, int size);
 
     /* DMACallback methods */
     void dma_start();
     void dma_end();
-    void dma_push(uint8_t *buf, int size);
-    void dma_pull(uint8_t *buf, int size);
+    void dma_push(uint8_t* buf, int size);
+    void dma_pull(uint8_t* buf, int size);
 
 protected:
-    uint32_t convert_data(const uint8_t *data, int len);
+    uint32_t convert_data(const uint8_t* data, int len);
 
 private:
-    uint32_t snd_ctrl_reg = {0};
+    uint32_t snd_ctrl_reg    = {0};
     uint16_t control_regs[8] = {0}; /* control registers, each 12-bits wide */
-    uint8_t  is_busy = 0;
-    AudioProcessor *audio_proc;
+    uint8_t is_busy          = 0;
+    AudioProcessor* audio_proc;
 
     SDL_AudioDeviceID snd_out_dev = 0;
-    bool wake_up = false;
+    bool wake_up                  = false;
 
-    DMAChannel  *dma_out_ch;
+    DMAChannel* dma_out_ch;
 
-    uint8_t*    snd_buf = 0;
-    uint32_t    buf_len = 0;
+    uint8_t* snd_buf = 0;
+    uint32_t buf_len = 0;
 };
 
 

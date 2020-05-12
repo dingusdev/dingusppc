@@ -21,26 +21,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // The uniquely Gekko opcodes for the processor - ppcgekkoopcodes.cpp
 
+#include "ppcemu.h"
 #include <iostream>
 #include <stdio.h>
-#include "ppcemu.h"
 
-void ppc_psq_l(){
+void ppc_psq_l() {
     printf("Hello. There's no GameCube emulation...yet. Goodbye.");
     exit(0);
 }
 
-void ppc_psq_lu(){
+void ppc_psq_lu() {
     printf("Hello. There's no GameCube emulation...yet. Goodbye.");
     exit(0);
 }
 
-void ppc_psq_st(){
+void ppc_psq_st() {
     printf("Hello. There's no GameCube emulation...yet. Goodbye.");
     exit(0);
 }
 
-void ppc_psq_stu(){
+void ppc_psq_stu() {
     printf("Hello. There's no GameCube emulation...yet. Goodbye.");
     exit(0);
 }

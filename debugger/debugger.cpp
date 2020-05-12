@@ -19,43 +19,38 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <stdio.h>
-#include <string>
-#include <sstream>
-#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include <map>
+#include "../cpu/ppc/ppcdisasm.h"
 #include "../cpu/ppc/ppcemu.h"
 #include "../cpu/ppc/ppcmmu.h"
-#include "../cpu/ppc/ppcdisasm.h"
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <map>
+#include <sstream>
+#include <stdio.h>
+#include <string>
 #include <thirdparty/loguru/loguru.hpp>
 
 
 using namespace std;
 
-static uint32_t str2addr(string& addr_str)
-{
+static uint32_t str2addr(string& addr_str) {
     try {
         return stoul(addr_str, NULL, 0);
-    }
-    catch (invalid_argument& exc) {
+    } catch (invalid_argument& exc) {
         throw invalid_argument(string("Cannot convert ") + addr_str);
     }
 }
 
-static uint32_t str2num(string& num_str)
-{
+static uint32_t str2num(string& num_str) {
     try {
         return stol(num_str, NULL, 0);
-    }
-    catch (invalid_argument & exc) {
+    } catch (invalid_argument& exc) {
         throw invalid_argument(string("Cannot convert ") + num_str);
     }
 }
 
-static void show_help()
-{
+static void show_help() {
     cout << "Debugger commands:" << endl;
     cout << "  step      -- execute single instruction" << endl;
     cout << "  si        -- shortcut for step" << endl;
@@ -80,8 +75,7 @@ static void show_help()
     cout << "Pressing ENTER will repeat last command." << endl;
 }
 
-static void disasm(uint32_t count, uint32_t address)
-{
+static void disasm(uint32_t count, uint32_t address) {
     PPCDisasmContext ctx;
 
     ctx.instr_addr = address;
@@ -94,8 +88,7 @@ static void disasm(uint32_t count, uint32_t address)
     }
 }
 
-static void dump_mem(string& params)
-{
+static void dump_mem(string& params) {
     int cell_size, chars_per_line;
     bool is_char;
     uint32_t count, addr;
@@ -110,55 +103,52 @@ static void dump_mem(string& params)
     }
 
     num_type_str = params.substr(0, params.find_first_of(","));
-    addr_str = params.substr(params.find_first_of(",") + 1);
+    addr_str     = params.substr(params.find_first_of(",") + 1);
 
     is_char = false;
 
-    switch(num_type_str.back()) {
-        case 'b':
-        case 'B':
-            cell_size = 1;
-            break;
-        case 'w':
-        case 'W':
-            cell_size = 2;
-            break;
-        case 'd':
-        case 'D':
-            cell_size = 4;
-            break;
-        case 'q':
-        case 'Q':
-            cell_size = 8;
-            break;
-        case 'c':
-        case 'C':
-            cell_size = 1;
-            is_char = true;
-            break;
-        default:
-            cout << "Invalid data type " << num_type_str << endl;
-            return;
+    switch (num_type_str.back()) {
+    case 'b':
+    case 'B':
+        cell_size = 1;
+        break;
+    case 'w':
+    case 'W':
+        cell_size = 2;
+        break;
+    case 'd':
+    case 'D':
+        cell_size = 4;
+        break;
+    case 'q':
+    case 'Q':
+        cell_size = 8;
+        break;
+    case 'c':
+    case 'C':
+        cell_size = 1;
+        is_char   = true;
+        break;
+    default:
+        cout << "Invalid data type " << num_type_str << endl;
+        return;
     }
 
     try {
         num_type_str = num_type_str.substr(0, num_type_str.length() - 1);
-        count = str2addr(num_type_str);
-    }
-    catch (invalid_argument& exc) {
+        count        = str2addr(num_type_str);
+    } catch (invalid_argument& exc) {
         cout << exc.what() << endl;
         return;
     }
 
     try {
-        addr  = str2addr(addr_str);
-    }
-    catch (invalid_argument& exc) {
+        addr = str2addr(addr_str);
+    } catch (invalid_argument& exc) {
         try {
             /* number conversion failed, trying reg name */
             addr = get_reg(addr_str);
-        }
-        catch (invalid_argument& exc) {
+        } catch (invalid_argument& exc) {
             cout << exc.what() << endl;
             return;
         }
@@ -179,13 +169,11 @@ static void dump_mem(string& params)
                 cout << (char)val;
                 chars_per_line += cell_size;
             } else {
-                cout << setw(cell_size * 2) << setfill('0') << uppercase <<
-                    hex << val << "  ";
+                cout << setw(cell_size * 2) << setfill('0') << uppercase << hex << val << "  ";
                 chars_per_line += cell_size * 2 + 2;
             }
         }
-    }
-    catch (invalid_argument& exc) {
+    } catch (invalid_argument& exc) {
         cout << exc.what() << endl;
         return;
     }
@@ -193,10 +181,8 @@ static void dump_mem(string& params)
     cout << endl << endl;
 }
 
-void enter_debugger()
-{
-    string inp, cmd, addr_str, expr_str, reg_expr, last_cmd, reg_value_str,
-        inst_string, inst_num_str;
+void enter_debugger() {
+    string inp, cmd, addr_str, expr_str, reg_expr, last_cmd, reg_value_str, inst_string, inst_num_str;
     uint32_t addr, inst_grab;
     std::stringstream ss;
     int log_level;
@@ -223,8 +209,7 @@ void enter_debugger()
         }
         if (cmd == "help") {
             show_help();
-        }
-        else if (cmd == "quit") {
+        } else if (cmd == "quit") {
             break;
         }
 #ifdef PROFILER
@@ -236,8 +221,7 @@ void enter_debugger()
 #endif
         else if (cmd == "regs") {
             print_gprs();
-        }
-        else if (cmd == "set") {
+        } else if (cmd == "set") {
             ss >> expr_str;
 
             separator_pos = expr_str.find_first_of("=");
@@ -256,35 +240,28 @@ void enter_debugger()
                         continue;
                     }
                     loguru::g_stderr_verbosity = log_level;
-                }
-                else {
+                } else {
                     addr = str2addr(addr_str);
                     set_reg(reg_expr, addr);
                 }
-            }
-            catch (invalid_argument& exc) {
+            } catch (invalid_argument& exc) {
                 cout << exc.what() << endl;
             }
-        }
-        else if (cmd == "step" || cmd == "si") {
+        } else if (cmd == "step" || cmd == "si") {
             ppc_exec_single();
-        }
-        else if (cmd == "next" || cmd == "ni") {
+        } else if (cmd == "next" || cmd == "ni") {
             addr_str = "PC";
-            addr = get_reg(addr_str) + 4;
+            addr     = get_reg(addr_str) + 4;
             ppc_exec_until(addr);
-        }
-        else if (cmd == "until") {
+        } else if (cmd == "until") {
             ss >> addr_str;
             try {
                 addr = str2addr(addr_str);
                 ppc_exec_until(addr);
-            }
-            catch (invalid_argument& exc) {
+            } catch (invalid_argument& exc) {
                 cout << exc.what() << endl;
             }
-        }
-        else if (cmd == "disas") {
+        } else if (cmd == "disas") {
             expr_str = "";
             ss >> expr_str;
             if (expr_str.length() > 0) {
@@ -294,41 +271,35 @@ void enter_debugger()
                     continue;
                 }
                 inst_num_str = expr_str.substr(0, expr_str.find_first_of(","));
-                inst_grab = stol(inst_num_str, NULL, 0);
-                addr_str = expr_str.substr(expr_str.find_first_of(",") + 1);
+                inst_grab    = stol(inst_num_str, NULL, 0);
+                addr_str     = expr_str.substr(expr_str.find_first_of(",") + 1);
                 try {
                     addr = str2addr(addr_str);
-                }
-                catch (invalid_argument& exc) {
+                } catch (invalid_argument& exc) {
                     try {
                         /* number conversion failed, trying reg name */
                         addr = get_reg(addr_str);
-                    }
-                    catch (invalid_argument& exc) {
+                    } catch (invalid_argument& exc) {
                         cout << exc.what() << endl;
                         continue;
                     }
                 }
                 try {
                     disasm(inst_grab, addr);
-                }
-                catch (invalid_argument& exc) {
+                } catch (invalid_argument& exc) {
                     cout << exc.what() << endl;
                 }
-            }
-            else {
+            } else {
                 /* disas without arguments defaults to disas 1,pc */
                 addr_str = "PC";
-                addr = get_reg(addr_str);
+                addr     = get_reg(addr_str);
                 disasm(1, addr);
             }
-        }
-        else if (cmd == "dump") {
+        } else if (cmd == "dump") {
             expr_str = "";
             ss >> expr_str;
             dump_mem(expr_str);
-        }
-        else {
+        } else {
             cout << "Unknown command: " << cmd << endl;
             continue;
         }

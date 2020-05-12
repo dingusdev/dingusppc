@@ -19,12 +19,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <thirdparty/loguru/loguru.hpp>
-#include <iostream>
-#include <fstream>
-#include <cstring>
-#include <cinttypes>
 #include "nvram.h"
+#include <cinttypes>
+#include <cstring>
+#include <fstream>
+#include <iostream>
+#include <thirdparty/loguru/loguru.hpp>
 
 /** @file Non-volatile RAM implementation.
  */
@@ -34,8 +34,7 @@ using namespace std;
 /** the signature for NVRAM backing file identification. */
 static char NVRAM_FILE_ID[] = "DINGUSPPCNVRAM";
 
-NVram::NVram(std::string file_name, uint32_t ram_size)
-{
+NVram::NVram(std::string file_name, uint32_t ram_size) {
     this->file_name = file_name;
     this->ram_size  = ram_size;
 
@@ -44,35 +43,30 @@ NVram::NVram(std::string file_name, uint32_t ram_size)
     this->init();
 }
 
-NVram::~NVram()
-{
+NVram::~NVram() {
     this->save();
     if (this->storage)
         delete this->storage;
 }
 
-uint8_t NVram::read_byte(uint32_t offset)
-{
+uint8_t NVram::read_byte(uint32_t offset) {
     return (this->storage[offset]);
 }
 
-void NVram::write_byte(uint32_t offset, uint8_t val)
-{
+void NVram::write_byte(uint32_t offset, uint8_t val) {
     this->storage[offset] = val;
 }
 
 void NVram::init() {
-    char     sig[sizeof(NVRAM_FILE_ID)];
+    char sig[sizeof(NVRAM_FILE_ID)];
     uint16_t data_size;
 
     ifstream f(this->file_name, ios::in | ios::binary);
 
-    if (f.fail() || !f.read(sig, sizeof(NVRAM_FILE_ID))   || \
-        !f.read((char *)&data_size, sizeof(data_size))    || \
-        memcmp(sig, NVRAM_FILE_ID, sizeof(NVRAM_FILE_ID)) || \
-        data_size != this->ram_size                       || \
-        !f.read((char *)this->storage, this->ram_size))
-    {
+    if (f.fail() || !f.read(sig, sizeof(NVRAM_FILE_ID)) ||
+        !f.read((char*)&data_size, sizeof(data_size)) ||
+        memcmp(sig, NVRAM_FILE_ID, sizeof(NVRAM_FILE_ID)) || data_size != this->ram_size ||
+        !f.read((char*)this->storage, this->ram_size)) {
         LOG_F(WARNING, "Could not restore NVRAM content from the given file. \n");
         memset(this->storage, 0, sizeof(this->ram_size));
     }
@@ -80,16 +74,15 @@ void NVram::init() {
     f.close();
 }
 
-void NVram::save()
-{
+void NVram::save() {
     ofstream f(this->file_name, ios::out | ios::binary);
 
     /* write file identification */
     f.write(NVRAM_FILE_ID, sizeof(NVRAM_FILE_ID));
-    f.write((char *)&this->ram_size, sizeof(this->ram_size));
+    f.write((char*)&this->ram_size, sizeof(this->ram_size));
 
     /* write NVRAM content */
-    f.write((char *)this->storage, this->ram_size);
+    f.write((char*)this->storage, this->ram_size);
 
     f.close();
 }

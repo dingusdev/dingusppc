@@ -19,11 +19,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <thirdparty/loguru/loguru.hpp>
 #include "displayid.h"
+#include <thirdparty/loguru/loguru.hpp>
 
-DisplayID::DisplayID()
-{
+DisplayID::DisplayID() {
     /* Initialize Apple monitor codes */
     this->std_sense_code = 6;
     this->ext_sense_code = 0x2B;
@@ -41,22 +40,19 @@ DisplayID::DisplayID()
 }
 
 
-uint16_t DisplayID::set_result(uint8_t sda, uint8_t scl)
-{
+uint16_t DisplayID::set_result(uint8_t sda, uint8_t scl) {
     this->last_sda = sda;
     this->last_scl = scl;
 
     if (scl) {
         this->data_out |= 0x1000;
-    }
-    else {
+    } else {
         this->data_out &= ~0x1000U;
     }
 
     if (sda) {
         this->data_out |= 0x2000;
-    }
-    else {
+    } else {
         this->data_out &= ~0x2000U;
     }
 
@@ -64,9 +60,8 @@ uint16_t DisplayID::set_result(uint8_t sda, uint8_t scl)
 }
 
 
-uint16_t DisplayID::read_monitor_sense(uint16_t data, uint16_t dirs)
-{
-    uint8_t	 scl, sda;
+uint16_t DisplayID::read_monitor_sense(uint16_t data, uint16_t dirs) {
+    uint8_t scl, sda;
     uint16_t result;
 
     if ((dirs & 0x3100) == 0 && (data & 0x3100) == 0x3100) {
@@ -81,24 +76,19 @@ uint16_t DisplayID::read_monitor_sense(uint16_t data, uint16_t dirs)
         sda = (dirs & 0x2000) ? !!(data & 0x2000) : 1;
 
         return update_ddc_i2c(sda, scl);
-    }
-    else { /* Apple legacy monitor codes (see Technical Note HW30) */
+    } else { /* Apple legacy monitor codes (see Technical Note HW30) */
         switch (dirs & 0x3100) {
         case 0:
-            result = ((this->std_sense_code & 6) << 11) |
-                     ((this->std_sense_code & 1) << 8);
+            result = ((this->std_sense_code & 6) << 11) | ((this->std_sense_code & 1) << 8);
             break;
         case 0x2000: /* Sense line 2 is low */
-            result = ((this->ext_sense_code & 0x20) << 7) |
-                     ((this->ext_sense_code & 0x10) << 4);
+            result = ((this->ext_sense_code & 0x20) << 7) | ((this->ext_sense_code & 0x10) << 4);
             break;
         case 0x1000: /* Sense line 1 is low */
-            result = ((this->ext_sense_code & 8) << 10) |
-                     ((this->ext_sense_code & 4) << 6);
+            result = ((this->ext_sense_code & 8) << 10) | ((this->ext_sense_code & 4) << 6);
             break;
         case 0x100: /* Sense line 0 is low */
-            result = ((this->ext_sense_code & 2) << 12) |
-                     ((this->ext_sense_code & 1) << 12);
+            result = ((this->ext_sense_code & 2) << 12) | ((this->ext_sense_code & 1) << 12);
             break;
         default:
             result = 0x3100U;
@@ -109,7 +99,7 @@ uint16_t DisplayID::read_monitor_sense(uint16_t data, uint16_t dirs)
 }
 
 
-uint16_t DisplayID::update_ddc_i2c(uint8_t sda, uint8_t scl)//(uint16_t data, uint16_t dirs)
+uint16_t DisplayID::update_ddc_i2c(uint8_t sda, uint8_t scl)    //(uint16_t data, uint16_t dirs)
 {
     bool clk_gone_high = false;
 
@@ -127,9 +117,8 @@ uint16_t DisplayID::update_ddc_i2c(uint8_t sda, uint8_t scl)//(uint16_t data, ui
             if (!sda) {
                 LOG_F(9, "DDC-I2C: START condition detected!");
                 this->next_state = I2CState::DEV_ADDR;
-                this->bit_count = 0;
-            }
-            else {
+                this->bit_count  = 0;
+            } else {
                 LOG_F(9, "DDC-I2C: STOP condition detected!");
                 this->next_state = I2CState::STOP;
             }
@@ -147,22 +136,20 @@ uint16_t DisplayID::update_ddc_i2c(uint8_t sda, uint8_t scl)//(uint16_t data, ui
 
     case I2CState::ACK:
         this->bit_count = 0;
-        this->byte = 0;
+        this->byte      = 0;
         switch (this->prev_state) {
         case I2CState::DEV_ADDR:
             if ((dev_addr & 0xFE) == 0xA0) {
                 sda = 0; /* send ACK */
-            }
-            else {
+            } else {
                 LOG_F(ERROR, "DDC-I2C: unknown device address 0x%X", this->dev_addr);
                 sda = 1; /* send NACK */
             }
             if (this->dev_addr & 1) {
                 this->next_state = I2CState::DATA;
-                this->data_ptr = this->edid;
-                this->byte = *(this->data_ptr++);
-            }
-            else {
+                this->data_ptr   = this->edid;
+                this->byte       = *(this->data_ptr++);
+            } else {
                 this->next_state = I2CState::REG_ADDR;
             }
             break;
@@ -170,8 +157,7 @@ uint16_t DisplayID::update_ddc_i2c(uint8_t sda, uint8_t scl)//(uint16_t data, ui
             this->next_state = I2CState::DATA;
             if (!this->reg_addr) {
                 sda = 0; /* send ACK */
-            }
-            else {
+            } else {
                 LOG_F(ERROR, "DDC-I2C: unknown register address 0x%X", this->reg_addr);
                 sda = 1; /* send NACK */
             }
@@ -182,12 +168,10 @@ uint16_t DisplayID::update_ddc_i2c(uint8_t sda, uint8_t scl)//(uint16_t data, ui
                 if (!sda) {
                     /* load next data byte */
                     this->byte = *(this->data_ptr++);
-                }
-                else {
+                } else {
                     LOG_F(ERROR, "DDC-I2C: Oops! NACK received");
                 }
-            }
-            else {
+            } else {
                 sda = 0; /* send ACK */
             }
             break;
@@ -198,14 +182,13 @@ uint16_t DisplayID::update_ddc_i2c(uint8_t sda, uint8_t scl)//(uint16_t data, ui
     case I2CState::REG_ADDR:
         this->byte = (this->byte << 1) | this->last_sda;
         if (this->bit_count++ >= 7) {
-            this->bit_count = 0;
+            this->bit_count  = 0;
             this->prev_state = this->next_state;
             this->next_state = I2CState::ACK;
             if (this->prev_state == I2CState::DEV_ADDR) {
                 LOG_F(9, "DDC-I2C: device address received, addr=0x%X", this->byte);
                 this->dev_addr = this->byte;
-            }
-            else {
+            } else {
                 LOG_F(9, "DDC-I2C: register address received, addr=0x%X", this->byte);
                 this->reg_addr = this->byte;
             }
@@ -215,7 +198,7 @@ uint16_t DisplayID::update_ddc_i2c(uint8_t sda, uint8_t scl)//(uint16_t data, ui
     case I2CState::DATA:
         sda = (this->byte >> (7 - this->bit_count)) & 1;
         if (this->bit_count++ >= 7) {
-            this->bit_count = 0;
+            this->bit_count  = 0;
             this->prev_state = this->next_state;
             this->next_state = I2CState::ACK;
         }

@@ -22,9 +22,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef MACHINE_ID_H
 #define MACHINE_ID_H
 
-#include <cinttypes>
 #include "hwcomponent.h"
 #include "mmiodevice.h"
+#include <cinttypes>
 
 /**
     @file Contains definitions for PowerMacintosh machine ID registers.
@@ -44,7 +44,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 class GossamerID : public MMIODevice {
 public:
-    GossamerID(const uint16_t id) { this->id = id, this->name = "Machine-id"; };
+    GossamerID(const uint16_t id) {
+        this->id = id, this->name = "Machine-id";
+    };
     ~GossamerID() = default;
 
     bool supports_type(HWCompType type) {
@@ -52,10 +54,10 @@ public:
     };
 
     uint32_t read(uint32_t reg_start, uint32_t offset, int size) {
-         return ((!offset && size == 2) ? this->id : 0); };
+        return ((!offset && size == 2) ? this->id : 0);
+    };
 
-    void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
-        {}; /* not writable */
+    void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size){}; /* not writable */
 
 private:
     uint16_t id;

@@ -45,10 +45,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef VIACUDA_H
 #define VIACUDA_H
 
-#include "hwcomponent.h"
-#include "nvram.h"
 #include "adb.h"
+#include "hwcomponent.h"
 #include "i2c.h"
+#include "nvram.h"
 
 /** VIA register offsets. */
 enum {
@@ -88,14 +88,14 @@ enum {
 
 /** Cuda pseudo commands. */
 enum {
-    CUDA_START_STOP_AUTOPOLL  = 0x01, /* start/stop device auto-polling */
-    CUDA_READ_PRAM            = 0x07, /* read parameter RAM */
-    CUDA_WRITE_PRAM           = 0x0C, /* write parameter RAM */
-    CUDA_SET_AUTOPOLL_RATE    = 0x14, /* set auto-polling rate */
-    CUDA_GET_AUTOPOLL_RATE    = 0x16, /* get auto-polling rate */
-    CUDA_READ_WRITE_I2C       = 0x22, /* read/write I2C device */
-    CUDA_COMB_FMT_I2C         = 0x25, /* combined format I2C transaction */
-    CUDA_OUT_PB0              = 0x26, /* output one bit to Cuda's PB0 line */
+    CUDA_START_STOP_AUTOPOLL = 0x01, /* start/stop device auto-polling */
+    CUDA_READ_PRAM           = 0x07, /* read parameter RAM */
+    CUDA_WRITE_PRAM          = 0x0C, /* write parameter RAM */
+    CUDA_SET_AUTOPOLL_RATE   = 0x14, /* set auto-polling rate */
+    CUDA_GET_AUTOPOLL_RATE   = 0x16, /* get auto-polling rate */
+    CUDA_READ_WRITE_I2C      = 0x22, /* read/write I2C device */
+    CUDA_COMB_FMT_I2C        = 0x25, /* combined format I2C transaction */
+    CUDA_OUT_PB0             = 0x26, /* output one bit to Cuda's PB0 line */
 };
 
 /** Cuda error codes. */
@@ -107,8 +107,7 @@ enum {
 };
 
 
-class ViaCuda : public HWComponent, public I2CBus
-{
+class ViaCuda : public HWComponent, public I2CBus {
 public:
     ViaCuda();
     ~ViaCuda();
@@ -134,7 +133,7 @@ private:
     int32_t out_pos;
     uint8_t poll_rate;
 
-    bool    is_open_ended;
+    bool is_open_ended;
     uint8_t curr_i2c_addr;
 
     void (ViaCuda::*out_handler)(void);
@@ -150,7 +149,7 @@ private:
     void assert_sr_int();
     void write(uint8_t new_state);
     void response_header(uint32_t pkt_type, uint32_t pkt_flag);
-    //void cuda_response_packet();
+    // void cuda_response_packet();
     void error_response(uint32_t error);
     void process_packet();
     void process_adb_command(uint8_t cmd_byte, int data_count);
@@ -162,8 +161,8 @@ private:
 
     /* I2C related methods */
     void i2c_simple_transaction(uint8_t dev_addr, const uint8_t* in_buf, int in_bytes);
-    void i2c_comb_transaction(uint8_t dev_addr, uint8_t sub_addr, uint8_t dev_addr1,
-        const uint8_t* in_buf, int in_bytes);
+    void i2c_comb_transaction(
+        uint8_t dev_addr, uint8_t sub_addr, uint8_t dev_addr1, const uint8_t* in_buf, int in_bytes);
 };
 
 #endif /* VIACUDA_H */
