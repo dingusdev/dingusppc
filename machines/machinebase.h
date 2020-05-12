@@ -27,27 +27,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef MACHINE_BASE_H
 #define MACHINE_BASE_H
 
+#include "devices/hwcomponent.h"
+#include <map>
 #include <memory>
 #include <string>
-#include <map>
-#include "devices/hwcomponent.h"
 
-class MachineBase
-{
+class MachineBase {
 public:
     MachineBase(std::string name);
     ~MachineBase();
 
-    bool add_component(std::string name, HWComponent *dev_obj);
-    bool add_subdevice(std::string name, HWComponent *dev_obj);
+    bool add_component(std::string name, HWComponent* dev_obj);
+    bool add_subdevice(std::string name, HWComponent* dev_obj);
     void add_alias(std::string name, std::string alias);
-    HWComponent *get_comp_by_name(std::string name);
-    HWComponent *get_comp_by_type(HWCompType type);
+    HWComponent* get_comp_by_name(std::string name);
+    HWComponent* get_comp_by_type(HWCompType type);
 
 private:
     std::string name;
-    std::map<std::string, HWComponent *>comp_map;
-    std::map<std::string, HWComponent *>subdev_map;
+    std::map<std::string, HWComponent*> comp_map;
+    std::map<std::string, HWComponent*> subdev_map;
     std::map<std::string, std::string> aliases;
 };
 

@@ -19,17 +19,16 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <atirage.h>
-#include <cstdint>
-#include <thirdparty/loguru/loguru.hpp>
+#include "displayid.h"
 #include "endianswap.h"
 #include "memreadwrite.h"
 #include "pcidevice.h"
-#include "displayid.h"
+#include <atirage.h>
+#include <cstdint>
+#include <thirdparty/loguru/loguru.hpp>
 
 
-ATIRage::ATIRage(uint16_t dev_id) : PCIDevice("ati-rage")
-{
+ATIRage::ATIRage(uint16_t dev_id) : PCIDevice("ati-rage") {
     WRITE_DWORD_BE_A(&this->pci_cfg[0], (dev_id << 16) | ATI_PCI_VENDOR_ID);
     WRITE_DWORD_BE_A(&this->pci_cfg[8], 0x0300005C);
     WRITE_DWORD_BE_A(&this->pci_cfg[0x3C], 0x00080100);
@@ -37,13 +36,11 @@ ATIRage::ATIRage(uint16_t dev_id) : PCIDevice("ati-rage")
     this->disp_id = new DisplayID();
 }
 
-ATIRage::~ATIRage()
-{
+ATIRage::~ATIRage() {
     delete (this->disp_id);
 }
 
-uint32_t ATIRage::size_dep_read(uint8_t *buf, uint32_t size)
-{
+uint32_t ATIRage::size_dep_read(uint8_t* buf, uint32_t size) {
     switch (size) {
     case 4:
         return READ_DWORD_LE_A(buf);
@@ -60,8 +57,7 @@ uint32_t ATIRage::size_dep_read(uint8_t *buf, uint32_t size)
     }
 }
 
-void ATIRage::size_dep_write(uint8_t *buf, uint32_t value, uint32_t size)
-{
+void ATIRage::size_dep_write(uint8_t* buf, uint32_t value, uint32_t size) {
     switch (size) {
     case 4:
         WRITE_DWORD_BE_A(buf, value);
@@ -74,8 +70,7 @@ void ATIRage::size_dep_write(uint8_t *buf, uint32_t value, uint32_t size)
     }
 }
 
-const char* ATIRage::get_reg_name(uint32_t reg_offset)
-{
+const char* ATIRage::get_reg_name(uint32_t reg_offset) {
     const char* reg_name;
 
     switch (reg_offset & ~3) {
@@ -152,16 +147,19 @@ const char* ATIRage::get_reg_name(uint32_t reg_offset)
     return reg_name;
 }
 
-uint32_t ATIRage::read_reg(uint32_t offset, uint32_t size)
-{
+uint32_t ATIRage::read_reg(uint32_t offset, uint32_t size) {
     uint32_t res;
 
     switch (offset & ~3) {
     case ATI_GP_IO:
         break;
     default:
-        LOG_F(INFO, "ATI Rage: read I/O reg %s at 0x%X, size=%d, val=0x%X",
-            get_reg_name(offset), offset, size,
+        LOG_F(
+            INFO,
+            "ATI Rage: read I/O reg %s at 0x%X, size=%d, val=0x%X",
+            get_reg_name(offset),
+            offset,
+            size,
             size_dep_read(&this->block_io_regs[offset], size));
     }
 
@@ -170,8 +168,7 @@ uint32_t ATIRage::read_reg(uint32_t offset, uint32_t size)
     return res;
 }
 
-void ATIRage::write_reg(uint32_t offset, uint32_t value, uint32_t size)
-{
+void ATIRage::write_reg(uint32_t offset, uint32_t value, uint32_t size) {
     uint32_t gpio_val;
     uint16_t gpio_dir;
 
@@ -183,20 +180,23 @@ void ATIRage::write_reg(uint32_t offset, uint32_t value, uint32_t size)
         if (offset < (ATI_GP_IO + 2)) {
             gpio_val = READ_DWORD_LE_A(&this->block_io_regs[ATI_GP_IO]);
             gpio_dir = (gpio_val >> 16) & 0x3FFF;
-            WRITE_WORD_LE_A(&this->block_io_regs[ATI_GP_IO],
+            WRITE_WORD_LE_A(
+                &this->block_io_regs[ATI_GP_IO],
                 this->disp_id->read_monitor_sense(gpio_val, gpio_dir));
         }
         break;
     default:
-        LOG_F(INFO, "ATI Rage: %s register at 0x%X set to 0x%X",
-            get_reg_name(offset), offset & ~3,
+        LOG_F(
+            INFO,
+            "ATI Rage: %s register at 0x%X set to 0x%X",
+            get_reg_name(offset),
+            offset & ~3,
             READ_DWORD_LE_A(&this->block_io_regs[offset & ~3]));
     }
 }
 
 
-uint32_t ATIRage::pci_cfg_read(uint32_t reg_offs, uint32_t size)
-{
+uint32_t ATIRage::pci_cfg_read(uint32_t reg_offs, uint32_t size) {
     uint32_t res = 0;
 
     LOG_F(INFO, "Reading ATI Rage config space, offset = 0x%X, size=%d", reg_offs, size);
@@ -207,32 +207,32 @@ uint32_t ATIRage::pci_cfg_read(uint32_t reg_offs, uint32_t size)
     return res;
 }
 
-void ATIRage::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
-{
-    LOG_F(INFO, "Writing into ATI Rage PCI config space, offset = 0x%X, val=0x%X size=%d",
-        reg_offs, BYTESWAP_32(value), size);
+void ATIRage::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size) {
+    LOG_F(
+        INFO,
+        "Writing into ATI Rage PCI config space, offset = 0x%X, val=0x%X size=%d",
+        reg_offs,
+        BYTESWAP_32(value),
+        size);
 
     switch (reg_offs) {
     case 0x10: /* BAR 0 */
         if (value == 0xFFFFFFFFUL) {
             WRITE_DWORD_BE_A(&this->pci_cfg[CFG_REG_BAR0], 0xFF000008);
-        }
-        else {
+        } else {
             WRITE_DWORD_BE_A(&this->pci_cfg[CFG_REG_BAR0], value);
         }
         break;
     case 0x14: /* BAR 1: I/O space base, 256 bytes wide */
         if (value == 0xFFFFFFFFUL) {
             WRITE_DWORD_BE_A(&this->pci_cfg[CFG_REG_BAR1], 0x0000FFF1);
-        }
-        else {
+        } else {
             WRITE_DWORD_BE_A(&this->pci_cfg[CFG_REG_BAR1], value);
         }
     case 0x18: /* BAR 2 */
         if (value == 0xFFFFFFFFUL) {
             WRITE_DWORD_BE_A(&this->pci_cfg[CFG_REG_BAR2], 0xFFFFF000);
-        }
-        else {
+        } else {
             WRITE_DWORD_BE_A(&this->pci_cfg[CFG_REG_BAR2], value);
         }
         break;
@@ -248,8 +248,7 @@ void ATIRage::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
 }
 
 
-bool ATIRage::io_access_allowed(uint32_t offset, uint32_t *p_io_base)
-{
+bool ATIRage::io_access_allowed(uint32_t offset, uint32_t* p_io_base) {
     if (!(this->pci_cfg[CFG_REG_CMD] & 1)) {
         LOG_F(WARNING, "ATI I/O space disabled in the command reg");
         return false;
@@ -268,8 +267,7 @@ bool ATIRage::io_access_allowed(uint32_t offset, uint32_t *p_io_base)
 }
 
 
-bool ATIRage::pci_io_read(uint32_t offset, uint32_t size, uint32_t *res)
-{
+bool ATIRage::pci_io_read(uint32_t offset, uint32_t size, uint32_t* res) {
     uint32_t io_base;
 
     if (!this->io_access_allowed(offset, &io_base)) {
@@ -281,8 +279,7 @@ bool ATIRage::pci_io_read(uint32_t offset, uint32_t size, uint32_t *res)
 }
 
 
-bool ATIRage::pci_io_write(uint32_t offset, uint32_t value, uint32_t size)
-{
+bool ATIRage::pci_io_write(uint32_t offset, uint32_t value, uint32_t size) {
     uint32_t io_base;
 
     if (!this->io_access_allowed(offset, &io_base)) {
@@ -294,13 +291,11 @@ bool ATIRage::pci_io_write(uint32_t offset, uint32_t value, uint32_t size)
 }
 
 
-uint32_t ATIRage::read(uint32_t reg_start, uint32_t offset, int size)
-{
+uint32_t ATIRage::read(uint32_t reg_start, uint32_t offset, int size) {
     LOG_F(INFO, "Reading reg=%X, size %d", offset, size);
     return 0;
 }
 
-void ATIRage::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
-{
+void ATIRage::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size) {
     LOG_F(INFO, "Writing reg=%X, value=%X, size %d", offset, value, size);
 }

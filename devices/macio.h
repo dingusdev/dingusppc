@@ -51,16 +51,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef MACIO_H
 #define MACIO_H
 
-#include <cinttypes>
-#include "hwcomponent.h"
-#include "pcidevice.h"
-#include "memctrlbase.h"
-#include "mmiodevice.h"
-#include "pcihost.h"
-#include "viacuda.h"
-#include "nvram.h"
 #include "awacs.h"
 #include "dbdma.h"
+#include "hwcomponent.h"
+#include "memctrlbase.h"
+#include "mmiodevice.h"
+#include "nvram.h"
+#include "pcidevice.h"
+#include "pcihost.h"
+#include "viacuda.h"
+#include <cinttypes>
 
 /**
     Heathrow ASIC emulation
@@ -86,19 +86,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     VIA-CUDA       register space: 0x00016000, size: 0x00002000
 */
 
-class HeathrowIC : public PCIDevice
-{
+class HeathrowIC : public PCIDevice {
 public:
     HeathrowIC();
     ~HeathrowIC();
 
-    bool supports_type(HWCompType type) { return type == HWCompType::MMIO_DEV; };
+    bool supports_type(HWCompType type) {
+        return type == HWCompType::MMIO_DEV;
+    };
 
     /* PCI device methods */
-    bool supports_io_space(void) { return false; };
+    bool supports_io_space(void) {
+        return false;
+    };
 
     uint32_t pci_cfg_read(uint32_t reg_offs, uint32_t size);
-    void     pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size);
+    void pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size);
 
     /* MMIO device methods */
     uint32_t read(uint32_t reg_start, uint32_t offset, int size);
@@ -113,17 +116,23 @@ protected:
 
 private:
     uint8_t pci_cfg_hdr[256] = {
-        0x6B, 0x10, // vendor ID: Apple Computer Inc.
-        0x10, 0x00, // device ID: Heathrow Mac I/O
-        0x00, 0x00, // PCI command (set to 0 at power-up?)
-        0x00, 0x00, // PCI status (set to 0 at power-up?)
-        0x01,       // revision ID
+        0x6B,
+        0x10,    // vendor ID: Apple Computer Inc.
+        0x10,
+        0x00,    // device ID: Heathrow Mac I/O
+        0x00,
+        0x00,    // PCI command (set to 0 at power-up?)
+        0x00,
+        0x00,    // PCI status (set to 0 at power-up?)
+        0x01,    // revision ID
         // class code is reported in OF property "class-code" as 0xff0000
-        0x00,       // standard programming
-        0x00,       // subclass code
-        0xFF,       // class code: unassigned
-        0x00, 0x00, // unknown defaults
-        0x00, 0x00  // unknown defaults
+        0x00,    // standard programming
+        0x00,    // subclass code
+        0xFF,    // class code: unassigned
+        0x00,
+        0x00,    // unknown defaults
+        0x00,
+        0x00    // unknown defaults
     };
 
     uint32_t int_mask2;
@@ -132,14 +141,14 @@ private:
     uint32_t int_mask1;
     uint32_t int_clear1;
     uint32_t int_levels1;
-    uint32_t feat_ctrl;  // features control register
+    uint32_t feat_ctrl;    // features control register
 
     /* device cells */
-    ViaCuda *viacuda;     /* VIA cell with Cuda MCU attached to it */
-    NVram   *nvram;       /* NVRAM cell */
-    AWACDevice *screamer; /* Screamer audio codec instance */
+    ViaCuda* viacuda;     /* VIA cell with Cuda MCU attached to it */
+    NVram* nvram;         /* NVRAM cell */
+    AWACDevice* screamer; /* Screamer audio codec instance */
 
-    DMAChannel  *snd_out_dma;
+    DMAChannel* snd_out_dma;
 };
 
 #endif /* MACIO_H */

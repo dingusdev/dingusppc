@@ -1,14 +1,13 @@
+#include "machinebase.h"
+#include "devices/hwcomponent.h"
 #include <memory>
 #include <string>
 #include <thirdparty/loguru/loguru.hpp>
-#include "machinebase.h"
-#include "devices/hwcomponent.h"
 
 std::unique_ptr<MachineBase> gMachineObj = 0;
 
 
-MachineBase::MachineBase(std::string name)
-{
+MachineBase::MachineBase(std::string name) {
     this->name = name;
 
     /* initialize internal maps */
@@ -17,9 +16,8 @@ MachineBase::MachineBase(std::string name)
     this->aliases.clear();
 }
 
-MachineBase::~MachineBase()
-{
-    for(auto it = this->comp_map.begin(); it != this->comp_map.end(); it++) {
+MachineBase::~MachineBase() {
+    for (auto it = this->comp_map.begin(); it != this->comp_map.end(); it++) {
         delete it->second;
     }
     this->comp_map.clear();
@@ -27,8 +25,7 @@ MachineBase::~MachineBase()
     this->subdev_map.clear();
 }
 
-bool MachineBase::add_component(std::string name, HWComponent *dev_obj)
-{
+bool MachineBase::add_component(std::string name, HWComponent* dev_obj) {
     if (this->comp_map.count(name)) {
         LOG_F(ERROR, "Component %s already exists!", name.c_str());
         return false;
@@ -39,8 +36,7 @@ bool MachineBase::add_component(std::string name, HWComponent *dev_obj)
     return true;
 }
 
-bool MachineBase::add_subdevice(std::string name, HWComponent *dev_obj)
-{
+bool MachineBase::add_subdevice(std::string name, HWComponent* dev_obj) {
     if (this->subdev_map.count(name)) {
         LOG_F(ERROR, "Subdevice %s already exists!", name.c_str());
         return false;
@@ -51,13 +47,11 @@ bool MachineBase::add_subdevice(std::string name, HWComponent *dev_obj)
     return true;
 }
 
-void MachineBase::add_alias(std::string name, std::string alias)
-{
+void MachineBase::add_alias(std::string name, std::string alias) {
     this->aliases[alias] = name;
 }
 
-HWComponent *MachineBase::get_comp_by_name(std::string name)
-{
+HWComponent* MachineBase::get_comp_by_name(std::string name) {
     if (this->aliases.count(name)) {
         name = this->aliases[name];
     }
@@ -73,15 +67,14 @@ HWComponent *MachineBase::get_comp_by_name(std::string name)
     }
 }
 
-HWComponent *MachineBase::get_comp_by_type(HWCompType type)
-{
+HWComponent* MachineBase::get_comp_by_type(HWCompType type) {
     std::string comp_name;
     bool found = false;
 
-    for(auto it = this->comp_map.begin(); it != this->comp_map.end(); it++) {
+    for (auto it = this->comp_map.begin(); it != this->comp_map.end(); it++) {
         if (it->second->supports_type(type)) {
             comp_name = it->first;
-            found = true;
+            found     = true;
             break;
         }
     }
@@ -90,10 +83,10 @@ HWComponent *MachineBase::get_comp_by_type(HWCompType type)
         return this->get_comp_by_name(comp_name);
     }
 
-    for(auto it = this->subdev_map.begin(); it != this->subdev_map.end(); it++) {
+    for (auto it = this->subdev_map.begin(); it != this->subdev_map.end(); it++) {
         if (it->second->supports_type(type)) {
             comp_name = it->first;
-            found = true;
+            found     = true;
             break;
         }
     }

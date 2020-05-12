@@ -24,15 +24,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     Author: Max Poliakovski
  */
 
-#include <map>
-#include <cinttypes>
-#include <cstring>
-#include <iostream>
-#include <fstream>
-#include <thirdparty/loguru/loguru.hpp>
-#include "memreadwrite.h"
 #include "machinefactory.h"
 #include "devices/memctrlbase.h"
+#include "memreadwrite.h"
+#include <cinttypes>
+#include <cstring>
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <thirdparty/loguru/loguru.hpp>
 
 using namespace std;
 
@@ -43,61 +43,58 @@ using namespace std;
     or 0x30C064 (Nubus Macs).
 */
 static const map<uint32_t, string> rom_identity = {
-    {0x416C6368, "Performa 6400"},                  //Alchemy
+    {0x416C6368, "Performa 6400"},    // Alchemy
     //{"Come", "PowerBook 2400"},                   //Comet
-    {0x436F7264, "Power Mac 5200/6200 series"},     //Cordyceps
-    {0x47617A65, "Power Mac 6500"},                 //Gazelle
-    {0x476F7373, "Power Mac G3 Beige"},             //Gossamer
+    {0x436F7264, "Power Mac 5200/6200 series"},    // Cordyceps
+    {0x47617A65, "Power Mac 6500"},                // Gazelle
+    {0x476F7373, "Power Mac G3 Beige"},            // Gossamer
     {0x47525820, "PowerBook G3 Wallstreet"},
     //{"Hoop", "PowerBook 3400"},                   //Hooper
     {0x50425820, "PowerBook Pre-G3"},
-    {0x50444D20, "Nubus Power Mac or WGS"},         //Piltdown Man (6100/7100/8100)
-    {0x50697020, "Bandai Pippin"},                  //Pippin
+    {0x50444D20, "Nubus Power Mac or WGS"},    // Piltdown Man (6100/7100/8100)
+    {0x50697020, "Bandai Pippin"},             // Pippin
     //{"Powe", "Generic Power Mac"},                //PowerMac?
     //{"Spar", "20th Anniversay Mac"},              //Spartacus
-    {0x544E5420, "Power Mac 7xxxx/8xxx series"},    //Trinitrotoluene :-)
-    {0x5A616E7A, "Power Mac 4400/7220"},            //Zanzibar
+    {0x544E5420, "Power Mac 7xxxx/8xxx series"},    // Trinitrotoluene :-)
+    {0x5A616E7A, "Power Mac 4400/7220"},            // Zanzibar
     //{"????", "A clone, perhaps?"}                 //N/A (Placeholder ID)
 };
 
 
-int create_machine_for_id(uint32_t id)
-{
-    switch(id) {
-        case 0x476F7373:
-            create_gossamer();
-            break;
-        default:
-            LOG_F(ERROR, "Unknown machine ID: %X", id);
-            return -1;
+int create_machine_for_id(uint32_t id) {
+    switch (id) {
+    case 0x476F7373:
+        create_gossamer();
+        break;
+    default:
+        LOG_F(ERROR, "Unknown machine ID: %X", id);
+        return -1;
     }
     return 0;
 }
 
 
 /* Read ROM file content and transfer it to the dedicated ROM region */
-void load_rom(ifstream& rom_file, uint32_t file_size)
-{
-    unsigned char *sysrom_mem = new unsigned char[file_size];
+void load_rom(ifstream& rom_file, uint32_t file_size) {
+    unsigned char* sysrom_mem = new unsigned char[file_size];
 
     rom_file.seekg(0, ios::beg);
-    rom_file.read((char *)sysrom_mem, file_size);
+    rom_file.read((char*)sysrom_mem, file_size);
 
-    MemCtrlBase *mem_ctrl = dynamic_cast<MemCtrlBase *>
-        (gMachineObj->get_comp_by_type(HWCompType::MEM_CTRL));
+    MemCtrlBase* mem_ctrl = dynamic_cast<MemCtrlBase*>(
+        gMachineObj->get_comp_by_type(HWCompType::MEM_CTRL));
 
     mem_ctrl->set_data(0xFFC00000, sysrom_mem, file_size);
     delete[] sysrom_mem;
 }
 
 
-int create_machine_for_rom(const char* rom_filepath)
-{
+int create_machine_for_rom(const char* rom_filepath) {
     ifstream rom_file;
     uint32_t file_size, config_info_offset, rom_id;
     char rom_id_str[17];
 
-    rom_file.open(rom_filepath, ios::in|ios::binary);
+    rom_file.open(rom_filepath, ios::in | ios::binary);
     if (rom_file.fail()) {
         LOG_F(ERROR, "Cound not open the specified ROM file.");
         rom_file.close();
@@ -108,7 +105,7 @@ int create_machine_for_rom(const char* rom_filepath)
     file_size = rom_file.tellg();
     rom_file.seekg(0, rom_file.beg);
 
-    if (file_size != 0x400000UL){
+    if (file_size != 0x400000UL) {
         LOG_F(ERROR, "Unxpected ROM File size. Expected size is 4 megabytes.");
         rom_file.close();
         return -1;
@@ -117,7 +114,7 @@ int create_machine_for_rom(const char* rom_filepath)
     /* read config info offset from file */
     config_info_offset = 0;
     rom_file.seekg(0x300080, ios::beg);
-    rom_file.read((char *)&config_info_offset, 4);
+    rom_file.read((char*)&config_info_offset, 4);
     config_info_offset = READ_DWORD_BE_A(&config_info_offset);
 
     /* rewind to ConfigInfo.BootstrapVersion field */
@@ -135,8 +132,7 @@ int create_machine_for_rom(const char* rom_filepath)
     }
 
     /* convert BootstrapVersion string to ROM ID */
-    rom_id = (rom_id_str[5] << 24) | (rom_id_str[6] << 16) |
-             (rom_id_str[7] <<  8) | rom_id_str[8];
+    rom_id = (rom_id_str[5] << 24) | (rom_id_str[6] << 16) | (rom_id_str[7] << 8) | rom_id_str[8];
 
     LOG_F(INFO, "The machine is identified as... %s\n", rom_identity.at(rom_id).c_str());
 

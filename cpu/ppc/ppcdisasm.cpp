@@ -25,18 +25,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #define _CRT_SECURE_NO_WARNINGS /* shut up MSVC regarding the unsafe strcpy/strcat */
 
-#include <iostream>
-#include <string>
-#include <cstring>
-#include <stdexcept>
-#include <functional> /* without this, MSVC doesn't understand std::function */
 #include "ppcdisasm.h"
+#include <cstring>
+#include <functional> /* without this, MSVC doesn't understand std::function */
+#include <iostream>
+#include <stdexcept>
+#include <string>
 
 using namespace std;
 
-template< typename... Args >
-std::string my_sprintf(const char* format, Args... args)
-{
+template <typename... Args>
+std::string my_sprintf(const char* format, Args... args) {
     int length = std::snprintf(nullptr, 0, format, args...);
     if (length <= 0)
         return {}; /* empty string in C++11 */
@@ -49,216 +48,264 @@ std::string my_sprintf(const char* format, Args... args)
     return str;
 }
 
-const char* arith_im_mnem[9] = {
-    "mulli", "subfic", "", "", "", "addic", "addic.", "addi", "addis"
-};
+const char* arith_im_mnem[9] = {"mulli", "subfic", "", "", "", "addic", "addic.", "addi", "addis"};
 
-const char* bx_mnem[4] = {
-    "b", "bl", "ba", "bla"
-};
+const char* bx_mnem[4] = {"b", "bl", "ba", "bla"};
 
-const char* bclrx_mnem[2] = {
-    "blr", "blrl"
-};
+const char* bclrx_mnem[2] = {"blr", "blrl"};
 
-const char* bcctrx_mnem[2] = {
-    "bctr", "bctrl"
-};
+const char* bcctrx_mnem[2] = {"bctr", "bctrl"};
 
-const char* br_cond[8] = { /* simplified branch conditions */
-    "ge", "le", "ne", "ns", "lt", "gt", "eq", "so"
-};
+const char* br_cond[8] = {/* simplified branch conditions */
+                          "ge",
+                          "le",
+                          "ne",
+                          "ns",
+                          "lt",
+                          "gt",
+                          "eq",
+                          "so"};
 
-const char* bclrx_cond[8] = { /* simplified branch conditions */
-    "gelr", "lelr", "nelr", "nslr", "ltlr", "gtlr", "eqlr", "solr"
-};
+const char* bclrx_cond[8] = {/* simplified branch conditions */
+                             "gelr",
+                             "lelr",
+                             "nelr",
+                             "nslr",
+                             "ltlr",
+                             "gtlr",
+                             "eqlr",
+                             "solr"};
 
-const char* bcctrx_cond[8] = { /* simplified branch conditions */
-    "gectr", "lectr", "nectr", "nsctr", "ltctr", "gtctr", "eqctr", "soctr"
-};
+const char* bcctrx_cond[8] = {/* simplified branch conditions */
+                              "gectr",
+                              "lectr",
+                              "nectr",
+                              "nsctr",
+                              "ltctr",
+                              "gtctr",
+                              "eqctr",
+                              "soctr"};
 
-const char* opc_idx_ldst[32] = { /* indexed load/store opcodes */
-    "lwzx", "lwzux", "lbzx", "lbzux", "stwx", "stwux", "stbx", "stbux",
-    "lhzx", "lhzux", "lhax", "lhaux", "sthx", "sthux", "", "",
-    "lfsx", "lfsux", "lfdx", "lfdux", "stfsx", "stfsux", "stfdx", "stfdux",
-    "", "", "", "", "", "", "stfiwx", ""
-};
+const char* opc_idx_ldst[32] = {/* indexed load/store opcodes */
+                                "lwzx",   "lwzux", "lbzx",   "lbzux", "stwx",  "stwux", "stbx",
+                                "stbux",  "lhzx",  "lhzux",  "lhax",  "lhaux", "sthx",  "sthux",
+                                "",       "",      "lfsx",   "lfsux", "lfdx",  "lfdux", "stfsx",
+                                "stfsux", "stfdx", "stfdux", "",      "",      "",      "",
+                                "",       "",      "stfiwx", ""};
 
-const char* opc_bim_str[6] = { /* boolean immediate instructions */
-    "ori", "oris", "xori", "xoris", "andi.", "andis."
-};
+const char* opc_bim_str[6] = {/* boolean immediate instructions */
+                              "ori",
+                              "oris",
+                              "xori",
+                              "xoris",
+                              "andi.",
+                              "andis."};
 
-const char* opc_logic[16] = { /* indexed load/store opcodes */
-    "and", "andc", "", "nor", "", "", "", "", "eqv", "xor", "", "", "orc", "or",
-    "nand", ""
-};
+const char* opc_logic[16] = {/* indexed load/store opcodes */
+                             "and",
+                             "andc",
+                             "",
+                             "nor",
+                             "",
+                             "",
+                             "",
+                             "",
+                             "eqv",
+                             "xor",
+                             "",
+                             "",
+                             "orc",
+                             "or",
+                             "nand",
+                             ""};
 
-const char* opc_subs[16] = { /* subtracts & friends */
-    "subfc", "subf", "", "neg", "subfe", "", "subfze", "subfme", "doz", "", "",
-    "abs", "", "", "", "nabs"
-};
+const char* opc_subs[16] = {/* subtracts & friends */
+                            "subfc",
+                            "subf",
+                            "",
+                            "neg",
+                            "subfe",
+                            "",
+                            "subfze",
+                            "subfme",
+                            "doz",
+                            "",
+                            "",
+                            "abs",
+                            "",
+                            "",
+                            "",
+                            "nabs"};
 
-const char* opc_adds[9] = { /* additions */
-    "addc", "", "", "", "adde", "", "addze", "addme", "add"
-};
+const char* opc_adds[9] = {/* additions */
+                           "addc",
+                           "",
+                           "",
+                           "",
+                           "adde",
+                           "",
+                           "addze",
+                           "addme",
+                           "add"};
 
-const char* opc_muldivs[16] = { /* multiply and division instructions */
-    "mulhwu", "", "mulhw", "mul", "", "", "", "mullw", "", "", "div", "divs",
-    "", "", "divwu", "divw"
-};
+const char* opc_muldivs[16] = {/* multiply and division instructions */
+                               "mulhwu",
+                               "",
+                               "mulhw",
+                               "mul",
+                               "",
+                               "",
+                               "",
+                               "mullw",
+                               "",
+                               "",
+                               "div",
+                               "divs",
+                               "",
+                               "",
+                               "divwu",
+                               "divw"};
 
-const char* opc_shft_reg[32]{ /* Regular shift instructions */
-    "slw", "", "", "", "slq", "sliq", "sllq", "slliq",
-    "", "", "", "", "", "", "", "",
-    "srw", "", "", "", "srq", "sriq", "srlq", "srliq",
-    "sraw", "srawi", "", "", "sraq", "sraiq", "", ""
-};
+const char* opc_shft_reg[32]{
+    /* Regular shift instructions */
+    "slw",  "",      "",     "",      "slq", "sliq", "sllq", "slliq", "", "",    "",
+    "",     "",      "",     "",      "",    "srw",  "",     "",      "", "srq", "sriq",
+    "srlq", "srliq", "sraw", "srawi", "",    "",     "sraq", "sraiq", "", ""};
 
 
-const char* opc_shft_ext[32]{ /* Extended shift instructions (601 only) */
-    "", "", "", "", "sle", "", "sleq", "",
-    "", "", "", "", "", "", "", "",
-    "rrib", "", "", "", "sre", "", "sreq", "",
-    "", "", "", "", "srea", "", "", ""
-};
+const char* opc_shft_ext[32]{
+    /* Extended shift instructions (601 only) */
+    "",     "", "", "", "sle", "", "sleq", "", "", "", "", "", "",     "", "", "",
+    "rrib", "", "", "", "sre", "", "sreq", "", "", "", "", "", "srea", "", "", ""};
 
-const char* opc_int_ldst[16] = { /* integer load and store instructions */
-    "lwz", "lwzu", "lbz", "lbzu", "stw", "stwu", "stb", "stbu", "lhz", "lhzu",
-    "lha", "lhau", "sth", "sthu", "lmw", "stmw"
-};
+const char* opc_int_ldst[16] = {/* integer load and store instructions */
+                                "lwz",
+                                "lwzu",
+                                "lbz",
+                                "lbzu",
+                                "stw",
+                                "stwu",
+                                "stb",
+                                "stbu",
+                                "lhz",
+                                "lhzu",
+                                "lha",
+                                "lhau",
+                                "sth",
+                                "sthu",
+                                "lmw",
+                                "stmw"};
 
 /* processor management + byte reversed load and store */
 const char* proc_mgmt_str[32] = {
-    "", "dcbst", "dcbf", "", "stwcx.", "", "", "dcbtst",
-    "dcbt", "eciwx", "", "", "", "ecowx", "dcbi", "",
-    "lwbrx", "tlbsync", "sync", "", "stwbrx", "", "", "dcba",
-    "lhbrx", "", "eieio", "", "sthbrx", "", "icbi", "dcbz"
+    "", "dcbst", "dcbf",  "",     "stwcx.", "",      "",        "dcbtst", "dcbt", "eciwx",  "",
+    "", "",      "ecowx", "dcbi", "",       "lwbrx", "tlbsync", "sync",   "",     "stwbrx", "",
+    "", "dcba",  "lhbrx", "",     "eieio",  "",      "sthbrx",  "",       "icbi", "dcbz"};
+
+const char* opc_flt_ldst[8] = {/* integer load and store instructions */
+                               "lfs",
+                               "lfsu",
+                               "lfd",
+                               "lfdu",
+                               "stfs",
+                               "stfsu",
+                               "sftd",
+                               "sftdu"};
+
+const char* opc_flt_ext_arith[32] = {
+    /* integer load and store instructions */
+    "", "", "", "", "", "", "", "",     "", "",     "", "", "",      "",      "",       "",
+    "", "", "", "", "", "", "", "fsel", "", "fmul", "", "", "fmsub", "fmadd", "fnmsub", "fnmadd",
 };
 
-const char* opc_flt_ldst[8] = { /* integer load and store instructions */
-    "lfs", "lfsu", "lfd", "lfdu", "stfs", "stfsu", "sftd", "sftdu"
-};
+const char* trap_cond[32] = {/*Trap conditions*/
+                             "",     "twlgt", "twllt", "", "tweq", "twlge", "twlle", "",
+                             "twgt", "",      "",      "", "twge", "",      "",      "",
+                             "twlt", "",      "",      "", "twle", "",      "",      "",
+                             "twne", "",      "",      "", "",     "",      "",      ""};
 
-const char* opc_flt_ext_arith[32] = { /* integer load and store instructions */
-    "", "", "", "", "", "", "", "",
-    "", "", "", "", "", "", "", "",
-    "", "", "", "", "", "", "", "fsel",
-    "", "fmul", "", "", "fmsub", "fmadd", "fnmsub", "fnmadd",
-};
-
-const char* trap_cond[32] = { /*Trap conditions*/
-    "", "twlgt", "twllt", "",  "tweq", "twlge", "twlle", "",
-    "twgt", "", "", "", "twge", "", "", "",
-    "twlt", "", "", "", "twle", "", "", "",
-    "twne", "", "", "", "", "", "", ""
-};
-
-const char* spr_index0[32] = {
-    "mq", "xer", "", "", "rtcu", "rtcl", "", "",
-    "lr", "ctr", "", "", "", "", "", "",
-    "", "", "dsisr", "dar", "", "", "dec", "",
-    "", "sdr1", "srr0", "srr1", "", "", "", ""
-};
+const char* spr_index0[32] = {"mq", "xer",  "",      "",     "rtcu", "rtcl", "",    "",
+                              "lr", "ctr",  "",      "",     "",     "",     "",    "",
+                              "",   "",     "dsisr", "dar",  "",     "",     "dec", "",
+                              "",   "sdr1", "srr0",  "srr1", "",     "",     "",    ""};
 
 const char* spr_index8[32] = {
-    "", "", "", "", "", "", "", "",
-    "", "", "", "", "", "", "", "",
-    "sprg0", "sprg1", "sprg2", "sprg3", "sprg4", "sprg5", "sprg6", "sprg7",
-    "", "", "ear", "", "tbl", "tbu", "", "pvr"
-};
+    "",      "",      "", "", "",    "",      "",      "",      "",      "",      "",
+    "",      "",      "", "", "",    "sprg0", "sprg1", "sprg2", "sprg3", "sprg4", "sprg5",
+    "sprg6", "sprg7", "", "", "ear", "",      "tbl",   "tbu",   "",      "pvr"};
 
 const char* spr_index16[32] = {
-    "", "", "", "", "", "", "", "",
-    "", "", "", "", "", "", "", "",
+    "",       "",       "",       "",       "",       "",       "",       "",
+    "",       "",       "",       "",       "",       "",       "",       "",
     "ibat0u", "ibat0l", "ibat1u", "ibat1l", "ibat2u", "ibat2l", "ibat3u", "ibat3l",
     "dbat0u", "dbat0l", "dbat1u", "dbat1l", "dbat2u", "dbat2l", "dbat3u", "dbat3l",
 };
 
 const char* spr_index29[32] = {
-    "", "", "", "", "", "", "", "",
-    "ummcr0", "upmc1", "upmc2", "usia", "ummcr1", "upmc3", "upmc4", "",
-    "", "", "", "", "", "", "", "",
-    "mmcr0", "pmc1", "pmc2", "sia", "mmcr1", "pmc3", "pmc4", "sda"
-};
+    "",     "",       "",      "",      "",     "",    "",      "",     "ummcr0", "upmc1", "upmc2",
+    "usia", "ummcr1", "upmc3", "upmc4", "",     "",    "",      "",     "",       "",      "",
+    "",     "",       "mmcr0", "pmc1",  "pmc2", "sia", "mmcr1", "pmc3", "pmc4",   "sda"};
 
 const char* spr_index30[32] = {
-    "", "", "", "", "", "", "", "",
-    "", "", "", "", "", "", "", "",
-    "dmiss", "dcmp", "hash1", "hash2", "imiss", "icmp", "rpa", "",
-    "", "", "", "", "", "", "", ""
-};
+    "",      "",     "",      "",      "",      "",     "",    "", "", "", "", "", "", "", "", "",
+    "dmiss", "dcmp", "hash1", "hash2", "imiss", "icmp", "rpa", "", "", "", "", "", "", "", "", ""};
 
 const char* spr_index31[32] = {
-    "", "", "", "", "", "", "", "",
-    "", "", "", "", "", "", "", "",
-    "hid0", "hid1", "iabr", "", "", "dabr", "", "",
-    "", "l2cr", "", "ictc", "thrm1", "thrm2", "thrm3", "pir",
+    "", "", "", "",     "", "",     "",      "",      "",      "",    "",
+    "", "", "", "",     "", "hid0", "hid1",  "iabr",  "",      "",    "dabr",
+    "", "", "", "l2cr", "", "ictc", "thrm1", "thrm2", "thrm3", "pir",
 };
 
 /** various formatting helpers. */
-void fmt_oneop(string& buf, const char* opc, int src)
-{
+void fmt_oneop(string& buf, const char* opc, int src) {
     buf = my_sprintf("%-8sr%d", opc, src);
 }
 
-void fmt_twoop(string& buf, const char* opc, int dst, int src)
-{
+void fmt_twoop(string& buf, const char* opc, int dst, int src) {
     buf = my_sprintf("%-8sr%d, r%d", opc, dst, src);
 }
 
-void fmt_twoop_simm(string& buf, const char* opc, int dst, int imm)
-{
+void fmt_twoop_simm(string& buf, const char* opc, int dst, int imm) {
     buf = my_sprintf("%-8sr%d, %s0x%X", opc, dst, (imm < 0) ? "-" : "", abs(imm));
 }
 
-void fmt_twoop_fromspr(string& buf, const char* opc, int dst, int src)
-{
+void fmt_twoop_fromspr(string& buf, const char* opc, int dst, int src) {
     buf = my_sprintf("%-8sr%d, spr%d", opc, dst, src);
 }
 
-void fmt_twoop_tospr(string& buf, const char* opc, int dst, int src)
-{
+void fmt_twoop_tospr(string& buf, const char* opc, int dst, int src) {
     buf = my_sprintf("%-8sspr%d, r%d", opc, dst, src);
 }
 
-void fmt_twoop_flt(string& buf, const char* opc, int dst, int src1)
-{
+void fmt_twoop_flt(string& buf, const char* opc, int dst, int src1) {
     buf = my_sprintf("%-8sf%d, f%d", opc, dst, src1);
 }
 
-void fmt_threeop(string& buf, const char* opc, int dst, int src1, int src2)
-{
+void fmt_threeop(string& buf, const char* opc, int dst, int src1, int src2) {
     buf = my_sprintf("%-8sr%d, r%d, r%d", opc, dst, src1, src2);
 }
 
-void fmt_threeop_crb(string& buf, const char* opc, int dst, int src1, int src2)
-{
+void fmt_threeop_crb(string& buf, const char* opc, int dst, int src1, int src2) {
     buf = my_sprintf("%-8scrb%d, crb%d, crb%d", opc, dst, src1, src2);
 }
 
-void fmt_threeop_uimm(string& buf, const char* opc, int dst, int src1, int imm)
-{
+void fmt_threeop_uimm(string& buf, const char* opc, int dst, int src1, int imm) {
     buf = my_sprintf("%-8sr%d, r%d, 0x%X", opc, dst, src1, imm);
 }
 
-void fmt_threeop_simm(string& buf, const char* opc, int dst, int src1, int imm)
-{
-    buf = my_sprintf("%-8sr%d, r%d, %s0x%X", opc, dst, src1,
-        (imm < 0) ? "-" : "", abs(imm));
+void fmt_threeop_simm(string& buf, const char* opc, int dst, int src1, int imm) {
+    buf = my_sprintf("%-8sr%d, r%d, %s0x%X", opc, dst, src1, (imm < 0) ? "-" : "", abs(imm));
 }
 
-void fmt_threeop_flt(string& buf, const char* opc, int dst, int src1, int src2)
-{
+void fmt_threeop_flt(string& buf, const char* opc, int dst, int src1, int src2) {
     buf = my_sprintf("%-8sf%d, f%d, f%d", opc, dst, src1, src2);
 }
 
-void fmt_fourop_flt(string& buf, const char* opc, int dst, int src1, int src2, int src3)
-{
+void fmt_fourop_flt(string& buf, const char* opc, int dst, int src1, int src2, int src3) {
     buf = my_sprintf("%-8sf%d, f%d, f%d, f%d", opc, dst, src1, src2, src3);
 }
 
-void fmt_rotateop(string& buf, const char* opc, int dst, int src, int sh, int mb, int me, bool imm)
-{
+void fmt_rotateop(string& buf, const char* opc, int dst, int src, int sh, int mb, int me, bool imm) {
     if (imm)
         buf = my_sprintf("%-8sr%d, r%d, %d, %d, %d", opc, dst, src, sh, mb, me);
     else
@@ -267,18 +314,15 @@ void fmt_rotateop(string& buf, const char* opc, int dst, int src, int sh, int mb
 
 /* Opcodes */
 
-void opc_illegal(PPCDisasmContext* ctx)
-{
+void opc_illegal(PPCDisasmContext* ctx) {
     ctx->instr_str = my_sprintf("%-8s0x%08X", "dc.l", ctx->instr_code);
 }
 
-void opc_twi(PPCDisasmContext* ctx)
-{
-
+void opc_twi(PPCDisasmContext* ctx) {
     char opcode[10] = "";
 
-    auto to = (ctx->instr_code >> 21) & 0x1F;
-    auto ra = (ctx->instr_code >> 16) & 0x1F;
+    auto to     = (ctx->instr_code >> 21) & 0x1F;
+    auto ra     = (ctx->instr_code >> 16) & 0x1F;
     int32_t imm = SIGNEXT(ctx->instr_code & 0xFFFF, 15);
 
     if (ctx->simplified) {
@@ -289,28 +333,24 @@ void opc_twi(PPCDisasmContext* ctx)
             ctx->instr_str = my_sprintf("%-8sr%d, 0x%X", opcode, ra, imm);
             return;
         }
-
     }
     ctx->instr_str = my_sprintf("%-8s%d, r%d, 0x%X", "twi", to, ra, imm);
 }
 
-void opc_group4(PPCDisasmContext* ctx)
-{
+void opc_group4(PPCDisasmContext* ctx) {
     printf("Altivec group 4 not supported yet\n");
 }
 
-void opc_ar_im(PPCDisasmContext* ctx)
-{
-    auto ra = (ctx->instr_code >> 16) & 0x1F;
-    auto rd = (ctx->instr_code >> 21) & 0x1F;
+void opc_ar_im(PPCDisasmContext* ctx) {
+    auto ra     = (ctx->instr_code >> 16) & 0x1F;
+    auto rd     = (ctx->instr_code >> 21) & 0x1F;
     int32_t imm = SIGNEXT(ctx->instr_code & 0xFFFF, 15);
 
     if (ctx->simplified) {
         if (((ctx->instr_code >> 26) == 0xE) & !ra) {
             fmt_twoop_simm(ctx->instr_str, "li", rd, imm);
             return;
-        }
-        else if (((ctx->instr_code >> 26) == 0xF) & !ra) {
+        } else if (((ctx->instr_code >> 26) == 0xF) & !ra) {
             fmt_twoop_simm(ctx->instr_str, "lis", rd, imm);
             return;
         }
@@ -333,21 +373,18 @@ void opc_ar_im(PPCDisasmContext* ctx)
         }
     }
 
-    fmt_threeop_simm(ctx->instr_str, arith_im_mnem[(ctx->instr_code >> 26) - 7],
-        rd, ra, imm);
+    fmt_threeop_simm(ctx->instr_str, arith_im_mnem[(ctx->instr_code >> 26) - 7], rd, ra, imm);
 }
 
-void power_dozi(PPCDisasmContext* ctx)
-{
-    auto ra = (ctx->instr_code >> 16) & 0x1F;
-    auto rd = (ctx->instr_code >> 21) & 0x1F;
+void power_dozi(PPCDisasmContext* ctx) {
+    auto ra  = (ctx->instr_code >> 16) & 0x1F;
+    auto rd  = (ctx->instr_code >> 21) & 0x1F;
     auto imm = ctx->instr_code & 0xFFFF;
 
     fmt_threeop_simm(ctx->instr_str, "dozi", rd, ra, imm);
 }
 
-void fmt_rot_imm(PPCDisasmContext* ctx, const char* opc, int ra, int rs, int n)
-{
+void fmt_rot_imm(PPCDisasmContext* ctx, const char* opc, int ra, int rs, int n) {
     char opcode[10];
 
     strcpy(opcode, opc);
@@ -357,9 +394,7 @@ void fmt_rot_imm(PPCDisasmContext* ctx, const char* opc, int ra, int rs, int n)
     ctx->instr_str = my_sprintf("%-8sr%d, r%d, %d", opcode, ra, rs, n);
 }
 
-void fmt_rot_2imm(PPCDisasmContext* ctx, const char* opc, int ra, int rs, int n,
-    int b)
-{
+void fmt_rot_2imm(PPCDisasmContext* ctx, const char* opc, int ra, int rs, int n, int b) {
     char opcode[10];
 
     strcpy(opcode, opc);
@@ -369,8 +404,7 @@ void fmt_rot_2imm(PPCDisasmContext* ctx, const char* opc, int ra, int rs, int n,
     ctx->instr_str = my_sprintf("%-8sr%d, r%d, %d, %d", opcode, ra, rs, n, b);
 }
 
-void opc_rlwimi(PPCDisasmContext* ctx)
-{
+void opc_rlwimi(PPCDisasmContext* ctx) {
     char opcode[10];
     auto rs = (ctx->instr_code >> 21) & 0x1F;
     auto ra = (ctx->instr_code >> 16) & 0x1F;
@@ -382,8 +416,7 @@ void opc_rlwimi(PPCDisasmContext* ctx)
         if ((32 - sh) == mb) {
             fmt_rot_2imm(ctx, "inslwi", ra, rs, me + 1 - mb, mb);
             return;
-        }
-        else if (sh == 32 - (me + 1)) {
+        } else if (sh == 32 - (me + 1)) {
             fmt_rot_2imm(ctx, "insrwi", ra, rs, (me - mb + 1), mb);
             return;
         }
@@ -396,8 +429,7 @@ void opc_rlwimi(PPCDisasmContext* ctx)
     fmt_rotateop(ctx->instr_str, opcode, ra, rs, sh, mb, me, true);
 }
 
-void opc_rlwinm(PPCDisasmContext* ctx)
-{
+void opc_rlwinm(PPCDisasmContext* ctx) {
     char opcode[10];
     auto rs = (ctx->instr_code >> 21) & 0x1F;
     auto ra = (ctx->instr_code >> 16) & 0x1F;
@@ -413,8 +445,7 @@ void opc_rlwinm(PPCDisasmContext* ctx)
                 fmt_rot_imm(ctx, "rotrwi", ra, rs, 32 - sh);
             }
             return;
-        }
-        else if (me == 31) {
+        } else if (me == 31) {
             if ((32 - sh) == mb) {
                 fmt_rot_imm(ctx, "srwi", ra, rs, mb);
             } else if (sh == 0) {
@@ -423,8 +454,7 @@ void opc_rlwinm(PPCDisasmContext* ctx)
                 fmt_rot_2imm(ctx, "extrwi", ra, rs, (32 - mb), (sh - (32 - mb)));
             }
             return;
-        }
-        else if (mb == 0) {
+        } else if (mb == 0) {
             if ((31 - me) == sh) {
                 fmt_rot_imm(ctx, "slwi", ra, rs, sh);
             } else if (sh == 0) {
@@ -433,8 +463,7 @@ void opc_rlwinm(PPCDisasmContext* ctx)
                 fmt_rot_2imm(ctx, "extlwi", ra, rs, (me + 1), sh);
             }
             return;
-        }
-        else if (mb) {
+        } else if (mb) {
             if ((31 - me) == sh) {
                 fmt_rot_2imm(ctx, "clrlslwi", ra, rs, (mb + sh), sh);
                 return;
@@ -449,8 +478,7 @@ void opc_rlwinm(PPCDisasmContext* ctx)
     fmt_rotateop(ctx->instr_str, opcode, ra, rs, sh, mb, me, true);
 }
 
-void opc_rlmi(PPCDisasmContext* ctx)
-{
+void opc_rlmi(PPCDisasmContext* ctx) {
     auto rs = (ctx->instr_code >> 21) & 0x1F;
     auto ra = (ctx->instr_code >> 16) & 0x1F;
     auto rb = (ctx->instr_code >> 11) & 0x1F;
@@ -463,8 +491,7 @@ void opc_rlmi(PPCDisasmContext* ctx)
         fmt_rotateop(ctx->instr_str, "rlmi", ra, rs, rb, mb, me, false);
 }
 
-void opc_rlwnm(PPCDisasmContext* ctx)
-{
+void opc_rlwnm(PPCDisasmContext* ctx) {
     char opcode[10];
     auto rs = (ctx->instr_code >> 21) & 0x1F;
     auto ra = (ctx->instr_code >> 16) & 0x1F;
@@ -479,8 +506,8 @@ void opc_rlwnm(PPCDisasmContext* ctx)
             if (ctx->instr_code & 1)
                 strcat(opcode, ".");
 
-             fmt_threeop(ctx->instr_str, opcode, ra, rs, rb);
-             return;
+            fmt_threeop(ctx->instr_str, opcode, ra, rs, rb);
+            return;
         }
     }
     strcpy(opcode, "rlwnm");
@@ -490,12 +517,11 @@ void opc_rlwnm(PPCDisasmContext* ctx)
     fmt_rotateop(ctx->instr_str, "rlwnm", ra, rs, rb, mb, me, false);
 }
 
-void opc_cmp_i_li(PPCDisasmContext* ctx)
-{
-    auto ls = (ctx->instr_code >> 21) & 0x1;
-    auto ra = (ctx->instr_code >> 16) & 0x1F;
+void opc_cmp_i_li(PPCDisasmContext* ctx) {
+    auto ls   = (ctx->instr_code >> 21) & 0x1;
+    auto ra   = (ctx->instr_code >> 16) & 0x1F;
     auto crfd = (ctx->instr_code >> 23) & 0x07;
-    int imm = ctx->instr_code & 0xFFFF;
+    int imm   = ctx->instr_code & 0xFFFF;
 
 
     if (ctx->simplified) {
@@ -503,7 +529,8 @@ void opc_cmp_i_li(PPCDisasmContext* ctx)
             if ((ctx->instr_code >> 26) & 0x1)
                 ctx->instr_str = my_sprintf("%-8scr%d, r%d, 0x%X", "cmpwi", crfd, ra, imm);
             else
-                ctx->instr_str = my_sprintf("%-8scr%d, r%d, %s0x%X", "cmplwi", crfd, ra, (imm < 0) ? "-" : "", abs(imm));
+                ctx->instr_str = my_sprintf(
+                    "%-8scr%d, r%d, %s0x%X", "cmplwi", crfd, ra, (imm < 0) ? "-" : "", abs(imm));
 
             return;
         }
@@ -512,21 +539,21 @@ void opc_cmp_i_li(PPCDisasmContext* ctx)
     if ((ctx->instr_code >> 26) & 0x1)
         ctx->instr_str = my_sprintf("%-8scr%d, %d, r%d, 0x%X", "cmpi", crfd, ls, ra, imm);
     else
-        ctx->instr_str = my_sprintf("%-8scr%d, %d, r%d, %s0x%X", "cmpli", crfd, ls, ra, (imm < 0) ? "-" : "", abs(imm));
+        ctx->instr_str = my_sprintf(
+            "%-8scr%d, %d, r%d, %s0x%X", "cmpli", crfd, ls, ra, (imm < 0) ? "-" : "", abs(imm));
 }
 
-void opc_bool_im(PPCDisasmContext* ctx)
-{
+void opc_bool_im(PPCDisasmContext* ctx) {
     char opcode[10];
 
-    auto ra = (ctx->instr_code >> 16) & 0x1F;
-    auto rs = (ctx->instr_code >> 21) & 0x1F;
+    auto ra    = (ctx->instr_code >> 16) & 0x1F;
+    auto rs    = (ctx->instr_code >> 21) & 0x1F;
     auto index = ((ctx->instr_code >> 26) & 0x1F) - 24;
-    auto imm = ctx->instr_code & 0xFFFF;
+    auto imm   = ctx->instr_code & 0xFFFF;
 
     if (ctx->simplified) {
         if (index == 0) {
-            if (imm == 0 && !ra && !rs && !imm) {  /* unofficial, produced by IDA */
+            if (imm == 0 && !ra && !rs && !imm) { /* unofficial, produced by IDA */
                 ctx->instr_str = my_sprintf("%-8s", "nop");
                 return;
             }
@@ -537,8 +564,7 @@ void opc_bool_im(PPCDisasmContext* ctx)
     fmt_threeop_uimm(ctx->instr_str, opcode, ra, rs, imm);
 }
 
-void generic_bcx(PPCDisasmContext* ctx, uint32_t bo, uint32_t bi, uint32_t dst)
-{
+void generic_bcx(PPCDisasmContext* ctx, uint32_t bo, uint32_t bi, uint32_t dst) {
     char opcode[10] = "bc";
 
     if (ctx->instr_code & 1) {
@@ -550,8 +576,7 @@ void generic_bcx(PPCDisasmContext* ctx, uint32_t bo, uint32_t bi, uint32_t dst)
     ctx->instr_str = my_sprintf("%-8s%d, %d, 0x%08X", opcode, bo, bi, dst);
 }
 
-void generic_bcctrx(PPCDisasmContext* ctx, uint32_t bo, uint32_t bi)
-{
+void generic_bcctrx(PPCDisasmContext* ctx, uint32_t bo, uint32_t bi) {
     char opcode[10] = "bcctr";
 
     if (ctx->instr_code & 1) {
@@ -561,8 +586,7 @@ void generic_bcctrx(PPCDisasmContext* ctx, uint32_t bo, uint32_t bi)
     ctx->instr_str = my_sprintf("%-8s%d, %d, 0x%08X", opcode, bo, bi);
 }
 
-void generic_bclrx(PPCDisasmContext* ctx, uint32_t bo, uint32_t bi)
-{
+void generic_bclrx(PPCDisasmContext* ctx, uint32_t bo, uint32_t bi) {
     char opcode[10] = "bclr";
 
     if (ctx->instr_code & 1) {
@@ -572,20 +596,17 @@ void generic_bclrx(PPCDisasmContext* ctx, uint32_t bo, uint32_t bi)
     ctx->instr_str = my_sprintf("%-8s%d, %d, 0x%08X", opcode, bo, bi);
 }
 
-void opc_bcx(PPCDisasmContext* ctx)
-{
+void opc_bcx(PPCDisasmContext* ctx) {
     uint32_t bo, bi, dst, cr;
-    char opcode[10] = "b";
+    char opcode[10]   = "b";
     char operands[12] = "";
 
-    bo = (ctx->instr_code >> 21) & 0x1F;
-    bi = (ctx->instr_code >> 16) & 0x1F;
-    cr = bi >> 2;
-    dst = ((ctx->instr_code & 2) ? 0 : ctx->instr_addr) +
-        SIGNEXT(ctx->instr_code & 0xFFFC, 15);
+    bo  = (ctx->instr_code >> 21) & 0x1F;
+    bi  = (ctx->instr_code >> 16) & 0x1F;
+    cr  = bi >> 2;
+    dst = ((ctx->instr_code & 2) ? 0 : ctx->instr_addr) + SIGNEXT(ctx->instr_code & 0xFFFC, 15);
 
-    if (!ctx->simplified || ((bo & 0x10) && bi) ||
-        (((bo & 0x14) == 0x14) && (bo & 0xB) && bi)) {
+    if (!ctx->simplified || ((bo & 0x10) && bi) || (((bo & 0x14) == 0x14) && (bo & 0xB) && bi)) {
         generic_bcx(ctx, bo, bi, dst);
         return;
     }
@@ -607,8 +628,7 @@ void opc_bcx(PPCDisasmContext* ctx)
             strcat(operands, br_cond[4 + (bi & 3)]);
             strcat(operands, ", ");
         }
-    }
-    else { /* CTR ignored */
+    } else { /* CTR ignored */
         strcat(opcode, br_cond[((bo >> 1) & 4) | (bi & 3)]);
         if (cr) {
             strcat(operands, "cr0, ");
@@ -629,10 +649,9 @@ void opc_bcx(PPCDisasmContext* ctx)
     ctx->instr_str = my_sprintf("%-8s%s0x%08X", opcode, operands, dst);
 }
 
-void opc_bcctrx(PPCDisasmContext* ctx)
-{
+void opc_bcctrx(PPCDisasmContext* ctx) {
     uint32_t bo, bi, cr;
-    char opcode[10] = "b";
+    char opcode[10]  = "b";
     char operands[4] = "";
 
     bo = (ctx->instr_code >> 21) & 0x1F;
@@ -643,8 +662,7 @@ void opc_bcctrx(PPCDisasmContext* ctx)
         opc_illegal(ctx);
     }
 
-    if (!ctx->simplified || ((bo & 0x10) && bi) ||
-        (((bo & 0x14) == 0x14) && (bo & 0xB) && bi)) {
+    if (!ctx->simplified || ((bo & 0x10) && bi) || (((bo & 0x14) == 0x14) && (bo & 0xB) && bi)) {
         generic_bcctrx(ctx, bo, bi);
         return;
     }
@@ -671,18 +689,16 @@ void opc_bcctrx(PPCDisasmContext* ctx)
     ctx->instr_str = my_sprintf("%-8s%s", opcode, operands);
 }
 
-void opc_bclrx(PPCDisasmContext* ctx)
-{
+void opc_bclrx(PPCDisasmContext* ctx) {
     uint32_t bo, bi, cr;
-    char opcode[10] = "b";
+    char opcode[10]   = "b";
     char operands[12] = "";
 
     bo = (ctx->instr_code >> 21) & 0x1F;
     bi = (ctx->instr_code >> 16) & 0x1F;
     cr = bi >> 2;
 
-    if (!ctx->simplified || ((bo & 0x10) && bi) ||
-        (((bo & 0x14) == 0x14) && (bo & 0xB) && bi)) {
+    if (!ctx->simplified || ((bo & 0x10) && bi) || (((bo & 0x14) == 0x14) && (bo & 0xB) && bi)) {
         generic_bclrx(ctx, bo, bi);
         return;
     }
@@ -703,8 +719,7 @@ void opc_bclrx(PPCDisasmContext* ctx)
             }
             strcat(operands, br_cond[4 + (bi & 3)]);
         }
-    }
-    else { /* CTR ignored */
+    } else { /* CTR ignored */
         strcat(opcode, br_cond[((bo >> 1) & 4) | (bi & 3)]);
         if (cr) {
             strcat(operands, "cr0");
@@ -724,26 +739,23 @@ void opc_bclrx(PPCDisasmContext* ctx)
     ctx->instr_str = my_sprintf("%-8s%s", opcode, operands);
 }
 
-void opc_bx(PPCDisasmContext* ctx)
-{
-    uint32_t dst = ((ctx->instr_code & 2) ? 0 : ctx->instr_addr)
-        + SIGNEXT(ctx->instr_code & 0x3FFFFFC, 25);
+void opc_bx(PPCDisasmContext* ctx) {
+    uint32_t dst = ((ctx->instr_code & 2) ? 0 : ctx->instr_addr) +
+        SIGNEXT(ctx->instr_code & 0x3FFFFFC, 25);
 
     ctx->instr_str = my_sprintf("%-8s0x%08X", bx_mnem[ctx->instr_code & 3], dst);
 }
 
-void opc_sc(PPCDisasmContext* ctx)
-{
+void opc_sc(PPCDisasmContext* ctx) {
     ctx->instr_str = my_sprintf("%-8s", "sc");
 }
 
-void opc_group19(PPCDisasmContext* ctx)
-{
+void opc_group19(PPCDisasmContext* ctx) {
     auto rb = (ctx->instr_code >> 11) & 0x1F;
     auto ra = (ctx->instr_code >> 16) & 0x1F;
     auto rs = (ctx->instr_code >> 21) & 0x1F;
 
-    int ext_opc = (ctx->instr_code >> 1) & 0x3FF; /* extract extended opcode */
+    int ext_opc       = (ctx->instr_code >> 1) & 0x3FF; /* extract extended opcode */
     char operand1[12] = "";
     char operand2[12] = "";
     char operand3[12] = "";
@@ -778,8 +790,7 @@ void opc_group19(PPCDisasmContext* ctx)
     case 33:
         if (ctx->simplified && (ra == rb)) {
             ctx->instr_str = my_sprintf("%-8s%s, %s, %s", "crnor", operand1, operand2, operand3);
-        }
-        else {
+        } else {
             fmt_threeop_crb(ctx->instr_str, "crnor", rs, ra, rb);
         }
         return;
@@ -789,8 +800,7 @@ void opc_group19(PPCDisasmContext* ctx)
     case 129:
         if (ctx->simplified) {
             ctx->instr_str = my_sprintf("%-8s%s, %s, %s", "crandc", operand1, operand2, operand3);
-        }
-        else {
+        } else {
             fmt_threeop_crb(ctx->instr_str, "crandc", rs, ra, rb);
         }
         return;
@@ -801,8 +811,7 @@ void opc_group19(PPCDisasmContext* ctx)
         if (ctx->simplified && (rs == ra) && (rs == rb)) {
             ctx->instr_str = my_sprintf("%-8scrb%d", "crclr", rs);
             return;
-        }
-        else if (ctx->simplified && ((rs != ra) || (rs != rb))) {
+        } else if (ctx->simplified && ((rs != ra) || (rs != rb))) {
             ctx->instr_str = my_sprintf("%-8s%s, %s, %s", "crxor", operand1, operand2, operand3);
             return;
         }
@@ -811,16 +820,14 @@ void opc_group19(PPCDisasmContext* ctx)
     case 225:
         if (ctx->simplified) {
             ctx->instr_str = my_sprintf("%-8s%s, %s, %s", "crnand", operand1, operand2, operand3);
-        }
-        else {
+        } else {
             fmt_threeop_crb(ctx->instr_str, "crnand", rs, ra, rb);
         }
         return;
     case 257:
         if (ctx->simplified) {
             ctx->instr_str = my_sprintf("%-8s%s, %s, %s", "crand", operand1, operand2, operand3);
-        }
-        else {
+        } else {
             fmt_threeop_crb(ctx->instr_str, "crand", rs, ra, rb);
         }
         return;
@@ -828,8 +835,7 @@ void opc_group19(PPCDisasmContext* ctx)
         if (ctx->simplified && (rs == ra) && (rs == rb)) {
             ctx->instr_str = my_sprintf("%-8scrb%d", "crset", rs);
             return;
-        }
-        else if (ctx->simplified && ((rs != ra) || (rs != rb))) {
+        } else if (ctx->simplified && ((rs != ra) || (rs != rb))) {
             ctx->instr_str = my_sprintf("%-8s%s, %s, %s", "creqv", operand1, operand2, operand3);
             return;
         }
@@ -838,8 +844,7 @@ void opc_group19(PPCDisasmContext* ctx)
     case 417:
         if (ctx->simplified) {
             ctx->instr_str = my_sprintf("%-8s%s, %s, %s", "crorc", operand1, operand2, operand3);
-        }
-        else {
+        } else {
             fmt_threeop_crb(ctx->instr_str, "crorc", rs, ra, rb);
         }
         return;
@@ -847,8 +852,7 @@ void opc_group19(PPCDisasmContext* ctx)
         if (ctx->simplified && (ra == rb)) {
             ctx->instr_str = my_sprintf("%-8scrb%d, crb%d", "crmove", rs, ra);
             return;
-        }
-        else if (ctx->simplified && (ra!= rb)) {
+        } else if (ctx->simplified && (ra != rb)) {
             ctx->instr_str = my_sprintf("%-8s%s, %s, %s", "cror", operand1, operand2, operand3);
             return;
         }
@@ -861,25 +865,23 @@ void opc_group19(PPCDisasmContext* ctx)
 }
 
 
-void opc_group31(PPCDisasmContext* ctx)
-{
+void opc_group31(PPCDisasmContext* ctx) {
     char opcode[10] = "";
 
     auto rb = (ctx->instr_code >> 11) & 0x1F;
     auto ra = (ctx->instr_code >> 16) & 0x1F;
     auto rs = (ctx->instr_code >> 21) & 0x1F;
 
-    int  ext_opc = (ctx->instr_code >> 1) & 0x3FF; /* extract extended opcode */
-    int  index = ext_opc >> 5;
+    int ext_opc = (ctx->instr_code >> 1) & 0x3FF; /* extract extended opcode */
+    int index   = ext_opc >> 5;
     bool rc_set = ctx->instr_code & 1;
 
     switch (ext_opc & 0x1F) {
-    case 8: /* subtracts & friends */
+    case 8:           /* subtracts & friends */
         index &= 0xF; /* strip OE bit */
         if (!strlen(opc_subs[index])) {
             opc_illegal(ctx);
-        }
-        else {
+        } else {
             strcpy(opcode, opc_subs[index]);
             if (ext_opc & 0x200) /* check OE bit */
                 strcat(opcode, "o");
@@ -891,18 +893,16 @@ void opc_group31(PPCDisasmContext* ctx)
                     opc_illegal(ctx);
                 else
                     fmt_twoop(ctx->instr_str, opcode, rs, ra);
-            }
-            else
+            } else
                 fmt_threeop(ctx->instr_str, opcode, rs, ra, rb);
         }
         return;
 
-    case 10: /* additions */
+    case 10:          /* additions */
         index &= 0xF; /* strip OE bit */
         if (index > 8 || !strlen(opc_adds[index])) {
             opc_illegal(ctx);
-        }
-        else {
+        } else {
             strcpy(opcode, opc_adds[index]);
             if (ext_opc & 0x200) /* check OE bit */
                 strcat(opcode, "o");
@@ -913,18 +913,16 @@ void opc_group31(PPCDisasmContext* ctx)
                     opc_illegal(ctx);
                 else
                     fmt_twoop(ctx->instr_str, opcode, rs, ra);
-            }
-            else
+            } else
                 fmt_threeop(ctx->instr_str, opcode, rs, ra, rb);
         }
         return;
 
-    case 11: /* integer multiplications and divisions */
+    case 11:          /* integer multiplications and divisions */
         index &= 0xF; /* strip OE bit */
         if (!strlen(opc_muldivs[index])) {
             opc_illegal(ctx);
-        }
-        else {
+        } else {
             strcpy(opcode, opc_muldivs[index]);
             if (ext_opc & 0x200) /* check OE bit */
                 strcat(opcode, "o");
@@ -944,29 +942,23 @@ void opc_group31(PPCDisasmContext* ctx)
                 opc_illegal(ctx);
             else
                 ctx->instr_str = my_sprintf("%-8sr%d", "mtmsr", rs);
-        }
-        else if (index == 6) { /* mtsr */
+        } else if (index == 6) { /* mtsr */
             if (ra & 16)
                 opc_illegal(ctx);
             else
                 ctx->instr_str = my_sprintf("%-8s%d, r%d", "mtsr", ra, rs);
-        }
-        else if (index == 7) { /* mtsrin */
+        } else if (index == 7) { /* mtsrin */
             ctx->instr_str = my_sprintf("%-8sr%d, r%d", "mtsrin", rs, rb);
-        }
-        else if (index == 9) {  /* tlbie */
+        } else if (index == 9) { /* tlbie */
             ctx->instr_str = my_sprintf("%-8sr%d", "tlbie", rb);
-        }
-        else if (index == 11) { /* tlbia */
+        } else if (index == 11) { /* tlbia */
             ctx->instr_str = my_sprintf("%-8s", "tlbia");
-        }
-        else if (index == 30) { /* tlbld - 603 only */
+        } else if (index == 30) { /* tlbld - 603 only */
             if (!rs & !ra)
                 opc_illegal(ctx);
             else
                 ctx->instr_str = my_sprintf("%-8sr%s", "tlbld", rb);
-        }
-        else if (index == 30) { /* tlbli - 603 only */
+        } else if (index == 30) { /* tlbli - 603 only */
             if (!rs & !ra)
                 opc_illegal(ctx);
             else
@@ -981,15 +973,12 @@ void opc_group31(PPCDisasmContext* ctx)
             strcat(opcode, ".");
 
 
-        if ((index == 0) | (index == 4) | (index == 6) | (index == 16) \
-            | (index == 20) | (index == 22) | (index == 24) | (index == 28)) {
+        if ((index == 0) | (index == 4) | (index == 6) | (index == 16) | (index == 20) |
+            (index == 22) | (index == 24) | (index == 28)) {
             fmt_threeop(ctx->instr_str, opcode, ra, rs, rb);
-        }
-        else if ((index == 5) | (index == 7) | (index == 21) \
-            | (index == 23) | (index == 25) | (index == 29)) {
+        } else if ((index == 5) | (index == 7) | (index == 21) | (index == 23) | (index == 25) | (index == 29)) {
             fmt_threeop_simm(ctx->instr_str, opcode, ra, rs, rb);
-        }
-        else {
+        } else {
             opc_illegal(ctx);
         }
 
@@ -1001,11 +990,10 @@ void opc_group31(PPCDisasmContext* ctx)
         if (rc_set)
             strcat(opcode, ".");
 
-        if ((index == 4) | (index == 6) | (index == 16) \
-            | (index == 20) | (index == 22) | (index == 28)){
+        if ((index == 4) | (index == 6) | (index == 16) | (index == 20) | (index == 22) |
+            (index == 28)) {
             fmt_threeop(ctx->instr_str, opcode, ra, rs, rb);
-        }
-        else{
+        } else {
             opc_illegal(ctx);
         }
 
@@ -1030,13 +1018,11 @@ void opc_group31(PPCDisasmContext* ctx)
     case 0x1C: /* logical instructions */
         if (index == 13 && rs == rb && ctx->simplified) {
             fmt_twoop(ctx->instr_str, rc_set ? "mr." : "mr", ra, rs);
-        }
-        else {
+        } else {
             strcpy(opcode, opc_logic[index]);
             if (!strlen(opcode)) {
                 opc_illegal(ctx);
-            }
-            else {
+            } else {
                 if (rc_set)
                     strcat(opcode, ".");
                 fmt_threeop(ctx->instr_str, opcode, ra, rs, rb);
@@ -1045,13 +1031,12 @@ void opc_group31(PPCDisasmContext* ctx)
         return;
 
 
-    case 0x17: /* indexed load/store instructions */
+    case 0x17:             /* indexed load/store instructions */
         if (index == 30) { /* stfiwx sneaks in here */
             if (rc_set) {
                 opc_illegal(ctx);
                 return;
-            }
-            else {
+            } else {
                 if (ra == 0)
                     ctx->instr_str = my_sprintf("%-8sf%d, 0, r%d", opc_idx_ldst[index], rs, rb);
                 else {
@@ -1071,10 +1056,8 @@ void opc_group31(PPCDisasmContext* ctx)
                 fmt_threeop(ctx->instr_str, opc_idx_ldst[index], rs, ra, rb);
 
             return;
-        }
-        else {
-            ctx->instr_str = my_sprintf("%-8sf%d, r%d, r%d", \
-                opc_idx_ldst[index], rs, ra, rb);
+        } else {
+            ctx->instr_str = my_sprintf("%-8sf%d, r%d, r%d", opc_idx_ldst[index], rs, ra, rb);
         }
         return;
 
@@ -1085,8 +1068,7 @@ void opc_group31(PPCDisasmContext* ctx)
             if (!rc_set) {
                 opc_illegal(ctx);
                 return;
-            }
-            else {
+            } else {
                 if (ra == 0)
                     ctx->instr_str = my_sprintf("%-8sr%d, 0, r%d", opcode, rs, rb);
                 else
@@ -1095,56 +1077,49 @@ void opc_group31(PPCDisasmContext* ctx)
             }
         }
         /* eciwx, ecowx, lhbrx, lwbrx, stwbrx, sthbrx */
-        else if ((index == 9) | (index == 13) | (index == 16)  \
-            | (index == 20) | (index == 24) | (index == 28)) {
+        else if ((index == 9) | (index == 13) | (index == 16) | (index == 20) | (index == 24) | (index == 28)) {
             if (rc_set) {
                 opc_illegal(ctx);
                 return;
-            }
-            else {
+            } else {
                 if (ra == 0)
                     ctx->instr_str = my_sprintf("%-8sr%d, 0, r%d", opcode, rs, rb);
                 else
                     fmt_threeop(ctx->instr_str, opcode, rs, ra, rb);
                 return;
             }
-        }
-        else if ((index == 18) | (index == 26)) { /* sync, eieio */
+        } else if ((index == 18) | (index == 26)) { /* sync, eieio */
             ctx->instr_str = my_sprintf("%-8s", opcode);
             return;
         }
         /* dcba, dcbf, dcbi, dcbst, dcbt, dcbz, icbi */
-        else if ((index == 1) | (index == 2) | (index == 7) \
-            | (index == 8) | (index == 14) | (index == 23) \
-            | (index == 30) | (index == 31)) {
+        else if (
+            (index == 1) | (index == 2) | (index == 7) | (index == 8) | (index == 14) |
+            (index == 23) | (index == 30) | (index == 31)) {
             if (rc_set | (rs != 0)) {
                 opc_illegal(ctx);
                 return;
-            }
-            else {
+            } else {
                 if (ra == 0)
                     ctx->instr_str = my_sprintf("%-8s0, r%d", opcode, rb);
                 else
                     fmt_twoop(ctx->instr_str, opcode, ra, rb);
                 return;
             }
-        }
-        else if (index == 17) { /* tlbsync */
+        } else if (index == 17) { /* tlbsync */
             ctx->instr_str = my_sprintf("%-8s", opcode);
             return;
-        }
-        else {
+        } else {
             opc_illegal(ctx);
         }
 
         return;
         break;
-
     }
 
-    auto ref_spr = (((ctx->instr_code >> 11) & 31) << 5) | ((ctx->instr_code >> 16) & 31);
+    auto ref_spr  = (((ctx->instr_code >> 11) & 31) << 5) | ((ctx->instr_code >> 16) & 31);
     auto spr_high = (ctx->instr_code >> 11) & 31;
-    auto spr_low = (ctx->instr_code >> 16) & 31;
+    auto spr_low  = (ctx->instr_code >> 16) & 31;
 
     switch (ext_opc) {
     case 0: /* cmp */
@@ -1159,8 +1134,7 @@ void opc_group31(PPCDisasmContext* ctx)
                 if ((rs >> 2) == 0) {
                     ctx->instr_str = my_sprintf("%-8sr%d, r%d", "cmpw", ra, rb);
                     return;
-                }
-                else {
+                } else {
                     ctx->instr_str = my_sprintf("%-8scr%d, r%d, r%d", "cmpw", (rs >> 2), ra, rb);
                     return;
                 }
@@ -1172,8 +1146,7 @@ void opc_group31(PPCDisasmContext* ctx)
     case 4: /* tw */
         if (rc_set) {
             opc_illegal(ctx);
-        }
-        else {
+        } else {
             if (ctx->simplified) {
                 strcpy(opcode, trap_cond[rs]);
 
@@ -1181,7 +1154,6 @@ void opc_group31(PPCDisasmContext* ctx)
                     ctx->instr_str = my_sprintf("%-8sr%d, r%d", opcode, ra, rb);
                     break;
                 }
-
             }
 
             ctx->instr_str = my_sprintf("%-8s%d, r%d, r%d", "tw", rs, ra, rb);
@@ -1193,8 +1165,7 @@ void opc_group31(PPCDisasmContext* ctx)
     case 20: /* lwarx */
         if (rc_set) {
             opc_illegal(ctx);
-        }
-        else {
+        } else {
             if (ra == 0)
                 ctx->instr_str = my_sprintf("%-8sr%d, 0, r%d", "lwarx", rs, rb);
             else
@@ -1227,12 +1198,12 @@ void opc_group31(PPCDisasmContext* ctx)
         }
 
         else {
-            ctx->instr_str = my_sprintf("%-8scr%d, %d, r%d, r%d", "cmpl", (rs >> 2), (rs & 1), ra, rb);
+            ctx->instr_str = my_sprintf(
+                "%-8scr%d, %d, r%d, r%d", "cmpl", (rs >> 2), (rs & 1), ra, rb);
         }
         break;
     case 83: /* mfmsr */
-        ctx->instr_str = my_sprintf("%-8sr%d", "mfmsr",
-            (ctx->instr_code >> 21) & 0x1F);
+        ctx->instr_str = my_sprintf("%-8sr%d", "mfmsr", (ctx->instr_code >> 21) & 0x1F);
         break;
     case 144: /* mtcrf */
         if (ctx->instr_code & 0x100801)
@@ -1241,8 +1212,8 @@ void opc_group31(PPCDisasmContext* ctx)
             if (((ctx->instr_code >> 12) & 0xFF) == 0xFF)
                 ctx->instr_str = my_sprintf("%-8sr%d", "mtcr", rs);
             else
-            ctx->instr_str = my_sprintf("%-8s0x%02X, r%d", "mtcrf",
-                (ctx->instr_code >> 12) & 0xFF, rs);
+                ctx->instr_str = my_sprintf(
+                    "%-8s0x%02X, r%d", "mtcrf", (ctx->instr_code >> 12) & 0xFF, rs);
         }
         break;
     case 277: /* lscbx */
@@ -1294,8 +1265,7 @@ void opc_group31(PPCDisasmContext* ctx)
         if (ctx->simplified) {
             if (ref_spr == 268) {
                 fmt_oneop(ctx->instr_str, "mftbl", rs);
-            }
-            else if (ref_spr == 269) {
+            } else if (ref_spr == 269) {
                 fmt_oneop(ctx->instr_str, "mftbu", rs);
             }
             return;
@@ -1353,8 +1323,7 @@ void opc_group31(PPCDisasmContext* ctx)
     case 533: /* lswx */
         if (rc_set) {
             opc_illegal(ctx);
-        }
-        else {
+        } else {
             if (ra == 0)
                 ctx->instr_str = my_sprintf("%-8sr%d, 0, r%d", "lswx", rs, rb);
             else
@@ -1378,8 +1347,7 @@ void opc_group31(PPCDisasmContext* ctx)
     case 597: /* lswi */
         if (rc_set) {
             opc_illegal(ctx);
-        }
-        else {
+        } else {
             if (rb == 0)
                 rb = 32;
 
@@ -1396,8 +1364,7 @@ void opc_group31(PPCDisasmContext* ctx)
         if (rc_set) {
             opc_illegal(ctx);
             return;
-        }
-        else {
+        } else {
             if (ra == 0)
                 ctx->instr_str = my_sprintf("%-8sr%d, 0, r%d", "stswx", rs, rb);
             else
@@ -1409,8 +1376,7 @@ void opc_group31(PPCDisasmContext* ctx)
         if (rc_set) {
             opc_illegal(ctx);
             return;
-        }
-        else {
+        } else {
             if (rb == 0)
                 rb = 32;
 
@@ -1426,8 +1392,7 @@ void opc_group31(PPCDisasmContext* ctx)
     }
 }
 
-void opc_group59(PPCDisasmContext* ctx)
-{
+void opc_group59(PPCDisasmContext* ctx) {
     char opcode[10] = "";
 
     auto rc = (ctx->instr_code >> 6) & 0x1F;
@@ -1435,7 +1400,7 @@ void opc_group59(PPCDisasmContext* ctx)
     auto ra = (ctx->instr_code >> 16) & 0x1F;
     auto rs = (ctx->instr_code >> 21) & 0x1F;
 
-    int  ext_opc = (ctx->instr_code >> 1) & 0x3FF; /* extract extended opcode */
+    int ext_opc = (ctx->instr_code >> 1) & 0x3FF; /* extract extended opcode */
     bool rc_set = ctx->instr_code & 1;
 
     switch (ext_opc & 0x1F) {
@@ -1569,8 +1534,7 @@ void opc_group59(PPCDisasmContext* ctx)
     }
 }
 
-void opc_group63(PPCDisasmContext* ctx)
-{
+void opc_group63(PPCDisasmContext* ctx) {
     char opcode[10] = "";
 
     auto rc = (ctx->instr_code >> 6) & 0x1F;
@@ -1578,7 +1542,7 @@ void opc_group63(PPCDisasmContext* ctx)
     auto ra = (ctx->instr_code >> 16) & 0x1F;
     auto rs = (ctx->instr_code >> 21) & 0x1F;
 
-    int  ext_opc = (ctx->instr_code >> 1) & 0x3FF; /* extract extended opcode */
+    int ext_opc = (ctx->instr_code >> 1) & 0x3FF; /* extract extended opcode */
     bool rc_set = ctx->instr_code & 1;
 
     switch (ext_opc & 0x1F) {
@@ -1819,78 +1783,64 @@ void opc_group63(PPCDisasmContext* ctx)
     }
 }
 
-void opc_intldst(PPCDisasmContext* ctx)
-{
+void opc_intldst(PPCDisasmContext* ctx) {
     int32_t opcode = (ctx->instr_code >> 26) - 32;
-    int32_t ra = (ctx->instr_code >> 16) & 0x1F;
-    int32_t rd = (ctx->instr_code >> 21) & 0x1F;
-    int32_t imm = SIGNEXT(ctx->instr_code & 0xFFFF, 15);
+    int32_t ra     = (ctx->instr_code >> 16) & 0x1F;
+    int32_t rd     = (ctx->instr_code >> 21) & 0x1F;
+    int32_t imm    = SIGNEXT(ctx->instr_code & 0xFFFF, 15);
 
     /* ra = 0 is forbidden for loads and stores with update */
     /* ra = rd is forbidden for loads with update */
-    if (((opcode < 14) && (opcode & 5) == 1 && ra == rd) || ((opcode & 1) && !ra))
-    {
+    if (((opcode < 14) && (opcode & 5) == 1 && ra == rd) || ((opcode & 1) && !ra)) {
         opc_illegal(ctx);
         return;
     }
 
     if (ra) {
-        ctx->instr_str = my_sprintf("%-8sr%d, %s0x%X(r%d)", opc_int_ldst[opcode],
-            rd, ((imm < 0) ? "-" : ""), abs(imm), ra);
-    }
-    else {
-        ctx->instr_str = my_sprintf("%-8sr%d, %s0x%X", opc_int_ldst[opcode],
-            rd, ((imm < 0) ? "-" : ""), abs(imm));
+        ctx->instr_str = my_sprintf(
+            "%-8sr%d, %s0x%X(r%d)", opc_int_ldst[opcode], rd, ((imm < 0) ? "-" : ""), abs(imm), ra);
+    } else {
+        ctx->instr_str = my_sprintf(
+            "%-8sr%d, %s0x%X", opc_int_ldst[opcode], rd, ((imm < 0) ? "-" : ""), abs(imm));
     }
 }
 
-void opc_fltldst(PPCDisasmContext* ctx)
-{
+void opc_fltldst(PPCDisasmContext* ctx) {
     int32_t opcode = (ctx->instr_code >> 26) - 48;
-    int32_t ra = (ctx->instr_code >> 16) & 0x1F;
-    int32_t rd = (ctx->instr_code >> 21) & 0x1F;
-    int32_t imm = SIGNEXT(ctx->instr_code & 0xFFFF, 15);
+    int32_t ra     = (ctx->instr_code >> 16) & 0x1F;
+    int32_t rd     = (ctx->instr_code >> 21) & 0x1F;
+    int32_t imm    = SIGNEXT(ctx->instr_code & 0xFFFF, 15);
 
     /* ra = 0 is forbidden for loads and stores with update */
     /* ra = rd is forbidden for loads with update */
-    if ((((opcode == 1) || (opcode == 3)) && ra == rd) || ((opcode & 1) && !ra))
-    {
+    if ((((opcode == 1) || (opcode == 3)) && ra == rd) || ((opcode & 1) && !ra)) {
         opc_illegal(ctx);
         return;
     }
 
     if (ra) {
-        ctx->instr_str = my_sprintf("%-8sf%d, %s0x%X(r%d)", opc_flt_ldst[opcode],
-            rd, ((imm < 0) ? "-" : ""), abs(imm), ra);
-    }
-    else {
-        ctx->instr_str = my_sprintf("%-8sf%d, %s0x%X", opc_flt_ldst[opcode],
-            rd, ((imm < 0) ? "-" : ""), abs(imm));
+        ctx->instr_str = my_sprintf(
+            "%-8sf%d, %s0x%X(r%d)", opc_flt_ldst[opcode], rd, ((imm < 0) ? "-" : ""), abs(imm), ra);
+    } else {
+        ctx->instr_str = my_sprintf(
+            "%-8sf%d, %s0x%X", opc_flt_ldst[opcode], rd, ((imm < 0) ? "-" : ""), abs(imm));
     }
 }
 
 /** main dispatch table. */
 static std::function<void(PPCDisasmContext*)> OpcodeDispatchTable[64] = {
-    opc_illegal,   opc_illegal,   opc_illegal,   opc_twi,
-    opc_group4,    opc_illegal,   opc_illegal,   opc_ar_im,
-    opc_ar_im,     power_dozi,    opc_cmp_i_li,  opc_cmp_i_li,
-    opc_ar_im,     opc_ar_im,     opc_ar_im,     opc_ar_im,
-    opc_bcx,       opc_sc,        opc_bx,        opc_group19,
-    opc_rlwimi,    opc_rlwinm,    opc_rlmi,      opc_rlwnm,
-    opc_bool_im,   opc_bool_im,   opc_bool_im,   opc_bool_im,
-    opc_bool_im,   opc_bool_im,   opc_illegal,   opc_group31,
-    opc_intldst,   opc_intldst,   opc_intldst,   opc_intldst,
-    opc_intldst,   opc_intldst,   opc_intldst,   opc_intldst,
-    opc_intldst,   opc_intldst,   opc_intldst,   opc_intldst,
-    opc_intldst,   opc_intldst,   opc_intldst,   opc_intldst,
-    opc_fltldst,   opc_fltldst,   opc_fltldst,   opc_fltldst,
-    opc_fltldst,   opc_fltldst,   opc_fltldst,   opc_fltldst,
-    opc_illegal,   opc_illegal,   opc_illegal,   opc_group59,
-    opc_illegal,   opc_illegal,   opc_illegal,   opc_group63
-};
+    opc_illegal, opc_illegal, opc_illegal, opc_twi,      opc_group4,   opc_illegal, opc_illegal,
+    opc_ar_im,   opc_ar_im,   power_dozi,  opc_cmp_i_li, opc_cmp_i_li, opc_ar_im,   opc_ar_im,
+    opc_ar_im,   opc_ar_im,   opc_bcx,     opc_sc,       opc_bx,       opc_group19, opc_rlwimi,
+    opc_rlwinm,  opc_rlmi,    opc_rlwnm,   opc_bool_im,  opc_bool_im,  opc_bool_im, opc_bool_im,
+    opc_bool_im, opc_bool_im, opc_illegal, opc_group31,  opc_intldst,  opc_intldst, opc_intldst,
+    opc_intldst, opc_intldst, opc_intldst, opc_intldst,  opc_intldst,  opc_intldst, opc_intldst,
+    opc_intldst, opc_intldst, opc_intldst, opc_intldst,  opc_intldst,  opc_intldst, opc_fltldst,
+    opc_fltldst, opc_fltldst, opc_fltldst, opc_fltldst,  opc_fltldst,  opc_fltldst, opc_fltldst,
+    opc_illegal, opc_illegal, opc_illegal, opc_group59,  opc_illegal,  opc_illegal, opc_illegal,
+    opc_group63};
 
-string disassemble_single(PPCDisasmContext* ctx)
-{
+string disassemble_single(PPCDisasmContext* ctx) {
     if (ctx->instr_addr & 3) {
         throw std::invalid_argument(string("PPC instruction address must be a multiply of 4!"));
     }

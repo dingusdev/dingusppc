@@ -26,15 +26,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <thirdparty/SDL2/include/SDL.h>
 #include <thirdparty/SDL2/include/SDL_events.h>
 
-enum adb_default_values { 
-    adb_reserved0, adb_reserved1, adb_encoded,   adb_relative,
-    adb_absolute,  adb_reserved5, adb_reserved6, adb_reserved7,
-    adb_other8,    adb_other9,    adb_other10,   adb_other11,
-    adb_other12,   adb_other13,   adb_other14,   adb_other15
+enum adb_default_values {
+    adb_reserved0,
+    adb_reserved1,
+    adb_encoded,
+    adb_relative,
+    adb_absolute,
+    adb_reserved5,
+    adb_reserved6,
+    adb_reserved7,
+    adb_other8,
+    adb_other9,
+    adb_other10,
+    adb_other11,
+    adb_other12,
+    adb_other13,
+    adb_other14,
+    adb_other15
 };
 
-class ADB_Bus
-{
+class ADB_Bus {
 public:
     ADB_Bus();
     ~ADB_Bus();
@@ -58,7 +69,7 @@ private:
     int keyboard_access_no;
     int mouse_access_no;
 
-    //Keyboard Variables
+    // Keyboard Variables
 
     uint16_t adb_keybd_register0;
     uint16_t adb_keybd_register2;
@@ -71,15 +82,15 @@ private:
 
     bool confirm_ask_reg_2;
 
-    //Mouse Variables
+    // Mouse Variables
     SDL_Event adb_mouse_evt;
 
     uint16_t adb_mouse_register0;
     uint16_t adb_mouse_register3;
 
-    uint8_t input_data_stream[16]; //temp buffer
+    uint8_t input_data_stream[16];    // temp buffer
     int input_stream_len;
-    uint8_t output_data_stream[16]; //temp buffer
+    uint8_t output_data_stream[16];    // temp buffer
     int output_stream_len;
 };
 

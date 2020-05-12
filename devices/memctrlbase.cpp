@@ -19,28 +19,26 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <string>
+#include <algorithm>    // to shut up MSVC errors (:
 #include <cstring>
+#include <string>
 #include <vector>
-#include <algorithm> // to shut up MSVC errors (:
 
 #include "memctrlbase.h"
 
 
-MemCtrlBase::~MemCtrlBase()
-{
-    for (auto &reg : mem_regions) {
+MemCtrlBase::~MemCtrlBase() {
+    for (auto& reg : mem_regions) {
         if (reg)
-            delete(reg);
+            delete (reg);
     }
     this->mem_regions.clear();
     this->address_map.clear();
 }
 
 
-AddressMapEntry *MemCtrlBase::find_range(uint32_t addr)
-{
-    for (auto &entry : address_map) {
+AddressMapEntry* MemCtrlBase::find_range(uint32_t addr) {
+    for (auto& entry : address_map) {
         if (addr >= entry.start && addr <= entry.end)
             return &entry;
     }
@@ -49,16 +47,15 @@ AddressMapEntry *MemCtrlBase::find_range(uint32_t addr)
 }
 
 
-bool MemCtrlBase::add_mem_region(uint32_t start_addr, uint32_t size,
-            uint32_t dest_addr, uint32_t type, uint8_t init_val = 0)
-{
+bool MemCtrlBase::add_mem_region(
+    uint32_t start_addr, uint32_t size, uint32_t dest_addr, uint32_t type, uint8_t init_val = 0) {
     AddressMapEntry entry;
 
     /* error if a memory region for the given range already exists */
     if (find_range(start_addr) || find_range(start_addr + size))
         return false;
 
-    uint8_t *reg_content = new uint8_t[size];
+    uint8_t* reg_content = new uint8_t[size];
 
     this->mem_regions.push_back(reg_content);
 
@@ -75,20 +72,17 @@ bool MemCtrlBase::add_mem_region(uint32_t start_addr, uint32_t size,
 }
 
 
-bool MemCtrlBase::add_rom_region(uint32_t start_addr, uint32_t size)
-{
+bool MemCtrlBase::add_rom_region(uint32_t start_addr, uint32_t size) {
     return add_mem_region(start_addr, size, 0, RT_ROM);
 }
 
 
-bool MemCtrlBase::add_ram_region(uint32_t start_addr, uint32_t size)
-{
+bool MemCtrlBase::add_ram_region(uint32_t start_addr, uint32_t size) {
     return add_mem_region(start_addr, size, 0, RT_RAM);
 }
 
 
-bool MemCtrlBase::add_mem_mirror(uint32_t start_addr, uint32_t dest_addr)
-{
+bool MemCtrlBase::add_mem_mirror(uint32_t start_addr, uint32_t dest_addr) {
     AddressMapEntry entry, *ref_entry;
 
     ref_entry = find_range(dest_addr);
@@ -108,9 +102,8 @@ bool MemCtrlBase::add_mem_mirror(uint32_t start_addr, uint32_t dest_addr)
 }
 
 
-bool MemCtrlBase::set_data(uint32_t reg_addr, const uint8_t *data, uint32_t size)
-{
-    AddressMapEntry *ref_entry;
+bool MemCtrlBase::set_data(uint32_t reg_addr, const uint8_t* data, uint32_t size) {
+    AddressMapEntry* ref_entry;
     uint32_t cpy_size;
 
     ref_entry = find_range(reg_addr);
@@ -124,9 +117,7 @@ bool MemCtrlBase::set_data(uint32_t reg_addr, const uint8_t *data, uint32_t size
 }
 
 
-bool MemCtrlBase::add_mmio_region(uint32_t start_addr, uint32_t size,
-                    MMIODevice *dev_instance)
-{
+bool MemCtrlBase::add_mmio_region(uint32_t start_addr, uint32_t size, MMIODevice* dev_instance) {
     AddressMapEntry entry;
 
     /* error if another region for the given range already exists */

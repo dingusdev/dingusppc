@@ -25,9 +25,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
  */
 
+#include "devices/adb.h"
 #include <cinttypes>
 #include <cstring>
-#include "devices/adb.h"
 
 #include <thirdparty/SDL2/include/SDL.h>
 #include <thirdparty/SDL2/include/SDL_events.h>
@@ -40,63 +40,56 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace std;
 
 ADB_Bus::ADB_Bus() {
-    //set data streams as clear
+    // set data streams as clear
     this->adb_mouse_register0 = 0x8080;
 
-    input_stream_len = 0;
+    input_stream_len  = 0;
     output_stream_len = 2;
 
     adb_keybd_register3 = 0x6201;
     adb_mouse_register3 = 0x6302;
 
     keyboard_access_no = adb_encoded;
-    mouse_access_no = adb_relative;
+    mouse_access_no    = adb_relative;
 }
 
-ADB_Bus::~ADB_Bus() {
-
-}
+ADB_Bus::~ADB_Bus() {}
 
 bool ADB_Bus::listen(int device, int reg) {
     if (device == keyboard_access_no) {
         if (adb_keybd_listen(reg)) {
             return true;
-        }
-        else {
+        } else {
             return false;
         }
-    }
-    else if (device == mouse_access_no) {
+    } else if (device == mouse_access_no) {
         if (adb_mouse_listen(reg)) {
             return true;
-        }
-        else {
+        } else {
             return false;
         }
-    }
-    else {
-
+    } else {
         return false;
     }
 }
 
 bool ADB_Bus::talk(int device, int reg, uint16_t value) {
-    //temp code
+    // temp code
     return false;
 }
 
 bool ADB_Bus::bus_reset() {
-    //temp code
+    // temp code
     return true;
 }
 
 bool ADB_Bus::set_addr(int dev_addr, int new_addr) {
-    //temp code
+    // temp code
     return false;
 }
 
 bool ADB_Bus::flush(int dev_addr) {
-    //temp code
+    // temp code
     return false;
 }
 
@@ -108,7 +101,7 @@ bool ADB_Bus::adb_keybd_listen(int reg) {
     }
 
     while (SDL_PollEvent(&adb_keybd_evt)) {
-        //Poll our SDL key event for any keystrokes.
+        // Poll our SDL key event for any keystrokes.
         switch (adb_keybd_evt.type) {
         case SDL_KEYDOWN:
             switch (adb_keybd_evt.key.keysym.sym) {
@@ -323,36 +316,36 @@ bool ADB_Bus::adb_keybd_listen(int reg) {
                 ask_key_pressed = 0x5C;
                 break;
             case SDLK_BACKSPACE:
-                //ask_key_pressed = 0x33;
+                // ask_key_pressed = 0x33;
                 confirm_ask_reg_2 = true;
-                mod_key_pressed = 0x40;
+                mod_key_pressed   = 0x40;
                 break;
             case SDLK_CAPSLOCK:
-                //ask_key_pressed = 0x39;
+                // ask_key_pressed = 0x39;
                 confirm_ask_reg_2 = true;
-                mod_key_pressed = 0x20;
+                mod_key_pressed   = 0x20;
                 break;
             case SDLK_RALT:
-            case SDLK_RCTRL: //Temp key for Control key
-                //ask_key_pressed = 0x36;
+            case SDLK_RCTRL:    // Temp key for Control key
+                // ask_key_pressed = 0x36;
                 confirm_ask_reg_2 = true;
-                mod_key_pressed = 0x8;
+                mod_key_pressed   = 0x8;
                 break;
             case SDLK_LSHIFT:
             case SDLK_RSHIFT:
-                //ask_key_pressed = 0x38;
+                // ask_key_pressed = 0x38;
                 confirm_ask_reg_2 = true;
-                mod_key_pressed = 0x4;
+                mod_key_pressed   = 0x4;
                 break;
             case SDLK_LALT:
-                //ask_key_pressed = 0x3A;
+                // ask_key_pressed = 0x3A;
                 confirm_ask_reg_2 = true;
-                mod_key_pressed = 0x2;
+                mod_key_pressed   = 0x2;
                 break;
-            case SDLK_LCTRL: //Temp key for the Command/Apple key
-                //ask_key_pressed = 0x37;
+            case SDLK_LCTRL:    // Temp key for the Command/Apple key
+                // ask_key_pressed = 0x37;
                 confirm_ask_reg_2 = true;
-                mod_key_pressed = 0x1;
+                mod_key_pressed   = 0x1;
                 break;
             default:
                 break;
@@ -363,15 +356,14 @@ bool ADB_Bus::adb_keybd_listen(int reg) {
                 adb_keybd_register0 &= (ask_key_pressed << 8);
                 output_data_stream[0] = (adb_keybd_register0 >> 8);
                 output_data_stream[1] = (adb_keybd_register0 & 0xff);
-            }
-            else if (adb_keybd_register0 & 0x80) {
+            } else if (adb_keybd_register0 & 0x80) {
                 adb_keybd_register0 &= 0xFF7F;
                 adb_keybd_register0 &= (ask_key_pressed);
                 output_data_stream[0] = (adb_keybd_register0 >> 8);
                 output_data_stream[1] = (adb_keybd_register0 & 0xff);
             }
 
-            //check if mod keys are being pressed
+            // check if mod keys are being pressed
 
             if (confirm_ask_reg_2) {
                 adb_keybd_register0 |= (mod_key_pressed << 8);
@@ -386,25 +378,23 @@ bool ADB_Bus::adb_keybd_listen(int reg) {
                 adb_keybd_register0 |= 0x8000;
                 output_data_stream[0] = (adb_keybd_register0 >> 8);
                 output_data_stream[1] = (adb_keybd_register0 & 0xff);
-            }
-            else if (adb_keybd_register0 & 0x80)
+            } else if (adb_keybd_register0 & 0x80)
                 adb_keybd_register0 |= 0x0080;
-                output_data_stream[0] = (adb_keybd_register0 >> 8);
-                output_data_stream[1] = (adb_keybd_register0 & 0xff);
+            output_data_stream[0] = (adb_keybd_register0 >> 8);
+            output_data_stream[1] = (adb_keybd_register0 & 0xff);
 
             if (confirm_ask_reg_2) {
                 adb_keybd_register2 &= (mod_key_pressed << 8);
                 output_data_stream[0] = (adb_keybd_register2 >> 8);
                 output_data_stream[1] = (adb_keybd_register2 & 0xff);
-                confirm_ask_reg_2 = false;
+                confirm_ask_reg_2     = false;
             }
         }
     }
 
     if ((reg != 1)) {
         return true;
-    }
-    else {
+    } else {
         return false;
     }
 }
@@ -421,11 +411,9 @@ bool ADB_Bus::adb_mouse_listen(int reg) {
             if (adb_mouse_evt.motion.xrel < 0) {
                 if (adb_mouse_evt.motion.xrel <= -64) {
                     this->adb_mouse_register0 |= 0x7F;
-                }
-                else if (adb_mouse_evt.motion.xrel >= 63) {
+                } else if (adb_mouse_evt.motion.xrel >= 63) {
                     this->adb_mouse_register0 |= 0x3F;
-                }
-                else {
+                } else {
                     this->adb_mouse_register0 |= adb_mouse_evt.motion.xrel;
                 }
             }
@@ -436,15 +424,12 @@ bool ADB_Bus::adb_mouse_listen(int reg) {
             if (adb_mouse_evt.motion.yrel < 0) {
                 if (adb_mouse_evt.motion.yrel <= -64) {
                     this->adb_mouse_register0 |= 0x7F00;
-                }
-                else if (adb_mouse_evt.motion.yrel >= 63) {
+                } else if (adb_mouse_evt.motion.yrel >= 63) {
                     this->adb_mouse_register0 |= 0x3F00;
-                }
-                else {
+                } else {
                     this->adb_mouse_register0 |= (adb_mouse_evt.motion.yrel << 8);
                 }
             }
-
         }
 
         switch (adb_mouse_evt.type) {
@@ -458,13 +443,11 @@ bool ADB_Bus::adb_mouse_listen(int reg) {
     if (reg == 0) {
         output_data_stream[0] = (adb_mouse_register0 >> 8);
         output_data_stream[1] = (adb_mouse_register0 & 0xff);
-    }
-    else if (reg == 3) {
+    } else if (reg == 3) {
         output_data_stream[0] = (adb_mouse_register3 >> 8);
         output_data_stream[1] = (adb_mouse_register3 & 0xff);
     }
     return true;
-
 }
 
 

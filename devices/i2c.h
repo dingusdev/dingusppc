@@ -27,26 +27,30 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef I2C_H
 #define I2C_H
 
-#include <thirdparty/loguru/loguru.hpp>
-#include <string>
 #include <stdexcept>
+#include <string>
+#include <thirdparty/loguru/loguru.hpp>
 
 /** Base class for I2C devices */
 class I2CDevice {
 public:
-    virtual void start_transaction() = 0;
+    virtual void start_transaction()               = 0;
     virtual bool send_subaddress(uint8_t sub_addr) = 0;
-    virtual bool send_byte(uint8_t data) = 0;
-    virtual bool receive_byte(uint8_t *p_data) = 0;
+    virtual bool send_byte(uint8_t data)           = 0;
+    virtual bool receive_byte(uint8_t* p_data)     = 0;
 };
 
 /** Base class for I2C hosts */
 class I2CBus {
 public:
-    I2CBus()  { std::memset(this->dev_list, 0, sizeof(this->dev_list)); };
-    ~I2CBus() { std::memset(this->dev_list, 0, sizeof(this->dev_list)); };
+    I2CBus() {
+        std::memset(this->dev_list, 0, sizeof(this->dev_list));
+    };
+    ~I2CBus() {
+        std::memset(this->dev_list, 0, sizeof(this->dev_list));
+    };
 
-    virtual void register_device(uint8_t dev_addr, I2CDevice *dev_obj) {
+    virtual void register_device(uint8_t dev_addr, I2CDevice* dev_obj) {
         if (this->dev_list[dev_addr]) {
             throw std::invalid_argument(std::string("I2C address already taken!"));
         }
@@ -77,7 +81,7 @@ public:
         return this->dev_list[dev_addr]->send_byte(data);
     };
 
-    virtual bool receive_byte(uint8_t dev_addr, uint8_t *p_data) {
+    virtual bool receive_byte(uint8_t dev_addr, uint8_t* p_data) {
         if (!this->dev_list[dev_addr]) {
             return false; /* no device -> no acknowledge */
         }
@@ -85,7 +89,7 @@ public:
     };
 
 protected:
-    I2CDevice *dev_list[128]; /* list of registered I2C devices */
+    I2CDevice* dev_list[128]; /* list of registered I2C devices */
 };
 
 #endif /* I2C_H */

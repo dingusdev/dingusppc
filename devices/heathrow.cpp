@@ -19,14 +19,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <thirdparty/loguru/loguru.hpp>
-#include <cinttypes>
-#include <iostream>
-#include "macio.h"
-#include "viacuda.h"
 #include "awacs.h"
 #include "dbdma.h"
 #include "machines/machinebase.h"
+#include "macio.h"
+#include "viacuda.h"
+#include <cinttypes>
+#include <iostream>
+#include <thirdparty/loguru/loguru.hpp>
 
 /** Heathrow Mac I/O device emulation.
 
@@ -35,49 +35,45 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace std;
 
-HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow")
-{
-    this->nvram    = new NVram();
+HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow") {
+    this->nvram = new NVram();
 
-    this->viacuda  = new ViaCuda();
+    this->viacuda = new ViaCuda();
     gMachineObj->add_subdevice("ViaCuda", this->viacuda);
 
-    this->screamer = new AWACDevice();
+    this->screamer    = new AWACDevice();
     this->snd_out_dma = new DMAChannel(this->screamer);
     this->screamer->set_dma_out(this->snd_out_dma);
 }
 
-HeathrowIC::~HeathrowIC()
-{
+HeathrowIC::~HeathrowIC() {
     if (this->nvram)
-        delete(this->nvram);
+        delete (this->nvram);
 
     if (this->viacuda)
-        delete(this->viacuda);
+        delete (this->viacuda);
 }
 
 
-uint32_t HeathrowIC::pci_cfg_read(uint32_t reg_offs, uint32_t size)
-{
+uint32_t HeathrowIC::pci_cfg_read(uint32_t reg_offs, uint32_t size) {
     return this->pci_cfg_hdr[reg_offs & 0xFF];
 }
 
-void HeathrowIC::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
-{
+void HeathrowIC::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size) {
     switch (reg_offs) {
-    case CFG_REG_BAR0: // base address register
+    case CFG_REG_BAR0:    // base address register
         value = LE2BE(value);
         if (value == 0xFFFFFFFF) {
-            LOG_F(ERROR, "%s err: BAR0 block size determination not \
-                implemented yet \n", this->name.c_str());
-        }
-        else if (value & 1) {
+            LOG_F(
+                ERROR,
+                "%s err: BAR0 block size determination not \
+                implemented yet \n",
+                this->name.c_str());
+        } else if (value & 1) {
             LOG_F(ERROR, "%s err: BAR0 I/O space not supported! \n", this->name.c_str());
-        }
-        else if (value & 0x06) {
+        } else if (value & 0x06) {
             LOG_F(ERROR, "%s err: BAR0 64-bit I/O space not supported! \n", this->name.c_str());
-        }
-        else {
+        } else {
             this->base_addr = value & 0xFFF80000;
             this->host_instance->pci_register_mmio_region(this->base_addr, 0x80000, this);
             LOG_F(INFO, "%s base address set to %x \n", this->name.c_str(), this->base_addr);
@@ -86,11 +82,10 @@ void HeathrowIC::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
     }
 }
 
-uint32_t HeathrowIC::dma_read(uint32_t offset, int size)
-{
+uint32_t HeathrowIC::dma_read(uint32_t offset, int size) {
     uint32_t res = 0;
 
-    switch(offset >> 8) {
+    switch (offset >> 8) {
     case 8:
         res = this->snd_out_dma->reg_read(offset & 0xFF, size);
         break;
@@ -101,9 +96,8 @@ uint32_t HeathrowIC::dma_read(uint32_t offset, int size)
     return res;
 }
 
-void HeathrowIC::dma_write(uint32_t offset, uint32_t value, int size)
-{
-    switch(offset >> 8) {
+void HeathrowIC::dma_write(uint32_t offset, uint32_t value, int size) {
+    switch (offset >> 8) {
     case 8:
         this->snd_out_dma->reg_write(offset & 0xFF, value, size);
         break;
@@ -113,8 +107,7 @@ void HeathrowIC::dma_write(uint32_t offset, uint32_t value, int size)
 }
 
 
-uint32_t HeathrowIC::read(uint32_t reg_start, uint32_t offset, int size)
-{
+uint32_t HeathrowIC::read(uint32_t reg_start, uint32_t offset, int size) {
     uint32_t res = 0;
 
     LOG_F(9, "%s: reading from offset %x \n", this->name.c_str(), offset);
@@ -138,8 +131,7 @@ uint32_t HeathrowIC::read(uint32_t reg_start, uint32_t offset, int size)
     default:
         if (sub_addr >= 0x60) {
             res = this->nvram->read_byte((offset - 0x60000) >> 4);
-        }
-        else {
+        } else {
             LOG_F(WARNING, "Attempting to read unmapped I/O space: %x \n", offset);
         }
     }
@@ -147,8 +139,7 @@ uint32_t HeathrowIC::read(uint32_t reg_start, uint32_t offset, int size)
     return res;
 }
 
-void HeathrowIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
-{
+void HeathrowIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size) {
     LOG_F(9, "%s: writing to offset %x \n", this->name.c_str(), offset);
 
     unsigned sub_addr = (offset >> 12) & 0x7F;
@@ -170,15 +161,13 @@ void HeathrowIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int 
     default:
         if (sub_addr >= 0x60) {
             this->nvram->write_byte((offset - 0x60000) >> 4, value);
-        }
-        else {
+        } else {
             LOG_F(WARNING, "Attempting to write to unmapped I/O space: %x \n", offset);
         }
     }
 }
 
-uint32_t HeathrowIC::mio_ctrl_read(uint32_t offset, int size)
-{
+uint32_t HeathrowIC::mio_ctrl_read(uint32_t offset, int size) {
     uint32_t res = 0;
 
     switch (offset & 0xFF) {
@@ -221,8 +210,7 @@ uint32_t HeathrowIC::mio_ctrl_read(uint32_t offset, int size)
     return res;
 }
 
-void HeathrowIC::mio_ctrl_write(uint32_t offset, uint32_t value, int size)
-{
+void HeathrowIC::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
     switch (offset & 0xFF) {
     case 0x14:
         LOG_F(9, "read from MIO:Int_Mask2 register \n");

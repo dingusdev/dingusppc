@@ -19,26 +19,24 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-//The main runfile - main.cpp
-//This is where the magic begins
+// The main runfile - main.cpp
+// This is where the magic begins
 
-#include <thirdparty/loguru/loguru.hpp>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <cstring>
-#include <cinttypes>
-#include <stdio.h>
-#include "ppcemu.h"
 #include "debugger/debugger.h"
 #include "machines/machinefactory.h"
+#include "ppcemu.h"
+#include <cinttypes>
+#include <cstring>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <stdio.h>
 #include <thirdparty/SDL2/include/SDL.h>
+#include <thirdparty/loguru/loguru.hpp>
 
 using namespace std;
 
-int main(int argc, char **argv)
-{
-
+int main(int argc, char** argv) {
     std::cout << "DingusPPC - Prototype 5bf4 (7/14/2019)       " << endl;
     std::cout << "Written by divingkatae, (c) 2019.            " << endl;
     std::cout << "This is not intended for general use.        " << endl;
@@ -48,19 +46,17 @@ int main(int argc, char **argv)
         string checker = argv[1];
         cout << checker << endl;
 
-        if ((checker == "1") || (checker == "realtime") || \
-            (checker == "-realtime") || (checker == "/realtime")) {
+        if ((checker == "1") || (checker == "realtime") || (checker == "-realtime") ||
+            (checker == "/realtime")) {
             loguru::g_stderr_verbosity = loguru::Verbosity_OFF;
             loguru::g_preamble_date    = false;
             loguru::g_preamble_time    = false;
             loguru::g_preamble_thread  = false;
             loguru::init(argc, argv);
             loguru::add_file("dingusppc.log", loguru::Append, 0);
-            //Replace the above line with this for maximum debugging detail:
-            //loguru::add_file("dingusppc.log", loguru::Append, loguru::Verbosity_MAX);
-        }
-        else if ((checker == "debugger") || (checker == "/debugger") ||
-            (checker == "-debugger")) {
+            // Replace the above line with this for maximum debugging detail:
+            // loguru::add_file("dingusppc.log", loguru::Append, loguru::Verbosity_MAX);
+        } else if ((checker == "debugger") || (checker == "/debugger") || (checker == "-debugger")) {
             loguru::g_stderr_verbosity = 0;
             loguru::g_preamble_date    = false;
             loguru::g_preamble_time    = false;
@@ -87,26 +83,20 @@ int main(int argc, char **argv)
             config_output.write("video_card=0x4750\n", 19);
 
             config_output.close();
-        }
-        else {
+        } else {
             while (std::getline(config_input, line)) {
                 sin.str(line.substr(line.find("=") + 1));
                 if (line.find("rompath") != std::string::npos) {
                     sin >> rom_file;
-                }
-                else if (line.find("diskpath") != std::string::npos) {
+                } else if (line.find("diskpath") != std::string::npos) {
                     sin >> disk_file;
-                }
-                else if (line.find("ramsize") != std::string::npos) {
+                } else if (line.find("ramsize") != std::string::npos) {
                     sin >> ram_size;
-                }
-                else if (line.find("machine_gestalt") != std::string::npos) {
+                } else if (line.find("machine_gestalt") != std::string::npos) {
                     sin >> machine_gestalt;
-                }
-                else if (line.find("video_vendor") != std::string::npos) {
+                } else if (line.find("video_vendor") != std::string::npos) {
                     sin >> video_card_vendor;
-                }
-                else if (line.find("video_card") != std::string::npos) {
+                } else if (line.find("video_card") != std::string::npos) {
                     sin >> video_card_id;
                 }
                 sin.clear();
@@ -117,20 +107,18 @@ int main(int argc, char **argv)
             goto bail;
         }
 
-        if (SDL_Init(SDL_INIT_AUDIO)){
+        if (SDL_Init(SDL_INIT_AUDIO)) {
             LOG_F(ERROR, "SDL_Init error: %s", SDL_GetError());
             goto bail;
         }
 
-        if ((checker == "1") || (checker == "realtime") || \
-            (checker == "-realtime") || (checker == "/realtime")) {
+        if ((checker == "1") || (checker == "realtime") || (checker == "-realtime") ||
+            (checker == "/realtime")) {
             ppc_exec();
-        } else if ((checker == "debugger") || (checker == "/debugger") ||
-            (checker == "-debugger")) {
+        } else if ((checker == "debugger") || (checker == "/debugger") || (checker == "-debugger")) {
             enter_debugger();
         }
-    }
-    else {
+    } else {
         std::cout << "                                                " << endl;
         std::cout << "Please enter one of the following commands when " << endl;
         std::cout << "booting up DingusPPC...                         " << endl;
