@@ -21,11 +21,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Descriptor-based direct memory access emulation. */
 
-#include <cinttypes>
-#include <thirdparty/loguru/loguru.hpp>
 #include "dbdma.h"
-#include "endianswap.h"
 #include "cpu/ppc/ppcmmu.h"
+#include "endianswap.h"
+#include <cinttypes>
+#include <cstring>
+#include <thirdparty/loguru/loguru.hpp>
 
 void DMAChannel::get_next_cmd(uint32_t cmd_addr, DMACmd *p_cmd)
 {
