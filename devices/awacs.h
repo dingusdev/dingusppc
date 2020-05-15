@@ -33,13 +33,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include "i2c.h"
 #include "dbdma.h"
-#ifdef SDL
-#include <thirdparty/SDL2/include/SDL.h>
+#include "soundserver.h"
+//#ifdef SDL
+//#include <thirdparty/SDL2/include/SDL.h>
 //#else
 //#include "thirdparty/portaudio/include/portaudio.h"
-#endif
+//#endif
 //#include "libsoundio/soundio/soundio.h"
-#include <thirdparty/libsoundio/soundio/soundio.h>
+//#include <thirdparty/libsoundio/soundio/soundio.h>
 
 /** AWAC registers offsets. */
 enum {
@@ -131,8 +132,10 @@ private:
     uint8_t  is_busy = 0;
     AudioProcessor *audio_proc;
 
-    SoundIoDevice *out_device;
-    SoundIoOutStream *out_stream;
+    SoundServer *snd_server;
+
+    //SoundIoDevice *out_device;
+    //SoundIoOutStream *out_stream;
     bool out_stream_ready;
     int out_sample_rate;
 

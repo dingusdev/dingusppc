@@ -30,7 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "dbdma.h"
 #include "machines/machinebase.h"
 #include "soundserver.h"
-#include <thirdparty/libsoundio/soundio/soundio.h>
+//#include <thirdparty/libsoundio/soundio/soundio.h>
 
 static int awac_freqs[8] = {44100, 29400, 22050, 17640, 14700, 11025, 8820, 7350};
 
@@ -43,14 +43,18 @@ AWACDevice::AWACDevice()
     I2CBus *i2c_bus = dynamic_cast<I2CBus *>(gMachineObj->get_comp_by_type(HWCompType::I2C_HOST));
     i2c_bus->register_device(0x45, this->audio_proc);
 
-    SoundServer *snd_server = dynamic_cast<SoundServer *>
+    this->snd_server = dynamic_cast<SoundServer *>
         (gMachineObj->get_comp_by_name("SoundServer"));
-    this->out_device = snd_server->get_out_device();
+    //this->out_device = snd_server->get_out_device();
     this->out_stream_ready = false;
 }
 
 AWACDevice::~AWACDevice()
 {
+    if (this->out_stream_ready) {
+        snd_server->close_out_stream();
+    }
+
     delete this->audio_proc;
 
     if (this->snd_buf)
@@ -103,6 +107,7 @@ void AWACDevice::snd_ctrl_write(uint32_t offset, uint32_t value, int size)
     }
 }
 
+#if 0
 static void convert_data(const uint8_t *in, SoundIoChannelArea *out_buf, uint32_t frame_count)
 {
     uint16_t *p_in = (uint16_t *)in;
@@ -134,7 +139,9 @@ static void insert_silence(SoundIoChannelArea *out_buf, uint32_t frame_count)
         out_buf[1].ptr += out_buf[1].step;
     }
 }
+#endif
 
+#if 0
 static void sound_out_callback(struct SoundIoOutStream *outstream,
         int frame_count_min, int frame_count_max)
 {
@@ -144,13 +151,13 @@ static void sound_out_callback(struct SoundIoOutStream *outstream,
     struct SoundIoChannelArea *areas;
     DMAChannel *dma_ch = (DMAChannel *)outstream->userdata; /* C API baby! */
     int n_channels = outstream->layout.channel_count;
-    //bool stop = false;
+    bool stop = false;
 
-    if (!dma_ch->is_active()) {
-        LOG_F(INFO, "pausing result: %s",
-            soundio_strerror(soundio_outstream_pause(outstream, true)));
-        return;
-    }
+    //if (!dma_ch->is_active()) {
+    //    soundio_outstream_clear_buffer(outstream);
+    //    soundio_outstream_pause(outstream, true);
+    //    return;
+    //}
 
     if (frame_count_max > 512) {
         frame_count = 512;
@@ -184,7 +191,7 @@ static void sound_out_callback(struct SoundIoOutStream *outstream,
             /* fill the buffer with silence */
             //LOG_F(ERROR, "rem_len=%d", rem_len);
             insert_silence(areas, rem_len >> 2);
-            //stop = true;
+            stop = true;
             break;
         }
     }
@@ -194,16 +201,74 @@ static void sound_out_callback(struct SoundIoOutStream *outstream,
         return;
     }
 
-    //if (stop) {
-    //    LOG_F(INFO, "pausing result: %s",
-    //        soundio_strerror(soundio_outstream_pause(outstream, true)));
-    //}
+    if (stop) {
+        LOG_F(INFO, "pausing result: %s",
+            soundio_strerror(soundio_outstream_pause(outstream, true)));
+    }
+}
+#endif
+
+static void convert_data(const uint8_t *in, uint8_t *out, uint32_t len)
+{
+    uint16_t *p_in, *p_out;
+
+    if (len & 7) {
+        LOG_F(WARNING, "AWAC sound buffer len not a multiply of 8, %d", len);
+    }
+
+    p_in  = (uint16_t *)in;
+    p_out = (uint16_t *)out;
+    len >>= 1;
+
+    LOG_F(INFO, "Converting %d samples", len);
+
+    /* AWAC data comes as LLRR -> convert it to LRLR */
+    for (int i = 0; i < len; i += 4) {
+        p_out[i+0] = BYTESWAP_16(p_in[i+0]);
+        p_out[i+1] = BYTESWAP_16(p_in[i+2]);
+        p_out[i+2] = BYTESWAP_16(p_in[i+1]);
+        p_out[i+3] = BYTESWAP_16(p_in[i+3]);
+    }
+}
+
+long sound_out_callback(cubeb_stream *stream, void *user_data,
+                        void const *input_buffer, void *output_buffer,
+                        long nframes)
+{
+    uint8_t *p_in, *buf;
+    uint32_t buf_len, rem_len, got_len;
+    DMAChannel *dma_ch = static_cast<DMAChannel*>(user_data); /* C API baby! */
+
+    //LOG_F(INFO, "Cubeb data callback fired, nframes = %ld", nframes);
+
+    buf = (uint8_t *)output_buffer;
+    buf_len = nframes * 2 * sizeof(int16_t);
+
+    for (rem_len = buf_len; rem_len > 0; rem_len -= got_len, buf += got_len) {
+        if (!dma_ch->get_data(rem_len, &got_len, &p_in)) {
+            convert_data(p_in, buf, got_len);
+            LOG_F(INFO, "Converted sound data, len = %d", got_len);
+        } else { /* no more data */
+            //memset(buf, 0, rem_len); /* fill the buffer with silence */
+            //LOG_F(INFO, "Inserted silence, len = %d", rem_len);
+            LOG_F(INFO, "AWAC: return %d samples", (buf_len - rem_len) >> 2);
+            return (buf_len - rem_len) >> 2;
+        }
+    }
+
+    return nframes;
+}
+
+void status_callback(cubeb_stream *stream, void *user_data, cubeb_state state)
+{
+    LOG_F(INFO, "Cubeb status callback fired, status = %d", state);
 }
 
 void AWACDevice::open_stream(int sample_rate)
 {
     int err;
 
+#if 0
     this->out_stream = soundio_outstream_create(this->out_device);
     this->out_stream->write_callback = sound_out_callback;
     this->out_stream->format = SoundIoFormatS16LE;
@@ -217,6 +282,16 @@ void AWACDevice::open_stream(int sample_rate)
         this->out_sample_rate = sample_rate;
         this->out_stream_ready = true;
     }
+#endif
+
+    if ((err = this->snd_server->open_out_stream(sample_rate, sound_out_callback,
+            status_callback, (void *)this->dma_out_ch))) {
+        LOG_F(ERROR, "AWAC: unable to open sound output stream: %d", err);
+        this->out_stream_ready = false;
+    } else {
+        this->out_sample_rate = sample_rate;
+        this->out_stream_ready = true;
+    }
 }
 
 void AWACDevice::dma_start()
@@ -226,12 +301,14 @@ void AWACDevice::dma_start()
     if (!this->out_stream_ready) {
         this->open_stream(awac_freqs[(this->snd_ctrl_reg >> 8) & 7]);
     } else if (this->out_sample_rate != awac_freqs[(this->snd_ctrl_reg >> 8) & 7]) {
-        soundio_outstream_destroy(this->out_stream);
+        //soundio_outstream_destroy(this->out_stream);
+        snd_server->close_out_stream();
         this->open_stream(awac_freqs[(this->snd_ctrl_reg >> 8) & 7]);
     } else {
+        LOG_F(ERROR, "AWAC: unpausing attempted!");
         //soundio_outstream_clear_buffer(this->out_stream);
-        LOG_F(INFO, "AWAC: unpausing result: %s",
-            soundio_strerror(soundio_outstream_pause(this->out_stream, false)));
+        //LOG_F(INFO, "AWAC: unpausing result: %s",
+        //    soundio_strerror(soundio_outstream_pause(this->out_stream, false)));
         return;
     }
 
@@ -239,9 +316,13 @@ void AWACDevice::dma_start()
         return;
     }
 
-    if ((err = soundio_outstream_start(this->out_stream))) {
-        LOG_F(ERROR, "AWAC: unable to start stream: %s\n", soundio_strerror(err));
-        return;
+    //if ((err = soundio_outstream_start(this->out_stream))) {
+    //    LOG_F(ERROR, "AWAC: unable to start stream: %s\n", soundio_strerror(err));
+    //    return;
+    //}
+
+    if ((err = snd_server->start_out_stream())) {
+        LOG_F(ERROR, "Could not start sound output stream");
     }
 }
 

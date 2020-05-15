@@ -19,26 +19,33 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/devices/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/machines/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/thirdparty/loguru/")
 
-set(BUILD_EXAMPLE_PROGRAMS OFF CACHE BOOL "Build libsoundio example programs")
-set(BUILD_TESTS OFF CACHE BOOL "Build libsoundio tests")
-set(BUILD_DYNAMIC_LIBS ON CACHE BOOL "Build libsoundio dynamic libs")
-set(BUILD_STATIC_LIBS ON CACHE BOOL "Build libsoundio static libs")
+#set(BUILD_EXAMPLE_PROGRAMS OFF CACHE BOOL "Build libsoundio example programs")
+#set(BUILD_TESTS OFF CACHE BOOL "Build libsoundio tests")
+#set(BUILD_DYNAMIC_LIBS ON CACHE BOOL "Build libsoundio dynamic libs")
+#set(BUILD_STATIC_LIBS ON CACHE BOOL "Build libsoundio static libs")
 
-add_subdirectory("${PROJECT_SOURCE_DIR}/thirdparty/libsoundio")
+#add_subdirectory("${PROJECT_SOURCE_DIR}/thirdparty/libsoundio")
+
+set(BUILD_TESTS OFF CACHE BOOL "Build Cubeb tests")
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries")
+set(BUILD_TOOLS OFF CACHE BOOL "Build Cubeb tools")
+
+add_subdirectory(thirdparty/cubeb EXCLUDE_FROM_ALL)
 
 include_directories("${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/devices"
                     "${PROJECT_SOURCE_DIR}/cpu/ppc"
                     "${PROJECT_SOURCE_DIR}/debugger"
 					"${PROJECT_SOURCE_DIR}/thirdparty/loguru/"
-					"${PROJECT_SOURCE_DIR}/thirdparty/SDL2/"
-                    ${LIBSOUNDIO_HEADERS})
+					"${PROJECT_SOURCE_DIR}/thirdparty/SDL2/")
+#                    "${PROJECT_SOURCE_DIR}/thirdparty/cubeb/include")
+#                    ${LIBSOUNDIO_HEADERS})
 
 file(GLOB SOURCES "${PROJECT_SOURCE_DIR}/*.cpp"
                   "${PROJECT_SOURCE_DIR}/*.c"
                   "${PROJECT_SOURCE_DIR}/*.hpp"
                   "${PROJECT_SOURCE_DIR}/*.h")
 
-get_directory_property(LIBSOUNDIO_LIBS DIRECTORY thirdparty/libsoundio DEFINITION LIBSOUNDIO_LIBS)
+#get_directory_property(LIBSOUNDIO_LIBS DIRECTORY thirdparty/libsoundio DEFINITION LIBSOUNDIO_LIBS)
 
 file(GLOB TEST_SOURCES "${PROJECT_SOURCE_DIR}/cpu/ppc/test/*.cpp")
 
@@ -53,7 +60,8 @@ target_link_libraries(dingusppc "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/S
                                 "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2main.lib"
                                 libsoundio_static ${LIBSOUNDIO_LIBS})
 else()
-target_link_libraries(dingusppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES} ${CMAKE_DL_LIBS})
+#target_link_libraries(dingusppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
+target_link_libraries(dingusppc cubeb ${SDL2_LIBRARIES})
 endif()
 
 
@@ -68,7 +76,8 @@ target_link_libraries(testppc "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL
                               "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2main.lib"
                               libsoundio_static ${LIBSOUNDIO_LIBS})
 else()
-target_link_libraries(testppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES} ${CMAKE_DL_LIBS})
+#target_link_libraries(testppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
+target_link_libraries(testppc cubeb ${SDL2_LIBRARIES})
 endif()
 
 add_custom_command(

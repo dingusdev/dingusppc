@@ -20,9 +20,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "soundserver.h"
-#include <thirdparty/libsoundio/soundio/soundio.h>
+//#include <thirdparty/libsoundio/soundio/soundio.h>
 #include <thirdparty/loguru/loguru.hpp>
+#include <cubeb/cubeb.h>
 
+#if 0
 int SoundServer::start()
 {
     int err;
@@ -78,4 +80,86 @@ void SoundServer::shutdown()
     this->status = SND_SERVER_DOWN;
 
     LOG_F(INFO, "Sound Server shut down.");
+}
+#endif
+
+int SoundServer::start()
+{
+    int res;
+
+    this->status = SND_SERVER_DOWN;
+
+    res = cubeb_init(&this->cubeb_ctx, "Dingus sound server", NULL);
+    if (res != CUBEB_OK) {
+        LOG_F(ERROR, "Could not initialize Cubeb library");
+        return -1;
+    }
+
+    LOG_F(INFO, "Connected to backend: %s", cubeb_get_backend_id(this->cubeb_ctx));
+
+    this->status = SND_API_READY;
+
+    return 0;
+}
+
+void SoundServer::shutdown()
+{
+    switch (this->status) {
+    case SND_SERVER_UP:
+        //soundio_device_unref(this->out_device);
+        /* fall through */
+    case SND_API_READY:
+        cubeb_destroy(this->cubeb_ctx);
+    }
+
+    this->status = SND_SERVER_DOWN;
+
+    LOG_F(INFO, "Sound Server shut down.");
+}
+
+
+int SoundServer::open_out_stream(uint32_t sample_rate, cubeb_data_callback data_cb,
+    cubeb_state_callback status_cb, void *user_data)
+{
+    int res;
+    uint32_t latency_frames;
+    cubeb_stream_params params;
+
+    params.format = CUBEB_SAMPLE_S16NE;
+    params.rate = sample_rate;
+    params.channels = 2;
+    params.layout = CUBEB_LAYOUT_STEREO;
+    params.prefs = CUBEB_STREAM_PREF_NONE;
+
+    res = cubeb_get_min_latency(this->cubeb_ctx, &params, &latency_frames);
+    if (res != CUBEB_OK) {
+        LOG_F(ERROR, "Could not get minimum latency, error: %d", res);
+        return -1;
+    } else {
+        LOG_F(INFO, "Minimum sound latency: %d frames", latency_frames);
+    }
+
+    res = cubeb_stream_init(this->cubeb_ctx, &this->out_stream, "SndOut stream",
+                            NULL, NULL, NULL, &params, latency_frames,
+                            data_cb, status_cb, user_data);
+    if (res != CUBEB_OK) {
+        LOG_F(ERROR, "Could not open sound output stream, error: %d", res);
+        return -1;
+    }
+
+    LOG_F(INFO, "Sound output stream opened.");
+
+    return 0;
+}
+
+int SoundServer::start_out_stream()
+{
+    return cubeb_stream_start(this->out_stream);
+}
+
+void SoundServer::close_out_stream()
+{
+    cubeb_stream_stop(this->out_stream);
+    cubeb_stream_destroy(this->out_stream);
+    LOG_F(INFO, "Sound output stream closed.");
 }
