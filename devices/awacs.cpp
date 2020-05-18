@@ -46,7 +46,6 @@ AWACDevice::AWACDevice()
 
     this->snd_server = dynamic_cast<SoundServer *>
         (gMachineObj->get_comp_by_name("SoundServer"));
-    //this->out_device = snd_server->get_out_device();
     this->out_stream_ready = false;
 }
 
@@ -210,9 +209,9 @@ long AWACDevice::sound_out_callback(cubeb_stream *stream, void *user_data,
                         void const *input_buffer, void *output_buffer,
                         long req_frames)
 {
-    uint8_t *p_in, *buf;
+    uint8_t *p_in;
     int16_t* in_buf, * out_buf;
-    uint32_t buf_len, rem_len, data_len, got_len;
+    uint32_t got_len;
     long frames, out_frames;
     AWACDevice *this_ptr = static_cast<AWACDevice*>(user_data); /* C API baby! */
 
@@ -224,48 +223,23 @@ long AWACDevice::sound_out_callback(cubeb_stream *stream, void *user_data,
 
     out_frames = 0;
 
-    /* handle remainder chunk from previous call */
-    if (req_frames > 0 && this_ptr->remainder) {
-        out_buf[0] = this_ptr->rem_data[0];
-        out_buf[1] = this_ptr->rem_data[1];
-        out_buf += 2;
-        req_frames--;
-        out_frames++;
-        this_ptr->remainder = false;
-    }
-
-    if (req_frames <= 0) {
-        return out_frames;
-    }
-
     while (req_frames > 0) {
-        data_len = ((req_frames << 2) + 8) & ~7;
-        if (!this_ptr->dma_out_ch->get_data(data_len, &got_len, &p_in)) {
-            frames = std::min((long)(got_len >> 2), req_frames);
+        if (!this_ptr->dma_out_ch->get_data(req_frames << 2, &got_len, &p_in)) {
+            frames = got_len >> 2;
 
             in_buf = (int16_t*)p_in;
 
-            for (int i = frames & ~1; i > 0; i -= 2) {
+            for (int i = frames; i > 0; i--) {
                 out_buf[0] = BYTESWAP_16(in_buf[0]);
                 out_buf[1] = BYTESWAP_16(in_buf[1]);
-                out_buf[2] = BYTESWAP_16(in_buf[2]);
-                out_buf[3] = BYTESWAP_16(in_buf[3]);
-                in_buf += 4;
-                out_buf += 4;
-            }
-            if (frames & 1) {
-                out_buf[0] = BYTESWAP_16(in_buf[0]);
-                out_buf[1] = BYTESWAP_16(in_buf[1]);
-                this_ptr->rem_data[0] = BYTESWAP_16(in_buf[2]);
-                this_ptr->rem_data[1] = BYTESWAP_16(in_buf[3]);
-                this_ptr->remainder = true;
+                in_buf += 2;
+                out_buf += 2;
             }
 
             req_frames -= frames;
             out_frames += frames;
         }
         else {
-            out_frames += got_len >> 2;
             break;
         }
     }
@@ -281,22 +255,6 @@ void status_callback(cubeb_stream *stream, void *user_data, cubeb_state state)
 void AWACDevice::open_stream(int sample_rate)
 {
     int err;
-
-#if 0
-    this->out_stream = soundio_outstream_create(this->out_device);
-    this->out_stream->write_callback = sound_out_callback;
-    this->out_stream->format = SoundIoFormatS16LE;
-    this->out_stream->sample_rate = sample_rate;
-    this->out_stream->userdata = (void *)this->dma_out_ch;
-
-    if ((err = soundio_outstream_open(this->out_stream))) {
-        LOG_F(ERROR, "AWAC: unable to open sound output stream: %s",
-            soundio_strerror(err));
-    } else {
-        this->out_sample_rate = sample_rate;
-        this->out_stream_ready = true;
-    }
-#endif
 
     if ((err = this->snd_server->open_out_stream(sample_rate, sound_out_callback,
             status_callback, (void *)this))) {
@@ -315,27 +273,16 @@ void AWACDevice::dma_start()
     if (!this->out_stream_ready) {
         this->open_stream(awac_freqs[(this->snd_ctrl_reg >> 8) & 7]);
     } else if (this->out_sample_rate != awac_freqs[(this->snd_ctrl_reg >> 8) & 7]) {
-        //soundio_outstream_destroy(this->out_stream);
         snd_server->close_out_stream();
         this->open_stream(awac_freqs[(this->snd_ctrl_reg >> 8) & 7]);
     } else {
         LOG_F(ERROR, "AWAC: unpausing attempted!");
-        //soundio_outstream_clear_buffer(this->out_stream);
-        //LOG_F(INFO, "AWAC: unpausing result: %s",
-        //    soundio_strerror(soundio_outstream_pause(this->out_stream, false)));
         return;
     }
 
     if (!this->out_stream_ready) {
         return;
     }
-
-    this->remainder = false;
-
-    //if ((err = soundio_outstream_start(this->out_stream))) {
-    //    LOG_F(ERROR, "AWAC: unable to start stream: %s\n", soundio_strerror(err));
-    //    return;
-    //}
 
     if ((err = snd_server->start_out_stream())) {
         LOG_F(ERROR, "Could not start sound output stream");

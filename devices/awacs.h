@@ -129,16 +129,10 @@ private:
 
     SoundServer *snd_server;
 
-    //SoundIoDevice *out_device;
-    //SoundIoOutStream *out_stream;
     bool out_stream_ready;
     int out_sample_rate;
 
     DMAChannel  *dma_out_ch;
-
-    /* variables for handling odd number of frames */
-    bool remainder;
-    int16_t rem_data[2];
 };
 
 
