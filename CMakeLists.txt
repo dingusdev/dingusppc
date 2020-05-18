@@ -58,7 +58,7 @@ add_executable(dingusppc ${SOURCES} $<TARGET_OBJECTS:debugger>
 if (WIN32)
 target_link_libraries(dingusppc "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2.lib"
                                 "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2main.lib"
-                                libsoundio_static ${LIBSOUNDIO_LIBS})
+                                cubeb)
 else()
 #target_link_libraries(dingusppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
 target_link_libraries(dingusppc cubeb ${SDL2_LIBRARIES})
@@ -74,7 +74,7 @@ add_executable(testppc ${TEST_SOURCES} $<TARGET_OBJECTS:debugger>
 if (WIN32)
 target_link_libraries(testppc "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2.lib"
                               "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2main.lib"
-                              libsoundio_static ${LIBSOUNDIO_LIBS})
+                              cubeb)
 else()
 #target_link_libraries(testppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
 target_link_libraries(testppc cubeb ${SDL2_LIBRARIES})

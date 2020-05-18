@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     Author: Max Poliakovski 2019-20
 */
 
+#include <algorithm>
 #include <thirdparty/loguru/loguru.hpp>
 #include "endianswap.h"
 #include "awacs.h"
@@ -56,9 +57,6 @@ AWACDevice::~AWACDevice()
     }
 
     delete this->audio_proc;
-
-    if (this->snd_buf)
-        delete[] this->snd_buf;
 }
 
 void AWACDevice::set_dma_out(DMAChannel *dma_out_ch)
@@ -208,60 +206,76 @@ static void sound_out_callback(struct SoundIoOutStream *outstream,
 }
 #endif
 
-static void convert_data(const uint8_t *in, uint8_t *out, uint32_t len)
-{
-    uint16_t *p_in, *p_out;
-
-    if (len & 7) {
-        LOG_F(WARNING, "AWAC sound buffer len not a multiply of 8, %d", len);
-    }
-
-    p_in  = (uint16_t *)in;
-    p_out = (uint16_t *)out;
-    len >>= 1;
-
-    LOG_F(INFO, "Converting %d samples", len);
-
-    /* AWAC data comes as LLRR -> convert it to LRLR */
-    for (int i = 0; i < len; i += 4) {
-        p_out[i+0] = BYTESWAP_16(p_in[i+0]);
-        p_out[i+1] = BYTESWAP_16(p_in[i+2]);
-        p_out[i+2] = BYTESWAP_16(p_in[i+1]);
-        p_out[i+3] = BYTESWAP_16(p_in[i+3]);
-    }
-}
-
-long sound_out_callback(cubeb_stream *stream, void *user_data,
+long AWACDevice::sound_out_callback(cubeb_stream *stream, void *user_data,
                         void const *input_buffer, void *output_buffer,
-                        long nframes)
+                        long req_frames)
 {
     uint8_t *p_in, *buf;
-    uint32_t buf_len, rem_len, got_len;
-    DMAChannel *dma_ch = static_cast<DMAChannel*>(user_data); /* C API baby! */
+    int16_t* in_buf, * out_buf;
+    uint32_t buf_len, rem_len, data_len, got_len;
+    long frames, out_frames;
+    AWACDevice *this_ptr = static_cast<AWACDevice*>(user_data); /* C API baby! */
 
-    //LOG_F(INFO, "Cubeb data callback fired, nframes = %ld", nframes);
+    if (!this_ptr->dma_out_ch->is_active()) {
+        return 0;
+    }
 
-    buf = (uint8_t *)output_buffer;
-    buf_len = nframes * 2 * sizeof(int16_t);
+    out_buf = (int16_t*)output_buffer;
 
-    for (rem_len = buf_len; rem_len > 0; rem_len -= got_len, buf += got_len) {
-        if (!dma_ch->get_data(rem_len, &got_len, &p_in)) {
-            convert_data(p_in, buf, got_len);
-            LOG_F(INFO, "Converted sound data, len = %d", got_len);
-        } else { /* no more data */
-            //memset(buf, 0, rem_len); /* fill the buffer with silence */
-            //LOG_F(INFO, "Inserted silence, len = %d", rem_len);
-            LOG_F(INFO, "AWAC: return %d samples", (buf_len - rem_len) >> 2);
-            return (buf_len - rem_len) >> 2;
+    out_frames = 0;
+
+    /* handle remainder chunk from previous call */
+    if (req_frames > 0 && this_ptr->remainder) {
+        out_buf[0] = this_ptr->rem_data[0];
+        out_buf[1] = this_ptr->rem_data[1];
+        out_buf += 2;
+        req_frames--;
+        out_frames++;
+        this_ptr->remainder = false;
+    }
+
+    if (req_frames <= 0) {
+        return out_frames;
+    }
+
+    while (req_frames > 0) {
+        data_len = ((req_frames << 2) + 8) & ~7;
+        if (!this_ptr->dma_out_ch->get_data(data_len, &got_len, &p_in)) {
+            frames = std::min((long)(got_len >> 2), req_frames);
+
+            in_buf = (int16_t*)p_in;
+
+            for (int i = frames & ~1; i > 0; i -= 2) {
+                out_buf[0] = BYTESWAP_16(in_buf[0]);
+                out_buf[1] = BYTESWAP_16(in_buf[1]);
+                out_buf[2] = BYTESWAP_16(in_buf[2]);
+                out_buf[3] = BYTESWAP_16(in_buf[3]);
+                in_buf += 4;
+                out_buf += 4;
+            }
+            if (frames & 1) {
+                out_buf[0] = BYTESWAP_16(in_buf[0]);
+                out_buf[1] = BYTESWAP_16(in_buf[1]);
+                this_ptr->rem_data[0] = BYTESWAP_16(in_buf[2]);
+                this_ptr->rem_data[1] = BYTESWAP_16(in_buf[3]);
+                this_ptr->remainder = true;
+            }
+
+            req_frames -= frames;
+            out_frames += frames;
+        }
+        else {
+            out_frames += got_len >> 2;
+            break;
         }
     }
 
-    return nframes;
+    return out_frames;
 }
 
 void status_callback(cubeb_stream *stream, void *user_data, cubeb_state state)
 {
-    LOG_F(INFO, "Cubeb status callback fired, status = %d", state);
+    LOG_F(9, "Cubeb status callback fired, status = %d", state);
 }
 
 void AWACDevice::open_stream(int sample_rate)
@@ -285,7 +299,7 @@ void AWACDevice::open_stream(int sample_rate)
 #endif
 
     if ((err = this->snd_server->open_out_stream(sample_rate, sound_out_callback,
-            status_callback, (void *)this->dma_out_ch))) {
+            status_callback, (void *)this))) {
         LOG_F(ERROR, "AWAC: unable to open sound output stream: %d", err);
         this->out_stream_ready = false;
     } else {
@@ -315,6 +329,8 @@ void AWACDevice::dma_start()
     if (!this->out_stream_ready) {
         return;
     }
+
+    this->remainder = false;
 
     //if ((err = soundio_outstream_start(this->out_stream))) {
     //    LOG_F(ERROR, "AWAC: unable to start stream: %s\n", soundio_strerror(err));

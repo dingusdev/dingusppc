@@ -23,6 +23,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //#include <thirdparty/libsoundio/soundio/soundio.h>
 #include <thirdparty/loguru/loguru.hpp>
 #include <cubeb/cubeb.h>
+#ifdef _WIN32
+#include <objbase.h>
+#endif
 
 #if 0
 int SoundServer::start()
@@ -86,6 +89,10 @@ void SoundServer::shutdown()
 int SoundServer::start()
 {
     int res;
+
+#ifdef _WIN32
+    CoInitialize(nullptr);
+#endif
 
     this->status = SND_SERVER_DOWN;
 
