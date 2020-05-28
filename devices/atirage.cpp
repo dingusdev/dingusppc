@@ -215,32 +215,35 @@ void ATIRage::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
     switch (reg_offs) {
     case 0x10: /* BAR 0 */
         if (value == 0xFFFFFFFFUL) {
-            WRITE_DWORD_BE_A(&this->pci_cfg[CFG_REG_BAR0], 0xFF000008);
+            WRITE_DWORD_LE_A(&this->pci_cfg[CFG_REG_BAR0], 0xFF000000UL);
         }
         else {
-            WRITE_DWORD_BE_A(&this->pci_cfg[CFG_REG_BAR0], value);
+            this->aperture_base = BYTESWAP_32(value);
+            LOG_F(INFO, "ATI Rage aperture address set to 0x%08X", this->aperture_base);
+            WRITE_DWORD_LE_A(&this->pci_cfg[CFG_REG_BAR0], value);
+            this->host_instance->pci_register_mmio_region(this->aperture_base, 0x01000000, this);
         }
         break;
     case 0x14: /* BAR 1: I/O space base, 256 bytes wide */
         if (value == 0xFFFFFFFFUL) {
-            WRITE_DWORD_BE_A(&this->pci_cfg[CFG_REG_BAR1], 0x0000FFF1);
+            WRITE_DWORD_LE_A(&this->pci_cfg[CFG_REG_BAR1], 0xFFFFFF01UL);
         }
         else {
-            WRITE_DWORD_BE_A(&this->pci_cfg[CFG_REG_BAR1], value);
+            WRITE_DWORD_LE_A(&this->pci_cfg[CFG_REG_BAR1], value);
         }
     case 0x18: /* BAR 2 */
         if (value == 0xFFFFFFFFUL) {
-            WRITE_DWORD_BE_A(&this->pci_cfg[CFG_REG_BAR2], 0xFFFFF000);
+            WRITE_DWORD_LE_A(&this->pci_cfg[CFG_REG_BAR2], 0xFFFFF000UL);
         }
         else {
-            WRITE_DWORD_BE_A(&this->pci_cfg[CFG_REG_BAR2], value);
+            WRITE_DWORD_LE_A(&this->pci_cfg[CFG_REG_BAR2], value);
         }
         break;
     case CFG_REG_BAR3: /* unimplemented */
     case CFG_REG_BAR4: /* unimplemented */
     case CFG_REG_BAR5: /* unimplemented */
     case CFG_EXP_BASE: /* no expansion ROM */
-        WRITE_DWORD_BE_A(&this->pci_cfg[reg_offs], 0);
+        WRITE_DWORD_LE_A(&this->pci_cfg[reg_offs], 0);
         break;
     default:
         size_dep_write(&this->pci_cfg[reg_offs], value, size);
@@ -255,7 +258,7 @@ bool ATIRage::io_access_allowed(uint32_t offset, uint32_t *p_io_base)
         return false;
     }
 
-    uint32_t io_base = READ_DWORD_LE_A(&this->pci_cfg[CFG_REG_BAR1]) & ~3;
+    uint32_t io_base = READ_DWORD_BE_A(&this->pci_cfg[CFG_REG_BAR1]) & ~3;
 
     if (offset < io_base || offset > (io_base + 0x100)) {
         LOG_F(WARNING, "Rage: I/O out of range, base=0x%X, offset=0x%X", io_base, offset);
@@ -296,11 +299,34 @@ bool ATIRage::pci_io_write(uint32_t offset, uint32_t value, uint32_t size)
 
 uint32_t ATIRage::read(uint32_t reg_start, uint32_t offset, int size)
 {
-    LOG_F(INFO, "Reading reg=%X, size %d", offset, size);
-    return 0;
+    LOG_F(INFO, "Reading ATI Rage PCI memory: region=%X, offset=%X, size %d", reg_start, offset, size);
+
+    if (reg_start < this->aperture_base || offset > 0x01000000) {
+        LOG_F(WARNING, "ATI Rage address out of range!");
+        return 0;
+    }
+
+    if (offset < 0x7FFC00UL) {
+        LOG_F(WARNING, "ATI Rage frame buffer reads not supported yet!");
+        return 0;
+    }
+
+    return this->read_reg(offset - 0x7FFC00UL, size);
 }
 
 void ATIRage::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
 {
-    LOG_F(INFO, "Writing reg=%X, value=%X, size %d", offset, value, size);
+    LOG_F(INFO, "Writing reg=%X, offset=%X, value=%X, size %d", reg_start, offset, value, size);
+
+    if (reg_start < this->aperture_base || offset > 0x01000000) {
+        LOG_F(WARNING, "ATI Rage address out of range!");
+        return;
+    }
+
+    if (offset < 0x7FFC00UL) {
+        LOG_F(WARNING, "ATI Rage frame buffer writes not supported yet!");
+        return;
+    }
+
+    this->write_reg(offset - 0x7FFC00UL, value, size);
 }
