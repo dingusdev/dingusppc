@@ -30,15 +30,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ATIRage::ATIRage(uint16_t dev_id) : PCIDevice("ati-rage")
 {
+    this->vram_size = 0x200000; /* FIXME: hardcoded VRAM size! */
+
+    /*allocate video RAM */
+    this->vram_ptr = new uint8_t[this->vram_size];
+
+    /* configure PCI parameters */
     WRITE_DWORD_BE_A(&this->pci_cfg[0], (dev_id << 16) | ATI_PCI_VENDOR_ID);
     WRITE_DWORD_BE_A(&this->pci_cfg[8], 0x0300005C);
     WRITE_DWORD_BE_A(&this->pci_cfg[0x3C], 0x00080100);
 
+    /* initialize display identification */
     this->disp_id = new DisplayID();
 }
 
 ATIRage::~ATIRage()
 {
+    if (this->vram_ptr) {
+        delete this->vram_ptr;
+    }
+
     delete (this->disp_id);
 }
 
@@ -106,6 +117,9 @@ const char* ATIRage::get_reg_name(uint32_t reg_offset)
     case ATI_DSP_ON_OFF:
         reg_name = "DSP_ON_OFF";
         break;
+    case ATI_MEM_BUF_CNTL:
+        reg_name = "MEM_BUF_CNTL";
+        break;
     case ATI_MEM_ADDR_CFG:
         reg_name = "MEM_ADDR_CFG";
         break;
@@ -132,6 +146,9 @@ const char* ATIRage::get_reg_name(uint32_t reg_offset)
         break;
     case ATI_MEM_CNTL:
         reg_name = "MEM_CNTL";
+        break;
+    case ATI_DAC_REGS:
+        reg_name = "DAC_REGS";
         break;
     case ATI_DAC_CNTL:
         reg_name = "DAC_CNTL";
@@ -299,34 +316,45 @@ bool ATIRage::pci_io_write(uint32_t offset, uint32_t value, uint32_t size)
 
 uint32_t ATIRage::read(uint32_t reg_start, uint32_t offset, int size)
 {
-    LOG_F(INFO, "Reading ATI Rage PCI memory: region=%X, offset=%X, size %d", reg_start, offset, size);
+    //LOG_F(INFO, "Reading ATI Rage PCI memory: region=%X, offset=%X, size %d", reg_start, offset, size);
 
     if (reg_start < this->aperture_base || offset > 0x01000000) {
-        LOG_F(WARNING, "ATI Rage address out of range!");
+        LOG_F(WARNING, "ATI Rage: attempt to read outside the aperture!");
         return 0;
     }
 
-    if (offset < 0x7FFC00UL) {
-        LOG_F(WARNING, "ATI Rage frame buffer reads not supported yet!");
-        return 0;
+    if (offset < this->vram_size) {
+        /* read from little-endian VRAM region */
+        return size_dep_read(this->vram_ptr + offset, size);
+    }
+    else if (offset >= 0x7FFC00UL) {
+        /* read from memory-mapped registers */
+        return this->read_reg(offset - 0x7FFC00UL, size);
+    }
+    else {
+        LOG_F(WARNING, "ATI Rage: read attempt from unmapped aperture region at 0x%08X", offset);
     }
 
-    return this->read_reg(offset - 0x7FFC00UL, size);
+    return 0;
 }
 
 void ATIRage::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
 {
-    LOG_F(INFO, "Writing reg=%X, offset=%X, value=%X, size %d", reg_start, offset, value, size);
+    //LOG_F(INFO, "Writing reg=%X, offset=%X, value=%X, size %d", reg_start, offset, value, size);
 
     if (reg_start < this->aperture_base || offset > 0x01000000) {
-        LOG_F(WARNING, "ATI Rage address out of range!");
+        LOG_F(WARNING, "ATI Rage: attempt to write outside the aperture!");
         return;
     }
 
-    if (offset < 0x7FFC00UL) {
-        LOG_F(WARNING, "ATI Rage frame buffer writes not supported yet!");
-        return;
+    if (offset < this->vram_size) {
+        /* write to little-endian VRAM region */
+        size_dep_write(this->vram_ptr + offset, value, size);
+    } else if (offset >= 0x7FFC00UL) {
+        /* write to memory-mapped registers */
+        this->write_reg(offset - 0x7FFC00UL, value, size);
     }
-
-    this->write_reg(offset - 0x7FFC00UL, value, size);
+    else {
+        LOG_F(WARNING, "ATI Rage: write attempt to unmapped aperture region at 0x%08X", offset);
+    }
 }

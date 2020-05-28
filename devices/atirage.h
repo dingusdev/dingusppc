@@ -142,8 +142,12 @@ private:
 
     uint8_t pci_cfg[256] = { 0 }; /* PCI configuration space */
 
-    uint32_t   aperture_base;
+    /* Video RAM variables */
+    uint32_t    vram_size;
+    uint8_t*    vram_ptr;
 
-    DisplayID* disp_id;
+    uint32_t    aperture_base;
+
+    DisplayID*  disp_id;
 };
 #endif /* ATI_RAGE_H */
