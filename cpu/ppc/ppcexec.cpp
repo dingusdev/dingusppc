@@ -43,7 +43,6 @@ bool power_on = 1;
 
 SetPRS ppc_state;
 
-bool grab_branch;
 bool grab_exception;
 bool grab_return;
 bool grab_breakpoint;
