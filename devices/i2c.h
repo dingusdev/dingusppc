@@ -29,6 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <stdexcept>
 #include <cstring>
+#include <string>
 #include <thirdparty/loguru/loguru.hpp>
 
 /** Base class for I2C devices */
