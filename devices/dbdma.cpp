@@ -183,10 +183,12 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
     }
 }
 
-int DMAChannel::get_data(uint32_t req_len, uint32_t* avail_len, uint8_t** p_data) {
+int DMAChannel::get_data(uint32_t req_len, uint32_t *avail_len, uint8_t **p_data)
+{
+    *avail_len = 0;
+
     if (this->ch_stat & CH_STAT_DEAD || !(this->ch_stat & CH_STAT_ACTIVE)) {
         LOG_F(WARNING, "Dead/idle channel -> no more data");
-        *avail_len = 0;
         return -1; /* dead or idle channel? -> no more data */
     }
 
@@ -215,7 +217,18 @@ int DMAChannel::get_data(uint32_t req_len, uint32_t* avail_len, uint8_t** p_data
     return -1; /* tell the caller there is no more data */
 }
 
-void DMAChannel::start() {
+bool DMAChannel::is_active()
+{
+    if (this->ch_stat & CH_STAT_DEAD || !(this->ch_stat & CH_STAT_ACTIVE)) {
+        return false;
+    }
+    else {
+        return true;
+    }
+}
+
+void DMAChannel::start()
+{
     if (this->ch_stat & CH_STAT_PAUSE) {
         LOG_F(WARNING, "Cannot start DMA channel, PAUSE bit is set");
         return;
@@ -226,9 +239,6 @@ void DMAChannel::start() {
     this->queue_len = 0;
 
     this->dma_cb->dma_start();
-
-    // while (this->interpret_cmd() != 7) {
-    //}
 }
 
 void DMAChannel::resume() {

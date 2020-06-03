@@ -1,0 +1,124 @@
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   ...
+   obj:*/libasound.so.2.0.0
+   fun:snd_config_hook_load
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   ...
+   obj:*/libasound.so.2.0.0
+   fun:snd_config_hook_load
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   ...
+   obj:*/libasound.so.2.0.0
+   fun:snd_config_update_r
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   ...
+   obj:*/libasound.so.2.0.0
+   fun:snd_config_update_r
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   obj:*/libasound.so.2.0.0
+   obj:*/libasound.so.2.0.0
+   obj:*/libasound.so.2.0.0
+   obj:*/libasound.so.2.0.0
+   obj:*/libasound.so.2.0.0
+   obj:*/libasound.so.2.0.0
+   obj:*/libasound.so.2.0.0
+   obj:*/libasound.so.2.0.0
+   obj:*/libasound.so.2.0.0
+   obj:*/libasound.so.2.0.0
+   obj:*/libasound.so.2.0.0
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   obj:*/libasound.so.2.0.0
+   obj:*/libasound.so.2.0.0
+   obj:*/libasound.so.2.0.0
+   obj:*/libasound.so.2.0.0
+   obj:*/libasound.so.2.0.0
+   obj:*/libasound.so.2.0.0
+   obj:*/libasound.so.2.0.0
+   obj:*/libasound.so.2.0.0
+   obj:*/libasound.so.2.0.0
+   obj:*/libasound.so.2.0.0
+   obj:*/libasound.so.2.0.0
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   ...
+   obj:*/libasound.so.2.0.0
+   fun:snd_config_load
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   ...
+   obj:*/libasound.so.2.0.0
+   fun:parse_array_defs
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   ...
+   fun:snd1_dlobj_cache_get
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:snd_pcm_hw_get_chmap
+   fun:snd_pcm_get_chmap
+   fun:snd1_pcm_direct_get_chmap
+   fun:snd_pcm_get_chmap
+   fun:snd1_pcm_generic_get_chmap
+   fun:snd_pcm_get_chmap
+   fun:snd1_pcm_generic_get_chmap
+   fun:snd_pcm_get_chmap
+   fun:snd1_pcm_generic_get_chmap
+   fun:snd_pcm_get_chmap
+   fun:snd_pcm_set_chmap
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Cond
+   fun:snd_interval_floor
+   fun:snd_pcm_plug_hw_refine_cchange
+   fun:snd1_pcm_hw_refine_slave
+   fun:snd_pcm_plug_hw_refine
+   fun:snd_pcm_hw_refine
+   fun:snd1_pcm_hw_param_set_last
+   ...
+}

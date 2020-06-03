@@ -17,3 +17,8 @@ dingusppc.exe
 # Ignore system files
 .DS_Store
 Thumb.db
+
+# IDE ignores
+build
+build-*
+*.user

@@ -220,7 +220,6 @@ extern BB_end_kind bb_kind;
 
 extern jmp_buf exc_env;
 
-extern bool grab_branch;
 extern bool grab_exception;
 extern bool grab_return;
 

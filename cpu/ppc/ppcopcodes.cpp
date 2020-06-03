@@ -1390,34 +1390,30 @@ void ppc_b() {
     uint32_t quick_test = (ppc_cur_instruction & 0x03FFFFFC);
     adr_li              = (quick_test < 0x2000000) ? quick_test : (0xFC000000UL + quick_test);
     ppc_next_instruction_address = (uint32_t)(ppc_state.pc + adr_li);
-    grab_branch                  = 1;
-    bb_kind                      = BB_end_kind::BB_BRANCH;
+    bb_kind = BB_end_kind::BB_BRANCH;
 }
 
 void ppc_bl() {
     uint32_t quick_test = (ppc_cur_instruction & 0x03FFFFFC);
     adr_li              = (quick_test < 0x2000000) ? quick_test : (0xFC000000UL + quick_test);
     ppc_next_instruction_address = (uint32_t)(ppc_state.pc + adr_li);
-    ppc_state.spr[SPR::LR]       = (uint32_t)(ppc_state.pc + 4);
-    grab_branch                  = 1;
-    bb_kind                      = BB_end_kind::BB_BRANCH;
+    ppc_state.spr[SPR::LR] = (uint32_t)(ppc_state.pc + 4);
+    bb_kind = BB_end_kind::BB_BRANCH;
 }
 
 void ppc_ba() {
     uint32_t quick_test = (ppc_cur_instruction & 0x03FFFFFC);
     adr_li              = (quick_test < 0x2000000) ? quick_test : (0xFC000000UL + quick_test);
     ppc_next_instruction_address = adr_li;
-    grab_branch                  = 1;
-    bb_kind                      = BB_end_kind::BB_BRANCH;
+    bb_kind = BB_end_kind::BB_BRANCH;
 }
 
 void ppc_bla() {
     uint32_t quick_test = (ppc_cur_instruction & 0x03FFFFFC);
     adr_li              = (quick_test < 0x2000000) ? quick_test : (0xFC000000UL + quick_test);
     ppc_next_instruction_address = adr_li;
-    ppc_state.spr[SPR::LR]       = ppc_state.pc + 4;
-    grab_branch                  = 1;
-    bb_kind                      = BB_end_kind::BB_BRANCH;
+    ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
+    bb_kind = BB_end_kind::BB_BRANCH;
 }
 
 void ppc_bc() {
@@ -1435,8 +1431,7 @@ void ppc_bc() {
 
     if (ctr_ok && cnd_ok) {
         ppc_next_instruction_address = (ppc_state.pc + br_bd);
-        grab_branch                  = 1;
-        bb_kind                      = BB_end_kind::BB_BRANCH;
+        bb_kind = BB_end_kind::BB_BRANCH;
     }
 }
 
@@ -1455,8 +1450,7 @@ void ppc_bca() {
 
     if (ctr_ok && cnd_ok) {
         ppc_next_instruction_address = br_bd;
-        grab_branch                  = 1;
-        bb_kind                      = BB_end_kind::BB_BRANCH;
+        bb_kind = BB_end_kind::BB_BRANCH;
     }
 }
 
@@ -1475,8 +1469,7 @@ void ppc_bcl() {
 
     if (ctr_ok && cnd_ok) {
         ppc_next_instruction_address = (ppc_state.pc + br_bd);
-        grab_branch                  = 1;
-        bb_kind                      = BB_end_kind::BB_BRANCH;
+        bb_kind = BB_end_kind::BB_BRANCH;
     }
     ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
 }
@@ -1496,8 +1489,7 @@ void ppc_bcla() {
 
     if (ctr_ok && cnd_ok) {
         ppc_next_instruction_address = br_bd;
-        grab_branch                  = 1;
-        bb_kind                      = BB_end_kind::BB_BRANCH;
+        bb_kind = BB_end_kind::BB_BRANCH;
     }
     ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
 }
@@ -1511,8 +1503,7 @@ void ppc_bcctr() {
 
     if (cnd_ok) {
         ppc_next_instruction_address = (ppc_state.spr[SPR::CTR] & 0xFFFFFFFCUL);
-        grab_branch                  = 1;
-        bb_kind                      = BB_end_kind::BB_BRANCH;
+        bb_kind = BB_end_kind::BB_BRANCH;
     }
 }
 
@@ -1525,8 +1516,7 @@ void ppc_bcctrl() {
 
     if (cnd_ok) {
         ppc_next_instruction_address = (ppc_state.spr[SPR::CTR] & 0xFFFFFFFCUL);
-        grab_branch                  = 1;
-        bb_kind                      = BB_end_kind::BB_BRANCH;
+        bb_kind = BB_end_kind::BB_BRANCH;
     }
     ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
 }
@@ -1545,8 +1535,7 @@ void ppc_bclr() {
 
     if (ctr_ok && cnd_ok) {
         ppc_next_instruction_address = (ppc_state.spr[SPR::LR] & 0xFFFFFFFCUL);
-        grab_branch                  = 1;
-        bb_kind                      = BB_end_kind::BB_BRANCH;
+        bb_kind = BB_end_kind::BB_BRANCH;
     }
 }
 
@@ -1564,8 +1553,7 @@ void ppc_bclrl() {
 
     if (ctr_ok && cnd_ok) {
         ppc_next_instruction_address = (ppc_state.spr[SPR::LR] & 0xFFFFFFFCUL);
-        grab_branch                  = 1;
-        bb_kind                      = BB_end_kind::BB_BRANCH;
+        bb_kind = BB_end_kind::BB_BRANCH;
     }
     ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
 }

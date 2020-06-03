@@ -1,0 +1,3 @@
+[submodule "thirdparty/cubeb"]
+	path = thirdparty/cubeb
+	url = https://github.com/DingusDevOrg/cubeb.git

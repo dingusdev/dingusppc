@@ -30,6 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "dbdma.h"
 #include "i2c.h"
+#include "soundserver.h"
 #include <cinttypes>
 #include <thirdparty/SDL2/include/SDL.h>
 
@@ -114,25 +115,26 @@ public:
     /* DMACallback methods */
     void dma_start();
     void dma_end();
-    void dma_push(uint8_t* buf, int size);
-    void dma_pull(uint8_t* buf, int size);
 
 protected:
-    uint32_t convert_data(const uint8_t* data, int len);
+    void open_stream(int sample_rate);
 
 private:
-    uint32_t snd_ctrl_reg    = {0};
+    static long sound_out_callback(cubeb_stream* stream, void* user_data,
+        void const* input_buffer, void* output_buffer,
+        long req_frames);
+
+    uint32_t snd_ctrl_reg = {0};
     uint16_t control_regs[8] = {0}; /* control registers, each 12-bits wide */
     uint8_t is_busy          = 0;
     AudioProcessor* audio_proc;
 
-    SDL_AudioDeviceID snd_out_dev = 0;
-    bool wake_up                  = false;
+    SoundServer *snd_server;
 
-    DMAChannel* dma_out_ch;
+    bool out_stream_ready;
+    int out_sample_rate;
 
-    uint8_t* snd_buf = 0;
-    uint32_t buf_len = 0;
+    DMAChannel  *dma_out_ch;
 };
 
 

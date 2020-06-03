@@ -23,8 +23,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define ADB_H
 
 #include <cinttypes>
+
+#if 0
 #include <thirdparty/SDL2/include/SDL.h>
 #include <thirdparty/SDL2/include/SDL_events.h>
+#endif
 
 enum adb_default_values {
     adb_reserved0,
@@ -75,7 +78,7 @@ private:
     uint16_t adb_keybd_register2;
     uint16_t adb_keybd_register3;
 
-    SDL_Event adb_keybd_evt;
+    //SDL_Event adb_keybd_evt;
 
     uint8_t ask_key_pressed;
     uint8_t mod_key_pressed;
@@ -83,7 +86,7 @@ private:
     bool confirm_ask_reg_2;
 
     // Mouse Variables
-    SDL_Event adb_mouse_evt;
+    //SDL_Event adb_mouse_evt;
 
     uint16_t adb_mouse_register0;
     uint16_t adb_mouse_register3;

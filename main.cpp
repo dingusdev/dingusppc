@@ -107,10 +107,12 @@ int main(int argc, char** argv) {
             goto bail;
         }
 
-        if (SDL_Init(SDL_INIT_AUDIO)) {
+#ifdef SDL
+        if (SDL_Init(SDL_INIT_AUDIO)){
             LOG_F(ERROR, "SDL_Init error: %s", SDL_GetError());
             goto bail;
         }
+#endif
 
         if ((checker == "1") || (checker == "realtime") || (checker == "-realtime") ||
             (checker == "/realtime")) {

@@ -29,11 +29,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <cstring>
 
+#if 0
 #include <thirdparty/SDL2/include/SDL.h>
 #include <thirdparty/SDL2/include/SDL_events.h>
 #include <thirdparty/SDL2/include/SDL_keycode.h>
 #include <thirdparty/SDL2/include/SDL_mouse.h>
 #include <thirdparty/SDL2/include/SDL_stdinc.h>
+#endif
 
 #include <thirdparty/loguru/loguru.hpp>
 
@@ -100,6 +102,7 @@ bool ADB_Bus::adb_keybd_listen(int reg) {
         return true;
     }
 
+#if 0
     while (SDL_PollEvent(&adb_keybd_evt)) {
         // Poll our SDL key event for any keystrokes.
         switch (adb_keybd_evt.type) {
@@ -391,6 +394,7 @@ bool ADB_Bus::adb_keybd_listen(int reg) {
             }
         }
     }
+#endif
 
     if ((reg != 1)) {
         return true;
@@ -404,6 +408,7 @@ bool ADB_Bus::adb_mouse_listen(int reg) {
         return false;
     }
 
+#if 0
     while (SDL_PollEvent(&adb_mouse_evt)) {
         if (adb_mouse_evt.motion.x) {
             this->adb_mouse_register0 &= 0x7F;
@@ -439,6 +444,7 @@ bool ADB_Bus::adb_mouse_listen(int reg) {
             this->adb_mouse_register0 |= 0x8000;
         }
     }
+#endif
 
     if (reg == 0) {
         output_data_stream[0] = (adb_mouse_register0 >> 8);

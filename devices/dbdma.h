@@ -61,10 +61,10 @@ typedef struct DMACmd {
 
 class DMACallback {
 public:
-    virtual void dma_start(void)                  = 0;
-    virtual void dma_end(void)                    = 0;
-    virtual void dma_push(uint8_t* buf, int size) = 0;
-    virtual void dma_pull(uint8_t* buf, int size) = 0;
+    virtual void dma_start(void) = 0;
+    virtual void dma_end(void)   = 0;
+    //virtual void dma_push(uint8_t *buf, int size) = 0;
+    //virtual void dma_pull(uint8_t *buf, int size)  = 0;
 };
 
 class DMAChannel {
@@ -77,7 +77,8 @@ public:
     uint32_t reg_read(uint32_t offset, int size);
     void reg_write(uint32_t offset, uint32_t value, int size);
 
-    int get_data(uint32_t req_len, uint32_t* avail_len, uint8_t** p_data);
+    int get_data(uint32_t req_len, uint32_t *avail_len, uint8_t **p_data);
+    bool is_active();
 
 protected:
     void get_next_cmd(uint32_t cmd_addr, DMACmd* p_cmd);

@@ -20,7 +20,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <algorithm>
-#include <chrono>
 #include <iostream>
 #include <map>
 #include <setjmp.h>
@@ -33,6 +32,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ppcemu.h"
 #include "ppcmmu.h"
 
+#define NEW_TBR_UPDATE_ALGO
+
 using namespace std;
 
 MemCtrlBase* mem_ctrl_instance = 0;
@@ -41,7 +42,6 @@ bool power_on = 1;
 
 SetPRS ppc_state;
 
-bool grab_branch;
 bool grab_exception;
 bool grab_return;
 bool grab_breakpoint;
@@ -52,9 +52,18 @@ uint32_t ppc_next_instruction_address;    // Used for branching, setting up the 
 
 BB_end_kind bb_kind; /* basic block end */
 
-uint64_t timebase_counter; /* internal timebase counter */
+/* copy of local variable bb_start_la. Need for correct
+   calculation of CPU cycles after setjmp that clobbers
+   non-volatile local variables. */
+uint32_t    glob_bb_start_la;
 
-clock_t clock_test_begin;    // Used to make sure the TBR does not increment so quickly.
+/* variables related to virtual time */
+uint64_t cycles_count;      /* contains number of cycles executed so far */
+uint64_t old_cycles_count;  /* previous value for cycles_count */
+uint64_t timebase_counter;  /* internal timebase counter */
+uint32_t decr;              /* current value of PPC DEC register */
+uint8_t  old_decr_msb;      /* MSB value for previous DEC value */
+uint8_t  tbr_factor;        /* cycles_count to TBR freq ratio in 2^x units */
 
 /** Opcode lookup tables. */
 
@@ -399,31 +408,32 @@ static std::unordered_map<uint16_t, PPCOpcode> SubOpcode63Grabber = {
     {2040, &ppc_fmsub},    {2041, &ppc_fmsubdot},  {2042, &ppc_fmadd},    {2043, &ppc_fmadddot},
     {2044, &ppc_fnmsub},   {2045, &ppc_fnmsubdot}, {2046, &ppc_fnmadd},   {2047, &ppc_fnmadddot}};
 
+
+#define UPDATE_TBR_DEC                                                  \
+    if ((delta = (cycles_count - old_cycles_count) >> tbr_factor)) {    \
+        timebase_counter += delta;                                      \
+        decr -= delta;                                                  \
+        if ((decr & 0x80000000) && !old_decr_msb) {                     \
+            old_decr_msb = decr >> 31;                                  \
+            /* signal_decr_int(); */                                    \
+        }                                                               \
+        old_cycles_count += delta << tbr_factor;                        \
+    }
+
 /** Opcode decoding functions. */
 
 void ppc_illegalop() {
-    uint8_t illegal_code = ppc_cur_instruction >> 26;
-    uint32_t grab_it     = (uint32_t)illegal_code;
-    LOG_F(ERROR, "Illegal opcode reported: %d Report this! \n", grab_it);
+    LOG_F(ERROR, "Illegal opcode reported: 0x%X Report this! \n", ppc_cur_instruction);
     exit(-1);
-}
-
-void ppc_illegalsubop31() {
-    uint16_t illegal_subcode = ppc_cur_instruction & 2047;
-    uint32_t grab_it         = (uint32_t)illegal_subcode;
-    LOG_F(ERROR, "Illegal subopcode for 31 reported: %d Report this! \n", grab_it);
 }
 
 void ppc_opcode4() {
     LOG_F(INFO, "Reading from Opcode 4 table \n");
     uint8_t subop_grab = ppc_cur_instruction & 3;
-    uint32_t regrab    = (uint32_t)subop_grab;
-    LOG_F(
-        ERROR,
-        "Executing subopcode entry %d \n"
-        ".. or would if I bothered to implement it. SORRY!",
-        regrab);
-    exit(0);
+    uint32_t regrab = (uint32_t)subop_grab;
+    LOG_F(ERROR, "Executing subopcode entry %d \n"
+           ".. or would if I bothered to implement it. SORRY!", regrab);
+    exit(-1);
 }
 
 void ppc_opcode16() {
@@ -498,73 +508,32 @@ void ppc_opcode63() {
 #endif    // EXHAUSTIVE_DEBUG
 }
 
-void ppc_main_opcode() {
-    // Grab the main opcode
-    uint8_t ppc_mainop = (ppc_cur_instruction >> 26) & 63;
-    OpcodeGrabber[ppc_mainop]();
+/* Dispatch using main opcode */
+void ppc_main_opcode()
+{
+    OpcodeGrabber[(ppc_cur_instruction >> 26) & 0x3F]();
 }
 
-/** Old time base register (TBR) update code. */
-void tbr_update() {
-    clock_t clock_test_current = clock();
-    uint32_t test_clock = ((uint32_t)(clock_test_current - clock_test_begin)) / CLOCKS_PER_SEC;
-    if (test_clock) {
-        if (ppc_state.tbr[0] != 0xFFFFFFFF) {
-            ppc_state.tbr[0]++;
-        } else {
-            ppc_state.tbr[0] = 0;
-            if (ppc_state.tbr[1] != 0xFFFFFFFF) {
-                ppc_state.tbr[1]++;
-            } else {
-                ppc_state.tbr[1] = 0;
-            }
-        }
-        clock_test_begin = clock();
-        // Placeholder Decrementing Code
-        if (ppc_state.spr[22] > 0) {
-            ppc_state.spr[22]--;
-        }
-    }
-}
 
 /** Execute PPC code as long as power is on. */
-#if 0
 void ppc_exec()
 {
-    while (power_on) {
-        //printf("PowerPC Address: %x \n", ppc_state.pc);
-        quickinstruction_translate(ppc_state.pc);
-        ppc_main_opcode();
-        if (grab_branch & !grab_exception) {
-            ppc_state.pc = ppc_next_instruction_address;
-            grab_branch = 0;
-            tbr_update();
-        }
-        else if (grab_return | grab_exception) {
-            ppc_state.pc = ppc_next_instruction_address;
-            grab_exception = 0;
-            grab_return = 0;
-            tbr_update();
-        }
-        else {
-            ppc_state.pc += 4;
-            tbr_update();
-        }
-    }
-}
-#else
-void ppc_exec() {
-    uint32_t bb_start_la, page_start;
+    uint32_t bb_start_la, page_start, delta;
     uint8_t* pc_real;
 
     /* start new basic block */
-    bb_start_la = ppc_state.pc;
+    glob_bb_start_la = bb_start_la = ppc_state.pc;
     bb_kind = BB_end_kind::BB_NONE;
 
     if (setjmp(exc_env)) {
         /* reaching here means we got a low-level exception */
-        timebase_counter += (ppc_state.pc - bb_start_la) >> 2;
-        bb_start_la = ppc_next_instruction_address;
+#ifdef NEW_TBR_UPDATE_ALGO
+        cycles_count += ((ppc_state.pc - glob_bb_start_la) >> 2) + 1;
+        UPDATE_TBR_DEC
+#else
+        timebase_counter += ((ppc_state.pc - glob_bb_start_la) >> 2) + 1;
+#endif
+        glob_bb_start_la = bb_start_la = ppc_next_instruction_address;
         pc_real = quickinstruction_translate(bb_start_la);
         page_start = bb_start_la & 0xFFFFF000;
         ppc_state.pc = bb_start_la;
@@ -582,8 +551,13 @@ again:
     while (power_on) {
         ppc_main_opcode();
         if (bb_kind != BB_end_kind::BB_NONE) {
-            timebase_counter += (ppc_state.pc - bb_start_la) >> 2;
-            bb_start_la = ppc_next_instruction_address;
+#ifdef NEW_TBR_UPDATE_ALGO
+            cycles_count += ((ppc_state.pc - bb_start_la) >> 2) + 1;
+            UPDATE_TBR_DEC
+#else
+            timebase_counter += ((ppc_state.pc - bb_start_la) >> 2) + 1;
+#endif
+            glob_bb_start_la = bb_start_la = ppc_next_instruction_address;
             if ((ppc_next_instruction_address & 0xFFFFF000) != page_start) {
                 page_start = bb_start_la & 0xFFFFF000;
                 pc_real = quickinstruction_translate(bb_start_la);
@@ -600,35 +574,20 @@ again:
         }
     }
 }
-#endif
 
 /** Execute one PPC instruction. */
-#if 0
 void ppc_exec_single()
 {
-    quickinstruction_translate(ppc_state.pc);
-    ppc_main_opcode();
-    if (grab_branch && !grab_exception) {
-        ppc_state.pc = ppc_next_instruction_address;
-        grab_branch = 0;
-        tbr_update();
-    }
-    else if (grab_return || grab_exception) {
-        ppc_state.pc = ppc_next_instruction_address;
-        grab_exception = 0;
-        grab_return = 0;
-        tbr_update();
-    }
-    else {
-        ppc_state.pc += 4;
-        tbr_update();
-    }
-}
-#else
-void ppc_exec_single() {
+    uint32_t delta;
+
     if (setjmp(exc_env)) {
         /* reaching here means we got a low-level exception */
-        timebase_counter += 1;
+#ifdef NEW_TBR_UPDATE_ALGO
+        cycles_count++;
+        UPDATE_TBR_DEC
+#else
+        timebase_counter++;
+#endif
         ppc_state.pc = ppc_next_instruction_address;
         bb_kind = BB_end_kind::BB_NONE;
         return;
@@ -642,48 +601,33 @@ void ppc_exec_single() {
     } else {
         ppc_state.pc += 4;
     }
-    timebase_counter += 1;
-}
+#ifdef NEW_TBR_UPDATE_ALGO
+    cycles_count++;
+    UPDATE_TBR_DEC
+#else
+    timebase_counter++;
 #endif
+}
 
 /** Execute PPC code until goal_addr is reached. */
-#if 0
 void ppc_exec_until(uint32_t goal_addr)
 {
-    while (ppc_state.pc != goal_addr) {
-        quickinstruction_translate(ppc_state.pc);
-        ppc_main_opcode();
-        if (grab_branch && !grab_exception) {
-            ppc_state.pc = ppc_next_instruction_address;
-            grab_branch = 0;
-            tbr_update();
-        }
-        else if (grab_return || grab_exception) {
-            ppc_state.pc = ppc_next_instruction_address;
-            grab_exception = 0;
-            grab_return = 0;
-            tbr_update();
-        }
-        else {
-            ppc_state.pc += 4;
-            tbr_update();
-        }
-        ppc_cur_instruction = 0;
-    }
-}
-#else
-void ppc_exec_until(uint32_t goal_addr) {
-    uint32_t bb_start_la, page_start;
+    uint32_t bb_start_la, page_start, delta;
     uint8_t* pc_real;
 
     /* start new basic block */
-    bb_start_la = ppc_state.pc;
+    glob_bb_start_la = bb_start_la = ppc_state.pc;
     bb_kind = BB_end_kind::BB_NONE;
 
     if (setjmp(exc_env)) {
         /* reaching here means we got a low-level exception */
-        timebase_counter += (ppc_state.pc - bb_start_la) >> 2;
-        bb_start_la = ppc_next_instruction_address;
+#ifdef NEW_TBR_UPDATE_ALGO
+        cycles_count += ((ppc_state.pc - glob_bb_start_la) >> 2) + 1;
+        UPDATE_TBR_DEC
+#else
+        timebase_counter += ((ppc_state.pc - glob_bb_start_la) >> 2) + 1;
+#endif
+        glob_bb_start_la = bb_start_la = ppc_next_instruction_address;
         pc_real = quickinstruction_translate(bb_start_la);
         page_start = bb_start_la & 0xFFFFF000;
         ppc_state.pc = bb_start_la;
@@ -701,8 +645,13 @@ again:
     while (ppc_state.pc != goal_addr) {
         ppc_main_opcode();
         if (bb_kind != BB_end_kind::BB_NONE) {
-            timebase_counter += (ppc_state.pc - bb_start_la) >> 2;
-            bb_start_la = ppc_next_instruction_address;
+#ifdef NEW_TBR_UPDATE_ALGO
+            cycles_count += ((ppc_state.pc - bb_start_la) >> 2) + 1;
+            UPDATE_TBR_DEC
+#else
+            timebase_counter += ((ppc_state.pc - bb_start_la) >> 2) + 1;
+#endif
+            glob_bb_start_la = bb_start_la = ppc_next_instruction_address;
             if ((ppc_next_instruction_address & 0xFFFFF000) != page_start) {
                 page_start = bb_start_la & 0xFFFFF000;
                 pc_real = quickinstruction_translate(bb_start_la);
@@ -719,15 +668,59 @@ again:
         }
     }
 }
-#endif
+
+
+uint64_t instr_count, old_instr_count;
+
+void test_timebase_update()
+{
+    uint32_t delta, factor;
+    uint8_t old_decr_msb;
+    uint8_t intervals[10] = {4, 7, 10, 2, 16, 6, 3, 20, 12, 8};
+
+    timebase_counter = 0;
+    decr = 0x00000003;
+    old_decr_msb = decr >> 31;
+
+    old_instr_count = 0xFFFFFFFFFFFFFF80UL;//0xFFFFFFFFFFFFFFD0UL;
+    instr_count = 0xFFFFFFFFFFFFFF80UL;//0xFFFFFFFFFFFFFFD0UL;
+
+    factor = 4;
+
+    for (int i = 0; i < 10; i++) {
+        cycles_count += intervals[i];
+        if ((delta = (cycles_count - old_cycles_count) >> factor)) {
+            timebase_counter += delta;
+            decr -= delta;
+            if ((decr & 0x80000000) && !old_decr_msb) {
+                old_decr_msb = decr >> 31;
+                LOG_F(ERROR, "DEC exception signaled!\n");
+            }
+            old_instr_count += delta << factor;
+            LOG_F(INFO, "Iteration %d, TBR=0x%llX, DEC=0x%X", i, timebase_counter, decr);
+            LOG_F(INFO, "  icount=0x%llX, old_icount=0x%llX\n", cycles_count, old_cycles_count);
+        }
+    }
+
+}
 
 void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t proc_version) {
     int i;
 
     mem_ctrl_instance = mem_ctrl;
 
-    clock_test_begin = clock();
+    //test_timebase_update();
+
+    /* initialize timer variables */
+#ifdef NEW_TBR_UPDATE_ALGO
+    cycles_count = 0;
+    old_cycles_count = 0;
+    tbr_factor = 4;
+#endif
+
     timebase_counter = 0;
+    decr = 0;
+    old_decr_msb = decr >> 31;
 
     /* zero all GPRs as prescribed for MPC601 */
     /* For later PPC CPUs, GPR content is undefined */
