@@ -53,6 +53,11 @@ uint32_t ppc_next_instruction_address; //Used for branching, setting up the NIA
 
 BB_end_kind bb_kind; /* basic block end */
 
+/* copy of local variable bb_start_la. Need for correct
+   calculation of CPU cycles after setjmp that clobbers
+   non-volatile local variables. */
+uint32_t    glob_bb_start_la;
+
 /* variables related to virtual time */
 uint64_t cycles_count;      /* contains number of cycles executed so far */
 uint64_t old_cycles_count;  /* previous value for cycles_count */
@@ -559,18 +564,18 @@ void ppc_exec()
     uint8_t* pc_real;
 
     /* start new basic block */
-    bb_start_la = ppc_state.pc;
+    glob_bb_start_la = bb_start_la = ppc_state.pc;
     bb_kind = BB_end_kind::BB_NONE;
 
     if (setjmp(exc_env)) {
         /* reaching here means we got a low-level exception */
 #ifdef NEW_TBR_UPDATE_ALGO
-        cycles_count += ((ppc_state.pc - bb_start_la) >> 2) + 1;
+        cycles_count += ((ppc_state.pc - glob_bb_start_la) >> 2) + 1;
         UPDATE_TBR_DEC
 #else
-        timebase_counter += (ppc_state.pc - bb_start_la) >> 2;
+        timebase_counter += ((ppc_state.pc - glob_bb_start_la) >> 2) + 1;
 #endif
-        bb_start_la = ppc_next_instruction_address;
+        glob_bb_start_la = bb_start_la = ppc_next_instruction_address;
         pc_real = quickinstruction_translate(bb_start_la);
         page_start = bb_start_la & 0xFFFFF000;
         ppc_state.pc = bb_start_la;
@@ -592,9 +597,9 @@ again:
             cycles_count += ((ppc_state.pc - bb_start_la) >> 2) + 1;
             UPDATE_TBR_DEC
 #else
-            timebase_counter += (ppc_state.pc - bb_start_la) >> 2;
+            timebase_counter += ((ppc_state.pc - bb_start_la) >> 2) + 1;
 #endif
-            bb_start_la = ppc_next_instruction_address;
+            glob_bb_start_la = bb_start_la = ppc_next_instruction_address;
             if ((ppc_next_instruction_address & 0xFFFFF000) != page_start) {
                 page_start = bb_start_la & 0xFFFFF000;
                 pc_real = quickinstruction_translate(bb_start_la);
@@ -656,18 +661,18 @@ void ppc_exec_until(uint32_t goal_addr)
     uint8_t* pc_real;
 
     /* start new basic block */
-    bb_start_la = ppc_state.pc;
+    glob_bb_start_la = bb_start_la = ppc_state.pc;
     bb_kind = BB_end_kind::BB_NONE;
 
     if (setjmp(exc_env)) {
         /* reaching here means we got a low-level exception */
 #ifdef NEW_TBR_UPDATE_ALGO
-        cycles_count += ((ppc_state.pc - bb_start_la) >> 2) + 1;
+        cycles_count += ((ppc_state.pc - glob_bb_start_la) >> 2) + 1;
         UPDATE_TBR_DEC
 #else
-        timebase_counter += (ppc_state.pc - bb_start_la) >> 2;
+        timebase_counter += ((ppc_state.pc - glob_bb_start_la) >> 2) + 1;
 #endif
-        bb_start_la = ppc_next_instruction_address;
+        glob_bb_start_la = bb_start_la = ppc_next_instruction_address;
         pc_real = quickinstruction_translate(bb_start_la);
         page_start = bb_start_la & 0xFFFFF000;
         ppc_state.pc = bb_start_la;
@@ -689,9 +694,9 @@ again:
             cycles_count += ((ppc_state.pc - bb_start_la) >> 2) + 1;
             UPDATE_TBR_DEC
 #else
-            timebase_counter += (ppc_state.pc - bb_start_la) >> 2;
+            timebase_counter += ((ppc_state.pc - bb_start_la) >> 2) + 1;
 #endif
-            bb_start_la = ppc_next_instruction_address;
+            glob_bb_start_la = bb_start_la = ppc_next_instruction_address;
             if ((ppc_next_instruction_address & 0xFFFFF000) != page_start) {
                 page_start = bb_start_la & 0xFFFFF000;
                 pc_real = quickinstruction_translate(bb_start_la);
