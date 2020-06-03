@@ -27,7 +27,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <algorithm>
 #include <map>
 #include <unordered_map>
-#include <chrono>
 #include <setjmp.h>
 
 #include "ppcemu.h"
@@ -65,8 +64,6 @@ uint64_t timebase_counter;  /* internal timebase counter */
 uint32_t decr;              /* current value of PPC DEC register */
 uint8_t  old_decr_msb;      /* MSB value for previous DEC value */
 uint8_t  tbr_factor;        /* cycles_count to TBR freq ratio in 2^x units */
-
-clock_t clock_test_begin; //Used to make sure the TBR does not increment so quickly.
 
 /** Opcode lookup tables. */
 
@@ -453,16 +450,8 @@ static std::unordered_map<uint16_t, PPCOpcode> SubOpcode63Grabber = {
 /** Opcode decoding functions. */
 
 void ppc_illegalop() {
-    uint8_t illegal_code = ppc_cur_instruction >> 26;
-    uint32_t grab_it = (uint32_t)illegal_code;
-    LOG_F(ERROR, "Illegal opcode reported: %d Report this! \n", grab_it);
+    LOG_F(ERROR, "Illegal opcode reported: 0x%X Report this! \n", ppc_cur_instruction);
     exit(-1);
-}
-
-void ppc_illegalsubop31() {
-    uint16_t illegal_subcode = ppc_cur_instruction & 2047;
-    uint32_t grab_it = (uint32_t)illegal_subcode;
-    LOG_F(ERROR, "Illegal subopcode for 31 reported: %d Report this! \n", grab_it);
 }
 
 void ppc_opcode4() {
@@ -471,7 +460,7 @@ void ppc_opcode4() {
     uint32_t regrab = (uint32_t)subop_grab;
     LOG_F(ERROR, "Executing subopcode entry %d \n"
            ".. or would if I bothered to implement it. SORRY!", regrab);
-    exit(0);
+    exit(-1);
 }
 
 void ppc_opcode16() {
@@ -550,10 +539,10 @@ void ppc_opcode63() {
 #endif // EXHAUSTIVE_DEBUG
 }
 
-void ppc_main_opcode() {
-    //Grab the main opcode
-    uint8_t ppc_mainop = (ppc_cur_instruction >> 26) & 63;
-    OpcodeGrabber[ppc_mainop]();
+/* Dispatch using main opcode */
+void ppc_main_opcode()
+{
+    OpcodeGrabber[(ppc_cur_instruction >> 26) & 0x3F]();
 }
 
 
