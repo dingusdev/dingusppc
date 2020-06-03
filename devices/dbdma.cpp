@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "cpu/ppc/ppcmmu.h"
 #include "endianswap.h"
 #include <cinttypes>
+#include <cstring>
 #include <thirdparty/loguru/loguru.hpp>
 
 void DMAChannel::get_next_cmd(uint32_t cmd_addr, DMACmd* p_cmd) {
