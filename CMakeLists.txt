@@ -11,6 +11,9 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 if (NOT WIN32)
 find_package(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIRS})
+if (UNIX AND NOT APPLE)
+    find_package (Threads)
+endif()
 endif()
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/cpu/ppc/")
@@ -61,7 +64,7 @@ target_link_libraries(dingusppc "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/S
                                 cubeb)
 else()
 #target_link_libraries(dingusppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
-target_link_libraries(dingusppc cubeb ${SDL2_LIBRARIES})
+target_link_libraries(dingusppc cubeb ${SDL2_LIBRARIES} ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
 
@@ -77,7 +80,7 @@ target_link_libraries(testppc "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL
                               cubeb)
 else()
 #target_link_libraries(testppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
-target_link_libraries(testppc cubeb ${SDL2_LIBRARIES})
+target_link_libraries(testppc cubeb ${SDL2_LIBRARIES} ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
 add_custom_command(
