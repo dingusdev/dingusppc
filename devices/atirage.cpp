@@ -243,7 +243,8 @@ void ATIRage::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size) {
             this->aperture_base = BYTESWAP_32(value);
             LOG_F(INFO, "ATI Rage aperture address set to 0x%08X", this->aperture_base);
             WRITE_DWORD_LE_A(&this->pci_cfg[CFG_REG_BAR0], value);
-            this->host_instance->pci_register_mmio_region(this->aperture_base, 0x01000000, this);
+            this->host_instance->pci_register_mmio_region(this->aperture_base,
+                APERTURE_SIZE, this);
         }
         break;
     case 0x14: /* BAR 1: I/O space base, 256 bytes wide */
@@ -320,7 +321,7 @@ uint32_t ATIRage::read(uint32_t reg_start, uint32_t offset, int size)
 {
     //LOG_F(INFO, "Reading ATI Rage PCI memory: region=%X, offset=%X, size %d", reg_start, offset, size);
 
-    if (reg_start < this->aperture_base || offset > 0x01000000) {
+    if (reg_start < this->aperture_base || offset > APERTURE_SIZE) {
         LOG_F(WARNING, "ATI Rage: attempt to read outside the aperture!");
         return 0;
     }
@@ -329,9 +330,9 @@ uint32_t ATIRage::read(uint32_t reg_start, uint32_t offset, int size)
         /* read from little-endian VRAM region */
         return size_dep_read(this->vram_ptr + offset, size);
     }
-    else if (offset >= 0x7FFC00UL) {
+    else if (offset >= MEMMAP_OFFSET) {
         /* read from memory-mapped registers */
-        return this->read_reg(offset - 0x7FFC00UL, size);
+        return this->read_reg(offset - MEMMAP_OFFSET, size);
     }
     else {
         LOG_F(WARNING, "ATI Rage: read attempt from unmapped aperture region at 0x%08X", offset);
@@ -344,7 +345,7 @@ void ATIRage::write(uint32_t reg_start, uint32_t offset, uint32_t value, int siz
 {
     //LOG_F(INFO, "Writing reg=%X, offset=%X, value=%X, size %d", reg_start, offset, value, size);
 
-    if (reg_start < this->aperture_base || offset > 0x01000000) {
+    if (reg_start < this->aperture_base || offset > APERTURE_SIZE) {
         LOG_F(WARNING, "ATI Rage: attempt to write outside the aperture!");
         return;
     }
@@ -352,9 +353,9 @@ void ATIRage::write(uint32_t reg_start, uint32_t offset, uint32_t value, int siz
     if (offset < this->vram_size) {
         /* write to little-endian VRAM region */
         size_dep_write(this->vram_ptr + offset, value, size);
-    } else if (offset >= 0x7FFC00UL) {
+    } else if (offset >= MEMMAP_OFFSET) {
         /* write to memory-mapped registers */
-        this->write_reg(offset - 0x7FFC00UL, value, size);
+        this->write_reg(offset - MEMMAP_OFFSET, value, size);
     }
     else {
         LOG_F(WARNING, "ATI Rage: write attempt to unmapped aperture region at 0x%08X", offset);

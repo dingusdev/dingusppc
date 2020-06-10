@@ -102,6 +102,9 @@ enum {
     ATI_TVO_CNTL             = 0x0500,
 };
 
+constexpr auto APERTURE_SIZE = 0x01000000UL; /* Mach64 aperture size */
+constexpr auto MEMMAP_OFFSET = 0x007FFC00UL; /* offset to memory mapped registers */
+
 class ATIRage : public PCIDevice {
 public:
     ATIRage(uint16_t dev_id);
