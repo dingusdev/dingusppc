@@ -80,6 +80,10 @@ enum {
     ATI_VGA_RP_SEL           = 0x00B8,
     ATI_I2C_CNTL_1           = 0x00BC,
     ATI_DAC_REGS             = 0x00C0,
+    ATI_DAC_W_INDEX          = 0x00C0,
+    ATI_DAC_DATA             = 0x00C1,
+    ATI_DAC_MASK             = 0x00C2,
+    ATI_DAC_R_INDEX          = 0x00C3,
     ATI_DAC_CNTL             = 0x00C4,
     ATI_GEN_TEST_CNTL        = 0x00D0,
     ATI_CUSTOM_MACRO_CNTL    = 0x00D4,
@@ -155,5 +159,8 @@ private:
     uint32_t    aperture_base;
 
     DisplayID*  disp_id;
+
+    uint8_t palette[256][4]; /* internal DAC palette in RGBA format */
+    int comp_index;          /* color component index for DAC palette access */
 };
 #endif /* ATI_RAGE_H */

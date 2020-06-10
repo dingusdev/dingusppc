@@ -170,7 +170,17 @@ uint32_t ATIRage::read_reg(uint32_t offset, uint32_t size) {
     uint32_t res;
 
     switch (offset & ~3) {
-    case ATI_GP_IO:
+    case ATI_DAC_REGS:
+        if (offset == ATI_DAC_DATA) {
+            this->block_io_regs[ATI_DAC_DATA] =
+                this->palette[this->block_io_regs[ATI_DAC_R_INDEX]][this->comp_index];
+            this->comp_index++; /* move to next color component */
+            if (this->comp_index >= 3) {
+                /* autoincrement reading index - move to next palette entry */
+                (this->block_io_regs[ATI_DAC_R_INDEX])++;
+                this->comp_index = 0;
+            }
+        }
         break;
     default:
         LOG_F(
@@ -202,6 +212,30 @@ void ATIRage::write_reg(uint32_t offset, uint32_t value, uint32_t size) {
             WRITE_WORD_LE_A(
                 &this->block_io_regs[ATI_GP_IO],
                 this->disp_id->read_monitor_sense(gpio_val, gpio_dir));
+        }
+        break;
+    case ATI_DAC_REGS:
+        switch (offset) {
+        /* writing to read/write index registers resets color component index */
+        case ATI_DAC_W_INDEX:
+        case ATI_DAC_R_INDEX:
+            this->comp_index = 0;
+            break;
+        case ATI_DAC_DATA:
+            this->palette[this->block_io_regs[ATI_DAC_W_INDEX]][this->comp_index] = value & 0xFF;
+            this->comp_index++; /* move to next color component */
+            if (this->comp_index >= 3) {
+                LOG_F(
+                    INFO,
+                    "ATI DAC palette entry #%d set to R=%X, G=%X, B=%X",
+                    this->block_io_regs[ATI_DAC_W_INDEX],
+                    this->palette[this->block_io_regs[ATI_DAC_W_INDEX]][0],
+                    this->palette[this->block_io_regs[ATI_DAC_W_INDEX]][1],
+                    this->palette[this->block_io_regs[ATI_DAC_W_INDEX]][2]);
+                /* autoincrement writing index - move to next palette entry */
+                (this->block_io_regs[ATI_DAC_W_INDEX])++;
+                this->comp_index = 0;
+            }
         }
         break;
     default:
