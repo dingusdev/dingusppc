@@ -1416,7 +1416,7 @@ void ppc_bla() {
     bb_kind = BB_end_kind::BB_BRANCH;
 }
 
-void ppc_bc() {
+void ppc_bc1() {
     uint32_t ctr_ok;
     uint32_t cnd_ok;
     uint32_t br_bo = (ppc_cur_instruction >> 21) & 31;

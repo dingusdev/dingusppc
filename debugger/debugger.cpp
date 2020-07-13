@@ -19,9 +19,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "../cpu/ppc/ppcdisasm.h"
-#include "../cpu/ppc/ppcemu.h"
-#include "../cpu/ppc/ppcmmu.h"
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -30,6 +27,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <string>
 #include <thirdparty/loguru/loguru.hpp>
+#include <capstone/capstone.h>
+#include "../cpu/ppc/ppcdisasm.h"
+#include "../cpu/ppc/ppcemu.h"
+#include "../cpu/ppc/ppcmmu.h"
 
 
 using namespace std;
@@ -86,6 +87,42 @@ static void disasm(uint32_t count, uint32_t address) {
         cout << uppercase << hex << ctx.instr_addr;
         cout << "    " << disassemble_single(&ctx) << endl;
     }
+}
+
+static void disasm_68k(uint32_t count, uint32_t address) {
+    csh cs_handle;
+    uint8_t code[8];
+    size_t code_size;
+    uint64_t dis_addr;
+
+    if (cs_open(CS_ARCH_M68K, CS_MODE_M68K_040, &cs_handle) != CS_ERR_OK) {
+        cout << "Capstone initialization error" << endl;
+        return;
+    }
+
+    cs_insn* insn = cs_malloc(cs_handle);
+
+    for (; count > 0; count--) {
+        for (int i = 0; i < sizeof(code); i++) {
+            code[i] = mem_read_dbg(address + i, 1);
+        }
+
+        const uint8_t *code_ptr  = code;
+        code_size = sizeof(code);
+        dis_addr  = address;
+
+        if (cs_disasm_iter(cs_handle, &code_ptr, &code_size, &dis_addr, insn)) {
+            cout << uppercase << hex << insn->address;
+            cout << "    " << insn->mnemonic << "    " << insn->op_str << endl;
+            address = dis_addr;
+        } else {
+            cout << "DS.W    " << hex << ((code[0] << 8) | code[1]) << endl;
+            address += 2;
+        }
+    }
+
+    cs_free(insn, 1);
+    cs_close(&cs_handle);
 }
 
 static void dump_mem(string& params) {
@@ -181,12 +218,41 @@ static void dump_mem(string& params) {
     cout << endl << endl;
 }
 
+void print_68k_regs()
+{
+    int i;
+    string reg;
+
+    for (i = 0; i < 8; i++) {
+        reg = "R" + to_string(i + 8);
+        cout << "D" << dec << i << " : " << uppercase << hex << get_reg(reg) << endl;
+    }
+
+    for (i = 0; i < 7; i++) {
+        reg = "R" + to_string(i + 16);
+        cout << "A" << dec << i << " : " << uppercase << hex << get_reg(reg) << endl;
+    }
+    reg = "R1";
+    cout << "A7 : " << uppercase << hex << get_reg(reg) << endl;
+
+    reg = "R24";
+    cout << "PC: " << uppercase << hex << get_reg(reg) - 2 << endl;
+
+    reg = "R25";
+    cout << "SR: " << uppercase << hex << ((get_reg(reg) & 0xFF) << 8) << endl;
+
+    reg = "R26";
+    cout << "CCR: " << uppercase << hex << get_reg(reg) << endl;
+}
+
 void enter_debugger() {
     string inp, cmd, addr_str, expr_str, reg_expr, last_cmd, reg_value_str, inst_string, inst_num_str;
     uint32_t addr, inst_grab;
     std::stringstream ss;
-    int log_level;
+    int log_level, context;
     size_t separator_pos;
+
+    context = 1; /* start with the PowerPC context */
 
     cout << "Welcome to the DingusPPC command line debugger." << endl;
     cout << "Please enter a command or 'help'." << endl << endl;
@@ -220,7 +286,11 @@ void enter_debugger() {
         }
 #endif
         else if (cmd == "regs") {
-            print_gprs();
+            if (context == 2) {
+                print_68k_regs();
+            } else {
+                print_gprs();
+            }
         } else if (cmd == "set") {
             ss >> expr_str;
 
@@ -278,27 +348,52 @@ void enter_debugger() {
                 } catch (invalid_argument& exc) {
                     try {
                         /* number conversion failed, trying reg name */
-                        addr = get_reg(addr_str);
+                        if (context == 2 && (addr_str == "pc" || addr_str == "PC")) {
+                            addr_str = "R24";
+                            addr = get_reg(addr_str) - 2;
+                        } else {
+                            addr = get_reg(addr_str);
+                        }
                     } catch (invalid_argument& exc) {
                         cout << exc.what() << endl;
                         continue;
                     }
                 }
                 try {
-                    disasm(inst_grab, addr);
+                    if (context == 2) {
+                        disasm_68k(inst_grab, addr);
+                    } else {
+                        disasm(inst_grab, addr);
+                    }
                 } catch (invalid_argument& exc) {
                     cout << exc.what() << endl;
                 }
             } else {
                 /* disas without arguments defaults to disas 1,pc */
-                addr_str = "PC";
-                addr     = get_reg(addr_str);
-                disasm(1, addr);
+                if (context == 2) {
+                    addr_str = "R24";
+                    addr     = get_reg(addr_str);
+                    disasm_68k(1, addr - 2);
+                } else {
+                    addr_str = "PC";
+                    addr     = get_reg(addr_str);
+                    disasm(1, addr);
+                }
             }
         } else if (cmd == "dump") {
             expr_str = "";
             ss >> expr_str;
             dump_mem(expr_str);
+        } else if (cmd == "context") {
+            expr_str = "";
+            ss >> expr_str;
+            if (expr_str == "ppc" || expr_str == "PPC") {
+                context = 1;
+            } else if (expr_str == "68k" || expr_str == "68K") {
+                context = 2;
+            } else {
+                cout << "Unknown debugging context: " << expr_str << endl;
+            }
         } else {
             cout << "Unknown command: " << cmd << endl;
             continue;

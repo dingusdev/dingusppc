@@ -82,7 +82,7 @@ static PPCOpcode OpcodeGrabber[] = {
     ppc_psq_st,    ppc_psq_stu,   ppc_illegalop, ppc_opcode63};
 
 /** Lookup tables for branch instructions. */
-static PPCOpcode SubOpcode16Grabber[] = {ppc_bc, ppc_bcl, ppc_bca, ppc_bcla};
+static PPCOpcode SubOpcode16Grabber[] = {ppc_bc1, ppc_bcl, ppc_bca, ppc_bcla};
 
 static PPCOpcode SubOpcode18Grabber[] = {ppc_b, ppc_bl, ppc_ba, ppc_bla};
 

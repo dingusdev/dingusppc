@@ -481,7 +481,7 @@ extern void ppc_b();
 extern void ppc_ba();
 extern void ppc_bl();
 extern void ppc_bla();
-extern void ppc_bc();
+extern void ppc_bc1();
 extern void ppc_bca();
 extern void ppc_bcl();
 extern void ppc_bcla();
