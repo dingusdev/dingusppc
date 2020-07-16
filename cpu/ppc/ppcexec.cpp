@@ -669,6 +669,66 @@ again:
     }
 }
 
+/** Execute PPC code until control is reached the specified region. */
+void ppc_exec_dbg(uint32_t start_addr, uint32_t size)
+{
+    uint32_t bb_start_la, page_start, delta;
+    uint8_t* pc_real;
+
+    /* start new basic block */
+    glob_bb_start_la = bb_start_la = ppc_state.pc;
+    bb_kind = BB_end_kind::BB_NONE;
+
+    if (setjmp(exc_env)) {
+        /* reaching here means we got a low-level exception */
+#ifdef NEW_TBR_UPDATE_ALGO
+        cycles_count += ((ppc_state.pc - glob_bb_start_la) >> 2) + 1;
+        UPDATE_TBR_DEC
+#else
+        timebase_counter += ((ppc_state.pc - glob_bb_start_la) >> 2) + 1;
+#endif
+        glob_bb_start_la = bb_start_la = ppc_next_instruction_address;
+        pc_real = quickinstruction_translate(bb_start_la);
+        page_start = bb_start_la & 0xFFFFF000;
+        ppc_state.pc = bb_start_la;
+        bb_kind = BB_end_kind::BB_NONE;
+        goto again;
+    }
+
+    /* initial MMU translation for the current code page. */
+    pc_real = quickinstruction_translate(bb_start_la);
+
+    /* set current code page limits */
+    page_start = bb_start_la & 0xFFFFF000;
+
+again:
+    while (ppc_state.pc < start_addr || ppc_state.pc >= start_addr + size) {
+        ppc_main_opcode();
+        if (bb_kind != BB_end_kind::BB_NONE) {
+#ifdef NEW_TBR_UPDATE_ALGO
+            cycles_count += ((ppc_state.pc - bb_start_la) >> 2) + 1;
+            UPDATE_TBR_DEC
+#else
+            timebase_counter += ((ppc_state.pc - bb_start_la) >> 2) + 1;
+#endif
+            glob_bb_start_la = bb_start_la = ppc_next_instruction_address;
+            if ((ppc_next_instruction_address & 0xFFFFF000) != page_start) {
+                page_start = bb_start_la & 0xFFFFF000;
+                pc_real = quickinstruction_translate(bb_start_la);
+            } else {
+                pc_real += (int)bb_start_la - (int)ppc_state.pc;
+                ppc_set_cur_instruction(pc_real);
+            }
+            ppc_state.pc = bb_start_la;
+            bb_kind = BB_end_kind::BB_NONE;
+        } else {
+            ppc_state.pc += 4;
+            pc_real += 4;
+            ppc_set_cur_instruction(pc_real);
+        }
+    }
+}
+
 
 uint64_t instr_count, old_instr_count;
 

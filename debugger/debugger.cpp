@@ -72,6 +72,9 @@ static void show_help() {
     cout << "  disas N,X -- disassemble N instructions starting at address X" << endl;
     cout << "               X can be any number or a known register name" << endl;
     cout << "               disas with no arguments defaults to disas 1,pc" << endl;
+    cout << "  context X -- switch to the debugging context X." << endl;
+    cout << "               X can be either 'ppc' (default) or '68k'" << endl;
+    cout << "               Use 68k for debugging emulated 68k code only." << endl;
     cout << "  quit      -- quit the debugger" << endl << endl;
     cout << "Pressing ENTER will repeat last command." << endl;
 }
@@ -91,7 +94,7 @@ static void disasm(uint32_t count, uint32_t address) {
 
 static void disasm_68k(uint32_t count, uint32_t address) {
     csh cs_handle;
-    uint8_t code[8];
+    uint8_t code[10];
     size_t code_size;
     uint64_t dis_addr;
 
@@ -103,6 +106,7 @@ static void disasm_68k(uint32_t count, uint32_t address) {
     cs_insn* insn = cs_malloc(cs_handle);
 
     for (; count > 0; count--) {
+        /* prefetch opcode bytes (a 68k instruction can occupy 2...10 bytes) */
         for (int i = 0; i < sizeof(code); i++) {
             code[i] = mem_read_dbg(address + i, 1);
         }
@@ -112,8 +116,8 @@ static void disasm_68k(uint32_t count, uint32_t address) {
         dis_addr  = address;
 
         if (cs_disasm_iter(cs_handle, &code_ptr, &code_size, &dis_addr, insn)) {
-            cout << uppercase << hex << insn->address;
-            cout << "    " << insn->mnemonic << "    " << insn->op_str << endl;
+            cout << uppercase << hex << insn->address << "    ";
+            cout << setw(10) << left << insn->mnemonic << insn->op_str << endl;
             address = dis_addr;
         } else {
             cout << "DS.W    " << hex << ((code[0] << 8) | code[1]) << endl;
@@ -123,6 +127,75 @@ static void disasm_68k(uint32_t count, uint32_t address) {
 
     cs_free(insn, 1);
     cs_close(&cs_handle);
+}
+
+/* emulator opcode table size --> 512 KB */
+#define EMU_68K_TABLE_SIZE 0x80000
+
+/** Execute one emulated 68k instruction. */
+void exec_single_68k()
+{
+    string reg;
+    uint32_t emu_table_virt, cur_68k_pc, cur_instr_tab_entry, ppc_pc;
+
+    /* PPC r24 contains 68k PC advanced by two bytes
+       as part of instruction prefetching */
+    reg = "R24";
+    cur_68k_pc = get_reg(reg) - 2;
+
+    /* PPC r29 contains base address of the emulator opcode table */
+    reg = "R29";
+    emu_table_virt = get_reg(reg) & 0xFFF80000;
+
+    /* calculate address of the current opcode table entry as follows:
+       get_word(68k_PC) * entry_size + table_base */
+    cur_instr_tab_entry = mem_grab_word(cur_68k_pc) * 8 + emu_table_virt;
+
+    /* grab the PPC PC too */
+    reg = "PC";
+    ppc_pc = get_reg(reg);
+
+    //printf("cur_instr_tab_entry = %X\n", cur_instr_tab_entry);
+
+    /* because the first two PPC instructions for each emulated 68k once
+       are resided in the emulator opcode table, we need to execute them
+       one by one until the execution goes outside the opcode table. */
+    while (ppc_pc >= cur_instr_tab_entry && ppc_pc < cur_instr_tab_entry + 8) {
+        ppc_exec_single();
+        reg = "PC";
+        ppc_pc = get_reg(reg);
+        LOG_F(9, "Tracing within emulator table, PC = %X\n", ppc_pc);
+    }
+
+    /* Getting here means we're outside the emualtor opcode table.
+       Execute PPC code until we hit the opcode table again. */
+    LOG_F(9, "Tracing outside the emulator table, PC = %X\n", ppc_pc);
+    ppc_exec_dbg(emu_table_virt, EMU_68K_TABLE_SIZE);
+}
+
+/** Execute emulated 68k code until target_addr is reached. */
+void exec_until_68k(uint32_t target_addr)
+{
+    string reg;
+    uint32_t emu_table_virt, ppc_pc;
+
+    reg = "R29";
+    emu_table_virt = get_reg(reg) & 0xFFF80000;
+
+    reg = "R24";
+    while (target_addr != (get_reg(reg) - 2)) {
+        reg = "PC";
+        ppc_pc = get_reg(reg);
+
+        if (ppc_pc >= emu_table_virt && ppc_pc < (emu_table_virt + EMU_68K_TABLE_SIZE)) {
+            LOG_F(9, "Tracing within emulator table, PC = %X\n", ppc_pc);
+            ppc_exec_single();
+        } else {
+            LOG_F(9, "Tracing outside the emulator table, PC = %X\n", ppc_pc);
+            ppc_exec_dbg(emu_table_virt, EMU_68K_TABLE_SIZE);
+        }
+        reg = "R24";
+    }
 }
 
 static void dump_mem(string& params) {
@@ -258,7 +331,7 @@ void enter_debugger() {
     cout << "Please enter a command or 'help'." << endl << endl;
 
     while (1) {
-        cout << "ppcdbg> ";
+        cout << "dingusdbg> ";
 
         /* reset string stream */
         ss.str("");
@@ -318,7 +391,11 @@ void enter_debugger() {
                 cout << exc.what() << endl;
             }
         } else if (cmd == "step" || cmd == "si") {
-            ppc_exec_single();
+            if (context == 2) {
+                exec_single_68k();
+            } else {
+                ppc_exec_single();
+            }
         } else if (cmd == "next" || cmd == "ni") {
             addr_str = "PC";
             addr     = get_reg(addr_str) + 4;
@@ -327,7 +404,11 @@ void enter_debugger() {
             ss >> addr_str;
             try {
                 addr = str2addr(addr_str);
-                ppc_exec_until(addr);
+                if (context == 2) {
+                    exec_until_68k(addr);
+                } else {
+                    ppc_exec_until(addr);
+                }
             } catch (invalid_argument& exc) {
                 cout << exc.what() << endl;
             }
