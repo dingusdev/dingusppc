@@ -117,6 +117,7 @@ static void disasm_68k(uint32_t count, uint32_t address) {
 
         if (cs_disasm_iter(cs_handle, &code_ptr, &code_size, &dis_addr, insn)) {
             cout << uppercase << hex << insn->address << "    ";
+            cout << setfill(' ');
             cout << setw(10) << left << insn->mnemonic << insn->op_str << endl;
             address = dis_addr;
         } else {
@@ -279,7 +280,8 @@ static void dump_mem(string& params) {
                 cout << (char)val;
                 chars_per_line += cell_size;
             } else {
-                cout << setw(cell_size * 2) << setfill('0') << uppercase << hex << val << "  ";
+                cout << setw(cell_size * 2) << setfill('0') << right;
+                cout << uppercase << hex << val << "  ";
                 chars_per_line += cell_size * 2 + 2;
             }
         }
