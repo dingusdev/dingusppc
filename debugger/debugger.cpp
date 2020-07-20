@@ -171,7 +171,7 @@ void exec_single_68k()
     /* Getting here means we're outside the emualtor opcode table.
        Execute PPC code until we hit the opcode table again. */
     LOG_F(9, "Tracing outside the emulator table, PC = %X\n", ppc_pc);
-    ppc_exec_dbg(emu_table_virt, EMU_68K_TABLE_SIZE);
+    ppc_exec_dbg(emu_table_virt, EMU_68K_TABLE_SIZE - 1);
 }
 
 /** Execute emulated 68k code until target_addr is reached. */
@@ -188,12 +188,12 @@ void exec_until_68k(uint32_t target_addr)
         reg = "PC";
         ppc_pc = get_reg(reg);
 
-        if (ppc_pc >= emu_table_virt && ppc_pc < (emu_table_virt + EMU_68K_TABLE_SIZE)) {
+        if (ppc_pc >= emu_table_virt && ppc_pc < (emu_table_virt + EMU_68K_TABLE_SIZE - 1)) {
             LOG_F(9, "Tracing within emulator table, PC = %X\n", ppc_pc);
             ppc_exec_single();
         } else {
             LOG_F(9, "Tracing outside the emulator table, PC = %X\n", ppc_pc);
-            ppc_exec_dbg(emu_table_virt, EMU_68K_TABLE_SIZE);
+            ppc_exec_dbg(emu_table_virt, EMU_68K_TABLE_SIZE - 1);
         }
         reg = "R24";
     }

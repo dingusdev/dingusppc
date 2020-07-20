@@ -610,7 +610,7 @@ void ppc_exec_single()
 }
 
 /** Execute PPC code until goal_addr is reached. */
-void ppc_exec_until(uint32_t goal_addr)
+void ppc_exec_until(volatile uint32_t goal_addr)
 {
     uint32_t bb_start_la, page_start, delta;
     uint8_t* pc_real;
@@ -670,7 +670,7 @@ again:
 }
 
 /** Execute PPC code until control is reached the specified region. */
-void ppc_exec_dbg(uint32_t start_addr, uint32_t size)
+void ppc_exec_dbg(volatile uint32_t start_addr, volatile uint32_t size)
 {
     uint32_t bb_start_la, page_start, delta;
     uint8_t* pc_real;
@@ -692,6 +692,7 @@ void ppc_exec_dbg(uint32_t start_addr, uint32_t size)
         page_start = bb_start_la & 0xFFFFF000;
         ppc_state.pc = bb_start_la;
         bb_kind = BB_end_kind::BB_NONE;
+        //printf("DBG Exec: got exception, continue at %X\n", ppc_state.pc);
         goto again;
     }
 
@@ -721,6 +722,7 @@ again:
             }
             ppc_state.pc = bb_start_la;
             bb_kind = BB_end_kind::BB_NONE;
+            //printf("DBG Exec: new basic block at %X, start_addr=%X\n", ppc_state.pc, start_addr);
         } else {
             ppc_state.pc += 4;
             pc_real += 4;
