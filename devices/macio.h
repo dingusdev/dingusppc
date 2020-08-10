@@ -60,6 +60,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "pcidevice.h"
 #include "pcihost.h"
 #include "viacuda.h"
+#include "z85c30.h"
 #include <cinttypes>
 
 /**
@@ -147,6 +148,7 @@ private:
     ViaCuda* viacuda;     /* VIA cell with Cuda MCU attached to it */
     NVram* nvram;         /* NVRAM cell */
     AWACDevice* screamer; /* Screamer audio codec instance */
+    Z85C30* serial;       /* Serial cell */
 
     DMAChannel* snd_out_dma;
 };

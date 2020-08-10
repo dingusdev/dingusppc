@@ -121,6 +121,15 @@ uint32_t HeathrowIC::read(uint32_t reg_start, uint32_t offset, int size) {
     case 8:
         res = dma_read(offset - 0x8000, size);
         break;
+    case 0x13:
+        if ((offset - 0x13000) >= 0x20) {
+            LOG_F(INFO, "Serial: Reading from Channel A \n");
+        }
+        else {
+            LOG_F(INFO, "Serial: Reading from Channel B \n");
+        }
+        res = this->serial->read(offset - 0x13000);
+        break;
     case 0x14:
         res = this->screamer->snd_ctrl_read(offset - 0x14000, size);
         break;
@@ -150,6 +159,14 @@ void HeathrowIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int 
         break;
     case 8:
         dma_write(offset - 0x8000, value, size);
+        break;
+    case 0x13:
+        if ((offset - 0x13000) >= 0x20) {
+            LOG_F(INFO, "Serial: Writing to Channel A \n");
+        } else {
+            LOG_F(INFO, "Serial: Writing to Channel B \n");
+        }
+        this->serial->write(offset - 0x13000, value);
         break;
     case 0x14:
         this->screamer->snd_ctrl_write(offset - 0x14000, value, size);
