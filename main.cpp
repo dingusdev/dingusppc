@@ -37,70 +37,71 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace std;
 
 int main(int argc, char** argv) {
-    std::cout << "DingusPPC - Prototype 5bf4 (7/14/2019)       " << endl;
-    std::cout << "Written by divingkatae, (c) 2019.            " << endl;
+    /*
+    Execution Type:
+    0 = Realtime (Interpreter)
+    1 = Realtime (Debugger)
+    2 = Recompiler (to-do)
+
+    The rest will be decided later
+    */
+
+    uint32_t execution_mode = 0;
+
+    std::cout << "DingusPPC - Prototype 5bf5 (8/23/2020)       " << endl;
+    std::cout << "Written by divingkatae and maximumspatium    " << endl;
+    std::cout << "(c) 2018-2020 The DingusPPC Dev Team.        " << endl;
     std::cout << "This is not intended for general use.        " << endl;
     std::cout << "Use at your own discretion.                  " << endl;
 
-    if (argc > 1) {
-        string checker = argv[1];
-        cout << checker << endl;
-
-        if ((checker == "1") || (checker == "realtime") || (checker == "-realtime") ||
-            (checker == "/realtime")) {
-            loguru::g_stderr_verbosity = loguru::Verbosity_OFF;
-            loguru::g_preamble_date    = false;
-            loguru::g_preamble_time    = false;
-            loguru::g_preamble_thread  = false;
-            loguru::init(argc, argv);
-            loguru::add_file("dingusppc.log", loguru::Append, 0);
-            // Replace the above line with this for maximum debugging detail:
-            // loguru::add_file("dingusppc.log", loguru::Append, loguru::Verbosity_MAX);
-        } else if ((checker == "debugger") || (checker == "/debugger") || (checker == "-debugger")) {
-            loguru::g_stderr_verbosity = 0;
-            loguru::g_preamble_date    = false;
-            loguru::g_preamble_time    = false;
-            loguru::g_preamble_thread  = false;
-            loguru::init(argc, argv);
-        }
-
+    if (argc < 1) {
+        std::cout << "                                                " << endl;
+        std::cout << "Please enter one of the following commands when " << endl;
+        std::cout << "booting up DingusPPC...                         " << endl;
+        std::cout << "                                                " << endl;
+        std::cout << "realtime - Run the emulator in real-time.       " << endl;
+        std::cout << "debugger - Enter the interactive debugger.      " << endl;
+    }
+    else {
+        
         std::string rom_file = "rom.bin", disk_file = "disk.img";
-        int ram_size = 64, machine_gestalt = 510, video_card_vendor = 0x1002, video_card_id = 0x4750;
+        int ram_size = 64, gfx_mem = 2, machine_gestalt = 510, video_card_vendor = 0x1002, video_card_id = 0x4750;
 
-        std::ifstream config_input("config.txt");
-        std::string line;
-        std::istringstream sin;
-
-        if (!config_input) {
-            LOG_F(ERROR, "Could not open config.txt. Creating a dummy config.txt now.");
-            std::ofstream config_output("config.txt");
-
-            config_output.write("rompath=rom.bin\n", 17);
-            config_output.write("diskpath=disk.img\n", 19);
-            config_output.write("ramsize=64\n", 12);
-            config_output.write("machine_gestalt=510\n", 21);
-            config_output.write("video_vendor=0x1002\n", 21);
-            config_output.write("video_card=0x4750\n", 19);
-
-            config_output.close();
-        } else {
-            while (std::getline(config_input, line)) {
-                sin.str(line.substr(line.find("=") + 1));
-                if (line.find("rompath") != std::string::npos) {
-                    sin >> rom_file;
-                } else if (line.find("diskpath") != std::string::npos) {
-                    sin >> disk_file;
-                } else if (line.find("ramsize") != std::string::npos) {
-                    sin >> ram_size;
-                } else if (line.find("machine_gestalt") != std::string::npos) {
-                    sin >> machine_gestalt;
-                } else if (line.find("video_vendor") != std::string::npos) {
-                    sin >> video_card_vendor;
-                } else if (line.find("video_card") != std::string::npos) {
-                    sin >> video_card_id;
-                }
-                sin.clear();
+        for (int arg_loop = 1; arg_loop < argc; arg_loop++) {
+            string checker = argv[arg_loop];
+            cout << checker << endl;
+            
+            if ((checker == "realtime") || (checker == "-realtime") || (checker == "/realtime")) {
+                loguru::g_stderr_verbosity = loguru::Verbosity_OFF;
+                loguru::g_preamble_date    = false;
+                loguru::g_preamble_time    = false;
+                loguru::g_preamble_thread  = false;
+                loguru::init(argc, argv);
+                loguru::add_file("dingusppc.log", loguru::Append, 0);
+                // Replace the above line with this for maximum debugging detail:
+                // loguru::add_file("dingusppc.log", loguru::Append, loguru::Verbosity_MAX);
+                execution_mode = 0;
+            } else if ((checker == "debugger") || (checker == "/debugger") || (checker == "-debugger")) {
+                loguru::g_stderr_verbosity = 0;
+                loguru::g_preamble_date    = false;
+                loguru::g_preamble_time    = false;
+                loguru::g_preamble_thread  = false;
+                loguru::init(argc, argv);
+                execution_mode = 1;
+            } 
+            else if ((checker == "ram") || (checker == "/ram") || (checker == "-ram")) {
+                arg_loop++;
+                string ram_amount = argv[arg_loop];
+                ram_size          = stoi(ram_amount);
+                LOG_F(INFO, "RAM SET TO: %d", ram_size);
+            } 
+            else if ((checker == "gfxmem") || (checker == "/gfxmem") || (checker == "-gfxmem")) {
+                arg_loop++;
+                string ram_amount = argv[arg_loop];
+                gfx_mem           = stoi(ram_amount);
+                LOG_F(INFO, "GFX MEMORY SET TO: %d", gfx_mem);
             }
+
         }
 
         if (create_machine_for_rom(rom_file.c_str())) {
@@ -114,21 +115,18 @@ int main(int argc, char** argv) {
         }
 #endif
 
-        if ((checker == "1") || (checker == "realtime") || (checker == "-realtime") ||
-            (checker == "/realtime")) {
+        switch (execution_mode) {
+        case 0:
             ppc_exec();
-        } else if ((checker == "debugger") || (checker == "/debugger") || (checker == "-debugger")) {
+            break;
+        case 1:
             enter_debugger();
+            break;
+        default:
+            LOG_F(ERROR, "Invalid EXECUTION MODE");
+            return 1;
         }
-    } else {
-        std::cout << "                                                " << endl;
-        std::cout << "Please enter one of the following commands when " << endl;
-        std::cout << "booting up DingusPPC...                         " << endl;
-        std::cout << "                                                " << endl;
-        std::cout << "                                                " << endl;
-        std::cout << "realtime - Run the emulator in real-time.       " << endl;
-        std::cout << "debugger - Enter the interactive debugger.      " << endl;
-    }
+    } 
 
 bail:
     LOG_F(INFO, "Cleaning up...");
