@@ -65,7 +65,7 @@ int main(int argc, char** argv) {
     else {
         
         std::string rom_file = "rom.bin", disk_file = "disk.img";
-        int ram_size = 64, gfx_mem = 2, machine_gestalt = 510, video_card_vendor = 0x1002, video_card_id = 0x4750;
+        int ram_size = 64, gfx_mem = 2, video_card_vendor = 0x1002, video_card_id = 0x4750;
 
         for (int arg_loop = 1; arg_loop < argc; arg_loop++) {
             string checker = argv[arg_loop];
@@ -93,13 +93,23 @@ int main(int argc, char** argv) {
                 arg_loop++;
                 string ram_amount = argv[arg_loop];
                 ram_size          = stoi(ram_amount);
-                LOG_F(INFO, "RAM SET TO: %d", ram_size);
+                LOG_F(INFO, "SYSTEM RAM set to: %d", ram_size);
             } 
             else if ((checker == "gfxmem") || (checker == "/gfxmem") || (checker == "-gfxmem")) {
                 arg_loop++;
-                string ram_amount = argv[arg_loop];
-                gfx_mem           = stoi(ram_amount);
-                LOG_F(INFO, "GFX MEMORY SET TO: %d", gfx_mem);
+                string vram_amount = argv[arg_loop];
+                gfx_mem            = stoi(vram_amount);
+                LOG_F(INFO, "GFX MEMORY set to: %d", gfx_mem);
+            }
+            else if ((checker == "romfile") || (checker == "/romfile") || (checker == "-romfile")) {
+                arg_loop++;
+                rom_file = argv[arg_loop];
+                LOG_F(INFO, "ROM FILE will now be: %s", rom_file.c_str());
+            } 
+            else if ((checker == "diskimg") || (checker == "/diskimg") || (checker == "-diskimg")) {
+                arg_loop++;
+                rom_file = argv[arg_loop];
+                LOG_F(INFO, "Load the DISK IMAGE from: %s", rom_file.c_str());
             }
 
         }

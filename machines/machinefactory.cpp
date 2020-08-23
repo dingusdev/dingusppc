@@ -43,21 +43,21 @@ using namespace std;
     or 0x30C064 (Nubus Macs).
 */
 static const map<uint32_t, string> rom_identity = {
-    {0x416C6368, "Performa 6400"},    // Alchemy
-    //{"Come", "PowerBook 2400"},                   //Comet
-    {0x436F7264, "Power Mac 5200/6200 series"},    // Cordyceps
-    {0x47617A65, "Power Mac 6500"},                // Gazelle
-    {0x476F7373, "Power Mac G3 Beige"},            // Gossamer
+    {0x416C6368, "Performa 6400"},                  // Alchemy
+    //{"Come", "PowerBook 2400"},                   // Comet
+    {0x436F7264, "Power Mac 5200/6200 series"},     // Cordyceps
+    {0x47617A65, "Power Mac 6500"},                 // Gazelle
+    {0x476F7373, "Power Mac G3 Beige"},             // Gossamer
     {0x47525820, "PowerBook G3 Wallstreet"},
-    //{"Hoop", "PowerBook 3400"},                   //Hooper
+    //{"Hoop", "PowerBook 3400"},                   // Hooper
     {0x50425820, "PowerBook Pre-G3"},
-    {0x50444D20, "Nubus Power Mac or WGS"},    // Piltdown Man (6100/7100/8100)
-    {0x50697020, "Bandai Pippin"},             // Pippin
-    //{"Powe", "Generic Power Mac"},                //PowerMac?
-    //{"Spar", "20th Anniversay Mac"},              //Spartacus
+    {0x50444D20, "Nubus Power Mac"},                // Piltdown Man (6100/7100/8100)
+    {0x50697020, "Bandai Pippin"},                  // Pippin
+    //{"Powe", "Generic Power Mac"},                // PowerMac?
+    //{"Spar", "20th Anniversay Mac"},              // Spartacus
     {0x544E5420, "Power Mac 7xxxx/8xxx series"},    // Trinitrotoluene :-)
     {0x5A616E7A, "Power Mac 4400/7220"},            // Zanzibar
-    //{"????", "A clone, perhaps?"}                 //N/A (Placeholder ID)
+    //{"????", "A clone, perhaps?"}                 // N/A (Placeholder ID)
 };
 
 

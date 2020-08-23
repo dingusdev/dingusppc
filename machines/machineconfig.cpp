@@ -16,15 +16,16 @@ void init_gpu_map() {
 }
 
 void init_machine_properties() {
-    PowerMac6100_Properties.emplace("gestalt",     StringProperty("100"));
+    PowerMac6100_Properties.emplace("machineid",   StringProperty("Nubus Power Mac"));
     PowerMac6100_Properties.emplace("cputype",     StringProperty("PPC_MPC601"));
     PowerMac6100_Properties.emplace("motherboard", StringProperty("Nubus"));
     PowerMac6100_Properties.emplace("ioboard",     StringProperty("Nubus_IO"));
-    PowerMac6100_Properties.emplace("ram",         StringProperty("8"));
+    PowerMac6100_Properties.emplace("ram",         StringProperty("16"));
     PowerMac6100_Properties.emplace("gfxcard",     StringProperty("Nubus_Video"));
     PowerMac6100_Properties.emplace("gfxmem",      StringProperty("1"));
 
-    PowerMacG3_Properties.emplace("gestalt",     StringProperty("510"));
+     
+    PowerMacG3_Properties.emplace("machineid",   StringProperty("Power Mac G3 Beige"));
     PowerMacG3_Properties.emplace("cputype",     StringProperty("PPC_MPC750"));
     PowerMacG3_Properties.emplace("motherboard", StringProperty("Grackle"));
     PowerMacG3_Properties.emplace("ioboard",     StringProperty("Heathrow"));
@@ -42,7 +43,7 @@ uint32_t get_gfx_card(std::string gfx_str) {
         } catch (std::string bad_string) {
             std::cerr << "Could not find the matching GFX card for " << bad_string << std::endl;
 
-            return 0x168A523B;
+            return ILLEGAL_DEVICE_VALUE;
         }
     }
 }
@@ -53,13 +54,13 @@ uint32_t get_cpu_type(std::string cpu_str) {
     } catch (std::string bad_string) {
         std::cerr << "Could not find the matching CPU value for " << bad_string << std::endl;
 
-        return 0x168A523B;
+        return ILLEGAL_DEVICE_VALUE;
     }
 }
 
 void search_properties(uint32_t chosen_gestalt) {
     std::string cpu_str = "OOPS";
-    uint32_t cpu_type   = 0x168A523B;
+    uint32_t cpu_type   = ILLEGAL_DEVICE_VALUE;
     uint32_t ram_size   = 0;
     uint32_t gfx_size   = 0;
     uint32_t gfx_type   = 0;
