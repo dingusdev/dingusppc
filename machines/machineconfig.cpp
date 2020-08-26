@@ -16,7 +16,7 @@ void init_gpu_map() {
 }
 
 void init_machine_properties() {
-    PowerMac6100_Properties.emplace("machineid",   StringProperty("Nubus Power Mac"));
+    PowerMac6100_Properties.emplace("machineid",   StringProperty("PowerMac6100"));
     PowerMac6100_Properties.emplace("cputype",     StringProperty("PPC_MPC601"));
     PowerMac6100_Properties.emplace("motherboard", StringProperty("Nubus"));
     PowerMac6100_Properties.emplace("ioboard",     StringProperty("Nubus_IO"));
@@ -25,7 +25,7 @@ void init_machine_properties() {
     PowerMac6100_Properties.emplace("gfxmem",      StringProperty("1"));
 
      
-    PowerMacG3_Properties.emplace("machineid",   StringProperty("Power Mac G3 Beige"));
+    PowerMacG3_Properties.emplace("machineid",   StringProperty("PowerMacG3"));
     PowerMacG3_Properties.emplace("cputype",     StringProperty("PPC_MPC750"));
     PowerMacG3_Properties.emplace("motherboard", StringProperty("Grackle"));
     PowerMacG3_Properties.emplace("ioboard",     StringProperty("Heathrow"));

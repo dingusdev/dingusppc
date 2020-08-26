@@ -28,9 +28,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <thirdparty/loguru/loguru.hpp>
 
 
-ATIRage::ATIRage(uint16_t dev_id) : PCIDevice("ati-rage")
-{
-    this->vram_size = 0x200000; /* FIXME: hardcoded VRAM size! */
+ATIRage::ATIRage(uint16_t dev_id, uint32_t mem_amount) : PCIDevice("ati-rage") {
+    this->vram_size = mem_amount << 20;
 
     /*allocate video RAM */
     this->vram_ptr = new uint8_t[this->vram_size];

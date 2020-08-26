@@ -24,11 +24,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "ppcemu.h"
 #include "ppcmmu.h"
-#include <array>
 #include <cmath>
 #include <iostream>
 #include <limits>
-#include <stdexcept>
 #include <stdio.h>
 #include <thirdparty/loguru/loguru.hpp>
 

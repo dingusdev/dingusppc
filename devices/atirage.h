@@ -111,7 +111,7 @@ constexpr auto MEMMAP_OFFSET = 0x007FFC00UL; /* offset to memory mapped register
 
 class ATIRage : public PCIDevice {
 public:
-    ATIRage(uint16_t dev_id);
+    ATIRage(uint16_t dev_id, uint32_t mem_amount);
     ~ATIRage();
 
     /* MMIODevice methods */

@@ -29,8 +29,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "machinebase.h"
 
-int create_machine_for_rom(const char* rom_filepath);
+int create_machine_for_rom(const char* rom_filepath, uint32_t* grab_ram_size, uint32_t gfx_size);
 
-int create_gossamer(void);
+int create_gossamer(uint32_t* grab_ram_size, uint32_t gfx_size);
 
 #endif /* MACHINE_FACTORY_H */

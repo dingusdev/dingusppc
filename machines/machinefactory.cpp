@@ -61,10 +61,10 @@ static const map<uint32_t, string> rom_identity = {
 };
 
 
-int create_machine_for_id(uint32_t id) {
+int create_machine_for_id(uint32_t id, uint32_t* grab_ram_size, uint32_t gfx_size) {
     switch (id) {
     case 0x476F7373:
-        create_gossamer();
+        create_gossamer(grab_ram_size, gfx_size);
         break;
     default:
         LOG_F(ERROR, "Unknown machine ID: %X", id);
@@ -89,7 +89,7 @@ void load_rom(ifstream& rom_file, uint32_t file_size) {
 }
 
 
-int create_machine_for_rom(const char* rom_filepath) {
+int create_machine_for_rom(const char* rom_filepath, uint32_t* grab_ram_size, uint32_t gfx_size) {
     ifstream rom_file;
     uint32_t file_size, config_info_offset, rom_id;
     char rom_id_str[17];
@@ -136,7 +136,7 @@ int create_machine_for_rom(const char* rom_filepath) {
 
     LOG_F(INFO, "The machine is identified as... %s\n", rom_identity.at(rom_id).c_str());
 
-    create_machine_for_id(rom_id);
+    create_machine_for_id(rom_id, grab_ram_size, gfx_size);
 
     load_rom(rom_file, file_size);
 

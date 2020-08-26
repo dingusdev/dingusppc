@@ -1,15 +1,15 @@
-
-#ifndef MACHINE_PROPERTIES_H
-#define MACHINE_PROPERTIES_H
-
 #include "endianswap.h"
 #include <cinttypes>
-#include <cstring>
+#include <string>
 #include <map>
 #include <iostream>
 #include <utility>
 
+#ifndef MACHINE_PROPERTIES_H
+#define MACHINE_PROPERTIES_H
 using namespace std;
+
+#define ILLEGAL_DEVICE_VALUE 0x168A523B
 
 class StringProperty {
 public:
@@ -27,21 +27,12 @@ public:
         } catch (string bad_string) {
             cerr << "Could not convert string " << bad_string << "to an ineteger!" << endl;
 
-            return 0x168A523B;
+            return ILLEGAL_DEVICE_VALUE;
         }
     }
 
 private:
-    string StringInput = "0x168A523B";
-};
-
-map<string, uint32_t> PPC_CPUs;
-
-map<string, uint32_t> GFX_CARDs;
-
-enum GESTALT : uint32_t {
-    pm6100 = 100,
-    pmg3   = 510,
+    string StringInput = std::to_string(ILLEGAL_DEVICE_VALUE);
 };
 
 void init_ppc_cpu_map();    //JANKY FUNCTION TO FIX VS 2019 BUG!

@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "debugger/debugger.h"
 #include "machines/machinefactory.h"
+#include "machines/machineproperties.h"
 #include "ppcemu.h"
 #include <cinttypes>
 #include <cstring>
@@ -36,6 +37,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace std;
 
+void display_help() {
+    std::cout << "                                                   " << endl;
+    std::cout << "To interact with DingusPPC, please refer to the    " << endl;
+    std::cout << "following command line reference guide:            " << endl;
+    std::cout << "___________________________________________________" << endl;
+    std::cout << "| COMMAND  | FUNCTION                             |" << endl;
+    std::cout << "___________________________________________________" << endl;
+    std::cout << " realtime  | Run the emulator in real-time         " << endl;
+    std::cout << " debugger  | Enter the interactive debugger        " << endl;
+    std::cout << " ram       | Specify the number of RAM banks,      " << endl;
+    std::cout << "           | followed by how much each bank holds  " << endl;
+    std::cout << " videocard | Specify the video card to emulate     " << endl;
+    std::cout << " gfxmem    | Specify the how much memory           " << endl;
+    std::cout << "           | to allocate to the emulated video card" << endl;
+    std::cout << " romfile   | Insert the ROM file to use            " << endl;
+    std::cout << "                                                   " << endl;
+}
+
 int main(int argc, char** argv) {
     /*
     Execution Type:
@@ -46,7 +65,10 @@ int main(int argc, char** argv) {
     The rest will be decided later
     */
 
-    uint32_t execution_mode = 0;
+    uint32_t execution_mode    = 0;
+    uint32_t sys_ram_size[12]  = {64, 0, 0, 0};
+    uint32_t gfx_mem           = 2;
+    bool machine_specified     = false;
 
     std::cout << "DingusPPC - Prototype 5bf5 (8/23/2020)       " << endl;
     std::cout << "Written by divingkatae and maximumspatium    " << endl;
@@ -55,17 +77,14 @@ int main(int argc, char** argv) {
     std::cout << "Use at your own discretion.                  " << endl;
 
     if (argc < 1) {
-        std::cout << "                                                " << endl;
-        std::cout << "Please enter one of the following commands when " << endl;
-        std::cout << "booting up DingusPPC...                         " << endl;
-        std::cout << "                                                " << endl;
-        std::cout << "realtime - Run the emulator in real-time.       " << endl;
-        std::cout << "debugger - Enter the interactive debugger.      " << endl;
+        display_help();
+
+        return 0;
     }
     else {
         
         std::string rom_file = "rom.bin", disk_file = "disk.img";
-        int ram_size = 64, gfx_mem = 2, video_card_vendor = 0x1002, video_card_id = 0x4750;
+        int video_card_vendor = 0x1002, video_card_id = 0x4750;
 
         for (int arg_loop = 1; arg_loop < argc; arg_loop++) {
             string checker = argv[arg_loop];
@@ -91,10 +110,12 @@ int main(int argc, char** argv) {
             } 
             else if ((checker == "ram") || (checker == "/ram") || (checker == "-ram")) {
                 arg_loop++;
-                string ram_amount = argv[arg_loop];
-                ram_size          = stoi(ram_amount);
-                LOG_F(INFO, "SYSTEM RAM set to: %d", ram_size);
-            } 
+                string ram_banks   = argv[arg_loop];
+                uint32_t ram_loop  = stoi(ram_banks);
+                for (int check_loop = 0; check_loop < ram_loop; check_loop++) {
+                    sys_ram_size[check_loop] = stoi(argv[arg_loop]);
+                }
+            }  
             else if ((checker == "gfxmem") || (checker == "/gfxmem") || (checker == "-gfxmem")) {
                 arg_loop++;
                 string vram_amount = argv[arg_loop];
@@ -110,12 +131,30 @@ int main(int argc, char** argv) {
                 arg_loop++;
                 rom_file = argv[arg_loop];
                 LOG_F(INFO, "Load the DISK IMAGE from: %s", rom_file.c_str());
+            } 
+            else if ((checker == "videocard") || (checker == "/videocard") || (checker == "-videocard")) {
+                arg_loop++;
+                string check_card = argv[arg_loop];
+                if (checker.compare("RagePro") == 0) {
+                    video_card_vendor = 0x1002;
+                    video_card_id     = 0x4750;
+                } 
+                else if (checker.compare("Rage128") == 0) {
+                    video_card_vendor = 0x1002;
+                    video_card_id     = 0x5046;
+                } 
+                else if (checker.compare("Radeon7000") == 0) {
+                    video_card_vendor = 0x1002;
+                    video_card_id     = 0x5159;
+                }
             }
 
         }
 
-        if (create_machine_for_rom(rom_file.c_str())) {
-            goto bail;
+        if (!machine_specified) {
+            if (create_machine_for_rom(rom_file.c_str(), sys_ram_size, gfx_mem)) {
+                goto bail;
+            }
         }
 
 #ifdef SDL
