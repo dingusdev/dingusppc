@@ -1,5 +1,7 @@
 #include "machineproperties.h"
 #include "machinepresets.h"
+#include <cmath>
+#include <thirdparty/loguru/loguru.hpp>
 
 void init_ppc_cpu_map() {
 
@@ -20,18 +22,21 @@ void init_machine_properties() {
     PowerMac6100_Properties.emplace("cputype",     StringProperty("PPC_MPC601"));
     PowerMac6100_Properties.emplace("motherboard", StringProperty("Nubus"));
     PowerMac6100_Properties.emplace("ioboard",     StringProperty("Nubus_IO"));
-    PowerMac6100_Properties.emplace("ram",         StringProperty("16"));
+    PowerMac6100_Properties.emplace("rambank1",    StringProperty("8"));
     PowerMac6100_Properties.emplace("gfxcard",     StringProperty("Nubus_Video"));
     PowerMac6100_Properties.emplace("gfxmem",      StringProperty("1"));
+    PowerMac6100_Properties.emplace("minram",      StringProperty("8"));
+    PowerMac6100_Properties.emplace("maxram",      StringProperty("136"));
 
-     
     PowerMacG3_Properties.emplace("machineid",   StringProperty("PowerMacG3"));
     PowerMacG3_Properties.emplace("cputype",     StringProperty("PPC_MPC750"));
     PowerMacG3_Properties.emplace("motherboard", StringProperty("Grackle"));
     PowerMacG3_Properties.emplace("ioboard",     StringProperty("Heathrow"));
-    PowerMacG3_Properties.emplace("ram",         StringProperty("64"));
+    PowerMacG3_Properties.emplace("rambank1",    StringProperty("64"));
     PowerMacG3_Properties.emplace("gfxcard",     StringProperty("ATI_Rage_Pro"));
     PowerMacG3_Properties.emplace("gfxmem",      StringProperty("2"));
+    PowerMacG3_Properties.emplace("minram",      StringProperty("32"));
+    PowerMacG3_Properties.emplace("maxram",      StringProperty("256"));
 }
 
 uint32_t get_gfx_card(std::string gfx_str) {
@@ -58,30 +63,68 @@ uint32_t get_cpu_type(std::string cpu_str) {
     }
 }
 
-void search_properties(uint32_t chosen_gestalt) {
+void init_search_array() {
+    //Code to generate a vector of maps for machine configs goes here
+}
+
+bool is_power_of_two(uint32_t number_to_check) {
+    if (number_to_check == 0)
+        return false;
+
+    return (ceil(log2(number_to_check)) == floor(log2(number_to_check)));
+}
+
+bool check_ram_size(std::string machine_str, uint32_t number_to_check) {
+    uint32_t min_ram = 8;
+    uint32_t max_ram = 16;
+
+    if (machine_str.compare("PowerMacG3") == 0) {
+        min_ram = PowerMacG3_Properties.find("minram")->second.IntRep();
+        max_ram = PowerMacG3_Properties.find("maxram")->second.IntRep();
+    }
+
+    if ((number_to_check > max_ram) || 
+        (number_to_check > max_ram) || 
+        !(is_power_of_two(number_to_check))) {
+        return false;
+    } 
+    else {
+        return true;
+    }
+
+}
+
+bool loop_ram_check(std::string machine_str, uint32_t* ram_sizes) {
+    for (int checking_stage_one = 0; checking_stage_one < sizeof(ram_sizes); checking_stage_one++) {
+        if (check_ram_size(machine_str, ram_sizes[checking_stage_one]) == false) {
+            LOG_F(ERROR, "RAM BANK ERROR with RAM BANK %d", checking_stage_one);
+        }
+    }
+}
+
+void search_properties(std::string machine_str) {
     std::string cpu_str = "OOPS";
     uint32_t cpu_type   = ILLEGAL_DEVICE_VALUE;
     uint32_t ram_size   = 0;
     uint32_t gfx_size   = 0;
     uint32_t gfx_type   = 0;
 
-    switch (chosen_gestalt) {
-    case 100:
+    if (machine_str.compare("PowerMacG3") == 0) {
         cpu_str  = PowerMac6100_Properties.find("cputype")->second.getString();
         cpu_type = get_cpu_type(cpu_str);
-        ram_size = PowerMac6100_Properties.find("ram")->second.IntRep();
+        ram_size = PowerMac6100_Properties.find("rambank1")->second.IntRep();
         gfx_size = PowerMac6100_Properties.find("gfxmem")->second.IntRep();
         gfx_type = PowerMac6100_Properties.find("gfxcard")->second.IntRep();
-        break;
-    case 510:
-        cpu_str  = PowerMacG3_Properties.find("cputype")->second.getString();
+    }
+    else if (machine_str.compare("PowerMac6100") == 0) {
+        cpu_str = PowerMacG3_Properties.find("cputype")->second.getString();
         cpu_type = get_cpu_type(cpu_str);
-        ram_size = PowerMacG3_Properties.find("ram")->second.IntRep();
+        ram_size = PowerMacG3_Properties.find("rambank1")->second.IntRep();
         gfx_size = PowerMacG3_Properties.find("gfxmem")->second.IntRep();
         gfx_type = PowerMacG3_Properties.find("gfxcard")->second.IntRep();
-        break;
-    default:
-        std::cerr << "Unable to find congifuration for " << chosen_gestalt << std::endl;
+    }
+    else {
+        std::cerr << "Unable to find congifuration for " << machine_str << std::endl;
     }
 
 
@@ -93,10 +136,18 @@ void search_properties(uint32_t chosen_gestalt) {
     std::cout << "GMEM SIZE: " << std::dec << gfx_size << std::endl;
 }
 
-void establish_machine_settings(uint32_t starting_setting) {
+bool establish_machine_settings(std::string machine_str, uint32_t* ram_sizes) {
     init_ppc_cpu_map();
     init_gpu_map();
     init_machine_properties();
+    //init_search_array();
 
-    search_properties(starting_setting);
+    //search_properties(machine_str);
+
+    if (loop_ram_check (machine_str, ram_sizes)) {
+        return true;
+    } 
+    else {
+        return false;
+    }
 }

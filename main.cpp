@@ -69,6 +69,7 @@ int main(int argc, char** argv) {
     uint32_t sys_ram_size[12]  = {64, 0, 0, 0};
     uint32_t gfx_mem           = 2;
     bool machine_specified     = false;
+    string machine_name        = "";
 
     std::cout << "DingusPPC - Prototype 5bf5 (8/23/2020)       " << endl;
     std::cout << "Written by divingkatae and maximumspatium    " << endl;
@@ -107,6 +108,10 @@ int main(int argc, char** argv) {
                 loguru::g_preamble_thread  = false;
                 loguru::init(argc, argv);
                 execution_mode = 1;
+            }
+            else if ((checker == "pmg3") || (checker == "/pmg3") || (checker == "-pmg3")) {
+                machine_name = "PowerMacG3";
+                machine_specified = true;
             } 
             else if ((checker == "ram") || (checker == "/ram") || (checker == "-ram")) {
                 arg_loop++;
@@ -151,9 +156,36 @@ int main(int argc, char** argv) {
 
         }
 
-        if (!machine_specified) {
+        if (machine_specified) {
+            if (machine_name.compare("PowerMac6100") == 0) {
+                if (establish_machine_settings(machine_name, sys_ram_size)) {
+                    if (create_gossamer(sys_ram_size, gfx_mem)) {
+                        goto bail;
+                    }
+                } else {
+                    LOG_F(ERROR, "Invalid Settings Specified");
+                    return -1;
+                }
+            } 
+            else if (machine_name.compare("PowerMac6100") == 0) {
+                LOG_F(ERROR, "Board not yet ready for: %s", machine_name.c_str());
+                return -1;
+            } 
+            else {
+                LOG_F(WARNING, "Invalid machine name specified: %s", machine_name.c_str());
+                display_help();
+                return -1;
+            }
+        } 
+        else{
             if (create_machine_for_rom(rom_file.c_str(), sys_ram_size, gfx_mem)) {
                 goto bail;
+            } else {
+                LOG_F(
+                    WARNING,
+                    "Could not create ROM, because the file %s was not found!", rom_file.c_str());
+                display_help();
+                return -1;
             }
         }
 
