@@ -55,6 +55,17 @@ void display_help() {
     std::cout << "                                                   " << endl;
 }
 
+void display_recognized_machines() {
+    std::cout << "                                                   " << endl;
+    std::cout << "The following machines are supported by DingusPPC: " << endl;
+    std::cout << "___________________________________________________" << endl;
+    std::cout << "| COMMAND  | MACHINE RECOGNIZED                   |" << endl;
+    std::cout << "___________________________________________________" << endl;
+    std::cout << " pmg3      | Power Mac G3 Beige                    " << endl;
+    std::cout << " pm6100    | Power Mac 6100                        " << endl;
+    std::cout << "                                                   " << endl;
+}
+
 int main(int argc, char** argv) {
     /*
     Execution Type:
@@ -108,11 +119,23 @@ int main(int argc, char** argv) {
                 loguru::g_preamble_thread  = false;
                 loguru::init(argc, argv);
                 execution_mode = 1;
-            }
+            } 
+            else if ((checker == "help") || (checker == "/help") || (checker == "-help")) {
+                display_help();
+                return 0;
+            }  
             else if ((checker == "pmg3") || (checker == "/pmg3") || (checker == "-pmg3")) {
                 machine_name = "PowerMacG3";
                 machine_specified = true;
             } 
+            else if ((checker == "pm6100") || (checker == "/pm6100") || (checker == "-pm6100")) {
+                machine_name      = "PowerMac6100";
+                machine_specified = true;
+            } 
+            else if ((checker == "machinehelp") || (checker == "/machinehelp") || (checker == "-machinehelp")) {
+                machine_name      = "MachineHelp";
+                machine_specified = true;
+            }  
             else if ((checker == "ram") || (checker == "/ram") || (checker == "-ram")) {
                 arg_loop++;
                 string ram_banks   = argv[arg_loop];
@@ -172,8 +195,7 @@ int main(int argc, char** argv) {
                 return -1;
             } 
             else {
-                LOG_F(WARNING, "Invalid machine name specified: %s", machine_name.c_str());
-                display_help();
+                display_recognized_machines();
                 return -1;
             }
         } 

@@ -98,8 +98,11 @@ bool loop_ram_check(std::string machine_str, uint32_t* ram_sizes) {
     for (int checking_stage_one = 0; checking_stage_one < sizeof(ram_sizes); checking_stage_one++) {
         if (check_ram_size(machine_str, ram_sizes[checking_stage_one]) == false) {
             LOG_F(ERROR, "RAM BANK ERROR with RAM BANK %d", checking_stage_one);
+            return false;
         }
     }
+
+    return true;
 }
 
 void search_properties(std::string machine_str) {
