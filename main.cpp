@@ -181,10 +181,10 @@ int main(int argc, char** argv) {
 
         if (machine_specified) {
             if (machine_name.compare("PowerMacG3") == 0) {
-                if (establish_machine_settings(machine_name, sys_ram_size)) {
+                if (establish_machine_presets(rom_file.c_str(), machine_name, sys_ram_size)) {
                     if (create_gossamer(sys_ram_size, gfx_mem)) {
                         goto bail;
-                    }
+                    } 
                 } else {
                     LOG_F(ERROR, "Invalid Settings Specified");
                     return -1;
@@ -199,15 +199,9 @@ int main(int argc, char** argv) {
                 return -1;
             }
         } 
-        else{
+        else {
             if (create_machine_for_rom(rom_file.c_str(), sys_ram_size, gfx_mem)) {
                 goto bail;
-            } else {
-                LOG_F(
-                    WARNING,
-                    "Could not create ROM, because the file %s was not found!", rom_file.c_str());
-                display_help();
-                return -1;
             }
         }
 

@@ -1,6 +1,9 @@
 #include "machineproperties.h"
 #include "machinepresets.h"
+#include "machinefactory.h"
+#include "devices/memctrlbase.h"
 #include <cmath>
+#include <fstream>
 #include <thirdparty/loguru/loguru.hpp>
 
 void init_ppc_cpu_map() {
@@ -139,13 +142,32 @@ void search_properties(std::string machine_str) {
     std::cout << "GMEM SIZE: " << std::dec << gfx_size << std::endl;
 }
 
-bool establish_machine_settings(std::string machine_str, uint32_t* ram_sizes) {
+bool establish_machine_presets(const char* rom_filepath, std::string machine_str, uint32_t* ram_sizes) {
+    ifstream rom_file;
+    uint32_t file_size;
+
     init_ppc_cpu_map();
     init_gpu_map();
     init_machine_properties();
     //init_search_array();
 
     //search_properties(machine_str);
+
+    rom_file.open(rom_filepath, ios::in | ios::binary);
+    if (rom_file.fail()) {
+        LOG_F(ERROR, "Cound not open the specified ROM file.");
+        rom_file.close();
+        return false;
+    }
+
+    if (file_size != 0x400000UL) {
+        LOG_F(ERROR, "Unxpected ROM File size. Expected size is 4 megabytes.");
+        rom_file.close();
+        return false;
+    }
+
+    load_rom(rom_file, file_size);
+    rom_file.close();
 
     if (loop_ram_check (machine_str, ram_sizes)) {
         return true;

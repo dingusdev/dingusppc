@@ -75,7 +75,7 @@ int create_machine_for_id(uint32_t id, uint32_t* grab_ram_size, uint32_t gfx_siz
 
 
 /* Read ROM file content and transfer it to the dedicated ROM region */
-void load_rom(ifstream& rom_file, uint32_t file_size) {
+void load_rom(std::ifstream& rom_file, uint32_t file_size) {
     unsigned char* sysrom_mem = new unsigned char[file_size];
 
     rom_file.seekg(0, ios::beg);

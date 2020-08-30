@@ -28,6 +28,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define MACHINE_FACTORY_H
 
 #include "machinebase.h"
+#include <fstream>
+
+void load_rom(std::ifstream& rom_file, uint32_t file_size);
 
 int create_machine_for_rom(const char* rom_filepath, uint32_t* grab_ram_size, uint32_t gfx_size);
 

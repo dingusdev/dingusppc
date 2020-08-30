@@ -41,6 +41,6 @@ void init_gpu_map();        //JANKY FUNCTION TO FIX VS 2019 BUG!
 uint32_t get_gfx_card(std::string gfx_str);
 uint32_t get_cpu_type(std::string cpu_str);
 void search_properties(uint32_t chosen_gestalt);
-bool establish_machine_settings(std::string machine_str, uint32_t* ram_sizes);
+bool establish_machine_presets(const char* rom_filepath, std::string machine_str, uint32_t* ram_sizes);
 
 #endif /* MACHINE_PROPERTIES_H */
