@@ -180,7 +180,7 @@ int main(int argc, char** argv) {
         }
 
         if (machine_specified) {
-            if (machine_name.compare("PowerMac6100") == 0) {
+            if (machine_name.compare("PowerMacG3") == 0) {
                 if (establish_machine_settings(machine_name, sys_ram_size)) {
                     if (create_gossamer(sys_ram_size, gfx_mem)) {
                         goto bail;
