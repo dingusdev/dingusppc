@@ -181,13 +181,9 @@ int main(int argc, char** argv) {
 
         if (machine_specified) {
             if (machine_name.compare("PowerMacG3") == 0) {
-                if (establish_machine_presets(rom_file.c_str(), machine_name, sys_ram_size)) {
-                    if (create_gossamer(sys_ram_size, gfx_mem)) {
-                        goto bail;
-                    } 
-                } else {
-                    LOG_F(ERROR, "Invalid Settings Specified");
-                    return -1;
+                LOG_F(INFO, "Time to build up a machine");
+                if (establish_machine_presets(rom_file.c_str(), machine_name, sys_ram_size, gfx_mem)) {
+                    goto bail;
                 }
             } 
             else if (machine_name.compare("PowerMac6100") == 0) {

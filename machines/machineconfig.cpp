@@ -72,7 +72,7 @@ void init_search_array() {
 
 bool is_power_of_two(uint32_t number_to_check) {
     if (number_to_check == 0)
-        return false;
+        return true; //This would be false normally, but 0 is used by DPPC to signify an empty bank of RAM
 
     return (ceil(log2(number_to_check)) == floor(log2(number_to_check)));
 }
@@ -99,6 +99,12 @@ bool check_ram_size(std::string machine_str, uint32_t number_to_check) {
 
 bool loop_ram_check(std::string machine_str, uint32_t* ram_sizes) {
     for (int checking_stage_one = 0; checking_stage_one < sizeof(ram_sizes); checking_stage_one++) {
+        if (checking_stage_one == 0) {
+            if (ram_sizes[checking_stage_one] == 0) {
+                LOG_F(ERROR, "EMPTY RAM BANK 0!!");
+                return false;
+            }
+        }
         if (check_ram_size(machine_str, ram_sizes[checking_stage_one]) == false) {
             LOG_F(ERROR, "RAM BANK ERROR with RAM BANK %d", checking_stage_one);
             return false;
@@ -142,7 +148,8 @@ void search_properties(std::string machine_str) {
     std::cout << "GMEM SIZE: " << std::dec << gfx_size << std::endl;
 }
 
-bool establish_machine_presets(const char* rom_filepath, std::string machine_str, uint32_t* ram_sizes) {
+int establish_machine_presets(
+    const char* rom_filepath, std::string machine_str, uint32_t* ram_sizes, uint32_t gfx_mem) {
     ifstream rom_file;
     uint32_t file_size;
 
@@ -157,22 +164,30 @@ bool establish_machine_presets(const char* rom_filepath, std::string machine_str
     if (rom_file.fail()) {
         LOG_F(ERROR, "Cound not open the specified ROM file.");
         rom_file.close();
-        return false;
+        return -1;
     }
+
+    rom_file.seekg(0, rom_file.end);
+    file_size = rom_file.tellg();
+    rom_file.seekg(0, rom_file.beg);
 
     if (file_size != 0x400000UL) {
         LOG_F(ERROR, "Unxpected ROM File size. Expected size is 4 megabytes.");
         rom_file.close();
-        return false;
+        return -1;
+    }
+
+    if (loop_ram_check(machine_str, ram_sizes) == true) {
+        if (machine_str.compare("PowerMacG3") == 0) {
+            create_gossamer(ram_sizes, gfx_mem);
+        }
+    } 
+    else {
+        return -1;
     }
 
     load_rom(rom_file, file_size);
     rom_file.close();
 
-    if (loop_ram_check (machine_str, ram_sizes)) {
-        return true;
-    } 
-    else {
-        return false;
-    }
+    return 0;
 }
