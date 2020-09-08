@@ -35,9 +35,6 @@ private:
     string StringInput = std::to_string(ILLEGAL_DEVICE_VALUE);
 };
 
-void init_ppc_cpu_map();    //JANKY FUNCTION TO FIX VS 2019 BUG!
-void init_gpu_map();        //JANKY FUNCTION TO FIX VS 2019 BUG!
-
 uint32_t get_gfx_card(std::string gfx_str);
 uint32_t get_cpu_type(std::string cpu_str);
 void search_properties(uint32_t chosen_gestalt);
