@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "machinefactory.h"
 #include "devices/memctrlbase.h"
 #include "memreadwrite.h"
+#include "machineproperties.h"
 #include <cinttypes>
 #include <cstring>
 #include <fstream>
@@ -37,29 +38,117 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace std;
 
 /**
-    Power Macintosh ROM identification string
+    Power Macintosh ROM identification map.
 
-    is located in the ConfigInfo structure starting at 0x30D064 (PCI Macs)
-    or 0x30C064 (Nubus Macs).
+    Maps Bootstrap string located at offset 0x30D064 (PCI Macs)
+    or 0x30C064 (Nubus Macs) to machine name and description.
 */
-static const map<uint32_t, string> rom_identity = {
-    {0x416C6368, "Performa 6400"},                  // Alchemy
-    //{"Come", "PowerBook 2400"},                   // Comet
-    {0x436F7264, "Power Mac 5200/6200 series"},     // Cordyceps
-    {0x47617A65, "Power Mac 6500"},                 // Gazelle
-    {0x476F7373, "Power Mac G3 Beige"},             // Gossamer
-    {0x47525820, "PowerBook G3 Wallstreet"},
-    //{"Hoop", "PowerBook 3400"},                   // Hooper
-    {0x50425820, "PowerBook Pre-G3"},
-    {0x50444D20, "Nubus Power Mac"},                // Piltdown Man (6100/7100/8100)
-    {0x50697020, "Bandai Pippin"},                  // Pippin
-    //{"Powe", "Generic Power Mac"},                // PowerMac?
-    //{"Spar", "20th Anniversay Mac"},              // Spartacus
-    {0x544E5420, "Power Mac 7xxxx/8xxx series"},    // Trinitrotoluene :-)
-    {0x5A616E7A, "Power Mac 4400/7220"},            // Zanzibar
-    //{"????", "A clone, perhaps?"}                 // N/A (Placeholder ID)
+static const map<uint32_t, std::tuple<string, const char*>> rom_identity = {
+    {0x416C6368, {"pm6400",   "Performa 6400"}},               // Alchemy
+    //{"Come", "PowerBook 2400"},                              // Comet
+    {0x436F7264, {"pm5200",   "Power Mac 5200/6200 series"}},  // Cordyceps
+    {0x47617A65, {"pm6500",   "Power Mac 6500"}},              // Gazelle
+    {0x476F7373, {"pmg3",     "Power Mac G3 Beige"}},          // Gossamer
+    {0x47525820, {"pbg3",     "PowerBook G3 Wallstreet"}},
+    //{"Hoop", "PowerBook 3400"},                              // Hooper
+    {0x50425820, {"pb-preg3", "PowerBook Pre-G3"}},
+    {0x50444D20, {"pm6100",   "Nubus Power Mac"}},             // Piltdown Man (6100/7100/8100)
+    {0x50697020, {"pippin",   "Bandai Pippin"}},               // Pippin
+    //{"Powe", "Generic Power Mac"},                           // PowerMac?
+    //{"Spar", "20th Anniversay Mac"},                         // Spartacus
+    {0x544E5420, {"pm7200",   "Power Mac 7xxxx/8xxx series"}}, // Trinitrotoluene :-)
+    {0x5A616E7A, {"pm4400",   "Power Mac 4400/7220"}},         // Zanzibar
 };
 
+typedef std::map<std::string, StrProperty> Settings;
+
+static const Settings GossamerSettings = {
+    {"rambank1_size", StrProperty("256MB")},
+    {"rambank2_size", StrProperty("0")    },
+    {"rambank3_size", StrProperty("0")    },
+    {"gfxmem_size",   StrProperty("2MB")  }
+};
+
+static const map<string, Settings> machines = {
+    {"pmg3", GossamerSettings}
+};
+
+string machine_name_from_rom(string& rom_filepath) {
+    ifstream rom_file;
+    uint32_t file_size, config_info_offset, rom_id;
+    char rom_id_str[17];
+
+    string machine_name = "";
+
+    rom_file.open(rom_filepath, ios::in | ios::binary);
+    if (rom_file.fail()) {
+        LOG_F(ERROR, "Cound not open the specified ROM file.");
+        goto bail_out;
+    }
+
+    rom_file.seekg(0, rom_file.end);
+    file_size = rom_file.tellg();
+    rom_file.seekg(0, rom_file.beg);
+
+    if (file_size != 0x400000UL) {
+        LOG_F(ERROR, "Unxpected ROM File size. Expected size is 4 megabytes.");
+        goto bail_out;
+    }
+
+    /* read config info offset from file */
+    config_info_offset = 0;
+    rom_file.seekg(0x300080, ios::beg);
+    rom_file.read((char*)&config_info_offset, 4);
+    config_info_offset = READ_DWORD_BE_A(&config_info_offset);
+
+    /* rewind to ConfigInfo.BootstrapVersion field */
+    rom_file.seekg(0x300064 + config_info_offset, ios::beg);
+
+    /* read BootstrapVersion as C string */
+    rom_file.read(rom_id_str, 16);
+    rom_id_str[16] = 0;
+    LOG_F(INFO, "ROM BootstrapVersion: %s", rom_id_str);
+
+    if (strncmp(rom_id_str, "Boot", 4) != 0) {
+        LOG_F(ERROR, "Invalid BootstrapVersion string.");
+        goto bail_out;
+    }
+
+    /* convert BootstrapVersion string to ROM ID */
+    rom_id = (rom_id_str[5] << 24) | (rom_id_str[6] << 16) |
+        (rom_id_str[7] << 8) | rom_id_str[8];
+
+    LOG_F(INFO, "The machine is identified as... %s\n",
+        std::get<1>(rom_identity.at(rom_id)));
+
+    machine_name = std::get<0>(rom_identity.at(rom_id));
+
+bail_out:
+    rom_file.close();
+
+    return machine_name;
+}
+
+int get_machine_settings(string& id, map<string, string> &settings) {
+    try {
+        Settings props = machines.at(id);
+
+        for (auto& p : props) {
+            settings[p.first] = p.second.get_string();
+        }
+    }
+    catch(out_of_range ex) {
+        LOG_F(ERROR, "Unknown machine id %s", id.c_str());
+        return -1;
+    }
+    return 0;
+}
+
+void set_machine_settings(map<string, string> &settings) {
+    for (auto& s : settings) {
+        cout << s.first << " : " << s.second << endl;
+    }
+}
 
 int create_machine_for_id(uint32_t id, uint32_t* grab_ram_size, uint32_t gfx_size) {
     switch (id) {
@@ -134,7 +223,7 @@ int create_machine_for_rom(const char* rom_filepath, uint32_t* grab_ram_size, ui
     /* convert BootstrapVersion string to ROM ID */
     rom_id = (rom_id_str[5] << 24) | (rom_id_str[6] << 16) | (rom_id_str[7] << 8) | rom_id_str[8];
 
-    LOG_F(INFO, "The machine is identified as... %s\n", rom_identity.at(rom_id).c_str());
+    LOG_F(INFO, "The machine is identified as... %s\n", std::get<1>(rom_identity.at(rom_id)));
 
     create_machine_for_id(rom_id, grab_ram_size, gfx_size);
 

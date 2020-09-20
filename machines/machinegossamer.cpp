@@ -36,6 +36,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "machineproperties.h"
 #include <thirdparty/loguru/loguru.hpp>
 
+
 static void setup_ram_slot(std::string name, int i2c_addr, int capacity_megs) {
     if (!capacity_megs)
         return;

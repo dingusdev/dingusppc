@@ -1,4 +1,5 @@
 #include "endianswap.h"
+#include <thirdparty/loguru/loguru.hpp>
 #include <cinttypes>
 #include <string>
 #include <map>
@@ -11,19 +12,23 @@ using namespace std;
 
 #define ILLEGAL_DEVICE_VALUE 0x168A523B
 
-class StringProperty {
+class StrProperty {
 public:
-    StringProperty(string EnterString) {
-        StringInput = EnterString;
+    StrProperty(string str) {
+        this->prop_val = str;
     }
 
-    string getString() {
-        return StringInput;
+    string get_string() {
+        return this->prop_val;
+    }
+
+    void set_string(string str) {
+        this->prop_val = str;
     }
 
     uint32_t IntRep() {
         try {
-            return strtoul(getString().c_str(), 0, 0);
+            return strtoul(get_string().c_str(), 0, 0);
         } catch (string bad_string) {
             cerr << "Could not convert string " << bad_string << "to an ineteger!" << endl;
 
@@ -32,7 +37,31 @@ public:
     }
 
 private:
-    string StringInput = std::to_string(ILLEGAL_DEVICE_VALUE);
+    string prop_val = string("");
+};
+
+class IntProperty {
+public:
+    IntProperty(string str) {
+        this->prop_val = str;
+    }
+
+    void set_string(string str) {
+        this->prop_val = str;
+    }
+
+    uint32_t get_int() {
+        try {
+            return strtoul(this->prop_val.c_str(), 0, 0);
+        } catch (string bad_string) {
+            LOG_F(ERROR, "Could not convert string %s to an integer!",
+                bad_string.c_str());
+        }
+        return 0;
+    }
+
+private:
+    string prop_val = string("");
 };
 
 uint32_t get_gfx_card(std::string gfx_str);

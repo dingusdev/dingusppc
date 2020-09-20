@@ -1,28 +1,28 @@
 #include "machineproperties.h"
 #include <map>
 
-static std::map<std::string, StringProperty> PowerMac6100_Properties = {
-    {"machineid",    StringProperty("PowerMacG3")},
-    {"cputype",      StringProperty("PPC_MPC750")},
-    {"motherboard",  StringProperty("Grackle")},
-    {"ioboard",      StringProperty("Heathrow")},
-    {"rambank1",     StringProperty("64")},
-    {"minram",       StringProperty("32")},
-    {"maxram",       StringProperty("256")},
-    {"gfxcard",      StringProperty("Nubus_Video")},
-    {"gfxmem",       StringProperty("2")}
+static std::map<std::string, StrProperty> PowerMac6100_Properties = {
+    {"machineid",    StrProperty("PowerMacG3")},
+    {"cputype",      StrProperty("PPC_MPC750")},
+    {"motherboard",  StrProperty("Grackle")},
+    {"ioboard",      StrProperty("Heathrow")},
+    {"rambank1",     StrProperty("64")},
+    {"minram",       StrProperty("32")},
+    {"maxram",       StrProperty("256")},
+    {"gfxcard",      StrProperty("Nubus_Video")},
+    {"gfxmem",       StrProperty("2")}
 };
 
-static std::map<std::string, StringProperty> PowerMacG3_Properties = {
-    {"machineid",    StringProperty("PowerMacG3")},
-    {"cputype",      StringProperty("PPC_MPC750")},
-    {"motherboard",  StringProperty("Grackle")},
-    {"ioboard",      StringProperty("Heathrow")},
-    {"rambank1",     StringProperty("64")},
-    {"minram",       StringProperty("32")},
-    {"maxram",       StringProperty("256")},
-    {"gfxcard",      StringProperty("ATI_Rage_Pro")},
-    {"gfxmem",       StringProperty("2")}
+static std::map<std::string, StrProperty> PowerMacG3_Properties = {
+    {"machineid",    StrProperty("PowerMacG3")},
+    {"cputype",      StrProperty("PPC_MPC750")},
+    {"motherboard",  StrProperty("Grackle")},
+    {"ioboard",      StrProperty("Heathrow")},
+    {"rambank1",     StrProperty("64")},
+    {"minram",       StrProperty("32")},
+    {"maxram",       StrProperty("256")},
+    {"gfxcard",      StrProperty("ATI_Rage_Pro")},
+    {"gfxmem",       StrProperty("2")}
 };
 
 static std::map<std::string, uint32_t> PPC_CPUs = {

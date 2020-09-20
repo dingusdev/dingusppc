@@ -29,8 +29,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "machinebase.h"
 #include <fstream>
+#include <string>
+
+using namespace std;
+
+std::string machine_name_from_rom(std::string& rom_filepath);
 
 void load_rom(std::ifstream& rom_file, uint32_t file_size);
+
+int get_machine_settings(string& id, map<string, string> &settings);
+void set_machine_settings(map<string, string> &settings);
 
 int create_machine_for_rom(const char* rom_filepath, uint32_t* grab_ram_size, uint32_t gfx_size);
 

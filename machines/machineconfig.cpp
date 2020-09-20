@@ -50,11 +50,11 @@ bool check_ram_size(std::string machine_str, uint32_t number_to_check) {
         max_ram = PowerMacG3_Properties.find("maxram")->second.IntRep();
     }
 
-    if ((number_to_check > max_ram) || 
-        (number_to_check > max_ram) || 
+    if ((number_to_check > max_ram) ||
+        (number_to_check > max_ram) ||
         !(is_power_of_two(number_to_check))) {
         return false;
-    } 
+    }
     else {
         return true;
     }
@@ -86,14 +86,14 @@ void search_properties(std::string machine_str) {
     uint32_t gfx_type   = 0;
 
     if (machine_str.compare("PowerMacG3") == 0) {
-        cpu_str  = PowerMac6100_Properties.find("cputype")->second.getString();
+        cpu_str  = PowerMac6100_Properties.find("cputype")->second.get_string();
         cpu_type = get_cpu_type(cpu_str);
         ram_size = PowerMac6100_Properties.find("rambank1")->second.IntRep();
         gfx_size = PowerMac6100_Properties.find("gfxmem")->second.IntRep();
         gfx_type = PowerMac6100_Properties.find("gfxcard")->second.IntRep();
     }
     else if (machine_str.compare("PowerMac6100") == 0) {
-        cpu_str = PowerMacG3_Properties.find("cputype")->second.getString();
+        cpu_str = PowerMacG3_Properties.find("cputype")->second.get_string();
         cpu_type = get_cpu_type(cpu_str);
         ram_size = PowerMacG3_Properties.find("rambank1")->second.IntRep();
         gfx_size = PowerMacG3_Properties.find("gfxmem")->second.IntRep();
@@ -142,7 +142,7 @@ int establish_machine_presets(
         if (machine_str.compare("PowerMacG3") == 0) {
             create_gossamer(ram_sizes, gfx_mem);
         }
-    } 
+    }
     else {
         return -1;
     }

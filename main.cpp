@@ -32,6 +32,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <iostream>
 #include <sstream>
 #include <stdio.h>
+#include <CLI11.hpp>
 #include <thirdparty/SDL2/include/SDL.h>
 #include <thirdparty/loguru/loguru.hpp>
 
@@ -82,11 +83,88 @@ int main(int argc, char** argv) {
     bool machine_specified     = false;
     string machine_name        = "";
 
-    std::cout << "DingusPPC - Prototype 5bf5 (8/23/2020)       " << endl;
-    std::cout << "Written by divingkatae and maximumspatium    " << endl;
-    std::cout << "(c) 2018-2020 The DingusPPC Dev Team.        " << endl;
-    std::cout << "This is not intended for general use.        " << endl;
-    std::cout << "Use at your own discretion.                  " << endl;
+    CLI::App app("DingusPPC CLI");
+    app.allow_windows_style_options(); /* we want Windows-style options */
+    app.allow_extras();
+
+    cout << endl;
+    cout << "DingusPPC - Prototype 5bf5 (8/23/2020)       " << endl;
+    cout << "Written by divingkatae and maximumspatium    " << endl;
+    cout << "(c) 2018-2020 The DingusPPC Dev Team.        " << endl;
+    cout << "This is not intended for general use.        " << endl;
+    cout << "Use at your own discretion.                  " << endl;
+    cout << endl;
+
+    bool   realtime_enabled, debugger_enabled;
+    string machine_str;
+    string bootrom_path("bootrom.bin");
+
+    app.add_flag("-r,--realtime", realtime_enabled,
+        "Run the emulator in real-time");
+
+    app.add_flag("-d,--debugger", debugger_enabled,
+        "Enter the built-in debugger");
+
+    app.add_option("-b,--bootrom", bootrom_path, "Specifies BootROM path")
+        ->check(CLI::ExistingFile);
+
+    CLI::Option* machine_opt = app.add_option("-m,--machine",
+        machine_str, "Specify machine ID");
+
+    auto list_cmd = app.add_subcommand("machines",
+        "Display available machine configurations and exit");
+
+    CLI11_PARSE(app, argc, argv);
+
+    if (debugger_enabled) {
+        if (realtime_enabled)
+            cout << "Both realtime and debugger enabled! Using debugger" << endl;
+        execution_mode = 1;
+    }
+
+    /* initialize logging */
+    loguru::g_preamble_date    = false;
+    loguru::g_preamble_time    = false;
+    loguru::g_preamble_thread  = false;
+
+    if (execution_mode) {
+        loguru::g_stderr_verbosity = loguru::Verbosity_OFF;
+        loguru::init(argc, argv);
+        loguru::add_file("dingusppc.log", loguru::Append, 0);
+    } else {
+        loguru::g_stderr_verbosity = 0;
+        loguru::init(argc, argv);
+    }
+
+    if (*machine_opt) {
+        LOG_F(INFO, "Machine option was passed in: %s", machine_str.c_str());
+    } else {
+        machine_str = machine_name_from_rom(bootrom_path);
+        if (machine_str.empty()) {
+            LOG_F(ERROR, "Could not autodetect machine");
+            return 0;
+        }
+        LOG_F(INFO, "Machine was autodetected as: %s", machine_str.c_str());
+    }
+
+    /* handle overriding of machine settings from CLI */
+    map<string, string> settings;
+    get_machine_settings(machine_str, settings);
+
+    CLI::App sa;
+    sa.allow_extras();
+
+    for (auto& s : settings) {
+        sa.add_option("--" + s.first, s.second);
+    }
+    sa.parse(app.remaining_for_passthrough()); /* TODO: handle exceptions! */
+
+    set_machine_settings(settings);
+
+    cout << "BootROM path: " << bootrom_path << endl;
+    cout << "Execution mode: " << execution_mode << endl;
+
+    return 0;
 
     if (argc < 1) {
         display_help();
@@ -94,14 +172,14 @@ int main(int argc, char** argv) {
         return 0;
     }
     else {
-        
+
         std::string rom_file = "rom.bin", disk_file = "disk.img";
         int video_card_vendor = 0x1002, video_card_id = 0x4750;
 
         for (int arg_loop = 1; arg_loop < argc; arg_loop++) {
             string checker = argv[arg_loop];
             cout << checker << endl;
-            
+
             if ((checker == "realtime") || (checker == "-realtime") || (checker == "/realtime")) {
                 loguru::g_stderr_verbosity = loguru::Verbosity_OFF;
                 loguru::g_preamble_date    = false;
@@ -119,23 +197,23 @@ int main(int argc, char** argv) {
                 loguru::g_preamble_thread  = false;
                 loguru::init(argc, argv);
                 execution_mode = 1;
-            } 
+            }
             else if ((checker == "help") || (checker == "/help") || (checker == "-help")) {
                 display_help();
                 return 0;
-            }  
+            }
             else if ((checker == "pmg3") || (checker == "/pmg3") || (checker == "-pmg3")) {
                 machine_name = "PowerMacG3";
                 machine_specified = true;
-            } 
+            }
             else if ((checker == "pm6100") || (checker == "/pm6100") || (checker == "-pm6100")) {
                 machine_name      = "PowerMac6100";
                 machine_specified = true;
-            } 
+            }
             else if ((checker == "machinehelp") || (checker == "/machinehelp") || (checker == "-machinehelp")) {
                 machine_name      = "MachineHelp";
                 machine_specified = true;
-            }  
+            }
             else if ((checker == "ram") || (checker == "/ram") || (checker == "-ram")) {
                 arg_loop++;
                 string ram_banks   = argv[arg_loop];
@@ -143,7 +221,7 @@ int main(int argc, char** argv) {
                 for (int check_loop = 0; check_loop < ram_loop; check_loop++) {
                     sys_ram_size[check_loop] = stoi(argv[arg_loop]);
                 }
-            }  
+            }
             else if ((checker == "gfxmem") || (checker == "/gfxmem") || (checker == "-gfxmem")) {
                 arg_loop++;
                 string vram_amount = argv[arg_loop];
@@ -154,23 +232,23 @@ int main(int argc, char** argv) {
                 arg_loop++;
                 rom_file = argv[arg_loop];
                 LOG_F(INFO, "ROM FILE will now be: %s", rom_file.c_str());
-            } 
+            }
             else if ((checker == "diskimg") || (checker == "/diskimg") || (checker == "-diskimg")) {
                 arg_loop++;
                 rom_file = argv[arg_loop];
                 LOG_F(INFO, "Load the DISK IMAGE from: %s", rom_file.c_str());
-            } 
+            }
             else if ((checker == "videocard") || (checker == "/videocard") || (checker == "-videocard")) {
                 arg_loop++;
                 string check_card = argv[arg_loop];
                 if (checker.compare("RagePro") == 0) {
                     video_card_vendor = 0x1002;
                     video_card_id     = 0x4750;
-                } 
+                }
                 else if (checker.compare("Rage128") == 0) {
                     video_card_vendor = 0x1002;
                     video_card_id     = 0x5046;
-                } 
+                }
                 else if (checker.compare("Radeon7000") == 0) {
                     video_card_vendor = 0x1002;
                     video_card_id     = 0x5159;
@@ -185,16 +263,16 @@ int main(int argc, char** argv) {
                 if (establish_machine_presets(rom_file.c_str(), machine_name, sys_ram_size, gfx_mem)) {
                     goto bail;
                 }
-            } 
+            }
             else if (machine_name.compare("PowerMac6100") == 0) {
                 LOG_F(ERROR, "Board not yet ready for: %s", machine_name.c_str());
                 return -1;
-            } 
+            }
             else {
                 display_recognized_machines();
                 return -1;
             }
-        } 
+        }
         else {
             if (create_machine_for_rom(rom_file.c_str(), sys_ram_size, gfx_mem)) {
                 goto bail;
@@ -219,7 +297,7 @@ int main(int argc, char** argv) {
             LOG_F(ERROR, "Invalid EXECUTION MODE");
             return 1;
         }
-    } 
+    }
 
 bail:
     LOG_F(INFO, "Cleaning up...");

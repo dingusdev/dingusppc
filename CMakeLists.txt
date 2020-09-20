@@ -35,6 +35,8 @@ set(BUILD_TOOLS OFF CACHE BOOL "Build Cubeb tools")
 
 add_subdirectory(thirdparty/cubeb EXCLUDE_FROM_ALL)
 
+set(CLI11_ROOT ${PROJECT_SOURCE_DIR}/thirdparty/CLI11)
+
 include_directories("${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/devices"
                     "${PROJECT_SOURCE_DIR}/cpu/ppc"
                     "${PROJECT_SOURCE_DIR}/debugger"
@@ -65,6 +67,7 @@ target_link_libraries(dingusppc "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/S
 else()
 #target_link_libraries(dingusppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
 target_link_libraries(dingusppc cubeb ${SDL2_LIBRARIES} ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+target_include_directories(dingusppc PRIVATE ${CLI11_ROOT})
 endif()
 
 
