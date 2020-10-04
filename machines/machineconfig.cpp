@@ -45,13 +45,18 @@ bool check_ram_size(std::string machine_str, uint32_t number_to_check) {
     uint32_t min_ram = 8;
     uint32_t max_ram = 16;
 
-    if (machine_str.compare("PowerMacG3") == 0) {
+    if (machine_str.compare("pmg3") == 0) {
         min_ram = PowerMacG3_Properties.find("minram")->second.IntRep();
         max_ram = PowerMacG3_Properties.find("maxram")->second.IntRep();
     }
 
+    if (number_to_check == 0) {
+        LOG_F(WARNING, "EMPTY RAM BANK ERROR - size %d", number_to_check);
+        return true;
+    }
+
     if ((number_to_check > max_ram) ||
-        (number_to_check > max_ram) ||
+        (number_to_check < min_ram) ||
         !(is_power_of_two(number_to_check))) {
         return false;
     }
@@ -71,6 +76,7 @@ bool loop_ram_check(std::string machine_str, uint32_t* ram_sizes) {
         }
         if (check_ram_size(machine_str, ram_sizes[checking_stage_one]) == false) {
             LOG_F(ERROR, "RAM BANK ERROR with RAM BANK %d", checking_stage_one);
+            cout << machine_str << endl;
             return false;
         }
     }
@@ -103,10 +109,6 @@ void search_properties(std::string machine_str) {
         std::cerr << "Unable to find congifuration for " << machine_str << std::endl;
     }
 
-
-    uint16_t gfx_ven = gfx_type >> 16;
-    uint16_t gfx_dev = gfx_type & 0xFFFF;
-
     std::cout << "CPU  TYPE: 0x" << std::hex << cpu_type << std::endl;
     std::cout << "RAM  SIZE: " << std::dec << ram_size << std::endl;
     std::cout << "GMEM SIZE: " << std::dec << gfx_size << std::endl;
@@ -128,6 +130,7 @@ int establish_machine_presets(
         return -1;
     }
 
+
     rom_file.seekg(0, rom_file.end);
     file_size = rom_file.tellg();
     rom_file.seekg(0, rom_file.beg);
@@ -139,7 +142,7 @@ int establish_machine_presets(
     }
 
     if (loop_ram_check(machine_str, ram_sizes) == true) {
-        if (machine_str.compare("PowerMacG3") == 0) {
+        if (machine_str.compare("pmg3") == 0) {
             create_gossamer(ram_sizes, gfx_mem);
         }
     }

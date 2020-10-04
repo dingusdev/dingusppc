@@ -6,7 +6,7 @@ static std::map<std::string, StrProperty> PowerMac6100_Properties = {
     {"cputype",      StrProperty("PPC_MPC750")},
     {"motherboard",  StrProperty("Grackle")},
     {"ioboard",      StrProperty("Heathrow")},
-    {"rambank1",     StrProperty("64")},
+    {"rambank1",     StrProperty("8")},
     {"minram",       StrProperty("32")},
     {"maxram",       StrProperty("256")},
     {"gfxcard",      StrProperty("Nubus_Video")},

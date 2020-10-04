@@ -80,7 +80,6 @@ int main(int argc, char** argv) {
     uint32_t execution_mode    = 0;
     uint32_t sys_ram_size[12]  = {64, 0, 0, 0};
     uint32_t gfx_mem           = 2;
-    bool machine_specified     = false;
     string machine_name        = "";
 
     CLI::App app("DingusPPC CLI");
@@ -138,13 +137,26 @@ int main(int argc, char** argv) {
 
     if (*machine_opt) {
         LOG_F(INFO, "Machine option was passed in: %s", machine_str.c_str());
+        create_machine_for_rom(bootrom_path.c_str(), sys_ram_size, gfx_mem);
     } else {
         machine_str = machine_name_from_rom(bootrom_path);
         if (machine_str.empty()) {
             LOG_F(ERROR, "Could not autodetect machine");
             return 0;
+        } 
+        else {
+            LOG_F(INFO, "Machine was autodetected as: %s", machine_str.c_str());
+            if (machine_str.compare("pmg3") == 0) {
+                LOG_F(INFO, "Time to build up a machine");
+                establish_machine_presets(bootrom_path.c_str(), machine_str, sys_ram_size, gfx_mem);
+            } else if (machine_str.compare("pm6100") == 0) {
+                LOG_F(ERROR, "Board not yet ready for: %s", machine_str.c_str());
+                return -1;
+            } else {
+                cout << "Unable to define machine: " << machine_str << endl;
+                return -1;
+            }
         }
-        LOG_F(INFO, "Machine was autodetected as: %s", machine_str.c_str());
     }
 
     /* handle overriding of machine settings from CLI */
@@ -164,145 +176,33 @@ int main(int argc, char** argv) {
     cout << "BootROM path: " << bootrom_path << endl;
     cout << "Execution mode: " << execution_mode << endl;
 
-    return 0;
-
-    if (argc < 1) {
-        display_help();
-
-        return 0;
-    }
-    else {
-
-        std::string rom_file = "rom.bin", disk_file = "disk.img";
-        int video_card_vendor = 0x1002, video_card_id = 0x4750;
-
-        for (int arg_loop = 1; arg_loop < argc; arg_loop++) {
-            string checker = argv[arg_loop];
-            cout << checker << endl;
-
-            if ((checker == "realtime") || (checker == "-realtime") || (checker == "/realtime")) {
-                loguru::g_stderr_verbosity = loguru::Verbosity_OFF;
-                loguru::g_preamble_date    = false;
-                loguru::g_preamble_time    = false;
-                loguru::g_preamble_thread  = false;
-                loguru::init(argc, argv);
-                loguru::add_file("dingusppc.log", loguru::Append, 0);
-                // Replace the above line with this for maximum debugging detail:
-                // loguru::add_file("dingusppc.log", loguru::Append, loguru::Verbosity_MAX);
-                execution_mode = 0;
-            } else if ((checker == "debugger") || (checker == "/debugger") || (checker == "-debugger")) {
-                loguru::g_stderr_verbosity = 0;
-                loguru::g_preamble_date    = false;
-                loguru::g_preamble_time    = false;
-                loguru::g_preamble_thread  = false;
-                loguru::init(argc, argv);
-                execution_mode = 1;
-            }
-            else if ((checker == "help") || (checker == "/help") || (checker == "-help")) {
-                display_help();
-                return 0;
-            }
-            else if ((checker == "pmg3") || (checker == "/pmg3") || (checker == "-pmg3")) {
-                machine_name = "PowerMacG3";
-                machine_specified = true;
-            }
-            else if ((checker == "pm6100") || (checker == "/pm6100") || (checker == "-pm6100")) {
-                machine_name      = "PowerMac6100";
-                machine_specified = true;
-            }
-            else if ((checker == "machinehelp") || (checker == "/machinehelp") || (checker == "-machinehelp")) {
-                machine_name      = "MachineHelp";
-                machine_specified = true;
-            }
-            else if ((checker == "ram") || (checker == "/ram") || (checker == "-ram")) {
-                arg_loop++;
-                string ram_banks   = argv[arg_loop];
-                uint32_t ram_loop  = stoi(ram_banks);
-                for (int check_loop = 0; check_loop < ram_loop; check_loop++) {
-                    sys_ram_size[check_loop] = stoi(argv[arg_loop]);
-                }
-            }
-            else if ((checker == "gfxmem") || (checker == "/gfxmem") || (checker == "-gfxmem")) {
-                arg_loop++;
-                string vram_amount = argv[arg_loop];
-                gfx_mem            = stoi(vram_amount);
-                LOG_F(INFO, "GFX MEMORY set to: %d", gfx_mem);
-            }
-            else if ((checker == "romfile") || (checker == "/romfile") || (checker == "-romfile")) {
-                arg_loop++;
-                rom_file = argv[arg_loop];
-                LOG_F(INFO, "ROM FILE will now be: %s", rom_file.c_str());
-            }
-            else if ((checker == "diskimg") || (checker == "/diskimg") || (checker == "-diskimg")) {
-                arg_loop++;
-                rom_file = argv[arg_loop];
-                LOG_F(INFO, "Load the DISK IMAGE from: %s", rom_file.c_str());
-            }
-            else if ((checker == "videocard") || (checker == "/videocard") || (checker == "-videocard")) {
-                arg_loop++;
-                string check_card = argv[arg_loop];
-                if (checker.compare("RagePro") == 0) {
-                    video_card_vendor = 0x1002;
-                    video_card_id     = 0x4750;
-                }
-                else if (checker.compare("Rage128") == 0) {
-                    video_card_vendor = 0x1002;
-                    video_card_id     = 0x5046;
-                }
-                else if (checker.compare("Radeon7000") == 0) {
-                    video_card_vendor = 0x1002;
-                    video_card_id     = 0x5159;
-                }
-            }
-
-        }
-
-        if (machine_specified) {
-            if (machine_name.compare("PowerMacG3") == 0) {
-                LOG_F(INFO, "Time to build up a machine");
-                if (establish_machine_presets(rom_file.c_str(), machine_name, sys_ram_size, gfx_mem)) {
-                    goto bail;
-                }
-            }
-            else if (machine_name.compare("PowerMac6100") == 0) {
-                LOG_F(ERROR, "Board not yet ready for: %s", machine_name.c_str());
-                return -1;
-            }
-            else {
-                display_recognized_machines();
-                return -1;
-            }
-        }
-        else {
-            if (create_machine_for_rom(rom_file.c_str(), sys_ram_size, gfx_mem)) {
-                goto bail;
-            }
-        }
-
 #ifdef SDL
         if (SDL_Init(SDL_INIT_AUDIO)){
             LOG_F(ERROR, "SDL_Init error: %s", SDL_GetError());
-            goto bail;
+            return 0;
         }
 #endif
-
-        switch (execution_mode) {
+    
+    switch (execution_mode) {
         case 0:
-            ppc_exec();
+            for (;;) {
+                ppc_exec();
+            }
             break;
         case 1:
             enter_debugger();
             break;
         default:
             LOG_F(ERROR, "Invalid EXECUTION MODE");
-            return 1;
-        }
+            return 0;
     }
-
-bail:
+    
+    /*
+    bail:
     LOG_F(INFO, "Cleaning up...");
 
     delete gMachineObj.release();
 
     return 0;
+    */
 }
