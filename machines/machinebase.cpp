@@ -1,11 +1,11 @@
 #include "machinebase.h"
 #include "devices/hwcomponent.h"
+#include <map>
 #include <memory>
 #include <string>
 #include <thirdparty/loguru/loguru.hpp>
 
 std::unique_ptr<MachineBase> gMachineObj = 0;
-
 
 MachineBase::MachineBase(std::string name) {
     this->name = name;

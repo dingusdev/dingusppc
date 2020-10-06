@@ -143,7 +143,7 @@ int establish_machine_presets(
 
     if (loop_ram_check(machine_str, ram_sizes) == true) {
         if (machine_str.compare("pmg3") == 0) {
-            create_gossamer(ram_sizes, gfx_mem);
+            create_gossamer();
         }
     }
     else {

@@ -38,23 +38,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace std;
 
-void display_help() {
-    std::cout << "                                                   " << endl;
-    std::cout << "To interact with DingusPPC, please refer to the    " << endl;
-    std::cout << "following command line reference guide:            " << endl;
-    std::cout << "___________________________________________________" << endl;
-    std::cout << "| COMMAND  | FUNCTION                             |" << endl;
-    std::cout << "___________________________________________________" << endl;
-    std::cout << " realtime  | Run the emulator in real-time         " << endl;
-    std::cout << " debugger  | Enter the interactive debugger        " << endl;
-    std::cout << " ram       | Specify the number of RAM banks,      " << endl;
-    std::cout << "           | followed by how much each bank holds  " << endl;
-    std::cout << " videocard | Specify the video card to emulate     " << endl;
-    std::cout << " gfxmem    | Specify the how much memory           " << endl;
-    std::cout << "           | to allocate to the emulated video card" << endl;
-    std::cout << " romfile   | Insert the ROM file to use            " << endl;
-    std::cout << "                                                   " << endl;
-}
+static string appDescription = string(
+    "\nDingusPPC - Prototype 5bf5 (8/23/2020)       "
+    "\nWritten by divingkatae and maximumspatium    "
+    "\n(c) 2018-2020 The DingusPPC Dev Team.        "
+    "\nThis is not intended for general use.        "
+    "\nUse at your own discretion.                  "
+    "\n"
+);
 
 void display_recognized_machines() {
     std::cout << "                                                   " << endl;
@@ -77,22 +68,11 @@ int main(int argc, char** argv) {
     The rest will be decided later
     */
 
-    uint32_t execution_mode    = 0;
-    uint32_t sys_ram_size[12]  = {64, 0, 0, 0};
-    uint32_t gfx_mem           = 2;
-    string machine_name        = "";
+    uint32_t execution_mode = 0;
 
-    CLI::App app("DingusPPC CLI");
+    CLI::App app(appDescription);
     app.allow_windows_style_options(); /* we want Windows-style options */
     app.allow_extras();
-
-    cout << endl;
-    cout << "DingusPPC - Prototype 5bf5 (8/23/2020)       " << endl;
-    cout << "Written by divingkatae and maximumspatium    " << endl;
-    cout << "(c) 2018-2020 The DingusPPC Dev Team.        " << endl;
-    cout << "This is not intended for general use.        " << endl;
-    cout << "Use at your own discretion.                  " << endl;
-    cout << endl;
 
     bool   realtime_enabled, debugger_enabled;
     string machine_str;
@@ -110,10 +90,19 @@ int main(int argc, char** argv) {
     CLI::Option* machine_opt = app.add_option("-m,--machine",
         machine_str, "Specify machine ID");
 
-    auto list_cmd = app.add_subcommand("machines",
+    auto list_cmd = app.add_subcommand("list",
         "Display available machine configurations and exit");
 
+    string sub_arg;
+
+    list_cmd->add_option("machines", sub_arg, "List supported machines");
+    list_cmd->add_option("properties", sub_arg, "List available properties");
+
     CLI11_PARSE(app, argc, argv);
+
+    if (*list_cmd) {
+        std::cout << "Got: " << sub_arg << std::endl;
+    }
 
     if (debugger_enabled) {
         if (realtime_enabled)
@@ -126,7 +115,7 @@ int main(int argc, char** argv) {
     loguru::g_preamble_time    = false;
     loguru::g_preamble_thread  = false;
 
-    if (execution_mode) {
+    if (!execution_mode) {
         loguru::g_stderr_verbosity = loguru::Verbosity_OFF;
         loguru::init(argc, argv);
         loguru::add_file("dingusppc.log", loguru::Append, 0);
@@ -137,31 +126,22 @@ int main(int argc, char** argv) {
 
     if (*machine_opt) {
         LOG_F(INFO, "Machine option was passed in: %s", machine_str.c_str());
-        create_machine_for_rom(bootrom_path.c_str(), sys_ram_size, gfx_mem);
     } else {
         machine_str = machine_name_from_rom(bootrom_path);
         if (machine_str.empty()) {
             LOG_F(ERROR, "Could not autodetect machine");
             return 0;
-        } 
+        }
         else {
             LOG_F(INFO, "Machine was autodetected as: %s", machine_str.c_str());
-            if (machine_str.compare("pmg3") == 0) {
-                LOG_F(INFO, "Time to build up a machine");
-                establish_machine_presets(bootrom_path.c_str(), machine_str, sys_ram_size, gfx_mem);
-            } else if (machine_str.compare("pm6100") == 0) {
-                LOG_F(ERROR, "Board not yet ready for: %s", machine_str.c_str());
-                return -1;
-            } else {
-                cout << "Unable to define machine: " << machine_str << endl;
-                return -1;
-            }
         }
     }
 
-    /* handle overriding of machine settings from CLI */
+    /* handle overriding of machine settings from command line */
     map<string, string> settings;
-    get_machine_settings(machine_str, settings);
+    if (get_machine_settings(machine_str, settings) < 0) {
+        return 0;
+    }
 
     CLI::App sa;
     sa.allow_extras();
@@ -176,13 +156,17 @@ int main(int argc, char** argv) {
     cout << "BootROM path: " << bootrom_path << endl;
     cout << "Execution mode: " << execution_mode << endl;
 
+    if (create_machine_for_id(machine_str, bootrom_path) < 0) {
+        goto bail;
+    }
+
 #ifdef SDL
         if (SDL_Init(SDL_INIT_AUDIO)){
             LOG_F(ERROR, "SDL_Init error: %s", SDL_GetError());
             return 0;
         }
 #endif
-    
+
     switch (execution_mode) {
         case 0:
             for (;;) {
@@ -196,13 +180,11 @@ int main(int argc, char** argv) {
             LOG_F(ERROR, "Invalid EXECUTION MODE");
             return 0;
     }
-    
-    /*
-    bail:
+
+bail:
     LOG_F(INFO, "Cleaning up...");
 
     delete gMachineObj.release();
 
     return 0;
-    */
 }

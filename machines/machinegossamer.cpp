@@ -51,7 +51,7 @@ static void setup_ram_slot(std::string name, int i2c_addr, int capacity_megs) {
 }
 
 
-int create_gossamer(uint32_t* grab_ram_size, uint32_t gfx_size) {
+int create_gossamer() {
     if (gMachineObj) {
         LOG_F(ERROR, "Global machine object not empty!");
         return -1;
@@ -88,12 +88,13 @@ int create_gossamer(uint32_t* grab_ram_size, uint32_t gfx_size) {
     }
 
     /* configure RAM slots */
-    setup_ram_slot("RAM_DIMM_1", 0x57, grab_ram_size[0]); /* RAM slot 1 ->  64MB by default */
-    setup_ram_slot("RAM_DIMM_2", 0x56, grab_ram_size[1]); /* RAM slot 2 -> empty by default */
-    setup_ram_slot("RAM_DIMM_3", 0x55, grab_ram_size[2]); /* RAM slot 3 -> empty by default */
+    setup_ram_slot("RAM_DIMM_1", 0x57,  GET_INT_PROP("rambank1_size"));
+    setup_ram_slot("RAM_DIMM_2", 0x56,  GET_INT_PROP("rambank2_size"));
+    setup_ram_slot("RAM_DIMM_3", 0x55,  GET_INT_PROP("rambank3_size"));
 
     /* register ATI 3D Rage Pro video card with the PCI host bridge */
-    gMachineObj->add_component("ATIRage", new ATIRage(ATI_RAGE_PRO_DEV_ID, gfx_size));
+    gMachineObj->add_component("ATIRage",
+        new ATIRage(ATI_RAGE_PRO_DEV_ID, GET_INT_PROP("gfxmem_size")));
     grackle_obj->pci_register_device(
         18, dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("ATIRage")));
 

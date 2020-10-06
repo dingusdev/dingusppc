@@ -37,11 +37,13 @@ std::string machine_name_from_rom(std::string& rom_filepath);
 
 void load_rom(std::ifstream& rom_file, uint32_t file_size);
 
-int get_machine_settings(string& id, map<string, string> &settings);
+int  get_machine_settings(string& id, map<string, string> &settings);
 void set_machine_settings(map<string, string> &settings);
+int  create_machine_for_id(string& id, string& rom_filepath);
 
 int create_machine_for_rom(const char* rom_filepath, uint32_t* grab_ram_size, uint32_t gfx_size);
 
-int create_gossamer(uint32_t* grab_ram_size, uint32_t gfx_size);
+/* Machine-specific factory functions. */
+int create_gossamer(void);
 
 #endif /* MACHINE_FACTORY_H */

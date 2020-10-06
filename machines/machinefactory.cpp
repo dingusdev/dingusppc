@@ -33,9 +33,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <thirdparty/loguru/loguru.hpp>
 
 using namespace std;
+
+map<string, unique_ptr<BasicProperty>> gMachineSettings;
 
 /**
     Power Macintosh ROM identification map.
@@ -60,17 +63,15 @@ static const map<uint32_t, std::tuple<string, const char*>> rom_identity = {
     {0x5A616E7A, {"pm4400",   "Power Mac 4400/7220"}},         // Zanzibar
 };
 
-typedef std::map<std::string, StrProperty> Settings;
-
-static const Settings GossamerSettings = {
-    {"rambank1_size", StrProperty("256MB")},
-    {"rambank2_size", StrProperty("0")    },
-    {"rambank3_size", StrProperty("0")    },
-    {"gfxmem_size",   StrProperty("2MB")  }
+static const PropMap GossamerSettings = {
+    {"rambank1_size", new IntProperty("256")},
+    {"rambank2_size", new IntProperty("0")  },
+    {"rambank3_size", new IntProperty("0")  },
+    {"gfxmem_size",   new IntProperty("2")  }
 };
 
-static const map<string, Settings> machines = {
-    {"pmg3", GossamerSettings}
+static const map<string, tuple<PropMap, function<int(void)>>> machines = {
+    {"pmg3", {GossamerSettings, create_gossamer}},
 };
 
 string machine_name_from_rom(string& rom_filepath) {
@@ -131,10 +132,15 @@ bail_out:
 
 int get_machine_settings(string& id, map<string, string> &settings) {
     try {
-        Settings props = machines.at(id);
+        auto props = get<0>(machines.at(id));
+
+        gMachineSettings.clear();
 
         for (auto& p : props) {
-            settings[p.first] = p.second.get_string();
+            settings[p.first] = p.second->get_string();
+
+            /* populate dynamic machine settings from presets  */
+            gMachineSettings[p.first] = unique_ptr<BasicProperty>(p.second->clone());
         }
     }
     catch(out_of_range ex) {
@@ -146,14 +152,21 @@ int get_machine_settings(string& id, map<string, string> &settings) {
 
 void set_machine_settings(map<string, string> &settings) {
     for (auto& s : settings) {
-        cout << s.first << " : " << s.second << endl;
+        gMachineSettings.at(s.first)->set_string(s.second);
+    }
+
+    /* print machine settings summary */
+    cout << endl << "Machine settings summary: " << endl;
+
+    for (auto& p : gMachineSettings) {
+        cout << p.first << " : " << p.second->get_string() << endl;
     }
 }
 
 int create_machine_for_id(uint32_t id, uint32_t* grab_ram_size, uint32_t gfx_size) {
     switch (id) {
     case 0x476F7373:
-        create_gossamer(grab_ram_size, gfx_size);
+        create_gossamer();
         break;
     default:
         LOG_F(ERROR, "Unknown machine ID: %X", id);
@@ -161,7 +174,6 @@ int create_machine_for_id(uint32_t id, uint32_t* grab_ram_size, uint32_t gfx_siz
     }
     return 0;
 }
-
 
 /* Read ROM file content and transfer it to the dedicated ROM region */
 void load_rom(std::ifstream& rom_file, uint32_t file_size) {
@@ -175,6 +187,63 @@ void load_rom(std::ifstream& rom_file, uint32_t file_size) {
 
     mem_ctrl->set_data(0xFFC00000, sysrom_mem, file_size);
     delete[] sysrom_mem;
+}
+
+/* Read ROM file content and transfer it to the dedicated ROM region */
+int load_boot_rom(string& rom_filepath) {
+    ifstream rom_file;
+    size_t   file_size;
+    int      result;
+
+    rom_file.open(rom_filepath, ios::in | ios::binary);
+    if (rom_file.fail()) {
+        LOG_F(ERROR, "Cound not open the specified ROM file.");
+        rom_file.close();
+        return -1;
+    }
+
+    rom_file.seekg(0, rom_file.end);
+    file_size = rom_file.tellg();
+    rom_file.seekg(0, rom_file.beg);
+
+    if (file_size != 0x400000UL) {
+        LOG_F(ERROR, "Unxpected ROM File size. Expected size is 4 megabytes.");
+        result = -1;
+    } else {
+        unsigned char* sysrom_mem = new unsigned char[file_size];
+
+        rom_file.seekg(0, ios::beg);
+        rom_file.read((char*)sysrom_mem, file_size);
+
+        MemCtrlBase* mem_ctrl = dynamic_cast<MemCtrlBase*>(
+            gMachineObj->get_comp_by_type(HWCompType::MEM_CTRL));
+
+        mem_ctrl->set_data(0xFFC00000, sysrom_mem, file_size);
+        delete[] sysrom_mem;
+
+        result = 0;
+    }
+
+    rom_file.close();
+
+    return result;
+}
+
+
+int create_machine_for_id(string& id, string& rom_filepath) {
+    try {
+        auto machine = machines.at(id);
+
+        /* build machine and load boot ROM */
+        if (get<1>(machine)() < 0 || load_boot_rom(rom_filepath) < 0) {
+            return -1;
+        }
+    } catch(out_of_range ex) {
+        LOG_F(ERROR, "Unknown machine id %s", id.c_str());
+        return -1;
+    }
+
+    return 0;
 }
 
 
@@ -221,9 +290,11 @@ int create_machine_for_rom(const char* rom_filepath, uint32_t* grab_ram_size, ui
     }
 
     /* convert BootstrapVersion string to ROM ID */
-    rom_id = (rom_id_str[5] << 24) | (rom_id_str[6] << 16) | (rom_id_str[7] << 8) | rom_id_str[8];
+    rom_id = (rom_id_str[5] << 24) | (rom_id_str[6] << 16) |
+             (rom_id_str[7] <<  8) | rom_id_str[8];
 
-    LOG_F(INFO, "The machine is identified as... %s\n", std::get<1>(rom_identity.at(rom_id)));
+    LOG_F(INFO, "The machine is identified as... %s\n",
+        std::get<1>(rom_identity.at(rom_id)));
 
     create_machine_for_id(rom_id, grab_ram_size, gfx_size);
 
