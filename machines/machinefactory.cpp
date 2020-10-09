@@ -73,7 +73,7 @@ static const PropMap GossamerSettings = {
     {"rambank3_size",
         new IntProperty(  0, vector<uint32_t>({0, 8, 16, 64, 128, 256}))},
     {"gfxmem_size",
-        new IntProperty(  2, vector<uint32_t>({2, 4}))},
+        new IntProperty(  2, vector<uint32_t>({2, 4, 6}))},
 };
 
 static const map<string, tuple<PropMap, function<int(void)>>> machines = {

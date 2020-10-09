@@ -113,6 +113,7 @@ public:
             /* perform value check */
             if (!this->check_val(result)) {
                 LOG_F(ERROR, "Invalid property value %d!", result);
+                this->set_string(to_string(this->int_val));
             } else {
                 this->int_val = result;
             }
