@@ -4,8 +4,8 @@
 #include <string>
 #include <map>
 #include <memory>
-#include <iostream>
 #include <utility>
+#include <vector>
 
 #ifndef MACHINE_PROPERTIES_H
 #define MACHINE_PROPERTIES_H
@@ -21,6 +21,14 @@ enum PropType : int {
     PROP_TYPE_INTEGER   = 2,
 };
 
+/** Check types for property values. */
+enum CheckType : int {
+    CHECK_TYPE_NONE     = 0,
+    CHECK_TYPE_RANGE    = 1,
+    CHECK_TYPE_CHOICE   = 2,
+};
+
+/** Abstract base class for properties. */
 class BasicProperty {
 public:
     BasicProperty(PropType type, string val) {
@@ -30,6 +38,7 @@ public:
 
     virtual ~BasicProperty() = default;
 
+    /* Clone method for copying derived property objects. */
     virtual BasicProperty* clone() const = 0;
 
     string get_string() {
@@ -50,42 +59,49 @@ protected:
 };
 
 
+/** Property class that holds a string value. */
 class StrProperty : public BasicProperty {
 public:
     StrProperty(string str)
         : BasicProperty(PROP_TYPE_STRING, str) {}
 
     BasicProperty* clone() const { return new StrProperty(*this); }
-
-    uint32_t IntRep() {
-        try {
-            return strtoul(get_string().c_str(), 0, 0);
-        } catch (string bad_string) {
-            cerr << "Could not convert string " << bad_string << "to an ineteger!" << endl;
-
-            return ILLEGAL_DEVICE_VALUE;
-        }
-    }
 };
 
+/** Property class that holds an integer value. */
 class IntProperty : public BasicProperty {
 public:
-    IntProperty(string str)
-        : BasicProperty(PROP_TYPE_INTEGER, str)
+    /* construct an integer property without value check. */
+    IntProperty(uint32_t val)
+        : BasicProperty(PROP_TYPE_INTEGER, to_string(val))
     {
-        this->int_val   = 0;
-        this->min       = std::numeric_limits<uint32_t>::min();
-        this->max       = std::numeric_limits<uint32_t>::max();
+        this->int_val    = val;
+        this->min        = std::numeric_limits<uint32_t>::min();
+        this->max        = std::numeric_limits<uint32_t>::max();
+        this->check_type = CHECK_TYPE_NONE;
+        this->vec.clear();
     }
 
-    IntProperty(string str, uint32_t min, uint32_t max)
-        : BasicProperty(PROP_TYPE_INTEGER, str)
+    /* construct an integer property with a predefined range. */
+    IntProperty(uint32_t val, uint32_t min, uint32_t max)
+        : BasicProperty(PROP_TYPE_INTEGER, to_string(val))
     {
-        this->int_val   = 0;
-        this->min       = min;
-        this->max       = max;
+        this->int_val    = val;
+        this->min        = min;
+        this->max        = max;
+        this->check_type = CHECK_TYPE_RANGE;
+        this->vec.clear();
+    }
 
-        this->int_val = this->get_int();
+    /* construct an integer property with a list of valid values. */
+    IntProperty(uint32_t val, vector<uint32_t> vec)
+        : BasicProperty(PROP_TYPE_INTEGER, to_string(val))
+    {
+        this->int_val    = val;
+        this->min        = std::numeric_limits<uint32_t>::min();
+        this->max        = std::numeric_limits<uint32_t>::max();
+        this->check_type = CHECK_TYPE_CHOICE;
+        this->vec = vec;
     }
 
     BasicProperty* clone() const { return new IntProperty(*this); }
@@ -94,9 +110,9 @@ public:
         try {
             uint32_t result = strtoul(this->get_string().c_str(), 0, 0);
 
-            /* perform range check */
-            if (result < this->min || result > this->max) {
-                LOG_F(ERROR, "Value %d out of range!", result);
+            /* perform value check */
+            if (!this->check_val(result)) {
+                LOG_F(ERROR, "Invalid property value %d!", result);
             } else {
                 this->int_val = result;
             }
@@ -107,15 +123,41 @@ public:
         return this->int_val;
     }
 
+protected:
+    bool check_val(uint32_t val) {
+        switch (this->check_type) {
+        case CHECK_TYPE_RANGE:
+            if (val < this->min || val > this->max)
+                return false;
+            else
+                return true;
+        case CHECK_TYPE_CHOICE:
+            if (find(this->vec.begin(), this->vec.end(), val) != this->vec.end())
+                return true;
+            else
+                return false;
+        default:
+            return true;
+        }
+    }
+
 private:
-    uint32_t    int_val;
-    uint32_t    min;
-    uint32_t    max;
+    uint32_t            int_val;
+    CheckType           check_type;
+    uint32_t            min;
+    uint32_t            max;
+    vector<uint32_t>    vec;
 };
 
+/** Special map type for specifying machine presets. */
 typedef map<string, BasicProperty*> PropMap;
 
+/** Global map that holds settings for the running machine. */
 extern map<string, unique_ptr<BasicProperty>> gMachineSettings;
+
+/** Conveniency macros to hide complex casts. */
+#define GET_STR_PROP(name) \
+    dynamic_cast<StrProperty*>(gMachineSettings.at(name).get())->get_string()
 
 #define GET_INT_PROP(name) \
     dynamic_cast<IntProperty*>(gMachineSettings.at(name).get())->get_int()

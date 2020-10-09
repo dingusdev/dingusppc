@@ -35,6 +35,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <iostream>
 #include <map>
 #include <memory>
+#include <vector>
 #include <thirdparty/loguru/loguru.hpp>
 
 using namespace std;
@@ -65,10 +66,14 @@ static const map<uint32_t, std::tuple<string, const char*>> rom_identity = {
 };
 
 static const PropMap GossamerSettings = {
-    {"rambank1_size", new IntProperty("256")},
-    {"rambank2_size", new IntProperty("0")  },
-    {"rambank3_size", new IntProperty("0")  },
-    {"gfxmem_size",   new IntProperty("2")  }
+    {"rambank1_size",
+        new IntProperty(256, vector<uint32_t>({8, 16, 64, 128, 256}))},
+    {"rambank2_size",
+        new IntProperty(  0, vector<uint32_t>({0, 8, 16, 64, 128, 256}))},
+    {"rambank3_size",
+        new IntProperty(  0, vector<uint32_t>({0, 8, 16, 64, 128, 256}))},
+    {"gfxmem_size",
+        new IntProperty(  2, vector<uint32_t>({2, 4}))},
 };
 
 static const map<string, tuple<PropMap, function<int(void)>>> machines = {
