@@ -120,10 +120,4 @@ extern map<string, unique_ptr<BasicProperty>> gMachineSettings;
 #define GET_INT_PROP(name) \
     dynamic_cast<IntProperty*>(gMachineSettings.at(name).get())->get_int()
 
-uint32_t get_gfx_card(std::string gfx_str);
-uint32_t get_cpu_type(std::string cpu_str);
-void search_properties(uint32_t chosen_gestalt);
-int establish_machine_presets(
-    const char* rom_filepath, std::string machine_str, uint32_t* ram_sizes, uint32_t gfx_mem);
-
 #endif /* MACHINE_PROPERTIES_H */
