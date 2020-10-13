@@ -38,6 +38,8 @@ std::string machine_name_from_rom(std::string& rom_filepath);
 int  get_machine_settings(string& id, map<string, string> &settings);
 void set_machine_settings(map<string, string> &settings);
 int  create_machine_for_id(string& id, string& rom_filepath);
+void list_machines(void);
+void list_properties(void);
 
 /* Machine-specific factory functions. */
 int create_gossamer(void);

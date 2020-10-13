@@ -101,7 +101,14 @@ int main(int argc, char** argv) {
     CLI11_PARSE(app, argc, argv);
 
     if (*list_cmd) {
-        std::cout << "Got: " << sub_arg << std::endl;
+        if (sub_arg == "machines") {
+            list_machines();
+        } else if (sub_arg == "properties") {
+            list_properties();
+        } else {
+            cout << "Unknown list subcommand " << sub_arg << endl;
+        }
+        return 0;
     }
 
     if (debugger_enabled) {

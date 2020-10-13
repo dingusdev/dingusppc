@@ -76,8 +76,15 @@ static const PropMap GossamerSettings = {
         new IntProperty(  2, vector<uint32_t>({2, 4, 6}))},
 };
 
-static const map<string, tuple<PropMap, function<int(void)>>> machines = {
-    {"pmg3", {GossamerSettings, create_gossamer}},
+static const map<string, string> PropHelp = {
+    {"rambank1_size",   "specifies RAM bank 1 size in MB"},
+    {"rambank2_size",   "specifies RAM bank 2 size in MB"},
+    {"rambank3_size",   "specifies RAM bank 3 size in MB"},
+    {"gfxmem_size",     "specifies video memory size in MB"},
+};
+
+static const map<string, tuple<PropMap, function<int(void)>, string>> machines = {
+    {"pmg3", {GossamerSettings, create_gossamer, "PowerMacintosh G3 (Beige)"}},
 };
 
 string machine_name_from_rom(string& rom_filepath) {
@@ -167,6 +174,30 @@ void set_machine_settings(map<string, string> &settings) {
     for (auto& p : gMachineSettings) {
         cout << p.first << " : " << p.second->get_string() << endl;
     }
+}
+
+void list_machines() {
+    cout << endl << "Supported machines:" << endl << endl;
+
+    for (auto& mach : machines) {
+        cout << mach.first << "\t\t" << get<2>(mach.second) << endl;
+    }
+
+    cout << endl;
+}
+
+void list_properties() {
+    cout << endl;
+
+    for (auto& mach : machines) {
+        cout << get<2>(mach.second) << " properties:" << endl << endl;
+
+        for (auto& p : get<0>(mach.second)) {
+            cout << p.first << "\t\t" << PropHelp.at(p.first) << endl << endl;
+        }
+    }
+
+    cout << endl;
 }
 
 /* Read ROM file content and transfer it to the dedicated ROM region */
