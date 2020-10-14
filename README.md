@@ -8,8 +8,7 @@ Be warned the program is highly unfinished and could use a lot of testing. Any f
 
 While many other PowerPC emus exist (PearPC, Sheepshaver), none of them currently attempt emulation of PPC Macs accurately (except for QEMU).
 
-This program aims to not only improve upon what Sheepshaver, PearPC, and other PowerPC mac emulators have done, but also to provide a better debugging environment. This currently is designed to work best with PowerPC Old World ROMs,
-including those of the PowerMac G3 Beige.
+This program aims to not only improve upon what Sheepshaver, PearPC, and other PowerPC mac emulators have done, but also to provide a better debugging environment. This currently is designed to work best with PowerPC Old World ROMs, including those of the PowerMac G3 Beige.
 
 ## Implemented Features
 
@@ -21,23 +20,46 @@ This program currently uses the command prompt to work.
 
 There are a few command line arguments one must enter when starting the program.
 
--realtime
+```
+-r, --realtime
+```
 
 Run the emulator in runtime.
 
--debugger
+```
+-d, --debugger
+```
 
 Enter the interactive debugger.
 
-You must also provide config.txt.
+```
+-b, --bootrom TEXT:FILE
+```
+
+Specifies the Boot ROM path (optional; looks for bootrom.bin by default)
+
+```
+-m, --machine TEXT
+```
+
+Specify machine ID (optional; uses pmg3 by default)
+
+As of now, only the Beige G3 is implemented.
 
 ## How to Compile
 
-You'll need to install development tools first.
+You need to install development tools first.
 
 At least, a C++ compiler and [CMake](https://cmake.org) are required.
 
-For example, to build the project in a Unix-like environment, you'll need to run
+You will also have to recursive clone or run 
+```
+git submodules --update
+```
+
+This is because the CubeB module is not included by default. All other components are already included in the thirdparty folder and compiled along with the rest of DingusPPC.
+
+For example, to build the project in a Unix-like environment, you will need to run
 the following commands in the OS terminal:
 ```
 mkdir build
@@ -47,9 +69,7 @@ make dingusppc
 ```
 You may specify another build type using the variable CMAKE_BUILD_TYPE.
 
-Due to the incomplete status of the program at this time, only Loguru is needed to compile the program. It is already included in the thirdparty folder and compiled along with the rest of DingusPPC.
-
-Future versions will include SDL 2 as a requirement.
+Future versions may drop SDL 2 as a requirement.
 
 ## Testing
 
