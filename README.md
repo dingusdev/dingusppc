@@ -42,7 +42,7 @@ Specifies the Boot ROM path (optional; looks for bootrom.bin by default)
 -m, --machine TEXT
 ```
 
-Specify machine ID (optional; uses pmg3 by default)
+Specify machine ID (optional; will attempt to determine machine ID from the boot rom otherwise)
 
 As of now, only the Beige G3 is implemented.
 
