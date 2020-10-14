@@ -169,6 +169,8 @@ uint32_t ATIRage::read_reg(uint32_t offset, uint32_t size) {
     uint32_t res;
 
     switch (offset & ~3) {
+    case ATI_GP_IO:
+        break;
     case ATI_DAC_REGS:
         if (offset == ATI_DAC_DATA) {
             this->block_io_regs[ATI_DAC_DATA] =
