@@ -33,6 +33,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <fstream>
 #include <functional>
 #include <iostream>
+#include <iomanip>
 #include <map>
 #include <memory>
 #include <vector>
@@ -67,11 +68,11 @@ static const map<uint32_t, std::tuple<string, const char*>> rom_identity = {
 
 static const PropMap GossamerSettings = {
     {"rambank1_size",
-        new IntProperty(256, vector<uint32_t>({8, 16, 64, 128, 256}))},
+        new IntProperty(256, vector<uint32_t>({8, 16, 32, 64, 128, 256}))},
     {"rambank2_size",
-        new IntProperty(  0, vector<uint32_t>({0, 8, 16, 64, 128, 256}))},
+        new IntProperty(  0, vector<uint32_t>({0, 8, 16, 32, 64, 128, 256}))},
     {"rambank3_size",
-        new IntProperty(  0, vector<uint32_t>({0, 8, 16, 64, 128, 256}))},
+        new IntProperty(  0, vector<uint32_t>({0, 8, 16, 32, 64, 128, 256}))},
     {"gfxmem_size",
         new IntProperty(  2, vector<uint32_t>({2, 4, 6}))},
 };
@@ -84,7 +85,7 @@ static const map<string, string> PropHelp = {
 };
 
 static const map<string, tuple<PropMap, function<int(void)>, string>> machines = {
-    {"pmg3", {GossamerSettings, create_gossamer, "PowerMacintosh G3 (Beige)"}},
+    {"pmg3", {GossamerSettings, create_gossamer, "Power Macintosh G3 (Beige)"}},
 };
 
 string machine_name_from_rom(string& rom_filepath) {
@@ -180,7 +181,7 @@ void list_machines() {
     cout << endl << "Supported machines:" << endl << endl;
 
     for (auto& mach : machines) {
-        cout << mach.first << "\t\t" << get<2>(mach.second) << endl;
+        cout << setw(13) << mach.first << "\t\t" << get<2>(mach.second) << endl;
     }
 
     cout << endl;
@@ -190,10 +191,10 @@ void list_properties() {
     cout << endl;
 
     for (auto& mach : machines) {
-        cout << get<2>(mach.second) << " properties:" << endl << endl;
+        cout << get<2>(mach.second) << " supported properties:" << endl << endl;
 
         for (auto& p : get<0>(mach.second)) {
-            cout << p.first << "\t\t" << PropHelp.at(p.first) << endl << endl;
+            cout << setw(13) << p.first << "\t\t" << PropHelp.at(p.first) << endl << endl;
         }
     }
 

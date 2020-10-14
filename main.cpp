@@ -47,17 +47,6 @@ static string appDescription = string(
     "\n"
 );
 
-void display_recognized_machines() {
-    std::cout << "                                                   " << endl;
-    std::cout << "The following machines are supported by DingusPPC: " << endl;
-    std::cout << "___________________________________________________" << endl;
-    std::cout << "| COMMAND  | MACHINE RECOGNIZED                   |" << endl;
-    std::cout << "___________________________________________________" << endl;
-    std::cout << " pmg3      | Power Mac G3 Beige                    " << endl;
-    std::cout << " pm6100    | Power Mac 6100                        " << endl;
-    std::cout << "                                                   " << endl;
-}
-
 int main(int argc, char** argv) {
     /*
     Execution Type:
