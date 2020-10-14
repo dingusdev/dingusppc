@@ -194,7 +194,14 @@ void list_properties() {
         cout << get<2>(mach.second) << " supported properties:" << endl << endl;
 
         for (auto& p : get<0>(mach.second)) {
-            cout << setw(13) << p.first << "\t\t" << PropHelp.at(p.first) << endl << endl;
+            cout << setw(13) << p.first << "\t\t" << PropHelp.at(p.first)
+                << endl;
+            if (p.second->get_type() == PROP_TYPE_INTEGER) {
+                cout << setw(13) << "\t\t\t" "Valid values: " <<
+                    dynamic_cast<IntProperty*>(p.second)->get_valid_values_as_str()
+                    << endl;
+            }
+            cout << endl;
         }
     }
 

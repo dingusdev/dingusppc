@@ -4,6 +4,7 @@
 #include <string>
 #include <map>
 #include <memory>
+#include <sstream>
 #include <utility>
 #include <vector>
 
@@ -25,7 +26,7 @@ enum PropType : int {
 enum CheckType : int {
     CHECK_TYPE_NONE     = 0,
     CHECK_TYPE_RANGE    = 1,
-    CHECK_TYPE_CHOICE   = 2,
+    CHECK_TYPE_LIST     = 2,
 };
 
 /** Abstract base class for properties. */
@@ -100,7 +101,7 @@ public:
         this->int_val    = val;
         this->min        = std::numeric_limits<uint32_t>::min();
         this->max        = std::numeric_limits<uint32_t>::max();
-        this->check_type = CHECK_TYPE_CHOICE;
+        this->check_type = CHECK_TYPE_LIST;
         this->vec = vec;
     }
 
@@ -113,6 +114,8 @@ public:
             /* perform value check */
             if (!this->check_val(result)) {
                 LOG_F(ERROR, "Invalid property value %d!", result);
+                LOG_F(ERROR, "Valid values: %s!",
+                    this->get_valid_values_as_str().c_str());
                 this->set_string(to_string(this->int_val));
             } else {
                 this->int_val = result;
@@ -124,6 +127,28 @@ public:
         return this->int_val;
     }
 
+    string get_valid_values_as_str() {
+        stringstream ss;
+
+        switch (this->check_type) {
+        case CHECK_TYPE_RANGE:
+            ss << "[" << this->min << "..." << this->max << "]";
+            return ss.str();
+        case CHECK_TYPE_LIST: {
+            bool first = true;
+            for (auto it = begin(this->vec); it != end(this->vec); ++it) {
+                if (!first)
+                    ss << ", ";
+                ss << *it;
+                first = false;
+            }
+            return ss.str();
+        }
+        default:
+            return string("None");
+        }
+    }
+
 protected:
     bool check_val(uint32_t val) {
         switch (this->check_type) {
@@ -132,7 +157,7 @@ protected:
                 return false;
             else
                 return true;
-        case CHECK_TYPE_CHOICE:
+        case CHECK_TYPE_LIST:
             if (find(this->vec.begin(), this->vec.end(), val) != this->vec.end())
                 return true;
             else
