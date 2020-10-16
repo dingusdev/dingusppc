@@ -19,6 +19,7 @@ endif()
 add_subdirectory("${PROJECT_SOURCE_DIR}/cpu/ppc/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/debugger/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/devices/")
+add_subdirectory("${PROJECT_SOURCE_DIR}/execution")
 add_subdirectory("${PROJECT_SOURCE_DIR}/machines/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/thirdparty/loguru/")
 
@@ -57,6 +58,7 @@ file(GLOB TEST_SOURCES "${PROJECT_SOURCE_DIR}/cpu/ppc/test/*.cpp")
 add_executable(dingusppc ${SOURCES} $<TARGET_OBJECTS:debugger>
                                     $<TARGET_OBJECTS:cpu_ppc>
                                     $<TARGET_OBJECTS:devices>
+                                    $<TARGET_OBJECTS:execution>
                                     $<TARGET_OBJECTS:machines>
                                     $<TARGET_OBJECTS:loguru>)
 
@@ -74,6 +76,7 @@ endif()
 add_executable(testppc ${TEST_SOURCES} $<TARGET_OBJECTS:debugger>
                                        $<TARGET_OBJECTS:cpu_ppc>
                                        $<TARGET_OBJECTS:devices>
+                                       $<TARGET_OBJECTS:execution>
                                        $<TARGET_OBJECTS:machines>
                                        $<TARGET_OBJECTS:loguru>)
 
