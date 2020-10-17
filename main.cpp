@@ -121,6 +121,8 @@ int main(int argc, char** argv) {
         loguru::init(argc, argv);
     }
 
+    initialize_ppc_opcode_tables(); //Temp location for initializing opcode tables
+
     if (*machine_opt) {
         LOG_F(INFO, "Machine option was passed in: %s", machine_str.c_str());
     } else {
