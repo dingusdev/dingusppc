@@ -303,6 +303,7 @@ void ppc_fp_changecrf1();
 extern MemCtrlBase* mem_ctrl_instance;
 
 // The functions used by the PowerPC processor
+namespace dppc_interpreter {
 extern void ppc_bcctr();
 extern void ppc_bcctrl();
 extern void ppc_bclr();
@@ -541,12 +542,7 @@ extern void power_sriq();
 extern void power_srliq();
 extern void power_srlq();
 extern void power_srq();
-
-// Gekko instructions
-extern void ppc_psq_l();
-extern void ppc_psq_lu();
-extern void ppc_psq_st();
-extern void ppc_psq_stu();
+}    // namespace dppc_interpreter
 
 // AltiVec instructions
 

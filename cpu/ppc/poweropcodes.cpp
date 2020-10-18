@@ -42,7 +42,7 @@ inline void power_setsoov(uint32_t a, uint32_t b, uint32_t d) {
     }
 }
 
-void power_abs() {
+void dppc_interpreter::power_abs() {
     ppc_grab_regsda();
     if (ppc_result_a == 0x80000000) {
         ppc_result_d = ppc_result_a;
@@ -59,7 +59,7 @@ void power_abs() {
     ppc_store_result_regd();
 }
 
-void power_clcs() {
+void dppc_interpreter::power_clcs() {
     ppc_grab_regsda();
     switch (reg_a) {
     case 12:
@@ -80,7 +80,7 @@ void power_clcs() {
     ppc_store_result_regd();
 }
 
-void power_div() {
+void dppc_interpreter::power_div() {
     ppc_grab_regsdab();
     ppc_result_d           = (ppc_result_a | ppc_state.spr[SPR::MQ]) / ppc_result_b;
     ppc_state.spr[SPR::MQ] = (ppc_result_a | ppc_state.spr[SPR::MQ]) % ppc_result_b;
@@ -93,7 +93,7 @@ void power_div() {
     ppc_store_result_regd();
 }
 
-void power_divs() {
+void dppc_interpreter::power_divs() {
     ppc_grab_regsdab();
     ppc_result_d           = ppc_result_a / ppc_result_b;
     ppc_state.spr[SPR::MQ] = (ppc_result_a % ppc_result_b);
@@ -106,7 +106,7 @@ void power_divs() {
     ppc_store_result_regd();
 }
 
-void power_doz() {
+void dppc_interpreter::power_doz() {
     ppc_grab_regsdab();
     if (((int32_t)ppc_result_a) > ((int32_t)ppc_result_b)) {
         ppc_result_d = 0;
@@ -120,7 +120,7 @@ void power_doz() {
     ppc_store_result_rega();
 }
 
-void power_dozi() {
+void dppc_interpreter::power_dozi() {
     ppc_grab_regsdab();
     if (((int32_t)ppc_result_a) > simm) {
         ppc_result_d = 0;
@@ -130,7 +130,7 @@ void power_dozi() {
     ppc_store_result_rega();
 }
 
-void power_lscbx() {
+void dppc_interpreter::power_lscbx() {
     ppc_grab_regsdab();
     uint32_t bytes_copied = 0;
     bool match_found      = false;
@@ -191,7 +191,7 @@ void power_lscbx() {
     ppc_store_result_regd();
 }
 
-void power_maskg() {
+void dppc_interpreter::power_maskg() {
     ppc_grab_regssab();
     uint32_t mask_start  = ppc_result_d & 31;
     uint32_t mask_end    = ppc_result_b & 31;
@@ -218,7 +218,7 @@ void power_maskg() {
     ppc_store_result_rega();
 }
 
-void power_maskir() {
+void dppc_interpreter::power_maskir() {
     ppc_grab_regssab();
     uint32_t mask_insert = ppc_result_a;
     uint32_t insert_rot  = 0x80000000;
@@ -238,7 +238,7 @@ void power_maskir() {
     ppc_store_result_rega();
 }
 
-void power_mul() {
+void dppc_interpreter::power_mul() {
     ppc_grab_regsdab();
     uint64_t product;
 
@@ -252,7 +252,7 @@ void power_mul() {
     ppc_store_result_regd();
 }
 
-void power_nabs() {
+void dppc_interpreter::power_nabs() {
     ppc_grab_regsda();
     ppc_result_d = (0x80000000 | ppc_result_a);
 
@@ -262,7 +262,7 @@ void power_nabs() {
     ppc_store_result_regd();
 }
 
-void power_rlmi() {
+void dppc_interpreter::power_rlmi() {
     ppc_grab_regssab();
     unsigned rot_mb      = (ppc_cur_instruction >> 6) & 31;
     unsigned rot_me      = (ppc_cur_instruction >> 1) & 31;
@@ -287,7 +287,7 @@ void power_rlmi() {
     ppc_store_result_rega();
 }
 
-void power_rrib() {
+void dppc_interpreter::power_rrib() {
     ppc_grab_regssab();
 
     if (ppc_result_d & 0x80000000) {
@@ -302,7 +302,7 @@ void power_rrib() {
     ppc_store_result_rega();
 }
 
-void power_sle() {
+void dppc_interpreter::power_sle() {
     ppc_grab_regssa();
     uint32_t insert_mask = 0;
     uint32_t rot_amt     = ppc_result_b & 31;
@@ -319,7 +319,7 @@ void power_sle() {
     ppc_store_result_rega();
 }
 
-void power_sleq() {
+void dppc_interpreter::power_sleq() {
     ppc_grab_regssa();
     uint32_t insert_mask = 0;
     uint32_t rot_amt     = ppc_result_b & 31;
@@ -345,7 +345,7 @@ void power_sleq() {
     ppc_store_result_rega();
 }
 
-void power_sliq() {
+void dppc_interpreter::power_sliq() {
     ppc_grab_regssa();
     uint32_t insert_mask = 0;
     unsigned rot_sh      = (ppc_cur_instruction >> 11) & 31;
@@ -371,7 +371,7 @@ void power_sliq() {
     ppc_store_result_rega();
 }
 
-void power_slliq() {
+void dppc_interpreter::power_slliq() {
     ppc_grab_regssa();
     uint32_t insert_mask = 0;
     unsigned rot_sh      = (ppc_cur_instruction >> 11) & 31;
@@ -397,23 +397,23 @@ void power_slliq() {
     ppc_store_result_rega();
 }
 
-void power_sllq() {
+void dppc_interpreter::power_sllq() {
     LOG_F(WARNING, "OOPS! Placeholder for sllq!!! \n");
 }
 
-void power_slq() {
+void dppc_interpreter::power_slq() {
     LOG_F(WARNING, "OOPS! Placeholder for slq!!! \n");
 }
 
-void power_sraiq() {
+void dppc_interpreter::power_sraiq() {
     LOG_F(WARNING, "OOPS! Placeholder for sraiq!!! \n");
 }
 
-void power_sraq() {
+void dppc_interpreter::power_sraq() {
     LOG_F(WARNING, "OOPS! Placeholder for sraq!!! \n");
 }
 
-void power_sre() {
+void dppc_interpreter::power_sre() {
     ppc_grab_regssa();
     uint32_t insert_mask = 0;
     uint32_t rot_amt     = ppc_result_b & 31;
@@ -428,11 +428,11 @@ void power_sre() {
     ppc_store_result_rega();
 }
 
-void power_srea() {
+void dppc_interpreter::power_srea() {
     LOG_F(WARNING, "OOPS! Placeholder for srea!!! \n");
 }
 
-void power_sreq() {
+void dppc_interpreter::power_sreq() {
     ppc_grab_regssa();
     uint32_t insert_mask = 0;
     unsigned rot_sh      = ppc_result_b & 31;
@@ -458,7 +458,7 @@ void power_sreq() {
     ppc_store_result_rega();
 }
 
-void power_sriq() {
+void dppc_interpreter::power_sriq() {
     ppc_grab_regssa();
     uint32_t insert_mask = 0;
     unsigned rot_sh      = (ppc_cur_instruction >> 11) & 31;
@@ -484,14 +484,14 @@ void power_sriq() {
     ppc_store_result_rega();
 }
 
-void power_srliq() {
+void dppc_interpreter::power_srliq() {
     LOG_F(WARNING, "OOPS! Placeholder for slriq!!! \n");
 }
 
-void power_srlq() {
+void dppc_interpreter::power_srlq() {
     LOG_F(WARNING, "OOPS! Placeholder for slrq!!! \n");
 }
 
-void power_srq() {
+void dppc_interpreter::power_srq() {
     LOG_F(WARNING, "OOPS! Placeholder for srq!!! \n");
 }

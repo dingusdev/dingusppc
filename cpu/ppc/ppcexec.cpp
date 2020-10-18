@@ -35,6 +35,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define NEW_TBR_UPDATE_ALGO
 
 using namespace std;
+using namespace dppc_interpreter;
 
 MemCtrlBase* mem_ctrl_instance = 0;
 
@@ -72,17 +73,17 @@ uint8_t  tbr_factor;        /* cycles_count to TBR freq ratio in 2^x units */
 
 /** Primary opcode (bits 0...5) lookup table. */
 static PPCOpcode OpcodeGrabber[] = {
-    ppc_illegalop, ppc_illegalop, ppc_illegalop, ppc_twi,     ppc_opcode4,   ppc_illegalop,
-    ppc_illegalop, ppc_mulli,     ppc_subfic,    power_dozi,  ppc_cmpli,     ppc_cmpi,
-    ppc_addic,     ppc_addicdot,  ppc_addi,      ppc_addis,   ppc_opcode16,  ppc_sc,
-    ppc_opcode18,  ppc_opcode19,  ppc_rlwimi,    ppc_rlwinm,  power_rlmi,    ppc_rlwnm,
-    ppc_ori,       ppc_oris,      ppc_xori,      ppc_xoris,   ppc_andidot,   ppc_andisdot,
-    ppc_illegalop, ppc_opcode31,  ppc_lwz,       ppc_lwzu,    ppc_lbz,       ppc_lbzu,
-    ppc_stw,       ppc_stwu,      ppc_stb,       ppc_stbu,    ppc_lhz,       ppc_lhzu,
-    ppc_lha,       ppc_lhau,      ppc_sth,       ppc_sthu,    ppc_lmw,       ppc_stmw,
-    ppc_lfs,       ppc_lfsu,      ppc_lfd,       ppc_lfdu,    ppc_stfs,      ppc_stfsu,
-    ppc_stfd,      ppc_stfdu,     ppc_psq_l,     ppc_psq_lu,  ppc_illegalop, ppc_illegalop,
-    ppc_psq_st,    ppc_psq_stu,   ppc_illegalop, ppc_opcode63};
+    ppc_illegalop, ppc_illegalop, ppc_illegalop, ppc_twi,       ppc_opcode4,   ppc_illegalop,
+    ppc_illegalop, ppc_mulli,     ppc_subfic,    power_dozi,    ppc_cmpli,     ppc_cmpi,
+    ppc_addic,     ppc_addicdot,  ppc_addi,      ppc_addis,     ppc_opcode16,  ppc_sc,
+    ppc_opcode18,  ppc_opcode19,  ppc_rlwimi,    ppc_rlwinm,    power_rlmi,    ppc_rlwnm,
+    ppc_ori,       ppc_oris,      ppc_xori,      ppc_xoris,     ppc_andidot,   ppc_andisdot,
+    ppc_illegalop, ppc_opcode31,  ppc_lwz,       ppc_lwzu,      ppc_lbz,       ppc_lbzu,
+    ppc_stw,       ppc_stwu,      ppc_stb,       ppc_stbu,      ppc_lhz,       ppc_lhzu,
+    ppc_lha,       ppc_lhau,      ppc_sth,       ppc_sthu,      ppc_lmw,       ppc_stmw,
+    ppc_lfs,       ppc_lfsu,      ppc_lfd,       ppc_lfdu,      ppc_stfs,      ppc_stfsu,
+    ppc_stfd,      ppc_stfdu,     ppc_illegalop, ppc_illegalop, ppc_illegalop, ppc_illegalop,
+    ppc_illegalop, ppc_illegalop, ppc_illegalop, ppc_opcode63};
 
 /** Lookup tables for branch instructions. */
 static PPCOpcode SubOpcode16Grabber[] = {ppc_bc, ppc_bcl, ppc_bca, ppc_bcla};
@@ -577,29 +578,29 @@ void initialize_ppc_opcode_tables() {
     SubOpcode31Grabber[978]  = ppc_tlbld;
     SubOpcode31Grabber[1010] = ppc_tlbli;
 
-    SubOpcode63Grabber[18] = ppc_fdivs;
-    SubOpcode63Grabber[20] = ppc_fsubs;
-    SubOpcode63Grabber[22] = ppc_fsqrts;
-    SubOpcode63Grabber[24] = ppc_fres;
+    SubOpcode59Grabber[18] = ppc_fdivs;
+    SubOpcode59Grabber[20] = ppc_fsubs;
+    SubOpcode59Grabber[22] = ppc_fsqrts;
+    SubOpcode59Grabber[24] = ppc_fres;
 
     for (int i = 25; i < 1024; i += 32) {
-        SubOpcode63Grabber[i] = ppc_fmults;
+        SubOpcode59Grabber[i] = ppc_fmults;
     }
 
     for (int i = 28; i < 1024; i += 32) {
-        SubOpcode63Grabber[i] = ppc_fmsubs;
+        SubOpcode59Grabber[i] = ppc_fmsubs;
     }
 
     for (int i = 29; i < 1024; i += 32) {
-        SubOpcode63Grabber[i] = ppc_fmadds;
+        SubOpcode59Grabber[i] = ppc_fmadds;
     }
 
     for (int i = 30; i < 1024; i += 32) {
-        SubOpcode63Grabber[i] = ppc_fnmsubs;
+        SubOpcode59Grabber[i] = ppc_fnmsubs;
     }
 
     for (int i = 31; i < 1024; i += 32) {
-        SubOpcode63Grabber[i] = ppc_fnmadds;
+        SubOpcode59Grabber[i] = ppc_fnmadds;
     }
 
     SubOpcode63Grabber[0]   = ppc_fcmpu;

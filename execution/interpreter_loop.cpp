@@ -51,7 +51,7 @@ void round_robin_bench() {
     std::chrono::high_resolution_clock::time_point dummy = std::chrono::high_resolution_clock::now();
 
     for (int i = 0; i < 4096; i++) {
-        ppc_ori(); //execute NOPs as a basic test
+        dppc_interpreter::ppc_ori(); //execute NOPs as a basic test
     }
 
     std::chrono::high_resolution_clock::time_point dummy2 = std::chrono::high_resolution_clock::now();
