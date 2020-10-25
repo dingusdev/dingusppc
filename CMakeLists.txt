@@ -93,4 +93,4 @@ add_custom_command(
     "${PROJECT_SOURCE_DIR}/cpu/ppc/test/ppcdisasmtest.csv"
     $<TARGET_FILE_DIR:${PROJECT_NAME}>)
 
-install (TARGETS dingusppc DESTINATION ${EXECUTABLE_OUTPUT_PATH})
+install (TARGETS dingusppc DESTINATION ${PROJECT_SOURCE_DIR}/build)

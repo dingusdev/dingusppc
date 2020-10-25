@@ -71,6 +71,11 @@ You may specify another build type using the variable CMAKE_BUILD_TYPE.
 
 Future versions may drop SDL 2 as a requirement.
 
+For Raspbian, you may also need the following command:
+```
+sudo apt install doxygen graphviz
+```
+
 ## Testing
 
 DingusPPC includes a test suite for verifying the correctness of its PowerPC CPU
