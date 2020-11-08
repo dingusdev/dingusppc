@@ -171,6 +171,10 @@ uint32_t HeathrowIC::mio_ctrl_read(uint32_t offset, int size) {
     uint32_t res = 0;
 
     switch (offset & 0xFF) {
+    case 0x10:
+        LOG_F(9, "read from MIO:Int_Events2 register \n");
+        res = this->int_events2;
+        break;
     case 0x14:
         LOG_F(9, "read from MIO:Int_Mask2 register \n");
         res = this->int_mask2;
@@ -182,6 +186,10 @@ uint32_t HeathrowIC::mio_ctrl_read(uint32_t offset, int size) {
     case 0x1C:
         LOG_F(9, "read from MIO:Int_Levels2 register \n");
         res = this->int_levels2;
+        break;
+    case 0x20:
+        LOG_F(9, "read from MIO:Int_Events1 register \n");
+        res = this->int_events1;
         break;
     case 0x24:
         LOG_F(9, "read from MIO:Int_Mask1 register \n");
@@ -212,16 +220,20 @@ uint32_t HeathrowIC::mio_ctrl_read(uint32_t offset, int size) {
 
 void HeathrowIC::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
     switch (offset & 0xFF) {
+    case 0x10:
+        LOG_F(9, "write %x to MIO:Int_Events2 register \n", value);
+        this->int_events2 = value;
+        break;
     case 0x14:
-        LOG_F(9, "read from MIO:Int_Mask2 register \n");
+        LOG_F(9, "write %x to MIO:Int_Mask2 register \n", value);
         this->int_mask2 = value;
         break;
     case 0x18:
-        LOG_F(9, "read from MIO:Int_Clear2 register \n");
+        LOG_F(9, "write %x to MIO:Int_Clear2 register \n", value);
         this->int_clear2 = value;
         break;
     case 0x1C:
-        LOG_F(9, "read from MIO:Int_Levels2 register \n");
+        LOG_F(9, "write %x to MIO:Int_Levels2 register \n", value);
         this->int_levels2 = value;
         break;
     case 0x24:
@@ -233,7 +245,7 @@ void HeathrowIC::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
         this->int_clear1 = value;
         break;
     case 0x2C:
-        LOG_F(9, "read from MIO:Int_Levels1 register \n");
+        LOG_F(9, "write %x to MIO:Int_Levels1 register \n", value);
         this->int_levels1 = value;
         break;
     case 0x38:
@@ -243,5 +255,42 @@ void HeathrowIC::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
     default:
         LOG_F(WARNING, "unknown MIO register at %x \n", offset);
         break;
+    }
+}
+
+void HeathrowIC::start_interrupt_event(uint32_t bit_activated, bool for_events2) {
+    if (for_events2) {
+        if (!(int_mask2 & (1 << bit_activated))) {
+                int_events2 |= (1 << bit_activated);
+            }
+    } else {
+        if (!(int_events1 & (1 << bit_activated))) {
+                int_events1 |= (1 << bit_activated);
+            }
+    }
+}
+
+void HeathrowIC::end_interrupt_event(uint32_t bit_activated) {
+    if (int_events1 & (1 << bit_activated)) {
+        int_events1 &= ~(1 << bit_activated);
+    }
+
+    if (int_events2 & (1 << bit_activated)) {
+        int_events2 &= ~(1 << bit_activated);
+        int_events1 |= (1 << bit_activated);
+    }
+}
+
+void HeathrowIC::mask_interrupt_events(uint32_t mask_flags, bool for_events2, bool is_clear) {
+    if (is_clear) {
+        if (for_events2)
+            int_pending_events2 &= ~mask_flags;
+        else
+            int_pending_events1 &= ~mask_flags;
+    } else {
+        if (for_events2)
+            int_events2 = mask_flags;
+        else
+            int_events1 = mask_flags;
     }
 }

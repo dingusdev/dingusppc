@@ -107,6 +107,11 @@ public:
     uint32_t read(uint32_t reg_start, uint32_t offset, int size);
     void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size);
 
+    /* Interrupt methods */
+    void start_interrupt_event(uint32_t bit_activated, bool for_events2);
+    void end_interrupt_event(uint32_t bit_activated);
+    void mask_interrupt_events(uint32_t mask_flags, bool for_events2, bool is_clear);
+
 protected:
     uint32_t dma_read(uint32_t offset, int size);
     void dma_write(uint32_t offset, uint32_t value, int size);
@@ -135,13 +140,20 @@ private:
         0x00    // unknown defaults
     };
 
+    uint32_t int_pending_events2;
+    uint32_t int_pending_events1;
+
+    uint32_t int_events2;
     uint32_t int_mask2;
     uint32_t int_clear2;
     uint32_t int_levels2;
+    uint32_t int_events1;
     uint32_t int_mask1;
     uint32_t int_clear1;
     uint32_t int_levels1;
-    uint32_t feat_ctrl;    // features control register
+    uint32_t media_bay_ctrl;    // media bay control register
+    uint32_t feat_ctrl;         // features control register
+    uint32_t aux_ctrl;          // Auxiliary features control register
 
     /* device cells */
     ViaCuda* viacuda;     /* VIA cell with Cuda MCU attached to it */
