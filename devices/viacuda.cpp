@@ -316,9 +316,21 @@ void ViaCuda::pseudo_command(int cmd, int data_count) {
         }
         response_header(CUDA_PKT_PSEUDO, 0);
         break;
+    case CUDA_GET_6805_ADDRESS:
+        LOG_F(WARNING, "Tell Dingus to implement PSUEDO 0x2!");
+        response_header(CUDA_PKT_PSEUDO, 0);
+        write(VIA_B, this->via_regs[VIA_B] & 0xCF);
+        this->pram_obj->read_byte(this->m6805_address);
+        write(VIA_DIRB, this->via_regs[VIA_DIRB] & 0xDF);
+        break;
     case CUDA_READ_PRAM:
         response_header(CUDA_PKT_PSEUDO, 0);
         this->pram_obj->read_byte(this->in_buf[2]);
+        break;
+    case CUDA_SET_6805_ADDRESS:
+        LOG_F(WARNING, "Tell Dingus to implement PSUEDO 0x8!");
+        response_header(CUDA_PKT_PSEUDO, 0);
+        this->m6805_address = this->in_buf[2];
         break;
     case CUDA_WRITE_PRAM:
         response_header(CUDA_PKT_PSEUDO, 0);

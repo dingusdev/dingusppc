@@ -30,14 +30,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "machinebase.h"
 #include <fstream>
 #include <string>
-
-using namespace std;
+#include <map>
 
 std::string machine_name_from_rom(std::string& rom_filepath);
 
-int  get_machine_settings(string& id, map<string, string> &settings);
-void set_machine_settings(map<string, string> &settings);
-int  create_machine_for_id(string& id, string& rom_filepath);
+int get_machine_settings(std::string& id, std::map<std::string, std::string>& settings);
+void set_machine_settings(std::map<std::string, std::string>& settings);
+int create_machine_for_id(std::string& id, std::string& rom_filepath);
 void list_machines(void);
 void list_properties(void);
 

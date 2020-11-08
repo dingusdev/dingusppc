@@ -164,7 +164,7 @@ int get_machine_settings(string& id, map<string, string> &settings) {
     return 0;
 }
 
-void set_machine_settings(map<string, string> &settings) {
+void set_machine_settings(map<std::string, std::string>& settings) {
     for (auto& s : settings) {
         gMachineSettings.at(s.first)->set_string(s.second);
     }

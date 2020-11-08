@@ -172,35 +172,35 @@ uint32_t HeathrowIC::mio_ctrl_read(uint32_t offset, int size) {
 
     switch (offset & 0xFF) {
     case 0x10:
-        LOG_F(9, "read from MIO:Int_Events2 register \n");
+        LOG_F(2, "read from MIO:Int_Events2 register \n");
         res = this->int_events2;
         break;
     case 0x14:
-        LOG_F(9, "read from MIO:Int_Mask2 register \n");
+        LOG_F(2, "read from MIO:Int_Mask2 register \n");
         res = this->int_mask2;
         break;
     case 0x18:
-        LOG_F(9, "read from MIO:Int_Clear2 register \n");
+        LOG_F(2, "read from MIO:Int_Clear2 register \n");
         res = this->int_clear2;
         break;
     case 0x1C:
-        LOG_F(9, "read from MIO:Int_Levels2 register \n");
+        LOG_F(2, "read from MIO:Int_Levels2 register \n");
         res = this->int_levels2;
         break;
     case 0x20:
-        LOG_F(9, "read from MIO:Int_Events1 register \n");
+        LOG_F(2, "read from MIO:Int_Events1 register \n");
         res = this->int_events1;
         break;
     case 0x24:
-        LOG_F(9, "read from MIO:Int_Mask1 register \n");
+        LOG_F(2, "read from MIO:Int_Mask1 register \n");
         res = this->int_mask1;
         break;
     case 0x28:
-        LOG_F(9, "read from MIO:Int_Clear1 register \n");
+        LOG_F(2, "read from MIO:Int_Clear1 register \n");
         res = this->int_clear1;
         break;
     case 0x2C:
-        LOG_F(9, "read from MIO:Int_Levels1 register \n");
+        LOG_F(2, "read from MIO:Int_Levels1 register \n");
         res = this->int_levels1;
         break;
     case 0x34: /* heathrowIDs / HEATHROW_MBCR (Linux): media bay config reg? */
@@ -221,35 +221,35 @@ uint32_t HeathrowIC::mio_ctrl_read(uint32_t offset, int size) {
 void HeathrowIC::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
     switch (offset & 0xFF) {
     case 0x10:
-        LOG_F(9, "write %x to MIO:Int_Events2 register \n", value);
+        LOG_F(2, "write %x to MIO:Int_Events2 register \n", value);
         this->int_events2 = value;
         break;
     case 0x14:
-        LOG_F(9, "write %x to MIO:Int_Mask2 register \n", value);
+        LOG_F(2, "write %x to MIO:Int_Mask2 register \n", value);
         this->int_mask2 = value;
         break;
     case 0x18:
-        LOG_F(9, "write %x to MIO:Int_Clear2 register \n", value);
+        LOG_F(2, "write %x to MIO:Int_Clear2 register \n", value);
         this->int_clear2 = value;
         break;
     case 0x1C:
-        LOG_F(9, "write %x to MIO:Int_Levels2 register \n", value);
+        LOG_F(2, "write %x to MIO:Int_Levels2 register \n", value);
         this->int_levels2 = value;
         break;
     case 0x24:
-        LOG_F(9, "write %x to MIO:Int_Mask1 register \n", value);
+        LOG_F(2, "write %x to MIO:Int_Mask1 register \n", value);
         this->int_mask1 = value;
         break;
     case 0x28:
-        LOG_F(9, "write %x to MIO:Int_Clear1 register \n", value);
+        LOG_F(2, "write %x to MIO:Int_Clear1 register \n", value);
         this->int_clear1 = value;
         break;
     case 0x2C:
-        LOG_F(9, "write %x to MIO:Int_Levels1 register \n", value);
+        LOG_F(2, "write %x to MIO:Int_Levels1 register \n", value);
         this->int_levels1 = value;
         break;
     case 0x38:
-        LOG_F(9, "write %x to MIO:Feat_Ctrl register \n", value);
+        LOG_F(2, "write %x to MIO:Feat_Ctrl register \n", value);
         this->feat_ctrl = value;
         break;
     default:

@@ -11,8 +11,6 @@
 #ifndef MACHINE_PROPERTIES_H
 #define MACHINE_PROPERTIES_H
 
-using namespace std;
-
 #define ILLEGAL_DEVICE_VALUE 0x168A523B
 
 /** Property types. */
@@ -32,7 +30,7 @@ enum CheckType : int {
 /** Abstract base class for properties. */
 class BasicProperty {
 public:
-    BasicProperty(PropType type, string val) {
+    BasicProperty(PropType type, std::string val) {
         this->type = type;
         set_string(val);
     }
@@ -42,11 +40,11 @@ public:
     /* Clone method for copying derived property objects. */
     virtual BasicProperty* clone() const = 0;
 
-    string get_string() {
+    std::string get_string() {
         return this->val;
     }
 
-    void set_string(string str) {
+    void set_string(std::string str) {
         this->val = str;
     }
 
@@ -56,14 +54,14 @@ public:
 
 protected:
     PropType    type;
-    string      val;
+    std::string val;
 };
 
 
 /** Property class that holds a string value. */
 class StrProperty : public BasicProperty {
 public:
-    StrProperty(string str)
+    StrProperty(std::string str)
         : BasicProperty(PROP_TYPE_STRING, str) {}
 
     BasicProperty* clone() const { return new StrProperty(*this); }
@@ -73,8 +71,7 @@ public:
 class IntProperty : public BasicProperty {
 public:
     /* construct an integer property without value check. */
-    IntProperty(uint32_t val)
-        : BasicProperty(PROP_TYPE_INTEGER, to_string(val))
+    IntProperty(uint32_t val) : BasicProperty(PROP_TYPE_INTEGER, std::to_string(val))
     {
         this->int_val    = val;
         this->min        = std::numeric_limits<uint32_t>::min();
@@ -85,7 +82,7 @@ public:
 
     /* construct an integer property with a predefined range. */
     IntProperty(uint32_t val, uint32_t min, uint32_t max)
-        : BasicProperty(PROP_TYPE_INTEGER, to_string(val))
+        : BasicProperty(PROP_TYPE_INTEGER, std::to_string(val))
     {
         this->int_val    = val;
         this->min        = min;
@@ -95,8 +92,8 @@ public:
     }
 
     /* construct an integer property with a list of valid values. */
-    IntProperty(uint32_t val, vector<uint32_t> vec)
-        : BasicProperty(PROP_TYPE_INTEGER, to_string(val))
+    IntProperty(uint32_t val, std::vector<uint32_t> vec)
+        : BasicProperty(PROP_TYPE_INTEGER, std::to_string(val))
     {
         this->int_val    = val;
         this->min        = std::numeric_limits<uint32_t>::min();
@@ -116,19 +113,19 @@ public:
                 LOG_F(ERROR, "Invalid property value %d!", result);
                 LOG_F(ERROR, "Valid values: %s!",
                     this->get_valid_values_as_str().c_str());
-                this->set_string(to_string(this->int_val));
+                this->set_string(std::to_string(this->int_val));
             } else {
                 this->int_val = result;
             }
-        } catch (string bad_string) {
+        } catch (std::string bad_string) {
             LOG_F(ERROR, "Could not convert string %s to an integer!",
                 bad_string.c_str());
         }
         return this->int_val;
     }
 
-    string get_valid_values_as_str() {
-        stringstream ss;
+    std::string get_valid_values_as_str() {
+        std::stringstream ss;
 
         switch (this->check_type) {
         case CHECK_TYPE_RANGE:
@@ -145,7 +142,7 @@ public:
             return ss.str();
         }
         default:
-            return string("None");
+            return std::string("None");
         }
     }
 
@@ -168,18 +165,18 @@ protected:
     }
 
 private:
-    uint32_t            int_val;
-    CheckType           check_type;
-    uint32_t            min;
-    uint32_t            max;
-    vector<uint32_t>    vec;
+    uint32_t              int_val;
+    CheckType             check_type;
+    uint32_t              min;
+    uint32_t              max;
+    std::vector<uint32_t> vec;
 };
 
 /** Special map type for specifying machine presets. */
-typedef map<string, BasicProperty*> PropMap;
+typedef std::map<std::string, BasicProperty*> PropMap;
 
 /** Global map that holds settings for the running machine. */
-extern map<string, unique_ptr<BasicProperty>> gMachineSettings;
+extern std::map<std::string, std::unique_ptr<BasicProperty>> gMachineSettings;
 
 /** Conveniency macros to hide complex casts. */
 #define GET_STR_PROP(name) \

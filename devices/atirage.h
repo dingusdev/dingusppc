@@ -26,8 +26,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "pcidevice.h"
 #include <cinttypes>
 
-using namespace std;
-
 /* PCI related definitions. */
 enum {
     ATI_PCI_VENDOR_ID   = 0x1002,
