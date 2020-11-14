@@ -89,6 +89,16 @@ else()
 target_link_libraries(testppc cubeb ${SDL2_LIBRARIES} ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
+file(GLOB BENCH_SOURCES "${PROJECT_SOURCE_DIR}/benchmark/*.cpp")
+add_executable(bench1 ${BENCH_SOURCES} $<TARGET_OBJECTS:debugger>
+                                       $<TARGET_OBJECTS:cpu_ppc>
+                                       $<TARGET_OBJECTS:devices>
+                                       $<TARGET_OBJECTS:execution>
+                                       $<TARGET_OBJECTS:machines>
+                                       $<TARGET_OBJECTS:loguru>)
+
+target_link_libraries(bench1 cubeb ${SDL2_LIBRARIES} ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+
 add_custom_command(
     TARGET testppc POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy
