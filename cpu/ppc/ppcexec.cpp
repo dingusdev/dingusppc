@@ -90,7 +90,7 @@ static PPCOpcode SubOpcode16Grabber[] = {ppc_bc, ppc_bcl, ppc_bca, ppc_bcla};
 
 static PPCOpcode SubOpcode18Grabber[] = {ppc_b, ppc_bl, ppc_ba, ppc_bla};
 
-/** Instructions decoding tables for integer, 
+/** Instructions decoding tables for integer,
     single floating-point, and double-floating point ops respectively */
 
 PPCOpcode SubOpcode31Grabber[1024] = {ppc_illegalsubop19};
@@ -655,6 +655,8 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t proc_version) {
     mem_ctrl_instance = mem_ctrl;
 
     //test_timebase_update();
+
+    initialize_ppc_opcode_tables();
 
     /* initialize timer variables */
 #ifdef NEW_TBR_UPDATE_ALGO
