@@ -48,11 +48,11 @@ PPC_BAT_entry ibat_array[4] = {{0}};
 PPC_BAT_entry dbat_array[4] = {{0}};
 
 /** remember recently used physical memory regions for quicker translation. */
-AddressMapEntry last_read_area  = {0};
-AddressMapEntry last_write_area = {0};
-AddressMapEntry last_exec_area  = {0};
-AddressMapEntry last_ptab_area  = {0};
-AddressMapEntry last_dma_area   = {0};
+AddressMapEntry last_read_area  = {0xFFFFFFFF, 0xFFFFFFFF};
+AddressMapEntry last_write_area = {0xFFFFFFFF, 0xFFFFFFFF};
+AddressMapEntry last_exec_area  = {0xFFFFFFFF, 0xFFFFFFFF};
+AddressMapEntry last_ptab_area  = {0xFFFFFFFF, 0xFFFFFFFF};
+AddressMapEntry last_dma_area   = {0xFFFFFFFF, 0xFFFFFFFF};
 
 
 /* macro for generating code reading from physical memory */
