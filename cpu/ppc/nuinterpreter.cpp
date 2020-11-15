@@ -4,29 +4,7 @@
 #include "ppcmmu.h"
 #include "ppcdefs.h"
 #include "jittables.h"
-
-struct CachedInstr; // forward declaration
-
-typedef void (*ImplSubr)(const CachedInstr *);
-
-struct CachedInstr {
-    ImplSubr call_me;
-
-    union {
-        struct  {
-            uint8_t     d1;
-            uint8_t     d2;
-            uint8_t     d3;
-            uint8_t     d4;
-        };
-        int32_t    bt; // branch target
-    };
-
-    union {
-        int32_t     simm;
-        uint32_t    uimm;
-    };
-};
+#include "nuinterpreter.h"
 
 CachedInstr* interp_tpc;
 bool         interp_running;
@@ -132,12 +110,6 @@ bool PreDecode(uint32_t next_pc, CachedInstr* c_instr)
         const InterpInstr* p_instr = &interp_tab[instr_index];
 
         c_instr->call_me = p_instr->emu_fn;
-
-        if (p_instr->info.cflow_type == CFlowType::CFL_UNCOND_BRANCH) {
-            // finish translation block when an uncoditional branch is encountered
-            done = true;
-            continue;
-        }
 
         /* pre-decode operands, immediate values etc. */
         switch (p_instr->info.ops_fmt) {
