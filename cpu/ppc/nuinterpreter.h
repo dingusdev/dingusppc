@@ -1,12 +1,20 @@
 #ifndef NU_INTERPRETER_H
 #define NU_INTERPRETER_H
 
+#include "ppcdefs.h"
+
+#define USE_DTC
+
 struct CachedInstr; // forward declaration
 
 typedef void (*ImplSubr)(const CachedInstr *);
 
 struct CachedInstr {
+#if defined(USE_DTC)
+    void*    call_me;
+#else
     ImplSubr call_me;
+#endif
 
     union {
         struct  {

@@ -6,43 +6,14 @@
 #include "jittables.h"
 #include "nuinterpreter.h"
 
-#if !defined(USE_DTC)
+#if defined(USE_DTC)
 
-CachedInstr* interp_tpc;
-bool         interp_running;
-
-#define GEN_OP(name,body)   void impl_##name(const CachedInstr* code) {body}
-#define NEXT                interp_tpc++
-
-#include "interpops.h"
+#define CAST(name)          &&lab_##name
 
 struct InterpInstr {
-    ImplSubr    emu_fn;     // pointer to the instruction emulation routine
+    void*       emu_fn;
     InstrInfo   info;
 };
-
-/* WARNING: entries in this table MUST be in the same order as constants in PPCInstr! */
-InterpInstr interp_tab[] = {
-    {nullptr,       {InstrOps::opNone,   CFlowType::CFL_NONE,           0}},
-    {impl_addi,     {InstrOps::opDASimm, CFlowType::CFL_NONE,           1}},
-    {impl_adde,     {InstrOps::opDAB,    CFlowType::CFL_NONE,           1}},
-    {impl_addze,    {InstrOps::opDA,     CFlowType::CFL_NONE,           1}},
-    {impl_andidot,  {InstrOps::opSAUimm, CFlowType::CFL_NONE,           1}},
-    {impl_lwz,      {InstrOps::opDASimm, CFlowType::CFL_NONE,           1}},
-    {impl_lwzu,     {InstrOps::opDASimm, CFlowType::CFL_NONE,           1}},
-    {impl_lbz,      {InstrOps::opDASimm, CFlowType::CFL_NONE,           1}},
-    {impl_lhz,      {InstrOps::opDASimm, CFlowType::CFL_NONE,           1}},
-    {impl_rlwinm,   {InstrOps::opRot,    CFlowType::CFL_NONE,           1}},
-    {impl_srawidot, {InstrOps::opSASh,   CFlowType::CFL_NONE,           1}},
-    {impl_bc,       {InstrOps::opBrRel,  CFlowType::CFL_COND_BRANCH,    0}},
-    {impl_bdnz,     {InstrOps::opBrRel,  CFlowType::CFL_COND_BRANCH,    0}},
-    {impl_bdz,      {InstrOps::opBrRel,  CFlowType::CFL_COND_BRANCH,    0}},
-    {impl_bclr,     {InstrOps::opBrLink, CFlowType::CFL_COND_BRANCH,    0}},
-    {impl_mtspr,    {InstrOps::opSSpr,   CFlowType::CFL_NONE,           2}},
-    {impl_bexit,    {InstrOps::opNone,   CFlowType::CFL_UNCOND_BRANCH,  0}},
-};
-
-CachedInstr code_block[256];
 
 #define REG_D(opcode)   ((opcode >> 21) & 0x1F)
 #define REG_A(opcode)   ((opcode >> 16) & 0x1F)
@@ -60,9 +31,31 @@ static inline uint32_t rot_mask(unsigned rot_mb, unsigned rot_me) {
     return ((rot_mb <= rot_me) ? m2 & m1 : m1 | m2);
 }
 
+CachedInstr code_block[256];
 
-bool PreDecode(uint32_t next_pc, CachedInstr* c_instr)
-{
+void NuInterpExec(uint32_t next_pc) {
+    /* WARNING: entries in this table MUST be in the same order as constants in PPCInstr! */
+    InterpInstr interp_tab[] = {
+        {nullptr,        {InstrOps::opNone,   CFlowType::CFL_NONE,           0}},
+        {CAST(addi),     {InstrOps::opDASimm, CFlowType::CFL_NONE,           1}},
+        {CAST(adde),     {InstrOps::opDAB,    CFlowType::CFL_NONE,           1}},
+        {CAST(addze),    {InstrOps::opDA,     CFlowType::CFL_NONE,           1}},
+        {CAST(andidot),  {InstrOps::opSAUimm, CFlowType::CFL_NONE,           1}},
+        {CAST(lwz),      {InstrOps::opDASimm, CFlowType::CFL_NONE,           1}},
+        {CAST(lwzu),     {InstrOps::opDASimm, CFlowType::CFL_NONE,           1}},
+        {CAST(lbz),      {InstrOps::opDASimm, CFlowType::CFL_NONE,           1}},
+        {CAST(lhz),      {InstrOps::opDASimm, CFlowType::CFL_NONE,           1}},
+        {CAST(rlwinm),   {InstrOps::opRot,    CFlowType::CFL_NONE,           1}},
+        {CAST(srawidot), {InstrOps::opSASh,   CFlowType::CFL_NONE,           1}},
+        {CAST(bc),       {InstrOps::opBrRel,  CFlowType::CFL_COND_BRANCH,    0}},
+        {CAST(bdnz),     {InstrOps::opBrRel,  CFlowType::CFL_COND_BRANCH,    0}},
+        {CAST(bdz),      {InstrOps::opBrRel,  CFlowType::CFL_COND_BRANCH,    0}},
+        {CAST(bclr),     {InstrOps::opBrLink, CFlowType::CFL_COND_BRANCH,    0}},
+        {CAST(mtspr),    {InstrOps::opSSpr,   CFlowType::CFL_NONE,           2}},
+        {CAST(bexit),    {InstrOps::opNone,   CFlowType::CFL_UNCOND_BRANCH,  0}},
+    };
+
+    CachedInstr* c_instr;
     uint32_t opcode, main_opcode;
     unsigned instr_index;
     uint8_t* pc_real;
@@ -70,7 +63,7 @@ bool PreDecode(uint32_t next_pc, CachedInstr* c_instr)
 
     pc_real = quickinstruction_translate(next_pc);
 
-    //CachedInstr* c_instr = &code[0];
+    c_instr = &code_block[0];
 
     done = false;
 
@@ -104,8 +97,8 @@ bool PreDecode(uint32_t next_pc, CachedInstr* c_instr)
             }
 
             if (!instr_index) {
-                LOG_F(ERROR, "Illegal opcode 0x%08X - Program exception!", opcode);
-                return false;
+                LOG_F(INFO, "Illegal opcode 0x%08X - Program exception!", opcode);
+                return;
             }
         }
 
@@ -167,7 +160,7 @@ bool PreDecode(uint32_t next_pc, CachedInstr* c_instr)
                 break;
             default:
                 LOG_F(ERROR, "Unsupported opcode 0x%08X - Program exception!", opcode);
-                return false;
+                return;
             }
             break;
         case InstrOps::opBrLink:
@@ -179,12 +172,12 @@ bool PreDecode(uint32_t next_pc, CachedInstr* c_instr)
                 continue;
             default:
                 LOG_F(ERROR, "Unsupported opcode 0x%08X - Program exception!", opcode);
-                return false;
+                return;
             }
             break;
         default:
             LOG_F(ERROR, "Unknown opcode format %d!", p_instr->info.ops_fmt);
-            return false;
+            return;
         }
 
         c_instr++;
@@ -194,21 +187,16 @@ bool PreDecode(uint32_t next_pc, CachedInstr* c_instr)
         ppc_set_cur_instruction(pc_real);
     } // while
 
-    return true;
+    //LOG_F(INFO, "PreDecode completed!");
+
+    CachedInstr* code = &code_block[0];
+
+    goto *(code->call_me); // begin code execution
+
+    #define GEN_OP(name,body)   lab_##name: { body; }
+    #define NEXT                goto *((++code)->call_me)
+
+    #include "interpops.h" // auto-generate labeled emulation blocks
 }
 
-void NuInterpExec(uint32_t start_addr) {
-    interp_tpc = &code_block[0];
-
-    if (!PreDecode(start_addr, interp_tpc)) {
-        return;
-    }
-
-    interp_running = true;
-
-    while(interp_running) {
-        interp_tpc->call_me(interp_tpc);
-    }
-}
-
-#endif // if !defined(USE_DTC)
+#endif

@@ -90,7 +90,12 @@ GEN_OP(srawidot, {
 
 GEN_OP(bc, {
     if (ppc_state.cr & code->uimm) {
+#if defined(USE_DTC)
+        code += code->bt;
+        goto *(code->call_me);
+#else
         interp_tpc += code->bt;
+#endif
     } else {
         NEXT;
     }
@@ -103,7 +108,12 @@ GEN_OP(mtspr, {
 
 GEN_OP(bdnz, {
     if (--ppc_state.spr[SPR::CTR]) {
+#if defined(USE_DTC)
+        code += code->bt;
+        goto *(code->call_me);
+#else
         interp_tpc += code->bt;
+#endif
     } else {
         NEXT;
     }
@@ -111,7 +121,12 @@ GEN_OP(bdnz, {
 
 GEN_OP(bdz, {
     if (!(--ppc_state.spr[SPR::CTR])) {
+#if defined(USE_DTC)
+        code += code->bt;
+        goto *(code->call_me);
+#else
         interp_tpc += code->bt;
+#endif
     } else {
         NEXT;
     }
@@ -123,5 +138,9 @@ GEN_OP(bclr, {
 
 GEN_OP(bexit, {
     ppc_state.pc = code->uimm; // write source pc
+#if defined(USE_DTC)
+    return;
+#else
     interp_running = false;
+#endif
 })
