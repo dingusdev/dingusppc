@@ -54,7 +54,7 @@ At least, a C++ compiler and [CMake](https://cmake.org) are required.
 
 You will also have to recursive clone or run 
 ```
-git submodules --update
+git submodule update --init --recursive
 ```
 
 This is because the CubeB module is not included by default. All other components are already included in the thirdparty folder and compiled along with the rest of DingusPPC.
