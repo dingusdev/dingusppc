@@ -23,35 +23,62 @@ struct InterpInstr {
 
 /* WARNING: entries in this table MUST be in the same order as constants in PPCInstr! */
 InterpInstr interp_tab[] = {
-    {nullptr,       {InstrOps::opNone,   CFlowType::CFL_NONE,           0}},
-    {impl_addi,     {InstrOps::opDASimm, CFlowType::CFL_NONE,           1}},
-    {impl_adde,     {InstrOps::opDAB,    CFlowType::CFL_NONE,           1}},
-    {impl_addze,    {InstrOps::opDA,     CFlowType::CFL_NONE,           1}},
-    {impl_andidot,  {InstrOps::opSAUimm, CFlowType::CFL_NONE,           1}},
-    {impl_lwz,      {InstrOps::opDASimm, CFlowType::CFL_NONE,           1}},
-    {impl_lwzu,     {InstrOps::opDASimm, CFlowType::CFL_NONE,           1}},
-    {impl_lbz,      {InstrOps::opDASimm, CFlowType::CFL_NONE,           1}},
-    {impl_lhz,      {InstrOps::opDASimm, CFlowType::CFL_NONE,           1}},
-    {impl_rlwinm,   {InstrOps::opRot,    CFlowType::CFL_NONE,           1}},
-    {impl_srawidot, {InstrOps::opSASh,   CFlowType::CFL_NONE,           1}},
-    {impl_bc,       {InstrOps::opBrRel,  CFlowType::CFL_COND_BRANCH,    0}},
-    {impl_bdnz,     {InstrOps::opBrRel,  CFlowType::CFL_COND_BRANCH,    0}},
-    {impl_bdz,      {InstrOps::opBrRel,  CFlowType::CFL_COND_BRANCH,    0}},
-    {impl_bclr,     {InstrOps::opBrLink, CFlowType::CFL_COND_BRANCH,    0}},
-    {impl_mtspr,    {InstrOps::opSSpr,   CFlowType::CFL_NONE,           2}},
-    {impl_bexit,    {InstrOps::opNone,   CFlowType::CFL_UNCOND_BRANCH,  0}},
+    {nullptr,       {InstrOps::opNone,      CFlowType::CFL_NONE,           0}},
+    {impl_addi,     {InstrOps::opDASimm,    CFlowType::CFL_NONE,           1}},
+    {impl_adde,     {InstrOps::opDAB,       CFlowType::CFL_NONE,           1}},
+    {impl_addze,    {InstrOps::opDA,        CFlowType::CFL_NONE,           1}},
+    {impl_andidot,  {InstrOps::opSAUimm,    CFlowType::CFL_NONE,           1}},
+    {impl_lwz,      {InstrOps::opDASimm,    CFlowType::CFL_NONE,           1}},
+    {impl_lwzu,     {InstrOps::opDASimm,    CFlowType::CFL_NONE,           1}},
+    {impl_lbz,      {InstrOps::opDASimm,    CFlowType::CFL_NONE,           1}},
+    {impl_lhz,      {InstrOps::opDASimm,    CFlowType::CFL_NONE,           1}},
+    {impl_rlwinm,   {InstrOps::opRot,       CFlowType::CFL_NONE,           1}},
+    {impl_srawidot, {InstrOps::opSASh,      CFlowType::CFL_NONE,           1}},
+    {impl_bc,       {InstrOps::opBrRel,     CFlowType::CFL_COND_BRANCH,    0}},
+    {impl_bdnz,     {InstrOps::opBrRel,     CFlowType::CFL_COND_BRANCH,    0}},
+    {impl_bdz,      {InstrOps::opBrRel,     CFlowType::CFL_COND_BRANCH,    0}},
+    {impl_bclr,     {InstrOps::opBrLink,    CFlowType::CFL_COND_BRANCH,    0}},
+    {impl_mtspr,    {InstrOps::opSSpr,      CFlowType::CFL_NONE,           2}},
+    {impl_bexit,    {InstrOps::opNone,      CFlowType::CFL_UNCOND_BRANCH,  0}},
+    {impl_twi,      {InstrOps::opTOASimm,   CFlowType::CFL_NONE,           1}},
+    {impl_mulli,    {InstrOps::opDASimm,    CFlowType::CFL_NONE,           1}},
+    {impl_cmpli,    {InstrOps::opCrfDASimm, CFlowType::CFL_NONE,           1}},
+    {impl_cmpi,     {InstrOps::opCrfDAUimm, CFlowType::CFL_NONE,           1}},
+    {impl_addic,    {InstrOps::opDASimm,    CFlowType::CFL_NONE,           1}},
+    {impl_addicdot, {InstrOps::opDASimm,    CFlowType::CFL_NONE,           1}},
+    {impl_sc,       {InstrOps::opSC,        CFlowType::CFL_NONE,           1}},
+    {impl_rlwimix,  {InstrOps::opRot,       CFlowType::CFL_NONE,           1}},
+    {impl_rlwnmx,   {InstrOps::opRot,       CFlowType::CFL_NONE,           1}},
+    {impl_ori,      {InstrOps::opSAUimm,    CFlowType::CFL_NONE,           1}},
+    {impl_oris,     {InstrOps::opSAUimm,    CFlowType::CFL_NONE,           1}},
+    {impl_xori,     {InstrOps::opSAUimm,    CFlowType::CFL_NONE,           1}},
+    {impl_xoris,    {InstrOps::opSAUimm,    CFlowType::CFL_NONE,           1}},
+    {impl_andisdot, {InstrOps::opSAUimm,    CFlowType::CFL_NONE,           1}},
+    {impl_lbzu,     {InstrOps::opDASimm,    CFlowType::CFL_NONE,           1}},
+    {impl_stw,      {InstrOps::opDASimm,    CFlowType::CFL_NONE,           1}},
+    {impl_stwu,     {InstrOps::opDASimm,    CFlowType::CFL_NONE,           1}},
+    {impl_stb,      {InstrOps::opDASimm,    CFlowType::CFL_NONE,           1}},
+    {impl_stbu,     {InstrOps::opDASimm,    CFlowType::CFL_NONE,           1}},
+    {impl_lhzu,     {InstrOps::opDASimm,    CFlowType::CFL_NONE,           1}},
+    {impl_lha,      {InstrOps::opDASimm,    CFlowType::CFL_NONE,           1}},
+    {impl_lhau,     {InstrOps::opDASimm,    CFlowType::CFL_NONE,           1}},
+    {impl_sth,      {InstrOps::opDASimm,    CFlowType::CFL_NONE,           1}},
+    {impl_sthu,     {InstrOps::opDASimm,    CFlowType::CFL_NONE,           1}},
 };
 
 CachedInstr code_block[256];
 
-#define REG_D(opcode)   ((opcode >> 21) & 0x1F)
-#define REG_A(opcode)   ((opcode >> 16) & 0x1F)
-#define REG_B(opcode)   ((opcode >> 11) & 0x1F)
-#define REG_S           REG_D
-#define BR_BO           REG_D
-#define BR_BI           REG_A
-#define SIMM(opcode)    ((int32_t)((int16_t)(opcode & 0xFFFF)))
-#define UIMM(opcode)    ((uint32_t)((uint16_t)(opcode & 0xFFFF)))
+#define REG_D(opcode)     ((opcode >> 21) & 0x1F)
+#define REG_A(opcode)     ((opcode >> 16) & 0x1F)
+#define REG_B(opcode)     ((opcode >> 11) & 0x1F)
+#define REG_S             REG_D
+#define BR_BO             REG_D
+#define BR_BI             REG_A
+#define SIMM(opcode)      ((int32_t)((int16_t)(opcode & 0xFFFF)))
+#define UIMM(opcode)      ((uint32_t)((uint16_t)(opcode & 0xFFFF)))
+#define REG_TO(opcode)    REG_D
+#define REG_CRFD(opcode)  (((opcode >> 23) & 7) << 2)
+#define REG_SR(opcode)    (opcode >> 16) & 15
 
 /** mask generator for rotate and shift instructions (§ 4.2.1.4 PowerpC PEM) */
 static inline uint32_t rot_mask(unsigned rot_mb, unsigned rot_me) {
@@ -150,6 +177,37 @@ bool PreDecode(uint32_t next_pc, CachedInstr* c_instr)
         case InstrOps::opSSpr:
             c_instr->d1   = REG_S(opcode);
             c_instr->uimm = (REG_B(opcode) << 5) | REG_A(opcode);
+            break;
+        case InstrOps::opD:
+            c_instr->d1 = REG_D(opcode);
+            break;
+        case InstrOps::opTOASimm:
+            c_instr->d1   = REG_TO(opcode);
+            c_instr->d2   = REG_A(opcode);
+            c_instr->simm = SIMM(opcode);
+            break;
+        case InstrOps::opTOB:
+            c_instr->d1 = REG_TO(opcode);
+            c_instr->d2 = REG_A(opcode);
+            c_instr->d3 = REG_B(opcode);
+            break;
+        case InstrOps::opCrfDASimm:
+            c_instr->d1   = REG_CRFD(opcode);
+            c_instr->d2   = REG_A(opcode);
+            c_instr->simm = SIMM(opcode);
+            break;
+        case InstrOps::opCrfDAUimm:
+            c_instr->d1   = REG_CRFD(opcode);
+            c_instr->d2   = REG_A(opcode);
+            c_instr->simm = UIMM(opcode);
+            break;
+        case InstrOps::opDSR:
+            c_instr->d1 = REG_D(opcode);
+            c_instr->d2 = REG_SR(opcode);
+        case InstrOps::opDB:
+            c_instr->d1 = REG_D(opcode);
+            c_instr->d2 = REG_B(opcode);
+        case InstrOps::opSC:
             break;
         case InstrOps::opBrRel:
             c_instr->bt = SIMM(opcode) >> 2;

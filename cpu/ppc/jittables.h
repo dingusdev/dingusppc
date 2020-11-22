@@ -16,6 +16,15 @@ enum class InstrOps {
     opSSpr,
     opBrRel,
     opBrLink,
+    opD,
+    opTOASimm,
+    opTOB,
+    opCrfDASimm,
+    opCrfDAUimm,
+    opDSR,
+    opDB,
+    opSC, //for System Calls
+    opSASimm,
 };
 
 /* Control flow kind. */
