@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "viacuda.h"
 #include "adb.h"
+//#include "cpu/ppc/ppcemu.h"
 #include <cinttypes>
 #include <thirdparty/loguru/loguru.hpp>
 
@@ -351,6 +352,7 @@ void ViaCuda::pseudo_command(int cmd, int data_count) {
         break;
     default:
         LOG_F(ERROR, "Cuda: unsupported pseudo command 0x%x \n", cmd);
+        //LOG_F(ERROR, "Cuda: unsupported pseudo command 0x%x - Address: 0x%x \n", cmd, ppc_state.pc);
         error_response(CUDA_ERR_BAD_CMD);
     }
 }

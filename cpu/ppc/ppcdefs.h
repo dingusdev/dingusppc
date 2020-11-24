@@ -187,7 +187,7 @@ enum PPCInstr : int {
     lfsux,
     mfsr,
     lswi,
-    sync,
+    ppc_sync,
     lfdx,
     nego,
     negodot,

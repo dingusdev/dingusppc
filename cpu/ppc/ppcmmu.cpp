@@ -371,7 +371,7 @@ static uint32_t ppc_mmu_addr_translate(uint32_t la, int is_write) {
 }
 
 static void mem_write_unaligned(uint32_t addr, uint32_t value, uint32_t size) {
-    LOG_F(WARNING, "Attempt to write unaligned %d bytes to 0x%08X\n", size, addr);
+    //LOG_F(WARNING, "Attempt to write unaligned %d bytes to 0x%08X\n", size, addr);
 
     if (((addr & 0xFFF) + size) > 0x1000) {
         LOG_F(ERROR, "SOS! Cross-page unaligned write, addr=%08X, size=%d\n", addr, size);
@@ -444,7 +444,7 @@ void mem_write_qword(uint32_t addr, uint64_t value) {
 static uint32_t mem_grab_unaligned(uint32_t addr, uint32_t size) {
     uint32_t ret = 0;
 
-    LOG_F(WARNING, "Attempt to read unaligned %d bytes from 0x%08X\n", size, addr);
+    //LOG_F(WARNING, "Attempt to read unaligned %d bytes from 0x%08X\n", size, addr);
 
     if (((addr & 0xFFF) + size) > 0x1000) {
         LOG_F(ERROR, "SOS! Cross-page unaligned read, addr=%08X, size=%d\n", addr, size);

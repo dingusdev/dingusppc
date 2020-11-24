@@ -130,7 +130,7 @@ static std::map<uint16_t, PPCInstr> Subop31Init = {
     { 1104, PPCInstr::subfo},       { 1105, PPCInstr::subfodot},
     { 1132, PPCInstr::tlbsync},     { 1134, PPCInstr::lfsux},
     { 1190, PPCInstr::mfsr},        { 1194, PPCInstr::lswi},
-    { 1196, PPCInstr::sync},        { 1198, PPCInstr::lfdx},
+    { 1196, PPCInstr::ppc_sync},    { 1198, PPCInstr::lfdx},
     { 1232, PPCInstr::nego},        { 1233, PPCInstr::negodot},
     { 1238, PPCInstr::mulo},        { 1239, PPCInstr::mulodot},
     { 1262, PPCInstr::lfdux},       { 1296, PPCInstr::subfeo},
