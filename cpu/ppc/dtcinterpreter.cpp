@@ -23,9 +23,11 @@ struct InterpInstr {
 #define BR_BI             REG_A
 #define SIMM(opcode)      ((int32_t)((int16_t)(opcode & 0xFFFF)))
 #define UIMM(opcode)      ((uint32_t)((uint16_t)(opcode & 0xFFFF)))
-#define REG_TO(opcode) ((opcode >> 21) & 0x1F)
+#define REG_TO(opcode)    ((opcode >> 21) & 0x1F)
 #define REG_CRFD(opcode)  (((opcode >> 23) & 7) << 2)
+#define REG_CRFS(opcode)  (((opcode >> 18) & 7) << 2)
 #define REG_SR(opcode)    (opcode >> 16) & 15
+#define LI(opcode)        (opcode >> 2) & 0xFFFFFF
 
 /** mask generator for rotate and shift instructions (§ 4.2.1.4 PowerpC PEM) */
 static inline uint32_t rot_mask(unsigned rot_mb, unsigned rot_me) {
@@ -62,7 +64,7 @@ void NuInterpExec(uint32_t next_pc) {
         {CAST(cmpi),          {InstrOps::opCrfDAUimm, CFlowType::CFL_NONE,          1}},
         {CAST(addic),         {InstrOps::opDASimm,    CFlowType::CFL_NONE,          1}},
         {CAST(addicdot),      {InstrOps::opDASimm,    CFlowType::CFL_NONE,          1}},
-        {CAST(sc),            {InstrOps::opSC,        CFlowType::CFL_NONE,          1}},
+        {CAST(sc),            {InstrOps::opNone,      CFlowType::CFL_NONE,          1}},
         {CAST(rlwimix),       {InstrOps::opRot,       CFlowType::CFL_NONE,          1}},
         {CAST(rlwnmx),        {InstrOps::opRot,       CFlowType::CFL_NONE,          1}},
         {CAST(ori),           {InstrOps::opSAUimm,    CFlowType::CFL_NONE,          1}},
@@ -80,6 +82,8 @@ void NuInterpExec(uint32_t next_pc) {
         {CAST(lhau),          {InstrOps::opDASimm,    CFlowType::CFL_NONE,          1}},
         {CAST(sth),           {InstrOps::opSASimm,    CFlowType::CFL_NONE,          1}},
         {CAST(sthu),          {InstrOps::opSASimm,    CFlowType::CFL_NONE,          1}},
+        {CAST(lmw),           {InstrOps::opSASimm,    CFlowType::CFL_NONE,          1}},
+        {CAST(stmw),          {InstrOps::opSASimm,    CFlowType::CFL_NONE,          1}},
         {CAST(lfs),           {InstrOps::opDASimm,    CFlowType::CFL_NONE,          1}},
         {CAST(lfsu),          {InstrOps::opDASimm,    CFlowType::CFL_NONE,          1}},
         {CAST(lfd),           {InstrOps::opDASimm,    CFlowType::CFL_NONE,          1}},
@@ -88,6 +92,120 @@ void NuInterpExec(uint32_t next_pc) {
         {CAST(stfsu),         {InstrOps::opSASimm,    CFlowType::CFL_NONE,          1}},
         {CAST(stfd),          {InstrOps::opSASimm,    CFlowType::CFL_NONE,          1}},
         {CAST(stfdu),         {InstrOps::opSASimm,    CFlowType::CFL_NONE,          1}},
+        {CAST(bcl),           {InstrOps::opBrRel,     CFlowType::CFL_COND_BRANCH,   0}},
+        {CAST(bca),           {InstrOps::opBrRel,     CFlowType::CFL_COND_BRANCH,   0}},
+        {CAST(bcla),          {InstrOps::opBrRel,     CFlowType::CFL_COND_BRANCH,   0}},
+        {CAST(b),             {InstrOps::opBrRel,     CFlowType::CFL_COND_BRANCH,   0}},
+        {CAST(bl),            {InstrOps::opBrRel,     CFlowType::CFL_COND_BRANCH,   0}},
+        {CAST(ba),            {InstrOps::opBrRel,     CFlowType::CFL_COND_BRANCH,   0}},
+        {CAST(bla),           {InstrOps::opBrRel,     CFlowType::CFL_COND_BRANCH,   0}},
+        {CAST(crnor),         {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(rfi),           {InstrOps::opNone,      CFlowType::CFL_COND_BRANCH,   1}},
+        {CAST(crandc),        {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(isync),         {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(crxor),         {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(crnand),        {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(crand),         {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(creqv),         {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(crorc),         {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(cror),          {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(bcctr),         {InstrOps::opBrRel,     CFlowType::CFL_NONE,          1}},
+        {CAST(cmp),           {InstrOps::opCrfDAB,    CFlowType::CFL_NONE,          1}},
+        {CAST(tw),            {InstrOps::opTOAB,      CFlowType::CFL_NONE,          1}},
+        /*
+        
+        {CAST(lbzux),         {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(lbzx),          {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(lfdux),         {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(lfdx),          {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(lfsux),         {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(lfsx),          {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(lhaux),         {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(lhax),          {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(lhbrx),         {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(lhzux),         {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(lhzx),          {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(lswi),          {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(lswx),          {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(lwarx),         {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(lwbrx),         {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(lwzx),          {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(lwzux),         {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+
+        {CAST(add),           {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(adddot),        {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(addc),          {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(addcdot),       {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(addedot),       {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(addme),         {InstrOps::opDA,        CFlowType::CFL_NONE,          1}},
+        {CAST(addmedot),      {InstrOps::opDA,        CFlowType::CFL_NONE,          1}},
+        {CAST(addze),         {InstrOps::opDA,        CFlowType::CFL_NONE,          1}},
+        {CAST(addzedot),      {InstrOps::opDA,        CFlowType::CFL_NONE,          1}},
+        {CAST(and),           {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(anddot),        {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(andc),          {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(andcdot),       {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(divw),          {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(divwdot),       {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(divwu),         {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(divwudot),      {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(eieio),         {InstrOps::opNone,       CFlowType::CFL_NONE,          1}},
+
+        {CAST(cmpl),          {InstrOps::opCrfDAB,    CFlowType::CFL_NONE,          1}},
+        {CAST(cntlzw),        {InstrOps::opSA,        CFlowType::CFL_NONE,          1}},
+        {CAST(cntlzwdot),     {InstrOps::opSA,        CFlowType::CFL_NONE,          1}},
+        {CAST(eqv),           {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(eqvdot),        {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(extsb),         {InstrOps::opSA,        CFlowType::CFL_NONE,          1}},
+        {CAST(extsbdot),      {InstrOps::opSA,        CFlowType::CFL_NONE,          1}},
+        {CAST(extsh),         {InstrOps::opSA,        CFlowType::CFL_NONE,          1}},
+        {CAST(extshdot),      {InstrOps::opSA,        CFlowType::CFL_NONE,          1}},
+
+        {CAST(fmr),           {InstrOps::opDB,        CFlowType::CFL_NONE,          1}},
+        {CAST(icbi),          {InstrOps::opAB,        CFlowType::CFL_NONE,          1}},
+        {CAST(isync),         {InstrOps::opNone,      CFlowType::CFL_NONE,          1}},
+
+        {CAST(mtcrf),         {InstrOps::opNone,      CFlowType::CFL_NONE,          1}},
+        {CAST(mulhw),         {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(mulhwu),        {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(mullw),         {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(nand),          {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(nanddot),       {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(neg),           {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(negdot),        {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(nor),           {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(nordot),        {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(or),            {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(ordot),         {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(orc),           {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(orcdot),        {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(slw),           {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(slwdot),        {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(sraw),          {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(srawdot),       {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(srawi),         {InstrOps::opSASh,      CFlowType::CFL_NONE,          1}},
+        {CAST(stbux),         {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(stbx),          {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(stfdux),        {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(stfdx),         {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(stfiwx),        {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(stfsux),        {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(stfsx),         {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(sthbrx),        {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(sthux),         {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(sthx),          {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(stswi),         {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(stswx),         {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(stwbrx),        {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(stwcx),         {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(stwux),         {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(stwx),          {InstrOps::opSAB,       CFlowType::CFL_NONE,          1}},
+
+        {CAST(addedot),       {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(addeo),         {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+        {CAST(addeodot),      {InstrOps::opDAB,       CFlowType::CFL_NONE,          1}},
+
+        */
     };
 
     CachedInstr* c_instr;
@@ -152,6 +270,16 @@ void NuInterpExec(uint32_t next_pc) {
             c_instr->d2   = REG_A(opcode);
             c_instr->d3   = REG_B(opcode);
             break;
+        case InstrOps::opTOAB:
+            c_instr->d1 = REG_TO(opcode);
+            c_instr->d2 = REG_A(opcode);
+            c_instr->d3 = REG_B(opcode);
+            break;
+        case InstrOps::opCrfDAB:
+            c_instr->d1 = REG_CRFD(opcode);
+            c_instr->d2 = REG_A(opcode);
+            c_instr->d3 = REG_B(opcode);
+            break;
         case InstrOps::opDASimm:
         case InstrOps::opSASimm:
             c_instr->d1   = REG_D(opcode);
@@ -209,7 +337,7 @@ void NuInterpExec(uint32_t next_pc) {
         case InstrOps::opDB:
             c_instr->d1 = REG_D(opcode);
             c_instr->d2 = REG_B(opcode);
-        case InstrOps::opSC:
+        case InstrOps::opNone:
             break;
         case InstrOps::opBrRel:
             c_instr->bt = SIMM(opcode) >> 2;

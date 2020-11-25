@@ -1288,11 +1288,11 @@ void dppc_interpreter::ppc_tw() {
     reg_a  = (ppc_cur_instruction >> 11) & 31;
     reg_b  = (ppc_cur_instruction >> 16) & 31;
     ppc_to = (ppc_cur_instruction >> 21) & 31;
-    if ((((int32_t)ppc_state.gpr[reg_a] < (int32_t)ppc_state.gpr[reg_b]) & (ppc_to & 0x10)) ||
-        (((int32_t)ppc_state.gpr[reg_a] > (int32_t)ppc_state.gpr[reg_b]) & (ppc_to & 0x08)) ||
-        (((int32_t)ppc_state.gpr[reg_a] == (int32_t)ppc_state.gpr[reg_b]) & (ppc_to & 0x04)) ||
-        ((ppc_state.gpr[reg_a] < ppc_state.gpr[reg_b]) & (ppc_to & 0x02)) ||
-        ((ppc_state.gpr[reg_a] > ppc_state.gpr[reg_b]) & (ppc_to & 0x01))) {
+    if ((((int32_t)ppc_state.gpr[reg_a] < (int32_t)ppc_state.gpr[reg_b]) && (ppc_to & 0x10)) ||
+        (((int32_t)ppc_state.gpr[reg_a] > (int32_t)ppc_state.gpr[reg_b]) && (ppc_to & 0x08)) ||
+        (((int32_t)ppc_state.gpr[reg_a] == (int32_t)ppc_state.gpr[reg_b]) && (ppc_to & 0x04)) ||
+        ((ppc_state.gpr[reg_a] < ppc_state.gpr[reg_b]) && (ppc_to & 0x02)) ||
+        ((ppc_state.gpr[reg_a] > ppc_state.gpr[reg_b]) && (ppc_to & 0x01))) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
     }
 }

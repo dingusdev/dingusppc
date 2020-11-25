@@ -19,12 +19,13 @@ enum class InstrOps {
     opD,
     opTOASimm,
     opTOB,
+    opCrfDAB,
     opCrfDASimm,
     opCrfDAUimm,
     opDSR,
     opDB,
-    opSC, //for System Calls
     opSASimm,
+    opTOAB
 };
 
 /* Control flow kind. */

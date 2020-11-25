@@ -481,6 +481,11 @@ GEN_OP(stfdu, {
     }
 })
 
+GEN_OP(stfdx, {
+    uint32_t ea = ((code->d2) ? ppc_state.gpr[code->d2] : 0) + ppc_state.gpr[code->d3];
+    mem_write_qword(ea, ppc_state.fpr[code->d1].int64_r);
+})
+
 // placeholders until I can figure out how to refactor these fully
 GEN_OP(bcl, {})
 GEN_OP(bca, {})
@@ -490,21 +495,77 @@ GEN_OP(bl, {})
 GEN_OP(ba, {})
 GEN_OP(bla, {})
 GEN_OP(bclrl, {})
-
-GEN_OP(crnor, {})
 GEN_OP(rfi, {})
-GEN_OP(crandc, {})
 GEN_OP(isync, {})
-GEN_OP(crxor, {})
-GEN_OP(crnand, {})
-GEN_OP(crand, {})
-GEN_OP(creqv, {})
-GEN_OP(crorc, {})
-GEN_OP(cror, {})
+
 GEN_OP(bcctr, {})
 GEN_OP(bcctrl, {})
+    // back to real code!
 
-// back to real code!
+GEN_OP(crnor, {
+    if (!((ppc_state.cr & (0x80000000UL >> code->d2)) || (ppc_state.cr & (0x80000000UL >> code->d3)))) {
+        ppc_state.cr |= (0x80000000UL >> code->d1);
+    } else {
+        ppc_state.cr &= ~(0x80000000UL >> code->d1);
+    }
+})
+
+GEN_OP(crandc, {
+    if ((ppc_state.cr & (0x80000000UL >> code->d2)) && !(ppc_state.cr & (0x80000000UL >> code->d3))) {
+        ppc_state.cr |= (0x80000000UL >> code->d1);
+    } else {
+        ppc_state.cr &= ~(0x80000000UL >> code->d1);
+    }
+})
+
+GEN_OP(crxor, {
+    if ((ppc_state.cr & (0x80000000UL >> code->d2)) ^ (ppc_state.cr & (0x80000000UL >> code->d3))) {
+        ppc_state.cr |= (0x80000000UL >> code->d1);
+    } else {
+        ppc_state.cr &= ~(0x80000000UL >> code->d1);
+    }
+})
+
+GEN_OP(crnand, {
+    if (!((ppc_state.cr & (0x80000000UL >> code->d2)) && (ppc_state.cr & (0x80000000UL >> code->d3)))) {
+        ppc_state.cr |= (0x80000000UL >> code->d1);
+    } else {
+        ppc_state.cr &= ~(0x80000000UL >> code->d1);
+    }
+})
+
+GEN_OP(crand, {
+    if ((ppc_state.cr & (0x80000000UL >> code->d2)) && (ppc_state.cr & (0x80000000UL >> code->d3))) {
+        ppc_state.cr |= (0x80000000UL >> code->d1);
+    } else {
+        ppc_state.cr &= ~(0x80000000UL >> code->d1);
+    }
+})
+
+GEN_OP(creqv, {
+    if (!((ppc_state.cr & (0x80000000UL >> code->d2)) ^ (ppc_state.cr & (0x80000000UL >> code->d3)))) {
+        ppc_state.cr |= (0x80000000UL >> code->d1);
+    } else {
+        ppc_state.cr &= ~(0x80000000UL >> code->d1);
+    }
+})
+
+GEN_OP(crorc, {
+    if ((ppc_state.cr & (0x80000000UL >> code->d2)) || !(ppc_state.cr & (0x80000000UL >> code->d3))) {
+        ppc_state.cr |= (0x80000000UL >> code->d1);
+    } else {
+        ppc_state.cr &= ~(0x80000000UL >> code->d1);
+    }
+})
+
+GEN_OP(cror, {
+    if ((ppc_state.cr & (0x80000000UL >> code->d2)) || (ppc_state.cr & (0x80000000UL >> code->d3))) {
+        ppc_state.cr |= (0x80000000UL >> code->d1);
+    } else {
+        ppc_state.cr &= ~(0x80000000UL >> code->d1);
+    }
+})
+
 
 GEN_OP(cmp, {
     uint32_t xer_in = (ppc_state.spr[SPR::XER] & 0x80000000UL) >> 3;
@@ -516,7 +577,15 @@ GEN_OP(cmp, {
          ((cmp_in + xer_in) >> (code->d1 & 0x1C)));
 })
 
-GEN_OP(tw, {})
+GEN_OP(tw, {
+    if ((((int32_t)ppc_state.gpr[code->d2] < (int32_t)ppc_state.gpr[code->d3]) && (code->d1 & 0x10)) ||
+        (((int32_t)ppc_state.gpr[code->d2] > (int32_t)ppc_state.gpr[code->d3]) && (code->d1 & 0x08)) ||
+        (((int32_t)ppc_state.gpr[code->d2] == (int32_t)ppc_state.gpr[code->d3]) && (code->d1 & 0x04)) ||
+        ((ppc_state.gpr[code->d2] < ppc_state.gpr[code->d3]) && (code->d1 & 0x02)) ||
+        ((ppc_state.gpr[code->d2] > ppc_state.gpr[code->d3]) && (code->d1 & 0x01))) {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+    }
+})
 
 GEN_OP(subfc, {
     ppc_state.gpr[code->d1] = ppc_state.gpr[code->d3] - ppc_state.gpr[code->d2];
@@ -586,6 +655,21 @@ GEN_OP(mulhwudot, {
     ppc_changecrf0(ppc_state.gpr[code->d1]);
 })
 
+GEN_OP(mfmsr, {
+    if (ppc_state.msr & 0x4000) {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x00040000);
+    }
+
+    ppc_state.gpr[code->d1] = ppc_state.msr;
+})
+
+GEN_OP(dcbf, {})
+
+GEN_OP(lbzx, {
+    uint32_t ea             = ((code->d2) ? ppc_state.gpr[code->d2] : 0) + ppc_state.gpr[code->d3];
+    ppc_state.gpr[code->d1] = mem_grab_byte(ea);
+})
+
 GEN_OP(neg,  { 
     ppc_state.gpr[code->d1] = ~(ppc_state.gpr[code->d2]) + 1; 
 })
@@ -595,8 +679,125 @@ GEN_OP(negdot, {
     ppc_changecrf0(ppc_result_d);
 })
 
+GEN_OP(mul, {
+    uint64_t product = ((uint64_t)ppc_state.gpr[code->d2]) * ((uint64_t)ppc_state.gpr[code->d3]);
+    ppc_state.gpr[code->d1] = ((uint32_t)(product >> 32));
+    ppc_state.spr[SPR::MQ]  = ((uint32_t)(product));
+})
+
+GEN_OP(muldot, {
+    uint64_t product = ((uint64_t)ppc_state.gpr[code->d2]) * ((uint64_t)ppc_state.gpr[code->d3]);
+    ppc_state.gpr[code->d1] = ((uint32_t)(product >> 32));
+    ppc_state.spr[SPR::MQ]  = ((uint32_t)(product));
+    ppc_changecrf0(ppc_result_d);
+})
+
+GEN_OP(lbzux, {
+    if ((ppc_state.gpr[code->d2] != ppc_state.gpr[code->d3]) || ppc_state.gpr[code->d2] != 0) {
+        ppc_effective_address   = ppc_state.gpr[code->d2] + ppc_state.gpr[code->d3];
+        ppc_state.gpr[code->d1] = mem_grab_byte(ppc_effective_address);
+        ppc_state.gpr[code->d2] = ppc_effective_address;
+    } else {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+    }
+})
+
+GEN_OP(nor, {
+    ppc_state.gpr[code->d2] = ~(ppc_state.gpr[code->d1] | ppc_state.gpr[code->d3]);
+})
+
+GEN_OP(nordot, {
+    ppc_state.gpr[code->d2] = ~(ppc_state.gpr[code->d1] | ppc_state.gpr[code->d3]);
+    ppc_changecrf0(ppc_state.gpr[code->d2]);
+})
+
+GEN_OP(subfe, {
+    uint32_t grab_xer = !!(ppc_state.spr[SPR::XER] & 0x20000000);
+    ppc_state.gpr[code->d1] = ~ppc_state.gpr[code->d2] + ppc_state.gpr[code->d3] + grab_xer;
+    if (ppc_state.gpr[code->d3] < ppc_state.gpr[code->d2]) {
+        ppc_state.spr[SPR::XER] |= 0x20000000UL;
+    } else {
+        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
+    }
+})
+
+GEN_OP(subfedot, {
+    uint32_t grab_xer       = !!(ppc_state.spr[SPR::XER] & 0x20000000);
+    ppc_state.gpr[code->d1] = ~ppc_state.gpr[code->d2] + ppc_state.gpr[code->d3] + grab_xer;
+    if (ppc_state.gpr[code->d3] < ppc_state.gpr[code->d2]) {
+        ppc_state.spr[SPR::XER] |= 0x20000000UL;
+    } else {
+        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
+    }
+    ppc_changecrf0(ppc_state.gpr[code->d1]);
+})
+
+GEN_OP(addedot, {
+    uint32_t xer_ca = !!(ppc_state.spr[SPR::XER] & 0x20000000);
+    uint32_t val_a  = ppc_state.gpr[code->d2];
+    uint32_t val_b  = ppc_state.gpr[code->d3];
+
+    uint32_t result = val_a + val_b + xer_ca;
+    if ((result < val_a) || (xer_ca && (result == val_a))) {
+        ppc_state.spr[SPR::XER] |= 0x20000000UL;
+    } else {
+        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
+    }
+    ppc_state.gpr[code->d1] = result;
+    ppc_changecrf0(ppc_state.gpr[code->d1]);
+    NEXT;
+})
+
+GEN_OP(mtcrf, {
+    crm = ((opcode >> 12) & 255);
+    // check this
+    uint32_t cr_mask = (crm & 128) ? 0xF0000000 : 0x00000000;
+    cr_mask += (crm & 64) ? 0x0F000000 : 0x00000000;
+    cr_mask += (crm & 32) ? 0x00F00000 : 0x00000000;
+    cr_mask += (crm & 16) ? 0x000F0000 : 0x00000000;
+    cr_mask += (crm & 8) ? 0x0000F000 : 0x00000000;
+    cr_mask += (crm & 4) ? 0x00000F00 : 0x00000000;
+    cr_mask += (crm & 2) ? 0x000000F0 : 0x00000000;
+    cr_mask += (crm & 1) ? 0x0000000F : 0x00000000;
+    ppc_state.cr = (ppc_result_d & cr_mask) | (ppc_state.cr & ~(cr_mask));
+})
+
+GEN_OP(mtmsr, {
+    if (ppc_state.msr & 0x4000) {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x00040000);
+    }
+
+    ppc_state.msr = ppc_state.gpr[code->d1];
+})
+
+GEN_OP(stwcx, {
+    uint32_t ea = ((code->d2) ? ppc_state.gpr[code->d2] : 0) + ppc_state.gpr[code->d3];
+    if (ppc_state.reserve) {
+        mem_write_dword(ea, ppc_state.gpr[code->d1]);
+        ppc_state.cr |= (ppc_state.spr[SPR::XER] & 0x80000000) ? 0x30000000 : 0x20000000;
+        ppc_state.reserve = false;
+    } else {
+        ppc_state.cr |= (ppc_state.spr[SPR::XER] & 0x80000000) ? 0x10000000 : 0;
+    }
+})
+
+GEN_OP(stwx, {
+    uint32_t ea = ((code->d2) ? ppc_state.gpr[code->d2] : 0) + ppc_state.gpr[code->d3];
+    mem_write_dword(ppc_effective_address, ppc_state.gpr[code->d1]);
+})
+
+GEN_OP(stwux, {
+    uint32_t ea = ppc_state.gpr[code->d2] + ppc_state.gpr[code->d3];
+    mem_write_dword(ea, ppc_state.gpr[code->d1]);
+    ppc_state.gpr[code->d2] = ea;
+})
+
+GEN_OP(mtsr, {
+    ppc_state.gpr[code->d2] = ppc_state.gpr[code->d1];
+})
+
 GEN_OP(nego, {
-    ppc_result_d = ~(ppc_result_a) + 1;
+        ppc_state.gpr[code->d1] = ~(ppc_state.gpr[code->d2]) + 1;
 
     if (ppc_state.gpr[code->d2] == 0x80000000)
         ppc_state.spr[SPR::XER] |= 0xC0000000;
@@ -605,7 +806,7 @@ GEN_OP(nego, {
 })
 
 GEN_OP(negodot, {
-    ppc_result_d = ~(ppc_result_a) + 1;
+    ppc_state.gpr[code->d1] = ~(ppc_state.gpr[code->d2]) + 1;
 
     if (oe_flag) {
         if (ppc_result_a == 0x80000000)
@@ -615,21 +816,6 @@ GEN_OP(negodot, {
     }
 
     ppc_changecrf0(ppc_result_d);
-})
-
-GEN_OP(dcbf, {})
-
-GEN_OP(lbzx, {
-    uint32_t ea  = ((code->d2) ? ppc_state.gpr[code->d2] : 0) + ppc_state.gpr[code->d3];
-    ppc_state.gpr[code->d1] = mem_grab_byte(ea);
-})
-
-GEN_OP(mfmsr, {
-    if (ppc_state.msr & 0x4000) {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x00040000);
-    }
-
-    ppc_state.gpr[code->d1] = ppc_state.msr;
 })
 
 GEN_OP(mfcr, { 
@@ -745,6 +931,19 @@ GEN_OP(andcdot, {
     ppc_changecrf0(ppc_state.gpr[code->d2]);
 })
 
+GEN_OP(mulhw, {
+    int64_t product = (int64_t)(int32_t)ppc_state.gpr[code->d2] * 
+        (int64_t)(int32_t)ppc_state.gpr[code->d3];
+    ppc_state.gpr[code->d1] = product >> 32;
+})
+
+GEN_OP(mulhwdot, {
+    int64_t product = (int64_t)(int32_t)ppc_state.gpr[code->d2] *
+        (int64_t)(int32_t)ppc_state.gpr[code->d3];
+    ppc_result_d    = product >> 32;
+    ppc_changecrf0(ppc_result_d);
+})
+
 GEN_OP(subfco, {
     ppc_state.gpr[code->d1] = ppc_state.gpr[code->d3] - ppc_state.gpr[code->d2];
 
@@ -784,6 +983,40 @@ GEN_OP(subfcodot, {
 GEN_OP(lhbrx, {
     uint32_t ea = ((code->d1 == 0) ? ppc_state.gpr[code->d3] : 0) + ppc_state.gpr[code->d3];
     ppc_state.gpr[code->d1] = (uint32_t)(BYTESWAP_16(mem_grab_word(ppc_effective_address)));
+})
+
+GEN_OP(sraw, {
+    if (ppc_state.gpr[code->d3] & 0x20) {
+        ppc_state.gpr[code->d2] = (int32_t)ppc_state.gpr[code->d1] >> 31;
+        ppc_state.spr[SPR::XER] |= (ppc_state.gpr[code->d2] & 1) << 29;
+    } else {
+        uint32_t shift          = ppc_state.gpr[code->d3] & 0x1F;
+        uint32_t mask           = (1 << shift) - 1;
+        ppc_state.gpr[code->d2] = (int32_t)ppc_state.gpr[code->d1] >> shift;
+        if ((ppc_state.gpr[code->d1] & 0x80000000UL) && (ppc_state.gpr[code->d1] & mask)) {
+            ppc_state.spr[SPR::XER] |= 0x20000000UL;
+        } else {
+            ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
+        }
+    }
+})
+
+GEN_OP(srawdot, {
+    if (ppc_state.gpr[code->d3] & 0x20) {
+        ppc_state.gpr[code->d2] = (int32_t)ppc_state.gpr[code->d1] >> 31;
+        ppc_state.spr[SPR::XER] |= (ppc_state.gpr[code->d2] & 1) << 29;
+    } else {
+        uint32_t shift          = ppc_state.gpr[code->d3] & 0x1F;
+        uint32_t mask           = (1 << shift) - 1;
+        ppc_state.gpr[code->d2] = (int32_t)ppc_state.gpr[code->d1] >> shift;
+        if ((ppc_state.gpr[code->d1] & 0x80000000UL) && (ppc_state.gpr[code->d1] & mask)) {
+            ppc_state.spr[SPR::XER] |= 0x20000000UL;
+        } else {
+            ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
+        }
+    }
+
+    ppc_changecrf0(ppc_state.gpr[code->d2]);
 })
 
 GEN_OP(srawi, {
@@ -908,3 +1141,227 @@ GEN_OP(dcbz, {
         ppc_exception_handler(Except_Type::EXC_ALIGNMENT, 0x00000);
     }
 })
+
+
+
+GEN_OP(mcrxr, {
+    ppc_state.cr = (ppc_state.cr & ~(0xF0000000UL >> ppc_state.gpr[code->d1])) |
+        ((ppc_state.spr[SPR::XER] & 0xF0000000UL) >> ppc_state.gpr[code->d1]);
+    ppc_state.spr[SPR::XER] &= 0x0FFFFFFF;
+})
+
+GEN_OP(mtsrin, {
+    if ((ppc_state.msr & 0x4000) == 0) {
+        uint32_t selection      = ppc_state.gpr[code->d2] >> 28;
+        ppc_state.sr[selection] = code->d1;
+    }
+})
+
+GEN_OP(dcbtst, {})
+
+GEN_OP(stbux, {
+    if (code->d2 != 0) {
+        uint32_t ea = ppc_state.gpr[code->d2] + ppc_state.gpr[code->d3];
+        mem_write_byte(ea, ppc_state.gpr[code->d1]);
+        ppc_state.gpr[code->d2] = ppc_effective_address;
+    }
+    else {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+    }
+})
+
+GEN_OP(add, {
+    ppc_state.gpr[code->d1] = ppc_state.gpr[code->d3] + ppc_state.gpr[code->d2];
+})
+
+GEN_OP(adddot, {
+    ppc_state.gpr[code->d1] = ppc_state.gpr[code->d3] + ppc_state.gpr[code->d2];
+    ppc_changecrf0(ppc_state.gpr[code->d1]);
+})
+
+GEN_OP(dcbt, {})
+
+GEN_OP(stfsx, {
+    uint32_t ea = ((code->d2) ? ppc_state.gpr[code->d2] : 0) + ppc_state.gpr[code->d3];
+    mem_write_dword(ea, uint32_t(ppc_state.fpr[code->d1].int64_r));
+})
+    
+GEN_OP(stfsux, {
+    if (code->d2 == 0) {
+        uint32_t ea = ppc_state.gpr[code->d2] + ppc_state.gpr[code->d3];
+        mem_write_dword(ea, uint32_t(ppc_state.fpr[code->d1].int64_r));
+        ppc_state.gpr[code->d2] = ea;
+    } else {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+    }
+})
+
+GEN_OP(lswx, {
+    if ((ppc_state.gpr[code->d1] == 0) && (ppc_state.gpr[code->d2] == 0)) {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x100000);
+    }
+    if ((ppc_state.gpr[code->d1] == ppc_state.gpr[code->d2]) ||
+        (ppc_state.gpr[code->d2] == ppc_state.gpr[code->d3])) {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x100000);
+    }
+
+    uint32_t ea    = ((code->d2) ? ppc_state.gpr[code->d2] : 0) + ppc_state.gpr[code->d3];
+    uint32_t words = ppc_state.spr[SPR::XER] & 0x7F;
+    uint32_t store_result = 0; 
+
+    while (words > 0) {
+        switch (words) {
+        case 1:
+            store_result   = mem_grab_byte(ea) << 24;
+            ppc_state.gpr[code->d1] = store_result;
+            words                   = 0;
+            break;
+        case 2:
+            store_result = mem_grab_byte(ea) << 24;
+            store_result += (mem_grab_byte(ea + 1)) << 16;
+            ppc_state.gpr[code->d1] = store_result;
+            words                   = 0;
+            break;
+        case 3:
+            store_result = mem_grab_byte(ea) << 24;
+            store_result += (mem_grab_byte(ea + 1)) << 16;
+            store_result += (mem_grab_byte(ea + 2)) << 8;
+            ppc_state.gpr[code->d1] = store_result;
+            words                   = 0;
+            break;
+        default:
+            ppc_state.gpr[code->d1] = mem_grab_dword(ea);
+            code->d1++;
+            ea += 4;
+            words -= 4;
+        }
+    }
+})
+    
+GEN_OP(lswi, {
+    uint32_t ea     = (code->d2) ? ppc_state.gpr[code->d2] : 0;
+    uint32_t words  = (code->d3) ? code->d3 : 32;
+    uint32_t store_result = 0; 
+
+    while (words > 0) {
+        switch (words) {
+        case 1:
+            store_result   = mem_grab_byte(ea) << 24;
+            ppc_state.gpr[code->d1] = store_result;
+            words                   = 0;
+            break;
+        case 2:
+            store_result = mem_grab_byte(ea) << 24;
+            store_result += (mem_grab_byte(ea + 1)) << 16;
+            ppc_state.gpr[code->d1] = store_result;
+            words                   = 0;
+            break;
+        case 3:
+            store_result = mem_grab_byte(ea) << 24;
+            store_result += (mem_grab_byte(ea + 1)) << 16;
+            store_result += (mem_grab_byte(ea + 2)) << 8;
+            ppc_state.gpr[code->d1] = store_result;
+            words                   = 0;
+            break;
+        default:
+            ppc_state.gpr[code->d1] = mem_grab_dword(ea);
+            code->d1++;
+            ea += 4;
+            words -= 4;
+        }
+    }
+})
+    
+GEN_OP(stswx, {
+    uint32_t ea    = ((code->d2) ? ppc_state.gpr[code->d2] : 0) + ppc_state.gpr[code->d3];
+    uint32_t words = ppc_state.spr[SPR::XER] & 0x7F;
+    while (words > 0) {
+        switch (words) {
+        case 1:
+            mem_write_byte(ea, (uint8_t)((ppc_state.gpr[code->d1]) >> 24));
+            words = 0;
+            break;
+        case 2:
+            mem_write_byte(ea, (uint8_t)((ppc_state.gpr[code->d1]) >> 24));
+            mem_write_byte((ea + 1), (uint8_t)((ppc_state.gpr[code->d1]) >> 16));
+            words = 0;
+            break;
+        case 3:
+            mem_write_byte(ea, (uint8_t)((ppc_state.gpr[code->d1]) >> 24));
+            mem_write_byte((ea + 1), (uint8_t)((ppc_state.gpr[code->d1]) >> 16));
+            mem_write_byte((ea + 2), (uint8_t)((ppc_state.gpr[code->d1]) >> 8));
+            words = 0;
+            break;
+        default:
+            mem_write_dword(ea, ((ppc_state.gpr[code->d1]) & 0xFF));
+            code->d1++;
+            ea += 4;
+            words -= 4;
+        }
+    }
+})
+
+GEN_OP(stswi, {
+    uint32_t ea    = (code->d2) ? ppc_state.gpr[code->d2] : 0;
+    uint32_t words = (code->d3) ? code->d3 : 32;
+    while (words > 0) {
+        switch (words) {
+        case 1:
+            mem_write_byte(ea, (uint8_t)((ppc_state.gpr[code->d1]) >> 24));
+            words = 0;
+            break;
+        case 2:
+            mem_write_byte(ea, (((ppc_state.gpr[code->d1]) >> 24) & 0xFF));
+            mem_write_byte((ea + 1), (((ppc_state.gpr[code->d1]) >> 16) & 0xFF));
+            words = 0;
+            break;
+        case 3:
+            mem_write_byte(ea, (((ppc_state.gpr[code->d1]) >> 24) & 0xFF));
+            mem_write_byte((ea + 1), (((ppc_state.gpr[code->d1]) >> 16) & 0xFF));
+            mem_write_byte((ea + 2), (uint8_t)((ppc_state.gpr[code->d1]) >> 8));
+            words = 0;
+            break;
+        default:
+            mem_write_dword(ea, ((ppc_state.gpr[code->d1]) & 0xFF));
+            ea += 4;
+            words -= 4;
+        }
+    }
+})
+
+GEN_OP(tlbia, {})
+
+GEN_OP(mftb, {
+    uint32_t ref_spr = (((opcode >> 11) & 31) << 5) | ((opcode >> 16) & 31);
+    code->d1         = (opcode >> 21) & 31;
+    switch (ref_spr) {
+    case 268:
+        ppc_state.gpr[code->d1] = timebase_counter & 0xFFFFFFFFUL;
+        break;
+    case 269:
+        ppc_state.gpr[code->d1] = (timebase_counter >> 32) & 0xFFFFFFFFUL;
+        break;
+    }
+})
+
+GEN_OP(stwbrx, {
+    uint32_t ea = ((code->d2) ? ppc_state.gpr[code->d2] : 0) + ppc_state.gpr[code->d3];
+    mem_write_dword(ea, BYTESWAP_32(ppc_state.gpr[code->d1]));
+})
+
+GEN_OP(stfdux, {
+    if (code->d2 == 0) {
+        uint32_t ea = ppc_state.gpr[code->d2] + ppc_state.gpr[code->d3];
+        mem_write_qword(ea, ppc_state.fpr[code->d1].int64_r);
+        ppc_result_a = ea;
+    } else {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+    }
+})
+
+GEN_OP(stbx, {
+    uint32_t ea = ((code->d2) ? ppc_state.gpr[code->d2] : 0) + ppc_state.gpr[code->d3];
+    mem_write_byte(ppc_effective_address, ppc_result_d);
+})
+
+GEN_OP(tlbie, {})
