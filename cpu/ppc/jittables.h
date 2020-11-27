@@ -9,6 +9,7 @@ enum class InstrOps {
     opNone,
     opDA,
     opDAB,
+    opAB,
     opDASimm,
     opSAUimm,
     opSASh,
@@ -25,6 +26,8 @@ enum class InstrOps {
     opDSR,
     opDB,
     opSASimm,
+    opSA,
+    opSAB,
     opTOAB
 };
 

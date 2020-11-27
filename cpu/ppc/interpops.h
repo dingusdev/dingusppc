@@ -1,3 +1,7 @@
+#define ppc_carry(a, b) (b < a) ? ppc_state.spr[SPR::XER] |= 0x20000000UL : ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL
+#define ppc_carry_sub(a, b) (b >= a) ? ppc_state.spr[SPR::XER] |= 0x20000000UL : ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL
+#define ppc_setsoov(a, b, d) ((a ^ b) & (a ^ d) & 0x80000000UL) ? ppc_state.spr[SPR::XER] |= 0xC0000000UL : ppc_state.spr[SPR::XER] &= 0xBFFFFFFFUL
+
 GEN_OP(addi, {
     ppc_state.gpr[code->d1] = ppc_state.gpr[code->d2] + code->simm;
     NEXT;
@@ -108,6 +112,10 @@ GEN_OP(bc, {
 GEN_OP(mtspr, {
     ppc_state.spr[code->uimm] = ppc_state.gpr[code->d1];
     NEXT;
+})
+
+GEN_OP(mfspr, {
+    ppc_state.gpr[code->d1] = ppc_state.spr[code->uimm];
 })
 
 GEN_OP(bdnz, {
@@ -334,24 +342,15 @@ GEN_OP(lhzu, {
 })
 
 GEN_OP(lha, {
-    if ((code->d2 != code->d1) || code->d2 != 0) {
-        uint32_t ea = ((code->d2) ? ppc_state.gpr[code->d2] : 0) + code->simm;
-        ppc_state.gpr[code->d1] = (uint32_t)(uint16_t)(mem_grab_word(ea));
-        ppc_state.gpr[code->d2] = ppc_effective_address;
-    } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
-    }
+    uint32_t ea             = ((code->d2) ? ppc_state.gpr[code->d2] : 0) + code->simm;
+    ppc_state.gpr[code->d1] = (int32_t)(int16_t)mem_grab_word(ea);
     NEXT;
 })
 
-GEN_OP(lhau, {
-    if ((code->d2 != code->d1) || code->d2 != 0) {
-        uint32_t ea = ((code->d2) ? ppc_state.gpr[code->d2] : 0) + code->simm;
-        ppc_state.gpr[code->d1] = (uint32_t)(uint16_t)(mem_grab_word(ea));
-        ppc_state.gpr[code->d2] = ppc_effective_address;
-    } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
-    }
+GEN_OP(lhaux, {
+    uint32_t ea             = ((code->d2) ? ppc_state.gpr[code->d2] : 0) + ppc_state.gpr[code->d3];
+    ppc_state.gpr[code->d1] = (int32_t)(int16_t)mem_grab_word(ea);
+    ppc_state.gpr[code->d2] = ea;
     NEXT;
 })
 
@@ -589,69 +588,34 @@ GEN_OP(tw, {
 
 GEN_OP(subfc, {
     ppc_state.gpr[code->d1] = ppc_state.gpr[code->d3] - ppc_state.gpr[code->d2];
-
-    if (ppc_state.gpr[code->d1] >= ppc_state.gpr[code->d2]) {
-        ppc_state.spr[SPR::XER] |= 0x20000000UL;
-    } else {
-        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
-    }
+    ppc_carry_sub(ppc_state.gpr[code->d2], ppc_state.gpr[code->d3]);
 })
 
 GEN_OP(subfcdot, {
     ppc_state.gpr[code->d1] = ppc_state.gpr[code->d3] - ppc_state.gpr[code->d2];
-
-    if (ppc_state.gpr[code->d1] >= ppc_state.gpr[code->d2]) {
-        ppc_state.spr[SPR::XER] |= 0x20000000UL;
-    } else {
-        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
-    }
-
+    ppc_carry_sub(ppc_state.gpr[code->d2], ppc_state.gpr[code->d3]);
     ppc_changecrf0(ppc_state.gpr[code->d1]);
 })
 
 GEN_OP(addc, {
     ppc_state.gpr[code->d1] = ppc_state.gpr[code->d3] + ppc_state.gpr[code->d2];
-
-    if (ppc_state.gpr[code->d2] < ppc_state.gpr[code->d1]) {
-        ppc_state.spr[SPR::XER] |= 0x20000000UL;
-    } else {
-        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
-    }
+    ppc_carry(ppc_state.gpr[code->d2], ppc_state.gpr[code->d1]);
 })
 
 GEN_OP(addcdot, {
     ppc_state.gpr[code->d1] = ppc_state.gpr[code->d3] + ppc_state.gpr[code->d2];
-
-    if (ppc_state.gpr[code->d2] < ppc_state.gpr[code->d1]) {
-        ppc_state.spr[SPR::XER] |= 0x20000000UL;
-    } else {
-        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
-    }
-
+    ppc_carry(ppc_state.gpr[code->d2], ppc_state.gpr[code->d1]);
     ppc_changecrf0(ppc_state.gpr[code->d1]);
 })
 
 GEN_OP(mulhwu, {
     uint64_t product        = (uint64_t)ppc_state.gpr[code->d3] * (uint64_t)ppc_state.gpr[code->d2];
     ppc_state.gpr[code->d1] = (uint32_t)(product >> 32);
-
-    if (ppc_state.gpr[code->d2] < ppc_state.gpr[code->d1]) {
-        ppc_state.spr[SPR::XER] |= 0x20000000UL;
-    } else {
-        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
-    }
 })
 
 GEN_OP(mulhwudot, {
     uint64_t product        = (uint64_t)ppc_state.gpr[code->d3] * (uint64_t)ppc_state.gpr[code->d2];
     ppc_state.gpr[code->d1] = (uint32_t)(product >> 32);
-
-    if (ppc_state.gpr[code->d2] < ppc_state.gpr[code->d1]) {
-        ppc_state.spr[SPR::XER] |= 0x20000000UL;
-    } else {
-        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
-    }
-
     ppc_changecrf0(ppc_state.gpr[code->d1]);
 })
 
@@ -845,6 +809,22 @@ GEN_OP(slwdot, {
     ppc_changecrf0(ppc_state.gpr[code->d2]);
 })
 
+GEN_OP(srw, {
+    ppc_state.gpr[code->d2] =
+        ((ppc_state.gpr[code->d3] > 0x1F)
+             ? 0
+             : ppc_state.gpr[code->d1] >> (ppc_state.gpr[code->d3] & 0x1F));
+})
+
+GEN_OP(srwdot, {
+    ppc_state.gpr[code->d2] =
+        ((ppc_state.gpr[code->d3] > 0x1F)
+             ? 0
+             : ppc_state.gpr[code->d1] >> (ppc_state.gpr[code->d3] & 0x1F));
+
+    ppc_changecrf0(ppc_state.gpr[code->d2]);
+})
+
 GEN_OP(cntlzw, {
     uint32_t lead      = 0;
     uint32_t bit_check = ppc_state.gpr[code->d1];
@@ -890,6 +870,51 @@ GEN_OP(ppc_and, {
 
 GEN_OP(anddot, {
     ppc_state.gpr[code->d2] = ppc_state.gpr[code->d1] & ppc_state.gpr[code->d3];
+    ppc_changecrf0(ppc_state.gpr[code->d2]);
+})
+
+GEN_OP(orc, { 
+    ppc_state.gpr[code->d2] = ppc_state.gpr[code->d1] | ~(ppc_state.gpr[code->d3]);
+})
+
+GEN_OP(orcdot, {
+    ppc_state.gpr[code->d2] = ppc_state.gpr[code->d1] | ~(ppc_state.gpr[code->d3]);
+    ppc_changecrf0(ppc_state.gpr[code->d2]);
+})
+
+GEN_OP(ppc_or, {
+    ppc_state.gpr[code->d2] = ppc_state.gpr[code->d1] | ppc_state.gpr[code->d3]; 
+})
+
+GEN_OP(ordot, {
+    ppc_state.gpr[code->d2] = ppc_state.gpr[code->d1] | ppc_state.gpr[code->d3];
+    ppc_changecrf0(ppc_state.gpr[code->d2]);
+})
+
+GEN_OP(xor, {
+    ppc_state.gpr[code->d2] = ppc_state.gpr[code->d1] ^ ppc_state.gpr[code->d3];
+})
+
+GEN_OP(xordot, {
+    ppc_state.gpr[code->d2] = ppc_state.gpr[code->d1] ^ ppc_state.gpr[code->d3];
+    ppc_changecrf0(ppc_state.gpr[code->d2]);
+})
+
+GEN_OP(eqv, {
+    ppc_state.gpr[code->d2] = ~(ppc_state.gpr[code->d1] ^ ppc_state.gpr[code->d3]);
+})
+
+GEN_OP(eqvdot, {
+    ppc_state.gpr[code->d2] = ~(ppc_state.gpr[code->d1] ^ ppc_state.gpr[code->d3]);
+    ppc_changecrf0(ppc_state.gpr[code->d2]);
+})
+
+GEN_OP(nand, { 
+    ppc_state.gpr[code->d2] = ~(ppc_state.gpr[code->d1] & ppc_state.gpr[code->d3]); 
+})
+
+GEN_OP(nanddot, {
+    ppc_state.gpr[code->d2] = ~(ppc_state.gpr[code->d1] & ppc_state.gpr[code->d3]);
     ppc_changecrf0(ppc_state.gpr[code->d2]);
 })
 
@@ -942,6 +967,38 @@ GEN_OP(mulhwdot, {
         (int64_t)(int32_t)ppc_state.gpr[code->d3];
     ppc_result_d    = product >> 32;
     ppc_changecrf0(ppc_result_d);
+})
+
+GEN_OP(mullw, {
+    int64_t product         = (int64_t)(int32_t)ppc_state.gpr[code->d2] * (int64_t)(int32_t)ppc_state.gpr[code->d3];
+    ppc_state.gpr[code->d1] = (uint32_t)product;
+})
+
+GEN_OP(mullwdot, {
+    int64_t product         = (int64_t)(int32_t)ppc_state.gpr[code->d2] * (int64_t)(int32_t)ppc_state.gpr[code->d3];
+    ppc_state.gpr[code->d1] = (uint32_t)product;
+    ppc_changecrf0(ppc_state.gpr[code->d1]);
+})
+
+GEN_OP(mullwo, {
+    int64_t product         = (int64_t)(int32_t)ppc_state.gpr[code->d2] * (int64_t)(int32_t)ppc_state.gpr[code->d3];
+    ppc_state.gpr[code->d1] = (uint32_t)product;
+    if (product != (int64_t)(int32_t)product) {
+            ppc_state.spr[SPR::XER] |= 0xC0000000;
+        } else {
+            ppc_state.spr[SPR::XER] &= 0xBFFFFFFFUL;
+        }
+})
+
+GEN_OP(mullwodot, {
+    int64_t product         = (int64_t)(int32_t)ppc_state.gpr[code->d2] * (int64_t)(int32_t)ppc_state.gpr[code->d3];
+    ppc_state.gpr[code->d1] = (uint32_t)product;
+    if (product != (int64_t)(int32_t)product) {
+            ppc_state.spr[SPR::XER] |= 0xC0000000;
+        } else {
+            ppc_state.spr[SPR::XER] &= 0xBFFFFFFFUL;
+        }
+    ppc_changecrf0(ppc_state.gpr[code->d1]);
 })
 
 GEN_OP(subfco, {
@@ -1060,7 +1117,7 @@ GEN_OP(extshdot, {
            
 GEN_OP(divwu, {
     if (!ppc_state.gpr[code->d3]) { /* division by zero */
-        ppc_result_d = 0;
+        ppc_state.gpr[code->d1] = 0;
         ppc_state.spr[SPR::XER] |= 0xC0000000;
     } else {
         ppc_state.gpr[code->d1] = ppc_state.gpr[code->d2] / ppc_state.gpr[code->d3];
@@ -1142,12 +1199,21 @@ GEN_OP(dcbz, {
     }
 })
 
-
-
 GEN_OP(mcrxr, {
     ppc_state.cr = (ppc_state.cr & ~(0xF0000000UL >> ppc_state.gpr[code->d1])) |
         ((ppc_state.spr[SPR::XER] & 0xF0000000UL) >> ppc_state.gpr[code->d1]);
     ppc_state.spr[SPR::XER] &= 0x0FFFFFFF;
+})
+
+GEN_OP(subfze, {
+    ppc_state.gpr[code->d1] = ~ppc_state.gpr[code->d2] + (ppc_state.spr[SPR::XER] & 0x20000000);
+    ppc_carry(~ppc_state.gpr[code->d2], ppc_state.gpr[code->d1]);
+})
+
+GEN_OP(subfzedot, {
+    ppc_state.gpr[code->d1] = ~ppc_state.gpr[code->d2] + (ppc_state.spr[SPR::XER] & 0x20000000);
+    ppc_carry(~ppc_state.gpr[code->d2], ppc_result_d);
+    ppc_changecrf0(ppc_state.gpr[code->d1]);
 })
 
 GEN_OP(mtsrin, {
@@ -1364,4 +1430,184 @@ GEN_OP(stbx, {
     mem_write_byte(ppc_effective_address, ppc_result_d);
 })
 
+GEN_OP(subfme, {
+    uint32_t grab_xer       = !!(ppc_state.spr[SPR::XER] & 0x20000000);
+    ppc_state.gpr[code->d1] = ~ppc_state.gpr[code->d2] + grab_xer - 1;
+    ppc_carry(~ppc_state.gpr[code->d2], ppc_state.gpr[code->d1]);
+})
+
+GEN_OP(subfmedot, {
+    uint32_t grab_xer       = !!(ppc_state.spr[SPR::XER] & 0x20000000);
+    ppc_state.gpr[code->d1] = ~ppc_state.gpr[code->d2] + grab_xer - 1;
+    ppc_carry(~ppc_state.gpr[code->d2], ppc_state.gpr[code->d1]);
+    ppc_setsoov(0xFFFFFFFF, ppc_state.gpr[code->d2], ppc_state.gpr[code->d1]);
+})
+
+GEN_OP(subfzeo, {
+    ppc_state.gpr[code->d1] = ~ppc_state.gpr[code->d2] + (ppc_state.spr[SPR::XER] & 0x20000000);
+    ppc_carry(~ppc_state.gpr[code->d2], ppc_result_d);
+    ppc_setsoov(0, ppc_state.gpr[code->d2], ppc_state.gpr[code->d1]);
+})
+
+GEN_OP(subfzeodot, {
+    ppc_state.gpr[code->d1] = ~ppc_state.gpr[code->d2] + (ppc_state.spr[SPR::XER] & 0x20000000);
+    ppc_carry(~ppc_state.gpr[code->d2], ppc_result_d);
+    ppc_setsoov(0, ppc_state.gpr[code->d2], ppc_state.gpr[code->d1]);
+    ppc_changecrf0(ppc_state.gpr[code->d1]);
+})
+
+GEN_OP(addme, {
+    uint32_t xer_ca         = !!(ppc_state.spr[SPR::XER] & 0x20000000);
+    ppc_state.gpr[code->d1] = ppc_state.gpr[code->d2] + xer_ca - 1;
+
+    if (((xer_ca - 1) < 0xFFFFFFFFUL) | (ppc_result_d < ppc_state.gpr[code->d2])) {
+        ppc_state.spr[SPR::XER] |= 0x20000000UL;
+    } else {
+        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
+    }
+})
+
+GEN_OP(addmedot, {
+    uint32_t xer_ca         = !!(ppc_state.spr[SPR::XER] & 0x20000000);
+    ppc_state.gpr[code->d1] = ppc_state.gpr[code->d2] + xer_ca - 1;
+
+    if (((xer_ca - 1) < 0xFFFFFFFFUL) | (ppc_state.gpr[code->d1] < ppc_state.gpr[code->d2])) {
+        ppc_state.spr[SPR::XER] |= 0x20000000UL;
+    } else {
+        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
+    }
+
+    ppc_changecrf0(ppc_result_d);
+})
+
+GEN_OP(addmeo, {
+    uint32_t xer_ca         = !!(ppc_state.spr[SPR::XER] & 0x20000000);
+    ppc_state.gpr[code->d1] = ppc_state.gpr[code->d2] + xer_ca - 1;
+
+    if (((xer_ca - 1) < 0xFFFFFFFFUL) | (ppc_state.gpr[code->d1] < ppc_state.gpr[code->d2])) {
+        ppc_state.spr[SPR::XER] |= 0x20000000UL;
+    } else {
+        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
+    }
+
+    ppc_setsoov(ppc_state.gpr[code->d2], 0, ppc_result_d);
+})
+
+GEN_OP(addmeodot, {
+    uint32_t xer_ca         = !!(ppc_state.spr[SPR::XER] & 0x20000000);
+    ppc_state.gpr[code->d1] = ppc_state.gpr[code->d2] + xer_ca - 1;
+
+    if (((xer_ca - 1) < 0xFFFFFFFFUL) | (ppc_state.gpr[code->d1] < ppc_state.gpr[code->d2])) {
+        ppc_state.spr[SPR::XER] |= 0x20000000UL;
+    } else {
+        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
+    }
+
+    ppc_setsoov(ppc_state.gpr[code->d2], 0, ppc_state.gpr[code->d1]);
+    ppc_changecrf0(ppc_state.gpr[code->d1]);
+})
+
+GEN_OP(subfo, {
+    ppc_state.gpr[code->d1] = ppc_state.gpr[code->d3] - ppc_state.gpr[code->d2];
+
+    if ((ppc_state.gpr[code->d2] ^ ppc_state.gpr[code->d3]) &
+        (ppc_state.gpr[code->d2] ^ ppc_state.gpr[code->d1]) & 0x80000000UL) {
+        ppc_state.spr[SPR::XER] |= 0xC0000000UL;
+    } else {
+        ppc_state.spr[SPR::XER] &= 0xBFFFFFFFUL;
+    }
+})
+
+GEN_OP(subfodot, {
+    ppc_state.gpr[code->d1] = ppc_state.gpr[code->d3] - ppc_state.gpr[code->d2];
+
+    if ((ppc_state.gpr[code->d2] ^ ppc_state.gpr[code->d3]) &
+        (ppc_state.gpr[code->d2] ^ ppc_state.gpr[code->d1]) & 0x80000000UL) {
+        ppc_state.spr[SPR::XER] |= 0xC0000000UL;
+    } else {
+        ppc_state.spr[SPR::XER] &= 0xBFFFFFFFUL;
+    }
+
+    ppc_changecrf0(ppc_state.gpr[code->d1]);
+})
+
+GEN_OP(lhzx, {
+    ppc_effective_address   = ((code->d2) ? ppc_state.gpr[code->d2] : 0) + ppc_state.gpr[code->d3];
+    ppc_state.gpr[code->d1] = mem_grab_word(ppc_effective_address);
+})
+
+GEN_OP(lhzux, {
+    if ((code->d2 != code->d1) || code->d2 != 0) {
+        ppc_effective_address   = ppc_state.gpr[code->d2] + ppc_state.gpr[code->d3];
+        ppc_state.gpr[code->d1] = mem_grab_word(ppc_effective_address);
+        ppc_state.gpr[code->d2] = ppc_effective_address;
+    } else {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+    }
+})
+    
+
+
+GEN_OP(lhau, {
+    if ((code->d2 != code->d1) || code->d2 != 0) {
+        uint32_t ea  = ((code->d2) ? ppc_state.gpr[code->d2] : 0) + code->simm;
+        uint16_t val = mem_grab_word(ea);
+        ppc_state.gpr[code->d1] = (int32_t)(int16_t)val;
+        ppc_state.gpr[code->d2] = ea;
+    } else {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+    }
+    NEXT;
+})
+    
+GEN_OP(lhax, {
+    uint32_t ea  = ((code->d2) ? ppc_state.gpr[code->d2] : 0) + ppc_state.gpr[code->d3];
+    uint16_t val = mem_grab_word(ea);
+    ppc_state.gpr[code->d1] = (int32_t)(int16_t)val;
+})
+
+GEN_OP(sthx, {
+    mem_write_word(((
+        (code->d2) ? ppc_state.gpr[code->d2] : 0) + ppc_state.gpr[code->d3]),
+        ppc_state.gpr[code->d1]);
+    NEXT;
+})
+
+GEN_OP(sthux, {
+    uint32_t ea = ((code->d2) ? ppc_state.gpr[code->d2] : 0) + ppc_state.gpr[code->d3];
+    mem_write_word(ea, ppc_state.gpr[code->d1]);
+    ppc_state.gpr[code->d2] = ea;
+    NEXT;
+})
+
+GEN_OP(lfdx, {
+    uint32_t ea                     = (reg_a > 0) ? ppc_result_a + ppc_result_b : ppc_result_b;
+    uint64_t grab_flt               = mem_grab_qword(ppc_effective_address);
+    ppc_state.fpr[code->d1].int64_r = grab_flt;
+    ppc_state.fpr[code->d1].dbl64_r = *(double*)&grab_flt;
+
+})
+
+GEN_OP(lfdux, {
+    if (code->d2 == 0) {
+        uint32_t ea                     = code->d1 + ppc_state.gpr[code->d3];
+        uint64_t grab_flt               = mem_grab_qword(ppc_effective_address);
+        ppc_state.fpr[code->d1].int64_r = grab_flt;
+        ppc_state.fpr[code->d1].dbl64_r = *(double*)&grab_flt;
+        ppc_state.gpr[code->d2]         = ppc_effective_address;
+    } else {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+    }
+})
+
 GEN_OP(tlbie, {})
+
+GEN_OP(lscbx, {})
+
+GEN_OP(lscbxdot, {})
+
+GEN_OP(dcbi, {})
+
+GEN_OP(tlbsync, {})
+
+GEN_OP(ppc_sync, {})
