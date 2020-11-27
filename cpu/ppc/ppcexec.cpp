@@ -86,9 +86,17 @@ static PPCOpcode OpcodeGrabber[] = {
     ppc_illegalop, ppc_illegalop, ppc_illegalop, ppc_opcode63};
 
 /** Lookup tables for branch instructions. */
-static PPCOpcode SubOpcode16Grabber[] = {ppc_bc, ppc_bcl, ppc_bca, ppc_bcla};
+static PPCOpcode SubOpcode16Grabber[] = {
+    dppc_interpreter::ppc_bc,
+    dppc_interpreter::ppc_bcl,
+    dppc_interpreter::ppc_bca,
+    dppc_interpreter::ppc_bcla};
 
-static PPCOpcode SubOpcode18Grabber[] = {ppc_b, ppc_bl, ppc_ba, ppc_bla};
+static PPCOpcode SubOpcode18Grabber[] = {
+    dppc_interpreter::ppc_b,
+    dppc_interpreter::ppc_bl,
+    dppc_interpreter::ppc_ba,
+    dppc_interpreter::ppc_bla};
 
 /** Instructions decoding tables for integer,
     single floating-point, and double-floating point ops respectively */
@@ -352,7 +360,7 @@ void ppc_exec_single()
 }
 
 /** Execute PPC code until goal_addr is reached. */
-void ppc_exec_until(uint32_t goal_addr)
+void ppc_exec_until(volatile uint32_t goal_addr)
 {
     uint32_t bb_start_la, page_start, delta;
     uint8_t* pc_real;
@@ -403,6 +411,68 @@ again:
             }
             ppc_state.pc = bb_start_la;
             bb_kind = BB_end_kind::BB_NONE;
+        } else {
+            ppc_state.pc += 4;
+            pc_real += 4;
+            ppc_set_cur_instruction(pc_real);
+        }
+    }
+}
+
+/** Execute PPC code until control is reached the specified region. */
+void ppc_exec_dbg(volatile uint32_t start_addr, volatile uint32_t size)
+{
+    uint32_t bb_start_la, page_start, delta;
+    uint8_t* pc_real;
+
+    /* start new basic block */
+    glob_bb_start_la = bb_start_la = ppc_state.pc;
+    bb_kind = BB_end_kind::BB_NONE;
+
+    if (setjmp(exc_env)) {
+        /* reaching here means we got a low-level exception */
+#ifdef NEW_TBR_UPDATE_ALGO
+        cycles_count += ((ppc_state.pc - glob_bb_start_la) >> 2) + 1;
+        UPDATE_TBR_DEC
+#else
+        timebase_counter += ((ppc_state.pc - glob_bb_start_la) >> 2) + 1;
+#endif
+        glob_bb_start_la = bb_start_la = ppc_next_instruction_address;
+        pc_real = quickinstruction_translate(bb_start_la);
+        page_start = bb_start_la & 0xFFFFF000;
+        ppc_state.pc = bb_start_la;
+        bb_kind = BB_end_kind::BB_NONE;
+        //printf("DBG Exec: got exception, continue at %X\n", ppc_state.pc);
+        goto again;
+    }
+
+    /* initial MMU translation for the current code page. */
+    pc_real = quickinstruction_translate(bb_start_la);
+
+    /* set current code page limits */
+    page_start = bb_start_la & 0xFFFFF000;
+
+again:
+    while (ppc_state.pc < start_addr || ppc_state.pc >= start_addr + size) {
+        ppc_main_opcode();
+        if (bb_kind != BB_end_kind::BB_NONE) {
+#ifdef NEW_TBR_UPDATE_ALGO
+            cycles_count += ((ppc_state.pc - bb_start_la) >> 2) + 1;
+            UPDATE_TBR_DEC
+#else
+            timebase_counter += ((ppc_state.pc - bb_start_la) >> 2) + 1;
+#endif
+            glob_bb_start_la = bb_start_la = ppc_next_instruction_address;
+            if ((ppc_next_instruction_address & 0xFFFFF000) != page_start) {
+                page_start = bb_start_la & 0xFFFFF000;
+                pc_real = quickinstruction_translate(bb_start_la);
+            } else {
+                pc_real += (int)bb_start_la - (int)ppc_state.pc;
+                ppc_set_cur_instruction(pc_real);
+            }
+            ppc_state.pc = bb_start_la;
+            bb_kind = BB_end_kind::BB_NONE;
+            //printf("DBG Exec: new basic block at %X, start_addr=%X\n", ppc_state.pc, start_addr);
         } else {
             ppc_state.pc += 4;
             pc_real += 4;

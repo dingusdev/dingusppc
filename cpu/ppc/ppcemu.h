@@ -554,6 +554,7 @@ extern void ppc_main_opcode(void);
 extern void ppc_exec(void);
 extern void ppc_exec_single(void);
 extern void ppc_exec_until(uint32_t goal_addr);
+extern void ppc_exec_dbg(uint32_t start_addr, uint32_t size);
 
 /* debugging support API */
 void print_gprs(void);                   /* print content of the general purpose registers */
