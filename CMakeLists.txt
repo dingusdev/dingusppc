@@ -17,7 +17,7 @@ endif()
 endif()
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(CAPSTONE REQUIRED capstone>=4.0.1)
+pkg_check_modules(CAPSTONE REQUIRED capstone>=4.0.2)
 include_directories(${CAPSTONE_INCLUDE_DIRS})
 link_directories(${CAPSTONE_LIBRARY_DIRS})
 
