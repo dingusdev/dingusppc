@@ -24,6 +24,7 @@ link_directories(${CAPSTONE_LIBRARY_DIRS})
 add_subdirectory("${PROJECT_SOURCE_DIR}/cpu/ppc/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/debugger/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/devices/")
+add_subdirectory("${PROJECT_SOURCE_DIR}/execution")
 add_subdirectory("${PROJECT_SOURCE_DIR}/machines/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/thirdparty/loguru/")
 
@@ -39,6 +40,8 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries")
 set(BUILD_TOOLS OFF CACHE BOOL "Build Cubeb tools")
 
 add_subdirectory(thirdparty/cubeb EXCLUDE_FROM_ALL)
+
+set(CLI11_ROOT ${PROJECT_SOURCE_DIR}/thirdparty/CLI11)
 
 include_directories("${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/devices"
                     "${PROJECT_SOURCE_DIR}/cpu/ppc"
@@ -60,6 +63,7 @@ file(GLOB TEST_SOURCES "${PROJECT_SOURCE_DIR}/cpu/ppc/test/*.cpp")
 add_executable(dingusppc ${SOURCES} $<TARGET_OBJECTS:debugger>
                                     $<TARGET_OBJECTS:cpu_ppc>
                                     $<TARGET_OBJECTS:devices>
+                                    $<TARGET_OBJECTS:execution>
                                     $<TARGET_OBJECTS:machines>
                                     $<TARGET_OBJECTS:loguru>)
 
@@ -70,12 +74,14 @@ target_link_libraries(dingusppc "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/S
 else()
 #target_link_libraries(dingusppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
 target_link_libraries(dingusppc cubeb ${SDL2_LIBRARIES} ${CAPSTONE_LIBRARIES} ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+target_include_directories(dingusppc PRIVATE ${CLI11_ROOT})
 endif()
 
 
 add_executable(testppc ${TEST_SOURCES} $<TARGET_OBJECTS:debugger>
                                        $<TARGET_OBJECTS:cpu_ppc>
                                        $<TARGET_OBJECTS:devices>
+                                       $<TARGET_OBJECTS:execution>
                                        $<TARGET_OBJECTS:machines>
                                        $<TARGET_OBJECTS:loguru>)
 
@@ -87,6 +93,16 @@ else()
 #target_link_libraries(testppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
 target_link_libraries(testppc cubeb ${SDL2_LIBRARIES} ${CAPSTONE_LIBRARIES} ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 endif()
+
+file(GLOB BENCH_SOURCES "${PROJECT_SOURCE_DIR}/benchmark/*.cpp")
+add_executable(bench1 ${BENCH_SOURCES} $<TARGET_OBJECTS:debugger>
+                                       $<TARGET_OBJECTS:cpu_ppc>
+                                       $<TARGET_OBJECTS:devices>
+                                       $<TARGET_OBJECTS:execution>
+                                       $<TARGET_OBJECTS:machines>
+                                       $<TARGET_OBJECTS:loguru>)
+
+target_link_libraries(bench1 cubeb ${SDL2_LIBRARIES} ${CAPSTONE_LIBRARIES} ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 
 add_custom_command(
     TARGET testppc POST_BUILD
