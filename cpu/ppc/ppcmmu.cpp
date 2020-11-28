@@ -55,6 +55,8 @@ AddressMapEntry last_ptab_area  = {0xFFFFFFFF, 0xFFFFFFFF};
 AddressMapEntry last_dma_area   = {0xFFFFFFFF, 0xFFFFFFFF};
 
 
+#define WRITE_BYTE(addr, val) (*(addr) = val)
+
 /* macro for generating code reading from physical memory */
 #define READ_PHYS_MEM(ENTRY, ADDR, OP, SIZE, UNVAL)                                                \
     {                                                                                              \
@@ -371,13 +373,32 @@ static uint32_t ppc_mmu_addr_translate(uint32_t la, int is_write) {
 }
 
 static void mem_write_unaligned(uint32_t addr, uint32_t value, uint32_t size) {
+#ifdef MMU_DEBUG
     LOG_F(WARNING, "Attempt to write unaligned %d bytes to 0x%08X\n", size, addr);
+#endif
 
     if (((addr & 0xFFF) + size) > 0x1000) {
-        LOG_F(ERROR, "SOS! Cross-page unaligned write, addr=%08X, size=%d\n", addr, size);
-        exit(-1);    // FIXME!
+        // Special case: unaligned cross-page writes
+        LOG_F(WARNING, "Cross-page unaligned write, addr=%08X, size=%d\n",
+            addr, size);
+
+        uint32_t phys_addr;
+        uint32_t shift = (size - 1) * 8;
+
+        // Break misaligned memory accesses into multiple, smaller accesses
+        // and retranslate on page boundary.
+        // Because such accesses suffer a performance penalty, they will be
+        // presumably very rare so don't care much about performance.
+        for (int i = 0; i < size; shift -= 8, addr++, phys_addr++, i++) {
+            if ((ppc_state.msr & 0x10) && (!i || !(addr & 0xFFF))) {
+                phys_addr = ppc_mmu_addr_translate(addr, 0);
+            }
+
+            WRITE_PHYS_MEM(last_write_area, phys_addr, WRITE_BYTE,
+                (value >> shift) & 0xFF, 1);
+        }
     } else {
-        /* data address translation if enabled */
+        // data address translation if enabled
         if (ppc_state.msr & 0x10) {
             addr = ppc_mmu_addr_translate(addr, 0);
         }
@@ -395,8 +416,6 @@ void mem_write_byte(uint32_t addr, uint8_t value) {
     if (ppc_state.msr & 0x10) {
         addr = ppc_mmu_addr_translate(addr, 1);
     }
-
-#define WRITE_BYTE(addr, val) (*(addr) = val)
 
     WRITE_PHYS_MEM(last_write_area, addr, WRITE_BYTE, value, 1);
 }
@@ -444,11 +463,32 @@ void mem_write_qword(uint32_t addr, uint64_t value) {
 static uint32_t mem_grab_unaligned(uint32_t addr, uint32_t size) {
     uint32_t ret = 0;
 
+#ifdef MMU_DEBUG
     LOG_F(WARNING, "Attempt to read unaligned %d bytes from 0x%08X\n", size, addr);
+#endif
 
     if (((addr & 0xFFF) + size) > 0x1000) {
-        LOG_F(ERROR, "SOS! Cross-page unaligned read, addr=%08X, size=%d\n", addr, size);
-        exit(-1);    // FIXME!
+        // Special case: misaligned cross-page reads
+        LOG_F(WARNING, "Cross-page unaligned read, addr=%08X, size=%d\n",
+            addr, size);
+
+        uint32_t phys_addr;
+        uint32_t res = 0;
+
+        // Break misaligned memory accesses into multiple, smaller accesses
+        // and retranslate on page boundary.
+        // Because such accesses suffer a performance penalty, they will be
+        // presumably very rare so don't care much about performance.
+        for (int i = 0; i < size; addr++, phys_addr++, i++) {
+            if ((ppc_state.msr & 0x10) && (!i || !(addr & 0xFFF))) {
+                phys_addr = ppc_mmu_addr_translate(addr, 0);
+            }
+
+            READ_PHYS_MEM(last_read_area, phys_addr, *, 1, 0xFFU);
+            res = (res << 8) | ret;
+        }
+        return res;
+
     } else {
         /* data address translation if enabled */
         if (ppc_state.msr & 0x10) {
