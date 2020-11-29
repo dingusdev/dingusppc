@@ -246,7 +246,8 @@ extern uint32_t supervisor_inst_num;
 extern void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t proc_version);
 extern void ppc_mmu_init();
 
-void ppc_illegalop();
+[[noreturn]] void ppc_illegalop();
+[[noreturn]] void ppc_fpu_off();
 void ppc_illegalsubop19();
 void ppc_illegalsubop31();
 void ppc_illegalsubop59();

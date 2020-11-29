@@ -73,7 +73,7 @@ uint8_t  tbr_factor;        /* cycles_count to TBR freq ratio in 2^x units */
 
 /** Primary opcode (bits 0...5) lookup table. */
 static PPCOpcode OpcodeGrabber[] = {
-    ppc_illegalop, ppc_illegalop, ppc_illegalop, ppc_twi,       ppc_opcode4,   ppc_illegalop,
+    ppc_illegalop, ppc_illegalop, ppc_illegalop, ppc_twi,       ppc_illegalop, ppc_illegalop,
     ppc_illegalop, ppc_mulli,     ppc_subfic,    power_dozi,    ppc_cmpli,     ppc_cmpi,
     ppc_addic,     ppc_addicdot,  ppc_addi,      ppc_addis,     ppc_opcode16,  ppc_sc,
     ppc_opcode18,  ppc_opcode19,  ppc_rlwimi,    ppc_rlwinm,    power_rlmi,    ppc_rlwnm,
@@ -101,9 +101,9 @@ static PPCOpcode SubOpcode18Grabber[] = {
 /** Instructions decoding tables for integer,
     single floating-point, and double-floating point ops respectively */
 
-PPCOpcode SubOpcode31Grabber[1024] = {ppc_illegalsubop19};
-PPCOpcode SubOpcode59Grabber[1024] = {ppc_illegalsubop19};
-PPCOpcode SubOpcode63Grabber[1024] = {ppc_illegalsubop19};
+PPCOpcode SubOpcode31Grabber[1024] = { ppc_illegalop };
+PPCOpcode SubOpcode59Grabber[1024] = { ppc_fpu_off };
+PPCOpcode SubOpcode63Grabber[1024] = { ppc_fpu_off };
 
 
 #define UPDATE_TBR_DEC                                                  \
@@ -117,49 +117,17 @@ PPCOpcode SubOpcode63Grabber[1024] = {ppc_illegalsubop19};
         old_cycles_count += delta << tbr_factor;                        \
     }
 
+/** Exception helpers. */
+
+[[noreturn]] void ppc_illegalop() {
+    ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x00080000);
+}
+
+[[noreturn]] void ppc_fpu_off() {
+    ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x00100000);
+}
+
 /** Opcode decoding functions. */
-
-void ppc_illegalop() {
-    LOG_F(ERROR, "Illegal opcode reported: 0x%X Report this! \n", ppc_cur_instruction);
-    exit(-1);
-}
-
-void ppc_illegalsubop19() {
-    uint16_t illegal_subcode = ppc_cur_instruction & 0x7FF;
-    uint32_t grab_it         = (uint32_t)illegal_subcode;
-    LOG_F(ERROR, "Illegal subopcode for 19 reported: %d Report this! \n", grab_it);
-    exit(-1);
-}
-
-void ppc_illegalsubop31() {
-    uint16_t illegal_subcode = ppc_cur_instruction & 0x7FF;
-    uint32_t grab_it         = (uint32_t)illegal_subcode;
-    LOG_F(ERROR, "Illegal subopcode for 31 reported: %d Report this! \n", grab_it);
-    exit(-1);
-}
-
-void ppc_illegalsubop59() {
-    uint16_t illegal_subcode = ppc_cur_instruction & 0x7FF;
-    uint32_t grab_it         = (uint32_t)illegal_subcode;
-    LOG_F(ERROR, "Illegal subopcode for 59 reported: %d Report this! \n", grab_it);
-    exit(-1);
-}
-
-void ppc_illegalsubop63() {
-    uint16_t illegal_subcode = ppc_cur_instruction & 0x7FF;
-    uint32_t grab_it         = (uint32_t)illegal_subcode;
-    LOG_F(ERROR, "Illegal subopcode for 63 reported: %d Report this! \n", grab_it);
-    exit(-1);
-}
-
-void ppc_opcode4() {
-    LOG_F(INFO, "Reading from Opcode 4 table \n");
-    uint8_t subop_grab = ppc_cur_instruction & 3;
-    uint32_t regrab = (uint32_t)subop_grab;
-    LOG_F(ERROR, "Executing subopcode entry %d \n"
-           ".. or would if I bothered to implement it. SORRY!", regrab);
-    exit(-1);
-}
 
 void ppc_opcode16() {
     SubOpcode16Grabber[ppc_cur_instruction & 3]();
@@ -218,8 +186,8 @@ void ppc_opcode19() {
         case 898:
             ppc_cror();
             break;
-        default:    // Illegal opcode - should never happen
-            ppc_illegalsubop19();
+        default:
+            ppc_illegalop();
         }
     }
 }

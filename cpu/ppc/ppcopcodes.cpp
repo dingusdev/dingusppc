@@ -295,7 +295,7 @@ void dppc_interpreter::ppc_addze() {
     } else {
         ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
     }
-    
+
     if (oe_flag)
         ppc_setsoov(ppc_result_a, 0xFFFFFFFFUL, ppc_result_d);
     if (rc_flag)
@@ -355,7 +355,7 @@ void dppc_interpreter::ppc_subfme() {
     uint32_t grab_xer = !!(ppc_state.spr[SPR::XER] & 0x20000000);
     ppc_result_d      = ~ppc_result_a + grab_xer - 1;
     ppc_carry(~ppc_result_a, ppc_result_d);
-    
+
     if (oe_flag)
         ppc_setsoov(0xFFFFFFFF, ppc_result_a, ppc_result_d);
     if (rc_flag)
@@ -506,7 +506,7 @@ void dppc_interpreter::ppc_neg() {
         else
             ppc_state.spr[SPR::XER] &= 0xBFFFFFFF;
     }
-    
+
     if (rc_flag)
         ppc_changecrf0(ppc_result_d);
 
@@ -602,7 +602,7 @@ void dppc_interpreter::ppc_divw() {
         if (oe_flag)
             ppc_state.spr[SPR::XER] |= 0xC0000000;
 
-    } 
+    }
     else { /* normal signed devision */
         ppc_result_d = (int32_t)ppc_result_a / (int32_t)ppc_result_b;
 
@@ -1463,7 +1463,7 @@ void dppc_interpreter::ppc_stwx() {
 void dppc_interpreter::ppc_stwcx() {
     // PLACEHOLDER CODE FOR STWCX - We need to check for reserve memory
     if (rc_flag == 0) {
-        ppc_illegalsubop31();
+        ppc_illegalop();
     } else {
         ppc_grab_regssab();
         ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
