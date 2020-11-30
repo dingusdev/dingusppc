@@ -775,7 +775,7 @@ void dppc_interpreter::ppc_lfsu() {
         ppc_store_dfpresult(true);
         ppc_store_result_rega();
     } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
 }
 
@@ -795,7 +795,7 @@ void dppc_interpreter::ppc_lfsux() {
         ppc_store_dfpresult(true);
         ppc_store_result_rega();
     } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
 }
 
@@ -817,7 +817,7 @@ void dppc_interpreter::ppc_lfdu() {
         ppc_result_a = ppc_effective_address;
         ppc_store_result_rega();
     } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
 }
 
@@ -837,7 +837,7 @@ void dppc_interpreter::ppc_lfdux() {
         ppc_result_a = ppc_effective_address;
         ppc_store_result_rega();
     } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
 }
 
@@ -857,7 +857,7 @@ void dppc_interpreter::ppc_stfsu() {
         ppc_result_a = ppc_effective_address;
         ppc_store_result_rega();
     } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
 }
 
@@ -875,7 +875,7 @@ void dppc_interpreter::ppc_stfsux() {
         ppc_result_a = ppc_effective_address;
         ppc_store_result_rega();
     } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
 }
 
@@ -895,7 +895,7 @@ void dppc_interpreter::ppc_stfdu() {
         ppc_result_a = ppc_effective_address;
         ppc_store_result_rega();
     } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
 }
 
@@ -913,7 +913,7 @@ void dppc_interpreter::ppc_stfdux() {
         ppc_result_a = ppc_effective_address;
         ppc_store_result_rega();
     } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
 }
 

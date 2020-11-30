@@ -811,7 +811,7 @@ void dppc_interpreter::ppc_mfmsr() {
     supervisor_inst_num++;
 #endif
     if (ppc_state.msr & 0x4000) {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x00040000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
     }
     reg_d                = (ppc_cur_instruction >> 21) & 31;
     ppc_state.gpr[reg_d] = ppc_state.msr;
@@ -822,7 +822,7 @@ void dppc_interpreter::ppc_mtmsr() {
     supervisor_inst_num++;
 #endif
     if (ppc_state.msr & 0x4000) {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x00040000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
     }
     reg_s         = (ppc_cur_instruction >> 21) & 31;
     ppc_state.msr = ppc_state.gpr[reg_s];
@@ -1293,7 +1293,7 @@ void dppc_interpreter::ppc_tw() {
         (((int32_t)ppc_state.gpr[reg_a] == (int32_t)ppc_state.gpr[reg_b]) & (ppc_to & 0x04)) ||
         ((ppc_state.gpr[reg_a] < ppc_state.gpr[reg_b]) & (ppc_to & 0x02)) ||
         ((ppc_state.gpr[reg_a] > ppc_state.gpr[reg_b]) & (ppc_to & 0x01))) {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::TRAP);
     }
 }
 
@@ -1306,7 +1306,7 @@ void dppc_interpreter::ppc_twi() {
         (((int32_t)ppc_state.gpr[reg_a] == simm) && (ppc_to & 0x04)) ||
         ((ppc_state.gpr[reg_a] < (uint32_t)simm) && (ppc_to & 0x02)) ||
         ((ppc_state.gpr[reg_a] > (uint32_t)simm) && (ppc_to & 0x01))) {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::TRAP);
     }
 }
 
@@ -1390,7 +1390,7 @@ void dppc_interpreter::ppc_stbu() {
         mem_write_byte(ppc_effective_address, ppc_result_d);
         ppc_state.gpr[reg_a] = ppc_effective_address;
     } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
 }
 
@@ -1401,7 +1401,7 @@ void dppc_interpreter::ppc_stbux() {
         mem_write_byte(ppc_effective_address, ppc_result_d);
         ppc_state.gpr[reg_a] = ppc_effective_address;
     } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
 }
 
@@ -1420,7 +1420,7 @@ void dppc_interpreter::ppc_sthu() {
         mem_write_word(ppc_effective_address, ppc_result_d);
         ppc_state.gpr[reg_a] = ppc_effective_address;
     } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
 }
 
@@ -1431,7 +1431,7 @@ void dppc_interpreter::ppc_sthux() {
         mem_write_word(ppc_effective_address, ppc_result_d);
         ppc_state.gpr[reg_a] = ppc_effective_address;
     } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
 }
 
@@ -1485,7 +1485,7 @@ void dppc_interpreter::ppc_stwu() {
         mem_write_dword(ppc_effective_address, ppc_result_d);
         ppc_state.gpr[reg_a] = ppc_effective_address;
     } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
 }
 
@@ -1496,7 +1496,7 @@ void dppc_interpreter::ppc_stwux() {
         mem_write_dword(ppc_effective_address, ppc_result_d);
         ppc_state.gpr[reg_a] = ppc_effective_address;
     } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
 }
 
@@ -1541,7 +1541,7 @@ void dppc_interpreter::ppc_lbzu() {
         ppc_store_result_regd();
         ppc_store_result_rega();
     } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
 }
 
@@ -1561,7 +1561,7 @@ void dppc_interpreter::ppc_lbzux() {
         ppc_store_result_regd();
         ppc_store_result_rega();
     } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
 }
 
@@ -1584,7 +1584,7 @@ void dppc_interpreter::ppc_lhzu() {
         ppc_store_result_regd();
         ppc_store_result_rega();
     } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
 }
 
@@ -1604,7 +1604,7 @@ void dppc_interpreter::ppc_lhzux() {
         ppc_store_result_regd();
         ppc_store_result_rega();
     } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
 }
 
@@ -1636,7 +1636,7 @@ void dppc_interpreter::ppc_lhau() {
         ppc_result_a = ppc_effective_address;
         ppc_store_result_rega();
     } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
 }
 
@@ -1698,7 +1698,7 @@ void dppc_interpreter::ppc_lwzu() {
         ppc_result_a = ppc_effective_address;
         ppc_store_result_rega();
     } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
 }
 
@@ -1714,7 +1714,7 @@ void dppc_interpreter::ppc_lwzux() {
     if ((reg_a != reg_d) || reg_a != 0) {
         ppc_effective_address = ppc_result_a + ppc_result_b;
     } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x20000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
     ppc_result_d = mem_grab_dword(ppc_effective_address);
     ppc_result_a = ppc_effective_address;
@@ -1790,10 +1790,10 @@ void dppc_interpreter::ppc_lswx() {
     ppc_grab_regsdab();
     // Invalid instruction forms
     if ((ppc_result_d == 0) && (ppc_result_a == 0)) {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x100000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
     if ((ppc_result_d == ppc_result_a) || (ppc_result_a == ppc_result_b)) {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x100000);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
     grab_inb              = ppc_state.spr[SPR::XER] & 127;

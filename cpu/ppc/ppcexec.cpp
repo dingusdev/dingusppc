@@ -120,11 +120,11 @@ PPCOpcode SubOpcode63Grabber[1024] = { ppc_fpu_off };
 /** Exception helpers. */
 
 [[noreturn]] void ppc_illegalop() {
-    ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x00080000);
+    ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
 }
 
 [[noreturn]] void ppc_fpu_off() {
-    ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x00100000);
+    ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::FPU_OFF);
 }
 
 /** Opcode decoding functions. */

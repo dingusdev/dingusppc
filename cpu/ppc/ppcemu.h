@@ -215,6 +215,14 @@ enum class Except_Type {
     EXC_TRACE   = 13
 };
 
+/** Programm Exception subclasses. */
+enum Exc_Cause : uint32_t {
+    FPU_OFF     = 1 << (31 - 11),
+    ILLEGAL_OP  = 1 << (31 - 12),
+    NOT_ALLOWED = 1 << (31 - 13),
+    TRAP        = 1 << (31 - 14),
+};
+
 // extern bool bb_end;
 extern BB_end_kind bb_kind;
 
