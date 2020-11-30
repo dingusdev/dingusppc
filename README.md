@@ -44,7 +44,7 @@ Specifies the Boot ROM path (optional; looks for bootrom.bin by default)
 
 Specify machine ID (optional; will attempt to determine machine ID from the boot rom otherwise)
 
-As of now, only the Beige G3 is implemented.
+As of now, only the Power Macintosh G3 Beige is implemented.
 
 ## How to Compile
 
