@@ -1,3 +1,7 @@
 [submodule "thirdparty/cubeb"]
 	path = thirdparty/cubeb
 	url = https://github.com/DingusDevOrg/cubeb.git
+[submodule "thirdparty/capstone"]
+	path = thirdparty/capstone
+	url = https://github.com/maximumspatium/capstone.git
+	branch = next

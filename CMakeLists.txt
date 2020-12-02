@@ -16,10 +16,41 @@ if (UNIX AND NOT APPLE)
 endif()
 endif()
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(CAPSTONE REQUIRED capstone>=4.0.2)
-include_directories(${CAPSTONE_INCLUDE_DIRS})
-link_directories(${CAPSTONE_LIBRARY_DIRS})
+#find_package(PkgConfig REQUIRED)
+#pkg_check_modules(CAPSTONE REQUIRED capstone>=4.0.2)
+#include_directories(${CAPSTONE_INCLUDE_DIRS})
+#link_directories(${CAPSTONE_LIBRARY_DIRS})
+
+# Build capstone as static library, static runtime (MSVC), and with default allocator.
+set(CAPSTONE_BUILD_STATIC OFF CACHE BOOL "")
+#set(CAPSTONE_BUILD_STATIC_RUNTIME ON CACHE BOOL "")
+#set(CAPSTONE_USE_DEFAULT_ALLOC ON CACHE BOOL "")
+
+# Turn off anything unnecessary.
+set(CAPSTONE_BUILD_SHARED ON CACHE BOOL "")
+set(CAPSTONE_BUILD_TESTS OFF CACHE BOOL "")
+set(CAPSTONE_BUILD_CSTOOL OFF CACHE BOOL "")
+set(CAPSTONE_BUILD_DIET OFF CACHE BOOL "")
+#set(CAPSTONE_OSXKERNEL_SUPPORT OFF CACHE BOOL "")
+
+# Disable unused Capstone architectures.
+set(CAPSTONE_ARM_SUPPORT OFF CACHE BOOL "")
+set(CAPSTONE_ARM64_SUPPORT OFF CACHE BOOL "")
+set(CAPSTONE_MIPS_SUPPORT OFF CACHE BOOL "")
+set(CAPSTONE_PPC_SUPPORT OFF CACHE BOOL "")
+set(CAPSTONE_SPARC_SUPPORT OFF CACHE BOOL "")
+set(CAPSTONE_SYSZ_SUPPORT OFF CACHE BOOL "")
+set(CAPSTONE_XCORE_SUPPORT OFF CACHE BOOL "")
+set(CAPSTONE_X86_SUPPORT OFF CACHE BOOL "")
+set(CAPSTONE_TMS320C64X_SUPPORT OFF CACHE BOOL "")
+set(CAPSTONE_M680X_SUPPORT OFF CACHE BOOL "")
+set(CAPSTONE_EVM_SUPPORT OFF CACHE BOOL "")
+set(CAPSTONE_MOS65XX_SUPPORT OFF CACHE BOOL "")
+set(CAPSTONE_WASM_SUPPORT OFF CACHE BOOL "")
+set(CAPSTONE_BPF_SUPPORT OFF CACHE BOOL "")
+set(CAPSTONE_RISCV_SUPPORT OFF CACHE BOOL "")
+
+add_subdirectory(thirdparty/capstone EXCLUDE_FROM_ALL)
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/cpu/ppc/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/debugger/")
@@ -73,7 +104,7 @@ target_link_libraries(dingusppc "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/S
                                 cubeb)
 else()
 #target_link_libraries(dingusppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
-target_link_libraries(dingusppc cubeb ${SDL2_LIBRARIES} ${CAPSTONE_LIBRARIES} ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(dingusppc cubeb ${SDL2_LIBRARIES} capstone-shared ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 target_include_directories(dingusppc PRIVATE ${CLI11_ROOT})
 endif()
 
@@ -91,7 +122,7 @@ target_link_libraries(testppc "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL
                               cubeb)
 else()
 #target_link_libraries(testppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
-target_link_libraries(testppc cubeb ${SDL2_LIBRARIES} ${CAPSTONE_LIBRARIES} ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(testppc cubeb ${SDL2_LIBRARIES} capstone-shared ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
 file(GLOB BENCH_SOURCES "${PROJECT_SOURCE_DIR}/benchmark/*.cpp")
@@ -102,7 +133,7 @@ add_executable(bench1 ${BENCH_SOURCES} $<TARGET_OBJECTS:debugger>
                                        $<TARGET_OBJECTS:machines>
                                        $<TARGET_OBJECTS:loguru>)
 
-target_link_libraries(bench1 cubeb ${SDL2_LIBRARIES} ${CAPSTONE_LIBRARIES} ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(bench1 cubeb ${SDL2_LIBRARIES} capstone-shared ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 
 add_custom_command(
     TARGET testppc POST_BUILD
