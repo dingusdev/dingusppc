@@ -27,11 +27,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <string>
 #include <thirdparty/loguru/loguru.hpp>
-#include <capstone/capstone.h>
 #include "../cpu/ppc/ppcdisasm.h"
 #include "../cpu/ppc/ppcemu.h"
 #include "../cpu/ppc/ppcmmu.h"
 
+#ifdef ENABLE_68K_DEBUGGER // optionally defined in CMakeLists.txt
+    #include <capstone/capstone.h>
+#endif
 
 using namespace std;
 
@@ -72,25 +74,16 @@ static void show_help() {
     cout << "  disas N,X -- disassemble N instructions starting at address X" << endl;
     cout << "               X can be any number or a known register name" << endl;
     cout << "               disas with no arguments defaults to disas 1,pc" << endl;
+#ifdef ENABLE_68K_DEBUGGER
     cout << "  context X -- switch to the debugging context X." << endl;
     cout << "               X can be either 'ppc' (default) or '68k'" << endl;
     cout << "               Use 68k for debugging emulated 68k code only." << endl;
+#endif
     cout << "  quit      -- quit the debugger" << endl << endl;
     cout << "Pressing ENTER will repeat last command." << endl;
 }
 
-static void disasm(uint32_t count, uint32_t address) {
-    PPCDisasmContext ctx;
-
-    ctx.instr_addr = address;
-    ctx.simplified = true;
-
-    for (int i = 0; i < count; i++) {
-        ctx.instr_code = mem_read_dbg(ctx.instr_addr, 4);
-        cout << uppercase << hex << ctx.instr_addr;
-        cout << "    " << disassemble_single(&ctx) << endl;
-    }
-}
+#ifdef ENABLE_68K_DEBUGGER
 
 static void disasm_68k(uint32_t count, uint32_t address) {
     csh cs_handle;
@@ -199,6 +192,35 @@ void exec_until_68k(uint32_t target_addr)
     }
 }
 
+void print_68k_regs()
+{
+    int i;
+    string reg;
+
+    for (i = 0; i < 8; i++) {
+        reg = "R" + to_string(i + 8);
+        cout << "D" << dec << i << " : " << uppercase << hex << get_reg(reg) << endl;
+    }
+
+    for (i = 0; i < 7; i++) {
+        reg = "R" + to_string(i + 16);
+        cout << "A" << dec << i << " : " << uppercase << hex << get_reg(reg) << endl;
+    }
+    reg = "R1";
+    cout << "A7 : " << uppercase << hex << get_reg(reg) << endl;
+
+    reg = "R24";
+    cout << "PC: " << uppercase << hex << get_reg(reg) - 2 << endl;
+
+    reg = "R25";
+    cout << "SR: " << uppercase << hex << ((get_reg(reg) & 0xFF) << 8) << endl;
+
+    reg = "R26";
+    cout << "CCR: " << uppercase << hex << get_reg(reg) << endl;
+}
+
+#endif // ENABLE_68K_DEBUGGER
+
 static void dump_mem(string& params) {
     int cell_size, chars_per_line;
     bool is_char;
@@ -293,31 +315,17 @@ static void dump_mem(string& params) {
     cout << endl << endl;
 }
 
-void print_68k_regs()
-{
-    int i;
-    string reg;
+static void disasm(uint32_t count, uint32_t address) {
+    PPCDisasmContext ctx;
 
-    for (i = 0; i < 8; i++) {
-        reg = "R" + to_string(i + 8);
-        cout << "D" << dec << i << " : " << uppercase << hex << get_reg(reg) << endl;
+    ctx.instr_addr = address;
+    ctx.simplified = true;
+
+    for (int i = 0; i < count; i++) {
+        ctx.instr_code = mem_read_dbg(ctx.instr_addr, 4);
+        cout << uppercase << hex << ctx.instr_addr;
+        cout << "    " << disassemble_single(&ctx) << endl;
     }
-
-    for (i = 0; i < 7; i++) {
-        reg = "R" + to_string(i + 16);
-        cout << "A" << dec << i << " : " << uppercase << hex << get_reg(reg) << endl;
-    }
-    reg = "R1";
-    cout << "A7 : " << uppercase << hex << get_reg(reg) << endl;
-
-    reg = "R24";
-    cout << "PC: " << uppercase << hex << get_reg(reg) - 2 << endl;
-
-    reg = "R25";
-    cout << "SR: " << uppercase << hex << ((get_reg(reg) & 0xFF) << 8) << endl;
-
-    reg = "R26";
-    cout << "CCR: " << uppercase << hex << get_reg(reg) << endl;
 }
 
 void enter_debugger() {
@@ -362,7 +370,9 @@ void enter_debugger() {
 #endif
         else if (cmd == "regs") {
             if (context == 2) {
+#ifdef ENABLE_68K_DEBUGGER
                 print_68k_regs();
+#endif
             } else {
                 print_gprs();
             }
@@ -394,7 +404,9 @@ void enter_debugger() {
             }
         } else if (cmd == "step" || cmd == "si") {
             if (context == 2) {
+#ifdef ENABLE_68K_DEBUGGER
                 exec_single_68k();
+#endif
             } else {
                 ppc_exec_single();
             }
@@ -407,7 +419,9 @@ void enter_debugger() {
             try {
                 addr = str2addr(addr_str);
                 if (context == 2) {
+#ifdef ENABLE_68K_DEBUGGER
                     exec_until_68k(addr);
+#endif
                 } else {
                     ppc_exec_until(addr);
                 }
@@ -444,7 +458,9 @@ void enter_debugger() {
                 }
                 try {
                     if (context == 2) {
+#ifdef ENABLE_68K_DEBUGGER
                         disasm_68k(inst_grab, addr);
+#endif
                     } else {
                         disasm(inst_grab, addr);
                     }
@@ -454,9 +470,11 @@ void enter_debugger() {
             } else {
                 /* disas without arguments defaults to disas 1,pc */
                 if (context == 2) {
+#ifdef ENABLE_68K_DEBUGGER
                     addr_str = "R24";
                     addr     = get_reg(addr_str);
                     disasm_68k(1, addr - 2);
+#endif
                 } else {
                     addr_str = "PC";
                     addr     = get_reg(addr_str);
@@ -467,6 +485,7 @@ void enter_debugger() {
             expr_str = "";
             ss >> expr_str;
             dump_mem(expr_str);
+#ifdef ENABLE_68K_DEBUGGER
         } else if (cmd == "context") {
             expr_str = "";
             ss >> expr_str;
@@ -477,6 +496,7 @@ void enter_debugger() {
             } else {
                 cout << "Unknown debugging context: " << expr_str << endl;
             }
+#endif
         } else {
             cout << "Unknown command: " << cmd << endl;
             continue;

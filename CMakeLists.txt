@@ -16,34 +16,40 @@ if (UNIX AND NOT APPLE)
 endif()
 endif()
 
-# Build capstone as static library.
-set(CAPSTONE_BUILD_STATIC ON CACHE BOOL "")
+option(ENABLE_68K_DEBUGGER "Enable 68k debugging" OFF)
 
-# Turn off anything unnecessary.
-set(CAPSTONE_BUILD_SHARED OFF CACHE BOOL "")
-set(CAPSTONE_BUILD_TESTS OFF CACHE BOOL "")
-set(CAPSTONE_BUILD_CSTOOL OFF CACHE BOOL "")
-set(CAPSTONE_BUILD_DIET OFF CACHE BOOL "")
-#set(CAPSTONE_OSXKERNEL_SUPPORT OFF CACHE BOOL "")
+if (ENABLE_68K_DEBUGGER)
+    # Build capstone as static library.
+    set(CAPSTONE_BUILD_STATIC ON CACHE BOOL "")
 
-# Disable unused Capstone architectures.
-set(CAPSTONE_ARM_SUPPORT OFF CACHE BOOL "")
-set(CAPSTONE_ARM64_SUPPORT OFF CACHE BOOL "")
-set(CAPSTONE_MIPS_SUPPORT OFF CACHE BOOL "")
-set(CAPSTONE_PPC_SUPPORT OFF CACHE BOOL "")
-set(CAPSTONE_SPARC_SUPPORT OFF CACHE BOOL "")
-set(CAPSTONE_SYSZ_SUPPORT OFF CACHE BOOL "")
-set(CAPSTONE_XCORE_SUPPORT OFF CACHE BOOL "")
-set(CAPSTONE_X86_SUPPORT OFF CACHE BOOL "")
-set(CAPSTONE_TMS320C64X_SUPPORT OFF CACHE BOOL "")
-set(CAPSTONE_M680X_SUPPORT OFF CACHE BOOL "")
-set(CAPSTONE_EVM_SUPPORT OFF CACHE BOOL "")
-set(CAPSTONE_MOS65XX_SUPPORT OFF CACHE BOOL "")
-set(CAPSTONE_WASM_SUPPORT OFF CACHE BOOL "")
-set(CAPSTONE_BPF_SUPPORT OFF CACHE BOOL "")
-set(CAPSTONE_RISCV_SUPPORT OFF CACHE BOOL "")
+    # Turn off anything unnecessary.
+    set(CAPSTONE_BUILD_SHARED OFF CACHE BOOL "")
+    set(CAPSTONE_BUILD_TESTS OFF CACHE BOOL "")
+    set(CAPSTONE_BUILD_CSTOOL OFF CACHE BOOL "")
+    set(CAPSTONE_BUILD_DIET OFF CACHE BOOL "")
+    set(CAPSTONE_OSXKERNEL_SUPPORT OFF CACHE BOOL "")
 
-add_subdirectory(thirdparty/capstone EXCLUDE_FROM_ALL)
+    # Disable unused Capstone architectures.
+    set(CAPSTONE_ARM_SUPPORT OFF CACHE BOOL "")
+    set(CAPSTONE_ARM64_SUPPORT OFF CACHE BOOL "")
+    set(CAPSTONE_MIPS_SUPPORT OFF CACHE BOOL "")
+    set(CAPSTONE_PPC_SUPPORT OFF CACHE BOOL "")
+    set(CAPSTONE_SPARC_SUPPORT OFF CACHE BOOL "")
+    set(CAPSTONE_SYSZ_SUPPORT OFF CACHE BOOL "")
+    set(CAPSTONE_XCORE_SUPPORT OFF CACHE BOOL "")
+    set(CAPSTONE_X86_SUPPORT OFF CACHE BOOL "")
+    set(CAPSTONE_TMS320C64X_SUPPORT OFF CACHE BOOL "")
+    set(CAPSTONE_M680X_SUPPORT OFF CACHE BOOL "")
+    set(CAPSTONE_EVM_SUPPORT OFF CACHE BOOL "")
+    set(CAPSTONE_MOS65XX_SUPPORT OFF CACHE BOOL "")
+    set(CAPSTONE_WASM_SUPPORT OFF CACHE BOOL "")
+    set(CAPSTONE_BPF_SUPPORT OFF CACHE BOOL "")
+    set(CAPSTONE_RISCV_SUPPORT OFF CACHE BOOL "")
+
+    ADD_DEFINITIONS(-DENABLE_68K_DEBUGGER)
+
+    add_subdirectory(thirdparty/capstone EXCLUDE_FROM_ALL)
+endif()
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/cpu/ppc/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/debugger/")
@@ -94,11 +100,15 @@ add_executable(dingusppc ${SOURCES} $<TARGET_OBJECTS:debugger>
 if (WIN32)
 target_link_libraries(dingusppc "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2.lib"
                                 "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2main.lib"
-                                cubeb capstone-static)
+                                cubeb)
 else()
 #target_link_libraries(dingusppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
-target_link_libraries(dingusppc cubeb ${SDL2_LIBRARIES} capstone-static ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(dingusppc cubeb ${SDL2_LIBRARIES} ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 target_include_directories(dingusppc PRIVATE ${CLI11_ROOT})
+endif()
+
+if (ENABLE_68K_DEBUGGER)
+    target_link_libraries(dingusppc capstone-static)
 endif()
 
 
@@ -112,10 +122,14 @@ add_executable(testppc ${TEST_SOURCES} $<TARGET_OBJECTS:debugger>
 if (WIN32)
 target_link_libraries(testppc "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2.lib"
                               "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2main.lib"
-                              cubeb capstone-static)
+                              cubeb)
 else()
 #target_link_libraries(testppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
-target_link_libraries(testppc cubeb ${SDL2_LIBRARIES} capstone-static ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(testppc cubeb ${SDL2_LIBRARIES} ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+endif()
+
+if (ENABLE_68K_DEBUGGER)
+    target_link_libraries(testppc capstone-static)
 endif()
 
 file(GLOB BENCH_SOURCES "${PROJECT_SOURCE_DIR}/benchmark/*.cpp")
@@ -126,7 +140,11 @@ add_executable(bench1 ${BENCH_SOURCES} $<TARGET_OBJECTS:debugger>
                                        $<TARGET_OBJECTS:machines>
                                        $<TARGET_OBJECTS:loguru>)
 
-target_link_libraries(bench1 cubeb ${SDL2_LIBRARIES} capstone-static ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(bench1 cubeb ${SDL2_LIBRARIES} ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+
+if (ENABLE_68K_DEBUGGER)
+    target_link_libraries(bench1 capstone-static)
+endif()
 
 add_custom_command(
     TARGET testppc POST_BUILD
