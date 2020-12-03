@@ -16,18 +16,11 @@ if (UNIX AND NOT APPLE)
 endif()
 endif()
 
-#find_package(PkgConfig REQUIRED)
-#pkg_check_modules(CAPSTONE REQUIRED capstone>=4.0.2)
-#include_directories(${CAPSTONE_INCLUDE_DIRS})
-#link_directories(${CAPSTONE_LIBRARY_DIRS})
-
-# Build capstone as static library, static runtime (MSVC), and with default allocator.
-set(CAPSTONE_BUILD_STATIC OFF CACHE BOOL "")
-#set(CAPSTONE_BUILD_STATIC_RUNTIME ON CACHE BOOL "")
-#set(CAPSTONE_USE_DEFAULT_ALLOC ON CACHE BOOL "")
+# Build capstone as static library.
+set(CAPSTONE_BUILD_STATIC ON CACHE BOOL "")
 
 # Turn off anything unnecessary.
-set(CAPSTONE_BUILD_SHARED ON CACHE BOOL "")
+set(CAPSTONE_BUILD_SHARED OFF CACHE BOOL "")
 set(CAPSTONE_BUILD_TESTS OFF CACHE BOOL "")
 set(CAPSTONE_BUILD_CSTOOL OFF CACHE BOOL "")
 set(CAPSTONE_BUILD_DIET OFF CACHE BOOL "")
@@ -101,10 +94,10 @@ add_executable(dingusppc ${SOURCES} $<TARGET_OBJECTS:debugger>
 if (WIN32)
 target_link_libraries(dingusppc "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2.lib"
                                 "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2main.lib"
-                                cubeb)
+                                cubeb capstone-static)
 else()
 #target_link_libraries(dingusppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
-target_link_libraries(dingusppc cubeb ${SDL2_LIBRARIES} capstone-shared ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(dingusppc cubeb ${SDL2_LIBRARIES} capstone-static ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 target_include_directories(dingusppc PRIVATE ${CLI11_ROOT})
 endif()
 
@@ -119,10 +112,10 @@ add_executable(testppc ${TEST_SOURCES} $<TARGET_OBJECTS:debugger>
 if (WIN32)
 target_link_libraries(testppc "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2.lib"
                               "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2main.lib"
-                              cubeb)
+                              cubeb capstone-static)
 else()
 #target_link_libraries(testppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
-target_link_libraries(testppc cubeb ${SDL2_LIBRARIES} capstone-shared ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(testppc cubeb ${SDL2_LIBRARIES} capstone-static ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
 file(GLOB BENCH_SOURCES "${PROJECT_SOURCE_DIR}/benchmark/*.cpp")
@@ -133,7 +126,7 @@ add_executable(bench1 ${BENCH_SOURCES} $<TARGET_OBJECTS:debugger>
                                        $<TARGET_OBJECTS:machines>
                                        $<TARGET_OBJECTS:loguru>)
 
-target_link_libraries(bench1 cubeb ${SDL2_LIBRARIES} capstone-shared ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(bench1 cubeb ${SDL2_LIBRARIES} capstone-static ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 
 add_custom_command(
     TARGET testppc POST_BUILD
