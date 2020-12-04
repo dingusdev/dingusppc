@@ -135,13 +135,13 @@ private:
         0x00    // unknown defaults
     };
 
-    uint32_t int_mask2;
-    uint32_t int_clear2;
-    uint32_t int_levels2;
-    uint32_t int_mask1;
-    uint32_t int_clear1;
-    uint32_t int_levels1;
-    uint32_t feat_ctrl;    // features control register
+    uint32_t int_mask2   = 0;
+    uint32_t int_clear2  = 0;
+    uint32_t int_levels2 = 0;
+    uint32_t int_mask1   = 0;
+    uint32_t int_clear1  = 0;
+    uint32_t int_levels1 = 0;
+    uint32_t feat_ctrl   = 0;    // features control register
 
     /* device cells */
     ViaCuda* viacuda;     /* VIA cell with Cuda MCU attached to it */

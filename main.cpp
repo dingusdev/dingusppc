@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // This is where the magic begins
 
 #include "debugger/debugger.h"
+#include "execution/interpreter_loop.h"
 #include "machines/machinefactory.h"
 #include "machines/machineproperties.h"
 #include "ppcemu.h"
@@ -165,9 +166,7 @@ int main(int argc, char** argv) {
 
     switch (execution_mode) {
         case 0:
-            for (;;) {
-                ppc_exec();
-            }
+            interpreter_main_loop();
             break;
         case 1:
             enter_debugger();
