@@ -35,7 +35,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //#define ILLEGAL_OP_SAFE 1
 
 // Uncomment this to use GCC built-in functions.
-//#define USE_GCC_BUILTINS 1
+#define USE_GCC_BUILTINS 1
 
 // Uncomment this to use Visual Studio built-in functions.
 //#define USE_VS_BUILTINS 1
