@@ -35,6 +35,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "machinebase.h"
 #include "machineproperties.h"
 #include <thirdparty/loguru/loguru.hpp>
+#include <string>
 
 
 static void setup_ram_slot(std::string name, int i2c_addr, int capacity_megs) {
@@ -51,7 +52,7 @@ static void setup_ram_slot(std::string name, int i2c_addr, int capacity_megs) {
 }
 
 
-int create_gossamer() {
+int create_gossamer(std::string& id) {
     if (gMachineObj) {
         LOG_F(ERROR, "Global machine object not empty!");
         return -1;

@@ -36,6 +36,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <iomanip>
 #include <map>
 #include <memory>
+#include <string>
 #include <vector>
 #include <thirdparty/loguru/loguru.hpp>
 
@@ -77,6 +78,13 @@ static const PropMap GossamerSettings = {
         new IntProperty(  2, vector<uint32_t>({2, 4, 6}))},
 };
 
+static const PropMap PDMSettings = {
+    {"rambank1_size",
+        new IntProperty(0, vector<uint32_t>({0, 8, 16, 32, 64, 128}))},
+    {"rambank2_size",
+        new IntProperty(0, vector<uint32_t>({0, 8, 16, 32, 64, 128}))},
+};
+
 static const map<string, string> PropHelp = {
     {"rambank1_size",   "specifies RAM bank 1 size in MB"},
     {"rambank2_size",   "specifies RAM bank 2 size in MB"},
@@ -84,8 +92,9 @@ static const map<string, string> PropHelp = {
     {"gfxmem_size",     "specifies video memory size in MB"},
 };
 
-static const map<string, tuple<PropMap, function<int(void)>, string>> machines = {
-    {"pmg3", {GossamerSettings, create_gossamer, "Power Macintosh G3 (Beige)"}},
+static const map<string, tuple<PropMap, function<int(string&)>, string>> machines = {
+    {"pm6100", {PDMSettings,      create_pdm,      "PowerMacintosh 6100"}},
+    {"pmg3",   {GossamerSettings, create_gossamer, "Power Macintosh G3 (Beige)"}},
 };
 
 string machine_name_from_rom(string& rom_filepath) {
@@ -268,7 +277,7 @@ int create_machine_for_id(string& id, string& rom_filepath) {
         auto machine = machines.at(id);
 
         /* build machine and load boot ROM */
-        if (get<1>(machine)() < 0 || load_boot_rom(rom_filepath) < 0) {
+        if (get<1>(machine)(id) < 0 || load_boot_rom(rom_filepath) < 0) {
             return -1;
         }
     } catch(out_of_range ex) {

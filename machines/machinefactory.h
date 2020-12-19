@@ -42,6 +42,7 @@ void list_machines(void);
 void list_properties(void);
 
 /* Machine-specific factory functions. */
-int create_gossamer(void);
+int create_gossamer(string& id);
+int create_pdm(string& id);
 
 #endif /* MACHINE_FACTORY_H */
