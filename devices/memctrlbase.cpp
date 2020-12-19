@@ -90,7 +90,7 @@ bool MemCtrlBase::add_mem_mirror(uint32_t start_addr, uint32_t dest_addr) {
         return false;
 
     entry.start   = start_addr;
-    entry.end     = start_addr + (ref_entry->end - ref_entry->start) + 1;
+    entry.end     = start_addr + (ref_entry->end - ref_entry->start);
     entry.mirror  = dest_addr;
     entry.type    = ref_entry->type | RT_MIRROR;
     entry.devobj  = 0;
