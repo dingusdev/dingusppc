@@ -30,6 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "../cpu/ppc/ppcdisasm.h"
 #include "../cpu/ppc/ppcemu.h"
 #include "../cpu/ppc/ppcmmu.h"
+#include "memreadwrite.h"
 
 #ifdef ENABLE_68K_DEBUGGER // optionally defined in CMakeLists.txt
     #include <capstone/capstone.h>
@@ -322,7 +323,7 @@ static void disasm(uint32_t count, uint32_t address) {
     ctx.simplified = true;
 
     for (int i = 0; i < count; i++) {
-        ctx.instr_code = mem_read_dbg(ctx.instr_addr, 4);
+        ctx.instr_code = READ_DWORD_BE_A(quickinstruction_translate(ctx.instr_addr));
         cout << uppercase << hex << ctx.instr_addr;
         cout << "    " << disassemble_single(&ctx) << endl;
     }
