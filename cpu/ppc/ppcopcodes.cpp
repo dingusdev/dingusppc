@@ -1355,16 +1355,13 @@ void dppc_interpreter::ppc_dcbtst() {
 void dppc_interpreter::ppc_dcbz() {
     ppc_grab_regsdab();
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
-    if (!(ppc_state.pc & 32) && (ppc_state.pc < 0xFFFFFFE0UL)) {
-        ppc_grab_regsdab();
-        ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
-        mem_write_qword(ppc_effective_address, 0);
-        mem_write_qword((ppc_effective_address + 8), 0);
-        mem_write_qword((ppc_effective_address + 16), 0);
-        mem_write_qword((ppc_effective_address + 24), 0);
-    } else {
-        ppc_exception_handler(Except_Type::EXC_ALIGNMENT, 0x00000);
-    }
+
+    ppc_effective_address &= 0xFFFFFFE0; // align EA on a 32-byte boundary
+
+    mem_write_qword(ppc_effective_address, 0);
+    mem_write_qword((ppc_effective_address + 8), 0);
+    mem_write_qword((ppc_effective_address + 16), 0);
+    mem_write_qword((ppc_effective_address + 24), 0);
 }
 
 
