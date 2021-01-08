@@ -1201,12 +1201,11 @@ void dppc_interpreter::ppc_cmpli() {
 // Condition Register Changes
 
 void dppc_interpreter::ppc_mcrf() {
-    crf_d           = (ppc_cur_instruction >> 23) & 7;
-    crf_d           = crf_d << 2;
-    crf_s           = (ppc_cur_instruction >> 18) & 7;
-    crf_s           = crf_d << 2;
+    int crf_d = (ppc_cur_instruction >> 21) & 0x1C;
+    int crf_s = (ppc_cur_instruction >> 16) & 0x1C;
     uint32_t grab_s = ppc_state.cr & (0xf0000000UL >> crf_s);
-    ppc_state.cr    = (ppc_state.cr & ~(0xf0000000UL >> crf_d) | (grab_s << crf_d));
+
+    ppc_state.cr = (ppc_state.cr & ~(0xf0000000UL >> crf_d) | (grab_s >> crf_d));
 }
 
 void dppc_interpreter::ppc_crand() {
