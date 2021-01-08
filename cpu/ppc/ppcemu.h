@@ -410,6 +410,7 @@ extern void ppc_mfsrin();
 extern void ppc_mtsr();
 extern void ppc_mtsrin();
 
+extern void ppc_mcrf();
 extern void ppc_mtcrf();
 extern void ppc_mfmsr();
 extern void ppc_mfspr();

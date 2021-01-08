@@ -156,6 +156,9 @@ void ppc_opcode19() {
 
     } else {
         switch (subop_grab) {
+        case 0:
+            ppc_mcrf();
+            break;
         case 66:
             ppc_crnor();
             break;

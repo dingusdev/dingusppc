@@ -1200,6 +1200,15 @@ void dppc_interpreter::ppc_cmpli() {
 
 // Condition Register Changes
 
+void dppc_interpreter::ppc_mcrf() {
+    crf_d           = (ppc_cur_instruction >> 23) & 7;
+    crf_d           = crf_d << 2;
+    crf_s           = (ppc_cur_instruction >> 18) & 7;
+    crf_s           = crf_d << 2;
+    uint32_t grab_s = ppc_state.cr & (0xf0000000UL >> crf_s);
+    ppc_state.cr    = (ppc_state.cr & ~(0xf0000000UL >> crf_d) | (grab_s << crf_d));
+}
+
 void dppc_interpreter::ppc_crand() {
     ppc_grab_regsdab();
     if ((ppc_state.cr & (0x80000000UL >> reg_a)) && (ppc_state.cr & (0x80000000UL >> reg_b))) {
@@ -1208,6 +1217,7 @@ void dppc_interpreter::ppc_crand() {
         ppc_state.cr &= ~(0x80000000UL >> reg_d);
     }
 }
+
 void dppc_interpreter::ppc_crandc() {
     ppc_grab_regsdab();
     if ((ppc_state.cr & (0x80000000UL >> reg_a)) && !(ppc_state.cr & (0x80000000UL >> reg_b))) {
@@ -1289,11 +1299,11 @@ void dppc_interpreter::ppc_tw() {
     reg_a  = (ppc_cur_instruction >> 11) & 31;
     reg_b  = (ppc_cur_instruction >> 16) & 31;
     ppc_to = (ppc_cur_instruction >> 21) & 31;
-    if ((((int32_t)ppc_state.gpr[reg_a] < (int32_t)ppc_state.gpr[reg_b]) & (ppc_to & 0x10)) ||
-        (((int32_t)ppc_state.gpr[reg_a] > (int32_t)ppc_state.gpr[reg_b]) & (ppc_to & 0x08)) ||
-        (((int32_t)ppc_state.gpr[reg_a] == (int32_t)ppc_state.gpr[reg_b]) & (ppc_to & 0x04)) ||
-        ((ppc_state.gpr[reg_a] < ppc_state.gpr[reg_b]) & (ppc_to & 0x02)) ||
-        ((ppc_state.gpr[reg_a] > ppc_state.gpr[reg_b]) & (ppc_to & 0x01))) {
+    if ((((int32_t)ppc_state.gpr[reg_a] < (int32_t)ppc_state.gpr[reg_b]) && (ppc_to & 0x10)) ||
+        (((int32_t)ppc_state.gpr[reg_a] > (int32_t)ppc_state.gpr[reg_b]) && (ppc_to & 0x08)) ||
+        (((int32_t)ppc_state.gpr[reg_a] == (int32_t)ppc_state.gpr[reg_b]) && (ppc_to & 0x04)) ||
+        ((ppc_state.gpr[reg_a] < ppc_state.gpr[reg_b]) && (ppc_to & 0x02)) ||
+        ((ppc_state.gpr[reg_a] > ppc_state.gpr[reg_b]) && (ppc_to & 0x01))) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::TRAP);
     }
 }
