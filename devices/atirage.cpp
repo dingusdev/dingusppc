@@ -158,6 +158,18 @@ const char* ATIRage::get_reg_name(uint32_t reg_offset) {
     case ATI_CFG_STAT0:
         reg_name = "CONFIG_STAT0";
         break;
+    case ATI_SCALE_3D_CNTL:
+        reg_name = "SCALE_3D_CNTL";
+        break;
+    case ATI_FIFO_STAT:
+        reg_name = "FIFO_STAT";
+        break;
+    case ATI_SRC_CNTL:
+        reg_name = "SRC_CNTL";
+        break;
+    case ATI_GUI_STAT:
+        reg_name = "GUI_STAT";
+        break;
     default:
         reg_name = "unknown";
     }
