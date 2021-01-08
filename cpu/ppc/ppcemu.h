@@ -256,12 +256,8 @@ extern void ppc_mmu_init();
 
 [[noreturn]] void ppc_illegalop();
 [[noreturn]] void ppc_fpu_off();
-void ppc_illegalsubop19();
-void ppc_illegalsubop31();
-void ppc_illegalsubop59();
-void ppc_illegalsubop63();
 
-void ppc_opcode4();
+//void ppc_opcode4();
 void ppc_opcode16();
 void ppc_opcode18();
 void ppc_opcode19();

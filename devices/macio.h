@@ -141,7 +141,9 @@ private:
     uint32_t int_mask1   = 0;
     uint32_t int_clear1  = 0;
     uint32_t int_levels1 = 0;
+    uint32_t macio_id    = 0xF0700008UL;
     uint32_t feat_ctrl   = 0;    // features control register
+    uint32_t aux_ctrl    = 0;    // aux features control register
 
     /* device cells */
     ViaCuda* viacuda;     /* VIA cell with Cuda MCU attached to it */

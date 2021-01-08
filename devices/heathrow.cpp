@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <iostream>
 #include <thirdparty/loguru/loguru.hpp>
+#include <cpu/ppc/ppcemu.h>
 
 /** Heathrow Mac I/O device emulation.
 
@@ -170,7 +171,7 @@ void HeathrowIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int 
 uint32_t HeathrowIC::mio_ctrl_read(uint32_t offset, int size) {
     uint32_t res = 0;
 
-    switch (offset & 0xFF) {
+    switch (offset & 0xFC) {
     case 0x14:
         LOG_F(9, "read from MIO:Int_Mask2 register \n");
         res = this->int_mask2;
@@ -196,14 +197,15 @@ uint32_t HeathrowIC::mio_ctrl_read(uint32_t offset, int size) {
         res = this->int_levels1;
         break;
     case 0x34: /* heathrowIDs / HEATHROW_MBCR (Linux): media bay config reg? */
-        res = 0xF0700000UL;
+        LOG_F(9, "read from MIO:ID register at Address %x \n", ppc_state.pc);
+        res = this->macio_id;
         break;
     case 0x38:
         LOG_F(9, "read from MIO:Feat_Ctrl register \n");
         res = this->feat_ctrl;
         break;
     default:
-        LOG_F(WARNING, "unknown MIO register at %x \n", offset);
+        LOG_F(WARNING, "read from unknown MIO register at %x \n", offset);
         break;
     }
 
@@ -211,17 +213,17 @@ uint32_t HeathrowIC::mio_ctrl_read(uint32_t offset, int size) {
 }
 
 void HeathrowIC::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
-    switch (offset & 0xFF) {
+    switch (offset & 0xFC) {
     case 0x14:
-        LOG_F(9, "read from MIO:Int_Mask2 register \n");
+        LOG_F(9, "write %x to MIO:Int_Mask2 register \n", value);
         this->int_mask2 = value;
         break;
     case 0x18:
-        LOG_F(9, "read from MIO:Int_Clear2 register \n");
+        LOG_F(9, "write %x to MIO:Int_Clear2 register \n", value);
         this->int_clear2 = value;
         break;
     case 0x1C:
-        LOG_F(9, "read from MIO:Int_Levels2 register \n");
+        LOG_F(9, "write %x to MIO:Int_Levels2 register \n", value);
         this->int_levels2 = value;
         break;
     case 0x24:
@@ -233,15 +235,22 @@ void HeathrowIC::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
         this->int_clear1 = value;
         break;
     case 0x2C:
-        LOG_F(9, "read from MIO:Int_Levels1 register \n");
+        LOG_F(9, "write %x to MIO:Int_Levels1 register \n", value);
         this->int_levels1 = value;
+        break;
+    case 0x34:
+        LOG_F(WARNING, "Attempted to write %x to MIO:ID at %x; Address : %x \n", value, offset, ppc_state.pc);
         break;
     case 0x38:
         LOG_F(9, "write %x to MIO:Feat_Ctrl register \n", value);
         this->feat_ctrl = value;
         break;
+    case 0x3C:
+        LOG_F(9, "write %x to MIO:Aux_Ctrl register \n", value);
+        this->aux_ctrl = value;
+        break;
     default:
-        LOG_F(WARNING, "unknown MIO register at %x \n", offset);
+        LOG_F(WARNING, "write %x to unknown MIO register at %x \n", value, offset);
         break;
     }
 }
