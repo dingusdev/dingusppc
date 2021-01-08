@@ -16,7 +16,10 @@ if (UNIX AND NOT APPLE)
 endif()
 endif()
 
-option(ENABLE_68K_DEBUGGER "Enable 68k debugging" OFF)
+option(DPPC_BUILD_PPC_TESTS  "Build PowerPC tests" OFF)
+option(DPPC_BUILD_BENCHMARKS "Build benchmarking programs" OFF)
+
+option(ENABLE_68K_DEBUGGER   "Enable 68k debugging" OFF)
 
 if (ENABLE_68K_DEBUGGER)
     # Build capstone as static library.
@@ -111,46 +114,54 @@ if (ENABLE_68K_DEBUGGER)
     target_link_libraries(dingusppc capstone-static)
 endif()
 
+if (DPPC_BUILD_PPC_TESTS)
+    add_executable(testppc ${TEST_SOURCES} $<TARGET_OBJECTS:debugger>
+                                           $<TARGET_OBJECTS:cpu_ppc>
+                                           $<TARGET_OBJECTS:devices>
+                                           $<TARGET_OBJECTS:execution>
+                                           $<TARGET_OBJECTS:machines>
+                                           $<TARGET_OBJECTS:loguru>)
 
-add_executable(testppc ${TEST_SOURCES} $<TARGET_OBJECTS:debugger>
-                                       $<TARGET_OBJECTS:cpu_ppc>
-                                       $<TARGET_OBJECTS:devices>
-                                       $<TARGET_OBJECTS:execution>
-                                       $<TARGET_OBJECTS:machines>
-                                       $<TARGET_OBJECTS:loguru>)
+    if (WIN32)
+        target_link_libraries(testppc
+                    "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2.lib"
+                    "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2main.lib"
+                    cubeb)
+    else()
+        #target_link_libraries(testppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
+        target_link_libraries(testppc cubeb ${SDL2_LIBRARIES} ${CMAKE_DL_LIBS}
+                    ${CMAKE_THREAD_LIBS_INIT})
+    endif()
 
-if (WIN32)
-target_link_libraries(testppc "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2.lib"
-                              "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2main.lib"
-                              cubeb)
-else()
-#target_link_libraries(testppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
-target_link_libraries(testppc cubeb ${SDL2_LIBRARIES} ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+    if (ENABLE_68K_DEBUGGER)
+        target_link_libraries(testppc capstone-static)
+    endif()
 endif()
 
-if (ENABLE_68K_DEBUGGER)
-    target_link_libraries(testppc capstone-static)
+if (DPPC_BUILD_BENCHMARKS)
+    file(GLOB BENCH_SOURCES "${PROJECT_SOURCE_DIR}/benchmark/*.cpp")
+    add_executable(bench1 ${BENCH_SOURCES} $<TARGET_OBJECTS:debugger>
+                                           $<TARGET_OBJECTS:cpu_ppc>
+                                           $<TARGET_OBJECTS:devices>
+                                           $<TARGET_OBJECTS:execution>
+                                           $<TARGET_OBJECTS:machines>
+                                           $<TARGET_OBJECTS:loguru>)
+
+    target_link_libraries(bench1 cubeb ${SDL2_LIBRARIES} ${CMAKE_DL_LIBS}
+            ${CMAKE_THREAD_LIBS_INIT})
+
+    if (ENABLE_68K_DEBUGGER)
+        target_link_libraries(bench1 capstone-static)
+    endif()
 endif()
 
-file(GLOB BENCH_SOURCES "${PROJECT_SOURCE_DIR}/benchmark/*.cpp")
-add_executable(bench1 ${BENCH_SOURCES} $<TARGET_OBJECTS:debugger>
-                                       $<TARGET_OBJECTS:cpu_ppc>
-                                       $<TARGET_OBJECTS:devices>
-                                       $<TARGET_OBJECTS:execution>
-                                       $<TARGET_OBJECTS:machines>
-                                       $<TARGET_OBJECTS:loguru>)
-
-target_link_libraries(bench1 cubeb ${SDL2_LIBRARIES} ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
-
-if (ENABLE_68K_DEBUGGER)
-    target_link_libraries(bench1 capstone-static)
+if (DPPC_BUILD_PPC_TESTS)
+    add_custom_command(
+        TARGET testppc POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+        "${PROJECT_SOURCE_DIR}/cpu/ppc/test/ppcinttests.csv"
+        "${PROJECT_SOURCE_DIR}/cpu/ppc/test/ppcdisasmtest.csv"
+        $<TARGET_FILE_DIR:${PROJECT_NAME}>)
 endif()
-
-add_custom_command(
-    TARGET testppc POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-    "${PROJECT_SOURCE_DIR}/cpu/ppc/test/ppcinttests.csv"
-    "${PROJECT_SOURCE_DIR}/cpu/ppc/test/ppcdisasmtest.csv"
-    $<TARGET_FILE_DIR:${PROJECT_NAME}>)
 
 install (TARGETS dingusppc DESTINATION ${PROJECT_SOURCE_DIR}/build)
