@@ -98,6 +98,9 @@ const char* ATIRage::get_reg_name(uint32_t reg_offset) {
     case ATI_CRTC_V_SYNC_STRT_WID:
         reg_name = "CRTC_V_SYNC_STRT_WID";
         break;
+    case ATI_CRTC_VLINE_CRNT_VLINE:
+        reg_name = "CRTC_VLINE_CRNT_VLINE";
+        break;
     case ATI_CRTC_OFF_PITCH:
         reg_name = "CRTC_OFF_PITCH";
         break;
@@ -130,6 +133,18 @@ const char* ATIRage::get_reg_name(uint32_t reg_offset) {
         break;
     case ATI_GP_IO:
         reg_name = "GP_IO";
+        break;
+    case ATI_SCRATCH_REG0:
+        reg_name = "SCRATCH_REG0";
+        break;
+    case ATI_SCRATCH_REG1:
+        reg_name = "SCRATCH_REG1";
+        break;
+    case ATI_SCRATCH_REG2:
+        reg_name = "SCRATCH_REG2";
+        break;
+    case ATI_SCRATCH_REG3:
+        reg_name = "SCRATCH_REG3";
         break;
     case ATI_CLOCK_CNTL:
         reg_name = "CLOCK_CNTL";
