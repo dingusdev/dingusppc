@@ -563,7 +563,6 @@ extern void ppc_exec_until(uint32_t goal_addr);
 extern void ppc_exec_dbg(uint32_t start_addr, uint32_t size);
 
 /* debugging support API */
-void print_gprs(void);                   /* print content of the general purpose registers */
 void print_fprs(void);                   /* print content of the floating-point registers  */
 uint64_t get_reg(std::string& reg_name); /* get content of the register reg_name */
 void set_reg(std::string& reg_name, uint64_t val); /* set reg_name to val */

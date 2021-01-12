@@ -757,18 +757,6 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t proc_version) {
     ppc_state.pc = 0xFFF00100;
 }
 
-void print_gprs() {
-    for (int i = 0; i < 32; i++)
-        cout << "GPR " << dec << i << " : " << uppercase << hex << ppc_state.gpr[i] << endl;
-
-    cout << "PC: " << uppercase << hex << ppc_state.pc << endl;
-    cout << "LR: " << uppercase << hex << ppc_state.spr[SPR::LR] << endl;
-    cout << "CR: " << uppercase << hex << ppc_state.cr << endl;
-    cout << "CTR: " << uppercase << hex << ppc_state.spr[SPR::CTR] << endl;
-    cout << "XER: " << uppercase << hex << ppc_state.spr[SPR::XER] << endl;
-    cout << "MSR: " << uppercase << hex << ppc_state.msr << endl;
-}
-
 void print_fprs() {
     for (int i = 0; i < 32; i++)
         cout << "FPR " << dec << i << " : " << ppc_state.fpr[i].dbl64_r << endl;

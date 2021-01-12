@@ -19,6 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <array>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -55,8 +56,9 @@ static uint32_t str2num(string& num_str) {
 
 static void show_help() {
     cout << "Debugger commands:" << endl;
-    cout << "  step      -- execute single instruction" << endl;
-    cout << "  si        -- shortcut for step" << endl;
+    cout << "  step [N]  -- execute single instruction" << endl;
+    cout << "               N is an optional step count" << endl;
+    cout << "  si [N]    -- shortcut for step" << endl;
     cout << "  next      -- same as step but treats subroutine calls" << endl;
     cout << "               as single instructions." << endl;
     cout << "  ni        -- shortcut for next" << endl;
@@ -74,6 +76,7 @@ static void show_help() {
     cout << "  disas N,X -- disassemble N instructions starting at address X" << endl;
     cout << "               X can be any number or a known register name" << endl;
     cout << "               disas with no arguments defaults to disas 1,pc" << endl;
+    cout << "  da N,X    -- shortcut for disas" << endl;
 #ifdef ENABLE_68K_DEBUGGER
     cout << "  context X -- switch to the debugging context X." << endl;
     cout << "               X can be either 'ppc' (default) or '68k'" << endl;
@@ -328,6 +331,39 @@ static void disasm(uint32_t count, uint32_t address) {
     }
 }
 
+static void print_gprs() {
+    string reg_name;
+    int i;
+
+    for (i = 0; i < 32; i++) {
+        reg_name = "R" + to_string(i);
+
+        cout << right << std::setw(3) << setfill(' ') << reg_name << " : " <<
+            setw(8) << setfill('0') << right << uppercase << hex << get_reg(reg_name);
+
+        if (i & 1) {
+            cout << endl;
+        } else {
+            cout << "\t\t";
+        }
+    }
+
+    array<string,6> sprs = {"PC", "LR", "CR", "CTR", "XER", "MSR"};
+
+    for (auto &spr : sprs) {
+        cout << right << std::setw(3) << setfill(' ') << spr << " : " <<
+            setw(8) << setfill('0') << uppercase << hex << get_reg(spr);
+
+        if (i & 1) {
+            cout << endl;
+        } else {
+            cout << "\t\t";
+        }
+
+        i++;
+    }
+}
+
 void enter_debugger() {
     string inp, cmd, addr_str, expr_str, reg_expr, last_cmd, reg_value_str, inst_string, inst_num_str;
     uint32_t addr, inst_grab;
@@ -403,12 +439,31 @@ void enter_debugger() {
                 cout << exc.what() << endl;
             }
         } else if (cmd == "step" || cmd == "si") {
+            int count;
+
+            expr_str = "";
+            ss >> expr_str;
+            if (expr_str.length() > 0) {
+                try {
+                    count = str2num(expr_str);
+                } catch (invalid_argument& exc) {
+                    cout << exc.what() << endl;
+                    count = 1;
+                }
+            } else {
+                count = 1;
+            }
+
             if (context == 2) {
 #ifdef ENABLE_68K_DEBUGGER
-                exec_single_68k();
+                for (; --count >= 0;) {
+                    exec_single_68k();
+                }
 #endif
             } else {
-                ppc_exec_single();
+                for (; --count >= 0;) {
+                    ppc_exec_single();
+                }
             }
         } else if (cmd == "next" || cmd == "ni") {
             addr_str = "PC";
@@ -428,7 +483,7 @@ void enter_debugger() {
             } catch (invalid_argument& exc) {
                 cout << exc.what() << endl;
             }
-        } else if (cmd == "disas") {
+        } else if (cmd == "disas" || cmd == "da") {
             expr_str = "";
             ss >> expr_str;
             if (expr_str.length() > 0) {
@@ -437,9 +492,16 @@ void enter_debugger() {
                     cout << "disas: not enough arguments specified." << endl;
                     continue;
                 }
+
                 inst_num_str = expr_str.substr(0, expr_str.find_first_of(","));
-                inst_grab    = stol(inst_num_str, NULL, 0);
-                addr_str     = expr_str.substr(expr_str.find_first_of(",") + 1);
+                try {
+                    inst_grab = str2num(inst_num_str);
+                } catch (invalid_argument& exc) {
+                    cout << exc.what() << endl;
+                    continue;
+                }
+
+                addr_str = expr_str.substr(expr_str.find_first_of(",") + 1);
                 try {
                     addr = str2addr(addr_str);
                 } catch (invalid_argument& exc) {
