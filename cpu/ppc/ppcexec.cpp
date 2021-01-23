@@ -220,8 +220,8 @@ void ppc_opcode59() {
 }
 
 void ppc_opcode63() {
-    uint16_t subop_grab = (ppc_cur_instruction & 0x7FF) >> 1;
-    rc_flag             = subop_grab & 1;
+    uint16_t subop_grab = (ppc_cur_instruction >> 1) & 0x3FF;
+    rc_flag             = ppc_cur_instruction & 1;
 #ifdef EXHAUSTIVE_DEBUG
     uint32_t regrab = (uint32_t)subop_grab;
     LOG_F(INFO, "Executing Opcode 63 table subopcode entry \n", regrab);
