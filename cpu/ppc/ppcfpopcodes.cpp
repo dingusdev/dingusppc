@@ -511,7 +511,7 @@ void dppc_interpreter::ppc_fsubs() {
         ppc_changecrf1();
 }
 
-void dppc_interpreter::ppc_fmults() {
+void dppc_interpreter::ppc_fmuls() {
     ppc_grab_regsfpdac(false);
 
     if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 50)) {

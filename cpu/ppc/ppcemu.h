@@ -494,7 +494,7 @@ extern void ppc_fmult();
 extern void ppc_fdiv();
 extern void ppc_fadds();
 extern void ppc_fsubs();
-extern void ppc_fmults();
+extern void ppc_fmuls();
 extern void ppc_fdivs();
 extern void ppc_fmadd();
 extern void ppc_fmsub();

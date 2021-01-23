@@ -82,7 +82,7 @@ static PPCOpcode OpcodeGrabber[] = {
     ppc_stw,       ppc_stwu,      ppc_stb,       ppc_stbu,      ppc_lhz,       ppc_lhzu,
     ppc_lha,       ppc_lhau,      ppc_sth,       ppc_sthu,      ppc_lmw,       ppc_stmw,
     ppc_lfs,       ppc_lfsu,      ppc_lfd,       ppc_lfdu,      ppc_stfs,      ppc_stfsu,
-    ppc_stfd,      ppc_stfdu,     ppc_illegalop, ppc_illegalop, ppc_illegalop, ppc_illegalop,
+    ppc_stfd,      ppc_stfdu,     ppc_illegalop, ppc_illegalop, ppc_illegalop, ppc_opcode59,
     ppc_illegalop, ppc_illegalop, ppc_illegalop, ppc_opcode63};
 
 /** Lookup tables for branch instructions. */
@@ -102,8 +102,8 @@ static PPCOpcode SubOpcode18Grabber[] = {
     single floating-point, and double-floating point ops respectively */
 
 PPCOpcode SubOpcode31Grabber[1024] = { ppc_illegalop };
-PPCOpcode SubOpcode59Grabber[1024] = { ppc_fpu_off };
-PPCOpcode SubOpcode63Grabber[1024] = { ppc_fpu_off };
+PPCOpcode SubOpcode59Grabber[32]   = { ppc_illegalop };
+PPCOpcode SubOpcode63Grabber[1024] = { ppc_illegalop };
 
 
 #define UPDATE_TBR_DEC                                                  \
@@ -210,8 +210,8 @@ void ppc_opcode31() {
 }
 
 void ppc_opcode59() {
-    uint16_t subop_grab = (ppc_cur_instruction & 0x7FF) >> 1;
-    rc_flag             = subop_grab & 1;
+    uint16_t subop_grab = (ppc_cur_instruction >> 1) & 0x1F;
+    rc_flag             = ppc_cur_instruction & 1;
 #ifdef EXHAUSTIVE_DEBUG
     uint32_t regrab = (uint32_t)subop_grab;
     LOG_F(INFO, "Executing Opcode 59 table subopcode entry \n", regrab);
@@ -621,28 +621,14 @@ void initialize_ppc_opcode_tables() {
 
     SubOpcode59Grabber[18] = ppc_fdivs;
     SubOpcode59Grabber[20] = ppc_fsubs;
+    SubOpcode59Grabber[21] = ppc_fadds;
     SubOpcode59Grabber[22] = ppc_fsqrts;
     SubOpcode59Grabber[24] = ppc_fres;
-
-    for (int i = 25; i < 1024; i += 32) {
-        SubOpcode59Grabber[i] = ppc_fmults;
-    }
-
-    for (int i = 28; i < 1024; i += 32) {
-        SubOpcode59Grabber[i] = ppc_fmsubs;
-    }
-
-    for (int i = 29; i < 1024; i += 32) {
-        SubOpcode59Grabber[i] = ppc_fmadds;
-    }
-
-    for (int i = 30; i < 1024; i += 32) {
-        SubOpcode59Grabber[i] = ppc_fnmsubs;
-    }
-
-    for (int i = 31; i < 1024; i += 32) {
-        SubOpcode59Grabber[i] = ppc_fnmadds;
-    }
+    SubOpcode59Grabber[25] = ppc_fmuls;
+    SubOpcode59Grabber[28] = ppc_fmsubs;
+    SubOpcode59Grabber[29] = ppc_fmadds;
+    SubOpcode59Grabber[30] = ppc_fnmsubs;
+    SubOpcode59Grabber[31] = ppc_fnmadds;
 
     SubOpcode63Grabber[0]   = ppc_fcmpu;
     SubOpcode63Grabber[12]  = ppc_frsp;
