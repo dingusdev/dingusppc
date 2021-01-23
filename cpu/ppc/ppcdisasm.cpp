@@ -1687,8 +1687,12 @@ void opc_group63(PPCDisasmContext* ctx) {
     case 12: /* frsp */
         if (ra != 0)
             opc_illegal(ctx);
-        else
-            ctx->instr_str = my_sprintf("%-8s%d, r%d, r%d", "frsp", rs, rb);
+        else {
+            strcpy(opcode, "frsp");
+            if (rc_set)
+                strcat(opcode, ".");
+            ctx->instr_str = my_sprintf("%-8sf%d, f%d", opcode, rs, rb);
+        }
         break;
     case 14: /* fctiw */
         if (ra != 0)
