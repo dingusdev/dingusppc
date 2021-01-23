@@ -271,7 +271,7 @@ void dppc_interpreter::ppc_addme() {
     uint32_t xer_ca = !!(ppc_state.spr[SPR::XER] & 0x20000000);
     ppc_result_d    = ppc_result_a + xer_ca - 1;
 
-    if (((xer_ca - 1) < 0xFFFFFFFFUL) | (ppc_result_d < ppc_result_a)) {
+    if (((xer_ca - 1) < 0xFFFFFFFFUL) || (ppc_result_d < ppc_result_a)) {
         ppc_state.spr[SPR::XER] |= 0x20000000UL;
     } else {
         ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;

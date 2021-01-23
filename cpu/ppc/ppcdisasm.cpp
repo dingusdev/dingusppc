@@ -209,8 +209,8 @@ const char* opc_flt_ldst[8] = {/* integer load and store instructions */
                                "lfdu",
                                "stfs",
                                "stfsu",
-                               "sftd",
-                               "sftdu"};
+                               "stfd",
+                               "stfdu"};
 
 const char* opc_flt_ext_arith[32] = {
     /* integer load and store instructions */
