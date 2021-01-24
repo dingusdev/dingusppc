@@ -1737,7 +1737,7 @@ void opc_group63(PPCDisasmContext* ctx) {
         if (ra != 0)
             opc_illegal(ctx);
         else
-            ctx->instr_str = my_sprintf("%-8sr%d, r%d", opcode, rs, rb);
+            ctx->instr_str = my_sprintf("%-8sf%d, f%d", opcode, rs, rb);
         break;
     case 64:
         strcpy(opcode, "mcrfs");
@@ -1750,31 +1750,52 @@ void opc_group63(PPCDisasmContext* ctx) {
         if (rc_set)
             strcat(opcode, ".");
 
-        ctx->instr_str = my_sprintf("%-8scrb%d", opcode, rs);
+        ctx->instr_str = my_sprintf("%-8s%d", opcode, rs);
         break;
     case 72: /* fmr */
         if (ra != 0)
             opc_illegal(ctx);
-        else
-            ctx->instr_str = my_sprintf("%-8sr%d, r%d", "fmr", rs, rb);
+        else {
+            strcpy(opcode, "fmr");
+
+            if (rc_set)
+                strcat(opcode, ".");
+
+            ctx->instr_str = my_sprintf("%-8sf%d, f%d", opcode, rs, rb);
+        }
         break;
     case 134: /* mtfsfi */
         if (ra != 0)
             opc_illegal(ctx);
-        else
-            ctx->instr_str = my_sprintf("%-8scr%d, r%d", "mtfsfi", (rs >> 2), (rb >> 1));
+        else {
+            strcpy(opcode, "mtfsfi");
+            if (rc_set)
+                strcat(opcode, ".");
+
+            ctx->instr_str = my_sprintf("%-8scr%d, %d", opcode, (rs >> 2), (rb >> 1));
+        }
         break;
     case 136: /* fnabs */
         if (ra != 0)
             opc_illegal(ctx);
-        else
-            ctx->instr_str = my_sprintf("%-8sf%d, f%d", "fnabs", rs, rb);
+        else {
+            strcpy(opcode, "fnabs");
+            if (rc_set)
+                strcat(opcode, ".");
+
+            ctx->instr_str = my_sprintf("%-8sf%d, f%d", opcode, rs, rb);
+        }
         break;
     case 264: /* fabs */
         if (ra != 0)
             opc_illegal(ctx);
-        else
-            ctx->instr_str = my_sprintf("%-8s%d, f%d, f%d", "fabs", rs, rb);
+        else {
+            strcpy(opcode, "fabs");
+            if (rc_set)
+                strcat(opcode, ".");
+
+            ctx->instr_str = my_sprintf("%-8sf%d, f%d", opcode, rs, rb);
+        }
         break;
     case 583: /* mffs */
         strcpy(opcode, "mffs");
@@ -1788,7 +1809,12 @@ void opc_group63(PPCDisasmContext* ctx) {
             ctx->instr_str = my_sprintf("%-8sf%d", opcode, rs);
         break;
     case 711: /* mtfsf */
-        ctx->instr_str = my_sprintf("%-8sfm%d, r%d", "mtfsf", fm, rb);
+        strcpy(opcode, "mtfsf");
+
+        if (rc_set)
+            strcat(opcode, ".");
+
+        ctx->instr_str = my_sprintf("%-8s%d, f%d", opcode, fm, rb);
         break;
     default:
         opc_illegal(ctx);
