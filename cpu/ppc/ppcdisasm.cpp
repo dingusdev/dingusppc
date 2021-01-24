@@ -347,10 +347,10 @@ void opc_ar_im(PPCDisasmContext* ctx) {
     int32_t imm = SIGNEXT(ctx->instr_code & 0xFFFF, 15);
 
     if (ctx->simplified) {
-        if (((ctx->instr_code >> 26) == 0xE) & !ra) {
+        if (((ctx->instr_code >> 26) == 0xE) && !ra) {
             fmt_twoop_simm(ctx->instr_str, "li", rd, imm);
             return;
-        } else if (((ctx->instr_code >> 26) == 0xF) & !ra) {
+        } else if (((ctx->instr_code >> 26) == 0xF) && !ra) {
             fmt_twoop_simm(ctx->instr_str, "lis", rd, imm);
             return;
         }
@@ -954,12 +954,12 @@ void opc_group31(PPCDisasmContext* ctx) {
         } else if (index == 11) { /* tlbia */
             ctx->instr_str = my_sprintf("%-8s", "tlbia");
         } else if (index == 30) { /* tlbld - 603 only */
-            if (!rs & !ra)
+            if (!rs && !ra)
                 opc_illegal(ctx);
             else
                 ctx->instr_str = my_sprintf("%-8sr%s", "tlbld", rb);
         } else if (index == 30) { /* tlbli - 603 only */
-            if (!rs & !ra)
+            if (!rs && !ra)
                 opc_illegal(ctx);
             else
                 ctx->instr_str = my_sprintf("%-8sr%s", "tlbli", rb);
@@ -973,10 +973,10 @@ void opc_group31(PPCDisasmContext* ctx) {
             strcat(opcode, ".");
 
 
-        if ((index == 0) | (index == 4) | (index == 6) | (index == 16) | (index == 20) |
-            (index == 22) | (index == 24) | (index == 28)) {
+        if ((index == 0) || (index == 4) || (index == 6) || (index == 16) || (index == 20) ||
+            (index == 22) || (index == 24) || (index == 28)) {
             fmt_threeop(ctx->instr_str, opcode, ra, rs, rb);
-        } else if ((index == 5) | (index == 7) | (index == 21) | (index == 23) | (index == 25) | (index == 29)) {
+        } else if ((index == 5) || (index == 7) || (index == 21) || (index == 23) || (index == 25) || (index == 29)) {
             fmt_threeop_simm(ctx->instr_str, opcode, ra, rs, rb);
         } else {
             opc_illegal(ctx);
@@ -990,7 +990,7 @@ void opc_group31(PPCDisasmContext* ctx) {
         if (rc_set)
             strcat(opcode, ".");
 
-        if ((index == 4) | (index == 6) | (index == 16) | (index == 20) | (index == 22) |
+        if ((index == 4) || (index == 6) || (index == 16) || (index == 20) || (index == 22) ||
             (index == 28)) {
             fmt_threeop(ctx->instr_str, opcode, ra, rs, rb);
         } else {
@@ -1077,7 +1077,7 @@ void opc_group31(PPCDisasmContext* ctx) {
             }
         }
         /* eciwx, ecowx, lhbrx, lwbrx, stwbrx, sthbrx */
-        else if ((index == 9) | (index == 13) | (index == 16) | (index == 20) | (index == 24) | (index == 28)) {
+        else if ((index == 9) || (index == 13) || (index == 16) || (index == 20) || (index == 24) || (index == 28)) {
             if (rc_set) {
                 opc_illegal(ctx);
                 return;
@@ -1088,15 +1088,15 @@ void opc_group31(PPCDisasmContext* ctx) {
                     fmt_threeop(ctx->instr_str, opcode, rs, ra, rb);
                 return;
             }
-        } else if ((index == 18) | (index == 26)) { /* sync, eieio */
+        } else if ((index == 18) || (index == 26)) { /* sync, eieio */
             ctx->instr_str = my_sprintf("%-8s", opcode);
             return;
         }
         /* dcba, dcbf, dcbi, dcbst, dcbt, dcbz, icbi */
         else if (
-            (index == 1) | (index == 2) | (index == 7) | (index == 8) | (index == 14) |
-            (index == 23) | (index == 30) | (index == 31)) {
-            if (rc_set | (rs != 0)) {
+            (index == 1) || (index == 2) || (index == 7) || (index == 8) || (index == 14) ||
+            (index == 23) || (index == 30) || (index == 31)) {
+            if (rc_set || (rs != 0)) {
                 opc_illegal(ctx);
                 return;
             } else {
@@ -1449,7 +1449,7 @@ void opc_group59(PPCDisasmContext* ctx) {
         if (rc_set)
             strcat(opcode, ".");
 
-        if ((rc != 0) | (ra != 0))
+        if ((rc != 0) || (ra != 0))
             opc_illegal(ctx);
         else
             fmt_twoop_flt(ctx->instr_str, "fsqrts", rs, rb);
@@ -1462,7 +1462,7 @@ void opc_group59(PPCDisasmContext* ctx) {
         if (rc_set)
             strcat(opcode, ".");
 
-        if ((rc != 0) | (ra != 0))
+        if ((rc != 0) || (ra != 0))
             opc_illegal(ctx);
         else
             fmt_twoop_flt(ctx->instr_str, opcode, rs, rb);
@@ -1590,7 +1590,7 @@ void opc_group63(PPCDisasmContext* ctx) {
         if (rc_set)
             strcat(opcode, ".");
 
-        if ((rc != 0) | (ra != 0))
+        if ((rc != 0) || (ra != 0))
             opc_illegal(ctx);
         else
             fmt_threeop_flt(ctx->instr_str, opcode, rs, ra, rb);
@@ -1627,7 +1627,7 @@ void opc_group63(PPCDisasmContext* ctx) {
         if (rc_set)
             strcat(opcode, ".");
 
-        if ((rc != 0) | (ra != 0))
+        if ((rc != 0) || (ra != 0))
             opc_illegal(ctx);
         else
             ctx->instr_str = my_sprintf("%-8sf%d, f%d", opcode, rs, rb);
@@ -1697,14 +1697,22 @@ void opc_group63(PPCDisasmContext* ctx) {
     case 14: /* fctiw */
         if (ra != 0)
             opc_illegal(ctx);
-        else
-            ctx->instr_str = my_sprintf("%-8s%d, r%d, r%d", "fctiw", rs, rb);
+        else {
+            strcpy(opcode, "fctiw");
+            if (rc_set)
+                strcat(opcode, ".");
+            ctx->instr_str = my_sprintf("%-8sf%d, f%d", opcode, rs, rb);
+        }
         break;
     case 15: /* fctiwz */
         if (ra != 0)
             opc_illegal(ctx);
-        else
-            ctx->instr_str = my_sprintf("%-8s%d, r%d, r%d", "fctiwz", rs, rb);
+        else {
+            strcpy(opcode, "fctiwz");
+            if (rc_set)
+                strcat(opcode, ".");
+            ctx->instr_str = my_sprintf("%-8sf%d, f%d", opcode, rs, rb);
+        }
         break;
     case 32: /* fcmpo */
         if (rs & 3)
@@ -1774,7 +1782,7 @@ void opc_group63(PPCDisasmContext* ctx) {
         if (rc_set)
             strcat(opcode, ".");
 
-        if ((ra != 0) | (rb != 0))
+        if ((ra != 0) || (rb != 0))
             opc_illegal(ctx);
         else
             ctx->instr_str = my_sprintf("%-8sf%d", opcode, rs);

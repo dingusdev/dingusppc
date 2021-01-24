@@ -16,7 +16,7 @@ if (UNIX AND NOT APPLE)
 endif()
 endif()
 
-option(DPPC_BUILD_PPC_TESTS  "Build PowerPC tests" OFF)
+option(DPPC_BUILD_PPC_TESTS  "Build PowerPC tests" ON)
 option(DPPC_BUILD_BENCHMARKS "Build benchmarking programs" OFF)
 
 option(ENABLE_68K_DEBUGGER   "Enable 68k debugging" OFF)
