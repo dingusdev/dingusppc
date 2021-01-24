@@ -50,6 +50,8 @@ double qnan = std::numeric_limits<double>::quiet_NaN();
 
 // Storage and register retrieval functions for the floating point functions.
 
+#define GET_FPR(reg)    ppc_state.fpr[(reg)].dbl64_r
+
 double fp_return_double(uint32_t reg) {
     return ppc_state.fpr[reg].dbl64_r;
 }
@@ -74,15 +76,9 @@ inline void ppc_store_dfpresult_flt() {
     ppc_state.fpr[reg_d].dbl64_r = ppc_dblresult64_d;
 }
 
-void ppc_grab_regsfpdb(bool int_rep) {
-    reg_d = (ppc_cur_instruction >> 21) & 31;
-    reg_b = (ppc_cur_instruction >> 11) & 31;
-    if (int_rep) {
-        ppc_result64_b = ppc_state.fpr[reg_b].int64_r;
-    } else {
-        ppc_dblresult64_b = ppc_state.fpr[reg_b].dbl64_r;
-    }
-}
+#define ppc_grab_regsfpdb()                         \
+    int reg_d = (ppc_cur_instruction >> 21) & 31;   \
+    int reg_b = (ppc_cur_instruction >> 11) & 31;
 
 void ppc_grab_regsfpdiab(bool int_rep) {
     reg_d = (ppc_cur_instruction >> 21) & 31;
@@ -614,9 +610,9 @@ void dppc_interpreter::ppc_fnmsubs() {
 }
 
 void dppc_interpreter::ppc_fabs() {
-    ppc_grab_regsfpdb(false);
+    ppc_grab_regsfpdb();
 
-    ppc_dblresult64_d = abs(ppc_dblresult64_b);
+    ppc_dblresult64_d = abs(GET_FPR(reg_b));
 
     ppc_store_dfpresult_flt();
 
@@ -625,9 +621,9 @@ void dppc_interpreter::ppc_fabs() {
 }
 
 void dppc_interpreter::ppc_fnabs() {
-    ppc_grab_regsfpdb(false);
+    ppc_grab_regsfpdb();
 
-    ppc_dblresult64_d = abs(ppc_dblresult64_b);
+    ppc_dblresult64_d = abs(GET_FPR(reg_b));
     ppc_dblresult64_d = -ppc_dblresult64_d;
 
     ppc_store_dfpresult_flt();
@@ -637,9 +633,9 @@ void dppc_interpreter::ppc_fnabs() {
 }
 
 void dppc_interpreter::ppc_fneg() {
-    ppc_grab_regsfpdb(false);
+    ppc_grab_regsfpdb();
 
-    ppc_dblresult64_d = -ppc_dblresult64_d;
+    ppc_dblresult64_d = -(GET_FPR(reg_b));
 
     ppc_store_dfpresult_flt();
 
@@ -663,8 +659,8 @@ void dppc_interpreter::ppc_fsel() {
 }
 
 void dppc_interpreter::ppc_fsqrt() {
-    ppc_grab_regsfpdb(false);
-    ppc_dblresult64_d = std::sqrt(ppc_dblresult64_b);
+    ppc_grab_regsfpdb();
+    ppc_dblresult64_d = std::sqrt(GET_FPR(reg_b));
     ppc_store_dfpresult_flt();
 
     if (rc_flag)
@@ -672,7 +668,7 @@ void dppc_interpreter::ppc_fsqrt() {
 }
 
 void dppc_interpreter::ppc_fsqrts() {
-    ppc_grab_regsfpdb(true);
+    ppc_grab_regsfpdb();
     uint32_t test = (uint32_t)ppc_result64_b;
     test += 127 << 23;
     test >>= 1;
@@ -685,7 +681,7 @@ void dppc_interpreter::ppc_fsqrts() {
 }
 
 void dppc_interpreter::ppc_frsqrte() {
-    ppc_grab_regsfpdb(false);
+    ppc_grab_regsfpdb();
     double testd2 = (double)ppc_result64_b;
     for (int i = 0; i < 10; i++) {
         testd2 = testd2 * (1.5 - (testd2 * .5) * testd2 * testd2);
@@ -699,10 +695,8 @@ void dppc_interpreter::ppc_frsqrte() {
 }
 
 void dppc_interpreter::ppc_frsp() {
-    ppc_grab_regsfpdb(false);
-    double testd2     = (double)ppc_result64_b;
-    float testf2      = (float)testd2;
-    ppc_dblresult64_d = (double)testf2;
+    ppc_grab_regsfpdb();
+    ppc_dblresult64_d = (float)(GET_FPR(reg_b));
     ppc_store_dfpresult_flt();
 
     if (rc_flag)
@@ -710,8 +704,8 @@ void dppc_interpreter::ppc_frsp() {
 }
 
 void dppc_interpreter::ppc_fres() {
-    ppc_grab_regsfpdb(false);
-    float testf2      = (float)ppc_dblresult64_b;
+    ppc_grab_regsfpdb();
+    float testf2      = (float)GET_FPR(reg_b);
     testf2            = 1 / testf2;
     ppc_dblresult64_d = (double)testf2;
     ppc_store_dfpresult_flt();
@@ -721,7 +715,8 @@ void dppc_interpreter::ppc_fres() {
 }
 
 void dppc_interpreter::ppc_fctiw() {
-    ppc_grab_regsfpdb(false);
+    ppc_grab_regsfpdb();
+    ppc_dblresult64_b = GET_FPR(reg_b);
 
     switch (ppc_state.fpscr & 0x3) {
     case 0:
@@ -741,8 +736,8 @@ void dppc_interpreter::ppc_fctiw() {
 }
 
 void dppc_interpreter::ppc_fctiwz() {
-    ppc_grab_regsfpdb(false);
-    ppc_result64_d = round_to_zero(ppc_dblresult64_b);
+    ppc_grab_regsfpdb();
+    ppc_result64_d = round_to_zero(GET_FPR(reg_b));
 
     ppc_store_dfpresult_int();
 
@@ -922,9 +917,8 @@ void dppc_interpreter::ppc_stfiwx() {
 // Floating Point Register Transfer
 
 void dppc_interpreter::ppc_fmr() {
-    ppc_grab_regsfpdb(true);
-    ppc_state.fpr[reg_d] = ppc_state.fpr[reg_b];
-    ppc_store_dfpresult_int();
+    ppc_grab_regsfpdb();
+    ppc_state.fpr[reg_d].dbl64_r = ppc_state.fpr[reg_b].dbl64_r;
 }
 
 
