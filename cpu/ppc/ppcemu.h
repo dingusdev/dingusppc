@@ -294,8 +294,11 @@ extern void ppc_grab_regsfpsiab(bool int_rep);
 
 extern void ppc_store_result_regd();
 extern void ppc_store_result_rega();
-extern void ppc_store_sfpresult(bool int_rep);
-extern void ppc_store_dfpresult(bool int_rep);
+
+extern void ppc_store_sfpresult_int();
+extern void ppc_store_sfpresult_flt();
+extern void ppc_store_dfpresult_int();
+extern void ppc_store_dfpresult_flt();
 
 void ppc_changecrf0(uint32_t set_result);
 void ppc_fp_changecrf1();

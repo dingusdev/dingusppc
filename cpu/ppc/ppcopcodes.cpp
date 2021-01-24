@@ -65,35 +65,35 @@ what endian the numbers are to be stored in.
 **/
 
 // Storage and register retrieval functions for the integer functions.
-void ppc_store_result_regd() {
+inline void ppc_store_result_regd() {
     ppc_state.gpr[reg_d] = ppc_result_d;
 }
 
-void ppc_store_result_rega() {
+inline void ppc_store_result_rega() {
     ppc_state.gpr[reg_a] = ppc_result_a;
 }
 
-void ppc_grab_regsdasimm() {
+inline void ppc_grab_regsdasimm() {
     reg_d        = (ppc_cur_instruction >> 21) & 31;
     reg_a        = (ppc_cur_instruction >> 16) & 31;
     simm         = (int32_t)((int16_t)((ppc_cur_instruction)&65535));
     ppc_result_a = ppc_state.gpr[reg_a];
 }
 
-void ppc_grab_regsdauimm() {
+inline void ppc_grab_regsdauimm() {
     reg_d        = (ppc_cur_instruction >> 21) & 31;
     reg_a        = (ppc_cur_instruction >> 16) & 31;
     uimm         = (uint32_t)((uint16_t)((ppc_cur_instruction)&65535));
     ppc_result_a = ppc_state.gpr[reg_a];
 }
 
-void ppc_grab_regsasimm() {
+inline void ppc_grab_regsasimm() {
     reg_a        = (ppc_cur_instruction >> 16) & 31;
     simm         = (int32_t)((int16_t)(ppc_cur_instruction & 65535));
     ppc_result_a = ppc_state.gpr[reg_a];
 }
 
-void ppc_grab_regssauimm() {
+inline void ppc_grab_regssauimm() {
     reg_s        = (ppc_cur_instruction >> 21) & 31;
     reg_a        = (ppc_cur_instruction >> 16) & 31;
     uimm         = (uint32_t)((uint16_t)((ppc_cur_instruction)&65535));
@@ -101,7 +101,7 @@ void ppc_grab_regssauimm() {
     ppc_result_a = ppc_state.gpr[reg_a];
 }
 
-void ppc_grab_regsdab() {
+inline void ppc_grab_regsdab() {
     reg_d        = (ppc_cur_instruction >> 21) & 31;
     reg_a        = (ppc_cur_instruction >> 16) & 31;
     reg_b        = (ppc_cur_instruction >> 11) & 31;
@@ -109,7 +109,7 @@ void ppc_grab_regsdab() {
     ppc_result_b = ppc_state.gpr[reg_b];
 }
 
-void ppc_grab_regssab() {
+inline void ppc_grab_regssab() {
     reg_s        = (ppc_cur_instruction >> 21) & 31;
     reg_a        = (ppc_cur_instruction >> 16) & 31;
     reg_b        = (ppc_cur_instruction >> 11) & 31;
@@ -118,27 +118,27 @@ void ppc_grab_regssab() {
     ppc_result_b = ppc_state.gpr[reg_b];
 }
 
-void ppc_grab_regssa() {
+inline void ppc_grab_regssa() {
     reg_s        = (ppc_cur_instruction >> 21) & 31;
     reg_a        = (ppc_cur_instruction >> 16) & 31;
     ppc_result_d = ppc_state.gpr[reg_s];
     ppc_result_a = ppc_state.gpr[reg_a];
 }
 
-void ppc_grab_regssb() {
+inline void ppc_grab_regssb() {
     reg_s        = (ppc_cur_instruction >> 21) & 31;
     reg_b        = (ppc_cur_instruction >> 11) & 31;
     ppc_result_d = ppc_state.gpr[reg_s];
     ppc_result_b = ppc_state.gpr[reg_b];
 }
 
-void ppc_grab_regsda() {
+inline void ppc_grab_regsda() {
     reg_d        = (ppc_cur_instruction >> 21) & 31;
     reg_a        = (ppc_cur_instruction >> 16) & 31;
     ppc_result_a = ppc_state.gpr[reg_a];
 }
 
-void ppc_grab_regsdb() {
+inline void ppc_grab_regsdb() {
     reg_d        = (ppc_cur_instruction >> 21) & 31;
     reg_b        = (ppc_cur_instruction >> 11) & 31;
     ppc_result_b = ppc_state.gpr[reg_b];
