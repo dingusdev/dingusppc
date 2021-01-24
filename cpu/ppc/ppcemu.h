@@ -490,7 +490,7 @@ extern void ppc_stfdux();
 
 extern void ppc_fadd();
 extern void ppc_fsub();
-extern void ppc_fmult();
+extern void ppc_fmul();
 extern void ppc_fdiv();
 extern void ppc_fadds();
 extern void ppc_fsubs();

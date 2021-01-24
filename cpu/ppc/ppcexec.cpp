@@ -656,7 +656,7 @@ void initialize_ppc_opcode_tables() {
     }
 
     for (int i = 25; i < 1024; i += 32) {
-        SubOpcode63Grabber[i] = ppc_fmult;
+        SubOpcode63Grabber[i] = ppc_fmul;
     }
 
     for (int i = 28; i < 1024; i += 32) {

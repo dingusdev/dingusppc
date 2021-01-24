@@ -61,20 +61,16 @@ uint64_t fp_return_uint64(uint32_t reg) {
 void ppc_store_sfpresult(bool int_rep) {
     if (int_rep) {
         ppc_state.fpr[reg_d].int64_r = ppc_result64_d;
-        ppc_state.fpr[reg_d].dbl64_r = *(double*)&ppc_result64_d;
     } else {
         ppc_state.fpr[reg_d].dbl64_r = ppc_dblresult64_d;
-        ppc_state.fpr[reg_d].int64_r = *(uint64_t*)&ppc_dblresult64_d;
     }
 }
 
 void ppc_store_dfpresult(bool int_rep) {
     if (int_rep) {
         ppc_state.fpr[reg_d].int64_r = ppc_result64_d;
-        ppc_state.fpr[reg_d].dbl64_r = *(double*)&ppc_result64_d;
     } else {
         ppc_state.fpr[reg_d].dbl64_r = ppc_dblresult64_d;
-        ppc_state.fpr[reg_d].int64_r = *(uint64_t*)&ppc_dblresult64_d;
     }
 }
 
@@ -407,11 +403,11 @@ void dppc_interpreter::ppc_fdiv() {
         ppc_changecrf1();
 }
 
-void dppc_interpreter::ppc_fmult() {
+void dppc_interpreter::ppc_fmul() {
     ppc_grab_regsfpdac(false);
 
     if (!ppc_confirm_inf_nan(reg_a, reg_b, false, 50)) {
-        ppc_dblresult64_d = ppc_dblresult64_a * ppc_dblresult64_b;
+        ppc_dblresult64_d = ppc_dblresult64_a * ppc_dblresult64_c;
         ppc_store_dfpresult(false);
     }
 
