@@ -65,11 +65,11 @@ what endian the numbers are to be stored in.
 **/
 
 // Storage and register retrieval functions for the integer functions.
-inline void ppc_store_result_regd() {
+void ppc_store_result_regd() {
     ppc_state.gpr[reg_d] = ppc_result_d;
 }
 
-inline void ppc_store_result_rega() {
+void ppc_store_result_rega() {
     ppc_state.gpr[reg_a] = ppc_result_a;
 }
 
@@ -101,7 +101,7 @@ inline void ppc_grab_regssauimm() {
     ppc_result_a = ppc_state.gpr[reg_a];
 }
 
-inline void ppc_grab_regsdab() {
+void ppc_grab_regsdab() {
     reg_d        = (ppc_cur_instruction >> 21) & 31;
     reg_a        = (ppc_cur_instruction >> 16) & 31;
     reg_b        = (ppc_cur_instruction >> 11) & 31;
@@ -109,7 +109,7 @@ inline void ppc_grab_regsdab() {
     ppc_result_b = ppc_state.gpr[reg_b];
 }
 
-inline void ppc_grab_regssab() {
+void ppc_grab_regssab() {
     reg_s        = (ppc_cur_instruction >> 21) & 31;
     reg_a        = (ppc_cur_instruction >> 16) & 31;
     reg_b        = (ppc_cur_instruction >> 11) & 31;
@@ -118,7 +118,7 @@ inline void ppc_grab_regssab() {
     ppc_result_b = ppc_state.gpr[reg_b];
 }
 
-inline void ppc_grab_regssa() {
+void ppc_grab_regssa() {
     reg_s        = (ppc_cur_instruction >> 21) & 31;
     reg_a        = (ppc_cur_instruction >> 16) & 31;
     ppc_result_d = ppc_state.gpr[reg_s];
@@ -132,7 +132,7 @@ inline void ppc_grab_regssb() {
     ppc_result_b = ppc_state.gpr[reg_b];
 }
 
-inline void ppc_grab_regsda() {
+void ppc_grab_regsda() {
     reg_d        = (ppc_cur_instruction >> 21) & 31;
     reg_a        = (ppc_cur_instruction >> 16) & 31;
     ppc_result_a = ppc_state.gpr[reg_a];
