@@ -35,14 +35,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <unordered_map>
 
 // Used for FP calcs
-uint64_t ppc_result64_a;
 uint64_t ppc_result64_b;
-uint64_t ppc_result64_c;
 uint64_t ppc_result64_d;
 
-double ppc_dblresult64_a;
-double ppc_dblresult64_b;
-double ppc_dblresult64_c;
 double ppc_dblresult64_d;
 
 double snan = std::numeric_limits<double>::signaling_NaN();
@@ -104,62 +99,35 @@ inline void ppc_store_dfpresult_flt() {
     uint32_t val_reg_a = ppc_state.gpr[reg_a];      \
     uint32_t val_reg_b = ppc_state.gpr[reg_b];
 
-void ppc_grab_regsfpsab(bool int_rep) {
-    reg_s = (ppc_cur_instruction >> 21) & 31;
-    reg_a = (ppc_cur_instruction >> 16) & 31;
-    reg_b = (ppc_cur_instruction >> 11) & 31;
-    if (int_rep) {
-        ppc_result64_d = ppc_state.fpr[reg_s].int64_r;
-        ppc_result64_a = ppc_state.fpr[reg_a].int64_r;
-        ppc_result64_b = ppc_state.fpr[reg_b].int64_r;
-    } else {
-        ppc_dblresult64_d = fp_return_double(reg_s);
-        ppc_dblresult64_a = fp_return_double(reg_a);
-        ppc_dblresult64_c = fp_return_double(reg_c);
-    }
-}
+#define ppc_grab_regsfpsab()                        \
+    int reg_a = (ppc_cur_instruction >> 16) & 31;   \
+    int reg_b = (ppc_cur_instruction >> 11) & 31;   \
+    int crf_d = (ppc_cur_instruction >> 21) & 0x1C; \
+    double db_test_a = GET_FPR(reg_a);              \
+    double db_test_b = GET_FPR(reg_b);
 
-void ppc_grab_regsfpdab(bool int_rep) {
-    reg_d = (ppc_cur_instruction >> 21) & 31;
-    reg_a = (ppc_cur_instruction >> 16) & 31;
-    reg_b = (ppc_cur_instruction >> 11) & 31;
-    if (int_rep) {
-        ppc_result64_a = fp_return_uint64(reg_a);
-        ppc_result64_b = fp_return_uint64(reg_b);
-    } else {
-        ppc_dblresult64_a = fp_return_double(reg_a);
-        ppc_dblresult64_b = fp_return_double(reg_b);
-    }
-}
+#define ppc_grab_regsfpdab()                        \
+    int reg_d = (ppc_cur_instruction >> 21) & 31;   \
+    int reg_a = (ppc_cur_instruction >> 16) & 31;   \
+    int reg_b = (ppc_cur_instruction >> 11) & 31;   \
+    double val_reg_a = GET_FPR(reg_a);              \
+    double val_reg_b = GET_FPR(reg_b);
 
-void ppc_grab_regsfpdac(bool int_rep) {
-    reg_d = (ppc_cur_instruction >> 21) & 31;
-    reg_a = (ppc_cur_instruction >> 16) & 31;
-    reg_c = (ppc_cur_instruction >> 6) & 31;
-    if (int_rep) {
-        ppc_result64_a = fp_return_uint64(reg_a);
-        ppc_result64_c = fp_return_uint64(reg_c);
-    } else {
-        ppc_dblresult64_a = fp_return_double(reg_a);
-        ppc_dblresult64_c = fp_return_double(reg_c);
-    }
-}
+#define ppc_grab_regsfpdac()                        \
+    int reg_d = (ppc_cur_instruction >> 21) & 31;   \
+    int reg_a = (ppc_cur_instruction >> 16) & 31;   \
+    int reg_c = (ppc_cur_instruction >>  6) & 31;   \
+    double val_reg_a = GET_FPR(reg_a);              \
+    double val_reg_c = GET_FPR(reg_c);
 
-void ppc_grab_regsfpdabc(bool int_rep) {
-    reg_d = (ppc_cur_instruction >> 21) & 31;
-    reg_a = (ppc_cur_instruction >> 16) & 31;
-    reg_b = (ppc_cur_instruction >> 11) & 31;
-    reg_c = (ppc_cur_instruction >> 6) & 31;
-    if (int_rep) {
-        ppc_result64_a = fp_return_uint64(reg_a);
-        ppc_result64_b = fp_return_uint64(reg_b);
-        ppc_result64_c = fp_return_uint64(reg_c);
-    } else {
-        ppc_dblresult64_a = fp_return_double(reg_a);
-        ppc_dblresult64_b = fp_return_double(reg_b);
-        ppc_dblresult64_c = fp_return_double(reg_c);
-    }
-}
+#define ppc_grab_regsfpdabc()                       \
+    int reg_d = (ppc_cur_instruction >> 21) & 31;   \
+    int reg_a = (ppc_cur_instruction >> 16) & 31;   \
+    int reg_b = (ppc_cur_instruction >> 11) & 31;   \
+    int reg_c = (ppc_cur_instruction >>  6) & 31;   \
+    double val_reg_a = GET_FPR(reg_a);              \
+    double val_reg_b = GET_FPR(reg_b);              \
+    double val_reg_c = GET_FPR(reg_c);
 
 void fp_save_float(float entry) {
     ppc_state.fpr[reg_d].dbl64_r = (double)entry;
@@ -223,7 +191,7 @@ void ppc_toggle_fpscr_fex() {
     ppc_state.fpscr |= (fex_result << 30);
 }
 
-bool ppc_confirm_inf_nan(uint32_t chosen_reg_1, uint32_t chosen_reg_2, bool is_single, uint32_t op) {
+bool ppc_confirm_inf_nan(int chosen_reg_1, int chosen_reg_2, bool is_single, uint32_t op) {
     uint64_t input_a = ppc_state.fpr[chosen_reg_1].int64_r;
     uint64_t input_b = ppc_state.fpr[chosen_reg_2].int64_r;
 
@@ -356,10 +324,10 @@ void ppc_changecrf1() {
 
 // Floating Point Arithmetic
 void dppc_interpreter::ppc_fadd() {
-    ppc_grab_regsfpdab(false);
+    ppc_grab_regsfpdab();
 
     if (!ppc_confirm_inf_nan(reg_a, reg_b, false, 58)) {
-        ppc_dblresult64_d = ppc_dblresult64_a + ppc_dblresult64_b;
+        ppc_dblresult64_d = val_reg_a + val_reg_b;
         ppc_store_dfpresult_flt();
     }
 
@@ -368,10 +336,10 @@ void dppc_interpreter::ppc_fadd() {
 }
 
 void dppc_interpreter::ppc_fsub() {
-    ppc_grab_regsfpdab(false);
+    ppc_grab_regsfpdab();
 
     if (!ppc_confirm_inf_nan(reg_a, reg_b, false, 56)) {
-        ppc_dblresult64_d = ppc_dblresult64_a - ppc_dblresult64_b;
+        ppc_dblresult64_d = val_reg_a - val_reg_b;
         ppc_store_dfpresult_flt();
     }
 
@@ -380,10 +348,10 @@ void dppc_interpreter::ppc_fsub() {
 }
 
 void dppc_interpreter::ppc_fdiv() {
-    ppc_grab_regsfpdab(false);
+    ppc_grab_regsfpdab();
 
     if (!ppc_confirm_inf_nan(reg_a, reg_b, false, 36)) {
-        ppc_dblresult64_d = ppc_dblresult64_a / ppc_dblresult64_b;
+        ppc_dblresult64_d = val_reg_a / val_reg_b;
         ppc_store_dfpresult_flt();
     }
 
@@ -392,10 +360,10 @@ void dppc_interpreter::ppc_fdiv() {
 }
 
 void dppc_interpreter::ppc_fmul() {
-    ppc_grab_regsfpdac(false);
+    ppc_grab_regsfpdac();
 
     if (!ppc_confirm_inf_nan(reg_a, reg_c, false, 50)) {
-        ppc_dblresult64_d = ppc_dblresult64_a * ppc_dblresult64_c;
+        ppc_dblresult64_d = val_reg_a * val_reg_c;
         ppc_store_dfpresult_flt();
     }
 
@@ -404,12 +372,12 @@ void dppc_interpreter::ppc_fmul() {
 }
 
 void dppc_interpreter::ppc_fmadd() {
-    ppc_grab_regsfpdabc(false);
+    ppc_grab_regsfpdabc();
 
     if (!ppc_confirm_inf_nan(reg_a, reg_c, false, 50)) {
-        ppc_dblresult64_d = (ppc_dblresult64_a * ppc_dblresult64_c);
+        ppc_dblresult64_d = (val_reg_a * val_reg_c);
         if (!ppc_confirm_inf_nan(reg_a, reg_b, false, 58)) {
-            ppc_dblresult64_d += ppc_dblresult64_b;
+            ppc_dblresult64_d += val_reg_b;
         }
     }
 
@@ -420,12 +388,12 @@ void dppc_interpreter::ppc_fmadd() {
 }
 
 void dppc_interpreter::ppc_fmsub() {
-    ppc_grab_regsfpdabc(false);
+    ppc_grab_regsfpdabc();
 
     if (!ppc_confirm_inf_nan(reg_a, reg_c, false, 50)) {
-        ppc_dblresult64_d = (ppc_dblresult64_a * ppc_dblresult64_c);
+        ppc_dblresult64_d = (val_reg_a * val_reg_c);
         if (!ppc_confirm_inf_nan(reg_d, reg_b, false, 56)) {
-            ppc_dblresult64_d -= ppc_dblresult64_b;
+            ppc_dblresult64_d -= val_reg_b;
         }
     }
 
@@ -436,12 +404,12 @@ void dppc_interpreter::ppc_fmsub() {
 }
 
 void dppc_interpreter::ppc_fnmadd() {
-    ppc_grab_regsfpdabc(false);
+    ppc_grab_regsfpdabc();
 
     if (!ppc_confirm_inf_nan(reg_a, reg_c, false, 50)) {
-        ppc_dblresult64_d = (ppc_dblresult64_a * ppc_dblresult64_c);
+        ppc_dblresult64_d = (val_reg_a * val_reg_c);
         if (!ppc_confirm_inf_nan(reg_a, reg_b, false, 58)) {
-            ppc_dblresult64_d += ppc_dblresult64_b;
+            ppc_dblresult64_d += val_reg_b;
         }
     }
 
@@ -453,12 +421,12 @@ void dppc_interpreter::ppc_fnmadd() {
 }
 
 void dppc_interpreter::ppc_fnmsub() {
-    ppc_grab_regsfpdabc(false);
+    ppc_grab_regsfpdabc();
 
     if (!ppc_confirm_inf_nan(reg_a, reg_c, false, 50)) {
-        ppc_dblresult64_d = (ppc_dblresult64_a * ppc_dblresult64_c);
+        ppc_dblresult64_d = (val_reg_a * val_reg_c);
         if (!ppc_confirm_inf_nan(reg_d, reg_b, false, 56)) {
-            ppc_dblresult64_d -= ppc_dblresult64_b;
+            ppc_dblresult64_d -= val_reg_b;
         }
     }
     ppc_dblresult64_d = -ppc_dblresult64_d;
@@ -470,10 +438,10 @@ void dppc_interpreter::ppc_fnmsub() {
 }
 
 void dppc_interpreter::ppc_fadds() {
-    ppc_grab_regsfpdab(false);
+    ppc_grab_regsfpdab();
 
     if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 58)) {
-        float intermediate = (float)ppc_dblresult64_a + (float)ppc_dblresult64_b;
+        float intermediate = (float)val_reg_a + (float)val_reg_b;
         ppc_dblresult64_d  = static_cast<double>(intermediate);
         ppc_store_sfpresult_flt();
     }
@@ -483,10 +451,10 @@ void dppc_interpreter::ppc_fadds() {
 }
 
 void dppc_interpreter::ppc_fsubs() {
-    ppc_grab_regsfpdab(false);
+    ppc_grab_regsfpdab();
 
     if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 56)) {
-        float intermediate = (float)ppc_dblresult64_a - (float)ppc_dblresult64_b;
+        float intermediate = (float)val_reg_a - (float)val_reg_b;
         ppc_dblresult64_d  = static_cast<double>(intermediate);
         ppc_store_sfpresult_flt();
     }
@@ -496,10 +464,10 @@ void dppc_interpreter::ppc_fsubs() {
 }
 
 void dppc_interpreter::ppc_fmuls() {
-    ppc_grab_regsfpdac(false);
+    ppc_grab_regsfpdac();
 
     if (!ppc_confirm_inf_nan(reg_a, reg_c, true, 50)) {
-        float intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
+        float intermediate = (float)val_reg_a * (float)val_reg_c;
         ppc_dblresult64_d  = static_cast<double>(intermediate);
         ppc_store_sfpresult_flt();
     }
@@ -509,10 +477,10 @@ void dppc_interpreter::ppc_fmuls() {
 }
 
 void dppc_interpreter::ppc_fdivs() {
-    ppc_grab_regsfpdab(false);
+    ppc_grab_regsfpdab();
 
     if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 36)) {
-        float intermediate = (float)ppc_dblresult64_a / (float)ppc_dblresult64_b;
+        float intermediate = (float)val_reg_a / (float)val_reg_b;
         ppc_dblresult64_d  = static_cast<double>(intermediate);
         ppc_store_sfpresult_flt();
     }
@@ -522,14 +490,14 @@ void dppc_interpreter::ppc_fdivs() {
 }
 
 void dppc_interpreter::ppc_fmadds() {
-    ppc_grab_regsfpdabc(false);
+    ppc_grab_regsfpdabc();
 
     float intermediate;
 
     if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 58)) {
-        intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
+        intermediate = (float)val_reg_a * (float)val_reg_c;
         if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 58)) {
-            intermediate += (float)ppc_dblresult64_b;
+            intermediate += (float)val_reg_b;
             ppc_dblresult64_d = static_cast<double>(intermediate);
 
             ppc_store_sfpresult_flt();
@@ -541,14 +509,14 @@ void dppc_interpreter::ppc_fmadds() {
 }
 
 void dppc_interpreter::ppc_fmsubs() {
-    ppc_grab_regsfpdabc(false);
+    ppc_grab_regsfpdabc();
 
     float intermediate;
 
     if (!ppc_confirm_inf_nan(reg_a, reg_c, false, 50)) {
-        intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
+        intermediate = (float)val_reg_a * (float)val_reg_c;
         if (!ppc_confirm_inf_nan(reg_d, reg_b, false, 56)) {
-            intermediate -= (float)ppc_dblresult64_b;
+            intermediate -= (float)val_reg_b;
             ppc_dblresult64_d = static_cast<double>(intermediate);
 
             ppc_store_sfpresult_flt();
@@ -560,14 +528,14 @@ void dppc_interpreter::ppc_fmsubs() {
 }
 
 void dppc_interpreter::ppc_fnmadds() {
-    ppc_grab_regsfpdabc(false);
+    ppc_grab_regsfpdabc();
 
     float intermediate;
 
     if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 58)) {
-        intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
+        intermediate = (float)val_reg_a * (float)val_reg_c;
         if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 58)) {
-            intermediate += (float)ppc_dblresult64_b;
+            intermediate += (float)val_reg_b;
             intermediate = -intermediate;
 
             ppc_dblresult64_d = static_cast<double>(intermediate);
@@ -581,14 +549,14 @@ void dppc_interpreter::ppc_fnmadds() {
 }
 
 void dppc_interpreter::ppc_fnmsubs() {
-    ppc_grab_regsfpdabc(false);
+    ppc_grab_regsfpdabc();
 
     float intermediate;
 
     if (!ppc_confirm_inf_nan(reg_a, reg_c, false, 50)) {
-        intermediate = (float)ppc_dblresult64_a * (float)ppc_dblresult64_c;
+        intermediate = (float)val_reg_a * (float)val_reg_c;
         if (!ppc_confirm_inf_nan(reg_d, reg_b, false, 56)) {
-            intermediate -= (float)ppc_dblresult64_b;
+            intermediate -= (float)val_reg_b;
             intermediate = -intermediate;
 
             ppc_dblresult64_d = static_cast<double>(intermediate);
@@ -636,13 +604,9 @@ void dppc_interpreter::ppc_fneg() {
 }
 
 void dppc_interpreter::ppc_fsel() {
-    ppc_grab_regsfpdabc(false);
+    ppc_grab_regsfpdabc();
 
-    if (ppc_dblresult64_a >= 0.0) {
-        ppc_dblresult64_d = ppc_dblresult64_c;
-    } else {
-        ppc_dblresult64_d = ppc_dblresult64_b;
-    }
+    ppc_dblresult64_d = (val_reg_a >= 0.0) ? val_reg_c : val_reg_b;
 
     ppc_store_dfpresult_flt();
 
@@ -708,17 +672,17 @@ void dppc_interpreter::ppc_fres() {
 
 void dppc_interpreter::ppc_fctiw() {
     ppc_grab_regsfpdb();
-    ppc_dblresult64_b = GET_FPR(reg_b);
+    double val_reg_b = GET_FPR(reg_b);
 
     switch (ppc_state.fpscr & 0x3) {
     case 0:
-        ppc_result64_d = round_to_nearest(ppc_dblresult64_b);
+        ppc_result64_d = round_to_nearest(val_reg_b);
     case 1:
-        ppc_result64_d = round_to_zero(ppc_dblresult64_b);
+        ppc_result64_d = round_to_zero(val_reg_b);
     case 2:
-        ppc_result64_d = round_to_pos_inf(ppc_dblresult64_b);
+        ppc_result64_d = round_to_pos_inf(val_reg_b);
     case 3:
-        ppc_result64_d = round_to_neg_inf(ppc_dblresult64_b);
+        ppc_result64_d = round_to_neg_inf(val_reg_b);
     }
 
     ppc_store_dfpresult_int();
@@ -1021,13 +985,7 @@ void dppc_interpreter::ppc_mcrfs() {
 // Floating Point Comparisons
 
 void dppc_interpreter::ppc_fcmpo() {
-    ppc_grab_regsfpsab(true);
-
-    crf_d = (ppc_cur_instruction >> 23) & 7;
-    crf_d = crf_d << 2;
-
-    double db_test_a = (double)ppc_result64_a;
-    double db_test_b = (double)ppc_result64_b;
+    ppc_grab_regsfpsab();
 
     ppc_state.fpscr &= 0xFFFF0FFF;
 
@@ -1055,13 +1013,7 @@ void dppc_interpreter::ppc_fcmpo() {
 }
 
 void dppc_interpreter::ppc_fcmpu() {
-    ppc_grab_regsfpsab(true);
-
-    crf_d = (ppc_cur_instruction >> 23) & 7;
-    crf_d = crf_d << 2;
-
-    double db_test_a = (double)ppc_result64_a;
-    double db_test_b = (double)ppc_result64_b;
+    ppc_grab_regsfpsab();
 
     ppc_state.fpscr &= 0xFFFF0FFF;
 
