@@ -33,6 +33,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <stdexcept>
 #include <stdio.h>
 #include <unordered_map>
+#include <thirdparty/loguru/loguru.hpp>
 
 // Used for FP calcs
 uint64_t ppc_result64_b;
@@ -55,21 +56,17 @@ uint64_t fp_return_uint64(uint32_t reg) {
     return ppc_state.fpr[reg].int64_r;
 }
 
-inline void ppc_store_sfpresult_int() {
-    ppc_state.fpr[reg_d].int64_r = ppc_result64_d;
-}
+#define ppc_store_sfpresult_int(reg)                    \
+    ppc_state.fpr[(reg)].int64_r = ppc_result64_d;
 
-inline void ppc_store_sfpresult_flt() {
-    ppc_state.fpr[reg_d].dbl64_r = ppc_dblresult64_d;
-}
+#define ppc_store_sfpresult_flt(reg)                    \
+    ppc_state.fpr[(reg)].dbl64_r = ppc_dblresult64_d;
 
-inline void ppc_store_dfpresult_int() {
-    ppc_state.fpr[reg_d].int64_r = ppc_result64_d;
-}
+#define ppc_store_dfpresult_int(reg)                    \
+    ppc_state.fpr[(reg)].int64_r = ppc_result64_d;
 
-inline void ppc_store_dfpresult_flt() {
-    ppc_state.fpr[reg_d].dbl64_r = ppc_dblresult64_d;
-}
+#define ppc_store_dfpresult_flt(reg)                    \
+    ppc_state.fpr[(reg)].dbl64_r = ppc_dblresult64_d;
 
 #define ppc_grab_regsfpdb()                         \
     int reg_d = (ppc_cur_instruction >> 21) & 31;   \
@@ -328,7 +325,7 @@ void dppc_interpreter::ppc_fadd() {
 
     if (!ppc_confirm_inf_nan(reg_a, reg_b, false, 58)) {
         ppc_dblresult64_d = val_reg_a + val_reg_b;
-        ppc_store_dfpresult_flt();
+        ppc_store_dfpresult_flt(reg_d);
     }
 
     if (rc_flag)
@@ -340,7 +337,7 @@ void dppc_interpreter::ppc_fsub() {
 
     if (!ppc_confirm_inf_nan(reg_a, reg_b, false, 56)) {
         ppc_dblresult64_d = val_reg_a - val_reg_b;
-        ppc_store_dfpresult_flt();
+        ppc_store_dfpresult_flt(reg_d);
     }
 
     if (rc_flag)
@@ -352,7 +349,7 @@ void dppc_interpreter::ppc_fdiv() {
 
     if (!ppc_confirm_inf_nan(reg_a, reg_b, false, 36)) {
         ppc_dblresult64_d = val_reg_a / val_reg_b;
-        ppc_store_dfpresult_flt();
+        ppc_store_dfpresult_flt(reg_d);
     }
 
     if (rc_flag)
@@ -364,7 +361,7 @@ void dppc_interpreter::ppc_fmul() {
 
     if (!ppc_confirm_inf_nan(reg_a, reg_c, false, 50)) {
         ppc_dblresult64_d = val_reg_a * val_reg_c;
-        ppc_store_dfpresult_flt();
+        ppc_store_dfpresult_flt(reg_d);
     }
 
     if (rc_flag)
@@ -381,7 +378,7 @@ void dppc_interpreter::ppc_fmadd() {
         }
     }
 
-    ppc_store_dfpresult_flt();
+    ppc_store_dfpresult_flt(reg_d);
 
     if (rc_flag)
         ppc_changecrf1();
@@ -397,7 +394,7 @@ void dppc_interpreter::ppc_fmsub() {
         }
     }
 
-    ppc_store_dfpresult_flt();
+    ppc_store_dfpresult_flt(reg_d);
 
     if (rc_flag)
         ppc_changecrf1();
@@ -414,7 +411,7 @@ void dppc_interpreter::ppc_fnmadd() {
     }
 
     ppc_dblresult64_d = -ppc_dblresult64_d;
-    ppc_store_dfpresult_flt();
+    ppc_store_dfpresult_flt(reg_d);
 
     if (rc_flag)
         ppc_changecrf1();
@@ -431,7 +428,7 @@ void dppc_interpreter::ppc_fnmsub() {
     }
     ppc_dblresult64_d = -ppc_dblresult64_d;
 
-    ppc_store_dfpresult_flt();
+    ppc_store_dfpresult_flt(reg_d);
 
     if (rc_flag)
         ppc_changecrf1();
@@ -443,7 +440,7 @@ void dppc_interpreter::ppc_fadds() {
     if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 58)) {
         float intermediate = (float)val_reg_a + (float)val_reg_b;
         ppc_dblresult64_d  = static_cast<double>(intermediate);
-        ppc_store_sfpresult_flt();
+        ppc_store_sfpresult_flt(reg_d);
     }
 
     if (rc_flag)
@@ -456,7 +453,7 @@ void dppc_interpreter::ppc_fsubs() {
     if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 56)) {
         float intermediate = (float)val_reg_a - (float)val_reg_b;
         ppc_dblresult64_d  = static_cast<double>(intermediate);
-        ppc_store_sfpresult_flt();
+        ppc_store_sfpresult_flt(reg_d);
     }
 
     if (rc_flag)
@@ -469,7 +466,7 @@ void dppc_interpreter::ppc_fmuls() {
     if (!ppc_confirm_inf_nan(reg_a, reg_c, true, 50)) {
         float intermediate = (float)val_reg_a * (float)val_reg_c;
         ppc_dblresult64_d  = static_cast<double>(intermediate);
-        ppc_store_sfpresult_flt();
+        ppc_store_sfpresult_flt(reg_d);
     }
 
     if (rc_flag)
@@ -482,7 +479,7 @@ void dppc_interpreter::ppc_fdivs() {
     if (!ppc_confirm_inf_nan(reg_a, reg_b, true, 36)) {
         float intermediate = (float)val_reg_a / (float)val_reg_b;
         ppc_dblresult64_d  = static_cast<double>(intermediate);
-        ppc_store_sfpresult_flt();
+        ppc_store_sfpresult_flt(reg_d);
     }
 
     if (rc_flag)
@@ -500,7 +497,7 @@ void dppc_interpreter::ppc_fmadds() {
             intermediate += (float)val_reg_b;
             ppc_dblresult64_d = static_cast<double>(intermediate);
 
-            ppc_store_sfpresult_flt();
+            ppc_store_sfpresult_flt(reg_d);
         }
     }
 
@@ -519,7 +516,7 @@ void dppc_interpreter::ppc_fmsubs() {
             intermediate -= (float)val_reg_b;
             ppc_dblresult64_d = static_cast<double>(intermediate);
 
-            ppc_store_sfpresult_flt();
+            ppc_store_sfpresult_flt(reg_d);
         }
     }
 
@@ -540,7 +537,7 @@ void dppc_interpreter::ppc_fnmadds() {
 
             ppc_dblresult64_d = static_cast<double>(intermediate);
 
-            ppc_store_sfpresult_flt();
+            ppc_store_sfpresult_flt(reg_d);
         }
     }
 
@@ -561,7 +558,7 @@ void dppc_interpreter::ppc_fnmsubs() {
 
             ppc_dblresult64_d = static_cast<double>(intermediate);
 
-            ppc_store_sfpresult_flt();
+            ppc_store_sfpresult_flt(reg_d);
         }
     }
 
@@ -574,7 +571,7 @@ void dppc_interpreter::ppc_fabs() {
 
     ppc_dblresult64_d = abs(GET_FPR(reg_b));
 
-    ppc_store_dfpresult_flt();
+    ppc_store_dfpresult_flt(reg_d);
 
     if (rc_flag)
         ppc_changecrf1();
@@ -586,7 +583,7 @@ void dppc_interpreter::ppc_fnabs() {
     ppc_dblresult64_d = abs(GET_FPR(reg_b));
     ppc_dblresult64_d = -ppc_dblresult64_d;
 
-    ppc_store_dfpresult_flt();
+    ppc_store_dfpresult_flt(reg_d);
 
     if (rc_flag)
         ppc_changecrf1();
@@ -597,7 +594,7 @@ void dppc_interpreter::ppc_fneg() {
 
     ppc_dblresult64_d = -(GET_FPR(reg_b));
 
-    ppc_store_dfpresult_flt();
+    ppc_store_dfpresult_flt(reg_d);
 
     if (rc_flag)
         ppc_changecrf1();
@@ -608,7 +605,7 @@ void dppc_interpreter::ppc_fsel() {
 
     ppc_dblresult64_d = (val_reg_a >= 0.0) ? val_reg_c : val_reg_b;
 
-    ppc_store_dfpresult_flt();
+    ppc_store_dfpresult_flt(reg_d);
 
     if (rc_flag)
         ppc_changecrf1();
@@ -617,7 +614,7 @@ void dppc_interpreter::ppc_fsel() {
 void dppc_interpreter::ppc_fsqrt() {
     ppc_grab_regsfpdb();
     ppc_dblresult64_d = std::sqrt(GET_FPR(reg_b));
-    ppc_store_dfpresult_flt();
+    ppc_store_dfpresult_flt(reg_d);
 
     if (rc_flag)
         ppc_changecrf1();
@@ -630,7 +627,7 @@ void dppc_interpreter::ppc_fsqrts() {
     test >>= 1;
     uint64_t* pre_final = (uint64_t*)&test;
     ppc_result64_d      = *pre_final;
-    ppc_store_sfpresult_flt();
+    ppc_store_sfpresult_flt(reg_d);
 
     if (rc_flag)
         ppc_changecrf1();
@@ -644,7 +641,7 @@ void dppc_interpreter::ppc_frsqrte() {
     }
     ppc_dblresult64_d = testd2;
 
-    ppc_store_dfpresult_flt();
+    ppc_store_dfpresult_flt(reg_d);
 
     if (rc_flag)
         ppc_changecrf1();
@@ -653,7 +650,7 @@ void dppc_interpreter::ppc_frsqrte() {
 void dppc_interpreter::ppc_frsp() {
     ppc_grab_regsfpdb();
     ppc_dblresult64_d = (float)(GET_FPR(reg_b));
-    ppc_store_dfpresult_flt();
+    ppc_store_dfpresult_flt(reg_d);
 
     if (rc_flag)
         ppc_changecrf1();
@@ -664,7 +661,7 @@ void dppc_interpreter::ppc_fres() {
     float testf2      = (float)GET_FPR(reg_b);
     testf2            = 1 / testf2;
     ppc_dblresult64_d = (double)testf2;
-    ppc_store_dfpresult_flt();
+    ppc_store_dfpresult_flt(reg_d);
 
     if (rc_flag)
         ppc_changecrf1();
@@ -685,7 +682,7 @@ void dppc_interpreter::ppc_fctiw() {
         ppc_result64_d = round_to_neg_inf(val_reg_b);
     }
 
-    ppc_store_dfpresult_int();
+    ppc_store_dfpresult_int(reg_d);
 
     if (rc_flag)
         ppc_changecrf1();
@@ -695,7 +692,7 @@ void dppc_interpreter::ppc_fctiwz() {
     ppc_grab_regsfpdb();
     ppc_result64_d = round_to_zero(GET_FPR(reg_b));
 
-    ppc_store_dfpresult_int();
+    ppc_store_dfpresult_int(reg_d);
 
     if (rc_flag)
         ppc_changecrf1();
@@ -708,7 +705,7 @@ void dppc_interpreter::ppc_lfs() {
     ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
     ppc_effective_address += (reg_a) ? val_reg_a : 0;
     ppc_result64_d = mem_grab_dword(ppc_effective_address);
-    ppc_store_sfpresult_int();
+    ppc_store_sfpresult_int(reg_d);
 }
 
 
@@ -718,9 +715,8 @@ void dppc_interpreter::ppc_lfsu() {
         ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
         ppc_effective_address += (reg_a) ? val_reg_a : 0;
         ppc_result64_d = mem_grab_dword(ppc_effective_address);
-        ppc_result_a   = ppc_effective_address;
-        ppc_store_sfpresult_int();
-        ppc_store_result_rega();
+        ppc_store_sfpresult_int(reg_d);
+        ppc_state.gpr[reg_a] = ppc_effective_address;
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
@@ -730,7 +726,7 @@ void dppc_interpreter::ppc_lfsx() {
     ppc_grab_regsfpdiab();
     ppc_effective_address = (reg_a) ? val_reg_a + val_reg_b : val_reg_b;
     ppc_result64_d        = mem_grab_dword(ppc_effective_address);
-    ppc_store_sfpresult_int();
+    ppc_store_sfpresult_int(reg_d);
 }
 
 void dppc_interpreter::ppc_lfsux() {
@@ -738,9 +734,8 @@ void dppc_interpreter::ppc_lfsux() {
     if (reg_a) {
         ppc_effective_address = val_reg_a + val_reg_b;
         ppc_result64_d        = mem_grab_dword(ppc_effective_address);
-        ppc_result_a          = ppc_effective_address;
-        ppc_store_sfpresult_int();
-        ppc_store_result_rega();
+        ppc_store_sfpresult_int(reg_d);
+        ppc_state.gpr[reg_a] = ppc_effective_address;
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
@@ -751,7 +746,7 @@ void dppc_interpreter::ppc_lfd() {
     ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
     ppc_effective_address += (reg_a) ? val_reg_a : 0;
     ppc_result64_d = mem_grab_qword(ppc_effective_address);
-    ppc_store_dfpresult_int();
+    ppc_store_dfpresult_int(reg_d);
 }
 
 void dppc_interpreter::ppc_lfdu() {
@@ -760,9 +755,8 @@ void dppc_interpreter::ppc_lfdu() {
         ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
         ppc_effective_address += val_reg_a;
         ppc_result64_d = mem_grab_qword(ppc_effective_address);
-        ppc_store_dfpresult_int();
-        ppc_result_a = ppc_effective_address;
-        ppc_store_result_rega();
+        ppc_store_dfpresult_int(reg_d);
+        ppc_state.gpr[reg_a] = ppc_effective_address;
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
@@ -772,7 +766,7 @@ void dppc_interpreter::ppc_lfdx() {
     ppc_grab_regsfpdiab();
     ppc_effective_address = (reg_a) ? val_reg_a + val_reg_b : val_reg_b;
     ppc_result64_d        = mem_grab_qword(ppc_effective_address);
-    ppc_store_dfpresult_int();
+    ppc_store_dfpresult_int(reg_d);
 }
 
 void dppc_interpreter::ppc_lfdux() {
@@ -780,9 +774,8 @@ void dppc_interpreter::ppc_lfdux() {
     if (reg_a) {
         ppc_effective_address = val_reg_a + val_reg_b;
         ppc_result64_d        = mem_grab_qword(ppc_effective_address);
-        ppc_store_dfpresult_int();
-        ppc_result_a = ppc_effective_address;
-        ppc_store_result_rega();
+        ppc_store_dfpresult_int(reg_d);
+        ppc_state.gpr[reg_a] = ppc_effective_address;
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
@@ -801,8 +794,7 @@ void dppc_interpreter::ppc_stfsu() {
         ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
         ppc_effective_address += val_reg_a;
         mem_write_dword(ppc_effective_address, uint32_t(ppc_state.fpr[reg_s].int64_r));
-        ppc_result_a = ppc_effective_address;
-        ppc_store_result_rega();
+        ppc_state.gpr[reg_a] = ppc_effective_address;
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
@@ -819,8 +811,7 @@ void dppc_interpreter::ppc_stfsux() {
     if (reg_a) {
         ppc_effective_address = val_reg_a + val_reg_b;
         mem_write_dword(ppc_effective_address, uint32_t(ppc_state.fpr[reg_s].int64_r));
-        ppc_result_a = ppc_effective_address;
-        ppc_store_result_rega();
+        ppc_state.gpr[reg_a] = ppc_effective_address;
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
@@ -839,8 +830,7 @@ void dppc_interpreter::ppc_stfdu() {
         ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
         ppc_effective_address += val_reg_a;
         mem_write_qword(ppc_effective_address, ppc_state.fpr[reg_s].int64_r);
-        ppc_result_a = ppc_effective_address;
-        ppc_store_result_rega();
+        ppc_state.gpr[reg_a] = ppc_effective_address;
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
@@ -857,8 +847,7 @@ void dppc_interpreter::ppc_stfdux() {
     if (reg_a != 0) {
         ppc_effective_address = val_reg_a + val_reg_b;
         mem_write_qword(ppc_effective_address, ppc_state.fpr[reg_s].int64_r);
-        ppc_result_a = ppc_effective_address;
-        ppc_store_result_rega();
+        ppc_state.gpr[reg_a] = ppc_effective_address;
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
