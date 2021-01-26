@@ -154,7 +154,6 @@ extern uint32_t uiadd_result;
 extern uint32_t uimult_result;
 
 extern int32_t word_copy_location;
-extern uint32_t strwrd_replace_value;
 
 extern uint32_t crf_d;
 extern uint32_t crf_s;

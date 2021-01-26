@@ -56,8 +56,6 @@ uint32_t ppc_result_b = 0;
 uint32_t ppc_result_c = 0;
 uint32_t ppc_result_d = 0;
 
-uint32_t strwrd_replace_value;
-
 /**
 Extract the registers desired and the values of the registers
 This also takes the MSR into account, mainly to determine
@@ -1373,13 +1371,13 @@ void dppc_interpreter::ppc_dcbz() {
 void dppc_interpreter::ppc_stb() {
     ppc_grab_regssa();
     ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
-    ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
+    ppc_effective_address += reg_a ? ppc_result_a : 0;
     mem_write_byte(ppc_effective_address, ppc_result_d);
 }
 
 void dppc_interpreter::ppc_stbx() {
     ppc_grab_regssab();
-    ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
+    ppc_effective_address = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
     mem_write_byte(ppc_effective_address, ppc_result_d);
 }
 
@@ -1438,7 +1436,7 @@ void dppc_interpreter::ppc_sthux() {
 
 void dppc_interpreter::ppc_sthx() {
     ppc_grab_regssab();
-    ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
+    ppc_effective_address = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
     mem_write_word(ppc_effective_address, ppc_result_d);
 }
 
@@ -1451,13 +1449,13 @@ void dppc_interpreter::ppc_sthbrx() {
 void dppc_interpreter::ppc_stw() {
     ppc_grab_regssa();
     ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
-    ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
+    ppc_effective_address += reg_a ? ppc_result_a : 0;
     mem_write_dword(ppc_effective_address, ppc_result_d);
 }
 
 void dppc_interpreter::ppc_stwx() {
     ppc_grab_regssab();
-    ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
+    ppc_effective_address = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
     mem_write_dword(ppc_effective_address, ppc_result_d);
 }
 
@@ -1503,7 +1501,7 @@ void dppc_interpreter::ppc_stwux() {
 
 void dppc_interpreter::ppc_stwbrx() {
     ppc_grab_regssab();
-    ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
+    ppc_effective_address = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
     ppc_result_d          = BYTESWAP_32(ppc_result_d);
     mem_write_dword(ppc_effective_address, ppc_result_d);
 }
@@ -1548,7 +1546,7 @@ void dppc_interpreter::ppc_lbzu() {
 
 void dppc_interpreter::ppc_lbzx() {
     ppc_grab_regsdab();
-    ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
+    ppc_effective_address = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
     ppc_result_d          = mem_grab_byte(ppc_effective_address);
     ppc_store_result_regd();
 }
@@ -1570,7 +1568,7 @@ void dppc_interpreter::ppc_lbzux() {
 void dppc_interpreter::ppc_lhz() {
     ppc_grab_regsda();
     ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
-    ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
+    ppc_effective_address += reg_a ? ppc_result_a : 0;
     ppc_result_d = mem_grab_word(ppc_effective_address);
     ppc_store_result_regd();
 }
@@ -1591,7 +1589,7 @@ void dppc_interpreter::ppc_lhzu() {
 
 void dppc_interpreter::ppc_lhzx() {
     ppc_grab_regsdab();
-    ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
+    ppc_effective_address = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
     ppc_result_d          = mem_grab_word(ppc_effective_address);
     ppc_store_result_regd();
 }
@@ -1643,7 +1641,7 @@ void dppc_interpreter::ppc_lhau() {
 
 void dppc_interpreter::ppc_lhaux() {
     ppc_grab_regsdab();
-    ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
+    ppc_effective_address = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
     uint16_t val          = mem_grab_word(ppc_effective_address);
     if (val & 0x8000) {
         ppc_result_d = 0xFFFF0000UL | (uint32_t)val;
@@ -1657,7 +1655,7 @@ void dppc_interpreter::ppc_lhaux() {
 
 void dppc_interpreter::ppc_lhax() {
     ppc_grab_regsdab();
-    ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
+    ppc_effective_address = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
     uint16_t val          = mem_grab_word(ppc_effective_address);
     if (val & 0x8000) {
         ppc_result_d = 0xFFFF0000UL | (uint32_t)val;
@@ -1669,7 +1667,7 @@ void dppc_interpreter::ppc_lhax() {
 
 void dppc_interpreter::ppc_lhbrx() {
     ppc_grab_regsdab();
-    ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
+    ppc_effective_address = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
     ppc_result_d          = (uint32_t)(BYTESWAP_16(mem_grab_word(ppc_effective_address)));
     ppc_store_result_regd();
 }
@@ -1684,7 +1682,7 @@ void dppc_interpreter::ppc_lwz() {
 
 void dppc_interpreter::ppc_lwbrx() {
     ppc_grab_regsdab();
-    ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
+    ppc_effective_address = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
     ppc_result_d          = BYTESWAP_32(mem_grab_dword(ppc_effective_address));
     ppc_store_result_regd();
 }
@@ -1705,7 +1703,7 @@ void dppc_interpreter::ppc_lwzu() {
 
 void dppc_interpreter::ppc_lwzx() {
     ppc_grab_regsdab();
-    ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
+    ppc_effective_address = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
     ppc_result_d          = mem_grab_dword(ppc_effective_address);
     ppc_store_result_regd();
 }
@@ -1746,49 +1744,43 @@ void dppc_interpreter::ppc_lmw() {
 
 void dppc_interpreter::ppc_lswi() {
     ppc_grab_regsda();
-    ppc_effective_address = ppc_result_a;
-    grab_inb              = (ppc_cur_instruction >> 11) & 31;
-    grab_inb              = (grab_inb & 32) == 0 ? 32 : grab_inb;
-
-    uint32_t shift_times = 0;
+    ppc_effective_address  = reg_a ? ppc_result_a : 0;
+    grab_inb               = (ppc_cur_instruction >> 11) & 31;
+    grab_inb               = grab_inb ? grab_inb : 32;
+    uint32_t stringed_word = 0;
 
     while (grab_inb > 0) {
-        switch (shift_times) {
-        case 0:
-            ppc_state.gpr[reg_d] = (ppc_result_d & 0x00FFFFFFUL) |
-                (mem_grab_byte(ppc_effective_address) << 24);
-            ppc_store_result_regd();
-            break;
+        switch (grab_inb) {
         case 1:
-            ppc_result_d = (ppc_result_d & 0xFF00FFFFUL) |
-                (mem_grab_byte(ppc_effective_address) << 16);
-            ppc_store_result_regd();
+            stringed_word = mem_grab_byte(ppc_effective_address) << 24;
+            ppc_state.gpr[reg_d] = stringed_word; 
+            grab_inb = 0;
             break;
         case 2:
-            ppc_result_d = (ppc_result_d & 0xFFFF00FFUL) |
-                (mem_grab_byte(ppc_effective_address) << 8);
-            ppc_store_result_regd();
+            stringed_word        = mem_grab_byte(ppc_effective_address) << 24;
+            stringed_word        += mem_grab_byte(ppc_effective_address + 1) << 16;
+            ppc_state.gpr[reg_d] = stringed_word;
+            grab_inb             = 0;
             break;
         case 3:
-            ppc_result_d = (ppc_result_d & 0xFFFFFF00UL) | mem_grab_byte(ppc_effective_address);
-            ppc_store_result_regd();
+            stringed_word        = mem_grab_byte(ppc_effective_address) << 24;
+            stringed_word        += mem_grab_byte(ppc_effective_address + 1) << 16;
+            stringed_word        += mem_grab_byte(ppc_effective_address + 2) << 8;
+            ppc_state.gpr[reg_d] = stringed_word;
+            grab_inb             = 0;
             break;
         default:
-            LOG_F(ERROR, "Something really horrible happened with lswi. \n");
+            ppc_state.gpr[reg_d] = mem_grab_word(ppc_effective_address);
+            reg_d++;
+            ppc_effective_address += 4;
+            grab_inb -= 4;
         }
-        if (shift_times == 3) {
-            shift_times = 0;
-            reg_d       = (reg_d + 1) & 0x1F;
-        } else {
-            shift_times++;
-        }
-        ppc_effective_address++;
-        grab_inb--;
     }
 }
 
 void dppc_interpreter::ppc_lswx() {
     ppc_grab_regsdab();
+
     // Invalid instruction forms
     if ((ppc_result_d == 0) && (ppc_result_a == 0)) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
@@ -1796,116 +1788,100 @@ void dppc_interpreter::ppc_lswx() {
     if ((ppc_result_d == ppc_result_a) || (ppc_result_a == ppc_result_b)) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
-    ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
-    grab_inb              = ppc_state.spr[SPR::XER] & 127;
-    uint32_t shift_times  = 0;
+
+    ppc_effective_address  = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
+    grab_inb               = ppc_state.spr[SPR::XER] & 127;
+    uint32_t stringed_word = 0;
+
     while (grab_inb > 0) {
-        switch (shift_times) {
-        case 0:
-            ppc_result_d = (ppc_result_d & 0x00FFFFFFUL) |
-                (mem_grab_byte(ppc_effective_address) << 24);
-            ppc_store_result_regd();
-            break;
+        switch (grab_inb) {
         case 1:
-            ppc_result_d = (ppc_result_d & 0xFF00FFFFUL) |
-                (mem_grab_byte(ppc_effective_address) << 16);
-            ppc_store_result_regd();
+            stringed_word        = mem_grab_byte(ppc_effective_address) << 24;
+            ppc_state.gpr[reg_d] = stringed_word;
+            grab_inb             = 0;
             break;
         case 2:
-            ppc_result_d = (ppc_result_d & 0xFFFF00FFUL) |
-                (mem_grab_byte(ppc_effective_address) << 8);
-            ppc_store_result_regd();
+            stringed_word = mem_grab_byte(ppc_effective_address) << 24;
+            stringed_word += mem_grab_byte(ppc_effective_address + 1) << 16;
+            ppc_state.gpr[reg_d] = stringed_word;
+            grab_inb             = 0;
             break;
         case 3:
-            ppc_result_d = (ppc_result_d & 0xFFFFFF00UL) | mem_grab_byte(ppc_effective_address);
-            ppc_store_result_regd();
+            stringed_word = mem_grab_byte(ppc_effective_address) << 24;
+            stringed_word += mem_grab_byte(ppc_effective_address + 1) << 16;
+            stringed_word += mem_grab_byte(ppc_effective_address + 2) << 8;
+            ppc_state.gpr[reg_d] = stringed_word;
+            grab_inb             = 0;
             break;
         default:
-            LOG_F(ERROR, "Something really horrible happened with lswx. \n");
+            ppc_state.gpr[reg_d] = mem_grab_word(ppc_effective_address);
+            reg_d++;
+            ppc_effective_address += 4;
+            grab_inb -= 4;
         }
-        if (shift_times == 3) {
-            shift_times = 0;
-            reg_d       = (reg_d + 1) & 0x1F;
-        } else {
-            shift_times++;
-        }
-        ppc_effective_address++;
-        grab_inb--;
     }
 }
 
 void dppc_interpreter::ppc_stswi() {
     ppc_grab_regssa();
-    ppc_effective_address = (reg_a == 0) ? 0 : ppc_result_a;
+    ppc_effective_address  = reg_a ? ppc_result_a : 0;
     grab_inb              = (ppc_cur_instruction >> 11) & 31;
-    grab_inb              = (grab_inb & 32) == 0 ? 32 : grab_inb;
-    uint32_t shift_times  = 0;
+    grab_inb               = (grab_inb & 32) == 0 ? 32 : grab_inb;
+
     while (grab_inb > 0) {
-        switch (shift_times) {
-        case 0:
-            strwrd_replace_value = (ppc_result_d >> 24);
-            mem_write_byte(ppc_effective_address, strwrd_replace_value);
-            break;
+        switch (grab_inb) {
         case 1:
-            strwrd_replace_value = (ppc_result_d >> 16);
-            mem_write_byte(ppc_effective_address, strwrd_replace_value);
+            mem_write_byte(ppc_effective_address, (ppc_result_d >> 24));
+            grab_inb = 0;
             break;
         case 2:
-            strwrd_replace_value = (ppc_result_d >> 8);
-            mem_write_byte(ppc_effective_address, strwrd_replace_value);
+            mem_write_byte(ppc_effective_address, ((ppc_result_d >> 24) & 0xFF));
+            mem_write_byte((ppc_effective_address + 1), ((ppc_result_d >> 16) & 0xFF));
+            grab_inb = 0;
             break;
         case 3:
-            strwrd_replace_value = (ppc_result_d);
-            mem_write_byte(ppc_effective_address, strwrd_replace_value);
+            mem_write_byte(ppc_effective_address, ((ppc_result_d >> 24) & 0xFF));
+            mem_write_byte((ppc_effective_address + 1), ((ppc_result_d >> 16) & 0xFF));
+            mem_write_byte((ppc_effective_address + 2), ((ppc_result_d >> 8) & 0xFF));
+            grab_inb = 0;
             break;
         default:
-            LOG_F(ERROR, "Something really horrible happened with stswi. \n");
+            mem_write_dword(ppc_effective_address, ppc_result_d);
+            reg_s++;
+            ppc_effective_address += 4;
+            grab_inb -= 4;
         }
-        if (shift_times == 3) {
-            shift_times = 0;
-            reg_s       = (reg_s + 1) & 0x1F;
-        } else {
-            shift_times++;
-        }
-        ppc_effective_address++;
-        grab_inb--;
     }
 }
 
 void dppc_interpreter::ppc_stswx() {
     ppc_grab_regssab();
-    ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
+    ppc_effective_address = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
     grab_inb              = ppc_state.spr[SPR::XER] & 127;
-    uint32_t shift_times  = 0;
+
     while (grab_inb > 0) {
-        switch (shift_times) {
-        case 0:
-            strwrd_replace_value = (ppc_result_d >> 24);
-            mem_write_byte(ppc_effective_address, strwrd_replace_value);
-            break;
+        switch (grab_inb) {
         case 1:
-            strwrd_replace_value = (ppc_result_d >> 16);
-            mem_write_byte(ppc_effective_address, strwrd_replace_value);
+            mem_write_byte(ppc_effective_address, (ppc_result_d >> 24));
+            grab_inb = 0;
             break;
         case 2:
-            strwrd_replace_value = (ppc_result_d >> 8);
-            mem_write_byte(ppc_effective_address, strwrd_replace_value);
+            mem_write_byte(ppc_effective_address, ((ppc_result_d >> 24) & 0xFF));
+            mem_write_byte((ppc_effective_address + 1), ((ppc_result_d >> 16) & 0xFF));
+            grab_inb = 0;
             break;
         case 3:
-            strwrd_replace_value = (ppc_result_d);
-            mem_write_byte(ppc_effective_address, strwrd_replace_value);
+            mem_write_byte(ppc_effective_address, ((ppc_result_d >> 24) & 0xFF));
+            mem_write_byte((ppc_effective_address + 1), ((ppc_result_d >> 16) & 0xFF));
+            mem_write_byte((ppc_effective_address + 2), ((ppc_result_d >> 8) & 0xFF));
+            grab_inb = 0;
             break;
         default:
-            LOG_F(ERROR, "Something really horrible happened with stswx. \n");
+            mem_write_dword(ppc_effective_address, ppc_result_d);
+            reg_s++;
+            ppc_effective_address += 4;
+            grab_inb -= 4;
         }
-        if (shift_times == 3) {
-            shift_times = 0;
-            reg_s       = (reg_s + 1) & 0x1F;
-        } else {
-            shift_times++;
-        }
-        ppc_effective_address++;
-        grab_inb--;
     }
 }
 
