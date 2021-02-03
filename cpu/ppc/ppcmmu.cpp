@@ -30,7 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "ppcmmu.h"
 #include "devices/memctrlbase.h"
-#include "memreadwrite.h"
+#include "memaccess.h"
 #include "ppcemu.h"
 #include <array>
 #include <cinttypes>

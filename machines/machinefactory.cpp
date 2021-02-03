@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "machinefactory.h"
 #include "devices/memctrlbase.h"
-#include "memreadwrite.h"
+#include "memaccess.h"
 #include "machineproperties.h"
 #include <cinttypes>
 #include <cstring>

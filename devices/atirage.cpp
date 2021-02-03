@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "displayid.h"
 #include "endianswap.h"
-#include "memreadwrite.h"
+#include "memaccess.h"
 #include "pcidevice.h"
 #include <atirage.h>
 #include <cstdint>

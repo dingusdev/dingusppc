@@ -31,7 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "hwcomponent.h"
 #include "memctrlbase.h"
-#include "memreadwrite.h"
+#include "memaccess.h"
 #include "mmiodevice.h"
 #include "mpc106.h"
 

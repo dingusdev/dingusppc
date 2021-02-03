@@ -1,9 +1,9 @@
-/** @file Set of macros for accessing integers of various sizes and endianness
-          in host memory.
+/** @file Set of macros for accessing host memory units of various sizes
+          and endianness.
  */
 
-#ifndef MEM_READ_WRITE_H
-#define MEM_READ_WRITE_H
+#ifndef MEM_ACCESS_H
+#define MEM_ACCESS_H
 
 #include "endianswap.h"
 #include <cinttypes>
@@ -99,4 +99,4 @@
         (addr)[3] = ((val) >> 24) & 0xFF;                                                          \
     } while (0)
 
-#endif /* MEM_READ_WRITE_H */
+#endif /* MEM_ACCESS_H */
