@@ -7,6 +7,7 @@
 
 #include "endianswap.h"
 #include <cinttypes>
+#include <thirdparty/loguru/loguru.hpp>
 
 /* read an aligned big-endian WORD (16bit) */
 #define READ_WORD_BE_A(addr) (BYTESWAP_16(*((uint16_t*)((addr)))))
@@ -98,5 +99,83 @@
         (addr)[2] = ((val) >> 16) & 0xFF;                                                          \
         (addr)[3] = ((val) >> 24) & 0xFF;                                                          \
     } while (0)
+
+/* read value of the specified size from memory starting at addr,
+   perform byte swapping when necessary so that the source
+   byte order remains unchanged. */
+inline uint32_t read_mem(const uint8_t* buf, uint32_t size) {
+   switch (size) {
+   case 4:
+       return READ_DWORD_BE_A(buf);
+       break;
+   case 2:
+       return READ_WORD_BE_A(buf);
+       break;
+   case 1:
+       return *buf;
+       break;
+   default:
+       LOG_F(WARNING, "READ_MEM: invalid size %d!", size);
+       return 0;
+   }
+}
+
+/* read value of the specified size from memory starting at addr,
+   perform byte swapping when necessary so that the destination data
+   will be in the reversed byte order. */
+inline uint32_t read_mem_rev(const uint8_t* buf, uint32_t size) {
+  switch (size) {
+  case 4:
+      return READ_DWORD_LE_A(buf);
+      break;
+  case 2:
+      return READ_WORD_LE_A(buf);
+      break;
+  case 1:
+      return *buf;
+      break;
+  default:
+      LOG_F(WARNING, "READ_MEM_REV: invalid size %d!", size);
+      return 0;
+  }
+}
+
+/* write the specified value of the specified size to memory pointed
+   to by addr, perform necessary byte swapping so that the byte order
+   of the destination remains unchanged. */
+inline void write_mem(uint8_t* buf, uint32_t value, uint32_t size) {
+    switch (size) {
+    case 4:
+        WRITE_DWORD_BE_A(buf, value);
+        break;
+    case 2:
+        WRITE_WORD_BE_A(buf, value & 0xFFFFU);
+        break;
+    case 1:
+        *buf = value & 0xFF;
+        break;
+    default:
+        LOG_F(WARNING, "WRITE_MEM: invalid size %d!", size);
+    }
+}
+
+/* write the specified value of the specified size to memory pointed
+   to by addr, perform necessary byte swapping so that the destination
+   data in memory will be in the reversed byte order. */
+inline void write_mem_rev(uint8_t* buf, uint32_t value, uint32_t size) {
+    switch (size) {
+    case 4:
+        WRITE_DWORD_LE_A(buf, value);
+        break;
+    case 2:
+        WRITE_WORD_LE_A(buf, value & 0xFFFFU);
+        break;
+    case 1:
+        *buf = value & 0xFF;
+        break;
+    default:
+        LOG_F(WARNING, "WRITE_MEM_REV: invalid size %d!", size);
+    }
+}
 
 #endif /* MEM_ACCESS_H */
