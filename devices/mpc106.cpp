@@ -271,8 +271,8 @@ void MPC106::setup_ram() {
             bank_end = (((ext_mem_end >> bank * 8) & 3) << 30) |
                 (((mem_end >> bank * 8) & 0xFF) << 20) | 0xFFFFFUL;
             if (bank && bank_start != ram_size)
-                LOG_F(ERROR, "MPC106 error: RAM not contiguous! \n");
-            ram_size += bank_end + 1;
+                LOG_F(WARNING, "MPC106: RAM not contiguous! \n");
+            ram_size += bank_end - bank_start + 1;
         }
     }
 
