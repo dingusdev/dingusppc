@@ -178,21 +178,7 @@ uint32_t MPC106::pci_cfg_read(uint32_t reg_offs, uint32_t size) {
     LOG_F(9, "read from Grackle register %08X\n", reg_offs);
 #endif
 
-    switch (size) {
-    case 1:
-        return this->my_pci_cfg_hdr[reg_offs];
-        break;
-    case 2:
-        return READ_WORD_BE_A(&this->my_pci_cfg_hdr[reg_offs]);
-        break;
-    case 4:
-        return READ_DWORD_BE_A(&this->my_pci_cfg_hdr[reg_offs]);
-        break;
-    default:
-        LOG_F(ERROR, "MPC106 read error: invalid size parameter %d \n", size);
-    }
-
-    return 0;
+    return read_mem(&this->my_pci_cfg_hdr[reg_offs], size);
 }
 
 void MPC106::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size) {
@@ -201,23 +187,8 @@ void MPC106::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size) {
 #endif
 
     // FIXME: implement write-protection for read-only registers
-    switch (size) {
-    case 1:
-        this->my_pci_cfg_hdr[reg_offs] = value & 0xFF;
-        break;
-    case 2:
-        this->my_pci_cfg_hdr[reg_offs]     = (value >> 8) & 0xFF;
-        this->my_pci_cfg_hdr[reg_offs + 1] = value & 0xFF;
-        break;
-    case 4:
-        this->my_pci_cfg_hdr[reg_offs]     = (value >> 24) & 0xFF;
-        this->my_pci_cfg_hdr[reg_offs + 1] = (value >> 16) & 0xFF;
-        this->my_pci_cfg_hdr[reg_offs + 2] = (value >> 8) & 0xFF;
-        this->my_pci_cfg_hdr[reg_offs + 3] = value & 0xFF;
-        break;
-    default:
-        LOG_F(ERROR, "MPC106 read error: invalid size parameter %d \n", size);
-    }
+
+    write_mem(&this->my_pci_cfg_hdr[reg_offs], value, size);
 
     if (this->my_pci_cfg_hdr[0xF2] & 8) {
 #ifdef MPC106_DEBUG
