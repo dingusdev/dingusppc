@@ -69,36 +69,6 @@ ATIRage::~ATIRage()
     delete (this->disp_id);
 }
 
-uint32_t ATIRage::size_dep_read(uint8_t* buf, uint32_t size) {
-    switch (size) {
-    case 4:
-        return READ_DWORD_LE_A(buf);
-        break;
-    case 2:
-        return READ_WORD_LE_A(buf);
-        break;
-    case 1:
-        return *buf;
-        break;
-    default:
-        LOG_F(WARNING, "ATI Rage read: invalid size %d", size);
-        return 0;
-    }
-}
-
-void ATIRage::size_dep_write(uint8_t* buf, uint32_t value, uint32_t size) {
-    switch (size) {
-    case 4:
-        WRITE_DWORD_BE_A(buf, value);
-        break;
-    case 2:
-        WRITE_WORD_BE_A(buf, value & 0xFFFFU);
-        break;
-    case 1:
-        *buf = value & 0xFF;
-    }
-}
-
 const char* ATIRage::get_reg_name(uint32_t reg_offset) {
     const char* reg_name;
 
