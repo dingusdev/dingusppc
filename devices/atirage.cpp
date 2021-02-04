@@ -25,7 +25,47 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "pcidevice.h"
 #include <atirage.h>
 #include <cstdint>
+#include <map>
 #include <thirdparty/loguru/loguru.hpp>
+
+/* Human readable Mach64 HW register names for easier debugging. */
+static const std::map<uint16_t, std::string> mach64_reg_names = {
+    {0x0000, "CRTC_H_TOTAL_DISP"},
+    {0x0004, "CRTC_H_SYNC_STRT_WID"},
+    {0x0008, "CRTC_V_TOTAL_DISP"},
+    {0x000C, "CRTC_V_SYNC_STRT_WID"},
+    {0x0010, "CRTC_VLINE_CRNT_VLINE"},
+    {0x0014, "CRTC_OFF_PITCH"},
+    {0x0018, "CRTC_INT_CNTL"},
+    {0x001C, "CRTC_GEN_CNTL"},
+    {0x0020, "DSP_CONFIG"},
+    {0x0024, "DSP_ON_OFF"},
+    {0x002C, "MEM_BUF_CNTL"},
+    {0x0034, "MEM_ADDR_CFG"},
+    {0x0040, "OVR_CLR"},
+    {0x0044, "OVR_WID_LEFT_RIGHT"},
+    {0x0048, "OVR_WID_TOP_BOTTOM"},
+    {0x0078, "GP_IO"},
+    {0x007C, "HW_DEBUG"},
+    {0x0080, "SCRATCH_REG0"},
+    {0x0084, "SCRATCH_REG1"},
+    {0x0088, "SCRATCH_REG2"},
+    {0x008C, "SCRATCH_REG3"},
+    {0x0090, "CLOCK_CNTL"},
+    {0x00A0, "BUS_CNTL"},
+    {0x00AC, "EXT_MEM_CNTL"},
+    {0x00B0, "MEM_CNTL"},
+    {0x00C0, "DAC_REGS"},
+    {0x00C4, "DAC_CNTL"},
+    {0x00D0, "GEN_TEST_CNTL"},
+    {0x00D4, "CUSTOM_MACRO_CNTL"},
+    {0x00E0, "CONFIG_CHIP_ID"},
+    {0x00E4, "CONFIG_STAT0"},
+    {0x01B4, "SRC_CNTL"},
+    {0x01FC, "SCALE_3D_CNTL"},
+    {0x0310, "FIFO_STAT"},
+    {0x0338, "GUI_STAT"},
+};
 
 
 ATIRage::ATIRage(uint16_t dev_id, uint32_t mem_amount) : PCIDevice("ati-rage") {
@@ -70,113 +110,12 @@ ATIRage::~ATIRage()
 }
 
 const char* ATIRage::get_reg_name(uint32_t reg_offset) {
-    const char* reg_name;
-
-    switch (reg_offset & ~3) {
-    case ATI_CRTC_H_TOTAL_DISP:
-        reg_name = "CRTC_H_TOTAL_DISP";
-        break;
-    case ATI_CRTC_H_SYNC_STRT_WID:
-        reg_name = "CRTC_H_SYNC_STRT_WID";
-        break;
-    case ATI_CRTC_V_TOTAL_DISP:
-        reg_name = "CRTC_V_TOTAL_DISP";
-        break;
-    case ATI_CRTC_V_SYNC_STRT_WID:
-        reg_name = "CRTC_V_SYNC_STRT_WID";
-        break;
-    case ATI_CRTC_VLINE_CRNT_VLINE:
-        reg_name = "CRTC_VLINE_CRNT_VLINE";
-        break;
-    case ATI_CRTC_OFF_PITCH:
-        reg_name = "CRTC_OFF_PITCH";
-        break;
-    case ATI_CRTC_INT_CNTL:
-        reg_name = "CRTC_INT_CNTL";
-        break;
-    case ATI_CRTC_GEN_CNTL:
-        reg_name = "CRTC_GEN_CNTL";
-        break;
-    case ATI_DSP_CONFIG:
-        reg_name = "DSP_CONFIG";
-        break;
-    case ATI_DSP_ON_OFF:
-        reg_name = "DSP_ON_OFF";
-        break;
-    case ATI_MEM_BUF_CNTL:
-        reg_name = "MEM_BUF_CNTL";
-        break;
-    case ATI_MEM_ADDR_CFG:
-        reg_name = "MEM_ADDR_CFG";
-        break;
-    case ATI_OVR_CLR:
-        reg_name = "OVR_CLR";
-        break;
-    case ATI_OVR_WID_LEFT_RIGHT:
-        reg_name = "OVR_WID_LEFT_RIGHT";
-        break;
-    case ATI_OVR_WID_TOP_BOTTOM:
-        reg_name = "OVR_WID_TOP_BOTTOM";
-        break;
-    case ATI_GP_IO:
-        reg_name = "GP_IO";
-        break;
-    case ATI_SCRATCH_REG0:
-        reg_name = "SCRATCH_REG0";
-        break;
-    case ATI_SCRATCH_REG1:
-        reg_name = "SCRATCH_REG1";
-        break;
-    case ATI_SCRATCH_REG2:
-        reg_name = "SCRATCH_REG2";
-        break;
-    case ATI_SCRATCH_REG3:
-        reg_name = "SCRATCH_REG3";
-        break;
-    case ATI_CLOCK_CNTL:
-        reg_name = "CLOCK_CNTL";
-        break;
-    case ATI_BUS_CNTL:
-        reg_name = "BUS_CNTL";
-        break;
-    case ATI_EXT_MEM_CNTL:
-        reg_name = "EXT_MEM_CNTL";
-        break;
-    case ATI_MEM_CNTL:
-        reg_name = "MEM_CNTL";
-        break;
-    case ATI_DAC_REGS:
-        reg_name = "DAC_REGS";
-        break;
-    case ATI_DAC_CNTL:
-        reg_name = "DAC_CNTL";
-        break;
-    case ATI_GEN_TEST_CNTL:
-        reg_name = "GEN_TEST_CNTL";
-        break;
-    case ATI_CONFIG_CHIP_ID:
-        reg_name = "CONFIG_CHIP_ID";
-        break;
-    case ATI_CFG_STAT0:
-        reg_name = "CONFIG_STAT0";
-        break;
-    case ATI_SCALE_3D_CNTL:
-        reg_name = "SCALE_3D_CNTL";
-        break;
-    case ATI_FIFO_STAT:
-        reg_name = "FIFO_STAT";
-        break;
-    case ATI_SRC_CNTL:
-        reg_name = "SRC_CNTL";
-        break;
-    case ATI_GUI_STAT:
-        reg_name = "GUI_STAT";
-        break;
-    default:
-        reg_name = "unknown";
+    auto iter = mach64_reg_names.find(reg_offset & ~3);
+    if (iter != mach64_reg_names.end()) {
+        return iter->second.c_str();
+    } else {
+        return "unknown Mach64 register";
     }
-
-    return reg_name;
 }
 
 uint32_t ATIRage::read_reg(uint32_t offset, uint32_t size) {

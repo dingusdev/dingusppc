@@ -26,8 +26,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "pcidevice.h"
 #include <cinttypes>
 
-using namespace std;
-
 /* PCI related definitions. */
 enum {
     ATI_PCI_VENDOR_ID   = 0x1002,
@@ -72,13 +70,13 @@ enum {
     ATI_SCRATCH_REG2          = 0x0088,
     ATI_SCRATCH_REG3          = 0x008C,
     ATI_CLOCK_CNTL            = 0x0090,
-    ATI_CLONFIG_STAT1         = 0x0094,
-    ATI_CLONFIG_STAT2         = 0x0098,
+    ATI_CONFIG_STAT1          = 0x0094,
+    ATI_CONFIG_STAT2          = 0x0098,
     ATI_BUS_CNTL              = 0x00A0,
     ATI_EXT_MEM_CNTL          = 0x00AC,
     ATI_MEM_CNTL              = 0x00B0,
-    ATI_VGA_WP_SEL            = 0x00B4,
-    ATI_VGA_RP_SEL            = 0x00B8,
+    ATI_MEM_VGA_WP_SEL        = 0x00B4,
+    ATI_MEM_VGA_RP_SEL        = 0x00B8,
     ATI_I2C_CNTL_1            = 0x00BC,
     ATI_DAC_REGS              = 0x00C0,
     ATI_DAC_W_INDEX           = 0x00C0,
@@ -90,7 +88,7 @@ enum {
     ATI_CUSTOM_MACRO_CNTL     = 0x00D4,
     ATI_CONFIG_CNTL           = 0x00DC,
     ATI_CONFIG_CHIP_ID        = 0x00E0,
-    ATI_CFG_STAT0             = 0x00E4,
+    ATI_CONFIG_STAT0          = 0x00E4,
     ATI_CRC_SIG               = 0x00E8,
     ATI_DST_Y_X_ALIAS1        = 0x00F4,
     ATI_DST_OFF_PITCH         = 0x0100,
