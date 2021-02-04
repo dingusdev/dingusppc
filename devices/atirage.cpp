@@ -31,13 +31,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ATIRage::ATIRage(uint16_t dev_id, uint32_t mem_amount) : PCIDevice("ati-rage") {
     this->vram_size = mem_amount << 20;
 
-    /*allocate video RAM */
+    /* allocate video RAM */
     this->vram_ptr = new uint8_t[this->vram_size];
 
-    /* configure PCI parameters */
-    WRITE_DWORD_BE_A(&this->pci_cfg[0], (dev_id << 16) | ATI_PCI_VENDOR_ID);
-    WRITE_DWORD_BE_A(&this->pci_cfg[8], 0x0300005C);
-    WRITE_DWORD_BE_A(&this->pci_cfg[0x3C], 0x00080100);
+    /* set up PCI configuration space header */
+    WRITE_DWORD_LE_A(&this->pci_cfg[0], (dev_id << 16) | ATI_PCI_VENDOR_ID);
+    WRITE_DWORD_LE_A(&this->pci_cfg[8], 0x0300005C);
+    WRITE_DWORD_LE_A(&this->pci_cfg[0x3C], 0x00080100);
 
     /* initialize display identification */
     this->disp_id = new DisplayID();
@@ -217,10 +217,10 @@ uint32_t ATIRage::read_reg(uint32_t offset, uint32_t size) {
             get_reg_name(offset),
             offset,
             size,
-            size_dep_read(&this->block_io_regs[offset], size));
+            read_mem(&this->block_io_regs[offset], size));
     }
 
-    res = size_dep_read(&this->block_io_regs[offset], size);
+    res = read_mem(&this->block_io_regs[offset], size);
 
     return res;
 }
@@ -230,7 +230,7 @@ void ATIRage::write_reg(uint32_t offset, uint32_t value, uint32_t size) {
     uint16_t gpio_dir;
 
     /* size-dependent endian conversion */
-    size_dep_write(&this->block_io_regs[offset], value, size);
+    write_mem(&this->block_io_regs[offset], value, size);
 
     switch (offset & ~3) {
     case ATI_GP_IO:
@@ -282,7 +282,7 @@ uint32_t ATIRage::pci_cfg_read(uint32_t reg_offs, uint32_t size) {
 
     LOG_F(INFO, "Reading ATI Rage config space, offset = 0x%X, size=%d", reg_offs, size);
 
-    res = size_dep_read(&this->pci_cfg[reg_offs], size);
+    res = read_mem(&this->pci_cfg[reg_offs], size);
 
     LOG_F(INFO, "Return value: 0x%X", res);
     return res;
@@ -304,34 +304,42 @@ void ATIRage::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size) {
         else {
             this->aperture_base = BYTESWAP_32(value);
             LOG_F(INFO, "ATI Rage aperture address set to 0x%08X", this->aperture_base);
-            WRITE_DWORD_LE_A(&this->pci_cfg[CFG_REG_BAR0], value);
+            WRITE_DWORD_BE_A(&this->pci_cfg[CFG_REG_BAR0], value);
             this->host_instance->pci_register_mmio_region(this->aperture_base,
                 APERTURE_SIZE, this);
         }
         break;
     case 0x14: /* BAR 1: I/O space base, 256 bytes wide */
         if (value == 0xFFFFFFFFUL) {
-            WRITE_DWORD_LE_A(&this->pci_cfg[CFG_REG_BAR1], 0xFFFFFF01UL);
+            WRITE_DWORD_BE_A(&this->pci_cfg[CFG_REG_BAR1], 0xFFFFFF01UL);
         }
         else {
-            WRITE_DWORD_LE_A(&this->pci_cfg[CFG_REG_BAR1], value);
+            WRITE_DWORD_BE_A(&this->pci_cfg[CFG_REG_BAR1], value);
         }
+        break;
     case 0x18: /* BAR 2 */
         if (value == 0xFFFFFFFFUL) {
-            WRITE_DWORD_LE_A(&this->pci_cfg[CFG_REG_BAR2], 0xFFFFF000UL);
+            WRITE_DWORD_BE_A(&this->pci_cfg[CFG_REG_BAR2], 0xFFFFF000UL);
         }
         else {
-            WRITE_DWORD_LE_A(&this->pci_cfg[CFG_REG_BAR2], value);
+            WRITE_DWORD_BE_A(&this->pci_cfg[CFG_REG_BAR2], value);
         }
         break;
     case CFG_REG_BAR3: /* unimplemented */
     case CFG_REG_BAR4: /* unimplemented */
     case CFG_REG_BAR5: /* unimplemented */
+        WRITE_DWORD_BE_A(&this->pci_cfg[reg_offs], 0);
+        break;
     case CFG_EXP_BASE: /* no expansion ROM */
-        WRITE_DWORD_LE_A(&this->pci_cfg[reg_offs], 0);
+        if (value == 0x00F8FFFFUL) {
+            // return 0 (not implemented) when attempting to size the expansion ROM
+            WRITE_DWORD_BE_A(&this->pci_cfg[reg_offs], 0);
+        } else {
+            WRITE_DWORD_BE_A(&this->pci_cfg[reg_offs], value);
+        }
         break;
     default:
-        size_dep_write(&this->pci_cfg[reg_offs], value, size);
+        write_mem(&this->pci_cfg[reg_offs], value, size);
     }
 }
 
@@ -342,7 +350,7 @@ bool ATIRage::io_access_allowed(uint32_t offset, uint32_t* p_io_base) {
         return false;
     }
 
-    uint32_t io_base = READ_DWORD_BE_A(&this->pci_cfg[CFG_REG_BAR1]) & ~3;
+    uint32_t io_base = READ_DWORD_LE_A(&this->pci_cfg[CFG_REG_BAR1]) & ~3;
 
     if (offset < io_base || offset > (io_base + 0x100)) {
         LOG_F(WARNING, "Rage: I/O out of range, base=0x%X, offset=0x%X", io_base, offset);
@@ -381,7 +389,7 @@ bool ATIRage::pci_io_write(uint32_t offset, uint32_t value, uint32_t size) {
 
 uint32_t ATIRage::read(uint32_t reg_start, uint32_t offset, int size)
 {
-    //LOG_F(INFO, "Reading ATI Rage PCI memory: region=%X, offset=%X, size %d", reg_start, offset, size);
+    LOG_F(8, "Reading ATI Rage PCI memory: region=%X, offset=%X, size %d", reg_start, offset, size);
 
     if (reg_start < this->aperture_base || offset > APERTURE_SIZE) {
         LOG_F(WARNING, "ATI Rage: attempt to read outside the aperture!");
@@ -390,7 +398,7 @@ uint32_t ATIRage::read(uint32_t reg_start, uint32_t offset, int size)
 
     if (offset < this->vram_size) {
         /* read from little-endian VRAM region */
-        return size_dep_read(this->vram_ptr + offset, size);
+        return read_mem(this->vram_ptr + offset, size);
     }
     else if (offset >= MEMMAP_OFFSET) {
         /* read from memory-mapped registers */
@@ -405,7 +413,7 @@ uint32_t ATIRage::read(uint32_t reg_start, uint32_t offset, int size)
 
 void ATIRage::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
 {
-    //LOG_F(INFO, "Writing reg=%X, offset=%X, value=%X, size %d", reg_start, offset, value, size);
+    LOG_F(8, "Writing reg=%X, offset=%X, value=%X, size %d", reg_start, offset, value, size);
 
     if (reg_start < this->aperture_base || offset > APERTURE_SIZE) {
         LOG_F(WARNING, "ATI Rage: attempt to write outside the aperture!");
@@ -414,7 +422,7 @@ void ATIRage::write(uint32_t reg_start, uint32_t offset, uint32_t value, int siz
 
     if (offset < this->vram_size) {
         /* write to little-endian VRAM region */
-        size_dep_write(this->vram_ptr + offset, value, size);
+        write_mem(this->vram_ptr + offset, value, size);
     } else if (offset >= MEMMAP_OFFSET) {
         /* write to memory-mapped registers */
         this->write_reg(offset - MEMMAP_OFFSET, value, size);
