@@ -89,7 +89,7 @@ enum {
     ATI_GEN_TEST_CNTL         = 0x00D0,
     ATI_CUSTOM_MACRO_CNTL     = 0x00D4,
     ATI_CONFIG_CNTL           = 0x00DC,
-    ATI_CFG_CHIP_ID           = 0x00E0,
+    ATI_CONFIG_CHIP_ID        = 0x00E0,
     ATI_CFG_STAT0             = 0x00E4,
     ATI_CRC_SIG               = 0x00E8,
     ATI_DST_Y_X_ALIAS1        = 0x00F4,

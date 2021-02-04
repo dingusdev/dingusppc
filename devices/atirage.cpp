@@ -29,15 +29,32 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
 ATIRage::ATIRage(uint16_t dev_id, uint32_t mem_amount) : PCIDevice("ati-rage") {
+    uint8_t asic_id;
+
     this->vram_size = mem_amount << 20;
 
     /* allocate video RAM */
     this->vram_ptr = new uint8_t[this->vram_size];
 
+    /* ATI Rage driver needs to know ASIC ID (manufacturer's internal chip code)
+       to operate properly */
+    switch (dev_id) {
+    case ATI_RAGE_PRO_DEV_ID:
+        asic_id = 0x5C; // R3B/D/P-A4 fabricated by UMC
+        break;
+    default:
+        asic_id = 0xDD;
+        LOG_F(WARNING, "ATI Rage: bogus ASIC ID assigned!");
+    }
+
     /* set up PCI configuration space header */
     WRITE_DWORD_LE_A(&this->pci_cfg[0], (dev_id << 16) | ATI_PCI_VENDOR_ID);
-    WRITE_DWORD_LE_A(&this->pci_cfg[8], 0x0300005C);
+    WRITE_DWORD_LE_A(&this->pci_cfg[8], (0x030000 << 8) | asic_id);
     WRITE_DWORD_LE_A(&this->pci_cfg[0x3C], 0x00080100);
+
+    /* stuff default values into chip registers */
+    WRITE_DWORD_LE_A(&this->block_io_regs[ATI_CONFIG_CHIP_ID],
+                    (asic_id << 24) | dev_id);
 
     /* initialize display identification */
     this->disp_id = new DisplayID();
@@ -167,7 +184,7 @@ const char* ATIRage::get_reg_name(uint32_t reg_offset) {
     case ATI_GEN_TEST_CNTL:
         reg_name = "GEN_TEST_CNTL";
         break;
-    case ATI_CFG_CHIP_ID:
+    case ATI_CONFIG_CHIP_ID:
         reg_name = "CONFIG_CHIP_ID";
         break;
     case ATI_CFG_STAT0:
