@@ -153,8 +153,6 @@ extern int32_t simult_result;
 extern uint32_t uiadd_result;
 extern uint32_t uimult_result;
 
-extern int32_t word_copy_location;
-
 extern uint32_t crf_d;
 extern uint32_t crf_s;
 extern uint32_t reg_s;
@@ -284,20 +282,8 @@ extern void ppc_grab_regsdauimm();
 extern void ppc_grab_regsasimm();
 extern void ppc_grab_regssauimm();
 
-extern void ppc_grab_regsfpdb(bool int_rep);
-extern void ppc_grab_regsfpdab(bool int_rep);
-extern void ppc_grab_regsfpdia(bool int_rep);
-extern void ppc_grab_regsfpdiab(bool int_rep);
-extern void ppc_grab_regsfpsia(bool int_rep);
-extern void ppc_grab_regsfpsiab(bool int_rep);
-
 extern void ppc_store_result_regd();
 extern void ppc_store_result_rega();
-
-extern void ppc_store_sfpresult_int();
-extern void ppc_store_sfpresult_flt();
-extern void ppc_store_dfpresult_int();
-extern void ppc_store_dfpresult_flt();
 
 void ppc_changecrf0(uint32_t set_result);
 void ppc_fp_changecrf1();
