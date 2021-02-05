@@ -153,6 +153,11 @@ uint32_t ATIRage::read_reg(uint32_t offset, uint32_t size) {
             read_mem(&this->block_io_regs[offset], size));
     }
 
+    if (offset > sizeof(this->block_io_regs)) {
+        LOG_F(WARNING, "ATI Rage: register offset 0x%04X out of bounds!", offset);
+        return 0;
+    }
+
     res = read_mem(&this->block_io_regs[offset], size);
 
     return res;
@@ -161,6 +166,11 @@ uint32_t ATIRage::read_reg(uint32_t offset, uint32_t size) {
 void ATIRage::write_reg(uint32_t offset, uint32_t value, uint32_t size) {
     uint32_t gpio_val;
     uint16_t gpio_dir;
+
+    if (offset > sizeof(this->block_io_regs)) {
+        LOG_F(WARNING, "ATI Rage: register offset 0x%04X out of bounds!", offset);
+        return;
+    }
 
     /* size-dependent endian conversion */
     write_mem(&this->block_io_regs[offset], value, size);

@@ -213,7 +213,7 @@ private:
     // uint32_t atirage_cmdfifo_regs[3];   /* ATI Rage Command FIFO Registers */
     // uint32_t atirage_datapath_regs[12]; /* ATI Rage Data Path Registers*/
 
-    uint8_t block_io_regs[256] = {0};
+    uint8_t block_io_regs[512] = {0};
 
     uint8_t pci_cfg[256] = {0}; /* PCI configuration space */
 
