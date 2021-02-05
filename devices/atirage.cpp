@@ -124,6 +124,13 @@ uint32_t ATIRage::read_reg(uint32_t offset, uint32_t size) {
     switch (offset & ~3) {
     case ATI_GP_IO:
         break;
+    case ATI_CLOCK_CNTL:
+        if (offset == ATI_CLOCK_CNTL+2 && size == 1 &&
+            !(this->block_io_regs[ATI_CLOCK_CNTL+1] & 0x2)) {
+            int pll_addr = this->block_io_regs[ATI_CLOCK_CNTL+1] >> 2;
+            return this->plls[pll_addr & 0xF];
+        }
+        break;
     case ATI_DAC_REGS:
         if (offset == ATI_DAC_DATA) {
             this->block_io_regs[ATI_DAC_DATA] =
@@ -166,6 +173,15 @@ void ATIRage::write_reg(uint32_t offset, uint32_t value, uint32_t size) {
             WRITE_WORD_LE_A(
                 &this->block_io_regs[ATI_GP_IO],
                 this->disp_id->read_monitor_sense(gpio_val, gpio_dir));
+        }
+        break;
+    case ATI_CLOCK_CNTL:
+        if (offset == ATI_CLOCK_CNTL+2 && size == 1 &&
+            (this->block_io_regs[ATI_CLOCK_CNTL+1] & 0x2)) {
+            int pll_addr = this->block_io_regs[ATI_CLOCK_CNTL+1] >> 2;
+            uint8_t pll_data = this->block_io_regs[ATI_CLOCK_CNTL+2];
+            this->plls[pll_addr & 0xF] = pll_data;
+            LOG_F(INFO, "ATI Rage: PLL #%d set to 0x%02X", pll_addr, pll_data);
         }
         break;
     case ATI_DAC_REGS:

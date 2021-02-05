@@ -217,6 +217,8 @@ private:
 
     uint8_t pci_cfg[256] = {0}; /* PCI configuration space */
 
+    uint8_t plls[16] = {0}; // internal PLL registers
+
     /* Video RAM variables */
     uint32_t    vram_size;
     uint8_t*    vram_ptr;
