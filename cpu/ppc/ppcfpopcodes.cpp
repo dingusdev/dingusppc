@@ -161,22 +161,22 @@ void ppc_divbyzero(uint64_t input_a, uint64_t input_b, bool is_single) {
 
 int64_t round_to_nearest(double f) {
     if (f >= 0.0) {
-        return (int32_t)(int64_t)(f + 0.5);
+        return static_cast<int32_t>(static_cast<int64_t> (f + 0.5));
     } else {
-        return (int32_t)(-(int64_t)(-f + 0.5));
+        return static_cast<int32_t>(static_cast<int64_t> (-f + 0.5));
     }
 }
 
 int64_t round_to_zero(double f) {
-    return (int32_t)(f);
+    return static_cast<int32_t>(trunc(f));
 }
 
 int64_t round_to_pos_inf(double f) {
-    return (int32_t)(ceil(f));
+    return static_cast<int32_t>(ceil(f));
 }
 
 int64_t round_to_neg_inf(double f) {
-    return (int32_t)(floor(f));
+    return static_cast<int32_t>(floor(f));
 }
 
 void ppc_toggle_fpscr_fex() {
@@ -671,18 +671,33 @@ void dppc_interpreter::ppc_fctiw() {
     ppc_grab_regsfpdb();
     double val_reg_b = GET_FPR(reg_b);
 
-    switch (ppc_state.fpscr & 0x3) {
-    case 0:
-        ppc_result64_d = round_to_nearest(val_reg_b);
-    case 1:
-        ppc_result64_d = round_to_zero(val_reg_b);
-    case 2:
-        ppc_result64_d = round_to_pos_inf(val_reg_b);
-    case 3:
-        ppc_result64_d = round_to_neg_inf(val_reg_b);
+    if (std::isnan(val_reg_b)) {
+        ppc_state.fpr[reg_d].int64_r = 0x80000000;
+        ppc_state.fpscr |= 0x1000100;
+    } 
+    else if (val_reg_b > static_cast<double>(0x7fffffff)) {
+        ppc_state.fpr[reg_d].int64_r = 0x7fffffff;
+        ppc_state.fpscr |= 0x100;
+    } 
+    else if (val_reg_b < -static_cast<double>(0x80000000)) {
+        ppc_state.fpr[reg_d].int64_r = 0x80000000;
+        ppc_state.fpscr |= 0x100;
     }
+    else {
+        switch (ppc_state.fpscr & 0x3) {
+        case 0:
+            ppc_result64_d = round_to_nearest(val_reg_b);
+        case 1:
+            ppc_result64_d = round_to_zero(val_reg_b);
+        case 2:
+            ppc_result64_d = round_to_pos_inf(val_reg_b);
+        case 3:
+            ppc_result64_d = round_to_neg_inf(val_reg_b);
+        }
 
-    ppc_store_dfpresult_int(reg_d);
+        ppc_store_dfpresult_int(reg_d);
+    
+    }
 
     if (rc_flag)
         ppc_changecrf1();
@@ -690,9 +705,25 @@ void dppc_interpreter::ppc_fctiw() {
 
 void dppc_interpreter::ppc_fctiwz() {
     ppc_grab_regsfpdb();
-    ppc_result64_d = round_to_zero(GET_FPR(reg_b));
+    double val_reg_b = GET_FPR(reg_b);
 
-    ppc_store_dfpresult_int(reg_d);
+    if (std::isnan(val_reg_b)) {
+        ppc_state.fpr[reg_d].int64_r = 0x80000000;
+        ppc_state.fpscr |= 0x1000100;
+    } 
+    else if (val_reg_b > static_cast<double>(0x7fffffff)) {
+        ppc_state.fpr[reg_d].int64_r = 0x7fffffff;
+        ppc_state.fpscr |= 0x100;
+    } 
+    else if (val_reg_b < -static_cast<double>(0x80000000)) {
+        ppc_state.fpr[reg_d].int64_r = 0x80000000;
+        ppc_state.fpscr |= 0x100;
+    } 
+    else {
+        ppc_result64_d = round_to_zero(val_reg_b);
+
+        ppc_store_dfpresult_int(reg_d);
+    }
 
     if (rc_flag)
         ppc_changecrf1();
