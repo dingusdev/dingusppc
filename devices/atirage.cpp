@@ -28,6 +28,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <map>
 #include <thirdparty/loguru/loguru.hpp>
 
+/* Mach64 post dividers. */
+static const int mach64_post_div[8] = {
+    1, 2, 4, 8, // standard post dividers
+    3, 5, 6, 12 // alternate post dividers
+};
+
 /* Human readable Mach64 HW register names for easier debugging. */
 static const std::map<uint16_t, std::string> mach64_reg_names = {
     {0x0000, "CRTC_H_TOTAL_DISP"},
@@ -45,6 +51,10 @@ static const std::map<uint16_t, std::string> mach64_reg_names = {
     {0x0040, "OVR_CLR"},
     {0x0044, "OVR_WID_LEFT_RIGHT"},
     {0x0048, "OVR_WID_TOP_BOTTOM"},
+    {0x0060, "CUR_CLR0"},
+    {0x0064, "CUR_CLR1"},
+    {0x0068, "CUR_OFFSET"},
+    {0x006C, "CUR_HORZ_VERT_POSN"},
     {0x0078, "GP_IO"},
     {0x007C, "HW_DEBUG"},
     {0x0080, "SCRATCH_REG0"},
@@ -176,6 +186,13 @@ void ATIRage::write_reg(uint32_t offset, uint32_t value, uint32_t size) {
     write_mem(&this->block_io_regs[offset], value, size);
 
     switch (offset & ~3) {
+    case ATI_CRTC_GEN_CNTL:
+        if (this->block_io_regs[ATI_CRTC_GEN_CNTL+3] & 2) {
+            this->crtc_enable();
+        } else {
+            this->crtc_on = false;
+        }
+        break;
     case ATI_GP_IO:
         if (offset < (ATI_GP_IO + 2)) {
             gpio_val = READ_DWORD_LE_A(&this->block_io_regs[ATI_GP_IO]);
@@ -193,6 +210,9 @@ void ATIRage::write_reg(uint32_t offset, uint32_t value, uint32_t size) {
             uint8_t pll_data = this->block_io_regs[ATI_CLOCK_CNTL+2];
             this->plls[pll_addr] = pll_data;
             LOG_F(INFO, "ATI Rage: PLL #%d set to 0x%02X", pll_addr, pll_data);
+        } else if (offset == ATI_CLOCK_CNTL && size == 1) {
+            LOG_F(INFO, "ATI Rage: CLOCK_SEL = 0x%02X",
+                  this->block_io_regs[ATI_CLOCK_CNTL] & 3);
         }
         break;
     case ATI_DAC_REGS:
@@ -383,4 +403,92 @@ void ATIRage::write(uint32_t reg_start, uint32_t offset, uint32_t value, int siz
     else {
         LOG_F(WARNING, "ATI Rage: write attempt to unmapped aperture region at 0x%08X", offset);
     }
+}
+
+float ATIRage::calc_pll_freq(int scale, int fb_div) {
+    return (ATI_XTAL * scale * fb_div) / this->plls[PLL_REF_DIV];
+}
+
+void ATIRage::verbose_pixel_format(int crtc_index) {
+    if (crtc_index) {
+        LOG_F(ERROR, "CRTC2 not supported yet");
+        return;
+    }
+
+    const char* what = "Pixel format:";
+
+    switch (this->block_io_regs[ATI_CRTC_GEN_CNTL+1] & 7) {
+    case 1:
+        LOG_F(INFO, "%s 4 bpp with DAC palette", what);
+        break;
+    case 2:
+        LOG_F(INFO, "%s 8 bpp with DAC palette", what);
+        break;
+    case 3:
+        LOG_F(INFO, "%s 15 bpp direct color", what);
+        break;
+    case 4:
+        LOG_F(INFO, "%s 16 bpp direct color", what);
+        break;
+    case 5:
+        LOG_F(INFO, "%s 24 bpp direct color", what);
+        break;
+    case 6:
+        LOG_F(INFO, "%s 32 bpp direct color", what);
+        break;
+    default:
+        LOG_F(ERROR, "ATI Rage: CRTC pixel format %d not supported",
+              this->block_io_regs[ATI_CRTC_GEN_CNTL+2] & 7);
+    }
+}
+
+void ATIRage::crtc_enable() {
+    /* active (visible) width is specified in characters (8 px) - 1 */
+    this->active_width  = (this->block_io_regs[ATI_CRTC_H_TOTAL_DISP+2] + 1) * 8;
+
+    /* active (visible) height is specified in lines - 1 */
+    this->active_height =
+        (READ_WORD_LE_A(&this->block_io_regs[ATI_CRTC_V_TOTAL_DISP+2]) & 0x7FFUL) + 1;
+
+    if ((this->plls[PLL_VCLK_CNTL] & 3) == 3) {
+        /* look up which VPLL ouput is requested */
+        int clock_sel = this->block_io_regs[ATI_CLOCK_CNTL] & 3;
+
+        /* calculate VPLL output frequency */
+        float vpll_freq = calc_pll_freq(2, this->plls[VCLK0_FB_DIV + clock_sel]);
+
+        /* calculate post divider's index */
+        /* NOTE: post divider's index has been extended by an additional
+                 bit in Rage Pro. This bit is resided in PLL_EXT_CNTL register.
+        */
+        int post_div_idx = ((this->plls[PLL_EXT_CNTL] >> (clock_sel + 2)) & 4) |
+                           ((this->plls[VCLK_POST_DIV] >> (clock_sel * 2)) & 3);
+
+        /* pixel clock = source_freq / post_div */
+        this->pixel_clock = vpll_freq / mach64_post_div[post_div_idx];
+
+        /* calculate display refresh rate */
+        int hori_total =
+            ((READ_WORD_LE_A(&this->block_io_regs[ATI_CRTC_H_TOTAL_DISP])
+              & 0x1FFUL) + 1) * 8;
+
+        int vert_total =
+            (READ_WORD_LE_A(&this->block_io_regs[ATI_CRTC_V_TOTAL_DISP]) & 0x7FFUL) + 1;
+
+        this->refresh_rate = pixel_clock / hori_total / vert_total;
+
+        LOG_F(INFO, "ATI Rage: primary CRT controller enabled:");
+        LOG_F(INFO, "Video mode: %s",
+             (this->block_io_regs[ATI_CRTC_GEN_CNTL+3] & 1) ? "extended" : "VGA");
+        LOG_F(INFO, "Video width: %d px", this->active_width);
+        LOG_F(INFO, "Video height: %d px", this->active_height);
+        verbose_pixel_format(0);
+        LOG_F(INFO, "VPLL frequency: %f MHz", vpll_freq * 1e-6);
+        LOG_F(INFO, "Pixel (dot) clock: %f MHz", this->pixel_clock * 1e-6);
+        LOG_F(INFO, "Refresh rate: %f Hz", this->refresh_rate);
+    } else {
+        LOG_F(WARNING, "ATI Rage: VLCK source != VPLL!");
+    }
+
+    this->crtc_on = true;
 }

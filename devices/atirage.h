@@ -171,8 +171,22 @@ enum {
     ATI_TVO_CNTL              = 0x0500,
 };
 
+/* Mach64 PLL register indices. */
+enum {
+    PLL_REF_DIV     =  2, // reference divider, same for all Mach64 clocks
+    PLL_VCLK_CNTL   =  5,
+    VCLK_POST_DIV   =  6,
+    VCLK0_FB_DIV    =  7, // feedback divider for VCLK0
+    VCLK1_FB_DIV    =  8, // feedback divider for VCLK1
+    VCLK2_FB_DIV    =  9, // feedback divider for VCLK2
+    VCLK3_FB_DIV    = 10, // feedback divider for VCLK3
+    PLL_EXT_CNTL    = 11,
+};
+
 constexpr auto APERTURE_SIZE = 0x01000000UL; /* Mach64 aperture size */
 constexpr auto MEMMAP_OFFSET = 0x007FFC00UL; /* offset to memory mapped registers */
+
+constexpr auto ATI_XTAL = 14318180.0f; // external crystal oscillator frequency
 
 class ATIRage : public PCIDevice {
 public:
@@ -200,24 +214,27 @@ public:
     bool pci_io_write(uint32_t offset, uint32_t value, uint32_t size);
 
 protected:
-    uint32_t size_dep_read(uint8_t* buf, uint32_t size);
-    void size_dep_write(uint8_t* buf, uint32_t val, uint32_t size);
     const char* get_reg_name(uint32_t reg_offset);
     bool io_access_allowed(uint32_t offset, uint32_t* p_io_base);
     uint32_t read_reg(uint32_t offset, uint32_t size);
     void write_reg(uint32_t offset, uint32_t value, uint32_t size);
+    float calc_pll_freq(int scale, int fb_div);
+    void verbose_pixel_format(int crtc_index);
+    void crtc_enable();
 
 private:
-    // uint32_t atirage_membuf_regs[9];    /* ATI Rage Memory Buffer Registers */
-    // uint32_t atirage_scratch_regs[4];   /* ATI Rage Scratch Registers */
-    // uint32_t atirage_cmdfifo_regs[3];   /* ATI Rage Command FIFO Registers */
-    // uint32_t atirage_datapath_regs[12]; /* ATI Rage Data Path Registers*/
-
     uint8_t block_io_regs[512] = {0};
 
     uint8_t pci_cfg[256] = {0}; /* PCI configuration space */
 
     uint8_t plls[64] = {0}; // internal PLL registers
+
+    /* CRT controller parameters */
+    bool        crtc_on = false;
+    int         active_width;   // width of the visible display area
+    int         active_height;  // height of the visible display area
+    float       pixel_clock;
+    float       refresh_rate;
 
     /* Video RAM variables */
     uint32_t    vram_size;
