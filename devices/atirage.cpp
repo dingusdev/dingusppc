@@ -422,19 +422,24 @@ void ATIRage::verbose_pixel_format(int crtc_index) {
         LOG_F(INFO, "%s 4 bpp with DAC palette", what);
         break;
     case 2:
-        LOG_F(INFO, "%s 8 bpp with DAC palette", what);
+        // check the undocumented DAC_DIRECT bit
+        if (this->block_io_regs[ATI_DAC_CNTL+1] & 4) {
+            LOG_F(INFO, "%s 8 bpp direct color (RGB322)", what);
+        } else {
+            LOG_F(INFO, "%s 8 bpp with DAC palette", what);
+        }
         break;
     case 3:
-        LOG_F(INFO, "%s 15 bpp direct color", what);
+        LOG_F(INFO, "%s 15 bpp direct color (RGB555)", what);
         break;
     case 4:
-        LOG_F(INFO, "%s 16 bpp direct color", what);
+        LOG_F(INFO, "%s 16 bpp direct color (RGB565)", what);
         break;
     case 5:
-        LOG_F(INFO, "%s 24 bpp direct color", what);
+        LOG_F(INFO, "%s 24 bpp direct color (RGB888)", what);
         break;
     case 6:
-        LOG_F(INFO, "%s 32 bpp direct color", what);
+        LOG_F(INFO, "%s 32 bpp direct color (ARGB8888)", what);
         break;
     default:
         LOG_F(ERROR, "ATI Rage: CRTC pixel format %d not supported",
