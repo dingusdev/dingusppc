@@ -338,6 +338,17 @@ void ViaCuda::pseudo_command(int cmd, int data_count) {
         response_header(CUDA_PKT_PSEUDO, 0);
         this->pram_obj->write_byte(this->in_buf[2], this->in_buf[3]);
         break;
+    case CUDA_FILE_SERVER_FLAG:
+        response_header(CUDA_PKT_PSEUDO, 0);
+        if (this->in_buf[2]) {
+            LOG_F(INFO, "Cuda: File server flag on");
+            this->file_server = true;
+        } 
+        else {
+            LOG_F(INFO, "Cuda: File server flag off");
+            this->file_server = false;
+        }
+        break;
     case CUDA_SET_AUTOPOLL_RATE:
         this->poll_rate = this->in_buf[2];
         LOG_F(INFO, "Cuda: autopoll rate set to: %d", this->poll_rate);

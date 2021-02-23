@@ -93,6 +93,7 @@ enum {
     CUDA_READ_PRAM           = 0x07, /* read parameter RAM */
     CUDA_SET_REAL_TIME       = 0x09, /* set real time */
     CUDA_WRITE_PRAM          = 0x0C, /* write parameter RAM */
+    CUDA_FILE_SERVER_FLAG    = 0x13, /* set file server flag */
     CUDA_SET_AUTOPOLL_RATE   = 0x14, /* set auto-polling rate */
     CUDA_GET_AUTOPOLL_RATE   = 0x16, /* get auto-polling rate */
     CUDA_READ_WRITE_I2C      = 0x22, /* read/write I2C device */
@@ -135,6 +136,7 @@ private:
     int32_t out_pos;
     uint8_t poll_rate;
     int32_t real_time;
+    bool file_server;
 
     bool is_open_ended;
     uint8_t curr_i2c_addr;
