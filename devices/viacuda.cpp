@@ -318,10 +318,10 @@ void ViaCuda::pseudo_command(int cmd, int data_count) {
         break;
     case CUDA_GET_REAL_TIME:
         response_header(CUDA_PKT_PSEUDO, 0);
-        this->out_buf[0] = (uint8_t)((this->real_time >> 24) & 0xFF);
-        this->out_buf[1] = (uint8_t)((this->real_time >> 16) & 0xFF);
-        this->out_buf[2] = (uint8_t)((this->real_time >> 8) & 0xFF);
-        this->out_buf[3] = (uint8_t)((this->real_time) & 0xFF);
+        this->out_buf[2] = (uint8_t)((this->real_time >> 24) & 0xFF);
+        this->out_buf[3] = (uint8_t)((this->real_time >> 16) & 0xFF);
+        this->out_buf[4] = (uint8_t)((this->real_time >> 8) & 0xFF);
+        this->out_buf[5] = (uint8_t)((this->real_time) & 0xFF);
         break;
     case CUDA_READ_PRAM:
         response_header(CUDA_PKT_PSEUDO, 0);
@@ -329,10 +329,10 @@ void ViaCuda::pseudo_command(int cmd, int data_count) {
         break;
     case CUDA_SET_REAL_TIME:
         response_header(CUDA_PKT_PSEUDO, 0);
-        this->real_time  = in_buf[0] >> 24;
-        this->real_time += in_buf[0] >> 16;
-        this->real_time += in_buf[0] >> 8;
-        this->real_time += in_buf[0];
+        this->real_time  = in_buf[2] >> 24;
+        this->real_time += in_buf[3] >> 16;
+        this->real_time += in_buf[4] >> 8;
+        this->real_time += in_buf[5];
         break;
     case CUDA_WRITE_PRAM:
         response_header(CUDA_PKT_PSEUDO, 0);
