@@ -89,7 +89,9 @@ enum {
 /** Cuda pseudo commands. */
 enum {
     CUDA_START_STOP_AUTOPOLL = 0x01, /* start/stop device auto-polling */
+    CUDA_GET_REAL_TIME       = 0x03, /* get real time */
     CUDA_READ_PRAM           = 0x07, /* read parameter RAM */
+    CUDA_SET_REAL_TIME       = 0x09, /* set real time */
     CUDA_WRITE_PRAM          = 0x0C, /* write parameter RAM */
     CUDA_SET_AUTOPOLL_RATE   = 0x14, /* set auto-polling rate */
     CUDA_GET_AUTOPOLL_RATE   = 0x16, /* get auto-polling rate */
@@ -132,6 +134,7 @@ private:
     int32_t out_count;
     int32_t out_pos;
     uint8_t poll_rate;
+    int32_t real_time;
 
     bool is_open_ended;
     uint8_t curr_i2c_addr;
