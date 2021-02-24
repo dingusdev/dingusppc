@@ -135,7 +135,7 @@ private:
     int32_t out_count;
     int32_t out_pos;
     uint8_t poll_rate;
-    int32_t real_time;
+    int32_t real_time = 0;
     bool file_server;
 
     bool is_open_ended;

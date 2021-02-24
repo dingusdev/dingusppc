@@ -329,10 +329,10 @@ void ViaCuda::pseudo_command(int cmd, int data_count) {
         break;
     case CUDA_SET_REAL_TIME:
         response_header(CUDA_PKT_PSEUDO, 0);
-        this->real_time  = in_buf[2] >> 24;
-        this->real_time += in_buf[3] >> 16;
-        this->real_time += in_buf[4] >> 8;
-        this->real_time += in_buf[5];
+        this->real_time  = ((uint32_t)in_buf[2]) >> 24;
+        this->real_time += ((uint32_t)in_buf[3]) >> 16;
+        this->real_time += ((uint32_t)in_buf[4]) >> 8;
+        this->real_time += ((uint32_t)in_buf[5]);
         break;
     case CUDA_WRITE_PRAM:
         response_header(CUDA_PKT_PSEUDO, 0);
