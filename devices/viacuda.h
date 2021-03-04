@@ -90,8 +90,10 @@ enum {
 enum {
     CUDA_WARM_START          = 0x00, /* warm start */
     CUDA_START_STOP_AUTOPOLL = 0x01, /* start/stop device auto-polling */
+    CUDA_GET_6805_ADDRESS    = 0x02, /* get 6805 address */
     CUDA_GET_REAL_TIME       = 0x03, /* get real time */
     CUDA_READ_PRAM           = 0x07, /* read parameter RAM */
+    CUDA_SET_6805_ADDRESS    = 0x08, /* set 6805 address */
     CUDA_SET_REAL_TIME       = 0x09, /* set real time */
     CUDA_POWER_DOWN          = 0x0A, /* power down system */
     CUDA_WRITE_PRAM          = 0x0C, /* write parameter RAM */
@@ -141,6 +143,7 @@ private:
     uint8_t poll_rate;
     int32_t real_time = 0;
     bool file_server;
+    uint16_t m6805_address = 0x1100;
 
     bool is_open_ended;
     uint8_t curr_i2c_addr;

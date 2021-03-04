@@ -316,6 +316,11 @@ void ViaCuda::pseudo_command(int cmd, int data_count) {
         }
         response_header(CUDA_PKT_PSEUDO, 0);
         break;
+    case CUDA_GET_6805_ADDRESS:
+        response_header(CUDA_PKT_PSEUDO, 0);
+        this->out_buf[2] = (uint8_t)((this->m6805_address >> 8) & 0xFF);
+        this->out_buf[3] = (uint8_t)((this->m6805_address) & 0xFF);
+        break;
     case CUDA_GET_REAL_TIME:
         response_header(CUDA_PKT_PSEUDO, 0);
         this->out_buf[2] = (uint8_t)((this->real_time >> 24) & 0xFF);
@@ -326,6 +331,12 @@ void ViaCuda::pseudo_command(int cmd, int data_count) {
     case CUDA_READ_PRAM:
         response_header(CUDA_PKT_PSEUDO, 0);
         this->pram_obj->read_byte(this->in_buf[2]);
+        break;
+    case CUDA_SET_6805_ADDRESS:
+        response_header(CUDA_PKT_PSEUDO, 0);
+        this->m6805_address = ((uint16_t)in_buf[2]) >> 8;
+        this->m6805_address += ((uint16_t)in_buf[3]);
+        LOG_F(INFO, "6805 address set to: %x", this->m6805_address);
         break;
     case CUDA_SET_REAL_TIME:
         response_header(CUDA_PKT_PSEUDO, 0);
