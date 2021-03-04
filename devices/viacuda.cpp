@@ -374,6 +374,14 @@ void ViaCuda::pseudo_command(int cmd, int data_count) {
         LOG_F(INFO, "Cuda: send %d to PB0 \n", (int)(this->in_buf[2]));
         response_header(CUDA_PKT_PSEUDO, 0);
         break;
+    case CUDA_WARM_START:
+    case CUDA_POWER_DOWN:
+    case CUDA_MONO_STABLE_RESET:
+    case CUDA_RESTART_SYSTEM:
+        /* really kludge temp code */
+        LOG_F(INFO, "Cuda: Restart/Shutdown signal sent with command 0x%x! \n", cmd);
+        exit(0);
+        break;
     default:
         LOG_F(ERROR, "Cuda: unsupported pseudo command 0x%x \n", cmd);
         error_response(CUDA_ERR_BAD_CMD);

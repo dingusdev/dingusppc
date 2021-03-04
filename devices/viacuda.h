@@ -88,11 +88,15 @@ enum {
 
 /** Cuda pseudo commands. */
 enum {
+    CUDA_WARM_START          = 0x00, /* warm start */
     CUDA_START_STOP_AUTOPOLL = 0x01, /* start/stop device auto-polling */
     CUDA_GET_REAL_TIME       = 0x03, /* get real time */
     CUDA_READ_PRAM           = 0x07, /* read parameter RAM */
     CUDA_SET_REAL_TIME       = 0x09, /* set real time */
+    CUDA_POWER_DOWN          = 0x0A, /* power down system */
     CUDA_WRITE_PRAM          = 0x0C, /* write parameter RAM */
+    CUDA_MONO_STABLE_RESET   = 0x0D, /* mono stable reset */
+    CUDA_RESTART_SYSTEM      = 0x11, /* restart system */
     CUDA_FILE_SERVER_FLAG    = 0x13, /* set file server flag */
     CUDA_SET_AUTOPOLL_RATE   = 0x14, /* set auto-polling rate */
     CUDA_GET_AUTOPOLL_RATE   = 0x16, /* get auto-polling rate */
