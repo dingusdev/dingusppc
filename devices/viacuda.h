@@ -102,6 +102,8 @@ enum {
     CUDA_FILE_SERVER_FLAG    = 0x13, /* set file server flag */
     CUDA_SET_AUTOPOLL_RATE   = 0x14, /* set auto-polling rate */
     CUDA_GET_AUTOPOLL_RATE   = 0x16, /* get auto-polling rate */
+    CUDA_SET_DEVICE_LIST     = 0x19, /* set device list */
+    CUDA_GET_DEVICE_LIST     = 0x1A, /* get device list */
     CUDA_READ_WRITE_I2C      = 0x22, /* read/write I2C device */
     CUDA_COMB_FMT_I2C        = 0x25, /* combined format I2C transaction */
     CUDA_OUT_PB0             = 0x26, /* output one bit to Cuda's PB0 line */
@@ -144,6 +146,7 @@ private:
     int32_t real_time = 0;
     bool file_server;
     uint16_t m6805_address = 0x1100;
+    uint16_t device_mask   = 0;
 
     bool is_open_ended;
     uint8_t curr_i2c_addr;

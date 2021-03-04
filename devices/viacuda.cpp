@@ -370,6 +370,16 @@ void ViaCuda::pseudo_command(int cmd, int data_count) {
         this->out_buf[3] = this->poll_rate;
         this->out_count++;
         break;
+    case CUDA_SET_DEVICE_LIST:
+        response_header(CUDA_PKT_PSEUDO, 0);
+        this->device_mask = ((uint16_t)in_buf[2]) >> 8;
+        this->device_mask += ((uint16_t)in_buf[3]);
+        break;
+    case CUDA_GET_DEVICE_LIST:
+        response_header(CUDA_PKT_PSEUDO, 0);
+        this->out_buf[2] = (uint8_t)((this->device_mask >> 8) & 0xFF);
+        this->out_buf[3] = (uint8_t)((this->device_mask) & 0xFF);
+        break;
     case CUDA_READ_WRITE_I2C:
         response_header(CUDA_PKT_PSEUDO, 0);
         i2c_simple_transaction(this->in_buf[2], &this->in_buf[3], this->in_count - 3);
