@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
     app.allow_windows_style_options(); /* we want Windows-style options */
     app.allow_extras();
 
-    bool   realtime_enabled, debugger_enabled;
+    bool   realtime_enabled, debugger_enabled = false;
     string machine_str;
     string bootrom_path("bootrom.bin");
 
