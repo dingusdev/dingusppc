@@ -304,7 +304,7 @@ static uint32_t ppc_mmu_instr_translate(uint32_t la) {
     // Format: %XY
     // X - supervisor access bit, Y - problem/user access bit
     // Those bits are mutually exclusive
-    unsigned access_bits = (~msr_pr << 1) | msr_pr;
+    unsigned access_bits = ((msr_pr ^ 1) << 1) | msr_pr;
 
     for (int bat_index = 0; bat_index < 4; bat_index++) {
         PPC_BAT_entry* bat_entry = &ibat_array[bat_index];
@@ -344,7 +344,7 @@ static uint32_t ppc_mmu_addr_translate(uint32_t la, int is_write) {
     // Format: %XY
     // X - supervisor access bit, Y - problem/user access bit
     // Those bits are mutually exclusive
-    unsigned access_bits = (~msr_pr << 1) | msr_pr;
+    unsigned access_bits = ((msr_pr ^ 1) << 1) | msr_pr;
 
     for (int bat_index = 0; bat_index < 4; bat_index++) {
         PPC_BAT_entry* bat_entry = &dbat_array[bat_index];
