@@ -130,7 +130,7 @@ void ppc_set_cur_instruction(const uint8_t* ptr) {
 
 void ibat_update(uint32_t bat_reg) {
     int upper_reg_num;
-    uint32_t bl, lo_mask;
+    uint32_t bl, hi_mask;
     PPC_BAT_entry* bat_entry;
 
     upper_reg_num = bat_reg & 0xFFFFFFFE;
@@ -138,19 +138,19 @@ void ibat_update(uint32_t bat_reg) {
     if (ppc_state.spr[upper_reg_num] & 3) {    // is that BAT pair valid?
         bat_entry = &ibat_array[(bat_reg - 528) >> 1];
         bl        = (ppc_state.spr[upper_reg_num] >> 2) & 0x7FF;
-        lo_mask   = (bl << 17) | 0x1FFFF;
+        hi_mask   = ~((bl << 17) | 0x1FFFF);
 
         bat_entry->access  = ppc_state.spr[upper_reg_num] & 3;
         bat_entry->prot    = ppc_state.spr[upper_reg_num + 1] & 3;
-        bat_entry->lo_mask = lo_mask;
-        bat_entry->phys_hi = ppc_state.spr[upper_reg_num + 1] & ~lo_mask;
-        bat_entry->bepi    = ppc_state.spr[upper_reg_num] & ~lo_mask;
+        bat_entry->hi_mask = hi_mask;
+        bat_entry->phys_hi = ppc_state.spr[upper_reg_num + 1] & hi_mask;
+        bat_entry->bepi    = ppc_state.spr[upper_reg_num] & hi_mask;
     }
 }
 
 void dbat_update(uint32_t bat_reg) {
     int upper_reg_num;
-    uint32_t bl, lo_mask;
+    uint32_t bl, hi_mask;
     PPC_BAT_entry* bat_entry;
 
     upper_reg_num = bat_reg & 0xFFFFFFFE;
@@ -158,13 +158,13 @@ void dbat_update(uint32_t bat_reg) {
     if (ppc_state.spr[upper_reg_num] & 3) {    // is that BAT pair valid?
         bat_entry = &dbat_array[(bat_reg - 536) >> 1];
         bl        = (ppc_state.spr[upper_reg_num] >> 2) & 0x7FF;
-        lo_mask   = (bl << 17) | 0x1FFFF;
+        hi_mask   = ~((bl << 17) | 0x1FFFF);
 
         bat_entry->access  = ppc_state.spr[upper_reg_num] & 3;
         bat_entry->prot    = ppc_state.spr[upper_reg_num + 1] & 3;
-        bat_entry->lo_mask = lo_mask;
-        bat_entry->phys_hi = ppc_state.spr[upper_reg_num + 1] & ~lo_mask;
-        bat_entry->bepi    = ppc_state.spr[upper_reg_num] & ~lo_mask;
+        bat_entry->hi_mask = hi_mask;
+        bat_entry->phys_hi = ppc_state.spr[upper_reg_num + 1] & hi_mask;
+        bat_entry->bepi    = ppc_state.spr[upper_reg_num] & hi_mask;
     }
 }
 
@@ -309,7 +309,7 @@ static uint32_t ppc_mmu_instr_translate(uint32_t la) {
     for (int bat_index = 0; bat_index < 4; bat_index++) {
         PPC_BAT_entry* bat_entry = &ibat_array[bat_index];
 
-        if ((bat_entry->access & access_bits) && ((la & ~bat_entry->lo_mask) == bat_entry->bepi)) {
+        if ((bat_entry->access & access_bits) && ((la & bat_entry->hi_mask) == bat_entry->bepi)) {
             bat_hit = true;
 
             if (!bat_entry->prot) {
@@ -317,7 +317,7 @@ static uint32_t ppc_mmu_instr_translate(uint32_t la) {
             }
 
             // logical to physical translation
-            pa = bat_entry->phys_hi | (la & bat_entry->lo_mask);
+            pa = bat_entry->phys_hi | (la & ~bat_entry->hi_mask);
             break;
         }
     }
@@ -349,7 +349,7 @@ static uint32_t ppc_mmu_addr_translate(uint32_t la, int is_write) {
     for (int bat_index = 0; bat_index < 4; bat_index++) {
         PPC_BAT_entry* bat_entry = &dbat_array[bat_index];
 
-        if ((bat_entry->access & access_bits) && ((la & ~bat_entry->lo_mask) == bat_entry->bepi)) {
+        if ((bat_entry->access & access_bits) && ((la & bat_entry->hi_mask) == bat_entry->bepi)) {
             bat_hit = true;
 
             if (!bat_entry->prot || ((bat_entry->prot & 1) && is_write)) {
@@ -359,7 +359,7 @@ static uint32_t ppc_mmu_addr_translate(uint32_t la, int is_write) {
             }
 
             // logical to physical translation
-            pa = bat_entry->phys_hi | (la & bat_entry->lo_mask);
+            pa = bat_entry->phys_hi | (la & ~bat_entry->hi_mask);
             break;
         }
     }

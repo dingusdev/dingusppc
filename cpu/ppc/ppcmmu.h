@@ -36,7 +36,7 @@ typedef struct PPC_BAT_entry {
     uint8_t access;   /* copy of Vs | Vp bits */
     uint8_t prot;     /* copy of PP bits */
     uint32_t phys_hi; /* high-order bits for physical address generation */
-    uint32_t lo_mask; /* mask for low-order logical address bits */
+    uint32_t hi_mask; /* mask for high-order logical address bits */
     uint32_t bepi;    /* copy of Block effective page index */
 } PPC_BAT_entry;
 
