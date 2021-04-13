@@ -59,6 +59,7 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/debugger/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/devices/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/execution")
 add_subdirectory("${PROJECT_SOURCE_DIR}/machines/")
+add_subdirectory("${PROJECT_SOURCE_DIR}/utils/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/thirdparty/loguru/")
 
 #set(BUILD_EXAMPLE_PROGRAMS OFF CACHE BOOL "Build libsoundio example programs")
@@ -79,6 +80,7 @@ set(CLI11_ROOT ${PROJECT_SOURCE_DIR}/thirdparty/CLI11)
 include_directories("${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/devices"
                     "${PROJECT_SOURCE_DIR}/cpu/ppc"
                     "${PROJECT_SOURCE_DIR}/debugger"
+                    "${PROJECT_SOURCE_DIR}/utils"
 					"${PROJECT_SOURCE_DIR}/thirdparty/loguru/"
 					"${PROJECT_SOURCE_DIR}/thirdparty/SDL2/")
 #                    "${PROJECT_SOURCE_DIR}/thirdparty/cubeb/include")
@@ -98,6 +100,7 @@ add_executable(dingusppc ${SOURCES} $<TARGET_OBJECTS:debugger>
                                     $<TARGET_OBJECTS:devices>
                                     $<TARGET_OBJECTS:execution>
                                     $<TARGET_OBJECTS:machines>
+                                    $<TARGET_OBJECTS:utils>
                                     $<TARGET_OBJECTS:loguru>)
 
 if (WIN32)
@@ -120,6 +123,7 @@ if (DPPC_BUILD_PPC_TESTS)
                                            $<TARGET_OBJECTS:devices>
                                            $<TARGET_OBJECTS:execution>
                                            $<TARGET_OBJECTS:machines>
+                                           $<TARGET_OBJECTS:utils>
                                            $<TARGET_OBJECTS:loguru>)
 
     if (WIN32)
@@ -145,6 +149,7 @@ if (DPPC_BUILD_BENCHMARKS)
                                            $<TARGET_OBJECTS:devices>
                                            $<TARGET_OBJECTS:execution>
                                            $<TARGET_OBJECTS:machines>
+                                           $<TARGET_OBJECTS:utils>
                                            $<TARGET_OBJECTS:loguru>)
 
     target_link_libraries(bench1 cubeb ${SDL2_LIBRARIES} ${CMAKE_DL_LIBS}

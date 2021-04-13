@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "execution/interpreter_loop.h"
 #include "machines/machinefactory.h"
 #include "machines/machineproperties.h"
+#include "utils/profiler.h"
 #include "ppcemu.h"
 #include <cinttypes>
 #include <cstring>
@@ -152,6 +153,9 @@ int main(int argc, char** argv) {
 
     cout << "BootROM path: " << bootrom_path << endl;
     cout << "Execution mode: " << execution_mode << endl;
+
+    // initialize global profiler object
+    gProfilerObj.reset(new Profiler());
 
     if (create_machine_for_id(machine_str, bootrom_path) < 0) {
         goto bail;

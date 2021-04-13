@@ -31,6 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "../cpu/ppc/ppcdisasm.h"
 #include "../cpu/ppc/ppcemu.h"
 #include "../cpu/ppc/ppcmmu.h"
+#include "utils/profiler.h"
 
 #ifdef ENABLE_68K_DEBUGGER // optionally defined in CMakeLists.txt
     #include <capstone/capstone.h>
@@ -70,6 +71,7 @@ static void show_help() {
     cout << "  dump NT,X -- dump N memory cells of size T at address X" << endl;
     cout << "               T can be b(byte), w(word), d(double)," << endl;
     cout << "               q(quad) or c(character)." << endl;
+    cout << "  profile N -- print variables for profile N" << endl;
 #ifdef PROFILER
     cout << "  profiler  -- show stats related to the processor" << endl;
 #endif
@@ -365,7 +367,8 @@ static void print_gprs() {
 }
 
 void enter_debugger() {
-    string inp, cmd, addr_str, expr_str, reg_expr, last_cmd, reg_value_str, inst_string, inst_num_str;
+    string inp, cmd, addr_str, expr_str, reg_expr, last_cmd, reg_value_str,
+           inst_string, inst_num_str, profile_name;
     uint32_t addr, inst_grab;
     std::stringstream ss;
     int log_level, context;
@@ -396,6 +399,10 @@ void enter_debugger() {
             show_help();
         } else if (cmd == "quit") {
             break;
+        } else if (cmd == "profile") {
+            ss >> profile_name;
+
+            gProfilerObj->print_profile(profile_name);
         }
 #ifdef PROFILER
         else if (cmd == "profiler") {
