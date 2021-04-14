@@ -36,7 +36,7 @@ enum class ProfileVarFmt { DEC, HEX };
 typedef struct ProfileVar {
     std::string     name;
     ProfileVarFmt   format;
-    uint32_t        value;
+    uint64_t        value;
 } ProfileVar;
 
 /** Base class for user-defined profiles. */
@@ -47,6 +47,8 @@ public:
     virtual ~BaseProfile() = default;
 
     virtual void populate_variables(std::vector<ProfileVar>& vars) = 0;
+
+    virtual void reset(void) = 0; // reset profile counters
 
 private:
     std::string     name;
@@ -62,6 +64,8 @@ public:
     bool register_profile(std::string name, std::unique_ptr<BaseProfile> profile_obj);
 
     void print_profile(std::string name);
+
+    void reset_profile(std::string name);
 
 private:
     std::map<std::string, std::unique_ptr<BaseProfile>> profiles_map;

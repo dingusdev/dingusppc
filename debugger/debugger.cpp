@@ -57,34 +57,37 @@ static uint32_t str2num(string& num_str) {
 
 static void show_help() {
     cout << "Debugger commands:" << endl;
-    cout << "  step [N]  -- execute single instruction" << endl;
-    cout << "               N is an optional step count" << endl;
-    cout << "  si [N]    -- shortcut for step" << endl;
-    cout << "  next      -- same as step but treats subroutine calls" << endl;
-    cout << "               as single instructions." << endl;
-    cout << "  ni        -- shortcut for next" << endl;
-    cout << "  until X   -- execute until address X is reached" << endl;
-    cout << "  regs      -- dump content of the GRPs" << endl;
-    cout << "  set R=X   -- assign value X to register R" << endl;
-    cout << "               if R=loglevel, set the internal" << endl;
-    cout << "               log level to X whose range is -2...9" << endl;
-    cout << "  dump NT,X -- dump N memory cells of size T at address X" << endl;
-    cout << "               T can be b(byte), w(word), d(double)," << endl;
-    cout << "               q(quad) or c(character)." << endl;
-    cout << "  profile N -- print variables for profile N" << endl;
+    cout << "  step [N]     -- execute single instruction" << endl;
+    cout << "                  N is an optional step count" << endl;
+    cout << "  si [N]       -- shortcut for step" << endl;
+    cout << "  next         -- same as step but treats subroutine calls" << endl;
+    cout << "                  as single instructions." << endl;
+    cout << "  ni           -- shortcut for next" << endl;
+    cout << "  until X      -- execute until address X is reached" << endl;
+    cout << "  regs         -- dump content of the GRPs" << endl;
+    cout << "  set R=X      -- assign value X to register R" << endl;
+    cout << "                  if R=loglevel, set the internal" << endl;
+    cout << "                  log level to X whose range is -2...9" << endl;
+    cout << "  dump NT,X    -- dump N memory cells of size T at address X" << endl;
+    cout << "                  T can be b(byte), w(word), d(double)," << endl;
+    cout << "                  q(quad) or c(character)." << endl;
+    cout << "  profile C N  -- run subcommand C on profile N" << endl;
+    cout << "                  supported subcommands:" << endl;
+    cout << "                  'show' - show profile report" << endl;
+    cout << "                  'reset' - reset profile variables" << endl;
 #ifdef PROFILER
-    cout << "  profiler  -- show stats related to the processor" << endl;
+    cout << "  profiler     -- show stats related to the processor" << endl;
 #endif
-    cout << "  disas N,X -- disassemble N instructions starting at address X" << endl;
-    cout << "               X can be any number or a known register name" << endl;
-    cout << "               disas with no arguments defaults to disas 1,pc" << endl;
-    cout << "  da N,X    -- shortcut for disas" << endl;
+    cout << "  disas N,X    -- disassemble N instructions starting at address X" << endl;
+    cout << "                  X can be any number or a known register name" << endl;
+    cout << "                  disas with no arguments defaults to disas 1,pc" << endl;
+    cout << "  da N,X       -- shortcut for disas" << endl;
 #ifdef ENABLE_68K_DEBUGGER
-    cout << "  context X -- switch to the debugging context X." << endl;
-    cout << "               X can be either 'ppc' (default) or '68k'" << endl;
-    cout << "               Use 68k for debugging emulated 68k code only." << endl;
+    cout << "  context X    -- switch to the debugging context X." << endl;
+    cout << "                  X can be either 'ppc' (default) or '68k'" << endl;
+    cout << "                  Use 68k for debugging emulated 68k code only." << endl;
 #endif
-    cout << "  quit      -- quit the debugger" << endl << endl;
+    cout << "  quit         -- quit the debugger" << endl << endl;
     cout << "Pressing ENTER will repeat last command." << endl;
 }
 
@@ -368,7 +371,7 @@ static void print_gprs() {
 
 void enter_debugger() {
     string inp, cmd, addr_str, expr_str, reg_expr, last_cmd, reg_value_str,
-           inst_string, inst_num_str, profile_name;
+           inst_string, inst_num_str, profile_name, sub_cmd;
     uint32_t addr, inst_grab;
     std::stringstream ss;
     int log_level, context;
@@ -400,9 +403,16 @@ void enter_debugger() {
         } else if (cmd == "quit") {
             break;
         } else if (cmd == "profile") {
+            ss >> sub_cmd;
             ss >> profile_name;
 
-            gProfilerObj->print_profile(profile_name);
+            if (sub_cmd == "show") {
+                gProfilerObj->print_profile(profile_name);
+            } else if (sub_cmd == "reset") {
+                gProfilerObj->reset_profile(profile_name);
+            } else {
+                cout << "Unknown/empty subcommand " << sub_cmd << endl;
+            }
         }
 #ifdef PROFILER
         else if (cmd == "profiler") {

@@ -77,3 +77,13 @@ void Profiler::print_profile(std::string name)
 
     std::cout << std::endl;
 }
+
+void Profiler::reset_profile(std::string name)
+{
+    if (this->profiles_map.find(name) == this->profiles_map.end()) {
+        std::cout << "Profile " << name << " not found." << std::endl;
+        return;
+    }
+
+    this->profiles_map.find(name)->second->reset();
+}
