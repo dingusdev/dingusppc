@@ -55,57 +55,112 @@ AddressMapEntry last_ptab_area  = {0xFFFFFFFF, 0xFFFFFFFF};
 AddressMapEntry last_dma_area   = {0xFFFFFFFF, 0xFFFFFFFF};
 
 
-#define WRITE_BYTE(addr, val) (*(addr) = val)
-
-/* macro for generating code reading from physical memory */
-#define READ_PHYS_MEM(ENTRY, ADDR, OP, SIZE, UNVAL)                                                \
-    {                                                                                              \
-        if ((ADDR) >= (ENTRY).start && ((ADDR) + (SIZE)) <= (ENTRY).end) {                         \
-            ret = OP((ENTRY).mem_ptr + ((ADDR) - (ENTRY).start));                                  \
-        } else {                                                                                   \
-            AddressMapEntry* entry = mem_ctrl_instance->find_range((ADDR));                        \
-            if (entry) {                                                                           \
-                if (entry->type & (RT_ROM | RT_RAM)) {                                             \
-                    (ENTRY).start   = entry->start;                                                \
-                    (ENTRY).end     = entry->end;                                                  \
-                    (ENTRY).mem_ptr = entry->mem_ptr;                                              \
-                    ret             = OP((ENTRY).mem_ptr + ((ADDR) - (ENTRY).start));              \
-                } else if (entry->type & RT_MMIO) {                                                \
-                    ret = entry->devobj->read(entry->start, (ADDR)-entry->start, (SIZE));          \
-                } else {                                                                           \
-                    LOG_F(ERROR, "Please check your address map! \n");                             \
-                    ret = (UNVAL);                                                                 \
-                }                                                                                  \
-            } else {                                                                               \
-                LOG_F(WARNING, "Read from unmapped memory at 0x%08X!\n", (ADDR));                  \
-                ret = (UNVAL);                                                                     \
-            }                                                                                      \
-        }                                                                                          \
+template <class T, const bool is_aligned>
+static inline T read_phys_mem(AddressMapEntry *mru_rgn, uint32_t addr)
+{
+    if (addr < mru_rgn->start || (addr + sizeof(T)) > mru_rgn->end) {
+        AddressMapEntry* entry = mem_ctrl_instance->find_range(addr);
+        if (entry) {
+            *mru_rgn = *entry;
+        } else {
+            LOG_F(ERROR, "Read from unmapped memory at 0x%08X!\n", addr);
+            return (-1ULL ? sizeof(T) == 8 : -1UL);
+        }
     }
 
-/* macro for generating code writing to physical memory */
-#define WRITE_PHYS_MEM(ENTRY, ADDR, OP, VAL, SIZE)                                                 \
-    {                                                                                              \
-        if ((ADDR) >= (ENTRY).start && ((ADDR) + (SIZE)) <= (ENTRY).end) {                         \
-            OP((ENTRY).mem_ptr + ((ADDR) - (ENTRY).start), (VAL));                                 \
-        } else {                                                                                   \
-            AddressMapEntry* entry = mem_ctrl_instance->find_range((ADDR));                        \
-            if (entry) {                                                                           \
-                if (entry->type & RT_RAM) {                                                        \
-                    (ENTRY).start   = entry->start;                                                \
-                    (ENTRY).end     = entry->end;                                                  \
-                    (ENTRY).mem_ptr = entry->mem_ptr;                                              \
-                    OP((ENTRY).mem_ptr + ((ADDR) - (ENTRY).start), (VAL));                         \
-                } else if (entry->type & RT_MMIO) {                                                \
-                    entry->devobj->write(entry->start, (ADDR)-entry->start, (VAL), (SIZE));        \
-                } else {                                                                           \
-                    LOG_F(ERROR, "Please check your address map!\n");                              \
-                }                                                                                  \
-            } else {                                                                               \
-                LOG_F(WARNING, "Write to unmapped memory at 0x%08X!\n", (ADDR));                   \
-            }                                                                                      \
-        }                                                                                          \
+    if (mru_rgn->type & (RT_ROM | RT_RAM)) {
+#ifdef MMU_PROFILING
+        dmem_reads_total++;
+#endif
+        switch(sizeof(T)) {
+        case 1:
+            return *(mru_rgn->mem_ptr + (addr - mru_rgn->start));
+        case 2:
+            if (is_aligned) {
+                return READ_WORD_BE_A(mru_rgn->mem_ptr + (addr - mru_rgn->start));
+            } else {
+                return READ_WORD_BE_U(mru_rgn->mem_ptr + (addr - mru_rgn->start));
+            }
+        case 4:
+            if (is_aligned) {
+                return READ_DWORD_BE_A(mru_rgn->mem_ptr + (addr - mru_rgn->start));
+            } else {
+                return READ_DWORD_BE_U(mru_rgn->mem_ptr + (addr - mru_rgn->start));
+            }
+        case 8:
+            if (is_aligned) {
+                return READ_QWORD_BE_A(mru_rgn->mem_ptr + (addr - mru_rgn->start));
+            }
+        default:
+            LOG_F(ERROR, "READ_PHYS: invalid size %lu passed\n", sizeof(T));
+            return (-1ULL ? sizeof(T) == 8 : -1UL);
+        }
+    } else if (mru_rgn->type & RT_MMIO) {
+#ifdef MMU_PROFILING
+        iomem_reads_total++;
+#endif
+        return (mru_rgn->devobj->read(mru_rgn->start,
+                addr - mru_rgn->start, sizeof(T)));
+    } else {
+        LOG_F(ERROR, "READ_PHYS: invalid region type!\n");
+        return (-1ULL ? sizeof(T) == 8 : -1UL);
     }
+}
+
+template <class T, const bool is_aligned>
+static inline void write_phys_mem(AddressMapEntry *mru_rgn, uint32_t addr, T value)
+{
+    if (addr < mru_rgn->start || (addr + sizeof(T)) > mru_rgn->end) {
+        AddressMapEntry* entry = mem_ctrl_instance->find_range(addr);
+        if (entry) {
+            *mru_rgn = *entry;
+        } else {
+            LOG_F(ERROR, "Write to unmapped memory at 0x%08X!\n", addr);
+            return;
+        }
+    }
+
+    if (mru_rgn->type & RT_RAM) {
+#ifdef MMU_PROFILING
+        dmem_writes_total++;
+#endif
+        switch(sizeof(T)) {
+        case 1:
+            *(mru_rgn->mem_ptr + (addr - mru_rgn->start)) = value;
+            break;
+        case 2:
+            if (is_aligned) {
+                WRITE_WORD_BE_A(mru_rgn->mem_ptr + (addr - mru_rgn->start), value);
+            } else {
+                WRITE_WORD_BE_U(mru_rgn->mem_ptr + (addr - mru_rgn->start), value);
+            }
+            break;
+        case 4:
+            if (is_aligned) {
+                WRITE_DWORD_BE_A(mru_rgn->mem_ptr + (addr - mru_rgn->start), value);
+            } else {
+                WRITE_DWORD_BE_U(mru_rgn->mem_ptr + (addr - mru_rgn->start), value);
+            }
+            break;
+        case 8:
+            if (is_aligned) {
+                WRITE_QWORD_BE_A(mru_rgn->mem_ptr + (addr - mru_rgn->start), value);
+            }
+            break;
+        default:
+            LOG_F(ERROR, "WRITE_PHYS: invalid size %lu passed\n", sizeof(T));
+            return;
+        }
+    } else if (mru_rgn->type & RT_MMIO) {
+#ifdef MMU_PROFILING
+        iomem_writes_total++;
+#endif
+        mru_rgn->devobj->write(mru_rgn->start, addr - mru_rgn->start, value,
+                               sizeof(T));
+    } else {
+        LOG_F(ERROR, "WRITE_PHYS: invalid region type!\n");
+    }
+}
 
 uint8_t* mmu_get_dma_mem(uint32_t addr, uint32_t size) {
     if (addr >= last_dma_area.start && (addr + size) <= last_dma_area.end) {
@@ -385,28 +440,28 @@ static void mem_write_unaligned(uint32_t addr, uint32_t value, uint32_t size) {
         uint32_t phys_addr;
         uint32_t shift = (size - 1) * 8;
 
-        // Break misaligned memory accesses into multiple, smaller accesses
+        // Break misaligned memory accesses into multiple, bytewise accesses
         // and retranslate on page boundary.
         // Because such accesses suffer a performance penalty, they will be
         // presumably very rare so don't care much about performance.
         for (int i = 0; i < size; shift -= 8, addr++, phys_addr++, i++) {
             if ((ppc_state.msr & 0x10) && (!i || !(addr & 0xFFF))) {
-                phys_addr = ppc_mmu_addr_translate(addr, 0);
+                phys_addr = ppc_mmu_addr_translate(addr, 1);
             }
 
-            WRITE_PHYS_MEM(last_write_area, phys_addr, WRITE_BYTE,
-                (value >> shift) & 0xFF, 1);
+            write_phys_mem<uint8_t, false>(&last_write_area, phys_addr,
+                                          (value >> shift) & 0xFF);
         }
     } else {
         // data address translation if enabled
         if (ppc_state.msr & 0x10) {
-            addr = ppc_mmu_addr_translate(addr, 0);
+            addr = ppc_mmu_addr_translate(addr, 1);
         }
 
         if (size == 2) {
-            WRITE_PHYS_MEM(last_write_area, addr, WRITE_WORD_BE_U, value, 2);
+            write_phys_mem<uint16_t, false>(&last_write_area, addr, value);
         } else {
-            WRITE_PHYS_MEM(last_write_area, addr, WRITE_DWORD_BE_U, value, 4);
+            write_phys_mem<uint32_t, false>(&last_write_area, addr, value);
         }
     }
 }
@@ -417,12 +472,13 @@ void mem_write_byte(uint32_t addr, uint8_t value) {
         addr = ppc_mmu_addr_translate(addr, 1);
     }
 
-    WRITE_PHYS_MEM(last_write_area, addr, WRITE_BYTE, value, 1);
+    write_phys_mem<uint8_t, true>(&last_write_area, addr, value);
 }
 
 void mem_write_word(uint32_t addr, uint16_t value) {
     if (addr & 1) {
         mem_write_unaligned(addr, value, 2);
+        return;
     }
 
     /* data address translation if enabled */
@@ -430,12 +486,13 @@ void mem_write_word(uint32_t addr, uint16_t value) {
         addr = ppc_mmu_addr_translate(addr, 1);
     }
 
-    WRITE_PHYS_MEM(last_write_area, addr, WRITE_WORD_BE_A, value, 2);
+    write_phys_mem<uint16_t, true>(&last_write_area, addr, value);
 }
 
 void mem_write_dword(uint32_t addr, uint32_t value) {
     if (addr & 3) {
         mem_write_unaligned(addr, value, 4);
+        return;
     }
 
     /* data address translation if enabled */
@@ -443,7 +500,7 @@ void mem_write_dword(uint32_t addr, uint32_t value) {
         addr = ppc_mmu_addr_translate(addr, 1);
     }
 
-    WRITE_PHYS_MEM(last_write_area, addr, WRITE_DWORD_BE_A, value, 4);
+    write_phys_mem<uint32_t, true>(&last_write_area, addr, value);
 }
 
 void mem_write_qword(uint32_t addr, uint64_t value) {
@@ -457,7 +514,7 @@ void mem_write_qword(uint32_t addr, uint64_t value) {
         addr = ppc_mmu_addr_translate(addr, 1);
     }
 
-    WRITE_PHYS_MEM(last_write_area, addr, WRITE_QWORD_BE_A, value, 8);
+    write_phys_mem<uint64_t, true>(&last_write_area, addr, value);
 }
 
 static uint32_t mem_grab_unaligned(uint32_t addr, uint32_t size) {
@@ -475,7 +532,7 @@ static uint32_t mem_grab_unaligned(uint32_t addr, uint32_t size) {
         uint32_t phys_addr;
         uint32_t res = 0;
 
-        // Break misaligned memory accesses into multiple, smaller accesses
+        // Break misaligned memory accesses into multiple, bytewise accesses
         // and retranslate on page boundary.
         // Because such accesses suffer a performance penalty, they will be
         // presumably very rare so don't care much about performance.
@@ -484,8 +541,7 @@ static uint32_t mem_grab_unaligned(uint32_t addr, uint32_t size) {
                 phys_addr = ppc_mmu_addr_translate(addr, 0);
             }
 
-            READ_PHYS_MEM(last_read_area, phys_addr, *, 1, 0xFFU);
-            res = (res << 8) | ret;
+            res = (res << 8) | read_phys_mem<uint8_t, false>(&last_read_area, phys_addr);
         }
         return res;
 
@@ -496,9 +552,9 @@ static uint32_t mem_grab_unaligned(uint32_t addr, uint32_t size) {
         }
 
         if (size == 2) {
-            READ_PHYS_MEM(last_read_area, addr, READ_WORD_BE_U, 2, 0xFFFFU);
+            return read_phys_mem<uint16_t, false>(&last_read_area, addr);
         } else {
-            READ_PHYS_MEM(last_read_area, addr, READ_DWORD_BE_U, 4, 0xFFFFFFFFUL);
+            return read_phys_mem<uint32_t, false>(&last_read_area, addr);
         }
     }
 
@@ -507,20 +563,15 @@ static uint32_t mem_grab_unaligned(uint32_t addr, uint32_t size) {
 
 /** Grab a value from memory into a register */
 uint8_t mem_grab_byte(uint32_t addr) {
-    uint8_t ret;
-
     /* data address translation if enabled */
     if (ppc_state.msr & 0x10) {
         addr = ppc_mmu_addr_translate(addr, 0);
     }
 
-    READ_PHYS_MEM(last_read_area, addr, *, 1, 0xFFU);
-    return ret;
+    return read_phys_mem<uint8_t, true>(&last_read_area, addr);
 }
 
 uint16_t mem_grab_word(uint32_t addr) {
-    uint16_t ret;
-
     if (addr & 1) {
         return mem_grab_unaligned(addr, 2);
     }
@@ -530,13 +581,10 @@ uint16_t mem_grab_word(uint32_t addr) {
         addr = ppc_mmu_addr_translate(addr, 0);
     }
 
-    READ_PHYS_MEM(last_read_area, addr, READ_WORD_BE_A, 2, 0xFFFFU);
-    return ret;
+    return read_phys_mem<uint16_t, true>(&last_read_area, addr);
 }
 
 uint32_t mem_grab_dword(uint32_t addr) {
-    uint32_t ret;
-
     if (addr & 3) {
         return mem_grab_unaligned(addr, 4);
     }
@@ -546,13 +594,10 @@ uint32_t mem_grab_dword(uint32_t addr) {
         addr = ppc_mmu_addr_translate(addr, 0);
     }
 
-    READ_PHYS_MEM(last_read_area, addr, READ_DWORD_BE_A, 4, 0xFFFFFFFFUL);
-    return ret;
+    return read_phys_mem<uint32_t, true>(&last_read_area, addr);
 }
 
 uint64_t mem_grab_qword(uint32_t addr) {
-    uint64_t ret;
-
     if (addr & 7) {
         LOG_F(ERROR, "SOS! Attempt to read unaligned QWORD at 0x%08X\n", addr);
         exit(-1);    // FIXME!
@@ -563,8 +608,7 @@ uint64_t mem_grab_qword(uint32_t addr) {
         addr = ppc_mmu_addr_translate(addr, 0);
     }
 
-    READ_PHYS_MEM(last_read_area, addr, READ_QWORD_BE_A, 8, 0xFFFFFFFFFFFFFFFFULL);
-    return ret;
+    return read_phys_mem<uint64_t, true>(&last_read_area, addr);
 }
 
 uint8_t* quickinstruction_translate(uint32_t addr) {
