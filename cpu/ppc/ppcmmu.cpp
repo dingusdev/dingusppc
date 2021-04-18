@@ -25,7 +25,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     - implement TLB
     - implement 601-style BATs
     - add proper error and exception handling
-    - clarify what to do in the case of unaligned memory accesses
  */
 
 #include "ppcmmu.h"
@@ -46,6 +45,95 @@ void (*mmu_exception_handler)(Except_Type exception_type, uint32_t srr1_bits);
 /** PowerPC-style MMU BAT arrays (NULL initialization isn't prescribed). */
 PPC_BAT_entry ibat_array[4] = {{0}};
 PPC_BAT_entry dbat_array[4] = {{0}};
+
+//#define MMU_PROFILING // enable MMU profiling
+
+/* MMU profiling */
+#ifdef MMU_PROFILING
+
+/* global variables for lightweight MMU profiling */
+uint32_t    dmem_reads_total   = 0; // counts reads from data memory
+uint32_t    iomem_reads_total  = 0; // counts I/O memory reads
+uint32_t    dmem_writes_total  = 0; // counts writes to data memory
+uint32_t    iomem_writes_total = 0; // counts I/O memory writes
+uint32_t    exec_reads_total   = 0; // counts reads from executable memory
+uint32_t    bat_transl_total   = 0; // counts BAT translations
+uint32_t    ptab_transl_total  = 0; // counts page table translations
+uint32_t    unaligned_reads    = 0; // counts unaligned reads
+uint32_t    unaligned_writes   = 0; // counts unaligned writes
+uint32_t    unaligned_crossp_r = 0; // counts unaligned crosspage reads
+uint32_t    unaligned_crossp_w = 0; // counts unaligned crosspage writes
+
+#include "utils/profiler.h"
+#include <memory>
+
+class MMUProfile : public BaseProfile {
+public:
+    MMUProfile() : BaseProfile("PPC_MMU") {};
+
+    void populate_variables(std::vector<ProfileVar>& vars) {
+        vars.clear();
+
+        vars.push_back({.name = "Data Memory Reads Total",
+                        .format = ProfileVarFmt::DEC,
+                        .value = dmem_reads_total});
+
+        vars.push_back({.name = "I/O Memory Reads Total",
+                        .format = ProfileVarFmt::DEC,
+                        .value = iomem_reads_total});
+
+        vars.push_back({.name = "Data Memory Writes Total",
+                        .format = ProfileVarFmt::DEC,
+                        .value = dmem_writes_total});
+
+        vars.push_back({.name = "I/O Memory Writes Total",
+                        .format = ProfileVarFmt::DEC,
+                        .value = iomem_writes_total});
+
+        vars.push_back({.name = "Reads from Executable Memory",
+                        .format = ProfileVarFmt::DEC,
+                        .value = exec_reads_total});
+
+        vars.push_back({.name = "BAT Translations Total",
+                        .format = ProfileVarFmt::DEC,
+                        .value = bat_transl_total});
+
+        vars.push_back({.name = "Page Table Translations Total",
+                        .format = ProfileVarFmt::DEC,
+                        .value = ptab_transl_total});
+
+        vars.push_back({.name = "Unaligned Reads Total",
+                        .format = ProfileVarFmt::DEC,
+                        .value = unaligned_reads});
+
+        vars.push_back({.name = "Unaligned Writes Total",
+                        .format = ProfileVarFmt::DEC,
+                        .value = unaligned_writes});
+
+        vars.push_back({.name = "Unaligned Crosspage Reads Total",
+                        .format = ProfileVarFmt::DEC,
+                        .value = unaligned_crossp_r});
+
+        vars.push_back({.name = "Unaligned Crosspage Writes Total",
+                        .format = ProfileVarFmt::DEC,
+                        .value = unaligned_crossp_w});
+    };
+
+    void reset() {
+        dmem_reads_total   = 0;
+        iomem_reads_total  = 0;
+        dmem_writes_total  = 0;
+        iomem_writes_total = 0;
+        exec_reads_total   = 0;
+        bat_transl_total   = 0;
+        ptab_transl_total  = 0;
+        unaligned_reads    = 0;
+        unaligned_writes   = 0;
+        unaligned_crossp_r = 0;
+        unaligned_crossp_w = 0;
+    };
+};
+#endif
 
 /** remember recently used physical memory regions for quicker translation. */
 AddressMapEntry last_read_area  = {0xFFFFFFFF, 0xFFFFFFFF};
@@ -367,6 +455,10 @@ static uint32_t ppc_mmu_instr_translate(uint32_t la) {
         if ((bat_entry->access & access_bits) && ((la & bat_entry->hi_mask) == bat_entry->bepi)) {
             bat_hit = true;
 
+#ifdef MMU_PROFILING
+            bat_transl_total++;
+#endif
+
             if (!bat_entry->prot) {
                 mmu_exception_handler(Except_Type::EXC_ISI, 0x08000000);
             }
@@ -380,6 +472,10 @@ static uint32_t ppc_mmu_instr_translate(uint32_t la) {
     /* page address translation */
     if (!bat_hit) {
         pa = page_address_translate(la, true, msr_pr, 0);
+
+#ifdef MMU_PROFILING
+        ptab_transl_total++;
+#endif
     }
 
     return pa;
@@ -407,6 +503,10 @@ static uint32_t ppc_mmu_addr_translate(uint32_t la, int is_write) {
         if ((bat_entry->access & access_bits) && ((la & bat_entry->hi_mask) == bat_entry->bepi)) {
             bat_hit = true;
 
+#ifdef MMU_PROFILING
+            bat_transl_total++;
+#endif
+
             if (!bat_entry->prot || ((bat_entry->prot & 1) && is_write)) {
                 ppc_state.spr[SPR::DSISR] = 0x08000000 | (is_write << 25);
                 ppc_state.spr[SPR::DAR]   = la;
@@ -422,6 +522,10 @@ static uint32_t ppc_mmu_addr_translate(uint32_t la, int is_write) {
     /* page address translation */
     if (!bat_hit) {
         pa = page_address_translate(la, false, msr_pr, is_write);
+
+#ifdef MMU_PROFILING
+        ptab_transl_total++;
+#endif
     }
 
     return pa;
@@ -434,8 +538,9 @@ static void mem_write_unaligned(uint32_t addr, uint32_t value, uint32_t size) {
 
     if (((addr & 0xFFF) + size) > 0x1000) {
         // Special case: unaligned cross-page writes
-        LOG_F(WARNING, "Cross-page unaligned write, addr=%08X, size=%d\n",
-            addr, size);
+#ifdef MMU_PROFILING
+        unaligned_crossp_w++;
+#endif
 
         uint32_t phys_addr;
         uint32_t shift = (size - 1) * 8;
@@ -463,6 +568,10 @@ static void mem_write_unaligned(uint32_t addr, uint32_t value, uint32_t size) {
         } else {
             write_phys_mem<uint32_t, false>(&last_write_area, addr, value);
         }
+
+#ifdef MMU_PROFILING
+        unaligned_writes++;
+#endif
     }
 }
 
@@ -526,8 +635,9 @@ static uint32_t mem_grab_unaligned(uint32_t addr, uint32_t size) {
 
     if (((addr & 0xFFF) + size) > 0x1000) {
         // Special case: misaligned cross-page reads
-        LOG_F(WARNING, "Cross-page unaligned read, addr=%08X, size=%d\n",
-            addr, size);
+#ifdef MMU_PROFILING
+        unaligned_crossp_r++;
+#endif
 
         uint32_t phys_addr;
         uint32_t res = 0;
@@ -541,7 +651,8 @@ static uint32_t mem_grab_unaligned(uint32_t addr, uint32_t size) {
                 phys_addr = ppc_mmu_addr_translate(addr, 0);
             }
 
-            res = (res << 8) | read_phys_mem<uint8_t, false>(&last_read_area, phys_addr);
+            res = (res << 8) |
+                read_phys_mem<uint8_t, false>(&last_read_area, phys_addr);
         }
         return res;
 
@@ -556,6 +667,10 @@ static uint32_t mem_grab_unaligned(uint32_t addr, uint32_t size) {
         } else {
             return read_phys_mem<uint32_t, false>(&last_read_area, addr);
         }
+
+#ifdef MMU_PROFILING
+        unaligned_reads++;
+#endif
     }
 
     return ret;
@@ -613,6 +728,10 @@ uint64_t mem_grab_qword(uint32_t addr) {
 
 uint8_t* quickinstruction_translate(uint32_t addr) {
     uint8_t* real_addr;
+
+#ifdef MMU_PROFILING
+    exec_reads_total++;
+#endif
 
     /* perform instruction address translation if enabled */
     if (ppc_state.msr & 0x20) {
@@ -685,4 +804,9 @@ uint64_t mem_read_dbg(uint32_t virt_addr, uint32_t size) {
 
 void ppc_mmu_init() {
     mmu_exception_handler = ppc_exception_handler;
+
+#ifdef MMU_PROFILING
+    gProfilerObj->register_profile("PPC_MMU",
+        std::unique_ptr<BaseProfile>(new MMUProfile()));
+#endif
 }
