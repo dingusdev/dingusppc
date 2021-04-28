@@ -52,17 +52,17 @@ PPC_BAT_entry dbat_array[4] = {{0}};
 #ifdef MMU_PROFILING
 
 /* global variables for lightweight MMU profiling */
-uint32_t    dmem_reads_total   = 0; // counts reads from data memory
-uint32_t    iomem_reads_total  = 0; // counts I/O memory reads
-uint32_t    dmem_writes_total  = 0; // counts writes to data memory
-uint32_t    iomem_writes_total = 0; // counts I/O memory writes
-uint32_t    exec_reads_total   = 0; // counts reads from executable memory
-uint32_t    bat_transl_total   = 0; // counts BAT translations
-uint32_t    ptab_transl_total  = 0; // counts page table translations
-uint32_t    unaligned_reads    = 0; // counts unaligned reads
-uint32_t    unaligned_writes   = 0; // counts unaligned writes
-uint32_t    unaligned_crossp_r = 0; // counts unaligned crosspage reads
-uint32_t    unaligned_crossp_w = 0; // counts unaligned crosspage writes
+uint64_t    dmem_reads_total   = 0; // counts reads from data memory
+uint64_t    iomem_reads_total  = 0; // counts I/O memory reads
+uint64_t    dmem_writes_total  = 0; // counts writes to data memory
+uint64_t    iomem_writes_total = 0; // counts I/O memory writes
+uint64_t    exec_reads_total   = 0; // counts reads from executable memory
+uint64_t    bat_transl_total   = 0; // counts BAT translations
+uint64_t    ptab_transl_total  = 0; // counts page table translations
+uint64_t    unaligned_reads    = 0; // counts unaligned reads
+uint64_t    unaligned_writes   = 0; // counts unaligned writes
+uint64_t    unaligned_crossp_r = 0; // counts unaligned crosspage reads
+uint64_t    unaligned_crossp_w = 0; // counts unaligned crosspage writes
 
 #include "utils/profiler.h"
 #include <memory>
@@ -483,10 +483,6 @@ static uint32_t ppc_mmu_instr_translate(uint32_t la) {
 
 /** PowerPC-style MMU data address translation. */
 static uint32_t ppc_mmu_addr_translate(uint32_t la, int is_write) {
-#ifdef PROFILER
-    mmu_translations_num++;
-#endif
-
     uint32_t pa; /* translated physical address */
 
     bool bat_hit    = false;
