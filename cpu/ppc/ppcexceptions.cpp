@@ -30,8 +30,8 @@ jmp_buf exc_env; /* Global exception environment. */
 
 [[noreturn]] void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
     grab_exception = true;
-#ifdef PROFILER
-    exceptions_performed++;
+#ifdef CPU_PROFILING
+    exceptions_processed++;
 #endif
     bb_kind = BB_end_kind::BB_EXCEPTION;
 

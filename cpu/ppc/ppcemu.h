@@ -40,6 +40,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Uncomment this to use Visual Studio built-in functions.
 //#define USE_VS_BUILTINS 1
 
+//#define CPU_PROFILING // enable CPU profiling
+
 enum endian_switch { big_end = 0, little_end = 1 };
 
 typedef void (*PPCOpcode)(void);
@@ -243,9 +245,13 @@ extern uint32_t ppc_effective_address;
 extern uint32_t ppc_next_instruction_address;
 
 // Profiling Stats
-extern uint32_t mmu_translations_num;
-extern uint32_t exceptions_performed;
-extern uint32_t supervisor_inst_num;
+#ifdef CPU_PROFILING
+extern uint64_t num_executed_instrs;
+extern uint64_t num_supervisor_instrs;
+extern uint64_t num_int_loads;
+extern uint64_t num_int_stores;
+extern uint64_t exceptions_processed;
+#endif
 
 // Function prototypes
 extern void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t proc_version);

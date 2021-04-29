@@ -414,13 +414,6 @@ void enter_debugger() {
                 cout << "Unknown/empty subcommand " << sub_cmd << endl;
             }
         }
-#ifdef PROFILER
-        else if (cmd == "profiler") {
-            cout << "Number of Supervisor Instructions Executed:" << supervisor_inst_num << endl;
-            cout << "Exception Handler Ran:" << exceptions_performed << endl;
-            cout << "Number of MMU Translations:" << mmu_translations_num << endl;
-        }
-#endif
         else if (cmd == "regs") {
             if (context == 2) {
 #ifdef ENABLE_68K_DEBUGGER

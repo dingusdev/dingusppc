@@ -69,6 +69,57 @@ uint32_t decr;              /* current value of PPC DEC register */
 uint8_t  old_decr_msb;      /* MSB value for previous DEC value */
 uint8_t  tbr_factor;        /* cycles_count to TBR freq ratio in 2^x units */
 
+#ifdef CPU_PROFILING
+
+/* global variables for lightweight CPU profiling */
+uint64_t num_executed_instrs;
+uint64_t num_supervisor_instrs;
+uint64_t num_int_loads;
+uint64_t num_int_stores;
+uint64_t exceptions_processed;
+
+#include "utils/profiler.h"
+#include <memory>
+
+class CPUProfile : public BaseProfile {
+public:
+    CPUProfile() : BaseProfile("PPC_CPU") {};
+
+    void populate_variables(std::vector<ProfileVar>& vars) {
+        vars.clear();
+
+        vars.push_back({.name = "Executed Instructions Total",
+                        .format = ProfileVarFmt::DEC,
+                        .value = num_executed_instrs});
+
+        vars.push_back({.name = "Executed Supervisor Instructions",
+                        .format = ProfileVarFmt::DEC,
+                        .value = num_supervisor_instrs});
+
+        vars.push_back({.name = "Integer Load Instructions",
+                        .format = ProfileVarFmt::DEC,
+                        .value = num_int_loads});
+
+        vars.push_back({.name = "Integer Store Instructions",
+                        .format = ProfileVarFmt::DEC,
+                        .value = num_int_stores});
+
+        vars.push_back({.name = "Exceptions processed",
+                        .format = ProfileVarFmt::DEC,
+                        .value = exceptions_processed});
+    };
+
+    void reset() {
+        num_executed_instrs = 0;
+        num_supervisor_instrs = 0;
+        num_int_loads = 0;
+        num_int_stores = 0;
+        exceptions_processed = 0;
+    };
+};
+
+#endif
+
 /** Opcode lookup tables. */
 
 /** Primary opcode (bits 0...5) lookup table. */
@@ -232,6 +283,9 @@ void ppc_opcode63() {
 /* Dispatch using main opcode */
 void ppc_main_opcode()
 {
+#ifdef CPU_PROFILING
+    num_executed_instrs++;
+#endif
     OpcodeGrabber[(ppc_cur_instruction >> 26) & 0x3F]();
 }
 
@@ -741,6 +795,11 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t proc_version) {
 
     /* redirect code execution to reset vector */
     ppc_state.pc = 0xFFF00100;
+
+#ifdef CPU_PROFILING
+    gProfilerObj->register_profile("PPC_CPU",
+        std::unique_ptr<BaseProfile>(new CPUProfile()));
+#endif
 }
 
 void print_fprs() {
