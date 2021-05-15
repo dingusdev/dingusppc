@@ -824,6 +824,7 @@ void dppc_interpreter::ppc_mtmsr() {
     }
     reg_s         = (ppc_cur_instruction >> 21) & 31;
     ppc_state.msr = ppc_state.gpr[reg_s];
+    mmu_change_mode();
 }
 
 void dppc_interpreter::ppc_mfspr() {
@@ -1277,6 +1278,8 @@ void dppc_interpreter::ppc_rfi() {
     uint32_t new_msr_val         = (ppc_state.msr & ~(0x87C0FF73UL));
     ppc_state.msr                = (new_msr_val | new_srr1_val) & 0xFFFBFFFFUL;
     ppc_next_instruction_address = ppc_state.spr[SPR::SRR0] & 0xFFFFFFFCUL;
+
+    mmu_change_mode();
 
     grab_return = true;
     bb_kind     = BB_end_kind::BB_RFI;

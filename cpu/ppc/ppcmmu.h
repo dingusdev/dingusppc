@@ -40,11 +40,26 @@ typedef struct PPC_BAT_entry {
     uint32_t bepi;    /* copy of Block effective page index */
 } PPC_BAT_entry;
 
+/** Block address translation types. */
+enum BATType : int {
+    Instruction,
+    Data
+};
+
+/** Result of the block address translation. */
+typedef struct BATResult {
+    bool        hit;
+    uint8_t     prot;
+    uint32_t    phys;
+} BATResult;
+
 
 extern void ibat_update(uint32_t bat_reg);
 extern void dbat_update(uint32_t bat_reg);
 
 extern uint8_t* mmu_get_dma_mem(uint32_t addr, uint32_t size);
+
+extern void mmu_change_mode(void);
 
 extern void ppc_set_cur_instruction(const uint8_t* ptr);
 extern void mem_write_byte(uint32_t addr, uint8_t value);

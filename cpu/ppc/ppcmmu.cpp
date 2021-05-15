@@ -135,6 +135,13 @@ public:
 };
 #endif
 
+/** Temporary TLB test variables. */
+bool        MemAccessType; // true - memory, false - I/O
+uint64_t    MemAddr = 0;
+MMIODevice  *Device = 0;
+uint32_t    DevOffset = 0;
+
+
 /** remember recently used physical memory regions for quicker translation. */
 AddressMapEntry last_read_area  = {0xFFFFFFFF, 0xFFFFFFFF};
 AddressMapEntry last_write_area = {0xFFFFFFFF, 0xFFFFFFFF};
@@ -160,6 +167,17 @@ static inline T read_phys_mem(AddressMapEntry *mru_rgn, uint32_t addr)
 #ifdef MMU_PROFILING
         dmem_reads_total++;
 #endif
+
+        if (!MemAccessType) {
+            LOG_F(ERROR, "TLB real memory access expected!");
+        }
+
+        if ((mru_rgn->mem_ptr + (addr - mru_rgn->start)) != (uint8_t *)MemAddr) {
+            LOG_F(ERROR, "TLB address mismatch! Expected: 0x%llu, got: 0x%llu",
+                  (uint64_t)(mru_rgn->mem_ptr + (addr - mru_rgn->start)),
+                  (uint64_t)MemAddr);
+        }
+
         switch(sizeof(T)) {
         case 1:
             return *(mru_rgn->mem_ptr + (addr - mru_rgn->start));
@@ -187,6 +205,15 @@ static inline T read_phys_mem(AddressMapEntry *mru_rgn, uint32_t addr)
 #ifdef MMU_PROFILING
         iomem_reads_total++;
 #endif
+        if (MemAccessType) {
+            LOG_F(ERROR, "TLB I/O memory access expected!");
+        }
+
+        if (mru_rgn->devobj != Device || (addr - mru_rgn->start) != DevOffset) {
+            LOG_F(ERROR, "TLB MMIO access mismatch! Expected: 0x%X, got: 0x%X",
+                  addr - mru_rgn->start, DevOffset);
+        }
+
         return (mru_rgn->devobj->read(mru_rgn->start,
                 addr - mru_rgn->start, sizeof(T)));
     } else {
@@ -309,6 +336,43 @@ void dbat_update(uint32_t bat_reg) {
         bat_entry->phys_hi = ppc_state.spr[upper_reg_num + 1] & hi_mask;
         bat_entry->bepi    = ppc_state.spr[upper_reg_num] & hi_mask;
     }
+}
+
+/** PowerPC-style block address translation. */
+template <const BATType type>
+static BATResult ppc_block_address_translation(uint32_t la)
+{
+    uint32_t pa;    // translated physical address
+    uint8_t  prot;  // protection bits for the translated address
+    PPC_BAT_entry *bat_array;
+
+    bool bat_hit    = false;
+    unsigned msr_pr = !!(ppc_state.msr & 0x4000);
+
+    bat_array = (type == BATType::Instruction) ? ibat_array : dbat_array;
+
+    // Format: %XY
+    // X - supervisor access bit, Y - problem/user access bit
+    // Those bits are mutually exclusive
+    unsigned access_bits = ((msr_pr ^ 1) << 1) | msr_pr;
+
+    for (int bat_index = 0; bat_index < 4; bat_index++) {
+        PPC_BAT_entry* bat_entry = &bat_array[bat_index];
+
+        if ((bat_entry->access & access_bits) && ((la & bat_entry->hi_mask) == bat_entry->bepi)) {
+            bat_hit = true;
+
+#ifdef MMU_PROFILING
+            bat_transl_total++;
+#endif
+            // logical to physical translation
+            pa = bat_entry->phys_hi | (la & ~bat_entry->hi_mask);
+            prot = bat_entry->prot;
+            break;
+        }
+    }
+
+    return BATResult{bat_hit, prot, pa};
 }
 
 static inline uint8_t* calc_pteg_addr(uint32_t hash) {
@@ -672,8 +736,244 @@ static uint32_t mem_grab_unaligned(uint32_t addr, uint32_t size) {
     return ret;
 }
 
+#define PAGE_SIZE_BITS      12
+#define TLB_SIZE            4096
+#define TLB2_WAYS           4
+#define TLB_INVALID_TAG     0xFFFFFFFF
+
+typedef struct TLBEntry {
+    uint32_t    tag;
+    uint16_t    flags;
+    uint16_t    lru_bits;
+    union {
+        int64_t             host_va_offset;
+        AddressMapEntry*    reg_desc;
+    };
+} TLBEntry;
+
+// primary TLB for all MMU modes
+static std::array<TLBEntry, TLB_SIZE> mode1_tlb1;
+static std::array<TLBEntry, TLB_SIZE> mode2_tlb1;
+static std::array<TLBEntry, TLB_SIZE> mode3_tlb1;
+
+// secondary TLB for all MMU modes
+static std::array<TLBEntry, TLB_SIZE*TLB2_WAYS> mode1_tlb2;
+static std::array<TLBEntry, TLB_SIZE*TLB2_WAYS> mode2_tlb2;
+static std::array<TLBEntry, TLB_SIZE*TLB2_WAYS> mode3_tlb2;
+
+TLBEntry *pCurTLB1; // current primary TLB
+TLBEntry *pCurTLB2; // current secondary TLB
+
+uint32_t tlb_size_mask = TLB_SIZE - 1;
+
+// fake TLB entry for handling of unmapped memory accesses
+uint64_t    UnmappedVal = -1ULL;
+TLBEntry    UnmappedMem = {TLB_INVALID_TAG, 0, 0, 0};
+
+uint8_t     MMUMode = {0xFF};
+
+void mmu_change_mode()
+{
+    uint8_t mmu_mode = ((ppc_state.msr >> 3) & 0x2) | ((ppc_state.msr >> 14) & 1);
+
+    if (MMUMode != mmu_mode) {
+        switch(mmu_mode) {
+        case 0: // real address mode
+            pCurTLB1 = &mode1_tlb1[0];
+            pCurTLB2 = &mode1_tlb2[0];
+            break;
+        case 2: // supervisor mode with data translation enabled
+            pCurTLB1 = &mode2_tlb1[0];
+            pCurTLB2 = &mode2_tlb2[0];
+            break;
+        case 3: // user mode with data translation enabled
+            pCurTLB1 = &mode3_tlb1[0];
+            pCurTLB2 = &mode3_tlb2[0];
+            break;
+        }
+        MMUMode = mmu_mode;
+    }
+}
+
+static TLBEntry* tlb2_target_entry(uint32_t gp_va)
+{
+    TLBEntry *tlb_entry;
+
+    tlb_entry = &pCurTLB2[((gp_va >> PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
+
+    // select the target from invalid blocks first
+    if (tlb_entry[0].tag == TLB_INVALID_TAG) {
+        // update LRU bits
+        tlb_entry[0].lru_bits  = 0x3;
+        tlb_entry[1].lru_bits  = 0x2;
+        tlb_entry[2].lru_bits &= 0x1;
+        tlb_entry[3].lru_bits &= 0x1;
+        return tlb_entry;
+    } else if (tlb_entry[1].tag == TLB_INVALID_TAG) {
+        // update LRU bits
+        tlb_entry[0].lru_bits  = 0x2;
+        tlb_entry[1].lru_bits  = 0x3;
+        tlb_entry[2].lru_bits &= 0x1;
+        tlb_entry[3].lru_bits &= 0x1;
+        return &tlb_entry[1];
+    } else if (tlb_entry[2].tag == TLB_INVALID_TAG) {
+        // update LRU bits
+        tlb_entry[0].lru_bits &= 0x1;
+        tlb_entry[1].lru_bits &= 0x1;
+        tlb_entry[2].lru_bits  = 0x3;
+        tlb_entry[3].lru_bits  = 0x2;
+        return &tlb_entry[2];
+    } else if (tlb_entry[3].tag == TLB_INVALID_TAG) {
+        // update LRU bits
+        tlb_entry[0].lru_bits &= 0x1;
+        tlb_entry[1].lru_bits &= 0x1;
+        tlb_entry[2].lru_bits  = 0x2;
+        tlb_entry[3].lru_bits  = 0x3;
+        return &tlb_entry[3];
+    } else { // no invalid blocks, replace an existing one according with the hLRU policy
+        if (tlb_entry[0].lru_bits == 0) {
+            // update LRU bits
+            tlb_entry[0].lru_bits  = 0x3;
+            tlb_entry[1].lru_bits  = 0x2;
+            tlb_entry[2].lru_bits &= 0x1;
+            tlb_entry[3].lru_bits &= 0x1;
+            return tlb_entry;
+        } else if (tlb_entry[1].lru_bits == 0) {
+            // update LRU bits
+            tlb_entry[0].lru_bits  = 0x2;
+            tlb_entry[1].lru_bits  = 0x3;
+            tlb_entry[2].lru_bits &= 0x1;
+            tlb_entry[3].lru_bits &= 0x1;
+            return &tlb_entry[1];
+        } else if (tlb_entry[2].lru_bits == 0) {
+            // update LRU bits
+            tlb_entry[0].lru_bits &= 0x1;
+            tlb_entry[1].lru_bits &= 0x1;
+            tlb_entry[2].lru_bits  = 0x3;
+            tlb_entry[3].lru_bits  = 0x2;
+            return &tlb_entry[2];
+        } else {
+            // update LRU bits
+            tlb_entry[0].lru_bits &= 0x1;
+            tlb_entry[1].lru_bits &= 0x1;
+            tlb_entry[2].lru_bits  = 0x2;
+            tlb_entry[3].lru_bits  = 0x3;
+            return &tlb_entry[3];
+        }
+    }
+}
+
+static TLBEntry* tlb2_refill(uint32_t guest_va, int is_write)
+{
+    uint32_t phys_addr;
+    TLBEntry *tlb_entry;
+
+    const uint32_t tag = guest_va & ~0xFFFUL;
+
+    // attempt block address translation first
+    BATResult bat_res = ppc_block_address_translation<BATType::Data>(guest_va);
+    if (bat_res.hit) {
+        // check block protection
+        if (!bat_res.prot || ((bat_res.prot & 1) && is_write)) {
+            ppc_state.spr[SPR::DSISR] = 0x08000000 | (is_write << 25);
+            ppc_state.spr[SPR::DAR]   = guest_va;
+            mmu_exception_handler(Except_Type::EXC_DSI, 0);
+        }
+        phys_addr = bat_res.phys;
+    } else {
+        // page address translation
+        phys_addr = page_address_translate(guest_va, false, !!(ppc_state.msr & 0x4000), is_write);
+    }
+
+    // look up host virtual address
+    AddressMapEntry* reg_desc = mem_ctrl_instance->find_range(phys_addr);
+    if (reg_desc) {
+        // refill the secondary TLB
+        tlb_entry = tlb2_target_entry(tag);
+        tlb_entry->tag = tag;
+        if (reg_desc->type & RT_MMIO) {
+            tlb_entry->flags = 2; // MMIO region
+            tlb_entry->reg_desc = reg_desc;
+        } else {
+            tlb_entry->flags = 1; // memory region backed by host memory
+            tlb_entry->host_va_offset = (int64_t)reg_desc->mem_ptr - reg_desc->start;
+        }
+        return tlb_entry;
+    } else {
+        LOG_F(ERROR, "Read from unmapped memory at 0x%08X!\n", phys_addr);
+        UnmappedMem.tag = tag;
+        UnmappedMem.host_va_offset = (int64_t)(&UnmappedVal) - guest_va;
+        return &UnmappedMem;
+    }
+}
+
+static inline uint64_t tlb_translate_addr(uint32_t guest_va)
+{
+    TLBEntry *tlb1_entry, *tlb2_entry;
+
+    const uint32_t tag = guest_va & ~0xFFFUL;
+
+    // look up address in the primary TLB
+    tlb1_entry = &pCurTLB1[(guest_va >> PAGE_SIZE_BITS) & tlb_size_mask];
+    if (tlb1_entry->tag == tag) { // primary TLB hit -> fast path
+        MemAccessType = true;
+        MemAddr = tlb1_entry->host_va_offset + guest_va;
+        return tlb1_entry->host_va_offset + guest_va;
+    } else { // primary TLB miss -> look up address in the secondary TLB
+        tlb2_entry = &pCurTLB2[((guest_va >> PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
+        if (tlb2_entry->tag == tag) {
+            // update LRU bits
+            tlb2_entry[0].lru_bits  = 0x3;
+            tlb2_entry[1].lru_bits  = 0x2;
+            tlb2_entry[2].lru_bits &= 0x1;
+            tlb2_entry[3].lru_bits &= 0x1;
+        } else if (tlb2_entry[1].tag == tag) {
+            tlb2_entry = &tlb2_entry[1];
+            // update LRU bits
+            tlb2_entry[0].lru_bits  = 0x2;
+            tlb2_entry[1].lru_bits  = 0x3;
+            tlb2_entry[2].lru_bits &= 0x1;
+            tlb2_entry[3].lru_bits &= 0x1;
+        } else if (tlb2_entry[2].tag == tag) {
+            tlb2_entry = &tlb2_entry[2];
+            // update LRU bits
+            tlb2_entry[0].lru_bits &= 0x1;
+            tlb2_entry[1].lru_bits &= 0x1;
+            tlb2_entry[2].lru_bits  = 0x3;
+            tlb2_entry[3].lru_bits  = 0x2;
+        } else if (tlb2_entry[3].tag == tag) {
+            tlb2_entry = &tlb2_entry[3];
+            // update LRU bits
+            tlb2_entry[0].lru_bits &= 0x1;
+            tlb2_entry[1].lru_bits &= 0x1;
+            tlb2_entry[2].lru_bits  = 0x2;
+            tlb2_entry[3].lru_bits  = 0x3;
+        } else { // secondary TLB miss ->
+            // perform full address translation and refill the secondary TLB
+            tlb2_entry = tlb2_refill(guest_va, 0);
+        }
+
+        if (tlb2_entry->flags & 1) { // is it a real memory region?
+            // refill the primary TLB
+            tlb1_entry->tag = tag;
+            tlb1_entry->flags = 1;
+            tlb1_entry->host_va_offset = tlb2_entry->host_va_offset;
+            MemAccessType = true;
+            MemAddr = tlb1_entry->host_va_offset + guest_va;
+            return tlb1_entry->host_va_offset + guest_va;
+        } else { // an attempt to access a memory-mapped device
+            MemAccessType = false;
+            Device = tlb2_entry->reg_desc->devobj;
+            DevOffset = guest_va - tlb2_entry->reg_desc->start;
+            return guest_va - tlb2_entry->reg_desc->start;
+        }
+    }
+}
+
 /** Grab a value from memory into a register */
 uint8_t mem_grab_byte(uint32_t addr) {
+    tlb_translate_addr(addr);
+
     /* data address translation if enabled */
     if (ppc_state.msr & 0x10) {
         addr = ppc_mmu_addr_translate(addr, 0);
@@ -683,6 +983,8 @@ uint8_t mem_grab_byte(uint32_t addr) {
 }
 
 uint16_t mem_grab_word(uint32_t addr) {
+    tlb_translate_addr(addr);
+
     if (addr & 1) {
         return mem_grab_unaligned(addr, 2);
     }
@@ -696,6 +998,8 @@ uint16_t mem_grab_word(uint32_t addr) {
 }
 
 uint32_t mem_grab_dword(uint32_t addr) {
+    tlb_translate_addr(addr);
+
     if (addr & 3) {
         return mem_grab_unaligned(addr, 4);
     }
@@ -709,6 +1013,8 @@ uint32_t mem_grab_dword(uint32_t addr) {
 }
 
 uint64_t mem_grab_qword(uint32_t addr) {
+    tlb_translate_addr(addr);
+
     if (addr & 7) {
         LOG_F(ERROR, "SOS! Attempt to read unaligned QWORD at 0x%08X\n", addr);
         exit(-1);    // FIXME!
@@ -800,6 +1106,51 @@ uint64_t mem_read_dbg(uint32_t virt_addr, uint32_t size) {
 
 void ppc_mmu_init() {
     mmu_exception_handler = ppc_exception_handler;
+
+    // invalidate all TLB entries
+    for(auto &tlb_el : mode1_tlb1) {
+        tlb_el.tag = TLB_INVALID_TAG;
+        tlb_el.flags = 0;
+        tlb_el.lru_bits = 0;
+        tlb_el.host_va_offset = 0;
+    }
+
+    for(auto &tlb_el : mode2_tlb1) {
+        tlb_el.tag = TLB_INVALID_TAG;
+        tlb_el.flags = 0;
+        tlb_el.lru_bits = 0;
+        tlb_el.host_va_offset = 0;
+    }
+
+    for(auto &tlb_el : mode3_tlb1) {
+        tlb_el.tag = TLB_INVALID_TAG;
+        tlb_el.flags = 0;
+        tlb_el.lru_bits = 0;
+        tlb_el.host_va_offset = 0;
+    }
+
+    for(auto &tlb_el : mode1_tlb2) {
+        tlb_el.tag = TLB_INVALID_TAG;
+        tlb_el.flags = 0;
+        tlb_el.lru_bits = 0;
+        tlb_el.host_va_offset = 0;
+    }
+
+    for(auto &tlb_el : mode2_tlb2) {
+        tlb_el.tag = TLB_INVALID_TAG;
+        tlb_el.flags = 0;
+        tlb_el.lru_bits = 0;
+        tlb_el.host_va_offset = 0;
+    }
+
+    for(auto &tlb_el : mode3_tlb2) {
+        tlb_el.tag = TLB_INVALID_TAG;
+        tlb_el.flags = 0;
+        tlb_el.lru_bits = 0;
+        tlb_el.host_va_offset = 0;
+    }
+
+    mmu_change_mode();
 
 #ifdef MMU_PROFILING
     gProfilerObj->register_profile("PPC_MMU",
