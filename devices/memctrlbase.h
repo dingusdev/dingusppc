@@ -67,7 +67,7 @@ protected:
 
 private:
     std::vector<uint8_t*> mem_regions;
-    std::vector<AddressMapEntry> address_map;
+    std::vector<AddressMapEntry*> address_map;
 };
 
 #endif /* MEMORY_CONTROLLER_BASE_H */

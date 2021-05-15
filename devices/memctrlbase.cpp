@@ -28,6 +28,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
 MemCtrlBase::~MemCtrlBase() {
+    for (auto& entry : address_map) {
+        if (entry)
+            delete(entry);
+    }
+
     for (auto& reg : mem_regions) {
         if (reg)
             delete (reg);
@@ -39,8 +44,8 @@ MemCtrlBase::~MemCtrlBase() {
 
 AddressMapEntry* MemCtrlBase::find_range(uint32_t addr) {
     for (auto& entry : address_map) {
-        if (addr >= entry.start && addr <= entry.end)
-            return &entry;
+        if (addr >= entry->start && addr <= entry->end)
+            return entry;
     }
 
     return 0;
@@ -49,7 +54,7 @@ AddressMapEntry* MemCtrlBase::find_range(uint32_t addr) {
 
 bool MemCtrlBase::add_mem_region(
     uint32_t start_addr, uint32_t size, uint32_t dest_addr, uint32_t type, uint8_t init_val = 0) {
-    AddressMapEntry entry;
+    AddressMapEntry *entry;
 
     /* error if a memory region for the given range already exists */
     if (find_range(start_addr) || find_range(start_addr + size))
@@ -59,12 +64,14 @@ bool MemCtrlBase::add_mem_region(
 
     this->mem_regions.push_back(reg_content);
 
-    entry.start   = start_addr;
-    entry.end     = start_addr + size - 1;
-    entry.mirror  = dest_addr;
-    entry.type    = type;
-    entry.devobj  = 0;
-    entry.mem_ptr = reg_content;
+    entry = new AddressMapEntry;
+
+    entry->start   = start_addr;
+    entry->end     = start_addr + size - 1;
+    entry->mirror  = dest_addr;
+    entry->type    = type;
+    entry->devobj  = 0;
+    entry->mem_ptr = reg_content;
 
     this->address_map.push_back(entry);
 
@@ -83,18 +90,20 @@ bool MemCtrlBase::add_ram_region(uint32_t start_addr, uint32_t size) {
 
 
 bool MemCtrlBase::add_mem_mirror(uint32_t start_addr, uint32_t dest_addr) {
-    AddressMapEntry entry, *ref_entry;
+    AddressMapEntry *entry, *ref_entry;
 
     ref_entry = find_range(dest_addr);
     if (!ref_entry)
         return false;
 
-    entry.start   = start_addr;
-    entry.end     = start_addr + (ref_entry->end - ref_entry->start) + 1;
-    entry.mirror  = dest_addr;
-    entry.type    = ref_entry->type | RT_MIRROR;
-    entry.devobj  = 0;
-    entry.mem_ptr = ref_entry->mem_ptr;
+    entry = new AddressMapEntry;
+
+    entry->start   = start_addr;
+    entry->end     = start_addr + (ref_entry->end - ref_entry->start) + 1;
+    entry->mirror  = dest_addr;
+    entry->type    = ref_entry->type | RT_MIRROR;
+    entry->devobj  = 0;
+    entry->mem_ptr = ref_entry->mem_ptr;
 
     this->address_map.push_back(entry);
 
@@ -118,18 +127,20 @@ bool MemCtrlBase::set_data(uint32_t reg_addr, const uint8_t* data, uint32_t size
 
 
 bool MemCtrlBase::add_mmio_region(uint32_t start_addr, uint32_t size, MMIODevice* dev_instance) {
-    AddressMapEntry entry;
+    AddressMapEntry *entry;
 
     /* error if another region for the given range already exists */
     if (find_range(start_addr) || find_range(start_addr + size))
         return false;
 
-    entry.start   = start_addr;
-    entry.end     = start_addr + size - 1;
-    entry.mirror  = 0;
-    entry.type    = RT_MMIO;
-    entry.devobj  = dev_instance;
-    entry.mem_ptr = 0;
+    entry = new AddressMapEntry;
+
+    entry->start   = start_addr;
+    entry->end     = start_addr + size - 1;
+    entry->mirror  = 0;
+    entry->type    = RT_MMIO;
+    entry->devobj  = dev_instance;
+    entry->mem_ptr = 0;
 
     this->address_map.push_back(entry);
 
