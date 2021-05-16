@@ -173,7 +173,7 @@ static inline T read_phys_mem(AddressMapEntry *mru_rgn, uint32_t addr)
         }
 
         if ((mru_rgn->mem_ptr + (addr - mru_rgn->start)) != (uint8_t *)MemAddr) {
-            LOG_F(ERROR, "TLB address mismatch! Expected: 0x%llu, got: 0x%llu",
+            LOG_F(ERROR, "TLB address mismatch! Expected: 0x%llx, got: 0x%llx",
                   (uint64_t)(mru_rgn->mem_ptr + (addr - mru_rgn->start)),
                   (uint64_t)MemAddr);
         }
@@ -686,55 +686,6 @@ void mem_write_qword(uint32_t addr, uint64_t value) {
     write_phys_mem<uint64_t, true>(&last_write_area, addr, value);
 }
 
-static uint32_t mem_grab_unaligned(uint32_t addr, uint32_t size) {
-    uint32_t ret = 0;
-
-#ifdef MMU_DEBUG
-    LOG_F(WARNING, "Attempt to read unaligned %d bytes from 0x%08X\n", size, addr);
-#endif
-
-    if (((addr & 0xFFF) + size) > 0x1000) {
-        // Special case: misaligned cross-page reads
-#ifdef MMU_PROFILING
-        unaligned_crossp_r++;
-#endif
-
-        uint32_t phys_addr;
-        uint32_t res = 0;
-
-        // Break misaligned memory accesses into multiple, bytewise accesses
-        // and retranslate on page boundary.
-        // Because such accesses suffer a performance penalty, they will be
-        // presumably very rare so don't care much about performance.
-        for (int i = 0; i < size; addr++, phys_addr++, i++) {
-            if ((ppc_state.msr & 0x10) && (!i || !(addr & 0xFFF))) {
-                phys_addr = ppc_mmu_addr_translate(addr, 0);
-            }
-
-            res = (res << 8) |
-                read_phys_mem<uint8_t, false>(&last_read_area, phys_addr);
-        }
-        return res;
-
-    } else {
-        /* data address translation if enabled */
-        if (ppc_state.msr & 0x10) {
-            addr = ppc_mmu_addr_translate(addr, 0);
-        }
-
-        if (size == 2) {
-            return read_phys_mem<uint16_t, false>(&last_read_area, addr);
-        } else {
-            return read_phys_mem<uint32_t, false>(&last_read_area, addr);
-        }
-
-#ifdef MMU_PROFILING
-        unaligned_reads++;
-#endif
-    }
-
-    return ret;
-}
 
 #define PAGE_SIZE_BITS      12
 #define TLB_SIZE            4096
@@ -870,19 +821,25 @@ static TLBEntry* tlb2_refill(uint32_t guest_va, int is_write)
 
     const uint32_t tag = guest_va & ~0xFFFUL;
 
-    // attempt block address translation first
-    BATResult bat_res = ppc_block_address_translation<BATType::Data>(guest_va);
-    if (bat_res.hit) {
-        // check block protection
-        if (!bat_res.prot || ((bat_res.prot & 1) && is_write)) {
-            ppc_state.spr[SPR::DSISR] = 0x08000000 | (is_write << 25);
-            ppc_state.spr[SPR::DAR]   = guest_va;
-            mmu_exception_handler(Except_Type::EXC_DSI, 0);
+    /* data address translation if enabled */
+    if (ppc_state.msr & 0x10) {
+        // attempt block address translation first
+        BATResult bat_res = ppc_block_address_translation<BATType::Data>(guest_va);
+        if (bat_res.hit) {
+            // check block protection
+            if (!bat_res.prot || ((bat_res.prot & 1) && is_write)) {
+                ppc_state.spr[SPR::DSISR] = 0x08000000 | (is_write << 25);
+                ppc_state.spr[SPR::DAR]   = guest_va;
+                mmu_exception_handler(Except_Type::EXC_DSI, 0);
+            }
+            phys_addr = bat_res.phys;
+        } else {
+            // page address translation
+            phys_addr = page_address_translate(guest_va, false,
+                                    !!(ppc_state.msr & 0x4000), is_write);
         }
-        phys_addr = bat_res.phys;
     } else {
-        // page address translation
-        phys_addr = page_address_translate(guest_va, false, !!(ppc_state.msr & 0x4000), is_write);
+        phys_addr = guest_va;
     }
 
     // look up host virtual address
@@ -896,7 +853,8 @@ static TLBEntry* tlb2_refill(uint32_t guest_va, int is_write)
             tlb_entry->reg_desc = reg_desc;
         } else {
             tlb_entry->flags = 1; // memory region backed by host memory
-            tlb_entry->host_va_offset = (int64_t)reg_desc->mem_ptr - reg_desc->start;
+            tlb_entry->host_va_offset = (int64_t)reg_desc->mem_ptr - guest_va +
+                                        (phys_addr - reg_desc->start);
         }
         return tlb_entry;
     } else {
@@ -904,6 +862,46 @@ static TLBEntry* tlb2_refill(uint32_t guest_va, int is_write)
         UnmappedMem.tag = tag;
         UnmappedMem.host_va_offset = (int64_t)(&UnmappedVal) - guest_va;
         return &UnmappedMem;
+    }
+}
+
+void flush_tlb_entry(uint32_t ea)
+{
+    TLBEntry *tlb_entry, *tlb1, *tlb2;
+
+    const uint32_t tag = ea & ~0xFFFUL;
+
+    for (int m = 0; m < 3; m++) {
+        switch (m) {
+        case 0:
+            tlb1 = &mode1_tlb1[0];
+            tlb2 = &mode1_tlb2[0];
+            break;
+        case 1:
+            tlb1 = &mode1_tlb1[0];
+            tlb2 = &mode1_tlb2[0];
+            break;
+        case 2:
+            tlb1 = &mode1_tlb1[0];
+            tlb2 = &mode1_tlb2[0];
+            break;
+        }
+
+        // flush primary TLB
+        tlb_entry = &tlb1[(ea >> PAGE_SIZE_BITS) & tlb_size_mask];
+        if (tlb_entry->tag == tag) {
+            tlb_entry->tag = TLB_INVALID_TAG;
+            //LOG_F(INFO, "Invalidated primary TLB entry at 0x%X", ea);
+        }
+
+        // flush secondary TLB
+        tlb_entry = &tlb2[((ea >> PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
+        for (int i = 0; i < TLB2_WAYS; i++) {
+            if (tlb_entry[i].tag == tag) {
+                tlb_entry[i].tag = TLB_INVALID_TAG;
+                //LOG_F(INFO, "Invalidated secondary TLB entry at 0x%X", ea);
+            }
+        }
     }
 }
 
@@ -968,6 +966,57 @@ static inline uint64_t tlb_translate_addr(uint32_t guest_va)
             return guest_va - tlb2_entry->reg_desc->start;
         }
     }
+}
+
+static uint32_t mem_grab_unaligned(uint32_t addr, uint32_t size) {
+    uint32_t ret = 0;
+
+#ifdef MMU_DEBUG
+    LOG_F(WARNING, "Attempt to read unaligned %d bytes from 0x%08X\n", size, addr);
+#endif
+
+    if (((addr & 0xFFF) + size) > 0x1000) {
+        // Special case: misaligned cross-page reads
+#ifdef MMU_PROFILING
+        unaligned_crossp_r++;
+#endif
+
+        uint32_t phys_addr;
+        uint32_t res = 0;
+
+        // Break misaligned memory accesses into multiple, bytewise accesses
+        // and retranslate on page boundary.
+        // Because such accesses suffer a performance penalty, they will be
+        // presumably very rare so don't care much about performance.
+        for (int i = 0; i < size; addr++, phys_addr++, i++) {
+            tlb_translate_addr(addr);
+            if ((ppc_state.msr & 0x10) && (!i || !(addr & 0xFFF))) {
+                phys_addr = ppc_mmu_addr_translate(addr, 0);
+            }
+
+            res = (res << 8) |
+                read_phys_mem<uint8_t, false>(&last_read_area, phys_addr);
+        }
+        return res;
+
+    } else {
+        /* data address translation if enabled */
+        if (ppc_state.msr & 0x10) {
+            addr = ppc_mmu_addr_translate(addr, 0);
+        }
+
+        if (size == 2) {
+            return read_phys_mem<uint16_t, false>(&last_read_area, addr);
+        } else {
+            return read_phys_mem<uint32_t, false>(&last_read_area, addr);
+        }
+
+#ifdef MMU_PROFILING
+        unaligned_reads++;
+#endif
+    }
+
+    return ret;
 }
 
 /** Grab a value from memory into a register */

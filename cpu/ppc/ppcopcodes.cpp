@@ -2014,7 +2014,8 @@ void dppc_interpreter::ppc_tlbie() {
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
-    /* placeholder */
+
+    flush_tlb_entry(ppc_state.gpr[(ppc_cur_instruction >> 11) & 31]);
 }
 
 void dppc_interpreter::ppc_tlbia() {
