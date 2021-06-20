@@ -1019,6 +1019,129 @@ static uint32_t mem_grab_unaligned(uint32_t addr, uint32_t size) {
     return ret;
 }
 
+static inline TLBEntry * lookup_secondary_tlb(uint32_t guest_va, uint32_t tag) {
+    TLBEntry *tlb_entry;
+
+    tlb_entry = &pCurTLB2[((guest_va >> PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
+    if (tlb_entry->tag == tag) {
+        // update LRU bits
+        tlb_entry[0].lru_bits  = 0x3;
+        tlb_entry[1].lru_bits  = 0x2;
+        tlb_entry[2].lru_bits &= 0x1;
+        tlb_entry[3].lru_bits &= 0x1;
+    } else if (tlb_entry[1].tag == tag) {
+        tlb_entry = &tlb_entry[1];
+        // update LRU bits
+        tlb_entry[0].lru_bits  = 0x2;
+        tlb_entry[1].lru_bits  = 0x3;
+        tlb_entry[2].lru_bits &= 0x1;
+        tlb_entry[3].lru_bits &= 0x1;
+    } else if (tlb_entry[2].tag == tag) {
+        tlb_entry = &tlb_entry[2];
+        // update LRU bits
+        tlb_entry[0].lru_bits &= 0x1;
+        tlb_entry[1].lru_bits &= 0x1;
+        tlb_entry[2].lru_bits  = 0x3;
+        tlb_entry[3].lru_bits  = 0x2;
+    } else if (tlb_entry[3].tag == tag) {
+        tlb_entry = &tlb_entry[3];
+        // update LRU bits
+        tlb_entry[0].lru_bits &= 0x1;
+        tlb_entry[1].lru_bits &= 0x1;
+        tlb_entry[2].lru_bits  = 0x2;
+        tlb_entry[3].lru_bits  = 0x3;
+    } else {
+        return nullptr;
+    }
+    return tlb_entry;
+}
+
+static uint32_t read_unaligned(uint32_t guest_va, uint8_t *host_va, uint32_t size);
+
+template <class T>
+inline T mmu_read_vmem(uint32_t guest_va) {
+    TLBEntry *tlb1_entry, *tlb2_entry;
+    uint8_t *host_va;
+
+    const uint32_t tag = guest_va & ~0xFFFUL;
+
+    // look up guest virtual address in the primary TLB
+    tlb1_entry = &pCurTLB1[(guest_va >> PAGE_SIZE_BITS) & tlb_size_mask];
+    if (tlb1_entry->tag == tag) { // primary TLB hit -> fast path
+        host_va = (uint8_t *)(tlb1_entry->host_va_offset + guest_va);
+    } else {
+        // primary TLB miss -> look up address in the secondary TLB
+        tlb2_entry = lookup_secondary_tlb(guest_va, tag);
+        if (tlb2_entry == nullptr) {
+            // secondary TLB miss ->
+            // perform full address translation and refill the secondary TLB
+            tlb2_entry = tlb2_refill(guest_va, 0);
+        }
+
+        if (tlb2_entry->flags & 1) { // is it a real memory region?
+            // refill the primary TLB
+            tlb1_entry->tag = tag;
+            tlb1_entry->flags = 1;
+            tlb1_entry->host_va_offset = tlb2_entry->host_va_offset;
+            host_va = (uint8_t *)(tlb1_entry->host_va_offset + guest_va);
+        } else { // otherwise, it's an access to a memory-mapped device
+            return (
+                tlb2_entry->reg_desc->devobj->read(tlb2_entry->reg_desc->start,
+                    guest_va - tlb2_entry->reg_desc->start, sizeof(T))
+            );
+        }
+    }
+
+    // handle unaligned memory accesses
+    if (sizeof(T) > 1 && (guest_va & (sizeof(T) - 1))) {
+        return read_unaligned(guest_va, host_va, sizeof(T));
+    }
+
+    // handle aligned memory accesses
+    switch(sizeof(T)) {
+    case 1:
+        return *host_va;
+    case 2:
+        return READ_WORD_BE_A(host_va);
+    case 4:
+        return READ_DWORD_BE_A(host_va);
+    case 8:
+        return READ_QWORD_BE_A(host_va);
+    }
+}
+
+// explicitely instantiate all required mmu_read_vmem variants
+// to avoid linking errors
+template uint8_t  mmu_read_vmem<uint8_t>(uint32_t guest_va);
+template uint16_t mmu_read_vmem<uint16_t>(uint32_t guest_va);
+template uint32_t mmu_read_vmem<uint32_t>(uint32_t guest_va);
+template uint64_t mmu_read_vmem<uint64_t>(uint32_t guest_va);
+
+static uint32_t read_unaligned(uint32_t guest_va, uint8_t *host_va, uint32_t size)
+{
+    uint32_t result = 0;
+
+    // is it a misaligned cross-page read?
+    if (((guest_va & 0xFFF) + size) > 0x1000) {
+        // Break such a memory access into multiple, bytewise accesses.
+        // Because such accesses suffer a performance penalty, they will be
+        // presumably very rare so don't waste time optimizing the code below.
+        for (int i = 0; i < size; guest_va++, i++) {
+            result = (result << 8) | mmu_read_vmem<uint8_t>(guest_va);
+        }
+    } else {
+        switch(size) {
+        case 2:
+            return READ_WORD_BE_U(host_va);
+        case 4:
+            return READ_DWORD_BE_U(host_va);
+        case 8: // FIXME: should we raise alignment exception here?
+            return READ_QWORD_BE_U(host_va);
+        }
+    }
+    return result;
+}
+
 /** Grab a value from memory into a register */
 uint8_t mem_grab_byte(uint32_t addr) {
     tlb_translate_addr(addr);
