@@ -75,6 +75,6 @@ extern uint64_t mem_read_dbg(uint32_t virt_addr, uint32_t size);
 extern uint8_t* quickinstruction_translate(uint32_t address_grab);
 
 template <class T>
-extern inline T mmu_read_vmem(uint32_t guest_va);
+extern T mmu_read_vmem(uint32_t guest_va);
 
 #endif    // PPCMEMORY_H
