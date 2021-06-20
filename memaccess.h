@@ -34,9 +34,10 @@
 #define READ_DWORD_BE_U(addr) (((addr)[0] << 24) | ((addr)[1] << 16) | ((addr)[2] << 8) | (addr)[3])
 
 /* read an unaligned big-endian QWORD (32bit) */
-#define READ_QWORD_BE_U(addr)                                                                      \
-    (((addr)[0] << 56) | ((addr)[1] << 48) | ((addr)[2] << 40) | ((addr)[3] << 32) |               \
-     ((addr)[4] << 24) | ((addr)[5] << 16) | ((addr)[6] << 8) | (addr)[7])
+#define READ_QWORD_BE_U(addr)                                                  \
+    ((uint64_t((addr)[0]) << 56) | (uint64_t((addr)[1]) << 48) |               \
+     (uint64_t((addr)[2]) << 40) | (uint64_t((addr)[3]) << 32) |               \
+     ((addr)[4] << 24) | ((addr)[5] << 16) | ((addr)[6] << 8)  | (addr)[7])
 
 /* read an unaligned little-endian WORD (16bit) */
 #define READ_WORD_LE_U(addr) (((addr)[1] << 8) | (addr)[0])
