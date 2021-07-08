@@ -965,6 +965,7 @@ void dppc_interpreter::ppc_mtfsfidot() {
 
 void dppc_interpreter::ppc_mtfsb0() {
     crf_d = (ppc_cur_instruction >> 23) & 7;
+    crf_d = crf_d << 2;
     if ((crf_d == 0) || (crf_d > 2)) {
         ppc_state.fpscr &= ~(1 << (31 - crf_d));
     }
@@ -972,6 +973,7 @@ void dppc_interpreter::ppc_mtfsb0() {
 
 void dppc_interpreter::ppc_mtfsb0dot() {
     crf_d = (ppc_cur_instruction >> 23) & 7;
+    crf_d = crf_d << 2;
     if ((crf_d == 0) || (crf_d > 2)) {
         ppc_state.fpscr &= ~(1 << crf_d);
     }
@@ -980,6 +982,7 @@ void dppc_interpreter::ppc_mtfsb0dot() {
 
 void dppc_interpreter::ppc_mtfsb1() {
     crf_d = (ppc_cur_instruction >> 23) & 7;
+    crf_d = crf_d << 2;
     if ((crf_d == 0) || (crf_d > 2)) {
         ppc_state.fpscr |= (1 << crf_d);
     }
@@ -987,6 +990,7 @@ void dppc_interpreter::ppc_mtfsb1() {
 
 void dppc_interpreter::ppc_mtfsb1dot() {
     crf_d = (ppc_cur_instruction >> 23) & 7;
+    crf_d = crf_d << 2;
     if ((crf_d == 0) || (crf_d > 2)) {
         ppc_state.fpscr |= (1 << crf_d);
     }
