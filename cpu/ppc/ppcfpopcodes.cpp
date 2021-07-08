@@ -674,11 +674,11 @@ void dppc_interpreter::ppc_fctiw() {
     if (std::isnan(val_reg_b)) {
         ppc_state.fpr[reg_d].int64_r = 0x80000000;
         ppc_state.fpscr |= 0x1000100;
-    } 
+    }
     else if (val_reg_b > static_cast<double>(0x7fffffff)) {
         ppc_state.fpr[reg_d].int64_r = 0x7fffffff;
         ppc_state.fpscr |= 0x100;
-    } 
+    }
     else if (val_reg_b < -static_cast<double>(0x80000000)) {
         ppc_state.fpr[reg_d].int64_r = 0x80000000;
         ppc_state.fpscr |= 0x100;
@@ -696,7 +696,7 @@ void dppc_interpreter::ppc_fctiw() {
         }
 
         ppc_store_dfpresult_int(reg_d);
-    
+
     }
 
     if (rc_flag)
@@ -710,15 +710,15 @@ void dppc_interpreter::ppc_fctiwz() {
     if (std::isnan(val_reg_b)) {
         ppc_state.fpr[reg_d].int64_r = 0x80000000;
         ppc_state.fpscr |= 0x1000100;
-    } 
+    }
     else if (val_reg_b > static_cast<double>(0x7fffffff)) {
         ppc_state.fpr[reg_d].int64_r = 0x7fffffff;
         ppc_state.fpscr |= 0x100;
-    } 
+    }
     else if (val_reg_b < -static_cast<double>(0x80000000)) {
         ppc_state.fpr[reg_d].int64_r = 0x80000000;
         ppc_state.fpscr |= 0x100;
-    } 
+    }
     else {
         ppc_result64_d = round_to_zero(val_reg_b);
 
@@ -964,35 +964,31 @@ void dppc_interpreter::ppc_mtfsfidot() {
 }
 
 void dppc_interpreter::ppc_mtfsb0() {
-    crf_d = (ppc_cur_instruction >> 23) & 7;
-    crf_d = crf_d << 2;
+    crf_d = (ppc_cur_instruction >> 21) & 0x1F;
     if ((crf_d == 0) || (crf_d > 2)) {
-        ppc_state.fpscr &= ~(1 << (31 - crf_d));
+        ppc_state.fpscr &= ~(0x80000000UL >> crf_d);
     }
 }
 
 void dppc_interpreter::ppc_mtfsb0dot() {
-    crf_d = (ppc_cur_instruction >> 23) & 7;
-    crf_d = crf_d << 2;
+    crf_d = (ppc_cur_instruction >> 21) & 0x1F;
     if ((crf_d == 0) || (crf_d > 2)) {
-        ppc_state.fpscr &= ~(1 << crf_d);
+        ppc_state.fpscr &= ~(0x80000000UL >> crf_d);
     }
     ppc_fp_changecrf1();
 }
 
 void dppc_interpreter::ppc_mtfsb1() {
-    crf_d = (ppc_cur_instruction >> 23) & 7;
-    crf_d = crf_d << 2;
+    crf_d = (ppc_cur_instruction >> 21) & 0x1F;
     if ((crf_d == 0) || (crf_d > 2)) {
-        ppc_state.fpscr |= (1 << crf_d);
+        ppc_state.fpscr |= (0x80000000UL >> crf_d);
     }
 }
 
 void dppc_interpreter::ppc_mtfsb1dot() {
-    crf_d = (ppc_cur_instruction >> 23) & 7;
-    crf_d = crf_d << 2;
+    crf_d = (ppc_cur_instruction >> 21) & 0x1F;
     if ((crf_d == 0) || (crf_d > 2)) {
-        ppc_state.fpscr |= (1 << crf_d);
+        ppc_state.fpscr |= (0x80000000UL >> crf_d);
     }
     ppc_fp_changecrf1();
 }
