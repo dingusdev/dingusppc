@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <array>
 #include <cinttypes>
 #include <vector>
+#include "devices/memctrlbase.h"
 
 /* Uncomment this to exhaustive MMU integrity checks. */
 //#define MMU_INTEGRITY_CHECKS
@@ -53,6 +54,36 @@ typedef struct BATResult {
     uint32_t    phys;
 } BATResult;
 
+/** Result of the page address translation. */
+typedef struct PATResult {
+    uint32_t    phys;
+    uint8_t     prot;
+    uint8_t     pte_c_status; // status of the C bit of the PTE
+} PATResult;
+
+#define PAGE_SIZE_BITS      12
+#define TLB_SIZE            4096
+#define TLB2_WAYS           4
+#define TLB_INVALID_TAG     0xFFFFFFFF
+
+typedef struct TLBEntry {
+    uint32_t    tag;
+    uint16_t    flags;
+    uint16_t    lru_bits;
+    union {
+        int64_t             host_va_offset;
+        AddressMapEntry*    reg_desc;
+    };
+} TLBEntry;
+
+enum TLBFlags : uint16_t {
+    PAGE_MEM      = 1 << 0, // memory page backed by host memory
+    PAGE_IO       = 1 << 1, // memory mapped I/O page
+    TLBE_FROM_BAT = 1 << 2, // TLB entry has been translated with BAT
+    TLBE_FROM_PAT = 1 << 3, // TLB entry has been translated with PAT
+    PAGE_WRITABLE = 1 << 4, // page is writable
+    PTE_SET_C     = 1 << 5, // tells if C bit of the PTE needs to be updated
+};
 
 extern void ibat_update(uint32_t bat_reg);
 extern void dbat_update(uint32_t bat_reg);
@@ -60,7 +91,10 @@ extern void dbat_update(uint32_t bat_reg);
 extern uint8_t* mmu_get_dma_mem(uint32_t addr, uint32_t size);
 
 extern void mmu_change_mode(void);
-extern void flush_tlb_entry(uint32_t ea);
+extern void mmu_pat_ctx_changed();
+extern void tlb_flush_entry(uint32_t ea);
+extern void tlb_flush_bat_entries();
+extern void tlb_flush_pat_entries();
 
 extern void ppc_set_cur_instruction(const uint8_t* ptr);
 extern void mem_write_byte(uint32_t addr, uint8_t value);
@@ -76,5 +110,7 @@ extern uint8_t* quickinstruction_translate(uint32_t address_grab);
 
 template <class T>
 extern T mmu_read_vmem(uint32_t guest_va);
+template <class T>
+extern void mmu_write_vmem(uint32_t guest_va, T value);
 
 #endif    // PPCMEMORY_H

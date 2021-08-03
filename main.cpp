@@ -118,8 +118,10 @@ int main(int argc, char** argv) {
         loguru::init(argc, argv);
         loguru::add_file("dingusppc.log", loguru::Append, 0);
     } else {
-        loguru::g_stderr_verbosity = 0;
+        loguru::g_preamble_uptime  = false;
+        loguru::g_stderr_verbosity = loguru::Verbosity_INFO;
         loguru::init(argc, argv);
+        loguru::add_file("exceptions.log", loguru::Truncate, -7);
     }
 
     if (*machine_opt) {

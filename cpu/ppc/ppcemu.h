@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "devices/memctrlbase.h"
 #include "endianswap.h"
 #include <cinttypes>
+#include <functional>
 #include <setjmp.h>
 #include <string>
 
@@ -300,6 +301,9 @@ void ppc_fp_changecrf1();
 
 // MEMORY DECLARATIONS
 extern MemCtrlBase* mem_ctrl_instance;
+
+//typedef std::function<void()> CtxSyncCallback;
+extern void add_ctx_sync_action(const std::function<void()> &);
 
 // The functions used by the PowerPC processor
 namespace dppc_interpreter {
