@@ -145,4 +145,4 @@ Apple OF is known to contain numerous bugs. The following table lists some recen
 
 | OF version affected | Bug description |
 |:-------------------:|-----------------|
-| 2.0f1, 2.4          | A numerical overflow in `um/mod` used by  `get-usecs-60x` causes the OF console to become unresponsible after approx. 71 minutes. You have to restart your computer once the bug is triggered. |
+| 2.0f1, 2.4          | A numerical overflow in `um/mod` used by  `get-usecs-60x` causes the OF console to become unresponsive after approx. 71 minutes. You have to restart your computer once the bug is triggered. |
