@@ -28,11 +28,11 @@ as found in various PowerMacintosh models.
 
 ### Old World Macs
 
-| ROM dump/Machine                     | BootROM codename | OF version    | OF image offset |
-|:----------------------------------- :|:----------------:|:-------------:|:---------------:|
+| ROM dump/Machine                    | BootROM codename | OF version    | OF image offset |
+|:------------------------------------:|:----------------:|:-------------:|:---------------:|
 | Power Macintosh 7300/7600/8600/9600  | TNT              | 1.0.5         | 0x330000        |
 | Bandai Pippin                        | Pip              | 1.0.5         | 0x330000        |
-| Power Macintosh/Performa 6400        | Alchemy          | 2.0           | 0x330000        |
+| Power Macintosh,Performa 6400        | Alchemy          | 2.0           | 0x330000        |
 | Power Macintosh G3 desktop           | Gossamer         | 2.0f1         | 0x320000        |
 | PowerBook G3 Wallstreet v2           | GRX              | 2.0.1         | 0x330000        |
 | Power Macintosh 4400/7220            | Zanzibar         | 2.0.2         | 0x330000        |
