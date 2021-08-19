@@ -46,7 +46,8 @@ void (*mmu_exception_handler)(Except_Type exception_type, uint32_t srr1_bits);
 PPC_BAT_entry ibat_array[4] = {{0}};
 PPC_BAT_entry dbat_array[4] = {{0}};
 
-//#define MMU_PROFILING // enable MMU profiling
+#define MMU_PROFILING // uncomment this to enable MMU profiling
+#define TLB_PROFILING // uncomment this to enable SoftTLB profiling
 
 /* MMU profiling */
 #ifdef MMU_PROFILING
@@ -131,6 +132,51 @@ public:
         unaligned_writes   = 0;
         unaligned_crossp_r = 0;
         unaligned_crossp_w = 0;
+    };
+};
+#endif
+
+/* SoftTLB profiling. */
+#ifdef TLB_PROFILING
+
+/* global variables for lightweight SoftTLB profiling */
+uint64_t    num_primary_tlb_hits   = 0; // number of hits in the primary TLB
+uint64_t    num_secondary_tlb_hits = 0; // number of hits in the secondary TLB
+uint64_t    num_tlb_refills        = 0; // number of TLB refills
+uint64_t    num_entry_replacements = 0; // number of entry replacements
+
+#include "utils/profiler.h"
+#include <memory>
+
+class TLBProfile : public BaseProfile {
+public:
+    TLBProfile() : BaseProfile("PPC:MMU:TLB") {};
+
+    void populate_variables(std::vector<ProfileVar>& vars) {
+        vars.clear();
+
+        vars.push_back({.name = "Number of hits in the primary TLB",
+            .format = ProfileVarFmt::DEC,
+            .value = num_primary_tlb_hits});
+
+        vars.push_back({.name = "Number of hits in the secondary TLB",
+            .format = ProfileVarFmt::DEC,
+            .value = num_secondary_tlb_hits});
+
+        vars.push_back({.name = "Number of TLB refills",
+            .format = ProfileVarFmt::DEC,
+            .value = num_tlb_refills});
+
+        vars.push_back({.name = "Number of replaced TLB entries",
+            .format = ProfileVarFmt::DEC,
+            .value = num_entry_replacements});
+    };
+
+    void reset() {
+        num_primary_tlb_hits   = 0;
+        num_secondary_tlb_hits = 0;
+        num_tlb_refills        = 0;
+        num_entry_replacements = 0;
     };
 };
 #endif
@@ -767,6 +813,9 @@ static TLBEntry* tlb2_target_entry(uint32_t gp_va)
         tlb_entry[3].lru_bits  = 0x3;
         return &tlb_entry[3];
     } else { // no invalid blocks, replace an existing one according with the hLRU policy
+#ifdef TLB_PROFILING
+        num_entry_replacements++;
+#endif
         if (tlb_entry[0].lru_bits == 0) {
             // update LRU bits
             tlb_entry[0].lru_bits  = 0x3;
@@ -946,7 +995,7 @@ void tlb_flush_bat_entries()
         return;
 
     tlb_flush_entries(TLBE_FROM_BAT);
-    
+
     gTLBFlushBatEntries = false;
 }
 
@@ -954,9 +1003,9 @@ void tlb_flush_pat_entries()
 {
     if (!gTLBFlushPatEntries)
         return;
-    
+
     tlb_flush_entries(TLBE_FROM_PAT);
-    
+
     gTLBFlushPatEntries = false;
 }
 
@@ -1126,15 +1175,26 @@ inline T mmu_read_vmem(uint32_t guest_va) {
     // look up guest virtual address in the primary TLB
     tlb1_entry = &pCurTLB1[(guest_va >> PAGE_SIZE_BITS) & tlb_size_mask];
     if (tlb1_entry->tag == tag) { // primary TLB hit -> fast path
+#ifdef TLB_PROFILING
+        num_primary_tlb_hits++;
+#endif
         host_va = (uint8_t *)(tlb1_entry->host_va_offset + guest_va);
     } else {
         // primary TLB miss -> look up address in the secondary TLB
         tlb2_entry = lookup_secondary_tlb(guest_va, tag);
         if (tlb2_entry == nullptr) {
+#ifdef TLB_PROFILING
+            num_tlb_refills++;
+#endif
             // secondary TLB miss ->
             // perform full address translation and refill the secondary TLB
             tlb2_entry = tlb2_refill(guest_va, 0);
         }
+#ifdef TLB_PROFILING
+        else {
+            num_secondary_tlb_hits++;
+        }
+#endif
 
         if (tlb2_entry->flags & TLBFlags::PAGE_MEM) { // is it a real memory region?
             // refill the primary TLB
@@ -1143,12 +1203,19 @@ inline T mmu_read_vmem(uint32_t guest_va) {
             tlb1_entry->host_va_offset = tlb2_entry->host_va_offset;
             host_va = (uint8_t *)(tlb1_entry->host_va_offset + guest_va);
         } else { // otherwise, it's an access to a memory-mapped device
+#ifdef MMU_PROFILING
+            iomem_reads_total++;
+#endif
             return (
                 tlb2_entry->reg_desc->devobj->read(tlb2_entry->reg_desc->start,
                     guest_va - tlb2_entry->reg_desc->start, sizeof(T))
             );
         }
     }
+
+#ifdef MMU_PROFILING
+    dmem_reads_total++;
+#endif
 
     // handle unaligned memory accesses
     if (sizeof(T) > 1 && (guest_va & (sizeof(T) - 1))) {
@@ -1185,6 +1252,9 @@ inline void mmu_write_vmem(uint32_t guest_va, T value) {
     // look up guest virtual address in the primary TLB
     tlb1_entry = &pCurTLB1[(guest_va >> PAGE_SIZE_BITS) & tlb_size_mask];
     if (tlb1_entry->tag == tag) { // primary TLB hit -> fast path
+#ifdef TLB_PROFILING
+        num_primary_tlb_hits++;
+#endif
         if (!(tlb1_entry->flags & TLBFlags::PAGE_WRITABLE)) {
             ppc_state.spr[SPR::DSISR] = 0x08000000 | (1 << 25);
             ppc_state.spr[SPR::DAR]   = guest_va;
@@ -1209,10 +1279,18 @@ inline void mmu_write_vmem(uint32_t guest_va, T value) {
         // primary TLB miss -> look up address in the secondary TLB
         tlb2_entry = lookup_secondary_tlb(guest_va, tag);
         if (tlb2_entry == nullptr) {
+#ifdef TLB_PROFILING
+            num_tlb_refills++;
+#endif
             // secondary TLB miss ->
             // perform full address translation and refill the secondary TLB
             tlb2_entry = tlb2_refill(guest_va, 1);
         }
+#ifdef TLB_PROFILING
+        else {
+            num_secondary_tlb_hits++;
+        }
+#endif
 
         if (!(tlb2_entry->flags & TLBFlags::PAGE_WRITABLE)) {
             LOG_F(WARNING, "DSI Exception in mmu_write_vmem! PC=0x%08X", ppc_state.pc);
@@ -1238,6 +1316,9 @@ inline void mmu_write_vmem(uint32_t guest_va, T value) {
             //MemAccessType = true;
             //MemAddr = (uint64_t)host_va;
         } else { // otherwise, it's an access to a memory-mapped device
+#ifdef MMU_PROFILING
+            iomem_writes_total++;
+#endif
             tlb2_entry->reg_desc->devobj->write(tlb2_entry->reg_desc->start,
                 guest_va - tlb2_entry->reg_desc->start, value, sizeof(T));
             //MemAccessType = false;
@@ -1246,6 +1327,10 @@ inline void mmu_write_vmem(uint32_t guest_va, T value) {
             return;
         }
     }
+
+#ifdef MMU_PROFILING
+    dmem_writes_total++;
+#endif
 
     // handle unaligned memory accesses
     if (sizeof(T) > 1 && (guest_va & (sizeof(T) - 1))) {
@@ -1285,6 +1370,9 @@ static uint32_t read_unaligned(uint32_t guest_va, uint8_t *host_va, uint32_t siz
 
     // is it a misaligned cross-page read?
     if (((guest_va & 0xFFF) + size) > 0x1000) {
+#ifdef MMU_PROFILING
+        unaligned_crossp_r++;
+#endif
         // Break such a memory access into multiple, bytewise accesses.
         // Because such accesses suffer a performance penalty, they will be
         // presumably very rare so don't waste time optimizing the code below.
@@ -1292,6 +1380,9 @@ static uint32_t read_unaligned(uint32_t guest_va, uint8_t *host_va, uint32_t siz
             result = (result << 8) | mmu_read_vmem<uint8_t>(guest_va);
         }
     } else {
+#ifdef MMU_PROFILING
+        unaligned_reads++;
+#endif
         switch(size) {
         case 2:
             return READ_WORD_BE_U(host_va);
@@ -1309,8 +1400,9 @@ static void write_unaligned(uint32_t guest_va, uint8_t *host_va, uint32_t value,
 {
     // is it a misaligned cross-page write?
     if (((guest_va & 0xFFF) + size) > 0x1000) {
-        Unaligned_crosspage = true;
-
+#ifdef MMU_PROFILING
+        unaligned_crossp_w++;
+#endif
         // Break such a memory access into multiple, bytewise accesses.
         // Because such accesses suffer a performance penalty, they will be
         // presumably very rare so don't waste time optimizing the code below.
@@ -1321,8 +1413,9 @@ static void write_unaligned(uint32_t guest_va, uint8_t *host_va, uint32_t value,
             mmu_write_vmem<uint8_t>(guest_va, (value >> shift) & 0xFF);
         }
     } else {
-        Unaligned_crosspage = false;
-#if 1
+#ifdef MMU_PROFILING
+        unaligned_writes++;
+#endif
         switch(size) {
         case 2:
             WRITE_WORD_BE_U(host_va, value);
@@ -1334,7 +1427,6 @@ static void write_unaligned(uint32_t guest_va, uint8_t *host_va, uint32_t value,
             WRITE_QWORD_BE_U(host_va, value);
             break;
         }
-#endif
     }
 }
 
@@ -1580,7 +1672,12 @@ void ppc_mmu_init() {
     mmu_change_mode();
 
 #ifdef MMU_PROFILING
-    gProfilerObj->register_profile("PPC_MMU",
+    gProfilerObj->register_profile("PPC:MMU",
         std::unique_ptr<BaseProfile>(new MMUProfile()));
+#endif
+
+#ifdef TLB_PROFILING
+    gProfilerObj->register_profile("PPC:MMU:TLB",
+    std::unique_ptr<BaseProfile>(new TLBProfile()));
 #endif
 }
