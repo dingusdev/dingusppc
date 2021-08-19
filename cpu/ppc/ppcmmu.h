@@ -19,10 +19,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-// The opcodes for the processor - ppcopcodes.cpp
+/** @file PowerPC Memory Management Unit definitions. */
 
-#ifndef PPCMEMORY_H
-#define PPCMEMORY_H
+#ifndef PPCMMU_H
+#define PPCMMU_H
 
 #include <array>
 #include <cinttypes>
@@ -93,8 +93,6 @@ extern uint8_t* mmu_get_dma_mem(uint32_t addr, uint32_t size);
 extern void mmu_change_mode(void);
 extern void mmu_pat_ctx_changed();
 extern void tlb_flush_entry(uint32_t ea);
-extern void tlb_flush_bat_entries();
-extern void tlb_flush_pat_entries();
 
 extern void ppc_set_cur_instruction(const uint8_t* ptr);
 extern void mem_write_byte(uint32_t addr, uint8_t value);
@@ -113,4 +111,4 @@ extern T mmu_read_vmem(uint32_t guest_va);
 template <class T>
 extern void mmu_write_vmem(uint32_t guest_va, T value);
 
-#endif    // PPCMEMORY_H
+#endif    // PPCMMU_H
