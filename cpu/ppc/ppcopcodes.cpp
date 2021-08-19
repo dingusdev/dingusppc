@@ -873,7 +873,6 @@ void dppc_interpreter::ppc_mtspr() {
     }
 
     if (ref_spr == SPR::SDR1) {
-        LOG_F(INFO, "SDR1 changed to 0x%08X", ppc_state.spr[SPR::SDR1]);
         mmu_pat_ctx_changed();
     }
 

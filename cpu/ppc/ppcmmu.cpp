@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/** @file PowerPC Memory management unit emulation. */
+/** @file PowerPC Memory Management Unit emulation. */
 
 /* TODO:
     - implement TLB
@@ -181,13 +181,6 @@ public:
 };
 #endif
 
-/** Temporary TLB test variables. */
-bool        MemAccessType; // true - memory, false - I/O
-bool        Unaligned_crosspage = false;
-uint64_t    MemAddr = 0;
-MMIODevice  *Device = 0;
-uint32_t    DevOffset = 0;
-
 
 /** remember recently used physical memory regions for quicker translation. */
 AddressMapEntry last_read_area  = {0xFFFFFFFF, 0xFFFFFFFF};
@@ -214,16 +207,6 @@ static inline T read_phys_mem(AddressMapEntry *mru_rgn, uint32_t addr)
 #ifdef MMU_PROFILING
         dmem_reads_total++;
 #endif
-
-        if (!MemAccessType) {
-            LOG_F(ERROR, "TLB real memory access expected!");
-        }
-
-        if ((mru_rgn->mem_ptr + (addr - mru_rgn->start)) != (uint8_t *)MemAddr) {
-            LOG_F(ERROR, "TLB address mismatch! Expected: 0x%llx, got: 0x%llx",
-                  (uint64_t)(mru_rgn->mem_ptr + (addr - mru_rgn->start)),
-                  (uint64_t)MemAddr);
-        }
 
         switch(sizeof(T)) {
         case 1:
@@ -252,14 +235,6 @@ static inline T read_phys_mem(AddressMapEntry *mru_rgn, uint32_t addr)
 #ifdef MMU_PROFILING
         iomem_reads_total++;
 #endif
-        if (MemAccessType) {
-            LOG_F(ERROR, "TLB I/O memory access expected!");
-        }
-
-        if (mru_rgn->devobj != Device || (addr - mru_rgn->start) != DevOffset) {
-            LOG_F(ERROR, "TLB MMIO access mismatch! Expected: 0x%X, got: 0x%X",
-                  addr - mru_rgn->start, DevOffset);
-        }
 
         return (mru_rgn->devobj->read(mru_rgn->start,
                 addr - mru_rgn->start, sizeof(T)));
@@ -285,20 +260,6 @@ static inline void write_phys_mem(AddressMapEntry *mru_rgn, uint32_t addr, T val
     if (mru_rgn->type & RT_RAM) {
 #ifdef MMU_PROFILING
         dmem_writes_total++;
-#endif
-
-#if 1
-        if (!MemAccessType) {
-            LOG_F(ERROR, "TLB real memory access expected!");
-        }
-
-        if (!is_aligned && Unaligned_crosspage) {
-            LOG_F(WARNING, "Unaligned cross-page access ignored!");
-        } else if ((mru_rgn->mem_ptr + (addr - mru_rgn->start)) != (uint8_t *)MemAddr) {
-            LOG_F(ERROR, "TLB address mismatch! Expected: 0x%llx, got: 0x%llx",
-                  (uint64_t)(mru_rgn->mem_ptr + (addr - mru_rgn->start)),
-                  (uint64_t)MemAddr);
-        }
 #endif
 
         switch(sizeof(T)) {
@@ -333,17 +294,6 @@ static inline void write_phys_mem(AddressMapEntry *mru_rgn, uint32_t addr, T val
         iomem_writes_total++;
 #endif
 
-#if 1
-        if (MemAccessType) {
-            LOG_F(ERROR, "TLB I/O memory access expected!");
-        }
-
-        if (mru_rgn->devobj != Device || (addr - mru_rgn->start) != DevOffset) {
-            LOG_F(ERROR, "TLB MMIO access mismatch! Expected: 0x%X, got: 0x%X",
-                addr - mru_rgn->start, DevOffset);
-        }
-#endif
-
         mru_rgn->devobj->write(mru_rgn->start, addr - mru_rgn->start, value,
                                sizeof(T));
     } else {
@@ -374,6 +324,10 @@ void ppc_set_cur_instruction(const uint8_t* ptr) {
 
 bool gTLBFlushBatEntries = false;
 bool gTLBFlushPatEntries = false;
+
+// Forward declarations.
+void tlb_flush_bat_entries();
+void tlb_flush_pat_entries();
 
 void ibat_update(uint32_t bat_reg) {
     int upper_reg_num;
@@ -527,7 +481,7 @@ static bool search_pteg(
     return false;
 }
 
-static PATResult page_address_translate(uint32_t la, bool is_instr_fetch,
+static PATResult page_address_translation(uint32_t la, bool is_instr_fetch,
                                         unsigned msr_pr, int is_write)
 {
     uint32_t sr_val, page_index, pteg_hash1, vsid, pte_word2;
@@ -598,7 +552,7 @@ static PATResult page_address_translate(uint32_t la, bool is_instr_fetch,
 }
 
 /** PowerPC-style MMU instruction address translation. */
-static uint32_t ppc_mmu_instr_translate(uint32_t la) {
+static uint32_t mmu_instr_translation(uint32_t la) {
     uint32_t pa; /* translated physical address */
 
     bool bat_hit    = false;
@@ -631,7 +585,7 @@ static uint32_t ppc_mmu_instr_translate(uint32_t la) {
 
     /* page address translation */
     if (!bat_hit) {
-        PATResult pat_res = page_address_translate(la, true, msr_pr, 0);
+        PATResult pat_res = page_address_translation(la, true, msr_pr, 0);
         pa = pat_res.phys;
 
 #ifdef MMU_PROFILING
@@ -678,7 +632,7 @@ static uint32_t ppc_mmu_addr_translate(uint32_t la, int is_write) {
 
     /* page address translation */
     if (!bat_hit) {
-        PATResult pat_res = page_address_translate(la, false, msr_pr, is_write);
+        PATResult pat_res = page_address_translation(la, false, msr_pr, is_write);
         pa = pat_res.phys;
 
 #ifdef MMU_PROFILING
@@ -812,7 +766,7 @@ static TLBEntry* tlb2_target_entry(uint32_t gp_va)
         tlb_entry[2].lru_bits  = 0x2;
         tlb_entry[3].lru_bits  = 0x3;
         return &tlb_entry[3];
-    } else { // no invalid blocks, replace an existing one according with the hLRU policy
+    } else { // no free entries, replace an existing one according with the hLRU policy
 #ifdef TLB_PROFILING
         num_entry_replacements++;
 #endif
@@ -880,7 +834,7 @@ static TLBEntry* tlb2_refill(uint32_t guest_va, int is_write)
             }
         } else {
             // page address translation
-            PATResult pat_res = page_address_translate(guest_va, false,
+            PATResult pat_res = page_address_translation(guest_va, false,
                                         !!(ppc_state.msr & 0x4000), is_write);
             phys_addr = pat_res.phys;
             flags = TLBFlags::TLBE_FROM_PAT; // tell the world we come from
@@ -1018,8 +972,6 @@ static inline uint64_t tlb_translate_addr(uint32_t guest_va)
     // look up address in the primary TLB
     tlb1_entry = &pCurTLB1[(guest_va >> PAGE_SIZE_BITS) & tlb_size_mask];
     if (tlb1_entry->tag == tag) { // primary TLB hit -> fast path
-        MemAccessType = true;
-        MemAddr = tlb1_entry->host_va_offset + guest_va;
         return tlb1_entry->host_va_offset + guest_va;
     } else { // primary TLB miss -> look up address in the secondary TLB
         tlb2_entry = &pCurTLB2[((guest_va >> PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
@@ -1060,13 +1012,8 @@ static inline uint64_t tlb_translate_addr(uint32_t guest_va)
             tlb1_entry->tag = tag;
             tlb1_entry->flags = tlb2_entry->flags;
             tlb1_entry->host_va_offset = tlb2_entry->host_va_offset;
-            MemAccessType = true;
-            MemAddr = tlb1_entry->host_va_offset + guest_va;
             return tlb1_entry->host_va_offset + guest_va;
         } else { // an attempt to access a memory-mapped device
-            MemAccessType = false;
-            Device = tlb2_entry->reg_desc->devobj;
-            DevOffset = guest_va - tlb2_entry->reg_desc->start;
             return guest_va - tlb2_entry->reg_desc->start;
         }
     }
@@ -1236,7 +1183,6 @@ inline T mmu_read_vmem(uint32_t guest_va) {
 }
 
 // explicitely instantiate all required mmu_read_vmem variants
-// to avoid linking errors
 template uint8_t  mmu_read_vmem<uint8_t>(uint32_t guest_va);
 template uint16_t mmu_read_vmem<uint16_t>(uint32_t guest_va);
 template uint32_t mmu_read_vmem<uint32_t>(uint32_t guest_va);
@@ -1262,7 +1208,7 @@ inline void mmu_write_vmem(uint32_t guest_va, T value) {
         }
         if (!(tlb1_entry->flags & TLBFlags::PTE_SET_C)) {
             // perform full page address translation to update PTE.C bit
-            PATResult pat_res = page_address_translate(guest_va, false,
+            PATResult pat_res = page_address_translation(guest_va, false,
                                                        !!(ppc_state.msr & 0x4000), true);
             tlb1_entry->flags |= TLBFlags::PTE_SET_C;
 
@@ -1273,8 +1219,6 @@ inline void mmu_write_vmem(uint32_t guest_va, T value) {
             }
         }
         host_va = (uint8_t *)(tlb1_entry->host_va_offset + guest_va);
-        MemAccessType = true;
-        MemAddr = (uint64_t)host_va;
     } else {
         // primary TLB miss -> look up address in the secondary TLB
         tlb2_entry = lookup_secondary_tlb(guest_va, tag);
@@ -1293,8 +1237,6 @@ inline void mmu_write_vmem(uint32_t guest_va, T value) {
 #endif
 
         if (!(tlb2_entry->flags & TLBFlags::PAGE_WRITABLE)) {
-            LOG_F(WARNING, "DSI Exception in mmu_write_vmem! PC=0x%08X", ppc_state.pc);
-            //return;
             ppc_state.spr[SPR::DSISR] = 0x08000000 | (1 << 25);
             ppc_state.spr[SPR::DAR]   = guest_va;
             mmu_exception_handler(Except_Type::EXC_DSI, 0);
@@ -1302,7 +1244,7 @@ inline void mmu_write_vmem(uint32_t guest_va, T value) {
 
         if (!(tlb2_entry->flags & TLBFlags::PTE_SET_C)) {
             // perform full page address translation to update PTE.C bit
-            PATResult pat_res = page_address_translate(guest_va, false,
+            PATResult pat_res = page_address_translation(guest_va, false,
                                                        !!(ppc_state.msr & 0x4000), true);
             tlb2_entry->flags |= TLBFlags::PTE_SET_C;
         }
@@ -1313,17 +1255,12 @@ inline void mmu_write_vmem(uint32_t guest_va, T value) {
             tlb1_entry->flags = tlb2_entry->flags;
             tlb1_entry->host_va_offset = tlb2_entry->host_va_offset;
             host_va = (uint8_t *)(tlb1_entry->host_va_offset + guest_va);
-            //MemAccessType = true;
-            //MemAddr = (uint64_t)host_va;
         } else { // otherwise, it's an access to a memory-mapped device
 #ifdef MMU_PROFILING
             iomem_writes_total++;
 #endif
             tlb2_entry->reg_desc->devobj->write(tlb2_entry->reg_desc->start,
                 guest_va - tlb2_entry->reg_desc->start, value, sizeof(T));
-            //MemAccessType = false;
-            //Device = tlb2_entry->reg_desc->devobj;
-            //DevOffset = guest_va - tlb2_entry->reg_desc->start;
             return;
         }
     }
@@ -1338,7 +1275,6 @@ inline void mmu_write_vmem(uint32_t guest_va, T value) {
         return;
     }
 
-#if 1
     // handle aligned memory accesses
     switch(sizeof(T)) {
     case 1:
@@ -1354,11 +1290,9 @@ inline void mmu_write_vmem(uint32_t guest_va, T value) {
         WRITE_QWORD_BE_A(host_va, value);
         break;
     }
-#endif
 }
 
 // explicitely instantiate all required mmu_write_vmem variants
-// to avoid linking errors
 template void mmu_write_vmem<uint8_t>(uint32_t guest_va,   uint8_t value);
 template void mmu_write_vmem<uint16_t>(uint32_t guest_va, uint16_t value);
 template void mmu_write_vmem<uint32_t>(uint32_t guest_va, uint32_t value);
@@ -1556,7 +1490,7 @@ uint8_t* quickinstruction_translate(uint32_t addr) {
 
     /* perform instruction address translation if enabled */
     if (ppc_state.msr & 0x20) {
-        addr = ppc_mmu_instr_translate(addr);
+        addr = mmu_instr_translation(addr);
     }
 
     if (addr >= last_exec_area.start && addr <= last_exec_area.end) {
