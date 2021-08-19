@@ -29,6 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "utils/profiler.h"
 #include "ppcemu.h"
 #include <cinttypes>
+#include <csignal>
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -39,6 +40,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <thirdparty/loguru/loguru.hpp>
 
 using namespace std;
+
+void sigint_handler(int signum) {
+    enter_debugger();
+
+    LOG_F(INFO, "Shutting down...");
+
+    delete gMachineObj.release();
+    exit(0);
+}
 
 static string appDescription = string(
     "\nDingusPPC - Prototype 5bf5 (8/23/2020)       "
@@ -118,10 +128,8 @@ int main(int argc, char** argv) {
         loguru::init(argc, argv);
         loguru::add_file("dingusppc.log", loguru::Append, 0);
     } else {
-        loguru::g_preamble_uptime  = false;
         loguru::g_stderr_verbosity = loguru::Verbosity_INFO;
         loguru::init(argc, argv);
-        loguru::add_file("exceptions.log", loguru::Truncate, -7);
     }
 
     if (*machine_opt) {
@@ -162,6 +170,9 @@ int main(int argc, char** argv) {
     if (create_machine_for_id(machine_str, bootrom_path) < 0) {
         goto bail;
     }
+
+    // redirect SIGINT to our own handler
+    signal(SIGINT, sigint_handler);
 
 #ifdef SDL
         if (SDL_Init(SDL_INIT_AUDIO)){
