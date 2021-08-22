@@ -45,6 +45,8 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow") {
     this->screamer    = new AWACDevice();
     this->snd_out_dma = new DMAChannel(this->screamer);
     this->screamer->set_dma_out(this->snd_out_dma);
+
+    this->mesh = new MESHController(HeathrowMESHID);
 }
 
 HeathrowIC::~HeathrowIC() {
@@ -53,6 +55,9 @@ HeathrowIC::~HeathrowIC() {
 
     if (this->viacuda)
         delete (this->viacuda);
+
+    if (this->mesh)
+        delete (this->mesh);
 }
 
 
@@ -122,6 +127,9 @@ uint32_t HeathrowIC::read(uint32_t reg_start, uint32_t offset, int size) {
     case 8:
         res = dma_read(offset - 0x8000, size);
         break;
+    case 0x10:
+        res = this->mesh->read((offset >> 4) & 0xF);
+        break;
     case 0x14:
         res = this->screamer->snd_ctrl_read(offset - 0x14000, size);
         break;
@@ -151,6 +159,9 @@ void HeathrowIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int 
         break;
     case 8:
         dma_write(offset - 0x8000, value, size);
+        break;
+    case 0x10:
+        this->mesh->write((offset >> 4) & 0xF, value);
         break;
     case 0x14:
         this->screamer->snd_ctrl_write(offset - 0x14000, value, size);

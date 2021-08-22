@@ -55,6 +55,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "dbdma.h"
 #include "hwcomponent.h"
 #include "memctrlbase.h"
+#include "mesh.h"
 #include "mmiodevice.h"
 #include "nvram.h"
 #include "pcidevice.h"
@@ -146,9 +147,10 @@ private:
     uint32_t aux_ctrl    = 0;    // aux features control register
 
     /* device cells */
-    ViaCuda* viacuda;     /* VIA cell with Cuda MCU attached to it */
-    NVram* nvram;         /* NVRAM cell */
-    AWACDevice* screamer; /* Screamer audio codec instance */
+    ViaCuda* viacuda;     // VIA cell with Cuda MCU attached to it
+    NVram* nvram;         // NVRAM cell
+    AWACDevice* screamer; // Screamer audio codec instance
+    MESHController *mesh; // MESH SCSI cell instance
 
     DMAChannel* snd_out_dma;
 };
