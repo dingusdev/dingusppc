@@ -47,6 +47,7 @@ void sigint_handler(int signum) {
     LOG_F(INFO, "Shutting down...");
 
     delete gMachineObj.release();
+    SDL_Quit();
     exit(0);
 }
 
@@ -164,6 +165,11 @@ int main(int argc, char** argv) {
     cout << "BootROM path: " << bootrom_path << endl;
     cout << "Execution mode: " << execution_mode << endl;
 
+    if (SDL_Init(SDL_INIT_VIDEO)) {
+        LOG_F(ERROR, "SDL_Init error: %s", SDL_GetError());
+        return 0;
+    }
+
     // initialize global profiler object
     gProfilerObj.reset(new Profiler());
 
@@ -173,13 +179,6 @@ int main(int argc, char** argv) {
 
     // redirect SIGINT to our own handler
     signal(SIGINT, sigint_handler);
-
-#ifdef SDL
-        if (SDL_Init(SDL_INIT_AUDIO)){
-            LOG_F(ERROR, "SDL_Init error: %s", SDL_GetError());
-            return 0;
-        }
-#endif
 
     switch (execution_mode) {
         case 0:
@@ -197,6 +196,8 @@ bail:
     LOG_F(INFO, "Cleaning up...");
 
     delete gMachineObj.release();
+
+    SDL_Quit();
 
     return 0;
 }

@@ -169,6 +169,7 @@ enum {
     ATI_MPP_ADDR              = 0x04C8,
     ATI_MPP_DATA              = 0x04CC,
     ATI_TVO_CNTL              = 0x0500,
+    ATI_SETUP_CNTL            = 0x0704,
 };
 
 /* Mach64 PLL register indices. */
@@ -184,7 +185,9 @@ enum {
 };
 
 constexpr auto APERTURE_SIZE = 0x01000000UL; /* Mach64 aperture size */
-constexpr auto MEMMAP_OFFSET = 0x007FFC00UL; /* offset to memory mapped registers */
+constexpr auto MM_REGS_0_OFF = 0x007FFC00UL; /* offset to memory mapped registers, block 0 */
+constexpr auto MM_REGS_1_OFF = 0x007FF800UL; /* offset to memory mapped registers, block 1 */
+constexpr auto BE_FB_OFFSET  = 0x00800000UL; /* Offset to the big-endian frame buffer */
 
 constexpr auto ATI_XTAL = 14318180.0f; // external crystal oscillator frequency
 
@@ -221,9 +224,11 @@ protected:
     float calc_pll_freq(int scale, int fb_div);
     void verbose_pixel_format(int crtc_index);
     void crtc_enable();
+    void draw_hw_cursor(uint8_t *dst_buf, int dst_pitch);
+    void update_screen();
 
 private:
-    uint8_t block_io_regs[512] = {0};
+    uint8_t block_io_regs[2048] = {0};
 
     uint8_t pci_cfg[256] = {0}; /* PCI configuration space */
 
@@ -246,5 +251,6 @@ private:
 
     uint8_t palette[256][4]; /* internal DAC palette in RGBA format */
     int comp_index;          /* color component index for DAC palette access */
+    uint8_t *surface;
 };
 #endif /* ATI_RAGE_H */

@@ -33,6 +33,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef DISPLAY_ID_H
 #define DISPLAY_ID_H
 
+#include "SDL.h"
 #include <cinttypes>
 
 /** I2C bus states. */
@@ -50,15 +51,21 @@ enum I2CState : uint8_t {
 class DisplayID {
 public:
     DisplayID();
-    ~DisplayID() = default;
+    ~DisplayID();
 
     uint16_t read_monitor_sense(uint16_t data, uint16_t dirs);
+    void get_disp_texture(void **pix_buf, int *pitch);
+    void update_screen(void);
 
 protected:
     uint16_t set_result(uint8_t sda, uint8_t scl);
     uint16_t update_ddc_i2c(uint8_t sda, uint8_t scl);
 
 private:
+    SDL_Window      *display_wnd;
+    SDL_Renderer    *renderer;
+    SDL_Texture     *disp_texture;
+
     bool i2c_on;
 
     uint8_t std_sense_code;
