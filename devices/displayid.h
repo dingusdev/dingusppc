@@ -33,7 +33,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef DISPLAY_ID_H
 #define DISPLAY_ID_H
 
-#include "SDL.h"
+#include "thirdparty/SDL2/include/SDL.h"
 #include <cinttypes>
 
 /** I2C bus states. */
