@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "displayid.h"
 #include <thirdparty/loguru/loguru.hpp>
-#include "thirdparty/SDL2/include/SDL.h"
+#include "SDL.h"
 
 DisplayID::DisplayID() {
     /* Initialize Apple monitor codes */
