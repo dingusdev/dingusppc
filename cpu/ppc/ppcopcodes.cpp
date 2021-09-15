@@ -31,7 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <stdexcept>
 #include <stdio.h>
 #include <stdlib.h>
-#include <thirdparty/loguru/loguru.hpp>
+#include <loguru.hpp>
 #include <thread>
 #include <vector>
 

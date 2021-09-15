@@ -27,7 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <chrono>
 #include <cstdint>
 #include <map>
-#include <thirdparty/loguru/loguru.hpp>
+#include <loguru.hpp>
 
 /* Mach64 post dividers. */
 static const int mach64_post_div[8] = {

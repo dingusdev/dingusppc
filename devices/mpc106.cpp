@@ -27,7 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <cstring>
 #include <iostream>
-#include <thirdparty/loguru/loguru.hpp>
+#include <loguru.hpp>
 
 #include "hwcomponent.h"
 #include "memctrlbase.h"

@@ -34,7 +34,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "devices/viacuda.h"
 #include "machinebase.h"
 #include "machineproperties.h"
-#include <thirdparty/loguru/loguru.hpp>
+#include <loguru.hpp>
 
 
 static void setup_ram_slot(std::string name, int i2c_addr, int capacity_megs) {

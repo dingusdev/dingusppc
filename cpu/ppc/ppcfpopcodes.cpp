@@ -33,7 +33,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <stdexcept>
 #include <stdio.h>
 #include <unordered_map>
-#include <thirdparty/loguru/loguru.hpp>
+#include <loguru.hpp>
 
 // Used for FP calcs
 uint64_t ppc_result64_b;

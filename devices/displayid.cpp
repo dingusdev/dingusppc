@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "displayid.h"
-#include <thirdparty/loguru/loguru.hpp>
+#include <loguru.hpp>
 #include "SDL.h"
 
 DisplayID::DisplayID() {

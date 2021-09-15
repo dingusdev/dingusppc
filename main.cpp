@@ -35,9 +35,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <iostream>
 #include <sstream>
 #include <stdio.h>
-#include <thirdparty/CLI11/CLI11.hpp>
-#include <thirdparty/SDL2/include/SDL.h>
-#include <thirdparty/loguru/loguru.hpp>
+#include <CLI11.hpp>
+#include <SDL.h>
+#include <loguru.hpp>
 
 using namespace std;
 

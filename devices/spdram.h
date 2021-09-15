@@ -52,7 +52,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <stdexcept>
 #include <string>
-#include <thirdparty/loguru/loguru.hpp>
+#include <loguru.hpp>
 
 enum RAMType : int { SDRAM = 4 };
 

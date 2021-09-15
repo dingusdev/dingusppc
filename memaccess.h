@@ -7,7 +7,7 @@
 
 #include "endianswap.h"
 #include <cinttypes>
-#include <thirdparty/loguru/loguru.hpp>
+#include <loguru.hpp>
 
 /* read an aligned big-endian WORD (16bit) */
 #define READ_WORD_BE_A(addr) (BYTESWAP_16(*((uint16_t*)((addr)))))

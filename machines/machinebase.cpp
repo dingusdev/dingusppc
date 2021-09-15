@@ -3,7 +3,7 @@
 #include <map>
 #include <memory>
 #include <string>
-#include <thirdparty/loguru/loguru.hpp>
+#include <loguru.hpp>
 
 std::unique_ptr<MachineBase> gMachineObj = 0;
 
