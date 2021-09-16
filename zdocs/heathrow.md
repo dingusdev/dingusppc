@@ -116,7 +116,7 @@ Macintosh firmware configures the Heathrow ASIC to live at address `0xF3000000`.
 ### Device register spaces
 
 | Offset  | Size          | Space name                               |
-|:--------|------------- :|:----------------------------------------:|
+|:-------:|:-------------:|:----------------------------------------:|
 | 0x10000 | 4 KB          | MESH SCSI controller registers           |
 | 0x11000 | 4 KB          | Ethernet (bmac) controller registers     |
 | 0x12000 | 4 KB          | Legacy serial (SCC) controller registers |
