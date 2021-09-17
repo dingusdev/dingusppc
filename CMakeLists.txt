@@ -84,6 +84,7 @@ include_directories("${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/devices"
                     "${PROJECT_SOURCE_DIR}/debugger"
                     "${PROJECT_SOURCE_DIR}/utils"
 					"${PROJECT_SOURCE_DIR}/thirdparty/loguru/"
+                    "${PROJECT_SOURCE_DIR}/thirdparty/CLI11/"
 #                    ${SDL2_INCLUDE_DIRS})
 					"${PROJECT_SOURCE_DIR}/thirdparty/SDL2/")
 #                    "${PROJECT_SOURCE_DIR}/thirdparty/cubeb/include")
