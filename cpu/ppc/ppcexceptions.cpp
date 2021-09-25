@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @file Handling of low-level PPC exceptions. */
 
 #include "ppcemu.h"
+#include "ppcmmu.h"
 #include <setjmp.h>
 #include <stdexcept>
 #include <string>
@@ -108,6 +109,8 @@ jmp_buf exc_env; /* Global exception environment. */
     if (ppc_state.msr & 0x40) {
         ppc_next_instruction_address |= 0xFFF00000;
     }
+
+    mmu_change_mode();
 
     longjmp(exc_env, 2); /* return to the main execution loop. */
 }

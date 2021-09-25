@@ -148,22 +148,26 @@ void dppc_interpreter::power_lscbx() {
         if (match_found == false) {
             switch (shift_amount) {
             case 0:
-                return_value = mem_grab_byte(ppc_effective_address);
+                return_value = mmu_read_vmem<uint8_t>(ppc_effective_address);
+                //return_value = mem_grab_byte(ppc_effective_address);
                 ppc_result_d = (ppc_result_d & 0x00FFFFFF) | (return_value << 24);
                 ppc_store_result_regd();
                 break;
             case 1:
-                return_value = mem_grab_byte(ppc_effective_address);
+                return_value = mmu_read_vmem<uint8_t>(ppc_effective_address);
+                //return_value = mem_grab_byte(ppc_effective_address);
                 ppc_result_d = (ppc_result_d & 0xFF00FFFF) | (return_value << 16);
                 ppc_store_result_regd();
                 break;
             case 2:
-                return_value = mem_grab_byte(ppc_effective_address);
+                return_value = mmu_read_vmem<uint8_t>(ppc_effective_address);
+                //return_value = mem_grab_byte(ppc_effective_address);
                 ppc_result_d = (ppc_result_d & 0xFFFF00FF) | (return_value << 8);
                 ppc_store_result_regd();
                 break;
             case 3:
-                return_value = mem_grab_byte(ppc_effective_address);
+                return_value = mmu_read_vmem<uint8_t>(ppc_effective_address);
+                //return_value = mem_grab_byte(ppc_effective_address);
                 ppc_result_d = (ppc_result_d & 0xFFFFFF00) | return_value;
                 ppc_store_result_regd();
                 break;

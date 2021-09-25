@@ -151,7 +151,7 @@ void exec_single_68k()
 
     /* calculate address of the current opcode table entry as follows:
        get_word(68k_PC) * entry_size + table_base */
-    cur_instr_tab_entry = mem_grab_word(cur_68k_pc) * 8 + emu_table_virt;
+    cur_instr_tab_entry = mmu_read_vmem<uint16_t>(cur_68k_pc) * 8 + emu_table_virt;
 
     /* grab the PPC PC too */
     reg = "PC";

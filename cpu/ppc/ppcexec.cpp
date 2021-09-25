@@ -309,7 +309,8 @@ void ppc_exec()
         timebase_counter += ((ppc_state.pc - glob_bb_start_la) >> 2) + 1;
 #endif
         glob_bb_start_la = bb_start_la = ppc_next_instruction_address;
-        pc_real = quickinstruction_translate(bb_start_la);
+        //pc_real = mmu_translate_imem(bb_start_la);
+        pc_real = mmu_translate_imem(bb_start_la);
         page_start = bb_start_la & 0xFFFFF000;
         ppc_state.pc = bb_start_la;
         bb_kind = BB_end_kind::BB_NONE;
@@ -317,7 +318,8 @@ void ppc_exec()
     }
 
     /* initial MMU translation for the current code page. */
-    pc_real = quickinstruction_translate(bb_start_la);
+    //pc_real = quickinstruction_translate(bb_start_la);
+    pc_real = mmu_translate_imem(bb_start_la);
 
     /* set current code page limits */
     page_start = bb_start_la & 0xFFFFF000;
@@ -335,7 +337,7 @@ again:
             glob_bb_start_la = bb_start_la = ppc_next_instruction_address;
             if ((ppc_next_instruction_address & 0xFFFFF000) != page_start) {
                 page_start = bb_start_la & 0xFFFFF000;
-                pc_real = quickinstruction_translate(bb_start_la);
+                pc_real = mmu_translate_imem(bb_start_la);
             } else {
                 pc_real += (int)bb_start_la - (int)ppc_state.pc;
                 ppc_set_cur_instruction(pc_real);
@@ -368,7 +370,8 @@ void ppc_exec_single()
         return;
     }
 
-    quickinstruction_translate(ppc_state.pc);
+    //quickinstruction_translate(ppc_state.pc);
+    mmu_translate_imem(ppc_state.pc);
     ppc_main_opcode();
     if (bb_kind != BB_end_kind::BB_NONE) {
         ppc_state.pc = ppc_next_instruction_address;
@@ -403,7 +406,7 @@ void ppc_exec_until(volatile uint32_t goal_addr)
         timebase_counter += ((ppc_state.pc - glob_bb_start_la) >> 2) + 1;
 #endif
         glob_bb_start_la = bb_start_la = ppc_next_instruction_address;
-        pc_real = quickinstruction_translate(bb_start_la);
+        pc_real = mmu_translate_imem(bb_start_la);
         page_start = bb_start_la & 0xFFFFF000;
         ppc_state.pc = bb_start_la;
         bb_kind = BB_end_kind::BB_NONE;
@@ -411,7 +414,8 @@ void ppc_exec_until(volatile uint32_t goal_addr)
     }
 
     /* initial MMU translation for the current code page. */
-    pc_real = quickinstruction_translate(bb_start_la);
+    //pc_real = quickinstruction_translate(bb_start_la);
+    pc_real = mmu_translate_imem(bb_start_la);
 
     /* set current code page limits */
     page_start = bb_start_la & 0xFFFFF000;
@@ -429,7 +433,7 @@ again:
             glob_bb_start_la = bb_start_la = ppc_next_instruction_address;
             if ((ppc_next_instruction_address & 0xFFFFF000) != page_start) {
                 page_start = bb_start_la & 0xFFFFF000;
-                pc_real = quickinstruction_translate(bb_start_la);
+                pc_real = mmu_translate_imem(bb_start_la);
             } else {
                 pc_real += (int)bb_start_la - (int)ppc_state.pc;
                 ppc_set_cur_instruction(pc_real);
@@ -463,7 +467,8 @@ void ppc_exec_dbg(volatile uint32_t start_addr, volatile uint32_t size)
         timebase_counter += ((ppc_state.pc - glob_bb_start_la) >> 2) + 1;
 #endif
         glob_bb_start_la = bb_start_la = ppc_next_instruction_address;
-        pc_real = quickinstruction_translate(bb_start_la);
+        //pc_real = quickinstruction_translate(bb_start_la);
+        pc_real = mmu_translate_imem(bb_start_la);
         page_start = bb_start_la & 0xFFFFF000;
         ppc_state.pc = bb_start_la;
         bb_kind = BB_end_kind::BB_NONE;
@@ -472,7 +477,7 @@ void ppc_exec_dbg(volatile uint32_t start_addr, volatile uint32_t size)
     }
 
     /* initial MMU translation for the current code page. */
-    pc_real = quickinstruction_translate(bb_start_la);
+    pc_real = mmu_translate_imem(bb_start_la);
 
     /* set current code page limits */
     page_start = bb_start_la & 0xFFFFF000;
@@ -490,7 +495,8 @@ again:
             glob_bb_start_la = bb_start_la = ppc_next_instruction_address;
             if ((ppc_next_instruction_address & 0xFFFFF000) != page_start) {
                 page_start = bb_start_la & 0xFFFFF000;
-                pc_real = quickinstruction_translate(bb_start_la);
+                //pc_real = quickinstruction_translate(bb_start_la);
+                pc_real = mmu_translate_imem(bb_start_la);
             } else {
                 pc_real += (int)bb_start_la - (int)ppc_state.pc;
                 ppc_set_cur_instruction(pc_real);
