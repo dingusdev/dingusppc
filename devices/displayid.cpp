@@ -20,7 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "displayid.h"
-#include <thirdparty/loguru/loguru.hpp>
+#include <loguru.hpp>
+#include "SDL.h"
 
 DisplayID::DisplayID() {
     /* Initialize Apple monitor codes */
@@ -37,8 +38,76 @@ DisplayID::DisplayID() {
 
     /* DDC sense mode is on by default */
     this->i2c_on = true;
+
+    LOG_F(INFO, "Create display window...");
+
+    // Create display window
+    this->display_wnd = SDL_CreateWindow(
+        "DingusPPC Display",
+        SDL_WINDOWPOS_UNDEFINED,
+        SDL_WINDOWPOS_UNDEFINED,
+        640,
+        480,
+        SDL_WINDOW_OPENGL
+    );
+
+    if (this->display_wnd == NULL) {
+        LOG_F(ERROR, "Display: SDL_CreateWindow failed with %s\n", SDL_GetError());
+    }
+
+    this->renderer = SDL_CreateRenderer(this->display_wnd, -1, SDL_RENDERER_ACCELERATED);
+    if (this->renderer == NULL) {
+        LOG_F(ERROR, "Display: SDL_CreateRenderer failed with %s\n", SDL_GetError());
+    }
+
+    SDL_SetRenderDrawColor(this->renderer, 0, 0, 0, 255);
+    SDL_RenderClear(this->renderer);
+    SDL_RenderPresent(this->renderer);
+
+    // Stupidly poll for 10 events.
+    // Otherwise no window will be shown on mac OS!
+    SDL_Event e;
+    for (int i = 0; i < 10; i++) {
+        SDL_PollEvent(&e);
+    }
+
+    this->disp_texture = SDL_CreateTexture(
+        this->renderer,
+        SDL_PIXELFORMAT_ARGB8888,
+        SDL_TEXTUREACCESS_STREAMING,
+        640, 480
+    );
+
+    if (this->disp_texture == NULL) {
+        LOG_F(ERROR, "Display: SDL_CreateTexture failed with %s\n", SDL_GetError());
+    }
 }
 
+DisplayID::~DisplayID() {
+    if (this->disp_texture) {
+        SDL_DestroyTexture(this->disp_texture);
+    }
+
+    if (this->renderer) {
+        SDL_DestroyRenderer(this->renderer);
+    }
+
+    if (this->display_wnd) {
+        SDL_DestroyWindow(this->display_wnd);
+    }
+}
+
+void DisplayID::get_disp_texture(void **pix_buf, int *pitch) {
+    SDL_LockTexture(this->disp_texture, NULL, pix_buf, pitch);
+}
+
+void DisplayID::update_screen() {
+    SDL_UnlockTexture(this->disp_texture);
+    //SDL_SetRenderDrawColor(this->renderer, 255, 255, 255, 255);
+    SDL_RenderClear(this->renderer);
+    SDL_RenderCopy(this->renderer, this->disp_texture, NULL, NULL);
+    SDL_RenderPresent(this->renderer);
+}
 
 uint16_t DisplayID::set_result(uint8_t sda, uint8_t scl) {
     this->last_sda = sda;

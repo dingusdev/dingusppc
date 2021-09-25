@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <ctime>
 #include <iostream>
 #include <interpreter_loop.h>
-#include <thirdparty/loguru/loguru.hpp>
+#include <loguru.hpp>
 #include <cpu/ppc/ppcemu.h>
 
 std::chrono::high_resolution_clock::time_point global;        // global timer

@@ -35,9 +35,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <iostream>
 #include <sstream>
 #include <stdio.h>
-#include <thirdparty/CLI11/CLI11.hpp>
-#include <thirdparty/SDL2/include/SDL.h>
-#include <thirdparty/loguru/loguru.hpp>
+#include <CLI11.hpp>
+#include <SDL.h>
+#include <loguru.hpp>
 
 using namespace std;
 
@@ -47,6 +47,7 @@ void sigint_handler(int signum) {
     LOG_F(INFO, "Shutting down...");
 
     delete gMachineObj.release();
+    SDL_Quit();
     exit(0);
 }
 
@@ -54,6 +55,7 @@ void sigabrt_handler(int signum) {
     LOG_F(INFO, "Shutting down...");
 
     delete gMachineObj.release();
+    SDL_Quit();
 }
 
 static string appDescription = string(
@@ -170,6 +172,11 @@ int main(int argc, char** argv) {
     cout << "BootROM path: " << bootrom_path << endl;
     cout << "Execution mode: " << execution_mode << endl;
 
+    if (SDL_Init(SDL_INIT_VIDEO)) {
+        LOG_F(ERROR, "SDL_Init error: %s", SDL_GetError());
+        return 0;
+    }
+
     // initialize global profiler object
     gProfilerObj.reset(new Profiler());
 
@@ -190,13 +197,6 @@ int main(int argc, char** argv) {
     // redirect SIGABRT to our own handler
     signal(SIGABRT, sigabrt_handler);
 
-#ifdef SDL
-        if (SDL_Init(SDL_INIT_AUDIO)){
-            LOG_F(ERROR, "SDL_Init error: %s", SDL_GetError());
-            return 0;
-        }
-#endif
-
     switch (execution_mode) {
         case 0:
             interpreter_main_loop();
@@ -213,6 +213,8 @@ bail:
     LOG_F(INFO, "Cleaning up...");
 
     delete gMachineObj.release();
+
+    SDL_Quit();
 
     return 0;
 }

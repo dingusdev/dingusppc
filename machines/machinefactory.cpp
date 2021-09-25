@@ -38,7 +38,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memory>
 #include <string>
 #include <vector>
-#include <thirdparty/loguru/loguru.hpp>
+#include <loguru.hpp>
 
 using namespace std;
 

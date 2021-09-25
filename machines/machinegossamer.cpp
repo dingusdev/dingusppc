@@ -34,7 +34,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "devices/viacuda.h"
 #include "machinebase.h"
 #include "machineproperties.h"
-#include <thirdparty/loguru/loguru.hpp>
+#include <loguru.hpp>
 #include <string>
 
 

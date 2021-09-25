@@ -37,7 +37,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <thirdparty/SDL2/include/SDL_stdinc.h>
 #endif
 
-#include <thirdparty/loguru/loguru.hpp>
+#include <loguru.hpp>
 
 using namespace std;
 

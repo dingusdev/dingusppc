@@ -27,7 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "viacuda.h"
 #include "adb.h"
 #include <cinttypes>
-#include <thirdparty/loguru/loguru.hpp>
+#include <loguru.hpp>
 
 using namespace std;
 

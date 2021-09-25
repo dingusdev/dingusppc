@@ -11,6 +11,8 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 if (NOT WIN32)
 find_package(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIRS})
+else()
+include_directories("${PROJECT_SOURCE_DIR}/thirdparty/SDL2/include/")
 if (UNIX AND NOT APPLE)
     find_package (Threads)
 endif()
@@ -82,6 +84,8 @@ include_directories("${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/devices"
                     "${PROJECT_SOURCE_DIR}/debugger"
                     "${PROJECT_SOURCE_DIR}/utils"
 					"${PROJECT_SOURCE_DIR}/thirdparty/loguru/"
+                    "${PROJECT_SOURCE_DIR}/thirdparty/CLI11/"
+#                    ${SDL2_INCLUDE_DIRS})
 					"${PROJECT_SOURCE_DIR}/thirdparty/SDL2/")
 #                    "${PROJECT_SOURCE_DIR}/thirdparty/cubeb/include")
 #                    ${LIBSOUNDIO_HEADERS})

@@ -24,9 +24,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "memaccess.h"
 #include "pcidevice.h"
 #include <atirage.h>
+#include <chrono>
 #include <cstdint>
 #include <map>
-#include <thirdparty/loguru/loguru.hpp>
+#include <loguru.hpp>
 
 /* Mach64 post dividers. */
 static const int mach64_post_div[8] = {
@@ -75,6 +76,12 @@ static const std::map<uint16_t, std::string> mach64_reg_names = {
     {0x01FC, "SCALE_3D_CNTL"},
     {0x0310, "FIFO_STAT"},
     {0x0338, "GUI_STAT"},
+    {0x04C0, "MPP_CONFIG"},
+    {0x04C4, "MPP_STROBE_SEQ"},
+    {0x04C8, "MPP_ADDR"},
+    {0x04CC, "MPP_DATA"},
+    {0x0500, "TVO_CNTL"},
+    {0x0704, "SETUP_CNTL"},
 };
 
 
@@ -89,6 +96,9 @@ ATIRage::ATIRage(uint16_t dev_id, uint32_t mem_amount) : PCIDevice("ati-rage") {
     /* ATI Rage driver needs to know ASIC ID (manufacturer's internal chip code)
        to operate properly */
     switch (dev_id) {
+    case ATI_RAGE_GT_DEV_ID:
+        asic_id = 0x9A; // GT-B2U3 fabricated by UMC
+        break;
     case ATI_RAGE_PRO_DEV_ID:
         asic_id = 0x5C; // R3B/D/P-A4 fabricated by UMC
         break;
@@ -108,10 +118,14 @@ ATIRage::ATIRage(uint16_t dev_id, uint32_t mem_amount) : PCIDevice("ati-rage") {
 
     /* initialize display identification */
     this->disp_id = new DisplayID();
+
+    //this->surface = new uint8_t[640 * 480];
 }
 
 ATIRage::~ATIRage()
 {
+    //delete (this->surface);
+
     if (this->vram_ptr) {
         delete this->vram_ptr;
     }
@@ -163,11 +177,6 @@ uint32_t ATIRage::read_reg(uint32_t offset, uint32_t size) {
             read_mem(&this->block_io_regs[offset], size));
     }
 
-    if (offset > sizeof(this->block_io_regs)) {
-        LOG_F(WARNING, "ATI Rage: register offset 0x%04X out of bounds!", offset);
-        return 0;
-    }
-
     res = read_mem(&this->block_io_regs[offset], size);
 
     return res;
@@ -177,21 +186,30 @@ void ATIRage::write_reg(uint32_t offset, uint32_t value, uint32_t size) {
     uint32_t gpio_val;
     uint16_t gpio_dir;
 
-    if (offset > sizeof(this->block_io_regs)) {
-        LOG_F(WARNING, "ATI Rage: register offset 0x%04X out of bounds!", offset);
-        return;
-    }
-
     /* size-dependent endian conversion */
     write_mem(&this->block_io_regs[offset], value, size);
 
     switch (offset & ~3) {
+    case ATI_CRTC_OFF_PITCH:
+        LOG_F(INFO, "ATI Rage: CRTC_OFF_PITCH=0x%08X", READ_DWORD_LE_A(&this->block_io_regs[ATI_CRTC_OFF_PITCH]));
+        break;
     case ATI_CRTC_GEN_CNTL:
         if (this->block_io_regs[ATI_CRTC_GEN_CNTL+3] & 2) {
             this->crtc_enable();
         } else {
             this->crtc_on = false;
         }
+        LOG_F(INFO, "ATI Rage: CRTC_GEN_CNTL:CRTC_ENABLE=%d", !!(this->block_io_regs[ATI_CRTC_GEN_CNTL+3] & 2));
+        LOG_F(INFO, "ATI Rage: CRTC_GEN_CNTL:CRTC_DISPLAY_DIS=%d", !!(this->block_io_regs[ATI_CRTC_GEN_CNTL] & 0x40));
+        break;
+    case ATI_CUR_OFFSET:
+        LOG_F(INFO, "ATI Rage: CUR_OFFSET=0x%08X", READ_DWORD_LE_A(&this->block_io_regs[ATI_CUR_OFFSET]));
+        break;
+    case ATI_CUR_HORZ_VERT_POSN:
+        LOG_F(INFO, "ATI Rage: CUR_HORZ_VERT_POSN=0x%08X", READ_DWORD_LE_A(&this->block_io_regs[ATI_CUR_HORZ_VERT_POSN]));
+        break;
+    case ATI_CUR_HORZ_VERT_OFF:
+        LOG_F(INFO, "ATI Rage: CUR_HORZ_VERT_OFF=0x%08X", READ_DWORD_LE_A(&this->block_io_regs[ATI_CUR_HORZ_VERT_OFF]));
         break;
     case ATI_GP_IO:
         if (offset < (ATI_GP_IO + 2)) {
@@ -239,6 +257,9 @@ void ATIRage::write_reg(uint32_t offset, uint32_t value, uint32_t size) {
             }
         }
         break;
+    case ATI_GEN_TEST_CNTL:
+        LOG_F(INFO, "HW cursor: %s", this->block_io_regs[ATI_GEN_TEST_CNTL] & 0x80 ? "on" : "off");
+        break;
     default:
         LOG_F(
             INFO,
@@ -246,6 +267,11 @@ void ATIRage::write_reg(uint32_t offset, uint32_t value, uint32_t size) {
             get_reg_name(offset),
             offset & ~3,
             READ_DWORD_LE_A(&this->block_io_regs[offset & ~3]));
+    }
+
+    if ((this->block_io_regs[ATI_CRTC_GEN_CNTL+3] & 2) &&
+        !(this->block_io_regs[ATI_CRTC_GEN_CNTL] & 0x40)) {
+        this->update_screen();
     }
 }
 
@@ -373,9 +399,17 @@ uint32_t ATIRage::read(uint32_t reg_start, uint32_t offset, int size)
         /* read from little-endian VRAM region */
         return read_mem(this->vram_ptr + offset, size);
     }
-    else if (offset >= MEMMAP_OFFSET) {
-        /* read from memory-mapped registers */
-        return this->read_reg(offset - MEMMAP_OFFSET, size);
+    else if (offset >= BE_FB_OFFSET) {
+        /* read from big-endian VRAM region */
+        return read_mem_rev(this->vram_ptr + (offset - BE_FB_OFFSET), size);
+    }
+    else if (offset >= MM_REGS_0_OFF) {
+        /* read from memory-mapped registers, block 0 */
+        return this->read_reg(offset - MM_REGS_0_OFF, size);
+    }
+    else if (offset >= MM_REGS_1_OFF) {
+        /* read from memory-mapped registers, block 1 */
+        return this->read_reg(offset - MM_REGS_1_OFF + 0x400, size);
     }
     else {
         LOG_F(WARNING, "ATI Rage: read attempt from unmapped aperture region at 0x%08X", offset);
@@ -396,9 +430,18 @@ void ATIRage::write(uint32_t reg_start, uint32_t offset, uint32_t value, int siz
     if (offset < this->vram_size) {
         /* write to little-endian VRAM region */
         write_mem(this->vram_ptr + offset, value, size);
-    } else if (offset >= MEMMAP_OFFSET) {
-        /* write to memory-mapped registers */
-        this->write_reg(offset - MEMMAP_OFFSET, value, size);
+    }
+    else if (offset >= BE_FB_OFFSET) {
+        /* write to big-endian VRAM region */
+        write_mem_rev(this->vram_ptr + (offset - BE_FB_OFFSET), value, size);
+    }
+    else if (offset >= MM_REGS_0_OFF) {
+        /* write to memory-mapped registers, block 0 */
+        this->write_reg(offset - MM_REGS_0_OFF, value, size);
+    }
+    else if (offset >= MM_REGS_1_OFF) {
+        /* write to memory-mapped registers, block 1 */
+        this->write_reg(offset - MM_REGS_1_OFF + 0x400, value, size);
     }
     else {
         LOG_F(WARNING, "ATI Rage: write attempt to unmapped aperture region at 0x%08X", offset);
@@ -496,4 +539,85 @@ void ATIRage::crtc_enable() {
     }
 
     this->crtc_on = true;
+}
+
+void ATIRage::draw_hw_cursor(uint8_t *dst_buf, int dst_pitch) {
+    uint8_t *src_buf, *src_row, *dst_row, px4;
+
+    int horz_offset = READ_DWORD_LE_A(&this->block_io_regs[ATI_CUR_HORZ_VERT_OFF]) & 0x3F;
+    int vert_offset = (READ_DWORD_LE_A(&this->block_io_regs[ATI_CUR_HORZ_VERT_OFF]) >> 16) & 0x3F;
+
+    src_buf = this->vram_ptr + (READ_DWORD_LE_A(&this->block_io_regs[ATI_CUR_OFFSET]) * 8);
+
+    int cur_height = 64 - vert_offset;
+
+    uint32_t color0 = READ_DWORD_LE_A(&this->block_io_regs[ATI_CUR_CLR0]) | 0x000000FFUL;
+    uint32_t color1 = READ_DWORD_LE_A(&this->block_io_regs[ATI_CUR_CLR1]) | 0x000000FFUL;
+
+    for (int h = 0; h < cur_height; h++) {
+        dst_row = &dst_buf[h * dst_pitch];
+        src_row = &src_buf[h * 16];
+
+        for (int x = 0; x < 16; x++) {
+            px4 = src_row[x];
+
+            for (int p = 0; p < 4; p++, px4 >>= 2, dst_row += 4) {
+                switch(px4 & 3) {
+                case 0: // cursor color 0
+                    WRITE_DWORD_BE_A(dst_row, color0);
+                    break;
+                case 1: // cursor color 1
+                    WRITE_DWORD_BE_A(dst_row, color1);
+                    break;
+                case 2: // transparent
+                    break;
+                case 3: // 1's complement of display pixel
+                    break;
+                }
+            }
+        }
+    }
+}
+
+void ATIRage::update_screen() {
+    uint8_t *src_buf, *dst_buf, *src_row, *dst_row, pix;
+    int     src_pitch, dst_pitch;
+
+    //auto start_time = std::chrono::steady_clock::now();
+
+    this->disp_id->get_disp_texture((void **)&dst_buf, &dst_pitch);
+
+    uint32_t src_offset = (READ_DWORD_LE_A(&this->block_io_regs[ATI_CRTC_OFF_PITCH]) & 0xFFFF) * 8;
+
+    src_pitch = ((READ_DWORD_LE_A(&this->block_io_regs[ATI_CRTC_OFF_PITCH])) >> 19) & 0x1FF8;
+
+    src_buf = this->vram_ptr + src_offset;
+
+    for (int h = 0; h < this->active_height; h++) {
+        src_row = &src_buf[h * src_pitch];
+        dst_row = &dst_buf[h * dst_pitch];
+
+        for (int x = 0; x < this->active_width; x++) {
+            pix = src_row[x];
+            dst_row[0] = this->palette[pix][2]; // B
+            dst_row[1] = this->palette[pix][1]; // G
+            dst_row[2] = this->palette[pix][0]; // R
+            dst_row[3] = 255; // A
+            dst_row += 4;
+        }
+    }
+
+    // HW cursor data is stored at the beginning of the video memory
+    // HACK: use src_offset to recognize cursor data being ready
+    // Normally, we should check GEN_CUR_ENABLE bit in the GEN_TEST_CNTL register
+    if (src_offset > 0x400 && READ_DWORD_LE_A(&this->block_io_regs[ATI_CUR_OFFSET])) {
+        this->draw_hw_cursor(dst_buf + dst_pitch * 20 + 120, dst_pitch);
+    }
+
+    this->disp_id->update_screen();
+
+    //auto end_time = std::chrono::steady_clock::now();
+    //auto time_elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
+    //LOG_F(INFO, "Display uodate took: %lld ns", time_elapsed.count());
+    SDL_Delay(15);
 }

@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <stdexcept>
 #include <stdio.h>
 #include <string>
-#include <thirdparty/loguru/loguru.hpp>
+#include <loguru.hpp>
 #include <unordered_map>
 
 #include "ppcemu.h"

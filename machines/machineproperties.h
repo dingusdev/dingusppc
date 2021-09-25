@@ -1,11 +1,11 @@
 #include "endianswap.h"
-#include <thirdparty/loguru/loguru.hpp>
+#include <loguru.hpp>
 #include <algorithm>
 #include <cinttypes>
 #include <string>
 #include <map>
 #include <memory>
-#include <limits> 
+#include <limits>
 #include <sstream>
 #include <utility>
 #include <vector>

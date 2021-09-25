@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "viacuda.h"
 #include <cinttypes>
 #include <iostream>
-#include <thirdparty/loguru/loguru.hpp>
+#include <loguru.hpp>
 #include <cpu/ppc/ppcemu.h>
 
 /** Heathrow Mac I/O device emulation.

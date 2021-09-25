@@ -28,6 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "devices/hmc.h"
 #include "machinebase.h"
 #include "machineproperties.h"
+#include <loguru.hpp>
 #include <string>
 
 int create_pdm(std::string& id) {

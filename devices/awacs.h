@@ -32,7 +32,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "i2c.h"
 #include "soundserver.h"
 #include <cinttypes>
-#include <thirdparty/SDL2/include/SDL.h>
 
 /** AWAC registers offsets. */
 enum {

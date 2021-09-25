@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "endianswap.h"
 #include <cinttypes>
 #include <cstring>
-#include <thirdparty/loguru/loguru.hpp>
+#include <loguru.hpp>
 
 void DMAChannel::get_next_cmd(uint32_t cmd_addr, DMACmd* p_cmd) {
     /* load DMACmd from physical memory */

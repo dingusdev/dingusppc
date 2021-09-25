@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cstring>
 #include <fstream>
 #include <iostream>
-#include <thirdparty/loguru/loguru.hpp>
+#include <loguru.hpp>
 
 /** @file Non-volatile RAM implementation.
  */

@@ -30,7 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <limits>
 #include <stdexcept>
 #include <stdio.h>
-#include <thirdparty/loguru/loguru.hpp>
+#include <loguru.hpp>
 
 // Affects the XER register's SO and OV Bits
 
