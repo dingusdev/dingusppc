@@ -101,6 +101,16 @@ extern void mmu_pat_ctx_changed();
 extern void tlb_flush_entry(uint32_t ea);
 
 extern void ppc_set_cur_instruction(const uint8_t* ptr);
+extern uint64_t mem_read_dbg(uint32_t virt_addr, uint32_t size);
+uint8_t *mmu_translate_imem(uint32_t vaddr);
+
+template <class T>
+extern T mmu_read_vmem(uint32_t guest_va);
+template <class T>
+extern void mmu_write_vmem(uint32_t guest_va, T value);
+
+//====================== Deprecated calls =========================
+#if 0
 extern void mem_write_byte(uint32_t addr, uint8_t value);
 extern void mem_write_word(uint32_t addr, uint16_t value);
 extern void mem_write_dword(uint32_t addr, uint32_t value);
@@ -109,14 +119,7 @@ extern uint8_t mem_grab_byte(uint32_t addr);
 extern uint16_t mem_grab_word(uint32_t addr);
 extern uint32_t mem_grab_dword(uint32_t addr);
 extern uint64_t mem_grab_qword(uint32_t addr);
-extern uint64_t mem_read_dbg(uint32_t virt_addr, uint32_t size);
 extern uint8_t* quickinstruction_translate(uint32_t address_grab);
-
-uint8_t *mmu_translate_imem(uint32_t vaddr);
-
-template <class T>
-extern T mmu_read_vmem(uint32_t guest_va);
-template <class T>
-extern void mmu_write_vmem(uint32_t guest_va, T value);
+#endif
 
 #endif    // PPCMMU_H
