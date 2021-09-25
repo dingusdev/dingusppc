@@ -31,11 +31,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ppcemu.h"
 #include <array>
 #include <cinttypes>
-#include <cstdint>
-#include <iostream>
+#include <loguru.hpp>
 #include <stdexcept>
-#include <string>
-#include <thirdparty/loguru/loguru.hpp>
 
 /* pointer to exception handler to be called when a MMU exception is occured. */
 void (*mmu_exception_handler)(Except_Type exception_type, uint32_t srr1_bits);
