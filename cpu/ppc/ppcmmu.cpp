@@ -327,8 +327,7 @@ uint8_t* mmu_get_dma_mem(uint32_t addr, uint32_t size) {
             last_dma_area.mem_ptr = entry->mem_ptr;
             return last_dma_area.mem_ptr + (addr - last_dma_area.start);
         } else {
-            LOG_F(ERROR, "SOS: DMA access to unmapped memory %08X!\n", addr);
-            exit(-1);    // FIXME: ugly error handling, must be the proper exception!
+            ABORT_F("SOS: DMA access to unmapped memory %08X!\n", addr);
         }
     }
 }
@@ -458,8 +457,7 @@ static inline uint8_t* calc_pteg_addr(uint32_t hash) {
             last_ptab_area.mem_ptr = entry->mem_ptr;
             return last_ptab_area.mem_ptr + (pteg_addr - last_ptab_area.start);
         } else {
-            LOG_F(ERROR, "SOS: no page table region was found at %08X!\n", pteg_addr);
-            exit(-1);    // FIXME: ugly error handling, must be the proper exception!
+            ABORT_F("SOS: no page table region was found at %08X!\n", pteg_addr);
         }
     }
 }
@@ -479,8 +477,7 @@ static bool search_pteg(
         if (pte_check == READ_DWORD_BE_A(pteg_addr)) {
             if (match_found) {
                 if ((READ_DWORD_BE_A(pteg_addr) & 0xFFFFF07B) != pte_word2_check) {
-                    LOG_F(ERROR, "Multiple PTEs with different RPN/WIMG/PP found!\n");
-                    exit(-1);
+                    ABORT_F("Multiple PTEs with different RPN/WIMG/PP found!\n");
                 }
             } else {
                 /* isolate RPN, WIMG and PP fields */
@@ -510,8 +507,7 @@ static PATResult page_address_translation(uint32_t la, bool is_instr_fetch,
 
     sr_val = ppc_state.sr[(la >> 28) & 0x0F];
     if (sr_val & 0x80000000) {
-        LOG_F(ERROR, "Direct-store segments not supported, LA=%0xX\n", la);
-        exit(-1);    // FIXME: ugly error handling, must be the proper exception!
+        ABORT_F("Direct-store segments not supported, LA=%0xX\n", la);
     }
 
     /* instruction fetch from a no-execute segment will cause ISI exception */
@@ -923,11 +919,8 @@ static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write)
         if (bat_res.hit) {
             // check block protection
             if (!bat_res.prot || ((bat_res.prot & 1) && is_write)) {
-                LOG_F(WARNING, "BAT DSI exception in TLB2 refill!");
-                LOG_F(WARNING, "Attempt to write to read-only region, LA=0x%08X, PC=0x%08X!", guest_va, ppc_state.pc);
-                //UnmappedMem.tag = tag;
-                //UnmappedMem.host_va_offset = (int64_t)(&UnmappedVal) - guest_va;
-                //return &UnmappedMem;
+                LOG_F(9, "BAT DSI exception in TLB2 refill!");
+                LOG_F(9, "Attempt to write to read-only region, LA=0x%08X, PC=0x%08X!", guest_va, ppc_state.pc);
                 ppc_state.spr[SPR::DSISR] = 0x08000000 | (is_write << 25);
                 ppc_state.spr[SPR::DAR]   = guest_va;
                 mmu_exception_handler(Except_Type::EXC_DSI, 0);
@@ -1535,8 +1528,7 @@ void mem_write_qword(uint32_t addr, uint64_t value) {
     mmu_write_vmem<uint64_t>(addr, value);
 
     if (addr & 7) {
-        LOG_F(ERROR, "SOS! Attempt to write unaligned QWORD to 0x%08X\n", addr);
-        exit(-1);    // FIXME!
+        ABORT_F("SOS! Attempt to write unaligned QWORD to 0x%08X\n", addr);
     }
 
     /* data address translation if enabled */
@@ -1593,8 +1585,7 @@ uint64_t mem_grab_qword(uint32_t addr) {
     tlb_translate_addr(addr);
 
     if (addr & 7) {
-        LOG_F(ERROR, "SOS! Attempt to read unaligned QWORD at 0x%08X\n", addr);
-        exit(-1);    // FIXME!
+        ABORT_F("SOS! Attempt to read unaligned QWORD at 0x%08X\n", addr);
     }
 
     /* data address translation if enabled */
@@ -1675,8 +1666,7 @@ uint8_t* quickinstruction_translate(uint32_t addr) {
             real_addr              = last_exec_area.mem_ptr + (addr - last_exec_area.start);
             ppc_set_cur_instruction(real_addr);
         } else {
-            LOG_F(WARNING, "attempt to execute code at %08X!\n", addr);
-            exit(-1);    // FIXME: ugly error handling, must be the proper exception!
+            ABORT_F("Attempt to execute code at %08X!\n", addr);
         }
     }
 

@@ -50,6 +50,12 @@ void sigint_handler(int signum) {
     exit(0);
 }
 
+void sigabrt_handler(int signum) {
+    LOG_F(INFO, "Shutting down...");
+
+    delete gMachineObj.release();
+}
+
 static string appDescription = string(
     "\nDingusPPC - Prototype 5bf5 (8/23/2020)       "
     "\nWritten by divingkatae and maximumspatium    "
@@ -171,8 +177,18 @@ int main(int argc, char** argv) {
         goto bail;
     }
 
+    // graceful handling of fatal errors
+    loguru::set_fatal_handler([](const loguru::Message& message) {
+        enter_debugger();
+
+        abort();
+    });
+
     // redirect SIGINT to our own handler
     signal(SIGINT, sigint_handler);
+
+    // redirect SIGABRT to our own handler
+    signal(SIGABRT, sigabrt_handler);
 
 #ifdef SDL
         if (SDL_Init(SDL_INIT_AUDIO)){
