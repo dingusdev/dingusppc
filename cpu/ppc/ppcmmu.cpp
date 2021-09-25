@@ -46,8 +46,8 @@ void (*mmu_exception_handler)(Except_Type exception_type, uint32_t srr1_bits);
 PPC_BAT_entry ibat_array[4] = {{0}};
 PPC_BAT_entry dbat_array[4] = {{0}};
 
-#define MMU_PROFILING // uncomment this to enable MMU profiling
-#define TLB_PROFILING // uncomment this to enable SoftTLB profiling
+//#define MMU_PROFILING // uncomment this to enable MMU profiling
+//#define TLB_PROFILING // uncomment this to enable SoftTLB profiling
 
 /* MMU profiling */
 #ifdef MMU_PROFILING
@@ -140,10 +140,13 @@ public:
 #ifdef TLB_PROFILING
 
 /* global variables for lightweight SoftTLB profiling */
-uint64_t    num_primary_tlb_hits   = 0; // number of hits in the primary TLB
-uint64_t    num_secondary_tlb_hits = 0; // number of hits in the secondary TLB
-uint64_t    num_tlb_refills        = 0; // number of TLB refills
-uint64_t    num_entry_replacements = 0; // number of entry replacements
+uint64_t    num_primary_itlb_hits   = 0; // number of hits in the primary ITLB
+uint64_t    num_secondary_itlb_hits = 0; // number of hits in the secondary ITLB
+uint64_t    num_itlb_refills        = 0; // number of ITLB refills
+uint64_t    num_primary_dtlb_hits   = 0; // number of hits in the primary DTLB
+uint64_t    num_secondary_dtlb_hits = 0; // number of hits in the secondary DTLB
+uint64_t    num_dtlb_refills        = 0; // number of DTLB refills
+uint64_t    num_entry_replacements  = 0; // number of entry replacements
 
 #include "utils/profiler.h"
 #include <memory>
@@ -155,17 +158,29 @@ public:
     void populate_variables(std::vector<ProfileVar>& vars) {
         vars.clear();
 
-        vars.push_back({.name = "Number of hits in the primary TLB",
+        vars.push_back({.name = "Number of hits in the primary ITLB",
             .format = ProfileVarFmt::DEC,
-            .value = num_primary_tlb_hits});
+            .value = num_primary_itlb_hits});
 
-        vars.push_back({.name = "Number of hits in the secondary TLB",
+        vars.push_back({.name = "Number of hits in the secondary ITLB",
             .format = ProfileVarFmt::DEC,
-            .value = num_secondary_tlb_hits});
+            .value = num_secondary_itlb_hits});
 
-        vars.push_back({.name = "Number of TLB refills",
+        vars.push_back({.name = "Number of ITLB refills",
             .format = ProfileVarFmt::DEC,
-            .value = num_tlb_refills});
+            .value = num_itlb_refills});
+
+        vars.push_back({.name = "Number of hits in the primary DTLB",
+            .format = ProfileVarFmt::DEC,
+            .value = num_primary_dtlb_hits});
+
+        vars.push_back({.name = "Number of hits in the secondary DTLB",
+            .format = ProfileVarFmt::DEC,
+            .value = num_secondary_dtlb_hits});
+
+        vars.push_back({.name = "Number of DTLB refills",
+            .format = ProfileVarFmt::DEC,
+            .value = num_dtlb_refills});
 
         vars.push_back({.name = "Number of replaced TLB entries",
             .format = ProfileVarFmt::DEC,
@@ -173,9 +188,9 @@ public:
     };
 
     void reset() {
-        num_primary_tlb_hits   = 0;
-        num_secondary_tlb_hits = 0;
-        num_tlb_refills        = 0;
+        num_primary_dtlb_hits   = 0;
+        num_secondary_dtlb_hits = 0;
+        num_dtlb_refills        = 0;
         num_entry_replacements = 0;
     };
 };
@@ -346,6 +361,11 @@ void ibat_update(uint32_t bat_reg) {
         bat_entry->hi_mask = hi_mask;
         bat_entry->phys_hi = ppc_state.spr[upper_reg_num + 1] & hi_mask;
         bat_entry->bepi    = ppc_state.spr[upper_reg_num] & hi_mask;
+
+        if (!gTLBFlushBatEntries) {
+            gTLBFlushBatEntries = true;
+            add_ctx_sync_action(&tlb_flush_bat_entries);
+        }
     }
 }
 
@@ -393,7 +413,7 @@ static BATResult ppc_block_address_translation(uint32_t la)
     bool bat_hit    = false;
     unsigned msr_pr = !!(ppc_state.msr & 0x4000);
 
-    bat_array = (type == BATType::Instruction) ? ibat_array : dbat_array;
+    bat_array = (type == BATType::IBAT) ? ibat_array : dbat_array;
 
     // Format: %XY
     // X - supervisor access bit, Y - problem/user access bit
@@ -687,18 +707,30 @@ static void mem_write_unaligned(uint32_t addr, uint32_t value, uint32_t size) {
     }
 }
 
-// primary TLB for all MMU modes
-static std::array<TLBEntry, TLB_SIZE> mode1_tlb1;
-static std::array<TLBEntry, TLB_SIZE> mode2_tlb1;
-static std::array<TLBEntry, TLB_SIZE> mode3_tlb1;
+// primary ITLB for all MMU modes
+static std::array<TLBEntry, TLB_SIZE> itlb1_mode1;
+static std::array<TLBEntry, TLB_SIZE> itlb1_mode2;
+static std::array<TLBEntry, TLB_SIZE> itlb1_mode3;
 
-// secondary TLB for all MMU modes
-static std::array<TLBEntry, TLB_SIZE*TLB2_WAYS> mode1_tlb2;
-static std::array<TLBEntry, TLB_SIZE*TLB2_WAYS> mode2_tlb2;
-static std::array<TLBEntry, TLB_SIZE*TLB2_WAYS> mode3_tlb2;
+// secondary ITLB for all MMU modes
+static std::array<TLBEntry, TLB_SIZE*TLB2_WAYS> itlb2_mode1;
+static std::array<TLBEntry, TLB_SIZE*TLB2_WAYS> itlb2_mode2;
+static std::array<TLBEntry, TLB_SIZE*TLB2_WAYS> itlb2_mode3;
 
-TLBEntry *pCurTLB1; // current primary TLB
-TLBEntry *pCurTLB2; // current secondary TLB
+// primary DTLB for all MMU modes
+static std::array<TLBEntry, TLB_SIZE> dtlb1_mode1;
+static std::array<TLBEntry, TLB_SIZE> dtlb1_mode2;
+static std::array<TLBEntry, TLB_SIZE> dtlb1_mode3;
+
+// secondary DTLB for all MMU modes
+static std::array<TLBEntry, TLB_SIZE*TLB2_WAYS> dtlb2_mode1;
+static std::array<TLBEntry, TLB_SIZE*TLB2_WAYS> dtlb2_mode2;
+static std::array<TLBEntry, TLB_SIZE*TLB2_WAYS> dtlb2_mode3;
+
+TLBEntry *pCurITLB1; // current primary ITLB
+TLBEntry *pCurITLB2; // current secondary ITLB
+TLBEntry *pCurDTLB1; // current primary DTLB
+TLBEntry *pCurDTLB2; // current secondary DTLB
 
 uint32_t tlb_size_mask = TLB_SIZE - 1;
 
@@ -706,28 +738,53 @@ uint32_t tlb_size_mask = TLB_SIZE - 1;
 uint64_t    UnmappedVal = -1ULL;
 TLBEntry    UnmappedMem = {TLB_INVALID_TAG, 0, 0, 0};
 
-uint8_t     CurMMUMode = {0xFF}; // current MMU mode
+uint8_t     CurITLBMode = {0xFF}; // current ITLB mode
+uint8_t     CurDTLBMode = {0xFF}; // current DTLB mode
 
 void mmu_change_mode()
 {
-    uint8_t mmu_mode = ((ppc_state.msr >> 3) & 0x2) | ((ppc_state.msr >> 14) & 1);
+    uint8_t mmu_mode;
 
-    if (CurMMUMode != mmu_mode) {
+    // switch ITLB tables first
+    mmu_mode = ((ppc_state.msr >> 4) & 0x2) | ((ppc_state.msr >> 14) & 1);
+
+    if (CurITLBMode != mmu_mode) {
         switch(mmu_mode) {
         case 0: // real address mode
-            pCurTLB1 = &mode1_tlb1[0];
-            pCurTLB2 = &mode1_tlb2[0];
+            pCurITLB1 = &dtlb1_mode1[0];
+            pCurITLB2 = &dtlb2_mode1[0];
             break;
-        case 2: // supervisor mode with data translation enabled
-            pCurTLB1 = &mode2_tlb1[0];
-            pCurTLB2 = &mode2_tlb2[0];
+        case 2: // supervisor mode with instruction translation enabled
+            pCurITLB1 = &dtlb1_mode2[0];
+            pCurITLB2 = &dtlb2_mode2[0];
             break;
-        case 3: // user mode with data translation enabled
-            pCurTLB1 = &mode3_tlb1[0];
-            pCurTLB2 = &mode3_tlb2[0];
+        case 3: // user mode with instruction translation enabled
+            pCurITLB1 = &dtlb1_mode3[0];
+            pCurITLB2 = &dtlb2_mode3[0];
             break;
         }
-        CurMMUMode = mmu_mode;
+        CurITLBMode = mmu_mode;
+    }
+
+    // then switch DTLB tables
+    mmu_mode = ((ppc_state.msr >> 3) & 0x2) | ((ppc_state.msr >> 14) & 1);
+
+    if (CurDTLBMode != mmu_mode) {
+        switch(mmu_mode) {
+        case 0: // real address mode
+            pCurDTLB1 = &dtlb1_mode1[0];
+            pCurDTLB2 = &dtlb2_mode1[0];
+            break;
+        case 2: // supervisor mode with data translation enabled
+            pCurDTLB1 = &dtlb1_mode2[0];
+            pCurDTLB2 = &dtlb2_mode2[0];
+            break;
+        case 3: // user mode with data translation enabled
+            pCurDTLB1 = &dtlb1_mode3[0];
+            pCurDTLB2 = &dtlb2_mode3[0];
+            break;
+        }
+        CurDTLBMode = mmu_mode;
     }
 }
 
@@ -735,7 +792,7 @@ static TLBEntry* tlb2_target_entry(uint32_t gp_va)
 {
     TLBEntry *tlb_entry;
 
-    tlb_entry = &pCurTLB2[((gp_va >> PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
+    tlb_entry = &pCurDTLB2[((gp_va >> PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
 
     // select the target from invalid blocks first
     if (tlb_entry[0].tag == TLB_INVALID_TAG) {
@@ -802,7 +859,56 @@ static TLBEntry* tlb2_target_entry(uint32_t gp_va)
     }
 }
 
-static TLBEntry* tlb2_refill(uint32_t guest_va, int is_write)
+static TLBEntry* itlb2_refill(uint32_t guest_va)
+{
+    uint32_t phys_addr;
+    TLBEntry *tlb_entry;
+    uint16_t flags = 0;
+
+    /* instruction address translation if enabled */
+    if (ppc_state.msr & 0x20) {
+        // attempt block address translation first
+        BATResult bat_res = ppc_block_address_translation<BATType::IBAT>(guest_va);
+        if (bat_res.hit) {
+            // check block protection
+            // only PP = 0 (no access) causes ISI exception
+            if (!bat_res.prot) {
+                mmu_exception_handler(Except_Type::EXC_ISI, 0x08000000);
+            }
+            phys_addr = bat_res.phys;
+            flags |= TLBFlags::TLBE_FROM_BAT; // tell the world we come from
+        } else {
+            // page address translation
+            PATResult pat_res = page_address_translation(guest_va, true,
+                                        !!(ppc_state.msr & 0x4000), 0);
+            phys_addr = pat_res.phys;
+            flags = TLBFlags::TLBE_FROM_PAT; // tell the world we come from
+        }
+    } else { // instruction translation disabled
+        phys_addr = guest_va;
+    }
+
+    // look up host virtual address
+    AddressMapEntry* reg_desc = mem_ctrl_instance->find_range(phys_addr);
+    if (reg_desc) {
+        if (reg_desc->type & RT_MMIO) {
+            ABORT_F("Instruction fetch from MMIO region at 0x%08X!\n", phys_addr);
+        }
+        // refill the secondary TLB
+        const uint32_t tag = guest_va & ~0xFFFUL;
+        tlb_entry = tlb2_target_entry(tag);
+        tlb_entry->tag = tag;
+        tlb_entry->flags = flags | TLBFlags::PAGE_MEM;
+        tlb_entry->host_va_offset = (int64_t)reg_desc->mem_ptr - guest_va +
+                                    (phys_addr - reg_desc->start);
+    } else {
+        ABORT_F("Instruction fetch from unmapped memory at 0x%08X!\n", phys_addr);
+    }
+
+    return tlb_entry;
+}
+
+static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write)
 {
     uint32_t phys_addr;
     uint16_t flags = 0;
@@ -813,7 +919,7 @@ static TLBEntry* tlb2_refill(uint32_t guest_va, int is_write)
     /* data address translation if enabled */
     if (ppc_state.msr & 0x10) {
         // attempt block address translation first
-        BATResult bat_res = ppc_block_address_translation<BATType::Data>(guest_va);
+        BATResult bat_res = ppc_block_address_translation<BATType::DBAT>(guest_va);
         if (bat_res.hit) {
             // check block protection
             if (!bat_res.prot || ((bat_res.prot & 1) && is_write)) {
@@ -882,19 +988,31 @@ void tlb_flush_entry(uint32_t ea)
 
     const uint32_t tag = ea & ~0xFFFUL;
 
-    for (int m = 0; m < 3; m++) {
+    for (int m = 0; m < 6; m++) {
         switch (m) {
         case 0:
-            tlb1 = &mode1_tlb1[0];
-            tlb2 = &mode1_tlb2[0];
+            tlb1 = &itlb1_mode1[0];
+            tlb2 = &itlb2_mode1[0];
             break;
         case 1:
-            tlb1 = &mode2_tlb1[0];
-            tlb2 = &mode2_tlb2[0];
+            tlb1 = &itlb1_mode2[0];
+            tlb2 = &itlb2_mode2[0];
             break;
         case 2:
-            tlb1 = &mode3_tlb1[0];
-            tlb2 = &mode3_tlb2[0];
+            tlb1 = &itlb1_mode3[0];
+            tlb2 = &itlb2_mode3[0];
+            break;
+        case 3:
+            tlb1 = &dtlb1_mode1[0];
+            tlb2 = &dtlb2_mode1[0];
+            break;
+        case 4:
+            tlb1 = &dtlb1_mode2[0];
+            tlb2 = &dtlb2_mode2[0];
+            break;
+        case 5:
+            tlb1 = &dtlb1_mode3[0];
+            tlb2 = &dtlb2_mode3[0];
             break;
         }
 
@@ -922,23 +1040,23 @@ void tlb_flush_entries(TLBFlags type)
 
     // Flush BAT entries from the primary TLBs
     for (i = 0; i < TLB_SIZE; i++) {
-        if (mode2_tlb1[i].flags & type) {
-            mode2_tlb1[i].tag = TLB_INVALID_TAG;
+        if (dtlb1_mode2[i].flags & type) {
+            dtlb1_mode2[i].tag = TLB_INVALID_TAG;
         }
 
-        if (mode3_tlb1[i].flags & type) {
-            mode3_tlb1[i].tag = TLB_INVALID_TAG;
+        if (dtlb1_mode3[i].flags & type) {
+            dtlb1_mode3[i].tag = TLB_INVALID_TAG;
         }
     }
 
     // Flush BAT entries from the secondary TLBs
     for (i = 0; i < TLB_SIZE * TLB2_WAYS; i++) {
-        if (mode2_tlb2[i].flags & type) {
-            mode2_tlb2[i].tag = TLB_INVALID_TAG;
+        if (dtlb2_mode2[i].flags & type) {
+            dtlb2_mode2[i].tag = TLB_INVALID_TAG;
         }
 
-        if (mode3_tlb2[i].flags & type) {
-            mode3_tlb2[i].tag = TLB_INVALID_TAG;
+        if (dtlb2_mode3[i].flags & type) {
+            dtlb2_mode3[i].tag = TLB_INVALID_TAG;
         }
     }
 }
@@ -970,11 +1088,11 @@ static inline uint64_t tlb_translate_addr(uint32_t guest_va)
     const uint32_t tag = guest_va & ~0xFFFUL;
 
     // look up address in the primary TLB
-    tlb1_entry = &pCurTLB1[(guest_va >> PAGE_SIZE_BITS) & tlb_size_mask];
+    tlb1_entry = &pCurDTLB1[(guest_va >> PAGE_SIZE_BITS) & tlb_size_mask];
     if (tlb1_entry->tag == tag) { // primary TLB hit -> fast path
         return tlb1_entry->host_va_offset + guest_va;
     } else { // primary TLB miss -> look up address in the secondary TLB
-        tlb2_entry = &pCurTLB2[((guest_va >> PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
+        tlb2_entry = &pCurDTLB2[((guest_va >> PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
         if (tlb2_entry->tag == tag) {
             // update LRU bits
             tlb2_entry[0].lru_bits  = 0x3;
@@ -1004,7 +1122,7 @@ static inline uint64_t tlb_translate_addr(uint32_t guest_va)
             tlb2_entry[3].lru_bits  = 0x3;
         } else { // secondary TLB miss ->
             // perform full address translation and refill the secondary TLB
-            tlb2_entry = tlb2_refill(guest_va, 0);
+            tlb2_entry = dtlb2_refill(guest_va, 0);
         }
 
         if (tlb2_entry->flags & TLBFlags::PAGE_MEM) { // is it a real memory region?
@@ -1070,10 +1188,16 @@ static uint32_t mem_grab_unaligned(uint32_t addr, uint32_t size) {
     return ret;
 }
 
-static inline TLBEntry * lookup_secondary_tlb(uint32_t guest_va, uint32_t tag) {
+template <const TLBType tlb_type>
+static inline TLBEntry* lookup_secondary_tlb(uint32_t guest_va, uint32_t tag) {
     TLBEntry *tlb_entry;
 
-    tlb_entry = &pCurTLB2[((guest_va >> PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
+    if (tlb_type == TLBType::ITLB) {
+        tlb_entry = &pCurITLB2[((guest_va >> PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
+    } else {
+        tlb_entry = &pCurDTLB2[((guest_va >> PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
+    }
+
     if (tlb_entry->tag == tag) {
         // update LRU bits
         tlb_entry[0].lru_bits  = 0x3;
@@ -1120,26 +1244,26 @@ inline T mmu_read_vmem(uint32_t guest_va) {
     const uint32_t tag = guest_va & ~0xFFFUL;
 
     // look up guest virtual address in the primary TLB
-    tlb1_entry = &pCurTLB1[(guest_va >> PAGE_SIZE_BITS) & tlb_size_mask];
+    tlb1_entry = &pCurDTLB1[(guest_va >> PAGE_SIZE_BITS) & tlb_size_mask];
     if (tlb1_entry->tag == tag) { // primary TLB hit -> fast path
 #ifdef TLB_PROFILING
-        num_primary_tlb_hits++;
+        num_primary_dtlb_hits++;
 #endif
         host_va = (uint8_t *)(tlb1_entry->host_va_offset + guest_va);
     } else {
         // primary TLB miss -> look up address in the secondary TLB
-        tlb2_entry = lookup_secondary_tlb(guest_va, tag);
+        tlb2_entry = lookup_secondary_tlb<TLBType::DTLB>(guest_va, tag);
         if (tlb2_entry == nullptr) {
 #ifdef TLB_PROFILING
-            num_tlb_refills++;
+            num_dtlb_refills++;
 #endif
             // secondary TLB miss ->
             // perform full address translation and refill the secondary TLB
-            tlb2_entry = tlb2_refill(guest_va, 0);
+            tlb2_entry = dtlb2_refill(guest_va, 0);
         }
 #ifdef TLB_PROFILING
         else {
-            num_secondary_tlb_hits++;
+            num_secondary_dtlb_hits++;
         }
 #endif
 
@@ -1196,10 +1320,10 @@ inline void mmu_write_vmem(uint32_t guest_va, T value) {
     const uint32_t tag = guest_va & ~0xFFFUL;
 
     // look up guest virtual address in the primary TLB
-    tlb1_entry = &pCurTLB1[(guest_va >> PAGE_SIZE_BITS) & tlb_size_mask];
+    tlb1_entry = &pCurDTLB1[(guest_va >> PAGE_SIZE_BITS) & tlb_size_mask];
     if (tlb1_entry->tag == tag) { // primary TLB hit -> fast path
 #ifdef TLB_PROFILING
-        num_primary_tlb_hits++;
+        num_primary_dtlb_hits++;
 #endif
         if (!(tlb1_entry->flags & TLBFlags::PAGE_WRITABLE)) {
             ppc_state.spr[SPR::DSISR] = 0x08000000 | (1 << 25);
@@ -1213,7 +1337,7 @@ inline void mmu_write_vmem(uint32_t guest_va, T value) {
             tlb1_entry->flags |= TLBFlags::PTE_SET_C;
 
             // don't forget to update the secondary TLB as well
-            tlb2_entry = lookup_secondary_tlb(guest_va, tag);
+            tlb2_entry = lookup_secondary_tlb<TLBType::DTLB>(guest_va, tag);
             if (tlb2_entry != nullptr) {
                 tlb2_entry->flags |= TLBFlags::PTE_SET_C;
             }
@@ -1221,18 +1345,18 @@ inline void mmu_write_vmem(uint32_t guest_va, T value) {
         host_va = (uint8_t *)(tlb1_entry->host_va_offset + guest_va);
     } else {
         // primary TLB miss -> look up address in the secondary TLB
-        tlb2_entry = lookup_secondary_tlb(guest_va, tag);
+        tlb2_entry = lookup_secondary_tlb<TLBType::DTLB>(guest_va, tag);
         if (tlb2_entry == nullptr) {
 #ifdef TLB_PROFILING
-            num_tlb_refills++;
+            num_dtlb_refills++;
 #endif
             // secondary TLB miss ->
             // perform full address translation and refill the secondary TLB
-            tlb2_entry = tlb2_refill(guest_va, 1);
+            tlb2_entry = dtlb2_refill(guest_va, 1);
         }
 #ifdef TLB_PROFILING
         else {
-            num_secondary_tlb_hits++;
+            num_secondary_dtlb_hits++;
         }
 #endif
 
@@ -1481,6 +1605,52 @@ uint64_t mem_grab_qword(uint32_t addr) {
     return read_phys_mem<uint64_t, true>(&last_read_area, addr);
 }
 
+uint8_t *mmu_translate_imem(uint32_t vaddr)
+{
+    TLBEntry *tlb1_entry, *tlb2_entry;
+    uint8_t *host_va;
+
+#ifdef MMU_PROFILING
+    exec_reads_total++;
+#endif
+
+    const uint32_t tag = vaddr & ~0xFFFUL;
+
+    // look up guest virtual address in the primary ITLB
+    tlb1_entry = &pCurITLB1[(vaddr >> PAGE_SIZE_BITS) & tlb_size_mask];
+    if (tlb1_entry->tag == tag) { // primary ITLB hit -> fast path
+#ifdef TLB_PROFILING
+        num_primary_itlb_hits++;
+#endif
+        host_va = (uint8_t *)(tlb1_entry->host_va_offset + vaddr);
+    } else {
+        // primary ITLB miss -> look up address in the secondary ITLB
+        tlb2_entry = lookup_secondary_tlb<TLBType::ITLB>(vaddr, tag);
+        if (tlb2_entry == nullptr) {
+#ifdef TLB_PROFILING
+            num_itlb_refills++;
+#endif
+            // secondary ITLB miss ->
+            // perform full address translation and refill the secondary ITLB
+            tlb2_entry = itlb2_refill(vaddr);
+        }
+#ifdef TLB_PROFILING
+        else {
+            num_secondary_itlb_hits++;
+        }
+#endif
+        // refill the primary ITLB
+        tlb1_entry->tag = tag;
+        tlb1_entry->flags = tlb2_entry->flags;
+        tlb1_entry->host_va_offset = tlb2_entry->host_va_offset;
+        host_va = (uint8_t *)(tlb1_entry->host_va_offset + vaddr);
+    }
+
+    ppc_set_cur_instruction(host_va);
+
+    return host_va;
+}
+
 uint8_t* quickinstruction_translate(uint32_t addr) {
     uint8_t* real_addr;
 
@@ -1560,43 +1730,86 @@ uint64_t mem_read_dbg(uint32_t virt_addr, uint32_t size) {
 void ppc_mmu_init() {
     mmu_exception_handler = ppc_exception_handler;
 
-    // invalidate all TLB entries
-    for(auto &tlb_el : mode1_tlb1) {
+    // invalidate all IDTLB entries
+    for (auto &tlb_el : itlb1_mode1) {
         tlb_el.tag = TLB_INVALID_TAG;
         tlb_el.flags = 0;
         tlb_el.lru_bits = 0;
         tlb_el.host_va_offset = 0;
     }
 
-    for(auto &tlb_el : mode2_tlb1) {
+    for (auto &tlb_el : itlb1_mode2) {
         tlb_el.tag = TLB_INVALID_TAG;
         tlb_el.flags = 0;
         tlb_el.lru_bits = 0;
         tlb_el.host_va_offset = 0;
     }
 
-    for(auto &tlb_el : mode3_tlb1) {
+    for (auto &tlb_el : itlb1_mode3) {
         tlb_el.tag = TLB_INVALID_TAG;
         tlb_el.flags = 0;
         tlb_el.lru_bits = 0;
         tlb_el.host_va_offset = 0;
     }
 
-    for(auto &tlb_el : mode1_tlb2) {
+    for (auto &tlb_el : itlb2_mode1) {
         tlb_el.tag = TLB_INVALID_TAG;
         tlb_el.flags = 0;
         tlb_el.lru_bits = 0;
         tlb_el.host_va_offset = 0;
     }
 
-    for(auto &tlb_el : mode2_tlb2) {
+    for (auto &tlb_el : itlb2_mode2) {
         tlb_el.tag = TLB_INVALID_TAG;
         tlb_el.flags = 0;
         tlb_el.lru_bits = 0;
         tlb_el.host_va_offset = 0;
     }
 
-    for(auto &tlb_el : mode3_tlb2) {
+    for (auto &tlb_el : itlb2_mode3) {
+        tlb_el.tag = TLB_INVALID_TAG;
+        tlb_el.flags = 0;
+        tlb_el.lru_bits = 0;
+        tlb_el.host_va_offset = 0;
+    }
+
+    // invalidate all DTLB entries
+    for (auto &tlb_el : dtlb1_mode1) {
+        tlb_el.tag = TLB_INVALID_TAG;
+        tlb_el.flags = 0;
+        tlb_el.lru_bits = 0;
+        tlb_el.host_va_offset = 0;
+    }
+
+    for (auto &tlb_el : dtlb1_mode2) {
+        tlb_el.tag = TLB_INVALID_TAG;
+        tlb_el.flags = 0;
+        tlb_el.lru_bits = 0;
+        tlb_el.host_va_offset = 0;
+    }
+
+    for (auto &tlb_el : dtlb1_mode3) {
+        tlb_el.tag = TLB_INVALID_TAG;
+        tlb_el.flags = 0;
+        tlb_el.lru_bits = 0;
+        tlb_el.host_va_offset = 0;
+    }
+
+    for (auto &tlb_el : dtlb2_mode1) {
+        tlb_el.tag = TLB_INVALID_TAG;
+        tlb_el.flags = 0;
+        tlb_el.lru_bits = 0;
+        tlb_el.host_va_offset = 0;
+    }
+
+    for (auto &tlb_el : dtlb2_mode2) {
+        tlb_el.tag = TLB_INVALID_TAG;
+        tlb_el.flags = 0;
+        tlb_el.lru_bits = 0;
+        tlb_el.host_va_offset = 0;
+    }
+
+    for (auto &tlb_el : dtlb2_mode3) {
         tlb_el.tag = TLB_INVALID_TAG;
         tlb_el.flags = 0;
         tlb_el.lru_bits = 0;

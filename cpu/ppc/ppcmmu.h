@@ -43,8 +43,14 @@ typedef struct PPC_BAT_entry {
 
 /** Block address translation types. */
 enum BATType : int {
-    Instruction,
-    Data
+    IBAT,
+    DBAT
+};
+
+/** TLB types. */
+enum TLBType : int {
+    ITLB,
+    DTLB
 };
 
 /** Result of the block address translation. */
@@ -105,6 +111,8 @@ extern uint32_t mem_grab_dword(uint32_t addr);
 extern uint64_t mem_grab_qword(uint32_t addr);
 extern uint64_t mem_read_dbg(uint32_t virt_addr, uint32_t size);
 extern uint8_t* quickinstruction_translate(uint32_t address_grab);
+
+uint8_t *mmu_translate_imem(uint32_t vaddr);
 
 template <class T>
 extern T mmu_read_vmem(uint32_t guest_va);
