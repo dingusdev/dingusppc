@@ -193,7 +193,7 @@ static PATResult page_address_translation(uint32_t la, bool is_instr_fetch,
 
     sr_val = ppc_state.sr[(la >> 28) & 0x0F];
     if (sr_val & 0x80000000) {
-        ABORT_F("Direct-store segments not supported, LA=%0xX\n", la);
+        ABORT_F("Direct-store segments not supported, LA=0x%X\n", la);
     }
 
     /* instruction fetch from a no-execute segment will cause ISI exception */
@@ -251,52 +251,6 @@ static PATResult page_address_translation(uint32_t la, bool is_instr_fetch,
         static_cast<uint8_t>((key << 2) | pp),
         static_cast<uint8_t>(pte_word2 & 0x80)
     };
-}
-
-/** PowerPC-style MMU instruction address translation. */
-static uint32_t mmu_instr_translation(uint32_t la)
-{
-    uint32_t pa; /* translated physical address */
-
-    bool bat_hit    = false;
-    unsigned msr_pr = !!(ppc_state.msr & 0x4000);
-
-    // Format: %XY
-    // X - supervisor access bit, Y - problem/user access bit
-    // Those bits are mutually exclusive
-    unsigned access_bits = ((msr_pr ^ 1) << 1) | msr_pr;
-
-    for (int bat_index = 0; bat_index < 4; bat_index++) {
-        PPC_BAT_entry* bat_entry = &ibat_array[bat_index];
-
-        if ((bat_entry->access & access_bits) && ((la & bat_entry->hi_mask) == bat_entry->bepi)) {
-            bat_hit = true;
-
-#ifdef MMU_PROFILING
-            bat_transl_total++;
-#endif
-
-            if (!bat_entry->prot) {
-                mmu_exception_handler(Except_Type::EXC_ISI, 0x08000000);
-            }
-
-            // logical to physical translation
-            pa = bat_entry->phys_hi | (la & ~bat_entry->hi_mask);
-            break;
-        }
-    }
-
-    /* page address translation */
-    if (!bat_hit) {
-        PATResult pat_res = page_address_translation(la, true, msr_pr, 0);
-        pa = pat_res.phys;
-
-#ifdef MMU_PROFILING
-        ptab_transl_total++;
-#endif
-    }
-
-    return pa;
 }
 
 /** PowerPC-style MMU data address translation. */
@@ -562,7 +516,7 @@ static TLBEntry* itlb2_refill(uint32_t guest_va)
         tlb_entry->tag = tag;
         tlb_entry->flags = flags | TLBFlags::PAGE_MEM;
         tlb_entry->host_va_offset = (int64_t)reg_desc->mem_ptr - guest_va +
-        (phys_addr - reg_desc->start);
+                                    (phys_addr - reg_desc->start);
     } else {
         ABORT_F("Instruction fetch from unmapped memory at 0x%08X!\n", phys_addr);
     }
@@ -1655,6 +1609,52 @@ uint64_t mem_grab_qword(uint32_t addr) {
     }
 
     return read_phys_mem<uint64_t, true>(&last_read_area, addr);
+}
+
+/** PowerPC-style MMU instruction address translation. */
+static uint32_t mmu_instr_translation(uint32_t la)
+{
+    uint32_t pa; /* translated physical address */
+
+    bool bat_hit    = false;
+    unsigned msr_pr = !!(ppc_state.msr & 0x4000);
+
+    // Format: %XY
+    // X - supervisor access bit, Y - problem/user access bit
+    // Those bits are mutually exclusive
+    unsigned access_bits = ((msr_pr ^ 1) << 1) | msr_pr;
+
+    for (int bat_index = 0; bat_index < 4; bat_index++) {
+        PPC_BAT_entry* bat_entry = &ibat_array[bat_index];
+
+        if ((bat_entry->access & access_bits) && ((la & bat_entry->hi_mask) == bat_entry->bepi)) {
+            bat_hit = true;
+
+#ifdef MMU_PROFILING
+            bat_transl_total++;
+#endif
+
+            if (!bat_entry->prot) {
+                mmu_exception_handler(Except_Type::EXC_ISI, 0x08000000);
+            }
+
+            // logical to physical translation
+            pa = bat_entry->phys_hi | (la & ~bat_entry->hi_mask);
+            break;
+        }
+    }
+
+    /* page address translation */
+    if (!bat_hit) {
+        PATResult pat_res = page_address_translation(la, true, msr_pr, 0);
+        pa = pat_res.phys;
+
+#ifdef MMU_PROFILING
+        ptab_transl_total++;
+#endif
+    }
+
+    return pa;
 }
 
 uint8_t* quickinstruction_translate(uint32_t addr) {
