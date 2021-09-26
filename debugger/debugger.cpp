@@ -23,14 +23,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <loguru.hpp>
 #include <map>
 #include <sstream>
 #include <stdio.h>
 #include <string>
-#include <loguru.hpp>
 #include "../cpu/ppc/ppcdisasm.h"
 #include "../cpu/ppc/ppcemu.h"
 #include "../cpu/ppc/ppcmmu.h"
+#include "memaccess.h"
 #include "utils/profiler.h"
 
 #ifdef ENABLE_68K_DEBUGGER // optionally defined in CMakeLists.txt
@@ -330,7 +331,7 @@ static void disasm(uint32_t count, uint32_t address) {
     ctx.simplified = true;
 
     for (int i = 0; i < count; i++) {
-        ctx.instr_code = mem_read_dbg(ctx.instr_addr, 4);
+        ctx.instr_code = READ_DWORD_BE_A(mmu_translate_imem(ctx.instr_addr));
         cout << uppercase << hex << ctx.instr_addr;
         cout << "    " << disassemble_single(&ctx) << endl;
     }
@@ -541,16 +542,20 @@ void enter_debugger() {
                 }
             } else {
                 /* disas without arguments defaults to disas 1,pc */
-                if (context == 2) {
+                try {
+                    if (context == 2) {
 #ifdef ENABLE_68K_DEBUGGER
-                    addr_str = "R24";
-                    addr     = get_reg(addr_str);
-                    disasm_68k(1, addr - 2);
+                        addr_str = "R24";
+                        addr     = get_reg(addr_str);
+                        disasm_68k(1, addr - 2);
 #endif
-                } else {
-                    addr_str = "PC";
-                    addr     = get_reg(addr_str);
-                    disasm(1, addr);
+                    } else {
+                        addr_str = "PC";
+                        addr     = get_reg(addr_str);
+                        disasm(1, addr);
+                    }
+                } catch (invalid_argument& exc) {
+                    cout << exc.what() << endl;
                 }
             }
         } else if (cmd == "dump") {
