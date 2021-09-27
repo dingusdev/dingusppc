@@ -21,25 +21,28 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file PowerPC Memory Management Unit emulation. */
 
-/* TODO:
-    - implement 601-style BATs
- */
-
 #include "ppcmmu.h"
 #include "devices/memctrlbase.h"
 #include "memaccess.h"
 #include "ppcemu.h"
 #include <array>
 #include <cinttypes>
+#include <functional>
 #include <loguru.hpp>
 #include <stdexcept>
 
 /* pointer to exception handler to be called when a MMU exception is occured. */
 void (*mmu_exception_handler)(Except_Type exception_type, uint32_t srr1_bits);
 
+/* pointers to BAT update functions. */
+std::function<void(uint32_t bat_reg)> ibat_update;
+std::function<void(uint32_t bat_reg)> dbat_update;
+
 /** PowerPC-style MMU BAT arrays (NULL initialization isn't prescribed). */
 PPC_BAT_entry ibat_array[4] = {{0}};
 PPC_BAT_entry dbat_array[4] = {{0}};
+
+bool is_601_MMU = false;
 
 //#define MMU_PROFILING // uncomment this to enable MMU profiling
 //#define TLB_PROFILING // uncomment this to enable SoftTLB profiling
@@ -83,6 +86,49 @@ AddressMapEntry last_dma_area   = {0xFFFFFFFF, 0xFFFFFFFF};
 
 void ppc_set_cur_instruction(const uint8_t* ptr) {
     ppc_cur_instruction = READ_DWORD_BE_A(ptr);
+}
+
+/** 601-style block address translation. */
+static BATResult mpc601_block_address_translation(uint32_t la)
+{
+    uint32_t pa;    // translated physical address
+    uint8_t  prot;  // protection bits for the translated address
+    unsigned key;
+
+    bool bat_hit    = false;
+    unsigned msr_pr = !!(ppc_state.msr & 0x4000);
+
+    // I/O controller interface takes precedence over BAT in 601
+    // Report BAT miss if T bit is set in the corresponding SR
+    if (ppc_state.sr[(la >> 28) & 0x0F] & 0x80000000) {
+        return BATResult{false, 0, 0};
+    }
+
+    for (int bat_index = 0; bat_index < 4; bat_index++) {
+        PPC_BAT_entry* bat_entry = &ibat_array[bat_index];
+
+        if (bat_entry->valid && ((la & bat_entry->hi_mask) == bat_entry->bepi)) {
+            bat_hit = true;
+
+            key = (((bat_entry->access & 1) & msr_pr) |
+                  (((bat_entry->access >> 1) & 1) & (msr_pr ^ 1)));
+
+            // remapping BAT access from 601-style to PowerPC-style
+            static uint8_t access_conv[8] = {2, 2, 2, 1, 0, 1, 2, 1};
+
+            prot = access_conv[(key << 2) | bat_entry->prot];
+
+#ifdef MMU_PROFILING
+            bat_transl_total++;
+#endif
+
+            // logical to physical translation
+            pa = bat_entry->phys_hi | (la & ~bat_entry->hi_mask);
+            break;
+        }
+    }
+
+    return BATResult{bat_hit, prot, pa};
 }
 
 /** PowerPC-style block address translation. */
@@ -193,7 +239,16 @@ static PATResult page_address_translation(uint32_t la, bool is_instr_fetch,
 
     sr_val = ppc_state.sr[(la >> 28) & 0x0F];
     if (sr_val & 0x80000000) {
-        ABORT_F("Direct-store segments not supported, LA=0x%X\n", la);
+        // check for 601-specific memory-forced I/O segments
+        if (((sr_val >> 20) & 0x1FF) == 0x7F) {
+            return PATResult{
+                (la & 0x0FFFFFFF) | (sr_val << 28),
+                0, // prot = read/write
+                1  // no C bit updates
+            };
+        } else {
+            ABORT_F("Direct-store segments not supported, LA=0x%X\n", la);
+        }
     }
 
     /* instruction fetch from a no-execute segment will cause ISI exception */
@@ -253,54 +308,6 @@ static PATResult page_address_translation(uint32_t la, bool is_instr_fetch,
     };
 }
 
-/** PowerPC-style MMU data address translation. */
-static uint32_t ppc_mmu_addr_translate(uint32_t la, int is_write)
-{
-    uint32_t pa; /* translated physical address */
-
-    bool bat_hit    = false;
-    unsigned msr_pr = !!(ppc_state.msr & 0x4000);
-
-    // Format: %XY
-    // X - supervisor access bit, Y - problem/user access bit
-    // Those bits are mutually exclusive
-    unsigned access_bits = ((msr_pr ^ 1) << 1) | msr_pr;
-
-    for (int bat_index = 0; bat_index < 4; bat_index++) {
-        PPC_BAT_entry* bat_entry = &dbat_array[bat_index];
-
-        if ((bat_entry->access & access_bits) && ((la & bat_entry->hi_mask) == bat_entry->bepi)) {
-            bat_hit = true;
-
-#ifdef MMU_PROFILING
-            bat_transl_total++;
-#endif
-
-            if (!bat_entry->prot || ((bat_entry->prot & 1) && is_write)) {
-                ppc_state.spr[SPR::DSISR] = 0x08000000 | (is_write << 25);
-                ppc_state.spr[SPR::DAR]   = la;
-                mmu_exception_handler(Except_Type::EXC_DSI, 0);
-            }
-
-            // logical to physical translation
-            pa = bat_entry->phys_hi | (la & ~bat_entry->hi_mask);
-            break;
-        }
-    }
-
-    /* page address translation */
-    if (!bat_hit) {
-        PATResult pat_res = page_address_translation(la, false, msr_pr, is_write);
-        pa = pat_res.phys;
-
-#ifdef MMU_PROFILING
-        ptab_transl_total++;
-#endif
-    }
-
-    return pa;
-}
-
 uint8_t* mmu_get_dma_mem(uint32_t addr, uint32_t size)
 {
     if (addr >= last_dma_area.start && (addr + size) <= last_dma_area.end) {
@@ -347,7 +354,7 @@ uint32_t tlb_size_mask = TLB_SIZE - 1;
 
 // fake TLB entry for handling of unmapped memory accesses
 uint64_t    UnmappedVal = -1ULL;
-TLBEntry    UnmappedMem = {TLB_INVALID_TAG, 0, 0, 0};
+TLBEntry    UnmappedMem = {TLB_INVALID_TAG, TLBFlags::PAGE_NOPHYS, 0, 0};
 
 uint8_t     CurITLBMode = {0xFF}; // current ITLB mode
 uint8_t     CurDTLBMode = {0xFF}; // current DTLB mode
@@ -477,6 +484,7 @@ static TLBEntry* tlb2_target_entry(uint32_t gp_va)
 
 static TLBEntry* itlb2_refill(uint32_t guest_va)
 {
+    BATResult bat_res;
     uint32_t phys_addr;
     TLBEntry *tlb_entry;
     uint16_t flags = 0;
@@ -484,7 +492,11 @@ static TLBEntry* itlb2_refill(uint32_t guest_va)
     /* instruction address translation if enabled */
     if (ppc_state.msr & 0x20) {
         // attempt block address translation first
-        BATResult bat_res = ppc_block_address_translation<BATType::IBAT>(guest_va);
+        if (is_601_MMU) {
+            bat_res = mpc601_block_address_translation(guest_va);
+        } else {
+            bat_res = ppc_block_address_translation<BATType::IBAT>(guest_va);
+        }
         if (bat_res.hit) {
             // check block protection
             // only PP = 0 (no access) causes ISI exception
@@ -526,6 +538,7 @@ static TLBEntry* itlb2_refill(uint32_t guest_va)
 
 static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write)
 {
+    BATResult bat_res;
     uint32_t phys_addr;
     uint16_t flags = 0;
     TLBEntry *tlb_entry;
@@ -535,7 +548,11 @@ static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write)
     /* data address translation if enabled */
     if (ppc_state.msr & 0x10) {
         // attempt block address translation first
-        BATResult bat_res = ppc_block_address_translation<BATType::DBAT>(guest_va);
+        if (is_601_MMU) {
+            bat_res = mpc601_block_address_translation(guest_va);
+        } else {
+            bat_res = ppc_block_address_translation<BATType::DBAT>(guest_va);
+        }
         if (bat_res.hit) {
             // check block protection
             if (!bat_res.prot || ((bat_res.prot & 1) && is_write)) {
@@ -588,9 +605,7 @@ static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write)
         }
         return tlb_entry;
     } else {
-        LOG_F(ERROR, "Read from unmapped memory at 0x%08X!\n", phys_addr);
-        UnmappedMem.tag = tag;
-        UnmappedMem.host_va_offset = (int64_t)(&UnmappedVal) - guest_va;
+        LOG_F(ERROR, "Access to unmapped physical memory, phys_addr=0x%08X\n", phys_addr);
         return &UnmappedMem;
     }
 }
@@ -714,6 +729,9 @@ inline T mmu_read_vmem(uint32_t guest_va)
             // secondary TLB miss ->
             // perform full address translation and refill the secondary TLB
             tlb2_entry = dtlb2_refill(guest_va, 0);
+            if (tlb2_entry->flags & PAGE_NOPHYS) {
+                return UnmappedVal;
+            }
         }
 #ifdef TLB_PROFILING
         else {
@@ -809,6 +827,9 @@ inline void mmu_write_vmem(uint32_t guest_va, T value)
             // secondary TLB miss ->
             // perform full address translation and refill the secondary TLB
             tlb2_entry = dtlb2_refill(guest_va, 1);
+            if (tlb2_entry->flags & PAGE_NOPHYS) {
+                return;
+            }
         }
 #ifdef TLB_PROFILING
         else {
@@ -1047,7 +1068,44 @@ void tlb_flush_pat_entries()
     gTLBFlushPatEntries = false;
 }
 
-void ibat_update(uint32_t bat_reg)
+static void mpc601_bat_update(uint32_t bat_reg)
+{
+    PPC_BAT_entry *ibat_entry, *dbat_entry;
+    uint32_t bsm, hi_mask;
+    uint8_t key, pp, prot;
+    int upper_reg_num;
+
+    upper_reg_num = bat_reg & 0xFFFFFFFE;
+
+    ibat_entry = &ibat_array[(bat_reg - 528) >> 1];
+    dbat_entry = &dbat_array[(bat_reg - 528) >> 1];
+
+    if (ppc_state.spr[bat_reg | 1] & 0x40) {
+        bsm     = ppc_state.spr[upper_reg_num + 1] & 0x3F;
+        hi_mask = ~((bsm << 17) | 0x1FFFF);
+
+        ibat_entry->valid   = true;
+        ibat_entry->access  = (ppc_state.spr[upper_reg_num] >> 2) & 3;
+        ibat_entry->prot    = ppc_state.spr[upper_reg_num] & 3;
+        ibat_entry->hi_mask = hi_mask;
+        ibat_entry->phys_hi = ppc_state.spr[upper_reg_num + 1] & hi_mask;
+        ibat_entry->bepi    = ppc_state.spr[upper_reg_num] & hi_mask;
+
+        // copy IBAT entry to DBAT entry
+        *dbat_entry = *ibat_entry;
+    } else {
+        // disable the corresponding BAT paars
+        ibat_entry->valid = false;
+        dbat_entry->valid = false;
+    }
+
+    if (!gTLBFlushBatEntries) {
+        gTLBFlushBatEntries = true;
+        add_ctx_sync_action(&tlb_flush_bat_entries);
+    }
+}
+
+static void ppc_ibat_update(uint32_t bat_reg)
 {
     int upper_reg_num;
     uint32_t bl, hi_mask;
@@ -1073,7 +1131,7 @@ void ibat_update(uint32_t bat_reg)
     }
 }
 
-void dbat_update(uint32_t bat_reg)
+static void ppc_dbat_update(uint32_t bat_reg)
 {
     int upper_reg_num;
     uint32_t bl, hi_mask;
@@ -1343,6 +1401,54 @@ static inline void write_phys_mem(AddressMapEntry *mru_rgn, uint32_t addr, T val
     } else {
         LOG_F(ERROR, "WRITE_PHYS: invalid region type!\n");
     }
+}
+
+/** PowerPC-style MMU data address translation. */
+static uint32_t ppc_mmu_addr_translate(uint32_t la, int is_write)
+{
+    uint32_t pa; /* translated physical address */
+
+    bool bat_hit    = false;
+    unsigned msr_pr = !!(ppc_state.msr & 0x4000);
+
+    // Format: %XY
+    // X - supervisor access bit, Y - problem/user access bit
+    // Those bits are mutually exclusive
+    unsigned access_bits = ((msr_pr ^ 1) << 1) | msr_pr;
+
+    for (int bat_index = 0; bat_index < 4; bat_index++) {
+        PPC_BAT_entry* bat_entry = &dbat_array[bat_index];
+
+        if ((bat_entry->access & access_bits) && ((la & bat_entry->hi_mask) == bat_entry->bepi)) {
+            bat_hit = true;
+
+#ifdef MMU_PROFILING
+            bat_transl_total++;
+#endif
+
+            if (!bat_entry->prot || ((bat_entry->prot & 1) && is_write)) {
+                ppc_state.spr[SPR::DSISR] = 0x08000000 | (is_write << 25);
+                ppc_state.spr[SPR::DAR]   = la;
+                mmu_exception_handler(Except_Type::EXC_DSI, 0);
+            }
+
+            // logical to physical translation
+            pa = bat_entry->phys_hi | (la & ~bat_entry->hi_mask);
+            break;
+        }
+    }
+
+    /* page address translation */
+    if (!bat_hit) {
+        PATResult pat_res = page_address_translation(la, false, msr_pr, is_write);
+        pa = pat_res.phys;
+
+#ifdef MMU_PROFILING
+        ptab_transl_total++;
+#endif
+    }
+
+    return pa;
 }
 
 static void mem_write_unaligned(uint32_t addr, uint32_t value, uint32_t size) {
@@ -1733,8 +1839,20 @@ uint64_t mem_read_dbg(uint32_t virt_addr, uint32_t size) {
     return ret_val;
 }
 
-void ppc_mmu_init() {
+void ppc_mmu_init(uint32_t cpu_version)
+{
     mmu_exception_handler = ppc_exception_handler;
+
+    if ((cpu_version >> 16) == 1) {
+        // use 601-style BATs
+        ibat_update = &mpc601_bat_update;
+        is_601_MMU = true;
+    } else {
+        // use PPC-style BATs
+        ibat_update = &ppc_ibat_update;
+        dbat_update = &ppc_dbat_update;
+        is_601_MMU = false;
+    }
 
     // invalidate all IDTLB entries
     for (auto &tlb_el : itlb1_mode1) {

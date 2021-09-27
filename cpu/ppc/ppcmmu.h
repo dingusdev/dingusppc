@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <array>
 #include <cinttypes>
+#include <functional>
 #include <vector>
 #include "devices/memctrlbase.h"
 
@@ -34,11 +35,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** generic PowerPC BAT descriptor (MMU internal state) */
 typedef struct PPC_BAT_entry {
-    uint8_t access;   /* copy of Vs | Vp bits */
-    uint8_t prot;     /* copy of PP bits */
-    uint32_t phys_hi; /* high-order bits for physical address generation */
-    uint32_t hi_mask; /* mask for high-order logical address bits */
-    uint32_t bepi;    /* copy of Block effective page index */
+    bool        valid;   /* BAT entry valid for MPC601 */
+    uint8_t     access;  /* copy of Vs | Vp bits */
+    uint8_t     prot;    /* copy of PP bits */
+    uint32_t    phys_hi; /* high-order bits for physical address generation */
+    uint32_t    hi_mask; /* mask for high-order logical address bits */
+    uint32_t    bepi;    /* copy of Block effective page index */
 } PPC_BAT_entry;
 
 /** Block address translation types. */
@@ -85,14 +87,15 @@ typedef struct TLBEntry {
 enum TLBFlags : uint16_t {
     PAGE_MEM      = 1 << 0, // memory page backed by host memory
     PAGE_IO       = 1 << 1, // memory mapped I/O page
-    TLBE_FROM_BAT = 1 << 2, // TLB entry has been translated with BAT
-    TLBE_FROM_PAT = 1 << 3, // TLB entry has been translated with PAT
-    PAGE_WRITABLE = 1 << 4, // page is writable
-    PTE_SET_C     = 1 << 5, // tells if C bit of the PTE needs to be updated
+    PAGE_NOPHYS   = 1 << 2, // no physical storage for this page (unmapped)
+    TLBE_FROM_BAT = 1 << 3, // TLB entry has been translated with BAT
+    TLBE_FROM_PAT = 1 << 4, // TLB entry has been translated with PAT
+    PAGE_WRITABLE = 1 << 5, // page is writable
+    PTE_SET_C     = 1 << 6, // tells if C bit of the PTE needs to be updated
 };
 
-extern void ibat_update(uint32_t bat_reg);
-extern void dbat_update(uint32_t bat_reg);
+extern std::function<void(uint32_t bat_reg)> ibat_update;
+extern std::function<void(uint32_t bat_reg)> dbat_update;
 
 extern uint8_t* mmu_get_dma_mem(uint32_t addr, uint32_t size);
 

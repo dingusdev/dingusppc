@@ -255,8 +255,8 @@ extern uint64_t exceptions_processed;
 #endif
 
 // Function prototypes
-extern void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t proc_version);
-extern void ppc_mmu_init();
+extern void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version);
+extern void ppc_mmu_init(uint32_t cpu_version);
 
 [[noreturn]] void ppc_illegalop();
 [[noreturn]] void ppc_fpu_off();

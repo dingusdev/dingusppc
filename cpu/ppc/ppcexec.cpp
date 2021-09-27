@@ -736,7 +736,7 @@ void initialize_ppc_opcode_tables() {
     }
 }
 
-void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t proc_version) {
+void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version) {
     int i;
 
     mem_ctrl_instance = mem_ctrl;
@@ -787,9 +787,9 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t proc_version) {
         ppc_state.spr[i] = 0;
     }
 
-    ppc_state.spr[SPR::PVR] = proc_version;
+    ppc_state.spr[SPR::PVR] = cpu_version;
 
-    if ((proc_version & 0xFFFF0000) == 0x00010000) {
+    if ((cpu_version & 0xFFFF0000) == 0x00010000) {
         /* MPC601 sets MSR[ME] bit during hard reset / Power-On */
         ppc_state.msr = 0x1040;
     } else {
@@ -797,7 +797,7 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t proc_version) {
         ppc_state.spr[SPR::DEC] = 0xFFFFFFFFUL;
     }
 
-    ppc_mmu_init();
+    ppc_mmu_init(cpu_version);
 
     /* redirect code execution to reset vector */
     ppc_state.pc = 0xFFF00100;
