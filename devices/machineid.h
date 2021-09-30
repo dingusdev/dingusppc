@@ -36,6 +36,39 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 /**
+    Machine ID register for Nubus Power Macs.
+    It's located at physical address 0x5FFFFFFC and contains four bytes:
+      +0 uint16_t signature = 0xA55A
+      +1 uint8_t  machine_type (3 - PowerMac)
+      +2 uint8_t  model (0x10 = PDM, 0x12 = Carl Sagan, 0x13 = Cold Fusion)
+ */
+class NubusMacID : public MMIODevice {
+public:
+    NubusMacID(const uint16_t id) {
+        this->name = "Nubus-Machine-id";
+        this->id[0] = 0xA5;
+        this->id[1] = 0x5A;
+        this->id[2] = (id >> 8) & 0xFF;
+        this->id[3] = id & 0xFF;
+    };
+    ~NubusMacID() = default;
+
+    bool supports_type(HWCompType type) {
+        return type == HWCompType::MMIO_DEV;
+    };
+
+    uint32_t read(uint32_t reg_start, uint32_t offset, int size) {
+        return (offset < 4 ? this->id[offset] : 0);
+    };
+
+    /* not writable */
+    void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size) {};
+
+private:
+    uint8_t id[4];
+};
+
+/**
     The machine ID for the Gossamer board is accesible at 0xFF000004 (phys).
     It contains a 16-bit value revealing machine's capabilities like bus speed,
     ROM speed, I/O configuration etc.
@@ -57,7 +90,8 @@ public:
         return ((!offset && size == 2) ? this->id : 0);
     };
 
-    void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size){}; /* not writable */
+    /* not writable */
+    void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size) {};
 
 private:
     uint16_t id;

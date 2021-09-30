@@ -25,7 +25,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include "cpu/ppc/ppcemu.h"
+#include "devices/amic.h"
 #include "devices/hmc.h"
+#include "devices/machineid.h"
 #include "machinebase.h"
 #include "machineproperties.h"
 #include <loguru.hpp>
@@ -45,8 +47,18 @@ int create_pdm(std::string& id) {
     /* register HMC memory controller */
     gMachineObj->add_component("HMC", new HMC);
 
+    /* register AMIC I/O controller */
+    gMachineObj->add_component("AMIC", new AMIC);
+
     /* get raw pointer to HMC object */
     HMC* hmc_obj = dynamic_cast<HMC*>(gMachineObj->get_comp_by_name("HMC"));
+
+    /* allocate machine ID register and tell we're running PowerMac 6100 */
+    // TODO: add a possibility to select another machine
+    // to be used with the same ROM
+    gMachineObj->add_component("MachineID", new NubusMacID(0x3010));
+    hmc_obj->add_mmio_region(0x5FFFFFFC, 4,
+        dynamic_cast<MMIODevice*>(gMachineObj->get_comp_by_name("MachineID")));
 
     /* allocate ROM region */
     if (!hmc_obj->add_rom_region(0x40000000, 0x400000)) {
