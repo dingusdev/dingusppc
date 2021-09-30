@@ -130,7 +130,7 @@ bool MemCtrlBase::add_mmio_region(uint32_t start_addr, uint32_t size, MMIODevice
     AddressMapEntry *entry;
 
     /* error if another region for the given range already exists */
-    if (find_range(start_addr) || find_range(start_addr + size))
+    if (find_range(start_addr) || find_range(start_addr + size - 1))
         return false;
 
     entry = new AddressMapEntry;

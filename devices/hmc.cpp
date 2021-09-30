@@ -31,7 +31,7 @@ HMC::HMC() : MemCtrlBase()
     this->name = "Highspeed Memory Controller";
 
     /* add memory mapped I/O region for the HMC control register */
-    add_mmio_region(0x50F40000, 0xFFFF, this);
+    add_mmio_region(0x50F40000, 0x10000, this);
 
     this->config_reg = 0ULL;
     this->bit_pos = 0;

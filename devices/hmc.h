@@ -34,6 +34,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "hwcomponent.h"
 #include "memctrlbase.h"
 #include "mmiodevice.h"
+#include <cinttypes>
 
 class HMC : public MemCtrlBase, public MMIODevice {
 public:
