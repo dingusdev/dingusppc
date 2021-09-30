@@ -96,7 +96,7 @@ void ViaCuda::write(int reg, uint8_t value) {
         break;
     case VIA_A:
     case VIA_ANH:
-        LOG_F(WARNING, "Attempted read from VIA Port A! \n");
+        LOG_F(WARNING, "Attempted write to VIA Port A! \n");
         break;
     case VIA_DIRB:
         LOG_F(9, "VIA_DIRB = %x \n", (uint32_t)value);

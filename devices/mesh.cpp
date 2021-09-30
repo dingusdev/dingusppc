@@ -23,13 +23,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "mesh.h"
 #include <cinttypes>
-#include <thirdparty/loguru/loguru.hpp>
+#include <loguru.hpp>
 
 uint8_t MESHController::read(uint8_t reg_offset)
 {
     switch(reg_offset) {
     case MeshReg::BusStatus0:
-        LOG_F(INFO, "MESH: read from BusStatus0 register");
+        LOG_F(9, "MESH: read from BusStatus0 register");
         return 0;
     case MeshReg::MeshID:
         LOG_F(INFO, "MESH: read from MeshID register");

@@ -605,7 +605,7 @@ static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write)
         }
         return tlb_entry;
     } else {
-        LOG_F(ERROR, "Access to unmapped physical memory, phys_addr=0x%08X\n", phys_addr);
+        LOG_F(WARNING, "Access to unmapped physical memory, phys_addr=0x%08X\n", phys_addr);
         return &UnmappedMem;
     }
 }
