@@ -44,6 +44,7 @@ AMIC::AMIC()
     }
 
     this->viacuda = std::unique_ptr<ViaCuda> (new ViaCuda());
+    this->awacs   = std::unique_ptr<AwacDevicePdm> (new AwacDevicePdm());
 }
 
 bool AMIC::supports_type(HWCompType type) {
@@ -60,7 +61,12 @@ uint32_t AMIC::read(uint32_t reg_start, uint32_t offset, int size)
         return this->viacuda->read(offset >> 9);
     }
 
-    LOG_F(INFO, "AMIC read!");
+    switch(offset) {
+    case AMICReg::Snd_Stat_0:
+    case AMICReg::Snd_Stat_1:
+    case AMICReg::Snd_Stat_2:
+        return (this->awacs->read_stat() >> (offset &  3 * 8)) & 0xFF;
+    }
     return 0;
 }
 
@@ -72,6 +78,19 @@ void AMIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
     }
 
     switch(offset) {
+    case AMICReg::Snd_Cntl_0:
+    case AMICReg::Snd_Cntl_1:
+    case AMICReg::Snd_Cntl_2:
+        // remember values of sound control registers
+        this->imm_snd_regs[offset & 3] = value;
+        // transfer control information to the sound codec when ready
+        if ((this->imm_snd_regs[0] & 0xC0) == PDM_SND_CNTL_VALID) {
+            this->awacs->write_ctrl(
+                (this->imm_snd_regs[1] >> 4) | (this->imm_snd_regs[0] & 0x3F),
+                ((this->imm_snd_regs[1] & 0xF) << 8) | this->imm_snd_regs[2]
+            );
+        }
+        break;
     case AMICReg::Snd_Out_Cntl:
         LOG_F(INFO, "AMIC Sound Out Ctrl updated, val=%x", value);
         break;

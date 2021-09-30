@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef AMIC_H
 #define AMIC_H
 
+#include "awacs.h"
 #include "mmiodevice.h"
 #include "viacuda.h"
 #include <cinttypes>
@@ -31,9 +32,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /* AMIC DMA registers offsets from AMIC base (0x50F00000). */
 enum AMICReg : uint32_t {
-    // Sound control registers
-    Snd_Out_Cntl        = 0x14010,
-    Snd_In_Cntl         = 0x14011,
+    // Audio codec control registers
+    Snd_Cntl_0          = 0x14000, // audio codec control register 0
+    Snd_Cntl_1          = 0x14001, // audio codec control register 1
+    Snd_Cntl_2          = 0x14002, // audio codec control register 2
+    Snd_Stat_0          = 0x14004, // audio codec status register 0
+    Snd_Stat_1          = 0x14005, // audio codec status register 1
+    Snd_Stat_2          = 0x14006, // audio codec status register 2
+    Snd_Out_Cntl        = 0x14010, // audio codec output DMA control register
+    Snd_In_Cntl         = 0x14011, // audio codec input DMA control register
 
     // VIA2 registers
     VIA2_Slot_IER       = 0x26012,
@@ -70,7 +77,10 @@ protected:
     void dma_reg_write(uint32_t offset, uint32_t value, int size);
 
 private:
-    std::unique_ptr<ViaCuda> viacuda;
+    uint8_t imm_snd_regs[4]; // temporary storage for sound control registers
+
+    std::unique_ptr<ViaCuda>        viacuda;
+    std::unique_ptr<AwacDevicePdm>  awacs;
 };
 
 #endif // AMIC_H

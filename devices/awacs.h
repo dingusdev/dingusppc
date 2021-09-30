@@ -41,8 +41,8 @@ enum {
 };
 
 /** AWAC manufacturer and revision. */
-#define AWAC_MAKER_CRYSTAL 1
-#define AWAC_REV_SCREAMER 3
+#define AWAC_MAKER_CRYSTAL  1
+#define AWAC_REV_SCREAMER   3
 
 /** Apple source calls this kValidData but doesn't explain
     what it actually means. It seems like it's used to check
@@ -134,6 +134,26 @@ private:
     int out_sample_rate;
 
     DMAChannel  *dma_out_ch;
+};
+
+/** AWAC PDM-style definitions. */
+
+// PDM HWInit source defines two constants: kExpBit = 0x80 and kCmdBit = 0x40
+// I don't know what they means but it seems that their combination will
+// cause sound control parameters to be transferred to the sound chip.
+#define PDM_SND_CNTL_VALID  0xC0
+
+/** AWAC PDM-style sound codec. */
+class AwacDevicePdm {
+public:
+    AwacDevicePdm();
+    ~AwacDevicePdm() = default;
+
+    uint32_t read_stat(void);
+    void write_ctrl(uint32_t addr, uint16_t value);
+
+private:
+    uint16_t    ctrl_regs[5]; // 12-bit wide control registers
 };
 
 

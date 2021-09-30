@@ -287,3 +287,25 @@ void AWACDevice::dma_start()
 void AWACDevice::dma_end()
 {
 }
+
+//=========================== PDM-style AWAC =================================
+AwacDevicePdm::AwacDevicePdm()
+{
+}
+
+uint32_t AwacDevicePdm::read_stat()
+{
+    LOG_F(INFO, "AWAC-PDM status requested!");
+    return 0;
+}
+
+void AwacDevicePdm::write_ctrl(uint32_t addr, uint16_t value)
+{
+    LOG_F(INFO, "AWAC-PDM control updated, address=0x%X, val=0x%X", addr, value);
+
+    if (addr <= 4) {
+        this->ctrl_regs[addr] = value;
+    } else {
+        LOG_F(ERROR, "AWAC-PDM: invalid control register address %d!", addr);
+    }
+}
