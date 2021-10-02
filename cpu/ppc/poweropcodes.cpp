@@ -42,12 +42,19 @@ inline void power_setsoov(uint32_t a, uint32_t b, uint32_t d) {
     }
 }
 
+/** mask generator for rotate and shift instructions (§ 4.2.1.4 PowerpC PEM) */
+static inline uint32_t power_rot_mask(unsigned rot_mb, unsigned rot_me) {
+    uint32_t m1 = 0xFFFFFFFFUL >> rot_mb;
+    uint32_t m2 = 0xFFFFFFFFUL << (31 - rot_me);
+    return ((rot_mb <= rot_me) ? m2 & m1 : m1 | m2);
+}
+
 void dppc_interpreter::power_abs() {
     ppc_grab_regsda();
     if (ppc_result_a == 0x80000000) {
         ppc_result_d = ppc_result_a;
         if (oe_flag)
-            ppc_state.spr[SPR::XER] |= 0x40000000;
+            ppc_state.spr[SPR::XER] |= 0xC0000000;
 
     } else {
         ppc_result_d = ppc_result_a & 0x7FFFFFFF;
@@ -62,19 +69,14 @@ void dppc_interpreter::power_abs() {
 void dppc_interpreter::power_clcs() {
     ppc_grab_regsda();
     switch (reg_a) {
-    case 12:
-    case 13:
-    case 14:
-    case 15:
-        ppc_result_d = 65535;
+    case 12: //instruction cache line size
+    case 13: //data cache line size
+    case 14: //minimum line size
+    case 15: //maximum line size
+        ppc_result_d = 64;
         break;
     default:
         ppc_result_d = 0;
-    }
-
-    if (rc_flag) {
-        ppc_changecrf0(ppc_result_d);
-        printf("Does RC do anything here? (TODO) \n");
     }
 
     ppc_store_result_regd();
@@ -111,88 +113,94 @@ void dppc_interpreter::power_doz() {
     if (((int32_t)ppc_result_a) > ((int32_t)ppc_result_b)) {
         ppc_result_d = 0;
     } else {
-        ppc_result_d = ~ppc_result_a + ppc_result_b + 1;
+        ppc_result_d = ppc_result_b - ppc_result_a;
     }
 
     if (rc_flag)
         ppc_changecrf0(ppc_result_d);
+    if (oe_flag)
+        power_setsoov(ppc_result_a, ppc_result_b, ppc_result_d);
 
     ppc_store_result_rega();
 }
 
 void dppc_interpreter::power_dozi() {
-    ppc_grab_regsdab();
+    ppc_grab_regsdasimm();
     if (((int32_t)ppc_result_a) > simm) {
         ppc_result_d = 0;
     } else {
-        ppc_result_d = ~ppc_result_a + simm + 1;
+        ppc_result_d = simm - ppc_result_a;
     }
     ppc_store_result_rega();
 }
 
 void dppc_interpreter::power_lscbx() {
     ppc_grab_regsdab();
-    uint32_t bytes_copied = 0;
-    bool match_found      = false;
-    uint32_t shift_amount = 0;
-    uint8_t return_value;
-    uint8_t byte_compared = (uint8_t)((ppc_state.spr[SPR::XER] & 0xFF00) >> 8);
-    if ((ppc_state.spr[SPR::XER] & 0x7f) == 0) {
-        return;
-    }
-    uint32_t bytes_to_load = (ppc_state.spr[SPR::XER] & 0x7f) + 1;
     ppc_effective_address  = (reg_a == 0) ? ppc_result_b : ppc_result_a + ppc_result_b;
-    do {
-        ppc_effective_address++;
-        bytes_to_load--;
-        if (match_found == false) {
-            switch (shift_amount) {
-            case 0:
-                return_value = mmu_read_vmem<uint8_t>(ppc_effective_address);
-                //return_value = mem_grab_byte(ppc_effective_address);
-                ppc_result_d = (ppc_result_d & 0x00FFFFFF) | (return_value << 24);
-                ppc_store_result_regd();
-                break;
-            case 1:
-                return_value = mmu_read_vmem<uint8_t>(ppc_effective_address);
-                //return_value = mem_grab_byte(ppc_effective_address);
-                ppc_result_d = (ppc_result_d & 0xFF00FFFF) | (return_value << 16);
-                ppc_store_result_regd();
-                break;
-            case 2:
-                return_value = mmu_read_vmem<uint8_t>(ppc_effective_address);
-                //return_value = mem_grab_byte(ppc_effective_address);
-                ppc_result_d = (ppc_result_d & 0xFFFF00FF) | (return_value << 8);
-                ppc_store_result_regd();
-                break;
-            case 3:
-                return_value = mmu_read_vmem<uint8_t>(ppc_effective_address);
-                //return_value = mem_grab_byte(ppc_effective_address);
-                ppc_result_d = (ppc_result_d & 0xFFFFFF00) | return_value;
-                ppc_store_result_regd();
-                break;
-            }
 
-            bytes_copied++;
+    uint8_t return_value   = 0;
+    uint32_t bytes_to_load = (ppc_state.spr[SPR::XER] & 0x7f);
+    uint32_t bytes_copied  = 0;
+    uint8_t matching_byte  = (uint8_t)((ppc_state.spr[SPR::XER] & 0xFF00) >> 8);
+    uint32_t byte_offset   = 0;
+
+    //for storing each byte
+    uint32_t bitmask       = 0;
+    uint32_t shift_amount  = 0;
+
+    while (bytes_to_load > 0) {
+        if (byte_offset == 24) {
+            reg_d = (reg_d + 1) % 32;
+            ppc_result_d = 0xFFFFFFFF;
+            ppc_store_result_regd();
         }
-        if (return_value == byte_compared) {
+        
+
+        switch (byte_offset) { 
+        case 0:
+            bitmask      = 0x00FFFFFF;
+            shift_amount = 24;
+            break;
+        case 8:
+            bitmask      = 0xFF00FFFF;
+            shift_amount = 16;
+            break;
+        case 16:
+            bitmask      = 0xFFFF00FF;
+            shift_amount = 8;
+            break;
+        case 24:
+            bitmask      = 0xFFFFFF00;
+            shift_amount = 0;
             break;
         }
+        
+        return_value = mmu_read_vmem<uint8_t>(ppc_effective_address);
+        // return_value = mem_grab_byte(ppc_effective_address);
+        ppc_result_d = (ppc_result_d & bitmask) | (return_value << shift_amount);
+        ppc_store_result_regd();
+        bytes_copied++;
 
-        if (shift_amount == 3) {
-            shift_amount = 0;
-            reg_d        = (reg_d + 1) & 0x1F;
-        } else {
-            shift_amount++;
+        if (return_value == matching_byte) {
+            //Match has been found - Time to break out
+            break;
         }
-    } while (bytes_to_load > 0);
+            
+        byte_offset += 8;
+
+        if (byte_offset == 32) {
+            byte_offset = 0;
+        }
+
+        ppc_effective_address++;
+        bytes_to_load--;
+    }
+
     ppc_state.spr[SPR::XER] = (ppc_state.spr[SPR::XER] & 0xFFFFFF80) | bytes_copied;
 
 
     if (rc_flag)
         ppc_changecrf0(ppc_result_d);
-
-    ppc_store_result_regd();
 }
 
 void dppc_interpreter::power_maskg() {
@@ -202,16 +210,13 @@ void dppc_interpreter::power_maskg() {
     uint32_t insert_mask = 0;
 
     if (mask_start < (mask_end + 1)) {
-        for (uint32_t i = mask_start; i < mask_end; i++) {
-            insert_mask |= (0x80000000 >> i);
-        }
-    } else if (mask_start == (mask_end + 1)) {
+        insert_mask = power_rot_mask(mask_start, mask_end);
+    } 
+    else if (mask_start == (mask_end + 1)) {
         insert_mask = 0xFFFFFFFF;
-    } else {
-        insert_mask = 0xFFFFFFFF;
-        for (uint32_t i = (mask_end + 1); i < (mask_start - 1); i++) {
-            insert_mask &= (~(0x80000000 >> i));
-        }
+    } 
+    else {
+        insert_mask = ~(power_rot_mask(mask_end + 1, mask_start - 1));
     }
 
     ppc_result_a = insert_mask;
@@ -224,17 +229,7 @@ void dppc_interpreter::power_maskg() {
 
 void dppc_interpreter::power_maskir() {
     ppc_grab_regssab();
-    uint32_t mask_insert = ppc_result_a;
-    uint32_t insert_rot  = 0x80000000;
-    do {
-        if (ppc_result_b & insert_rot) {
-            mask_insert &= ~insert_rot;
-            mask_insert |= (ppc_result_d & insert_rot);
-        }
-        insert_rot = insert_rot >> 1;
-    } while (insert_rot > 0);
-
-    ppc_result_a = (ppc_result_d & ppc_result_b);
+    ppc_result_a = (ppc_result_d & ppc_result_b) | (~(ppc_result_b) & ppc_result_a);
 
     if (rc_flag)
         ppc_changecrf0(ppc_result_a);
@@ -270,24 +265,16 @@ void dppc_interpreter::power_rlmi() {
     ppc_grab_regssab();
     unsigned rot_mb      = (ppc_cur_instruction >> 6) & 31;
     unsigned rot_me      = (ppc_cur_instruction >> 1) & 31;
-    uint32_t rot_amt     = ppc_result_b & 31;
-    uint32_t insert_mask = 0;
+    unsigned rot_sh      = ppc_result_b & 31;
 
-    if (rot_mb < (rot_me + 1)) {
-        for (uint32_t i = rot_mb; i < rot_me; i++) {
-            insert_mask |= (0x80000000 >> i);
-        }
-    } else if (rot_mb == (rot_me + 1)) {
-        insert_mask = 0xFFFFFFFF;
-    } else {
-        insert_mask = 0xFFFFFFFF;
-        for (uint32_t i = (rot_me + 1); i < (rot_mb - 1); i++) {
-            insert_mask &= (~(0x80000000 >> i));
-        }
-    }
+    uint32_t r           = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
+    uint32_t mask        = power_rot_mask(rot_mb, rot_me);
 
-    uint32_t step2 = (ppc_result_d << rot_amt) | (ppc_result_d >> rot_amt);
-    ppc_result_a   = step2 & insert_mask;
+    ppc_result_a         = ((r & mask) | (ppc_result_a & ~mask));
+
+    if (rc_flag)
+        ppc_changecrf0(ppc_result_a);
+
     ppc_store_result_rega();
 }
 
@@ -295,9 +282,9 @@ void dppc_interpreter::power_rrib() {
     ppc_grab_regssab();
 
     if (ppc_result_d & 0x80000000) {
-        ppc_result_a |= (0x80000000 >> ppc_result_b);
+        ppc_result_a |= ((ppc_result_d & 0x80000000) >> ppc_result_b);
     } else {
-        ppc_result_a &= ~(0x80000000 >> ppc_result_b);
+        ppc_result_a &= ~((ppc_result_d & 0x80000000) >> ppc_result_b);
     }
 
     if (rc_flag)
@@ -307,15 +294,13 @@ void dppc_interpreter::power_rrib() {
 }
 
 void dppc_interpreter::power_sle() {
-    ppc_grab_regssa();
-    uint32_t insert_mask = 0;
-    uint32_t rot_amt     = ppc_result_b & 31;
-    for (uint32_t i = 31; i > rot_amt; i--) {
-        insert_mask |= (1 << i);
-    }
-    uint32_t insert_final  = ((ppc_result_d << rot_amt) | (ppc_result_d >> (32 - rot_amt)));
-    ppc_state.spr[SPR::MQ] = insert_final & insert_mask;
-    ppc_result_a           = insert_final & insert_mask;
+    ppc_grab_regssab();
+    unsigned rot_sh = ppc_result_b & 31;
+
+    ppc_result_a           = ppc_result_d << rot_sh;
+    ppc_state.spr[SPR::MQ] = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
+
+    ppc_store_result_rega();
 
     if (rc_flag)
         ppc_changecrf0(ppc_result_a);
@@ -324,24 +309,13 @@ void dppc_interpreter::power_sle() {
 }
 
 void dppc_interpreter::power_sleq() {
-    ppc_grab_regssa();
-    uint32_t insert_mask = 0;
-    uint32_t rot_amt     = ppc_result_b & 31;
-    for (uint32_t i = 31; i > rot_amt; i--) {
-        insert_mask |= (1 << i);
-    }
-    uint32_t insert_start = ((ppc_result_d << rot_amt) | (ppc_result_d >> (rot_amt - 31)));
-    uint32_t insert_end   = ppc_state.spr[SPR::MQ];
+    ppc_grab_regssab();
+    unsigned rot_sh = ppc_result_b & 31;
+    uint32_t r      = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
+    uint32_t mask   = power_rot_mask(0, 31 - rot_sh);
 
-    for (int i = 0; i < 32; i++) {
-        if (insert_mask & (1 << i)) {
-            insert_end &= ~(1 << i);
-            insert_end |= (insert_start & (1 << i));
-        }
-    }
-
-    ppc_result_a           = insert_end;
-    ppc_state.spr[SPR::MQ] = insert_start;
+    ppc_result_a           = ((r & mask) | (ppc_state.spr[SPR::MQ] & ~mask));
+    ppc_state.spr[SPR::MQ] = r;
 
     if (rc_flag)
         ppc_changecrf0(ppc_result_a);
@@ -351,23 +325,10 @@ void dppc_interpreter::power_sleq() {
 
 void dppc_interpreter::power_sliq() {
     ppc_grab_regssa();
-    uint32_t insert_mask = 0;
     unsigned rot_sh      = (ppc_cur_instruction >> 11) & 31;
-    for (uint32_t i = 31; i > rot_sh; i--) {
-        insert_mask |= (1 << i);
-    }
-    uint32_t insert_start = ((ppc_result_d << rot_sh) | (ppc_result_d >> (rot_sh - 31)));
-    uint32_t insert_end   = ppc_state.spr[SPR::MQ];
 
-    for (int i = 0; i < 32; i++) {
-        if (insert_mask & (1 << i)) {
-            insert_end &= ~(1 << i);
-            insert_end |= (insert_start & (1 << i));
-        }
-    }
-
-    ppc_result_a           = insert_end & insert_mask;
-    ppc_state.spr[SPR::MQ] = insert_start;
+    ppc_result_a           = ppc_result_d << rot_sh;
+    ppc_state.spr[SPR::MQ] = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
 
     if (rc_flag)
         ppc_changecrf0(ppc_result_a);
@@ -377,23 +338,12 @@ void dppc_interpreter::power_sliq() {
 
 void dppc_interpreter::power_slliq() {
     ppc_grab_regssa();
-    uint32_t insert_mask = 0;
     unsigned rot_sh      = (ppc_cur_instruction >> 11) & 31;
-    for (uint32_t i = 31; i > rot_sh; i--) {
-        insert_mask |= (1 << i);
-    }
-    uint32_t insert_start = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
-    uint32_t insert_end   = ppc_state.spr[SPR::MQ];
+    uint32_t r           = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
+    uint32_t mask        = power_rot_mask(0, 31 - rot_sh);
 
-    for (int i = 0; i < 32; i++) {
-        if (insert_mask & (1 << i)) {
-            insert_end &= ~(1 << i);
-            insert_end |= (insert_start & (1 << i));
-        }
-    }
-
-    ppc_result_a           = insert_end;
-    ppc_state.spr[SPR::MQ] = insert_start;
+    ppc_result_a           = ((r & mask) | (ppc_state.spr[SPR::MQ] & ~mask));
+    ppc_state.spr[SPR::MQ] = r;
 
     if (rc_flag)
         ppc_changecrf0(ppc_result_a);
@@ -402,59 +352,119 @@ void dppc_interpreter::power_slliq() {
 }
 
 void dppc_interpreter::power_sllq() {
-    LOG_F(WARNING, "OOPS! Placeholder for sllq!!! \n");
+    ppc_grab_regssab();
+    unsigned rot_sh      = ppc_result_b & 31;
+    uint32_t r           = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
+    uint32_t mask        = power_rot_mask(0, 31 - rot_sh);
+
+    if (ppc_result_b >= 0x20) {
+        ppc_result_a = (ppc_state.spr[SPR::MQ] & mask);
+    } 
+    else {
+        ppc_result_a = ((r & mask) | (ppc_state.spr[SPR::MQ] & ~mask));
+    }
+
+    if (rc_flag)
+        ppc_changecrf0(ppc_result_a);
+
+    ppc_store_result_rega();
 }
 
 void dppc_interpreter::power_slq() {
-    LOG_F(WARNING, "OOPS! Placeholder for slq!!! \n");
+    ppc_grab_regssab();
+    unsigned rot_sh = ppc_result_b & 31;
+
+    if (ppc_result_b >= 0x20) {
+        ppc_result_a = ppc_result_d << rot_sh;
+    } else {
+        ppc_result_a = 0;
+    }
+
+    if (rc_flag)
+        ppc_changecrf0(ppc_result_a);
+
+    ppc_state.spr[SPR::MQ] = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
 }
 
 void dppc_interpreter::power_sraiq() {
-    LOG_F(WARNING, "OOPS! Placeholder for sraiq!!! \n");
+    ppc_grab_regssa();
+    unsigned rot_sh        = (ppc_cur_instruction >> 11) & 0x1F;
+    uint32_t mask          = (1 << rot_sh) - 1;
+    ppc_result_a           = (int32_t)ppc_result_d >> rot_sh;
+    ppc_state.spr[SPR::MQ] = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
+
+    if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & mask)) {
+        ppc_state.spr[SPR::XER] |= 0x20000000UL;
+    } else {
+        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
+    }
+
+    if (rc_flag)
+        ppc_changecrf0(ppc_result_a);
+
+    ppc_store_result_rega();
 }
 
 void dppc_interpreter::power_sraq() {
-    LOG_F(WARNING, "OOPS! Placeholder for sraq!!! \n");
+    ppc_grab_regssab();
+    unsigned rot_sh        = ppc_result_b & 0x1F;
+    uint32_t mask          = (1 << rot_sh) - 1;
+    ppc_result_a           = (int32_t)ppc_result_d >> rot_sh;
+    ppc_state.spr[SPR::MQ] = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
+
+    if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & mask)) {
+        ppc_state.spr[SPR::XER] |= 0x20000000UL;
+    } else {
+        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
+    }
+
+    ppc_state.spr[SPR::MQ] = ((ppc_result_d << ppc_result_b) | (ppc_result_d >> (ppc_result_b)));
+
+    if (rc_flag)
+        ppc_changecrf0(ppc_result_a);
+
+    ppc_store_result_rega();
 }
 
 void dppc_interpreter::power_sre() {
-    ppc_grab_regssa();
-    uint32_t insert_mask = 0;
-    uint32_t rot_amt     = ppc_result_b & 31;
-    for (uint32_t i = 31; i > rot_amt; i--) {
-        insert_mask |= (1 << i);
-    }
-    uint32_t insert_final  = ((ppc_result_d >> rot_amt) | (ppc_result_d << (32 - rot_amt)));
-    ppc_state.spr[SPR::MQ] = insert_final & insert_mask;
-    ppc_result_a           = insert_final;
+    ppc_grab_regssab();
+
+    unsigned rot_sh        = ppc_result_b & 31;
+
+    ppc_result_a           = ppc_result_d >> rot_sh;
+    ppc_state.spr[SPR::MQ] = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
+
     if (rc_flag)
         ppc_changecrf0(ppc_result_a);
+
     ppc_store_result_rega();
 }
 
 void dppc_interpreter::power_srea() {
-    LOG_F(WARNING, "OOPS! Placeholder for srea!!! \n");
+    ppc_grab_regssab();
+    unsigned rot_sh        = ppc_result_b & 0x1F;
+    ppc_result_a           = (int32_t)ppc_result_d >> rot_sh;
+    ppc_state.spr[SPR::MQ] = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
+
+    if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & rot_sh)) {
+        ppc_state.spr[SPR::XER] |= 0x20000000UL;
+    } else {
+        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
+    }
+
+    if (rc_flag)
+        ppc_changecrf0(ppc_result_a);
+
+    ppc_store_result_rega();
 }
 
 void dppc_interpreter::power_sreq() {
-    ppc_grab_regssa();
-    uint32_t insert_mask = 0;
+    ppc_grab_regssab();
     unsigned rot_sh      = ppc_result_b & 31;
-    for (uint32_t i = 31; i > rot_sh; i--) {
-        insert_mask |= (1 << i);
-    }
-    uint32_t insert_start = ((ppc_result_d >> rot_sh) | (ppc_result_d << (32 - rot_sh)));
-    uint32_t insert_end   = ppc_state.spr[SPR::MQ];
+    unsigned mask        = power_rot_mask(rot_sh, 31);
 
-    for (int i = 0; i < 32; i++) {
-        if (insert_mask & (1 << i)) {
-            insert_end &= ~(1 << i);
-            insert_end |= (insert_start & (1 << i));
-        }
-    }
-
-    ppc_result_a           = insert_end;
-    ppc_state.spr[SPR::MQ] = insert_start;
+    ppc_result_a           = ((rot_sh & mask) | (ppc_state.spr[SPR::MQ] & ~mask));
+    ppc_state.spr[SPR::MQ] = rot_sh;
 
     if (rc_flag)
         ppc_changecrf0(ppc_result_a);
@@ -464,23 +474,9 @@ void dppc_interpreter::power_sreq() {
 
 void dppc_interpreter::power_sriq() {
     ppc_grab_regssa();
-    uint32_t insert_mask = 0;
-    unsigned rot_sh      = (ppc_cur_instruction >> 11) & 31;
-    for (uint32_t i = 31; i > rot_sh; i--) {
-        insert_mask |= (1 << i);
-    }
-    uint32_t insert_start = ((ppc_result_d >> rot_sh) | (ppc_result_d << (32 - rot_sh)));
-    uint32_t insert_end   = ppc_state.spr[SPR::MQ];
-
-    for (int i = 0; i < 32; i++) {
-        if (insert_mask & (1 << i)) {
-            insert_end &= ~(1 << i);
-            insert_end |= (insert_start & (1 << i));
-        }
-    }
-
-    ppc_result_a           = insert_end;
-    ppc_state.spr[SPR::MQ] = insert_start;
+    unsigned rot_sh        = (ppc_cur_instruction >> 11) & 31;
+    ppc_result_a           = ppc_result_d >> rot_sh;
+    ppc_state.spr[SPR::MQ] = ((ppc_result_d << rot_sh) | (ppc_result_d >> (rot_sh)));
 
     if (rc_flag)
         ppc_changecrf0(ppc_result_a);
@@ -489,13 +485,54 @@ void dppc_interpreter::power_sriq() {
 }
 
 void dppc_interpreter::power_srliq() {
-    LOG_F(WARNING, "OOPS! Placeholder for slriq!!! \n");
+    ppc_grab_regssa();
+    unsigned rot_sh        = (ppc_cur_instruction >> 11) & 31;
+
+    uint32_t r             = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
+    unsigned mask          = power_rot_mask(rot_sh, 31);
+
+    ppc_result_a           = ((r & mask) | (ppc_state.spr[SPR::MQ] & ~mask));
+    ppc_state.spr[SPR::MQ] = r;
+
+    if (rc_flag)
+        ppc_changecrf0(ppc_result_a);
+
+    ppc_store_result_rega();
 }
 
 void dppc_interpreter::power_srlq() {
-    LOG_F(WARNING, "OOPS! Placeholder for slrq!!! \n");
+    ppc_grab_regssab();
+    unsigned rot_sh = ppc_result_b & 31;
+    uint32_t r      = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
+    unsigned mask   = power_rot_mask(rot_sh, 31);
+
+    if (ppc_result_b >= 0x20) {
+        ppc_result_a = (ppc_state.spr[SPR::MQ] & mask);
+    } 
+    else {
+        ppc_result_a = ((r & mask) | (ppc_state.spr[SPR::MQ] & ~mask));
+    }
+
+    if (rc_flag)
+        ppc_changecrf0(ppc_result_a);
+
+    ppc_store_result_rega();
 }
 
 void dppc_interpreter::power_srq() {
-    LOG_F(WARNING, "OOPS! Placeholder for srq!!! \n");
+    ppc_grab_regssab();
+    unsigned rot_sh = ppc_result_b & 31;
+
+    if (ppc_result_b >= 0x20) {
+        ppc_result_a = 0;
+    } else {
+        ppc_result_a = ppc_result_d >> rot_sh;
+    }
+
+    ppc_state.spr[SPR::MQ] = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
+
+    if (rc_flag)
+        ppc_changecrf0(ppc_result_a);
+
+    ppc_store_result_rega();
 }
