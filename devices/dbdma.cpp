@@ -29,6 +29,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cstring>
 #include <loguru.hpp>
 
+void DMAChannel::set_callbacks(DbdmaCallback start_cb, DbdmaCallback stop_cb)
+{
+    this->start_cb = start_cb;
+    this->stop_cb  = stop_cb;
+}
+
 void DMAChannel::get_next_cmd(uint32_t cmd_addr, DMACmd* p_cmd) {
     /* load DMACmd from physical memory */
     memcpy((uint8_t*)p_cmd, mmu_get_dma_mem(cmd_addr, 16), 16);
@@ -241,7 +247,7 @@ void DMAChannel::start()
 
     this->queue_len = 0;
 
-    this->dma_cb->dma_start();
+    this->start_cb();
 }
 
 void DMAChannel::resume() {
@@ -259,5 +265,5 @@ void DMAChannel::abort() {
 
 void DMAChannel::pause() {
     LOG_F(INFO, "Pausing DMA channel");
-    this->dma_cb->dma_end();
+    this->stop_cb();
 }

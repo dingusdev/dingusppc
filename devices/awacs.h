@@ -144,8 +144,8 @@ private:
     int auto_inc;
 };
 
-
-class AwacsScreamer : public AwacsBase, public DMACallback {
+/** AWACs Screamer sound codec. */
+class AwacsScreamer : public AwacsBase {
 public:
     AwacsScreamer();
     ~AwacsScreamer();
@@ -153,7 +153,6 @@ public:
     uint32_t    snd_ctrl_read(uint32_t offset, int size);
     void        snd_ctrl_write(uint32_t offset, uint32_t value, int size);
 
-    /* DMACallback methods */
     void dma_start();
     void dma_end();
 

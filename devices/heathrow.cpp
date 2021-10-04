@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-20 divingkatae and maximum
+Copyright (C) 2018-21 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -25,13 +25,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "macio.h"
 #include "viacuda.h"
 #include <cinttypes>
+#include <functional>
 #include <iostream>
 #include <loguru.hpp>
 #include <cpu/ppc/ppcemu.h>
 
 /** Heathrow Mac I/O device emulation.
 
-    Author: Max Poliakovski 2019
+    Author: Max Poliakovski
 */
 
 using namespace std;
@@ -42,9 +43,14 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow") {
     this->viacuda = new ViaCuda();
     gMachineObj->add_subdevice("ViaCuda", this->viacuda);
 
+    // initialize sound chip and its DMA output channel, then wire them together
     this->screamer    = new AwacsScreamer();
-    this->snd_out_dma = new DMAChannel(this->screamer);
+    this->snd_out_dma = new DMAChannel();
     this->screamer->set_dma_out(this->snd_out_dma);
+    this->snd_out_dma->set_callbacks(
+        std::bind(&AwacsScreamer::dma_start, this->screamer),
+        std::bind(&AwacsScreamer::dma_end, this->screamer)
+    );
 
     this->mesh = new MESHController(HeathrowMESHID);
 }

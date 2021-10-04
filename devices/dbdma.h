@@ -31,6 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "dmacore.h"
 #include <cinttypes>
+#include <functional>
 
 /** DBDMA Channel registers offsets */
 enum DMAReg : uint32_t {
@@ -60,21 +61,14 @@ typedef struct DMACmd {
     uint16_t xfer_stat;
 } DMACmd;
 
-class DMACallback {
-public:
-    virtual void dma_start(void) = 0;
-    virtual void dma_end(void)   = 0;
-    //virtual void dma_push(uint8_t *buf, int size) = 0;
-    //virtual void dma_pull(uint8_t *buf, int size)  = 0;
-};
+typedef std::function<void(void)> DbdmaCallback;
 
 class DMAChannel : public DmaOutChannel {
 public:
-    DMAChannel(DMACallback* cb) {
-        this->dma_cb = cb;
-    };
+    DMAChannel()  = default;
     ~DMAChannel() = default;
 
+    void set_callbacks(DbdmaCallback start_cb, DbdmaCallback stop_cb);
     uint32_t reg_read(uint32_t offset, int size);
     void reg_write(uint32_t offset, uint32_t value, int size);
 
@@ -91,7 +85,9 @@ protected:
     void pause(void);
 
 private:
-    DMACallback* dma_cb = 0;
+    std::function<void(void)> start_cb; // DMA channel start callback
+    std::function<void(void)> stop_cb;  // DMA channel stop callback
+
     uint16_t ch_stat    = 0;
     uint32_t cmd_ptr    = 0;
 
