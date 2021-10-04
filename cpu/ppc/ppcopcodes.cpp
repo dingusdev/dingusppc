@@ -73,7 +73,7 @@ void ppc_store_result_rega() {
     ppc_state.gpr[reg_a] = ppc_result_a;
 }
 
-inline void ppc_grab_regsdasimm() {
+void ppc_grab_regsdasimm() {
     reg_d        = (ppc_cur_instruction >> 21) & 31;
     reg_a        = (ppc_cur_instruction >> 16) & 31;
     simm         = (int32_t)((int16_t)((ppc_cur_instruction)&65535));
