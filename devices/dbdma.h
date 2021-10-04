@@ -29,6 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef DB_DMA_H
 #define DB_DMA_H
 
+#include "dmacore.h"
 #include <cinttypes>
 
 /** DBDMA Channel registers offsets */
@@ -67,7 +68,7 @@ public:
     //virtual void dma_pull(uint8_t *buf, int size)  = 0;
 };
 
-class DMAChannel {
+class DMAChannel : public DmaOutChannel {
 public:
     DMAChannel(DMACallback* cb) {
         this->dma_cb = cb;
@@ -77,8 +78,8 @@ public:
     uint32_t reg_read(uint32_t offset, int size);
     void reg_write(uint32_t offset, uint32_t value, int size);
 
-    int get_data(uint32_t req_len, uint32_t *avail_len, uint8_t **p_data);
-    bool is_active();
+    bool            is_active();
+    DmaPullResult   pull_data(uint32_t req_len, uint32_t *avail_len, uint8_t **p_data);
 
 protected:
     void get_next_cmd(uint32_t cmd_addr, DMACmd* p_cmd);

@@ -35,7 +35,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define SOUND_SERVER_H
 
 #include "hwcomponent.h"
-//#include <thirdparty/libsoundio/soundio/soundio.h>
 #include <cubeb/cubeb.h>
 
 enum {
@@ -52,32 +51,19 @@ public:
 
     int start();
     void shutdown();
-    int open_out_stream(uint32_t sample_rate, cubeb_data_callback data_cb,
-        cubeb_state_callback status_cb, void *user_data);
+    int open_out_stream(uint32_t sample_rate, void *user_data);
     int start_out_stream();
     void close_out_stream();
 
-    bool supports_type(HWCompType type) { return type == HWCompType::SND_SERVER; };
-
-#if 0
-    SoundIoDevice *get_out_device() {
-        if (this->status == SND_SERVER_UP) {
-            return this->out_device;
-        } else {
-            return NULL;
-        }
+    bool supports_type(HWCompType type) {
+        return type == HWCompType::SND_SERVER;
     };
-#endif
 
 private:
     int status;                     /* server status */
     cubeb *cubeb_ctx;
 
     cubeb_stream *out_stream;
-    //SoundIo *soundio;
-    //int out_dev_index;              /* current output device index */
-    //SoundIoDevice *out_device;      /* current output device instance */
-    //SoundIoOutStream *outstream;
 };
 
 #endif /* SOUND_SERVER_H */

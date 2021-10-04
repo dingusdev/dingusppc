@@ -28,6 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "devices/amic.h"
 #include "devices/hmc.h"
 #include "devices/machineid.h"
+#include "devices/soundserver.h"
 #include "machinebase.h"
 #include "machineproperties.h"
 #include <loguru.hpp>
@@ -46,6 +47,9 @@ int create_pdm(std::string& id) {
 
     /* register HMC memory controller */
     gMachineObj->add_component("HMC", new HMC);
+
+    /* start the sound server. */
+    gMachineObj->add_component("SoundServer", new SoundServer());
 
     /* register AMIC I/O controller */
     gMachineObj->add_component("AMIC", new AMIC);

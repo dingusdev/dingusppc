@@ -42,7 +42,7 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow") {
     this->viacuda = new ViaCuda();
     gMachineObj->add_subdevice("ViaCuda", this->viacuda);
 
-    this->screamer    = new AWACDevice();
+    this->screamer    = new AwacsScreamer();
     this->snd_out_dma = new DMAChannel(this->screamer);
     this->screamer->set_dma_out(this->snd_out_dma);
 

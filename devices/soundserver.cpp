@@ -19,8 +19,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include "dmacore.h"
+#include "endianswap.h"
 #include "soundserver.h"
-//#include <thirdparty/libsoundio/soundio/soundio.h>
 #include <loguru.hpp>
 #include <cubeb/cubeb.h>
 #ifdef _WIN32
@@ -124,9 +125,54 @@ void SoundServer::shutdown()
     LOG_F(INFO, "Sound Server shut down.");
 }
 
+long sound_out_callback(cubeb_stream *stream, void *user_data,
+                        void const *input_buffer, void *output_buffer,
+                        long req_frames)
+{
+    uint8_t *p_in;
+    int16_t* in_buf, * out_buf;
+    uint32_t got_len;
+    long frames, out_frames;
+    DmaOutChannel *dma_ch = static_cast<DmaOutChannel*>(user_data); /* C API baby! */
 
-int SoundServer::open_out_stream(uint32_t sample_rate, cubeb_data_callback data_cb,
-    cubeb_state_callback status_cb, void *user_data)
+    if (!dma_ch->is_active()) {
+        return 0;
+    }
+
+    out_buf = (int16_t*)output_buffer;
+
+    out_frames = 0;
+
+    while (req_frames > 0) {
+        if (!dma_ch->pull_data(req_frames << 2, &got_len, &p_in)) {
+            frames = got_len >> 2;
+
+            in_buf = (int16_t*)p_in;
+
+            for (int i = frames; i > 0; i--) {
+                out_buf[0] = BYTESWAP_16(in_buf[0]);
+                out_buf[1] = BYTESWAP_16(in_buf[1]);
+                in_buf += 2;
+                out_buf += 2;
+            }
+
+            req_frames -= frames;
+            out_frames += frames;
+        }
+        else {
+            break;
+        }
+    }
+
+    return out_frames;
+}
+
+static void status_callback(cubeb_stream *stream, void *user_data, cubeb_state state)
+{
+    LOG_F(9, "Cubeb status callback fired, status = %d", state);
+}
+
+int SoundServer::open_out_stream(uint32_t sample_rate, void *user_data)
 {
     int res;
     uint32_t latency_frames;
@@ -148,7 +194,7 @@ int SoundServer::open_out_stream(uint32_t sample_rate, cubeb_data_callback data_
 
     res = cubeb_stream_init(this->cubeb_ctx, &this->out_stream, "SndOut stream",
                             NULL, NULL, NULL, &params, latency_frames,
-                            data_cb, status_cb, user_data);
+                            sound_out_callback, status_callback, user_data);
     if (res != CUBEB_OK) {
         LOG_F(ERROR, "Could not open sound output stream, error: %d", res);
         return -1;

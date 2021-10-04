@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-20 divingkatae and maximum
+Copyright (C) 2018-21 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -21,7 +21,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** AWAC sound device emulation.
 
-    Author: Max Poliakovski 2019-20
+    Currently supported audio codecs:
+    - PDM AWACs in Nubus Power Macintosh models
+    - Screamer AWACs in Beige G3
+
+    Author: Max Poliakovski 2019-21
 */
 
 #include "awacs.h"
@@ -31,37 +35,106 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "soundserver.h"
 #include <algorithm>
 #include <loguru.hpp>
+#include <memory>
 
-static int awac_freqs[8] = {44100, 29400, 22050, 17640, 14700, 11025, 8820, 7350};
-
-
-AWACDevice::AWACDevice()
+AwacsBase::AwacsBase()
 {
-    this->audio_proc = new AudioProcessor();
-
-    /* register audio processor chip with the I2C bus */
-    I2CBus* i2c_bus = dynamic_cast<I2CBus*>(gMachineObj->get_comp_by_type(HWCompType::I2C_HOST));
-    i2c_bus->register_device(0x45, this->audio_proc);
-
+    // connect to SoundServer
     this->snd_server = dynamic_cast<SoundServer *>
         (gMachineObj->get_comp_by_name("SoundServer"));
     this->out_stream_ready = false;
 }
 
-AWACDevice::~AWACDevice()
+AwacsBase::~AwacsBase()
 {
+    // disconnect from SoundServer
     if (this->out_stream_ready) {
         snd_server->close_out_stream();
     }
-
-    delete this->audio_proc;
 }
 
-void AWACDevice::set_dma_out(DMAChannel* dma_out_ch) {
-    this->dma_out_ch = dma_out_ch;
+void AwacsBase::set_sample_rate(int sr_id)
+{
+    if (sr_id > this->max_sr_id) {
+        LOG_F(ERROR, "AWACs: invalid sample rate ID %d!", sr_id);
+    } else {
+        this->cur_sample_rate = this->sr_table[sr_id];
+    }
+};
+
+void AwacsBase::start_output_dma()
+{
+    int err;
+
+    if ((err = this->snd_server->open_out_stream(this->cur_sample_rate,
+        (void *)this->dma_out_ch))) {
+        LOG_F(ERROR, "AWACs: unable to open sound output stream: %d", err);
+        this->out_stream_ready = false;
+        return;
+    }
+
+    this->out_stream_ready = true;
+
+    if ((err = snd_server->start_out_stream())) {
+        LOG_F(ERROR, "AWACs: could not start sound output stream");
+    }
 }
 
-uint32_t AWACDevice::snd_ctrl_read(uint32_t offset, int size) {
+void AwacsBase::stop_output_dma()
+{
+    if (this->out_stream_ready) {
+        snd_server->close_out_stream();
+        this->out_stream_ready = false;
+    }
+}
+
+//=========================== PDM-style AWACs =================================
+AwacDevicePdm::AwacDevicePdm() : AwacsBase()
+{
+    static int pdm_awac_freqs[3] = {22050, 29400, 44100};
+
+    // PDM-style AWACs only supports three sample rates
+    this->sr_table = pdm_awac_freqs;
+    this->max_sr_id = 2;
+}
+
+uint32_t AwacDevicePdm::read_stat()
+{
+    LOG_F(INFO, "AWACs-PDM: status requested!");
+    // TODO: return valid status including manufacturer & device IDs
+    return 0;
+}
+
+void AwacDevicePdm::write_ctrl(uint32_t addr, uint16_t value)
+{
+    LOG_F(9, "AWACs-PDM: control updated, addr=0x%X, val=0x%X", addr, value);
+
+    if (addr <= 4) {
+        this->ctrl_regs[addr] = value;
+    } else {
+        LOG_F(ERROR, "AWACs-PDM: invalid control register address %d!", addr);
+    }
+}
+
+//============================= Screamer AWACs ================================
+AwacsScreamer::AwacsScreamer() : AwacsBase()
+{
+    this->audio_proc = std::unique_ptr<AudioProcessor> (new AudioProcessor());
+
+    /* register audio processor chip with the I2C bus */
+    I2CBus* i2c_bus = dynamic_cast<I2CBus*>(gMachineObj->get_comp_by_type(HWCompType::I2C_HOST));
+    i2c_bus->register_device(0x45, this->audio_proc.get());
+
+    static int screamer_freqs[8] = {
+        44100, 29400, 22050, 17640, 14700, 11025, 8820, 7350
+    };
+
+    this->sr_table = screamer_freqs;
+    this->max_sr_id = 7;
+}
+
+uint32_t AwacsScreamer::snd_ctrl_read(uint32_t offset, int size)
+{
     switch (offset) {
     case AWAC_SOUND_CTRL_REG:
         return this->snd_ctrl_reg;
@@ -69,191 +142,43 @@ uint32_t AWACDevice::snd_ctrl_read(uint32_t offset, int size) {
         return this->is_busy;
     case AWAC_CODEC_STATUS_REG:
         return (AWAC_AVAILABLE << 8) | (AWAC_MAKER_CRYSTAL << 16) | (AWAC_REV_SCREAMER << 20);
-        break;
     default:
-        LOG_F(ERROR, "AWAC: unsupported register at offset 0x%X", offset);
+        LOG_F(ERROR, "Screamer: unsupported register at offset 0x%X", offset);
     }
 
     return 0;
 }
 
-void AWACDevice::snd_ctrl_write(uint32_t offset, uint32_t value, int size) {
+void AwacsScreamer::snd_ctrl_write(uint32_t offset, uint32_t value, int size)
+{
     int subframe, reg_num;
     uint16_t data;
 
     switch (offset) {
     case AWAC_SOUND_CTRL_REG:
         this->snd_ctrl_reg = BYTESWAP_32(value);
-        LOG_F(INFO, "New sound control value = 0x%X", this->snd_ctrl_reg);
+        LOG_F(9, "Screamer: new sound control value = 0x%X", this->snd_ctrl_reg);
         break;
     case AWAC_CODEC_CTRL_REG:
         subframe = (value >> 14) & 3;
         reg_num  = (value >> 20) & 7;
         data     = ((value >> 8) & 0xF00) | ((value >> 24) & 0xFF);
-        LOG_F(INFO, "AWAC subframe = %d, reg = %d, data = %08X\n", subframe, reg_num, data);
+        LOG_F(9, "Screamer subframe = %d, reg = %d, data = %08X\n",
+              subframe, reg_num, data);
         if (!subframe)
             this->control_regs[reg_num] = data;
         break;
     default:
-        LOG_F(ERROR, "AWAC: unsupported register at offset 0x%X", offset);
+        LOG_F(ERROR, "Screamer: unsupported register at offset 0x%X", offset);
     }
 }
 
-#if 0
-static void convert_data(const uint8_t *in, SoundIoChannelArea *out_buf, uint32_t frame_count)
-{
-    uint16_t *p_in = (uint16_t *)in;
-
-    for (int i = 0; i < frame_count; i += 2, p_in += 4) {
-        *(uint16_t *)(out_buf[0].ptr) = BYTESWAP_16(p_in[0]);
-        out_buf[0].ptr += out_buf[0].step;
-        *(uint16_t *)(out_buf[0].ptr) = BYTESWAP_16(p_in[1]);
-        out_buf[0].ptr += out_buf[0].step;
-
-        *(uint16_t *)(out_buf[1].ptr) = BYTESWAP_16(p_in[2]);
-        out_buf[1].ptr += out_buf[1].step;
-        *(uint16_t *)(out_buf[1].ptr) = BYTESWAP_16(p_in[3]);
-        out_buf[1].ptr += out_buf[1].step;
-    }
-}
-
-static void insert_silence(SoundIoChannelArea *out_buf, uint32_t frame_count)
-{
-    for (int i = 0; i < frame_count; i += 2) {
-        *(uint16_t *)(out_buf[0].ptr) = 0;
-        out_buf[0].ptr += out_buf[0].step;
-        *(uint16_t *)(out_buf[0].ptr) = 0;
-        out_buf[0].ptr += out_buf[0].step;
-
-        *(uint16_t *)(out_buf[1].ptr) = 0;
-        out_buf[1].ptr += out_buf[1].step;
-        *(uint16_t *)(out_buf[1].ptr) = 0;
-        out_buf[1].ptr += out_buf[1].step;
-    }
-}
-#endif
-
-#if 0
-static void sound_out_callback(struct SoundIoOutStream *outstream,
-        int frame_count_min, int frame_count_max)
-{
-    int err, frame_count;
-    uint8_t *p_in;
-    uint32_t buf_len, rem_len, got_len;
-    struct SoundIoChannelArea *areas;
-    DMAChannel *dma_ch = (DMAChannel *)outstream->userdata; /* C API baby! */
-    int n_channels = outstream->layout.channel_count;
-    bool stop = false;
-
-    //if (!dma_ch->is_active()) {
-    //    soundio_outstream_clear_buffer(outstream);
-    //    soundio_outstream_pause(outstream, true);
-    //    return;
-    //}
-
-    if (frame_count_max > 512) {
-        frame_count = 512;
-    }
-    else {
-        frame_count = frame_count_max;
-    }
-
-    buf_len = (frame_count * n_channels) << 1;
-    //frame_count = frame_count_max;
-
-    //LOG_F(INFO, "frame_count_min=%d", frame_count_min);
-    //LOG_F(INFO, "frame_count_max=%d", frame_count_max);
-    //LOG_F(INFO, "channel count: %d", n_channels);
-    //LOG_F(INFO, "buf_len: %d", buf_len);
-
-    if ((err = soundio_outstream_begin_write(outstream, &areas, &frame_count))) {
-        LOG_F(ERROR, "unrecoverable stream error: %s\n", soundio_strerror(err));
-        return;
-    }
-
-    for (rem_len = buf_len; rem_len > 0; rem_len -= got_len) {
-        if (!dma_ch->get_data(rem_len, &got_len, &p_in)) {
-            //LOG_F(INFO, "SndCallback: got_len = %d", got_len);
-            convert_data(p_in, areas, got_len >> 2);
-            //LOG_F(9, "Converted sound data, len = %d", got_len);
-        } else { /* no more data */
-            //memset(buf, 0, rem_len); /* fill the buffer with silence */
-            //LOG_F(9, "Inserted silence, len = %d", rem_len);
-
-            /* fill the buffer with silence */
-            //LOG_F(ERROR, "rem_len=%d", rem_len);
-            insert_silence(areas, rem_len >> 2);
-            stop = true;
-            break;
-        }
-    }
-
-    if ((err = soundio_outstream_end_write(outstream))) {
-        LOG_F(ERROR, "unrecoverable stream error: %s\n", soundio_strerror(err));
-        return;
-    }
-
-    if (stop) {
-        LOG_F(INFO, "pausing result: %s",
-            soundio_strerror(soundio_outstream_pause(outstream, true)));
-    }
-}
-#endif
-
-long AWACDevice::sound_out_callback(cubeb_stream *stream, void *user_data,
-                        void const *input_buffer, void *output_buffer,
-                        long req_frames)
-{
-    uint8_t *p_in;
-    int16_t* in_buf, * out_buf;
-    uint32_t got_len;
-    long frames, out_frames;
-    AWACDevice *this_ptr = static_cast<AWACDevice*>(user_data); /* C API baby! */
-
-    if (!this_ptr->dma_out_ch->is_active()) {
-        return 0;
-    }
-
-    out_buf = (int16_t*)output_buffer;
-
-    out_frames = 0;
-
-    while (req_frames > 0) {
-        if (!this_ptr->dma_out_ch->get_data(req_frames << 2, &got_len, &p_in)) {
-            frames = got_len >> 2;
-
-            in_buf = (int16_t*)p_in;
-
-            for (int i = frames; i > 0; i--) {
-                out_buf[0] = BYTESWAP_16(in_buf[0]);
-                out_buf[1] = BYTESWAP_16(in_buf[1]);
-                in_buf += 2;
-                out_buf += 2;
-            }
-
-            req_frames -= frames;
-            out_frames += frames;
-        }
-        else {
-            break;
-        }
-    }
-
-    return out_frames;
-}
-
-void status_callback(cubeb_stream *stream, void *user_data, cubeb_state state)
-{
-    LOG_F(9, "Cubeb status callback fired, status = %d", state);
-}
-
-void AWACDevice::open_stream(int sample_rate)
+void AwacsScreamer::open_stream(int sample_rate)
 {
     int err;
 
-    if ((err = this->snd_server->open_out_stream(sample_rate, sound_out_callback,
-            status_callback, (void *)this))) {
-        LOG_F(ERROR, "AWAC: unable to open sound output stream: %d", err);
+    if ((err = this->snd_server->open_out_stream(sample_rate, (void *)this->dma_out_ch))) {
+        LOG_F(ERROR, "Screamer: unable to open sound output stream: %d", err);
         this->out_stream_ready = false;
     } else {
         this->out_sample_rate = sample_rate;
@@ -261,17 +186,17 @@ void AWACDevice::open_stream(int sample_rate)
     }
 }
 
-void AWACDevice::dma_start()
+void AwacsScreamer::dma_start()
 {
     int err;
 
     if (!this->out_stream_ready) {
-        this->open_stream(awac_freqs[(this->snd_ctrl_reg >> 8) & 7]);
-    } else if (this->out_sample_rate != awac_freqs[(this->snd_ctrl_reg >> 8) & 7]) {
+        this->open_stream(this->sr_table[(this->snd_ctrl_reg >> 8) & 7]);
+    } else if (this->out_sample_rate != this->sr_table[(this->snd_ctrl_reg >> 8) & 7]) {
         snd_server->close_out_stream();
-        this->open_stream(awac_freqs[(this->snd_ctrl_reg >> 8) & 7]);
+        this->open_stream(this->sr_table[(this->snd_ctrl_reg >> 8) & 7]);
     } else {
-        LOG_F(ERROR, "AWAC: unpausing attempted!");
+        LOG_F(ERROR, "Screamer: unpausing attempted!");
         return;
     }
 
@@ -280,32 +205,10 @@ void AWACDevice::dma_start()
     }
 
     if ((err = snd_server->start_out_stream())) {
-        LOG_F(ERROR, "Could not start sound output stream");
+        LOG_F(ERROR, "Screamer: could not start sound output stream");
     }
 }
 
-void AWACDevice::dma_end()
+void AwacsScreamer::dma_end()
 {
-}
-
-//=========================== PDM-style AWAC =================================
-AwacDevicePdm::AwacDevicePdm()
-{
-}
-
-uint32_t AwacDevicePdm::read_stat()
-{
-    LOG_F(INFO, "AWAC-PDM status requested!");
-    return 0;
-}
-
-void AwacDevicePdm::write_ctrl(uint32_t addr, uint16_t value)
-{
-    LOG_F(INFO, "AWAC-PDM control updated, address=0x%X, val=0x%X", addr, value);
-
-    if (addr <= 4) {
-        this->ctrl_regs[addr] = value;
-    } else {
-        LOG_F(ERROR, "AWAC-PDM: invalid control register address %d!", addr);
-    }
 }

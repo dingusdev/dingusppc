@@ -149,7 +149,7 @@ private:
     /* device cells */
     ViaCuda* viacuda;     // VIA cell with Cuda MCU attached to it
     NVram* nvram;         // NVRAM cell
-    AWACDevice* screamer; // Screamer audio codec instance
+    AwacsScreamer  *screamer; // Screamer audio codec instance
     MESHController *mesh; // MESH SCSI cell instance
 
     DMAChannel* snd_out_dma;

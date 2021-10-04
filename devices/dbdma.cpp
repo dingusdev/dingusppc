@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Descriptor-based direct memory access emulation. */
 
+#include "dmacore.h"
 #include "dbdma.h"
 #include "cpu/ppc/ppcmmu.h"
 #include "endianswap.h"
@@ -184,13 +185,14 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
     }
 }
 
-int DMAChannel::get_data(uint32_t req_len, uint32_t *avail_len, uint8_t **p_data)
+DmaPullResult DMAChannel::pull_data(uint32_t req_len, uint32_t *avail_len, uint8_t **p_data)
 {
     *avail_len = 0;
 
     if (this->ch_stat & CH_STAT_DEAD || !(this->ch_stat & CH_STAT_ACTIVE)) {
+        /* dead or idle channel? -> no more data */
         LOG_F(WARNING, "Dead/idle channel -> no more data");
-        return -1; /* dead or idle channel? -> no more data */
+        return DmaPullResult::NoMoreData;
     }
 
     /* interpret DBDMA program until we get data or become idle  */
@@ -212,10 +214,10 @@ int DMAChannel::get_data(uint32_t req_len, uint32_t *avail_len, uint8_t **p_data
             *avail_len      = this->queue_len;
             this->queue_len = 0;
         }
-        return 0; /* tell the caller there is more data */
+        return DmaPullResult::MoreData; /* tell the caller there is more data */
     }
 
-    return -1; /* tell the caller there is no more data */
+    return DmaPullResult::NoMoreData; /* tell the caller there is no more data */
 }
 
 bool DMAChannel::is_active()
