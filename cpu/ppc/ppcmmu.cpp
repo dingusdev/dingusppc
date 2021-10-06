@@ -699,13 +699,246 @@ uint8_t *mmu_translate_imem(uint32_t vaddr)
     return host_va;
 }
 
+void tlb_flush_entry(uint32_t ea)
+{
+    TLBEntry *tlb_entry, *tlb1, *tlb2;
+
+    const uint32_t tag = ea & ~0xFFFUL;
+
+    for (int m = 0; m < 6; m++) {
+        switch (m) {
+        case 0:
+            tlb1 = &itlb1_mode1[0];
+            tlb2 = &itlb2_mode1[0];
+            break;
+        case 1:
+            tlb1 = &itlb1_mode2[0];
+            tlb2 = &itlb2_mode2[0];
+            break;
+        case 2:
+            tlb1 = &itlb1_mode3[0];
+            tlb2 = &itlb2_mode3[0];
+            break;
+        case 3:
+            tlb1 = &dtlb1_mode1[0];
+            tlb2 = &dtlb2_mode1[0];
+            break;
+        case 4:
+            tlb1 = &dtlb1_mode2[0];
+            tlb2 = &dtlb2_mode2[0];
+            break;
+        case 5:
+            tlb1 = &dtlb1_mode3[0];
+            tlb2 = &dtlb2_mode3[0];
+            break;
+        }
+
+        // flush primary TLB
+        tlb_entry = &tlb1[(ea >> PAGE_SIZE_BITS) & tlb_size_mask];
+        if (tlb_entry->tag == tag) {
+            tlb_entry->tag = TLB_INVALID_TAG;
+            //LOG_F(INFO, "Invalidated primary TLB entry at 0x%X", ea);
+        }
+
+        // flush secondary TLB
+        tlb_entry = &tlb2[((ea >> PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
+        for (int i = 0; i < TLB2_WAYS; i++) {
+            if (tlb_entry[i].tag == tag) {
+                tlb_entry[i].tag = TLB_INVALID_TAG;
+                //LOG_F(INFO, "Invalidated secondary TLB entry at 0x%X", ea);
+            }
+        }
+    }
+}
+
+template <const TLBType tlb_type>
+void tlb_flush_entries(TLBFlags type)
+{
+    TLBEntry *m1_tlb, *m2_tlb, *m3_tlb;
+    int i;
+
+    if (tlb_type == TLBType::ITLB) {
+        m1_tlb = &itlb1_mode1[0];
+        m2_tlb = &itlb1_mode2[0];
+        m3_tlb = &itlb1_mode3[0];
+    } else {
+        m1_tlb = &dtlb1_mode1[0];
+        m2_tlb = &dtlb1_mode2[0];
+        m3_tlb = &dtlb1_mode3[0];
+    }
+
+    // Flush entries from the primary TLBs
+    for (i = 0; i < TLB_SIZE; i++) {
+        if (m1_tlb[i].flags & type) {
+            m1_tlb[i].tag = TLB_INVALID_TAG;
+        }
+
+        if (m2_tlb[i].flags & type) {
+            m2_tlb[i].tag = TLB_INVALID_TAG;
+        }
+
+        if (m3_tlb[i].flags & type) {
+            m3_tlb[i].tag = TLB_INVALID_TAG;
+        }
+    }
+
+    if (tlb_type == TLBType::ITLB) {
+        m1_tlb = &itlb2_mode1[0];
+        m2_tlb = &itlb2_mode2[0];
+        m3_tlb = &itlb2_mode3[0];
+    } else {
+        m1_tlb = &dtlb2_mode1[0];
+        m2_tlb = &dtlb2_mode2[0];
+        m3_tlb = &dtlb2_mode3[0];
+    }
+
+    // Flush entries from the secondary TLBs
+    for (i = 0; i < TLB_SIZE * TLB2_WAYS; i++) {
+        if (dtlb2_mode1[i].flags & type) {
+            dtlb2_mode1[i].tag = TLB_INVALID_TAG;
+        }
+
+        if (dtlb2_mode2[i].flags & type) {
+            dtlb2_mode2[i].tag = TLB_INVALID_TAG;
+        }
+
+        if (dtlb2_mode3[i].flags & type) {
+            dtlb2_mode3[i].tag = TLB_INVALID_TAG;
+        }
+    }
+}
+
+bool gTLBFlushBatEntries = false;
+bool gTLBFlushPatEntries = false;
+
+template <const TLBType tlb_type>
+void tlb_flush_bat_entries()
+{
+    if (!gTLBFlushBatEntries)
+        return;
+
+    tlb_flush_entries<tlb_type>(TLBE_FROM_BAT);
+
+    gTLBFlushBatEntries = false;
+}
+
+template <const TLBType tlb_type>
+void tlb_flush_pat_entries()
+{
+    if (!gTLBFlushPatEntries)
+        return;
+
+    tlb_flush_entries<tlb_type>(TLBE_FROM_PAT);
+
+    gTLBFlushPatEntries = false;
+}
+
+static void mpc601_bat_update(uint32_t bat_reg)
+{
+    PPC_BAT_entry *ibat_entry, *dbat_entry;
+    uint32_t bsm, hi_mask;
+    uint8_t key, pp, prot;
+    int upper_reg_num;
+
+    upper_reg_num = bat_reg & 0xFFFFFFFE;
+
+    ibat_entry = &ibat_array[(bat_reg - 528) >> 1];
+    dbat_entry = &dbat_array[(bat_reg - 528) >> 1];
+
+    if (ppc_state.spr[bat_reg | 1] & 0x40) {
+        bsm     = ppc_state.spr[upper_reg_num + 1] & 0x3F;
+        hi_mask = ~((bsm << 17) | 0x1FFFF);
+
+        ibat_entry->valid   = true;
+        ibat_entry->access  = (ppc_state.spr[upper_reg_num] >> 2) & 3;
+        ibat_entry->prot    = ppc_state.spr[upper_reg_num] & 3;
+        ibat_entry->hi_mask = hi_mask;
+        ibat_entry->phys_hi = ppc_state.spr[upper_reg_num + 1] & hi_mask;
+        ibat_entry->bepi    = ppc_state.spr[upper_reg_num] & hi_mask;
+
+        // copy IBAT entry to DBAT entry
+        *dbat_entry = *ibat_entry;
+    } else {
+        // disable the corresponding BAT paars
+        ibat_entry->valid = false;
+        dbat_entry->valid = false;
+    }
+
+    // MPC601 has unified BATs so we're going to fush both ITLB and DTLB
+    if (!gTLBFlushBatEntries) {
+        gTLBFlushBatEntries = true;
+        add_ctx_sync_action(&tlb_flush_bat_entries<TLBType::ITLB>);
+        add_ctx_sync_action(&tlb_flush_bat_entries<TLBType::DTLB>);
+    }
+}
+
+static void ppc_ibat_update(uint32_t bat_reg)
+{
+    int upper_reg_num;
+    uint32_t bl, hi_mask;
+    PPC_BAT_entry* bat_entry;
+
+    upper_reg_num = bat_reg & 0xFFFFFFFE;
+
+    if (ppc_state.spr[upper_reg_num] & 3) {    // is that BAT pair valid?
+        bat_entry = &ibat_array[(bat_reg - 528) >> 1];
+        bl        = (ppc_state.spr[upper_reg_num] >> 2) & 0x7FF;
+        hi_mask   = ~((bl << 17) | 0x1FFFF);
+
+        bat_entry->access  = ppc_state.spr[upper_reg_num] & 3;
+        bat_entry->prot    = ppc_state.spr[upper_reg_num + 1] & 3;
+        bat_entry->hi_mask = hi_mask;
+        bat_entry->phys_hi = ppc_state.spr[upper_reg_num + 1] & hi_mask;
+        bat_entry->bepi    = ppc_state.spr[upper_reg_num] & hi_mask;
+
+        if (!gTLBFlushBatEntries) {
+            gTLBFlushBatEntries = true;
+            add_ctx_sync_action(&tlb_flush_bat_entries<TLBType::ITLB>);
+        }
+    }
+}
+
+static void ppc_dbat_update(uint32_t bat_reg)
+{
+    int upper_reg_num;
+    uint32_t bl, hi_mask;
+    PPC_BAT_entry* bat_entry;
+
+    upper_reg_num = bat_reg & 0xFFFFFFFE;
+
+    if (ppc_state.spr[upper_reg_num] & 3) {    // is that BAT pair valid?
+        bat_entry = &dbat_array[(bat_reg - 536) >> 1];
+        bl        = (ppc_state.spr[upper_reg_num] >> 2) & 0x7FF;
+        hi_mask   = ~((bl << 17) | 0x1FFFF);
+
+        bat_entry->access  = ppc_state.spr[upper_reg_num] & 3;
+        bat_entry->prot    = ppc_state.spr[upper_reg_num + 1] & 3;
+        bat_entry->hi_mask = hi_mask;
+        bat_entry->phys_hi = ppc_state.spr[upper_reg_num + 1] & hi_mask;
+        bat_entry->bepi    = ppc_state.spr[upper_reg_num] & hi_mask;
+
+        if (!gTLBFlushBatEntries) {
+            gTLBFlushBatEntries = true;
+            add_ctx_sync_action(&tlb_flush_bat_entries<TLBType::DTLB>);
+        }
+    }
+}
+
+void mmu_pat_ctx_changed()
+{
+    // Page address translation context changed so we need to flush
+    // all PAT entries from both ITLB and DTLB
+    if (!gTLBFlushPatEntries) {
+        gTLBFlushPatEntries = true;
+        add_ctx_sync_action(&tlb_flush_pat_entries<TLBType::ITLB>);
+        add_ctx_sync_action(&tlb_flush_pat_entries<TLBType::DTLB>);
+    }
+}
+
 // Forward declarations.
 static uint32_t read_unaligned(uint32_t guest_va, uint8_t *host_va, uint32_t size);
 static void write_unaligned(uint32_t guest_va, uint8_t *host_va, uint32_t value,
                             uint32_t size);
-
-template <const TLBType tlb_type>
-void tlb_flush_bat_entries();
 
 template <class T>
 inline T mmu_read_vmem(uint32_t guest_va)
@@ -966,242 +1199,6 @@ static void write_unaligned(uint32_t guest_va, uint8_t *host_va, uint32_t value,
                 WRITE_QWORD_BE_U(host_va, value);
                 break;
         }
-    }
-}
-
-void tlb_flush_entry(uint32_t ea)
-{
-    TLBEntry *tlb_entry, *tlb1, *tlb2;
-
-    const uint32_t tag = ea & ~0xFFFUL;
-
-    for (int m = 0; m < 6; m++) {
-        switch (m) {
-            case 0:
-                tlb1 = &itlb1_mode1[0];
-                tlb2 = &itlb2_mode1[0];
-                break;
-            case 1:
-                tlb1 = &itlb1_mode2[0];
-                tlb2 = &itlb2_mode2[0];
-                break;
-            case 2:
-                tlb1 = &itlb1_mode3[0];
-                tlb2 = &itlb2_mode3[0];
-                break;
-            case 3:
-                tlb1 = &dtlb1_mode1[0];
-                tlb2 = &dtlb2_mode1[0];
-                break;
-            case 4:
-                tlb1 = &dtlb1_mode2[0];
-                tlb2 = &dtlb2_mode2[0];
-                break;
-            case 5:
-                tlb1 = &dtlb1_mode3[0];
-                tlb2 = &dtlb2_mode3[0];
-                break;
-        }
-
-        // flush primary TLB
-        tlb_entry = &tlb1[(ea >> PAGE_SIZE_BITS) & tlb_size_mask];
-        if (tlb_entry->tag == tag) {
-            tlb_entry->tag = TLB_INVALID_TAG;
-            //LOG_F(INFO, "Invalidated primary TLB entry at 0x%X", ea);
-        }
-
-        // flush secondary TLB
-        tlb_entry = &tlb2[((ea >> PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
-        for (int i = 0; i < TLB2_WAYS; i++) {
-            if (tlb_entry[i].tag == tag) {
-                tlb_entry[i].tag = TLB_INVALID_TAG;
-                //LOG_F(INFO, "Invalidated secondary TLB entry at 0x%X", ea);
-            }
-        }
-    }
-}
-
-template <const TLBType tlb_type>
-void tlb_flush_entries(TLBFlags type)
-{
-    TLBEntry *m1_tlb, *m2_tlb, *m3_tlb;
-    int i;
-
-    if (tlb_type == TLBType::ITLB) {
-        m1_tlb = &itlb1_mode1[0];
-        m2_tlb = &itlb1_mode2[0];
-        m3_tlb = &itlb1_mode3[0];
-    } else {
-        m1_tlb = &dtlb1_mode1[0];
-        m2_tlb = &dtlb1_mode2[0];
-        m3_tlb = &dtlb1_mode3[0];
-    }
-
-    // Flush entries from the primary TLBs
-    for (i = 0; i < TLB_SIZE; i++) {
-        if (m1_tlb[i].flags & type) {
-            m1_tlb[i].tag = TLB_INVALID_TAG;
-        }
-
-        if (m2_tlb[i].flags & type) {
-            m2_tlb[i].tag = TLB_INVALID_TAG;
-        }
-
-        if (m3_tlb[i].flags & type) {
-            m3_tlb[i].tag = TLB_INVALID_TAG;
-        }
-    }
-
-    if (tlb_type == TLBType::ITLB) {
-        m1_tlb = &itlb2_mode1[0];
-        m2_tlb = &itlb2_mode2[0];
-        m3_tlb = &itlb2_mode3[0];
-    } else {
-        m1_tlb = &dtlb2_mode1[0];
-        m2_tlb = &dtlb2_mode2[0];
-        m3_tlb = &dtlb2_mode3[0];
-    }
-
-    // Flush entries from the secondary TLBs
-    for (i = 0; i < TLB_SIZE * TLB2_WAYS; i++) {
-        if (dtlb2_mode1[i].flags & type) {
-            dtlb2_mode1[i].tag = TLB_INVALID_TAG;
-        }
-
-        if (dtlb2_mode2[i].flags & type) {
-            dtlb2_mode2[i].tag = TLB_INVALID_TAG;
-        }
-
-        if (dtlb2_mode3[i].flags & type) {
-            dtlb2_mode3[i].tag = TLB_INVALID_TAG;
-        }
-    }
-}
-
-bool gTLBFlushBatEntries = false;
-bool gTLBFlushPatEntries = false;
-
-template <const TLBType tlb_type>
-void tlb_flush_bat_entries()
-{
-    if (!gTLBFlushBatEntries)
-        return;
-
-    tlb_flush_entries<tlb_type>(TLBE_FROM_BAT);
-
-    gTLBFlushBatEntries = false;
-}
-
-template <const TLBType tlb_type>
-void tlb_flush_pat_entries()
-{
-    if (!gTLBFlushPatEntries)
-        return;
-
-    tlb_flush_entries<tlb_type>(TLBE_FROM_PAT);
-
-    gTLBFlushPatEntries = false;
-}
-
-static void mpc601_bat_update(uint32_t bat_reg)
-{
-    PPC_BAT_entry *ibat_entry, *dbat_entry;
-    uint32_t bsm, hi_mask;
-    uint8_t key, pp, prot;
-    int upper_reg_num;
-
-    upper_reg_num = bat_reg & 0xFFFFFFFE;
-
-    ibat_entry = &ibat_array[(bat_reg - 528) >> 1];
-    dbat_entry = &dbat_array[(bat_reg - 528) >> 1];
-
-    if (ppc_state.spr[bat_reg | 1] & 0x40) {
-        bsm     = ppc_state.spr[upper_reg_num + 1] & 0x3F;
-        hi_mask = ~((bsm << 17) | 0x1FFFF);
-
-        ibat_entry->valid   = true;
-        ibat_entry->access  = (ppc_state.spr[upper_reg_num] >> 2) & 3;
-        ibat_entry->prot    = ppc_state.spr[upper_reg_num] & 3;
-        ibat_entry->hi_mask = hi_mask;
-        ibat_entry->phys_hi = ppc_state.spr[upper_reg_num + 1] & hi_mask;
-        ibat_entry->bepi    = ppc_state.spr[upper_reg_num] & hi_mask;
-
-        // copy IBAT entry to DBAT entry
-        *dbat_entry = *ibat_entry;
-    } else {
-        // disable the corresponding BAT paars
-        ibat_entry->valid = false;
-        dbat_entry->valid = false;
-    }
-
-    // MPC601 has unified BATs so we're going to fush both ITLB and DTLB
-    if (!gTLBFlushBatEntries) {
-        gTLBFlushBatEntries = true;
-        add_ctx_sync_action(&tlb_flush_bat_entries<TLBType::ITLB>);
-        add_ctx_sync_action(&tlb_flush_bat_entries<TLBType::DTLB>);
-    }
-}
-
-static void ppc_ibat_update(uint32_t bat_reg)
-{
-    int upper_reg_num;
-    uint32_t bl, hi_mask;
-    PPC_BAT_entry* bat_entry;
-
-    upper_reg_num = bat_reg & 0xFFFFFFFE;
-
-    if (ppc_state.spr[upper_reg_num] & 3) {    // is that BAT pair valid?
-        bat_entry = &ibat_array[(bat_reg - 528) >> 1];
-        bl        = (ppc_state.spr[upper_reg_num] >> 2) & 0x7FF;
-        hi_mask   = ~((bl << 17) | 0x1FFFF);
-
-        bat_entry->access  = ppc_state.spr[upper_reg_num] & 3;
-        bat_entry->prot    = ppc_state.spr[upper_reg_num + 1] & 3;
-        bat_entry->hi_mask = hi_mask;
-        bat_entry->phys_hi = ppc_state.spr[upper_reg_num + 1] & hi_mask;
-        bat_entry->bepi    = ppc_state.spr[upper_reg_num] & hi_mask;
-
-        if (!gTLBFlushBatEntries) {
-            gTLBFlushBatEntries = true;
-            add_ctx_sync_action(&tlb_flush_bat_entries<TLBType::ITLB>);
-        }
-    }
-}
-
-static void ppc_dbat_update(uint32_t bat_reg)
-{
-    int upper_reg_num;
-    uint32_t bl, hi_mask;
-    PPC_BAT_entry* bat_entry;
-
-    upper_reg_num = bat_reg & 0xFFFFFFFE;
-
-    if (ppc_state.spr[upper_reg_num] & 3) {    // is that BAT pair valid?
-        bat_entry = &dbat_array[(bat_reg - 536) >> 1];
-        bl        = (ppc_state.spr[upper_reg_num] >> 2) & 0x7FF;
-        hi_mask   = ~((bl << 17) | 0x1FFFF);
-
-        bat_entry->access  = ppc_state.spr[upper_reg_num] & 3;
-        bat_entry->prot    = ppc_state.spr[upper_reg_num + 1] & 3;
-        bat_entry->hi_mask = hi_mask;
-        bat_entry->phys_hi = ppc_state.spr[upper_reg_num + 1] & hi_mask;
-        bat_entry->bepi    = ppc_state.spr[upper_reg_num] & hi_mask;
-
-        if (!gTLBFlushBatEntries) {
-            gTLBFlushBatEntries = true;
-            add_ctx_sync_action(&tlb_flush_bat_entries<TLBType::DTLB>);
-        }
-    }
-}
-
-void mmu_pat_ctx_changed()
-{
-    // Page address translation context changed so we need to flush
-    // all PAT entries from both ITLB and DTLB
-    if (!gTLBFlushPatEntries) {
-        gTLBFlushPatEntries = true;
-        add_ctx_sync_action(&tlb_flush_pat_entries<TLBType::ITLB>);
-        add_ctx_sync_action(&tlb_flush_pat_entries<TLBType::DTLB>);
     }
 }
 
