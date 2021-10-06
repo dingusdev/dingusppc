@@ -606,6 +606,9 @@ void initialize_ppc_opcode_tables() {
     SubOpcode31Grabber[918] = ppc_sthbrx;
     SubOpcode31Grabber[983] = ppc_stfiwx;
 
+    SubOpcode31Grabber[310] = ppc_eciwx;
+    SubOpcode31Grabber[438] = ppc_ecowx;
+
     SubOpcode31Grabber[24]  = ppc_slw;
     SubOpcode31Grabber[28]  = ppc_and;
     SubOpcode31Grabber[60]  = ppc_andc;

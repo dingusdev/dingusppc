@@ -339,6 +339,8 @@ extern void ppc_dcbtst();
 extern void ppc_dcbz();
 extern void ppc_divw();
 extern void ppc_divwu();
+extern void ppc_eciwx();
+extern void ppc_ecowx();
 extern void ppc_eieio();
 extern void ppc_eqv();
 extern void ppc_extsb();

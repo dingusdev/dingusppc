@@ -909,17 +909,17 @@ void dppc_interpreter::ppc_mtspr() {
 
 void dppc_interpreter::ppc_mftb() {
     uint32_t ref_spr = (((ppc_cur_instruction >> 11) & 31) << 5) | ((ppc_cur_instruction >> 16) & 31);
-    reg_d            = (ppc_cur_instruction >> 21) & 31;
+    reg_d = (ppc_cur_instruction >> 21) & 31;
     switch (ref_spr) {
-    case 268:
-        ppc_state.gpr[reg_d] = timebase_counter & 0xFFFFFFFFUL;
-        break;
-    case 269:
-        ppc_state.gpr[reg_d] = (timebase_counter >> 32) & 0xFFFFFFFFUL;
-        break;
-    default:
-        std::cout << "Invalid TBR access attempted!" << std::endl;
-    }
+        case 268:
+            ppc_state.gpr[reg_d] = timebase_counter & 0xFFFFFFFFUL;
+            break;
+        case 269:
+            ppc_state.gpr[reg_d] = (timebase_counter >> 32) & 0xFFFFFFFFUL;
+            break;
+        default:
+            LOG_F(ERROR, "Invalid TBR access attempted !\n");
+     }
 }
 
 void dppc_interpreter::ppc_mtcrf() {
@@ -2096,6 +2096,46 @@ void dppc_interpreter::ppc_stswx() {
     }
 }
 
+void dppc_interpreter::ppc_eciwx() {
+    uint32_t ear_enable = 0x80000000;
+
+    // error if EAR[E] != 1
+    if (!(ppc_state.spr[282] && ear_enable)) {
+        ppc_exception_handler(Except_Type::EXC_DSI, 0x0);
+    }
+
+    ppc_grab_regsdab();
+    ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
+
+    if (ppc_effective_address & 0x3) {
+        ppc_exception_handler(Except_Type::EXC_ALIGNMENT, 0x0);
+    }
+
+    ppc_result_d = mmu_read_vmem<uint32_t>(ppc_effective_address);
+
+    ppc_store_result_regd();
+}
+
+void dppc_interpreter::ppc_ecowx() {
+    uint32_t ear_enable = 0x80000000;
+
+    // error if EAR[E] != 1
+    if (!(ppc_state.spr[282] && ear_enable)) {
+        ppc_exception_handler(Except_Type::EXC_DSI, 0x0);
+    }
+
+    ppc_grab_regssab();
+    ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
+
+    if (ppc_effective_address & 0x3) {
+        ppc_exception_handler(Except_Type::EXC_ALIGNMENT, 0x0);
+    }
+
+    mmu_write_vmem<uint32_t>(ppc_effective_address, ppc_result_d);
+
+    ppc_store_result_regd();
+}
+
 // TLB Instructions
 
 void dppc_interpreter::ppc_tlbie() {
@@ -2111,6 +2151,9 @@ void dppc_interpreter::ppc_tlbia() {
     num_supervisor_instrs++;
 #endif
     /* placeholder */
+    if (ppc_state.spr[SPR::PVR] == PPC_VER::MPC601) {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x0);
+    }
 }
 
 void dppc_interpreter::ppc_tlbld() {
@@ -2132,4 +2175,7 @@ void dppc_interpreter::ppc_tlbsync() {
     num_supervisor_instrs++;
 #endif
     /* placeholder */
+    if (ppc_state.spr[SPR::PVR] == PPC_VER::MPC601) {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x0);
+    }
 }
