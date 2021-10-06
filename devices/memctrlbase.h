@@ -60,6 +60,7 @@ public:
     virtual bool set_data(uint32_t reg_addr, const uint8_t* data, uint32_t size);
 
     AddressMapEntry* find_range(uint32_t addr);
+    AddressMapEntry* find_rom_region();
 
 protected:
     bool add_mem_region(

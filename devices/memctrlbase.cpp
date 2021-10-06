@@ -48,7 +48,7 @@ AddressMapEntry* MemCtrlBase::find_range(uint32_t addr) {
             return entry;
     }
 
-    return 0;
+    return nullptr;
 }
 
 
@@ -145,4 +145,15 @@ bool MemCtrlBase::add_mmio_region(uint32_t start_addr, uint32_t size, MMIODevice
     this->address_map.push_back(entry);
 
     return true;
+}
+
+AddressMapEntry* MemCtrlBase::find_rom_region()
+{
+    for (auto& entry : address_map) {
+        if (entry->type == RT_ROM) {
+            return entry;
+        }
+    }
+
+    return nullptr;
 }

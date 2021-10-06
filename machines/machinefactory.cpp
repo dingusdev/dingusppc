@@ -235,6 +235,7 @@ int load_boot_rom(string& rom_filepath) {
     ifstream rom_file;
     size_t   file_size;
     int      result;
+    AddressMapEntry *rom_reg;
 
     rom_file.open(rom_filepath, ios::in | ios::binary);
     if (rom_file.fail()) {
@@ -259,7 +260,12 @@ int load_boot_rom(string& rom_filepath) {
         MemCtrlBase* mem_ctrl = dynamic_cast<MemCtrlBase*>(
             gMachineObj->get_comp_by_type(HWCompType::MEM_CTRL));
 
-        mem_ctrl->set_data(0xFFC00000, sysrom_mem, file_size);
+        if ((rom_reg = mem_ctrl->find_rom_region())) {
+            mem_ctrl->set_data(rom_reg->start, sysrom_mem, file_size);
+        } else {
+            ABORT_F("Could not locate physical ROM region!");
+        }
+
         delete[] sysrom_mem;
 
         result = 0;
