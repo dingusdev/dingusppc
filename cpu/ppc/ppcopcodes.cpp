@@ -2151,9 +2151,6 @@ void dppc_interpreter::ppc_tlbia() {
     num_supervisor_instrs++;
 #endif
     /* placeholder */
-    if (ppc_state.spr[SPR::PVR] == PPC_VER::MPC601) {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x0);
-    }
 }
 
 void dppc_interpreter::ppc_tlbld() {
@@ -2175,7 +2172,4 @@ void dppc_interpreter::ppc_tlbsync() {
     num_supervisor_instrs++;
 #endif
     /* placeholder */
-    if (ppc_state.spr[SPR::PVR] == PPC_VER::MPC601) {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x0);
-    }
 }
