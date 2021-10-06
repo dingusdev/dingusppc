@@ -704,6 +704,9 @@ static uint32_t read_unaligned(uint32_t guest_va, uint8_t *host_va, uint32_t siz
 static void write_unaligned(uint32_t guest_va, uint8_t *host_va, uint32_t value,
                             uint32_t size);
 
+template <const TLBType tlb_type>
+void tlb_flush_bat_entries();
+
 template <class T>
 inline T mmu_read_vmem(uint32_t guest_va)
 {
@@ -1018,23 +1021,53 @@ void tlb_flush_entry(uint32_t ea)
     }
 }
 
+template <const TLBType tlb_type>
 void tlb_flush_entries(TLBFlags type)
 {
+    TLBEntry *m1_tlb, *m2_tlb, *m3_tlb;
     int i;
 
-    // Flush BAT entries from the primary TLBs
+    if (tlb_type == TLBType::ITLB) {
+        m1_tlb = &itlb1_mode1[0];
+        m2_tlb = &itlb1_mode2[0];
+        m3_tlb = &itlb1_mode3[0];
+    } else {
+        m1_tlb = &dtlb1_mode1[0];
+        m2_tlb = &dtlb1_mode2[0];
+        m3_tlb = &dtlb1_mode3[0];
+    }
+
+    // Flush entries from the primary TLBs
     for (i = 0; i < TLB_SIZE; i++) {
-        if (dtlb1_mode2[i].flags & type) {
-            dtlb1_mode2[i].tag = TLB_INVALID_TAG;
+        if (m1_tlb[i].flags & type) {
+            m1_tlb[i].tag = TLB_INVALID_TAG;
         }
 
-        if (dtlb1_mode3[i].flags & type) {
-            dtlb1_mode3[i].tag = TLB_INVALID_TAG;
+        if (m2_tlb[i].flags & type) {
+            m2_tlb[i].tag = TLB_INVALID_TAG;
+        }
+
+        if (m3_tlb[i].flags & type) {
+            m3_tlb[i].tag = TLB_INVALID_TAG;
         }
     }
 
-    // Flush BAT entries from the secondary TLBs
+    if (tlb_type == TLBType::ITLB) {
+        m1_tlb = &itlb2_mode1[0];
+        m2_tlb = &itlb2_mode2[0];
+        m3_tlb = &itlb2_mode3[0];
+    } else {
+        m1_tlb = &dtlb2_mode1[0];
+        m2_tlb = &dtlb2_mode2[0];
+        m3_tlb = &dtlb2_mode3[0];
+    }
+
+    // Flush entries from the secondary TLBs
     for (i = 0; i < TLB_SIZE * TLB2_WAYS; i++) {
+        if (dtlb2_mode1[i].flags & type) {
+            dtlb2_mode1[i].tag = TLB_INVALID_TAG;
+        }
+
         if (dtlb2_mode2[i].flags & type) {
             dtlb2_mode2[i].tag = TLB_INVALID_TAG;
         }
@@ -1048,22 +1081,24 @@ void tlb_flush_entries(TLBFlags type)
 bool gTLBFlushBatEntries = false;
 bool gTLBFlushPatEntries = false;
 
+template <const TLBType tlb_type>
 void tlb_flush_bat_entries()
 {
     if (!gTLBFlushBatEntries)
         return;
 
-    tlb_flush_entries(TLBE_FROM_BAT);
+    tlb_flush_entries<tlb_type>(TLBE_FROM_BAT);
 
     gTLBFlushBatEntries = false;
 }
 
+template <const TLBType tlb_type>
 void tlb_flush_pat_entries()
 {
     if (!gTLBFlushPatEntries)
         return;
 
-    tlb_flush_entries(TLBE_FROM_PAT);
+    tlb_flush_entries<tlb_type>(TLBE_FROM_PAT);
 
     gTLBFlushPatEntries = false;
 }
@@ -1099,9 +1134,11 @@ static void mpc601_bat_update(uint32_t bat_reg)
         dbat_entry->valid = false;
     }
 
+    // MPC601 has unified BATs so we're going to fush both ITLB and DTLB
     if (!gTLBFlushBatEntries) {
         gTLBFlushBatEntries = true;
-        add_ctx_sync_action(&tlb_flush_bat_entries);
+        add_ctx_sync_action(&tlb_flush_bat_entries<TLBType::ITLB>);
+        add_ctx_sync_action(&tlb_flush_bat_entries<TLBType::DTLB>);
     }
 }
 
@@ -1126,7 +1163,7 @@ static void ppc_ibat_update(uint32_t bat_reg)
 
         if (!gTLBFlushBatEntries) {
             gTLBFlushBatEntries = true;
-            add_ctx_sync_action(&tlb_flush_bat_entries);
+            add_ctx_sync_action(&tlb_flush_bat_entries<TLBType::ITLB>);
         }
     }
 }
@@ -1152,16 +1189,19 @@ static void ppc_dbat_update(uint32_t bat_reg)
 
         if (!gTLBFlushBatEntries) {
             gTLBFlushBatEntries = true;
-            add_ctx_sync_action(&tlb_flush_bat_entries);
+            add_ctx_sync_action(&tlb_flush_bat_entries<TLBType::DTLB>);
         }
     }
 }
 
 void mmu_pat_ctx_changed()
 {
+    // Page address translation context changed so we need to flush
+    // all PAT entries from both ITLB and DTLB
     if (!gTLBFlushPatEntries) {
         gTLBFlushPatEntries = true;
-        add_ctx_sync_action(&tlb_flush_pat_entries);
+        add_ctx_sync_action(&tlb_flush_pat_entries<TLBType::ITLB>);
+        add_ctx_sync_action(&tlb_flush_pat_entries<TLBType::DTLB>);
     }
 }
 
