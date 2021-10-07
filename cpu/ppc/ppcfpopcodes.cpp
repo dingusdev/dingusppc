@@ -622,7 +622,7 @@ void dppc_interpreter::ppc_fsqrt() {
 
 void dppc_interpreter::ppc_fsqrts() {
     ppc_grab_regsfpdb();
-    uint32_t test = (uint32_t)ppc_result64_b;
+    uint32_t test = (uint32_t)(GET_FPR(reg_b));
     test += 127 << 23;
     test >>= 1;
     uint64_t* pre_final = (uint64_t*)&test;
@@ -635,7 +635,7 @@ void dppc_interpreter::ppc_fsqrts() {
 
 void dppc_interpreter::ppc_frsqrte() {
     ppc_grab_regsfpdb();
-    double testd2 = (double)ppc_result64_b;
+    double testd2 = (double)(GET_FPR(reg_b));
     for (int i = 0; i < 10; i++) {
         testd2 = testd2 * (1.5 - (testd2 * .5) * testd2 * testd2);
     }
