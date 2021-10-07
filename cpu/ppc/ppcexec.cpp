@@ -687,11 +687,26 @@ void initialize_ppc_opcode_tables() {
     SubOpcode59Grabber[21] = ppc_fadds;
     SubOpcode59Grabber[22] = ppc_fsqrts;
     SubOpcode59Grabber[24] = ppc_fres;
-    SubOpcode59Grabber[25] = ppc_fmuls;
-    SubOpcode59Grabber[28] = ppc_fmsubs;
-    SubOpcode59Grabber[29] = ppc_fmadds;
-    SubOpcode59Grabber[30] = ppc_fnmsubs;
-    SubOpcode59Grabber[31] = ppc_fnmadds;
+
+    for (int i = 25; i < 1024; i += 32) {
+        SubOpcode59Grabber[i] = ppc_fmuls;
+    }
+
+    for (int i = 28; i < 1024; i += 32) {
+        SubOpcode59Grabber[i] = ppc_fmsubs;
+    }
+
+    for (int i = 29; i < 1024; i += 32) {
+        SubOpcode59Grabber[i] = ppc_fmadds;
+    }
+
+    for (int i = 30; i < 1024; i += 32) {
+        SubOpcode59Grabber[i] = ppc_fnmsubs;
+    }
+
+    for (int i = 31; i < 1024; i += 32) {
+        SubOpcode59Grabber[i] = ppc_fnmadds;
+    }
 
     SubOpcode63Grabber[0]   = ppc_fcmpu;
     SubOpcode63Grabber[12]  = ppc_frsp;
