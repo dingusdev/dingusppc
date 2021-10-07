@@ -99,6 +99,90 @@ def gen_ppc_opcode(opc_str, imm):
         return (0x1F << 26) + (3 << 21) + (3 << 16) + (0x39A << 1)
     elif opc_str == "EXTSH.":
         return (0x1F << 26) + (3 << 21) + (3 << 16) + (0x39A << 1) + 1
+    elif opc_str == "FABS":
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x108 << 1)
+    elif opc_str == "FABS.":
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x108 << 1) + 1
+    elif opc_str == "FADD":
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x15 << 1)
+    elif opc_str == "FADD.":
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x15 << 1) + 1
+    elif opc_str == "FADDS":
+        return (0x3B << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x15 << 1)
+    elif opc_str == "FADDS.":
+        return (0x3B << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x15 << 1) + 1
+    elif opc_str == "FCMPO":
+        return (0x3B << 26) + (3 << 16) + (4 << 11) + (0x20 << 1)
+    elif opc_str == "FCMPU":
+        return (0x3B << 26) + (3 << 16) + (4 << 11)
+    elif opc_str == "FCTIW":
+        return (0x3B << 26) + (3 << 16) + (4 << 11) + (0xE << 1)
+    elif opc_str == "FCTIW.":
+        return (0x3B << 26) + (3 << 16) + (4 << 11) + (0xE << 1) + 1
+    elif opc_str == "FCTIWZ":
+        return (0x3B << 26) + (3 << 16) + (4 << 11) + (0xF << 1)
+    elif opc_str == "FCTIWZ.":
+        return (0x3B << 26) + (3 << 16) + (4 << 11) + (0xF << 1) + 1
+    elif opc_str == "FDIV":
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x12 << 1)
+    elif opc_str == "FDIV.":
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x12 << 1) + 1
+    elif opc_str == "FMADD":
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (4 << 6) + (0x1D << 1)
+    elif opc_str == "FMADD.":
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (4 << 6) + (0x1D << 1) + 1
+    elif opc_str == "FMADDS":
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (4 << 6) + (0x1D << 1)
+    elif opc_str == "FMADDS.":
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (4 << 6) + (0x1D << 1) + 1
+    elif opc_str == "FMUL":
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 6) + (0x19 << 1)
+    elif opc_str == "FMUL.":
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 6) + (0x19 << 1) + 1
+    elif opc_str == "FMULS":
+        return (0x3B << 26) + (3 << 21) + (3 << 16) + (4 << 6) + (0x19 << 1)
+    elif opc_str == "FMULS.":
+        return (0x3B << 26) + (3 << 21) + (3 << 16) + (4 << 6) + (0x19 << 1) + 1
+    elif opc_str == "FNABS":
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 6) + (0x88 << 1)
+    elif opc_str == "FNABS.":
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 6) + (0x88 << 1) + 1
+    elif opc_str == "FNEG":
+        return (0x3B << 26) + (3 << 21) + (3 << 16) + (4 << 6) + (0x28 << 1)
+    elif opc_str == "FMULS.":
+        return (0x3B << 26) + (3 << 21) + (3 << 16) + (4 << 6) + (0x28 << 1) + 1
+    elif opc_str == "FMSUB":
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (4 << 6) + (0x1C << 1)
+    elif opc_str == "FMSUB.":
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (4 << 6) + (0x1C << 1) + 1
+    elif opc_str == "FMSUBS":
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (4 << 6) + (0x1C << 1)
+    elif opc_str == "FMSUBS.":
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (4 << 6) + (0x1C << 1) + 1
+    elif opc_str == "FNMADD":
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (4 << 6) + (0x1F << 1)
+    elif opc_str == "FNMADD.":
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (4 << 6) + (0x1F << 1) + 1
+    elif opc_str == "FNMADDS":
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (4 << 6) + (0x1F << 1)
+    elif opc_str == "FNMADDS.":
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (4 << 6) + (0x1F << 1) + 1
+    elif opc_str == "FNMSUB":
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (4 << 6) + (0x1C << 1)
+    elif opc_str == "FNMSUB.":
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (4 << 6) + (0x1C << 1) + 1
+    elif opc_str == "FNMSUBS":
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (4 << 6) + (0x1C << 1)
+    elif opc_str == "FNMSUBS.":
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (4 << 6) + (0x1C << 1) + 1
+    elif opc_str == "FSUB":
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x15 << 1)
+    elif opc_str == "FSUB.":
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x15 << 1) + 1
+    elif opc_str == "FSUBS":
+        return (0x3B << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x15 << 1)
+    elif opc_str == "FSUBS.":
+        return (0x3B << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x15 << 1) + 1
     elif opc_str == "MULHW":
         return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x4B << 1)
     elif opc_str == "MULHW.":
@@ -263,50 +347,98 @@ def extract_rot_params(line):
     return (sh, mb, me)
 
 
-with open("ppcinttest.txt", "r") as in_file:
-    with open("ppcinttests.csv", "w") as out_file:
-        lineno = 0
-        for line in in_file:
-            lineno += 1
+if __name__ == "__main__":
+    with open("ppcinttest.txt", "r") as in_file:
+        with open("ppcinttests.csv", "w") as out_file:
+            lineno = 0
+            for line in in_file:
+                lineno += 1
 
-            line = line.strip()
-            opcode = (line[0:8]).rstrip().upper()
-            out_file.write(opcode + ",")
+                line = line.strip()
+                opcode = (line[0:8]).rstrip().upper()
+                out_file.write(opcode + ",")
 
-            if opcode.startswith("RLWI"):
-                sh, mb, me = extract_rot_params(line)
-                out_file.write("0x{:X}".format(gen_rot_opcode(opcode, sh, mb, me)))
-            else:
-                imm = extract_imm(line)
-                out_file.write("0x{:X}".format(gen_ppc_opcode(opcode, imm)))
-
-            pos = 12
-
-            while pos < len(line):
-                reg_id = line[pos:pos+4]
-                if reg_id.startswith("rD"):
-                    out_file.write(",rD=" + line[pos+3:pos+13])
-                    pos += 16
-                elif reg_id.startswith("rA"):
-                    out_file.write(",rA=" + line[pos+3:pos+13])
-                    pos += 16
-                elif reg_id.startswith("rB") or reg_id.startswith("rS"):
-                    out_file.write(",rB=" + line[pos+3:pos+13])
-                    pos += 16
-                elif reg_id.startswith("XER:"):
-                    out_file.write(",XER=" + line[pos+5:pos+15])
-                    pos += 18
-                elif reg_id.startswith("CR:"):
-                    out_file.write(",CR=" + line[pos+4:pos+14])
-                    pos += 17
-                elif reg_id.startswith("imm"):
-                    pos += 17 # ignore immediate operands
-                elif reg_id.startswith("SH"):
-                    pos += 16
-                elif reg_id.startswith("MB") or reg_id.startswith("ME"):
-                    pos += 16
+                if opcode.startswith("RLWI"):
+                    sh, mb, me = extract_rot_params(line)
+                    out_file.write("0x{:X}".format(gen_rot_opcode(opcode, sh, mb, me)))
                 else:
-                    out_file.write("Unknown reg ID" + reg_id)
-                    break
+                    imm = extract_imm(line)
+                    out_file.write("0x{:X}".format(gen_ppc_opcode(opcode, imm)))
 
-            out_file.write("\n")
+                pos = 12
+
+                while pos < len(line):
+                    reg_id = line[pos:pos+4]
+                    if reg_id.startswith("rD"):
+                        out_file.write(",rD=" + line[pos+3:pos+13])
+                        pos += 16
+                    elif reg_id.startswith("rA"):
+                        out_file.write(",rA=" + line[pos+3:pos+13])
+                        pos += 16
+                    elif reg_id.startswith("rB") or reg_id.startswith("rS"):
+                        out_file.write(",rB=" + line[pos+3:pos+13])
+                        pos += 16
+                    elif reg_id.startswith("XER:"):
+                        out_file.write(",XER=" + line[pos+5:pos+15])
+                        pos += 18
+                    elif reg_id.startswith("CR:"):
+                        out_file.write(",CR=" + line[pos+4:pos+14])
+                        pos += 17
+                    elif reg_id.startswith("imm"):
+                        pos += 17 # ignore immediate operands
+                    elif reg_id.startswith("SH"):
+                        pos += 16
+                    elif reg_id.startswith("MB") or reg_id.startswith("ME"):
+                        pos += 16
+                    else:
+                        out_file.write("Unknown reg ID" + reg_id)
+                        break
+
+                out_file.write("\n")
+
+    with open("ppcfloattest.txt", "r") as in_file:
+        with open("ppcfloattests.csv", "w") as out_file:
+            lineno = 0
+            for line in in_file:
+                lineno += 1
+
+                line = line.strip()
+                opcode = (line[0:8]).rstrip().upper()
+                out_file.write(opcode + ",")
+
+                if opcode.startswith("RLWI"):
+                    sh, mb, me = extract_rot_params(line)
+                    out_file.write("0x{:X}".format(gen_rot_opcode(opcode, sh, mb, me)))
+                else:
+                    imm = extract_imm(line)
+                    out_file.write("0x{:X}".format(gen_ppc_opcode(opcode, imm)))
+
+                pos = 12
+
+                while pos < len(line):
+                    reg_id = line[pos:pos+4]
+                    if reg_id.startswith("frD"):
+                        out_file.write(",frD=" + line[pos+4:pos+14])
+                        pos += 16
+                    elif reg_id.startswith("frA"):
+                        out_file.write(",frA=" + line[pos+4:pos+14])
+                        pos += 16
+                    elif reg_id.startswith("frB"):
+                        out_file.write(",frB=" + line[pos+4:pos+14])
+                        pos += 16
+                    elif reg_id.startswith("frC"):
+                        out_file.write(",frC=" + line[pos+4:pos+14])
+                        pos += 16
+                    elif reg_id.startswith("FPSCR:"):
+                        out_file.write(",FPSCR=" + line[pos+7:pos+17])
+                        pos += 19
+                    elif reg_id.startswith("CR:"):
+                        out_file.write(",CR=" + line[pos+4:pos+14])
+                        pos += 17
+                    elif reg_id.startswith("imm"):
+                        pos += 17 # ignore immediate operands
+                    else:
+                        out_file.write("Unknown reg ID" + reg_id)
+                        break
+
+                out_file.write("\n")
