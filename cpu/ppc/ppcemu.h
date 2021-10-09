@@ -200,6 +200,70 @@ enum class BB_end_kind {
     BB_RFI         /* the rfi instruction is encountered  */
 };
 
+enum class CR_select {
+    CR0_field = (0xF << 28),
+};
+
+enum class CRx_bit {
+    CR_SO = 0,
+    CR_EQ,
+    CR_GT,
+    CR_LT
+};
+
+enum class CR1_bit {
+    CR1_OX = 24, 
+    CR1_VX,
+    CR1_FEX,
+    CR1_FX,
+};
+
+enum class FPSCR_bit {
+    FPSCR_RN = 0x3,
+    FPSCR_NI = 0x4,
+    FPSCR_XE = 0x8,
+    FPSCR_ZE = 0x10,
+    FPSCR_UE = 0x20,
+    FPSCR_OE = 0x40,
+    FPSCR_VE = 0x80,
+    FPSCR_VXCVI = 0x100,
+    FPSCR_VXSQRT = 0x200,
+    FPSCR_VXSOFT = 0x400,
+    FPSCR_FPRF   = 0x1F000,
+    FPSCR_FPCC_FUNAN   = 0x10000,
+    FPSCR_FPCC_ZERO = 0x8000,
+    FPSCR_FPCC_POS = 0x4000,
+    FPSCR_FPCC_NEG = 0x2000,
+    FPSCR_FPCC_FPRCD = 0x1000,
+    FPSCR_FI     = (1 << 17),
+    FPSCR_FR    = (1 << 18),
+    FPSCR_VXVC  = (1 << 19),
+    FPSCR_VXIMZ = (1 << 20),
+    FPSCR_VXZDZ = (1 << 21),
+    FPSCR_VXIDI = (1 << 22),
+    FPSCR_VXISI = (1 << 23),
+    FPSCR_VXSNAN = (1 << 24),
+    FPSCR_XX  = (1 << 25),
+    FPSCR_ZX  = (1 << 26),
+    FPSCR_UX  = (1 << 27),
+    FPSCR_OX  = (1 << 28),
+    FPSCR_VX  = (1 << 29),
+    FPSCR_FEX = (1 << 30),
+    FPSCR_FX = (1 << 31)
+};
+
+//for inf and nan checks
+enum FPOP : int {
+    DIV  = 0x12,
+    SUB  = 0x14,
+    ADD  = 0x15,
+    MUL   = 0x19,
+    FMSUB = 0x1C, 
+    FMADD = 0x1D,
+    FNMSUB = 0x1E,
+    FNMADD = 0x1F,
+};
+
 /** PowerPC exception types. */
 enum class Except_Type {
     EXC_SYSTEM_RESET = 1,
@@ -271,7 +335,6 @@ void ppc_opcode63();
 
 void initialize_ppc_opcode_tables();
 
-extern bool ppc_confirm_inf_nan(uint64_t input_a, uint64_t input_b, bool is_single, uint32_t op);
 extern double fp_return_double(uint32_t reg);
 extern uint64_t fp_return_uint64(uint32_t reg);
 
