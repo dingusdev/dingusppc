@@ -202,6 +202,7 @@ enum class BB_end_kind {
 
 enum class CR_select {
     CR0_field = (0xF << 28),
+    CR1_field = (0xF << 24),
 };
 
 enum class CRx_bit {
@@ -479,15 +480,10 @@ extern void ppc_mtspr();
 extern void ppc_mtfsb0();
 extern void ppc_mtfsb1();
 extern void ppc_mcrfs();
-extern void ppc_mtfsb0dot();
-extern void ppc_mtfsb1dot();
 extern void ppc_fmr();
 extern void ppc_mffs();
-extern void ppc_mffsdot();
 extern void ppc_mtfsf();
-extern void ppc_mtfsfdot();
 extern void ppc_mtfsfi();
-extern void ppc_mtfsfidot();
 
 extern void ppc_addi();
 extern void ppc_addic();
