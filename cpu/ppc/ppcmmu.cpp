@@ -356,6 +356,9 @@ uint32_t tlb_size_mask = TLB_SIZE - 1;
 uint64_t    UnmappedVal = -1ULL;
 TLBEntry    UnmappedMem = {TLB_INVALID_TAG, TLBFlags::PAGE_NOPHYS, 0, 0};
 
+// Dummy page for catching writes to physical read-only pages
+static std::array<uint8_t, 4096> dummy_page;
+
 uint8_t     CurITLBMode = {0xFF}; // current ITLB mode
 uint8_t     CurDTLBMode = {0xFF}; // current DTLB mode
 
@@ -527,7 +530,7 @@ static TLBEntry* itlb2_refill(uint32_t guest_va)
         tlb_entry = tlb2_target_entry<TLBType::ITLB>(tag);
         tlb_entry->tag = tag;
         tlb_entry->flags = flags | TLBFlags::PAGE_MEM;
-        tlb_entry->host_va_offset = (int64_t)reg_desc->mem_ptr - guest_va +
+        tlb_entry->host_va_offs_r = (int64_t)reg_desc->mem_ptr - guest_va +
                                     (phys_addr - reg_desc->start);
     } else {
         ABORT_F("Instruction fetch from unmapped memory at 0x%08X!\n", phys_addr);
@@ -600,8 +603,14 @@ static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write)
             tlb_entry->reg_desc = reg_desc;
         } else { // memory region backed by host memory
             tlb_entry->flags = flags | TLBFlags::PAGE_MEM;
-            tlb_entry->host_va_offset = (int64_t)reg_desc->mem_ptr - guest_va +
-            (phys_addr - reg_desc->start);
+            tlb_entry->host_va_offs_r = (int64_t)reg_desc->mem_ptr - guest_va +
+                                        (phys_addr - reg_desc->start);
+            if (reg_desc->type == RT_ROM) {
+                // redirect writes to the dummy page for ROM regions
+                tlb_entry->host_va_offs_w = (int64_t)&dummy_page - guest_va;
+            } else {
+                tlb_entry->host_va_offs_w = tlb_entry->host_va_offs_r;
+            }
         }
         return tlb_entry;
     } else {
@@ -670,7 +679,7 @@ uint8_t *mmu_translate_imem(uint32_t vaddr)
 #ifdef TLB_PROFILING
         num_primary_itlb_hits++;
 #endif
-        host_va = (uint8_t *)(tlb1_entry->host_va_offset + vaddr);
+        host_va = (uint8_t *)(tlb1_entry->host_va_offs_r + vaddr);
     } else {
         // primary ITLB miss -> look up address in the secondary ITLB
         tlb2_entry = lookup_secondary_tlb<TLBType::ITLB>(vaddr, tag);
@@ -690,8 +699,8 @@ uint8_t *mmu_translate_imem(uint32_t vaddr)
         // refill the primary ITLB
         tlb1_entry->tag = tag;
         tlb1_entry->flags = tlb2_entry->flags;
-        tlb1_entry->host_va_offset = tlb2_entry->host_va_offset;
-        host_va = (uint8_t *)(tlb1_entry->host_va_offset + vaddr);
+        tlb1_entry->host_va_offs_r = tlb2_entry->host_va_offs_r;
+        host_va = (uint8_t *)(tlb1_entry->host_va_offs_r + vaddr);
     }
 
     ppc_set_cur_instruction(host_va);
@@ -984,7 +993,7 @@ inline T mmu_read_vmem(uint32_t guest_va)
 #ifdef TLB_PROFILING
         num_primary_dtlb_hits++;
 #endif
-        host_va = (uint8_t *)(tlb1_entry->host_va_offset + guest_va);
+        host_va = (uint8_t *)(tlb1_entry->host_va_offs_r + guest_va);
     } else {
         // primary TLB miss -> look up address in the secondary TLB
         tlb2_entry = lookup_secondary_tlb<TLBType::DTLB>(guest_va, tag);
@@ -1007,10 +1016,8 @@ inline T mmu_read_vmem(uint32_t guest_va)
 
         if (tlb2_entry->flags & TLBFlags::PAGE_MEM) { // is it a real memory region?
             // refill the primary TLB
-            tlb1_entry->tag = tag;
-            tlb1_entry->flags = tlb2_entry->flags;
-            tlb1_entry->host_va_offset = tlb2_entry->host_va_offset;
-            host_va = (uint8_t *)(tlb1_entry->host_va_offset + guest_va);
+            *tlb1_entry = *tlb2_entry;
+            host_va = (uint8_t *)(tlb1_entry->host_va_offs_r + guest_va);
         } else { // otherwise, it's an access to a memory-mapped device
 #ifdef MMU_PROFILING
             iomem_reads_total++;
@@ -1082,7 +1089,7 @@ inline void mmu_write_vmem(uint32_t guest_va, T value)
                 tlb2_entry->flags |= TLBFlags::PTE_SET_C;
             }
         }
-        host_va = (uint8_t *)(tlb1_entry->host_va_offset + guest_va);
+        host_va = (uint8_t *)(tlb1_entry->host_va_offs_w + guest_va);
     } else {
         // primary TLB miss -> look up address in the secondary TLB
         tlb2_entry = lookup_secondary_tlb<TLBType::DTLB>(guest_va, tag);
@@ -1118,10 +1125,8 @@ inline void mmu_write_vmem(uint32_t guest_va, T value)
 
         if (tlb2_entry->flags & TLBFlags::PAGE_MEM) { // is it a real memory region?
             // refill the primary TLB
-            tlb1_entry->tag = tag;
-            tlb1_entry->flags = tlb2_entry->flags;
-            tlb1_entry->host_va_offset = tlb2_entry->host_va_offset;
-            host_va = (uint8_t *)(tlb1_entry->host_va_offset + guest_va);
+            *tlb1_entry = *tlb2_entry;
+            host_va = (uint8_t *)(tlb1_entry->host_va_offs_w + guest_va);
         } else { // otherwise, it's an access to a memory-mapped device
 #ifdef MMU_PROFILING
             iomem_writes_total++;
@@ -1571,7 +1576,7 @@ static inline uint64_t tlb_translate_addr(uint32_t guest_va)
     // look up address in the primary TLB
     tlb1_entry = &pCurDTLB1[(guest_va >> PAGE_SIZE_BITS) & tlb_size_mask];
     if (tlb1_entry->tag == tag) { // primary TLB hit -> fast path
-        return tlb1_entry->host_va_offset + guest_va;
+        return tlb1_entry->host_va_offs_r + guest_va;
     } else { // primary TLB miss -> look up address in the secondary TLB
         tlb2_entry = &pCurDTLB2[((guest_va >> PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
         if (tlb2_entry->tag == tag) {
@@ -1610,8 +1615,8 @@ static inline uint64_t tlb_translate_addr(uint32_t guest_va)
             // refill the primary TLB
             tlb1_entry->tag = tag;
             tlb1_entry->flags = tlb2_entry->flags;
-            tlb1_entry->host_va_offset = tlb2_entry->host_va_offset;
-            return tlb1_entry->host_va_offset + guest_va;
+            tlb1_entry->host_va_offs_r = tlb2_entry->host_va_offs_r;
+            return tlb1_entry->host_va_offs_r + guest_va;
         } else { // an attempt to access a memory-mapped device
             return guest_va - tlb2_entry->reg_desc->start;
         }
@@ -1926,42 +1931,42 @@ void ppc_mmu_init(uint32_t cpu_version)
         tlb_el.tag = TLB_INVALID_TAG;
         tlb_el.flags = 0;
         tlb_el.lru_bits = 0;
-        tlb_el.host_va_offset = 0;
+        tlb_el.host_va_offs_r = 0;
     }
 
     for (auto &tlb_el : itlb1_mode2) {
         tlb_el.tag = TLB_INVALID_TAG;
         tlb_el.flags = 0;
         tlb_el.lru_bits = 0;
-        tlb_el.host_va_offset = 0;
+        tlb_el.host_va_offs_r = 0;
     }
 
     for (auto &tlb_el : itlb1_mode3) {
         tlb_el.tag = TLB_INVALID_TAG;
         tlb_el.flags = 0;
         tlb_el.lru_bits = 0;
-        tlb_el.host_va_offset = 0;
+        tlb_el.host_va_offs_r = 0;
     }
 
     for (auto &tlb_el : itlb2_mode1) {
         tlb_el.tag = TLB_INVALID_TAG;
         tlb_el.flags = 0;
         tlb_el.lru_bits = 0;
-        tlb_el.host_va_offset = 0;
+        tlb_el.host_va_offs_r = 0;
     }
 
     for (auto &tlb_el : itlb2_mode2) {
         tlb_el.tag = TLB_INVALID_TAG;
         tlb_el.flags = 0;
         tlb_el.lru_bits = 0;
-        tlb_el.host_va_offset = 0;
+        tlb_el.host_va_offs_r = 0;
     }
 
     for (auto &tlb_el : itlb2_mode3) {
         tlb_el.tag = TLB_INVALID_TAG;
         tlb_el.flags = 0;
         tlb_el.lru_bits = 0;
-        tlb_el.host_va_offset = 0;
+        tlb_el.host_va_offs_r = 0;
     }
 
     // invalidate all DTLB entries
@@ -1969,42 +1974,48 @@ void ppc_mmu_init(uint32_t cpu_version)
         tlb_el.tag = TLB_INVALID_TAG;
         tlb_el.flags = 0;
         tlb_el.lru_bits = 0;
-        tlb_el.host_va_offset = 0;
+        tlb_el.host_va_offs_r = 0;
+        tlb_el.host_va_offs_w = 0;
     }
 
     for (auto &tlb_el : dtlb1_mode2) {
         tlb_el.tag = TLB_INVALID_TAG;
         tlb_el.flags = 0;
         tlb_el.lru_bits = 0;
-        tlb_el.host_va_offset = 0;
+        tlb_el.host_va_offs_r = 0;
+        tlb_el.host_va_offs_w = 0;
     }
 
     for (auto &tlb_el : dtlb1_mode3) {
         tlb_el.tag = TLB_INVALID_TAG;
         tlb_el.flags = 0;
         tlb_el.lru_bits = 0;
-        tlb_el.host_va_offset = 0;
+        tlb_el.host_va_offs_r = 0;
+        tlb_el.host_va_offs_w = 0;
     }
 
     for (auto &tlb_el : dtlb2_mode1) {
         tlb_el.tag = TLB_INVALID_TAG;
         tlb_el.flags = 0;
         tlb_el.lru_bits = 0;
-        tlb_el.host_va_offset = 0;
+        tlb_el.host_va_offs_r = 0;
+        tlb_el.host_va_offs_w = 0;
     }
 
     for (auto &tlb_el : dtlb2_mode2) {
         tlb_el.tag = TLB_INVALID_TAG;
         tlb_el.flags = 0;
         tlb_el.lru_bits = 0;
-        tlb_el.host_va_offset = 0;
+        tlb_el.host_va_offs_r = 0;
+        tlb_el.host_va_offs_w = 0;
     }
 
     for (auto &tlb_el : dtlb2_mode3) {
         tlb_el.tag = TLB_INVALID_TAG;
         tlb_el.flags = 0;
         tlb_el.lru_bits = 0;
-        tlb_el.host_va_offset = 0;
+        tlb_el.host_va_offs_r = 0;
+        tlb_el.host_va_offs_w = 0;
     }
 
     mmu_change_mode();

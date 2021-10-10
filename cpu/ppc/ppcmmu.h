@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-20 divingkatae and maximum
+Copyright (C) 2018-21 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -79,9 +79,11 @@ typedef struct TLBEntry {
     uint16_t    flags;
     uint16_t    lru_bits;
     union {
-        int64_t             host_va_offset;
+        int64_t             host_va_offs_r;
         AddressMapEntry*    reg_desc;
     };
+    int64_t     host_va_offs_w;
+    int64_t     unused;
 } TLBEntry;
 
 enum TLBFlags : uint16_t {
