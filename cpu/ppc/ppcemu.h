@@ -200,57 +200,57 @@ enum class BB_end_kind {
     BB_RFI         /* the rfi instruction is encountered  */
 };
 
-enum class CR_select {
+enum CR_select : int32_t {
     CR0_field = (0xF << 28),
     CR1_field = (0xF << 24),
 };
 
-enum class CRx_bit {
+enum CRx_bit : uint32_t {
     CR_SO = 0,
     CR_EQ,
     CR_GT,
     CR_LT
 };
 
-enum class CR1_bit {
+enum CR1_bit : uint32_t {
     CR1_OX = 24, 
     CR1_VX,
     CR1_FEX,
     CR1_FX,
 };
 
-enum class FPSCR_bit {
-    FPSCR_RN = 0x3,
-    FPSCR_NI = 0x4,
-    FPSCR_XE = 0x8,
-    FPSCR_ZE = 0x10,
-    FPSCR_UE = 0x20,
-    FPSCR_OE = 0x40,
-    FPSCR_VE = 0x80,
-    FPSCR_VXCVI = 0x100,
-    FPSCR_VXSQRT = 0x200,
-    FPSCR_VXSOFT = 0x400,
-    FPSCR_FPRF   = 0x1F000,
-    FPSCR_FPCC_FUNAN   = 0x10000,
-    FPSCR_FPCC_ZERO = 0x8000,
-    FPSCR_FPCC_POS = 0x4000,
-    FPSCR_FPCC_NEG = 0x2000,
-    FPSCR_FPCC_FPRCD = 0x1000,
-    FPSCR_FI     = (1 << 17),
-    FPSCR_FR    = (1 << 18),
-    FPSCR_VXVC  = (1 << 19),
-    FPSCR_VXIMZ = (1 << 20),
-    FPSCR_VXZDZ = (1 << 21),
-    FPSCR_VXIDI = (1 << 22),
-    FPSCR_VXISI = (1 << 23),
-    FPSCR_VXSNAN = (1 << 24),
-    FPSCR_XX  = (1 << 25),
-    FPSCR_ZX  = (1 << 26),
-    FPSCR_UX  = (1 << 27),
-    FPSCR_OX  = (1 << 28),
-    FPSCR_VX  = (1 << 29),
-    FPSCR_FEX = (1 << 30),
-    FPSCR_FX = (1 << 31)
+enum FPSCR : uint32_t {
+    RN = 0x3,
+    NI = 0x4,
+    XE = 0x8,
+    ZE = 0x10,
+    UE = 0x20,
+    OE = 0x40,
+    VE = 0x80,
+    VXCVI = 0x100,
+    VXSQRT = 0x200,
+    VXSOFT = 0x400,
+    FPRF   = 0x1F000,
+    FPCC_FUNAN   = 0x10000,
+    FPCC_ZERO = 0x8000,
+    FPCC_POS = 0x4000,
+    FPCC_NEG = 0x2000,
+    FPCC_FPRCD = 0x1000,
+    FI         = 0x20000,
+    FR         = 0x40000,
+    VXVC       = 0x80000,
+    VXIMZ      = 0x100000,
+    VXZDZ      = 0x200000,
+    VXIDI      = 0x400000,
+    VXISI      = 0x800000,
+    VXSNAN     = 0x1000000,
+    XX         = 0x2000000,
+    ZX         = 0x4000000,
+    UX         = 0x8000000,
+    OX         = 0x10000000,
+    VX         = 0x20000000,
+    FEX        = 0x40000000,
+    FX         = 0x80000000
 };
 
 //for inf and nan checks

@@ -180,7 +180,7 @@ int64_t round_to_neg_inf(double f) {
     return static_cast<int32_t>(floor(f));
 }
 
-void update_fpscr_fex() {
+void update_fex() {
     int fex_result  = !!((ppc_state.fpscr & (ppc_state.fpscr << 22)) & 0x3E000000);
     ppc_state.fpscr = (ppc_state.fpscr & ~0x40000000) | (fex_result << 30);
 }
@@ -198,64 +198,64 @@ constexpr auto ppc_confirm_inf_nan(int chosen_reg_1, int chosen_reg_2, int chose
     switch (op) {
         case FPOP::DIV:
             if (isnan(input_a) && isnan(input_b)) {
-                ppc_state.fpscr |= ((uint32_t)FPSCR_bit::FPSCR_FX | (uint32_t)FPSCR_bit::FPSCR_VXIDI);
+                ppc_state.fpscr |= (FPSCR::FX | FPSCR::VXIDI);
                 inf_or_nan = true;
             } else if ((input_a == FP_ZERO) && (input_b == FP_ZERO)) {
-                ppc_state.fpscr |= ((uint32_t)FPSCR_bit::FPSCR_FX | (uint32_t)FPSCR_bit::FPSCR_VXZDZ);
+                ppc_state.fpscr |= (FPSCR::FX | FPSCR::VXZDZ);
                 inf_or_nan = true;
             }
-            update_fpscr_fex();
+            update_fex();
             return inf_or_nan;
             break;
         case FPOP::SUB:
             if (isnan(input_a) && isnan(input_b)) {
-                ppc_state.fpscr |= ((uint32_t)FPSCR_bit::FPSCR_FX | (uint32_t)FPSCR_bit::FPSCR_VXISI);
+                ppc_state.fpscr |= (FPSCR::FX | FPSCR::VXISI);
                 inf_or_nan = true;
             }
-            update_fpscr_fex();
+            update_fex();
             return inf_or_nan;
             break;
         case FPOP::ADD:
-            if ((isnan(input_a) & (input_b == FP_ZERO)) | (isnan(input_b) & (input_a == FP_ZERO))) {
-                ppc_state.fpscr |= 0x80100000;
+            if (isnan(input_a) && isnan(input_b)) {
+                ppc_state.fpscr |= (FPSCR::FX | FPSCR::VXISI);
                 inf_or_nan = true;
             }
-            update_fpscr_fex();
+            update_fex();
             return inf_or_nan;
             break;
         case FPOP::MUL:
             if (((input_a == FP_ZERO) && (input_c == FP_INFINITE)) ||
                 ((input_c == FP_ZERO) && (input_a == FP_INFINITE))) {
                 ppc_state.fpscr |=
-                    ((uint32_t)FPSCR_bit::FPSCR_FX | (uint32_t)FPSCR_bit::FPSCR_VXSNAN |
-                     (uint32_t)FPSCR_bit::FPSCR_VXIMZ);
+                    (FPSCR::FX | FPSCR::VXSNAN |
+                     FPSCR::VXIMZ);
                 inf_or_nan = true;
             }
-            update_fpscr_fex();
+            update_fex();
             return inf_or_nan;
             break;
         case FPOP::FMSUB:
         case FPOP::FNMSUB:
             if (isnan(input_a) || isnan(input_b) || isnan(input_c)) {
-                ppc_state.fpscr |= (uint32_t)FPSCR_bit::FPSCR_VXSNAN;
+                ppc_state.fpscr |= FPSCR::VXSNAN;
                 inf_or_nan = true;
                 if (((input_a == FP_ZERO) && (input_c == FP_INFINITE)) ||
                     ((input_c == FP_ZERO) && (input_a == FP_INFINITE))) {
-                    ppc_state.fpscr |= (uint32_t)FPSCR_bit::FPSCR_VXIMZ;
+                    ppc_state.fpscr |= FPSCR::VXIMZ;
                 }
             }
 
-            update_fpscr_fex();
+            update_fex();
             return inf_or_nan;
             break;
         case FPOP::FMADD:
         case FPOP::FNMADD:
             if (isnan(input_a) || isnan(input_b) || isnan(input_c)) {
-                ppc_state.fpscr |= (uint32_t)FPSCR_bit::FPSCR_VXSNAN;
+                ppc_state.fpscr |= FPSCR::VXSNAN;
                 inf_or_nan = true;
             }
 
-            update_fpscr_fex();
+            update_fex();
             return inf_or_nan;
             break;
         default:
@@ -267,23 +267,23 @@ void fpresult_update(double set_result, bool confirm_arc) {
     bool confirm_ov = (bool)std::fetestexcept(FE_OVERFLOW);
 
     if (confirm_ov) {
-        ppc_state.fpscr |= ((uint32_t)FPSCR_bit::FPSCR_FX | ((uint32_t)FPSCR_bit::FPSCR_FPRF & (uint32_t)FPSCR_bit::FPSCR_FPCC_FUNAN));
+        ppc_state.fpscr |= (FPSCR::FX | (FPSCR::FPRF & FPSCR::FPCC_FUNAN));
     }
 
     if (confirm_arc) {
-        ppc_state.fpscr |= ((uint32_t)FPSCR_bit::FPSCR_FX | ((uint32_t)FPSCR_bit::FPSCR_FPRF & (uint32_t)FPSCR_bit::FPSCR_FPCC_FUNAN));
+        ppc_state.fpscr |= (FPSCR::FX | (FPSCR::FPRF & FPSCR::FPCC_FUNAN));
         ppc_state.fpscr &= 0xFFFF0FFF;
 
 
         if (set_result == 0.0) {
-            ppc_state.fpscr |= (uint32_t)FPSCR_bit::FPSCR_FPCC_NEG;
+            ppc_state.fpscr |= FPSCR::FPCC_NEG;
         } else {
             if (set_result < 0.0) {
-                ppc_state.fpscr |= (uint32_t)FPSCR_bit::FPSCR_FPCC_ZERO;
+                ppc_state.fpscr |= FPSCR::FPCC_ZERO;
             } else if (set_result > 0.0) {
-                ppc_state.fpscr |= (uint32_t)FPSCR_bit::FPSCR_FPCC_POS;
+                ppc_state.fpscr |= FPSCR::FPCC_POS;
             } else {
-                ppc_state.fpscr |= (uint32_t)FPSCR_bit::FPSCR_FPCC_FPRCD;
+                ppc_state.fpscr |= FPSCR::FPCC_FPRCD;
             }
         }
     }
@@ -453,8 +453,6 @@ void dppc_interpreter::ppc_fdivs() {
 void dppc_interpreter::ppc_fmadds() {
     ppc_grab_regsfpdabc();
 
-    float intermediate;
-
     if (!ppc_confirm_inf_nan<float>(reg_a, reg_b, reg_c, FPOP::FMADD)) {
         ppc_dblresult64_d = static_cast<double>(std::fma(
             (float)val_reg_a, (float)val_reg_c, (float)val_reg_b));
@@ -620,13 +618,13 @@ void dppc_interpreter::ppc_fres() {
     ppc_store_dfpresult_flt(reg_d);
 
     if (start_num == 0.0) {
-        ppc_state.fpscr |= (uint32_t)FPSCR_bit::FPSCR_ZX;
+        ppc_state.fpscr |= FPSCR::ZX;
     }
     else if (std::isnan(start_num)) {
-        ppc_state.fpscr |= (uint32_t)FPSCR_bit::FPSCR_VXSNAN;
+        ppc_state.fpscr |= FPSCR::VXSNAN;
     } 
     else if (std::isinf(start_num)){
-        ppc_state.fpscr |= (uint32_t)FPSCR_bit::FPSCR_VXSNAN;
+        ppc_state.fpscr |= FPSCR::VXSNAN;
         ppc_state.fpscr &= 0xFFF9FFFF;
     }
 
@@ -640,15 +638,15 @@ void dppc_interpreter::ppc_fctiw() {
 
     if (std::isnan(val_reg_b)) {
         ppc_state.fpr[reg_d].int64_r = 0x80000000;
-        ppc_state.fpscr |= (uint32_t)FPSCR_bit::FPSCR_VXSNAN | (uint32_t)FPSCR_bit::FPSCR_VXCVI;
+        ppc_state.fpscr |= FPSCR::VXSNAN | FPSCR::VXCVI;
     }
     else if (val_reg_b > static_cast<double>(0x7fffffff)) {
         ppc_state.fpr[reg_d].int64_r = 0x7fffffff;
-        ppc_state.fpscr |= (uint32_t)FPSCR_bit::FPSCR_VXCVI;
+        ppc_state.fpscr |= FPSCR::VXCVI;
     }
     else if (val_reg_b < -static_cast<double>(0x80000000)) {
         ppc_state.fpr[reg_d].int64_r = 0x80000000;
-        ppc_state.fpscr |= (uint32_t)FPSCR_bit::FPSCR_VXCVI;
+        ppc_state.fpscr |= FPSCR::VXCVI;
     }
     else {
         switch (ppc_state.fpscr & 0x3) {
@@ -680,15 +678,15 @@ void dppc_interpreter::ppc_fctiwz() {
 
     if (std::isnan(val_reg_b)) {
         ppc_state.fpr[reg_d].int64_r = 0x80000000;
-        ppc_state.fpscr |= (uint32_t)FPSCR_bit::FPSCR_VXSNAN | (uint32_t)FPSCR_bit::FPSCR_VXCVI;
+        ppc_state.fpscr |= FPSCR::VXSNAN | FPSCR::VXCVI;
     }
     else if (val_reg_b > static_cast<double>(0x7fffffff)) {
         ppc_state.fpr[reg_d].int64_r = 0x7fffffff;
-        ppc_state.fpscr |= (uint32_t)FPSCR_bit::FPSCR_VXCVI;
+        ppc_state.fpscr |= FPSCR::VXCVI;
     }
     else if (val_reg_b < -static_cast<double>(0x80000000)) {
         ppc_state.fpr[reg_d].int64_r = 0x80000000;
-        ppc_state.fpscr |= (uint32_t)FPSCR_bit::FPSCR_VXCVI;
+        ppc_state.fpscr |= FPSCR::VXCVI;
     }
     else {
         ppc_result64_d = round_to_zero(val_reg_b);
@@ -887,17 +885,8 @@ void dppc_interpreter::ppc_fmr() {
 
 void dppc_interpreter::ppc_mffs() {
     ppc_grab_regsda();
-    uint64_t fpstore1 = 0;
-
-    if (ppc_state.spr[SPR::PVR] == PPC_VER::MPC601) {
-        fpstore1 = ppc_state.fpr[reg_d].int64_r & ((uint64_t)0xFFF80000 << 32);
-    } 
-    else {
-        fpstore1 = ppc_state.fpr[reg_d].int64_r & ((uint64_t)0xFFFFFFFF << 32);
-    }
-
-    uint64_t fpstore2 = ppc_state.fpscr & (uint64_t)0xFFFFFFFF;
-    fpstore1 |= fpstore2;
+    uint64_t fpstore1 = ppc_state.fpr[reg_d].int64_r & ((uint64_t)0xFFF80000 << 32);
+    fpstore1          |= (uint64_t)ppc_state.fpscr;
     fp_save_uint64(fpstore1);
 
     if (rc_flag)
@@ -981,17 +970,17 @@ void dppc_interpreter::ppc_fcmpo() {
 
     fpresult_update(db_test_a, true);
 
-    ppc_state.fpscr = (ppc_state.fpscr & ~((uint32_t)FPSCR_bit::FPSCR_FPRF)) | (cmp_c << 12);
+    ppc_state.fpscr = (ppc_state.fpscr & ~(FPSCR::FPRF)) | (cmp_c << 12);
     ppc_state.cr =
         ((ppc_state.cr & ~((uint32_t)CR_select::CR0_field >> crf_d)) | ((cmp_c + xercon) >> crf_d));
 
     if (std::isnan(db_test_a) || std::isnan(db_test_b)) {
-        ppc_state.fpscr |= (uint32_t)FPSCR_bit::FPSCR_VXSNAN;
+        ppc_state.fpscr |= FPSCR::VXSNAN;
         if (ppc_state.fpscr & 0x80) {
-            ppc_state.fpscr |= (uint32_t)FPSCR_bit::FPSCR_VXVC;
+            ppc_state.fpscr |= FPSCR::VXVC;
         }
     } else if ((db_test_a == qnan) || (db_test_b == qnan)) {
-        ppc_state.fpscr |= (uint32_t)FPSCR_bit::FPSCR_VXVC;
+        ppc_state.fpscr |= FPSCR::VXVC;
     }
 }
 
@@ -1012,11 +1001,11 @@ void dppc_interpreter::ppc_fcmpu() {
 
     fpresult_update(db_test_a, true);
 
-    ppc_state.fpscr = (ppc_state.fpscr & ~((uint32_t)FPSCR_bit::FPSCR_FPRF)) | (cmp_c << 12);
+    ppc_state.fpscr = (ppc_state.fpscr & ~(FPSCR::FPRF)) | (cmp_c << 12);
     ppc_state.cr =
         ((ppc_state.cr & ~((uint32_t)CR_select::CR0_field >> crf_d)) | ((cmp_c + xercon) >> crf_d));
 
     if (std::isnan(db_test_a) || std::isnan(db_test_b)) {
-        ppc_state.fpscr |= (uint32_t)FPSCR_bit::FPSCR_VXSNAN;
+        ppc_state.fpscr |= FPSCR::VXSNAN;
     }
 }
