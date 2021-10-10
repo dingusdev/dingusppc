@@ -89,6 +89,8 @@ uint32_t AMIC::read(uint32_t reg_start, uint32_t offset, int size)
         return this->snd_out_ctrl;
     case AMICReg::Snd_Out_DMA:
         return this->snd_out_dma->read_stat();
+    case AMICReg::Diag_Reg:
+        return 0xFFU; // this value allows the machine to boot normally
     default:
         LOG_F(WARNING, "Unknown AMIC register read, offset=%x", offset);
     }

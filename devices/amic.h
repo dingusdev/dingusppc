@@ -99,6 +99,9 @@ enum AMICReg : uint32_t {
 
     Int_Ctrl            = 0x2A000,
 
+    // Undocumented diagnostics register
+    Diag_Reg            = 0x2C000,
+
     // DMA control registers
     DMA_Base_Addr_0     = 0x31000,
     DMA_Base_Addr_1     = 0x31001,
