@@ -110,6 +110,12 @@ jmp_buf exc_env; /* Global exception environment. */
         ppc_next_instruction_address |= 0xFFF00000;
     }
 
+    // perform context synchronization for recoverable exceptions
+    if (exception_type != Except_Type::EXC_MACHINE_CHECK &&
+        exception_type != Except_Type::EXC_SYSTEM_RESET) {
+        do_ctx_sync();
+    }
+
     mmu_change_mode();
 
     longjmp(exc_env, 2); /* return to the main execution loop. */

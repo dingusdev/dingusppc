@@ -302,8 +302,8 @@ void ppc_fp_changecrf1();
 // MEMORY DECLARATIONS
 extern MemCtrlBase* mem_ctrl_instance;
 
-//typedef std::function<void()> CtxSyncCallback;
 extern void add_ctx_sync_action(const std::function<void()> &);
+extern void do_ctx_sync(void);
 
 // The functions used by the PowerPC processor
 namespace dppc_interpreter {

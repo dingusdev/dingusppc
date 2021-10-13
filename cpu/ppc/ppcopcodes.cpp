@@ -1302,6 +1302,8 @@ void dppc_interpreter::ppc_rfi() {
     ppc_state.msr                = (new_msr_val | new_srr1_val) & 0xFFFBFFFFUL;
     ppc_next_instruction_address = ppc_state.spr[SPR::SRR0] & 0xFFFFFFFCUL;
 
+    do_ctx_sync(); // RFI is context synchronizing
+
     mmu_change_mode();
 
     grab_return = true;
@@ -1309,6 +1311,7 @@ void dppc_interpreter::ppc_rfi() {
 }
 
 void dppc_interpreter::ppc_sc() {
+    do_ctx_sync(); // SC is context synchronizing!
     ppc_exception_handler(Except_Type::EXC_SYSCALL, 0x20000);
 }
 
