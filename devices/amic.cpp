@@ -91,6 +91,8 @@ uint32_t AMIC::read(uint32_t reg_start, uint32_t offset, int size)
         return this->snd_out_dma->read_stat();
     case AMICReg::Diag_Reg:
         return 0xFFU; // this value allows the machine to boot normally
+    case AMICReg::SCSI_DMA_Ctrl:
+        return this->scsi_dma_cs;
     default:
         LOG_F(WARNING, "Unknown AMIC register read, offset=%x", offset);
     }
@@ -177,6 +179,7 @@ void AMIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
         break;
     case AMICReg::SCSI_DMA_Ctrl:
         LOG_F(INFO, "AMIC SCSI DMA Ctrl updated, val=%x", value);
+        this->scsi_dma_cs = value;
         break;
     case AMICReg::Enet_DMA_Rcv_Ctrl:
         LOG_F(INFO, "AMIC Ethernet Receive DMA Ctrl updated, val=%x", value);

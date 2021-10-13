@@ -139,6 +139,8 @@ private:
     uint16_t    snd_buf_size = 0; // sound buffer size in bytes
     uint8_t     snd_out_ctrl = 0;
 
+    uint8_t     scsi_dma_cs = 0; // SCSI DMA control/status register value
+
     std::unique_ptr<ViaCuda>        viacuda;
     std::unique_ptr<AwacDevicePdm>  awacs;
 
