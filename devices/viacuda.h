@@ -49,6 +49,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "hwcomponent.h"
 #include "i2c.h"
 #include "nvram.h"
+#include <memory>
 
 /** VIA register offsets. */
 enum {
@@ -103,6 +104,7 @@ enum {
     CUDA_ERR_BAD_PKT  = 1, /* invalid packet type */
     CUDA_ERR_BAD_CMD  = 2, /* invalid pseudo command */
     CUDA_ERR_BAD_SIZE = 3, /* invalid packet size */
+    CUDA_ERR_BAD_PAR  = 4, /* invalid parameter */
     CUDA_ERR_I2C      = 5  /* invalid I2C data or no acknowledge */
 };
 
@@ -110,7 +112,7 @@ enum {
 class ViaCuda : public HWComponent, public I2CBus {
 public:
     ViaCuda();
-    ~ViaCuda();
+    ~ViaCuda() = default;
 
     bool supports_type(HWCompType type) {
         return (type == HWCompType::ADB_HOST || type == HWCompType::I2C_HOST);
@@ -135,11 +137,12 @@ private:
 
     bool is_open_ended;
     uint8_t curr_i2c_addr;
+    uint8_t cur_pram_addr;
 
     void (ViaCuda::*out_handler)(void);
     void (ViaCuda::*next_out_handler)(void);
 
-    NVram* pram_obj;
+    std::unique_ptr<NVram>  pram_obj;
     ADB_Bus* adb_obj;
 
     void print_enabled_ints(); /* print enabled VIA interrupts and their sources */
@@ -149,13 +152,13 @@ private:
     void assert_sr_int();
     void write(uint8_t new_state);
     void response_header(uint32_t pkt_type, uint32_t pkt_flag);
-    // void cuda_response_packet();
     void error_response(uint32_t error);
     void process_packet();
     void process_adb_command(uint8_t cmd_byte, int data_count);
     void pseudo_command(int cmd, int data_count);
 
     void null_out_handler(void);
+    void pram_out_handler(void);
     void out_buf_handler(void);
     void i2c_handler(void);
 

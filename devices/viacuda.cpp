@@ -24,10 +24,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     Author: Max Poliakovski 2019
 */
 
-#include "viacuda.h"
 #include "adb.h"
+#include "memaccess.h"
+#include "viacuda.h"
 #include <cinttypes>
 #include <loguru.hpp>
+#include <memory>
 
 using namespace std;
 
@@ -43,17 +45,12 @@ ViaCuda::ViaCuda() {
     this->via_regs[VIA_T1LH] = 0xFF;
     this->via_regs[VIA_IER]  = 0x7F;
 
-    // PRAM Pre-Initialization
-    this->pram_obj = new NVram("pram.bin", 256);
+    // PRAM is part of Cuda
+    this->pram_obj = std::unique_ptr<NVram> (new NVram("pram.bin", 256));
 
     this->adb_obj = new ADB_Bus();
 
     this->init();
-}
-
-ViaCuda::~ViaCuda() {
-    if (this->pram_obj)
-        delete (this->pram_obj);
 }
 
 void ViaCuda::init() {
@@ -197,9 +194,15 @@ void ViaCuda::write(uint8_t new_state) {
     }
 }
 
-/* sends zeros to host at infinitum */
+/* sends zeros to host ad infinitum */
 void ViaCuda::null_out_handler() {
     this->via_regs[VIA_SR] = 0;
+}
+
+/* sends PRAM content to host ad infinitum */
+void ViaCuda::pram_out_handler()
+{
+    this->via_regs[VIA_SR] = this->pram_obj->read_byte(this->cur_pram_addr++);
 }
 
 /* sends data from out_buf until exhausted, then switches to next_out_handler */
@@ -307,6 +310,8 @@ void ViaCuda::process_adb_command(uint8_t cmd_byte, int data_count) {
 }
 
 void ViaCuda::pseudo_command(int cmd, int data_count) {
+    uint16_t addr;
+
     switch (cmd) {
     case CUDA_START_STOP_AUTOPOLL:
         if (this->in_buf[2]) {
@@ -317,12 +322,26 @@ void ViaCuda::pseudo_command(int cmd, int data_count) {
         response_header(CUDA_PKT_PSEUDO, 0);
         break;
     case CUDA_READ_PRAM:
-        response_header(CUDA_PKT_PSEUDO, 0);
-        this->pram_obj->read_byte(this->in_buf[2]);
+        addr = READ_WORD_BE_A(&this->in_buf[2]);
+        if (addr <= 0xFF) {
+            response_header(CUDA_PKT_PSEUDO, 0);
+            // this command is open-ended so set up the corresponding context
+            this->cur_pram_addr    = addr;
+            this->next_out_handler = &ViaCuda::pram_out_handler;
+            this->is_open_ended    = true;
+        } else {
+            error_response(CUDA_ERR_BAD_PAR);
+        }
         break;
     case CUDA_WRITE_PRAM:
-        response_header(CUDA_PKT_PSEUDO, 0);
-        this->pram_obj->write_byte(this->in_buf[2], this->in_buf[3]);
+        addr = READ_WORD_BE_A(&this->in_buf[2]);
+        if (addr <= 0xFF) {
+            // TODO: implement open-ended write transaction properly
+            response_header(CUDA_PKT_PSEUDO, 0);
+            this->pram_obj->write_byte(addr, this->in_buf[4]);
+        } else {
+            error_response(CUDA_ERR_BAD_PAR);
+        }
         break;
     case CUDA_SET_AUTOPOLL_RATE:
         this->poll_rate = this->in_buf[2];
