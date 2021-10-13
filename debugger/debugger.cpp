@@ -117,13 +117,23 @@ static void disasm_68k(uint32_t count, uint32_t address) {
         code_size = sizeof(code);
         dis_addr  = address;
 
+        // catch and handle F-Traps (Nanokernel calls) ourselves because
+        // Capstone will likely return no meaningful assembly for them
+        if ((code[0] & 0xF0) == 0xF0) {
+            goto print_bin;
+        }
+
         if (cs_disasm_iter(cs_handle, &code_ptr, &code_size, &dis_addr, insn)) {
             cout << uppercase << hex << insn->address << "    ";
             cout << setfill(' ');
             cout << setw(10) << left << insn->mnemonic << insn->op_str << endl;
             address = dis_addr;
         } else {
-            cout << "DS.W    " << hex << ((code[0] << 8) | code[1]) << endl;
+print_bin:
+            cout << uppercase << hex << address << "    ";
+            cout << setfill(' ');
+            cout << setw(10) << left << "dc.w" << "$" << hex <<
+                ((code[0] << 8) | code[1]) << endl;
             address += 2;
         }
     }
