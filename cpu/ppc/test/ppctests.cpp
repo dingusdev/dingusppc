@@ -181,7 +181,6 @@ static void read_test_float_data() {
 
         opcode = stoul(tokens[1], NULL, 16);
 
-        dest        = 0;
         src1        = 0;
         src2        = 0;
         check_xer   = 0;
@@ -207,7 +206,7 @@ static void read_test_float_data() {
                 dfp_src3 = stoul(tokens[i].substr(4), NULL, 16);
             } else if (tokens[i].rfind("round=", 0) == 0) {
                 rounding_mode = tokens[i].substr(6, 3);
-                ppc_state.fpscr &= 0xFFFFFFFC;
+                ppc_state.fpscr &= 0xFFFFFF7C;
                 if (rounding_mode.compare("RTN") == 0) {
                     ppc_state.fpscr |= 0x0;
                 } else if (rounding_mode.compare("RTZ") == 0) {
@@ -216,6 +215,8 @@ static void read_test_float_data() {
                     ppc_state.fpscr |= 0x2;
                 } else if (rounding_mode.compare("RNI") == 0) {
                     ppc_state.fpscr |= 0x3;
+                } else if (rounding_mode.compare("VEN") == 0) {
+                    ppc_state.fpscr |= FPSCR::VE;
                 } else {
                     cout << "ILLEGAL ROUNDING METHOD: " << tokens[i] << " in line " << lineno
                          << ". Exiting..." << endl;
@@ -248,11 +249,13 @@ static void read_test_float_data() {
 
         ntested++;
 
-        if ((tokens[0].rfind("FCMP") && (ppc_state.gpr[3] != dest)) || (ppc_state.fpscr != check_fpscr) ||
+        if ((tokens[0].rfind("FCMP") && (ppc_state.gpr[3] != dfp_dest)) ||
+            (ppc_state.fpscr != check_fpscr) ||
             (ppc_state.cr != check_cr)) {
             cout << "Mismatch: instr=" << tokens[0] << ", src1=0x" << hex << src1 << ", src2=0x" << hex
                 << src2 << endl;
-            cout << "expected: dest=0x" << hex << dest << ", FPSCR=0x" << hex << check_xer << ", CR=0x"
+            cout << "expected: dest=0x" << hex << dfp_dest << ", FPSCR=0x" << hex << check_xer
+                 << ", CR=0x"
                 << hex << check_cr << endl;
             cout << "got: dest=0x" << hex << ppc_state.gpr[3] << ", FPSCR=0x" << hex
                  << ppc_state.fpscr << ", CR=0x" << hex << ppc_state.cr << endl;
