@@ -438,7 +438,7 @@ if __name__ == "__main__":
                         checkstring = ''
                         pos += 1
                     if ("frD" in checkstring):
-                        out_file.write(",frD=" + line[pos+4:pos+20])
+                        out_file.write(",frD=0x" + line[pos+4:pos+20])
                         checkstring = ''
                     if ("frA" in checkstring): #sloppy temp code
                         check2 = line[pos+1:pos+10]

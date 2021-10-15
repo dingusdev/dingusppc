@@ -198,7 +198,7 @@ static void read_test_float_data() {
 
         for (i = 2; i < tokens.size(); i++) {
             if (tokens[i].rfind("frD=", 0) == 0) {
-                dfp_dest = stoul(tokens[i].substr(4), NULL, 16);
+                dfp_dest = stoull(tokens[i].substr(4), NULL, 16);
             } else if (tokens[i].rfind("frA=", 0) == 0) {
                 dfp_src1 = stod(tokens[i].substr(4), NULL);
             } else if (tokens[i].rfind("frB=", 0) == 0) {
