@@ -1,5 +1,6 @@
 #include "../ppcdisasm.h"
 #include "../ppcemu.h"
+#include <cmath>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -147,8 +148,8 @@ static void read_test_float_data() {
     int i, lineno;
 
     uint32_t opcode, dest, src1, src2, check_xer, check_cr, check_fpscr;
-    uint64_t dest_64, src1_64, src2_64;
-    float sfp_dest, sfp_src1, sfp_src2, sfp_src3;
+    //uint64_t dest_64, src1_64, src2_64;
+    //float sfp_dest, sfp_src1, sfp_src2, sfp_src3;
     double dfp_dest, dfp_src1, dfp_src2, dfp_src3;
     string rounding_mode;
 
@@ -186,10 +187,10 @@ static void read_test_float_data() {
         check_xer   = 0;
         check_cr    = 0;
         check_fpscr = 0;
-        sfp_dest    = 0.0;
-        sfp_src1    = 0.0;
-        sfp_src2    = 0.0;
-        sfp_src3    = 0.0;
+        //sfp_dest    = 0.0;
+        //sfp_src1    = 0.0;
+        //sfp_src2    = 0.0;
+        //sfp_src3    = 0.0;
         dfp_dest    = 0.0;
         dfp_src1    = 0.0;
         dfp_src2    = 0.0;
@@ -199,14 +200,14 @@ static void read_test_float_data() {
             if (tokens[i].rfind("frD=", 0) == 0) {
                 dfp_dest = stoul(tokens[i].substr(4), NULL, 16);
             } else if (tokens[i].rfind("frA=", 0) == 0) {
-                dfp_src1 = stoul(tokens[i].substr(4), NULL, 16);
+                dfp_src1 = stod(tokens[i].substr(4), NULL);
             } else if (tokens[i].rfind("frB=", 0) == 0) {
-                dfp_src2 = stoul(tokens[i].substr(4), NULL, 16);
+                dfp_src2 = stod(tokens[i].substr(4), NULL);
             } else if (tokens[i].rfind("frC=", 0) == 0) {
-                dfp_src3 = stoul(tokens[i].substr(4), NULL, 16);
+                dfp_src3 = stod(tokens[i].substr(4), NULL);
             } else if (tokens[i].rfind("round=", 0) == 0) {
                 rounding_mode = tokens[i].substr(6, 3);
-                ppc_state.fpscr &= 0xFFFFFF7C;
+                ppc_state.fpscr &= 0xFFFFFFFC;
                 if (rounding_mode.compare("RTN") == 0) {
                     ppc_state.fpscr |= 0x0;
                 } else if (rounding_mode.compare("RTZ") == 0) {
@@ -249,15 +250,14 @@ static void read_test_float_data() {
 
         ntested++;
 
-        if ((tokens[0].rfind("FCMP") && (ppc_state.gpr[3] != dfp_dest)) ||
+        if ((tokens[0].rfind("FCMP") && (ppc_state.fpr[3].dbl64_r != dfp_dest)) ||
             (ppc_state.fpscr != check_fpscr) ||
             (ppc_state.cr != check_cr)) {
-            cout << "Mismatch: instr=" << tokens[0] << ", src1=0x" << hex << src1 << ", src2=0x" << hex
-                << src2 << endl;
+            cout << "Mismatch: instr=" << tokens[0] << ", src1=0x" << scientific << dfp_src1 << ", src2=0x" << scientific << dfp_src2 << ", src3=0x" << scientific << dfp_src3 << endl;
             cout << "expected: dest=0x" << hex << dfp_dest << ", FPSCR=0x" << hex << check_xer
                  << ", CR=0x"
                 << hex << check_cr << endl;
-            cout << "got: dest=0x" << hex << ppc_state.gpr[3] << ", FPSCR=0x" << hex
+            cout << "got: dest=0x" << hex << ppc_state.fpr[3].dbl64_r << ", FPSCR=0x" << hex
                  << ppc_state.fpscr << ", CR=0x" << hex << ppc_state.cr << endl;
             cout << "Test file line #: " << dec << lineno << endl << endl;
 
