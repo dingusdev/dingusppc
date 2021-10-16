@@ -66,29 +66,41 @@ uint32_t AMIC::read(uint32_t reg_start, uint32_t offset, int size)
 {
     uint32_t  phase_val;
 
-    if (offset < 0x2000) {
+    // subdevices registers
+    switch(offset >> 12) {
+    case 0: // VIA1 registers
+    case 1:
         return this->viacuda->read(offset >> 9);
+    case 4: // SCC registers
+        LOG_F(WARNING, "AMIC: read attempt from unimplemented SCC register");
+        return 0;
+    case 0x10: // SCSI registers
+        LOG_F(WARNING, "AMIC: read attempt from unimplemented SCSI register");
+        return 0;
+    case 0x14: // Sound registers
+        switch (offset) {
+        case AMICReg::Snd_Stat_0:
+        case AMICReg::Snd_Stat_1:
+        case AMICReg::Snd_Stat_2:
+            return (this->awacs->read_stat() >> (offset &  3 * 8)) & 0xFF;
+        case AMICReg::Snd_Phase0:
+        case AMICReg::Snd_Phase1:
+        case AMICReg::Snd_Phase2:
+            // the sound phase register is organized as follows:
+            // 000000oo oooooooo oopppppp where 'o' is the 12-bit offset
+            // into the DMA buffer and 'p' is an undocumented prescale value
+            // HWInit doesn't care about. Let's hope it will be sufficient
+            // to return 0 for prescale.
+            phase_val = this->snd_out_dma->get_cur_buf_pos() << 6;
+            return (phase_val >> ((2 - (offset & 3)) * 8)) & 0xFF;
+        case AMICReg::Snd_Out_Ctrl:
+            return this->snd_out_ctrl;
+        case AMICReg::Snd_Out_DMA:
+            return this->snd_out_dma->read_stat();
+        }
     }
 
     switch(offset) {
-    case AMICReg::Snd_Stat_0:
-    case AMICReg::Snd_Stat_1:
-    case AMICReg::Snd_Stat_2:
-        return (this->awacs->read_stat() >> (offset &  3 * 8)) & 0xFF;
-    case AMICReg::Snd_Phase0:
-    case AMICReg::Snd_Phase1:
-    case AMICReg::Snd_Phase2:
-        // the sound phase register is organized as follows:
-        // 000000oo oooooooo oopppppp where 'o' is the 12-bit offset
-        // into the DMA buffer and 'p' is an undocumented prescale value
-        // HWInit doesn't care about. Let's hope it will be sufficient
-        // to return 0 for prescale.
-        phase_val = this->snd_out_dma->get_cur_buf_pos() << 6;
-        return (phase_val >> ((2 - (offset & 3)) * 8)) & 0xFF;
-    case AMICReg::Snd_Out_Ctrl:
-        return this->snd_out_ctrl;
-    case AMICReg::Snd_Out_DMA:
-        return this->snd_out_dma->read_stat();
     case AMICReg::Diag_Reg:
         return 0xFFU; // this value allows the machine to boot normally
     case AMICReg::SCSI_DMA_Ctrl:
@@ -103,56 +115,62 @@ void AMIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
 {
     uint32_t mask;
 
-    if (offset < 0x2000) {
+    // subdevices registers
+    switch(offset >> 12) {
+    case 0: // VIA1 registers
+    case 1:
         this->viacuda->write(offset >> 9, value);
         return;
+    case 0x14: // Sound registers
+        switch(offset) {
+        case AMICReg::Snd_Ctrl_0:
+        case AMICReg::Snd_Ctrl_1:
+        case AMICReg::Snd_Ctrl_2:
+            // remember values of sound control registers
+            this->imm_snd_regs[offset & 3] = value;
+            // transfer control information to the sound codec when ready
+            if ((this->imm_snd_regs[0] & 0xC0) == PDM_SND_CTRL_VALID) {
+                this->awacs->write_ctrl(
+                    (this->imm_snd_regs[1] >> 4) | (this->imm_snd_regs[0] & 0x3F),
+                    ((this->imm_snd_regs[1] & 0xF) << 8) | this->imm_snd_regs[2]
+                );
+            }
+            return;
+        case AMICReg::Snd_Buf_Size_Hi:
+        case AMICReg::Snd_Buf_Size_Lo:
+            mask = 0xFF00U >> (8 * (offset & 1));
+            this->snd_buf_size = (this->snd_buf_size & ~mask) |
+                                ((value & 0xFF) << (8 * ((offset & 1) ^1)));
+            this->snd_buf_size &= ~3; // sound buffer size is always a multiple of 4
+            LOG_F(9, "AMIC: Sound buffer size set to 0x%X", this->snd_buf_size);
+            return;
+        case AMICReg::Snd_Out_Ctrl:
+            LOG_F(9, "AMIC Sound Out Ctrl updated, val=%x", value);
+            if ((value & 1) != (this->snd_out_ctrl & 1)) {
+                if (value & 1) {
+                    LOG_F(9, "AMIC Sound Out DMA enabled!");
+                    this->snd_out_dma->init(this->dma_base & ~0x3FFFF,
+                                            this->snd_buf_size);
+                    this->snd_out_dma->enable();
+                    this->awacs->set_sample_rate((this->snd_out_ctrl >> 1) & 3);
+                    this->awacs->start_output_dma();
+                } else {
+                    LOG_F(9, "AMIC Sound Out DMA disabled!");
+                    this->snd_out_dma->disable();
+                }
+            }
+            this->snd_out_ctrl = value;
+            return;
+        case AMICReg::Snd_In_Ctrl:
+            LOG_F(INFO, "AMIC Sound In Ctrl updated, val=%x", value);
+            return;
+        case AMICReg::Snd_Out_DMA:
+            this->snd_out_dma->write_dma_out_ctrl(value);
+            return;
+        }
     }
 
     switch(offset) {
-    case AMICReg::Snd_Ctrl_0:
-    case AMICReg::Snd_Ctrl_1:
-    case AMICReg::Snd_Ctrl_2:
-        // remember values of sound control registers
-        this->imm_snd_regs[offset & 3] = value;
-        // transfer control information to the sound codec when ready
-        if ((this->imm_snd_regs[0] & 0xC0) == PDM_SND_CTRL_VALID) {
-            this->awacs->write_ctrl(
-                (this->imm_snd_regs[1] >> 4) | (this->imm_snd_regs[0] & 0x3F),
-                ((this->imm_snd_regs[1] & 0xF) << 8) | this->imm_snd_regs[2]
-            );
-        }
-        break;
-    case AMICReg::Snd_Buf_Size_Hi:
-    case AMICReg::Snd_Buf_Size_Lo:
-        mask = 0xFF00U >> (8 * (offset & 1));
-        this->snd_buf_size = (this->snd_buf_size & ~mask) |
-                            ((value & 0xFF) << (8 * ((offset & 1) ^1)));
-        this->snd_buf_size &= ~3; // sound buffer size is always a multiple of 4
-        LOG_F(9, "AMIC: Sound buffer size set to 0x%X", this->snd_buf_size);
-        break;
-    case AMICReg::Snd_Out_Ctrl:
-        LOG_F(9, "AMIC Sound Out Ctrl updated, val=%x", value);
-        if ((value & 1) != (this->snd_out_ctrl & 1)) {
-            if (value & 1) {
-                LOG_F(9, "AMIC Sound Out DMA enabled!");
-                this->snd_out_dma->init(this->dma_base & ~0x3FFFF,
-                                        this->snd_buf_size);
-                this->snd_out_dma->enable();
-                this->awacs->set_sample_rate((this->snd_out_ctrl >> 1) & 3);
-                this->awacs->start_output_dma();
-            } else {
-                LOG_F(9, "AMIC Sound Out DMA disabled!");
-                this->snd_out_dma->disable();
-            }
-        }
-        this->snd_out_ctrl = value;
-        break;
-    case AMICReg::Snd_In_Ctrl:
-        LOG_F(INFO, "AMIC Sound In Ctrl updated, val=%x", value);
-        break;
-    case AMICReg::Snd_Out_DMA:
-        this->snd_out_dma->write_dma_out_ctrl(value);
-        break;
     case AMICReg::VIA2_Slot_IER:
         LOG_F(INFO, "AMIC VIA2 Slot Interrupt Enable Register updated, val=%x", value);
         break;
