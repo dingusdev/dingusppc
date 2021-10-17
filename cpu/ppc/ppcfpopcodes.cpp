@@ -186,7 +186,7 @@ void update_fex() {
 }
 
 template <typename T, const FPOP fpop>
-constexpr auto ppc_confirm_inf_nan(int chosen_reg_1, int chosen_reg_2, int chosen_reg_3) {
+void ppc_confirm_inf_nan(int chosen_reg_1, int chosen_reg_2, int chosen_reg_3) {
     T input_a = T(ppc_state.fpr[chosen_reg_1].int64_r);
     T input_b = T(ppc_state.fpr[chosen_reg_2].int64_r);
     T input_c = T(ppc_state.fpr[chosen_reg_3].int64_r);
@@ -243,7 +243,7 @@ constexpr auto ppc_confirm_inf_nan(int chosen_reg_1, int chosen_reg_2, int chose
             update_fex();
             break;
         }
-} 
+}
 
 void fpresult_update(double set_result, bool confirm_arc) {
     bool confirm_ov = (bool)std::fetestexcept(FE_OVERFLOW);
@@ -279,9 +279,9 @@ void ppc_changecrf1() {
 // Floating Point Arithmetic
 void dppc_interpreter::ppc_fadd() {
     ppc_grab_regsfpdab();
-    
+
     ppc_dblresult64_d = val_reg_a + val_reg_b;
-    
+
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_dfpresult_flt(reg_d);
     } else {
@@ -377,7 +377,7 @@ void dppc_interpreter::ppc_fnmadd() {
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_dfpresult_flt(reg_d);
-    } 
+    }
     else {
         ppc_confirm_inf_nan<double, FNMADD>(reg_a, reg_b, reg_c);
     }
@@ -525,7 +525,7 @@ void dppc_interpreter::ppc_fnmsubs() {
     intermediate       = -intermediate;
     ppc_dblresult64_d  = static_cast<double>(intermediate);
 
-    
+
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_sfpresult_flt(reg_d);
     } else {
@@ -639,7 +639,7 @@ void dppc_interpreter::ppc_fres() {
     }
     else if (std::isnan(start_num)) {
         ppc_state.fpscr |= FPSCR::VXSNAN;
-    } 
+    }
     else if (std::isinf(start_num)){
         ppc_state.fpscr |= FPSCR::VXSNAN;
         ppc_state.fpscr &= 0xFFF9FFFF;
