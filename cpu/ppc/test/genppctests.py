@@ -513,7 +513,7 @@ if __name__ == "__main__":
                         out_file.write(",FPSCR=" + line[pos+3:pos+13])
                         checkstring = ''
                     if ("CR" in checkstring):
-                        out_file.write(",CR=" + line[pos+3:pos+14])
+                        out_file.write(",CR=0x0" + line[pos+6:pos+14])
                         checkstring = ''
                     pos += 1
 

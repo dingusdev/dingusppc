@@ -224,7 +224,7 @@ static void read_test_float_data() {
                     exit(0);
                 }
             } else if (tokens[i].rfind("FPSCR=", 0) == 0) {
-                check_cr = stoul(tokens[i].substr(6), NULL, 16);
+                check_fpscr = stoul(tokens[i].substr(6), NULL, 16);
             } else if (tokens[i].rfind("CR=", 0) == 0) {
                 check_cr = stoul(tokens[i].substr(3), NULL, 16);
             } else {
@@ -241,7 +241,6 @@ static void read_test_float_data() {
         ppc_state.fpr[4].dbl64_r = dfp_src2;
         ppc_state.fpr[5].dbl64_r = dfp_src3;
 
-        ppc_state.spr[SPR::XER] = 0;
         ppc_state.cr            = 0;
 
         ppc_cur_instruction = opcode;
@@ -253,8 +252,8 @@ static void read_test_float_data() {
         if ((tokens[0].rfind("FCMP") && (ppc_state.fpr[3].dbl64_r != dfp_dest)) ||
             (ppc_state.fpscr != check_fpscr) ||
             (ppc_state.cr != check_cr)) {
-            cout << "Mismatch: instr=" << tokens[0] << ", src1=0x" << scientific << dfp_src1 << ", src2=0x" << scientific << dfp_src2 << ", src3=0x" << scientific << dfp_src3 << endl;
-            cout << "expected: dest=0x" << hex << dfp_dest << ", FPSCR=0x" << hex << check_xer
+            cout << "Mismatch: instr=" << tokens[0] << ", src1=" << scientific << dfp_src1 << ", src2=" << scientific << dfp_src2 << ", src3=" << scientific << dfp_src3 << endl;
+            cout << "expected: dest=0x" << hex << dfp_dest << ", FPSCR=0x" << hex << check_fpscr
                  << ", CR=0x"
                 << hex << check_cr << endl;
             cout << "got: dest=0x" << hex << ppc_state.fpr[3].dbl64_r << ", FPSCR=0x" << hex
