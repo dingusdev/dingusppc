@@ -195,7 +195,7 @@ void ViaCuda::write(uint8_t new_state) {
                 this->in_buf[this->in_count++] = this->via_regs[VIA_SR];
                 assert_sr_int(); /* tell the system we've read the data */
             } else {
-                LOG_F(WARNING, "Cuda input buffer exhausted!");
+                LOG_F(WARNING, "Cuda input buffer too small. Truncating data!");
             }
         } else { /* data transfer: Cuda --> Host */
             (this->*out_handler)();
@@ -320,7 +320,8 @@ void ViaCuda::process_adb_command(uint8_t cmd_byte, int data_count) {
 }
 
 void ViaCuda::pseudo_command(int cmd, int data_count) {
-    uint16_t addr;
+    uint16_t    addr;
+    int         i;
 
     switch (cmd) {
     case CUDA_START_STOP_AUTOPOLL:
@@ -328,6 +329,36 @@ void ViaCuda::pseudo_command(int cmd, int data_count) {
             LOG_F(INFO, "Cuda: autopoll started, rate: %d ms", this->poll_rate);
         } else {
             LOG_F(INFO, "Cuda: autopoll stopped");
+        }
+        response_header(CUDA_PKT_PSEUDO, 0);
+        break;
+    case CUDA_READ_MCU_MEM:
+        addr = READ_WORD_BE_A(&this->in_buf[2]);
+        response_header(CUDA_PKT_PSEUDO, 0);
+        // if starting address is within PRAM region
+        // prepare to transfer PRAM content, othwesise we will send zeroes
+        if (addr >= CUDA_PRAM_START && addr <= CUDA_PRAM_END) {
+            this->cur_pram_addr    = addr - CUDA_PRAM_START;
+            this->next_out_handler = &ViaCuda::pram_out_handler;
+        } else if (addr >= CUDA_ROM_START) {
+            // HACK: Cuda ROM dump requsted so let's partially fake it
+            this->out_buf[3] = 0; // empty copyright string
+            WRITE_WORD_BE_A(&this->out_buf[4], 0x0019U);
+            WRITE_WORD_BE_A(&this->out_buf[6], CUDA_FW_VERSION_MAJOR);
+            WRITE_WORD_BE_A(&this->out_buf[8], CUDA_FW_VERSION_MINOR);
+            this->out_count += 7;
+        }
+        this->is_open_ended = true;
+        break;
+    case CUDA_WRITE_MCU_MEM:
+        addr = READ_WORD_BE_A(&this->in_buf[2]);
+        // if addr is inside PRAM, update PRAM with data from in_buf
+        // otherwise, ignore data in in_buf
+        if (addr >= CUDA_PRAM_START && addr <= CUDA_PRAM_END) {
+            for (i = 0; i < this->in_count - 4; i++) {
+                this->pram_obj->write_byte((addr - CUDA_PRAM_START + i) & 0xFF,
+                                            this->in_buf[4+i]);
+            }
         }
         response_header(CUDA_PKT_PSEUDO, 0);
         break;
@@ -346,9 +377,11 @@ void ViaCuda::pseudo_command(int cmd, int data_count) {
     case CUDA_WRITE_PRAM:
         addr = READ_WORD_BE_A(&this->in_buf[2]);
         if (addr <= 0xFF) {
-            // TODO: implement open-ended write transaction properly
+            // transfer data from in_buf to PRAM
+            for (i = 0; i < this->in_count - 4; i++) {
+                this->pram_obj->write_byte((addr + i) & 0xFF, this->in_buf[4+i]);
+            }
             response_header(CUDA_PKT_PSEUDO, 0);
-            this->pram_obj->write_byte(addr, this->in_buf[4]);
         } else {
             error_response(CUDA_ERR_BAD_PAR);
         }

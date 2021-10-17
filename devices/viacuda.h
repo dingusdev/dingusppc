@@ -90,7 +90,9 @@ enum {
 /** Cuda pseudo commands. */
 enum {
     CUDA_START_STOP_AUTOPOLL = 0x01, /* start/stop device auto-polling */
+    CUDA_READ_MCU_MEM        = 0x02, /* read internal Cuda memory */
     CUDA_READ_PRAM           = 0x07, /* read parameter RAM */
+    CUDA_WRITE_MCU_MEM       = 0x08, /* write internal Cuda memory */
     CUDA_WRITE_PRAM          = 0x0C, /* write parameter RAM */
     CUDA_SET_AUTOPOLL_RATE   = 0x14, /* set auto-polling rate */
     CUDA_GET_AUTOPOLL_RATE   = 0x16, /* get auto-polling rate */
@@ -108,6 +110,14 @@ enum {
     CUDA_ERR_I2C      = 5  /* invalid I2C data or no acknowledge */
 };
 
+/** PRAM addresses within Cuda's internal memory */
+#define CUDA_PRAM_START 0x100 // starting address of PRAM
+#define CUDA_PRAM_END   0x1FF // last byte of PRAM
+#define CUDA_ROM_START  0xF00 // starting address of ROM containing Cuda FW
+
+/** Latest Cuda Firmware version. */
+#define CUDA_FW_VERSION_MAJOR   0x0002
+#define CUDA_FW_VERSION_MINOR   0x0029
 
 class ViaCuda : public HWComponent, public I2CBus {
 public:
@@ -135,9 +145,9 @@ private:
     int32_t out_pos;
     uint8_t poll_rate;
 
-    bool is_open_ended;
-    uint8_t curr_i2c_addr;
-    uint8_t cur_pram_addr;
+    bool        is_open_ended; // true if current transaction is open-ended
+    uint8_t     curr_i2c_addr; // current I2C address
+    uint8_t     cur_pram_addr; // current PRAM address, range 0...FF
 
     void (ViaCuda::*out_handler)(void);
     void (ViaCuda::*next_out_handler)(void);
