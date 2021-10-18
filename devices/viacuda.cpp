@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-20 divingkatae and maximum
+Copyright (C) 2018-21 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -36,14 +36,24 @@ using namespace std;
 ViaCuda::ViaCuda() {
     this->name = "ViaCuda";
 
-    /* FIXME: is this the correct
-       VIA initialization? */
-    this->via_regs[VIA_A]    = 0x80;
-    this->via_regs[VIA_DIRB] = 0xFF;
-    this->via_regs[VIA_DIRA] = 0xFF;
+    // VIA reset clears all internal registers to logic 0
+    // except timers/counters and the shift register
+    // as stated in the 6522 datasheet
+    this->via_regs[VIA_A]    = 0;
+    this->via_regs[VIA_B]    = 0;
+    this->via_regs[VIA_DIRB] = 0;
+    this->via_regs[VIA_DIRA] = 0;
+    this->via_regs[VIA_IER]  = 0;
+    this->via_regs[VIA_ACR]  = 0;
+    this->via_regs[VIA_PCR]  = 0;
+    this->via_regs[VIA_IFR]  = 0;
+
+    // load maximum value into the timer registers for safety
+    // (not prescribed in the 6522 datasheet)
     this->via_regs[VIA_T1LL] = 0xFF;
     this->via_regs[VIA_T1LH] = 0xFF;
-    this->via_regs[VIA_IER]  = 0x7F;
+    this->via_regs[VIA_T2CL] = 0xFF;
+    this->via_regs[VIA_T2CH] = 0xFF;
 
     // PRAM is part of Cuda
     this->pram_obj = std::unique_ptr<NVram> (new NVram("pram.bin", 256));
