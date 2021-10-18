@@ -65,7 +65,7 @@ void ViaCuda::init() {
 uint8_t ViaCuda::read(int reg) {
     uint8_t res;
 
-    LOG_F(9, "Read VIA reg %x \n", (uint32_t)reg);
+    LOG_F(9, "Read VIA reg %d", reg);
 
     res = this->via_regs[reg & 0xF];
 
@@ -76,7 +76,7 @@ uint8_t ViaCuda::read(int reg) {
         break;
     case VIA_A:
     case VIA_ANH:
-        LOG_F(WARNING, "Attempted read from VIA Port A! \n");
+        LOG_F(WARNING, "Attempted read from VIA Port A!");
         break;
     case VIA_IER:
         res |= 0x80; /* bit 7 always reads as "1" */
@@ -93,27 +93,27 @@ void ViaCuda::write(int reg, uint8_t value) {
         break;
     case VIA_A:
     case VIA_ANH:
-        LOG_F(WARNING, "Attempted write to VIA Port A! \n");
+        LOG_F(WARNING, "Attempted write to VIA Port A!");
         break;
     case VIA_DIRB:
-        LOG_F(9, "VIA_DIRB = %x \n", (uint32_t)value);
+        LOG_F(9, "VIA_DIRB = 0x%X", value);
         this->via_regs[VIA_DIRB] = value;
         break;
     case VIA_DIRA:
-        LOG_F(9, "VIA_DIRA = %x \n", (uint32_t)value);
+        LOG_F(9, "VIA_DIRA = 0x%X", value);
         this->via_regs[VIA_DIRA] = value;
         break;
     case VIA_PCR:
-        LOG_F(9, "VIA_PCR =  %x \n", (uint32_t)value);
+        LOG_F(9, "VIA_PCR = 0x%X", value);
         this->via_regs[VIA_PCR] = value;
         break;
     case VIA_ACR:
-        LOG_F(9, "VIA_ACR =  %x \n", (uint32_t)value);
+        LOG_F(9, "VIA_ACR = 0x%X", value);
         this->via_regs[VIA_ACR] = value;
         break;
     case VIA_IER:
         this->via_regs[VIA_IER] = (value & 0x80) ? value & 0x7F : this->via_regs[VIA_IER] & ~value;
-        LOG_F(INFO, "VIA_IER updated to %d \n", (uint32_t)this->via_regs[VIA_IER]);
+        LOG_F(9, "VIA_IER updated to 0x%X", this->via_regs[VIA_IER]);
         print_enabled_ints();
         break;
     default:
@@ -126,7 +126,7 @@ void ViaCuda::print_enabled_ints() {
 
     for (int i = 0; i < 7; i++) {
         if (this->via_regs[VIA_IER] & (1 << i))
-            LOG_F(INFO, "VIA %s interrupt enabled \n", via_int_src[i]);
+            LOG_F(INFO, "VIA %s interrupt enabled", via_int_src[i]);
     }
 }
 
@@ -140,7 +140,7 @@ inline void ViaCuda::assert_sr_int() {
 
 void ViaCuda::write(uint8_t new_state) {
     if (!ready()) {
-        LOG_F(WARNING, "Cuda not ready! \n");
+        LOG_F(WARNING, "Cuda not ready!");
         return;
     }
 
@@ -151,7 +151,7 @@ void ViaCuda::write(uint8_t new_state) {
     if (new_tip == this->old_tip && new_byteack == this->old_byteack)
         return;
 
-    LOG_F(9, "Cuda state changed! \n");
+    LOG_F(9, "Cuda state changed!");
 
     this->old_tip     = new_tip;
     this->old_byteack = new_byteack;
@@ -171,7 +171,7 @@ void ViaCuda::write(uint8_t new_state) {
 
             this->in_count = 0;
         } else {
-            LOG_F(9, "Cuda: enter sync state \n");
+            LOG_F(9, "Cuda: enter sync state");
             this->via_regs[VIA_B] &= ~CUDA_TREQ; /* assert TREQ */
             this->treq      = 0;
             this->in_count  = 0;
@@ -185,7 +185,7 @@ void ViaCuda::write(uint8_t new_state) {
                 this->in_buf[this->in_count++] = this->via_regs[VIA_SR];
                 assert_sr_int(); /* tell the system we've read the data */
             } else {
-                LOG_F(WARNING, "Cuda input buffer exhausted! \n");
+                LOG_F(WARNING, "Cuda input buffer exhausted!");
             }
         } else { /* data transfer: Cuda --> Host */
             (this->*out_handler)();
@@ -248,7 +248,7 @@ void ViaCuda::error_response(uint32_t error) {
 
 void ViaCuda::process_packet() {
     if (this->in_count < 2) {
-        LOG_F(ERROR, "Cuda: invalid packet (too few data)!\n");
+        LOG_F(ERROR, "Cuda: invalid packet (too few data)!");
         error_response(CUDA_ERR_BAD_SIZE);
         return;
     }
@@ -259,16 +259,16 @@ void ViaCuda::process_packet() {
         process_adb_command(this->in_buf[1], this->in_count - 2);
         break;
     case CUDA_PKT_PSEUDO:
-        LOG_F(9, "Cuda: pseudo command packet received \n");
-        LOG_F(9, "Command: %x \n", (uint32_t)(this->in_buf[1]));
-        LOG_F(9, "Data count: %d \n ", this->in_count);
+        LOG_F(9, "Cuda: pseudo command packet received");
+        LOG_F(9, "Command: 0x%X", this->in_buf[1]);
+        LOG_F(9, "Data count: %d", this->in_count);
         for (int i = 0; i < this->in_count; i++) {
-            LOG_F(9, "%x ,", (uint32_t)(this->in_buf[i]));
+            LOG_F(9, "0x%X ,", this->in_buf[i]);
         }
         pseudo_command(this->in_buf[1], this->in_count - 2);
         break;
     default:
-        LOG_F(ERROR, "Cuda: unsupported packet type = %d \n", (uint32_t)(this->in_buf[0]));
+        LOG_F(ERROR, "Cuda: unsupported packet type = %d", this->in_buf[0]);
         error_response(CUDA_ERR_BAD_PKT);
     }
 }
@@ -278,13 +278,13 @@ void ViaCuda::process_adb_command(uint8_t cmd_byte, int data_count) {
     int cmd     = cmd_byte & 0xF;
 
     if (!cmd) {
-        LOG_F(9, "Cuda: ADB SendReset command requested\n");
+        LOG_F(9, "Cuda: ADB SendReset command requested");
         response_header(CUDA_PKT_ADB, 0);
     } else if (cmd == 1) {
-        LOG_F(9, "Cuda: ADB Flush command requested\n");
+        LOG_F(9, "Cuda: ADB Flush command requested");
         response_header(CUDA_PKT_ADB, 0);
     } else if ((cmd & 0xC) == 8) {
-        LOG_F(9, "Cuda: ADB Listen command requested\n");
+        LOG_F(9, "Cuda: ADB Listen command requested");
         int adb_reg = cmd_byte & 0x3;
         if (adb_obj->listen(adb_dev, adb_reg)) {
             response_header(CUDA_PKT_ADB, 0);
@@ -295,7 +295,7 @@ void ViaCuda::process_adb_command(uint8_t cmd_byte, int data_count) {
             response_header(CUDA_PKT_ADB, 2);
         }
     } else if ((cmd & 0xC) == 0xC) {
-        LOG_F(9, "Cuda: ADB Talk command requested\n");
+        LOG_F(9, "Cuda: ADB Talk command requested");
         response_header(CUDA_PKT_ADB, 0);
         int adb_reg = cmd_byte & 0x3;
         if (adb_obj->talk(adb_dev, adb_reg, this->in_buf[2])) {
@@ -304,7 +304,7 @@ void ViaCuda::process_adb_command(uint8_t cmd_byte, int data_count) {
             response_header(CUDA_PKT_ADB, 2);
         }
     } else {
-        LOG_F(ERROR, "Cuda: unsupported ADB command 0x%x \n", cmd);
+        LOG_F(ERROR, "Cuda: unsupported ADB command 0x%X", cmd);
         error_response(CUDA_ERR_BAD_CMD);
     }
 }
@@ -315,7 +315,7 @@ void ViaCuda::pseudo_command(int cmd, int data_count) {
     switch (cmd) {
     case CUDA_START_STOP_AUTOPOLL:
         if (this->in_buf[2]) {
-            LOG_F(INFO, "Cuda: autopoll started, rate: %dms", this->poll_rate);
+            LOG_F(INFO, "Cuda: autopoll started, rate: %d ms", this->poll_rate);
         } else {
             LOG_F(INFO, "Cuda: autopoll stopped");
         }
@@ -345,7 +345,7 @@ void ViaCuda::pseudo_command(int cmd, int data_count) {
         break;
     case CUDA_SET_AUTOPOLL_RATE:
         this->poll_rate = this->in_buf[2];
-        LOG_F(INFO, "Cuda: autopoll rate set to: %d", this->poll_rate);
+        LOG_F(INFO, "Cuda: autopoll rate set to %d ms", this->poll_rate);
         response_header(CUDA_PKT_PSEUDO, 0);
         break;
     case CUDA_GET_AUTOPOLL_RATE:
@@ -365,11 +365,11 @@ void ViaCuda::pseudo_command(int cmd, int data_count) {
         }
         break;
     case CUDA_OUT_PB0: /* undocumented call! */
-        LOG_F(INFO, "Cuda: send %d to PB0 \n", (int)(this->in_buf[2]));
+        LOG_F(INFO, "Cuda: send %d to PB0", (int)(this->in_buf[2]));
         response_header(CUDA_PKT_PSEUDO, 0);
         break;
     default:
-        LOG_F(ERROR, "Cuda: unsupported pseudo command 0x%x \n", cmd);
+        LOG_F(ERROR, "Cuda: unsupported pseudo command 0x%X", cmd);
         error_response(CUDA_ERR_BAD_CMD);
     }
 }
@@ -385,7 +385,7 @@ void ViaCuda::i2c_simple_transaction(uint8_t dev_addr, const uint8_t* in_buf, in
     dev_addr >>= 1; /* strip RD/WR bit */
 
     if (!this->start_transaction(dev_addr)) {
-        LOG_F(WARNING, "Unsupported I2C device 0x%X \n", (int)(dev_addr));
+        LOG_F(WARNING, "Unsupported I2C device 0x%X", dev_addr);
         error_response(CUDA_ERR_I2C);
         return;
     }
@@ -394,7 +394,7 @@ void ViaCuda::i2c_simple_transaction(uint8_t dev_addr, const uint8_t* in_buf, in
        or the target device doesn't acknowledge that indicates an error */
     for (int i = 0; i < in_bytes; i++) {
         if (!this->send_byte(dev_addr, in_buf[i])) {
-            LOG_F(WARNING, "NO_ACK during sending, device 0x%X \n", (int)(dev_addr));
+            LOG_F(WARNING, "NO_ACK during sending, device 0x%X", dev_addr);
             error_response(CUDA_ERR_I2C);
             return;
         }
@@ -413,7 +413,7 @@ void ViaCuda::i2c_comb_transaction(
     int op_type = dev_addr1 & 1; /* 0 - write to device, 1 - read from device */
 
     if ((dev_addr & 0xFE) != (dev_addr1 & 0xFE)) {
-        LOG_F(ERROR, "Combined I2C: dev_addr mismatch!\n");
+        LOG_F(ERROR, "Combined I2C: dev_addr mismatch!");
         error_response(CUDA_ERR_I2C);
         return;
     }
@@ -421,13 +421,13 @@ void ViaCuda::i2c_comb_transaction(
     dev_addr >>= 1; /* strip RD/WR bit */
 
     if (!this->start_transaction(dev_addr)) {
-        LOG_F(WARNING, "Unsupported I2C device 0x%X \n", (int)(dev_addr));
+        LOG_F(WARNING, "Unsupported I2C device 0x%X", dev_addr);
         error_response(CUDA_ERR_I2C);
         return;
     }
 
     if (!this->send_subaddress(dev_addr, sub_addr)) {
-        LOG_F(WARNING, "NO_ACK while sending subaddress, device 0x%X \n", (int)(dev_addr));
+        LOG_F(WARNING, "NO_ACK while sending subaddress, device 0x%X", dev_addr);
         error_response(CUDA_ERR_I2C);
         return;
     }
@@ -436,7 +436,7 @@ void ViaCuda::i2c_comb_transaction(
        or the target device doesn't acknowledge that indicates an error */
     for (int i = 0; i < in_bytes; i++) {
         if (!this->send_byte(dev_addr, in_buf[i])) {
-            LOG_F(WARNING, "NO_ACK during sending, device 0x%X \n", (int)(dev_addr));
+            LOG_F(WARNING, "NO_ACK during sending, device 0x%X", dev_addr);
             error_response(CUDA_ERR_I2C);
             return;
         }
