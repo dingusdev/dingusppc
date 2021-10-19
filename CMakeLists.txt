@@ -169,6 +169,7 @@ if (DPPC_BUILD_PPC_TESTS)
         TARGET testppc POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy
         "${PROJECT_SOURCE_DIR}/cpu/ppc/test/ppcinttests.csv"
+        "${PROJECT_SOURCE_DIR}/cpu/ppc/test/ppcfloattests.csv"
         "${PROJECT_SOURCE_DIR}/cpu/ppc/test/ppcdisasmtest.csv"
         $<TARGET_FILE_DIR:${PROJECT_NAME}>)
 endif()

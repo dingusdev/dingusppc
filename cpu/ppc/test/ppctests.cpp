@@ -1,5 +1,6 @@
 #include "../ppcdisasm.h"
 #include "../ppcemu.h"
+#include <cmath>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -148,7 +149,7 @@ static void read_test_float_data() {
 
     uint32_t opcode, dest, src1, src2, check_xer, check_cr, check_fpscr;
     uint64_t dest_64, src1_64, src2_64;
-    float sfp_dest, sfp_src1, sfp_src2, sfp_src3;
+    //float sfp_dest, sfp_src1, sfp_src2, sfp_src3;
     double dfp_dest, dfp_src1, dfp_src2, dfp_src3;
     string rounding_mode;
 
@@ -181,48 +182,50 @@ static void read_test_float_data() {
 
         opcode = stoul(tokens[1], NULL, 16);
 
-        dest        = 0;
         src1        = 0;
         src2        = 0;
         check_xer   = 0;
         check_cr    = 0;
         check_fpscr = 0;
-        sfp_dest    = 0.0;
-        sfp_src1    = 0.0;
-        sfp_src2    = 0.0;
-        sfp_src3    = 0.0;
+        //sfp_dest    = 0.0;
+        //sfp_src1    = 0.0;
+        //sfp_src2    = 0.0;
+        //sfp_src3    = 0.0;
         dfp_dest    = 0.0;
         dfp_src1    = 0.0;
         dfp_src2    = 0.0;
         dfp_src3    = 0.0;
+        dest_64     = 0;
 
         for (i = 2; i < tokens.size(); i++) {
             if (tokens[i].rfind("frD=", 0) == 0) {
-                dfp_dest = stoul(tokens[i].substr(4), NULL, 16);
+                dest_64 = stoull(tokens[i].substr(4), NULL, 16);
             } else if (tokens[i].rfind("frA=", 0) == 0) {
-                dfp_src1 = stoul(tokens[i].substr(4), NULL, 16);
+                dfp_src1 = stod(tokens[i].substr(4), NULL);
             } else if (tokens[i].rfind("frB=", 0) == 0) {
-                dfp_src2 = stoul(tokens[i].substr(4), NULL, 16);
+                dfp_src2 = stod(tokens[i].substr(4), NULL);
             } else if (tokens[i].rfind("frC=", 0) == 0) {
-                dfp_src3 = stoul(tokens[i].substr(4), NULL, 16);
+                dfp_src3 = stod(tokens[i].substr(4), NULL);
             } else if (tokens[i].rfind("round=", 0) == 0) {
                 rounding_mode = tokens[i].substr(6, 3);
                 ppc_state.fpscr &= 0xFFFFFFFC;
                 if (rounding_mode.compare("RTN") == 0) {
-                    ppc_state.fpscr |= 0x0;
+                    ppc_state.fpscr = 0x0;
                 } else if (rounding_mode.compare("RTZ") == 0) {
-                    ppc_state.fpscr |= 0x1;
+                    ppc_state.fpscr = 0x1;
                 } else if (rounding_mode.compare("RPI") == 0) {
-                    ppc_state.fpscr |= 0x2;
+                    ppc_state.fpscr = 0x2;
                 } else if (rounding_mode.compare("RNI") == 0) {
-                    ppc_state.fpscr |= 0x3;
+                    ppc_state.fpscr = 0x3;
+                } else if (rounding_mode.compare("VEN") == 0) {
+                    ppc_state.fpscr = FPSCR::VE;
                 } else {
                     cout << "ILLEGAL ROUNDING METHOD: " << tokens[i] << " in line " << lineno
                          << ". Exiting..." << endl;
                     exit(0);
                 }
             } else if (tokens[i].rfind("FPSCR=", 0) == 0) {
-                check_cr = stoul(tokens[i].substr(6), NULL, 16);
+                check_fpscr = stoul(tokens[i].substr(6), NULL, 16);
             } else if (tokens[i].rfind("CR=", 0) == 0) {
                 check_cr = stoul(tokens[i].substr(3), NULL, 16);
             } else {
@@ -239,7 +242,6 @@ static void read_test_float_data() {
         ppc_state.fpr[4].dbl64_r = dfp_src2;
         ppc_state.fpr[5].dbl64_r = dfp_src3;
 
-        ppc_state.spr[SPR::XER] = 0;
         ppc_state.cr            = 0;
 
         ppc_cur_instruction = opcode;
@@ -248,13 +250,14 @@ static void read_test_float_data() {
 
         ntested++;
 
-        if ((tokens[0].rfind("FCMP") && (ppc_state.gpr[3] != dest)) || (ppc_state.fpscr != check_fpscr) ||
+        if ((tokens[0].rfind("FCMP") && (ppc_state.fpr[3].int64_r != dest_64)) ||
+            (ppc_state.fpscr != check_fpscr) ||
             (ppc_state.cr != check_cr)) {
-            cout << "Mismatch: instr=" << tokens[0] << ", src1=0x" << hex << src1 << ", src2=0x" << hex
-                << src2 << endl;
-            cout << "expected: dest=0x" << hex << dest << ", FPSCR=0x" << hex << check_xer << ", CR=0x"
+            cout << "Mismatch: instr=" << tokens[0] << ", src1=" << scientific << dfp_src1 << ", src2=" << scientific << dfp_src2 << ", src3=" << scientific << dfp_src3 << endl;
+            cout << "expected: dest=0x" << hex << dest_64 << ", FPSCR=0x" << hex << check_fpscr
+                 << ", CR=0x"
                 << hex << check_cr << endl;
-            cout << "got: dest=0x" << hex << ppc_state.gpr[3] << ", FPSCR=0x" << hex
+            cout << "got: dest=0x" << hex << ppc_state.fpr[3].int64_r << ", FPSCR=0x" << hex
                  << ppc_state.fpscr << ", CR=0x" << hex << ppc_state.cr << endl;
             cout << "Test file line #: " << dec << lineno << endl << endl;
 

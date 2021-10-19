@@ -253,8 +253,7 @@ void ppc_opcode31() {
     oe_flag = ppc_cur_instruction & 0x400;
 
 #ifdef EXHAUSTIVE_DEBUG
-    uint32_t regrab = (uint32_t)subop_grab;
-    LOG_F(INFO, "Executing Opcode 63 table subopcode entry \n", regrab);
+    LOG_F(INFO, "Executing Opcode 31 table subopcode entry %n \n", (uint32_t)subop_grab);
 #endif    // EXHAUSTIVE_DEBUG
 
     SubOpcode31Grabber[subop_grab]();
@@ -264,8 +263,7 @@ void ppc_opcode59() {
     uint16_t subop_grab = (ppc_cur_instruction >> 1) & 0x1F;
     rc_flag             = ppc_cur_instruction & 1;
 #ifdef EXHAUSTIVE_DEBUG
-    uint32_t regrab = (uint32_t)subop_grab;
-    LOG_F(INFO, "Executing Opcode 59 table subopcode entry \n", regrab);
+    LOG_F(INFO, "Executing Opcode 59 table subopcode entry %n \n", (uint32_t)subop_grab);
 #endif    // EXHAUSTIVE_DEBUG
     SubOpcode59Grabber[subop_grab]();
 }
@@ -274,8 +272,7 @@ void ppc_opcode63() {
     uint16_t subop_grab = (ppc_cur_instruction >> 1) & 0x3FF;
     rc_flag             = ppc_cur_instruction & 1;
 #ifdef EXHAUSTIVE_DEBUG
-    uint32_t regrab = (uint32_t)subop_grab;
-    LOG_F(INFO, "Executing Opcode 63 table subopcode entry \n", regrab);
+    LOG_F(INFO, "Executing Opcode 63 table subopcode entry %n \n", (uint32_t)subop_grab);
 #endif    // EXHAUSTIVE_DEBUG
     SubOpcode63Grabber[subop_grab]();
 }

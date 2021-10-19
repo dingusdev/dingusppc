@@ -200,6 +200,71 @@ enum class BB_end_kind {
     BB_RFI         /* the rfi instruction is encountered  */
 };
 
+enum CR_select : int32_t {
+    CR0_field = (0xF << 28),
+    CR1_field = (0xF << 24),
+};
+
+enum CRx_bit : uint32_t {
+    CR_SO = 0,
+    CR_EQ,
+    CR_GT,
+    CR_LT
+};
+
+enum CR1_bit : uint32_t {
+    CR1_OX = 24, 
+    CR1_VX,
+    CR1_FEX,
+    CR1_FX,
+};
+
+enum FPSCR : uint32_t {
+    RN = 0x3,
+    NI = 0x4,
+    XE = 0x8,
+    ZE = 0x10,
+    UE = 0x20,
+    OE = 0x40,
+    VE = 0x80,
+    VXCVI = 0x100,
+    VXSQRT = 0x200,
+    VXSOFT = 0x400,
+    FPRF   = 0x1F000,
+    FPCC_FUNAN = 0x10000,
+    FPCC_NEG   = 0x8000,
+    FPCC_POS   = 0x4000,
+    FPCC_ZERO  = 0x2000,
+    FPCC_FPRCD = 0x1000,
+    FI         = 0x20000,
+    FR         = 0x40000,
+    VXVC       = 0x80000,
+    VXIMZ      = 0x100000,
+    VXZDZ      = 0x200000,
+    VXIDI      = 0x400000,
+    VXISI      = 0x800000,
+    VXSNAN     = 0x1000000,
+    XX         = 0x2000000,
+    ZX         = 0x4000000,
+    UX         = 0x8000000,
+    OX         = 0x10000000,
+    VX         = 0x20000000,
+    FEX        = 0x40000000,
+    FX         = 0x80000000
+};
+
+//for inf and nan checks
+enum FPOP : int {
+    DIV  = 0x12,
+    SUB  = 0x14,
+    ADD  = 0x15,
+    MUL   = 0x19,
+    FMSUB = 0x1C, 
+    FMADD = 0x1D,
+    FNMSUB = 0x1E,
+    FNMADD = 0x1F,
+};
+
 /** PowerPC exception types. */
 enum class Except_Type {
     EXC_SYSTEM_RESET = 1,
@@ -271,7 +336,6 @@ void ppc_opcode63();
 
 void initialize_ppc_opcode_tables();
 
-extern bool ppc_confirm_inf_nan(uint64_t input_a, uint64_t input_b, bool is_single, uint32_t op);
 extern double fp_return_double(uint32_t reg);
 extern uint64_t fp_return_uint64(uint32_t reg);
 
@@ -416,15 +480,10 @@ extern void ppc_mtspr();
 extern void ppc_mtfsb0();
 extern void ppc_mtfsb1();
 extern void ppc_mcrfs();
-extern void ppc_mtfsb0dot();
-extern void ppc_mtfsb1dot();
 extern void ppc_fmr();
 extern void ppc_mffs();
-extern void ppc_mffsdot();
 extern void ppc_mtfsf();
-extern void ppc_mtfsfdot();
 extern void ppc_mtfsfi();
-extern void ppc_mtfsfidot();
 
 extern void ppc_addi();
 extern void ppc_addic();
