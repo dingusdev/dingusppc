@@ -151,15 +151,6 @@ void ppc_fp_changecrf1() {
     ppc_state.fpscr |= 0xf0000000;
 }
 
-void ppc_divbyzero(uint64_t input_a, uint64_t input_b, bool is_single) {
-    if (input_b == 0) {
-        ppc_state.fpscr |= 0x84000000;
-        if (input_a == 0) {
-            ppc_state.fpscr |= 0x200000;
-        }
-    }
-}
-
 int64_t round_to_nearest(double f) {
     if (f >= 0.0) {
         return static_cast<int32_t>(static_cast<int64_t> (ceil(f)));
@@ -186,7 +177,7 @@ void update_fex() {
 }
 
 template <typename T, const FPOP fpop>
-void ppc_confirm_inf_nan(int chosen_reg_1, int chosen_reg_2, int chosen_reg_3) {
+void ppc_confirm_inf_nan(int chosen_reg_1, int chosen_reg_2, int chosen_reg_3, bool rc_flag = false) {
     T input_a = T(ppc_state.fpr[chosen_reg_1].int64_r);
     T input_b = T(ppc_state.fpr[chosen_reg_2].int64_r);
     T input_c = T(ppc_state.fpr[chosen_reg_3].int64_r);
@@ -238,7 +229,7 @@ void ppc_confirm_inf_nan(int chosen_reg_1, int chosen_reg_2, int chosen_reg_3) {
         case FPOP::FMADD:
         case FPOP::FNMADD:
             if (isnan(input_a) || isnan(input_b) || isnan(input_c)) {
-                ppc_state.fpscr |= FPSCR::VXSNAN;
+                ppc_state.fpscr |= (FPSCR::VXSNAN | FPSCR::FPCC_FUNAN);
             }
             update_fex();
             break;
@@ -248,26 +239,26 @@ void ppc_confirm_inf_nan(int chosen_reg_1, int chosen_reg_2, int chosen_reg_3) {
 void fpresult_update(double set_result, bool confirm_arc) {
     bool confirm_ov = (bool)std::fetestexcept(FE_OVERFLOW);
 
+    if (ppc_state.fpscr & 0x3)
+        ppc_state.cr |= 0x2;
+
+    if (set_result > 0.0) {
+        ppc_state.fpscr |= FPSCR::FPCC_POS;
+    } else if (set_result < 0.0) {
+        ppc_state.fpscr |= FPSCR::FPCC_NEG;
+    } else if (set_result == 0.0) {
+        ppc_state.fpscr |= FPSCR::FPCC_ZERO;
+    } else {
+        ppc_state.fpscr |= FPSCR::FPCC_FPRCD;
+    }
+
     if (confirm_ov) {
         ppc_state.fpscr |= (FPSCR::FX | (FPSCR::FPRF & FPSCR::FPCC_FUNAN));
     }
 
     if (confirm_arc) {
         ppc_state.fpscr |= (FPSCR::FX | (FPSCR::FPRF & FPSCR::FPCC_FUNAN));
-        ppc_state.fpscr &= 0xFFFF0FFF;
-
-
-        if (set_result == 0.0) {
-            ppc_state.fpscr |= FPSCR::FPCC_NEG;
-        } else {
-            if (set_result < 0.0) {
-                ppc_state.fpscr |= FPSCR::FPCC_ZERO;
-            } else if (set_result > 0.0) {
-                ppc_state.fpscr |= FPSCR::FPCC_POS;
-            } else {
-                ppc_state.fpscr |= FPSCR::FPCC_FPRCD;
-            }
-        }
+        //ppc_state.fpscr &= 0xFFFF0FFF;
     }
 }
 
@@ -284,8 +275,9 @@ void dppc_interpreter::ppc_fadd() {
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_dfpresult_flt(reg_d);
+        fpresult_update(ppc_dblresult64_d, rc_flag);
     } else {
-        ppc_confirm_inf_nan<double, ADD>(reg_a, reg_b, 0);
+        ppc_confirm_inf_nan<double, ADD>(reg_a, reg_b, 0, rc_flag);
     }
 
     if (rc_flag)
@@ -299,8 +291,9 @@ void dppc_interpreter::ppc_fsub() {
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_dfpresult_flt(reg_d);
+        fpresult_update(ppc_dblresult64_d, rc_flag);
     } else {
-        ppc_confirm_inf_nan<double, SUB>(reg_a, reg_b, 0);
+        ppc_confirm_inf_nan<double, SUB>(reg_a, reg_b, 0, rc_flag);
     }
 
     if (rc_flag)
@@ -314,8 +307,9 @@ void dppc_interpreter::ppc_fdiv() {
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_dfpresult_flt(reg_d);
+        fpresult_update(ppc_dblresult64_d, rc_flag);
     } else {
-        ppc_confirm_inf_nan<double, DIV>(reg_a, reg_b, 0);
+        ppc_confirm_inf_nan<double, DIV>(reg_a, reg_b, 0, rc_flag);
     }
 
     if (rc_flag)
@@ -329,8 +323,9 @@ void dppc_interpreter::ppc_fmul() {
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_dfpresult_flt(reg_d);
+        fpresult_update(ppc_dblresult64_d, rc_flag);
     } else {
-        ppc_confirm_inf_nan<double, MUL>(reg_a, reg_b, 0);
+        ppc_confirm_inf_nan<double, MUL>(reg_a, reg_b, 0, rc_flag);
     }
 
     if (rc_flag)
@@ -344,6 +339,7 @@ void dppc_interpreter::ppc_fmadd() {
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_dfpresult_flt(reg_d);
+        fpresult_update(ppc_dblresult64_d, rc_flag);
     } else {
         ppc_confirm_inf_nan<double, FMADD>(reg_a, reg_b, reg_c);
     }
@@ -360,6 +356,7 @@ void dppc_interpreter::ppc_fmsub() {
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_dfpresult_flt(reg_d);
+        fpresult_update(ppc_dblresult64_d, rc_flag);
     } else {
         ppc_confirm_inf_nan<double, FMSUB>(reg_a, reg_b, reg_c);
     }
@@ -373,10 +370,10 @@ void dppc_interpreter::ppc_fnmadd() {
 
     ppc_dblresult64_d = (val_reg_a * val_reg_c);
     ppc_dblresult64_d += val_reg_b;
-    ppc_dblresult64_d = -ppc_dblresult64_d;
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_dfpresult_flt(reg_d);
+        fpresult_update(ppc_dblresult64_d, rc_flag);
     }
     else {
         ppc_confirm_inf_nan<double, FNMADD>(reg_a, reg_b, reg_c);
@@ -391,9 +388,11 @@ void dppc_interpreter::ppc_fnmsub() {
 
     ppc_dblresult64_d = (val_reg_a * val_reg_c);
     ppc_dblresult64_d -= val_reg_b;
+    ppc_dblresult64_d = -ppc_dblresult64_d;
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_dfpresult_flt(reg_d);
+        fpresult_update(ppc_dblresult64_d, rc_flag);
     } else {
         ppc_confirm_inf_nan<double, FNMSUB>(reg_a, reg_b, reg_c);
     }
@@ -410,6 +409,7 @@ void dppc_interpreter::ppc_fadds() {
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_sfpresult_flt(reg_d);
+        fpresult_update(ppc_dblresult64_d, rc_flag);
     } else {
         ppc_confirm_inf_nan<float, ADD>(reg_a, reg_b, 0);
     }
@@ -426,6 +426,7 @@ void dppc_interpreter::ppc_fsubs() {
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_sfpresult_flt(reg_d);
+        fpresult_update(ppc_dblresult64_d, rc_flag);
     } else {
         ppc_confirm_inf_nan<float, SUB>(reg_a, reg_b, 0);
     }
@@ -442,6 +443,7 @@ void dppc_interpreter::ppc_fdivs() {
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_sfpresult_flt(reg_d);
+        fpresult_update(ppc_dblresult64_d, rc_flag);
     } else {
         ppc_confirm_inf_nan<float, DIV>(reg_a, reg_b, 0);
     }
@@ -458,6 +460,7 @@ void dppc_interpreter::ppc_fmuls() {
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_sfpresult_flt(reg_d);
+        fpresult_update(ppc_dblresult64_d, rc_flag);
     } else {
         ppc_confirm_inf_nan<float, MUL>(reg_a, 0, reg_c);
     }
@@ -474,6 +477,7 @@ void dppc_interpreter::ppc_fmadds() {
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_sfpresult_flt(reg_d);
+        fpresult_update(ppc_dblresult64_d, rc_flag);
     } else {
         ppc_confirm_inf_nan<float, FMADD>(reg_a, reg_b, reg_c);
     }
@@ -491,6 +495,7 @@ void dppc_interpreter::ppc_fmsubs() {
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_sfpresult_flt(reg_d);
+        fpresult_update(ppc_dblresult64_d, rc_flag);
     } else {
         ppc_confirm_inf_nan<float, FMSUB>(reg_a, reg_b, reg_c);
     }
@@ -509,6 +514,7 @@ void dppc_interpreter::ppc_fnmadds() {
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_sfpresult_flt(reg_d);
+        fpresult_update(ppc_dblresult64_d, rc_flag);
     } else {
         ppc_confirm_inf_nan<float, FNMADD>(reg_a, reg_b, reg_c);
     }
@@ -528,6 +534,7 @@ void dppc_interpreter::ppc_fnmsubs() {
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_sfpresult_flt(reg_d);
+        fpresult_update(ppc_dblresult64_d, rc_flag);
     } else {
         ppc_confirm_inf_nan<float, FNMSUB>(reg_a, reg_b, reg_c);
     }

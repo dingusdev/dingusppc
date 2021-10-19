@@ -148,7 +148,7 @@ static void read_test_float_data() {
     int i, lineno;
 
     uint32_t opcode, dest, src1, src2, check_xer, check_cr, check_fpscr;
-    //uint64_t dest_64, src1_64, src2_64;
+    uint64_t dest_64, src1_64, src2_64;
     //float sfp_dest, sfp_src1, sfp_src2, sfp_src3;
     double dfp_dest, dfp_src1, dfp_src2, dfp_src3;
     string rounding_mode;
@@ -195,10 +195,11 @@ static void read_test_float_data() {
         dfp_src1    = 0.0;
         dfp_src2    = 0.0;
         dfp_src3    = 0.0;
+        dest_64     = 0;
 
         for (i = 2; i < tokens.size(); i++) {
             if (tokens[i].rfind("frD=", 0) == 0) {
-                dfp_dest = stoull(tokens[i].substr(4), NULL, 16);
+                dest_64 = stoull(tokens[i].substr(4), NULL, 16);
             } else if (tokens[i].rfind("frA=", 0) == 0) {
                 dfp_src1 = stod(tokens[i].substr(4), NULL);
             } else if (tokens[i].rfind("frB=", 0) == 0) {
@@ -209,15 +210,15 @@ static void read_test_float_data() {
                 rounding_mode = tokens[i].substr(6, 3);
                 ppc_state.fpscr &= 0xFFFFFFFC;
                 if (rounding_mode.compare("RTN") == 0) {
-                    ppc_state.fpscr |= 0x0;
+                    ppc_state.fpscr = 0x0;
                 } else if (rounding_mode.compare("RTZ") == 0) {
-                    ppc_state.fpscr |= 0x1;
+                    ppc_state.fpscr = 0x1;
                 } else if (rounding_mode.compare("RPI") == 0) {
-                    ppc_state.fpscr |= 0x2;
+                    ppc_state.fpscr = 0x2;
                 } else if (rounding_mode.compare("RNI") == 0) {
-                    ppc_state.fpscr |= 0x3;
+                    ppc_state.fpscr = 0x3;
                 } else if (rounding_mode.compare("VEN") == 0) {
-                    ppc_state.fpscr |= FPSCR::VE;
+                    ppc_state.fpscr = FPSCR::VE;
                 } else {
                     cout << "ILLEGAL ROUNDING METHOD: " << tokens[i] << " in line " << lineno
                          << ". Exiting..." << endl;
@@ -249,14 +250,14 @@ static void read_test_float_data() {
 
         ntested++;
 
-        if ((tokens[0].rfind("FCMP") && (ppc_state.fpr[3].dbl64_r != dfp_dest)) ||
+        if ((tokens[0].rfind("FCMP") && (ppc_state.fpr[3].int64_r != dest_64)) ||
             (ppc_state.fpscr != check_fpscr) ||
             (ppc_state.cr != check_cr)) {
             cout << "Mismatch: instr=" << tokens[0] << ", src1=" << scientific << dfp_src1 << ", src2=" << scientific << dfp_src2 << ", src3=" << scientific << dfp_src3 << endl;
-            cout << "expected: dest=0x" << hex << dfp_dest << ", FPSCR=0x" << hex << check_fpscr
+            cout << "expected: dest=0x" << hex << dest_64 << ", FPSCR=0x" << hex << check_fpscr
                  << ", CR=0x"
                 << hex << check_cr << endl;
-            cout << "got: dest=0x" << hex << ppc_state.fpr[3].dbl64_r << ", FPSCR=0x" << hex
+            cout << "got: dest=0x" << hex << ppc_state.fpr[3].int64_r << ", FPSCR=0x" << hex
                  << ppc_state.fpscr << ", CR=0x" << hex << ppc_state.cr << endl;
             cout << "Test file line #: " << dec << lineno << endl << endl;
 

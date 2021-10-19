@@ -416,31 +416,31 @@ if __name__ == "__main__":
                 while pos < len(line):
                     if (line[pos].isalnum()):
                         checkstring += line[pos]
-
+                        
                     if ("RTN" in checkstring):
-                        out_file.write(",round=RTN")
-                        checkstring = ''
+                        if (line[pos+1:pos+2] == "I"):
+                            out_file.write(",round=RNI")
+                            checkstring = ''
+                        else:
+                            out_file.write(",round=RTN")
+                            checkstring = ''
                         pos += 1
-                    if ("RTZ" in checkstring):
+                    elif ("RTZ" in checkstring):
                         out_file.write(",round=RTZ")
                         checkstring = ''
                         pos += 1
-                    if ("RTPI" in checkstring):
+                    elif ("RTPI" in checkstring):
                         out_file.write(",round=RPI")
                         checkstring = ''
                         pos += 1
-                    if ("RTNI" in checkstring):
-                        out_file.write(",round=RNI")
-                        checkstring = ''
-                        pos += 1
-                    if ("VE" in checkstring):
+                    elif ("VE" in checkstring):
                         out_file.write(",round=VEN")
                         checkstring = ''
                         pos += 1
-                    if ("frD" in checkstring):
+                    elif ("frD" in checkstring):
                         out_file.write(",frD=0x" + line[pos+4:pos+20])
                         checkstring = ''
-                    if ("frA" in checkstring): #sloppy temp code
+                    elif ("frA" in checkstring): #sloppy temp code
                         check2 = line[pos+1:pos+10]
                         if ("-inf" in check2):
                             out_file.write(",frA=-inf")
@@ -463,7 +463,7 @@ if __name__ == "__main__":
                             get_pos = line[pos+2:pos+15]
                             out_file.write(",frA=" + get_pos.strip())
                         checkstring = ''
-                    if ("frB" in checkstring): #sloppy temp code
+                    elif ("frB" in checkstring): #sloppy temp code
                         check2 = line[pos+1:pos+10]
                         if ("-inf" in check2):
                             out_file.write(",frB=-inf")
@@ -486,7 +486,7 @@ if __name__ == "__main__":
                             get_pos = line[pos+2:pos+15]
                             out_file.write(",frB=" + get_pos.strip())
                         checkstring = ''
-                    if ("frC" in checkstring): #sloppy temp code
+                    elif ("frC" in checkstring): #sloppy temp code
                         check2 = line[pos+1:pos+10]
                         if ("-inf" in check2):
                             out_file.write(",frC=-inf")
@@ -509,10 +509,10 @@ if __name__ == "__main__":
                             get_pos = line[pos+2:pos+15]
                             out_file.write(",frC=" + get_pos.strip())
                         checkstring = ''
-                    if ("FPSCR" in checkstring):
+                    elif ("FPSCR" in checkstring):
                         out_file.write(",FPSCR=" + line[pos+3:pos+13])
                         checkstring = ''
-                    if ("CR" in checkstring):
+                    elif ("CR" in checkstring):
                         out_file.write(",CR=0x0" + line[pos+6:pos+14])
                         checkstring = ''
                     pos += 1
