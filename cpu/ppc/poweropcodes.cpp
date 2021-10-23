@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-20 divingkatae and maximum
+Copyright (C) 2018-21 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -42,7 +42,7 @@ inline void power_setsoov(uint32_t a, uint32_t b, uint32_t d) {
     }
 }
 
-/** mask generator for rotate and shift instructions (ง 4.2.1.4 PowerpC PEM) */
+/** mask generator for rotate and shift instructions (ยง 4.2.1.4 PowerpC PEM) */
 static inline uint32_t power_rot_mask(unsigned rot_mb, unsigned rot_me) {
     uint32_t m1 = 0xFFFFFFFFUL >> rot_mb;
     uint32_t m2 = 0xFFFFFFFFUL << (31 - rot_me);
@@ -154,9 +154,9 @@ void dppc_interpreter::power_lscbx() {
             ppc_result_d = 0xFFFFFFFF;
             ppc_store_result_regd();
         }
-        
 
-        switch (byte_offset) { 
+
+        switch (byte_offset) {
         case 0:
             bitmask      = 0x00FFFFFF;
             shift_amount = 24;
@@ -174,7 +174,7 @@ void dppc_interpreter::power_lscbx() {
             shift_amount = 0;
             break;
         }
-        
+
         return_value = mmu_read_vmem<uint8_t>(ppc_effective_address);
         // return_value = mem_grab_byte(ppc_effective_address);
         ppc_result_d = (ppc_result_d & bitmask) | (return_value << shift_amount);
@@ -185,7 +185,7 @@ void dppc_interpreter::power_lscbx() {
             //Match has been found - Time to break out
             break;
         }
-            
+
         byte_offset += 8;
 
         if (byte_offset == 32) {
@@ -211,10 +211,10 @@ void dppc_interpreter::power_maskg() {
 
     if (mask_start < (mask_end + 1)) {
         insert_mask = power_rot_mask(mask_start, mask_end);
-    } 
+    }
     else if (mask_start == (mask_end + 1)) {
         insert_mask = 0xFFFFFFFF;
-    } 
+    }
     else {
         insert_mask = ~(power_rot_mask(mask_end + 1, mask_start - 1));
     }
@@ -359,7 +359,7 @@ void dppc_interpreter::power_sllq() {
 
     if (ppc_result_b >= 0x20) {
         ppc_result_a = (ppc_state.spr[SPR::MQ] & mask);
-    } 
+    }
     else {
         ppc_result_a = ((r & mask) | (ppc_state.spr[SPR::MQ] & ~mask));
     }
@@ -508,7 +508,7 @@ void dppc_interpreter::power_srlq() {
 
     if (ppc_result_b >= 0x20) {
         ppc_result_a = (ppc_state.spr[SPR::MQ] & mask);
-    } 
+    }
     else {
         ppc_result_a = ((r & mask) | (ppc_state.spr[SPR::MQ] & ~mask));
     }
