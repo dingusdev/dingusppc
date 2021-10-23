@@ -24,11 +24,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef PPCMMU_H
 #define PPCMMU_H
 
+#include <devices/memctrl/memctrlbase.h>
+
 #include <array>
 #include <cinttypes>
 #include <functional>
 #include <vector>
-#include "devices/memctrlbase.h"
 
 /* Uncomment this to exhaustive MMU integrity checks. */
 //#define MMU_INTEGRITY_CHECKS

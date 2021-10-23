@@ -79,7 +79,8 @@ add_subdirectory(thirdparty/cubeb EXCLUDE_FROM_ALL)
 
 set(CLI11_ROOT ${PROJECT_SOURCE_DIR}/thirdparty/CLI11)
 
-include_directories("${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/devices"
+include_directories("${PROJECT_SOURCE_DIR}"
+                    "${PROJECT_SOURCE_DIR}/devices"
                     "${PROJECT_SOURCE_DIR}/cpu/ppc"
                     "${PROJECT_SOURCE_DIR}/debugger"
                     "${PROJECT_SOURCE_DIR}/utils"

@@ -24,10 +24,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     Author: Max Poliakovski
  */
 
-#include "machinefactory.h"
-#include "devices/memctrlbase.h"
-#include "memaccess.h"
-#include "machineproperties.h"
+#include <devices/memctrl/memctrlbase.h>
+#include <loguru.hpp>
+#include <machines/machinefactory.h>
+#include <machines/machineproperties.h>
+#include <memaccess.h>
+
 #include <cinttypes>
 #include <cstring>
 #include <fstream>
@@ -38,7 +40,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memory>
 #include <string>
 #include <vector>
-#include <loguru.hpp>
 
 using namespace std;
 

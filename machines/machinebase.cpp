@@ -1,9 +1,10 @@
-#include "machinebase.h"
-#include "devices/hwcomponent.h"
+#include <devices/common/hwcomponent.h>
+#include <loguru.hpp>
+#include <machines/machinebase.h>
+
 #include <map>
 #include <memory>
 #include <string>
-#include <loguru.hpp>
 
 std::unique_ptr<MachineBase> gMachineObj = 0;
 

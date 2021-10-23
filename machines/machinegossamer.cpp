@@ -24,17 +24,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     Author: Max Poliakovski
  */
 
-#include "cpu/ppc/ppcemu.h"
-#include "devices/atirage.h"
-#include "devices/machineid.h"
-#include "devices/soundserver.h"
-#include "devices/macio.h"
-#include "devices/mpc106.h"
-#include "devices/spdram.h"
-#include "devices/viacuda.h"
-#include "machinebase.h"
-#include "machineproperties.h"
+#include <cpu/ppc/ppcemu.h>
+#include <devices/common/machineid.h>
+#include <devices/ioctrl/macio.h>
+#include <devices/memctrl/mpc106.h>
+#include <devices/memctrl/spdram.h>
+#include <devices/sound/soundserver.h>
+#include <devices/video/atirage.h>
 #include <loguru.hpp>
+#include <machines/machinebase.h>
+#include <machines/machineproperties.h>
+
 #include <string>
 
 

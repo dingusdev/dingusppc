@@ -22,8 +22,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef PPCEMU_H
 #define PPCEMU_H
 
-#include "devices/memctrlbase.h"
-#include "endianswap.h"
+#include <devices/memctrl/memctrlbase.h>
+#include <endianswap.h>
+
 #include <cinttypes>
 #include <functional>
 #include <setjmp.h>
@@ -213,7 +214,7 @@ enum CRx_bit : uint32_t {
 };
 
 enum CR1_bit : uint32_t {
-    CR1_OX = 24, 
+    CR1_OX = 24,
     CR1_VX,
     CR1_FEX,
     CR1_FX,
@@ -259,7 +260,7 @@ enum FPOP : int {
     SUB  = 0x14,
     ADD  = 0x15,
     MUL   = 0x19,
-    FMSUB = 0x1C, 
+    FMSUB = 0x1C,
     FMADD = 0x1D,
     FNMSUB = 0x1E,
     FNMADD = 0x1F,

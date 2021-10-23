@@ -19,31 +19,20 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/** @file Factory for creating different machines.
+#ifndef MMIO_DEVICE_H
+#define MMIO_DEVICE_H
 
-    Author: Max Poliakovski
- */
+#include <devices/common/hwcomponent.h>
 
-#ifndef MACHINE_FACTORY_H
-#define MACHINE_FACTORY_H
-
-#include <machines/machinebase.h>
-
-#include <fstream>
+#include <cinttypes>
 #include <string>
 
-using namespace std;
+/** Abstract class representing a simple, memory-mapped I/O device */
+class MMIODevice : public HWComponent {
+public:
+    virtual uint32_t read(uint32_t reg_start, uint32_t offset, int size)              = 0;
+    virtual void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size) = 0;
+    virtual ~MMIODevice()                                                             = default;
+};
 
-std::string machine_name_from_rom(std::string& rom_filepath);
-
-int  get_machine_settings(string& id, map<string, string> &settings);
-void set_machine_settings(map<string, string> &settings);
-int  create_machine_for_id(string& id, string& rom_filepath);
-void list_machines(void);
-void list_properties(void);
-
-/* Machine-specific factory functions. */
-int create_gossamer(string& id);
-int create_pdm(string& id);
-
-#endif /* MACHINE_FACTORY_H */
+#endif /* MMIO_DEVICE_H */

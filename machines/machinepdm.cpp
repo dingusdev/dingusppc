@@ -24,14 +24,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     Author: Max Poliakovski
  */
 
-#include "cpu/ppc/ppcemu.h"
-#include "devices/amic.h"
-#include "devices/hmc.h"
-#include "devices/machineid.h"
-#include "devices/soundserver.h"
-#include "machinebase.h"
-#include "machineproperties.h"
+#include <cpu/ppc/ppcemu.h>
+#include <devices/common/machineid.h>
+#include <devices/ioctrl/amic.h>
+#include <devices/memctrl/hmc.h>
+#include <devices/sound/soundserver.h>
 #include <loguru.hpp>
+#include <machines/machinebase.h>
+#include <machines/machineproperties.h>
+
 #include <string>
 
 int create_pdm(std::string& id) {

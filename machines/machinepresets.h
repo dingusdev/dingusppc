@@ -1,4 +1,5 @@
-#include "machineproperties.h"
+#include <machines/machineproperties.h>
+
 #include <map>
 
 static std::map<std::string, StrProperty> PowerMac6100_Properties = {

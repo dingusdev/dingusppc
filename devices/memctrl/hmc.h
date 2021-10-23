@@ -19,31 +19,38 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/** @file Factory for creating different machines.
+/** Highspeed Memory Controller emulation.
 
     Author: Max Poliakovski
- */
 
-#ifndef MACHINE_FACTORY_H
-#define MACHINE_FACTORY_H
+    Highspeed Memory Controller (HMC) is a custom memory
+    and L2 cache controller designed especially for the
+    first generation of the PowerMacintosh computer.
+*/
 
-#include <machines/machinebase.h>
+#ifndef HMC_H
+#define HMC_H
 
-#include <fstream>
-#include <string>
+#include <devices/common/hwcomponent.h>
+#include <devices/common/mmiodevice.h>
+#include <devices/memctrl/memctrlbase.h>
 
-using namespace std;
+#include <cinttypes>
 
-std::string machine_name_from_rom(std::string& rom_filepath);
+class HMC : public MemCtrlBase, public MMIODevice {
+public:
+    HMC();
+    ~HMC() = default;
 
-int  get_machine_settings(string& id, map<string, string> &settings);
-void set_machine_settings(map<string, string> &settings);
-int  create_machine_for_id(string& id, string& rom_filepath);
-void list_machines(void);
-void list_properties(void);
+    bool supports_type(HWCompType type);
 
-/* Machine-specific factory functions. */
-int create_gossamer(string& id);
-int create_pdm(string& id);
+    /* MMIODevice methods */
+    uint32_t read(uint32_t reg_start, uint32_t offset, int size);
+    void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size);
 
-#endif /* MACHINE_FACTORY_H */
+private:
+    int      bit_pos;
+    uint64_t config_reg;
+};
+
+#endif // HMC_H

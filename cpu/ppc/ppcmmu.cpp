@@ -21,10 +21,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file PowerPC Memory Management Unit emulation. */
 
-#include "ppcmmu.h"
-#include "devices/memctrlbase.h"
-#include "memaccess.h"
+#include <devices/memctrl/memctrlbase.h>
+#include <memaccess.h>
 #include "ppcemu.h"
+#include "ppcmmu.h"
+
 #include <array>
 #include <cinttypes>
 #include <functional>
