@@ -140,19 +140,21 @@ def gen_ppc_opcode(opc_str, imm):
     elif opc_str == "FMADDS.":
         return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (5 << 6) + (0x1D << 1) + 1
     elif opc_str == "FMUL":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 6) + (0x19 << 1)
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (5 << 6) + (0x19 << 1)
     elif opc_str == "FMUL.":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 6) + (0x19 << 1) + 1
+        return (0x3F << 26) + (3 << 21) + (3 << 16) + (5 << 6) + (0x19 << 1) + 1
     elif opc_str == "FMULS":
-        return (0x3B << 26) + (3 << 21) + (3 << 16) + (4 << 6) + (0x19 << 1)
+        return (0x3B << 26) + (3 << 21) + (3 << 16) + (5 << 6) + (0x19 << 1)
     elif opc_str == "FMULS.":
-        return (0x3B << 26) + (3 << 21) + (3 << 16) + (4 << 6) + (0x19 << 1) + 1
+        return (0x3B << 26) + (3 << 21) + (3 << 16) + (5 << 6) + (0x19 << 1) + 1
     elif opc_str == "FNABS":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 6) + (0x88 << 1)
+        return (0x3F << 26) + (3 << 21) + (4 << 11) + (0x88 << 1)
     elif opc_str == "FNABS.":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 6) + (0x88 << 1) + 1
+        return (0x3F << 26) + (3 << 21) + (4 << 11) + (0x88 << 1) + 1
     elif opc_str == "FNEG":
-        return (0x3B << 26) + (3 << 21) + (3 << 16) + (4 << 6) + (0x28 << 1)
+        return (0x3B << 26) + (3 << 21) + (4 << 11) + (0x28 << 1)
+    elif opc_str == "FNEG.":
+        return (0x3B << 26) + (3 << 21) + (4 << 11) + (0x28 << 1) + 1
     elif opc_str == "FMULS.":
         return (0x3B << 26) + (3 << 21) + (3 << 16) + (4 << 6) + (0x28 << 1) + 1
     elif opc_str == "FMSUB":

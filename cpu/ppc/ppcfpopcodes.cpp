@@ -217,7 +217,7 @@ void ppc_confirm_inf_nan(int chosen_reg_1, int chosen_reg_2, int chosen_reg_3, b
         case FPOP::FMSUB:
         case FPOP::FNMSUB:
             if (isnan(input_a) || isnan(input_b) || isnan(input_c)) {
-                ppc_state.fpscr |= FPSCR::VXSNAN;
+                ppc_state.fpscr |= (FPSCR::FX | FPSCR::VXSNAN);
                 if (((input_a == FP_ZERO) && (input_c == FP_INFINITE)) ||
                     ((input_c == FP_ZERO) && (input_a == FP_INFINITE))) {
                     ppc_state.fpscr |= FPSCR::VXIMZ;
@@ -253,11 +253,11 @@ void fpresult_update(double set_result, bool confirm_arc) {
     }
 
     if (confirm_ov) {
-        ppc_state.fpscr |= (FPSCR::FX | (FPSCR::FPRF & FPSCR::FPCC_FUNAN));
+    //    ppc_state.fpscr |= (FPSCR::FX | (FPSCR::FPRF & FPSCR::FPCC_FUNAN));
     }
 
     if (confirm_arc) {
-        ppc_state.fpscr |= (FPSCR::FX | (FPSCR::FPRF & FPSCR::FPCC_FUNAN));
+        //ppc_state.fpscr |= (FPSCR::FX | FPSCR::FPRF);
         //ppc_state.fpscr &= 0xFFFF0FFF;
     }
 }
@@ -404,8 +404,7 @@ void dppc_interpreter::ppc_fnmsub() {
 void dppc_interpreter::ppc_fadds() {
     ppc_grab_regsfpdab();
 
-    float intermediate = (float)val_reg_a + (float)val_reg_b;
-    ppc_dblresult64_d  = static_cast<double>(intermediate);
+    ppc_dblresult64_d  = (float)(val_reg_a + val_reg_b);
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_sfpresult_flt(reg_d);
@@ -421,8 +420,7 @@ void dppc_interpreter::ppc_fadds() {
 void dppc_interpreter::ppc_fsubs() {
     ppc_grab_regsfpdab();
 
-    float intermediate = (float)val_reg_a - (float)val_reg_b;
-    ppc_dblresult64_d  = static_cast<double>(intermediate);
+    ppc_dblresult64_d = (float)(val_reg_a - val_reg_b);
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_sfpresult_flt(reg_d);
@@ -438,8 +436,7 @@ void dppc_interpreter::ppc_fsubs() {
 void dppc_interpreter::ppc_fdivs() {
     ppc_grab_regsfpdab();
 
-    float intermediate = (float)val_reg_a / (float)val_reg_b;
-    ppc_dblresult64_d  = static_cast<double>(intermediate);
+    ppc_dblresult64_d  = (float)(val_reg_a / val_reg_b);
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_sfpresult_flt(reg_d);
@@ -455,8 +452,7 @@ void dppc_interpreter::ppc_fdivs() {
 void dppc_interpreter::ppc_fmuls() {
     ppc_grab_regsfpdac();
 
-    float intermediate = (float)val_reg_a * (float)val_reg_c;
-    ppc_dblresult64_d  = static_cast<double>(intermediate);
+    ppc_dblresult64_d = (float)(val_reg_a * val_reg_c);
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_sfpresult_flt(reg_d);
