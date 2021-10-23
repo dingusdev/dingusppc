@@ -21,9 +21,9 @@ endif()
 option(DPPC_BUILD_PPC_TESTS  "Build PowerPC tests" OFF)
 option(DPPC_BUILD_BENCHMARKS "Build benchmarking programs" OFF)
 
-option(ENABLE_68K_DEBUGGER   "Enable 68k debugging" OFF)
+option(DPPC_68K_DEBUGGER   "Enable 68k debugging" OFF)
 
-if (ENABLE_68K_DEBUGGER)
+if (DPPC_68K_DEBUGGER)
     # Build capstone as static library.
     set(CAPSTONE_BUILD_STATIC ON CACHE BOOL "")
 
@@ -118,7 +118,7 @@ target_link_libraries(dingusppc cubeb ${SDL2_LIBRARIES} ${CMAKE_DL_LIBS} ${CMAKE
 target_include_directories(dingusppc PRIVATE ${CLI11_ROOT})
 endif()
 
-if (ENABLE_68K_DEBUGGER)
+if (DPPC_68K_DEBUGGER)
     target_link_libraries(dingusppc capstone-static)
 endif()
 
@@ -142,7 +142,7 @@ if (DPPC_BUILD_PPC_TESTS)
                     ${CMAKE_THREAD_LIBS_INIT})
     endif()
 
-    if (ENABLE_68K_DEBUGGER)
+    if (DPPC_68K_DEBUGGER)
         target_link_libraries(testppc capstone-static)
     endif()
 endif()
@@ -160,7 +160,7 @@ if (DPPC_BUILD_BENCHMARKS)
     target_link_libraries(bench1 cubeb ${SDL2_LIBRARIES} ${CMAKE_DL_LIBS}
             ${CMAKE_THREAD_LIBS_INIT})
 
-    if (ENABLE_68K_DEBUGGER)
+    if (DPPC_68K_DEBUGGER)
         target_link_libraries(bench1 capstone-static)
     endif()
 endif()
