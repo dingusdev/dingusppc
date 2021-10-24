@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <devices/common/mmiodevice.h>
 #include <devices/common/viacuda.h>
+#include <devices/ethernet/mace.h>
 #include <devices/sound/awacs.h>
 
 #include <cinttypes>
@@ -141,6 +142,7 @@ private:
 
     uint8_t     scsi_dma_cs = 0; // SCSI DMA control/status register value
 
+    std::unique_ptr<MaceController> mace;
     std::unique_ptr<ViaCuda>        viacuda;
     std::unique_ptr<AwacDevicePdm>  awacs;
 

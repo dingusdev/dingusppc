@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cpu/ppc/ppcmmu.h>
 #include <devices/common/viacuda.h>
+#include <devices/ethernet/mace.h>
 #include <devices/ioctrl/amic.h>
 #include <machines/machinebase.h>
 #include <devices/memctrl/memctrlbase.h>
@@ -47,6 +48,7 @@ AMIC::AMIC()
         LOG_F(ERROR, "Couldn't register AMIC registers!");
     }
 
+    this->mace    = std::unique_ptr<MaceController> (new MaceController(MACE_ID));
     this->viacuda = std::unique_ptr<ViaCuda> (new ViaCuda());
 
     this->snd_out_dma = std::unique_ptr<AmicSndOutDma> (new AmicSndOutDma());
@@ -74,6 +76,8 @@ uint32_t AMIC::read(uint32_t reg_start, uint32_t offset, int size)
     case 4: // SCC registers
         LOG_F(WARNING, "AMIC: read attempt from unimplemented SCC register");
         return 0;
+    case 0xA: // MACE registers
+        return this->mace->read((offset >> 4) & 0xFF);
     case 0x10: // SCSI registers
         LOG_F(WARNING, "AMIC: read attempt from unimplemented SCSI register");
         return 0;
@@ -120,6 +124,9 @@ void AMIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
     case 0: // VIA1 registers
     case 1:
         this->viacuda->write(offset >> 9, value);
+        return;
+    case 0xA: // MACE registers
+        this->mace->write((offset >> 4) & 0xFF, value);
         return;
     case 0x14: // Sound registers
         switch(offset) {
