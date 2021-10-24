@@ -186,7 +186,7 @@ void ppc_confirm_inf_nan(int chosen_reg_1, int chosen_reg_2, int chosen_reg_3, b
 
     switch (fpop) {
         case FPOP::DIV:
-            if (isnan(input_a) && isnan(input_b)) {
+            if (isinf(input_a) && isinf(input_b)) {
                 ppc_state.fpscr |= (FPSCR::FX | FPSCR::VXIDI);
             } else if ((input_a == FP_ZERO) && (input_b == FP_ZERO)) {
                 ppc_state.fpscr |= (FPSCR::FX | FPSCR::VXZDZ);
@@ -244,11 +244,15 @@ void fpresult_update(double set_result, bool confirm_arc) {
 
     if (set_result > 0.0) {
         ppc_state.fpscr |= FPSCR::FPCC_POS;
-    } else if (set_result < 0.0) {
+    } 
+    else if (set_result < 0.0) {
         ppc_state.fpscr |= FPSCR::FPCC_NEG;
-    } else if (set_result == 0.0) {
+    } 
+    else {
         ppc_state.fpscr |= FPSCR::FPCC_ZERO;
-    } else {
+    } 
+
+    if (isnan(set_result) || isinf(set_result)) {
         ppc_state.fpscr |= FPSCR::FPCC_FPRCD;
     }
 
@@ -305,7 +309,7 @@ void dppc_interpreter::ppc_fdiv() {
 
     ppc_dblresult64_d = val_reg_a / val_reg_b;
 
-    if (!isnan(ppc_dblresult64_d)) {
+    if (!isnan(ppc_dblresult64_d) || !isinf(ppc_dblresult64_d)) {
         ppc_store_dfpresult_flt(reg_d);
         fpresult_update(ppc_dblresult64_d, rc_flag);
     } else {
@@ -370,6 +374,7 @@ void dppc_interpreter::ppc_fnmadd() {
 
     ppc_dblresult64_d = (val_reg_a * val_reg_c);
     ppc_dblresult64_d += val_reg_b;
+    ppc_dblresult64_d = -(ppc_dblresult64_d);
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_dfpresult_flt(reg_d);
@@ -388,7 +393,7 @@ void dppc_interpreter::ppc_fnmsub() {
 
     ppc_dblresult64_d = (val_reg_a * val_reg_c);
     ppc_dblresult64_d -= val_reg_b;
-    ppc_dblresult64_d = -ppc_dblresult64_d;
+    ppc_dblresult64_d = -(ppc_dblresult64_d);
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_dfpresult_flt(reg_d);

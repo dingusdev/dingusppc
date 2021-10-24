@@ -112,9 +112,9 @@ def gen_ppc_opcode(opc_str, imm):
     elif opc_str == "FADDS.":
         return (0x3B << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x15 << 1) + 1
     elif opc_str == "FCMPO":
-        return (0x3B << 26) + (3 << 16) + (4 << 11) + (0x20 << 1)
+        return (0x3F << 26) + (3 << 16) + (4 << 11) + (0x20 << 1)
     elif opc_str == "FCMPU":
-        return (0x3B << 26) + (3 << 16) + (4 << 11)
+        return (0x3F << 26) + (3 << 16) + (4 << 11)
     elif opc_str == "FCTIW":
         return (0x3B << 26) + (3 << 16) + (4 << 11) + (0xE << 1)
     elif opc_str == "FCTIW.":
@@ -152,9 +152,9 @@ def gen_ppc_opcode(opc_str, imm):
     elif opc_str == "FNABS.":
         return (0x3F << 26) + (3 << 21) + (4 << 11) + (0x88 << 1) + 1
     elif opc_str == "FNEG":
-        return (0x3B << 26) + (3 << 21) + (4 << 11) + (0x28 << 1)
+        return (0x3F << 26) + (3 << 21) + (4 << 11) + (0x28 << 1)
     elif opc_str == "FNEG.":
-        return (0x3B << 26) + (3 << 21) + (4 << 11) + (0x28 << 1) + 1
+        return (0x3F << 26) + (3 << 21) + (4 << 11) + (0x28 << 1) + 1
     elif opc_str == "FMULS.":
         return (0x3B << 26) + (3 << 21) + (3 << 16) + (4 << 6) + (0x28 << 1) + 1
     elif opc_str == "FMSUB":
