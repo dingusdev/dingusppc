@@ -24,12 +24,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/viacuda.h>
 #include <devices/ioctrl/macio.h>
 #include <devices/sound/awacs.h>
+#include <loguru.hpp>
 #include <machines/machinebase.h>
 
 #include <cinttypes>
 #include <functional>
 #include <iostream>
-#include <loguru.hpp>
+#include <memory>
 
 /** Heathrow Mac I/O device emulation.
 
@@ -39,34 +40,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace std;
 
 HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow") {
-    this->nvram = new NVram();
+    this->nvram = std::unique_ptr<NVram> (new NVram());
 
-    this->viacuda = new ViaCuda();
-    gMachineObj->add_subdevice("ViaCuda", this->viacuda);
+    this->viacuda = std::unique_ptr<ViaCuda> (new ViaCuda());
+    gMachineObj->add_subdevice("ViaCuda", this->viacuda.get());
 
     // initialize sound chip and its DMA output channel, then wire them together
-    this->screamer    = new AwacsScreamer();
-    this->snd_out_dma = new DMAChannel();
-    this->screamer->set_dma_out(this->snd_out_dma);
+    this->screamer    = std::unique_ptr<AwacsScreamer> (new AwacsScreamer());
+    this->snd_out_dma = std::unique_ptr<DMAChannel> (new DMAChannel());
+    this->screamer->set_dma_out(this->snd_out_dma.get());
     this->snd_out_dma->set_callbacks(
-        std::bind(&AwacsScreamer::dma_start, this->screamer),
-        std::bind(&AwacsScreamer::dma_end, this->screamer)
+        std::bind(&AwacsScreamer::dma_start, this->screamer.get()),
+        std::bind(&AwacsScreamer::dma_end, this->screamer.get())
     );
 
-    this->mesh = new MESHController(HeathrowMESHID);
+    this->mesh = std::unique_ptr<MESHController> (new MESHController(HeathrowMESHID));
 }
-
-HeathrowIC::~HeathrowIC() {
-    if (this->nvram)
-        delete (this->nvram);
-
-    if (this->viacuda)
-        delete (this->viacuda);
-
-    if (this->mesh)
-        delete (this->mesh);
-}
-
 
 uint32_t HeathrowIC::pci_cfg_read(uint32_t reg_offs, uint32_t size) {
     return this->pci_cfg_hdr[reg_offs & 0xFF];

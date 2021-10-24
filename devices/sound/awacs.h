@@ -149,7 +149,7 @@ private:
 class AwacsScreamer : public AwacsBase {
 public:
     AwacsScreamer();
-    ~AwacsScreamer();
+    ~AwacsScreamer() = default;
 
     uint32_t    snd_ctrl_read(uint32_t offset, int size);
     void        snd_ctrl_write(uint32_t offset, uint32_t value, int size);

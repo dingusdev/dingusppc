@@ -63,6 +63,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/sound/awacs.h>
 
 #include <cinttypes>
+#include <memory>
 
 /**
     Heathrow ASIC emulation
@@ -91,7 +92,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 class HeathrowIC : public PCIDevice {
 public:
     HeathrowIC();
-    ~HeathrowIC();
+    ~HeathrowIC() = default;
 
     bool supports_type(HWCompType type) {
         return type == HWCompType::MMIO_DEV;
@@ -148,12 +149,12 @@ private:
     uint32_t aux_ctrl    = 0;    // aux features control register
 
     /* device cells */
-    ViaCuda* viacuda;     // VIA cell with Cuda MCU attached to it
-    NVram* nvram;         // NVRAM cell
-    AwacsScreamer  *screamer; // Screamer audio codec instance
-    MESHController *mesh; // MESH SCSI cell instance
+    std::unique_ptr<ViaCuda>        viacuda; // VIA cell with Cuda MCU attached to it
+    std::unique_ptr<NVram>          nvram;   // NVRAM cell
+    std::unique_ptr<AwacsScreamer>  screamer; // Screamer audio codec instance
+    std::unique_ptr<MESHController> mesh; // MESH SCSI cell instance
 
-    DMAChannel* snd_out_dma;
+    std::unique_ptr<DMAChannel>     snd_out_dma;
 };
 
 #endif /* MACIO_H */
