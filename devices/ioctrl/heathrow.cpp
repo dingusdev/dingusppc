@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/dbdma.h>
 #include <devices/common/viacuda.h>
 #include <devices/ioctrl/macio.h>
+#include <devices/serial/escc.h>
 #include <devices/sound/awacs.h>
 #include <loguru.hpp>
 #include <machines/machinebase.h>
@@ -55,6 +56,7 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow") {
     );
 
     this->mesh = std::unique_ptr<MESHController> (new MESHController(HeathrowMESHID));
+    this->escc = std::unique_ptr<EsccController> (new EsccController());
 }
 
 uint32_t HeathrowIC::pci_cfg_read(uint32_t reg_offs, uint32_t size) {
@@ -126,6 +128,10 @@ uint32_t HeathrowIC::read(uint32_t reg_start, uint32_t offset, int size) {
     case 0x10:
         res = this->mesh->read((offset >> 4) & 0xF);
         break;
+    case 0x12: // ESCC compatible
+        return this->escc->read_compat((offset >> 4) & 0xF);
+    case 0x13: // ESCC MacRISC
+        return this->escc->read((offset >> 4) & 0xF);
     case 0x14:
         res = this->screamer->snd_ctrl_read(offset - 0x14000, size);
         break;
@@ -158,6 +164,12 @@ void HeathrowIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int 
         break;
     case 0x10:
         this->mesh->write((offset >> 4) & 0xF, value);
+        break;
+    case 0x12: // ESCC compatible
+        this->escc->write_compat((offset >> 4) & 0xF, value);
+        break;
+    case 0x13: // ESCC MacRISC
+        this->escc->write((offset >> 4) & 0xF, value);
         break;
     case 0x14:
         this->screamer->snd_ctrl_write(offset - 0x14000, value, size);

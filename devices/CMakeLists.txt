@@ -11,6 +11,7 @@ file(GLOB SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
                   "${CMAKE_CURRENT_SOURCE_DIR}/ethernet/*.cpp"
                   "${CMAKE_CURRENT_SOURCE_DIR}/ioctrl/*.cpp"
                   "${CMAKE_CURRENT_SOURCE_DIR}/memctrl/*.cpp"
+                  "${CMAKE_CURRENT_SOURCE_DIR}/serial/*.cpp"
                   "${CMAKE_CURRENT_SOURCE_DIR}/sound/*.cpp"
                   "${CMAKE_CURRENT_SOURCE_DIR}/video/*.cpp"
     )

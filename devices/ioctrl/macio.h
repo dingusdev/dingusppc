@@ -60,6 +60,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/scsi/mesh.h>
 #include <devices/common/viacuda.h>
 #include <devices/memctrl/memctrlbase.h>
+#include <devices/serial/escc.h>
 #include <devices/sound/awacs.h>
 
 #include <cinttypes>
@@ -78,7 +79,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     ----------------------------------------------------------------
     mesh(SCSI)     register space: 0x00010000, DMA space: 0x00008000
     bmac(ethernet) register space: 0x00011000, DMA space: 0x00008200, 0x00008300
-    escc(serial)   register space: 0x00013000, size: 0x00001000
+    escc(compat)   register space: 0x00012000, size: 0x00001000
+                        DMA space: 0x00008400, size: 0x00000400
+    escc(MacRISC)  register space: 0x00013000, size: 0x00001000
                         DMA space: 0x00008400, size: 0x00000400
     escc:ch-a      register space: 0x00013020, DMA space: 0x00008400, 0x00008500
     escc:ch-b      register space: 0x00013000, DMA space: 0x00008600, 0x00008700
@@ -149,10 +152,11 @@ private:
     uint32_t aux_ctrl    = 0;    // aux features control register
 
     /* device cells */
-    std::unique_ptr<ViaCuda>        viacuda; // VIA cell with Cuda MCU attached to it
-    std::unique_ptr<NVram>          nvram;   // NVRAM cell
+    std::unique_ptr<ViaCuda>        viacuda;  // VIA cell with Cuda MCU attached to it
+    std::unique_ptr<NVram>          nvram;    // NVRAM cell
     std::unique_ptr<AwacsScreamer>  screamer; // Screamer audio codec instance
-    std::unique_ptr<MESHController> mesh; // MESH SCSI cell instance
+    std::unique_ptr<MESHController> mesh;     // MESH SCSI cell instance
+    std::unique_ptr<EsccController> escc;     // ESCC serial controller
 
     std::unique_ptr<DMAChannel>     snd_out_dma;
 };

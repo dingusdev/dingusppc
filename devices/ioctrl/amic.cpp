@@ -28,6 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/viacuda.h>
 #include <devices/ethernet/mace.h>
 #include <devices/ioctrl/amic.h>
+#include <devices/serial/escc.h>
 #include <machines/machinebase.h>
 #include <devices/memctrl/memctrlbase.h>
 
@@ -48,6 +49,7 @@ AMIC::AMIC()
         LOG_F(ERROR, "Couldn't register AMIC registers!");
     }
 
+    this->escc    = std::unique_ptr<EsccController> (new EsccController());
     this->mace    = std::unique_ptr<MaceController> (new MaceController(MACE_ID));
     this->viacuda = std::unique_ptr<ViaCuda> (new ViaCuda());
 
@@ -74,10 +76,10 @@ uint32_t AMIC::read(uint32_t reg_start, uint32_t offset, int size)
     case 1:
         return this->viacuda->read(offset >> 9);
     case 4: // SCC registers
-        LOG_F(WARNING, "AMIC: read attempt from unimplemented SCC register");
+        this->escc->read_compat((offset >> 1) & 0xF);
         return 0;
     case 0xA: // MACE registers
-        return this->mace->read((offset >> 4) & 0xFF);
+        return this->mace->read((offset >> 4) & 0xF);
     case 0x10: // SCSI registers
         LOG_F(WARNING, "AMIC: read attempt from unimplemented SCSI register");
         return 0;
@@ -125,8 +127,11 @@ void AMIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
     case 1:
         this->viacuda->write(offset >> 9, value);
         return;
+    case 4:
+        this->escc->write_compat((offset >> 1) & 0xF, value);
+        return;
     case 0xA: // MACE registers
-        this->mace->write((offset >> 4) & 0xFF, value);
+        this->mace->write((offset >> 4) & 0xF, value);
         return;
     case 0x14: // Sound registers
         switch(offset) {
