@@ -229,7 +229,7 @@ static void read_test_float_data() {
                 dfp_src3 = stod(tokens[i].substr(4), NULL);
             } else if (tokens[i].rfind("round=", 0) == 0) {
                 rounding_mode = tokens[i].substr(6, 3);
-                ppc_state.fpscr &= 0xFFFFFFFC;
+                ppc_state.fpscr = 0;
                 if (rounding_mode.compare("RTN") == 0) {
                     ppc_state.fpscr = 0x0;
                 } else if (rounding_mode.compare("RTZ") == 0) {
@@ -263,7 +263,7 @@ static void read_test_float_data() {
         ppc_state.fpr[4].dbl64_r = dfp_src2;
         ppc_state.fpr[5].dbl64_r = dfp_src3;
 
-        ppc_state.cr            = 0;
+        ppc_state.cr          = 0;
 
         ppc_cur_instruction = opcode;
 
@@ -302,6 +302,9 @@ int main() {
     cout << endl << "Testing integer instructions:" << endl;
 
     read_test_data();
+
+    cout << endl << "Float IEEE suport: " << (bool)std::numeric_limits<float>::is_iec559 << endl;
+    cout << endl << "Double IEEE suport: " << (bool)std::numeric_limits<double>::is_iec559 << endl;
 
     cout << endl << "Testing floating point instructions:" << endl;
 

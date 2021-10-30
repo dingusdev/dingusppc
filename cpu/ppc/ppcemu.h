@@ -206,12 +206,11 @@ enum CR_select : int32_t {
     CR1_field = (0xF << 24),
 };
 
-enum CRx_bit : uint32_t {
-    CR_SO = 0,
-    CR_EQ,
-    CR_GT,
-    CR_LT
-};
+enum CRx_bit : uint32_t { 
+    CR_SO = 28, 
+    CR_EQ = 29, 
+    CR_GT = 30,
+    CR_LT = 31 };
 
 enum CR1_bit : uint32_t {
     CR1_OX = 24,

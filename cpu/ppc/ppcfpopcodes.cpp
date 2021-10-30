@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-// The opcodes for the processor - ppcopcodes.cpp
+// The floating point opcodes for the processor - ppcfpopcodes.cpp
 
 #include "ppcemu.h"
 #include "ppcmmu.h"
@@ -236,72 +236,79 @@ void ppc_confirm_inf_nan(int chosen_reg_1, int chosen_reg_2, int chosen_reg_3, b
         }
 }
 
+template <typename T, const FPOP fpop>
 void fpresult_update(double set_result, bool confirm_arc) {
-    bool confirm_ov = (bool)std::fetestexcept(FE_OVERFLOW);
-
     if (ppc_state.fpscr & 0x3)
         ppc_state.cr |= 0x2;
 
     if (set_result > 0.0) {
-        ppc_state.fpscr |= FPSCR::FPCC_POS;
-    } 
-    else if (set_result < 0.0) {
-        ppc_state.fpscr |= FPSCR::FPCC_NEG;
-    } 
-    else {
-        ppc_state.fpscr |= FPSCR::FPCC_ZERO;
-    } 
+        ppc_state.fpscr |= FPCC_POS;
+    } else if (set_result < 0.0) {
+        ppc_state.fpscr |= FPCC_NEG;
+    } else {
+        ppc_state.fpscr |= FPCC_ZERO;
+    }
 
     if (isnan(set_result) || isinf(set_result)) {
-        ppc_state.fpscr |= FPSCR::FPCC_FPRCD;
-    }
-
-    if (confirm_ov) {
-    //    ppc_state.fpscr |= (FPSCR::FX | (FPSCR::FPRF & FPSCR::FPCC_FUNAN));
-    }
-
-    if (confirm_arc) {
-        //ppc_state.fpscr |= (FPSCR::FX | FPSCR::FPRF);
-        //ppc_state.fpscr &= 0xFFFF0FFF;
+            ppc_state.fpscr |= FPCC_FPRCD;
     }
 }
 
-void ppc_changecrf1() {
-    ppc_state.cr &= ~((uint32_t)CR_select::CR1_field);
-    ppc_state.cr |= (ppc_state.fpscr & (uint32_t)CR_select::CR0_field) >> 4;
+void ppc_changecrf1(double set_result) {
+    cmp_c = 0;
+
+    /*
+    if (isnan(set_result)) {
+        cmp_c |= (1 << CRx_bit::CR_SO);
+    }
+
+    if (set_result > 0.0) {
+        cmp_c |= (1 << CRx_bit::CR_GT);
+    }
+
+    if (set_result < 0.0) {
+        cmp_c |= (1 << CRx_bit::CR_LT);
+    }
+
+    if (set_result == 0.0) {
+        cmp_c |= (1 << CRx_bit::CR_EQ);
+    }*/
+
+    ppc_state.cr = ((ppc_state.cr & ~(CR_select::CR1_field)) | ((cmp_c) >> crf_d));
 }
 
 // Floating Point Arithmetic
 void dppc_interpreter::ppc_fadd() {
     ppc_grab_regsfpdab();
 
-    ppc_dblresult64_d = val_reg_a + val_reg_b;
+    ppc_dblresult64_d = double(val_reg_a + val_reg_b);
 
-    if (!isnan(ppc_dblresult64_d)) {
+    if (!isnan(ppc_dblresult64_d) || !isinf(ppc_dblresult64_d)) {
         ppc_store_dfpresult_flt(reg_d);
-        fpresult_update(ppc_dblresult64_d, rc_flag);
-    } else {
+        fpresult_update<double, ADD>(ppc_dblresult64_d, rc_flag);
+    } 
+    else {
         ppc_confirm_inf_nan<double, ADD>(reg_a, reg_b, 0, rc_flag);
     }
 
     if (rc_flag)
-        ppc_changecrf1();
+        ppc_changecrf1(ppc_dblresult64_d);
 }
 
 void dppc_interpreter::ppc_fsub() {
     ppc_grab_regsfpdab();
 
-    ppc_dblresult64_d = val_reg_a - val_reg_b;
+    ppc_dblresult64_d = double(val_reg_a - val_reg_b);
 
-    if (!isnan(ppc_dblresult64_d)) {
+    if (!isnan(ppc_dblresult64_d) || !isinf(ppc_dblresult64_d)) {
         ppc_store_dfpresult_flt(reg_d);
-        fpresult_update(ppc_dblresult64_d, rc_flag);
+        fpresult_update<double, SUB>(ppc_dblresult64_d, rc_flag);
     } else {
         ppc_confirm_inf_nan<double, SUB>(reg_a, reg_b, 0, rc_flag);
     }
 
     if (rc_flag)
-        ppc_changecrf1();
+        ppc_changecrf1(ppc_dblresult64_d);
 }
 
 void dppc_interpreter::ppc_fdiv() {
@@ -311,13 +318,13 @@ void dppc_interpreter::ppc_fdiv() {
 
     if (!isnan(ppc_dblresult64_d) || !isinf(ppc_dblresult64_d)) {
         ppc_store_dfpresult_flt(reg_d);
-        fpresult_update(ppc_dblresult64_d, rc_flag);
+        fpresult_update<double, DIV>(ppc_dblresult64_d, rc_flag);
     } else {
         ppc_confirm_inf_nan<double, DIV>(reg_a, reg_b, 0, rc_flag);
     }
 
     if (rc_flag)
-        ppc_changecrf1();
+        ppc_changecrf1(ppc_dblresult64_d);
 }
 
 void dppc_interpreter::ppc_fmul() {
@@ -325,15 +332,15 @@ void dppc_interpreter::ppc_fmul() {
 
     ppc_dblresult64_d = val_reg_a * val_reg_c;
 
-    if (!isnan(ppc_dblresult64_d)) {
+    if (!isnan(ppc_dblresult64_d) || !isinf(ppc_dblresult64_d)) {
         ppc_store_dfpresult_flt(reg_d);
-        fpresult_update(ppc_dblresult64_d, rc_flag);
+        fpresult_update<double, MUL>(ppc_dblresult64_d, rc_flag);
     } else {
         ppc_confirm_inf_nan<double, MUL>(reg_a, reg_b, 0, rc_flag);
     }
 
     if (rc_flag)
-        ppc_changecrf1();
+        ppc_changecrf1(ppc_dblresult64_d);
 }
 
 void dppc_interpreter::ppc_fmadd() {
@@ -341,15 +348,15 @@ void dppc_interpreter::ppc_fmadd() {
 
     ppc_dblresult64_d = std::fma(val_reg_a, val_reg_c, val_reg_b);
 
-    if (!isnan(ppc_dblresult64_d)) {
+    if (!isnan(ppc_dblresult64_d) || !isinf(ppc_dblresult64_d)) {
         ppc_store_dfpresult_flt(reg_d);
-        fpresult_update(ppc_dblresult64_d, rc_flag);
+        fpresult_update<double, FMADD>(ppc_dblresult64_d, rc_flag);
     } else {
         ppc_confirm_inf_nan<double, FMADD>(reg_a, reg_b, reg_c);
     }
 
     if (rc_flag)
-        ppc_changecrf1();
+        ppc_changecrf1(ppc_dblresult64_d);
 }
 
 void dppc_interpreter::ppc_fmsub() {
@@ -358,15 +365,15 @@ void dppc_interpreter::ppc_fmsub() {
     ppc_dblresult64_d = (val_reg_a * val_reg_c);
     ppc_dblresult64_d -= val_reg_b;
 
-    if (!isnan(ppc_dblresult64_d)) {
+    if (!isnan(ppc_dblresult64_d) || !isinf(ppc_dblresult64_d)) {
         ppc_store_dfpresult_flt(reg_d);
-        fpresult_update(ppc_dblresult64_d, rc_flag);
+        fpresult_update<double, FMSUB>(ppc_dblresult64_d, rc_flag);
     } else {
         ppc_confirm_inf_nan<double, FMSUB>(reg_a, reg_b, reg_c);
     }
 
     if (rc_flag)
-        ppc_changecrf1();
+        ppc_changecrf1(ppc_dblresult64_d);
 }
 
 void dppc_interpreter::ppc_fnmadd() {
@@ -376,16 +383,16 @@ void dppc_interpreter::ppc_fnmadd() {
     ppc_dblresult64_d += val_reg_b;
     ppc_dblresult64_d = -(ppc_dblresult64_d);
 
-    if (!isnan(ppc_dblresult64_d)) {
+    if (!isnan(ppc_dblresult64_d) || !isinf(ppc_dblresult64_d)) {
         ppc_store_dfpresult_flt(reg_d);
-        fpresult_update(ppc_dblresult64_d, rc_flag);
+        fpresult_update<double, FNMADD>(ppc_dblresult64_d, rc_flag);
     }
     else {
         ppc_confirm_inf_nan<double, FNMADD>(reg_a, reg_b, reg_c);
     }
 
     if (rc_flag)
-        ppc_changecrf1();
+        ppc_changecrf1(ppc_dblresult64_d);
 }
 
 void dppc_interpreter::ppc_fnmsub() {
@@ -395,31 +402,32 @@ void dppc_interpreter::ppc_fnmsub() {
     ppc_dblresult64_d -= val_reg_b;
     ppc_dblresult64_d = -(ppc_dblresult64_d);
 
-    if (!isnan(ppc_dblresult64_d)) {
+    if (!isnan(ppc_dblresult64_d) || !isinf(ppc_dblresult64_d)) {
         ppc_store_dfpresult_flt(reg_d);
-        fpresult_update(ppc_dblresult64_d, rc_flag);
+        fpresult_update<double, FNMSUB>(ppc_dblresult64_d, rc_flag);
     } else {
         ppc_confirm_inf_nan<double, FNMSUB>(reg_a, reg_b, reg_c);
     }
 
     if (rc_flag)
-        ppc_changecrf1();
+        ppc_changecrf1(ppc_dblresult64_d);
 }
 
 void dppc_interpreter::ppc_fadds() {
     ppc_grab_regsfpdab();
 
-    ppc_dblresult64_d  = (float)(val_reg_a + val_reg_b);
+    ppc_dblresult64_d = (float)(val_reg_a + val_reg_b);
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_sfpresult_flt(reg_d);
-        fpresult_update(ppc_dblresult64_d, rc_flag);
-    } else {
+        fpresult_update<float, ADD>(ppc_dblresult64_d, rc_flag);
+    } 
+    else {
         ppc_confirm_inf_nan<float, ADD>(reg_a, reg_b, 0);
     }
 
     if (rc_flag)
-        ppc_changecrf1();
+        ppc_changecrf1(ppc_dblresult64_d);
 }
 
 void dppc_interpreter::ppc_fsubs() {
@@ -429,13 +437,13 @@ void dppc_interpreter::ppc_fsubs() {
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_sfpresult_flt(reg_d);
-        fpresult_update(ppc_dblresult64_d, rc_flag);
+        fpresult_update<float, SUB>(ppc_dblresult64_d, rc_flag);
     } else {
         ppc_confirm_inf_nan<float, SUB>(reg_a, reg_b, 0);
     }
 
     if (rc_flag)
-        ppc_changecrf1();
+        ppc_changecrf1(ppc_dblresult64_d);
 }
 
 void dppc_interpreter::ppc_fdivs() {
@@ -445,13 +453,13 @@ void dppc_interpreter::ppc_fdivs() {
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_sfpresult_flt(reg_d);
-        fpresult_update(ppc_dblresult64_d, rc_flag);
+        fpresult_update<float,  DIV>(ppc_dblresult64_d, rc_flag);
     } else {
         ppc_confirm_inf_nan<float, DIV>(reg_a, reg_b, 0);
     }
 
     if (rc_flag)
-        ppc_changecrf1();
+        ppc_changecrf1(ppc_dblresult64_d);
 }
 
 void dppc_interpreter::ppc_fmuls() {
@@ -461,13 +469,13 @@ void dppc_interpreter::ppc_fmuls() {
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_sfpresult_flt(reg_d);
-        fpresult_update(ppc_dblresult64_d, rc_flag);
+        fpresult_update<float,  MUL>(ppc_dblresult64_d, rc_flag);
     } else {
         ppc_confirm_inf_nan<float, MUL>(reg_a, 0, reg_c);
     }
 
     if (rc_flag)
-        ppc_changecrf1();
+        ppc_changecrf1(ppc_dblresult64_d);
 }
 
 void dppc_interpreter::ppc_fmadds() {
@@ -478,31 +486,31 @@ void dppc_interpreter::ppc_fmadds() {
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_sfpresult_flt(reg_d);
-        fpresult_update(ppc_dblresult64_d, rc_flag);
+        fpresult_update<float,  FMADD>(ppc_dblresult64_d, rc_flag);
     } else {
         ppc_confirm_inf_nan<float, FMADD>(reg_a, reg_b, reg_c);
     }
 
     if (rc_flag)
-        ppc_changecrf1();
+        ppc_changecrf1(ppc_dblresult64_d);
 }
 
 void dppc_interpreter::ppc_fmsubs() {
     ppc_grab_regsfpdabc();
 
-    float intermediate = (float)val_reg_a * (float)val_reg_c;
+    float intermediate = float(val_reg_a * val_reg_c);
     intermediate -= (float)val_reg_b;
     ppc_dblresult64_d = static_cast<double>(intermediate);
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_sfpresult_flt(reg_d);
-        fpresult_update(ppc_dblresult64_d, rc_flag);
+        fpresult_update<float,  FMADD>(ppc_dblresult64_d, rc_flag);
     } else {
         ppc_confirm_inf_nan<float, FMSUB>(reg_a, reg_b, reg_c);
     }
 
     if (rc_flag)
-        ppc_changecrf1();
+        ppc_changecrf1(ppc_dblresult64_d);
 }
 
 void dppc_interpreter::ppc_fnmadds() {
@@ -515,13 +523,13 @@ void dppc_interpreter::ppc_fnmadds() {
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_sfpresult_flt(reg_d);
-        fpresult_update(ppc_dblresult64_d, rc_flag);
+        fpresult_update<float,  FNMADD>(ppc_dblresult64_d, rc_flag);
     } else {
         ppc_confirm_inf_nan<float, FNMADD>(reg_a, reg_b, reg_c);
     }
 
     if (rc_flag)
-        ppc_changecrf1();
+        ppc_changecrf1(ppc_dblresult64_d);
 }
 
 void dppc_interpreter::ppc_fnmsubs() {
@@ -535,13 +543,13 @@ void dppc_interpreter::ppc_fnmsubs() {
 
     if (!isnan(ppc_dblresult64_d)) {
         ppc_store_sfpresult_flt(reg_d);
-        fpresult_update(ppc_dblresult64_d, rc_flag);
+        fpresult_update<float,  FNMSUB>(ppc_dblresult64_d, rc_flag);
     } else {
         ppc_confirm_inf_nan<float, FNMSUB>(reg_a, reg_b, reg_c);
     }
 
     if (rc_flag)
-        ppc_changecrf1();
+        ppc_changecrf1(ppc_dblresult64_d);
 }
 
 void dppc_interpreter::ppc_fabs() {
@@ -552,7 +560,7 @@ void dppc_interpreter::ppc_fabs() {
     ppc_store_dfpresult_flt(reg_d);
 
     if (rc_flag)
-        ppc_changecrf1();
+        ppc_changecrf1(ppc_dblresult64_d);
 }
 
 void dppc_interpreter::ppc_fnabs() {
@@ -564,7 +572,7 @@ void dppc_interpreter::ppc_fnabs() {
     ppc_store_dfpresult_flt(reg_d);
 
     if (rc_flag)
-        ppc_changecrf1();
+        ppc_changecrf1(ppc_dblresult64_d);
 }
 
 void dppc_interpreter::ppc_fneg() {
@@ -575,7 +583,7 @@ void dppc_interpreter::ppc_fneg() {
     ppc_store_dfpresult_flt(reg_d);
 
     if (rc_flag)
-        ppc_changecrf1();
+        ppc_changecrf1(ppc_dblresult64_d);
 }
 
 void dppc_interpreter::ppc_fsel() {
@@ -586,7 +594,7 @@ void dppc_interpreter::ppc_fsel() {
     ppc_store_dfpresult_flt(reg_d);
 
     if (rc_flag)
-        ppc_changecrf1();
+        ppc_changecrf1(ppc_dblresult64_d);
 }
 
 void dppc_interpreter::ppc_fsqrt() {
@@ -595,7 +603,7 @@ void dppc_interpreter::ppc_fsqrt() {
     ppc_store_dfpresult_flt(reg_d);
 
     if (rc_flag)
-        ppc_changecrf1();
+        ppc_changecrf1(ppc_dblresult64_d);
 }
 
 void dppc_interpreter::ppc_fsqrts() {
@@ -608,7 +616,7 @@ void dppc_interpreter::ppc_fsqrts() {
     ppc_store_sfpresult_flt(reg_d);
 
     if (rc_flag)
-        ppc_changecrf1();
+        ppc_changecrf1(ppc_dblresult64_d);
 }
 
 void dppc_interpreter::ppc_frsqrte() {
@@ -622,7 +630,7 @@ void dppc_interpreter::ppc_frsqrte() {
     ppc_store_dfpresult_flt(reg_d);
 
     if (rc_flag)
-        ppc_changecrf1();
+        ppc_changecrf1(ppc_dblresult64_d);
 }
 
 void dppc_interpreter::ppc_frsp() {
@@ -631,7 +639,7 @@ void dppc_interpreter::ppc_frsp() {
     ppc_store_dfpresult_flt(reg_d);
 
     if (rc_flag)
-        ppc_changecrf1();
+        ppc_changecrf1(ppc_dblresult64_d);
 }
 
 void dppc_interpreter::ppc_fres() {
@@ -654,7 +662,7 @@ void dppc_interpreter::ppc_fres() {
     }
 
     if (rc_flag)
-        ppc_changecrf1();
+        ppc_changecrf1(ppc_dblresult64_d);
 }
 
 void dppc_interpreter::ppc_fctiw() {
@@ -694,7 +702,7 @@ void dppc_interpreter::ppc_fctiw() {
     }
 
     if (rc_flag)
-        ppc_changecrf1();
+        ppc_changecrf1(ppc_dblresult64_d);
 }
 
 void dppc_interpreter::ppc_fctiwz() {
@@ -720,7 +728,7 @@ void dppc_interpreter::ppc_fctiwz() {
     }
 
     if (rc_flag)
-        ppc_changecrf1();
+        ppc_changecrf1(ppc_dblresult64_d);
 }
 
 // Floating Point Store and Load
@@ -982,26 +990,30 @@ void dppc_interpreter::ppc_fcmpo() {
     ppc_grab_regsfpsab();
 
     ppc_state.fpscr &= 0xFFFF0FFF;
+    cmp_c = 0;
+    crf_d = 4;
 
     if (std::isnan(db_test_a) || std::isnan(db_test_b)) {
-        cmp_c |= (1 << (uint32_t)CRx_bit::CR_SO);
-    } else if (db_test_a < db_test_b) {
-        cmp_c |= (1 << (uint32_t)CRx_bit::CR_LT);
-    } else if (db_test_a > db_test_b) {
-        cmp_c |= (1 << (uint32_t)CRx_bit::CR_GT);
-    } else {
-        cmp_c |= (1 << (uint32_t)CRx_bit::CR_EQ);
+        cmp_c |= (1 << CRx_bit::CR_SO);
+    }
+    
+    if (db_test_a < db_test_b) {
+        cmp_c |= (1 << CRx_bit::CR_LT);
+    } 
+    else if (db_test_a > db_test_b) {
+        cmp_c |= (1 << CRx_bit::CR_GT);
+    }
+    else {
+        cmp_c |= (1 << CRx_bit::CR_EQ);
     }
 
-    fpresult_update(db_test_a, true);
-
-    ppc_state.fpscr = (ppc_state.fpscr & ~(FPSCR::FPRF)) | (cmp_c << 12);
-    ppc_state.cr =
-        ((ppc_state.cr & ~((uint32_t)CR_select::CR0_field >> crf_d)) | ((cmp_c + xercon) >> crf_d));
+    ppc_state.fpscr &= ~(FPSCR::FPRF);
+    ppc_state.fpscr |= (cmp_c << 12);
+    ppc_state.cr = ((ppc_state.cr & ~(0xF0000000 >> crf_d)) | ((cmp_c) >> crf_d));
 
     if (std::isnan(db_test_a) || std::isnan(db_test_b)) {
-        ppc_state.fpscr |= FPSCR::VXSNAN;
-        if (ppc_state.fpscr & 0x80) {
+        ppc_state.fpscr |= FPSCR::FX | FPSCR::VXSNAN;
+        if ((ppc_state.fpscr & FPSCR::VE) == 0) {
             ppc_state.fpscr |= FPSCR::VXVC;
         }
     } else if ((db_test_a == qnan) || (db_test_b == qnan)) {
@@ -1012,25 +1024,28 @@ void dppc_interpreter::ppc_fcmpo() {
 void dppc_interpreter::ppc_fcmpu() {
     ppc_grab_regsfpsab();
 
-    ppc_state.fpscr &= 0xFFFF0FFF;
+    cmp_c = 0;
+    crf_d = 4;
 
     if (std::isnan(db_test_a) || std::isnan(db_test_b)) {
-        cmp_c |= (1 << (uint32_t)CRx_bit::CR_SO);
-    } else if (db_test_a < db_test_b) {
-        cmp_c |= (1 << (uint32_t)CRx_bit::CR_LT);
-    } else if (db_test_a > db_test_b) {
-        cmp_c |= (1 << (uint32_t)CRx_bit::CR_GT);
-    } else {
-        cmp_c |= (1 << (uint32_t)CRx_bit::CR_EQ);
+        cmp_c |= (1 << CRx_bit::CR_SO);
+    }
+    
+    if (db_test_a < db_test_b) {
+        cmp_c |= (1 << CRx_bit::CR_LT);
+    } 
+    else if (db_test_a > db_test_b) {
+        cmp_c |= (1 << CRx_bit::CR_GT);
+    }
+    else {
+        cmp_c |= (1 << CRx_bit::CR_EQ);
     }
 
-    fpresult_update(db_test_a, true);
+    ppc_state.fpscr &= ~(FPSCR::FPRF);
+    ppc_state.fpscr |= (cmp_c << 12);
+    ppc_state.cr = ((ppc_state.cr & ~(0xF0000000 >> crf_d)) | ((cmp_c) >> crf_d));
 
-    ppc_state.fpscr = (ppc_state.fpscr & ~(FPSCR::FPRF)) | (cmp_c << 12);
-    ppc_state.cr =
-        ((ppc_state.cr & ~((uint32_t)CR_select::CR0_field >> crf_d)) | ((cmp_c + xercon) >> crf_d));
-
-    if (std::isnan(db_test_a) || std::isnan(db_test_b)) {
-        ppc_state.fpscr |= FPSCR::VXSNAN;
-    }
+    //if (std::isnan(db_test_a) || std::isnan(db_test_b)) {
+    //    ppc_state.fpscr |= FPSCR::VX | FPSCR::VXSNAN;
+    //}
 }
