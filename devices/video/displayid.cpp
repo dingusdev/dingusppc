@@ -24,8 +24,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/video/displayid.h>
 #include <loguru.hpp>
 
-DisplayID::DisplayID()
+DisplayID::DisplayID(Disp_Id_Kind id_kind)
 {
+    this->id_kind = id_kind;
+
     /* Initialize Apple monitor codes */
     this->std_sense_code = 6;
     this->ext_sense_code = 0x2B;
@@ -37,9 +39,6 @@ DisplayID::DisplayID()
     this->last_scl   = 1;
     this->data_out   = 0x3000;
     this->data_ptr   = 0;
-
-    /* DDC sense mode is on by default */
-    this->i2c_on = true;
 }
 
 
@@ -70,18 +69,18 @@ uint16_t DisplayID::read_monitor_sense(uint16_t data, uint16_t dirs)
     uint16_t result;
 
     if ((dirs & 0x3100) == 0 && (data & 0x3100) == 0x3100) {
-        LOG_F(WARNING, "DisplayID: Hackish Monitor ID Switch activated!");
-        this->i2c_on = false;
+        LOG_F(WARNING, "DisplayID: Monitor sense lines tristated!");
     }
 
-    if (this->i2c_on) {
+    switch(this->id_kind) {
+    case Disp_Id_Kind::DDC2B:
         /* if GPIO pins are in the output mode, pick up their values
            In the input mode, GPIO pins will be read "high" */
         scl = (dirs & 0x1000) ? !!(data & 0x1000) : 1;
         sda = (dirs & 0x2000) ? !!(data & 0x2000) : 1;
 
         return update_ddc_i2c(sda, scl);
-    } else { /* Apple legacy monitor codes (see Technical Note HW30) */
+    case Disp_Id_Kind::AppleSense:
         switch (dirs & 0x3100) {
         case 0:
             result = ((this->std_sense_code & 6) << 11) | ((this->std_sense_code & 1) << 8);
@@ -98,7 +97,6 @@ uint16_t DisplayID::read_monitor_sense(uint16_t data, uint16_t dirs)
         default:
             result = 0x3100U;
         }
-
         return result;
     }
 }

@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     video cards.
 
     DisplayID provides two methods for display identification:
-    - Apple monitor sense codes as described in the Technical Note HW30
+    - Apple monitor sense as described in the Technical Note HW30
     - Display Data Channel (DDC) standardized by VESA
  */
 
@@ -34,6 +34,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define DISPLAY_ID_H
 
 #include <cinttypes>
+
+/* Supported diplay ID methods. */
+enum class Disp_Id_Kind {
+    AppleSense,
+    DDC2B,
+};
 
 /** I2C bus states. */
 enum I2CState : uint8_t {
@@ -49,7 +55,7 @@ enum I2CState : uint8_t {
 
 class DisplayID {
 public:
-    DisplayID();
+    DisplayID(Disp_Id_Kind id_kind);
     ~DisplayID() = default;
 
     uint16_t read_monitor_sense(uint16_t data, uint16_t dirs);
@@ -59,7 +65,7 @@ protected:
     uint16_t update_ddc_i2c(uint8_t sda, uint8_t scl);
 
 private:
-    bool i2c_on;
+    Disp_Id_Kind    id_kind;
 
     uint8_t std_sense_code;
     uint8_t ext_sense_code;

@@ -120,7 +120,7 @@ ATIRage::ATIRage(uint16_t dev_id, uint32_t vmem_size_mb)
                     (asic_id << 24) | dev_id);
 
     /* initialize display identification */
-    this->disp_id = new DisplayID();
+    this->disp_id = new DisplayID(Disp_Id_Kind::DDC2B);
 }
 
 ATIRage::~ATIRage()
