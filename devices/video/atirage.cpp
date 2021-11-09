@@ -86,10 +86,12 @@ static const std::map<uint16_t, std::string> mach64_reg_names = {
 };
 
 
-ATIRage::ATIRage(uint16_t dev_id, uint32_t mem_amount) : PCIDevice("ati-rage") {
+ATIRage::ATIRage(uint16_t dev_id, uint32_t vmem_size_mb)
+    : PCIDevice("ati-rage"), VideoCtrlBase()
+{
     uint8_t asic_id;
 
-    this->vram_size = mem_amount << 20;
+    this->vram_size = vmem_size_mb << 20; // convert MBs to bytes
 
     /* allocate video RAM */
     this->vram_ptr = new uint8_t[this->vram_size];
@@ -119,14 +121,10 @@ ATIRage::ATIRage(uint16_t dev_id, uint32_t mem_amount) : PCIDevice("ati-rage") {
 
     /* initialize display identification */
     this->disp_id = new DisplayID();
-
-    //this->surface = new uint8_t[640 * 480];
 }
 
 ATIRage::~ATIRage()
 {
-    //delete (this->surface);
-
     if (this->vram_ptr) {
         delete this->vram_ptr;
     }
@@ -272,6 +270,11 @@ void ATIRage::write_reg(uint32_t offset, uint32_t value, uint32_t size) {
 
     if ((this->block_io_regs[ATI_CRTC_GEN_CNTL+3] & 2) &&
         !(this->block_io_regs[ATI_CRTC_GEN_CNTL] & 0x40)) {
+        int32_t src_offset = (READ_DWORD_LE_A(&this->block_io_regs[ATI_CRTC_OFF_PITCH]) & 0xFFFF) * 8;
+
+        this->fb_pitch = ((READ_DWORD_LE_A(&this->block_io_regs[ATI_CRTC_OFF_PITCH])) >> 19) & 0x1FF8;
+
+        this->fb_ptr = this->vram_ptr + src_offset;
         this->update_screen();
     }
 }
@@ -578,47 +581,4 @@ void ATIRage::draw_hw_cursor(uint8_t *dst_buf, int dst_pitch) {
             }
         }
     }
-}
-
-void ATIRage::update_screen() {
-    uint8_t *src_buf, *dst_buf, *src_row, *dst_row, pix;
-    int     src_pitch, dst_pitch;
-
-    //auto start_time = std::chrono::steady_clock::now();
-
-    this->disp_id->get_disp_texture((void **)&dst_buf, &dst_pitch);
-
-    uint32_t src_offset = (READ_DWORD_LE_A(&this->block_io_regs[ATI_CRTC_OFF_PITCH]) & 0xFFFF) * 8;
-
-    src_pitch = ((READ_DWORD_LE_A(&this->block_io_regs[ATI_CRTC_OFF_PITCH])) >> 19) & 0x1FF8;
-
-    src_buf = this->vram_ptr + src_offset;
-
-    for (int h = 0; h < this->active_height; h++) {
-        src_row = &src_buf[h * src_pitch];
-        dst_row = &dst_buf[h * dst_pitch];
-
-        for (int x = 0; x < this->active_width; x++) {
-            pix = src_row[x];
-            dst_row[0] = this->palette[pix][2]; // B
-            dst_row[1] = this->palette[pix][1]; // G
-            dst_row[2] = this->palette[pix][0]; // R
-            dst_row[3] = 255; // A
-            dst_row += 4;
-        }
-    }
-
-    // HW cursor data is stored at the beginning of the video memory
-    // HACK: use src_offset to recognize cursor data being ready
-    // Normally, we should check GEN_CUR_ENABLE bit in the GEN_TEST_CNTL register
-    if (src_offset > 0x400 && READ_DWORD_LE_A(&this->block_io_regs[ATI_CUR_OFFSET])) {
-        this->draw_hw_cursor(dst_buf + dst_pitch * 20 + 120, dst_pitch);
-    }
-
-    this->disp_id->update_screen();
-
-    //auto end_time = std::chrono::steady_clock::now();
-    //auto time_elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
-    //LOG_F(INFO, "Display uodate took: %lld ns", time_elapsed.count());
-    SDL_Delay(15);
 }

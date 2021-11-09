@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <devices/common/pci/pcidevice.h>
 #include <devices/video/displayid.h>
+#include <devices/video/videoctrl.h>
 
 #include <cinttypes>
 
@@ -192,9 +193,9 @@ constexpr auto BE_FB_OFFSET  = 0x00800000UL; /* Offset to the big-endian frame b
 
 constexpr auto ATI_XTAL = 14318180.0f; // external crystal oscillator frequency
 
-class ATIRage : public PCIDevice {
+class ATIRage : public PCIDevice, public VideoCtrlBase {
 public:
-    ATIRage(uint16_t dev_id, uint32_t mem_amount);
+    ATIRage(uint16_t dev_id, uint32_t vmem_size_mb);
     ~ATIRage();
 
     /* MMIODevice methods */
@@ -226,7 +227,6 @@ protected:
     void verbose_pixel_format(int crtc_index);
     void crtc_enable();
     void draw_hw_cursor(uint8_t *dst_buf, int dst_pitch);
-    void update_screen();
 
 private:
     uint8_t block_io_regs[2048] = {0};
@@ -234,13 +234,6 @@ private:
     uint8_t pci_cfg[256] = {0}; /* PCI configuration space */
 
     uint8_t plls[64] = {0}; // internal PLL registers
-
-    /* CRT controller parameters */
-    bool        crtc_on = false;
-    int         active_width;   // width of the visible display area
-    int         active_height;  // height of the visible display area
-    float       pixel_clock;
-    float       refresh_rate;
 
     /* Video RAM variables */
     uint32_t    vram_size;
@@ -250,8 +243,6 @@ private:
 
     DisplayID*  disp_id;
 
-    uint8_t palette[256][4]; /* internal DAC palette in RGBA format */
     int comp_index;          /* color component index for DAC palette access */
-    uint8_t *surface;
 };
 #endif /* ATI_RAGE_H */
