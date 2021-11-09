@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/ioctrl/macio.h>
 #include <devices/serial/escc.h>
 #include <devices/sound/awacs.h>
+#include <endianswap.h>
 #include <loguru.hpp>
 #include <machines/machinebase.h>
 
@@ -221,7 +222,7 @@ uint32_t HeathrowIC::mio_ctrl_read(uint32_t offset, int size) {
         break;
     case 0x38:
         LOG_F(9, "read from MIO:Feat_Ctrl register \n");
-        res = this->feat_ctrl;
+        res = BYTESWAP_32(this->feat_ctrl);
         break;
     default:
         LOG_F(WARNING, "read from unknown MIO register at %x \n", offset);
@@ -261,8 +262,7 @@ void HeathrowIC::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
         LOG_F(WARNING, "Attempted to write %x to MIO:ID at %x; Address : %x \n", value, offset, ppc_state.pc);
         break;
     case 0x38:
-        LOG_F(9, "write %x to MIO:Feat_Ctrl register \n", value);
-        this->feat_ctrl = value;
+        this->feature_control(BYTESWAP_32(value));
         break;
     case 0x3C:
         LOG_F(9, "write %x to MIO:Aux_Ctrl register \n", value);
@@ -271,5 +271,18 @@ void HeathrowIC::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
     default:
         LOG_F(WARNING, "write %x to unknown MIO register at %x \n", value, offset);
         break;
+    }
+}
+
+void HeathrowIC::feature_control(const uint32_t value)
+{
+    LOG_F(9, "write %x to MIO:Feat_Ctrl register \n", value);
+
+    this->feat_ctrl = value;
+
+    if (!(this->feat_ctrl & 1)) {
+        LOG_F(9, "Heathrow: Monitor sense enabled");
+    } else {
+        LOG_F(9, "Heathrow: Monitor sense disabled");
     }
 }

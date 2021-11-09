@@ -120,6 +120,8 @@ protected:
     uint32_t mio_ctrl_read(uint32_t offset, int size);
     void mio_ctrl_write(uint32_t offset, uint32_t value, int size);
 
+    void feature_control(const uint32_t value);
+
 private:
     uint8_t pci_cfg_hdr[256] = {
         0x6B,
