@@ -90,13 +90,23 @@ enum {
 
 /** Cuda pseudo commands. */
 enum {
+    CUDA_WARM_START          = 0x00, /* warm start */
     CUDA_START_STOP_AUTOPOLL = 0x01, /* start/stop device auto-polling */
     CUDA_READ_MCU_MEM        = 0x02, /* read internal Cuda memory */
+    CUDA_GET_REAL_TIME       = 0x03, /* get real time */
     CUDA_READ_PRAM           = 0x07, /* read parameter RAM */
     CUDA_WRITE_MCU_MEM       = 0x08, /* write internal Cuda memory */
+    CUDA_SET_REAL_TIME       = 0x09, /* set real time */
+    CUDA_POWER_DOWN          = 0x0A, /* power down system */
     CUDA_WRITE_PRAM          = 0x0C, /* write parameter RAM */
+    CUDA_MONO_STABLE_RESET   = 0x0D, /* mono stable reset */
+    CUDA_RESTART_SYSTEM      = 0x11, /* restart system */
+    CUDA_FILE_SERVER_FLAG    = 0x13, /* set file server flag */
     CUDA_SET_AUTOPOLL_RATE   = 0x14, /* set auto-polling rate */
     CUDA_GET_AUTOPOLL_RATE   = 0x16, /* get auto-polling rate */
+    CUDA_SET_DEVICE_LIST     = 0x19, /* set device list */
+    CUDA_GET_DEVICE_LIST     = 0x1A, /* get device list */
+    CUDA_ONE_SECOND_MODE     = 0x1B, /* one second interrupt mode */
     CUDA_READ_WRITE_I2C      = 0x22, /* read/write I2C device */
     CUDA_COMB_FMT_I2C        = 0x25, /* combined format I2C transaction */
     CUDA_OUT_PB0             = 0x26, /* output one bit to Cuda's PB0 line */
@@ -145,6 +155,9 @@ private:
     int32_t out_count;
     int32_t out_pos;
     uint8_t poll_rate;
+    int32_t real_time = 0;
+    bool file_server;
+    uint16_t device_mask = 0;
 
     bool        is_open_ended; // true if current transaction is open-ended
     uint8_t     curr_i2c_addr; // current I2C address

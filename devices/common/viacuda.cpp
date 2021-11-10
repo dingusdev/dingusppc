@@ -351,6 +351,13 @@ void ViaCuda::pseudo_command(int cmd, int data_count) {
         }
         this->is_open_ended = true;
         break;
+    case CUDA_GET_REAL_TIME:
+        response_header(CUDA_PKT_PSEUDO, 0);
+        this->out_buf[2] = (uint8_t)((this->real_time >> 24) & 0xFF);
+        this->out_buf[3] = (uint8_t)((this->real_time >> 16) & 0xFF);
+        this->out_buf[4] = (uint8_t)((this->real_time >> 8) & 0xFF);
+        this->out_buf[5] = (uint8_t)((this->real_time) & 0xFF);
+        break;
     case CUDA_WRITE_MCU_MEM:
         addr = READ_WORD_BE_A(&this->in_buf[2]);
         // if addr is inside PRAM, update PRAM with data from in_buf
@@ -375,6 +382,13 @@ void ViaCuda::pseudo_command(int cmd, int data_count) {
             error_response(CUDA_ERR_BAD_PAR);
         }
         break;
+    case CUDA_SET_REAL_TIME:
+        response_header(CUDA_PKT_PSEUDO, 0);
+        this->real_time = ((uint32_t)in_buf[2]) >> 24;
+        this->real_time += ((uint32_t)in_buf[3]) >> 16;
+        this->real_time += ((uint32_t)in_buf[4]) >> 8;
+        this->real_time += ((uint32_t)in_buf[5]);
+        break;
     case CUDA_WRITE_PRAM:
         addr = READ_WORD_BE_A(&this->in_buf[2]);
         if (addr <= 0xFF) {
@@ -387,6 +401,16 @@ void ViaCuda::pseudo_command(int cmd, int data_count) {
             error_response(CUDA_ERR_BAD_PAR);
         }
         break;
+    case CUDA_FILE_SERVER_FLAG:
+        response_header(CUDA_PKT_PSEUDO, 0);
+        if (this->in_buf[2]) {
+            LOG_F(INFO, "Cuda: File server flag on");
+            this->file_server = true;
+        } else {
+            LOG_F(INFO, "Cuda: File server flag off");
+            this->file_server = false;
+        }
+        break;
     case CUDA_SET_AUTOPOLL_RATE:
         this->poll_rate = this->in_buf[2];
         LOG_F(INFO, "Cuda: autopoll rate set to %d ms", this->poll_rate);
@@ -396,6 +420,20 @@ void ViaCuda::pseudo_command(int cmd, int data_count) {
         response_header(CUDA_PKT_PSEUDO, 0);
         this->out_buf[3] = this->poll_rate;
         this->out_count++;
+        break;
+    case CUDA_SET_DEVICE_LIST:
+        response_header(CUDA_PKT_PSEUDO, 0);
+        this->device_mask = ((uint16_t)in_buf[2]) >> 8;
+        this->device_mask += ((uint16_t)in_buf[3]);
+        break;
+    case CUDA_GET_DEVICE_LIST:
+        response_header(CUDA_PKT_PSEUDO, 0);
+        this->out_buf[2] = (uint8_t)((this->device_mask >> 8) & 0xFF);
+        this->out_buf[3] = (uint8_t)((this->device_mask) & 0xFF);
+        break;
+    case CUDA_ONE_SECOND_MODE:
+        LOG_F(INFO, "Cuda: One Second Interrupt - Byte Sent: %d", this->in_buf[2]);
+        response_header(CUDA_PKT_PSEUDO, 0);
         break;
     case CUDA_READ_WRITE_I2C:
         response_header(CUDA_PKT_PSEUDO, 0);
@@ -411,6 +449,14 @@ void ViaCuda::pseudo_command(int cmd, int data_count) {
     case CUDA_OUT_PB0: /* undocumented call! */
         LOG_F(INFO, "Cuda: send %d to PB0", (int)(this->in_buf[2]));
         response_header(CUDA_PKT_PSEUDO, 0);
+        break;
+    case CUDA_WARM_START:
+    case CUDA_POWER_DOWN:
+    case CUDA_MONO_STABLE_RESET:
+    case CUDA_RESTART_SYSTEM:
+        /* really kludge temp code */
+        LOG_F(INFO, "Cuda: Restart/Shutdown signal sent with command 0x%x! \n", cmd);
+        //exit(0);
         break;
     default:
         LOG_F(ERROR, "Cuda: unsupported pseudo command 0x%X", cmd);
