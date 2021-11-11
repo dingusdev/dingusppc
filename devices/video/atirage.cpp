@@ -116,7 +116,7 @@ ATIRage::ATIRage(uint16_t dev_id, uint32_t vmem_size_mb)
     WRITE_DWORD_LE_A(&this->pci_cfg[0x3C], 0x00080100);
 
     /* stuff default values into chip registers */
-    WRITE_DWORD_LE_A(&this->block_io_regs[ATI_CONFIG_CHIP_ID],
+    WRITE_DWORD_LE_A(&this->mm_regs[ATI_CONFIG_CHIP_ID],
                     (asic_id << 24) | dev_id);
 
     /* initialize display identification */
@@ -144,24 +144,25 @@ const char* ATIRage::get_reg_name(uint32_t reg_offset) {
 uint32_t ATIRage::read_reg(uint32_t offset, uint32_t size) {
     uint32_t res;
 
+    // perform register-specific pre-read action
     switch (offset & ~3) {
     case ATI_GP_IO:
         break;
     case ATI_CLOCK_CNTL:
         /* reading from internal PLL registers */
         if (offset == ATI_CLOCK_CNTL+2 && size == 1 &&
-            !(this->block_io_regs[ATI_CLOCK_CNTL+1] & 0x2)) {
-            return this->plls[this->block_io_regs[ATI_CLOCK_CNTL+1] >> 2];
+            !(this->mm_regs[ATI_CLOCK_CNTL+1] & 0x2)) {
+            return this->plls[this->mm_regs[ATI_CLOCK_CNTL+1] >> 2];
         }
         break;
     case ATI_DAC_REGS:
         if (offset == ATI_DAC_DATA) {
-            this->block_io_regs[ATI_DAC_DATA] =
-                this->palette[this->block_io_regs[ATI_DAC_R_INDEX]][this->comp_index];
+            this->mm_regs[ATI_DAC_DATA] =
+                this->palette[this->mm_regs[ATI_DAC_R_INDEX]][this->comp_index];
             this->comp_index++; /* move to next color component */
             if (this->comp_index >= 3) {
                 /* autoincrement reading index - move to next palette entry */
-                (this->block_io_regs[ATI_DAC_R_INDEX])++;
+                (this->mm_regs[ATI_DAC_R_INDEX])++;
                 this->comp_index = 0;
             }
         }
@@ -173,10 +174,11 @@ uint32_t ATIRage::read_reg(uint32_t offset, uint32_t size) {
             get_reg_name(offset),
             offset,
             size,
-            read_mem(&this->block_io_regs[offset], size));
+            read_mem(&this->mm_regs[offset], size));
     }
 
-    res = read_mem(&this->block_io_regs[offset], size);
+    // reading internal registers with necessary endian conversion
+    res = read_mem(&this->mm_regs[offset], size);
 
     return res;
 }
@@ -185,51 +187,52 @@ void ATIRage::write_reg(uint32_t offset, uint32_t value, uint32_t size) {
     uint32_t gpio_val;
     uint16_t gpio_dir;
 
-    /* size-dependent endian conversion */
-    write_mem(&this->block_io_regs[offset], value, size);
+    // writing internal registers with necessary endian conversion
+    write_mem(&this->mm_regs[offset], value, size);
 
+    // perform register-specific post-write action
     switch (offset & ~3) {
     case ATI_CRTC_OFF_PITCH:
-        LOG_F(INFO, "ATI Rage: CRTC_OFF_PITCH=0x%08X", READ_DWORD_LE_A(&this->block_io_regs[ATI_CRTC_OFF_PITCH]));
+        LOG_F(INFO, "ATI Rage: CRTC_OFF_PITCH=0x%08X", READ_DWORD_LE_A(&this->mm_regs[ATI_CRTC_OFF_PITCH]));
         break;
     case ATI_CRTC_GEN_CNTL:
-        if (this->block_io_regs[ATI_CRTC_GEN_CNTL+3] & 2) {
+        if (this->mm_regs[ATI_CRTC_GEN_CNTL+3] & 2) {
             this->crtc_enable();
         } else {
             this->crtc_on = false;
         }
-        LOG_F(INFO, "ATI Rage: CRTC_GEN_CNTL:CRTC_ENABLE=%d", !!(this->block_io_regs[ATI_CRTC_GEN_CNTL+3] & 2));
-        LOG_F(INFO, "ATI Rage: CRTC_GEN_CNTL:CRTC_DISPLAY_DIS=%d", !!(this->block_io_regs[ATI_CRTC_GEN_CNTL] & 0x40));
+        LOG_F(INFO, "ATI Rage: CRTC_GEN_CNTL:CRTC_ENABLE=%d", !!(this->mm_regs[ATI_CRTC_GEN_CNTL+3] & 2));
+        LOG_F(INFO, "ATI Rage: CRTC_GEN_CNTL:CRTC_DISPLAY_DIS=%d", !!(this->mm_regs[ATI_CRTC_GEN_CNTL] & 0x40));
         break;
     case ATI_CUR_OFFSET:
-        LOG_F(INFO, "ATI Rage: CUR_OFFSET=0x%08X", READ_DWORD_LE_A(&this->block_io_regs[ATI_CUR_OFFSET]));
+        LOG_F(INFO, "ATI Rage: CUR_OFFSET=0x%08X", READ_DWORD_LE_A(&this->mm_regs[ATI_CUR_OFFSET]));
         break;
     case ATI_CUR_HORZ_VERT_POSN:
-        LOG_F(INFO, "ATI Rage: CUR_HORZ_VERT_POSN=0x%08X", READ_DWORD_LE_A(&this->block_io_regs[ATI_CUR_HORZ_VERT_POSN]));
+        LOG_F(INFO, "ATI Rage: CUR_HORZ_VERT_POSN=0x%08X", READ_DWORD_LE_A(&this->mm_regs[ATI_CUR_HORZ_VERT_POSN]));
         break;
     case ATI_CUR_HORZ_VERT_OFF:
-        LOG_F(INFO, "ATI Rage: CUR_HORZ_VERT_OFF=0x%08X", READ_DWORD_LE_A(&this->block_io_regs[ATI_CUR_HORZ_VERT_OFF]));
+        LOG_F(INFO, "ATI Rage: CUR_HORZ_VERT_OFF=0x%08X", READ_DWORD_LE_A(&this->mm_regs[ATI_CUR_HORZ_VERT_OFF]));
         break;
     case ATI_GP_IO:
         if (offset < (ATI_GP_IO + 2)) {
-            gpio_val = READ_DWORD_LE_A(&this->block_io_regs[ATI_GP_IO]);
+            gpio_val = READ_DWORD_LE_A(&this->mm_regs[ATI_GP_IO]);
             gpio_dir = (gpio_val >> 16) & 0x3FFF;
             WRITE_WORD_LE_A(
-                &this->block_io_regs[ATI_GP_IO],
+                &this->mm_regs[ATI_GP_IO],
                 this->disp_id->read_monitor_sense(gpio_val, gpio_dir));
         }
         break;
     case ATI_CLOCK_CNTL:
         /* writing to internal PLL registers */
         if (offset == ATI_CLOCK_CNTL+2 && size == 1 &&
-            (this->block_io_regs[ATI_CLOCK_CNTL+1] & 0x2)) {
-            int pll_addr = this->block_io_regs[ATI_CLOCK_CNTL+1] >> 2;
-            uint8_t pll_data = this->block_io_regs[ATI_CLOCK_CNTL+2];
+            (this->mm_regs[ATI_CLOCK_CNTL+1] & 0x2)) {
+            int pll_addr = this->mm_regs[ATI_CLOCK_CNTL+1] >> 2;
+            uint8_t pll_data = this->mm_regs[ATI_CLOCK_CNTL+2];
             this->plls[pll_addr] = pll_data;
             LOG_F(INFO, "ATI Rage: PLL #%d set to 0x%02X", pll_addr, pll_data);
         } else if (offset == ATI_CLOCK_CNTL && size == 1) {
             LOG_F(INFO, "ATI Rage: CLOCK_SEL = 0x%02X",
-                  this->block_io_regs[ATI_CLOCK_CNTL] & 3);
+                  this->mm_regs[ATI_CLOCK_CNTL] & 3);
         }
         break;
     case ATI_DAC_REGS:
@@ -240,24 +243,24 @@ void ATIRage::write_reg(uint32_t offset, uint32_t value, uint32_t size) {
             this->comp_index = 0;
             break;
         case ATI_DAC_DATA:
-            this->palette[this->block_io_regs[ATI_DAC_W_INDEX]][this->comp_index] = value & 0xFF;
+            this->palette[this->mm_regs[ATI_DAC_W_INDEX]][this->comp_index] = value & 0xFF;
             this->comp_index++; /* move to next color component */
             if (this->comp_index >= 3) {
                 LOG_F(
                     INFO,
                     "ATI DAC palette entry #%d set to R=%X, G=%X, B=%X",
-                    this->block_io_regs[ATI_DAC_W_INDEX],
-                    this->palette[this->block_io_regs[ATI_DAC_W_INDEX]][0],
-                    this->palette[this->block_io_regs[ATI_DAC_W_INDEX]][1],
-                    this->palette[this->block_io_regs[ATI_DAC_W_INDEX]][2]);
+                    this->mm_regs[ATI_DAC_W_INDEX],
+                    this->palette[this->mm_regs[ATI_DAC_W_INDEX]][0],
+                    this->palette[this->mm_regs[ATI_DAC_W_INDEX]][1],
+                    this->palette[this->mm_regs[ATI_DAC_W_INDEX]][2]);
                 /* autoincrement writing index - move to next palette entry */
-                (this->block_io_regs[ATI_DAC_W_INDEX])++;
+                (this->mm_regs[ATI_DAC_W_INDEX])++;
                 this->comp_index = 0;
             }
         }
         break;
     case ATI_GEN_TEST_CNTL:
-        LOG_F(INFO, "HW cursor: %s", this->block_io_regs[ATI_GEN_TEST_CNTL] & 0x80 ? "on" : "off");
+        LOG_F(INFO, "HW cursor: %s", this->mm_regs[ATI_GEN_TEST_CNTL] & 0x80 ? "on" : "off");
         break;
     default:
         LOG_F(
@@ -265,14 +268,14 @@ void ATIRage::write_reg(uint32_t offset, uint32_t value, uint32_t size) {
             "ATI Rage: %s register at 0x%X set to 0x%X",
             get_reg_name(offset),
             offset & ~3,
-            READ_DWORD_LE_A(&this->block_io_regs[offset & ~3]));
+            READ_DWORD_LE_A(&this->mm_regs[offset & ~3]));
     }
 
-    if ((this->block_io_regs[ATI_CRTC_GEN_CNTL+3] & 2) &&
-        !(this->block_io_regs[ATI_CRTC_GEN_CNTL] & 0x40)) {
-        int32_t src_offset = (READ_DWORD_LE_A(&this->block_io_regs[ATI_CRTC_OFF_PITCH]) & 0xFFFF) * 8;
+    if ((this->mm_regs[ATI_CRTC_GEN_CNTL+3] & 2) &&
+        !(this->mm_regs[ATI_CRTC_GEN_CNTL] & 0x40)) {
+        int32_t src_offset = (READ_DWORD_LE_A(&this->mm_regs[ATI_CRTC_OFF_PITCH]) & 0xFFFF) * 8;
 
-        this->fb_pitch = ((READ_DWORD_LE_A(&this->block_io_regs[ATI_CRTC_OFF_PITCH])) >> 19) & 0x1FF8;
+        this->fb_pitch = ((READ_DWORD_LE_A(&this->mm_regs[ATI_CRTC_OFF_PITCH])) >> 19) & 0x1FF8;
 
         this->fb_ptr = this->vram_ptr + src_offset;
         this->update_screen();
@@ -464,13 +467,13 @@ void ATIRage::verbose_pixel_format(int crtc_index) {
 
     const char* what = "Pixel format:";
 
-    switch (this->block_io_regs[ATI_CRTC_GEN_CNTL+1] & 7) {
+    switch (this->mm_regs[ATI_CRTC_GEN_CNTL+1] & 7) {
     case 1:
         LOG_F(INFO, "%s 4 bpp with DAC palette", what);
         break;
     case 2:
         // check the undocumented DAC_DIRECT bit
-        if (this->block_io_regs[ATI_DAC_CNTL+1] & 4) {
+        if (this->mm_regs[ATI_DAC_CNTL+1] & 4) {
             LOG_F(INFO, "%s 8 bpp direct color (RGB322)", what);
         } else {
             LOG_F(INFO, "%s 8 bpp with DAC palette", what);
@@ -490,21 +493,21 @@ void ATIRage::verbose_pixel_format(int crtc_index) {
         break;
     default:
         LOG_F(ERROR, "ATI Rage: CRTC pixel format %d not supported",
-              this->block_io_regs[ATI_CRTC_GEN_CNTL+2] & 7);
+              this->mm_regs[ATI_CRTC_GEN_CNTL+2] & 7);
     }
 }
 
 void ATIRage::crtc_enable() {
     /* active (visible) width is specified in characters (8 px) - 1 */
-    this->active_width  = (this->block_io_regs[ATI_CRTC_H_TOTAL_DISP+2] + 1) * 8;
+    this->active_width  = (this->mm_regs[ATI_CRTC_H_TOTAL_DISP+2] + 1) * 8;
 
     /* active (visible) height is specified in lines - 1 */
     this->active_height =
-        (READ_WORD_LE_A(&this->block_io_regs[ATI_CRTC_V_TOTAL_DISP+2]) & 0x7FFUL) + 1;
+        (READ_WORD_LE_A(&this->mm_regs[ATI_CRTC_V_TOTAL_DISP+2]) & 0x7FFUL) + 1;
 
     if ((this->plls[PLL_VCLK_CNTL] & 3) == 3) {
         /* look up which VPLL ouput is requested */
-        int clock_sel = this->block_io_regs[ATI_CLOCK_CNTL] & 3;
+        int clock_sel = this->mm_regs[ATI_CLOCK_CNTL] & 3;
 
         /* calculate VPLL output frequency */
         float vpll_freq = calc_pll_freq(2, this->plls[VCLK0_FB_DIV + clock_sel]);
@@ -521,17 +524,17 @@ void ATIRage::crtc_enable() {
 
         /* calculate display refresh rate */
         int hori_total =
-            ((READ_WORD_LE_A(&this->block_io_regs[ATI_CRTC_H_TOTAL_DISP])
+            ((READ_WORD_LE_A(&this->mm_regs[ATI_CRTC_H_TOTAL_DISP])
               & 0x1FFUL) + 1) * 8;
 
         int vert_total =
-            (READ_WORD_LE_A(&this->block_io_regs[ATI_CRTC_V_TOTAL_DISP]) & 0x7FFUL) + 1;
+            (READ_WORD_LE_A(&this->mm_regs[ATI_CRTC_V_TOTAL_DISP]) & 0x7FFUL) + 1;
 
         this->refresh_rate = pixel_clock / hori_total / vert_total;
 
         LOG_F(INFO, "ATI Rage: primary CRT controller enabled:");
         LOG_F(INFO, "Video mode: %s",
-             (this->block_io_regs[ATI_CRTC_GEN_CNTL+3] & 1) ? "extended" : "VGA");
+             (this->mm_regs[ATI_CRTC_GEN_CNTL+3] & 1) ? "extended" : "VGA");
         LOG_F(INFO, "Video width: %d px", this->active_width);
         LOG_F(INFO, "Video height: %d px", this->active_height);
         verbose_pixel_format(0);
@@ -548,15 +551,15 @@ void ATIRage::crtc_enable() {
 void ATIRage::draw_hw_cursor(uint8_t *dst_buf, int dst_pitch) {
     uint8_t *src_buf, *src_row, *dst_row, px4;
 
-    int horz_offset = READ_DWORD_LE_A(&this->block_io_regs[ATI_CUR_HORZ_VERT_OFF]) & 0x3F;
-    int vert_offset = (READ_DWORD_LE_A(&this->block_io_regs[ATI_CUR_HORZ_VERT_OFF]) >> 16) & 0x3F;
+    int horz_offset = READ_DWORD_LE_A(&this->mm_regs[ATI_CUR_HORZ_VERT_OFF]) & 0x3F;
+    int vert_offset = (READ_DWORD_LE_A(&this->mm_regs[ATI_CUR_HORZ_VERT_OFF]) >> 16) & 0x3F;
 
-    src_buf = this->vram_ptr + (READ_DWORD_LE_A(&this->block_io_regs[ATI_CUR_OFFSET]) * 8);
+    src_buf = this->vram_ptr + (READ_DWORD_LE_A(&this->mm_regs[ATI_CUR_OFFSET]) * 8);
 
     int cur_height = 64 - vert_offset;
 
-    uint32_t color0 = READ_DWORD_LE_A(&this->block_io_regs[ATI_CUR_CLR0]) | 0x000000FFUL;
-    uint32_t color1 = READ_DWORD_LE_A(&this->block_io_regs[ATI_CUR_CLR1]) | 0x000000FFUL;
+    uint32_t color0 = READ_DWORD_LE_A(&this->mm_regs[ATI_CUR_CLR0]) | 0x000000FFUL;
+    uint32_t color1 = READ_DWORD_LE_A(&this->mm_regs[ATI_CUR_CLR1]) | 0x000000FFUL;
 
     for (int h = 0; h < cur_height; h++) {
         dst_row = &dst_buf[h * dst_pitch];

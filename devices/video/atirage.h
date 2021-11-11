@@ -229,7 +229,7 @@ protected:
     void draw_hw_cursor(uint8_t *dst_buf, int dst_pitch);
 
 private:
-    uint8_t block_io_regs[2048] = {0};
+    uint8_t mm_regs[2048] = {0};
 
     uint8_t pci_cfg[256] = {0}; /* PCI configuration space */
 
