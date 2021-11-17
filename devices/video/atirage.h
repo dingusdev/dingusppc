@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/video/videoctrl.h>
 
 #include <cinttypes>
+#include <memory>
 
 /* PCI related definitions. */
 enum {
@@ -196,7 +197,7 @@ constexpr auto ATI_XTAL = 14318180.0f; // external crystal oscillator frequency
 class ATIRage : public PCIDevice, public VideoCtrlBase {
 public:
     ATIRage(uint16_t dev_id, uint32_t vmem_size_mb);
-    ~ATIRage();
+    ~ATIRage() = default;
 
     /* MMIODevice methods */
     uint32_t read(uint32_t reg_start, uint32_t offset, int size);
@@ -229,19 +230,19 @@ protected:
     void draw_hw_cursor(uint8_t *dst_buf, int dst_pitch);
 
 private:
-    uint8_t mm_regs[2048] = {0};
+    uint8_t mm_regs[2048] = {0}; // internal registers
 
-    uint8_t pci_cfg[256] = {0}; /* PCI configuration space */
+    uint8_t pci_cfg[256] = {0}; // PCI configuration space
 
     uint8_t plls[64] = {0}; // internal PLL registers
 
     /* Video RAM variables */
+    std::unique_ptr<uint8_t[]>  vram_ptr;
     uint32_t    vram_size;
-    uint8_t*    vram_ptr;
 
     uint32_t    aperture_base;
 
-    DisplayID*  disp_id;
+    std::unique_ptr<DisplayID>  disp_id;
 
     int comp_index;          /* color component index for DAC palette access */
 };

@@ -29,6 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <chrono>
 #include <cstdint>
 #include <map>
+#include <memory>
 
 /* Mach64 post dividers. */
 static const int mach64_post_div[8] = {
@@ -94,7 +95,7 @@ ATIRage::ATIRage(uint16_t dev_id, uint32_t vmem_size_mb)
     this->vram_size = vmem_size_mb << 20; // convert MBs to bytes
 
     /* allocate video RAM */
-    this->vram_ptr = new uint8_t[this->vram_size];
+    this->vram_ptr = std::unique_ptr<uint8_t[]> (new uint8_t[this->vram_size]);
 
     /* ATI Rage driver needs to know ASIC ID (manufacturer's internal chip code)
        to operate properly */
@@ -120,16 +121,7 @@ ATIRage::ATIRage(uint16_t dev_id, uint32_t vmem_size_mb)
                     (asic_id << 24) | dev_id);
 
     /* initialize display identification */
-    this->disp_id = new DisplayID(Disp_Id_Kind::DDC2B);
-}
-
-ATIRage::~ATIRage()
-{
-    if (this->vram_ptr) {
-        delete this->vram_ptr;
-    }
-
-    delete (this->disp_id);
+    this->disp_id = std::unique_ptr<DisplayID> (new DisplayID(Disp_Id_Kind::DDC2B));
 }
 
 const char* ATIRage::get_reg_name(uint32_t reg_offset) {
@@ -277,7 +269,7 @@ void ATIRage::write_reg(uint32_t offset, uint32_t value, uint32_t size) {
 
         this->fb_pitch = ((READ_DWORD_LE_A(&this->mm_regs[ATI_CRTC_OFF_PITCH])) >> 19) & 0x1FF8;
 
-        this->fb_ptr = this->vram_ptr + src_offset;
+        this->fb_ptr = &this->vram_ptr[src_offset];
         this->update_screen();
     }
 }
@@ -404,11 +396,11 @@ uint32_t ATIRage::read(uint32_t reg_start, uint32_t offset, int size)
 
     if (offset < this->vram_size) {
         /* read from little-endian VRAM region */
-        return read_mem(this->vram_ptr + offset, size);
+        return read_mem(&this->vram_ptr[offset], size);
     }
     else if (offset >= BE_FB_OFFSET) {
         /* read from big-endian VRAM region */
-        return read_mem_rev(this->vram_ptr + (offset - BE_FB_OFFSET), size);
+        return read_mem_rev(&this->vram_ptr[offset - BE_FB_OFFSET], size);
     }
     else if (offset >= MM_REGS_0_OFF) {
         /* read from memory-mapped registers, block 0 */
@@ -436,11 +428,11 @@ void ATIRage::write(uint32_t reg_start, uint32_t offset, uint32_t value, int siz
 
     if (offset < this->vram_size) {
         /* write to little-endian VRAM region */
-        write_mem(this->vram_ptr + offset, value, size);
+        write_mem(&this->vram_ptr[offset], value, size);
     }
     else if (offset >= BE_FB_OFFSET) {
         /* write to big-endian VRAM region */
-        write_mem_rev(this->vram_ptr + (offset - BE_FB_OFFSET), value, size);
+        write_mem_rev(&this->vram_ptr[offset - BE_FB_OFFSET], value, size);
     }
     else if (offset >= MM_REGS_0_OFF) {
         /* write to memory-mapped registers, block 0 */
@@ -554,7 +546,7 @@ void ATIRage::draw_hw_cursor(uint8_t *dst_buf, int dst_pitch) {
     int horz_offset = READ_DWORD_LE_A(&this->mm_regs[ATI_CUR_HORZ_VERT_OFF]) & 0x3F;
     int vert_offset = (READ_DWORD_LE_A(&this->mm_regs[ATI_CUR_HORZ_VERT_OFF]) >> 16) & 0x3F;
 
-    src_buf = this->vram_ptr + (READ_DWORD_LE_A(&this->mm_regs[ATI_CUR_OFFSET]) * 8);
+    src_buf = &this->vram_ptr[(READ_DWORD_LE_A(&this->mm_regs[ATI_CUR_OFFSET]) * 8)];
 
     int cur_height = 64 - vert_offset;
 
