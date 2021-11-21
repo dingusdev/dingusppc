@@ -143,9 +143,11 @@ private:
         0x00    // unknown defaults
     };
 
+    uint32_t int_events2 = 0;
     uint32_t int_mask2   = 0;
     uint32_t int_clear2  = 0;
     uint32_t int_levels2 = 0;
+    uint32_t int_events1 = 0;
     uint32_t int_mask1   = 0;
     uint32_t int_clear1  = 0;
     uint32_t int_levels1 = 0;
