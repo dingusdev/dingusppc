@@ -53,6 +53,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <devices/common/dbdma.h>
 #include <devices/common/hwcomponent.h>
+#include <devices/common/hwinterrupt.h>
 #include <devices/common/mmiodevice.h>
 #include <devices/common/nvram.h>
 #include <devices/common/pci/pcidevice.h>
@@ -161,6 +162,7 @@ private:
     std::unique_ptr<AwacsScreamer>  screamer; // Screamer audio codec instance
     std::unique_ptr<MESHController> mesh;     // MESH SCSI cell instance
     std::unique_ptr<EsccController> escc;     // ESCC serial controller
+    std::unique_ptr<HWInterrupt>    hwinterrupt;     // ESCC serial controller
 
     std::unique_ptr<DMAChannel>     snd_out_dma;
 };

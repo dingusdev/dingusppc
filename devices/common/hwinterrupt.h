@@ -24,19 +24,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 #include <memory>
+#include <string>
 
-class InterruptManager {
+class HWInterrupt {
 public:
-    InterruptManager(std::string sys_type = "None");
-    ~InterruptManager() = default;
+    HWInterrupt(std::string sys_type = "None");
+    ~HWInterrupt() = default;
 
     uint32_t ack_interrupts();
-    uint32_t clear_interrupts();
+
+    //for all (Old World) PCI-based Macs
+    uint32_t update_int1_flags(uint32_t bit_setting);
+    uint32_t clear_int1_flags(uint32_t bit_setting);
+
+    //for Heathrow
+    uint32_t update_int2_flags(uint32_t bit_setting);
+    uint32_t clear_int2_flags(uint32_t bit_setting);
+
+    uint32_t pending_interrupts(uint32_t device_bits); 
     void call_ppc_handler(uint32_t device_bits);
 
 private:
-    uint32_t int1_flags;
-    uint32_t int2_flags;
+    uint32_t pending_int1_flags;
+    uint32_t pending_int2_flags;
     uint32_t scsi0_dma_mask_bit    = 0;
     uint32_t scca_dma_out_mask_bit = 0;
     uint32_t scca_dma_in_mask_bit  = 0;

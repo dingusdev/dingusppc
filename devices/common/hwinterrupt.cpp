@@ -27,7 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace std;
 
-InterruptManager::InterruptManager(std::string sys_type) {
+HWInterrupt::HWInterrupt(std::string sys_type) {
     if (sys_type.compare("Heathrow") == 0) {
         scsi0_dma_mask_bit    = (1 << 0);
         scca_dma_out_mask_bit = (1 << 4);
@@ -51,15 +51,30 @@ InterruptManager::InterruptManager(std::string sys_type) {
     }
 }
 
+uint32_t HWInterrupt::update_int1_flags(uint32_t bit_setting) {
+    pending_int1_flags = bit_setting;
+}
 
-uint32_t InterruptManager::ack_interrupts(){
+uint32_t HWInterrupt::clear_int1_flags(uint32_t bit_setting) {
+    pending_int1_flags &= ~(bit_setting);
+}
+
+uint32_t HWInterrupt::update_int2_flags(uint32_t bit_setting) {
+    pending_int2_flags = bit_setting;
+}
+
+uint32_t HWInterrupt::clear_int2_flags(uint32_t bit_setting) {
+    pending_int2_flags &= ~(bit_setting);
+}
+
+uint32_t HWInterrupt::ack_interrupts() {
 
 }
 
-uint32_t InterruptManager::clear_interrupts(){
-
+uint32_t HWInterrupt::pending_interrupts(uint32_t device_bits) {
+    call_ppc_handler(device_bits);
 }
 
-void InterruptManager::call_ppc_handler(uint32_t device_bits) {
+void HWInterrupt::call_ppc_handler(uint32_t device_bits) {
     ppc_exception_handler(Except_Type::EXC_EXT_INT, device_bits);
 }

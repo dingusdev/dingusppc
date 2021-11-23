@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cpu/ppc/ppcemu.h>
 #include <devices/common/dbdma.h>
+#include <devices/common/hwinterrupt.h>
 #include <devices/common/viacuda.h>
 #include <devices/ioctrl/macio.h>
 #include <devices/serial/escc.h>
@@ -56,8 +57,9 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow") {
         std::bind(&AwacsScreamer::dma_end, this->screamer.get())
     );
 
-    this->mesh = std::unique_ptr<MESHController> (new MESHController(HeathrowMESHID));
-    this->escc = std::unique_ptr<EsccController> (new EsccController());
+    this->mesh        = std::unique_ptr<MESHController> (new MESHController(HeathrowMESHID));
+    this->escc        = std::unique_ptr<EsccController>(new EsccController());
+    this->hwinterrupt = std::unique_ptr<HWInterrupt>(new HWInterrupt());
 }
 
 uint32_t HeathrowIC::pci_cfg_read(uint32_t reg_offs, uint32_t size) {
@@ -269,10 +271,12 @@ void HeathrowIC::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
     case 0x14:
         LOG_F(0, "write %x to MIO:Int_Mask2 register \n", value);
         this->int_mask2 = value;
+        this->hwinterrupt->update_int2_flags(this->int_mask2);
         break;
     case 0x18:
         LOG_F(0, "write %x to MIO:Int_Clear2 register \n", value);
         this->int_clear2 = value;
+        this->hwinterrupt->clear_int2_flags(this->int_clear2);
         break;
     case 0x1C:
         LOG_F(0, "write %x to MIO:Int_Levels2 register \n", value);
@@ -285,10 +289,12 @@ void HeathrowIC::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
     case 0x24:
         LOG_F(0, "write %x to MIO:Int_Mask1 register \n", value);
         this->int_mask1 = value;
+        this->hwinterrupt->update_int1_flags(this->int_mask1);
         break;
     case 0x28:
         LOG_F(0, "write %x to MIO:Int_Clear1 register \n", value);
         this->int_clear1 = value;
+        this->hwinterrupt->clear_int1_flags(this->int_clear1);
         break;
     case 0x2C:
         LOG_F(0, "write %x to MIO:Int_Levels1 register \n", value);
