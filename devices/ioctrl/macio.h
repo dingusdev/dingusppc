@@ -53,13 +53,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <devices/common/dbdma.h>
 #include <devices/common/hwcomponent.h>
-#include <devices/common/hwinterrupt.h>
 #include <devices/common/mmiodevice.h>
 #include <devices/common/nvram.h>
 #include <devices/common/pci/pcidevice.h>
 #include <devices/common/pci/pcihost.h>
 #include <devices/common/scsi/mesh.h>
 #include <devices/common/viacuda.h>
+#include <devices/ioctrl/heathintctrl.h>
 #include <devices/memctrl/memctrlbase.h>
 #include <devices/serial/escc.h>
 #include <devices/sound/awacs.h>
@@ -143,15 +143,7 @@ private:
         0x00,
         0x00    // unknown defaults
     };
-
-    uint32_t int_events2 = 0;
-    uint32_t int_mask2   = 0;
-    uint32_t int_clear2  = 0;
-    uint32_t int_levels2 = 0;
-    uint32_t int_events1 = 0;
-    uint32_t int_mask1   = 0;
-    uint32_t int_clear1  = 0;
-    uint32_t int_levels1 = 0;
+    
     uint32_t macio_id    = 0xF0700008UL;
     uint32_t feat_ctrl   = 0;    // features control register
     uint32_t aux_ctrl    = 0;    // aux features control register
@@ -162,7 +154,7 @@ private:
     std::unique_ptr<AwacsScreamer>  screamer; // Screamer audio codec instance
     std::unique_ptr<MESHController> mesh;     // MESH SCSI cell instance
     std::unique_ptr<EsccController> escc;     // ESCC serial controller
-    std::unique_ptr<HWInterrupt>    hwinterrupt;     // ESCC serial controller
+    std::unique_ptr<HeathIntCtrl>   int_ctrl; // Interrupt controller
 
     std::unique_ptr<DMAChannel>     snd_out_dma;
 };

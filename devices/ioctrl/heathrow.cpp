@@ -21,9 +21,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cpu/ppc/ppcemu.h>
 #include <devices/common/dbdma.h>
-#include <devices/common/hwinterrupt.h>
 #include <devices/common/viacuda.h>
 #include <devices/ioctrl/macio.h>
+#include <devices/ioctrl/heathintctrl.h>
 #include <devices/serial/escc.h>
 #include <devices/sound/awacs.h>
 #include <endianswap.h>
@@ -59,7 +59,7 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow") {
 
     this->mesh        = std::unique_ptr<MESHController> (new MESHController(HeathrowMESHID));
     this->escc        = std::unique_ptr<EsccController>(new EsccController());
-    this->hwinterrupt = std::unique_ptr<HWInterrupt>(new HWInterrupt());
+    this->int_ctrl    = std::unique_ptr<HeathIntCtrl>(new HeathIntCtrl());
 }
 
 uint32_t HeathrowIC::pci_cfg_read(uint32_t reg_offs, uint32_t size) {
@@ -95,6 +95,7 @@ uint32_t HeathrowIC::dma_read(uint32_t offset, int size) {
     switch (offset >> 8) {
     case 8:
         res = this->snd_out_dma->reg_read(offset & 0xFF, size);
+        this->int_ctrl->ack_interrupt(Heathrow_Int1::DAVBUS_DMA_OUT, 0);
         break;
     default:
         LOG_F(WARNING, "Unsupported DMA channel read, offset=0x%X", offset);
@@ -177,6 +178,7 @@ void HeathrowIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int 
         break;
     case 0x10:
         this->mesh->write((offset >> 4) & 0xF, value);
+        this->int_ctrl->ack_interrupt(Heathrow_Int1::SCSI0, 0);
         break;
     case 0x11: // BMAC
         LOG_F(WARNING, "Attempted to write to BMAC: %x \n", (offset - 0x11000));    
@@ -189,6 +191,7 @@ void HeathrowIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int 
         break;
     case 0x14:
         this->screamer->snd_ctrl_write(offset - 0x14000, value, size);
+        this->int_ctrl->ack_interrupt(Heathrow_Int1::DAVBUS, 0);
         break;
     case 0x15: // SWIM 3
         LOG_F(WARNING, "Attempted to write to SWIM 3: %x \n", (offset - 0x15000));
@@ -196,6 +199,7 @@ void HeathrowIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int 
     case 0x16:
     case 0x17:
         this->viacuda->write((offset - 0x16000) >> 9, value);
+        this->int_ctrl->ack_interrupt(Heathrow_Int1::VIA_CUDA, 0);
         break;
     case 0x20: // IDE
     case 0x21:
@@ -216,35 +220,35 @@ uint32_t HeathrowIC::mio_ctrl_read(uint32_t offset, int size) {
     switch (offset & 0xFC) {
     case 0x10:
         LOG_F(0, "read from MIO:Int_Events2 register \n");
-        res = this->int_events2;
+        res = this->int_ctrl->retrieve_events2_flags();
         break;
     case 0x14:
         LOG_F(0, "read from MIO:Int_Mask2 register \n");
-        res = this->int_mask2;
+        res = this->int_ctrl->retrieve_mask2_flags();
         break;
     case 0x18:
         LOG_F(0, "read from MIO:Int_Clear2 register \n");
-        res = this->int_clear2;
+        res = this->int_ctrl->retrieve_clear2_flags();
         break;
     case 0x1C:
         LOG_F(0, "read from MIO:Int_Levels2 register \n");
-        res = this->int_levels2;
+        res = this->int_ctrl->retrieve_levels2_flags();
         break;
     case 0x20:
         LOG_F(0, "read from MIO:Int_Events1 register \n");
-        res = this->int_events2;
+        res = this->int_ctrl->retrieve_events_flags();
         break;
     case 0x24:
         LOG_F(0, "read from MIO:Int_Mask1 register \n");
-        res = this->int_mask1;
+        res = this->int_ctrl->retrieve_mask_flags();
         break;
     case 0x28:
         LOG_F(0, "read from MIO:Int_Clear1 register \n");
-        res = this->int_clear1;
+        res = this->int_ctrl->retrieve_clear_flags();
         break;
     case 0x2C:
         LOG_F(0, "read from MIO:Int_Levels1 register \n");
-        res = this->int_levels1;
+        res = this->int_ctrl->retrieve_levels_flags();
         break;
     case 0x34: /* heathrowIDs / HEATHROW_MBCR (Linux): media bay config reg? */
         LOG_F(9, "read from MIO:ID register at Address %x \n", ppc_state.pc);
@@ -266,39 +270,35 @@ void HeathrowIC::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
     switch (offset & 0xFC) {
     case 0x10:
         LOG_F(0, "write %x to MIO:Int_Events2 register \n", value);
-        this->int_events2 = value;
+        this->int_ctrl->update_events2_flags(value);
         break;
     case 0x14:
         LOG_F(0, "write %x to MIO:Int_Mask2 register \n", value);
-        this->int_mask2 = value;
-        this->hwinterrupt->update_int2_flags(this->int_mask2);
+        this->int_ctrl->update_mask2_flags(value);
         break;
     case 0x18:
         LOG_F(0, "write %x to MIO:Int_Clear2 register \n", value);
-        this->int_clear2 = value;
-        this->hwinterrupt->clear_int2_flags(this->int_clear2);
+        this->int_ctrl->update_clear2_flags(value);
         break;
     case 0x1C:
         LOG_F(0, "write %x to MIO:Int_Levels2 register \n", value);
-        this->int_levels2 = value;
+        this->int_ctrl->update_levels2_flags(value);
         break;
     case 0x20:
         LOG_F(0, "write %x to MIO:Int_Events1 register \n", value);
-        this->int_events1 = value;
+        this->int_ctrl->update_events_flags(value);
         break;
     case 0x24:
         LOG_F(0, "write %x to MIO:Int_Mask1 register \n", value);
-        this->int_mask1 = value;
-        this->hwinterrupt->update_int1_flags(this->int_mask1);
+        this->int_ctrl->update_mask_flags(value);
         break;
     case 0x28:
         LOG_F(0, "write %x to MIO:Int_Clear1 register \n", value);
-        this->int_clear1 = value;
-        this->hwinterrupt->clear_int1_flags(this->int_clear1);
+        this->int_ctrl->update_clear_flags(value);
         break;
     case 0x2C:
         LOG_F(0, "write %x to MIO:Int_Levels1 register \n", value);
-        this->int_levels1 = value;
+        this->int_ctrl->update_levels_flags(value);
         break;
     case 0x34:
         LOG_F(WARNING, "Attempted to write %x to MIO:ID at %x; Address : %x \n", value, offset, ppc_state.pc);
