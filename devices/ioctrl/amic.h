@@ -30,6 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/ethernet/mace.h>
 #include <devices/serial/escc.h>
 #include <devices/sound/awacs.h>
+#include <devices/video/displayid.h>
 
 #include <cinttypes>
 #include <memory>
@@ -98,7 +99,9 @@ enum AMICReg : uint32_t {
     VIA2_IER            = 0x26013,
 
     // Video control registers
-    Video_Mode_Reg      = 0x28000,
+    Video_Mode          = 0x28000,
+    Color_Ctrl          = 0x28001,
+    Monitor_Id          = 0x28002,
 
     Int_Ctrl            = 0x2A000,
 
@@ -152,6 +155,10 @@ private:
     std::unique_ptr<AwacDevicePdm>  awacs;
 
     std::unique_ptr<AmicSndOutDma>  snd_out_dma;
+
+    // on-board video
+    std::unique_ptr<DisplayID>          disp_id;
+    uint8_t                             mon_id;
 };
 
 #endif // AMIC_H

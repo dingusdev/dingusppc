@@ -37,72 +37,58 @@ DisplayID::DisplayID(Disp_Id_Kind id_kind)
     this->prev_state = I2CState::STOP;
     this->last_sda   = 1;
     this->last_scl   = 1;
-    this->data_out   = 0x3000;
     this->data_ptr   = 0;
 }
 
-
-uint16_t DisplayID::set_result(uint8_t sda, uint8_t scl)
-{
-    this->last_sda = sda;
-    this->last_scl = scl;
-
-    if (scl) {
-        this->data_out |= 0x1000;
-    } else {
-        this->data_out &= ~0x1000U;
-    }
-
-    if (sda) {
-        this->data_out |= 0x2000;
-    } else {
-        this->data_out &= ~0x2000U;
-    }
-
-    return this->data_out;
-}
-
-
-uint16_t DisplayID::read_monitor_sense(uint16_t data, uint16_t dirs)
+uint8_t DisplayID::read_monitor_sense(uint8_t levels, uint8_t dirs)
 {
     uint8_t scl, sda;
     uint16_t result;
 
-    if ((dirs & 0x3100) == 0 && (data & 0x3100) == 0x3100) {
-        LOG_F(WARNING, "DisplayID: Monitor sense lines tristated!");
-    }
-
     switch(this->id_kind) {
     case Disp_Id_Kind::DDC2B:
-        /* if GPIO pins are in the output mode, pick up their values
+        /* If GPIO pins are in the output mode, pick up their levels.
            In the input mode, GPIO pins will be read "high" */
-        scl = (dirs & 0x1000) ? !!(data & 0x1000) : 1;
-        sda = (dirs & 0x2000) ? !!(data & 0x2000) : 1;
+        scl = (dirs & 2) ? !!(levels & 2) : 1;
+        sda = (dirs & 4) ? !!(levels & 4) : 1;
 
         return update_ddc_i2c(sda, scl);
     case Disp_Id_Kind::AppleSense:
-        switch (dirs & 0x3100) {
-        case 0:
-            result = ((this->std_sense_code & 6) << 11) | ((this->std_sense_code & 1) << 8);
-            break;
-        case 0x2000: /* Sense line 2 is low */
-            result = ((this->ext_sense_code & 0x20) << 7) | ((this->ext_sense_code & 0x10) << 4);
-            break;
-        case 0x1000: /* Sense line 1 is low */
-            result = ((this->ext_sense_code & 8) << 10) | ((this->ext_sense_code & 4) << 6);
-            break;
-        case 0x100: /* Sense line 0 is low */
-            result = ((this->ext_sense_code & 2) << 12) | ((this->ext_sense_code & 1) << 12);
-            break;
+        switch ((dirs << 3) | levels) {
+        case 0x23: // Sense line 2 pulled low
+            return ((this->ext_sense_code >> 4) & 3);
+        case 0x15: // Sense line 1 pulled low
+            return (((this->ext_sense_code & 8) >> 1) |
+                    ((this->ext_sense_code & 4) >> 2));
+        case 0xE: // Sense line 0 pulled low
+            return ((this->ext_sense_code & 3) << 1);
         default:
-            result = 0x3100U;
+            return this->std_sense_code;
         }
-        return result;
     }
 }
 
+uint8_t DisplayID::set_result(uint8_t sda, uint8_t scl)
+{
+    uint16_t data_out;
 
-uint16_t DisplayID::update_ddc_i2c(uint8_t sda, uint8_t scl)
+    this->last_sda = sda;
+    this->last_scl = scl;
+
+    data_out = 0;
+
+    if (scl) {
+        data_out |= 2;
+    }
+
+    if (sda) {
+        data_out |= 4;
+    }
+
+    return data_out;
+}
+
+uint8_t DisplayID::update_ddc_i2c(uint8_t sda, uint8_t scl)
 {
     bool clk_gone_high = false;
 

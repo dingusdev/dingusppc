@@ -50,14 +50,19 @@ AMIC::AMIC()
         LOG_F(ERROR, "Couldn't register AMIC registers!");
     }
 
+    // register I/O devices
     this->scsi    = std::unique_ptr<Ncr53C94> (new Ncr53C94());
     this->escc    = std::unique_ptr<EsccController> (new EsccController());
     this->mace    = std::unique_ptr<MaceController> (new MaceController(MACE_ID));
     this->viacuda = std::unique_ptr<ViaCuda> (new ViaCuda());
 
+    // initialize sound HW
     this->snd_out_dma = std::unique_ptr<AmicSndOutDma> (new AmicSndOutDma());
     this->awacs       = std::unique_ptr<AwacDevicePdm> (new AwacDevicePdm());
     this->awacs->set_dma_out(this->snd_out_dma.get());
+
+    // initialize on-board video
+    this->disp_id = std::unique_ptr<DisplayID> (new DisplayID(Disp_Id_Kind::AppleSense));
 }
 
 bool AMIC::supports_type(HWCompType type) {
@@ -108,6 +113,8 @@ uint32_t AMIC::read(uint32_t reg_start, uint32_t offset, int size)
     }
 
     switch(offset) {
+    case AMICReg::Monitor_Id:
+        return this->mon_id;
     case AMICReg::Diag_Reg:
         return 0xFFU; // this value allows the machine to boot normally
     case AMICReg::SCSI_DMA_Ctrl:
@@ -193,8 +200,22 @@ void AMIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
     case AMICReg::VIA2_IER:
         LOG_F(INFO, "AMIC VIA2 Interrupt Enable Register updated, val=%x", value);
         break;
-    case AMICReg::Video_Mode_Reg:
+    case AMICReg::Video_Mode:
         LOG_F(INFO, "AMIC Video Mode Register set to %x", value);
+        break;
+    case AMICReg::Monitor_Id: {
+            // extract and convert pin directions (0 - input, 1 - output)
+            uint8_t dirs = ~value & 7;
+            if (!dirs && !(value & 8)) {
+                LOG_F(INFO, "AMIC: Monitor sense lines tristated");
+            }
+            // propagate bit 3 to all pins configured as output
+            // set levels of all intput pins to "1"
+            uint8_t levels = (7 ^ dirs) | (((value & 8) ? 7 : 0) & dirs);
+            // read monitor sense lines and store the result in the bits 4-6
+            this->mon_id = (this->mon_id & 0xF) |
+                (this->disp_id->read_monitor_sense(levels, dirs) << 4);
+        }
         break;
     case AMICReg::Int_Ctrl:
         LOG_F(INFO, "AMIC Interrupt Control Register set to %X", value);

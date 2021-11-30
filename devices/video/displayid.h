@@ -58,11 +58,11 @@ public:
     DisplayID(Disp_Id_Kind id_kind);
     ~DisplayID() = default;
 
-    uint16_t read_monitor_sense(uint16_t data, uint16_t dirs);
+    uint8_t read_monitor_sense(uint8_t levels, uint8_t dirs);
 
 protected:
-    uint16_t set_result(uint8_t sda, uint8_t scl);
-    uint16_t update_ddc_i2c(uint8_t sda, uint8_t scl);
+    uint8_t set_result(uint8_t sda, uint8_t scl);
+    uint8_t update_ddc_i2c(uint8_t sda, uint8_t scl);
 
 private:
     Disp_Id_Kind    id_kind;
@@ -75,7 +75,6 @@ private:
     uint8_t prev_state;
     uint8_t last_sda;
     uint8_t last_scl;
-    uint16_t data_out;
     int bit_count;     /* number of bits processed so far */
     uint8_t byte;      /* byte value being currently transferred */
     uint8_t dev_addr;  /* current device address */

@@ -175,9 +175,9 @@ uint32_t ATIRage::read_reg(uint32_t offset, uint32_t size) {
     return res;
 }
 
-void ATIRage::write_reg(uint32_t offset, uint32_t value, uint32_t size) {
-    uint32_t gpio_val;
-    uint16_t gpio_dir;
+void ATIRage::write_reg(uint32_t offset, uint32_t value, uint32_t size)
+{
+    uint8_t gpio_levels, gpio_dirs;
 
     // writing internal registers with necessary endian conversion
     write_mem(&this->mm_regs[offset], value, size);
@@ -207,11 +207,12 @@ void ATIRage::write_reg(uint32_t offset, uint32_t value, uint32_t size) {
         break;
     case ATI_GP_IO:
         if (offset < (ATI_GP_IO + 2)) {
-            gpio_val = READ_DWORD_LE_A(&this->mm_regs[ATI_GP_IO]);
-            gpio_dir = (gpio_val >> 16) & 0x3FFF;
-            WRITE_WORD_LE_A(
-                &this->mm_regs[ATI_GP_IO],
-                this->disp_id->read_monitor_sense(gpio_val, gpio_dir));
+            gpio_levels = this->mm_regs[ATI_GP_IO+1];
+            gpio_levels = ((gpio_levels & 0x30) >> 3) | (gpio_levels & 1);
+            gpio_dirs   = this->mm_regs[ATI_GP_IO+3];
+            gpio_dirs   = ((gpio_dirs & 0x30) >> 3) | (gpio_dirs & 1);
+            gpio_levels = this->disp_id->read_monitor_sense(gpio_levels, gpio_dirs);
+            this->mm_regs[ATI_GP_IO+1] = ((gpio_levels & 6) << 3) | (gpio_levels & 1);
         }
         break;
     case ATI_CLOCK_CNTL:
