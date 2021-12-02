@@ -28,6 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/scsi/ncr53c94.h>
 #include <devices/common/viacuda.h>
 #include <devices/ethernet/mace.h>
+#include <devices/ioctrl/interruptctrl.h>
 #include <devices/serial/escc.h>
 #include <devices/sound/awacs.h>
 
@@ -121,7 +122,7 @@ enum AMICReg : uint32_t {
 };
 
 /** Apple Memory-mapped I/O controller device. */
-class AMIC : public MMIODevice {
+class AMIC : public MMIODevice, public InterruptCtrl {
 public:
     AMIC();
     ~AMIC() = default;

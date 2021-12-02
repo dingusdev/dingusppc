@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <cpu/ppc/ppcemu.h>
-#include "interruptctrl.h"
+#include <devices/ioctrl/interruptctrl.h>
 #include <cinttypes>
 #include <string>
 #include <loguru.hpp>
@@ -30,40 +30,67 @@ using namespace std;
 InterruptCtrl::InterruptCtrl() {
 }
 
-void InterruptCtrl::update_mask_flags(uint32_t bit_setting) {
-    int_mask1 = bit_setting;
+void InterruptCtrl::update_reg(REG_ID retrieve_reg, uint32_t bit_setting) {
+    switch (retrieve_reg) { 
+        case mask1:
+            int_mask1 = bit_setting;
+            break;
+        case clear1:
+            int_clear1 = bit_setting;
+            int_events1 &= ~int_clear1;
+            break;
+        case events1:
+            int_events1 = bit_setting;
+            break;
+        case levels1:
+            int_levels1 = bit_setting;
+            break;
+        case mask2:
+            int_mask2 = bit_setting;
+            break;
+        case clear2:
+            int_clear2 = bit_setting;
+            int_events2 &= ~int_clear2;
+            break;
+        case events2:
+            int_events2 = bit_setting;
+            break;
+        case levels2:
+            int_levels2 = bit_setting;
+            break;
+    }
 }
 
-void InterruptCtrl::update_events_flags(uint32_t bit_setting) {
-    int_events1 = bit_setting;
+uint32_t InterruptCtrl::retrieve_reg(REG_ID retrieve_reg) {
+    switch (retrieve_reg) {
+    case mask1:
+        return int_mask1;
+        break;
+    case clear1:
+        return int_clear1;
+        break;
+    case events1:
+        return int_events1;
+        break;
+    case levels1:
+        return int_levels1;
+        break;
+    case mask2:
+        return int_mask2;
+        break;
+    case clear2:
+        return int_clear2;
+        break;
+    case events2:
+        return int_events2;
+        break;
+    case levels2:
+        return int_levels2;
+        break;
+    }
 }
 
-void InterruptCtrl::update_levels_flags(uint32_t bit_setting) {
-    int_levels1 = bit_setting;
-}
-
-void InterruptCtrl::update_clear_flags(uint32_t bit_setting) {
-    int_clear1 = bit_setting;
-    int_events1 &= ~int_clear1;
-}
-
-uint32_t InterruptCtrl::retrieve_mask_flags() {
-    return int_mask1;
-}
-
-uint32_t InterruptCtrl::retrieve_events_flags() {
-    return int_events1;
-}
-
-uint32_t InterruptCtrl::retrieve_levels_flags() {
-    return int_levels1;
-}
-
-uint32_t InterruptCtrl::retrieve_clear_flags() {
-    return int_clear1;
-}
-
-uint32_t InterruptCtrl::ack_interrupt(uint32_t device_bits){
+uint32_t InterruptCtrl::ack_interrupt(uint32_t device_bits) {
     bool confirm_interrupt = false;
 
     int_events1 |= device_bits;
@@ -71,11 +98,11 @@ uint32_t InterruptCtrl::ack_interrupt(uint32_t device_bits){
         confirm_interrupt = true;
 
     if (confirm_interrupt)
-        call_ppc_handler();
+        ack_cpu_interrupt();
 
     return 0;
 }
 
-void InterruptCtrl::call_ppc_handler() {
+void InterruptCtrl::ack_cpu_interrupt() {
     ppc_exception_handler(Except_Type::EXC_EXT_INT, 0x0);
 }

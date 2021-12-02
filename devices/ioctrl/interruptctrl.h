@@ -26,36 +26,71 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <memory>
 
-class InterruptCtrl : public HWComponent {
+enum DEV_ID {
+    SCSI_DMA       = 0,
+    Swim3_DMA      = 1,
+    IDE0_DMA       = 2,
+    IDE1_DMA       = 3,
+    SCC_A_DMA_OUT  = 4,
+    SCC_A_DMA_IN   = 5,
+    SCC_B_DMA_OUT  = 6,
+    SCC_B_DMA_IN   = 7,
+    DAVBUS_DMA_OUT = 8,
+    DAVBUS_DMA_IN  = 9,
+    VIDEO_OUT      = 10,
+    VIDEO_IN       = 11,
+    SCSI0          = 12,
+    IDE0           = 13,
+    IDE1           = 14,
+    SCC_A          = 15,
+    SCC_B          = 16,
+    DAVBUS         = 17,
+    VIA_CUDA       = 18,
+    SWIM3          = 19,
+    NMI            = 20,
+    PERCH_DMA      = 21,
+    PERCH          = 22,
+    BMAC_DMA_OUT   = 0,
+    BMAC_DMA_IN    = 1,
+    BMAC           = 10,
+};
+
+enum REG_ID { 
+    mask1 = 0,
+    clear1 = 1,
+    events1 = 2,
+    levels1 = 3,
+    mask2   = 4,
+    clear2  = 5,
+    events2 = 6,
+    levels2 = 7,
+};
+
+class InterruptCtrl {
 public:
     InterruptCtrl();
     ~InterruptCtrl() = default;
 
-    bool supports_type(HWCompType type) {
-        return (type == HWCompType::INT_CTRL);
-    };
-
     uint32_t ack_interrupt(uint32_t device_bits);
 
-    //for all (Old World) PCI-based Macs (is_int is only for Heathrow)
-    void update_mask_flags(uint32_t bit_setting);
-    void update_events_flags(uint32_t bit_setting);
-    void update_levels_flags(uint32_t bit_setting);
-    void update_clear_flags(uint32_t bit_setting);
-    uint32_t retrieve_mask_flags();
-    uint32_t retrieve_events_flags();
-    uint32_t retrieve_levels_flags();
-    uint32_t retrieve_clear_flags();
+    virtual uint32_t register_device(DEV_ID dev_id){
+        return 0;
+    };
 
-    //for Heathrow
+    void update_reg(REG_ID retrieve_reg, uint32_t bit_setting);
+    uint32_t retrieve_reg(REG_ID retrieve_reg);
 
-    void call_ppc_handler();
+    void ack_cpu_interrupt();
 
-private:
+protected:
     uint32_t int_events1 = 0;
     uint32_t int_mask1   = 0;
     uint32_t int_clear1  = 0;
     uint32_t int_levels1 = 0;
+    uint32_t int_events2 = 0;
+    uint32_t int_mask2   = 0;
+    uint32_t int_clear2  = 0;
+    uint32_t int_levels2 = 0;
 };
 
 #endif /* HWINTERRUPT_H */

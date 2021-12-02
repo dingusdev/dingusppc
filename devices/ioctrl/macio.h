@@ -59,7 +59,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/pci/pcihost.h>
 #include <devices/common/scsi/mesh.h>
 #include <devices/common/viacuda.h>
-#include <devices/ioctrl/heathintctrl.h>
+#include <devices/ioctrl/interruptctrl.h>
 #include <devices/memctrl/memctrlbase.h>
 #include <devices/serial/escc.h>
 #include <devices/sound/awacs.h>
@@ -93,13 +93,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     VIA-CUDA       register space: 0x00016000, size: 0x00002000
 */
 
-class HeathrowIC : public PCIDevice {
+class HeathrowIC : public PCIDevice,
+                   public InterruptCtrl {
+
 public:
     HeathrowIC();
     ~HeathrowIC() = default;
 
     bool supports_type(HWCompType type) {
-        return type == HWCompType::MMIO_DEV;
+        return (type == HWCompType::MMIO_DEV) || (type == HWCompType::INT_CTRL);
     };
 
     /* PCI device methods */
@@ -113,6 +115,9 @@ public:
     /* MMIO device methods */
     uint32_t read(uint32_t reg_start, uint32_t offset, int size);
     void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size);
+
+    uint32_t register_device(DEV_ID dev_id);
+    void process_interrupt(uint32_t cookie);
 
 protected:
     uint32_t dma_read(uint32_t offset, int size);
@@ -154,7 +159,6 @@ private:
     std::unique_ptr<AwacsScreamer>  screamer; // Screamer audio codec instance
     std::unique_ptr<MESHController> mesh;     // MESH SCSI cell instance
     std::unique_ptr<EsccController> escc;     // ESCC serial controller
-    std::unique_ptr<HeathIntCtrl>   int_ctrl; // Interrupt controller
 
     std::unique_ptr<DMAChannel>     snd_out_dma;
 };

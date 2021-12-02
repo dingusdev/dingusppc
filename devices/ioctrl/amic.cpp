@@ -61,7 +61,8 @@ AMIC::AMIC()
 }
 
 bool AMIC::supports_type(HWCompType type) {
-    if (type == HWCompType::MMIO_DEV) {
+    if ((type == HWCompType::MMIO_DEV)
+        || (type == HWCompType::INT_CTRL)) {
         return true;
     } else {
         return false;
