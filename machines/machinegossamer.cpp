@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cpu/ppc/ppcemu.h>
 #include <devices/common/machineid.h>
+#include <devices/floppy/floppyimg.h>
 #include <devices/ioctrl/macio.h>
 #include <devices/memctrl/mpc106.h>
 #include <devices/memctrl/spdram.h>
@@ -89,9 +90,9 @@ int create_gossamer(std::string& id) {
     }
 
     /* configure RAM slots */
-    setup_ram_slot("RAM_DIMM_1", 0x57,  GET_INT_PROP("rambank1_size"));
-    setup_ram_slot("RAM_DIMM_2", 0x56,  GET_INT_PROP("rambank2_size"));
-    setup_ram_slot("RAM_DIMM_3", 0x55,  GET_INT_PROP("rambank3_size"));
+    setup_ram_slot("RAM_DIMM_1", 0x57, GET_INT_PROP("rambank1_size"));
+    setup_ram_slot("RAM_DIMM_2", 0x56, GET_INT_PROP("rambank2_size"));
+    setup_ram_slot("RAM_DIMM_3", 0x55, GET_INT_PROP("rambank3_size"));
 
     /* register ATI 3D Rage Pro video card with the PCI host bridge */
     gMachineObj->add_component("ATIRage",
@@ -101,6 +102,12 @@ int create_gossamer(std::string& id) {
 
     /* Init virtual CPU and request MPC750 CPU aka G3 */
     ppc_cpu_init(grackle_obj, PPC_VER::MPC750);
+
+    /* check for a floppy image to be inserted into the virtual superdrive */
+    std::string fdd_path = GET_STR_PROP("fdd_img");
+    if (!fdd_path.empty()) {
+        open_floppy_image(fdd_path.c_str());
+    }
 
     LOG_F(INFO, "Initialization complete.\n");
 
