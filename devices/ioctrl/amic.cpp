@@ -62,7 +62,7 @@ AMIC::AMIC()
     this->awacs->set_dma_out(this->snd_out_dma.get());
 
     // initialize on-board video
-    this->disp_id = std::unique_ptr<DisplayID> (new DisplayID(Disp_Id_Kind::AppleSense));
+    this->disp_id = std::unique_ptr<DisplayID> (new DisplayID());
 }
 
 bool AMIC::supports_type(HWCompType type) {

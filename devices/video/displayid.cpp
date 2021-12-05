@@ -23,14 +23,51 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <devices/video/displayid.h>
 #include <loguru.hpp>
+#include <machines/machineproperties.h>
 
-DisplayID::DisplayID(Disp_Id_Kind id_kind)
+#include <cinttypes>
+#include <map>
+#include <string>
+
+/** Mapping between monitor IDs and their sense codes. */
+static const std::map<std::string, uint16_t> MonitorIdToCode = {
+    { "MacColor21in"    , 0x00FF },
+    { "PortraitGS"      , 0x01FF },
+    { "MacRGB12in"      , 0x02FF },
+    { "TwoPageGS"       , 0x03FF },
+    { "NTSC"            , 0x04FF },
+    { "MacRGB15in"      , 0x05FF },
+    { "HiRes12-14in"    , 0x06FF },
+    { "Multiscan15in"   , 0x0603 },
+    { "Multiscan17in"   , 0x060B },
+    { "Multiscan20in"   , 0x0623 },
+    { "AppleVision1710" , 0x062B }, // this code is assigned to several different monitors!
+    { "PALEncoder"      , 0x0700 }, // no clue what it means
+    { "NTSCEncoder"     , 0x0714 }, // no clue what it means
+    { "VGA-SVGA"        , 0x0717 },
+    { "MacRGB16in"      , 0x072D },
+    { "MacRGB19in"      , 0x073A },
+    { "PAL"             , 0x0730 },
+    { "NotConnected"    , 0x07FF }
+};
+
+DisplayID::DisplayID()
 {
-    this->id_kind = id_kind;
+    // assume a DDC monitor is connected by default
+    this->id_kind = Disp_Id_Kind::DDC2B;
 
-    /* Initialize Apple monitor codes */
-    this->std_sense_code = 6;
-    this->ext_sense_code = 0x2B;
+    std::string mon_id = GET_STR_PROP("mon_id");
+    if (!mon_id.empty()) {
+        if (MonitorIdToCode.count(mon_id)) {
+            auto sense_code = MonitorIdToCode.at(mon_id);
+            this->std_sense_code = (sense_code >> 8) & 0xFFU;
+            this->ext_sense_code = (sense_code >> 0) & 0xFFU;
+            this->id_kind = Disp_Id_Kind::AppleSense;
+            LOG_F(INFO, "DisplayID mode set to AppleSense");
+            LOG_F(INFO, "Standard sense code: 0x%d", this->std_sense_code);
+            LOG_F(INFO, "Extended sense code: 0x%X", this->ext_sense_code);
+        }
+    }
 
     /* Initialize DDC I2C bus */
     this->next_state = I2CState::STOP;

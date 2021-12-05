@@ -121,7 +121,7 @@ ATIRage::ATIRage(uint16_t dev_id, uint32_t vmem_size_mb)
                     (asic_id << 24) | dev_id);
 
     /* initialize display identification */
-    this->disp_id = std::unique_ptr<DisplayID> (new DisplayID(Disp_Id_Kind::DDC2B));
+    this->disp_id = std::unique_ptr<DisplayID> (new DisplayID());
 }
 
 const char* ATIRage::get_reg_name(uint32_t reg_offset) {

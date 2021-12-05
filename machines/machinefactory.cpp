@@ -76,8 +76,18 @@ static const PropMap GossamerSettings = {
         new IntProperty(  0, vector<uint32_t>({0, 8, 16, 32, 64, 128, 256}))},
     {"gfxmem_size",
         new IntProperty(  2, vector<uint32_t>({2, 4, 6}))},
+    {"mon_id",
+        new StrProperty("")},
     {"fdd_img",
         new StrProperty("")},
+};
+
+/** Monitors supported by the PDM on-board video. */
+/* see displayid.cpp for the full list of supported monitor IDs. */
+static const vector<string> PDMBuiltinMonitorIDs = {
+    "PortraitGS", "MacRGB12in", "MacRGB15in", "HiRes12-14in", "VGA-SVGA",
+    "MacRGB16in", "Multiscan15in", "Multiscan17in", "Multiscan20in",
+    "NotConnected"
 };
 
 static const PropMap PDMSettings = {
@@ -85,6 +95,8 @@ static const PropMap PDMSettings = {
         new IntProperty(0, vector<uint32_t>({0, 8, 16, 32, 64, 128}))},
     {"rambank2_size",
         new IntProperty(0, vector<uint32_t>({0, 8, 16, 32, 64, 128}))},
+    {"mon_id",
+        new StrProperty("HiRes12-14in", PDMBuiltinMonitorIDs)},
     {"fdd_img",
         new StrProperty("")},
 };
@@ -95,6 +107,7 @@ static const map<string, string> PropHelp = {
     {"rambank3_size",   "specifies RAM bank 3 size in MB"},
     {"gfxmem_size",     "specifies video memory size in MB"},
     {"fdd_img",         "specifies path to floppy disk image"},
+    {"mon_id",          "specifies which monitor to emulate"},
 };
 
 static const map<string, tuple<PropMap, function<int(string&)>, string>> machines = {
@@ -210,10 +223,20 @@ void list_properties() {
         for (auto& p : get<0>(mach.second)) {
             cout << setw(13) << p.first << "\t\t" << PropHelp.at(p.first)
                 << endl;
-            if (p.second->get_type() == PROP_TYPE_INTEGER) {
-                cout << setw(13) << "\t\t\t" "Valid values: " <<
-                    dynamic_cast<IntProperty*>(p.second)->get_valid_values_as_str()
+
+            cout << setw(13) << "\t\t\t" "Valid values: ";
+
+            switch(p.second->get_type()) {
+            case PROP_TYPE_INTEGER:
+                cout << dynamic_cast<IntProperty*>(p.second)->get_valid_values_as_str()
                     << endl;
+                break;
+            case PROP_TYPE_STRING:
+                cout << dynamic_cast<StrProperty*>(p.second)->get_valid_values_as_str()
+                    << endl;
+                break;
+            default:
+                break;
             }
             cout << endl;
         }
