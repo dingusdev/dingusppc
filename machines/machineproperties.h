@@ -19,16 +19,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <endianswap.h>
 #include <loguru.hpp>
 
-#include <algorithm>
 #include <cinttypes>
 #include <string>
 #include <map>
 #include <memory>
 #include <limits>
-#include <sstream>
 #include <utility>
 #include <vector>
 
@@ -36,8 +33,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define MACHINE_PROPERTIES_H
 
 using namespace std;
-
-#define ILLEGAL_DEVICE_VALUE 0x168A523B
 
 /** Property types. */
 enum PropType : int {
@@ -66,15 +61,15 @@ public:
     /* Clone method for copying derived property objects. */
     virtual BasicProperty* clone() const = 0;
 
-    string get_string() {
+    virtual string get_string() {
         return this->val;
     }
 
-    void set_string(string str) {
+    virtual void set_string(string str) {
         this->val = str;
     }
 
-    PropType get_type() {
+    virtual PropType get_type() {
         return this->type;
     }
 
@@ -88,9 +83,33 @@ protected:
 class StrProperty : public BasicProperty {
 public:
     StrProperty(string str)
-        : BasicProperty(PROP_TYPE_STRING, str) {}
+        : BasicProperty(PROP_TYPE_STRING, str)
+    {
+        this->check_type = CHECK_TYPE_NONE;
+        this->vec.clear();
+    }
+
+    /* construct a string property with a list of valid values. */
+    StrProperty(string str, vector<string> vec)
+        : BasicProperty(PROP_TYPE_STRING, str)
+    {
+        this->check_type = CHECK_TYPE_LIST;
+        this->vec = vec;
+    }
 
     BasicProperty* clone() const { return new StrProperty(*this); }
+
+    /* override BasicProperty::set_string() and perform checks */
+    void set_string(string str);
+
+    string get_valid_values_as_str();
+
+protected:
+    bool check_val(string str);
+
+private:
+    CheckType       check_type;
+    vector<string>  vec;
 };
 
 /** Property class that holds an integer value. */
@@ -131,65 +150,12 @@ public:
 
     BasicProperty* clone() const { return new IntProperty(*this); }
 
-    uint32_t get_int() {
-        try {
-            uint32_t result = strtoul(this->get_string().c_str(), 0, 0);
+    uint32_t get_int();
 
-            /* perform value check */
-            if (!this->check_val(result)) {
-                LOG_F(ERROR, "Invalid property value %d!", result);
-                LOG_F(ERROR, "Valid values: %s!",
-                    this->get_valid_values_as_str().c_str());
-                this->set_string(to_string(this->int_val));
-            } else {
-                this->int_val = result;
-            }
-        } catch (string bad_string) {
-            LOG_F(ERROR, "Could not convert string %s to an integer!",
-                bad_string.c_str());
-        }
-        return this->int_val;
-    }
-
-    string get_valid_values_as_str() {
-        stringstream ss;
-
-        switch (this->check_type) {
-        case CHECK_TYPE_RANGE:
-            ss << "[" << this->min << "..." << this->max << "]";
-            return ss.str();
-        case CHECK_TYPE_LIST: {
-            bool first = true;
-            for (auto it = begin(this->vec); it != end(this->vec); ++it) {
-                if (!first)
-                    ss << ", ";
-                ss << *it;
-                first = false;
-            }
-            return ss.str();
-        }
-        default:
-            return string("None");
-        }
-    }
+    string get_valid_values_as_str();
 
 protected:
-    bool check_val(uint32_t val) {
-        switch (this->check_type) {
-        case CHECK_TYPE_RANGE:
-            if (val < this->min || val > this->max)
-                return false;
-            else
-                return true;
-        case CHECK_TYPE_LIST:
-            if (find(this->vec.begin(), this->vec.end(), val) != this->vec.end())
-                return true;
-            else
-                return false;
-        default:
-            return true;
-        }
-    }
+    bool check_val(uint32_t val);
 
 private:
     uint32_t            int_val;
