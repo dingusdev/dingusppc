@@ -25,8 +25,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 #include <map>
 #include <memory>
-#include <limits>
-#include <utility>
 #include <vector>
 
 #ifndef MACHINE_PROPERTIES_H

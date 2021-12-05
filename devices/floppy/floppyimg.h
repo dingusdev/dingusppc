@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef FLOPPY_IMG_H
 #define FLOPPY_IMG_H
 
+#include <cinttypes>
 #include <stdio.h>
 
 #define BLOCK_SIZE 512 // size in bytes of a logical block
