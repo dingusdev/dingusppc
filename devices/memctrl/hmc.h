@@ -37,6 +37,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 
+/** Bit in the HMC control register telling us where the frame bufffer
+   for the on-board video is located. */
+#define HMC_VBASE_BIT   33
+
 class HMC : public MemCtrlBase, public MMIODevice {
 public:
     HMC();
@@ -48,9 +52,13 @@ public:
     uint32_t read(uint32_t reg_start, uint32_t offset, int size);
     void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size);
 
+    uint64_t get_control_reg(void) {
+        return this->ctrl_reg;
+    };
+
 private:
     int      bit_pos;
-    uint64_t config_reg;
+    uint64_t ctrl_reg;
 };
 
 #endif // HMC_H

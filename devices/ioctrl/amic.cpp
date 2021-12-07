@@ -32,6 +32,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/serial/escc.h>
 #include <machines/machinebase.h>
 #include <devices/memctrl/memctrlbase.h>
+#include <devices/video/displayid.h>
+#include <devices/video/pdmonboard.h>
 
 #include <algorithm>
 #include <cinttypes>
@@ -63,6 +65,7 @@ AMIC::AMIC()
 
     // initialize on-board video
     this->disp_id = std::unique_ptr<DisplayID> (new DisplayID());
+    this->def_vid = std::unique_ptr<PdmOnboardVideo> (new PdmOnboardVideo());
 }
 
 bool AMIC::supports_type(HWCompType type) {
@@ -113,6 +116,8 @@ uint32_t AMIC::read(uint32_t reg_start, uint32_t offset, int size)
     }
 
     switch(offset) {
+    case AMICReg::Video_Mode:
+        return this->def_vid->get_video_mode();
     case AMICReg::Monitor_Id:
         return this->mon_id;
     case AMICReg::Diag_Reg:
@@ -200,8 +205,20 @@ void AMIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
     case AMICReg::VIA2_IER:
         LOG_F(INFO, "AMIC VIA2 Interrupt Enable Register updated, val=%x", value);
         break;
+    case AMICReg::Ariel_Clut_Index:
+        this->def_vid->set_clut_index(value);
+        break;
+    case AMICReg::Ariel_Clut_Color:
+        this->def_vid->set_clut_color(value);
+        break;
+    case AMICReg::Ariel_Config:
+        this->def_vid->vdac_config(value);
+        break;
     case AMICReg::Video_Mode:
-        LOG_F(INFO, "AMIC Video Mode Register set to %x", value);
+        this->def_vid->set_video_mode(value);
+        break;
+    case AMICReg::Pixel_Depth:
+        this->def_vid->set_pixel_depth(value);
         break;
     case AMICReg::Monitor_Id: {
             // extract and convert pin directions (0 - input, 1 - output)

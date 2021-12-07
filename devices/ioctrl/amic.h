@@ -31,6 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/serial/escc.h>
 #include <devices/sound/awacs.h>
 #include <devices/video/displayid.h>
+#include <devices/video/pdmonboard.h>
 
 #include <cinttypes>
 #include <memory>
@@ -98,9 +99,14 @@ enum AMICReg : uint32_t {
     VIA2_Slot_IER       = 0x26012,
     VIA2_IER            = 0x26013,
 
+    // Video DAC (Ariel II) control registers
+    Ariel_Clut_Index    = 0x24000,
+    Ariel_Clut_Color    = 0x24001,
+    Ariel_Config        = 0x24002,
+
     // Video control registers
     Video_Mode          = 0x28000,
-    Color_Ctrl          = 0x28001,
+    Pixel_Depth         = 0x28001,
     Monitor_Id          = 0x28002,
 
     Int_Ctrl            = 0x2A000,
@@ -158,6 +164,7 @@ private:
 
     // on-board video
     std::unique_ptr<DisplayID>          disp_id;
+    std::unique_ptr<PdmOnboardVideo>    def_vid;
     uint8_t                             mon_id;
 };
 

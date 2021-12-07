@@ -33,7 +33,7 @@ HMC::HMC() : MemCtrlBase()
     /* add memory mapped I/O region for the HMC control register */
     add_mmio_region(0x50F40000, 0x10000, this);
 
-    this->config_reg = 0ULL;
+    this->ctrl_reg = 0ULL;
     this->bit_pos = 0;
 }
 
@@ -48,7 +48,7 @@ bool HMC::supports_type(HWCompType type) {
 uint32_t HMC::read(uint32_t reg_start, uint32_t offset, int size)
 {
     if (!offset)
-        return !!(this->config_reg & (1ULL << this->bit_pos++));
+        return !!(this->ctrl_reg & (1ULL << this->bit_pos++));
     else
         return 0; /* FIXME: what should be returned for invalid offsets? */
 }
@@ -60,8 +60,8 @@ void HMC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
     switch(offset) {
         case 0:
             bit = 1ULL << this->bit_pos++;
-            this->config_reg = (value & 1) ? this->config_reg | bit :
-                               this->config_reg & ~bit;
+            this->ctrl_reg = (value & 1) ? this->ctrl_reg | bit :
+                               this->ctrl_reg & ~bit;
             break;
         case 8: /* writing to HMCBase + 8 resets internal bit position */
             this->bit_pos = 0;
