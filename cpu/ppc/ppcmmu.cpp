@@ -847,7 +847,6 @@ static void mpc601_bat_update(uint32_t bat_reg)
 {
     PPC_BAT_entry *ibat_entry, *dbat_entry;
     uint32_t bsm, hi_mask;
-    uint8_t key, pp, prot;
     int upper_reg_num;
 
     upper_reg_num = bat_reg & 0xFFFFFFFE;
