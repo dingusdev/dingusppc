@@ -525,6 +525,11 @@ void ATIRage::crtc_enable() {
 
         this->refresh_rate = pixel_clock / hori_total / vert_total;
 
+        // specify framebuffer converter (hardcoded for now)
+        this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
+            this->convert_frame_8bpp(dst_buf, dst_pitch);
+        };
+
         LOG_F(INFO, "ATI Rage: primary CRT controller enabled:");
         LOG_F(INFO, "Video mode: %s",
              (this->mm_regs[ATI_CRTC_GEN_CNTL+3] & 1) ? "extended" : "VGA");

@@ -27,15 +27,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <SDL.h>
 
 #include <cinttypes>
+#include <functional>
 
 class VideoCtrlBase {
 public:
-    VideoCtrlBase();
+    VideoCtrlBase(int width = 640, int height = 480);
     ~VideoCtrlBase();
 
     void update_screen(void);
 
-    void convert_frame_8bpp(uint8_t *dst_buf, int dst_pitch);
+    // converters for various framebuffer pixel depths
+    virtual void convert_frame_1bpp(uint8_t *dst_buf, int dst_pitch);
+    virtual void convert_frame_8bpp(uint8_t *dst_buf, int dst_pitch);
 
 protected:
     /* CRT controller parameters */
@@ -50,6 +53,8 @@ protected:
     // Framebuffer parameters
     uint8_t*    fb_ptr;
     int         fb_pitch;
+
+    std::function<void(uint8_t *dst_buf, int dst_pitch)> convert_fb_cb;
 
 private:
     SDL_Window      *display_wnd;

@@ -28,17 +28,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <chrono>
 #include <cinttypes>
 
-VideoCtrlBase::VideoCtrlBase()
+VideoCtrlBase::VideoCtrlBase(int width, int height)
 {
     LOG_F(INFO, "Create display window...");
+
+    this->active_width  = width;
+    this->active_height = height;
 
     // Create display window
     this->display_wnd = SDL_CreateWindow(
         "DingusPPC Display",
         SDL_WINDOWPOS_UNDEFINED,
         SDL_WINDOWPOS_UNDEFINED,
-        640,
-        480,
+        this->active_width,
+        this->active_height,
         SDL_WINDOW_OPENGL
     );
 
@@ -98,9 +101,8 @@ void VideoCtrlBase::update_screen()
 
     SDL_LockTexture(this->disp_texture, NULL, (void **)&dst_buf, &dst_pitch);
 
-    // call texture update method (hardcoded for now)
-    // TODO: convert it to a callback
-    this->convert_frame_8bpp(dst_buf, dst_pitch);
+    // texture update callback to get ARGB data from guest framebuffer
+    this->convert_fb_cb(dst_buf, dst_pitch);
 
     SDL_UnlockTexture(this->disp_texture);
     SDL_RenderClear(this->renderer);
@@ -119,6 +121,11 @@ void VideoCtrlBase::update_screen()
     //LOG_F(INFO, "Display uodate took: %lld ns", time_elapsed.count());
 
     SDL_Delay(15);
+}
+
+void VideoCtrlBase::convert_frame_1bpp(uint8_t *dst_buf, int dst_pitch)
+{
+    // TODO: implement me!
 }
 
 void VideoCtrlBase::convert_frame_8bpp(uint8_t *dst_buf, int dst_pitch)
