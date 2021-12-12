@@ -28,6 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/scsi/ncr53c94.h>
 #include <devices/common/viacuda.h>
 #include <devices/ethernet/mace.h>
+#include <devices/floppy/swim3.h>
 #include <devices/serial/escc.h>
 #include <devices/sound/awacs.h>
 #include <devices/video/displayid.h>
@@ -166,6 +167,8 @@ private:
     std::unique_ptr<DisplayID>          disp_id;
     std::unique_ptr<PdmOnboardVideo>    def_vid;
     uint8_t                             mon_id;
+
+    std::unique_ptr<Swim3::Swim3Ctrl>   swim3;
 };
 
 #endif // AMIC_H

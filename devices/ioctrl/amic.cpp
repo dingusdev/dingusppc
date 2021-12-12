@@ -28,6 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/scsi/ncr53c94.h>
 #include <devices/common/viacuda.h>
 #include <devices/ethernet/mace.h>
+#include <devices/floppy/swim3.h>
 #include <devices/ioctrl/amic.h>
 #include <devices/serial/escc.h>
 #include <machines/machinebase.h>
@@ -66,6 +67,9 @@ AMIC::AMIC()
     // initialize on-board video
     this->disp_id = std::unique_ptr<DisplayID> (new DisplayID());
     this->def_vid = std::unique_ptr<PdmOnboardVideo> (new PdmOnboardVideo());
+
+    // intialize floppy disk HW
+    this->swim3 = std::unique_ptr<Swim3::Swim3Ctrl> (new Swim3::Swim3Ctrl());
 }
 
 bool AMIC::supports_type(HWCompType type) {
@@ -113,6 +117,9 @@ uint32_t AMIC::read(uint32_t reg_start, uint32_t offset, int size)
         case AMICReg::Snd_Out_DMA:
             return this->snd_out_dma->read_stat();
         }
+    case 0x16: // SWIM3 registers
+    case 0x17:
+        return this->swim3->read((offset >> 9) & 0xF);
     }
 
     switch(offset) {
@@ -196,6 +203,10 @@ void AMIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
             this->snd_out_dma->write_dma_out_ctrl(value);
             return;
         }
+    case 0x16: // SWIM3 registers
+    case 0x17:
+        this->swim3->write((offset >> 9) & 0xF, value);
+        return;
     }
 
     switch(offset) {

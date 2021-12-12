@@ -59,6 +59,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/pci/pcihost.h>
 #include <devices/common/scsi/mesh.h>
 #include <devices/common/viacuda.h>
+#include <devices/floppy/swim3.h>
 #include <devices/memctrl/memctrlbase.h>
 #include <devices/serial/escc.h>
 #include <devices/sound/awacs.h>
@@ -154,11 +155,12 @@ private:
     uint32_t aux_ctrl    = 0;    // aux features control register
 
     /* device cells */
-    std::unique_ptr<ViaCuda>        viacuda;  // VIA cell with Cuda MCU attached to it
-    std::unique_ptr<NVram>          nvram;    // NVRAM cell
-    std::unique_ptr<AwacsScreamer>  screamer; // Screamer audio codec instance
-    std::unique_ptr<MESHController> mesh;     // MESH SCSI cell instance
-    std::unique_ptr<EsccController> escc;     // ESCC serial controller
+    std::unique_ptr<ViaCuda>            viacuda;  // VIA cell with Cuda MCU attached to it
+    std::unique_ptr<NVram>              nvram;    // NVRAM cell
+    std::unique_ptr<AwacsScreamer>      screamer; // Screamer audio codec instance
+    std::unique_ptr<MESHController>     mesh;     // MESH SCSI cell instance
+    std::unique_ptr<EsccController>     escc;     // ESCC serial controller
+    std::unique_ptr<Swim3::Swim3Ctrl>   swim3;    // floppy disk controller
 
     std::unique_ptr<DMAChannel>     snd_out_dma;
 };

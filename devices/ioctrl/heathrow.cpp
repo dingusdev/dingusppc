@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cpu/ppc/ppcemu.h>
 #include <devices/common/dbdma.h>
 #include <devices/common/viacuda.h>
+#include <devices/floppy/swim3.h>
 #include <devices/ioctrl/macio.h>
 #include <devices/serial/escc.h>
 #include <devices/sound/awacs.h>
@@ -56,8 +57,9 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow") {
         std::bind(&AwacsScreamer::dma_end, this->screamer.get())
     );
 
-    this->mesh = std::unique_ptr<MESHController> (new MESHController(HeathrowMESHID));
-    this->escc = std::unique_ptr<EsccController> (new EsccController());
+    this->mesh  = std::unique_ptr<MESHController> (new MESHController(HeathrowMESHID));
+    this->escc  = std::unique_ptr<EsccController> (new EsccController());
+    this->swim3 = std::unique_ptr<Swim3::Swim3Ctrl> (new Swim3::Swim3Ctrl());
 }
 
 uint32_t HeathrowIC::pci_cfg_read(uint32_t reg_offs, uint32_t size) {
@@ -136,6 +138,8 @@ uint32_t HeathrowIC::read(uint32_t reg_start, uint32_t offset, int size) {
     case 0x14:
         res = this->screamer->snd_ctrl_read(offset - 0x14000, size);
         break;
+    case 0x15: // SWIM3
+        return this->swim3->read(offset & 0xF);
     case 0x16:
     case 0x17:
         res = this->viacuda->read((offset - 0x16000) >> 9);
@@ -174,6 +178,9 @@ void HeathrowIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int 
         break;
     case 0x14:
         this->screamer->snd_ctrl_write(offset - 0x14000, value, size);
+        break;
+    case 0x15:
+        this->swim3->write(offset & 0xF, value);
         break;
     case 0x16:
     case 0x17:
