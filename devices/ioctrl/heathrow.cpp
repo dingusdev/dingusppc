@@ -70,8 +70,8 @@ void HeathrowIC::process_interrupt(uint32_t cookie) {
     uint32_t bit_field = 0;
 
     switch (cookie) { 
-        case DEV_ID::DAVBUS_DMA_OUT:
-            bit_field = (1 << DEV_ID::DAVBUS_DMA_OUT);
+        case DEV_ID::SOUND_DMA_OUT:
+        bit_field = (1 << DEV_ID::SOUND_DMA_OUT);
             break;
         case DEV_ID::SCSI0:
             bit_field = (1 << DEV_ID::SCSI0);
@@ -124,7 +124,7 @@ uint32_t HeathrowIC::dma_read(uint32_t offset, int size) {
     switch (offset >> 8) {
     case 8:
         res = this->snd_out_dma->reg_read(offset & 0xFF, size);
-        this->ack_interrupt(DEV_ID::DAVBUS_DMA_OUT);
+        this->ack_interrupt(DEV_ID::SOUND_DMA_OUT);
         break;
     default:
         LOG_F(WARNING, "Unsupported DMA channel read, offset=0x%X", offset);

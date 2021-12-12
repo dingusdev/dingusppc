@@ -121,13 +121,26 @@ enum AMICReg : uint32_t {
     SCC_DMA_Rcv_B_Ctrl  = 0x320B8,
 };
 
-/** Apple Memory-mapped I/O controller device. */
+enum AMICIntReg : uint32_t {
+    VIA1_Interrupt = 0,
+    VIA2_Interrupt = 1,
+    SCC_Interrupt  = 2,
+    Eth_Interrupt  = 3,
+    DMA_Interrupt  = 4,
+    NMI_Interrupt  = 5,
+    INT_Mode       = 6,
+    ACK_Bit        = 7,
+};
+
+    /** Apple Memory-mapped I/O controller device. */
 class AMIC : public MMIODevice, public InterruptCtrl {
 public:
     AMIC();
     ~AMIC() = default;
 
     bool supports_type(HWCompType type);
+    void process_interrupt(uint32_t cookie);
+    uint32_t ack_interrupt(uint32_t device_bits);
 
     /* MMIODevice methods */
     uint32_t read(uint32_t reg_start, uint32_t offset, int size);

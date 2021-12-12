@@ -68,9 +68,75 @@ bool AMIC::supports_type(HWCompType type) {
         return false;
     }
 }
+void AMIC::process_interrupt(uint32_t cookie) {
+    bool confirm_interrupt = false;
+    uint32_t bit_field     = 0;
 
-uint32_t AMIC::read(uint32_t reg_start, uint32_t offset, int size)
-{
+    switch (cookie) {
+    case DEV_ID::PDM_HZTICK:
+    case DEV_ID::VIA_CUDA:
+    case DEV_ID::PDM_TIMER2:
+    case DEV_ID::PDM_TIMER1:
+        bit_field         = (1 << VIA1_Interrupt);
+        confirm_interrupt = true;
+        break;
+    case DEV_ID::NUBUS_SLOT3:
+    case DEV_ID::NUBUS_SLOT0:
+    case DEV_ID::NUBUS_SLOT1:
+    case DEV_ID::NUBUS_SLOT2:
+    case DEV_ID::SCSI0:
+    case DEV_ID::SWIM3:
+    case DEV_ID::SCSI1:
+        bit_field         = (1 << VIA2_Interrupt);
+        confirm_interrupt = true;
+        break;
+    case DEV_ID::SCC_B:
+    case DEV_ID::SCC_A:
+        bit_field         = (1 << SCC_Interrupt);
+        confirm_interrupt = true;
+        break;
+    case DEV_ID::BMAC:
+        bit_field         = (1 << Eth_Interrupt);
+        confirm_interrupt = true;
+        break;
+    case DEV_ID::SCSI_DMA:
+    case DEV_ID::Swim3_DMA:
+    case DEV_ID::IDE0_DMA:
+    case DEV_ID::IDE1_DMA:
+    case DEV_ID::SCC_A_DMA_OUT:
+    case DEV_ID::SCC_A_DMA_IN:
+    case DEV_ID::SCC_B_DMA_OUT:
+    case DEV_ID::SCC_B_DMA_IN:
+    case DEV_ID::SOUND_DMA_OUT:
+    case DEV_ID::SOUND_DMA_IN:
+    case DEV_ID::PERCH_DMA:
+        bit_field         = (1 << DMA_Interrupt);
+        confirm_interrupt = true;
+        break;
+    case DEV_ID::NMI:
+        bit_field         = (1 << NMI_Interrupt);
+        confirm_interrupt = true;
+        break;
+    }
+
+    if (confirm_interrupt)
+        ack_interrupt(bit_field);
+}
+
+uint32_t AMIC::ack_interrupt(uint32_t device_bits) {
+    bool confirm_interrupt = false;
+    bool ack_bit           = this->int_mask1 & 0x80;
+
+    if (device_bits & int_mask1)
+        confirm_interrupt = true;
+
+    if (confirm_interrupt && ack_bit)
+        ack_cpu_interrupt();
+
+    return 0;
+}
+
+uint32_t AMIC::read(uint32_t reg_start, uint32_t offset, int size) {
     uint32_t  phase_val;
 
     // subdevices registers
@@ -113,6 +179,8 @@ uint32_t AMIC::read(uint32_t reg_start, uint32_t offset, int size)
         return 0xFFU; // this value allows the machine to boot normally
     case AMICReg::SCSI_DMA_Ctrl:
         return this->scsi_dma_cs;
+    case AMICReg::Int_Ctrl:
+        return this->int_mask1;
     default:
         LOG_F(WARNING, "Unknown AMIC register read, offset=%x", offset);
     }
@@ -152,6 +220,7 @@ void AMIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
                     ((this->imm_snd_regs[1] & 0xF) << 8) | this->imm_snd_regs[2]
                 );
             }
+            this->process_interrupt(DEV_ID::DAVBUS);
             return;
         case AMICReg::Snd_Buf_Size_Hi:
         case AMICReg::Snd_Buf_Size_Lo:
@@ -160,6 +229,7 @@ void AMIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
                                 ((value & 0xFF) << (8 * ((offset & 1) ^1)));
             this->snd_buf_size &= ~3; // sound buffer size is always a multiple of 4
             LOG_F(9, "AMIC: Sound buffer size set to 0x%X", this->snd_buf_size);
+            this->process_interrupt(DEV_ID::DAVBUS);
             return;
         case AMICReg::Snd_Out_Ctrl:
             LOG_F(9, "AMIC Sound Out Ctrl updated, val=%x", value);
@@ -183,6 +253,7 @@ void AMIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
             return;
         case AMICReg::Snd_Out_DMA:
             this->snd_out_dma->write_dma_out_ctrl(value);
+            this->process_interrupt(DEV_ID::SOUND_DMA_OUT);
             return;
         }
     }
@@ -199,6 +270,7 @@ void AMIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
         break;
     case AMICReg::Int_Ctrl:
         LOG_F(INFO, "AMIC Interrupt Control Register set to %X", value);
+        this->int_mask1 = value;
         break;
     case AMICReg::DMA_Base_Addr_0:
     case AMICReg::DMA_Base_Addr_1:
@@ -208,6 +280,7 @@ void AMIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
         this->dma_base = (this->dma_base & ~mask) |
                         ((value & 0xFF) << (8 * (3 - (offset & 3))));
         LOG_F(9, "AMIC: DMA base address set to 0x%X", this->dma_base);
+        this->process_interrupt(DEV_ID::PERCH_DMA);
         break;
     case AMICReg::Enet_DMA_Xmt_Ctrl:
         LOG_F(INFO, "AMIC Ethernet Transmit DMA Ctrl updated, val=%x", value);
