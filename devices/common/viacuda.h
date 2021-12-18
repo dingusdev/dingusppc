@@ -72,6 +72,20 @@ enum {
     VIA_ANH  = 0x0F, /* input/output register A, no handshake */
 };
 
+/** IFR and IER register bits */
+enum { 
+    IER_SET = 0x80, 
+    IER_CLR = 0x00, 
+    
+    IFR_CA2 = 0x01,
+    IFR_CA1 = 0x02,
+    IFR_SR  = 0x04,
+    IFR_CB2 = 0x08,
+    IFR_CB1 = 0x10,
+    IFR_T2  = 0x20,
+    IFR_T1  = 0x40,
+};
+
 /** Cuda communication signals. */
 enum {
     CUDA_TIP     = 0x20, /* transaction in progress: 0 - true, 1 - false */

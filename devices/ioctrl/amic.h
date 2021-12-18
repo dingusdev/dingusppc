@@ -95,13 +95,20 @@ enum AMICReg : uint32_t {
     Snd_Out_DMA         = 0x14018, // sound output DMA status/control register
 
     // VIA2 registers
+    VIA2_Slot_INT       = 0x26002,
     VIA2_Slot_IER       = 0x26012,
+    VIA2_INT            = 0x26003,
     VIA2_IER            = 0x26013,
 
     // Video control registers
     Video_Mode_Reg      = 0x28000,
-
+    
+    // Interrupt registers
     Int_Ctrl            = 0x2A000,
+    DMA_Int_0           = 0x2A008,
+    Bus_Error_Int_0     = 0x2A009,
+    DMA_Int_1           = 0x2A00A,
+    Bus_Error_Int_1     = 0x2A00B,
 
     // Undocumented diagnostics register
     Diag_Reg            = 0x2C000,
@@ -132,6 +139,10 @@ enum AMICIntReg : uint32_t {
     ACK_Bit        = 7,
 };
 
+enum {
+    FDC_PENDING = 0x40,
+};
+
     /** Apple Memory-mapped I/O controller device. */
 class AMIC : public MMIODevice, public InterruptCtrl {
 public:
@@ -152,11 +163,16 @@ protected:
 private:
     uint8_t imm_snd_regs[4]; // temporary storage for sound control registers
 
-    uint32_t    dma_base     = 0; // DMA physical base address
-    uint16_t    snd_buf_size = 0; // sound buffer size in bytes
-    uint8_t     snd_out_ctrl = 0;
+    uint32_t dma_base                = 0;    // DMA physical base address
+    uint16_t snd_buf_size            = 0;    // sound buffer size in bytes
+    uint8_t  snd_out_ctrl            = 0;
 
-    uint8_t     scsi_dma_cs = 0; // SCSI DMA control/status register value
+    uint8_t scsi_dma_cs              = 0;    // SCSI DMA control/status register value
+    uint8_t int_ctrl_reg             = 0;
+    uint8_t dma_int_reg0             = 0;
+    uint8_t dma_int_reg1             = 0;
+    uint8_t via2_int_enable          = 0;
+    uint8_t via2_slot_int_enable     = 0;
 
     // AMIC subdevices instances
     std::unique_ptr<Ncr53C94>       scsi;

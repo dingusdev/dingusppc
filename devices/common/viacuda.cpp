@@ -45,6 +45,7 @@ ViaCuda::ViaCuda() {
     this->via_regs[VIA_DIRB] = 0;
     this->via_regs[VIA_DIRA] = 0;
     this->via_regs[VIA_IER]  = 0;
+    this->via_regs[VIA_SR]   = 0;
     this->via_regs[VIA_ACR]  = 0;
     this->via_regs[VIA_PCR]  = 0;
     this->via_regs[VIA_IFR]  = 0;
@@ -88,6 +89,20 @@ uint8_t ViaCuda::read(int reg) {
     case VIA_A:
     case VIA_ANH:
         LOG_F(WARNING, "Attempted read from VIA Port A!");
+        break;
+    case VIA_T1CL:
+        res = this->via_regs[VIA_T1CL];
+        this->via_regs[VIA_IFR] &= ~IFR_T1;
+    case VIA_T2CL:
+        res = this->via_regs[VIA_T2CL];
+        this->via_regs[VIA_IFR] &= ~IFR_T2;
+    case VIA_SR:
+        res = this->via_regs[VIA_SR];
+        this->via_regs[VIA_IFR] &= ~IFR_SR;
+    case VIA_IFR:
+        res = this->via_regs[VIA_IFR];
+        if (this->via_regs[VIA_IFR] & this->via_regs[VIA_IER])
+            res |= 0x80;
         break;
     case VIA_IER:
         res |= 0x80; /* bit 7 always reads as "1" */

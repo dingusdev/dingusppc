@@ -161,9 +161,6 @@ uint32_t HeathrowIC::read(uint32_t reg_start, uint32_t offset, int size) {
     case 0x10:
         res = this->mesh->read((offset >> 4) & 0xF);
         break;
-    case 0x11: // BMAC
-        LOG_F(WARNING, "Attempted to read from BMAC: %x \n", (offset - 0x11000));    
-        break;
     case 0x12: // ESCC compatible
         return this->escc->read_compat((offset >> 4) & 0xF);
     case 0x13: // ESCC MacRISC
@@ -171,16 +168,9 @@ uint32_t HeathrowIC::read(uint32_t reg_start, uint32_t offset, int size) {
     case 0x14:
         res = this->screamer->snd_ctrl_read(offset - 0x14000, size);
         break;
-    case 0x15:    // BMAC
-        LOG_F(WARNING, "Attempted to read from SWIM3: %x \n", (offset - 0x15000));
-        break;
     case 0x16:
     case 0x17:
         res = this->viacuda->read((offset - 0x16000) >> 9);
-        break;
-    case 0x20:    // IDE
-    case 0x21:
-        LOG_F(WARNING, "Attempted to read from IDE: %x \n", (offset - 0x20000));
         break;
     default:
         if (sub_addr >= 0x60) {
@@ -209,9 +199,6 @@ void HeathrowIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int 
         this->mesh->write((offset >> 4) & 0xF, value);
         this->process_interrupt(DEV_ID::SCSI0);
         break;
-    case 0x11: // BMAC
-        LOG_F(WARNING, "Attempted to write to BMAC: %x \n", (offset - 0x11000));    
-        break;
     case 0x12: // ESCC compatible
         this->escc->write_compat((offset >> 4) & 0xF, value);
         break;
@@ -222,17 +209,10 @@ void HeathrowIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int 
         this->screamer->snd_ctrl_write(offset - 0x14000, value, size);
         this->process_interrupt(DEV_ID::DAVBUS);
         break;
-    case 0x15: // SWIM 3
-        LOG_F(WARNING, "Attempted to write to SWIM 3: %x \n", (offset - 0x15000));
-        break;
     case 0x16:
     case 0x17:
         this->viacuda->write((offset - 0x16000) >> 9, value);
         this->process_interrupt(DEV_ID::VIA_CUDA);
-        break;
-    case 0x20: // IDE
-    case 0x21:
-        LOG_F(WARNING, "Attempted to write to IDE: %x \n", (offset - 0x20000));    
         break;
     default:
         if (sub_addr >= 0x60) {

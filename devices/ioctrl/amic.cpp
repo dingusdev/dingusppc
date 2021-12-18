@@ -68,50 +68,53 @@ bool AMIC::supports_type(HWCompType type) {
         return false;
     }
 }
+
+//Interrupt Register
 void AMIC::process_interrupt(uint32_t cookie) {
     bool confirm_interrupt = false;
     uint32_t bit_field     = 0;
 
+    if (this->int_ctrl_reg & 0x40) {
+        confirm_interrupt = true;
+    }
     switch (cookie) {
-    case DEV_ID::PDM_HZTICK:
     case DEV_ID::VIA_CUDA:
-    case DEV_ID::PDM_TIMER2:
-    case DEV_ID::PDM_TIMER1:
-        bit_field         = (1 << VIA1_Interrupt);
-        confirm_interrupt = true;
-        break;
-    case DEV_ID::NUBUS_SLOT3:
-    case DEV_ID::NUBUS_SLOT0:
-    case DEV_ID::NUBUS_SLOT1:
-    case DEV_ID::NUBUS_SLOT2:
-    case DEV_ID::SCSI0:
-    case DEV_ID::SWIM3:
-    case DEV_ID::SCSI1:
-        bit_field         = (1 << VIA2_Interrupt);
-        confirm_interrupt = true;
+        if (this->viacuda->read(VIA_IFR)) {
+            bit_field         = (1 << VIA1_Interrupt);
+            confirm_interrupt = true;
+        } 
+        else if (via2_slot_int_enable || via2_int_enable) {
+            bit_field         = (1 << VIA2_Interrupt);
+            confirm_interrupt = true;
+        }
         break;
     case DEV_ID::SCC_B:
     case DEV_ID::SCC_A:
         bit_field         = (1 << SCC_Interrupt);
         confirm_interrupt = true;
         break;
-    case DEV_ID::BMAC:
+    case DEV_ID::ETHERNET:
         bit_field         = (1 << Eth_Interrupt);
         confirm_interrupt = true;
         break;
-    case DEV_ID::SCSI_DMA:
     case DEV_ID::Swim3_DMA:
-    case DEV_ID::IDE0_DMA:
-    case DEV_ID::IDE1_DMA:
+    case DEV_ID::ETHERNET_DMA_OUT:
+    case DEV_ID::ETHERNET_DMA_IN:
     case DEV_ID::SCC_A_DMA_OUT:
     case DEV_ID::SCC_A_DMA_IN:
     case DEV_ID::SCC_B_DMA_OUT:
     case DEV_ID::SCC_B_DMA_IN:
+        if (dma_int_reg0) {
+            bit_field         = (1 << DMA_Interrupt);
+            confirm_interrupt = true;
+        }
+        break;
     case DEV_ID::SOUND_DMA_OUT:
     case DEV_ID::SOUND_DMA_IN:
-    case DEV_ID::PERCH_DMA:
-        bit_field         = (1 << DMA_Interrupt);
-        confirm_interrupt = true;
+        if (dma_int_reg1) {
+            bit_field         = (1 << DMA_Interrupt);
+            confirm_interrupt = true;
+        }
         break;
     case DEV_ID::NMI:
         bit_field         = (1 << NMI_Interrupt);
@@ -125,9 +128,9 @@ void AMIC::process_interrupt(uint32_t cookie) {
 
 uint32_t AMIC::ack_interrupt(uint32_t device_bits) {
     bool confirm_interrupt = false;
-    bool ack_bit           = this->int_mask1 & 0x80;
+    bool ack_bit           = this->int_ctrl_reg & 0x80;
 
-    if (device_bits & int_mask1)
+    if (device_bits & this->int_ctrl_reg)
         confirm_interrupt = true;
 
     if (confirm_interrupt && ack_bit)
@@ -143,9 +146,11 @@ uint32_t AMIC::read(uint32_t reg_start, uint32_t offset, int size) {
     switch(offset >> 12) {
     case 0: // VIA1 registers
     case 1:
+        process_interrupt(VIA_CUDA);
         return this->viacuda->read(offset >> 9);
     case 4: // SCC registers
         this->escc->read_compat((offset >> 1) & 0xF);
+        this->process_interrupt(SCC_A);
         return 0;
     case 0xA: // MACE registers
         return this->mace->read((offset >> 4) & 0xF);
@@ -180,7 +185,10 @@ uint32_t AMIC::read(uint32_t reg_start, uint32_t offset, int size) {
     case AMICReg::SCSI_DMA_Ctrl:
         return this->scsi_dma_cs;
     case AMICReg::Int_Ctrl:
-        return this->int_mask1;
+        if (this->int_ctrl_reg & 0x80) {
+            ack_cpu_interrupt();
+        }
+        return this->int_ctrl_reg;
     default:
         LOG_F(WARNING, "Unknown AMIC register read, offset=%x", offset);
     }
@@ -253,6 +261,7 @@ void AMIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
             return;
         case AMICReg::Snd_Out_DMA:
             this->snd_out_dma->write_dma_out_ctrl(value);
+            this->dma_int_reg1 |= 0x2;
             this->process_interrupt(DEV_ID::SOUND_DMA_OUT);
             return;
         }
@@ -261,16 +270,22 @@ void AMIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
     switch(offset) {
     case AMICReg::VIA2_Slot_IER:
         LOG_F(INFO, "AMIC VIA2 Slot Interrupt Enable Register updated, val=%x", value);
+        via2_slot_int_enable = value;
         break;
     case AMICReg::VIA2_IER:
         LOG_F(INFO, "AMIC VIA2 Interrupt Enable Register updated, val=%x", value);
+        via2_int_enable = value;
         break;
     case AMICReg::Video_Mode_Reg:
         LOG_F(INFO, "AMIC Video Mode Register set to %x", value);
         break;
     case AMICReg::Int_Ctrl:
         LOG_F(INFO, "AMIC Interrupt Control Register set to %X", value);
-        this->int_mask1 = value;
+        if (value & 0x80) {
+            value &= 0xC0;
+            ack_cpu_interrupt();
+        }
+        this->int_ctrl_reg = value;
         break;
     case AMICReg::DMA_Base_Addr_0:
     case AMICReg::DMA_Base_Addr_1:
