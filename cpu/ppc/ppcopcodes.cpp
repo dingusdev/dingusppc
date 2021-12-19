@@ -858,6 +858,23 @@ void dppc_interpreter::ppc_mfspr() {
     ppc_state.gpr[reg_d] = ppc_state.spr[ref_spr];
 }
 
+#define NS_PER_SEC  1E9
+
+static inline uint64_t calc_tbr_value()
+{
+    uint64_t diff = get_virt_time_ns() - tbr_wr_timestamp;
+    uint64_t tbr_inc = diff * tbr_freq_hz / NS_PER_SEC;
+    return (tbr_wr_value + tbr_inc);
+}
+
+static void update_timebase(uint64_t mask, uint64_t new_val)
+{
+    uint64_t tbr_value = calc_tbr_value();
+    tbr_wr_value = (tbr_value & mask) | new_val;
+    tbr_wr_timestamp = get_virt_time_ns();
+    LOG_F(9, "New TBR value = 0x%llu", tbr_wr_value);
+}
+
 void dppc_interpreter::ppc_mtspr() {
     uint32_t ref_spr = (((ppc_cur_instruction >> 11) & 31) << 5) | ((ppc_cur_instruction >> 16) & 31);
     reg_s            = (ppc_cur_instruction >> 21) & 31;
@@ -877,13 +894,11 @@ void dppc_interpreter::ppc_mtspr() {
     }
 
     switch (ref_spr) {
-        // Mirror the TBRs in the SPR range to the user-mode TBRs.
     case 284:
-        timebase_counter = (timebase_counter & 0xFFFFFFFF00000000ULL) + ppc_state.gpr[reg_s];
+        update_timebase(0xFFFFFFFF00000000ULL, ppc_state.gpr[reg_s]);
         break;
     case 285:
-        timebase_counter = (timebase_counter & 0x00000000FFFFFFFFULL) +
-            (((uint64_t)(ppc_state.gpr[reg_s])) << 32);
+        update_timebase(0x00000000FFFFFFFFULL, (uint64_t)(ppc_state.gpr[reg_s]) << 32);
         break;
     case 528:
     case 529:
@@ -910,15 +925,18 @@ void dppc_interpreter::ppc_mtspr() {
 void dppc_interpreter::ppc_mftb() {
     uint32_t ref_spr = (((ppc_cur_instruction >> 11) & 31) << 5) | ((ppc_cur_instruction >> 16) & 31);
     reg_d = (ppc_cur_instruction >> 21) & 31;
+
+    uint64_t tbr_value = calc_tbr_value();
+
     switch (ref_spr) {
-        case 268:
-            ppc_state.gpr[reg_d] = timebase_counter & 0xFFFFFFFFUL;
-            break;
-        case 269:
-            ppc_state.gpr[reg_d] = (timebase_counter >> 32) & 0xFFFFFFFFUL;
-            break;
-        default:
-            LOG_F(ERROR, "Invalid TBR access attempted !\n");
+    case 268:
+        ppc_state.gpr[reg_d] = tbr_value & 0xFFFFFFFFUL;
+        break;
+    case 269:
+        ppc_state.gpr[reg_d] = (tbr_value >> 32) & 0xFFFFFFFFUL;
+        break;
+    default:
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
      }
 }
 
