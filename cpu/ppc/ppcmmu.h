@@ -71,6 +71,8 @@ typedef struct PATResult {
 } PATResult;
 
 #define PAGE_SIZE_BITS      12
+#define PAGE_SIZE           (1 << PAGE_SIZE_BITS)
+#define PAGE_MASK           ~(PAGE_SIZE - 1)
 #define TLB_SIZE            4096
 #define TLB2_WAYS           4
 #define TLB_INVALID_TAG     0xFFFFFFFF

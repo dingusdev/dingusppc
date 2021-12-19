@@ -148,8 +148,12 @@ SUPERVISOR MODEL
 536 - 543 are the Data BAT registers
 **/
 
-extern uint32_t opcode_value;        // used for interpreting opcodes
-extern uint64_t timebase_counter;    // used for storing time base value
+extern uint32_t opcode_value;      // used for interpreting opcodes
+
+extern uint64_t timebase_counter;
+extern uint64_t tbr_wr_timestamp;
+extern uint64_t tbr_wr_value;
+extern uint64_t tbr_freq_hz;
 
 // Additional steps to prevent overflow?
 extern int32_t add_result;
@@ -206,9 +210,9 @@ enum CR_select : int32_t {
     CR1_field = (0xF << 24),
 };
 
-enum CRx_bit : uint32_t { 
-    CR_SO = 28, 
-    CR_EQ = 29, 
+enum CRx_bit : uint32_t {
+    CR_SO = 28,
+    CR_EQ = 29,
     CR_GT = 30,
     CR_LT = 31 };
 
@@ -614,6 +618,8 @@ extern void power_srq();
 // 64-bit instructions
 
 // G5+ instructions
+
+extern uint64_t get_virt_time_ns(void);
 
 extern void ppc_main_opcode(void);
 extern void ppc_exec(void);

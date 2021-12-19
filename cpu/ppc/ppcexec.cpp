@@ -62,12 +62,19 @@ BB_end_kind bb_kind; /* basic block end */
 uint32_t    glob_bb_start_la;
 
 /* variables related to virtual time */
-uint64_t cycles_count;      /* contains number of cycles executed so far */
-uint64_t old_cycles_count;  /* previous value for cycles_count */
-uint64_t timebase_counter;  /* internal timebase counter */
-uint32_t decr;              /* current value of PPC DEC register */
-uint8_t  old_decr_msb;      /* MSB value for previous DEC value */
-uint8_t  tbr_factor;        /* cycles_count to TBR freq ratio in 2^x units */
+uint64_t g_icycles;
+int      icnt_factor;
+
+/* global variables related to the timebase facility */
+uint64_t tbr_wr_timestamp;  // stores vCPU virtual time of the last TBR write
+uint64_t tbr_wr_value;      // last value written to the TBR
+uint64_t tbr_freq_hz;       // TBR driving frequency in Hz
+uint64_t cycles_count;      // contains number of cycles executed so far */
+uint64_t old_cycles_count;  // previous value for cycles_count */
+uint64_t timebase_counter;  // internal timebase counter */
+uint32_t decr;              // current value of PPC DEC register */
+uint8_t  old_decr_msb;      // MSB value for previous DEC value */
+uint8_t  tbr_factor;        // cycles_count to TBR freq ratio in 2^x units */
 
 #ifdef CPU_PROFILING
 
@@ -286,8 +293,20 @@ void ppc_main_opcode()
     OpcodeGrabber[(ppc_cur_instruction >> 26) & 0x3F]();
 }
 
+uint64_t get_virt_time_ns()
+{
+    return g_icycles << icnt_factor;
+}
+
+int process_events()
+{
+    // dummy implementation that schedules execution
+    // of another 10.000 instructions
+    return g_icycles + 10000;
+}
 
 /** Execute PPC code as long as power is on. */
+#if 0
 void ppc_exec()
 {
     uint32_t bb_start_la, page_start, delta;
@@ -348,8 +367,78 @@ again:
         }
     }
 }
+#else
+// inner interpreter loop
+static void ppc_exec_inner()
+{
+    uint64_t max_cycles;
+    uint32_t page_start, eb_start, eb_end;
+    uint8_t* pc_real;
+
+    max_cycles = 0;
+
+    while (power_on) {
+        // define boundaries of the next execution block
+        // max execution block length = one memory page
+        eb_start = ppc_state.pc;
+        eb_end   = (eb_start + PAGE_SIZE) & PAGE_MASK;
+        //eb_last = false;
+        bb_kind  = BB_end_kind::BB_NONE;
+
+        page_start = eb_start & PAGE_MASK;
+        pc_real    = mmu_translate_imem(eb_start);
+
+        // interpret execution block
+        while (ppc_state.pc < eb_end) {
+            ppc_main_opcode();
+            if (g_icycles++ >= max_cycles) {
+                max_cycles = process_events();
+            }
+
+            //if (eb_last) {
+            if (bb_kind != BB_end_kind::BB_NONE) { // execution block ended ?
+                if (!power_on)
+                    break;
+                // check the reason for the block end
+                //eb_last = false;
+                // define next execution block
+                eb_start = ppc_next_instruction_address;
+                eb_end   = (eb_start + PAGE_SIZE) & PAGE_MASK;
+                if ((eb_start & PAGE_MASK) == page_start) {
+                    pc_real += (int)eb_start - (int)ppc_state.pc;
+                    ppc_set_cur_instruction(pc_real);
+                } else {
+                    page_start = eb_start & PAGE_MASK;
+                    pc_real = mmu_translate_imem(eb_start);
+                }
+                ppc_state.pc = eb_start;
+                bb_kind = BB_end_kind::BB_NONE;
+            } else {
+                ppc_state.pc += 4;
+                pc_real += 4;
+                ppc_set_cur_instruction(pc_real);
+            }
+        }
+    }
+}
+
+// outer interpreter loop
+void ppc_exec()
+{
+    if (setjmp(exc_env)) {
+        // process low-level exceptions
+        //LOG_F(9, "PPC-EXEC: low_level exception raised!");
+        ppc_state.pc = ppc_next_instruction_address;
+    }
+
+    while (power_on) {
+        ppc_exec_inner();
+    }
+}
+#endif
 
 /** Execute one PPC instruction. */
+#if 0
 void ppc_exec_single()
 {
     uint32_t delta;
@@ -383,8 +472,31 @@ void ppc_exec_single()
     timebase_counter++;
 #endif
 }
+#else
+void ppc_exec_single()
+{
+    if (setjmp(exc_env)) {
+        // process low-level exceptions
+        //LOG_F(9, "PPC-EXEC: low_level exception raised!");
+        ppc_state.pc = ppc_next_instruction_address;
+        bb_kind = BB_end_kind::BB_NONE;
+        return;
+    }
+
+    mmu_translate_imem(ppc_state.pc);
+    ppc_main_opcode();
+    if (bb_kind != BB_end_kind::BB_NONE) {
+        ppc_state.pc = ppc_next_instruction_address;
+        bb_kind = BB_end_kind::BB_NONE;
+    } else {
+        ppc_state.pc += 4;
+    }
+    g_icycles++;
+}
+#endif
 
 /** Execute PPC code until goal_addr is reached. */
+#if 0
 void ppc_exec_until(volatile uint32_t goal_addr)
 {
     uint32_t bb_start_la, page_start, delta;
@@ -411,7 +523,6 @@ void ppc_exec_until(volatile uint32_t goal_addr)
     }
 
     /* initial MMU translation for the current code page. */
-    //pc_real = quickinstruction_translate(bb_start_la);
     pc_real = mmu_translate_imem(bb_start_la);
 
     /* set current code page limits */
@@ -444,8 +555,77 @@ again:
         }
     }
 }
+#else
+// inner interpreter loop
+static void ppc_exec_until_inner(const uint32_t goal_addr)
+{
+    uint64_t max_cycles;
+    uint32_t page_start, eb_start, eb_end;
+    uint8_t* pc_real;
+
+    max_cycles = 0;
+
+    while (ppc_state.pc != goal_addr) {
+        // define boundaries of the next execution block
+        // max execution block length = one memory page
+        eb_start = ppc_state.pc;
+        eb_end   = (eb_start + PAGE_SIZE) & PAGE_MASK;
+        //eb_last = false;
+        bb_kind  = BB_end_kind::BB_NONE;
+
+        page_start = eb_start & PAGE_MASK;
+        pc_real    = mmu_translate_imem(eb_start);
+
+        // interpret execution block
+        while ((ppc_state.pc != goal_addr) && (ppc_state.pc < eb_end)) {
+            ppc_main_opcode();
+            if (g_icycles++ >= max_cycles) {
+                max_cycles = process_events();
+            }
+
+            //if (eb_last) {
+            if (bb_kind != BB_end_kind::BB_NONE) { // execution block ended ?
+                // check the reason for the block end
+                //eb_last = false;
+                // define next execution block
+                eb_start = ppc_next_instruction_address;
+                eb_end   = (eb_start + PAGE_SIZE) & PAGE_MASK;
+                if ((eb_start & PAGE_MASK) == page_start) {
+                    pc_real += (int)eb_start - (int)ppc_state.pc;
+                    ppc_set_cur_instruction(pc_real);
+                } else {
+                    page_start = eb_start & PAGE_MASK;
+                    pc_real = mmu_translate_imem(eb_start);
+                }
+                ppc_state.pc = eb_start;
+                bb_kind = BB_end_kind::BB_NONE;
+            } else {
+                ppc_state.pc += 4;
+                pc_real += 4;
+                ppc_set_cur_instruction(pc_real);
+            }
+        }
+    }
+    LOG_F(9, "PPC-EXEC: goal address reached, icycles=%llu", g_icycles);
+}
+
+// outer interpreter loop
+void ppc_exec_until(volatile uint32_t goal_addr)
+{
+    if (setjmp(exc_env)) {
+        // process low-level exceptions
+        //LOG_F(9, "PPC-EXEC: low_level exception raised!");
+        ppc_state.pc = ppc_next_instruction_address;
+    }
+
+    while (ppc_state.pc != goal_addr) {
+        ppc_exec_until_inner(goal_addr);
+    }
+}
+#endif
 
 /** Execute PPC code until control is reached the specified region. */
+#if 0
 void ppc_exec_dbg(volatile uint32_t start_addr, volatile uint32_t size)
 {
     uint32_t bb_start_la, page_start, delta;
@@ -508,6 +688,75 @@ again:
         }
     }
 }
+#else
+// inner interpreter loop
+static void ppc_exec_dbg_inner(const uint32_t start_addr, const uint32_t size)
+{
+    uint64_t max_cycles;
+    uint32_t page_start, eb_start, eb_end;
+    uint8_t* pc_real;
+
+    max_cycles = 0;
+
+    while (ppc_state.pc < start_addr || ppc_state.pc >= start_addr + size) {
+        // define boundaries of the next execution block
+        // max execution block length = one memory page
+        eb_start = ppc_state.pc;
+        eb_end   = (eb_start + PAGE_SIZE) & PAGE_MASK;
+        //eb_last = false;
+        bb_kind  = BB_end_kind::BB_NONE;
+
+        page_start = eb_start & PAGE_MASK;
+        pc_real    = mmu_translate_imem(eb_start);
+
+        // interpret execution block
+        while ((ppc_state.pc < start_addr || ppc_state.pc >= start_addr + size)
+                && (ppc_state.pc < eb_end)) {
+            ppc_main_opcode();
+            if (g_icycles++ >= max_cycles) {
+                max_cycles = process_events();
+            }
+
+            //if (eb_last) {
+            if (bb_kind != BB_end_kind::BB_NONE) { // execution block ended ?
+                // check the reason for the block end
+                //eb_last = false;
+                // define next execution block
+                eb_start = ppc_next_instruction_address;
+                eb_end   = (eb_start + PAGE_SIZE) & PAGE_MASK;
+                if ((eb_start & PAGE_MASK) == page_start) {
+                    pc_real += (int)eb_start - (int)ppc_state.pc;
+                    ppc_set_cur_instruction(pc_real);
+                } else {
+                    page_start = eb_start & PAGE_MASK;
+                    pc_real = mmu_translate_imem(eb_start);
+                }
+                ppc_state.pc = eb_start;
+                bb_kind = BB_end_kind::BB_NONE;
+            } else {
+                ppc_state.pc += 4;
+                pc_real += 4;
+                ppc_set_cur_instruction(pc_real);
+            }
+        }
+    }
+    LOG_F(9, "PPC-EXEC: goal address reached, icycles=%llu", g_icycles);
+}
+
+// outer interpreter loop
+void ppc_exec_dbg(volatile uint32_t start_addr, volatile uint32_t size)
+{
+    if (setjmp(exc_env)) {
+        // process low-level exceptions
+        //LOG_F(9, "PPC-EXEC: low_level exception raised!");
+        ppc_state.pc = ppc_next_instruction_address;
+    }
+
+    while (ppc_state.pc < start_addr || ppc_state.pc >= start_addr + size) {
+        ppc_exec_dbg_inner(start_addr, size);
+    }
+}
+#endif
 
 
 uint64_t instr_count, old_instr_count;
@@ -766,6 +1015,13 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version) {
     old_cycles_count = 0;
     tbr_factor = 4;
 #endif
+
+    // initialize time base facility
+    g_icycles   = 0;
+    icnt_factor = 4;
+    tbr_wr_timestamp = 0;
+    tbr_wr_value = 0;
+    tbr_freq_hz = 16705000; // FIXME: this should be set properly during machine initialization
 
     timebase_counter = 0;
     decr = 0;
