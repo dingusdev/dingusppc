@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // General opcodes for the processor - ppcopcodes.cpp
 
+#include "ppcdefs.h"
 #include "ppcemu.h"
 #include "ppcmmu.h"
 #include <array>
@@ -1415,203 +1416,112 @@ void dppc_interpreter::ppc_dcbz() {
 
 // Integer Load and Store Functions
 
-void dppc_interpreter::ppc_stb() {
+template <class T>
+void dppc_interpreter::ppc_st() {
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
-    ppc_grab_regssa();
-    ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
-    ppc_effective_address += reg_a ? ppc_result_a : 0;
-    mmu_write_vmem<uint8_t>(ppc_effective_address, ppc_result_d);
-    //mem_write_byte(ppc_effective_address, ppc_result_d);
+    GET_rS_rA_OFFS(ppc_cur_instruction);
+    uint32_t ea = offs + (reg_a ? GET_GPR(reg_a) : 0);
+    mmu_write_vmem<T>(ea, GET_GPR(reg_s));
 }
 
-void dppc_interpreter::ppc_stbx() {
-#ifdef CPU_PROFILING
-    num_int_stores++;
-#endif
-    ppc_grab_regssab();
-    ppc_effective_address = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
-    mmu_write_vmem<uint8_t>(ppc_effective_address, ppc_result_d);
-    //mem_write_byte(ppc_effective_address, ppc_result_d);
-}
+// explicitely instantiate all required ppc_st variants
+template void dppc_interpreter::ppc_st<uint8_t>(void);  // stb
+template void dppc_interpreter::ppc_st<uint16_t>(void); // sth
+template void dppc_interpreter::ppc_st<uint32_t>(void); // stw
 
-void dppc_interpreter::ppc_stbu() {
+template <class T>
+void dppc_interpreter::ppc_stu() {
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
-    ppc_grab_regssa();
-    if (reg_a != 0) {
-        ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
-        ppc_effective_address += ppc_result_a;
-        mmu_write_vmem<uint8_t>(ppc_effective_address, ppc_result_d);
-        //mem_write_byte(ppc_effective_address, ppc_result_d);
-        ppc_state.gpr[reg_a] = ppc_effective_address;
-    } else {
+    GET_rS_rA_OFFS(ppc_cur_instruction);
+    if (!reg_a) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
+    uint32_t ea = offs + GET_GPR(reg_a);
+    mmu_write_vmem<T>(ea, GET_GPR(reg_s));
+    SET_GPR(reg_a, ea);
 }
 
-void dppc_interpreter::ppc_stbux() {
+// explicitely instantiate all required ppc_stu variants
+template void dppc_interpreter::ppc_stu<uint8_t>(void);  // stbu
+template void dppc_interpreter::ppc_stu<uint16_t>(void); // sthu
+template void dppc_interpreter::ppc_stu<uint32_t>(void); // stwu
+
+template <class T>
+void dppc_interpreter::ppc_stx() {
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
-    ppc_grab_regssab();
-    if (reg_a != 0) {
-        ppc_effective_address = ppc_result_a + ppc_result_b;
-        mmu_write_vmem<uint8_t>(ppc_effective_address, ppc_result_d);
-        //mem_write_byte(ppc_effective_address, ppc_result_d);
-        ppc_state.gpr[reg_a] = ppc_effective_address;
-    } else {
+    GET_rS_rA_iA_iB(ppc_cur_instruction);
+    uint32_t ea = imm_b + ((reg_a) ? imm_a : 0);
+    mmu_write_vmem<T>(ea, GET_GPR(reg_s));
+}
+
+// explicitely instantiate all required ppc_stx variants
+template void dppc_interpreter::ppc_stx<uint8_t>(void);  // stbx
+template void dppc_interpreter::ppc_stx<uint16_t>(void); // sthx
+template void dppc_interpreter::ppc_stx<uint32_t>(void); // stwx
+
+template <class T>
+void dppc_interpreter::ppc_stux() {
+#ifdef CPU_PROFILING
+    num_int_stores++;
+#endif
+    GET_rS_rA_iA_iB(ppc_cur_instruction);
+    if (!reg_a) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
+    uint32_t ea = imm_a + imm_b;
+    mmu_write_vmem<T>(ea, GET_GPR(reg_s));
+    SET_GPR(reg_a, ea);
 }
 
-void dppc_interpreter::ppc_sth() {
-#ifdef CPU_PROFILING
-    num_int_stores++;
-#endif
-    ppc_grab_regssa();
-    ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
-    ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
-    mmu_write_vmem<uint16_t>(ppc_effective_address, ppc_result_d);
-    //mem_write_word(ppc_effective_address, ppc_result_d);
-}
+// explicitely instantiate all required ppc_stux variants
+template void dppc_interpreter::ppc_stux<uint8_t>(void);  // stbux
+template void dppc_interpreter::ppc_stux<uint16_t>(void); // sthux
+template void dppc_interpreter::ppc_stux<uint32_t>(void); // stwux
 
-void dppc_interpreter::ppc_sthu() {
-#ifdef CPU_PROFILING
-    num_int_stores++;
-#endif
-    ppc_grab_regssa();
-    if (reg_a != 0) {
-        ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
-        ppc_effective_address += ppc_result_a;
-        mmu_write_vmem<uint16_t>(ppc_effective_address, ppc_result_d);
-        //mem_write_word(ppc_effective_address, ppc_result_d);
-        ppc_state.gpr[reg_a] = ppc_effective_address;
-    } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-    }
-}
-
-void dppc_interpreter::ppc_sthux() {
-#ifdef CPU_PROFILING
-    num_int_stores++;
-#endif
-    ppc_grab_regssab();
-    if (reg_a != 0) {
-        ppc_effective_address = ppc_result_a + ppc_result_b;
-        mmu_write_vmem<uint16_t>(ppc_effective_address, ppc_result_d);
-        //mem_write_word(ppc_effective_address, ppc_result_d);
-        ppc_state.gpr[reg_a] = ppc_effective_address;
-    } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-    }
-}
-
-void dppc_interpreter::ppc_sthx() {
-#ifdef CPU_PROFILING
-    num_int_stores++;
-#endif
-    ppc_grab_regssab();
-    ppc_effective_address = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
-    mmu_write_vmem<uint16_t>(ppc_effective_address, ppc_result_d);
-    //mem_write_word(ppc_effective_address, ppc_result_d);
-}
 
 void dppc_interpreter::ppc_sthbrx() {
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
-    ppc_grab_regssab();
-    ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
-    ppc_result_d          = (uint32_t)(BYTESWAP_16((uint16_t)ppc_result_d));
-    mmu_write_vmem<uint16_t>(ppc_effective_address, ppc_result_d);
-    //mem_write_word(ppc_effective_address, ppc_result_d);
-}
-
-void dppc_interpreter::ppc_stw() {
-#ifdef CPU_PROFILING
-    num_int_stores++;
-#endif
-    ppc_grab_regssa();
-    ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
-    ppc_effective_address += reg_a ? ppc_result_a : 0;
-    mmu_write_vmem<uint32_t>(ppc_effective_address, ppc_result_d);
-    //mem_write_dword(ppc_effective_address, ppc_result_d);
-}
-
-void dppc_interpreter::ppc_stwx() {
-#ifdef CPU_PROFILING
-    num_int_stores++;
-#endif
-    ppc_grab_regssab();
-    ppc_effective_address = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
-    mmu_write_vmem<uint32_t>(ppc_effective_address, ppc_result_d);
-    //mem_write_dword(ppc_effective_address, ppc_result_d);
-}
-
-void dppc_interpreter::ppc_stwcx() {
-#ifdef CPU_PROFILING
-    num_int_stores++;
-#endif
-    // PLACEHOLDER CODE FOR STWCX - We need to check for reserve memory
-    if (rc_flag == 0) {
-        ppc_illegalop();
-    } else {
-        ppc_grab_regssab();
-        ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
-        if (ppc_state.reserve) {
-            mmu_write_vmem<uint32_t>(ppc_effective_address, ppc_result_d);
-            //mem_write_dword(ppc_effective_address, ppc_result_d);
-            ppc_state.cr |= (ppc_state.spr[SPR::XER] & 0x80000000) ? 0x30000000 : 0x20000000;
-            ppc_state.reserve = false;
-        } else {
-            ppc_state.cr |= (ppc_state.spr[SPR::XER] & 0x80000000) ? 0x10000000 : 0;
-        }
-    }
-}
-
-void dppc_interpreter::ppc_stwu() {
-#ifdef CPU_PROFILING
-    num_int_stores++;
-#endif
-    ppc_grab_regssa();
-    if (reg_a != 0) {
-        ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
-        ppc_effective_address += ppc_result_a;
-        mmu_write_vmem<uint32_t>(ppc_effective_address, ppc_result_d);
-        //mem_write_dword(ppc_effective_address, ppc_result_d);
-        ppc_state.gpr[reg_a] = ppc_effective_address;
-    } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-    }
-}
-
-void dppc_interpreter::ppc_stwux() {
-#ifdef CPU_PROFILING
-    num_int_stores++;
-#endif
-    ppc_grab_regssab();
-    if (reg_a != 0) {
-        ppc_effective_address = ppc_result_a + ppc_result_b;
-        mmu_write_vmem<uint32_t>(ppc_effective_address, ppc_result_d);
-        //mem_write_dword(ppc_effective_address, ppc_result_d);
-        ppc_state.gpr[reg_a] = ppc_effective_address;
-    } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-    }
+    GET_rS_rA_iA_iB(ppc_cur_instruction);
+    uint32_t ea = imm_b + ((reg_a) ? imm_a : 0);
+    mmu_write_vmem<uint16_t>(ea, BYTESWAP_16((uint16_t)(GET_GPR(reg_s))));
 }
 
 void dppc_interpreter::ppc_stwbrx() {
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
-    ppc_grab_regssab();
-    ppc_effective_address = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
-    ppc_result_d          = BYTESWAP_32(ppc_result_d);
-    mmu_write_vmem<uint32_t>(ppc_effective_address, ppc_result_d);
-    //mem_write_dword(ppc_effective_address, ppc_result_d);
+    GET_rS_rA_iA_iB(ppc_cur_instruction);
+    uint32_t ea = imm_b + ((reg_a) ? imm_a : 0);
+    mmu_write_vmem<uint32_t>(ea, BYTESWAP_32(GET_GPR(reg_s)));
+}
+
+
+void dppc_interpreter::ppc_stwcx() {
+#ifdef CPU_PROFILING
+    num_int_stores++;
+#endif
+    if (rc_flag == 0) {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+    } else {
+        // TODO: We need to check for memory reservation
+        ppc_grab_regssab();
+        ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
+        if (ppc_state.reserve) {
+            mmu_write_vmem<uint32_t>(ppc_effective_address, ppc_result_d);
+            ppc_state.cr |= (ppc_state.spr[SPR::XER] & 0x80000000) ? 0x30000000 : 0x20000000;
+            ppc_state.reserve = false;
+        } else {
+            ppc_state.cr |= (ppc_state.spr[SPR::XER] & 0x80000000) ? 0x10000000 : 0;
+        }
+    }
 }
 
 void dppc_interpreter::ppc_stmw() {
@@ -1634,276 +1544,135 @@ void dppc_interpreter::ppc_stmw() {
     }
 }
 
-void dppc_interpreter::ppc_lbz() {
-#ifdef CPU_PROFILING
-    num_int_loads++;
-#endif
-    ppc_grab_regsda();
-    ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
-    ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
-    //ppc_result_d = mem_grab_byte(ppc_effective_address);
-    ppc_result_d = mmu_read_vmem<uint8_t>(ppc_effective_address);
-    ppc_store_result_regd();
-}
-
-void dppc_interpreter::ppc_lbzu() {
-#ifdef CPU_PROFILING
-    num_int_loads++;
-#endif
-    ppc_grab_regsda();
-    ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
-    if ((reg_a != reg_d) || reg_a != 0) {
-        ppc_effective_address += ppc_result_a;
-        //ppc_result_d = mem_grab_byte(ppc_effective_address);
-        ppc_result_d = mmu_read_vmem<uint8_t>(ppc_effective_address);
-        ppc_result_a = ppc_effective_address;
-        ppc_store_result_regd();
-        ppc_store_result_rega();
-    } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-    }
-}
-
-void dppc_interpreter::ppc_lbzx() {
-#ifdef CPU_PROFILING
-    num_int_loads++;
-#endif
-    ppc_grab_regsdab();
-    ppc_effective_address = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
-    //ppc_result_d          = mem_grab_byte(ppc_effective_address);
-    ppc_result_d = mmu_read_vmem<uint8_t>(ppc_effective_address);
-    ppc_store_result_regd();
-}
-
-void dppc_interpreter::ppc_lbzux() {
-#ifdef CPU_PROFILING
-    num_int_loads++;
-#endif
-    ppc_grab_regsdab();
-    if ((reg_a != reg_d) || reg_a != 0) {
-        ppc_effective_address = ppc_result_a + ppc_result_b;
-        //ppc_result_d          = mem_grab_byte(ppc_effective_address);
-        ppc_result_d = mmu_read_vmem<uint8_t>(ppc_effective_address);
-        ppc_result_a          = ppc_effective_address;
-        ppc_store_result_regd();
-        ppc_store_result_rega();
-    } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-    }
-}
-
-
-void dppc_interpreter::ppc_lhz() {
-#ifdef CPU_PROFILING
-    num_int_loads++;
-#endif
-    ppc_grab_regsda();
-    ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
-    ppc_effective_address += reg_a ? ppc_result_a : 0;
-    //ppc_result_d = mem_grab_word(ppc_effective_address);
-    ppc_result_d = mmu_read_vmem<uint16_t>(ppc_effective_address);
-    ppc_store_result_regd();
-}
-
-void dppc_interpreter::ppc_lhzu() {
-#ifdef CPU_PROFILING
-    num_int_loads++;
-#endif
-    ppc_grab_regsda();
-    if ((reg_a != reg_d) || reg_a != 0) {
-        ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
-        ppc_effective_address += ppc_result_a;
-        //ppc_result_d = mem_grab_word(ppc_effective_address);
-        ppc_result_d = mmu_read_vmem<uint16_t>(ppc_effective_address);
-        ppc_result_a = ppc_effective_address;
-        ppc_store_result_regd();
-        ppc_store_result_rega();
-    } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-    }
-}
-
-void dppc_interpreter::ppc_lhzx() {
-#ifdef CPU_PROFILING
-    num_int_loads++;
-#endif
-    ppc_grab_regsdab();
-    ppc_effective_address = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
-    //ppc_result_d         = mem_grab_word(ppc_effective_address);
-    ppc_result_d = mmu_read_vmem<uint16_t>(ppc_effective_address);
-    ppc_store_result_regd();
-}
-
-void dppc_interpreter::ppc_lhzux() {
-#ifdef CPU_PROFILING
-    num_int_loads++;
-#endif
-    ppc_grab_regsdab();
-    if ((reg_a != reg_d) || reg_a != 0) {
-        ppc_effective_address = ppc_result_a + ppc_result_b;
-        //ppc_result_d          = mem_grab_word(ppc_effective_address);
-        ppc_result_d = mmu_read_vmem<uint16_t>(ppc_effective_address);
-        ppc_result_a = ppc_effective_address;
-        ppc_store_result_regd();
-        ppc_store_result_rega();
-    } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-    }
-}
-
 void dppc_interpreter::ppc_lha() {
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
-    ppc_grab_regsda();
-    ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
-    ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
-    //uint16_t val = mem_grab_word(ppc_effective_address);
-    uint16_t val = mmu_read_vmem<uint16_t>(ppc_effective_address);
-    if (val & 0x8000) {
-        ppc_result_d = 0xFFFF0000UL | (uint32_t)val;
-    } else {
-        ppc_result_d = (uint32_t)val;
-    }
-    ppc_store_result_regd();
+    GET_rD_rA_OFFS(ppc_cur_instruction);
+    uint32_t ea = offs + ((reg_a) ? ppc_state.gpr[reg_a] : 0);
+    SET_GPR(reg_d, (int32_t)((int16_t)mmu_read_vmem<uint16_t>(ea)));
 }
 
 void dppc_interpreter::ppc_lhau() {
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
-    ppc_grab_regsda();
-    if ((reg_a != reg_d) || reg_a != 0) {
-        ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
-        ppc_effective_address += ppc_result_a;
-        //uint16_t val = mem_grab_word(ppc_effective_address);
-        uint16_t val = mmu_read_vmem<uint16_t>(ppc_effective_address);
-        if (val & 0x8000) {
-            ppc_result_d = 0xFFFF0000UL | (uint32_t)val;
-        } else {
-            ppc_result_d = (uint32_t)val;
-        }
-        ppc_store_result_regd();
-        ppc_result_a = ppc_effective_address;
-        ppc_store_result_rega();
-    } else {
+    GET_rD_rA_OFFS(ppc_cur_instruction);
+    if ((reg_a == reg_d) || reg_a == 0) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
+    uint32_t ea = offs + ppc_state.gpr[reg_a];
+    SET_GPR(reg_d, (int32_t)((int16_t)mmu_read_vmem<uint16_t>(ea)));
+    SET_GPR(reg_a, ea);
 }
 
 void dppc_interpreter::ppc_lhaux() {
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
-    ppc_grab_regsdab();
-    ppc_effective_address = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
-    //uint16_t val          = mem_grab_word(ppc_effective_address);
-    uint16_t val = mmu_read_vmem<uint16_t>(ppc_effective_address);
-    if (val & 0x8000) {
-        ppc_result_d = 0xFFFF0000UL | (uint32_t)val;
-    } else {
-        ppc_result_d = (uint32_t)val;
+    GET_rD_rA_iA_iB(ppc_cur_instruction);
+    if ((reg_a == reg_d) || reg_a == 0) {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
-    ppc_store_result_regd();
-    ppc_result_a = ppc_effective_address;
-    ppc_store_result_rega();
+    uint32_t ea = imm_a + imm_b;
+    SET_GPR(reg_d, (int32_t)((int16_t)mmu_read_vmem<uint16_t>(ea)));
+    SET_GPR(reg_a, ea);
 }
 
 void dppc_interpreter::ppc_lhax() {
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
-    ppc_grab_regsdab();
-    ppc_effective_address = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
-    //uint16_t val          = mem_grab_word(ppc_effective_address);
-    uint16_t val = mmu_read_vmem<uint16_t>(ppc_effective_address);
-    if (val & 0x8000) {
-        ppc_result_d = 0xFFFF0000UL | (uint32_t)val;
-    } else {
-        ppc_result_d = (uint32_t)val;
-    }
-    ppc_store_result_regd();
+    GET_rD_rA_iA_iB(ppc_cur_instruction);
+    uint32_t ea = imm_b + ((reg_a) ? imm_a : 0);
+    SET_GPR(reg_d, (int32_t)((int16_t)mmu_read_vmem<uint16_t>(ea)));
 }
 
 void dppc_interpreter::ppc_lhbrx() {
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
-    ppc_grab_regsdab();
-    ppc_effective_address = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
-    //ppc_result_d          = (uint32_t)(BYTESWAP_16(mem_grab_word(ppc_effective_address)));
-    ppc_result_d = (uint32_t)(BYTESWAP_16(mmu_read_vmem<uint16_t>(ppc_effective_address)));
-    ppc_store_result_regd();
-}
-
-void dppc_interpreter::ppc_lwz() {
-#ifdef CPU_PROFILING
-    num_int_loads++;
-#endif
-    ppc_grab_regsda();
-    ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
-    ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
-    //ppc_result_d = mem_grab_dword(ppc_effective_address);
-    ppc_result_d = mmu_read_vmem<uint32_t>(ppc_effective_address);
-    ppc_store_result_regd();
+    GET_rD_rA_iA_iB(ppc_cur_instruction);
+    uint32_t ea = imm_b + ((reg_a) ? imm_a : 0);
+    SET_GPR(reg_d, BYTESWAP_16(mmu_read_vmem<uint16_t>(ea)));
 }
 
 void dppc_interpreter::ppc_lwbrx() {
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
-    ppc_grab_regsdab();
-    ppc_effective_address = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
-    //ppc_result_d          = BYTESWAP_32(mem_grab_dword(ppc_effective_address));
-    ppc_result_d = BYTESWAP_32(mmu_read_vmem<uint32_t>(ppc_effective_address));
-    ppc_store_result_regd();
+    GET_rD_rA_iA_iB(ppc_cur_instruction);
+    uint32_t ea = imm_b + ((reg_a) ? imm_a : 0);
+    SET_GPR(reg_d, BYTESWAP_32(mmu_read_vmem<uint32_t>(ea)));
 }
 
-void dppc_interpreter::ppc_lwzu() {
+template <class T>
+void dppc_interpreter::ppc_lz() {
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
-    ppc_grab_regsda();
-    ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
-    if ((reg_a != reg_d) || reg_a != 0) {
-        ppc_effective_address += ppc_result_a;
-        //ppc_result_d = mem_grab_dword(ppc_effective_address);
-        ppc_result_d = mmu_read_vmem<uint32_t>(ppc_effective_address);
-        ppc_store_result_regd();
-        ppc_result_a = ppc_effective_address;
-        ppc_store_result_rega();
-    } else {
+    GET_rD_rA_OFFS(ppc_cur_instruction);
+    uint32_t ea = offs + ((reg_a) ? ppc_state.gpr[reg_a] : 0);
+    SET_GPR(reg_d, mmu_read_vmem<T>(ea));
+}
+
+// explicitely instantiate all required ppc_lz variants
+template void dppc_interpreter::ppc_lz<uint8_t>(void);  // lbz
+template void dppc_interpreter::ppc_lz<uint16_t>(void); // lhz
+template void dppc_interpreter::ppc_lz<uint32_t>(void); // lwz
+
+template <class T>
+void dppc_interpreter::ppc_lzu() {
+#ifdef CPU_PROFILING
+    num_int_loads++;
+#endif
+    GET_rD_rA_OFFS(ppc_cur_instruction);
+    if ((reg_a == reg_d) || reg_a == 0) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
+    uint32_t ea = offs + ppc_state.gpr[reg_a];
+    SET_GPR(reg_d, mmu_read_vmem<T>(ea));
+    SET_GPR(reg_a, ea);
 }
 
-void dppc_interpreter::ppc_lwzx() {
+// explicitely instantiate all required ppc_lzu variants
+template void dppc_interpreter::ppc_lzu<uint8_t>(void);  // lbzu
+template void dppc_interpreter::ppc_lzu<uint16_t>(void); // lhzu
+template void dppc_interpreter::ppc_lzu<uint32_t>(void); // lwzu
+
+template <class T>
+void dppc_interpreter::ppc_lzx() {
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
-    ppc_grab_regsdab();
-    ppc_effective_address = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
-    //ppc_result_d          = mem_grab_dword(ppc_effective_address);
-    ppc_result_d = mmu_read_vmem<uint32_t>(ppc_effective_address);
-    ppc_store_result_regd();
+    GET_rD_rA_iA_iB(ppc_cur_instruction);
+    uint32_t ea = imm_b + ((reg_a) ? imm_a : 0);
+    SET_GPR(reg_d, mmu_read_vmem<T>(ea));
 }
 
-void dppc_interpreter::ppc_lwzux() {
+// explicitely instantiate all required ppc_lzx variants
+template void dppc_interpreter::ppc_lzx<uint8_t>(void);  // lbzx
+template void dppc_interpreter::ppc_lzx<uint16_t>(void); // lhzx
+template void dppc_interpreter::ppc_lzx<uint32_t>(void); // lwzx
+
+template <class T>
+void dppc_interpreter::ppc_lzux() {
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
-    ppc_grab_regsdab();
-    if ((reg_a != reg_d) || reg_a != 0) {
-        ppc_effective_address = ppc_result_a + ppc_result_b;
-    } else {
+    GET_rD_rA_iA_iB(ppc_cur_instruction);
+    if ((reg_a == reg_d) || reg_a == 0) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
-    //ppc_result_d = mem_grab_dword(ppc_effective_address);
-    ppc_result_d = mmu_read_vmem<uint32_t>(ppc_effective_address);
-    ppc_result_a = ppc_effective_address;
-    ppc_store_result_regd();
-    ppc_store_result_rega();
+    uint32_t ea = imm_a + imm_b;
+    SET_GPR(reg_d, mmu_read_vmem<T>(ea));
+    SET_GPR(reg_a, ea);
 }
+
+// explicitely instantiate all required ppc_lzux variants
+template void dppc_interpreter::ppc_lzux<uint8_t>(void);  // lbzux
+template void dppc_interpreter::ppc_lzux<uint16_t>(void); // lhzux
+template void dppc_interpreter::ppc_lzux<uint32_t>(void); // lwzux
 
 void dppc_interpreter::ppc_lwarx() {
 #ifdef CPU_PROFILING

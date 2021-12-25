@@ -136,9 +136,9 @@ static PPCOpcode OpcodeGrabber[] = {
     ppc_addic,     ppc_addicdot,  ppc_addi,      ppc_addis,     ppc_opcode16,  ppc_sc,
     ppc_opcode18,  ppc_opcode19,  ppc_rlwimi,    ppc_rlwinm,    power_rlmi,    ppc_rlwnm,
     ppc_ori,       ppc_oris,      ppc_xori,      ppc_xoris,     ppc_andidot,   ppc_andisdot,
-    ppc_illegalop, ppc_opcode31,  ppc_lwz,       ppc_lwzu,      ppc_lbz,       ppc_lbzu,
-    ppc_stw,       ppc_stwu,      ppc_stb,       ppc_stbu,      ppc_lhz,       ppc_lhzu,
-    ppc_lha,       ppc_lhau,      ppc_sth,       ppc_sthu,      ppc_lmw,       ppc_stmw,
+    ppc_illegalop, ppc_opcode31,  ppc_lz<uint32_t>,  ppc_lzu<uint32_t>, ppc_lz<uint8_t>, ppc_lzu<uint8_t>,
+    ppc_st<uint32_t>,  ppc_stu<uint32_t>,  ppc_st<uint8_t>,  ppc_stu<uint8_t>, ppc_lz<uint16_t>, ppc_lzu<uint16_t>,
+    ppc_lha,       ppc_lhau,      ppc_st<uint16_t>,  ppc_stu<uint16_t>,      ppc_lmw,       ppc_stmw,
     ppc_lfs,       ppc_lfsu,      ppc_lfd,       ppc_lfdu,      ppc_stfs,      ppc_stfsu,
     ppc_stfd,      ppc_stfdu,     ppc_illegalop, ppc_illegalop, ppc_illegalop, ppc_opcode59,
     ppc_illegalop, ppc_illegalop, ppc_illegalop, ppc_opcode63};
@@ -818,12 +818,12 @@ void initialize_ppc_opcode_tables() {
     SubOpcode31Grabber[491] = SubOpcode31Grabber[1003] = ppc_divw;
 
     SubOpcode31Grabber[20]  = ppc_lwarx;
-    SubOpcode31Grabber[23]  = ppc_lwzx;
-    SubOpcode31Grabber[55]  = ppc_lwzux;
-    SubOpcode31Grabber[87]  = ppc_lbzx;
-    SubOpcode31Grabber[119] = ppc_lbzux;
-    SubOpcode31Grabber[279] = ppc_lhzx;
-    SubOpcode31Grabber[311] = ppc_lhzux;
+    SubOpcode31Grabber[23]  = ppc_lzx<uint32_t>;
+    SubOpcode31Grabber[55]  = ppc_lzux<uint32_t>;
+    SubOpcode31Grabber[87]  = ppc_lzx<uint8_t>;
+    SubOpcode31Grabber[119] = ppc_lzux<uint8_t>;
+    SubOpcode31Grabber[279] = ppc_lzx<uint16_t>;
+    SubOpcode31Grabber[311] = ppc_lzux<uint16_t>;
     SubOpcode31Grabber[343] = ppc_lhax;
     SubOpcode31Grabber[375] = ppc_lhaux;
     SubOpcode31Grabber[533] = ppc_lswx;
@@ -836,12 +836,12 @@ void initialize_ppc_opcode_tables() {
     SubOpcode31Grabber[790] = ppc_lhbrx;
 
     SubOpcode31Grabber[150] = ppc_stwcx;
-    SubOpcode31Grabber[151] = ppc_stwx;
-    SubOpcode31Grabber[183] = ppc_stwux;
-    SubOpcode31Grabber[215] = ppc_stbx;
-    SubOpcode31Grabber[247] = ppc_stbux;
-    SubOpcode31Grabber[407] = ppc_sthx;
-    SubOpcode31Grabber[439] = ppc_sthux;
+    SubOpcode31Grabber[151] = ppc_stx<uint32_t>;
+    SubOpcode31Grabber[183] = ppc_stux<uint32_t>;
+    SubOpcode31Grabber[215] = ppc_stx<uint8_t>;
+    SubOpcode31Grabber[247] = ppc_stux<uint8_t>;
+    SubOpcode31Grabber[407] = ppc_stx<uint16_t>;
+    SubOpcode31Grabber[439] = ppc_stux<uint16_t>;
     SubOpcode31Grabber[661] = ppc_stswx;
     SubOpcode31Grabber[662] = ppc_stwbrx;
     SubOpcode31Grabber[663] = ppc_stfsx;
