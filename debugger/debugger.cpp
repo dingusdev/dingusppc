@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <array>
+#include <chrono>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -499,7 +500,11 @@ void enter_debugger() {
                     exec_until_68k(addr);
 #endif
                 } else {
+                    auto start_time = std::chrono::steady_clock::now();
                     ppc_exec_until(addr);
+                    auto end_time = std::chrono::steady_clock::now();
+                    auto time_elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
+                    LOG_F(INFO, "Time elapsed: %lld ns", time_elapsed.count());
                 }
             } catch (invalid_argument& exc) {
                 cout << exc.what() << endl;

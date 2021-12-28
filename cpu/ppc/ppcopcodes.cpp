@@ -241,16 +241,25 @@ void dppc_interpreter::ppc_addis() {
 }
 
 void dppc_interpreter::ppc_add() {
+/*
     ppc_grab_regsdab();
     ppc_result_d = ppc_result_a + ppc_result_b;
     if (oe_flag)
         ppc_setsoov(ppc_result_a, ~ppc_result_b, ppc_result_d);
     if (rc_flag)
         ppc_changecrf0(ppc_result_d);
-    ppc_store_result_regd();
+    ppc_store_result_regd();*/
+    GET_rD_iA_iB(ppc_cur_instruction);
+    uint32_t result = imm_a + imm_b;
+    if (oe_flag)
+        ppc_setsoov(imm_a, ~imm_b, result);
+    if (rc_flag)
+        ppc_changecrf0(result);
+    SET_GPR(reg_d, result);
 }
 
 void dppc_interpreter::ppc_addc() {
+/*
     ppc_grab_regsdab();
     ppc_result_d = ppc_result_a + ppc_result_b;
     ppc_carry(ppc_result_a, ppc_result_d);
@@ -260,7 +269,15 @@ void dppc_interpreter::ppc_addc() {
     if (rc_flag)
         ppc_changecrf0(ppc_result_d);
 
-    ppc_store_result_regd();
+    ppc_store_result_regd();*/
+    GET_rD_iA_iB(ppc_cur_instruction);
+    uint32_t result = imm_a + imm_b;
+    ppc_carry(imm_a, result);
+    if (oe_flag)
+        ppc_setsoov(imm_a, ~imm_b, result);
+    if (rc_flag)
+        ppc_changecrf0(result);
+    SET_GPR(reg_d, result);
 }
 
 void dppc_interpreter::ppc_adde() {
@@ -747,6 +764,7 @@ void dppc_interpreter::ppc_rlwimi() {
 }
 
 void dppc_interpreter::ppc_rlwinm() {
+/*
     ppc_grab_regssa();
     unsigned rot_sh = (ppc_cur_instruction >> 11) & 31;
     unsigned rot_mb = (ppc_cur_instruction >> 6) & 31;
@@ -757,7 +775,19 @@ void dppc_interpreter::ppc_rlwinm() {
     if ((ppc_cur_instruction & 0x01) == 1) {
         ppc_changecrf0(ppc_result_a);
     }
-    ppc_store_result_rega();
+    ppc_store_result_rega();*/
+    uint32_t opcode = ppc_cur_instruction;
+    GET_rA_iS(opcode);
+    unsigned rot_sh = (opcode >> 11) & 31;
+    unsigned rot_mb = (opcode >> 6) & 31;
+    unsigned rot_me = (opcode >> 1) & 31;
+    uint32_t mask   = rot_mask(rot_mb, rot_me);
+    uint32_t r      = ((imm_d << rot_sh) | (imm_d >> (32 - rot_sh)));
+    r &= mask;
+    SET_GPR(reg_a, r);
+    if (ppc_cur_instruction & 1) {
+        ppc_changecrf0(r);
+    }
 }
 
 void dppc_interpreter::ppc_rlwnm() {
