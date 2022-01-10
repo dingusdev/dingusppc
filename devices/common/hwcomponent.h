@@ -37,6 +37,7 @@ enum HWCompType : int {
     I2C_DEV     =  61, /* I2C device */
     ADB_HOST    =  70, /* ADB host   */
     ADB_DEV     =  71, /* ADB device */
+    INT_CTRL    =  80, /* interrupt controller */
     SND_SERVER  = 100, /* host sound server */
 };
 
