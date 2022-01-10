@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -21,12 +21,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** VIA-CUDA combo device emulation.
 
-    Author: Max Poliakovski 2019
-
     Versatile interface adapter (VIA) is an old I/O controller that can be found
     in nearly every Macintosh computer. In the 68k era, VIA was used to control
-    various peripherial devices. In a Power Macintosh, its function is limited
-    to the I/O interface for the Cuda MCU. I therefore decided to put VIA
+    various peripheral devices. In a Power Macintosh, its function is limited
+    to the I/O interface with the Cuda MCU. I therefore decided to put VIA
     emulation code here.
 
     Cuda MCU is a multipurpose IC built around a custom version of the Motorola
@@ -47,10 +45,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <devices/common/adb/adb.h>
 #include <devices/common/hwcomponent.h>
+#include <devices/common/hwinterrupt.h>
 #include <devices/common/i2c/i2c.h>
 #include <devices/common/nvram.h>
 
 #include <memory>
+
+#define VIA_CLOCK_HZ 783360
 
 /** VIA register offsets. */
 enum {
@@ -70,6 +71,17 @@ enum {
     VIA_IFR  = 0x0D, /* interrupt flag register */
     VIA_IER  = 0x0E, /* interrupt enable register */
     VIA_ANH  = 0x0F, /* input/output register A, no handshake */
+};
+
+/** VIA interrupt flags */
+enum {
+    VIA_IF_CA2 = 1 << 0,
+    VIA_IF_CA1 = 1 << 1,
+    VIA_IF_SR  = 1 << 2,
+    VIA_IF_CB2 = 1 << 3,
+    VIA_IF_CB1 = 1 << 4,
+    VIA_IF_T2  = 1 << 5,
+    VIA_IF_T1  = 1 << 6
 };
 
 /** Cuda communication signals. */
@@ -143,20 +155,36 @@ public:
     void write(int reg, uint8_t value);
 
 private:
-    uint8_t via_regs[16]; /* VIA virtual registers */
+    // VIA virtual HW registers
+    uint8_t via_regs[16];
+
+    float via_clk_dur; // one VIA clock duration = 1,27655 µs
+
+    // VIA internal state
+    uint8_t  _via_ifr;
+    uint8_t  _via_ier;
+    uint8_t  irq;
+    uint16_t t2_value;
+    uint32_t sr_timer_id = 0;
+    uint32_t t2_timer_id = 0;
+    bool     sr_timer_on = false;
+    bool     t2_active;
+
+    InterruptCtrl* int_ctrl;
+    uint32_t       irq_id;
 
     /* Cuda state. */
-    uint8_t old_tip;
-    uint8_t old_byteack;
-    uint8_t treq;
-    uint8_t in_buf[16];
-    int32_t in_count;
-    uint8_t out_buf[16];
-    int32_t out_count;
-    int32_t out_pos;
-    uint8_t poll_rate;
-    int32_t real_time = 0;
-    bool file_server;
+    uint8_t  old_tip;
+    uint8_t  old_byteack;
+    uint8_t  treq;
+    uint8_t  in_buf[16];
+    int32_t  in_count;
+    uint8_t  out_buf[16];
+    int32_t  out_count;
+    int32_t  out_pos;
+    uint8_t  poll_rate;
+    int32_t  real_time = 0;
+    bool     file_server;
     uint16_t device_mask = 0;
 
     bool        is_open_ended; // true if current transaction is open-ended
@@ -166,14 +194,20 @@ private:
     void (ViaCuda::*out_handler)(void);
     void (ViaCuda::*next_out_handler)(void);
 
-    std::unique_ptr<NVram>  pram_obj;
-    ADB_Bus* adb_obj;
+    std::unique_ptr<NVram>   pram_obj;
+    std::unique_ptr<ADB_Bus> adb_bus;
 
-    void print_enabled_ints(); /* print enabled VIA interrupts and their sources */
-
-    void init();
-    bool ready();
+    // VIA methods
+    void print_enabled_ints(); // print enabled VIA interrupts and their sources
+    void init_ints();
+    void update_irq();
     void assert_sr_int();
+    void assert_t2_int();
+    void schedule_sr_int(uint64_t timeout_ns);
+
+    // CUDA methods
+    void cuda_init();
+    bool ready();
     void write(uint8_t new_state);
     void response_header(uint32_t pkt_type, uint32_t pkt_flag);
     void error_response(uint32_t error);

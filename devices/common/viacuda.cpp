@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -19,14 +19,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/** VIA-CUDA combo device emulation.
+/** High-level VIA-CUDA combo device emulation.
+ */
 
-    Author: Max Poliakovski 2019
-*/
-
+#include <core/timermanager.h>
 #include <devices/common/adb/adb.h>
+#include <devices/common/hwinterrupt.h>
 #include <devices/common/viacuda.h>
 #include <loguru.hpp>
+#include <machines/machinebase.h>
 #include <memaccess.h>
 
 #include <cinttypes>
@@ -56,15 +57,27 @@ ViaCuda::ViaCuda() {
     this->via_regs[VIA_T2CL] = 0xFF;
     this->via_regs[VIA_T2CH] = 0xFF;
 
+    this->_via_ifr = 0; // all flags cleared
+    this->_via_ier = 0; // all interrupts disabled
+    this->irq      = 0; // IRQ is not active
+
+    this->t2_value  = 0xFFFF;
+    this->t2_active = false;
+
+    // calculate VIA clock duration in ns
+    this->via_clk_dur = 1.0f / VIA_CLOCK_HZ * NS_PER_SEC;
+
     // PRAM is part of Cuda
     this->pram_obj = std::unique_ptr<NVram> (new NVram("pram.bin", 256));
 
-    this->adb_obj = new ADB_Bus();
+    this->adb_bus = std::unique_ptr<ADB_Bus> (new ADB_Bus());
 
-    this->init();
+    this->cuda_init();
+
+    this->int_ctrl = nullptr;
 }
 
-void ViaCuda::init() {
+void ViaCuda::cuda_init() {
     this->old_tip     = 0;
     this->old_byteack = 0;
     this->treq        = 1;
@@ -74,32 +87,38 @@ void ViaCuda::init() {
 }
 
 uint8_t ViaCuda::read(int reg) {
-    uint8_t res;
-
     LOG_F(9, "Read VIA reg %d", reg);
-
-    res = this->via_regs[reg & 0xF];
 
     /* reading from some VIA registers triggers special actions */
     switch (reg & 0xF) {
     case VIA_B:
-        res = this->via_regs[VIA_B];
-        break;
+        return (this->via_regs[VIA_B]);
     case VIA_A:
     case VIA_ANH:
         LOG_F(WARNING, "Attempted read from VIA Port A!");
         break;
     case VIA_IER:
-        res |= 0x80; /* bit 7 always reads as "1" */
+        return (this->_via_ier | 0x80); // bit 7 always reads as "1"
+    case VIA_IFR:
+        return this->_via_ifr;
+    case VIA_T2CL:
+        this->_via_ifr &= ~VIA_IF_T2;
+        update_irq();
+        break;
+    case VIA_SR:
+        this->_via_ifr &= ~VIA_IF_SR;
+        update_irq();
+        break;
     }
 
-    return res;
+    return (this->via_regs[reg & 0xF]);
 }
 
 void ViaCuda::write(int reg, uint8_t value) {
+    this->via_regs[reg & 0xF] = value;
+
     switch (reg & 0xF) {
     case VIA_B:
-        this->via_regs[VIA_B] = value;
         write(value);
         break;
     case VIA_A:
@@ -108,27 +127,54 @@ void ViaCuda::write(int reg, uint8_t value) {
         break;
     case VIA_DIRB:
         LOG_F(9, "VIA_DIRB = 0x%X", value);
-        this->via_regs[VIA_DIRB] = value;
         break;
     case VIA_DIRA:
         LOG_F(9, "VIA_DIRA = 0x%X", value);
-        this->via_regs[VIA_DIRA] = value;
         break;
     case VIA_PCR:
         LOG_F(9, "VIA_PCR = 0x%X", value);
-        this->via_regs[VIA_PCR] = value;
         break;
     case VIA_ACR:
         LOG_F(9, "VIA_ACR = 0x%X", value);
-        this->via_regs[VIA_ACR] = value;
+        break;
+    case VIA_IFR:
+        this->_via_ifr &= ~value;
+        update_irq();
         break;
     case VIA_IER:
-        this->via_regs[VIA_IER] = (value & 0x80) ? value & 0x7F : this->via_regs[VIA_IER] & ~value;
-        LOG_F(9, "VIA_IER updated to 0x%X", this->via_regs[VIA_IER]);
+        if (value & 0x80) {
+            this->_via_ier |= value & 0x7F;
+        } else {
+            this->_via_ier &= ~value;
+        }
+        update_irq();
         print_enabled_ints();
         break;
+    case VIA_T2CH:
+        // cancel any active T2 timer
+        if (this->t2_active) {
+            TimerManager::get_instance()->cancel_timer(this->t2_timer_id);
+            this->t2_active = false;
+        }
+        // clear T2 flag in IFR
+        this->_via_ifr &= ~VIA_IF_T2;
+        update_irq();
+        // load initial value into timer 2
+        this->t2_value = (value << 8) | this->via_regs[VIA_T2CL];
+        // delay for one phase 2 clock
+        // sample current vCPU time and remember it
+        // set up new timer for T2
+        this->t2_timer_id = TimerManager::get_instance()->add_oneshot_timer(
+            static_cast<uint64_t>(this->via_clk_dur * (this->t2_value + 3) + 0.5f),
+            [this]() { this->assert_t2_int(); });
+        this->t2_active = true;
+        break;
+    case VIA_SR:
+        this->_via_ifr &= ~VIA_IF_SR;
+        update_irq();
+        break;
     default:
-        this->via_regs[reg & 0xF] = value;
+        break;
     }
 }
 
@@ -136,8 +182,27 @@ void ViaCuda::print_enabled_ints() {
     const char* via_int_src[] = {"CA2", "CA1", "SR", "CB2", "CB1", "T2", "T1"};
 
     for (int i = 0; i < 7; i++) {
-        if (this->via_regs[VIA_IER] & (1 << i))
+        if (this->_via_ier & (1 << i))
             LOG_F(INFO, "VIA %s interrupt enabled", via_int_src[i]);
+    }
+}
+
+void ViaCuda::init_ints() {
+    // lazy interrupt wiring
+    if (this->int_ctrl == nullptr) {
+        this->int_ctrl = dynamic_cast<InterruptCtrl*>(
+            gMachineObj->get_comp_by_type(HWCompType::INT_CTRL));
+        this->irq_id = this->int_ctrl->register_dev_int(IntSrc::VIA_CUDA);
+    }
+}
+
+inline void ViaCuda::update_irq() {
+    init_ints();
+    uint8_t new_irq = !!(this->_via_ifr & this->_via_ier & 0x7F);
+    this->_via_ifr  = (this->_via_ifr & 0x7F) | (new_irq << 7);
+    if (new_irq != this->irq) {
+        this->irq = new_irq;
+        this->int_ctrl->ack_int(this->irq_id, new_irq);
     }
 }
 
@@ -145,8 +210,27 @@ inline bool ViaCuda::ready() {
     return ((this->via_regs[VIA_DIRB] & 0x38) == 0x30);
 }
 
-inline void ViaCuda::assert_sr_int() {
-    this->via_regs[VIA_IFR] |= 0x84;
+void ViaCuda::assert_sr_int() {
+    this->sr_timer_on = false;
+    this->_via_ifr |= VIA_IF_SR;
+    update_irq();
+}
+
+void ViaCuda::assert_t2_int() {
+    this->_via_ifr |= VIA_IF_T2;
+    this->t2_active = false;
+    update_irq();
+}
+
+void ViaCuda::schedule_sr_int(uint64_t timeout_ns) {
+    if (this->sr_timer_on) {
+        TimerManager::get_instance()->cancel_timer(this->sr_timer_id);
+        this->sr_timer_on = false;
+    }
+    this->sr_timer_id = TimerManager::get_instance()->add_oneshot_timer(
+        timeout_ns,
+        [this]() { this->assert_sr_int(); });
+    this->sr_timer_on = true;
 }
 
 void ViaCuda::write(uint8_t new_state) {
@@ -189,18 +273,24 @@ void ViaCuda::write(uint8_t new_state) {
             this->out_count = 0;
         }
 
-        assert_sr_int(); /* send dummy byte as idle acknowledge or attention */
+        // send dummy byte as idle acknowledge or attention
+        //assert_sr_int();
+        schedule_sr_int(USECS_TO_NSECS(61));
     } else {
         if (this->via_regs[VIA_ACR] & 0x10) { /* data transfer: Host --> Cuda */
             if (this->in_count < 16) {
                 this->in_buf[this->in_count++] = this->via_regs[VIA_SR];
-                assert_sr_int(); /* tell the system we've read the data */
+                // tell the system we've read the byte after 71 usecs
+                schedule_sr_int(USECS_TO_NSECS(71)); 
+                //assert_sr_int();
             } else {
                 LOG_F(WARNING, "Cuda input buffer too small. Truncating data!");
             }
         } else { /* data transfer: Cuda --> Host */
             (this->*out_handler)();
-            assert_sr_int(); /* tell the system we've written the data */
+            //assert_sr_int();
+            // tell the system we've written next byte after 88 usecs
+            schedule_sr_int(USECS_TO_NSECS(88));
         }
     }
 }
@@ -297,10 +387,10 @@ void ViaCuda::process_adb_command(uint8_t cmd_byte, int data_count) {
     } else if ((cmd & 0xC) == 8) {
         LOG_F(9, "Cuda: ADB Listen command requested");
         int adb_reg = cmd_byte & 0x3;
-        if (adb_obj->listen(adb_dev, adb_reg)) {
+        if (adb_bus->listen(adb_dev, adb_reg)) {
             response_header(CUDA_PKT_ADB, 0);
-            for (int data_ptr = 0; data_ptr < adb_obj->get_output_len(); data_ptr++) {
-                this->in_buf[(2 + data_ptr)] = adb_obj->get_output_byte(data_ptr);
+            for (int data_ptr = 0; data_ptr < adb_bus->get_output_len(); data_ptr++) {
+                this->in_buf[(2 + data_ptr)] = adb_bus->get_output_byte(data_ptr);
             }
         } else {
             response_header(CUDA_PKT_ADB, 2);
@@ -309,7 +399,7 @@ void ViaCuda::process_adb_command(uint8_t cmd_byte, int data_count) {
         LOG_F(9, "Cuda: ADB Talk command requested");
         response_header(CUDA_PKT_ADB, 0);
         int adb_reg = cmd_byte & 0x3;
-        if (adb_obj->talk(adb_dev, adb_reg, this->in_buf[2])) {
+        if (adb_bus->talk(adb_dev, adb_reg, this->in_buf[2])) {
             response_header(CUDA_PKT_ADB, 0);
         } else {
             response_header(CUDA_PKT_ADB, 2);
