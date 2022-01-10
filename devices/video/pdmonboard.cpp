@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file PDM on-board video emulation. */
 
+#include <core/timermanager.h>
 #include <cpu/ppc/ppcmmu.h>
 #include <devices/memctrl/hmc.h>
 #include <devices/video/pdmonboard.h>
@@ -33,10 +34,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 PdmOnboardVideo::PdmOnboardVideo()
     : VideoCtrlBase()
 {
-    this->video_mode = PDM_VMODE_OFF;
-    this->blanking   = 0x80;
-    this->crtc_on    = false;
-    this->vdac_mode  = 8;
+    this->video_mode  = PDM_VMODE_OFF;
+    this->blanking    = 0x80;
+    this->crtc_on     = false;
+    this->vdac_mode   = 8;
+    this->pixel_depth = 0;
 
     // get pointer to the Highspeed Memory controller
     this->hmc_obj = dynamic_cast<HMC*>(gMachineObj->get_comp_by_name("HMC"));
@@ -75,18 +77,24 @@ void PdmOnboardVideo::set_pixel_depth(uint8_t depth)
 {
     static uint8_t pix_depths[8] = {1, 2, 4, 8, 16, 0xFF, 0xFF, 0xFF};
 
-    this->pixel_depth = pix_depths[depth];
-    if (this->pixel_depth == 0xFF) {
+    uint8_t new_pix_depth = pix_depths[depth];
+    if (new_pix_depth == 0xFF) {
         ABORT_F("PDM-Video: invalid pixel depth code %d specified!", depth);
+    }
+
+    if (new_pix_depth != this->pixel_depth) {
+        this->pixel_depth = new_pix_depth;
+        this->set_depth_internal(this->active_width);
+        LOG_F(INFO, "PDM-Video: pixel depth changed to %dbpp", new_pix_depth);
     }
 }
 
-void PdmOnboardVideo::vdac_config(uint8_t mode)
+void PdmOnboardVideo::set_vdac_config(uint8_t mode)
 {
-    if (mode != 8) {
-        LOG_F(WARNING, "Unknown Ariel Config code 0x%X", mode);
+    this->vdac_mode = mode;
+    if ((mode & 0xF8) != 8) {
+        LOG_F(WARNING, "Ariel control changed to unknown value 0x%X", mode);
     }
-    this->vdac_mode = 8; // 1 bpp, master mode, no overlay
 }
 
 void PdmOnboardVideo::set_clut_index(uint8_t index)
@@ -110,9 +118,29 @@ void PdmOnboardVideo::set_clut_color(uint8_t color)
     }
 }
 
+void PdmOnboardVideo::set_depth_internal(int pitch)
+{
+    switch (this->pixel_depth) {
+    case 1:
+        this->convert_fb_cb = [this](uint8_t* dst_buf, int dst_pitch) {
+            this->convert_frame_1bpp(dst_buf, dst_pitch);
+        };
+        this->fb_pitch = pitch >> 3;    // one byte contains 8 pixels
+        break;
+    case 8:
+        this->convert_fb_cb = [this](uint8_t* dst_buf, int dst_pitch) {
+            this->convert_frame_8bpp(dst_buf, dst_pitch);
+        };
+        this->fb_pitch = pitch; // one byte contains 1 pixel
+        break;
+    default:
+        ABORT_F("PDM-Video: pixel depth %d not implemented yet!", this->pixel_depth);
+    }
+}
+
 void PdmOnboardVideo::enable_video_internal()
 {
-    int new_width, new_height;
+    int new_width, new_height, hori_blank, vert_blank;
 
     // ensure all video parameters contain safe values
     switch(this->video_mode) {
@@ -131,26 +159,36 @@ void PdmOnboardVideo::enable_video_internal()
     case PdmVideoMode::Portrait:
         new_width  = 640;
         new_height = 870;
+        hori_blank = 192;
+        vert_blank =  48;
         this->pixel_clock = 57283200;
         break;
     case PdmVideoMode::Rgb12in:
         new_width  = 512;
         new_height = 384;
+        hori_blank = 128;
+        vert_blank =  23;
         this->pixel_clock = 15667200;
         break;
     case PdmVideoMode::Rgb13in:
         new_width  = 640;
         new_height = 480;
+        hori_blank = 256;
+        vert_blank =  45;
         this->pixel_clock = 31334400;
         break;
     case PdmVideoMode::Rgb16in:
         new_width  = 832;
         new_height = 624;
+        hori_blank = 320;
+        vert_blank =  43;
         this->pixel_clock = 57283200;
         break;
     case PdmVideoMode::VGA:
         new_width  = 640;
         new_height = 480;
+        hori_blank = 160;
+        vert_blank =  45;
         this->pixel_clock = 25175000;
         break;
     default:
@@ -171,16 +209,18 @@ void PdmOnboardVideo::enable_video_internal()
     this->active_width  = new_width;
     this->active_height = new_height;
 
-    switch(this->pixel_depth) {
-    case 1:
-        this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
-            this->convert_frame_1bpp(dst_buf, dst_pitch);
-        };
-        this->fb_pitch = new_width >> 3; // one byte contains 8 pixels
-        break;
-    default:
-        ABORT_F("PDM-Video: pixel depth %d not implemented yet!", this->pixel_depth);
-    }
+    this->set_depth_internal(new_width);
+
+    // set up video refresh timer
+    double refresh_rate_hz = (double)(this->pixel_clock) / (new_width + hori_blank) / (new_height + vert_blank);
+    LOG_F(INFO, "PDM-Video: refresh rate set to %f Hz", refresh_rate_hz);
+    uint64_t refresh_interval = static_cast<uint64_t>(1.0f / refresh_rate_hz * NS_PER_SEC + 0.5);
+    TimerManager::get_instance()->add_cyclic_timer(
+        refresh_interval,
+        [this]() {
+            this->update_screen();
+        }
+    );
 
     this->update_screen();
 

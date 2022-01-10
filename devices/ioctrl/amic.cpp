@@ -123,6 +123,8 @@ uint32_t AMIC::read(uint32_t reg_start, uint32_t offset, int size)
     }
 
     switch(offset) {
+    case AMICReg::Ariel_Config:
+        return this->def_vid->get_vdac_config();
     case AMICReg::Video_Mode:
         return this->def_vid->get_video_mode();
     case AMICReg::Monitor_Id:
@@ -223,7 +225,7 @@ void AMIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
         this->def_vid->set_clut_color(value);
         break;
     case AMICReg::Ariel_Config:
-        this->def_vid->vdac_config(value);
+        this->def_vid->set_vdac_config(value);
         break;
     case AMICReg::Video_Mode:
         this->def_vid->set_video_mode(value);

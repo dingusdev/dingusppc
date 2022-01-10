@@ -54,11 +54,15 @@ public:
 
     void set_video_mode(uint8_t new_mode);
     void set_pixel_depth(uint8_t depth);
-    void vdac_config(uint8_t config);
+    void set_vdac_config(uint8_t config);
+    uint8_t get_vdac_config() {
+        return this->vdac_mode;
+    };
     void set_clut_index(uint8_t index);
     void set_clut_color(uint8_t color);
 
 protected:
+    void set_depth_internal(int pitch);
     void enable_video_internal();
     void disable_video_internal();
     void convert_frame_1bpp(uint8_t *dst_buf, int dst_pitch);
