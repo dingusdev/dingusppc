@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     Author: Max Poliakovski
 */
 
+#include <cpu/ppc/ppcemu.h>
 #include <cpu/ppc/ppcmmu.h>
 #include <devices/common/scsi/ncr53c94.h>
 #include <devices/common/viacuda.h>
@@ -41,7 +42,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <loguru.hpp>
 #include <memory>
 
-AMIC::AMIC()
+AMIC::AMIC() : MMIODevice()
 {
     this->name = "Apple Memory-mapped I/O Controller";
 
@@ -70,14 +71,6 @@ AMIC::AMIC()
 
     // intialize floppy disk HW
     this->swim3 = std::unique_ptr<Swim3::Swim3Ctrl> (new Swim3::Swim3Ctrl());
-}
-
-bool AMIC::supports_type(HWCompType type) {
-    if (type == HWCompType::MMIO_DEV) {
-        return true;
-    } else {
-        return false;
-    }
 }
 
 uint32_t AMIC::read(uint32_t reg_start, uint32_t offset, int size)
@@ -129,6 +122,8 @@ uint32_t AMIC::read(uint32_t reg_start, uint32_t offset, int size)
         return this->def_vid->get_video_mode();
     case AMICReg::Monitor_Id:
         return this->mon_id;
+    case AMICReg::Int_Ctrl:
+        return (this->int_ctrl & 0xC0) | (this->dev_irq_lines & 0x3F);
     case AMICReg::Diag_Reg:
         return 0xFFU; // this value allows the machine to boot normally
     case AMICReg::SCSI_DMA_Ctrl:
@@ -248,7 +243,13 @@ void AMIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
         }
         break;
     case AMICReg::Int_Ctrl:
-        LOG_F(INFO, "AMIC Interrupt Control Register set to %X", value);
+        // reset CPU interrupt bit if requested
+        if (value & AMIC_INT_CLR) {
+            this->int_ctrl &= ~AMIC_INT_CLR;
+        }
+        // keep interrupt mode bit
+        // and discard read-only IQR state bits
+        this->int_ctrl |= value & AMIC_INT_MODE;
         break;
     case AMICReg::DMA_Base_Addr_0:
     case AMICReg::DMA_Base_Addr_1:
@@ -288,6 +289,40 @@ void AMIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
         LOG_F(WARNING, "Unknown AMIC register write, offset=%x, val=%x",
                 offset, value);
     }
+}
+
+// ======================== Interrupt related stuff ==========================
+uint32_t AMIC::register_dev_int(IntSrc src_id) {
+    switch (src_id) {
+    case IntSrc::VIA_CUDA:
+        return 1;
+    default:
+        ABORT_F("AMIC: unknown interrupt source %d", src_id);
+    }
+    return 0;
+}
+
+uint32_t AMIC::register_dma_int(IntSrc src_id) {
+    ABORT_F("AMIC: register_dma_int() not implemented");
+    return 0;
+}
+
+void AMIC::ack_int(uint32_t irq_id, uint8_t irq_line_state) {
+    if (this->int_ctrl & AMIC_INT_MODE) { // 68k interrupt emulation mode?
+        this->int_ctrl |= 0x80; // set CPU interrupt bit
+        if (irq_line_state) {
+            this->dev_irq_lines |= irq_id;
+        } else {
+            this->dev_irq_lines &= ~irq_id;
+        }
+        ppc_ext_int();
+    } else {
+        ABORT_F("AMIC: interrupt mode 0 not implemented");
+    }
+}
+
+void AMIC::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state) {
+    ABORT_F("AMIC: ack_dma_int() not implemented");
 }
 
 // =========================== DMA related stuff =============================

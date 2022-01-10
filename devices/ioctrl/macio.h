@@ -99,7 +99,7 @@ public:
     ~HeathrowIC() = default;
 
     bool supports_type(HWCompType type) {
-        return type == HWCompType::MMIO_DEV;
+        return (type == HWCompType::MMIO_DEV) || (type == HWCompType::INT_CTRL);
     };
 
     /* PCI device methods */

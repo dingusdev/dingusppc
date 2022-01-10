@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef AMIC_H
 #define AMIC_H
 
+#include <devices/common/hwinterrupt.h>
 #include <devices/common/mmiodevice.h>
 #include <devices/common/scsi/ncr53c94.h>
 #include <devices/common/viacuda.h>
@@ -37,12 +38,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <memory>
 
+/** Interrupt related constants. */
+#define AMIC_INT_CLR    0x80 // clears CPU interrupt
+#define AMIC_INT_MODE   0x40 // interrupt mode: 0 - native, 1 - 68k-style
+
 /** AMIC sound buffers are located at fixed offsets from DMA base. */
 #define AMIC_SND_BUF0_OFFS  0x10000
 #define AMIC_SND_BUF1_OFFS  0x12000
 
 // PDM HWInit source defines two constants: kExpBit = 0x80 and kCmdBit = 0x40
-// I don't know what they means but it seems that their combination will
+// I don't know what they mean but it seems that their combination will
 // cause sound control parameters to be transferred to the sound chip.
 #define PDM_SND_CTRL_VALID  0xC0
 
@@ -110,6 +115,7 @@ enum AMICReg : uint32_t {
     Pixel_Depth         = 0x28001,
     Monitor_Id          = 0x28002,
 
+    // Interrupt registers
     Int_Ctrl            = 0x2A000,
 
     // Undocumented diagnostics register
@@ -131,19 +137,24 @@ enum AMICReg : uint32_t {
 };
 
 /** Apple Memory-mapped I/O controller device. */
-class AMIC : public MMIODevice {
+class AMIC : public MMIODevice, public InterruptCtrl {
 public:
     AMIC();
     ~AMIC() = default;
 
-    bool supports_type(HWCompType type);
+    bool supports_type(HWCompType type) {
+        return (type == HWCompType::MMIO_DEV) || (type == HWCompType::INT_CTRL);
+    };
 
     /* MMIODevice methods */
     uint32_t read(uint32_t reg_start, uint32_t offset, int size);
     void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size);
 
-protected:
-    void dma_reg_write(uint32_t offset, uint32_t value, int size);
+    // InterruptCtrl methods
+    uint32_t register_dev_int(IntSrc src_id);
+    uint32_t register_dma_int(IntSrc src_id);
+    void ack_int(uint32_t irq_id, uint8_t irq_line_state);
+    void ack_dma_int(uint32_t irq_id, uint8_t irq_line_state);
 
 private:
     uint8_t imm_snd_regs[4]; // temporary storage for sound control registers
@@ -153,6 +164,9 @@ private:
     uint8_t     snd_out_ctrl = 0;
 
     uint8_t     scsi_dma_cs = 0; // SCSI DMA control/status register value
+
+    uint8_t     int_ctrl = 0;
+    uint8_t     dev_irq_lines = 0; // state of the IRQ lines
 
     // AMIC subdevices instances
     std::unique_ptr<Ncr53C94>       scsi;
