@@ -202,7 +202,8 @@ enum class BB_end_kind {
     BB_NONE   = 0, /* no basic block end is reached       */
     BB_BRANCH = 1, /* a branch instruction is encountered */
     BB_EXCEPTION,  /* an exception is occured             */
-    BB_RFI         /* the rfi instruction is encountered  */
+    BB_RFI,        /* the rfi instruction is encountered  */
+    BB_TIMER,      /* timer queue changed                 */
 };
 
 enum CR_select : int32_t {
@@ -297,7 +298,6 @@ extern BB_end_kind bb_kind;
 
 extern jmp_buf exc_env;
 
-extern bool grab_exception;
 extern bool grab_return;
 
 extern bool power_on;

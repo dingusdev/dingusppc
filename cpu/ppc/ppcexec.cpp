@@ -19,18 +19,20 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <core/timermanager.h>
+#include <loguru.hpp>
+#include "ppcemu.h"
+#include "ppcmmu.h"
+
 #include <algorithm>
+#include <functional>
 #include <iostream>
 #include <map>
 #include <setjmp.h>
 #include <stdexcept>
 #include <stdio.h>
 #include <string>
-#include <loguru.hpp>
 #include <unordered_map>
-
-#include "ppcemu.h"
-#include "ppcmmu.h"
 
 #define NEW_TBR_UPDATE_ALGO
 
@@ -46,7 +48,6 @@ SetPRS ppc_state;
 bool rc_flag = 0;           // Record flag
 bool oe_flag = 0;    // Overflow flag
 
-bool grab_exception;
 bool grab_return;
 bool grab_breakpoint;
 
@@ -298,11 +299,21 @@ uint64_t get_virt_time_ns()
     return g_icycles << icnt_factor;
 }
 
-int process_events()
+uint64_t process_events()
 {
-    // dummy implementation that schedules execution
-    // of another 10.000 instructions
-    return g_icycles + 10000;
+    uint64_t slice_ns = TimerManager::get_instance()->process_timers(get_virt_time_ns());
+    if (slice_ns == 0) {
+        // execute 10.000 cycles
+        // if there are no pending timers
+        return g_icycles + 10000;
+    }
+    return g_icycles + ((slice_ns + (1 << icnt_factor)) >> icnt_factor);
+}
+
+void force_cycle_counter_reload()
+{
+    // tell the interpreter loop to reload cycle counter
+    bb_kind = BB_end_kind::BB_TIMER;
 }
 
 /** Execute PPC code as long as power is on. */
@@ -399,8 +410,15 @@ static void ppc_exec_inner()
             if (bb_kind != BB_end_kind::BB_NONE) { // execution block ended ?
                 if (!power_on)
                     break;
-                // check the reason for the block end
-                //eb_last = false;
+                // reload cycle counter if requested
+                if (bb_kind == BB_end_kind::BB_TIMER) {
+                    max_cycles = process_events();
+                    ppc_state.pc += 4;
+                    pc_real += 4;
+                    ppc_set_cur_instruction(pc_real);
+                    bb_kind = BB_end_kind::BB_NONE;
+                    continue;
+                }
                 // define next execution block
                 eb_start = ppc_next_instruction_address;
                 eb_end   = (eb_start + PAGE_SIZE) & PAGE_MASK;
@@ -486,7 +504,11 @@ void ppc_exec_single()
     mmu_translate_imem(ppc_state.pc);
     ppc_main_opcode();
     if (bb_kind != BB_end_kind::BB_NONE) {
-        ppc_state.pc = ppc_next_instruction_address;
+        if (bb_kind == BB_end_kind::BB_TIMER) {
+            ppc_state.pc += 4;
+        } else {
+            ppc_state.pc = ppc_next_instruction_address;
+        }
         bb_kind = BB_end_kind::BB_NONE;
     } else {
         ppc_state.pc += 4;
@@ -585,8 +607,15 @@ static void ppc_exec_until_inner(const uint32_t goal_addr)
 
             //if (eb_last) {
             if (bb_kind != BB_end_kind::BB_NONE) { // execution block ended ?
-                // check the reason for the block end
-                //eb_last = false;
+                // reload cycle counter if requested
+                if (bb_kind == BB_end_kind::BB_TIMER) {
+                    max_cycles = process_events();
+                    ppc_state.pc += 4;
+                    pc_real += 4;
+                    ppc_set_cur_instruction(pc_real);
+                    bb_kind = BB_end_kind::BB_NONE;
+                    continue;
+                }
                 // define next execution block
                 eb_start = ppc_next_instruction_address;
                 eb_end   = (eb_start + PAGE_SIZE) & PAGE_MASK;
@@ -719,8 +748,15 @@ static void ppc_exec_dbg_inner(const uint32_t start_addr, const uint32_t size)
 
             //if (eb_last) {
             if (bb_kind != BB_end_kind::BB_NONE) { // execution block ended ?
-                // check the reason for the block end
-                //eb_last = false;
+                // reload cycle counter if requested
+                if (bb_kind == BB_end_kind::BB_TIMER) {
+                    max_cycles = process_events();
+                    ppc_state.pc += 4;
+                    pc_real += 4;
+                    ppc_set_cur_instruction(pc_real);
+                    bb_kind = BB_end_kind::BB_NONE;
+                    continue;
+                }
                 // define next execution block
                 eb_start = ppc_next_instruction_address;
                 eb_end   = (eb_start + PAGE_SIZE) & PAGE_MASK;
@@ -1015,6 +1051,10 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version) {
     old_cycles_count = 0;
     tbr_factor = 4;
 #endif
+
+    // initialize emulator timers
+    TimerManager::get_instance()->set_time_now_cb(&get_virt_time_ns);
+    TimerManager::get_instance()->set_notify_changes_cb(&force_cycle_counter_reload);
 
     // initialize time base facility
     g_icycles   = 0;

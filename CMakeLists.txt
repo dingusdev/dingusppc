@@ -56,6 +56,7 @@ if (DPPC_68K_DEBUGGER)
     add_subdirectory(thirdparty/capstone EXCLUDE_FROM_ALL)
 endif()
 
+add_subdirectory("${PROJECT_SOURCE_DIR}/core")
 add_subdirectory("${PROJECT_SOURCE_DIR}/cpu/ppc/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/debugger/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/devices/")
@@ -80,6 +81,7 @@ add_subdirectory(thirdparty/cubeb EXCLUDE_FROM_ALL)
 set(CLI11_ROOT ${PROJECT_SOURCE_DIR}/thirdparty/CLI11)
 
 include_directories("${PROJECT_SOURCE_DIR}"
+                    "${PROJECT_SOURCE_DIR}/core"
                     "${PROJECT_SOURCE_DIR}/devices"
                     "${PROJECT_SOURCE_DIR}/cpu/ppc"
                     "${PROJECT_SOURCE_DIR}/debugger"
@@ -100,8 +102,9 @@ file(GLOB SOURCES "${PROJECT_SOURCE_DIR}/*.cpp"
 
 file(GLOB TEST_SOURCES "${PROJECT_SOURCE_DIR}/cpu/ppc/test/*.cpp")
 
-add_executable(dingusppc ${SOURCES} $<TARGET_OBJECTS:debugger>
+add_executable(dingusppc ${SOURCES} $<TARGET_OBJECTS:core>
                                     $<TARGET_OBJECTS:cpu_ppc>
+                                    $<TARGET_OBJECTS:debugger>
                                     $<TARGET_OBJECTS:devices>
                                     $<TARGET_OBJECTS:execution>
                                     $<TARGET_OBJECTS:machines>

@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // General opcodes for the processor - ppcopcodes.cpp
 
+#include <core/timermanager.h>
 #include "ppcemu.h"
 #include "ppcmmu.h"
 #include <array>
@@ -857,8 +858,6 @@ void dppc_interpreter::ppc_mfspr() {
     reg_d                = (ppc_cur_instruction >> 21) & 31;
     ppc_state.gpr[reg_d] = ppc_state.spr[ref_spr];
 }
-
-#define NS_PER_SEC  1E9
 
 static inline uint64_t calc_tbr_value()
 {
