@@ -29,8 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 jmp_buf exc_env; /* Global exception environment. */
 
-[[noreturn]] void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
-    grab_exception = true;
+void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
 #ifdef CPU_PROFILING
     exceptions_processed++;
 #endif
@@ -61,7 +60,7 @@ jmp_buf exc_env; /* Global exception environment. */
         break;
 
     case Except_Type::EXC_EXT_INT:
-        ppc_state.spr[SPR::SRR0]     = ppc_next_instruction_address;
+        ppc_state.spr[SPR::SRR0]     = ppc_state.pc & 0xFFFFFFFC;
         ppc_next_instruction_address = 0x0500;
         break;
 
@@ -118,7 +117,9 @@ jmp_buf exc_env; /* Global exception environment. */
 
     mmu_change_mode();
 
-    longjmp(exc_env, 2); /* return to the main execution loop. */
+    if (exception_type != Except_Type::EXC_EXT_INT) {
+        longjmp(exc_env, 2); /* return to the main execution loop. */
+    }
 }
 
 

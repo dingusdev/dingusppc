@@ -186,6 +186,12 @@ PPCOpcode SubOpcode63Grabber[1024] = { ppc_illegalop };
     ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::FPU_OFF);
 }
 
+void ppc_ext_int() {
+    if (ppc_state.msr & 0x8000) {
+        ppc_exception_handler(Except_Type::EXC_EXT_INT, 0);
+    }
+}
+
 /** Opcode decoding functions. */
 
 void ppc_opcode16() {

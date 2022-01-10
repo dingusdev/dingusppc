@@ -329,6 +329,7 @@ extern void ppc_mmu_init(uint32_t cpu_version);
 
 [[noreturn]] void ppc_illegalop();
 [[noreturn]] void ppc_fpu_off();
+void ppc_ext_int();
 
 //void ppc_opcode4();
 void ppc_opcode16();
@@ -364,7 +365,7 @@ void ppc_changecrf0(uint32_t set_result);
 void ppc_fp_changecrf1();
 
 /* Exception handlers. */
-[[noreturn]] void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits);
+void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits);
 [[noreturn]] void dbg_exception_handler(Except_Type exception_type, uint32_t srr1_bits);
 
 // MEMORY DECLARATIONS
