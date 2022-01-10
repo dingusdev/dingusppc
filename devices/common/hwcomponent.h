@@ -45,6 +45,7 @@ enum HWCompType : int {
 /** Abstract base class for HW components. */
 class HWComponent {
 public:
+    HWComponent()          = default;
     virtual ~HWComponent() = default;
 
     virtual std::string get_name(void) {

@@ -55,8 +55,6 @@ ADB_Bus::ADB_Bus() {
     mouse_access_no    = adb_relative;
 }
 
-ADB_Bus::~ADB_Bus() {}
-
 bool ADB_Bus::listen(int device, int reg) {
     if (device == keyboard_access_no) {
         if (adb_keybd_listen(reg)) {

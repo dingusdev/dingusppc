@@ -51,7 +51,7 @@ enum adb_default_values {
 class ADB_Bus {
 public:
     ADB_Bus();
-    ~ADB_Bus();
+    ~ADB_Bus() = default;
 
     bool listen(int device, int reg);
     bool talk(int device, int reg, uint16_t value);

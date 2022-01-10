@@ -47,9 +47,7 @@ public:
     I2CBus() {
         std::memset(this->dev_list, 0, sizeof(this->dev_list));
     };
-    ~I2CBus() {
-        std::memset(this->dev_list, 0, sizeof(this->dev_list));
-    };
+    virtual ~I2CBus() = default;
 
     virtual void register_device(uint8_t dev_addr, I2CDevice* dev_obj) {
         if (this->dev_list[dev_addr]) {
