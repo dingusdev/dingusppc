@@ -1243,8 +1243,7 @@ void dppc_interpreter::ppc_mcrf() {
 
 void dppc_interpreter::ppc_crand() {
     ppc_grab_regsdab();
-    uint8_t ir = (ppc_state.cr >> (31 - reg_a)) & (ppc_state.cr >> (31 - reg_b));
-    if (ir & 1) {
+    if ((ppc_state.cr & (0x80000000UL >> reg_a)) && (ppc_state.cr & (0x80000000UL >> reg_b))) {
         ppc_state.cr |= (0x80000000UL >> reg_d);
     } else {
         ppc_state.cr &= ~(0x80000000UL >> reg_d);
@@ -1253,8 +1252,7 @@ void dppc_interpreter::ppc_crand() {
 
 void dppc_interpreter::ppc_crandc() {
     ppc_grab_regsdab();
-    uint8_t ir = (ppc_state.cr >> (31 - reg_a)) & ~(ppc_state.cr >> (31 - reg_b));
-    if (ir & 1) {
+    if ((ppc_state.cr & (0x80000000UL >> reg_a)) && !(ppc_state.cr & (0x80000000UL >> reg_b))) {
         ppc_state.cr |= (0x80000000UL >> reg_d);
     } else {
         ppc_state.cr &= ~(0x80000000UL >> reg_d);
@@ -1262,8 +1260,7 @@ void dppc_interpreter::ppc_crandc() {
 }
 void dppc_interpreter::ppc_creqv() {
     ppc_grab_regsdab();
-    uint8_t ir = ~((ppc_state.cr & (31 - reg_a)) ^ (ppc_state.cr & (31 - reg_b)));
-    if (ir & 1) {
+    if (!((ppc_state.cr & (0x80000000UL >> reg_a)) ^ (ppc_state.cr & (0x80000000UL >> reg_b)))) {
         ppc_state.cr |= (0x80000000UL >> reg_d);
     } else {
         ppc_state.cr &= ~(0x80000000UL >> reg_d);
@@ -1271,8 +1268,7 @@ void dppc_interpreter::ppc_creqv() {
 }
 void dppc_interpreter::ppc_crnand() {
     ppc_grab_regsdab();
-    uint8_t ir = ~((ppc_state.cr >> (31 - reg_a)) & (ppc_state.cr >> (31 - reg_b)));
-    if (ir & 1) {
+    if (!((ppc_state.cr & (0x80000000UL >> reg_a)) && (ppc_state.cr & (0x80000000UL >> reg_b)))) {
         ppc_state.cr |= (0x80000000UL >> reg_d);
     } else {
         ppc_state.cr &= ~(0x80000000UL >> reg_d);
@@ -1280,8 +1276,7 @@ void dppc_interpreter::ppc_crnand() {
 }
 void dppc_interpreter::ppc_crnor() {
     ppc_grab_regsdab();
-    uint8_t ir = ~((ppc_state.cr >> (31 - reg_a)) | (ppc_state.cr >> (31 - reg_b)));
-    if (ir & 1) {
+    if (!((ppc_state.cr & (0x80000000UL >> reg_a)) || (ppc_state.cr & (0x80000000UL >> reg_b)))) {
         ppc_state.cr |= (0x80000000UL >> reg_d);
     } else {
         ppc_state.cr &= ~(0x80000000UL >> reg_d);
@@ -1290,8 +1285,7 @@ void dppc_interpreter::ppc_crnor() {
 
 void dppc_interpreter::ppc_cror() {
     ppc_grab_regsdab();
-    uint8_t ir = (ppc_state.cr >> (31 - reg_a)) || (ppc_state.cr >> (31 - reg_b));
-    if (ir & 1) {
+    if ((ppc_state.cr & (0x80000000UL >> reg_a)) || (ppc_state.cr & (0x80000000UL >> reg_b))) {
         ppc_state.cr |= (0x80000000UL >> reg_d);
     } else {
         ppc_state.cr &= ~(0x80000000UL >> reg_d);
@@ -1299,8 +1293,7 @@ void dppc_interpreter::ppc_cror() {
 }
 void dppc_interpreter::ppc_crorc() {
     ppc_grab_regsdab();
-    uint8_t ir = (ppc_state.cr >> (31 - reg_a)) || ~(ppc_state.cr >> (31 - reg_b));
-    if (ir & 1) {
+    if ((ppc_state.cr & (0x80000000UL >> reg_a)) || !(ppc_state.cr & (0x80000000UL >> reg_b))) {
         ppc_state.cr |= (0x80000000UL >> reg_d);
     } else {
         ppc_state.cr &= ~(0x80000000UL >> reg_d);
