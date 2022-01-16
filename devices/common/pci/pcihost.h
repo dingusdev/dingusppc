@@ -23,13 +23,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define PCI_HOST_H
 
 #include <cinttypes>
+#include <unordered_map>
+#include <vector>
 
 class PCIDevice;    // forward declaration to prevent errors
 
 class PCIHost {
 public:
-    virtual bool pci_register_device(int dev_num, PCIDevice* dev_instance)                    = 0;
-    virtual bool pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIDevice* obj) = 0;
+    PCIHost() {
+        this->dev_map.clear();
+        io_space_devs.clear();
+    };
+    ~PCIHost() = default;
+
+    virtual bool pci_register_device(int dev_num, PCIDevice* dev_instance);
+
+    virtual bool pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIDevice* obj);
+
+protected:
+    std::unordered_map<int, PCIDevice*> dev_map;
+    std::vector<PCIDevice*>             io_space_devs;
 };
 
 #endif /* PCI_HOST_H */

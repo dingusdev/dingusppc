@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -18,9 +18,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-/** MPC106 (Grackle) emulation
 
-    Author: Max Poliakovski
+/** MPC106 (Grackle) emulation
 
     Grackle IC is a combined memory and PCI controller manufactured by Motorola.
     It's the central device in the Gossamer architecture.
@@ -47,13 +46,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 class MPC106 : public MemCtrlBase, public PCIDevice, public PCIHost {
 public:
     MPC106();
-    ~MPC106();
+    ~MPC106() = default;
 
     uint32_t read(uint32_t reg_start, uint32_t offset, int size);
     void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size);
-
-    /* PCI host bridge API */
-    bool pci_register_device(int dev_num, PCIDevice* dev_instance);
 
 protected:
     /* PCI access */
@@ -67,8 +63,6 @@ protected:
     bool supports_io_space(void) {
         return true;
     };
-
-    bool pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIDevice* obj);
 
     void setup_ram(void);
 
@@ -159,10 +153,6 @@ private:
     };
 
     uint32_t config_addr;
-    // uint32_t config_data;
-
-    std::unordered_map<int, PCIDevice*> pci_0_bus;
-    std::vector<PCIDevice*> io_space_devs;
 };
 
 #endif

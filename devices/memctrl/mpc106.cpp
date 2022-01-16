@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -19,10 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/** MPC106 (Grackle) emulation
-
-    Author: Max Poliakovski
-*/
+/** MPC106 (Grackle) emulation. */
 
 #include <devices/common/hwcomponent.h>
 #include <devices/common/mmiodevice.h>
@@ -36,7 +33,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <loguru.hpp>
 
 
-MPC106::MPC106() : MemCtrlBase(), PCIDevice("Grackle PCI host bridge") {
+MPC106::MPC106() : MemCtrlBase(), PCIDevice("Grackle PCI host bridge"), PCIHost()
+{
     this->name = "Grackle";
 
     supports_types(HWCompType::MEM_CTRL | HWCompType::MMIO_DEV |
@@ -47,13 +45,6 @@ MPC106::MPC106() : MemCtrlBase(), PCIDevice("Grackle PCI host bridge") {
 
     /* add memory mapped I/O region for MPC106 registers */
     add_mmio_region(0xFEC00000, 0x300000, this);
-
-    this->pci_0_bus.clear();
-    this->io_space_devs.clear();
-}
-
-MPC106::~MPC106() {
-    this->pci_0_bus.clear();
 }
 
 uint32_t MPC106::read(uint32_t reg_start, uint32_t offset, int size) {
@@ -120,8 +111,8 @@ uint32_t MPC106::pci_read(uint32_t size) {
     if (dev_num == 0 && fun_num == 0) {    // dev_num 0 is assigned to myself
         return this->pci_cfg_read(reg_offs, size);
     } else {
-        if (this->pci_0_bus.count(dev_num)) {
-            return this->pci_0_bus[dev_num]->pci_cfg_read(reg_offs, size);
+        if (this->dev_map.count(dev_num)) {
+            return this->dev_map[dev_num]->pci_cfg_read(reg_offs, size);
         } else {
             LOG_F(
                 ERROR,
@@ -155,8 +146,8 @@ void MPC106::pci_write(uint32_t value, uint32_t size) {
     if (dev_num == 0 && fun_num == 0) {    // dev_num 0 is assigned to myself
         this->pci_cfg_write(reg_offs, value, size);
     } else {
-        if (this->pci_0_bus.count(dev_num)) {
-            this->pci_0_bus[dev_num]->pci_cfg_write(reg_offs, value, size);
+        if (this->dev_map.count(dev_num)) {
+            this->dev_map[dev_num]->pci_cfg_write(reg_offs, value, size);
         } else {
             LOG_F(
                 ERROR,
@@ -190,26 +181,6 @@ void MPC106::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size) {
 #endif
         setup_ram();
     }
-}
-
-bool MPC106::pci_register_device(int dev_num, PCIDevice* dev_instance) {
-    if (this->pci_0_bus.count(dev_num))    // is dev_num already registered?
-        return false;
-
-    this->pci_0_bus[dev_num] = dev_instance;
-
-    dev_instance->set_host(this);
-
-    if (dev_instance->supports_io_space()) {
-        this->io_space_devs.push_back(dev_instance);
-    }
-
-    return true;
-}
-
-bool MPC106::pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIDevice* obj) {
-    // FIXME: add sanity checks!
-    return this->add_mmio_region(start_addr, size, obj);
 }
 
 void MPC106::setup_ram() {
