@@ -126,8 +126,9 @@ if (DPPC_68K_DEBUGGER)
 endif()
 
 if (DPPC_BUILD_PPC_TESTS)
-    add_executable(testppc ${TEST_SOURCES} $<TARGET_OBJECTS:debugger>
+    add_executable(testppc ${TEST_SOURCES} $<TARGET_OBJECTS:core>
                                            $<TARGET_OBJECTS:cpu_ppc>
+                                           $<TARGET_OBJECTS:debugger>
                                            $<TARGET_OBJECTS:devices>
                                            $<TARGET_OBJECTS:execution>
                                            $<TARGET_OBJECTS:machines>
@@ -152,8 +153,9 @@ endif()
 
 if (DPPC_BUILD_BENCHMARKS)
     file(GLOB BENCH_SOURCES "${PROJECT_SOURCE_DIR}/benchmark/*.cpp")
-    add_executable(bench1 ${BENCH_SOURCES} $<TARGET_OBJECTS:debugger>
+    add_executable(bench1 ${BENCH_SOURCES} $<TARGET_OBJECTS:core>
                                            $<TARGET_OBJECTS:cpu_ppc>
+                                           $<TARGET_OBJECTS:debugger>
                                            $<TARGET_OBJECTS:devices>
                                            $<TARGET_OBJECTS:execution>
                                            $<TARGET_OBJECTS:machines>
