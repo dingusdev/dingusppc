@@ -60,28 +60,38 @@ Bandit::Bandit(int bridge_num, std::string name) : MMIODevice(), PCIHost()
 
 uint32_t Bandit::read(uint32_t reg_start, uint32_t offset, int size)
 {
-    int dev_num, dev_fn;
-    uint8_t reg_offs;
-    uint32_t result;
+    int      fun_num;
+    uint8_t  reg_offs;
+    uint32_t result, idsel;
 
     if (offset & BANDIT_CONFIG_SPACE) {
         if (offset & 0x00400000) {
             // access to the CONFIG_DATA pseudo-register causes a Config Cycle
-            if (this->config_addr & BANDIT_DEV_NUM) { // access to myself
-                result = this->pci_cfg_read(this->config_addr & 0xFFU, size);
-            } else {
-                dev_num  = this->config_addr >> 12;
-                dev_fn   = this->config_addr >>  8;
-                reg_offs = this->config_addr & 0xFFU;
+            if (this->config_addr & BANDIT_CAR_TYPE) {
+                LOG_F(WARNING, "%s: config cycle type 1 not supported yet", this->name.c_str());
+                return 0;
+            }
 
-                if (this->dev_map.count(dev_num)) {
-                    result = this->dev_map[dev_num]->pci_cfg_read(reg_offs, size);
+            idsel    = (this->config_addr >> 11) & 0x1FFFFFU;
+            fun_num  = (this->config_addr >> 8) & 7;
+            reg_offs = this->config_addr & 0xFCU;
+
+            if (!SINGLE_BIT_SET(idsel)) {
+                LOG_F(ERROR, "%s: invalid IDSEL=0x%X passed", this->name.c_str(), idsel);
+                return 0;
+            }
+
+            if (idsel == BANDIT_ID_SEL) { // access to myself
+                result = this->pci_cfg_read(reg_offs, size);
+            } else {
+                if (this->dev_map.count(idsel)) {
+                    result = this->dev_map[idsel]->pci_cfg_read(reg_offs, size);
                 } else {
                     LOG_F(
                         ERROR,
                         "%s err: read attempt from non-existing PCI device %d \n",
                         this->name.c_str(),
-                        dev_num);
+                        idsel);
                     result = 0;
                 }
             }
@@ -96,32 +106,43 @@ uint32_t Bandit::read(uint32_t reg_start, uint32_t offset, int size)
 
 void Bandit::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
 {
-    int dev_num, dev_fn;
-    uint8_t reg_offs;
+    int      fun_num;
+    uint8_t  reg_offs;
+    uint32_t idsel;
 
     if (offset & BANDIT_CONFIG_SPACE) {
         if (offset & 0x00400000) {
             // access to the CONFIG_DATA pseudo-register causes a Config Cycle
-            if (this->config_addr & BANDIT_DEV_NUM) { // access to myself
-                this->pci_cfg_write(this->config_addr & 0xFFU, value, size);
+            if (this->config_addr & BANDIT_CAR_TYPE) {
+                LOG_F(WARNING, "%s: config cycle type 1 not supported yet", this->name.c_str());
                 return;
             }
 
-            dev_num  = this->config_addr >> 12;
-            dev_fn   = this->config_addr >>  8;
-            reg_offs = this->config_addr & 0xFFU;
+            idsel    = (this->config_addr >> 11) & 0x1FFFFFU;
+            fun_num  = (this->config_addr >> 8) & 7;
+            reg_offs = this->config_addr & 0xFCU;
 
-            if (this->dev_map.count(dev_num)) {
-                this->dev_map[dev_num]->pci_cfg_write(reg_offs, value, size);
+            if (!SINGLE_BIT_SET(idsel)) {
+                LOG_F(ERROR, "%s: invalid IDSEL=0x%X passed", this->name.c_str(), idsel);
+                return;
+            }
+
+            if (idsel == BANDIT_ID_SEL) { // access to myself
+                this->pci_cfg_write(reg_offs, value, size);
+                return;
+            }
+
+            if (this->dev_map.count(idsel)) {
+                this->dev_map[idsel]->pci_cfg_write(reg_offs, value, size);
             } else {
                 LOG_F(
                     ERROR,
                     "%s err: write attempt to non-existing PCI device %d \n",
                     this->name.c_str(),
-                    dev_num);
+                    idsel);
             }
         } else {
-            this->config_addr = BYTESWAP_32(value) & 0x3FFFFF;
+            this->config_addr = BYTESWAP_32(value);
         }
     } else { // I/O space access
         LOG_F(WARNING, "%s: I/O space write not implemented yet", this->name.c_str());
