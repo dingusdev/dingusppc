@@ -36,8 +36,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 #include <unordered_map>
 
-#define BANDIT_DEV_NUM      (1 << 11)
-#define BANDIT_CONFIG_SPACE 0x00800000
+#define BANDIT_ID_SEL       (1 << 0)   // Bandit's own IDSEL
+#define BANDIT_CAR_TYPE     (1 << 0)   // Bandit config address type bit
+#define BANDIT_CONFIG_SPACE 0x00800000 // Bandit Config Space bit
+
+/** checks if one bit is set at time, return 0 if not */
+#define SINGLE_BIT_SET(val) ((val) && !((val) & ((val)-1)))
 
 class Bandit : public MMIODevice, public PCIHost {//}, public PCIDevice {
 public:
