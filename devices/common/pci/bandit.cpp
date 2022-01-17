@@ -43,7 +43,7 @@ Bandit::Bandit(int bridge_num, std::string name) : MMIODevice(), PCIHost()
     // base_addr +  0x000000 --> I/O space
     // base_addr +  0x800000 --> CONFIG_ADDR
     // base_addr +  0xC00000 --> CONFIG_DATA
-    // base_addr + 0x1000000 - pass-through memory space (not included below)
+    // base_addr + 0x1000000 --> pass-through memory space (not included below)
     mem_ctrl->add_mmio_region(base_addr, 0x01000000, this);
 
     // prepare the PCI config header
