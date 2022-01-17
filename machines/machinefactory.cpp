@@ -69,6 +69,23 @@ static const map<uint32_t, std::tuple<string, const char*>> rom_identity = {
 
 static const vector<string> WriteToggle = {"ON", "on", "OFF", "off"};
 
+static const PropMap CatalystSettings = {
+    {"rambank1_size",
+        new IntProperty(16, vector<uint32_t>({4, 8, 16, 32, 64, 128}))},
+    {"rambank2_size",
+        new IntProperty( 0, vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
+    {"rambank3_size",
+        new IntProperty( 0, vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
+    {"rambank4_size",
+        new IntProperty( 0, vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
+    {"gfxmem_size",
+        new IntProperty( 1, vector<uint32_t>({1, 2, 4}))},
+    {"mon_id",
+        new StrProperty("")},
+    {"fdd_img",
+        new StrProperty("")},
+};
+
 static const PropMap GossamerSettings = {
     {"rambank1_size",
         new IntProperty(256, vector<uint32_t>({8, 16, 32, 64, 128, 256}))},
@@ -102,7 +119,7 @@ static const PropMap PDMSettings = {
         new StrProperty("HiRes12-14in", PDMBuiltinMonitorIDs)},
     {"fdd_img",
         new StrProperty("")},
-    {"fdd_wr_prot", 
+    {"fdd_wr_prot",
         new StrProperty("OFF", WriteToggle)},
 };
 
@@ -110,6 +127,7 @@ static const map<string, string> PropHelp = {
     {"rambank1_size",   "specifies RAM bank 1 size in MB"},
     {"rambank2_size",   "specifies RAM bank 2 size in MB"},
     {"rambank3_size",   "specifies RAM bank 3 size in MB"},
+    {"rambank4_size",   "specifies RAM bank 4 size in MB"},
     {"gfxmem_size",     "specifies video memory size in MB"},
     {"fdd_img",         "specifies path to floppy disk image"},
     {"fdd_wr_prot",     "toggles floppy disks write protection"},
@@ -118,6 +136,7 @@ static const map<string, string> PropHelp = {
 
 static const map<string, tuple<PropMap, function<int(string&)>, string>> machines = {
     {"pm6100", {PDMSettings,      create_pdm,      "PowerMacintosh 6100"}},
+    {"pm7200", {CatalystSettings, create_catalyst, "PowerMacintosh 7200"}},
     {"pmg3",   {GossamerSettings, create_gossamer, "Power Macintosh G3 (Beige)"}},
 };
 
