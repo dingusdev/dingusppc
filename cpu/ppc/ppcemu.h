@@ -327,8 +327,8 @@ extern uint64_t exceptions_processed;
 extern void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version);
 extern void ppc_mmu_init(uint32_t cpu_version);
 
-[[noreturn]] void ppc_illegalop();
-[[noreturn]] void ppc_fpu_off();
+void ppc_illegalop();
+void ppc_fpu_off();
 void ppc_ext_int();
 
 //void ppc_opcode4();

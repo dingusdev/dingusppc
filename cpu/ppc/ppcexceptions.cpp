@@ -33,7 +33,6 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
 #ifdef CPU_PROFILING
     exceptions_processed++;
 #endif
-    bb_kind = BB_end_kind::BB_EXCEPTION;
 
     switch (exception_type) {
     case Except_Type::EXC_SYSTEM_RESET:
@@ -60,7 +59,11 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
         break;
 
     case Except_Type::EXC_EXT_INT:
-        ppc_state.spr[SPR::SRR0]     = ppc_state.pc & 0xFFFFFFFC;
+        if (bb_kind != BB_end_kind::BB_NONE) {
+            ppc_state.spr[SPR::SRR0] = ppc_next_instruction_address;
+        } else {
+            ppc_state.spr[SPR::SRR0] = (ppc_state.pc & 0xFFFFFFFCUL) + 4;
+        }
         ppc_next_instruction_address = 0x0500;
         break;
 
@@ -108,6 +111,8 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
     if (ppc_state.msr & 0x40) {
         ppc_next_instruction_address |= 0xFFF00000;
     }
+
+    bb_kind = BB_end_kind::BB_EXCEPTION;
 
     // perform context synchronization for recoverable exceptions
     if (exception_type != Except_Type::EXC_MACHINE_CHECK &&
