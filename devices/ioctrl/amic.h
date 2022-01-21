@@ -142,9 +142,12 @@ public:
     AMIC();
     ~AMIC() = default;
 
+    // HWComponent methods
     bool supports_type(HWCompType type) {
         return (type == HWCompType::MMIO_DEV) || (type == HWCompType::INT_CTRL);
     };
+
+    int device_postinit();
 
     /* MMIODevice methods */
     uint32_t read(uint32_t reg_start, uint32_t offset, int size);
@@ -167,6 +170,8 @@ private:
 
     uint8_t     int_ctrl = 0;
     uint8_t     dev_irq_lines = 0; // state of the IRQ lines
+
+    uint32_t    pseudo_vbl_tid; // ID for the pseudo-VBL timer
 
     // AMIC subdevices instances
     std::unique_ptr<Ncr53C94>       scsi;

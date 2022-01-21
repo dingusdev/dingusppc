@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     Author: Max Poliakovski
 */
 
+#include <core/timermanager.h>
 #include <cpu/ppc/ppcemu.h>
 #include <cpu/ppc/ppcmmu.h>
 #include <devices/common/scsi/ncr53c94.h>
@@ -46,19 +47,12 @@ AMIC::AMIC() : MMIODevice()
 {
     this->name = "Apple Memory-mapped I/O Controller";
 
-    MemCtrlBase *mem_ctrl = dynamic_cast<MemCtrlBase *>
-                           (gMachineObj->get_comp_by_type(HWCompType::MEM_CTRL));
-
-    /* add memory mapped I/O region for the AMIC control registers */
-    if (!mem_ctrl->add_mmio_region(0x50F00000, 0x00040000, this)) {
-        LOG_F(ERROR, "Couldn't register AMIC registers!");
-    }
-
     // register I/O devices
     this->scsi    = std::unique_ptr<Ncr53C94> (new Ncr53C94());
     this->escc    = std::unique_ptr<EsccController> (new EsccController());
     this->mace    = std::unique_ptr<MaceController> (new MaceController(MACE_ID));
     this->viacuda = std::unique_ptr<ViaCuda> (new ViaCuda());
+    gMachineObj->add_subdevice("ViaCuda", this->viacuda.get());
 
     // initialize sound HW
     this->snd_out_dma = std::unique_ptr<AmicSndOutDma> (new AmicSndOutDma());
@@ -71,6 +65,26 @@ AMIC::AMIC() : MMIODevice()
 
     // intialize floppy disk HW
     this->swim3 = std::unique_ptr<Swim3::Swim3Ctrl> (new Swim3::Swim3Ctrl());
+}
+
+int AMIC::device_postinit()
+{
+    MemCtrlBase *mem_ctrl = dynamic_cast<MemCtrlBase *>
+                           (gMachineObj->get_comp_by_type(HWCompType::MEM_CTRL));
+
+    // add memory mapped I/O region for the AMIC control registers
+    if (!mem_ctrl->add_mmio_region(0x50F00000, 0x00040000, this)) {
+        LOG_F(ERROR, "Couldn't register AMIC registers!");
+    }
+
+    // AMIC drives the VIA CA1 internally to generate 60.15 Hz interrupts
+    this->pseudo_vbl_tid = TimerManager::get_instance()->add_cyclic_timer(
+        static_cast<uint64_t>((1.0f/60.15) * NS_PER_SEC + 0.5f),
+        [this]() {
+            this->viacuda->assert_ctrl_line(ViaLine::CA1);
+        });
+
+    return 0;
 }
 
 uint32_t AMIC::read(uint32_t reg_start, uint32_t offset, int size)
