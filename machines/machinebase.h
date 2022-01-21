@@ -43,6 +43,7 @@ public:
     void add_alias(std::string name, std::string alias);
     HWComponent* get_comp_by_name(std::string name);
     HWComponent* get_comp_by_type(HWCompType type);
+    int postinit_devices();
 
 private:
     std::string name;

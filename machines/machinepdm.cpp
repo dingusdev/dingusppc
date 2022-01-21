@@ -59,7 +59,7 @@ int create_pdm(std::string& id) {
     /* get raw pointer to HMC object */
     HMC* hmc_obj = dynamic_cast<HMC*>(gMachineObj->get_comp_by_name("HMC"));
 
-    /* allocate machine ID register and tell we're running PowerMac 6100 */
+    // allocate machine ID register and tell we're running PowerMac 6100
     // TODO: add a possibility to select another machine
     // to be used with the same ROM
     gMachineObj->add_component("MachineID", new NubusMacID(0x3010));
@@ -86,6 +86,12 @@ int create_pdm(std::string& id) {
 
     /* Init virtual CPU and request MPC601 */
     ppc_cpu_init(hmc_obj, PPC_VER::MPC601);
+
+    // post-initialize all devices
+    if (gMachineObj->postinit_devices()) {
+        LOG_F(ERROR, "Could not post-initialize devices!\n");
+        return -1;
+    }
 
     /* check for a floppy image to be inserted into the virtual superdrive */
     std::string fdd_path = GET_STR_PROP("fdd_img");

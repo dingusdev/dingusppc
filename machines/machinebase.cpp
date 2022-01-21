@@ -119,3 +119,20 @@ HWComponent* MachineBase::get_comp_by_type(HWCompType type) {
         return NULL;
     }
 }
+
+int MachineBase::postinit_devices()
+{
+    for (auto it = this->comp_map.begin(); it != this->comp_map.end(); it++) {
+        if (it->second->device_postinit()) {
+            return -1;
+        }
+    }
+
+    for (auto it = this->subdev_map.begin(); it != this->subdev_map.end(); it++) {
+        if (it->second->device_postinit()) {
+            return -1;
+        }
+    }
+
+    return 0;
+}

@@ -103,6 +103,12 @@ int create_gossamer(std::string& id) {
     /* Init virtual CPU and request MPC750 CPU aka G3 */
     ppc_cpu_init(grackle_obj, PPC_VER::MPC750);
 
+    // post-initialize all devices
+    if (gMachineObj->postinit_devices()) {
+        LOG_F(ERROR, "Could not post-initialize devices!\n");
+        return -1;
+    }
+
     /* check for a floppy image to be inserted into the virtual superdrive */
     std::string fdd_path = GET_STR_PROP("fdd_img");
     if (!fdd_path.empty()) {

@@ -57,6 +57,10 @@ public:
 
     virtual bool supports_type(HWCompType type) = 0;
 
+    virtual int device_postinit() {
+        return 0;
+    };
+
 protected:
     std::string name;
 };
