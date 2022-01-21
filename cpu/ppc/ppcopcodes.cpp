@@ -1285,12 +1285,14 @@ void dppc_interpreter::ppc_crnor() {
 
 void dppc_interpreter::ppc_cror() {
     ppc_grab_regsdab();
-    if ((ppc_state.cr & (0x80000000UL >> reg_a)) || (ppc_state.cr & (0x80000000UL >> reg_b))) {
+    uint8_t ir = (ppc_state.cr >> (31 - reg_a)) | (ppc_state.cr >> (31 - reg_b));
+    if (ir & 1) {
         ppc_state.cr |= (0x80000000UL >> reg_d);
     } else {
         ppc_state.cr &= ~(0x80000000UL >> reg_d);
     }
 }
+
 void dppc_interpreter::ppc_crorc() {
     ppc_grab_regsdab();
     if ((ppc_state.cr & (0x80000000UL >> reg_a)) || !(ppc_state.cr & (0x80000000UL >> reg_b))) {
