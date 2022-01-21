@@ -78,6 +78,15 @@ ViaCuda::ViaCuda() {
     this->int_ctrl = nullptr;
 }
 
+int ViaCuda::device_postinit()
+{
+    this->int_ctrl = dynamic_cast<InterruptCtrl*>(
+        gMachineObj->get_comp_by_type(HWCompType::INT_CTRL));
+    this->irq_id = this->int_ctrl->register_dev_int(IntSrc::VIA_CUDA);
+
+    return 0;
+}
+
 void ViaCuda::cuda_init() {
     this->old_tip     = 0;
     this->old_byteack = 0;
@@ -189,17 +198,7 @@ void ViaCuda::print_enabled_ints() {
     }
 }
 
-void ViaCuda::init_ints() {
-    // lazy interrupt wiring
-    if (this->int_ctrl == nullptr) {
-        this->int_ctrl = dynamic_cast<InterruptCtrl*>(
-            gMachineObj->get_comp_by_type(HWCompType::INT_CTRL));
-        this->irq_id = this->int_ctrl->register_dev_int(IntSrc::VIA_CUDA);
-    }
-}
-
 inline void ViaCuda::update_irq() {
-    init_ints();
     uint8_t new_irq = !!(this->_via_ifr & this->_via_ier & 0x7F);
     this->_via_ifr  = (this->_via_ifr & 0x7F) | (new_irq << 7);
     if (new_irq != this->irq) {

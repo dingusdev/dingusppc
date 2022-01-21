@@ -154,9 +154,12 @@ public:
     ViaCuda();
     ~ViaCuda() = default;
 
+    // HWComponent methods
     bool supports_type(HWCompType type) {
         return (type == HWCompType::ADB_HOST || type == HWCompType::I2C_HOST);
     };
+
+    int device_postinit();
 
     uint8_t read(int reg);
     void write(int reg, uint8_t value);
