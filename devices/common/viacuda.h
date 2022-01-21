@@ -84,6 +84,13 @@ enum {
     VIA_IF_T1  = 1 << 6
 };
 
+enum class ViaLine {
+    CA1,
+    CA2,
+    CB1,
+    CB2
+};
+
 /** Cuda communication signals. */
 enum {
     CUDA_TIP     = 0x20, /* transaction in progress: 0 - true, 1 - false */
@@ -153,6 +160,8 @@ public:
 
     uint8_t read(int reg);
     void write(int reg, uint8_t value);
+
+    void assert_ctrl_line(ViaLine line);
 
 private:
     // VIA virtual HW registers

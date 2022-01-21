@@ -70,6 +70,7 @@ ViaCuda::ViaCuda() {
     // PRAM is part of Cuda
     this->pram_obj = std::unique_ptr<NVram> (new NVram("pram.bin", 256));
 
+    // ADB bus is driven by Cuda
     this->adb_bus = std::unique_ptr<ADB_Bus> (new ADB_Bus());
 
     this->cuda_init();
@@ -138,6 +139,7 @@ void ViaCuda::write(int reg, uint8_t value) {
         LOG_F(9, "VIA_ACR = 0x%X", value);
         break;
     case VIA_IFR:
+        // for each "1" in value clear the corresponding flags
         this->_via_ifr &= ~value;
         update_irq();
         break;
@@ -222,6 +224,27 @@ void ViaCuda::assert_t2_int() {
     update_irq();
 }
 
+void ViaCuda::assert_ctrl_line(ViaLine line)
+{
+    switch (line) {
+    case ViaLine::CA1:
+        this->_via_ifr |= VIA_IF_CA1;
+        break;
+    case ViaLine::CA2:
+        this->_via_ifr |= VIA_IF_CA2;
+        break;
+    case ViaLine::CB1:
+        this->_via_ifr |= VIA_IF_CB1;
+        break;
+    case ViaLine::CB2:
+        this->_via_ifr |= VIA_IF_CB1;
+        break;
+    default:
+        ABORT_F("Assertion of unknown VIA line requested!");
+    }
+    update_irq();
+}
+
 void ViaCuda::schedule_sr_int(uint64_t timeout_ns) {
     if (this->sr_timer_on) {
         TimerManager::get_instance()->cancel_timer(this->sr_timer_id);
@@ -281,7 +304,7 @@ void ViaCuda::write(uint8_t new_state) {
             if (this->in_count < 16) {
                 this->in_buf[this->in_count++] = this->via_regs[VIA_SR];
                 // tell the system we've read the byte after 71 usecs
-                schedule_sr_int(USECS_TO_NSECS(71)); 
+                schedule_sr_int(USECS_TO_NSECS(71));
                 //assert_sr_int();
             } else {
                 LOG_F(WARNING, "Cuda input buffer too small. Truncating data!");
