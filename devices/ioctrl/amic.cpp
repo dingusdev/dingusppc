@@ -27,7 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <core/timermanager.h>
 #include <cpu/ppc/ppcemu.h>
 #include <cpu/ppc/ppcmmu.h>
-#include <devices/common/scsi/ncr53c94.h>
+#include <devices/common/scsi/sc53c94.h>
 #include <devices/common/viacuda.h>
 #include <devices/ethernet/mace.h>
 #include <devices/floppy/swim3.h>
@@ -48,7 +48,7 @@ AMIC::AMIC() : MMIODevice()
     this->name = "Apple Memory-mapped I/O Controller";
 
     // register I/O devices
-    this->scsi    = std::unique_ptr<Ncr53C94> (new Ncr53C94());
+    this->scsi    = std::unique_ptr<Sc53C94> (new Sc53C94());
     this->escc    = std::unique_ptr<EsccController> (new EsccController());
     this->mace    = std::unique_ptr<MaceController> (new MaceController(MACE_ID));
     this->viacuda = std::unique_ptr<ViaCuda> (new ViaCuda());

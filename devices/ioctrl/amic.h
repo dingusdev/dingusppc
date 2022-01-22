@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <devices/common/hwinterrupt.h>
 #include <devices/common/mmiodevice.h>
-#include <devices/common/scsi/ncr53c94.h>
+#include <devices/common/scsi/sc53c94.h>
 #include <devices/common/viacuda.h>
 #include <devices/ethernet/mace.h>
 #include <devices/floppy/swim3.h>
@@ -174,7 +174,7 @@ private:
     uint32_t    pseudo_vbl_tid; // ID for the pseudo-VBL timer
 
     // AMIC subdevices instances
-    std::unique_ptr<Ncr53C94>       scsi;
+    std::unique_ptr<Sc53C94>        scsi;
     std::unique_ptr<EsccController> escc;
     std::unique_ptr<MaceController> mace;
     std::unique_ptr<ViaCuda>        viacuda;

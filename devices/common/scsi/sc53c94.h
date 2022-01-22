@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -19,19 +19,19 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/** @file NCR 53C94 SCSI controller definitions. */
+/** @file NCR53C94/Am53CF94 SCSI controller definitions. */
 
 /* NOTE: Power Macintosh computers don't have a real NCR 53C94 chip.
-   The corresponding functionality is provided by the 53C94 compatible
+   The corresponding functionality is provided by the 53CF94 compatible
    cell in the custom Curio IC (Am79C950).
 */
 
-#ifndef NCR53C94_H
-#define NCR53C94_H
+#ifndef SC_53C94_H
+#define SC_53C94_H
 
 #include <cinttypes>
 
-/** NCR 53C94 read registers */
+/** 53C94 read registers */
 namespace Read {
     enum Reg53C94 : uint8_t {
         Xfer_Cnt_LSB = 0,
@@ -45,13 +45,12 @@ namespace Read {
         Config_1     = 8,
         Config_2     = 0xB,
         Config_3     = 0xC,
-        Config_4     = 0xD, // Curio extension?
-        Xfer_Cnt_Hi  = 0xE, // Curio extension?
-        DMA          = 0xF, // Curio extension?
+        Config_4     = 0xD, // Am53CF94 extension
+        Xfer_Cnt_Hi  = 0xE, // Am53CF94 extension
     };
 };
 
-/** NCR 53C94 write registers */
+/** 53C94 write registers */
 namespace Write {
     enum Reg53C94 : uint8_t {
         Xfer_Cnt_LSB = 0,
@@ -63,27 +62,51 @@ namespace Write {
         Synch_Period = 6,
         Synch_Offset = 7,
         Config_1     = 8,
-        Clk_Conv_Fac = 9,
+        Clock_Factor = 9,
         Test_Mode    = 0xA,
         Config_2     = 0xB,
         Config_3     = 0xC,
-        Config_4     = 0xD, // Curio extension?
-        Chip_ID      = 0xE, // Curio extension?
-        DMA          = 0xF, // Curio extension?
+        Config_4     = 0xD, // Am53CF94 extension
+        Xfer_Cnt_Hi  = 0xE, // Am53CF94 extension
+        Data_Align   = 0xF
     };
 };
 
-class Ncr53C94 {
-public:
-    Ncr53C94()  = default;
-    ~Ncr53C94() = default;
+enum {
+    CMD_NOP          = 0,
+    CMD_CLEAR_FIFO   = 1,
+    CMD_RESET_DEVICE = 2,
+    CMD_RESET_BUS    = 3,
+    CMD_DMA_STOP     = 4,
+};
 
-    // NCR 53C94 registers access
+enum {
+    CFG2_ENF    = 0x40, // Am53CF94: enable features (ENF) bit
+};
+
+class Sc53C94 {
+public:
+    Sc53C94(uint8_t chip_id=12) { this->chip_id = chip_id; };
+    ~Sc53C94() = default;
+
+    // 53C94 registers access
     uint8_t read(uint8_t reg_offset);
     void   write(uint8_t reg_offset, uint8_t value);
 
+protected:
+    void reset_device();
+    void add_command(uint8_t cmd);
+
 private:
-    uint8_t chip_id;
+    uint8_t     chip_id;
+    bool        on_reset = false;
+    uint32_t    xfer_count;
+    uint32_t    set_xfer_count;
+    uint8_t     sel_timeout;
+    uint8_t     clk_factor;
+    uint8_t     config1;
+    uint8_t     config2;
+    uint8_t     config3;
 };
 
-#endif // NCR53C94_H
+#endif // SC_53C94_H
