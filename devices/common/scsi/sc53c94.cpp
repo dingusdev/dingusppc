@@ -26,6 +26,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 
+Sc53C94::Sc53C94(uint8_t chip_id)
+{
+    this->chip_id = chip_id;
+    reset_device();
+}
+
 void Sc53C94::reset_device()
 {
     // part-unique ID to be read using a magic sequence
@@ -33,18 +39,27 @@ void Sc53C94::reset_device()
 
     this->clk_factor  = 2;
     this->sel_timeout = 0;
+
+    // clear command FIFO
+    this->cmd_fifo_pos = 0;
 }
 
 uint8_t Sc53C94::read(uint8_t reg_offset)
 {
     switch (reg_offset) {
+    case Read::Reg53C94::Command:
+        return this->cmd_fifo[0];
+    case Read::Reg53C94::Status:
+        return this->status;
+    case Read::Reg53C94::Int_Status:
+        return this->int_status;
     case Read::Reg53C94::Xfer_Cnt_Hi:
         if (this->config2 & CFG2_ENF) {
             return (this->xfer_count >> 16) & 0xFFU;
         }
         break;
     default:
-        LOG_F(9, "NCR53C94: reading from register %d", reg_offset);
+        LOG_F(INFO, "SC53C94: reading from register %d", reg_offset);
     }
     return 0;
 }
@@ -53,7 +68,7 @@ void Sc53C94::write(uint8_t reg_offset, uint8_t value)
 {
     switch (reg_offset) {
     case Write::Reg53C94::Command:
-        add_command(value);
+        update_command_reg(value);
         break;
     case Write::Reg53C94::Sel_Timeout:
         this->sel_timeout = value;
@@ -75,41 +90,79 @@ void Sc53C94::write(uint8_t reg_offset, uint8_t value)
     }
 }
 
-void Sc53C94::add_command(uint8_t cmd)
+void Sc53C94::update_command_reg(uint8_t cmd)
 {
-    bool is_dma_cmd = !!(cmd & 0x80);
-
-    cmd &= 0x7F;
-
-    if (this->on_reset && cmd != CMD_NOP) {
+    if (this->on_reset && (cmd & 0x7F) != CMD_NOP) {
         LOG_F(WARNING, "SC53C94: command register blocked after RESET!");
         return;
     }
 
     // NOTE: Reset Device (chip), Reset Bus and DMA Stop commands execute
     // immediately while all others are placed into the command FIFO
+    switch (cmd & 0x7F) {
+    case CMD_RESET_DEVICE:
+    case CMD_RESET_BUS:
+    case CMD_DMA_STOP:
+        this->cmd_fifo_pos = 0; // put them at the bottom of the command FIFO
+    }
+
+    if (this->cmd_fifo_pos < 2) {
+        // put new command into the command FIFO
+        this->cmd_fifo[this->cmd_fifo_pos++] = cmd;
+        if (this->cmd_fifo_pos == 1) {
+            exec_command();
+        }
+    } else {
+        LOG_F(ERROR, "SC53C94: the top of the command FIFO overwritten!");
+        this->status |= 0x40; // signal IOE/Gross Error
+    }
+}
+
+void Sc53C94::exec_command()
+{
+    uint8_t cmd = this->cmd_fifo[0] & 0x7F;
+    bool    is_dma_cmd = !!(this->cmd_fifo[0] & 0x80);
+
+    if (is_dma_cmd) {
+        if (this->config2 & CFG2_ENF) { // extended mode: 24-bit
+            this->xfer_count = this->set_xfer_count & 0xFFFFFFUL;
+        } else { // standard mode: 16-bit
+            this->xfer_count = this->set_xfer_count & 0xFFFFUL;
+        }
+    }
+
     switch (cmd) {
+    case CMD_NOP:
+        this->on_reset = false; // unblock the command register
+        exec_next_command();
+        break;
+    case CMD_CLEAR_FIFO:
+        this->data_fifo_pos = 0; // set the bottom of the FIFO to zero
+        this->data_fifo[0] = 0;
+        exec_next_command();
+        break;
     case CMD_RESET_DEVICE:
         reset_device();
         this->on_reset = true; // block the command register
         return;
     case CMD_RESET_BUS:
-        LOG_F(ERROR, "SC53C94: RESET_BUS command not implemented yet");
-        return;
-    case CMD_DMA_STOP:
-        LOG_F(ERROR, "SC53C94: TARGET_DMA_STOP command not implemented yet");
-        return;
+        LOG_F(INFO, "SC53C94: resetting SCSI bus...");
+        exec_next_command();
+        break;
+    default:
+        LOG_F(ERROR, "SC53C94: invalid/unimplemented command 0x%X", cmd);
+        this->cmd_fifo_pos--; // remove invalid command from FIFO
+        this->int_status |= 0x40; // set ICMD bit
     }
+}
 
-    // HACK: commands should be placed into the command FIFO
-    if (cmd == CMD_NOP) {
-        if (is_dma_cmd) {
-            if (this->config2 & CFG2_ENF) { // extended mode: 24-bit
-                this->xfer_count = this->set_xfer_count & 0xFFFFFFUL;
-            } else { // standard mode: 16-bit
-                this->xfer_count = this->set_xfer_count & 0xFFFFUL;
-            }
+void Sc53C94::exec_next_command()
+{
+    if (this->cmd_fifo_pos) { // skip empty command FIFO
+        this->cmd_fifo_pos--; // remove completed command
+        if (this->cmd_fifo_pos) { // is there another command in the FIFO?
+            this->cmd_fifo[0] = this->cmd_fifo[1]; // top -> bottom
+            exec_command(); // execute it
         }
-        this->on_reset = false;
     }
 }

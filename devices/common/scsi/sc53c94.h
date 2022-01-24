@@ -39,7 +39,7 @@ namespace Read {
         FIFO         = 2,
         Command      = 3,
         Status       = 4,
-        Interrupt    = 5,
+        Int_Status   = 5,
         Seq_Step     = 6,
         FIFO_Flags   = 7,
         Config_1     = 8,
@@ -72,6 +72,7 @@ namespace Write {
     };
 };
 
+/** NCR53C94/Am53CF94 commands. */
 enum {
     CMD_NOP          = 0,
     CMD_CLEAR_FIFO   = 1,
@@ -86,7 +87,7 @@ enum {
 
 class Sc53C94 {
 public:
-    Sc53C94(uint8_t chip_id=12) { this->chip_id = chip_id; };
+    Sc53C94(uint8_t chip_id=12);
     ~Sc53C94() = default;
 
     // 53C94 registers access
@@ -95,13 +96,21 @@ public:
 
 protected:
     void reset_device();
-    void add_command(uint8_t cmd);
+    void update_command_reg(uint8_t cmd);
+    void exec_command();
+    void exec_next_command();
 
 private:
     uint8_t     chip_id;
+    uint8_t     cmd_fifo[2];
+    uint8_t     data_fifo[16];
+    int         cmd_fifo_pos;
+    int         data_fifo_pos;
     bool        on_reset = false;
     uint32_t    xfer_count;
     uint32_t    set_xfer_count;
+    uint8_t     status;
+    uint8_t     int_status;
     uint8_t     sel_timeout;
     uint8_t     clk_factor;
     uint8_t     config1;
