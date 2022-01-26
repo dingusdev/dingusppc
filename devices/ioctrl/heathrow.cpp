@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cpu/ppc/ppcemu.h>
 #include <devices/common/dbdma.h>
+#include <devices/common/hwcomponent.h>
 #include <devices/common/viacuda.h>
 #include <devices/floppy/swim3.h>
 #include <devices/ioctrl/macio.h>
@@ -43,6 +44,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace std;
 
 HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow") {
+    supports_types(HWCompType::MMIO_DEV | HWCompType::INT_CTRL);
+
     this->nvram = std::unique_ptr<NVram> (new NVram());
 
     this->viacuda = std::unique_ptr<ViaCuda> (new ViaCuda());

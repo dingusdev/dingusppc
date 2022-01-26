@@ -35,7 +35,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef MPC106_H_
 #define MPC106_H_
 
-#include <devices/common/hwcomponent.h>
 #include <devices/common/mmiodevice.h>
 #include <devices/common/pci/pcidevice.h>
 #include <devices/common/pci/pcihost.h>
@@ -49,8 +48,6 @@ class MPC106 : public MemCtrlBase, public PCIDevice, public PCIHost {
 public:
     MPC106();
     ~MPC106();
-
-    bool supports_type(HWCompType type);
 
     uint32_t read(uint32_t reg_start, uint32_t offset, int size);
     void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size);

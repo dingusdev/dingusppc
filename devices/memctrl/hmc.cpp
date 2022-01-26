@@ -24,25 +24,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     Author: Max Poliakovski
 */
 
+#include <devices/common/hwcomponent.h>
 #include <devices/memctrl/hmc.h>
 
 HMC::HMC() : MemCtrlBase()
 {
     this->name = "Highspeed Memory Controller";
 
+    supports_types(HWCompType::MEM_CTRL | HWCompType::MMIO_DEV);
+
     /* add memory mapped I/O region for the HMC control register */
     add_mmio_region(0x50F40000, 0x10000, this);
 
     this->ctrl_reg = 0ULL;
     this->bit_pos = 0;
-}
-
-bool HMC::supports_type(HWCompType type) {
-    if (type == HWCompType::MEM_CTRL || type == HWCompType::MMIO_DEV) {
-        return true;
-    } else {
-        return false;
-    }
 }
 
 uint32_t HMC::read(uint32_t reg_start, uint32_t offset, int size)

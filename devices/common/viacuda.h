@@ -155,10 +155,6 @@ public:
     ~ViaCuda() = default;
 
     // HWComponent methods
-    bool supports_type(HWCompType type) {
-        return (type == HWCompType::ADB_HOST || type == HWCompType::I2C_HOST);
-    };
-
     int device_postinit();
 
     uint8_t read(int reg);
@@ -170,7 +166,7 @@ private:
     // VIA virtual HW registers
     uint8_t via_regs[16];
 
-    float via_clk_dur; // one VIA clock duration = 1,27655 µs
+    float via_clk_dur; // one VIA clock duration = 1,27655 us
 
     // VIA internal state
     uint8_t  _via_ifr;

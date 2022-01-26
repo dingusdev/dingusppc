@@ -38,6 +38,8 @@ using namespace std;
 ViaCuda::ViaCuda() {
     this->name = "ViaCuda";
 
+    supports_types(HWCompType::ADB_HOST | HWCompType::I2C_HOST);
+
     // VIA reset clears all internal registers to logic 0
     // except timers/counters and the shift register
     // as stated in the 6522 datasheet

@@ -203,10 +203,6 @@ public:
     uint32_t read(uint32_t reg_start, uint32_t offset, int size);
     void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size);
 
-    bool supports_type(HWCompType type) {
-        return type == HWCompType::MMIO_DEV;
-    };
-
     /* PCI device methods */
     bool supports_io_space(void) {
         return true;

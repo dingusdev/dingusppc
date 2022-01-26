@@ -51,12 +51,9 @@ public:
         this->id[1] = 0x5A;
         this->id[2] = (id >> 8) & 0xFF;
         this->id[3] = id & 0xFF;
+        supports_types(HWCompType::MMIO_DEV);
     };
     ~NubusMacID() = default;
-
-    bool supports_type(HWCompType type) {
-        return type == HWCompType::MMIO_DEV;
-    };
 
     uint32_t read(uint32_t reg_start, uint32_t offset, int size) {
         return (offset < 4 ? this->id[offset] : 0);
@@ -80,12 +77,9 @@ class GossamerID : public MMIODevice {
 public:
     GossamerID(const uint16_t id) {
         this->id = id, this->name = "Machine-id";
+        supports_types(HWCompType::MMIO_DEV);
     };
     ~GossamerID() = default;
-
-    bool supports_type(HWCompType type) {
-        return type == HWCompType::MMIO_DEV;
-    };
 
     uint32_t read(uint32_t reg_start, uint32_t offset, int size) {
         return ((!offset && size == 2) ? this->id : 0);

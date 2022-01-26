@@ -39,6 +39,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 MPC106::MPC106() : MemCtrlBase(), PCIDevice("Grackle PCI host bridge") {
     this->name = "Grackle";
 
+    supports_types(HWCompType::MEM_CTRL | HWCompType::MMIO_DEV |
+                   HWCompType::PCI_HOST | HWCompType::PCI_DEV);
+
     /* add PCI/ISA I/O space, 64K for now */
     add_mmio_region(0xFE000000, 0x10000, this);
 
@@ -51,15 +54,6 @@ MPC106::MPC106() : MemCtrlBase(), PCIDevice("Grackle PCI host bridge") {
 
 MPC106::~MPC106() {
     this->pci_0_bus.clear();
-}
-
-bool MPC106::supports_type(HWCompType type) {
-    if (type == HWCompType::MEM_CTRL || type == HWCompType::MMIO_DEV ||
-        type == HWCompType::PCI_HOST || type == HWCompType::PCI_DEV) {
-        return true;
-    } else {
-        return false;
-    }
 }
 
 uint32_t MPC106::read(uint32_t reg_start, uint32_t offset, int size) {

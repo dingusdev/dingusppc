@@ -31,7 +31,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef HMC_H
 #define HMC_H
 
-#include <devices/common/hwcomponent.h>
 #include <devices/common/mmiodevice.h>
 #include <devices/memctrl/memctrlbase.h>
 
@@ -45,8 +44,6 @@ class HMC : public MemCtrlBase, public MMIODevice {
 public:
     HMC();
     ~HMC() = default;
-
-    bool supports_type(HWCompType type);
 
     /* MMIODevice methods */
     uint32_t read(uint32_t reg_start, uint32_t offset, int size);

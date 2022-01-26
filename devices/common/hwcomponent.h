@@ -22,25 +22,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef HW_COMPONENT_H
 #define HW_COMPONENT_H
 
+#include <cinttypes>
 #include <string>
 
 /** types of different HW components */
-enum HWCompType : int {
-    UNKNOWN     =   0, /* unknown component type */
-    MEM_CTRL    =  10, /* memory controller */
-    ROM         =  20, /* read-only memory */
-    RAM         =  30, /* random access memory */
-    MMIO_DEV    =  40, /* memory mapped I/O device */
-    PCI_HOST    =  50, /* PCI host   */
-    PCI_DEV     =  51, /* PCI device */
-    I2C_HOST    =  60, /* I2C host   */
-    I2C_DEV     =  61, /* I2C device */
-    ADB_HOST    =  70, /* ADB host   */
-    ADB_DEV     =  71, /* ADB device */
-    INT_CTRL    =  80, /* interrupt controller */
-    SND_SERVER  = 100, /* host sound server */
+enum HWCompType {
+    UNKNOWN     = 0ULL,       /* unknown component type */
+    MEM_CTRL    = 1ULL << 0,  /* memory controller */
+    ROM         = 1ULL << 2,  /* read-only memory */
+    RAM         = 1ULL << 3,  /* random access memory */
+    MMIO_DEV    = 1ULL << 4,  /* memory mapped I/O device */
+    PCI_HOST    = 1ULL << 5,  /* PCI host   */
+    PCI_DEV     = 1ULL << 6,  /* PCI device */
+    I2C_HOST    = 1ULL << 8,  /* I2C host   */
+    I2C_DEV     = 1ULL << 9,  /* I2C device */
+    ADB_HOST    = 1ULL << 12, /* ADB host   */
+    ADB_DEV     = 1ULL << 13, /* ADB device */
+    INT_CTRL    = 1ULL << 16, /* interrupt controller */
+    SND_SERVER  = 1ULL << 31, /* host sound server */
 };
-
 
 /** Abstract base class for HW components. */
 class HWComponent {
@@ -55,7 +55,13 @@ public:
         this->name = name;
     };
 
-    virtual bool supports_type(HWCompType type) = 0;
+    virtual bool supports_type(HWCompType type) {
+        return !!(this->supported_types & type);
+    };
+
+    virtual void supports_types(uint64_t types) {
+        this->supported_types = types;
+    };
 
     virtual int device_postinit() {
         return 0;
@@ -63,6 +69,7 @@ public:
 
 protected:
     std::string name;
+    uint64_t    supported_types = HWCompType::UNKNOWN;
 };
 
 #endif /* HW_COMPONENT_H */

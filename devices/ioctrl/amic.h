@@ -143,10 +143,6 @@ public:
     ~AMIC() = default;
 
     // HWComponent methods
-    bool supports_type(HWCompType type) {
-        return (type == HWCompType::MMIO_DEV) || (type == HWCompType::INT_CTRL);
-    };
-
     int device_postinit();
 
     /* MMIODevice methods */

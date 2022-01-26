@@ -46,7 +46,10 @@ enum {
 
 class SoundServer : public HWComponent {
 public:
-    SoundServer()  { this->start();    };
+    SoundServer()  {
+        supports_types(HWCompType::SND_SERVER);
+        this->start();
+    };
     ~SoundServer() { this->shutdown(); };
 
     int start();
@@ -54,10 +57,6 @@ public:
     int open_out_stream(uint32_t sample_rate, void *user_data);
     int start_out_stream();
     void close_out_stream();
-
-    bool supports_type(HWCompType type) {
-        return type == HWCompType::SND_SERVER;
-    };
 
 private:
     int status;                     /* server status */

@@ -63,13 +63,10 @@ public:
     SpdSdram168(uint8_t addr) {
         this->dev_addr = addr;
         this->pos      = 0;
+        supports_types(HWCompType::RAM);
     };
 
     ~SpdSdram168() = default;
-
-    bool supports_type(HWCompType type) {
-        return type == HWCompType::RAM;
-    };
 
     void set_capacity(int capacity_megs) {
         switch (capacity_megs) {

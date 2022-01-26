@@ -19,6 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <devices/common/hwcomponent.h>
 #include <devices/common/pci/pcidevice.h>
 #include <devices/video/atirage.h>
 #include <devices/video/displayid.h>
@@ -91,6 +92,8 @@ ATIRage::ATIRage(uint16_t dev_id, uint32_t vmem_size_mb)
     : PCIDevice("ati-rage"), VideoCtrlBase()
 {
     uint8_t asic_id;
+
+    supports_types(HWCompType::MMIO_DEV | HWCompType::PCI_DEV);
 
     this->vram_size = vmem_size_mb << 20; // convert MBs to bytes
 

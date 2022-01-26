@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <core/timermanager.h>
 #include <cpu/ppc/ppcemu.h>
 #include <cpu/ppc/ppcmmu.h>
+#include <devices/common/hwcomponent.h>
 #include <devices/common/scsi/sc53c94.h>
 #include <devices/common/viacuda.h>
 #include <devices/ethernet/mace.h>
@@ -46,6 +47,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 AMIC::AMIC() : MMIODevice()
 {
     this->name = "Apple Memory-mapped I/O Controller";
+
+    supports_types(HWCompType::MMIO_DEV | HWCompType::INT_CTRL);
 
     // register I/O devices
     this->scsi    = std::unique_ptr<Sc53C94> (new Sc53C94());

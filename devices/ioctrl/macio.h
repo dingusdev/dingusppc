@@ -52,7 +52,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define MACIO_H
 
 #include <devices/common/dbdma.h>
-#include <devices/common/hwcomponent.h>
 #include <devices/common/mmiodevice.h>
 #include <devices/common/nvram.h>
 #include <devices/common/pci/pcidevice.h>
@@ -97,10 +96,6 @@ class HeathrowIC : public PCIDevice {
 public:
     HeathrowIC();
     ~HeathrowIC() = default;
-
-    bool supports_type(HWCompType type) {
-        return (type == HWCompType::MMIO_DEV) || (type == HWCompType::INT_CTRL);
-    };
 
     /* PCI device methods */
     bool supports_io_space(void) {
