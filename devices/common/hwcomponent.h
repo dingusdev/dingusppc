@@ -39,6 +39,9 @@ enum HWCompType {
     ADB_HOST    = 1ULL << 12, /* ADB host   */
     ADB_DEV     = 1ULL << 13, /* ADB device */
     INT_CTRL    = 1ULL << 16, /* interrupt controller */
+    SCSI_BUS    = 1ULL << 20, /* SCSI bus */
+    SCSI_HOST   = 1ULL << 21, /* SCSI host adapter */
+    SCSI_DEV    = 1ULL << 22, /* SCSI device */
     SND_SERVER  = 1ULL << 31, /* host sound server */
 };
 
