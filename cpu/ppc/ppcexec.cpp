@@ -319,7 +319,11 @@ uint64_t process_events()
 void force_cycle_counter_reload()
 {
     // tell the interpreter loop to reload cycle counter
-    bb_kind = BB_end_kind::BB_TIMER;
+    if (bb_kind == BB_end_kind::BB_NONE || bb_kind == BB_end_kind::BB_TIMER) {
+        bb_kind = BB_end_kind::BB_TIMER;
+    } else {
+        ABORT_F("PPCEXEC: attempt to override basic block type %d", bb_kind);
+    }
 }
 
 /** Execute PPC code as long as power is on. */
@@ -412,7 +416,6 @@ static void ppc_exec_inner()
                 max_cycles = process_events();
             }
 
-            //if (eb_last) {
             if (bb_kind != BB_end_kind::BB_NONE) { // execution block ended ?
                 if (!power_on)
                     break;
@@ -611,7 +614,6 @@ static void ppc_exec_until_inner(const uint32_t goal_addr)
                 max_cycles = process_events();
             }
 
-            //if (eb_last) {
             if (bb_kind != BB_end_kind::BB_NONE) { // execution block ended ?
                 // reload cycle counter if requested
                 if (bb_kind == BB_end_kind::BB_TIMER) {

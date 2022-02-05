@@ -48,7 +48,9 @@ uint32_t TimerManager::add_oneshot_timer(uint64_t timeout, timer_cb cb)
     this->timer_queue.push(timer_desc);
 
     // notify listeners about changes in the timer queue
-    this->notify_timer_changes();
+    if (!this->cb_active) {
+        this->notify_timer_changes();
+    }
 
     return ti->id;
 }
@@ -72,7 +74,9 @@ uint32_t TimerManager::add_cyclic_timer(uint64_t interval, timer_cb cb)
     this->timer_queue.push(timer_desc);
 
     // notify listeners about changes in the timer queue
-    this->notify_timer_changes();
+    if (!this->cb_active) {
+        this->notify_timer_changes();
+    }
 
     return ti->id;
 }
@@ -85,7 +89,9 @@ void TimerManager::cancel_timer(uint32_t id)
     } else {
         this->timer_queue.remove_by_id(id);
     }
-    this->notify_timer_changes();
+    if (!this->cb_active) {
+        this->notify_timer_changes();
+    }
 }
 
 uint64_t TimerManager::process_timers(uint64_t time_now)
@@ -100,8 +106,7 @@ uint64_t TimerManager::process_timers(uint64_t time_now)
     cur_timer = this->timer_queue.top().get();
     while (cur_timer->timeout_ns <= time_now ||
            cur_timer->timeout_ns <= (time_now + MIN_TIMEOUT_NS)) {
-        // invoke timer callback
-        cur_timer->cb();
+        timer_cb cb = cur_timer->cb;
 
         // re-arm cyclic timers
         if (cur_timer->interval_ns) {
@@ -113,6 +118,13 @@ uint64_t TimerManager::process_timers(uint64_t time_now)
             // remove one-shot timers from queue
             this->timer_queue.pop();
         }
+
+        this->cb_active = true;
+
+        // invoke timer callback
+        cb();
+
+        this->cb_active = false;
 
         // process next timer
         if (this->timer_queue.empty()) {

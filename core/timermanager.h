@@ -82,7 +82,7 @@ public:
         return timer_manager;
     };
 
-    // callback ´for retrieving current time
+    // callback for retrieving current time
     void set_time_now_cb(const function<uint64_t()> &cb) {
         this->get_time_now = cb;
     };
@@ -103,13 +103,14 @@ private:
     static TimerManager* timer_manager;
     TimerManager(){}; // private constructor to implement a singleton
 
-    uint32_t id = 0;
-
     // timer queue
     my_priority_queue<shared_ptr<TimerInfo>, vector<shared_ptr<TimerInfo>>, MyGtComparator> timer_queue;
 
     function<uint64_t()>   get_time_now;
     function<void()>       notify_timer_changes;
+
+    uint32_t    id = 0;
+    bool        cb_active = false; // true if a timer callback is executing
 };
 
 #endif // TIMER_MANAGER_H
