@@ -29,6 +29,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SC_53C94_H
 #define SC_53C94_H
 
+#include "scsi.h"
+
 #include <cinttypes>
 
 /** 53C94 read registers */
@@ -59,8 +61,8 @@ namespace Write {
         Command      = 3,
         Dest_Bus_ID  = 4,
         Sel_Timeout  = 5,
-        Synch_Period = 6,
-        Synch_Offset = 7,
+        Sync_Period  = 6,
+        Sync_Offset  = 7,
         Config_1     = 8,
         Clock_Factor = 9,
         Test_Mode    = 0xA,
@@ -74,34 +76,82 @@ namespace Write {
 
 /** NCR53C94/Am53CF94 commands. */
 enum {
-    CMD_NOP          = 0,
-    CMD_CLEAR_FIFO   = 1,
-    CMD_RESET_DEVICE = 2,
-    CMD_RESET_BUS    = 3,
-    CMD_DMA_STOP     = 4,
+    CMD_NOP           =    0,
+    CMD_CLEAR_FIFO    =    1,
+    CMD_RESET_DEVICE  =    2,
+    CMD_RESET_BUS     =    3,
+    CMD_DMA_STOP      =    4,
+    CMD_SELECT_NO_ATN = 0x41,
+};
+
+/** Interrupt status register bits. */
+enum {
+    INTSTAT_SRST    = 0x80, // bus reset
+    INTSTAT_ICMD    = 0x40, // invalid command
+    INTSTAT_DIS     = 0x20, // disconnected
+    INTSTAT_SR      = 0x10, // service request
+    INTSTAT_SO      = 0x08, // successful operation
+    INTSTAT_RESEL   = 0x04, // reselected
+    INTSTAT_SELA    = 0x02, // selected as a target with attention
+    INTSTAT_SEL     = 0x01, // selected as a target without attention
 };
 
 enum {
-    CFG2_ENF    = 0x40, // Am53CF94: enable features (ENF) bit
+    CFG2_ENF        = 0x40, // Am53CF94: enable features (ENF) bit
 };
 
-class Sc53C94 {
+/** Sequencer states. */
+namespace SeqState {
+    enum {
+        IDLE = 0,
+        BUS_FREE,
+        ARB_BEGIN,
+        ARB_END,
+        SEL_BEGIN,
+        SEL_END,
+        CMD_BEGIN,
+        CMD_COMPLETE,
+    };
+};
+
+/** Sequence descriptor for sequencer commands. */
+typedef struct {
+    int next_step;
+    int step_num;
+    int status;
+} SeqDesc;
+
+class Sc53C94 : public ScsiDevice {
 public:
-    Sc53C94(uint8_t chip_id=12);
+    Sc53C94(uint8_t chip_id=12, uint8_t my_id=7);
     ~Sc53C94() = default;
+
+    // HWComponent methods
+    int device_postinit();
 
     // 53C94 registers access
     uint8_t read(uint8_t reg_offset);
     void   write(uint8_t reg_offset, uint8_t value);
+
+    // ScsiDevice methods
+    void notify(ScsiMsg msg_type, int param);
 
 protected:
     void reset_device();
     void update_command_reg(uint8_t cmd);
     void exec_command();
     void exec_next_command();
+    void fifo_push(const uint8_t data);
+
+    void sequencer();
+    void seq_defer_state(uint64_t delay_ns);
 
 private:
     uint8_t     chip_id;
+    uint8_t     my_bus_id;
+    ScsiBus*    bus_obj;
+    uint32_t    my_timer_id;
+
     uint8_t     cmd_fifo[2];
     uint8_t     data_fifo[16];
     int         cmd_fifo_pos;
@@ -110,12 +160,23 @@ private:
     uint32_t    xfer_count;
     uint32_t    set_xfer_count;
     uint8_t     status;
+    uint8_t     target_id;
     uint8_t     int_status;
+    uint8_t     seq_step;
     uint8_t     sel_timeout;
+    uint8_t     sync_offset;
     uint8_t     clk_factor;
     uint8_t     config1;
     uint8_t     config2;
     uint8_t     config3;
+
+    // sequencer state
+    uint32_t    seq_timer_id;
+    uint32_t    cur_state;
+    uint32_t    next_state;
+    SeqDesc*    cmd_steps;
+    bool        is_initiator;
+    uint8_t     cur_cmd;
 };
 
 #endif // SC_53C94_H
