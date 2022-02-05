@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cpu/ppc/ppcemu.h>
 #include <devices/common/machineid.h>
+#include <devices/common/scsi/scsi.h>
 #include <devices/floppy/floppyimg.h>
 #include <devices/ioctrl/amic.h>
 #include <devices/memctrl/hmc.h>
@@ -83,6 +84,9 @@ int create_pdm(std::string& id) {
         LOG_F(ERROR, "Could not allocate built-in RAM region!\n");
         return -1;
     }
+
+    /* add internal SCSI bus */
+    gMachineObj->add_component("SCSI0", new ScsiBus);
 
     /* Init virtual CPU and request MPC601 */
     ppc_cpu_init(hmc_obj, PPC_VER::MPC601);
