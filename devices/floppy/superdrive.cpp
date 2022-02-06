@@ -31,6 +31,7 @@ using namespace MacSuperdrive;
 MacSuperDrive::MacSuperDrive()
 {
     this->media_kind = MediaKind::high_density;
+    this->has_disk   = 0; // drive is empty
 }
 
 void MacSuperDrive::command(uint8_t addr, uint8_t value)
@@ -61,6 +62,8 @@ uint8_t MacSuperDrive::status(uint8_t addr)
         return 1; // yes, Superdrive is double sided
     case StatusAddr::Drive_Exists:
         return 0; // tell the world I'm here
+    case StatusAddr::Disk_In_Drive:
+        return this->has_disk ^ 1; // reverse logic (active low)!
     case StatusAddr::Media_Kind:
         return this->media_kind;
     default:

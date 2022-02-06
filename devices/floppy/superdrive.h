@@ -30,10 +30,11 @@ namespace MacSuperdrive {
 
 /** Apple Drive status request addresses. */
 enum StatusAddr : uint8_t {
-    MFM_Support  = 5,
-    Double_Sided = 6,
-    Drive_Exists = 7,
-    Media_Kind   = 0xF
+    MFM_Support   = 5,
+    Double_Sided  = 6,
+    Drive_Exists  = 7,
+    Disk_In_Drive = 8,
+    Media_Kind    = 0xF
 };
 
 /** Apple Drive command addresses. */
@@ -57,6 +58,7 @@ public:
 
 private:
     uint8_t media_kind;
+    uint8_t has_disk;
 };
 
 }; // namespace MacSuperdrive
