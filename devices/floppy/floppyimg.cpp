@@ -26,11 +26,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memaccess.h>
 
 #include <cinttypes>
-#include <stdio.h>
+#include <fstream>
 #include <string>
-#include <sys/stat.h>
 
-static FlopImgType identify_image(FILE *img_file)
+static FlopImgType identify_image(std::ifstream& img_file)
 {
     // WOZ images identification strings
     static uint8_t WOZ1_SIG[] = {0x57, 0x4F, 0x5A, 0x31, 0xFF, 0x0A, 0x0D, 0x0A};
@@ -38,8 +37,8 @@ static FlopImgType identify_image(FILE *img_file)
 
     uint8_t buf[8] = { 0 };
 
-    fseek(img_file, 0, SEEK_SET);
-    fread(buf, sizeof(buf), 1, img_file);
+    img_file.seekg(0, std::ios::beg);
+    img_file.read((char *)buf, sizeof(buf));
 
     // WOZ files are easily identified
     if (!std::memcmp(buf, WOZ1_SIG, sizeof(buf))) {
@@ -49,8 +48,8 @@ static FlopImgType identify_image(FILE *img_file)
     } else {
         for (int offset = 0; offset <=84; offset += 84) {
             // rewind to logical block 2
-            fseek(img_file, 2*BLOCK_SIZE + offset, SEEK_SET);
-            fread(buf, sizeof(buf), 1, img_file);
+            img_file.seekg(2*BLOCK_SIZE + offset, std::ios::beg);
+            img_file.read((char *)buf, sizeof(buf));
 
             // check for HFS/MFS signature at the start of the logical block 2
             if ((buf[0] == 0x42 && buf[1] == 0x44) ||
@@ -67,16 +66,6 @@ static FlopImgType identify_image(FILE *img_file)
     return FlopImgType::UNKNOWN;
 }
 
-static int64_t get_img_file_size(const char *fname)
-{
-    struct stat stat_buf;
-
-    memset(&stat_buf, 0, sizeof(stat_buf));
-
-    int res = stat(fname, &stat_buf);
-    return res == 0 ? stat_buf.st_size : -1;
-}
-
 static int64_t get_hfs_vol_size(const uint8_t *mdb_data)
 {
     uint16_t drNmAlBlks = READ_WORD_BE_A(&mdb_data[18]);
@@ -89,7 +78,7 @@ static int64_t get_hfs_vol_size(const uint8_t *mdb_data)
 }
 
 //======================= RAW IMAGE CONVERTER ============================
-RawFloppyImg::RawFloppyImg(const char *file_path) : FloppyImgConverter()
+RawFloppyImg::RawFloppyImg(std::string& file_path) : FloppyImgConverter()
 {
     this->img_path = file_path;
 }
@@ -100,20 +89,29 @@ RawFloppyImg::RawFloppyImg(const char *file_path) : FloppyImgConverter()
 */
 int RawFloppyImg::validate()
 {
-    FILE *img_file = fopen(this->img_path, "rb");
-    if (img_file == NULL) {
+    std::ifstream img_file;
+
+    img_file.open(img_path, std::ios::in | std::ios::binary);
+    if (img_file.fail()) {
+        img_file.close();
         LOG_F(ERROR, "RawFloppyImg: Could not open specified floppy image!");
         return -1;
     }
 
     // determine image size
-    this->img_size = get_img_file_size(this->img_path);
+    img_file.seekg(0, img_file.end);
+    this->img_size = img_file.tellg();
+    img_file.seekg(0, img_file.beg);
+
+    // verify image size
     if (this->img_size < 5*BLOCK_SIZE) {
+        img_file.close();
         LOG_F(ERROR, "RawFloppyImg: image too short!");
         return -1;
     }
 
     if (this->img_size > MFM_HD_SIZE) {
+        img_file.close();
         LOG_F(ERROR, "RawFloppyImg: image too big!");
         return -1;
     }
@@ -121,9 +119,9 @@ int RawFloppyImg::validate()
     // read Master Directory Block from logical block 2
     uint8_t buf[512] = { 0 };
 
-    fseek(img_file, 2*BLOCK_SIZE, SEEK_SET);
-    fread(buf, sizeof(buf), 1, img_file);
-    fclose(img_file);
+    img_file.seekg(2*BLOCK_SIZE, img_file.beg);
+    img_file.read((char *)buf, sizeof(buf));
+    img_file.close();
 
     uint64_t vol_size = 0;
 
@@ -139,7 +137,7 @@ int RawFloppyImg::validate()
 
     if (vol_size > this->img_size) {
         LOG_F(INFO, "RawFloppyImg: volume size > image size!");
-        LOG_F(INFO, "Volume size: %llu, Image size: %llu", vol_size, this->img_size);
+        LOG_F(INFO, "Volume size: %llu, Image size: %d", vol_size, this->img_size);
         return -1;
     }
 
@@ -168,19 +166,22 @@ int RawFloppyImg::export_data()
     return 0;
 }
 
-int open_floppy_image(const char* img_path)
+int open_floppy_image(std::string& img_path)
 {
     FloppyImgConverter *fconv;
 
-    FILE *img_file = fopen(img_path, "rb");
-    if (img_file == NULL) {
+    std::ifstream img_file;
+
+    img_file.open(img_path, std::ios::in | std::ios::binary);
+    if (img_file.fail()) {
+        img_file.close();
         LOG_F(ERROR, "Could not open specified floppy image!");
         return -1;
     }
 
     FlopImgType itype = identify_image(img_file);
 
-    fclose(img_file);
+    img_file.close();
 
     switch(itype) {
     case FlopImgType::RAW:

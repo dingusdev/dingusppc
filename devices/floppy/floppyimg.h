@@ -25,7 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define FLOPPY_IMG_H
 
 #include <cinttypes>
-#include <stdio.h>
+#include <string>
 
 #define BLOCK_SIZE 512 // size in bytes of a logical block
 
@@ -55,7 +55,7 @@ public:
 /** Converter for raw floppy images. */
 class RawFloppyImg : public FloppyImgConverter {
 public:
-    RawFloppyImg(const char *file_path);
+    RawFloppyImg(std::string& file_path);
     ~RawFloppyImg() = default;
 
     int validate(void);
@@ -64,10 +64,10 @@ public:
     int export_data(void);
 
 private:
-    const char *img_path;
-    int64_t     img_size;
+    std::string img_path;
+    int         img_size;
 };
 
-extern int open_floppy_image(const char* img_path);
+extern int open_floppy_image(std::string& img_path);
 
 #endif // FLOPPY_IMG_H

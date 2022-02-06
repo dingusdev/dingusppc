@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -21,9 +21,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Sander-Wozniak Machine 3 (SWIM3) emulation. */
 
-#include "superdrive.h"
-#include "swim3.h"
+#include <devices/floppy/superdrive.h>
+#include <devices/floppy/swim3.h>
 #include <loguru.hpp>
+#include <machines/machinebase.h>
 
 #include <cinttypes>
 #include <memory>
@@ -43,6 +44,7 @@ Swim3Ctrl::Swim3Ctrl()
     // TODO: make SWIM3/drive wiring user selectable
     this->int_drive = std::unique_ptr<MacSuperdrive::MacSuperDrive>
         (new MacSuperdrive::MacSuperDrive());
+    gMachineObj->add_subdevice("Superdrive", this->int_drive.get());
 }
 
 uint8_t Swim3Ctrl::read(uint8_t reg_offset)

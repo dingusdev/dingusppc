@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -21,7 +21,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Macintosh Superdrive emulation. */
 
-#include "superdrive.h"
+#include <devices/floppy/floppyimg.h>
+#include <devices/floppy/superdrive.h>
 #include <loguru.hpp>
 
 #include <cinttypes>
@@ -30,6 +31,9 @@ using namespace MacSuperdrive;
 
 MacSuperDrive::MacSuperDrive()
 {
+    this->name = "Superdrive";
+    this->supported_types = HWCompType::FLOPPY_DRV;
+
     this->media_kind = MediaKind::high_density;
     this->has_disk   = 0; // drive is empty
 }
@@ -70,4 +74,12 @@ uint8_t MacSuperDrive::status(uint8_t addr)
         LOG_F(WARNING, "Superdrive: unimplemented status request, addr=0x%X", addr);
         return 0;
     }
+}
+
+int MacSuperDrive::insert_disk(std::string& img_path)
+{
+    //open_floppy_image(img_path.c_str());
+    open_floppy_image(img_path);
+
+    return 0;
 }

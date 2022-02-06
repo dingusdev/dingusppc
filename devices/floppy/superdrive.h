@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -24,7 +24,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef MAC_SUPERDRIVE_H
 #define MAC_SUPERDRIVE_H
 
+#include <devices/common/hwcomponent.h>
+
 #include <cinttypes>
+#include <string>
 
 namespace MacSuperdrive {
 
@@ -48,13 +51,14 @@ enum MediaKind : uint8_t {
     low_density  = 1
 };
 
-class MacSuperDrive {
+class MacSuperDrive : public HWComponent {
 public:
     MacSuperDrive();
     ~MacSuperDrive() = default;
 
     void command(uint8_t addr, uint8_t value);
     uint8_t status(uint8_t addr);
+    int insert_disk(std::string& img_path);
 
 private:
     uint8_t media_kind;

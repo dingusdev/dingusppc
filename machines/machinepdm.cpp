@@ -27,7 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cpu/ppc/ppcemu.h>
 #include <devices/common/machineid.h>
 #include <devices/common/scsi/scsi.h>
-#include <devices/floppy/floppyimg.h>
+#include <devices/floppy/superdrive.h>
 #include <devices/ioctrl/amic.h>
 #include <devices/memctrl/hmc.h>
 #include <devices/sound/soundserver.h>
@@ -97,10 +97,14 @@ int create_pdm(std::string& id) {
         return -1;
     }
 
-    /* check for a floppy image to be inserted into the virtual superdrive */
-    std::string fdd_path = GET_STR_PROP("fdd_img");
-    if (!fdd_path.empty()) {
-        open_floppy_image(fdd_path.c_str());
+    // if a floppy image was given "insert" it into the virtual superdrive
+    std::string fd_image_path = GET_STR_PROP("fdd_img");
+    if (!fd_image_path.empty()) {
+        using namespace MacSuperdrive;
+
+        MacSuperDrive* fdd = dynamic_cast<MacSuperDrive*>
+            (gMachineObj->get_comp_by_name("Superdrive"));
+        fdd->insert_disk(fd_image_path);
     }
 
     LOG_F(INFO, "Initialization completed.\n");
