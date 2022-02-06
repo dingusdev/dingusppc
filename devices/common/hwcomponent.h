@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -43,9 +43,10 @@ enum HWCompType {
     SCSI_HOST   = 1ULL << 21, /* SCSI host adapter */
     SCSI_DEV    = 1ULL << 22, /* SCSI device */
     SND_SERVER  = 1ULL << 31, /* host sound server */
+    FLOPPY_DRV  = 1ULL << 32, /* floppy disk drive */
 };
 
-/** Abstract base class for HW components. */
+/** Base class for HW components. */
 class HWComponent {
 public:
     HWComponent()          = default;
