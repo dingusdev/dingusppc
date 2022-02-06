@@ -101,14 +101,17 @@ enum AMICReg : uint32_t {
     Snd_In_DMA          = 0x14014, // sound input DMA status/control register
     Snd_Out_DMA         = 0x14018, // sound output DMA status/control register
 
-    // VIA2 registers
-    VIA2_Slot_IER       = 0x26012,
-    VIA2_IER            = 0x26013,
-
     // Video DAC (Ariel II) control registers
     Ariel_Clut_Index    = 0x24000,
     Ariel_Clut_Color    = 0x24001,
     Ariel_Config        = 0x24002,
+
+    // VIA2 registers
+    VIA2_IFR            = 0x26003,
+    VIA2_Slot_IER       = 0x26012,
+    VIA2_IER            = 0x26013,
+    VIA2_IFR_RBV        = 0x27A03, // RBV-compatible mirror for the VIA2_IFR
+    VIA2_IER_RBV        = 0x27C13, // RBV-compatible mirror for the VIA2_IER
 
     // Video control registers
     Video_Mode          = 0x28000,
@@ -155,6 +158,10 @@ public:
     void ack_int(uint32_t irq_id, uint8_t irq_line_state);
     void ack_dma_int(uint32_t irq_id, uint8_t irq_line_state);
 
+protected:
+    void ack_via2_int(uint32_t irq_id, uint8_t irq_line_state);
+    void ack_cpu_int(uint32_t irq_id, uint8_t irq_line_state);
+
 private:
     uint8_t imm_snd_regs[4]; // temporary storage for sound control registers
 
@@ -166,6 +173,11 @@ private:
 
     uint8_t     int_ctrl = 0;
     uint8_t     dev_irq_lines = 0; // state of the IRQ lines
+
+    // pseudo VIA2 state
+    uint8_t     via2_ier = 0;
+    uint8_t     via2_ifr = 0;
+    uint8_t     via2_irq = 0;
 
     uint32_t    pseudo_vbl_tid; // ID for the pseudo-VBL timer
 

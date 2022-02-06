@@ -52,6 +52,8 @@ AMIC::AMIC() : MMIODevice()
 
     // register I/O devices
     this->scsi    = std::unique_ptr<Sc53C94> (new Sc53C94());
+    gMachineObj->add_subdevice("Curio_SCSI0", this->scsi.get());
+
     this->escc    = std::unique_ptr<EsccController> (new EsccController());
     this->mace    = std::unique_ptr<MaceController> (new MaceController(MACE_ID));
     this->viacuda = std::unique_ptr<ViaCuda> (new ViaCuda());
@@ -135,6 +137,12 @@ uint32_t AMIC::read(uint32_t reg_start, uint32_t offset, int size)
     switch(offset) {
     case AMICReg::Ariel_Config:
         return this->def_vid->get_vdac_config();
+    case AMICReg::VIA2_IFR:
+    case AMICReg::VIA2_IFR_RBV:
+        return this->via2_ifr;
+    case AMICReg::VIA2_IER:
+    case AMICReg::VIA2_IER_RBV:
+        return this->via2_ier;
     case AMICReg::Video_Mode:
         return this->def_vid->get_video_mode();
     case AMICReg::Monitor_Id:
@@ -228,7 +236,11 @@ void AMIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
         LOG_F(INFO, "AMIC VIA2 Slot Interrupt Enable Register updated, val=%x", value);
         break;
     case AMICReg::VIA2_IER:
-        LOG_F(INFO, "AMIC VIA2 Interrupt Enable Register updated, val=%x", value);
+        if (value & 0x80) {
+            this->via2_ier |= value & 0x7F;
+        } else {
+            this->via2_ier &= ~value;
+        }
         break;
     case AMICReg::Ariel_Clut_Index:
         this->def_vid->set_clut_index(value);
@@ -313,6 +325,8 @@ uint32_t AMIC::register_dev_int(IntSrc src_id) {
     switch (src_id) {
     case IntSrc::VIA_CUDA:
         return 1;
+    case IntSrc::SCSI1:
+        return 0x800;
     default:
         ABORT_F("AMIC: unknown interrupt source %d", src_id);
     }
@@ -325,6 +339,31 @@ uint32_t AMIC::register_dma_int(IntSrc src_id) {
 }
 
 void AMIC::ack_int(uint32_t irq_id, uint8_t irq_line_state) {
+    // dispatch AMIC interrupts from various sources
+    if (irq_id < 0x100) {
+        this->ack_cpu_int(irq_id, irq_line_state);
+    } else if (irq_id < 0x10000) {
+        this->ack_via2_int(irq_id >> 8, irq_line_state);
+    } else {
+        ABORT_F("AMIC: unknown interrupt source ID 0x%X", irq_id);
+    }
+}
+
+void AMIC::ack_via2_int(uint32_t irq_id, uint8_t irq_line_state) {
+    if (irq_line_state) {
+        this->via2_ifr |= irq_id;
+    } else {
+        this->via2_ifr &= ~irq_id;
+    }
+    uint8_t new_irq = !!(this->via2_ifr & this->via2_ier & 0x7F);
+    this->via2_ifr  = (this->via2_ifr & 0x7F) | (new_irq << 7);
+    if (new_irq != this->via2_irq) {
+        this->via2_irq = new_irq;
+        this->ack_cpu_int(2, new_irq);
+    }
+}
+
+void AMIC::ack_cpu_int(uint32_t irq_id, uint8_t irq_line_state) {
     if (this->int_ctrl & AMIC_INT_MODE) { // 68k interrupt emulation mode?
         this->int_ctrl |= 0x80; // set CPU interrupt bit
         if (irq_line_state) {

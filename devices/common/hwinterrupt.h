@@ -27,10 +27,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** Enumerator for various interrupt sources. */
 enum IntSrc : int {
     VIA_CUDA = 1,
-    VIA2     = 2,
-    SCC      = 3,
-    ETHERNET = 4,
-    NMI      = 5,
+    SCSI1    = 2,
+    SWIM3    = 3,
+    SCC      = 4,
+    ETHERNET = 5,
+    NMI      = 6,
 };
 
 /** Base class for interrupt controllers. */
