@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <core/timermanager.h>
 #include <devices/common/hwcomponent.h>
+#include <devices/common/hwinterrupt.h>
 #include <devices/common/scsi/sc53c94.h>
 #include <loguru.hpp>
 #include <machines/machinebase.h>
@@ -41,6 +42,11 @@ int Sc53C94::device_postinit()
 {
     this->bus_obj = dynamic_cast<ScsiBus*>(gMachineObj->get_comp_by_name("SCSI0"));
     this->bus_obj->register_device(7, static_cast<ScsiDevice*>(this));
+
+    this->int_ctrl = dynamic_cast<InterruptCtrl*>(
+        gMachineObj->get_comp_by_type(HWCompType::INT_CTRL));
+    this->irq_id = this->int_ctrl->register_dev_int(IntSrc::SCSI1);
+
     return 0;
 }
 
@@ -61,17 +67,31 @@ void Sc53C94::reset_device()
     this->data_fifo[0]  = 0;
 
     this->seq_step = 0;
+
+    this->status = 0;
 }
 
 uint8_t Sc53C94::read(uint8_t reg_offset)
 {
+    uint8_t int_status;
+
     switch (reg_offset) {
     case Read::Reg53C94::Command:
         return this->cmd_fifo[0];
     case Read::Reg53C94::Status:
         return this->status;
     case Read::Reg53C94::Int_Status:
-        return this->int_status;
+        int_status = this->int_status;
+        this->seq_step = 0;
+        this->int_status = 0;
+        this->update_irq();
+        return int_status;
+    case Read::Reg53C94::Seq_Step:
+        return this->seq_step;
+    case Read::Reg53C94::FIFO_Flags:
+        return (this->seq_step << 5) | (this->data_fifo_pos & 0x1F);
+    case Read::Reg53C94::Config_3:
+        return this->config3;
     case Read::Reg53C94::Xfer_Cnt_Hi:
         if (this->config2 & CFG2_ENF) {
             return (this->xfer_count >> 16) & 0xFFU;
@@ -197,7 +217,7 @@ void Sc53C94::exec_command()
         break;
     case CMD_SELECT_NO_ATN:
         static SeqDesc sel_no_atn_desc[] {
-            {SeqState::SEL_BEGIN,    2, INTSTAT_SR | INTSTAT_SO},
+            {SeqState::SEL_BEGIN,    0, INTSTAT_DIS            },
             {SeqState::CMD_BEGIN,    3, INTSTAT_SR | INTSTAT_SO},
             {SeqState::CMD_COMPLETE, 4, INTSTAT_SR | INTSTAT_SO},
         };
@@ -206,6 +226,10 @@ void Sc53C94::exec_command()
         this->cur_state = SeqState::BUS_FREE;
         sequencer();
         LOG_F(INFO, "SC53C94: SELECT W/O ATN command started");
+        break;
+    case CMD_ENA_SEL_RESEL:
+        LOG_F(INFO, "SC53C94: ENABLE SELECTION/RESELECTION command executed");
+        exec_next_command();
         break;
     default:
         LOG_F(ERROR, "SC53C94: invalid/unimplemented command 0x%X", cmd);
@@ -296,13 +320,24 @@ void Sc53C94::sequencer()
         } else { // selection timeout
             this->seq_step = this->cmd_steps->step_num;
             this->int_status |= this->cmd_steps->status;
-            this->bus_obj->release_ctrl_lines(this->my_bus_id);
+            this->bus_obj->disconnect(this->my_bus_id);
             this->cur_state = SeqState::IDLE;
+            this->update_irq();
             exec_next_command();
         }
         break;
     default:
         ABORT_F("SC53C94: unimplemented sequencer state %d", this->cur_state);
+    }
+}
+
+void Sc53C94::update_irq()
+{
+    uint8_t new_irq = !!(this->int_status != 0);
+    if (new_irq != this->irq) {
+        this->irq = new_irq;
+        this->status = (this->status & 0x7F) | (new_irq << 7);
+        this->int_ctrl->ack_int(this->irq_id, new_irq);
     }
 }
 

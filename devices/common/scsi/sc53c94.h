@@ -30,6 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define SC_53C94_H
 
 #include "scsi.h"
+#include "devices/common/hwinterrupt.h"
 
 #include <cinttypes>
 
@@ -82,6 +83,7 @@ enum {
     CMD_RESET_BUS     =    3,
     CMD_DMA_STOP      =    4,
     CMD_SELECT_NO_ATN = 0x41,
+    CMD_ENA_SEL_RESEL = 0x44,
 };
 
 /** Interrupt status register bits. */
@@ -146,6 +148,8 @@ protected:
     void sequencer();
     void seq_defer_state(uint64_t delay_ns);
 
+    void update_irq();
+
 private:
     uint8_t     chip_id;
     uint8_t     my_bus_id;
@@ -177,6 +181,11 @@ private:
     SeqDesc*    cmd_steps;
     bool        is_initiator;
     uint8_t     cur_cmd;
+
+    // interrupt related stuff
+    InterruptCtrl* int_ctrl = nullptr;
+    uint32_t       irq_id   = 0;
+    uint8_t        irq      = 0;
 };
 
 #endif // SC_53C94_H

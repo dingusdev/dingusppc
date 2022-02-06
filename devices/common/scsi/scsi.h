@@ -90,7 +90,7 @@ public:
     void assert_ctrl_line(int id, uint16_t mask);
     void release_ctrl_line(int id, uint16_t mask);
     void release_ctrl_lines(int id);
-    int current_phase() { return this->cur_phase; };
+    int  current_phase() { return this->cur_phase; };
 
     // high-level control/status
     bool begin_arbitration(int id);
@@ -98,6 +98,7 @@ public:
     bool begin_selection(int initiator_id, int target_id, bool atn);
     void confirm_selection(int target_id);
     bool end_selection(int initiator_id, int target_id);
+    void disconnect(int dev_id);
 
 protected:
     void change_bus_phase(int initiator_id);

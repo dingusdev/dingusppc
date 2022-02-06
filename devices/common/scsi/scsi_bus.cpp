@@ -170,3 +170,12 @@ bool ScsiBus::end_selection(int initiator_id, int target_id)
     // check for selection confirmation from target
     return this->target_id == target_id;
 }
+
+void ScsiBus::disconnect(int dev_id)
+{
+    this->release_ctrl_lines(dev_id);
+    if (!(this->ctrl_lines & SCSI_CTRL_BSY) && !(this->ctrl_lines & SCSI_CTRL_SEL)) {
+        this->cur_phase = ScsiPhase::BUS_FREE;
+        change_bus_phase(dev_id);
+    }
+}
