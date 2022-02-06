@@ -25,8 +25,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define MAC_SUPERDRIVE_H
 
 #include <devices/common/hwcomponent.h>
+#include <devices/floppy/floppyimg.h>
 
 #include <cinttypes>
+#include <memory>
 #include <string>
 
 namespace MacSuperdrive {
@@ -47,8 +49,14 @@ enum CommandAddr : uint8_t {
 
 /** Type of media currently in the drive. */
 enum MediaKind : uint8_t {
-    high_density = 0, // 1 or 2 MB disk
-    low_density  = 1
+    low_density  = 0,
+    high_density = 1, // 1 or 2 MB disk
+};
+
+/** Disk recording method. */
+enum RecMethod : int {
+    GCR = 0,
+    MFM = 1
 };
 
 class MacSuperDrive : public HWComponent {
@@ -60,9 +68,24 @@ public:
     uint8_t status(uint8_t addr);
     int insert_disk(std::string& img_path);
 
+protected:
+    void set_disk_phys_params();
+
 private:
-    uint8_t media_kind;
     uint8_t has_disk;
+
+    // physical parameters of the currently inserted disk
+    uint8_t media_kind;
+    int     rec_method;
+    int     num_tracks;
+    int     num_sides;
+    int     sectors_per_track[80];
+    int     rpm_per_track[80];
+    int     track_start_block[80]; // logical block number of the first sector in a track
+
+    std::unique_ptr<FloppyImgConverter>  img_conv;
+
+    std::unique_ptr<char[]> disk_data;
 };
 
 }; // namespace MacSuperdrive

@@ -44,12 +44,29 @@ enum class FlopImgType {
 class FloppyImgConverter {
 public:
     FloppyImgConverter()  = default;
-    ~FloppyImgConverter() = default;
+    virtual ~FloppyImgConverter() = default;
 
-    virtual int validate(void) = 0;
-    virtual int get_phys_params(void) = 0;
-    virtual int import_data(void) = 0;
+    virtual int calc_phys_params(void) = 0;
+    virtual int get_raw_disk_data(char* buf) = 0;
     virtual int export_data(void) = 0;
+
+    int get_data_size()        { return this->data_size;   };
+    int get_disk_rec_method()  { return this->rec_method;  };
+    int get_number_of_tracks() { return this->num_tracks;  };
+    int get_number_of_sides()  { return this->num_sides;   };
+    int get_sectors_per_side() { return this->num_sectors; };
+    int get_rec_density()      { return this->density;     };
+
+protected:
+    std::string img_path;
+    int         img_size;
+    int         data_size; // disk data size without image format specific stuff
+
+    int         rec_method;
+    int         num_tracks;
+    int         num_sides;
+    int         num_sectors;
+    int         density;
 };
 
 /** Converter for raw floppy images. */
@@ -58,16 +75,11 @@ public:
     RawFloppyImg(std::string& file_path);
     ~RawFloppyImg() = default;
 
-    int validate(void);
-    int get_phys_params(void);
-    int import_data(void);
+    int calc_phys_params(void);
+    int get_raw_disk_data(char* buf);
     int export_data(void);
-
-private:
-    std::string img_path;
-    int         img_size;
 };
 
-extern int open_floppy_image(std::string& img_path);
+extern FloppyImgConverter* open_floppy_image(std::string& img_path);
 
 #endif // FLOPPY_IMG_H

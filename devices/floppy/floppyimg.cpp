@@ -86,8 +86,9 @@ RawFloppyImg::RawFloppyImg(std::string& file_path) : FloppyImgConverter()
 /** For raw images, we're going to ensure that the data fits into
     one of the supported floppy disk sizes as well as image size
     matches the size of the embedded HFS/MFS volume.
+    Then we'll attempt to guess disk format based on image size.
 */
-int RawFloppyImg::validate()
+int RawFloppyImg::calc_phys_params()
 {
     std::ifstream img_file;
 
@@ -141,22 +142,60 @@ int RawFloppyImg::validate()
         return -1;
     }
 
+    // raw images don't include anything than raw disk data
+    this->data_size = this->img_size;
+
+    // guess disk format from image file size
+    static struct {
+        int capacity;
+        int rec_method;
+        int num_tracks;
+        int num_sectors;
+        int num_sides;
+        int density;
+    } size_to_params[] = {
+        { 409600, 0, 80,  800, 1, 0}, //  400K GCR
+        { 819200, 0, 80,  800, 2, 0}, //  800K GCR
+        { 737280, 1, 80, 1440, 2, 0}, //  720K MFM
+        {1474560, 1, 80, 2880, 2, 1}, // 1440K MFM
+    };
+
+    this->rec_method = -1;
+
+    for (int i = 0; i < 4; i++) {
+        if (this->img_size == size_to_params[i].capacity) {
+            this->rec_method  = size_to_params[i].rec_method;
+            this->num_tracks  = size_to_params[i].num_tracks;
+            this->num_sectors = size_to_params[i].num_sectors;
+            this->num_sides   = size_to_params[i].num_sides;
+            this->density     = size_to_params[i].density;
+        }
+    }
+
+    if (this->rec_method == -1) {
+        LOG_F(ERROR, "RawFloppyImg: could't determine disk format from image size!");
+        return -1;
+    }
+
     return 0;
 }
 
-/** Guess physical parameters of the target virtual disk based on image size. */
-int RawFloppyImg::get_phys_params()
+/** Retrieve raw disk data. */
+int RawFloppyImg::get_raw_disk_data(char* buf)
 {
-    // disk format: GCR vs MFM
-    // single-sided vs double-sided
-    // number of tracks
-    // number of sectors
-    return 0;
-}
+    std::ifstream img_file;
 
-/** Convert high-level image data to low-level disk data. */
-int RawFloppyImg::import_data()
-{
+    img_file.open(img_path, std::ios::in | std::ios::binary);
+    if (img_file.fail()) {
+        img_file.close();
+        LOG_F(ERROR, "RawFloppyImg: Could not open specified floppy image!");
+        return -1;
+    }
+
+    img_file.seekg(0, img_file.beg);
+    img_file.read(buf, this->data_size);
+    img_file.close();
+
     return 0;
 }
 
@@ -166,7 +205,7 @@ int RawFloppyImg::export_data()
     return 0;
 }
 
-int open_floppy_image(std::string& img_path)
+FloppyImgConverter* open_floppy_image(std::string& img_path)
 {
     FloppyImgConverter *fconv;
 
@@ -176,7 +215,7 @@ int open_floppy_image(std::string& img_path)
     if (img_file.fail()) {
         img_file.close();
         LOG_F(ERROR, "Could not open specified floppy image!");
-        return -1;
+        return nullptr;
     }
 
     FlopImgType itype = identify_image(img_file);
@@ -197,13 +236,13 @@ int open_floppy_image(std::string& img_path)
         break;
     default:
         LOG_F(ERROR, "Unknown/unsupported image format!");
-        return -1;
+        return nullptr;
     }
 
-    if (fconv->validate()) {
-        LOG_F(ERROR, "Image validation failed!");
-        return -1;
+    if (fconv->calc_phys_params()) {
+        delete fconv;
+        return nullptr;
     }
 
-    return 0;
+    return fconv;
 }
