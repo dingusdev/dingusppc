@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @file Sander-Wozniak Machine 3 (SWIM3) emulation. */
 
 #include <core/timermanager.h>
+#include <devices/common/hwinterrupt.h>
 #include <devices/floppy/superdrive.h>
 #include <devices/floppy/swim3.h>
 #include <loguru.hpp>
@@ -34,6 +35,9 @@ using namespace Swim3;
 
 Swim3Ctrl::Swim3Ctrl()
 {
+    this->name = "SWIM3";
+    this->supported_types = HWCompType::FLOPPY_CTRL;
+
     this->setup_reg = 0;
     this->mode_reg  = 0;
     this->int_reg   = 0;
@@ -48,6 +52,15 @@ Swim3Ctrl::Swim3Ctrl()
         (new MacSuperdrive::MacSuperDrive());
     gMachineObj->add_subdevice("Superdrive", this->int_drive.get());
 }
+
+int Swim3Ctrl::device_postinit()
+{
+    this->int_ctrl = dynamic_cast<InterruptCtrl*>(
+        gMachineObj->get_comp_by_type(HWCompType::INT_CTRL));
+    this->irq_id = this->int_ctrl->register_dev_int(IntSrc::SWIM3);
+
+    return 0;
+};
 
 uint8_t Swim3Ctrl::read(uint8_t reg_offset)
 {
@@ -134,6 +147,11 @@ void Swim3Ctrl::write(uint8_t reg_offset, uint8_t value)
 
 void Swim3Ctrl::update_irq()
 {
+    uint8_t new_irq = !!(this->int_flags & this->int_mask);
+    if (new_irq != this->irq) {
+        this->irq = new_irq;
+        this->int_ctrl->ack_int(this->irq_id, new_irq);
+    }
 }
 
 void Swim3Ctrl::do_step()

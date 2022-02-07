@@ -24,7 +24,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SWIM3_H
 #define SWIM3_H
 
-#include "superdrive.h"
+#include <devices/common/hwcomponent.h>
+#include <devices/common/hwinterrupt.h>
+#include <devices/floppy/superdrive.h>
 
 #include <cinttypes>
 #include <memory>
@@ -62,10 +64,12 @@ enum {
     INT_STEP_DONE = 0x02,
 };
 
-class Swim3Ctrl {
+class Swim3Ctrl : public HWComponent {
 public:
     Swim3Ctrl();
     ~Swim3Ctrl() = default;
+
+    int device_postinit();
 
     // SWIM3 registers access
     uint8_t read(uint8_t reg_offset);
@@ -94,6 +98,11 @@ private:
     uint8_t xfer_cnt;
 
     int     step_timer_id = 0;
+
+    // Interrupt related stuff
+    InterruptCtrl* int_ctrl = nullptr;
+    uint32_t       irq_id   = 0;
+    uint8_t        irq      = 0;
 };
 
 }; // namespace Swim3

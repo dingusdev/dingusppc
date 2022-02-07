@@ -43,7 +43,8 @@ enum HWCompType {
     SCSI_HOST   = 1ULL << 21, /* SCSI host adapter */
     SCSI_DEV    = 1ULL << 22, /* SCSI device */
     SND_SERVER  = 1ULL << 31, /* host sound server */
-    FLOPPY_DRV  = 1ULL << 32, /* floppy disk drive */
+    FLOPPY_CTRL = 1ULL << 32, /* floppy disk controller */
+    FLOPPY_DRV  = 1ULL << 33, /* floppy disk drive */
 };
 
 /** Base class for HW components. */

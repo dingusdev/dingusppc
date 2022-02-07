@@ -70,6 +70,7 @@ AMIC::AMIC() : MMIODevice()
 
     // intialize floppy disk HW
     this->swim3 = std::unique_ptr<Swim3::Swim3Ctrl> (new Swim3::Swim3Ctrl());
+    gMachineObj->add_subdevice("SWIM3", this->swim3.get());
 }
 
 int AMIC::device_postinit()
@@ -129,6 +130,7 @@ uint32_t AMIC::read(uint32_t reg_start, uint32_t offset, int size)
         case AMICReg::Snd_Out_DMA:
             return this->snd_out_dma->read_stat();
         }
+        break;
     case 0x16: // SWIM3 registers
     case 0x17:
         return this->swim3->read((offset >> 9) & 0xF);
@@ -327,6 +329,8 @@ uint32_t AMIC::register_dev_int(IntSrc src_id) {
         return 1;
     case IntSrc::SCSI1:
         return 0x800;
+    case IntSrc::SWIM3:
+        return 0x2000;
     default:
         ABORT_F("AMIC: unknown interrupt source %d", src_id);
     }
