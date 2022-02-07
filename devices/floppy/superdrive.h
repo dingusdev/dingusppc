@@ -51,6 +51,7 @@ enum StatusAddr : uint8_t {
 /** Apple Drive command addresses. */
 enum CommandAddr : uint8_t {
     Step_Direction    = 0,
+    Do_Step           = 1,
     Motor_On_Off      = 2,
     Reset_Eject_Latch = 4,
     Switch_Drive_Mode = 5,
@@ -87,7 +88,9 @@ private:
     uint8_t motor_stat;  // spindle motor status: 1 - on, 0 - off
     uint8_t drive_mode;  // drive mode: 0 - GCR, 1 - MFM
     uint8_t is_ready;
+    uint8_t track_zero;  // 1 - if head is at track zero
     int     step_dir;    // step direction -1/+1
+    int     head_pos;    // track number the head is currently at
 
     // physical parameters of the currently inserted disk
     uint8_t media_kind;

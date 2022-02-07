@@ -40,6 +40,7 @@ MacSuperDrive::MacSuperDrive()
     this->eject_latch = 0; // eject latch is off
     this->drive_mode  = RecMethod::MFM; // assume MFM mode by default
     this->motor_stat  = 0; // spindle motor is off
+    this->head_pos    = 0; // current head position
     this->is_ready    = 0; // drive not ready
 }
 
@@ -52,6 +53,14 @@ void MacSuperDrive::command(uint8_t addr, uint8_t value)
     switch(addr) {
     case CommandAddr::Step_Direction:
         this->step_dir = value ? -1 : 1;
+        break;
+    case CommandAddr::Do_Step:
+        if (!value) {
+            this->head_pos += this->step_dir;
+            if (this->head_pos < 0)
+                this->head_pos = 0;
+            this->track_zero = this->head_pos == 0;
+        }
         break;
     case CommandAddr::Motor_On_Off:
         new_motor_stat = value ^ 1;
