@@ -35,16 +35,25 @@ namespace MacSuperdrive {
 
 /** Apple Drive status request addresses. */
 enum StatusAddr : uint8_t {
+    Step_Status   = 1,
+    Motor_Status  = 2,
+    Eject_Latch   = 3,
     MFM_Support   = 5,
     Double_Sided  = 6,
     Drive_Exists  = 7,
     Disk_In_Drive = 8,
+    Write_Protect = 9,
+    Drive_Mode    = 0xD,
+    Drive_Ready   = 0xE,
     Media_Kind    = 0xF
 };
 
 /** Apple Drive command addresses. */
 enum CommandAddr : uint8_t {
-    Motor_On_Off = 2,
+    Step_Direction    = 0,
+    Motor_On_Off      = 2,
+    Reset_Eject_Latch = 4,
+    Switch_Drive_Mode = 5,
 };
 
 /** Type of media currently in the drive. */
@@ -70,12 +79,19 @@ public:
 
 protected:
     void set_disk_phys_params();
+    void switch_drive_mode(int mode);
 
 private:
     uint8_t has_disk;
+    uint8_t eject_latch;
+    uint8_t motor_stat;  // spindle motor status: 1 - on, 0 - off
+    uint8_t drive_mode;  // drive mode: 0 - GCR, 1 - MFM
+    uint8_t is_ready;
+    int     step_dir;    // step direction -1/+1
 
     // physical parameters of the currently inserted disk
     uint8_t media_kind;
+    uint8_t wr_protect;
     int     rec_method;
     int     num_tracks;
     int     num_sides;
