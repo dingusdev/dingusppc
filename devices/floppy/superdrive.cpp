@@ -111,6 +111,8 @@ uint8_t MacSuperDrive::status(uint8_t addr)
         return this->has_disk ^ 1;   // reverse logic (active low)!
     case StatusAddr::Write_Protect:
         return this->wr_protect ^ 1; // reverse logic
+    case StatusAddr::Track_Zero:
+        return this->track_zero ^ 1; // reverse logic
     case StatusAddr::Drive_Mode:
         return this->drive_mode;
     case StatusAddr::Drive_Ready:

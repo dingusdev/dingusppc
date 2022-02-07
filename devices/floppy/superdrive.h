@@ -43,6 +43,7 @@ enum StatusAddr : uint8_t {
     Drive_Exists  = 7,
     Disk_In_Drive = 8,
     Write_Protect = 9,
+    Track_Zero    = 0xA,
     Drive_Mode    = 0xD,
     Drive_Ready   = 0xE,
     Media_Kind    = 0xF
