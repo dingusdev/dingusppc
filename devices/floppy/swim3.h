@@ -56,12 +56,14 @@ enum Swim3Reg : uint8_t {
 /** Mode register bits. */
 enum {
     SWIM3_GO      = 0x08,
+    SWIM3_WR_MODE = 0x10,
     SWIM3_GO_STEP = 0x80,
 };
 
 /** Interrupt flags. */
 enum {
     INT_STEP_DONE = 0x02,
+    INT_ID_READ   = 0x04,
 };
 
 class Swim3Ctrl : public HWComponent {
@@ -80,24 +82,30 @@ protected:
     void start_stepping();
     void do_step();
     void stop_stepping();
-    void start_action();
-    void stop_action();
+    void start_disk_access();
+    void stop_disk_access();
 
 private:
     std::unique_ptr<MacSuperdrive::MacSuperDrive> int_drive;
 
     uint8_t setup_reg;
     uint8_t mode_reg;
+    uint8_t error;
     uint8_t phase_lines;
     uint8_t int_reg;
     uint8_t int_flags;  // interrupt flags
     uint8_t int_mask;
     uint8_t pram;       // parameter RAM: two nibbles = {late_time, early_time}
     uint8_t step_count;
+    uint8_t cur_track;
+    uint8_t cur_sector;
+    uint8_t format;     // format byte from the last GCR/MFM address field
     uint8_t first_sec;
     uint8_t xfer_cnt;
+    uint8_t gap_size;
 
-    int     step_timer_id = 0;
+    int     step_timer_id   = 0;
+    int     access_timer_id = 0;
 
     // Interrupt related stuff
     InterruptCtrl* int_ctrl = nullptr;

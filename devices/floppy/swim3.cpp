@@ -43,6 +43,7 @@ Swim3Ctrl::Swim3Ctrl()
     this->int_reg   = 0;
     this->int_flags = 0;
     this->int_mask  = 0;
+    this->error     = 0;
     this->xfer_cnt  = 0;
     this->first_sec = 0xFF;
 
@@ -64,9 +65,13 @@ int Swim3Ctrl::device_postinit()
 
 uint8_t Swim3Ctrl::read(uint8_t reg_offset)
 {
-    uint8_t status_addr, old_int_flags;
+    uint8_t status_addr, old_int_flags, old_error;
 
     switch(reg_offset) {
+    case Swim3Reg::Error:
+        old_error = this->error;
+        this->error = 0;
+        return old_error;
     case Swim3Reg::Phase:
         return this->phase_lines;
     case Swim3Reg::Setup:
@@ -82,6 +87,16 @@ uint8_t Swim3Ctrl::read(uint8_t reg_offset)
         this->int_flags = 0; // read from this register clears all flags
         update_irq();
         return old_int_flags;
+    case Swim3Reg::Current_Track:
+        return this->cur_track;
+    case Swim3Reg::Current_Sector:
+        return this->cur_sector;
+    case Swim3Reg::Gap_Format:
+        return this->format;
+    case Swim3Reg::First_Sector:
+        return this->first_sec;
+    case Swim3Reg::Sectors_To_Xfer:
+        return this->xfer_cnt;
     case Swim3Reg::Interrupt_Mask:
         return this->int_mask;
     default:
@@ -118,7 +133,7 @@ void Swim3Ctrl::write(uint8_t reg_offset, uint8_t value)
             if (value & SWIM3_GO_STEP) {
                 stop_stepping();
             } else {
-                stop_action();
+                stop_disk_access();
             }
         }
         this->mode_reg &= ~value;
@@ -129,13 +144,22 @@ void Swim3Ctrl::write(uint8_t reg_offset, uint8_t value)
             if (value & SWIM3_GO_STEP) {
                 start_stepping();
             } else {
-                start_action();
+                start_disk_access();
             }
         }
         this->mode_reg |= value;
         break;
     case Swim3Reg::Step:
         this->step_count = value;
+        break;
+    case Swim3Reg::Gap_Format:
+        this->gap_size = value;
+        break;
+    case Swim3Reg::First_Sector:
+        this->first_sec = value;
+        break;
+    case Swim3Reg::Sectors_To_Xfer:
+        this->xfer_cnt = value;
         break;
     case Swim3Reg::Interrupt_Mask:
         this->int_mask = value;
@@ -176,6 +200,16 @@ void Swim3Ctrl::start_stepping()
         return;
     }
 
+    if (this->mode_reg & SWIM3_GO_STEP || this->step_timer_id) {
+        LOG_F(ERROR, "SWIM3: another stepping action is running!");
+        return;
+    }
+
+    if (this->mode_reg & SWIM3_GO || this->access_timer_id) {
+        LOG_F(ERROR, "SWIM3: stepping attempt while disk access is in progress!");
+        return;
+    }
+
     if ((((this->mode_reg & 0x20) >> 3) | (this->phase_lines & 3))
         != MacSuperdrive::CommandAddr::Do_Step) {
         LOG_F(WARNING, "SWIM3: invalid command address on the phase lines!");
@@ -208,11 +242,54 @@ void Swim3Ctrl::stop_stepping()
     this->step_count = 0; // not sure this one is required
 }
 
-void Swim3Ctrl::start_action()
+void Swim3Ctrl::start_disk_access()
 {
-    LOG_F(INFO, "SWIM3: action started!");
+    if (this->mode_reg & SWIM3_GO || this->access_timer_id) {
+        LOG_F(ERROR, "SWIM3: another disk access is running!");
+        return;
+    }
+
+    if (this->mode_reg & SWIM3_GO_STEP || this->step_timer_id) {
+        LOG_F(ERROR, "SWIM3: disk access attempt while stepping is in progress!");
+        return;
+    }
+
+    if (this->mode_reg & SWIM3_WR_MODE) {
+        LOG_F(ERROR, "SWIM3: writing not implemented yet");
+        return;
+    }
+
+    this->mode_reg |= SWIM3_GO;
+    LOG_F(INFO, "SWIM3: disk access started!");
+
+    if (this->first_sec == 0xFF) {
+        // $FF means no sector to match ->
+        // generate ID_read interrups as long as the GO bit is set
+        this->int_drive->init_track_search(-1); // start at random sector
+        this->access_timer_id = TimerManager::get_instance()->add_cyclic_timer(
+            static_cast<uint64_t>(this->int_drive->get_sector_delay() * NS_PER_SEC + 0.5f),
+            [this]() {
+                // get next sector's address field
+                MacSuperdrive::SectorHdr addr = this->int_drive->next_sector_header();
+                // set up the corresponding SWIM3 registers
+                this->cur_track  = ((addr.side & 1) << 7) | (addr.track & 0x7F);
+                this->cur_sector = 0x80 /* CRC/checksum valid */ | (addr.sector & 0x7F);
+                this->format = addr.format;
+                // generate ID_read interrupt
+                this->int_flags |= INT_ID_READ;
+                update_irq();
+            }
+        );
+    } else {
+        LOG_F(ERROR, "SWIM3: unsupported first_sec value 0x%X", this->first_sec);
+    }
 }
 
-void Swim3Ctrl::stop_action()
+void Swim3Ctrl::stop_disk_access()
 {
+    // cancel disk access timer
+    if (this->access_timer_id) {
+        TimerManager::get_instance()->cancel_timer(this->access_timer_id);
+    }
+    this->access_timer_id = 0;
 }
