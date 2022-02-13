@@ -63,7 +63,10 @@ ViaCuda::ViaCuda() {
     this->_via_ier = 0; // all interrupts disabled
     this->irq      = 0; // IRQ is not active
 
-    this->t2_value  = 0xFFFF;
+    // intialize counters/timers
+    this->t1_counter  = 0xFFFF;
+    this->t1_active = false;
+    this->t2_counter  = 0xFFFF;
     this->t2_active = false;
 
     // calculate VIA clock duration in ns
@@ -99,8 +102,6 @@ void ViaCuda::cuda_init() {
 }
 
 uint8_t ViaCuda::read(int reg) {
-    LOG_F(9, "Read VIA reg %d", reg);
-
     /* reading from some VIA registers triggers special actions */
     switch (reg & 0xF) {
     case VIA_B:
@@ -113,10 +114,18 @@ uint8_t ViaCuda::read(int reg) {
         return (this->_via_ier | 0x80); // bit 7 always reads as "1"
     case VIA_IFR:
         return this->_via_ifr;
+    case VIA_T1CL:
+        this->_via_ifr &= ~VIA_IF_T1;
+        update_irq();
+        return this->calc_counter_val(this->t1_counter, this->t1_start_time) & 0xFFU;
+    case VIA_T1CH:
+        return this->calc_counter_val(this->t1_counter, this->t1_start_time) >> 8;
     case VIA_T2CL:
         this->_via_ifr &= ~VIA_IF_T2;
         update_irq();
-        break;
+        return this->calc_counter_val(this->t2_counter, this->t2_start_time) & 0xFFU;
+    case VIA_T2CH:
+        return this->calc_counter_val(this->t2_counter, this->t2_start_time) >> 8;
     case VIA_SR:
         this->_via_ifr &= ~VIA_IF_SR;
         update_irq();
@@ -163,8 +172,37 @@ void ViaCuda::write(int reg, uint8_t value) {
         update_irq();
         print_enabled_ints();
         break;
+    case VIA_T1CH:
+        if (this->via_regs[VIA_ACR] & 0xC0) {
+            ABORT_F("Unsupported VIA T1 mode, ACR=0x%X", this->via_regs[VIA_ACR]);
+        }
+        // cancel active T1 timer task
+        if (this->t1_active) {
+            TimerManager::get_instance()->cancel_timer(this->t1_timer_id);
+            this->t1_active = false;
+        }
+        // clear T1 flag in IFR
+        this->_via_ifr &= ~VIA_IF_T1;
+        update_irq();
+        // load initial value into counter 1
+        this->t1_counter = (value << 8) | this->via_regs[VIA_T1CL];
+        // TODO: delay for one phase 2 clock
+        // sample current vCPU time and remember it
+        this->t1_start_time = TimerManager::get_instance()->current_time_ns();
+        // set up timout timer for T1
+        this->t1_timer_id = TimerManager::get_instance()->add_oneshot_timer(
+            static_cast<uint64_t>(this->via_clk_dur * (this->t1_counter + 3) + 0.5f),
+            [this]() {
+                this->assert_t1_int();
+            }
+        );
+        this->t1_active = true;
+        break;
     case VIA_T2CH:
-        // cancel any active T2 timer
+        if (this->via_regs[VIA_ACR] & 0x20) {
+            ABORT_F("VIA T2 pulse count mode not supported!");
+        }
+        // cancel active T2 timer task
         if (this->t2_active) {
             TimerManager::get_instance()->cancel_timer(this->t2_timer_id);
             this->t2_active = false;
@@ -172,23 +210,33 @@ void ViaCuda::write(int reg, uint8_t value) {
         // clear T2 flag in IFR
         this->_via_ifr &= ~VIA_IF_T2;
         update_irq();
-        // load initial value into timer 2
-        this->t2_value = (value << 8) | this->via_regs[VIA_T2CL];
-        // delay for one phase 2 clock
+        // load initial value into counter 2
+        this->t2_counter = (value << 8) | this->via_regs[VIA_T2CL];
+        // TODO: delay for one phase 2 clock
         // sample current vCPU time and remember it
-        // set up new timer for T2
+        this->t2_start_time = TimerManager::get_instance()->current_time_ns();
+        // set up timeout timer for T2
         this->t2_timer_id = TimerManager::get_instance()->add_oneshot_timer(
-            static_cast<uint64_t>(this->via_clk_dur * (this->t2_value + 3) + 0.5f),
-            [this]() { this->assert_t2_int(); });
+            static_cast<uint64_t>(this->via_clk_dur * (this->t2_counter + 3) + 0.5f),
+            [this]() {
+                this->assert_t2_int();
+            }
+        );
         this->t2_active = true;
         break;
     case VIA_SR:
         this->_via_ifr &= ~VIA_IF_SR;
         update_irq();
         break;
-    default:
-        break;
     }
+}
+
+uint16_t ViaCuda::calc_counter_val(const uint16_t last_val, const uint64_t& last_time)
+{
+    // calcualte current counter value based on elapsed time and timer frequency
+    uint64_t cur_time = TimerManager::get_instance()->current_time_ns();
+    uint32_t diff = (cur_time - last_time) / this->via_clk_dur;
+    return last_val - diff;
 }
 
 void ViaCuda::print_enabled_ints() {
@@ -216,6 +264,12 @@ inline bool ViaCuda::ready() {
 void ViaCuda::assert_sr_int() {
     this->sr_timer_on = false;
     this->_via_ifr |= VIA_IF_SR;
+    update_irq();
+}
+
+void ViaCuda::assert_t1_int() {
+    this->_via_ifr |= VIA_IF_T1;
+    this->t1_active = false;
     update_irq();
 }
 

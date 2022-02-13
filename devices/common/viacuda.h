@@ -169,17 +169,27 @@ private:
     float via_clk_dur; // one VIA clock duration = 1,27655 us
 
     // VIA internal state
-    uint8_t  _via_ifr;
-    uint8_t  _via_ier;
-    uint8_t  irq;
-    uint16_t t2_value;
     uint32_t sr_timer_id = 0;
-    uint32_t t2_timer_id = 0;
     bool     sr_timer_on = false;
-    bool     t2_active;
 
+    // timer 1 state
+    bool     t1_active;
+    uint16_t t1_counter;
+    uint32_t t1_timer_id = 0;
+    uint64_t t1_start_time = 0;
+
+    // timer 2 state
+    bool     t2_active;
+    uint16_t t2_counter;
+    uint32_t t2_timer_id = 0;
+    uint64_t t2_start_time = 0;
+
+    // VIA interrupt related stuff
     InterruptCtrl* int_ctrl;
     uint32_t       irq_id;
+    uint8_t        _via_ifr;
+    uint8_t        _via_ier;
+    uint8_t        irq;
 
     /* Cuda state. */
     uint8_t  old_tip;
@@ -210,8 +220,10 @@ private:
     void init_ints();
     void update_irq();
     void assert_sr_int();
+    void assert_t1_int();
     void assert_t2_int();
     void schedule_sr_int(uint64_t timeout_ns);
+    uint16_t calc_counter_val(const uint16_t last_val, const uint64_t& last_time);
 
     // CUDA methods
     void cuda_init();

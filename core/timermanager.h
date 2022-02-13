@@ -92,6 +92,9 @@ public:
         this->notify_timer_changes = cb;
     };
 
+    // return current virtual time in nanoseconds
+    uint64_t current_time_ns() { return get_time_now(); };
+
     // creating and cancelling timers
     uint32_t add_oneshot_timer(uint64_t timeout, timer_cb cb);
     uint32_t add_cyclic_timer(uint64_t interval, timer_cb cb);
