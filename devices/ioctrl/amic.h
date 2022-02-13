@@ -82,6 +82,16 @@ private:
     uint32_t    cur_buf_pos;
 };
 
+// macro for byte wise updating of AMIC DMA address registers
+#define SET_ADDR_BYTE(reg, offset, value)                                       \
+    mask = 0xFF000000UL >> (8 * ((offset) & 3));                                \
+    (reg) = ((reg) & ~mask) | (((value) & 0xFF) << (8 * (3 - ((offset) & 3))));
+
+// macro for byte wise updating of AMIC DMA size registers
+#define SET_SIZE_BYTE(reg, offset, value)                                       \
+    mask = 0xFF00U >> (8 * ((offset) & 1));                                     \
+    (reg) = ((reg) & ~mask) | (((value) & 0xFF) << (8 * (((offset) & 1) ^ 1)));
+
 /* AMIC registers offsets from AMIC base (0x50F00000). */
 enum AMICReg : uint32_t {
     // Sound control registers
@@ -132,7 +142,16 @@ enum AMICReg : uint32_t {
     Enet_DMA_Xmt_Ctrl   = 0x31C20,
     SCSI_DMA_Ctrl       = 0x32008,
     Enet_DMA_Rcv_Ctrl   = 0x32028,
-    SWIM3_DMA_Ctrl      = 0x32068,
+
+    // Floppy (SWIM3) DMA registers
+    Floppy_Addr_Ptr_0   = 0x32060,
+    Floppy_Addr_Ptr_1   = 0x32061,
+    Floppy_Addr_Ptr_2   = 0x32062,
+    Floppy_Addr_Ptr_3   = 0x32063,
+    Floppy_Byte_Cnt_Hi  = 0x32064,
+    Floppy_Byte_Cnt_Lo  = 0x32065,
+    Floppy_DMA_Ctrl     = 0x32068,
+
     SCC_DMA_Xmt_A_Ctrl  = 0x32088,
     SCC_DMA_Rcv_A_Ctrl  = 0x32098,
     SCC_DMA_Xmt_B_Ctrl  = 0x320A8,
@@ -161,15 +180,21 @@ public:
 protected:
     void ack_via2_int(uint32_t irq_id, uint8_t irq_line_state);
     void ack_cpu_int(uint32_t irq_id, uint8_t irq_line_state);
+    void reset_floppy_dma();
 
 private:
     uint8_t imm_snd_regs[4]; // temporary storage for sound control registers
 
-    uint32_t    dma_base     = 0; // DMA physical base address
-    uint16_t    snd_buf_size = 0; // sound buffer size in bytes
+    uint32_t    dma_base     = 0;  // DMA physical base address
+    uint16_t    snd_buf_size = 0;  // sound buffer size in bytes
     uint8_t     snd_out_ctrl = 0;
 
-    uint8_t     scsi_dma_cs = 0; // SCSI DMA control/status register value
+    // floppy DMA state
+    uint32_t    floppy_addr_ptr;
+    uint16_t    floppy_byte_cnt;
+    uint8_t     floppy_dma_cs;     // floppy DMA control/status value
+
+    uint8_t     scsi_dma_cs = 0;   // SCSI DMA control/status register value
 
     uint8_t     int_ctrl = 0;
     uint8_t     dev_irq_lines = 0; // state of the IRQ lines

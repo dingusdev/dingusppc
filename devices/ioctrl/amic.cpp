@@ -114,7 +114,7 @@ uint32_t AMIC::read(uint32_t reg_start, uint32_t offset, int size)
         case AMICReg::Snd_Stat_0:
         case AMICReg::Snd_Stat_1:
         case AMICReg::Snd_Stat_2:
-            return (this->awacs->read_stat() >> (offset &  3 * 8)) & 0xFF;
+            return (this->awacs->read_stat() >> (offset & 3) * 8) & 0xFF;
         case AMICReg::Snd_Phase0:
         case AMICReg::Snd_Phase1:
         case AMICReg::Snd_Phase2:
@@ -153,8 +153,20 @@ uint32_t AMIC::read(uint32_t reg_start, uint32_t offset, int size)
         return (this->int_ctrl & 0xC0) | (this->dev_irq_lines & 0x3F);
     case AMICReg::Diag_Reg:
         return 0xFFU; // this value allows the machine to boot normally
+    case AMICReg::DMA_Base_Addr_0:
+    case AMICReg::DMA_Base_Addr_1:
+    case AMICReg::DMA_Base_Addr_2:
+    case AMICReg::DMA_Base_Addr_3:
+        return (this->dma_base >> (offset & 3) * 8) & 0xFF;
     case AMICReg::SCSI_DMA_Ctrl:
         return this->scsi_dma_cs;
+    case AMICReg::Floppy_Addr_Ptr_0:
+    case AMICReg::Floppy_Addr_Ptr_1:
+    case AMICReg::Floppy_Addr_Ptr_2:
+    case AMICReg::Floppy_Addr_Ptr_3:
+        return (this->floppy_addr_ptr >> (offset & 3) * 8) & 0xFF;
+    case AMICReg::Floppy_DMA_Ctrl:
+        return this->floppy_dma_cs;
     default:
         LOG_F(WARNING, "Unknown AMIC register read, offset=%x", offset);
     }
@@ -197,9 +209,7 @@ void AMIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
             return;
         case AMICReg::Snd_Buf_Size_Hi:
         case AMICReg::Snd_Buf_Size_Lo:
-            mask = 0xFF00U >> (8 * (offset & 1));
-            this->snd_buf_size = (this->snd_buf_size & ~mask) |
-                                ((value & 0xFF) << (8 * ((offset & 1) ^1)));
+            SET_SIZE_BYTE(this->snd_buf_size, offset, value);
             this->snd_buf_size &= ~3; // sound buffer size is always a multiple of 4
             LOG_F(9, "AMIC: Sound buffer size set to 0x%X", this->snd_buf_size);
             return;
@@ -286,9 +296,8 @@ void AMIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
     case AMICReg::DMA_Base_Addr_1:
     case AMICReg::DMA_Base_Addr_2:
     case AMICReg::DMA_Base_Addr_3:
-        mask = 0xFF000000UL >> (8 * (offset & 3));
-        this->dma_base = (this->dma_base & ~mask) |
-                        ((value & 0xFF) << (8 * (3 - (offset & 3))));
+        SET_ADDR_BYTE(this->dma_base, offset, value);
+        this->dma_base &= 0xFFFC0000UL;
         LOG_F(9, "AMIC: DMA base address set to 0x%X", this->dma_base);
         break;
     case AMICReg::Enet_DMA_Xmt_Ctrl:
@@ -301,8 +310,28 @@ void AMIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
     case AMICReg::Enet_DMA_Rcv_Ctrl:
         LOG_F(INFO, "AMIC Ethernet Receive DMA Ctrl updated, val=%x", value);
         break;
-    case AMICReg::SWIM3_DMA_Ctrl:
+    case AMICReg::Floppy_Addr_Ptr_2:
+    case AMICReg::Floppy_Addr_Ptr_3:
+        SET_ADDR_BYTE(this->floppy_addr_ptr, offset, value);
+        break;
+    case AMICReg::Floppy_Byte_Cnt_Hi:
+    case AMICReg::Floppy_Byte_Cnt_Lo:
+        SET_SIZE_BYTE(this->floppy_byte_cnt, offset, value);
+        break;
+    case AMICReg::Floppy_DMA_Ctrl:
         LOG_F(INFO, "AMIC SWIM3 DMA Ctrl updated, val=%x", value);
+        // copy over DIR and IE bits
+        this->floppy_dma_cs = (floppy_dma_cs & 0x83) | (value & 0x48);
+        if (value & 1) {
+            this->reset_floppy_dma();
+        } else {
+            // copy over RUN bit
+            this->floppy_dma_cs = (floppy_dma_cs & 0xC8) | (value & 2);
+            // clear interrupt flag if requested
+            if (value & 0x80) {
+                this->floppy_dma_cs &= 0x7F;
+            }
+        }
         break;
     case AMICReg::SCC_DMA_Xmt_A_Ctrl:
         LOG_F(INFO, "AMIC SCC Transmit Ch A DMA Ctrl updated, val=%x", value);
@@ -459,4 +488,12 @@ DmaPullResult AmicSndOutDma::pull_data(uint32_t req_len, uint32_t *avail_len,
     this->cur_buf_pos += len;
     *avail_len = len;
     return DmaPullResult::MoreData;
+}
+
+// =========================== Floppy DMA stuff ==============================
+void AMIC::reset_floppy_dma()
+{
+    this->floppy_dma_cs &= 0x48; // clear interrupt flang, RUN and RST bits
+    this->floppy_addr_ptr = this->dma_base + 0x15000;
+    this->floppy_byte_cnt = 0;
 }
