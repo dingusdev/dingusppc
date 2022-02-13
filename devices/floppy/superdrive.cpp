@@ -40,7 +40,7 @@ MacSuperDrive::MacSuperDrive()
     this->eject_latch = 0; // eject latch is off
     this->drive_mode  = RecMethod::MFM; // assume MFM mode by default
     this->motor_stat  = 0; // spindle motor is off
-    this->head_pos    = 0; // current head position
+    this->cur_track   = 0; // current head position
     this->is_ready    = 0; // drive not ready
 }
 
@@ -56,10 +56,10 @@ void MacSuperDrive::command(uint8_t addr, uint8_t value)
         break;
     case CommandAddr::Do_Step:
         if (!value) {
-            this->head_pos += this->step_dir;
-            if (this->head_pos < 0)
-                this->head_pos = 0;
-            this->track_zero = this->head_pos == 0;
+            this->cur_track += this->step_dir;
+            if (this->cur_track < 0)
+                this->cur_track = 0;
+            this->track_zero = this->cur_track == 0;
         }
         break;
     case CommandAddr::Motor_On_Off:
@@ -101,6 +101,9 @@ uint8_t MacSuperDrive::status(uint8_t addr)
         return this->motor_stat ^ 1; // reverse logic
     case StatusAddr::Eject_Latch:
         return this->eject_latch;
+    case StatusAddr::Select_Head_0:
+        this->cur_head = 0;
+        return 1; // not sure what should be returned here
     case StatusAddr::MFM_Support:
         return 1; // Superdrive does support MFM encoding scheme
     case StatusAddr::Double_Sided:
@@ -113,6 +116,9 @@ uint8_t MacSuperDrive::status(uint8_t addr)
         return this->wr_protect ^ 1; // reverse logic
     case StatusAddr::Track_Zero:
         return this->track_zero ^ 1; // reverse logic
+    case StatusAddr::Select_Head_1:
+        this->cur_head = 1;
+        return 1; // not sure what should be returned here
     case StatusAddr::Drive_Mode:
         return this->drive_mode;
     case StatusAddr::Drive_Ready:
@@ -157,10 +163,11 @@ int MacSuperDrive::insert_disk(std::string& img_path)
 
 void MacSuperDrive::set_disk_phys_params()
 {
-    this->rec_method = this->img_conv->get_disk_rec_method();
-    this->num_tracks = this->img_conv->get_number_of_tracks();
-    this->num_sides  = this->img_conv->get_number_of_sides();
-    this->media_kind = this->img_conv->get_rec_density();
+    this->rec_method  = this->img_conv->get_disk_rec_method();
+    this->num_tracks  = this->img_conv->get_number_of_tracks();
+    this->num_sides   = this->img_conv->get_number_of_sides();
+    this->media_kind  = this->img_conv->get_rec_density();
+    this->format_byte = this->img_conv->get_format_byte();
 
     switch_drive_mode(this->rec_method);
 }
@@ -199,4 +206,34 @@ void MacSuperDrive::switch_drive_mode(int mode)
 
         this->drive_mode = RecMethod::MFM;
     }
+}
+
+double MacSuperDrive::get_current_track_delay()
+{
+    return (1.0f / (this->rpm_per_track[this->cur_track] / 60));
+}
+
+double MacSuperDrive::get_sector_delay()
+{
+    return this->get_current_track_delay() / this->sectors_per_track[this->cur_track];
+}
+
+void MacSuperDrive::init_track_search(int pos)
+{
+    if (pos == -1) {
+        // pick random sector number
+        this->cur_sector = this->sectors_per_track[this->cur_track] / 2;
+    } else {
+        this->cur_sector = pos;
+    }
+}
+
+SectorHdr MacSuperDrive::next_sector_header()
+{
+    return SectorHdr {
+        this->cur_track,
+        this->cur_head,
+        this->cur_sector++,
+        this->format_byte
+    };
 }

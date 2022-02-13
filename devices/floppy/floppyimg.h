@@ -56,6 +56,7 @@ public:
     int get_number_of_sides()  { return this->num_sides;   };
     int get_sectors_per_side() { return this->num_sectors; };
     int get_rec_density()      { return this->density;     };
+    uint8_t get_format_byte()  { return this->format_byte; };
 
 protected:
     std::string img_path;
@@ -67,6 +68,7 @@ protected:
     int         num_sides;
     int         num_sectors;
     int         density;
+    uint8_t     format_byte; // GCR format byte from sector header
 };
 
 /** Converter for raw floppy images. */

@@ -38,12 +38,14 @@ enum StatusAddr : uint8_t {
     Step_Status   = 1,
     Motor_Status  = 2,
     Eject_Latch   = 3,
+    Select_Head_0 = 4,
     MFM_Support   = 5,
     Double_Sided  = 6,
     Drive_Exists  = 7,
     Disk_In_Drive = 8,
     Write_Protect = 9,
     Track_Zero    = 0xA,
+    Select_Head_1 = 0xC,
     Drive_Mode    = 0xD,
     Drive_Ready   = 0xE,
     Media_Kind    = 0xF
@@ -70,6 +72,13 @@ enum RecMethod : int {
     MFM = 1
 };
 
+typedef struct SectorHdr {
+    int track;
+    int side;
+    int sector;
+    int format;
+} SectorHdr;
+
 class MacSuperDrive : public HWComponent {
 public:
     MacSuperDrive();
@@ -78,6 +87,10 @@ public:
     void command(uint8_t addr, uint8_t value);
     uint8_t status(uint8_t addr);
     int insert_disk(std::string& img_path);
+    double get_current_track_delay();
+    double get_sector_delay();
+    void init_track_search(int pos);
+    SectorHdr next_sector_header();
 
 protected:
     void set_disk_phys_params();
@@ -91,11 +104,14 @@ private:
     uint8_t is_ready;
     uint8_t track_zero;  // 1 - if head is at track zero
     int     step_dir;    // step direction -1/+1
-    int     head_pos;    // track number the head is currently at
+    int     cur_track;   // track number the head is currently at
+    int     cur_head;    // current head number: 1 - upper, 0 - lower
+    int     cur_sector;  // current sector number
 
     // physical parameters of the currently inserted disk
     uint8_t media_kind;
     uint8_t wr_protect;
+    uint8_t format_byte;
     int     rec_method;
     int     num_tracks;
     int     num_sides;

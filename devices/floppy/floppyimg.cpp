@@ -169,6 +169,15 @@ int RawFloppyImg::calc_phys_params()
             this->num_sectors = size_to_params[i].num_sectors;
             this->num_sides   = size_to_params[i].num_sides;
             this->density     = size_to_params[i].density;
+
+            // fake format byte for GCR disks
+            if (!this->rec_method) {
+                this->format_byte = (this->num_sides == 2) ? 0x22 : 0x2;
+            } else {
+                // For MFM disks this byte indicates sector size in blocks
+                this->format_byte = 2;
+            }
+            break;
         }
     }
 
