@@ -55,6 +55,7 @@ enum Swim3Reg : uint8_t {
 
 /** Mode register bits. */
 enum {
+    SWIM3_INT_ENA = 0x01,
     SWIM3_GO      = 0x08,
     SWIM3_WR_MODE = 0x10,
     SWIM3_GO_STEP = 0x80,

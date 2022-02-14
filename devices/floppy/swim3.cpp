@@ -171,10 +171,12 @@ void Swim3Ctrl::write(uint8_t reg_offset, uint8_t value)
 
 void Swim3Ctrl::update_irq()
 {
-    uint8_t new_irq = !!(this->int_flags & this->int_mask);
-    if (new_irq != this->irq) {
-        this->irq = new_irq;
-        this->int_ctrl->ack_int(this->irq_id, new_irq);
+    if (this->mode_reg & SWIM3_INT_ENA) {
+        uint8_t new_irq = !!(this->int_flags & this->int_mask);
+        if (new_irq != this->irq) {
+            this->irq = new_irq;
+            this->int_ctrl->ack_int(this->irq_id, new_irq);
+        }
     }
 }
 
