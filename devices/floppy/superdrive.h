@@ -91,6 +91,7 @@ public:
     double get_sector_delay();
     void init_track_search(int pos);
     SectorHdr next_sector_header();
+    char* get_sector_data_ptr(int sector_num);
 
 protected:
     void set_disk_phys_params();
@@ -117,7 +118,7 @@ private:
     int     num_sides;
     int     sectors_per_track[80];
     int     rpm_per_track[80];
-    int     track_start_block[80]; // logical block number of the first sector in a track
+    int     track2lblk[80]; // convert track number to first logical block number
 
     std::unique_ptr<FloppyImgConverter>  img_conv;
 

@@ -187,8 +187,8 @@ void MacSuperDrive::switch_drive_mode(int mode)
             for (int trk = 0; trk < 16; trk++) {
                 this->sectors_per_track[grp * 16 + trk] = 12 - grp;
                 this->rpm_per_track[grp * 16 + trk] = gcr_rpm_per_group[grp];
-                this->track_start_block[grp * 16 + trk] = blk_num;
-                blk_num += 12 - grp;
+                this->track2lblk[grp * 16 + trk] = blk_num;
+                blk_num += (12 - grp) * this->num_sides;
             }
         }
 
@@ -201,7 +201,7 @@ void MacSuperDrive::switch_drive_mode(int mode)
         for (int trk = 0; trk < 80; trk++) {
             this->sectors_per_track[trk] = sectors_per_track;
             this->rpm_per_track[trk] = 300;
-            this->track_start_block[trk] = trk * sectors_per_track;
+            this->track2lblk[trk] = trk * sectors_per_track * 2;
         }
 
         this->drive_mode = RecMethod::MFM;
@@ -230,10 +230,27 @@ void MacSuperDrive::init_track_search(int pos)
 
 SectorHdr MacSuperDrive::next_sector_header()
 {
+    this->cur_sector++;
+    if (this->cur_sector >= this->sectors_per_track[this->cur_track]) {
+        this->cur_sector = 0;
+    }
+
+    // MFM sector numbering is 1-based so we need to bump sector number
+    int sector_num = this->cur_sector + ((this->rec_method == RecMethod::MFM) ? 1 : 0);
+
     return SectorHdr {
         this->cur_track,
         this->cur_head,
-        this->cur_sector++,
+        sector_num,
         this->format_byte
     };
+}
+
+char* MacSuperDrive::get_sector_data_ptr(int sector_num)
+{
+    return this->disk_data.get() +
+        ((this->track2lblk[this->cur_track] +
+         (this->cur_head * this->sectors_per_track[this->cur_track]) +
+          sector_num - 1) * 512
+    );
 }
