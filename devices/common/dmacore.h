@@ -33,7 +33,16 @@ enum DmaPullResult : int {
 
 class DmaOutChannel {
 public:
-    virtual bool            is_active() = 0;
+    virtual bool            is_active() { return true; };
+    virtual DmaPullResult   pull_data(uint32_t req_len, uint32_t *avail_len,
+                                      uint8_t **p_data) = 0;
+};
+
+// Base class for bidirectional DMA channels.
+class DmaBidirChannel {
+public:
+    virtual bool            is_active() { return true; };
+    virtual int             push_data(const char* src_ptr, int len) = 0;
     virtual DmaPullResult   pull_data(uint32_t req_len, uint32_t *avail_len,
                                       uint8_t **p_data) = 0;
 };

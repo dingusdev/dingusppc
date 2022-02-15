@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SWIM3_H
 #define SWIM3_H
 
+#include <devices/common/dmacore.h>
 #include <devices/common/hwcomponent.h>
 #include <devices/common/hwinterrupt.h>
 #include <devices/floppy/superdrive.h>
@@ -78,6 +79,10 @@ public:
     uint8_t read(uint8_t reg_offset);
     void    write(uint8_t reg_offset, uint8_t value);
 
+    void set_dma_channel(DmaBidirChannel *dma_ch) {
+        this->dma_ch = dma_ch;
+    };
+
 protected:
     void update_irq();
     void start_stepping();
@@ -88,6 +93,8 @@ protected:
 
 private:
     std::unique_ptr<MacSuperdrive::MacSuperDrive> int_drive;
+
+    DmaBidirChannel*    dma_ch;
 
     uint8_t setup_reg;
     uint8_t mode_reg;
