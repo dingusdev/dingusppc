@@ -66,6 +66,7 @@ enum {
 enum {
     INT_STEP_DONE = 0x02,
     INT_ID_READ   = 0x04,
+    INT_SECT_DONE = 0x08,
 };
 
 class Swim3Ctrl : public HWComponent {

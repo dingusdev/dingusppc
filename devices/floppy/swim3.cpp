@@ -262,12 +262,18 @@ void Swim3Ctrl::start_disk_access()
     }
 
     this->mode_reg |= SWIM3_GO;
-    LOG_F(INFO, "SWIM3: disk access started!");
+    LOG_F(9, "SWIM3: disk access started!");
 
     if (this->first_sec == 0xFF) {
         // $FF means no sector to match ->
         // generate ID_read interrups as long as the GO bit is set
         this->int_drive->init_track_search(-1); // start at random sector
+    } else {
+        this->cur_sector = this->first_sec;
+    }
+
+    // HACK: figure out from bits in int_mask register which kind of disk access is requested
+    if (this->int_mask & INT_ID_READ) { // read address header
         this->access_timer_id = TimerManager::get_instance()->add_cyclic_timer(
             static_cast<uint64_t>(this->int_drive->get_sector_delay() * NS_PER_SEC + 0.5f),
             [this]() {
@@ -282,8 +288,28 @@ void Swim3Ctrl::start_disk_access()
                 update_irq();
             }
         );
-    } else {
-        LOG_F(ERROR, "SWIM3: unsupported first_sec value 0x%X", this->first_sec);
+    } else { // otherwise, read sector data
+        this->access_timer_id = TimerManager::get_instance()->add_cyclic_timer(
+            static_cast<uint64_t>(this->int_drive->get_sector_delay() * NS_PER_SEC + 0.5f),
+            [this]() {
+                // transfer sector data over DMA
+                this->dma_ch->push_data(this->int_drive->get_sector_data_ptr(this->cur_sector), 512);
+
+                // get next address field
+                MacSuperdrive::SectorHdr addr = this->int_drive->next_sector_header();
+                // set up the corresponding SWIM3 registers
+                this->cur_track  = ((addr.side & 1) << 7) | (addr.track & 0x7F);
+                this->cur_sector = 0x80 /* CRC/checksum valid */ | (addr.sector & 0x7F);
+                this->format = addr.format;
+
+                if (--this->xfer_cnt == 0) {
+                    this->stop_disk_access();
+                    // generate sector_done interrupt
+                    this->int_flags |= INT_SECT_DONE;
+                    update_irq();
+                }
+            }
+        );
     }
 }
 
