@@ -61,7 +61,6 @@ public:
     AmicSndOutDma();
     ~AmicSndOutDma() = default;
 
-    bool            is_active();
     void            init(uint32_t buf_base, uint32_t buf_samples);
     void            enable()  { this->enabled = true;  };
     void            disable() { this->enabled = false; };
@@ -80,6 +79,27 @@ private:
     uint32_t    out_buf_len;
     uint32_t    snd_buf_num;
     uint32_t    cur_buf_pos;
+};
+
+/** AMIC-specific floppy DMA implementation. */
+class AmicFloppyDma : public DmaBidirChannel {
+public:
+    AmicFloppyDma() = default;
+    ~AmicFloppyDma() = default;
+
+    void            reinit(const uint32_t addr_ptr, const uint16_t byte_cnt);
+    void            reset(const uint32_t addr_ptr);
+    void            write_ctrl(const uint8_t value);
+    uint8_t         read_stat() { return this->stat; };
+
+    int             push_data(const char* src_ptr, int len);
+    DmaPullResult   pull_data(uint32_t req_len, uint32_t *avail_len,
+                                      uint8_t **p_data);
+
+private:
+    uint32_t        addr_ptr;
+    uint16_t        byte_count;
+    uint8_t         stat;
 };
 
 // macro for byte wise updating of AMIC DMA address registers
@@ -180,7 +200,6 @@ public:
 protected:
     void ack_via2_int(uint32_t irq_id, uint8_t irq_line_state);
     void ack_cpu_int(uint32_t irq_id, uint8_t irq_line_state);
-    void reset_floppy_dma();
 
 private:
     uint8_t imm_snd_regs[4]; // temporary storage for sound control registers
@@ -192,7 +211,6 @@ private:
     // floppy DMA state
     uint32_t    floppy_addr_ptr;
     uint16_t    floppy_byte_cnt;
-    uint8_t     floppy_dma_cs;     // floppy DMA control/status value
 
     uint8_t     scsi_dma_cs = 0;   // SCSI DMA control/status register value
 
@@ -214,6 +232,7 @@ private:
     std::unique_ptr<AwacDevicePdm>  awacs;
 
     std::unique_ptr<AmicSndOutDma>  snd_out_dma;
+    std::unique_ptr<AmicFloppyDma>  floppy_dma;
 
     // on-board video
     std::unique_ptr<DisplayID>          disp_id;

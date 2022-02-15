@@ -70,6 +70,8 @@ AMIC::AMIC() : MMIODevice()
 
     // intialize floppy disk HW
     this->swim3 = std::unique_ptr<Swim3::Swim3Ctrl> (new Swim3::Swim3Ctrl());
+    this->floppy_dma = std::unique_ptr<AmicFloppyDma> (new AmicFloppyDma());
+    this->swim3->set_dma_channel(this->floppy_dma.get());
     gMachineObj->add_subdevice("SWIM3", this->swim3.get());
 }
 
@@ -157,16 +159,16 @@ uint32_t AMIC::read(uint32_t reg_start, uint32_t offset, int size)
     case AMICReg::DMA_Base_Addr_1:
     case AMICReg::DMA_Base_Addr_2:
     case AMICReg::DMA_Base_Addr_3:
-        return (this->dma_base >> (offset & 3) * 8) & 0xFF;
+        return (this->dma_base >> (3 - (offset & 3)) * 8) & 0xFF;
     case AMICReg::SCSI_DMA_Ctrl:
         return this->scsi_dma_cs;
     case AMICReg::Floppy_Addr_Ptr_0:
     case AMICReg::Floppy_Addr_Ptr_1:
     case AMICReg::Floppy_Addr_Ptr_2:
     case AMICReg::Floppy_Addr_Ptr_3:
-        return (this->floppy_addr_ptr >> (offset & 3) * 8) & 0xFF;
+        return (this->floppy_addr_ptr >> (3 - (offset & 3)) * 8) & 0xFF;
     case AMICReg::Floppy_DMA_Ctrl:
-        return this->floppy_dma_cs;
+        return this->floppy_dma->read_stat();
     default:
         LOG_F(WARNING, "Unknown AMIC register read, offset=%x", offset);
     }
@@ -319,19 +321,14 @@ void AMIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
         SET_SIZE_BYTE(this->floppy_byte_cnt, offset, value);
         break;
     case AMICReg::Floppy_DMA_Ctrl:
-        LOG_F(INFO, "AMIC SWIM3 DMA Ctrl updated, val=%x", value);
-        // copy over DIR and IE bits
-        this->floppy_dma_cs = (floppy_dma_cs & 0x83) | (value & 0x48);
-        if (value & 1) {
-            this->reset_floppy_dma();
-        } else {
-            // copy over RUN bit
-            this->floppy_dma_cs = (floppy_dma_cs & 0xC8) | (value & 2);
-            // clear interrupt flag if requested
-            if (value & 0x80) {
-                this->floppy_dma_cs &= 0x7F;
-            }
+        if (value & 1) { // RST bit set?
+            this->floppy_addr_ptr = this->dma_base + 0x15000;
+            this->floppy_dma->reset(this->floppy_addr_ptr);
         }
+        if (value & 2) { // RUN bit set?
+            this->floppy_dma->reinit(this->floppy_addr_ptr, this->floppy_byte_cnt);
+        }
+        this->floppy_dma->write_ctrl(value);
         break;
     case AMICReg::SCC_DMA_Xmt_A_Ctrl:
         LOG_F(INFO, "AMIC SCC Transmit Ch A DMA Ctrl updated, val=%x", value);
@@ -414,16 +411,11 @@ void AMIC::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state) {
     ABORT_F("AMIC: ack_dma_int() not implemented");
 }
 
-// =========================== DMA related stuff =============================
+// ============================ Sound DMA stuff ================================
 AmicSndOutDma::AmicSndOutDma()
 {
     this->dma_out_ctrl = 0;
     this->enabled = false;
-}
-
-bool AmicSndOutDma::is_active()
-{
-    return true;
 }
 
 void AmicSndOutDma::init(uint32_t buf_base, uint32_t buf_samples)
@@ -490,10 +482,49 @@ DmaPullResult AmicSndOutDma::pull_data(uint32_t req_len, uint32_t *avail_len,
     return DmaPullResult::MoreData;
 }
 
-// =========================== Floppy DMA stuff ==============================
-void AMIC::reset_floppy_dma()
+// ============================ Floppy DMA stuff ===============================
+void AmicFloppyDma::reset(const uint32_t addr_ptr)
 {
-    this->floppy_dma_cs &= 0x48; // clear interrupt flang, RUN and RST bits
-    this->floppy_addr_ptr = this->dma_base + 0x15000;
-    this->floppy_byte_cnt = 0;
+    this->stat &= 0x48; // clear interrupt flag, RUN and RST bits
+    this->addr_ptr   = addr_ptr;
+    this->byte_count = 0;
+}
+
+void AmicFloppyDma::reinit(const uint32_t addr_ptr, const uint16_t byte_cnt)
+{
+    this->addr_ptr   = addr_ptr;
+    this->byte_count = byte_cnt;
+}
+
+void AmicFloppyDma::write_ctrl(uint8_t value)
+{
+    // copy over DIR, IE and RUN bits
+    this->stat = (this->stat & 0x81) | (value & 0x4A);
+
+    // clear interrupt flag if requested
+    if (value & 0x80) {
+        this->stat &= 0x7F;
+    }
+}
+
+int AmicFloppyDma::push_data(const char* src_ptr, int len)
+{
+    len = std::min((int)this->byte_count, len);
+
+    uint8_t *p_data = mmu_get_dma_mem(this->addr_ptr, len);
+    std::memcpy(p_data, src_ptr, len);
+
+    this->addr_ptr += len;
+    this->byte_count -= len;
+    if (!this->byte_count) {
+        LOG_F(WARNING, "AMIC: DMA interrupts not implemented yet");
+    }
+
+    return 0;
+}
+
+DmaPullResult AmicFloppyDma::pull_data(uint32_t req_len, uint32_t *avail_len,
+                                       uint8_t **p_data)
+{
+    return DmaPullResult::NoMoreData;
 }
