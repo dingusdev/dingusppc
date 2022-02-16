@@ -977,26 +977,11 @@ void initialize_ppc_opcode_tables() {
     SubOpcode59Grabber[21] = ppc_fadds;
     SubOpcode59Grabber[22] = ppc_fsqrts;
     SubOpcode59Grabber[24] = ppc_fres;
-
-    for (int i = 25; i < 1024; i += 32) {
-        SubOpcode59Grabber[i] = ppc_fmuls;
-    }
-
-    for (int i = 28; i < 1024; i += 32) {
-        SubOpcode59Grabber[i] = ppc_fmsubs;
-    }
-
-    for (int i = 29; i < 1024; i += 32) {
-        SubOpcode59Grabber[i] = ppc_fmadds;
-    }
-
-    for (int i = 30; i < 1024; i += 32) {
-        SubOpcode59Grabber[i] = ppc_fnmsubs;
-    }
-
-    for (int i = 31; i < 1024; i += 32) {
-        SubOpcode59Grabber[i] = ppc_fnmadds;
-    }
+    SubOpcode59Grabber[25] = ppc_fmuls;
+    SubOpcode59Grabber[28] = ppc_fmsubs;
+    SubOpcode59Grabber[29] = ppc_fmadds;
+    SubOpcode59Grabber[30] = ppc_fnmsubs;
+    SubOpcode59Grabber[31] = ppc_fnmadds;
 
     SubOpcode63Grabber[0]   = ppc_fcmpu;
     SubOpcode63Grabber[12]  = ppc_frsp;
@@ -1019,28 +1004,13 @@ void initialize_ppc_opcode_tables() {
     SubOpcode63Grabber[583] = ppc_mffs;
     SubOpcode63Grabber[711] = ppc_mtfsf;
 
-    for (int i = 23; i < 1024; i += 32) {
-        SubOpcode63Grabber[i] = ppc_fsel;
-    }
-
-    for (int i = 25; i < 1024; i += 32) {
-        SubOpcode63Grabber[i] = ppc_fmul;
-    }
-
-    for (int i = 28; i < 1024; i += 32) {
-        SubOpcode63Grabber[i] = ppc_fmsub;
-    }
-
-    for (int i = 29; i < 1024; i += 32) {
-        SubOpcode63Grabber[i] = ppc_fmadd;
-    }
-
-    for (int i = 30; i < 1024; i += 32) {
-        SubOpcode63Grabber[i] = ppc_fnmsub;
-    }
-
-    for (int i = 31; i < 1024; i += 32) {
-        SubOpcode63Grabber[i] = ppc_fnmadd;
+    for (int i = 0; i < 1024; i += 32) {
+        SubOpcode63Grabber[i + 23] = ppc_fsel;
+        SubOpcode63Grabber[i + 25] = ppc_fmul;
+        SubOpcode63Grabber[i + 28] = ppc_fmsub;
+        SubOpcode63Grabber[i + 29] = ppc_fmadd;
+        SubOpcode63Grabber[i + 30] = ppc_fnmsub;
+        SubOpcode63Grabber[i + 31] = ppc_fnmadd;
     }
 }
 
