@@ -22,9 +22,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <loguru.hpp>
 
 #include <cinttypes>
-#include <string>
+#include <limits>
 #include <map>
 #include <memory>
+#include <string>
 #include <vector>
 
 #ifndef MACHINE_PROPERTIES_H
