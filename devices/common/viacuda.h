@@ -140,6 +140,8 @@ enum {
     CUDA_ERR_I2C      = 5  /* invalid I2C data or no acknowledge */
 };
 
+#define CUDA_IN_BUF_SIZE    256
+
 /** PRAM addresses within Cuda's internal memory */
 #define CUDA_PRAM_START 0x100 // starting address of PRAM
 #define CUDA_PRAM_END   0x1FF // last byte of PRAM
@@ -195,7 +197,7 @@ private:
     uint8_t  old_tip;
     uint8_t  old_byteack;
     uint8_t  treq;
-    uint8_t  in_buf[16];
+    uint8_t  in_buf[CUDA_IN_BUF_SIZE];
     int32_t  in_count;
     uint8_t  out_buf[16];
     int32_t  out_count;

@@ -356,7 +356,7 @@ void ViaCuda::write(uint8_t new_state) {
         schedule_sr_int(USECS_TO_NSECS(61));
     } else {
         if (this->via_regs[VIA_ACR] & 0x10) { /* data transfer: Host --> Cuda */
-            if (this->in_count < 16) {
+            if (this->in_count < sizeof(this->in_buf)) {
                 this->in_buf[this->in_count++] = this->via_regs[VIA_SR];
                 // tell the system we've read the byte after 71 usecs
                 schedule_sr_int(USECS_TO_NSECS(71));
