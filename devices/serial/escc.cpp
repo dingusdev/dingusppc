@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -35,16 +35,27 @@ EsccController::EsccController()
     this->reg_ptr = 0;
 }
 
+void EsccController::reset()
+{
+    this->master_int_cntrl &= 0xFC;
+    this->master_int_cntrl |= 0xC0;
+
+    this->ch_a->reset(true);
+    this->ch_b->reset(true);
+}
+
 uint8_t EsccController::read(uint8_t reg_offset)
 {
     switch(reg_offset) {
     case EsccReg::Port_B_Cmd:
         LOG_F(9, "ESCC: reading Port B register RR%d", this->reg_ptr);
         this->reg_ptr = 0;
+        return this->ch_b->read_reg(reg_offset);
         break;
     case EsccReg::Port_A_Cmd:
         LOG_F(9, "ESCC: reading Port A register RR%d", this->reg_ptr);
         this->reg_ptr = 0;
+        return this->ch_a->read_reg(reg_offset);
         break;
     default:
         LOG_F(INFO, "ESCC: reading register %d", reg_offset);
@@ -70,7 +81,29 @@ void EsccController::write(uint8_t reg_offset, uint8_t value)
 void EsccController::write_internal(EsccChannel *ch, uint8_t value)
 {
     if (this->reg_ptr) {
-        ch->write_reg(this->reg_ptr, value);
+        // chip-specific registers
+        if (this->reg_ptr == 9) {
+            // see if some reset is requested
+            switch(value & 0xC0) {
+            case RESET_CH_B:
+                this->master_int_cntrl &= 0xDF;
+                this->ch_b->reset(false);
+                break;
+            case RESET_CH_A:
+                this->master_int_cntrl &= 0xDF;
+                this->ch_a->reset(false);
+                break;
+            case RESET_ESCC:
+                this->reset();
+                break;
+            }
+
+            this->master_int_cntrl = value & 0x3F;
+        } else if (this->reg_ptr == 2) {
+            this->int_vec = value;
+        } else { // channel-specific registers
+            ch->write_reg(this->reg_ptr, value);
+        }
         this->reg_ptr = 0;
     } else {
         this->reg_ptr = value & 7;
@@ -82,9 +115,44 @@ void EsccController::write_internal(EsccChannel *ch, uint8_t value)
     }
 }
 
+// ======================== ESCC Channel methods ==============================
+
+void EsccChannel::reset(bool hw_reset)
+{
+    this->write_regs[1] &= 0x24;
+    this->write_regs[3] &= 0xFE;
+    this->write_regs[4] |= 0x04;
+    this->write_regs[5] &= 0x61;
+    this->write_regs[15] = 0xF8;
+
+    this->read_regs[0] &= 0x3C;
+    this->read_regs[0] |= 0x44;
+    this->read_regs[1]  = 0x06;
+    this->read_regs[3]  = 0x00;
+    this->read_regs[10] = 0x00;
+
+    if (hw_reset) {
+        this->write_regs[10] = 0;
+        this->write_regs[11] = 8;
+        this->write_regs[14] &= 0xC0;
+        this->write_regs[14] |= 0x20;
+    } else {
+        this->write_regs[10] &= 0x60;
+        this->write_regs[14] &= 0xC3;
+        this->write_regs[14] |= 0x20;
+    }
+}
+
 void EsccChannel::write_reg(int reg_num, uint8_t value)
 {
     this->write_regs[reg_num] = value;
     LOG_F(9, "ESCC: writing 0x%X to Channel %s WR%d", value, this->name.c_str(),
           reg_num);
+
+
+}
+
+uint8_t EsccChannel::read_reg(int reg_num)
+{
+    return 0;
 }

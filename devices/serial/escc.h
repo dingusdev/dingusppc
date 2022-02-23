@@ -50,16 +50,26 @@ enum WR0Cmd : uint8_t {
     Point_High = 1,
 };
 
+/** ESCC reset commands. */
+enum {
+    RESET_ESCC = 0xC0,
+    RESET_CH_A = 0x80,
+    RESET_CH_B = 0x40
+};
+
 /** ESCC Channel class. */
 class EsccChannel {
 public:
     EsccChannel(std::string name) { this->name = name; };
     ~EsccChannel() = default;
 
+    void reset(bool hw_reset);
+    uint8_t read_reg(int reg_num);
     void write_reg(int reg_num, uint8_t value);
 
 private:
     std::string     name;
+    uint8_t         read_regs[16];
     uint8_t         write_regs[16];
 };
 
@@ -74,12 +84,15 @@ public:
     void    write(uint8_t reg_offset, uint8_t value);
 
 private:
+    void reset();
     void write_internal(EsccChannel* ch, uint8_t value);
 
     std::unique_ptr<EsccChannel>    ch_a;
     std::unique_ptr<EsccChannel>    ch_b;
 
     int reg_ptr; // register pointer for reading/writing (same for both channels)
+    uint8_t master_int_cntrl;
+    uint8_t int_vec;
 };
 
 #endif // ESCC_H
