@@ -105,8 +105,7 @@ uint32_t AMIC::read(uint32_t reg_start, uint32_t offset, int size)
     case 1:
         return this->viacuda->read(offset >> 9);
     case 4: // SCC registers
-        this->escc->read_compat((offset >> 1) & 0xF);
-        return 0;
+        return this->escc->read((offset >> 1) & 0xF);
     case 0xA: // MACE registers
         return this->mace->read((offset >> 4) & 0xF);
     case 0x10: // SCSI registers
@@ -186,7 +185,7 @@ void AMIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
         this->viacuda->write(offset >> 9, value);
         return;
     case 4:
-        this->escc->write_compat((offset >> 1) & 0xF, value);
+        this->escc->write((offset >> 1) & 0xF, value);
         return;
     case 0xA: // MACE registers
         this->mace->write((offset >> 4) & 0xF, value);

@@ -134,9 +134,12 @@ uint32_t HeathrowIC::read(uint32_t reg_start, uint32_t offset, int size) {
     case 0x10:
         res = this->mesh->read((offset >> 4) & 0xF);
         break;
-    case 0x12: // ESCC compatible
-        return this->escc->read_compat((offset >> 4) & 0xF);
-    case 0x13: // ESCC MacRISC
+    case 0x12: // ESCC compatible addressing
+        if ((offset & 0xFF) < 16) {
+            return this->escc->read((offset >> 1) & 0xF);
+        }
+        // fallthrough
+    case 0x13: // ESCC MacRISC addressing
         return this->escc->read((offset >> 4) & 0xF);
     case 0x14:
         res = this->screamer->snd_ctrl_read(offset - 0x14000, size);
@@ -173,10 +176,13 @@ void HeathrowIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int 
     case 0x10:
         this->mesh->write((offset >> 4) & 0xF, value);
         break;
-    case 0x12: // ESCC compatible
-        this->escc->write_compat((offset >> 4) & 0xF, value);
-        break;
-    case 0x13: // ESCC MacRISC
+    case 0x12: // ESCC compatible addressing
+        if ((offset & 0xFF) < 16) {
+            this->escc->write((offset >> 1) & 0xF, value);
+            break;
+        }
+        // fallthrough
+    case 0x13: // ESCC MacRISC addressing
         this->escc->write((offset >> 4) & 0xF, value);
         break;
     case 0x14:

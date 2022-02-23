@@ -67,38 +67,6 @@ void EsccController::write(uint8_t reg_offset, uint8_t value)
     }
 }
 
-uint8_t EsccController::read_compat(uint8_t reg_offset)
-{
-    switch(reg_offset) {
-    case Compat::EsccReg::Port_B_Cmd:
-        LOG_F(9, "ESCC: reading Port B register RR%d", this->reg_ptr);
-        this->reg_ptr = 0;
-        break;
-    case Compat::EsccReg::Port_A_Cmd:
-        LOG_F(9, "ESCC: reading Port A register RR%d", this->reg_ptr);
-        this->reg_ptr = 0;
-        break;
-    default:
-        LOG_F(INFO, "ESCC: reading register %d", reg_offset);
-    }
-
-    return 0;
-}
-
-void EsccController::write_compat(uint8_t reg_offset, uint8_t value)
-{
-    switch(reg_offset) {
-    case Compat::EsccReg::Port_B_Cmd:
-        this->write_internal(this->ch_b.get(), value);
-        break;
-    case Compat::EsccReg::Port_A_Cmd:
-        this->write_internal(this->ch_a.get(), value);
-        break;
-    default:
-        LOG_F(INFO, "ESCC: writing 0x%X to register %d", value, reg_offset);
-    }
-}
-
 void EsccController::write_internal(EsccChannel *ch, uint8_t value)
 {
     if (this->reg_ptr) {

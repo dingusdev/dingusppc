@@ -28,19 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memory>
 #include <string>
 
-/** ESCC compatible (aka Macintosh legacy) register addressing */
-namespace Compat {
-    enum EsccReg : uint8_t {
-        Port_B_Cmd      = 0,
-        Port_A_Cmd      = 1,
-        Port_B_Data     = 2,
-        Port_A_Data     = 3,
-        Enh_Reg_B       = 4,
-        Enh_Reg_A       = 5,
-    };
-};
-
-/** ESCC MacRISC style register addressing */
+/** ESCC register addresses */
 enum EsccReg : uint8_t {
     Port_B_Cmd      = 0,
     Port_B_Data     = 1,
@@ -50,7 +38,7 @@ enum EsccReg : uint8_t {
     Enh_Reg_A       = 5,
 };
 
-/** LocalTalk registers (same in both addressing schemes) */
+/** LocalTalk LTPC registers */
 enum LocalTalkReg : uint8_t {
     Rec_Count   = 8,
     Start_A     = 9,
@@ -81,13 +69,9 @@ public:
     EsccController();
     ~EsccController() = default;
 
-    // ESCC MacRISC registers access
+    // ESCC registers access
     uint8_t read(uint8_t reg_offset);
     void    write(uint8_t reg_offset, uint8_t value);
-
-    // ESCC compatible registers access
-    uint8_t read_compat(uint8_t reg_offset);
-    void    write_compat(uint8_t reg_offset, uint8_t value);
 
 private:
     void write_internal(EsccChannel* ch, uint8_t value);
