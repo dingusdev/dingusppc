@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -148,25 +148,21 @@ print_bin:
 /** Execute one emulated 68k instruction. */
 void exec_single_68k()
 {
-    string reg;
     uint32_t emu_table_virt, cur_68k_pc, cur_instr_tab_entry, ppc_pc;
 
     /* PPC r24 contains 68k PC advanced by two bytes
        as part of instruction prefetching */
-    reg = "R24";
-    cur_68k_pc = get_reg(reg) - 2;
+    cur_68k_pc = get_reg(string("R24")) - 2;
 
     /* PPC r29 contains base address of the emulator opcode table */
-    reg = "R29";
-    emu_table_virt = get_reg(reg) & 0xFFF80000;
+    emu_table_virt = get_reg(string("R29")) & 0xFFF80000;
 
     /* calculate address of the current opcode table entry as follows:
        get_word(68k_PC) * entry_size + table_base */
     cur_instr_tab_entry = mmu_read_vmem<uint16_t>(cur_68k_pc) * 8 + emu_table_virt;
 
     /* grab the PPC PC too */
-    reg = "PC";
-    ppc_pc = get_reg(reg);
+    ppc_pc = get_reg(string("PC"));
 
     //printf("cur_instr_tab_entry = %X\n", cur_instr_tab_entry);
 
@@ -175,39 +171,29 @@ void exec_single_68k()
        one by one until the execution goes outside the opcode table. */
     while (ppc_pc >= cur_instr_tab_entry && ppc_pc < cur_instr_tab_entry + 8) {
         ppc_exec_single();
-        reg = "PC";
-        ppc_pc = get_reg(reg);
-        LOG_F(9, "Tracing within emulator table, PC = %X\n", ppc_pc);
+        ppc_pc = get_reg(string("PC"));
     }
 
     /* Getting here means we're outside the emualtor opcode table.
        Execute PPC code until we hit the opcode table again. */
-    LOG_F(9, "Tracing outside the emulator table, PC = %X\n", ppc_pc);
     ppc_exec_dbg(emu_table_virt, EMU_68K_TABLE_SIZE - 1);
 }
 
 /** Execute emulated 68k code until target_addr is reached. */
 void exec_until_68k(uint32_t target_addr)
 {
-    string reg;
     uint32_t emu_table_virt, ppc_pc;
 
-    reg = "R29";
-    emu_table_virt = get_reg(reg) & 0xFFF80000;
+    emu_table_virt = get_reg(string("R29")) & 0xFFF80000;
 
-    reg = "R24";
-    while (target_addr != (get_reg(reg) - 2)) {
-        reg = "PC";
-        ppc_pc = get_reg(reg);
+    while (target_addr != (get_reg(string("R24")) - 2)) {
+        ppc_pc = get_reg(string("PC"));
 
         if (ppc_pc >= emu_table_virt && ppc_pc < (emu_table_virt + EMU_68K_TABLE_SIZE - 1)) {
-            LOG_F(9, "Tracing within emulator table, PC = %X\n", ppc_pc);
             ppc_exec_single();
         } else {
-            LOG_F(9, "Tracing outside the emulator table, PC = %X\n", ppc_pc);
             ppc_exec_dbg(emu_table_virt, EMU_68K_TABLE_SIZE - 1);
         }
-        reg = "R24";
     }
 }
 
@@ -225,17 +211,14 @@ void print_68k_regs()
         reg = "R" + to_string(i + 16);
         cout << "A" << dec << i << " : " << uppercase << hex << get_reg(reg) << endl;
     }
-    reg = "R1";
-    cout << "A7 : " << uppercase << hex << get_reg(reg) << endl;
 
-    reg = "R24";
-    cout << "PC: " << uppercase << hex << get_reg(reg) - 2 << endl;
+    cout << "A7 : " << uppercase << hex << get_reg(string("R1")) << endl;
 
-    reg = "R25";
-    cout << "SR: " << uppercase << hex << ((get_reg(reg) & 0xFF) << 8) << endl;
+    cout << "PC: " << uppercase << hex << get_reg(string("R24")) - 2 << endl;
 
-    reg = "R26";
-    cout << "CCR: " << uppercase << hex << get_reg(reg) << endl;
+    cout << "SR: " << uppercase << hex << ((get_reg("R25") & 0xFF) << 8) << endl;
+
+    cout << "CCR: " << uppercase << hex << get_reg(string("R26")) << endl;
 }
 
 #endif // ENABLE_68K_DEBUGGER

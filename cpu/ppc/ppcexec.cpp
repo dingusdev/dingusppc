@@ -643,7 +643,6 @@ static void ppc_exec_until_inner(const uint32_t goal_addr)
             }
         }
     }
-    LOG_F(9, "PPC-EXEC: goal address reached, icycles=%llu", g_icycles);
 }
 
 // outer interpreter loop
@@ -784,7 +783,6 @@ static void ppc_exec_dbg_inner(const uint32_t start_addr, const uint32_t size)
             }
         }
     }
-    LOG_F(9, "PPC-EXEC: goal address reached, icycles=%llu", g_icycles);
 }
 
 // outer interpreter loop
@@ -1193,10 +1191,10 @@ bail_out:
     throw std::invalid_argument(string("Unknown register ") + reg_name);
 }
 
-uint64_t get_reg(string& reg_name) {
+uint64_t get_reg(string reg_name) {
     return reg_op(reg_name, 0, false);
 }
 
-void set_reg(string& reg_name, uint64_t val) {
+void set_reg(string reg_name, uint64_t val) {
     reg_op(reg_name, val, true);
 }
