@@ -80,6 +80,8 @@ static const PropMap GossamerSettings = {
         new StrProperty("")},
     {"fdd_img",
         new StrProperty("")},
+    {"fdd_wr_prot",
+        new StrProperty("")},
 };
 
 /** Monitors supported by the PDM on-board video. */
@@ -99,6 +101,8 @@ static const PropMap PDMSettings = {
         new StrProperty("HiRes12-14in", PDMBuiltinMonitorIDs)},
     {"fdd_img",
         new StrProperty("")},
+    {"fdd_wr_prot",
+        new StrProperty("")},
 };
 
 static const map<string, string> PropHelp = {
@@ -107,6 +111,7 @@ static const map<string, string> PropHelp = {
     {"rambank3_size",   "specifies RAM bank 3 size in MB"},
     {"gfxmem_size",     "specifies video memory size in MB"},
     {"fdd_img",         "specifies path to floppy disk image"},
+    {"fdd_wr_prot",     "toggles floppy disks write protection"},
     {"mon_id",          "specifies which monitor to emulate"},
 };
 

@@ -131,7 +131,7 @@ uint8_t MacSuperDrive::status(uint8_t addr)
     }
 }
 
-int MacSuperDrive::insert_disk(std::string& img_path)
+int MacSuperDrive::insert_disk(std::string& img_path, bool write_flag = 0)
 {
     if (this->has_disk) {
         LOG_F(ERROR, "Superdrive: drive is not empty!");
@@ -150,7 +150,7 @@ int MacSuperDrive::insert_disk(std::string& img_path)
         this->img_conv->get_raw_disk_data(this->disk_data.get());
 
         // disk is write-enabled by default
-        this->wr_protect = 0;
+        this->wr_protect = write_flag;
 
         // everything is set up, let's say we got a disk
         this->has_disk = 1;

@@ -99,12 +99,22 @@ int create_pdm(std::string& id) {
 
     // if a floppy image was given "insert" it into the virtual superdrive
     std::string fd_image_path = GET_STR_PROP("fdd_img");
+    std::string fd_write_prot = GET_STR_PROP("fdd_wr_prot");
     if (!fd_image_path.empty()) {
         using namespace MacSuperdrive;
 
         MacSuperDrive* fdd = dynamic_cast<MacSuperDrive*>
             (gMachineObj->get_comp_by_name("Superdrive"));
-        fdd->insert_disk(fd_image_path);
+
+        bool write_flag = false;
+
+        if (!fd_write_prot.empty()) {
+            if (fd_write_prot.compare("on") == 0) {
+                write_flag = true;
+            }
+        }
+
+        fdd->insert_disk(fd_image_path, write_flag);
     }
 
     LOG_F(INFO, "Initialization completed.\n");

@@ -110,7 +110,8 @@ int create_gossamer(std::string& id) {
     }
 
     /* check for a floppy image to be inserted into the virtual superdrive */
-    std::string fdd_path = GET_STR_PROP("fdd_img");
+    std::string fdd_path      = GET_STR_PROP("fdd_img");
+    std::string fd_write_prot = GET_STR_PROP("fdd_wr_prot");
     if (!fdd_path.empty()) {
         open_floppy_image(fdd_path);
     }

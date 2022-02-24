@@ -86,7 +86,7 @@ public:
 
     void command(uint8_t addr, uint8_t value);
     uint8_t status(uint8_t addr);
-    int insert_disk(std::string& img_path);
+    int insert_disk(std::string& img_path, bool write_flag);
     double get_current_track_delay();
     double get_sector_delay();
     void init_track_search(int pos);
