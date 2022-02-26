@@ -65,6 +65,7 @@ static void show_help() {
     cout << "                  as single instructions." << endl;
     cout << "  ni           -- shortcut for next" << endl;
     cout << "  until X      -- execute until address X is reached" << endl;
+    cout << "  go           -- exit debugger and continue emulator execution" << endl;
     cout << "  regs         -- dump content of the GRPs" << endl;
     cout << "  set R=X      -- assign value X to register R" << endl;
     cout << "                  if R=loglevel, set the internal" << endl;
@@ -487,6 +488,8 @@ void enter_debugger() {
             } catch (invalid_argument& exc) {
                 cout << exc.what() << endl;
             }
+        } else if (cmd == "go") {
+            ppc_exec(); // won't return!
         } else if (cmd == "disas" || cmd == "da") {
             expr_str = "";
             ss >> expr_str;
