@@ -28,17 +28,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memory>
 #include <string>
 
-/** ESCC register addresses */
+/** ESCC register positions */
+/* Please note that the registers below are provided
+   by Apple I/O controllers for accessing ESCC in a
+   more convenient way. Actual physical addresses
+   are controller dependent. */
 enum EsccReg : uint8_t {
     Port_B_Cmd      = 0,
-    Port_B_Data     = 1,
-    Port_A_Cmd      = 2,
-    Port_A_Data     = 3,
-    Enh_Reg_B       = 4,
-    Enh_Reg_A       = 5,
+    Port_A_Cmd      = 1,
+    Port_B_Data     = 2, // direct access to WR8/RR8
+    Port_A_Data     = 3, // direct access to WR8/RR8
+    Enh_Reg_B       = 4, // undocumented Apple extension
+    Enh_Reg_A       = 5, // undocumented Apple extension
 };
 
-/** LocalTalk LTPC registers */
+/** LocalTalk LTPC registers provided by a MacIO controller. */
 enum LocalTalkReg : uint8_t {
     Rec_Count   = 8,
     Start_A     = 9,
@@ -57,6 +61,22 @@ enum {
     RESET_CH_B = 0x40
 };
 
+/** DPLL commands in WR14. */
+enum {
+    DPLL_ENTER_SRC_MODE     = 1,
+    DPLL_RST_MISSING_CLK    = 2,
+    DPLL_DISABLE            = 3,
+    DPLL_SET_SRC_BGR        = 4,
+    DPLL_SET_SRC_RTXC       = 5,
+    DPLL_SET_FM_MODE        = 6,
+    DPLL_SET_NRZI_MODE      = 7
+};
+
+enum DpllMode : uint8_t {
+    NRZI = 0,
+    FM   = 1
+};
+
 /** ESCC Channel class. */
 class EsccChannel {
 public:
@@ -66,11 +86,19 @@ public:
     void reset(bool hw_reset);
     uint8_t read_reg(int reg_num);
     void write_reg(int reg_num, uint8_t value);
+    void send_byte(uint8_t value);
+    uint8_t receive_byte();
 
 private:
     std::string     name;
     uint8_t         read_regs[16];
     uint8_t         write_regs[16];
+    uint8_t         wr7_enh;
+    uint8_t         dpll_active;
+    uint8_t         dpll_mode;
+    uint8_t         dpll_clock_src;
+    uint8_t         brg_active;
+    uint8_t         brg_clock_src;
 };
 
 /** ESCC Controller class. */
@@ -91,6 +119,7 @@ private:
     std::unique_ptr<EsccChannel>    ch_b;
 
     int reg_ptr; // register pointer for reading/writing (same for both channels)
+
     uint8_t master_int_cntrl;
     uint8_t int_vec;
 };

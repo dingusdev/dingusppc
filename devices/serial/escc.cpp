@@ -46,22 +46,37 @@ void EsccController::reset()
 
 uint8_t EsccController::read(uint8_t reg_offset)
 {
+    uint8_t result = 0;
+
     switch(reg_offset) {
     case EsccReg::Port_B_Cmd:
         LOG_F(9, "ESCC: reading Port B register RR%d", this->reg_ptr);
+        if (this->reg_ptr == 2) {
+            // TODO: implement interrupt vector modifications
+            result = this->int_vec;
+        } else {
+            result = this->ch_b->read_reg(this->reg_ptr);
+        }
         this->reg_ptr = 0;
-        return this->ch_b->read_reg(reg_offset);
         break;
     case EsccReg::Port_A_Cmd:
         LOG_F(9, "ESCC: reading Port A register RR%d", this->reg_ptr);
+        if (this->reg_ptr == 2) {
+            return this->int_vec;
+        } else {
+            return this->ch_a->read_reg(this->reg_ptr);
+        }
         this->reg_ptr = 0;
-        return this->ch_a->read_reg(reg_offset);
         break;
+    case EsccReg::Port_B_Data:
+        return this->ch_b->receive_byte();
+    case EsccReg::Port_A_Data:
+        return this->ch_a->receive_byte();
     default:
-        LOG_F(INFO, "ESCC: reading register %d", reg_offset);
+        LOG_F(9, "ESCC: reading from unimplemented register %d", reg_offset);
     }
 
-    return 0;
+    return result;
 }
 
 void EsccController::write(uint8_t reg_offset, uint8_t value)
@@ -73,8 +88,14 @@ void EsccController::write(uint8_t reg_offset, uint8_t value)
     case EsccReg::Port_A_Cmd:
         this->write_internal(this->ch_a.get(), value);
         break;
+    case EsccReg::Port_B_Data:
+        this->ch_b->send_byte(value);
+        break;
+    case EsccReg::Port_A_Data:
+        this->ch_a->send_byte(value);
+        break;
     default:
-        LOG_F(INFO, "ESCC: writing 0x%X to register %d", value, reg_offset);
+        LOG_F(9, "ESCC: writing 0x%X to unimplemented register %d", value, reg_offset);
     }
 }
 
@@ -131,6 +152,15 @@ void EsccChannel::reset(bool hw_reset)
     this->read_regs[3]  = 0x00;
     this->read_regs[10] = 0x00;
 
+    // initialize DPLL
+    this->dpll_active    = 0;
+    this->dpll_mode      = DpllMode::NRZI;
+    this->dpll_clock_src = 0;
+
+    // initialize Baud Rate Generator (BRG)
+    this->brg_active    = 0;
+    this->brg_clock_src = 0;
+
     if (hw_reset) {
         this->write_regs[10] = 0;
         this->write_regs[11] = 8;
@@ -145,14 +175,79 @@ void EsccChannel::reset(bool hw_reset)
 
 void EsccChannel::write_reg(int reg_num, uint8_t value)
 {
+    switch (reg_num) {
+    case 3:
+        if (value & 0x11) {
+            if ((this->write_regs[3] ^ value) & 0x10) {
+                this->write_regs[3] |= 0x10;
+                this->read_regs[0] |= 0x10; // set SYNC_HUNT flag
+                LOG_F(9, "ESCC: Hunt mode entered.");
+            }
+            if (value & 1) {
+                this->write_regs[3] |= 0x1;
+                LOG_F(9, "ESCC: receiver enabled.");
+            }
+        }
+        this->write_regs[3] = (this->write_regs[3] & 0x11) | (value & 0xEE);
+        return;
+    case 7:
+        if (this->write_regs[15] & 1) {
+            this->wr7_enh = value;
+            return;
+        }
+        break;
+    case 14:
+        switch (value >> 5) {
+        case DPLL_ENTER_SRC_MODE:
+            this->dpll_active = 1;
+            this->read_regs[10] &= 0x3F;
+            break;
+        case DPLL_DISABLE:
+            this->dpll_active = 0;
+            // fallthrough
+        case DPLL_RST_MISSING_CLK:
+            this->read_regs[10] &= 0x3F;
+            break;
+        case DPLL_SET_SRC_BGR:
+            this->dpll_clock_src = 0;
+            break;
+        case DPLL_SET_SRC_RTXC:
+            this->dpll_clock_src = 1;
+            break;
+        case DPLL_SET_FM_MODE:
+            this->dpll_mode = DpllMode::FM;
+            break;
+        case DPLL_SET_NRZI_MODE:
+            this->dpll_mode = DpllMode::NRZI;
+            break;
+        default:
+            LOG_F(WARNING, "ESCC: unimplemented DPLL command %d", value >> 5);
+        }
+        if (value & 0x1C) { // Local Loopback, Auto Echo DTR/REQ bits set
+            LOG_F(WARNING, "ESCC: unexpected value in WR14 = 0x%X", value);
+        }
+        if (this->brg_active ^ (value & 1)) {
+            this->brg_active = value & 1;
+            LOG_F(9, "ESCC: BRG %s", this->brg_active ? "enabled" : "disabled");
+        }
+        return;
+    }
+
     this->write_regs[reg_num] = value;
-    LOG_F(9, "ESCC: writing 0x%X to Channel %s WR%d", value, this->name.c_str(),
-          reg_num);
-
-
 }
 
 uint8_t EsccChannel::read_reg(int reg_num)
 {
-    return 0;
+    return this->read_regs[reg_num];
+}
+
+void EsccChannel::send_byte(uint8_t value)
+{
+    // Put one byte into the Data FIFO
+}
+
+uint8_t EsccChannel::receive_byte()
+{
+    // Remove one byte from the Receive FIFO
+    return 0xFF;
 }
