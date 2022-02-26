@@ -107,7 +107,6 @@ void PdmOnboardVideo::set_clut_color(uint8_t color)
 {
     this->clut_color[this->comp_index++] = color;
     if (this->comp_index >= 3) {
-        LOG_F(INFO, "PDM-Video: received color for index %d", this->clut_index);
         // TODO: combine separate components into a single ARGB value
         this->palette[this->clut_index][0] = this->clut_color[0];
         this->palette[this->clut_index][1] = this->clut_color[1];
