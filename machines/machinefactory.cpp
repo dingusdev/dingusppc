@@ -67,6 +67,8 @@ static const map<uint32_t, std::tuple<string, const char*>> rom_identity = {
     {0x5A616E7A, {"pm4400",   "Power Mac 4400/7220"}},         // Zanzibar
 };
 
+static const vector<string> WriteToggle = {"ON", "on", "OFF", "off"};
+
 static const PropMap GossamerSettings = {
     {"rambank1_size",
         new IntProperty(256, vector<uint32_t>({8, 16, 32, 64, 128, 256}))},
@@ -80,8 +82,7 @@ static const PropMap GossamerSettings = {
         new StrProperty("")},
     {"fdd_img",
         new StrProperty("")},
-    {"fdd_wr_prot",
-        new StrProperty("")},
+    {"fdd_wr_prot", new StrProperty("OFF", WriteToggle)},
 };
 
 /** Monitors supported by the PDM on-board video. */
@@ -101,8 +102,8 @@ static const PropMap PDMSettings = {
         new StrProperty("HiRes12-14in", PDMBuiltinMonitorIDs)},
     {"fdd_img",
         new StrProperty("")},
-    {"fdd_wr_prot",
-        new StrProperty("")},
+    {"fdd_wr_prot", 
+        new StrProperty("OFF", WriteToggle)},
 };
 
 static const map<string, string> PropHelp = {
