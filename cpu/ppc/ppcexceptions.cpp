@@ -21,8 +21,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Handling of low-level PPC exceptions. */
 
+#include <loguru.hpp>
 #include "ppcemu.h"
 #include "ppcmmu.h"
+
 #include <setjmp.h>
 #include <stdexcept>
 #include <string>
@@ -59,7 +61,7 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
         break;
 
     case Except_Type::EXC_EXT_INT:
-        if (bb_kind != BB_end_kind::BB_NONE) {
+        if (exec_flags & ~EXEF_TIMER) {
             ppc_state.spr[SPR::SRR0] = ppc_next_instruction_address;
         } else {
             ppc_state.spr[SPR::SRR0] = (ppc_state.pc & 0xFFFFFFFCUL) + 4;
@@ -98,8 +100,7 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
         break;
 
     default:
-        // printf("Unknown exception occured: %X\n", exception_type);
-        // exit(-1);
+        ABORT_F("Unknown exception occured: %X\n", exception_type);
         break;
     }
 
@@ -112,7 +113,7 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
         ppc_next_instruction_address |= 0xFFF00000;
     }
 
-    bb_kind = BB_end_kind::BB_EXCEPTION;
+    exec_flags = EXEF_EXCEPTION;
 
     // perform context synchronization for recoverable exceptions
     if (exception_type != Except_Type::EXC_MACHINE_CHECK &&

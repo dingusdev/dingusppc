@@ -196,14 +196,12 @@ extern uint64_t ppc_result64_b;
 extern uint64_t ppc_result64_c;
 extern uint64_t ppc_result64_d;
 
-
-/* The precise end of a basic block. */
-enum class BB_end_kind {
-    BB_NONE   = 0, /* no basic block end is reached       */
-    BB_BRANCH = 1, /* a branch instruction is encountered */
-    BB_EXCEPTION,  /* an exception is occured             */
-    BB_RFI,        /* the rfi instruction is encountered  */
-    BB_TIMER,      /* timer queue changed                 */
+/* Flags for controlling interpreter execution. */
+enum {
+    EXEF_BRANCH    = 1 << 0,
+    EXEF_EXCEPTION = 1 << 1,
+    EXEF_RFI       = 1 << 2,
+    EXEF_TIMER     = 1 << 7
 };
 
 enum CR_select : int32_t {
@@ -293,8 +291,7 @@ enum Exc_Cause : uint32_t {
     TRAP        = 1 << (31 - 14),
 };
 
-// extern bool bb_end;
-extern BB_end_kind bb_kind;
+extern unsigned exec_flags;
 
 extern jmp_buf exc_env;
 

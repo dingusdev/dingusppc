@@ -55,7 +55,7 @@ uint32_t ppc_cur_instruction;    // Current instruction for the PPC
 uint32_t ppc_effective_address;
 uint32_t ppc_next_instruction_address;    // Used for branching, setting up the NIA
 
-BB_end_kind bb_kind; /* basic block end */
+unsigned exec_flags;
 
 /* copy of local variable bb_start_la. Need for correct
    calculation of CPU cycles after setjmp that clobbers
@@ -319,11 +319,7 @@ uint64_t process_events()
 void force_cycle_counter_reload()
 {
     // tell the interpreter loop to reload cycle counter
-    if (bb_kind == BB_end_kind::BB_NONE || bb_kind == BB_end_kind::BB_TIMER) {
-        bb_kind = BB_end_kind::BB_TIMER;
-    } else {
-        ABORT_F("PPCEXEC: attempt to override basic block type %d", bb_kind);
-    }
+    exec_flags |= EXEF_TIMER;
 }
 
 /** Execute PPC code as long as power is on. */
@@ -401,10 +397,9 @@ static void ppc_exec_inner()
     while (power_on) {
         // define boundaries of the next execution block
         // max execution block length = one memory page
-        eb_start = ppc_state.pc;
-        eb_end   = (eb_start + PAGE_SIZE) & PAGE_MASK;
-        //eb_last = false;
-        bb_kind  = BB_end_kind::BB_NONE;
+        eb_start   = ppc_state.pc;
+        eb_end     = (eb_start + PAGE_SIZE) & PAGE_MASK;
+        exec_flags = 0;
 
         page_start = eb_start & PAGE_MASK;
         pc_real    = mmu_translate_imem(eb_start);
@@ -416,17 +411,19 @@ static void ppc_exec_inner()
                 max_cycles = process_events();
             }
 
-            if (bb_kind != BB_end_kind::BB_NONE) { // execution block ended ?
+            if (exec_flags) {
                 if (!power_on)
                     break;
                 // reload cycle counter if requested
-                if (bb_kind == BB_end_kind::BB_TIMER) {
+                if (exec_flags & EXEF_TIMER) {
                     max_cycles = process_events();
-                    ppc_state.pc += 4;
-                    pc_real += 4;
-                    ppc_set_cur_instruction(pc_real);
-                    bb_kind = BB_end_kind::BB_NONE;
-                    continue;
+                    if (!(exec_flags & ~EXEF_TIMER)) {
+                        ppc_state.pc += 4;
+                        pc_real += 4;
+                        ppc_set_cur_instruction(pc_real);
+                        exec_flags = 0;
+                        continue;
+                    }
                 }
                 // define next execution block
                 eb_start = ppc_next_instruction_address;
@@ -439,7 +436,7 @@ static void ppc_exec_inner()
                     pc_real = mmu_translate_imem(eb_start);
                 }
                 ppc_state.pc = eb_start;
-                bb_kind = BB_end_kind::BB_NONE;
+                exec_flags = 0;
             } else {
                 ppc_state.pc += 4;
                 pc_real += 4;
@@ -506,19 +503,19 @@ void ppc_exec_single()
         // process low-level exceptions
         //LOG_F(9, "PPC-EXEC: low_level exception raised!");
         ppc_state.pc = ppc_next_instruction_address;
-        bb_kind = BB_end_kind::BB_NONE;
+        exec_flags = 0;
         return;
     }
 
     mmu_translate_imem(ppc_state.pc);
     ppc_main_opcode();
-    if (bb_kind != BB_end_kind::BB_NONE) {
-        if (bb_kind == BB_end_kind::BB_TIMER) {
+    if (exec_flags) {
+        if (exec_flags & EXEF_TIMER) {
             ppc_state.pc += 4;
         } else {
             ppc_state.pc = ppc_next_instruction_address;
         }
-        bb_kind = BB_end_kind::BB_NONE;
+        exec_flags = 0;
     } else {
         ppc_state.pc += 4;
     }
@@ -599,10 +596,9 @@ static void ppc_exec_until_inner(const uint32_t goal_addr)
     while (ppc_state.pc != goal_addr) {
         // define boundaries of the next execution block
         // max execution block length = one memory page
-        eb_start = ppc_state.pc;
-        eb_end   = (eb_start + PAGE_SIZE) & PAGE_MASK;
-        //eb_last = false;
-        bb_kind  = BB_end_kind::BB_NONE;
+        eb_start   = ppc_state.pc;
+        eb_end     = (eb_start + PAGE_SIZE) & PAGE_MASK;
+        exec_flags = 0;
 
         page_start = eb_start & PAGE_MASK;
         pc_real    = mmu_translate_imem(eb_start);
@@ -614,15 +610,17 @@ static void ppc_exec_until_inner(const uint32_t goal_addr)
                 max_cycles = process_events();
             }
 
-            if (bb_kind != BB_end_kind::BB_NONE) { // execution block ended ?
+            if (exec_flags) {
                 // reload cycle counter if requested
-                if (bb_kind == BB_end_kind::BB_TIMER) {
+                if (exec_flags & EXEF_TIMER) {
                     max_cycles = process_events();
-                    ppc_state.pc += 4;
-                    pc_real += 4;
-                    ppc_set_cur_instruction(pc_real);
-                    bb_kind = BB_end_kind::BB_NONE;
-                    continue;
+                    if (!(exec_flags & ~EXEF_TIMER)) {
+                        ppc_state.pc += 4;
+                        pc_real += 4;
+                        ppc_set_cur_instruction(pc_real);
+                        exec_flags = 0;
+                        continue;
+                    }
                 }
                 // define next execution block
                 eb_start = ppc_next_instruction_address;
@@ -635,7 +633,7 @@ static void ppc_exec_until_inner(const uint32_t goal_addr)
                     pc_real = mmu_translate_imem(eb_start);
                 }
                 ppc_state.pc = eb_start;
-                bb_kind = BB_end_kind::BB_NONE;
+                exec_flags = 0;
             } else {
                 ppc_state.pc += 4;
                 pc_real += 4;
@@ -737,10 +735,9 @@ static void ppc_exec_dbg_inner(const uint32_t start_addr, const uint32_t size)
     while (ppc_state.pc < start_addr || ppc_state.pc >= start_addr + size) {
         // define boundaries of the next execution block
         // max execution block length = one memory page
-        eb_start = ppc_state.pc;
-        eb_end   = (eb_start + PAGE_SIZE) & PAGE_MASK;
-        //eb_last = false;
-        bb_kind  = BB_end_kind::BB_NONE;
+        eb_start   = ppc_state.pc;
+        eb_end     = (eb_start + PAGE_SIZE) & PAGE_MASK;
+        exec_flags = 0;
 
         page_start = eb_start & PAGE_MASK;
         pc_real    = mmu_translate_imem(eb_start);
@@ -753,16 +750,17 @@ static void ppc_exec_dbg_inner(const uint32_t start_addr, const uint32_t size)
                 max_cycles = process_events();
             }
 
-            //if (eb_last) {
-            if (bb_kind != BB_end_kind::BB_NONE) { // execution block ended ?
+            if (exec_flags) {
                 // reload cycle counter if requested
-                if (bb_kind == BB_end_kind::BB_TIMER) {
+                if (exec_flags & EXEF_TIMER) {
                     max_cycles = process_events();
-                    ppc_state.pc += 4;
-                    pc_real += 4;
-                    ppc_set_cur_instruction(pc_real);
-                    bb_kind = BB_end_kind::BB_NONE;
-                    continue;
+                    if (!(exec_flags & ~EXEF_TIMER)) {
+                        ppc_state.pc += 4;
+                        pc_real += 4;
+                        ppc_set_cur_instruction(pc_real);
+                        exec_flags = 0;
+                        continue;
+                    }
                 }
                 // define next execution block
                 eb_start = ppc_next_instruction_address;
@@ -775,7 +773,7 @@ static void ppc_exec_dbg_inner(const uint32_t start_addr, const uint32_t size)
                     pc_real = mmu_translate_imem(eb_start);
                 }
                 ppc_state.pc = eb_start;
-                bb_kind = BB_end_kind::BB_NONE;
+                exec_flags = 0;
             } else {
                 ppc_state.pc += 4;
                 pc_real += 4;
@@ -1038,6 +1036,8 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version) {
     tbr_wr_timestamp = 0;
     tbr_wr_value = 0;
     tbr_freq_hz = 16705000; // FIXME: this should be set properly during machine initialization
+
+    exec_flags = 0;
 
     timebase_counter = 0;
     decr = 0;
