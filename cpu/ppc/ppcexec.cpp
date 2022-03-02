@@ -34,8 +34,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 #include <unordered_map>
 
-#define NEW_TBR_UPDATE_ALGO
-
 using namespace std;
 using namespace dppc_interpreter;
 
@@ -70,12 +68,8 @@ int      icnt_factor;
 uint64_t tbr_wr_timestamp;  // stores vCPU virtual time of the last TBR write
 uint64_t tbr_wr_value;      // last value written to the TBR
 uint64_t tbr_freq_hz;       // TBR driving frequency in Hz
-uint64_t cycles_count;      // contains number of cycles executed so far */
-uint64_t old_cycles_count;  // previous value for cycles_count */
-uint64_t timebase_counter;  // internal timebase counter */
-uint32_t decr;              // current value of PPC DEC register */
-uint8_t  old_decr_msb;      // MSB value for previous DEC value */
-uint8_t  tbr_factor;        // cycles_count to TBR freq ratio in 2^x units */
+uint64_t timebase_counter;  // internal timebase counter
+uint32_t decr;              // current value of PPC DEC register
 
 #ifdef CPU_PROFILING
 
@@ -163,18 +157,6 @@ static PPCOpcode SubOpcode18Grabber[] = {
 PPCOpcode SubOpcode31Grabber[1024] = { ppc_illegalop };
 PPCOpcode SubOpcode59Grabber[32]   = { ppc_illegalop };
 PPCOpcode SubOpcode63Grabber[1024] = { ppc_illegalop };
-
-
-#define UPDATE_TBR_DEC                                                  \
-    if ((delta = (cycles_count - old_cycles_count) >> tbr_factor)) {    \
-        timebase_counter += delta;                                      \
-        decr -= delta;                                                  \
-        if ((decr & 0x80000000) && !old_decr_msb) {                     \
-            old_decr_msb = decr >> 31;                                  \
-            /* signal_decr_int(); */                                    \
-        }                                                               \
-        old_cycles_count += delta << tbr_factor;                        \
-    }
 
 /** Exception helpers. */
 
@@ -323,68 +305,6 @@ void force_cycle_counter_reload()
 }
 
 /** Execute PPC code as long as power is on. */
-#if 0
-void ppc_exec()
-{
-    uint32_t bb_start_la, page_start, delta;
-    uint8_t* pc_real;
-
-    /* start new basic block */
-    glob_bb_start_la = bb_start_la = ppc_state.pc;
-    bb_kind = BB_end_kind::BB_NONE;
-
-    if (setjmp(exc_env)) {
-        /* reaching here means we got a low-level exception */
-#ifdef NEW_TBR_UPDATE_ALGO
-        cycles_count += ((ppc_state.pc - glob_bb_start_la) >> 2) + 1;
-        UPDATE_TBR_DEC
-#else
-        timebase_counter += ((ppc_state.pc - glob_bb_start_la) >> 2) + 1;
-#endif
-        glob_bb_start_la = bb_start_la = ppc_next_instruction_address;
-        //pc_real = mmu_translate_imem(bb_start_la);
-        pc_real = mmu_translate_imem(bb_start_la);
-        page_start = bb_start_la & 0xFFFFF000;
-        ppc_state.pc = bb_start_la;
-        bb_kind = BB_end_kind::BB_NONE;
-        goto again;
-    }
-
-    /* initial MMU translation for the current code page. */
-    //pc_real = quickinstruction_translate(bb_start_la);
-    pc_real = mmu_translate_imem(bb_start_la);
-
-    /* set current code page limits */
-    page_start = bb_start_la & 0xFFFFF000;
-
-again:
-    while (power_on) {
-        ppc_main_opcode();
-        if (bb_kind != BB_end_kind::BB_NONE) {
-#ifdef NEW_TBR_UPDATE_ALGO
-            cycles_count += ((ppc_state.pc - bb_start_la) >> 2) + 1;
-            UPDATE_TBR_DEC
-#else
-            timebase_counter += ((ppc_state.pc - bb_start_la) >> 2) + 1;
-#endif
-            glob_bb_start_la = bb_start_la = ppc_next_instruction_address;
-            if ((ppc_next_instruction_address & 0xFFFFF000) != page_start) {
-                page_start = bb_start_la & 0xFFFFF000;
-                pc_real = mmu_translate_imem(bb_start_la);
-            } else {
-                pc_real += (int)bb_start_la - (int)ppc_state.pc;
-                ppc_set_cur_instruction(pc_real);
-            }
-            ppc_state.pc = bb_start_la;
-            bb_kind = BB_end_kind::BB_NONE;
-        } else {
-            ppc_state.pc += 4;
-            pc_real += 4;
-            ppc_set_cur_instruction(pc_real);
-        }
-    }
-}
-#else
 // inner interpreter loop
 static void ppc_exec_inner()
 {
@@ -459,44 +379,8 @@ void ppc_exec()
         ppc_exec_inner();
     }
 }
-#endif
 
 /** Execute one PPC instruction. */
-#if 0
-void ppc_exec_single()
-{
-    uint32_t delta;
-
-    if (setjmp(exc_env)) {
-        /* reaching here means we got a low-level exception */
-#ifdef NEW_TBR_UPDATE_ALGO
-        cycles_count++;
-        UPDATE_TBR_DEC
-#else
-        timebase_counter++;
-#endif
-        ppc_state.pc = ppc_next_instruction_address;
-        bb_kind = BB_end_kind::BB_NONE;
-        return;
-    }
-
-    //quickinstruction_translate(ppc_state.pc);
-    mmu_translate_imem(ppc_state.pc);
-    ppc_main_opcode();
-    if (bb_kind != BB_end_kind::BB_NONE) {
-        ppc_state.pc = ppc_next_instruction_address;
-        bb_kind = BB_end_kind::BB_NONE;
-    } else {
-        ppc_state.pc += 4;
-    }
-#ifdef NEW_TBR_UPDATE_ALGO
-    cycles_count++;
-    UPDATE_TBR_DEC
-#else
-    timebase_counter++;
-#endif
-}
-#else
 void ppc_exec_single()
 {
     if (setjmp(exc_env)) {
@@ -521,69 +405,9 @@ void ppc_exec_single()
     }
     g_icycles++;
 }
-#endif
 
 /** Execute PPC code until goal_addr is reached. */
-#if 0
-void ppc_exec_until(volatile uint32_t goal_addr)
-{
-    uint32_t bb_start_la, page_start, delta;
-    uint8_t* pc_real;
 
-    /* start new basic block */
-    glob_bb_start_la = bb_start_la = ppc_state.pc;
-    bb_kind = BB_end_kind::BB_NONE;
-
-    if (setjmp(exc_env)) {
-        /* reaching here means we got a low-level exception */
-#ifdef NEW_TBR_UPDATE_ALGO
-        cycles_count += ((ppc_state.pc - glob_bb_start_la) >> 2) + 1;
-        UPDATE_TBR_DEC
-#else
-        timebase_counter += ((ppc_state.pc - glob_bb_start_la) >> 2) + 1;
-#endif
-        glob_bb_start_la = bb_start_la = ppc_next_instruction_address;
-        pc_real = mmu_translate_imem(bb_start_la);
-        page_start = bb_start_la & 0xFFFFF000;
-        ppc_state.pc = bb_start_la;
-        bb_kind = BB_end_kind::BB_NONE;
-        goto again;
-    }
-
-    /* initial MMU translation for the current code page. */
-    pc_real = mmu_translate_imem(bb_start_la);
-
-    /* set current code page limits */
-    page_start = bb_start_la & 0xFFFFF000;
-
-again:
-    while (ppc_state.pc != goal_addr) {
-        ppc_main_opcode();
-        if (bb_kind != BB_end_kind::BB_NONE) {
-#ifdef NEW_TBR_UPDATE_ALGO
-            cycles_count += ((ppc_state.pc - bb_start_la) >> 2) + 1;
-            UPDATE_TBR_DEC
-#else
-            timebase_counter += ((ppc_state.pc - bb_start_la) >> 2) + 1;
-#endif
-            glob_bb_start_la = bb_start_la = ppc_next_instruction_address;
-            if ((ppc_next_instruction_address & 0xFFFFF000) != page_start) {
-                page_start = bb_start_la & 0xFFFFF000;
-                pc_real = mmu_translate_imem(bb_start_la);
-            } else {
-                pc_real += (int)bb_start_la - (int)ppc_state.pc;
-                ppc_set_cur_instruction(pc_real);
-            }
-            ppc_state.pc = bb_start_la;
-            bb_kind = BB_end_kind::BB_NONE;
-        } else {
-            ppc_state.pc += 4;
-            pc_real += 4;
-            ppc_set_cur_instruction(pc_real);
-        }
-    }
-}
-#else
 // inner interpreter loop
 static void ppc_exec_until_inner(const uint32_t goal_addr)
 {
@@ -656,73 +480,9 @@ void ppc_exec_until(volatile uint32_t goal_addr)
         ppc_exec_until_inner(goal_addr);
     }
 }
-#endif
 
 /** Execute PPC code until control is reached the specified region. */
-#if 0
-void ppc_exec_dbg(volatile uint32_t start_addr, volatile uint32_t size)
-{
-    uint32_t bb_start_la, page_start, delta;
-    uint8_t* pc_real;
 
-    /* start new basic block */
-    glob_bb_start_la = bb_start_la = ppc_state.pc;
-    bb_kind = BB_end_kind::BB_NONE;
-
-    if (setjmp(exc_env)) {
-        /* reaching here means we got a low-level exception */
-#ifdef NEW_TBR_UPDATE_ALGO
-        cycles_count += ((ppc_state.pc - glob_bb_start_la) >> 2) + 1;
-        UPDATE_TBR_DEC
-#else
-        timebase_counter += ((ppc_state.pc - glob_bb_start_la) >> 2) + 1;
-#endif
-        glob_bb_start_la = bb_start_la = ppc_next_instruction_address;
-        //pc_real = quickinstruction_translate(bb_start_la);
-        pc_real = mmu_translate_imem(bb_start_la);
-        page_start = bb_start_la & 0xFFFFF000;
-        ppc_state.pc = bb_start_la;
-        bb_kind = BB_end_kind::BB_NONE;
-        //printf("DBG Exec: got exception, continue at %X\n", ppc_state.pc);
-        goto again;
-    }
-
-    /* initial MMU translation for the current code page. */
-    pc_real = mmu_translate_imem(bb_start_la);
-
-    /* set current code page limits */
-    page_start = bb_start_la & 0xFFFFF000;
-
-again:
-    while (ppc_state.pc < start_addr || ppc_state.pc >= start_addr + size) {
-        ppc_main_opcode();
-        if (bb_kind != BB_end_kind::BB_NONE) {
-#ifdef NEW_TBR_UPDATE_ALGO
-            cycles_count += ((ppc_state.pc - bb_start_la) >> 2) + 1;
-            UPDATE_TBR_DEC
-#else
-            timebase_counter += ((ppc_state.pc - bb_start_la) >> 2) + 1;
-#endif
-            glob_bb_start_la = bb_start_la = ppc_next_instruction_address;
-            if ((ppc_next_instruction_address & 0xFFFFF000) != page_start) {
-                page_start = bb_start_la & 0xFFFFF000;
-                //pc_real = quickinstruction_translate(bb_start_la);
-                pc_real = mmu_translate_imem(bb_start_la);
-            } else {
-                pc_real += (int)bb_start_la - (int)ppc_state.pc;
-                ppc_set_cur_instruction(pc_real);
-            }
-            ppc_state.pc = bb_start_la;
-            bb_kind = BB_end_kind::BB_NONE;
-            //printf("DBG Exec: new basic block at %X, start_addr=%X\n", ppc_state.pc, start_addr);
-        } else {
-            ppc_state.pc += 4;
-            pc_real += 4;
-            ppc_set_cur_instruction(pc_real);
-        }
-    }
-}
-#else
 // inner interpreter loop
 static void ppc_exec_dbg_inner(const uint32_t start_addr, const uint32_t size)
 {
@@ -795,42 +555,6 @@ void ppc_exec_dbg(volatile uint32_t start_addr, volatile uint32_t size)
     while (ppc_state.pc < start_addr || ppc_state.pc >= start_addr + size) {
         ppc_exec_dbg_inner(start_addr, size);
     }
-}
-#endif
-
-
-uint64_t instr_count, old_instr_count;
-
-void test_timebase_update()
-{
-    uint32_t delta, factor;
-    uint8_t old_decr_msb;
-    uint8_t intervals[10] = {4, 7, 10, 2, 16, 6, 3, 20, 12, 8};
-
-    timebase_counter = 0;
-    decr = 0x00000003;
-    old_decr_msb = decr >> 31;
-
-    old_instr_count = 0xFFFFFFFFFFFFFF80UL;//0xFFFFFFFFFFFFFFD0UL;
-    instr_count = 0xFFFFFFFFFFFFFF80UL;//0xFFFFFFFFFFFFFFD0UL;
-
-    factor = 4;
-
-    for (int i = 0; i < 10; i++) {
-        cycles_count += intervals[i];
-        if ((delta = (cycles_count - old_cycles_count) >> factor)) {
-            timebase_counter += delta;
-            decr -= delta;
-            if ((decr & 0x80000000) && !old_decr_msb) {
-                old_decr_msb = decr >> 31;
-                LOG_F(ERROR, "DEC exception signaled!\n");
-            }
-            old_instr_count += delta << factor;
-            LOG_F(INFO, "Iteration %d, TBR=0x%llX, DEC=0x%X", i, timebase_counter, decr);
-            LOG_F(INFO, "  icount=0x%llX, old_icount=0x%llX\n", cycles_count, old_cycles_count);
-        }
-    }
-
 }
 
 void initialize_ppc_opcode_tables() {
@@ -1019,13 +743,6 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version) {
 
     initialize_ppc_opcode_tables();
 
-    /* initialize timer variables */
-#ifdef NEW_TBR_UPDATE_ALGO
-    cycles_count = 0;
-    old_cycles_count = 0;
-    tbr_factor = 4;
-#endif
-
     // initialize emulator timers
     TimerManager::get_instance()->set_time_now_cb(&get_virt_time_ns);
     TimerManager::get_instance()->set_notify_changes_cb(&force_cycle_counter_reload);
@@ -1041,7 +758,6 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version) {
 
     timebase_counter = 0;
     decr = 0;
-    old_decr_msb = decr >> 31;
 
     /* zero all GPRs as prescribed for MPC601 */
     /* For later PPC CPUs, GPR content is undefined */
