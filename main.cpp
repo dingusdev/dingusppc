@@ -23,7 +23,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // This is where the magic begins
 
 #include "debugger/debugger.h"
-#include "execution/interpreter_loop.h"
 #include "machines/machinefactory.h"
 #include "machines/machineproperties.h"
 #include "utils/profiler.h"
@@ -198,15 +197,17 @@ int main(int argc, char** argv) {
     signal(SIGABRT, sigabrt_handler);
 
     switch (execution_mode) {
-        case 0:
-            interpreter_main_loop();
-            break;
-        case 1:
-            enter_debugger();
-            break;
-        default:
-            LOG_F(ERROR, "Invalid EXECUTION MODE");
-            return 0;
+    case 0:
+        for (;;) {
+            ppc_exec();
+        }
+        break;
+    case 1:
+        enter_debugger();
+        break;
+    default:
+        LOG_F(ERROR, "Invalid EXECUTION MODE");
+        return 0;
     }
 
 bail:

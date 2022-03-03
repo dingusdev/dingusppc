@@ -60,7 +60,6 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/core")
 add_subdirectory("${PROJECT_SOURCE_DIR}/cpu/ppc/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/debugger/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/devices/")
-add_subdirectory("${PROJECT_SOURCE_DIR}/execution")
 add_subdirectory("${PROJECT_SOURCE_DIR}/machines/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/utils/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/thirdparty/loguru/")
@@ -106,7 +105,6 @@ add_executable(dingusppc ${SOURCES} $<TARGET_OBJECTS:core>
                                     $<TARGET_OBJECTS:cpu_ppc>
                                     $<TARGET_OBJECTS:debugger>
                                     $<TARGET_OBJECTS:devices>
-                                    $<TARGET_OBJECTS:execution>
                                     $<TARGET_OBJECTS:machines>
                                     $<TARGET_OBJECTS:utils>
                                     $<TARGET_OBJECTS:loguru>)
@@ -130,7 +128,6 @@ if (DPPC_BUILD_PPC_TESTS)
                                            $<TARGET_OBJECTS:cpu_ppc>
                                            $<TARGET_OBJECTS:debugger>
                                            $<TARGET_OBJECTS:devices>
-                                           $<TARGET_OBJECTS:execution>
                                            $<TARGET_OBJECTS:machines>
                                            $<TARGET_OBJECTS:utils>
                                            $<TARGET_OBJECTS:loguru>)
@@ -157,7 +154,6 @@ if (DPPC_BUILD_BENCHMARKS)
                                            $<TARGET_OBJECTS:cpu_ppc>
                                            $<TARGET_OBJECTS:debugger>
                                            $<TARGET_OBJECTS:devices>
-                                           $<TARGET_OBJECTS:execution>
                                            $<TARGET_OBJECTS:machines>
                                            $<TARGET_OBJECTS:utils>
                                            $<TARGET_OBJECTS:loguru>)
