@@ -29,6 +29,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Chip ID returned by the MESH cell inside the Heathrow ASIC
 #define HeathrowMESHID  4
 
+namespace MeshScsi {
+
 // MESH registers offsets
 enum MeshReg : uint8_t {
     XferCount0 = 0,
@@ -48,6 +50,8 @@ enum MeshReg : uint8_t {
     MeshID     = 0xE,
     SelTimeOut = 0xF
 };
+
+}; // namespace MeshScsi
 
 class MESHController {
 public:
