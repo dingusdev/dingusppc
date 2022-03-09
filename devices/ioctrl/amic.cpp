@@ -107,7 +107,7 @@ uint32_t AMIC::read(uint32_t reg_start, uint32_t offset, int size)
     case 4: // SCC registers
         return this->escc->read((offset >> 1) & 0xF);
     case 0xA: // MACE registers
-        return this->mace->read((offset >> 4) & 0xF);
+        return this->mace->read((offset >> 4) & 0x1F);
     case 0x10: // SCSI registers
         return this->scsi->read((offset >> 4) & 0xF);
     case 0x14: // Sound registers
@@ -188,7 +188,7 @@ void AMIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
         this->escc->write((offset >> 1) & 0xF, value);
         return;
     case 0xA: // MACE registers
-        this->mace->write((offset >> 4) & 0xF, value);
+        this->mace->write((offset >> 4) & 0x1F, value);
         return;
     case 0x10:
         this->scsi->write((offset >> 4) & 0xF, value);
