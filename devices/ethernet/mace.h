@@ -32,6 +32,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // MACE registers offsets
 // Refer to the Am79C940 datasheet for details
+namespace MaceEnet {
+
 enum MaceReg : uint8_t {
     Rcv_FIFO        = 0,
     Xmit_FIFO       = 1,
@@ -61,6 +63,8 @@ enum MaceReg : uint8_t {
     Rsrvd_Test_1    = 0x1E, // not used in Macintosh?
     Rsrvd_Test_2    = 0x1F, // not used in Macintosh?
 };
+
+}; // namespace MaceEnet
 
 class MaceController {
 public:
