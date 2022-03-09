@@ -26,6 +26,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <loguru.hpp>
 
+using namespace MeshScsi;
+
 uint8_t MESHController::read(uint8_t reg_offset)
 {
     switch(reg_offset) {
