@@ -26,6 +26,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 
+using namespace MaceEnet;
+
 uint8_t MaceController::read(uint8_t reg_offset)
 {
     switch(reg_offset) {
