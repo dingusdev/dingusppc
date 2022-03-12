@@ -216,7 +216,7 @@ void Sc53C94::exec_command()
         exec_next_command();
         break;
     case CMD_SELECT_NO_ATN:
-        static SeqDesc sel_no_atn_desc[] {
+        static SeqDesc * sel_no_atn_desc = new SeqDesc[3]{
             {SeqState::SEL_BEGIN,    0, INTSTAT_DIS            },
             {SeqState::CMD_BEGIN,    3, INTSTAT_SR | INTSTAT_SO},
             {SeqState::CMD_COMPLETE, 4, INTSTAT_SR | INTSTAT_SO},

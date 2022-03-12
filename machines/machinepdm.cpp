@@ -109,7 +109,7 @@ int create_pdm(std::string& id) {
         bool write_flag = false;
 
         if (!fd_write_prot.empty()) {
-            if ((fd_write_prot.compare("ON") == 0) or (fd_write_prot.compare("on") == 0)) {
+            if ((fd_write_prot.compare("ON") == 0) || (fd_write_prot.compare("on") == 0)) {
                 write_flag = true;
             }
         }
