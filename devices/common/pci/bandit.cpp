@@ -30,16 +30,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 
-Bandit::Bandit(int bridge_num, std::string name) : MMIODevice(), PCIHost()
+Bandit::Bandit(int bridge_num, std::string name) : PCIHost(), PCIDevice(name)
 {
     this->base_addr = 0xF0000000 + ((bridge_num & 3) << 25);
-    this->name      = name;
 
     MemCtrlBase *mem_ctrl = dynamic_cast<MemCtrlBase *>
                            (gMachineObj->get_comp_by_type(HWCompType::MEM_CTRL));
 
     // add memory mapped I/O region for Bandit control registers
-    // This region has the following format:
+    // This region has the following layout:
     // base_addr +  0x000000 --> I/O space
     // base_addr +  0x800000 --> CONFIG_ADDR
     // base_addr +  0xC00000 --> CONFIG_DATA
@@ -47,15 +46,15 @@ Bandit::Bandit(int bridge_num, std::string name) : MMIODevice(), PCIHost()
     mem_ctrl->add_mmio_region(base_addr, 0x01000000, this);
 
     // prepare the PCI config header
-    std::memset(this->my_pci_cfg_hdr, 0, sizeof(this->my_pci_cfg_hdr));
-    WRITE_DWORD_BE_A(&this->my_pci_cfg_hdr[0x00], 0x0001106B);
-    WRITE_DWORD_BE_A(&this->my_pci_cfg_hdr[0x08], 0x06000003);
+    this->vendor_id   = PCI_VENDOR_APPLE;
+    this->device_id   = 0x0001;
+    this->class_rev   = 0x06000003;
+    this->cache_ln_sz = 8;
+    this->command     = 0x16;
 
-    // mask array for protecting accesses to the PCI config header
-    std::memset(this->my_cfg_mask, 0xFF, sizeof(this->my_pci_cfg_hdr));
-    WRITE_DWORD_BE_A(&this->my_cfg_mask[0x00], 0); // make DeviceID/VendorID read-only
-    WRITE_DWORD_BE_A(&this->my_cfg_mask[0x08], 0); // make ClassCode/Revision read-only
-    WRITE_DWORD_BE_A(&this->my_cfg_mask[0x0C], 0xFF00FFFFUL); // make HeaderType read-only
+    // make several PCI config space registers read-only
+    this->pci_wr_cmd = [](uint16_t cmd) {}; // command register
+    this->pci_wr_cache_lnsz = [](uint8_t val) {}; // cache line size register
 }
 
 uint32_t Bandit::read(uint32_t reg_start, uint32_t offset, int size)
@@ -101,7 +100,7 @@ uint32_t Bandit::read(uint32_t reg_start, uint32_t offset, int size)
     } else { // I/O space access
         LOG_F(WARNING, "%s: I/O space write not implemented yet", this->name.c_str());
     }
-    return BYTESWAP_32(result);
+    return result;
 }
 
 void Bandit::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
@@ -147,24 +146,4 @@ void Bandit::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size
     } else { // I/O space access
         LOG_F(WARNING, "%s: I/O space write not implemented yet", this->name.c_str());
     }
-}
-
-uint32_t Bandit::pci_cfg_read(uint32_t reg_offs, uint32_t size)
-{
-    if ((reg_offs & 3) || size != 4) {
-        LOG_F(WARNING, "%s: non-DWORD access to the config space", this->name.c_str());
-    }
-
-    return read_mem_rev(&this->my_pci_cfg_hdr[reg_offs], size);
-}
-
-void Bandit::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
-{
-    if ((reg_offs & 3) || size != 4) {
-        LOG_F(WARNING, "%s: non-DWORD access to the config space", this->name.c_str());
-    }
-
-    uint32_t mask = read_mem_rev(&my_cfg_mask[reg_offs], size);
-    uint32_t cur_val = read_mem_rev(&this->my_pci_cfg_hdr[reg_offs], size);
-    write_mem_rev(&this->my_pci_cfg_hdr[reg_offs], (cur_val & ~mask) | (value & mask), size);
 }
