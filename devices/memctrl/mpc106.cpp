@@ -33,17 +33,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <loguru.hpp>
 
 
-MPC106::MPC106() : MemCtrlBase(), PCIDevice("Grackle PCI host bridge"), PCIHost()
+MPC106::MPC106() : MemCtrlBase(), PCIDevice("Grackle"), PCIHost()
 {
     this->name = "Grackle";
 
     supports_types(HWCompType::MEM_CTRL | HWCompType::MMIO_DEV |
                    HWCompType::PCI_HOST | HWCompType::PCI_DEV);
 
-    /* add PCI/ISA I/O space, 64K for now */
+    // populate PCI config header
+    this->vendor_id   = PCI_VENDOR_MOTOROLA;
+    this->device_id   = 0x0002;
+    this->class_rev   = 0x06000040;
+    this->cache_ln_sz = 8;
+    this->command     = 6;
+    this->status      = 0x80;
+
+    // add PCI/ISA I/O space, 64K for now
     add_mmio_region(0xFE000000, 0x10000, this);
 
-    /* add memory mapped I/O region for MPC106 registers */
+    // add memory mapped I/O region for MPC106 registers
     add_mmio_region(0xFEC00000, 0x300000, this);
 }
 
@@ -51,8 +59,8 @@ uint32_t MPC106::read(uint32_t reg_start, uint32_t offset, int size) {
     uint32_t result;
 
     if (reg_start == 0xFE000000) {
-        /* broadcast I/O request to devices that support I/O space
-           until a device returns true that means "request accepted" */
+        // broadcast I/O request to devices that support I/O space
+        // until a device returns true that means "request accepted"
         for (auto& dev : this->io_space_devs) {
             if (dev->pci_io_read(offset, size, &result)) {
                 return result;
@@ -66,15 +74,15 @@ uint32_t MPC106::read(uint32_t reg_start, uint32_t offset, int size) {
         }
     }
 
-    /* FIXME: reading from CONFIG_ADDR is ignored for now */
+    // FIXME: reading from CONFIG_ADDR is ignored for now
 
     return 0;
 }
 
 void MPC106::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size) {
     if (reg_start == 0xFE000000) {
-        /* broadcast I/O request to devices that support I/O space
-           until a device returns true that means "request accepted" */
+        // broadcast I/O request to devices that support I/O space
+        // until a device returns true that means "request accepted"
         for (auto& dev : this->io_space_devs) {
             if (dev->pci_io_write(offset, value, size)) {
                 return;
@@ -163,6 +171,10 @@ uint32_t MPC106::pci_cfg_read(uint32_t reg_offs, uint32_t size) {
     LOG_F(9, "read from Grackle register %08X\n", reg_offs);
 #endif
 
+    if (reg_offs < 64) {
+        return PCIDevice::pci_cfg_read(reg_offs, size);
+    }
+
     return read_mem(&this->my_pci_cfg_hdr[reg_offs], size);
 }
 
@@ -170,6 +182,11 @@ void MPC106::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size) {
 #ifdef MPC106_DEBUG
     LOG_F(9, "write %08X to Grackle register %08X\n", value, reg_offs);
 #endif
+
+    if (reg_offs < 64) {
+        PCIDevice::pci_cfg_write(reg_offs, value, size);
+        return;
+    }
 
     // FIXME: implement write-protection for read-only registers
 
