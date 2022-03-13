@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -115,9 +115,20 @@ ATIRage::ATIRage(uint16_t dev_id, uint32_t vmem_size_mb)
     }
 
     /* set up PCI configuration space header */
-    WRITE_DWORD_LE_A(&this->pci_cfg[0], (dev_id << 16) | ATI_PCI_VENDOR_ID);
-    WRITE_DWORD_LE_A(&this->pci_cfg[8], (0x030000 << 8) | asic_id);
-    WRITE_DWORD_LE_A(&this->pci_cfg[0x3C], 0x00080100);
+    this->vendor_id   = PCI_VENDOR_ATI;
+    this->device_id   = dev_id;
+    this->subsys_vndr = PCI_VENDOR_ATI;
+    this->subsys_id   = 0x6987; // adapter ID
+    this->class_rev   = (0x030000 << 8) | asic_id;
+    this->min_gnt     = 8;
+    this->irq_pin     = 1;
+    this->bars_cfg[0] = 0xFF000000UL; // declare main aperture (16MB)
+    this->bars_cfg[1] = 0xFFFFFF01UL; // declare I/O region (256 bytes)
+    this->bars_cfg[2] = 0xFFFFF000UL; // declare register aperture (4KB)
+
+    this->pci_notify_bar_change = [this](int bar_num) {
+        this->notify_bar_change(bar_num);
+    };
 
     /* stuff default values into chip registers */
     WRITE_DWORD_LE_A(&this->mm_regs[ATI_CONFIG_CHIP_ID],
@@ -125,6 +136,58 @@ ATIRage::ATIRage(uint16_t dev_id, uint32_t vmem_size_mb)
 
     /* initialize display identification */
     this->disp_id = std::unique_ptr<DisplayID> (new DisplayID());
+}
+
+void ATIRage::notify_bar_change(int bar_num)
+{
+    switch (bar_num) {
+    case 0:
+        if (this->aperture_base != (this->bars[bar_num] & 0xFFFFFFF0UL)) {
+            this->aperture_base = this->bars[0] & 0xFFFFFFF0UL;
+            this->host_instance->pci_register_mmio_region(this->aperture_base,
+                APERTURE_SIZE, this);
+            LOG_F(INFO, "ATIRage: aperture address set to 0x%08X", this->aperture_base);
+        }
+        break;
+    case 1:
+        this->io_base = this->bars[1] & ~3;
+        LOG_F(INFO, "ATIRage: I/O space address set to 0x%08X", this->io_base);
+        break;
+    case 2:
+        LOG_F(INFO, "ATIRage: register aperture address set to 0x%08X", this->bars[2]);
+        break;
+    }
+}
+
+uint32_t ATIRage::pci_cfg_read(uint32_t reg_offs, uint32_t size)
+{
+    if (reg_offs < 64) {
+        return PCIDevice::pci_cfg_read(reg_offs, size);
+    }
+
+    switch (reg_offs) {
+    case 0x40:
+        return this->user_cfg;
+    default:
+        LOG_F(WARNING, "ATIRage: reading from unimplemented config register at 0x%X", reg_offs);
+    }
+
+    return 0;
+}
+
+void ATIRage::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
+{
+    if (reg_offs < 64) {
+        PCIDevice::pci_cfg_write(reg_offs, value, size);
+    } else {
+        switch (reg_offs) {
+        case 0x40:
+            this->user_cfg = value;
+            break;
+        default:
+            LOG_F(WARNING, "ATIRage: writing to unimplemented config register at 0x%X", reg_offs);
+        }
+    }
 }
 
 const char* ATIRage::get_reg_name(uint32_t reg_offset) {
@@ -278,113 +341,37 @@ void ATIRage::write_reg(uint32_t offset, uint32_t value, uint32_t size)
     }
 }
 
-
-uint32_t ATIRage::pci_cfg_read(uint32_t reg_offs, uint32_t size) {
-    uint32_t res = 0;
-
-    LOG_F(INFO, "Reading ATI Rage config space, offset = 0x%X, size=%d", reg_offs, size);
-
-    res = read_mem(&this->pci_cfg[reg_offs], size);
-
-    LOG_F(INFO, "Return value: 0x%X", res);
-    return res;
-}
-
-void ATIRage::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size) {
-    LOG_F(
-        INFO,
-        "Writing into ATI Rage PCI config space, offset = 0x%X, val=0x%X size=%d",
-        reg_offs,
-        BYTESWAP_32(value),
-        size);
-
-    switch (reg_offs) {
-    case 0x10: /* BAR 0 */
-        if (value == 0xFFFFFFFFUL) {
-            WRITE_DWORD_LE_A(&this->pci_cfg[CFG_REG_BAR0], 0xFF000000UL);
-        }
-        else {
-            this->aperture_base = BYTESWAP_32(value);
-            LOG_F(INFO, "ATI Rage aperture address set to 0x%08X", this->aperture_base);
-            WRITE_DWORD_BE_A(&this->pci_cfg[CFG_REG_BAR0], value);
-            this->host_instance->pci_register_mmio_region(this->aperture_base,
-                APERTURE_SIZE, this);
-        }
-        break;
-    case 0x14: /* BAR 1: I/O space base, 256 bytes wide */
-        if (value == 0xFFFFFFFFUL) {
-            WRITE_DWORD_BE_A(&this->pci_cfg[CFG_REG_BAR1], 0xFFFFFF01UL);
-        }
-        else {
-            WRITE_DWORD_BE_A(&this->pci_cfg[CFG_REG_BAR1], value);
-        }
-        break;
-    case 0x18: /* BAR 2 */
-        if (value == 0xFFFFFFFFUL) {
-            WRITE_DWORD_BE_A(&this->pci_cfg[CFG_REG_BAR2], 0xFFFFF000UL);
-        }
-        else {
-            WRITE_DWORD_BE_A(&this->pci_cfg[CFG_REG_BAR2], value);
-        }
-        break;
-    case CFG_REG_BAR3: /* unimplemented */
-    case CFG_REG_BAR4: /* unimplemented */
-    case CFG_REG_BAR5: /* unimplemented */
-        WRITE_DWORD_BE_A(&this->pci_cfg[reg_offs], 0);
-        break;
-    case CFG_EXP_BASE: /* no expansion ROM */
-        if (value == 0x00F8FFFFUL) {
-            // return 0 (not implemented) when attempting to size the expansion ROM
-            WRITE_DWORD_BE_A(&this->pci_cfg[reg_offs], 0);
-        } else {
-            WRITE_DWORD_BE_A(&this->pci_cfg[reg_offs], value);
-        }
-        break;
-    default:
-        write_mem(&this->pci_cfg[reg_offs], value, size);
-    }
-}
-
-
-bool ATIRage::io_access_allowed(uint32_t offset, uint32_t* p_io_base) {
-    if (!(this->pci_cfg[CFG_REG_CMD] & 1)) {
+bool ATIRage::io_access_allowed(uint32_t offset) {
+    if (!(this->command & 1)) {
         LOG_F(WARNING, "ATI I/O space disabled in the command reg");
         return false;
     }
 
-    uint32_t io_base = READ_DWORD_LE_A(&this->pci_cfg[CFG_REG_BAR1]) & ~3;
-
-    if (offset < io_base || offset > (io_base + 0x100)) {
+    if (offset < this->io_base || offset > (this->io_base + 0x100)) {
         LOG_F(WARNING, "Rage: I/O out of range, base=0x%X, offset=0x%X", io_base, offset);
         return false;
     }
-
-    *p_io_base = io_base;
 
     return true;
 }
 
 
 bool ATIRage::pci_io_read(uint32_t offset, uint32_t size, uint32_t* res) {
-    uint32_t io_base;
-
-    if (!this->io_access_allowed(offset, &io_base)) {
+    if (!this->io_access_allowed(offset)) {
         return false;
     }
 
-    *res = this->read_reg(offset - io_base, size);
+    *res = this->read_reg(offset - this->io_base, size);
     return true;
 }
 
 
 bool ATIRage::pci_io_write(uint32_t offset, uint32_t value, uint32_t size) {
-    uint32_t io_base;
-
-    if (!this->io_access_allowed(offset, &io_base)) {
+    if (!this->io_access_allowed(offset)) {
         return false;
     }
 
-    this->write_reg(offset - io_base, value, size);
+    this->write_reg(offset - this->io_base, value, size);
     return true;
 }
 

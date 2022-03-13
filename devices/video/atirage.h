@@ -31,7 +31,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /* PCI related definitions. */
 enum {
-    ATI_PCI_VENDOR_ID   = 0x1002,
     ATI_RAGE_PRO_DEV_ID = 0x4750,
     ATI_RAGE_GT_DEV_ID  = 0x4754,
 };
@@ -216,8 +215,9 @@ public:
     bool pci_io_write(uint32_t offset, uint32_t value, uint32_t size);
 
 protected:
+    void notify_bar_change(int bar_num);
     const char* get_reg_name(uint32_t reg_offset);
-    bool io_access_allowed(uint32_t offset, uint32_t* p_io_base);
+    bool io_access_allowed(uint32_t offset);
     uint32_t read_reg(uint32_t offset, uint32_t size);
     void write_reg(uint32_t offset, uint32_t value, uint32_t size);
     float calc_pll_freq(int scale, int fb_div);
@@ -228,15 +228,15 @@ protected:
 private:
     uint8_t mm_regs[2048] = {0}; // internal registers
 
-    uint8_t pci_cfg[256] = {0}; // PCI configuration space
-
     uint8_t plls[64] = {0}; // internal PLL registers
 
     /* Video RAM variables */
     std::unique_ptr<uint8_t[]>  vram_ptr;
     uint32_t    vram_size;
 
-    uint32_t    aperture_base;
+    uint32_t    aperture_base = 0;
+    uint32_t    io_base = 0;
+    uint8_t     user_cfg = 8;
 
     std::unique_ptr<DisplayID>  disp_id;
 
