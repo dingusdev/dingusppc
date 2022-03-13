@@ -92,22 +92,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     VIA-CUDA       register space: 0x00016000, size: 0x00002000
 */
 
-class HeathrowIC : public PCIDevice {
+class HeathrowIC : public PCIDevice, public InterruptCtrl {
 public:
     HeathrowIC();
     ~HeathrowIC() = default;
 
-    /* PCI device methods */
-    bool supports_io_space(void) {
-        return false;
-    };
-
-    uint32_t pci_cfg_read(uint32_t reg_offs, uint32_t size);
-    void pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size);
-
-    /* MMIO device methods */
+    // MMIO device methods
     uint32_t read(uint32_t reg_start, uint32_t offset, int size);
     void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size);
+
+    // InterruptCtrl methods
+    uint32_t register_dev_int(IntSrc src_id);
+    uint32_t register_dma_int(IntSrc src_id);
+    void ack_int(uint32_t irq_id, uint8_t irq_line_state);
+    void ack_dma_int(uint32_t irq_id, uint8_t irq_line_state);
 
 protected:
     uint32_t dma_read(uint32_t offset, int size);
@@ -116,29 +114,12 @@ protected:
     uint32_t mio_ctrl_read(uint32_t offset, int size);
     void mio_ctrl_write(uint32_t offset, uint32_t value, int size);
 
+    void notify_bar_change(int bar_num);
+
     void feature_control(const uint32_t value);
 
 private:
-    uint8_t pci_cfg_hdr[256] = {
-        0x6B,
-        0x10,    // vendor ID: Apple Computer Inc.
-        0x10,
-        0x00,    // device ID: Heathrow Mac I/O
-        0x00,
-        0x00,    // PCI command (set to 0 at power-up?)
-        0x00,
-        0x00,    // PCI status (set to 0 at power-up?)
-        0x01,    // revision ID
-        // class code is reported in OF property "class-code" as 0xff0000
-        0x00,    // standard programming
-        0x00,    // subclass code
-        0xFF,    // class code: unassigned
-        0x00,
-        0x00,    // unknown defaults
-        0x00,
-        0x00    // unknown defaults
-    };
-
+    uint32_t base_addr   = 0;
     uint32_t int_mask2   = 0;
     uint32_t int_clear2  = 0;
     uint32_t int_levels2 = 0;
@@ -157,7 +138,7 @@ private:
     std::unique_ptr<EsccController>     escc;     // ESCC serial controller
     std::unique_ptr<Swim3::Swim3Ctrl>   swim3;    // floppy disk controller
 
-    std::unique_ptr<DMAChannel>     snd_out_dma;
+    std::unique_ptr<DMAChannel>         snd_out_dma;
 };
 
 #endif /* MACIO_H */

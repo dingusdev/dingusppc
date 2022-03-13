@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -43,8 +43,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace std;
 
-HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow") {
+HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
+{
     supports_types(HWCompType::MMIO_DEV | HWCompType::INT_CTRL);
+
+    // populate my PCI config header
+    this->vendor_id   = PCI_VENDOR_APPLE;
+    this->device_id   = 0x0010;
+    this->class_rev   = 0xFF000001;
+    this->cache_ln_sz = 8;
+    this->lat_timer   = 0x40;
+    this->bars_cfg[0] = 0xFFF80000UL; // declare 512Kb of memory-mapped I/O space
+
+    this->pci_notify_bar_change = [this](int bar_num) {
+        this->notify_bar_change(bar_num);
+    };
 
     this->nvram = std::unique_ptr<NVram> (new NVram());
 
@@ -65,30 +78,18 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow") {
     this->swim3 = std::unique_ptr<Swim3::Swim3Ctrl> (new Swim3::Swim3Ctrl());
 }
 
-uint32_t HeathrowIC::pci_cfg_read(uint32_t reg_offs, uint32_t size) {
-    return this->pci_cfg_hdr[reg_offs & 0xFF];
-}
+void HeathrowIC::notify_bar_change(int bar_num)
+{
+    if (bar_num) // only BAR0 is supported
+        return;
 
-void HeathrowIC::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size) {
-    switch (reg_offs) {
-    case CFG_REG_BAR0:    // base address register
-        value = LE2BE(value);
-        if (value == 0xFFFFFFFF) {
-            LOG_F(
-                ERROR,
-                "%s err: BAR0 block size determination not \
-                implemented yet \n",
-                this->name.c_str());
-        } else if (value & 1) {
-            LOG_F(ERROR, "%s err: BAR0 I/O space not supported! \n", this->name.c_str());
-        } else if (value & 0x06) {
-            LOG_F(ERROR, "%s err: BAR0 64-bit I/O space not supported! \n", this->name.c_str());
-        } else {
-            this->base_addr = value & 0xFFF80000;
-            this->host_instance->pci_register_mmio_region(this->base_addr, 0x80000, this);
-            LOG_F(INFO, "%s base address set to %x \n", this->name.c_str(), this->base_addr);
+    if (this->base_addr != (this->bars[bar_num] & 0xFFFFFFF0UL)) {
+        if (this->base_addr) {
+            LOG_F(WARNING, "Heathrow: deallocating I/O memory not implemented");
         }
-        break;
+        this->base_addr = this->bars[0] & 0xFFFFFFF0UL;
+        this->host_instance->pci_register_mmio_region(this->base_addr, 0x80000, this);
+        LOG_F(INFO, "%s: base address set to 0x%X", this->pci_name.c_str(), this->base_addr);
     }
 }
 
@@ -301,4 +302,22 @@ void HeathrowIC::feature_control(const uint32_t value)
     } else {
         LOG_F(9, "Heathrow: Monitor sense disabled");
     }
+}
+
+uint32_t HeathrowIC::register_dev_int(IntSrc src_id)
+{
+    return 0;
+}
+
+uint32_t HeathrowIC::register_dma_int(IntSrc src_id)
+{
+    return 0;
+}
+
+void HeathrowIC::ack_int(uint32_t irq_id, uint8_t irq_line_state)
+{
+}
+
+void HeathrowIC::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state)
+{
 }
