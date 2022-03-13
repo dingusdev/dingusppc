@@ -43,7 +43,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** checks if one bit is set at time, return 0 if not */
 #define SINGLE_BIT_SET(val) ((val) && !((val) & ((val)-1)))
 
-class Bandit : public MMIODevice, public PCIHost {//}, public PCIDevice {
+class Bandit : public PCIHost, public PCIDevice {
 public:
     Bandit(int bridge_num, std::string name);
     ~Bandit() = default;
@@ -56,17 +56,9 @@ public:
     uint32_t read(uint32_t reg_start, uint32_t offset, int size);
     void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size);
 
-protected:
-    uint32_t pci_cfg_read(uint32_t reg_offs, uint32_t size);
-    void pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size);
-
 private:
-    std::string name;
     uint32_t    base_addr;
     uint32_t    config_addr;
-
-    uint8_t     my_pci_cfg_hdr[256];
-    uint8_t     my_cfg_mask[256];
 };
 
 #endif // BANDIT_PCI_H
