@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -66,6 +66,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 #include <memory>
+
+/** Interrupt related constants. */
+#define MACIO_INT_CLR    0x80UL       // clears bits in the interrupt events registers
+#define MACIO_INT_MODE   0x80000000UL // interrupt mode: 0 - native, 1 - 68k-style
 
 /** Offsets to common MacIO interrupt registers. */
 enum {
@@ -164,11 +168,11 @@ protected:
 
 private:
     uint32_t base_addr   = 0;
+    uint32_t int_events2 = 0;
     uint32_t int_mask2   = 0;
-    uint32_t int_clear2  = 0;
     uint32_t int_levels2 = 0;
+    uint32_t int_events1 = 0;
     uint32_t int_mask1   = 0;
-    uint32_t int_clear1  = 0;
     uint32_t int_levels1 = 0;
     uint32_t macio_id    = 0xF0700008UL;
     uint32_t feat_ctrl   = 0;    // features control register

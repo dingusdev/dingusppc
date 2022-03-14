@@ -209,28 +209,22 @@ uint32_t HeathrowIC::mio_ctrl_read(uint32_t offset, int size) {
     uint32_t res = 0;
 
     switch (offset & 0xFC) {
-    case 0x14:
-        LOG_F(9, "read from MIO:Int_Mask2 register \n");
+    case MIO_INT_EVENTS2:
+        res = this->int_events2;
+        break;
+    case MIO_INT_MASK2:
         res = this->int_mask2;
         break;
-    case 0x18:
-        LOG_F(9, "read from MIO:Int_Clear2 register \n");
-        res = this->int_clear2;
-        break;
-    case 0x1C:
-        LOG_F(9, "read from MIO:Int_Levels2 register \n");
+    case MIO_INT_LEVELS2:
         res = this->int_levels2;
         break;
-    case 0x24:
-        LOG_F(9, "read from MIO:Int_Mask1 register \n");
+    case MIO_INT_EVENTS1:
+        res = this->int_events1;
+        break;
+    case MIO_INT_MASK1:
         res = this->int_mask1;
         break;
-    case 0x28:
-        LOG_F(9, "read from MIO:Int_Clear1 register \n");
-        res = this->int_clear1;
-        break;
-    case 0x2C:
-        LOG_F(9, "read from MIO:Int_Levels1 register \n");
+    case MIO_INT_LEVELS1:
         res = this->int_levels1;
         break;
     case 0x34: /* heathrowIDs / HEATHROW_MBCR (Linux): media bay config reg? */
@@ -239,41 +233,39 @@ uint32_t HeathrowIC::mio_ctrl_read(uint32_t offset, int size) {
         break;
     case 0x38:
         LOG_F(9, "read from MIO:Feat_Ctrl register \n");
-        res = BYTESWAP_32(this->feat_ctrl);
+        res = this->feat_ctrl;
         break;
     default:
         LOG_F(WARNING, "read from unknown MIO register at %x \n", offset);
         break;
     }
 
-    return res;
+    return BYTESWAP_32(res);
 }
 
 void HeathrowIC::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
     switch (offset & 0xFC) {
-    case 0x14:
-        LOG_F(9, "write %x to MIO:Int_Mask2 register \n", value);
-        this->int_mask2 = value;
+    case MIO_INT_MASK2:
+        this->int_mask2 |= BYTESWAP_32(value) & ~MACIO_INT_MODE;
         break;
-    case 0x18:
-        LOG_F(9, "write %x to MIO:Int_Clear2 register \n", value);
-        this->int_clear2 = value;
+    case MIO_INT_CLEAR2:
+        if (value & MACIO_INT_CLR) {
+            this->int_events2 = 0;
+        } else {
+            this->int_events2 &= BYTESWAP_32(value);
+        }
         break;
-    case 0x1C:
-        LOG_F(9, "write %x to MIO:Int_Levels2 register \n", value);
-        this->int_levels2 = value;
+    case MIO_INT_MASK1:
+        this->int_mask1 = BYTESWAP_32(value);
+        // copy IntMode bit to InterruptMask2 register
+        this->int_mask2 = (this->int_mask2 & ~MACIO_INT_MODE) | (this->int_mask1 & MACIO_INT_MODE);
         break;
-    case 0x24:
-        LOG_F(9, "write %x to MIO:Int_Mask1 register \n", value);
-        this->int_mask1 = value;
-        break;
-    case 0x28:
-        LOG_F(9, "write %x to MIO:Int_Clear1 register \n", value);
-        this->int_clear1 = value;
-        break;
-    case 0x2C:
-        LOG_F(9, "write %x to MIO:Int_Levels1 register \n", value);
-        this->int_levels1 = value;
+    case MIO_INT_CLEAR1:
+        if (value & MACIO_INT_CLR) {
+            this->int_events1 = 0;
+        } else {
+            this->int_events1 &= BYTESWAP_32(value);
+        }
         break;
     case 0x34:
         LOG_F(WARNING, "Attempted to write %x to MIO:ID at %x; Address : %x \n", value, offset, ppc_state.pc);
@@ -306,6 +298,16 @@ void HeathrowIC::feature_control(const uint32_t value)
 
 uint32_t HeathrowIC::register_dev_int(IntSrc src_id)
 {
+    switch (src_id) {
+    case IntSrc::VIA_CUDA:
+        return 1 << 7;
+    case IntSrc::SCSI1:
+        return 1 << 1;
+    case IntSrc::SWIM3:
+        return 1 << 8;
+    default:
+        ABORT_F("Heathrow: unknown interrupt source %d", src_id);
+    }
     return 0;
 }
 
@@ -316,6 +318,35 @@ uint32_t HeathrowIC::register_dma_int(IntSrc src_id)
 
 void HeathrowIC::ack_int(uint32_t irq_id, uint8_t irq_line_state)
 {
+    if (this->int_mask1 & MACIO_INT_MODE) { // 68k interrupt emulation mode?
+        if (irq_id > 0x200000) {
+            irq_id >>= 21;
+            this->int_events2 |= irq_id; // signal IRQ line change
+            this->int_events2 &= this->int_mask2;
+            // update IRQ line state
+            if (irq_line_state) {
+                this->int_levels2 |= irq_id;
+            } else {
+                this->int_levels2 &= ~irq_id;
+            }
+        } else {
+            irq_id <<= 11;
+            this->int_events1 |= irq_id; // signal IRQ line change
+            this->int_events1 &= this->int_mask1;
+            // update IRQ line state
+            if (irq_line_state) {
+                this->int_levels1 |= irq_id;
+            } else {
+                this->int_levels1 &= ~irq_id;
+            }
+        }
+        // signal CPU interrupt
+        if (this->int_events1 || this->int_events2) {
+            ppc_ext_int();
+        }
+    } else {
+        ABORT_F("Heathrow: native interrupt mode not implemented");
+    }
 }
 
 void HeathrowIC::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state)
