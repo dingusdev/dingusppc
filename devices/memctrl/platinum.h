@@ -116,7 +116,20 @@ enum PlatinumReg : uint32_t {
     BANK_6_BASE   = 0x0C0,
     BANK_7_BASE   = 0x0D0,
     GP_SW_SCRATCH = 0x0E0,
-    PCI_ADDR_MASK = 0x0F0
+    PCI_ADDR_MASK = 0x0F0,
+    FB_CONFIG_1   = 0x140,
+    FB_CONFIG_2   = 0x150,
+    VRAM_REFRESH  = 0x1B0,
+};
+
+enum {
+    DRAM_CAP_2MB    = (1 << 21),
+    DRAM_CAP_4MB    = (1 << 22),
+    DRAM_CAP_8MB    = (1 << 23),
+    DRAM_CAP_16MB   = (1 << 24),
+    DRAM_CAP_32MB   = (1 << 25),
+    DRAM_CAP_64MB   = (1 << 26),
+    DRAM_CAP_128MB  = (1 << 27),
 };
 
 }; // namespace Platinum
@@ -132,11 +145,23 @@ public:
 
     /* MMIODevice methods */
     uint32_t read(uint32_t reg_start, uint32_t offset, int size);
-    void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size);
+    void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size);
+
+    void insert_ram_dimm(int slot_num, uint32_t capacity);
+    void map_phys_ram();
 
 private:
     uint32_t    cpu_id;
     uint8_t     cpu_type; // 0 - MPC601, 1 - 603/604 CPU
+
+    // memory controller state
+    uint32_t    rom_timing   = 0;
+    uint32_t    dram_timing  = 0xEFF;
+    uint32_t    dram_refresh = 0x1F4;
+    uint32_t    fb_config_2  = 0x1FFF;
+    uint32_t    vram_refresh = 0x1F4;
+    uint32_t    bank_base[8];
+    uint32_t    bank_size[8] = { 0 };
 };
 
 #endif // PLATINUM_MEMCTRL_H
