@@ -148,7 +148,16 @@ void GrandCentral::write(uint32_t reg_start, uint32_t offset, uint32_t value, in
             this->viacuda->write((offset >> 9) & 0xF, value);
             break;
         case 0xD: // NVRAM High Address (IOBus dev #4)
-            this->nvram_addr_hi = BYTESWAP_32(value);
+            switch (size) {
+            case 4:
+                this->nvram_addr_hi = BYTESWAP_32(value);
+                break;
+            case 2:
+                this->nvram_addr_hi = BYTESWAP_16(value);
+                break;
+            default:
+                this->nvram_addr_hi = value;
+            }
             break;
         case 0xF: // NVRAM Data (IOBus dev #6)
             this->nvram->write_byte(
