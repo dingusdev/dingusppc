@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <devices/ethernet/mace.h>
 #include <devices/ioctrl/macio.h>
+#include <devices/serial/escc.h>
 #include <endianswap.h>
 #include <loguru.hpp>
 #include <machines/machinebase.h>
@@ -57,6 +58,8 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
         std::bind(&AwacsScreamer::dma_start, this->awacs.get()),
         std::bind(&AwacsScreamer::dma_end, this->awacs.get())
     );
+
+    this->escc = std::unique_ptr<EsccController> (new EsccController());
 }
 
 void GrandCentral::notify_bar_change(int bar_num)
@@ -82,11 +85,20 @@ uint32_t GrandCentral::read(uint32_t reg_start, uint32_t offset, int size)
         switch (subdev_num) {
         case 1: // MACE
             return this->mace->read((offset >> 4) & 0x1F);
+        case 2: // ESCC compatible addressing
+            if ((offset & 0xFF) < 16) {
+                return this->escc->read((offset >> 1) & 0xF);
+            }
+            // fallthrough
+        case 3: // ESCC MacRISC addressing
+            return this->escc->read((offset >> 4) & 0xF);
         case 4: // AWACS
             return this->awacs->snd_ctrl_read(offset & 0xFF, size);
         case 6:
         case 7: // VIA-CUDA
             return this->viacuda->read((offset >> 9) & 0xF);
+        case 0xA: // Board register 1 (IOBus dev #1)
+            return BYTESWAP_32(0x100);
         case 0xF: // NVRAM Data (IOBus dev #6)
             return this->nvram->read_byte(
                 (this->nvram_addr_hi << 5) + ((offset >> 4) & 0x1F));
@@ -118,6 +130,15 @@ void GrandCentral::write(uint32_t reg_start, uint32_t offset, uint32_t value, in
         switch (subdev_num) {
         case 1: // MACE registers
             this->mace->write((offset >> 4) & 0x1F, value);
+            break;
+        case 2: // ESCC compatible addressing
+            if ((offset & 0xFF) < 16) {
+                this->escc->write((offset >> 1) & 0xF, value);
+                break;
+            }
+            // fallthrough
+        case 3: // ESCC MacRISC addressing
+            this->escc->write((offset >> 4) & 0xF, value);
             break;
         case 4: // AWACS
             this->awacs->snd_ctrl_write(offset & 0xFF, value, size);

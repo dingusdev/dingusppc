@@ -112,6 +112,7 @@ private:
     std::unique_ptr<AwacsScreamer>  awacs;   // AWACS audio codec instance
     std::unique_ptr<ViaCuda>        viacuda; // VIA cell with Cuda MCU attached to it
     std::unique_ptr<NVram>          nvram;   // NVRAM module
+    std::unique_ptr<EsccController> escc;     // ESCC serial controller
 
     std::unique_ptr<DMAChannel>     snd_out_dma;
 };
