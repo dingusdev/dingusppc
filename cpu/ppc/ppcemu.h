@@ -84,21 +84,26 @@ extern SetPRS ppc_state;
 
 /** symbolic names for frequently used SPRs */
 enum SPR : int {
-    MQ    = 0,
-    XER   = 1,
-    LR    = 8,
-    CTR   = 9,
-    DSISR = 18,
-    DAR   = 19,
-    DEC   = 22,
-    SDR1  = 25,
-    SRR0  = 26,
-    SRR1  = 27,
-    PVR   = 287
+    MQ      = 0,
+    XER     = 1,
+    RTCU_U  = 4,   // user RTCU
+    RTCL_U  = 5,   // user RTCL
+    LR      = 8,
+    CTR     = 9,
+    DSISR   = 18,
+    DAR     = 19,
+    RTCU_S  = 20,  // supervisor RTCU
+    RTCL_S  = 21,  // supervisor RTCL
+    DEC     = 22,
+    SDR1    = 25,
+    SRR0    = 26,
+    SRR1    = 27,
+    TBL_U   = 268, // user mode TBL
+    TBU_U   = 269, // user mode TBU
+    TBL_S   = 284, // supervisor TBL
+    TBU_S   = 285, // supervisor TBU
+    PVR     = 287
 };
-
-/** symbolic names for frequently used SPRs */
-enum TBR : int { TBL = 0, TBU = 1 };
 
 /** symbolic names for common PPC processors */
 enum PPC_VER : uint32_t {
@@ -154,6 +159,7 @@ extern uint64_t timebase_counter;
 extern uint64_t tbr_wr_timestamp;
 extern uint64_t tbr_wr_value;
 extern uint64_t tbr_freq_hz;
+extern uint32_t rtc_lo, rtc_hi;
 
 // Additional steps to prevent overflow?
 extern int32_t add_result;
@@ -321,7 +327,7 @@ extern uint64_t exceptions_processed;
 #endif
 
 // Function prototypes
-extern void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version);
+extern void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, uint64_t tb_freq);
 extern void ppc_mmu_init(uint32_t cpu_version);
 
 void ppc_illegalop();

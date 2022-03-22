@@ -33,7 +33,8 @@ using namespace std;
 
 #define MIN_TIMEOUT_NS 200
 
-#define NS_PER_SEC 1E9
+#define NS_PER_SEC      1E9
+#define ONE_BILLION_NS  0x3B9ACA00UL
 
 #define USECS_TO_NSECS(us) (us) * 1000
 

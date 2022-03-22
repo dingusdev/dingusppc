@@ -847,6 +847,20 @@ void dppc_interpreter::ppc_mtmsr() {
     mmu_change_mode();
 }
 
+static inline uint64_t calc_rtcl_value()
+{
+    uint64_t diff    = get_virt_time_ns() - tbr_wr_timestamp;
+    uint64_t rtc_inc = diff * tbr_freq_hz / NS_PER_SEC;
+    uint64_t rtc_l   = rtc_lo + (rtc_inc << 7);
+    if (rtc_l >= ONE_BILLION_NS) { // check RTCL overflow
+        rtc_hi += rtc_l / ONE_BILLION_NS;
+        rtc_lo  = rtc_l % ONE_BILLION_NS;
+        tbr_wr_timestamp = get_virt_time_ns();
+        rtc_l =  rtc_lo;
+    }
+    return rtc_l & 0x3FFFFF80UL;
+}
+
 void dppc_interpreter::ppc_mfspr() {
     uint32_t ref_spr = (((ppc_cur_instruction >> 11) & 31) << 5) | ((ppc_cur_instruction >> 16) & 31);
 
@@ -855,8 +869,17 @@ void dppc_interpreter::ppc_mfspr() {
         num_supervisor_instrs++;
     }
 #endif
-    reg_d                = (ppc_cur_instruction >> 21) & 31;
-    ppc_state.gpr[reg_d] = ppc_state.spr[ref_spr];
+
+    switch (ref_spr) {
+    case SPR::RTCL_U:
+        ppc_state.spr[SPR::RTCL_U] = calc_rtcl_value();
+        break;
+    case SPR::RTCU_U:
+        ppc_state.spr[SPR::RTCL_U] = rtc_hi;
+        break;
+    }
+
+    ppc_state.gpr[(ppc_cur_instruction >> 21) & 31] = ppc_state.spr[ref_spr];
 }
 
 static inline uint64_t calc_tbr_value()
@@ -871,7 +894,6 @@ static void update_timebase(uint64_t mask, uint64_t new_val)
     uint64_t tbr_value = calc_tbr_value();
     tbr_wr_value = (tbr_value & mask) | new_val;
     tbr_wr_timestamp = get_virt_time_ns();
-    LOG_F(9, "New TBR value = 0x%llu", tbr_wr_value);
 }
 
 void dppc_interpreter::ppc_mtspr() {
@@ -884,20 +906,30 @@ void dppc_interpreter::ppc_mtspr() {
     }
 #endif
 
-    if (ref_spr != 287) {
-        ppc_state.spr[ref_spr] = ppc_state.gpr[reg_s];
+    uint32_t val = ppc_state.gpr[reg_s];
+
+    if (ref_spr != SPR::PVR) { // prevent writes to the read-only PVR
+        ppc_state.spr[ref_spr] = val;
     }
 
-    if (ref_spr == SPR::SDR1) {
+    if (ref_spr == SPR::SDR1) { // adapt to SDR1 changes
         mmu_pat_ctx_changed();
     }
 
     switch (ref_spr) {
-    case 284:
-        update_timebase(0xFFFFFFFF00000000ULL, ppc_state.gpr[reg_s]);
+    case SPR::RTCL_S:
+        rtc_lo = val & 0x3FFFFF80UL;
+        tbr_wr_timestamp = get_virt_time_ns();
         break;
-    case 285:
-        update_timebase(0x00000000FFFFFFFFULL, (uint64_t)(ppc_state.gpr[reg_s]) << 32);
+    case SPR::RTCU_S:
+        rtc_hi = val;
+        tbr_wr_timestamp = get_virt_time_ns();
+        break;
+    case SPR::TBL_S:
+        update_timebase(0xFFFFFFFF00000000ULL, val);
+        break;
+    case SPR::TBU_S:
+        update_timebase(0x00000000FFFFFFFFULL, (uint64_t)(val) << 32);
         break;
     case 528:
     case 529:
@@ -928,10 +960,10 @@ void dppc_interpreter::ppc_mftb() {
     uint64_t tbr_value = calc_tbr_value();
 
     switch (ref_spr) {
-    case 268:
+    case SPR::TBL_U:
         ppc_state.gpr[reg_d] = tbr_value & 0xFFFFFFFFUL;
         break;
-    case 269:
+    case SPR::TBU_U:
         ppc_state.gpr[reg_d] = (tbr_value >> 32) & 0xFFFFFFFFUL;
         break;
     default:

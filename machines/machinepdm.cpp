@@ -89,7 +89,7 @@ int create_pdm(std::string& id) {
     gMachineObj->add_component("SCSI0", new ScsiBus);
 
     /* Init virtual CPU and request MPC601 */
-    ppc_cpu_init(hmc_obj, PPC_VER::MPC601);
+    ppc_cpu_init(hmc_obj, PPC_VER::MPC601, 7812500ULL);
 
     // post-initialize all devices
     if (gMachineObj->postinit_devices()) {
