@@ -65,11 +65,13 @@ uint64_t g_icycles;
 int      icnt_factor;
 
 /* global variables related to the timebase facility */
-uint64_t tbr_wr_timestamp;  // stores vCPU virtual time of the last TBR write
+uint64_t tbr_wr_timestamp;  // stores vCPU virtual time of the last TBR/RTC write
 uint64_t tbr_wr_value;      // last value written to the TBR
-uint64_t tbr_freq_hz;       // TBR driving frequency in Hz
+uint64_t tbr_freq_hz;       // TBR/RTC driving frequency in Hz
 uint64_t timebase_counter;  // internal timebase counter
 uint32_t decr;              // current value of PPC DEC register
+uint32_t rtc_lo;            // MPC601 RTC lower, counts nanoseconds
+uint32_t rtc_hi;            // MPC601 RTC upper, counts seconds
 
 #ifdef CPU_PROFILING
 
@@ -734,12 +736,11 @@ void initialize_ppc_opcode_tables() {
     }
 }
 
-void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version) {
+void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, uint64_t tb_freq)
+{
     int i;
 
     mem_ctrl_instance = mem_ctrl;
-
-    //test_timebase_update();
 
     initialize_ppc_opcode_tables();
 
@@ -752,7 +753,7 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version) {
     icnt_factor = 4;
     tbr_wr_timestamp = 0;
     tbr_wr_value = 0;
-    tbr_freq_hz = 16705000; // FIXME: this should be set properly during machine initialization
+    tbr_freq_hz = tb_freq;
 
     exec_flags = 0;
 

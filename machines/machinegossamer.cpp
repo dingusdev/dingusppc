@@ -101,7 +101,7 @@ int create_gossamer(std::string& id) {
         18, dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("ATIRage")));
 
     /* Init virtual CPU and request MPC750 CPU aka G3 */
-    ppc_cpu_init(grackle_obj, PPC_VER::MPC750);
+    ppc_cpu_init(grackle_obj, PPC_VER::MPC750, 16705000ULL);
 
     // post-initialize all devices
     if (gMachineObj->postinit_devices()) {
