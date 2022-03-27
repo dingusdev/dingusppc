@@ -57,6 +57,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/pci/pcidevice.h>
 #include <devices/common/pci/pcihost.h>
 #include <devices/common/scsi/mesh.h>
+#include <devices/common/scsi/sc53c94.h>
 #include <devices/common/viacuda.h>
 #include <devices/ethernet/mace.h>
 #include <devices/floppy/swim3.h>
@@ -112,7 +113,8 @@ private:
     std::unique_ptr<AwacsScreamer>  awacs;   // AWACS audio codec instance
     std::unique_ptr<ViaCuda>        viacuda; // VIA cell with Cuda MCU attached to it
     std::unique_ptr<NVram>          nvram;   // NVRAM module
-    std::unique_ptr<EsccController> escc;     // ESCC serial controller
+    std::unique_ptr<EsccController> escc;    // ESCC serial controller
+    std::unique_ptr<Sc53C94>        scsi_0;  // external SCSI
 
     std::unique_ptr<DMAChannel>     snd_out_dma;
 };
