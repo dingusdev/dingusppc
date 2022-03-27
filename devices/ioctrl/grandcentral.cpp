@@ -19,6 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <devices/common/scsi/sc53c94.h>
 #include <devices/ethernet/mace.h>
 #include <devices/ioctrl/macio.h>
 #include <devices/serial/escc.h>
@@ -60,6 +61,8 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
     );
 
     this->escc = std::unique_ptr<EsccController> (new EsccController());
+
+    this->scsi_0 = std::unique_ptr<Sc53C94> (new Sc53C94());
 }
 
 void GrandCentral::notify_bar_change(int bar_num)
@@ -83,6 +86,8 @@ uint32_t GrandCentral::read(uint32_t reg_start, uint32_t offset, int size)
         unsigned subdev_num = (offset >> 12) & 0xF;
 
         switch (subdev_num) {
+        case 0: // Curio SCSI
+            return this->scsi_0->read((offset >> 4) & 0xF);
         case 1: // MACE
             return this->mace->read((offset >> 4) & 0x1F);
         case 2: // ESCC compatible addressing
@@ -128,6 +133,9 @@ void GrandCentral::write(uint32_t reg_start, uint32_t offset, uint32_t value, in
         unsigned subdev_num = (offset >> 12) & 0xF;
 
         switch (subdev_num) {
+        case 0: // Curio SCSI
+            this->scsi_0->write((offset >> 4) & 0xF, value);
+            break;
         case 1: // MACE registers
             this->mace->write((offset >> 4) & 0x1F, value);
             break;
