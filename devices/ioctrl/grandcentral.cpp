@@ -19,6 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <cpu/ppc/ppcemu.h>
 #include <devices/common/scsi/sc53c94.h>
 #include <devices/ethernet/mace.h>
 #include <devices/ioctrl/macio.h>
@@ -121,6 +122,14 @@ uint32_t GrandCentral::read(uint32_t reg_start, uint32_t offset, int size)
                   this->base_addr + offset);
         }
     } else { // Interrupt related registers
+        switch (offset) {
+        case MIO_INT_MASK1:
+            return BYTESWAP_32(this->int_mask);
+        case MIO_INT_LEVELS1:
+            return BYTESWAP_32(this->int_levels);
+        case MIO_INT_EVENTS1:
+            return BYTESWAP_32(this->int_events);
+        }
     }
 
     LOG_F(WARNING, "GC: reading from unmapped I/O memory 0x%X", this->base_addr + offset);
@@ -190,6 +199,13 @@ void GrandCentral::write(uint32_t reg_start, uint32_t offset, uint32_t value, in
         case MIO_INT_MASK1:
             this->int_mask = BYTESWAP_32(value);
             break;
+        case MIO_INT_CLEAR1:
+            if (value & MACIO_INT_CLR) {
+                this->int_events = 0;
+            } else {
+                this->int_events &= BYTESWAP_32(value);
+            }
+            break;
         default:
             LOG_F(WARNING, "GC: writing to unmapped I/O memory 0x%X",
                  this->base_addr + offset);
@@ -199,18 +215,46 @@ void GrandCentral::write(uint32_t reg_start, uint32_t offset, uint32_t value, in
 
 uint32_t GrandCentral::register_dev_int(IntSrc src_id)
 {
+    switch (src_id) {
+    case IntSrc::VIA_CUDA:
+        return 1 << 18;
+    case IntSrc::SCSI1:
+        return 1 << 12;
+    case IntSrc::SWIM3:
+        return 1 << 19;
+    default:
+        ABORT_F("GC: unknown interrupt source %d", src_id);
+    }
     return 0;
 }
 
 uint32_t GrandCentral::register_dma_int(IntSrc src_id)
 {
+    ABORT_F("GC: register_dma_int() not implemened");
     return 0;
 }
 
 void GrandCentral::ack_int(uint32_t irq_id, uint8_t irq_line_state)
 {
+    if (this->int_mask & MACIO_INT_MODE) { // 68k interrupt emulation mode?
+        this->int_events |= irq_id; // signal IRQ line change
+        this->int_events &= this->int_mask;
+        // update IRQ line state
+        if (irq_line_state) {
+            this->int_levels |= irq_id;
+        } else {
+            this->int_levels &= ~irq_id;
+        }
+        // signal CPU interrupt
+        if (this->int_events) {
+            ppc_ext_int();
+        }
+    } else {
+        ABORT_F("GC: native interrupt mode not implemented");
+    }
 }
 
 void GrandCentral::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state)
 {
+    ABORT_F("GC: ack_dma_int() not implemened");
 }

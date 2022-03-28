@@ -104,7 +104,11 @@ protected:
 
 private:
     uint32_t    base_addr = 0;
-    uint32_t    int_mask  = 0;
+
+    // interrupt state
+    uint32_t    int_mask   = 0;
+    uint32_t    int_levels = 0;
+    uint32_t    int_events = 0;
 
     uint32_t    nvram_addr_hi;
 
