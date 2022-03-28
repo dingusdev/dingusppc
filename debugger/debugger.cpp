@@ -25,12 +25,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <iostream>
 #include <loguru.hpp>
 #include <map>
+#include <memory>
 #include <sstream>
 #include <stdio.h>
 #include <string>
 #include "../cpu/ppc/ppcdisasm.h"
 #include "../cpu/ppc/ppcemu.h"
 #include "../cpu/ppc/ppcmmu.h"
+#include <devices/common/ofnvram.h>
 #include "memaccess.h"
 #include "utils/profiler.h"
 
@@ -89,6 +91,8 @@ static void show_help() {
     cout << "                  X can be either 'ppc' (default) or '68k'" << endl;
     cout << "                  Use 68k for debugging emulated 68k code only." << endl;
 #endif
+    cout << "  printenv     -- print current NVRAM settings." << endl;
+    cout << "  setenv V N   -- set NVRAM variable V to value N." << endl;
     cout << "  quit         -- quit the debugger" << endl << endl;
     cout << "Pressing ENTER will repeat last command." << endl;
 }
@@ -372,6 +376,9 @@ void enter_debugger() {
     int log_level, context;
     size_t separator_pos;
 
+    unique_ptr<OfNvramUtils> ofnvram = unique_ptr<OfNvramUtils>(new OfNvramUtils);
+    ofnvram->init();
+
     context = 1; /* start with the PowerPC context */
 
     cout << "Welcome to the DingusPPC command line debugger." << endl;
@@ -570,6 +577,13 @@ void enter_debugger() {
                 cout << "Unknown debugging context: " << expr_str << endl;
             }
 #endif
+        } else if (cmd == "printenv") {
+            ofnvram->printenv();
+        } else if (cmd == "setenv") {
+            string var_name, value;
+            ss >> var_name;
+            ss >> value;
+            ofnvram->setenv(var_name, value);
         } else {
             cout << "Unknown command: " << cmd << endl;
             continue;
