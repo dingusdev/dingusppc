@@ -22,6 +22,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef NVRAM_H
 #define NVRAM_H
 
+#include <devices/common/hwcomponent.h>
+
 #include <cinttypes>
 #include <string>
 
@@ -31,7 +33,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     automatically saved to and restored from the dedicated file.
  */
 
-class NVram {
+class NVram : public HWComponent {
 public:
     NVram(std::string file_name = "nvram.bin", uint32_t ram_size = 8192);
     ~NVram();
@@ -40,9 +42,9 @@ public:
     void write_byte(uint32_t offset, uint8_t value);
 
 private:
-    std::string file_name; /* file name for the backing file. */
-    uint16_t ram_size;     /* NVRAM size. */
-    uint8_t* storage;
+    std::string file_name; // file name for the backing file
+    uint16_t    ram_size;  // NVRAM size
+    uint8_t*    storage;
 
     void init();
     void save();
