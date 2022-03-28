@@ -19,6 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <core/timermanager.h>
 #include <devices/common/hwcomponent.h>
 #include <devices/common/pci/pcidevice.h>
 #include <devices/video/atirage.h>
@@ -89,7 +90,7 @@ static const std::map<uint16_t, std::string> mach64_reg_names = {
 
 
 ATIRage::ATIRage(uint16_t dev_id, uint32_t vmem_size_mb)
-    : PCIDevice("ati-rage"), VideoCtrlBase()
+    : PCIDevice("ati-rage"), VideoCtrlBase(1024, 768)
 {
     uint8_t asic_id;
 
@@ -330,15 +331,15 @@ void ATIRage::write_reg(uint32_t offset, uint32_t value, uint32_t size)
             READ_DWORD_LE_A(&this->mm_regs[offset & ~3]));
     }
 
-    if ((this->mm_regs[ATI_CRTC_GEN_CNTL+3] & 2) &&
-        !(this->mm_regs[ATI_CRTC_GEN_CNTL] & 0x40)) {
-        int32_t src_offset = (READ_DWORD_LE_A(&this->mm_regs[ATI_CRTC_OFF_PITCH]) & 0xFFFF) * 8;
+    //if ((this->mm_regs[ATI_CRTC_GEN_CNTL+3] & 2) &&
+    //    !(this->mm_regs[ATI_CRTC_GEN_CNTL] & 0x40)) {
+    //    int32_t src_offset = (READ_DWORD_LE_A(&this->mm_regs[ATI_CRTC_OFF_PITCH]) & 0xFFFF) * 8;
 
-        this->fb_pitch = ((READ_DWORD_LE_A(&this->mm_regs[ATI_CRTC_OFF_PITCH])) >> 19) & 0x1FF8;
+    //    this->fb_pitch = ((READ_DWORD_LE_A(&this->mm_regs[ATI_CRTC_OFF_PITCH])) >> 19) & 0x1FF8;
 
-        this->fb_ptr = &this->vram_ptr[src_offset];
-        this->update_screen();
-    }
+    //    this->fb_ptr = &this->vram_ptr[src_offset];
+    //    this->update_screen();
+    //}
 }
 
 bool ATIRage::io_access_allowed(uint32_t offset) {
@@ -515,6 +516,12 @@ void ATIRage::crtc_enable() {
 
         this->refresh_rate = pixel_clock / hori_total / vert_total;
 
+        int32_t src_offset = (READ_DWORD_LE_A(&this->mm_regs[ATI_CRTC_OFF_PITCH]) & 0xFFFF) * 8;
+
+        this->fb_pitch = ((READ_DWORD_LE_A(&this->mm_regs[ATI_CRTC_OFF_PITCH])) >> 19) & 0x1FF8;
+
+        this->fb_ptr = &this->vram_ptr[src_offset];
+
         // specify framebuffer converter (hardcoded for now)
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
             this->convert_frame_8bpp(dst_buf, dst_pitch);
@@ -529,6 +536,16 @@ void ATIRage::crtc_enable() {
         LOG_F(INFO, "VPLL frequency: %f MHz", vpll_freq * 1e-6);
         LOG_F(INFO, "Pixel (dot) clock: %f MHz", this->pixel_clock * 1e-6);
         LOG_F(INFO, "Refresh rate: %f Hz", this->refresh_rate);
+
+        uint64_t refresh_interval = static_cast<uint64_t>(1.0f / this->refresh_rate * NS_PER_SEC + 0.5);
+        TimerManager::get_instance()->add_cyclic_timer(
+            refresh_interval,
+            [this]() {
+                this->update_screen();
+            }
+        );
+
+        this->update_screen();
     } else {
         LOG_F(WARNING, "ATI Rage: VLCK source != VPLL!");
     }
