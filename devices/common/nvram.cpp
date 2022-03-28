@@ -19,6 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <devices/common/hwcomponent.h>
 #include <devices/common/nvram.h>
 
 #include <cinttypes>
@@ -35,7 +36,12 @@ using namespace std;
 /** the signature for NVRAM backing file identification. */
 static char NVRAM_FILE_ID[] = "DINGUSPPCNVRAM";
 
-NVram::NVram(std::string file_name, uint32_t ram_size) {
+NVram::NVram(std::string file_name, uint32_t ram_size)
+{
+    this->name = "NVRAM";
+
+    supports_types(HWCompType::NVRAM);
+
     this->file_name = file_name;
     this->ram_size  = ram_size;
 

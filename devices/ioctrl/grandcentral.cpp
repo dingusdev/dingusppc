@@ -49,8 +49,10 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
     // construct subdevices
     this->mace    = std::unique_ptr<MaceController> (new MaceController(MACE_ID));
     this->viacuda = std::unique_ptr<ViaCuda> (new ViaCuda());
-    gMachineObj->add_subdevice("ViaCuda", this->viacuda.get());
     this->nvram   = std::unique_ptr<NVram> (new NVram());
+
+    gMachineObj->add_subdevice("ViaCuda", this->viacuda.get());
+    gMachineObj->add_subdevice("NVRAM", this->nvram.get());
 
     // initialize sound chip and its DMA output channel, then wire them together
     this->awacs       = std::unique_ptr<AwacsScreamer> (new AwacsScreamer());

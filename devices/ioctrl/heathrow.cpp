@@ -60,6 +60,7 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
     };
 
     this->nvram = std::unique_ptr<NVram> (new NVram());
+    gMachineObj->add_subdevice("NVRAM", this->nvram.get());
 
     this->viacuda = std::unique_ptr<ViaCuda> (new ViaCuda());
     gMachineObj->add_subdevice("ViaCuda", this->viacuda.get());

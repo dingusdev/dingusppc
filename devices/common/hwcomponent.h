@@ -29,6 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 enum HWCompType {
     UNKNOWN     = 0ULL,       /* unknown component type */
     MEM_CTRL    = 1ULL << 0,  /* memory controller */
+    NVRAM       = 1ULL << 1,  /* non-volatile random access memory */
     ROM         = 1ULL << 2,  /* read-only memory */
     RAM         = 1ULL << 3,  /* random access memory */
     MMIO_DEV    = 1ULL << 4,  /* memory mapped I/O device */
