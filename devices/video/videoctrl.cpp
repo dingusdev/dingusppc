@@ -69,7 +69,7 @@ VideoCtrlBase::VideoCtrlBase(int width, int height)
         this->renderer,
         SDL_PIXELFORMAT_ARGB8888,
         SDL_TEXTUREACCESS_STREAMING,
-        640, 480
+        width, height
     );
 
     if (this->disp_texture == NULL) {
