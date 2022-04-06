@@ -117,26 +117,26 @@ static const string flag_names[8] = {
 };
 
 static const map<string, std::tuple<int, uint16_t>> of_vars = {
-    // name,            type, offset
-    {"real-base",       {1,   0x10}},
-    {"real-size",       {1,   0x14}},
-    {"virt-base",       {1,   0x18}},
-    {"virt-size",       {1,   0x1C}},
-    {"load-base",       {1,   0x20}},
-    {"pci-probe-list",  {1,   0x24}},
-    {"screen-#columns", {1,   0x28}},
-    {"screen-#rows",    {1,   0x2C}},
-    {"selftest-#megs",  {1,   0x30}},
-    {"boot-device",     {2,   0x34}},
-    {"boot-file",       {2,   0x38}},
-    {"diag-device",     {2,   0x3C}},
-    {"diag-file",       {2,   0x40}},
-    {"input-device",    {2,   0x44}},
-    {"output-device",   {2,   0x48}},
-    {"oem-banner",      {2,   0x4C}},
-    {"oem-logo",        {2,   0x50}},
-    {"nvramrc",         {2,   0x54}},
-    {"boot-command",    {2,   0x58}},
+    // name,            type,               offset
+    {"real-base",       {OF_VAR_TYPE_INT,   0x10}},
+    {"real-size",       {OF_VAR_TYPE_INT,   0x14}},
+    {"virt-base",       {OF_VAR_TYPE_INT,   0x18}},
+    {"virt-size",       {OF_VAR_TYPE_INT,   0x1C}},
+    {"load-base",       {OF_VAR_TYPE_INT,   0x20}},
+    {"pci-probe-list",  {OF_VAR_TYPE_INT,   0x24}},
+    {"screen-#columns", {OF_VAR_TYPE_INT,   0x28}},
+    {"screen-#rows",    {OF_VAR_TYPE_INT,   0x2C}},
+    {"selftest-#megs",  {OF_VAR_TYPE_INT,   0x30}},
+    {"boot-device",     {OF_VAR_TYPE_STR,   0x34}},
+    {"boot-file",       {OF_VAR_TYPE_STR,   0x38}},
+    {"diag-device",     {OF_VAR_TYPE_STR,   0x3C}},
+    {"diag-file",       {OF_VAR_TYPE_STR,   0x40}},
+    {"input-device",    {OF_VAR_TYPE_STR,   0x44}},
+    {"output-device",   {OF_VAR_TYPE_STR,   0x48}},
+    {"oem-banner",      {OF_VAR_TYPE_STR,   0x4C}},
+    {"oem-logo",        {OF_VAR_TYPE_STR,   0x50}},
+    {"nvramrc",         {OF_VAR_TYPE_STR,   0x54}},
+    {"boot-command",    {OF_VAR_TYPE_STR,   0x58}},
 };
 
 void OfNvramUtils::printenv()
@@ -166,10 +166,10 @@ void OfNvramUtils::printenv()
         cout << setw(20) << left << var.first;
 
         switch (type) {
-        case 1: // integer
+        case OF_VAR_TYPE_INT:
             cout << hex << READ_DWORD_BE_A(&this->buf[offset]) << endl;
             break;
-        case 2: // string
+        case OF_VAR_TYPE_STR:
             uint16_t str_offset = READ_WORD_BE_A(&this->buf[offset]) - OF_NVRAM_OFFSET;
             uint16_t str_len    = READ_WORD_BE_A(&this->buf[offset+2]);
             if (str_len) {
@@ -193,6 +193,7 @@ void OfNvramUtils::setenv(string var_name, string value)
         return;
     }
 
+    // check if the user tries to change a flag
     for (i = 0; i < 8; i++) {
         if (var_name == flag_names[i]) {
             if (value == "true")
@@ -218,5 +219,57 @@ void OfNvramUtils::setenv(string var_name, string value)
         }
     }
 
-    cout << "Changing of properties not supported yet" << endl;
+    // see if one of the stanard properties should be changed
+    if (of_vars.find(var_name) == of_vars.end()) {
+        cout << "Attempt to change unknown variable " << var_name << endl;
+        return;
+    }
+
+    auto type   = std::get<0>(of_vars.at(var_name));
+    auto offset = std::get<1>(of_vars.at(var_name));
+
+    if (type == OF_VAR_TYPE_INT) {
+        cout << "Changing of integer variables not supported yet" << endl;
+    } else {
+        uint16_t str_len = READ_WORD_BE_A(&this->buf[offset+2]);
+        if (value.length() > str_len) {
+            // we're going to allocate additional space
+            // for the new string in the heap between here and top.
+            // TODO: implement removal of dead strings and heap compaction
+
+            OfNvramHdr *hdr = (OfNvramHdr *)&this->buf[0];
+            uint16_t here = READ_WORD_BE_A(&hdr->here);
+            uint16_t top  = READ_WORD_BE_A(&hdr->top);
+
+            // check if there is enough space in the heap for the new string
+            if ((top - value.length()) < here) {
+                cout << "No room in the heap!" << endl;
+                return;
+            }
+
+            // allocate required space by lowering top
+            top -= value.length();
+            i = 0;
+
+            // copy new string into NVRAM buffer char by char
+            for(char& ch : value) {
+                this->buf[top + i - OF_NVRAM_OFFSET] = ch;
+                i++;
+            }
+
+            // stuff new values into the variable state
+            WRITE_WORD_BE_A(&this->buf[offset+0], top);
+            WRITE_WORD_BE_A(&this->buf[offset+2], value.length());
+
+            // update partition header
+            WRITE_WORD_BE_A(&hdr->top, top);
+
+            // update physical NVRAM
+            this->update_partition();
+            cout << " ok" << endl; // mimic Forth
+            return;
+        } else {
+            // TODO: replace existing string
+        }
+    }
 }

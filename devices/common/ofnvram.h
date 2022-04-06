@@ -29,6 +29,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define OF_NVRAM_OFFSET 0x1800
 #define OF_NVRAM_SIG    0x1275
 
+// OF Variable types
+enum {
+    OF_VAR_TYPE_INT = 1,
+    OF_VAR_TYPE_STR = 2,
+};
+
 typedef struct {
     uint16_t    sig;        // partition signature (= 0x1275)
     uint8_t     version;    // header version
