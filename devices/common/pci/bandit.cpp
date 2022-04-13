@@ -133,7 +133,15 @@ uint32_t Bandit::read(uint32_t reg_start, uint32_t offset, int size)
             result = this->config_addr;
         }
     } else { // I/O space access
-        LOG_F(WARNING, "%s: I/O space write not implemented yet", this->name.c_str());
+        // broadcast I/O request to devices that support I/O space
+        // until a device returns true that means "request accepted"
+        for (auto& dev : this->io_space_devs) {
+            if (dev->pci_io_read(offset, size, &result)) {
+                return result;
+            }
+        }
+        LOG_F(ERROR, "%s: attempt to read from unmapped PCI I/O space, offset=0x%X",
+              this->name.c_str(), offset);
     }
     return result;
 }
@@ -179,7 +187,15 @@ void Bandit::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size
             this->config_addr = BYTESWAP_32(value);
         }
     } else { // I/O space access
-        LOG_F(WARNING, "%s: I/O space write not implemented yet", this->name.c_str());
+        // broadcast I/O request to devices that support I/O space
+        // until a device returns true that means "request accepted"
+        for (auto& dev : this->io_space_devs) {
+            if (dev->pci_io_write(offset, value, size)) {
+                return;
+            }
+        }
+        LOG_F(ERROR, "%s: attempt to write to unmapped PCI I/O space, offset=0x%X",
+              this->name.c_str(), offset);
     }
 }
 
