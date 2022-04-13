@@ -69,7 +69,6 @@ protected:
 
 private:
     uint8_t     video_mode;
-    uint8_t     pixel_depth;
     uint8_t     blanking;
     uint8_t     vdac_mode;
     uint8_t     clut_index;
