@@ -26,6 +26,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memaccess.h>
 
 #include <cinttypes>
+#include <fstream>
+#include <string>
 
 PCIDevice::PCIDevice(std::string name)
 {
@@ -132,7 +134,13 @@ void PCIDevice::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
         if (data == 0xFFFFF800UL) {
             this->exp_rom_bar = this->exp_bar_cfg;
         } else {
-            this->exp_rom_bar = (data & 0xFFFFF800UL) | (this->exp_bar_cfg & 1);
+            this->exp_rom_bar = (data & 0xFFFFF801UL);
+            if (this->exp_rom_bar & 1) {
+                this->map_exp_rom_mem(this->exp_rom_bar & 0xFFFFF800UL);
+            } else {
+                LOG_F(WARNING, "%s: unmapping of expansion ROM not implemented yet",
+                      this->pci_name.c_str());
+            }
         }
         break;
     case PCI_CFG_DWORD_15:
@@ -142,6 +150,70 @@ void PCIDevice::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
         LOG_F(WARNING, "%s: attempt to write to reserved/unimplemented register %d",
               this->pci_name.c_str(), reg_offs);
     }
+}
+
+int PCIDevice::attach_exp_rom_image(const std::string img_path)
+{
+    std::ifstream img_file;
+
+    int result = 0;
+
+    this->exp_bar_cfg = 0; // tell the world we got no ROM for now
+
+    try {
+        img_file.open(img_path, std::ios::in | std::ios::binary);
+        if (img_file.fail()) {
+            throw std::runtime_error("could not open specified ROM dump image");
+        }
+
+        // validate image file
+        uint8_t buf[4] = { 0 };
+
+        img_file.seekg(0, std::ios::beg);
+        img_file.read((char *)buf, sizeof(buf));
+
+        if (buf[0] != 0x55 || buf[1] != 0xAA) {
+            throw std::runtime_error("invalid expansion ROM signature");
+        }
+
+        // determine image size
+        img_file.seekg(0, std::ios::end);
+        this->exp_rom_size = img_file.tellg();
+
+        // verify PCI struct offset
+        uint32_t pci_struct_offset = 0;
+        img_file.seekg(0x18, std::ios::beg);
+        img_file.read((char *)&pci_struct_offset, sizeof(pci_struct_offset));
+
+        if (pci_struct_offset > this->exp_rom_size) {
+            throw std::runtime_error("invalid PCI structure offset");
+        }
+
+        // verify PCI struct signature
+        img_file.seekg(pci_struct_offset, std::ios::beg);
+        img_file.read((char *)buf, sizeof(buf));
+
+        if (buf[0] != 'P' || buf[1] != 'C' || buf[2] != 'I' || buf[3] != 'R') {
+            throw std::runtime_error("unexpected PCI struct signature");
+        }
+
+        // ROM image ok - go ahead and load it
+        this->exp_rom_data = std::unique_ptr<uint8_t[]> (new uint8_t[this->exp_rom_size]);
+        img_file.seekg(0, std::ios::beg);
+        img_file.read((char *)this->exp_rom_data.get(), this->exp_rom_size);
+
+        // align ROM image size on a 2KB boundary and initialize ROM config
+        this->exp_rom_size = (this->exp_rom_size + 0x7FFU) & 0xFFFFF800UL;
+        this->exp_bar_cfg  = ~(this->exp_rom_size - 1);
+    }
+    catch (const std::exception& exc) {
+        LOG_F(ERROR, "PCIDevice: %s", exc.what());
+        result = -1;
+    }
+
+    img_file.close();
+
+    return result;
 }
 
 void PCIDevice::do_bar_sizing(int bar_num)
@@ -161,4 +233,11 @@ void PCIDevice::set_bar_value(int bar_num, uint32_t value)
         this->bars[bar_num] = (value & 0xFFFFFFF0UL) | (bar_cfg & 0xF);
     }
     this->pci_notify_bar_change(bar_num);
+}
+
+void PCIDevice::map_exp_rom_mem(uint32_t rom_addr)
+{
+    if (!this->exp_rom_addr || this->exp_rom_addr != rom_addr) {
+        this->host_instance->pci_register_mmio_region(rom_addr, 0x10000, this);
+    }
 }

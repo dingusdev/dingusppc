@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 #include <functional>
+#include <memory>
 #include <string>
 
 /** PCI configuration space registers offsets */
@@ -91,6 +92,8 @@ public:
 
     std::function<void(int)>        pci_notify_bar_change;
 
+    int attach_exp_rom_image(const std::string img_path);
+
     virtual void set_host(PCIHost* host_instance) {
         this->host_instance = host_instance;
     };
@@ -98,6 +101,7 @@ public:
 protected:
     void do_bar_sizing(int bar_num);
     void set_bar_value(int bar_num, uint32_t value);
+    void map_exp_rom_mem(uint32_t rom_addr);
 
     std::string pci_name;      // human-readable device name
     PCIHost* host_instance;    // host bridge instance to call back
@@ -120,8 +124,13 @@ protected:
 
     uint32_t    bars[6] = { 0 };     // base address registers
     uint32_t    bars_cfg[6] = { 0 }; // configuration values for base address registers
-    uint32_t    exp_rom_bar = 0;     // expansion ROM base address
-    uint32_t    exp_bar_cfg = 0;
+
+    uint32_t    exp_bar_cfg  = 0;    // expansion ROM configuration
+    uint32_t    exp_rom_bar  = 0;    // expansion ROM base address register
+    uint32_t    exp_rom_addr = 0;    // expansion ROM base address
+    uint32_t    exp_rom_size = 0;    // expansion ROM size in bytes
+
+    std::unique_ptr<uint8_t[]> exp_rom_data;
 };
 
 #endif /* PCI_DEVICE_H */
