@@ -57,6 +57,41 @@ Bandit::Bandit(int bridge_num, std::string name) : PCIHost(), PCIDevice(name)
     this->pci_wr_cache_lnsz = [](uint8_t val) {}; // cache line size register
 }
 
+uint32_t Bandit::pci_cfg_read(uint32_t reg_offs, uint32_t size)
+{
+    if (reg_offs < 64) {
+        return PCIDevice::pci_cfg_read(reg_offs, size);
+    }
+
+    switch (reg_offs) {
+    case BANDIT_ADDR_MASK:
+        return BYTESWAP_32(this->addr_mask);
+    default:
+        LOG_F(WARNING, "%s: reading from unimplemented config register at 0x%X",
+              this->pci_name.c_str(), reg_offs);
+    }
+
+    return 0;
+}
+
+void Bandit::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
+{
+    if (reg_offs < 64) {
+        PCIDevice::pci_cfg_write(reg_offs, value, size);
+        return;
+    }
+
+    switch (reg_offs) {
+    case BANDIT_ADDR_MASK:
+        this->addr_mask = BYTESWAP_32(value);
+        this->verbose_address_space();
+        break;
+    default:
+        LOG_F(WARNING, "%s: writing to unimplemented config register at 0x%X",
+              this->pci_name.c_str(), reg_offs);
+    }
+}
+
 uint32_t Bandit::read(uint32_t reg_start, uint32_t offset, int size)
 {
     int      fun_num;
@@ -145,5 +180,29 @@ void Bandit::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size
         }
     } else { // I/O space access
         LOG_F(WARNING, "%s: I/O space write not implemented yet", this->name.c_str());
+    }
+}
+
+void Bandit::verbose_address_space()
+{
+    uint32_t mask;
+    int bit_pos;
+
+    LOG_F(INFO, "%s address spaces:", this->pci_name.c_str());
+
+    // verbose coarse aka 256MB memory regions
+    for (mask = 0x10000, bit_pos = 0; mask != 0x80000000UL; mask <<= 1, bit_pos++) {
+        if (this->addr_mask & mask) {
+            uint32_t start_addr = bit_pos << 28;
+            LOG_F(INFO, "- 0x%X ... 0x%X", start_addr, start_addr + 0x0FFFFFFFU);
+        }
+    }
+
+    // verbose fine aka 16MB memory regions
+    for (mask = 0x1, bit_pos = 0; mask != 0x10000UL; mask <<= 1, bit_pos++) {
+        if (this->addr_mask & mask) {
+            uint32_t start_addr = (bit_pos << 24) + 0xF0000000UL;
+            LOG_F(INFO, "- 0x%X ... 0x%X", start_addr, start_addr + 0x00FFFFFFU);
+        }
     }
 }

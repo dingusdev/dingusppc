@@ -40,6 +40,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define BANDIT_CAR_TYPE     (1 << 0)   // Bandit config address type bit
 #define BANDIT_CONFIG_SPACE 0x00800000 // Bandit Config Space bit
 
+/** Bandit specific configuration registers. */
+enum {
+    BANDIT_ADDR_MASK = 0x48,
+};
+
 /** checks if one bit is set at time, return 0 if not */
 #define SINGLE_BIT_SET(val) ((val) && !((val) & ((val)-1)))
 
@@ -52,13 +57,20 @@ public:
         return (type == HWCompType::PCI_HOST || type == HWCompType::PCI_DEV);
     };
 
+    uint32_t pci_cfg_read(uint32_t reg_offs, uint32_t size);
+    void pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size);
+
     // MMIODevice methods
     uint32_t read(uint32_t reg_start, uint32_t offset, int size);
     void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size);
 
+protected:
+    void verbose_address_space();
+
 private:
     uint32_t    base_addr;
     uint32_t    config_addr;
+    uint32_t    addr_mask;
 };
 
 #endif // BANDIT_PCI_H
