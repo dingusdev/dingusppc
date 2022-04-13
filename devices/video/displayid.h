@@ -56,6 +56,7 @@ enum I2CState : uint8_t {
 class DisplayID {
 public:
     DisplayID();
+    DisplayID(uint8_t std_code, uint8_t ext_code);
     ~DisplayID() = default;
 
     uint8_t read_monitor_sense(uint8_t levels, uint8_t dirs);
