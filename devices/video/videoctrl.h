@@ -45,6 +45,7 @@ protected:
     bool        crtc_on = false;
     int         active_width;   // width of the visible display area
     int         active_height;  // height of the visible display area
+    int         pixel_depth;
     float       pixel_clock;
     float       refresh_rate;
 
