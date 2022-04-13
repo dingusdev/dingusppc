@@ -77,6 +77,14 @@ DisplayID::DisplayID()
     this->data_ptr   = 0;
 }
 
+DisplayID::DisplayID(uint8_t std_code, uint8_t ext_code)
+{
+    this->id_kind = Disp_Id_Kind::AppleSense;
+
+    this->std_sense_code = std_code;
+    this->ext_sense_code = ext_code;
+}
+
 uint8_t DisplayID::read_monitor_sense(uint8_t levels, uint8_t dirs)
 {
     uint8_t scl, sda;
