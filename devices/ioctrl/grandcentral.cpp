@@ -95,7 +95,7 @@ uint32_t GrandCentral::read(uint32_t reg_start, uint32_t offset, int size)
             return this->mace->read((offset >> 4) & 0x1F);
         case 2: // ESCC compatible addressing
             if ((offset & 0xFF) < 16) {
-                return this->escc->read((offset >> 1) & 0xF);
+                return this->escc->read(compat_to_macrisc[(offset >> 1) & 0xF]);
             }
             // fallthrough
         case 3: // ESCC MacRISC addressing
@@ -152,7 +152,7 @@ void GrandCentral::write(uint32_t reg_start, uint32_t offset, uint32_t value, in
             break;
         case 2: // ESCC compatible addressing
             if ((offset & 0xFF) < 16) {
-                this->escc->write((offset >> 1) & 0xF, value);
+                this->escc->write(compat_to_macrisc[(offset >> 1) & 0xF], value);
                 break;
             }
             // fallthrough

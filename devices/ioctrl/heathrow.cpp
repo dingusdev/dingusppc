@@ -138,7 +138,7 @@ uint32_t HeathrowIC::read(uint32_t reg_start, uint32_t offset, int size) {
         break;
     case 0x12: // ESCC compatible addressing
         if ((offset & 0xFF) < 16) {
-            return this->escc->read((offset >> 1) & 0xF);
+            return this->escc->read(compat_to_macrisc[(offset >> 1) & 0xF]);
         }
         // fallthrough
     case 0x13: // ESCC MacRISC addressing
@@ -180,7 +180,7 @@ void HeathrowIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int 
         break;
     case 0x12: // ESCC compatible addressing
         if ((offset & 0xFF) < 16) {
-            this->escc->write((offset >> 1) & 0xF, value);
+            this->escc->write(compat_to_macrisc[(offset >> 1) & 0xF], value);
             break;
         }
         // fallthrough

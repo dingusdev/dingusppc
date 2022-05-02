@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -30,17 +30,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** ESCC register positions */
 /* Please note that the registers below are provided
-   by Apple I/O controllers for accessing ESCC in a
-   more convenient way. Actual physical addresses
-   are controller dependent. */
+   by the Apple I/O controllers for accessing ESCC
+   in a more convenient way. Actual physical addresses
+   are controller dependent.
+   The registers are ordered according with the MacRISC
+   scheme used in the PCI Power Macintosh models.
+   Pre-PCI Macs uses the so-called compatibility
+   addressing. Please use compat_to_macrisc table
+   below for converting from compat to MacRISC.
+ */
 enum EsccReg : uint8_t {
     Port_B_Cmd      = 0,
-    Port_A_Cmd      = 1,
-    Port_B_Data     = 2, // direct access to WR8/RR8
+    Port_B_Data     = 1, // direct access to WR8/RR8
+    Port_A_Cmd      = 2,
     Port_A_Data     = 3, // direct access to WR8/RR8
     Enh_Reg_B       = 4, // undocumented Apple extension
     Enh_Reg_A       = 5, // undocumented Apple extension
 };
+
+extern const uint8_t compat_to_macrisc[6];
 
 /** LocalTalk LTPC registers provided by a MacIO controller. */
 enum LocalTalkReg : uint8_t {

@@ -27,6 +27,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <memory>
 
+/** Remap the compatible addressing scheme to MacRISC one. */
+const uint8_t compat_to_macrisc[6] = {
+    EsccReg::Port_B_Cmd,    EsccReg::Port_A_Cmd,
+    EsccReg::Port_B_Data,   EsccReg::Port_A_Data,
+    EsccReg::Enh_Reg_B,     EsccReg::Enh_Reg_A
+};
+
 EsccController::EsccController()
 {
     this->ch_a = std::unique_ptr<EsccChannel> (new EsccChannel("A"));
