@@ -21,11 +21,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Enhanced Serial Communications Controller (ESCC) emulation. */
 
-#include "escc.h"
+#include <devices/serial/chario.h>
+#include <devices/serial/escc.h>
 #include <loguru.hpp>
+#include <machines/machineproperties.h>
 
 #include <cinttypes>
 #include <memory>
+#include <string>
 
 /** Remap the compatible addressing scheme to MacRISC one. */
 const uint8_t compat_to_macrisc[6] = {
@@ -36,8 +39,16 @@ const uint8_t compat_to_macrisc[6] = {
 
 EsccController::EsccController()
 {
+    // allocate channels
     this->ch_a = std::unique_ptr<EsccChannel> (new EsccChannel("A"));
     this->ch_b = std::unique_ptr<EsccChannel> (new EsccChannel("B"));
+
+    // attach backends
+    std::string backend_name = GET_STR_PROP("serial_backend");
+
+    this->ch_a->attach_backend(
+        (backend_name == "stdio") ? CHARIO_BE_STDIO : CHARIO_BE_NULL);
+    this->ch_b->attach_backend(CHARIO_BE_NULL);
 
     this->reg_ptr = 0;
 }
@@ -144,9 +155,25 @@ void EsccController::write_internal(EsccChannel *ch, uint8_t value)
 }
 
 // ======================== ESCC Channel methods ==============================
+void EsccChannel::attach_backend(int id)
+{
+    switch(id) {
+    case CHARIO_BE_NULL:
+        this->chario = std::unique_ptr<CharIoBackEnd> (new CharIoNull);
+        break;
+    case CHARIO_BE_STDIO:
+        this->chario = std::unique_ptr<CharIoBackEnd> (new CharIoStdin);
+        break;
+    default:
+        LOG_F(ERROR, "ESCC: unknown backend ID %d, using NULL instead", id);
+        this->chario = std::unique_ptr<CharIoBackEnd> (new CharIoNull);
+    }
+}
 
 void EsccChannel::reset(bool hw_reset)
 {
+    this->chario->rcv_disable();
+
     this->write_regs[1] &= 0x24;
     this->write_regs[3] &= 0xFE;
     this->write_regs[4] |= 0x04;
@@ -184,15 +211,22 @@ void EsccChannel::write_reg(int reg_num, uint8_t value)
 {
     switch (reg_num) {
     case 3:
-        if (value & 0x11) {
-            if ((this->write_regs[3] ^ value) & 0x10) {
-                this->write_regs[3] |= 0x10;
-                this->read_regs[0] |= 0x10; // set SYNC_HUNT flag
-                LOG_F(9, "ESCC: Hunt mode entered.");
-            }
+        if ((this->write_regs[3] ^ value) & 0x10) {
+            this->write_regs[3] |= 0x10;
+            this->read_regs[0] |= 0x10; // set SYNC_HUNT flag
+            LOG_F(9, "ESCC: Hunt mode entered.");
+        }
+        if ((this->write_regs[3] ^ value) & 1) {
             if (value & 1) {
                 this->write_regs[3] |= 0x1;
+                this->chario->rcv_enable();
                 LOG_F(9, "ESCC: receiver enabled.");
+            } else {
+                this->write_regs[3] ^= 0x1;
+                this->chario->rcv_disable();
+                LOG_F(9, "ESCC: receiver disabled.");
+                this->write_regs[3] |= 0x10; // enter HUNT mode
+                this->read_regs[0] |= 0x10; // set SYNC_HUNT flag
             }
         }
         this->write_regs[3] = (this->write_regs[3] & 0x11) | (value & 0xEE);
@@ -205,6 +239,8 @@ void EsccChannel::write_reg(int reg_num, uint8_t value)
         break;
     case 14:
         switch (value >> 5) {
+        case DPLL_NULL_CMD:
+            break;
         case DPLL_ENTER_SRC_MODE:
             this->dpll_active = 1;
             this->read_regs[10] &= 0x3F;
@@ -245,16 +281,28 @@ void EsccChannel::write_reg(int reg_num, uint8_t value)
 
 uint8_t EsccChannel::read_reg(int reg_num)
 {
+    if (!reg_num) {
+        if (this->chario->rcv_char_available()) {
+            this->read_regs[0] |= 1;
+        }
+    }
     return this->read_regs[reg_num];
 }
 
 void EsccChannel::send_byte(uint8_t value)
 {
-    // Put one byte into the Data FIFO
+    // TODO: put one byte into the Data FIFO
+
+    this->chario->xmit_char(value);
 }
 
 uint8_t EsccChannel::receive_byte()
 {
-    // Remove one byte from the Receive FIFO
-    return 0xFF;
+    // TODO: remove one byte from the Receive FIFO
+
+    uint8_t c;
+
+    this->chario->rcv_char(&c);
+    this->read_regs[0] &= ~1;
+    return c;
 }

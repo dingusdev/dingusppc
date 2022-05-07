@@ -24,6 +24,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef ESCC_H
 #define ESCC_H
 
+#include <devices/serial/chario.h>
+
 #include <cinttypes>
 #include <memory>
 #include <string>
@@ -71,6 +73,7 @@ enum {
 
 /** DPLL commands in WR14. */
 enum {
+    DPLL_NULL_CMD           = 0,
     DPLL_ENTER_SRC_MODE     = 1,
     DPLL_RST_MISSING_CLK    = 2,
     DPLL_DISABLE            = 3,
@@ -91,6 +94,7 @@ public:
     EsccChannel(std::string name) { this->name = name; };
     ~EsccChannel() = default;
 
+    void attach_backend(int id);
     void reset(bool hw_reset);
     uint8_t read_reg(int reg_num);
     void write_reg(int reg_num, uint8_t value);
@@ -107,6 +111,8 @@ private:
     uint8_t         dpll_clock_src;
     uint8_t         brg_active;
     uint8_t         brg_clock_src;
+
+    std::unique_ptr<CharIoBackEnd>  chario;
 };
 
 /** ESCC Controller class. */
