@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -69,6 +69,8 @@ static const map<uint32_t, std::tuple<string, const char*>> rom_identity = {
 
 static const vector<string> WriteToggle = {"ON", "on", "OFF", "off"};
 
+static const vector<string> CharIoBackends = {"null", "stdio"};
+
 static const PropMap CatalystSettings = {
     {"rambank1_size",
         new IntProperty(16, vector<uint32_t>({4, 8, 16, 32, 64, 128}))},
@@ -84,6 +86,7 @@ static const PropMap CatalystSettings = {
         new StrProperty("")},
     {"fdd_img",
         new StrProperty("")},
+    {"serial_backend", new StrProperty("null", CharIoBackends)},
 };
 
 static const PropMap GossamerSettings = {
@@ -100,6 +103,7 @@ static const PropMap GossamerSettings = {
     {"fdd_img",
         new StrProperty("")},
     {"fdd_wr_prot", new StrProperty("OFF", WriteToggle)},
+    {"serial_backend", new StrProperty("null", CharIoBackends)},
 };
 
 /** Monitors supported by the PDM on-board video. */
@@ -121,6 +125,7 @@ static const PropMap PDMSettings = {
         new StrProperty("")},
     {"fdd_wr_prot",
         new StrProperty("OFF", WriteToggle)},
+    {"serial_backend", new StrProperty("null", CharIoBackends)},
 };
 
 static const map<string, string> PropHelp = {
@@ -132,6 +137,7 @@ static const map<string, string> PropHelp = {
     {"fdd_img",         "specifies path to floppy disk image"},
     {"fdd_wr_prot",     "toggles floppy disks write protection"},
     {"mon_id",          "specifies which monitor to emulate"},
+    {"serial_backend",  "specifies the backend for the serial port"},
 };
 
 static const map<string, tuple<PropMap, function<int(string&)>, string>> machines = {
