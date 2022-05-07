@@ -80,19 +80,16 @@ int CharIoStdin::rcv_enable()
 
     new_termios.c_cflag &= ~(CSIZE | PARENB);
     new_termios.c_cflag |= CS8;
-    new_termios.c_lflag &= ~(ECHO | ICANON);
+    new_termios.c_lflag &= ~(ECHO | ICANON | ISIG);
     new_termios.c_iflag &= ~(ICRNL);
 
     tcsetattr(STDIN_FILENO, TCSANOW, &new_termios);
 
     // save original signal handler for SIGINT
-    //struct sigaction new_act;
+    // then redirect SIGINT to new handler
     memset(&new_act, 0, sizeof(new_act));
     new_act.sa_handler = mysig_handler;
     sigaction(SIGINT, &new_act, &old_act);
-
-    // redirect SIGINT to new handler
-    //signal(SIGINT, mysig_handler);
 
     this->stdio_inited = true;
 
