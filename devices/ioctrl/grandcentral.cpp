@@ -66,6 +66,7 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
     this->escc = std::unique_ptr<EsccController> (new EsccController());
 
     this->scsi_0 = std::unique_ptr<Sc53C94> (new Sc53C94());
+    gMachineObj->add_subdevice("Curio_SCSI0", this->scsi_0.get());
 }
 
 void GrandCentral::notify_bar_change(int bar_num)
