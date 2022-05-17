@@ -1268,9 +1268,11 @@ void dppc_interpreter::ppc_cmpli() {
 void dppc_interpreter::ppc_mcrf() {
     int crf_d       = (ppc_cur_instruction >> 21) & 0x1C;
     int crf_s       = (ppc_cur_instruction >> 16) & 0x1C;
-    uint32_t grab_s = ppc_state.cr & (0xf0000000UL >> crf_s);
 
-    ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | (grab_s >> crf_d));
+    // extract and right justify source flags field
+    uint32_t grab_s = (ppc_state.cr >> (28 - crf_s)) & 0xF;
+
+    ppc_state.cr = (ppc_state.cr & ~(0xf0000000UL >> crf_d)) | (grab_s << (28 - crf_d));
 }
 
 void dppc_interpreter::ppc_crand() {
