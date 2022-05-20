@@ -64,9 +64,9 @@ int create_catalyst(std::string& id)
         32, dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("GrandCentral")));
 
     // HACK: attach temporary ATI Mach64 video card
-    gMachineObj->add_component("AtiMach64", new AtiMach64Gx);
-    pci_host->pci_register_device(
-        4, dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("AtiMach64")));
+    //gMachineObj->add_component("AtiMach64", new AtiMach64Gx);
+    //pci_host->pci_register_device(
+    //    4, dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("AtiMach64")));
 
     // get (raw) pointer to the memory controller
     platinum_obj = dynamic_cast<PlatinumCtrl*>(gMachineObj->get_comp_by_name("Platinum"));
