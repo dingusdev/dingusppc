@@ -112,7 +112,7 @@ uint32_t GrandCentral::read(uint32_t reg_start, uint32_t offset, int size)
             return this->nvram->read_byte(
                 (this->nvram_addr_hi << 5) + ((offset >> 4) & 0x1F));
         default:
-            LOG_F(WARNING, "GC: unimplemented subdevice %d registers", subdev_num);
+            LOG_F(WARNING, "GC: unimplemented GBUS device #%d", subdev_num - 9);
         }
     } else if (offset & 0x8000) { // DMA register space
         unsigned subdev_num = (offset >> 12) & 0xF;
@@ -184,7 +184,7 @@ void GrandCentral::write(uint32_t reg_start, uint32_t offset, uint32_t value, in
                 (this->nvram_addr_hi << 5) + ((offset >> 4) & 0x1F), value);
             break;
         default:
-            LOG_F(WARNING, "GC: unimplemented subdevice %d registers", subdev_num);
+            LOG_F(WARNING, "GC: unimplemented GBUS device #%d", subdev_num - 9);
         }
     } else if (offset & 0x8000) { // DMA register space
         unsigned subdev_num = (offset >> 12) & 0xF;
