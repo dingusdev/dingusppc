@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <loguru.hpp>
 
 #include <cinttypes>
+#include <cstring>
 #include <memory>
 
 bool CharIoNull::rcv_char_available()
@@ -46,8 +47,11 @@ int CharIoNull::rcv_char(uint8_t *c)
 //======================== STDIO character I/O backend ========================
 #ifndef _WIN32
 
-#include<signal.h>
+#include <signal.h>
 #include <stdio.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/select.h>
 #include <termios.h>
 #include <unistd.h>
 
