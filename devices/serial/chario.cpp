@@ -143,4 +143,77 @@ int CharIoStdin::rcv_char(uint8_t *c)
     return 0;
 }
 
+#else 
+//Windows terminal code
+#include <io.h>
+#include <iostream>
+#include <stdio.h>
+#include <windows.h>
+#include <winsock.h>
+
+HANDLE hInput  = GetStdHandle(STD_INPUT_HANDLE); 
+HANDLE hOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+//DWORD oldMode;
+//DWORD newMode;
+//INPUT_RECORD in;
+//CHAR_INFO charData;
+
+void mysig_handler(int signum) 
+{
+    SetStdHandle(signum, hInput);
+    SetStdHandle(signum, hOutput);
+}
+
+int CharIoStdin::rcv_enable() {
+    if (this->stdio_inited)
+        return 0;
+
+    SetCommMask(hInput, EV_DSR);
+    SetCommMask(hOutput, EV_CTS);
+
+    SetConsoleMode(hInput, ENABLE_LINE_INPUT);
+    SetConsoleMode(hInput, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    this->stdio_inited = true;
+
+    return 0;
+}
+
+void CharIoStdin::rcv_disable() {
+    if (!this->stdio_inited)
+        return;
+    
+    SetCommMask(hInput, !EV_DSR);
+    SetCommMask(hOutput, !EV_CTS);
+
+    this->stdio_inited = false;
+}
+
+bool CharIoStdin::rcv_char_available() {
+    fd_set readfds;
+    FD_ZERO(&readfds);
+    FD_SET(1, &readfds);
+    fd_set savefds = readfds;
+
+    struct timeval timeout;
+    timeout.tv_sec  = 0;
+    timeout.tv_usec = 0;
+
+    //int chr;
+
+    int sel_rv = select(1, &readfds, NULL, NULL, &timeout);
+
+    return sel_rv > 0;
+}
+
+int CharIoStdin::xmit_char(uint8_t c) {
+    _write(_fileno(stdout), &c, 1);
+    return 0;
+}
+
+int CharIoStdin::rcv_char(uint8_t* c) {
+    _read(_fileno(stdin), c, 1);
+    return 0;
+}
+
 #endif // _WIN32

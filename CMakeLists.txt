@@ -112,6 +112,7 @@ add_executable(dingusppc ${SOURCES} $<TARGET_OBJECTS:core>
 if (WIN32)
 target_link_libraries(dingusppc "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2.lib"
                                 "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2main.lib"
+                                ws2_32
                                 cubeb)
 else()
 #target_link_libraries(dingusppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
