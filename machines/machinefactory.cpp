@@ -83,7 +83,7 @@ static const PropMap CatalystSettings = {
     {"gfxmem_size",
         new IntProperty( 1, vector<uint32_t>({1, 2, 4}))},
     {"mon_id",
-        new StrProperty("")},
+        new StrProperty("HiRes12-14in")},
     {"fdd_img",
         new StrProperty("")},
     {"serial_backend", new StrProperty("null", CharIoBackends)},
