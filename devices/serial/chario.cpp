@@ -45,7 +45,87 @@ int CharIoNull::rcv_char(uint8_t *c)
 }
 
 //======================== STDIO character I/O backend ========================
-#ifndef _WIN32
+#ifdef _WIN32
+
+#include <fcntl.h>
+#include <io.h>
+#include <windows.h>
+
+HANDLE hInput  = GetStdHandle(STD_INPUT_HANDLE);
+HANDLE hOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+DWORD old_in_mode, old_out_mode;
+int old_stdin_trans_mode;
+
+void mysig_handler(int signum) {
+    SetStdHandle(signum, hInput);
+    SetStdHandle(signum, hOutput);
+}
+
+int CharIoStdin::rcv_enable() {
+    if (this->stdio_inited)
+        return 0;
+
+    GetConsoleMode(hInput, &old_in_mode);
+    GetConsoleMode(hOutput, &old_out_mode);
+
+    DWORD new_in_mode = old_in_mode;
+    new_in_mode &= ~ENABLE_ECHO_INPUT;
+    new_in_mode &= ~ENABLE_LINE_INPUT;
+    new_in_mode &= ~ENABLE_PROCESSED_INPUT;
+
+    new_in_mode |= ENABLE_EXTENDED_FLAGS;
+    new_in_mode |= ENABLE_INSERT_MODE;
+    new_in_mode |= ENABLE_VIRTUAL_TERMINAL_INPUT;
+
+    SetConsoleMode(hInput, new_in_mode);
+
+    SetConsoleMode(hOutput, old_out_mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    // disable automatic CRLF translation
+    old_stdin_trans_mode = _setmode(_fileno(stdin), _O_BINARY);
+
+    this->stdio_inited = true;
+
+    LOG_F(INFO, "Winterm: receiver initialized");
+
+    return 0;
+}
+
+void CharIoStdin::rcv_disable() {
+    if (!this->stdio_inited)
+        return;
+
+    // restore original console mode
+    SetConsoleMode(hInput, old_in_mode);
+    SetConsoleMode(hOutput, old_out_mode);
+
+    // restore original translation mode
+    _setmode(_fileno(stdin), old_stdin_trans_mode);
+
+    this->stdio_inited = false;
+
+    LOG_F(INFO, "Winterm: receiver disabled");
+}
+
+bool CharIoStdin::rcv_char_available() {
+    DWORD events;
+    INPUT_RECORD buffer;
+
+    PeekConsoleInput(hInput, &buffer, 1, &events);
+    return !!(events > 0);
+}
+
+int CharIoStdin::xmit_char(uint8_t c) {
+    _write(_fileno(stdout), &c, 1);
+    return 0;
+}
+
+int CharIoStdin::rcv_char(uint8_t* c) {
+    _read(_fileno(stdin), c, 1);
+    return 0;
+}
+
+#else // non-Windows OS (Linux, mac OS etc.)
 
 #include <signal.h>
 #include <stdio.h>
@@ -143,77 +223,4 @@ int CharIoStdin::rcv_char(uint8_t *c)
     return 0;
 }
 
-#else 
-//Windows terminal code
-#include <io.h>
-#include <iostream>
-#include <stdio.h>
-#include <windows.h>
-#include <winsock.h>
-
-HANDLE hInput  = GetStdHandle(STD_INPUT_HANDLE); 
-HANDLE hOutput = GetStdHandle(STD_OUTPUT_HANDLE);
-//DWORD oldMode;
-//DWORD newMode;
-//INPUT_RECORD in;
-//CHAR_INFO charData;
-
-void mysig_handler(int signum) 
-{
-    SetStdHandle(signum, hInput);
-    SetStdHandle(signum, hOutput);
-}
-
-int CharIoStdin::rcv_enable() {
-    if (this->stdio_inited)
-        return 0;
-
-    SetCommMask(hInput, EV_DSR);
-    SetCommMask(hOutput, EV_CTS);
-
-    SetConsoleMode(hInput, ENABLE_LINE_INPUT);
-    SetConsoleMode(hInput, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-
-    this->stdio_inited = true;
-
-    return 0;
-}
-
-void CharIoStdin::rcv_disable() {
-    if (!this->stdio_inited)
-        return;
-    
-    SetCommMask(hInput, !EV_DSR);
-    SetCommMask(hOutput, !EV_CTS);
-
-    this->stdio_inited = false;
-}
-
-bool CharIoStdin::rcv_char_available() {
-    fd_set readfds;
-    FD_ZERO(&readfds);
-    FD_SET(1, &readfds);
-    fd_set savefds = readfds;
-
-    struct timeval timeout;
-    timeout.tv_sec  = 0;
-    timeout.tv_usec = 0;
-
-    //int chr;
-
-    int sel_rv = select(1, &readfds, NULL, NULL, &timeout);
-
-    return sel_rv > 0;
-}
-
-int CharIoStdin::xmit_char(uint8_t c) {
-    _write(_fileno(stdout), &c, 1);
-    return 0;
-}
-
-int CharIoStdin::rcv_char(uint8_t* c) {
-    _read(_fileno(stdin), c, 1);
-    return 0;
-}
-
-#endif // _WIN32
+#endif
