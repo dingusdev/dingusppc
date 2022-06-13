@@ -72,7 +72,7 @@ int create_gossamer(std::string& id) {
     MPC106* grackle_obj = dynamic_cast<MPC106*>(gMachineObj->get_comp_by_name("Grackle"));
 
     /* add the machine ID register */
-    gMachineObj->add_component("MachineID", new GossamerID(0x3d8c));
+    gMachineObj->add_component("MachineID", new GossamerID(0xBF3D));
     grackle_obj->add_mmio_region(
         0xFF000004, 4096, dynamic_cast<MMIODevice*>(gMachineObj->get_comp_by_name("MachineID")));
 

@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cpu/ppc/ppcemu.h>
 #include <devices/common/scsi/sc53c94.h>
 #include <devices/ethernet/mace.h>
+#include <devices/floppy/swim3.h>
 #include <devices/ioctrl/macio.h>
 #include <devices/serial/escc.h>
 #include <endianswap.h>
@@ -67,6 +68,9 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
 
     this->scsi_0 = std::unique_ptr<Sc53C94> (new Sc53C94());
     gMachineObj->add_subdevice("Curio_SCSI0", this->scsi_0.get());
+
+    this->swim3 = std::unique_ptr<Swim3::Swim3Ctrl> (new Swim3::Swim3Ctrl());
+    gMachineObj->add_subdevice("SWIM3", this->swim3.get());
 }
 
 void GrandCentral::notify_bar_change(int bar_num)
@@ -103,6 +107,8 @@ uint32_t GrandCentral::read(uint32_t reg_start, uint32_t offset, int size)
             return this->escc->read((offset >> 4) & 0xF);
         case 4: // AWACS
             return this->awacs->snd_ctrl_read(offset & 0xFF, size);
+        case 5: // SWIM3
+            return this->swim3->read((offset >> 4) & 0xF);
         case 6:
         case 7: // VIA-CUDA
             return this->viacuda->read((offset >> 9) & 0xF);
@@ -162,6 +168,9 @@ void GrandCentral::write(uint32_t reg_start, uint32_t offset, uint32_t value, in
             break;
         case 4: // AWACS
             this->awacs->snd_ctrl_write(offset & 0xFF, value, size);
+            break;
+        case 5:
+            this->swim3->write((offset >> 4) & 0xF, value);
             break;
         case 6:
         case 7: // VIA-CUDA
