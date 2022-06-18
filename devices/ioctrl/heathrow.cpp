@@ -76,7 +76,10 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
 
     this->mesh  = std::unique_ptr<MESHController> (new MESHController(HeathrowMESHID));
     this->escc  = std::unique_ptr<EsccController> (new EsccController());
+
+    // intialize floppy disk HW
     this->swim3 = std::unique_ptr<Swim3::Swim3Ctrl> (new Swim3::Swim3Ctrl());
+    gMachineObj->add_subdevice("SWIM3", this->swim3.get());
 }
 
 void HeathrowIC::notify_bar_change(int bar_num)
@@ -147,7 +150,7 @@ uint32_t HeathrowIC::read(uint32_t reg_start, uint32_t offset, int size) {
         res = this->screamer->snd_ctrl_read(offset - 0x14000, size);
         break;
     case 0x15: // SWIM3
-        return this->swim3->read(offset & 0xF);
+        return this->swim3->read((offset >> 4 )& 0xF);
     case 0x16:
     case 0x17:
         res = this->viacuda->read((offset - 0x16000) >> 9);
@@ -190,8 +193,8 @@ void HeathrowIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int 
     case 0x14:
         this->screamer->snd_ctrl_write(offset - 0x14000, value, size);
         break;
-    case 0x15:
-        this->swim3->write(offset & 0xF, value);
+    case 0x15: // SWIM3
+        this->swim3->write((offset >> 4) & 0xF, value);
         break;
     case 0x16:
     case 0x17:
