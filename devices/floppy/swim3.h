@@ -74,6 +74,10 @@ public:
     Swim3Ctrl();
     ~Swim3Ctrl() = default;
 
+    static std::unique_ptr<HWComponent> create() {
+        return std::unique_ptr<Swim3Ctrl>(new Swim3Ctrl());
+    }
+
     int device_postinit();
 
     // SWIM3 registers access

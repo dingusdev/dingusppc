@@ -22,14 +22,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @file Sander-Wozniak Machine 3 (SWIM3) emulation. */
 
 #include <core/timermanager.h>
+#include <devices/deviceregistry.h>
 #include <devices/common/hwinterrupt.h>
 #include <devices/floppy/superdrive.h>
 #include <devices/floppy/swim3.h>
 #include <loguru.hpp>
 #include <machines/machinebase.h>
+#include <machines/machineproperties.h>
 
 #include <cinttypes>
 #include <memory>
+#include <string>
 
 using namespace Swim3;
 
@@ -51,7 +54,6 @@ Swim3Ctrl::Swim3Ctrl()
     // TODO: make SWIM3/drive wiring user selectable
     this->int_drive = std::unique_ptr<MacSuperdrive::MacSuperDrive>
         (new MacSuperdrive::MacSuperDrive());
-    gMachineObj->add_subdevice("Superdrive", this->int_drive.get());
 }
 
 int Swim3Ctrl::device_postinit()
@@ -60,12 +62,27 @@ int Swim3Ctrl::device_postinit()
         gMachineObj->get_comp_by_type(HWCompType::INT_CTRL));
     this->irq_id = this->int_ctrl->register_dev_int(IntSrc::SWIM3);
 
+    // if a floppy image was given "insert" it into the virtual superdrive
+    std::string fd_image_path = GET_STR_PROP("fdd_img");
+    std::string fd_write_prot = GET_STR_PROP("fdd_wr_prot");
+    if (!fd_image_path.empty()) {
+        bool write_flag = false;
+
+        if (!fd_write_prot.empty()) {
+            if ((fd_write_prot.compare("ON") == 0) || (fd_write_prot.compare("on") == 0)) {
+                write_flag = true;
+            }
+        }
+
+        this->int_drive->insert_disk(fd_image_path, write_flag);
+    }
+
     return 0;
 };
 
 uint8_t Swim3Ctrl::read(uint8_t reg_offset)
 {
-    uint8_t status_addr, old_int_flags, old_error;
+    uint8_t status_addr, status_val, old_int_flags, old_error;
 
     switch(reg_offset) {
     case Swim3Reg::Error:
@@ -79,7 +96,11 @@ uint8_t Swim3Ctrl::read(uint8_t reg_offset)
     case Swim3Reg::Handshake_Mode1:
         if (this->mode_reg & 2) { // internal drive?
             status_addr = ((this->mode_reg & 0x20) >> 2) | (this->phase_lines & 7);
-            return ((this->int_drive->status(status_addr) & 1) << 2);
+            status_val = this->int_drive->status(status_addr) & 1;
+
+            // transfer status_val to both bit 2 (RDDATA) and bit 3 (SENSE)
+            // because those signals seem to be historically wired together
+            return ((status_val << 2) | (status_val << 3));
         }
         return 4;
     case Swim3Reg::Interrupt_Flags:
@@ -321,3 +342,18 @@ void Swim3Ctrl::stop_disk_access()
     }
     this->access_timer_id = 0;
 }
+
+static const vector<string> WriteToggle = {"ON", "on", "OFF", "off"};
+
+static const PropMap Swim3_Properties = {
+    {"fdd_img",
+        new StrProperty("")},
+    {"fdd_wr_prot",
+        new StrProperty("OFF", WriteToggle)}
+};
+
+static const DeviceDescription Swim3_Descriptor = {
+    Swim3Ctrl::create, {}, Swim3_Properties
+};
+
+REGISTER_DEVICE(Swim3, Swim3_Descriptor);
