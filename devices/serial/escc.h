@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef ESCC_H
 #define ESCC_H
 
+#include <devices/common/hwcomponent.h>
 #include <devices/serial/chario.h>
 
 #include <cinttypes>
@@ -116,10 +117,14 @@ private:
 };
 
 /** ESCC Controller class. */
-class EsccController {
+class EsccController : public HWComponent {
 public:
     EsccController();
     ~EsccController() = default;
+
+    static std::unique_ptr<HWComponent> create() {
+        return std::unique_ptr<EsccController>(new EsccController());
+    }
 
     // ESCC registers access
     uint8_t read(uint8_t reg_offset);

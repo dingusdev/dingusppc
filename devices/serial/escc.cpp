@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Enhanced Serial Communications Controller (ESCC) emulation. */
 
+#include <devices/deviceregistry.h>
 #include <devices/serial/chario.h>
 #include <devices/serial/escc.h>
 #include <loguru.hpp>
@@ -29,6 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <memory>
 #include <string>
+#include <vector>
 
 /** Remap the compatible addressing scheme to MacRISC one. */
 const uint8_t compat_to_macrisc[6] = {
@@ -306,3 +308,15 @@ uint8_t EsccChannel::receive_byte()
     this->read_regs[0] &= ~1;
     return c;
 }
+
+static const vector<string> CharIoBackends = {"null", "stdio"};
+
+static const PropMap Escc_Properties = {
+    {"serial_backend", new StrProperty("null", CharIoBackends)},
+};
+
+static const DeviceDescription Escc_Descriptor = {
+    EsccController::create, {}, Escc_Properties
+};
+
+REGISTER_DEVICE(Escc, Escc_Descriptor);
