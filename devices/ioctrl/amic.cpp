@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <core/timermanager.h>
 #include <cpu/ppc/ppcemu.h>
 #include <cpu/ppc/ppcmmu.h>
+#include <devices/deviceregistry.h>
 #include <devices/common/hwcomponent.h>
 #include <devices/common/scsi/sc53c94.h>
 #include <devices/common/viacuda.h>
@@ -527,3 +528,13 @@ DmaPullResult AmicFloppyDma::pull_data(uint32_t req_len, uint32_t *avail_len,
 {
     return DmaPullResult::NoMoreData;
 }
+
+static vector<string> Amic_Subdevices = {
+    "Swim3", "Escc"
+};
+
+static const DeviceDescription Amic_Descriptor = {
+    AMIC::create, Amic_Subdevices, {}
+};
+
+REGISTER_DEVICE(Amic, Amic_Descriptor);

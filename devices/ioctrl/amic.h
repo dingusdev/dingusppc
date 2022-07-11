@@ -184,6 +184,10 @@ public:
     AMIC();
     ~AMIC() = default;
 
+    static std::unique_ptr<HWComponent> create() {
+        return std::unique_ptr<AMIC>(new AMIC());
+    }
+
     // HWComponent methods
     int device_postinit();
 
