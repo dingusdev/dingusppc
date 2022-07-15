@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <cpu/ppc/ppcemu.h>
+#include <devices/deviceregistry.h>
 #include <devices/common/scsi/sc53c94.h>
 #include <devices/ethernet/mace.h>
 #include <devices/floppy/swim3.h>
@@ -270,3 +271,13 @@ void GrandCentral::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state)
 {
     ABORT_F("GC: ack_dma_int() not implemened");
 }
+
+static const vector<string> GCSubdevices = {
+    "Swim3", "Escc"
+};
+
+static const DeviceDescription GC_Descriptor = {
+    GrandCentral::create, GCSubdevices, {}
+};
+
+REGISTER_DEVICE(GrandCentral, GC_Descriptor);

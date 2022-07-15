@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <cpu/ppc/ppcemu.h>
+#include <devices/deviceregistry.h>
 #include <devices/common/dbdma.h>
 #include <devices/common/hwcomponent.h>
 #include <devices/common/viacuda.h>
@@ -356,3 +357,13 @@ void HeathrowIC::ack_int(uint32_t irq_id, uint8_t irq_line_state)
 void HeathrowIC::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state)
 {
 }
+
+static const vector<string> Heathrow_Subdevices = {
+    "Swim3", "Escc"
+};
+
+static const DeviceDescription Heathrow_Descriptor = {
+    HeathrowIC::create, Heathrow_Subdevices, {}
+};
+
+REGISTER_DEVICE(Heathrow, Heathrow_Descriptor);

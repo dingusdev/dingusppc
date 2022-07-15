@@ -89,6 +89,10 @@ public:
     GrandCentral();
     ~GrandCentral() = default;
 
+    static std::unique_ptr<HWComponent> create() {
+        return std::unique_ptr<GrandCentral>(new GrandCentral());
+    }
+
     // MMIO device methods
     uint32_t read(uint32_t reg_start, uint32_t offset, int size);
     void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size);
@@ -152,6 +156,10 @@ class HeathrowIC : public PCIDevice, public InterruptCtrl {
 public:
     HeathrowIC();
     ~HeathrowIC() = default;
+
+    static std::unique_ptr<HWComponent> create() {
+        return std::unique_ptr<HeathrowIC>(new HeathrowIC());
+    }
 
     // MMIO device methods
     uint32_t read(uint32_t reg_start, uint32_t offset, int size);
