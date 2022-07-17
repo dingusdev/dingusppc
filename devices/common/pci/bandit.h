@@ -33,6 +33,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/pci/pcihost.h>
 
 #include <cinttypes>
+#include <memory>
 #include <string>
 #include <unordered_map>
 
@@ -53,9 +54,9 @@ public:
     Bandit(int bridge_num, std::string name);
     ~Bandit() = default;
 
-    bool supports_type(HWCompType type) {
-        return (type == HWCompType::PCI_HOST || type == HWCompType::PCI_DEV);
-    };
+    static std::unique_ptr<HWComponent> create_first() {
+        return std::unique_ptr<Bandit>(new Bandit(1, "Bandit-PCI1"));
+    }
 
     uint32_t pci_cfg_read(uint32_t reg_offs, uint32_t size);
     void pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size);

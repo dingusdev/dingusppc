@@ -21,7 +21,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** Bandit ARBus-to-PCI Bridge emulation. */
 
-#include "bandit.h"
+#include <devices/common/pci/bandit.h>
+#include <devices/deviceregistry.h>
 #include <devices/memctrl/memctrlbase.h>
 #include <endianswap.h>
 #include <loguru.hpp>
@@ -32,6 +33,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 Bandit::Bandit(int bridge_num, std::string name) : PCIHost(), PCIDevice(name)
 {
+    supports_types(HWCompType::PCI_HOST | HWCompType::PCI_DEV);
+
     this->base_addr = 0xF0000000 + ((bridge_num & 3) << 25);
 
     MemCtrlBase *mem_ctrl = dynamic_cast<MemCtrlBase *>
@@ -222,3 +225,9 @@ void Bandit::verbose_address_space()
         }
     }
 }
+
+static const DeviceDescription Bandit1_Descriptor = {
+    Bandit::create_first, {}, {}
+};
+
+REGISTER_DEVICE(Bandit1, Bandit1_Descriptor);
