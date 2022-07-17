@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     Author: Max Poliakovski
 */
 
+#include <devices/deviceregistry.h>
 #include <devices/common/hwcomponent.h>
 #include <devices/memctrl/hmc.h>
 
@@ -63,3 +64,9 @@ void HMC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
             break;
     }
 }
+
+static const DeviceDescription Hmc_Descriptor = {
+    HMC::create, {}, {}
+};
+
+REGISTER_DEVICE(HMC, Hmc_Descriptor);

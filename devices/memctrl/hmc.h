@@ -35,6 +35,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/memctrl/memctrlbase.h>
 
 #include <cinttypes>
+#include <memory>
 
 /** Bit in the HMC control register telling us where the frame bufffer
    for the on-board video is located. */
@@ -44,6 +45,10 @@ class HMC : public MemCtrlBase, public MMIODevice {
 public:
     HMC();
     ~HMC() = default;
+
+    static std::unique_ptr<HWComponent> create() {
+        return std::unique_ptr<HMC>(new HMC());
+    }
 
     /* MMIODevice methods */
     uint32_t read(uint32_t reg_start, uint32_t offset, int size);
