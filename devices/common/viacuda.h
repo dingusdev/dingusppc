@@ -156,6 +156,10 @@ public:
     ViaCuda();
     ~ViaCuda() = default;
 
+    static std::unique_ptr<HWComponent> create() {
+        return std::unique_ptr<ViaCuda>(new ViaCuda());
+    }
+
     // HWComponent methods
     int device_postinit();
 

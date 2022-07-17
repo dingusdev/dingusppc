@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/adb/adb.h>
 #include <devices/common/hwinterrupt.h>
 #include <devices/common/viacuda.h>
+#include <devices/deviceregistry.h>
 #include <loguru.hpp>
 #include <machines/machinebase.h>
 #include <memaccess.h>
@@ -709,3 +710,9 @@ void ViaCuda::i2c_comb_transaction(
         this->is_open_ended    = true;
     }
 }
+
+static const DeviceDescription ViaCuda_Descriptor = {
+    ViaCuda::create, {}, {}
+};
+
+REGISTER_DEVICE(ViaCuda, ViaCuda_Descriptor);
