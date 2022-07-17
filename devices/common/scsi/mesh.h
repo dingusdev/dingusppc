@@ -24,7 +24,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef MESH_H
 #define MESH_H
 
+#include <devices/common/hwcomponent.h>
+
 #include <cinttypes>
+#include <memory>
 
 // Chip ID returned by the MESH cell inside the Heathrow ASIC
 #define HeathrowMESHID  4
@@ -53,10 +56,17 @@ enum MeshReg : uint8_t {
 
 }; // namespace MeshScsi
 
-class MESHController {
+class MESHController : public HWComponent {
 public:
-    MESHController(uint8_t mesh_id) { this->chip_id = mesh_id; };
+    MESHController(uint8_t mesh_id) {
+        supports_types(HWCompType::SCSI_HOST | HWCompType::SCSI_DEV);
+        this->chip_id = mesh_id;
+    };
     ~MESHController() = default;
+
+    static std::unique_ptr<HWComponent> create() {
+        return std::unique_ptr<MESHController>(new MESHController(HeathrowMESHID));
+    }
 
     // MESH registers access
     uint8_t read(uint8_t reg_offset);

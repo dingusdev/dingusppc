@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @file MESH (Macintosh Enhanced SCSI Hardware) controller emulation. */
 
 #include <devices/common/scsi/mesh.h>
+#include <devices/deviceregistry.h>
 
 #include <cinttypes>
 #include <loguru.hpp>
@@ -69,3 +70,9 @@ void MESHController::write(uint8_t reg_offset, uint8_t value)
         LOG_F(WARNING, "MESH: write to unimplemented register at offset %d", reg_offset);
     }
 }
+
+static const DeviceDescription Mesh_Descriptor = {
+    MESHController::create, {}, {}
+};
+
+REGISTER_DEVICE(Mesh, Mesh_Descriptor);
