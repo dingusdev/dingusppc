@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -114,8 +114,10 @@ int SoundServer::start()
 void SoundServer::shutdown()
 {
     switch (this->status) {
+    case SND_STREAM_OPENED:
+        close_out_stream();
+        /* fall through */
     case SND_SERVER_UP:
-        //soundio_device_unref(this->out_device);
         /* fall through */
     case SND_API_READY:
         cubeb_destroy(this->cubeb_ctx);
@@ -202,6 +204,8 @@ int SoundServer::open_out_stream(uint32_t sample_rate, void *user_data)
     }
 
     LOG_F(INFO, "Sound output stream opened.");
+
+    this->status = SND_STREAM_OPENED;
 
     return 0;
 }

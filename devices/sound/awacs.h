@@ -40,7 +40,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 class AwacsBase {
 public:
     AwacsBase();
-    ~AwacsBase();
+    ~AwacsBase() = default;
 
     void set_dma_out(DmaOutChannel *dma_out_ch) {
         this->dma_out_ch = dma_out_ch;

@@ -46,14 +46,6 @@ AwacsBase::AwacsBase()
     this->out_stream_ready = false;
 }
 
-AwacsBase::~AwacsBase()
-{
-    // disconnect from SoundServer
-    if (this->out_stream_ready) {
-        snd_server->close_out_stream();
-    }
-}
-
 void AwacsBase::set_sample_rate(int sr_id)
 {
     if (sr_id > this->max_sr_id) {

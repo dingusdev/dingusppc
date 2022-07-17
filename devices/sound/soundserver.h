@@ -41,6 +41,7 @@ enum {
     SND_SERVER_DOWN = 0,
     SND_API_READY,
     SND_SERVER_UP,
+    SND_STREAM_OPENED
 };
 
 
