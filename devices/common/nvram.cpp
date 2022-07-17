@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <devices/common/hwcomponent.h>
 #include <devices/common/nvram.h>
+#include <devices/deviceregistry.h>
 
 #include <cinttypes>
 #include <cstring>
@@ -93,3 +94,9 @@ void NVram::save() {
 
     f.close();
 }
+
+static const DeviceDescription Nvram_Descriptor = {
+    NVram::create, {}, {}
+};
+
+REGISTER_DEVICE(NVRAM, Nvram_Descriptor);

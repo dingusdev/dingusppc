@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/hwcomponent.h>
 
 #include <cinttypes>
+#include <memory>
 #include <string>
 
 /** @file Non-volatile RAM emulation.
@@ -37,6 +38,10 @@ class NVram : public HWComponent {
 public:
     NVram(std::string file_name = "nvram.bin", uint32_t ram_size = 8192);
     ~NVram();
+
+    static std::unique_ptr<HWComponent> create() {
+        return std::unique_ptr<NVram>(new NVram());
+    }
 
     uint8_t read_byte(uint32_t offset);
     void write_byte(uint32_t offset, uint8_t value);
