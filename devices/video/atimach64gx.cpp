@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <core/timermanager.h>
+#include <devices/deviceregistry.h>
 #include <devices/video/atimach64defs.h>
 #include <devices/video/atimach64gx.h>
 #include <devices/video/displayid.h>
@@ -356,3 +357,9 @@ void AtiMach64Gx::rgb514_write_ind_reg(uint8_t reg_addr, uint8_t value)
         break;
     }
 }
+
+static const DeviceDescription AtiMach64Gx_Descriptor = {
+    AtiMach64Gx::create, {}, {}
+};
+
+REGISTER_DEVICE(AtiMach64Gx, AtiMach64Gx_Descriptor);

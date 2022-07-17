@@ -37,6 +37,10 @@ public:
     AtiMach64Gx();
     ~AtiMach64Gx() = default;
 
+    static std::unique_ptr<HWComponent> create() {
+        return std::unique_ptr<AtiMach64Gx>(new AtiMach64Gx());
+    }
+
     /* PCI device methods */
     bool supports_io_space(void) {
         return true;
