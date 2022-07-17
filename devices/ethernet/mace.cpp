@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -21,7 +21,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Media Access Controller for Ethernet (MACE) emulation. */
 
-#include "mace.h"
+#include <devices/deviceregistry.h>
+#include <devices/ethernet/mace.h>
 #include <loguru.hpp>
 
 #include <cinttypes>
@@ -55,3 +56,9 @@ void MaceController::write(uint8_t reg_offset, uint8_t value)
         LOG_F(INFO, "Writing 0x%X to MACE register %d", value, reg_offset);
     }
 }
+
+static const DeviceDescription Mace_Descriptor = {
+    MaceController::create, {}, {}
+};
+
+REGISTER_DEVICE(Mace, Mace_Descriptor);

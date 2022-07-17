@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -24,7 +24,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef MACE_H
 #define MACE_H
 
+#include <devices/common/hwcomponent.h>
+
 #include <cinttypes>
+#include <memory>
 
 // MACE Chip ID from AMD datasheet
 // TODO: compare with real HW
@@ -66,10 +69,14 @@ enum MaceReg : uint8_t {
 
 }; // namespace MaceEnet
 
-class MaceController {
+class MaceController : public HWComponent {
 public:
     MaceController(uint16_t id) { this->chip_id = id; };
     ~MaceController() = default;
+
+    static std::unique_ptr<HWComponent> create() {
+        return std::unique_ptr<MaceController>(new MaceController(MACE_ID));
+    }
 
     // MACE registers access
     uint8_t read(uint8_t reg_offset);
