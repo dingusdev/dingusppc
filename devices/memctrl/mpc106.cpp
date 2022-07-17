@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <devices/common/hwcomponent.h>
 #include <devices/common/mmiodevice.h>
+#include <devices/deviceregistry.h>
 #include <devices/memctrl/memctrlbase.h>
 #include <devices/memctrl/mpc106.h>
 #include <memaccess.h>
@@ -233,3 +234,9 @@ void MPC106::setup_ram() {
         LOG_F(ERROR, "MPC106 RAM allocation failed! \n");
     }
 }
+
+static const DeviceDescription Grackle_Descriptor = {
+    MPC106::create, {}, {}
+};
+
+REGISTER_DEVICE(Grackle, Grackle_Descriptor);

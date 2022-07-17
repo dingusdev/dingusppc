@@ -40,13 +40,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/memctrl/memctrlbase.h>
 
 #include <cinttypes>
+#include <memory>
 #include <unordered_map>
-
 
 class MPC106 : public MemCtrlBase, public PCIDevice, public PCIHost {
 public:
     MPC106();
     ~MPC106() = default;
+
+    static std::unique_ptr<HWComponent> create() {
+        return std::unique_ptr<MPC106>(new MPC106());
+    }
 
     uint32_t read(uint32_t reg_start, uint32_t offset, int size);
     void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size);
