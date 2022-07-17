@@ -160,8 +160,8 @@ public:
     PlatinumCtrl();
     ~PlatinumCtrl() = default;
 
-    bool supports_type(HWCompType type) {
-        return (type == HWCompType::MEM_CTRL || type == HWCompType::MMIO_DEV);
+    static std::unique_ptr<HWComponent> create() {
+        return std::unique_ptr<PlatinumCtrl>(new PlatinumCtrl());
     }
 
     /* MMIODevice methods */

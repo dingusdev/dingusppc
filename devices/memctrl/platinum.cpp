@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** Platinum Memory/Display Controller emulation. */
 
+#include <devices/deviceregistry.h>
 #include <devices/memctrl/platinum.h>
 #include <devices/video/displayid.h>
 #include <loguru.hpp>
@@ -33,6 +34,8 @@ using namespace Platinum;
 PlatinumCtrl::PlatinumCtrl() : MemCtrlBase()
 {
     this->name = "Platinum Memory Controller";
+
+    supports_types(HWCompType::MEM_CTRL | HWCompType::MMIO_DEV);
 
     // add MMIO region for the configuration and status registers
     add_mmio_region(0xF8000000, 0x500, this);
@@ -196,3 +199,9 @@ void PlatinumCtrl::map_phys_ram()
         ABORT_F("Platinum: could not allocate RAM storage");
     }
 }
+
+static const DeviceDescription Platinum_Descriptor = {
+    PlatinumCtrl::create, {}, {}
+};
+
+REGISTER_DEVICE(Platinum, Platinum_Descriptor);
