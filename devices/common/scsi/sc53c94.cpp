@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/hwcomponent.h>
 #include <devices/common/hwinterrupt.h>
 #include <devices/common/scsi/sc53c94.h>
+#include <devices/deviceregistry.h>
 #include <loguru.hpp>
 #include <machines/machinebase.h>
 
@@ -358,3 +359,9 @@ void Sc53C94::notify(ScsiMsg msg_type, int param)
         LOG_F(WARNING, "SC53C94: ignore notification message, type: %d", msg_type);
     }
 }
+
+static const DeviceDescription Sc53C94_Descriptor = {
+    Sc53C94::create, {}, {}
+};
+
+REGISTER_DEVICE(Sc53C94, Sc53C94_Descriptor);

@@ -29,10 +29,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SC_53C94_H
 #define SC_53C94_H
 
-#include "scsi.h"
-#include "devices/common/hwinterrupt.h"
+#include <devices/common/scsi/scsi.h>
+#include <devices/common/hwinterrupt.h>
 
 #include <cinttypes>
+#include <memory>
 
 /** 53C94 read registers */
 namespace Read {
@@ -127,6 +128,10 @@ class Sc53C94 : public ScsiDevice {
 public:
     Sc53C94(uint8_t chip_id=12, uint8_t my_id=7);
     ~Sc53C94() = default;
+
+    static std::unique_ptr<HWComponent> create() {
+        return std::unique_ptr<Sc53C94>(new Sc53C94());
+    }
 
     // HWComponent methods
     int device_postinit();
