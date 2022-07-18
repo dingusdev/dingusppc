@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <core/timermanager.h>
 #include <devices/common/hwcomponent.h>
 #include <devices/common/pci/pcidevice.h>
+#include <devices/deviceregistry.h>
 #include <devices/video/atirage.h>
 #include <devices/video/displayid.h>
 #include <endianswap.h>
@@ -89,14 +90,14 @@ static const std::map<uint16_t, std::string> mach64_reg_names = {
 };
 
 
-ATIRage::ATIRage(uint16_t dev_id, uint32_t vmem_size_mb)
+ATIRage::ATIRage(uint16_t dev_id)
     : PCIDevice("ati-rage"), VideoCtrlBase(1024, 768)
 {
     uint8_t asic_id;
 
     supports_types(HWCompType::MMIO_DEV | HWCompType::PCI_DEV);
 
-    this->vram_size = vmem_size_mb << 20; // convert MBs to bytes
+    this->vram_size = GET_INT_PROP("gfxmem_size") << 20; // convert MBs to bytes
 
     /* allocate video RAM */
     this->vram_ptr = std::unique_ptr<uint8_t[]> (new uint8_t[this->vram_size]);
@@ -590,3 +591,21 @@ void ATIRage::draw_hw_cursor(uint8_t *dst_buf, int dst_pitch) {
         }
     }
 }
+
+static const PropMap AtiRage_Properties = {
+    {"gfxmem_size",
+        new IntProperty(  2, vector<uint32_t>({2, 4, 6}))},
+    {"mon_id",
+        new StrProperty("")},
+};
+
+static const DeviceDescription AtiRageGT_Descriptor = {
+    ATIRage::create_gt, {}, AtiRage_Properties
+};
+
+static const DeviceDescription AtiRagePro_Descriptor = {
+    ATIRage::create_pro, {}, AtiRage_Properties
+};
+
+REGISTER_DEVICE(AtiRageGT, AtiRageGT_Descriptor);
+REGISTER_DEVICE(AtiRagePro, AtiRagePro_Descriptor);

@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -44,8 +44,16 @@ enum {
 
 class ATIRage : public PCIDevice, public VideoCtrlBase {
 public:
-    ATIRage(uint16_t dev_id, uint32_t vmem_size_mb);
+    ATIRage(uint16_t dev_id);
     ~ATIRage() = default;
+
+    static std::unique_ptr<HWComponent> create_gt() {
+        return std::unique_ptr<ATIRage>(new ATIRage(ATI_RAGE_GT_DEV_ID));
+    }
+
+    static std::unique_ptr<HWComponent> create_pro() {
+        return std::unique_ptr<ATIRage>(new ATIRage(ATI_RAGE_PRO_DEV_ID));
+    }
 
     /* MMIODevice methods */
     uint32_t read(uint32_t reg_start, uint32_t offset, int size);
@@ -91,4 +99,5 @@ private:
 
     int comp_index;          /* color component index for DAC palette access */
 };
+
 #endif /* ATI_RAGE_H */

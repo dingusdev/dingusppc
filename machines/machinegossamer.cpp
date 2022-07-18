@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -34,89 +34,86 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/video/atirage.h>
 #include <loguru.hpp>
 #include <machines/machinebase.h>
+#include <machines/machinefactory.h>
 #include <machines/machineproperties.h>
 
+#include <memory>
 #include <string>
-
 
 static void setup_ram_slot(std::string name, int i2c_addr, int capacity_megs) {
     if (!capacity_megs)
         return;
 
-    gMachineObj->add_component(name, new SpdSdram168(i2c_addr));
+    gMachineObj->add_device(name, std::unique_ptr<SpdSdram168>(new SpdSdram168(i2c_addr)));
     SpdSdram168* ram_dimm = dynamic_cast<SpdSdram168*>(gMachineObj->get_comp_by_name(name));
     ram_dimm->set_capacity(capacity_megs);
 
-    /* register RAM DIMM with the I2C bus */
+    // register RAM DIMM with the I2C bus
     I2CBus* i2c_bus = dynamic_cast<I2CBus*>(gMachineObj->get_comp_by_type(HWCompType::I2C_HOST));
     i2c_bus->register_device(i2c_addr, ram_dimm);
 }
 
 
-int create_gossamer(std::string& id) {
-    if (gMachineObj) {
-        LOG_F(ERROR, "Global machine object not empty!");
-        return -1;
-    }
-
-    LOG_F(INFO, "Initializing the Gossamer hardware...");
-
-    /* initialize the global machine object */
-    gMachineObj.reset(new MachineBase("Gossamer"));
-
-    /* register MPC106 aka Grackle as memory controller and PCI host */
-    gMachineObj->add_component("Grackle", new MPC106);
-    gMachineObj->add_alias("Grackle", "PCI_Host");
-
-    /* get raw pointer to MPC106 object */
+int initialize_gossamer(std::string& id)
+{
+    // get pointer to the memory controller/PCI host bridge object
     MPC106* grackle_obj = dynamic_cast<MPC106*>(gMachineObj->get_comp_by_name("Grackle"));
 
-    /* add the machine ID register */
-    gMachineObj->add_component("MachineID", new GossamerID(0xBF3D));
+    // add the machine ID register
+    gMachineObj->add_device("MachineID", std::unique_ptr<GossamerID>(new GossamerID(0xBF3D)));
     grackle_obj->add_mmio_region(
         0xFF000004, 4096, dynamic_cast<MMIODevice*>(gMachineObj->get_comp_by_name("MachineID")));
 
-    gMachineObj->add_component("SoundServer", new SoundServer());
-
-    /* add the Heathrow I/O controller */
-    gMachineObj->add_component("Heathrow", new HeathrowIC);
+    // register the Heathrow I/O controller with the PCI host bridge
     grackle_obj->pci_register_device(
         16, dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("Heathrow")));
 
-    /* allocate ROM region */
+    // allocate ROM region
     if (!grackle_obj->add_rom_region(0xFFC00000, 0x400000)) {
         LOG_F(ERROR, "Could not allocate ROM region!\n");
         return -1;
     }
 
-    /* configure RAM slots */
+    // configure RAM slots
     setup_ram_slot("RAM_DIMM_1", 0x57, GET_INT_PROP("rambank1_size"));
     setup_ram_slot("RAM_DIMM_2", 0x56, GET_INT_PROP("rambank2_size"));
     setup_ram_slot("RAM_DIMM_3", 0x55, GET_INT_PROP("rambank3_size"));
 
-    /* register ATI 3D Rage Pro video card with the PCI host bridge */
-    gMachineObj->add_component("ATIRage",
-        new ATIRage(ATI_RAGE_PRO_DEV_ID, GET_INT_PROP("gfxmem_size")));
+    // select built-in GPU name
+    std::string gpu_name = "AtiRageGT";
+    if (id == "pmg3twr") {
+        gpu_name = "AtiRagePro";
+    }
+
+    // register built-in ATI Rage GPU with the PCI host bridge
     grackle_obj->pci_register_device(
-        18, dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("ATIRage")));
+        18, dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name(gpu_name)));
 
-    /* Init virtual CPU and request MPC750 CPU aka G3 */
+    // initialize virtual CPU and request MPC750 CPU aka G3
     ppc_cpu_init(grackle_obj, PPC_VER::MPC750, 16705000ULL);
-
-    // post-initialize all devices
-    if (gMachineObj->postinit_devices()) {
-        LOG_F(ERROR, "Could not post-initialize devices!\n");
-        return -1;
-    }
-
-    /* check for a floppy image to be inserted into the virtual superdrive */
-    std::string fdd_path      = GET_STR_PROP("fdd_img");
-    std::string fd_write_prot = GET_STR_PROP("fdd_wr_prot");
-    if (!fdd_path.empty()) {
-        open_floppy_image(fdd_path);
-    }
-
-    LOG_F(INFO, "Initialization complete.\n");
 
     return 0;
 }
+
+static const PropMap gossamer_settings = {
+    {"rambank1_size",
+        new IntProperty(256, vector<uint32_t>({8, 16, 32, 64, 128, 256}))},
+    {"rambank2_size",
+        new IntProperty(  0, vector<uint32_t>({0, 8, 16, 32, 64, 128, 256}))},
+    {"rambank3_size",
+        new IntProperty(  0, vector<uint32_t>({0, 8, 16, 32, 64, 128, 256}))},
+};
+
+static vector<string> pmg3_devices = {
+    "Grackle", "Heathrow", "AtiRageGT"
+};
+
+static const MachineDescription pmg3dt_descriptor = {
+    .name = "pmg3",
+    .description = "Power Macintosh G3 (Beige) Desktop",
+    .devices = pmg3_devices,
+    .settings = gossamer_settings,
+    .init_func = &initialize_gossamer
+};
+
+REGISTER_MACHINE(pmg3dt, pmg3dt_descriptor);

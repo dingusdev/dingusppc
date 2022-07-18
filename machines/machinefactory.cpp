@@ -24,8 +24,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     Author: Max Poliakovski
  */
 
+#include <devices/deviceregistry.h>
 #include <devices/memctrl/memctrlbase.h>
+#include <devices/sound/soundserver.h>
 #include <loguru.hpp>
+#include <machines/machinebase.h>
 #include <machines/machinefactory.h>
 #include <machines/machineproperties.h>
 #include <memaccess.h>
@@ -56,7 +59,7 @@ static const map<uint32_t, std::tuple<string, const char*>> rom_identity = {
     //{"Come", "PowerBook 2400"},                              // Comet
     {0x436F7264, {"pm5200",   "Power Mac 5200/6200 series"}},  // Cordyceps
     {0x47617A65, {"pm6500",   "Power Mac 6500"}},              // Gazelle
-    {0x476F7373, {"pmg3",     "Power Mac G3 Beige"}},          // Gossamer
+    {0x476F7373, {"pmg3dt",   "Power Mac G3 Beige"}},          // Gossamer
     {0x47525820, {"pbg3",     "PowerBook G3 Wallstreet"}},
     //{"Hoop", "PowerBook 3400"},                              // Hooper
     {0x50425820, {"pb-preg3", "PowerBook Pre-G3"}},
@@ -67,67 +70,6 @@ static const map<uint32_t, std::tuple<string, const char*>> rom_identity = {
     {0x5A616E7A, {"pm4400",   "Power Mac 4400/7220"}},         // Zanzibar
 };
 
-static const vector<string> WriteToggle = {"ON", "on", "OFF", "off"};
-
-static const vector<string> CharIoBackends = {"null", "stdio"};
-
-static const PropMap CatalystSettings = {
-    {"rambank1_size",
-        new IntProperty(16, vector<uint32_t>({4, 8, 16, 32, 64, 128}))},
-    {"rambank2_size",
-        new IntProperty( 0, vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
-    {"rambank3_size",
-        new IntProperty( 0, vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
-    {"rambank4_size",
-        new IntProperty( 0, vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
-    {"gfxmem_size",
-        new IntProperty( 1, vector<uint32_t>({1, 2, 4}))},
-    {"mon_id",
-        new StrProperty("HiRes12-14in")},
-    {"fdd_img",
-        new StrProperty("")},
-    {"serial_backend", new StrProperty("null", CharIoBackends)},
-};
-
-static const PropMap GossamerSettings = {
-    {"rambank1_size",
-        new IntProperty(256, vector<uint32_t>({8, 16, 32, 64, 128, 256}))},
-    {"rambank2_size",
-        new IntProperty(  0, vector<uint32_t>({0, 8, 16, 32, 64, 128, 256}))},
-    {"rambank3_size",
-        new IntProperty(  0, vector<uint32_t>({0, 8, 16, 32, 64, 128, 256}))},
-    {"gfxmem_size",
-        new IntProperty(  2, vector<uint32_t>({2, 4, 6}))},
-    {"mon_id",
-        new StrProperty("")},
-    {"fdd_img",
-        new StrProperty("")},
-    {"fdd_wr_prot", new StrProperty("OFF", WriteToggle)},
-    {"serial_backend", new StrProperty("null", CharIoBackends)},
-};
-
-/** Monitors supported by the PDM on-board video. */
-/* see displayid.cpp for the full list of supported monitor IDs. */
-static const vector<string> PDMBuiltinMonitorIDs = {
-    "PortraitGS", "MacRGB12in", "MacRGB15in", "HiRes12-14in", "VGA-SVGA",
-    "MacRGB16in", "Multiscan15in", "Multiscan17in", "Multiscan20in",
-    "NotConnected"
-};
-
-static const PropMap PDMSettings = {
-    {"rambank1_size",
-        new IntProperty(0, vector<uint32_t>({0, 8, 16, 32, 64, 128}))},
-    {"rambank2_size",
-        new IntProperty(0, vector<uint32_t>({0, 8, 16, 32, 64, 128}))},
-    {"mon_id",
-        new StrProperty("HiRes12-14in", PDMBuiltinMonitorIDs)},
-    {"fdd_img",
-        new StrProperty("")},
-    {"fdd_wr_prot",
-        new StrProperty("OFF", WriteToggle)},
-    {"serial_backend", new StrProperty("null", CharIoBackends)},
-};
-
 static const map<string, string> PropHelp = {
     {"rambank1_size",   "specifies RAM bank 1 size in MB"},
     {"rambank2_size",   "specifies RAM bank 2 size in MB"},
@@ -135,18 +77,182 @@ static const map<string, string> PropHelp = {
     {"rambank4_size",   "specifies RAM bank 4 size in MB"},
     {"gfxmem_size",     "specifies video memory size in MB"},
     {"fdd_img",         "specifies path to floppy disk image"},
-    {"fdd_wr_prot",     "toggles floppy disks write protection"},
+    {"fdd_wr_prot",     "toggles floppy disk's write protection"},
     {"mon_id",          "specifies which monitor to emulate"},
     {"serial_backend",  "specifies the backend for the serial port"},
 };
 
-static const map<string, tuple<PropMap, function<int(string&)>, string>> machines = {
-    {"pm6100", {PDMSettings,      create_pdm,      "PowerMacintosh 6100"}},
-    {"pm7200", {CatalystSettings, create_catalyst, "PowerMacintosh 7200"}},
-    {"pmg3",   {GossamerSettings, create_gossamer, "Power Macintosh G3 (Beige)"}},
-};
+bool MachineFactory::add(const string& machine_id, MachineDescription desc)
+{
+    if (get_registry().find(machine_id) != get_registry().end()) {
+        return false;
+    }
 
-string machine_name_from_rom(string& rom_filepath) {
+    get_registry()[machine_id] = desc;
+    return true;
+}
+
+void MachineFactory::list_machines()
+{
+    cout << endl << "Supported machines:" << endl << endl;
+
+    for (auto& m : get_registry()) {
+        cout << setw(13) << m.first << "\t\t" << m.second.description << endl;
+    }
+
+    cout << endl;
+}
+
+void MachineFactory::create_device(string& dev_name, DeviceDescription& dev)
+{
+    for (auto& subdev_name : dev.subdev_list) {
+        create_device(subdev_name, DeviceRegistry::get_descriptor(subdev_name));
+    }
+
+    gMachineObj->add_device(dev_name, dev.m_create_func());
+}
+
+int MachineFactory::create(string& mach_id)
+{
+    auto it = get_registry().find(mach_id);
+    if (it == get_registry().end()) {
+        LOG_F(ERROR, "Unknown machine id %s", mach_id.c_str());
+        return -1;
+    }
+
+    LOG_F(INFO, "Initializing %s hardware...", it->second.description.c_str());
+
+    // initialize global machine object
+    gMachineObj.reset(new MachineBase(it->second.name));
+
+    // create and register sound server
+    gMachineObj->add_device("SoundServer", std::unique_ptr<SoundServer>(new SoundServer()));
+
+    // recursively create device objects
+    for (auto& dev_name : it->second.devices) {
+        create_device(dev_name, DeviceRegistry::get_descriptor(dev_name));
+    }
+
+    if (it->second.init_func(mach_id)) {
+        LOG_F(ERROR, "Machine initialization function failed!");
+        return -1;
+    }
+
+    // post-initialize all devices
+    if (gMachineObj->postinit_devices()) {
+        LOG_F(ERROR, "Could not post-initialize devices!\n");
+        return -1;
+    }
+
+    LOG_F(INFO, "Initialization completed.\n");
+
+    return 0;
+}
+
+void MachineFactory::list_properties()
+{
+    cout << endl;
+
+    for (auto& mach : get_registry()) {
+        cout << mach.second.description << " supported properties:" << endl << endl;
+
+        print_settings(mach.second.settings);
+
+        for (auto& d : mach.second.devices) {
+            list_device_settings(DeviceRegistry::get_descriptor(d));
+        }
+    }
+
+    cout << endl;
+}
+
+void MachineFactory::list_device_settings(DeviceDescription& dev)
+{
+    for (auto& d : dev.subdev_list) {
+        list_device_settings(DeviceRegistry::get_descriptor(d));
+    }
+
+    print_settings(dev.properties);
+}
+
+void MachineFactory::print_settings(PropMap& prop_map)
+{
+    for (auto& p : prop_map) {
+        cout << setw(13) << p.first << "\t\t" << PropHelp.at(p.first)
+            << endl;
+
+        cout << setw(13) << "\t\t\t" "Valid values: ";
+
+        switch(p.second->get_type()) {
+        case PROP_TYPE_INTEGER:
+            cout << dynamic_cast<IntProperty*>(p.second)->get_valid_values_as_str()
+                << endl;
+            break;
+        case PROP_TYPE_STRING:
+            cout << dynamic_cast<StrProperty*>(p.second)->get_valid_values_as_str()
+                << endl;
+            break;
+        default:
+            break;
+        }
+        cout << endl;
+    }
+}
+
+void MachineFactory::get_device_settings(DeviceDescription& dev, map<string, string> &settings)
+{
+    for (auto& d : dev.subdev_list) {
+        get_device_settings(DeviceRegistry::get_descriptor(d), settings);
+    }
+
+    for (auto& p : dev.properties) {
+        settings[p.first] = p.second->get_string();
+
+        // populate dynamic machine settings from presets
+        gMachineSettings[p.first] = unique_ptr<BasicProperty>(p.second->clone());
+    }
+}
+
+int MachineFactory::get_machine_settings(const string& id, map<string, string> &settings)
+{
+    auto it = get_registry().find(id);
+    if (it != get_registry().end()) {
+        auto props = it->second.settings;
+
+        gMachineSettings.clear();
+
+        for (auto& p : props) {
+            settings[p.first] = p.second->get_string();
+
+            // populate dynamic machine settings from presets
+            gMachineSettings[p.first] = unique_ptr<BasicProperty>(p.second->clone());
+        }
+
+        for (auto& dev : it->second.devices) {
+            get_device_settings(DeviceRegistry::get_descriptor(dev), settings);
+        }
+    } else {
+        LOG_F(ERROR, "Unknown machine id %s", id.c_str());
+        return -1;
+    }
+
+    return 0;
+}
+
+void MachineFactory::set_machine_settings(map<string, string> &settings) {
+    for (auto& s : settings) {
+        gMachineSettings.at(s.first)->set_string(s.second);
+    }
+
+    // print machine settings summary
+    cout << endl << "Machine settings summary: " << endl;
+
+    for (auto& p : gMachineSettings) {
+        cout << p.first << " : " << p.second->get_string() << endl;
+    }
+}
+
+string MachineFactory::machine_name_from_rom(string& rom_filepath) {
     ifstream rom_file;
     uint32_t file_size, config_info_offset, rom_id;
     char rom_id_str[17];
@@ -202,96 +308,8 @@ bail_out:
     return machine_name;
 }
 
-int get_machine_settings(string& id, map<string, string> &settings) {
-    try {
-        auto props = get<0>(machines.at(id));
-
-        gMachineSettings.clear();
-
-        for (auto& p : props) {
-            settings[p.first] = p.second->get_string();
-
-            /* populate dynamic machine settings from presets  */
-            gMachineSettings[p.first] = unique_ptr<BasicProperty>(p.second->clone());
-        }
-    }
-    catch(out_of_range ex) {
-        LOG_F(ERROR, "Unknown machine id %s", id.c_str());
-        return -1;
-    }
-    return 0;
-}
-
-void set_machine_settings(map<string, string> &settings) {
-    for (auto& s : settings) {
-        gMachineSettings.at(s.first)->set_string(s.second);
-    }
-
-    /* print machine settings summary */
-    cout << endl << "Machine settings summary: " << endl;
-
-    for (auto& p : gMachineSettings) {
-        cout << p.first << " : " << p.second->get_string() << endl;
-    }
-}
-
-void list_machines() {
-    cout << endl << "Supported machines:" << endl << endl;
-
-    for (auto& mach : machines) {
-        cout << setw(13) << mach.first << "\t\t" << get<2>(mach.second) << endl;
-    }
-
-    cout << endl;
-}
-
-void list_properties() {
-    cout << endl;
-
-    for (auto& mach : machines) {
-        cout << get<2>(mach.second) << " supported properties:" << endl << endl;
-
-        for (auto& p : get<0>(mach.second)) {
-            cout << setw(13) << p.first << "\t\t" << PropHelp.at(p.first)
-                << endl;
-
-            cout << setw(13) << "\t\t\t" "Valid values: ";
-
-            switch(p.second->get_type()) {
-            case PROP_TYPE_INTEGER:
-                cout << dynamic_cast<IntProperty*>(p.second)->get_valid_values_as_str()
-                    << endl;
-                break;
-            case PROP_TYPE_STRING:
-                cout << dynamic_cast<StrProperty*>(p.second)->get_valid_values_as_str()
-                    << endl;
-                break;
-            default:
-                break;
-            }
-            cout << endl;
-        }
-    }
-
-    cout << endl;
-}
-
 /* Read ROM file content and transfer it to the dedicated ROM region */
-void load_rom(std::ifstream& rom_file, uint32_t file_size) {
-    unsigned char* sysrom_mem = new unsigned char[file_size];
-
-    rom_file.seekg(0, ios::beg);
-    rom_file.read((char*)sysrom_mem, file_size);
-
-    MemCtrlBase* mem_ctrl = dynamic_cast<MemCtrlBase*>(
-        gMachineObj->get_comp_by_type(HWCompType::MEM_CTRL));
-
-    mem_ctrl->set_data(0xFFC00000, sysrom_mem, file_size);
-    delete[] sysrom_mem;
-}
-
-/* Read ROM file content and transfer it to the dedicated ROM region */
-int load_boot_rom(string& rom_filepath) {
+int MachineFactory::load_boot_rom(string& rom_filepath) {
     ifstream rom_file;
     size_t   file_size;
     int      result;
@@ -336,17 +354,8 @@ int load_boot_rom(string& rom_filepath) {
     return result;
 }
 
-
-int create_machine_for_id(string& id, string& rom_filepath) {
-    try {
-        auto machine = machines.at(id);
-
-        /* build machine and load boot ROM */
-        if (get<1>(machine)(id) < 0 || load_boot_rom(rom_filepath) < 0) {
-            return -1;
-        }
-    } catch(out_of_range ex) {
-        LOG_F(ERROR, "Unknown machine id %s", id.c_str());
+int MachineFactory::create_machine_for_id(string& id, string& rom_filepath) {
+    if (MachineFactory::create(id) < 0 || load_boot_rom(rom_filepath) < 0) {
         return -1;
     }
 

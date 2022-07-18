@@ -60,11 +60,11 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
         this->notify_bar_change(bar_num);
     };
 
-    this->nvram = std::unique_ptr<NVram> (new NVram());
-    gMachineObj->add_subdevice("NVRAM", this->nvram.get());
+    // NVRAM connection
+    this->nvram = dynamic_cast<NVram*>(gMachineObj->get_comp_by_name("NVRAM"));
 
-    this->viacuda = std::unique_ptr<ViaCuda> (new ViaCuda());
-    gMachineObj->add_subdevice("ViaCuda", this->viacuda.get());
+    // connect Cuda
+    this->viacuda = dynamic_cast<ViaCuda*>(gMachineObj->get_comp_by_name("ViaCuda"));
 
     // initialize sound chip and its DMA output channel, then wire them together
     this->screamer    = std::unique_ptr<AwacsScreamer> (new AwacsScreamer());
@@ -75,12 +75,14 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
         std::bind(&AwacsScreamer::dma_end, this->screamer.get())
     );
 
-    this->mesh  = std::unique_ptr<MESHController> (new MESHController(HeathrowMESHID));
-    this->escc  = std::unique_ptr<EsccController> (new EsccController());
+    // connect SCSI HW
+    this->mesh = dynamic_cast<MESHController*>(gMachineObj->get_comp_by_name("Mesh"));
 
-    // intialize floppy disk HW
-    this->swim3 = std::unique_ptr<Swim3::Swim3Ctrl> (new Swim3::Swim3Ctrl());
-    gMachineObj->add_subdevice("SWIM3", this->swim3.get());
+    // connect serial HW
+    this->escc = dynamic_cast<EsccController*>(gMachineObj->get_comp_by_name("Escc"));
+
+    // connect floppy disk HW
+    this->swim3 = dynamic_cast<Swim3::Swim3Ctrl*>(gMachineObj->get_comp_by_name("Swim3"));
 }
 
 void HeathrowIC::notify_bar_change(int bar_num)
@@ -359,7 +361,7 @@ void HeathrowIC::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state)
 }
 
 static const vector<string> Heathrow_Subdevices = {
-    "Swim3", "Escc"
+    "NVRAM", "ViaCuda", "Mesh", "Escc", "Swim3"
 };
 
 static const DeviceDescription Heathrow_Descriptor = {

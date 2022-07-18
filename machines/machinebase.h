@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -38,18 +38,14 @@ public:
     MachineBase(std::string name);
     ~MachineBase();
 
-    bool add_component(std::string name, HWComponent* dev_obj);
-    bool add_subdevice(std::string name, HWComponent* dev_obj);
-    void add_alias(std::string name, std::string alias);
+    void add_device(std::string name, std::unique_ptr<HWComponent> dev_obj);
     HWComponent* get_comp_by_name(std::string name);
     HWComponent* get_comp_by_type(HWCompType type);
     int postinit_devices();
 
 private:
     std::string name;
-    std::map<std::string, HWComponent*> comp_map;
-    std::map<std::string, HWComponent*> subdev_map;
-    std::map<std::string, std::string> aliases;
+    std::map<std::string, std::unique_ptr<HWComponent>> device_map;
 };
 
 extern std::unique_ptr<MachineBase> gMachineObj;

@@ -116,14 +116,15 @@ private:
 
     uint32_t    nvram_addr_hi;
 
-    // device cells
-    std::unique_ptr<MaceController>     mace;
+    // subdevice objects
     std::unique_ptr<AwacsScreamer>      awacs;   // AWACS audio codec instance
-    std::unique_ptr<ViaCuda>            viacuda; // VIA cell with Cuda MCU attached to it
-    std::unique_ptr<NVram>              nvram;   // NVRAM module
-    std::unique_ptr<EsccController>     escc;    // ESCC serial controller
-    std::unique_ptr<Sc53C94>            scsi_0;  // external SCSI
-    std::unique_ptr<Swim3::Swim3Ctrl>   swim3;  // floppy disk controller
+
+    NVram*              nvram;   // NVRAM module
+    MaceController*     mace;
+    ViaCuda*            viacuda; // VIA cell with Cuda MCU attached to it
+    EsccController*     escc;    // ESCC serial controller
+    Sc53C94*            scsi_0;  // external SCSI
+    Swim3::Swim3Ctrl*   swim3;   // floppy disk controller
 
     std::unique_ptr<DMAChannel>     snd_out_dma;
 };
@@ -194,15 +195,17 @@ private:
     uint32_t feat_ctrl   = 0;    // features control register
     uint32_t aux_ctrl    = 0;    // aux features control register
 
-    /* device cells */
-    std::unique_ptr<ViaCuda>            viacuda;  // VIA cell with Cuda MCU attached to it
-    std::unique_ptr<NVram>              nvram;    // NVRAM cell
+    // subdevice objects
     std::unique_ptr<AwacsScreamer>      screamer; // Screamer audio codec instance
-    std::unique_ptr<MESHController>     mesh;     // MESH SCSI cell instance
-    std::unique_ptr<EsccController>     escc;     // ESCC serial controller
-    std::unique_ptr<Swim3::Swim3Ctrl>   swim3;    // floppy disk controller
+    //std::unique_ptr<MESHController>     mesh;     // MESH SCSI cell instance
 
-    std::unique_ptr<DMAChannel>         snd_out_dma;
+    NVram*              nvram;    // NVRAM
+    ViaCuda*            viacuda;  // VIA cell with Cuda MCU attached to it
+    MESHController*     mesh;     // MESH SCSI cell instance
+    EsccController*     escc;     // ESCC serial controller
+    Swim3::Swim3Ctrl*   swim3;    // floppy disk controller
+
+    std::unique_ptr<DMAChannel>     snd_out_dma;
 };
 
 #endif /* MACIO_H */

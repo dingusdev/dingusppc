@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -110,9 +110,9 @@ int main(int argc, char** argv) {
 
     if (*list_cmd) {
         if (sub_arg == "machines") {
-            list_machines();
+            MachineFactory::list_machines();
         } else if (sub_arg == "properties") {
-            list_properties();
+            MachineFactory::list_properties();
         } else {
             cout << "Unknown list subcommand " << sub_arg << endl;
         }
@@ -142,7 +142,7 @@ int main(int argc, char** argv) {
     if (*machine_opt) {
         LOG_F(INFO, "Machine option was passed in: %s", machine_str.c_str());
     } else {
-        machine_str = machine_name_from_rom(bootrom_path);
+        machine_str = MachineFactory::machine_name_from_rom(bootrom_path);
         if (machine_str.empty()) {
             LOG_F(ERROR, "Could not autodetect machine");
             return 0;
@@ -154,7 +154,7 @@ int main(int argc, char** argv) {
 
     /* handle overriding of machine settings from command line */
     map<string, string> settings;
-    if (get_machine_settings(machine_str, settings) < 0) {
+    if (MachineFactory::get_machine_settings(machine_str, settings) < 0) {
         return 0;
     }
 
@@ -166,7 +166,7 @@ int main(int argc, char** argv) {
     }
     sa.parse(app.remaining_for_passthrough()); /* TODO: handle exceptions! */
 
-    set_machine_settings(settings);
+    MachineFactory::set_machine_settings(settings);
 
     cout << "BootROM path: " << bootrom_path << endl;
     cout << "Execution mode: " << execution_mode << endl;
@@ -179,7 +179,7 @@ int main(int argc, char** argv) {
     // initialize global profiler object
     gProfilerObj.reset(new Profiler());
 
-    if (create_machine_for_id(machine_str, bootrom_path) < 0) {
+    if (MachineFactory::create_machine_for_id(machine_str, bootrom_path) < 0) {
         goto bail;
     }
 

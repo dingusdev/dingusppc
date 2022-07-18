@@ -228,13 +228,14 @@ private:
 
     uint32_t    pseudo_vbl_tid; // ID for the pseudo-VBL timer
 
-    // AMIC subdevices instances
-    std::unique_ptr<Sc53C94>        scsi;
-    std::unique_ptr<EsccController> escc;
-    std::unique_ptr<MaceController> mace;
-    std::unique_ptr<ViaCuda>        viacuda;
-    std::unique_ptr<AwacDevicePdm>  awacs;
+    // AMIC subdevice instances
+    Sc53C94*            scsi;
+    EsccController*     escc;
+    MaceController*     mace;
+    ViaCuda*            viacuda;
+    Swim3::Swim3Ctrl*   swim3;
 
+    std::unique_ptr<AwacDevicePdm>  awacs;
     std::unique_ptr<AmicSndOutDma>  snd_out_dma;
     std::unique_ptr<AmicFloppyDma>  floppy_dma;
 
@@ -242,8 +243,6 @@ private:
     std::unique_ptr<DisplayID>          disp_id;
     std::unique_ptr<PdmOnboardVideo>    def_vid;
     uint8_t                             mon_id;
-
-    std::unique_ptr<Swim3::Swim3Ctrl>   swim3;
 };
 
 #endif // AMIC_H

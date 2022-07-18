@@ -48,13 +48,11 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
         this->notify_bar_change(bar_num);
     };
 
-    // construct subdevices
-    this->mace    = std::unique_ptr<MaceController> (new MaceController(MACE_ID));
-    this->viacuda = std::unique_ptr<ViaCuda> (new ViaCuda());
-    this->nvram   = std::unique_ptr<NVram> (new NVram());
+    // NVRAM connection
+    this->nvram = dynamic_cast<NVram*>(gMachineObj->get_comp_by_name("NVRAM"));
 
-    gMachineObj->add_subdevice("ViaCuda", this->viacuda.get());
-    gMachineObj->add_subdevice("NVRAM", this->nvram.get());
+    // connect Cuda
+    this->viacuda = dynamic_cast<ViaCuda*>(gMachineObj->get_comp_by_name("ViaCuda"));
 
     // initialize sound chip and its DMA output channel, then wire them together
     this->awacs       = std::unique_ptr<AwacsScreamer> (new AwacsScreamer());
@@ -65,13 +63,17 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
         std::bind(&AwacsScreamer::dma_end, this->awacs.get())
     );
 
-    this->escc = std::unique_ptr<EsccController> (new EsccController());
+    // connect serial HW
+    this->escc = dynamic_cast<EsccController*>(gMachineObj->get_comp_by_name("Escc"));
 
-    this->scsi_0 = std::unique_ptr<Sc53C94> (new Sc53C94());
-    gMachineObj->add_subdevice("Curio_SCSI0", this->scsi_0.get());
+    // connect SCSI HW
+    this->scsi_0 = dynamic_cast<Sc53C94*>(gMachineObj->get_comp_by_name("Sc53C94"));
 
-    this->swim3 = std::unique_ptr<Swim3::Swim3Ctrl> (new Swim3::Swim3Ctrl());
-    gMachineObj->add_subdevice("SWIM3", this->swim3.get());
+    // connect Ethernet HW
+    this->mace = dynamic_cast<MaceController*>(gMachineObj->get_comp_by_name("Mace"));
+
+    // connect floppy disk HW
+    this->swim3 = dynamic_cast<Swim3::Swim3Ctrl*>(gMachineObj->get_comp_by_name("Swim3"));
 }
 
 void GrandCentral::notify_bar_change(int bar_num)
@@ -273,7 +275,7 @@ void GrandCentral::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state)
 }
 
 static const vector<string> GCSubdevices = {
-    "Swim3", "Escc"
+    "NVRAM", "ViaCuda", "Escc", "Sc53C94", "Mace", "Swim3"
 };
 
 static const DeviceDescription GC_Descriptor = {

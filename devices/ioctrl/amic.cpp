@@ -51,14 +51,17 @@ AMIC::AMIC() : MMIODevice()
 
     supports_types(HWCompType::MMIO_DEV | HWCompType::INT_CTRL);
 
-    // register I/O devices
-    this->scsi    = std::unique_ptr<Sc53C94> (new Sc53C94());
-    gMachineObj->add_subdevice("Curio_SCSI0", this->scsi.get());
+    // connect internal SCSI controller
+    this->scsi = dynamic_cast<Sc53C94*>(gMachineObj->get_comp_by_name("Sc53C94"));
 
-    this->escc    = std::unique_ptr<EsccController> (new EsccController());
-    this->mace    = std::unique_ptr<MaceController> (new MaceController(MACE_ID));
-    this->viacuda = std::unique_ptr<ViaCuda> (new ViaCuda());
-    gMachineObj->add_subdevice("ViaCuda", this->viacuda.get());
+    // connect serial HW
+    this->escc = dynamic_cast<EsccController*>(gMachineObj->get_comp_by_name("Escc"));
+
+    // connect Ethernet HW
+    this->mace = dynamic_cast<MaceController*>(gMachineObj->get_comp_by_name("Mace"));
+
+    // connect Cuda
+    this->viacuda = dynamic_cast<ViaCuda*>(gMachineObj->get_comp_by_name("ViaCuda"));
 
     // initialize sound HW
     this->snd_out_dma = std::unique_ptr<AmicSndOutDma> (new AmicSndOutDma());
@@ -69,11 +72,10 @@ AMIC::AMIC() : MMIODevice()
     this->disp_id = std::unique_ptr<DisplayID> (new DisplayID());
     this->def_vid = std::unique_ptr<PdmOnboardVideo> (new PdmOnboardVideo());
 
-    // intialize floppy disk HW
-    this->swim3 = std::unique_ptr<Swim3::Swim3Ctrl> (new Swim3::Swim3Ctrl());
+    // initialize floppy disk HW
+    this->swim3 = dynamic_cast<Swim3::Swim3Ctrl*>(gMachineObj->get_comp_by_name("Swim3"));
     this->floppy_dma = std::unique_ptr<AmicFloppyDma> (new AmicFloppyDma());
     this->swim3->set_dma_channel(this->floppy_dma.get());
-    gMachineObj->add_subdevice("SWIM3", this->swim3.get());
 }
 
 int AMIC::device_postinit()
@@ -530,7 +532,7 @@ DmaPullResult AmicFloppyDma::pull_data(uint32_t req_len, uint32_t *avail_len,
 }
 
 static vector<string> Amic_Subdevices = {
-    "Swim3", "Escc"
+    "Sc53C94", "Escc", "Mace", "ViaCuda", "Swim3"
 };
 
 static const DeviceDescription Amic_Descriptor = {

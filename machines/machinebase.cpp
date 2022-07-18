@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -33,59 +33,28 @@ MachineBase::MachineBase(std::string name) {
     this->name = name;
 
     /* initialize internal maps */
-    this->comp_map.clear();
-    this->subdev_map.clear();
-    this->aliases.clear();
+    this->device_map.clear();
 }
 
 MachineBase::~MachineBase() {
-    for (auto it = this->comp_map.begin(); it != this->comp_map.end(); it++) {
-        delete it->second;
-    }
-    this->comp_map.clear();
-    this->aliases.clear();
-    this->subdev_map.clear();
+    this->device_map.clear();
 }
 
-bool MachineBase::add_component(std::string name, HWComponent* dev_obj) {
-    if (this->comp_map.count(name)) {
-        LOG_F(ERROR, "Component %s already exists!", name.c_str());
-        return false;
+void MachineBase::add_device(std::string name, std::unique_ptr<HWComponent> dev_obj) {
+    if (this->device_map.count(name)) {
+        LOG_F(ERROR, "Device %s already exists!", name.c_str());
+        return;
     }
 
-    this->comp_map[name] = dev_obj;
-
-    return true;
-}
-
-bool MachineBase::add_subdevice(std::string name, HWComponent* dev_obj) {
-    if (this->subdev_map.count(name)) {
-        LOG_F(ERROR, "Subdevice %s already exists!", name.c_str());
-        return false;
-    }
-
-    this->subdev_map[name] = dev_obj;
-
-    return true;
-}
-
-void MachineBase::add_alias(std::string name, std::string alias) {
-    this->aliases[alias] = name;
+    this->device_map[name] = std::move(dev_obj);
 }
 
 HWComponent* MachineBase::get_comp_by_name(std::string name) {
-    if (this->aliases.count(name)) {
-        name = this->aliases[name];
-    }
-
-    if (this->comp_map.count(name)) {
-        return this->comp_map[name];
-    }
-
-    if (this->subdev_map.count(name)) {
-        return this->subdev_map[name];
+    if (this->device_map.count(name)) {
+        return this->device_map[name].get();
     } else {
-        return NULL;
+        LOG_F(WARNING, "Component name %s not found!", name.c_str());
+        return nullptr;
     }
 }
 
@@ -93,19 +62,7 @@ HWComponent* MachineBase::get_comp_by_type(HWCompType type) {
     std::string comp_name;
     bool found = false;
 
-    for (auto it = this->comp_map.begin(); it != this->comp_map.end(); it++) {
-        if (it->second->supports_type(type)) {
-            comp_name = it->first;
-            found     = true;
-            break;
-        }
-    }
-
-    if (found) {
-        return this->get_comp_by_name(comp_name);
-    }
-
-    for (auto it = this->subdev_map.begin(); it != this->subdev_map.end(); it++) {
+    for (auto it = this->device_map.begin(); it != this->device_map.end(); it++) {
         if (it->second->supports_type(type)) {
             comp_name = it->first;
             found     = true;
@@ -116,19 +73,14 @@ HWComponent* MachineBase::get_comp_by_type(HWCompType type) {
     if (found) {
         return this->get_comp_by_name(comp_name);
     } else {
-        return NULL;
+        LOG_F(WARNING, "No component of type %lu was found!", type);
+        return nullptr;
     }
 }
 
 int MachineBase::postinit_devices()
 {
-    for (auto it = this->comp_map.begin(); it != this->comp_map.end(); it++) {
-        if (it->second->device_postinit()) {
-            return -1;
-        }
-    }
-
-    for (auto it = this->subdev_map.begin(); it != this->subdev_map.end(); it++) {
+    for (auto it = this->device_map.begin(); it != this->device_map.end(); it++) {
         if (it->second->device_postinit()) {
             return -1;
         }

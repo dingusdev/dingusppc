@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -27,97 +27,94 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cpu/ppc/ppcemu.h>
 #include <devices/common/machineid.h>
 #include <devices/common/scsi/scsi.h>
-#include <devices/floppy/superdrive.h>
-#include <devices/ioctrl/amic.h>
 #include <devices/memctrl/hmc.h>
-#include <devices/sound/soundserver.h>
 #include <loguru.hpp>
 #include <machines/machinebase.h>
+#include <machines/machinefactory.h>
 #include <machines/machineproperties.h>
 
 #include <string>
+#include <vector>
 
-int create_pdm(std::string& id) {
-    if (gMachineObj) {
-        LOG_F(ERROR, "PDM Factory: global machine object not empty!");
+int initialize_pdm(std::string& id)
+{
+    uint16_t machine_id;
+
+    // get raw pointer to HMC object
+    HMC* hmc_obj = dynamic_cast<HMC*>(gMachineObj->get_comp_by_name("HMC"));
+
+    if (id == "pm6100") {
+        machine_id = 0x3010;
+    } else if (id == "pm7100") {
+        machine_id = 0x3012;
+    } else if (id == "pm8100") {
+        machine_id = 0x3013;
+    } else {
+        LOG_F(ERROR, "Unknown machine ID: %s!", id.c_str());
         return -1;
     }
 
-    LOG_F(INFO, "Initializing the %s hardware...", id.c_str());
-
-    /* initialize the global machine object */
-    gMachineObj.reset(new MachineBase("PDM"));
-
-    /* register HMC memory controller */
-    gMachineObj->add_component("HMC", new HMC);
-
-    /* start the sound server. */
-    gMachineObj->add_component("SoundServer", new SoundServer());
-
-    /* register AMIC I/O controller */
-    gMachineObj->add_component("AMIC", new AMIC);
-
-    /* get raw pointer to HMC object */
-    HMC* hmc_obj = dynamic_cast<HMC*>(gMachineObj->get_comp_by_name("HMC"));
-
-    // allocate machine ID register and tell we're running PowerMac 6100
-    // TODO: add a possibility to select another machine
-    // to be used with the same ROM
-    gMachineObj->add_component("MachineID", new NubusMacID(0x3010));
+    // create machine ID register
+    //gMachineObj->add_component("MachineID", new NubusMacID(machine_id));
+    gMachineObj->add_device("MachineID", std::unique_ptr<NubusMacID>(new NubusMacID(machine_id)));
     hmc_obj->add_mmio_region(0x5FFFFFFC, 4,
         dynamic_cast<MMIODevice*>(gMachineObj->get_comp_by_name("MachineID")));
 
-    /* allocate ROM region */
+    // allocate ROM region
     if (!hmc_obj->add_rom_region(0x40000000, 0x400000)) {
         LOG_F(ERROR, "Could not allocate ROM region!\n");
         return -1;
     }
 
-    /* mirror ROM to 0xFFC00000 for a PowerPC CPU to start */
+    // mirror ROM to 0xFFC00000 for a PowerPC CPU to start
     if (!hmc_obj->add_mem_mirror(0xFFC00000, 0x40000000)) {
         LOG_F(ERROR, "Could not create ROM mirror!\n");
         return -1;
     }
 
-    /* add 8MB of soldered on-board RAM */
+    // add 8MB of soldered on-board RAM
     if (!hmc_obj->add_ram_region(0x00000000, 0x800000)) {
         LOG_F(ERROR, "Could not allocate built-in RAM region!\n");
         return -1;
     }
 
-    /* add internal SCSI bus */
-    gMachineObj->add_component("SCSI0", new ScsiBus);
+    // add internal SCSI bus
+    gMachineObj->add_device("SCSI0", std::unique_ptr<ScsiBus>(new ScsiBus()));
 
-    /* Init virtual CPU and request MPC601 */
+    // Init virtual CPU and request MPC601
     ppc_cpu_init(hmc_obj, PPC_VER::MPC601, 7812500ULL);
-
-    // post-initialize all devices
-    if (gMachineObj->postinit_devices()) {
-        LOG_F(ERROR, "Could not post-initialize devices!\n");
-        return -1;
-    }
-
-    // if a floppy image was given "insert" it into the virtual superdrive
-    std::string fd_image_path = GET_STR_PROP("fdd_img");
-    std::string fd_write_prot = GET_STR_PROP("fdd_wr_prot");
-    if (!fd_image_path.empty()) {
-        using namespace MacSuperdrive;
-
-        MacSuperDrive* fdd = dynamic_cast<MacSuperDrive*>
-            (gMachineObj->get_comp_by_name("Superdrive"));
-
-        bool write_flag = false;
-
-        if (!fd_write_prot.empty()) {
-            if ((fd_write_prot.compare("ON") == 0) || (fd_write_prot.compare("on") == 0)) {
-                write_flag = true;
-            }
-        }
-
-        fdd->insert_disk(fd_image_path, write_flag);
-    }
-
-    LOG_F(INFO, "Initialization completed.\n");
 
     return 0;
 }
+
+// Monitors supported by the PDM on-board video.
+// see displayid.cpp for the full list of supported monitor IDs.
+static const vector<string> PDMBuiltinMonitorIDs = {
+    "PortraitGS", "MacRGB12in", "MacRGB15in", "HiRes12-14in", "VGA-SVGA",
+    "MacRGB16in", "Multiscan15in", "Multiscan17in", "Multiscan20in",
+    "NotConnected"
+};
+
+static const PropMap pm6100_settings = {
+    {"rambank1_size",
+        new IntProperty(0, vector<uint32_t>({0, 8, 16, 32, 64, 128}))},
+    {"rambank2_size",
+        new IntProperty(0, vector<uint32_t>({0, 8, 16, 32, 64, 128}))},
+    {"mon_id",
+        new StrProperty("HiRes12-14in", PDMBuiltinMonitorIDs)},
+};
+
+static vector<string> pm6100_devices = {
+    "HMC", "Amic"
+};
+
+static const MachineDescription pm6100_descriptor = {
+    .name = "pm6100",
+    .description = "Power Macintosh 6100",
+    .devices = pm6100_devices,
+    .settings = pm6100_settings,
+    .init_func = initialize_pdm
+};
+
+// self-registration with the MachineFactory
+REGISTER_MACHINE(pm6100, pm6100_descriptor);

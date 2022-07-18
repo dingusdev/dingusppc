@@ -26,47 +26,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/scsi/scsi.h>
 #include <devices/ioctrl/macio.h>
 #include <devices/memctrl/platinum.h>
-#include <devices/video/atimach64gx.h>
 #include <loguru.hpp>
 #include <machines/machinebase.h>
+#include <machines/machinefactory.h>
 #include <machines/machineproperties.h>
 
+#include <memory>
 #include <string>
 
-int create_catalyst(std::string& id)
+int initialize_catalyst(std::string& id)
 {
     PlatinumCtrl* platinum_obj;
 
-    if (gMachineObj) {
-        LOG_F(ERROR, "Global machine object not empty!");
-        return -1;
-    }
-
-    LOG_F(INFO, "Initializing the Catalyst hardware...");
-
-    // initialize the global machine object
-    gMachineObj.reset(new MachineBase("Catalyst"));
-
-    // add memory controller
-    gMachineObj->add_component("Platinum", new PlatinumCtrl());
-
-    // add the ARBus-to-PCI bridge
-    gMachineObj->add_component("Bandit1", new Bandit(1, "Bandit-PCI1"));
-
     PCIHost *pci_host = dynamic_cast<PCIHost*>(gMachineObj->get_comp_by_name("Bandit1"));
 
-    // start the sound server
-    gMachineObj->add_component("SoundServer", new SoundServer());
-
     // add the GrandCentral I/O controller
-    gMachineObj->add_component("GrandCentral", new GrandCentral());
     pci_host->pci_register_device(
         32, dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("GrandCentral")));
-
-    // HACK: attach temporary ATI Mach64 video card
-    //gMachineObj->add_component("AtiMach64", new AtiMach64Gx);
-    //pci_host->pci_register_device(
-    //    4, dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("AtiMach64")));
 
     // get (raw) pointer to the memory controller
     platinum_obj = dynamic_cast<PlatinumCtrl*>(gMachineObj->get_comp_by_name("Platinum"));
@@ -84,18 +60,39 @@ int create_catalyst(std::string& id)
     platinum_obj->map_phys_ram();
 
     // add single SCSI bus
-    gMachineObj->add_component("SCSI0", new ScsiBus);
+    gMachineObj->add_device("SCSI0", std::unique_ptr<ScsiBus>(new ScsiBus()));
 
     // init virtual CPU and request MPC601
     ppc_cpu_init(platinum_obj, PPC_VER::MPC601, 7833600ULL);
 
-    // post-initialize all devices
-    if (gMachineObj->postinit_devices()) {
-        LOG_F(ERROR, "Could not post-initialize devices!\n");
-        return -1;
-    }
-
-    LOG_F(INFO, "Initialization complete.\n");
-
     return 0;
 }
+
+static const PropMap pm7200_settings = {
+    {"rambank1_size",
+        new IntProperty(16, vector<uint32_t>({4, 8, 16, 32, 64, 128}))},
+    {"rambank2_size",
+        new IntProperty( 0, vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
+    {"rambank3_size",
+        new IntProperty( 0, vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
+    {"rambank4_size",
+        new IntProperty( 0, vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
+    {"gfxmem_size",
+        new IntProperty( 1, vector<uint32_t>({1, 2, 4}))},
+    {"mon_id",
+        new StrProperty("HiRes12-14in")},
+};
+
+static vector<string> pm7200_devices = {
+    "Platinum", "Bandit1", "GrandCentral"
+};
+
+static const MachineDescription pm7200_descriptor = {
+    .name = "pm7200",
+    .description = "Power Macintosh 7200",
+    .devices = pm7200_devices,
+    .settings = pm7200_settings,
+    .init_func = &initialize_catalyst
+};
+
+REGISTER_MACHINE(pm7200, pm7200_descriptor);

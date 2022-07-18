@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -27,24 +27,58 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef MACHINE_FACTORY_H
 #define MACHINE_FACTORY_H
 
+#include <devices/deviceregistry.h>
 #include <machines/machinebase.h>
+#include <machines/machineproperties.h>
 
 #include <fstream>
+#include <functional>
+#include <map>
 #include <string>
+#include <vector>
 
 using namespace std;
 
-std::string machine_name_from_rom(std::string& rom_filepath);
+struct MachineDescription {
+    string                  name;
+    string                  description;
+    vector<string>          devices;
+    PropMap                 settings;
+    function<int(string&)>  init_func;
+};
 
-int  get_machine_settings(string& id, map<string, string> &settings);
-void set_machine_settings(map<string, string> &settings);
-int  create_machine_for_id(string& id, string& rom_filepath);
-void list_machines(void);
-void list_properties(void);
+class MachineFactory
+{
+public:
+    MachineFactory() = delete;
 
-/* Machine-specific factory functions. */
-int create_catalyst(string& id);
-int create_gossamer(string& id);
-int create_pdm(string& id);
+    static bool add(const string& machine_id, MachineDescription desc);
+
+    static string machine_name_from_rom(string& rom_filepath);
+
+    static int create(string& mach_id);
+    static int create_machine_for_id(string& id, string& rom_filepath);
+
+    static int get_machine_settings(const string& id, map<string, string> &settings);
+    static void set_machine_settings(map<string, string> &settings);
+
+    static void list_machines();
+    static void list_properties();
+
+private:
+    static void create_device(string& dev_name, DeviceDescription& dev);
+    static void print_settings(PropMap& p);
+    static void list_device_settings(DeviceDescription& dev);
+    static void get_device_settings(DeviceDescription& dev, map<string, string> &settings);
+    static int  load_boot_rom(string& rom_filepath);
+
+    static map<string, MachineDescription> & get_registry() {
+        static map<string, MachineDescription> machine_registry;
+        return machine_registry;
+    }
+};
+
+#define REGISTER_MACHINE(mach_name, mach_desc) \
+    static bool mach_name ## _registered = MachineFactory::add(#mach_name, (mach_desc))
 
 #endif /* MACHINE_FACTORY_H */
