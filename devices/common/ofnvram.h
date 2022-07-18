@@ -49,7 +49,7 @@ public:
     OfNvramUtils()  = default;
     ~OfNvramUtils() = default;
 
-    void init();
+    int  init();
     void printenv();
     void setenv(std::string var_name, std::string value);
 

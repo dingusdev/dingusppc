@@ -37,9 +37,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace std;
 
-void OfNvramUtils::init()
+int OfNvramUtils::init()
 {
     this->nvram_obj = dynamic_cast<NVram*>(gMachineObj->get_comp_by_name("NVRAM"));
+    return this->nvram_obj == nullptr;
 }
 
 bool OfNvramUtils::validate()

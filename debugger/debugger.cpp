@@ -377,7 +377,6 @@ void enter_debugger() {
     size_t separator_pos;
 
     unique_ptr<OfNvramUtils> ofnvram = unique_ptr<OfNvramUtils>(new OfNvramUtils);
-    ofnvram->init();
 
     context = 1; /* start with the PowerPC context */
 
@@ -578,11 +577,15 @@ void enter_debugger() {
             }
 #endif
         } else if (cmd == "printenv") {
+            if (ofnvram->init())
+                continue;
             ofnvram->printenv();
         } else if (cmd == "setenv") {
             string var_name, value;
             ss >> var_name;
             ss >> value;
+            if (ofnvram->init())
+                continue;
             ofnvram->setenv(var_name, value);
         } else {
             cout << "Unknown command: " << cmd << endl;
