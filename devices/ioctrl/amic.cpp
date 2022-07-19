@@ -95,6 +95,9 @@ int AMIC::device_postinit()
             this->viacuda->assert_ctrl_line(ViaLine::CA1);
         });
 
+    // set EMMO pin status (active low)
+    this->emmo_pin = GET_BIN_PROP("emmo") ^ 1;
+
     return 0;
 }
 
@@ -156,7 +159,7 @@ uint32_t AMIC::read(uint32_t reg_start, uint32_t offset, int size)
     case AMICReg::Int_Ctrl:
         return (this->int_ctrl & 0xC0) | (this->dev_irq_lines & 0x3F);
     case AMICReg::Diag_Reg:
-        return 0xFFU; // this value allows the machine to boot normally
+        return 0xFE | this->emmo_pin;
     case AMICReg::DMA_Base_Addr_0:
     case AMICReg::DMA_Base_Addr_1:
     case AMICReg::DMA_Base_Addr_2:

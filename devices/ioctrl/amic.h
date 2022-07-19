@@ -208,6 +208,8 @@ protected:
 private:
     uint8_t imm_snd_regs[4]; // temporary storage for sound control registers
 
+    uint8_t     emmo_pin; // EMMO aka factory tester pin status, active low
+
     uint32_t    dma_base     = 0;  // DMA physical base address
     uint16_t    snd_buf_size = 0;  // sound buffer size in bytes
     uint8_t     snd_out_ctrl = 0;

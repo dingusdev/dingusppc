@@ -80,6 +80,7 @@ static const map<string, string> PropHelp = {
     {"fdd_wr_prot",     "toggles floppy disk's write protection"},
     {"mon_id",          "specifies which monitor to emulate"},
     {"serial_backend",  "specifies the backend for the serial port"},
+    {"emmo",            "enables/disables factory HW tests during startup"},
 };
 
 bool MachineFactory::add(const string& machine_id, MachineDescription desc)

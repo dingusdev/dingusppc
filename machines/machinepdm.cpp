@@ -102,6 +102,8 @@ static const PropMap pm6100_settings = {
         new IntProperty(0, vector<uint32_t>({0, 8, 16, 32, 64, 128}))},
     {"mon_id",
         new StrProperty("HiRes12-14in", PDMBuiltinMonitorIDs)},
+    {"emmo",
+        new BinProperty(0)},
 };
 
 static vector<string> pm6100_devices = {
