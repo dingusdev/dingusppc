@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -38,6 +38,7 @@ enum PropType : int {
     PROP_TYPE_UNKNOWN   = 0,
     PROP_TYPE_STRING    = 1,
     PROP_TYPE_INTEGER   = 2,
+    PROP_TYPE_BINARY    = 3, // binary aka on/off switch
 };
 
 /** Check types for property values. */
@@ -164,6 +165,30 @@ private:
     vector<uint32_t>    vec;
 };
 
+/** Property class that holds a binary value. */
+class BinProperty : public BasicProperty {
+public:
+    BinProperty(int val)
+        : BasicProperty(PROP_TYPE_BINARY, (val & 1) ? "on" : "off")
+    {
+        this->bin_val = val & 1;
+    };
+
+    BasicProperty* clone() const { return new BinProperty(*this); }
+
+    // override BasicProperty::set_string() and perform checks
+    void set_string(string str);
+
+    string get_valid_values_as_str() {
+        return string("on, off, ON, OFF");
+    };
+
+    int get_val() { return this->bin_val; };
+
+private:
+    int     bin_val;
+};
+
 /** Special map type for specifying machine presets. */
 typedef map<string, BasicProperty*> PropMap;
 
@@ -176,5 +201,8 @@ extern map<string, unique_ptr<BasicProperty>> gMachineSettings;
 
 #define GET_INT_PROP(name) \
     dynamic_cast<IntProperty*>(gMachineSettings.at(name).get())->get_int()
+
+#define GET_BIN_PROP(name) \
+    dynamic_cast<BinProperty*>(gMachineSettings.at(name).get())->get_val()
 
 #endif /* MACHINE_PROPERTIES_H */

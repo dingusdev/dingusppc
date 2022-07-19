@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -129,5 +129,18 @@ bool IntProperty::check_val(uint32_t val)
             return false;
     default:
         return true;
+    }
+}
+
+void BinProperty::set_string(string val)
+{
+    if ((val.compare("ON") == 0) || (val.compare("on") == 0)) {
+        this->bin_val = 1;
+        this->val = val;
+    } else if ((val.compare("OFF") == 0) || (val.compare("off") == 0)) {
+        this->bin_val = 0;
+        this->val = val;
+    } else {
+        LOG_F(ERROR, "Invalid BinProperty value %s!", val.c_str());
     }
 }
