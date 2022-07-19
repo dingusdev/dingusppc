@@ -74,6 +74,9 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
 
     // connect floppy disk HW
     this->swim3 = dynamic_cast<Swim3::Swim3Ctrl*>(gMachineObj->get_comp_by_name("Swim3"));
+
+    // set EMMO pin status (active low)
+    this->emmo_pin = GET_BIN_PROP("emmo") ^ 1;
 }
 
 void GrandCentral::notify_bar_change(int bar_num)
@@ -116,7 +119,7 @@ uint32_t GrandCentral::read(uint32_t reg_start, uint32_t offset, int size)
         case 7: // VIA-CUDA
             return this->viacuda->read((offset >> 9) & 0xF);
         case 0xA: // Board register 1 (IOBus dev #1)
-            return BYTESWAP_32(0x100);
+            return BYTESWAP_32(this->emmo_pin << 8);
         case 0xF: // NVRAM Data (IOBus dev #6)
             return this->nvram->read_byte(
                 (this->nvram_addr_hi << 5) + ((offset >> 4) & 0x1F));

@@ -81,6 +81,8 @@ static const PropMap pm7200_settings = {
         new IntProperty( 1, vector<uint32_t>({1, 2, 4}))},
     {"mon_id",
         new StrProperty("HiRes12-14in")},
+    {"emmo",
+        new BinProperty(0)},
 };
 
 static vector<string> pm7200_devices = {
