@@ -192,6 +192,10 @@ void MachineFactory::print_settings(PropMap& prop_map)
             cout << dynamic_cast<StrProperty*>(p.second)->get_valid_values_as_str()
                 << endl;
             break;
+        case PROP_TYPE_BINARY:
+            cout << dynamic_cast<BinProperty*>(p.second)->get_valid_values_as_str()
+                << endl;
+            break;
         default:
             break;
         }

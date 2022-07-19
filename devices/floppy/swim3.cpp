@@ -64,17 +64,9 @@ int Swim3Ctrl::device_postinit()
 
     // if a floppy image was given "insert" it into the virtual superdrive
     std::string fd_image_path = GET_STR_PROP("fdd_img");
-    std::string fd_write_prot = GET_STR_PROP("fdd_wr_prot");
+    int fd_write_prot = GET_BIN_PROP("fdd_wr_prot");
     if (!fd_image_path.empty()) {
-        bool write_flag = false;
-
-        if (!fd_write_prot.empty()) {
-            if ((fd_write_prot.compare("ON") == 0) || (fd_write_prot.compare("on") == 0)) {
-                write_flag = true;
-            }
-        }
-
-        this->int_drive->insert_disk(fd_image_path, write_flag);
+        this->int_drive->insert_disk(fd_image_path, fd_write_prot);
     }
 
     return 0;
@@ -343,13 +335,11 @@ void Swim3Ctrl::stop_disk_access()
     this->access_timer_id = 0;
 }
 
-static const vector<string> WriteToggle = {"ON", "on", "OFF", "off"};
-
 static const PropMap Swim3_Properties = {
     {"fdd_img",
         new StrProperty("")},
     {"fdd_wr_prot",
-        new StrProperty("OFF", WriteToggle)}
+        new BinProperty(0)},
 };
 
 static const DeviceDescription Swim3_Descriptor = {

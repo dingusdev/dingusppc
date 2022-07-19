@@ -131,7 +131,7 @@ uint8_t MacSuperDrive::status(uint8_t addr)
     }
 }
 
-int MacSuperDrive::insert_disk(std::string& img_path, bool write_flag = 0)
+int MacSuperDrive::insert_disk(std::string& img_path, int write_flag = 0)
 {
     if (this->has_disk) {
         LOG_F(ERROR, "Superdrive: drive is not empty!");
