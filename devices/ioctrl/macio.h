@@ -155,6 +155,12 @@ private:
     VIA-CUDA       register space: 0x00016000, size: 0x00002000
 */
 
+/** Heathrow specific registers. */
+enum {
+    MIO_HEAT_ID         = 0x34, // IDs register
+    MIO_HEAT_FEAT_CTRL  = 0x38, // feature control register
+};
+
 class HeathrowIC : public PCIDevice, public InterruptCtrl {
 public:
     HeathrowIC();
@@ -193,13 +199,17 @@ private:
     uint32_t int_events1 = 0;
     uint32_t int_mask1   = 0;
     uint32_t int_levels1 = 0;
-    uint32_t macio_id    = 0xF0700008UL;
     uint32_t feat_ctrl   = 0;    // features control register
     uint32_t aux_ctrl    = 0;    // aux features control register
 
+    uint8_t  cpu_id = 0xE0; // CPUID field (LSB of the MIO_HEAT_ID)
+    uint8_t  mb_id  = 0x70; // Media Bay ID (bits 15:8 of the MIO_HEAT_ID)
+    uint8_t  mon_id = 0x10; // Monitor ID (bits 23:16 of the MIO_HEAT_ID)
+    uint8_t  fp_id  = 0x70; // Flat panel ID (MSB of the MIO_HEAT_ID)
+    uint8_t  emmo_pin;      // factory tester status, active low
+
     // subdevice objects
     std::unique_ptr<AwacsScreamer>      screamer; // Screamer audio codec instance
-    //std::unique_ptr<MESHController>     mesh;     // MESH SCSI cell instance
 
     NVram*              nvram;    // NVRAM
     ViaCuda*            viacuda;  // VIA cell with Cuda MCU attached to it

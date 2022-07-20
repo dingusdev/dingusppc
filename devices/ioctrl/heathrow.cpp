@@ -83,6 +83,9 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
 
     // connect floppy disk HW
     this->swim3 = dynamic_cast<Swim3::Swim3Ctrl*>(gMachineObj->get_comp_by_name("Swim3"));
+
+    // set EMMO pin status (active low)
+    this->emmo_pin = GET_BIN_PROP("emmo") ^ 1;
 }
 
 void HeathrowIC::notify_bar_change(int bar_num)
@@ -234,11 +237,12 @@ uint32_t HeathrowIC::mio_ctrl_read(uint32_t offset, int size) {
     case MIO_INT_LEVELS1:
         res = this->int_levels1;
         break;
-    case 0x34: /* heathrowIDs / HEATHROW_MBCR (Linux): media bay config reg? */
+    case MIO_HEAT_ID:
         LOG_F(9, "read from MIO:ID register at Address %x \n", ppc_state.pc);
-        res = this->macio_id;
+        res = (this->fp_id << 24) | (this->mon_id << 16) | (this->mb_id << 8) |
+              (this->cpu_id | this->emmo_pin);
         break;
-    case 0x38:
+    case MIO_HEAT_FEAT_CTRL:
         LOG_F(9, "read from MIO:Feat_Ctrl register \n");
         res = this->feat_ctrl;
         break;
@@ -274,10 +278,10 @@ void HeathrowIC::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
             this->int_events1 &= BYTESWAP_32(value);
         }
         break;
-    case 0x34:
+    case MIO_HEAT_ID:
         LOG_F(WARNING, "Attempted to write %x to MIO:ID at %x; Address : %x \n", value, offset, ppc_state.pc);
         break;
-    case 0x38:
+    case MIO_HEAT_FEAT_CTRL:
         this->feature_control(BYTESWAP_32(value));
         break;
     case 0x3C:

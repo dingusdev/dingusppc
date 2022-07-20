@@ -102,6 +102,8 @@ static const PropMap gossamer_settings = {
         new IntProperty(  0, vector<uint32_t>({0, 8, 16, 32, 64, 128, 256}))},
     {"rambank3_size",
         new IntProperty(  0, vector<uint32_t>({0, 8, 16, 32, 64, 128, 256}))},
+    {"emmo",
+        new BinProperty(0)},
 };
 
 static vector<string> pmg3_devices = {
