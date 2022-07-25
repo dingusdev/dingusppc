@@ -58,6 +58,11 @@ Bandit::Bandit(int bridge_num, std::string name) : PCIHost(), PCIDevice(name)
     // make several PCI config space registers read-only
     this->pci_wr_cmd = [](uint16_t cmd) {}; // command register
     this->pci_wr_cache_lnsz = [](uint8_t val) {}; // cache line size register
+
+    // set the bits in the fine address space field of the address mask register
+    // that correspond to the 32MB assigned PCI address space of this Bandit.
+    // This initialization is implied by the device functionality.
+    this->addr_mask = 3 << ((bridge_num & 3) * 2);
 }
 
 uint32_t Bandit::pci_cfg_read(uint32_t reg_offs, uint32_t size)
