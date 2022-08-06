@@ -54,7 +54,7 @@ int initialize_catalyst(std::string& id)
     }
 
     // plug 8MB RAM DIMM into slot #0
-    platinum_obj->insert_ram_dimm(0, Platinum::DRAM_CAP_8MB);
+    platinum_obj->insert_ram_dimm(0, DRAM_CAP_8MB);
 
     // allocate and map physical RAM
     platinum_obj->map_phys_ram();

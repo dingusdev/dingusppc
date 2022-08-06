@@ -23,8 +23,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
     Author: Max Poliakovski
 
-    Platium is a single chip memory subsystem controller designed especially
-    for the Power Macintosh 7200 computer, code name Catalyst.
+    Platinum is a single chip memory and video subsystem controller designed
+    especially for the Power Macintosh 7200 computer, code name Catalyst.
 */
 
 #ifndef PLATINUM_MEMCTRL_H
@@ -134,16 +134,6 @@ enum PlatinumReg : uint32_t {
     SWATCH_VAL      = 0x370,
     SWATCH_VFP      = 0x380,
     IRIDIUM_CONFIG  = 0x4A0,
-};
-
-enum {
-    DRAM_CAP_2MB    = (1 << 21),
-    DRAM_CAP_4MB    = (1 << 22),
-    DRAM_CAP_8MB    = (1 << 23),
-    DRAM_CAP_16MB   = (1 << 24),
-    DRAM_CAP_32MB   = (1 << 25),
-    DRAM_CAP_64MB   = (1 << 26),
-    DRAM_CAP_128MB  = (1 << 27),
 };
 
 // FB_RESET register bits.

@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -27,6 +27,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <string>
 #include <vector>
+
+// Common DRAM capacities.
+enum {
+    DRAM_CAP_2MB    = (1 << 21),
+    DRAM_CAP_4MB    = (1 << 22),
+    DRAM_CAP_8MB    = (1 << 23),
+    DRAM_CAP_16MB   = (1 << 24),
+    DRAM_CAP_32MB   = (1 << 25),
+    DRAM_CAP_64MB   = (1 << 26),
+    DRAM_CAP_128MB  = (1 << 27),
+};
 
 enum RangeType {
     RT_ROM    = 1, /* read-only memory */
