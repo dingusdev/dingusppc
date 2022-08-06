@@ -231,8 +231,106 @@ void Bandit::verbose_address_space()
     }
 }
 
+Chaos::Chaos(std::string name) : PCIHost()
+{
+    supports_types(HWCompType::PCI_HOST);
+
+    MemCtrlBase *mem_ctrl = dynamic_cast<MemCtrlBase *>
+                           (gMachineObj->get_comp_by_type(HWCompType::MEM_CTRL));
+
+    // add memory mapped I/O region for Chaos control registers
+    // This region has the following layout:
+    // base_addr +  0x800000 --> CONFIG_ADDR
+    // base_addr +  0xC00000 --> CONFIG_DATA
+    mem_ctrl->add_mmio_region(0xF0000000UL, 0x01000000, this);
+
+    this->name = name;
+}
+
+uint32_t Chaos::read(uint32_t reg_start, uint32_t offset, int size)
+{
+    int      fun_num;
+    uint8_t  reg_offs;
+    uint32_t result, idsel;
+
+    if (offset & BANDIT_CONFIG_SPACE) {
+        if (offset & 0x00400000) {
+            idsel    = (this->config_addr >> 11) & 0x1FFFFFU;
+            fun_num  = (this->config_addr >> 8) & 7;
+            reg_offs = this->config_addr & 0xFCU;
+
+            if (!SINGLE_BIT_SET(idsel)) {
+                LOG_F(ERROR, "%s: invalid IDSEL=0x%X passed", this->name.c_str(), idsel);
+                return 0;
+            }
+
+            if (this->dev_map.count(idsel)) {
+                result = this->dev_map[idsel]->pci_cfg_read(reg_offs, size);
+            } else {
+                LOG_F(
+                    ERROR,
+                    "%s err: read attempt from non-existing VCI device %d \n",
+                    this->name.c_str(),
+                    idsel);
+                result = 0;
+            }
+        } else {
+            result = this->config_addr;
+        }
+    } else { // I/O space access
+        LOG_F(ERROR, "%s: I/O space not supported", this->name.c_str());
+        return 0;
+    }
+    return result;
+}
+
+void Chaos::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
+{
+    int      fun_num;
+    uint8_t  reg_offs;
+    uint32_t idsel;
+
+    if (offset & BANDIT_CONFIG_SPACE) {
+        if (offset & 0x00400000) {
+            // access to the CONFIG_DATA pseudo-register causes a Config Cycle
+            if (this->config_addr & BANDIT_CAR_TYPE) {
+                LOG_F(WARNING, "%s: config cycle type 1 not supported yet", this->name.c_str());
+                return;
+            }
+
+            idsel    = (this->config_addr >> 11) & 0x1FFFFFU;
+            fun_num  = (this->config_addr >> 8) & 7;
+            reg_offs = this->config_addr & 0xFCU;
+
+            if (!SINGLE_BIT_SET(idsel)) {
+                LOG_F(ERROR, "%s: invalid IDSEL=0x%X passed", this->name.c_str(), idsel);
+                return;
+            }
+
+            if (this->dev_map.count(idsel)) {
+                this->dev_map[idsel]->pci_cfg_write(reg_offs, value, size);
+            } else {
+                LOG_F(
+                    ERROR,
+                    "%s err: write attempt to non-existing VCI device %d \n",
+                    this->name.c_str(),
+                    idsel);
+            }
+        } else {
+            this->config_addr = BYTESWAP_32(value);
+        }
+    } else { // I/O space access
+        LOG_F(ERROR, "%s: I/O space not supported", this->name.c_str());
+    }
+}
+
 static const DeviceDescription Bandit1_Descriptor = {
     Bandit::create_first, {}, {}
 };
 
+static const DeviceDescription Chaos_Descriptor = {
+    Chaos::create, {}, {}
+};
+
 REGISTER_DEVICE(Bandit1, Bandit1_Descriptor);
+REGISTER_DEVICE(Chaos, Chaos_Descriptor);

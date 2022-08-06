@@ -29,6 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define BANDIT_PCI_H
 
 #include <devices/common/hwcomponent.h>
+#include <devices/common/mmiodevice.h>
 #include <devices/common/pci/pcidevice.h>
 #include <devices/common/pci/pcihost.h>
 
@@ -56,7 +57,7 @@ public:
 
     static std::unique_ptr<HWComponent> create_first() {
         return std::unique_ptr<Bandit>(new Bandit(1, "Bandit-PCI1"));
-    }
+    };
 
     uint32_t pci_cfg_read(uint32_t reg_offs, uint32_t size);
     void pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size);
@@ -72,6 +73,29 @@ private:
     uint32_t    base_addr;
     uint32_t    config_addr;
     uint32_t    addr_mask;
+};
+
+/** Chaos is a custom ARBus-to-PCI bridge that provides a specialized
+    PCI-like bus for video called VCI. This 64-bit bus runs at the same
+    frequency as the CPU bus (40-50 MHz) and provides an interface
+    between video input/output devices and the CPU bus.
+ */
+class Chaos : public PCIHost, public MMIODevice {
+public:
+    Chaos(std::string name);
+    ~Chaos() = default;
+
+    static std::unique_ptr<HWComponent> create() {
+        return std::unique_ptr<Chaos>(new Chaos("VCI0"));
+    };
+
+    // MMIODevice methods
+    uint32_t read(uint32_t reg_start, uint32_t offset, int size);
+    void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size);
+
+private:
+    std::string name;
+    uint32_t    config_addr;
 };
 
 #endif // BANDIT_PCI_H
