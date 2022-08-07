@@ -34,6 +34,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/i2c/athens.h>
 #include <loguru.hpp>
 
+#include <algorithm>
 #include <cinttypes>
 #include <vector>
 
