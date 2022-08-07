@@ -84,6 +84,12 @@ enum {
     MIO_INT_LEVELS1 = 0x2C
 };
 
+class IobusDevice {
+public:
+    virtual uint16_t iodev_read(uint32_t address) = 0;
+    virtual void iodev_write(uint32_t address, uint16_t value) = 0;
+};
+
 class GrandCentral : public PCIDevice, public InterruptCtrl {
 public:
     GrandCentral();
@@ -103,6 +109,8 @@ public:
     void ack_int(uint32_t irq_id, uint8_t irq_line_state);
     void ack_dma_int(uint32_t irq_id, uint8_t irq_line_state);
 
+    void attach_iodevice(int dev_num, IobusDevice* dev_obj);
+
 protected:
     void notify_bar_change(int bar_num);
 
@@ -117,6 +125,9 @@ private:
     uint32_t    int_events = 0;
 
     uint32_t    nvram_addr_hi;
+
+    // IOBus devices
+    IobusDevice*    iobus_devs[6] = { nullptr };
 
     // subdevice objects
     std::unique_ptr<AwacsScreamer>      awacs;   // AWACS audio codec instance

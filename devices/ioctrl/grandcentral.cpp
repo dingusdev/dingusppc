@@ -120,11 +120,20 @@ uint32_t GrandCentral::read(uint32_t reg_start, uint32_t offset, int size)
             return this->viacuda->read((offset >> 9) & 0xF);
         case 0xA: // Board register 1 (IOBus dev #1)
             return BYTESWAP_32(this->emmo_pin << 8);
+        case 0xB: // IOBus dev #2
+        case 0xC: // IOBus dev #3
+        case 0xE: // IOBus dev #5
+            if (this->iobus_devs[subdev_num - 10] != nullptr) {
+                return BYTESWAP_16(this->iobus_devs[subdev_num - 10]->iodev_read(
+                    (offset >> 4) & 0x1F));
+            } else {
+                LOG_F(ERROR, "GC: IOBus device #%d doesn't exist", subdev_num - 9);
+                return 0;
+            }
+            break;
         case 0xF: // NVRAM Data (IOBus dev #6)
             return this->nvram->read_byte(
                 (this->nvram_addr_hi << 5) + ((offset >> 4) & 0x1F));
-        default:
-            LOG_F(WARNING, "GC: unimplemented GBUS device #%d", subdev_num - 9);
         }
     } else if (offset & 0x8000) { // DMA register space
         unsigned subdev_num = (offset >> 12) & 0xF;
@@ -182,6 +191,17 @@ void GrandCentral::write(uint32_t reg_start, uint32_t offset, uint32_t value, in
         case 7: // VIA-CUDA
             this->viacuda->write((offset >> 9) & 0xF, value);
             break;
+        case 0xA: // IOBus dev #1
+        case 0xB: // IOBus dev #2
+        case 0xC: // IOBus dev #3
+        case 0xE: // IOBus dev #5
+            if (this->iobus_devs[subdev_num - 10] != nullptr) {
+                this->iobus_devs[subdev_num - 10]->iodev_write(
+                    (offset >> 4) & 0x1F, value);
+            } else {
+                LOG_F(ERROR, "GC: IOBus device #%d doesn't exist", subdev_num - 9);
+            }
+            break;
         case 0xD: // NVRAM High Address (IOBus dev #4)
             switch (size) {
             case 4:
@@ -199,7 +219,8 @@ void GrandCentral::write(uint32_t reg_start, uint32_t offset, uint32_t value, in
                 (this->nvram_addr_hi << 5) + ((offset >> 4) & 0x1F), value);
             break;
         default:
-            LOG_F(WARNING, "GC: unimplemented GBUS device #%d", subdev_num - 9);
+            LOG_F(WARNING, "GC: writing to unmapped I/O memory 0x%X",
+                  this->base_addr + offset);
         }
     } else if (offset & 0x8000) { // DMA register space
         unsigned subdev_num = (offset >> 12) & 0xF;
@@ -228,6 +249,13 @@ void GrandCentral::write(uint32_t reg_start, uint32_t offset, uint32_t value, in
             LOG_F(WARNING, "GC: writing to unmapped I/O memory 0x%X",
                  this->base_addr + offset);
         }
+    }
+}
+
+void GrandCentral::attach_iodevice(int dev_num, IobusDevice* dev_obj)
+{
+    if (dev_num >= 0 && dev_num < 6) {
+        this->iobus_devs[dev_num] = dev_obj;
     }
 }
 
