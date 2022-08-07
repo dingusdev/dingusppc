@@ -119,8 +119,6 @@ void VideoCtrlBase::update_screen()
     //auto end_time = std::chrono::steady_clock::now();
     //auto time_elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
     //LOG_F(INFO, "Display uodate took: %lld ns", time_elapsed.count());
-
-    SDL_Delay(15);
 }
 
 void VideoCtrlBase::convert_frame_1bpp(uint8_t *dst_buf, int dst_pitch)
