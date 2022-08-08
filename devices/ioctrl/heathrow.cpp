@@ -240,7 +240,7 @@ uint32_t HeathrowIC::mio_ctrl_read(uint32_t offset, int size) {
     case MIO_HEAT_ID:
         LOG_F(9, "read from MIO:ID register at Address %x \n", ppc_state.pc);
         res = (this->fp_id << 24) | (this->mon_id << 16) | (this->mb_id << 8) |
-              (this->cpu_id | this->emmo_pin);
+              (this->cpu_id | (this->emmo_pin << 4));
         break;
     case MIO_HEAT_FEAT_CTRL:
         LOG_F(9, "read from MIO:Feat_Ctrl register \n");
