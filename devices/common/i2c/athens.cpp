@@ -85,8 +85,8 @@ bool AthensClocks::send_byte(uint8_t data)
 
 bool AthensClocks::receive_byte(uint8_t* p_data)
 {
-    LOG_F(INFO, "Athens: receive_byte called");
-    return false; // return NACK for now
+    *p_data = 0x41; // return my ID (value has been guessed)
+    return true;
 }
 
 int AthensClocks::get_sys_freq()
@@ -100,6 +100,11 @@ int AthensClocks::get_dot_freq()
     static std::vector<int> N2_commons = {
         22, 27, 28, 31, 35, 37, 38, 42, 49, 55, 56, 78,  125
     };
+
+    if (this->regs[AthensRegs::P2_MUX2] & 0xC0) {
+        LOG_F(INFO, "Athens: dot clock disabled");
+        return 0;
+    }
 
     float out_freq = 0.0f;
 
