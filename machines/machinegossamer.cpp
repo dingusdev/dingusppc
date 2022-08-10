@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <cpu/ppc/ppcemu.h>
+#include <devices/common/i2c/athens.h>
 #include <devices/common/machineid.h>
 #include <devices/floppy/floppyimg.h>
 #include <devices/ioctrl/macio.h>
@@ -89,6 +90,11 @@ int initialize_gossamer(std::string& id)
     grackle_obj->pci_register_device(
         18, dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name(gpu_name)));
 
+    // add Athens clock generator device and register it with the I2C host
+    gMachineObj->add_device("Athens", std::unique_ptr<AthensClocks>(new AthensClocks(0x28)));
+    I2CBus* i2c_bus = dynamic_cast<I2CBus*>(gMachineObj->get_comp_by_type(HWCompType::I2C_HOST));
+    i2c_bus->register_device(0x28, dynamic_cast<I2CDevice*>(gMachineObj->get_comp_by_name("Athens")));
+
     // initialize virtual CPU and request MPC750 CPU aka G3
     ppc_cpu_init(grackle_obj, PPC_VER::MPC750, 16705000ULL);
 
@@ -111,7 +117,7 @@ static vector<string> pmg3_devices = {
 };
 
 static const MachineDescription pmg3dt_descriptor = {
-    .name = "pmg3",
+    .name = "pmg3dt",
     .description = "Power Macintosh G3 (Beige) Desktop",
     .devices = pmg3_devices,
     .settings = gossamer_settings,
