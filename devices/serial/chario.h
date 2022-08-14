@@ -26,13 +26,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 
-#ifndef _WIN32
+#ifdef _WIN32
+#else
 #include <termios.h>
+#include <signal.h>
 #endif
 
 enum {
     CHARIO_BE_NULL  = 0, // NULL backend: swallows everything, receives nothing
     CHARIO_BE_STDIO = 1, // STDIO backend: uses STDIN for input and STDOUT for output
+    CHARIO_BE_SOCKET = 2, // socket backend: uses a socket for input and output
 };
 
 /** Interface for character I/O backends. */
@@ -72,7 +75,27 @@ public:
     int rcv_char(uint8_t *c);
 
 private:
+    static void mysig_handler(int signum);
     bool    stdio_inited;
+};
+
+/** Socket character I/O backend. */
+class CharIoSocket : public CharIoBackEnd  {
+public:
+    CharIoSocket();
+    ~CharIoSocket();
+
+    int rcv_enable();
+    void rcv_disable();
+    bool rcv_char_available();
+    int xmit_char(uint8_t c);
+    int rcv_char(uint8_t *c);
+
+private:
+    bool    socket_inited = false;
+    int     sockfd = -1;
+    int     acceptfd = -1;
+    const char* path = 0;
 };
 
 #endif // CHAR_IO_H
