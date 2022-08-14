@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cpu/ppc/ppcemu.h>
 #include <devices/common/i2c/athens.h>
+#include <devices/common/i2c/i2cprom.h>
 #include <devices/common/machineid.h>
 #include <devices/floppy/floppyimg.h>
 #include <devices/ioctrl/macio.h>
@@ -40,6 +41,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <memory>
 #include <string>
+
+// EEPROM ID content for a Whisper personality card.
+const uint8_t WhisperID[16] = {
+    0x0F, 0xAA, 0x55, 0xAA, 0x57, 0x68, 0x69, 0x73, 0x70, 0x65, 0x72, 0x00,
+    0x00, 0x00, 0x00, 0x02
+};
 
 static void setup_ram_slot(std::string name, int i2c_addr, int capacity_megs) {
     if (!capacity_megs)
@@ -94,6 +101,14 @@ int initialize_gossamer(std::string& id)
     gMachineObj->add_device("Athens", std::unique_ptr<AthensClocks>(new AthensClocks(0x28)));
     I2CBus* i2c_bus = dynamic_cast<I2CBus*>(gMachineObj->get_comp_by_type(HWCompType::I2C_HOST));
     i2c_bus->register_device(0x28, dynamic_cast<I2CDevice*>(gMachineObj->get_comp_by_name("Athens")));
+
+    // create ID EEPROM for the Whisper personality card and register it with the I2C host
+    gMachineObj->add_device("Perch", std::unique_ptr<I2CProm>(new I2CProm(0x53, 256)));
+    I2CProm* perch_id = dynamic_cast<I2CProm*>(gMachineObj->get_comp_by_name("Perch"));
+    perch_id->fill_memory(0, 256, 0);
+    perch_id->fill_memory(32, 223, 0xFF);
+    perch_id->set_memory(0, WhisperID, sizeof(WhisperID));
+    i2c_bus->register_device(0x53, perch_id);
 
     // initialize virtual CPU and request MPC750 CPU aka G3
     ppc_cpu_init(grackle_obj, PPC_VER::MPC750, 16705000ULL);

@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** AWAC sound devices family definitions.
 
-    Audio Waveform Aplifier and Converters (AWACs) is a family of custom audio
+    Audio Waveform Amplifier and Converters (AWACs) is a family of custom audio
     chips used in Power Macintosh.
  */
 
