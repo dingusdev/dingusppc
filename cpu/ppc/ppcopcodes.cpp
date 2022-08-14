@@ -1199,7 +1199,7 @@ void dppc_interpreter::ppc_bclrl() {
 void dppc_interpreter::ppc_cmp() {
 #ifdef CHECK_INVALID
     if (ppc_cur_instruction & 0x200000) {
-        LOG_F(WARNING, "Invalid CMP instruction form (L=1)!\n");
+        LOG_F(WARNING, "Invalid CMP instruction form (L=1)!");
         return;
     }
 #endif
@@ -1216,7 +1216,7 @@ void dppc_interpreter::ppc_cmp() {
 void dppc_interpreter::ppc_cmpi() {
 #ifdef CHECK_INVALID
     if (ppc_cur_instruction & 0x200000) {
-        LOG_F(WARNING, "Invalid CMPI instruction form (L=1)!\n");
+        LOG_F(WARNING, "Invalid CMPI instruction form (L=1)!");
         return;
     }
 #endif
@@ -1233,7 +1233,7 @@ void dppc_interpreter::ppc_cmpi() {
 void dppc_interpreter::ppc_cmpl() {
 #ifdef CHECK_INVALID
     if (ppc_cur_instruction & 0x200000) {
-        LOG_F(WARNING, "Invalid CMPL instruction form (L=1)!\n");
+        LOG_F(WARNING, "Invalid CMPL instruction form (L=1)!");
         return;
     }
 #endif
@@ -1250,7 +1250,7 @@ void dppc_interpreter::ppc_cmpl() {
 void dppc_interpreter::ppc_cmpli() {
 #ifdef CHECK_INVALID
     if (ppc_cur_instruction & 0x200000) {
-        LOG_F(WARNING, "Invalid CMPLI instruction form (L=1)!\n");
+        LOG_F(WARNING, "Invalid CMPLI instruction form (L=1)!");
         return;
     }
 #endif

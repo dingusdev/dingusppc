@@ -107,7 +107,7 @@ uint32_t MPC106::pci_read(uint32_t size) {
     if (bus_num) {
         LOG_F(
             ERROR,
-            "%s err: read attempt from non-local PCI bus, config_addr = %x \n",
+            "%s err: read attempt from non-local PCI bus, config_addr = %x",
             this->name.c_str(),
             this->config_addr);
         return 0;
@@ -125,7 +125,7 @@ uint32_t MPC106::pci_read(uint32_t size) {
         } else {
             LOG_F(
                 ERROR,
-                "%s err: read attempt from non-existing PCI device %d \n",
+                "%s err: read attempt from non-existing PCI device %d",
                 this->name.c_str(),
                 dev_num);
             return 0;
@@ -142,7 +142,7 @@ void MPC106::pci_write(uint32_t value, uint32_t size) {
     if (bus_num) {
         LOG_F(
             ERROR,
-            "%s err: write attempt to non-local PCI bus, config_addr = %x \n",
+            "%s err: write attempt to non-local PCI bus, config_addr = %x",
             this->name.c_str(),
             this->config_addr);
         return;
@@ -160,7 +160,7 @@ void MPC106::pci_write(uint32_t value, uint32_t size) {
         } else {
             LOG_F(
                 ERROR,
-                "%s err: write attempt to non-existing PCI device %d \n",
+                "%s err: write attempt to non-existing PCI device %d",
                 this->name.c_str(),
                 dev_num);
         }
@@ -169,7 +169,7 @@ void MPC106::pci_write(uint32_t value, uint32_t size) {
 
 uint32_t MPC106::pci_cfg_read(uint32_t reg_offs, uint32_t size) {
 #ifdef MPC106_DEBUG
-    LOG_F(9, "read from Grackle register %08X\n", reg_offs);
+    LOG_F(9, "read from Grackle register %08X", reg_offs);
 #endif
 
     if (reg_offs < 64) {
@@ -181,7 +181,7 @@ uint32_t MPC106::pci_cfg_read(uint32_t reg_offs, uint32_t size) {
 
 void MPC106::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size) {
 #ifdef MPC106_DEBUG
-    LOG_F(9, "write %08X to Grackle register %08X\n", value, reg_offs);
+    LOG_F(9, "write %08X to Grackle register %08X", value, reg_offs);
 #endif
 
     if (reg_offs < 64) {
@@ -195,7 +195,7 @@ void MPC106::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size) {
 
     if (this->my_pci_cfg_hdr[0xF2] & 8) {
 #ifdef MPC106_DEBUG
-        LOG_F(9, "MPC106: MCCR1[MEMGO] was set! \n");
+        LOG_F(9, "MPC106: MCCR1[MEMGO] was set!");
 #endif
         setup_ram();
     }
@@ -225,13 +225,13 @@ void MPC106::setup_ram() {
             bank_end = (((ext_mem_end >> bank * 8) & 3) << 30) |
                 (((mem_end >> bank * 8) & 0xFF) << 20) | 0xFFFFFUL;
             if (bank && bank_start != ram_size)
-                LOG_F(WARNING, "MPC106: RAM not contiguous! \n");
+                LOG_F(WARNING, "MPC106: RAM not contiguous!");
             ram_size += bank_end - bank_start + 1;
         }
     }
 
     if (!this->add_ram_region(0, ram_size)) {
-        LOG_F(ERROR, "MPC106 RAM allocation failed! \n");
+        LOG_F(ERROR, "MPC106 RAM allocation failed!");
     }
 }
 

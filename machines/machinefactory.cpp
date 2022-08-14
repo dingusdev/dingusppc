@@ -141,11 +141,11 @@ int MachineFactory::create(string& mach_id)
 
     // post-initialize all devices
     if (gMachineObj->postinit_devices()) {
-        LOG_F(ERROR, "Could not post-initialize devices!\n");
+        LOG_F(ERROR, "Could not post-initialize devices!");
         return -1;
     }
 
-    LOG_F(INFO, "Initialization completed.\n");
+    LOG_F(INFO, "Initialization completed.");
 
     return 0;
 }
@@ -302,7 +302,7 @@ string MachineFactory::machine_name_from_rom(string& rom_filepath) {
     rom_id = (rom_id_str[5] << 24) | (rom_id_str[6] << 16) |
         (rom_id_str[7] << 8) | rom_id_str[8];
 
-    LOG_F(INFO, "The machine is identified as... %s\n",
+    LOG_F(INFO, "The machine is identified as... %s",
         std::get<1>(rom_identity.at(rom_id)));
 
     machine_name = std::get<0>(rom_identity.at(rom_id));

@@ -242,7 +242,7 @@ FloppyImgConverter* open_floppy_image(std::string& img_path)
         break;
     case FlopImgType::WOZ1:
     case FlopImgType::WOZ2:
-        LOG_F(INFO, "WOZ v%s image\n", (itype == FlopImgType::WOZ2) ? "2" : "1");
+        LOG_F(INFO, "WOZ v%s image", (itype == FlopImgType::WOZ2) ? "2" : "1");
         break;
     default:
         LOG_F(ERROR, "Unknown/unsupported image format!");

@@ -78,7 +78,7 @@ int initialize_gossamer(std::string& id)
 
     // allocate ROM region
     if (!grackle_obj->add_rom_region(0xFFC00000, 0x400000)) {
-        LOG_F(ERROR, "Could not allocate ROM region!\n");
+        LOG_F(ERROR, "Could not allocate ROM region!");
         return -1;
     }
 

@@ -49,7 +49,13 @@ EsccController::EsccController()
     std::string backend_name = GET_STR_PROP("serial_backend");
 
     this->ch_a->attach_backend(
-        (backend_name == "stdio") ? CHARIO_BE_STDIO : CHARIO_BE_NULL);
+        (backend_name == "stdio") ? CHARIO_BE_STDIO :
+#ifdef _WIN32
+#else
+        (backend_name == "socket") ? CHARIO_BE_SOCKET :
+#endif
+        CHARIO_BE_NULL
+    );
     this->ch_b->attach_backend(CHARIO_BE_NULL);
 
     this->reg_ptr = 0;
@@ -166,6 +172,12 @@ void EsccChannel::attach_backend(int id)
     case CHARIO_BE_STDIO:
         this->chario = std::unique_ptr<CharIoBackEnd> (new CharIoStdin);
         break;
+#ifdef _WIN32
+#else
+    case CHARIO_BE_SOCKET:
+        this->chario = std::unique_ptr<CharIoBackEnd> (new CharIoSocket);
+        break;
+#endif
     default:
         LOG_F(ERROR, "ESCC: unknown backend ID %d, using NULL instead", id);
         this->chario = std::unique_ptr<CharIoBackEnd> (new CharIoNull);
@@ -309,7 +321,7 @@ uint8_t EsccChannel::receive_byte()
     return c;
 }
 
-static const vector<string> CharIoBackends = {"null", "stdio"};
+static const vector<string> CharIoBackends = {"null", "stdio", "socket"};
 
 static const PropMap Escc_Properties = {
     {"serial_backend", new StrProperty("null", CharIoBackends)},

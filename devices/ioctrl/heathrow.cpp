@@ -131,7 +131,7 @@ void HeathrowIC::dma_write(uint32_t offset, uint32_t value, int size) {
 uint32_t HeathrowIC::read(uint32_t reg_start, uint32_t offset, int size) {
     uint32_t res = 0;
 
-    LOG_F(9, "%s: reading from offset %x \n", this->name.c_str(), offset);
+    LOG_F(9, "%s: reading from offset %x", this->name.c_str(), offset);
 
     unsigned sub_addr = (offset >> 12) & 0x7F;
 
@@ -165,7 +165,7 @@ uint32_t HeathrowIC::read(uint32_t reg_start, uint32_t offset, int size) {
         if (sub_addr >= 0x60) {
             res = this->nvram->read_byte((offset - 0x60000) >> 4);
         } else {
-            LOG_F(WARNING, "Attempting to read unmapped I/O space: %x \n", offset);
+            LOG_F(WARNING, "Attempting to read unmapped I/O space: %x", offset);
         }
     }
 
@@ -173,7 +173,7 @@ uint32_t HeathrowIC::read(uint32_t reg_start, uint32_t offset, int size) {
 }
 
 void HeathrowIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size) {
-    LOG_F(9, "%s: writing to offset %x \n", this->name.c_str(), offset);
+    LOG_F(9, "%s: writing to offset %x", this->name.c_str(), offset);
 
     unsigned sub_addr = (offset >> 12) & 0x7F;
 
@@ -210,7 +210,7 @@ void HeathrowIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int 
         if (sub_addr >= 0x60) {
             this->nvram->write_byte((offset - 0x60000) >> 4, value);
         } else {
-            LOG_F(WARNING, "Attempting to write to unmapped I/O space: %x \n", offset);
+            LOG_F(WARNING, "Attempting to write to unmapped I/O space: %x", offset);
         }
     }
 }
@@ -238,16 +238,16 @@ uint32_t HeathrowIC::mio_ctrl_read(uint32_t offset, int size) {
         res = this->int_levels1;
         break;
     case MIO_HEAT_ID:
-        LOG_F(9, "read from MIO:ID register at Address %x \n", ppc_state.pc);
+        LOG_F(9, "read from MIO:ID register at Address %x", ppc_state.pc);
         res = (this->fp_id << 24) | (this->mon_id << 16) | (this->mb_id << 8) |
               (this->cpu_id | (this->emmo_pin << 4));
         break;
     case MIO_HEAT_FEAT_CTRL:
-        LOG_F(9, "read from MIO:Feat_Ctrl register \n");
+        LOG_F(9, "read from MIO:Feat_Ctrl register");
         res = this->feat_ctrl;
         break;
     default:
-        LOG_F(WARNING, "read from unknown MIO register at %x \n", offset);
+        LOG_F(WARNING, "read from unknown MIO register at %x", offset);
         break;
     }
 
@@ -279,24 +279,24 @@ void HeathrowIC::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
         }
         break;
     case MIO_HEAT_ID:
-        LOG_F(WARNING, "Attempted to write %x to MIO:ID at %x; Address : %x \n", value, offset, ppc_state.pc);
+        LOG_F(WARNING, "Attempted to write %x to MIO:ID at %x; Address : %x", value, offset, ppc_state.pc);
         break;
     case MIO_HEAT_FEAT_CTRL:
         this->feature_control(BYTESWAP_32(value));
         break;
     case 0x3C:
-        LOG_F(9, "write %x to MIO:Aux_Ctrl register \n", value);
+        LOG_F(9, "write %x to MIO:Aux_Ctrl register", value);
         this->aux_ctrl = value;
         break;
     default:
-        LOG_F(WARNING, "write %x to unknown MIO register at %x \n", value, offset);
+        LOG_F(WARNING, "write %x to unknown MIO register at %x", value, offset);
         break;
     }
 }
 
 void HeathrowIC::feature_control(const uint32_t value)
 {
-    LOG_F(9, "write %x to MIO:Feat_Ctrl register \n", value);
+    LOG_F(9, "write %x to MIO:Feat_Ctrl register", value);
 
     this->feat_ctrl = value;
 

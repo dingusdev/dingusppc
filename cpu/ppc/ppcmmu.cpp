@@ -615,7 +615,7 @@ static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write)
         }
         return tlb_entry;
     } else {
-        LOG_F(WARNING, "Access to unmapped physical memory, phys_addr=0x%08X\n", phys_addr);
+        LOG_F(WARNING, "Access to unmapped physical memory, phys_addr=0x%08X", phys_addr);
         return &UnmappedMem;
     }
 }
@@ -947,7 +947,7 @@ void mmu_pat_ctx_changed()
 void mmu_print_regs()
 {
     LOG_SCOPE_FUNCTION(INFO);
-    LOG_F(INFO, "MSR = 0x%X\n", ppc_state.msr);
+    LOG_F(INFO, "MSR = 0x%X", ppc_state.msr);
 
     LOG_F(INFO, "BAT registers:");
 
@@ -966,7 +966,7 @@ void mmu_print_regs()
     }
 
     LOG_F(INFO, "");
-    LOG_F(INFO, "SDR1 = 0x%X\n", ppc_state.spr[SPR::SDR1]);
+    LOG_F(INFO, "SDR1 = 0x%X", ppc_state.spr[SPR::SDR1]);
     LOG_F(INFO, "Segment registers:");
 
     for (int i = 0; i < 16; i++) {
@@ -1372,7 +1372,7 @@ static inline T read_phys_mem(AddressMapEntry *mru_rgn, uint32_t addr)
         if (entry) {
             *mru_rgn = *entry;
         } else {
-            LOG_F(ERROR, "Read from unmapped memory at 0x%08X!\n", addr);
+            LOG_F(ERROR, "Read from unmapped memory at 0x%08X!", addr);
             return (-1ULL ? sizeof(T) == 8 : -1UL);
         }
     }
@@ -1402,7 +1402,7 @@ static inline T read_phys_mem(AddressMapEntry *mru_rgn, uint32_t addr)
                 return READ_QWORD_BE_A(mru_rgn->mem_ptr + (addr - mru_rgn->start));
             }
         default:
-            LOG_F(ERROR, "READ_PHYS: invalid size %lu passed\n", sizeof(T));
+            LOG_F(ERROR, "READ_PHYS: invalid size %lu passed", sizeof(T));
             return (-1ULL ? sizeof(T) == 8 : -1UL);
         }
     } else if (mru_rgn->type & RT_MMIO) {
@@ -1413,7 +1413,7 @@ static inline T read_phys_mem(AddressMapEntry *mru_rgn, uint32_t addr)
         return (mru_rgn->devobj->read(mru_rgn->start,
                 addr - mru_rgn->start, sizeof(T)));
     } else {
-        LOG_F(ERROR, "READ_PHYS: invalid region type!\n");
+        LOG_F(ERROR, "READ_PHYS: invalid region type!");
         return (-1ULL ? sizeof(T) == 8 : -1UL);
     }
 }
@@ -1426,7 +1426,7 @@ static inline void write_phys_mem(AddressMapEntry *mru_rgn, uint32_t addr, T val
         if (entry) {
             *mru_rgn = *entry;
         } else {
-            LOG_F(ERROR, "Write to unmapped memory at 0x%08X!\n", addr);
+            LOG_F(ERROR, "Write to unmapped memory at 0x%08X!", addr);
             return;
         }
     }
@@ -1460,7 +1460,7 @@ static inline void write_phys_mem(AddressMapEntry *mru_rgn, uint32_t addr, T val
             }
             break;
         default:
-            LOG_F(ERROR, "WRITE_PHYS: invalid size %lu passed\n", sizeof(T));
+            LOG_F(ERROR, "WRITE_PHYS: invalid size %lu passed", sizeof(T));
             return;
         }
     } else if (mru_rgn->type & RT_MMIO) {
@@ -1471,7 +1471,7 @@ static inline void write_phys_mem(AddressMapEntry *mru_rgn, uint32_t addr, T val
         mru_rgn->devobj->write(mru_rgn->start, addr - mru_rgn->start, value,
                                sizeof(T));
     } else {
-        LOG_F(ERROR, "WRITE_PHYS: invalid region type!\n");
+        LOG_F(ERROR, "WRITE_PHYS: invalid region type!");
     }
 }
 
@@ -1525,7 +1525,7 @@ static uint32_t ppc_mmu_addr_translate(uint32_t la, int is_write)
 
 static void mem_write_unaligned(uint32_t addr, uint32_t value, uint32_t size) {
 #ifdef MMU_DEBUG
-    LOG_F(WARNING, "Attempt to write unaligned %d bytes to 0x%08X\n", size, addr);
+    LOG_F(WARNING, "Attempt to write unaligned %d bytes to 0x%08X", size, addr);
 #endif
 
     if (((addr & 0xFFF) + size) > 0x1000) {
@@ -1627,7 +1627,7 @@ static uint32_t mem_grab_unaligned(uint32_t addr, uint32_t size) {
     uint32_t ret = 0;
 
 #ifdef MMU_DEBUG
-    LOG_F(WARNING, "Attempt to read unaligned %d bytes from 0x%08X\n", size, addr);
+    LOG_F(WARNING, "Attempt to read unaligned %d bytes from 0x%08X", size, addr);
 #endif
 
     if (((addr & 0xFFF) + size) > 0x1000) {
