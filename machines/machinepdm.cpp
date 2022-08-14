@@ -62,19 +62,19 @@ int initialize_pdm(std::string& id)
 
     // allocate ROM region
     if (!hmc_obj->add_rom_region(0x40000000, 0x400000)) {
-        LOG_F(ERROR, "Could not allocate ROM region!\n");
+        LOG_F(ERROR, "Could not allocate ROM region!");
         return -1;
     }
 
     // mirror ROM to 0xFFC00000 for a PowerPC CPU to start
     if (!hmc_obj->add_mem_mirror(0xFFC00000, 0x40000000)) {
-        LOG_F(ERROR, "Could not create ROM mirror!\n");
+        LOG_F(ERROR, "Could not create ROM mirror!");
         return -1;
     }
 
     // add 8MB of soldered on-board RAM
     if (!hmc_obj->add_ram_region(0x00000000, 0x800000)) {
-        LOG_F(ERROR, "Could not allocate built-in RAM region!\n");
+        LOG_F(ERROR, "Could not allocate built-in RAM region!");
         return -1;
     }
 

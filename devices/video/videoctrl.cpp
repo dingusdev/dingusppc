@@ -46,12 +46,12 @@ VideoCtrlBase::VideoCtrlBase(int width, int height)
     );
 
     if (this->display_wnd == NULL) {
-        LOG_F(ERROR, "Display: SDL_CreateWindow failed with %s\n", SDL_GetError());
+        LOG_F(ERROR, "Display: SDL_CreateWindow failed with %s", SDL_GetError());
     }
 
     this->renderer = SDL_CreateRenderer(this->display_wnd, -1, SDL_RENDERER_ACCELERATED);
     if (this->renderer == NULL) {
-        LOG_F(ERROR, "Display: SDL_CreateRenderer failed with %s\n", SDL_GetError());
+        LOG_F(ERROR, "Display: SDL_CreateRenderer failed with %s", SDL_GetError());
     }
 
     SDL_SetRenderDrawColor(this->renderer, 0, 0, 0, 255);
@@ -73,7 +73,7 @@ VideoCtrlBase::VideoCtrlBase(int width, int height)
     );
 
     if (this->disp_texture == NULL) {
-        LOG_F(ERROR, "Display: SDL_CreateTexture failed with %s\n", SDL_GetError());
+        LOG_F(ERROR, "Display: SDL_CreateTexture failed with %s", SDL_GetError());
     }
 }
 

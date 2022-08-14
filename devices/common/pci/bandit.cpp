@@ -131,7 +131,7 @@ uint32_t Bandit::read(uint32_t reg_start, uint32_t offset, int size)
                 } else {
                     LOG_F(
                         ERROR,
-                        "%s err: read attempt from non-existing PCI device %d \n",
+                        "%s err: read attempt from non-existing PCI device %d",
                         this->name.c_str(),
                         idsel);
                     result = 0;
@@ -187,7 +187,7 @@ void Bandit::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size
             } else {
                 LOG_F(
                     ERROR,
-                    "%s err: write attempt to non-existing PCI device %d \n",
+                    "%s err: write attempt to non-existing PCI device %d",
                     this->name.c_str(),
                     idsel);
             }
@@ -269,7 +269,7 @@ uint32_t Chaos::read(uint32_t reg_start, uint32_t offset, int size)
             } else {
                 LOG_F(
                     ERROR,
-                    "%s err: read attempt from non-existing VCI device %d \n",
+                    "%s err: read attempt from non-existing VCI device %d",
                     this->name.c_str(),
                     idsel);
                 result = 0;
@@ -312,7 +312,7 @@ void Chaos::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
             } else {
                 LOG_F(
                     ERROR,
-                    "%s err: write attempt to non-existing VCI device %d \n",
+                    "%s err: write attempt to non-existing VCI device %d",
                     this->name.c_str(),
                     idsel);
             }

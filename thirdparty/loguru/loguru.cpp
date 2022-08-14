@@ -1248,7 +1248,7 @@ namespace loguru
 		if (message.verbosity == Verbosity_FATAL) {
 			auto st = loguru::stacktrace(stack_trace_skip + 2);
 			if (!st.empty()) {
-				RAW_LOG_F(ERROR, "Stack trace:\n" LOGURU_FMT(s) "", st.c_str());
+				RAW_LOG_F(ERROR, "Stack trace:" LOGURU_FMT(s) "", st.c_str());
 			}
 
 			auto ec = loguru::get_error_context();

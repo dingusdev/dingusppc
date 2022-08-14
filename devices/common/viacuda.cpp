@@ -435,7 +435,7 @@ void ViaCuda::process_packet() {
 
     switch (this->in_buf[0]) {
     case CUDA_PKT_ADB:
-        LOG_F(9, "Cuda: ADB packet received \n");
+        LOG_F(9, "Cuda: ADB packet received");
         process_adb_command(this->in_buf[1], this->in_count - 2);
         break;
     case CUDA_PKT_PSEUDO:
@@ -624,7 +624,7 @@ void ViaCuda::pseudo_command(int cmd, int data_count) {
     case CUDA_MONO_STABLE_RESET:
     case CUDA_RESTART_SYSTEM:
         /* really kludge temp code */
-        LOG_F(INFO, "Cuda: Restart/Shutdown signal sent with command 0x%x! \n", cmd);
+        LOG_F(INFO, "Cuda: Restart/Shutdown signal sent with command 0x%x!", cmd);
         //exit(0);
         break;
     default:

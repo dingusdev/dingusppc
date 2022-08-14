@@ -156,7 +156,7 @@ void AwacsScreamer::snd_ctrl_write(uint32_t offset, uint32_t value, int size)
         subframe = (value >> 14) & 3;
         reg_num  = (value >> 20) & 7;
         data     = ((value >> 8) & 0xF00) | ((value >> 24) & 0xFF);
-        LOG_F(9, "Screamer subframe = %d, reg = %d, data = %08X\n",
+        LOG_F(9, "Screamer subframe = %d, reg = %d, data = %08X",
               subframe, reg_num, data);
         if (!subframe)
             this->control_regs[reg_num] = data;
