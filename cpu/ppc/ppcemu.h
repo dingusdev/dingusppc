@@ -102,7 +102,9 @@ enum SPR : int {
     TBU_U   = 269, // user mode TBU
     TBL_S   = 284, // supervisor TBL
     TBU_S   = 285, // supervisor TBU
-    PVR     = 287
+    PVR     = 287,
+    HID0    = 1008,
+    HID1    = 1009,
 };
 
 /** symbolic names for common PPC processors */
