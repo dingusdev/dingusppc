@@ -70,8 +70,7 @@ private:
     The machine ID for the Gossamer board is accesible at 0xFF000004 (phys).
     It contains a 16-bit value revealing machine's capabilities like bus speed,
     ROM speed, I/O configuration etc.
-    Because the meaning of these bits is poorly documented, the code below
-    simply return a raw value obtained from real hardware.
+    See machines/machinegossamer.cpp for further details.
  */
 class GossamerID : public MMIODevice {
 public:
