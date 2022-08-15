@@ -39,8 +39,39 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <machines/machinefactory.h>
 #include <machines/machineproperties.h>
 
+#include <cinttypes>
 #include <memory>
 #include <string>
+
+// Bit definitions for the Gossamer system register at 0xFF000004
+enum : uint16_t {
+    FDC_TYPE_SWIM3  = (1 << 15), // Macintosh style floppy disk controller
+    FDC_TYPE_MFDC   = (0 << 15), // PC style floppy disk controller
+    BURST_ROM_FALSE = (1 << 14), // burst ROM not present
+    BURST_ROM_TRUE  = (0 << 14), // burst ROM present
+    PCI_C_PRSNT_POS = 12,        // PRSNT bits for the PCI Slot C
+    PCI_B_PRSNT_POS = 10,        // PRSNT bits for the PCI Slot B
+    PCI_A_PRSNT_POS = 8,         // PRSNT bits for the PCI Slot A
+    PCM_PID_POS     = 5,         // Processor und Cache module ID
+    PCM_PID_MASK    = 0xE0,
+    AIO_PRSNT_FALSE = (1 << 4),  // Whisper/Wings style card in the PERCH slot
+    AIO_PRSNT_TRUE  = (0 << 4),  // All-in-one style card in the PERCH slot
+    BUS_SPEED_POS   = 1,         // bus speed code, see below
+    BUS_SPEED_MASK  = 0x0E,
+    UNKNOWN_BIT_0   = 1          // Don't know what this bit is for
+};
+
+// Gossamer bus speed frequency codes
+enum : uint8_t {
+    BUS_FREQ_75P00A = 0, // 75.00 MHz
+    BUS_FREQ_70P00  = 1, // 70.00 MHz
+    BUS_FREQ_78P75  = 2, // 78.75 MHz
+    BUS_FREQ_TRI    = 3, // clock output tristated
+    BUS_FREQ_75P00B = 4, // 75.00 MHz
+    BUS_FREQ_60P00  = 5, // 60.00 MHz
+    BUS_FREQ_66P82  = 6, // 66.82 MHz
+    BUS_FREQ_83P00  = 7, // 83.00 MHz
+};
 
 // EEPROM ID content for a Whisper personality card.
 const uint8_t WhisperID[16] = {
