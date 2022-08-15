@@ -92,14 +92,20 @@ static void setup_ram_slot(std::string name, int i2c_addr, int capacity_megs) {
     i2c_bus->register_device(i2c_addr, ram_dimm);
 }
 
-
 int initialize_gossamer(std::string& id)
 {
     // get pointer to the memory controller/PCI host bridge object
     MPC106* grackle_obj = dynamic_cast<MPC106*>(gMachineObj->get_comp_by_name("Grackle"));
 
-    // add the machine ID register
-    gMachineObj->add_device("MachineID", std::unique_ptr<GossamerID>(new GossamerID(0xBF3D)));
+    // configure the Gossamer system register
+    uint16_t sys_reg = FDC_TYPE_SWIM3 | BURST_ROM_TRUE
+                        | (0x3F << PCI_A_PRSNT_POS) // pull up all PRSNT bits
+                        | (1 << PCM_PID_POS) // CPU/Cache speed ratio = 2:1
+                        | AIO_PRSNT_FALSE // this machine is not All-in-one
+                        | (BUS_FREQ_66P82 << BUS_SPEED_POS) // set bus frequency
+                        | UNKNOWN_BIT_0; // pull up bit 0
+
+    gMachineObj->add_device("MachineID", std::unique_ptr<GossamerID>(new GossamerID(sys_reg)));
     grackle_obj->add_mmio_region(
         0xFF000004, 4096, dynamic_cast<MMIODevice*>(gMachineObj->get_comp_by_name("MachineID")));
 
@@ -141,8 +147,15 @@ int initialize_gossamer(std::string& id)
     perch_id->set_memory(0, WhisperID, sizeof(WhisperID));
     i2c_bus->register_device(0x53, perch_id);
 
+    // configure CPU clocks
+    uint64_t bus_freq      = 66820000ULL;
+    uint64_t timebase_freq = bus_freq / 4;
+
     // initialize virtual CPU and request MPC750 CPU aka G3
-    ppc_cpu_init(grackle_obj, PPC_VER::MPC750, 16705000ULL);
+    ppc_cpu_init(grackle_obj, PPC_VER::MPC750, timebase_freq);
+
+    // set CPU PLL ratio to 3.5
+    ppc_state.spr[SPR::HID1] = 0xE << 28;
 
     return 0;
 }
