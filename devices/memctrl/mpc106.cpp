@@ -32,7 +32,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cstring>
 #include <iostream>
 #include <loguru.hpp>
-
+#include <string>
+#include <vector>
 
 MPC106::MPC106() : MemCtrlBase(), PCIDevice("Grackle"), PCIHost()
 {
@@ -54,6 +55,23 @@ MPC106::MPC106() : MemCtrlBase(), PCIDevice("Grackle"), PCIHost()
 
     // add memory mapped I/O region for MPC106 registers
     add_mmio_region(0xFEC00000, 0x300000, this);
+}
+
+int MPC106::device_postinit()
+{
+    std::string pci_dev_name;
+
+    static const std::map<std::string, int> pci_slots = {
+        {"pci_A1", 0xD}, {"pci_B1", 0xE}, {"pci_C1", 0xF}
+    };
+
+    for (auto& slot : pci_slots) {
+        pci_dev_name = GET_STR_PROP(slot.first);
+        if (!pci_dev_name.empty()) {
+            this->attach_pci_device(pci_dev_name, slot.second);
+        }
+    }
+    return 0;
 }
 
 uint32_t MPC106::read(uint32_t reg_start, uint32_t offset, int size) {
@@ -235,8 +253,17 @@ void MPC106::setup_ram() {
     }
 }
 
+static const PropMap Grackle_Properties = {
+    {"pci_A1",
+        new StrProperty("")},
+    {"pci_B1",
+        new StrProperty("")},
+    {"pci_C1",
+        new StrProperty("")},
+};
+
 static const DeviceDescription Grackle_Descriptor = {
-    MPC106::create, {}, {}
+    MPC106::create, {}, Grackle_Properties
 };
 
 REGISTER_DEVICE(Grackle, Grackle_Descriptor);
