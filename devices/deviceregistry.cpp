@@ -29,7 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 bool DeviceRegistry::add(const std::string name, DeviceDescription desc)
 {
-    if (get_registry().find(name) != get_registry().end()) {
+    if (device_registered(name)) {
         return false;
     }
 
@@ -37,7 +37,16 @@ bool DeviceRegistry::add(const std::string name, DeviceDescription desc)
     return true;
 }
 
-shared_ptr<HWComponent> DeviceRegistry::create(const std::string& name)
+bool DeviceRegistry::device_registered(const string dev_name)
+{
+    if (get_registry().find(dev_name) != get_registry().end()) {
+        return true;
+    }
+
+    return false;
+}
+
+unique_ptr<HWComponent> DeviceRegistry::create(const std::string& name)
 {
     auto it = get_registry().find(name);
     if (it != get_registry().end()) {

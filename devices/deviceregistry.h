@@ -48,7 +48,9 @@ public:
 
     static bool add(const string name, DeviceDescription desc);
 
-    static shared_ptr<HWComponent> create(const string& name);
+    static bool device_registered(const string dev_name);
+
+    static unique_ptr<HWComponent> create(const string& name);
 
     static DeviceDescription& get_descriptor(const std::string& name);
 
