@@ -79,6 +79,9 @@ static const map<string, string> PropHelp = {
     {"fdd_img",         "specifies path to floppy disk image"},
     {"fdd_wr_prot",     "toggles floppy disk's write protection"},
     {"mon_id",          "specifies which monitor to emulate"},
+    {"pci_A1",          "insert a PCI device into A1 slot"},
+    {"pci_B1",          "insert a PCI device into B1 slot"},
+    {"pci_C1",          "insert a PCI device into C1 slot"},
     {"serial_backend",  "specifies the backend for the serial port"},
     {"emmo",            "enables/disables factory HW tests during startup"},
 };
@@ -178,9 +181,15 @@ void MachineFactory::list_device_settings(DeviceDescription& dev)
 
 void MachineFactory::print_settings(PropMap& prop_map)
 {
+    string help;
+
     for (auto& p : prop_map) {
-        cout << setw(13) << p.first << "\t\t" << PropHelp.at(p.first)
-            << endl;
+        if (PropHelp.find(p.first) != PropHelp.end())
+            help = PropHelp.at(p.first);
+        else
+            help = "";
+
+        cout << setw(13) << p.first << "\t\t" << help << endl;
 
         cout << setw(13) << "\t\t\t" "Valid values: ";
 
