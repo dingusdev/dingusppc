@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -22,7 +22,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef PCI_HOST_H
 #define PCI_HOST_H
 
+#include <devices/deviceregistry.h>
+
 #include <cinttypes>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -39,6 +42,8 @@ public:
     virtual bool pci_register_device(int dev_num, PCIDevice* dev_instance);
 
     virtual bool pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIDevice* obj);
+
+    virtual void attach_pci_device(std::string& dev_name, int slot_id);
 
 protected:
     std::unordered_map<int, PCIDevice*> dev_map;
