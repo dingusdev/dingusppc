@@ -101,7 +101,7 @@ public:
 protected:
     void do_bar_sizing(int bar_num);
     void set_bar_value(int bar_num, uint32_t value);
-    void map_exp_rom_mem(uint32_t rom_addr);
+    void map_exp_rom_mem();
 
     std::string pci_name;      // human-readable device name
     PCIHost* host_instance;    // host bridge instance to call back

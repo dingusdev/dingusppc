@@ -217,7 +217,7 @@ uint32_t AtiMach64Gx::read(uint32_t rgn_start, uint32_t offset, int size)
     }
 
     // memory mapped expansion ROM region
-    if (rgn_start >= this->exp_rom_addr && offset < this->exp_rom_size) {
+    if (rgn_start == this->exp_rom_addr && offset < this->exp_rom_size) {
         return read_mem(&this->exp_rom_data[offset], size);
     }
 

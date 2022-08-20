@@ -136,7 +136,7 @@ void PCIDevice::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
         } else {
             this->exp_rom_bar = (data & 0xFFFFF801UL);
             if (this->exp_rom_bar & 1) {
-                this->map_exp_rom_mem(this->exp_rom_bar & 0xFFFFF800UL);
+                this->map_exp_rom_mem();
             } else {
                 LOG_F(WARNING, "%s: unmapping of expansion ROM not implemented yet",
                       this->pci_name.c_str());
@@ -235,9 +235,15 @@ void PCIDevice::set_bar_value(int bar_num, uint32_t value)
     this->pci_notify_bar_change(bar_num);
 }
 
-void PCIDevice::map_exp_rom_mem(uint32_t rom_addr)
+void PCIDevice::map_exp_rom_mem()
 {
+    uint32_t rom_addr, rom_size;
+
+    rom_addr = this->exp_rom_bar & 0xFFFFF800UL;
+    rom_size = ~this->exp_bar_cfg + 1;
+
     if (!this->exp_rom_addr || this->exp_rom_addr != rom_addr) {
-        this->host_instance->pci_register_mmio_region(rom_addr, 0x10000, this);
+        this->host_instance->pci_register_mmio_region(rom_addr, rom_size, this);
+        this->exp_rom_addr = rom_addr;
     }
 }
