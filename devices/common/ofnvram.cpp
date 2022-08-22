@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/** @file Utilities for working with the Apple OpenFirmware NVRAM partition. */
+/** @file Utilities for working with the Apple Open Firmware NVRAM partition. */
 
 #include <devices/common/ofnvram.h>
 #include <endianswap.h>
@@ -146,7 +146,7 @@ void OfNvramUtils::printenv()
     int i;
 
     if (!this->validate()) {
-        cout << "Invalid OpenFirmware partition content!" << endl;
+        cout << "Invalid Open Firmware partition content!" << endl;
         return;
     }
 
@@ -191,7 +191,7 @@ void OfNvramUtils::setenv(string var_name, string value)
     int i, flag;
 
     if (!this->validate()) {
-        cout << "Invalid OpenFirmware partition content!" << endl;
+        cout << "Invalid Open Firmware partition content!" << endl;
         return;
     }
 
@@ -221,7 +221,7 @@ void OfNvramUtils::setenv(string var_name, string value)
         }
     }
 
-    // see if one of the stanard properties should be changed
+    // see if one of the standard properties should be changed
     if (of_vars.find(var_name) == of_vars.end()) {
         cout << "Attempt to change unknown variable " << var_name << endl;
         return;

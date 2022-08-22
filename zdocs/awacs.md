@@ -19,7 +19,7 @@ All registers are 32-bit here.
 
 | Register          | Offset |
 |:-----------------:|:------:|
-| Sound Control     | 0x0    | 
+| Sound Control     | 0x0    |
 | Codec Control     | 0x10   |
 | Codec Status      | 0x20   |
 | Clipping Count    | 0x30   |

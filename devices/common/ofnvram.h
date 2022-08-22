@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <devices/common/nvram.h>
 
-/** @file Utilities for working with the Apple OpenFirmware NVRAM partition. */
+/** @file Utilities for working with the Apple Open Firmware NVRAM partition. */
 
 #define OF_NVRAM_OFFSET 0x1800
 #define OF_NVRAM_SIG    0x1275

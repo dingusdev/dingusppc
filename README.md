@@ -12,7 +12,7 @@ This program aims to not only improve upon what Sheepshaver, PearPC, and other P
 
 ## Implemented Features
 
-This emulator has a debugging environment, complete with a disassembler. We also have implemented enough to allow OpenFirmware to boot, going so far as to allow audio playback of the boot-up jingles.
+This emulator has a debugging environment, complete with a disassembler. We also have implemented enough to allow Open Firmware to boot, going so far as to allow audio playback of the boot-up jingles.
 
 ## How to Use
 
@@ -52,7 +52,7 @@ You need to install development tools first.
 
 At least, a C++11 compliant compiler and [CMake](https://cmake.org) are required.
 
-You will also have to recursive clone or run 
+You will also have to recursive clone or run
 ```
 git submodule update --init --recursive
 ```

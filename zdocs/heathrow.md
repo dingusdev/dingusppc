@@ -8,7 +8,7 @@ computers. As those names suggest, Apple engineers liked to name their I/O contr
 after airports and train stations.
 
 Heathrow and its siblings are collectively referred to as __mac-io__ devices in the
-OpenFirmware device tree.
+Open Firmware device tree.
 
 ## Mac I/O family
 
@@ -134,7 +134,7 @@ Macintosh firmware configures the Heathrow ASIC to live at address `0xF3000000`.
 
 #### Feature control register
 
-Bit names in the table below were pulled from OpenFirmware v2.4.
+Bit names in the table below were pulled from Open Firmware v2.4.
 The field "Description" represents my personal attempt to describe the function
 of those bits based on publicly available Apple and Linux sources.
 
