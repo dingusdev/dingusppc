@@ -63,6 +63,8 @@ Bandit::Bandit(int bridge_num, std::string name) : PCIHost(), PCIDevice(name)
     // that correspond to the 32MB assigned PCI address space of this Bandit.
     // This initialization is implied by the device functionality.
     this->addr_mask = 3 << ((bridge_num & 3) * 2);
+
+    this->name = name;
 }
 
 uint32_t Bandit::pci_cfg_read(uint32_t reg_offs, uint32_t size)
