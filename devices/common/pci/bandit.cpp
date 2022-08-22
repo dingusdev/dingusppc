@@ -79,7 +79,7 @@ uint32_t Bandit::pci_cfg_read(uint32_t reg_offs, uint32_t size)
               this->pci_name.c_str(), reg_offs);
     }
 
-    return 0;
+    return 0xFFFFFFFFUL; // PCI spec §6.1
 }
 
 void Bandit::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
@@ -134,7 +134,7 @@ uint32_t Bandit::read(uint32_t reg_start, uint32_t offset, int size)
                         "%s err: read attempt from non-existing PCI device %d",
                         this->name.c_str(),
                         idsel);
-                    result = 0;
+                    return 0xFFFFFFFFUL; // PCI spec §6.1
                 }
             }
         } else {
@@ -272,7 +272,7 @@ uint32_t Chaos::read(uint32_t reg_start, uint32_t offset, int size)
                     "%s err: read attempt from non-existing VCI device %d",
                     this->name.c_str(),
                     idsel);
-                result = 0;
+                return 0xFFFFFFFFUL; // PCI spec §6.1
             }
         } else {
             result = this->config_addr;
