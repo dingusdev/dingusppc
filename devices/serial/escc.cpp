@@ -99,7 +99,7 @@ uint8_t EsccController::read(uint8_t reg_offset)
     case EsccReg::Port_A_Data:
         return this->ch_a->receive_byte();
     default:
-        LOG_F(9, "ESCC: reading from unimplemented register %d", reg_offset);
+        LOG_F(9, "ESCC: reading from unimplemented register 0x%x", reg_offset);
     }
 
     return result;
@@ -121,7 +121,7 @@ void EsccController::write(uint8_t reg_offset, uint8_t value)
         this->ch_a->send_byte(value);
         break;
     default:
-        LOG_F(9, "ESCC: writing 0x%X to unimplemented register %d", value, reg_offset);
+        LOG_F(9, "ESCC: writing 0x%X to unimplemented register 0x%x", value, reg_offset);
     }
 }
 

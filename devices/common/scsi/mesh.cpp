@@ -39,7 +39,7 @@ uint8_t MESHController::read(uint8_t reg_offset)
         LOG_F(INFO, "MESH: read from MeshID register");
         return this->chip_id; // tell them who we are
     default:
-        LOG_F(WARNING, "MESH: read from unimplemented register at offset %d", reg_offset);
+        LOG_F(WARNING, "MESH: read from unimplemented register at offset 0x%x", reg_offset);
     }
 
     return 0;
@@ -67,7 +67,7 @@ void MESHController::write(uint8_t reg_offset, uint8_t value)
         LOG_F(INFO, "MESH: write 0x%02X to SyncParms register", value);
         break;
     default:
-        LOG_F(WARNING, "MESH: write to unimplemented register at offset %d", reg_offset);
+        LOG_F(WARNING, "MESH: write to unimplemented register at offset 0x%x", reg_offset);
     }
 }
 
