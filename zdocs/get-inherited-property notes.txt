@@ -1,0 +1,306 @@
+get-inherited-property and map-in notes
+by joevt
+
+==========================================================================================
+PowerMac 8600
+
+
+rom notes:
+
+The Open Firmware part (192k) of the 4MB ROM in the 8600 is the same in the 9500 and is probably the same for these other Macs:
+
+" AAPL,7500"
+" AAPL,8500"
+" AAPL,9500"
+" AAPL,7300"
+
+
+Detokenized FCode from Mac ROM:
+
+
+external-token get-inherited-property                       \ [0x0ca] 0x21d
+b(:)                                                        \ [0x0b7]
+    2 mac_rom_401                   \   mac_rom_code_45C    \ [0x401]       \ I don't know how token 401 turns into token 45C or the how the other tokens change.
+    ?my-self                                                \ [0x654]
+    8 mac_rom_table_2               \   mac_rom_code_45E    \ [0x41a]       \ The fcode compiler is probably responsible for these changes.
+    b(<mark)                                                \ [0x0b1]
+        8 mac_rom_table_1           \   mac_rom_code_45D    \ [0x412]
+        b?branch                                            \ [0x014] 0x30
+            8 mac_rom_table_1       \   mac_rom_code_45D    \ [0x412]
+            mac_rom_field_512_4                             \ [0x512]
+            @                                               \ [0x06d]
+            0xC mac_rom_table_2     \   mac_rom_code_45E    \ [0x41b]
+            0 mac_rom_table_1       \   mac_rom_code_45D    \ [0x410]
+            4 mac_rom_table_1       \   mac_rom_code_45D    \ [0x411]
+            0xC mac_rom_table_1     \   mac_rom_code_45D    \ [0x413]
+            unnamed_fcode_79e                               \ [0x79e]
+            ?dup                                            \ [0x050]
+            b?branch                                        \ [0x014] 0x14
+                dup                                         \ [0x047]
+                unnamed_fcode_796                           \ [0x796]
+                @                                           \ [0x06d]
+                swap                                        \ [0x049]
+                unnamed_fcode_797                           \ [0x797]
+                @                                           \ [0x06d]
+\\ missing dup here!!!!
+                -1                                          \ [0x0a4]
+                =                                           \ [0x03c]
+                b?branch                                    \ [0x014] 0x4
+                    drop                                    \ [0x046]
+                    execute                                 \ [0x01d]
+                    b(>resolve)                             \ [0x0b2]
+                false                                       \ [0x557]
+                exit                                        \ [0x033]
+                b(>resolve)         \   mac_rom_code_45D    \ [0x0b2]
+            8 mac_rom_table_1                               \ [0x412]
+            mac_rom_field_513_8                             \ [0x513]
+            @                       \   mac_rom_code_45E    \ [0x06d]
+            8 mac_rom_table_2                               \ [0x41a]
+            bbranch                                         \ [0x013] 0xffffffcf
+        b(>resolve)                                         \ [0x0b2]
+    true                                                    \ [0x558]
+    b(;)                                                    \ [0x0c2]
+
+
+
+Detokenized FCode converted to Forth:
+
+
+: get-inherited-property                                                                            \ (21d)         [0ca 0b7]
+    2 mac_rom_401                                                                                   \               [401]
+    ?my-self                                ( -- ihandle )  \ return iHandle of current instance    \               [654]
+    8 mac_rom_table_2                                                                               \               [41a]
+    begin                                                                                           \               [0b1]
+        8 mac_rom_table_1                                                                           \               [412]
+        while                                                                                       \ (0x30)        [014]
+            8 mac_rom_table_1                                                                       \               [412]
+            mac_rom_field_512_4                                                                     \               [512]
+            @                                                                                       \               [06d]
+            0xC mac_rom_table_2                                                                     \               [41b]
+            0 mac_rom_table_1                                                                       \               [410]
+            4 mac_rom_table_1                                                                       \               [411]
+            0xC mac_rom_table_1                                                                     \               [413]
+            colon_definition_function_79e                                                           \ (79e)         [79e]
+            ?dup                                                                                    \               [050]
+            if                                                                                      \ (0x14)        [014]
+                dup                                                                                 \               [047]
+                field_796                                                                           \ (796)         [796]
+                @                                                                                   \               [06d]
+                swap                                                                                \               [049]
+                field_797                                                                           \ (797)         [797]
+                @                                                                                   \               [06d]
+\\ missing dup here!!!!
+                -1                                                                                  \               [0a4]
+                =                                                                                   \               [03c]
+                if                                                                                  \ (0x4)         [014]
+                    drop                                                                            \               [046]
+                    execute                                                                         \               [01d]
+                then                                                                                \               [0b2]
+                false                                                                               \               [557]
+                exit                                                                                \               [033]
+            then                                                                                    \               [0b2]
+            8 mac_rom_table_1                                                                       \               [412]
+            mac_rom_field_513_8                                                                     \               [513]
+            @                                                                                       \               [06d]
+            8 mac_rom_table_2                                                                       \               [41a]
+    repeat                                                                                          \ (0xffffffcf)  [013 0b2]
+    true                                                                                            \               [558]
+    ;                                                                                               \               [0c2]
+
+
+Disassembled PPC compiled FCode taken from Open Firmware RAM:
+
+
+Offset  Hex            Dest Offset     Instruction Operands            Comments
+
+0143C0: ........                                                       \ fcode link (offset) to previous word or 00000000 for first word
+0143C4: 80                                                             \ fcode flags 80 = fdefd (fcode is defined)
+0143C5: b(:) \ [0x0b7] 0x21d get-inherited-property
+0143E0: 967E FFFC                       stwu     r19,-4(r30)           \ execution token is here - always a multiple of 8
+0143E4: 7E68 02A6                       mflr     r19                   \ every compiled b(:) word starts with these two lines 967EFFFC, 7E6802A6
+0143E8: 3860 0002                       li       r3,2
+0143EC: 4BFE DA1D       001E08          bl       mac_rom_code_45C
+0143F0: 4BFF 5EA9       00A298          bl       ?my-self
+0143F4: 3860 0008                       li       r3,8
+0143F8: 4BFE DA69       001E60          bl       mac_rom_code_45E
+0143FC: 3860 FFFF                       li       r3,-1
+014400: 3860 0008                       li       r3,8
+014404: 4BFE DA45       001E48          bl       mac_rom_code_45D
+014408: 4BFE D871       001C78          bl       mac_rom_code_455
+01440C: 4800 0098       0144A4          b        $+152
+014410: 3860 0008                       li       r3,8
+014414: 4BFE DA35       001E48          bl       mac_rom_code_45D
+014418: 4BFF 0551       004968          bl       mac_rom_field_512_4
+01441C: 4BFE E52D       002948          bl       @
+014420: 3860 000C                       li       r3,0x000C
+014424: 4BFE DA3D       001E60          bl       mac_rom_code_45E
+014428: 3860 0000                       li       r3,0
+01442C: 4BFE DA1D       001E48          bl       mac_rom_code_45D
+014430: 3860 0004                       li       r3,4
+014434: 4BFE DA15       001E48          bl       mac_rom_code_45D
+014438: 3860 000C                       li       r3,0x000C
+01443C: 4BFE DA0D       001E48          bl       mac_rom_code_45D
+014440: 4BFF F321       013760          bl       mac_rom_colon_79E
+014444: 4BFE E965       002DA8          bl       ?dup
+014448: 4BFE D831       001C78          bl       mac_rom_code_455
+01444C: 4800 003C       014488          b        $+60
+014450: 4BFE E921       002D70          bl       dup
+014454: 4BFF F1FD       013650          bl       mac_rom_field_796
+014458: 4BFE E4F1       002948          bl       @
+01445C: 4BFE EA95       002EF0          bl       swap
+014460: 4BFF F209       013668          bl       mac_rom_field_797
+014464: 4BFE E4E5       002948          bl       @
+014468: 4BFE EBD9       003040          bl       -1
+01446C: 4BFE F425       003890          bl       =
+014470: 4BFE D809       001C78          bl       mac_rom_code_455
+014474: 4800 000C       014480          b        $+12
+014478: 4BFE E999       002E10          bl       drop
+01447C: 4BFE CBE5       001060          bl       execute
+014480: 4BFF 2681       006B00          bl       false
+014484: 4BFE CC15       001098          bl       exit
+014488: 3860 0008                       li       r3,8
+01448C: 4BFE D9BD       001E48          bl       mac_rom_code_45D
+014490: 4BFF 04E9       004978          bl       mac_rom_field_513_8
+014494: 4BFE E4B5       002948          bl       @
+014498: 3860 0008                       li       r3,8
+01449C: 4BFE D9C5       001E60          bl       mac_rom_code_45E
+0144A0: 4BFF FF60       014400          b        $-160
+0144A4: 4BFF 267D       006B20          bl       true
+0144A8: 4BFE CBF0       001098          b        exit                  \ every compiled b(:) word starts ends with a branch to exit
+0144AC: 0000 0000                                                      \ filler makes fcode length a multiple of 8
+
+
+========================================
+
+The following Forth script changes the 0x22nd instruction (offset 0x88) in get-inherited-property from the Forth word "-1" to "dup -1".
+
+: myGIPpatch dup -1 ;
+' get-inherited-property 22 na+ ' myGIPpatch BLpatch
+
+
+The following tests the patch:
+
+" crap" get-inherited-property  \ should return true
+" name" get-inherited-property  \ should return nameaddr, namelen, false
+
+
+The following undoes the patch:
+
+' get-inherited-property 22 na+ ' -1 BLpatch
+
+
+I don't know what kind of properties would return a length of -1 which would cause the drop and execute words to run but there would be no address to execute (stack underflow) without the dup word in the patch.
+
+A method needs to be used to decide if the patch is needed:
+- test for add-range (see below)
+- test get-inherited-property and check if stack depth is 2 instead of 3
+
+The patch offset (0x88) will have to be verified for every Mac that has the bug.
+
+
+=========
+
+The Radeon 7000 defines an unnamed value that can have one of following values:
+
+0: for machines that do not have the "AAPL,cpu-id" property (newer Macs like the iMac)
+
+1: for machines that have the "AAPL,cpu-id" property but do not have the get-inherited-property bug
+
+3: for machines that have the "AAPL,cpu-id" property and the get-inherited-property bug (older Macs like the 8600)
+
+
+However, when using the value, the Radeon 7000 only distinguishes between 0 and not 0 (doesn't have "AAPL,cpu-id" and has "AAPL,cpu-id"). If the value is not zero, the Radeon 7000 uses "assigned-addresses" in the calculation of the address for the map-in method.
+
+The method that the Radeon 7000 uses (the "AAPL,cpu-id" check) to decide whether or not assigned-addresses needs to be used is different than the method described by the "PCI Bus Binding to Open Firmware Revision 2.1" documentation. I don't know why ATI didn't do it that way.
+
+
+
+==========================================================================================
+PowerMac G3 233 (beige) Open Firmware 2.0f1:
+
+- The PCI bridge in the G3 does not implement the add-range method which signifies that get-inherited-property returns the correct number of parameters
+- get-inherited-property is implemented the same as Open Firmware 2.4 (see below)
+
+==========================================================================================
+PowerMac G3 300 (beige) Open Firmware 2.4:
+
+- this version of Open Firmware is the best Old World Mac Open Firmware to work with since it has names for almost everything.
+
+
+Detokenized FCode converted to Forth:
+
+: get-inherited-property                                                        \ (21d)             [0ca 0b7]
+    { local_0 local_1 ; local_2 local_3 }                                       \                   [409]
+    ?my-self                                                                    \                   [652]
+    -> local_2                                                                  \                   [41a]
+    begin                                                                       \                   [0b1]
+        local_2                                                                 \                   [412]
+        while                                                                   \ (0x31)            [014]
+            local_2                                                             \                   [412]
+            >in.device-node                                                     \                   [526]
+            @                                                                   \                   [06d]
+            -> local_3                                                          \                   [41b]
+            local_0                                                             \                   [410]
+            local_1                                                             \                   [411]
+            local_3                                                             \                   [413]
+            find-property                                                       \                   [790]
+            ?dup                                                                \                   [050]
+            if                                                                  \ (0x15)            [014]
+                dup                                                             \                   [047]
+                >prop.addr                                                      \                   [788]
+                @                                                               \                   [06d]
+                swap                                                            \                   [049]
+                >prop.len                                                       \                   [789]
+                @                                                               \                   [06d]
+                dup                                                             \                   [047]
+                -1                                                              \                   [0a4]
+                =                                                               \                   [03c]
+                if                                                              \ (0x4)             [014]
+                    drop                                                        \                   [046]
+                    execute                                                     \                   [01d]
+                then                                                            \                   [0b2]
+                false                                                           \                   [56b]
+                exit                                                            \                   [033]
+            then                                                                \                   [0b2]
+            local_2                                                             \                   [412]
+            >in.my-parent                                                       \                   [527]
+            @                                                                   \                   [06d]
+            -> local_2                                                          \                   [41a]
+    repeat                                                                      \ (0xffce)          [013 0b2]
+    true                                                                        \                   [56c]
+    ;                                                                           \                   [0c2]
+
+
+==========================================================================================
+from "Writing FCode Programs For PCI"
+
+\ Some of Apple’s Open Firmware implementations have a bug in their map-in method. The
+\ bug causes phys.lo and phys.mid to be treated as absolute addresses rather than
+\ offsets even when working with relocatable addresses.
+\ To overcome this bug, the Open Firmware Working Group in conjunction with Apple has
+\ adopted a workaround that is keyed to the presence or absence of the add-range method
+\ in the PCI node. If the add-range method is present in an Apple ROM, the map-in
+\ method is broken. If the add-range property is absent, the map-in method behaves
+\ correctly.
+\ The following methods allow the FCode driver to accomodate both broken and working
+\ map-in methods.
+
+: map-in-broken? ( -- flag )
+    \ Look for the method that is present when the bug is present
+    " add-range" my-parent ihandle>phandle          ( adr len phandle )
+    find-method dup if nip then                     ( flag ) \ Discard xt if present
+    ;
+
+==========================================================================================
+from "PCI Bus Binding to Open Firmware Revision 2.1"
+
+1. The method add-range is reserved and shall not be implemented in future releases of OFW. The
+presence of this method in the PCI node indicates to child nodes both that the map-in method of this
+bus node requires that the phys.lo address to be extracted from the "assigned-addresses" prop-erty
+and that the get-inherited-property method does not return the prop-len (only the
+prop-addr and false) if the property is found. The non-existence of this method indicates to child
+nodes that the phys.lo address is an offset relative to the base address (when n=0) and that get-inher-ited-
+property returns three stack items (prop-addr prop-len and false) if the inherited
+property is found.
+
+==========================================================================================

@@ -258,3 +258,5 @@ Apple OF is known to contain numerous bugs. The following table lists some recen
 | 2.0f1, 2.4          | A numerical overflow in `um/mod` used by  `get-usecs-60x` causes the OF console to become unresponsive after approx. 71 minutes. You have to restart your computer once the bug is triggered. |
 | 1.0.5               | /chaos/control `fill-rectangle` is ( ? color y x w h -- ) instead of ( color x y w h -- ) |
 | 2.4                 | string literal buffers `"` on the command line are 256 bytes but will overflow if you enter more than 256 bytes. |
+
+`get-inherited-property notes.txt` discusses known bugs regarding get-inherited-property and map-in in Open Firmware 1.0.5.
