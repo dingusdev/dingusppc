@@ -33,7 +33,7 @@ PCIDevice::PCIDevice(std::string name)
 {
     this->pci_name = name;
 
-    this->pci_rd_stat       = []() { return 0; };
+    this->pci_rd_stat       = [this]() { return this->status; };
     this->pci_rd_cmd        = [this]() { return this->command; };
     this->pci_rd_bist       = []() { return 0; };
     this->pci_rd_lat_timer  = [this]() { return this->lat_timer; };
