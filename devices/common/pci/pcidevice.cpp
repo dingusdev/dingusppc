@@ -83,6 +83,9 @@ uint32_t PCIDevice::pci_cfg_read(uint32_t reg_offs, uint32_t size)
     case PCI_CFG_DWORD_15:
         result = (max_lat << 24) | (min_gnt << 16) | (irq_pin << 8) | irq_line;
         break;
+    case PCI_CFG_CAP_PTR:
+        result = cap_ptr;
+        break;
     default:
         LOG_F(
             WARNING, "%s: attempt to read from reserved/unimplemented register @%02x.%c",
