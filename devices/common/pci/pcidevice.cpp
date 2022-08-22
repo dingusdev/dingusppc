@@ -84,8 +84,11 @@ uint32_t PCIDevice::pci_cfg_read(uint32_t reg_offs, uint32_t size)
         result = (max_lat << 24) | (min_gnt << 16) | (irq_pin << 8) | irq_line;
         break;
     default:
-        LOG_F(WARNING, "%s: attempt to read from reserved/unimplemented register %d",
-              this->pci_name.c_str(), reg_offs);
+        LOG_F(
+            WARNING, "%s: attempt to read from reserved/unimplemented register @%02x.%c",
+            this->pci_name.c_str(), reg_offs,
+            size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
+        );
         return 0;
     }
 
@@ -147,8 +150,11 @@ void PCIDevice::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
         this->irq_line = data >> 24;
         break;
     default:
-        LOG_F(WARNING, "%s: attempt to write to reserved/unimplemented register %d",
-              this->pci_name.c_str(), reg_offs);
+        LOG_F(
+            WARNING, "%s: attempt to write to reserved/unimplemented register @%02x.%c = %0*x",
+            this->pci_name.c_str(), reg_offs,
+            size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size, size * 2, value
+        );
     }
 }
 

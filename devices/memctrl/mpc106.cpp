@@ -143,9 +143,10 @@ uint32_t MPC106::pci_read(uint32_t size) {
         } else {
             LOG_F(
                 ERROR,
-                "%s err: read attempt from non-existing PCI device %d",
-                this->name.c_str(),
-                dev_num);
+                "%s err: read attempt from non-existing PCI device %02x:%02x.%x @%02x.%c",
+                this->name.c_str(), bus_num, dev_num, fun_num, reg_offs,
+                size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
+            );
             return 0;
         }
     }
@@ -178,9 +179,11 @@ void MPC106::pci_write(uint32_t value, uint32_t size) {
         } else {
             LOG_F(
                 ERROR,
-                "%s err: write attempt to non-existing PCI device %d",
-                this->name.c_str(),
-                dev_num);
+                "%s err: write attempt to non-existing PCI device %02x:%02x.%x @%02x.%c = %0*x",
+                this->name.c_str(), bus_num, dev_num, fun_num, reg_offs,
+                size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size,
+                size * 2, value
+            );
         }
     }
 }
