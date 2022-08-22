@@ -100,8 +100,8 @@ public:
     }
 
     // MMIO device methods
-    uint32_t read(uint32_t reg_start, uint32_t offset, int size);
-    void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size);
+    uint32_t read(uint32_t rgn_start, uint32_t offset, int size);
+    void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size);
 
     // InterruptCtrl methods
     uint32_t register_dev_int(IntSrc src_id);
@@ -182,8 +182,8 @@ public:
     }
 
     // MMIO device methods
-    uint32_t read(uint32_t reg_start, uint32_t offset, int size);
-    void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size);
+    uint32_t read(uint32_t rgn_start, uint32_t offset, int size);
+    void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size);
 
     // InterruptCtrl methods
     uint32_t register_dev_int(IntSrc src_id);

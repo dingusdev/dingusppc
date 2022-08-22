@@ -155,7 +155,7 @@ public:
     }
 
     /* MMIODevice methods */
-    uint32_t read(uint32_t reg_start, uint32_t offset, int size);
+    uint32_t read(uint32_t rgn_start, uint32_t offset, int size);
     void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size);
 
     void insert_ram_dimm(int slot_num, uint32_t capacity);

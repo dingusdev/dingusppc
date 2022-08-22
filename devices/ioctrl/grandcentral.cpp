@@ -94,7 +94,7 @@ void GrandCentral::notify_bar_change(int bar_num)
     }
 }
 
-uint32_t GrandCentral::read(uint32_t reg_start, uint32_t offset, int size)
+uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
 {
     if (offset & 0x10000) { // Device register space
         unsigned subdev_num = (offset >> 12) & 0xF;
@@ -160,7 +160,7 @@ uint32_t GrandCentral::read(uint32_t reg_start, uint32_t offset, int size)
     return 0;
 }
 
-void GrandCentral::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
+void GrandCentral::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
 {
     if (offset & 0x10000) { // Device register space
         unsigned subdev_num = (offset >> 12) & 0xF;

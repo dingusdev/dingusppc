@@ -111,7 +111,7 @@ void Bandit::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
     }
 }
 
-uint32_t Bandit::read(uint32_t reg_start, uint32_t offset, int size)
+uint32_t Bandit::read(uint32_t rgn_start, uint32_t offset, int size)
 {
     int      bus_num, dev_num, fun_num;
     uint8_t  reg_offs;
@@ -178,7 +178,7 @@ uint32_t Bandit::read(uint32_t reg_start, uint32_t offset, int size)
     return result;
 }
 
-void Bandit::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
+void Bandit::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
 {
     int      bus_num, dev_num, fun_num;
     uint8_t  reg_offs;
@@ -284,7 +284,7 @@ Chaos::Chaos(std::string name) : PCIHost()
     this->name = name;
 }
 
-uint32_t Chaos::read(uint32_t reg_start, uint32_t offset, int size)
+uint32_t Chaos::read(uint32_t rgn_start, uint32_t offset, int size)
 {
     int      bus_num, dev_num, fun_num;
     uint8_t  reg_offs;
@@ -340,7 +340,7 @@ uint32_t Chaos::read(uint32_t reg_start, uint32_t offset, int size)
     return result;
 }
 
-void Chaos::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
+void Chaos::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
 {
     int      bus_num, dev_num, fun_num;
     uint8_t  reg_offs;

@@ -74,10 +74,10 @@ int MPC106::device_postinit()
     return 0;
 }
 
-uint32_t MPC106::read(uint32_t reg_start, uint32_t offset, int size) {
+uint32_t MPC106::read(uint32_t rgn_start, uint32_t offset, int size) {
     uint32_t result;
 
-    if (reg_start == 0xFE000000) {
+    if (rgn_start == 0xFE000000) {
         // broadcast I/O request to devices that support I/O space
         // until a device returns true that means "request accepted"
         for (auto& dev : this->io_space_devs) {
@@ -98,8 +98,8 @@ uint32_t MPC106::read(uint32_t reg_start, uint32_t offset, int size) {
     return 0;
 }
 
-void MPC106::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size) {
-    if (reg_start == 0xFE000000) {
+void MPC106::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size) {
+    if (rgn_start == 0xFE000000) {
         // broadcast I/O request to devices that support I/O space
         // until a device returns true that means "request accepted"
         for (auto& dev : this->io_space_devs) {
