@@ -133,9 +133,9 @@ int CharIoStdin::rcv_char(uint8_t* c) {
 #include <sys/select.h>
 #include <unistd.h>
 
-struct sigaction    old_act_sigint, new_act_sigint;
-struct sigaction    old_act_sigterm, new_act_sigterm;
-struct termios      orig_termios;
+static struct sigaction    old_act_sigint, new_act_sigint;
+static struct sigaction    old_act_sigterm, new_act_sigterm;
+static struct termios      orig_termios;
 
 void CharIoStdin::mysig_handler(int signum)
 {
