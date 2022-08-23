@@ -22,3 +22,21 @@ Device ID: 0x0002 (MPC106)
 Within the Mac's own device tree, this is usually device 0.
 
 It also spans for 0x7F000000 bytes starting from 0x80000000.
+
+# Adding PCI devices to dingusppc
+
+The dingusppc CLI can add known PCI devices to a PCI slot (A1, B1, C1).
+
+Only the following device numbers are probed by Open Firmware:
+
+- @0 used by pci [grackle]
+- @c slot PERCH interrupt 0x1c
+- @d slot A1 interrupt 0x17
+- @e slot B1 interrupt 0x18
+- @f slot C1 interrupt 0x19
+- @10 used by mac-io [heathrow] which includes many devices with different interrupts
+- @12 slot F1 interrupt 0x16 used by AtiRageGT or AtiRagePro
+
+With minor additions to source code, dingusppc can add a known PCI device to any device number between @1 and @1f except for @10 and @12.
+
+A nvramrc patch can make Open Firmware probe the other device numbers. An OS might be able to probe these other devices numbers even if they are not probed by Open Firmware.

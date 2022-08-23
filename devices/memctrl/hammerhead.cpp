@@ -40,7 +40,7 @@ HammerheadCtrl::HammerheadCtrl() : MemCtrlBase()
     add_mmio_region(0xF8000000, 0x500, this);
 }
 
-uint32_t HammerheadCtrl::read(uint32_t reg_start, uint32_t offset, int size)
+uint32_t HammerheadCtrl::read(uint32_t rgn_start, uint32_t offset, int size)
 {
     uint32_t result;
 

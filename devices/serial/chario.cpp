@@ -133,9 +133,9 @@ int CharIoStdin::rcv_char(uint8_t* c) {
 #include <sys/select.h>
 #include <unistd.h>
 
-struct sigaction    old_act_sigint, new_act_sigint;
-struct sigaction    old_act_sigterm, new_act_sigterm;
-struct termios      orig_termios;
+static struct sigaction    old_act_sigint, new_act_sigint;
+static struct sigaction    old_act_sigterm, new_act_sigterm;
+static struct termios      orig_termios;
 
 void CharIoStdin::mysig_handler(int signum)
 {
@@ -340,7 +340,7 @@ bool CharIoSocket::rcv_char_available()
 
     if (consecutivechars >= 15) {
         consecutivechars++;
-        if (consecutivechars >= 400)
+        if (consecutivechars >= 800)
             consecutivechars = 0;
         return 0;
     }
@@ -378,14 +378,19 @@ bool CharIoSocket::rcv_char_available()
              if (FD_ISSET(sockfd, &readfds)) {
                 uint8_t c;
                 int received = recv(sockfd, &c, 1, 0);
-                if (received == -1 && acceptfd != -1) {
-                    LOG_F(INFO, "socket sock read err: %s", strerror(errno));
+                if (received == -1) {
+                    if (acceptfd == -1) {
+                        //LOG_F(INFO, "socket sock read (not accepted yet) err: %s", strerror(errno)); // this happens once before accept
+                    }
+                    else {
+                        LOG_F(INFO, "socket sock read err: %s", strerror(errno)); // should never happen
+                    }
                 }
                 else if (received == 1) {
-                    LOG_F(INFO, "socket sock read '%c'", c);
+                    LOG_F(INFO, "socket sock read '%c'", c); // should never happen
                 }
                 else {
-                    LOG_F(INFO, "socket sock read %d", received);
+                    LOG_F(INFO, "socket sock read %d", received); // should never happen
                 }
 
                 if (acceptfd == -1) {

@@ -103,11 +103,11 @@ void ControlVideo::notify_bar_change(int bar_num)
     }
 }
 
-uint32_t ControlVideo::read(uint32_t reg_start, uint32_t offset, int size)
+uint32_t ControlVideo::read(uint32_t rgn_start, uint32_t offset, int size)
 {
     uint32_t result = 0;
 
-    if (reg_start == this->vram_base) {
+    if (rgn_start == this->vram_base) {
         if (offset >= 0x800000) {
             return read_mem_rev(&this->vram_ptr[offset - 0x800000], size);
         } else {
@@ -124,15 +124,15 @@ uint32_t ControlVideo::read(uint32_t reg_start, uint32_t offset, int size)
         result = this->cur_mon_id << 6;
         break;
     default:
-        LOG_F(INFO, "read from 0x%08X:0x%08X", reg_start, offset);
+        LOG_F(INFO, "read from 0x%08X:0x%08X", rgn_start, offset);
     }
 
     return BYTESWAP_32(result);
 }
 
-void ControlVideo::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
+void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
 {
-    if (reg_start == this->vram_base) {
+    if (rgn_start == this->vram_base) {
         if (offset >= 0x800000) {
             write_mem_rev(&this->vram_ptr[offset - 0x800000], value, size);
         } else {
@@ -209,7 +209,7 @@ void ControlVideo::write(uint32_t reg_start, uint32_t offset, uint32_t value, in
         this->int_enable = value;
         break;
     default:
-        LOG_F(INFO, "write 0x%08X to 0x%08X:0x%08X", value, reg_start, offset);
+        LOG_F(INFO, "write 0x%08X to 0x%08X:0x%08X", value, rgn_start, offset);
     }
 }
 

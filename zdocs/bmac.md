@@ -1,5 +1,5 @@
 The BMac is an Ethernet controller featured in G3 and early G4 Macs. As described by a Linux contributor, this controller "appears to have some parts in common with the Sun "Happy Meal" (HME) controller".
- 
+
 The max frame size is 0x5EE bytes.
 
 It resides on 0xF3011000, with Writing DMA on 0xF3008200 and Reading DMA on 0xF3008300.

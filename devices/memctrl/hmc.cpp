@@ -41,7 +41,7 @@ HMC::HMC() : MemCtrlBase()
     this->bit_pos = 0;
 }
 
-uint32_t HMC::read(uint32_t reg_start, uint32_t offset, int size)
+uint32_t HMC::read(uint32_t rgn_start, uint32_t offset, int size)
 {
     if (!offset)
         return !!(this->ctrl_reg & (1ULL << this->bit_pos++));
@@ -49,7 +49,7 @@ uint32_t HMC::read(uint32_t reg_start, uint32_t offset, int size)
         return 0; /* FIXME: what should be returned for invalid offsets? */
 }
 
-void HMC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
+void HMC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
 {
     uint64_t bit;
 

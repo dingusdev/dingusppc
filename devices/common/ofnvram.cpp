@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/** @file Utilities for working with the Apple OpenFirmware NVRAM partition. */
+/** @file Utilities for working with the Apple Open Firmware NVRAM partition. */
 
 #include <devices/common/ofnvram.h>
 #include <endianswap.h>
@@ -36,6 +36,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <tuple>
 
 using namespace std;
+
+static uint32_t str2env(string& num_str) {
+    try {
+        return stoul(num_str, NULL, 0);
+    } catch (invalid_argument& exc) {
+        try {
+            string num_str2 = string("0x") + num_str;
+            return std::stoul(num_str2, NULL, 0);
+        } catch (invalid_argument& exc) {
+            throw invalid_argument(string("Cannot convert ") + num_str);
+        }
+    }
+}
 
 int OfNvramUtils::init()
 {
@@ -146,7 +159,7 @@ void OfNvramUtils::printenv()
     int i;
 
     if (!this->validate()) {
-        cout << "Invalid OpenFirmware partition content!" << endl;
+        cout << "Invalid Open Firmware partition content!" << endl;
         return;
     }
 
@@ -174,10 +187,9 @@ void OfNvramUtils::printenv()
         case OF_VAR_TYPE_STR:
             uint16_t str_offset = READ_WORD_BE_A(&this->buf[offset]) - OF_NVRAM_OFFSET;
             uint16_t str_len    = READ_WORD_BE_A(&this->buf[offset+2]);
-            if (str_len) {
-                char value[32] = "";
-                std::memcpy(value, (char *)&(this->buf[str_offset]), str_len);
-                cout << value;
+            for (i = 0; i < str_len; i++) {
+                char ch = *(char *)&(this->buf[str_offset + i]);
+                if (ch == '\x0D') cout << endl; else cout << ch;
             }
             cout << endl;
         }
@@ -191,7 +203,7 @@ void OfNvramUtils::setenv(string var_name, string value)
     int i, flag;
 
     if (!this->validate()) {
-        cout << "Invalid OpenFirmware partition content!" << endl;
+        cout << "Invalid Open Firmware partition content!" << endl;
         return;
     }
 
@@ -221,7 +233,7 @@ void OfNvramUtils::setenv(string var_name, string value)
         }
     }
 
-    // see if one of the stanard properties should be changed
+    // see if one of the standard properties should be changed
     if (of_vars.find(var_name) == of_vars.end()) {
         cout << "Attempt to change unknown variable " << var_name << endl;
         return;
@@ -231,47 +243,63 @@ void OfNvramUtils::setenv(string var_name, string value)
     auto offset = std::get<1>(of_vars.at(var_name));
 
     if (type == OF_VAR_TYPE_INT) {
-        cout << "Changing of integer variables not supported yet" << endl;
-    } else {
-        uint16_t str_len = READ_WORD_BE_A(&this->buf[offset+2]);
-        if (value.length() > str_len) {
-            // we're going to allocate additional space
-            // for the new string in the heap between here and top.
-            // TODO: implement removal of dead strings and heap compaction
-
-            OfNvramHdr *hdr = (OfNvramHdr *)&this->buf[0];
-            uint16_t here = READ_WORD_BE_A(&hdr->here);
-            uint16_t top  = READ_WORD_BE_A(&hdr->top);
-
-            // check if there is enough space in the heap for the new string
-            if ((top - value.length()) < here) {
-                cout << "No room in the heap!" << endl;
-                return;
-            }
-
-            // allocate required space by lowering top
-            top -= value.length();
-            i = 0;
-
-            // copy new string into NVRAM buffer char by char
-            for(char& ch : value) {
-                this->buf[top + i - OF_NVRAM_OFFSET] = ch;
-                i++;
-            }
-
-            // stuff new values into the variable state
-            WRITE_WORD_BE_A(&this->buf[offset+0], top);
-            WRITE_WORD_BE_A(&this->buf[offset+2], value.length());
-
-            // update partition header
-            WRITE_WORD_BE_A(&hdr->top, top);
-
-            // update physical NVRAM
-            this->update_partition();
-            cout << " ok" << endl; // mimic Forth
+        uint32_t num;
+        try {
+            num = str2env(value);
+        } catch (invalid_argument& exc) {
+            cout << exc.what() << endl;
             return;
-        } else {
-            // TODO: replace existing string
         }
+        WRITE_DWORD_BE_A(&this->buf[offset], num);
+        this->update_partition();
+        cout << " ok" << endl; // mimic Forth
+    } else {
+        uint16_t str_offset = READ_WORD_BE_A(&this->buf[offset]);
+        uint16_t str_len    = READ_WORD_BE_A(&this->buf[offset+2]);
+
+        OfNvramHdr *hdr = (OfNvramHdr *)&this->buf[0];
+        uint16_t here = READ_WORD_BE_A(&hdr->here);
+        uint16_t top  = READ_WORD_BE_A(&hdr->top);
+
+        // check if there is enough space in the heap for the new string
+        // the heap is grown down from offset 0x2000 and cannot be lower than here (0x185c)
+        uint16_t new_top = top + str_len - value.length();
+        if (new_top < here) {
+            cout << "No room in the heap!" << endl;
+            return;
+        }
+
+        // remove the old string
+        std::memmove(&this->buf[top + str_len - OF_NVRAM_OFFSET], &this->buf[top - OF_NVRAM_OFFSET], str_offset - top);
+        for (auto& var : of_vars) {
+            auto type   = std::get<0>(var.second);
+            auto offset = std::get<1>(var.second);
+            if (type == OF_VAR_TYPE_STR) {
+                uint16_t i_str_offset = READ_WORD_BE_A(&this->buf[offset]);
+                if (i_str_offset < str_offset) {
+                    WRITE_WORD_BE_A(&this->buf[offset], i_str_offset + str_len);
+                }
+            }
+        }
+        top = new_top;
+
+        // copy new string into NVRAM buffer char by char
+        i = 0;
+        for(char& ch : value) {
+            this->buf[top + i - OF_NVRAM_OFFSET] = ch == '\x0A' ? '\x0D' : ch;
+            i++;
+        }
+
+        // stuff new values into the variable state
+        WRITE_WORD_BE_A(&this->buf[offset+0], top);
+        WRITE_WORD_BE_A(&this->buf[offset+2], value.length());
+
+        // update partition header
+        WRITE_WORD_BE_A(&hdr->top, top);
+
+        // update physical NVRAM
+        this->update_partition();
+        cout << " ok" << endl; // mimic Forth
+        return;
     }
 }

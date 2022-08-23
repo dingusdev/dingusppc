@@ -45,6 +45,8 @@ enum {
     PCI_CFG_CIS_PTR   = 0x28, // Cardbus CIS Pointer
     PCI_CFG_SUBSYS_ID = 0x2C, // Subsysten IDs
     PCI_CFG_ROM_BAR   = 0x30, // expansion ROM base address
+    PCI_CFG_CAP_PTR   = 0x34, // capabilities pointer
+    PCI_CFG_DWORD_14  = 0x38, // reserved
     PCI_CFG_DWORD_15  = 0x3C, // Max_Lat, Min_Gnt, Int_Pin and Int_Line registers
 };
 
@@ -117,6 +119,7 @@ protected:
     uint8_t     cache_ln_sz = 0; // cache line size
     uint16_t    subsys_id = 0;
     uint16_t    subsys_vndr = 0;
+    uint8_t     cap_ptr = 0;
     uint8_t     max_lat = 0;
     uint8_t     min_gnt = 0;
     uint8_t     irq_pin = 0;

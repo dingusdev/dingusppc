@@ -33,7 +33,7 @@ PCIDevice::PCIDevice(std::string name)
 {
     this->pci_name = name;
 
-    this->pci_rd_stat       = []() { return 0; };
+    this->pci_rd_stat       = [this]() { return this->status; };
     this->pci_rd_cmd        = [this]() { return this->command; };
     this->pci_rd_bist       = []() { return 0; };
     this->pci_rd_lat_timer  = [this]() { return this->lat_timer; };
@@ -83,9 +83,15 @@ uint32_t PCIDevice::pci_cfg_read(uint32_t reg_offs, uint32_t size)
     case PCI_CFG_DWORD_15:
         result = (max_lat << 24) | (min_gnt << 16) | (irq_pin << 8) | irq_line;
         break;
+    case PCI_CFG_CAP_PTR:
+        result = cap_ptr;
+        break;
     default:
-        LOG_F(WARNING, "%s: attempt to read from reserved/unimplemented register %d",
-              this->pci_name.c_str(), reg_offs);
+        LOG_F(
+            WARNING, "%s: attempt to read from reserved/unimplemented register @%02x.%c",
+            this->pci_name.c_str(), reg_offs,
+            size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
+        );
         return 0;
     }
 
@@ -147,8 +153,11 @@ void PCIDevice::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
         this->irq_line = data >> 24;
         break;
     default:
-        LOG_F(WARNING, "%s: attempt to write to reserved/unimplemented register %d",
-              this->pci_name.c_str(), reg_offs);
+        LOG_F(
+            WARNING, "%s: attempt to write to reserved/unimplemented register @%02x.%c = %0*x",
+            this->pci_name.c_str(), reg_offs,
+            size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size, size * 2, value
+        );
     }
 }
 
@@ -178,14 +187,14 @@ int PCIDevice::attach_exp_rom_image(const std::string img_path)
 
         // determine image size
         img_file.seekg(0, std::ios::end);
-        this->exp_rom_size = img_file.tellg();
+        uint32_t exp_rom_image_size = img_file.tellg();
 
         // verify PCI struct offset
         uint32_t pci_struct_offset = 0;
         img_file.seekg(0x18, std::ios::beg);
         img_file.read((char *)&pci_struct_offset, sizeof(pci_struct_offset));
 
-        if (pci_struct_offset > this->exp_rom_size) {
+        if (pci_struct_offset > exp_rom_image_size) {
             throw std::runtime_error("invalid PCI structure offset");
         }
 
@@ -197,13 +206,22 @@ int PCIDevice::attach_exp_rom_image(const std::string img_path)
             throw std::runtime_error("unexpected PCI struct signature");
         }
 
+        // find minimum rom size for the rom file (power of 2 >= 0x800)
+        for (this->exp_rom_size = 1 << 11; this->exp_rom_size < exp_rom_image_size; this->exp_rom_size <<= 1) {}
+
         // ROM image ok - go ahead and load it
         this->exp_rom_data = std::unique_ptr<uint8_t[]> (new uint8_t[this->exp_rom_size]);
         img_file.seekg(0, std::ios::beg);
-        img_file.read((char *)this->exp_rom_data.get(), this->exp_rom_size);
+        img_file.read((char *)this->exp_rom_data.get(), exp_rom_image_size);
+        memset(&this->exp_rom_data[exp_rom_image_size], 0xff, this->exp_rom_size - exp_rom_image_size);
 
-        // align ROM image size on a 2KB boundary and initialize ROM config
-        this->exp_rom_size = (this->exp_rom_size + 0x7FFU) & 0xFFFFF800UL;
+        if (exp_rom_image_size == this->exp_rom_size) {
+            LOG_F(INFO, "%s: loaded expansion rom (%d bytes).", this->pci_name.c_str(), this->exp_rom_size);
+        }
+        else {
+            LOG_F(WARNING, "%s: loaded expansion rom (%d bytes adjusted to %d bytes).", this->pci_name.c_str(), exp_rom_image_size, this->exp_rom_size);
+        }
+
         this->exp_bar_cfg  = ~(this->exp_rom_size - 1);
     }
     catch (const std::exception& exc) {

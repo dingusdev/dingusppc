@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <devices/common/nvram.h>
 
-/** @file Utilities for working with the Apple OpenFirmware NVRAM partition. */
+/** @file Utilities for working with the Apple Open Firmware NVRAM partition. */
 
 #define OF_NVRAM_OFFSET 0x1800
 #define OF_NVRAM_SIG    0x1275
@@ -36,12 +36,12 @@ enum {
 };
 
 typedef struct {
-    uint16_t    sig;        // partition signature (= 0x1275)
-    uint8_t     version;    // header version
-    uint8_t     num_pages;  // number of memory pages
-    uint16_t    checksum;   // partition checksum
-    uint16_t    here;       // offset to the next free byte (bottom-up)
-    uint16_t    top;        // offset to the last free byte (top-down)
+    uint16_t    sig;        // >nv.1275     partition signature (= 0x1275)
+    uint8_t     version;    // >nv.version  header version (= 5)
+    uint8_t     num_pages;  // >nv.pages    number of memory pages (= 8 pages 0x100 bytes each)
+    uint16_t    checksum;   // >nv.checksum partition checksum
+    uint16_t    here;       // >nv.here     offset to the next free byte (offset of after last string length; = 0x185c)
+    uint16_t    top;        // >nv.top      offset to the last free byte (offset of string with lowest offset; < 0x2000)
 } OfNvramHdr;
 
 class OfNvramUtils {

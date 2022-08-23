@@ -8,7 +8,7 @@ Code execution generally begins at 0xFFF00100, which the reset exception vector.
 
 # BATs
 
-The 601 BATs are emulated by the OpenFirmware.
+The 601 BATs are emulated by the Open Firmware.
 
 # TLBs
 

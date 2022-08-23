@@ -74,10 +74,10 @@ int MPC106::device_postinit()
     return 0;
 }
 
-uint32_t MPC106::read(uint32_t reg_start, uint32_t offset, int size) {
+uint32_t MPC106::read(uint32_t rgn_start, uint32_t offset, int size) {
     uint32_t result;
 
-    if (reg_start == 0xFE000000) {
+    if (rgn_start == 0xFE000000) {
         // broadcast I/O request to devices that support I/O space
         // until a device returns true that means "request accepted"
         for (auto& dev : this->io_space_devs) {
@@ -98,8 +98,8 @@ uint32_t MPC106::read(uint32_t reg_start, uint32_t offset, int size) {
     return 0;
 }
 
-void MPC106::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size) {
-    if (reg_start == 0xFE000000) {
+void MPC106::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size) {
+    if (rgn_start == 0xFE000000) {
         // broadcast I/O request to devices that support I/O space
         // until a device returns true that means "request accepted"
         for (auto& dev : this->io_space_devs) {
@@ -143,9 +143,10 @@ uint32_t MPC106::pci_read(uint32_t size) {
         } else {
             LOG_F(
                 ERROR,
-                "%s err: read attempt from non-existing PCI device %d",
-                this->name.c_str(),
-                dev_num);
+                "%s err: read attempt from non-existing PCI device %02x:%02x.%x @%02x.%c",
+                this->name.c_str(), bus_num, dev_num, fun_num, reg_offs,
+                size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
+            );
             return 0;
         }
     }
@@ -178,9 +179,11 @@ void MPC106::pci_write(uint32_t value, uint32_t size) {
         } else {
             LOG_F(
                 ERROR,
-                "%s err: write attempt to non-existing PCI device %d",
-                this->name.c_str(),
-                dev_num);
+                "%s err: write attempt to non-existing PCI device %02x:%02x.%x @%02x.%c = %0*x",
+                this->name.c_str(), bus_num, dev_num, fun_num, reg_offs,
+                size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size,
+                size * 2, value
+            );
         }
     }
 }

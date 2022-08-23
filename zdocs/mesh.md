@@ -2,7 +2,7 @@
 
 | Register Name    | Number |
 |:----------------:|:------:|
-| R_COUNT0         | 0x0    | 
+| R_COUNT0         | 0x0    |
 | R_COUNT1         | 0x1    |
 | R_FIFO           | 0x2    |
 | R_CMD            | 0x3    |
@@ -23,7 +23,7 @@
 
 | Command Name     | Number |
 |:----------------:|:------:|
-| NOP              | 0x0    | 
+| NOP              | 0x0    |
 | ARBITRATE        | 0x1    |
 | SELECT           | 0x2    |
 | COMMAND          | 0x3    |

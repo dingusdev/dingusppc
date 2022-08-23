@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <map>
 #include <memory>
 #include <sstream>
+#include <cstring>
 #include <stdio.h>
 #include <string>
 #include "../cpu/ppc/ppcdisasm.h"
@@ -35,6 +36,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/ofnvram.h>
 #include "memaccess.h"
 #include "utils/profiler.h"
+
+#ifdef _WIN32
+#else
+#include <signal.h>
+#include <termios.h>
+#include <unistd.h>
+#endif
 
 #ifdef ENABLE_68K_DEBUGGER // optionally defined in CMakeLists.txt
     #include <capstone/capstone.h>
@@ -368,6 +376,25 @@ static void print_gprs() {
     }
 }
 
+static struct sigaction    old_act_sigint, new_act_sigint;
+static struct sigaction    old_act_sigterm, new_act_sigterm;
+static struct termios      orig_termios;
+
+static void mysig_handler(int signum)
+{
+    // restore original terminal state
+    tcsetattr(STDIN_FILENO, TCSANOW, &orig_termios);
+
+    // restore original signal handler for SIGINT
+    signal(SIGINT, old_act_sigint.sa_handler);
+    signal(SIGTERM, old_act_sigterm.sa_handler);
+
+    LOG_F(INFO, "Old terminal state restored, SIG#=%d", signum);
+
+    // re-post signal
+    raise(signum);
+}
+
 void enter_debugger() {
     string inp, cmd, addr_str, expr_str, reg_expr, last_cmd, reg_value_str,
            inst_string, inst_num_str, profile_name, sub_cmd;
@@ -587,6 +614,53 @@ void enter_debugger() {
             if (ofnvram->init())
                 continue;
             ofnvram->setenv(var_name, value);
+        } else if (cmd == "nvedit") {
+            cout << "===== press CNTRL-C to save =====" << endl;
+
+            // save original terminal state
+            tcgetattr(STDIN_FILENO, &orig_termios);
+            struct termios new_termios = orig_termios;
+
+            new_termios.c_cflag &= ~(CSIZE | PARENB);
+            new_termios.c_cflag |= CS8;
+
+            new_termios.c_lflag &= ~(ISIG | NOFLSH | ICANON | ECHOCTL);
+            new_termios.c_lflag |= NOFLSH | ECHONL;
+
+            // new_termios.c_iflag &= ~(ICRNL | IGNCR);
+            // new_termios.c_iflag |= INLCR;
+
+            // new_termios.c_oflag &= ~(ONOCR | ONLCR);
+            // new_termios.c_oflag |= OPOST | OCRNL | ONLRET;
+
+            tcsetattr(STDIN_FILENO, TCSANOW, &new_termios);
+
+            // save original signal handler for SIGINT
+            // then redirect SIGINT to new handler
+            memset(&new_act_sigint, 0, sizeof(new_act_sigint));
+            new_act_sigint.sa_handler = mysig_handler;
+            sigaction(SIGINT, &new_act_sigint, &old_act_sigint);
+
+            // save original signal handler for SIGTERM
+            // then redirect SIGTERM to new handler
+            memset(&new_act_sigterm, 0, sizeof(new_act_sigterm));
+            new_act_sigterm.sa_handler = mysig_handler;
+            sigaction(SIGTERM, &new_act_sigterm, &old_act_sigterm);
+
+            getline(cin, inp, '\x03');
+
+            // restore original terminal state
+            tcsetattr(STDIN_FILENO, TCSANOW, &orig_termios);
+
+            // restore original signal handler for SIGINT
+            signal(SIGINT, old_act_sigint.sa_handler);
+
+            // restore original signal handler for SIGTERM
+            signal(SIGTERM, old_act_sigterm.sa_handler);
+
+            if (ofnvram->init())
+                continue;
+            ofnvram->setenv("nvramrc", inp);
         } else {
             cout << "Unknown command: " << cmd << endl;
             continue;

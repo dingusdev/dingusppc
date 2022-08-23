@@ -9,7 +9,7 @@
 | 0x68080000    | Opcode Dispatch Table                  |
 | 0x68FFE000    | KernelData                             |
 | 0x68FFF000    | EmulatorData                           |
-| 0xFF800000    | OpenFirmware                           |
+| 0xFF800000    | Open Firmware                          |
 | 0xFFF0C000    | HardwarePriv                           |
 
 # PHYSICAL MEMORY MAP
@@ -44,14 +44,14 @@
 
 ### Main Memory
 * 0x00000000 - 0x7FFFFFFF
-    Mac OS 
+    Mac OS
 
-* 0x00400000 - OpenFirmware
- 
+* 0x00400000 - Open Firmware
+
 ### PCI/Device Memory Area 0x80000000 - 0xFF000000
-    
+
 * 0x81000000 - Video Display Device (normally)
- 
+
 * 0xF3000000 -
     Mac OS I/O Device area
 

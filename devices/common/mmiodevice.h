@@ -31,8 +31,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 class MMIODevice : public HWComponent {
 public:
     MMIODevice()                                                                      = default;
-    virtual uint32_t read(uint32_t reg_start, uint32_t offset, int size)              = 0;
-    virtual void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size) = 0;
+    virtual uint32_t read(uint32_t rgn_start, uint32_t offset, int size)              = 0;
+    virtual void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size) = 0;
     virtual ~MMIODevice()                                                             = default;
 };
 

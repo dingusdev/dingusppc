@@ -12,7 +12,7 @@ The Description-Based Direct Memory Access relies on memory-based descriptions, 
 
 | Channel           | Number |
 |:-----------------:|:------:|
-| SCSI0             | 0x0    | 
+| SCSI0             | 0x0    |
 | FLOPPY            | 0x1    |
 | ETHERNET TRANSMIT | 0x2    |
 | ETHERNET RECIEVE  | 0x3    |
@@ -27,9 +27,9 @@ The Description-Based Direct Memory Access relies on memory-based descriptions, 
 # NCR 53C94
 
 The NCR 53C94 is the SCSI controller.
- 
+
 # Register Map
- 
+
 | Offset | Read functionality       |Write functionality        |
 |:------:|:------------------------:|:-------------------------:|
 | 0x0    | Transfer counter LSB     | Transfer counter LSB      |
@@ -49,7 +49,7 @@ The NCR 53C94 is the SCSI controller.
 
 # SWIM 3
 
-The SWIM 3 (Sanders-Wozniak integrated machine 3) is the floppy drive disk controller. As can be inferred by the name, the SWIM III chip is the improvement of a combination of floppy disk driver designs by Steve Wozniak (who worked on his own floppy drive controller for early Apple computers) and Wendell B. Sander (who worked on an MFM-compatible IBM floppy drive controller). 
+The SWIM 3 (Sanders-Wozniak integrated machine 3) is the floppy drive disk controller. As can be inferred by the name, the SWIM III chip is the improvement of a combination of floppy disk driver designs by Steve Wozniak (who worked on his own floppy drive controller for early Apple computers) and Wendell B. Sander (who worked on an MFM-compatible IBM floppy drive controller).
 
 The SWIM chip is resided on the logic board physically and is located at IOBase + 0x15000 in the device tree. It sits between the I/O controller and the floppy disk connector. Its function is to translate the I/O commands to specialized signals to drive the floppy disk drive, i.e. disk spinning speed, head position, phase sync, etc.
 
@@ -79,4 +79,4 @@ Mac OS relies on 8 KB of NVRAM at minimum to run properly. It's usually found at
 
 # Miscellaneous
 
-The Power Mac G3 Beige has an additional register at 0xFF000004, which is dubbed varyingly as the "cpu-id" (by OpenFirmware), the ""systemReg" (display driver) or "MachineID" (platform driver).
+The Power Mac G3 Beige has an additional register at 0xFF000004, which is dubbed varyingly as the "cpu-id" (by Open Firmware), the ""systemReg" (display driver) or "MachineID" (platform driver).

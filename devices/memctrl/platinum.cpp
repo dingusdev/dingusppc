@@ -53,7 +53,7 @@ PlatinumCtrl::PlatinumCtrl() : MemCtrlBase()
     this->display_id = std::unique_ptr<DisplayID> (new DisplayID());
 }
 
-uint32_t PlatinumCtrl::read(uint32_t reg_start, uint32_t offset, int size)
+uint32_t PlatinumCtrl::read(uint32_t rgn_start, uint32_t offset, int size)
 {
     if (size != 4) {
         LOG_F(WARNING, "Platinum: unsupported register access size %d!", size);

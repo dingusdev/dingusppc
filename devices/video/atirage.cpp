@@ -378,11 +378,11 @@ bool ATIRage::pci_io_write(uint32_t offset, uint32_t value, uint32_t size) {
 }
 
 
-uint32_t ATIRage::read(uint32_t reg_start, uint32_t offset, int size)
+uint32_t ATIRage::read(uint32_t rgn_start, uint32_t offset, int size)
 {
-    LOG_F(8, "Reading ATI Rage PCI memory: region=%X, offset=%X, size %d", reg_start, offset, size);
+    LOG_F(8, "Reading ATI Rage PCI memory: region=%X, offset=%X, size %d", rgn_start, offset, size);
 
-    if (reg_start < this->aperture_base || offset > APERTURE_SIZE) {
+    if (rgn_start < this->aperture_base || offset > APERTURE_SIZE) {
         LOG_F(WARNING, "ATI Rage: attempt to read outside the aperture!");
         return 0;
     }
@@ -410,11 +410,11 @@ uint32_t ATIRage::read(uint32_t reg_start, uint32_t offset, int size)
     return 0;
 }
 
-void ATIRage::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
+void ATIRage::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
 {
-    LOG_F(8, "Writing reg=%X, offset=%X, value=%X, size %d", reg_start, offset, value, size);
+    LOG_F(8, "Writing reg=%X, offset=%X, value=%X, size %d", rgn_start, offset, value, size);
 
-    if (reg_start < this->aperture_base || offset > APERTURE_SIZE) {
+    if (rgn_start < this->aperture_base || offset > APERTURE_SIZE) {
         LOG_F(WARNING, "ATI Rage: attempt to write outside the aperture!");
         return;
     }

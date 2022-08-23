@@ -101,7 +101,7 @@ int AMIC::device_postinit()
     return 0;
 }
 
-uint32_t AMIC::read(uint32_t reg_start, uint32_t offset, int size)
+uint32_t AMIC::read(uint32_t rgn_start, uint32_t offset, int size)
 {
     uint32_t  phase_val;
 
@@ -180,7 +180,7 @@ uint32_t AMIC::read(uint32_t reg_start, uint32_t offset, int size)
     return 0;
 }
 
-void AMIC::write(uint32_t reg_start, uint32_t offset, uint32_t value, int size)
+void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
 {
     uint32_t mask;
 

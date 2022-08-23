@@ -63,8 +63,8 @@ public:
     void pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size);
 
     // MMIODevice methods
-    uint32_t read(uint32_t reg_start, uint32_t offset, int size);
-    void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size);
+    uint32_t read(uint32_t rgn_start, uint32_t offset, int size);
+    void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size);
 
 protected:
     void verbose_address_space();
@@ -90,8 +90,8 @@ public:
     };
 
     // MMIODevice methods
-    uint32_t read(uint32_t reg_start, uint32_t offset, int size);
-    void write(uint32_t reg_start, uint32_t offset, uint32_t value, int size);
+    uint32_t read(uint32_t rgn_start, uint32_t offset, int size);
+    void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size);
 
 private:
     std::string name;

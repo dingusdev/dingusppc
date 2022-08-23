@@ -109,10 +109,6 @@ int initialize_gossamer(std::string& id)
     grackle_obj->add_mmio_region(
         0xFF000004, 4096, dynamic_cast<MMIODevice*>(gMachineObj->get_comp_by_name("MachineID")));
 
-    // register the Heathrow I/O controller with the PCI host bridge
-    grackle_obj->pci_register_device(
-        16, dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("Heathrow")));
-
     // allocate ROM region
     if (!grackle_obj->add_rom_region(0xFFC00000, 0x400000)) {
         LOG_F(ERROR, "Could not allocate ROM region!");
@@ -124,15 +120,11 @@ int initialize_gossamer(std::string& id)
     setup_ram_slot("RAM_DIMM_2", 0x56, GET_INT_PROP("rambank2_size"));
     setup_ram_slot("RAM_DIMM_3", 0x55, GET_INT_PROP("rambank3_size"));
 
-    // select built-in GPU name
-    std::string gpu_name = "AtiRageGT";
-    if (id == "pmg3twr") {
-        gpu_name = "AtiRagePro";
-    }
-
-    // register built-in ATI Rage GPU with the PCI host bridge
+    // add pci devices
     grackle_obj->pci_register_device(
-        18, dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name(gpu_name)));
+        16, dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("Heathrow")));
+    grackle_obj->pci_register_device(
+        18, dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name(id == "pmg3twr" ? "AtiRagePro" : "AtiRageGT")));
 
     // add Athens clock generator device and register it with the I2C host
     gMachineObj->add_device("Athens", std::unique_ptr<AthensClocks>(new AthensClocks(0x28)));
