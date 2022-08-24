@@ -90,7 +90,7 @@ uint32_t Bandit::pci_cfg_read(uint32_t reg_offs, uint32_t size)
               this->pci_name.c_str(), reg_offs);
     }
 
-    return 0xFFFFFFFFUL; // PCI spec §6.1
+    return 0;
 }
 
 void Bandit::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
@@ -131,7 +131,7 @@ uint32_t Bandit::read(uint32_t rgn_start, uint32_t offset, int size)
                     this->name.c_str(), bus_num, dev_num, fun_num, reg_offs + (offset & 3),
                     size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
                 );
-                return 0;
+                return 0xFFFFFFFFUL; // PCI spec §6.1
             }
 
             idsel = (this->config_addr >> 11) & 0x1FFFFFU;
@@ -143,7 +143,7 @@ uint32_t Bandit::read(uint32_t rgn_start, uint32_t offset, int size)
                     fun_num, reg_offs + (offset & 3),
                     size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
                 );
-                return 0;
+                return 0xFFFFFFFFUL; // PCI spec §6.1
             }
 
             if (idsel == BANDIT_ID_SEL) { // access to myself
@@ -304,7 +304,7 @@ uint32_t Chaos::read(uint32_t rgn_start, uint32_t offset, int size)
                     this->name.c_str(), bus_num, dev_num, fun_num, reg_offs + (offset & 3),
                     size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
                 );
-                return 0;
+                return 0xFFFFFFFFUL; // PCI spec §6.1
             }
 
             idsel = (this->config_addr >> 11) & 0x1FFFFFU;
@@ -316,7 +316,7 @@ uint32_t Chaos::read(uint32_t rgn_start, uint32_t offset, int size)
                     fun_num, reg_offs + (offset & 3),
                     size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
                 );
-                return 0;
+                return 0xFFFFFFFFUL; // PCI spec §6.1
             }
 
             if (this->dev_map.count(idsel)) {

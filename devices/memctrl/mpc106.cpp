@@ -122,18 +122,19 @@ uint32_t MPC106::pci_read(uint32_t size) {
     int bus_num, dev_num, fun_num, reg_offs;
 
     bus_num = (this->config_addr >> 8) & 0xFF;
-    if (bus_num) {
-        LOG_F(
-            ERROR,
-            "%s err: read attempt from non-local PCI bus, config_addr = %x",
-            this->name.c_str(),
-            this->config_addr);
-        return 0;
-    }
-
     dev_num  = (this->config_addr >> 19) & 0x1F;
     fun_num  = (this->config_addr >> 16) & 0x07;
     reg_offs = (this->config_addr >> 24) & 0xFC;
+
+    if (bus_num) {
+		LOG_F(
+			ERROR,
+			"%s err: read attempt from non-local PCI bus, config_addr = %x %02x:%02x.%x @%02x.%c",
+			this->name.c_str(), this->config_addr, bus_num, dev_num, fun_num, reg_offs,
+			size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
+		);
+        return 0xFFFFFFFFUL; // PCI spec §6.1
+    }
 
     if (dev_num == 0 && fun_num == 0) {    // dev_num 0 is assigned to myself
         return this->pci_cfg_read(reg_offs, size);
@@ -147,7 +148,7 @@ uint32_t MPC106::pci_read(uint32_t size) {
                 this->name.c_str(), bus_num, dev_num, fun_num, reg_offs,
                 size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
             );
-            return 0;
+            return 0xFFFFFFFFUL; // PCI spec §6.1
         }
     }
 
@@ -158,18 +159,20 @@ void MPC106::pci_write(uint32_t value, uint32_t size) {
     int bus_num, dev_num, fun_num, reg_offs;
 
     bus_num = (this->config_addr >> 8) & 0xFF;
-    if (bus_num) {
-        LOG_F(
-            ERROR,
-            "%s err: write attempt to non-local PCI bus, config_addr = %x",
-            this->name.c_str(),
-            this->config_addr);
-        return;
-    }
-
     dev_num  = (this->config_addr >> 19) & 0x1F;
     fun_num  = (this->config_addr >> 16) & 0x07;
     reg_offs = (this->config_addr >> 24) & 0xFC;
+
+    if (bus_num) {
+        LOG_F(
+            ERROR,
+            "%s err: write attempt to non-local PCI bus, config_addr = %x %02x:%02x.%x @%02x.%c = %0*x",
+			this->name.c_str(), this->config_addr, bus_num, dev_num, fun_num, reg_offs,
+			size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size,
+			size * 2, value
+		);
+        return;
+    }
 
     if (dev_num == 0 && fun_num == 0) {    // dev_num 0 is assigned to myself
         this->pci_cfg_write(reg_offs, value, size);
