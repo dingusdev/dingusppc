@@ -293,7 +293,11 @@ void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
     case AMICReg::Int_Ctrl:
         // reset CPU interrupt bit if requested
         if (value & AMIC_INT_CLR) {
-            this->int_ctrl &= ~AMIC_INT_CLR;
+            if (this->int_ctrl & 0x80) {
+                this->int_ctrl &= ~AMIC_INT_CLR;
+                ppc_release_int();
+                LOG_F(5, "AMIC: CPU INT latch cleared");
+            }
         }
         // keep interrupt mode bit
         // and discard read-only IQR state bits
@@ -400,13 +404,19 @@ void AMIC::ack_via2_int(uint32_t irq_id, uint8_t irq_line_state) {
 
 void AMIC::ack_cpu_int(uint32_t irq_id, uint8_t irq_line_state) {
     if (this->int_ctrl & AMIC_INT_MODE) { // 68k interrupt emulation mode?
-        this->int_ctrl |= 0x80; // set CPU interrupt bit
         if (irq_line_state) {
             this->dev_irq_lines |= irq_id;
         } else {
             this->dev_irq_lines &= ~irq_id;
         }
-        ppc_ext_int();
+        if (!(this->int_ctrl & 0x80)) {
+            this->int_ctrl |= 0x80; // set CPU interrupt bit
+            ppc_assert_int();
+            LOG_F(5, "AMIC: CPU INT asserted, source: %d", irq_id);
+        } else {
+            LOG_F(5, "AMIC: CPU INT already latched");
+        }
+
     } else {
         ABORT_F("AMIC: interrupt mode 0 not implemented");
     }

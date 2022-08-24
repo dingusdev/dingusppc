@@ -220,6 +220,7 @@ private:
 
     uint8_t     scsi_dma_cs = 0;   // SCSI DMA control/status register value
 
+    // interrupt state
     uint8_t     int_ctrl = 0;
     uint8_t     dev_irq_lines = 0; // state of the IRQ lines
 
