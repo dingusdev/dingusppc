@@ -120,9 +120,10 @@ private:
     uint8_t     emmo_pin; // factory tester status, active low
 
     // interrupt state
-    uint32_t    int_mask   = 0;
-    uint32_t    int_levels = 0;
-    uint32_t    int_events = 0;
+    uint32_t    int_mask      = 0;
+    uint32_t    int_levels    = 0;
+    uint32_t    int_events    = 0;
+    bool        cpu_int_latch = false;
 
     uint32_t    nvram_addr_hi;
 

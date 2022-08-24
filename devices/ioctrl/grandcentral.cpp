@@ -240,7 +240,10 @@ void GrandCentral::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
             break;
         case MIO_INT_CLEAR1:
             if (value & MACIO_INT_CLR) {
-                this->int_events = 0;
+                this->int_events    = 0;
+                this->cpu_int_latch = false;
+                ppc_release_int();
+                LOG_F(5, "GC: CPU INT latch cleared");
             } else {
                 this->int_events &= BYTESWAP_32(value);
             }
@@ -293,7 +296,13 @@ void GrandCentral::ack_int(uint32_t irq_id, uint8_t irq_line_state)
         }
         // signal CPU interrupt
         if (this->int_events) {
-            ppc_ext_int();
+            if (!this->cpu_int_latch) {
+                this->cpu_int_latch = true;
+                ppc_assert_int();
+                LOG_F(5, "GC: CPU INT asserted, source: %d", irq_id);
+            } else {
+                LOG_F(5, "GC: CPU INT already latched");
+            }
         }
     } else {
         ABORT_F("GC: native interrupt mode not implemented");
