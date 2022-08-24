@@ -62,7 +62,6 @@ ViaCuda::ViaCuda() {
 
     this->_via_ifr = 0; // all flags cleared
     this->_via_ier = 0; // all interrupts disabled
-    this->irq      = 0; // IRQ is not active
 
     // intialize counters/timers
     this->t1_counter  = 0xFFFF;
@@ -249,11 +248,14 @@ void ViaCuda::print_enabled_ints() {
     }
 }
 
-inline void ViaCuda::update_irq() {
-    uint8_t new_irq = !!(this->_via_ifr & this->_via_ier & 0x7F);
-    this->_via_ifr  = (this->_via_ifr & 0x7F) | (new_irq << 7);
-    if (new_irq != this->irq) {
-        this->irq = new_irq;
+void ViaCuda::update_irq()
+{
+    uint8_t active_ints = this->_via_ifr & this->_via_ier & 0x7F;
+    if (active_ints != this->old_ifr) {
+        uint8_t new_irq = !!active_ints;
+        this->_via_ifr  = (active_ints) | (new_irq << 7);
+        this->old_ifr = active_ints;
+        LOG_F(6, "VIA: assert IRQ, IFR=0x%02X", this->_via_ifr);
         this->int_ctrl->ack_int(this->irq_id, new_irq);
     }
 }

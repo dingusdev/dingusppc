@@ -195,7 +195,7 @@ private:
     uint32_t       irq_id;
     uint8_t        _via_ifr;
     uint8_t        _via_ier;
-    uint8_t        irq;
+    uint8_t        old_ifr = 0;
 
     /* Cuda state. */
     uint8_t  old_tip;
