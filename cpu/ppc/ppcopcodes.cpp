@@ -844,7 +844,15 @@ void dppc_interpreter::ppc_mtmsr() {
     }
     reg_s         = (ppc_cur_instruction >> 21) & 31;
     ppc_state.msr = ppc_state.gpr[reg_s];
-    mmu_change_mode();
+
+    // generate External Interrupt Exception
+    // if CPU interrupt line is asserted
+    if (ppc_state.msr & 0x8000 && int_pin) {
+        LOG_F(WARNING, "MTMSR: CPU INT pending, generate CPU exception");
+        ppc_exception_handler(Except_Type::EXC_EXT_INT, 0);
+    } else {
+        mmu_change_mode();
+    }
 }
 
 static inline uint64_t calc_rtcl_value()
@@ -1359,6 +1367,16 @@ void dppc_interpreter::ppc_rfi() {
     uint32_t new_srr1_val        = (ppc_state.spr[SPR::SRR1] & 0x87C0FF73UL);
     uint32_t new_msr_val         = (ppc_state.msr & ~(0x87C0FF73UL));
     ppc_state.msr                = (new_msr_val | new_srr1_val) & 0xFFFBFFFFUL;
+
+    // generate External Interrupt Exception
+    // if CPU interrupt line is still asserted
+    if (ppc_state.msr & 0x8000 && int_pin) {
+        uint32_t save_srr0 = ppc_state.spr[SPR::SRR0] & 0xFFFFFFFCUL;
+        ppc_exception_handler(Except_Type::EXC_EXT_INT, 0);
+        ppc_state.spr[SPR::SRR0] = save_srr0;
+        return;
+    }
+
     ppc_next_instruction_address = ppc_state.spr[SPR::SRR0] & 0xFFFFFFFCUL;
 
     do_ctx_sync(); // RFI is context synchronizing

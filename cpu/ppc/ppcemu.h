@@ -306,6 +306,7 @@ extern jmp_buf exc_env;
 extern bool grab_return;
 
 extern bool power_on;
+extern bool int_pin;
 
 extern bool is_601;        // For PowerPC 601 Emulation
 extern bool is_altivec;    // For Altivec Emulation
@@ -334,7 +335,8 @@ extern void ppc_mmu_init(uint32_t cpu_version);
 
 void ppc_illegalop();
 void ppc_fpu_off();
-void ppc_ext_int();
+void ppc_assert_int();
+void ppc_release_int();
 
 //void ppc_opcode4();
 void ppc_opcode16();

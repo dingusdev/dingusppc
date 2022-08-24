@@ -43,8 +43,8 @@ bool power_on = 1;
 
 SetPRS ppc_state;
 
-bool rc_flag = 0;           // Record flag
-bool oe_flag = 0;    // Overflow flag
+bool rc_flag = 0; // Record flag
+bool oe_flag = 0; // Overflow flag
 
 bool grab_return;
 bool grab_breakpoint;
@@ -53,7 +53,8 @@ uint32_t ppc_cur_instruction;    // Current instruction for the PPC
 uint32_t ppc_effective_address;
 uint32_t ppc_next_instruction_address;    // Used for branching, setting up the NIA
 
-unsigned exec_flags;
+unsigned exec_flags;  // execution control flags
+bool int_pin = false; // interrupt request pin state: true - asserted
 
 /* copy of local variable bb_start_la. Need for correct
    calculation of CPU cycles after setjmp that clobbers
@@ -170,10 +171,18 @@ void ppc_fpu_off() {
     ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::FPU_OFF);
 }
 
-void ppc_ext_int() {
+void ppc_assert_int() {
+    int_pin = true;
     if (ppc_state.msr & 0x8000) {
+        LOG_F(5, "CPU ExtIntHandler called");
         ppc_exception_handler(Except_Type::EXC_EXT_INT, 0);
+    } else {
+        LOG_F(5, "CPU IRQ ignored!");
     }
+}
+
+void ppc_release_int() {
+    int_pin = false;
 }
 
 /** Opcode decoding functions. */
@@ -395,6 +404,9 @@ void ppc_exec_single()
 
     mmu_translate_imem(ppc_state.pc);
     ppc_main_opcode();
+    g_icycles++;
+    process_events();
+
     if (exec_flags) {
         if (exec_flags & EXEF_TIMER) {
             ppc_state.pc += 4;
@@ -405,7 +417,6 @@ void ppc_exec_single()
     } else {
         ppc_state.pc += 4;
     }
-    g_icycles++;
 }
 
 /** Execute PPC code until goal_addr is reached. */
