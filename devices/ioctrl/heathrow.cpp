@@ -262,6 +262,7 @@ void HeathrowIC::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
     case MIO_INT_CLEAR2:
         if (value & MACIO_INT_CLR) {
             this->int_events2 = 0;
+            clear_cpu_int();
         } else {
             this->int_events2 &= BYTESWAP_32(value);
         }
@@ -274,6 +275,7 @@ void HeathrowIC::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
     case MIO_INT_CLEAR1:
         if (value & MACIO_INT_CLR) {
             this->int_events1 = 0;
+            clear_cpu_int();
         } else {
             this->int_events1 &= BYTESWAP_32(value);
         }
@@ -353,7 +355,13 @@ void HeathrowIC::ack_int(uint32_t irq_id, uint8_t irq_line_state)
         }
         // signal CPU interrupt
         if (this->int_events1 || this->int_events2) {
-            ppc_ext_int();
+            if (!this->cpu_int_latch) {
+                this->cpu_int_latch = true;
+                ppc_assert_int();
+                LOG_F(5, "Heathrow: CPU INT asserted, source: %d", irq_id);
+            } else {
+                LOG_F(5, "Heathrow: CPU INT already latched");
+            }
         }
     } else {
         ABORT_F("Heathrow: native interrupt mode not implemented");
@@ -362,6 +370,15 @@ void HeathrowIC::ack_int(uint32_t irq_id, uint8_t irq_line_state)
 
 void HeathrowIC::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state)
 {
+}
+
+void HeathrowIC::clear_cpu_int()
+{
+    if (!this->int_events1 && !this->int_events2) {
+        this->cpu_int_latch = false;
+        ppc_release_int();
+        LOG_F(5, "Heathrow: CPU INT latch cleared");
+    }
 }
 
 static const vector<string> Heathrow_Subdevices = {

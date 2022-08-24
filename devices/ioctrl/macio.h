@@ -202,17 +202,19 @@ protected:
     void notify_bar_change(int bar_num);
 
     void feature_control(const uint32_t value);
+    void clear_cpu_int();
 
 private:
-    uint32_t base_addr   = 0;
-    uint32_t int_events2 = 0;
-    uint32_t int_mask2   = 0;
-    uint32_t int_levels2 = 0;
-    uint32_t int_events1 = 0;
-    uint32_t int_mask1   = 0;
-    uint32_t int_levels1 = 0;
-    uint32_t feat_ctrl   = 0;    // features control register
-    uint32_t aux_ctrl    = 0;    // aux features control register
+    uint32_t base_addr     = 0;
+    uint32_t int_events2   = 0;
+    uint32_t int_mask2     = 0;
+    uint32_t int_levels2   = 0;
+    uint32_t int_events1   = 0;
+    uint32_t int_mask1     = 0;
+    uint32_t int_levels1   = 0;
+    uint32_t feat_ctrl     = 0;    // features control register
+    uint32_t aux_ctrl      = 0;    // aux features control register
+    bool     cpu_int_latch = false;
 
     uint8_t  cpu_id = 0xE0; // CPUID field (LSB of the MIO_HEAT_ID)
     uint8_t  mb_id  = 0x70; // Media Bay ID (bits 15:8 of the MIO_HEAT_ID)
