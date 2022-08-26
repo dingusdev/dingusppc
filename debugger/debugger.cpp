@@ -37,13 +37,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "memaccess.h"
 #include "utils/profiler.h"
 
-#ifdef _WIN32
-#else
-#include <signal.h>
-#include <termios.h>
-#include <unistd.h>
-#endif
-
 #ifdef ENABLE_68K_DEBUGGER // optionally defined in CMakeLists.txt
     #include <capstone/capstone.h>
 #endif
@@ -376,6 +369,12 @@ static void print_gprs() {
     }
 }
 
+#ifndef _WIN32
+
+#include <signal.h>
+#include <termios.h>
+#include <unistd.h>
+
 static struct sigaction    old_act_sigint, new_act_sigint;
 static struct sigaction    old_act_sigterm, new_act_sigterm;
 static struct termios      orig_termios;
@@ -394,6 +393,7 @@ static void mysig_handler(int signum)
     // re-post signal
     raise(signum);
 }
+#endif
 
 void enter_debugger() {
     string inp, cmd, addr_str, expr_str, reg_expr, last_cmd, reg_value_str,
@@ -614,6 +614,7 @@ void enter_debugger() {
             if (ofnvram->init())
                 continue;
             ofnvram->setenv(var_name, value);
+ #ifndef _WIN32
         } else if (cmd == "nvedit") {
             cout << "===== press CNTRL-C to save =====" << endl;
 
@@ -661,6 +662,7 @@ void enter_debugger() {
             if (ofnvram->init())
                 continue;
             ofnvram->setenv("nvramrc", inp);
+#endif
         } else {
             cout << "Unknown command: " << cmd << endl;
             continue;
