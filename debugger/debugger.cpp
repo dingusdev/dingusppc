@@ -19,7 +19,16 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <cpu/ppc/ppcdisasm.h>
+#include <cpu/ppc/ppcemu.h>
+#include <cpu/ppc/ppcmmu.h>
+#include <devices/common/hwinterrupt.h>
+#include <devices/common/ofnvram.h>
+#include "memaccess.h"
+#include <utils/profiler.h>
+
 #include <array>
+#include <cstring>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -27,15 +36,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <map>
 #include <memory>
 #include <sstream>
-#include <cstring>
 #include <stdio.h>
 #include <string>
-#include "../cpu/ppc/ppcdisasm.h"
-#include "../cpu/ppc/ppcemu.h"
-#include "../cpu/ppc/ppcmmu.h"
-#include <devices/common/ofnvram.h>
-#include "memaccess.h"
-#include "utils/profiler.h"
+
+#ifdef DEBUG_CPU_INT
+#include <machines/machinebase.h>
+#include <devices/common/viacuda.h>
+#endif
 
 #ifdef ENABLE_68K_DEBUGGER // optionally defined in CMakeLists.txt
     #include <capstone/capstone.h>
@@ -522,6 +529,7 @@ void enter_debugger() {
                 cout << exc.what() << endl;
             }
         } else if (cmd == "go") {
+            power_on = true;
             ppc_exec(); // won't return!
         } else if (cmd == "disas" || cmd == "da") {
             expr_str = "";
@@ -662,6 +670,34 @@ void enter_debugger() {
             if (ofnvram->init())
                 continue;
             ofnvram->setenv("nvramrc", inp);
+#endif
+#ifdef DEBUG_CPU_INT
+        } else if (cmd == "amicint") {
+            string value;
+            int irq_id;
+            ss >> value;
+            try {
+                irq_id = str2num(value);
+            } catch (invalid_argument& exc) {
+                cout << exc.what() << endl;
+                continue;
+            }
+            InterruptCtrl* int_ctrl = dynamic_cast<InterruptCtrl*>(
+                gMachineObj->get_comp_by_type(HWCompType::INT_CTRL));
+            int_ctrl->ack_int(irq_id, 1);
+        } else if (cmd == "viaint") {
+            string value;
+            int irq_bit;
+            ss >> value;
+            try {
+                irq_bit = str2num(value);
+            } catch (invalid_argument& exc) {
+                cout << exc.what() << endl;
+                continue;
+            }
+            ViaCuda* via_obj = dynamic_cast<ViaCuda*>(gMachineObj->get_comp_by_name("ViaCuda"));
+            ppc_state.pc -= 4;
+            via_obj->assert_int(irq_bit);
 #endif
         } else {
             cout << "Unknown command: " << cmd << endl;

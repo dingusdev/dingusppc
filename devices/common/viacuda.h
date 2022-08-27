@@ -168,6 +168,10 @@ public:
 
     void assert_ctrl_line(ViaLine line);
 
+#ifdef DEBUG_CPU_INT
+    void assert_int(uint8_t flags);
+#endif
+
 private:
     // VIA virtual HW registers
     uint8_t via_regs[16];

@@ -282,6 +282,13 @@ void ViaCuda::assert_t2_int() {
     update_irq();
 }
 
+#ifdef DEBUG_CPU_INT
+void ViaCuda::assert_int(uint8_t flags) {
+    this->_via_ifr |= (flags & 0x7F);
+    update_irq();
+}
+#endif
+
 void ViaCuda::assert_ctrl_line(ViaLine line)
 {
     switch (line) {
