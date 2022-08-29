@@ -96,6 +96,7 @@ static const map<string, string> PropHelp = {
     {"emmo",            "enables/disables factory HW tests during startup"},
     {"cpu",             "specifies CPU"},
     {"adb_devices",     "specifies which ADB device(s) to attach"},
+    {"pds",             "specify device for the processsor direct slot"},
 };
 
 static uint32_t adler32(char *buf, size_t len) {

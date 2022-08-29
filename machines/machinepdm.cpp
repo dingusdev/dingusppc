@@ -42,6 +42,30 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 #include <vector>
 
+void setup_pds() {
+    std::string dev_name = GET_STR_PROP("pds");
+    if (!dev_name.empty()) {
+        if (!DeviceRegistry::device_registered(dev_name)) {
+            LOG_F(WARNING, "specified PDS device %s doesn't exist", dev_name.c_str());
+            return;
+        }
+
+        // attempt to create device object
+        auto dev_obj = DeviceRegistry::get_descriptor(dev_name).m_create_func();
+
+        // safety check
+        if (!dev_obj->supports_type(HWCompType::NUBUS_DEV)) {
+            LOG_F(WARNING, "Cannot use device %s with the PDS", dev_name.c_str());
+            return;
+        }
+
+        // add device to the machine object
+        gMachineObj->add_device(dev_name, std::move(dev_obj));
+
+        LOG_F(INFO, "Plugged %s into the PDS/VDS slot", dev_name.c_str());
+    }
+}
+
 class MachinePdm : public Machine {
 public:
     static std::unique_ptr<HWComponent> create6100() {
@@ -107,6 +131,10 @@ int MachinePdm::initialize(const std::string &id) {
         return -1;
     }
 
+    // find and attach devices to the processor direct slot (PDS)
+    // aka video direct slot (VDS)
+    setup_pds();
+
     // Init virtual CPU and request MPC601
     ppc_cpu_init(hmc_obj, PPC_VER::MPC601, true, 7833600ULL);
 
@@ -128,6 +156,8 @@ static const PropMap pm6100_settings = {
         new IntProperty(0, std::vector<uint32_t>({0, 2, 4, 8, 16, 32, 64, 128}))},
     {"mon_id",
         new StrProperty("HiRes12-14in", PDMBuiltinMonitorIDs)},
+    {"pds",
+        new StrProperty("")},
     {"emmo",
         new BinProperty(0)},
 };
