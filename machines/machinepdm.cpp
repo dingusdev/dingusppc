@@ -36,6 +36,35 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 #include <vector>
 
+void setup_pds()
+{
+    std::string dev_name = GET_STR_PROP("pds");
+    if (!dev_name.empty()) {
+        if (!DeviceRegistry::device_registered(dev_name)) {
+            LOG_F(WARNING, "specified PDS device %s doesn't exist", dev_name.c_str());
+            goto empty_slot;
+        }
+
+        // attempt to create device object
+        auto dev_obj = DeviceRegistry::get_descriptor(dev_name).m_create_func();
+
+        // safety check
+        if (!dev_obj->supports_type(HWCompType::PDS_DEV)) {
+            LOG_F(WARNING, "Cannot use device %s with the PDS", dev_name.c_str());
+            goto empty_slot;
+        }
+
+        // add device to the machine object
+        gMachineObj->add_device(dev_name, std::move(dev_obj));
+
+        LOG_F(INFO, "PDS slot: %s", dev_name.c_str());
+        return;
+    }
+
+empty_slot:
+    LOG_F(INFO, "PDS slot: empty");
+}
+
 int initialize_pdm(std::string& id)
 {
     uint16_t machine_id;
@@ -81,6 +110,9 @@ int initialize_pdm(std::string& id)
     // add internal SCSI bus
     gMachineObj->add_device("SCSI0", std::unique_ptr<ScsiBus>(new ScsiBus()));
 
+    // set up the processor direct slot
+    setup_pds();
+
     // Init virtual CPU and request MPC601
     ppc_cpu_init(hmc_obj, PPC_VER::MPC601, 7812500ULL);
 
@@ -102,6 +134,8 @@ static const PropMap pm6100_settings = {
         new IntProperty(0, vector<uint32_t>({0, 8, 16, 32, 64, 128}))},
     {"mon_id",
         new StrProperty("HiRes12-14in", PDMBuiltinMonitorIDs)},
+    {"pds",
+        new StrProperty("")},
     {"emmo",
         new BinProperty(0)},
 };
