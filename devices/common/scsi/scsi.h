@@ -58,6 +58,42 @@ enum ScsiMsg : int {
     BUS_PHASE_CHANGE,
 };
 
+enum ScsiCommamd : int {
+    SCSI_TEST_UNITY_READY = 0x0,
+    SCSI_REWIND           = 0x1,
+    SCSI_REQ_SENSE        = 0x3,
+    SCSI_FORMAT           = 0x4,
+    SCSI_READ_BLK_LIMITS  = 0x5,
+    SCSI_READ_6           = 0x8,
+    SCSI_WRITE_6          = 0xA,
+    SCSI_SEEK_6           = 0xB,
+    SCSI_VERIFY_6         = 0x13,
+    SCSI_MODE_SELECT_6    = 0x15,
+    SCSI_ERASE_6          = 0x19,
+    SCSI_MODE_SENSE_6     = 0x1A,
+    SCSI_DIAG_RESULTS     = 0x1C,
+    SCSI_READ_CAPAC_10    = 0x25,
+    SCSI_READ_10          = 0x28,
+    SCSI_WRITE_10         = 0x2A,
+    SCSI_VERIFY_10        = 0x2F,
+    SCSI_READ_LONG_10     = 0x35,
+};
+
+enum ScsiSense : int {
+    SCSI_NO_SENSE       = 0x0,
+    SCSI_RECOVERED      = 0x1,
+    SCSI_NOT_READY      = 0x2,
+    SCSI_MEDIA_ERR      = 0x3,
+    SCSI_HW_ERROR       = 0x4,
+    SCSI_ILLEGAL_REQ    = 0x5,
+    SCSI_UNIT_ATTENTION = 0x6,
+    SCSI_DATA_PROTECT   = 0x7,
+    SCSI_BLANK_CHECK    = 0x8,
+    SCSI_MISCOMPARE     = 0xE,
+    SCSI_COMPLETED      = 0xF,
+
+};
+
 /** Standard SCSI bus timing values measured in ns. */
 #define BUS_SETTLE_DELAY    400
 #define BUS_FREE_DELAY      800
