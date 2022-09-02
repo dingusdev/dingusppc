@@ -246,7 +246,7 @@ void PCIDevice::set_bar_value(int bar_num, uint32_t value)
 {
     uint32_t bar_cfg = this->bars_cfg[bar_num];
     if (bar_cfg & 1) {
-        this->bars[bar_num] = (value & 0xFFFFFFFCUL) | 1;
+        this->bars[bar_num] = (value & 0xFFFFFFFCUL) | (bar_cfg & 3);
     } else {
         if (bar_cfg & 6) {
             ABORT_F("Invalid or unsupported PCI space type: %d", (bar_cfg >> 1) & 3);
