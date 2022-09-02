@@ -52,6 +52,16 @@ uint32_t PCIDevice::pci_cfg_read(uint32_t reg_offs, uint32_t size)
 {
     uint32_t result;
 
+    uint32_t offset = reg_offs & 3;
+    reg_offs &= ~3;
+    if (~-size & offset) {
+        LOG_F(
+            WARNING, "%s: unaligned read @%02x.%c",
+            this->pci_name.c_str(), reg_offs + offset,
+            size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
+        );
+    }
+
     switch (reg_offs) {
     case PCI_CFG_DEV_ID:
         result = (this->device_id << 16) | (this->vendor_id);
@@ -89,30 +99,31 @@ uint32_t PCIDevice::pci_cfg_read(uint32_t reg_offs, uint32_t size)
     default:
         LOG_F(
             WARNING, "%s: attempt to read from reserved/unimplemented register @%02x.%c",
-            this->pci_name.c_str(), reg_offs,
+            this->pci_name.c_str(), reg_offs + offset,
             size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
         );
         return 0;
     }
 
-    if (size == 4) {
-        return BYTESWAP_32(result);
-    } else {
-        return read_mem_rev(((uint8_t *)&result) + (reg_offs & 3), size);
-    }
+    return pci_cfg_rev_read(result, offset, size);
 }
 
 void PCIDevice::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
 {
     uint32_t data;
 
-    if (size == 4) {
-        data = BYTESWAP_32(value);
-    } else {
-        // get current register content as DWORD and update it partially
-        data = BYTESWAP_32(this->pci_cfg_read(reg_offs, 4));
-        write_mem_rev(((uint8_t *)&data) + (reg_offs & 3), value, size);
+    uint32_t offset = reg_offs & 3;
+    reg_offs &= ~3;
+    if (~-size & offset) {
+        LOG_F(
+            WARNING, "%s: unaligned write @%02x.%c = %0*x",
+            this->pci_name.c_str(), reg_offs + offset,
+            size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size, size * 2, flip_sized(value, size)
+        );
     }
+
+    // get current register content as DWORD and update it partially
+    data = pci_cfg_rev_write(size == 4 ? 0 : BYTESWAP_32(this->pci_cfg_read(reg_offs, 4)), offset, size, value);
 
     switch (reg_offs) {
     case PCI_CFG_STAT_CMD:
@@ -137,10 +148,10 @@ void PCIDevice::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
         }
         break;
     case PCI_CFG_ROM_BAR:
-        if (data == 0xFFFFF800UL) {
-            this->exp_rom_bar = this->exp_bar_cfg;
+        if ((data & this->exp_bar_cfg) == this->exp_bar_cfg) {
+            this->exp_rom_bar = (data & (this->exp_bar_cfg | 1));
         } else {
-            this->exp_rom_bar = (data & 0xFFFFF801UL);
+            this->exp_rom_bar = (data & (this->exp_bar_cfg | 1));
             if (this->exp_rom_bar & 1) {
                 this->map_exp_rom_mem();
             } else {
@@ -156,7 +167,7 @@ void PCIDevice::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
         LOG_F(
             WARNING, "%s: attempt to write to reserved/unimplemented register @%02x.%c = %0*x",
             this->pci_name.c_str(), reg_offs,
-            size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size, size * 2, value
+            size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size, size * 2, flip_sized(value, size)
         );
     }
 }
@@ -243,7 +254,7 @@ void PCIDevice::set_bar_value(int bar_num, uint32_t value)
 {
     uint32_t bar_cfg = this->bars_cfg[bar_num];
     if (bar_cfg & 1) {
-        this->bars[bar_num] = (value & 0xFFFFFFFCUL) | 1;
+        this->bars[bar_num] = (value & 0xFFFFFFFCUL) | (bar_cfg & 3);
     } else {
         if (bar_cfg & 6) {
             ABORT_F("Invalid or unsupported PCI space type: %d", (bar_cfg >> 1) & 3);
@@ -257,7 +268,7 @@ void PCIDevice::map_exp_rom_mem()
 {
     uint32_t rom_addr, rom_size;
 
-    rom_addr = this->exp_rom_bar & 0xFFFFF800UL;
+    rom_addr = this->exp_rom_bar & this->exp_bar_cfg;
     rom_size = ~this->exp_bar_cfg + 1;
 
     if (!this->exp_rom_addr || this->exp_rom_addr != rom_addr) {
