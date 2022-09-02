@@ -177,6 +177,15 @@ inline uint32_t read_mem_rev(const uint8_t* buf, uint32_t size) {
   }
 }
 
+inline uint32_t flip_sized(uint32_t value, uint32_t size) {
+    switch (size) {
+    case 1: return value;
+    case 2: return BYTESWAP_16(value);
+    case 4: return BYTESWAP_32(value);
+    default: LOG_F(ERROR, "flip_sized: invalid size %d!", size); return 0xffffffff;
+    }
+}
+
 /* write the specified value of the specified size to memory pointed
    to by addr, perform necessary byte swapping so that the byte order
    of the destination remains unchanged. */
