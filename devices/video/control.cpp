@@ -59,6 +59,7 @@ ControlVideo::ControlVideo()
     this->vendor_id   = PCI_VENDOR_APPLE;
     this->device_id   = 3;
     this->class_rev   = 0;
+    this->bars_cfg[0] = 0xFFFFFFFFUL; // I/O region (4 bytes but it's weird because bit 1 is set)
     this->bars_cfg[1] = 0xFFFFF000UL; // base address for the HW registers (4KB)
     this->bars_cfg[2] = 0xFC000000UL; // base address for the VRAM (64MB)
 
@@ -84,6 +85,10 @@ ControlVideo::ControlVideo()
 void ControlVideo::notify_bar_change(int bar_num)
 {
     switch (bar_num) {
+    case 0:
+        this->io_base = this->bars[bar_num] & ~3;
+        LOG_F(INFO, "Control: I/O space address set to 0x%08X", this->io_base);
+        break;
     case 1:
         if (this->regs_base != (this->bars[bar_num] & 0xFFFFFFF0UL)) {
             this->regs_base = this->bars[bar_num] & 0xFFFFFFF0UL;
@@ -116,18 +121,22 @@ uint32_t ControlVideo::read(uint32_t rgn_start, uint32_t offset, int size)
         }
     }
 
-    switch (offset >> 4) {
-    case ControlRegs::TEST:
-        result = this->test;
-        break;
-    case ControlRegs::MON_SENSE:
-        result = this->cur_mon_id << 6;
-        break;
-    default:
-        LOG_F(INFO, "read from 0x%08X:0x%08X", rgn_start, offset);
+    if (rgn_start == this->regs_base) {
+        switch (offset >> 4) {
+        case ControlRegs::TEST:
+            result = this->test;
+            break;
+        case ControlRegs::MON_SENSE:
+            result = this->cur_mon_id << 6;
+            break;
+        default:
+            LOG_F(INFO, "read from 0x%08X:0x%08X", rgn_start, offset);
+        }
+
+        return BYTESWAP_32(result);
     }
 
-    return BYTESWAP_32(result);
+    return 0;
 }
 
 void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
@@ -141,75 +150,77 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
         return;
     }
 
-    value = BYTESWAP_32(value);
+    if (rgn_start == this->regs_base) {
+        value = BYTESWAP_32(value);
 
-    switch (offset >> 4) {
-    case ControlRegs::VFPEQ:
-    case ControlRegs::VFP:
-    case ControlRegs::VAL:
-    case ControlRegs::VBP:
-    case ControlRegs::VBPEQ:
-    case ControlRegs::VSYNC:
-    case ControlRegs::VHLINE:
-    case ControlRegs::PIPED:
-    case ControlRegs::HPIX:
-    case ControlRegs::HFP:
-    case ControlRegs::HAL:
-    case ControlRegs::HBWAY:
-    case ControlRegs::HSP:
-    case ControlRegs::HEQ:
-    case ControlRegs::HLFLN:
-    case ControlRegs::HSERR:
-        this->swatch_params[(offset >> 4) - 1] = value;
-        break;
-    case ControlRegs::TEST:
-        if (this->test != value) {
-            if ((this->test & ~TEST_STROBE) != (value & ~TEST_STROBE)) {
-                this->test = value;
-                this->test_shift = 0;
-                LOG_F(9, "New TEST value: 0x%08X", this->test);
-            } else {
-                LOG_F(9, "TEST strobe bit flipped, new value: 0x%08X", value);
-                this->test = value;
-                if (++this->test_shift >= 3) {
-                    LOG_F(9, "Received TEST reg value: 0x%08X", this->test & ~TEST_STROBE);
-                    if ((this->test ^ this->prev_test) & 0x400) {
-                        if (this->test & 0x400) {
-                            this->disable_display();
-                        } else {
-                            this->enable_display();
+        switch (offset >> 4) {
+        case ControlRegs::VFPEQ:
+        case ControlRegs::VFP:
+        case ControlRegs::VAL:
+        case ControlRegs::VBP:
+        case ControlRegs::VBPEQ:
+        case ControlRegs::VSYNC:
+        case ControlRegs::VHLINE:
+        case ControlRegs::PIPED:
+        case ControlRegs::HPIX:
+        case ControlRegs::HFP:
+        case ControlRegs::HAL:
+        case ControlRegs::HBWAY:
+        case ControlRegs::HSP:
+        case ControlRegs::HEQ:
+        case ControlRegs::HLFLN:
+        case ControlRegs::HSERR:
+            this->swatch_params[(offset >> 4) - 1] = value;
+            break;
+        case ControlRegs::TEST:
+            if (this->test != value) {
+                if ((this->test & ~TEST_STROBE) != (value & ~TEST_STROBE)) {
+                    this->test = value;
+                    this->test_shift = 0;
+                    LOG_F(9, "New TEST value: 0x%08X", this->test);
+                } else {
+                    LOG_F(9, "TEST strobe bit flipped, new value: 0x%08X", value);
+                    this->test = value;
+                    if (++this->test_shift >= 3) {
+                        LOG_F(9, "Received TEST reg value: 0x%08X", this->test & ~TEST_STROBE);
+                        if ((this->test ^ this->prev_test) & 0x400) {
+                            if (this->test & 0x400) {
+                                this->disable_display();
+                            } else {
+                                this->enable_display();
+                            }
+                            this->prev_test = this->test;
                         }
-                        this->prev_test = this->test;
                     }
                 }
             }
+            break;
+        case ControlRegs::GBASE:
+            this->fb_base = value;
+            break;
+        case ControlRegs::ROW_WORDS:
+            this->row_words = value;
+            break;
+        case ControlRegs::MON_SENSE:
+            LOG_F(9, "Control: monitor sense written with 0x%X", value);
+            value = (value >> 3) & 7;
+            this->cur_mon_id = this->display_id->read_monitor_sense(value & 7, value ^ 7);
+            break;
+        case ControlRegs::ENABLE:
+            this->flags = value;
+            break;
+        case ControlRegs::GSC_DIVIDE:
+            this->clock_divider = value;
+            break;
+        case ControlRegs::REFRESH_COUNT:
+            LOG_F(INFO, "Control: refresh count set to 0x%08X", value);
+            break;
+        case ControlRegs::INT_ENABLE:
+            this->int_enable = value;
+            break;
+        default:
+            LOG_F(INFO, "write 0x%08X to 0x%08X:0x%08X", value, rgn_start, offset);
         }
-        break;
-    case ControlRegs::GBASE:
-        this->fb_base = value;
-        break;
-    case ControlRegs::ROW_WORDS:
-        this->row_words = value;
-        break;
-    case ControlRegs::MON_SENSE:
-        LOG_F(9, "Control: monitor sense written with 0x%X", value);
-        value = (value >> 3) & 7;
-        this->cur_mon_id = this->display_id->read_monitor_sense(value & 7, value ^ 7);
-        break;
-    case ControlRegs::ENABLE:
-        this->flags = value;
-        break;
-    case ControlRegs::GSC_DIVIDE:
-        this->clock_divider = value;
-        break;
-    case ControlRegs::REFRESH_COUNT:
-        LOG_F(INFO, "Control: refresh count set to 0x%08X", value);
-        break;
-    case ControlRegs::INT_ENABLE:
-        this->int_enable = value;
-        break;
-    default:
-        LOG_F(INFO, "write 0x%08X to 0x%08X:0x%08X", value, rgn_start, offset);
     }
 }
 
