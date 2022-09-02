@@ -137,10 +137,10 @@ void PCIDevice::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
         }
         break;
     case PCI_CFG_ROM_BAR:
-        if (data == 0xFFFFF800UL) {
-            this->exp_rom_bar = this->exp_bar_cfg;
+        if ((data & this->exp_bar_cfg) == this->exp_bar_cfg) {
+            this->exp_rom_bar = (data & (this->exp_bar_cfg | 1));
         } else {
-            this->exp_rom_bar = (data & 0xFFFFF801UL);
+            this->exp_rom_bar = (data & (this->exp_bar_cfg | 1));
             if (this->exp_rom_bar & 1) {
                 this->map_exp_rom_mem();
             } else {
@@ -257,7 +257,7 @@ void PCIDevice::map_exp_rom_mem()
 {
     uint32_t rom_addr, rom_size;
 
-    rom_addr = this->exp_rom_bar & 0xFFFFF800UL;
+    rom_addr = this->exp_rom_bar & this->exp_bar_cfg;
     rom_size = ~this->exp_bar_cfg + 1;
 
     if (!this->exp_rom_addr || this->exp_rom_addr != rom_addr) {
