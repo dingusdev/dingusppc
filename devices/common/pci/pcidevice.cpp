@@ -52,6 +52,16 @@ uint32_t PCIDevice::pci_cfg_read(uint32_t reg_offs, uint32_t size)
 {
     uint32_t result;
 
+    uint32_t offset = reg_offs & 3;
+    reg_offs &= ~3;
+    if (~-size & offset) {
+        LOG_F(
+            WARNING, "%s: unaligned read @%02x.%c",
+            this->pci_name.c_str(), reg_offs + offset,
+            size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
+        );
+    }
+
     switch (reg_offs) {
     case PCI_CFG_DEV_ID:
         result = (this->device_id << 16) | (this->vendor_id);
@@ -89,30 +99,31 @@ uint32_t PCIDevice::pci_cfg_read(uint32_t reg_offs, uint32_t size)
     default:
         LOG_F(
             WARNING, "%s: attempt to read from reserved/unimplemented register @%02x.%c",
-            this->pci_name.c_str(), reg_offs,
+            this->pci_name.c_str(), reg_offs + offset,
             size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
         );
         return 0;
     }
 
-    if (size == 4) {
-        return BYTESWAP_32(result);
-    } else {
-        return read_mem_rev(((uint8_t *)&result) + (reg_offs & 3), size);
-    }
+    return pci_cfg_rev_read(result, offset, size);
 }
 
 void PCIDevice::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
 {
     uint32_t data;
 
-    if (size == 4) {
-        data = BYTESWAP_32(value);
-    } else {
-        // get current register content as DWORD and update it partially
-        data = BYTESWAP_32(this->pci_cfg_read(reg_offs, 4));
-        write_mem_rev(((uint8_t *)&data) + (reg_offs & 3), value, size);
+    uint32_t offset = reg_offs & 3;
+    reg_offs &= ~3;
+    if (~-size & offset) {
+        LOG_F(
+            WARNING, "%s: unaligned write @%02x.%c = %0*x",
+            this->pci_name.c_str(), reg_offs + offset,
+            size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size, size * 2, flip_sized(value, size)
+        );
     }
+
+    // get current register content as DWORD and update it partially
+    data = pci_cfg_rev_write(size == 4 ? 0 : BYTESWAP_32(this->pci_cfg_read(reg_offs, 4)), offset, size, value);
 
     switch (reg_offs) {
     case PCI_CFG_STAT_CMD:

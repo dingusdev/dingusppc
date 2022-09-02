@@ -89,7 +89,7 @@ uint32_t MPC106::read(uint32_t rgn_start, uint32_t offset, int size) {
     } else {
         if (offset >= 0x200000) {
             if (this->config_addr & 0x80)    // process only if bit E (enable) is set
-                return pci_read(size);
+                return pci_read(offset & 3, size);
         }
     }
 
@@ -113,39 +113,39 @@ void MPC106::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size
             this->config_addr = value;
         } else {
             if (this->config_addr & 0x80)    // process only if bit E (enable) is set
-                return pci_write(value, size);
+                return pci_write(offset & 3, value, size);
         }
     }
 }
 
-uint32_t MPC106::pci_read(uint32_t size) {
+uint32_t MPC106::pci_read(uint32_t offset, uint32_t size) {
     int bus_num, dev_num, fun_num, reg_offs;
 
-    bus_num = (this->config_addr >> 8) & 0xFF;
+    bus_num  = (this->config_addr >>  8) & 0xFF;
     dev_num  = (this->config_addr >> 19) & 0x1F;
     fun_num  = (this->config_addr >> 16) & 0x07;
     reg_offs = (this->config_addr >> 24) & 0xFC;
 
     if (bus_num) {
-		LOG_F(
-			ERROR,
-			"%s err: read attempt from non-local PCI bus, config_addr = %x %02x:%02x.%x @%02x.%c",
-			this->name.c_str(), this->config_addr, bus_num, dev_num, fun_num, reg_offs,
-			size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
-		);
+        LOG_F(
+            ERROR,
+            "%s err: read attempt from non-local PCI bus, config_addr = %x, offset = %x %02x:%02x.%x @%02x.%c",
+            this->name.c_str(), this->config_addr, offset, bus_num, dev_num, fun_num, reg_offs,
+            size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
+        );
         return 0xFFFFFFFFUL; // PCI spec §6.1
     }
 
     if (dev_num == 0 && fun_num == 0) {    // dev_num 0 is assigned to myself
-        return this->pci_cfg_read(reg_offs, size);
+        return this->pci_cfg_read(reg_offs + offset, size);
     } else {
         if (this->dev_map.count(dev_num)) {
-            return this->dev_map[dev_num]->pci_cfg_read(reg_offs, size);
+            return this->dev_map[dev_num]->pci_cfg_read(reg_offs + offset, size);
         } else {
             LOG_F(
                 ERROR,
                 "%s err: read attempt from non-existing PCI device %02x:%02x.%x @%02x.%c",
-                this->name.c_str(), bus_num, dev_num, fun_num, reg_offs,
+                this->name.c_str(), bus_num, dev_num, fun_num, reg_offs + offset,
                 size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
             );
             return 0xFFFFFFFFUL; // PCI spec §6.1
@@ -155,10 +155,10 @@ uint32_t MPC106::pci_read(uint32_t size) {
     return 0;
 }
 
-void MPC106::pci_write(uint32_t value, uint32_t size) {
+void MPC106::pci_write(uint32_t offset, uint32_t value, uint32_t size) {
     int bus_num, dev_num, fun_num, reg_offs;
 
-    bus_num = (this->config_addr >> 8) & 0xFF;
+    bus_num  = (this->config_addr >>  8) & 0xFF;
     dev_num  = (this->config_addr >> 19) & 0x1F;
     fun_num  = (this->config_addr >> 16) & 0x07;
     reg_offs = (this->config_addr >> 24) & 0xFC;
@@ -166,24 +166,24 @@ void MPC106::pci_write(uint32_t value, uint32_t size) {
     if (bus_num) {
         LOG_F(
             ERROR,
-            "%s err: write attempt to non-local PCI bus, config_addr = %x %02x:%02x.%x @%02x.%c = %0*x",
-			this->name.c_str(), this->config_addr, bus_num, dev_num, fun_num, reg_offs,
-			size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size,
+            "%s err: write attempt to non-local PCI bus, config_addr = %x, offset = %x %02x:%02x.%x @%02x.%c = %0*x",
+            this->name.c_str(), this->config_addr, offset, bus_num, dev_num, fun_num, reg_offs + offset,
+            size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size,
             size * 2, flip_sized(value, size)
         );
         return;
     }
 
     if (dev_num == 0 && fun_num == 0) {    // dev_num 0 is assigned to myself
-        this->pci_cfg_write(reg_offs, value, size);
+        this->pci_cfg_write(reg_offs + offset, value, size);
     } else {
         if (this->dev_map.count(dev_num)) {
-            this->dev_map[dev_num]->pci_cfg_write(reg_offs, value, size);
+            this->dev_map[dev_num]->pci_cfg_write(reg_offs + offset, value, size);
         } else {
             LOG_F(
                 ERROR,
                 "%s err: write attempt to non-existing PCI device %02x:%02x.%x @%02x.%c = %0*x",
-                this->name.c_str(), bus_num, dev_num, fun_num, reg_offs,
+                this->name.c_str(), bus_num, dev_num, fun_num, reg_offs + offset,
                 size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size,
                 size * 2, flip_sized(value, size)
             );
@@ -200,7 +200,17 @@ uint32_t MPC106::pci_cfg_read(uint32_t reg_offs, uint32_t size) {
         return PCIDevice::pci_cfg_read(reg_offs, size);
     }
 
-    return read_mem(&this->my_pci_cfg_hdr[reg_offs], size);
+    uint32_t offset = reg_offs & 3;
+    reg_offs &= ~3;
+    if (~-size & offset) {
+        LOG_F(
+            WARNING, "%s: unaligned read @%02x.%c",
+            this->pci_name.c_str(), reg_offs + offset,
+            size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
+        );
+    }
+
+    return pci_cfg_rev_read(READ_DWORD_LE_A(&this->my_pci_cfg_hdr[reg_offs]), offset, size);
 }
 
 void MPC106::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size) {
@@ -213,9 +223,20 @@ void MPC106::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size) {
         return;
     }
 
+    uint32_t offset = reg_offs & 3;
+    reg_offs &= ~3;
+    if (~-size & offset) {
+        LOG_F(
+            WARNING, "%s: unaligned write @%02x.%c = %0*x",
+            this->pci_name.c_str(), reg_offs + offset,
+            size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size, size * 2, flip_sized(value, size)
+        );
+    }
+
     // FIXME: implement write-protection for read-only registers
 
-    write_mem(&this->my_pci_cfg_hdr[reg_offs], value, size);
+    uint32_t *addr = (uint32_t *)&this->my_pci_cfg_hdr[reg_offs];
+    WRITE_DWORD_LE_A(addr, pci_cfg_rev_write(READ_DWORD_LE_A(addr), offset, size, value));
 
     if (this->my_pci_cfg_hdr[0xF2] & 8) {
 #ifdef MPC106_DEBUG

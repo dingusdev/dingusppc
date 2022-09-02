@@ -177,6 +177,51 @@ inline uint32_t read_mem_rev(const uint8_t* buf, uint32_t size) {
   }
 }
 
+/* value is dword from PCI config. MSB..LSB of value is stored in PCI config as 0:LSB..3:MSB.
+   result is part of value at byte offset from LSB and size bytes (with wrap around) and flipped as required for pci_cfg_read result. */
+inline uint32_t pci_cfg_rev_read(uint32_t value, uint32_t offset, uint32_t size) {
+    switch (size << 2 | offset) {
+    case 0x04: return  value        & 0xff; // 0
+    case 0x05: return (value >>  8) & 0xff; // 1
+    case 0x06: return (value >> 16) & 0xff; // 2
+    case 0x07: return (value >> 24) & 0xff; // 3
+
+    case 0x08: return ((value & 0xff) << 8)    | ((value >>  8) & 0xff); // 0 1
+    case 0x09: return ( value        & 0xff00) | ((value >> 16) & 0xff); // 1 2
+    case 0x0a: return ((value >>  8) & 0xff00) | ((value >> 24) & 0xff); // 2 3
+    case 0x0b: return ((value >> 16) & 0xff00) | ( value        & 0xff); // 3 0
+
+    case 0x10: return ((value &       0xff) << 24) | ((value &  0xff00) <<  8) | ((value >>  8) & 0xff00) | ((value >> 24) & 0xff); // 0 1 2 3
+    case 0x11: return ((value &     0xff00) << 16) | ( value       & 0xff0000) | ((value >> 16) & 0xff00) | ( value        & 0xff); // 1 2 3 0
+    case 0x12: return ((value &   0xff0000) <<  8) | ((value >> 8) & 0xff0000) | ((value & 0xff) << 8)    | ((value >>  8) & 0xff); // 2 3 0 1
+    case 0x13: return ( value & 0xff000000)        | ((value &    0xff) << 16) | ( value        & 0xff00) | ((value >> 16) & 0xff); // 3 0 1 2
+    default: LOG_F(ERROR, "pci_cfg_rev: invalid offset %d for size %d!", offset, size); return 0xffffffff;
+    }
+}
+
+/* value is dword from PCI config. MSB..LSB of value (3.2.1.0) is stored in PCI config as 0:LSB..3:MSB.
+   data is flipped bytes (d0.d1.d2.d3, as passed to pci_cfg_write) to be merged into value. 
+   result is part of value at byte offset from LSB and size bytes (with wrap around) modified by data. */
+inline uint32_t pci_cfg_rev_write(uint32_t value, uint32_t offset, uint32_t size, uint32_t data) {
+    switch (size << 2 | offset) {
+    case 0x04: return (value & 0xffffff00) |  (data & 0xff);        //  3  2  1 d0
+    case 0x05: return (value & 0xffff00ff) | ((data & 0xff) <<  8); //  3  2 d0  0
+    case 0x06: return (value & 0xff00ffff) | ((data & 0xff) << 16); //  3 d0  1  0
+    case 0x07: return (value & 0x00ffffff) | ((data & 0xff) << 24); // d0  2  1  0
+
+    case 0x08: return (value & 0xffff0000) | ((data >> 8) & 0xff)    | ((data & 0xff) <<  8); //  3  2 d1 d0
+    case 0x09: return (value & 0xff0000ff) |  (data & 0xff00)        | ((data & 0xff) << 16); //  3 d1 d0  0
+    case 0x0a: return (value & 0x0000ffff) | ((data & 0xff00) <<  8) | ((data & 0xff) << 24); // d1 d0  1  0
+    case 0x0b: return (value & 0x00ffff00) | ((data & 0xff00) << 16) |  (data & 0xff);        // d0  2  1 d1
+
+    case 0x10: return ((data &       0xff) << 24) | ((data &   0xff00) <<  8) | ((data >>  8) & 0xff00) | ((data >> 24) & 0xff); // d3 d2 d1 d0
+    case 0x11: return ((data &     0xff00) << 16) | ( data        & 0xff0000) | ((data >> 16) & 0xff00) | ( data        & 0xff); // d2 d1 d0 d3
+    case 0x12: return ((data &   0xff0000) <<  8) | ((data >> 8)  & 0xff0000) | ((data & 0xff) << 8)    | ((data >>  8) & 0xff); // d1 d0 d3 d2
+    case 0x13: return ( data & 0xff000000)        | ((data &     0xff) << 16) | ( data        & 0xff00) | ((data >> 16) & 0xff); // d0 d3 d2 d1
+    default: LOG_F(ERROR, "pci_cfg_rev: invalid offset %d for size %d!", offset, size); return 0xffffffff;
+    }
+}
+
 inline uint32_t flip_sized(uint32_t value, uint32_t size) {
     switch (size) {
     case 1: return value;

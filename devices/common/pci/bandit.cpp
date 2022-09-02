@@ -81,14 +81,26 @@ uint32_t Bandit::pci_cfg_read(uint32_t reg_offs, uint32_t size)
     if (reg_offs < 64) {
         return PCIDevice::pci_cfg_read(reg_offs, size);
     }
-
-    switch (reg_offs) {
-    case BANDIT_ADDR_MASK:
-        return BYTESWAP_32(this->addr_mask);
-    default:
-        LOG_F(WARNING, "%s: reading from unimplemented config register at 0x%X",
-              this->pci_name.c_str(), reg_offs);
+    
+    uint32_t offset = reg_offs & 3;
+    reg_offs &= ~3;
+    if (~-size & offset) {
+        LOG_F(
+            WARNING, "%s: unaligned read @%02x.%c",
+            this->name.c_str(), reg_offs + offset,
+            size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
+        );
     }
+
+    if (reg_offs == BANDIT_ADDR_MASK) {
+        return pci_cfg_rev_read(this->addr_mask, offset, size);
+    }
+
+    LOG_F(
+        WARNING, "%s: reading from unimplemented config register @%02x.%c",
+        this->name.c_str(), reg_offs + offset,
+        size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
+    );
 
     return 0;
 }
@@ -100,15 +112,27 @@ void Bandit::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
         return;
     }
 
-    switch (reg_offs) {
-    case BANDIT_ADDR_MASK:
-        this->addr_mask = BYTESWAP_32(value);
-        this->verbose_address_space();
-        break;
-    default:
-        LOG_F(WARNING, "%s: writing to unimplemented config register at 0x%X",
-              this->pci_name.c_str(), reg_offs);
+    uint32_t offset = reg_offs & 3;
+    reg_offs &= ~3;
+    if (~-size & offset) {
+        LOG_F(
+            WARNING, "%s: unaligned write @%02x.%c = %0*x",
+            this->name.c_str(), reg_offs + offset,
+            size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size, size * 2, flip_sized(value, size)
+        );
     }
+
+    if (reg_offs == BANDIT_ADDR_MASK) {
+        this->addr_mask = pci_cfg_rev_write(this->addr_mask, offset, size, value);
+        this->verbose_address_space();
+        return;
+    }
+    
+    LOG_F(
+        WARNING, "%s: writing to unimplemented config register @%02x.%c = %0*x",
+        this->name.c_str(), reg_offs + offset,
+        size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size, size * 2, flip_sized(value, size)
+    );
 }
 
 uint32_t Bandit::read(uint32_t rgn_start, uint32_t offset, int size)
@@ -147,10 +171,10 @@ uint32_t Bandit::read(uint32_t rgn_start, uint32_t offset, int size)
             }
 
             if (idsel == BANDIT_ID_SEL) { // access to myself
-                result = this->pci_cfg_read(reg_offs, size);
+                result = this->pci_cfg_read(reg_offs + (offset & 3), size);
             } else {
                 if (this->dev_map.count(idsel)) {
-                    result = this->dev_map[idsel]->pci_cfg_read(reg_offs, size);
+                    result = this->dev_map[idsel]->pci_cfg_read(reg_offs + (offset & 3), size);
                 } else {
                     dev_num = WHAT_BIT_SET(idsel) + 11;
                     LOG_F(
@@ -214,12 +238,12 @@ void Bandit::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size
             }
 
             if (idsel == BANDIT_ID_SEL) { // access to myself
-                this->pci_cfg_write(reg_offs, value, size);
+                this->pci_cfg_write(reg_offs + (offset & 3), value, size);
                 return;
             }
 
             if (this->dev_map.count(idsel)) {
-                this->dev_map[idsel]->pci_cfg_write(reg_offs, value, size);
+                this->dev_map[idsel]->pci_cfg_write(reg_offs + (offset & 3), value, size);
             } else {
                 dev_num = WHAT_BIT_SET(idsel) + 11;
                 LOG_F(
@@ -320,7 +344,7 @@ uint32_t Chaos::read(uint32_t rgn_start, uint32_t offset, int size)
             }
 
             if (this->dev_map.count(idsel)) {
-                result = this->dev_map[idsel]->pci_cfg_read(reg_offs, size);
+                result = this->dev_map[idsel]->pci_cfg_read(reg_offs + (offset & 3), size);
             } else {
                 dev_num = WHAT_BIT_SET(idsel) + 11;
                 LOG_F(
@@ -376,7 +400,7 @@ void Chaos::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
             }
 
             if (this->dev_map.count(idsel)) {
-                this->dev_map[idsel]->pci_cfg_write(reg_offs, value, size);
+                this->dev_map[idsel]->pci_cfg_write(reg_offs + (offset & 3), value, size);
             } else {
                 dev_num = WHAT_BIT_SET(idsel) + 11;
                 LOG_F(
