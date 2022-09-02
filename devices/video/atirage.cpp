@@ -167,25 +167,11 @@ uint32_t ATIRage::pci_cfg_read(uint32_t reg_offs, uint32_t size)
         return PCIDevice::pci_cfg_read(reg_offs, size);
     }
 
-    uint32_t offset = reg_offs & 3;
-    reg_offs &= ~3;
-    if (~-size & offset) {
-        LOG_F(
-            WARNING, "%s: unaligned read @%02x.%c",
-            this->pci_name.c_str(), reg_offs + offset,
-            size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
-        );
-    }
-
     switch (reg_offs) {
     case 0x40:
-        return pci_cfg_rev_read(this->user_cfg, offset, size);
+        return this->user_cfg;
     default:
-        LOG_F(
-            WARNING, "%s: reading from unimplemented config register @%02x.%c",
-            this->pci_name.c_str(), reg_offs + offset,
-            size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
-        );
+        LOG_F(WARNING, "ATIRage: reading from unimplemented config register at 0x%X", reg_offs);
     }
 
     return 0;
@@ -195,29 +181,14 @@ void ATIRage::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
 {
     if (reg_offs < 64) {
         PCIDevice::pci_cfg_write(reg_offs, value, size);
-        return;
-    }
-
-    uint32_t offset = reg_offs & 3;
-    reg_offs &= ~3;
-    if (~-size & offset) {
-        LOG_F(
-            WARNING, "%s: unaligned write @%02x.%c = %0*x",
-            this->pci_name.c_str(), reg_offs + offset,
-            size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size, size * 2, flip_sized(value, size)
-        );
-    }
-
-    switch (reg_offs) {
-    case 0x40:
-        this->user_cfg = pci_cfg_rev_write(this->user_cfg, offset, size, value);
-        break;
-    default:
-        LOG_F(
-            WARNING, "%s: writing to unimplemented config register @%02x.%c = %0*x",
-            this->pci_name.c_str(), reg_offs + offset,
-            size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size, size * 2, flip_sized(value, size)
-        );
+    } else {
+        switch (reg_offs) {
+        case 0x40:
+            this->user_cfg = value;
+            break;
+        default:
+            LOG_F(WARNING, "ATIRage: writing to unimplemented config register at 0x%X", reg_offs);
+        }
     }
 }
 

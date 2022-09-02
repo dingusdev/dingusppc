@@ -64,7 +64,7 @@ static FlopImgType identify_image(std::ifstream& img_file)
         }
     }
 
-    return FlopImgType::RAW;
+    return FlopImgType::UNKNOWN;
 }
 
 static int64_t get_hfs_vol_size(const uint8_t *mdb_data)
@@ -133,16 +133,17 @@ int RawFloppyImg::calc_phys_params()
     } else if (buf[0] == 0xD2 && buf[1] == 0xD7) {
         // check MFS volume size
     } else {
-        LOG_F(WARNING, "RawFloppyImg: unknown volume type!");
+        LOG_F(ERROR, "RawFloppyImg: unknown volume type!");
+        return -1;
     }
 
-    if (vol_size && (vol_size > this->img_size)) {
+    if (vol_size > this->img_size) {
         LOG_F(INFO, "RawFloppyImg: volume size > image size!");
         LOG_F(INFO, "Volume size: %llu, Image size: %d", vol_size, this->img_size);
         return -1;
     }
 
-    // raw images don't include anything other than raw disk data
+    // raw images don't include anything than raw disk data
     this->data_size = this->img_size;
 
     // guess disk format from image file size
