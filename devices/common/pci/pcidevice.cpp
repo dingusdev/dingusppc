@@ -50,81 +50,49 @@ PCIDevice::PCIDevice(std::string name)
     this->pci_notify_bar_change = [](int bar_num) {};
 };
 
-uint32_t PCIDevice::pci_cfg_read(uint32_t reg_offs, uint32_t size)
+uint32_t PCIDevice::pci_cfg_read(uint32_t reg_offs, AccessDetails &details)
 {
-    uint32_t result;
-
     switch (reg_offs) {
     case PCI_CFG_DEV_ID:
-        result = (this->device_id << 16) | (this->vendor_id);
-        break;
+        return (this->device_id << 16) | (this->vendor_id);
     case PCI_CFG_STAT_CMD:
-        result = (this->pci_rd_stat() << 16) | (this->pci_rd_cmd());
-        break;
+        return (this->pci_rd_stat() << 16) | (this->pci_rd_cmd());
     case PCI_CFG_CLASS_REV:
-        result = this->class_rev;
-        break;
+        return this->class_rev;
     case PCI_CFG_DWORD_3:
-        result = (pci_rd_bist() << 24) | (this->hdr_type << 16) |
-                 (pci_rd_lat_timer() << 8) | pci_rd_cache_lnsz();
-        break;
+        return (pci_rd_bist() << 24) | (this->hdr_type << 16) |
+               (pci_rd_lat_timer() << 8) | pci_rd_cache_lnsz();
     case PCI_CFG_BAR0:
     case PCI_CFG_BAR1:
     case PCI_CFG_BAR2:
     case PCI_CFG_BAR3:
     case PCI_CFG_BAR4:
     case PCI_CFG_BAR5:
-        result = this->bars[(reg_offs - 0x10) >> 2];
-        break;
+        return this->bars[(reg_offs - 0x10) >> 2];
     case PCI_CFG_SUBSYS_ID:
-        result = (this->subsys_id << 16) | (this->subsys_vndr);
-        break;
+        return (this->subsys_id << 16) | (this->subsys_vndr);
     case PCI_CFG_ROM_BAR:
-        result = this->exp_rom_bar;
-        break;
+        return this->exp_rom_bar;
     case PCI_CFG_DWORD_15:
-        result = (max_lat << 24) | (min_gnt << 16) | (irq_pin << 8) | irq_line;
-        break;
+        return (max_lat << 24) | (min_gnt << 16) | (irq_pin << 8) | irq_line;
     case PCI_CFG_CAP_PTR:
-        result = cap_ptr;
-        break;
-    default:
-        LOG_F(
-            WARNING, "%s: attempt to read from reserved/unimplemented register @%02x.%c",
-            this->pci_name.c_str(), reg_offs,
-            size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
-        );
-        return 0;
+        return cap_ptr;
     }
-
-    if (size == 4) {
-        return BYTESWAP_32(result);
-    } else {
-        return read_mem_rev(((uint8_t *)&result) + (reg_offs & 3), size);
-    }
+    LOG_READ_UNIMPLEMENTED_CONFIG_REGISTER();
+    return 0;
 }
 
-void PCIDevice::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
+void PCIDevice::pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDetails &details)
 {
-    uint32_t data;
-
-    if (size == 4) {
-        data = BYTESWAP_32(value);
-    } else {
-        // get current register content as DWORD and update it partially
-        data = BYTESWAP_32(this->pci_cfg_read(reg_offs, 4));
-        write_mem_rev(((uint8_t *)&data) + (reg_offs & 3), value, size);
-    }
-
     switch (reg_offs) {
     case PCI_CFG_STAT_CMD:
-        this->pci_wr_stat(data >> 16);
-        this->pci_wr_cmd(data & 0xFFFFU);
+        this->pci_wr_stat(value >> 16);
+        this->pci_wr_cmd(value & 0xFFFFU);
         break;
     case PCI_CFG_DWORD_3:
-        this->pci_wr_bist(data >> 24);
-        this->pci_wr_lat_timer((data >> 8) & 0xFF);
-        this->pci_wr_cache_lnsz(data & 0xFF);
+        this->pci_wr_bist(value >> 24);
+        this->pci_wr_lat_timer((value >> 8) & 0xFF);
+        this->pci_wr_cache_lnsz(value & 0xFF);
         break;
     case PCI_CFG_BAR0:
     case PCI_CFG_BAR1:
@@ -132,17 +100,17 @@ void PCIDevice::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
     case PCI_CFG_BAR3:
     case PCI_CFG_BAR4:
     case PCI_CFG_BAR5:
-        if (data == 0xFFFFFFFFUL) {
+        if (value == 0xFFFFFFFFUL) {
             this->do_bar_sizing((reg_offs - 0x10) >> 2);
         } else {
-            this->set_bar_value((reg_offs - 0x10) >> 2, data);
+            this->set_bar_value((reg_offs - 0x10) >> 2, value);
         }
         break;
     case PCI_CFG_ROM_BAR:
-        if ((data & this->exp_bar_cfg) == this->exp_bar_cfg) {
-            this->exp_rom_bar = (data & (this->exp_bar_cfg | 1));
+        if ((value & this->exp_bar_cfg) == this->exp_bar_cfg) {
+            this->exp_rom_bar = (value & (this->exp_bar_cfg | 1));
         } else {
-            this->exp_rom_bar = (data & (this->exp_bar_cfg | 1));
+            this->exp_rom_bar = (value & (this->exp_bar_cfg | 1));
             if (this->exp_rom_bar & 1) {
                 this->map_exp_rom_mem();
             } else {
@@ -152,15 +120,10 @@ void PCIDevice::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
         }
         break;
     case PCI_CFG_DWORD_15:
-        this->irq_line = data >> 24;
+        this->irq_line = value >> 24;
         break;
     default:
-        LOG_F(
-            WARNING, "%s: attempt to write to reserved/unimplemented register @%02x.%c = %0*x",
-            this->pci_name.c_str(), reg_offs,
-            size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size,
-            size * 2, BYTESWAP_SIZED(value, size)
-        );
+        LOG_WRITE_UNIMPLEMENTED_CONFIG_REGISTER();
     }
 }
 

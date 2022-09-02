@@ -41,9 +41,11 @@ const int MultiplyDeBruijnBitPosition2[] =
 #define WHAT_BIT_SET(val) (MultiplyDeBruijnBitPosition2[(uint32_t)(val * 0x077CB531U) >> 27])
 
 Bandit::Bandit(int bridge_num, std::string name, int dev_id, int rev)
-    : PCIHost(), PCIDevice(name)
+    : BanditHost()
 {
-    supports_types(HWCompType::PCI_HOST | HWCompType::PCI_DEV);
+    this->name = name;
+
+    supports_types(HWCompType::PCI_HOST);
 
     this->base_addr = 0xF0000000 + ((bridge_num & 3) << 25);
 
@@ -57,6 +59,15 @@ Bandit::Bandit(int bridge_num, std::string name, int dev_id, int rev)
     // base_addr +  0xC00000 --> CONFIG_DATA
     // base_addr + 0x1000000 --> pass-through memory space (not included below)
     mem_ctrl->add_mmio_region(base_addr, 0x01000000, this);
+
+	std::string banditpcitname = "Bandit1PCI";
+    attach_pci_device(banditpcitname, 1);
+}
+
+BanditPCI::BanditPCI(int bridge_num, std::string name)
+    : PCIDevice(name)
+{
+    supports_types(HWCompType::PCI_DEV);
 
     // prepare the PCI config header
     this->vendor_id   = PCI_VENDOR_APPLE;
@@ -80,195 +91,149 @@ Bandit::Bandit(int bridge_num, std::string name, int dev_id, int rev)
     this->rd_hold_off_cnt = 8;
 }
 
-uint32_t Bandit::pci_cfg_read(uint32_t reg_offs, uint32_t size)
+uint32_t BanditPCI::pci_cfg_read(uint32_t reg_offs, AccessDetails &details)
 {
     if (reg_offs < 64) {
-        return PCIDevice::pci_cfg_read(reg_offs, size);
+        return PCIDevice::pci_cfg_read(reg_offs, details);
     }
 
     switch (reg_offs) {
     case BANDIT_ADDR_MASK:
-        return BYTESWAP_32(this->addr_mask);
+        return this->addr_mask;
     case BANDIT_MODE_SELECT:
-        return BYTESWAP_32(this->mode_ctrl);
+        return this->mode_ctrl;
     case BANDIT_ARBUS_RD_HOLD_OFF:
-        return BYTESWAP_32(this->rd_hold_off_cnt);
-    default:
-        LOG_F(WARNING, "%s: reading from unimplemented config register at 0x%X",
-              this->pci_name.c_str(), reg_offs);
+        return this->rd_hold_off_cnt;
     }
-
+    LOG_READ_UNIMPLEMENTED_CONFIG_REGISTER();
     return 0;
 }
 
-void Bandit::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
+void BanditPCI::pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDetails &details)
 {
     if (reg_offs < 64) {
-        PCIDevice::pci_cfg_write(reg_offs, value, size);
+        PCIDevice::pci_cfg_write(reg_offs, value, details);
         return;
-    }
-
-    if (size == 4) {
-        value = BYTESWAP_32(value);
-    } else {
-        LOG_F(WARNING, "%s: non-DWORD writes to the control registers not supported",
-            this->pci_name.c_str());
     }
 
     switch (reg_offs) {
     case BANDIT_ADDR_MASK:
         this->addr_mask = value;
         this->verbose_address_space();
-        break;
+        return;
     case BANDIT_MODE_SELECT:
         this->mode_ctrl = value;
-        break;
+        return;
     case BANDIT_ARBUS_RD_HOLD_OFF:
-        this->rd_hold_off_cnt =  value & 0x1F;
-        break;
-    default:
-        LOG_F(WARNING, "%s: writing to unimplemented config register at 0x%X",
-              this->pci_name.c_str(), reg_offs);
+        this->rd_hold_off_cnt = value & 0x1F;
+        return;
+    }
+    LOG_WRITE_UNIMPLEMENTED_CONFIG_REGISTER();
+}
+
+void BanditHost::cfg_setup(uint32_t offset, int size, int &bus_num, int &dev_num, int &fun_num, uint8_t &reg_offs, AccessDetails &details, PCIDevice *&device)
+{
+    device = NULL;
+    details.size = size;
+    details.offset = offset & 3;
+    fun_num = (this->config_addr >> 8) & 7;
+    reg_offs = this->config_addr & 0xFCU;
+    if (this->config_addr & BANDIT_CAR_TYPE) { // type 1 configuration command
+        details.flags = PCI_CONFIG_TYPE_1;
+        bus_num = (this->config_addr >> 16) & 255;
+        dev_num = (this->config_addr >> 11) & 31;
+        device = pci_find_device(bus_num, dev_num, fun_num);
+        return;
+    }
+    details.flags = PCI_CONFIG_TYPE_0;
+    bus_num = 0; // bus number is meaningless for type 0 configuration command; a type 1 configuration command cannot reach devices attached directly to the host
+    uint32_t idsel = this->config_addr & 0xFFFFF800U;
+    if (!SINGLE_BIT_SET(idsel)) {
+        for (dev_num = -1, idsel = this->config_addr; idsel; idsel >>= 1, dev_num++) {}
+        LOG_F(ERROR, "%s: config_addr 0x%08x does not contain valid IDSEL", this->name.c_str(), (uint32_t)this->config_addr);
+        return;
+    }
+    dev_num = WHAT_BIT_SET(idsel);
+    if (this->dev_map.count(idsel >> 11)) {
+        device = this->dev_map[idsel >> 11];
     }
 }
 
-uint32_t Bandit::read(uint32_t rgn_start, uint32_t offset, int size)
+uint32_t BanditHost::read(uint32_t rgn_start, uint32_t offset, int size)
 {
-    int      bus_num, dev_num, fun_num;
-    uint8_t  reg_offs;
-    uint32_t result, idsel;
+    switch (offset >> 22) {
 
-    if (offset & BANDIT_CONFIG_SPACE) {
-        if (offset & 0x00400000) {
-            fun_num = (this->config_addr >> 8) & 7;
-            reg_offs = this->config_addr & 0xFCU;
-
-            // access to the CONFIG_DATA pseudo-register causes a Config Cycle
-            if (this->config_addr & BANDIT_CAR_TYPE) {
-                bus_num = (this->config_addr >> 16) & 255;
-                dev_num = (this->config_addr >> 11) & 31;
-                LOG_F(
-                    WARNING, "%s: read config cycle type 1 not supported yet %02x:%02x.%x @%02x.%c",
-                    this->name.c_str(), bus_num, dev_num, fun_num, reg_offs + (offset & 3),
-                    size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
-                );
-                return 0xFFFFFFFFUL; // PCI spec §6.1
+        case 3: // 0xC00000 // CONFIG_DATA
+            int bus_num, dev_num, fun_num;
+            uint8_t reg_offs;
+            AccessDetails details;
+            PCIDevice *device;
+            cfg_setup(offset, size, bus_num, dev_num, fun_num, reg_offs, details, device);
+            details.flags |= PCI_CONFIG_READ;
+            if (device) {
+                return pci_cfg_rev_read(device->pci_cfg_read(reg_offs, details), details);
             }
+            LOG_READ_NON_EXISTENT_PCI_DEVICE();
+            return 0xFFFFFFFFUL; // PCI spec §6.1
 
-            idsel = (this->config_addr >> 11) & 0x1FFFFFU;
+        case 2: // 0x800000 // CONFIG_ADDR
+            return this->config_addr;
 
-            if (!SINGLE_BIT_SET(idsel)) {
-                LOG_F(
-                    ERROR, "%s: read invalid IDSEL=0x%X config:0x%X ??:??.%x? @%02x?.%c",
-                    this->name.c_str(), idsel, this->config_addr,
-                    fun_num, reg_offs + (offset & 3),
-                    size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
-                );
-                return 0xFFFFFFFFUL; // PCI spec §6.1
-            }
-
-            if (idsel == BANDIT_ID_SEL) { // access to myself
-                result = this->pci_cfg_read(reg_offs, size);
-            } else {
-                if (this->dev_map.count(idsel)) {
-                    result = this->dev_map[idsel]->pci_cfg_read(reg_offs, size);
-                } else {
-                    dev_num = WHAT_BIT_SET(idsel) + 11;
-                    LOG_F(
-                        ERROR, "%s err: read attempt from non-existing PCI device ??:%02x.%x @%02x.%c",
-                        this->name.c_str(), dev_num, fun_num, reg_offs + (offset & 3),
-                        size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
-                    );
-                    return 0xFFFFFFFFUL; // PCI spec §6.1
+        default: // 0x000000 // I/O space
+        {
+            uint32_t result;
+            // broadcast I/O request to devices that support I/O space
+            // until a device returns true that means "request accepted"
+            for (auto& dev : this->io_space_devs) {
+                if (dev->pci_io_read(offset, size, &result)) {
+                    return result;
                 }
             }
-        } else {
-            result = this->config_addr;
+            LOG_F(ERROR, "%s: attempt to read from unmapped PCI I/O space, offset=0x%X",
+                  this->name.c_str(), offset);
+            return 0;
         }
-    } else { // I/O space access
-        // broadcast I/O request to devices that support I/O space
-        // until a device returns true that means "request accepted"
-        for (auto& dev : this->io_space_devs) {
-            if (dev->pci_io_read(offset, size, &result)) {
-                return result;
-            }
-        }
-        LOG_F(ERROR, "%s: attempt to read from unmapped PCI I/O space, offset=0x%X",
-              this->name.c_str(), offset);
     }
-    return result;
 }
 
-void Bandit::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
+void BanditHost::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
 {
-    int      bus_num, dev_num, fun_num;
-    uint8_t  reg_offs;
-    uint32_t idsel;
+    switch (offset >> 22) {
 
-    if (offset & BANDIT_CONFIG_SPACE) {
-        if (offset & 0x00400000) {
-            fun_num = (this->config_addr >> 8) & 7;
-            reg_offs = this->config_addr & 0xFCU;
-
-            // access to the CONFIG_DATA pseudo-register causes a Config Cycle
-            if (this->config_addr & BANDIT_CAR_TYPE) {
-                bus_num = (this->config_addr >> 16) & 255;
-                dev_num = (this->config_addr >> 11) & 31;
-                LOG_F(
-                    WARNING, "%s: write config cycle type 1 not supported yet %02x:%02x.%x @%02x.%c = %0*x",
-                    this->name.c_str(), bus_num, dev_num, fun_num, reg_offs + (offset & 3),
-                    size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size,
-                    size * 2, BYTESWAP_SIZED(value, size)
-                );
+        case 3: // 0xC00000 // CONFIG_DATA
+            int bus_num, dev_num, fun_num;
+            uint8_t reg_offs;
+            AccessDetails details;
+            PCIDevice *device;
+            cfg_setup(offset, size, bus_num, dev_num, fun_num, reg_offs, details, device);
+            details.flags |= PCI_CONFIG_WRITE;
+            if (device) {
+                uint32_t oldvalue = details.size == 4 ? 0 : device->pci_cfg_read(reg_offs, details);
+                value = pci_cfg_rev_write(oldvalue, details, value);
+                device->pci_cfg_write(reg_offs, value, details);
                 return;
             }
+            LOG_WRITE_NON_EXISTENT_PCI_DEVICE();
+            break;
 
-            idsel = (this->config_addr >> 11) & 0x1FFFFFU;
-
-            if (!SINGLE_BIT_SET(idsel)) {
-                LOG_F(
-                    ERROR, "%s: write invalid IDSEL=0x%X config:0x%X ??:??.%x? @%02x?.%c = %0*x",
-                    this->name.c_str(), idsel, this->config_addr,
-                    fun_num, reg_offs + (offset & 3),
-                    size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size,
-                    size * 2, BYTESWAP_SIZED(value, size)
-                );
-                return;
-            }
-
-            if (idsel == BANDIT_ID_SEL) { // access to myself
-                this->pci_cfg_write(reg_offs, value, size);
-                return;
-            }
-
-            if (this->dev_map.count(idsel)) {
-                this->dev_map[idsel]->pci_cfg_write(reg_offs, value, size);
-            } else {
-                dev_num = WHAT_BIT_SET(idsel) + 11;
-                LOG_F(
-                    ERROR, "%s err: write attempt to non-existing PCI device ??:%02x.%x @%02x.%c = %0*x",
-                    this->name.c_str(), dev_num, fun_num, reg_offs + (offset & 3),
-                    size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size,
-                    size * 2, BYTESWAP_SIZED(value, size)
-                );
-            }
-        } else {
+        case 2: // 0x800000 // CONFIG_ADDR
             this->config_addr = BYTESWAP_32(value);
-        }
-    } else { // I/O space access
-        // broadcast I/O request to devices that support I/O space
-        // until a device returns true that means "request accepted"
-        for (auto& dev : this->io_space_devs) {
-            if (dev->pci_io_write(offset, value, size)) {
-                return;
+            break;
+
+        default: // 0x000000 // I/O space
+            // broadcast I/O request to devices that support I/O space
+            // until a device returns true that means "request accepted"
+            for (auto& dev : this->io_space_devs) {
+                if (dev->pci_io_write(offset, value, size)) {
+                    return;
+                }
             }
-        }
-        LOG_F(ERROR, "%s: attempt to write to unmapped PCI I/O space, offset=0x%X",
-              this->name.c_str(), offset);
+            LOG_F(ERROR, "%s: attempt to write to unmapped PCI I/O space, offset=0x%X",
+                  this->name.c_str(), offset);
     }
 }
 
-void Bandit::verbose_address_space()
+void BanditPCI::verbose_address_space()
 {
     uint32_t mask;
     int bit_pos;
@@ -296,7 +261,7 @@ void Bandit::verbose_address_space()
     }
 }
 
-Chaos::Chaos(std::string name) : PCIHost()
+Chaos::Chaos(std::string name) : BanditHost()
 {
     this->name = name;
 
@@ -312,118 +277,6 @@ Chaos::Chaos(std::string name) : PCIHost()
     mem_ctrl->add_mmio_region(0xF0000000UL, 0x01000000, this);
 }
 
-uint32_t Chaos::read(uint32_t rgn_start, uint32_t offset, int size)
-{
-    int      bus_num, dev_num, fun_num;
-    uint8_t  reg_offs;
-    uint32_t result, idsel;
-
-    if (offset & BANDIT_CONFIG_SPACE) {
-        if (offset & 0x00400000) {
-            fun_num = (this->config_addr >> 8) & 7;
-            reg_offs = this->config_addr & 0xFCU;
-
-            // access to the CONFIG_DATA pseudo-register causes a Config Cycle
-            if (this->config_addr & BANDIT_CAR_TYPE) {
-                bus_num = (this->config_addr >> 16) & 255;
-                dev_num = (this->config_addr >> 11) & 31;
-                LOG_F(
-                    WARNING, "%s: read config cycle type 1 not supported yet %02x:%02x.%x @%02x.%c",
-                    this->name.c_str(), bus_num, dev_num, fun_num, reg_offs + (offset & 3),
-                    size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
-                );
-                return 0xFFFFFFFFUL; // PCI spec §6.1
-            }
-
-            idsel = (this->config_addr >> 11) & 0x1FFFFFU;
-
-            if (!SINGLE_BIT_SET(idsel)) {
-                LOG_F(
-                    ERROR, "%s: read invalid IDSEL=0x%X config:0x%X ??:??.%x? @%02x?.%c",
-                    this->name.c_str(), idsel, this->config_addr,
-                    fun_num, reg_offs + (offset & 3),
-                    size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
-                );
-                return 0xFFFFFFFFUL; // PCI spec §6.1
-            }
-
-            if (this->dev_map.count(idsel)) {
-                result = this->dev_map[idsel]->pci_cfg_read(reg_offs, size);
-            } else {
-                dev_num = WHAT_BIT_SET(idsel) + 11;
-                LOG_F(
-                    ERROR, "%s err: read attempt from non-existing VCI device ??:%02x.%x @%02x.%c",
-                    this->name.c_str(), dev_num, fun_num, reg_offs + (offset & 3),
-                    size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
-                );
-                return 0xFFFFFFFFUL; // PCI spec §6.1
-            }
-        } else {
-            result = this->config_addr;
-        }
-    } else { // I/O space access
-        LOG_F(ERROR, "%s: I/O space not supported", this->name.c_str());
-        return 0;
-    }
-    return result;
-}
-
-void Chaos::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
-{
-    int      bus_num, dev_num, fun_num;
-    uint8_t  reg_offs;
-    uint32_t idsel;
-
-    if (offset & BANDIT_CONFIG_SPACE) {
-        if (offset & 0x00400000) {
-            fun_num = (this->config_addr >> 8) & 7;
-            reg_offs = this->config_addr & 0xFCU;
-
-            // access to the CONFIG_DATA pseudo-register causes a Config Cycle
-            if (this->config_addr & BANDIT_CAR_TYPE) {
-                bus_num = (this->config_addr >> 16) & 255;
-                dev_num = (this->config_addr >> 11) & 31;
-                LOG_F(
-                    WARNING, "%s: write config cycle type 1 not supported yet %02x:%02x.%x @%02x.%c = %0*x",
-                    this->name.c_str(), bus_num, dev_num, fun_num, reg_offs + (offset & 3),
-                    size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size,
-                    size * 2, BYTESWAP_SIZED(value, size)
-                );
-                return;
-            }
-
-            idsel = (this->config_addr >> 11) & 0x1FFFFFU;
-
-            if (!SINGLE_BIT_SET(idsel)) {
-                LOG_F(
-                    ERROR, "%s: write invalid IDSEL=0x%X config:0x%X ??:??.%x? @%02x?.%c = %0*x",
-                    this->name.c_str(), idsel, this->config_addr,
-                    fun_num, reg_offs + (offset & 3),
-                    size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size,
-                    size * 2, BYTESWAP_SIZED(value, size)
-                );
-                return;
-            }
-
-            if (this->dev_map.count(idsel)) {
-                this->dev_map[idsel]->pci_cfg_write(reg_offs, value, size);
-            } else {
-                dev_num = WHAT_BIT_SET(idsel) + 11;
-                LOG_F(
-                    ERROR, "%s err: write attempt to non-existing VCI device ??:%02x.%x @%02x.%c = %0*x",
-                    this->name.c_str(), dev_num, fun_num, reg_offs + (offset & 3),
-                    size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size,
-                    size * 2, BYTESWAP_SIZED(value, size)
-                );
-            }
-        } else {
-            this->config_addr = BYTESWAP_32(value);
-        }
-    } else { // I/O space access
-        LOG_F(ERROR, "%s: I/O space not supported", this->name.c_str());
-    }
-}
-
 static const DeviceDescription Bandit1_Descriptor = {
     Bandit::create_first, {}, {}
 };
@@ -436,6 +289,11 @@ static const DeviceDescription Chaos_Descriptor = {
     Chaos::create, {}, {}
 };
 
-REGISTER_DEVICE(Bandit1, Bandit1_Descriptor);
-REGISTER_DEVICE(PsxPci1, PsxPci1_Descriptor);
-REGISTER_DEVICE(Chaos,   Chaos_Descriptor);
+static const DeviceDescription Bandit1PCI_Descriptor = {
+    BanditPCI::create_first, {}, {}
+};
+
+REGISTER_DEVICE(Bandit1   , Bandit1_Descriptor);
+REGISTER_DEVICE(Bandit1PCI, Bandit1PCI_Descriptor);
+REGISTER_DEVICE(PsxPci1   , PsxPci1_Descriptor);
+REGISTER_DEVICE(Chaos     , Chaos_Descriptor);

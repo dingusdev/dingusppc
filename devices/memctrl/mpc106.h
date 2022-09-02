@@ -59,12 +59,13 @@ public:
 
 protected:
     /* PCI access */
-    uint32_t pci_read(uint32_t size);
-    void pci_write(uint32_t value, uint32_t size);
+    uint32_t pci_read(uint32_t offset, uint32_t size);
+    void pci_write(uint32_t offset, uint32_t value, uint32_t size);
+    void cfg_setup(uint32_t offset, int size, int &bus_num, int &dev_num, int &fun_num, uint8_t &reg_offs, AccessDetails &details, PCIDevice *&device);
 
     /* my own PCI configuration registers access */
-    uint32_t pci_cfg_read(uint32_t reg_offs, uint32_t size);
-    void pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size);
+    uint32_t pci_cfg_read(uint32_t reg_offs, AccessDetails &details);
+    void pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDetails &details);
 
     bool supports_io_space(void) {
         return true;

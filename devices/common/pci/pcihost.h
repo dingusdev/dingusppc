@@ -29,6 +29,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <unordered_map>
 #include <vector>
 
+enum {
+    PCI_CONFIG_DIRECTION    = 1,
+    PCI_CONFIG_READ         = 0,
+    PCI_CONFIG_WRITE        = 1,
+
+    PCI_CONFIG_TYPE         = 4,
+    PCI_CONFIG_TYPE_0       = 0,
+    PCI_CONFIG_TYPE_1       = 4,
+};
+
+/** PCI config space access details */
+typedef struct AccessDetails {
+    uint8_t size;
+    uint8_t offset;
+    uint8_t flags;
+} AccessDetails;
+
 class PCIDevice;    // forward declaration to prevent errors
 
 class PCIHost {
@@ -45,6 +62,8 @@ public:
     virtual bool pci_unregister_mmio_region(uint32_t start_addr, uint32_t size, PCIDevice* obj);
 
     virtual void attach_pci_device(std::string& dev_name, int slot_id);
+
+    virtual PCIDevice *pci_find_device(uint8_t bus_num, uint8_t dev_num, uint8_t fun_num);
 
 protected:
     std::unordered_map<int, PCIDevice*> dev_map;
