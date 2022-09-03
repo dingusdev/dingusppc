@@ -77,6 +77,7 @@ static const map<string, string> PropHelp = {
     {"rambank4_size",   "specifies RAM bank 4 size in MB"},
     {"gfxmem_size",     "specifies video memory size in MB"},
     {"fdd_img",         "specifies path to floppy disk image"},
+    {"fdd_fmt",         "specifies floppy disk format"},
     {"fdd_wr_prot",     "toggles floppy disk's write protection"},
     {"mon_id",          "specifies which monitor to emulate"},
     {"pci_A1",          "insert a PCI device into A1 slot"},

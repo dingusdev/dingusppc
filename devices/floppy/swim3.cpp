@@ -33,6 +33,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <memory>
 #include <string>
+#include <vector>
 
 using namespace Swim3;
 
@@ -335,11 +336,19 @@ void Swim3Ctrl::stop_disk_access()
     this->access_timer_id = 0;
 }
 
+// floppy disk formats properties for the cases
+// where disk format needs to be specified manually
+static const std::vector<std::string> FloppyFormats = {
+    "", "GCR_400K", "GCR_800K", "MFM_720K", "MFM_1440K"
+};
+
 static const PropMap Swim3_Properties = {
     {"fdd_img",
         new StrProperty("")},
     {"fdd_wr_prot",
         new BinProperty(0)},
+    {"fdd_fmt",
+        new StrProperty("", FloppyFormats)},
 };
 
 static const DeviceDescription Swim3_Descriptor = {

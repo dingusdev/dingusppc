@@ -21,7 +21,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Support for reading and writing of various floppy images. */
 
-#include "floppyimg.h"
+#include <devices/floppy/floppyimg.h>
+#include <machines/machineproperties.h>
 #include <loguru.hpp>
 #include <memaccess.h>
 
@@ -67,27 +68,14 @@ static FlopImgType identify_image(std::ifstream& img_file)
     return FlopImgType::UNKNOWN;
 }
 
-static int64_t get_hfs_vol_size(const uint8_t *mdb_data)
-{
-    uint16_t drNmAlBlks = READ_WORD_BE_A(&mdb_data[18]);
-    uint32_t drAlBlkSiz = READ_DWORD_BE_A(&mdb_data[20]);
-
-    // calculate size of the volume bitmap
-    uint32_t vol_bmp_size = (((drNmAlBlks + 8) >> 3) + 512) & 0xFFFFFE00UL;
-
-    return (drNmAlBlks * drAlBlkSiz + vol_bmp_size + 3*BLOCK_SIZE);
-}
-
 //======================= RAW IMAGE CONVERTER ============================
 RawFloppyImg::RawFloppyImg(std::string& file_path) : FloppyImgConverter()
 {
     this->img_path = file_path;
 }
 
-/** For raw images, we're going to ensure that the data fits into
-    one of the supported floppy disk sizes as well as image size
-    matches the size of the embedded HFS/MFS volume.
-    Then we'll attempt to guess disk format based on image size.
+/**
+  For raw images, we'll attempt to guess disk format based on image size.
 */
 int RawFloppyImg::calc_phys_params()
 {
@@ -118,33 +106,24 @@ int RawFloppyImg::calc_phys_params()
         return -1;
     }
 
-    // read Master Directory Block from logical block 2
-    uint8_t buf[512] = { 0 };
-
-    img_file.seekg(2*BLOCK_SIZE, img_file.beg);
-    img_file.read((char *)buf, sizeof(buf));
-    img_file.close();
-
-    uint64_t vol_size = 0;
-
-    if (buf[0] == 0x42 && buf[1] == 0x44) {
-        // check HFS volume size
-        vol_size = get_hfs_vol_size(buf);
-    } else if (buf[0] == 0xD2 && buf[1] == 0xD7) {
-        // check MFS volume size
-    } else {
-        LOG_F(ERROR, "RawFloppyImg: unknown volume type!");
-        return -1;
-    }
-
-    if (vol_size > this->img_size) {
-        LOG_F(INFO, "RawFloppyImg: volume size > image size!");
-        LOG_F(INFO, "Volume size: %llu, Image size: %d", vol_size, this->img_size);
-        return -1;
-    }
-
-    // raw images don't include anything than raw disk data
+    // raw images don't include anything other than raw disk data
     this->data_size = this->img_size;
+
+    // see if user has specified disk format manually
+    std::string fmt = GET_STR_PROP("fdd_fmt");
+    if (!fmt.empty()) {
+        if (fmt == "GCR_400K") {
+            this->img_size = 409600;
+        } else if (fmt == "GCR_800K") {
+            this->img_size = 819200;
+        } else if (fmt == "MFM_720K") {
+            this->img_size = 737280;
+        } else if (fmt == "MFM_1440K") {
+            this->img_size = 1474560;
+        } else {
+            LOG_F(WARNING, "Invalid floppy disk format %s", fmt.c_str());
+        }
+    }
 
     // guess disk format from image file size
     static struct {
