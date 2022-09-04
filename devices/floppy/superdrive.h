@@ -56,6 +56,7 @@ enum CommandAddr : uint8_t {
     Step_Direction    = 0,
     Do_Step           = 1,
     Motor_On_Off      = 2,
+    Eject_Disk        = 3,
     Reset_Eject_Latch = 4,
     Switch_Drive_Mode = 5,
 };
@@ -94,6 +95,7 @@ public:
     char* get_sector_data_ptr(int sector_num);
 
 protected:
+    void reset_params();
     void set_disk_phys_params();
     void switch_drive_mode(int mode);
 

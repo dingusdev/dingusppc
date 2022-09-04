@@ -35,9 +35,15 @@ MacSuperDrive::MacSuperDrive()
     this->name = "Superdrive";
     this->supported_types = HWCompType::FLOPPY_DRV;
 
+    this->eject_latch = 0; // eject latch is off
+
+    this->reset_params();
+}
+
+void MacSuperDrive::reset_params()
+{
     this->media_kind  = MediaKind::high_density;
     this->has_disk    = 0; // drive is empty
-    this->eject_latch = 0; // eject latch is off
     this->drive_mode  = RecMethod::MFM; // assume MFM mode by default
     this->motor_stat  = 0; // spindle motor is off
     this->cur_track   = 0; // current head position
@@ -74,6 +80,12 @@ void MacSuperDrive::command(uint8_t addr, uint8_t value)
             }
         }
         break;
+    case CommandAddr::Eject_Disk:
+        if (value) {
+            LOG_F(INFO, "Superdrive: disk ejected");
+            this->eject_latch = 1;
+            this->reset_params();
+        }
     case CommandAddr::Reset_Eject_Latch:
         if (value) {
             this->eject_latch = 0;
