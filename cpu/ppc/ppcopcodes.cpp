@@ -883,7 +883,7 @@ void dppc_interpreter::ppc_mfspr() {
         ppc_state.spr[SPR::RTCL_U] = calc_rtcl_value();
         break;
     case SPR::RTCU_U:
-        ppc_state.spr[SPR::RTCL_U] = rtc_hi;
+        ppc_state.spr[SPR::RTCU_U] = rtc_hi;
         break;
     }
 
