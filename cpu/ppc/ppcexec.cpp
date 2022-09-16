@@ -69,7 +69,7 @@ int      icnt_factor;
 uint64_t tbr_wr_timestamp;  // stores vCPU virtual time of the last TBR write
 uint64_t rtc_timestamp;     // stores vCPU virtual time of the last RTC write
 uint64_t tbr_wr_value;      // last value written to the TBR
-uint64_t tbr_freq_hz;       // TBR/RTC driving frequency in Hz
+uint32_t tbr_freq_ghz;      // TBR/RTC driving frequency in GHz expressed as a 32 bit fraction less than 1.0.
 uint64_t timebase_counter;  // internal timebase counter
 uint32_t decr;              // current value of PPC DEC register
 uint32_t rtc_lo;            // MPC601 RTC lower, counts nanoseconds
@@ -766,7 +766,7 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, uint64_t tb_freq)
     tbr_wr_timestamp = 0;
     rtc_timestamp = 0;
     tbr_wr_value = 0;
-    tbr_freq_hz = tb_freq;
+    tbr_freq_ghz = (tb_freq << 32) / NS_PER_SEC;
 
     exec_flags = 0;
 

@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // General opcodes for the processor - ppcopcodes.cpp
 
 #include <core/timermanager.h>
+#include <core/mathutils.h>
 #include "ppcemu.h"
 #include "ppcmmu.h"
 #include <array>
@@ -895,7 +896,7 @@ void dppc_interpreter::ppc_mfspr() {
 static inline uint64_t calc_tbr_value()
 {
     uint64_t diff = get_virt_time_ns() - tbr_wr_timestamp;
-    uint64_t tbr_inc = diff * tbr_freq_hz / NS_PER_SEC;
+    uint64_t tbr_inc; uint32_t tbr_inc_lo; _u32xu64(tbr_freq_ghz, diff, tbr_inc, tbr_inc_lo);
     return (tbr_wr_value + tbr_inc);
 }
 
