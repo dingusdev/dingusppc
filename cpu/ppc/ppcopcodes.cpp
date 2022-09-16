@@ -858,9 +858,7 @@ void dppc_interpreter::ppc_mtmsr() {
 static inline void calc_rtcl_value()
 {
     uint64_t new_ts = get_virt_time_ns();
-    uint64_t diff    = new_ts - rtc_timestamp;
-    uint64_t rtc_inc = diff * tbr_freq_hz / NS_PER_SEC;
-    uint64_t rtc_l   = rtc_lo + (rtc_inc << 7);
+    uint64_t rtc_l = new_ts - rtc_timestamp + rtc_lo;
     if (rtc_l >= ONE_BILLION_NS) { // check RTCL overflow
         rtc_hi += rtc_l / ONE_BILLION_NS;
         rtc_lo  = rtc_l % ONE_BILLION_NS;
