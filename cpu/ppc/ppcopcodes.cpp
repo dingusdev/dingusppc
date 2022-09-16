@@ -855,18 +855,20 @@ void dppc_interpreter::ppc_mtmsr() {
     }
 }
 
-static inline uint64_t calc_rtcl_value()
+static inline void calc_rtcl_value()
 {
-    uint64_t diff    = get_virt_time_ns() - rtc_timestamp;
+    uint64_t new_ts = get_virt_time_ns();
+    uint64_t diff    = new_ts - rtc_timestamp;
     uint64_t rtc_inc = diff * tbr_freq_hz / NS_PER_SEC;
     uint64_t rtc_l   = rtc_lo + (rtc_inc << 7);
     if (rtc_l >= ONE_BILLION_NS) { // check RTCL overflow
         rtc_hi += rtc_l / ONE_BILLION_NS;
         rtc_lo  = rtc_l % ONE_BILLION_NS;
-        rtc_timestamp = get_virt_time_ns();
-        rtc_l =  rtc_lo;
     }
-    return rtc_l & 0x3FFFFF80UL;
+    else {
+        rtc_lo = rtc_l;
+    }
+    rtc_timestamp = new_ts;
 }
 
 void dppc_interpreter::ppc_mfspr() {
@@ -880,9 +882,11 @@ void dppc_interpreter::ppc_mfspr() {
 
     switch (ref_spr) {
     case SPR::RTCL_U:
-        ppc_state.spr[SPR::RTCL_U] = calc_rtcl_value();
+        calc_rtcl_value();
+        ppc_state.spr[SPR::RTCL_U] = rtc_lo & 0x3FFFFF80UL;
         break;
     case SPR::RTCU_U:
+        calc_rtcl_value();
         ppc_state.spr[SPR::RTCU_U] = rtc_hi;
         break;
     }
