@@ -930,12 +930,12 @@ void dppc_interpreter::ppc_mtspr() {
 
     switch (ref_spr) {
     case SPR::RTCL_S:
+        calc_rtcl_value();
         rtc_lo = val & 0x3FFFFF80UL;
-        rtc_timestamp = get_virt_time_ns();
         break;
     case SPR::RTCU_S:
+        calc_rtcl_value();
         rtc_hi = val;
-        rtc_timestamp = get_virt_time_ns();
         break;
     case SPR::TBL_S:
         update_timebase(0xFFFFFFFF00000000ULL, val);
