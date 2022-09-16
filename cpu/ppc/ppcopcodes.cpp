@@ -857,13 +857,13 @@ void dppc_interpreter::ppc_mtmsr() {
 
 static inline uint64_t calc_rtcl_value()
 {
-    uint64_t diff    = get_virt_time_ns() - tbr_wr_timestamp;
+    uint64_t diff    = get_virt_time_ns() - rtc_timestamp;
     uint64_t rtc_inc = diff * tbr_freq_hz / NS_PER_SEC;
     uint64_t rtc_l   = rtc_lo + (rtc_inc << 7);
     if (rtc_l >= ONE_BILLION_NS) { // check RTCL overflow
         rtc_hi += rtc_l / ONE_BILLION_NS;
         rtc_lo  = rtc_l % ONE_BILLION_NS;
-        tbr_wr_timestamp = get_virt_time_ns();
+        rtc_timestamp = get_virt_time_ns();
         rtc_l =  rtc_lo;
     }
     return rtc_l & 0x3FFFFF80UL;
@@ -927,11 +927,11 @@ void dppc_interpreter::ppc_mtspr() {
     switch (ref_spr) {
     case SPR::RTCL_S:
         rtc_lo = val & 0x3FFFFF80UL;
-        tbr_wr_timestamp = get_virt_time_ns();
+        rtc_timestamp = get_virt_time_ns();
         break;
     case SPR::RTCU_S:
         rtc_hi = val;
-        tbr_wr_timestamp = get_virt_time_ns();
+        rtc_timestamp = get_virt_time_ns();
         break;
     case SPR::TBL_S:
         update_timebase(0xFFFFFFFF00000000ULL, val);
