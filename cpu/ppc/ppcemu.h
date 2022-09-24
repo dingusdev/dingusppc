@@ -159,8 +159,9 @@ extern uint32_t opcode_value;      // used for interpreting opcodes
 
 extern uint64_t timebase_counter;
 extern uint64_t tbr_wr_timestamp;
+extern uint64_t rtc_timestamp;
 extern uint64_t tbr_wr_value;
-extern uint64_t tbr_freq_hz;
+extern uint32_t tbr_freq_ghz;
 extern uint32_t rtc_lo, rtc_hi;
 
 // Additional steps to prevent overflow?

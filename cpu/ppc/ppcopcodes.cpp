@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // General opcodes for the processor - ppcopcodes.cpp
 
 #include <core/timermanager.h>
+#include <core/mathutils.h>
 #include "ppcemu.h"
 #include "ppcmmu.h"
 #include <array>
@@ -855,18 +856,18 @@ void dppc_interpreter::ppc_mtmsr() {
     }
 }
 
-static inline uint64_t calc_rtcl_value()
+static inline void calc_rtcl_value()
 {
-    uint64_t diff    = get_virt_time_ns() - tbr_wr_timestamp;
-    uint64_t rtc_inc = diff * tbr_freq_hz / NS_PER_SEC;
-    uint64_t rtc_l   = rtc_lo + (rtc_inc << 7);
+    uint64_t new_ts = get_virt_time_ns();
+    uint64_t rtc_l = new_ts - rtc_timestamp + rtc_lo;
     if (rtc_l >= ONE_BILLION_NS) { // check RTCL overflow
         rtc_hi += rtc_l / ONE_BILLION_NS;
         rtc_lo  = rtc_l % ONE_BILLION_NS;
-        tbr_wr_timestamp = get_virt_time_ns();
-        rtc_l =  rtc_lo;
     }
-    return rtc_l & 0x3FFFFF80UL;
+    else {
+        rtc_lo = rtc_l;
+    }
+    rtc_timestamp = new_ts;
 }
 
 void dppc_interpreter::ppc_mfspr() {
@@ -880,10 +881,12 @@ void dppc_interpreter::ppc_mfspr() {
 
     switch (ref_spr) {
     case SPR::RTCL_U:
-        ppc_state.spr[SPR::RTCL_U] = calc_rtcl_value();
+        calc_rtcl_value();
+        ppc_state.spr[SPR::RTCL_U] = rtc_lo & 0x3FFFFF80UL;
         break;
     case SPR::RTCU_U:
-        ppc_state.spr[SPR::RTCL_U] = rtc_hi;
+        calc_rtcl_value();
+        ppc_state.spr[SPR::RTCU_U] = rtc_hi;
         break;
     }
 
@@ -893,7 +896,7 @@ void dppc_interpreter::ppc_mfspr() {
 static inline uint64_t calc_tbr_value()
 {
     uint64_t diff = get_virt_time_ns() - tbr_wr_timestamp;
-    uint64_t tbr_inc = diff * tbr_freq_hz / NS_PER_SEC;
+    uint64_t tbr_inc; uint32_t tbr_inc_lo; _u32xu64(tbr_freq_ghz, diff, tbr_inc, tbr_inc_lo);
     return (tbr_wr_value + tbr_inc);
 }
 
@@ -926,12 +929,12 @@ void dppc_interpreter::ppc_mtspr() {
 
     switch (ref_spr) {
     case SPR::RTCL_S:
+        calc_rtcl_value();
         rtc_lo = val & 0x3FFFFF80UL;
-        tbr_wr_timestamp = get_virt_time_ns();
         break;
     case SPR::RTCU_S:
+        calc_rtcl_value();
         rtc_hi = val;
-        tbr_wr_timestamp = get_virt_time_ns();
         break;
     case SPR::TBL_S:
         update_timebase(0xFFFFFFFF00000000ULL, val);
