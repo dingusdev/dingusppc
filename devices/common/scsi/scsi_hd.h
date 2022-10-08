@@ -26,17 +26,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <devices/common/scsi/scsi.h>
 #include <cinttypes>
+#include <fstream>
 #include <stdio.h>
 #include <string>
 
-class HardDrive : public ScsiDevice {
+class SCSI_HD : public ScsiDevice {
 public:
-    HardDrive(std::string filename);
-    ~HardDrive() = default;
+    SCSI_HD();
+    ~SCSI_HD() = default;
 
-    virtual void notify(ScsiMsg msg_type, int param){
-        return param;
-    };
+    virtual void notify(ScsiMsg msg_type, int param) = 0;
 
     int test_unit_ready();
     int req_sense(uint8_t alloc_len);
@@ -52,11 +51,12 @@ public:
 
 protected:
     std::string img_path;
-    fstream hdd_img;
+    std::fstream hdd_img;
     uint64_t img_size;
     char img_buffer[1 << 17];
     uint8_t scsi_command[12];
     uint64_t file_offset = 0;
-}
+    uint8_t status;
+};
 
 #endif

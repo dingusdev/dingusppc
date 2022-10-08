@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/dbdma.h>
 #include <devices/common/hwcomponent.h>
 #include <devices/common/viacuda.h>
+#include <devices/common/ide/heath_ide.h>
 #include <devices/floppy/swim3.h>
 #include <devices/ioctrl/macio.h>
 #include <devices/serial/escc.h>
@@ -77,6 +78,9 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
 
     // connect SCSI HW
     this->mesh = dynamic_cast<MESHController*>(gMachineObj->get_comp_by_name("Mesh"));
+
+    // connect IDE HW
+    this->ide_0 = dynamic_cast<HeathIDE*>(gMachineObj->get_comp_by_name("IDE0"));
 
     // connect serial HW
     this->escc = dynamic_cast<EsccController*>(gMachineObj->get_comp_by_name("Escc"));
@@ -161,6 +165,9 @@ uint32_t HeathrowIC::read(uint32_t rgn_start, uint32_t offset, int size) {
     case 0x17:
         res = this->viacuda->read((offset - 0x16000) >> 9);
         break;
+    case 0x20:
+        res = this->ide_0->read((offset - 0x20000) >> 4);
+        break;
     default:
         if (sub_addr >= 0x60) {
             res = this->nvram->read_byte((offset - 0x60000) >> 4);
@@ -205,6 +212,9 @@ void HeathrowIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int 
     case 0x16:
     case 0x17:
         this->viacuda->write((offset - 0x16000) >> 9, value);
+        break;
+    case 0x20:
+        this->ide_0->write((offset - 0x20000) >> 9, value);
         break;
     default:
         if (sub_addr >= 0x60) {

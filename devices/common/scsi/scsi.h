@@ -59,38 +59,42 @@ enum ScsiMsg : int {
 };
 
 enum ScsiCommamd : int {
-    SCSI_TEST_UNITY_READY = 0x0,
-    SCSI_REWIND           = 0x1,
-    SCSI_REQ_SENSE        = 0x3,
-    SCSI_FORMAT           = 0x4,
-    SCSI_READ_BLK_LIMITS  = 0x5,
-    SCSI_READ_6           = 0x8,
-    SCSI_WRITE_6          = 0xA,
-    SCSI_SEEK_6           = 0xB,
-    SCSI_VERIFY_6         = 0x13,
-    SCSI_MODE_SELECT_6    = 0x15,
-    SCSI_ERASE_6          = 0x19,
-    SCSI_MODE_SENSE_6     = 0x1A,
-    SCSI_DIAG_RESULTS     = 0x1C,
-    SCSI_READ_CAPAC_10    = 0x25,
-    SCSI_READ_10          = 0x28,
-    SCSI_WRITE_10         = 0x2A,
-    SCSI_VERIFY_10        = 0x2F,
-    SCSI_READ_LONG_10     = 0x35,
+    TEST_UNITY_READY = 0x0,
+    REWIND           = 0x1,
+    REQ_SENSE        = 0x3,
+    FORMAT           = 0x4,
+    READ_BLK_LIMITS  = 0x5,
+    READ_6           = 0x8,
+    WRITE_6          = 0xA,
+    SEEK_6           = 0xB,
+    INQUIRY          = 0x12,
+    VERIFY_6         = 0x13,
+    MODE_SELECT_6    = 0x15,
+    RELEASE_UNIT     = 0x17,
+    ERASE_6          = 0x19,
+    MODE_SENSE_6     = 0x1A,
+    DIAG_RESULTS     = 0x1C,
+    SEND_DIAGS       = 0x1D,
+    READ_CAPAC_10    = 0x25,
+    READ_10          = 0x28,
+    WRITE_10         = 0x2A,
+    VERIFY_10        = 0x2F,
+    READ_LONG_10     = 0x35,
 };
 
 enum ScsiSense : int {
-    SCSI_NO_SENSE       = 0x0,
-    SCSI_RECOVERED      = 0x1,
-    SCSI_NOT_READY      = 0x2,
-    SCSI_MEDIA_ERR      = 0x3,
-    SCSI_HW_ERROR       = 0x4,
-    SCSI_ILLEGAL_REQ    = 0x5,
-    SCSI_UNIT_ATTENTION = 0x6,
-    SCSI_DATA_PROTECT   = 0x7,
-    SCSI_BLANK_CHECK    = 0x8,
-    SCSI_MISCOMPARE     = 0xE,
-    SCSI_COMPLETED      = 0xF,
+    NO_SENSE       = 0x0,
+    RECOVERED      = 0x1,
+    NOT_READY      = 0x2,
+    MEDIUM_ERR     = 0x3,
+    HW_ERROR       = 0x4,
+    ILLEGAL_REQ    = 0x5,
+    UNIT_ATTENTION = 0x6,
+    DATA_PROTECT   = 0x7,
+    BLANK_CHECK    = 0x8,
+    VOL_OVERFLOW   = 0xD,
+    MISCOMPARE     = 0xE,
+    COMPLETED      = 0xF,
 
 };
 
@@ -110,6 +114,7 @@ public:
     ~ScsiDevice() = default;
 
     virtual void notify(ScsiMsg msg_type, int param) = 0;
+    virtual void select() = 0;
 
 private:
     int scsi_id;

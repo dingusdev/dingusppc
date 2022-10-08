@@ -150,6 +150,10 @@ enum AMICReg : uint32_t {
 
     // Interrupt registers
     Int_Ctrl            = 0x2A000,
+    DMA_Int_0           = 0x2A008,
+    Bus_Err_Int_0       = 0x2A009,
+    DMA_Int_1           = 0x2A00A,
+    Bus_Err_Int_1       = 0x2A00B,
 
     // Undocumented diagnostics register
     Diag_Reg            = 0x2C000,
