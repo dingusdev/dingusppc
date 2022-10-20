@@ -34,9 +34,11 @@ using namespace std;
 #define MIN_TIMEOUT_NS 200
 
 #define NS_PER_SEC      1E9
+#define USEC_PER_SEC    1E6
+#define NS_PER_USEC     1000UL
 #define ONE_BILLION_NS  0x3B9ACA00UL
 
-#define USECS_TO_NSECS(us) (us) * 1000
+#define USECS_TO_NSECS(us) (us) * NS_PER_USEC
 
 typedef function<void()> timer_cb;
 
