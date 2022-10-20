@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -38,13 +38,13 @@ public:
                                       uint8_t **p_data) = 0;
 };
 
-// Base class for bidirectional DMA channels.
-class DmaBidirChannel {
+class DmaInChannel {
 public:
-    virtual bool            is_active() { return true; };
     virtual int             push_data(const char* src_ptr, int len) = 0;
-    virtual DmaPullResult   pull_data(uint32_t req_len, uint32_t *avail_len,
-                                      uint8_t **p_data) = 0;
+};
+
+// Base class for bidirectional DMA channels.
+class DmaBidirChannel : public DmaOutChannel, public DmaInChannel {
 };
 
 #endif // DMA_CORE_H

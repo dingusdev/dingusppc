@@ -204,7 +204,7 @@ void PdmOnboardVideo::enable_video_internal()
     LOG_F(INFO, "PDM-Video: framebuffer phys base addr = 0x%X", fb_base_phys);
 
     // set framebuffer address and pitch
-    this->fb_ptr = mmu_get_dma_mem(fb_base_phys, PDM_FB_SIZE_MAX);
+    this->fb_ptr = mmu_get_dma_mem(fb_base_phys, PDM_FB_SIZE_MAX, nullptr);
     this->active_width  = new_width;
     this->active_height = new_height;
 

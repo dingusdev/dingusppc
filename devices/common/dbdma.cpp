@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/dbdma.h>
 #include <devices/common/dmacore.h>
 #include <endianswap.h>
+#include <memaccess.h>
 
 #include <cinttypes>
 #include <cstring>
@@ -36,21 +37,51 @@ void DMAChannel::set_callbacks(DbdmaCallback start_cb, DbdmaCallback stop_cb)
     this->stop_cb  = stop_cb;
 }
 
-void DMAChannel::get_next_cmd(uint32_t cmd_addr, DMACmd* p_cmd) {
+void DMAChannel::fetch_cmd(uint32_t cmd_addr, DMACmd* p_cmd) {
     /* load DMACmd from physical memory */
-    memcpy((uint8_t*)p_cmd, mmu_get_dma_mem(cmd_addr, 16), 16);
+    memcpy((uint8_t*)p_cmd, mmu_get_dma_mem(cmd_addr, 16, nullptr), 16);
 }
 
 uint8_t DMAChannel::interpret_cmd() {
     DMACmd cmd_struct;
+    bool   is_writable;
+    int    cmd;
 
-    get_next_cmd(this->cmd_ptr, &cmd_struct);
+    if (this->cmd_in_progress) {
+        // return current command if there is data to transfer
+        if (this->queue_len)
+            return cmd;
+
+        // obtain real pointer to the descriptor of the completed command
+        uint8_t *curr_cmd = mmu_get_dma_mem(this->cmd_ptr - 16, 16, &is_writable);
+
+        // get command code
+        cmd = curr_cmd[3] >> 4;
+
+        // all commands except STOP update cmd.xferStatus
+        if (cmd < 7 && is_writable) {
+            WRITE_WORD_LE_A(&curr_cmd[14], this->ch_stat | CH_STAT_ACTIVE);
+        }
+
+        // all INPUT and OUTPUT commands update cmd.resCount
+        if (cmd < 4 && is_writable) {
+            WRITE_WORD_LE_A(&curr_cmd[12], this->queue_len & 0xFFFFUL);
+        }
+
+        this->cmd_in_progress = false;
+    }
+
+    fetch_cmd(this->cmd_ptr, &cmd_struct);
+
+    cmd = cmd_struct.cmd_key >> 4;
 
     this->ch_stat &= ~CH_STAT_WAKE; /* clear wake bit (DMA spec, 5.5.3.4) */
 
     switch (cmd_struct.cmd_key >> 4) {
-    case 0:
-        LOG_F(9, "Executing DMA Command OUTPUT_MORE");
+    case 0: // OUTPUT_MORE
+    case 1: // OUTPUT_LAST
+    case 2: // INPUT_MORE
+    case 3: // INPUT_LAST
         if (cmd_struct.cmd_key & 7) {
             LOG_F(ERROR, "Key > 0 not implemented");
             break;
@@ -59,35 +90,10 @@ uint8_t DMAChannel::interpret_cmd() {
             LOG_F(ERROR, "non-zero i/b/w not implemented");
             break;
         }
-        // this->dma_cb->dma_push(
-        //    mmu_get_dma_mem(cmd_struct.address, cmd_struct.req_count),
-        //    cmd_struct.req_count);
-        this->queue_data = mmu_get_dma_mem(cmd_struct.address, cmd_struct.req_count);
+        this->queue_data = mmu_get_dma_mem(cmd_struct.address, cmd_struct.req_count, &is_writable);
         this->queue_len  = cmd_struct.req_count;
         this->cmd_ptr += 16;
-        break;
-    case 1:
-        LOG_F(9, "Executing DMA Command OUTPUT_LAST");
-        if (cmd_struct.cmd_key & 7) {
-            LOG_F(ERROR, "Key > 0 not implemented");
-            break;
-        }
-        if (cmd_struct.cmd_bits & 0x3F) {
-            LOG_F(ERROR, "non-zero i/b/w not implemented");
-            break;
-        }
-        // this->dma_cb->dma_push(
-        //    mmu_get_dma_mem(cmd_struct.address, cmd_struct.req_count),
-        //    cmd_struct.req_count);
-        this->queue_data = mmu_get_dma_mem(cmd_struct.address, cmd_struct.req_count);
-        this->queue_len  = cmd_struct.req_count;
-        this->cmd_ptr += 16;
-        break;
-    case 2:
-        LOG_F(ERROR, "Unsupported DMA Command INPUT_MORE");
-        break;
-    case 3:
-        LOG_F(ERROR, "Unsupported DMA Command INPUT_LAST");
+        this->cmd_in_progress = true;
         break;
     case 4:
         LOG_F(ERROR, "Unsupported DMA Command STORE_QUAD");
@@ -96,11 +102,11 @@ uint8_t DMAChannel::interpret_cmd() {
         LOG_F(ERROR, "Unsupported DMA Command LOAD_QUAD");
         break;
     case 6:
-        LOG_F(INFO, "Unsupported DMA Command NOP");
+        LOG_F(ERROR, "Unsupported DMA Command NOP");
         break;
     case 7:
-        LOG_F(INFO, "DMA Command: 7 (STOP)");
         this->ch_stat &= ~CH_STAT_ACTIVE;
+        this->cmd_in_progress = false;
         break;
     default:
         LOG_F(ERROR, "Unsupported DMA command 0x%X", cmd_struct.cmd_key >> 4);
@@ -149,7 +155,7 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
     case DMAReg::CH_CTRL:
         mask     = value >> 16;
         new_stat = (value & mask & 0xF0FFU) | (old_stat & ~mask);
-        LOG_F(INFO, "New ChannelStatus value = 0x%X", new_stat);
+        LOG_F(9, "New ChannelStatus value = 0x%X", new_stat);
 
         if ((new_stat & CH_STAT_RUN) != (old_stat & CH_STAT_RUN)) {
             if (new_stat & CH_STAT_RUN) {
@@ -184,7 +190,7 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
     case DMAReg::CMD_PTR_LO:
         if (!(this->ch_stat & CH_STAT_RUN) && !(this->ch_stat & CH_STAT_ACTIVE)) {
             this->cmd_ptr = value;
-            LOG_F(INFO, "CommandPtrLo set to 0x%X", this->cmd_ptr);
+            LOG_F(9, "CommandPtrLo set to 0x%X", this->cmd_ptr);
         }
         break;
     default:
@@ -227,6 +233,33 @@ DmaPullResult DMAChannel::pull_data(uint32_t req_len, uint32_t *avail_len, uint8
     return DmaPullResult::NoMoreData; /* tell the caller there is no more data */
 }
 
+int DMAChannel::push_data(const char* src_ptr, int len)
+{
+    if (this->ch_stat & CH_STAT_DEAD || !(this->ch_stat & CH_STAT_ACTIVE)) {
+        LOG_F(WARNING, "DBDMA: attempt to push data to dead/idle channel");
+        return -1;
+    }
+
+    // interpret DBDMA program until we get buffer to fill in or become idle
+    while ((this->ch_stat & CH_STAT_ACTIVE) && !this->queue_len) {
+        this->interpret_cmd();
+    }
+
+    if (this->queue_len) {
+        len = std::min((int)this->queue_len, len);
+        std::memcpy(this->queue_data, src_ptr, len);
+        this->queue_data += len;
+        this->queue_len  -= len;
+    }
+
+    // proceed with the DBDMA program if the buffer became exhausted
+    if (!this->queue_len) {
+        this->interpret_cmd();
+    }
+
+    return 0;
+}
+
 bool DMAChannel::is_active()
 {
     if (this->ch_stat & CH_STAT_DEAD || !(this->ch_stat & CH_STAT_ACTIVE)) {
@@ -248,7 +281,8 @@ void DMAChannel::start()
 
     this->queue_len = 0;
 
-    this->start_cb();
+    if (this->start_cb)
+        this->start_cb();
 }
 
 void DMAChannel::resume() {
@@ -266,5 +300,6 @@ void DMAChannel::abort() {
 
 void DMAChannel::pause() {
     LOG_F(INFO, "Pausing DMA channel");
-    this->stop_cb();
+    if (this->stop_cb)
+        this->stop_cb();
 }

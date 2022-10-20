@@ -491,7 +491,7 @@ DmaPullResult AmicSndOutDma::pull_data(uint32_t req_len, uint32_t *avail_len,
 
     *p_data = mmu_get_dma_mem(
         (this->snd_buf_num ? this->out_buf1 : this->out_buf0) + this->cur_buf_pos,
-        len);
+        len, nullptr);
     this->cur_buf_pos += len;
     *avail_len = len;
     return DmaPullResult::MoreData;
@@ -524,9 +524,14 @@ void AmicFloppyDma::write_ctrl(uint8_t value)
 
 int AmicFloppyDma::push_data(const char* src_ptr, int len)
 {
+    bool is_writable;
+
     len = std::min((int)this->byte_count, len);
 
-    uint8_t *p_data = mmu_get_dma_mem(this->addr_ptr, len);
+    uint8_t *p_data = mmu_get_dma_mem(this->addr_ptr, len, &is_writable);
+    if (!is_writable) {
+        ABORT_F("AMIC: attempting DMA write to read-only memory");
+    }
     std::memcpy(p_data, src_ptr, len);
 
     this->addr_ptr += len;
