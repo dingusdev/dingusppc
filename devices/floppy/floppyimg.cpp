@@ -224,8 +224,8 @@ FloppyImgConverter* open_floppy_image(std::string& img_path)
         LOG_F(INFO, "WOZ v%s image", (itype == FlopImgType::WOZ2) ? "2" : "1");
         break;
     default:
-        LOG_F(ERROR, "Unknown/unsupported image format!");
-        return nullptr;
+        LOG_F(WARNING, "Unknown image format - assume RAW");
+        fconv = new RawFloppyImg(img_path);
     }
 
     if (fconv->calc_phys_params()) {
