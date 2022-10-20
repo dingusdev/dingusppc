@@ -136,7 +136,7 @@ uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
                 (this->nvram_addr_hi << 5) + ((offset >> 4) & 0x1F));
         }
     } else if (offset & 0x8000) { // DMA register space
-        unsigned subdev_num = (offset >> 12) & 0xF;
+        unsigned subdev_num = (offset >> 8) & 0xF;
 
         switch (subdev_num) {
         case 8:
@@ -223,7 +223,7 @@ void GrandCentral::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
                   this->base_addr + offset);
         }
     } else if (offset & 0x8000) { // DMA register space
-        unsigned subdev_num = (offset >> 12) & 0xF;
+        unsigned subdev_num = (offset >> 8) & 0xF;
 
         switch (subdev_num) {
         case 8:
