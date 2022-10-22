@@ -58,7 +58,7 @@ enum ScsiMsg : int {
     BUS_PHASE_CHANGE,
 };
 
-enum ScsiCommamd : int {
+enum ScsiCommand : int {
     TEST_UNITY_READY = 0x0,
     REWIND           = 0x1,
     REQ_SENSE        = 0x3,
@@ -94,8 +94,19 @@ enum ScsiSense : int {
     BLANK_CHECK    = 0x8,
     VOL_OVERFLOW   = 0xD,
     MISCOMPARE     = 0xE,
-    COMPLETED      = 0xF,
+    COMPLETED      = 0xF
+};
 
+enum ScsiError : int {
+    NO_ERROR       = 0x0,
+    NO_SECTOR      = 0x1,
+    WRITE_FAULT    = 0x3,
+    DEV_NOT_READY  = 0x4,
+    INVALID_CMD    = 0x20,
+    INVALID_LBA    = 0x21,
+    INVALID_CDB    = 0x24,
+    INVALID_LUN    = 0x25,
+    WRITE_PROTECT  = 0x27
 };
 
 /** Standard SCSI bus timing values measured in ns. */
@@ -114,7 +125,6 @@ public:
     ~ScsiDevice() = default;
 
     virtual void notify(ScsiMsg msg_type, int param) = 0;
-    virtual void select() = 0;
 
 private:
     int scsi_id;

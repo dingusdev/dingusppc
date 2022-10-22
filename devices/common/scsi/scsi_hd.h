@@ -30,18 +30,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <string>
 
-class SCSI_HD : public ScsiDevice {
+class ScsiHardDisk : public ScsiDevice {
 public:
-    SCSI_HD();
-    ~SCSI_HD() = default;
+    ScsiHardDisk();
+    ~ScsiHardDisk() = default;
 
     virtual void notify(ScsiMsg msg_type, int param) = 0;
 
     int test_unit_ready();
     int req_sense(uint8_t alloc_len);
-    int read_capacity_10();
     int inquiry();
     int send_diagnostic();
+    int mode_select();
+
+    uint64_t read_capacity_10();
 
     void format();
     void read(uint32_t lba, uint16_t transfer_len);
@@ -57,6 +59,10 @@ protected:
     uint8_t scsi_command[12];
     uint64_t file_offset = 0;
     uint8_t status;
+
+    //inquiry info
+    char vendor_info[8] = {'D', 'i', 'n', 'g', 'u', 's', 'D', '\0'};
+    char prod_info[16]  = {'E', 'm', 'u', 'l', 'a', 't', 'e', 'd', ' ', 'D', 'i', 's', 'k', '\0'};
 };
 
 #endif

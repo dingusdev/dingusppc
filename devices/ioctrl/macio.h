@@ -54,7 +54,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/dbdma.h>
 #include <devices/common/mmiodevice.h>
 #include <devices/common/nvram.h>
-#include <devices/common/ide/heath_ide.h>
+#include <devices/common/ide/ide_hd.h>
 #include <devices/common/pci/pcidevice.h>
 #include <devices/common/pci/pcihost.h>
 #include <devices/common/scsi/mesh.h>
@@ -138,7 +138,7 @@ private:
     MaceController*     mace;
     ViaCuda*            viacuda; // VIA cell with Cuda MCU attached to it
     EsccController*     escc;    // ESCC serial controller
-    HeathIDE*           ide_0;   // Internal ATA
+    IdeHardDisk*        ide_0;   // Internal ATA
     Sc53C94*            scsi_0;  // external SCSI
     Swim3::Swim3Ctrl*   swim3;   // floppy disk controller
 
@@ -231,7 +231,7 @@ private:
     ViaCuda*            viacuda;  // VIA cell with Cuda MCU attached to it
     MESHController*     mesh;     // MESH SCSI cell instance
     EsccController*     escc;     // ESCC serial controller
-    HeathIDE*           ide_0;    // Internal ATA
+    IdeHardDisk*        ide_0;    // Internal ATA
     Swim3::Swim3Ctrl*   swim3;    // floppy disk controller
 
     std::unique_ptr<DMAChannel>     snd_out_dma;

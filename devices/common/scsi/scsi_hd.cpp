@@ -34,7 +34,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace std;
 
-SCSI_HD::SCSI_HD() {
+ScsiHardDisk::ScsiHardDisk() {
     supports_types(HWCompType::SCSI_DEV);
 
     std::string hd_image_path = GET_STR_PROP("hdd_img");
@@ -51,32 +51,37 @@ SCSI_HD::SCSI_HD() {
     this->hdd_img.seekg(0, std::ios_base::beg);
 }
 
-int SCSI_HD::test_unit_ready() {
+int ScsiHardDisk::test_unit_ready() {
     return 0x0;
 }
 
-int SCSI_HD::req_sense(uint8_t alloc_len) {
+int ScsiHardDisk::req_sense(uint8_t alloc_len) {
     if (alloc_len != 252) {
         LOG_F(WARNING, "Inappropriate Allocation Length: %%d", alloc_len);
     }
-    return 0x0; //placeholder - no sense
+    return ScsiError::NO_ERROR;    // placeholder - no sense
 }
 
-int SCSI_HD::inquiry() {
+int ScsiHardDisk::inquiry() {
     return 0x1000000F;
 }
 
-int SCSI_HD::send_diagnostic() {
+int ScsiHardDisk::send_diagnostic() {
     return 0x0;
 }
 
-int SCSI_HD::read_capacity_10() {
+int ScsiHardDisk::mode_select() {
+    return 0x0;
+}
+
+uint64_t ScsiHardDisk::read_capacity_10() {
     return this->img_size;
 }
 
-void SCSI_HD::format() {}
+void ScsiHardDisk::format() {
+}
 
-void SCSI_HD::read(uint32_t lba, uint16_t transfer_len) {
+void ScsiHardDisk::read(uint32_t lba, uint16_t transfer_len) {
     uint32_t transfer_size  = (transfer_len == 0) ? 256 : transfer_len;
     transfer_size           *= sector_size;
     uint32_t device_offset  = lba * sector_size;
@@ -85,7 +90,7 @@ void SCSI_HD::read(uint32_t lba, uint16_t transfer_len) {
     this->hdd_img.read(img_buffer, transfer_size);
 }
 
-void SCSI_HD::write(uint32_t lba, uint16_t transfer_len) {
+void ScsiHardDisk::write(uint32_t lba, uint16_t transfer_len) {
     uint32_t transfer_size = (transfer_len == 0) ? 256 : transfer_len;
     transfer_size *= sector_size;
     uint32_t device_offset = lba * sector_size;
@@ -95,11 +100,11 @@ void SCSI_HD::write(uint32_t lba, uint16_t transfer_len) {
 
 }
 
-void SCSI_HD::seek(uint32_t lba) {
+void ScsiHardDisk::seek(uint32_t lba) {
     this->hdd_img.seekg(0, this->hdd_img.beg);
 }
 
-void SCSI_HD::rewind() {
+void ScsiHardDisk::rewind() {
     this->hdd_img.seekg(0, this->hdd_img.beg);
 }
 

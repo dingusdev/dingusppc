@@ -21,16 +21,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file ATA hard drive support */
 
-#ifndef ATA_HD_H
-#define ATA_HD_H
+#ifndef IDE_HD_H
+#define IDE_HD_H
 
+#include <devices/common/hwcomponent.h>
 #include <cinttypes>
+#include <fstream>
+#include <memory>
 #include <stdio.h>
 #include <string>
 
 #define SEC_SIZE 512
 
-/** Heath IDE register offsets. */
+using namespace std;
+
+/** IDE register offsets. */
 enum IDE_Reg : int {
     IDE_DATA    = 0x0,
     ERROR       = 0x1,    // error (read)
@@ -41,13 +46,13 @@ enum IDE_Reg : int {
     CYL_HIGH    = 0x5,    // cylinder high
     DRIVE_HEAD  = 0x6,    // drive/head
     STATUS      = 0x7,    // status (read)
-    CMD         = 0x7,    // command (write)
+    COMMAND     = 0x7,    // command (write)
     ALT_STATUS  = 0x16,   // alt status (read)
     DEV_CTRL    = 0x16,   // device control (write)
-    TIME_CONFIG = 0x20,
+    TIME_CONFIG = 0x20
 };
 
-enum IDE_Status { 
+enum IDE_Status : int { 
     ERR  = 0x1, 
     IDX  = 0x2,
     CORR = 0x4,
@@ -59,24 +64,39 @@ enum IDE_Status {
 };
 
 /** Heath IDE commands. */
-enum IDE_Cmd {
+enum IDE_Cmd : int {
+    IDE_NOP         = 0x00,
     RESET_ATAPI     = 0x08,
     RECALIBRATE     = 0x10,
     READ_SECTOR     = 0x20,
+    READ_LONG       = 0x22,
     WRITE_SECTOR    = 0x30,
+    WRITE_LONG      = 0x32,
+    WRITE_VERIFY    = 0x40,
     FORMAT_TRACKS   = 0x50,
     DIAGNOSTICS     = 0x90,
+    READ_DMA        = 0xC8,
+    WRITE_DMA       = 0xCA,
 };
 
-class HeathIDE : public HWComponent {
+class IdeHardDisk : public HWComponent {
 public:
-    HeathIDE(std::string filename);
+    IdeHardDisk();
+    ~IdeHardDisk() = default;
+    
+    static std::unique_ptr<HWComponent> create() {
+        return std::unique_ptr<IdeHardDisk>(new IdeHardDisk());
+    }
+
+    void insert_image(std::string filename);
     uint32_t read(int reg);
     void write(int reg, uint32_t value);
 
     void perform_command(uint32_t command);
 
 private:
+    std::fstream hdd_img;
+    uint64_t img_size;
     uint32_t regs[33];
     uint8_t buffer[SEC_SIZE];
 };
