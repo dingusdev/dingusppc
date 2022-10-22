@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cpu/ppc/ppcemu.h>
 #include <devices/common/machineid.h>
 #include <devices/common/scsi/scsi.h>
+#include <devices/common/scsi/scsi_hd.h>
 #include <devices/memctrl/hmc.h>
 #include <loguru.hpp>
 #include <machines/machinebase.h>
@@ -80,6 +81,11 @@ int initialize_pdm(std::string& id)
 
     // add internal SCSI bus
     gMachineObj->add_device("SCSI0", std::unique_ptr<ScsiBus>(new ScsiBus()));
+    auto scsi_bus = dynamic_cast<ScsiBus*>(gMachineObj->get_comp_by_name("SCSI0"));
+
+    // attach SCSI HD to the main bus, ID #0
+    gMachineObj->add_device("SCSI_HD", std::unique_ptr<ScsiHardDisk>(new ScsiHardDisk()));
+    scsi_bus->register_device(0, dynamic_cast<ScsiDevice*>(gMachineObj->get_comp_by_name("SCSI_HD")));
 
     // Init virtual CPU and request MPC601
     ppc_cpu_init(hmc_obj, PPC_VER::MPC601, 7812500ULL);
