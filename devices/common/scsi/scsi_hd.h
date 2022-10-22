@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/** @file SCSI hard drive support */
+/** @file SCSI hard drive definitions. */
 
 #ifndef SCSI_HD_H
 #define SCSI_HD_H
@@ -35,7 +35,7 @@ public:
     ScsiHardDisk();
     ~ScsiHardDisk() = default;
 
-    virtual void notify(ScsiMsg msg_type, int param) = 0;
+    void notify(ScsiMsg msg_type, int param);
 
     int test_unit_ready();
     int req_sense(uint8_t alloc_len);

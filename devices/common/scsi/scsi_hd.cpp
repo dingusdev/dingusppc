@@ -19,16 +19,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/** @file Sander-Wozniak Machine 3 (SWIM3) emulation. */
+/** @file Generic SCSI Hard Disk emulation. */
 
-#include <fstream>
-#include <limits>
-#include <stdio.h>
 #include <devices/deviceregistry.h>
 #include <devices/common/scsi/scsi_hd.h>
 #include <machines/machinebase.h>
 #include <machines/machineproperties.h>
-#include <devices/common/scsi/sc53c94.h>
+#include <loguru.hpp>
+
+#include <fstream>
+#include <limits>
+#include <stdio.h>
 
 #define sector_size 512
 
@@ -49,6 +50,11 @@ ScsiHardDisk::ScsiHardDisk() {
     this->img_size = this->hdd_img.gcount();
     this->hdd_img.clear();    //  Since ignore will have set eof.
     this->hdd_img.seekg(0, std::ios_base::beg);
+}
+
+void ScsiHardDisk::notify(ScsiMsg msg_type, int param)
+{
+    LOG_F(INFO, "SCSI_HD: message of type %d received", msg_type);
 }
 
 int ScsiHardDisk::test_unit_ready() {
