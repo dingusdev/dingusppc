@@ -39,13 +39,12 @@ public:
 
     int test_unit_ready();
     int req_sense(uint8_t alloc_len);
-    int inquiry();
     int send_diagnostic();
     int mode_select();
 
-    uint64_t read_capacity_10();
-
     void format();
+    void inquiry();
+    void read_capacity_10();
     void read(uint32_t lba, uint16_t transfer_len);
     void write(uint32_t lba, uint16_t transfer_len);
     void seek(uint32_t lba);
@@ -58,11 +57,13 @@ protected:
     char img_buffer[1 << 17];
     uint8_t scsi_command[12];
     uint64_t file_offset = 0;
-    uint8_t status;
+    uint8_t status       = ScsiError::NO_ERROR;
 
     //inquiry info
     char vendor_info[8] = {'D', 'i', 'n', 'g', 'u', 's', 'D', '\0'};
     char prod_info[16]  = {'E', 'm', 'u', 'l', 'a', 't', 'e', 'd', ' ', 'D', 'i', 's', 'k', '\0'};
+    char rev_info[8]    = {'d', 'i', '0', '0', '0', '0', '0', '1'};
+    char serial_info[8] = {'0', '0', '0', '0', '0', '0', '0', '0'};
 };
 
 #endif
