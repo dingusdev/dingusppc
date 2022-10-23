@@ -190,7 +190,7 @@ int PCIDevice::attach_exp_rom_image(const std::string img_path)
         uint32_t exp_rom_image_size = img_file.tellg();
 
         // verify PCI struct offset
-        uint32_t pci_struct_offset = 0;
+        uint16_t pci_struct_offset = 0;
         img_file.seekg(0x18, std::ios::beg);
         img_file.read((char *)&pci_struct_offset, sizeof(pci_struct_offset));
 
