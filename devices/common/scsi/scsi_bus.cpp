@@ -36,11 +36,11 @@ ScsiBus::ScsiBus()
         this->dev_ctrl_lines[i] = 0;
     }
 
-    this->ctrl_lines = 0; // all control lines released
-    this->data_lines = 0; // data lines released
+    this->ctrl_lines    =  0; // all control lines released
+    this->data_lines    =  0; // data lines released
     this->arb_winner_id = -1;
-    this->initiator_id = -1;
-    this->target_id = -1;
+    this->initiator_id  = -1;
+    this->target_id     = -1;
 }
 
 void ScsiBus::register_device(int id, ScsiDevice* dev_obj)
@@ -98,12 +98,26 @@ void ScsiBus::release_ctrl_line(int id, uint16_t mask)
             this->cur_phase = ScsiPhase::BUS_FREE;
             change_bus_phase(id);
         }
+    } else {
+        this->ctrl_lines = new_state;
     }
 }
 
 void ScsiBus::release_ctrl_lines(int id)
 {
     this->release_ctrl_line(id, 0xFFFFUL);
+}
+
+uint16_t ScsiBus::test_ctrl_lines(uint16_t mask)
+{
+    uint16_t new_state = 0;
+
+    // OR control lines of all devices together
+    for (int i = 0; i < SCSI_MAX_DEVS; i++) {
+        new_state |= this->dev_ctrl_lines[i];
+    }
+
+    return new_state & mask;
 }
 
 bool ScsiBus::begin_arbitration(int initiator_id)
@@ -143,6 +157,8 @@ bool ScsiBus::begin_selection(int initiator_id, int target_id, bool atn)
     if (this->cur_phase != ScsiPhase::ARBITRATION || this->arb_winner_id != initiator_id)
         return false;
 
+    this->assert_ctrl_line(initiator_id, SCSI_CTRL_SEL);
+
     this->data_lines |= (1 << initiator_id) | (1 << target_id);
 
     if (atn) {
@@ -169,6 +185,31 @@ bool ScsiBus::end_selection(int initiator_id, int target_id)
 {
     // check for selection confirmation from target
     return this->target_id == target_id;
+}
+
+bool ScsiBus::transfer_command(uint8_t* dst_ptr)
+{
+    static uint8_t cmd_to_cdb_length[8] = {6, 10, 10, 6, 6, 12, 6, 6};
+
+    this->cur_phase = ScsiPhase::COMMAND;
+    change_bus_phase(target_id);
+
+    // attempt to transfer the shortest Command Description Block (CDB)
+    if (!this->devices[this->initiator_id]->send_bytes(dst_ptr, 6)) {
+        LOG_F(ERROR, "ScsiBus: error while transferring CDB!");
+        return false;
+    }
+
+    // transfer the remaining CDB
+    int cdb_length = cmd_to_cdb_length[dst_ptr[0] >> 5];
+    if (cdb_length > 6) {
+        if (!this->devices[this->initiator_id]->send_bytes(dst_ptr + 6, cdb_length - 6)) {
+            LOG_F(ERROR, "ScsiBus: error while transferring CDB!");
+            return false;
+        }
+    }
+
+    return true;
 }
 
 void ScsiBus::disconnect(int dev_id)

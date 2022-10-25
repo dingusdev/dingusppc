@@ -45,12 +45,18 @@ enum {
     SCSI_CTRL_RST = 1 << 8,
 };
 
-enum ScsiPhase : int {
+namespace ScsiPhase {
+enum : int {
     BUS_FREE = 0,
     ARBITRATION,
     SELECTION,
     RESELECTION,
+    COMMAND,
+    DATA,
+    STATUS,
+    MESSAGE,
     RESET,
+};
 };
 
 enum ScsiMsg : int {
@@ -143,12 +149,18 @@ public:
     ScsiBus();
     ~ScsiBus() = default;
 
-    // low-level control/status
-    void register_device(int id, ScsiDevice* dev_obj);
-    void assert_ctrl_line(int id, uint16_t mask);
-    void release_ctrl_line(int id, uint16_t mask);
-    void release_ctrl_lines(int id);
-    int  current_phase() { return this->cur_phase; };
+    // low-level state management
+    void    register_device(int id, ScsiDevice* dev_obj);
+    int     current_phase() { return this->cur_phase; };
+
+    // reading/writing control lines
+    void        assert_ctrl_line(int id, uint16_t mask);
+    void        release_ctrl_line(int id, uint16_t mask);
+    void        release_ctrl_lines(int id);
+    uint16_t    test_ctrl_lines(uint16_t mask);
+
+    // reading/writing data lines
+    uint8_t get_data_lines() { return this->data_lines; };
 
     // high-level control/status
     bool begin_arbitration(int id);
@@ -156,6 +168,7 @@ public:
     bool begin_selection(int initiator_id, int target_id, bool atn);
     void confirm_selection(int target_id);
     bool end_selection(int initiator_id, int target_id);
+    bool transfer_command(uint8_t* dst_ptr);
     void disconnect(int dev_id);
 
 protected:
