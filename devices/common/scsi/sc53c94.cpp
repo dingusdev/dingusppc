@@ -30,6 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <machines/machinebase.h>
 
 #include <cinttypes>
+#include <cstring>
 
 Sc53C94::Sc53C94(uint8_t chip_id, uint8_t my_id) : ScsiDevice(my_id)
 {
@@ -172,7 +173,7 @@ void Sc53C94::update_command_reg(uint8_t cmd)
 
 void Sc53C94::exec_command()
 {
-    uint8_t cmd = this->cmd_fifo[0] & 0x7F;
+    uint8_t cmd = this->cur_cmd = this->cmd_fifo[0] & 0x7F;
     bool    is_dma_cmd = !!(this->cmd_fifo[0] & 0x80);
 
     if (is_dma_cmd) {
@@ -192,7 +193,7 @@ void Sc53C94::exec_command()
         exec_next_command();
         break;
     case CMD_CLEAR_FIFO:
-        this->data_fifo_pos = 0; // set the bottom of the FIFO to zero
+        this->data_fifo_pos = 0; // set the bottom of the data FIFO to zero
         this->data_fifo[0] = 0;
         exec_next_command();
         break;
@@ -225,7 +226,7 @@ void Sc53C94::exec_command()
         this->seq_step = 0;
         this->cmd_steps = sel_no_atn_desc;
         this->cur_state = SeqState::BUS_FREE;
-        sequencer();
+        this->sequencer();
         LOG_F(INFO, "SC53C94: SELECT W/O ATN command started");
         break;
     case CMD_ENA_SEL_RESEL:
@@ -316,6 +317,7 @@ void Sc53C94::sequencer()
         break;
     case SeqState::SEL_END:
         if (this->bus_obj->end_selection(this->my_bus_id, this->target_id)) {
+            this->bus_obj->release_ctrl_line(this->my_bus_id, SCSI_CTRL_SEL);
             LOG_F(INFO, "SC53C94: selection completed");
             this->cmd_steps++;
         } else { // selection timeout
@@ -326,6 +328,9 @@ void Sc53C94::sequencer()
             this->update_irq();
             exec_next_command();
         }
+        break;
+    case SeqState::CMD_BEGIN:
+        LOG_F(INFO, "CMD_BEGIN reached");
         break;
     default:
         ABORT_F("SC53C94: unimplemented sequencer state %d", this->cur_state);
@@ -345,12 +350,22 @@ void Sc53C94::update_irq()
 void Sc53C94::notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param)
 {
     switch (msg_type) {
+    case ScsiMsg::BUS_PHASE_CHANGE:
+        switch (param) {
+        case ScsiPhase::COMMAND:
+            this->cur_state = SeqState::CMD_BEGIN;
+            this->sequencer();
+            break;
+        default:
+            LOG_F(WARNING, "SC53C94: ignore bus phase change %d message", param);
+        }
+        break;
     case ScsiMsg::CONFIRM_SEL:
         if (this->target_id == param) {
             // cancel selection timeout timer
             TimerManager::get_instance()->cancel_timer(this->seq_timer_id);
             this->cur_state = SeqState::SEL_END;
-            sequencer();
+            this->sequencer();
         } else {
             LOG_F(WARNING, "SC53C94: ignore invalid selection confirmation message");
         }
@@ -362,11 +377,18 @@ void Sc53C94::notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param)
 
 bool Sc53C94::send_bytes(uint8_t* dst_ptr, int count)
 {
-    if ((this->data_fifo_pos - this->data_fifo_read_pos) < count) {
+    if (this->data_fifo_pos < count) {
         return false;
     }
 
-    std::memcpy(dst_ptr, &this->data_fifo[this->data_fifo_read_pos], count);
+    // move data out of the data FIFO
+    std::memcpy(dst_ptr, this->data_fifo, count);
+
+    // remove the just readed data from the data FIFO
+    this->data_fifo_pos -= count;
+    if (this->data_fifo_pos > 0) {
+        std::memcpy(this->data_fifo, &this->data_fifo[count], this->data_fifo_pos);
+    }
     return true;
 }
 
