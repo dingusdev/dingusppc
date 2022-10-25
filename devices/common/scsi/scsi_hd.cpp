@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @file Generic SCSI Hard Disk emulation. */
 
 #include <devices/deviceregistry.h>
+#include <devices/common/scsi/scsi.h>
 #include <devices/common/scsi/scsi_hd.h>
 #include <machines/machinebase.h>
 #include <machines/machineproperties.h>
@@ -35,7 +36,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace std;
 
-ScsiHardDisk::ScsiHardDisk() {
+ScsiHardDisk::ScsiHardDisk(int my_id) : ScsiDevice(my_id)
+{
     supports_types(HWCompType::SCSI_DEV);
 
     std::string hd_image_path = GET_STR_PROP("hdd_img");

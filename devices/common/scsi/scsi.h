@@ -119,15 +119,22 @@ enum ScsiError : int {
 
 #define SCSI_MAX_DEVS   8
 
+class ScsiBus;
+
 class ScsiDevice : public HWComponent {
 public:
-    ScsiDevice()  = default;
+    ScsiDevice(int my_id) {
+        this->scsi_id = my_id;
+    };
     ~ScsiDevice() = default;
 
-    virtual void notify(ScsiMsg msg_type, int param) = 0;
+    virtual void notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param);
+
+    virtual bool send_bytes(uint8_t* dst_ptr, int count) = 0;
 
 private:
-    int scsi_id;
+    int     scsi_id;
+    uint8_t cmd_buf[16] = {};
 };
 
 /** This class provides a higher level abstraction for the SCSI bus. */

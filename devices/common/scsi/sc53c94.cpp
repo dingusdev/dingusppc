@@ -31,7 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 
-Sc53C94::Sc53C94(uint8_t chip_id, uint8_t my_id)
+Sc53C94::Sc53C94(uint8_t chip_id, uint8_t my_id) : ScsiDevice(my_id)
 {
     this->chip_id   = chip_id;
     this->my_bus_id = my_id;
@@ -342,7 +342,7 @@ void Sc53C94::update_irq()
     }
 }
 
-void Sc53C94::notify(ScsiMsg msg_type, int param)
+void Sc53C94::notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param)
 {
     switch (msg_type) {
     case ScsiMsg::CONFIRM_SEL:
@@ -358,6 +358,16 @@ void Sc53C94::notify(ScsiMsg msg_type, int param)
     default:
         LOG_F(WARNING, "SC53C94: ignore notification message, type: %d", msg_type);
     }
+}
+
+bool Sc53C94::send_bytes(uint8_t* dst_ptr, int count)
+{
+    if ((this->data_fifo_pos - this->data_fifo_read_pos) < count) {
+        return false;
+    }
+
+    std::memcpy(dst_ptr, &this->data_fifo[this->data_fifo_read_pos], count);
+    return true;
 }
 
 static const DeviceDescription Sc53C94_Descriptor = {

@@ -58,7 +58,7 @@ void ScsiBus::change_bus_phase(int initiator_id)
         if (i == initiator_id)
             continue; // don't notify the initiator
         if (this->devices[i] != nullptr) {
-            this->devices[i]->notify(ScsiMsg::BUS_PHASE_CHANGE, this->cur_phase);
+            this->devices[i]->notify(this, ScsiMsg::BUS_PHASE_CHANGE, this->cur_phase);
         }
     }
 }
@@ -161,7 +161,7 @@ void ScsiBus::confirm_selection(int target_id)
 
     // notify initiator about selection confirmation from target
     if (this->initiator_id >= 0) {
-        this->devices[this->initiator_id]->notify(ScsiMsg::CONFIRM_SEL, target_id);
+        this->devices[this->initiator_id]->notify(this, ScsiMsg::CONFIRM_SEL, target_id);
     }
 }
 

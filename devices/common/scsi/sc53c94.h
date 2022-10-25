@@ -141,7 +141,8 @@ public:
     void   write(uint8_t reg_offset, uint8_t value);
 
     // ScsiDevice methods
-    void notify(ScsiMsg msg_type, int param);
+    void notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param);
+    bool send_bytes(uint8_t* dst_ptr, int count);
 
 protected:
     void reset_device();

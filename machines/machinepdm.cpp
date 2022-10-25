@@ -84,7 +84,7 @@ int initialize_pdm(std::string& id)
     auto scsi_bus = dynamic_cast<ScsiBus*>(gMachineObj->get_comp_by_name("SCSI0"));
 
     // attach SCSI HD to the main bus, ID #0
-    gMachineObj->add_device("SCSI_HD", std::unique_ptr<ScsiHardDisk>(new ScsiHardDisk()));
+    gMachineObj->add_device("SCSI_HD", std::unique_ptr<ScsiHardDisk>(new ScsiHardDisk(0)));
     scsi_bus->register_device(0, dynamic_cast<ScsiDevice*>(gMachineObj->get_comp_by_name("SCSI_HD")));
 
     // Init virtual CPU and request MPC601

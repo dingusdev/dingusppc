@@ -32,10 +32,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 class ScsiHardDisk : public ScsiDevice {
 public:
-    ScsiHardDisk();
+    ScsiHardDisk(int my_id);
     ~ScsiHardDisk() = default;
 
-    void notify(ScsiMsg msg_type, int param);
+    bool send_bytes(uint8_t* dst_ptr, int count) { return true; };
 
     int test_unit_ready();
     int req_sense(uint8_t alloc_len);
