@@ -54,11 +54,6 @@ ScsiHardDisk::ScsiHardDisk(int my_id) : ScsiDevice(my_id)
     this->hdd_img.seekg(0, std::ios_base::beg);
 }
 
-void ScsiHardDisk::notify(ScsiMsg msg_type, int param)
-{
-    LOG_F(INFO, "SCSI_HD: message of type %d received", msg_type);
-}
-
 int ScsiHardDisk::test_unit_ready() {
     if (img_path.empty() || img_path == " ") {
         return ScsiError::DEV_NOT_READY;
