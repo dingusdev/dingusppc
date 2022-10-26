@@ -45,7 +45,7 @@ public:
 
     void mode_sense_6(uint8_t page_code, uint8_t subpage_code, uint8_t alloc_len);
     void format();
-    void inquiry();
+    void inquiry(uint16_t alloc_len);
     void read_capacity_10();
     void read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len);
     void write(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len);

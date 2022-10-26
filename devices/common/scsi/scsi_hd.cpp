@@ -73,7 +73,7 @@ void ScsiHardDisk::process_command(uint8_t* cmd) {
             req_sense(alloc_len);
         case ScsiCommand::INQUIRY:
             alloc_len = (cmd[3] << 8) + cmd[4];
-            req_sense(alloc_len);
+            inquiry(alloc_len);
         case ScsiCommand::READ_6:
             lba = ((cmd[1] & 0x1F) << 16) + (cmd[2] << 8) + cmd[3];
             transfer_len = cmd[4];
@@ -123,17 +123,22 @@ int ScsiHardDisk::req_sense(uint16_t alloc_len) {
     return ScsiError::NO_ERROR;    // placeholder - no sense
 }
 
-void ScsiHardDisk::inquiry() {
-    uint8_t empty_filler[1 << 17] = {0x0};
-    memcpy(img_buffer, empty_filler, (1 << 17));
-    img_buffer[2] = 0x1;
-    img_buffer[3] = 0x2;
-    img_buffer[4] = 0x31;
-    img_buffer[7] = 0x1C;
-    memcpy(img_buffer + 8, vendor_info, 8);
-    memcpy(img_buffer + 16, prod_info, 16);
-    memcpy(img_buffer + 32, rev_info, 8);
-    memcpy(img_buffer + 40, serial_info, 8);
+void ScsiHardDisk::inquiry(uint16_t alloc_len) {
+    if (alloc_len >= 48) {
+        uint8_t empty_filler[1 << 17] = {0x0};
+        memcpy(img_buffer, empty_filler, (1 << 17));
+        img_buffer[2] = 0x1;
+        img_buffer[3] = 0x2;
+        img_buffer[4] = 0x31;
+        img_buffer[7] = 0x1C;
+        memcpy(img_buffer + 8, vendor_info, 8);
+        memcpy(img_buffer + 16, prod_info, 16);
+        memcpy(img_buffer + 32, rev_info, 8);
+        memcpy(img_buffer + 40, serial_info, 8);
+    } 
+    else {
+        LOG_F(WARNING, "Inappropriate Allocation Length: %d", alloc_len);
+    }
 }
 
 int ScsiHardDisk::send_diagnostic() {
