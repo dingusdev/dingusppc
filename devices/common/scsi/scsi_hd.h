@@ -35,18 +35,20 @@ public:
     ScsiHardDisk(int my_id);
     ~ScsiHardDisk() = default;
 
+    void process_command(uint8_t* cmd);
     bool send_bytes(uint8_t* dst_ptr, int count) { return true; };
 
     int test_unit_ready();
-    int req_sense(uint8_t alloc_len);
+    int req_sense(uint16_t alloc_len);
     int send_diagnostic();
-    int mode_select();
+    int mode_select_6(uint8_t param_len);
 
+    void mode_sense_6(uint8_t page_code, uint8_t subpage_code, uint8_t alloc_len);
     void format();
     void inquiry();
     void read_capacity_10();
-    void read(uint32_t lba, uint16_t transfer_len);
-    void write(uint32_t lba, uint16_t transfer_len);
+    void read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len);
+    void write(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len);
     void seek(uint32_t lba);
     void rewind();
 

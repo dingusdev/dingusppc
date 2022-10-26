@@ -54,6 +54,60 @@ ScsiHardDisk::ScsiHardDisk(int my_id) : ScsiDevice(my_id)
     this->hdd_img.seekg(0, std::ios_base::beg);
 }
 
+void ScsiHardDisk::process_command(uint8_t* cmd) {
+    uint32_t lba          = 0;
+    uint16_t transfer_len = 0;
+    uint16_t alloc_len    = 0;
+    uint8_t  param_len    = 0;
+
+    uint8_t  page_code    = 0;
+    uint8_t  subpage_code = 0;
+
+    switch (cmd[0]) { 
+        case ScsiCommand::TEST_UNIT_READY:
+            test_unit_ready();
+        case ScsiCommand::REWIND:
+            rewind();
+        case ScsiCommand::REQ_SENSE:
+            alloc_len = cmd[4];
+            req_sense(alloc_len);
+        case ScsiCommand::INQUIRY:
+            alloc_len = (cmd[3] << 8) + cmd[4];
+            req_sense(alloc_len);
+        case ScsiCommand::READ_6:
+            lba = ((cmd[1] & 0x1F) << 16) + (cmd[2] << 8) + cmd[3];
+            transfer_len = cmd[4];
+            read(lba, transfer_len, 6);
+        case ScsiCommand::READ_10:
+            lba          = (cmd[2] << 24) + (cmd[3] << 16) + (cmd[4] << 8) + cmd[5];
+            transfer_len = (cmd[7] << 8) + cmd[8];
+            read(lba, transfer_len, 10);
+        case ScsiCommand::WRITE_6:
+            lba          = ((cmd[1] & 0x1F) << 16) + (cmd[2] << 8) + cmd[3];
+            transfer_len = cmd[4];
+            write(lba, transfer_len, 6);
+        case ScsiCommand::WRITE_10:
+            lba          = (cmd[2] << 24) + (cmd[3] << 16) + (cmd[4] << 8) + cmd[5];
+            transfer_len = (cmd[7] << 8) + cmd[8];
+            write(lba, transfer_len, 10);
+        case ScsiCommand::SEEK_6:
+            lba         = ((cmd[1] & 0x1F) << 16) + (cmd[2] << 8) + cmd[3];
+            seek(lba);
+        case ScsiCommand::MODE_SELECT_6:
+            param_len = cmd[4];
+            mode_select_6(param_len);
+        case ScsiCommand::MODE_SENSE_6:
+            page_code    = cmd[2] & 0x1F;
+            subpage_code = cmd[3];
+            alloc_len    = cmd[4];
+            mode_sense_6(page_code, subpage_code, alloc_len);
+        case ScsiCommand::READ_CAPAC_10:
+            read_capacity_10();
+        default:
+            LOG_F(WARNING, "Unrecognized SCSI command: %x", cmd[0]);
+    }
+}
+
 int ScsiHardDisk::test_unit_ready() {
     if (img_path.empty() || img_path == " ") {
         return ScsiError::DEV_NOT_READY;
@@ -62,7 +116,7 @@ int ScsiHardDisk::test_unit_ready() {
     }
 }
 
-int ScsiHardDisk::req_sense(uint8_t alloc_len) {
+int ScsiHardDisk::req_sense(uint16_t alloc_len) {
     if (alloc_len != 252) {
         LOG_F(WARNING, "Inappropriate Allocation Length: %d", alloc_len);
     }
@@ -86,12 +140,22 @@ int ScsiHardDisk::send_diagnostic() {
     return 0x0;
 }
 
-int ScsiHardDisk::mode_select() {
-    return 0x0;
+int ScsiHardDisk::mode_select_6(uint8_t param_len) {
+    if (param_len == 0) {
+        return 0x0;
+    } 
+    else {
+        LOG_F(WARNING, "Mode Select calling for param length of: %d", param_len);
+        return param_len;
+    }
+}
+
+void ScsiHardDisk::mode_sense_6(uint8_t page_code, uint8_t subpage_code, uint8_t alloc_len) {
+    LOG_F(WARNING, "Page Code %d; Subpage Code: %d", page_code, subpage_code);
 }
 
 void ScsiHardDisk::read_capacity_10() {
-    uint32_t sec_limit            = this->img_size / 512;
+    uint32_t sec_limit            = (this->img_size >> 9);
     uint8_t empty_filler[1 << 17] = {0x0};
     memcpy(img_buffer, empty_filler, (1 << 17));
 
@@ -107,10 +171,14 @@ void ScsiHardDisk::read_capacity_10() {
 void ScsiHardDisk::format() {
 }
 
-void ScsiHardDisk::read(uint32_t lba, uint16_t transfer_len) {
+void ScsiHardDisk::read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
     uint8_t empty_filler[1 << 17] = {0x0};
     memcpy(img_buffer, empty_filler, (1 << 17));
-    uint32_t transfer_size = (transfer_len == 0) ? 256 : transfer_len;
+    uint32_t transfer_size = transfer_len;
+
+    if (cmd_len == 6)
+        transfer_size = (transfer_len == 0) ? 256 : transfer_len;
+
     transfer_size *= sector_size;
     uint64_t device_offset = lba * sector_size;
 
@@ -118,8 +186,12 @@ void ScsiHardDisk::read(uint32_t lba, uint16_t transfer_len) {
     this->hdd_img.read(img_buffer, transfer_size);
 }
 
-void ScsiHardDisk::write(uint32_t lba, uint16_t transfer_len) {
-    uint32_t transfer_size = (transfer_len == 0) ? 256 : transfer_len;
+void ScsiHardDisk::write(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
+    uint32_t transfer_size = transfer_len;
+
+    if (cmd_len == 6)
+        transfer_size = (transfer_len == 0) ? 256 : transfer_len;
+
     transfer_size *= sector_size;
     uint64_t device_offset = lba * sector_size;
 
@@ -129,7 +201,7 @@ void ScsiHardDisk::write(uint32_t lba, uint16_t transfer_len) {
 
 void ScsiHardDisk::seek(uint32_t lba) {
     uint64_t device_offset = lba * sector_size;
-    this->hdd_img.seekg(0, this->hdd_img.beg);
+    this->hdd_img.seekg(device_offset, this->hdd_img.beg);
 }
 
 void ScsiHardDisk::rewind() {

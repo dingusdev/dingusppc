@@ -65,7 +65,7 @@ enum ScsiMsg : int {
 };
 
 enum ScsiCommand : int {
-    TEST_UNITY_READY = 0x0,
+    TEST_UNIT_READY  = 0x0,
     REWIND           = 0x1,
     REQ_SENSE        = 0x3,
     FORMAT           = 0x4,
@@ -137,6 +137,8 @@ public:
     virtual void notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param);
 
     virtual bool send_bytes(uint8_t* dst_ptr, int count) = 0;
+
+    virtual void process_command(uint8_t* cmd) = 0;
 
 private:
     int     scsi_id;
