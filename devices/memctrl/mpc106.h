@@ -67,10 +67,6 @@ protected:
     uint32_t pci_cfg_read(uint32_t reg_offs, AccessDetails &details);
     void pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDetails &details);
 
-    bool supports_io_space(void) {
-        return true;
-    };
-
     void setup_ram(void);
 
 private:

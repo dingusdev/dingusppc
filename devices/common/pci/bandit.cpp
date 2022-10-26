@@ -60,8 +60,7 @@ Bandit::Bandit(int bridge_num, std::string name, int dev_id, int rev)
     // base_addr + 0x1000000 --> pass-through memory space (not included below)
     mem_ctrl->add_mmio_region(base_addr, 0x01000000, this);
 
-	std::string banditpcitname = "Bandit1PCI";
-    attach_pci_device(banditpcitname, 1);
+    attach_pci_device("Bandit1PCI", DEV_FUN(BANDIT_DEV,0));
 }
 
 BanditPCI::BanditPCI(int bridge_num, std::string name)
@@ -154,8 +153,8 @@ void BanditHost::cfg_setup(uint32_t offset, int size, int &bus_num, int &dev_num
         return;
     }
     dev_num = WHAT_BIT_SET(idsel);
-    if (this->dev_map.count(idsel >> 11)) {
-        device = this->dev_map[idsel >> 11];
+    if (this->dev_map.count(DEV_FUN(dev_num, fun_num))) {
+        device = this->dev_map[DEV_FUN(dev_num, fun_num)];
     }
 }
 
@@ -180,19 +179,7 @@ uint32_t BanditHost::read(uint32_t rgn_start, uint32_t offset, int size)
             return this->config_addr;
 
         default: // 0x000000 // I/O space
-        {
-            uint32_t result;
-            // broadcast I/O request to devices that support I/O space
-            // until a device returns true that means "request accepted"
-            for (auto& dev : this->io_space_devs) {
-                if (dev->pci_io_read(offset, size, &result)) {
-                    return result;
-                }
-            }
-            LOG_F(ERROR, "%s: attempt to read from unmapped PCI I/O space, offset=0x%X",
-                  this->name.c_str(), offset);
-            return 0;
-        }
+            return pci_io_read_broadcast(offset, size);
     }
 }
 
@@ -221,15 +208,7 @@ void BanditHost::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int 
             break;
 
         default: // 0x000000 // I/O space
-            // broadcast I/O request to devices that support I/O space
-            // until a device returns true that means "request accepted"
-            for (auto& dev : this->io_space_devs) {
-                if (dev->pci_io_write(offset, value, size)) {
-                    return;
-                }
-            }
-            LOG_F(ERROR, "%s: attempt to write to unmapped PCI I/O space, offset=0x%X",
-                  this->name.c_str(), offset);
+            pci_io_write_broadcast(offset, size, value);
     }
 }
 

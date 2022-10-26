@@ -27,7 +27,7 @@ It also spans for 0x7F000000 bytes starting from 0x80000000.
 
 The dingusppc CLI can add known PCI devices to a PCI slot (A1, B1, C1).
 
-Only the following device numbers are probed by Open Firmware:
+Only the following device numbers connected to grackle are probed by Open Firmware:
 
 - @0 used by pci [grackle]
 - @c slot PERCH interrupt 0x1c
@@ -37,6 +37,8 @@ Only the following device numbers are probed by Open Firmware:
 - @10 used by mac-io [heathrow] which includes many devices with different interrupts
 - @12 slot F1 interrupt 0x16 used by AtiRageGT or AtiRagePro
 
-With minor additions to source code, dingusppc can add a known PCI device to any device number between @1 and @1f except for @10 and @12.
+With minor additions to source code, dingusppc can add a known PCI device to any device number between @1 and @1f except for @10 and @12. A nvramrc patch can make Open Firmware probe the other device numbers. An OS might be able to probe these other device numbers even if they are not probed by Open Firmware.
 
-A nvramrc patch can make Open Firmware probe the other device numbers. An OS might be able to probe these other devices numbers even if they are not probed by Open Firmware.
+A better approach may be to attach a PCI bridge to one of the supported slots. Then additional devices can be attached to the PCI bridge. For a PCI bridge, Open Firmware will probe device numbers between @1 and @f. Some nvramrc patches could maybe make Open Firmware probe the PCI bridge devices up to device number @1f. PCI bridges can be nested. In any case, each device number can have up to 8 functions numbered from 0 to 7.
+
+The dingusppc CLI doesn't yet support adding devices to PCI bridges or adding function numbers 1 to 7.

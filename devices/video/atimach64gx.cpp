@@ -46,6 +46,7 @@ AtiMach64Gx::AtiMach64Gx()
     this->class_rev   = (0x030000 << 8) | 3;
     this->bars_cfg[0] = 0xFF000000UL; // declare main aperture (16MB)
     this->finish_config_bars();
+    has_io_space = true;
 
     this->pci_notify_bar_change = [this](int bar_num) {
         this->notify_bar_change(bar_num);

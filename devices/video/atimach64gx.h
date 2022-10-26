@@ -42,11 +42,6 @@ public:
     }
 
     /* PCI device methods */
-    bool supports_io_space(void) {
-        return true;
-    };
-
-    /* I/O space access methods */
     bool pci_io_read(uint32_t offset, uint32_t size, uint32_t* res);
     bool pci_io_write(uint32_t offset, uint32_t value, uint32_t size);
 

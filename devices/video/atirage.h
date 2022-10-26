@@ -60,10 +60,6 @@ public:
     void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size);
 
     /* PCI device methods */
-    bool supports_io_space(void) {
-        return true;
-    };
-
     uint32_t pci_cfg_read(uint32_t reg_offs, AccessDetails &details);
     void pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDetails &details);
 

@@ -20,7 +20,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <devices/common/pci/pcidevice.h>
-#include <devices/common/viacuda.h>
 #include <endianswap.h>
 #include <loguru.hpp>
 #include <memaccess.h>
@@ -103,17 +102,7 @@ void PCIDevice::pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDetails &
         this->set_bar_value((reg_offs - 0x10) >> 2, value);
         break;
     case PCI_CFG_ROM_BAR:
-        if ((value & this->exp_bar_cfg) == this->exp_bar_cfg) {
-            this->exp_rom_bar = (value & (this->exp_bar_cfg | 1));
-        } else {
-            this->exp_rom_bar = (value & (this->exp_bar_cfg | 1));
-            if (this->exp_rom_bar & 1) {
-                this->map_exp_rom_mem();
-            } else {
-                LOG_F(WARNING, "%s: unmapping of expansion ROM not implemented yet",
-                      this->pci_name.c_str());
-            }
-        }
+        this->pci_wr_exp_rom_bar(value);
         break;
     case PCI_CFG_DWORD_15:
         this->irq_line = value >> 24;
@@ -238,10 +227,11 @@ void PCIDevice::set_bar_value(int bar_num, uint32_t value)
 
 void PCIDevice::finish_config_bars()
 {
-    for (int bar_num = 0; bar_num < 6; bar_num++) {
+    for (int bar_num = 0; bar_num < this->num_bars; bar_num++) {
         uint32_t bar_cfg = this->bars_cfg[bar_num];
         if (bar_cfg & 1) {
             bars_typ[bar_num] = (bar_cfg & 0xffff0000) ? BAR_IO_32Bit : BAR_IO_16Bit;
+            has_io_space = true;
         }
         else if (bar_cfg != 0) {
             int pci_space_type = (bar_cfg >> 1) & 3;
@@ -253,7 +243,7 @@ void PCIDevice::finish_config_bars()
                     bars_typ[bar_num] = BAR_MEM_20Bit;
                     break;
                 case 2:
-                    if (bar_num > 4) {
+                    if (bar_num > num_bars - 2) {
                         ABORT_F("%s: BAR %d cannot be 64-bit", this->pci_name.c_str(), bar_num);
                     }
                     else if (this->bars_cfg[bar_num+1] == 0) {
@@ -274,13 +264,45 @@ void PCIDevice::finish_config_bars()
 
 void PCIDevice::map_exp_rom_mem()
 {
-    uint32_t rom_addr, rom_size;
+    uint32_t rom_addr = this->exp_rom_bar & this->exp_bar_cfg;
+    if (rom_addr) {
+        if (this->exp_rom_addr != rom_addr) {
+            this->unmap_exp_rom_mem();
+            uint32_t rom_size = ~this->exp_bar_cfg + 1;
+            this->host_instance->pci_register_mmio_region(rom_addr, rom_size, this);
+            this->exp_rom_addr = rom_addr;
+        }
+    }
+    else {
+        this->unmap_exp_rom_mem();
+    }
+}
 
-    rom_addr = this->exp_rom_bar & this->exp_bar_cfg;
-    rom_size = ~this->exp_bar_cfg + 1;
+void PCIDevice::unmap_exp_rom_mem()
+{
+    if (this->exp_rom_addr) {
+        uint32_t rom_size = ~this->exp_bar_cfg + 1;
+        this->host_instance->pci_unregister_mmio_region(exp_rom_addr, rom_size, this);
+        this->exp_rom_addr = 0;
+    }
+}
 
-    if (!this->exp_rom_addr || this->exp_rom_addr != rom_addr) {
-        this->host_instance->pci_register_mmio_region(rom_addr, rom_size, this);
-        this->exp_rom_addr = rom_addr;
+void PCIDevice::pci_wr_exp_rom_bar(uint32_t data)
+{
+    if (!this->exp_bar_cfg) {
+        return;
+    }
+
+    if ((data & this->exp_bar_cfg) == this->exp_bar_cfg) {
+        // doing sizing
+        this->exp_rom_bar = (data & (this->exp_bar_cfg | 1));
+    } else {
+        this->exp_rom_bar = (data & (this->exp_bar_cfg | 1));
+        if (this->exp_rom_bar & 1) {
+            this->map_exp_rom_mem();
+        }
+        else {
+            this->unmap_exp_rom_mem();
+        }
     }
 }

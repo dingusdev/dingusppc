@@ -44,7 +44,7 @@ int initialize_catalyst(std::string& id)
 
     // add the GrandCentral I/O controller
     pci_host->pci_register_device(
-        32, dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("GrandCentral")));
+        DEV_FUN(0x10,0), dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("GrandCentral")));
 
     // get (raw) pointer to the memory controller
     platinum_obj = dynamic_cast<PlatinumCtrl*>(gMachineObj->get_comp_by_name("Platinum"));

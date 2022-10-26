@@ -99,46 +99,33 @@ void MPC106::cfg_setup(uint32_t offset, int size, int &bus_num, int &dev_num, in
 }
 
 uint32_t MPC106::read(uint32_t rgn_start, uint32_t offset, int size) {
-    uint32_t result;
-
     if (rgn_start == 0xFE000000) {
-        // broadcast I/O request to devices that support I/O space
-        // until a device returns true that means "request accepted"
-        for (auto& dev : this->io_space_devs) {
-            if (dev->pci_io_read(offset, size, &result)) {
-                return result;
-            }
-        }
-        LOG_F(ERROR, "Attempt to read from unmapped PCI I/O space, offset=0x%X", offset);
-    } else {
-        if (offset >= 0x200000) {
-            if (this->config_addr & 0x80)    // process only if bit E (enable) is set
-                return pci_read(offset, size);
-        }
+        return pci_io_read_broadcast(offset, size);
     }
 
-    // FIXME: reading from CONFIG_ADDR is ignored for now
+    if (offset < 0x200000) {
+        return this->config_addr;
+    }
 
+    if (this->config_addr & 0x80) {    // process only if bit E (enable) is set
+        return pci_read(offset, size);
+    }
     return 0;
 }
 
 void MPC106::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size) {
     if (rgn_start == 0xFE000000) {
-        // broadcast I/O request to devices that support I/O space
-        // until a device returns true that means "request accepted"
-        for (auto& dev : this->io_space_devs) {
-            if (dev->pci_io_write(offset, value, size)) {
-                return;
-            }
-        }
-        LOG_F(ERROR, "Attempt to write to unmapped PCI I/O space, offset=0x%X", offset);
-    } else {
-        if (offset < 0x200000) {
-            this->config_addr = value;
-        } else {
-            if (this->config_addr & 0x80)    // process only if bit E (enable) is set
-                return pci_write(offset, value, size);
-        }
+        pci_io_write_broadcast (offset, size, value);
+        return;
+    }
+
+    if (offset < 0x200000) {
+        this->config_addr = value;
+        return;
+    }
+
+    if (this->config_addr & 0x80) {    // process only if bit E (enable) is set
+        return pci_write(offset, value, size);
     }
 }
 
