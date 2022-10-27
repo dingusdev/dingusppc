@@ -35,7 +35,7 @@ public:
     ScsiHardDisk(int my_id);
     ~ScsiHardDisk() = default;
 
-    void process_command(uint8_t* cmd);
+    void process_command();
     bool send_bytes(uint8_t* dst_ptr, int count) { return true; };
 
     int test_unit_ready();

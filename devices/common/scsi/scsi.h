@@ -142,11 +142,13 @@ public:
 
     virtual bool send_bytes(uint8_t* dst_ptr, int count) = 0;
 
-    virtual void process_command(uint8_t* cmd) = 0;
+    virtual void process_command() = 0;
+
+protected:
+    uint8_t cmd_buf[16] = {};
 
 private:
     int     scsi_id;
-    uint8_t cmd_buf[16] = {};
 };
 
 /** This class provides a higher level abstraction for the SCSI bus. */

@@ -54,7 +54,7 @@ ScsiHardDisk::ScsiHardDisk(int my_id) : ScsiDevice(my_id)
     this->hdd_img.seekg(0, std::ios_base::beg);
 }
 
-void ScsiHardDisk::process_command(uint8_t* cmd) {
+void ScsiHardDisk::process_command() {
     uint32_t lba          = 0;
     uint16_t transfer_len = 0;
     uint16_t alloc_len    = 0;
@@ -63,7 +63,9 @@ void ScsiHardDisk::process_command(uint8_t* cmd) {
     uint8_t  page_code    = 0;
     uint8_t  subpage_code = 0;
 
-    switch (cmd[0]) { 
+    uint8_t* cmd = this->cmd_buf;
+
+    switch (cmd[0]) {
         case ScsiCommand::TEST_UNIT_READY:
             test_unit_ready();
         case ScsiCommand::REWIND:
@@ -135,7 +137,7 @@ void ScsiHardDisk::inquiry(uint16_t alloc_len) {
         memcpy(img_buffer + 16, prod_info, 16);
         memcpy(img_buffer + 32, rev_info, 8);
         memcpy(img_buffer + 40, serial_info, 8);
-    } 
+    }
     else {
         LOG_F(WARNING, "Inappropriate Allocation Length: %d", alloc_len);
     }
@@ -148,7 +150,7 @@ int ScsiHardDisk::send_diagnostic() {
 int ScsiHardDisk::mode_select_6(uint8_t param_len) {
     if (param_len == 0) {
         return 0x0;
-    } 
+    }
     else {
         LOG_F(WARNING, "Mode Select calling for param length of: %d", param_len);
         return param_len;

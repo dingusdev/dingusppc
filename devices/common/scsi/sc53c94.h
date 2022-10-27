@@ -143,6 +143,7 @@ public:
     // ScsiDevice methods
     void notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param);
     bool send_bytes(uint8_t* dst_ptr, int count);
+    void process_command() {};
 
 protected:
     void reset_device();

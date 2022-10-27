@@ -48,7 +48,7 @@ void ScsiDevice::notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param)
                             LOG_F(WARNING, "ScsiDevice: MESSAGE_OUT isn't supported yet");
                         }
                         bus_obj->transfer_command(this->cmd_buf);
-                        //this->process_command();
+                        this->process_command();
                         bus_obj->switch_phase(this->scsi_id, ScsiPhase::DATA_IN);
                 });
             }
