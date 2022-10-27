@@ -30,6 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <fstream>
 #include <limits>
+#include <cstring>
 #include <stdio.h>
 
 #define sector_size 512
@@ -66,47 +67,59 @@ void ScsiHardDisk::process_command() {
     uint8_t* cmd = this->cmd_buf;
 
     switch (cmd[0]) {
-        case ScsiCommand::TEST_UNIT_READY:
-            test_unit_ready();
-        case ScsiCommand::REWIND:
-            rewind();
-        case ScsiCommand::REQ_SENSE:
-            alloc_len = cmd[4];
-            req_sense(alloc_len);
-        case ScsiCommand::INQUIRY:
-            alloc_len = (cmd[3] << 8) + cmd[4];
-            inquiry(alloc_len);
-        case ScsiCommand::READ_6:
-            lba = ((cmd[1] & 0x1F) << 16) + (cmd[2] << 8) + cmd[3];
-            transfer_len = cmd[4];
-            read(lba, transfer_len, 6);
-        case ScsiCommand::READ_10:
-            lba          = (cmd[2] << 24) + (cmd[3] << 16) + (cmd[4] << 8) + cmd[5];
-            transfer_len = (cmd[7] << 8) + cmd[8];
-            read(lba, transfer_len, 10);
-        case ScsiCommand::WRITE_6:
-            lba          = ((cmd[1] & 0x1F) << 16) + (cmd[2] << 8) + cmd[3];
-            transfer_len = cmd[4];
-            write(lba, transfer_len, 6);
-        case ScsiCommand::WRITE_10:
-            lba          = (cmd[2] << 24) + (cmd[3] << 16) + (cmd[4] << 8) + cmd[5];
-            transfer_len = (cmd[7] << 8) + cmd[8];
-            write(lba, transfer_len, 10);
-        case ScsiCommand::SEEK_6:
-            lba         = ((cmd[1] & 0x1F) << 16) + (cmd[2] << 8) + cmd[3];
-            seek(lba);
-        case ScsiCommand::MODE_SELECT_6:
-            param_len = cmd[4];
-            mode_select_6(param_len);
-        case ScsiCommand::MODE_SENSE_6:
-            page_code    = cmd[2] & 0x1F;
-            subpage_code = cmd[3];
-            alloc_len    = cmd[4];
-            mode_sense_6(page_code, subpage_code, alloc_len);
-        case ScsiCommand::READ_CAPAC_10:
-            read_capacity_10();
-        default:
-            LOG_F(WARNING, "Unrecognized SCSI command: %x", cmd[0]);
+    case ScsiCommand::TEST_UNIT_READY:
+        test_unit_ready();
+        break;
+    case ScsiCommand::REWIND:
+        rewind();
+        break;
+    case ScsiCommand::REQ_SENSE:
+        alloc_len = cmd[4];
+        req_sense(alloc_len);
+        break;
+    case ScsiCommand::INQUIRY:
+        alloc_len = (cmd[3] << 8) + cmd[4];
+        inquiry(alloc_len);
+        break;
+    case ScsiCommand::READ_6:
+        lba = ((cmd[1] & 0x1F) << 16) + (cmd[2] << 8) + cmd[3];
+        transfer_len = cmd[4];
+        read(lba, transfer_len, 6);
+        break;
+    case ScsiCommand::READ_10:
+        lba          = (cmd[2] << 24) + (cmd[3] << 16) + (cmd[4] << 8) + cmd[5];
+        transfer_len = (cmd[7] << 8) + cmd[8];
+        read(lba, transfer_len, 10);
+        break;
+    case ScsiCommand::WRITE_6:
+        lba          = ((cmd[1] & 0x1F) << 16) + (cmd[2] << 8) + cmd[3];
+        transfer_len = cmd[4];
+        write(lba, transfer_len, 6);
+        break;
+    case ScsiCommand::WRITE_10:
+        lba          = (cmd[2] << 24) + (cmd[3] << 16) + (cmd[4] << 8) + cmd[5];
+        transfer_len = (cmd[7] << 8) + cmd[8];
+        write(lba, transfer_len, 10);
+        break;
+    case ScsiCommand::SEEK_6:
+        lba         = ((cmd[1] & 0x1F) << 16) + (cmd[2] << 8) + cmd[3];
+        seek(lba);
+        break;
+    case ScsiCommand::MODE_SELECT_6:
+        param_len = cmd[4];
+        mode_select_6(param_len);
+        break;
+    case ScsiCommand::MODE_SENSE_6:
+        page_code    = cmd[2] & 0x1F;
+        subpage_code = cmd[3];
+        alloc_len    = cmd[4];
+        mode_sense_6(page_code, subpage_code, alloc_len);
+        break;
+    case ScsiCommand::READ_CAPAC_10:
+        read_capacity_10();
+        break;
+    default:
+        LOG_F(WARNING, "SCSI_HD: unrecognized command: %x", cmd[0]);
     }
 }
 
@@ -128,15 +141,15 @@ int ScsiHardDisk::req_sense(uint16_t alloc_len) {
 void ScsiHardDisk::inquiry(uint16_t alloc_len) {
     if (alloc_len >= 48) {
         uint8_t empty_filler[1 << 17] = {0x0};
-        memcpy(img_buffer, empty_filler, (1 << 17));
+        std::memcpy(img_buffer, empty_filler, (1 << 17));
         img_buffer[2] = 0x1;
         img_buffer[3] = 0x2;
         img_buffer[4] = 0x31;
         img_buffer[7] = 0x1C;
-        memcpy(img_buffer + 8, vendor_info, 8);
-        memcpy(img_buffer + 16, prod_info, 16);
-        memcpy(img_buffer + 32, rev_info, 8);
-        memcpy(img_buffer + 40, serial_info, 8);
+        std::memcpy(img_buffer + 8, vendor_info, 8);
+        std::memcpy(img_buffer + 16, prod_info, 16);
+        std::memcpy(img_buffer + 32, rev_info, 8);
+        std::memcpy(img_buffer + 40, serial_info, 8);
     }
     else {
         LOG_F(WARNING, "Inappropriate Allocation Length: %d", alloc_len);
@@ -163,8 +176,8 @@ void ScsiHardDisk::mode_sense_6(uint8_t page_code, uint8_t subpage_code, uint8_t
 
 void ScsiHardDisk::read_capacity_10() {
     uint32_t sec_limit            = (this->img_size >> 9);
-    uint8_t empty_filler[1 << 17] = {0x0};
-    memcpy(img_buffer, empty_filler, (1 << 17));
+
+    std::memset(img_buffer, 0, sizeof(img_buffer));
 
     img_buffer[0] = (sec_limit >> 24) & 0xFF;
     img_buffer[1] = (sec_limit >> 16) & 0xFF;
@@ -179,9 +192,9 @@ void ScsiHardDisk::format() {
 }
 
 void ScsiHardDisk::read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
-    uint8_t empty_filler[1 << 17] = {0x0};
-    memcpy(img_buffer, empty_filler, (1 << 17));
     uint32_t transfer_size = transfer_len;
+
+    std::memset(img_buffer, 0, sizeof(img_buffer));
 
     if (cmd_len == 6)
         transfer_size = (transfer_len == 0) ? 256 : transfer_len;
