@@ -120,6 +120,37 @@ uint16_t ScsiBus::test_ctrl_lines(uint16_t mask)
     return new_state & mask;
 }
 
+int ScsiBus::switch_phase(int id, int new_phase)
+{
+    int old_phase = this->cur_phase;
+
+    // leave the current phase (low-level)
+    switch (old_phase) {
+    case ScsiPhase::COMMAND:
+        this->release_ctrl_line(id, SCSI_CTRL_CD);
+        break;
+    case ScsiPhase::DATA_IN:
+        this->release_ctrl_line(id, SCSI_CTRL_IO);
+        break;
+    }
+
+    // enter new phase (low-level)
+    switch (new_phase) {
+    case ScsiPhase::COMMAND:
+        this->assert_ctrl_line(id, SCSI_CTRL_CD);
+        break;
+    case ScsiPhase::DATA_IN:
+        this->assert_ctrl_line(id, SCSI_CTRL_IO);
+        break;
+    }
+
+    // switch the bus to the new phase (high-level)
+    this->cur_phase = new_phase;
+    change_bus_phase(id);
+
+    return old_phase;
+}
+
 bool ScsiBus::begin_arbitration(int initiator_id)
 {
     if (this->cur_phase == ScsiPhase::BUS_FREE) {
@@ -191,8 +222,9 @@ bool ScsiBus::transfer_command(uint8_t* dst_ptr)
 {
     static uint8_t cmd_to_cdb_length[8] = {6, 10, 10, 6, 6, 12, 6, 6};
 
-    this->cur_phase = ScsiPhase::COMMAND;
-    change_bus_phase(target_id);
+    this->switch_phase(target_id, ScsiPhase::COMMAND);
+
+    this->devices[this->initiator_id]->notify(this, ScsiMsg::SEND_CMD_BEGIN, 0);
 
     // attempt to transfer the shortest Command Description Block (CDB)
     if (!this->devices[this->initiator_id]->send_bytes(dst_ptr, 6)) {
@@ -200,7 +232,7 @@ bool ScsiBus::transfer_command(uint8_t* dst_ptr)
         return false;
     }
 
-    // transfer the remaining CDB
+    // transfer the remaining CDB bytes if any
     int cdb_length = cmd_to_cdb_length[dst_ptr[0] >> 5];
     if (cdb_length > 6) {
         if (!this->devices[this->initiator_id]->send_bytes(dst_ptr + 6, cdb_length - 6)) {
@@ -208,6 +240,8 @@ bool ScsiBus::transfer_command(uint8_t* dst_ptr)
             return false;
         }
     }
+
+    this->devices[this->initiator_id]->notify(this, ScsiMsg::SEND_CMD_END, 0);
 
     return true;
 }

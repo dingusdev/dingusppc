@@ -49,6 +49,7 @@ void ScsiDevice::notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param)
                         }
                         bus_obj->transfer_command(this->cmd_buf);
                         //this->process_command();
+                        bus_obj->switch_phase(this->scsi_id, ScsiPhase::DATA_IN);
                 });
             }
             break;

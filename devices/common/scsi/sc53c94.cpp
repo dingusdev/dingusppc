@@ -75,13 +75,14 @@ void Sc53C94::reset_device()
 
 uint8_t Sc53C94::read(uint8_t reg_offset)
 {
-    uint8_t int_status;
+    uint8_t status, int_status;
 
     switch (reg_offset) {
     case Read::Reg53C94::Command:
         return this->cmd_fifo[0];
     case Read::Reg53C94::Status:
-        return this->status;
+        status = bus_obj->test_ctrl_lines(SCSI_CTRL_MSG | SCSI_CTRL_CD | SCSI_CTRL_IO);
+        return (this->status & 0xF8) | status;
     case Read::Reg53C94::Int_Status:
         int_status = this->int_status;
         this->seq_step = 0;
@@ -92,6 +93,8 @@ uint8_t Sc53C94::read(uint8_t reg_offset)
         return this->seq_step;
     case Read::Reg53C94::FIFO_Flags:
         return (this->seq_step << 5) | (this->data_fifo_pos & 0x1F);
+    case Read::Reg53C94::Config_1:
+        return this->config1;
     case Read::Reg53C94::Config_3:
         return this->config3;
     case Read::Reg53C94::Xfer_Cnt_Hi:
@@ -332,6 +335,12 @@ void Sc53C94::sequencer()
     case SeqState::CMD_BEGIN:
         LOG_F(INFO, "CMD_BEGIN reached");
         break;
+    case SeqState::CMD_COMPLETE:
+        this->cmd_steps++;
+        this->int_status |= this->cmd_steps->status;
+        this->update_irq();
+        exec_next_command();
+        break;
     default:
         ABORT_F("SC53C94: unimplemented sequencer state %d", this->cur_state);
     }
@@ -350,16 +359,6 @@ void Sc53C94::update_irq()
 void Sc53C94::notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param)
 {
     switch (msg_type) {
-    case ScsiMsg::BUS_PHASE_CHANGE:
-        switch (param) {
-        case ScsiPhase::COMMAND:
-            this->cur_state = SeqState::CMD_BEGIN;
-            this->sequencer();
-            break;
-        default:
-            LOG_F(WARNING, "SC53C94: ignore bus phase change %d message", param);
-        }
-        break;
     case ScsiMsg::CONFIRM_SEL:
         if (this->target_id == param) {
             // cancel selection timeout timer
@@ -369,6 +368,14 @@ void Sc53C94::notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param)
         } else {
             LOG_F(WARNING, "SC53C94: ignore invalid selection confirmation message");
         }
+        break;
+    case ScsiMsg::SEND_CMD_BEGIN:
+        this->cur_state = SeqState::CMD_BEGIN;
+        this->sequencer();
+        break;
+    case ScsiMsg::SEND_CMD_END:
+        this->cur_state = SeqState::CMD_COMPLETE;
+        this->sequencer();
         break;
     default:
         LOG_F(WARNING, "SC53C94: ignore notification message, type: %d", msg_type);

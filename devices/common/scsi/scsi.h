@@ -52,9 +52,11 @@ enum : int {
     SELECTION,
     RESELECTION,
     COMMAND,
-    DATA,
+    DATA_IN,
+    DATA_OUT,
     STATUS,
-    MESSAGE,
+    MESSAGE_IN,
+    MESSAGE_OUT,
     RESET,
 };
 };
@@ -62,6 +64,8 @@ enum : int {
 enum ScsiMsg : int {
     CONFIRM_SEL = 1,
     BUS_PHASE_CHANGE,
+    SEND_CMD_BEGIN,
+    SEND_CMD_END,
 };
 
 enum ScsiCommand : int {
@@ -165,6 +169,7 @@ public:
     uint8_t get_data_lines() { return this->data_lines; };
 
     // high-level control/status
+    int  switch_phase(int id, int new_phase);
     bool begin_arbitration(int id);
     bool end_arbitration(int id);
     bool begin_selection(int initiator_id, int target_id, bool atn);
