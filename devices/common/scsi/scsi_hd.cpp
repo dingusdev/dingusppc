@@ -37,15 +37,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace std;
 
-ScsiHardDisk::ScsiHardDisk(int my_id) : ScsiDevice(my_id)
-{
+ScsiHardDisk::ScsiHardDisk(int my_id) : ScsiDevice(my_id) {
     supports_types(HWCompType::SCSI_DEV);
-
-    std::string hd_image_path = GET_STR_PROP("hdd_img");
+}
+ 
+ void ScsiHardDisk::insert_image(std::string filename) {
 
     //We don't want to store everything in memory, but
     //we want to keep the hard disk available.
-    this->hdd_img.open(hd_image_path, ios::out | ios::in | ios::binary);
+     this->hdd_img.open(filename, ios::out | ios::in | ios::binary);
 
     // Taken from:
     // https://stackoverflow.com/questions/22984956/tellg-function-give-wrong-size-of-file/22986486
@@ -232,3 +232,8 @@ static const PropMap SCSI_HD_Properties = {
     {"hdd_img", new StrProperty("")},
     {"hdd_wr_prot", new BinProperty(0)},
 };
+
+static const DeviceDescription SCSI_HD_Descriptor = 
+    {ScsiHardDisk::create, {}, SCSI_HD_Properties};
+
+REGISTER_DEVICE(ScsiDevice, SCSI_HD_Descriptor);

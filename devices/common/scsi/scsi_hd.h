@@ -35,6 +35,11 @@ public:
     ScsiHardDisk(int my_id);
     ~ScsiHardDisk() = default;
 
+    static std::unique_ptr<HWComponent> create() {
+        return std::unique_ptr<ScsiHardDisk>(new ScsiHardDisk(0));
+    }
+    
+    void insert_image(std::string filename);
     void process_command();
     bool send_bytes(uint8_t* dst_ptr, int count) { return true; };
 
@@ -57,7 +62,6 @@ protected:
     std::fstream hdd_img;
     uint64_t img_size;
     char img_buffer[1 << 17];
-    uint8_t scsi_command[12];
     uint64_t file_offset = 0;
     uint8_t status       = ScsiError::NO_ERROR;
 

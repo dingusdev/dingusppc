@@ -190,7 +190,7 @@ private:
     std::array<ScsiDevice*, SCSI_MAX_DEVS> devices;
 
     // per-device state of the control lines
-    uint16_t    dev_ctrl_lines[SCSI_MAX_DEVS];
+    uint16_t    dev_ctrl_lines[SCSI_MAX_DEVS] = {};
 
     uint16_t    ctrl_lines;
     int         cur_phase;

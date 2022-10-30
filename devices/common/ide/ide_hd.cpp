@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Heathrow hard drive controller */
 
+#include <devices/deviceregistry.h>
 #include <devices/common/ide/ide_hd.h>
 #include <fstream>
 #include <limits>
@@ -115,3 +116,9 @@ void IdeHardDisk::perform_command(uint32_t command) {
         LOG_F(WARNING, "Attempted to execute IDE command: %x", command);
     }
 }
+
+static const DeviceDescription IDE_Descriptor = {
+    IdeHardDisk::create, {}, {}
+};
+
+REGISTER_DEVICE(IdeHardDisk, IDE_Descriptor);

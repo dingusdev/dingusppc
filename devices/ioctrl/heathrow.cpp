@@ -81,6 +81,9 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
 
     // connect IDE HW
     this->ide_0 = dynamic_cast<IdeHardDisk*>(gMachineObj->get_comp_by_name("IDE0"));
+    if (!StrProperty("hdd_img").get_string().empty()) {
+        this->ide_0->insert_image(GET_STR_PROP("hdd_img"));
+    }
 
     // connect serial HW
     this->escc = dynamic_cast<EsccController*>(gMachineObj->get_comp_by_name("Escc"));
