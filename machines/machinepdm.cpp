@@ -83,9 +83,15 @@ int initialize_pdm(std::string& id)
     gMachineObj->add_device("SCSI0", std::unique_ptr<ScsiBus>(new ScsiBus()));
     auto scsi_bus = dynamic_cast<ScsiBus*>(gMachineObj->get_comp_by_name("SCSI0"));
 
-    // attach SCSI HD to the main bus, ID #0
-    gMachineObj->add_device("SCSI_HD", std::unique_ptr<ScsiHardDisk>(new ScsiHardDisk(0)));
-    scsi_bus->register_device(0, dynamic_cast<ScsiDevice*>(gMachineObj->get_comp_by_name("SCSI_HD")));
+    std::string hd_image_path = GET_STR_PROP("hdd_img");
+    if (!hd_image_path.empty()) {
+        // attach SCSI HD to the main bus, ID #0
+        gMachineObj->add_device("SCSI_HD", std::unique_ptr<ScsiHardDisk>(new ScsiHardDisk(0)));
+        scsi_bus->register_device(0, dynamic_cast<ScsiDevice*>(gMachineObj->get_comp_by_name("SCSI_HD")));
+        // insert specified disk image
+        auto my_hd = dynamic_cast<ScsiHardDisk*>(gMachineObj->get_comp_by_name("SCSI_HD"));
+        my_hd->insert_image(hd_image_path);
+    }
 
     // Init virtual CPU and request MPC601
     ppc_cpu_init(hmc_obj, PPC_VER::MPC601, 7812500ULL);
@@ -113,7 +119,7 @@ static const PropMap pm6100_settings = {
 };
 
 static vector<string> pm6100_devices = {
-    "HMC", "Amic"
+    "HMC", "Amic", "ScsiHD"
 };
 
 static const MachineDescription pm6100_descriptor = {
