@@ -251,6 +251,12 @@ void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
     }
 
     switch(offset) {
+    case AMICReg::VIA2_IFR:
+        // for each "1" in value clear the corresponding IRQ bit
+        // TODO: is bit 7 read only?
+        // TODO: update interrupts?
+        this->via2_ifr &= ~(value & 0x7F);
+        break;
     case AMICReg::VIA2_Slot_IER:
         LOG_F(INFO, "AMIC VIA2 Slot Interrupt Enable Register updated, val=%x", value);
         break;
