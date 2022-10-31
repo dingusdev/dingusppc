@@ -85,6 +85,7 @@ enum {
     CMD_RESET_DEVICE  =    2,
     CMD_RESET_BUS     =    3,
     CMD_DMA_STOP      =    4,
+    CMD_XFER          = 0x10,
     CMD_SELECT_NO_ATN = 0x41,
     CMD_ENA_SEL_RESEL = 0x44,
 };
@@ -116,6 +117,10 @@ namespace SeqState {
         SEL_END,
         CMD_BEGIN,
         CMD_COMPLETE,
+        XFER_BEGIN,
+        XFER_END,
+        SEND_DATA,
+        RCV_DATA,
     };
 };
 
@@ -158,6 +163,8 @@ protected:
     void sequencer();
     void seq_defer_state(uint64_t delay_ns);
 
+    bool rcv_data();
+
     void update_irq();
 
 private:
@@ -191,6 +198,7 @@ private:
     SeqDesc*    cmd_steps;
     bool        is_initiator;
     uint8_t     cur_cmd;
+    int         cur_bus_phase;
 
     // interrupt related stuff
     InterruptCtrl* int_ctrl = nullptr;

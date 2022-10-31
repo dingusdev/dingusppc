@@ -229,6 +229,18 @@ void Sc53C94::exec_command()
         }
         exec_next_command();
         break;
+    case CMD_XFER:
+        if (!this->is_initiator) {
+            // clear command FIFO
+            this->cmd_fifo_pos = 0;
+            this->int_status |= INTSTAT_ICMD;
+            this->update_irq();
+        } else {
+            this->seq_step = 0;
+            this->cur_state = SeqState::XFER_BEGIN;
+            this->sequencer();
+        }
+        break;
     case CMD_SELECT_NO_ATN:
         static SeqDesc * sel_no_atn_desc = new SeqDesc[3]{
             {SeqState::SEL_BEGIN,    0, INTSTAT_DIS            },
@@ -351,6 +363,37 @@ void Sc53C94::sequencer()
         this->update_irq();
         exec_next_command();
         break;
+    case SeqState::XFER_BEGIN:
+        this->cur_bus_phase = this->bus_obj->current_phase();
+        switch (this->cur_bus_phase) {
+        case ScsiPhase::COMMAND:
+        case ScsiPhase::DATA_OUT:
+        case ScsiPhase::MESSAGE_OUT:
+            LOG_F(WARNING, "Sc53C94: sending data not unimplemented");
+            break;
+        case ScsiPhase::STATUS:
+        case ScsiPhase::DATA_IN:
+        case ScsiPhase::MESSAGE_IN:
+            this->cur_state = SeqState::RCV_DATA;
+            this->bus_obj->target_request_data();
+            this->rcv_data();
+        }
+        break;
+    case SeqState::XFER_END:
+        this->int_status |= INTSTAT_SR;
+        this->update_irq();
+        exec_next_command();
+        break;
+    case SeqState::RCV_DATA:
+        // check for unexpected bus phase changes
+        if (this->bus_obj->current_phase() != this->cur_bus_phase) {
+            this->cmd_fifo_pos = 0; // clear command FIFO
+            this->int_status |= INTSTAT_SR;
+            this->update_irq();
+        } else {
+            this->rcv_data();
+        }
+        break;
     default:
         ABORT_F("SC53C94: unimplemented sequencer state %d", this->cur_state);
     }
@@ -404,8 +447,20 @@ bool Sc53C94::send_bytes(uint8_t* dst_ptr, int count)
     // remove the just readed data from the data FIFO
     this->data_fifo_pos -= count;
     if (this->data_fifo_pos > 0) {
-        std::memcpy(this->data_fifo, &this->data_fifo[count], this->data_fifo_pos);
+        std::memmove(this->data_fifo, &this->data_fifo[count], this->data_fifo_pos);
     }
+    return true;
+}
+
+bool Sc53C94::rcv_data()
+{
+    // return if REQ line is negated
+    if (!this->bus_obj->test_ctrl_lines(SCSI_CTRL_REQ)) {
+        return false;
+    }
+
+    this->bus_obj->target_pull_data(this->data_fifo, DATA_FIFO_MAX);
+    this->data_fifo_pos = DATA_FIFO_MAX;
     return true;
 }
 
