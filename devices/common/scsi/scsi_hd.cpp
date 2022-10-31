@@ -123,6 +123,18 @@ void ScsiHardDisk::process_command() {
     }
 }
 
+bool ScsiHardDisk::send_bytes(uint8_t* dst_ptr, int count) {
+    if (dst_ptr == nullptr || !count || count > this->cur_buf_cnt) {
+        return false;
+    }
+
+    std::memcpy(dst_ptr, &this->img_buffer[this->cur_buf_pos], count);
+    this->cur_buf_pos += count;
+    this->cur_buf_cnt -= count;
+
+    return true;
+}
+
 int ScsiHardDisk::test_unit_ready() {
     if (img_path.empty() || img_path == " ") {
         return ScsiError::DEV_NOT_READY;
@@ -204,6 +216,8 @@ void ScsiHardDisk::read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
 
     this->hdd_img.seekg(device_offset, this->hdd_img.beg);
     this->hdd_img.read(img_buffer, transfer_size);
+
+    this->cur_buf_cnt = transfer_size;
 }
 
 void ScsiHardDisk::write(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {

@@ -41,7 +41,8 @@ public:
     
     void insert_image(std::string filename);
     void process_command();
-    bool send_bytes(uint8_t* dst_ptr, int count) { return true; };
+    bool has_data() { return this->cur_buf_cnt != 0; };
+    bool send_bytes(uint8_t* dst_ptr, int count);
 
     int test_unit_ready();
     int req_sense(uint16_t alloc_len);
@@ -57,13 +58,17 @@ public:
     void seek(uint32_t lba);
     void rewind();
 
-protected:
+private:
     std::string img_path;
     std::fstream hdd_img;
     uint64_t img_size;
     char img_buffer[1 << 17];
     uint64_t file_offset = 0;
     uint8_t status       = ScsiError::NO_ERROR;
+
+    // SCSI transfer pointers
+    uint32_t    cur_buf_pos = 0;
+    uint32_t    cur_buf_cnt = 0;
 
     //inquiry info
     char vendor_info[8] = {'D', 'i', 'n', 'g', 'u', 's', 'D', '\0'};

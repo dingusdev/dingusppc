@@ -246,6 +246,31 @@ bool ScsiBus::transfer_command(uint8_t* dst_ptr)
     return true;
 }
 
+bool ScsiBus::target_request_data()
+{
+    if (this->devices[this->target_id]->has_data()) {
+        this->assert_ctrl_line(target_id, SCSI_CTRL_REQ);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool ScsiBus::target_pull_data(uint8_t* dst_ptr, int size)
+{
+    if (dst_ptr == nullptr || !size) {
+        return false;
+    }
+
+    // transfer the requested number of bytes from target to initiator
+    if (!this->devices[this->target_id]->send_bytes(dst_ptr, size)) {
+        LOG_F(ERROR, "ScsiBus: error while transferring data from target!");
+        return false;
+    }
+
+    return true;
+}
+
 void ScsiBus::disconnect(int dev_id)
 {
     this->release_ctrl_lines(dev_id);

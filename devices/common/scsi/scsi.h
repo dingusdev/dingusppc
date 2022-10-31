@@ -46,19 +46,19 @@ enum {
 };
 
 namespace ScsiPhase {
-enum : int {
-    BUS_FREE = 0,
-    ARBITRATION,
-    SELECTION,
-    RESELECTION,
-    COMMAND,
-    DATA_IN,
-    DATA_OUT,
-    STATUS,
-    MESSAGE_IN,
-    MESSAGE_OUT,
-    RESET,
-};
+    enum : int {
+        BUS_FREE = 0,
+        ARBITRATION,
+        SELECTION,
+        RESELECTION,
+        COMMAND,
+        DATA_IN,
+        DATA_OUT,
+        STATUS,
+        MESSAGE_IN,
+        MESSAGE_OUT,
+        RESET,
+    };
 };
 
 enum ScsiMsg : int {
@@ -140,6 +140,7 @@ public:
 
     virtual void notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param);
 
+    virtual bool has_data() = 0;
     virtual bool send_bytes(uint8_t* dst_ptr, int count) = 0;
 
     virtual void process_command() = 0;
@@ -179,6 +180,8 @@ public:
     bool end_selection(int initiator_id, int target_id);
     bool transfer_command(uint8_t* dst_ptr);
     void disconnect(int dev_id);
+    bool target_request_data();
+    bool target_pull_data(uint8_t* dst_ptr, int size);
 
 protected:
     void change_bus_phase(int initiator_id);
