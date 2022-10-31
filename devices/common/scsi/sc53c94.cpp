@@ -152,6 +152,36 @@ void Sc53C94::write(uint8_t reg_offset, uint8_t value)
     }
 }
 
+uint16_t Sc53C94::pseudo_dma_read()
+{
+    uint16_t data_word;
+    bool     is_done = false;
+
+    if (this->data_fifo_pos >= 2) {
+        // remove one word from FIFO
+        data_word = (this->data_fifo[0] << 8) | this->data_fifo[1];
+        this->data_fifo_pos -= 2;
+        std:memmove(this->data_fifo, &this->data_fifo[2], this->data_fifo_pos);
+
+        // update DMA status
+        if ((this->cmd_fifo[0] & 0x80)) {
+            this->xfer_count -= 2;
+            if (!this->xfer_count) {
+                is_done = true;
+                this->cur_state = SeqState::XFER_END;
+                this->sequencer();
+            }
+        }
+    }
+
+    // see if we need to refill FIFO
+    if (!this->data_fifo_pos && !is_done) {
+        this->sequencer();
+    }
+
+    return data_word;
+}
+
 void Sc53C94::update_command_reg(uint8_t cmd)
 {
     if (this->on_reset && (cmd & 0x7F) != CMD_NOP) {

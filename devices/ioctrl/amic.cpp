@@ -115,7 +115,11 @@ uint32_t AMIC::read(uint32_t rgn_start, uint32_t offset, int size)
     case 0xA: // MACE registers
         return this->mace->read((offset >> 4) & 0x1F);
     case 0x10: // SCSI registers
-        return this->scsi->read((offset >> 4) & 0xF);
+        if (offset & 0x100) {
+            return this->scsi->pseudo_dma_read();
+        } else {
+            return this->scsi->read((offset >> 4) & 0xF);
+        }
     case 0x14: // Sound registers
         switch (offset) {
         case AMICReg::Snd_Stat_0:

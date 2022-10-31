@@ -144,8 +144,9 @@ public:
     int device_postinit();
 
     // 53C94 registers access
-    uint8_t read(uint8_t reg_offset);
-    void   write(uint8_t reg_offset, uint8_t value);
+    uint8_t  read(uint8_t reg_offset);
+    void     write(uint8_t reg_offset, uint8_t value);
+    uint16_t pseudo_dma_read();
 
     // ScsiDevice methods
     void notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param);
