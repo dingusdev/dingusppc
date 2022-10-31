@@ -35,6 +35,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <memory>
 
+#define DATA_FIFO_MAX   16
+
 /** 53C94 read registers */
 namespace Read {
     enum Reg53C94 : uint8_t {

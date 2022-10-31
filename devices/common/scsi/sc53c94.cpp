@@ -111,6 +111,12 @@ uint8_t Sc53C94::read(uint8_t reg_offset)
 void Sc53C94::write(uint8_t reg_offset, uint8_t value)
 {
     switch (reg_offset) {
+    case Write::Reg53C94::Xfer_Cnt_LSB:
+        this->set_xfer_count = (this->set_xfer_count & ~0xFFU) | value;
+        break;
+    case Write::Reg53C94::Xfer_Cnt_MSB:
+        this->set_xfer_count = (this->set_xfer_count & ~0xFF00U) | (value << 8);
+        break;
     case Write::Reg53C94::Command:
         update_command_reg(value);
         break;
@@ -184,6 +190,9 @@ void Sc53C94::exec_command()
             this->xfer_count = this->set_xfer_count & 0xFFFFFFUL;
         } else { // standard mode: 16-bit
             this->xfer_count = this->set_xfer_count & 0xFFFFUL;
+            if (!this->xfer_count) {
+                this->xfer_count = 65536;
+            }
         }
     }
 
@@ -240,6 +249,7 @@ void Sc53C94::exec_command()
         LOG_F(ERROR, "SC53C94: invalid/unimplemented command 0x%X", cmd);
         this->cmd_fifo_pos--; // remove invalid command from FIFO
         this->int_status |= INTSTAT_ICMD;
+        this->update_irq();
     }
 }
 
@@ -256,7 +266,7 @@ void Sc53C94::exec_next_command()
 
 void Sc53C94::fifo_push(const uint8_t data)
 {
-    if (this->data_fifo_pos < 16) {
+    if (this->data_fifo_pos < DATA_FIFO_MAX) {
         this->data_fifo[this->data_fifo_pos++] = data;
     } else {
         LOG_F(ERROR, "SC53C94: data FIFO overflow!");
