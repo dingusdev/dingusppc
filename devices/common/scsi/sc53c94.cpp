@@ -168,6 +168,7 @@ uint16_t Sc53C94::pseudo_dma_read()
             this->xfer_count -= 2;
             if (!this->xfer_count) {
                 is_done = true;
+                this->status |= STAT_TC; // signal zero transfer count
                 this->cur_state = SeqState::XFER_END;
                 this->sequencer();
             }
@@ -206,7 +207,7 @@ void Sc53C94::update_command_reg(uint8_t cmd)
         }
     } else {
         LOG_F(ERROR, "SC53C94: the top of the command FIFO overwritten!");
-        this->status |= 0x40; // signal IOE/Gross Error
+        this->status |= STAT_GE; // signal IOE/Gross Error
     }
 }
 
@@ -312,7 +313,7 @@ void Sc53C94::fifo_push(const uint8_t data)
         this->data_fifo[this->data_fifo_pos++] = data;
     } else {
         LOG_F(ERROR, "SC53C94: data FIFO overflow!");
-        this->status |= 0x40; // signal IOE/Gross Error
+        this->status |= STAT_GE; // signal IOE/Gross Error
     }
 }
 

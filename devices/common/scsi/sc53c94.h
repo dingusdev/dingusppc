@@ -90,6 +90,12 @@ enum {
     CMD_ENA_SEL_RESEL = 0x44,
 };
 
+/** Status register bits. **/
+enum {
+    STAT_TC         = 1 << 4, // Terminal count (NCR) / count to zero (AMD)
+    STAT_GE         = 1 << 6, // Gross Error (NCR) / Illegal Operation Error (AMD)
+};
+
 /** Interrupt status register bits. */
 enum {
     INTSTAT_SRST    = 0x80, // bus reset
