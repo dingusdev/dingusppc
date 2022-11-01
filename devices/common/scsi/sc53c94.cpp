@@ -78,6 +78,10 @@ uint8_t Sc53C94::read(uint8_t reg_offset)
     uint8_t status, int_status;
 
     switch (reg_offset) {
+    case Read::Reg53C94::Xfer_Cnt_LSB:
+        return this->xfer_count & 0xFFU;
+    case Read::Reg53C94::Xfer_Cnt_MSB:
+        return (this->xfer_count >> 8) & 0xFFU;
     case Read::Reg53C94::Command:
         return this->cmd_fifo[0];
     case Read::Reg53C94::Status:
