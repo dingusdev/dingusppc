@@ -67,15 +67,14 @@ void ScsiBus::assert_ctrl_line(int initiator_id, uint16_t mask)
 {
     uint16_t new_state = 0xFFFFU & mask;
 
-    this->dev_ctrl_lines[initiator_id] = new_state;
+    this->dev_ctrl_lines[initiator_id] |= new_state;
 
     if (new_state == this->ctrl_lines) {
         return;
     }
 
-    this->ctrl_lines = new_state;
-
     if (new_state & SCSI_CTRL_RST) {
+        this->ctrl_lines |= SCSI_CTRL_RST;
         this->cur_phase = ScsiPhase::RESET;
         change_bus_phase(initiator_id);
     }
