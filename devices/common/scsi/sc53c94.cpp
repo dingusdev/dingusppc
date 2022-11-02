@@ -301,7 +301,8 @@ void Sc53C94::exec_command()
             this->bus_obj->target_next_step();
         }
         this->bus_obj->release_ctrl_line(this->my_bus_id, SCSI_CTRL_ACK);
-        this->int_status |= INTSTAT_SR | INTSTAT_DIS;
+        this->int_status |= INTSTAT_SR;
+        this->int_status |= INTSTAT_DIS; // TODO: handle target disconnection properly
         this->update_irq();
         exec_next_command();
         break;
@@ -533,7 +534,7 @@ void Sc53C94::notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param)
         this->sequencer();
         break;
     default:
-        LOG_F(WARNING, "SC53C94: ignore notification message, type: %d", msg_type);
+        LOG_F(9, "SC53C94: ignore notification message, type: %d", msg_type);
     }
 }
 
