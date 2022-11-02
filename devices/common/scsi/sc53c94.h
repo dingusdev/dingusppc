@@ -166,6 +166,7 @@ protected:
     void exec_command();
     void exec_next_command();
     void fifo_push(const uint8_t data);
+    uint8_t fifo_pop();
 
     void sequencer();
     void seq_defer_state(uint64_t delay_ns);

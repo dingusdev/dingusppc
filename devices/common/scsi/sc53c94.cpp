@@ -82,6 +82,8 @@ uint8_t Sc53C94::read(uint8_t reg_offset)
         return this->xfer_count & 0xFFU;
     case Read::Reg53C94::Xfer_Cnt_MSB:
         return (this->xfer_count >> 8) & 0xFFU;
+    case Read::Reg53C94::FIFO:
+        return this->fifo_pop();
     case Read::Reg53C94::Command:
         return this->cmd_fifo[0];
     case Read::Reg53C94::Status:
@@ -319,6 +321,22 @@ void Sc53C94::fifo_push(const uint8_t data)
         LOG_F(ERROR, "SC53C94: data FIFO overflow!");
         this->status |= STAT_GE; // signal IOE/Gross Error
     }
+}
+
+uint8_t Sc53C94::fifo_pop()
+{
+    uint8_t data = 0;
+
+    if (this->data_fifo_pos < 1) {
+        LOG_F(ERROR, "SC53C94: data FIFO underflow!");
+        this->status |= STAT_GE; // signal IOE/Gross Error
+    } else {
+        data = this->data_fifo[0];
+        this->data_fifo_pos--;
+        std:memmove(this->data_fifo, &this->data_fifo[1], this->data_fifo_pos);
+    }
+
+    return data;
 }
 
 void Sc53C94::seq_defer_state(uint64_t delay_ns)
