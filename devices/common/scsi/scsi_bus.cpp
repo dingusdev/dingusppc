@@ -195,7 +195,7 @@ bool ScsiBus::begin_selection(int initiator_id, int target_id, bool atn)
 
     this->assert_ctrl_line(initiator_id, SCSI_CTRL_SEL);
 
-    this->data_lines |= (1 << initiator_id) | (1 << target_id);
+    this->data_lines = (1 << initiator_id) | (1 << target_id);
 
     if (atn) {
         assert_ctrl_line(initiator_id, SCSI_CTRL_ATN);
