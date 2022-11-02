@@ -50,9 +50,38 @@ void ScsiDevice::notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param)
                         bus_obj->transfer_command(this->cmd_buf);
                         this->process_command();
                         bus_obj->switch_phase(this->scsi_id, ScsiPhase::DATA_IN);
+                        this->cur_phase = ScsiPhase::DATA_IN;
                 });
             }
             break;
         }
+    }
+}
+
+void ScsiDevice::next_step(ScsiBus* bus_obj)
+{
+    switch (this->cur_phase) {
+    case ScsiPhase::DATA_IN:
+        if (this->has_data()) {
+            LOG_F(WARNING, "ScsiDevice: attempt to leave DATA_IN phase with xfer != 0");
+        } else {
+            bus_obj->switch_phase(this->scsi_id, ScsiPhase::STATUS);
+            this->cur_phase = ScsiPhase::STATUS;
+        }
+        break;
+    case ScsiPhase::STATUS:
+        bus_obj->switch_phase(this->scsi_id, ScsiPhase::MESSAGE_IN);
+        this->cur_phase = ScsiPhase::MESSAGE_IN;
+        break;
+    case ScsiPhase::MESSAGE_IN:
+        this->cur_phase = ScsiPhase::BUS_FREE;
+        break;
+    case ScsiPhase::BUS_FREE:
+        bus_obj->release_ctrl_lines(this->scsi_id);
+        bus_obj->switch_phase(this->scsi_id, ScsiPhase::BUS_FREE);
+        this->cur_phase = ScsiPhase::BUS_FREE;
+        break;
+    default:
+        LOG_F(WARNING, "ScsiDevice: nothing to do for the current phase %d", this->cur_phase);
     }
 }
