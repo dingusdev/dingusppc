@@ -156,6 +156,7 @@ public:
 
     // ScsiDevice methods
     void notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param);
+    bool prepare_data() { return false; };
     bool has_data() { return this->data_fifo_pos != 0; };
     bool send_bytes(uint8_t* dst_ptr, int count);
     void process_command() {};

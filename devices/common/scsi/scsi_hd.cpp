@@ -122,6 +122,32 @@ void ScsiHardDisk::process_command() {
     }
 }
 
+bool ScsiHardDisk::prepare_data() {
+    cur_buf_pos = 0;
+
+    switch (this->cur_phase) {
+    case ScsiPhase::DATA_IN:
+        break;
+    case ScsiPhase::STATUS:
+        if (!error) {
+            this->img_buffer[0] = ScsiStatus::GOOD;
+        } else {
+            this->img_buffer[0] = ScsiStatus::CHECK_CONDITION;
+        }
+        this->cur_buf_cnt = 1;
+        break;
+    case ScsiPhase::MESSAGE_IN:
+        this->img_buffer[0] = this->msg_code;
+        this->cur_buf_cnt = 1;
+        break;
+    default:
+        LOG_F(WARNING, "SCSI_HD: unexpected phase in prepare_data");
+        return false;
+    }
+
+    return true;
+}
+
 bool ScsiHardDisk::send_bytes(uint8_t* dst_ptr, int count) {
     if (dst_ptr == nullptr || !count || count > this->cur_buf_cnt) {
         return false;
@@ -217,6 +243,7 @@ void ScsiHardDisk::read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
     this->hdd_img.read(img_buffer, transfer_size);
 
     this->cur_buf_cnt = transfer_size;
+    this->msg_code = ScsiMessage::COMMAND_COMPLETE;
 }
 
 void ScsiHardDisk::write(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {

@@ -38,9 +38,10 @@ public:
     static std::unique_ptr<HWComponent> create() {
         return std::unique_ptr<ScsiHardDisk>(new ScsiHardDisk(0));
     }
-    
+
     void insert_image(std::string filename);
     void process_command();
+    bool prepare_data();
     bool has_data() { return this->cur_buf_cnt != 0; };
     bool send_bytes(uint8_t* dst_ptr, int count);
 
@@ -69,6 +70,8 @@ private:
     // SCSI transfer pointers
     uint32_t    cur_buf_pos = 0;
     uint32_t    cur_buf_cnt = 0;
+    uint8_t     error = 0;
+    uint8_t     msg_code = 0;
 
     //inquiry info
     char vendor_info[8] = {'D', 'i', 'n', 'g', 'u', 's', 'D', '\0'};

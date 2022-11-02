@@ -131,6 +131,9 @@ int ScsiBus::switch_phase(int id, int new_phase)
     case ScsiPhase::DATA_IN:
         this->release_ctrl_line(id, SCSI_CTRL_IO);
         break;
+    case ScsiPhase::STATUS:
+        this->release_ctrl_line(id, SCSI_CTRL_CD | SCSI_CTRL_IO);
+        break;
     }
 
     // enter new phase (low-level)
@@ -140,6 +143,9 @@ int ScsiBus::switch_phase(int id, int new_phase)
         break;
     case ScsiPhase::DATA_IN:
         this->assert_ctrl_line(id, SCSI_CTRL_IO);
+        break;
+    case ScsiPhase::STATUS:
+        this->assert_ctrl_line(id, SCSI_CTRL_CD | SCSI_CTRL_IO);
         break;
     }
 
@@ -247,7 +253,7 @@ bool ScsiBus::transfer_command(uint8_t* dst_ptr)
 
 bool ScsiBus::target_request_data()
 {
-    if (this->devices[this->target_id]->has_data()) {
+    if (this->devices[this->target_id]->prepare_data()) {
         this->assert_ctrl_line(target_id, SCSI_CTRL_REQ);
         return true;
     } else {
@@ -268,6 +274,11 @@ bool ScsiBus::target_pull_data(uint8_t* dst_ptr, int size)
     }
 
     return true;
+}
+
+void ScsiBus::target_next_step()
+{
+    this->devices[this->target_id]->next_step(this);
 }
 
 void ScsiBus::disconnect(int dev_id)

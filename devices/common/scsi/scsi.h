@@ -61,6 +61,19 @@ namespace ScsiPhase {
     };
 };
 
+namespace ScsiStatus {
+    enum : uint8_t {
+        GOOD = 0,
+        CHECK_CONDITION = 2,
+    };
+};
+
+namespace ScsiMessage {
+    enum : uint8_t {
+        COMMAND_COMPLETE = 0,
+    };
+};
+
 enum ScsiMsg : int {
     CONFIRM_SEL = 1,
     BUS_PHASE_CHANGE,
@@ -135,11 +148,14 @@ class ScsiDevice : public HWComponent {
 public:
     ScsiDevice(int my_id) {
         this->scsi_id = my_id;
+        this->cur_phase = ScsiPhase::BUS_FREE;
     };
     ~ScsiDevice() = default;
 
     virtual void notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param);
+    virtual void next_step(ScsiBus* bus_obj);
 
+    virtual bool prepare_data() = 0;
     virtual bool has_data() = 0;
     virtual bool send_bytes(uint8_t* dst_ptr, int count) = 0;
 
@@ -147,8 +163,7 @@ public:
 
 protected:
     uint8_t cmd_buf[16] = {};
-
-private:
+    int     cur_phase;
     int     scsi_id;
 };
 
@@ -182,6 +197,7 @@ public:
     void disconnect(int dev_id);
     bool target_request_data();
     bool target_pull_data(uint8_t* dst_ptr, int size);
+    void target_next_step();
 
 protected:
     void change_bus_phase(int initiator_id);
