@@ -80,14 +80,16 @@ namespace Write {
 
 /** NCR53C94/Am53CF94 commands. */
 enum {
-    CMD_NOP           =    0,
-    CMD_CLEAR_FIFO    =    1,
-    CMD_RESET_DEVICE  =    2,
-    CMD_RESET_BUS     =    3,
-    CMD_DMA_STOP      =    4,
-    CMD_XFER          = 0x10,
-    CMD_SELECT_NO_ATN = 0x41,
-    CMD_ENA_SEL_RESEL = 0x44,
+    CMD_NOP             =    0,
+    CMD_CLEAR_FIFO      =    1,
+    CMD_RESET_DEVICE    =    2,
+    CMD_RESET_BUS       =    3,
+    CMD_DMA_STOP        =    4,
+    CMD_XFER            = 0x10,
+    CMD_COMPLETE_STEPS  = 0x11,
+    CMD_MSG_ACCEPTED    = 0x12,
+    CMD_SELECT_NO_ATN   = 0x41,
+    CMD_ENA_SEL_RESEL   = 0x44,
 };
 
 /** Status register bits. **/
@@ -127,6 +129,8 @@ namespace SeqState {
         XFER_END,
         SEND_DATA,
         RCV_DATA,
+        RCV_STATUS,
+        RCV_MESSAGE,
     };
 };
 

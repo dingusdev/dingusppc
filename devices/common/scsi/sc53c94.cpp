@@ -267,6 +267,9 @@ void Sc53C94::exec_command()
         exec_next_command();
         break;
     case CMD_XFER:
+        static SeqDesc * xfer_desc = new SeqDesc[3]{
+            {SeqState::IDLE, 0, INTSTAT_SR}
+        };
         if (!this->is_initiator) {
             // clear command FIFO
             this->cmd_fifo_pos = 0;
@@ -274,9 +277,33 @@ void Sc53C94::exec_command()
             this->update_irq();
         } else {
             this->seq_step = 0;
+            this->cmd_steps = xfer_desc;
             this->cur_state = SeqState::XFER_BEGIN;
             this->sequencer();
         }
+        break;
+    case CMD_COMPLETE_STEPS:
+        static SeqDesc * complete_steps_desc = new SeqDesc[3]{
+            {SeqState::RCV_MESSAGE, 0,          0},
+            {SeqState::XFER_END,    0,          0},
+            {SeqState::IDLE,        0, INTSTAT_SR}
+        };
+        if (this->bus_obj->current_phase() != ScsiPhase::STATUS) {
+            ABORT_F("Sc53C94: complete steps only works in the STATUS phase");
+        }
+        this->seq_step = 0;
+        this->cmd_steps = complete_steps_desc;
+        this->cur_state = SeqState::RCV_STATUS;
+        this->sequencer();
+        break;
+    case CMD_MSG_ACCEPTED:
+        if (this->is_initiator) {
+            this->bus_obj->target_next_step();
+        }
+        this->bus_obj->release_ctrl_line(this->my_bus_id, SCSI_CTRL_ACK);
+        this->int_status |= INTSTAT_SR | INTSTAT_DIS;
+        this->update_irq();
+        exec_next_command();
         break;
     case CMD_SELECT_NO_ATN:
         static SeqDesc * sel_no_atn_desc = new SeqDesc[3]{
@@ -291,7 +318,6 @@ void Sc53C94::exec_command()
         LOG_F(INFO, "SC53C94: SELECT W/O ATN command started");
         break;
     case CMD_ENA_SEL_RESEL:
-        LOG_F(INFO, "SC53C94: ENABLE SELECTION/RESELECTION command executed");
         exec_next_command();
         break;
     default:
@@ -408,7 +434,7 @@ void Sc53C94::sequencer()
         }
         break;
     case SeqState::CMD_BEGIN:
-        LOG_F(INFO, "CMD_BEGIN reached");
+        LOG_F(9, "CMD_BEGIN reached");
         break;
     case SeqState::CMD_COMPLETE:
         this->cmd_steps++;
@@ -433,9 +459,17 @@ void Sc53C94::sequencer()
         }
         break;
     case SeqState::XFER_END:
-        this->int_status |= INTSTAT_SR;
+        if (this->is_initiator) {
+            this->bus_obj->target_next_step();
+        }
+        this->int_status |= this->cmd_steps->status;
         this->update_irq();
-        exec_next_command();
+        if (this->cmd_steps->next_step > 0) {
+            this->cur_state = this->cmd_steps->next_step;
+            this->cmd_steps++;
+        } else {
+            exec_next_command();
+        }
         break;
     case SeqState::RCV_DATA:
         // check for unexpected bus phase changes
@@ -446,6 +480,21 @@ void Sc53C94::sequencer()
         } else {
             this->rcv_data();
         }
+        break;
+    case SeqState::RCV_STATUS:
+    case SeqState::RCV_MESSAGE:
+        this->bus_obj->target_request_data();
+        this->rcv_data();
+        if (this->is_initiator) {
+            if (this->cur_state == SeqState::RCV_STATUS) {
+                this->bus_obj->target_next_step();
+            } else if (this->cur_state == SeqState::RCV_MESSAGE) {
+                this->bus_obj->assert_ctrl_line(this->my_bus_id, SCSI_CTRL_ACK);
+            }
+        }
+        this->cur_state = this->cmd_steps->next_step;
+        this->cmd_steps++;
+        this->sequencer();
         break;
     default:
         ABORT_F("SC53C94: unimplemented sequencer state %d", this->cur_state);
@@ -507,13 +556,21 @@ bool Sc53C94::send_bytes(uint8_t* dst_ptr, int count)
 
 bool Sc53C94::rcv_data()
 {
+    int req_count;
+
     // return if REQ line is negated
     if (!this->bus_obj->test_ctrl_lines(SCSI_CTRL_REQ)) {
         return false;
     }
 
-    this->bus_obj->target_pull_data(this->data_fifo, DATA_FIFO_MAX);
-    this->data_fifo_pos = DATA_FIFO_MAX;
+    if (this->cmd_fifo[0] & 0x80) {
+        req_count = std::min((int)this->xfer_count, DATA_FIFO_MAX);
+    } else {
+        req_count = 1;
+    }
+
+    this->bus_obj->target_pull_data(&this->data_fifo[this->data_fifo_pos], req_count);
+    this->data_fifo_pos += req_count;
     return true;
 }
 
