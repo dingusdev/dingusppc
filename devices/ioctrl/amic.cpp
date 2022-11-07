@@ -53,6 +53,8 @@ AMIC::AMIC() : MMIODevice()
 
     // connect internal SCSI controller
     this->scsi = dynamic_cast<Sc53C94*>(gMachineObj->get_comp_by_name("Sc53C94"));
+    this->scsi_dma = std::unique_ptr<AmicScsiDma> (new AmicScsiDma());
+    this->scsi->set_dma_channel(this->scsi_dma.get());
 
     // connect serial HW
     this->escc = dynamic_cast<EsccController*>(gMachineObj->get_comp_by_name("Escc"));
@@ -170,7 +172,7 @@ uint32_t AMIC::read(uint32_t rgn_start, uint32_t offset, int size)
     case AMICReg::DMA_Base_Addr_3:
         return (this->dma_base >> (3 - (offset & 3)) * 8) & 0xFF;
     case AMICReg::SCSI_DMA_Ctrl:
-        return this->scsi_dma_cs;
+        return this->scsi_dma->read_stat();
     case AMICReg::Floppy_Addr_Ptr_0:
     case AMICReg::Floppy_Addr_Ptr_1:
     case AMICReg::Floppy_Addr_Ptr_2:
@@ -324,9 +326,24 @@ void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
     case AMICReg::Enet_DMA_Xmt_Ctrl:
         LOG_F(INFO, "AMIC Ethernet Transmit DMA Ctrl updated, val=%x", value);
         break;
+    case AMICReg::SCSI_DMA_Base_0:
+    case AMICReg::SCSI_DMA_Base_1:
+    case AMICReg::SCSI_DMA_Base_2:
+    case AMICReg::SCSI_DMA_Base_3:
+        SET_ADDR_BYTE(this->scsi_dma_base, offset, value);
+        this->scsi_dma_base &= 0xFFFFFFF8UL;
+        LOG_F(9, "AMIC: SCSI DMA base address set to 0x%X", this->scsi_dma_base);
+        break;
     case AMICReg::SCSI_DMA_Ctrl:
-        LOG_F(INFO, "AMIC SCSI DMA Ctrl updated, val=%x", value);
-        this->scsi_dma_cs = value;
+        if (value & 1) { // RST bit set?
+            this->scsi_addr_ptr = this->scsi_dma_base;
+            this->scsi_dma->reset(this->scsi_addr_ptr);
+        }
+        if (value & 2) { // RUN bit set?
+            this->scsi_dma->reinit(this->scsi_dma_base);
+            this->scsi->real_dma_xfer((value >> 6) & 1);
+        }
+        this->scsi_dma->write_ctrl(value);
         break;
     case AMICReg::Enet_DMA_Rcv_Ctrl:
         LOG_F(INFO, "AMIC Ethernet Receive DMA Ctrl updated, val=%x", value);
@@ -552,6 +569,50 @@ DmaPullResult AmicFloppyDma::pull_data(uint32_t req_len, uint32_t *avail_len,
                                        uint8_t **p_data)
 {
     return DmaPullResult::NoMoreData;
+}
+
+// ============================ SCSI DMA stuff ================================
+void AmicScsiDma::reset(const uint32_t addr_ptr)
+{
+    this->stat &= 0x48; // clear interrupt flag, RUN and RST bits
+    this->addr_ptr   = addr_ptr;
+    this->byte_count = 0;
+}
+
+void AmicScsiDma::reinit(const uint32_t addr_ptr)
+{
+    this->addr_ptr   = addr_ptr;
+    this->byte_count = 0;
+}
+
+void AmicScsiDma::write_ctrl(uint8_t value)
+{
+    // copy over DIR, IE and RUN bits
+    this->stat = (this->stat & 0x81) | (value & 0x4A);
+
+    // clear interrupt flag if requested
+    if (value & 0x80) {
+        this->stat &= 0x7F;
+    }
+}
+
+int AmicScsiDma::push_data(const char* src_ptr, int len)
+{
+    uint8_t *p_data = mmu_get_dma_mem(this->addr_ptr, len);
+    std::memcpy(p_data, src_ptr, len);
+
+    this->addr_ptr += len;
+
+    return 0;
+}
+
+DmaPullResult AmicScsiDma::pull_data(uint32_t req_len, uint32_t *avail_len,
+                                     uint8_t **p_data)
+{
+    *p_data = mmu_get_dma_mem(this->addr_ptr, req_len);
+    this->addr_ptr += req_len;
+    *avail_len = req_len;
+    return DmaPullResult::MoreData;
 }
 
 static vector<string> Amic_Subdevices = {
