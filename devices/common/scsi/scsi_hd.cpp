@@ -74,7 +74,7 @@ void ScsiHardDisk::process_command() {
 
     uint8_t* cmd = this->cmd_buf;
 
-    if (cmd[0] != 8 && cmd[0] != 0xA && cmd[0] != 0x28 && cmd[0] != 0x2A) {
+    if (cmd[0] != 0 && cmd[0] != 8 && cmd[0] != 0xA && cmd[0] != 0x28 && cmd[0] != 0x2A) {
         ABORT_F("SCSI-HD: untested command 0x%X", cmd[0]);
     }
 
@@ -169,11 +169,8 @@ bool ScsiHardDisk::prepare_data() {
 }
 
 int ScsiHardDisk::test_unit_ready() {
-    if (img_path.empty() || img_path == " ") {
-        return ScsiError::DEV_NOT_READY;
-    } else {
-        return ScsiError::NO_ERROR;
-    }
+    this->switch_phase(ScsiPhase::STATUS);
+    return ScsiError::NO_ERROR;
 }
 
 int ScsiHardDisk::req_sense(uint16_t alloc_len) {
