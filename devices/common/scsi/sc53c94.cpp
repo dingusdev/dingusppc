@@ -313,7 +313,7 @@ void Sc53C94::exec_command()
         this->cmd_steps = sel_no_atn_desc;
         this->cur_state = SeqState::BUS_FREE;
         this->sequencer();
-        LOG_F(INFO, "SC53C94: SELECT W/O ATN command started");
+        LOG_F(9, "SC53C94: SELECT W/O ATN command started");
         break;
     case CMD_SELECT_WITH_ATN:
         static SeqDesc * sel_with_atn_desc = new SeqDesc[4]{
@@ -327,7 +327,7 @@ void Sc53C94::exec_command()
         this->cmd_steps = sel_with_atn_desc;
         this->cur_state = SeqState::BUS_FREE;
         this->sequencer();
-        LOG_F(INFO, "SC53C94: SELECT WITH ATN command started");
+        LOG_F(9, "SC53C94: SELECT WITH ATN command started");
         break;
     case CMD_ENA_SEL_RESEL:
         exec_next_command();
@@ -434,7 +434,7 @@ void Sc53C94::sequencer()
     case SeqState::SEL_END:
         if (this->bus_obj->end_selection(this->my_bus_id, this->target_id)) {
             this->bus_obj->release_ctrl_line(this->my_bus_id, SCSI_CTRL_SEL);
-            LOG_F(INFO, "SC53C94: selection completed");
+            LOG_F(9, "SC53C94: selection completed");
         } else { // selection timeout
             this->seq_step = this->cmd_steps->step_num;
             this->int_status |= this->cmd_steps->status;

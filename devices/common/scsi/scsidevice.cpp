@@ -30,12 +30,12 @@ void ScsiDevice::notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param)
     if (msg_type == ScsiMsg::BUS_PHASE_CHANGE) {
         switch (param) {
         case ScsiPhase::RESET:
-            LOG_F(INFO, "ScsiDevice %d: bus reset aknowledged", this->scsi_id);
+            LOG_F(9, "ScsiDevice %d: bus reset aknowledged", this->scsi_id);
             break;
         case ScsiPhase::SELECTION:
             // check if something tries to select us
             if (bus_obj->get_data_lines() & (1 << scsi_id)) {
-                LOG_F(INFO, "ScsiDevice %d selected", this->scsi_id);
+                LOG_F(9, "ScsiDevice %d selected", this->scsi_id);
                 TimerManager::get_instance()->add_oneshot_timer(
                     BUS_SETTLE_DELAY,
                     [this, bus_obj]() {
@@ -48,7 +48,9 @@ void ScsiDevice::notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param)
                         this->bus_obj = bus_obj;
                         if (bus_obj->test_ctrl_lines(SCSI_CTRL_ATN)) {
                             this->switch_phase(ScsiPhase::MESSAGE_OUT);
-                            LOG_F(INFO, "ScsiDevice: received message 0x%X", this->msg_buf[0]);
+                            if (this->msg_buf[0] != 0x80) {
+                                LOG_F(INFO, "ScsiDevice: received message 0x%X", this->msg_buf[0]);
+                            }
                         }
                         this->switch_phase(ScsiPhase::COMMAND);
                         this->process_command();
