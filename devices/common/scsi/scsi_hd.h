@@ -42,7 +42,6 @@ public:
     void insert_image(std::string filename);
     void process_command();
     bool prepare_data();
-    bool has_data() { return this->cur_buf_cnt != 0; };
     bool send_bytes(uint8_t* dst_ptr, int count);
 
     int test_unit_ready();
@@ -65,12 +64,11 @@ private:
     uint64_t img_size;
     char img_buffer[1 << 17];
     uint64_t file_offset = 0;
-    uint8_t status       = ScsiError::NO_ERROR;
 
     // SCSI transfer pointers
     uint32_t    cur_buf_pos = 0;
     uint32_t    cur_buf_cnt = 0;
-    uint8_t     error = 0;
+    uint8_t     error = ScsiError::NO_ERROR;
     uint8_t     msg_code = 0;
 
     //inquiry info

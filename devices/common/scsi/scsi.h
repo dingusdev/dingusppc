@@ -79,6 +79,8 @@ enum ScsiMsg : int {
     BUS_PHASE_CHANGE,
     SEND_CMD_BEGIN,
     SEND_CMD_END,
+    MESSAGE_BEGIN,
+    MESSAGE_END,
 };
 
 enum ScsiCommand : int {
@@ -154,17 +156,24 @@ public:
 
     virtual void notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param);
     virtual void next_step(ScsiBus* bus_obj);
+    virtual void prepare_xfer(ScsiBus* bus_obj, int& bytes_in, int& bytes_out);
 
     virtual bool prepare_data() = 0;
-    virtual bool has_data() = 0;
-    virtual bool send_bytes(uint8_t* dst_ptr, int count) = 0;
+    virtual bool has_data() { return this->data_size != 0; };
+    virtual int  send_data(uint8_t* dst_ptr, int count);
+    virtual int  rcv_data(const uint8_t* src_ptr, const int count);
 
     virtual void process_command() = 0;
 
 protected:
-    uint8_t cmd_buf[16] = {};
-    int     cur_phase;
-    int     scsi_id;
+    uint8_t     cmd_buf[16] = {};
+    uint8_t     msg_buf[16] = {}; // TODO: clarify how big this one should be
+    int         scsi_id;
+    int         initiator_id;
+    int         cur_phase;
+    uint8_t*    data_ptr = nullptr;
+    int         data_size;
+    uint8_t     status;
 };
 
 /** This class provides a higher level abstraction for the SCSI bus. */
@@ -176,6 +185,8 @@ public:
     // low-level state management
     void    register_device(int id, ScsiDevice* dev_obj);
     int     current_phase() { return this->cur_phase; };
+    int     get_initiator_id() { return this->initiator_id; };
+    int     get_target_id() { return this->target_id; };
 
     // reading/writing control lines
     void        assert_ctrl_line(int id, uint16_t mask);
@@ -193,11 +204,11 @@ public:
     bool begin_selection(int initiator_id, int target_id, bool atn);
     void confirm_selection(int target_id);
     bool end_selection(int initiator_id, int target_id);
-    bool transfer_command(uint8_t* dst_ptr);
     void disconnect(int dev_id);
-    bool target_request_data();
-    bool target_pull_data(uint8_t* dst_ptr, int size);
+    bool pull_data(const int id, uint8_t* dst_ptr, const int size);
+    bool push_data(const int id, const uint8_t* src_ptr, const int size);
     void target_next_step();
+    bool negotiate_xfer(int& bytes_in, int& bytes_out);
 
 protected:
     void change_bus_phase(int initiator_id);

@@ -44,13 +44,22 @@ void ScsiDevice::notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param)
                             return;
                         bus_obj->assert_ctrl_line(this->scsi_id, SCSI_CTRL_BSY);
                         bus_obj->confirm_selection(this->scsi_id);
+                        this->initiator_id = bus_obj->get_initiator_id();
                         if (bus_obj->test_ctrl_lines(SCSI_CTRL_ATN)) {
-                            LOG_F(WARNING, "ScsiDevice: MESSAGE_OUT isn't supported yet");
+                            this->cur_phase = ScsiPhase::MESSAGE_OUT;
+                            bus_obj->switch_phase(this->scsi_id, ScsiPhase::MESSAGE_OUT);
+                            LOG_F(INFO, "ScsiDevice: received message 0x%X", this->msg_buf[0]);
                         }
-                        bus_obj->transfer_command(this->cmd_buf);
+                        this->cur_phase = ScsiPhase::COMMAND;
+                        bus_obj->switch_phase(this->scsi_id, ScsiPhase::COMMAND);
                         this->process_command();
-                        bus_obj->switch_phase(this->scsi_id, ScsiPhase::DATA_IN);
                         this->cur_phase = ScsiPhase::DATA_IN;
+                        bus_obj->switch_phase(this->scsi_id, ScsiPhase::DATA_IN);
+                        if (this->prepare_data()) {
+                            bus_obj->assert_ctrl_line(this->scsi_id, SCSI_CTRL_REQ);
+                        } else {
+                            ABORT_F("ScsiDevice: prepare_data() failed");
+                        }
                 });
             }
             break;
@@ -61,27 +70,96 @@ void ScsiDevice::notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param)
 void ScsiDevice::next_step(ScsiBus* bus_obj)
 {
     switch (this->cur_phase) {
+    case ScsiPhase::COMMAND:
+        this->process_command();
+        bus_obj->switch_phase(this->scsi_id, ScsiPhase::DATA_IN);
+        this->cur_phase = ScsiPhase::DATA_IN;
+        break;
     case ScsiPhase::DATA_IN:
-        if (this->has_data()) {
-            LOG_F(WARNING, "ScsiDevice: attempt to leave DATA_IN phase with xfer != 0");
-        } else {
-            bus_obj->switch_phase(this->scsi_id, ScsiPhase::STATUS);
+        if (!this->has_data()) {
             this->cur_phase = ScsiPhase::STATUS;
+            bus_obj->switch_phase(this->scsi_id, ScsiPhase::STATUS);
         }
         break;
     case ScsiPhase::STATUS:
-        bus_obj->switch_phase(this->scsi_id, ScsiPhase::MESSAGE_IN);
         this->cur_phase = ScsiPhase::MESSAGE_IN;
+        bus_obj->switch_phase(this->scsi_id, ScsiPhase::MESSAGE_IN);
         break;
     case ScsiPhase::MESSAGE_IN:
         this->cur_phase = ScsiPhase::BUS_FREE;
-        break;
+        /* fall-through */
     case ScsiPhase::BUS_FREE:
         bus_obj->release_ctrl_lines(this->scsi_id);
         bus_obj->switch_phase(this->scsi_id, ScsiPhase::BUS_FREE);
         this->cur_phase = ScsiPhase::BUS_FREE;
         break;
     default:
-        LOG_F(WARNING, "ScsiDevice: nothing to do for the current phase %d", this->cur_phase);
+        LOG_F(WARNING, "ScsiDevice: nothing to do for phase %d", this->cur_phase);
     }
+}
+
+void ScsiDevice::prepare_xfer(ScsiBus* bus_obj, int& bytes_in, int& bytes_out)
+{
+    this->cur_phase = bus_obj->current_phase();
+
+    switch (this->cur_phase) {
+    case ScsiPhase::COMMAND:
+        this->data_ptr = this->cmd_buf;
+        this->data_size = bytes_in;
+        break;
+    case ScsiPhase::STATUS:
+        this->data_ptr = &this->status;
+        this->data_size = 1;
+        bytes_out = 1;
+        break;
+    case ScsiPhase::DATA_IN:
+        bytes_out = this->data_size;
+        break;
+    case ScsiPhase::MESSAGE_OUT:
+        this->data_ptr = this->msg_buf;
+        this->data_size = bytes_in;
+        break;
+    case ScsiPhase::MESSAGE_IN:
+        this->data_ptr = this->msg_buf;
+        this->data_size = 1;
+        bytes_out = 1;
+        break;
+    default:
+        ABORT_F("ScsiDevice: unhandled phase %d in prepare_xfer()", this->cur_phase);
+    }
+}
+
+int ScsiDevice::send_data(uint8_t* dst_ptr, const int count)
+{
+    if (dst_ptr == nullptr || !count) {
+        return 0;
+    }
+
+    int actual_count = std::min(this->data_size, count);
+
+    std::memcpy(dst_ptr, this->data_ptr, actual_count);
+    this->data_ptr  += actual_count;
+    this->data_size -= actual_count;
+
+    return actual_count;
+}
+
+int ScsiDevice::rcv_data(const uint8_t* src_ptr, const int count)
+{
+    uint8_t* dst_ptr;
+
+    switch (this->cur_phase) {
+    case ScsiPhase::COMMAND:
+        dst_ptr = this->cmd_buf;
+        break;
+    case ScsiPhase::MESSAGE_OUT:
+        dst_ptr = this->msg_buf;
+        break;
+    default:
+        ABORT_F("ScsiDevice: invalid phase %d in rcv_data()", this->cur_phase);
+    }
+
+    std::memcpy(dst_ptr, src_ptr, count);
+
+    return count;
 }

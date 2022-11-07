@@ -134,6 +134,9 @@ int ScsiBus::switch_phase(int id, int new_phase)
     case ScsiPhase::STATUS:
         this->release_ctrl_line(id, SCSI_CTRL_CD | SCSI_CTRL_IO);
         break;
+    case ScsiPhase::MESSAGE_OUT:
+        this->release_ctrl_line(id, SCSI_CTRL_CD | SCSI_CTRL_MSG);
+        break;
     }
 
     // enter new phase (low-level)
@@ -146,6 +149,9 @@ int ScsiBus::switch_phase(int id, int new_phase)
         break;
     case ScsiPhase::STATUS:
         this->assert_ctrl_line(id, SCSI_CTRL_CD | SCSI_CTRL_IO);
+        break;
+    case ScsiPhase::MESSAGE_OUT:
+        this->assert_ctrl_line(id, SCSI_CTRL_CD | SCSI_CTRL_MSG);
         break;
     }
 
@@ -223,53 +229,24 @@ bool ScsiBus::end_selection(int initiator_id, int target_id)
     return this->target_id == target_id;
 }
 
-bool ScsiBus::transfer_command(uint8_t* dst_ptr)
-{
-    static uint8_t cmd_to_cdb_length[8] = {6, 10, 10, 6, 6, 12, 6, 6};
-
-    this->switch_phase(target_id, ScsiPhase::COMMAND);
-
-    this->devices[this->initiator_id]->notify(this, ScsiMsg::SEND_CMD_BEGIN, 0);
-
-    // attempt to transfer the shortest Command Description Block (CDB)
-    if (!this->devices[this->initiator_id]->send_bytes(dst_ptr, 6)) {
-        LOG_F(ERROR, "ScsiBus: error while transferring CDB!");
-        return false;
-    }
-
-    // transfer the remaining CDB bytes if any
-    int cdb_length = cmd_to_cdb_length[dst_ptr[0] >> 5];
-    if (cdb_length > 6) {
-        if (!this->devices[this->initiator_id]->send_bytes(dst_ptr + 6, cdb_length - 6)) {
-            LOG_F(ERROR, "ScsiBus: error while transferring CDB!");
-            return false;
-        }
-    }
-
-    this->devices[this->initiator_id]->notify(this, ScsiMsg::SEND_CMD_END, 0);
-
-    return true;
-}
-
-bool ScsiBus::target_request_data()
-{
-    if (this->devices[this->target_id]->prepare_data()) {
-        this->assert_ctrl_line(target_id, SCSI_CTRL_REQ);
-        return true;
-    } else {
-        return false;
-    }
-}
-
-bool ScsiBus::target_pull_data(uint8_t* dst_ptr, int size)
+bool ScsiBus::pull_data(const int id, uint8_t* dst_ptr, const int size)
 {
     if (dst_ptr == nullptr || !size) {
         return false;
     }
 
-    // transfer the requested number of bytes from target to initiator
-    if (!this->devices[this->target_id]->send_bytes(dst_ptr, size)) {
-        LOG_F(ERROR, "ScsiBus: error while transferring data from target!");
+    if (!this->devices[id]->send_data(dst_ptr, size)) {
+        LOG_F(ERROR, "ScsiBus: error while transferring T->I data!");
+        return false;
+    }
+
+    return true;
+}
+
+bool ScsiBus::push_data(const int id, const uint8_t* src_ptr, const int size)
+{
+    if (!this->devices[id]->rcv_data(src_ptr, size)) {
+        LOG_F(ERROR, "ScsiBus: error while transferring I->T data!");
         return false;
     }
 
@@ -279,6 +256,13 @@ bool ScsiBus::target_pull_data(uint8_t* dst_ptr, int size)
 void ScsiBus::target_next_step()
 {
     this->devices[this->target_id]->next_step(this);
+}
+
+bool ScsiBus::negotiate_xfer(int& bytes_in, int& bytes_out)
+{
+    this->devices[this->target_id]->prepare_xfer(this, bytes_in, bytes_out);
+
+    return true;
 }
 
 void ScsiBus::disconnect(int dev_id)

@@ -66,7 +66,12 @@ void ScsiHardDisk::process_command() {
     uint8_t  page_code    = 0;
     uint8_t  subpage_code = 0;
 
+    // assume successful command execution
+    this->status = ScsiStatus::GOOD;
+
     uint8_t* cmd = this->cmd_buf;
+
+    LOG_F(INFO, "SCSI-HD: processing command 0x%X", cmd[0]);
 
     switch (cmd[0]) {
     case ScsiCommand::TEST_UNIT_READY:
@@ -130,6 +135,8 @@ bool ScsiHardDisk::prepare_data() {
 
     switch (this->cur_phase) {
     case ScsiPhase::DATA_IN:
+        this->data_ptr  = (uint8_t*)this->img_buffer;
+        this->data_size = this->cur_buf_cnt;
         break;
     case ScsiPhase::STATUS:
         if (!error) {
@@ -147,18 +154,6 @@ bool ScsiHardDisk::prepare_data() {
         LOG_F(WARNING, "SCSI_HD: unexpected phase in prepare_data");
         return false;
     }
-
-    return true;
-}
-
-bool ScsiHardDisk::send_bytes(uint8_t* dst_ptr, int count) {
-    if (dst_ptr == nullptr || !count || count > this->cur_buf_cnt) {
-        return false;
-    }
-
-    std::memcpy(dst_ptr, &this->img_buffer[this->cur_buf_pos], count);
-    this->cur_buf_pos += count;
-    this->cur_buf_cnt -= count;
 
     return true;
 }
@@ -246,7 +241,7 @@ void ScsiHardDisk::read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
     this->hdd_img.read(img_buffer, transfer_size);
 
     this->cur_buf_cnt = transfer_size;
-    this->msg_code = ScsiMessage::COMMAND_COMPLETE;
+    this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;
 }
 
 void ScsiHardDisk::write(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
