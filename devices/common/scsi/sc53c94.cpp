@@ -451,6 +451,7 @@ void Sc53C94::sequencer()
         if (this->data_fifo_pos > 0) {
             std::memmove(this->data_fifo, &this->data_fifo[this->bytes_out], this->data_fifo_pos);
         }
+        this->bus_obj->release_ctrl_line(this->my_bus_id, SCSI_CTRL_ATN);
         break;
     case SeqState::SEND_CMD:
         this->bus_obj->negotiate_xfer(this->data_fifo_pos, this->bytes_out);
