@@ -267,9 +267,6 @@ void Sc53C94::exec_command()
         exec_next_command();
         break;
     case CMD_XFER:
-        static SeqDesc * xfer_desc = new SeqDesc[3]{
-            {SeqState::IDLE, 0, INTSTAT_SR}
-        };
         if (!this->is_initiator) {
             // clear command FIFO
             this->cmd_fifo_pos = 0;
@@ -277,23 +274,23 @@ void Sc53C94::exec_command()
             this->update_irq();
         } else {
             this->seq_step = 0;
-            this->cmd_steps = xfer_desc;
+            this->cmd_steps = nullptr;
             this->cur_state = SeqState::XFER_BEGIN;
             this->sequencer();
         }
         break;
     case CMD_COMPLETE_STEPS:
         static SeqDesc * complete_steps_desc = new SeqDesc[3]{
-            {SeqState::RCV_MESSAGE, 0,          0},
-            {SeqState::XFER_END,    0,          0},
-            {SeqState::IDLE,        0, INTSTAT_SR}
+            {SeqState::RCV_STATUS,   0,          0},
+            {SeqState::RCV_MESSAGE,  0,          0},
+            {SeqState::CMD_COMPLETE, 0, INTSTAT_SR}
         };
         if (this->bus_obj->current_phase() != ScsiPhase::STATUS) {
             ABORT_F("Sc53C94: complete steps only works in the STATUS phase");
         }
         this->seq_step = 0;
         this->cmd_steps = complete_steps_desc;
-        this->cur_state = SeqState::RCV_STATUS;
+        this->cur_state = this->cmd_steps->next_step;
         this->sequencer();
         break;
     case CMD_MSG_ACCEPTED:
@@ -309,7 +306,7 @@ void Sc53C94::exec_command()
     case CMD_SELECT_NO_ATN:
         static SeqDesc * sel_no_atn_desc = new SeqDesc[3]{
             {SeqState::SEL_BEGIN,    0, INTSTAT_DIS            },
-            {SeqState::CMD_BEGIN,    3, INTSTAT_SR | INTSTAT_SO},
+            {SeqState::SEND_CMD,     3, INTSTAT_SR | INTSTAT_SO},
             {SeqState::CMD_COMPLETE, 4, INTSTAT_SR | INTSTAT_SO},
         };
         this->seq_step = 0;
@@ -317,6 +314,20 @@ void Sc53C94::exec_command()
         this->cur_state = SeqState::BUS_FREE;
         this->sequencer();
         LOG_F(INFO, "SC53C94: SELECT W/O ATN command started");
+        break;
+    case CMD_SELECT_WITH_ATN:
+        static SeqDesc * sel_with_atn_desc = new SeqDesc[4]{
+            {SeqState::SEL_BEGIN,    0, INTSTAT_DIS            },
+            {SeqState::SEND_MSG,     2, INTSTAT_SR | INTSTAT_SO},
+            {SeqState::SEND_CMD,     3, INTSTAT_SR | INTSTAT_SO},
+            {SeqState::CMD_COMPLETE, 4, INTSTAT_SR | INTSTAT_SO},
+        };
+        this->seq_step  = 0;
+        this->bytes_out = 1; // set message length
+        this->cmd_steps = sel_with_atn_desc;
+        this->cur_state = SeqState::BUS_FREE;
+        this->sequencer();
+        LOG_F(INFO, "SC53C94: SELECT WITH ATN command started");
         break;
     case CMD_ENA_SEL_RESEL:
         exec_next_command();
@@ -424,7 +435,6 @@ void Sc53C94::sequencer()
         if (this->bus_obj->end_selection(this->my_bus_id, this->target_id)) {
             this->bus_obj->release_ctrl_line(this->my_bus_id, SCSI_CTRL_SEL);
             LOG_F(INFO, "SC53C94: selection completed");
-            this->cmd_steps++;
         } else { // selection timeout
             this->seq_step = this->cmd_steps->step_num;
             this->int_status |= this->cmd_steps->status;
@@ -434,11 +444,19 @@ void Sc53C94::sequencer()
             exec_next_command();
         }
         break;
-    case SeqState::CMD_BEGIN:
-        LOG_F(9, "CMD_BEGIN reached");
+    case SeqState::SEND_MSG:
+        this->bus_obj->push_data(this->target_id, this->data_fifo, this->bytes_out);
+        this->data_fifo_pos -= this->bytes_out;
+        if (this->data_fifo_pos > 0) {
+            std::memmove(this->data_fifo, &this->data_fifo[this->bytes_out], this->data_fifo_pos);
+        }
+        break;
+    case SeqState::SEND_CMD:
+        this->bus_obj->push_data(this->target_id, this->data_fifo, this->data_fifo_pos);
+        this->data_fifo_pos = 0;
         break;
     case SeqState::CMD_COMPLETE:
-        this->cmd_steps++;
+        this->seq_step    = this->cmd_steps->step_num;
         this->int_status |= this->cmd_steps->status;
         this->update_irq();
         exec_next_command();
@@ -449,28 +467,31 @@ void Sc53C94::sequencer()
         case ScsiPhase::COMMAND:
         case ScsiPhase::DATA_OUT:
         case ScsiPhase::MESSAGE_OUT:
-            LOG_F(WARNING, "Sc53C94: sending data not unimplemented");
+            this->bus_obj->push_data(this->target_id, this->data_fifo, this->data_fifo_pos);
+            this->data_fifo_pos = 0;
+            this->cur_state = SeqState::XFER_END;
+            this->cmd_steps++;
+            this->sequencer();
             break;
         case ScsiPhase::STATUS:
         case ScsiPhase::DATA_IN:
         case ScsiPhase::MESSAGE_IN:
+            this->bus_obj->negotiate_xfer(this->data_fifo_pos, this->bytes_out);
             this->cur_state = SeqState::RCV_DATA;
-            this->bus_obj->target_request_data();
             this->rcv_data();
+            if (!(this->cmd_fifo[0] & 0x80)) {
+                this->cur_state = SeqState::XFER_END;
+                this->sequencer();
+            }
         }
         break;
     case SeqState::XFER_END:
         if (this->is_initiator) {
             this->bus_obj->target_next_step();
         }
-        this->int_status |= this->cmd_steps->status;
+        this->int_status |= INTSTAT_SR;
         this->update_irq();
-        if (this->cmd_steps->next_step > 0) {
-            this->cur_state = this->cmd_steps->next_step;
-            this->cmd_steps++;
-        } else {
-            exec_next_command();
-        }
+        exec_next_command();
         break;
     case SeqState::RCV_DATA:
         // check for unexpected bus phase changes
@@ -484,18 +505,18 @@ void Sc53C94::sequencer()
         break;
     case SeqState::RCV_STATUS:
     case SeqState::RCV_MESSAGE:
-        this->bus_obj->target_request_data();
+        this->bus_obj->negotiate_xfer(this->data_fifo_pos, this->bytes_out);
         this->rcv_data();
         if (this->is_initiator) {
             if (this->cur_state == SeqState::RCV_STATUS) {
                 this->bus_obj->target_next_step();
             } else if (this->cur_state == SeqState::RCV_MESSAGE) {
                 this->bus_obj->assert_ctrl_line(this->my_bus_id, SCSI_CTRL_ACK);
+                this->cmd_steps++;
+                this->cur_state = this->cmd_steps->next_step;
+                this->sequencer();
             }
         }
-        this->cur_state = this->cmd_steps->next_step;
-        this->cmd_steps++;
-        this->sequencer();
         break;
     default:
         ABORT_F("SC53C94: unimplemented sequencer state %d", this->cur_state);
@@ -525,34 +546,40 @@ void Sc53C94::notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param)
             LOG_F(WARNING, "SC53C94: ignore invalid selection confirmation message");
         }
         break;
-    case ScsiMsg::SEND_CMD_BEGIN:
-        this->cur_state = SeqState::CMD_BEGIN;
-        this->sequencer();
-        break;
-    case ScsiMsg::SEND_CMD_END:
-        this->cur_state = SeqState::CMD_COMPLETE;
-        this->sequencer();
+    case ScsiMsg::BUS_PHASE_CHANGE:
+        if (param != ScsiPhase::BUS_FREE && this->cmd_steps != nullptr) {
+            this->cmd_steps++;
+            this->cur_state = this->cmd_steps->next_step;
+            this->sequencer();
+        }
         break;
     default:
         LOG_F(9, "SC53C94: ignore notification message, type: %d", msg_type);
     }
 }
 
-bool Sc53C94::send_bytes(uint8_t* dst_ptr, int count)
+int Sc53C94::send_data(uint8_t* dst_ptr, int count)
 {
-    if (this->data_fifo_pos < count) {
-        return false;
+    if (dst_ptr == nullptr || !count) {
+        return 0;
     }
+
+    int actual_count = std::min(this->data_fifo_pos, count);
 
     // move data out of the data FIFO
-    std::memcpy(dst_ptr, this->data_fifo, count);
+    std::memcpy(dst_ptr, this->data_fifo, actual_count);
 
     // remove the just readed data from the data FIFO
-    this->data_fifo_pos -= count;
+    this->data_fifo_pos -= actual_count;
     if (this->data_fifo_pos > 0) {
-        std::memmove(this->data_fifo, &this->data_fifo[count], this->data_fifo_pos);
+        std::memmove(this->data_fifo, &this->data_fifo[actual_count], this->data_fifo_pos);
+    } else {
+        this->cmd_steps++;
+        this->cur_state = this->cmd_steps->next_step;
+        this->sequencer();
     }
-    return true;
+
+    return actual_count;
 }
 
 bool Sc53C94::rcv_data()
@@ -564,13 +591,13 @@ bool Sc53C94::rcv_data()
         return false;
     }
 
-    if (this->cmd_fifo[0] & 0x80) {
-        req_count = std::min((int)this->xfer_count, DATA_FIFO_MAX);
+    if ((this->cmd_fifo[0] & 0x80) && this->cur_bus_phase == ScsiPhase::DATA_IN) {
+        req_count = std::min((int)this->xfer_count, DATA_FIFO_MAX - this->data_fifo_pos);
     } else {
         req_count = 1;
     }
 
-    this->bus_obj->target_pull_data(&this->data_fifo[this->data_fifo_pos], req_count);
+    this->bus_obj->pull_data(this->target_id, &this->data_fifo[this->data_fifo_pos], req_count);
     this->data_fifo_pos += req_count;
     return true;
 }

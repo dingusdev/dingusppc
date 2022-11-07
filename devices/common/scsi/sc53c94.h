@@ -89,6 +89,7 @@ enum {
     CMD_COMPLETE_STEPS  = 0x11,
     CMD_MSG_ACCEPTED    = 0x12,
     CMD_SELECT_NO_ATN   = 0x41,
+    CMD_SELECT_WITH_ATN = 0x42,
     CMD_ENA_SEL_RESEL   = 0x44,
 };
 
@@ -123,7 +124,8 @@ namespace SeqState {
         ARB_END,
         SEL_BEGIN,
         SEL_END,
-        CMD_BEGIN,
+        SEND_MSG,
+        SEND_CMD,
         CMD_COMPLETE,
         XFER_BEGIN,
         XFER_END,
@@ -162,7 +164,7 @@ public:
     void notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param);
     bool prepare_data() { return false; };
     bool has_data() { return this->data_fifo_pos != 0; };
-    bool send_bytes(uint8_t* dst_ptr, int count);
+    int  send_data(uint8_t* dst_ptr, int count);
     void process_command() {};
 
 protected:
@@ -190,6 +192,7 @@ private:
     uint8_t     data_fifo[16];
     int         cmd_fifo_pos;
     int         data_fifo_pos;
+    int         bytes_out;
     bool        on_reset = false;
     uint32_t    xfer_count;
     uint32_t    set_xfer_count;
