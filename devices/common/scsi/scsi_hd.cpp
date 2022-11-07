@@ -32,6 +32,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <limits>
 #include <cstring>
 #include <stdio.h>
+#include <sys/stat.h>
 
 #define sector_size 512
 
@@ -46,11 +47,13 @@ void ScsiHardDisk::insert_image(std::string filename) {
     //we want to keep the hard disk available.
     this->hdd_img.open(filename, ios::out | ios::in | ios::binary);
 
-    // Taken from:
-    // https://stackoverflow.com/questions/22984956/tellg-function-give-wrong-size-of-file/22986486
-    this->hdd_img.ignore(std::numeric_limits<std::streamsize>::max());
-    this->img_size = this->hdd_img.gcount();
-    this->hdd_img.clear();    //  Since ignore will have set eof.
+    struct stat stat_buf;
+    int rc = stat(filename.c_str(), &stat_buf);
+    if (!rc) {
+        this->img_size = stat_buf.st_size;
+    } else {
+        ABORT_F("ScsiHardDisk: could not determine file size using stat()");
+    }
     this->hdd_img.seekg(0, std::ios_base::beg);
 }
 
