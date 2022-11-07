@@ -28,6 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <array>
 #include <cinttypes>
+#include <functional>
 #include <string>
 
 /** SCSI control signals.
@@ -146,6 +147,8 @@ enum ScsiError : int {
 
 class ScsiBus;
 
+typedef std::function<void()> action_callback;
+
 class ScsiDevice : public HWComponent {
 public:
     ScsiDevice(int my_id) {
@@ -157,12 +160,13 @@ public:
     virtual void notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param);
     virtual void next_step(ScsiBus* bus_obj);
     virtual void prepare_xfer(ScsiBus* bus_obj, int& bytes_in, int& bytes_out);
+    virtual void switch_phase(const int new_phase);
 
-    virtual bool prepare_data() = 0;
     virtual bool has_data() { return this->data_size != 0; };
     virtual int  send_data(uint8_t* dst_ptr, int count);
     virtual int  rcv_data(const uint8_t* src_ptr, const int count);
 
+    virtual bool prepare_data() = 0;
     virtual void process_command() = 0;
 
 protected:
@@ -173,7 +177,13 @@ protected:
     int         cur_phase;
     uint8_t*    data_ptr = nullptr;
     int         data_size;
+    int         incoming_size;
     uint8_t     status;
+
+    ScsiBus*    bus_obj;
+
+    action_callback pre_xfer_action  = nullptr;
+    action_callback post_xfer_action = nullptr;
 };
 
 /** This class provides a higher level abstraction for the SCSI bus. */

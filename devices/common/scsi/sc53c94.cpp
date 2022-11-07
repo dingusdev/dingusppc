@@ -445,6 +445,7 @@ void Sc53C94::sequencer()
         }
         break;
     case SeqState::SEND_MSG:
+        this->bus_obj->negotiate_xfer(this->data_fifo_pos, this->bytes_out);
         this->bus_obj->push_data(this->target_id, this->data_fifo, this->bytes_out);
         this->data_fifo_pos -= this->bytes_out;
         if (this->data_fifo_pos > 0) {
@@ -452,6 +453,7 @@ void Sc53C94::sequencer()
         }
         break;
     case SeqState::SEND_CMD:
+        this->bus_obj->negotiate_xfer(this->data_fifo_pos, this->bytes_out);
         this->bus_obj->push_data(this->target_id, this->data_fifo, this->data_fifo_pos);
         this->data_fifo_pos = 0;
         break;
@@ -464,18 +466,17 @@ void Sc53C94::sequencer()
     case SeqState::XFER_BEGIN:
         this->cur_bus_phase = this->bus_obj->current_phase();
         switch (this->cur_bus_phase) {
-        case ScsiPhase::COMMAND:
         case ScsiPhase::DATA_OUT:
-        case ScsiPhase::MESSAGE_OUT:
+            if (this->cmd_fifo[0] & 0x80) {
+                this->cur_state = SeqState::SEND_DATA;
+                break;
+            }
             this->bus_obj->push_data(this->target_id, this->data_fifo, this->data_fifo_pos);
             this->data_fifo_pos = 0;
             this->cur_state = SeqState::XFER_END;
-            this->cmd_steps++;
             this->sequencer();
             break;
-        case ScsiPhase::STATUS:
         case ScsiPhase::DATA_IN:
-        case ScsiPhase::MESSAGE_IN:
             this->bus_obj->negotiate_xfer(this->data_fifo_pos, this->bytes_out);
             this->cur_state = SeqState::RCV_DATA;
             this->rcv_data();
@@ -492,6 +493,8 @@ void Sc53C94::sequencer()
         this->int_status |= INTSTAT_SR;
         this->update_irq();
         exec_next_command();
+        break;
+    case SeqState::SEND_DATA:
         break;
     case SeqState::RCV_DATA:
         // check for unexpected bus phase changes
@@ -607,7 +610,25 @@ void Sc53C94::real_dma_xfer(int direction)
     bool is_done = false;
 
     if (direction) {
-        ABORT_F("Sc53C94: real DMA transfers from host to target not implemented yet");
+        uint32_t got_bytes;
+        uint8_t* src_ptr;
+
+        while (this->xfer_count) {
+            this->dma_ch->pull_data(std::min((int)this->xfer_count, DATA_FIFO_MAX),
+                                    &got_bytes, &src_ptr);
+            std::memcpy(this->data_fifo, src_ptr, got_bytes);
+            this->data_fifo_pos = got_bytes;
+            this->bus_obj->push_data(this->target_id, this->data_fifo, this->data_fifo_pos);
+
+            this->xfer_count -= this->data_fifo_pos;
+            this->data_fifo_pos = 0;
+            if (!this->xfer_count) {
+                is_done = true;
+                this->status |= STAT_TC; // signal zero transfer count
+                this->cur_state = SeqState::XFER_END;
+                this->sequencer();
+            }
+        }
     } else { // transfer data from target to host's memory
         while (this->xfer_count) {
             if (this->data_fifo_pos) {

@@ -66,12 +66,17 @@ void ScsiHardDisk::process_command() {
     uint8_t  page_code    = 0;
     uint8_t  subpage_code = 0;
 
+    this->pre_xfer_action  = nullptr;
+    this->post_xfer_action = nullptr;
+
     // assume successful command execution
     this->status = ScsiStatus::GOOD;
 
     uint8_t* cmd = this->cmd_buf;
 
-    LOG_F(INFO, "SCSI-HD: processing command 0x%X", cmd[0]);
+    if (cmd[0] != 8 && cmd[0] != 0xA && cmd[0] != 0x28 && cmd[0] != 0x2A) {
+        ABORT_F("SCSI-HD: untested command 0x%X", cmd[0]);
+    }
 
     switch (cmd[0]) {
     case ScsiCommand::TEST_UNIT_READY:
@@ -107,6 +112,7 @@ void ScsiHardDisk::process_command() {
         lba          = (cmd[2] << 24) + (cmd[3] << 16) + (cmd[4] << 8) + cmd[5];
         transfer_len = (cmd[7] << 8) + cmd[8];
         write(lba, transfer_len, 10);
+        this->switch_phase(ScsiPhase::DATA_OUT);
         break;
     case ScsiCommand::SEEK_6:
         lba         = ((cmd[1] & 0x1F) << 16) + (cmd[2] << 8) + cmd[3];
@@ -137,6 +143,10 @@ bool ScsiHardDisk::prepare_data() {
     case ScsiPhase::DATA_IN:
         this->data_ptr  = (uint8_t*)this->img_buffer;
         this->data_size = this->cur_buf_cnt;
+        break;
+    case ScsiPhase::DATA_OUT:
+        this->data_ptr  = (uint8_t*)this->img_buffer;
+        this->data_size = 0;
         break;
     case ScsiPhase::STATUS:
         if (!error) {
@@ -242,6 +252,8 @@ void ScsiHardDisk::read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
 
     this->cur_buf_cnt = transfer_size;
     this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;
+
+    this->switch_phase(ScsiPhase::DATA_IN);
 }
 
 void ScsiHardDisk::write(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
@@ -253,8 +265,13 @@ void ScsiHardDisk::write(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
     transfer_size *= sector_size;
     uint64_t device_offset = lba * sector_size;
 
+    this->incoming_size = transfer_size;
+
     this->hdd_img.seekg(device_offset, this->hdd_img.beg);
-    this->hdd_img.write((char*)&img_buffer, transfer_size);
+
+    this->post_xfer_action = [this]() {
+        this->hdd_img.write(this->img_buffer, this->incoming_size);
+    };
 }
 
 void ScsiHardDisk::seek(uint32_t lba) {

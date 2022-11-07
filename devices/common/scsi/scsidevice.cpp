@@ -45,16 +45,13 @@ void ScsiDevice::notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param)
                         bus_obj->assert_ctrl_line(this->scsi_id, SCSI_CTRL_BSY);
                         bus_obj->confirm_selection(this->scsi_id);
                         this->initiator_id = bus_obj->get_initiator_id();
+                        this->bus_obj = bus_obj;
                         if (bus_obj->test_ctrl_lines(SCSI_CTRL_ATN)) {
-                            this->cur_phase = ScsiPhase::MESSAGE_OUT;
-                            bus_obj->switch_phase(this->scsi_id, ScsiPhase::MESSAGE_OUT);
+                            this->switch_phase(ScsiPhase::MESSAGE_OUT);
                             LOG_F(INFO, "ScsiDevice: received message 0x%X", this->msg_buf[0]);
                         }
-                        this->cur_phase = ScsiPhase::COMMAND;
-                        bus_obj->switch_phase(this->scsi_id, ScsiPhase::COMMAND);
+                        this->switch_phase(ScsiPhase::COMMAND);
                         this->process_command();
-                        this->cur_phase = ScsiPhase::DATA_IN;
-                        bus_obj->switch_phase(this->scsi_id, ScsiPhase::DATA_IN);
                         if (this->prepare_data()) {
                             bus_obj->assert_ctrl_line(this->scsi_id, SCSI_CTRL_REQ);
                         } else {
@@ -67,31 +64,39 @@ void ScsiDevice::notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param)
     }
 }
 
+void ScsiDevice::switch_phase(const int new_phase)
+{
+    this->cur_phase = new_phase;
+    this->bus_obj->switch_phase(this->scsi_id, this->cur_phase);
+}
+
 void ScsiDevice::next_step(ScsiBus* bus_obj)
 {
     switch (this->cur_phase) {
     case ScsiPhase::COMMAND:
         this->process_command();
-        bus_obj->switch_phase(this->scsi_id, ScsiPhase::DATA_IN);
-        this->cur_phase = ScsiPhase::DATA_IN;
+        this->switch_phase(ScsiPhase::DATA_IN);
+        break;
+    case ScsiPhase::DATA_OUT:
+        if (this->data_size >= this->incoming_size) {
+            if (this->post_xfer_action != nullptr) {
+                this->post_xfer_action();
+            }
+            this->switch_phase(ScsiPhase::STATUS);
+        }
         break;
     case ScsiPhase::DATA_IN:
         if (!this->has_data()) {
-            this->cur_phase = ScsiPhase::STATUS;
-            bus_obj->switch_phase(this->scsi_id, ScsiPhase::STATUS);
+            this->switch_phase(ScsiPhase::STATUS);
         }
         break;
     case ScsiPhase::STATUS:
-        this->cur_phase = ScsiPhase::MESSAGE_IN;
-        bus_obj->switch_phase(this->scsi_id, ScsiPhase::MESSAGE_IN);
+        this->switch_phase(ScsiPhase::MESSAGE_IN);
         break;
     case ScsiPhase::MESSAGE_IN:
-        this->cur_phase = ScsiPhase::BUS_FREE;
-        /* fall-through */
     case ScsiPhase::BUS_FREE:
         bus_obj->release_ctrl_lines(this->scsi_id);
-        bus_obj->switch_phase(this->scsi_id, ScsiPhase::BUS_FREE);
-        this->cur_phase = ScsiPhase::BUS_FREE;
+        this->switch_phase(ScsiPhase::BUS_FREE);
         break;
     default:
         LOG_F(WARNING, "ScsiDevice: nothing to do for phase %d", this->cur_phase);
@@ -114,6 +119,8 @@ void ScsiDevice::prepare_xfer(ScsiBus* bus_obj, int& bytes_in, int& bytes_out)
         break;
     case ScsiPhase::DATA_IN:
         bytes_out = this->data_size;
+        break;
+    case ScsiPhase::DATA_OUT:
         break;
     case ScsiPhase::MESSAGE_OUT:
         this->data_ptr = this->msg_buf;
@@ -146,20 +153,10 @@ int ScsiDevice::send_data(uint8_t* dst_ptr, const int count)
 
 int ScsiDevice::rcv_data(const uint8_t* src_ptr, const int count)
 {
-    uint8_t* dst_ptr;
-
-    switch (this->cur_phase) {
-    case ScsiPhase::COMMAND:
-        dst_ptr = this->cmd_buf;
-        break;
-    case ScsiPhase::MESSAGE_OUT:
-        dst_ptr = this->msg_buf;
-        break;
-    default:
-        ABORT_F("ScsiDevice: invalid phase %d in rcv_data()", this->cur_phase);
-    }
-
-    std::memcpy(dst_ptr, src_ptr, count);
+    // accumulating incoming data in the pre-configured buffer
+    std::memcpy(this->data_ptr, src_ptr, count);
+    this->data_ptr  += count;
+    this->data_size += count;
 
     return count;
 }
