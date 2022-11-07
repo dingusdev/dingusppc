@@ -29,6 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SC_53C94_H
 #define SC_53C94_H
 
+#include <devices/common/dmacore.h>
 #include <devices/common/scsi/scsi.h>
 #include <devices/common/hwinterrupt.h>
 
@@ -160,6 +161,13 @@ public:
     void     write(uint8_t reg_offset, uint8_t value);
     uint16_t pseudo_dma_read();
 
+    // real DMA control
+    void     real_dma_xfer(int direction);
+
+    void set_dma_channel(DmaBidirChannel *dma_ch) {
+        this->dma_ch = dma_ch;
+    };
+
     // ScsiDevice methods
     void notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param);
     bool prepare_data() { return false; };
@@ -220,6 +228,9 @@ private:
     InterruptCtrl* int_ctrl = nullptr;
     uint32_t       irq_id   = 0;
     uint8_t        irq      = 0;
+
+    // DMA related stuff
+    DmaBidirChannel*    dma_ch;
 };
 
 #endif // SC_53C94_H

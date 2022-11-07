@@ -602,6 +602,35 @@ bool Sc53C94::rcv_data()
     return true;
 }
 
+void Sc53C94::real_dma_xfer(int direction)
+{
+    bool is_done = false;
+
+    if (direction) {
+        ABORT_F("Sc53C94: real DMA transfers from host to target not implemented yet");
+    } else { // transfer data from target to host's memory
+        while (this->xfer_count) {
+            if (this->data_fifo_pos) {
+                this->dma_ch->push_data((char*)this->data_fifo, this->data_fifo_pos);
+
+                this->xfer_count -= this->data_fifo_pos;
+                this->data_fifo_pos = 0;
+                if (!this->xfer_count) {
+                    is_done = true;
+                    this->status |= STAT_TC; // signal zero transfer count
+                    this->cur_state = SeqState::XFER_END;
+                    this->sequencer();
+                }
+            }
+
+            // see if we need to refill FIFO
+            if (!this->data_fifo_pos && !is_done) {
+                this->sequencer();
+            }
+        }
+    }
+}
+
 static const DeviceDescription Sc53C94_Descriptor = {
     Sc53C94::create, {}, {}
 };
