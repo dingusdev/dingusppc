@@ -25,8 +25,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define SCSI_HD_H
 
 #include <devices/common/scsi/scsi.h>
+
 #include <cinttypes>
 #include <fstream>
+#include <memory>
 #include <stdio.h>
 #include <string>
 
@@ -42,8 +44,8 @@ public:
     void insert_image(std::string filename);
     void process_command();
     bool prepare_data();
-    bool send_bytes(uint8_t* dst_ptr, int count);
 
+protected:
     int test_unit_ready();
     int req_sense(uint16_t alloc_len);
     int send_diagnostic();
@@ -59,14 +61,12 @@ public:
     void rewind();
 
 private:
-    std::string img_path;
-    std::fstream hdd_img;
-    uint64_t img_size;
-    char img_buffer[1 << 17];
-    uint64_t file_offset = 0;
+    std::fstream    hdd_img;
+    uint64_t        img_size;
+    uint64_t        file_offset = 0;
 
-    // SCSI transfer pointers
-    uint32_t    cur_buf_pos = 0;
+    char            img_buffer[1 << 17]; // TODO: add proper buffer management!
+
     uint32_t    cur_buf_cnt = 0;
     uint8_t     error = ScsiError::NO_ERROR;
     uint8_t     msg_code = 0;
@@ -78,4 +78,4 @@ private:
     char serial_info[8] = {'0', '0', '0', '0', '0', '0', '0', '0'};
 };
 
-#endif
+#endif // SCSI_HD_H

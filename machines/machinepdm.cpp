@@ -86,10 +86,9 @@ int initialize_pdm(std::string& id)
     std::string hd_image_path = GET_STR_PROP("hdd_img");
     if (!hd_image_path.empty()) {
         // attach SCSI HD to the main bus, ID #0
-        gMachineObj->add_device("SCSI_HD", std::unique_ptr<ScsiHardDisk>(new ScsiHardDisk(0)));
-        scsi_bus->register_device(0, dynamic_cast<ScsiDevice*>(gMachineObj->get_comp_by_name("SCSI_HD")));
+        auto my_hd = dynamic_cast<ScsiHardDisk*>(gMachineObj->get_comp_by_name("ScsiHD"));
+        scsi_bus->register_device(0, my_hd);
         // insert specified disk image
-        auto my_hd = dynamic_cast<ScsiHardDisk*>(gMachineObj->get_comp_by_name("SCSI_HD"));
         my_hd->insert_image(hd_image_path);
     }
 

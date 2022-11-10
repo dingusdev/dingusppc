@@ -21,20 +21,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Generic SCSI Hard Disk emulation. */
 
-#include <devices/deviceregistry.h>
 #include <devices/common/scsi/scsi.h>
 #include <devices/common/scsi/scsi_hd.h>
+#include <devices/deviceregistry.h>
 #include <machines/machinebase.h>
 #include <machines/machineproperties.h>
 #include <loguru.hpp>
 
 #include <fstream>
-#include <limits>
 #include <cstring>
 #include <stdio.h>
 #include <sys/stat.h>
 
-#define sector_size 512
+#define HDD_SECTOR_SIZE 512
 
 using namespace std;
 
@@ -137,8 +136,6 @@ void ScsiHardDisk::process_command() {
 }
 
 bool ScsiHardDisk::prepare_data() {
-    cur_buf_pos = 0;
-
     switch (this->cur_phase) {
     case ScsiPhase::DATA_IN:
         this->data_ptr  = (uint8_t*)this->img_buffer;
@@ -238,11 +235,12 @@ void ScsiHardDisk::read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
 
     std::memset(img_buffer, 0, sizeof(img_buffer));
 
-    if (cmd_len == 6)
-        transfer_size = (transfer_len == 0) ? 256 : transfer_len;
+    if (cmd_len == 6 && transfer_len == 0) {
+        transfer_size = 256;
+    }
 
-    transfer_size *= sector_size;
-    uint64_t device_offset = lba * sector_size;
+    transfer_size *= HDD_SECTOR_SIZE;
+    uint64_t device_offset = lba * HDD_SECTOR_SIZE;
 
     this->hdd_img.seekg(device_offset, this->hdd_img.beg);
     this->hdd_img.read(img_buffer, transfer_size);
@@ -256,11 +254,12 @@ void ScsiHardDisk::read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
 void ScsiHardDisk::write(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
     uint32_t transfer_size = transfer_len;
 
-    if (cmd_len == 6)
-        transfer_size = (transfer_len == 0) ? 256 : transfer_len;
+    if (cmd_len == 6 && transfer_len == 0) {
+        transfer_size = 256;
+    }
 
-    transfer_size *= sector_size;
-    uint64_t device_offset = lba * sector_size;
+    transfer_size *= HDD_SECTOR_SIZE;
+    uint64_t device_offset = lba * HDD_SECTOR_SIZE;
 
     this->incoming_size = transfer_size;
 
@@ -272,7 +271,7 @@ void ScsiHardDisk::write(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
 }
 
 void ScsiHardDisk::seek(uint32_t lba) {
-    uint64_t device_offset = lba * sector_size;
+    uint64_t device_offset = lba * HDD_SECTOR_SIZE;
     this->hdd_img.seekg(device_offset, this->hdd_img.beg);
 }
 
