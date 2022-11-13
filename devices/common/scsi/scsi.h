@@ -85,27 +85,31 @@ enum ScsiMsg : int {
 };
 
 enum ScsiCommand : int {
-    TEST_UNIT_READY  = 0x0,
-    REWIND           = 0x1,
-    REQ_SENSE        = 0x3,
-    FORMAT           = 0x4,
-    READ_BLK_LIMITS  = 0x5,
-    READ_6           = 0x8,
-    WRITE_6          = 0xA,
-    SEEK_6           = 0xB,
-    INQUIRY          = 0x12,
-    VERIFY_6         = 0x13,
-    MODE_SELECT_6    = 0x15,
-    RELEASE_UNIT     = 0x17,
-    ERASE_6          = 0x19,
-    MODE_SENSE_6     = 0x1A,
-    DIAG_RESULTS     = 0x1C,
-    SEND_DIAGS       = 0x1D,
-    READ_CAPAC_10    = 0x25,
-    READ_10          = 0x28,
-    WRITE_10         = 0x2A,
-    VERIFY_10        = 0x2F,
-    READ_LONG_10     = 0x35,
+    TEST_UNIT_READY              = 0x0,
+    REWIND                       = 0x1,
+    REQ_SENSE                    = 0x3,
+    FORMAT                       = 0x4,
+    READ_BLK_LIMITS              = 0x5,
+    READ_6                       = 0x8,
+    WRITE_6                      = 0xA,
+    SEEK_6                       = 0xB,
+    INQUIRY                      = 0x12,
+    VERIFY_6                     = 0x13,
+    MODE_SELECT_6                = 0x15,
+    RELEASE_UNIT                 = 0x17,
+    ERASE_6                      = 0x19,
+    MODE_SENSE_6                 = 0x1A,
+    DIAG_RESULTS                 = 0x1C,
+    SEND_DIAGS                   = 0x1D,
+    PREVENT_ALLOW_MEDIUM_REMOVAL = 0x1E,
+    READ_CAPACITY_10             = 0x25,
+    READ_10                      = 0x28,
+    WRITE_10                     = 0x2A,
+    VERIFY_10                    = 0x2F,
+    READ_LONG_10                 = 0x35,
+
+    // CD-ROM specific commands
+    READ_TOC                     = 0x43,
 };
 
 enum ScsiSense : int {
@@ -179,6 +183,7 @@ protected:
     int         data_size;
     int         incoming_size;
     uint8_t     status;
+    int         sense;
 
     ScsiBus*    bus_obj;
 

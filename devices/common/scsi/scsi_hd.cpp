@@ -127,7 +127,7 @@ void ScsiHardDisk::process_command() {
         alloc_len    = cmd[4];
         mode_sense_6(page_code, subpage_code, alloc_len);
         break;
-    case ScsiCommand::READ_CAPAC_10:
+    case ScsiCommand::READ_CAPACITY_10:
         read_capacity_10();
         break;
     default:
