@@ -136,64 +136,37 @@ void dppc_interpreter::power_dozi() {
 
 void dppc_interpreter::power_lscbx() {
     ppc_grab_regsdab();
-    ppc_effective_address  = (reg_a == 0) ? ppc_result_b : ppc_result_a + ppc_result_b;
+    ppc_effective_address = (reg_a == 0) ? ppc_result_b : ppc_result_a + ppc_result_b;
+    ppc_result_d          = 0xFFFFFFFF;
 
     uint8_t return_value   = 0;
     uint32_t bytes_to_load = (ppc_state.spr[SPR::XER] & 0x7f);
     uint32_t bytes_copied  = 0;
     uint8_t matching_byte  = (uint8_t)((ppc_state.spr[SPR::XER] & 0xFF00) >> 8);
-    uint32_t byte_offset   = 0;
 
-    //for storing each byte
-    uint32_t bitmask       = 0;
-    uint32_t shift_amount  = 0;
+    // for storing each byte
+    uint32_t bitmask     = 0xFF000000;
+    uint8_t shift_amount = 24;
 
-    while (bytes_to_load > 0) {
-        if (byte_offset == 24) {
-            reg_d = (reg_d + 1) % 32;
-            ppc_result_d = 0xFFFFFFFF;
+    while (return_value != matching_byte) {
+        if (bytes_to_load > 0) {
+            return_value = mmu_read_vmem<uint8_t>(ppc_effective_address);
+            // return_value = mem_grab_byte(ppc_effective_address);
+            ppc_result_d = (ppc_result_d & ~(bitmask)) | (return_value << shift_amount);
             ppc_store_result_regd();
+            if (bitmask == 0x000000FF) {
+                reg_d        = (reg_d + 1) & 31;
+                ppc_result_d = 0xFFFFFFFF;
+                bitmask      = 0xFF000000;
+                shift_amount = 24;
+            } else {
+                bitmask >> 8;
+                shift_amount -= 8;
+            }
+            ppc_effective_address++;
+            bytes_copied++;
+            bytes_to_load--;
         }
-
-
-        switch (byte_offset) {
-        case 0:
-            bitmask      = 0x00FFFFFF;
-            shift_amount = 24;
-            break;
-        case 8:
-            bitmask      = 0xFF00FFFF;
-            shift_amount = 16;
-            break;
-        case 16:
-            bitmask      = 0xFFFF00FF;
-            shift_amount = 8;
-            break;
-        case 24:
-            bitmask      = 0xFFFFFF00;
-            shift_amount = 0;
-            break;
-        }
-
-        return_value = mmu_read_vmem<uint8_t>(ppc_effective_address);
-        // return_value = mem_grab_byte(ppc_effective_address);
-        ppc_result_d = (ppc_result_d & bitmask) | (return_value << shift_amount);
-        ppc_store_result_regd();
-        bytes_copied++;
-
-        if (return_value == matching_byte) {
-            //Match has been found - Time to break out
-            break;
-        }
-
-        byte_offset += 8;
-
-        if (byte_offset == 32) {
-            byte_offset = 0;
-        }
-
-        ppc_effective_address++;
-        bytes_to_load--;
     }
 
     ppc_state.spr[SPR::XER] = (ppc_state.spr[SPR::XER] & 0xFFFFFF80) | bytes_copied;
