@@ -2001,7 +2001,6 @@ void dppc_interpreter::ppc_lswi() {
     ppc_effective_address = reg_a ? ppc_result_a : 0;
     grab_inb              = (ppc_cur_instruction >> 11) & 0x1F;
     grab_inb              = grab_inb ? grab_inb : 32;
-    uint32_t stringed_word = 0;
 
     while (grab_inb > 0) {
         switch (grab_inb) {
@@ -2014,9 +2013,8 @@ void dppc_interpreter::ppc_lswi() {
             grab_inb             = 0;
             break;
         case 3:
-            stringed_word  = mmu_read_vmem<uint16_t>(ppc_effective_address) << 16;
-            stringed_word += mmu_read_vmem<uint8_t>(ppc_effective_address + 2) << 8;
-            ppc_state.gpr[reg_d] = stringed_word;
+            ppc_state.gpr[reg_d]  = mmu_read_vmem<uint16_t>(ppc_effective_address) << 16;
+            ppc_state.gpr[reg_d] += mmu_read_vmem<uint8_t>(ppc_effective_address + 2) << 8;
             grab_inb             = 0;
             break;
         default:
@@ -2044,7 +2042,6 @@ void dppc_interpreter::ppc_lswx() {
 
     ppc_effective_address  = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
     grab_inb               = ppc_state.spr[SPR::XER] & 0x7F;
-    uint32_t stringed_word = 0;
 
     while (grab_inb > 0) {
         switch (grab_inb) {
@@ -2057,10 +2054,9 @@ void dppc_interpreter::ppc_lswx() {
             grab_inb             = 0;
             break;
         case 3:
-            stringed_word  = mmu_read_vmem<uint16_t>(ppc_effective_address) << 16;
-            stringed_word += mmu_read_vmem<uint8_t>(ppc_effective_address + 2) << 8;
-            ppc_state.gpr[reg_d] = stringed_word;
-            grab_inb             = 0;
+            ppc_state.gpr[reg_d]  = mmu_read_vmem<uint16_t>(ppc_effective_address) << 16;
+            ppc_state.gpr[reg_d] += mmu_read_vmem<uint8_t>(ppc_effective_address + 2) << 8;
+            grab_inb              = 0;
             break;
         default:
             ppc_state.gpr[reg_d] = mmu_read_vmem<uint32_t>(ppc_effective_address);
