@@ -160,7 +160,7 @@ void dppc_interpreter::power_lscbx() {
                 bitmask      = 0xFF000000;
                 shift_amount = 24;
             } else {
-                bitmask >> 8;
+                bitmask >>= 8;
                 shift_amount -= 8;
             }
             ppc_effective_address++;
