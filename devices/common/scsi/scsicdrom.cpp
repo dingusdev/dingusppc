@@ -24,8 +24,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/scsi/scsi.h>
 #include <devices/common/scsi/scsicdrom.h>
 #include <devices/deviceregistry.h>
-#include <machines/machineproperties.h>
 #include <loguru.hpp>
+#include <machines/machineproperties.h>
+#include <memaccess.h>
 
 #include <cinttypes>
 #include <cstring>
@@ -103,9 +104,15 @@ void ScsiCdrom::process_command()
         this->eject_allowed = (this->cmd_buf[4] & 1) == 0;
         this->switch_phase(ScsiPhase::STATUS);
         break;
+    case ScsiCommand::READ_CAPACITY_10:
+        this->read_capacity();
+        break;
     case ScsiCommand::READ_10:
-        lba      = (cmd_buf[2] << 24) + (cmd_buf[3] << 16) + (cmd_buf[4] << 8) + cmd_buf[5];
-        xfer_len = (cmd_buf[7] << 8) + cmd_buf[8];
+        lba      = READ_DWORD_BE_U(&this->cmd_buf[2]);
+        xfer_len = READ_WORD_BE_U(&this->cmd_buf[7]);
+        if (this->cmd_buf[1] & 1) {
+            ABORT_F("SCSI-CDROM: RelAdr bit set in READ_10");
+        }
         read(lba, xfer_len, 10);
         break;
     case ScsiCommand::READ_TOC:
@@ -264,6 +271,8 @@ void ScsiCdrom::read_toc()
         LOG_F(ERROR, "SCSI-CDROM: invalid starting track %d in READ_TOC", start_track);
         this->status = ScsiStatus::CHECK_CONDITION;
         this->sense  = ScsiSense::ILLEGAL_REQ;
+        this->switch_phase(ScsiPhase::STATUS);
+        return;
     }
 
     char* buf_ptr = this->data_buf;
@@ -301,7 +310,40 @@ void ScsiCdrom::read_toc()
         }
     }
 
-    this->bytes_out = alloc_len;
+    this->bytes_out  = alloc_len;
+    this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;
+
+    this->switch_phase(ScsiPhase::DATA_IN);
+}
+
+void ScsiCdrom::read_capacity()
+{
+    uint32_t lba = READ_DWORD_BE_U(&this->cmd_buf[2]);
+
+    if (this->cmd_buf[1] & 1) {
+        ABORT_F("SCSI-CDROM: RelAdr bit set in READ_CAPACITY_10");
+    }
+
+    if (!(this->cmd_buf[8] & 1) && lba) {
+        LOG_F(ERROR, "SCSI-CDROM: non-zero LBA for PMI=0");
+        this->status = ScsiStatus::CHECK_CONDITION;
+        this->sense  = ScsiSense::ILLEGAL_REQ;
+        this->switch_phase(ScsiPhase::STATUS);
+        return;
+    }
+
+    int last_lba = this->total_frames - 1;
+
+    this->data_buf[0] = (last_lba >> 24) & 0xFFU;
+    this->data_buf[1] = (last_lba >> 16) & 0xFFU;
+    this->data_buf[2] = (last_lba >>  8) & 0xFFU;
+    this->data_buf[3] = (last_lba >>  0) & 0xFFU;
+    this->data_buf[4] = 0;
+    this->data_buf[5] = 0;
+    this->data_buf[6] = (this->sector_size >> 8) & 0xFFU;
+    this->data_buf[7] = this->sector_size & 0xFFU;
+
+    this->bytes_out  = 8;
     this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;
 
     this->switch_phase(ScsiPhase::DATA_IN);

@@ -68,6 +68,7 @@ protected:
     void    inquiry();
     void    mode_sense();
     void    read_toc();
+    void    read_capacity();
 
 private:
     AddrMsf lba_to_msf(const int lba);
