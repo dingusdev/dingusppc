@@ -137,7 +137,7 @@ void dppc_interpreter::power_dozi() {
 void dppc_interpreter::power_lscbx() {
     ppc_grab_regsdab();
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : ppc_result_a + ppc_result_b;
-    ppc_result_d          = 0xFFFFFFFF;
+    //ppc_result_d          = 0xFFFFFFFF;
 
     uint8_t return_value   = 0;
     uint32_t bytes_to_load = (ppc_state.spr[SPR::XER] & 0x7f);
@@ -148,25 +148,28 @@ void dppc_interpreter::power_lscbx() {
     uint32_t bitmask     = 0xFF000000;
     uint8_t shift_amount = 24;
 
-    while (return_value != matching_byte) {
-        if (bytes_to_load > 0) {
-            return_value = mmu_read_vmem<uint8_t>(ppc_effective_address);
-            // return_value = mem_grab_byte(ppc_effective_address);
-            ppc_result_d = (ppc_result_d & ~(bitmask)) | (return_value << shift_amount);
-            ppc_store_result_regd();
-            if (bitmask == 0x000000FF) {
-                reg_d        = (reg_d + 1) & 31;
-                ppc_result_d = 0xFFFFFFFF;
-                bitmask      = 0xFF000000;
-                shift_amount = 24;
-            } else {
-                bitmask >>= 8;
-                shift_amount -= 8;
-            }
-            ppc_effective_address++;
-            bytes_copied++;
-            bytes_to_load--;
+    while (bytes_to_load > 0) {
+        return_value = mmu_read_vmem<uint8_t>(ppc_effective_address);
+        // return_value = mem_grab_byte(ppc_effective_address);
+        ppc_result_d = (ppc_result_d & ~(bitmask)) | (return_value << shift_amount);
+        ppc_store_result_regd();
+        if (bitmask == 0x000000FF) {
+            reg_d        = (reg_d + 1) & 31;
+            //ppc_result_d = 0xFFFFFFFF;
+            bitmask      = 0xFF000000;
+            shift_amount = 24;
+        } 
+        else {
+            bitmask >>= 8;
+            shift_amount -= 8;
         }
+
+        if (return_value == matching_byte)
+            break;
+
+        ppc_effective_address++;
+        bytes_copied++;
+        bytes_to_load--;
     }
 
     ppc_state.spr[SPR::XER] = (ppc_state.spr[SPR::XER] & 0xFFFFFF80) | bytes_copied;
