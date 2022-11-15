@@ -164,12 +164,12 @@ void dppc_interpreter::power_lscbx() {
             shift_amount -= 8;
         }
 
-        if (return_value == matching_byte)
-            break;
-
         ppc_effective_address++;
         bytes_copied++;
         bytes_to_load--;
+
+        if (return_value == matching_byte)
+            break;
     }
 
     ppc_state.spr[SPR::XER] = (ppc_state.spr[SPR::XER] & 0xFFFFFF80) | bytes_copied;
