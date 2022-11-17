@@ -80,6 +80,8 @@ uint8_t Swim3Ctrl::read(uint8_t reg_offset)
     uint8_t status_addr, rddata_val, old_int_flags, old_error;
 
     switch(reg_offset) {
+    case Swim3Reg::Timer:
+        return this->calc_timer_val();
     case Swim3Reg::Error:
         old_error = this->error;
         this->error = 0;
@@ -127,7 +129,7 @@ void Swim3Ctrl::write(uint8_t reg_offset, uint8_t value)
 
     switch(reg_offset) {
     case Swim3Reg::Timer:
-        LOG_F(INFO, "SWIM3: writing %d to the Timer register", value);
+        this->init_timer(value);
         break;
     case Swim3Reg::Param_Data:
         this->pram = value;
@@ -355,6 +357,44 @@ void Swim3Ctrl::stop_disk_access()
         TimerManager::get_instance()->cancel_timer(this->access_timer_id);
     }
     this->access_timer_id = 0;
+}
+
+void Swim3Ctrl::init_timer(const uint8_t start_val)
+{
+    if (this->timer_val) {
+        LOG_F(WARNING, "SWIM3: attempt to re-arm the timer");
+    }
+    this->timer_val = start_val;
+    if (!this->timer_val) {
+        this->one_us_timer_start = 0;
+        return;
+    }
+
+    this->one_us_timer_start = TimerManager::get_instance()->current_time_ns();
+
+    this->one_us_timer_id = TimerManager::get_instance()->add_oneshot_timer(
+        this->timer_val * NS_PER_USEC,
+        [this]() {
+            this->timer_val = 0;
+            this->int_flags |= INT_TIMER_DONE;
+            update_irq();
+        }
+    );
+}
+
+uint8_t Swim3Ctrl::calc_timer_val()
+{
+    if (!this->timer_val) {
+        return 0;
+    }
+
+    uint64_t time_now   = TimerManager::get_instance()->current_time_ns();
+    uint64_t us_elapsed = (time_now - this->one_us_timer_start) / NS_PER_USEC;
+    if (us_elapsed > this->timer_val) {
+        return 0;
+    } else {
+        return (this->timer_val - us_elapsed) & 0xFFU;
+    }
 }
 
 // floppy disk formats properties for the cases

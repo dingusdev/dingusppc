@@ -64,9 +64,10 @@ enum {
 
 /** Interrupt flags. */
 enum {
-    INT_STEP_DONE = 0x02,
-    INT_ID_READ   = 0x04,
-    INT_SECT_DONE = 0x08,
+    INT_TIMER_DONE = 0x01,
+    INT_STEP_DONE  = 0x02,
+    INT_ID_READ    = 0x04,
+    INT_SECT_DONE  = 0x08,
 };
 
 // SWIM3 internal states.
@@ -96,19 +97,22 @@ public:
     };
 
 protected:
-    void update_irq();
-    void start_stepping();
-    void do_step();
-    void stop_stepping();
-    void start_disk_access();
-    void disk_access();
-    void stop_disk_access();
+    void    update_irq();
+    void    start_stepping();
+    void    do_step();
+    void    stop_stepping();
+    void    start_disk_access();
+    void    disk_access();
+    void    stop_disk_access();
+    void    init_timer(const uint8_t start_val);
+    uint8_t calc_timer_val();
 
 private:
     std::unique_ptr<MacSuperdrive::MacSuperDrive> int_drive;
 
     DmaBidirChannel*    dma_ch;
 
+    uint8_t timer_val = 0; // internal timer that decrements at a 1 us rate
     uint8_t setup_reg;
     uint8_t mode_reg;
     uint8_t error;
@@ -128,8 +132,11 @@ private:
     uint8_t rd_line;
     int     cur_state;
 
+    int     one_us_timer_id = 0;
     int     step_timer_id   = 0;
     int     access_timer_id = 0;
+
+    uint64_t    one_us_timer_start = 0;
 
     // Interrupt related stuff
     InterruptCtrl* int_ctrl = nullptr;
