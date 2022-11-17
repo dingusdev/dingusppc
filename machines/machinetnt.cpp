@@ -60,8 +60,8 @@ int initialize_tnt(std::string& id)
         return -1;
     }
 
-    // plug 8MB RAM DIMM into slot #0
-    memctrl_obj->insert_ram_dimm(2, DRAM_CAP_16MB);
+    // plug 16MB RAM DIMM into slot #0
+    memctrl_obj->insert_ram_dimm(0, DRAM_CAP_16MB);
 
     // allocate and map physical RAM
     memctrl_obj->map_phys_ram();
