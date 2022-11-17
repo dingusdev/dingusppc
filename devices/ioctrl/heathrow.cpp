@@ -81,8 +81,10 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
     // connect serial HW
     this->escc = dynamic_cast<EsccController*>(gMachineObj->get_comp_by_name("Escc"));
 
-    // connect floppy disk HW
+    // connect floppy disk HW and initialize its DMA channel
     this->swim3 = dynamic_cast<Swim3::Swim3Ctrl*>(gMachineObj->get_comp_by_name("Swim3"));
+    this->floppy_dma = std::unique_ptr<DMAChannel> (new DMAChannel());
+    this->swim3->set_dma_channel(this->floppy_dma.get());
 
     // set EMMO pin status (active low)
     this->emmo_pin = GET_BIN_PROP("emmo") ^ 1;
@@ -104,21 +106,24 @@ void HeathrowIC::notify_bar_change(int bar_num)
 }
 
 uint32_t HeathrowIC::dma_read(uint32_t offset, int size) {
-    uint32_t res = 0;
-
     switch (offset >> 8) {
+    case 1:
+        return this->floppy_dma->reg_read(offset & 0xFF, size);
     case 8:
-        res = this->snd_out_dma->reg_read(offset & 0xFF, size);
+        return this->snd_out_dma->reg_read(offset & 0xFF, size);
         break;
     default:
         LOG_F(WARNING, "Unsupported DMA channel read, offset=0x%X", offset);
     }
 
-    return res;
+    return 0;
 }
 
 void HeathrowIC::dma_write(uint32_t offset, uint32_t value, int size) {
     switch (offset >> 8) {
+    case 1:
+        this->floppy_dma->reg_write(offset & 0xFF, value, size);
+        break;
     case 8:
         this->snd_out_dma->reg_write(offset & 0xFF, value, size);
         break;

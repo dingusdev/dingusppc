@@ -74,6 +74,8 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
 
     // connect floppy disk HW
     this->swim3 = dynamic_cast<Swim3::Swim3Ctrl*>(gMachineObj->get_comp_by_name("Swim3"));
+    this->floppy_dma = std::unique_ptr<DMAChannel> (new DMAChannel());
+    this->swim3->set_dma_channel(this->floppy_dma.get());
 
     // set EMMO pin status (active low)
     this->emmo_pin = GET_BIN_PROP("emmo") ^ 1;
@@ -139,6 +141,8 @@ uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
         unsigned subdev_num = (offset >> 8) & 0xF;
 
         switch (subdev_num) {
+        case 1:
+            return this->floppy_dma->reg_read(offset & 0xFF, size);
         case 8:
             return this->snd_out_dma->reg_read(offset & 0xFF, size);
         default:
@@ -226,6 +230,9 @@ void GrandCentral::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
         unsigned subdev_num = (offset >> 8) & 0xF;
 
         switch (subdev_num) {
+        case 1:
+            this->floppy_dma->reg_write(offset & 0xFF, value, size);
+            break;
         case 8:
             this->snd_out_dma->reg_write(offset & 0xFF, value, size);
             break;

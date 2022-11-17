@@ -141,6 +141,7 @@ private:
     Swim3::Swim3Ctrl*   swim3;   // floppy disk controller
 
     std::unique_ptr<DMAChannel>     snd_out_dma;
+    std::unique_ptr<DMAChannel>     floppy_dma;
 };
 
 /**
@@ -231,7 +232,9 @@ private:
     EsccController*     escc;     // ESCC serial controller
     Swim3::Swim3Ctrl*   swim3;    // floppy disk controller
 
+    // DMA channels
     std::unique_ptr<DMAChannel>     snd_out_dma;
+    std::unique_ptr<DMAChannel>     floppy_dma;
 };
 
 #endif /* MACIO_H */
