@@ -69,6 +69,13 @@ enum {
     INT_SECT_DONE = 0x08,
 };
 
+// SWIM3 internal states.
+enum {
+    SWIM3_IDLE,
+    SWIM3_ADDR_MARK_SEARCH,
+    SWIM3_DATA_XFER,
+};
+
 class Swim3Ctrl : public HWComponent {
 public:
     Swim3Ctrl();
@@ -94,6 +101,7 @@ protected:
     void do_step();
     void stop_stepping();
     void start_disk_access();
+    void disk_access();
     void stop_disk_access();
 
 private:
@@ -112,10 +120,13 @@ private:
     uint8_t step_count;
     uint8_t cur_track;
     uint8_t cur_sector;
+    uint8_t target_sect;
     uint8_t format;     // format byte from the last GCR/MFM address field
     uint8_t first_sec;
     uint8_t xfer_cnt;
     uint8_t gap_size;
+    uint8_t rd_line;
+    int     cur_state;
 
     int     step_timer_id   = 0;
     int     access_timer_id = 0;

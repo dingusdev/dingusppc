@@ -51,6 +51,8 @@ Swim3Ctrl::Swim3Ctrl()
     this->xfer_cnt  = 0;
     this->first_sec = 0xFF;
 
+    this->cur_state = SWIM3_IDLE;
+
     // Attach virtual Superdrive to the internal drive connector
     // TODO: make SWIM3/drive wiring user selectable
     this->int_drive = std::unique_ptr<MacSuperdrive::MacSuperDrive>
@@ -75,7 +77,7 @@ int Swim3Ctrl::device_postinit()
 
 uint8_t Swim3Ctrl::read(uint8_t reg_offset)
 {
-    uint8_t status_addr, status_val, old_int_flags, old_error;
+    uint8_t status_addr, rddata_val, old_int_flags, old_error;
 
     switch(reg_offset) {
     case Swim3Reg::Error:
@@ -89,13 +91,13 @@ uint8_t Swim3Ctrl::read(uint8_t reg_offset)
     case Swim3Reg::Handshake_Mode1:
         if (this->mode_reg & 2) { // internal drive?
             status_addr = ((this->mode_reg & 0x20) >> 2) | (this->phase_lines & 7);
-            status_val = this->int_drive->status(status_addr) & 1;
+            rddata_val  = this->int_drive->status(status_addr) & 1;
 
-            // transfer status_val to both bit 2 (RDDATA) and bit 3 (SENSE)
+            // transfer rddata_val to both bit 2 (RDDATA) and bit 3 (SENSE)
             // because those signals seem to be historically wired together
-            return ((status_val << 2) | (status_val << 3));
+            return (rddata_val << 2) | (rddata_val << 3);
         }
-        return 4;
+        return 0xC; // report both RdData & Sense high
     case Swim3Reg::Interrupt_Flags:
         old_int_flags = this->int_flags;
         this->int_flags = 0; // read from this register clears all flags
@@ -121,21 +123,27 @@ uint8_t Swim3Ctrl::read(uint8_t reg_offset)
 
 void Swim3Ctrl::write(uint8_t reg_offset, uint8_t value)
 {
-    uint8_t old_mode_reg;
+    uint8_t old_mode_reg, status_addr;
 
     switch(reg_offset) {
+    case Swim3Reg::Timer:
+        LOG_F(INFO, "SWIM3: writing %d to the Timer register", value);
+        break;
     case Swim3Reg::Param_Data:
         this->pram = value;
         break;
     case Swim3Reg::Phase:
         this->phase_lines = value & 0xF;
-        if (value & 8) {
-            if (this->mode_reg & 2) { // internal drive?
+        if (this->phase_lines & 8) { // CA3 aka LSTRB high -> sending a command to the drive
+            if (this->mode_reg & 2) { // if internal drive is selected
                 this->int_drive->command(
                     ((this->mode_reg & 0x20) >> 3) | (this->phase_lines & 3),
                     (value >> 2) & 1
                 );
             }
+        } else if (this->phase_lines == 4 && (this->mode_reg & 2)) {
+            status_addr = ((this->mode_reg & 0x20) >> 2) | (this->phase_lines & 7);
+            this->rd_line = this->int_drive->status(status_addr) & 1;
         }
         break;
     case Swim3Reg::Setup:
@@ -278,53 +286,66 @@ void Swim3Ctrl::start_disk_access()
     this->mode_reg |= SWIM3_GO;
     LOG_F(9, "SWIM3: disk access started!");
 
-    if (this->first_sec == 0xFF) {
-        // $FF means no sector to match ->
-        // generate ID_read interrups as long as the GO bit is set
-        this->int_drive->init_track_search(-1); // start at random sector
-    } else {
-        this->cur_sector = this->first_sec;
+    this->target_sect = this->first_sec;
+
+    this->access_timer_id = TimerManager::get_instance()->add_oneshot_timer(
+        this->int_drive->sync_to_disk(),
+        [this]() {
+            this->cur_state = SWIM3_ADDR_MARK_SEARCH;
+            this->disk_access();
+        }
+    );
+}
+
+void Swim3Ctrl::disk_access()
+{
+    MacSuperdrive::SectorHdr hdr;
+    uint64_t delay;
+
+    switch(this->cur_state) {
+    case SWIM3_ADDR_MARK_SEARCH:
+        hdr = this->int_drive->current_sector_header();
+        // update the corresponding SWIM3 registers
+        this->cur_track  = ((hdr.side & 1) << 7) | (hdr.track & 0x7F);
+        this->cur_sector = 0x80 /* CRC/checksum valid */ | (hdr.sector & 0x7F);
+        this->format = hdr.format;
+        // generate ID_read interrupt
+        this->int_flags |= INT_ID_READ;
+        update_irq();
+        if ((this->cur_sector & 0x7F) == this->target_sect) {
+            // sector matches -> transfer its data
+            this->cur_state = SWIM3_DATA_XFER;
+            delay = this->int_drive->sector_data_delay();
+        } else {
+            // move to next address mark
+            this->cur_state = SWIM3_ADDR_MARK_SEARCH;
+            delay = this->int_drive->next_sector_delay();
+        }
+        break;
+    case SWIM3_DATA_XFER:
+        // transfer sector data over DMA
+        this->dma_ch->push_data(this->int_drive->get_sector_data_ptr(this->cur_sector & 0x7F), 512);
+        if (--this->xfer_cnt == 0) {
+            this->stop_disk_access();
+            // generate sector_done interrupt
+            this->int_flags |= INT_SECT_DONE;
+            update_irq();
+            return;
+        }
+        this->cur_state = SWIM3_ADDR_MARK_SEARCH;
+        delay = this->int_drive->next_addr_mark_delay(&this->target_sect);
+        break;
+    default:
+        LOG_F(ERROR, "SWIM3: unknown disk access phase 0x%X", this->cur_state);
+        return;
     }
 
-    // HACK: figure out from bits in int_mask register which kind of disk access is requested
-    if (this->int_mask & INT_ID_READ) { // read address header
-        this->access_timer_id = TimerManager::get_instance()->add_cyclic_timer(
-            static_cast<uint64_t>(this->int_drive->get_sector_delay() * NS_PER_SEC + 0.5f),
-            [this]() {
-                // get next sector's address field
-                MacSuperdrive::SectorHdr addr = this->int_drive->next_sector_header();
-                // set up the corresponding SWIM3 registers
-                this->cur_track  = ((addr.side & 1) << 7) | (addr.track & 0x7F);
-                this->cur_sector = 0x80 /* CRC/checksum valid */ | (addr.sector & 0x7F);
-                this->format = addr.format;
-                // generate ID_read interrupt
-                this->int_flags |= INT_ID_READ;
-                update_irq();
-            }
-        );
-    } else { // otherwise, read sector data
-        this->access_timer_id = TimerManager::get_instance()->add_cyclic_timer(
-            static_cast<uint64_t>(this->int_drive->get_sector_delay() * NS_PER_SEC + 0.5f),
-            [this]() {
-                // transfer sector data over DMA
-                this->dma_ch->push_data(this->int_drive->get_sector_data_ptr(this->cur_sector), 512);
-
-                // get next address field
-                MacSuperdrive::SectorHdr addr = this->int_drive->next_sector_header();
-                // set up the corresponding SWIM3 registers
-                this->cur_track  = ((addr.side & 1) << 7) | (addr.track & 0x7F);
-                this->cur_sector = 0x80 /* CRC/checksum valid */ | (addr.sector & 0x7F);
-                this->format = addr.format;
-
-                if (--this->xfer_cnt == 0) {
-                    this->stop_disk_access();
-                    // generate sector_done interrupt
-                    this->int_flags |= INT_SECT_DONE;
-                    update_irq();
-                }
-            }
-        );
-    }
+    this->access_timer_id = TimerManager::get_instance()->add_oneshot_timer(
+        delay,
+        [this]() {
+            this->disk_access();
+        }
+    );
 }
 
 void Swim3Ctrl::stop_disk_access()
