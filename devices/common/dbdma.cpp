@@ -277,8 +277,6 @@ void DMAChannel::start()
         return;
     }
 
-    LOG_F(INFO, "Starting DMA channel, stat = 0x%X", this->ch_stat);
-
     this->queue_len = 0;
 
     if (this->start_cb)
@@ -295,7 +293,7 @@ void DMAChannel::resume() {
 }
 
 void DMAChannel::abort() {
-    LOG_F(INFO, "Aborting DMA channel");
+    LOG_F(9, "Aborting DMA channel");
 }
 
 void DMAChannel::pause() {
