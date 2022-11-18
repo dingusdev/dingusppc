@@ -42,14 +42,15 @@ Swim3Ctrl::Swim3Ctrl()
     this->name = "SWIM3";
     this->supported_types = HWCompType::FLOPPY_CTRL;
 
-    this->setup_reg = 0;
-    this->mode_reg  = 0;
-    this->int_reg   = 0;
-    this->int_flags = 0;
-    this->int_mask  = 0;
-    this->error     = 0;
-    this->xfer_cnt  = 0;
-    this->first_sec = 0xFF;
+    this->setup_reg  = 0;
+    this->mode_reg   = 0;
+    this->int_reg    = 0;
+    this->int_flags  = 0;
+    this->int_mask   = 0;
+    this->error      = 0;
+    this->step_count = 0;
+    this->xfer_cnt   = 0;
+    this->first_sec  = 0xFF;
 
     this->cur_state = SWIM3_IDLE;
 
@@ -105,6 +106,8 @@ uint8_t Swim3Ctrl::read(uint8_t reg_offset)
         this->int_flags = 0; // read from this register clears all flags
         update_irq();
         return old_int_flags;
+    case Swim3Reg::Step:
+        return this->step_count;
     case Swim3Reg::Current_Track:
         return this->cur_track;
     case Swim3Reg::Current_Sector:
