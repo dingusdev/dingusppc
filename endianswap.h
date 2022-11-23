@@ -69,4 +69,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #endif
 
+#define BYTESWAP_SIZED(val, size) \
+    (size) == 2 ? BYTESWAP_16((val)) : ((size) == 4 ? BYTESWAP_32((val)) : (val))
+
 #endif /* ENDIAN_SWAP_H */

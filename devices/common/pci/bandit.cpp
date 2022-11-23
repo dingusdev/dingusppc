@@ -196,7 +196,8 @@ void Bandit::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size
                 LOG_F(
                     WARNING, "%s: write config cycle type 1 not supported yet %02x:%02x.%x @%02x.%c = %0*x",
                     this->name.c_str(), bus_num, dev_num, fun_num, reg_offs + (offset & 3),
-                    size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size, size * 2, flip_sized(value, size)
+                    size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size,
+                    size * 2, BYTESWAP_SIZED(value, size)
                 );
                 return;
             }
@@ -208,7 +209,8 @@ void Bandit::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size
                     ERROR, "%s: write invalid IDSEL=0x%X config:0x%X ??:??.%x? @%02x?.%c = %0*x",
                     this->name.c_str(), idsel, this->config_addr,
                     fun_num, reg_offs + (offset & 3),
-                    size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size, size * 2, flip_sized(value, size)
+                    size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size,
+                    size * 2, BYTESWAP_SIZED(value, size)
                 );
                 return;
             }
@@ -225,7 +227,8 @@ void Bandit::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size
                 LOG_F(
                     ERROR, "%s err: write attempt to non-existing PCI device ??:%02x.%x @%02x.%c = %0*x",
                     this->name.c_str(), dev_num, fun_num, reg_offs + (offset & 3),
-                    size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size, size * 2, flip_sized(value, size)
+                    size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size,
+                    size * 2, BYTESWAP_SIZED(value, size)
                 );
             }
         } else {
@@ -358,7 +361,8 @@ void Chaos::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
                 LOG_F(
                     WARNING, "%s: write config cycle type 1 not supported yet %02x:%02x.%x @%02x.%c = %0*x",
                     this->name.c_str(), bus_num, dev_num, fun_num, reg_offs + (offset & 3),
-                    size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size, size * 2, flip_sized(value, size)
+                    size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size,
+                    size * 2, BYTESWAP_SIZED(value, size)
                 );
                 return;
             }
@@ -370,7 +374,8 @@ void Chaos::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
                     ERROR, "%s: write invalid IDSEL=0x%X config:0x%X ??:??.%x? @%02x?.%c = %0*x",
                     this->name.c_str(), idsel, this->config_addr,
                     fun_num, reg_offs + (offset & 3),
-                    size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size, size * 2, flip_sized(value, size)
+                    size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size,
+                    size * 2, BYTESWAP_SIZED(value, size)
                 );
                 return;
             }
@@ -382,7 +387,8 @@ void Chaos::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
                 LOG_F(
                     ERROR, "%s err: write attempt to non-existing VCI device ??:%02x.%x @%02x.%c = %0*x",
                     this->name.c_str(), dev_num, fun_num, reg_offs + (offset & 3),
-                    size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size, size * 2, flip_sized(value, size)
+                    size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size,
+                    size * 2, BYTESWAP_SIZED(value, size)
                 );
             }
         } else {

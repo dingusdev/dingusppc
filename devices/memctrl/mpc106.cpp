@@ -169,7 +169,7 @@ void MPC106::pci_write(uint32_t value, uint32_t size) {
             "%s err: write attempt to non-local PCI bus, config_addr = %x %02x:%02x.%x @%02x.%c = %0*x",
 			this->name.c_str(), this->config_addr, bus_num, dev_num, fun_num, reg_offs,
 			size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size,
-            size * 2, flip_sized(value, size)
+            size * 2, BYTESWAP_SIZED(value, size)
         );
         return;
     }
@@ -185,7 +185,7 @@ void MPC106::pci_write(uint32_t value, uint32_t size) {
                 "%s err: write attempt to non-existing PCI device %02x:%02x.%x @%02x.%c = %0*x",
                 this->name.c_str(), bus_num, dev_num, fun_num, reg_offs,
                 size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size,
-                size * 2, flip_sized(value, size)
+                size * 2, BYTESWAP_SIZED(value, size)
             );
         }
     }

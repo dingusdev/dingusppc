@@ -156,7 +156,8 @@ void PCIDevice::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
         LOG_F(
             WARNING, "%s: attempt to write to reserved/unimplemented register @%02x.%c = %0*x",
             this->pci_name.c_str(), reg_offs,
-            size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size, size * 2, flip_sized(value, size)
+            size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size,
+            size * 2, BYTESWAP_SIZED(value, size)
         );
     }
 }
@@ -216,10 +217,12 @@ int PCIDevice::attach_exp_rom_image(const std::string img_path)
         memset(&this->exp_rom_data[exp_rom_image_size], 0xff, this->exp_rom_size - exp_rom_image_size);
 
         if (exp_rom_image_size == this->exp_rom_size) {
-            LOG_F(INFO, "%s: loaded expansion rom (%d bytes).", this->pci_name.c_str(), this->exp_rom_size);
+            LOG_F(INFO, "%s: loaded expansion rom (%d bytes).",
+            this->pci_name.c_str(), this->exp_rom_size);
         }
         else {
-            LOG_F(WARNING, "%s: loaded expansion rom (%d bytes adjusted to %d bytes).", this->pci_name.c_str(), exp_rom_image_size, this->exp_rom_size);
+            LOG_F(WARNING, "%s: loaded expansion rom (%d bytes adjusted to %d bytes).",
+            this->pci_name.c_str(), exp_rom_image_size, this->exp_rom_size);
         }
 
         this->exp_bar_cfg  = ~(this->exp_rom_size - 1);
