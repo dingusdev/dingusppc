@@ -33,12 +33,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace std;
 
 IdeHardDisk::IdeHardDisk() {
-    this->name = "IDE0";
+    this->name = "IdeHardDisk";
     supports_types(HWCompType::IDE_DEV);
 }
 
 void IdeHardDisk::insert_image(std::string filename) {
-    hdd_img.open(filename);
+    this->hdd_img.open(filename, ios::out | ios::in | ios::binary);
 
     // Taken from:
     // https://stackoverflow.com/questions/22984956/tellg-function-give-wrong-size-of-file/22986486
@@ -82,25 +82,37 @@ void IdeHardDisk::write(int reg, uint32_t value) {
     switch (reg) {
     case IDE_Reg::IDE_DATA:
         regs[IDE_Reg::IDE_DATA] = value;
+        break;
+        break;
     case IDE_Reg::FEATURES:
         regs[IDE_Reg::FEATURES] = value;
+        break;
     case IDE_Reg::SEC_COUNT:
         regs[IDE_Reg::SEC_COUNT] = value;
+        break;
     case IDE_Reg::SEC_NUM:
         regs[IDE_Reg::SEC_NUM] = value;
+        break;
     case IDE_Reg::CYL_LOW:
         regs[IDE_Reg::CYL_LOW] = value;
+        break;
     case IDE_Reg::CYL_HIGH:
         regs[IDE_Reg::CYL_HIGH] = value;
+        break;
     case IDE_Reg::DRIVE_HEAD:
         regs[IDE_Reg::DRIVE_HEAD] = value;
+        break;
     case IDE_Reg::COMMAND:
+        regs[IDE_Reg::COMMAND] = value;
         LOG_F(0, "Executing COMMAND for IDE: %x", value);
         perform_command(value);
+        break;
     case IDE_Reg::DEV_CTRL:
         regs[IDE_Reg::DEV_CTRL] = value;
+        break;
     case IDE_Reg::TIME_CONFIG:
         regs[IDE_Reg::TIME_CONFIG] = value;
+        break;
     default:
         LOG_F(WARNING, "Attempted to write unknown IDE register: %x", reg);
     }
@@ -110,8 +122,10 @@ void IdeHardDisk::perform_command(uint32_t command) {
     switch (command) {
     case IDE_Cmd::READ_SECTOR:
         LOG_F(WARNING, "Trying to read sector with: %x", command);
+        break;
     case IDE_Cmd::WRITE_SECTOR:
         LOG_F(WARNING, "Trying to write sector with: %x", command);
+        break;
     default:
         LOG_F(WARNING, "Attempted to execute IDE command: %x", command);
     }

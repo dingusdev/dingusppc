@@ -231,7 +231,7 @@ private:
     ViaCuda*            viacuda;  // VIA cell with Cuda MCU attached to it
     MESHController*     mesh;     // MESH SCSI cell instance
     EsccController*     escc;     // ESCC serial controller
-    IdeHardDisk*        ide_0;    // Internal ATA
+    IdeHardDisk*        ide_1;    // Internal ATA
     Swim3::Swim3Ctrl*   swim3;    // floppy disk controller
 
     std::unique_ptr<DMAChannel>     snd_out_dma;

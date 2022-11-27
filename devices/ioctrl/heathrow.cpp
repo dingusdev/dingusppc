@@ -80,10 +80,12 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
     this->mesh = dynamic_cast<MESHController*>(gMachineObj->get_comp_by_name("Mesh"));
 
     // connect IDE HW
-    this->ide_0 = dynamic_cast<IdeHardDisk*>(gMachineObj->get_comp_by_name("IDE0"));
-    if (!StrProperty("hdd_img").get_string().empty()) {
-        this->ide_0->insert_image(GET_STR_PROP("hdd_img"));
-    }
+    this->ide_1 = dynamic_cast<IdeHardDisk*>(gMachineObj->get_comp_by_name("IdeHardDisk"));
+
+    //std::string hd_image_path = GET_STR_PROP("hdd_img");
+    //if (!hd_image_path.empty()) {
+    //    this->ide_1->insert_image(hd_image_path);
+    //}
 
     // connect serial HW
     this->escc = dynamic_cast<EsccController*>(gMachineObj->get_comp_by_name("Escc"));
@@ -168,8 +170,9 @@ uint32_t HeathrowIC::read(uint32_t rgn_start, uint32_t offset, int size) {
     case 0x17:
         res = this->viacuda->read((offset - 0x16000) >> 9);
         break;
-    case 0x20:
-        res = this->ide_0->read((offset - 0x20000) >> 4);
+    case 0x21: //IDE 1
+        LOG_F(0, "Read IDE offset=0x%X", offset);
+        res = this->ide_1->read((offset - 0x21000) >> 4);
         break;
     default:
         if (sub_addr >= 0x60) {
@@ -216,8 +219,9 @@ void HeathrowIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int 
     case 0x17:
         this->viacuda->write((offset - 0x16000) >> 9, value);
         break;
-    case 0x20:
-        this->ide_0->write((offset - 0x20000) >> 4, value);
+    case 0x21:
+        LOG_F(0, "Write IDE offset=0x%X", offset);
+        this->ide_1->write(((offset - 0x21000) >> 4), value);
         break;
     default:
         if (sub_addr >= 0x60) {
@@ -395,8 +399,7 @@ void HeathrowIC::clear_cpu_int()
 }
 
 static const vector<string> Heathrow_Subdevices = {
-    "NVRAM", "ViaCuda", "Mesh", "Escc", "Swim3"
-};
+    "NVRAM", "ViaCuda", "Mesh", "Escc", "Swim3", "IdeHardDisk"};
 
 static const DeviceDescription Heathrow_Descriptor = {
     HeathrowIC::create, Heathrow_Subdevices, {}
