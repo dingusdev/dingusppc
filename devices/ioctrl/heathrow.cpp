@@ -24,7 +24,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/dbdma.h>
 #include <devices/common/hwcomponent.h>
 #include <devices/common/viacuda.h>
-#include <devices/common/ide/ide_hd.h>
+#include <devices/common/ata/ata_full.h>
+#include <devices/common/ata/ata_null.h>
 #include <devices/floppy/swim3.h>
 #include <devices/ioctrl/macio.h>
 #include <devices/serial/escc.h>
@@ -80,7 +81,8 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
     this->mesh = dynamic_cast<MESHController*>(gMachineObj->get_comp_by_name("Mesh"));
 
     // connect IDE HW
-    this->ide_1 = dynamic_cast<IdeHardDisk*>(gMachineObj->get_comp_by_name("IdeHardDisk"));
+    this->ide_0 = dynamic_cast<AtaNullDevice*>(gMachineObj->get_comp_by_name("AtaNullDevice"));
+    this->ide_1 = dynamic_cast<AtaNullDevice*>(gMachineObj->get_comp_by_name("AtaNullDevice"));
 
     //std::string hd_image_path = GET_STR_PROP("hdd_img");
     //if (!hd_image_path.empty()) {
@@ -170,9 +172,13 @@ uint32_t HeathrowIC::read(uint32_t rgn_start, uint32_t offset, int size) {
     case 0x17:
         res = this->viacuda->read((offset - 0x16000) >> 9);
         break;
+    case 0x20:    // IDE 0
+        LOG_F(0, "Read IDE 0 - offset=0x%X", offset);
+        res = this->ide_0->read((offset >> 4) & 0x1F);
+        break;
     case 0x21: //IDE 1
-        LOG_F(0, "Read IDE offset=0x%X", offset);
-        res = this->ide_1->read((offset - 0x21000) >> 4);
+        LOG_F(0, "Read IDE 1 - offset=0x%X", offset);
+        res = this->ide_1->read((offset >> 4) & 0x1F);
         break;
     default:
         if (sub_addr >= 0x60) {
@@ -219,9 +225,13 @@ void HeathrowIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int 
     case 0x17:
         this->viacuda->write((offset - 0x16000) >> 9, value);
         break;
+    case 0x20:
+        LOG_F(0, "Write IDE 0 - offset=0x%X", offset);
+        this->ide_0->write((offset >> 4) & 0x1F, value);
+        break;
     case 0x21:
-        LOG_F(0, "Write IDE offset=0x%X", offset);
-        this->ide_1->write(((offset - 0x21000) >> 4), value);
+        LOG_F(0, "Write IDE 1 - offset=0x%X", offset);
+        this->ide_1->write((offset >> 4) & 0x1F, value);
         break;
     default:
         if (sub_addr >= 0x60) {
@@ -399,7 +409,7 @@ void HeathrowIC::clear_cpu_int()
 }
 
 static const vector<string> Heathrow_Subdevices = {
-    "NVRAM", "ViaCuda", "Mesh", "Escc", "Swim3", "IdeHardDisk"};
+    "NVRAM", "ViaCuda", "Mesh", "Escc", "Swim3", "AtaNullDevice"};
 
 static const DeviceDescription Heathrow_Descriptor = {
     HeathrowIC::create, Heathrow_Subdevices, {}

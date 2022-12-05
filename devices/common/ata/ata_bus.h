@@ -21,8 +21,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file ATA hard drive support */
 
-#ifndef IDE_HD_H
-#define IDE_HD_H
+#ifndef IDEDEVICE_H
+#define IDEDEVICE_H
 
 #include <devices/common/hwcomponent.h>
 #include <cinttypes>
@@ -52,6 +52,7 @@ enum IDE_Reg : int {
     TIME_CONFIG = 0x20
 };
 
+/** Status Register Bits */
 enum IDE_Status : int { 
     ERR  = 0x1, 
     IDX  = 0x2,
@@ -61,6 +62,18 @@ enum IDE_Status : int {
     DWF  = 0x20,
     DRDY = 0x40,
     BSY  = 0x80
+};
+
+/** Error Register Bits */
+enum IDE_Error : int {
+    ANMF   = 0x1,
+    TK0NF  = 0x2,
+    ABRT   = 0x4,
+    MCR    = 0x8,
+    IDNF   = 0x10,
+    MC     = 0x20,
+    UNC    = 0x40,
+    BBK    = 0x80
 };
 
 /** Heath IDE commands. */
@@ -79,26 +92,13 @@ enum IDE_Cmd : int {
     WRITE_DMA       = 0xCA,
 };
 
-class IdeHardDisk : public HWComponent {
+class AtaBus : public HWComponent {
 public:
-    IdeHardDisk();
-    ~IdeHardDisk() = default;
-    
-    static std::unique_ptr<HWComponent> create() {
-        return std::unique_ptr<IdeHardDisk>(new IdeHardDisk());
-    }
+    AtaBus();
+    ~AtaBus() = default;
 
-    void insert_image(std::string filename);
-    uint32_t read(int reg);
-    void write(int reg, uint32_t value);
-
-    void perform_command(uint32_t command);
-
-private:
-    std::fstream hdd_img;
-    uint64_t img_size;
-    uint32_t regs[33];
-    uint8_t buffer[SEC_SIZE];
+    void connect_msg();
+    void pass_msg();
 };
 
 #endif

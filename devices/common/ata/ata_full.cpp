@@ -21,35 +21,40 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Heathrow hard drive controller */
 
+#include <devices/common/ata/ata_full.h>
 #include <devices/deviceregistry.h>
-#include <devices/common/ide/ide_hd.h>
 #include <fstream>
 #include <limits>
-#include <stdio.h>
 #include <loguru.hpp>
+#include <stdio.h>
 
 #define sector_size 512
 
 using namespace std;
 
-IdeHardDisk::IdeHardDisk() {
-    this->name = "IdeHardDisk";
+AtaFullDevice::AtaFullDevice() {
     supports_types(HWCompType::IDE_DEV);
+
+    regs[IDE_Reg::ERROR]      = IDE_Error::ANMF;
+    regs[IDE_Reg::SEC_COUNT]  = 0x1;
+    regs[IDE_Reg::SEC_NUM]    = 0x1;
+    regs[IDE_Reg::STATUS]     = IDE_Status::DRDY | IDE_Status::DSC;
+    regs[IDE_Reg::ALT_STATUS] = IDE_Status::DRDY | IDE_Status::DSC;
 }
 
-void IdeHardDisk::insert_image(std::string filename) {
-    this->hdd_img.open(filename, ios::out | ios::in | ios::binary);
+void AtaFullDevice::insert_image(std::string filename) {
+    this->ide_img.open(filename, ios::out | ios::in | ios::binary);
 
     // Taken from:
     // https://stackoverflow.com/questions/22984956/tellg-function-give-wrong-size-of-file/22986486
-    hdd_img.ignore(std::numeric_limits<std::streamsize>::max());
-    img_size = this->hdd_img.gcount();
-    hdd_img.clear();    //  Since ignore will have set eof.
-    hdd_img.seekg(0, std::ios_base::beg);
+    ide_img.ignore(std::numeric_limits<std::streamsize>::max());
+    img_size = this->ide_img.gcount();
+    ide_img.clear();    //  Since ignore will have set eof.
+    ide_img.seekg(0, std::ios_base::beg);
 }
 
-uint32_t IdeHardDisk::read(int reg) {
-    switch (reg) { 
+uint32_t AtaFullDevice::read(int reg) {
+    switch (reg) {
     case IDE_Reg::IDE_DATA:
         LOG_F(0, "Retrieving DATA from IDE: %x", regs[IDE_Reg::IDE_DATA]);
         return regs[IDE_Reg::IDE_DATA];
@@ -75,14 +80,12 @@ uint32_t IdeHardDisk::read(int reg) {
         LOG_F(WARNING, "Attempted to read unknown IDE register: %x", reg);
         return 0x0;
     }
-
 }
 
-void IdeHardDisk::write(int reg, uint32_t value) {
+void AtaFullDevice::write(int reg, uint32_t value) {
     switch (reg) {
     case IDE_Reg::IDE_DATA:
         regs[IDE_Reg::IDE_DATA] = value;
-        break;
         break;
     case IDE_Reg::FEATURES:
         regs[IDE_Reg::FEATURES] = value;
@@ -118,7 +121,7 @@ void IdeHardDisk::write(int reg, uint32_t value) {
     }
 }
 
-void IdeHardDisk::perform_command(uint32_t command) {
+int AtaFullDevice::perform_command(uint32_t command) {
     switch (command) {
     case IDE_Cmd::READ_SECTOR:
         LOG_F(WARNING, "Trying to read sector with: %x", command);
@@ -129,10 +132,13 @@ void IdeHardDisk::perform_command(uint32_t command) {
     default:
         LOG_F(WARNING, "Attempted to execute IDE command: %x", command);
     }
+
+    return 0;
 }
 
-static const DeviceDescription IDE_Descriptor = {
-    IdeHardDisk::create, {}, {}
+
+static const DeviceDescription ATA_Full_Descriptor = {
+    AtaFullDevice::create, {}, {}
 };
 
-REGISTER_DEVICE(IdeHardDisk, IDE_Descriptor);
+REGISTER_DEVICE(AtaFullDevice, ATA_Full_Descriptor);

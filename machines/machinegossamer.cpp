@@ -164,7 +164,7 @@ static const PropMap gossamer_settings = {
 };
 
 static vector<string> pmg3_devices = {
-    "Grackle", "Heathrow", "AtiRageGT", "IdeHardDisk"
+    "Grackle", "Heathrow", "AtiRageGT"
 };
 
 static const MachineDescription pmg3dt_descriptor = {
