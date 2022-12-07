@@ -21,11 +21,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cpu/ppc/ppcemu.h>
 #include <devices/deviceregistry.h>
+#include <devices/common/ata/idechannel.h>
 #include <devices/common/dbdma.h>
 #include <devices/common/hwcomponent.h>
 #include <devices/common/viacuda.h>
-#include <devices/common/ata/ata_full.h>
-#include <devices/common/ata/ata_null.h>
 #include <devices/floppy/swim3.h>
 #include <devices/ioctrl/macio.h>
 #include <devices/serial/escc.h>
@@ -81,13 +80,8 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
     this->mesh = dynamic_cast<MESHController*>(gMachineObj->get_comp_by_name("Mesh"));
 
     // connect IDE HW
-    this->ide_0 = dynamic_cast<AtaNullDevice*>(gMachineObj->get_comp_by_name("AtaNullDevice"));
-    this->ide_1 = dynamic_cast<AtaNullDevice*>(gMachineObj->get_comp_by_name("AtaNullDevice"));
-
-    //std::string hd_image_path = GET_STR_PROP("hdd_img");
-    //if (!hd_image_path.empty()) {
-    //    this->ide_1->insert_image(hd_image_path);
-    //}
+    this->ide_0 = dynamic_cast<IdeChannel*>(gMachineObj->get_comp_by_name("Ide0"));
+    this->ide_1 = dynamic_cast<IdeChannel*>(gMachineObj->get_comp_by_name("Ide1"));
 
     // connect serial HW
     this->escc = dynamic_cast<EsccController*>(gMachineObj->get_comp_by_name("Escc"));
@@ -168,17 +162,15 @@ uint32_t HeathrowIC::read(uint32_t rgn_start, uint32_t offset, int size) {
         break;
     case 0x15: // SWIM3
         return this->swim3->read((offset >> 4 )& 0xF);
-    case 0x16:
+    case 0x16: // VIA-CUDA
     case 0x17:
         res = this->viacuda->read((offset - 0x16000) >> 9);
         break;
-    case 0x20:    // IDE 0
-        LOG_F(0, "Read IDE 0 - offset=0x%X", offset);
-        res = this->ide_0->read((offset >> 4) & 0x1F);
+    case 0x20: // IDE 0
+        res = this->ide_0->read((offset >> 4) & 0x1F, size);
         break;
-    case 0x21: //IDE 1
-        LOG_F(0, "Read IDE 1 - offset=0x%X", offset);
-        res = this->ide_1->read((offset >> 4) & 0x1F);
+    case 0x21: // IDE 1
+        res = this->ide_1->read((offset >> 4) & 0x1F, size);
         break;
     default:
         if (sub_addr >= 0x60) {
@@ -221,17 +213,15 @@ void HeathrowIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int 
     case 0x15: // SWIM3
         this->swim3->write((offset >> 4) & 0xF, value);
         break;
-    case 0x16:
+    case 0x16: // VIA-CUDA
     case 0x17:
         this->viacuda->write((offset - 0x16000) >> 9, value);
         break;
-    case 0x20:
-        LOG_F(0, "Write IDE 0 - offset=0x%X", offset);
-        this->ide_0->write((offset >> 4) & 0x1F, value);
+    case 0x20: // IDE O
+        this->ide_0->write((offset >> 4) & 0x1F, value, size);
         break;
-    case 0x21:
-        LOG_F(0, "Write IDE 1 - offset=0x%X", offset);
-        this->ide_1->write((offset >> 4) & 0x1F, value);
+    case 0x21: // IDE 1
+        this->ide_1->write((offset >> 4) & 0x1F, value, size);
         break;
     default:
         if (sub_addr >= 0x60) {
@@ -409,7 +399,7 @@ void HeathrowIC::clear_cpu_int()
 }
 
 static const vector<string> Heathrow_Subdevices = {
-    "NVRAM", "ViaCuda", "Mesh", "Escc", "Swim3", "AtaNullDevice"};
+    "NVRAM", "ViaCuda", "Mesh", "Escc", "Swim3", "Ide0", "Ide1"};
 
 static const DeviceDescription Heathrow_Descriptor = {
     HeathrowIC::create, Heathrow_Subdevices, {}

@@ -21,18 +21,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Heathrow hard drive controller */
 
-#include <devices/common/ata/ata_full.h>
+#include <devices/common/ata/atabasedevice.h>
+#include <devices/common/ata/atadefs.h>
 #include <devices/deviceregistry.h>
-#include <fstream>
-#include <limits>
 #include <loguru.hpp>
-#include <stdio.h>
+
+#include <cinttypes>
 
 #define sector_size 512
 
 using namespace std;
 
-AtaFullDevice::AtaFullDevice() {
+AtaBaseDevice::AtaBaseDevice(const std::string name)
+{
+    this->set_name(name);
     supports_types(HWCompType::IDE_DEV);
 
     regs[IDE_Reg::ERROR]      = IDE_Error::ANMF;
@@ -42,19 +44,8 @@ AtaFullDevice::AtaFullDevice() {
     regs[IDE_Reg::ALT_STATUS] = IDE_Status::DRDY | IDE_Status::DSC;
 }
 
-void AtaFullDevice::insert_image(std::string filename) {
-    this->ide_img.open(filename, ios::out | ios::in | ios::binary);
-
-    // Taken from:
-    // https://stackoverflow.com/questions/22984956/tellg-function-give-wrong-size-of-file/22986486
-    ide_img.ignore(std::numeric_limits<std::streamsize>::max());
-    img_size = this->ide_img.gcount();
-    ide_img.clear();    //  Since ignore will have set eof.
-    ide_img.seekg(0, std::ios_base::beg);
-}
-
-uint32_t AtaFullDevice::read(int reg) {
-    switch (reg) {
+uint16_t AtaBaseDevice::read(const uint8_t reg_addr) {
+    switch (reg_addr) {
     case IDE_Reg::IDE_DATA:
         LOG_F(0, "Retrieving DATA from IDE: %x", regs[IDE_Reg::IDE_DATA]);
         return regs[IDE_Reg::IDE_DATA];
@@ -77,13 +68,13 @@ uint32_t AtaFullDevice::read(int reg) {
     case IDE_Reg::TIME_CONFIG:
         return regs[IDE_Reg::TIME_CONFIG];
     default:
-        LOG_F(WARNING, "Attempted to read unknown IDE register: %x", reg);
-        return 0x0;
+        LOG_F(WARNING, "Attempted to read unknown IDE register: %x", reg_addr);
+        return 0;
     }
 }
 
-void AtaFullDevice::write(int reg, uint32_t value) {
-    switch (reg) {
+void AtaBaseDevice::write(const uint8_t reg_addr, const uint16_t value) {
+    switch (reg_addr) {
     case IDE_Reg::IDE_DATA:
         regs[IDE_Reg::IDE_DATA] = value;
         break;
@@ -108,7 +99,7 @@ void AtaFullDevice::write(int reg, uint32_t value) {
     case IDE_Reg::COMMAND:
         regs[IDE_Reg::COMMAND] = value;
         LOG_F(0, "Executing COMMAND for IDE: %x", value);
-        perform_command(value);
+        perform_command();
         break;
     case IDE_Reg::DEV_CTRL:
         regs[IDE_Reg::DEV_CTRL] = value;
@@ -117,28 +108,6 @@ void AtaFullDevice::write(int reg, uint32_t value) {
         regs[IDE_Reg::TIME_CONFIG] = value;
         break;
     default:
-        LOG_F(WARNING, "Attempted to write unknown IDE register: %x", reg);
+        LOG_F(WARNING, "Attempted to write unknown IDE register: %x", reg_addr);
     }
 }
-
-int AtaFullDevice::perform_command(uint32_t command) {
-    switch (command) {
-    case IDE_Cmd::READ_SECTOR:
-        LOG_F(WARNING, "Trying to read sector with: %x", command);
-        break;
-    case IDE_Cmd::WRITE_SECTOR:
-        LOG_F(WARNING, "Trying to write sector with: %x", command);
-        break;
-    default:
-        LOG_F(WARNING, "Attempted to execute IDE command: %x", command);
-    }
-
-    return 0;
-}
-
-
-static const DeviceDescription ATA_Full_Descriptor = {
-    AtaFullDevice::create, {}, {}
-};
-
-REGISTER_DEVICE(AtaFullDevice, ATA_Full_Descriptor);

@@ -19,21 +19,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/** @file ATA hard drive support */
+/** @file ATA interface definitions. */
 
-#ifndef IDEDEVICE_H
-#define IDEDEVICE_H
+#ifndef ATA_INTERFACE_H
+#define ATA_INTERFACE_H
 
-#include <devices/common/hwcomponent.h>
 #include <cinttypes>
-#include <fstream>
-#include <memory>
-#include <stdio.h>
-#include <string>
-
-#define SEC_SIZE 512
-
-using namespace std;
 
 /** IDE register offsets. */
 enum IDE_Reg : int {
@@ -53,8 +44,8 @@ enum IDE_Reg : int {
 };
 
 /** Status Register Bits */
-enum IDE_Status : int { 
-    ERR  = 0x1, 
+enum IDE_Status : int {
+    ERR  = 0x1,
     IDX  = 0x2,
     CORR = 0x4,
     DRQ  = 0x8,
@@ -92,13 +83,31 @@ enum IDE_Cmd : int {
     WRITE_DMA       = 0xCA,
 };
 
-class AtaBus : public HWComponent {
+/** Interface for ATA devices. */
+class AtaInterface {
 public:
-    AtaBus();
-    ~AtaBus() = default;
-
-    void connect_msg();
-    void pass_msg();
+    AtaInterface() = default;
+    virtual ~AtaInterface() = default;
+    virtual uint16_t read(const uint8_t reg_addr) = 0;
+    virtual void write(const uint8_t reg_addr, const uint16_t val) = 0;
 };
 
-#endif
+/** Dummy ATA device. */
+class AtaNullDevice : public AtaInterface {
+public:
+    AtaNullDevice() = default;
+    ~AtaNullDevice() = default;
+
+    uint16_t read(const uint8_t reg_addr) {
+        // return all one's except DD7 if no device is present
+        // DD7 corresponds to the BSY bit of the status register
+        // The host should have a pull-down resistor on DD7
+        // to prevent the software from waiting for a long time
+        // for empty slots
+        return 0xFF7FU;
+    };
+
+    void write(const uint8_t reg_addr, const uint16_t val) {};
+};
+
+#endif // ATA_INTERFACE_H

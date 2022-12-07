@@ -19,32 +19,29 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/** @file Null ATA device */
+/** @file Base class for ATA devices. */
 
-#include <devices/common/ata/ata_bus.h>
+#ifndef ATA_BASE_DEVICE_H
+#define ATA_BASE_DEVICE_H
 
-#define SEC_SIZE 512
+#include <devices/common/ata/atadefs.h>
+#include <devices/common/hwcomponent.h>
 
-#ifndef ATA_NULL_H
-#define ATA_NULL_H
+#include <cinttypes>
 
-class AtaNullDevice : public AtaBus {
+class AtaBaseDevice : public HWComponent, public AtaInterface
+{
 public:
-    AtaNullDevice();
-    ~AtaNullDevice() = default;
+    AtaBaseDevice(const std::string name);
+    ~AtaBaseDevice() = default;
 
-    static std::unique_ptr<HWComponent> create() {
-        return std::unique_ptr<AtaNullDevice>(new AtaNullDevice());
-    }
+    uint16_t read(const uint8_t reg_addr);
+    void write(const uint8_t reg_addr, const uint16_t value);
 
-    int process_command(uint32_t cmd);
-
-    uint32_t read(int reg);
-    void write(int reg, uint32_t value);
+    virtual int perform_command() = 0;
 
 private:
-    uint32_t regs[33] = {0x0};
-    uint8_t buffer[SEC_SIZE];
+    uint8_t regs[33] = {};
 };
 
-#endif
+#endif // ATA_BASE_DEVICE_H

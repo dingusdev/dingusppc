@@ -19,37 +19,39 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/** @file Full ATA device */
+/** @file IDE Channel (aka IDE port) definitions. */
 
-#include <devices/common/ata/ata_bus.h>
+#ifndef IDE_CHANNEL_H
+#define IDE_CHANNEL_H
 
-#define SEC_SIZE 512
+#include <devices/common/ata/atadefs.h>
+#include <devices/common/hwcomponent.h>
 
-#ifndef ATA_FULL_H
-#define ATA_FULL_H
+#include <cinttypes>
+#include <memory>
+#include <string>
 
-class AtaFullDevice : public AtaBus {
-    public:
-    AtaFullDevice();
-    ~AtaFullDevice() = default;
+class IdeChannel : public HWComponent
+{
+public:
+    IdeChannel(const std::string name);
+    ~IdeChannel() = default;
 
-    static std::unique_ptr<HWComponent> create() {
-        return std::unique_ptr<AtaFullDevice>(new AtaFullDevice());
+    static std::unique_ptr<HWComponent> create_first() {
+        return std::unique_ptr<IdeChannel>(new IdeChannel("IDEO"));
     }
 
-    void insert_image(std::string filename);
-    uint32_t read(int reg);
-    void write(int reg, uint32_t value);
+    static std::unique_ptr<HWComponent> create_second() {
+        return std::unique_ptr<IdeChannel>(new IdeChannel("IDE1"));
+    }
 
-    int perform_command(uint32_t command);
-    void get_status();
+    uint16_t read(const uint8_t reg_addr, const int size);
+    void write(const uint8_t reg_addr, const uint16_t val, const int size);
 
-    private:
-    uint32_t regs[33] = {0x0};
-    uint8_t buffer[SEC_SIZE];
-    std::fstream ide_img;
-    uint64_t img_size;
+private:
+    int cur_dev = 0;
+
+    std::unique_ptr<AtaInterface>   devices[2];
 };
 
-
-#endif
+#endif // IDE_CHANNEL_H
