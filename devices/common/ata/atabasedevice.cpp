@@ -37,36 +37,44 @@ AtaBaseDevice::AtaBaseDevice(const std::string name)
     this->set_name(name);
     supports_types(HWCompType::IDE_DEV);
 
-    regs[IDE_Reg::ERROR]      = IDE_Error::ANMF;
-    regs[IDE_Reg::SEC_COUNT]  = 0x1;
-    regs[IDE_Reg::SEC_NUM]    = 0x1;
-    regs[IDE_Reg::STATUS]     = IDE_Status::DRDY | IDE_Status::DSC;
-    regs[IDE_Reg::ALT_STATUS] = IDE_Status::DRDY | IDE_Status::DSC;
+    device_reset();
+}
+
+void AtaBaseDevice::device_reset()
+{
+    this->r_error = 1; // Device 0 passed, Device 1 passed or not present
+
+    this->r_sect_count = 1;
+    this->r_sect_num   = 1;
+
+    // set ATA protocol signature
+    this->r_cylinder_lo = 0;
+    this->r_cylinder_hi = 0;
+    this->r_status = IDE_Status::DRDY | IDE_Status::DSC;
 }
 
 uint16_t AtaBaseDevice::read(const uint8_t reg_addr) {
     switch (reg_addr) {
     case IDE_Reg::IDE_DATA:
-        LOG_F(0, "Retrieving DATA from IDE: %x", regs[IDE_Reg::IDE_DATA]);
-        return regs[IDE_Reg::IDE_DATA];
+        LOG_F(WARNING, "Retrieving data from %s", this->name.c_str());
+        return 0xFFFFU;
     case IDE_Reg::ERROR:
-        return regs[IDE_Reg::ERROR];
+        return this->r_error;
     case IDE_Reg::SEC_COUNT:
-        return regs[IDE_Reg::SEC_COUNT];
+        return this->r_sect_count;
     case IDE_Reg::SEC_NUM:
-        return regs[IDE_Reg::SEC_NUM];
+        return this->r_sect_num;
     case IDE_Reg::CYL_LOW:
-        return regs[IDE_Reg::CYL_LOW];
+        return this->r_cylinder_lo;
     case IDE_Reg::CYL_HIGH:
-        return regs[IDE_Reg::CYL_HIGH];
-    case IDE_Reg::DRIVE_HEAD:
-        return regs[IDE_Reg::DRIVE_HEAD];
+        return this->r_cylinder_hi;
+    case IDE_Reg::DEVICE_HEAD:
+        return this->r_dev_head;
     case IDE_Reg::STATUS:
-        return regs[IDE_Reg::STATUS];
+        // TODO: clear pending interrupt
+        return this->r_status;
     case IDE_Reg::ALT_STATUS:
-        return regs[IDE_Reg::ALT_STATUS];
-    case IDE_Reg::TIME_CONFIG:
-        return regs[IDE_Reg::TIME_CONFIG];
+        return this->r_status;
     default:
         LOG_F(WARNING, "Attempted to read unknown IDE register: %x", reg_addr);
         return 0;
@@ -76,36 +84,34 @@ uint16_t AtaBaseDevice::read(const uint8_t reg_addr) {
 void AtaBaseDevice::write(const uint8_t reg_addr, const uint16_t value) {
     switch (reg_addr) {
     case IDE_Reg::IDE_DATA:
-        regs[IDE_Reg::IDE_DATA] = value;
+        LOG_F(WARNING, "Pushing data to %s", this->name.c_str());
         break;
     case IDE_Reg::FEATURES:
-        regs[IDE_Reg::FEATURES] = value;
+        this->r_features = value;
         break;
     case IDE_Reg::SEC_COUNT:
-        regs[IDE_Reg::SEC_COUNT] = value;
+        this->r_sect_count = value;
         break;
     case IDE_Reg::SEC_NUM:
-        regs[IDE_Reg::SEC_NUM] = value;
+        this->r_sect_num = value;
         break;
     case IDE_Reg::CYL_LOW:
-        regs[IDE_Reg::CYL_LOW] = value;
+        this->r_cylinder_lo = value;
         break;
     case IDE_Reg::CYL_HIGH:
-        regs[IDE_Reg::CYL_HIGH] = value;
+        this->r_cylinder_hi = value;
         break;
-    case IDE_Reg::DRIVE_HEAD:
-        regs[IDE_Reg::DRIVE_HEAD] = value;
+    case IDE_Reg::DEVICE_HEAD:
+        this->r_dev_head = value;
         break;
     case IDE_Reg::COMMAND:
-        regs[IDE_Reg::COMMAND] = value;
-        LOG_F(0, "Executing COMMAND for IDE: %x", value);
-        perform_command();
+        this->r_command = value;
+        if (is_selected()) {
+            perform_command();
+        }
         break;
     case IDE_Reg::DEV_CTRL:
-        regs[IDE_Reg::DEV_CTRL] = value;
-        break;
-    case IDE_Reg::TIME_CONFIG:
-        regs[IDE_Reg::TIME_CONFIG] = value;
+        this->r_dev_ctrl = value;
         break;
     default:
         LOG_F(WARNING, "Attempted to write unknown IDE register: %x", reg_addr);

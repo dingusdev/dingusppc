@@ -30,6 +30,6 @@ AtaHardDisk::AtaHardDisk() : AtaBaseDevice("ATA-HD")
 
 int AtaHardDisk::perform_command()
 {
-    LOG_F(INFO, "%s: command 0x%x requested", this->name.c_str(), regs[IDE_Reg::COMMAND]);
+    LOG_F(INFO, "%s: command 0x%x requested", this->name.c_str(), this->r_command);
     return -1;
 }

@@ -40,8 +40,25 @@ public:
 
     virtual int perform_command() = 0;
 
+    void device_reset();
+
+private:
+    bool is_selected() { return ((this->r_dev_head >> 4) & 1) == this->my_dev_id; };
+
 protected:
-    uint8_t regs[33] = {};
+    uint8_t my_dev_id = 0; // my IDE device ID configured by the host
+
+    // IDE aka task file registers
+    uint8_t r_error;
+    uint8_t r_features;
+    uint8_t r_sect_count;
+    uint8_t r_sect_num;
+    uint8_t r_cylinder_lo;
+    uint8_t r_cylinder_hi;
+    uint8_t r_dev_head;
+    uint8_t r_command;
+    uint8_t r_status;
+    uint8_t r_dev_ctrl;
 };
 
 #endif // ATA_BASE_DEVICE_H

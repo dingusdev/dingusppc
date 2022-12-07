@@ -35,7 +35,7 @@ enum IDE_Reg : int {
     SEC_NUM     = 0x3,    // sector number
     CYL_LOW     = 0x4,    // cylinder low
     CYL_HIGH    = 0x5,    // cylinder high
-    DRIVE_HEAD  = 0x6,    // drive/head
+    DEVICE_HEAD = 0x6,    // device/head
     STATUS      = 0x7,    // status (read)
     COMMAND     = 0x7,    // command (write)
     ALT_STATUS  = 0x16,   // alt status (read)

@@ -52,7 +52,7 @@ uint16_t IdeChannel::read(const uint8_t reg_addr, const int size)
 void IdeChannel::write(const uint8_t reg_addr, const uint16_t val, const int size)
 {
     // keep track of the currently selected device
-    if (reg_addr == IDE_Reg::DRIVE_HEAD) {
+    if (reg_addr == IDE_Reg::DEVICE_HEAD) {
         this->cur_dev = (val >> 4) & 1;
     }
 
