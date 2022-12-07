@@ -19,29 +19,20 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/** @file Base class for ATA devices. */
+/** @file TA hard disk definitions. */
 
-#ifndef ATA_BASE_DEVICE_H
-#define ATA_BASE_DEVICE_H
+#ifndef ATA_HARD_DISK_H
+#define ATA_HARD_DISK_H
 
-#include <devices/common/ata/atadefs.h>
-#include <devices/common/hwcomponent.h>
+#include <devices/common/ata/atabasedevice.h>
 
-#include <cinttypes>
-
-class AtaBaseDevice : public HWComponent, public AtaInterface
+class AtaHardDisk : public AtaBaseDevice
 {
 public:
-    AtaBaseDevice(const std::string name);
-    ~AtaBaseDevice() = default;
+    AtaHardDisk();
+    ~AtaHardDisk() = default;
 
-    uint16_t read(const uint8_t reg_addr);
-    void write(const uint8_t reg_addr, const uint16_t value);
-
-    virtual int perform_command() = 0;
-
-protected:
-    uint8_t regs[33] = {};
+    int perform_command();
 };
 
-#endif // ATA_BASE_DEVICE_H
+#endif // ATA_HARD_DISK_H

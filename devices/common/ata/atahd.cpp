@@ -19,29 +19,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/** @file Base class for ATA devices. */
+/** @file ATA hard disk emulation. */
 
-#ifndef ATA_BASE_DEVICE_H
-#define ATA_BASE_DEVICE_H
+#include <devices/common/ata/atahd.h>
+#include <loguru.hpp>
 
-#include <devices/common/ata/atadefs.h>
-#include <devices/common/hwcomponent.h>
-
-#include <cinttypes>
-
-class AtaBaseDevice : public HWComponent, public AtaInterface
+AtaHardDisk::AtaHardDisk() : AtaBaseDevice("ATA-HD")
 {
-public:
-    AtaBaseDevice(const std::string name);
-    ~AtaBaseDevice() = default;
+}
 
-    uint16_t read(const uint8_t reg_addr);
-    void write(const uint8_t reg_addr, const uint16_t value);
-
-    virtual int perform_command() = 0;
-
-protected:
-    uint8_t regs[33] = {};
-};
-
-#endif // ATA_BASE_DEVICE_H
+int AtaHardDisk::perform_command()
+{
+    LOG_F(INFO, "%s: command 0x%x requested", this->name.c_str(), regs[IDE_Reg::COMMAND]);
+    return -1;
+}
