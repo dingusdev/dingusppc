@@ -47,6 +47,7 @@ public:
 
     uint16_t read(const uint8_t reg_addr, const int size);
     void write(const uint8_t reg_addr, const uint16_t val, const int size);
+    //void talk_to_channel(std::string name)
 
 private:
     int cur_dev = 0;

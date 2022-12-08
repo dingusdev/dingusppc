@@ -69,20 +69,38 @@ enum IDE_Error : int {
     BBK    = 0x80
 };
 
-/** ATA commands. */
+/* ATA Signals */
+enum IDE_Signal : int { 
+    PDIAG = 0x22, 
+    DASP = 0x27 
+};
+
+/* ATA commands. */
 enum IDE_Cmd : int {
-    NOP             = 0x00,
-    RESET_ATAPI     = 0x08,
-    RECALIBRATE     = 0x10,
-    READ_SECTOR     = 0x20,
-    READ_LONG       = 0x22,
-    WRITE_SECTOR    = 0x30,
-    WRITE_LONG      = 0x32,
-    WRITE_VERIFY    = 0x40,
-    FORMAT_TRACKS   = 0x50,
-    DIAGNOSTICS     = 0x90,
-    READ_DMA        = 0xC8,
-    WRITE_DMA       = 0xCA,
+    NOP              = 0x00,
+    RESET_ATAPI      = 0x08,
+    RECALIBRATE      = 0x10,
+    READ_SECTOR      = 0x20,
+    READ_SECTOR_NR   = 0x21,
+    READ_LONG        = 0x22,
+    READ_SECTOR_EXT  = 0x24,
+    WRITE_SECTOR     = 0x30,
+    WRITE_SECTOR_NR  = 0x21,
+    WRITE_LONG       = 0x32,
+    READ_VERIFY      = 0x40,
+    FORMAT_TRACKS    = 0x50,
+    IDE_SEEK         = 0x70,
+    DIAGNOSTICS      = 0x90,
+    INIT_DEV_PARAM   = 0x91,
+    PACKET           = 0xA0,
+    IDFY_PKT_DEV     = 0xA1,
+    READ_MULTIPLE    = 0xC4,
+    WRITE_MULTIPLE   = 0xC5,
+    READ_DMA         = 0xC8,
+    WRITE_DMA        = 0xCA,
+    WRITE_BUFFER_DMA = 0xE9,
+    READ_BUFFER_DMA  = 0xEB,
+    IDENTIFY_DEVICE  = 0xEC,
 };
 
 }; // namespace ata_interface
