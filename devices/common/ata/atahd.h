@@ -25,6 +25,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define ATA_HARD_DISK_H
 
 #include <devices/common/ata/atabasedevice.h>
+#include <string>
+#include <fstream>
 
 class AtaHardDisk : public AtaBaseDevice
 {
@@ -32,7 +34,13 @@ public:
     AtaHardDisk();
     ~AtaHardDisk() = default;
 
+    void insert_image(std::string filename);
     int perform_command();
+
+private:
+    std::fstream hdd_img;
+    uint64_t img_size;
+    char * buffer = new char[1 <<17];
 };
 
 #endif // ATA_HARD_DISK_H

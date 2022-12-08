@@ -46,21 +46,35 @@ IdeChannel::IdeChannel(const std::string name)
     this->devices[1] = std::unique_ptr<AtaNullDevice>(new AtaNullDevice());
 }
 
-uint16_t IdeChannel::read(const uint8_t reg_addr, const int size)
+uint32_t IdeChannel::read(const uint8_t reg_addr, const int size)
 {
-    return this->devices[this->cur_dev]->read(reg_addr);
+    if (reg_addr == IDE_Reg::TIME_CONFIG) {
+        if (size != 4) {
+            LOG_F(WARNING, "%s: non-DWORD read from the channel config", this->name.c_str());
+        }
+        return this->ch_config;
+    } else {
+        return this->devices[this->cur_dev]->read(reg_addr);
+    }
 }
 
-void IdeChannel::write(const uint8_t reg_addr, const uint16_t val, const int size)
+void IdeChannel::write(const uint8_t reg_addr, const uint32_t val, const int size)
 {
-    // keep track of the currently selected device
-    if (reg_addr == IDE_Reg::DEVICE_HEAD) {
-        this->cur_dev = (val >> 4) & 1;
-    }
+    if (reg_addr == IDE_Reg::TIME_CONFIG) {
+        if (size != 4) {
+            LOG_F(WARNING, "%s: non-DWORD write to the channel config", this->name.c_str());
+        }
+        this->ch_config = val;
+    } else {
+        // keep track of the currently selected device
+        if (reg_addr == IDE_Reg::DEVICE_HEAD) {
+            this->cur_dev = (val >> 4) & 1;
+        }
 
-    // redirect register writes to both devices
-    for (auto& dev : this->devices) {
-        dev->write(reg_addr, val);
+        // redirect register writes to both devices
+        for (auto& dev : this->devices) {
+            dev->write(reg_addr, val);
+        }
     }
 }
 

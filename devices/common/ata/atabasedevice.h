@@ -40,6 +40,8 @@ public:
 
     virtual int perform_command() = 0;
 
+    int get_device_id() { return this->my_dev_id; };
+
     void device_reset();
 
 private:

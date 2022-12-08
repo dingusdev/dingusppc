@@ -111,6 +111,10 @@ void AtaBaseDevice::write(const uint8_t reg_addr, const uint16_t value) {
         }
         break;
     case IDE_Reg::DEV_CTRL:
+        if (!(this->r_dev_ctrl & ATA_CTRL_SRST) && (value & ATA_CTRL_SRST)) {
+            LOG_F(INFO, "%s: soft reset triggered", this->name.c_str());
+            this->r_status |= IDE_Status::BSY;
+        }
         this->r_dev_ctrl = value;
         break;
     default:
