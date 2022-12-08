@@ -26,9 +26,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 
-/** IDE register offsets. */
+namespace ata_interface {
+
+/** ATA register offsets. */
 enum IDE_Reg : int {
-    IDE_DATA    = 0x0,
+    DATA        = 0x0,
     ERROR       = 0x1,    // error (read)
     FEATURES    = 0x1,    // features (write)
     SEC_COUNT   = 0x2,    // sector count
@@ -67,9 +69,9 @@ enum IDE_Error : int {
     BBK    = 0x80
 };
 
-/** Heath IDE commands. */
+/** ATA commands. */
 enum IDE_Cmd : int {
-    IDE_NOP         = 0x00,
+    NOP             = 0x00,
     RESET_ATAPI     = 0x08,
     RECALIBRATE     = 0x10,
     READ_SECTOR     = 0x20,
@@ -82,6 +84,8 @@ enum IDE_Cmd : int {
     READ_DMA        = 0xC8,
     WRITE_DMA       = 0xCA,
 };
+
+}; // namespace ata_interface
 
 /** Interface for ATA devices. */
 class AtaInterface {

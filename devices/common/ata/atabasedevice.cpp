@@ -28,9 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 
-#define sector_size 512
-
-using namespace std;
+using namespace ata_interface;
 
 AtaBaseDevice::AtaBaseDevice(const std::string name)
 {
@@ -46,16 +44,18 @@ void AtaBaseDevice::device_reset()
 
     this->r_sect_count = 1;
     this->r_sect_num   = 1;
+    this->r_dev_ctrl   = 0;
 
     // set ATA protocol signature
     this->r_cylinder_lo = 0;
     this->r_cylinder_hi = 0;
+    this->r_dev_head    = 0; // TODO: ATAPI devices shouldn't change this reg!
     this->r_status = IDE_Status::DRDY | IDE_Status::DSC;
 }
 
 uint16_t AtaBaseDevice::read(const uint8_t reg_addr) {
     switch (reg_addr) {
-    case IDE_Reg::IDE_DATA:
+    case IDE_Reg::DATA:
         LOG_F(WARNING, "Retrieving data from %s", this->name.c_str());
         return 0xFFFFU;
     case IDE_Reg::ERROR:
@@ -83,7 +83,7 @@ uint16_t AtaBaseDevice::read(const uint8_t reg_addr) {
 
 void AtaBaseDevice::write(const uint8_t reg_addr, const uint16_t value) {
     switch (reg_addr) {
-    case IDE_Reg::IDE_DATA:
+    case IDE_Reg::DATA:
         LOG_F(WARNING, "Pushing data to %s", this->name.c_str());
         break;
     case IDE_Reg::FEATURES:
@@ -106,7 +106,7 @@ void AtaBaseDevice::write(const uint8_t reg_addr, const uint16_t value) {
         break;
     case IDE_Reg::COMMAND:
         this->r_command = value;
-        if (is_selected()) {
+        if (is_selected() || this->r_command == IDE_Cmd::DIAGNOSTICS) {
             perform_command();
         }
         break;

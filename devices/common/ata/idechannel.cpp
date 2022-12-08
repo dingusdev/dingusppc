@@ -35,6 +35,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memory>
 #include <string>
 
+using namespace ata_interface;
+
 IdeChannel::IdeChannel(const std::string name)
 {
     this->set_name(name);
