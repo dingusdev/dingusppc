@@ -69,23 +69,13 @@ enum IDE_Error : int {
     BBK    = 0x80
 };
 
-<<<<<<< HEAD
 /** Bit definition for the device control register. */
 enum {
     ATA_CTRL_nIEN = 1 << 1,
     ATA_CTRL_SRST = 1 << 2,
 };
 
-/** ATA commands. */
-=======
-/* ATA Signals */
-enum IDE_Signal : int { 
-    PDIAG = 0x22, 
-    DASP = 0x27 
-};
-
 /* ATA commands. */
->>>>>>> 1e9ec5d... Start ATA command support
 enum IDE_Cmd : int {
     NOP              = 0x00,
     RESET_ATAPI      = 0x08,

@@ -45,14 +45,8 @@ public:
         return std::unique_ptr<IdeChannel>(new IdeChannel("IDE1"));
     }
 
-<<<<<<< HEAD
     uint32_t read(const uint8_t reg_addr, const int size);
     void write(const uint8_t reg_addr, const uint32_t val, const int size);
-=======
-    uint16_t read(const uint8_t reg_addr, const int size);
-    void write(const uint8_t reg_addr, const uint16_t val, const int size);
-    //void talk_to_channel(std::string name)
->>>>>>> 1e9ec5d... Start ATA command support
 
 private:
     int         cur_dev = 0;
