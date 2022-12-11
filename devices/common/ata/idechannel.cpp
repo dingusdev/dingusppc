@@ -48,7 +48,7 @@ IdeChannel::IdeChannel(const std::string name)
 
 uint32_t IdeChannel::read(const uint8_t reg_addr, const int size)
 {
-    if (reg_addr == IDE_Reg::TIME_CONFIG) {
+    if (reg_addr == TIME_CONFIG) {
         if (size != 4) {
             LOG_F(WARNING, "%s: non-DWORD read from the channel config", this->name.c_str());
         }
@@ -60,14 +60,14 @@ uint32_t IdeChannel::read(const uint8_t reg_addr, const int size)
 
 void IdeChannel::write(const uint8_t reg_addr, const uint32_t val, const int size)
 {
-    if (reg_addr == IDE_Reg::TIME_CONFIG) {
+    if (reg_addr == TIME_CONFIG) {
         if (size != 4) {
             LOG_F(WARNING, "%s: non-DWORD write to the channel config", this->name.c_str());
         }
         this->ch_config = val;
     } else {
         // keep track of the currently selected device
-        if (reg_addr == IDE_Reg::DEVICE_HEAD) {
+        if (reg_addr == DEVICE_HEAD) {
             this->cur_dev = (val >> 4) & 1;
         }
 

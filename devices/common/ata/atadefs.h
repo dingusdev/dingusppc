@@ -29,7 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace ata_interface {
 
 /** ATA register offsets. */
-enum IDE_Reg : int {
+enum ATA_Reg : int {
     DATA        = 0x0,
     ERROR       = 0x1,    // error (read)
     FEATURES    = 0x1,    // features (write)
@@ -46,7 +46,7 @@ enum IDE_Reg : int {
 };
 
 /** Status register bits. */
-enum IDE_Status : int {
+enum ATA_Status : int {
     ERR  = 0x1,
     IDX  = 0x2,
     CORR = 0x4,
@@ -58,25 +58,26 @@ enum IDE_Status : int {
 };
 
 /** Error register bits. */
-enum IDE_Error : int {
-    ANMF   = 0x1,
-    TK0NF  = 0x2,
-    ABRT   = 0x4,
+enum ATA_Error : int {
+    ANMF   = 0x1,   //no address mark
+    TK0NF  = 0x2,   //track 0 not found
+    ABRT   = 0x4,   //abort command
     MCR    = 0x8,
-    IDNF   = 0x10,
-    MC     = 0x20,
+    IDNF   = 0x10,  //id mark not found
+    MC     = 0x20,  //media change request
     UNC    = 0x40,
-    BBK    = 0x80
+    BBK    = 0x80  //bad block
 };
 
 /** Bit definition for the device control register. */
-enum {
-    ATA_CTRL_nIEN = 1 << 1,
-    ATA_CTRL_SRST = 1 << 2,
+enum ATA_CTRL : int{
+    IEN    = 0x2,
+    SRST   = 0x4,
+    HOB    = 0x80,
 };
 
 /* ATA commands. */
-enum IDE_Cmd : int {
+enum ATA_Cmd : int {
     NOP              = 0x00,
     RESET_ATAPI      = 0x08,
     RECALIBRATE      = 0x10,
@@ -85,7 +86,7 @@ enum IDE_Cmd : int {
     READ_LONG        = 0x22,
     READ_SECTOR_EXT  = 0x24,
     WRITE_SECTOR     = 0x30,
-    WRITE_SECTOR_NR  = 0x21,
+    WRITE_SECTOR_NR  = 0x31,
     WRITE_LONG       = 0x32,
     READ_VERIFY      = 0x40,
     FORMAT_TRACKS    = 0x50,

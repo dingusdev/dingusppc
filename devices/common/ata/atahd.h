@@ -41,6 +41,10 @@ private:
     std::fstream hdd_img;
     uint64_t img_size;
     char * buffer = new char[1 <<17];
+
+    char* ide_hd_id = {
+        0x0
+    };
 };
 
 #endif // ATA_HARD_DISK_H

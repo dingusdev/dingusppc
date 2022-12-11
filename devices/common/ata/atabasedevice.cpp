@@ -50,30 +50,30 @@ void AtaBaseDevice::device_reset()
     this->r_cylinder_lo = 0;
     this->r_cylinder_hi = 0;
     this->r_dev_head    = 0; // TODO: ATAPI devices shouldn't change this reg!
-    this->r_status = IDE_Status::DRDY | IDE_Status::DSC;
+    this->r_status = DRDY | DSC;
 }
 
 uint16_t AtaBaseDevice::read(const uint8_t reg_addr) {
     switch (reg_addr) {
-    case IDE_Reg::DATA:
+    case ATA_Reg::DATA:
         LOG_F(WARNING, "Retrieving data from %s", this->name.c_str());
         return 0xFFFFU;
-    case IDE_Reg::ERROR:
+    case ATA_Reg::ERROR:
         return this->r_error;
-    case IDE_Reg::SEC_COUNT:
+    case ATA_Reg::SEC_COUNT:
         return this->r_sect_count;
-    case IDE_Reg::SEC_NUM:
+    case ATA_Reg::SEC_NUM:
         return this->r_sect_num;
-    case IDE_Reg::CYL_LOW:
+    case ATA_Reg::CYL_LOW:
         return this->r_cylinder_lo;
-    case IDE_Reg::CYL_HIGH:
+    case ATA_Reg::CYL_HIGH:
         return this->r_cylinder_hi;
-    case IDE_Reg::DEVICE_HEAD:
+    case ATA_Reg::DEVICE_HEAD:
         return this->r_dev_head;
-    case IDE_Reg::STATUS:
+    case ATA_Reg::STATUS:
         // TODO: clear pending interrupt
         return this->r_status;
-    case IDE_Reg::ALT_STATUS:
+    case ATA_Reg::ALT_STATUS:
         return this->r_status;
     default:
         LOG_F(WARNING, "Attempted to read unknown IDE register: %x", reg_addr);
@@ -83,37 +83,37 @@ uint16_t AtaBaseDevice::read(const uint8_t reg_addr) {
 
 void AtaBaseDevice::write(const uint8_t reg_addr, const uint16_t value) {
     switch (reg_addr) {
-    case IDE_Reg::DATA:
+    case ATA_Reg::DATA:
         LOG_F(WARNING, "Pushing data to %s", this->name.c_str());
         break;
-    case IDE_Reg::FEATURES:
+    case ATA_Reg::FEATURES:
         this->r_features = value;
         break;
-    case IDE_Reg::SEC_COUNT:
+    case ATA_Reg::SEC_COUNT:
         this->r_sect_count = value;
         break;
-    case IDE_Reg::SEC_NUM:
+    case ATA_Reg::SEC_NUM:
         this->r_sect_num = value;
         break;
-    case IDE_Reg::CYL_LOW:
+    case ATA_Reg::CYL_LOW:
         this->r_cylinder_lo = value;
         break;
-    case IDE_Reg::CYL_HIGH:
+    case ATA_Reg::CYL_HIGH:
         this->r_cylinder_hi = value;
         break;
-    case IDE_Reg::DEVICE_HEAD:
+    case ATA_Reg::DEVICE_HEAD:
         this->r_dev_head = value;
         break;
-    case IDE_Reg::COMMAND:
+    case ATA_Reg::COMMAND:
         this->r_command = value;
-        if (is_selected() || this->r_command == IDE_Cmd::DIAGNOSTICS) {
+        if (is_selected() || this->r_command == DIAGNOSTICS) {
             perform_command();
         }
         break;
-    case IDE_Reg::DEV_CTRL:
-        if (!(this->r_dev_ctrl & ATA_CTRL_SRST) && (value & ATA_CTRL_SRST)) {
+    case ATA_Reg::DEV_CTRL:
+        if (!(this->r_dev_ctrl & SRST) && (value & SRST)) {
             LOG_F(INFO, "%s: soft reset triggered", this->name.c_str());
-            this->r_status |= IDE_Status::BSY;
+            this->r_status |= BSY;
         }
         this->r_dev_ctrl = value;
         break;
