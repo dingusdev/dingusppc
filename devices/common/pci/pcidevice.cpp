@@ -31,6 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 PCIDevice::PCIDevice(std::string name)
 {
+    this->name = name;
     this->pci_name = name;
 
     this->pci_rd_stat       = [this]() { return this->status; };

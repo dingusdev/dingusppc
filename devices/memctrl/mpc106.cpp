@@ -37,8 +37,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 MPC106::MPC106() : MemCtrlBase(), PCIDevice("Grackle"), PCIHost()
 {
-    this->name = "Grackle";
-
     supports_types(HWCompType::MEM_CTRL | HWCompType::MMIO_DEV |
                    HWCompType::PCI_HOST | HWCompType::PCI_DEV);
 

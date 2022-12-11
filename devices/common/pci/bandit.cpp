@@ -298,6 +298,8 @@ void Bandit::verbose_address_space()
 
 Chaos::Chaos(std::string name) : PCIHost()
 {
+    this->name = name;
+
     supports_types(HWCompType::PCI_HOST);
 
     MemCtrlBase *mem_ctrl = dynamic_cast<MemCtrlBase *>
@@ -308,8 +310,6 @@ Chaos::Chaos(std::string name) : PCIHost()
     // base_addr +  0x800000 --> CONFIG_ADDR
     // base_addr +  0xC00000 --> CONFIG_DATA
     mem_ctrl->add_mmio_region(0xF0000000UL, 0x01000000, this);
-
-    this->name = name;
 }
 
 uint32_t Chaos::read(uint32_t rgn_start, uint32_t offset, int size)

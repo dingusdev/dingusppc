@@ -102,7 +102,6 @@ public:
     void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size);
 
 private:
-    std::string name;
     uint32_t    config_addr;
 };
 

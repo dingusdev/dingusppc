@@ -104,8 +104,6 @@ protected:
     void change_bus_phase(int initiator_id);
 
 private:
-    std::string name;
-
     // SCSI devices registered with this bus
     std::array<ScsiDevice*, SCSI_MAX_DEVS> devices;
 
