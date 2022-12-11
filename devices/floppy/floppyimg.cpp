@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -93,15 +93,15 @@ int RawFloppyImg::calc_phys_params()
     this->img_size = img_file.tellg();
     img_file.seekg(0, img_file.beg);
 
+    img_file.close();
+
     // verify image size
     if (this->img_size < 5*BLOCK_SIZE) {
-        img_file.close();
         LOG_F(ERROR, "RawFloppyImg: image too short!");
         return -1;
     }
 
     if (this->img_size > MFM_HD_SIZE) {
-        img_file.close();
         LOG_F(ERROR, "RawFloppyImg: image too big!");
         return -1;
     }
@@ -194,9 +194,100 @@ int RawFloppyImg::export_data()
     return 0;
 }
 
+// ====================== DISK COPY 4.2 IMAGE CONVERTER ======================
+DiskCopy42Img::DiskCopy42Img(std::string& file_path) : FloppyImgConverter()
+{
+    this->img_path = file_path;
+}
+
+int DiskCopy42Img::calc_phys_params() {
+    std::ifstream img_file;
+
+    img_file.open(img_path, std::ios::in | std::ios::binary);
+    if (img_file.fail()) {
+        img_file.close();
+        LOG_F(ERROR, "DiskCopy42Img: could not open specified floppy image!");
+        return -1;
+    }
+
+    // determine image size
+    img_file.seekg(0, img_file.end);
+    this->img_size = img_file.tellg();
+    img_file.seekg(0, img_file.beg);
+
+    // get data size from image
+    uint8_t buf[4];
+    img_file.seekg(0x40, img_file.beg);
+    img_file.read((char *)&buf, 4);
+    this->data_size = READ_DWORD_BE_U(buf);
+
+    if (this->data_size > this->img_size) {
+        img_file.close();
+        LOG_F(ERROR, "DiskCopy42Img: invalid data size %d", this->data_size);
+        return -1;
+    }
+
+    uint8_t disk_format = 0xFFU;
+
+    img_file.seekg(0x50, img_file.beg);
+    img_file.read((char *)&disk_format, 1);
+    img_file.read((char *)&this->format_byte, 1);
+
+    img_file.close();
+
+    this->density = 0; // assume double density by default
+
+    this->num_tracks = 80;
+
+    switch (disk_format) {
+    case 0:
+    case 1:
+        this->rec_method  = 0; // GCR
+        this->num_sectors = 800;
+        break;
+    case 2:
+        this->rec_method  = 1; // MFM
+        this->num_sectors = 1440;
+        break;
+    case 3:
+        this->rec_method  = 1; // MFM
+        this->density     = 1; // report high density
+        this->num_sectors = 2880;
+        break;
+    default:
+        LOG_F(ERROR, "DiskCopy42Img: invalid disk format %X", disk_format);
+        return -1;
+    }
+
+    this->num_sides = ((this->format_byte >> 5) & 1) + 1;
+
+    return 0;
+}
+
+int DiskCopy42Img::get_raw_disk_data(char* buf) {
+    std::ifstream img_file;
+
+    img_file.open(img_path, std::ios::in | std::ios::binary);
+    if (img_file.fail()) {
+        img_file.close();
+        LOG_F(ERROR, "DiskCopy42Img: could not open specified floppy image!");
+        return -1;
+    }
+
+    img_file.seekg(0x54, img_file.beg);
+    img_file.read(buf, this->data_size);
+    img_file.close();
+
+    return 0;
+}
+
+int DiskCopy42Img::export_data(void) {
+    return 0;
+}
+
 FloppyImgConverter* open_floppy_image(std::string& img_path)
 {
-    FloppyImgConverter *fconv;
+    FloppyImgConverter *fconv =  nullptr;
 
     std::ifstream img_file;
 
@@ -218,6 +309,7 @@ FloppyImgConverter* open_floppy_image(std::string& img_path)
         break;
     case FlopImgType::DC42:
         LOG_F(INFO, "Disk Copy 4.2 image");
+        fconv = new DiskCopy42Img(img_path);
         break;
     case FlopImgType::WOZ1:
     case FlopImgType::WOZ2:

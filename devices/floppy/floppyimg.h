@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-22 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -76,6 +76,17 @@ class RawFloppyImg : public FloppyImgConverter {
 public:
     RawFloppyImg(std::string& file_path);
     ~RawFloppyImg() = default;
+
+    int calc_phys_params(void);
+    int get_raw_disk_data(char* buf);
+    int export_data(void);
+};
+
+/** Converter for Disk Copy 4.2 images. */
+class DiskCopy42Img : public FloppyImgConverter {
+public:
+    DiskCopy42Img(std::string& file_path);
+    ~DiskCopy42Img() = default;
 
     int calc_phys_params(void);
     int get_raw_disk_data(char* buf);
