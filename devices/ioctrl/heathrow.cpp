@@ -55,6 +55,7 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
     this->cache_ln_sz = 8;
     this->lat_timer   = 0x40;
     this->bars_cfg[0] = 0xFFF80000UL; // declare 512Kb of memory-mapped I/O space
+    this->finish_config_bars();
 
     this->pci_notify_bar_change = [this](int bar_num) {
         this->notify_bar_change(bar_num);

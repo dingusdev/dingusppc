@@ -127,6 +127,7 @@ ATIRage::ATIRage(uint16_t dev_id)
     this->bars_cfg[0] = 0xFF000000UL; // declare main aperture (16MB)
     this->bars_cfg[1] = 0xFFFFFF01UL; // declare I/O region (256 bytes)
     this->bars_cfg[2] = 0xFFFFF000UL; // declare register aperture (4KB)
+    this->finish_config_bars();
 
     this->pci_notify_bar_change = [this](int bar_num) {
         this->notify_bar_change(bar_num);
