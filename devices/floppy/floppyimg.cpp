@@ -238,6 +238,7 @@ int DiskCopy42Img::calc_phys_params() {
     this->density = 0; // assume double density by default
 
     this->num_tracks = 80;
+    this->num_sides  = ((this->format_byte >> 5) & 1) + 1;
 
     switch (disk_format) {
     case 0:
@@ -248,18 +249,18 @@ int DiskCopy42Img::calc_phys_params() {
     case 2:
         this->rec_method  = 1; // MFM
         this->num_sectors = 1440;
+        this->format_byte = 2;
         break;
     case 3:
         this->rec_method  = 1; // MFM
         this->density     = 1; // report high density
         this->num_sectors = 2880;
+        this->format_byte = 2;
         break;
     default:
         LOG_F(ERROR, "DiskCopy42Img: invalid disk format %X", disk_format);
         return -1;
     }
-
-    this->num_sides = ((this->format_byte >> 5) & 1) + 1;
 
     return 0;
 }
