@@ -28,6 +28,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace ata_interface {
 
+/** Device IDs according with the Apple ATA zero/one specification. */
+enum {
+    DEVICE_ID_INVALID   = -1,
+    DEVICE_ID_ZERO      = 0,
+    DEVICE_ID_ONE       = 1
+};
+
 /** ATA register offsets. */
 enum ATA_Reg : int {
     DATA        = 0x0,
@@ -135,7 +142,7 @@ public:
     void write(const uint8_t reg_addr, const uint16_t val) {};
 
     // invalid device ID means no real device is present
-    int get_device_id() { return -1; };
+    int get_device_id() { return ata_interface::DEVICE_ID_INVALID; };
 };
 
 #endif // ATA_INTERFACE_H
