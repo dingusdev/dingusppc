@@ -41,7 +41,7 @@ void AtaHardDisk::insert_image(std::string filename) {
     if (!rc) {
         this->img_size = stat_buf.st_size;
     } else {
-        ABORT_F("ScsiHardDisk: could not determine file size using stat()");
+        ABORT_F("AtaHardDisk: could not determine file size using stat()");
     }
     this->hdd_img.seekg(0, std::ios_base::beg);
 }
@@ -51,7 +51,7 @@ int AtaHardDisk::perform_command()
     LOG_F(INFO, "%s: command 0x%x requested", this->name.c_str(), this->r_command);
     this->r_status |= BSY;
     this->r_status &= ~(DRDY);
-    switch (this->r_command) { 
+    switch (this->r_command) {
         case NOP:
             break;
         case RESET_ATAPI: {

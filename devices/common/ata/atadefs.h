@@ -35,6 +35,13 @@ enum {
     DEVICE_ID_ONE       = 1
 };
 
+/** Device types. */
+enum {
+    DEVICE_TYPE_UNKNOWN = -1,
+    DEVICE_TYPE_ATA     = 0,
+    DEVICE_TYPE_ATAPI   = 1,
+};
+
 /** ATA register offsets. */
 enum ATA_Reg : int {
     DATA        = 0x0,
@@ -49,7 +56,7 @@ enum ATA_Reg : int {
     COMMAND     = 0x7,    // command (write)
     ALT_STATUS  = 0x16,   // alt status (read)
     DEV_CTRL    = 0x16,   // device control (write)
-    TIME_CONFIG = 0x20
+    TIME_CONFIG = 0x20    // Apple ASIC specific timing configuration
 };
 
 /** Status register bits. */

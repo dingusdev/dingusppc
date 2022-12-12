@@ -38,7 +38,7 @@ AtaBaseDevice::AtaBaseDevice(const std::string name)
     device_reset();
 }
 
-void AtaBaseDevice::device_reset()
+void AtaBaseDevice::device_reset(const uint8_t dev_head_val)
 {
     this->r_error = 1; // Device 0 passed, Device 1 passed or not present
 
@@ -46,11 +46,17 @@ void AtaBaseDevice::device_reset()
     this->r_sect_num   = 1;
     this->r_dev_ctrl   = 0;
 
-    // set ATA protocol signature
-    this->r_cylinder_lo = 0;
-    this->r_cylinder_hi = 0;
-    this->r_dev_head    = 0; // TODO: ATAPI devices shouldn't change this reg!
-    this->r_status = DRDY | DSC;
+    // set protocol signature
+    if (this->device_type == DEVICE_TYPE_ATAPI) {
+        this->r_cylinder_lo = 0x14;
+        this->r_cylinder_hi = 0xEB;
+        this->r_dev_head    = dev_head_val;
+    } else { // assume ATA by default
+        this->r_cylinder_lo = 0;
+        this->r_cylinder_hi = 0;
+        this->r_dev_head    = 0;
+        this->r_status = DRDY | DSC;
+    }
 }
 
 uint16_t AtaBaseDevice::read(const uint8_t reg_addr) {

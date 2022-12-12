@@ -42,13 +42,14 @@ public:
 
     int get_device_id() { return this->my_dev_id; };
 
-    void device_reset();
+    void device_reset(const uint8_t dev_head_val = 0);
 
 private:
     bool is_selected() { return ((this->r_dev_head >> 4) & 1) == this->my_dev_id; };
 
 protected:
     uint8_t my_dev_id = 0; // my IDE device ID configured by the host
+    uint8_t device_type = ata_interface::DEVICE_TYPE_UNKNOWN;
 
     // IDE aka task file registers
     uint8_t r_error;
