@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cstring>
 #include <string>
 #include <vector>
+#include <loguru.hpp>
 
 
 MemCtrlBase::~MemCtrlBase() {
@@ -52,12 +53,74 @@ AddressMapEntry* MemCtrlBase::find_range(uint32_t addr) {
 }
 
 
+AddressMapEntry* MemCtrlBase::find_range_exact(uint32_t addr, uint32_t size, MMIODevice* dev_instance) {
+    if (size) {
+        uint32_t end = addr + size - 1;
+        for (auto& entry : address_map) {
+            if (addr == entry->start && end == entry->end && (!dev_instance || dev_instance == entry->devobj) )
+                return entry;
+        }
+    }
+
+    return nullptr;
+}
+
+
+AddressMapEntry* MemCtrlBase::find_range_contains(uint32_t addr, uint32_t size) {
+    if (size) {
+        uint32_t end = addr + size - 1;
+        for (auto& entry : address_map) {
+            if (addr >= entry->start && end <= entry->end)
+                return entry;
+        }
+    }
+
+    return nullptr;
+}
+
+
+AddressMapEntry* MemCtrlBase::find_range_overlaps(uint32_t addr, uint32_t size) {
+    if (size) {
+        uint32_t end = addr + size - 1;
+        for (auto& entry : address_map) {
+            if (end >= entry->start && addr <= entry->end)
+                return entry;
+        }
+    }
+
+    return nullptr;
+}
+
+
+bool MemCtrlBase::is_range_free(uint32_t addr, uint32_t size) {
+    bool result = true;
+    if (size) {
+        uint32_t end = addr + size - 1;
+        for (auto& entry : address_map) {
+            if (addr == entry->start && end == entry->end) {
+                LOG_F(WARNING, "memory region 0x%X..0x%X%s%s%s already exists", addr, end, entry->devobj ? " (" : "", entry->devobj ? entry->devobj->get_name().c_str() : "", entry->devobj ? ")" : "");
+                result = false;
+            }
+            else if (addr >= entry->start && end <= entry->end) {
+                LOG_F(WARNING, "0x%X..0x%X already exists in memory region 0x%X..0x%X%s%s%s", addr, end, entry->start, entry->end, entry->devobj ? " (" : "", entry->devobj ? entry->devobj->get_name().c_str() : "", entry->devobj ? ")" : "");
+                result = false;
+            }
+            else if (end >= entry->start && addr <= entry->end) {
+                LOG_F(ERROR, "0x%X..0x%X overlaps existing memory region 0x%X..0x%X%s%s%s", addr, end, entry->start, entry->end, entry->devobj ? " (" : "", entry->devobj ? entry->devobj->get_name().c_str() : "", entry->devobj ? ")" : "");
+                result = false;
+            }
+        }
+    }
+    return result;
+}
+
+
 bool MemCtrlBase::add_mem_region(
     uint32_t start_addr, uint32_t size, uint32_t dest_addr, uint32_t type, uint8_t init_val = 0) {
     AddressMapEntry *entry;
 
     /* error if a memory region for the given range already exists */
-    if (find_range(start_addr) || find_range(start_addr + size))
+    if (!is_range_free(start_addr, size))
         return false;
 
     uint8_t* reg_content = new uint8_t[size];
@@ -66,14 +129,23 @@ bool MemCtrlBase::add_mem_region(
 
     entry = new AddressMapEntry;
 
+    uint32_t end   = start_addr + size - 1;
     entry->start   = start_addr;
-    entry->end     = start_addr + size - 1;
+    entry->end     = end;
     entry->mirror  = dest_addr;
     entry->type    = type;
     entry->devobj  = 0;
     entry->mem_ptr = reg_content;
 
     this->address_map.push_back(entry);
+
+    LOG_F(INFO, "Added mem region 0x%X..0x%X (%s%s%s%s) -> 0x%X", start_addr, end,
+        entry->type & RT_ROM ? "ROM," : "",
+        entry->type & RT_RAM ? "RAM," : "",
+        entry->type & RT_MMIO ? "MMIO," : "",
+        entry->type & RT_MIRROR ? "MIRROR," : "",
+        dest_addr
+    );
 
     return true;
 }
@@ -98,14 +170,25 @@ bool MemCtrlBase::add_mem_mirror(uint32_t start_addr, uint32_t dest_addr) {
 
     entry = new AddressMapEntry;
 
+    uint32_t end   = start_addr + (ref_entry->end - ref_entry->start);
     entry->start   = start_addr;
-    entry->end     = start_addr + (ref_entry->end - ref_entry->start);
+    entry->end     = end;
     entry->mirror  = dest_addr;
     entry->type    = ref_entry->type | RT_MIRROR;
     entry->devobj  = 0;
     entry->mem_ptr = ref_entry->mem_ptr;
 
     this->address_map.push_back(entry);
+
+    LOG_F(INFO, "Added mem region mirror 0x%X..0x%X (%s%s%s%s) -> 0x%X : 0x%X..0x%X%s%s%s", start_addr, end,
+        entry->type & RT_ROM ? "ROM," : "",
+        entry->type & RT_RAM ? "RAM," : "",
+        entry->type & RT_MMIO ? "MMIO," : "",
+        entry->type & RT_MIRROR ? "MIRROR," : "",
+        dest_addr,
+        ref_entry->start, ref_entry->end,
+        ref_entry->devobj ? " (" : "", ref_entry->devobj ? ref_entry->devobj->get_name().c_str() : "", ref_entry->devobj ? ")" : ""
+    );
 
     return true;
 }
@@ -129,20 +212,23 @@ bool MemCtrlBase::set_data(uint32_t reg_addr, const uint8_t* data, uint32_t size
 bool MemCtrlBase::add_mmio_region(uint32_t start_addr, uint32_t size, MMIODevice* dev_instance) {
     AddressMapEntry *entry;
 
-    /* error if another region for the given range already exists */
-    if (find_range(start_addr) || find_range(start_addr + size - 1))
+    /* error if a memory region for the given range already exists */
+    if (!is_range_free(start_addr, size))
         return false;
 
     entry = new AddressMapEntry;
 
+    uint32_t end   = start_addr + size - 1;
     entry->start   = start_addr;
-    entry->end     = start_addr + size - 1;
+    entry->end     = end;
     entry->mirror  = 0;
     entry->type    = RT_MMIO;
     entry->devobj  = dev_instance;
     entry->mem_ptr = 0;
 
     this->address_map.push_back(entry);
+
+    LOG_F(INFO, "Added mmio region 0x%X..0x%X%s%s%s", start_addr, end, dev_instance ? " (" : "", dev_instance ? dev_instance->get_name().c_str() : "", dev_instance ? ")" : "");
 
     return true;
 }

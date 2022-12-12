@@ -253,7 +253,7 @@ void MPC106::setup_ram() {
     }
 
     if (!this->add_ram_region(0, ram_size)) {
-        LOG_F(ERROR, "MPC106 RAM allocation failed!");
+        LOG_F(WARNING, "MPC106 RAM allocation 0x%X..0x%X failed (maybe already exists?)", 0, ram_size - 1);
     }
 }
 
