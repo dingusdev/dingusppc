@@ -53,6 +53,14 @@ bool PCIHost::pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIDe
     return mem_ctrl->add_mmio_region(start_addr, size, obj);
 }
 
+bool PCIHost::pci_unregister_mmio_region(uint32_t start_addr, uint32_t size, PCIDevice* obj)
+{
+    MemCtrlBase *mem_ctrl = dynamic_cast<MemCtrlBase *>
+                           (gMachineObj->get_comp_by_type(HWCompType::MEM_CTRL));
+    // FIXME: add sanity checks!
+    return mem_ctrl->remove_mmio_region(start_addr, size, obj);
+}
+
 void PCIHost::attach_pci_device(std::string& dev_name, int slot_id)
 {
     if (!DeviceRegistry::device_registered(dev_name)) {

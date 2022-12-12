@@ -68,6 +68,7 @@ public:
     virtual bool add_mem_mirror(uint32_t start_addr, uint32_t dest_addr);
 
     virtual bool add_mmio_region(uint32_t start_addr, uint32_t size, MMIODevice* dev_instance);
+    virtual bool remove_mmio_region(uint32_t start_addr, uint32_t size, MMIODevice* dev_instance);
 
     virtual bool set_data(uint32_t reg_addr, const uint8_t* data, uint32_t size);
 

@@ -233,6 +233,28 @@ bool MemCtrlBase::add_mmio_region(uint32_t start_addr, uint32_t size, MMIODevice
     return true;
 }
 
+bool MemCtrlBase::remove_mmio_region(uint32_t start_addr, uint32_t size, MMIODevice* dev_instance) {
+    int found = 0;
+
+    uint32_t end = start_addr + size - 1;
+    address_map.erase(std::remove_if(address_map.begin(), address_map.end(),
+        [start_addr, end, dev_instance, &found](const AddressMapEntry *entry) {
+            bool result = (start_addr == entry->start && end == entry->end && (!dev_instance || dev_instance == entry->devobj));
+            found += result;
+            return result;
+        }
+    ), address_map.end());
+
+    if (found == 0)
+        LOG_F(ERROR, "Cannot find mmio region 0x%X..0x%X%s%s%s to remove", start_addr, end, dev_instance ? " (" : "", dev_instance ? dev_instance->get_name().c_str() : "", dev_instance ? ")" : "");
+    else if (found > 1)
+        LOG_F(ERROR, "Removed %d occurrences of mmio region 0x%X..0x%X%s%s%s", found, start_addr, end, dev_instance ? " (" : "", dev_instance ? dev_instance->get_name().c_str() : "", dev_instance ? ")" : "");
+    else
+        LOG_F(INFO, "Removed mmio region 0x%X..0x%X%s%s%s", start_addr, end, dev_instance ? " (" : "", dev_instance ? dev_instance->get_name().c_str() : "", dev_instance ? ")" : "");
+    
+    return (found > 0);
+}
+
 AddressMapEntry* MemCtrlBase::find_rom_region()
 {
     for (auto& entry : address_map) {
