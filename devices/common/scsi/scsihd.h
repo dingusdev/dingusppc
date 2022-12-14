@@ -63,9 +63,10 @@ protected:
 private:
     std::fstream    hdd_img;
     uint64_t        img_size;
+    int             total_blocks;
     uint64_t        file_offset = 0;
 
-    char            img_buffer[1 << 17]; // TODO: add proper buffer management!
+    char            img_buffer[1 << 21]; // TODO: add proper buffer management!
 
     uint32_t    cur_buf_cnt = 0;
     uint8_t     error = ScsiError::NO_ERROR;

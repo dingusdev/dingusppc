@@ -22,11 +22,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @file Generic SCSI Hard Disk emulation. */
 
 #include <devices/common/scsi/scsi.h>
-#include <devices/common/scsi/scsi_hd.h>
+#include <devices/common/scsi/scsihd.h>
 #include <devices/deviceregistry.h>
+#include <loguru.hpp>
 #include <machines/machinebase.h>
 #include <machines/machineproperties.h>
-#include <loguru.hpp>
+#include <memaccess.h>
 
 #include <fstream>
 #include <cstring>
@@ -50,6 +51,7 @@ void ScsiHardDisk::insert_image(std::string filename) {
     int rc = stat(filename.c_str(), &stat_buf);
     if (!rc) {
         this->img_size = stat_buf.st_size;
+        this->total_blocks = (this->img_size + HDD_SECTOR_SIZE - 1) / HDD_SECTOR_SIZE;
     } else {
         ABORT_F("ScsiHardDisk: could not determine file size using stat()");
     }
@@ -73,7 +75,8 @@ void ScsiHardDisk::process_command() {
 
     uint8_t* cmd = this->cmd_buf;
 
-    if (cmd[0] != 0 && cmd[0] != 8 && cmd[0] != 0xA && cmd[0] != 0x28 && cmd[0] != 0x2A) {
+    if (cmd[0] != 0 && cmd[0] != 8 && cmd[0] != 0xA && cmd[0] != 0x28
+        && cmd[0] != 0x2A && cmd[0] != 0x25) {
         ABORT_F("SCSI-HD: untested command 0x%X", cmd[0]);
     }
 
@@ -214,16 +217,30 @@ void ScsiHardDisk::mode_sense_6(uint8_t page_code, uint8_t subpage_code, uint8_t
 }
 
 void ScsiHardDisk::read_capacity_10() {
-    uint32_t sec_limit            = (this->img_size >> 9);
+    uint32_t lba = READ_DWORD_BE_U(&this->cmd_buf[2]);
 
-    std::memset(img_buffer, 0, sizeof(img_buffer));
+    if (this->cmd_buf[1] & 1) {
+        ABORT_F("SCSI-HD: RelAdr bit set in READ_CAPACITY_10");
+    }
 
-    img_buffer[0] = (sec_limit >> 24) & 0xFF;
-    img_buffer[1] = (sec_limit >> 16) & 0xFF;
-    img_buffer[2] = (sec_limit >> 8) & 0xFF;
-    img_buffer[3] = sec_limit & 0xFF;
+    if (!(this->cmd_buf[8] & 1) && lba) {
+        LOG_F(ERROR, "SCSI-HD: non-zero LBA for PMI=0");
+        this->status = ScsiStatus::CHECK_CONDITION;
+        this->sense  = ScsiSense::ILLEGAL_REQ;
+        this->switch_phase(ScsiPhase::STATUS);
+        return;
+    }
 
-    img_buffer[6] = 2;
+    uint32_t last_lba = this->total_blocks - 1;
+    uint32_t blk_len  = HDD_SECTOR_SIZE;
+
+    WRITE_DWORD_BE_A(&img_buffer[0], last_lba);
+    WRITE_DWORD_BE_A(&img_buffer[4], blk_len);
+
+    this->cur_buf_cnt = 8;
+    this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;
+
+    this->switch_phase(ScsiPhase::DATA_IN);
 }
 
 

@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <loguru.hpp>
 
 #include <cinttypes>
+#include <cstring>
 
 void ScsiDevice::notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param)
 {

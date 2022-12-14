@@ -83,7 +83,7 @@ private:
     int             bytes_out = 0;
     TrackDescriptor tracks[CDROM_MAX_TRACKS];
 
-    char            data_buf[1 << 16]; // TODO: proper buffer management
+    char            data_buf[1 << 18]; // TODO: proper buffer management
 };
 
 #endif // SCSI_CDROM_H

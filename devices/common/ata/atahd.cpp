@@ -22,6 +22,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @file ATA hard disk emulation. */
 
 #include <devices/common/ata/atahd.h>
+
+#include <cstring>
 #include <sys/stat.h>
 #include <fstream>
 #include <string>
@@ -99,7 +101,7 @@ int AtaHardDisk::perform_command()
         }
         case IDENTIFY_DEVICE: {
             this->r_status |= DRQ;
-            memcpy(buffer, ide_hd_id, 512);
+            std::memcpy(buffer, ide_hd_id, 512);
             this->r_status &= ~(DRQ);
             break;
         }
