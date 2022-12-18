@@ -52,11 +52,15 @@ enum {
 
 class Bandit : public PCIHost, public PCIDevice {
 public:
-    Bandit(int bridge_num, std::string name);
+    Bandit(int bridge_num, std::string name, int dev_id=1, int rev=3);
     ~Bandit() = default;
 
     static std::unique_ptr<HWComponent> create_first() {
         return std::unique_ptr<Bandit>(new Bandit(1, "Bandit-PCI1"));
+    };
+
+    static std::unique_ptr<HWComponent> create_psx_first() {
+        return std::unique_ptr<Bandit>(new Bandit(1, "PSX-PCI1", 8, 0));
     };
 
     uint32_t pci_cfg_read(uint32_t reg_offs, uint32_t size);

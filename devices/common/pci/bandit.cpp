@@ -40,7 +40,8 @@ const int MultiplyDeBruijnBitPosition2[] =
 /** finds the position of the bit that is set */
 #define WHAT_BIT_SET(val) (MultiplyDeBruijnBitPosition2[(uint32_t)(val * 0x077CB531U) >> 27])
 
-Bandit::Bandit(int bridge_num, std::string name) : PCIHost(), PCIDevice(name)
+Bandit::Bandit(int bridge_num, std::string name, int dev_id, int rev)
+    : PCIHost(), PCIDevice(name)
 {
     supports_types(HWCompType::PCI_HOST | HWCompType::PCI_DEV);
 
@@ -72,8 +73,6 @@ Bandit::Bandit(int bridge_num, std::string name) : PCIHost(), PCIDevice(name)
     // that correspond to the 32MB assigned PCI address space of this Bandit.
     // This initialization is implied by the device functionality.
     this->addr_mask = 3 << ((bridge_num & 3) * 2);
-
-    this->name = name;
 }
 
 uint32_t Bandit::pci_cfg_read(uint32_t reg_offs, uint32_t size)
@@ -403,9 +402,14 @@ static const DeviceDescription Bandit1_Descriptor = {
     Bandit::create_first, {}, {}
 };
 
+static const DeviceDescription PsxPci1_Descriptor = {
+    Bandit::create_psx_first, {}, {}
+};
+
 static const DeviceDescription Chaos_Descriptor = {
     Chaos::create, {}, {}
 };
 
 REGISTER_DEVICE(Bandit1, Bandit1_Descriptor);
-REGISTER_DEVICE(Chaos, Chaos_Descriptor);
+REGISTER_DEVICE(PsxPci1, PsxPci1_Descriptor);
+REGISTER_DEVICE(Chaos,   Chaos_Descriptor);
