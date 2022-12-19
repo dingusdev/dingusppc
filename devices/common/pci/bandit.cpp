@@ -73,6 +73,11 @@ Bandit::Bandit(int bridge_num, std::string name, int dev_id, int rev)
     // that correspond to the 32MB assigned PCI address space of this Bandit.
     // This initialization is implied by the device functionality.
     this->addr_mask = 3 << ((bridge_num & 3) * 2);
+
+    // initial PCI number + chip mode: big endian, interrupts & VGA space disabled
+    this->mode_ctrl = ((bridge_num & 3) << 2) | 3;
+
+    this->rd_hold_off_cnt = 8;
 }
 
 uint32_t Bandit::pci_cfg_read(uint32_t reg_offs, uint32_t size)
@@ -84,6 +89,10 @@ uint32_t Bandit::pci_cfg_read(uint32_t reg_offs, uint32_t size)
     switch (reg_offs) {
     case BANDIT_ADDR_MASK:
         return BYTESWAP_32(this->addr_mask);
+    case BANDIT_MODE_SELECT:
+        return BYTESWAP_32(this->mode_ctrl);
+    case BANDIT_ARBUS_RD_HOLD_OFF:
+        return BYTESWAP_32(this->rd_hold_off_cnt);
     default:
         LOG_F(WARNING, "%s: reading from unimplemented config register at 0x%X",
               this->pci_name.c_str(), reg_offs);
@@ -99,10 +108,23 @@ void Bandit::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
         return;
     }
 
+    if (size == 4) {
+        value = BYTESWAP_32(value);
+    } else {
+        LOG_F(WARNING, "%s: non-DWORD writes to the control registers not supported",
+            this->pci_name.c_str());
+    }
+
     switch (reg_offs) {
     case BANDIT_ADDR_MASK:
-        this->addr_mask = BYTESWAP_32(value);
+        this->addr_mask = value;
         this->verbose_address_space();
+        break;
+    case BANDIT_MODE_SELECT:
+        this->mode_ctrl = value;
+        break;
+    case BANDIT_ARBUS_RD_HOLD_OFF:
+        this->rd_hold_off_cnt =  value & 0x1F;
         break;
     default:
         LOG_F(WARNING, "%s: writing to unimplemented config register at 0x%X",
@@ -250,6 +272,10 @@ void Bandit::verbose_address_space()
 {
     uint32_t mask;
     int bit_pos;
+
+    if (!this->addr_mask) {
+        return;
+    }
 
     LOG_F(INFO, "%s address spaces:", this->pci_name.c_str());
 

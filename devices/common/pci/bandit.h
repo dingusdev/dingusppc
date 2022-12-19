@@ -44,7 +44,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** Bandit specific configuration registers. */
 enum {
-    BANDIT_ADDR_MASK = 0x48,
+    BANDIT_ADDR_MASK            = 0x48,
+    BANDIT_MODE_SELECT          = 0x50,
+    BANDIT_ARBUS_RD_HOLD_OFF    = 0x58,
 };
 
 /** checks if one bit is set at time, return 0 if not */
@@ -77,6 +79,8 @@ private:
     uint32_t    base_addr;
     uint32_t    config_addr;
     uint32_t    addr_mask;
+    uint32_t    mode_ctrl; // controls various chip modes/features
+    uint32_t    rd_hold_off_cnt;
 };
 
 /** Chaos is a custom ARBus-to-PCI bridge that provides a specialized
