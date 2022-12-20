@@ -878,7 +878,7 @@ static void mpc601_bat_update(uint32_t bat_reg)
         dbat_entry->valid = false;
     }
 
-    // MPC601 has unified BATs so we're going to fush both ITLB and DTLB
+    // MPC601 has unified BATs so we're going to flush both ITLB and DTLB
     if (!gTLBFlushBatEntries) {
         gTLBFlushBatEntries = true;
         add_ctx_sync_action(&tlb_flush_bat_entries<TLBType::ITLB>);
@@ -894,21 +894,19 @@ static void ppc_ibat_update(uint32_t bat_reg)
 
     upper_reg_num = bat_reg & 0xFFFFFFFE;
 
-    if (ppc_state.spr[upper_reg_num] & 3) {    // is that BAT pair valid?
-        bat_entry = &ibat_array[(bat_reg - 528) >> 1];
-        bl        = (ppc_state.spr[upper_reg_num] >> 2) & 0x7FF;
-        hi_mask   = ~((bl << 17) | 0x1FFFF);
+    bat_entry = &ibat_array[(bat_reg - 528) >> 1];
+    bl        = (ppc_state.spr[upper_reg_num] >> 2) & 0x7FF;
+    hi_mask   = ~((bl << 17) | 0x1FFFF);
 
-        bat_entry->access  = ppc_state.spr[upper_reg_num] & 3;
-        bat_entry->prot    = ppc_state.spr[upper_reg_num + 1] & 3;
-        bat_entry->hi_mask = hi_mask;
-        bat_entry->phys_hi = ppc_state.spr[upper_reg_num + 1] & hi_mask;
-        bat_entry->bepi    = ppc_state.spr[upper_reg_num] & hi_mask;
+    bat_entry->access  = ppc_state.spr[upper_reg_num] & 3;
+    bat_entry->prot    = ppc_state.spr[upper_reg_num + 1] & 3;
+    bat_entry->hi_mask = hi_mask;
+    bat_entry->phys_hi = ppc_state.spr[upper_reg_num + 1] & hi_mask;
+    bat_entry->bepi    = ppc_state.spr[upper_reg_num] & hi_mask;
 
-        if (!gTLBFlushBatEntries) {
-            gTLBFlushBatEntries = true;
-            add_ctx_sync_action(&tlb_flush_bat_entries<TLBType::ITLB>);
-        }
+    if (!gTLBFlushBatEntries) {
+        gTLBFlushBatEntries = true;
+        add_ctx_sync_action(&tlb_flush_bat_entries<TLBType::ITLB>);
     }
 }
 
@@ -920,22 +918,21 @@ static void ppc_dbat_update(uint32_t bat_reg)
 
     upper_reg_num = bat_reg & 0xFFFFFFFE;
 
-    if (ppc_state.spr[upper_reg_num] & 3) {    // is that BAT pair valid?
-        bat_entry = &dbat_array[(bat_reg - 536) >> 1];
-        bl        = (ppc_state.spr[upper_reg_num] >> 2) & 0x7FF;
-        hi_mask   = ~((bl << 17) | 0x1FFFF);
+    bat_entry = &dbat_array[(bat_reg - 536) >> 1];
+    bl        = (ppc_state.spr[upper_reg_num] >> 2) & 0x7FF;
+    hi_mask   = ~((bl << 17) | 0x1FFFF);
 
-        bat_entry->access  = ppc_state.spr[upper_reg_num] & 3;
-        bat_entry->prot    = ppc_state.spr[upper_reg_num + 1] & 3;
-        bat_entry->hi_mask = hi_mask;
-        bat_entry->phys_hi = ppc_state.spr[upper_reg_num + 1] & hi_mask;
-        bat_entry->bepi    = ppc_state.spr[upper_reg_num] & hi_mask;
+    bat_entry->access  = ppc_state.spr[upper_reg_num] & 3;
+    bat_entry->prot    = ppc_state.spr[upper_reg_num + 1] & 3;
+    bat_entry->hi_mask = hi_mask;
+    bat_entry->phys_hi = ppc_state.spr[upper_reg_num + 1] & hi_mask;
+    bat_entry->bepi    = ppc_state.spr[upper_reg_num] & hi_mask;
 
-        if (!gTLBFlushBatEntries) {
-            gTLBFlushBatEntries = true;
-            add_ctx_sync_action(&tlb_flush_bat_entries<TLBType::DTLB>);
-        }
+    if (!gTLBFlushBatEntries) {
+        gTLBFlushBatEntries = true;
+        add_ctx_sync_action(&tlb_flush_bat_entries<TLBType::DTLB>);
     }
+
 }
 
 void mmu_pat_ctx_changed()
