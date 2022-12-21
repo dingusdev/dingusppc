@@ -29,3 +29,6 @@ build
 build-*
 *.dir
 *.user
+DerivedData
+*.xcodeproj/project.xcworkspace
+*.xcodeproj/xcuserdata
