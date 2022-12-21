@@ -92,7 +92,6 @@ uint8_t EsccController::read(uint8_t reg_offset)
         } else {
             return this->ch_a->read_reg(this->reg_ptr);
         }
-        this->reg_ptr = 0;
         break;
     case EsccReg::Port_B_Data:
         return this->ch_b->receive_byte();
