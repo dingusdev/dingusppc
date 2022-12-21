@@ -66,7 +66,7 @@ int MPC106::device_postinit()
     for (auto& slot : pci_slots) {
         pci_dev_name = GET_STR_PROP(slot.first);
         if (!pci_dev_name.empty()) {
-            this->attach_pci_device(pci_dev_name, slot.second);
+            this->attach_pci_device(pci_dev_name, slot.second, std::string("@") + slot.first);
         }
     }
     return 0;
