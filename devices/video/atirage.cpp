@@ -557,7 +557,7 @@ void ATIRage::crtc_enable() {
 void ATIRage::draw_hw_cursor(uint8_t *dst_buf, int dst_pitch) {
     uint8_t *src_buf, *src_row, *dst_row, px4;
 
-    int horz_offset = READ_DWORD_LE_A(&this->mm_regs[ATI_CUR_HORZ_VERT_OFF]) & 0x3F;
+    // int horz_offset = READ_DWORD_LE_A(&this->mm_regs[ATI_CUR_HORZ_VERT_OFF]) & 0x3F;
     int vert_offset = (READ_DWORD_LE_A(&this->mm_regs[ATI_CUR_HORZ_VERT_OFF]) >> 16) & 0x3F;
 
     src_buf = &this->vram_ptr[(READ_DWORD_LE_A(&this->mm_regs[ATI_CUR_OFFSET]) * 8)];

@@ -336,7 +336,6 @@ void CharIoSocket::rcv_disable()
 bool CharIoSocket::rcv_char_available()
 {
     static int consecutivechars = 0;
-    static int count = 0;
 
     if (consecutivechars >= 15) {
         consecutivechars++;

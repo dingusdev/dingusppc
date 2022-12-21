@@ -1082,8 +1082,8 @@ inline void mmu_write_vmem(uint32_t guest_va, T value)
         }
         if (!(tlb1_entry->flags & TLBFlags::PTE_SET_C)) {
             // perform full page address translation to update PTE.C bit
-            PATResult pat_res = page_address_translation(guest_va, false,
-                                                         !!(ppc_state.msr & 0x4000), true);
+            page_address_translation(guest_va, false,
+                                     !!(ppc_state.msr & 0x4000), true);
             tlb1_entry->flags |= TLBFlags::PTE_SET_C;
 
             // don't forget to update the secondary TLB as well
@@ -1121,8 +1121,8 @@ inline void mmu_write_vmem(uint32_t guest_va, T value)
 
         if (!(tlb2_entry->flags & TLBFlags::PTE_SET_C)) {
             // perform full page address translation to update PTE.C bit
-            PATResult pat_res = page_address_translation(guest_va, false,
-                                                         !!(ppc_state.msr & 0x4000), true);
+            page_address_translation(guest_va, false,
+                                     !!(ppc_state.msr & 0x4000), true);
             tlb2_entry->flags |= TLBFlags::PTE_SET_C;
         }
 
