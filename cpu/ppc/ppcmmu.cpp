@@ -125,11 +125,11 @@ static BATResult mpc601_block_address_translation(uint32_t la)
 
             // logical to physical translation
             pa = bat_entry->phys_hi | (la & ~bat_entry->hi_mask);
-            break;
+            return BATResult{bat_hit, prot, pa};
         }
     }
 
-    return BATResult{bat_hit, prot, pa};
+    return BATResult{bat_hit, 0, 0};
 }
 
 /** PowerPC-style block address translation. */
@@ -742,6 +742,7 @@ void tlb_flush_entry(uint32_t ea)
             tlb1 = &dtlb1_mode2[0];
             tlb2 = &dtlb2_mode2[0];
             break;
+        default:
         case 5:
             tlb1 = &dtlb1_mode3[0];
             tlb2 = &dtlb2_mode3[0];
