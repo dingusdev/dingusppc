@@ -729,7 +729,7 @@ void dppc_interpreter::ppc_srawi() {
 /** mask generator for rotate and shift instructions (§ 4.2.1.4 PowerpC PEM) */
 static inline uint32_t rot_mask(unsigned rot_mb, unsigned rot_me) {
     uint32_t m1 = 0xFFFFFFFFUL >> rot_mb;
-    uint32_t m2 = 0xFFFFFFFFUL << (31 - rot_me);
+    uint32_t m2 = (uint32_t)(0xFFFFFFFFUL << (31 - rot_me));
     return ((rot_mb <= rot_me) ? m2 & m1 : m1 | m2);
 }
 
@@ -861,11 +861,11 @@ static inline void calc_rtcl_value()
     uint64_t new_ts = get_virt_time_ns();
     uint64_t rtc_l = new_ts - rtc_timestamp + rtc_lo;
     if (rtc_l >= ONE_BILLION_NS) { // check RTCL overflow
-        rtc_hi += rtc_l / ONE_BILLION_NS;
+        rtc_hi += (uint32_t)(rtc_l / ONE_BILLION_NS);
         rtc_lo  = rtc_l % ONE_BILLION_NS;
     }
     else {
-        rtc_lo = rtc_l;
+        rtc_lo = (uint32_t)rtc_l;
     }
     rtc_timestamp = new_ts;
 }

@@ -1007,7 +1007,7 @@ inline T mmu_read_vmem(uint32_t guest_va)
             // perform full address translation and refill the secondary TLB
             tlb2_entry = dtlb2_refill(guest_va, 0);
             if (tlb2_entry->flags & PAGE_NOPHYS) {
-                return UnmappedVal;
+                return (T)UnmappedVal;
             }
         }
 #ifdef TLB_PROFILING

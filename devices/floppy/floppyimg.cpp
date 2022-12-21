@@ -90,7 +90,12 @@ int RawFloppyImg::calc_phys_params()
 
     // determine image size
     img_file.seekg(0, img_file.end);
-    this->img_size = img_file.tellg();
+    size_t img_size = img_file.tellg();
+    if (img_size > 2*1024*1024) {
+        LOG_F(ERROR, "RawFloppyImg: image size is too large to determine disk format from image size!");
+        return -1;
+    }
+    this->img_size = (int)img_size;
     img_file.seekg(0, img_file.beg);
 
     img_file.close();
@@ -212,7 +217,7 @@ int DiskCopy42Img::calc_phys_params() {
 
     // determine image size
     img_file.seekg(0, img_file.end);
-    this->img_size = img_file.tellg();
+    size_t img_size = img_file.tellg();
     img_file.seekg(0, img_file.beg);
 
     // get data size from image
@@ -221,11 +226,12 @@ int DiskCopy42Img::calc_phys_params() {
     img_file.read((char *)&buf, 4);
     this->data_size = READ_DWORD_BE_U(buf);
 
-    if (this->data_size > this->img_size) {
+    if (this->data_size > img_size) {
         img_file.close();
         LOG_F(ERROR, "DiskCopy42Img: invalid data size %d", this->data_size);
         return -1;
     }
+    this->img_size = (int)img_size;
 
     uint8_t disk_format = 0xFFU;
 

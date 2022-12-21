@@ -73,7 +73,7 @@ bool StrProperty::check_val(std::string str)
 uint32_t IntProperty::get_int()
 {
     try {
-        uint32_t result = strtoul(this->get_string().c_str(), 0, 0);
+        uint32_t result = (uint32_t)strtoul(this->get_string().c_str(), 0, 0);
 
         /* perform value check */
         if (!this->check_val(result)) {

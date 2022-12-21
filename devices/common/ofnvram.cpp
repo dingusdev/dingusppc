@@ -39,7 +39,7 @@ using namespace std;
 
 static uint32_t str2env(string& num_str) {
     try {
-        return stoul(num_str, NULL, 0);
+        return (uint32_t)stoul(num_str, NULL, 0);
     } catch (invalid_argument& exc) {
         try {
             string num_str2 = string("0x") + num_str;

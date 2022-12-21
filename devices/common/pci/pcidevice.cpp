@@ -189,7 +189,10 @@ int PCIDevice::attach_exp_rom_image(const std::string img_path)
 
         // determine image size
         img_file.seekg(0, std::ios::end);
-        uint32_t exp_rom_image_size = img_file.tellg();
+        size_t exp_rom_image_size = img_file.tellg();
+        if (exp_rom_image_size > 4*1024*1024) {
+            throw std::runtime_error("expansion ROM file too large");
+        }
 
         // verify PCI struct offset
         uint16_t pci_struct_offset = 0;
@@ -223,7 +226,7 @@ int PCIDevice::attach_exp_rom_image(const std::string img_path)
         }
         else {
             LOG_F(WARNING, "%s: loaded expansion rom (%d bytes adjusted to %d bytes).",
-            this->pci_name.c_str(), exp_rom_image_size, this->exp_rom_size);
+            this->pci_name.c_str(), (int)exp_rom_image_size, this->exp_rom_size);
         }
 
         this->exp_bar_cfg  = ~(this->exp_rom_size - 1);

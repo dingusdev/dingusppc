@@ -269,7 +269,8 @@ void MachineFactory::set_machine_settings(map<string, string> &settings) {
 
 string MachineFactory::machine_name_from_rom(string& rom_filepath) {
     ifstream rom_file;
-    uint32_t file_size, config_info_offset, rom_id;
+    size_t file_size;
+    uint32_t config_info_offset, rom_id;
     char rom_id_str[17];
 
     string machine_name = "";
@@ -354,7 +355,7 @@ int MachineFactory::load_boot_rom(string& rom_filepath) {
             gMachineObj->get_comp_by_type(HWCompType::MEM_CTRL));
 
         if ((rom_reg = mem_ctrl->find_rom_region())) {
-            mem_ctrl->set_data(rom_reg->start, sysrom_mem, file_size);
+            mem_ctrl->set_data(rom_reg->start, sysrom_mem, (uint32_t)file_size);
         } else {
             ABORT_F("Could not locate physical ROM region!");
         }
