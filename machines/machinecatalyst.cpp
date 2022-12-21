@@ -36,6 +36,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 int initialize_catalyst(std::string& id)
 {
+    LOG_F(INFO, "Building machine catalyst");
+
     PlatinumCtrl* platinum_obj;
 
     PCIHost *pci_host = dynamic_cast<PCIHost*>(gMachineObj->get_comp_by_name("Bandit1"));

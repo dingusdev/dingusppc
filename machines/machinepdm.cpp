@@ -38,6 +38,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 int initialize_pdm(std::string& id)
 {
+    LOG_F(INFO, "Building machine pdm");
+
     uint16_t machine_id;
 
     // get raw pointer to HMC object
