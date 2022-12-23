@@ -109,11 +109,12 @@ enum SPR : int {
 
 /** symbolic names for common PPC processors */
 enum PPC_VER : uint32_t {
-    MPC601  = 0x00010001,
-    MPC603  = 0x00030001,
-    MPC604  = 0x00040001,
-    MPC603E = 0x00060101,
-    MPC750  = 0x00080200
+    MPC601      = 0x00010001,
+    MPC603      = 0x00030001,
+    MPC604      = 0x00040001,
+    MPC603E     = 0x00060101,
+    MPC603EV    = 0x00070101,
+    MPC750      = 0x00080200
 };
 
 /**
