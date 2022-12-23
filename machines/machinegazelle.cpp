@@ -61,7 +61,7 @@ int initialize_gazelle(std::string& id)
         return -1;
     }
 
-    // plug 8MB RAM DIMM into slot #0
+    // plug 32MB RAM DIMM into slot #0
     psx_obj->insert_ram_dimm(0, DRAM_CAP_32MB);
 
     // allocate and map physical RAM
@@ -74,6 +74,7 @@ int initialize_gazelle(std::string& id)
     // init virtual CPU and request MPC603ev
     ppc_cpu_init(psx_obj, PPC_VER::MPC603EV, timebase_freq);
 
+    // CPU frequency is hardcoded to 225 MHz for now
     ppc_state.spr[SPR::HID1] = get_cpu_pll_value(225000000) << 28;
 
     return 0;
