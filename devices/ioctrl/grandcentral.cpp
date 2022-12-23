@@ -35,7 +35,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
 {
-    supports_types(HWCompType::MMIO_DEV | HWCompType::INT_CTRL);
+    supports_types(HWCompType::MMIO_DEV | HWCompType::PCI_DEV | HWCompType::INT_CTRL);
 
     // populate my PCI config header
     this->vendor_id   = PCI_VENDOR_APPLE;

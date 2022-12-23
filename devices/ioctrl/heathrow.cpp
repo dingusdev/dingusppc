@@ -46,7 +46,7 @@ using namespace std;
 
 HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
 {
-    supports_types(HWCompType::MMIO_DEV | HWCompType::INT_CTRL);
+    supports_types(HWCompType::MMIO_DEV | HWCompType::PCI_DEV | HWCompType::INT_CTRL);
 
     // populate my PCI config header
     this->vendor_id   = PCI_VENDOR_APPLE;
@@ -111,7 +111,6 @@ uint32_t HeathrowIC::dma_read(uint32_t offset, int size) {
         return this->floppy_dma->reg_read(offset & 0xFF, size);
     case 8:
         return this->snd_out_dma->reg_read(offset & 0xFF, size);
-        break;
     default:
         LOG_F(WARNING, "Unsupported DMA channel read, offset=0x%X", offset);
     }
@@ -242,12 +241,12 @@ uint32_t HeathrowIC::mio_ctrl_read(uint32_t offset, int size) {
     case MIO_INT_LEVELS1:
         res = this->int_levels1;
         break;
-    case MIO_HEAT_ID:
+    case MIO_OHARE_ID:
         LOG_F(9, "read from MIO:ID register at Address %x", ppc_state.pc);
         res = (this->fp_id << 24) | (this->mon_id << 16) | (this->mb_id << 8) |
               (this->cpu_id | (this->emmo_pin << 4));
         break;
-    case MIO_HEAT_FEAT_CTRL:
+    case MIO_OHARE_FEAT_CTRL:
         LOG_F(9, "read from MIO:Feat_Ctrl register");
         res = this->feat_ctrl;
         break;
@@ -285,10 +284,10 @@ void HeathrowIC::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
             this->int_events1 &= BYTESWAP_32(value);
         }
         break;
-    case MIO_HEAT_ID:
+    case MIO_OHARE_ID:
         LOG_F(WARNING, "Attempted to write %x to MIO:ID at %x; Address : %x", value, offset, ppc_state.pc);
         break;
-    case MIO_HEAT_FEAT_CTRL:
+    case MIO_OHARE_FEAT_CTRL:
         this->feature_control(BYTESWAP_32(value));
         break;
     case 0x3C:

@@ -144,6 +144,49 @@ private:
     std::unique_ptr<DMAChannel>     floppy_dma;
 };
 
+class OHare : public PCIDevice, public InterruptCtrl {
+public:
+    OHare();
+    ~OHare() = default;
+
+    static std::unique_ptr<HWComponent> create() {
+        return std::unique_ptr<OHare>(new OHare());
+    }
+
+    // MMIO device methods
+    uint32_t read(uint32_t rgn_start, uint32_t offset, int size);
+    void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size);
+
+    // InterruptCtrl methods
+    uint32_t register_dev_int(IntSrc src_id);
+    uint32_t register_dma_int(IntSrc src_id);
+    void ack_int(uint32_t irq_id, uint8_t irq_line_state);
+    void ack_dma_int(uint32_t irq_id, uint8_t irq_line_state);
+
+protected:
+    void notify_bar_change(int bar_num);
+    uint32_t read_ctrl(uint32_t offset, int size);
+    void write_ctrl(uint32_t offset, uint32_t value, int size);
+    uint32_t dma_read(uint32_t offset, int size);
+    void dma_write(uint32_t offset, uint32_t value, int size);
+
+private:
+    uint32_t    base_addr = 0;
+
+    // interrupt state
+    uint32_t    int_mask      = 0;
+    uint32_t    int_levels    = 0;
+    uint32_t    int_events    = 0;
+    bool        cpu_int_latch = false;
+
+    std::unique_ptr<AwacsScreamer>  awacs; // AWACS audio codec instance
+    std::unique_ptr<DMAChannel>     snd_out_dma;
+
+    NVram*              nvram;   // NVRAM module
+    ViaCuda*            viacuda; // VIA cell with Cuda MCU attached to it
+    EsccController*     escc;    // ESCC serial controller
+};
+
 /**
     Heathrow ASIC emulation
 
@@ -168,10 +211,10 @@ private:
     VIA-CUDA       register space: 0x00016000, size: 0x00002000
 */
 
-/** Heathrow specific registers. */
+/** O'Hare/Heathrow specific registers. */
 enum {
-    MIO_HEAT_ID         = 0x34, // IDs register
-    MIO_HEAT_FEAT_CTRL  = 0x38, // feature control register
+    MIO_OHARE_ID        = 0x34, // IDs register
+    MIO_OHARE_FEAT_CTRL = 0x38, // feature control register
 };
 
 class HeathrowIC : public PCIDevice, public InterruptCtrl {
