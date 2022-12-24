@@ -35,7 +35,7 @@ PsxCtrl::PsxCtrl(int bridge_num, std::string name)
     // add MMIO region for the PSX control registers
     add_mmio_region(0xF8000000, 0x70, this);
 
-    this->sys_id     = 0x30040000; // TODO: use correct value here!
+    this->sys_id     = 0x10000000;
     this->chip_rev   = 0; // old PSX, what's about PSX+?
     this->sys_config = PSX_BUS_SPEED_50;
 }
