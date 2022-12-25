@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 #include <fstream>
+#include <cstring>
 #include <string>
 
 PCIDevice::PCIDevice(std::string name)
