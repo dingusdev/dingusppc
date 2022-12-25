@@ -32,7 +32,7 @@ TimerManager* TimerManager::timer_manager;
 uint32_t TimerManager::add_oneshot_timer(uint64_t timeout, timer_cb cb)
 {
     if (!timeout || timeout <= MIN_TIMEOUT_NS) {
-        LOG_F(WARNING, "One-shot timer too short, timeout=%llu ns", timeout);
+        LOG_F(WARNING, "One-shot timer too short, timeout=%llu ns", (long long unsigned)timeout);
     }
 
     TimerInfo* ti = new TimerInfo;
@@ -58,7 +58,7 @@ uint32_t TimerManager::add_oneshot_timer(uint64_t timeout, timer_cb cb)
 uint32_t TimerManager::add_cyclic_timer(uint64_t interval, timer_cb cb)
 {
     if (!interval || interval <= MIN_TIMEOUT_NS) {
-        LOG_F(WARNING, "Cyclic timer interval too short, timeout=%llu ns", interval);
+        LOG_F(WARNING, "Cyclic timer interval too short, timeout=%llu ns", (long long unsigned)interval);
     }
 
     TimerInfo* ti = new TimerInfo;

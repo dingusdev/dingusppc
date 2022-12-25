@@ -968,7 +968,7 @@ void mmu_print_regs()
         }
     }
 
-    LOG_F(INFO, "");
+    LOG_F(INFO, "%s", "");
     LOG_F(INFO, "SDR1 = 0x%X", ppc_state.spr[SPR::SDR1]);
     LOG_F(INFO, "Segment registers:");
 

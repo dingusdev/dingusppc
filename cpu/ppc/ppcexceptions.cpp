@@ -100,7 +100,7 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
         break;
 
     default:
-        ABORT_F("Unknown exception occured: %X\n", exception_type);
+        ABORT_F("Unknown exception occured: %X\n", (unsigned)exception_type);
         break;
     }
 
