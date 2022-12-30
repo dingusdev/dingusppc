@@ -24,9 +24,6 @@ option(DPPC_BUILD_BENCHMARKS "Build benchmarking programs" OFF)
 option(DPPC_68K_DEBUGGER   "Enable 68k debugging" OFF)
 
 if (DPPC_68K_DEBUGGER)
-    # Build capstone as static library.
-    set(CAPSTONE_BUILD_STATIC ON CACHE BOOL "")
-
     # Turn off anything unnecessary.
     set(CAPSTONE_BUILD_SHARED OFF CACHE BOOL "")
     set(CAPSTONE_BUILD_TESTS OFF CACHE BOOL "")
@@ -121,7 +118,7 @@ target_include_directories(dingusppc PRIVATE ${CLI11_ROOT})
 endif()
 
 if (DPPC_68K_DEBUGGER)
-    target_link_libraries(dingusppc capstone-static)
+    target_link_libraries(dingusppc capstone)
 endif()
 
 if (DPPC_BUILD_PPC_TESTS)
