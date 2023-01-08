@@ -4,18 +4,40 @@ project(dingusppc)
 set(CMAKE_CXX_STANDARD 11)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-#set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 
 if (NOT WIN32)
-find_package(SDL2 REQUIRED)
-include_directories(${SDL2_INCLUDE_DIRS})
-else()
-include_directories("${PROJECT_SOURCE_DIR}/thirdparty/SDL2/include/")
-if (UNIX AND NOT APPLE)
-    find_package (Threads)
-endif()
+    find_package(SDL2 REQUIRED)
+    include_directories(${SDL2_INCLUDE_DIRS})
+    if (UNIX AND NOT APPLE)
+        find_package (Threads)
+    endif()
+
+else() # Windows build relies on vcpkg
+    # pick up system wide vcpkg if exists
+    if (DEFINED ENV{VCPKG_ROOT} AND EXISTS $ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake)
+        message(STATUS "Using system vcpkg at $ENV{VCPKG_ROOT}")
+        set(vcpkg_toolchain_file $ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake)
+
+    # check Github Actions vcpkg installation
+    elseif (DEFINED ENV{VCPKG_INSTALLATION_ROOT} AND EXISTS $ENV{VCPKG_INSTALLATION_ ROOT}/scripts/buildsystems/vcpkg.cmake)
+        message(STATUS "Using system vcpkg at $ENV{VCPKG_INSTALLATION_ROOT}")
+        set(vcpkg_toolchain_file $ENV{VCPKG_INSTALLATION_ROOT}/scripts/buildsystems/vcpkg.cmake)
+
+    # otherwise, fetch vcpkg from Github
+    else()
+        message(STATUS "Fetching latest vcpkg from Github...")
+
+        include(FetchContent)
+        FetchContent_Declare(vcpkg GIT_REPOSITORY https://github.com/microsoft/vcpkg.git)
+        FetchContent_MakeAvailable(vcpkg)
+        set(vcpkg_toolchain_file ${vcpkg_SOURCE_DIR}/scripts/buildsystems/vcpkg.cmake)
+    endif()
+
+    set(CMAKE_TOOLCHAIN_FILE ${vcpkg_toolchain_file})
+    find_package(SDL2 CONFIG REQUIRED)
+    add_compile_definitions(SDL_MAIN_HANDLED)
 endif()
 
 option(DPPC_BUILD_PPC_TESTS  "Build PowerPC tests" OFF)
@@ -84,9 +106,7 @@ include_directories("${PROJECT_SOURCE_DIR}"
                     "${PROJECT_SOURCE_DIR}/utils"
 					"${PROJECT_SOURCE_DIR}/thirdparty/loguru/"
                     "${PROJECT_SOURCE_DIR}/thirdparty/CLI11/"
-#                    ${SDL2_INCLUDE_DIRS})
-					"${PROJECT_SOURCE_DIR}/thirdparty/SDL2/")
-#                    "${PROJECT_SOURCE_DIR}/thirdparty/cubeb/include")
+                    "${PROJECT_SOURCE_DIR}/thirdparty/cubeb/include")
 #                    ${LIBSOUNDIO_HEADERS})
 
 file(GLOB SOURCES "${PROJECT_SOURCE_DIR}/*.cpp"
@@ -107,10 +127,7 @@ add_executable(dingusppc ${SOURCES} $<TARGET_OBJECTS:core>
                                     $<TARGET_OBJECTS:loguru>)
 
 if (WIN32)
-target_link_libraries(dingusppc "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2.lib"
-                                "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2main.lib"
-                                ws2_32
-                                cubeb)
+target_link_libraries(dingusppc PRIVATE SDL2::SDL2 SDL2::SDL2main cubeb)
 else()
 #target_link_libraries(dingusppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
 target_link_libraries(dingusppc cubeb ${SDL2_LIBRARIES} ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
@@ -131,10 +148,7 @@ if (DPPC_BUILD_PPC_TESTS)
                                            $<TARGET_OBJECTS:loguru>)
 
     if (WIN32)
-        target_link_libraries(testppc
-                    "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2.lib"
-                    "${PROJECT_SOURCE_DIR}/thirdparty/SDL2/lib/x64/SDL2main.lib"
-                    cubeb)
+        target_link_libraries(testppc SDL2::SDL2 SDL2::SDL2main cubeb)
     else()
         #target_link_libraries(testppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
         target_link_libraries(testppc cubeb ${SDL2_LIBRARIES} ${CMAKE_DL_LIBS}

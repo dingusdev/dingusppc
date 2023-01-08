@@ -1,0 +1,10 @@
+{
+  "name": "dingusppc",
+  "version-string": "0.01-pre",
+  "homepage": "https://github.com/dingusdev/dingusppc",
+  "description": "Experimental Power Macintosh emulator",
+  "license": "GPL-3.0-or-later",
+  "dependencies": [
+    "sdl2"
+  ]
+}
