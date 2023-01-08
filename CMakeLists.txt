@@ -83,13 +83,6 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/machines/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/utils/")
 add_subdirectory("${PROJECT_SOURCE_DIR}/thirdparty/loguru/")
 
-#set(BUILD_EXAMPLE_PROGRAMS OFF CACHE BOOL "Build libsoundio example programs")
-#set(BUILD_TESTS OFF CACHE BOOL "Build libsoundio tests")
-#set(BUILD_DYNAMIC_LIBS ON CACHE BOOL "Build libsoundio dynamic libs")
-#set(BUILD_STATIC_LIBS ON CACHE BOOL "Build libsoundio static libs")
-
-#add_subdirectory("${PROJECT_SOURCE_DIR}/thirdparty/libsoundio")
-
 set(BUILD_TESTS OFF CACHE BOOL "Build Cubeb tests")
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries")
 set(BUILD_TOOLS OFF CACHE BOOL "Build Cubeb tools")
@@ -107,14 +100,11 @@ include_directories("${PROJECT_SOURCE_DIR}"
 					"${PROJECT_SOURCE_DIR}/thirdparty/loguru/"
                     "${PROJECT_SOURCE_DIR}/thirdparty/CLI11/"
                     "${PROJECT_SOURCE_DIR}/thirdparty/cubeb/include")
-#                    ${LIBSOUNDIO_HEADERS})
 
 file(GLOB SOURCES "${PROJECT_SOURCE_DIR}/*.cpp"
                   "${PROJECT_SOURCE_DIR}/*.c"
                   "${PROJECT_SOURCE_DIR}/*.hpp"
                   "${PROJECT_SOURCE_DIR}/*.h")
-
-#get_directory_property(LIBSOUNDIO_LIBS DIRECTORY thirdparty/libsoundio DEFINITION LIBSOUNDIO_LIBS)
 
 file(GLOB TEST_SOURCES "${PROJECT_SOURCE_DIR}/cpu/ppc/test/*.cpp")
 
@@ -127,15 +117,14 @@ add_executable(dingusppc ${SOURCES} $<TARGET_OBJECTS:core>
                                     $<TARGET_OBJECTS:loguru>)
 
 if (WIN32)
-target_link_libraries(dingusppc PRIVATE SDL2::SDL2 SDL2::SDL2main cubeb)
+    target_link_libraries(dingusppc PRIVATE SDL2::SDL2 SDL2::SDL2main cubeb)
 else()
-#target_link_libraries(dingusppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
-target_link_libraries(dingusppc cubeb ${SDL2_LIBRARIES} ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
-target_include_directories(dingusppc PRIVATE ${CLI11_ROOT})
+    target_link_libraries(dingusppc PRIVATE SDL2::SDL2 SDL2::SDL2main cubeb
+                                    ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
 if (DPPC_68K_DEBUGGER)
-    target_link_libraries(dingusppc capstone)
+    target_link_libraries(dingusppc PRIVATE capstone)
 endif()
 
 if (DPPC_BUILD_PPC_TESTS)
@@ -148,15 +137,14 @@ if (DPPC_BUILD_PPC_TESTS)
                                            $<TARGET_OBJECTS:loguru>)
 
     if (WIN32)
-        target_link_libraries(testppc SDL2::SDL2 SDL2::SDL2main cubeb)
+        target_link_libraries(testppc PRIVATE SDL2::SDL2 SDL2::SDL2main cubeb)
     else()
-        #target_link_libraries(testppc libsoundio_static ${LIBSOUNDIO_LIBS} ${SDL2_LIBRARIES})
-        target_link_libraries(testppc cubeb ${SDL2_LIBRARIES} ${CMAKE_DL_LIBS}
-                    ${CMAKE_THREAD_LIBS_INIT})
+        target_link_libraries(testppc PRIVATE SDL2::SDL2 SDL2::SDL2main cubeb
+                                    ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
     endif()
 
     if (DPPC_68K_DEBUGGER)
-        target_link_libraries(testppc capstone-static)
+        target_link_libraries(testppc PRIVATE capstone)
     endif()
 endif()
 
@@ -170,11 +158,11 @@ if (DPPC_BUILD_BENCHMARKS)
                                            $<TARGET_OBJECTS:utils>
                                            $<TARGET_OBJECTS:loguru>)
 
-    target_link_libraries(bench1 cubeb ${SDL2_LIBRARIES} ${CMAKE_DL_LIBS}
+    target_link_libraries(bench1 PRIVATE cubeb SDL2::SDL2 SDL2::SDL2main ${CMAKE_DL_LIBS}
             ${CMAKE_THREAD_LIBS_INIT})
 
     if (DPPC_68K_DEBUGGER)
-        target_link_libraries(bench1 capstone-static)
+        target_link_libraries(bench1 PRIVATE capstone)
     endif()
 endif()
 

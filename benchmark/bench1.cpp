@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <chrono>
 #include "cpu/ppc/ppcemu.h"
 #include "cpu/ppc/ppcmmu.h"
-#include "devices/mpc106.h"
+#include "devices/memctrl/mpc106.h"
 #include <thirdparty/loguru/loguru.hpp>
 
 uint32_t cs_code[] = {
@@ -59,17 +59,19 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    ppc_cpu_init(grackle_obj, PPC_VER::MPC750);
+    constexpr uint64_t tbr_freq = 16705000;
+
+    ppc_cpu_init(grackle_obj, PPC_VER::MPC750, tbr_freq);
 
     /* load executable code into RAM at address 0 */
     for (i = 0; i < sizeof(cs_code); i++) {
-        mem_write_dword(i*4, cs_code[i]);
+        mmu_write_vmem<uint32_t>(i*4, cs_code[i]);
     }
 
     srand(0xCAFEBABE);
 
     for (i = 0; i < 32768; i++) {
-        mem_write_byte(0x1000+i, rand() % 256);
+        mmu_write_vmem<uint8_t>(0x1000+i, rand() % 256);
     }
 
     /* prepare benchmark code execution */
