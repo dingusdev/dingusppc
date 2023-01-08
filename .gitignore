@@ -7,8 +7,14 @@ out/
 *.o
 *.d
 
+# Ignore CMake system files
+CMakeFiles
+cmake_install.cmake
+
 # Ignore Visual Studio configuration files
 CMakeSettings.json
+*.vcxproj
+*.vcxproj.filters
 
 # Ignore generated executables
 dingusppc
@@ -21,4 +27,5 @@ Thumb.db
 # IDE ignores
 build
 build-*
+*.dir
 *.user
