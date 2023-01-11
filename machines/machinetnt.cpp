@@ -36,7 +36,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 int initialize_tnt(std::string& id)
 {
-    LOG_F(INFO, "Building machine tnt");
+    LOG_F(INFO, "Building machine TNT...");
 
     HammerheadCtrl* memctrl_obj;
 

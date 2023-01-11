@@ -94,7 +94,7 @@ static void setup_ram_slot(std::string name, int i2c_addr, int capacity_megs) {
 
 int initialize_gossamer(std::string& id)
 {
-    LOG_F(INFO, "Building machine gossamer");
+    LOG_F(INFO, "Building machine Gossamer...");
 
     // get pointer to the memory controller/PCI host bridge object
     MPC106* grackle_obj = dynamic_cast<MPC106*>(gMachineObj->get_comp_by_name("Grackle"));

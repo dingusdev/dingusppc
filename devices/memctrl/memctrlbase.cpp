@@ -27,6 +27,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <vector>
 #include <loguru.hpp>
 
+static inline bool match_mem_entry(const AddressMapEntry* entry,
+                                   const uint32_t start, const uint32_t end,
+                                   MMIODevice* dev_instance)
+{
+    return start == entry->start && end == entry->end &&
+        (!dev_instance || dev_instance == entry->devobj);
+}
 
 MemCtrlBase::~MemCtrlBase() {
     for (auto& entry : address_map) {
@@ -53,11 +60,13 @@ AddressMapEntry* MemCtrlBase::find_range(uint32_t addr) {
 }
 
 
-AddressMapEntry* MemCtrlBase::find_range_exact(uint32_t addr, uint32_t size, MMIODevice* dev_instance) {
+AddressMapEntry* MemCtrlBase::find_range_exact(uint32_t addr, uint32_t size,
+                                               MMIODevice* dev_instance)
+{
     if (size) {
-        uint32_t end = addr + size - 1;
+        const uint32_t end = addr + size - 1;
         for (auto& entry : address_map) {
-            if (addr == entry->start && end == entry->end && (!dev_instance || dev_instance == entry->devobj) )
+            if (match_mem_entry(entry, addr, end, dev_instance))
                 return entry;
         }
     }
@@ -98,15 +107,33 @@ bool MemCtrlBase::is_range_free(uint32_t addr, uint32_t size) {
         uint32_t end = addr + size - 1;
         for (auto& entry : address_map) {
             if (addr == entry->start && end == entry->end) {
-                LOG_F(WARNING, "memory region 0x%X..0x%X%s%s%s already exists", addr, end, entry->devobj ? " (" : "", entry->devobj ? entry->devobj->get_name().c_str() : "", entry->devobj ? ")" : "");
+                LOG_F(WARNING, "memory region 0x%X..0x%X%s%s%s already exists",
+                    addr, end,
+                    entry->devobj ? " (" : "",
+                        entry->devobj ? entry->devobj->get_name().c_str() : "",
+                        entry->devobj ? ")"
+                        : ""
+                );
                 result = false;
             }
             else if (addr >= entry->start && end <= entry->end) {
-                LOG_F(WARNING, "0x%X..0x%X already exists in memory region 0x%X..0x%X%s%s%s", addr, end, entry->start, entry->end, entry->devobj ? " (" : "", entry->devobj ? entry->devobj->get_name().c_str() : "", entry->devobj ? ")" : "");
+                LOG_F(WARNING, "0x%X..0x%X already exists in memory region 0x%X..0x%X%s%s%s",
+                    addr, end, entry->start, entry->end,
+                    entry->devobj ? " (" : "",
+                        entry->devobj ? entry->devobj->get_name().c_str() : "",
+                        entry->devobj ? ")"
+                        : ""
+                );
                 result = false;
             }
             else if (end >= entry->start && addr <= entry->end) {
-                LOG_F(ERROR, "0x%X..0x%X overlaps existing memory region 0x%X..0x%X%s%s%s", addr, end, entry->start, entry->end, entry->devobj ? " (" : "", entry->devobj ? entry->devobj->get_name().c_str() : "", entry->devobj ? ")" : "");
+                LOG_F(ERROR, "0x%X..0x%X overlaps existing memory region 0x%X..0x%X%s%s%s",
+                    addr, end, entry->start, entry->end,
+                    entry->devobj ? " (" : "",
+                        entry->devobj ? entry->devobj->get_name().c_str() : "",
+                        entry->devobj ? ")"
+                        : ""
+                );
                 result = false;
             }
         }
@@ -115,8 +142,10 @@ bool MemCtrlBase::is_range_free(uint32_t addr, uint32_t size) {
 }
 
 
-bool MemCtrlBase::add_mem_region(
-    uint32_t start_addr, uint32_t size, uint32_t dest_addr, uint32_t type, uint8_t init_val = 0) {
+bool MemCtrlBase::add_mem_region(uint32_t start_addr, uint32_t size,
+                                 uint32_t dest_addr, uint32_t type,
+                                 uint8_t init_val = 0)
+{
     AddressMapEntry *entry;
 
     /* error if a memory region for the given range already exists */
@@ -180,14 +209,18 @@ bool MemCtrlBase::add_mem_mirror(uint32_t start_addr, uint32_t dest_addr) {
 
     this->address_map.push_back(entry);
 
-    LOG_F(INFO, "Added mem region mirror 0x%X..0x%X (%s%s%s%s) -> 0x%X : 0x%X..0x%X%s%s%s", start_addr, end,
+    LOG_F(INFO, "Added mem region mirror 0x%X..0x%X (%s%s%s%s) -> 0x%X : 0x%X..0x%X%s%s%s",
+        start_addr, end,
         entry->type & RT_ROM ? "ROM," : "",
         entry->type & RT_RAM ? "RAM," : "",
         entry->type & RT_MMIO ? "MMIO," : "",
         entry->type & RT_MIRROR ? "MIRROR," : "",
         dest_addr,
         ref_entry->start, ref_entry->end,
-        ref_entry->devobj ? " (" : "", ref_entry->devobj ? ref_entry->devobj->get_name().c_str() : "", ref_entry->devobj ? ")" : ""
+        ref_entry->devobj ? " (" : "",
+            ref_entry->devobj ? ref_entry->devobj->get_name().c_str() : "",
+            ref_entry->devobj ? ")"
+        : ""
     );
 
     return true;
@@ -209,7 +242,8 @@ bool MemCtrlBase::set_data(uint32_t reg_addr, const uint8_t* data, uint32_t size
 }
 
 
-bool MemCtrlBase::add_mmio_region(uint32_t start_addr, uint32_t size, MMIODevice* dev_instance) {
+bool MemCtrlBase::add_mmio_region(uint32_t start_addr, uint32_t size, MMIODevice* dev_instance)
+{
     AddressMapEntry *entry;
 
     /* error if a memory region for the given range already exists */
@@ -228,30 +262,55 @@ bool MemCtrlBase::add_mmio_region(uint32_t start_addr, uint32_t size, MMIODevice
 
     this->address_map.push_back(entry);
 
-    LOG_F(INFO, "Added mmio region 0x%X..0x%X%s%s%s", start_addr, end, dev_instance ? " (" : "", dev_instance ? dev_instance->get_name().c_str() : "", dev_instance ? ")" : "");
+    LOG_F(INFO, "Added mmio region 0x%X..0x%X%s%s%s",
+        start_addr, end,
+        dev_instance ? " (" : "",
+            dev_instance ? dev_instance->get_name().c_str() : "",
+            dev_instance ? ")"
+            : ""
+    );
 
     return true;
 }
 
-bool MemCtrlBase::remove_mmio_region(uint32_t start_addr, uint32_t size, MMIODevice* dev_instance) {
+bool MemCtrlBase::remove_mmio_region(uint32_t start_addr, uint32_t size, MMIODevice* dev_instance)
+{
     int found = 0;
 
     uint32_t end = start_addr + size - 1;
     address_map.erase(std::remove_if(address_map.begin(), address_map.end(),
         [start_addr, end, dev_instance, &found](const AddressMapEntry *entry) {
-            bool result = (start_addr == entry->start && end == entry->end && (!dev_instance || dev_instance == entry->devobj));
+            bool result = match_mem_entry(entry, start_addr, end, dev_instance);
             found += result;
             return result;
         }
     ), address_map.end());
 
     if (found == 0)
-        LOG_F(ERROR, "Cannot find mmio region 0x%X..0x%X%s%s%s to remove", start_addr, end, dev_instance ? " (" : "", dev_instance ? dev_instance->get_name().c_str() : "", dev_instance ? ")" : "");
+        LOG_F(ERROR, "Cannot find mmio region 0x%X..0x%X%s%s%s to remove",
+            start_addr, end,
+            dev_instance ? " (" : "",
+                dev_instance ? dev_instance->get_name().c_str() : "",
+                dev_instance ? ")"
+                : ""
+        );
     else if (found > 1)
-        LOG_F(ERROR, "Removed %d occurrences of mmio region 0x%X..0x%X%s%s%s", found, start_addr, end, dev_instance ? " (" : "", dev_instance ? dev_instance->get_name().c_str() : "", dev_instance ? ")" : "");
+        LOG_F(ERROR, "Removed %d occurrences of mmio region 0x%X..0x%X%s%s%s",
+            found, start_addr, end,
+            dev_instance ? " (" : "",
+            dev_instance ? dev_instance->get_name().c_str() : "",
+            dev_instance ? ")"
+            : ""
+        );
     else
-        LOG_F(INFO, "Removed mmio region 0x%X..0x%X%s%s%s", start_addr, end, dev_instance ? " (" : "", dev_instance ? dev_instance->get_name().c_str() : "", dev_instance ? ")" : "");
-    
+        LOG_F(INFO, "Removed mmio region 0x%X..0x%X%s%s%s",
+            start_addr, end,
+            dev_instance ? " (" : "",
+                dev_instance ? dev_instance->get_name().c_str() : "",
+                dev_instance ? ")"
+                : ""
+        );
+
     return (found > 0);
 }
 

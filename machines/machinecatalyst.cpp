@@ -36,7 +36,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 int initialize_catalyst(std::string& id)
 {
-    LOG_F(INFO, "Building machine catalyst");
+    LOG_F(INFO, "Building machine Catalyst...");
 
     PlatinumCtrl* platinum_obj;
 

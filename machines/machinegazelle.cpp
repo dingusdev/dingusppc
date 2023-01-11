@@ -47,7 +47,7 @@ int get_cpu_pll_value(const uint64_t cpu_freq_hz) {
 
 int initialize_gazelle(std::string& id)
 {
-    LOG_F(INFO, "Building machine gazelle");
+    LOG_F(INFO, "Building machine Gazelle...");
 
     PCIHost *pci_host = dynamic_cast<PCIHost*>(gMachineObj->get_comp_by_name("PsxPci1"));
 
