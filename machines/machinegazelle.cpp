@@ -47,6 +47,8 @@ int get_cpu_pll_value(const uint64_t cpu_freq_hz) {
 
 int initialize_gazelle(std::string& id)
 {
+    LOG_F(INFO, "Building machine gazelle");
+
     PCIHost *pci_host = dynamic_cast<PCIHost*>(gMachineObj->get_comp_by_name("PsxPci1"));
 
     // register O'Hare I/O controller with the main PCI bus

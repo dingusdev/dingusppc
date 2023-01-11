@@ -295,7 +295,7 @@ uint64_t MacSuperDrive::sync_to_disk()
     track_time_ns -= this->index_delay;
 
     // calculate current sector number from timestamp
-    int cur_sect_num = this->cur_sector = track_time_ns / this->sector_delay;
+    int cur_sect_num = this->cur_sector = (int)(track_time_ns / this->sector_delay);
 
     this->sector_start_time = this->track_start_time + cur_sect_num * this->sector_delay +
                               this->index_delay;

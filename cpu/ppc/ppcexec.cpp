@@ -849,38 +849,38 @@ uint64_t reg_op(string& reg_name, uint64_t val, bool is_write) {
     try {
         if (reg_name_u == "PC") {
             if (is_write)
-                ppc_state.pc = val;
+                ppc_state.pc = (uint32_t)val;
             return ppc_state.pc;
         }
         if (reg_name_u == "MSR") {
             if (is_write)
-                ppc_state.msr = val;
+                ppc_state.msr = (uint32_t)val;
             return ppc_state.msr;
         }
         if (reg_name_u == "CR") {
             if (is_write)
-                ppc_state.cr = val;
+                ppc_state.cr = (uint32_t)val;
             return ppc_state.cr;
         }
         if (reg_name_u == "FPSCR") {
             if (is_write)
-                ppc_state.fpscr = val;
+                ppc_state.fpscr = (uint32_t)val;
             return ppc_state.fpscr;
         }
 
         if (reg_name_u.substr(0, 1) == "R") {
             reg_num_str = reg_name_u.substr(1);
-            reg_num     = stoul(reg_num_str, NULL, 0);
+            reg_num     = (unsigned)stoul(reg_num_str, NULL, 0);
             if (reg_num < 32) {
                 if (is_write)
-                    ppc_state.gpr[reg_num] = val;
+                    ppc_state.gpr[reg_num] = (uint32_t)val;
                 return ppc_state.gpr[reg_num];
             }
         }
 
         if (reg_name_u.substr(0, 1) == "FR") {
             reg_num_str = reg_name_u.substr(2);
-            reg_num     = stoul(reg_num_str, NULL, 0);
+            reg_num     = (unsigned)stoul(reg_num_str, NULL, 0);
             if (reg_num < 32) {
                 if (is_write)
                     ppc_state.fpr[reg_num].int64_r = val;
@@ -890,20 +890,20 @@ uint64_t reg_op(string& reg_name, uint64_t val, bool is_write) {
 
         if (reg_name_u.substr(0, 3) == "SPR") {
             reg_num_str = reg_name_u.substr(3);
-            reg_num     = stoul(reg_num_str, NULL, 0);
+            reg_num     = (unsigned)stoul(reg_num_str, NULL, 0);
             if (reg_num < 1024) {
                 if (is_write)
-                    ppc_state.spr[reg_num] = val;
+                    ppc_state.spr[reg_num] = (uint32_t)val;
                 return ppc_state.spr[reg_num];
             }
         }
 
         if (reg_name_u.substr(0, 2) == "SR") {
             reg_num_str = reg_name_u.substr(2);
-            reg_num     = stoul(reg_num_str, NULL, 0);
+            reg_num     = (unsigned)stoul(reg_num_str, NULL, 0);
             if (reg_num < 16) {
                 if (is_write)
-                    ppc_state.sr[reg_num] = val;
+                    ppc_state.sr[reg_num] = (uint32_t)val;
                 return ppc_state.sr[reg_num];
             }
         }
@@ -911,7 +911,7 @@ uint64_t reg_op(string& reg_name, uint64_t val, bool is_write) {
         spr = SPRName2Num.find(reg_name_u);
         if (spr != SPRName2Num.end()) {
             if (is_write)
-                ppc_state.spr[spr->second] = val;
+                ppc_state.spr[spr->second] = (uint32_t)val;
             return ppc_state.spr[spr->second];
         }
     } catch (...) {

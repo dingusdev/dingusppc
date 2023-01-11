@@ -94,6 +94,8 @@ static void setup_ram_slot(std::string name, int i2c_addr, int capacity_megs) {
 
 int initialize_gossamer(std::string& id)
 {
+    LOG_F(INFO, "Building machine gossamer");
+
     // get pointer to the memory controller/PCI host bridge object
     MPC106* grackle_obj = dynamic_cast<MPC106*>(gMachineObj->get_comp_by_name("Grackle"));
 
@@ -107,7 +109,7 @@ int initialize_gossamer(std::string& id)
 
     gMachineObj->add_device("MachineID", std::unique_ptr<GossamerID>(new GossamerID(sys_reg)));
     grackle_obj->add_mmio_region(
-        0xFF000004, 4096, dynamic_cast<MMIODevice*>(gMachineObj->get_comp_by_name("MachineID")));
+        0xFF000000 + 4, 4096 - 4, dynamic_cast<MMIODevice*>(gMachineObj->get_comp_by_name("MachineID")));
 
     // allocate ROM region
     if (!grackle_obj->add_rom_region(0xFFC00000, 0x400000)) {

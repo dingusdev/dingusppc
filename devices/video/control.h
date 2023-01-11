@@ -117,6 +117,7 @@ private:
     std::unique_ptr<uint8_t[]>  vram_ptr;
 
     uint32_t    vram_size;
+    uint32_t    io_base = 0;
     uint32_t    vram_base = 0;
     uint32_t    regs_base = 0;
     uint32_t    prev_test = 0x433;

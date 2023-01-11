@@ -147,12 +147,12 @@ long sound_out_callback(cubeb_stream *stream, void *user_data,
     out_frames = 0;
 
     while (req_frames > 0) {
-        if (!dma_ch->pull_data(req_frames << 2, &got_len, &p_in)) {
+        if (!dma_ch->pull_data((uint32_t)req_frames << 2, &got_len, &p_in)) {
             frames = got_len >> 2;
 
             in_buf = (int16_t*)p_in;
 
-            for (int i = frames; i > 0; i--) {
+            for (int i = (int)frames; i > 0; i--) {
                 out_buf[0] = BYTESWAP_16(in_buf[0]);
                 out_buf[1] = BYTESWAP_16(in_buf[1]);
                 in_buf += 2;

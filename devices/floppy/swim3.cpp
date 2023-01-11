@@ -128,7 +128,7 @@ uint8_t Swim3Ctrl::read(uint8_t reg_offset)
 
 void Swim3Ctrl::write(uint8_t reg_offset, uint8_t value)
 {
-    uint8_t old_mode_reg, status_addr;
+    uint8_t status_addr;
 
     switch(reg_offset) {
     case Swim3Reg::Timer:

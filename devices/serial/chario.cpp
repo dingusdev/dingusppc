@@ -336,7 +336,6 @@ void CharIoSocket::rcv_disable()
 bool CharIoSocket::rcv_char_available()
 {
     static int consecutivechars = 0;
-    static int count = 0;
 
     if (consecutivechars >= 15) {
         consecutivechars++;
@@ -377,7 +376,7 @@ bool CharIoSocket::rcv_char_available()
         if (sockfd != -1) {
              if (FD_ISSET(sockfd, &readfds)) {
                 uint8_t c;
-                int received = recv(sockfd, &c, 1, 0);
+                int received = (int)recv(sockfd, &c, 1, 0);
                 if (received == -1) {
                     if (acceptfd == -1) {
                         //LOG_F(INFO, "socket sock read (not accepted yet) err: %s", strerror(errno)); // this happens once before accept
@@ -443,7 +442,7 @@ int CharIoSocket::xmit_char(uint8_t c)
         CharIoSocket::rcv_char_available();
 
     if (acceptfd != -1) {
-        int sent = send(acceptfd, &c, 1, 0);
+        int sent = (int)send(acceptfd, &c, 1, 0);
         if (sent == -1) {
             LOG_F(INFO, "socket accept write err: %s", strerror(errno));
         }
@@ -463,7 +462,7 @@ int CharIoSocket::rcv_char(uint8_t *c)
         CharIoSocket::rcv_char_available();
 
     if (acceptfd != -1) {
-        int received = recv(acceptfd, c, 1, 0);
+        int received = (int)recv(acceptfd, c, 1, 0);
         if (received == -1) {
             LOG_F(INFO, "socket accept read err: %s", strerror(errno));
         }

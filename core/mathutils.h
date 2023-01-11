@@ -34,13 +34,13 @@ inline void _u32xu64(uint32_t a, uint64_t b, uint64_t &hi, uint32_t &lo)
 {
     uint64_t p0 = (b & 0xffffffff) * a;
     uint64_t p1 = (b >> 32) * a;
-    lo = p0;
+    lo = (uint32_t)p0;
     hi = (p0 >> 32) + p1;
 }
 
 inline void _u64xu64(uint64_t a, uint64_t b, uint64_t &hi, uint64_t &lo)
 {
-    uint32_t p0h; uint64_t p0l; _u32xu64(b, a, p0h, p0l);
+    uint32_t p0h; uint64_t p0l; _u32xu64((uint32_t)b, a, p0h, p0l);
     uint64_t p1h; uint32_t p1l; _u32xu64(b >> 32, a, p1h, p1l);
     lo = p0l + ((uint64_t)p1l << 32);
     hi = p0h + p1h + (lo < p0l);

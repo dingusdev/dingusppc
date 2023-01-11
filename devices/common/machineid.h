@@ -75,7 +75,8 @@ private:
 class GossamerID : public MMIODevice {
 public:
     GossamerID(const uint16_t id) {
-        this->id = id, this->name = "Machine-id";
+        this->id = id;
+        this->name = "Machine-id";
         supports_types(HWCompType::MMIO_DEV);
     };
     ~GossamerID() = default;

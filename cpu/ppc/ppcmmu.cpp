@@ -125,11 +125,11 @@ static BATResult mpc601_block_address_translation(uint32_t la)
 
             // logical to physical translation
             pa = bat_entry->phys_hi | (la & ~bat_entry->hi_mask);
-            break;
+            return BATResult{bat_hit, prot, pa};
         }
     }
 
-    return BATResult{bat_hit, prot, pa};
+    return BATResult{bat_hit, 0, 0};
 }
 
 /** PowerPC-style block address translation. */
@@ -742,6 +742,7 @@ void tlb_flush_entry(uint32_t ea)
             tlb1 = &dtlb1_mode2[0];
             tlb2 = &dtlb2_mode2[0];
             break;
+        default:
         case 5:
             tlb1 = &dtlb1_mode3[0];
             tlb2 = &dtlb2_mode3[0];
@@ -967,7 +968,7 @@ void mmu_print_regs()
         }
     }
 
-    LOG_F(INFO, "");
+    LOG_F(INFO, "%s", "");
     LOG_F(INFO, "SDR1 = 0x%X", ppc_state.spr[SPR::SDR1]);
     LOG_F(INFO, "Segment registers:");
 
@@ -1007,7 +1008,7 @@ inline T mmu_read_vmem(uint32_t guest_va)
             // perform full address translation and refill the secondary TLB
             tlb2_entry = dtlb2_refill(guest_va, 0);
             if (tlb2_entry->flags & PAGE_NOPHYS) {
-                return UnmappedVal;
+                return (T)UnmappedVal;
             }
         }
 #ifdef TLB_PROFILING
@@ -1081,8 +1082,8 @@ inline void mmu_write_vmem(uint32_t guest_va, T value)
         }
         if (!(tlb1_entry->flags & TLBFlags::PTE_SET_C)) {
             // perform full page address translation to update PTE.C bit
-            PATResult pat_res = page_address_translation(guest_va, false,
-                                                         !!(ppc_state.msr & 0x4000), true);
+            page_address_translation(guest_va, false,
+                                     !!(ppc_state.msr & 0x4000), true);
             tlb1_entry->flags |= TLBFlags::PTE_SET_C;
 
             // don't forget to update the secondary TLB as well
@@ -1120,8 +1121,8 @@ inline void mmu_write_vmem(uint32_t guest_va, T value)
 
         if (!(tlb2_entry->flags & TLBFlags::PTE_SET_C)) {
             // perform full page address translation to update PTE.C bit
-            PATResult pat_res = page_address_translation(guest_va, false,
-                                                         !!(ppc_state.msr & 0x4000), true);
+            page_address_translation(guest_va, false,
+                                     !!(ppc_state.msr & 0x4000), true);
             tlb2_entry->flags |= TLBFlags::PTE_SET_C;
         }
 

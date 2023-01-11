@@ -52,7 +52,7 @@ using namespace std;
 
 static uint32_t str2addr(string& addr_str) {
     try {
-        return stoul(addr_str, NULL, 0);
+        return (uint32_t)stoul(addr_str, NULL, 0);
     } catch (invalid_argument& exc) {
         throw invalid_argument(string("Cannot convert ") + addr_str);
     }
@@ -60,7 +60,7 @@ static uint32_t str2addr(string& addr_str) {
 
 static uint32_t str2num(string& num_str) {
     try {
-        return stol(num_str, NULL, 0);
+        return (uint32_t)stol(num_str, NULL, 0);
     } catch (invalid_argument& exc) {
         throw invalid_argument(string("Cannot convert ") + num_str);
     }
@@ -512,7 +512,7 @@ void enter_debugger() {
             }
         } else if (cmd == "next" || cmd == "ni") {
             addr_str = "PC";
-            addr     = get_reg(addr_str) + 4;
+            addr     = (uint32_t)get_reg(addr_str) + 4;
             ppc_exec_until(addr);
         } else if (cmd == "until") {
             ss >> addr_str;
@@ -588,7 +588,7 @@ void enter_debugger() {
 #endif
                     } else {
                         addr_str = "PC";
-                        addr     = get_reg(addr_str);
+                        addr     = (uint32_t)get_reg(addr_str);
                         disasm(1, addr);
                     }
                 } catch (invalid_argument& exc) {

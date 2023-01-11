@@ -42,6 +42,7 @@ public:
     virtual bool pci_register_device(int dev_num, PCIDevice* dev_instance);
 
     virtual bool pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIDevice* obj);
+    virtual bool pci_unregister_mmio_region(uint32_t start_addr, uint32_t size, PCIDevice* obj);
 
     virtual void attach_pci_device(std::string& dev_name, int slot_id);
 

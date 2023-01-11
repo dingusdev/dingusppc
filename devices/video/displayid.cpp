@@ -88,7 +88,6 @@ DisplayID::DisplayID(uint8_t std_code, uint8_t ext_code)
 uint8_t DisplayID::read_monitor_sense(uint8_t levels, uint8_t dirs)
 {
     uint8_t scl, sda;
-    uint16_t result;
 
     switch(this->id_kind) {
     case Disp_Id_Kind::DDC2B:

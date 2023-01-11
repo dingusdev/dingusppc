@@ -27,10 +27,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 #include <fstream>
+#include <cstring>
 #include <string>
 
 PCIDevice::PCIDevice(std::string name)
 {
+    this->name = name;
     this->pci_name = name;
 
     this->pci_rd_stat       = [this]() { return this->status; };
@@ -188,7 +190,10 @@ int PCIDevice::attach_exp_rom_image(const std::string img_path)
 
         // determine image size
         img_file.seekg(0, std::ios::end);
-        uint32_t exp_rom_image_size = img_file.tellg();
+        size_t exp_rom_image_size = img_file.tellg();
+        if (exp_rom_image_size > 4*1024*1024) {
+            throw std::runtime_error("expansion ROM file too large");
+        }
 
         // verify PCI struct offset
         uint16_t pci_struct_offset = 0;
@@ -222,7 +227,7 @@ int PCIDevice::attach_exp_rom_image(const std::string img_path)
         }
         else {
             LOG_F(WARNING, "%s: loaded expansion rom (%d bytes adjusted to %d bytes).",
-            this->pci_name.c_str(), exp_rom_image_size, this->exp_rom_size);
+            this->pci_name.c_str(), (int)exp_rom_image_size, this->exp_rom_size);
         }
 
         this->exp_bar_cfg  = ~(this->exp_rom_size - 1);
@@ -246,7 +251,7 @@ void PCIDevice::set_bar_value(int bar_num, uint32_t value)
 {
     uint32_t bar_cfg = this->bars_cfg[bar_num];
     if (bar_cfg & 1) {
-        this->bars[bar_num] = (value & 0xFFFFFFFCUL) | 1;
+        this->bars[bar_num] = (value & 0xFFFFFFFCUL) | (bar_cfg & 3);
     } else {
         if (bar_cfg & 6) {
             ABORT_F("Invalid or unsupported PCI space type: %d", (bar_cfg >> 1) & 3);
