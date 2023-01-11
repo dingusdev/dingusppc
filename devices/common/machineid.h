@@ -82,7 +82,7 @@ public:
     ~GossamerID() = default;
 
     uint32_t read(uint32_t rgn_start, uint32_t offset, int size) {
-        return ((!offset && size == 2) ? this->id : 0);
+        return ((offset == 4 && size == 2) ? this->id : 0);
     };
 
     /* not writable */

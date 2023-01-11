@@ -109,7 +109,7 @@ int initialize_gossamer(std::string& id)
 
     gMachineObj->add_device("MachineID", std::unique_ptr<GossamerID>(new GossamerID(sys_reg)));
     grackle_obj->add_mmio_region(
-        0xFF000000 + 4, 4096 - 4, dynamic_cast<MMIODevice*>(gMachineObj->get_comp_by_name("MachineID")));
+        0xFF000000, 4096, dynamic_cast<MMIODevice*>(gMachineObj->get_comp_by_name("MachineID")));
 
     // allocate ROM region
     if (!grackle_obj->add_rom_region(0xFFC00000, 0x400000)) {
