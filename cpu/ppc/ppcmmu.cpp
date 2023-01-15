@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -620,7 +620,16 @@ static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write)
         }
         return tlb_entry;
     } else {
-        LOG_F(WARNING, "Access to unmapped physical memory, phys_addr=0x%08X", phys_addr);
+        static uint32_t last_phys_addr = -1;
+        static uint32_t first_phys_addr = -1;
+        if (phys_addr != last_phys_addr + 4) {
+            if (last_phys_addr != -1 && last_phys_addr != first_phys_addr) {
+                LOG_F(WARNING, "                                                         ... phys_addr=0x%08X", last_phys_addr);
+            }
+            first_phys_addr = phys_addr;
+            LOG_F(WARNING, "Access to unmapped physical memory, phys_addr=0x%08X", first_phys_addr);
+        }
+        last_phys_addr = phys_addr;
         return &UnmappedMem;
     }
 }
