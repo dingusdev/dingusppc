@@ -76,10 +76,20 @@ uint32_t MPC106::read(uint32_t rgn_start, uint32_t offset, int size) {
         return pci_io_read_broadcast(offset, size);
     }
     if (offset < 0x200000) {
-            return this->config_addr;
-        }
+        return this->config_addr;
+    }
     if (this->config_addr & 0x80) {    // process only if bit E (enable) is set
-        return pci_read(offset, size);
+        int bus_num, dev_num, fun_num;
+        uint8_t reg_offs;
+        AccessDetails details;
+        PCIDevice *device;
+        cfg_setup(offset, size, bus_num, dev_num, fun_num, reg_offs, details, device);
+        details.flags |= PCI_CONFIG_READ;
+        if (device) {
+            return pci_conv_rd_data(device->pci_cfg_read(reg_offs, details), details);
+        }
+        LOG_READ_NON_EXISTENT_PCI_DEVICE();
+        return 0xFFFFFFFFUL; // PCI spec §6.1
     }
     return 0;
 }
@@ -87,50 +97,32 @@ uint32_t MPC106::read(uint32_t rgn_start, uint32_t offset, int size) {
 void MPC106::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size) {
     if (rgn_start == 0xFE000000) {
         pci_io_write_broadcast(offset, size, value);
-                return;
-            }
-        if (offset < 0x200000) {
-            this->config_addr = value;
+        return;
+    }
+    if (offset < 0x200000) {
+        this->config_addr = value;
         return;
     }
     if (this->config_addr & 0x80) {    // process only if bit E (enable) is set
-                return pci_write(offset, value, size);
-        }
-    }
-
-uint32_t MPC106::pci_read(uint32_t offset, uint32_t size) {
-    int bus_num, dev_num, fun_num;
-    uint8_t reg_offs;
-    AccessDetails details;
-    PCIDevice *device;
-    cfg_setup(offset, size, bus_num, dev_num, fun_num, reg_offs, details, device);
-    details.flags |= PCI_CONFIG_READ;
-    if (device) {
-        return pci_conv_rd_data(device->pci_cfg_read(reg_offs, details), details);
-    }
-    LOG_READ_NON_EXISTENT_PCI_DEVICE();
-    return 0xFFFFFFFFUL; // PCI spec §6.1
-}
-
-void MPC106::pci_write(uint32_t offset, uint32_t value, uint32_t size) {
-    int bus_num, dev_num, fun_num;
-    uint8_t reg_offs;
-    AccessDetails details;
-    PCIDevice *device;
-    cfg_setup(offset, size, bus_num, dev_num, fun_num, reg_offs, details, device);
-    details.flags |= PCI_CONFIG_WRITE;
-    if (device) {
-        if (size == 4 && !details.offset) { // aligned DWORD writes -> fast path
-            device->pci_cfg_write(reg_offs, BYTESWAP_32(value), details);
+        int bus_num, dev_num, fun_num;
+        uint8_t reg_offs;
+        AccessDetails details;
+        PCIDevice *device;
+        cfg_setup(offset, size, bus_num, dev_num, fun_num, reg_offs, details, device);
+        details.flags |= PCI_CONFIG_WRITE;
+        if (device) {
+            if (size == 4 && !details.offset) { // aligned DWORD writes -> fast path
+                device->pci_cfg_write(reg_offs, BYTESWAP_32(value), details);
+                return;
+            }
+            // otherwise perform necessary data transformations -> slow path
+            uint32_t old_val = details.size == 4 ? 0 : device->pci_cfg_read(reg_offs, details);
+            uint32_t new_val = pci_conv_wr_data(old_val, value, details);
+            device->pci_cfg_write(reg_offs, new_val, details);
             return;
         }
-        // otherwise perform necessary data transformations -> slow path
-        uint32_t old_val = details.size == 4 ? 0 : device->pci_cfg_read(reg_offs, details);
-        uint32_t new_val = pci_conv_wr_data(old_val, value, details);
-        device->pci_cfg_write(reg_offs, new_val, details);
-        return;
+        LOG_WRITE_NON_EXISTENT_PCI_DEVICE();
     }
-    LOG_WRITE_NON_EXISTENT_PCI_DEVICE();
 }
 
 inline void MPC106::cfg_setup(uint32_t offset, int size, int &bus_num, int &dev_num,
