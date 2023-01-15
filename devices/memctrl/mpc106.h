@@ -69,88 +69,78 @@ protected:
 
 private:
     uint8_t my_pci_cfg_hdr[256] = {
-        0x57, 0x10,    // vendor ID: Motorola
-        0x02, 0x00,    // device ID: MPC106
-        0x06, 0x00,    // PCI command
-        0x80, 0x00,    // PCI status
-        0x40,          // revision ID: 4.0
-        0x00,          // standard programming
-        0x00,          // subclass code: host bridge
-        0x06,          // class code: bridge device
-        0x08,          // cache line size
-        0x00,          // latency timer
-        0x00,          // header type
-        0x00,          // BIST Control
-        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-        0x00,                                                    // Interrupt line
-        0x00,                                                    // Interrupt pin
-        0x00,                                                    // MIN GNT
-        0x00,                                                    // MAX LAT
-        0x00,                                                    // Bus number
-        0x00,                                                    // Subordinate bus number
-        0x00,                                                    // Discount counter
-        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00,    // Performance monitor command
-        0x00, 0x00,                                              // Performance monitor mode control
-        0xFF, 0xFF,
-
-        0x00, 0x00, 0x00, 0x00,    // Performance monitor counter 0
-        0x00, 0x00, 0x00, 0x00,    // Performance monitor counter 1
-        0x00, 0x00, 0x00, 0x00,    // Performance monitor counter 2
-        0x00, 0x00, 0x00, 0x00,    // Performance monitor counter 3
-
-        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-        0xFF,
-
-        0x00, 0x00,    // Power mgt config 1
-        0x00,          // Power mgt config 2
-        0xCD,          // default value for ODCR
-        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00,                      // Memory Starting Address
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,    // Extended Memory Starting Address
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,    // Memory Ending Address
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,    // Extended Memory Ending Address
-
-        0x00,    // Memory bank enable
-        0xFF, 0xFF,
-        0x00,    // Memory page mode
-        0xFF, 0xFF, 0xFF, 0xFF,
-
-        0x10, 0x00, 0x00, 0xFF,    // PICR1
-        0x0C, 0x06, 0x0C, 0x00,    // PICR2
-        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-        0x00,    // ECC single-bit error counter
-        0x00,    // ECC single-bit error trigger
-        0x04,    // Alternate OS visible paramaters 1
-        0x01,    // Alternate OS visible paramaters 2
-
-        0xFF, 0xFF, 0xFF, 0xFF,
-
-        0x01,    // Error enabling 1
-        0x00,    // Error detection 1
-        0xFF,
-        0x00,    // 60x bus error status
-        0x00,    // Error enabling 2
-        0x00,    // Error detection 2
-        0xFF,
-        0x00,                      // PCI bus error status
-        0x00, 0x00, 0x00, 0x00,    // 60x/PCI ERROR address
-
-        0xFF, 0xFF, 0xFF, 0xFF,
-
-        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-        0xFF,
-
-        0x42, 0x00, 0xFF, 0x0F,    // Emulation support config 1
-        0x00, 0x00, 0x00, 0x00,    // Modified memory status (no clear)
-        0x20, 0x00, 0x00, 0x00,    // Emulation support config 2
-        0x00, 0x00, 0x00, 0x00,    // Modified memory status (clear)
-
-        0x00, 0x00, 0x02, 0xFF,    // Memory ctrl config 1
-        0x03, 0x00, 0x00, 0x00,    // Memory ctrl config 2
-        0x00, 0x00, 0x00, 0x00,    // Memory ctrl config 3
-        0x00, 0x00, 0x10, 0x00     // Memory ctrl config 4
+#define _ 0xFF,
+/* 00 */    0x57, 0x10,             // vendor ID: Motorola
+/* 02 */    0x02, 0x00,             // device ID: MPC106
+/* 04 */    0x06, 0x00,             // PCI command
+/* 06 */    0x80, 0x00,             // PCI status
+/* 08 */    0x40,                   // revision ID: 4.0
+/* 09 */    0x00,                   // standard programming
+/* 0A */    0x00,                   // subclass code: host bridge
+/* 0B */    0x06,                   // class code: bridge device
+/* 0C */    0x08,                   // cache line size
+/* 0D */    0x00,                   // latency timer
+/* 0E */    0x00,                   // header type
+/* 0F */    0x00,                   // BIST Control
+/* 10 */    _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+/* 20 */    _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+/* 30 */    _ _ _ _ _ _ _ _ _ _ _ _
+/* 3C */    0x00,                   // Interrupt line
+/* 3D */    0x00,                   // Interrupt pin
+/* 3E */    0x00,                   // MIN GNT
+/* 3F */    0x00,                   // MAX LAT
+/* 40 */    0x00,                   // Bus number
+/* 41 */    0x00,                   // Subordinate bus number
+/* 42 */    0x00,                   // Discount counter
+/* 43 */    _ _ _ _ _
+/* 48 */    0x00, 0x00, 0x00, 0x00, // Performance monitor command
+/* 4C */    0x00, 0x00,             // Performance monitor mode control
+/* 4E */    _ _
+/* 50 */    0x00, 0x00, 0x00, 0x00, // Performance monitor counter 0
+/* 54 */    0x00, 0x00, 0x00, 0x00, // Performance monitor counter 1
+/* 58 */    0x00, 0x00, 0x00, 0x00, // Performance monitor counter 2
+/* 5C */    0x00, 0x00, 0x00, 0x00, // Performance monitor counter 3
+/* 60 */    _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+/* 70 */    0x00, 0x00,             // Power mgt config 1
+/* 72 */    0x00,                   // Power mgt config 2
+/* 73 */    0xCD,                   // Output driver control
+/* 74 */    _ _ _ _ _ _ _ _ _ _ _ _
+/* 80 */    0, 0, 0, 0, 0, 0, 0, 0, // Memory Starting Address
+/* 88 */    0, 0, 0, 0, 0, 0, 0, 0, // Extended Memory Starting Address
+/* 90 */    0, 0, 0, 0, 0, 0, 0, 0, // Memory Ending Address
+/* 98 */    0, 0, 0, 0, 0, 0, 0, 0, // Extended Memory Ending Address
+/* A0 */    0x00,                   // Memory bank enable
+/* A1 */    _ _
+/* A3 */    0x00,                   // Memory page mode
+/* A4 */    _ _ _ _
+/* A8 */    0x10, 0x00, 0x00, 0xFF, // PICR1
+/* AC */    0x0C, 0x06, 0x0C, 0x00, // PICR2
+/* B0 */    _ _ _ _ _ _ _ _
+/* B8 */    0x00,                   // ECC single-bit error counter
+/* B9 */    0x00,                   // ECC single-bit error trigger
+/* BA */    0x04,                   // Alternate OS visible paramaters 1
+/* BB */    0x01,                   // Alternate OS visible paramaters 2
+/* BC */    _ _ _ _
+/* C0 */    0x01,                   // Error enabling 1
+/* C1 */    0x00,                   // Error detection 1
+/* C2 */    _
+/* C3 */    0x00,                   // 60x bus error status
+/* C4 */    0x00,                   // Error enabling 2
+/* C5 */    0x00,                   // Error detection 2
+/* C6 */    _
+/* C7 */    0x00,                   // PCI bus error status
+/* C8 */    0x00, 0x00, 0x00, 0x00, // 60x/PCI ERROR address
+/* CC */    _ _ _ _
+/* D0 */    _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+/* E0 */    0x42, 0x00, 0xFF, 0x0F, // Emulation support config 1
+/* E4 */    0x00, 0x00, 0x00, 0x00, // Modified memory status (no clear)
+/* E8 */    0x20, 0x00, 0x00, 0x00, // Emulation support config 2
+/* EC */    0x00, 0x00, 0x00, 0x00, // Modified memory status (clear)
+/* F0 */    0x00, 0x00, 0x02, 0xFF, // Memory ctrl config 1
+/* F4 */    0x03, 0x00, 0x00, 0x00, // Memory ctrl config 2
+/* F8 */    0x00, 0x00, 0x00, 0x00, // Memory ctrl config 3
+/* FC */    0x00, 0x00, 0x10, 0x00  // Memory ctrl config 4
+#undef _
     };
 
     uint32_t config_addr;
