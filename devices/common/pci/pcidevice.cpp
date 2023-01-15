@@ -210,12 +210,18 @@ void PCIDevice::set_bar_value(int bar_num, uint32_t value)
         case PCIBarType::Io_16_Bit:
         case PCIBarType::Io_32_Bit:
             this->bars[bar_num] = (value & bar_cfg & ~3) | (bar_cfg & 3);
+            if (value != 0xFFFFFFFFUL && (value & ~3) != (value & bar_cfg & ~3)) {
+                LOG_F(ERROR, "%s: BAR %d cannot be 0x%08x (set to 0x%08x)", this->pci_name.c_str(), bar_num, (value & ~3), (value & bar_cfg & ~3));
+            }
             break;
 
         case PCIBarType::Mem_20_Bit:
         case PCIBarType::Mem_32_Bit:
         case PCIBarType::Mem_64_Bit_Lo:
             this->bars[bar_num] = (value & bar_cfg & ~0xF) | (bar_cfg & 0xF);
+            if (value != 0xFFFFFFFFUL && (value & ~0xF) != (value & bar_cfg & ~0xF)) {
+                LOG_F(ERROR, "%s: BAR %d cannot be 0x%08x (set to 0x%08x)", this->pci_name.c_str(), bar_num, (value & ~0xF), (value & bar_cfg & ~0xF));
+            }
             break;
 
         case PCIBarType::Mem_64_Bit_Hi:
