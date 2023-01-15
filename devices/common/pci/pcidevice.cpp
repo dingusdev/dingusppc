@@ -181,7 +181,7 @@ int PCIDevice::attach_exp_rom_image(const std::string img_path)
         this->exp_bar_cfg  = ~(this->exp_rom_size - 1);
     }
     catch (const std::exception& exc) {
-        LOG_F(ERROR, "PCIDevice: %s", exc.what());
+        LOG_F(ERROR, "%s: %s", this->pci_name.c_str(), exc.what());
         result = -1;
     }
 
