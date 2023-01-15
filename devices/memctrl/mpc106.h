@@ -84,10 +84,6 @@ public:
     int device_postinit();
 
 protected:
-    /* PCI access */
-    uint32_t pci_read(uint32_t offset, uint32_t size);
-    void pci_write(uint32_t offset, uint32_t value, uint32_t size);
-
     /* my own PCI configuration registers access */
     uint32_t pci_cfg_read(uint32_t reg_offs, AccessDetails &details);
     void pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDetails &details);
