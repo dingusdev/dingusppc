@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -19,10 +19,19 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/** Bandit ARBus-to-PCI bridge definitions.
+/** Bandit/Chaos ARBus-to-PCI bridge definitions.
 
-    The Bandit ASIC is a custom ARBus-to-PCI bridge used in the second
-    generation of the Power Macintosh computer equipped with the PCI bus.
+    Bandit is a custom ARBus-to-PCI bridge used in the second generation
+    of the Power Macintosh computer equipped with the PCI bus.
+
+    Chaos is a custom ARBus-to-PCI bridge that provides a specialized
+    PCI-like bus for video called VCI. This 64-bit bus runs at the same
+    frequency as the CPU bus (40-50 MHz) and connects video input/output
+    devices with the CPU bus.
+
+    Chaos seems to be a Bandit variant without PCI configuration space.
+    It's assumed to be present in some PCI Power Macintosh models of the
+    first generation.
 */
 
 #ifndef BANDIT_PCI_H
@@ -36,7 +45,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <memory>
 #include <string>
-#include <unordered_map>
 
 #define BANDIT_DEV          (11)       // Bandit's own device number
 #define BANDIT_CAR_TYPE     (1 << 0)   // Bandit config address type bit
@@ -52,6 +60,9 @@ enum {
 /** checks if one bit is set at time, return 0 if not */
 #define SINGLE_BIT_SET(val) ((val) && !((val) & ((val)-1)))
 
+/*
+    Common functionality for Bandit/Chaos PCI host bridge.
+ */
 class BanditHost : public PCIHost, public MMIODevice {
 public:
     void cfg_setup(uint32_t offset, int size, int &bus_num, int &dev_num, int &fun_num, uint8_t &reg_offs, AccessDetails &details, PCIDevice *&device);
@@ -64,6 +75,30 @@ protected:
     uint32_t    config_addr;
 };
 
+/*
+    PCI device for Bandit (but not for Chaos).
+ */
+class BanditPciDevice : public PCIDevice {
+public:
+    BanditPciDevice(int bridge_num, std::string name, int dev_id, int rev);
+    ~BanditPciDevice() = default;
+
+    // PCIDevice methods
+    uint32_t pci_cfg_read(uint32_t reg_offs, AccessDetails &details);
+    void pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDetails &details);
+
+protected:
+    void verbose_address_space();
+
+private:
+    uint32_t    addr_mask;
+    uint32_t    mode_ctrl; // controls various chip modes/features
+    uint32_t    rd_hold_off_cnt;
+};
+
+/*
+    Bandit HLE emulation class.
+ */
 class Bandit : public BanditHost {
 public:
     Bandit(int bridge_num, std::string name, int dev_id=1, int rev=3);
@@ -78,35 +113,12 @@ public:
     };
 
 private:
-    uint32_t    base_addr;
+    uint32_t                    base_addr;
+    unique_ptr<BanditPciDevice> my_pci_device;
 };
 
-class BanditPCI : public PCIDevice {
-public:
-    BanditPCI(int bridge_num, std::string name);
-    ~BanditPCI() = default;
-    
-    static std::unique_ptr<HWComponent> create_first() {
-        return std::unique_ptr<BanditPCI>(new BanditPCI(1, "BanditPCI"));
-    };
-
-    // PCIDevice methods
-    uint32_t pci_cfg_read(uint32_t reg_offs, AccessDetails &details);
-    void pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDetails &details);
-    
-protected:
-    void verbose_address_space();
-
-private:
-    uint32_t    addr_mask;
-    uint32_t    mode_ctrl; // controls various chip modes/features
-    uint32_t    rd_hold_off_cnt;
-};
-
-/** Chaos is a custom ARBus-to-PCI bridge that provides a specialized
-    PCI-like bus for video called VCI. This 64-bit bus runs at the same
-    frequency as the CPU bus (40-50 MHz) and provides an interface
-    between video input/output devices and the CPU bus.
+/**
+    Chaos HLE emulation class.
  */
 class Chaos : public BanditHost {
 public:

@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/** Bandit ARBus-to-PCI Bridge emulation. */
+/** Bandit/Chaos ARBus-to-PCI Bridge emulation. */
 
 #include <devices/common/pci/bandit.h>
 #include <devices/deviceregistry.h>
@@ -60,19 +60,22 @@ Bandit::Bandit(int bridge_num, std::string name, int dev_id, int rev)
     // base_addr + 0x1000000 --> pass-through memory space (not included below)
     mem_ctrl->add_mmio_region(base_addr, 0x01000000, this);
 
-	std::string banditpcitname = "Bandit1PCI";
-    attach_pci_device(banditpcitname, 1);
+    // connnect Bandit PCI device
+	this->my_pci_device = unique_ptr<BanditPciDevice>(
+        new BanditPciDevice(bridge_num, name, dev_id, rev)
+    );
+    this->pci_register_device(1, this->my_pci_device.get());
 }
 
-BanditPCI::BanditPCI(int bridge_num, std::string name)
+BanditPciDevice::BanditPciDevice(int bridge_num, std::string name, int dev_id, int rev)
     : PCIDevice(name)
 {
     supports_types(HWCompType::PCI_DEV);
 
     // prepare the PCI config header
     this->vendor_id   = PCI_VENDOR_APPLE;
-    this->device_id   = 0x0001;
-    this->class_rev   = 0x06000003;
+    this->device_id   = dev_id;
+    this->class_rev   = 0x06000000 | (rev & 0xFFU);
     this->cache_ln_sz = 8;
     this->command     = 0x16;
 
@@ -91,7 +94,7 @@ BanditPCI::BanditPCI(int bridge_num, std::string name)
     this->rd_hold_off_cnt = 8;
 }
 
-uint32_t BanditPCI::pci_cfg_read(uint32_t reg_offs, AccessDetails &details)
+uint32_t BanditPciDevice::pci_cfg_read(uint32_t reg_offs, AccessDetails &details)
 {
     if (reg_offs < 64) {
         return PCIDevice::pci_cfg_read(reg_offs, details);
@@ -109,7 +112,7 @@ uint32_t BanditPCI::pci_cfg_read(uint32_t reg_offs, AccessDetails &details)
     return 0;
 }
 
-void BanditPCI::pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDetails &details)
+void BanditPciDevice::pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDetails &details)
 {
     if (reg_offs < 64) {
         PCIDevice::pci_cfg_write(reg_offs, value, details);
@@ -233,7 +236,7 @@ void BanditHost::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int 
     }
 }
 
-void BanditPCI::verbose_address_space()
+void BanditPciDevice::verbose_address_space()
 {
     uint32_t mask;
     int bit_pos;
@@ -289,11 +292,6 @@ static const DeviceDescription Chaos_Descriptor = {
     Chaos::create, {}, {}
 };
 
-static const DeviceDescription Bandit1PCI_Descriptor = {
-    BanditPCI::create_first, {}, {}
-};
-
 REGISTER_DEVICE(Bandit1   , Bandit1_Descriptor);
-REGISTER_DEVICE(Bandit1PCI, Bandit1PCI_Descriptor);
 REGISTER_DEVICE(PsxPci1   , PsxPci1_Descriptor);
 REGISTER_DEVICE(Chaos     , Chaos_Descriptor);
