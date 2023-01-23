@@ -78,8 +78,8 @@ public:
     };
 
     // configuration space access methods
-    virtual uint32_t pci_cfg_read(uint32_t reg_offs, uint32_t size);
-    virtual void pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size);
+    virtual uint32_t pci_cfg_read(uint32_t reg_offs, AccessDetails &details);
+    virtual void pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDetails &details);
 
     // plugin interface for using in the derived classes
     std::function<uint16_t()>       pci_rd_stat;
@@ -100,6 +100,10 @@ public:
     virtual void set_host(PCIHost* host_instance) {
         this->host_instance = host_instance;
     };
+
+    // MMIODevice methods
+    virtual uint32_t read(uint32_t rgn_start, uint32_t offset, int size) { return 0; }
+    virtual void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size) { }
 
 protected:
     void do_bar_sizing(int bar_num);
@@ -136,5 +140,125 @@ protected:
 
     std::unique_ptr<uint8_t[]> exp_rom_data;
 };
+
+/* value is dword from PCI config. MSB..LSB of value is stored in PCI config as 0:LSB..3:MSB.
+   result is part of value at byte offset from LSB with size bytes (with wrap around) and flipped as required for pci_cfg_read result. */
+inline uint32_t pci_cfg_rev_read(uint32_t value, AccessDetails &details) {
+    switch (details.size << 2 | details.offset) {
+        case 0x04: return  value        & 0xff; // 0
+        case 0x05: return (value >>  8) & 0xff; // 1
+        case 0x06: return (value >> 16) & 0xff; // 2
+        case 0x07: return (value >> 24) & 0xff; // 3
+
+        case 0x08: return ((value & 0xff) << 8)    | ((value >>  8) & 0xff); // 0 1
+        case 0x09: return ( value        & 0xff00) | ((value >> 16) & 0xff); // 1 2
+        case 0x0a: return ((value >>  8) & 0xff00) | ((value >> 24) & 0xff); // 2 3
+        case 0x0b: return ((value >> 16) & 0xff00) | ( value        & 0xff); // 3 0
+
+        case 0x10: return ((value &       0xff) << 24) | ((value &  0xff00) <<  8) | ((value >>  8) & 0xff00) | ((value >> 24) & 0xff); // 0 1 2 3
+        case 0x11: return ((value &     0xff00) << 16) | ( value       & 0xff0000) | ((value >> 16) & 0xff00) | ( value        & 0xff); // 1 2 3 0
+        case 0x12: return ((value &   0xff0000) <<  8) | ((value >> 8) & 0xff0000) | ((value & 0xff) << 8)    | ((value >>  8) & 0xff); // 2 3 0 1
+        case 0x13: return ( value & 0xff000000)        | ((value &    0xff) << 16) | ( value        & 0xff00) | ((value >> 16) & 0xff); // 3 0 1 2
+
+        default: return 0xffffffff;
+    }
+}
+
+/* value is dword from PCI config. MSB..LSB of value (3.2.1.0) is stored in PCI config as 0:LSB..3:MSB.
+   newvalue is flipped bytes (d0.d1.d2.d3, as passed to pci_cfg_write) to be merged into value.
+   result is part of value at byte offset from LSB with size bytes (with wrap around) modified by newvalue. */
+inline uint32_t pci_cfg_rev_write(uint32_t value, AccessDetails &details, uint32_t newvalue) {
+    switch (details.size << 2 | details.offset) {
+        case 0x04: return (value & 0xffffff00) |  (newvalue & 0xff);        //  3  2  1 d0
+        case 0x05: return (value & 0xffff00ff) | ((newvalue & 0xff) <<  8); //  3  2 d0  0
+        case 0x06: return (value & 0xff00ffff) | ((newvalue & 0xff) << 16); //  3 d0  1  0
+        case 0x07: return (value & 0x00ffffff) | ((newvalue & 0xff) << 24); // d0  2  1  0
+
+        case 0x08: return (value & 0xffff0000) | ((newvalue >> 8) & 0xff)    | ((newvalue & 0xff) <<  8); //  3  2 d1 d0
+        case 0x09: return (value & 0xff0000ff) |  (newvalue & 0xff00)        | ((newvalue & 0xff) << 16); //  3 d1 d0  0
+        case 0x0a: return (value & 0x0000ffff) | ((newvalue & 0xff00) <<  8) | ((newvalue & 0xff) << 24); // d1 d0  1  0
+        case 0x0b: return (value & 0x00ffff00) | ((newvalue & 0xff00) << 16) |  (newvalue & 0xff);        // d0  2  1 d1
+
+        case 0x10: return ((newvalue &       0xff) << 24) | ((newvalue &   0xff00) <<  8) | ((newvalue >>  8) & 0xff00) | ((newvalue >> 24) & 0xff); // d3 d2 d1 d0
+        case 0x11: return ((newvalue &     0xff00) << 16) | ( newvalue        & 0xff0000) | ((newvalue >> 16) & 0xff00) | ( newvalue        & 0xff); // d2 d1 d0 d3
+        case 0x12: return ((newvalue &   0xff0000) <<  8) | ((newvalue >> 8)  & 0xff0000) | ((newvalue & 0xff) << 8)    | ((newvalue >>  8) & 0xff); // d1 d0 d3 d2
+        case 0x13: return ( newvalue & 0xff000000)        | ((newvalue &     0xff) << 16) | ( newvalue        & 0xff00) | ((newvalue >> 16) & 0xff); // d0 d3 d2 d1
+
+        default: return 0xffffffff;
+    }
+}
+
+inline uint32_t pci_cfg_log(uint32_t value, AccessDetails &details) {
+    switch (details.size << 2 | details.offset) {
+        case 0x04: return (uint8_t) value;
+        case 0x05: return (uint8_t)(value >> 8);
+        case 0x06: return (uint8_t)(value >> 16);
+        case 0x07: return (uint8_t)(value >> 24);
+
+        case 0x08: return (uint16_t)  value;
+        case 0x09: return (uint16_t) (value >>  8);
+        case 0x0a: return (uint16_t) (value >> 16);
+        case 0x0b: return (uint16_t)((value >> 24) | (value << 8));
+
+        case 0x10: return  value;
+        case 0x11: return (value >>  8) | (value << 24);
+        case 0x12: return (value >> 16) | (value << 16);
+        case 0x13: return (value >> 24) | (value <<  8);
+
+        default: return 0xffffffff;
+    }
+}
+
+#define SIZE_ARGS details.size == 4 ? 'l' : details.size == 2 ? 'w' : details.size == 1 ? 'b' : '0' + details.size
+
+#define LOG_READ_UNIMPLEMENTED_CONFIG_REGISTER() \
+    do { if ((details.flags & PCI_CONFIG_DIRECTION) == PCI_CONFIG_READ) { \
+        VLOG_F( \
+            (~-details.size & details.offset) ? loguru::Verbosity_ERROR : loguru::Verbosity_WARNING, \
+            "%s: read  unimplemented config register @%02x.%c", \
+            this->name.c_str(), reg_offs + details.offset, \
+            SIZE_ARGS \
+        ); \
+    } } while(0)
+
+#define LOG_NAMED_CONFIG_REGISTER(reg_verb, reg_name) \
+    VLOG_F( \
+        (~-details.size & details.offset) ? loguru::Verbosity_ERROR : loguru::Verbosity_WARNING, \
+        "%s: %s %s register @%02x.%c = %0*x", \
+        this->name.c_str(), reg_verb, reg_name, reg_offs + details.offset, \
+        SIZE_ARGS, \
+        details.size * 2, pci_cfg_log(value, details) \
+    )
+
+#define LOG_READ_NAMED_CONFIG_REGISTER(reg_name) \
+    do { if ((details.flags & PCI_CONFIG_DIRECTION) == PCI_CONFIG_READ) { \
+        LOG_NAMED_CONFIG_REGISTER("read ", reg_name); \
+    } } while(0)
+
+#define LOG_WRITE_NAMED_CONFIG_REGISTER(reg_name) \
+    LOG_NAMED_CONFIG_REGISTER("write", reg_name)
+
+#define LOG_READ_UNIMPLEMENTED_CONFIG_REGISTER_WITH_VALUE() \
+    LOG_READ_NAMED_CONFIG_REGISTER("unimplemented config")
+
+#define LOG_WRITE_UNIMPLEMENTED_CONFIG_REGISTER() \
+    LOG_WRITE_NAMED_CONFIG_REGISTER("unimplemented config")
+
+#define LOG_READ_NON_EXISTENT_PCI_DEVICE() \
+    LOG_F( \
+        ERROR, \
+        "%s err: read  attempt from non-existent PCI device %02x:%02x.%x @%02x.%c", \
+        this->name.c_str(), bus_num, dev_num, fun_num, reg_offs + details.offset, \
+        SIZE_ARGS \
+    )
+
+#define LOG_WRITE_NON_EXISTENT_PCI_DEVICE() \
+    LOG_F( \
+        ERROR, \
+        "%s err: write attempt  to  non-existent PCI device %02x:%02x.%x @%02x.%c = %0*x", \
+        this->name.c_str(), bus_num, dev_num, fun_num, reg_offs + details.offset, \
+        SIZE_ARGS, \
+        details.size * 2, BYTESWAP_SIZED(value, details.size) \
+    )
 
 #endif /* PCI_DEVICE_H */

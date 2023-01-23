@@ -38,7 +38,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 #include <unordered_map>
 
-#define BANDIT_ID_SEL       (1 << 0)   // Bandit's own IDSEL
+#define BANDIT_DEV          (11)       // Bandit's own device number
 #define BANDIT_CAR_TYPE     (1 << 0)   // Bandit config address type bit
 #define BANDIT_CONFIG_SPACE 0x00800000 // Bandit Config Space bit
 
@@ -52,7 +52,19 @@ enum {
 /** checks if one bit is set at time, return 0 if not */
 #define SINGLE_BIT_SET(val) ((val) && !((val) & ((val)-1)))
 
-class Bandit : public PCIHost, public PCIDevice {
+class BanditHost : public PCIHost, public MMIODevice {
+public:
+    void cfg_setup(uint32_t offset, int size, int &bus_num, int &dev_num, int &fun_num, uint8_t &reg_offs, AccessDetails &details, PCIDevice *&device);
+
+    // MMIODevice methods
+    uint32_t read(uint32_t rgn_start, uint32_t offset, int size);
+    void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size);
+
+protected:
+    uint32_t    config_addr;
+};
+
+class Bandit : public BanditHost {
 public:
     Bandit(int bridge_num, std::string name, int dev_id=1, int rev=3);
     ~Bandit() = default;
@@ -65,19 +77,27 @@ public:
         return std::unique_ptr<Bandit>(new Bandit(1, "PSX-PCI1", 8, 0));
     };
 
-    uint32_t pci_cfg_read(uint32_t reg_offs, uint32_t size);
-    void pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size);
+private:
+    uint32_t    base_addr;
+};
 
-    // MMIODevice methods
-    uint32_t read(uint32_t rgn_start, uint32_t offset, int size);
-    void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size);
+class BanditPCI : public PCIDevice {
+public:
+    BanditPCI(int bridge_num, std::string name);
+    ~BanditPCI() = default;
+    
+    static std::unique_ptr<HWComponent> create_first() {
+        return std::unique_ptr<BanditPCI>(new BanditPCI(1, "BanditPCI"));
+    };
 
+    // PCIDevice methods
+    uint32_t pci_cfg_read(uint32_t reg_offs, AccessDetails &details);
+    void pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDetails &details);
+    
 protected:
     void verbose_address_space();
 
 private:
-    uint32_t    base_addr;
-    uint32_t    config_addr;
     uint32_t    addr_mask;
     uint32_t    mode_ctrl; // controls various chip modes/features
     uint32_t    rd_hold_off_cnt;
@@ -88,7 +108,7 @@ private:
     frequency as the CPU bus (40-50 MHz) and provides an interface
     between video input/output devices and the CPU bus.
  */
-class Chaos : public PCIHost, public MMIODevice {
+class Chaos : public BanditHost {
 public:
     Chaos(std::string name);
     ~Chaos() = default;
@@ -96,13 +116,6 @@ public:
     static std::unique_ptr<HWComponent> create() {
         return std::unique_ptr<Chaos>(new Chaos("VCI0"));
     };
-
-    // MMIODevice methods
-    uint32_t read(uint32_t rgn_start, uint32_t offset, int size);
-    void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size);
-
-private:
-    uint32_t    config_addr;
 };
 
 #endif // BANDIT_PCI_H

@@ -83,3 +83,8 @@ void PCIHost::attach_pci_device(std::string& dev_name, int slot_id)
     this->pci_register_device(
         slot_id, dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name(dev_name)));
 }
+
+PCIDevice *PCIHost::pci_find_device(uint8_t bus_num, uint8_t dev_num, uint8_t fun_num)
+{
+    return NULL;
+}

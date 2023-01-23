@@ -161,34 +161,35 @@ void ATIRage::notify_bar_change(int bar_num)
     }
 }
 
-uint32_t ATIRage::pci_cfg_read(uint32_t reg_offs, uint32_t size)
+uint32_t ATIRage::pci_cfg_read(uint32_t reg_offs, AccessDetails &details)
 {
     if (reg_offs < 64) {
-        return PCIDevice::pci_cfg_read(reg_offs, size);
+        return PCIDevice::pci_cfg_read(reg_offs, details);
     }
 
     switch (reg_offs) {
     case 0x40:
         return this->user_cfg;
     default:
-        LOG_F(WARNING, "ATIRage: reading from unimplemented config register at 0x%X", reg_offs);
+        LOG_READ_UNIMPLEMENTED_CONFIG_REGISTER();
     }
 
     return 0;
 }
 
-void ATIRage::pci_cfg_write(uint32_t reg_offs, uint32_t value, uint32_t size)
+void ATIRage::pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDetails &details)
 {
     if (reg_offs < 64) {
-        PCIDevice::pci_cfg_write(reg_offs, value, size);
-    } else {
-        switch (reg_offs) {
-        case 0x40:
-            this->user_cfg = value;
-            break;
-        default:
-            LOG_F(WARNING, "ATIRage: writing to unimplemented config register at 0x%X", reg_offs);
-        }
+        PCIDevice::pci_cfg_write(reg_offs, value, details);
+        return;
+    }
+
+    switch (reg_offs) {
+    case 0x40:
+        this->user_cfg = value;
+        break;
+    default:
+        LOG_WRITE_UNIMPLEMENTED_CONFIG_REGISTER();
     }
 }
 
