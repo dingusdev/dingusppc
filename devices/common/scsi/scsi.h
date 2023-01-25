@@ -41,9 +41,9 @@ enum {
     SCSI_CTRL_ATN = 1 << 3,
     SCSI_CTRL_ACK = 1 << 4,
     SCSI_CTRL_REQ = 1 << 5,
-    SCSI_CTRL_SEL = 1 << 6,
-    SCSI_CTRL_BSY = 1 << 7,
-    SCSI_CTRL_RST = 1 << 8,
+    SCSI_CTRL_SEL = 1 << 13,
+    SCSI_CTRL_BSY = 1 << 14,
+    SCSI_CTRL_RST = 1 << 15,
 };
 
 namespace ScsiPhase {
