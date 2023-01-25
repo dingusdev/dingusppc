@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -23,20 +23,41 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <devices/common/scsi/mesh.h>
 #include <devices/deviceregistry.h>
+#include <loguru.hpp>
+#include <machines/machinebase.h>
 
 #include <cinttypes>
-#include <loguru.hpp>
 
 using namespace MeshScsi;
 
-uint8_t MESHController::read(uint8_t reg_offset)
+int MeshController::device_postinit()
+{
+    this->bus_obj = dynamic_cast<ScsiBus*>(gMachineObj->get_comp_by_name("SCSI0"));
+
+    return 0;
+}
+
+void MeshController::reset(bool is_hard_reset)
+{
+    this->cur_cmd       = SeqCmd::NoOperation;
+    this->int_mask      = 0;
+
+    if (is_hard_reset) {
+        this->bus_stat      = 0;
+        this->sync_params   = 2; // guessed
+    }
+}
+
+uint8_t MeshController::read(uint8_t reg_offset)
 {
     switch(reg_offset) {
     case MeshReg::BusStatus0:
-        LOG_F(9, "MESH: read from BusStatus0 register");
-        return 0;
+        return this->bus_obj->test_ctrl_lines(0xFFU);
+    case MeshReg::BusStatus1:
+        return this->bus_obj->test_ctrl_lines(0xE000U) >> 8;
+    case MeshReg::IntMask:
+        return this->int_mask;
     case MeshReg::MeshID:
-        LOG_F(INFO, "MESH: read from MeshID register");
         return this->chip_id; // tell them who we are
     default:
         LOG_F(WARNING, "MESH: read from unimplemented register at offset 0x%x", reg_offset);
@@ -45,34 +66,67 @@ uint8_t MESHController::read(uint8_t reg_offset)
     return 0;
 }
 
-void MESHController::write(uint8_t reg_offset, uint8_t value)
+void MeshController::write(uint8_t reg_offset, uint8_t value)
 {
+    uint16_t new_stat;
+
     switch(reg_offset) {
     case MeshReg::Sequence:
-        LOG_F(INFO, "MESH: write 0x%02X to Sequence register", value);
+        perform_command(value);
         break;
     case MeshReg::BusStatus1:
-        LOG_F(INFO, "MESH: write 0x%02X to BusStatus1 register", value);
+        new_stat = value << 8;
+        if (new_stat != this->bus_stat) {
+            for (uint16_t mask = SCSI_CTRL_RST; mask >= SCSI_CTRL_SEL; mask >>= 1) {
+                if ((new_stat ^ this->bus_stat) & mask) {
+                    if (new_stat & mask)
+                        this->bus_obj->assert_ctrl_line(new_stat, mask);
+                    else
+                        this->bus_obj->release_ctrl_line(new_stat, mask);
+                }
+            }
+            this->bus_stat = new_stat;
+        }
         break;
     case MeshReg::IntMask:
-        LOG_F(INFO, "MESH: write 0x%02X to IntMask register", value);
+        this->int_mask = value;
         break;
     case MeshReg::Interrupt:
-        LOG_F(INFO, "MESH: write 0x%02X to Interrupt register", value);
+        this->int_stat &= ~(value & INT_MASK); // clear requested interrupt bits
         break;
     case MeshReg::SourceID:
-        LOG_F(INFO, "MESH: write 0x%02X to SourceID register", value);
+        this->src_id = value;
+        break;
+    case MeshReg::DestID:
+        this->dst_id = value;
         break;
     case MeshReg::SyncParms:
-        LOG_F(INFO, "MESH: write 0x%02X to SyncParms register", value);
+        this->sync_params = value;
         break;
     default:
-        LOG_F(WARNING, "MESH: write to unimplemented register at offset 0x%x", reg_offset);
+        LOG_F(WARNING, "MESH: write to unimplemented register at offset 0x%x",
+              reg_offset);
+    }
+}
+
+void MeshController::perform_command(const uint8_t cmd)
+{
+    this->cur_cmd = cmd & 0xF;
+
+    this->int_stat &= ~INT_CMD_DONE;
+
+    switch (this->cur_cmd) {
+    case SeqCmd::ResetMesh:
+        this->reset(false);
+        this->int_stat |= INT_CMD_DONE;
+        break;
+    default:
+        LOG_F(ERROR, "MESH: unsupported sequencer command 0x%X", this->cur_cmd);
     }
 }
 
 static const DeviceDescription Mesh_Descriptor = {
-    MESHController::create, {}, {}
+    MeshController::create, {}, {}
 };
 
 REGISTER_DEVICE(Mesh, Mesh_Descriptor);

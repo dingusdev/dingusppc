@@ -77,7 +77,7 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
     );
 
     // connect SCSI HW
-    this->mesh = dynamic_cast<MESHController*>(gMachineObj->get_comp_by_name("Mesh"));
+    this->mesh = dynamic_cast<MeshController*>(gMachineObj->get_comp_by_name("Mesh"));
 
     // connect IDE HW
     this->ide_0 = dynamic_cast<IdeChannel*>(gMachineObj->get_comp_by_name("Ide0"));
