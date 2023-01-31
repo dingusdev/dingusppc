@@ -141,53 +141,6 @@ protected:
     std::unique_ptr<uint8_t[]> exp_rom_data;
 };
 
-/* value is dword from PCI config. MSB..LSB of value is stored in PCI config as 0:LSB..3:MSB.
-   result is part of value at byte offset from LSB with size bytes (with wrap around) and flipped as required for pci_cfg_read result. */
-inline uint32_t pci_cfg_rev_read(uint32_t value, AccessDetails &details) {
-    switch (details.size << 2 | details.offset) {
-        case 0x04: return  value        & 0xff; // 0
-        case 0x05: return (value >>  8) & 0xff; // 1
-        case 0x06: return (value >> 16) & 0xff; // 2
-        case 0x07: return (value >> 24) & 0xff; // 3
-
-        case 0x08: return ((value & 0xff) << 8)    | ((value >>  8) & 0xff); // 0 1
-        case 0x09: return ( value        & 0xff00) | ((value >> 16) & 0xff); // 1 2
-        case 0x0a: return ((value >>  8) & 0xff00) | ((value >> 24) & 0xff); // 2 3
-        case 0x0b: return ((value >> 16) & 0xff00) | ( value        & 0xff); // 3 0
-
-        case 0x10: return ((value &       0xff) << 24) | ((value &  0xff00) <<  8) | ((value >>  8) & 0xff00) | ((value >> 24) & 0xff); // 0 1 2 3
-        case 0x11: return ((value &     0xff00) << 16) | ( value       & 0xff0000) | ((value >> 16) & 0xff00) | ( value        & 0xff); // 1 2 3 0
-        case 0x12: return ((value &   0xff0000) <<  8) | ((value >> 8) & 0xff0000) | ((value & 0xff) << 8)    | ((value >>  8) & 0xff); // 2 3 0 1
-        case 0x13: return ( value & 0xff000000)        | ((value &    0xff) << 16) | ( value        & 0xff00) | ((value >> 16) & 0xff); // 3 0 1 2
-
-        default: return 0xffffffff;
-    }
-}
-
-/* value is dword from PCI config. MSB..LSB of value (3.2.1.0) is stored in PCI config as 0:LSB..3:MSB.
-   newvalue is flipped bytes (d0.d1.d2.d3, as passed to pci_cfg_write) to be merged into value.
-   result is part of value at byte offset from LSB with size bytes (with wrap around) modified by newvalue. */
-inline uint32_t pci_cfg_rev_write(uint32_t value, AccessDetails &details, uint32_t newvalue) {
-    switch (details.size << 2 | details.offset) {
-        case 0x04: return (value & 0xffffff00) |  (newvalue & 0xff);        //  3  2  1 d0
-        case 0x05: return (value & 0xffff00ff) | ((newvalue & 0xff) <<  8); //  3  2 d0  0
-        case 0x06: return (value & 0xff00ffff) | ((newvalue & 0xff) << 16); //  3 d0  1  0
-        case 0x07: return (value & 0x00ffffff) | ((newvalue & 0xff) << 24); // d0  2  1  0
-
-        case 0x08: return (value & 0xffff0000) | ((newvalue >> 8) & 0xff)    | ((newvalue & 0xff) <<  8); //  3  2 d1 d0
-        case 0x09: return (value & 0xff0000ff) |  (newvalue & 0xff00)        | ((newvalue & 0xff) << 16); //  3 d1 d0  0
-        case 0x0a: return (value & 0x0000ffff) | ((newvalue & 0xff00) <<  8) | ((newvalue & 0xff) << 24); // d1 d0  1  0
-        case 0x0b: return (value & 0x00ffff00) | ((newvalue & 0xff00) << 16) |  (newvalue & 0xff);        // d0  2  1 d1
-
-        case 0x10: return ((newvalue &       0xff) << 24) | ((newvalue &   0xff00) <<  8) | ((newvalue >>  8) & 0xff00) | ((newvalue >> 24) & 0xff); // d3 d2 d1 d0
-        case 0x11: return ((newvalue &     0xff00) << 16) | ( newvalue        & 0xff0000) | ((newvalue >> 16) & 0xff00) | ( newvalue        & 0xff); // d2 d1 d0 d3
-        case 0x12: return ((newvalue &   0xff0000) <<  8) | ((newvalue >> 8)  & 0xff0000) | ((newvalue & 0xff) << 8)    | ((newvalue >>  8) & 0xff); // d1 d0 d3 d2
-        case 0x13: return ( newvalue & 0xff000000)        | ((newvalue &     0xff) << 16) | ( newvalue        & 0xff00) | ((newvalue >> 16) & 0xff); // d0 d3 d2 d1
-
-        default: return 0xffffffff;
-    }
-}
-
 inline uint32_t pci_cfg_log(uint32_t value, AccessDetails &details) {
     switch (details.size << 2 | details.offset) {
         case 0x04: return (uint8_t) value;

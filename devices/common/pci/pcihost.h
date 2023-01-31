@@ -22,7 +22,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef PCI_HOST_H
 #define PCI_HOST_H
 
+#include <core/bitops.h>
 #include <devices/deviceregistry.h>
+#include <endianswap.h>
 
 #include <cinttypes>
 #include <string>
@@ -69,5 +71,85 @@ protected:
     std::unordered_map<int, PCIDevice*> dev_map;
     std::vector<PCIDevice*>             io_space_devs;
 };
+
+/* value is dword from PCI config. MSB..LSB of value is stored in PCI config as 0:LSB..3:MSB.
+   result is part of value at byte offset from LSB with size bytes (with wrap around) and flipped as required for pci_cfg_read result. */
+inline uint32_t pci_cfg_rev_read(uint32_t value, AccessDetails &details) {
+    switch (details.size << 2 | details.offset) {
+    // Bytes
+    case 0x04:
+        return value & 0xFF;            // 0
+    case 0x05:
+        return (value >>  8) & 0xFF;    // 1
+    case 0x06:
+        return (value >> 16) & 0xFF;    // 2
+    case 0x07:
+        return (value >> 24) & 0xFF;    // 3
+
+    // Words
+    case 0x08:
+        return BYTESWAP_16(value);                          // 0 1
+    case 0x09:
+        return BYTESWAP_16((value >>  8) & 0xFFFFU);        // 1 2
+    case 0x0A:
+        return BYTESWAP_16((value >> 16) & 0xFFFFU);        // 2 3
+    case 0x0B:
+        return ((value >> 16) & 0xFF00) | (value & 0xFF);   // 3 0
+
+    // Dwords
+    case 0x10:
+        return BYTESWAP_32(value);              // 0 1 2 3
+    case 0x11:
+        return ROTL_32(BYTESWAP_32(value), 8);  // 1 2 3 0
+    case 0x12:
+        return ROTL_32(BYTESWAP_32(value), 16); // 2 3 0 1
+    case 0x13:
+        return ROTR_32(BYTESWAP_32(value), 8);  // 3 0 1 2
+    default:
+        return 0xFFFFFFFFUL;
+    }
+}
+
+/* value is dword from PCI config. MSB..LSB of value (3.2.1.0) is stored in PCI config as 0:LSB..3:MSB.
+   newvalue is flipped bytes (d0.d1.d2.d3, as passed to pci_cfg_write) to be merged into value.
+   result is part of value at byte offset from LSB with size bytes (with wrap around) modified by newvalue. */
+inline uint32_t pci_cfg_rev_write(uint32_t v1, uint32_t v2, AccessDetails &details)
+{
+    switch (details.size << 2 | details.offset) {
+    // Bytes
+    case 0x04:
+        return (v1 & ~0xFF)      |  (v2 & 0xFF);        //  3  2  1 d0
+    case 0x05:
+        return (v1 & ~0xFF00)    | ((v2 & 0xFF) << 8);  //  3  2 d0  0
+    case 0x06:
+        return (v1 & ~0xFF0000)  | ((v2 & 0xFF) << 16); //  3 d0  1  0
+    case 0x07:
+        return (v1 & 0x00FFFFFF) | ((v2 & 0xFF) << 24); // d0  2  1  0
+
+    // Words
+    case 0x08:
+        return (v1 & ~0xFFFF)    |  BYTESWAP_16(v2);        //  3  2 d1 d0
+    case 0x09:
+        return (v1 & ~0xFFFF00)  | (BYTESWAP_16(v2) << 8);  //  3 d1 d0  0
+    case 0x0a:
+        return (v1 & 0x0000FFFF) | (BYTESWAP_16(v2) << 16); // d1 d0  1  0
+    case 0x0b:
+        return (v1 & 0x00FFFF00) | ((v2 & 0xFF00) << 16) |
+               (v2 & 0xFF);                                 // d0  2  1 d1
+
+    // Dwords
+    case 0x10:
+        return BYTESWAP_32(v2);              // d3 d2 d1 d0
+    case 0x11:
+        return ROTL_32(BYTESWAP_32(v2), 8);  // d2 d1 d0 d3
+    case 0x12:
+        return ROTL_32(BYTESWAP_32(v2), 16); // d1 d0 d3 d2
+    case 0x13:
+        return ROTR_32(BYTESWAP_32(v2), 8);  // d0 d3 d2 d1
+
+    default:
+        return 0xFFFFFFFFUL;
+    }
+}
 
 #endif /* PCI_HOST_H */

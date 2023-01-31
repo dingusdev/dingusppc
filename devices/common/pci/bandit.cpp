@@ -212,7 +212,7 @@ void BanditHost::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int 
             details.flags |= PCI_CONFIG_WRITE;
             if (device) {
                 uint32_t oldvalue = details.size == 4 ? 0 : device->pci_cfg_read(reg_offs, details);
-                value = pci_cfg_rev_write(oldvalue, details, value);
+                value = pci_cfg_rev_write(oldvalue, value, details);
                 device->pci_cfg_write(reg_offs, value, details);
                 return;
             }
