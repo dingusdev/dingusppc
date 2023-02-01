@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/** MPC106 (Grackle) emulation
+/** MPC106 (Grackle) definitions.
 
     Grackle IC is a combined memory and PCI controller manufactured by Motorola.
     It's the central device in the Gossamer architecture.
@@ -31,8 +31,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     - our virtual device reports revision 4.0 as expected by machine firmware
 */
 
-#ifndef MPC106_H_
-#define MPC106_H_
+#ifndef MPC106_H
+#define MPC106_H
 
 #include <devices/common/mmiodevice.h>
 #include <devices/common/pci/pcidevice.h>
@@ -42,6 +42,32 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <memory>
 #include <unordered_map>
+
+/** Grackle configuration space registers. */
+enum GrackleReg : uint32_t {
+    CFG10   = 0x40, // bus # + subordinate bus # + disconnect counter
+    PMCR1   = 0x70, // power management config 1
+    MSAR1   = 0x80, // memory starting address 1
+    MSAR2   = 0x84, // memory starting address 2
+    EMSAR1  = 0x88, // extended memory starting address 1
+    EMSAR2  = 0x8C, // extended memory starting address 2
+    MEAR1   = 0x90, // memory ending address 1
+    MEAR2   = 0x94, // memory ending address 2
+    EMEAR1  = 0x98, // extended memory ending address 1
+    EMEAR2  = 0x9C, // extended memory ending address 2
+    MBER    = 0xA0, // memory bank enable
+    PICR1   = 0xA8, // processor interface configuration 1
+    PICR2   = 0xAC, // processor interface configuration 2
+    MCCR1   = 0xF0, // memory control configuration 1
+    MCCR2   = 0xF4, // memory control configuration 2
+    MCCR3   = 0xF8, // memory control configuration 3
+    MCCR4   = 0xFC  // memory control configuration 4
+};
+
+/* MCCR1 bit definitions. */
+enum {
+    MEMGO = 1 << 19,
+};
 
 class MPC106 : public MemCtrlBase, public PCIDevice, public PCIHost {
 public:
@@ -74,92 +100,23 @@ protected:
     void setup_ram(void);
 
 private:
-    uint8_t my_pci_cfg_hdr[256] = {
-        0x57, 0x10,    // vendor ID: Motorola
-        0x02, 0x00,    // device ID: MPC106
-        0x06, 0x00,    // PCI command
-        0x80, 0x00,    // PCI status
-        0x40,          // revision ID: 4.0
-        0x00,          // standard programming
-        0x00,          // subclass code: host bridge
-        0x06,          // class code: bridge device
-        0x08,          // cache line size
-        0x00,          // latency timer
-        0x00,          // header type
-        0x00,          // BIST Control
-        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-        0x00,                                                    // Interrupt line
-        0x00,                                                    // Interrupt pin
-        0x00,                                                    // MIN GNT
-        0x00,                                                    // MAX LAT
-        0x00,                                                    // Bus number
-        0x00,                                                    // Subordinate bus number
-        0x00,                                                    // Discount counter
-        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00,    // Performance monitor command
-        0x00, 0x00,                                              // Performance monitor mode control
-        0xFF, 0xFF,
-
-        0x00, 0x00, 0x00, 0x00,    // Performance monitor counter 0
-        0x00, 0x00, 0x00, 0x00,    // Performance monitor counter 1
-        0x00, 0x00, 0x00, 0x00,    // Performance monitor counter 2
-        0x00, 0x00, 0x00, 0x00,    // Performance monitor counter 3
-
-        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-        0xFF,
-
-        0x00, 0x00,    // Power mgt config 1
-        0x00,          // Power mgt config 2
-        0xCD,          // default value for ODCR
-        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00,                      // Memory Starting Address
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,    // Extended Memory Starting Address
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,    // Memory Ending Address
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,    // Extended Memory Ending Address
-
-        0x00,    // Memory bank enable
-        0xFF, 0xFF,
-        0x00,    // Memory page mode
-        0xFF, 0xFF, 0xFF, 0xFF,
-
-        0x10, 0x00, 0x00, 0xFF,    // PICR1
-        0x0C, 0x06, 0x0C, 0x00,    // PICR2
-        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-        0x00,    // ECC single-bit error counter
-        0x00,    // ECC single-bit error trigger
-        0x04,    // Alternate OS visible paramaters 1
-        0x01,    // Alternate OS visible paramaters 2
-
-        0xFF, 0xFF, 0xFF, 0xFF,
-
-        0x01,    // Error enabling 1
-        0x00,    // Error detection 1
-        0xFF,
-        0x00,    // 60x bus error status
-        0x00,    // Error enabling 2
-        0x00,    // Error detection 2
-        0xFF,
-        0x00,                      // PCI bus error status
-        0x00, 0x00, 0x00, 0x00,    // 60x/PCI ERROR address
-
-        0xFF, 0xFF, 0xFF, 0xFF,
-
-        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-        0xFF,
-
-        0x42, 0x00, 0xFF, 0x0F,    // Emulation support config 1
-        0x00, 0x00, 0x00, 0x00,    // Modified memory status (no clear)
-        0x20, 0x00, 0x00, 0x00,    // Emulation support config 2
-        0x00, 0x00, 0x00, 0x00,    // Modified memory status (clear)
-
-        0x00, 0x00, 0x02, 0xFF,    // Memory ctrl config 1
-        0x03, 0x00, 0x00, 0x00,    // Memory ctrl config 2
-        0x00, 0x00, 0x00, 0x00,    // Memory ctrl config 3
-        0x00, 0x00, 0x10, 0x00     // Memory ctrl config 4
-    };
-
     uint32_t config_addr;
+
+    uint16_t pmcr1 = 0;          // power management config 1
+    uint8_t  pmcr2 = 0;          // power management config 2
+    uint8_t  odcr  = 0xCD;       // output driver control
+    uint32_t picr1 = 0xFF100010; // ROM on CPU bus, address map B, CPU type = MPC601
+    uint32_t picr2 = 0x000C060C;
+    uint32_t mccr1 = 0xFF820000; // 64bit ROM bus
+    uint32_t mccr2 = 3;
+    uint32_t mccr3 = 0;
+    uint32_t mccr4 = 0x00100000;
+
+    uint32_t mem_start[2]       = {};
+    uint32_t ext_mem_start[2]   = {};
+    uint32_t mem_end[2]         = {};
+    uint32_t ext_mem_end[2]     = {};
+    uint8_t  mem_bank_en        = 0;
 };
 
-#endif
+#endif // MPC106_H

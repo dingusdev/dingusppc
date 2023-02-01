@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -173,80 +173,120 @@ void MPC106::pci_write(uint32_t offset, uint32_t value, uint32_t size) {
 }
 
 uint32_t MPC106::pci_cfg_read(uint32_t reg_offs, AccessDetails &details) {
-#ifdef MPC106_DEBUG
-    LOG_F(9, "read from Grackle register %08X", reg_offs);
-#endif
-
     if (reg_offs < 64) {
         return PCIDevice::pci_cfg_read(reg_offs, details);
     }
 
-    uint32_t value = READ_DWORD_LE_A(&this->my_pci_cfg_hdr[reg_offs]);
-    if ((reg_offs >= 0x80 && reg_offs <= 0xA0) || reg_offs == 0xF0) {
-        return value;
+    switch (reg_offs) {
+    case GrackleReg::CFG10:
+        return 0;
+    case GrackleReg::PMCR1:
+        return (this->odcr << 24) | (this->pmcr2 << 16) | this->pmcr1;
+    case GrackleReg::MBER:
+        return this->mem_bank_en;
+    case GrackleReg::PICR1:
+        return this->picr1;
+    case GrackleReg::PICR2:
+        return this->picr2;
+    case GrackleReg::MCCR1:
+        return this->mccr1;
+    default:
+        LOG_READ_UNIMPLEMENTED_CONFIG_REGISTER();
     }
-    LOG_READ_UNIMPLEMENTED_CONFIG_REGISTER_WITH_VALUE();
-    return value;
+
+    return 0; // PCI Spec §6.1
 }
 
 void MPC106::pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDetails &details) {
-#ifdef MPC106_DEBUG
-    LOG_F(9, "write %08X to Grackle register %08X", value, reg_offs);
-#endif
-
     if (reg_offs < 64) {
         PCIDevice::pci_cfg_write(reg_offs, value, details);
         return;
     }
 
-    // FIXME: implement write-protection for read-only registers
-
-    uint32_t *addr = (uint32_t *)&this->my_pci_cfg_hdr[reg_offs];
-    WRITE_DWORD_LE_A(addr, value);
-
-    if ((reg_offs >= 0x80 && reg_offs <= 0xA0) || reg_offs == 0xF0) {
-        if (this->my_pci_cfg_hdr[0xF2] & 8) {
-#ifdef MPC106_DEBUG
-            LOG_F(9, "MPC106: MCCR1[MEMGO] was set!");
-#endif
-            setup_ram();
+    switch (reg_offs) {
+    case GrackleReg::CFG10:
+        // Open Firmware writes 0 to subordinate bus # - we don't care
+        break;
+    case GrackleReg::PMCR1:
+        this->pmcr1 = value & 0xFFFFU;
+        this->pmcr2 = (value >> 16) & 0xFF;
+        this->odcr  = value >> 24;
+        break;
+    case GrackleReg::MSAR1:
+    case GrackleReg::MSAR2:
+        this->mem_start[(reg_offs >> 2) & 1] = value;
+        break;
+    case GrackleReg::EMSAR1:
+    case GrackleReg::EMSAR2:
+        this->ext_mem_start[(reg_offs >> 2) & 1] = value;
+        break;
+    case GrackleReg::MEAR1:
+    case GrackleReg::MEAR2:
+        this->mem_end[(reg_offs >> 2) & 1] = value;
+        break;
+    case GrackleReg::EMEAR1:
+    case GrackleReg::EMEAR2:
+        this->ext_mem_end[(reg_offs >> 2) & 1] = value;
+        break;
+    case GrackleReg::MBER:
+        this->mem_bank_en = value & 0xFFU;
+        break;
+    case GrackleReg::PICR1:
+        this->picr1 = value;
+        break;
+    case GrackleReg::PICR2:
+        this->picr2 = value;
+        break;
+    case GrackleReg::MCCR1:
+        if ((value ^ this->mccr1) & MEMGO) {
+            if (value & MEMGO)
+                setup_ram();
         }
-        return;
+        this->mccr1 = value;
+        break;
+    case GrackleReg::MCCR2:
+        this->mccr2 = value;
+        break;
+    case GrackleReg::MCCR3:
+        this->mccr3 = value;
+        break;
+    case GrackleReg::MCCR4:
+        this->mccr4 = value;
+        break;
+    default:
+        LOG_WRITE_UNIMPLEMENTED_CONFIG_REGISTER();
     }
-    LOG_WRITE_UNIMPLEMENTED_CONFIG_REGISTER();
 }
 
 void MPC106::setup_ram() {
     uint32_t mem_start, mem_end, ext_mem_start, ext_mem_end, bank_start, bank_end;
     uint32_t ram_size = 0;
 
-    uint8_t bank_en = this->my_pci_cfg_hdr[0xA0];
-
     for (int bank = 0; bank < 8; bank++) {
-        if (bank_en & (1 << bank)) {
+        if (this->mem_bank_en & (1 << bank)) {
             if (bank < 4) {
-                mem_start     = READ_DWORD_LE_A(&this->my_pci_cfg_hdr[0x80]);
-                ext_mem_start = READ_DWORD_LE_A(&this->my_pci_cfg_hdr[0x88]);
-                mem_end       = READ_DWORD_LE_A(&this->my_pci_cfg_hdr[0x90]);
-                ext_mem_end   = READ_DWORD_LE_A(&this->my_pci_cfg_hdr[0x98]);
+                mem_start     = this->mem_start[0];
+                ext_mem_start = this->ext_mem_start[0];
+                mem_end       = this->mem_end[0];
+                ext_mem_end   = this->ext_mem_end[0];
             } else {
-                mem_start     = READ_DWORD_LE_A(&this->my_pci_cfg_hdr[0x84]);
-                ext_mem_start = READ_DWORD_LE_A(&this->my_pci_cfg_hdr[0x8C]);
-                mem_end       = READ_DWORD_LE_A(&this->my_pci_cfg_hdr[0x94]);
-                ext_mem_end   = READ_DWORD_LE_A(&this->my_pci_cfg_hdr[0x9C]);
+                mem_start     = this->mem_start[1];
+                ext_mem_start = this->ext_mem_start[1];
+                mem_end       = this->mem_end[1];
+                ext_mem_end   = this->ext_mem_end[1];
             }
             bank_start = (((ext_mem_start >> bank * 8) & 3) << 30) |
                 (((mem_start >> bank * 8) & 0xFF) << 20);
             bank_end = (((ext_mem_end >> bank * 8) & 3) << 30) |
                 (((mem_end >> bank * 8) & 0xFF) << 20) | 0xFFFFFUL;
             if (bank && bank_start != ram_size)
-                LOG_F(WARNING, "MPC106: RAM not contiguous!");
+                LOG_F(WARNING, "Grackle: RAM not contiguous!");
             ram_size += bank_end - bank_start + 1;
         }
     }
 
     if (!this->add_ram_region(0, ram_size)) {
-        LOG_F(WARNING, "MPC106 RAM allocation 0x%X..0x%X failed (maybe already exists?)",
+        LOG_F(WARNING, "Grackle: RAM allocation 0x%X..0x%X failed (maybe already exists?)",
               0, ram_size - 1);
     }
 }
