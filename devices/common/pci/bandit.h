@@ -46,9 +46,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memory>
 #include <string>
 
-#define BANDIT_DEV          (11)       // Bandit's own device number
 #define BANDIT_CAR_TYPE     (1 << 0)   // Bandit config address type bit
-#define BANDIT_CONFIG_SPACE 0x00800000 // Bandit Config Space bit
+
+/* Convenient macros for parsing CONFIG_ADDR fields. */
+#define BUS_NUM()   (this->config_addr >> 16) & 0xFFU
+#define DEV_NUM()   (this->config_addr >> 11) & 0x1FU
+#define FUN_NUM()   (this->config_addr >>  8) & 0x07U
+#define REG_NUM()   (this->config_addr      ) & 0xFCU
 
 /** Bandit specific configuration registers. */
 enum {
@@ -65,11 +69,9 @@ enum {
  */
 class BanditHost : public PCIHost, public MMIODevice {
 public:
-    void cfg_setup(uint32_t offset, int size, int &bus_num, int &dev_num, int &fun_num, uint8_t &reg_offs, AccessDetails &details, PCIDevice *&device);
-
     // MMIODevice methods
     uint32_t read(uint32_t rgn_start, uint32_t offset, int size);
-    void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size);
+    void    write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size);
 
 protected:
     uint32_t    config_addr;
