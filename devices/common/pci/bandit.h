@@ -49,10 +49,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define BANDIT_CAR_TYPE     (1 << 0)   // Bandit config address type bit
 
 /* Convenient macros for parsing CONFIG_ADDR fields. */
-#define BUS_NUM()   (this->config_addr >> 16) & 0xFFU
-#define DEV_NUM()   (this->config_addr >> 11) & 0x1FU
-#define FUN_NUM()   (this->config_addr >>  8) & 0x07U
-#define REG_NUM()   (this->config_addr      ) & 0xFCU
+#define BUS_NUM()   ((this->config_addr >> 16) & 0xFFU)
+#define DEV_NUM()   ((this->config_addr >> 11) & 0x1FU)
+#define FUN_NUM()   ((this->config_addr >>  8) & 0x07U)
+#define REG_NUM()   ((this->config_addr      ) & 0xFCU)
 
 /** Bandit specific configuration registers. */
 enum {
