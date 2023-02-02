@@ -227,16 +227,18 @@ bool MemCtrlBase::add_mem_mirror(uint32_t start_addr, uint32_t dest_addr) {
 }
 
 
-bool MemCtrlBase::set_data(uint32_t reg_addr, const uint8_t* data, uint32_t size) {
+bool MemCtrlBase::set_data(uint32_t load_addr, const uint8_t* data, uint32_t size) {
     AddressMapEntry* ref_entry;
     uint32_t cpy_size;
 
-    ref_entry = find_range(reg_addr);
+    ref_entry = find_range(load_addr);
     if (!ref_entry)
         return false;
 
+    uint32_t load_offset = load_addr - ref_entry->start;
+
     cpy_size = std::min(ref_entry->end - ref_entry->start + 1, size);
-    memcpy(ref_entry->mem_ptr, data, cpy_size);
+    memcpy(ref_entry->mem_ptr + load_offset, data, cpy_size);
 
     return true;
 }

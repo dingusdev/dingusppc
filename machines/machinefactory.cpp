@@ -328,7 +328,8 @@ bail_out:
 int MachineFactory::load_boot_rom(string& rom_filepath) {
     ifstream rom_file;
     size_t   file_size;
-    int      result;
+    int      result = 0;
+    uint32_t rom_load_addr;
     AddressMapEntry *rom_reg;
 
     rom_file.open(rom_filepath, ios::in | ios::binary);
@@ -342,10 +343,16 @@ int MachineFactory::load_boot_rom(string& rom_filepath) {
     file_size = rom_file.tellg();
     rom_file.seekg(0, rom_file.beg);
 
-    if (file_size != 0x400000UL) {
-        LOG_F(ERROR, "Unxpected ROM File size. Expected size is 4 megabytes.");
-        result = -1;
+    if (file_size == 0x400000UL) { // Old World ROMs
+        rom_load_addr = 0xFFC00000UL;
+    } else if (file_size == 0x100000UL) { // New World ROMs
+        rom_load_addr = 0xFFF00000UL;
     } else {
+        LOG_F(ERROR, "Unxpected ROM File size: %zu bytes.", file_size);
+        result = -1;
+    }
+
+    if (!result) {
         unsigned char* sysrom_mem = new unsigned char[file_size];
 
         rom_file.seekg(0, ios::beg);
@@ -355,14 +362,13 @@ int MachineFactory::load_boot_rom(string& rom_filepath) {
             gMachineObj->get_comp_by_type(HWCompType::MEM_CTRL));
 
         if ((rom_reg = mem_ctrl->find_rom_region())) {
-            mem_ctrl->set_data(rom_reg->start, sysrom_mem, (uint32_t)file_size);
+            mem_ctrl->set_data(rom_load_addr, sysrom_mem, (uint32_t)file_size);
         } else {
-            ABORT_F("Could not locate physical ROM region!");
+            LOG_F(ERROR, "Could not locate physical ROM region!");
+            result = -1;
         }
 
         delete[] sysrom_mem;
-
-        result = 0;
     }
 
     rom_file.close();
