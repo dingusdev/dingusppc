@@ -136,7 +136,7 @@ uint32_t MPC106::pci_read(uint32_t offset, uint32_t size) {
         details.size   = size;
         details.flags  = PCI_CONFIG_TYPE_0 | PCI_CONFIG_READ;
         uint32_t result = this->dev_map[dev_num]->pci_cfg_read(reg_offs, details);
-        return pci_cfg_rev_read(result, details);
+        return pci_conv_rd_data(result, details);
     } else {
         LOG_F(ERROR, "%s: read attempt from non-existing PCI device ??:%02x.%x @%02x",
             this->name.c_str(), dev_num, fun_num, offset);
@@ -167,7 +167,7 @@ void MPC106::pci_write(uint32_t offset, uint32_t value, uint32_t size) {
             this->dev_map[dev_num]->pci_cfg_write(reg_offs, BYTESWAP_32(value), details);
         } else { // otherwise perform necessary data transformations -> slow path
             uint32_t old_val = this->dev_map[dev_num]->pci_cfg_read(reg_offs, details);
-            uint32_t new_val = pci_cfg_rev_write(old_val, value, details);
+            uint32_t new_val = pci_conv_wr_data(old_val, value, details);
             this->dev_map[dev_num]->pci_cfg_write(reg_offs, new_val, details);
         }
     } else {

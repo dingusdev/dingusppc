@@ -166,7 +166,7 @@ uint32_t BanditHost::read(uint32_t rgn_start, uint32_t offset, int size)
             details.flags  = PCI_CONFIG_TYPE_0 | PCI_CONFIG_READ;
 
             result = this->dev_map[idsel]->pci_cfg_read(REG_NUM(), details);
-            return pci_cfg_rev_read(result, details);
+            return pci_conv_rd_data(result, details);
         } else {
             LOG_F(
                 ERROR, "%s err: read attempt from non-existing PCI device ??:%02x.%x @%02x",
@@ -225,7 +225,7 @@ void BanditHost::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int 
                 this->dev_map[idsel]->pci_cfg_write(REG_NUM(), BYTESWAP_32(value), details);
             } else { // otherwise perform necessary data transformations -> slow path
                 uint32_t old_val = this->dev_map[idsel]->pci_cfg_read(REG_NUM(), details);
-                uint32_t new_val = pci_cfg_rev_write(old_val, value, details);
+                uint32_t new_val = pci_conv_wr_data(old_val, value, details);
                 this->dev_map[idsel]->pci_cfg_write(REG_NUM(), new_val, details);
             }
         } else {

@@ -72,9 +72,14 @@ protected:
     std::vector<PCIDevice*>             io_space_devs;
 };
 
-/* value is dword from PCI config. MSB..LSB of value is stored in PCI config as 0:LSB..3:MSB.
-   result is part of value at byte offset from LSB with size bytes (with wrap around) and flipped as required for pci_cfg_read result. */
-inline uint32_t pci_cfg_rev_read(uint32_t value, AccessDetails &details) {
+// Helpers for data conversion in the PCI Configuration space.
+
+/**
+    Perform size dependent endian swapping for value that is dword from PCI config.
+
+    Unaligned data is handled properly by wrapping around if needed.
+ */
+inline uint32_t pci_conv_rd_data(uint32_t value, AccessDetails &details) {
     switch (details.size << 2 | details.offset) {
     // Bytes
     case 0x04:
@@ -110,10 +115,13 @@ inline uint32_t pci_cfg_rev_read(uint32_t value, AccessDetails &details) {
     }
 }
 
-/* value is dword from PCI config. MSB..LSB of value (3.2.1.0) is stored in PCI config as 0:LSB..3:MSB.
-   newvalue is flipped bytes (d0.d1.d2.d3, as passed to pci_cfg_write) to be merged into value.
-   result is part of value at byte offset from LSB with size bytes (with wrap around) modified by newvalue. */
-inline uint32_t pci_cfg_rev_write(uint32_t v1, uint32_t v2, AccessDetails &details)
+/**
+    Perform size dependent endian swapping for v2, then merge v2 with v1 under
+    control of a mask generated according with the size parameter.
+
+    Unaligned data is handled properly by wrapping around if needed.
+ */
+inline uint32_t pci_conv_wr_data(uint32_t v1, uint32_t v2, AccessDetails &details)
 {
     switch (details.size << 2 | details.offset) {
     // Bytes

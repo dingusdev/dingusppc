@@ -116,12 +116,12 @@ protected:
     // PCI configuration space state
     uint16_t    vendor_id;
     uint16_t    device_id;
-    uint32_t    class_rev;       // class code and revision id
+    uint32_t    class_rev;           // class code and revision id
     uint16_t    status = 0;
     uint16_t    command = 0;
-    uint8_t     hdr_type = 0;    // header type
-    uint8_t     lat_timer = 0;   // latency timer
-    uint8_t     cache_ln_sz = 0; // cache line size
+    uint8_t     hdr_type = 0;        // header type
+    uint8_t     lat_timer = 0;       // latency timer
+    uint8_t     cache_ln_sz = 0;     // cache line size
     uint16_t    subsys_id = 0;
     uint16_t    subsys_vndr = 0;
     uint8_t     cap_ptr = 0;
