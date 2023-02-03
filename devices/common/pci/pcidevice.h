@@ -54,6 +54,7 @@ enum {
 /** PCI Vendor IDs for devices used in Power Macintosh computers. */
 enum {
     PCI_VENDOR_ATI      = 0x1002,
+    PCI_VENDOR_DEC      = 0x1011,
     PCI_VENDOR_MOTOROLA = 0x1057,
     PCI_VENDOR_APPLE    = 0x106B,
     PCI_VENDOR_NVIDIA   = 0x10DE,
