@@ -91,10 +91,10 @@ uint32_t MPC106::read(uint32_t rgn_start, uint32_t offset, int size) {
         if (offset >= 0x200000) {
             if (this->config_addr & 0x80)    // process only if bit E (enable) is set
                 return pci_read(offset, size);
+        } else {
+            return this->config_addr;
         }
     }
-
-    // FIXME: reading from CONFIG_ADDR is ignored for now
 
     return 0;
 }
