@@ -146,7 +146,7 @@ uint32_t BanditHost::read(uint32_t rgn_start, uint32_t offset, int size)
         if (this->config_addr & BANDIT_CAR_TYPE) { // type 1 configuration command
             LOG_F(
                 WARNING, "%s: read config cycle type 1 not supported yet %02x:%02x.%x @%02x",
-                this->name.c_str(), BUS_NUM(), DEV_NUM(), FUN_NUM(), offset & 0xFCU
+                this->name.c_str(), BUS_NUM(), DEV_NUM(), FUN_NUM(), REG_NUM() + (offset & 3)
             );
             return 0xFFFFFFFFUL; // PCI spec §6.1
         }
@@ -170,7 +170,7 @@ uint32_t BanditHost::read(uint32_t rgn_start, uint32_t offset, int size)
         } else {
             LOG_F(
                 ERROR, "%s err: read attempt from non-existing PCI device ??:%02x.%x @%02x",
-                this->name.c_str(), WHAT_BIT_SET(idsel), FUN_NUM(), offset
+                this->name.c_str(), WHAT_BIT_SET(idsel) + 11, FUN_NUM(), REG_NUM() + (offset & 3)
             );
             return 0xFFFFFFFFUL; // PCI spec §6.1
         }
@@ -188,9 +188,9 @@ uint32_t BanditHost::read(uint32_t rgn_start, uint32_t offset, int size)
         }
         LOG_F(ERROR, "%s: attempt to read from unmapped PCI I/O space, offset=0x%X",
                       this->name.c_str(), offset);
+        // FIXME: add machine check exception (DEFAULT CATCH!, code=FFF00200)
+        return 0;
     }
-
-    return 0xFFFFFFFFUL; // PCI spec §6.1
 }
 
 void BanditHost::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
@@ -202,7 +202,7 @@ void BanditHost::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int 
         if (this->config_addr & BANDIT_CAR_TYPE) { // type 1 configuration command
             LOG_F(
                 WARNING, "%s: write config cycle type 1 not supported yet %02x:%02x.%x @%02x",
-                this->name.c_str(), BUS_NUM(), DEV_NUM(), FUN_NUM(), offset & 0xFCU
+                this->name.c_str(), BUS_NUM(), DEV_NUM(), FUN_NUM(), REG_NUM() + (offset & 3)
             );
             return;
         }
@@ -231,7 +231,7 @@ void BanditHost::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int 
         } else {
             LOG_F(
                 ERROR, "%s err: write attempt to non-existing PCI device ??:%02x.%x @%02x",
-                this->name.c_str(), WHAT_BIT_SET(idsel), FUN_NUM(), offset
+                this->name.c_str(), WHAT_BIT_SET(idsel) + 11, FUN_NUM(), REG_NUM() + (offset & 3)
             );
         }
         break;
@@ -273,7 +273,7 @@ Bandit::Bandit(int bridge_num, std::string name, int dev_id, int rev)
     mem_ctrl->add_mmio_region(base_addr, 0x01000000, this);
 
     // connnect Bandit PCI device
-	this->my_pci_device = unique_ptr<BanditPciDevice>(
+    this->my_pci_device = unique_ptr<BanditPciDevice>(
         new BanditPciDevice(bridge_num, name, dev_id, rev)
     );
     this->pci_register_device(1, this->my_pci_device.get());

@@ -86,6 +86,7 @@ uint32_t MPC106::read(uint32_t rgn_start, uint32_t offset, int size) {
             }
         }
         LOG_F(ERROR, "Attempt to read from unmapped PCI I/O space, offset=0x%X", offset);
+        // FIXME: add machine check exception (DEFAULT CATCH!, code=FFF00200)
     } else {
         if (offset >= 0x200000) {
             if (this->config_addr & 0x80)    // process only if bit E (enable) is set
@@ -125,8 +126,8 @@ uint32_t MPC106::pci_read(uint32_t offset, uint32_t size) {
     int reg_offs = (this->config_addr >> 24) & 0xFC;
 
     if (bus_num) {
-		LOG_F(ERROR, "%s: read attempt from non-local PCI bus, %02x:%02x.%x @%02x",
-            this->name.c_str(), bus_num, dev_num, fun_num, offset & 0xFCU);
+        LOG_F(ERROR, "%s: read attempt from non-local PCI bus, %02x:%02x.%x @%02x",
+            this->name.c_str(), bus_num, dev_num, fun_num, reg_offs + (offset & 3));
         return 0xFFFFFFFFUL; // PCI spec §6.1
     }
 
@@ -139,7 +140,7 @@ uint32_t MPC106::pci_read(uint32_t offset, uint32_t size) {
         return pci_conv_rd_data(result, details);
     } else {
         LOG_F(ERROR, "%s: read attempt from non-existing PCI device ??:%02x.%x @%02x",
-            this->name.c_str(), dev_num, fun_num, offset);
+            this->name.c_str(), dev_num, fun_num, reg_offs + (offset & 3));
     }
 
     return 0xFFFFFFFFUL; // PCI spec §6.1
@@ -152,8 +153,8 @@ void MPC106::pci_write(uint32_t offset, uint32_t value, uint32_t size) {
     int reg_offs = (this->config_addr >> 24) & 0xFC;
 
     if (bus_num) {
-		LOG_F(ERROR, "%s: write attempt to non-local PCI bus, %02x:%02x.%x @%02x",
-            this->name.c_str(), bus_num, dev_num, fun_num, offset & 0xFCU);
+        LOG_F(ERROR, "%s: write attempt to non-local PCI bus, %02x:%02x.%x @%02x",
+            this->name.c_str(), bus_num, dev_num, fun_num, reg_offs + (offset & 3));
         return;
     }
 
@@ -172,7 +173,7 @@ void MPC106::pci_write(uint32_t offset, uint32_t value, uint32_t size) {
         }
     } else {
         LOG_F(ERROR, "%s: write attempt to non-existing PCI device ??:%02x.%x @%02x",
-            this->name.c_str(), dev_num, fun_num, offset);
+            this->name.c_str(), dev_num, fun_num, reg_offs + (offset & 3));
     }
 }
 

@@ -58,6 +58,16 @@ enum {
     PCI_VENDOR_NVIDIA   = 0x10DE,
 };
 
+/** PCI BAR types */
+enum PCIBarType {
+    BAR_Unused,
+    BAR_IO_16Bit,
+    BAR_IO_32Bit,
+    BAR_MEM_20Bit, // < 1M
+    BAR_MEM_32Bit,
+    BAR_MEM_64Bit,
+    BAR_MEM_64BitHi,
+};
 
 class PCIDevice : public MMIODevice {
 public:
@@ -108,6 +118,7 @@ public:
 protected:
     void do_bar_sizing(int bar_num);
     void set_bar_value(int bar_num, uint32_t value);
+    void finish_config_bars();
     void map_exp_rom_mem();
 
     std::string pci_name;      // human-readable device name
@@ -132,6 +143,7 @@ protected:
 
     uint32_t    bars[6] = { 0 };     // base address registers
     uint32_t    bars_cfg[6] = { 0 }; // configuration values for base address registers
+    PCIBarType  bars_typ[6] = { BAR_Unused }; // types for base address registers
 
     uint32_t    exp_bar_cfg  = 0;    // expansion ROM configuration
     uint32_t    exp_rom_bar  = 0;    // expansion ROM base address register
