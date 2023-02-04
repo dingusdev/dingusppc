@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @file Construct the Yosemite machine (Power Macintosh G3 Blue & White). */
 
 #include <cpu/ppc/ppcemu.h>
+#include <devices/common/pci/dec21154.h>
 #include <devices/memctrl/mpc106.h>
 #include <machines/machinefactory.h>
 #include <machines/machineproperties.h>
@@ -30,12 +31,18 @@ int initialize_yosemite(std::string& id)
 {
     LOG_F(INFO, "Building machine Yosemite...");
 
-    // get pointer to the memory controller/PCI host bridge object
+    // get pointer to the memory controller/primary PCI bridge object
     MPC106* grackle_obj = dynamic_cast<MPC106*>(gMachineObj->get_comp_by_name("Grackle"));
+
+    // get pointer to the bridge of the secondary PCI bus
+    DecPciBridge *sec_bridge = dynamic_cast<DecPciBridge*>(gMachineObj->get_comp_by_name("Dec21154"));
 
     // connect PCI devices
     grackle_obj->pci_register_device(
         13, dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("Dec21154")));
+
+    sec_bridge->pci_register_device(
+        5, dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("Heathrow")));
 
     // allocate ROM region
     if (!grackle_obj->add_rom_region(0xFFF00000, 0x100000)) {
@@ -68,7 +75,7 @@ static const PropMap yosemite_settings = {
 };
 
 static vector<string> pmg3nw_devices = {
-    "Grackle", "Dec21154"
+    "Grackle", "Dec21154", "Heathrow"
 };
 
 static const MachineDescription pmg3nw_descriptor = {
