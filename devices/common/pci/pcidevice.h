@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -29,6 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <functional>
 #include <memory>
 #include <string>
+#include <vector>
 
 /** PCI configuration space registers offsets */
 enum {
@@ -59,15 +60,20 @@ enum {
 };
 
 /** PCI BAR types */
-enum PCIBarType {
-    BAR_Unused,
-    BAR_IO_16Bit,
-    BAR_IO_32Bit,
-    BAR_MEM_20Bit, // < 1M
-    BAR_MEM_32Bit,
-    BAR_MEM_64Bit,
-    BAR_MEM_64BitHi,
+enum PCIBarType : uint32_t {
+    Unused = 0,
+    Io_16_Bit,
+    Io_32_Bit,
+    Mem_20_Bit, // legacy type for < 1MB memory
+    Mem_32_Bit,
+    Mem_64_Bit_Lo,
+    Mem_64_Bit_Hi
 };
+
+typedef struct {
+    uint32_t    bar_num;
+    uint32_t    bar_cfg;
+} BarConfig;
 
 class PCIDevice : public MMIODevice {
 public:
@@ -116,8 +122,8 @@ public:
     virtual void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size) { }
 
 protected:
-    void do_bar_sizing(int bar_num);
     void set_bar_value(int bar_num, uint32_t value);
+    void setup_bars(std::vector<BarConfig> cfg_data);
     void finish_config_bars();
     void map_exp_rom_mem();
 
@@ -143,7 +149,7 @@ protected:
 
     uint32_t    bars[6] = { 0 };     // base address registers
     uint32_t    bars_cfg[6] = { 0 }; // configuration values for base address registers
-    PCIBarType  bars_typ[6] = { BAR_Unused }; // types for base address registers
+    PCIBarType  bars_typ[6] = { PCIBarType::Unused }; // types for base address registers
 
     uint32_t    exp_bar_cfg  = 0;    // expansion ROM configuration
     uint32_t    exp_rom_bar  = 0;    // expansion ROM base address register

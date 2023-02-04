@@ -36,8 +36,8 @@ OHare::OHare() : PCIDevice("mac-io/ohare"), InterruptCtrl()
     this->device_id   = 0x0007;
     this->class_rev   = 0xFF000001;
     this->cache_ln_sz = 8;
-    this->bars_cfg[0] = 0xFFF80000UL; // declare 512Kb of memory-mapped I/O space
-    this->finish_config_bars();
+
+    this->setup_bars({{0, 0xFFF80000UL}}); // declare 512Kb of memory-mapped I/O space
 
     this->pci_notify_bar_change = [this](int bar_num) {
         this->notify_bar_change(bar_num);

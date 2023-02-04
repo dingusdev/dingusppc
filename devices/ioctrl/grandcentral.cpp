@@ -42,8 +42,8 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
     this->device_id   = 0x0002;
     this->class_rev   = 0xFF000002;
     this->cache_ln_sz = 8;
-    this->bars_cfg[0] = 0xFFFE0000UL; // declare 128Kb of memory-mapped I/O space
-    this->finish_config_bars();
+
+    this->setup_bars({{0, 0xFFFE0000UL}}); // declare 128Kb of memory-mapped I/O space
 
     this->pci_notify_bar_change = [this](int bar_num) {
         this->notify_bar_change(bar_num);

@@ -124,10 +124,12 @@ ATIRage::ATIRage(uint16_t dev_id)
     this->class_rev   = (0x030000 << 8) | asic_id;
     this->min_gnt     = 8;
     this->irq_pin     = 1;
-    this->bars_cfg[0] = 0xFF000000UL; // declare main aperture (16MB)
-    this->bars_cfg[1] = 0xFFFFFF01UL; // declare I/O region (256 bytes)
-    this->bars_cfg[2] = 0xFFFFF000UL; // declare register aperture (4KB)
-    this->finish_config_bars();
+
+    this->setup_bars({
+        {0, 0xFF000000UL}, // declare main aperture (16MB)
+        {1, 0xFFFFFF01UL}, // declare I/O region (256 bytes)
+        {2, 0xFFFFF000UL}  // declare register aperture (4KB)
+    });
 
     this->pci_notify_bar_change = [this](int bar_num) {
         this->notify_bar_change(bar_num);

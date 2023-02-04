@@ -59,10 +59,12 @@ ControlVideo::ControlVideo()
     this->vendor_id   = PCI_VENDOR_APPLE;
     this->device_id   = 3;
     this->class_rev   = 0;
-    this->bars_cfg[0] = 0xFFFFFFFFUL; // I/O region (4 bytes but it's weird because bit 1 is set)
-    this->bars_cfg[1] = 0xFFFFF000UL; // base address for the HW registers (4KB)
-    this->bars_cfg[2] = 0xFC000000UL; // base address for the VRAM (64MB)
-    this->finish_config_bars();
+
+    this->setup_bars({
+        {0, 0xFFFFFFFFUL}, // I/O region (4 bytes but it's weird because bit 1 is set)
+        {1, 0xFFFFF000UL}, // base address for the HW registers (4KB)
+        {2, 0xFC000000UL}  // base address for the VRAM (64MB)
+    });
 
     this->pci_notify_bar_change = [this](int bar_num) {
         this->notify_bar_change(bar_num);

@@ -44,8 +44,8 @@ AtiMach64Gx::AtiMach64Gx()
     this->vendor_id   = PCI_VENDOR_ATI;
     this->device_id   = ATI_MACH64_GX_DEV_ID;
     this->class_rev   = (0x030000 << 8) | 3;
-    this->bars_cfg[0] = 0xFF000000UL; // declare main aperture (16MB)
-    this->finish_config_bars();
+
+    this->setup_bars({{0, 0xFF000000UL}}); // declare main aperture (16MB)
 
     this->pci_notify_bar_change = [this](int bar_num) {
         this->notify_bar_change(bar_num);

@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -123,6 +123,18 @@ void PCIDevice::pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDetails &
     }
 }
 
+void PCIDevice::setup_bars(std::vector<BarConfig> cfg_data)
+{
+    for (auto cfg_entry : cfg_data) {
+        if (cfg_entry.bar_num > 5) {
+            ABORT_F("BAR number %d out of range", cfg_entry.bar_num);
+        }
+        this->bars_cfg[cfg_entry.bar_num] = cfg_entry.bar_cfg;
+    }
+
+    this->finish_config_bars();
+}
+
 int PCIDevice::attach_exp_rom_image(const std::string img_path)
 {
     std::ifstream img_file;
@@ -201,74 +213,73 @@ int PCIDevice::attach_exp_rom_image(const std::string img_path)
     return result;
 }
 
-void PCIDevice::do_bar_sizing(int bar_num)
-{
-}
-
 void PCIDevice::set_bar_value(int bar_num, uint32_t value)
 {
     uint32_t bar_cfg = this->bars_cfg[bar_num];
     switch (bars_typ[bar_num]) {
-        case BAR_Unused:
+        case PCIBarType::Unused:
             return;
 
-        case BAR_IO_16Bit:
-        case BAR_IO_32Bit:
+        case PCIBarType::Io_16_Bit:
+        case PCIBarType::Io_32_Bit:
             this->bars[bar_num] = (value & bar_cfg & ~3) | (bar_cfg & 3);
             break;
 
-        case BAR_MEM_20Bit:
-        case BAR_MEM_32Bit:
-        case BAR_MEM_64Bit:
+        case PCIBarType::Mem_20_Bit:
+        case PCIBarType::Mem_32_Bit:
+        case PCIBarType::Mem_64_Bit_Lo:
             this->bars[bar_num] = (value & bar_cfg & ~0xF) | (bar_cfg & 0xF);
             break;
 
-        case BAR_MEM_64BitHi:
-            this->bars[bar_num] = (value & bar_cfg);
+        case PCIBarType::Mem_64_Bit_Hi:
+            this->bars[bar_num] = value & bar_cfg;
             break;
     }
 
-    if (value == 0xFFFFFFFFUL) {
-        do_bar_sizing(bar_num);
-        return;
-    }
-
-    this->pci_notify_bar_change(bar_num);
+    if (value != 0xFFFFFFFFUL) // don't notify the device during BAR sizing
+        this->pci_notify_bar_change(bar_num);
 }
 
 void PCIDevice::finish_config_bars()
 {
     for (int bar_num = 0; bar_num < 6; bar_num++) {
         uint32_t bar_cfg = this->bars_cfg[bar_num];
+
+        if (!bar_cfg) // skip unimplemented BARs
+            continue;
+
         if (bar_cfg & 1) {
-            bars_typ[bar_num] = (bar_cfg & 0xffff0000) ? BAR_IO_32Bit : BAR_IO_16Bit;
+            bars_typ[bar_num] = (bar_cfg & 0xffff0000) ? PCIBarType::Io_32_Bit :
+                                                         PCIBarType::Io_16_Bit;
         }
-        else if (bar_cfg != 0) {
+        else {
             int pci_space_type = (bar_cfg >> 1) & 3;
             switch (pci_space_type) {
-                case 0:
-                    bars_typ[bar_num] = BAR_MEM_32Bit;
-                    break;
-                case 1:
-                    bars_typ[bar_num] = BAR_MEM_20Bit;
-                    break;
-                case 2:
-                    if (bar_num > 4) {
-                        ABORT_F("%s: BAR %d cannot be 64-bit", this->pci_name.c_str(), bar_num);
-                    }
-                    else if (this->bars_cfg[bar_num+1] == 0) {
-                        ABORT_F("%s: 64-bit BAR %d has zero for upper 32 bits", this->pci_name.c_str(), bar_num);
-                    }
-                    else {
-                        bars_typ[bar_num++] = BAR_MEM_64Bit;
-                        bars_typ[bar_num] = BAR_MEM_64BitHi;
-                    }
-                    break;
-                case 3:
-                    ABORT_F("%s: invalid or unsupported PCI space type %d for BAR %d", this->pci_name.c_str(), pci_space_type, bar_num);
-                    break;
+            case 0:
+                bars_typ[bar_num] = PCIBarType::Mem_32_Bit;
+                break;
+            case 1:
+                bars_typ[bar_num] = PCIBarType::Mem_20_Bit;
+                break;
+            case 2:
+                if (bar_num >= 5) {
+                    ABORT_F("%s: BAR %d cannot be 64-bit",
+                            this->pci_name.c_str(), bar_num);
+                }
+                else if (this->bars_cfg[bar_num+1] == 0) {
+                    ABORT_F("%s: 64-bit BAR %d has zero for upper 32 bits",
+                            this->pci_name.c_str(), bar_num);
+                }
+                else {
+                    bars_typ[bar_num]   = PCIBarType::Mem_64_Bit_Hi;
+                    bars_typ[bar_num++] = PCIBarType::Mem_64_Bit_Lo;
+                }
+                break;
+            default:
+                ABORT_F("%s: invalid or unsupported PCI space type %d for BAR %d",
+                        this->pci_name.c_str(), pci_space_type, bar_num);
             } // switch pci_space_type
-        } // if BAR_MEM
+        }
     } // for bar_num
 }
 

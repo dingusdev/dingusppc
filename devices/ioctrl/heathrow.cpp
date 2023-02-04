@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -34,7 +34,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 #include <functional>
-#include <iostream>
 #include <memory>
 
 /** Heathrow Mac I/O device emulation.
@@ -54,8 +53,8 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
     this->class_rev   = 0xFF000001;
     this->cache_ln_sz = 8;
     this->lat_timer   = 0x40;
-    this->bars_cfg[0] = 0xFFF80000UL; // declare 512Kb of memory-mapped I/O space
-    this->finish_config_bars();
+
+    this->setup_bars({{0, 0xFFF80000UL}}); // declare 512Kb of memory-mapped I/O space
 
     this->pci_notify_bar_change = [this](int bar_num) {
         this->notify_bar_change(bar_num);
