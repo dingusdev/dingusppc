@@ -271,8 +271,8 @@ void PCIDevice::finish_config_bars()
                             this->pci_name.c_str(), bar_num);
                 }
                 else {
-                    bars_typ[bar_num]   = PCIBarType::Mem_64_Bit_Hi;
                     bars_typ[bar_num++] = PCIBarType::Mem_64_Bit_Lo;
+                    bars_typ[bar_num  ] = PCIBarType::Mem_64_Bit_Hi;
                 }
                 break;
             default:
