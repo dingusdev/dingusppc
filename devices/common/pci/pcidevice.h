@@ -120,6 +120,10 @@ public:
     virtual void set_multi_function(bool is_multi_function) {
         this->hdr_type = is_multi_function ? (this->hdr_type | 0x80) : (this->hdr_type & 0x7f);
     }
+    virtual void set_irq_pin(uint8_t irq_pin) {
+        this->irq_pin = irq_pin;
+    }
+
     // MMIODevice methods
     virtual uint32_t read(uint32_t rgn_start, uint32_t offset, int size) { return 0; }
     virtual void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size) { }
