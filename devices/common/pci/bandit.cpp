@@ -39,6 +39,7 @@ const int MultiplyDeBruijnBitPosition2[] =
 
 /** finds the position of the bit that is set */
 #define WHAT_BIT_SET(val) (MultiplyDeBruijnBitPosition2[(uint32_t)(val * 0x077CB531U) >> 27])
+#define IDSEL_TO_DEV_FUN(idsel) DEV_FUN(WHAT_BIT_SET(idsel) + 11,0)
 
 BanditPciDevice::BanditPciDevice(int bridge_num, std::string name, int dev_id, int rev)
     : PCIDevice(name)
@@ -159,18 +160,18 @@ uint32_t BanditHost::read(uint32_t rgn_start, uint32_t offset, int size)
             return 0xFFFFFFFFUL; // PCI spec §6.1
         }
 
-        if (this->dev_map.count(idsel)) {
+        if (this->dev_map.count(IDSEL_TO_DEV_FUN(idsel))) {
             AccessDetails details;
             details.offset = offset & 3;
             details.size   = size;
             details.flags  = PCI_CONFIG_TYPE_0 | PCI_CONFIG_READ;
 
-            result = this->dev_map[idsel]->pci_cfg_read(REG_NUM(), details);
+            result = this->dev_map[IDSEL_TO_DEV_FUN(idsel)]->pci_cfg_read(REG_NUM(), details);
             return pci_conv_rd_data(result, details);
         } else {
             LOG_F(
                 ERROR, "%s err: read attempt from non-existing PCI device ??:%02x.%x @%02x",
-                this->name.c_str(), WHAT_BIT_SET(idsel) + 11, FUN_NUM(), REG_NUM() + (offset & 3)
+                this->name.c_str(), IDSEL_TO_DEV_FUN(idsel), FUN_NUM(), REG_NUM() + (offset & 3)
             );
             return 0xFFFFFFFFUL; // PCI spec §6.1
         }
@@ -215,23 +216,23 @@ void BanditHost::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int 
             return;
         }
 
-        if (this->dev_map.count(idsel)) {
+        if (this->dev_map.count(IDSEL_TO_DEV_FUN(idsel))) {
             AccessDetails details;
             details.offset = offset & 3;
             details.size   = size;
             details.flags  = PCI_CONFIG_TYPE_0 | PCI_CONFIG_WRITE;
 
             if (size == 4 && !details.offset) { // aligned DWORD writes -> fast path
-                this->dev_map[idsel]->pci_cfg_write(REG_NUM(), BYTESWAP_32(value), details);
+                this->dev_map[IDSEL_TO_DEV_FUN(idsel)]->pci_cfg_write(REG_NUM(), BYTESWAP_32(value), details);
             } else { // otherwise perform necessary data transformations -> slow path
-                uint32_t old_val = this->dev_map[idsel]->pci_cfg_read(REG_NUM(), details);
+                uint32_t old_val = this->dev_map[IDSEL_TO_DEV_FUN(idsel)]->pci_cfg_read(REG_NUM(), details);
                 uint32_t new_val = pci_conv_wr_data(old_val, value, details);
-                this->dev_map[idsel]->pci_cfg_write(REG_NUM(), new_val, details);
+                this->dev_map[IDSEL_TO_DEV_FUN(idsel)]->pci_cfg_write(REG_NUM(), new_val, details);
             }
         } else {
             LOG_F(
                 ERROR, "%s err: write attempt to non-existing PCI device ??:%02x.%x @%02x",
-                this->name.c_str(), WHAT_BIT_SET(idsel) + 11, FUN_NUM(), REG_NUM() + (offset & 3)
+                this->name.c_str(), IDSEL_TO_DEV_FUN(idsel), FUN_NUM(), REG_NUM() + (offset & 3)
             );
         }
         break;
@@ -276,7 +277,7 @@ Bandit::Bandit(int bridge_num, std::string name, int dev_id, int rev)
     this->my_pci_device = unique_ptr<BanditPciDevice>(
         new BanditPciDevice(bridge_num, name, dev_id, rev)
     );
-    this->pci_register_device(1, this->my_pci_device.get());
+    this->pci_register_device(DEV_FUN(BANDIT_DEV,0), this->my_pci_device.get());
 }
 
 Chaos::Chaos(std::string name) : BanditHost()

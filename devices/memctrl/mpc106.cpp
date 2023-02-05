@@ -48,7 +48,7 @@ MPC106::MPC106() : MemCtrlBase(), PCIDevice("Grackle"), PCIHost()
     this->status      = 0x80;
 
     // assign PCI device number zero to myself
-    this->pci_register_device(0, this);
+    this->pci_register_device(DEV_FUN(0,0), this);
 
     // add PCI/ISA I/O space, 64K for now
     add_mmio_region(0xFE000000, 0x10000, this);
@@ -62,7 +62,7 @@ int MPC106::device_postinit()
     std::string pci_dev_name;
 
     static const std::map<std::string, int> pci_slots = {
-        {"pci_A1", 0xD}, {"pci_B1", 0xE}, {"pci_C1", 0xF}
+        {"pci_A1", DEV_FUN(0xD,0)}, {"pci_B1", DEV_FUN(0xE,0)}, {"pci_C1", DEV_FUN(0xF,0)}
     };
 
     for (auto& slot : pci_slots) {
@@ -131,12 +131,12 @@ uint32_t MPC106::pci_read(uint32_t offset, uint32_t size) {
         return 0xFFFFFFFFUL; // PCI spec §6.1
     }
 
-    if (this->dev_map.count(dev_num)) {
+    if (this->dev_map.count(DEV_FUN(dev_num,fun_num))) {
         AccessDetails details;
         details.offset = offset & 3;
         details.size   = size;
         details.flags  = PCI_CONFIG_TYPE_0 | PCI_CONFIG_READ;
-        uint32_t result = this->dev_map[dev_num]->pci_cfg_read(reg_offs, details);
+        uint32_t result = this->dev_map[DEV_FUN(dev_num,fun_num)]->pci_cfg_read(reg_offs, details);
         return pci_conv_rd_data(result, details);
     } else {
         LOG_F(ERROR, "%s: read attempt from non-existing PCI device ??:%02x.%x @%02x",
@@ -158,18 +158,18 @@ void MPC106::pci_write(uint32_t offset, uint32_t value, uint32_t size) {
         return;
     }
 
-    if (this->dev_map.count(dev_num)) {
+    if (this->dev_map.count(DEV_FUN(dev_num,fun_num))) {
         AccessDetails details;
         details.offset = offset & 3;
         details.size   = size;
         details.flags  = PCI_CONFIG_TYPE_0 | PCI_CONFIG_WRITE;
 
         if (size == 4 && !details.offset) { // aligned DWORD writes -> fast path
-            this->dev_map[dev_num]->pci_cfg_write(reg_offs, BYTESWAP_32(value), details);
+            this->dev_map[DEV_FUN(dev_num,fun_num)]->pci_cfg_write(reg_offs, BYTESWAP_32(value), details);
         } else { // otherwise perform necessary data transformations -> slow path
-            uint32_t old_val = this->dev_map[dev_num]->pci_cfg_read(reg_offs, details);
+            uint32_t old_val = this->dev_map[DEV_FUN(dev_num,fun_num)]->pci_cfg_read(reg_offs, details);
             uint32_t new_val = pci_conv_wr_data(old_val, value, details);
-            this->dev_map[dev_num]->pci_cfg_write(reg_offs, new_val, details);
+            this->dev_map[DEV_FUN(dev_num,fun_num)]->pci_cfg_write(reg_offs, new_val, details);
         }
     } else {
         LOG_F(ERROR, "%s: write attempt to non-existing PCI device ??:%02x.%x @%02x",

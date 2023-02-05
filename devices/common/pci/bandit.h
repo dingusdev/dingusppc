@@ -46,6 +46,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memory>
 #include <string>
 
+#define BANDIT_DEV          (11)       // Bandit's own device number
 #define BANDIT_CAR_TYPE     (1 << 0)   // Bandit config address type bit
 
 /* Convenient macros for parsing CONFIG_ADDR fields. */

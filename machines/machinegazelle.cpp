@@ -53,7 +53,7 @@ int initialize_gazelle(std::string& id)
 
     // register O'Hare I/O controller with the main PCI bus
     pci_host->pci_register_device(
-        32, dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("OHare")));
+        DEV_FUN(0x10,0), dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("OHare")));
 
     PsxCtrl* psx_obj = dynamic_cast<PsxCtrl*>(gMachineObj->get_comp_by_name("Psx"));
 

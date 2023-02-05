@@ -48,6 +48,8 @@ typedef struct AccessDetails {
     uint8_t flags;
 } AccessDetails;
 
+#define DEV_FUN(dev_num,fun_num) (((dev_num) << 3) | (fun_num))
+
 class PCIDevice;    // forward declaration to prevent errors
 
 class PCIHost {
@@ -58,7 +60,7 @@ public:
     };
     ~PCIHost() = default;
 
-    virtual bool pci_register_device(int dev_num, PCIDevice* dev_instance);
+    virtual bool pci_register_device(int dev_fun_num, PCIDevice* dev_instance);
 
     virtual bool pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIDevice* obj);
     virtual bool pci_unregister_mmio_region(uint32_t start_addr, uint32_t size, PCIDevice* obj);

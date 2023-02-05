@@ -28,13 +28,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 
-bool PCIHost::pci_register_device(int dev_num, PCIDevice* dev_instance)
+bool PCIHost::pci_register_device(int dev_fun_num, PCIDevice* dev_instance)
 {
     // return false if dev_num already registered
-    if (this->dev_map.count(dev_num))
+    if (this->dev_map.count(dev_fun_num))
         return false;
 
-    this->dev_map[dev_num] = dev_instance;
+    this->dev_map[dev_fun_num] = dev_instance;
 
     dev_instance->set_host(this);
 

@@ -44,14 +44,14 @@ int initialize_tnt(std::string& id)
 
     // connect GrandCentral I/O controller to the PCI1 bus
     pci_host->pci_register_device(
-        32, dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("GrandCentral")));
+        DEV_FUN(0x10,0), dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("GrandCentral")));
 
     // get video PCI controller object
     PCIHost *vci_host = dynamic_cast<PCIHost*>(gMachineObj->get_comp_by_name("Chaos"));
 
     // connect built-in video device to the VCI bus
     vci_host->pci_register_device(
-        1, dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("ControlVideo")));
+        DEV_FUN(0x0B,0), dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("ControlVideo")));
 
     // get (raw) pointer to the memory controller
     memctrl_obj = dynamic_cast<HammerheadCtrl*>(gMachineObj->get_comp_by_name("Hammerhead"));
