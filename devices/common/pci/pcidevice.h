@@ -81,7 +81,7 @@ public:
     virtual ~PCIDevice() = default;
 
     virtual bool supports_io_space() {
-        return false;
+        return has_io_space;
     };
 
     /* I/O space access methods */
@@ -156,6 +156,7 @@ protected:
     uint8_t     irq_pin = 0;
     uint8_t     irq_line = 0;
 
+    bool        has_io_space = false;
     int         num_bars = 6;
     uint32_t    bars[6] = { 0 };     // base address registers
     uint32_t    bars_cfg[6] = { 0 }; // configuration values for base address registers

@@ -240,6 +240,7 @@ void PCIDevice::finish_config_bars()
         if (bar_cfg & 1) {
             bars_typ[bar_num] = (bar_cfg & 0xffff0000) ? PCIBarType::Io_32_Bit :
                                                          PCIBarType::Io_16_Bit;
+            has_io_space = true;
         }
         else {
             int pci_space_type = (bar_cfg >> 1) & 3;
