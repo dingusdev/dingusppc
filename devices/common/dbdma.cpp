@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -44,77 +44,100 @@ void DMAChannel::fetch_cmd(uint32_t cmd_addr, DMACmd* p_cmd) {
 
 uint8_t DMAChannel::interpret_cmd() {
     DMACmd cmd_struct;
-    bool   is_writable;
-    int    cmd;
+    bool   is_writable, branch_taken = false;
 
     if (this->cmd_in_progress) {
         // return current command if there is data to transfer
         if (this->queue_len)
-            return cmd;
+            return this->cur_cmd;
 
         // obtain real pointer to the descriptor of the completed command
-        uint8_t *curr_cmd = mmu_get_dma_mem(this->cmd_ptr - 16, 16, &is_writable);
+        uint8_t *cmd_desc = mmu_get_dma_mem(this->cmd_ptr, 16, &is_writable);
 
         // get command code
-        cmd = curr_cmd[3] >> 4;
+        this->cur_cmd = cmd_desc[3] >> 4;
 
-        // all commands except STOP update cmd.xferStatus
-        if (cmd < 7 && is_writable) {
-            WRITE_WORD_LE_A(&curr_cmd[14], this->ch_stat | CH_STAT_ACTIVE);
+        // all commands except STOP update cmd.xferStatus and
+        // perform actions under control of "i", "b" and "w" bits
+        if (this->cur_cmd < DBDMA_Cmd::STOP) {
+            if (is_writable)
+                WRITE_WORD_LE_A(&cmd_desc[14], this->ch_stat | CH_STAT_ACTIVE);
+
+            if (cmd_desc[2] & 3) {
+                ABORT_F("DBDMA: cmd.w bit not implemented");
+            }
+
+            // react to cmd.b bit
+            if (cmd_desc[2] & 0xC) {
+                bool cond = true;
+                if ((cmd_desc[2] & 0xC) != 0xC) {
+                    uint16_t br_mask = this->branch_select >> 16;
+                    cond = (this->ch_stat & br_mask) == (this->branch_select & br_mask);
+                    if ((cmd_desc[2] & 0xC) == 0x8) { // branch if cond cleared?
+                        cond = !cond;
+                    }
+                }
+                if (cond) {
+                    this->cmd_ptr = READ_DWORD_LE_A(&cmd_desc[8]);
+                    branch_taken = true;
+                }
+            }
+
+            if (cmd_desc[2] & 0x30) {
+                ABORT_F("DBDMA: cmd.i bit not implemented");
+            }
         }
 
         // all INPUT and OUTPUT commands update cmd.resCount
-        if (cmd < 4 && is_writable) {
-            WRITE_WORD_LE_A(&curr_cmd[12], this->queue_len & 0xFFFFUL);
+        if (this->cur_cmd < DBDMA_Cmd::STORE_QUAD && is_writable) {
+            WRITE_WORD_LE_A(&cmd_desc[12], this->queue_len & 0xFFFFUL);
         }
+
+        if (!branch_taken)
+            this->cmd_ptr += 16;
 
         this->cmd_in_progress = false;
     }
 
     fetch_cmd(this->cmd_ptr, &cmd_struct);
 
-    cmd = cmd_struct.cmd_key >> 4;
+    this->ch_stat &= ~CH_STAT_WAKE; // clear wake bit (DMA spec, 5.5.3.4)
 
-    this->ch_stat &= ~CH_STAT_WAKE; /* clear wake bit (DMA spec, 5.5.3.4) */
+    this->cur_cmd = cmd_struct.cmd_key >> 4;
 
-    switch (cmd_struct.cmd_key >> 4) {
-    case 0: // OUTPUT_MORE
-    case 1: // OUTPUT_LAST
-    case 2: // INPUT_MORE
-    case 3: // INPUT_LAST
+    switch (this->cur_cmd) {
+    case DBDMA_Cmd::OUTPUT_MORE:
+    case DBDMA_Cmd::OUTPUT_LAST:
+    case DBDMA_Cmd::INPUT_MORE:
+    case DBDMA_Cmd::INPUT_LAST:
         if (cmd_struct.cmd_key & 7) {
             LOG_F(ERROR, "Key > 0 not implemented");
             break;
         }
-        if (cmd_struct.cmd_bits & 0x3F) {
-            LOG_F(ERROR, "non-zero i/b/w not implemented");
-            break;
-        }
         this->queue_data = mmu_get_dma_mem(cmd_struct.address, cmd_struct.req_count, &is_writable);
         this->queue_len  = cmd_struct.req_count;
-        this->cmd_ptr += 16;
         this->cmd_in_progress = true;
         break;
-    case 4:
+    case DBDMA_Cmd::STORE_QUAD:
         LOG_F(ERROR, "Unsupported DMA Command STORE_QUAD");
         break;
-    case 5:
+    case DBDMA_Cmd::LOAD_QUAD:
         LOG_F(ERROR, "Unsupported DMA Command LOAD_QUAD");
         break;
-    case 6:
+    case DBDMA_Cmd::NOP:
         LOG_F(ERROR, "Unsupported DMA Command NOP");
         break;
-    case 7:
+    case DBDMA_Cmd::STOP:
         this->ch_stat &= ~CH_STAT_ACTIVE;
         this->cmd_in_progress = false;
         break;
     default:
-        LOG_F(ERROR, "Unsupported DMA command 0x%X", cmd_struct.cmd_key >> 4);
+        LOG_F(ERROR, "Unsupported DMA command 0x%X", this->cur_cmd);
         this->ch_stat |= CH_STAT_DEAD;
         this->ch_stat &= ~CH_STAT_ACTIVE;
     }
 
-    return (cmd_struct.cmd_key >> 4);
+    return this->cur_cmd;
 }
 
 
@@ -184,6 +207,10 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
             new_stat &= ~CH_STAT_FLUSH;
             this->ch_stat = new_stat;
         }
+        // update ch_stat.s0...s7 if requested
+        if ((new_stat & 0xFF) != (old_stat & 0xFF)) {
+            this->ch_stat |= new_stat & 0xFF;
+        }
         break;
     case DMAReg::CH_STAT:
         break; /* ingore writes to ChannelStatus */
@@ -192,6 +219,9 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
             this->cmd_ptr = value;
             LOG_F(9, "CommandPtrLo set to 0x%X", this->cmd_ptr);
         }
+        break;
+    case DMAReg::BRANCH_SELECT:
+        this->branch_select = value & 0xFF00FFUL;
         break;
     default:
         LOG_F(WARNING, "Unsupported DMA channel register 0x%X", offset);

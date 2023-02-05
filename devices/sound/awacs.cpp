@@ -188,9 +188,6 @@ void AwacsScreamer::dma_start()
     } else if (this->out_sample_rate != this->sr_table[(this->snd_ctrl_reg >> 8) & 7]) {
         snd_server->close_out_stream();
         this->open_stream(this->sr_table[(this->snd_ctrl_reg >> 8) & 7]);
-    } else {
-        LOG_F(ERROR, "Screamer: unpausing attempted!");
-        return;
     }
 
     if (!this->out_stream_ready) {
