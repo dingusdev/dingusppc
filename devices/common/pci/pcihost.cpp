@@ -83,27 +83,44 @@ bool PCIHost::pci_unregister_mmio_region(uint32_t start_addr, uint32_t size, PCI
     return mem_ctrl->remove_mmio_region(start_addr, size, obj);
 }
 
-void PCIHost::attach_pci_device(std::string& dev_name, int slot_id)
+void PCIHost::attach_pci_device(const std::string& dev_name, int slot_id)
+{
+    this->attach_pci_device(dev_name, slot_id, "");
+}
+
+PCIDevice *PCIHost::attach_pci_device(const std::string& dev_name, int slot_id, const std::string& dev_suffix)
 {
     if (!DeviceRegistry::device_registered(dev_name)) {
-        LOG_F(WARNING, "PCIHost: specified PCI device %s doesn't exist", dev_name.c_str());
-        return;
+        HWComponent *hwc = dynamic_cast<HWComponent*>(this);
+        LOG_F(
+            WARNING, "%s: specified PCI device %s doesn't exist",
+            hwc ? hwc->get_name().c_str() : "PCIHost", dev_name.c_str()
+        );
+        return NULL;
     }
 
     // attempt to create device object
     auto dev_obj = DeviceRegistry::get_descriptor(dev_name).m_create_func();
 
     if (!dev_obj->supports_type(HWCompType::PCI_DEV)) {
-        LOG_F(WARNING, "PCIHost: cannot attach non-PCI device %s", dev_name.c_str());
-        return;
+        HWComponent *hwc = dynamic_cast<HWComponent*>(this);
+        LOG_F(
+            WARNING, "%s: cannot attach non-PCI device %s",
+            hwc ? hwc->get_name().c_str() : "PCIHost", dev_name.c_str()
+        );
+
+        return NULL;
     }
 
     // add device to the machine object
-    gMachineObj->add_device(dev_name, std::move(dev_obj));
+    gMachineObj->add_device(dev_name + dev_suffix, std::move(dev_obj));
+
+    PCIDevice *dev = dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name(dev_name + dev_suffix));
 
     // register device with the PCI host
-    this->pci_register_device(
-        slot_id, dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name(dev_name)));
+    this->pci_register_device(slot_id, dev);
+
+    return dev;
 }
 
 bool PCIHost::pci_io_read_loop(uint32_t offset, int size, uint32_t &res)

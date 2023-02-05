@@ -66,7 +66,8 @@ public:
     virtual bool pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIDevice* obj);
     virtual bool pci_unregister_mmio_region(uint32_t start_addr, uint32_t size, PCIDevice* obj);
 
-    virtual void attach_pci_device(std::string& dev_name, int slot_id);
+    virtual void attach_pci_device(const std::string& dev_name, int slot_id);
+    PCIDevice *attach_pci_device(const std::string& dev_name, int slot_id, const std::string& dev_suffix);
 
     virtual bool pci_io_read_loop (uint32_t offset, int size, uint32_t &res);
     virtual bool pci_io_write_loop(uint32_t offset, int size, uint32_t value);
