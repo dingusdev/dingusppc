@@ -348,17 +348,13 @@ void ATIRage::write_reg(uint32_t offset, uint32_t value, uint32_t size)
 }
 
 bool ATIRage::io_access_allowed(uint32_t offset) {
-    if (!(this->command & 1)) {
+    if (offset >= this->io_base && offset < (this->io_base + 0x100)) {
+        if (this->command & 1) {
+            return true;
+        }
         LOG_F(WARNING, "ATI I/O space disabled in the command reg");
-        return false;
     }
-
-    if (offset < this->io_base || offset > (this->io_base + 0x100)) {
-        LOG_F(WARNING, "Rage: I/O out of range, base=0x%X, offset=0x%X", io_base, offset);
-        return false;
-    }
-
-    return true;
+    return false;
 }
 
 
