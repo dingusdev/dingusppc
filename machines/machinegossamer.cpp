@@ -124,9 +124,9 @@ int initialize_gossamer(std::string& id)
 
     // add pci devices
     grackle_obj->pci_register_device(
-        16, dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("Heathrow")));
+        DEV_FUN(0x10,0), dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("Heathrow")));
     grackle_obj->pci_register_device(
-        18, dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name(id == "pmg3twr" ? "AtiRagePro" : "AtiRageGT")));
+        DEV_FUN(0x12,0), dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name(id == "pmg3twr" ? "AtiRagePro" : "AtiRageGT")));
 
     // add Athens clock generator device and register it with the I2C host
     gMachineObj->add_device("Athens", std::unique_ptr<AthensClocks>(new AthensClocks(0x28)));

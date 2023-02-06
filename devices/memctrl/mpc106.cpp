@@ -48,7 +48,7 @@ MPC106::MPC106() : MemCtrlBase(), PCIDevice("Grackle"), PCIHost()
     this->status      = 0x80;
 
     // assign PCI device number zero to myself
-    this->pci_register_device(0, this);
+    this->pci_register_device(DEV_FUN(0,0), this);
 
     // add PCI/ISA I/O space, 64K for now
     add_mmio_region(0xFE000000, 0x10000, this);
@@ -62,7 +62,7 @@ int MPC106::device_postinit()
     std::string pci_dev_name;
 
     static const std::map<std::string, int> pci_slots = {
-        {"pci_A1", 0xD}, {"pci_B1", 0xE}, {"pci_C1", 0xF}
+        {"pci_A1", DEV_FUN(0xD,0)}, {"pci_B1", DEV_FUN(0xE,0)}, {"pci_C1", DEV_FUN(0xF,0)}
     };
 
     for (auto& slot : pci_slots) {
@@ -75,105 +75,87 @@ int MPC106::device_postinit()
 }
 
 uint32_t MPC106::read(uint32_t rgn_start, uint32_t offset, int size) {
-    uint32_t result;
-
     if (rgn_start == 0xFE000000) {
-        // broadcast I/O request to devices that support I/O space
-        // until a device returns true that means "request accepted"
-        for (auto& dev : this->io_space_devs) {
-            if (dev->pci_io_read(offset, size, &result)) {
-                return result;
-            }
-        }
-        LOG_F(ERROR, "Attempt to read from unmapped PCI I/O space, offset=0x%X", offset);
-        // FIXME: add machine check exception (DEFAULT CATCH!, code=FFF00200)
-    } else {
-        if (offset >= 0x200000) {
-            if (this->config_addr & 0x80)    // process only if bit E (enable) is set
-                return pci_read(offset, size);
-        } else {
+        return pci_io_read_broadcast(offset, size);
+    }
+    if (offset < 0x200000) {
             return this->config_addr;
         }
+    if (this->config_addr & 0x80) {    // process only if bit E (enable) is set
+        return pci_read(offset, size);
     }
-
     return 0;
 }
 
 void MPC106::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size) {
     if (rgn_start == 0xFE000000) {
-        // broadcast I/O request to devices that support I/O space
-        // until a device returns true that means "request accepted"
-        for (auto& dev : this->io_space_devs) {
-            if (dev->pci_io_write(offset, value, size)) {
+        pci_io_write_broadcast(offset, size, value);
                 return;
             }
-        }
-        LOG_F(ERROR, "Attempt to write to unmapped PCI I/O space, offset=0x%X", offset);
-    } else {
         if (offset < 0x200000) {
             this->config_addr = value;
-        } else {
-            if (this->config_addr & 0x80)    // process only if bit E (enable) is set
+        return;
+    }
+    if (this->config_addr & 0x80) {    // process only if bit E (enable) is set
                 return pci_write(offset, value, size);
         }
     }
-}
 
 uint32_t MPC106::pci_read(uint32_t offset, uint32_t size) {
-    int bus_num  = (this->config_addr >>  8) & 0xFF;
-    int dev_num  = (this->config_addr >> 19) & 0x1F;
-    int fun_num  = (this->config_addr >> 16) & 0x07;
-    int reg_offs = (this->config_addr >> 24) & 0xFC;
-
-    if (bus_num) {
-        LOG_F(ERROR, "%s: read attempt from non-local PCI bus, %02x:%02x.%x @%02x",
-            this->name.c_str(), bus_num, dev_num, fun_num, reg_offs + (offset & 3));
-        return 0xFFFFFFFFUL; // PCI spec §6.1
+    int bus_num, dev_num, fun_num;
+    uint8_t reg_offs;
+    AccessDetails details;
+    PCIDevice *device;
+    cfg_setup(offset, size, bus_num, dev_num, fun_num, reg_offs, details, device);
+    details.flags |= PCI_CONFIG_READ;
+    if (device) {
+        return pci_conv_rd_data(device->pci_cfg_read(reg_offs, details), details);
     }
-
-    if (this->dev_map.count(dev_num)) {
-        AccessDetails details;
-        details.offset = offset & 3;
-        details.size   = size;
-        details.flags  = PCI_CONFIG_TYPE_0 | PCI_CONFIG_READ;
-        uint32_t result = this->dev_map[dev_num]->pci_cfg_read(reg_offs, details);
-        return pci_conv_rd_data(result, details);
-    } else {
-        LOG_F(ERROR, "%s: read attempt from non-existing PCI device ??:%02x.%x @%02x",
-            this->name.c_str(), dev_num, fun_num, reg_offs + (offset & 3));
-    }
-
+    LOG_READ_NON_EXISTENT_PCI_DEVICE();
     return 0xFFFFFFFFUL; // PCI spec §6.1
 }
 
 void MPC106::pci_write(uint32_t offset, uint32_t value, uint32_t size) {
-    int bus_num  = (this->config_addr >>  8) & 0xFF;
-    int dev_num  = (this->config_addr >> 19) & 0x1F;
-    int fun_num  = (this->config_addr >> 16) & 0x07;
-    int reg_offs = (this->config_addr >> 24) & 0xFC;
-
-    if (bus_num) {
-        LOG_F(ERROR, "%s: write attempt to non-local PCI bus, %02x:%02x.%x @%02x",
-            this->name.c_str(), bus_num, dev_num, fun_num, reg_offs + (offset & 3));
+    int bus_num, dev_num, fun_num;
+    uint8_t reg_offs;
+    AccessDetails details;
+    PCIDevice *device;
+    cfg_setup(offset, size, bus_num, dev_num, fun_num, reg_offs, details, device);
+    details.flags |= PCI_CONFIG_WRITE;
+    if (device) {
+        if (size == 4 && !details.offset) { // aligned DWORD writes -> fast path
+            device->pci_cfg_write(reg_offs, BYTESWAP_32(value), details);
+            return;
+        }
+        // otherwise perform necessary data transformations -> slow path
+        uint32_t old_val = details.size == 4 ? 0 : device->pci_cfg_read(reg_offs, details);
+        uint32_t new_val = pci_conv_wr_data(old_val, value, details);
+        device->pci_cfg_write(reg_offs, new_val, details);
         return;
     }
+    LOG_WRITE_NON_EXISTENT_PCI_DEVICE();
+}
 
-    if (this->dev_map.count(dev_num)) {
-        AccessDetails details;
-        details.offset = offset & 3;
-        details.size   = size;
-        details.flags  = PCI_CONFIG_TYPE_0 | PCI_CONFIG_WRITE;
+inline void MPC106::cfg_setup(uint32_t offset, int size, int &bus_num, int &dev_num, int &fun_num, uint8_t &reg_offs, AccessDetails &details, PCIDevice *&device)
+{
+    device = NULL;
+    details.size = size;
+    details.offset = offset & 3;
 
-        if (size == 4 && !details.offset) { // aligned DWORD writes -> fast path
-            this->dev_map[dev_num]->pci_cfg_write(reg_offs, BYTESWAP_32(value), details);
-        } else { // otherwise perform necessary data transformations -> slow path
-            uint32_t old_val = this->dev_map[dev_num]->pci_cfg_read(reg_offs, details);
-            uint32_t new_val = pci_conv_wr_data(old_val, value, details);
-            this->dev_map[dev_num]->pci_cfg_write(reg_offs, new_val, details);
+    bus_num  = (this->config_addr >>  8) & 0xFF;
+    dev_num  = (this->config_addr >> 19) & 0x1F;
+    fun_num  = (this->config_addr >> 16) & 0x07;
+    reg_offs = (this->config_addr >> 24) & 0xFC;
+
+    if (bus_num) {
+        details.flags = PCI_CONFIG_TYPE_1;
+        device = pci_find_device(bus_num, dev_num, fun_num);
+    }
+    else {
+        details.flags = PCI_CONFIG_TYPE_0;
+        if (this->dev_map.count(DEV_FUN(dev_num, fun_num))) {
+            device = this->dev_map[DEV_FUN(dev_num, fun_num)];
         }
-    } else {
-        LOG_F(ERROR, "%s: write attempt to non-existing PCI device ??:%02x.%x @%02x",
-            this->name.c_str(), dev_num, fun_num, reg_offs + (offset & 3));
     }
 }
 

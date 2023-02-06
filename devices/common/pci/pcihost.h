@@ -48,7 +48,10 @@ typedef struct AccessDetails {
     uint8_t flags;
 } AccessDetails;
 
-class PCIDevice;    // forward declaration to prevent errors
+#define DEV_FUN(dev_num,fun_num) (((dev_num) << 3) | (fun_num))
+
+class PCIDevice;
+class PCIBridge;
 
 class PCIHost {
 public:
@@ -58,18 +61,26 @@ public:
     };
     ~PCIHost() = default;
 
-    virtual bool pci_register_device(int dev_num, PCIDevice* dev_instance);
+    virtual bool pci_register_device(int dev_fun_num, PCIDevice* dev_instance);
 
     virtual bool pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIDevice* obj);
     virtual bool pci_unregister_mmio_region(uint32_t start_addr, uint32_t size, PCIDevice* obj);
 
-    virtual void attach_pci_device(std::string& dev_name, int slot_id);
+    virtual void attach_pci_device(const std::string& dev_name, int slot_id);
+    PCIDevice *attach_pci_device(const std::string& dev_name, int slot_id, const std::string& dev_suffix);
+
+    virtual bool pci_io_read_loop (uint32_t offset, int size, uint32_t &res);
+    virtual bool pci_io_write_loop(uint32_t offset, int size, uint32_t value);
+
+    virtual uint32_t pci_io_read_broadcast (uint32_t offset, int size);
+    virtual void     pci_io_write_broadcast(uint32_t offset, int size, uint32_t value);
 
     virtual PCIDevice *pci_find_device(uint8_t bus_num, uint8_t dev_num, uint8_t fun_num);
 
 protected:
     std::unordered_map<int, PCIDevice*> dev_map;
     std::vector<PCIDevice*>             io_space_devs;
+    std::vector<PCIBridge*>             bridge_devs;
 };
 
 // Helpers for data conversion in the PCI Configuration space.

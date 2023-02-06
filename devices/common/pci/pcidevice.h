@@ -81,7 +81,7 @@ public:
     virtual ~PCIDevice() = default;
 
     virtual bool supports_io_space() {
-        return false;
+        return has_io_space;
     };
 
     /* I/O space access methods */
@@ -117,6 +117,13 @@ public:
         this->host_instance = host_instance;
     };
 
+    virtual void set_multi_function(bool is_multi_function) {
+        this->hdr_type = is_multi_function ? (this->hdr_type | 0x80) : (this->hdr_type & 0x7f);
+    }
+    virtual void set_irq_pin(uint8_t irq_pin) {
+        this->irq_pin = irq_pin;
+    }
+
     // MMIODevice methods
     virtual uint32_t read(uint32_t rgn_start, uint32_t offset, int size) { return 0; }
     virtual void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size) { }
@@ -125,7 +132,9 @@ protected:
     void set_bar_value(int bar_num, uint32_t value);
     void setup_bars(std::vector<BarConfig> cfg_data);
     void finish_config_bars();
+    void pci_wr_exp_rom_bar(uint32_t data);
     void map_exp_rom_mem();
+    void unmap_exp_rom_mem();
 
     std::string pci_name;      // human-readable device name
     PCIHost* host_instance;    // host bridge instance to call back
@@ -136,7 +145,7 @@ protected:
     uint32_t    class_rev;           // class code and revision id
     uint16_t    status = 0;
     uint16_t    command = 0;
-    uint8_t     hdr_type = 0;        // header type
+    uint8_t     hdr_type = 0;        // header type, single function
     uint8_t     lat_timer = 0;       // latency timer
     uint8_t     cache_ln_sz = 0;     // cache line size
     uint16_t    subsys_id = 0;
@@ -147,6 +156,8 @@ protected:
     uint8_t     irq_pin = 0;
     uint8_t     irq_line = 0;
 
+    bool        has_io_space = false;
+    int         num_bars = 6;
     uint32_t    bars[6] = { 0 };     // base address registers
     uint32_t    bars_cfg[6] = { 0 }; // configuration values for base address registers
     PCIBarType  bars_typ[6] = { PCIBarType::Unused }; // types for base address registers

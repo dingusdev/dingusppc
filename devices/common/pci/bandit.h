@@ -46,6 +46,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memory>
 #include <string>
 
+#define BANDIT_DEV          (11)       // Bandit's own device number
 #define BANDIT_CAR_TYPE     (1 << 0)   // Bandit config address type bit
 
 /* Convenient macros for parsing CONFIG_ADDR fields. */
@@ -75,6 +76,9 @@ public:
 
 protected:
     uint32_t    config_addr;
+
+private:
+    inline void cfg_setup(uint32_t offset, int size, int &bus_num, int &dev_num, int &fun_num, uint8_t &reg_offs, AccessDetails &details, PCIDevice *&device);
 };
 
 /*

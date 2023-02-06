@@ -92,13 +92,11 @@ protected:
     uint32_t pci_cfg_read(uint32_t reg_offs, AccessDetails &details);
     void pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDetails &details);
 
-    bool supports_io_space(void) {
-        return true;
-    };
-
     void setup_ram(void);
 
 private:
+    inline void cfg_setup(uint32_t offset, int size, int &bus_num, int &dev_num, int &fun_num, uint8_t &reg_offs, AccessDetails &details, PCIDevice *&device);
+
     uint32_t config_addr;
 
     uint16_t pmcr1 = 0;          // power management config 1
