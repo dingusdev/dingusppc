@@ -74,7 +74,8 @@ void NVram::init() {
         !f.read((char*)&data_size, sizeof(data_size)) ||
         memcmp(sig, NVRAM_FILE_ID, sizeof(NVRAM_FILE_ID)) || data_size != this->ram_size ||
         !f.read((char*)this->storage.get(), this->ram_size)) {
-        LOG_F(WARNING, "Could not restore NVRAM content from the given file.");
+        LOG_F(WARNING, "Could not restore NVRAM content from the given file \"%s\".", this->file_name.c_str());
+        memset(this->storage.get(), 0, this->ram_size);
     }
 
     f.close();
