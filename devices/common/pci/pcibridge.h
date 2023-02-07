@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -121,10 +121,18 @@ protected:
     uint16_t    io_limit_upper16 = 0;
     uint16_t    bridge_control = 0;
 
-    uint8_t     sec_latency_timer_cfg = 0; // 0 = not writable, 0xf8 = limits the granularity to eight PCI clocks
-    uint8_t     io_cfg = 0xf0; // 0 = not writable, 0xf0 = supports 16 bit io range, 0xf1 = supports 32 bit io range
-    uint16_t    memory_cfg = 0xfff0; // 0 = not writable, 0xfff0 = supports 32 bit memory range
-    uint16_t    pref_mem_cfg = 0xfff0; // 0 = not writable, 0xfff0 = supports 32 bit prefetchable memory range, 0xfff1 = supports 64 bit prefetchable memory range
+    // 0 = not writable, 0xf8 = limits the granularity to eight PCI clocks
+    uint8_t     sec_latency_timer_cfg = 0;
+
+    // 0 = not writable, 0xf0 = supports 16 bit io range, 0xf1 = supports 32 bit I/O range
+    uint8_t     io_cfg = 0xf0;
+
+    // 0 = not writable, 0xfff0 = supports 32 bit memory range
+    uint16_t    memory_cfg = 0xfff0;
+
+    // 0 = not writable, 0xfff0 = supports 32 bit prefetchable memory range,
+    // 0xfff1 = supports 64 bit prefetchable memory range
+    uint16_t    pref_mem_cfg = 0xfff0;
 
     uint32_t    io_base_32 = 0;
     uint32_t    io_limit_32 = 0;

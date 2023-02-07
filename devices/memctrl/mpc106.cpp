@@ -136,7 +136,9 @@ void MPC106::pci_write(uint32_t offset, uint32_t value, uint32_t size) {
     LOG_WRITE_NON_EXISTENT_PCI_DEVICE();
 }
 
-inline void MPC106::cfg_setup(uint32_t offset, int size, int &bus_num, int &dev_num, int &fun_num, uint8_t &reg_offs, AccessDetails &details, PCIDevice *&device)
+inline void MPC106::cfg_setup(uint32_t offset, int size, int &bus_num, int &dev_num,
+                              int &fun_num, uint8_t &reg_offs, AccessDetails &details,
+                              PCIDevice *&device)
 {
     device = NULL;
     details.size = size;

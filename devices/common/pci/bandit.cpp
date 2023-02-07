@@ -194,7 +194,9 @@ void BanditHost::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int 
     }
 }
 
-inline void BanditHost::cfg_setup(uint32_t offset, int size, int &bus_num, int &dev_num, int &fun_num, uint8_t &reg_offs, AccessDetails &details, PCIDevice *&device)
+inline void BanditHost::cfg_setup(uint32_t offset, int size, int &bus_num,
+                                  int &dev_num, int &fun_num, uint8_t &reg_offs,
+                                  AccessDetails &details, PCIDevice *&device)
 {
     device = NULL;
     details.size = size;
@@ -209,11 +211,12 @@ inline void BanditHost::cfg_setup(uint32_t offset, int size, int &bus_num, int &
         return;
     }
     details.flags = PCI_CONFIG_TYPE_0;
-    bus_num = 0; // bus number is meaningless for type 0 configuration command; a type 1 configuration command cannot reach devices attached directly to the host
+    bus_num = 0; // use dummy value for bus number
     uint32_t idsel = this->config_addr & 0xFFFFF800U;
     if (!SINGLE_BIT_SET(idsel)) {
         for (dev_num = -1, idsel = this->config_addr; idsel; idsel >>= 1, dev_num++) {}
-        LOG_F(ERROR, "%s: config_addr 0x%08x does not contain valid IDSEL", this->name.c_str(), (uint32_t)this->config_addr);
+        LOG_F(ERROR, "%s: config_addr 0x%08x does not contain valid IDSEL",
+              this->name.c_str(), (uint32_t)this->config_addr);
         return;
     }
     dev_num = WHAT_BIT_SET(idsel);

@@ -191,7 +191,8 @@ inline uint32_t pci_cfg_log(uint32_t value, AccessDetails &details) {
     }
 }
 
-#define SIZE_ARGS details.size == 4 ? 'l' : details.size == 2 ? 'w' : details.size == 1 ? 'b' : '0' + details.size
+#define SIZE_ARGS details.size == 4 ? 'l' : details.size == 2 ? 'w' :   \
+                  details.size == 1 ? 'b' : '0' + details.size
 
 #define LOG_READ_UNIMPLEMENTED_CONFIG_REGISTER() \
     do { if ((details.flags & PCI_CONFIG_DIRECTION) == PCI_CONFIG_READ) { \
