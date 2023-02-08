@@ -24,8 +24,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cpu/ppc/ppcemu.h>
 #include <devices/common/pci/dec21154.h>
 #include <devices/memctrl/mpc106.h>
+#include <devices/memctrl/spdram.h>
 #include <machines/machinefactory.h>
 #include <machines/machineproperties.h>
+
+static void setup_ram_slot(std::string name, int i2c_addr, int capacity_megs) {
+    if (!capacity_megs)
+        return;
+
+    gMachineObj->add_device(name, std::unique_ptr<SpdSdram168>(new SpdSdram168(i2c_addr)));
+    SpdSdram168* ram_dimm = dynamic_cast<SpdSdram168*>(gMachineObj->get_comp_by_name(name));
+    ram_dimm->set_capacity(capacity_megs);
+
+    // register RAM DIMM with the I2C bus
+    I2CBus* i2c_bus = dynamic_cast<I2CBus*>(gMachineObj->get_comp_by_type(HWCompType::I2C_HOST));
+    i2c_bus->register_device(i2c_addr, ram_dimm);
+}
 
 int initialize_yosemite(std::string& id)
 {
@@ -38,17 +52,23 @@ int initialize_yosemite(std::string& id)
     DecPciBridge *sec_bridge = dynamic_cast<DecPciBridge*>(gMachineObj->get_comp_by_name("Dec21154"));
 
     // connect PCI devices
-    grackle_obj->pci_register_device(
-        13, dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("Dec21154")));
+    grackle_obj->pci_register_device(DEV_FUN(13,0),
+        dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("Dec21154")));
 
-    sec_bridge->pci_register_device(
-        5, dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("Heathrow")));
+    sec_bridge->pci_register_device(DEV_FUN(5,0),
+        dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("Heathrow")));
 
     // allocate ROM region
     if (!grackle_obj->add_rom_region(0xFFF00000, 0x100000)) {
         LOG_F(ERROR, "Could not allocate ROM region!");
         return -1;
     }
+
+    // configure RAM slots
+    setup_ram_slot("RAM_DIMM_1", 0x50, GET_INT_PROP("rambank1_size"));
+    setup_ram_slot("RAM_DIMM_2", 0x51, GET_INT_PROP("rambank2_size"));
+    setup_ram_slot("RAM_DIMM_3", 0x52, GET_INT_PROP("rambank3_size"));
+    setup_ram_slot("RAM_DIMM_4", 0x53, GET_INT_PROP("rambank4_size"));
 
     // configure CPU clocks
     uint64_t bus_freq      = 66820000ULL;
@@ -69,6 +89,8 @@ static const PropMap yosemite_settings = {
     {"rambank2_size",
         new IntProperty(  0, vector<uint32_t>({0, 8, 16, 32, 64, 128, 256}))},
     {"rambank3_size",
+        new IntProperty(  0, vector<uint32_t>({0, 8, 16, 32, 64, 128, 256}))},
+    {"rambank4_size",
         new IntProperty(  0, vector<uint32_t>({0, 8, 16, 32, 64, 128, 256}))},
     {"emmo",
         new BinProperty(0)},
