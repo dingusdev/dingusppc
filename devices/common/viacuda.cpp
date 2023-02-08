@@ -93,8 +93,8 @@ int ViaCuda::device_postinit()
 }
 
 void ViaCuda::cuda_init() {
-    this->old_tip     = 0;
-    this->old_byteack = 0;
+    this->old_tip     = 1;
+    this->old_byteack = 1;
     this->treq        = 1;
     this->in_count    = 0;
     this->out_count   = 0;
@@ -260,10 +260,6 @@ void ViaCuda::update_irq()
     }
 }
 
-inline bool ViaCuda::ready() {
-    return ((this->via_regs[VIA_DIRB] & 0x38) == 0x30);
-}
-
 void ViaCuda::assert_sr_int() {
     this->sr_timer_on = false;
     this->_via_ifr |= VIA_IF_SR;
@@ -322,11 +318,6 @@ void ViaCuda::schedule_sr_int(uint64_t timeout_ns) {
 }
 
 void ViaCuda::write(uint8_t new_state) {
-    if (!ready()) {
-        LOG_F(WARNING, "Cuda not ready!");
-        return;
-    }
-
     int new_tip     = !!(new_state & CUDA_TIP);
     int new_byteack = !!(new_state & CUDA_BYTEACK);
 
@@ -348,8 +339,12 @@ void ViaCuda::write(uint8_t new_state) {
                 process_packet();
 
                 /* start response transaction */
-                this->via_regs[VIA_B] &= ~CUDA_TREQ; /* assert TREQ */
-                this->treq = 0;
+                TimerManager::get_instance()->add_oneshot_timer(
+                    USECS_TO_NSECS(13), // delay TREQ assertion for New World
+                    [this]() {
+                        this->via_regs[VIA_B] &= ~CUDA_TREQ; // assert TREQ
+                        this->treq = 0;
+                });
             }
 
             this->in_count = 0;
@@ -362,7 +357,6 @@ void ViaCuda::write(uint8_t new_state) {
         }
 
         // send dummy byte as idle acknowledge or attention
-        //assert_sr_int();
         schedule_sr_int(USECS_TO_NSECS(61));
     } else {
         if (this->via_regs[VIA_ACR] & 0x10) { /* data transfer: Host --> Cuda */
@@ -370,13 +364,11 @@ void ViaCuda::write(uint8_t new_state) {
                 this->in_buf[this->in_count++] = this->via_regs[VIA_SR];
                 // tell the system we've read the byte after 71 usecs
                 schedule_sr_int(USECS_TO_NSECS(71));
-                //assert_sr_int();
             } else {
                 LOG_F(WARNING, "Cuda input buffer too small. Truncating data!");
             }
         } else { /* data transfer: Cuda --> Host */
             (this->*out_handler)();
-            //assert_sr_int();
             // tell the system we've written next byte after 88 usecs
             schedule_sr_int(USECS_TO_NSECS(88));
         }

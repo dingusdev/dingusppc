@@ -237,7 +237,6 @@ private:
 
     // CUDA methods
     void cuda_init();
-    bool ready();
     void write(uint8_t new_state);
     void response_header(uint32_t pkt_type, uint32_t pkt_flag);
     void error_response(uint32_t error);
