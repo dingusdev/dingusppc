@@ -94,7 +94,7 @@ enum SPR : int {
     DAR     = 19,
     RTCU_S  = 20,  // supervisor RTCU
     RTCL_S  = 21,  // supervisor RTCL
-    DEC     = 22,
+    DEC     = 22,  // decrementer
     SDR1    = 25,
     SRR0    = 26,
     SRR1    = 27,
@@ -160,8 +160,10 @@ extern uint32_t opcode_value;      // used for interpreting opcodes
 
 extern uint64_t timebase_counter;
 extern uint64_t tbr_wr_timestamp;
+extern uint64_t dec_wr_timestamp;
 extern uint64_t rtc_timestamp;
 extern uint64_t tbr_wr_value;
+extern uint32_t dec_wr_value;
 extern uint32_t tbr_freq_ghz;
 extern uint32_t rtc_lo, rtc_hi;
 
