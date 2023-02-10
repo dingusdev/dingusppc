@@ -171,6 +171,18 @@ uint32_t MPC106::pci_cfg_read(uint32_t reg_offs, AccessDetails &details) {
         return 0;
     case GrackleReg::PMCR1:
         return (this->odcr << 24) | (this->pmcr2 << 16) | this->pmcr1;
+    case GrackleReg::MSAR1:
+    case GrackleReg::MSAR2:
+        return this->mem_start[(reg_offs >> 2) & 1];
+    case GrackleReg::EMSAR1:
+    case GrackleReg::EMSAR2:
+        return this->ext_mem_start[(reg_offs >> 2) & 1];
+    case GrackleReg::MEAR1:
+    case GrackleReg::MEAR2:
+        return this->mem_end[(reg_offs >> 2) & 1];
+    case GrackleReg::EMEAR1:
+    case GrackleReg::EMEAR2:
+        return this->ext_mem_end[(reg_offs >> 2) & 1];
     case GrackleReg::MBER:
         return this->mem_bank_en;
     case GrackleReg::PICR1:
@@ -179,6 +191,12 @@ uint32_t MPC106::pci_cfg_read(uint32_t reg_offs, AccessDetails &details) {
         return this->picr2;
     case GrackleReg::MCCR1:
         return this->mccr1;
+    case GrackleReg::MCCR2:
+        return this->mccr2;
+    case GrackleReg::MCCR3:
+        return this->mccr3;
+    case GrackleReg::MCCR4:
+        return this->mccr4;
     default:
         LOG_READ_UNIMPLEMENTED_CONFIG_REGISTER();
     }
