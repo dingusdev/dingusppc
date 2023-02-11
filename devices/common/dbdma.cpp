@@ -324,6 +324,8 @@ void DMAChannel::resume() {
 
 void DMAChannel::abort() {
     LOG_F(9, "Aborting DMA channel");
+    if (this->stop_cb)
+        this->stop_cb();
 }
 
 void DMAChannel::pause() {

@@ -71,8 +71,8 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
     this->snd_out_dma = std::unique_ptr<DMAChannel> (new DMAChannel());
     this->screamer->set_dma_out(this->snd_out_dma.get());
     this->snd_out_dma->set_callbacks(
-        std::bind(&AwacsScreamer::dma_start, this->screamer.get()),
-        std::bind(&AwacsScreamer::dma_end, this->screamer.get())
+        std::bind(&AwacsScreamer::dma_out_start, this->screamer.get()),
+        std::bind(&AwacsScreamer::dma_out_stop, this->screamer.get())
     );
 
     // connect SCSI HW

@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -28,18 +28,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef AWAC_H
 #define AWAC_H
 
-#include <devices/common/dbdma.h>
 #include <devices/common/dmacore.h>
+#include <devices/common/hwcomponent.h>
 #include <devices/common/i2c/i2c.h>
 #include <devices/sound/soundserver.h>
 
 #include <cinttypes>
 #include <memory>
+#include <string>
 
 /** Base class for the AWACs codecs. */
-class AwacsBase {
+class AwacsBase : public HWComponent {
 public:
-    AwacsBase();
+    AwacsBase(std::string name);
     ~AwacsBase() = default;
 
     void set_dma_out(DmaOutChannel *dma_out_ch) {
@@ -47,8 +48,8 @@ public:
     };
 
     void set_sample_rate(int sr_id);
-    void start_output_dma();
-    void stop_output_dma();
+    void dma_out_start();
+    void dma_out_stop();
 
 protected:
     SoundServer     *snd_server; // SoundServer instance pointer
@@ -57,8 +58,9 @@ protected:
     int     *sr_table;  // pointer to the table of supported sample rates
     int     max_sr_id;  // maximum value for sample rate ID
 
-    bool    out_stream_ready;
-    int     cur_sample_rate;
+    bool    out_stream_ready = false;
+    int     cur_sample_rate  = -1;
+    int     out_sample_rate  = -1;
 };
 
 /** AWACs PDM-style sound codec. */
@@ -70,23 +72,16 @@ public:
     uint32_t read_stat(void);
     void write_ctrl(uint32_t addr, uint16_t value);
 
-    void dma_out_start(uint8_t sample_rate_id);
-    void dma_out_stop();
-
 private:
     uint16_t    ctrl_regs[5]; // 12-bit wide control registers
 };
 
-/** AWACs Screamer registers offsets. */
+/** Offsets to MacIO sound codec registers. */
 enum {
     AWAC_SOUND_CTRL_REG   = 0x00,
     AWAC_CODEC_CTRL_REG   = 0x10,
     AWAC_CODEC_STATUS_REG = 0x20,
 };
-
-/** AWACs Screamer manufacturer and revision. */
-#define AWAC_MAKER_CRYSTAL  1
-#define AWAC_REV_SCREAMER   3
 
 /** Apple source calls this kValidData but doesn't explain
     what it actually means. It seems like it's used to check
@@ -145,27 +140,36 @@ private:
     int auto_inc;
 };
 
-/** AWACs Screamer sound codec. */
-class AwacsScreamer : public AwacsBase {
+/** Sound codec interface with the typical MacIO access. */
+class MacioSndCtrl : public virtual AwacsBase {
 public:
-    AwacsScreamer();
+    virtual uint32_t snd_ctrl_read(uint32_t offset, int size) = 0;
+    virtual void     snd_ctrl_write(uint32_t offset, uint32_t value, int size) = 0;
+};
+
+/** AWACs Screamer manufacturer and revision. */
+#define AWAC_MAKER_CRYSTAL  1
+#define AWAC_REV_SCREAMER   3
+
+/** Screamer sound codec. */
+class AwacsScreamer : public MacioSndCtrl {
+public:
+    AwacsScreamer(std::string name = "Screamer");
     ~AwacsScreamer() = default;
 
     uint32_t    snd_ctrl_read(uint32_t offset, int size);
     void        snd_ctrl_write(uint32_t offset, uint32_t value, int size);
 
-    void dma_start();
-    void dma_end();
+    int device_postinit();
 
-protected:
-    void open_stream(int sample_rate);
+    static std::unique_ptr<HWComponent> create() {
+        return std::unique_ptr<AwacsScreamer>(new AwacsScreamer("Screamer"));
+    }
 
 private:
     uint32_t snd_ctrl_reg    = { 0 };
-    uint16_t control_regs[8] = { 0 }; /* control registers, each 12-bits wide */
-    uint8_t is_busy          = 0;
-
-    int out_sample_rate;
+    uint16_t control_regs[8] = { 0 }; // control registers, each 12-bits wide
+    uint8_t  is_busy         = 0;
 
     std::unique_ptr<AudioProcessor> audio_proc;
 };
