@@ -267,7 +267,7 @@ private:
     uint8_t  emmo_pin;      // factory tester status, active low
 
     // subdevice objects
-    std::unique_ptr<AwacsScreamer>      screamer; // Screamer audio codec instance
+    MacioSndCtrl*       snd_codec; // audio codec instance
 
     NVram*              nvram;    // NVRAM
     ViaCuda*            viacuda;  // VIA cell with Cuda MCU attached to it

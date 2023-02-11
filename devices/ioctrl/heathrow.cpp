@@ -66,13 +66,14 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
     // connect Cuda
     this->viacuda = dynamic_cast<ViaCuda*>(gMachineObj->get_comp_by_name("ViaCuda"));
 
-    // initialize sound chip and its DMA output channel, then wire them together
-    this->screamer    = std::unique_ptr<AwacsScreamer> (new AwacsScreamer());
+    // find appropriate sound chip, create a DMA output channel for sound,
+    // then wire everything together
+    this->snd_codec   = dynamic_cast<MacioSndCtrl*>(gMachineObj->get_comp_by_type(HWCompType::SND_CODEC));
     this->snd_out_dma = std::unique_ptr<DMAChannel> (new DMAChannel());
-    this->screamer->set_dma_out(this->snd_out_dma.get());
+    this->snd_codec->set_dma_out(this->snd_out_dma.get());
     this->snd_out_dma->set_callbacks(
-        std::bind(&AwacsScreamer::dma_out_start, this->screamer.get()),
-        std::bind(&AwacsScreamer::dma_out_stop, this->screamer.get())
+        std::bind(&AwacsScreamer::dma_out_start, this->snd_codec),
+        std::bind(&AwacsScreamer::dma_out_stop, this->snd_codec)
     );
 
     // connect SCSI HW
@@ -157,7 +158,7 @@ uint32_t HeathrowIC::read(uint32_t rgn_start, uint32_t offset, int size) {
     case 0x13: // ESCC MacRISC addressing
         return this->escc->read((offset >> 4) & 0xF);
     case 0x14:
-        res = this->screamer->snd_ctrl_read(offset - 0x14000, size);
+        res = this->snd_codec->snd_ctrl_read(offset - 0x14000, size);
         break;
     case 0x15: // SWIM3
         return this->swim3->read((offset >> 4 )& 0xF);
@@ -201,7 +202,7 @@ void HeathrowIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int 
         this->escc->write((offset >> 4) & 0xF, value);
         break;
     case 0x14:
-        this->screamer->snd_ctrl_write(offset - 0x14000, value, size);
+        this->snd_codec->snd_ctrl_write(offset - 0x14000, value, size);
         break;
     case 0x15: // SWIM3
         this->swim3->write((offset >> 4) & 0xF, value);
