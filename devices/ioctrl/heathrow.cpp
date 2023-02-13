@@ -98,7 +98,7 @@ void HeathrowIC::notify_bar_change(int bar_num)
 
     if (this->base_addr != (this->bars[bar_num] & 0xFFFFFFF0UL)) {
         if (this->base_addr) {
-            LOG_F(WARNING, "Heathrow: deallocating I/O memory not implemented");
+            this->host_instance->pci_unregister_mmio_region(this->base_addr, 0x80000, this);
         }
         this->base_addr = this->bars[0] & 0xFFFFFFF0UL;
         this->host_instance->pci_register_mmio_region(this->base_addr, 0x80000, this);
