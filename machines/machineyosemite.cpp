@@ -97,7 +97,7 @@ static const PropMap yosemite_settings = {
 };
 
 static vector<string> pmg3nw_devices = {
-    "Grackle", "Dec21154", "Heathrow"
+    "Grackle", "Dec21154", "BurgundySnd", "Heathrow"
 };
 
 static const MachineDescription pmg3nw_descriptor = {
