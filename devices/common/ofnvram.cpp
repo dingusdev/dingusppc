@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/** @file Utilities for working with the Apple Open Firmware NVRAM partition. */
+/** Utilities for working with Apple Open Firmware and CHRP NVRAM partitions. */
 
 #include <devices/common/ofnvram.h>
 #include <endianswap.h>
@@ -32,10 +32,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include <sstream>
 #include <string>
 #include <tuple>
 
 using namespace std;
+
+static std::string hex2str(uint32_t n)
+{
+   std::stringstream ss;
+   ss << setw(8) << setfill('0') << hex << n;
+   return ss.str();
+}
 
 static uint32_t str2env(string& num_str) {
     try {
@@ -50,22 +58,15 @@ static uint32_t str2env(string& num_str) {
     }
 }
 
-int OfNvramUtils::init()
-{
-    this->nvram_obj = dynamic_cast<NVram*>(gMachineObj->get_comp_by_name("NVRAM"));
-    return this->nvram_obj == nullptr;
-}
-
-bool OfNvramUtils::validate()
-{
-    int         i;
-    OfNvramHdr  hdr;
+bool OfConfigAppl::validate() {
+    int             i;
+    OfConfigHdrAppl hdr;
 
     if (this->nvram_obj == nullptr)
         return false;
 
     // read OF partition header
-    for (i = 0; i < sizeof(OfNvramHdr); i++) {
+    for (i = 0; i < sizeof(OfConfigHdrAppl); i++) {
         ((uint8_t*)&hdr)[i] = this->nvram_obj->read_byte(OF_NVRAM_OFFSET + i);
     }
 
@@ -75,7 +76,7 @@ bool OfNvramUtils::validate()
 
     this->size = hdr.num_pages * 256;
 
-    if (this->size != 0x800)
+    if (this->size != OF_CFG_SIZE)
         return false;
 
     // read the entire partition into the local buffer
@@ -88,10 +89,9 @@ bool OfNvramUtils::validate()
         return false;
 
     return true;
-}
+};
 
-uint16_t OfNvramUtils::checksum_partition()
-{
+uint16_t OfConfigAppl::checksum_partition() {
     uint32_t acc = 0;
 
     for (int i = 0; i < this->size; i += 2) {
@@ -99,25 +99,6 @@ uint16_t OfNvramUtils::checksum_partition()
     }
 
     return acc + (acc >> 16);
-}
-
-void OfNvramUtils::update_partition()
-{
-    // set checksum in the header to zero
-    this->buf[4] = 0;
-    this->buf[5] = 0;
-
-    // calculate new checksum
-    uint16_t checksum = this->checksum_partition();
-    checksum = checksum ? ~checksum : 0xFFFFU;
-
-    // stuff it into the header
-    WRITE_WORD_BE_A(&this->buf[4], checksum);
-
-    // write the entire partition back to NVRAM
-    for (int i = 0; i < this->size; i++) {
-        this->nvram_obj->write_byte(OF_NVRAM_OFFSET + i, this->buf[i]);
-    }
 }
 
 static const string flag_names[8] = {
@@ -154,58 +135,74 @@ static const map<string, std::tuple<int, uint16_t>> of_vars = {
     {"boot-command",    {OF_VAR_TYPE_STR,   0x58}},
 };
 
-void OfNvramUtils::printenv()
-{
-    int i;
+const OfConfigImpl::config_dict& OfConfigAppl::get_config_vars() {
+    this->_config_vars.clear();
 
-    if (!this->validate()) {
-        cout << "Invalid Open Firmware partition content!" << endl;
-        return;
-    }
+    if (!this->validate())
+        return _config_vars;
 
     uint8_t of_flags = this->buf[12];
 
-    cout << endl;
-
-    // print flags
-    for (i = 0; i < 8; i++) {
-        cout << setw(20) << left << flag_names[i] <<
-            (((of_flags << i) & 0x80) ? "true" : "false") << endl;
+    // populate flags
+    for (int i = 0; i < 8; i++) {
+        _config_vars.push_back(std::make_pair(flag_names[i],
+                             ((of_flags << i) & 0x80) ? "true" : "false"));
     }
 
-    // print the remaining variables
+    // populate the remaining variables
     for (auto& var : of_vars) {
+        auto name   = var.first;
         auto type   = std::get<0>(var.second);
         auto offset = std::get<1>(var.second);
 
-        cout << setw(20) << left << var.first;
-
         switch (type) {
         case OF_VAR_TYPE_INT:
-            cout << hex << READ_DWORD_BE_A(&this->buf[offset]) << endl;
+            _config_vars.push_back(std::make_pair(name,
+                hex2str(READ_DWORD_BE_A(&this->buf[offset]))));
             break;
         case OF_VAR_TYPE_STR:
             uint16_t str_offset = READ_WORD_BE_A(&this->buf[offset]) - OF_NVRAM_OFFSET;
             uint16_t str_len    = READ_WORD_BE_A(&this->buf[offset+2]);
-            for (i = 0; i < str_len; i++) {
-                char ch = *(char *)&(this->buf[str_offset + i]);
-                if (ch == '\x0D') cout << endl; else cout << ch;
+
+            if ((str_offset + str_len) > OF_CFG_SIZE) {
+                cout << "string property too long - skip it" << endl;
+                break;
             }
-            cout << endl;
+
+            char prop_val[OF_CFG_SIZE] = "";
+            memcpy(prop_val, &this->buf[str_offset], str_len);
+            prop_val[str_len] = '\0';
+
+            _config_vars.push_back(std::make_pair(name, prop_val));
         }
     }
 
-    cout << endl;
+    return _config_vars;
+};
+
+void OfConfigAppl::update_partition() {
+    // set checksum in the header to zero
+    this->buf[4] = 0;
+    this->buf[5] = 0;
+
+    // calculate new checksum
+    uint16_t checksum = this->checksum_partition();
+    checksum = checksum ? ~checksum : 0xFFFFU;
+
+    // stuff checksum into the header
+    WRITE_WORD_BE_A(&this->buf[4], checksum);
+
+    // write the entire partition back to NVRAM
+    for (int i = 0; i < this->size; i++) {
+        this->nvram_obj->write_byte(OF_NVRAM_OFFSET + i, this->buf[i]);
+    }
 }
 
-void OfNvramUtils::setenv(string var_name, string value)
-{
+bool OfConfigAppl::set_var(std::string& var_name, std::string& value) {
     int i, flag;
 
-    if (!this->validate()) {
-        cout << "Invalid Open Firmware partition content!" << endl;
-        return;
-    }
+    if (!this->validate())
+        return false;
 
     // check if the user tries to change a flag
     for (i = 0; i < 8; i++) {
@@ -216,7 +213,7 @@ void OfNvramUtils::setenv(string var_name, string value)
                 flag = 0;
             else {
                 cout << "Invalid property value: " << value << endl;
-                return;
+                return false;
             }
             uint8_t flag_bit = 0x80U >> i;
             uint8_t of_flags = this->buf[12];
@@ -228,15 +225,14 @@ void OfNvramUtils::setenv(string var_name, string value)
 
             this->buf[12] = of_flags;
             this->update_partition();
-            cout << " ok" << endl; // mimic Forth
-            return;
+            return true;
         }
     }
 
     // see if one of the standard properties should be changed
     if (of_vars.find(var_name) == of_vars.end()) {
         cout << "Attempt to change unknown variable " << var_name << endl;
-        return;
+        return false;
     }
 
     auto type   = std::get<0>(of_vars.at(var_name));
@@ -248,7 +244,7 @@ void OfNvramUtils::setenv(string var_name, string value)
             num = str2env(value);
         } catch (invalid_argument& exc) {
             cout << exc.what() << endl;
-            return;
+            return false;
         }
         WRITE_DWORD_BE_A(&this->buf[offset], num);
         this->update_partition();
@@ -257,7 +253,7 @@ void OfNvramUtils::setenv(string var_name, string value)
         uint16_t str_offset = READ_WORD_BE_A(&this->buf[offset]);
         uint16_t str_len    = READ_WORD_BE_A(&this->buf[offset+2]);
 
-        OfNvramHdr *hdr = (OfNvramHdr *)&this->buf[0];
+        OfConfigHdrAppl *hdr = (OfConfigHdrAppl *)&this->buf[0];
         uint16_t here = READ_WORD_BE_A(&hdr->here);
         uint16_t top  = READ_WORD_BE_A(&hdr->top);
 
@@ -266,11 +262,13 @@ void OfNvramUtils::setenv(string var_name, string value)
         uint16_t new_top = top + str_len - value.length();
         if (new_top < here) {
             cout << "No room in the heap!" << endl;
-            return;
+            return false;
         }
 
         // remove the old string
-        std::memmove(&this->buf[top + str_len - OF_NVRAM_OFFSET], &this->buf[top - OF_NVRAM_OFFSET], str_offset - top);
+        std::memmove(&this->buf[top + str_len - OF_NVRAM_OFFSET],
+            &this->buf[top - OF_NVRAM_OFFSET], str_offset - top);
+
         for (auto& var : of_vars) {
             auto type   = std::get<0>(var.second);
             auto offset = std::get<1>(var.second);
@@ -299,7 +297,271 @@ void OfNvramUtils::setenv(string var_name, string value)
 
         // update physical NVRAM
         this->update_partition();
-        cout << " ok" << endl; // mimic Forth
+    }
+
+    return true;
+};
+
+uint8_t OfConfigChrp::checksum_hdr(const uint8_t* data)
+{
+    uint16_t sum = data[0];
+
+    for (int i = 2; i < 16; i++) {
+        sum += data[i];
+        if (sum >= 256)
+            sum = (sum + 1) & 0xFFU;
+    }
+
+    return sum;
+}
+
+bool OfConfigChrp::validate()
+{
+    int     i, pos, len;
+    uint8_t sig;
+    bool    wip = true;
+    bool    of_part_found = false;
+
+    // search the entire 8KB NVRAM for CHRP OF config partition.
+    // Bail out if an unknown partition or free space is encountered.
+    // Skip over known partitions.
+    for (pos = 0; wip && pos < 8192;) {
+        sig = this->nvram_obj->read_byte(pos);
+        switch (sig) {
+        case NVRAM_SIG_OF_ENV:
+            of_part_found = true;
+            // fall-through
+        case NVRAM_SIG_FREE:
+            wip = false;
+            break;
+        case NVRAM_SIG_VPD:
+        case NVRAM_SIG_DIAG:
+        case NVRAM_SIG_OF_CFG:
+        case NVRAM_SIG_MAC_OS:
+        case NVRAM_SIG_ERR_LOG:
+            // skip valid partitions we're not interested in
+            len = (this->nvram_obj->read_byte(pos + 2) << 8) |
+                   this->nvram_obj->read_byte(pos + 3);
+            if (!len || (len * 16) >= 8192)
+                break;
+            pos += len * 16;
+            break;
+        default:
+            wip = false;
+        }
+    }
+
+    if (!of_part_found)
+        return false;
+
+    OfConfigHdrChrp  hdr;
+
+    // read OF partition header
+    for (i = 0; i < sizeof(OfConfigHdrChrp); i++) {
+        ((uint8_t*)&hdr)[i] = this->nvram_obj->read_byte(pos + i);
+    }
+
+    len = BYTESWAP_16(hdr.length) * 16;
+
+    // sanity checks
+    if (hdr.sig != NVRAM_SIG_OF_ENV || len < 16 || len > (4096 + sizeof(OfConfigHdrChrp)))
+        return false;
+
+    // calculate partition header checksum
+    uint8_t chk_sum = this->checksum_hdr((uint8_t*)&hdr);
+
+    if (chk_sum != hdr.checksum)
+        return false;
+
+    len -= sizeof(OfConfigHdrChrp);
+    pos += sizeof(OfConfigHdrChrp);
+
+    this->data_offset = pos;
+
+    // read the entire partition into the local buffer
+    for (i = 0; i < len; i++) {
+        this->buf[i] = this->nvram_obj->read_byte(pos + i);
+    }
+
+    return true;
+}
+
+const OfConfigImpl::config_dict& OfConfigChrp::get_config_vars() {
+    int len;
+
+    this->_config_vars.clear();
+
+    if (!this->validate())
+        return _config_vars;
+
+    for (int pos = 0; pos < 4096;) {
+        char *pname = (char *)&this->buf[pos];
+
+        // scan property name until '=' is encountered
+        // or max length is reached
+        for (len = 0; len < 32; pos++, len++) {
+            if (pname[len] == '=' || pname[len] == '\0')
+                break;
+        }
+
+        // empty property name -> free space reached
+        if (!len) {
+            this->data_length = pos;
+            break;
+        }
+
+        if (pname[len] != '=') {
+            cout << "no = sign found or name > 31 chars" << endl;
+            break;
+        }
+
+        char prop_name[32];
+        memcpy(prop_name, pname, len);
+        prop_name[len] = '\0';
+
+        pos++; // skip past '='
+        char *pval = (char *)&this->buf[pos];
+
+        // determine property value length
+        for (len = 0; pos < 4096; pos++, len++) {
+            if (pval[len] == '\0')
+                break;
+        }
+
+        // ensure each property value is null-terminated
+        if (pos >= 4096) {
+            cout << "ran off partition end" << endl;
+            break;
+        }
+
+        this->_config_vars.push_back(std::make_pair(prop_name, pval));
+        pos++; // skip past null terminator
+    }
+
+    return this->_config_vars;
+}
+
+bool OfConfigChrp::update_partition() {
+    unsigned pos = 0;
+
+    memset(this->buf, 0, 4096);
+
+    for (auto& var : this->_config_vars) {
+        if ((var.first.length() + var.second.length() + 2) >= 4096) {
+            cout << "No room in the partition!" << endl;
+            return false;
+        }
+        memcpy(&this->buf[pos], var.first.c_str(), var.first.length());
+        pos += var.first.length();
+        this->buf[pos++] = '=';
+        memcpy(&this->buf[pos], var.second.c_str(), var.second.length());
+        pos += var.second.length();
+        this->buf[pos++] = '\0';
+    }
+
+    // write the entire partition back to NVRAM
+    for (int i = 0; i < 4096; i++) {
+        this->nvram_obj->write_byte(this->data_offset + i, this->buf[i]);
+    }
+
+    return true;
+}
+
+bool OfConfigChrp::set_var(std::string& var_name, std::string& value) {
+    if (!this->validate())
+        return false;
+
+    bool found   = false;
+
+    // see if the user tries to change an existing property
+    for (auto& var : this->_config_vars) {
+        if (var.first == var_name) {
+            found = true;
+
+            // see if we're about to change a flag
+            if (var_name.back() == '?') {
+                if (value != "true" && value != "false") {
+                    cout << "Flag value can be 'true' or 'false'" << endl;
+                    return false;
+                }
+            }
+
+            if (value.length() > var.second.length()) {
+                unsigned free_space = 4096 - this->data_length;
+                if ((value.length() - var.second.length()) >= free_space) {
+                    cout << "No room for new data!" << endl;
+                    return false;
+                }
+            }
+
+            var.second = value;
+            break;
+        }
+    }
+
+    if (!found) {
+        cout << "Attempt to change unknown variable " << var_name << endl;
+        return false;
+    }
+
+    return this->update_partition();
+};
+
+int OfConfigUtils::init()
+{
+    this->nvram_obj = dynamic_cast<NVram*>(gMachineObj->get_comp_by_name("NVRAM"));
+    return this->nvram_obj == nullptr;
+}
+
+bool OfConfigUtils::open_container() {
+    OfConfigImpl*   cfg_obj;
+
+    if (this->cfg_impl == nullptr) {
+        cfg_obj = new OfConfigAppl(this->nvram_obj);
+        if (cfg_obj->validate()) {
+            this->cfg_impl = std::unique_ptr<OfConfigImpl>(cfg_obj);
+            return true;
+        } else {
+            delete(cfg_obj);
+
+            cfg_obj = new OfConfigChrp(this->nvram_obj);
+            if (cfg_obj->validate()) {
+                this->cfg_impl = std::unique_ptr<OfConfigImpl>(cfg_obj);
+                return true;
+            } else {
+                delete(cfg_obj);
+            }
+        }
+    } else {
+        return this->cfg_impl->validate();
+    }
+
+    cout << "No valid Open Firmware partition found!" << endl;
+
+    return false;
+}
+
+void OfConfigUtils::printenv() {
+    OfConfigImpl::config_dict   vars;
+
+    if (!this->open_container())
         return;
+
+    vars = this->cfg_impl->get_config_vars();
+
+    for (auto& var : vars) {
+        cout << setw(34) << left << var.first << var.second << endl;
+    }
+}
+
+void OfConfigUtils::setenv(string var_name, string value)
+{
+    if (!this->open_container())
+        return;
+
+    if (!this->cfg_impl->set_var(var_name, value)) {
+        cout << " Please try again" << endl;
+    } else {
+        cout << " ok" << endl; // mimic Forth
     }
 }

@@ -410,7 +410,7 @@ void enter_debugger() {
     int log_level, context;
     size_t separator_pos;
 
-    unique_ptr<OfNvramUtils> ofnvram = unique_ptr<OfNvramUtils>(new OfNvramUtils);
+    unique_ptr<OfConfigUtils> ofnvram = unique_ptr<OfConfigUtils>(new OfConfigUtils);
 
     context = 1; /* start with the PowerPC context */
 
