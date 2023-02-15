@@ -378,16 +378,16 @@ void mmu_change_mode()
     if (CurITLBMode != mmu_mode) {
         switch(mmu_mode) {
             case 0: // real address mode
-                pCurITLB1 = &dtlb1_mode1[0];
-                pCurITLB2 = &dtlb2_mode1[0];
+                pCurITLB1 = &itlb1_mode1[0];
+                pCurITLB2 = &itlb2_mode1[0];
                 break;
             case 2: // supervisor mode with instruction translation enabled
-                pCurITLB1 = &dtlb1_mode2[0];
-                pCurITLB2 = &dtlb2_mode2[0];
+                pCurITLB1 = &itlb1_mode2[0];
+                pCurITLB2 = &itlb2_mode2[0];
                 break;
             case 3: // user mode with instruction translation enabled
-                pCurITLB1 = &dtlb1_mode3[0];
-                pCurITLB2 = &dtlb2_mode3[0];
+                pCurITLB1 = &itlb1_mode3[0];
+                pCurITLB2 = &itlb2_mode3[0];
                 break;
         }
         CurITLBMode = mmu_mode;
