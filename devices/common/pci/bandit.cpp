@@ -151,7 +151,7 @@ uint32_t BanditHost::read(uint32_t rgn_start, uint32_t offset, int size)
             return pci_conv_rd_data(device->pci_cfg_read(reg_offs, details), details);
         }
         LOG_READ_NON_EXISTENT_PCI_DEVICE();
-            return 0xFFFFFFFFUL; // PCI spec §6.1
+        return 0xFFFFFFFFUL; // PCI spec §6.1
 
     case 2: // CONFIG_ADDR
         return BYTESWAP_32(this->config_addr);
