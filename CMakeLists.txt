@@ -21,7 +21,7 @@ else() # Windows build relies on vcpkg
         set(vcpkg_toolchain_file $ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake)
 
     # check Github Actions vcpkg installation
-    elseif (DEFINED ENV{VCPKG_INSTALLATION_ROOT} AND EXISTS $ENV{VCPKG_INSTALLATION_ ROOT}/scripts/buildsystems/vcpkg.cmake)
+    elseif (DEFINED ENV{VCPKG_INSTALLATION_ROOT} AND EXISTS $ENV{VCPKG_INSTALLATION_ROOT}/scripts/buildsystems/vcpkg.cmake)
         message(STATUS "Using system vcpkg at $ENV{VCPKG_INSTALLATION_ROOT}")
         set(vcpkg_toolchain_file $ENV{VCPKG_INSTALLATION_ROOT}/scripts/buildsystems/vcpkg.cmake)
 
