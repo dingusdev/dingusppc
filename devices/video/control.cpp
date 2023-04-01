@@ -352,11 +352,8 @@ void ControlVideo::iodev_write(uint32_t address, uint16_t value)
     case RadacalRegs::CLUT_DATA:
         this->clut_color[this->comp_index++] = value;
         if (this->comp_index >= 3) {
-            // TODO: combine separate components into a single ARGB value
-            this->palette[this->rad_addr][0] = this->clut_color[0];
-            this->palette[this->rad_addr][1] = this->clut_color[1];
-            this->palette[this->rad_addr][2] = this->clut_color[2];
-            this->palette[this->rad_addr][3] = 255;
+            this->set_palette_color(this->rad_addr, clut_color[0],
+                                    clut_color[1], clut_color[2], 0xFF);
             this->rad_addr++; // auto-increment CLUT address
             this->comp_index = 0;
         }

@@ -300,11 +300,8 @@ void AtiMach64Gx::rgb514_write_reg(uint8_t reg_addr, uint8_t value)
     case Rgb514::CLUT_DATA:
         this->clut_color[this->comp_index++] = value;
         if (this->comp_index >= 3) {
-            // TODO: combine separate components into a single ARGB value
-            this->palette[this->clut_index][0] = this->clut_color[0];
-            this->palette[this->clut_index][1] = this->clut_color[1];
-            this->palette[this->clut_index][2] = this->clut_color[2];
-            this->palette[this->clut_index][3] = 255;
+            this->set_palette_color(this->clut_index, clut_color[0],
+                                    clut_color[1], clut_color[2], 0xFF);
             this->clut_index++;
             this->comp_index = 0;
         }

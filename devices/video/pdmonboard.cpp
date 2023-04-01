@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -107,13 +107,10 @@ void PdmOnboardVideo::set_clut_color(uint8_t color)
 {
     this->clut_color[this->comp_index++] = color;
     if (this->comp_index >= 3) {
-        // TODO: combine separate components into a single ARGB value
-        this->palette[this->clut_index][0] = this->clut_color[0];
-        this->palette[this->clut_index][1] = this->clut_color[1];
-        this->palette[this->clut_index][2] = this->clut_color[2];
-        this->palette[this->clut_index][3] = 255;
-        this->clut_index++;   // assume the HW works like that
-        this->comp_index = 0; // assume the HW works like that
+        this->set_palette_color(this->clut_index, clut_color[0],
+                                clut_color[1], clut_color[2], 0xFF);
+        this->clut_index++;
+        this->comp_index = 0;
     }
 }
 
@@ -245,10 +242,8 @@ void PdmOnboardVideo::convert_frame_1bpp(uint8_t *dst_buf, int dst_pitch)
     uint32_t pixels[2];
 
     // prepare cached ARGB values for white & black pixels
-    pixels[0] = (0xFF << 24) | (this->palette[127][0] << 16) |
-                (this->palette[127][1] << 8) | this->palette[127][2];
-    pixels[1] = (0xFF << 24) | (this->palette[255][0] << 16) |
-                (this->palette[255][1] << 8) | this->palette[255][2];
+    pixels[0] = this->palette[127];
+    pixels[1] = this->palette[255];
 
     src_buf   = this->fb_ptr;
     src_pitch = this->fb_pitch;

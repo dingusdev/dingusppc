@@ -93,7 +93,12 @@ private:
 
     std::unique_ptr<DisplayID>  disp_id;
 
-    int comp_index;          /* color component index for DAC palette access */
+    // DAC interface state
+    uint8_t     dac_wr_index = 0;  // current DAC color index for writing
+    uint8_t     dac_rd_index = 0;  // current DAC color index for reading
+    uint8_t     dac_mask     = 0;  // current DAC mask
+    int         comp_index   = 0;  // current color component index
+    uint8_t     color_buf[3] = {}; // buffer for storing DAC color components
 };
 
-#endif /* ATI_RAGE_H */
+#endif // ATI_RAGE_H

@@ -121,6 +121,20 @@ void VideoCtrlBase::update_screen()
     //LOG_F(INFO, "Display uodate took: %lld ns", time_elapsed.count());
 }
 
+void VideoCtrlBase::get_palette_colors(uint8_t index, uint8_t& r, uint8_t& g,
+                                       uint8_t& b, uint8_t& a)
+{
+    b =  this->palette[index] & 0xFFU;
+    g = (this->palette[index] >>  8) & 0xFFU;
+    r = (this->palette[index] >> 16) & 0xFFU;
+    a = (this->palette[index] >> 24) & 0xFFU;
+}
+
+void VideoCtrlBase::set_palette_color(uint8_t index, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+{
+    this->palette[index] = (a << 24) | (r << 16) | (g << 8) | b;
+}
+
 void VideoCtrlBase::convert_frame_1bpp(uint8_t *dst_buf, int dst_pitch)
 {
     // TODO: implement me!
@@ -128,7 +142,7 @@ void VideoCtrlBase::convert_frame_1bpp(uint8_t *dst_buf, int dst_pitch)
 
 void VideoCtrlBase::convert_frame_8bpp(uint8_t *dst_buf, int dst_pitch)
 {
-    uint8_t *src_buf, *src_row, *dst_row, pix;
+    uint8_t *src_buf, *src_row, *dst_row;
     int     src_pitch;
 
     src_buf   = this->fb_ptr;
@@ -139,11 +153,7 @@ void VideoCtrlBase::convert_frame_8bpp(uint8_t *dst_buf, int dst_pitch)
         dst_row = &dst_buf[h * dst_pitch];
 
         for (int x = 0; x < this->active_width; x++) {
-            pix = src_row[x];
-            dst_row[0] = this->palette[pix][2]; // B
-            dst_row[1] = this->palette[pix][1]; // G
-            dst_row[2] = this->palette[pix][0]; // R
-            dst_row[3] = 255; // Alpha
+            WRITE_DWORD_LE_A(dst_row, this->palette[src_row[x]]);
             dst_row += 4;
         }
     }

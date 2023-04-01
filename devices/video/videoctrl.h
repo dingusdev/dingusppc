@@ -36,6 +36,10 @@ public:
 
     void update_screen(void);
 
+    void get_palette_colors(uint8_t index, uint8_t& r, uint8_t& g, uint8_t& b,
+                            uint8_t& a);
+    void set_palette_color(uint8_t index, uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+
     // converters for various framebuffer pixel depths
     virtual void convert_frame_1bpp(uint8_t *dst_buf, int dst_pitch);
     virtual void convert_frame_8bpp(uint8_t *dst_buf, int dst_pitch);
@@ -49,7 +53,7 @@ protected:
     float       pixel_clock;
     float       refresh_rate;
 
-    uint8_t     palette[256][4]; /* internal DAC palette in RGBA format */
+    uint32_t    palette[256]; // internal DAC palette in RGBA format
 
     // Framebuffer parameters
     uint8_t*    fb_ptr;

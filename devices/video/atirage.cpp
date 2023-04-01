@@ -221,11 +221,14 @@ uint32_t ATIRage::read_reg(uint32_t offset, uint32_t size) {
         break;
     case ATI_DAC_REGS:
         if (offset == ATI_DAC_DATA) {
-            this->mm_regs[ATI_DAC_DATA] =
-                this->palette[this->mm_regs[ATI_DAC_R_INDEX]][this->comp_index];
-            this->comp_index++; /* move to next color component */
-            if (this->comp_index >= 3) {
-                /* autoincrement reading index - move to next palette entry */
+            if (!this->comp_index) {
+                uint8_t alpha; // temporal variable for unused alpha
+                get_palette_colors(this->mm_regs[ATI_DAC_R_INDEX], color_buf[0],
+                                   color_buf[1], color_buf[2], alpha);
+            }
+            this->mm_regs[ATI_DAC_DATA] = color_buf[this->comp_index];
+            if (++this->comp_index >= 3) {
+                // autoincrement reading index - move to next palette entry
                 (this->mm_regs[ATI_DAC_R_INDEX])++;
                 this->comp_index = 0;
             }
@@ -308,19 +311,12 @@ void ATIRage::write_reg(uint32_t offset, uint32_t value, uint32_t size)
             this->comp_index = 0;
             break;
         case ATI_DAC_DATA:
-            this->palette[this->mm_regs[ATI_DAC_W_INDEX]][this->comp_index] = value & 0xFF;
-            this->comp_index++; /* move to next color component */
-            if (this->comp_index >= 3) {
-                LOG_F(
-                    INFO,
-                    "ATI DAC palette entry #%d set to R=%X, G=%X, B=%X",
-                    this->mm_regs[ATI_DAC_W_INDEX],
-                    this->palette[this->mm_regs[ATI_DAC_W_INDEX]][0],
-                    this->palette[this->mm_regs[ATI_DAC_W_INDEX]][1],
-                    this->palette[this->mm_regs[ATI_DAC_W_INDEX]][2]);
-                /* autoincrement writing index - move to next palette entry */
-                (this->mm_regs[ATI_DAC_W_INDEX])++;
-                this->comp_index = 0;
+            this->color_buf[this->comp_index] = (value >> 8) & this->dac_mask;
+            if (++this->comp_index >= 3) {
+                this->set_palette_color(this->dac_wr_index, color_buf[0],
+                                        color_buf[1], color_buf[2], 0xFF);
+                this->dac_wr_index++; // auto-increment color index
+                this->comp_index = 0; // reset color component index
             }
         }
         break;
