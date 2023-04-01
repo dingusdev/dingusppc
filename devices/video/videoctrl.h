@@ -42,6 +42,11 @@ public:
                             uint8_t& a);
     void set_palette_color(uint8_t index, uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 
+    // HW cursor support
+    void setup_hw_cursor(int cursor_width=64, int cur_height=64);
+    virtual void draw_hw_cursor(uint8_t *dst_buf, int dst_pitch) {};
+    virtual void get_cursor_position(int& x, int& y) { x = 0; y = 0; };
+
     // converters for various framebuffer pixel depths
     virtual void convert_frame_1bpp(uint8_t *dst_buf, int dst_pitch);
     virtual void convert_frame_8bpp(uint8_t *dst_buf, int dst_pitch);
@@ -51,6 +56,7 @@ protected:
     bool        crtc_on = false;
     bool        blank_on = true;
     bool        resizing = false;
+    bool        cursor_on = false;
     int         active_width;   // width of the visible display area
     int         active_height;  // height of the visible display area
     int         hori_total = 0;
@@ -73,6 +79,8 @@ private:
     SDL_Window*     display_wnd = 0;
     SDL_Renderer*   renderer = 0;
     SDL_Texture*    disp_texture = 0;
+    SDL_Texture*    cursor_texture = 0;
+    SDL_Rect        cursor_rect; // destination rectangle for cursor drawing
 };
 
 #endif // VIDEO_CTRL_H

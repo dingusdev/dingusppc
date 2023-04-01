@@ -45,6 +45,10 @@ VideoCtrlBase::VideoCtrlBase(int width, int height)
 
 VideoCtrlBase::~VideoCtrlBase()
 {
+    if (this->cursor_texture) {
+        SDL_DestroyTexture(this->cursor_texture);
+    }
+
     if (this->disp_texture) {
         SDL_DestroyTexture(this->disp_texture);
     }
@@ -136,18 +140,14 @@ void VideoCtrlBase::update_screen()
     SDL_UnlockTexture(this->disp_texture);
     SDL_RenderClear(this->renderer);
     SDL_RenderCopy(this->renderer, this->disp_texture, NULL, NULL);
+
+    // draw HW cursor if enabled
+    if (this->cursor_on) {
+        this->get_cursor_position(cursor_rect.x, cursor_rect.y);
+        SDL_RenderCopy(this->renderer, this->cursor_texture, NULL, &cursor_rect);
+    }
+
     SDL_RenderPresent(this->renderer);
-
-    // HW cursor data is stored at the beginning of the video memory
-    // HACK: use src_offset to recognize cursor data being ready
-    // Normally, we should check GEN_CUR_ENABLE bit in the GEN_TEST_CNTL register
-    //if (src_offset > 0x400 && READ_DWORD_LE_A(&this->block_io_regs[ATI_CUR_OFFSET])) {
-    //    this->draw_hw_cursor(dst_buf + dst_pitch * 20 + 120, dst_pitch);
-    //}
-
-    //auto end_time = std::chrono::steady_clock::now();
-    //auto time_elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
-    //LOG_F(INFO, "Display uodate took: %lld ns", time_elapsed.count());
 }
 
 void VideoCtrlBase::get_palette_colors(uint8_t index, uint8_t& r, uint8_t& g,
@@ -162,6 +162,39 @@ void VideoCtrlBase::get_palette_colors(uint8_t index, uint8_t& r, uint8_t& g,
 void VideoCtrlBase::set_palette_color(uint8_t index, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {
     this->palette[index] = (a << 24) | (r << 16) | (g << 8) | b;
+}
+
+void VideoCtrlBase::setup_hw_cursor(int cursor_width, int cursor_height)
+{
+    uint8_t*    dst_buf;
+    int         dst_pitch;
+
+    if (this->cursor_texture) {
+        SDL_DestroyTexture(this->cursor_texture);
+    }
+
+    this->cursor_texture = SDL_CreateTexture(
+        this->renderer,
+        SDL_PIXELFORMAT_ARGB8888,
+        SDL_TEXTUREACCESS_STREAMING,
+        cursor_width, cursor_height
+    );
+
+    if (this->cursor_texture == NULL) {
+        ABORT_F("SDL_CreateTexture for HW cursor failed with %s", SDL_GetError());
+    }
+
+    SDL_LockTexture(this->cursor_texture, NULL, (void **)&dst_buf, &dst_pitch);
+    SDL_SetTextureBlendMode(this->cursor_texture, SDL_BLENDMODE_BLEND);
+    this->draw_hw_cursor(dst_buf, dst_pitch);
+    SDL_UnlockTexture(this->cursor_texture);
+
+    this->cursor_rect.x = 0;
+    this->cursor_rect.y = 0;
+    this->cursor_rect.w = cursor_width;
+    this->cursor_rect.h = cursor_height;
+
+    this->cursor_on = true;
 }
 
 void VideoCtrlBase::convert_frame_1bpp(uint8_t *dst_buf, int dst_pitch)

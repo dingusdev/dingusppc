@@ -351,7 +351,10 @@ void ATIRage::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size) {
         return;
     case ATI_GEN_TEST_CNTL:
         if (bit_changed(this->regs[reg_offset >> 2], value, 7)) {
-            LOG_F(INFO, "%s: HW cursor status changed", this->name.c_str());
+            if (bit_set(value, 7))
+                this->setup_hw_cursor();
+            else
+                this->cursor_on = false;
         }
         if (bit_changed(this->regs[reg_offset >> 2], value, 8)) {
             if (!bit_set(value, 8))
@@ -606,6 +609,7 @@ void ATIRage::draw_hw_cursor(uint8_t *dst_buf, int dst_pitch) {
                     WRITE_DWORD_BE_A(dst_row, color1);
                     break;
                 case 2: // transparent
+                    WRITE_DWORD_BE_A(dst_row, 0);
                     break;
                 case 3: // 1's complement of display pixel
                     break;
@@ -613,6 +617,11 @@ void ATIRage::draw_hw_cursor(uint8_t *dst_buf, int dst_pitch) {
             }
         }
     }
+}
+
+void ATIRage::get_cursor_position(int& x, int& y) {
+    x =  this->regs[ATI_CUR_HORZ_VERT_POSN >> 2] & 0xFFFFU;
+    y = (this->regs[ATI_CUR_HORZ_VERT_POSN >> 2] >> 16) & 0xFFFFU;
 }
 
 static const PropMap AtiRage_Properties = {

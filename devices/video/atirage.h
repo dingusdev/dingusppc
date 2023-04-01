@@ -78,6 +78,7 @@ protected:
     void crtc_update();
     void crtc_enable();
     void draw_hw_cursor(uint8_t *dst_buf, int dst_pitch);
+    void get_cursor_position(int& x, int& y);
 
 private:
     uint32_t    regs[512] = {}; // internal registers
