@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -22,11 +22,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // The main runfile - main.cpp
 // This is where the magic begins
 
-#include "debugger/debugger.h"
-#include "machines/machinefactory.h"
-#include "machines/machineproperties.h"
-#include "utils/profiler.h"
-#include "ppcemu.h"
+#include <core/hostevents.h>
+#include <core/timermanager.h>
+#include <cpu/ppc/ppcemu.h>
+#include <debugger/debugger.h>
+#include <machines/machinefactory.h>
+#include <machines/machineproperties.h>
+#include <utils/profiler.h>
+
 #include <cinttypes>
 #include <csignal>
 #include <cstring>
@@ -195,6 +198,12 @@ int main(int argc, char** argv) {
 
     // redirect SIGABRT to our own handler
     signal(SIGABRT, sigabrt_handler);
+
+    // set up system wide event polling using
+    // default Macintosh polling rate of 11 ms
+    TimerManager::get_instance()->add_cyclic_timer(MSECS_TO_NSECS(11), [] {
+        EventManager::get_instance()->poll_events();
+    });
 
     switch (execution_mode) {
     case 0:
