@@ -46,6 +46,15 @@ PdmOnboardVideo::PdmOnboardVideo()
 
 void PdmOnboardVideo::set_video_mode(uint8_t new_mode)
 {
+    if (this->blanking != (new_mode & 0x80)) {
+        if (new_mode & 0x80) {
+            this->disable_video_internal();
+        } else {
+            this->blank_on = false;
+            this->blanking = 0;
+        }
+    }
+
     switch(new_mode & 0x7F) {
     case PdmVideoMode::Portrait:
     case PdmVideoMode::Rgb12in:
@@ -56,20 +65,14 @@ void PdmOnboardVideo::set_video_mode(uint8_t new_mode)
             this->video_mode = new_mode & 0x1F;
             LOG_F(INFO, "PDM-Video: video mode set to 0x%X", this->video_mode);
         }
-        if (this->blanking != (new_mode & 0x80)) {
-            this->blanking = new_mode & 0x80;
-            if (this->blanking) {
-                this->disable_video_internal();
-            } else {
-                this->enable_video_internal();
-            }
+        if (!this->blanking) {
+            this->enable_video_internal();
         }
         break;
     default:
         LOG_F(9, "PDM-Video: video disabled, new mode = 0x%X", new_mode & 0x1F);
         this->video_mode = new_mode & 0x1F;
-        this->blanking   = 0x80;
-        this->crtc_on    = false;
+        this->disable_video_internal();
     }
 }
 
@@ -207,27 +210,32 @@ void PdmOnboardVideo::enable_video_internal()
 
     this->set_depth_internal(new_width);
 
+    if (this->refresh_task_id) {
+        TimerManager::get_instance()->cancel_timer(this->refresh_task_id);
+    }
+
     // set up video refresh timer
     double refresh_rate_hz = (double)(this->pixel_clock) / (new_width + hori_blank) / (new_height + vert_blank);
     LOG_F(INFO, "PDM-Video: refresh rate set to %f Hz", refresh_rate_hz);
     uint64_t refresh_interval = static_cast<uint64_t>(1.0f / refresh_rate_hz * NS_PER_SEC + 0.5);
-    TimerManager::get_instance()->add_cyclic_timer(
+    this->refresh_task_id = TimerManager::get_instance()->add_cyclic_timer(
         refresh_interval,
         [this]() {
             this->update_screen();
         }
     );
 
-    this->update_screen();
-
-    LOG_F(INFO, "PDM-Video: video enabled");
+    LOG_F(9, "PDM-Video: video enabled");
     this->crtc_on = true;
 }
 
 void PdmOnboardVideo::disable_video_internal()
 {
+    this->blank_on = true;
+    this->blank_display();
+    this->blanking = 0x80;
     this->crtc_on = false;
-    LOG_F(INFO, "PDM-Video: video disabled");
+    LOG_F(9, "PDM-Video: video disabled");
 }
 
 /** Ariel II has a weird 1bpp mode where a white pixel is mapped to

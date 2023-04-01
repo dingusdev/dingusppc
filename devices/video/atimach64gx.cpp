@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -40,7 +40,7 @@ AtiMach64Gx::AtiMach64Gx()
 {
     supports_types(HWCompType::MMIO_DEV | HWCompType::PCI_DEV);
 
-    /* set up PCI configuration space header */
+    // set up PCI configuration space header
     this->vendor_id   = PCI_VENDOR_ATI;
     this->device_id   = ATI_MACH64_GX_DEV_ID;
     this->class_rev   = (0x030000 << 8) | 3;
@@ -53,7 +53,8 @@ AtiMach64Gx::AtiMach64Gx()
 
     // declare expansion ROM containing FCode and Mac OS drivers
     if (this->attach_exp_rom_image(std::string("113-32900-004_Apple_MACH64.bin"))) {
-        LOG_F(WARNING, "AtiMach64Gx: could not load ROM - this device won't work properly!");
+        ABORT_F("%s: could not load ROM - this device won't work properly!",
+                this->name.c_str());
     }
 
     // initialize display identification
@@ -180,6 +181,15 @@ void AtiMach64Gx::write_reg(uint32_t offset, uint32_t value, uint32_t size)
 
     switch (offset & ~3) {
     case ATI_CRTC_GEN_CNTL:
+        if (value & 0x40) {
+            this->mm_regs[ATI_CRTC_GEN_CNTL] |= (1 << 6);
+            this->blank_on = true;
+            this->blank_display();
+        } else {
+            this->mm_regs[ATI_CRTC_GEN_CNTL] &= ~(1 << 6);
+            this->blank_on = false;
+        }
+
         crtc_en = (this->mm_regs[ATI_CRTC_GEN_CNTL+3] >> 1) & 1;
         if (crtc_en != this->crtc_enable) {
             if (!crtc_en) {
@@ -246,7 +256,7 @@ void AtiMach64Gx::enable_crtc_internal()
         LOG_F(WARNING, "AtiMach64Gx: display window resizing not implemented yet!");
     }
 
-    /* calculate display refresh rate */
+    // calculate display refresh rate
     int hori_total = (this->mm_regs[ATI_CRTC_H_TOTAL_DISP] + 1) * 8;
 
     int vert_total = (READ_WORD_LE_A(&this->mm_regs[ATI_CRTC_V_TOTAL_DISP]) & 0x7FFUL) + 1;
@@ -270,15 +280,17 @@ void AtiMach64Gx::enable_crtc_internal()
         ABORT_F("AtiMach64Gx: unsupported pixel depth %d", this->pixel_depth);
     }
 
+    if (this->refresh_task_id) {
+        TimerManager::get_instance()->cancel_timer(this->refresh_task_id);
+    }
+
     uint64_t refresh_interval = static_cast<uint64_t>(1.0f / this->refresh_rate * NS_PER_SEC + 0.5);
-    TimerManager::get_instance()->add_cyclic_timer(
+    this->refresh_task_id = TimerManager::get_instance()->add_cyclic_timer(
         refresh_interval,
         [this]() {
             this->update_screen();
         }
     );
-
-    this->update_screen();
 
     this->crtc_on = true;
 

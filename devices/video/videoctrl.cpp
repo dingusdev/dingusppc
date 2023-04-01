@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -21,8 +21,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Video Conroller base class implementation. */
 
-#include "videoctrl.h"
+#include <core/hostevents.h>
+#include <devices/video/videoctrl.h>
 #include <loguru.hpp>
+#include <memaccess.h>
 #include <SDL.h>
 
 #include <chrono>
@@ -30,51 +32,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 VideoCtrlBase::VideoCtrlBase(int width, int height)
 {
-    LOG_F(INFO, "Create display window...");
+    EventManager::get_instance()->register_handler(EventType::EVENT_WINDOW,
+                                                  [this](const BaseEvent& event) {
+        const WindowEvent& wnd_event = static_cast<const WindowEvent&>(event);
+        if (wnd_event.sub_type == SDL_WINDOWEVENT_SIZE_CHANGED &&
+            wnd_event.window_id == this->disp_wnd_id)
+            this->resizing = false;
+    });
 
-    this->active_width  = width;
-    this->active_height = height;
-
-    // Create display window
-    this->display_wnd = SDL_CreateWindow(
-        "DingusPPC Display",
-        SDL_WINDOWPOS_UNDEFINED,
-        SDL_WINDOWPOS_UNDEFINED,
-        this->active_width,
-        this->active_height,
-        SDL_WINDOW_OPENGL
-    );
-
-    if (this->display_wnd == NULL) {
-        LOG_F(ERROR, "Display: SDL_CreateWindow failed with %s", SDL_GetError());
-    }
-
-    this->renderer = SDL_CreateRenderer(this->display_wnd, -1, SDL_RENDERER_ACCELERATED);
-    if (this->renderer == NULL) {
-        LOG_F(ERROR, "Display: SDL_CreateRenderer failed with %s", SDL_GetError());
-    }
-
-    SDL_SetRenderDrawColor(this->renderer, 0, 0, 0, 255);
-    SDL_RenderClear(this->renderer);
-    SDL_RenderPresent(this->renderer);
-
-    // Stupidly poll for 10 events.
-    // Otherwise no window will be shown on mac OS!
-    SDL_Event e;
-    for (int i = 0; i < 10; i++) {
-        SDL_PollEvent(&e);
-    }
-
-    this->disp_texture = SDL_CreateTexture(
-        this->renderer,
-        SDL_PIXELFORMAT_ARGB8888,
-        SDL_TEXTUREACCESS_STREAMING,
-        width, height
-    );
-
-    if (this->disp_texture == NULL) {
-        LOG_F(ERROR, "Display: SDL_CreateTexture failed with %s", SDL_GetError());
-    }
+    this->create_display_window(width, height);
 }
 
 VideoCtrlBase::~VideoCtrlBase()
@@ -92,12 +58,75 @@ VideoCtrlBase::~VideoCtrlBase()
     }
 }
 
+void VideoCtrlBase::create_display_window(int width, int height)
+{
+    if (!this->display_wnd) { // create display window
+        this->display_wnd = SDL_CreateWindow(
+            "DingusPPC Display",
+            SDL_WINDOWPOS_UNDEFINED,
+            SDL_WINDOWPOS_UNDEFINED,
+            width, height,
+            SDL_WINDOW_OPENGL
+        );
+
+        this->disp_wnd_id = SDL_GetWindowID(this->display_wnd);
+
+        if (this->display_wnd == NULL) {
+            ABORT_F("Display: SDL_CreateWindow failed with %s", SDL_GetError());
+        }
+
+        this->renderer = SDL_CreateRenderer(this->display_wnd, -1, SDL_RENDERER_ACCELERATED);
+        if (this->renderer == NULL) {
+            ABORT_F("Display: SDL_CreateRenderer failed with %s", SDL_GetError());
+        }
+
+        this->blank_on = true; // TODO: should be true!
+
+        this->blank_display();
+    } else { // resize display window
+        SDL_SetWindowSize(this->display_wnd, width, height);
+        this->resizing = true;
+    }
+
+    this->active_width  = width;
+    this->active_height = height;
+
+    if (this->disp_texture) {
+        SDL_DestroyTexture(this->disp_texture);
+    }
+
+    this->disp_texture = SDL_CreateTexture(
+        this->renderer,
+        SDL_PIXELFORMAT_ARGB8888,
+        SDL_TEXTUREACCESS_STREAMING,
+        width, height
+    );
+
+    if (this->disp_texture == NULL) {
+        ABORT_F("Display: SDL_CreateTexture failed with %s", SDL_GetError());
+    }
+}
+
+void VideoCtrlBase::blank_display() {
+    SDL_SetRenderDrawColor(this->renderer, 0, 0, 0, 255);
+    SDL_RenderClear(this->renderer);
+    SDL_RenderPresent(this->renderer);
+}
+
 void VideoCtrlBase::update_screen()
 {
     uint8_t*    dst_buf;
     int         dst_pitch;
 
     //auto start_time = std::chrono::steady_clock::now();
+
+    if (this->resizing)
+        return;
+
+    if (this->blank_on) {
+        this->blank_display();
+        return;
+    }
 
     SDL_LockTexture(this->disp_texture, NULL, (void **)&dst_buf, &dst_pitch);
 

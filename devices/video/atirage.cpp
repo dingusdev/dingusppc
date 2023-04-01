@@ -534,15 +534,17 @@ void ATIRage::crtc_enable() {
         LOG_F(INFO, "Pixel (dot) clock: %f MHz", this->pixel_clock * 1e-6);
         LOG_F(INFO, "Refresh rate: %f Hz", this->refresh_rate);
 
+        if (this->refresh_task_id) {
+            TimerManager::get_instance()->cancel_timer(this->refresh_task_id);
+        }
+
         uint64_t refresh_interval = static_cast<uint64_t>(1.0f / this->refresh_rate * NS_PER_SEC + 0.5);
-        TimerManager::get_instance()->add_cyclic_timer(
+        this->refresh_task_id = TimerManager::get_instance()->add_cyclic_timer(
             refresh_interval,
             [this]() {
                 this->update_screen();
             }
         );
-
-        this->update_screen();
     } else {
         LOG_F(WARNING, "ATI Rage: VLCK source != VPLL!");
     }

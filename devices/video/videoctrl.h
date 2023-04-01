@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -34,6 +34,8 @@ public:
     VideoCtrlBase(int width = 640, int height = 480);
     ~VideoCtrlBase();
 
+    void create_display_window(int width, int height);
+    void blank_display();
     void update_screen(void);
 
     void get_palette_colors(uint8_t index, uint8_t& r, uint8_t& g, uint8_t& b,
@@ -45,10 +47,14 @@ public:
     virtual void convert_frame_8bpp(uint8_t *dst_buf, int dst_pitch);
 
 protected:
-    /* CRT controller parameters */
+    // CRT controller parameters
     bool        crtc_on = false;
+    bool        blank_on = true;
+    bool        resizing = false;
     int         active_width;   // width of the visible display area
     int         active_height;  // height of the visible display area
+    int         hori_total;
+    int         vert_total;
     int         pixel_depth;
     float       pixel_clock;
     float       refresh_rate;
@@ -58,13 +64,15 @@ protected:
     // Framebuffer parameters
     uint8_t*    fb_ptr;
     int         fb_pitch;
+    uint32_t    refresh_task_id = 0;
 
     std::function<void(uint8_t *dst_buf, int dst_pitch)> convert_fb_cb;
 
 private:
-    SDL_Window      *display_wnd;
-    SDL_Renderer    *renderer;
-    SDL_Texture     *disp_texture;
+    uint32_t        disp_wnd_id = 0;
+    SDL_Window*     display_wnd = 0;
+    SDL_Renderer*   renderer = 0;
+    SDL_Texture*    disp_texture = 0;
 };
 
 #endif // VIDEO_CTRL_H
