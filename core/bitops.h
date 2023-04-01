@@ -24,6 +24,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef BIT_OPS_H
 #define BIT_OPS_H
 
+#include <cinttypes>
+
 #if defined(__GNUG__) && !defined(__clang__) // GCC, mybe ICC but not Clang
 
 #   include <x86intrin.h>
@@ -55,5 +57,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     }
 
 #endif
+
+template <class T>
+inline T extract_bits(T val, int pos, int len) {
+    return (val >> pos) & (((T)1 << len) - 1);
+}
+
+template <class T>
+inline void insert_bits(T &old_val, T new_val, int pos, int len) {
+    T mask = (((T)1 << len) - 1) << pos;
+    old_val = (old_val & ~mask) | ((new_val << pos) & mask);
+}
+
+/* Return true if the specified bit is different in the given numbers. */
+static inline bool bit_changed(uint64_t old_val, uint64_t new_val, int bit_num) {
+    return (old_val ^ new_val) & (1ULL << bit_num);
+}
+
+static inline bool bit_set(const uint64_t val, const int bit_num) {
+    return !!(val & (1ULL << bit_num));
+}
 
 #endif // BIT_OPS_H
