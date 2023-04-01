@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -55,15 +55,15 @@ public:
         return std::unique_ptr<ATIRage>(new ATIRage(ATI_RAGE_PRO_DEV_ID));
     }
 
-    /* MMIODevice methods */
+    // MMIODevice methods
     uint32_t read(uint32_t rgn_start, uint32_t offset, int size);
     void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size);
 
-    /* PCI device methods */
+    // PCI device methods
     uint32_t pci_cfg_read(uint32_t reg_offs, AccessDetails &details);
     void pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDetails &details);
 
-    /* I/O space access methods */
+    // I/O space access methods
     bool pci_io_read(uint32_t offset, uint32_t size, uint32_t* res);
     bool pci_io_write(uint32_t offset, uint32_t value, uint32_t size);
 
@@ -71,19 +71,19 @@ protected:
     void notify_bar_change(int bar_num);
     const char* get_reg_name(uint32_t reg_offset);
     bool io_access_allowed(uint32_t offset);
-    uint32_t read_reg(uint32_t offset, uint32_t size);
-    void write_reg(uint32_t offset, uint32_t value, uint32_t size);
+    uint32_t read_reg(uint32_t reg_offset, uint32_t size);
+    void write_reg(uint32_t reg_addr, uint32_t value, uint32_t size);
     float calc_pll_freq(int scale, int fb_div);
     void verbose_pixel_format(int crtc_index);
+    void crtc_update();
     void crtc_enable();
     void draw_hw_cursor(uint8_t *dst_buf, int dst_pitch);
 
 private:
-    uint8_t mm_regs[2048] = {0}; // internal registers
+    uint32_t    regs[512] = {}; // internal registers
+    uint8_t     plls[64]  = {}; // internal PLL registers
 
-    uint8_t plls[64] = {0}; // internal PLL registers
-
-    /* Video RAM variables */
+    // Video RAM variables
     std::unique_ptr<uint8_t[]>  vram_ptr;
     uint32_t    vram_size;
 

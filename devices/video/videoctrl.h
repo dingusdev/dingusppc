@@ -53,8 +53,8 @@ protected:
     bool        resizing = false;
     int         active_width;   // width of the visible display area
     int         active_height;  // height of the visible display area
-    int         hori_total;
-    int         vert_total;
+    int         hori_total = 0;
+    int         vert_total = 0;
     int         pixel_depth;
     float       pixel_clock;
     float       refresh_rate;
