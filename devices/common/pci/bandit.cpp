@@ -225,6 +225,23 @@ inline void BanditHost::cfg_setup(uint32_t offset, int size, int &bus_num,
     }
 }
 
+int BanditHost::device_postinit()
+{
+    std::string pci_dev_name;
+
+    static const std::map<std::string, int> pci_slots = {
+        {"pci_A1", DEV_FUN(0xD,0)}, {"pci_B1", DEV_FUN(0xE,0)}, {"pci_C1", DEV_FUN(0xF,0)}
+    };
+
+    for (auto& slot : pci_slots) {
+        pci_dev_name = GET_STR_PROP(slot.first);
+        if (!pci_dev_name.empty()) {
+            this->attach_pci_device(pci_dev_name, slot.second);
+        }
+    }
+    return 0;
+}
+
 Bandit::Bandit(int bridge_num, std::string name, int dev_id, int rev)
     : BanditHost()
 {
@@ -268,8 +285,17 @@ Chaos::Chaos(std::string name) : BanditHost()
     mem_ctrl->add_mmio_region(0xF0000000UL, 0x01000000, this);
 }
 
+static const PropMap Bandit_Properties = {
+    {"pci_A1",
+        new StrProperty("")},
+    {"pci_B1",
+        new StrProperty("")},
+    {"pci_C1",
+        new StrProperty("")},
+};
+
 static const DeviceDescription Bandit1_Descriptor = {
-    Bandit::create_first, {}, {}
+    Bandit::create_first, {}, Bandit_Properties
 };
 
 static const DeviceDescription PsxPci1_Descriptor = {

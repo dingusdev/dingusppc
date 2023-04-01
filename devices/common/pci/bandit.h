@@ -74,6 +74,8 @@ public:
     uint32_t read(uint32_t rgn_start, uint32_t offset, int size);
     void    write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size);
 
+    int device_postinit();
+
 protected:
     uint32_t    config_addr;
 
