@@ -603,7 +603,9 @@ void AmicScsiDma::write_ctrl(uint8_t value)
 
 int AmicScsiDma::push_data(const char* src_ptr, int len)
 {
-    uint8_t *p_data = mmu_get_dma_mem(this->addr_ptr, len);
+    bool is_writable;
+
+    uint8_t *p_data = mmu_get_dma_mem(this->addr_ptr, len, &is_writable);
     std::memcpy(p_data, src_ptr, len);
 
     this->addr_ptr += len;
@@ -614,7 +616,9 @@ int AmicScsiDma::push_data(const char* src_ptr, int len)
 DmaPullResult AmicScsiDma::pull_data(uint32_t req_len, uint32_t *avail_len,
                                      uint8_t **p_data)
 {
-    *p_data = mmu_get_dma_mem(this->addr_ptr, req_len);
+    bool is_writable;
+
+    *p_data = mmu_get_dma_mem(this->addr_ptr, req_len, &is_writable);
     this->addr_ptr += req_len;
     *avail_len = req_len;
     return DmaPullResult::MoreData;
