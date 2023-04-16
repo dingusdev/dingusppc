@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -49,7 +49,7 @@ public:
 private:
     std::string file_name; // file name for the backing file
     uint16_t    ram_size;  // NVRAM size
-    uint8_t*    storage;
+    std::unique_ptr<uint8_t[]>  storage;
 
     void init();
     void save();
