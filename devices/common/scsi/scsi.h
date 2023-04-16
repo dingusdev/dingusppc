@@ -28,6 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <array>
 #include <cinttypes>
+#include <functional>
 #include <string>
 
 /** SCSI control signals.
@@ -40,22 +41,102 @@ enum {
     SCSI_CTRL_ATN = 1 << 3,
     SCSI_CTRL_ACK = 1 << 4,
     SCSI_CTRL_REQ = 1 << 5,
-    SCSI_CTRL_SEL = 1 << 6,
-    SCSI_CTRL_BSY = 1 << 7,
-    SCSI_CTRL_RST = 1 << 8,
+    SCSI_CTRL_SEL = 1 << 13,
+    SCSI_CTRL_BSY = 1 << 14,
+    SCSI_CTRL_RST = 1 << 15,
 };
 
-enum ScsiPhase : int {
-    BUS_FREE = 0,
-    ARBITRATION,
-    SELECTION,
-    RESELECTION,
-    RESET,
+namespace ScsiPhase {
+    enum : int {
+        BUS_FREE = 0,
+        ARBITRATION,
+        SELECTION,
+        RESELECTION,
+        COMMAND,
+        DATA_IN,
+        DATA_OUT,
+        STATUS,
+        MESSAGE_IN,
+        MESSAGE_OUT,
+        RESET,
+    };
+};
+
+namespace ScsiStatus {
+    enum : uint8_t {
+        GOOD = 0,
+        CHECK_CONDITION = 2,
+    };
+};
+
+namespace ScsiMessage {
+    enum : uint8_t {
+        COMMAND_COMPLETE = 0,
+    };
 };
 
 enum ScsiMsg : int {
     CONFIRM_SEL = 1,
     BUS_PHASE_CHANGE,
+    SEND_CMD_BEGIN,
+    SEND_CMD_END,
+    MESSAGE_BEGIN,
+    MESSAGE_END,
+};
+
+enum ScsiCommand : int {
+    TEST_UNIT_READY              = 0x0,
+    REWIND                       = 0x1,
+    REQ_SENSE                    = 0x3,
+    FORMAT                       = 0x4,
+    READ_BLK_LIMITS              = 0x5,
+    READ_6                       = 0x8,
+    WRITE_6                      = 0xA,
+    SEEK_6                       = 0xB,
+    INQUIRY                      = 0x12,
+    VERIFY_6                     = 0x13,
+    MODE_SELECT_6                = 0x15,
+    RELEASE_UNIT                 = 0x17,
+    ERASE_6                      = 0x19,
+    MODE_SENSE_6                 = 0x1A,
+    DIAG_RESULTS                 = 0x1C,
+    SEND_DIAGS                   = 0x1D,
+    PREVENT_ALLOW_MEDIUM_REMOVAL = 0x1E,
+    READ_CAPACITY_10             = 0x25,
+    READ_10                      = 0x28,
+    WRITE_10                     = 0x2A,
+    VERIFY_10                    = 0x2F,
+    READ_LONG_10                 = 0x35,
+
+    // CD-ROM specific commands
+    READ_TOC                     = 0x43,
+};
+
+enum ScsiSense : int {
+    NO_SENSE       = 0x0,
+    RECOVERED      = 0x1,
+    NOT_READY      = 0x2,
+    MEDIUM_ERR     = 0x3,
+    HW_ERROR       = 0x4,
+    ILLEGAL_REQ    = 0x5,
+    UNIT_ATTENTION = 0x6,
+    DATA_PROTECT   = 0x7,
+    BLANK_CHECK    = 0x8,
+    VOL_OVERFLOW   = 0xD,
+    MISCOMPARE     = 0xE,
+    COMPLETED      = 0xF
+};
+
+enum ScsiError : int {
+    NO_ERROR       = 0x0,
+    NO_SECTOR      = 0x1,
+    WRITE_FAULT    = 0x3,
+    DEV_NOT_READY  = 0x4,
+    INVALID_CMD    = 0x20,
+    INVALID_LBA    = 0x21,
+    INVALID_CDB    = 0x24,
+    INVALID_LUN    = 0x25,
+    WRITE_PROTECT  = 0x27
 };
 
 /** Standard SCSI bus timing values measured in ns. */
@@ -68,15 +149,46 @@ enum ScsiMsg : int {
 
 #define SCSI_MAX_DEVS   8
 
+class ScsiBus;
+
+typedef std::function<void()> action_callback;
+
 class ScsiDevice : public HWComponent {
 public:
-    ScsiDevice()  = default;
+    ScsiDevice(int my_id) {
+        this->scsi_id = my_id;
+        this->cur_phase = ScsiPhase::BUS_FREE;
+    };
     ~ScsiDevice() = default;
 
-    virtual void notify(ScsiMsg msg_type, int param) = 0;
+    virtual void notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param);
+    virtual void next_step(ScsiBus* bus_obj);
+    virtual void prepare_xfer(ScsiBus* bus_obj, int& bytes_in, int& bytes_out);
+    virtual void switch_phase(const int new_phase);
 
-private:
-    int scsi_id;
+    virtual bool has_data() { return this->data_size != 0; };
+    virtual int  send_data(uint8_t* dst_ptr, int count);
+    virtual int  rcv_data(const uint8_t* src_ptr, const int count);
+
+    virtual bool prepare_data() = 0;
+    virtual void process_command() = 0;
+
+protected:
+    uint8_t     cmd_buf[16] = {};
+    uint8_t     msg_buf[16] = {}; // TODO: clarify how big this one should be
+    int         scsi_id;
+    int         initiator_id;
+    int         cur_phase;
+    uint8_t*    data_ptr = nullptr;
+    int         data_size;
+    int         incoming_size;
+    uint8_t     status;
+    int         sense;
+
+    ScsiBus*    bus_obj;
+
+    action_callback pre_xfer_action  = nullptr;
+    action_callback post_xfer_action = nullptr;
 };
 
 /** This class provides a higher level abstraction for the SCSI bus. */
@@ -85,20 +197,33 @@ public:
     ScsiBus();
     ~ScsiBus() = default;
 
-    // low-level control/status
-    void register_device(int id, ScsiDevice* dev_obj);
-    void assert_ctrl_line(int id, uint16_t mask);
-    void release_ctrl_line(int id, uint16_t mask);
-    void release_ctrl_lines(int id);
-    int  current_phase() { return this->cur_phase; };
+    // low-level state management
+    void    register_device(int id, ScsiDevice* dev_obj);
+    int     current_phase() { return this->cur_phase; };
+    int     get_initiator_id() { return this->initiator_id; };
+    int     get_target_id() { return this->target_id; };
+
+    // reading/writing control lines
+    void        assert_ctrl_line(int id, uint16_t mask);
+    void        release_ctrl_line(int id, uint16_t mask);
+    void        release_ctrl_lines(int id);
+    uint16_t    test_ctrl_lines(uint16_t mask);
+
+    // reading/writing data lines
+    uint8_t get_data_lines() { return this->data_lines; };
 
     // high-level control/status
+    int  switch_phase(int id, int new_phase);
     bool begin_arbitration(int id);
     bool end_arbitration(int id);
     bool begin_selection(int initiator_id, int target_id, bool atn);
     void confirm_selection(int target_id);
     bool end_selection(int initiator_id, int target_id);
     void disconnect(int dev_id);
+    bool pull_data(const int id, uint8_t* dst_ptr, const int size);
+    bool push_data(const int id, const uint8_t* src_ptr, const int size);
+    void target_next_step();
+    bool negotiate_xfer(int& bytes_in, int& bytes_out);
 
 protected:
     void change_bus_phase(int initiator_id);
@@ -108,7 +233,7 @@ private:
     std::array<ScsiDevice*, SCSI_MAX_DEVS> devices;
 
     // per-device state of the control lines
-    uint16_t    dev_ctrl_lines[SCSI_MAX_DEVS];
+    uint16_t    dev_ctrl_lines[SCSI_MAX_DEVS] = {};
 
     uint16_t    ctrl_lines;
     int         cur_phase;

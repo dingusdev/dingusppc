@@ -51,6 +51,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef MACIO_H
 #define MACIO_H
 
+#include <devices/common/ata/idechannel.h>
 #include <devices/common/dbdma.h>
 #include <devices/common/mmiodevice.h>
 #include <devices/common/nvram.h>
@@ -271,8 +272,10 @@ private:
 
     NVram*              nvram;    // NVRAM
     ViaCuda*            viacuda;  // VIA cell with Cuda MCU attached to it
-    MESHController*     mesh;     // MESH SCSI cell instance
+    MeshController*     mesh;     // MESH SCSI cell instance
     EsccController*     escc;     // ESCC serial controller
+    IdeChannel*         ide_0;    // Internal ATA
+    IdeChannel*         ide_1;    // Media Bay ATA
     Swim3::Swim3Ctrl*   swim3;    // floppy disk controller
 
     // DMA channels

@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -25,6 +25,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define MESH_H
 
 #include <devices/common/hwcomponent.h>
+#include <devices/common/hwinterrupt.h>
+#include <devices/common/scsi/scsi.h>
 
 #include <cinttypes>
 #include <memory>
@@ -34,7 +36,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace MeshScsi {
 
-// MESH registers offsets
+// MESH registers offsets.
 enum MeshReg : uint8_t {
     XferCount0 = 0,
     XferCount1 = 1,
@@ -54,26 +56,102 @@ enum MeshReg : uint8_t {
     SelTimeOut = 0xF
 };
 
+// MESH Sequencer commands.
+enum SeqCmd : uint8_t {
+    NoOperation = 0,
+    Arbitrate   = 1,
+    Select      = 2,
+    DisReselect = 0xD,
+    ResetMesh   = 0xE,
+    FlushFIFO   = 0xF,
+};
+
+// Exception register bits.
+enum {
+    EXC_SEL_TIMEOUT = 1 << 0,
+    EXC_PHASE_MM    = 1 << 1,
+    EXC_ARB_LOST    = 1 << 2,
+};
+
+// Interrupt register bits.
+enum {
+    INT_CMD_DONE    = 1 << 0,
+    INT_EXCEPTION   = 1 << 1,
+    INT_ERROR       = 1 << 2,
+    INT_MASK        = INT_CMD_DONE | INT_EXCEPTION | INT_ERROR
+};
+
+
+enum SeqState : uint32_t {
+    IDLE = 0,
+    BUS_FREE,
+    ARB_BEGIN,
+    ARB_END,
+    SEL_BEGIN,
+    SEL_END,
+    SEND_MSG,
+    SEND_CMD,
+    CMD_COMPLETE,
+    XFER_BEGIN,
+    XFER_END,
+    SEND_DATA,
+    RCV_DATA,
+    RCV_STATUS,
+    RCV_MESSAGE,
+};
+
 }; // namespace MeshScsi
 
-class MESHController : public HWComponent {
+class MeshController : public HWComponent {
 public:
-    MESHController(uint8_t mesh_id) {
+    MeshController(uint8_t mesh_id) {
         supports_types(HWCompType::SCSI_HOST | HWCompType::SCSI_DEV);
         this->chip_id = mesh_id;
+        this->reset(true);
     };
-    ~MESHController() = default;
+    ~MeshController() = default;
 
     static std::unique_ptr<HWComponent> create() {
-        return std::unique_ptr<MESHController>(new MESHController(HeathrowMESHID));
+        return std::unique_ptr<MeshController>(new MeshController(HeathrowMESHID));
     }
 
     // MESH registers access
     uint8_t read(uint8_t reg_offset);
     void   write(uint8_t reg_offset, uint8_t value);
 
+    // HWComponent methods
+    int device_postinit();
+
+protected:
+    void    reset(bool is_hard_reset);
+    void    perform_command(const uint8_t cmd);
+    void    seq_defer_state(uint64_t delay_ns);
+    void    sequencer();
+    void    update_irq();
+
 private:
-    uint8_t chip_id; // Chip ID for the MESH controller
+    uint8_t     chip_id;
+    uint8_t     int_mask;
+    uint8_t     int_stat = 0;
+    uint8_t     sync_params;
+    uint8_t     src_id;
+    uint8_t     dst_id;
+    uint8_t     cur_cmd;
+    uint8_t     error;
+    uint8_t     exception;
+
+    ScsiBus*    bus_obj;
+    uint16_t    bus_stat;
+
+    // Sequencer state
+    uint32_t    seq_timer_id;
+    uint32_t    cur_state;
+    uint32_t    next_state;
+
+    // interrupt related stuff
+    InterruptCtrl* int_ctrl = nullptr;
+    uint32_t       irq_id   = 0;
+    uint8_t        irq      = 0;
 };
 
 #endif // MESH_H

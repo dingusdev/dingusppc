@@ -102,6 +102,27 @@ private:
     uint8_t         stat;
 };
 
+/** AMIC-specific SCSI DMA implementation. */
+class AmicScsiDma : public DmaBidirChannel {
+public:
+    AmicScsiDma()   = default;
+    ~AmicScsiDma()  = default;
+
+    void            reinit(const uint32_t addr_ptr);
+    void            reset(const uint32_t addr_ptr);
+    void            write_ctrl(const uint8_t value);
+    uint8_t         read_stat() { return this->stat; };
+
+    int             push_data(const char* src_ptr, int len);
+    DmaPullResult   pull_data(uint32_t req_len, uint32_t *avail_len,
+                                      uint8_t **p_data);
+
+private:
+    uint32_t        addr_ptr;
+    uint16_t        byte_count;
+    uint8_t         stat;
+};
+
 // macro for byte wise updating of AMIC DMA address registers
 #define SET_ADDR_BYTE(reg, offset, value)                                       \
     mask = 0xFF000000UL >> (8 * ((offset) & 3));                                \
@@ -150,6 +171,10 @@ enum AMICReg : uint32_t {
 
     // Interrupt registers
     Int_Ctrl            = 0x2A000,
+    DMA_Int_0           = 0x2A008,
+    Bus_Err_Int_0       = 0x2A009,
+    DMA_Int_1           = 0x2A00A,
+    Bus_Err_Int_1       = 0x2A00B,
 
     // Undocumented diagnostics register
     Diag_Reg            = 0x2C000,
@@ -160,8 +185,14 @@ enum AMICReg : uint32_t {
     DMA_Base_Addr_2     = 0x31002,
     DMA_Base_Addr_3     = 0x31003,
     Enet_DMA_Xmt_Ctrl   = 0x31C20,
-    SCSI_DMA_Ctrl       = 0x32008,
     Enet_DMA_Rcv_Ctrl   = 0x32028,
+
+    // SCSI DMA registers
+    SCSI_DMA_Base_0     = 0x32000,
+    SCSI_DMA_Base_1     = 0x32001,
+    SCSI_DMA_Base_2     = 0x32002,
+    SCSI_DMA_Base_3     = 0x32003,
+    SCSI_DMA_Ctrl       = 0x32008,
 
     // Floppy (SWIM3) DMA registers
     Floppy_Addr_Ptr_0   = 0x32060,
@@ -210,15 +241,19 @@ private:
 
     uint8_t     emmo_pin; // EMMO aka factory tester pin status, active low
 
-    uint32_t    dma_base     = 0;  // DMA physical base address
-    uint16_t    snd_buf_size = 0;  // sound buffer size in bytes
-    uint8_t     snd_out_ctrl = 0;
+    uint32_t    dma_base      = 0;  // DMA physical base address
+    uint32_t    scsi_dma_base = 0;  // physical base address for SCSI DMA
+    uint16_t    snd_buf_size  = 0;  // sound buffer size in bytes
+    uint8_t     snd_out_ctrl  = 0;
 
     // floppy DMA state
     uint32_t    floppy_addr_ptr;
     uint16_t    floppy_byte_cnt;
 
-    uint8_t     scsi_dma_cs = 0;   // SCSI DMA control/status register value
+    // SCSI DMA state
+    uint32_t    scsi_addr_ptr;
+
+    //uint8_t     scsi_dma_cs = 0;   // SCSI DMA control/status register value
 
     // interrupt state
     uint8_t     int_ctrl = 0;
@@ -241,6 +276,7 @@ private:
     std::unique_ptr<AwacDevicePdm>  awacs;
     std::unique_ptr<AmicSndOutDma>  snd_out_dma;
     std::unique_ptr<AmicFloppyDma>  floppy_dma;
+    std::unique_ptr<AmicScsiDma>    scsi_dma;
 
     // on-board video
     std::unique_ptr<DisplayID>          disp_id;

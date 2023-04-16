@@ -27,6 +27,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cpu/ppc/ppcemu.h>
 #include <devices/common/machineid.h>
 #include <devices/common/scsi/scsi.h>
+#include <devices/common/scsi/scsicdrom.h>
+#include <devices/common/scsi/scsihd.h>
 #include <devices/memctrl/hmc.h>
 #include <loguru.hpp>
 #include <machines/machinebase.h>
@@ -82,6 +84,25 @@ int initialize_pdm(std::string& id)
 
     // add internal SCSI bus
     gMachineObj->add_device("SCSI0", std::unique_ptr<ScsiBus>(new ScsiBus()));
+    auto scsi_bus = dynamic_cast<ScsiBus*>(gMachineObj->get_comp_by_name("SCSI0"));
+
+    std::string hd_image_path = GET_STR_PROP("hdd_img");
+    if (!hd_image_path.empty()) {
+        // attach SCSI HD to the main bus, ID #0
+        auto my_hd = dynamic_cast<ScsiHardDisk*>(gMachineObj->get_comp_by_name("ScsiHD"));
+        scsi_bus->register_device(0, my_hd);
+        // insert specified disk image
+        my_hd->insert_image(hd_image_path);
+    }
+
+    std::string cdr_image_path = GET_STR_PROP("cdr_img");
+    if (!cdr_image_path.empty()) {
+        // attach SCSI CD-ROM to the main bus, ID #3
+        auto my_cdr = dynamic_cast<ScsiCdrom*>(gMachineObj->get_comp_by_name("ScsiCdrom"));
+        scsi_bus->register_device(3, my_cdr);
+        // insert specified disk image
+        my_cdr->insert_image(cdr_image_path);
+    }
 
     // Init virtual CPU and request MPC601
     ppc_cpu_init(hmc_obj, PPC_VER::MPC601, 7812500ULL);
@@ -109,7 +130,7 @@ static const PropMap pm6100_settings = {
 };
 
 static vector<string> pm6100_devices = {
-    "HMC", "Amic"
+    "HMC", "Amic", "ScsiHD", "ScsiCdrom"
 };
 
 static const MachineDescription pm6100_descriptor = {

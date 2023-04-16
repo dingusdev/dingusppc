@@ -30,8 +30,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <machines/machinebase.h>
 
 #include <cinttypes>
+#include <cstring>
 
-Sc53C94::Sc53C94(uint8_t chip_id, uint8_t my_id)
+Sc53C94::Sc53C94(uint8_t chip_id, uint8_t my_id) : ScsiDevice(my_id)
 {
     this->chip_id   = chip_id;
     this->my_bus_id = my_id;
@@ -74,13 +75,20 @@ void Sc53C94::reset_device()
 
 uint8_t Sc53C94::read(uint8_t reg_offset)
 {
-    uint8_t int_status;
+    uint8_t status, int_status;
 
     switch (reg_offset) {
+    case Read::Reg53C94::Xfer_Cnt_LSB:
+        return this->xfer_count & 0xFFU;
+    case Read::Reg53C94::Xfer_Cnt_MSB:
+        return (this->xfer_count >> 8) & 0xFFU;
+    case Read::Reg53C94::FIFO:
+        return this->fifo_pop();
     case Read::Reg53C94::Command:
         return this->cmd_fifo[0];
     case Read::Reg53C94::Status:
-        return this->status;
+        status = bus_obj->test_ctrl_lines(SCSI_CTRL_MSG | SCSI_CTRL_CD | SCSI_CTRL_IO);
+        return (this->status & 0xF8) | status;
     case Read::Reg53C94::Int_Status:
         int_status = this->int_status;
         this->seq_step = 0;
@@ -91,6 +99,8 @@ uint8_t Sc53C94::read(uint8_t reg_offset)
         return this->seq_step;
     case Read::Reg53C94::FIFO_Flags:
         return (this->seq_step << 5) | (this->data_fifo_pos & 0x1F);
+    case Read::Reg53C94::Config_1:
+        return this->config1;
     case Read::Reg53C94::Config_3:
         return this->config3;
     case Read::Reg53C94::Xfer_Cnt_Hi:
@@ -107,6 +117,12 @@ uint8_t Sc53C94::read(uint8_t reg_offset)
 void Sc53C94::write(uint8_t reg_offset, uint8_t value)
 {
     switch (reg_offset) {
+    case Write::Reg53C94::Xfer_Cnt_LSB:
+        this->set_xfer_count = (this->set_xfer_count & ~0xFFU) | value;
+        break;
+    case Write::Reg53C94::Xfer_Cnt_MSB:
+        this->set_xfer_count = (this->set_xfer_count & ~0xFF00U) | (value << 8);
+        break;
     case Write::Reg53C94::Command:
         update_command_reg(value);
         break;
@@ -142,6 +158,37 @@ void Sc53C94::write(uint8_t reg_offset, uint8_t value)
     }
 }
 
+uint16_t Sc53C94::pseudo_dma_read()
+{
+    uint16_t data_word;
+    bool     is_done = false;
+
+    if (this->data_fifo_pos >= 2) {
+        // remove one word from FIFO
+        data_word = (this->data_fifo[0] << 8) | this->data_fifo[1];
+        this->data_fifo_pos -= 2;
+        std:memmove(this->data_fifo, &this->data_fifo[2], this->data_fifo_pos);
+
+        // update DMA status
+        if ((this->cmd_fifo[0] & 0x80)) {
+            this->xfer_count -= 2;
+            if (!this->xfer_count) {
+                is_done = true;
+                this->status |= STAT_TC; // signal zero transfer count
+                this->cur_state = SeqState::XFER_END;
+                this->sequencer();
+            }
+        }
+    }
+
+    // see if we need to refill FIFO
+    if (!this->data_fifo_pos && !is_done) {
+        this->sequencer();
+    }
+
+    return data_word;
+}
+
 void Sc53C94::update_command_reg(uint8_t cmd)
 {
     if (this->on_reset && (cmd & 0x7F) != CMD_NOP) {
@@ -166,13 +213,13 @@ void Sc53C94::update_command_reg(uint8_t cmd)
         }
     } else {
         LOG_F(ERROR, "SC53C94: the top of the command FIFO overwritten!");
-        this->status |= 0x40; // signal IOE/Gross Error
+        this->status |= STAT_GE; // signal IOE/Gross Error
     }
 }
 
 void Sc53C94::exec_command()
 {
-    uint8_t cmd = this->cmd_fifo[0] & 0x7F;
+    uint8_t cmd = this->cur_cmd = this->cmd_fifo[0] & 0x7F;
     bool    is_dma_cmd = !!(this->cmd_fifo[0] & 0x80);
 
     if (is_dma_cmd) {
@@ -180,6 +227,9 @@ void Sc53C94::exec_command()
             this->xfer_count = this->set_xfer_count & 0xFFFFFFUL;
         } else { // standard mode: 16-bit
             this->xfer_count = this->set_xfer_count & 0xFFFFUL;
+            if (!this->xfer_count) {
+                this->xfer_count = 65536;
+            }
         }
     }
 
@@ -192,7 +242,7 @@ void Sc53C94::exec_command()
         exec_next_command();
         break;
     case CMD_CLEAR_FIFO:
-        this->data_fifo_pos = 0; // set the bottom of the FIFO to zero
+        this->data_fifo_pos = 0; // set the bottom of the data FIFO to zero
         this->data_fifo[0] = 0;
         exec_next_command();
         break;
@@ -216,26 +266,77 @@ void Sc53C94::exec_command()
         }
         exec_next_command();
         break;
+    case CMD_XFER:
+        if (!this->is_initiator) {
+            // clear command FIFO
+            this->cmd_fifo_pos = 0;
+            this->int_status |= INTSTAT_ICMD;
+            this->update_irq();
+        } else {
+            this->seq_step = 0;
+            this->cmd_steps = nullptr;
+            this->cur_state = SeqState::XFER_BEGIN;
+            this->sequencer();
+        }
+        break;
+    case CMD_COMPLETE_STEPS:
+        static SeqDesc * complete_steps_desc = new SeqDesc[3]{
+            {SeqState::RCV_STATUS,   0,          0},
+            {SeqState::RCV_MESSAGE,  0,          0},
+            {SeqState::CMD_COMPLETE, 0, INTSTAT_SR}
+        };
+        if (this->bus_obj->current_phase() != ScsiPhase::STATUS) {
+            ABORT_F("Sc53C94: complete steps only works in the STATUS phase");
+        }
+        this->seq_step = 0;
+        this->cmd_steps = complete_steps_desc;
+        this->cur_state = this->cmd_steps->next_step;
+        this->sequencer();
+        break;
+    case CMD_MSG_ACCEPTED:
+        if (this->is_initiator) {
+            this->bus_obj->target_next_step();
+        }
+        this->bus_obj->release_ctrl_line(this->my_bus_id, SCSI_CTRL_ACK);
+        this->int_status |= INTSTAT_SR;
+        this->int_status |= INTSTAT_DIS; // TODO: handle target disconnection properly
+        this->update_irq();
+        exec_next_command();
+        break;
     case CMD_SELECT_NO_ATN:
         static SeqDesc * sel_no_atn_desc = new SeqDesc[3]{
             {SeqState::SEL_BEGIN,    0, INTSTAT_DIS            },
-            {SeqState::CMD_BEGIN,    3, INTSTAT_SR | INTSTAT_SO},
+            {SeqState::SEND_CMD,     3, INTSTAT_SR | INTSTAT_SO},
             {SeqState::CMD_COMPLETE, 4, INTSTAT_SR | INTSTAT_SO},
         };
         this->seq_step = 0;
         this->cmd_steps = sel_no_atn_desc;
         this->cur_state = SeqState::BUS_FREE;
-        sequencer();
-        LOG_F(INFO, "SC53C94: SELECT W/O ATN command started");
+        this->sequencer();
+        LOG_F(9, "SC53C94: SELECT W/O ATN command started");
+        break;
+    case CMD_SELECT_WITH_ATN:
+        static SeqDesc * sel_with_atn_desc = new SeqDesc[4]{
+            {SeqState::SEL_BEGIN,    0, INTSTAT_DIS            },
+            {SeqState::SEND_MSG,     2, INTSTAT_SR | INTSTAT_SO},
+            {SeqState::SEND_CMD,     3, INTSTAT_SR | INTSTAT_SO},
+            {SeqState::CMD_COMPLETE, 4, INTSTAT_SR | INTSTAT_SO},
+        };
+        this->seq_step  = 0;
+        this->bytes_out = 1; // set message length
+        this->cmd_steps = sel_with_atn_desc;
+        this->cur_state = SeqState::BUS_FREE;
+        this->sequencer();
+        LOG_F(9, "SC53C94: SELECT WITH ATN command started");
         break;
     case CMD_ENA_SEL_RESEL:
-        LOG_F(INFO, "SC53C94: ENABLE SELECTION/RESELECTION command executed");
         exec_next_command();
         break;
     default:
         LOG_F(ERROR, "SC53C94: invalid/unimplemented command 0x%X", cmd);
         this->cmd_fifo_pos--; // remove invalid command from FIFO
         this->int_status |= INTSTAT_ICMD;
+        this->update_irq();
     }
 }
 
@@ -252,12 +353,28 @@ void Sc53C94::exec_next_command()
 
 void Sc53C94::fifo_push(const uint8_t data)
 {
-    if (this->data_fifo_pos < 16) {
+    if (this->data_fifo_pos < DATA_FIFO_MAX) {
         this->data_fifo[this->data_fifo_pos++] = data;
     } else {
         LOG_F(ERROR, "SC53C94: data FIFO overflow!");
-        this->status |= 0x40; // signal IOE/Gross Error
+        this->status |= STAT_GE; // signal IOE/Gross Error
     }
+}
+
+uint8_t Sc53C94::fifo_pop()
+{
+    uint8_t data = 0;
+
+    if (this->data_fifo_pos < 1) {
+        LOG_F(ERROR, "SC53C94: data FIFO underflow!");
+        this->status |= STAT_GE; // signal IOE/Gross Error
+    } else {
+        data = this->data_fifo[0];
+        this->data_fifo_pos--;
+        std:memmove(this->data_fifo, &this->data_fifo[1], this->data_fifo_pos);
+    }
+
+    return data;
 }
 
 void Sc53C94::seq_defer_state(uint64_t delay_ns)
@@ -316,8 +433,8 @@ void Sc53C94::sequencer()
         break;
     case SeqState::SEL_END:
         if (this->bus_obj->end_selection(this->my_bus_id, this->target_id)) {
-            LOG_F(INFO, "SC53C94: selection completed");
-            this->cmd_steps++;
+            this->bus_obj->release_ctrl_line(this->my_bus_id, SCSI_CTRL_SEL);
+            LOG_F(9, "SC53C94: selection completed");
         } else { // selection timeout
             this->seq_step = this->cmd_steps->step_num;
             this->int_status |= this->cmd_steps->status;
@@ -325,6 +442,84 @@ void Sc53C94::sequencer()
             this->cur_state = SeqState::IDLE;
             this->update_irq();
             exec_next_command();
+        }
+        break;
+    case SeqState::SEND_MSG:
+        this->bus_obj->negotiate_xfer(this->data_fifo_pos, this->bytes_out);
+        this->bus_obj->push_data(this->target_id, this->data_fifo, this->bytes_out);
+        this->data_fifo_pos -= this->bytes_out;
+        if (this->data_fifo_pos > 0) {
+            std::memmove(this->data_fifo, &this->data_fifo[this->bytes_out], this->data_fifo_pos);
+        }
+        this->bus_obj->release_ctrl_line(this->my_bus_id, SCSI_CTRL_ATN);
+        break;
+    case SeqState::SEND_CMD:
+        this->bus_obj->negotiate_xfer(this->data_fifo_pos, this->bytes_out);
+        this->bus_obj->push_data(this->target_id, this->data_fifo, this->data_fifo_pos);
+        this->data_fifo_pos = 0;
+        break;
+    case SeqState::CMD_COMPLETE:
+        this->seq_step    = this->cmd_steps->step_num;
+        this->int_status |= this->cmd_steps->status;
+        this->update_irq();
+        exec_next_command();
+        break;
+    case SeqState::XFER_BEGIN:
+        this->cur_bus_phase = this->bus_obj->current_phase();
+        switch (this->cur_bus_phase) {
+        case ScsiPhase::DATA_OUT:
+            if (this->cmd_fifo[0] & 0x80) {
+                this->cur_state = SeqState::SEND_DATA;
+                break;
+            }
+            this->bus_obj->push_data(this->target_id, this->data_fifo, this->data_fifo_pos);
+            this->data_fifo_pos = 0;
+            this->cur_state = SeqState::XFER_END;
+            this->sequencer();
+            break;
+        case ScsiPhase::DATA_IN:
+            this->bus_obj->negotiate_xfer(this->data_fifo_pos, this->bytes_out);
+            this->cur_state = SeqState::RCV_DATA;
+            this->rcv_data();
+            if (!(this->cmd_fifo[0] & 0x80)) {
+                this->cur_state = SeqState::XFER_END;
+                this->sequencer();
+            }
+        }
+        break;
+    case SeqState::XFER_END:
+        if (this->is_initiator) {
+            this->bus_obj->target_next_step();
+        }
+        this->int_status |= INTSTAT_SR;
+        this->update_irq();
+        exec_next_command();
+        break;
+    case SeqState::SEND_DATA:
+        break;
+    case SeqState::RCV_DATA:
+        // check for unexpected bus phase changes
+        if (this->bus_obj->current_phase() != this->cur_bus_phase) {
+            this->cmd_fifo_pos = 0; // clear command FIFO
+            this->int_status |= INTSTAT_SR;
+            this->update_irq();
+        } else {
+            this->rcv_data();
+        }
+        break;
+    case SeqState::RCV_STATUS:
+    case SeqState::RCV_MESSAGE:
+        this->bus_obj->negotiate_xfer(this->data_fifo_pos, this->bytes_out);
+        this->rcv_data();
+        if (this->is_initiator) {
+            if (this->cur_state == SeqState::RCV_STATUS) {
+                this->bus_obj->target_next_step();
+            } else if (this->cur_state == SeqState::RCV_MESSAGE) {
+                this->bus_obj->assert_ctrl_line(this->my_bus_id, SCSI_CTRL_ACK);
+                this->cmd_steps++;
+                this->cur_state = this->cmd_steps->next_step;
+                this->sequencer();
+            }
         }
         break;
     default:
@@ -342,7 +537,7 @@ void Sc53C94::update_irq()
     }
 }
 
-void Sc53C94::notify(ScsiMsg msg_type, int param)
+void Sc53C94::notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param)
 {
     switch (msg_type) {
     case ScsiMsg::CONFIRM_SEL:
@@ -350,13 +545,111 @@ void Sc53C94::notify(ScsiMsg msg_type, int param)
             // cancel selection timeout timer
             TimerManager::get_instance()->cancel_timer(this->seq_timer_id);
             this->cur_state = SeqState::SEL_END;
-            sequencer();
+            this->sequencer();
         } else {
             LOG_F(WARNING, "SC53C94: ignore invalid selection confirmation message");
         }
         break;
+    case ScsiMsg::BUS_PHASE_CHANGE:
+        if (param != ScsiPhase::BUS_FREE && this->cmd_steps != nullptr) {
+            this->cmd_steps++;
+            this->cur_state = this->cmd_steps->next_step;
+            this->sequencer();
+        }
+        break;
     default:
-        LOG_F(WARNING, "SC53C94: ignore notification message, type: %d", msg_type);
+        LOG_F(9, "SC53C94: ignore notification message, type: %d", msg_type);
+    }
+}
+
+int Sc53C94::send_data(uint8_t* dst_ptr, int count)
+{
+    if (dst_ptr == nullptr || !count) {
+        return 0;
+    }
+
+    int actual_count = std::min(this->data_fifo_pos, count);
+
+    // move data out of the data FIFO
+    std::memcpy(dst_ptr, this->data_fifo, actual_count);
+
+    // remove the just readed data from the data FIFO
+    this->data_fifo_pos -= actual_count;
+    if (this->data_fifo_pos > 0) {
+        std::memmove(this->data_fifo, &this->data_fifo[actual_count], this->data_fifo_pos);
+    } else {
+        this->cmd_steps++;
+        this->cur_state = this->cmd_steps->next_step;
+        this->sequencer();
+    }
+
+    return actual_count;
+}
+
+bool Sc53C94::rcv_data()
+{
+    int req_count;
+
+    // return if REQ line is negated
+    if (!this->bus_obj->test_ctrl_lines(SCSI_CTRL_REQ)) {
+        return false;
+    }
+
+    if ((this->cmd_fifo[0] & 0x80) && this->cur_bus_phase == ScsiPhase::DATA_IN) {
+        req_count = std::min((int)this->xfer_count, DATA_FIFO_MAX - this->data_fifo_pos);
+    } else {
+        req_count = 1;
+    }
+
+    this->bus_obj->pull_data(this->target_id, &this->data_fifo[this->data_fifo_pos], req_count);
+    this->data_fifo_pos += req_count;
+    return true;
+}
+
+void Sc53C94::real_dma_xfer(int direction)
+{
+    bool is_done = false;
+
+    if (direction) {
+        uint32_t got_bytes;
+        uint8_t* src_ptr;
+
+        while (this->xfer_count) {
+            this->dma_ch->pull_data(std::min((int)this->xfer_count, DATA_FIFO_MAX),
+                                    &got_bytes, &src_ptr);
+            std::memcpy(this->data_fifo, src_ptr, got_bytes);
+            this->data_fifo_pos = got_bytes;
+            this->bus_obj->push_data(this->target_id, this->data_fifo, this->data_fifo_pos);
+
+            this->xfer_count -= this->data_fifo_pos;
+            this->data_fifo_pos = 0;
+            if (!this->xfer_count) {
+                is_done = true;
+                this->status |= STAT_TC; // signal zero transfer count
+                this->cur_state = SeqState::XFER_END;
+                this->sequencer();
+            }
+        }
+    } else { // transfer data from target to host's memory
+        while (this->xfer_count) {
+            if (this->data_fifo_pos) {
+                this->dma_ch->push_data((char*)this->data_fifo, this->data_fifo_pos);
+
+                this->xfer_count -= this->data_fifo_pos;
+                this->data_fifo_pos = 0;
+                if (!this->xfer_count) {
+                    is_done = true;
+                    this->status |= STAT_TC; // signal zero transfer count
+                    this->cur_state = SeqState::XFER_END;
+                    this->sequencer();
+                }
+            }
+
+            // see if we need to refill FIFO
+            if (!this->data_fifo_pos && !is_done) {
+                this->sequencer();
+            }
+        }
     }
 }
 

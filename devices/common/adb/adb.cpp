@@ -402,7 +402,7 @@ bool ADB_Bus::adb_keybd_listen(int reg) {
 }
 
 bool ADB_Bus::adb_mouse_listen(int reg) {
-    if ((reg != 0) | (reg != 3)) {
+    if ((reg != 0) || (reg != 3)) {
         return false;
     }
 

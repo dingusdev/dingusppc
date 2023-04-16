@@ -29,11 +29,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SC_53C94_H
 #define SC_53C94_H
 
+#include <devices/common/dmacore.h>
 #include <devices/common/scsi/scsi.h>
 #include <devices/common/hwinterrupt.h>
 
 #include <cinttypes>
 #include <memory>
+
+#define DATA_FIFO_MAX   16
 
 /** 53C94 read registers */
 namespace Read {
@@ -78,13 +81,23 @@ namespace Write {
 
 /** NCR53C94/Am53CF94 commands. */
 enum {
-    CMD_NOP           =    0,
-    CMD_CLEAR_FIFO    =    1,
-    CMD_RESET_DEVICE  =    2,
-    CMD_RESET_BUS     =    3,
-    CMD_DMA_STOP      =    4,
-    CMD_SELECT_NO_ATN = 0x41,
-    CMD_ENA_SEL_RESEL = 0x44,
+    CMD_NOP             =    0,
+    CMD_CLEAR_FIFO      =    1,
+    CMD_RESET_DEVICE    =    2,
+    CMD_RESET_BUS       =    3,
+    CMD_DMA_STOP        =    4,
+    CMD_XFER            = 0x10,
+    CMD_COMPLETE_STEPS  = 0x11,
+    CMD_MSG_ACCEPTED    = 0x12,
+    CMD_SELECT_NO_ATN   = 0x41,
+    CMD_SELECT_WITH_ATN = 0x42,
+    CMD_ENA_SEL_RESEL   = 0x44,
+};
+
+/** Status register bits. **/
+enum {
+    STAT_TC         = 1 << 4, // Terminal count (NCR) / count to zero (AMD)
+    STAT_GE         = 1 << 6, // Gross Error (NCR) / Illegal Operation Error (AMD)
 };
 
 /** Interrupt status register bits. */
@@ -112,8 +125,15 @@ namespace SeqState {
         ARB_END,
         SEL_BEGIN,
         SEL_END,
-        CMD_BEGIN,
+        SEND_MSG,
+        SEND_CMD,
         CMD_COMPLETE,
+        XFER_BEGIN,
+        XFER_END,
+        SEND_DATA,
+        RCV_DATA,
+        RCV_STATUS,
+        RCV_MESSAGE,
     };
 };
 
@@ -137,11 +157,23 @@ public:
     int device_postinit();
 
     // 53C94 registers access
-    uint8_t read(uint8_t reg_offset);
-    void   write(uint8_t reg_offset, uint8_t value);
+    uint8_t  read(uint8_t reg_offset);
+    void     write(uint8_t reg_offset, uint8_t value);
+    uint16_t pseudo_dma_read();
+
+    // real DMA control
+    void     real_dma_xfer(int direction);
+
+    void set_dma_channel(DmaBidirChannel *dma_ch) {
+        this->dma_ch = dma_ch;
+    };
 
     // ScsiDevice methods
-    void notify(ScsiMsg msg_type, int param);
+    void notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param);
+    bool prepare_data() { return false; };
+    bool has_data() { return this->data_fifo_pos != 0; };
+    int  send_data(uint8_t* dst_ptr, int count);
+    void process_command() {};
 
 protected:
     void reset_device();
@@ -149,9 +181,12 @@ protected:
     void exec_command();
     void exec_next_command();
     void fifo_push(const uint8_t data);
+    uint8_t fifo_pop();
 
     void sequencer();
     void seq_defer_state(uint64_t delay_ns);
+
+    bool rcv_data();
 
     void update_irq();
 
@@ -165,6 +200,7 @@ private:
     uint8_t     data_fifo[16];
     int         cmd_fifo_pos;
     int         data_fifo_pos;
+    int         bytes_out;
     bool        on_reset = false;
     uint32_t    xfer_count;
     uint32_t    set_xfer_count;
@@ -186,11 +222,15 @@ private:
     SeqDesc*    cmd_steps;
     bool        is_initiator;
     uint8_t     cur_cmd;
+    int         cur_bus_phase;
 
     // interrupt related stuff
     InterruptCtrl* int_ctrl = nullptr;
     uint32_t       irq_id   = 0;
     uint8_t        irq      = 0;
+
+    // DMA related stuff
+    DmaBidirChannel*    dma_ch;
 };
 
 #endif // SC_53C94_H

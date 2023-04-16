@@ -28,12 +28,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/i2c/athens.h>
 #include <devices/common/i2c/i2cprom.h>
 #include <devices/common/machineid.h>
-#include <devices/floppy/floppyimg.h>
+#include <devices/common/scsi/scsi.h>
 #include <devices/ioctrl/macio.h>
 #include <devices/memctrl/mpc106.h>
 #include <devices/memctrl/spdram.h>
-#include <devices/sound/soundserver.h>
-#include <devices/video/atirage.h>
 #include <loguru.hpp>
 #include <machines/machinebase.h>
 #include <machines/machinefactory.h>
@@ -127,6 +125,8 @@ int initialize_gossamer(std::string& id)
         DEV_FUN(0x10,0), dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("Heathrow")));
     grackle_obj->pci_register_device(
         DEV_FUN(0x12,0), dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name(id == "pmg3twr" ? "AtiRagePro" : "AtiRageGT")));
+
+    gMachineObj->add_device("SCSI0", std::unique_ptr<ScsiBus>(new ScsiBus()));
 
     // add Athens clock generator device and register it with the I2C host
     gMachineObj->add_device("Athens", std::unique_ptr<AthensClocks>(new AthensClocks(0x28)));
