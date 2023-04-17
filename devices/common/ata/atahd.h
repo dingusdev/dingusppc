@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/** @file TA hard disk definitions. */
+/** @file ATA hard disk definitions. */
 
 #ifndef ATA_HARD_DISK_H
 #define ATA_HARD_DISK_H
@@ -27,6 +27,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/ata/atabasedevice.h>
 #include <string>
 #include <fstream>
+
+#define ATA_HD_SEC_SIZE 512
 
 class AtaHardDisk : public AtaBaseDevice
 {
@@ -42,9 +44,7 @@ private:
     uint64_t img_size;
     char * buffer = new char[1 <<17];
 
-    char* ide_hd_id = {
-        0x0
-    };
+    uint8_t hd_id_data[ATA_HD_SEC_SIZE] = {};
 };
 
 #endif // ATA_HARD_DISK_H

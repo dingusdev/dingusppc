@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -52,66 +52,64 @@ int AtaHardDisk::perform_command()
 {
     LOG_F(INFO, "%s: command 0x%x requested", this->name.c_str(), this->r_command);
     this->r_status |= BSY;
-    this->r_status &= ~(DRDY);
+    this->r_status &= ~DRDY;
     switch (this->r_command) {
-        case NOP:
-            break;
-        case RESET_ATAPI: {
-            device_reset();
-            break;
-        }
-        case RECALIBRATE:
-            hdd_img.seekg(0, std::ios::beg);
-            this->r_error       = 0;
-            this->r_cylinder_lo = 0;
-            this->r_cylinder_hi = 0;
-            break;
-        case READ_SECTOR:
-        case READ_SECTOR_NR: {
-            this->r_status |= DRQ;
-            uint16_t sec_count = (this->r_sect_count == 0) ? 256 : this->r_sect_count;
-            uint32_t sector = (r_sect_num << 16);
-            sector |= ((this->r_cylinder_lo) << 8) + (this->r_cylinder_hi);
-            uint64_t offset = sector * 512;
-            hdd_img.seekg(offset, std::ios::beg);
-            hdd_img.read(buffer, sec_count * 512);
-            this->r_status &= ~(DRQ);
-            break;
-        }
-        case WRITE_SECTOR:
-        case WRITE_SECTOR_NR: {
-            this->r_status |= DRQ;
-            uint16_t sec_count = (this->r_sect_count == 0) ? 256 : this->r_sect_count;
-            uint32_t sector    = (r_sect_num << 16);
-            sector |= ((this->r_cylinder_lo) << 8) + (this->r_cylinder_hi);
-            uint64_t offset = sector * 512;
-            hdd_img.seekg(offset, std::ios::beg);
-            hdd_img.write(buffer, sec_count * 512);
-            this->r_status &= ~(DRQ);
-            break;
-        }
-        case INIT_DEV_PARAM:
-            break;
-        case DIAGNOSTICS: {
-            this->r_status |= DRQ;
-            int ret_code = this->r_error;
-            this->r_status &= ~(DRQ);
-            return ret_code;
-            break;
-        }
-        case IDENTIFY_DEVICE: {
-            this->r_status |= DRQ;
-            std::memcpy(buffer, ide_hd_id, 512);
-            this->r_status &= ~(DRQ);
-            break;
-        }
-        default:
-            LOG_F(INFO, "Unknown ATA command 0x%x", this->r_command);
-            this->r_status &= ~(BSY);
-            this->r_status |= ERR;
-            return -1;
+    case NOP:
+        break;
+    case RESET_ATAPI:
+        device_reset();
+        break;
+    case RECALIBRATE:
+        hdd_img.seekg(0, std::ios::beg);
+        this->r_error       = 0;
+        this->r_cylinder_lo = 0;
+        this->r_cylinder_hi = 0;
+        break;
+    case READ_SECTOR:
+    case READ_SECTOR_NR: {
+        this->r_status |= DRQ;
+        uint16_t sec_count = (this->r_sect_count == 0) ? 256 : this->r_sect_count;
+        uint32_t sector = (r_sect_num << 16);
+        sector |= ((this->r_cylinder_lo) << 8) + (this->r_cylinder_hi);
+        uint64_t offset = sector * ATA_HD_SEC_SIZE;
+        hdd_img.seekg(offset, std::ios::beg);
+        hdd_img.read(buffer, sec_count * ATA_HD_SEC_SIZE);
+        this->r_status &= ~DRQ;
     }
-    this->r_status &= ~(BSY);
+    break;
+    case WRITE_SECTOR:
+    case WRITE_SECTOR_NR: {
+        this->r_status |= DRQ;
+        uint16_t sec_count = (this->r_sect_count == 0) ? 256 : this->r_sect_count;
+        uint32_t sector    = (r_sect_num << 16);
+        sector |= ((this->r_cylinder_lo) << 8) + (this->r_cylinder_hi);
+        uint64_t offset = sector * ATA_HD_SEC_SIZE;
+        hdd_img.seekg(offset, std::ios::beg);
+        hdd_img.write(buffer, sec_count * ATA_HD_SEC_SIZE);
+        this->r_status &= ~DRQ;
+    }
+    break;
+    case INIT_DEV_PARAM:
+        break;
+    case DIAGNOSTICS: {
+        this->r_status |= DRQ;
+        int ret_code = this->r_error;
+        this->r_status &= ~DRQ;
+        return ret_code;
+    }
+    break;
+    case IDENTIFY_DEVICE:
+        this->r_status |= DRQ;
+        std::memcpy(buffer, this->hd_id_data, ATA_HD_SEC_SIZE);
+        this->r_status &= ~DRQ;
+        break;
+    default:
+        LOG_F(ERROR, "%s: unknown ATA command 0x%x", this->name.c_str(), this->r_command);
+        this->r_status &= ~BSY;
+        this->r_status |= ERR;
+        return -1;
+    }
+    this->r_status &= ~BSY;
     this->r_status |= DRDY;
     return 0;
 }
