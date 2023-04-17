@@ -207,9 +207,7 @@ int main(int argc, char** argv) {
 
     switch (execution_mode) {
     case 0:
-        for (;;) {
-            ppc_exec();
-        }
+        ppc_exec();
         break;
     case 1:
         enter_debugger();
