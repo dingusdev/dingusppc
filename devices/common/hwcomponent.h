@@ -45,6 +45,7 @@ enum HWCompType {
     SCSI_DEV    = 1ULL << 22, /* SCSI device */
     IDE_BUS     = 1ULL << 23, /* IDE bus */
     IDE_DEV     = 1ULL << 25, /* IDE device */
+    SND_CODEC   = 1ULL << 30, /* Sound codec */
     SND_SERVER  = 1ULL << 31, /* host sound server */
     FLOPPY_CTRL = 1ULL << 32, /* floppy disk controller */
     FLOPPY_DRV  = 1ULL << 33, /* floppy disk drive */

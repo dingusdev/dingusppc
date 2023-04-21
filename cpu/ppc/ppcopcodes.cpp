@@ -870,6 +870,35 @@ static inline void calc_rtcl_value()
     rtc_timestamp = new_ts;
 }
 
+static inline uint64_t calc_tbr_value()
+{
+    uint64_t tbr_inc;
+    uint32_t tbr_inc_lo;
+    uint64_t diff = get_virt_time_ns() - tbr_wr_timestamp;
+    _u32xu64(tbr_freq_ghz, diff, tbr_inc, tbr_inc_lo);
+    return (tbr_wr_value + tbr_inc);
+}
+
+static inline uint32_t calc_dec_value() {
+    uint64_t dec_adj;
+    uint32_t dec_adj_lo;
+    uint64_t diff = get_virt_time_ns() - dec_wr_timestamp;
+    _u32xu64(tbr_freq_ghz, diff, dec_adj, dec_adj_lo);
+    return (dec_wr_value - dec_adj);
+}
+
+static void update_timebase(uint64_t mask, uint64_t new_val)
+{
+    uint64_t tbr_value = calc_tbr_value();
+    tbr_wr_value = (tbr_value & mask) | new_val;
+    tbr_wr_timestamp = get_virt_time_ns();
+}
+
+static void update_decrementer(uint32_t val) {
+    dec_wr_value = val;
+    dec_wr_timestamp = get_virt_time_ns();
+}
+
 void dppc_interpreter::ppc_mfspr() {
     uint32_t ref_spr = (((ppc_cur_instruction >> 11) & 31) << 5) | ((ppc_cur_instruction >> 16) & 31);
 
@@ -888,23 +917,12 @@ void dppc_interpreter::ppc_mfspr() {
         calc_rtcl_value();
         ppc_state.spr[SPR::RTCU_U] = rtc_hi;
         break;
+    case SPR::DEC:
+        ppc_state.spr[SPR::DEC] = calc_dec_value();
+        break;
     }
 
     ppc_state.gpr[(ppc_cur_instruction >> 21) & 31] = ppc_state.spr[ref_spr];
-}
-
-static inline uint64_t calc_tbr_value()
-{
-    uint64_t diff = get_virt_time_ns() - tbr_wr_timestamp;
-    uint64_t tbr_inc; uint32_t tbr_inc_lo; _u32xu64(tbr_freq_ghz, diff, tbr_inc, tbr_inc_lo);
-    return (tbr_wr_value + tbr_inc);
-}
-
-static void update_timebase(uint64_t mask, uint64_t new_val)
-{
-    uint64_t tbr_value = calc_tbr_value();
-    tbr_wr_value = (tbr_value & mask) | new_val;
-    tbr_wr_timestamp = get_virt_time_ns();
 }
 
 void dppc_interpreter::ppc_mtspr() {
@@ -935,6 +953,9 @@ void dppc_interpreter::ppc_mtspr() {
     case SPR::RTCU_S:
         calc_rtcl_value();
         rtc_hi = val;
+        break;
+    case SPR::DEC:
+        update_decrementer(val);
         break;
     case SPR::TBL_S:
         update_timebase(0xFFFFFFFF00000000ULL, val);

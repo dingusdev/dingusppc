@@ -60,8 +60,8 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
     this->snd_out_dma = std::unique_ptr<DMAChannel> (new DMAChannel());
     this->awacs->set_dma_out(this->snd_out_dma.get());
     this->snd_out_dma->set_callbacks(
-        std::bind(&AwacsScreamer::dma_start, this->awacs.get()),
-        std::bind(&AwacsScreamer::dma_end, this->awacs.get())
+        std::bind(&AwacsScreamer::dma_out_start, this->awacs.get()),
+        std::bind(&AwacsScreamer::dma_out_stop, this->awacs.get())
     );
 
     // connect serial HW

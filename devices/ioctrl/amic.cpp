@@ -235,7 +235,7 @@ void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
                                             this->snd_buf_size);
                     this->snd_out_dma->enable();
                     this->awacs->set_sample_rate((this->snd_out_ctrl >> 1) & 3);
-                    this->awacs->start_output_dma();
+                    this->awacs->dma_out_start();
                 } else {
                     LOG_F(9, "AMIC Sound Out DMA disabled!");
                     this->snd_out_dma->disable();

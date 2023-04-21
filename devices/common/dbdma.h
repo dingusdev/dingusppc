@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -36,9 +36,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** DBDMA Channel registers offsets */
 enum DMAReg : uint32_t {
-    CH_CTRL    = 0,
-    CH_STAT    = 4,
-    CMD_PTR_LO = 12,
+    CH_CTRL         = 0,
+    CH_STAT         = 4,
+    CMD_PTR_LO      = 12,
+    INT_SELECT      = 16,
+    BRANCH_SELECT   = 20,
 };
 
 /** Channel Status bits (DBDMA spec, 5.5.3) */
@@ -61,6 +63,19 @@ typedef struct DMACmd {
     uint16_t    res_count;
     uint16_t    xfer_stat;
 } DMACmd;
+
+namespace DBDMA_Cmd {
+    enum : uint8_t {
+        OUTPUT_MORE = 0,
+        OUTPUT_LAST = 1,
+        INPUT_MORE  = 2,
+        INPUT_LAST  = 3,
+        STORE_QUAD  = 4,
+        LOAD_QUAD   = 5,
+        NOP         = 6,
+        STOP        = 7
+    };
+};
 
 typedef std::function<void(void)> DbdmaCallback;
 
@@ -90,12 +105,14 @@ private:
     std::function<void(void)> start_cb = nullptr; // DMA channel start callback
     std::function<void(void)> stop_cb  = nullptr; // DMA channel stop callback
 
-    uint16_t ch_stat    = 0;
-    uint32_t cmd_ptr    = 0;
-    uint32_t queue_len  = 0;
-    uint8_t* queue_data = 0;
+    uint16_t ch_stat        = 0;
+    uint32_t cmd_ptr        = 0;
+    uint32_t queue_len      = 0;
+    uint8_t* queue_data     = 0;
+    uint32_t branch_select  = 0;
 
-    bool cmd_in_progress = false;
+    bool     cmd_in_progress = false;
+    uint8_t  cur_cmd;
 };
 
 #endif /* DB_DMA_H */
