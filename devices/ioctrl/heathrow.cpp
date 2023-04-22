@@ -91,6 +91,7 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
     this->swim3 = dynamic_cast<Swim3::Swim3Ctrl*>(gMachineObj->get_comp_by_name("Swim3"));
     this->floppy_dma = std::unique_ptr<DMAChannel> (new DMAChannel());
     this->swim3->set_dma_channel(this->floppy_dma.get());
+    this->floppy_dma->register_dma_int(this, 2);
 
     // set EMMO pin status (active low)
     this->emmo_pin = GET_BIN_PROP("emmo") ^ 1;
@@ -259,6 +260,11 @@ uint32_t HeathrowIC::mio_ctrl_read(uint32_t offset, int size) {
     case MIO_INT_LEVELS1:
         res = this->int_levels1;
         break;
+    case MIO_INT_CLEAR1:
+    case MIO_INT_CLEAR2:
+        // some Mac OS drivers reads from those write-only registers
+        // so we return zero here as real HW does
+        break;
     case MIO_OHARE_ID:
         LOG_F(9, "read from MIO:ID register at Address %x", ppc_state.pc);
         res = (this->fp_id << 24) | (this->mon_id << 16) | (this->mb_id << 8) |
@@ -375,23 +381,38 @@ void HeathrowIC::ack_int(uint32_t irq_id, uint8_t irq_line_state)
                 this->int_levels1 &= ~irq_id;
             }
         }
-        // signal CPU interrupt
-        if (this->int_events1 || this->int_events2) {
-            if (!this->cpu_int_latch) {
-                this->cpu_int_latch = true;
-                ppc_assert_int();
-                LOG_F(5, "Heathrow: CPU INT asserted, source: %d", irq_id);
-            } else {
-                LOG_F(5, "Heathrow: CPU INT already latched");
-            }
-        }
+        this->signal_cpu_int();
     } else {
-        ABORT_F("Heathrow: native interrupt mode not implemented");
+        ABORT_F("%s: native interrupt mode not implemented", this->name.c_str());
     }
 }
 
 void HeathrowIC::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state)
 {
+    if (this->int_mask1 & MACIO_INT_MODE) { // 68k interrupt emulation mode?
+        this->int_events1 |= irq_id; // signal IRQ line change
+        this->int_events1 &= this->int_mask1;
+        // update IRQ line state
+        if (irq_line_state) {
+            this->int_levels1 |= irq_id;
+        } else {
+            this->int_levels1 &= ~irq_id;
+        }
+        this->signal_cpu_int();
+    } else {
+        ABORT_F("%s: native interrupt mode not implemented", this->name.c_str());
+    }
+}
+
+void HeathrowIC::signal_cpu_int() {
+    if (this->int_events1 || this->int_events2) {
+        if (!this->cpu_int_latch) {
+            this->cpu_int_latch = true;
+            ppc_assert_int();
+        } else {
+            LOG_F(5, "%s: CPU INT already latched", this->name.c_str());
+        }
+    }
 }
 
 void HeathrowIC::clear_cpu_int()

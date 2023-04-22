@@ -247,6 +247,7 @@ protected:
     void notify_bar_change(int bar_num);
 
     void feature_control(const uint32_t value);
+    void signal_cpu_int();
     void clear_cpu_int();
 
 private:
