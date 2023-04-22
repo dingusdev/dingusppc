@@ -69,7 +69,7 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
 
     // find appropriate sound chip, create a DMA output channel for sound,
     // then wire everything together
-    this->snd_codec   = dynamic_cast<MacioSndCtrl*>(gMachineObj->get_comp_by_type(HWCompType::SND_CODEC));
+    this->snd_codec   = dynamic_cast<MacioSndCodec*>(gMachineObj->get_comp_by_type(HWCompType::SND_CODEC));
     this->snd_out_dma = std::unique_ptr<DMAChannel> (new DMAChannel());
     this->snd_codec->set_dma_out(this->snd_out_dma.get());
     this->snd_out_dma->set_callbacks(

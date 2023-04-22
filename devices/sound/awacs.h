@@ -141,8 +141,9 @@ private:
 };
 
 /** Sound codec interface with the typical MacIO access. */
-class MacioSndCtrl : public virtual AwacsBase {
+class MacioSndCodec : public AwacsBase {
 public:
+    MacioSndCodec(std::string name) : AwacsBase(name) {};
     virtual uint32_t snd_ctrl_read(uint32_t offset, int size) = 0;
     virtual void     snd_ctrl_write(uint32_t offset, uint32_t value, int size) = 0;
 };
@@ -152,7 +153,7 @@ public:
 #define AWAC_REV_SCREAMER   3
 
 /** Screamer sound codec. */
-class AwacsScreamer : public MacioSndCtrl {
+class AwacsScreamer : public MacioSndCodec {
 public:
     AwacsScreamer(std::string name = "Screamer");
     ~AwacsScreamer() = default;

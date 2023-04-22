@@ -269,7 +269,7 @@ private:
     uint8_t  emmo_pin;      // factory tester status, active low
 
     // subdevice objects
-    MacioSndCtrl*       snd_codec; // audio codec instance
+    MacioSndCodec*      snd_codec; // audio codec instance
 
     NVram*              nvram;    // NVRAM
     ViaCuda*            viacuda;  // VIA cell with Cuda MCU attached to it

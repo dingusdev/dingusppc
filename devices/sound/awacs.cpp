@@ -123,7 +123,7 @@ void AwacDevicePdm::write_ctrl(uint32_t addr, uint16_t value)
 }
 
 //============================= Screamer AWACs ================================
-AwacsScreamer::AwacsScreamer(std::string name) : AwacsBase(name)
+AwacsScreamer::AwacsScreamer(std::string name) : MacioSndCodec(name)
 {
     static int screamer_freqs[8] = {
         44100, 29400, 22050, 17640, 14700, 11025, 8820, 7350

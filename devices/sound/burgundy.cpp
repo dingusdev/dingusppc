@@ -29,7 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <loguru.hpp>
 #include <memaccess.h>
 
-BurgundyCodec::BurgundyCodec(std::string name) : AwacsBase(name)
+BurgundyCodec::BurgundyCodec(std::string name) : MacioSndCodec(name)
 {
     supports_types(HWCompType::SND_CODEC);
 
