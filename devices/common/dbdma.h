@@ -30,6 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define DB_DMA_H
 
 #include <devices/common/dmacore.h>
+#include <devices/common/hwinterrupt.h>
 
 #include <cinttypes>
 #include <functional>
@@ -92,9 +93,15 @@ public:
     DmaPullResult   pull_data(uint32_t req_len, uint32_t *avail_len, uint8_t **p_data);
     int             push_data(const char* src_ptr, int len);
 
+    void register_dma_int(InterruptCtrl* int_ctrl_obj, uint32_t irq_id) {
+        this->int_ctrl = int_ctrl_obj;
+        this->irq_id   = irq_id;
+    };
+
 protected:
     void fetch_cmd(uint32_t cmd_addr, DMACmd* p_cmd);
     uint8_t interpret_cmd(void);
+    void update_irq();
 
     void start(void);
     void resume(void);
@@ -109,10 +116,15 @@ private:
     uint32_t cmd_ptr        = 0;
     uint32_t queue_len      = 0;
     uint8_t* queue_data     = 0;
+    uint32_t int_select     = 0;
     uint32_t branch_select  = 0;
 
     bool     cmd_in_progress = false;
     uint8_t  cur_cmd;
+
+    // Interrupt related stuff
+    InterruptCtrl* int_ctrl = nullptr;
+    uint32_t       irq_id   = 0;
 };
 
 #endif /* DB_DMA_H */
