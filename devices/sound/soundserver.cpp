@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -192,7 +192,7 @@ int SoundServer::open_out_stream(uint32_t sample_rate, void *user_data)
         LOG_F(ERROR, "Could not get minimum latency, error: %d", res);
         return -1;
     } else {
-        LOG_F(INFO, "Minimum sound latency: %d frames", latency_frames);
+        LOG_F(9, "Minimum sound latency: %d frames", latency_frames);
     }
 
     res = cubeb_stream_init(this->cubeb_ctx, &this->out_stream, "SndOut stream",
@@ -203,7 +203,7 @@ int SoundServer::open_out_stream(uint32_t sample_rate, void *user_data)
         return -1;
     }
 
-    LOG_F(INFO, "Sound output stream opened.");
+    LOG_F(9, "Sound output stream opened.");
 
     this->status = SND_STREAM_OPENED;
 
@@ -219,5 +219,5 @@ void SoundServer::close_out_stream()
 {
     cubeb_stream_stop(this->out_stream);
     cubeb_stream_destroy(this->out_stream);
-    LOG_F(INFO, "Sound output stream closed.");
+    LOG_F(9, "Sound output stream closed.");
 }
