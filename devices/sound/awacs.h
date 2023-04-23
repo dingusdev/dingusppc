@@ -73,7 +73,7 @@ public:
     void write_ctrl(uint32_t addr, uint16_t value);
 
 private:
-    uint16_t    ctrl_regs[5]; // 12-bit wide control registers
+    uint16_t    ctrl_regs[5] = {}; // 12-bit wide control registers
 };
 
 /** Offsets to MacIO sound codec registers. */
@@ -102,7 +102,7 @@ public:
 
     bool send_subaddress(uint8_t sub_addr) {
         if ((sub_addr & 0xF) > 6)
-            return false; /* invalid subaddress -> no acknowledge */
+            return false; // invalid subaddress -> no acknowledge
 
         this->sub_addr = sub_addr & 0xF;
         this->auto_inc = !!(sub_addr & 0x10);
@@ -123,7 +123,7 @@ public:
             }
             return true;
         } else {
-            return false; /* invalid sub_addr -> no acknowledge */
+            return false; // invalid sub_addr -> no acknowledge
         }
     };
 
@@ -134,7 +134,7 @@ public:
     };
 
 private:
-    uint8_t regs[7]; /* control registers, see TDA7433 datasheet */
+    uint8_t regs[7] = {}; // control registers, see TDA7433 datasheet
     uint8_t sub_addr;
     int pos;
     int auto_inc;
@@ -168,8 +168,8 @@ public:
     }
 
 private:
-    uint32_t snd_ctrl_reg    = { 0 };
-    uint16_t control_regs[8] = { 0 }; // control registers, each 12-bits wide
+    uint32_t snd_ctrl_reg    = 0;
+    uint16_t control_regs[8] = {}; // control registers, each 12-bits wide
     uint8_t  is_busy         = 0;
 
     std::unique_ptr<AudioProcessor> audio_proc;
