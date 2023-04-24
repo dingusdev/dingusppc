@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cpu/ppc/ppcemu.h>
 #include <devices/common/pci/dec21154.h>
+#include <devices/common/scsi/scsi.h>
 #include <devices/memctrl/mpc106.h>
 #include <devices/memctrl/spdram.h>
 #include <machines/machinefactory.h>
@@ -63,6 +64,9 @@ int initialize_yosemite(std::string& id)
         LOG_F(ERROR, "Could not allocate ROM region!");
         return -1;
     }
+
+    // add internal SCSI bus
+    gMachineObj->add_device("SCSI0", std::unique_ptr<ScsiBus>(new ScsiBus()));
 
     // configure RAM slots
     setup_ram_slot("RAM_DIMM_1", 0x50, GET_INT_PROP("rambank1_size"));
