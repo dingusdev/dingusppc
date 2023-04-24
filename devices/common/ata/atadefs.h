@@ -128,7 +128,8 @@ public:
     virtual uint16_t read(const uint8_t reg_addr) = 0;
     virtual void write(const uint8_t reg_addr, const uint16_t val) = 0;
 
-    virtual int get_device_id() = 0;
+    virtual int  get_device_id() = 0;
+    virtual void pdiag_callback() {};
 };
 
 /** Dummy ATA device. */
@@ -137,7 +138,7 @@ public:
     AtaNullDevice() = default;
     ~AtaNullDevice() = default;
 
-    uint16_t read(const uint8_t reg_addr) {
+    uint16_t read(const uint8_t reg_addr) override {
         // return all one's except DD7 if no device is present
         // DD7 corresponds to the BSY bit of the status register
         // The host should have a pull-down resistor on DD7
@@ -146,10 +147,10 @@ public:
         return 0xFF7FU;
     };
 
-    void write(const uint8_t reg_addr, const uint16_t val) {};
+    void write(const uint8_t reg_addr, const uint16_t val) override {};
 
     // invalid device ID means no real device is present
-    int get_device_id() { return ata_interface::DEVICE_ID_INVALID; };
+    int get_device_id() override { return ata_interface::DEVICE_ID_INVALID; };
 };
 
 #endif // ATA_INTERFACE_H

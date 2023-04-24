@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -47,6 +47,14 @@ public:
 
     uint32_t read(const uint8_t reg_addr, const int size);
     void write(const uint8_t reg_addr, const uint32_t val, const int size);
+
+    void assert_pdiag() {
+        this->devices[0]->pdiag_callback();
+    };
+
+    bool is_device1_present() {
+        return this->devices[1]->get_device_id() != ata_interface::DEVICE_ID_INVALID;
+    }
 
 private:
     int         cur_dev = 0;

@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define ATA_BASE_DEVICE_H
 
 #include <devices/common/ata/atadefs.h>
+#include <devices/common/ata/idechannel.h>
 #include <devices/common/hwcomponent.h>
 
 #include <cinttypes>
@@ -32,17 +33,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 class AtaBaseDevice : public HWComponent, public AtaInterface
 {
 public:
-    AtaBaseDevice(const std::string name);
+    AtaBaseDevice(const std::string name, uint8_t type);
     ~AtaBaseDevice() = default;
 
-    uint16_t read(const uint8_t reg_addr);
-    void write(const uint8_t reg_addr, const uint16_t value);
+    void set_host(IdeChannel* host) { this->host_obj = host; };
+
+    uint16_t read(const uint8_t reg_addr) override;
+    void write(const uint8_t reg_addr, const uint16_t value) override;
 
     virtual int perform_command() = 0;
 
-    int get_device_id() { return this->my_dev_id; };
+    int get_device_id() override { return this->my_dev_id; };
 
-    void device_reset(const uint8_t dev_head_val = 0);
+    void pdiag_callback() override {
+        this->r_error &= 0x7F;
+    };
+
+    void device_reset(bool is_soft_reset);
+    void device_set_signature();
+    void device_control(const uint8_t new_ctrl);
 
 private:
     bool is_selected() { return ((this->r_dev_head >> 4) & 1) == this->my_dev_id; };
@@ -50,6 +59,8 @@ private:
 protected:
     uint8_t my_dev_id = 0; // my IDE device ID configured by the host
     uint8_t device_type = ata_interface::DEVICE_TYPE_UNKNOWN;
+
+    IdeChannel* host_obj = nullptr;
 
     // IDE aka task file registers
     uint8_t r_error;
@@ -61,7 +72,8 @@ protected:
     uint8_t r_dev_head;
     uint8_t r_command;
     uint8_t r_status;
-    uint8_t r_dev_ctrl;
+    uint8_t r_status_save;
+    uint8_t r_dev_ctrl = 0x08;
 };
 
 #endif // ATA_BASE_DEVICE_H

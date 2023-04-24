@@ -37,7 +37,7 @@ public:
     ~AtaHardDisk() = default;
 
     void insert_image(std::string filename);
-    int perform_command();
+    int perform_command() override;
 
 private:
     std::fstream hdd_img;

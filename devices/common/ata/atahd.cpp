@@ -31,8 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace ata_interface;
 
-AtaHardDisk::AtaHardDisk() : AtaBaseDevice("ATA-HD")
-{
+AtaHardDisk::AtaHardDisk() : AtaBaseDevice("ATA-HD", DEVICE_TYPE_ATA) {
 }
 
 void AtaHardDisk::insert_image(std::string filename) {
@@ -57,7 +56,7 @@ int AtaHardDisk::perform_command()
     case NOP:
         break;
     case RESET_ATAPI:
-        device_reset();
+        device_reset(true);
         break;
     case RECALIBRATE:
         hdd_img.seekg(0, std::ios::beg);

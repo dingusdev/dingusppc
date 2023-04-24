@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -30,32 +30,39 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace ata_interface;
 
-AtaBaseDevice::AtaBaseDevice(const std::string name)
-{
+AtaBaseDevice::AtaBaseDevice(const std::string name, uint8_t type) {
     this->set_name(name);
     supports_types(HWCompType::IDE_DEV);
 
-    device_reset();
+    this->device_type = type;
+
+    device_reset(false);
+    device_set_signature();
 }
 
-void AtaBaseDevice::device_reset(const uint8_t dev_head_val)
-{
-    this->r_error = 1; // Device 0 passed, Device 1 passed or not present
+void AtaBaseDevice::device_reset(bool is_soft_reset) {
+    LOG_F(INFO, "%s: %s-reset triggered", this->name.c_str(),
+          is_soft_reset ? "soft" : "hard");
 
+    // Diagnostic code
+    this->r_error = 1; // device 0 passed, device 1 passed or not present
+}
+
+void AtaBaseDevice::device_set_signature() {
     this->r_sect_count = 1;
     this->r_sect_num   = 1;
-    this->r_dev_ctrl   = 0;
+    this->r_dev_head   = 0;
 
     // set protocol signature
     if (this->device_type == DEVICE_TYPE_ATAPI) {
         this->r_cylinder_lo = 0x14;
         this->r_cylinder_hi = 0xEB;
-        this->r_dev_head    = dev_head_val;
+        this->r_status_save = this->r_status; // for restoring on the first command
+        this->r_status      = 0;
     } else { // assume ATA by default
         this->r_cylinder_lo = 0;
         this->r_cylinder_hi = 0;
-        this->r_dev_head    = 0;
-        this->r_status = DRDY | DSC;
+        this->r_status = DRDY | DSC; // DSC=1 is required for ATA devices
     }
 }
 
@@ -117,13 +124,29 @@ void AtaBaseDevice::write(const uint8_t reg_addr, const uint16_t value) {
         }
         break;
     case ATA_Reg::DEV_CTRL:
-        if (!(this->r_dev_ctrl & SRST) && (value & SRST)) {
-            LOG_F(INFO, "%s: soft reset triggered", this->name.c_str());
-            this->r_status |= BSY;
-        }
-        this->r_dev_ctrl = value;
+        this->device_control(value);
         break;
     default:
         LOG_F(WARNING, "Attempted to write unknown IDE register: %x", reg_addr);
     }
+}
+
+void AtaBaseDevice::device_control(const uint8_t new_ctrl) {
+    // perform ATA Soft Reset if requested
+    if ((this->r_dev_ctrl ^ new_ctrl) & SRST) {
+        if (new_ctrl & SRST) { // SRST set -> phase 0 aka self-test
+            this->r_status |= BSY;
+            this->device_reset(true);
+        } else { // SRST cleared -> phase 1 aka signature and error report
+            if (!this->my_dev_id && this->host_obj->is_device1_present())
+                this->r_error |= 0x80;
+            this->device_set_signature();
+            this->r_status &= ~BSY;
+
+            if (this->my_dev_id && this->r_error == 1) {
+                this->host_obj->assert_pdiag();
+            }
+        }
+    }
+    this->r_dev_ctrl = new_ctrl;
 }
