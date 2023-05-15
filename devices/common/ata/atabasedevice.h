@@ -29,6 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/hwcomponent.h>
 
 #include <cinttypes>
+#include <string>
 
 class AtaBaseDevice : public HWComponent, public AtaInterface
 {
@@ -49,14 +50,13 @@ public:
         this->r_error &= 0x7F;
     };
 
-    void device_reset(bool is_soft_reset);
-    void device_set_signature();
+    virtual void device_reset(bool is_soft_reset);
+    virtual void device_set_signature();
     void device_control(const uint8_t new_ctrl);
 
-private:
+protected:
     bool is_selected() { return ((this->r_dev_head >> 4) & 1) == this->my_dev_id; };
 
-protected:
     uint8_t my_dev_id = 0; // my IDE device ID configured by the host
     uint8_t device_type = ata_interface::DEVICE_TYPE_UNKNOWN;
 
@@ -74,6 +74,11 @@ protected:
     uint8_t r_status;
     uint8_t r_status_save;
     uint8_t r_dev_ctrl = 0x08;
+
+    uint16_t    *data_ptr = nullptr;
+    uint8_t     data_buf[512] = {};
+    int         data_pos  = 0;
+    int         xfer_cnt  = 0;
 };
 
 #endif // ATA_BASE_DEVICE_H

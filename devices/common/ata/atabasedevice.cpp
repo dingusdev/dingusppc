@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/** @file Heathrow hard drive controller */
+/** @file Basic ATA device emulation. */
 
 #include <devices/common/ata/atabasedevice.h>
 #include <devices/common/ata/atadefs.h>
@@ -53,17 +53,10 @@ void AtaBaseDevice::device_set_signature() {
     this->r_sect_num   = 1;
     this->r_dev_head   = 0;
 
-    // set protocol signature
-    if (this->device_type == DEVICE_TYPE_ATAPI) {
-        this->r_cylinder_lo = 0x14;
-        this->r_cylinder_hi = 0xEB;
-        this->r_status_save = this->r_status; // for restoring on the first command
-        this->r_status      = 0;
-    } else { // assume ATA by default
-        this->r_cylinder_lo = 0;
-        this->r_cylinder_hi = 0;
-        this->r_status = DRDY | DSC; // DSC=1 is required for ATA devices
-    }
+    // set ATA protocol signature
+    this->r_cylinder_lo = 0;
+    this->r_cylinder_hi = 0;
+    this->r_status = DRDY | DSC; // DSC=1 is required for ATA devices
 }
 
 uint16_t AtaBaseDevice::read(const uint8_t reg_addr) {
