@@ -55,9 +55,6 @@ int AtaHardDisk::perform_command()
     switch (this->r_command) {
     case NOP:
         break;
-    case RESET_ATAPI:
-        device_reset(true);
-        break;
     case RECALIBRATE:
         hdd_img.seekg(0, std::ios::beg);
         this->r_error       = 0;

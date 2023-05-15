@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -84,21 +84,22 @@ enum ScsiMsg : int {
     MESSAGE_END,
 };
 
-enum ScsiCommand : int {
-    TEST_UNIT_READY              = 0x0,
-    REWIND                       = 0x1,
-    REQ_SENSE                    = 0x3,
-    FORMAT                       = 0x4,
-    READ_BLK_LIMITS              = 0x5,
-    READ_6                       = 0x8,
-    WRITE_6                      = 0xA,
-    SEEK_6                       = 0xB,
+enum ScsiCommand : uint8_t {
+    TEST_UNIT_READY              = 0x00,
+    REWIND                       = 0x01,
+    REQ_SENSE                    = 0x03,
+    FORMAT                       = 0x04,
+    READ_BLK_LIMITS              = 0x05,
+    READ_6                       = 0x08,
+    WRITE_6                      = 0x0A,
+    SEEK_6                       = 0x0B,
     INQUIRY                      = 0x12,
     VERIFY_6                     = 0x13,
     MODE_SELECT_6                = 0x15,
     RELEASE_UNIT                 = 0x17,
     ERASE_6                      = 0x19,
     MODE_SENSE_6                 = 0x1A,
+    START_STOP_UNIT              = 0x1B,
     DIAG_RESULTS                 = 0x1C,
     SEND_DIAGS                   = 0x1D,
     PREVENT_ALLOW_MEDIUM_REMOVAL = 0x1E,
@@ -107,6 +108,7 @@ enum ScsiCommand : int {
     WRITE_10                     = 0x2A,
     VERIFY_10                    = 0x2F,
     READ_LONG_10                 = 0x35,
+    READ_12                      = 0xA8,
 
     // CD-ROM specific commands
     READ_TOC                     = 0x43,

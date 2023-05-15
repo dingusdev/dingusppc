@@ -44,27 +44,41 @@ enum {
 
 /** ATA register offsets. */
 enum ATA_Reg : int {
-    DATA        = 0x0,
-    ERROR       = 0x1,    // error (read)
-    FEATURES    = 0x1,    // features (write)
-    SEC_COUNT   = 0x2,    // sector count
-    SEC_NUM     = 0x3,    // sector number
-    CYL_LOW     = 0x4,    // cylinder low
-    CYL_HIGH    = 0x5,    // cylinder high
-    DEVICE_HEAD = 0x6,    // device/head
-    STATUS      = 0x7,    // status (read)
-    COMMAND     = 0x7,    // command (write)
-    ALT_STATUS  = 0x16,   // alt status (read)
-    DEV_CTRL    = 0x16,   // device control (write)
-    TIME_CONFIG = 0x20    // Apple ASIC specific timing configuration
+    DATA        = 0x00, // 16-bit data (read & write)
+    ERROR       = 0x01, // error (read)
+    FEATURES    = 0x01, // features (write)
+    SEC_COUNT   = 0x02, // sector count
+    SEC_NUM     = 0x03, // sector number
+    CYL_LOW     = 0x04, // cylinder low
+    CYL_HIGH    = 0x05, // cylinder high
+    DEVICE_HEAD = 0x06, // device/head
+    STATUS      = 0x07, // status (read)
+    COMMAND     = 0x07, // command (write)
+    ALT_STATUS  = 0x16, // alt status (read)
+    DEV_CTRL    = 0x16, // device control (write)
+    TIME_CONFIG = 0x20  // Apple ASIC specific timing configuration
+};
+
+/** ATAPI specific register offsets. */
+enum ATAPI_Reg : int {
+    INT_REASON      = 0x2,  // interrupt reason (read-only)
+    BYTE_COUNT_LO   = 0x4,  // byte count (bits 0-7)
+    BYTE_COUNT_HI   = 0x5,  // byte count (bits 8-15)
+};
+
+/** ATAPI Interrupt Reason bits. */
+enum ATAPI_Int_Reason : uint8_t {
+    CoD         = 1 << 0,
+    IO          = 1 << 1,
+    RELEASE     = 1 << 2,
 };
 
 /** Status register bits. */
-enum ATA_Status : int {
-    ERR  = 0x1,
-    IDX  = 0x2,
-    CORR = 0x4,
-    DRQ  = 0x8,
+enum ATA_Status : uint8_t {
+    ERR  = 0x01,
+    IDX  = 0x02,
+    CORR = 0x04,
+    DRQ  = 0x08,
     DSC  = 0x10,
     DWF  = 0x20,
     DRDY = 0x40,
@@ -72,28 +86,28 @@ enum ATA_Status : int {
 };
 
 /** Error register bits. */
-enum ATA_Error : int {
-    ANMF   = 0x1,   //no address mark
-    TK0NF  = 0x2,   //track 0 not found
-    ABRT   = 0x4,   //abort command
-    MCR    = 0x8,
+enum ATA_Error : uint8_t {
+    ANMF   = 0x01,  //no address mark
+    TK0NF  = 0x02,  //track 0 not found
+    ABRT   = 0x04,  //abort command
+    MCR    = 0x08,
     IDNF   = 0x10,  //id mark not found
     MC     = 0x20,  //media change request
     UNC    = 0x40,
-    BBK    = 0x80  //bad block
+    BBK    = 0x80,  //bad block
 };
 
 /** Bit definition for the device control register. */
-enum ATA_CTRL : int{
-    IEN    = 0x2,
-    SRST   = 0x4,
+enum ATA_CTRL : uint8_t {
+    IEN    = 0x02,
+    SRST   = 0x04,
     HOB    = 0x80,
 };
 
 /* ATA commands. */
-enum ATA_Cmd : int {
+enum ATA_Cmd : uint8_t {
     NOP              = 0x00,
-    RESET_ATAPI      = 0x08,
+    ATAPI_SOFT_RESET = 0x08,
     RECALIBRATE      = 0x10,
     READ_SECTOR      = 0x20,
     READ_SECTOR_NR   = 0x21,
@@ -107,8 +121,9 @@ enum ATA_Cmd : int {
     IDE_SEEK         = 0x70,
     DIAGNOSTICS      = 0x90,
     INIT_DEV_PARAM   = 0x91,
-    PACKET           = 0xA0,
-    IDFY_PKT_DEV     = 0xA1,
+    ATAPI_PACKET     = 0xA0,
+    ATAPI_IDFY_DEV   = 0xA1,
+    ATAPI_SERVICE    = 0xA2,
     READ_MULTIPLE    = 0xC4,
     WRITE_MULTIPLE   = 0xC5,
     READ_DMA         = 0xC8,
@@ -116,6 +131,7 @@ enum ATA_Cmd : int {
     WRITE_BUFFER_DMA = 0xE9,
     READ_BUFFER_DMA  = 0xEB,
     IDENTIFY_DEVICE  = 0xEC,
+    SET_FEATURES     = 0xEF,
 };
 
 }; // namespace ata_interface
