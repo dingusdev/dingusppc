@@ -29,6 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <array>
 #include <cinttypes>
 #include <functional>
+#include <memory>
 #include <string>
 
 /** SCSI control signals.
