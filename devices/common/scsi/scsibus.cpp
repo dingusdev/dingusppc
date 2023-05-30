@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -23,12 +23,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <devices/common/hwcomponent.h>
 #include <devices/common/scsi/scsi.h>
+#include <devices/deviceregistry.h>
 #include <loguru.hpp>
 
 #include <cinttypes>
 
-ScsiBus::ScsiBus()
+ScsiBus::ScsiBus(const std::string name)
 {
+    this->set_name(name);
     supports_types(HWCompType::SCSI_BUS);
 
     for(int i = 0; i < SCSI_MAX_DEVS; i++) {
@@ -273,3 +275,14 @@ void ScsiBus::disconnect(int dev_id)
         change_bus_phase(dev_id);
     }
 }
+
+static const DeviceDescription Scsi0_Descriptor = {
+    ScsiBus::create_first, {}, {}
+};
+
+static const DeviceDescription Scsi1_Descriptor = {
+    ScsiBus::create_second, {}, {}
+};
+
+REGISTER_DEVICE(Scsi0, Scsi0_Descriptor);
+REGISTER_DEVICE(Scsi1, Scsi1_Descriptor);

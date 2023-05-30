@@ -196,8 +196,16 @@ protected:
 /** This class provides a higher level abstraction for the SCSI bus. */
 class ScsiBus : public HWComponent {
 public:
-    ScsiBus();
+    ScsiBus(const std::string name);
     ~ScsiBus() = default;
+
+    static std::unique_ptr<HWComponent> create_first() {
+        return std::unique_ptr<ScsiBus>(new ScsiBus("SCSIO"));
+    }
+
+    static std::unique_ptr<HWComponent> create_second() {
+        return std::unique_ptr<ScsiBus>(new ScsiBus("SCSI1"));
+    }
 
     // low-level state management
     void    register_device(int id, ScsiDevice* dev_obj);

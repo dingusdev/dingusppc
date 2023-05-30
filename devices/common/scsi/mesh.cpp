@@ -34,7 +34,7 @@ using namespace MeshScsi;
 
 int MeshController::device_postinit()
 {
-    this->bus_obj = dynamic_cast<ScsiBus*>(gMachineObj->get_comp_by_name("SCSI0"));
+    this->bus_obj = dynamic_cast<ScsiBus*>(gMachineObj->get_comp_by_name("Scsi0"));
 
     this->int_ctrl = dynamic_cast<InterruptCtrl*>(
         gMachineObj->get_comp_by_type(HWCompType::INT_CTRL));

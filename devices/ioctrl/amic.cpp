@@ -625,7 +625,7 @@ DmaPullResult AmicScsiDma::pull_data(uint32_t req_len, uint32_t *avail_len,
 }
 
 static vector<string> Amic_Subdevices = {
-    "Sc53C94", "Escc", "Mace", "ViaCuda", "Swim3"
+    "Scsi0", "Sc53C94", "Escc", "Mace", "ViaCuda", "Swim3"
 };
 
 static const DeviceDescription Amic_Descriptor = {

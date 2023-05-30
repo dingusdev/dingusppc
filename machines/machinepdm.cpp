@@ -82,9 +82,8 @@ int initialize_pdm(std::string& id)
         return -1;
     }
 
-    // add internal SCSI bus
-    gMachineObj->add_device("SCSI0", std::unique_ptr<ScsiBus>(new ScsiBus()));
-    auto scsi_bus = dynamic_cast<ScsiBus*>(gMachineObj->get_comp_by_name("SCSI0"));
+    // get internal SCSI bus object
+    auto scsi_bus = dynamic_cast<ScsiBus*>(gMachineObj->get_comp_by_name("Scsi0"));
 
     std::string hd_image_path = GET_STR_PROP("hdd_img");
     if (!hd_image_path.empty()) {

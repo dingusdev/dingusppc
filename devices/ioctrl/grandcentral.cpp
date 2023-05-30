@@ -323,7 +323,7 @@ void GrandCentral::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state)
 }
 
 static const vector<string> GCSubdevices = {
-    "NVRAM", "ViaCuda", "Escc", "Sc53C94", "Mace", "Swim3"
+    "NVRAM", "ViaCuda", "Escc", "Scsi0", "Sc53C94", "Mace", "Swim3"
 };
 
 static const DeviceDescription GC_Descriptor = {

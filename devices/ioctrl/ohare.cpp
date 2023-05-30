@@ -226,7 +226,7 @@ void OHare::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state)
 }
 
 static const vector<string> OHare_Subdevices = {
-    "NVRAM", "ViaCuda", "Mesh", "Escc", "Swim3"
+    "NVRAM", "ViaCuda", "Scsi0", "Mesh", "Escc", "Swim3"
 };
 
 static const DeviceDescription OHare_Descriptor = {

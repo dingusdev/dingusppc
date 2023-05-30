@@ -425,7 +425,7 @@ void HeathrowIC::clear_cpu_int()
 }
 
 static const vector<string> Heathrow_Subdevices = {
-    "NVRAM", "ViaCuda", "Mesh", "Escc", "Swim3", "Ide0", "Ide1"};
+    "NVRAM", "ViaCuda", "Scsi0", "Mesh", "Escc", "Swim3", "Ide0", "Ide1"};
 
 static const DeviceDescription Heathrow_Descriptor = {
     HeathrowIC::create, Heathrow_Subdevices, {}

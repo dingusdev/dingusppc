@@ -23,7 +23,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cpu/ppc/ppcemu.h>
 #include <devices/common/pci/bandit.h>
-#include <devices/common/scsi/scsi.h>
 #include <devices/ioctrl/macio.h>
 #include <devices/memctrl/platinum.h>
 #include <loguru.hpp>
@@ -60,9 +59,6 @@ int initialize_catalyst(std::string& id)
 
     // allocate and map physical RAM
     platinum_obj->map_phys_ram();
-
-    // add single SCSI bus
-    gMachineObj->add_device("SCSI0", std::unique_ptr<ScsiBus>(new ScsiBus()));
 
     // init virtual CPU and request MPC601
     ppc_cpu_init(platinum_obj, PPC_VER::MPC601, 7833600ULL);
