@@ -299,7 +299,7 @@ static const DeviceDescription Bandit1_Descriptor = {
 };
 
 static const DeviceDescription PsxPci1_Descriptor = {
-    Bandit::create_psx_first, {}, {}
+    Bandit::create_psx_first, {}, Bandit_Properties
 };
 
 static const DeviceDescription Chaos_Descriptor = {
