@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -174,12 +174,12 @@ uint32_t AtiMach64Gx::read_reg(uint32_t reg_offset, uint32_t size)
     uint64_t result = this->regs[reg_offset >> 2];
 
     if (!offset && size == 4) { // fast path
-        return result;
+        return static_cast<uint32_t>(result);
     } else { // slow path
         if ((offset + size) > 4) {
             result |= (uint64_t)(this->regs[(reg_offset >> 2) + 1]) << 32;
         }
-        return extract_bits<uint64_t>(result, offset * 8, size * 8);
+        return static_cast<uint32_t>(extract_bits<uint64_t>(result, offset * 8, size * 8));
     }
 }
 
@@ -197,7 +197,7 @@ void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
         }
         uint64_t old_val = this->regs[reg_offset];
         insert_bits<uint64_t>(old_val, value, offset * 8, size * 8);
-        value = old_val;
+        value = static_cast<uint32_t>(old_val);
     }
 
     switch (reg_offset) {

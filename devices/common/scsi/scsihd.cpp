@@ -46,7 +46,11 @@ void ScsiHardDisk::insert_image(std::string filename) {
         ABORT_F("%s: could not open image file %s", this->name.c_str(), filename.c_str());
 
     this->img_size = this->hdd_img.size();
-    this->total_blocks = (this->img_size + HDD_SECTOR_SIZE - 1) / HDD_SECTOR_SIZE;
+    uint64_t tb = (this->img_size + HDD_SECTOR_SIZE - 1) / HDD_SECTOR_SIZE;
+    this->total_blocks = static_cast<int>(tb);
+    if (this->total_blocks < 0 || tb != this->total_blocks) {
+        ABORT_F("ScsiHardDisk: file size is too large");
+    }
 }
 
 void ScsiHardDisk::process_command() {
