@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -57,7 +57,11 @@ void ScsiCdrom::insert_image(std::string filename)
     int rc = stat(filename.c_str(), &stat_buf);
     if (!rc) {
         this->img_size = stat_buf.st_size;
-        this->total_frames = (this->img_size + this->sector_size - 1) / this->sector_size;
+        uint64_t tf = (this->img_size + this->sector_size - 1) / this->sector_size;
+        this->total_frames = static_cast<int>(tf);
+        if (this->total_frames < 0 || tf >= 0xffffff) { // 32 GB limit
+            ABORT_F("SCSI-CDROM: file size is too large");
+        }
 
         // create single track descriptor
         this->tracks[0]  = {.trk_num = 1, .adr_ctrl = 0x14, .start_lba = 0};
@@ -203,7 +207,7 @@ void ScsiCdrom::mode_sense()
     uint8_t page_code = this->cmd_buf[2] & 0x3F;
     uint8_t alloc_len = this->cmd_buf[4];
 
-    int num_blocks = (this->img_size + this->sector_size) / this->sector_size;
+    uint32_t num_blocks = static_cast<uint32_t>((this->img_size + this->sector_size) / this->sector_size);
 
     this->data_buf[ 0] =   13; // initial data size
     this->data_buf[ 1] =    0; // medium type

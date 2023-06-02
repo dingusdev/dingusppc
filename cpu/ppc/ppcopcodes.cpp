@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -884,7 +884,7 @@ static inline uint32_t calc_dec_value() {
     uint32_t dec_adj_lo;
     uint64_t diff = get_virt_time_ns() - dec_wr_timestamp;
     _u32xu64(tbr_freq_ghz, diff, dec_adj, dec_adj_lo);
-    return (dec_wr_value - dec_adj);
+    return (dec_wr_value - static_cast<uint32_t>(dec_adj));
 }
 
 static void update_timebase(uint64_t mask, uint64_t new_val)
