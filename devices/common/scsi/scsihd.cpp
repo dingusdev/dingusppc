@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -51,7 +51,11 @@ void ScsiHardDisk::insert_image(std::string filename) {
     int rc = stat(filename.c_str(), &stat_buf);
     if (!rc) {
         this->img_size = stat_buf.st_size;
-        this->total_blocks = (this->img_size + HDD_SECTOR_SIZE - 1) / HDD_SECTOR_SIZE;
+        uint64_t tb = (this->img_size + HDD_SECTOR_SIZE - 1) / HDD_SECTOR_SIZE;
+        this->total_blocks = static_cast<int>(tb);
+        if (this->total_blocks < 0 || tb != this->total_blocks) {
+            ABORT_F("ScsiHardDisk: file size is too large");
+        }
     } else {
         ABORT_F("ScsiHardDisk: could not determine file size using stat()");
     }
