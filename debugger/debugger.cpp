@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -413,6 +413,7 @@ static void print_mmu_regs()
 #include <signal.h>
 #include <termios.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
 
 static struct sigaction    old_act_sigint, new_act_sigint;
 static struct sigaction    old_act_sigterm, new_act_sigterm;
@@ -449,17 +450,37 @@ void enter_debugger() {
     cout << "Welcome to the DingusPPC command line debugger." << endl;
     cout << "Please enter a command or 'help'." << endl << endl;
 
+#ifndef _WIN32
+    struct winsize win_size_previous;
+    ioctl(0, TIOCGWINSZ, &win_size_previous);
+#endif
+
     while (1) {
         cout << "dingusdbg> ";
 
-        /* reset string stream */
-        ss.str("");
-        ss.clear();
+        while (1) {
+            /* reset string stream */
+            ss.str("");
+            ss.clear();
 
-        cmd = "";
-        getline(cin, inp, '\n');
-        ss.str(inp);
-        ss >> cmd;
+            cmd = "";
+            std::cin.clear();
+            getline(cin, inp, '\n');
+            ss.str(inp);
+            ss >> cmd;
+
+#ifndef _WIN32
+            struct winsize win_size_current;
+            ioctl(0, TIOCGWINSZ, &win_size_current);
+            if (win_size_current.ws_col != win_size_previous.ws_col || win_size_current.ws_row != win_size_previous.ws_row) {
+                win_size_previous = win_size_current;
+                if (cmd.empty()) {
+                    continue;
+                }
+            }
+#endif
+            break;
+        }
 
         if (cmd.empty() && !last_cmd.empty()) {
             cmd = last_cmd;
