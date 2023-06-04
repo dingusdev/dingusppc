@@ -756,8 +756,10 @@ void enter_debugger() {
             via_obj->assert_int(irq_bit);
 #endif
         } else {
-            cout << "Unknown command: " << cmd << endl;
-            continue;
+            if (!cmd.empty()) {
+                cout << "Unknown command: " << cmd << endl;
+                cmd = "";
+            }
         }
         last_cmd = cmd;
     }
