@@ -89,7 +89,7 @@ bool OfConfigAppl::validate() {
         return false;
 
     return true;
-};
+}
 
 uint16_t OfConfigAppl::checksum_partition() {
     uint32_t acc = 0;
@@ -178,7 +178,7 @@ const OfConfigImpl::config_dict& OfConfigAppl::get_config_vars() {
     }
 
     return _config_vars;
-};
+}
 
 void OfConfigAppl::update_partition() {
     // set checksum in the header to zero
@@ -300,7 +300,7 @@ bool OfConfigAppl::set_var(std::string& var_name, std::string& value) {
     }
 
     return true;
-};
+}
 
 uint8_t OfConfigChrp::checksum_hdr(const uint8_t* data)
 {
@@ -505,7 +505,7 @@ bool OfConfigChrp::set_var(std::string& var_name, std::string& value) {
     }
 
     return this->update_partition();
-};
+}
 
 int OfConfigUtils::init()
 {
