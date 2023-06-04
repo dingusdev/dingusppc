@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -281,7 +281,7 @@ string MachineFactory::machine_name_from_rom(string& rom_filepath) {
 
     rom_file.open(rom_filepath, ios::in | ios::binary);
     if (rom_file.fail()) {
-        LOG_F(ERROR, "Cound not open the specified ROM file.");
+        LOG_F(ERROR, "Could not open the specified ROM file.");
         goto bail_out;
     }
 
@@ -338,7 +338,7 @@ int MachineFactory::load_boot_rom(string& rom_filepath) {
 
     rom_file.open(rom_filepath, ios::in | ios::binary);
     if (rom_file.fail()) {
-        LOG_F(ERROR, "Cound not open the specified ROM file.");
+        LOG_F(ERROR, "Could not open the specified ROM file.");
         rom_file.close();
         return -1;
     }
