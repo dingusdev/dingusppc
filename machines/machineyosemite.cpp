@@ -53,7 +53,7 @@ int initialize_yosemite(std::string& id)
 
     // connect PCI devices
     grackle_obj->pci_register_device(DEV_FUN(13,0),
-        dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("Dec21154")));
+        dynamic_cast<PCIBase*>(gMachineObj->get_comp_by_name("Dec21154")));
 
     sec_bridge->pci_register_device(DEV_FUN(5,0),
         dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("Heathrow")));

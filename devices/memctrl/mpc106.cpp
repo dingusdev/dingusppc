@@ -85,7 +85,7 @@ uint32_t MPC106::read(uint32_t rgn_start, uint32_t offset, int size) {
         int bus_num, dev_num, fun_num;
         uint8_t reg_offs;
         AccessDetails details;
-        PCIDevice *device;
+        PCIBase *device;
         cfg_setup(offset, size, bus_num, dev_num, fun_num, reg_offs, details, device);
         details.flags |= PCI_CONFIG_READ;
         if (device) {
@@ -110,7 +110,7 @@ void MPC106::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size
         int bus_num, dev_num, fun_num;
         uint8_t reg_offs;
         AccessDetails details;
-        PCIDevice *device;
+        PCIBase *device;
         cfg_setup(offset, size, bus_num, dev_num, fun_num, reg_offs, details, device);
         details.flags |= PCI_CONFIG_WRITE;
         if (device) {
@@ -130,7 +130,7 @@ void MPC106::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size
 
 inline void MPC106::cfg_setup(uint32_t offset, int size, int &bus_num, int &dev_num,
                               int &fun_num, uint8_t &reg_offs, AccessDetails &details,
-                              PCIDevice *&device)
+                              PCIBase *&device)
 {
     device = NULL;
     details.size = size;

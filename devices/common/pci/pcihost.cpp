@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -29,7 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 
-bool PCIHost::pci_register_device(int dev_fun_num, PCIDevice* dev_instance)
+bool PCIHost::pci_register_device(int dev_fun_num, PCIBase* dev_instance)
 {
     // return false if dev_fun_num already registered
     if (this->dev_map.count(dev_fun_num))
@@ -59,7 +59,7 @@ bool PCIHost::pci_register_device(int dev_fun_num, PCIDevice* dev_instance)
         this->io_space_devs.push_back(dev_instance);
     }
 
-    PCIBridge *bridge = dynamic_cast<PCIBridge*>(dev_instance);
+    PCIBridgeBase *bridge = dynamic_cast<PCIBridgeBase*>(dev_instance);
     if (bridge) {
         this->bridge_devs.push_back(bridge);
     }
@@ -67,7 +67,7 @@ bool PCIHost::pci_register_device(int dev_fun_num, PCIDevice* dev_instance)
     return true;
 }
 
-bool PCIHost::pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIDevice* obj)
+bool PCIHost::pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIBase* obj)
 {
     MemCtrlBase *mem_ctrl = dynamic_cast<MemCtrlBase *>
                            (gMachineObj->get_comp_by_type(HWCompType::MEM_CTRL));
@@ -75,7 +75,7 @@ bool PCIHost::pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIDe
     return mem_ctrl->add_mmio_region(start_addr, size, obj);
 }
 
-bool PCIHost::pci_unregister_mmio_region(uint32_t start_addr, uint32_t size, PCIDevice* obj)
+bool PCIHost::pci_unregister_mmio_region(uint32_t start_addr, uint32_t size, PCIBase* obj)
 {
     MemCtrlBase *mem_ctrl = dynamic_cast<MemCtrlBase *>
                            (gMachineObj->get_comp_by_type(HWCompType::MEM_CTRL));
@@ -88,7 +88,7 @@ void PCIHost::attach_pci_device(const std::string& dev_name, int slot_id)
     this->attach_pci_device(dev_name, slot_id, "");
 }
 
-PCIDevice *PCIHost::attach_pci_device(const std::string& dev_name, int slot_id, const std::string& dev_suffix)
+PCIBase *PCIHost::attach_pci_device(const std::string& dev_name, int slot_id, const std::string& dev_suffix)
 {
     if (!DeviceRegistry::device_registered(dev_name)) {
         HWComponent *hwc = dynamic_cast<HWComponent*>(this);
@@ -115,7 +115,7 @@ PCIDevice *PCIHost::attach_pci_device(const std::string& dev_name, int slot_id, 
     // add device to the machine object
     gMachineObj->add_device(dev_name + dev_suffix, std::move(dev_obj));
 
-    PCIDevice *dev = dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name(dev_name + dev_suffix));
+    PCIBase *dev = dynamic_cast<PCIBase*>(gMachineObj->get_comp_by_name(dev_name + dev_suffix));
 
     // register device with the PCI host
     this->pci_register_device(slot_id, dev);
@@ -177,7 +177,7 @@ void PCIHost::pci_io_write_broadcast(uint32_t offset, int size, uint32_t value)
     );
 }
 
-PCIDevice *PCIHost::pci_find_device(uint8_t bus_num, uint8_t dev_num, uint8_t fun_num)
+PCIBase *PCIHost::pci_find_device(uint8_t bus_num, uint8_t dev_num, uint8_t fun_num)
 {
     for (auto& bridge : this->bridge_devs) {
         if (bridge->secondary_bus <= bus_num) {
