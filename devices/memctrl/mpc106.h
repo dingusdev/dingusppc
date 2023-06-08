@@ -93,7 +93,7 @@ protected:
 private:
     inline void cfg_setup(uint32_t offset, int size, int &bus_num, int &dev_num,
                           int &fun_num, uint8_t &reg_offs, AccessDetails &details,
-                          PCIDevice *&device);
+                          PCIBase *&device);
 
     uint32_t config_addr;
 
