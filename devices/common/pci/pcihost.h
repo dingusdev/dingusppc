@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -38,7 +38,7 @@ enum {
     PCI_CONFIG_TYPE         = 4,
     PCI_CONFIG_TYPE_0       = 0,
     PCI_CONFIG_TYPE_1       = 4,
-};
+}; // PCIAccessFlags
 
 /** PCI config space access details */
 typedef struct AccessDetails {
@@ -49,8 +49,8 @@ typedef struct AccessDetails {
 
 #define DEV_FUN(dev_num,fun_num) (((dev_num) << 3) | (fun_num))
 
-class PCIDevice;
-class PCIBridge;
+class PCIBase;
+class PCIBridgeBase;
 
 class PCIHost {
 public:
@@ -60,14 +60,14 @@ public:
     };
     ~PCIHost() = default;
 
-    virtual bool pci_register_device(int dev_fun_num, PCIDevice* dev_instance);
+    virtual bool pci_register_device(int dev_fun_num, PCIBase* dev_instance);
 
-    virtual bool pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIDevice* obj);
-    virtual bool pci_unregister_mmio_region(uint32_t start_addr, uint32_t size, PCIDevice* obj);
+    virtual bool pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIBase* obj);
+    virtual bool pci_unregister_mmio_region(uint32_t start_addr, uint32_t size, PCIBase* obj);
 
     virtual void attach_pci_device(const std::string& dev_name, int slot_id);
-    PCIDevice *attach_pci_device(const std::string& dev_name, int slot_id,
-                                 const std::string& dev_suffix);
+    PCIBase *attach_pci_device(const std::string& dev_name, int slot_id,
+                               const std::string& dev_suffix);
 
     virtual bool pci_io_read_loop (uint32_t offset, int size, uint32_t &res);
     virtual bool pci_io_write_loop(uint32_t offset, int size, uint32_t value);
@@ -75,7 +75,7 @@ public:
     virtual uint32_t pci_io_read_broadcast (uint32_t offset, int size);
     virtual void     pci_io_write_broadcast(uint32_t offset, int size, uint32_t value);
 
-    virtual PCIDevice *pci_find_device(uint8_t bus_num, uint8_t dev_num, uint8_t fun_num);
+    virtual PCIBase *pci_find_device(uint8_t bus_num, uint8_t dev_num, uint8_t fun_num);
 
     virtual uint32_t pci_t1_read(uint8_t dev, uint32_t fun, uint32_t reg, AccessDetails &details) {
         return 0;
@@ -85,9 +85,9 @@ public:
         AccessDetails &details) {};
 
 protected:
-    std::unordered_map<int, PCIDevice*> dev_map;
-    std::vector<PCIDevice*>             io_space_devs;
-    std::vector<PCIBridge*>             bridge_devs;
+    std::unordered_map<int, PCIBase*> dev_map;
+    std::vector<PCIBase*>             io_space_devs;
+    std::vector<PCIBridgeBase*>       bridge_devs;
 };
 
 // Helpers for data conversion in the PCI Configuration space.
