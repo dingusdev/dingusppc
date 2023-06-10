@@ -155,7 +155,7 @@ uint32_t PCIHost::pci_io_read_broadcast(uint32_t offset, int size)
     LOG_F(
         ERROR, "%s: Attempt to read from unmapped PCI I/O space @%08x.%c",
         hwc ? hwc->get_name().c_str() : "PCIHost", offset,
-        size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size
+        SIZE_ARG(size)
     );
     // FIXME: add machine check exception (DEFAULT CATCH!, code=FFF00200)
     return 0;
@@ -172,7 +172,7 @@ void PCIHost::pci_io_write_broadcast(uint32_t offset, int size, uint32_t value)
     LOG_F(
         ERROR, "%s: Attempt to write to unmapped PCI I/O space @%08x.%c = %0*x",
         hwc ? hwc->get_name().c_str() : "PCIHost", offset,
-        size == 4 ? 'l' : size == 2 ? 'w' : size == 1 ? 'b' : '0' + size,
+        SIZE_ARG(size),
         size * 2, BYTESWAP_SIZED(value, size)
     );
 }
