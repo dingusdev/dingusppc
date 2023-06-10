@@ -53,7 +53,6 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
     this->device_id   = 0x0010;
     this->class_rev   = 0xFF000001;
     this->cache_ln_sz = 8;
-    this->lat_timer   = 0x40;
 
     this->setup_bars({{0, 0xFFF80000UL}}); // declare 512Kb of memory-mapped I/O space
 
