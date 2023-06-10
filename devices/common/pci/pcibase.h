@@ -197,8 +197,8 @@ inline uint32_t pci_cfg_log(uint32_t value, AccessDetails &details) {
     }
 }
 
-#define SIZE_ARGS details.size == 4 ? 'l' : details.size == 2 ? 'w' :   \
-                  details.size == 1 ? 'b' : '0' + details.size
+#define SIZE_ARG(size) (size == 4 ? 'l' : size == 2 ? 'w' : \
+                        size == 1 ? 'b' : '0' + size)
 
 #define LOG_READ_UNIMPLEMENTED_CONFIG_REGISTER() \
     do { if ((details.flags & PCI_CONFIG_DIRECTION) == PCI_CONFIG_READ) { \
@@ -206,7 +206,7 @@ inline uint32_t pci_cfg_log(uint32_t value, AccessDetails &details) {
             (~-details.size & details.offset) ? loguru::Verbosity_ERROR : loguru::Verbosity_WARNING, \
             "%s: read  unimplemented config register @%02x.%c", \
             this->name.c_str(), reg_offs + details.offset, \
-            SIZE_ARGS \
+            SIZE_ARG(details.size) \
         ); \
     } } while(0)
 
@@ -215,7 +215,7 @@ inline uint32_t pci_cfg_log(uint32_t value, AccessDetails &details) {
         (~-details.size & details.offset) ? loguru::Verbosity_ERROR : loguru::Verbosity_WARNING, \
         "%s: %s %s register @%02x.%c = %0*x", \
         this->name.c_str(), reg_verb, reg_name, reg_offs + details.offset, \
-        SIZE_ARGS, \
+        SIZE_ARG(details.size), \
         details.size * 2, pci_cfg_log(value, details) \
     )
 
@@ -238,7 +238,7 @@ inline uint32_t pci_cfg_log(uint32_t value, AccessDetails &details) {
         ERROR, \
         "%s err: read  attempt from non-existent PCI device %02x:%02x.%x @%02x.%c", \
         this->name.c_str(), bus_num, dev_num, fun_num, reg_offs + details.offset, \
-        SIZE_ARGS \
+        SIZE_ARG(details.size) \
     )
 
 #define LOG_WRITE_NON_EXISTENT_PCI_DEVICE() \
@@ -246,7 +246,7 @@ inline uint32_t pci_cfg_log(uint32_t value, AccessDetails &details) {
         ERROR, \
         "%s err: write attempt  to  non-existent PCI device %02x:%02x.%x @%02x.%c = %0*x", \
         this->name.c_str(), bus_num, dev_num, fun_num, reg_offs + details.offset, \
-        SIZE_ARGS, \
+        SIZE_ARG(details.size), \
         details.size * 2, BYTESWAP_SIZED(value, details.size) \
     )
 
