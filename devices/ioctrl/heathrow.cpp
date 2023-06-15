@@ -372,8 +372,8 @@ uint32_t HeathrowIC::register_dma_int(IntSrc src_id)
 void HeathrowIC::ack_int(uint32_t irq_id, uint8_t irq_line_state)
 {
     if (this->int_mask1 & MACIO_INT_MODE) { // 68k interrupt emulation mode?
-        if (irq_id > 0x200000) {
-            irq_id >>= 21;
+        if (irq_id >= 0x200000) { // not the 21 non-DMA interrupt bits of int_events1?
+            irq_id >>= (21 - 2); // the non-DMA interrupts bits of int_events2 start at bit 2.
             this->int_events2 |= irq_id; // signal IRQ line change
             this->int_events2 &= this->int_mask2;
             // update IRQ line state
