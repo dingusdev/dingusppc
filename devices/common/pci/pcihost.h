@@ -95,11 +95,11 @@ protected:
 // Helpers for data conversion in the PCI Configuration space.
 
 /**
-    Perform size dependent endian swapping for value that is dword from PCI config.
+    Perform size dependent endian swapping for value that is dword from PCI config or any other dword little endian register.
 
-    Unaligned data is handled properly by wrapping around if needed.
+    Unaligned data is handled properly by using bytes from the next dword.
  */
-inline uint32_t pci_conv_rd_data(uint32_t value, AccessDetails &details) {
+inline uint32_t pci_conv_rd_data(uint32_t value, uint32_t value2, AccessDetails &details) {
     switch (details.size << 2 | details.offset) {
     // Bytes
     case 0x04:
@@ -119,17 +119,20 @@ inline uint32_t pci_conv_rd_data(uint32_t value, AccessDetails &details) {
     case 0x0A:
         return BYTESWAP_16((value >> 16) & 0xFFFFU);        // 2 3
     case 0x0B:
-        return ((value >> 16) & 0xFF00) | (value & 0xFF);   // 3 0
+        return ((value >> 16) & 0xFF00) | (value2 & 0xFF);  // 3 4
 
     // Dwords
     case 0x10:
-        return BYTESWAP_32(value);              // 0 1 2 3
+        return BYTESWAP_32(value);                          // 0 1 2 3
     case 0x11:
-        return ROTL_32(BYTESWAP_32(value), 8);  // 1 2 3 0
+        value = (uint32_t)((((uint64_t)value2 << 32) | value) >>  8);
+        return BYTESWAP_32(value);                          // 1 2 3 4
     case 0x12:
-        return ROTL_32(BYTESWAP_32(value), 16); // 2 3 0 1
+        value = (uint32_t)((((uint64_t)value2 << 32) | value) >> 16);
+        return BYTESWAP_32(value);                          // 2 3 4 5
     case 0x13:
-        return ROTR_32(BYTESWAP_32(value), 8);  // 3 0 1 2
+        value = (uint32_t)((((uint64_t)value2 << 32) | value) >> 24);
+        return BYTESWAP_32(value);                          // 3 4 5 6
     default:
         return 0xFFFFFFFFUL;
     }

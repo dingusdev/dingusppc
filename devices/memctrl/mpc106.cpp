@@ -89,7 +89,9 @@ uint32_t MPC106::read(uint32_t rgn_start, uint32_t offset, int size) {
         cfg_setup(offset, size, bus_num, dev_num, fun_num, reg_offs, details, device);
         details.flags |= PCI_CONFIG_READ;
         if (device) {
-            return pci_conv_rd_data(device->pci_cfg_read(reg_offs, details), details);
+            uint32_t value = device->pci_cfg_read(reg_offs, details);
+            // bytes 0 to 3 repeat
+            return pci_conv_rd_data(value, value, details);
         }
         LOG_READ_NON_EXISTENT_PCI_DEVICE();
         return 0xFFFFFFFFUL; // PCI spec §6.1
