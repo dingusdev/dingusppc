@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -388,11 +388,11 @@ void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
 uint32_t AMIC::register_dev_int(IntSrc src_id) {
     switch (src_id) {
     case IntSrc::VIA_CUDA:
-        return 1;
+        return 1 << 0;
     case IntSrc::SCSI1:
-        return 0x800;
+        return 1 << 11;
     case IntSrc::SWIM3:
-        return 0x2000;
+        return 1 << 13;
     default:
         ABORT_F("AMIC: unknown interrupt source %d", src_id);
     }
