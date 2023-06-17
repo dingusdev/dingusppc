@@ -1487,12 +1487,14 @@ void dppc_interpreter::ppc_dcbz() {
     ppc_grab_regsdab();
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
 
-    ppc_effective_address &= 0xFFFFFFE0;    // align EA on a 32-byte boundary
+    ppc_effective_address &= 0xFFFFFFE0UL; // align EA on a 32-byte boundary
 
-    //mem_write_qword(ppc_effective_address, 0);
-    //mem_write_qword((ppc_effective_address + 8), 0);
-    //mem_write_qword((ppc_effective_address + 16), 0);
-    //mem_write_qword((ppc_effective_address + 24), 0);
+    // the following is not especially efficient but necessary
+    // to make BlockZero under Mac OS 8.x and later to work
+    mmu_write_vmem<uint64_t>(ppc_effective_address +  0, 0);
+    mmu_write_vmem<uint64_t>(ppc_effective_address +  8, 0);
+    mmu_write_vmem<uint64_t>(ppc_effective_address + 16, 0);
+    mmu_write_vmem<uint64_t>(ppc_effective_address + 24, 0);
 }
 
 
