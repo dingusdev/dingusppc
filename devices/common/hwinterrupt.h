@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -27,13 +27,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //#define DEBUG_CPU_INT // uncomment this to enable hacks for debugging HW interrupts
 
 /** Enumerator for various interrupt sources. */
-enum IntSrc : int {
+enum IntSrc : uint32_t {
     VIA_CUDA = 1,
     SCSI1    = 2,
     SWIM3    = 3,
     SCC      = 4,
     ETHERNET = 5,
     NMI      = 6,
+    IDE0     = 7,
+    IDE1     = 8,
 };
 
 /** Base class for interrupt controllers. */
