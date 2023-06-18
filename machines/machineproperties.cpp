@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -142,5 +142,23 @@ void BinProperty::set_string(string val)
         this->val = val;
     } else {
         LOG_F(ERROR, "Invalid BinProperty value %s!", val.c_str());
+    }
+}
+
+void parse_device_path(string dev_path, string& bus_id, uint32_t& dev_num) {
+    bus_id  = "";
+    dev_num = -1;
+
+    size_t delimiter_pos = dev_path.find(":");
+    if (delimiter_pos == string::npos)
+        ABORT_F("Invalid device path %s", dev_path.c_str());
+
+    bus_id = dev_path.substr(0, delimiter_pos);
+
+    try {
+        dev_num = (uint32_t)strtoul(dev_path.substr(delimiter_pos+1).c_str(), 0, 0);
+    } catch (string bad_string) {
+        ABORT_F("Invalid device number %s in device path %s", bad_string.c_str(),
+            dev_path.c_str());
     }
 }
