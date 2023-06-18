@@ -73,6 +73,12 @@ enum ATAPI_Int_Reason : uint8_t {
     RELEASE     = 1 << 2,
 };
 
+/** ATAPI Features bits. */
+enum ATAPI_Features : uint8_t {
+    DMA     = 1 << 0,
+    OVERLAP = 1 << 1
+};
+
 /** Status register bits. */
 enum ATA_Status : uint8_t {
     ERR  = 0x01,
