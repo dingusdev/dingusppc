@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <devices/common/ata/atadefs.h>
 #include <devices/common/hwcomponent.h>
+#include <devices/common/hwinterrupt.h>
 
 #include <cinttypes>
 #include <memory>
@@ -38,12 +39,16 @@ public:
     ~IdeChannel() = default;
 
     static std::unique_ptr<HWComponent> create_first() {
-        return std::unique_ptr<IdeChannel>(new IdeChannel("IDEO"));
+        return std::unique_ptr<IdeChannel>(new IdeChannel("IDE0"));
     }
 
     static std::unique_ptr<HWComponent> create_second() {
         return std::unique_ptr<IdeChannel>(new IdeChannel("IDE1"));
     }
+
+    int device_postinit() override;
+
+    void register_device(int id, AtaInterface* dev_obj);
 
     uint32_t read(const uint8_t reg_addr, const int size);
     void write(const uint8_t reg_addr, const uint32_t val, const int size);
@@ -56,11 +61,20 @@ public:
         return this->devices[1]->get_device_id() != ata_interface::DEVICE_ID_INVALID;
     }
 
-private:
-    int         cur_dev = 0;
-    uint32_t    ch_config = 0; // timing configuration for this channel
+    void report_intrq(uint8_t intrq_state) {
+        this->int_ctrl->ack_int(this->irq_id, intrq_state);
+    }
 
-    std::unique_ptr<AtaInterface>   devices[2];
+private:
+    int             cur_dev = 0;
+    uint32_t        ch_config = 0; // timing configuration for this channel
+    AtaInterface*   devices[2];
+
+    // interrupt related stuff
+    InterruptCtrl*  int_ctrl = nullptr;
+    uint32_t        irq_id   = 0;
+
+    std::unique_ptr<AtaInterface>   device_stub;
 };
 
 #endif // IDE_CHANNEL_H

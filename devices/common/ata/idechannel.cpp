@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -26,10 +26,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     from and to the host.
  */
 
+#include <devices/common/ata/atabasedevice.h>
 #include <devices/common/ata/atadefs.h>
 #include <devices/common/ata/idechannel.h>
 #include <devices/common/hwcomponent.h>
 #include <devices/deviceregistry.h>
+#include <machines/machinebase.h>
 
 #include <cinttypes>
 #include <memory>
@@ -42,8 +44,28 @@ IdeChannel::IdeChannel(const std::string name)
     this->set_name(name);
     this->supports_types(HWCompType::IDE_BUS);
 
-    this->devices[0] = std::unique_ptr<AtaNullDevice>(new AtaNullDevice());
-    this->devices[1] = std::unique_ptr<AtaNullDevice>(new AtaNullDevice());
+    this->device_stub = std::unique_ptr<AtaNullDevice>(new AtaNullDevice());
+
+    this->devices[0] = this->device_stub.get();
+    this->devices[1] = this->device_stub.get();
+}
+
+int IdeChannel::device_postinit() {
+    this->int_ctrl = dynamic_cast<InterruptCtrl*>(
+        gMachineObj->get_comp_by_type(HWCompType::INT_CTRL));
+    this->irq_id = this->int_ctrl->register_dev_int(
+        this->name == "IDE0" ? IntSrc::IDE0 : IntSrc::IDE1);
+
+    return 0;
+}
+
+void IdeChannel::register_device(int id, AtaInterface* dev_obj) {
+    if (id < 0 || id >= 2)
+        ABORT_F("%s: invalid device ID", this->name.c_str());
+
+    this->devices[id] = dev_obj;
+
+    ((AtaBaseDevice*)dev_obj)->set_host(this);
 }
 
 uint32_t IdeChannel::read(const uint8_t reg_addr, const int size)
