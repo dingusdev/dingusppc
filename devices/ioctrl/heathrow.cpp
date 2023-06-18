@@ -340,10 +340,14 @@ void HeathrowIC::feature_control(const uint32_t value)
 uint32_t HeathrowIC::register_dev_int(IntSrc src_id)
 {
     switch (src_id) {
-    case IntSrc::VIA_CUDA:
-        return 1 << 7;
     case IntSrc::SCSI1:
         return 1 << 1;
+    case IntSrc::IDE0:
+        return 1 << 2;
+    case IntSrc::IDE1:
+        return 1 << 3;
+    case IntSrc::VIA_CUDA:
+        return 1 << 7;
     case IntSrc::SWIM3:
         return 1 << 8;
     default:
