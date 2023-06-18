@@ -94,18 +94,20 @@ static const PropMap yosemite_settings = {
         new IntProperty(  0, vector<uint32_t>({0, 8, 16, 32, 64, 128, 256}))},
     {"emmo",
         new BinProperty(0)},
+    {"cdr_config",
+        new StrProperty("Ide0:0")},
 };
 
-static vector<string> pmg3nw_devices = {
-    "Grackle", "Dec21154", "BurgundySnd", "Heathrow"
+static vector<string> yosemite_devices = {
+    "Grackle", "Dec21154", "BurgundySnd", "Heathrow", "AtapiCdrom"
 };
 
-static const MachineDescription pmg3nw_descriptor = {
+static const MachineDescription yosemite_descriptor = {
     .name = "pmg3dt",
     .description = "Power Macintosh G3 Blue and White",
-    .devices = pmg3nw_devices,
+    .devices = yosemite_devices,
     .settings = yosemite_settings,
     .init_func = &initialize_yosemite
 };
 
-REGISTER_MACHINE(pmg3nw, pmg3nw_descriptor);
+REGISTER_MACHINE(pmg3nw, yosemite_descriptor);
