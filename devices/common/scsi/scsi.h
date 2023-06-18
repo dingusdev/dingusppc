@@ -109,10 +109,13 @@ enum ScsiCommand : uint8_t {
     WRITE_10                     = 0x2A,
     VERIFY_10                    = 0x2F,
     READ_LONG_10                 = 0x35,
+    MODE_SENSE_10                = 0x5A,
     READ_12                      = 0xA8,
 
     // CD-ROM specific commands
     READ_TOC                     = 0x43,
+    SET_CD_SPEED                 = 0xBB,
+    READ_CD                      = 0xBE,
 };
 
 enum ScsiSense : int {
@@ -131,15 +134,16 @@ enum ScsiSense : int {
 };
 
 enum ScsiError : int {
-    NO_ERROR       = 0x0,
-    NO_SECTOR      = 0x1,
-    WRITE_FAULT    = 0x3,
-    DEV_NOT_READY  = 0x4,
-    INVALID_CMD    = 0x20,
-    INVALID_LBA    = 0x21,
-    INVALID_CDB    = 0x24,
-    INVALID_LUN    = 0x25,
-    WRITE_PROTECT  = 0x27
+    NO_ERROR            = 0x00,
+    NO_SECTOR           = 0x01,
+    WRITE_FAULT         = 0x03,
+    DEV_NOT_READY       = 0x04,
+    INVALID_CMD         = 0x20,
+    INVALID_LBA         = 0x21,
+    INVALID_CDB         = 0x24,
+    INVALID_LUN         = 0x25,
+    WRITE_PROTECT       = 0x27,
+    MEDIUM_NOT_PRESENT  = 0x3A,
 };
 
 /** Standard SCSI bus timing values measured in ns. */
