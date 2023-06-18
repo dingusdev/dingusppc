@@ -53,12 +53,14 @@ public:
     virtual void device_reset(bool is_soft_reset);
     virtual void device_set_signature();
     void device_control(const uint8_t new_ctrl);
+    void update_intrq(uint8_t new_intrq_state);
 
 protected:
     bool is_selected() { return ((this->r_dev_head >> 4) & 1) == this->my_dev_id; };
 
     uint8_t my_dev_id = 0; // my IDE device ID configured by the host
     uint8_t device_type = ata_interface::DEVICE_TYPE_UNKNOWN;
+    uint8_t intrq_state = 0; // INTRQ deasserted
 
     IdeChannel* host_obj = nullptr;
 

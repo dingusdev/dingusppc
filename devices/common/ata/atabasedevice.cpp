@@ -143,3 +143,11 @@ void AtaBaseDevice::device_control(const uint8_t new_ctrl) {
     }
     this->r_dev_ctrl = new_ctrl;
 }
+
+void AtaBaseDevice::update_intrq(uint8_t new_intrq_state) {
+    if (!this->is_selected() || (this->r_dev_ctrl & IEN))
+        return;
+
+    this->intrq_state = new_intrq_state;
+    this->host_obj->report_intrq(new_intrq_state);
+}
