@@ -24,12 +24,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/ata/atabasedevice.h>
 #include <devices/common/ata/atapibasedevice.h>
 #include <devices/common/ata/atadefs.h>
-#include <devices/common/scsi/scsi.h> // ATAPI reuses SCSI commands (sic!)
 #include <endianswap.h>
 #include <loguru.hpp>
-#include <memaccess.h>
 
 #include <cinttypes>
+#include <cstring>
 
 using namespace ata_interface;
 
@@ -55,8 +54,24 @@ uint16_t AtapiBaseDevice::read(const uint8_t reg_addr) {
             this->xfer_cnt -= 2;
             if (this->xfer_cnt <= 0) {
                 this->r_status &= ~DRQ;
+
+                if ((this->r_int_reason & ATAPI_Int_Reason::IO) &&
+                    !(this->r_int_reason & ATAPI_Int_Reason::CoD)) {
+                    uint16_t ret_data = BYTESWAP_16(*this->data_ptr++);
+                    if (this->data_available()) {
+                        this->r_status &= ~DRQ;
+                        this->r_status |= BSY;
+                        this->update_intrq(1);
+                        return ret_data;
+                    }
+
+                    if (this->status_expected) {
+                        this->present_status();
+                    }
+                    return ret_data;
+                }
             }
-            return *this->data_ptr++;
+            return BYTESWAP_16(*this->data_ptr++);
         } else {
             return 0xFFFFU;
         }
@@ -71,9 +86,13 @@ uint16_t AtapiBaseDevice::read(const uint8_t reg_addr) {
     case ATA_Reg::DEVICE_HEAD:
         return this->r_dev_head;
     case ATA_Reg::STATUS:
-        // TODO: clear pending interrupt
+        this->update_intrq(0);
         return this->r_status;
     case ATA_Reg::ALT_STATUS:
+        if (this->r_status & BSY && this->data_available()) {
+            this->r_byte_count = this->request_data();
+            this->data_out_phase();
+        }
         return this->r_status;
     default:
         LOG_F(WARNING, "Attempted to read unknown register: %x", reg_addr);
@@ -125,6 +144,8 @@ void AtapiBaseDevice::write(const uint8_t reg_addr, const uint16_t value) {
 }
 
 int AtapiBaseDevice::perform_command() {
+    this->r_error  &= ~ATA_Error::ABRT;
+    this->r_status &= ~ATA_Status::ERR;
     this->r_status |= BSY;
 
     switch (this->r_command) {
@@ -137,49 +158,54 @@ int AtapiBaseDevice::perform_command() {
         this->r_status &= ~BSY;
         break;
     case ATAPI_IDFY_DEV:
-        LOG_F(INFO, "ATAPI_IDENTIFY issued");
-        this->data_buf[0] = 0x85;
-        this->data_buf[1] = 0xC0;
+        std::memset(this->data_buf, 0, 512);
+        this->data_buf[0] = 0xC0;
+        this->data_buf[1] = 0x85;
         this->data_ptr = (uint16_t *)this->data_buf;
         this->data_pos = 0;
         this->xfer_cnt = 512;
-        this->r_status |= DRQ;
-        this->r_status &= ~BSY;
+        this->status_expected = false;
+        this->data_out_phase();
         break;
     case SET_FEATURES:
-        LOG_F(INFO, "%s: SET_FEATURES #%d", this->name.c_str(), this->r_features);
+        switch (this->r_features) {
+        case 3: // set transfer mode
+            LOG_F(INFO, "%s: xfer_type=0x%X, mode=0x%X", this->name.c_str(),
+                this->r_sect_count >> 3, this->r_sect_count & 7);
+            break;
+        default:
+            LOG_F(ERROR, "%s: unsupported subcommand 0x%X in SET_FEATURES",
+                this->name.c_str(), this->r_features);
+            this->r_error  |= ATA_Error::ABRT;
+            this->r_status |= ATA_Status::ERR;
+        }
         this->r_status &= ~BSY;
+        this->update_intrq(1);
         break;
     default:
         LOG_F(ERROR, "%s: unsupported command 0x%X", this->name.c_str(), this->r_command);
-        return -1;
+        this->r_error  |= ATA_Error::ABRT;
+        this->r_status |= ATA_Status::ERR;
     }
     return 0;
 }
 
-void AtapiBaseDevice::perform_packet_command() {
-    uint32_t lba, xfer_len;
+void AtapiBaseDevice::data_out_phase() {
+    this->r_int_reason |= ATAPI_Int_Reason::IO; // device->host
+    this->r_int_reason &= ~ATAPI_Int_Reason::CoD; // data
+    this->signal_data_ready();
+}
 
-    this->r_status |= BSY;
+void AtapiBaseDevice::signal_data_ready() {
+    this->r_status |= DRQ;
+    this->r_status &= ~BSY;
+    this->update_intrq(1);
+}
 
-    switch (this->cmd_pkt[0]) {
-    case ScsiCommand::TEST_UNIT_READY:
-        this->r_status &= ~BSY;
-        break;
-    case ScsiCommand::START_STOP_UNIT:
-        this->r_status &= ~BSY;
-        break;
-    case ScsiCommand::READ_12:
-        lba      = READ_DWORD_BE_U(&this->cmd_pkt[2]);
-        xfer_len = READ_DWORD_BE_U(&this->cmd_pkt[6]);
-        this->r_int_reason |= ~ATAPI_Int_Reason::IO; // device->host
-        this->r_int_reason &= ATAPI_Int_Reason::CoD; // data
-        this->xfer_cnt = xfer_len * 2048;
-        this->r_status |= DRQ;
-        this->r_status &= ~BSY;
-        break;
-    default:
-        LOG_F(INFO, "%s: unsupported ATAPI command 0x%X", this->name.c_str(),
-              this->cmd_pkt[0]);
-    }
+void AtapiBaseDevice::present_status() {
+    this->r_int_reason |= ATAPI_Int_Reason::IO;
+    this->r_int_reason |= ATAPI_Int_Reason::CoD;
+    this->r_status &= ~DRQ;
+    this->r_status &= ~BSY;
+    this->update_intrq(1);
 }

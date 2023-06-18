@@ -41,12 +41,21 @@ public:
     uint16_t read(const uint8_t reg_addr) override;
     void write(const uint8_t reg_addr, const uint16_t value) override;
 
+    // methods to be implemented in the particular device
     int  perform_command() override;
-    void perform_packet_command();
+    virtual void perform_packet_command() = 0;
+    virtual int request_data() = 0;
+    virtual bool data_available() = 0;
 
-private:
+    // methods with default implementation
+    virtual void data_out_phase();
+    virtual void signal_data_ready();
+    virtual void present_status();
+
+protected:
     uint8_t     r_int_reason;
     uint16_t    r_byte_count;
+    bool        status_expected = false;
 
     uint8_t     cmd_pkt[12] = {};
 };
