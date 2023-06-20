@@ -70,16 +70,8 @@ static string appDescription = string(
 );
 
 int main(int argc, char** argv) {
-    /*
-    Execution Type:
-    0 = Realtime (Interpreter)
-    1 = Realtime (Debugger)
-    2 = Recompiler (to-do)
 
-    The rest will be decided later
-    */
-
-    uint32_t execution_mode = 0;
+    uint32_t execution_mode = interpreter;
 
     CLI::App app(appDescription);
     app.allow_windows_style_options(); /* we want Windows-style options */
@@ -206,10 +198,10 @@ int main(int argc, char** argv) {
     });
 
     switch (execution_mode) {
-    case 0:
+    case interpreter:
         ppc_exec();
         break;
-    case 1:
+    case debugger:
         enter_debugger();
         break;
     default:

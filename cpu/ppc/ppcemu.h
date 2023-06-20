@@ -44,6 +44,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 //#define CPU_PROFILING // enable CPU profiling
 
+/** type of compiler used during execution */
+enum EXEC_MODE:uint32_t {
+    interpreter     = 0,
+    debugger        = 1,
+    threaded_int    = 2,
+    jit             = 3
+};
+
 enum endian_switch { big_end = 0, little_end = 1 };
 
 typedef void (*PPCOpcode)(void);
