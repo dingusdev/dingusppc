@@ -50,7 +50,7 @@ As of now, only the Power Macintosh G3 Beige is implemented.
 
 You need to install development tools first.
 
-At least, a C++11 compliant compiler and [CMake](https://cmake.org) are required.
+At least, a C++20 compliant compiler and [CMake](https://cmake.org) are required.
 
 You will also have to recursive clone or run
 ```
