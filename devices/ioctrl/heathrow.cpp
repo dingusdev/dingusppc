@@ -93,6 +93,9 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
     this->swim3->set_dma_channel(this->floppy_dma.get());
     this->floppy_dma->register_dma_int(this, 2);
 
+    // connect Ethernet HW
+    this->bmac = dynamic_cast<BigMac*>(gMachineObj->get_comp_by_type(HWCompType::ETHER_MAC));
+
     // set EMMO pin status (active low)
     this->emmo_pin = GET_BIN_PROP("emmo") ^ 1;
 }
@@ -153,8 +156,11 @@ uint32_t HeathrowIC::read(uint32_t rgn_start, uint32_t offset, int size) {
     case 8:
         res = dma_read(offset - 0x8000, size);
         break;
-    case 0x10:
+    case 0x10: // SCSI
         res = this->mesh->read((offset >> 4) & 0xF);
+        break;
+    case 0x11: // Ethernet
+        res = BYTESWAP_SIZED(this->bmac->read(offset & 0xFFFU), size);
         break;
     case 0x12: // ESCC compatible addressing
         if ((offset & 0xFF) < 16) {
@@ -201,8 +207,11 @@ void HeathrowIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int 
     case 8:
         dma_write(offset - 0x8000, value, size);
         break;
-    case 0x10:
+    case 0x10: // SCSI
         this->mesh->write((offset >> 4) & 0xF, value);
+        break;
+    case 0x11: // Ethernet
+        this->bmac->write(offset & 0xFFFU, BYTESWAP_SIZED(value, size));
         break;
     case 0x12: // ESCC compatible addressing
         if ((offset & 0xFF) < 16) {
@@ -429,7 +438,9 @@ void HeathrowIC::clear_cpu_int()
 }
 
 static const vector<string> Heathrow_Subdevices = {
-    "NVRAM", "ViaCuda", "Scsi0", "Mesh", "Escc", "Swim3", "Ide0", "Ide1"};
+    "NVRAM", "ViaCuda", "Scsi0", "Mesh", "Escc", "Swim3", "Ide0", "Ide1",
+    "BigMacHeathrow"
+};
 
 static const DeviceDescription Heathrow_Descriptor = {
     HeathrowIC::create, Heathrow_Subdevices, {}

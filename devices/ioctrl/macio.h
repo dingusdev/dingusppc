@@ -60,6 +60,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/scsi/mesh.h>
 #include <devices/common/scsi/sc53c94.h>
 #include <devices/common/viacuda.h>
+#include <devices/ethernet/bigmac.h>
 #include <devices/ethernet/mace.h>
 #include <devices/floppy/swim3.h>
 #include <devices/memctrl/memctrlbase.h>
@@ -278,6 +279,7 @@ private:
     IdeChannel*         ide_0;    // Internal ATA
     IdeChannel*         ide_1;    // Media Bay ATA
     Swim3::Swim3Ctrl*   swim3;    // floppy disk controller
+    BigMac*             bmac;     // Ethernet MAC cell
 
     // DMA channels
     std::unique_ptr<DMAChannel>     snd_out_dma;

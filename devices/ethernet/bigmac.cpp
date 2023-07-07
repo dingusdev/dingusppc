@@ -1,0 +1,258 @@
+/*
+DingusPPC - The Experimental PowerPC Macintosh emulator
+Copyright (C) 2018-23 divingkatae and maximum
+                      (theweirdo)     spatium
+
+(Contact divingkatae#1017 or powermax#2286 on Discord for more info)
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+/** @file BigMac Ethernet controller emulation. */
+
+#include <devices/deviceregistry.h>
+#include <devices/ethernet/bigmac.h>
+#include <loguru.hpp>
+
+BigMac::BigMac(uint8_t id) {
+    set_name("BigMac");
+    supports_types(HWCompType::MMIO_DEV | HWCompType::ETHER_MAC);
+
+    this->chip_id = id;
+    this->phy_reset();
+    this->mii_reset();
+}
+
+uint16_t BigMac::read(uint16_t reg_offset) {
+    switch (reg_offset) {
+    case BigMacReg::CHIP_ID:
+        return this->chip_id;
+    case BigMacReg::MIF_CSR:
+        return (this->mif_csr_old & ~MIF_CSR::Data_In) | (this->mii_in_bit << 3);
+    default:
+        LOG_F(WARNING, "%s: unimplemented register at 0x%X", this->name.c_str(),
+              reg_offset);
+    }
+
+    return 0;
+}
+
+void BigMac::write(uint16_t reg_offset, uint16_t value) {
+    switch (reg_offset) {
+    case BigMacReg::MIF_CSR:
+        if (value & MIF_CSR::Data_Out_En) {
+            // send bits one by one on each low-to-high transition of MIF_CSR::Clock
+            if (((this->mif_csr_old ^ value) & MIF_CSR::Clock) && (value & MIF_CSR::Clock))
+                this->mii_xmit_bit(!!(value & MIF_CSR::Data_Out));
+        } else {
+            if (((this->mif_csr_old ^ value) & MIF_CSR::Clock) && (value & MIF_CSR::Clock))
+                this->mii_rcv_bit();
+        }
+        this->mif_csr_old = value;
+        break;
+    default:
+        LOG_F(WARNING, "%s: unimplemented register at 0x%X is written with 0x%X",
+              this->name.c_str(), reg_offset, value);
+    }
+}
+
+// ================ Media Independent Interface (MII) emulation ================
+bool BigMac::mii_rcv_value(uint16_t& var, uint8_t num_bits, uint8_t next_bit) {
+    var = (var << 1) | (next_bit & 1);
+    this->mii_bit_counter++;
+    if (this->mii_bit_counter >= num_bits) {
+        this->mii_bit_counter = 0;
+        return true; // all bits have been received -> return true
+    }
+    return false; // more bits expected
+}
+
+void BigMac::mii_rcv_bit() {
+    switch(this->mii_state) {
+    case MII_FRAME_SM::Preamble:
+        this->mii_in_bit = 1; // required for OSX
+        this->mii_reset();
+        break;
+    case MII_FRAME_SM::Turnaround:
+        this->mii_in_bit = 0;
+        this->mii_bit_counter = 16;
+        this->mii_state = MII_FRAME_SM::Read_Data;
+        break;
+    case MII_FRAME_SM::Read_Data:
+        if (this->mii_bit_counter) {
+            --this->mii_bit_counter;
+            this->mii_in_bit = (this->mii_data >> this->mii_bit_counter) & 1;
+            if (!this->mii_bit_counter) {
+                this->mii_state = MII_FRAME_SM::Preamble;
+            }
+        } else { // out of sync (shouldn't happen)
+            this->mii_reset();
+        }
+        break;
+    default:
+        LOG_F(ERROR, "%s: unhandled state %d in mii_rcv_bit", this->name.c_str(),
+              this->mii_state);
+        this->mii_reset();
+    }
+}
+
+void BigMac::mii_xmit_bit(const uint8_t bit_val) {
+    switch(this->mii_state) {
+    case MII_FRAME_SM::Preamble:
+        if (bit_val) {
+            this->mii_bit_counter++;
+            if (this->mii_bit_counter >= 32) {
+                this->mii_state = MII_FRAME_SM::Start;
+                this->mii_in_bit = 1; // checked in OSX
+                this->mii_bit_counter = 0;
+            }
+        } else { // zero bit -> out of sync
+            this->mii_reset();
+        }
+        break;
+    case MII_FRAME_SM::Start:
+        if (this->mii_rcv_value(this->mii_start, 2, bit_val)) {
+            LOG_F(9, "MII_Start=0x%X", this->mii_start);
+            this->mii_state = MII_FRAME_SM::Opcode;
+        }
+        break;
+    case MII_FRAME_SM::Opcode:
+        if (this->mii_rcv_value(this->mii_opcode, 2, bit_val)) {
+            LOG_F(9, "MII_Opcode=0x%X", this->mii_opcode);
+            this->mii_state = MII_FRAME_SM::Phy_Address;
+        }
+        break;
+    case MII_FRAME_SM::Phy_Address:
+        if (this->mii_rcv_value(this->mii_phy_address, 5, bit_val)) {
+            LOG_F(9, "MII_PHY_Address=0x%X", this->mii_phy_address);
+            this->mii_state = MII_FRAME_SM::Reg_Address;
+        }
+        break;
+    case MII_FRAME_SM::Reg_Address:
+        if (this->mii_rcv_value(this->mii_reg_address, 5, bit_val)) {
+            LOG_F(9, "MII_REG_Address=0x%X", this->mii_reg_address);
+
+            if (this->mii_start != 1)
+                LOG_F(ERROR, "%s: unsupported frame type %d", this->name.c_str(),
+                      this->mii_start);
+            if (this->mii_phy_address)
+                LOG_F(ERROR, "%s: unsupported PHY address %d", this->name.c_str(),
+                      this->mii_phy_address);
+            switch (this->mii_opcode) {
+            case 1: // write
+                this->mii_state = MII_FRAME_SM::Turnaround;
+                break;
+            case 2: // read
+                this->mii_data = this->phy_reg_read(this->mii_reg_address);
+                this->mii_state = MII_FRAME_SM::Turnaround;
+                break;
+            default:
+                LOG_F(ERROR, "%s: invalid MII opcode %d", this->name.c_str(),
+                      this->mii_opcode);
+            }
+        }
+        break;
+    case MII_FRAME_SM::Turnaround:
+        if (this->mii_rcv_value(this->mii_turnaround, 2, bit_val)) {
+            if (this->mii_turnaround != 2)
+                LOG_F(ERROR, "%s: unexpected turnaround 0x%X", this->name.c_str(),
+                      this->mii_turnaround);
+            this->mii_state = MII_FRAME_SM::Write_Data;
+        }
+        break;
+    case MII_FRAME_SM::Write_Data:
+        if (this->mii_rcv_value(this->mii_data, 16, bit_val)) {
+            LOG_F(9, "%s: MII data received = 0x%X", this->name.c_str(),
+                  this->mii_data);
+            this->phy_reg_write(this->mii_reg_address, this->mii_data);
+            this->mii_state = MII_FRAME_SM::Stop;
+        }
+        break;
+    case MII_FRAME_SM::Stop:
+        if (this->mii_rcv_value(this->mii_stop, 2, bit_val)) {
+            LOG_F(9, "MII_Stop=0x%X", this->mii_stop);
+            this->mii_reset();
+        }
+        break;
+    default:
+        LOG_F(ERROR, "%s: unhandled state %d in mii_xmit_bit", this->name.c_str(),
+              this->mii_state);
+        this->mii_reset();
+    }
+}
+
+void BigMac::mii_reset() {
+    mii_start = 0;
+    mii_opcode = 0;
+    mii_phy_address = 0;
+    mii_reg_address = 0;
+    mii_turnaround = 0;
+    mii_data = 0;
+    mii_stop = 0;
+    this->mii_bit_counter = 0;
+    this->mii_state = MII_FRAME_SM::Preamble;
+}
+
+// ===================== Ethernet PHY interface emulation =====================
+void BigMac::phy_reset() {
+    if (this->chip_id == EthernetCellId::Paddington) {
+        this->phy_oui   = 0x1E0400; // LXT970 aka ST10040 PHY
+        this->phy_model = 0;
+        this->phy_rev   = 0;
+    } else { // assume Heathrow with LXT907 PHY
+        this->phy_oui   = 0x1E0400; // LXT970 aka ST10040
+        this->phy_model = 0;
+        this->phy_rev   = 0;
+    }
+    this->phy_anar = 0xA1; // tell the world we support 10BASE-T and 100BASE-TX
+}
+
+uint16_t BigMac::phy_reg_read(uint8_t reg_num) {
+    switch(reg_num) {
+    case PHY_ID1:
+        return (this->phy_oui >> 6) & 0xFFFFU;
+    case PHY_ID2:
+        return ((this->phy_oui << 10) | (phy_model << 4) | phy_rev) & 0xFFFFU;
+    case PHY_ANAR:
+        return this->phy_anar;
+    default:
+        LOG_F(ERROR, "Reading unimplemented PHY register %d", reg_num);
+    }
+
+    return 0;
+}
+
+void BigMac::phy_reg_write(uint8_t reg_num, uint16_t value) {
+    switch(reg_num) {
+    case PHY_BMCR:
+        this->phy_bmcr = value;
+        break;
+    case PHY_ANAR:
+        this->phy_anar = value;
+        break;
+    default:
+        LOG_F(ERROR, "Writing unimplemented PHY register %d", reg_num);
+    }
+}
+
+static const DeviceDescription BigMac_Heathrow_Descriptor = {
+    BigMac::create_for_heathrow, {}, {}
+};
+
+static const DeviceDescription BigMac_Paddington_Descriptor = {
+    BigMac::create_for_paddington, {}, {}
+};
+
+REGISTER_DEVICE(BigMacHeathrow, BigMac_Heathrow_Descriptor);
+REGISTER_DEVICE(BigMacPaddington, BigMac_Paddington_Descriptor);
