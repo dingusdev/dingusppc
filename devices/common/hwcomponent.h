@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -27,28 +27,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** types of different HW components */
 enum HWCompType {
-    UNKNOWN     = 0ULL,       /* unknown component type */
-    MEM_CTRL    = 1ULL << 0,  /* memory controller */
-    NVRAM       = 1ULL << 1,  /* non-volatile random access memory */
-    ROM         = 1ULL << 2,  /* read-only memory */
-    RAM         = 1ULL << 3,  /* random access memory */
-    MMIO_DEV    = 1ULL << 4,  /* memory mapped I/O device */
-    PCI_HOST    = 1ULL << 5,  /* PCI host   */
-    PCI_DEV     = 1ULL << 6,  /* PCI device */
-    I2C_HOST    = 1ULL << 8,  /* I2C host   */
-    I2C_DEV     = 1ULL << 9,  /* I2C device */
-    ADB_HOST    = 1ULL << 12, /* ADB host   */
-    ADB_DEV     = 1ULL << 13, /* ADB device */
-    INT_CTRL    = 1ULL << 16, /* interrupt controller */
-    SCSI_BUS    = 1ULL << 20, /* SCSI bus */
-    SCSI_HOST   = 1ULL << 21, /* SCSI host adapter */
-    SCSI_DEV    = 1ULL << 22, /* SCSI device */
-    IDE_BUS     = 1ULL << 23, /* IDE bus */
-    IDE_DEV     = 1ULL << 25, /* IDE device */
-    SND_CODEC   = 1ULL << 30, /* Sound codec */
-    SND_SERVER  = 1ULL << 31, /* host sound server */
-    FLOPPY_CTRL = 1ULL << 32, /* floppy disk controller */
-    FLOPPY_DRV  = 1ULL << 33, /* floppy disk drive */
+    UNKNOWN     = 0ULL,       // unknown component type
+    MEM_CTRL    = 1ULL << 0,  // memory controller
+    NVRAM       = 1ULL << 1,  // non-volatile random access memory
+    ROM         = 1ULL << 2,  // read-only memory
+    RAM         = 1ULL << 3,  // random access memory
+    MMIO_DEV    = 1ULL << 4,  // memory mapped I/O device
+    PCI_HOST    = 1ULL << 5,  // PCI host
+    PCI_DEV     = 1ULL << 6,  // PCI device
+    I2C_HOST    = 1ULL << 8,  // I2C host
+    I2C_DEV     = 1ULL << 9,  // I2C device
+    ADB_HOST    = 1ULL << 12, // ADB host
+    ADB_DEV     = 1ULL << 13, // ADB device
+    INT_CTRL    = 1ULL << 16, // interrupt controller
+    SCSI_BUS    = 1ULL << 20, // SCSI bus
+    SCSI_HOST   = 1ULL << 21, // SCSI host adapter
+    SCSI_DEV    = 1ULL << 22, // SCSI device
+    IDE_BUS     = 1ULL << 23, // IDE bus
+    IDE_DEV     = 1ULL << 25, // IDE device
+    SND_CODEC   = 1ULL << 30, // sound codec
+    SND_SERVER  = 1ULL << 31, // host sound server
+    FLOPPY_CTRL = 1ULL << 32, // floppy disk controller
+    FLOPPY_DRV  = 1ULL << 33, // floppy disk drive
+    ETHER_MAC   = 1ULL << 40, // Ethernet media access controller
 };
 
 /** Base class for HW components. */
@@ -81,4 +82,4 @@ protected:
     uint64_t    supported_types = HWCompType::UNKNOWN;
 };
 
-#endif /* HW_COMPONENT_H */
+#endif // HW_COMPONENT_H
