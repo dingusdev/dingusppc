@@ -74,6 +74,17 @@ void BigMac::write(uint16_t reg_offset, uint16_t value) {
         }
         this->srom_csr_old = value;
         break;
+    case BigMacReg::TX_SW_RST:
+        if (value == 1) {
+            LOG_F(INFO, "%s: transceiver soft reset asserted", this->name.c_str());
+            this->tx_reset = 0; // acknowledge SW reset
+        }
+        break;
+    case BigMacReg::RX_SW_RST:
+        if (!value) {
+            LOG_F(INFO, "%s: receiver soft reset asserted", this->name.c_str());
+        }
+        break;
     default:
         LOG_F(WARNING, "%s: unimplemented register at 0x%X is written with 0x%X",
               this->name.c_str(), reg_offset, value);

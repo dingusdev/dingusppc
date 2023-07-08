@@ -40,6 +40,8 @@ enum BigMacReg : uint16_t {
     CHIP_ID     = 0x170,
     MIF_CSR     = 0x180,
     SROM_CSR    = 0x190,
+    TX_SW_RST   = 0x420,
+    RX_SW_RST   = 0x620,
 };
 
 /* MIF_CSR bit definitions. */
@@ -122,6 +124,9 @@ public:
 
 private:
     uint8_t chip_id; // BigMac Chip ID
+
+    // BigMac state
+    uint16_t        tx_reset = 0;
 
     // MII state
     uint8_t         mif_csr_old = 0;
