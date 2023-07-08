@@ -32,6 +32,7 @@ BigMac::BigMac(uint8_t id) {
     this->chip_id = id;
     this->phy_reset();
     this->mii_reset();
+    this->srom_reset();
 }
 
 uint16_t BigMac::read(uint16_t reg_offset) {
@@ -40,6 +41,8 @@ uint16_t BigMac::read(uint16_t reg_offset) {
         return this->chip_id;
     case BigMacReg::MIF_CSR:
         return (this->mif_csr_old & ~Mif_Data_In) | (this->mii_in_bit << 3);
+    case BigMacReg::SROM_CSR:
+        return (this->srom_csr_old & ~Srom_Data_In) | (this->srom_in_bit << 2);
     default:
         LOG_F(WARNING, "%s: unimplemented register at 0x%X", this->name.c_str(),
               reg_offset);
@@ -60,6 +63,16 @@ void BigMac::write(uint16_t reg_offset, uint16_t value) {
                 this->mii_rcv_bit();
         }
         this->mif_csr_old = value;
+        break;
+    case BigMacReg::SROM_CSR:
+        if (value & Srom_Chip_Select) {
+            // exchange data on each low-to-high transition of Srom_Clock
+            if (((this->srom_csr_old ^ value) & Srom_Clock) && (value & Srom_Clock))
+                this->srom_xmit_bit(!!(value & Srom_Data_Out));
+        } else {
+            this->srom_reset();
+        }
+        this->srom_csr_old = value;
         break;
     default:
         LOG_F(WARNING, "%s: unimplemented register at 0x%X is written with 0x%X",
@@ -244,6 +257,70 @@ void BigMac::phy_reg_write(uint8_t reg_num, uint16_t value) {
         break;
     default:
         LOG_F(ERROR, "Writing unimplemented PHY register %d", reg_num);
+    }
+}
+
+// ======================== MAC Serial EEPROM emulation ========================
+void BigMac::srom_reset() {
+    this->srom_csr_old = 0;
+    this->srom_bit_counter = 0;
+    this->srom_opcode = 0;
+    this->srom_address = 0;
+    this->srom_state = Srom_Start;
+}
+
+bool BigMac::srom_rcv_value(uint16_t& var, uint8_t num_bits, uint8_t next_bit) {
+    var = (var << 1) | (next_bit & 1);
+    this->srom_bit_counter++;
+    if (this->srom_bit_counter >= num_bits) {
+        this->srom_bit_counter = 0;
+        return true; // all bits have been received -> return true
+    }
+    return false; // more bits expected
+}
+
+void BigMac::srom_xmit_bit(const uint8_t bit_val) {
+    switch(this->srom_state) {
+    case Srom_Start:
+        if (bit_val)
+            this->srom_state = Srom_Opcode;
+        else
+            this->srom_reset();
+        break;
+    case Srom_Opcode:
+        if (this->srom_rcv_value(this->srom_opcode, 2, bit_val)) {
+            switch(this->srom_opcode) {
+            case 2: // read
+                this->srom_state = Srom_Address;
+                break;
+            default:
+                LOG_F(ERROR, "%s: unsupported SROM opcode %d", this->name.c_str(),
+                      this->srom_opcode);
+                this->srom_reset();
+            }
+        }
+        break;
+    case Srom_Address:
+        if (this->srom_rcv_value(this->srom_address, 6, bit_val)) {
+            LOG_F(9, "SROM address received = 0x%X", this->srom_address);
+            this->srom_bit_counter = 16;
+            this->srom_state = Srom_Read_Data;
+        }
+        break;
+    case Srom_Read_Data:
+        if (this->srom_bit_counter) {
+            this->srom_bit_counter--;
+            this->srom_in_bit = (this->srom_data[this->srom_address] >> this->srom_bit_counter) & 1;
+            if (!this->srom_bit_counter) {
+                this->srom_address++;
+                this->srom_bit_counter = 16;
+            }
+        }
+        break;
+    default:
+        LOG_F(ERROR, "%s: unhandled state %d in srom_xmit_bit", this->name.c_str(),
+              this->srom_state);
+        this->srom_reset();
     }
 }
 

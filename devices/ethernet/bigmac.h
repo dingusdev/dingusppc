@@ -37,8 +37,9 @@ enum EthernetCellId : uint8_t {
 
 /* BigMac HW registers. */
 enum BigMacReg : uint16_t {
-    CHIP_ID = 0x170,
-    MIF_CSR = 0x180,
+    CHIP_ID     = 0x170,
+    MIF_CSR     = 0x180,
+    SROM_CSR    = 0x190,
 };
 
 /* MIF_CSR bit definitions. */
@@ -47,6 +48,22 @@ enum {
     Mif_Data_Out    = 1 << 1,
     Mif_Data_Out_En = 1 << 2,
     Mif_Data_In     = 1 << 3
+};
+
+/* SROM_CSR bit definitions. */
+enum {
+    Srom_Chip_Select = 1 << 0,
+    Srom_Clock       = 1 << 1,
+    Srom_Data_In     = 1 << 2,
+    Srom_Data_Out    = 1 << 3,
+};
+
+/* Serial EEPROM states (see ST93C46 datasheet). */
+enum {
+    Srom_Start,
+    Srom_Opcode,
+    Srom_Address,
+    Srom_Read_Data,
 };
 
 /* MII frame states. */
@@ -98,6 +115,11 @@ public:
     uint16_t phy_reg_read(uint8_t reg_num);
     void phy_reg_write(uint8_t reg_num, uint16_t value);
 
+    // MAC Serial EEPROM methods
+    void srom_reset();
+    bool srom_rcv_value(uint16_t& var, uint8_t num_bits, uint8_t next_bit);
+    void srom_xmit_bit(const uint8_t bit_val);
+
 private:
     uint8_t chip_id; // BigMac Chip ID
 
@@ -120,6 +142,16 @@ private:
     uint8_t         phy_rev;
     uint16_t        phy_bmcr;
     uint16_t        phy_anar;
+
+    // MAC SROM state
+    uint8_t         srom_csr_old = 0;
+    uint8_t         srom_bit_counter = 0;
+    uint16_t        srom_opcode = 0;
+    uint16_t        srom_address = 0;
+    uint8_t         srom_in_bit = 0;
+    uint8_t         srom_state = Srom_Start;
+    uint16_t        srom_data[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                     0xDEAD, 0xBEEF, 0xBABE}; // bogus MAC!!!
 };
 
 #endif // BIG_MAC_H
