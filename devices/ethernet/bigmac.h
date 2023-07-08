@@ -42,11 +42,11 @@ enum BigMacReg : uint16_t {
 };
 
 /* MIF_CSR bit definitions. */
-enum MIF_CSR : uint8_t {
-    Clock       = 1 << 0,
-    Data_Out    = 1 << 1,
-    Data_Out_En = 1 << 2,
-    Data_In     = 1 << 3
+enum {
+    Mif_Clock       = 1 << 0,
+    Mif_Data_Out    = 1 << 1,
+    Mif_Data_Out_En = 1 << 2,
+    Mif_Data_In     = 1 << 3
 };
 
 /* MII frame states. */

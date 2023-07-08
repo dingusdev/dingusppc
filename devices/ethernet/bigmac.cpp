@@ -39,7 +39,7 @@ uint16_t BigMac::read(uint16_t reg_offset) {
     case BigMacReg::CHIP_ID:
         return this->chip_id;
     case BigMacReg::MIF_CSR:
-        return (this->mif_csr_old & ~MIF_CSR::Data_In) | (this->mii_in_bit << 3);
+        return (this->mif_csr_old & ~Mif_Data_In) | (this->mii_in_bit << 3);
     default:
         LOG_F(WARNING, "%s: unimplemented register at 0x%X", this->name.c_str(),
               reg_offset);
@@ -51,12 +51,12 @@ uint16_t BigMac::read(uint16_t reg_offset) {
 void BigMac::write(uint16_t reg_offset, uint16_t value) {
     switch (reg_offset) {
     case BigMacReg::MIF_CSR:
-        if (value & MIF_CSR::Data_Out_En) {
-            // send bits one by one on each low-to-high transition of MIF_CSR::Clock
-            if (((this->mif_csr_old ^ value) & MIF_CSR::Clock) && (value & MIF_CSR::Clock))
-                this->mii_xmit_bit(!!(value & MIF_CSR::Data_Out));
+        if (value & Mif_Data_Out_En) {
+            // send bits one by one on each low-to-high transition of Mif_Clock
+            if (((this->mif_csr_old ^ value) & Mif_Clock) && (value & Mif_Clock))
+                this->mii_xmit_bit(!!(value & Mif_Data_Out));
         } else {
-            if (((this->mif_csr_old ^ value) & MIF_CSR::Clock) && (value & MIF_CSR::Clock))
+            if (((this->mif_csr_old ^ value) & Mif_Clock) && (value & Mif_Clock))
                 this->mii_rcv_bit();
         }
         this->mif_csr_old = value;
@@ -206,12 +206,13 @@ void BigMac::mii_reset() {
 
 // ===================== Ethernet PHY interface emulation =====================
 void BigMac::phy_reset() {
+    // TODO: add PHY type property to be able to select another PHY (DP83843)
     if (this->chip_id == EthernetCellId::Paddington) {
         this->phy_oui   = 0x1E0400; // LXT970 aka ST10040 PHY
         this->phy_model = 0;
         this->phy_rev   = 0;
     } else { // assume Heathrow with LXT907 PHY
-        this->phy_oui   = 0x1E0400; // LXT970 aka ST10040
+        this->phy_oui   = 0; // LXT907 doesn't support MII, MDIO is pulled low
         this->phy_model = 0;
         this->phy_rev   = 0;
     }
