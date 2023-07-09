@@ -37,8 +37,8 @@ AtapiBaseDevice::AtapiBaseDevice(const std::string name)
 }
 
 void AtapiBaseDevice::device_set_signature() {
-    this->r_sect_count = 1;
-    this->r_sect_num   = 1;
+    this->r_int_reason = 1; // shadows ATA r_sect_count
+    this->r_sect_num   = 1; // required for protocol identification in OF 2.x
     this->r_dev_head   = 0;
 
     // set ATAPI protocol signature
@@ -79,6 +79,8 @@ uint16_t AtapiBaseDevice::read(const uint8_t reg_addr) {
         return this->r_error;
     case ATAPI_Reg::INT_REASON:
         return this->r_int_reason;
+    case ATA_Reg::SEC_NUM:
+        return this->r_sect_num;
     case ATAPI_Reg::BYTE_COUNT_LO:
         return this->r_byte_count & 0xFFU;
     case ATAPI_Reg::BYTE_COUNT_HI:
