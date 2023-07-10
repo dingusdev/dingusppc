@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -56,7 +56,11 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
         break;
 
     case Except_Type::EXC_ISI:
-        ppc_state.spr[SPR::SRR0]     = ppc_next_instruction_address;
+        if (exec_flags & ~EXEF_TIMER) {
+            ppc_state.spr[SPR::SRR0] = ppc_next_instruction_address;
+        } else {
+            ppc_state.spr[SPR::SRR0] = ppc_state.pc & 0xFFFFFFFCUL;
+        }
         ppc_next_instruction_address = 0x0400;
         break;
 
