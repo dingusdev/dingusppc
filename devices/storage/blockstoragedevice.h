@@ -31,7 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 class BlockStorageDevice {
 public:
-    BlockStorageDevice(const uint32_t cache_blocks, const uint32_t block_size=512);
+    BlockStorageDevice(const uint32_t cache_blocks, const uint32_t block_size=512, const uint64_t max_blocks=0xffffffffffffffff);
     ~BlockStorageDevice();
 
     void set_block_size(const int blk_size) { this->block_size = blk_size; };
@@ -48,6 +48,7 @@ protected:
     std::fstream    img_file     = {};
     uint64_t        size_bytes   = 0;   // image file size in bytes
     uint64_t        size_blocks  = 0;   // image file size in blocks
+    uint64_t        max_blocks   = 0;   // maximum number of blocks supported
     uint64_t        cur_fpos     = 0;   // current image file pointer position
     uint32_t        block_size   = 512; // physical block size
     uint32_t        cache_size   = 0;   // cache size
