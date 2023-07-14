@@ -48,7 +48,7 @@ PCIBase::PCIBase(std::string name, PCIHeaderType hdr_type, int num_bars)
             FIXME: should register or unregister BAR mmio regions if (cmd & 2) changes.
             Or the mmio regions should be enabled/disabled.
         */
-        this->command = cmd;
+        this->command = cmd & this->command_cfg;
     };
     this->pci_wr_bist       = [](uint8_t  val) {};
     this->pci_wr_lat_timer  = [this](uint8_t val) { this->lat_timer = val; };

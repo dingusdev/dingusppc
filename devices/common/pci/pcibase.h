@@ -171,6 +171,9 @@ protected:
     uint32_t    exp_rom_size = 0;    // expansion ROM size in bytes
 
     std::unique_ptr<uint8_t[]> exp_rom_data;
+
+    // 0 = not writable; 1 = bit is enabled in command register
+    uint16_t    command_cfg = 0xffff - (1<<3) - (1<<7); // disable: special cycles and stepping
 };
 
 inline uint32_t pci_cfg_log(uint32_t value, AccessDetails &details) {
