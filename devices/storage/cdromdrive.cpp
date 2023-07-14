@@ -30,7 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cstring>
 #include <string>
 
-CdromDrive::CdromDrive() : BlockStorageDevice(31, 2048) {
+CdromDrive::CdromDrive() : BlockStorageDevice(31, 2048, 0xfffffffe) {
     this->is_writeable = false;
 }
 
@@ -133,7 +133,7 @@ uint32_t CdromDrive::request_sense(uint8_t *data_ptr, uint8_t sense_key,
 }
 
 uint32_t CdromDrive::report_capacity(uint8_t *data_ptr) {
-    WRITE_DWORD_BE_A(data_ptr, this->size_blocks);
+    WRITE_DWORD_BE_A(data_ptr, static_cast<uint32_t>(this->size_blocks));
     WRITE_DWORD_BE_A(&data_ptr[4], this->block_size);
     return 8;
 }
