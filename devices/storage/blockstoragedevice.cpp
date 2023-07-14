@@ -29,9 +29,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace std;
 
-BlockStorageDevice::BlockStorageDevice(const uint32_t cache_blocks, const uint32_t block_size) {
+BlockStorageDevice::BlockStorageDevice(const uint32_t cache_blocks, const uint32_t block_size, const uint64_t max_blocks) {
     this->block_size = block_size;
     this->cache_size = cache_blocks * this->block_size;
+    this->max_blocks = max_blocks;
 
     // allocate device cache and fill it with zeroes
     this->data_cache = std::unique_ptr<char[]>(new char[this->cache_size] ());
@@ -54,6 +55,9 @@ int BlockStorageDevice::set_host_file(std::string file_path) {
 
     this->size_bytes  = stat_buf.st_size;
     this->size_blocks = this->size_bytes / this->block_size;
+    if (this->size_blocks > this->max_blocks)
+        return -1;
+
     this->set_fpos(0);
 
     this->is_ready = true;
