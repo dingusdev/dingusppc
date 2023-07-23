@@ -208,7 +208,7 @@ uint32_t HeathrowIC::read(uint32_t rgn_start, uint32_t offset, int size) {
         if (sub_addr >= 0x60) {
             res = this->nvram->read_byte((offset - 0x60000) >> 4);
         } else {
-            LOG_F(WARNING, "Attempting to read unmapped I/O space: %x", offset);
+            LOG_F(WARNING, "Attempting to read from unmapped I/O space: %x", offset);
         }
     }
 
@@ -262,7 +262,7 @@ void HeathrowIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int 
         if (sub_addr >= 0x60) {
             this->nvram->write_byte((offset - 0x60000) >> 4, value);
         } else {
-            LOG_F(WARNING, "Attempting to write to unmapped I/O space: %x", offset);
+            LOG_F(WARNING, "Attempting to write to  unmapped I/O space: %x", offset);
         }
     }
 }
