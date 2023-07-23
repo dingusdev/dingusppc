@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 
 /** types of different HW components */
-enum HWCompType {
+enum HWCompType : uint64_t {
     UNKNOWN     = 0ULL,       // unknown component type
     MEM_CTRL    = 1ULL << 0,  // memory controller
     NVRAM       = 1ULL << 1,  // non-volatile random access memory
