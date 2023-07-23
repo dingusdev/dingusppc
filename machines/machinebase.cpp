@@ -73,7 +73,7 @@ HWComponent* MachineBase::get_comp_by_type(HWCompType type) {
     if (found) {
         return this->get_comp_by_name(comp_name);
     } else {
-        LOG_F(WARNING, "No component of type %lu was found!", type);
+        LOG_F(WARNING, "No component of type %llu was found!", type);
         return nullptr;
     }
 }
