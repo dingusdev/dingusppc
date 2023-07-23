@@ -94,7 +94,7 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
     this->floppy_dma->register_dma_int(this, 2);
 
     // connect Ethernet HW
-    this->bmac = dynamic_cast<BigMac*>(gMachineObj->get_comp_by_name("BigMacHeathrow"));
+    this->bmac = dynamic_cast<BigMac*>(gMachineObj->get_comp_by_type(HWCompType::ETHER_MAC));
 
     // set EMMO pin status (active low)
     this->emmo_pin = GET_BIN_PROP("emmo") ^ 1;
