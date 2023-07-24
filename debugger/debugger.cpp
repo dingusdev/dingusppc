@@ -639,7 +639,8 @@ void enter_debugger() {
         } else if (cmd == "setenv") {
             string var_name, value;
             ss >> var_name;
-            ss >> value;
+            std::istream::sentry se(ss); // skip white space
+            getline(ss, value); // get everything up to eol
             if (ofnvram->init())
                 continue;
             ofnvram->setenv(var_name, value);
