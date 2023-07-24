@@ -117,9 +117,9 @@ void HeathrowIC::notify_bar_change(int bar_num)
 
 uint32_t HeathrowIC::dma_read(uint32_t offset, int size) {
     switch (offset >> 8) {
-    case 1:
+    case MIO_OHARE_DMA_FLOPPY:
         return this->floppy_dma->reg_read(offset & 0xFF, size);
-    case 8:
+    case MIO_OHARE_DMA_AUDIO_OUT:
         return this->snd_out_dma->reg_read(offset & 0xFF, size);
     default:
         LOG_F(WARNING, "Unsupported DMA channel read, offset=0x%X", offset);
@@ -130,10 +130,10 @@ uint32_t HeathrowIC::dma_read(uint32_t offset, int size) {
 
 void HeathrowIC::dma_write(uint32_t offset, uint32_t value, int size) {
     switch (offset >> 8) {
-    case 1:
+    case MIO_OHARE_DMA_FLOPPY:
         this->floppy_dma->reg_write(offset & 0xFF, value, size);
         break;
-    case 8:
+    case MIO_OHARE_DMA_AUDIO_OUT:
         this->snd_out_dma->reg_write(offset & 0xFF, value, size);
         break;
     default:

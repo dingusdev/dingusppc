@@ -40,7 +40,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     DMA space. Access to emulated legacy devices is accomplished by reading from/
     writing to MIO's PCI address space at predefined offsets.
 
-    MIO includes a DMA controller that offers 15 DMA channels implementing
+    MIO includes a DMA controller that offers up to 12 DMA channels implementing
     Apple's own DMA protocol called descriptor-based DMA (DBDMA).
 
     Official documentation (that is somewhat incomplete and erroneous) can be
@@ -217,6 +217,22 @@ private:
 enum {
     MIO_OHARE_ID        = 0x34, // IDs register
     MIO_OHARE_FEAT_CTRL = 0x38, // feature control register
+};
+
+/** O'Hare/Heathrow DBDMA channels. */
+enum : uint8_t {
+    MIO_OHARE_DMA_MESH          = 0,
+    MIO_OHARE_DMA_FLOPPY        = 1,
+    MIO_OHARE_DMA_ETH_XMIT      = 2,
+    MIO_OHARE_DMA_ETH_RCV       = 3,
+    MIO_OHARE_DMA_ESSC_A_XMIT   = 4,
+    MIO_OHARE_DMA_ESSC_A_RCV    = 5,
+    MIO_OHARE_DMA_ESSC_B_XMIT   = 6,
+    MIO_OHARE_DMA_ESSC_B_RCV    = 7,
+    MIO_OHARE_DMA_AUDIO_OUT     = 8,
+    MIO_OHARE_DMA_AUDIO_IN      = 9,
+    MIO_OHARE_DMA_IDE0          = 0xB,
+    MIO_OHARE_DMA_IDE1          = 0xC
 };
 
 class HeathrowIC : public PCIDevice, public InterruptCtrl {
