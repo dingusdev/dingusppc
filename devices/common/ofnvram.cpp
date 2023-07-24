@@ -541,6 +541,15 @@ bool OfConfigUtils::open_container() {
     return false;
 }
 
+static std::string ReplaceAll(std::string& str, const std::string& from, const std::string& to) {
+    size_t start_pos = 0;
+    while((start_pos = str.find(from, start_pos)) != std::string::npos) {
+        str.replace(start_pos, from.length(), to);
+        start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
+    }
+    return str;
+}
+
 void OfConfigUtils::printenv() {
     OfConfigImpl::config_dict   vars;
 
@@ -550,7 +559,11 @@ void OfConfigUtils::printenv() {
     vars = this->cfg_impl->get_config_vars();
 
     for (auto& var : vars) {
-        cout << setw(34) << left << var.first << var.second << endl;
+        std::string val = var.second;
+        ReplaceAll(val, "\r\n", "\n");
+        ReplaceAll(val, "\r", "\n");
+        ReplaceAll(val, "\n", "\n                                  "); // 34 spaces
+        cout << setw(34) << left << var.first << val << endl; // name column has width 34
     }
 }
 
