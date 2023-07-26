@@ -23,7 +23,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <core/timermanager.h>
-#include <devices/common/adb/adb.h>
 #include <devices/common/hwinterrupt.h>
 #include <devices/common/viacuda.h>
 #include <devices/deviceregistry.h>
@@ -33,6 +32,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 #include <memory>
+#include <string>
+#include <vector>
 
 using namespace std;
 
@@ -75,8 +76,8 @@ ViaCuda::ViaCuda() {
     // PRAM is part of Cuda
     this->pram_obj = std::unique_ptr<NVram> (new NVram("pram.bin", 256));
 
-    // ADB bus is driven by Cuda
-    this->adb_bus = std::unique_ptr<ADB_Bus> (new ADB_Bus());
+    // establish ADB bus connection
+    this->adb_bus_obj = dynamic_cast<AdbBus*>(gMachineObj->get_comp_by_type(HWCompType::ADB_HOST));
 
     this->cuda_init();
 
@@ -437,7 +438,7 @@ void ViaCuda::process_packet() {
     switch (this->in_buf[0]) {
     case CUDA_PKT_ADB:
         LOG_F(9, "Cuda: ADB packet received");
-        process_adb_command(this->in_buf[1], this->in_count - 2);
+        this->process_adb_command();
         break;
     case CUDA_PKT_PSEUDO:
         LOG_F(9, "Cuda: pseudo command packet received");
@@ -454,39 +455,16 @@ void ViaCuda::process_packet() {
     }
 }
 
-void ViaCuda::process_adb_command(uint8_t cmd_byte, int data_count) {
-    int adb_dev = cmd_byte >> 4;    // 2 for keyboard, 3 for mouse
-    int cmd     = cmd_byte & 0xF;
+void ViaCuda::process_adb_command() {
+    uint8_t adb_stat, output_size;
 
-    if (!cmd) {
-        LOG_F(9, "Cuda: ADB SendReset command requested");
-        response_header(CUDA_PKT_ADB, 0);
-    } else if (cmd == 1) {
-        LOG_F(9, "Cuda: ADB Flush command requested");
-        response_header(CUDA_PKT_ADB, 0);
-    } else if ((cmd & 0xC) == 8) {
-        LOG_F(9, "Cuda: ADB Listen command requested");
-        int adb_reg = cmd_byte & 0x3;
-        if (adb_bus->listen(adb_dev, adb_reg)) {
-            response_header(CUDA_PKT_ADB, 0);
-            for (int data_ptr = 0; data_ptr < adb_bus->get_output_len(); data_ptr++) {
-                this->in_buf[(2 + data_ptr)] = adb_bus->get_output_byte(data_ptr);
-            }
-        } else {
-            response_header(CUDA_PKT_ADB, 2);
-        }
-    } else if ((cmd & 0xC) == 0xC) {
-        LOG_F(9, "Cuda: ADB Talk command requested");
-        response_header(CUDA_PKT_ADB, 0);
-        int adb_reg = cmd_byte & 0x3;
-        if (adb_bus->talk(adb_dev, adb_reg, this->in_buf[2])) {
-            response_header(CUDA_PKT_ADB, 0);
-        } else {
-            response_header(CUDA_PKT_ADB, 2);
-        }
-    } else {
-        LOG_F(ERROR, "Cuda: unsupported ADB command 0x%X", cmd);
-        error_response(CUDA_ERR_BAD_CMD);
+    adb_stat = this->adb_bus_obj->process_command(&this->in_buf[1],
+                                                  this->in_count - 1);
+    response_header(CUDA_PKT_ADB, adb_stat);
+    output_size = this->adb_bus_obj->get_output_count();
+    if (output_size) {
+        std::memcpy(&this->out_buf[3], this->adb_bus_obj->get_output_buf(), output_size);
+        this->out_count += output_size;
     }
 }
 
@@ -712,8 +690,12 @@ void ViaCuda::i2c_comb_transaction(
     }
 }
 
+static const vector<string> Cuda_Subdevices = {
+    "AdbBus", "AdbMouse"
+};
+
 static const DeviceDescription ViaCuda_Descriptor = {
-    ViaCuda::create, {}, {}
+    ViaCuda::create, Cuda_Subdevices, {}
 };
 
 REGISTER_DEVICE(ViaCuda, ViaCuda_Descriptor);

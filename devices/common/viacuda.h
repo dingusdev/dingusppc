@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -43,7 +43,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef VIACUDA_H
 #define VIACUDA_H
 
-#include <devices/common/adb/adb.h>
+#include <devices/common/adb/adbbus.h>
 #include <devices/common/hwcomponent.h>
 #include <devices/common/hwinterrupt.h>
 #include <devices/common/i2c/i2c.h>
@@ -223,7 +223,7 @@ private:
     void (ViaCuda::*next_out_handler)(void);
 
     std::unique_ptr<NVram>   pram_obj;
-    std::unique_ptr<ADB_Bus> adb_bus;
+    AdbBus* adb_bus_obj = nullptr;
 
     // VIA methods
     void print_enabled_ints(); // print enabled VIA interrupts and their sources
@@ -241,7 +241,7 @@ private:
     void response_header(uint32_t pkt_type, uint32_t pkt_flag);
     void error_response(uint32_t error);
     void process_packet();
-    void process_adb_command(uint8_t cmd_byte, int data_count);
+    void process_adb_command();
     void pseudo_command(int cmd, int data_count);
 
     void null_out_handler(void);
