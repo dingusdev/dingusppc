@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -325,20 +325,18 @@ void ViaCuda::write(uint8_t new_state) {
     if (new_tip == this->old_tip && new_byteack == this->old_byteack)
         return;
 
-    LOG_F(9, "Cuda state changed!");
-
     this->old_tip     = new_tip;
     this->old_byteack = new_byteack;
 
     if (new_tip) {
         if (new_byteack) {
-            this->via_regs[VIA_B] |= CUDA_TREQ; /* negate TREQ */
+            this->via_regs[VIA_B] |= CUDA_TREQ; // negate TREQ
             this->treq = 1;
 
             if (this->in_count) {
                 process_packet();
 
-                /* start response transaction */
+                // start response transaction
                 TimerManager::get_instance()->add_oneshot_timer(
                     USECS_TO_NSECS(13), // delay TREQ assertion for New World
                     [this]() {
@@ -350,7 +348,7 @@ void ViaCuda::write(uint8_t new_state) {
             this->in_count = 0;
         } else {
             LOG_F(9, "Cuda: enter sync state");
-            this->via_regs[VIA_B] &= ~CUDA_TREQ; /* assert TREQ */
+            this->via_regs[VIA_B] &= ~CUDA_TREQ; // assert TREQ
             this->treq      = 0;
             this->in_count  = 0;
             this->out_count = 0;
@@ -359,7 +357,7 @@ void ViaCuda::write(uint8_t new_state) {
         // send dummy byte as idle acknowledge or attention
         schedule_sr_int(USECS_TO_NSECS(61));
     } else {
-        if (this->via_regs[VIA_ACR] & 0x10) { /* data transfer: Host --> Cuda */
+        if (this->via_regs[VIA_ACR] & 0x10) { // data transfer: Host --> Cuda
             if (this->in_count < sizeof(this->in_buf)) {
                 this->in_buf[this->in_count++] = this->via_regs[VIA_SR];
                 // tell the system we've read the byte after 71 usecs
@@ -367,7 +365,7 @@ void ViaCuda::write(uint8_t new_state) {
             } else {
                 LOG_F(WARNING, "Cuda input buffer too small. Truncating data!");
             }
-        } else { /* data transfer: Cuda --> Host */
+        } else { // data transfer: Cuda --> Host
             (this->*out_handler)();
             // tell the system we've written next byte after 88 usecs
             schedule_sr_int(USECS_TO_NSECS(88));
@@ -389,17 +387,19 @@ void ViaCuda::pram_out_handler()
 /* sends data from out_buf until exhausted, then switches to next_out_handler */
 void ViaCuda::out_buf_handler() {
     if (this->out_pos < this->out_count) {
-        LOG_F(9, "OutBufHandler: sending next byte 0x%X", this->out_buf[this->out_pos]);
         this->via_regs[VIA_SR] = this->out_buf[this->out_pos++];
+        if (!this->is_open_ended && this->out_pos >= this->out_count) {
+            // tell the host this will be the last byte
+            this->via_regs[VIA_B] |= CUDA_TREQ; // negate TREQ
+            this->treq = 1;
+        }
     } else if (this->is_open_ended) {
-        LOG_F(9, "OutBufHandler: switching to next handler");
         this->out_handler      = this->next_out_handler;
         this->next_out_handler = &ViaCuda::null_out_handler;
         (this->*out_handler)();
     } else {
-        LOG_F(9, "Sending last byte");
         this->out_count = 0;
-        this->via_regs[VIA_B] |= CUDA_TREQ; /* negate TREQ */
+        this->via_regs[VIA_B] |= CUDA_TREQ; // negate TREQ
         this->treq = 1;
     }
 }
@@ -407,7 +407,7 @@ void ViaCuda::out_buf_handler() {
 void ViaCuda::response_header(uint32_t pkt_type, uint32_t pkt_flag) {
     this->out_buf[0]       = pkt_type;
     this->out_buf[1]       = pkt_flag;
-    this->out_buf[2]       = this->in_buf[1]; /* copy original cmd */
+    this->out_buf[2]       = this->in_buf[1]; // copy original cmd
     this->out_count        = 3;
     this->out_pos          = 0;
     this->out_handler      = &ViaCuda::out_buf_handler;
@@ -419,7 +419,7 @@ void ViaCuda::error_response(uint32_t error) {
     this->out_buf[0]       = CUDA_PKT_ERROR;
     this->out_buf[1]       = error;
     this->out_buf[2]       = this->in_buf[0];
-    this->out_buf[3]       = this->in_buf[1]; /* copy original cmd */
+    this->out_buf[3]       = this->in_buf[1]; // copy original cmd
     this->out_count        = 4;
     this->out_pos          = 0;
     this->out_handler      = &ViaCuda::out_buf_handler;
