@@ -58,16 +58,17 @@ uint8_t DMAChannel::interpret_cmd() {
         this->cur_cmd = cmd_desc[3] >> 4;
 
         // all commands except STOP update cmd.xferStatus and
-        // perform actions under control of "i", "b" and "w" bits
+        // perform actions under control of "i" interrupt, "b" branch, and "w" wait bits
         if (this->cur_cmd < DBDMA_Cmd::STOP) {
             if (is_writable)
                 WRITE_WORD_LE_A(&cmd_desc[14], this->ch_stat | CH_STAT_ACTIVE);
 
+            // react to cmd.wait bits
             if (cmd_desc[2] & 3) {
                 ABORT_F("%s: cmd.wait bits not implemented", this->get_name().c_str());
             }
 
-            // react to cmd.b bit
+            // react to cmd.branch bits
             if (cmd_desc[2] & 0xC) {
                 bool cond = true;
                 if ((cmd_desc[2] & 0xC) != 0xC) {
@@ -146,12 +147,13 @@ void DMAChannel::update_irq() {
 
     // STOP doesn't generate interrupts
     if (this->cur_cmd < DBDMA_Cmd::STOP) {
+        // react to cmd.interrupt bits
         if (cmd_desc[2] & 0x30) {
             bool cond = true;
             if ((cmd_desc[2] & 0x30) != 0x30) {
                 uint16_t int_mask = this->int_select >> 16;
                 cond = (this->ch_stat & int_mask) == (this->int_select & int_mask);
-                if ((cmd_desc[2] & 0x30) == 0x20) { // branch if cond cleared?
+                if ((cmd_desc[2] & 0x30) == 0x20) { // interrupt if cond cleared?
                     cond = !cond;
                 }
             }
@@ -241,14 +243,25 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
         break;
     case DMAReg::CH_STAT:
         break; // ingore writes to ChannelStatus
+    case DMAReg::CMD_PTR_HI:
+        if (value != 0) {
+            LOG_F(WARNING, "%s: Unsupported DMA channel register write @%02x.%c = %0*x", this->get_name().c_str(), offset, SIZE_ARG(size), size * 2, value);
+        }
+        break;
     case DMAReg::CMD_PTR_LO:
         if (!(this->ch_stat & CH_STAT_RUN) && !(this->ch_stat & CH_STAT_ACTIVE)) {
             this->cmd_ptr = value;
             LOG_F(9, "%s: CommandPtrLo set to 0x%X", this->get_name().c_str(), this->cmd_ptr);
         }
         break;
+    case DMAReg::INT_SELECT:
+        this->int_select = value & 0xFF00FFUL;
+        break;
     case DMAReg::BRANCH_SELECT:
         this->branch_select = value & 0xFF00FFUL;
+        break;
+    case DMAReg::WAIT_SELECT:
+        this->wait_select = value & 0xFF00FFUL;
         break;
     default:
         LOG_F(WARNING, "%s: Unsupported DMA channel register write @%02x.%c = %0*x", this->get_name().c_str(), offset, SIZE_ARG(size), size * 2, value);
