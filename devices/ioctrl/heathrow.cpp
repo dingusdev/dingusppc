@@ -77,6 +77,7 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
     );
 
     // connect SCSI HW
+    mesh_dma = std::unique_ptr<DMAChannel> (new DMAChannel("mesh"));
     this->mesh = dynamic_cast<MeshController*>(gMachineObj->get_comp_by_name("Mesh"));
 
     // connect IDE HW
@@ -116,6 +117,8 @@ void HeathrowIC::notify_bar_change(int bar_num)
 
 uint32_t HeathrowIC::dma_read(uint32_t offset, int size) {
     switch (offset >> 8) {
+    case MIO_OHARE_DMA_MESH:
+        return this->mesh_dma->reg_read(offset & 0xFF, size);
     case MIO_OHARE_DMA_FLOPPY:
         return this->floppy_dma->reg_read(offset & 0xFF, size);
     case MIO_OHARE_DMA_AUDIO_OUT:
@@ -129,6 +132,9 @@ uint32_t HeathrowIC::dma_read(uint32_t offset, int size) {
 
 void HeathrowIC::dma_write(uint32_t offset, uint32_t value, int size) {
     switch (offset >> 8) {
+    case MIO_OHARE_DMA_MESH:
+        this->mesh_dma->reg_write(offset & 0xFF, value, size);
+        break;
     case MIO_OHARE_DMA_FLOPPY:
         this->floppy_dma->reg_write(offset & 0xFF, value, size);
         break;
