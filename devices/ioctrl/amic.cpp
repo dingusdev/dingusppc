@@ -65,7 +65,7 @@ AMIC::AMIC() : MMIODevice()
 
     // connect serial HW
     this->escc = dynamic_cast<EsccController*>(gMachineObj->get_comp_by_name("Escc"));
-    this->escc_xmit_b_dma = std::unique_ptr<AmicSerialXmitDma>(new AmicSerialXmitDma());
+    this->escc_xmit_b_dma = std::unique_ptr<AmicSerialXmitDma>(new AmicSerialXmitDma("EsccBXmit"));
 
     // connect Ethernet HW
     this->mace = dynamic_cast<MaceController*>(gMachineObj->get_comp_by_name("Mace"));
@@ -533,7 +533,7 @@ void AMIC::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state) {
 }
 
 // ============================ Sound DMA stuff ================================
-AmicSndOutDma::AmicSndOutDma()
+AmicSndOutDma::AmicSndOutDma() : DmaOutChannel("SndOut")
 {
     this->dma_out_ctrl = 0;
     this->enabled = false;

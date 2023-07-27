@@ -127,7 +127,7 @@ private:
 /** AMIC-specific floppy DMA implementation. */
 class AmicFloppyDma : public DmaBidirChannel {
 public:
-    AmicFloppyDma() = default;
+    AmicFloppyDma() : DmaBidirChannel("floppy") {}
     ~AmicFloppyDma() = default;
 
     void            reinit(const uint32_t addr_ptr, const uint16_t byte_cnt);
@@ -148,7 +148,7 @@ private:
 /** AMIC specific Serial Transmit DMA channel. */
 class AmicSerialXmitDma : public DmaOutChannel {
 public:
-    AmicSerialXmitDma()  = default;
+    AmicSerialXmitDma(std::string name) : DmaOutChannel(name) {}
     ~AmicSerialXmitDma() = default;
 
     void            write_ctrl(const uint8_t value);
@@ -166,7 +166,7 @@ private:
 /** AMIC-specific SCSI DMA implementation. */
 class AmicScsiDma : public DmaBidirChannel {
 public:
-    AmicScsiDma()   = default;
+    AmicScsiDma() : DmaBidirChannel("Scsi") {}
     ~AmicScsiDma()  = default;
 
     void            reinit(const uint32_t addr_ptr);

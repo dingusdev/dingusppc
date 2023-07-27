@@ -57,7 +57,7 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
 
     // initialize sound chip and its DMA output channel, then wire them together
     this->awacs       = std::unique_ptr<AwacsScreamer> (new AwacsScreamer());
-    this->snd_out_dma = std::unique_ptr<DMAChannel> (new DMAChannel());
+    this->snd_out_dma = std::unique_ptr<DMAChannel> (new DMAChannel("snd_out"));
     this->awacs->set_dma_out(this->snd_out_dma.get());
     this->snd_out_dma->set_callbacks(
         std::bind(&AwacsScreamer::dma_out_start, this->awacs.get()),
@@ -74,14 +74,14 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
         this->mesh_stub = std::unique_ptr<MeshStub>(new MeshStub());
         this->mesh = dynamic_cast<MeshController*>(this->mesh_stub.get());
     } else {
-        this->mesh_dma = std::unique_ptr<DMAChannel> (new DMAChannel());
+        this->mesh_dma = std::unique_ptr<DMAChannel> (new DMAChannel("mesh_scsi"));
         this->mesh_dma->register_dma_int(this, this->register_dma_int(IntSrc::DMA_SCSI_MESH));
         this->mesh->set_dma_channel(this->mesh_dma.get());
     }
 
     // connect external SCSI controller (Curio) to its DMA channel
     this->ext_scsi = dynamic_cast<Sc53C94*>(gMachineObj->get_comp_by_name("Sc53C94"));
-    this->ext_scsi_dma  = std::unique_ptr<DMAChannel> (new DMAChannel());
+    this->ext_scsi_dma  = std::unique_ptr<DMAChannel> (new DMAChannel("curio_scsi"));
     this->ext_scsi_dma->register_dma_int(this, this->register_dma_int(IntSrc::DMA_SCSI_CURIO));
     this->ext_scsi->set_dma_channel(this->ext_scsi_dma.get());
 
@@ -90,7 +90,7 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
 
     // connect floppy disk HW
     this->swim3 = dynamic_cast<Swim3::Swim3Ctrl*>(gMachineObj->get_comp_by_name("Swim3"));
-    this->floppy_dma = std::unique_ptr<DMAChannel> (new DMAChannel());
+    this->floppy_dma = std::unique_ptr<DMAChannel> (new DMAChannel("floppy"));
     this->swim3->set_dma_channel(this->floppy_dma.get());
     this->floppy_dma->register_dma_int(this, this->register_dma_int(IntSrc::DMA_SWIM3));
 }

@@ -52,7 +52,7 @@ OHare::OHare() : PCIDevice("mac-io/ohare"), InterruptCtrl()
 
     // initialize sound chip and its DMA output channel, then wire them together
     this->awacs       = std::unique_ptr<AwacsScreamer> (new AwacsScreamer());
-    this->snd_out_dma = std::unique_ptr<DMAChannel> (new DMAChannel());
+    this->snd_out_dma = std::unique_ptr<DMAChannel> (new DMAChannel("snd_out"));
     this->awacs->set_dma_out(this->snd_out_dma.get());
     this->snd_out_dma->set_callbacks(
         std::bind(&AwacsScreamer::dma_out_start, this->awacs.get()),
