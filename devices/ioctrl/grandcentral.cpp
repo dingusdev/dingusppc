@@ -57,7 +57,7 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
 
     // initialize sound chip and its DMA output channel, then wire them together
     this->awacs       = std::unique_ptr<AwacsScreamer> (new AwacsScreamer());
-    this->snd_out_dma = std::unique_ptr<DMAChannel> (new DMAChannel());
+    this->snd_out_dma = std::unique_ptr<DMAChannel> (new DMAChannel("snd_out"));
     this->awacs->set_dma_out(this->snd_out_dma.get());
     this->snd_out_dma->set_callbacks(
         std::bind(&AwacsScreamer::dma_out_start, this->awacs.get()),
@@ -75,7 +75,7 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
 
     // connect floppy disk HW
     this->swim3 = dynamic_cast<Swim3::Swim3Ctrl*>(gMachineObj->get_comp_by_name("Swim3"));
-    this->floppy_dma = std::unique_ptr<DMAChannel> (new DMAChannel());
+    this->floppy_dma = std::unique_ptr<DMAChannel> (new DMAChannel("floppy"));
     this->swim3->set_dma_channel(this->floppy_dma.get());
 
     // set EMMO pin status (active low)
