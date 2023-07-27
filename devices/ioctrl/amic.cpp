@@ -495,7 +495,7 @@ void AMIC::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state) {
 }
 
 // ============================ Sound DMA stuff ================================
-AmicSndOutDma::AmicSndOutDma()
+AmicSndOutDma::AmicSndOutDma() : DmaOutChannel("SndOut")
 {
     this->dma_out_ctrl = 0;
     this->enabled = false;

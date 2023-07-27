@@ -115,7 +115,7 @@ private:
 /** AMIC-specific floppy DMA implementation. */
 class AmicFloppyDma : public DmaBidirChannel {
 public:
-    AmicFloppyDma() = default;
+    AmicFloppyDma() : DmaBidirChannel("floppy") {}
     ~AmicFloppyDma() = default;
 
     void            reinit(const uint32_t addr_ptr, const uint16_t byte_cnt);
@@ -136,7 +136,7 @@ private:
 /** AMIC-specific SCSI DMA implementation. */
 class AmicScsiDma : public DmaBidirChannel {
 public:
-    AmicScsiDma()   = default;
+    AmicScsiDma() : DmaBidirChannel("Scsi") {}
     ~AmicScsiDma()  = default;
 
     void            reinit(const uint32_t addr_ptr);

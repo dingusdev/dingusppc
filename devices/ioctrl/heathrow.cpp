@@ -70,7 +70,7 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
     // find appropriate sound chip, create a DMA output channel for sound,
     // then wire everything together
     this->snd_codec   = dynamic_cast<MacioSndCodec*>(gMachineObj->get_comp_by_type(HWCompType::SND_CODEC));
-    this->snd_out_dma = std::unique_ptr<DMAChannel> (new DMAChannel());
+    this->snd_out_dma = std::unique_ptr<DMAChannel> (new DMAChannel("snd_out"));
     this->snd_codec->set_dma_out(this->snd_out_dma.get());
     this->snd_out_dma->set_callbacks(
         std::bind(&AwacsScreamer::dma_out_start, this->snd_codec),
@@ -89,7 +89,7 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
 
     // connect floppy disk HW and initialize its DMA channel
     this->swim3 = dynamic_cast<Swim3::Swim3Ctrl*>(gMachineObj->get_comp_by_name("Swim3"));
-    this->floppy_dma = std::unique_ptr<DMAChannel> (new DMAChannel());
+    this->floppy_dma = std::unique_ptr<DMAChannel> (new DMAChannel("floppy"));
     this->swim3->set_dma_channel(this->floppy_dma.get());
     this->floppy_dma->register_dma_int(this, 2);
 
