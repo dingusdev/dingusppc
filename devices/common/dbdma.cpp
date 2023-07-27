@@ -130,7 +130,7 @@ void DMAChannel::finish_cmd() {
     this->cur_cmd = cmd_desc[3] >> 4;
 
     // all commands except STOP update cmd.xferStatus and
-    // perform actions under control of "i", "b" and "w" bits
+    // perform actions under control of "i" interrupt, "b" branch, and "w" wait bits
     if (this->cur_cmd < DBDMA_Cmd::STOP) {
         // react to cmd.w (wait) bits
         if (cmd_desc[2] & 3) {
@@ -344,8 +344,10 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
         break;
     case DMAReg::CH_STAT:
         break; // ingore writes to ChannelStatus
-    case DMAReg::CMD_PTR_HI: // Mac OS X writes this optional register with zero
-        LOG_F(9, "CommandPtrHi set to 0x%X", value);
+    case DMAReg::CMD_PTR_HI:
+        if (value != 0) {
+            LOG_F(WARNING, "%s: Unsupported DMA channel register write @%02x.%c = %0*x", this->get_name().c_str(), offset, SIZE_ARG(size), size * 2, value);
+        }
         break;
     case DMAReg::CMD_PTR_LO:
         if (!(this->ch_stat & CH_STAT_RUN) && !(this->ch_stat & CH_STAT_ACTIVE)) {
