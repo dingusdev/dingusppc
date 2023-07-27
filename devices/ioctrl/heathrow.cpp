@@ -124,7 +124,7 @@ uint32_t HeathrowIC::dma_read(uint32_t offset, int size) {
     case MIO_OHARE_DMA_AUDIO_OUT:
         return this->snd_out_dma->reg_read(offset & 0xFF, size);
     default:
-        LOG_F(WARNING, "Unsupported DMA channel read, offset=0x%X", offset);
+        LOG_F(WARNING, "Unsupported DMA channel %d  read @%02x.%c", offset >> 8, offset & 0xFF, SIZE_ARG(size));
     }
 
     return 0;
@@ -142,10 +142,9 @@ void HeathrowIC::dma_write(uint32_t offset, uint32_t value, int size) {
         this->snd_out_dma->reg_write(offset & 0xFF, value, size);
         break;
     default:
-        LOG_F(WARNING, "Unsupported DMA channel write, offset=0x%X, val=0x%X", offset, value);
+        LOG_F(WARNING, "Unsupported DMA channel %d write @%02x.%c = %0*x", offset >> 8, offset & 0xFF, SIZE_ARG(size), size * 2, value);
     }
 }
-
 
 uint32_t HeathrowIC::read(uint32_t rgn_start, uint32_t offset, int size) {
     uint32_t res = 0;
