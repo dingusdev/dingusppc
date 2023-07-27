@@ -42,7 +42,7 @@ void EventManager::poll_events()
                 WindowEvent we;
                 we.sub_type  = event.window.event;
                 we.window_id = event.window.windowID;
-                this->post_event(we);
+                this->_window_signal.emit(we);
             }
             break;
 
@@ -54,8 +54,13 @@ void EventManager::poll_events()
             key_ups++;
             break;
 
-        case SDL_MOUSEMOTION:
-            mouse_motions++;
+        case SDL_MOUSEMOTION: {
+                MouseEvent me;
+                me.xrel  = event.motion.xrel;
+                me.yrel  = event.motion.yrel;
+                me.flags = MOUSE_EVENT_MOTION;
+                this->_mouse_signal.emit(me);
+            }
             break;
 
         default:

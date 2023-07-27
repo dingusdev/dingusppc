@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef VIDEO_CTRL_H
 #define VIDEO_CTRL_H
 
+#include <core/hostevents.h>
 #include <SDL.h>
 
 #include <cinttypes>
@@ -34,6 +35,7 @@ public:
     VideoCtrlBase(int width = 640, int height = 480);
     ~VideoCtrlBase();
 
+    void handle_events(const WindowEvent& wnd_event);
     void create_display_window(int width, int height);
     void blank_display();
     void update_screen(void);

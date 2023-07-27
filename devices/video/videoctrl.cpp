@@ -21,7 +21,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Video Conroller base class implementation. */
 
-#include <core/hostevents.h>
 #include <devices/video/videoctrl.h>
 #include <loguru.hpp>
 #include <memaccess.h>
@@ -32,13 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 VideoCtrlBase::VideoCtrlBase(int width, int height)
 {
-    EventManager::get_instance()->register_handler(EventType::EVENT_WINDOW,
-                                                  [this](const BaseEvent& event) {
-        const WindowEvent& wnd_event = static_cast<const WindowEvent&>(event);
-        if (wnd_event.sub_type == SDL_WINDOWEVENT_SIZE_CHANGED &&
-            wnd_event.window_id == this->disp_wnd_id)
-            this->resizing = false;
-    });
+    EventManager::get_instance()->add_window_handler(this, &VideoCtrlBase::handle_events);
 
     this->create_display_window(width, height);
 }
@@ -60,6 +53,12 @@ VideoCtrlBase::~VideoCtrlBase()
     if (this->display_wnd) {
         SDL_DestroyWindow(this->display_wnd);
     }
+}
+
+void VideoCtrlBase::handle_events(const WindowEvent& wnd_event) {
+    if (wnd_event.sub_type == SDL_WINDOWEVENT_SIZE_CHANGED &&
+        wnd_event.window_id == this->disp_wnd_id)
+        this->resizing = false;
 }
 
 void VideoCtrlBase::create_display_window(int width, int height)
