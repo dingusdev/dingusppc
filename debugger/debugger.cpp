@@ -458,7 +458,6 @@ void enter_debugger() {
         cmd_repeat = cmd.empty() && !last_cmd.empty();
         if (cmd_repeat) {
             cmd = last_cmd;
-            cout << cmd << endl;
         }
         if (cmd == "help") {
             show_help();
