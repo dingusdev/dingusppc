@@ -526,7 +526,6 @@ void enter_debugger() {
 
         if (cmd.empty() && !last_cmd.empty()) {
             cmd = last_cmd;
-            cout << cmd << endl;
         }
         if (cmd == "help") {
             cmd = "";
