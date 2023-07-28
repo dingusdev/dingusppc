@@ -353,7 +353,7 @@ static void print_gprs() {
         reg_name = "R" + to_string(i);
 
         cout << right << std::setw(3) << setfill(' ') << reg_name << " : " <<
-            setw(8) << setfill('0') << right << uppercase << hex << get_reg(reg_name);
+            setw(8) << setfill('0') << right << uppercase << hex << get_reg(reg_name) << setfill(' ');
 
         if (i & 1) {
             cout << endl;
@@ -366,7 +366,7 @@ static void print_gprs() {
 
     for (auto &spr : sprs) {
         cout << right << std::setw(3) << setfill(' ') << spr << " : " <<
-            setw(8) << setfill('0') << uppercase << hex << get_reg(spr);
+            setw(8) << setfill('0') << uppercase << hex << get_reg(spr) << setfill(' ');
 
         if (i & 1) {
             cout << endl;
