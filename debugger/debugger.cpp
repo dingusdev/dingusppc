@@ -339,8 +339,9 @@ static void disasm(uint32_t count, uint32_t address) {
 
     for (int i = 0; power_on && i < count; i++) {
         ctx.instr_code = READ_DWORD_BE_A(mmu_translate_imem(ctx.instr_addr));
-        cout << uppercase << hex << ctx.instr_addr;
-        cout << "    " << disassemble_single(&ctx) << endl;
+        cout << setfill('0') << setw(8) << right << uppercase << hex << ctx.instr_addr;
+        cout << ": " << setfill('0') << setw(8) << right << uppercase << hex << ctx.instr_code;
+        cout << "    " << disassemble_single(&ctx) << setfill(' ') << left << endl;
     }
 }
 
