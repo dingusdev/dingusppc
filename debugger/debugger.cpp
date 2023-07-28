@@ -456,6 +456,7 @@ void enter_debugger() {
         }
         if (cmd == "help") {
             show_help();
+            cmd = "";
         } else if (cmd == "quit") {
             break;
         } else if (cmd == "profile") {
@@ -469,6 +470,7 @@ void enter_debugger() {
             } else {
                 cout << "Unknown/empty subcommand " << sub_cmd << endl;
             }
+            cmd = "";
         }
         else if (cmd == "regs") {
             if (context == 2) {
@@ -478,6 +480,7 @@ void enter_debugger() {
             } else {
                 print_gprs();
             }
+            cmd = "";
         } else if (cmd == "set") {
             ss >> expr_str;
 
@@ -622,6 +625,7 @@ void enter_debugger() {
             dump_mem(expr_str);
 #ifdef ENABLE_68K_DEBUGGER
         } else if (cmd == "context") {
+            cmd = "";
             expr_str = "";
             ss >> expr_str;
             if (expr_str == "ppc" || expr_str == "PPC") {
@@ -633,10 +637,12 @@ void enter_debugger() {
             }
 #endif
         } else if (cmd == "printenv") {
+            cmd = "";
             if (ofnvram->init())
                 continue;
             ofnvram->printenv();
         } else if (cmd == "setenv") {
+            cmd = "";
             string var_name, value;
             ss >> var_name;
             std::istream::sentry se(ss); // skip white space
@@ -646,6 +652,7 @@ void enter_debugger() {
             ofnvram->setenv(var_name, value);
  #ifndef _WIN32
         } else if (cmd == "nvedit") {
+            cmd = "";
             cout << "===== press CNTRL-C to save =====" << endl;
 
             // save original terminal state
@@ -695,6 +702,7 @@ void enter_debugger() {
 #endif
 #ifdef DEBUG_CPU_INT
         } else if (cmd == "amicint") {
+            cmd = "";
             string value;
             int irq_id;
             ss >> value;
@@ -708,6 +716,7 @@ void enter_debugger() {
                 gMachineObj->get_comp_by_type(HWCompType::INT_CTRL));
             int_ctrl->ack_int(irq_id, 1);
         } else if (cmd == "viaint") {
+            cmd = "";
             string value;
             int irq_bit;
             ss >> value;
