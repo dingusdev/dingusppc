@@ -532,11 +532,17 @@ void enter_debugger() {
             if (context == 2) {
 #ifdef ENABLE_68K_DEBUGGER
                 for (; --count >= 0;) {
+                    addr_str = "R24";
+                    addr     = get_reg(addr_str) - 2;
+                    disasm_68k(1, addr);
                     exec_single_68k();
                 }
 #endif
             } else {
                 for (; --count >= 0;) {
+                    addr_str = "PC";
+                    addr     = (uint32_t)get_reg(addr_str);
+                    disasm(1, addr);
                     ppc_exec_single();
                 }
             }
