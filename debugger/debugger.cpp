@@ -108,7 +108,7 @@ static void show_help() {
 
 #ifdef ENABLE_68K_DEBUGGER
 
-static void disasm_68k(uint32_t count, uint32_t address) {
+static uint32_t disasm_68k(uint32_t count, uint32_t address) {
     csh cs_handle;
     uint8_t code[10];
     size_t code_size;
@@ -116,7 +116,7 @@ static void disasm_68k(uint32_t count, uint32_t address) {
 
     if (cs_open(CS_ARCH_M68K, CS_MODE_M68K_040, &cs_handle) != CS_ERR_OK) {
         cout << "Capstone initialization error" << endl;
-        return;
+        return address;
     }
 
     cs_insn* insn = cs_malloc(cs_handle);
@@ -154,6 +154,7 @@ print_bin:
 
     cs_free(insn, 1);
     cs_close(&cs_handle);
+    return address;
 }
 
 /* emulator opcode table size --> 512 KB */
@@ -331,7 +332,7 @@ static void dump_mem(string& params) {
     cout << endl << endl;
 }
 
-static void disasm(uint32_t count, uint32_t address) {
+static uint32_t disasm(uint32_t count, uint32_t address) {
     PPCDisasmContext ctx;
 
     ctx.instr_addr = address;
@@ -343,6 +344,7 @@ static void disasm(uint32_t count, uint32_t address) {
         cout << ": " << setfill('0') << setw(8) << right << uppercase << hex << ctx.instr_code;
         cout << "    " << disassemble_single(&ctx) << setfill(' ') << left << endl;
     }
+    return ctx.instr_addr;
 }
 
 static void print_gprs() {
@@ -444,6 +446,9 @@ void enter_debugger() {
     int log_level, context;
     size_t separator_pos;
     bool did_message = false;
+    uint32_t next_addr_ppc;
+    uint32_t next_addr_68k;
+    bool cmd_repeat;
 
     unique_ptr<OfConfigUtils> ofnvram = unique_ptr<OfConfigUtils>(new OfConfigUtils);
 
@@ -525,7 +530,8 @@ void enter_debugger() {
             continue;
         }
 
-        if (cmd.empty() && !last_cmd.empty()) {
+        cmd_repeat = cmd.empty() && !last_cmd.empty();
+        if (cmd_repeat) {
             cmd = last_cmd;
         }
         if (cmd == "help") {
@@ -672,10 +678,10 @@ void enter_debugger() {
                 try {
                     if (context == 2) {
 #ifdef ENABLE_68K_DEBUGGER
-                        disasm_68k(inst_grab, addr);
+                        next_addr_68k = disasm_68k(inst_grab, addr);
 #endif
                     } else {
-                        disasm(inst_grab, addr);
+                        next_addr_ppc = disasm(inst_grab, addr);
                     }
                 } catch (invalid_argument& exc) {
                     cout << exc.what() << endl;
@@ -685,14 +691,24 @@ void enter_debugger() {
                 try {
                     if (context == 2) {
 #ifdef ENABLE_68K_DEBUGGER
+                        if (cmd_repeat) {
+                            addr = next_addr_68k;
+                        }
+                        else {
                         addr_str = "R24";
-                        addr     = get_reg(addr_str);
-                        disasm_68k(1, addr - 2);
+                            addr     = get_reg(addr_str) - 2;
+                        }
+                        next_addr_68k = disasm_68k(1, addr);
 #endif
                     } else {
+                        if (cmd_repeat) {
+                            addr = next_addr_ppc;
+                        }
+                        else {
                         addr_str = "PC";
                         addr     = (uint32_t)get_reg(addr_str);
-                        disasm(1, addr);
+                        }
+                        next_addr_ppc = disasm(1, addr);
                     }
                 } catch (invalid_argument& exc) {
                     cout << exc.what() << endl;
