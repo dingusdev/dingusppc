@@ -31,7 +31,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     Kudos to joevt#3510 for his precious technical help and HW hacking.
  */
 
-#include <core/timermanager.h>
 #include <devices/common/i2c/athens.h>
 #include <devices/common/i2c/i2c.h>
 #include <devices/deviceregistry.h>
@@ -293,18 +292,10 @@ void ControlVideo::enable_display()
         / (new_height + vert_blank);
     LOG_F(INFO, "Control: refresh rate set to %f Hz", this->refresh_rate);
 
-    if (this->refresh_task_id) {
-        TimerManager::get_instance()->cancel_timer(this->refresh_task_id);
-    }
+    this->stop_refresh_task();
 
     // set up periodic timer for display updates
-    uint64_t refresh_interval = static_cast<uint64_t>(1.0f / refresh_rate * NS_PER_SEC + 0.5);
-    this->refresh_task_id = TimerManager::get_instance()->add_cyclic_timer(
-        refresh_interval,
-        [this]() {
-            this->update_screen();
-        }
-    );
+    this->start_refresh_task();
 
     this->blank_on = false;
 
