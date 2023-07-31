@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Video Conroller base class implementation. */
 
+#include <core/timermanager.h>
 #include <devices/video/videoctrl.h>
 #include <loguru.hpp>
 #include <memaccess.h>
@@ -147,6 +148,22 @@ void VideoCtrlBase::update_screen()
     }
 
     SDL_RenderPresent(this->renderer);
+}
+
+void VideoCtrlBase::start_refresh_task() {
+    uint64_t refresh_interval = static_cast<uint64_t>(1.0f / refresh_rate * NS_PER_SEC + 0.5);
+    this->refresh_task_id = TimerManager::get_instance()->add_cyclic_timer(
+        refresh_interval,
+        [this]() {
+            this->update_screen();
+        }
+    );
+}
+
+void VideoCtrlBase::stop_refresh_task() {
+    if (this->refresh_task_id) {
+        TimerManager::get_instance()->cancel_timer(this->refresh_task_id);
+    }
 }
 
 void VideoCtrlBase::get_palette_colors(uint8_t index, uint8_t& r, uint8_t& g,
