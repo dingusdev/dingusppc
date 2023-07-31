@@ -21,7 +21,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file PDM on-board video emulation. */
 
-#include <core/timermanager.h>
 #include <cpu/ppc/ppcmmu.h>
 #include <devices/memctrl/hmc.h>
 #include <devices/video/pdmonboard.h>
@@ -210,20 +209,13 @@ void PdmOnboardVideo::enable_video_internal()
 
     this->set_depth_internal(new_width);
 
-    if (this->refresh_task_id) {
-        TimerManager::get_instance()->cancel_timer(this->refresh_task_id);
-    }
+    this->stop_refresh_task();
 
     // set up video refresh timer
-    double refresh_rate_hz = (double)(this->pixel_clock) / (new_width + hori_blank) / (new_height + vert_blank);
-    LOG_F(INFO, "PDM-Video: refresh rate set to %f Hz", refresh_rate_hz);
-    uint64_t refresh_interval = static_cast<uint64_t>(1.0f / refresh_rate_hz * NS_PER_SEC + 0.5);
-    this->refresh_task_id = TimerManager::get_instance()->add_cyclic_timer(
-        refresh_interval,
-        [this]() {
-            this->update_screen();
-        }
-    );
+    this->refresh_rate = (double)(this->pixel_clock) / (new_width + hori_blank) /
+                         (new_height + vert_blank);
+    LOG_F(INFO, "PDM-Video: refresh rate set to %f Hz", this->refresh_rate);
+    this->start_refresh_task();
 
     LOG_F(9, "PDM-Video: video enabled");
     this->crtc_on = true;
@@ -240,7 +232,7 @@ void PdmOnboardVideo::disable_video_internal()
 
 /** Ariel II has a weird 1bpp mode where a white pixel is mapped to
     CLUT entry #127 (%01111111) and a black pixel to #255 (%11111111).
-    It requres a non-standard conversion routine implementend below.
+    It requres a non-standard conversion routine implemented below.
  */
 void PdmOnboardVideo::convert_frame_1bpp(uint8_t *dst_buf, int dst_pitch)
 {
