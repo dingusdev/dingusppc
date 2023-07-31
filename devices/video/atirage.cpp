@@ -20,7 +20,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <core/bitops.h>
-#include <core/timermanager.h>
 #include <devices/common/hwcomponent.h>
 #include <devices/common/pci/pcidevice.h>
 #include <devices/deviceregistry.h>
@@ -567,17 +566,8 @@ void ATIRage::crtc_update() {
     LOG_F(INFO, "Pixel (dot) clock: %f MHz", this->pixel_clock * 1e-6);
     LOG_F(INFO, "Refresh rate: %f Hz", this->refresh_rate);
 
-    if (this->refresh_task_id) {
-        TimerManager::get_instance()->cancel_timer(this->refresh_task_id);
-    }
-
-    uint64_t refresh_interval = static_cast<uint64_t>(1.0f / this->refresh_rate * NS_PER_SEC + 0.5);
-    this->refresh_task_id = TimerManager::get_instance()->add_cyclic_timer(
-        refresh_interval,
-        [this]() {
-            this->update_screen();
-        }
-    );
+    this->stop_refresh_task();
+    this->start_refresh_task();
 
     this->crtc_on = true;
 }
