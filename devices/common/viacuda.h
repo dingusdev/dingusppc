@@ -223,7 +223,9 @@ private:
     void (ViaCuda::*next_out_handler)(void);
 
     std::unique_ptr<NVram>   pram_obj;
+
     AdbBus* adb_bus_obj = nullptr;
+    bool    autopoll_enabled = false;
 
     // VIA methods
     void print_enabled_ints(); // print enabled VIA interrupts and their sources
@@ -248,6 +250,8 @@ private:
     void pram_out_handler(void);
     void out_buf_handler(void);
     void i2c_handler(void);
+
+    void autopoll_handler();
 
     /* I2C related methods */
     void i2c_simple_transaction(uint8_t dev_addr, const uint8_t* in_buf, int in_bytes);

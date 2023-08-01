@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** High-level VIA-CUDA combo device emulation.
  */
 
+#include <core/hostevents.h>
 #include <core/timermanager.h>
 #include <devices/common/hwinterrupt.h>
 #include <devices/common/viacuda.h>
@@ -78,6 +79,9 @@ ViaCuda::ViaCuda() {
 
     // establish ADB bus connection
     this->adb_bus_obj = dynamic_cast<AdbBus*>(gMachineObj->get_comp_by_type(HWCompType::ADB_HOST));
+
+    // autopoll handler will be called during post-processing of the host events
+    EventManager::get_instance()->add_post_handler(this, &ViaCuda::autopoll_handler);
 
     this->cuda_init();
 
@@ -468,6 +472,40 @@ void ViaCuda::process_adb_command() {
     }
 }
 
+void ViaCuda::autopoll_handler() {
+    uint8_t adb_status, output_size;
+
+    if (!this->autopoll_enabled)
+        return;
+
+    // send TALK R0 command to address 3 (mouse)
+    uint8_t in_data[2] = { 0x3C, 0};
+
+    adb_status = this->adb_bus_obj->process_command(in_data, 1);
+
+    if (adb_status == ADB_STAT_OK) {
+        if (!this->old_tip || !this->treq) {
+            LOG_F(WARNING, "Cuda transaction probably in progress");
+        }
+
+        // prepare autopoll packet
+        response_header(CUDA_PKT_ADB, adb_status | ADB_STAT_AUTOPOLL);
+        this->out_buf[2] = 0x3C; // put the proper ADB command
+        output_size = this->adb_bus_obj->get_output_count();
+        if (output_size) {
+            std::memcpy(&this->out_buf[3], this->adb_bus_obj->get_output_buf(), output_size);
+            this->out_count += output_size;
+        }
+
+        // assert TREQ
+        this->via_regs[VIA_B] &= ~CUDA_TREQ;
+        this->treq = 0;
+
+        // draw guest system's attention
+        schedule_sr_int(USECS_TO_NSECS(30));
+    }
+}
+
 void ViaCuda::pseudo_command(int cmd, int data_count) {
     uint16_t    addr;
     int         i;
@@ -476,8 +514,10 @@ void ViaCuda::pseudo_command(int cmd, int data_count) {
     case CUDA_START_STOP_AUTOPOLL:
         if (this->in_buf[2]) {
             LOG_F(INFO, "Cuda: autopoll started, rate: %d ms", this->poll_rate);
+            this->autopoll_enabled = true;
         } else {
             LOG_F(INFO, "Cuda: autopoll stopped");
+            this->autopoll_enabled = false;
         }
         response_header(CUDA_PKT_PSEUDO, 0);
         break;
