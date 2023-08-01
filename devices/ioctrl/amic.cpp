@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -73,6 +73,7 @@ AMIC::AMIC() : MMIODevice()
     // initialize on-board video
     this->disp_id = std::unique_ptr<DisplayID> (new DisplayID());
     this->def_vid = std::unique_ptr<PdmOnboardVideo> (new PdmOnboardVideo());
+    this->def_vid->init_interrupts(this, SLOT_INT_VBL << 16);
 
     // initialize floppy disk HW
     this->swim3 = dynamic_cast<Swim3::Swim3Ctrl*>(gMachineObj->get_comp_by_name("Swim3"));
@@ -152,9 +153,13 @@ uint32_t AMIC::read(uint32_t rgn_start, uint32_t offset, int size)
     switch(offset) {
     case AMICReg::Ariel_Config:
         return this->def_vid->get_vdac_config();
+    case AMICReg::VIA2_Slot_IFR:
+        return this->via2_slot_ifr;
     case AMICReg::VIA2_IFR:
     case AMICReg::VIA2_IFR_RBV:
         return this->via2_ifr;
+    case AMICReg::VIA2_Slot_IER:
+        return this->via2_slot_ier;
     case AMICReg::VIA2_IER:
     case AMICReg::VIA2_IER_RBV:
         return this->via2_ier;
@@ -257,16 +262,26 @@ void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
     }
 
     switch(offset) {
+    case AMICReg::VIA2_Slot_IFR:
+        if (value & SLOT_INT_VBL) {
+            // clear pending VBL int
+            this->ack_slot_int(SLOT_INT_VBL, 0);
+        }
+        break;
     case AMICReg::VIA2_IFR:
         // for each "1" in value clear the corresponding IRQ bit
         // TODO: is bit 7 read only?
-        // TODO: update interrupts?
         this->via2_ifr &= ~(value & 0x7F);
+        this->update_via2_irq();
         break;
     case AMICReg::VIA2_Slot_IER:
-        LOG_F(INFO, "AMIC VIA2 Slot Interrupt Enable Register updated, val=%x", value);
+        if (value & 0x80)
+            this->via2_slot_ier |= value & 0x7F;
+        else
+            this->via2_slot_ier &= ~value;
         break;
     case AMICReg::VIA2_IER:
+    case AMICReg::VIA2_IER_RBV:
         if (value & 0x80) {
             this->via2_ier |= value & 0x7F;
         } else {
@@ -304,16 +319,16 @@ void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
         break;
     case AMICReg::Int_Ctrl:
         // reset CPU interrupt bit if requested
-        if (value & AMIC_INT_CLR) {
-            if (this->int_ctrl & 0x80) {
-                this->int_ctrl &= ~AMIC_INT_CLR;
+        if (value & CPU_INT_CLEAR) {
+            if (this->int_ctrl & CPU_INT_FLAG) {
+                this->int_ctrl &= ~CPU_INT_FLAG;
                 ppc_release_int();
                 LOG_F(5, "AMIC: CPU INT latch cleared");
             }
         }
         // keep interrupt mode bit
         // and discard read-only IQR state bits
-        this->int_ctrl |= value & AMIC_INT_MODE;
+        this->int_ctrl |= value & CPU_INT_MODE;
         break;
     case AMICReg::DMA_Base_Addr_0:
     case AMICReg::DMA_Base_Addr_1:
@@ -388,11 +403,13 @@ void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
 uint32_t AMIC::register_dev_int(IntSrc src_id) {
     switch (src_id) {
     case IntSrc::VIA_CUDA:
-        return 1;
+        return CPU_INT_VIA1;
     case IntSrc::SCSI1:
-        return 0x800;
+        return VIA2_INT_SCSI_IRQ << 8;
     case IntSrc::SWIM3:
-        return 0x2000;
+        return VIA2_INT_SWIM3 << 8;
+    case IntSrc::NMI:
+        return CPU_INT_NMI;
     default:
         ABORT_F("AMIC: unknown interrupt source %d", src_id);
     }
@@ -405,13 +422,42 @@ uint32_t AMIC::register_dma_int(IntSrc src_id) {
 }
 
 void AMIC::ack_int(uint32_t irq_id, uint8_t irq_line_state) {
-    // dispatch AMIC interrupts from various sources
+    // dispatch cascaded AMIC interrupts from various sources
+    // irq_id format: 00DDCCBBAA where
+    // - AA -> CPU interrupts
+    // - BB -> pseudo VIA2 interrupts
+    // - CC -> slot interrupts
     if (irq_id < 0x100) {
         this->ack_cpu_int(irq_id, irq_line_state);
     } else if (irq_id < 0x10000) {
         this->ack_via2_int(irq_id >> 8, irq_line_state);
+    } else if (irq_id < 0x1000000) {
+        this->ack_slot_int(irq_id >> 16, irq_line_state);
     } else {
         ABORT_F("AMIC: unknown interrupt source ID 0x%X", irq_id);
+    }
+}
+
+void AMIC::ack_slot_int(uint32_t irq_id, uint8_t irq_line_state) {
+    // CAUTION: reverse logic (0 - true, 1 - false) in the IFR register!
+    if (irq_line_state) {
+        this->via2_slot_ifr &= ~irq_id;
+    } else {
+        this->via2_slot_ifr |= irq_id;
+    }
+    uint8_t new_irq = !!(~this->via2_slot_ifr & this->via2_slot_ier & 0x7F);
+    if (new_irq != this->via2_slot_irq) {
+        this->via2_slot_irq = new_irq;
+        this->ack_via2_int(VIA2_INT_ALL_SLOT, new_irq);
+    }
+}
+
+void AMIC::update_via2_irq() {
+    uint8_t new_irq = !!(this->via2_ifr & this->via2_ier & 0x7F);
+    this->via2_ifr  = (this->via2_ifr & 0x7F) | (new_irq << 7);
+    if (new_irq != this->via2_irq) {
+        this->via2_irq = new_irq;
+        this->ack_cpu_int(CPU_INT_VIA2, new_irq);
     }
 }
 
@@ -421,23 +467,18 @@ void AMIC::ack_via2_int(uint32_t irq_id, uint8_t irq_line_state) {
     } else {
         this->via2_ifr &= ~irq_id;
     }
-    uint8_t new_irq = !!(this->via2_ifr & this->via2_ier & 0x7F);
-    this->via2_ifr  = (this->via2_ifr & 0x7F) | (new_irq << 7);
-    if (new_irq != this->via2_irq) {
-        this->via2_irq = new_irq;
-        this->ack_cpu_int(2, new_irq);
-    }
+    this->update_via2_irq();
 }
 
 void AMIC::ack_cpu_int(uint32_t irq_id, uint8_t irq_line_state) {
-    if (this->int_ctrl & AMIC_INT_MODE) { // 68k interrupt emulation mode?
+    if (this->int_ctrl & CPU_INT_MODE) { // 68k interrupt emulation mode?
         if (irq_line_state) {
             this->dev_irq_lines |= irq_id;
         } else {
             this->dev_irq_lines &= ~irq_id;
         }
-        if (!(this->int_ctrl & 0x80)) {
-            this->int_ctrl |= 0x80; // set CPU interrupt bit
+        if (!(this->int_ctrl & CPU_INT_FLAG)) {
+            this->int_ctrl |= CPU_INT_FLAG;
             ppc_assert_int();
             LOG_F(5, "AMIC: CPU INT asserted, source: %d", irq_id);
         } else {
@@ -445,7 +486,7 @@ void AMIC::ack_cpu_int(uint32_t irq_id, uint8_t irq_line_state) {
         }
 
     } else {
-        ABORT_F("AMIC: interrupt mode 0 not implemented");
+        ABORT_F("AMIC: native interrupt mode not implemented");
     }
 }
 

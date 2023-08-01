@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -39,8 +39,39 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memory>
 
 /** Interrupt related constants. */
-#define AMIC_INT_CLR    0x80 // clears CPU interrupt
-#define AMIC_INT_MODE   0x40 // interrupt mode: 0 - native, 1 - 68k-style
+
+/** CPU interrupt register bits. */
+enum : uint8_t {
+    CPU_INT_VIA1    = 1 << 0, // (R) VIA1 interrupts
+    CPU_INT_VIA2    = 1 << 1, // (R) pseudo VIA2 interrupts
+    CPU_INT_ESCC    = 1 << 2, // (R) ESCC interrupt
+    CPU_INT_ENET    = 1 << 3, // (R) ethernet interrupt
+    CPU_INT_ALL_DMA = 1 << 4, // (R) all DMA interrupts are signalled here
+    CPU_INT_NMI     = 1 << 5, // (R) non-maskable interrupt
+    CPU_INT_MODE    = 1 << 6, // (R/W) interrupt mode: 0 - native, 1 - 68k-style
+    CPU_INT_CLEAR   = 1 << 7, // (R/W) writing "1" clears CPU interrupt flag
+    CPU_INT_FLAG    = 1 << 7  // special constant for manipulating CPU int flag
+};
+
+/** Pseudo VIA2 interrupt flag/enable register bits. */
+enum : uint8_t {
+    VIA2_INT_SCSI_DRQ   = 1 << 0, // (R) SCSI DRQ interrupt
+    VIA2_INT_ALL_SLOT   = 1 << 1, // (R) all slot interrupts are signalled here
+    VIA2_INT_SCSI_IRQ   = 1 << 3, // (R) SCSI IRQ interrupt
+    VIA2_INT_SOUND      = 1 << 4, // (R) sound chip (AWACS) interrupt
+    VIA2_INT_SWIM3      = 1 << 5, // (R) floppy disk controller interrupt
+    VIA2_INT_IRQ        = 1 << 7, // (R) all VIA2 interrupts are signalled here
+};
+
+/** Slot interrupt flag/enable register bits. */
+enum : uint8_t {
+    SLOT_INT_SLOT_0     = 1 << 2, // (R) ColdFusion Nubus slot 0 interrupt
+    SLOT_INT_SLOT_1     = 1 << 3, // (R) ColdFusion Nubus slot 1 interrupt
+    SLOT_INT_SLOT_2     = 1 << 4, // (R) ColdFusion Nubus slot 2 interrupt
+    SLOT_INT_SLOT_VDS   = 1 << 5, // (R) ColdFusion video direct slot interrupt
+    SLOT_INT_SLOT_PDS   = 1 << 5, // (R) PDM processor direct slot interrupt
+    SLOT_INT_VBL        = 1 << 6, // (R) built-in video VBL interrupt
+};
 
 /** AMIC sound buffers are located at fixed offsets from DMA base. */
 #define AMIC_SND_BUF0_OFFS  0x10000
@@ -158,6 +189,7 @@ enum AMICReg : uint32_t {
     Ariel_Config        = 0x24002,
 
     // VIA2 registers
+    VIA2_Slot_IFR       = 0x26002,
     VIA2_IFR            = 0x26003,
     VIA2_Slot_IER       = 0x26012,
     VIA2_IER            = 0x26013,
@@ -233,8 +265,10 @@ public:
     void ack_dma_int(uint32_t irq_id, uint8_t irq_line_state);
 
 protected:
+    void ack_slot_int(uint32_t irq_id, uint8_t irq_line_state);
     void ack_via2_int(uint32_t irq_id, uint8_t irq_line_state);
     void ack_cpu_int(uint32_t irq_id, uint8_t irq_line_state);
+    void update_via2_irq();
 
 private:
     uint8_t imm_snd_regs[4]; // temporary storage for sound control registers
@@ -260,9 +294,12 @@ private:
     uint8_t     dev_irq_lines = 0; // state of the IRQ lines
 
     // pseudo VIA2 state
-    uint8_t     via2_ier = 0;
-    uint8_t     via2_ifr = 0;
-    uint8_t     via2_irq = 0;
+    uint8_t     via2_ier        =    0;
+    uint8_t     via2_ifr        =    0;
+    uint8_t     via2_irq        =    0;
+    uint8_t     via2_slot_ier   =    0; // normal logic
+    uint8_t     via2_slot_ifr   = 0x7F; // reverse logic
+    uint8_t     via2_slot_irq   =    0; // normal logic
 
     uint32_t    pseudo_vbl_tid; // ID for the pseudo-VBL timer
 
