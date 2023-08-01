@@ -63,6 +63,22 @@ void EventManager::poll_events()
             }
             break;
 
+        case SDL_MOUSEBUTTONDOWN: {
+                MouseEvent me;
+                me.buttons_state = 1;
+                me.flags = MOUSE_EVENT_BUTTON;
+                this->_mouse_signal.emit(me);
+            }
+            break;
+
+        case SDL_MOUSEBUTTONUP: {
+                MouseEvent me;
+                me.buttons_state = 0;
+                me.flags = MOUSE_EVENT_BUTTON;
+                this->_mouse_signal.emit(me);
+            }
+            break;
+
         default:
             unhandled_events++;
         }

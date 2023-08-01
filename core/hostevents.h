@@ -48,6 +48,7 @@ public:
     uint32_t    flags;
     uint32_t    xrel;
     uint32_t    yrel;
+    uint8_t     buttons_state;
 };
 
 class EventManager {
