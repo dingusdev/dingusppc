@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef ADB_MOUSE_H
 #define ADB_MOUSE_H
 
+#include <core/hostevents.h>
 #include <devices/common/adb/adbdevice.h>
 #include <devices/common/hwcomponent.h>
 
@@ -40,8 +41,14 @@ public:
     }
 
     void reset() override;
+    void event_handler(const MouseEvent& event);
 
+    bool get_register_0() override;
     void set_register_3() override;
+
+private:
+    int32_t x_rel = 0;
+    int32_t y_rel = 0;
 };
 
 #endif // ADB_MOUSE_H
