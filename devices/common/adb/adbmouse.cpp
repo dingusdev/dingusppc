@@ -34,6 +34,9 @@ void AdbMouse::event_handler(const MouseEvent& event) {
     if (event.flags & MOUSE_EVENT_MOTION) {
         this->x_rel += event.xrel;
         this->y_rel += event.yrel;
+    } else if (event.flags & MOUSE_EVENT_BUTTON) {
+        this->buttons_state = event.buttons_state;
+        this->changed = true;
     }
 }
 
@@ -42,19 +45,25 @@ void AdbMouse::reset() {
     this->dev_handler_id = 1;
     this->exc_event_flag = 1;
     this->srq_flag = 1; // enable service requests
+    this->x_rel = 0;
+    this->y_rel = 0;
+    this->buttons_state = 0;
+    this->changed = false;
 }
 
 bool AdbMouse::get_register_0() {
-    if (this->x_rel || this->y_rel) {
+    if (this->x_rel || this->y_rel || this->changed) {
         uint8_t* out_buf = this->host_obj->get_output_buf();
+
+        uint8_t button1_state = (this->buttons_state ^ 1) << 7;
 
         // report Y-axis motion
         if (this->y_rel < -64)
-            out_buf[0] = 0x40 | 0x80;
+            out_buf[0] = 0x40 | button1_state;
         else if (this->y_rel > 63)
-            out_buf[0] = 0x3F | 0x80;
+            out_buf[0] = 0x3F | button1_state;
         else
-            out_buf[0] = (this->y_rel & 0x7F) | 0x80;
+            out_buf[0] = (this->y_rel & 0x7F) | button1_state;
 
         // report X-axis motion
         if (this->x_rel < -64)
@@ -64,9 +73,10 @@ bool AdbMouse::get_register_0() {
         else
             out_buf[1] = (this->x_rel & 0x7F) | 0x80;
 
-        // reset accumulated motion data
-        this->x_rel = 0;
-        this->y_rel = 0;
+        // reset accumulated motion data and button change flag
+        this->x_rel     = 0;
+        this->y_rel     = 0;
+        this->changed   = false;
 
         this->host_obj->set_output_count(2);
         return true;

@@ -49,6 +49,8 @@ public:
 private:
     int32_t x_rel = 0;
     int32_t y_rel = 0;
+    uint8_t buttons_state = 0;
+    bool    changed = false;
 };
 
 #endif // ADB_MOUSE_H
