@@ -202,18 +202,21 @@ void PdmOnboardVideo::enable_video_internal()
     uint32_t fb_base_phys = ((hmc_control >> HMC_VBASE_BIT) & 1) ? 0 : 0x100000;
     LOG_F(INFO, "PDM-Video: framebuffer phys base addr = 0x%X", fb_base_phys);
 
-    // set framebuffer address and pitch
+    // set CRTC parameters
     this->fb_ptr = mmu_get_dma_mem(fb_base_phys, PDM_FB_SIZE_MAX, nullptr);
     this->active_width  = new_width;
     this->active_height = new_height;
+    this->hori_blank    = hori_blank;
+    this->vert_blank    = vert_blank;
+    this->hori_total    = new_width  + hori_blank;
+    this->vert_total    = new_height + vert_blank;
 
     this->set_depth_internal(new_width);
 
     this->stop_refresh_task();
 
     // set up video refresh timer
-    this->refresh_rate = (double)(this->pixel_clock) / (new_width + hori_blank) /
-                         (new_height + vert_blank);
+    this->refresh_rate = (double)(this->pixel_clock) / hori_total / vert_total;
     LOG_F(INFO, "PDM-Video: refresh rate set to %f Hz", this->refresh_rate);
     this->start_refresh_task();
 
@@ -223,6 +226,7 @@ void PdmOnboardVideo::enable_video_internal()
 
 void PdmOnboardVideo::disable_video_internal()
 {
+    this->stop_refresh_task();
     this->blank_on = true;
     this->blank_display();
     this->blanking = 0x80;
