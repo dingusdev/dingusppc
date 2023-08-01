@@ -67,4 +67,7 @@ void EventManager::poll_events()
             unhandled_events++;
         }
     }
+
+    // perform post-processing
+    this->_post_signal.emit();
 }

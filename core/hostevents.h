@@ -71,12 +71,18 @@ public:
         _mouse_signal.connect_method(inst, func);
     }
 
+    template <typename T>
+    void add_post_handler(T *inst, void (T::*func)()) {
+        _post_signal.connect_method(inst, func);
+    }
+
 private:
     static EventManager* event_manager;
     EventManager() {}; // private constructor to implement a singleton
 
     CoreSignal<const WindowEvent&>  _window_signal;
     CoreSignal<const MouseEvent&>   _mouse_signal;
+    CoreSignal<>                    _post_signal;
 
     uint64_t    events_captured = 0;
     uint64_t    unhandled_events = 0;
