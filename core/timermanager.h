@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -104,6 +104,7 @@ public:
     // creating and cancelling timers
     uint32_t add_oneshot_timer(uint64_t timeout, timer_cb cb);
     uint32_t add_cyclic_timer(uint64_t interval, timer_cb cb);
+    uint32_t add_cyclic_timer(uint64_t interval, uint64_t delay, timer_cb cb);
     void cancel_timer(uint32_t id);
 
     uint64_t process_timers(uint64_t time_now);

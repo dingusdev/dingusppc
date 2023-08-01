@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -55,16 +55,17 @@ uint32_t TimerManager::add_oneshot_timer(uint64_t timeout, timer_cb cb)
     return ti->id;
 }
 
-uint32_t TimerManager::add_cyclic_timer(uint64_t interval, timer_cb cb)
+uint32_t TimerManager::add_cyclic_timer(uint64_t interval, uint64_t delay, timer_cb cb)
 {
     if (!interval || interval <= MIN_TIMEOUT_NS) {
-        LOG_F(WARNING, "Cyclic timer interval too short, timeout=%llu ns", (long long unsigned)interval);
+        LOG_F(WARNING, "Cyclic timer interval too short, timeout=%llu ns",
+            (long long unsigned)interval);
     }
 
     TimerInfo* ti = new TimerInfo;
 
     ti->id          = ++this->id;
-    ti->timeout_ns  = this->get_time_now() + interval;
+    ti->timeout_ns  = this->get_time_now() + delay;
     ti->interval_ns = interval;
     ti->cb          = cb;
 
@@ -79,6 +80,10 @@ uint32_t TimerManager::add_cyclic_timer(uint64_t interval, timer_cb cb)
     }
 
     return ti->id;
+}
+
+uint32_t TimerManager::add_cyclic_timer(uint64_t interval, timer_cb cb) {
+    return this->add_cyclic_timer(interval, interval, cb);
 }
 
 void TimerManager::cancel_timer(uint32_t id)
