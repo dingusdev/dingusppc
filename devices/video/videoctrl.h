@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define VIDEO_CTRL_H
 
 #include <core/hostevents.h>
+#include <devices/common/hwinterrupt.h>
 #include <SDL.h>
 
 #include <cinttypes>
@@ -66,6 +67,8 @@ protected:
     int         active_height;  // height of the visible display area
     int         hori_total = 0;
     int         vert_total = 0;
+    int         hori_blank = 0;
+    int         vert_blank = 0;
     int         pixel_depth;
     float       pixel_clock;
     float       refresh_rate;
@@ -76,6 +79,11 @@ protected:
     uint8_t*    fb_ptr;
     int         fb_pitch;
     uint32_t    refresh_task_id = 0;
+    uint32_t    vbl_end_task_id = 0;
+
+    // interrupt suff
+    InterruptCtrl* int_ctrl = nullptr;
+    uint32_t       irq_id   = 0;
 
     std::function<void(uint8_t *dst_buf, int dst_pitch)> convert_fb_cb;
 

@@ -155,7 +155,22 @@ void VideoCtrlBase::start_refresh_task() {
     this->refresh_task_id = TimerManager::get_instance()->add_cyclic_timer(
         refresh_interval,
         [this]() {
+            // assert VBL interrupt
+            if (this->int_ctrl)
+                this->int_ctrl->ack_int(this->irq_id, 1);
             this->update_screen();
+        }
+    );
+
+    uint64_t vbl_duration = static_cast<uint64_t>(1.0f / ((double)(this->pixel_clock) /
+        hori_total / vert_blank) * NS_PER_SEC + 0.5);
+    this->vbl_end_task_id = TimerManager::get_instance()->add_cyclic_timer(
+        refresh_interval,
+        refresh_interval + vbl_duration,
+        [this]() {
+            // deassert VBL interrupt
+            if (this->int_ctrl)
+                this->int_ctrl->ack_int(this->irq_id, 0);
         }
     );
 }
@@ -163,6 +178,9 @@ void VideoCtrlBase::start_refresh_task() {
 void VideoCtrlBase::stop_refresh_task() {
     if (this->refresh_task_id) {
         TimerManager::get_instance()->cancel_timer(this->refresh_task_id);
+    }
+    if (this->vbl_end_task_id) {
+        TimerManager::get_instance()->cancel_timer(this->vbl_end_task_id);
     }
 }
 
