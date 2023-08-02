@@ -92,8 +92,7 @@ void ScsiHardDisk::process_command() {
         req_sense(alloc_len);
         break;
     case ScsiCommand::INQUIRY:
-        alloc_len = (cmd[3] << 8) + cmd[4];
-        inquiry(alloc_len);
+        this->inquiry();
         break;
     case ScsiCommand::READ_6:
         lba = ((cmd[1] & 0x1F) << 16) + (cmd[2] << 8) + cmd[3];
@@ -125,13 +124,10 @@ void ScsiHardDisk::process_command() {
         mode_select_6(param_len);
         break;
     case ScsiCommand::MODE_SENSE_6:
-        page_code    = cmd[2] & 0x1F;
-        subpage_code = cmd[3];
-        alloc_len    = cmd[4];
-        mode_sense_6(page_code, subpage_code, alloc_len);
+        this->mode_sense_6();
         break;
     case ScsiCommand::READ_CAPACITY_10:
-        read_capacity_10();
+        this->read_capacity_10();
         break;
     default:
         LOG_F(WARNING, "SCSI_HD: unrecognized command: %x", cmd[0]);
@@ -180,18 +176,31 @@ int ScsiHardDisk::req_sense(uint16_t alloc_len) {
     return ScsiError::NO_ERROR;    // placeholder - no sense
 }
 
-void ScsiHardDisk::inquiry(uint16_t alloc_len) {
-    if (alloc_len >= 48) {
-        uint8_t empty_filler[1 << 17] = {0x0};
-        std::memcpy(img_buffer, empty_filler, (1 << 17));
-        img_buffer[2] = 0x1;
-        img_buffer[3] = 0x2;
-        img_buffer[4] = 0x31;
-        img_buffer[7] = 0x1C;
+void ScsiHardDisk::inquiry() {
+    int page_num  = cmd_buf[2];
+    int alloc_len = cmd_buf[4];
+
+    if (page_num) {
+        ABORT_F("SCSI_CDROM: invalid page number in INQUIRY");
+    }
+
+    if (alloc_len >= 36) {
+        this->img_buffer[0] = 0;       // device type: Direct-access block device (hard drive)
+        this->img_buffer[1] = 0x80;    // removable media
+        this->img_buffer[2] = 2;       // ANSI version: SCSI-2
+        this->img_buffer[3] = 1;       // response data format
+        this->img_buffer[4] = 0x1F;    // additional length
+        this->img_buffer[5] = 0;
+        this->img_buffer[6] = 0;
+        this->img_buffer[7] = 0x18;    // supports synchronous xfers and linked commands
         std::memcpy(img_buffer + 8, vendor_info, 8);
         std::memcpy(img_buffer + 16, prod_info, 16);
-        std::memcpy(img_buffer + 32, rev_info, 8);
-        std::memcpy(img_buffer + 40, serial_info, 8);
+        std::memcpy(img_buffer + 32, rev_info, 4);
+
+        this->bytes_out  = 36;
+        this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;
+
+        this->switch_phase(ScsiPhase::DATA_IN);
     }
     else {
         LOG_F(WARNING, "Inappropriate Allocation Length: %d", alloc_len);
@@ -212,8 +221,9 @@ int ScsiHardDisk::mode_select_6(uint8_t param_len) {
     }
 }
 
-void ScsiHardDisk::mode_sense_6(uint8_t page_code, uint8_t subpage_code, uint8_t alloc_len) {
-    LOG_F(WARNING, "Page Code %d; Subpage Code: %d", page_code, subpage_code);
+void ScsiHardDisk::mode_sense_6() {
+    uint8_t page_code  = this->cmd_buf[2] & 0x3F;
+    uint8_t alloc_len = this->cmd_buf[4];
 }
 
 void ScsiHardDisk::read_capacity_10() {

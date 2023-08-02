@@ -51,9 +51,9 @@ protected:
     int send_diagnostic();
     int mode_select_6(uint8_t param_len);
 
-    void mode_sense_6(uint8_t page_code, uint8_t subpage_code, uint8_t alloc_len);
+    void mode_sense_6();
     void format();
-    void inquiry(uint16_t alloc_len);
+    void inquiry();
     void read_capacity_10();
     void read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len);
     void write(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len);
@@ -65,6 +65,7 @@ private:
     uint64_t        img_size;
     int             total_blocks;
     uint64_t        file_offset = 0;
+    int             bytes_out = 0;
 
     char            img_buffer[1 << 21]; // TODO: add proper buffer management!
 
@@ -75,8 +76,7 @@ private:
     //inquiry info
     char vendor_info[8] = {'D', 'i', 'n', 'g', 'u', 's', 'D', '\0'};
     char prod_info[16]  = {'E', 'm', 'u', 'l', 'a', 't', 'e', 'd', ' ', 'D', 'i', 's', 'k', '\0'};
-    char rev_info[8]    = {'d', 'i', '0', '0', '0', '0', '0', '1'};
-    char serial_info[8] = {'0', '0', '0', '0', '0', '0', '0', '0'};
+    char rev_info[4]    = {'d', 'i', '0', '1'};
 };
 
 #endif // SCSI_HD_H
