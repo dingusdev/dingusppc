@@ -731,7 +731,7 @@ void ViaCuda::i2c_comb_transaction(
 }
 
 static const vector<string> Cuda_Subdevices = {
-    "AdbBus", "AdbMouse"
+    "AdbBus", "AdbMouse", "AdbKeyboard"
 };
 
 static const DeviceDescription ViaCuda_Descriptor = {

@@ -38,6 +38,8 @@ public:
 enum : uint32_t {
     MOUSE_EVENT_MOTION = 1 << 0,
     MOUSE_EVENT_BUTTON = 1 << 1,
+    KEYBOARD_EVENT_DOWN = 1 << 0,
+    KEYBOARD_EVENT_UP = 1 << 1,
 };
 
 class MouseEvent {
@@ -49,6 +51,16 @@ public:
     uint32_t    xrel;
     uint32_t    yrel;
     uint8_t     buttons_state;
+};
+
+class KeyboardEvent {
+public:
+    KeyboardEvent() = default;
+    ~KeyboardEvent() = default;
+
+    uint32_t flags;
+    uint32_t key;
+    uint16_t keys_state;
 };
 
 class EventManager {
@@ -73,6 +85,11 @@ public:
     }
 
     template <typename T>
+    void add_keyboard_handler(T* inst, void (T::*func)(const KeyboardEvent&)) {
+        _keyboard_signal.connect_method(inst, func);
+    }
+
+    template <typename T>
     void add_post_handler(T *inst, void (T::*func)()) {
         _post_signal.connect_method(inst, func);
     }
@@ -81,9 +98,10 @@ private:
     static EventManager* event_manager;
     EventManager() {}; // private constructor to implement a singleton
 
-    CoreSignal<const WindowEvent&>  _window_signal;
-    CoreSignal<const MouseEvent&>   _mouse_signal;
-    CoreSignal<>                    _post_signal;
+    CoreSignal<const WindowEvent&>     _window_signal;
+    CoreSignal<const MouseEvent&>      _mouse_signal;
+    CoreSignal<const KeyboardEvent&>   _keyboard_signal;
+    CoreSignal<>                       _post_signal;
 
     uint64_t    events_captured = 0;
     uint64_t    unhandled_events = 0;
