@@ -87,7 +87,7 @@ typedef struct TLBEntry {
             int64_t host_va_offs_w;
         };
         struct { // for MMIO pages
-            AddressMapEntry*    reg_desc;
+            AddressMapEntry*    rgn_desc;
             int64_t             dev_base_va;
         };
     };

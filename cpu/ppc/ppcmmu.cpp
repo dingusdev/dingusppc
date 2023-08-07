@@ -526,9 +526,9 @@ static TLBEntry* itlb2_refill(uint32_t guest_va)
     }
 
     // look up host virtual address
-    AddressMapEntry* reg_desc = mem_ctrl_instance->find_range(phys_addr);
-    if (reg_desc) {
-        if (reg_desc->type & RT_MMIO) {
+    AddressMapEntry* rgn_desc = mem_ctrl_instance->find_range(phys_addr);
+    if (rgn_desc) {
+        if (rgn_desc->type & RT_MMIO) {
             ABORT_F("Instruction fetch from MMIO region at 0x%08X!\n", phys_addr);
         }
         // refill the secondary TLB
@@ -536,8 +536,8 @@ static TLBEntry* itlb2_refill(uint32_t guest_va)
         tlb_entry = tlb2_target_entry<TLBType::ITLB>(tag);
         tlb_entry->tag = tag;
         tlb_entry->flags = flags | TLBFlags::PAGE_MEM;
-        tlb_entry->host_va_offs_r = (int64_t)reg_desc->mem_ptr - guest_va +
-                                    (phys_addr - reg_desc->start);
+        tlb_entry->host_va_offs_r = (int64_t)rgn_desc->mem_ptr - guest_va +
+                                    (phys_addr - rgn_desc->start);
     } else {
         ABORT_F("Instruction fetch from unmapped memory at 0x%08X!\n", phys_addr);
     }
@@ -599,20 +599,20 @@ static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write)
     }
 
     // look up host virtual address
-    AddressMapEntry* reg_desc = mem_ctrl_instance->find_range(phys_addr);
-    if (reg_desc) {
+    AddressMapEntry* rgn_desc = mem_ctrl_instance->find_range(phys_addr);
+    if (rgn_desc) {
         // refill the secondary TLB
         tlb_entry = tlb2_target_entry<TLBType::DTLB>(tag);
         tlb_entry->tag = tag;
-        if (reg_desc->type & RT_MMIO) { // MMIO region
+        if (rgn_desc->type & RT_MMIO) { // MMIO region
             tlb_entry->flags = flags | TLBFlags::PAGE_IO;
-            tlb_entry->reg_desc = reg_desc;
-            tlb_entry->dev_base_va = guest_va - (phys_addr - reg_desc->start);
+            tlb_entry->rgn_desc = rgn_desc;
+            tlb_entry->dev_base_va = guest_va - (phys_addr - rgn_desc->start);
         } else { // memory region backed by host memory
             tlb_entry->flags = flags | TLBFlags::PAGE_MEM;
-            tlb_entry->host_va_offs_r = (int64_t)reg_desc->mem_ptr - guest_va +
-                                        (phys_addr - reg_desc->start);
-            if (reg_desc->type == RT_ROM) {
+            tlb_entry->host_va_offs_r = (int64_t)rgn_desc->mem_ptr - guest_va +
+                                        (phys_addr - rgn_desc->start);
+            if (rgn_desc->type == RT_ROM) {
                 // redirect writes to the dummy page for ROM regions
                 tlb_entry->host_va_offs_w = (int64_t)&dummy_page - guest_va;
             } else {
@@ -1036,7 +1036,7 @@ inline T mmu_read_vmem(uint32_t guest_va)
             iomem_reads_total++;
 #endif
             return (
-                tlb2_entry->reg_desc->devobj->read(tlb2_entry->reg_desc->start,
+                tlb2_entry->rgn_desc->devobj->read(tlb2_entry->rgn_desc->start,
                                                    guest_va - tlb2_entry->dev_base_va,
                                                    sizeof(T))
             );
@@ -1144,7 +1144,7 @@ inline void mmu_write_vmem(uint32_t guest_va, T value)
 #ifdef MMU_PROFILING
             iomem_writes_total++;
 #endif
-            tlb2_entry->reg_desc->devobj->write(tlb2_entry->reg_desc->start,
+            tlb2_entry->rgn_desc->devobj->write(tlb2_entry->rgn_desc->start,
                                                 guest_va - tlb2_entry->dev_base_va,
                                                 value, sizeof(T));
             return;
@@ -1631,7 +1631,7 @@ static inline uint64_t tlb_translate_addr(uint32_t guest_va)
             tlb1_entry->host_va_offs_r = tlb2_entry->host_va_offs_r;
             return tlb1_entry->host_va_offs_r + guest_va;
         } else { // an attempt to access a memory-mapped device
-            return guest_va - tlb2_entry->reg_desc->start;
+            return guest_va - tlb2_entry->rgn_desc->start;
         }
     }
 }
