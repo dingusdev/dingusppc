@@ -82,13 +82,13 @@ typedef struct TLBEntry {
     uint16_t    flags;
     uint16_t    lru_bits;
     union {
-        struct {
-            int64_t         host_va_offs_r;
-            int64_t         host_va_offs_w;
+        struct { // for memory pages
+            int64_t host_va_offs_r;
+            int64_t host_va_offs_w;
         };
-        struct {
+        struct { // for MMIO pages
             AddressMapEntry*    reg_desc;
-            int64_t             reg_va_offs;
+            int64_t             dev_base_va;
         };
     };
 } TLBEntry;

@@ -607,7 +607,7 @@ static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write)
         if (reg_desc->type & RT_MMIO) { // MMIO region
             tlb_entry->flags = flags | TLBFlags::PAGE_IO;
             tlb_entry->reg_desc = reg_desc;
-            tlb_entry->reg_va_offs = (phys_addr - reg_desc->start) - guest_va;
+            tlb_entry->dev_base_va = guest_va - (phys_addr - reg_desc->start);
         } else { // memory region backed by host memory
             tlb_entry->flags = flags | TLBFlags::PAGE_MEM;
             tlb_entry->host_va_offs_r = (int64_t)reg_desc->mem_ptr - guest_va +
@@ -1037,7 +1037,7 @@ inline T mmu_read_vmem(uint32_t guest_va)
 #endif
             return (
                 tlb2_entry->reg_desc->devobj->read(tlb2_entry->reg_desc->start,
-                                                   static_cast<uint32_t>(tlb2_entry->reg_va_offs + guest_va),
+                                                   guest_va - tlb2_entry->dev_base_va,
                                                    sizeof(T))
             );
         }
@@ -1145,7 +1145,7 @@ inline void mmu_write_vmem(uint32_t guest_va, T value)
             iomem_writes_total++;
 #endif
             tlb2_entry->reg_desc->devobj->write(tlb2_entry->reg_desc->start,
-                                                static_cast<uint32_t>(tlb2_entry->reg_va_offs + guest_va),
+                                                guest_va - tlb2_entry->dev_base_va,
                                                 value, sizeof(T));
             return;
         }
@@ -1631,7 +1631,7 @@ static inline uint64_t tlb_translate_addr(uint32_t guest_va)
             tlb1_entry->host_va_offs_r = tlb2_entry->host_va_offs_r;
             return tlb1_entry->host_va_offs_r + guest_va;
         } else { // an attempt to access a memory-mapped device
-            return tlb2_entry->reg_va_offs + guest_va;
+            return guest_va - tlb2_entry->reg_desc->start;
         }
     }
 }
