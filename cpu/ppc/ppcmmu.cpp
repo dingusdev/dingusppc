@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -607,6 +607,7 @@ static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write)
         if (reg_desc->type & RT_MMIO) { // MMIO region
             tlb_entry->flags = flags | TLBFlags::PAGE_IO;
             tlb_entry->reg_desc = reg_desc;
+            tlb_entry->reg_va_offs = (phys_addr - reg_desc->start) - guest_va;
         } else { // memory region backed by host memory
             tlb_entry->flags = flags | TLBFlags::PAGE_MEM;
             tlb_entry->host_va_offs_r = (int64_t)reg_desc->mem_ptr - guest_va +
@@ -620,7 +621,16 @@ static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write)
         }
         return tlb_entry;
     } else {
-        LOG_F(WARNING, "Access to unmapped physical memory, phys_addr=0x%08X", phys_addr);
+        static uint32_t last_phys_addr = -1;
+        static uint32_t first_phys_addr = -1;
+        if (phys_addr != last_phys_addr + 4) {
+            if (last_phys_addr != -1 && last_phys_addr != first_phys_addr) {
+                LOG_F(WARNING, "                                                         ... phys_addr=0x%08X", last_phys_addr);
+            }
+            first_phys_addr = phys_addr;
+            LOG_F(WARNING, "Access to unmapped physical memory, phys_addr=0x%08X", first_phys_addr);
+        }
+        last_phys_addr = phys_addr;
         return &UnmappedMem;
     }
 }
@@ -978,9 +988,10 @@ void mmu_print_regs()
 }
 
 // Forward declarations.
-static uint32_t read_unaligned(uint32_t guest_va, uint8_t *host_va, uint32_t size);
-static void write_unaligned(uint32_t guest_va, uint8_t *host_va, uint32_t value,
-                            uint32_t size);
+template <class T>
+static T read_unaligned(uint32_t guest_va, uint8_t *host_va);
+template <class T>
+static void write_unaligned(uint32_t guest_va, uint8_t *host_va, T value);
 
 template <class T>
 inline T mmu_read_vmem(uint32_t guest_va)
@@ -1025,11 +1036,28 @@ inline T mmu_read_vmem(uint32_t guest_va)
 #ifdef MMU_PROFILING
             iomem_reads_total++;
 #endif
-            return (
-                tlb2_entry->reg_desc->devobj->read(tlb2_entry->reg_desc->start,
-                                                   guest_va - tlb2_entry->reg_desc->start,
-                                                   sizeof(T))
-            );
+            if (sizeof(T) == 8) {
+                if (guest_va & 3) {
+                    ppc_exception_handler(Except_Type::EXC_ALIGNMENT, 0x0);
+                }
+                {
+                    return (
+                        ((T)tlb2_entry->reg_desc->devobj->read(tlb2_entry->reg_desc->start,
+                                                               static_cast<uint32_t>(tlb2_entry->reg_va_offs + guest_va),
+                                                               4) << 32) |
+                        tlb2_entry->reg_desc->devobj->read(tlb2_entry->reg_desc->start,
+                                                           static_cast<uint32_t>(tlb2_entry->reg_va_offs + guest_va) + 4,
+                                                           4)
+                    );
+                }
+            }
+            else {
+                return (
+                    tlb2_entry->reg_desc->devobj->read(tlb2_entry->reg_desc->start,
+                                                       static_cast<uint32_t>(tlb2_entry->reg_va_offs + guest_va),
+                                                       sizeof(T))
+                );
+            }
         }
     }
 
@@ -1039,7 +1067,7 @@ inline T mmu_read_vmem(uint32_t guest_va)
 
     // handle unaligned memory accesses
     if (sizeof(T) > 1 && (guest_va & (sizeof(T) - 1))) {
-        return read_unaligned(guest_va, host_va, sizeof(T));
+        return read_unaligned<T>(guest_va, host_va);
     }
 
     // handle aligned memory accesses
@@ -1134,9 +1162,24 @@ inline void mmu_write_vmem(uint32_t guest_va, T value)
 #ifdef MMU_PROFILING
             iomem_writes_total++;
 #endif
-            tlb2_entry->reg_desc->devobj->write(tlb2_entry->reg_desc->start,
-                                                guest_va - tlb2_entry->reg_desc->start,
-                                                value, sizeof(T));
+            if (sizeof(T) == 8) {
+                if (guest_va & 3) {
+                    ppc_exception_handler(Except_Type::EXC_ALIGNMENT, 0x0);
+                }
+                {
+                    tlb2_entry->reg_desc->devobj->write(tlb2_entry->reg_desc->start,
+                                                        static_cast<uint32_t>(tlb2_entry->reg_va_offs + guest_va),
+                                                        value >> 32, 4);
+                    tlb2_entry->reg_desc->devobj->write(tlb2_entry->reg_desc->start,
+                                                        static_cast<uint32_t>(tlb2_entry->reg_va_offs + guest_va) + 4,
+                                                        (uint32_t)value, 4);
+                }
+            }
+            else {
+                tlb2_entry->reg_desc->devobj->write(tlb2_entry->reg_desc->start,
+                                                    static_cast<uint32_t>(tlb2_entry->reg_va_offs + guest_va),
+                                                    value, sizeof(T));
+            }
             return;
         }
     }
@@ -1147,7 +1190,7 @@ inline void mmu_write_vmem(uint32_t guest_va, T value)
 
     // handle unaligned memory accesses
     if (sizeof(T) > 1 && (guest_va & (sizeof(T) - 1))) {
-        write_unaligned(guest_va, host_va, value, sizeof(T));
+        write_unaligned<T>(guest_va, host_va, value);
         return;
     }
 
@@ -1174,42 +1217,53 @@ template void mmu_write_vmem<uint16_t>(uint32_t guest_va, uint16_t value);
 template void mmu_write_vmem<uint32_t>(uint32_t guest_va, uint32_t value);
 template void mmu_write_vmem<uint64_t>(uint32_t guest_va, uint64_t value);
 
-static uint32_t read_unaligned(uint32_t guest_va, uint8_t *host_va, uint32_t size)
+template <class T>
+static T read_unaligned(uint32_t guest_va, uint8_t *host_va)
 {
-    uint32_t result = 0;
+    T result = 0;
 
     // is it a misaligned cross-page read?
-    if (((guest_va & 0xFFF) + size) > 0x1000) {
+    if (((guest_va & 0xFFF) + sizeof(T)) > 0x1000) {
 #ifdef MMU_PROFILING
         unaligned_crossp_r++;
 #endif
         // Break such a memory access into multiple, bytewise accesses.
         // Because such accesses suffer a performance penalty, they will be
         // presumably very rare so don't waste time optimizing the code below.
-        for (int i = 0; i < size; guest_va++, i++) {
+        for (int i = 0; i < sizeof(T); guest_va++, i++) {
             result = (result << 8) | mmu_read_vmem<uint8_t>(guest_va);
         }
     } else {
 #ifdef MMU_PROFILING
         unaligned_reads++;
 #endif
-        switch(size) {
+        switch(sizeof(T)) {
+            case 1:
+                return *host_va;
             case 2:
                 return READ_WORD_BE_U(host_va);
             case 4:
                 return READ_DWORD_BE_U(host_va);
-            case 8: // FIXME: should we raise alignment exception here?
+            case 8:
+                if (guest_va & 3) {
+                    ppc_exception_handler(Except_Type::EXC_ALIGNMENT, 0x0);
+                }
                 return READ_QWORD_BE_U(host_va);
         }
     }
     return result;
 }
 
-static void write_unaligned(uint32_t guest_va, uint8_t *host_va, uint32_t value,
-                            uint32_t size)
+// explicitely instantiate all required read_unaligned variants
+template uint16_t read_unaligned<uint16_t>(uint32_t guest_va, uint8_t *host_va);
+template uint32_t read_unaligned<uint32_t>(uint32_t guest_va, uint8_t *host_va);
+template uint64_t read_unaligned<uint64_t>(uint32_t guest_va, uint8_t *host_va);
+
+template <class T>
+static void write_unaligned(uint32_t guest_va, uint8_t *host_va, T value)
 {
     // is it a misaligned cross-page write?
-    if (((guest_va & 0xFFF) + size) > 0x1000) {
+    if (((guest_va & 0xFFF) + sizeof(T)) > 0x1000) {
 #ifdef MMU_PROFILING
         unaligned_crossp_w++;
 #endif
@@ -1217,28 +1271,40 @@ static void write_unaligned(uint32_t guest_va, uint8_t *host_va, uint32_t value,
         // Because such accesses suffer a performance penalty, they will be
         // presumably very rare so don't waste time optimizing the code below.
 
-        uint32_t shift = (size - 1) * 8;
+        uint32_t shift = (sizeof(T) - 1) * 8;
 
-        for (int i = 0; i < size; shift -= 8, guest_va++, i++) {
+        for (int i = 0; i < sizeof(T); shift -= 8, guest_va++, i++) {
             mmu_write_vmem<uint8_t>(guest_va, (value >> shift) & 0xFF);
         }
     } else {
 #ifdef MMU_PROFILING
         unaligned_writes++;
 #endif
-        switch(size) {
+        switch(sizeof(T)) {
+            case 1:
+                *host_va = value;
+                break;
             case 2:
                 WRITE_WORD_BE_U(host_va, value);
                 break;
             case 4:
                 WRITE_DWORD_BE_U(host_va, value);
                 break;
-            case 8: // FIXME: should we raise alignment exception here?
+            case 8:
+                if (guest_va & 3) {
+                    ppc_exception_handler(Except_Type::EXC_ALIGNMENT, 0x0);
+                }
                 WRITE_QWORD_BE_U(host_va, value);
                 break;
         }
     }
 }
+
+// explicitely instantiate all required write_unaligned variants
+template void write_unaligned<uint16_t>(uint32_t guest_va, uint8_t *host_va, uint16_t value);
+template void write_unaligned<uint32_t>(uint32_t guest_va, uint8_t *host_va, uint32_t value);
+template void write_unaligned<uint64_t>(uint32_t guest_va, uint8_t *host_va, uint64_t value);
+
 
 /* MMU profiling. */
 #ifdef MMU_PROFILING
@@ -1621,7 +1687,7 @@ static inline uint64_t tlb_translate_addr(uint32_t guest_va)
             tlb1_entry->host_va_offs_r = tlb2_entry->host_va_offs_r;
             return tlb1_entry->host_va_offs_r + guest_va;
         } else { // an attempt to access a memory-mapped device
-            return guest_va - tlb2_entry->reg_desc->start;
+            return tlb2_entry->reg_va_offs + guest_va;
         }
     }
 }
@@ -1868,7 +1934,7 @@ uint8_t* quickinstruction_translate(uint32_t addr) {
 
     return real_addr;
 }
-#endif
+#endif // Old and slow code
 
 uint64_t mem_read_dbg(uint32_t virt_addr, uint32_t size) {
     uint32_t save_dsisr, save_dar;

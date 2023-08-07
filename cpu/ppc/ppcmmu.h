@@ -82,11 +82,15 @@ typedef struct TLBEntry {
     uint16_t    flags;
     uint16_t    lru_bits;
     union {
-        int64_t             host_va_offs_r;
-        AddressMapEntry*    reg_desc;
+        struct {
+            int64_t         host_va_offs_r;
+            int64_t         host_va_offs_w;
+        };
+        struct {
+            AddressMapEntry*    reg_desc;
+            int64_t             reg_va_offs;
+        };
     };
-    int64_t     host_va_offs_w;
-    int64_t     unused;
 } TLBEntry;
 
 enum TLBFlags : uint16_t {
