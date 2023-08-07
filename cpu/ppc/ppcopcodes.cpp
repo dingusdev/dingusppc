@@ -851,6 +851,10 @@ void dppc_interpreter::ppc_mtmsr() {
     if (ppc_state.msr & 0x8000 && int_pin) {
         LOG_F(WARNING, "MTMSR: CPU INT pending, generate CPU exception");
         ppc_exception_handler(Except_Type::EXC_EXT_INT, 0);
+    } else if ((ppc_state.msr & 0x8000) && dec_exception_pending) {
+        dec_exception_pending = false;
+        //LOG_F(WARNING, "MTMSR: decrementer exception triggered");
+        ppc_exception_handler(Except_Type::EXC_DECR, 0);
     } else {
         mmu_change_mode();
     }
@@ -894,9 +898,43 @@ static void update_timebase(uint64_t mask, uint64_t new_val)
     tbr_wr_timestamp = get_virt_time_ns();
 }
 
+
+static uint32_t decrementer_timer_id = 0;
+
+static void trigger_decrementer_exception() {
+    decrementer_timer_id = 0;
+    dec_wr_value = -1;
+    dec_wr_timestamp = get_virt_time_ns();
+    if (ppc_state.msr & 0x8000) {
+        dec_exception_pending = false;
+        //LOG_F(WARNING, "decrementer exception triggered");
+        ppc_exception_handler(Except_Type::EXC_DECR, 0);
+    }
+    else {
+        //LOG_F(WARNING, "decrementer exception pending");
+        dec_exception_pending = true;
+    }
+}
+
 static void update_decrementer(uint32_t val) {
     dec_wr_value = val;
     dec_wr_timestamp = get_virt_time_ns();
+
+    dec_exception_pending = false;
+
+    if (decrementer_timer_id) {
+        //LOG_F(WARNING, "decrementer cancel timer");
+        TimerManager::get_instance()->cancel_timer(decrementer_timer_id);
+    }
+
+    uint64_t time_out;
+    uint32_t time_out_lo;
+    _u32xu64(val, tbr_period_ns, time_out, time_out_lo);
+    //LOG_F(WARNING, "decrementer:0x%08X ns:%llu", val, time_out);
+    decrementer_timer_id = TimerManager::get_instance()->add_oneshot_timer(
+        time_out,
+        trigger_decrementer_exception
+    );
 }
 
 void dppc_interpreter::ppc_mfspr() {
@@ -1397,6 +1435,15 @@ void dppc_interpreter::ppc_rfi() {
     if (ppc_state.msr & 0x8000 && int_pin) {
         uint32_t save_srr0 = ppc_state.spr[SPR::SRR0] & 0xFFFFFFFCUL;
         ppc_exception_handler(Except_Type::EXC_EXT_INT, 0);
+        ppc_state.spr[SPR::SRR0] = save_srr0;
+        return;
+    }
+
+    if ((ppc_state.msr & 0x8000) && dec_exception_pending) {
+        dec_exception_pending = false;
+        //LOG_F(WARNING, "decrementer exception from rfi msr:0x%X", ppc_state.msr);
+        uint32_t save_srr0 = ppc_state.spr[SPR::SRR0] & 0xFFFFFFFCUL;
+        ppc_exception_handler(Except_Type::EXC_DECR, 0);
         ppc_state.spr[SPR::SRR0] = save_srr0;
         return;
     }

@@ -173,6 +173,7 @@ extern uint64_t rtc_timestamp;
 extern uint64_t tbr_wr_value;
 extern uint32_t dec_wr_value;
 extern uint32_t tbr_freq_ghz;
+extern uint64_t tbr_period_ns;
 extern uint32_t rtc_lo, rtc_hi;
 
 // Additional steps to prevent overflow?
@@ -319,6 +320,7 @@ extern bool grab_return;
 
 extern bool power_on;
 extern bool int_pin;
+extern bool dec_exception_pending;
 
 extern bool is_601;        // For PowerPC 601 Emulation
 extern bool is_altivec;    // For Altivec Emulation
