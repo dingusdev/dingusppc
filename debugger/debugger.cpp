@@ -353,7 +353,7 @@ static void print_gprs() {
     int i;
 
     for (i = 0; i < 32; i++) {
-        reg_name = "R" + to_string(i);
+        reg_name = "r" + to_string(i);
 
         cout << right << std::setw(3) << setfill(' ') << reg_name << " : " <<
             setw(8) << setfill('0') << right << uppercase << hex << get_reg(reg_name) << setfill(' ');
@@ -365,7 +365,7 @@ static void print_gprs() {
         }
     }
 
-    array<string,6> sprs = {"PC", "LR", "CR", "CTR", "XER", "MSR"};
+    array<string,6> sprs = {"pc", "lr", "cr", "ctr", "xer", "msr"};
 
     for (auto &spr : sprs) {
         cout << right << std::setw(3) << setfill(' ') << spr << " : " <<
