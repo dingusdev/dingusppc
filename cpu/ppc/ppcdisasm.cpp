@@ -36,13 +36,14 @@ using namespace std;
 
 template <typename... Args>
 std::string my_sprintf(const char* format, Args... args) {
-    int length = std::snprintf(nullptr, 0, format, args...);
+    char buf_small[32];
+    int length = std::snprintf(buf_small, sizeof(buf_small), format, args...);
     if (length <= 0)
         return {}; /* empty string in C++11 */
-
+    if (length < sizeof(buf_small))
+        return buf_small;
     char* buf = new char[length + 1];
     std::snprintf(buf, length + 1, format, args...);
-
     std::string str(buf);
     delete[] buf;
     return str;
