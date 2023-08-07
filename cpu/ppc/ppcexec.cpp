@@ -908,7 +908,10 @@ uint64_t reg_op(string& reg_name, uint64_t val, bool is_write) {
                 ppc_state.fpscr = (uint32_t)val;
             return ppc_state.fpscr;
         }
+    } catch (...) {
+    }
 
+    try {
         if (reg_name_u.substr(0, 1) == "R") {
             reg_num_str = reg_name_u.substr(1);
             reg_num     = (unsigned)stoul(reg_num_str, NULL, 0);
@@ -918,7 +921,10 @@ uint64_t reg_op(string& reg_name, uint64_t val, bool is_write) {
                 return ppc_state.gpr[reg_num];
             }
         }
+    } catch (...) {
+    }
 
+    try {
         if (reg_name_u.substr(0, 1) == "FR") {
             reg_num_str = reg_name_u.substr(2);
             reg_num     = (unsigned)stoul(reg_num_str, NULL, 0);
@@ -928,7 +934,10 @@ uint64_t reg_op(string& reg_name, uint64_t val, bool is_write) {
                 return ppc_state.fpr[reg_num].int64_r;
             }
         }
+    } catch (...) {
+    }
 
+    try {
         if (reg_name_u.substr(0, 3) == "SPR") {
             reg_num_str = reg_name_u.substr(3);
             reg_num     = (unsigned)stoul(reg_num_str, NULL, 0);
@@ -938,7 +947,10 @@ uint64_t reg_op(string& reg_name, uint64_t val, bool is_write) {
                 return ppc_state.spr[reg_num];
             }
         }
+    } catch (...) {
+    }
 
+    try {
         if (reg_name_u.substr(0, 2) == "SR") {
             reg_num_str = reg_name_u.substr(2);
             reg_num     = (unsigned)stoul(reg_num_str, NULL, 0);
@@ -948,7 +960,10 @@ uint64_t reg_op(string& reg_name, uint64_t val, bool is_write) {
                 return ppc_state.sr[reg_num];
             }
         }
+    } catch (...) {
+    }
 
+    try {
         spr = SPRName2Num.find(reg_name_u);
         if (spr != SPRName2Num.end()) {
             if (is_write)
