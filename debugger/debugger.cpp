@@ -425,19 +425,52 @@ static void patch_mem(string& params) {
     }
 }
 
+static uint32_t disasm(PPCDisasmContext &ctx) {
+    ctx.instr_code = READ_DWORD_BE_A(mmu_translate_imem(ctx.instr_addr));
+    cout << COUT08X << ctx.instr_addr;
+    cout << ": " << COUT08X << ctx.instr_code;
+    cout << "    " << disassemble_single(&ctx) << setfill(' ') << right << dec;
+    return ctx.instr_addr;
+}
+
 static uint32_t disasm(uint32_t count, uint32_t address) {
     PPCDisasmContext ctx;
-
     ctx.instr_addr = address;
     ctx.simplified = true;
-
     for (int i = 0; power_on && i < count; i++) {
-        ctx.instr_code = READ_DWORD_BE_A(mmu_translate_imem(ctx.instr_addr));
-        cout << COUT08X << ctx.instr_addr;
-        cout << ": " << COUT08X << ctx.instr_code;
-        cout << "    " << disassemble_single(&ctx) << setfill(' ') << right << endl;
+        disasm(ctx);
+        cout << endl;
     }
     return ctx.instr_addr;
+}
+
+static void disasm_in(PPCDisasmContext &ctx, uint32_t address) {
+    ctx.instr_addr = address;
+    ctx.simplified = true;
+    disasm(ctx);
+    if (ctx.regs_in.size() > 0 || ctx.regs_out.size() > 0) {
+        if (ctx.instr_str.length() < 28)
+            cout << setw(28 - (int)ctx.instr_str.length()) << " ";
+        cout << " ;";
+        if (ctx.regs_in.size() > 0) {
+            cout << " in{" << COUTX;
+            for (auto & reg_name : ctx.regs_in) {
+                cout << " " << reg_name << ":" << get_reg(reg_name);
+            }
+            cout << " }" << dec;
+        }
+    }
+}
+
+static void disasm_out(PPCDisasmContext &ctx) {
+    if (ctx.regs_out.size() > 0) {
+        cout << " out{" << COUTX;
+        for (auto & reg_name : ctx.regs_out) {
+            cout << " " << reg_name << ":" << get_reg(reg_name);
+        }
+        cout << " }" << dec;
+    }
+    cout << endl;
 }
 
 static void print_gprs() {
@@ -765,8 +798,10 @@ void DppcDebugger::enter_debugger() {
                 }
                 for (; --count >= 0;) {
                     addr = ppc_state.pc;
-                    disasm(1, addr);
+                    PPCDisasmContext ctx;
+                    disasm_in(ctx, addr);
                     ppc_exec_single();
+                    disasm_out(ctx);
                 }
             }
         } else if (cmd == "next" || cmd == "ni") {
