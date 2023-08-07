@@ -103,9 +103,19 @@ enum SPR : int {
     SRR1    = 27,
     TBL_U   = 268, // user mode TBL
     TBU_U   = 269, // user mode TBU
+    SPRG0   = 272,
+    SPRG1   = 273,
+    SPRG2   = 274,
+    SPRG3   = 275,
     TBL_S   = 284, // supervisor TBL
     TBU_S   = 285, // supervisor TBU
     PVR     = 287,
+    MMCR0   = 952,
+    PMC1    = 953,
+    PMC2    = 954,
+    SIA     = 955,
+    MMCR1   = 956,
+    SDA     = 959,
     HID0    = 1008,
     HID1    = 1009,
 };

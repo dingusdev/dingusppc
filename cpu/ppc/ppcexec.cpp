@@ -861,7 +861,18 @@ void print_fprs() {
 }
 
 static map<string, int> SPRName2Num = {
-    {"XER", SPR::XER}, {"LR", SPR::LR}, {"CTR", SPR::CTR}, {"DEC", SPR::DEC}, {"PVR", SPR::PVR}};
+    {"XER", SPR::XER}, {"LR", SPR::LR}, {"CTR", SPR::CTR}, {"DEC", SPR::DEC}, {"PVR", SPR::PVR},
+    {"SPRG0", SPR::SPRG0}, {"SPRG1", SPR::SPRG1}, {"SPRG2", SPR::SPRG2}, {"SPRG3", SPR::SPRG3},
+    {"SRR0", SPR::SRR0}, {"SRR1", SPR::SRR1},
+    {"IBAT0U", 528}, {"IBAT0L", 529}, {"IBAT1U", 530}, {"IBAT1L", 531}, {"IBAT2U", 532}, {"IBAT2L", 533}, {"IBAT3U", 534}, {"IBAT3L", 535},
+    {"DBAT0U", 536}, {"DBAT0L", 537}, {"DBAT1U", 538}, {"DBAT1L", 539}, {"DBAT2U", 540}, {"DBAT2L", 541}, {"DBAT3U", 542}, {"DBAT3L", 543},
+    {"HID0", SPR::HID0}, {"HID1", SPR::HID1},
+    {"IABR", 1010}, {"DABR", 1013}, {"L2CR", 1017}, {"ICTC", 1019}, {"THRM1", 1020}, {"THRM2", 1021}, {"THRM3", 1022}, {"PIR", 1023},
+    {"TBL", SPR::TBL_U}, {"TBU", SPR::TBU_U},
+    {"SDR1", SPR::SDR1},
+    {"MQ", SPR::MQ}, {"RTCU", SPR::RTCU_U}, {"RTCL", SPR::RTCL_U}, {"DSISR", SPR::DSISR}, {"DAR", SPR::DAR},
+    {"MMCR0", SPR::MMCR0}, {"PMC1", SPR::PMC1}, {"PMC2", SPR::PMC2}, {"SDA", SPR::SDA}, {"SIA", SPR::SIA}, {"MMCR1", SPR::MMCR1}
+};
 
 uint64_t reg_op(string& reg_name, uint64_t val, bool is_write) {
     string reg_name_u, reg_num_str;
