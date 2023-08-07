@@ -32,7 +32,7 @@ AdbKeyboard::AdbKeyboard(std::string name) : AdbDevice(name) {
 
 void AdbKeyboard::event_handler(const KeyboardEvent& event) {
     if (event.flags & KEYBOARD_EVENT_DOWN) {
-    } 
+    }
     else if (event.flags & KEYBOARD_EVENT_UP) {
     }
 }
@@ -45,6 +45,7 @@ void AdbKeyboard::reset() {
 }
 
 bool AdbKeyboard::get_register_0() {
+    return false;
 }
 
 void AdbKeyboard::set_register_2() {
