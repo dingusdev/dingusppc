@@ -108,7 +108,7 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
         break;
 
     default:
-        ABORT_F("Unknown exception occured: %X\n", (unsigned)exception_type);
+        ABORT_F("Unknown exception occurred: %X\n", (unsigned)exception_type);
         break;
     }
 
@@ -142,11 +142,11 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
 
     switch (exception_type) {
     case Except_Type::EXC_SYSTEM_RESET:
-        exc_descriptor = "System reset exception occured";
+        exc_descriptor = "System reset exception occurred";
         break;
 
     case Except_Type::EXC_MACHINE_CHECK:
-        exc_descriptor = "Machine check exception occured";
+        exc_descriptor = "Machine check exception occurred";
         break;
 
     case Except_Type::EXC_DSI:
@@ -164,31 +164,31 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
         break;
 
     case Except_Type::EXC_EXT_INT:
-        exc_descriptor = "External interrupt exception occured";
+        exc_descriptor = "External interrupt exception occurred";
         break;
 
     case Except_Type::EXC_ALIGNMENT:
-        exc_descriptor = "Alignment exception occured";
+        exc_descriptor = "Alignment exception occurred";
         break;
 
     case Except_Type::EXC_PROGRAM:
-        exc_descriptor = "Program exception occured";
+        exc_descriptor = "Program exception occurred";
         break;
 
     case Except_Type::EXC_NO_FPU:
-        exc_descriptor = "Floating-Point unavailable exception occured";
+        exc_descriptor = "Floating-Point unavailable exception occurred";
         break;
 
     case Except_Type::EXC_DECR:
-        exc_descriptor = "Decrementer exception occured";
+        exc_descriptor = "Decrementer exception occurred";
         break;
 
     case Except_Type::EXC_SYSCALL:
-        exc_descriptor = "Syscall exception occured";
+        exc_descriptor = "Syscall exception occurred";
         break;
 
     case Except_Type::EXC_TRACE:
-        exc_descriptor = "Trace exception occured";
+        exc_descriptor = "Trace exception occurred";
         break;
     }
 

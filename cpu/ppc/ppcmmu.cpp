@@ -32,7 +32,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <loguru.hpp>
 #include <stdexcept>
 
-/* pointer to exception handler to be called when a MMU exception is occured. */
+/* pointer to exception handler to be called when a MMU exception is occurred. */
 void (*mmu_exception_handler)(Except_Type exception_type, uint32_t srr1_bits);
 
 /* pointers to BAT update functions. */
