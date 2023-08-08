@@ -46,23 +46,31 @@ int MeshController::device_postinit()
 void MeshController::reset(bool is_hard_reset)
 {
     this->cur_cmd       = SeqCmd::NoOperation;
+    this->fifo_cnt      = 0;
     this->int_mask      = 0;
+    this->xfer_count    = 0;
 
     if (is_hard_reset) {
         this->bus_stat      = 0;
-        this->sync_params   = 2; // guessed
+        this->sync_params   = (0 << 16) | 2; // fast async operation (guessed)
     }
 }
 
 uint8_t MeshController::read(uint8_t reg_offset)
 {
     switch(reg_offset) {
+    case MeshReg::XferCount0:
+        return this->xfer_count & 0xFFU;
+    case MeshReg::XferCount1:
+        return (this->xfer_count >> 8) & 0xFFU;
     case MeshReg::Sequence:
         return this->cur_cmd;
     case MeshReg::BusStatus0:
         return this->bus_obj->test_ctrl_lines(0xFFU);
     case MeshReg::BusStatus1:
         return this->bus_obj->test_ctrl_lines(0xE000U) >> 8;
+    case MeshReg::FIFOCount:
+        return this->fifo_cnt;
     case MeshReg::Exception:
         return 0;
     case MeshReg::Error:
@@ -71,6 +79,10 @@ uint8_t MeshController::read(uint8_t reg_offset)
         return this->int_mask;
     case MeshReg::Interrupt:
         return this->int_stat;
+    case MeshReg::DestID:
+        return this->dst_id;
+    case MeshReg::SyncParms:
+        return this->sync_params;
     case MeshReg::MeshID:
         return this->chip_id; // tell them who we are
     default:

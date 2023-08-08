@@ -138,7 +138,9 @@ private:
     uint8_t     dst_id;
     uint8_t     cur_cmd;
     uint8_t     error;
+    uint8_t     fifo_cnt;
     uint8_t     exception;
+    uint32_t    xfer_count;
 
     ScsiBus*    bus_obj;
     uint16_t    bus_stat;
