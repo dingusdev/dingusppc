@@ -549,7 +549,7 @@ static TLBEntry* itlb2_refill(uint32_t guest_va)
     return tlb_entry;
 }
 
-static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write)
+static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write, bool is_dbg = false)
 {
     BATResult bat_res;
     uint32_t phys_addr;
@@ -569,7 +569,9 @@ static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write)
         if (bat_res.hit) {
             // check block protection
             if (!bat_res.prot || ((bat_res.prot & 1) && is_write)) {
+                if (!is_dbg)
                 LOG_F(9, "BAT DSI exception in TLB2 refill!");
+                if (!is_dbg)
                 LOG_F(9, "Attempt to write to read-only region, LA=0x%08X, PC=0x%08X!", guest_va, ppc_state.pc);
                 ppc_state.spr[SPR::DSISR] = 0x08000000 | (is_write << 25);
                 ppc_state.spr[SPR::DAR]   = guest_va;
@@ -625,6 +627,7 @@ static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write)
         tlb_entry->phys_tag = phys_addr & ~0xFFFUL;
         return tlb_entry;
     } else {
+        if (!is_dbg) {
         static uint32_t last_phys_addr = -1;
         static uint32_t first_phys_addr = -1;
         if (phys_addr != last_phys_addr + 4) {
@@ -635,6 +638,7 @@ static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write)
             LOG_F(WARNING, "Access to unmapped physical memory, phys_addr=0x%08X", first_phys_addr);
         }
         last_phys_addr = phys_addr;
+        }
         return &UnmappedMem;
     }
 }
@@ -1985,6 +1989,61 @@ uint64_t mem_read_dbg(uint32_t virt_addr, uint32_t size) {
     ppc_state.spr[SPR::DAR]   = save_dar;
 
     return ret_val;
+}
+
+bool mmu_translate_dbg(uint32_t guest_va, uint32_t &guest_pa) {
+    uint32_t save_dsisr, save_dar;
+    bool is_mapped;
+
+    /* save MMU-related CPU state */
+    save_dsisr            = ppc_state.spr[SPR::DSISR];
+    save_dar              = ppc_state.spr[SPR::DAR];
+    mmu_exception_handler = dbg_exception_handler;
+
+    try {
+        TLBEntry *tlb1_entry, *tlb2_entry;
+
+        const uint32_t tag = guest_va & ~0xFFFUL;
+
+        // look up guest virtual address in the primary TLB
+        tlb1_entry = &pCurDTLB1[(guest_va >> PAGE_SIZE_BITS) & tlb_size_mask];
+
+        do {
+            if (tlb1_entry->tag != tag) {
+                // primary TLB miss -> look up address in the secondary TLB
+                tlb2_entry = lookup_secondary_tlb<TLBType::DTLB>(guest_va, tag);
+                if (tlb2_entry == nullptr) {
+                    // secondary TLB miss ->
+                    // perform full address translation and refill the secondary TLB
+                    tlb2_entry = dtlb2_refill(guest_va, 0, true);
+                    if (tlb2_entry->flags & PAGE_NOPHYS) {
+                        is_mapped = false;
+                        break;
+                    }
+                }
+
+                if (tlb2_entry->flags & TLBFlags::PAGE_MEM) { // is it a real memory region?
+                    // refill the primary TLB
+                    *tlb1_entry = *tlb2_entry;
+                }
+                else {
+                    tlb1_entry = tlb2_entry;
+                }
+            }
+            guest_pa = tlb1_entry->phys_tag | (guest_va & 0xFFFUL);
+            is_mapped = true;
+        } while (0);
+    } catch (std::invalid_argument& exc) {
+        LOG_F(WARNING, "Unmapped address 0x%08X", guest_va);
+        is_mapped = false;
+    }
+
+    /* restore MMU-related CPU state */
+    mmu_exception_handler     = ppc_exception_handler;
+    ppc_state.spr[SPR::DSISR] = save_dsisr;
+    ppc_state.spr[SPR::DAR]   = save_dar;
+
+    return is_mapped;
 }
 
 void ppc_mmu_init()
