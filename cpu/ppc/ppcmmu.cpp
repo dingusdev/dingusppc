@@ -1059,17 +1059,17 @@ inline T mmu_read_vmem(uint32_t guest_va)
 
                 return (
                     ((T)tlb2_entry->rgn_desc->devobj->read(tlb2_entry->rgn_desc->start,
-                                                           guest_va - tlb2_entry->dev_base_va,
+                                                           static_cast<uint32_t>(guest_va - tlb2_entry->dev_base_va),
                                                            4) << 32) |
                     tlb2_entry->rgn_desc->devobj->read(tlb2_entry->rgn_desc->start,
-                                                       guest_va + 4 - tlb2_entry->dev_base_va,
+                                                       static_cast<uint32_t>(guest_va + 4 - tlb2_entry->dev_base_va),
                                                        4)
                 );
             }
             else {
                 return (
                     tlb2_entry->rgn_desc->devobj->read(tlb2_entry->rgn_desc->start,
-                                                       guest_va - tlb2_entry->dev_base_va,
+                                                       static_cast<uint32_t>(guest_va - tlb2_entry->dev_base_va),
                                                        sizeof(T))
                 );
             }
@@ -1180,14 +1180,14 @@ inline void mmu_write_vmem(uint32_t guest_va, T value)
                     ppc_alignment_exception(guest_va);
 
                 tlb2_entry->rgn_desc->devobj->write(tlb2_entry->rgn_desc->start,
-                                                    guest_va - tlb2_entry->dev_base_va,
+                                                    static_cast<uint32_t>(guest_va - tlb2_entry->dev_base_va),
                                                     value >> 32, 4);
                 tlb2_entry->rgn_desc->devobj->write(tlb2_entry->rgn_desc->start,
-                                                    guest_va + 4 - tlb2_entry->dev_base_va,
+                                                    static_cast<uint32_t>(guest_va + 4 - tlb2_entry->dev_base_va),
                                                     (uint32_t)value, 4);
             } else {
                 tlb2_entry->rgn_desc->devobj->write(tlb2_entry->rgn_desc->start,
-                                                    guest_va - tlb2_entry->dev_base_va,
+                                                    static_cast<uint32_t>(guest_va - tlb2_entry->dev_base_va),
                                                     value, sizeof(T));
             }
             return;
