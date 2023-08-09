@@ -682,7 +682,7 @@ static inline TLBEntry* lookup_secondary_tlb(uint32_t guest_va, uint32_t tag) {
     return tlb_entry;
 }
 
-uint8_t *mmu_translate_imem(uint32_t vaddr)
+uint8_t *mmu_translate_imem(uint32_t vaddr, uint32_t *paddr)
 {
     TLBEntry *tlb1_entry, *tlb2_entry;
     uint8_t *host_va;
@@ -725,6 +725,8 @@ uint8_t *mmu_translate_imem(uint32_t vaddr)
     }
 
     ppc_set_cur_instruction(host_va);
+    if (paddr)
+        *paddr = tlb1_entry->phys_tag | (vaddr & 0xFFFUL);
 
     return host_va;
 }

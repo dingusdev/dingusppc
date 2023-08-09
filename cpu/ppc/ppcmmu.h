@@ -126,7 +126,7 @@ extern void mmu_pat_ctx_changed();
 extern void tlb_flush_entry(uint32_t ea);
 
 extern uint64_t mem_read_dbg(uint32_t virt_addr, uint32_t size);
-uint8_t *mmu_translate_imem(uint32_t vaddr);
+uint8_t *mmu_translate_imem(uint32_t vaddr, uint32_t *paddr = nullptr);
 
 template <class T>
 extern T mmu_read_vmem(uint32_t guest_va);
