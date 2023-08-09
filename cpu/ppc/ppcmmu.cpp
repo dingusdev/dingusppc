@@ -541,6 +541,7 @@ static TLBEntry* itlb2_refill(uint32_t guest_va)
         tlb_entry->flags = flags | TLBFlags::PAGE_MEM;
         tlb_entry->host_va_offs_r = (int64_t)rgn_desc->mem_ptr - guest_va +
                                     (phys_addr - rgn_desc->start);
+        tlb_entry->phys_tag = phys_addr & ~0xFFFUL;
     } else {
         ABORT_F("Instruction fetch from unmapped memory at 0x%08X!\n", phys_addr);
     }
@@ -621,6 +622,7 @@ static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write)
                 tlb_entry->host_va_offs_w = tlb_entry->host_va_offs_r;
             }
         }
+        tlb_entry->phys_tag = phys_addr & ~0xFFFUL;
         return tlb_entry;
     } else {
         static uint32_t last_phys_addr = -1;
@@ -718,6 +720,7 @@ uint8_t *mmu_translate_imem(uint32_t vaddr)
         tlb1_entry->tag = tag;
         tlb1_entry->flags = tlb2_entry->flags;
         tlb1_entry->host_va_offs_r = tlb2_entry->host_va_offs_r;
+        tlb1_entry->phys_tag = tlb2_entry->phys_tag;
         host_va = (uint8_t *)(tlb1_entry->host_va_offs_r + vaddr);
     }
 
@@ -1686,6 +1689,7 @@ static inline uint64_t tlb_translate_addr(uint32_t guest_va)
             tlb1_entry->tag = tag;
             tlb1_entry->flags = tlb2_entry->flags;
             tlb1_entry->host_va_offs_r = tlb2_entry->host_va_offs_r;
+            tlb1_entry->phys_tag = tlb2_entry->phys_tag;
             return tlb1_entry->host_va_offs_r + guest_va;
         } else { // an attempt to access a memory-mapped device
             return guest_va - tlb2_entry->rgn_desc->start;

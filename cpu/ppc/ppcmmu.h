@@ -102,6 +102,8 @@ typedef struct TLBEntry {
             int64_t             dev_base_va;
         };
     };
+    uint32_t phys_tag;
+    uint32_t reserved;
 } TLBEntry;
 
 enum TLBFlags : uint16_t {
