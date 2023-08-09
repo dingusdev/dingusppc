@@ -172,6 +172,23 @@ void GrandCentral::notify_bar_change(int bar_num)
     }
 }
 
+static const char *get_name_dma(unsigned dma_channel) {
+    switch (dma_channel) {
+        case MIO_GC_DMA_SCSI_CURIO    : return "DMA_SCSI_CURIO" ;
+        case MIO_GC_DMA_FLOPPY        : return "DMA_FLOPPY"     ;
+        case MIO_GC_DMA_ETH_XMIT      : return "DMA_ETH_XMIT"   ;
+        case MIO_GC_DMA_ETH_RCV       : return "DMA_ETH_RCV"    ;
+        case MIO_GC_DMA_ESCC_A_XMIT   : return "DMA_ESCC_A_XMIT";
+        case MIO_GC_DMA_ESCC_A_RCV    : return "DMA_ESCC_A_RCV" ;
+        case MIO_GC_DMA_ESCC_B_XMIT   : return "DMA_ESCC_B_XMIT";
+        case MIO_GC_DMA_ESCC_B_RCV    : return "DMA_ESCC_B_RCV" ;
+        case MIO_GC_DMA_AUDIO_OUT     : return "DMA_AUDIO_OUT"  ;
+        case MIO_GC_DMA_AUDIO_IN      : return "DMA_AUDIO_IN"   ;
+        case MIO_GC_DMA_SCSI_MESH     : return "DMA_SCSI_MESH"  ;
+        default                       : return "unknown"        ;
+    }
+}
+
 // The first 3 bytes of a MAC address is an OUI for "Apple, Inc."
 // A MAC address cannot begin with 0x10 because that will get bit-flipped to 0x08.
 // A MAC address that begins with 0x08 can be stored as bit-flipped or not bit-flipped.
@@ -277,8 +294,11 @@ uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
             }
             // fallthrough
         default:
-            LOG_F(WARNING, "%s: unimplemented DMA register at 0x%X",
-                  this->name.c_str(), this->base_addr + offset);
+            if (!(unsupported_dma_channel_read & (1 << dma_channel))) {
+                unsupported_dma_channel_read |= (1 << dma_channel);
+                LOG_F(WARNING, "%s: Unsupported DMA channel %d %s read  @%02x.%c", this->name.c_str(),
+                      dma_channel, get_name_dma(dma_channel), offset & 0xFF, SIZE_ARG(size));
+            }
         }
     } else { // Interrupt related registers
         switch (offset) {
@@ -411,8 +431,11 @@ void GrandCentral::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
             }
             // fallthrough
         default:
-            LOG_F(WARNING, "%s: unimplemented DMA register at 0x%X",
-                  this->name.c_str(), this->base_addr + offset);
+            if (!(unsupported_dma_channel_write & (1 << dma_channel))) {
+                unsupported_dma_channel_write |= (1 << dma_channel);
+                LOG_F(WARNING, "%s: Unsupported DMA channel %d %s write @%02x.%c = %0*x", this->name.c_str(),
+                      dma_channel, get_name_dma(dma_channel), offset & 0xFF, SIZE_ARG(size), size * 2, value);
+            }
         }
     } else { // Interrupt related registers
         switch (offset) {

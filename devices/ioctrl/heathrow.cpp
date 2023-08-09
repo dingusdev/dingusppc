@@ -106,6 +106,24 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io_heathrow"), InterruptCtrl()
     this->emmo_pin = GET_BIN_PROP("emmo") ^ 1;
 }
 
+static const char *get_name_dma(unsigned dma_channel) {
+    switch (dma_channel) {
+        case MIO_OHARE_DMA_MESH        : return "DMA_MESH"       ;
+        case MIO_OHARE_DMA_FLOPPY      : return "DMA_FLOPPY"     ;
+        case MIO_OHARE_DMA_ETH_XMIT    : return "DMA_ETH_XMIT"   ;
+        case MIO_OHARE_DMA_ETH_RCV     : return "DMA_ETH_RCV"    ;
+        case MIO_OHARE_DMA_ESCC_A_XMIT : return "DMA_ESCC_A_XMIT";
+        case MIO_OHARE_DMA_ESCC_A_RCV  : return "DMA_ESCC_A_RCV" ;
+        case MIO_OHARE_DMA_ESCC_B_XMIT : return "DMA_ESCC_B_XMIT";
+        case MIO_OHARE_DMA_ESCC_B_RCV  : return "DMA_ESCC_B_RCV" ;
+        case MIO_OHARE_DMA_AUDIO_OUT   : return "DMA_AUDIO_OUT"  ;
+        case MIO_OHARE_DMA_AUDIO_IN    : return "DMA_AUDIO_IN"   ;
+        case MIO_OHARE_DMA_IDE0        : return "DMA_IDE0"       ;
+        case MIO_OHARE_DMA_IDE1        : return "DMA_IDE1"       ;
+        default                        : return "unknown"        ;
+    }
+}
+
 void HeathrowIC::set_media_bay_id(uint8_t id) {
     this->mb_id = id;
 }
@@ -126,7 +144,8 @@ void HeathrowIC::notify_bar_change(int bar_num)
 }
 
 uint32_t HeathrowIC::dma_read(uint32_t offset, int size) {
-    switch (offset >> 8) {
+    int dma_channel = offset >> 8;
+    switch (dma_channel) {
     case MIO_OHARE_DMA_MESH:
         if (this->mesh_dma)
             return this->mesh_dma->reg_read(offset & 0xFF, size);
@@ -143,14 +162,19 @@ uint32_t HeathrowIC::dma_read(uint32_t offset, int size) {
     case MIO_OHARE_DMA_AUDIO_OUT:
         return this->snd_out_dma->reg_read(offset & 0xFF, size);
     default:
-        LOG_F(WARNING, "Unsupported DMA channel read, offset=0x%X", offset);
+        if (!(unsupported_dma_channel_read & (1 << dma_channel))) {
+            unsupported_dma_channel_read |= (1 << dma_channel);
+            LOG_F(WARNING, "%s: Unsupported DMA channel %d %s read  @%02x.%c", this->name.c_str(),
+                dma_channel, get_name_dma(dma_channel), offset & 0xFF, SIZE_ARG(size));
+        }
     }
 
     return 0;
 }
 
 void HeathrowIC::dma_write(uint32_t offset, uint32_t value, int size) {
-    switch (offset >> 8) {
+    int dma_channel = offset >> 8;
+    switch (dma_channel) {
     case MIO_OHARE_DMA_MESH:
         if (this->mesh_dma) this->mesh_dma->reg_write(offset & 0xFF, value, size);
         break;
@@ -170,7 +194,11 @@ void HeathrowIC::dma_write(uint32_t offset, uint32_t value, int size) {
         this->snd_out_dma->reg_write(offset & 0xFF, value, size);
         break;
     default:
-        LOG_F(WARNING, "Unsupported DMA channel write, offset=0x%X, val=0x%X", offset, value);
+        if (!(unsupported_dma_channel_write & (1 << dma_channel))) {
+            unsupported_dma_channel_write |= (1 << dma_channel);
+            LOG_F(WARNING, "%s: Unsupported DMA channel %d %s write @%02x.%c = %0*x", this->name.c_str(),
+                dma_channel, get_name_dma(dma_channel), offset & 0xFF, SIZE_ARG(size), size * 2, value);
+        }
     }
 }
 
