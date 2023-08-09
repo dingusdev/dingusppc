@@ -1698,7 +1698,7 @@ static inline uint64_t tlb_translate_addr(uint32_t guest_va)
             tlb1_entry->phys_tag = tlb2_entry->phys_tag;
             return tlb1_entry->host_va_offs_r + guest_va;
         } else { // an attempt to access a memory-mapped device
-            return guest_va - tlb2_entry->rgn_desc->start;
+            return guest_va - tlb2_entry->dev_base_va;
         }
     }
 }
