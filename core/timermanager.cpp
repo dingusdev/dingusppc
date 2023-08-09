@@ -30,7 +30,7 @@ TimerManager* TimerManager::timer_manager;
 
 uint32_t TimerManager::add_oneshot_timer(uint64_t timeout, timer_cb cb)
 {
-    if (!timeout || timeout <= MIN_TIMEOUT_NS) {
+    if (timeout <= MIN_TIMEOUT_NS) {
         LOG_F(WARNING, "One-shot timer too short, timeout=%llu ns", (long long unsigned)timeout);
     }
 
