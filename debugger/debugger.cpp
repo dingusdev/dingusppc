@@ -463,6 +463,7 @@ void DppcDebugger::enter_debugger() {
     uint32_t next_addr_68k;
 #endif
     bool cmd_repeat;
+    int repeat_count;
 
     unique_ptr<OfConfigUtils> ofnvram = unique_ptr<OfConfigUtils>(new OfConfigUtils);
 
@@ -556,6 +557,10 @@ void DppcDebugger::enter_debugger() {
         cmd_repeat = cmd.empty() && !last_cmd.empty();
         if (cmd_repeat) {
             cmd = last_cmd;
+            repeat_count++;
+        }
+        else {
+            repeat_count = 1;
         }
         if (cmd == "help") {
             cmd = "";
@@ -652,7 +657,13 @@ void DppcDebugger::enter_debugger() {
             addr     = (uint32_t)get_reg(addr_str) + 4;
             ppc_exec_until(addr);
         } else if (cmd == "until") {
-            ss >> addr_str;
+            if (cmd_repeat) {
+                delete_prompt();
+                cout << repeat_count << "> " << cmd << " " << addr_str << endl;
+            }
+            else {
+                ss >> addr_str;
+            }
             try {
                 addr = str2addr(addr_str);
                 if (context == 2) {
