@@ -434,7 +434,7 @@ static void ppc_exec_until_inner(const uint32_t goal_addr)
 
     max_cycles = 0;
 
-    while (ppc_state.pc != goal_addr) {
+    do {
         // define boundaries of the next execution block
         // max execution block length = one memory page
         eb_start   = ppc_state.pc;
@@ -445,7 +445,7 @@ static void ppc_exec_until_inner(const uint32_t goal_addr)
         pc_real    = mmu_translate_imem(eb_start);
 
         // interpret execution block
-        while ((ppc_state.pc != goal_addr) && (ppc_state.pc < eb_end)) {
+        while ((ppc_state.pc < eb_end)) {
             ppc_main_opcode();
             if (g_icycles++ >= max_cycles) {
                 max_cycles = process_events();
@@ -480,8 +480,11 @@ static void ppc_exec_until_inner(const uint32_t goal_addr)
                 pc_real += 4;
                 ppc_set_cur_instruction(pc_real);
             }
+
+            if (ppc_state.pc == goal_addr)
+                break;
         }
-    }
+    } while (ppc_state.pc != goal_addr);
 }
 
 // outer interpreter loop
@@ -493,9 +496,9 @@ void ppc_exec_until(volatile uint32_t goal_addr)
         ppc_state.pc = ppc_next_instruction_address;
     }
 
-    while (ppc_state.pc != goal_addr) {
+    do {
         ppc_exec_until_inner(goal_addr);
-    }
+    } while (ppc_state.pc != goal_addr);
 }
 
 /** Execute PPC code until control is reached the specified region. */
