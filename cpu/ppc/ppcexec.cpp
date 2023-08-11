@@ -925,8 +925,8 @@ uint64_t reg_op(string& reg_name, uint64_t val, bool is_write) {
     }
 
     try {
-        if (reg_name_u.substr(0, 1) == "FR") {
-            reg_num_str = reg_name_u.substr(2);
+        if (reg_name_u.substr(0, 1) == "F") {
+            reg_num_str = reg_name_u.substr(1);
             reg_num     = (unsigned)stoul(reg_num_str, NULL, 0);
             if (reg_num < 32) {
                 if (is_write)
