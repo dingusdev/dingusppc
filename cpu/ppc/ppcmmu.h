@@ -107,6 +107,8 @@ extern std::function<void(uint32_t bat_reg)> ibat_update;
 extern std::function<void(uint32_t bat_reg)> dbat_update;
 
 extern uint8_t* mmu_get_dma_mem(uint32_t addr, uint32_t size, bool* is_writable);
+extern void mmu_dma_store_quad(uint32_t addr, uint32_t value);
+extern uint8_t* mmu_dma_load_quad(uint32_t addr);
 
 extern void mmu_change_mode(void);
 extern void mmu_pat_ctx_changed();
