@@ -185,6 +185,10 @@ uint16_t Sc53C94::pseudo_dma_read()
             }
         }
     }
+    else {
+        LOG_F(ERROR, "SC53C94: FIFO underrun %d", data_fifo_pos);
+        data_word = 0;
+    }
 
     // see if we need to refill FIFO
     if (!this->data_fifo_pos && !is_done) {
