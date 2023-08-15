@@ -384,6 +384,7 @@ uint32_t HeathrowIC::register_dev_int(IntSrc src_id)
 
 uint32_t HeathrowIC::register_dma_int(IntSrc src_id)
 {
+    ABORT_F("Heathrow: register_dma_int() not implemented");
     return 0;
 }
 
