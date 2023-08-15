@@ -149,6 +149,14 @@ int AtapiBaseDevice::perform_command() {
     this->r_status |= BSY;
 
     switch (this->r_command) {
+    case ATAPI_SOFT_RESET:
+        LOG_F(ERROR, "%s: unsupported command 0x%X ATAPI_SOFT_RESET", this->name.c_str(), this->r_command);
+#if 1
+        this->r_dev_ctrl |= SRST; // SRST set -> phase 0 aka self-test
+        this->r_status |= BSY;
+        this->device_reset(true);
+#endif
+        break;
     case ATAPI_PACKET:
         this->data_ptr = (uint16_t *)this->cmd_pkt;
         this->xfer_cnt = sizeof(this->cmd_pkt);
