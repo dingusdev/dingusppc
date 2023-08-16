@@ -1238,7 +1238,7 @@ void opc_group31(PPCDisasmContext* ctx) {
             add_reg_out(ctx, "cr");
         }
 
-        fmt_twoop(ctx, opcode, rs, ra);
+        fmt_twoop(ctx, opcode, ra, rs);
 
         return;
 
