@@ -101,7 +101,7 @@ const char* opc_bim_str[6] = {/* boolean immediate instructions */
                               "andi.",
                               "andis."};
 
-const char* opc_logic[16] = {/* indexed load/store opcodes */
+const char* opc_logic[16] = {/* logic instructions */
                              "and",
                              "andc",
                              "",
