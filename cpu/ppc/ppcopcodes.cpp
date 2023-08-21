@@ -1687,19 +1687,17 @@ void dppc_interpreter::ppc_stwcx() {
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
-    // PLACEHOLDER CODE FOR STWCX - We need to check for reserve memory
     if (rc_flag == 0) {
         ppc_illegalop();
     } else {
         ppc_grab_regssab();
         ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
+        ppc_state.cr &= 0x0FFFFFFFUL; // clear CR0
+        ppc_state.cr |= (ppc_state.spr[SPR::XER] & 0x80000000UL) >> 3; // copy XER[SO] to CR0[SO]
         if (ppc_state.reserve) {
             mmu_write_vmem<uint32_t>(ppc_effective_address, ppc_result_d);
-            //mem_write_dword(ppc_effective_address, ppc_result_d);
-            ppc_state.cr |= (ppc_state.spr[SPR::XER] & 0x80000000) ? 0x30000000 : 0x20000000;
             ppc_state.reserve = false;
-        } else {
-            ppc_state.cr |= (ppc_state.spr[SPR::XER] & 0x80000000) ? 0x10000000 : 0;
+            ppc_state.cr |= 0x20000000UL; // set CR0[EQ]
         }
     }
 }
