@@ -67,7 +67,6 @@ public:
     uint32_t report_capacity(uint8_t *data_ptr);
     uint32_t read_toc(uint8_t *cmd_ptr, uint8_t *data_ptr);
 
-private:
     AddrMsf lba_to_msf(const int lba);
 
 protected:

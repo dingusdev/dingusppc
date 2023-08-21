@@ -50,28 +50,26 @@ void AtapiBaseDevice::device_set_signature() {
 uint16_t AtapiBaseDevice::read(const uint8_t reg_addr) {
     switch (reg_addr) {
     case ATA_Reg::DATA:
-        if (this->data_ptr && this->xfer_cnt) {
+        if (has_data()) {
+            uint16_t ret_data = get_data();
             this->xfer_cnt -= 2;
             if (this->xfer_cnt <= 0) {
                 this->r_status &= ~DRQ;
 
                 if ((this->r_int_reason & ATAPI_Int_Reason::IO) &&
-                    !(this->r_int_reason & ATAPI_Int_Reason::CoD)) {
-                    uint16_t ret_data = BYTESWAP_16(*this->data_ptr++);
+                    !(this->r_int_reason & ATAPI_Int_Reason::CoD)
+                ) {
                     if (this->data_available()) {
                         this->r_status &= ~DRQ;
                         this->r_status |= BSY;
-                        this->update_intrq(1);
-                        return ret_data;
+                        this->update_intrq(1); // Is this going to work here? The interrupt happens before returning ret_data.
                     }
-
-                    if (this->status_expected) {
+                    else if (this->status_expected) {
                         this->present_status();
                     }
-                    return ret_data;
                 }
             }
-            return BYTESWAP_16(*this->data_ptr++);
+            return ret_data;
         } else {
             return 0xFFFFU;
         }
@@ -105,7 +103,7 @@ uint16_t AtapiBaseDevice::read(const uint8_t reg_addr) {
 void AtapiBaseDevice::write(const uint8_t reg_addr, const uint16_t value) {
     switch (reg_addr) {
     case ATA_Reg::DATA:
-        if (this->data_ptr && this->xfer_cnt) {
+        if (has_data()) {
             *this->data_ptr++ = BYTESWAP_16(value);
             this->xfer_cnt -= 2;
             if (this->xfer_cnt <= 0) {

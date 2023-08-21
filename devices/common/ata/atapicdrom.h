@@ -42,11 +42,7 @@ public:
 
     void perform_packet_command() override;
 
-    int request_data() override {
-        this->data_ptr = (uint16_t*)this->data_cache.get();
-        this->xfer_cnt = this->read_more();
-        return this->xfer_cnt;
-    }
+    int request_data() override;
 
     bool data_available() override {
         return this->data_left() != 0;
@@ -55,10 +51,16 @@ public:
     void status_good();
     void status_error(uint8_t sense_key, uint8_t asc);
 
+    uint16_t get_data();
 private:
     uint8_t sense_key = 0;
     uint8_t asc = 0;
     uint8_t ascq = 0;
+
+    bool        doing_sector_areas = false;
+    uint8_t     sector_areas;
+    uint32_t    current_block;
+    uint16_t    current_block_byte;
 };
 
 #endif // ATAPI_CDROM_H

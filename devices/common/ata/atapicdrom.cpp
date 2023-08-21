@@ -68,6 +68,11 @@ void AtapiCdrom::perform_packet_command() {
     uint32_t lba, xfer_len;
 
     this->r_status |= BSY;
+    this->sector_areas = 0;
+    if (this->doing_sector_areas) {
+        this->doing_sector_areas = false;
+        LOG_F(WARNING, "%s: doing_sector_areas reset", this->name.c_str());
+    }
 
     switch (this->cmd_pkt[0]) {
     case ScsiCommand::TEST_UNIT_READY:
@@ -183,26 +188,171 @@ void AtapiCdrom::perform_packet_command() {
         this->present_status();
         break;
     case ScsiCommand::READ_CD:
-        lba      = READ_DWORD_BE_U(&this->cmd_pkt[2]);
+    {
+        lba = READ_DWORD_BE_U(&this->cmd_pkt[2]);
         xfer_len = (this->cmd_pkt[6] << 16) | READ_WORD_BE_U(&this->cmd_pkt[7]);
-        if (this->cmd_pkt[1] || this->cmd_pkt[9] != 0x10 || this->cmd_pkt[10])
-            LOG_F(WARNING, "%s: unsupported READ_CD params", this->name.c_str());
+        if (this->cmd_pkt[1] || (this->cmd_pkt[9] & ~0xf8) || ((this->cmd_pkt[9] & 0xf8) == 0) || this->cmd_pkt[10])
+            LOG_F(WARNING, "%s: unsupported READ_CD params: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X",
+                this->name.c_str(),
+                this->cmd_pkt[0], this->cmd_pkt[1], this->cmd_pkt[2], this->cmd_pkt[3], this->cmd_pkt[4], this->cmd_pkt[5],
+                this->cmd_pkt[6], this->cmd_pkt[7], this->cmd_pkt[8], this->cmd_pkt[9], this->cmd_pkt[10], this->cmd_pkt[11]
+            );
         if (this->r_features & ATAPI_Features::DMA) {
             LOG_F(WARNING, "ATAPI DMA transfer requsted");
         }
         this->set_fpos(lba);
-        this->xfer_cnt = this->read_begin(xfer_len, this->r_byte_count);
-        this->r_byte_count = this->xfer_cnt;
+        this->sector_areas = cmd_pkt[9];
+        this->doing_sector_areas = true;
+        this->current_block = lba;
+        this->current_block_byte = 0;
+
+        int bytes_prolog = 0;
+        int bytes_data = 0;
+        int bytes_epilog = 0;
+
+        // For Mode 1 CD-ROMs:
+        if (this->sector_areas & 0x80) bytes_prolog +=   12; // Sync
+        if (this->sector_areas & 0x20) bytes_prolog +=    4; // Header
+        if (this->sector_areas & 0x40) bytes_prolog +=    0; // SubHeader
+        if (this->sector_areas & 0x10) bytes_data   += 2048; // User
+        if (this->sector_areas & 0x08) bytes_epilog +=  288; // Auxiliary
+        if (this->sector_areas & 0x02) bytes_epilog +=  294; // ErrorFlags
+        if (this->sector_areas & 0x01) bytes_epilog +=   96; // SubChannel
+
+        int bytes_per_block = bytes_prolog + bytes_data + bytes_epilog;
+
+        int disk_image_byte_count;
+
+        if (bytes_per_block == 0) {
+            disk_image_byte_count = 0xffff;
+        }
+        else {
+            disk_image_byte_count = (this->r_byte_count / bytes_per_block) * this->block_size; // whole blocks
+            if ((this->r_byte_count % bytes_per_block) > bytes_prolog) { // partial block
+                int disk_image_byte_count_partial_block = (this->r_byte_count % bytes_per_block) - bytes_prolog; // remove prolog from partial block
+                if (disk_image_byte_count_partial_block > this->block_size) { // partial block includes some epilog?
+                    disk_image_byte_count_partial_block = this->block_size; // // remove epilog from partial block
+                }
+                // add partial block
+                disk_image_byte_count += disk_image_byte_count_partial_block;
+            }
+        }
+
+        int disk_image_bytes_received = this->read_begin(xfer_len, disk_image_byte_count);
+
+        int bytes_received = (disk_image_bytes_received / this->block_size) * bytes_per_block + bytes_prolog + (disk_image_bytes_received % this->block_size); // whole blocks + prolog + partial block
+        if (bytes_received > this->r_byte_count) { // if partial epilog or partial prolog
+            bytes_received = this->r_byte_count; // confine to r_byte_count
+        }
+        this->r_byte_count = bytes_received;
+        this->xfer_cnt = bytes_received;
+
         this->data_ptr = (uint16_t*)this->data_cache.get();
         this->status_good();
         this->data_out_phase();
         break;
+    }
     default:
         LOG_F(ERROR, "%s: unsupported ATAPI command 0x%X", this->name.c_str(),
               this->cmd_pkt[0]);
         this->status_error(ScsiSense::ILLEGAL_REQ, ScsiError::INVALID_CMD);
         this->present_status();
     }
+}
+
+int AtapiCdrom::request_data() {
+    // continuation of READ_CD above
+
+    this->data_ptr = (uint16_t*)this->data_cache.get();
+
+    this->xfer_cnt = this->read_more();
+
+    return this->xfer_cnt;
+}
+
+static const uint8_t mode_1_sync[] = { 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00 };
+
+uint16_t AtapiCdrom::get_data() {
+    uint16_t ret_data;
+
+    if (doing_sector_areas) {
+        // For Mode 1 CD-ROMs:
+        int area_start;
+        int area_end = 0;
+        
+        ret_data = 0xffff;
+
+        if (this->sector_areas & 0x80) {
+            area_start = area_end;
+            area_end += 12; // Sync
+            if (this->current_block_byte >= area_start && this->current_block_byte < area_end) {
+                ret_data = BYTESWAP_16(*((uint16_t*)(&mode_1_sync[current_block_byte - area_start])));
+            }
+        }
+
+        if (this->sector_areas & 0x20) {
+            area_start = area_end;
+            area_end += 4; // Header
+            if (this->current_block_byte >= area_start && this->current_block_byte < area_end) {
+                AddrMsf msf = lba_to_msf(this->current_block + 150);
+                uint8_t header[4];
+                header[0] = msf.min;
+                header[1] = msf.sec;
+                header[2] = msf.frm;
+                header[3] = 0x01; // Mode 1
+                ret_data = BYTESWAP_16(*((uint16_t*)(&header[current_block_byte - area_start])));
+            }
+        }
+
+        if (this->sector_areas & 0x40) {
+            area_start = area_end;
+            area_end += 0; // SubHeader
+            if (this->current_block_byte >= area_start && this->current_block_byte < area_end) {
+                ret_data = 0;
+            }
+        }
+
+        if (this->sector_areas & 0x10) {
+            area_start = area_end;
+            area_end += 2048; // User
+            if (this->current_block_byte >= area_start && this->current_block_byte < area_end) {
+                ret_data = AtaBaseDevice::get_data();
+            }
+        }
+
+        if (this->sector_areas & 0x08) {
+            area_start = area_end;
+            area_end += 288; // Auxiliary
+            if (this->current_block_byte >= area_start && this->current_block_byte < area_end) {
+                ret_data = 0;
+            }
+        }
+
+        if (this->sector_areas & 0x02) {
+            area_start = area_end;
+            area_end += 294; // ErrorFlags
+            if (this->current_block_byte >= area_start && this->current_block_byte < area_end) {
+                ret_data = 0;
+            }
+        }
+
+        if (this->sector_areas & 0x01) {
+            area_start = area_end;
+            area_end += 96; // SubChannel
+            if (this->current_block_byte >= area_start && this->current_block_byte < area_end) {
+                ret_data = 0;
+            }
+        }
+
+        current_block_byte += 2;
+        if (current_block_byte >= area_end)
+            current_block_byte = 0;
+    }
+    else {
+        ret_data = AtaBaseDevice::get_data();
+    }
+
+    return ret_data;
 }
 
 void AtapiCdrom::status_good() {

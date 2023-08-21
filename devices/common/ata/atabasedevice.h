@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/ata/atadefs.h>
 #include <devices/common/ata/idechannel.h>
 #include <devices/common/hwcomponent.h>
+#include "endianswap.h"
 
 #include <cinttypes>
 #include <string>
@@ -54,6 +55,14 @@ public:
     virtual void device_set_signature();
     void device_control(const uint8_t new_ctrl);
     void update_intrq(uint8_t new_intrq_state);
+
+    bool has_data() {
+        return data_ptr && xfer_cnt;
+    }
+
+    uint16_t get_data() {
+        return BYTESWAP_16(*this->data_ptr++);
+    }
 
 protected:
     bool is_selected() { return ((this->r_dev_head >> 4) & 1) == this->my_dev_id; };
