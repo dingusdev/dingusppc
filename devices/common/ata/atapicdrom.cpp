@@ -137,6 +137,32 @@ void AtapiCdrom::perform_packet_command() {
             this->data_out_phase();
         }
         break;
+    case ScsiCommand::READ_6:
+        lba      = this->cmd_pkt[1] << 16 | READ_WORD_BE_U(&this->cmd_pkt[2]);
+        xfer_len = this->cmd_pkt[4];
+        if (this->r_features & ATAPI_Features::DMA) {
+            LOG_F(WARNING, "ATAPI DMA transfer requsted");
+        }
+        this->set_fpos(lba);
+        this->xfer_cnt = this->read_begin(xfer_len, this->r_byte_count);
+        this->r_byte_count = this->xfer_cnt;
+        this->data_ptr = (uint16_t*)this->data_cache.get();
+        this->status_good();
+        this->data_out_phase();
+        break;
+    case ScsiCommand::READ_10:
+        lba      = READ_DWORD_BE_U(&this->cmd_pkt[2]);
+        xfer_len = READ_WORD_BE_U(&this->cmd_pkt[7]);
+        if (this->r_features & ATAPI_Features::DMA) {
+            LOG_F(WARNING, "ATAPI DMA transfer requsted");
+        }
+        this->set_fpos(lba);
+        this->xfer_cnt = this->read_begin(xfer_len, this->r_byte_count);
+        this->r_byte_count = this->xfer_cnt;
+        this->data_ptr = (uint16_t*)this->data_cache.get();
+        this->status_good();
+        this->data_out_phase();
+        break;
     case ScsiCommand::READ_12:
         lba      = READ_DWORD_BE_U(&this->cmd_pkt[2]);
         xfer_len = READ_DWORD_BE_U(&this->cmd_pkt[6]);
