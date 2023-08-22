@@ -820,16 +820,16 @@ void tlb_flush_entries(TLBFlags type)
 
     // Flush entries from the secondary TLBs
     for (i = 0; i < TLB_SIZE * TLB2_WAYS; i++) {
-        if (dtlb2_mode1[i].flags & type) {
-            dtlb2_mode1[i].tag = TLB_INVALID_TAG;
+        if (m1_tlb[i].flags & type) {
+            m1_tlb[i].tag = TLB_INVALID_TAG;
         }
 
-        if (dtlb2_mode2[i].flags & type) {
-            dtlb2_mode2[i].tag = TLB_INVALID_TAG;
+        if (m2_tlb[i].flags & type) {
+            m2_tlb[i].tag = TLB_INVALID_TAG;
         }
 
-        if (dtlb2_mode3[i].flags & type) {
-            dtlb2_mode3[i].tag = TLB_INVALID_TAG;
+        if (m3_tlb[i].flags & type) {
+            m3_tlb[i].tag = TLB_INVALID_TAG;
         }
     }
 }
