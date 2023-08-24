@@ -376,6 +376,37 @@ static void print_gprs() {
     }
 }
 
+extern bool is_601;
+
+static void print_mmu_regs()
+{
+    printf("MSR : 0x%08X\n", ppc_state.msr);
+
+    printf("\nBAT registers:\n");
+
+    for (int i = 0; i < 4; i++) {
+        printf("IBAT%dU : 0x%08X, IBAT%dL : 0x%08X\n",
+              i, ppc_state.spr[528+i*2],
+              i, ppc_state.spr[529+i*2]);
+    }
+
+    if (!is_601) {
+        for (int i = 0; i < 4; i++) {
+            printf("DBAT%dU : 0x%08X, DBAT%dL : 0x%08X\n",
+                  i, ppc_state.spr[536+i*2],
+                  i, ppc_state.spr[537+i*2]);
+        }
+    }
+
+    printf("\n");
+    printf("SDR1 : 0x%08X\n", ppc_state.spr[SPR::SDR1]);
+    printf("\nSegment registers:\n");
+
+    for (int i = 0; i < 16; i++) {
+        printf("SR%-2d : 0x%08X\n", i, ppc_state.sr[i]);
+    }
+}
+
 #ifndef _WIN32
 
 #include <signal.h>
@@ -457,6 +488,9 @@ void enter_debugger() {
             } else {
                 print_gprs();
             }
+        } else if (cmd == "mregs") {
+            cmd = "";
+            print_mmu_regs();
         } else if (cmd == "set") {
             ss >> expr_str;
 

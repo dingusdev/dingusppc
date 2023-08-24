@@ -995,36 +995,6 @@ void mmu_pat_ctx_changed()
     }
 }
 
-void mmu_print_regs()
-{
-    LOG_SCOPE_FUNCTION(INFO);
-    LOG_F(INFO, "MSR = 0x%X", ppc_state.msr);
-
-    LOG_F(INFO, "BAT registers:");
-
-    for (int i = 0; i < 4; i++) {
-        LOG_F(INFO, "IBAT%dU = 0x%X, IBAT%dL = 0x%X",
-              i, ppc_state.spr[528+i*2],
-              i, ppc_state.spr[529+i*2]);
-    }
-
-    if (!is_601) {
-        for (int i = 0; i < 4; i++) {
-            LOG_F(INFO, "DBAT%dU = 0x%X, DBAT%dL = 0x%X",
-                  i, ppc_state.spr[536+i*2],
-                  i, ppc_state.spr[537+i*2]);
-        }
-    }
-
-    LOG_F(INFO, "%s", "");
-    LOG_F(INFO, "SDR1 = 0x%X", ppc_state.spr[SPR::SDR1]);
-    LOG_F(INFO, "Segment registers:");
-
-    for (int i = 0; i < 16; i++) {
-        LOG_F(INFO, "SR%d = 0x%X", i, ppc_state.sr[i]);
-    }
-}
-
 // Forward declarations.
 template <class T>
 static T read_unaligned(uint32_t guest_va, uint8_t *host_va);
