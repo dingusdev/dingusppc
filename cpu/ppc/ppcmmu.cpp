@@ -650,26 +650,26 @@ static inline TLBEntry* lookup_secondary_tlb(uint32_t guest_va, uint32_t tag) {
         tlb_entry[2].lru_bits &= 0x1;
         tlb_entry[3].lru_bits &= 0x1;
     } else if (tlb_entry[1].tag == tag) {
-        tlb_entry = &tlb_entry[1];
         // update LRU bits
         tlb_entry[0].lru_bits  = 0x2;
         tlb_entry[1].lru_bits  = 0x3;
         tlb_entry[2].lru_bits &= 0x1;
         tlb_entry[3].lru_bits &= 0x1;
+        tlb_entry = &tlb_entry[1];
     } else if (tlb_entry[2].tag == tag) {
-        tlb_entry = &tlb_entry[2];
         // update LRU bits
         tlb_entry[0].lru_bits &= 0x1;
         tlb_entry[1].lru_bits &= 0x1;
         tlb_entry[2].lru_bits  = 0x3;
         tlb_entry[3].lru_bits  = 0x2;
+        tlb_entry = &tlb_entry[2];
     } else if (tlb_entry[3].tag == tag) {
-        tlb_entry = &tlb_entry[3];
         // update LRU bits
         tlb_entry[0].lru_bits &= 0x1;
         tlb_entry[1].lru_bits &= 0x1;
         tlb_entry[2].lru_bits  = 0x2;
         tlb_entry[3].lru_bits  = 0x3;
+        tlb_entry = &tlb_entry[3];
     } else {
         return nullptr;
     }
@@ -1597,26 +1597,26 @@ static inline uint64_t tlb_translate_addr(uint32_t guest_va)
             tlb2_entry[2].lru_bits &= 0x1;
             tlb2_entry[3].lru_bits &= 0x1;
         } else if (tlb2_entry[1].tag == tag) {
-            tlb2_entry = &tlb2_entry[1];
             // update LRU bits
             tlb2_entry[0].lru_bits  = 0x2;
             tlb2_entry[1].lru_bits  = 0x3;
             tlb2_entry[2].lru_bits &= 0x1;
             tlb2_entry[3].lru_bits &= 0x1;
+            tlb2_entry = &tlb2_entry[1];
         } else if (tlb2_entry[2].tag == tag) {
-            tlb2_entry = &tlb2_entry[2];
             // update LRU bits
             tlb2_entry[0].lru_bits &= 0x1;
             tlb2_entry[1].lru_bits &= 0x1;
             tlb2_entry[2].lru_bits  = 0x3;
             tlb2_entry[3].lru_bits  = 0x2;
+            tlb2_entry = &tlb2_entry[2];
         } else if (tlb2_entry[3].tag == tag) {
-            tlb2_entry = &tlb2_entry[3];
             // update LRU bits
             tlb2_entry[0].lru_bits &= 0x1;
             tlb2_entry[1].lru_bits &= 0x1;
             tlb2_entry[2].lru_bits  = 0x2;
             tlb2_entry[3].lru_bits  = 0x3;
+            tlb2_entry = &tlb2_entry[3];
         } else { // secondary TLB miss ->
             // perform full address translation and refill the secondary TLB
             tlb2_entry = dtlb2_refill(guest_va, 0);
