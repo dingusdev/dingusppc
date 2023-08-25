@@ -772,6 +772,15 @@ void tlb_flush_entry(uint32_t ea)
     tlb_flush_secondary_entry(dtlb2_mode3, tag);
 }
 
+template <std::size_t N>
+static void tlb_flush_entries(std::array<TLBEntry, N> &tlb, TLBFlags type) {
+    for (auto &tlb_el : tlb) {
+        if (tlb_el.tag != TLB_INVALID_TAG && tlb_el.flags & type) {
+            tlb_el.tag = TLB_INVALID_TAG;
+        }
+    }
+}
+
 template <const TLBType tlb_type>
 void tlb_flush_entries(TLBFlags type)
 {
@@ -779,53 +788,19 @@ void tlb_flush_entries(TLBFlags type)
     int i;
 
     if (tlb_type == TLBType::ITLB) {
-        m1_tlb = &itlb1_mode1[0];
-        m2_tlb = &itlb1_mode2[0];
-        m3_tlb = &itlb1_mode3[0];
+        tlb_flush_entries(itlb1_mode1, type);
+        tlb_flush_entries(itlb1_mode2, type);
+        tlb_flush_entries(itlb1_mode3, type);
+        tlb_flush_entries(itlb2_mode1, type);
+        tlb_flush_entries(itlb2_mode2, type);
+        tlb_flush_entries(itlb2_mode3, type);
     } else {
-        m1_tlb = &dtlb1_mode1[0];
-        m2_tlb = &dtlb1_mode2[0];
-        m3_tlb = &dtlb1_mode3[0];
-    }
-
-    // Flush entries from the primary TLBs
-    for (i = 0; i < TLB_SIZE; i++) {
-        if (m1_tlb[i].flags & type) {
-            m1_tlb[i].tag = TLB_INVALID_TAG;
-        }
-
-        if (m2_tlb[i].flags & type) {
-            m2_tlb[i].tag = TLB_INVALID_TAG;
-        }
-
-        if (m3_tlb[i].flags & type) {
-            m3_tlb[i].tag = TLB_INVALID_TAG;
-        }
-    }
-
-    if (tlb_type == TLBType::ITLB) {
-        m1_tlb = &itlb2_mode1[0];
-        m2_tlb = &itlb2_mode2[0];
-        m3_tlb = &itlb2_mode3[0];
-    } else {
-        m1_tlb = &dtlb2_mode1[0];
-        m2_tlb = &dtlb2_mode2[0];
-        m3_tlb = &dtlb2_mode3[0];
-    }
-
-    // Flush entries from the secondary TLBs
-    for (i = 0; i < TLB_SIZE * TLB2_WAYS; i++) {
-        if (m1_tlb[i].flags & type) {
-            m1_tlb[i].tag = TLB_INVALID_TAG;
-        }
-
-        if (m2_tlb[i].flags & type) {
-            m2_tlb[i].tag = TLB_INVALID_TAG;
-        }
-
-        if (m3_tlb[i].flags & type) {
-            m3_tlb[i].tag = TLB_INVALID_TAG;
-        }
+        tlb_flush_entries(dtlb1_mode1, type);
+        tlb_flush_entries(dtlb1_mode2, type);
+        tlb_flush_entries(dtlb1_mode3, type);
+        tlb_flush_entries(dtlb2_mode1, type);
+        tlb_flush_entries(dtlb2_mode2, type);
+        tlb_flush_entries(dtlb2_mode3, type);
     }
 }
 
