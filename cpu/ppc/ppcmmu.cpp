@@ -857,6 +857,18 @@ void tlb_flush_pat_entries()
     gTLBFlushPatEntries = false;
 }
 
+template <const TLBType tlb_type>
+void tlb_flush_all_entries()
+{
+    if (!gTLBFlushBatEntries && !gTLBFlushPatEntries)
+        return;
+
+    tlb_flush_entries<tlb_type>((TLBFlags)(TLBE_FROM_BAT | TLBE_FROM_PAT));
+
+    gTLBFlushBatEntries = false;
+    gTLBFlushPatEntries = false;
+}
+
 static void mpc601_bat_update(uint32_t bat_reg)
 {
     PPC_BAT_entry *ibat_entry, *dbat_entry;
@@ -888,10 +900,11 @@ static void mpc601_bat_update(uint32_t bat_reg)
     }
 
     // MPC601 has unified BATs so we're going to flush both ITLB and DTLB
-    if (!gTLBFlushBatEntries) {
+    if (!gTLBFlushBatEntries || !gTLBFlushPatEntries) {
         gTLBFlushBatEntries = true;
-        add_ctx_sync_action(&tlb_flush_bat_entries<TLBType::ITLB>);
-        add_ctx_sync_action(&tlb_flush_bat_entries<TLBType::DTLB>);
+        gTLBFlushPatEntries = true;
+        add_ctx_sync_action(&tlb_flush_all_entries<TLBType::ITLB>);
+        add_ctx_sync_action(&tlb_flush_all_entries<TLBType::DTLB>);
     }
 }
 
@@ -913,9 +926,10 @@ static void ppc_ibat_update(uint32_t bat_reg)
     bat_entry->phys_hi = ppc_state.spr[upper_reg_num + 1] & hi_mask;
     bat_entry->bepi    = ppc_state.spr[upper_reg_num] & hi_mask;
 
-    if (!gTLBFlushBatEntries) {
+    if (!gTLBFlushBatEntries || !gTLBFlushPatEntries) {
         gTLBFlushBatEntries = true;
-        add_ctx_sync_action(&tlb_flush_bat_entries<TLBType::ITLB>);
+        gTLBFlushPatEntries = true;
+        add_ctx_sync_action(&tlb_flush_all_entries<TLBType::ITLB>);
     }
 }
 
@@ -937,9 +951,10 @@ static void ppc_dbat_update(uint32_t bat_reg)
     bat_entry->phys_hi = ppc_state.spr[upper_reg_num + 1] & hi_mask;
     bat_entry->bepi    = ppc_state.spr[upper_reg_num] & hi_mask;
 
-    if (!gTLBFlushBatEntries) {
+    if (!gTLBFlushBatEntries || !gTLBFlushPatEntries) {
         gTLBFlushBatEntries = true;
-        add_ctx_sync_action(&tlb_flush_bat_entries<TLBType::DTLB>);
+        gTLBFlushPatEntries = true;
+        add_ctx_sync_action(&tlb_flush_all_entries<TLBType::DTLB>);
     }
 
 }
