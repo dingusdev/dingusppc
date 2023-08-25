@@ -735,57 +735,41 @@ uint8_t *mmu_translate_imem(uint32_t vaddr, uint32_t *paddr)
     return host_va;
 }
 
-void tlb_flush_entry(uint32_t ea)
+static void tlb_flush_primary_entry(std::array<TLBEntry, TLB_SIZE> &tlb1, uint32_t tag)
 {
-    TLBEntry *tlb_entry, *tlb1, *tlb2;
+    TLBEntry *tlb_entry = &tlb1[(tag >> PAGE_SIZE_BITS) & tlb_size_mask];
+    if (tlb_entry->tag == tag) {
+        tlb_entry->tag = TLB_INVALID_TAG;
+        //LOG_F(INFO, "Invalidated primary TLB entry at 0x%X", ea);
+    }
+}
 
-    const uint32_t tag = ea & ~0xFFFUL;
-
-    for (int m = 0; m < 6; m++) {
-        switch (m) {
-        case 0:
-            tlb1 = &itlb1_mode1[0];
-            tlb2 = &itlb2_mode1[0];
-            break;
-        case 1:
-            tlb1 = &itlb1_mode2[0];
-            tlb2 = &itlb2_mode2[0];
-            break;
-        case 2:
-            tlb1 = &itlb1_mode3[0];
-            tlb2 = &itlb2_mode3[0];
-            break;
-        case 3:
-            tlb1 = &dtlb1_mode1[0];
-            tlb2 = &dtlb2_mode1[0];
-            break;
-        case 4:
-            tlb1 = &dtlb1_mode2[0];
-            tlb2 = &dtlb2_mode2[0];
-            break;
-        default:
-        case 5:
-            tlb1 = &dtlb1_mode3[0];
-            tlb2 = &dtlb2_mode3[0];
-            break;
-        }
-
-        // flush primary TLB
-        tlb_entry = &tlb1[(ea >> PAGE_SIZE_BITS) & tlb_size_mask];
-        if (tlb_entry->tag == tag) {
-            tlb_entry->tag = TLB_INVALID_TAG;
-            //LOG_F(INFO, "Invalidated primary TLB entry at 0x%X", ea);
-        }
-
-        // flush secondary TLB
-        tlb_entry = &tlb2[((ea >> PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
-        for (int i = 0; i < TLB2_WAYS; i++) {
-            if (tlb_entry[i].tag == tag) {
-                tlb_entry[i].tag = TLB_INVALID_TAG;
-                //LOG_F(INFO, "Invalidated secondary TLB entry at 0x%X", ea);
-            }
+static void tlb_flush_secondary_entry(std::array<TLBEntry, TLB_SIZE*TLB2_WAYS> &tlb2, uint32_t tag)
+{
+    TLBEntry *tlb_entry = &tlb2[((tag >> PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
+    for (int i = 0; i < TLB2_WAYS; i++) {
+        if (tlb_entry[i].tag == tag) {
+            tlb_entry[i].tag = TLB_INVALID_TAG;
+            //LOG_F(INFO, "Invalidated secondary TLB entry at 0x%X", ea);
         }
     }
+}
+
+void tlb_flush_entry(uint32_t ea)
+{
+    const uint32_t tag = ea & ~0xFFFUL;
+    tlb_flush_primary_entry(itlb1_mode1, tag);
+    tlb_flush_secondary_entry(itlb2_mode1, tag);
+    tlb_flush_primary_entry(itlb1_mode2, tag);
+    tlb_flush_secondary_entry(itlb2_mode2, tag);
+    tlb_flush_primary_entry(itlb1_mode3, tag);
+    tlb_flush_secondary_entry(itlb2_mode3, tag);
+    tlb_flush_primary_entry(dtlb1_mode1, tag);
+    tlb_flush_secondary_entry(dtlb2_mode1, tag);
+    tlb_flush_primary_entry(dtlb1_mode2, tag);
+    tlb_flush_secondary_entry(dtlb2_mode2, tag);
+    tlb_flush_primary_entry(dtlb1_mode3, tag);
+    tlb_flush_secondary_entry(dtlb2_mode3, tag);
 }
 
 template <const TLBType tlb_type>
