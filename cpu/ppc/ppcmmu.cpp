@@ -2046,6 +2046,19 @@ bool mmu_translate_dbg(uint32_t guest_va, uint32_t &guest_pa) {
     return is_mapped;
 }
 
+template <std::size_t N>
+static void invalidate_tlb_entries(std::array<TLBEntry, N> &tlb) {
+    for (auto &tlb_el : tlb) {
+        tlb_el.tag = TLB_INVALID_TAG;
+        tlb_el.flags = 0;
+        tlb_el.lru_bits = 0;
+        tlb_el.host_va_offs_r = 0;
+        tlb_el.host_va_offs_w = 0;
+        tlb_el.phys_tag = 0;
+        tlb_el.reserved = 0;
+    }
+}
+
 void ppc_mmu_init()
 {
     mmu_exception_handler = ppc_exception_handler;
@@ -2060,96 +2073,19 @@ void ppc_mmu_init()
     }
 
     // invalidate all IDTLB entries
-    for (auto &tlb_el : itlb1_mode1) {
-        tlb_el.tag = TLB_INVALID_TAG;
-        tlb_el.flags = 0;
-        tlb_el.lru_bits = 0;
-        tlb_el.host_va_offs_r = 0;
-    }
-
-    for (auto &tlb_el : itlb1_mode2) {
-        tlb_el.tag = TLB_INVALID_TAG;
-        tlb_el.flags = 0;
-        tlb_el.lru_bits = 0;
-        tlb_el.host_va_offs_r = 0;
-    }
-
-    for (auto &tlb_el : itlb1_mode3) {
-        tlb_el.tag = TLB_INVALID_TAG;
-        tlb_el.flags = 0;
-        tlb_el.lru_bits = 0;
-        tlb_el.host_va_offs_r = 0;
-    }
-
-    for (auto &tlb_el : itlb2_mode1) {
-        tlb_el.tag = TLB_INVALID_TAG;
-        tlb_el.flags = 0;
-        tlb_el.lru_bits = 0;
-        tlb_el.host_va_offs_r = 0;
-    }
-
-    for (auto &tlb_el : itlb2_mode2) {
-        tlb_el.tag = TLB_INVALID_TAG;
-        tlb_el.flags = 0;
-        tlb_el.lru_bits = 0;
-        tlb_el.host_va_offs_r = 0;
-    }
-
-    for (auto &tlb_el : itlb2_mode3) {
-        tlb_el.tag = TLB_INVALID_TAG;
-        tlb_el.flags = 0;
-        tlb_el.lru_bits = 0;
-        tlb_el.host_va_offs_r = 0;
-    }
-
+    invalidate_tlb_entries(itlb1_mode1);
+    invalidate_tlb_entries(itlb1_mode2);
+    invalidate_tlb_entries(itlb1_mode3);
+    invalidate_tlb_entries(itlb2_mode1);
+    invalidate_tlb_entries(itlb2_mode2);
+    invalidate_tlb_entries(itlb2_mode3);
     // invalidate all DTLB entries
-    for (auto &tlb_el : dtlb1_mode1) {
-        tlb_el.tag = TLB_INVALID_TAG;
-        tlb_el.flags = 0;
-        tlb_el.lru_bits = 0;
-        tlb_el.host_va_offs_r = 0;
-        tlb_el.host_va_offs_w = 0;
-    }
-
-    for (auto &tlb_el : dtlb1_mode2) {
-        tlb_el.tag = TLB_INVALID_TAG;
-        tlb_el.flags = 0;
-        tlb_el.lru_bits = 0;
-        tlb_el.host_va_offs_r = 0;
-        tlb_el.host_va_offs_w = 0;
-    }
-
-    for (auto &tlb_el : dtlb1_mode3) {
-        tlb_el.tag = TLB_INVALID_TAG;
-        tlb_el.flags = 0;
-        tlb_el.lru_bits = 0;
-        tlb_el.host_va_offs_r = 0;
-        tlb_el.host_va_offs_w = 0;
-    }
-
-    for (auto &tlb_el : dtlb2_mode1) {
-        tlb_el.tag = TLB_INVALID_TAG;
-        tlb_el.flags = 0;
-        tlb_el.lru_bits = 0;
-        tlb_el.host_va_offs_r = 0;
-        tlb_el.host_va_offs_w = 0;
-    }
-
-    for (auto &tlb_el : dtlb2_mode2) {
-        tlb_el.tag = TLB_INVALID_TAG;
-        tlb_el.flags = 0;
-        tlb_el.lru_bits = 0;
-        tlb_el.host_va_offs_r = 0;
-        tlb_el.host_va_offs_w = 0;
-    }
-
-    for (auto &tlb_el : dtlb2_mode3) {
-        tlb_el.tag = TLB_INVALID_TAG;
-        tlb_el.flags = 0;
-        tlb_el.lru_bits = 0;
-        tlb_el.host_va_offs_r = 0;
-        tlb_el.host_va_offs_w = 0;
-    }
+    invalidate_tlb_entries(dtlb1_mode1);
+    invalidate_tlb_entries(dtlb1_mode2);
+    invalidate_tlb_entries(dtlb1_mode3);
+    invalidate_tlb_entries(dtlb2_mode1);
+    invalidate_tlb_entries(dtlb2_mode2);
+    invalidate_tlb_entries(dtlb2_mode3);
 
     mmu_change_mode();
 
