@@ -40,6 +40,12 @@ else() # Windows build relies on vcpkg
     add_compile_definitions(SDL_MAIN_HANDLED)
 endif()
 
+if (EMSCRIPTEN)
+    message(STATUS "Targeting Emscripten")
+    # loguru tries to include excinfo.h, which is not available under Emscripten.
+    add_compile_definitions(LOGURU_STACKTRACES=0)
+endif()
+
 option(DPPC_BUILD_PPC_TESTS  "Build PowerPC tests" OFF)
 option(DPPC_BUILD_BENCHMARKS "Build benchmarking programs" OFF)
 
@@ -118,6 +124,16 @@ add_executable(dingusppc ${SOURCES} $<TARGET_OBJECTS:core>
 
 if (WIN32)
     target_link_libraries(dingusppc PRIVATE SDL2::SDL2 SDL2::SDL2main cubeb)
+elseif (EMSCRIPTEN)
+    target_link_libraries(dingusppc PRIVATE SDL2::SDL2 SDL2::SDL2main cubeb
+                                    ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT}
+                                    "-gsource-map"
+                                    # 256 MB max for emulated Mac RAM, plus 32 MB of emulator overhead
+                                    "-s INITIAL_MEMORY=301989888"
+                                    "-s MODULARIZE"
+                                    "-s EXPORT_ES6"
+                                    "-s EXPORT_NAME=emulator"
+                                    "-s 'EXTRA_EXPORTED_RUNTIME_METHODS=[\"FS\"]'")
 else()
     target_link_libraries(dingusppc PRIVATE SDL2::SDL2 SDL2::SDL2main cubeb
                                     ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
