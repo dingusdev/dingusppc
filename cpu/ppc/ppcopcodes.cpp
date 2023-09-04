@@ -1460,6 +1460,9 @@ void dppc_interpreter::ppc_icbi() {
 
 void dppc_interpreter::ppc_dcbf() {
     /* placeholder */
+    ppc_grab_regsdab();
+    ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
+    LOG_F(9, "DCBF attempted; EA: %d", ppc_effective_address);
 }
 
 void dppc_interpreter::ppc_dcbi() {
@@ -1467,10 +1470,18 @@ void dppc_interpreter::ppc_dcbi() {
     num_supervisor_instrs++;
 #endif
     /* placeholder */
+    ppc_grab_regsdab();
+    ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
+    if (ppc_state.msr & 0x100000) {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x100000);
+    }
+    LOG_F(WARNING, "DCBI attempted; EA: %d", ppc_effective_address);
 }
 
 void dppc_interpreter::ppc_dcbst() {
-    /* placeholder */
+    ppc_grab_regsdab();
+    ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
+    LOG_F(WARNING, "DCBST attempted; EA: %d", ppc_effective_address);
 }
 
 void dppc_interpreter::ppc_dcbt() {
@@ -2010,11 +2021,18 @@ void dppc_interpreter::ppc_lmw() {
     ppc_grab_regsda();
     ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
     ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
+    if (ppc_state.spr[PVR] != MPC601) {
+        if (reg_d <= reg_a) {
+            ppc_exception_handler(Except_Type::EXC_PROGRAM, 0x80000);
+        }
+    }
     // How many words to load in memory - using a do-while for this
     do {
         //ppc_state.gpr[reg_d] = mem_grab_dword(ppc_effective_address);
-        ppc_state.gpr[reg_d] = mmu_read_vmem<uint32_t>(ppc_effective_address);
-        ppc_effective_address += 4;
+        if (reg_d != reg_a){
+            ppc_state.gpr[reg_d] = mmu_read_vmem<uint32_t>(ppc_effective_address);
+            ppc_effective_address += 4;
+        }
         reg_d++;
     } while (reg_d < 32);
 }
