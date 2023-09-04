@@ -851,6 +851,10 @@ void dppc_interpreter::ppc_mtmsr() {
     if (ppc_state.msr & 0x8000 && int_pin) {
         LOG_F(WARNING, "MTMSR: CPU INT pending, generate CPU exception");
         ppc_exception_handler(Except_Type::EXC_EXT_INT, 0);
+    } else if ((ppc_state.msr & 0x8000) && dec_exception_pending) {
+        dec_exception_pending = false;
+        //LOG_F(WARNING, "MTMSR: decrementer exception triggered");
+        ppc_exception_handler(Except_Type::EXC_DECR, 0);
     } else {
         mmu_change_mode();
     }
@@ -894,9 +898,43 @@ static void update_timebase(uint64_t mask, uint64_t new_val)
     tbr_wr_timestamp = get_virt_time_ns();
 }
 
+
+static uint32_t decrementer_timer_id = 0;
+
+static void trigger_decrementer_exception() {
+    decrementer_timer_id = 0;
+    dec_wr_value = -1;
+    dec_wr_timestamp = get_virt_time_ns();
+    if (ppc_state.msr & 0x8000) {
+        dec_exception_pending = false;
+        //LOG_F(WARNING, "decrementer exception triggered");
+        ppc_exception_handler(Except_Type::EXC_DECR, 0);
+    }
+    else {
+        //LOG_F(WARNING, "decrementer exception pending");
+        dec_exception_pending = true;
+    }
+}
+
 static void update_decrementer(uint32_t val) {
     dec_wr_value = val;
     dec_wr_timestamp = get_virt_time_ns();
+
+    dec_exception_pending = false;
+
+    if (decrementer_timer_id) {
+        //LOG_F(WARNING, "decrementer cancel timer");
+        TimerManager::get_instance()->cancel_timer(decrementer_timer_id);
+    }
+
+    uint64_t time_out;
+    uint32_t time_out_lo;
+    _u32xu64(val, tbr_period_ns, time_out, time_out_lo);
+    //LOG_F(WARNING, "decrementer:0x%08X ns:%llu", val, time_out);
+    decrementer_timer_id = TimerManager::get_instance()->add_oneshot_timer(
+        time_out,
+        trigger_decrementer_exception
+    );
 }
 
 void dppc_interpreter::ppc_mfspr() {
@@ -1401,6 +1439,15 @@ void dppc_interpreter::ppc_rfi() {
         return;
     }
 
+    if ((ppc_state.msr & 0x8000) && dec_exception_pending) {
+        dec_exception_pending = false;
+        //LOG_F(WARNING, "decrementer exception from rfi msr:0x%X", ppc_state.msr);
+        uint32_t save_srr0 = ppc_state.spr[SPR::SRR0] & 0xFFFFFFFCUL;
+        ppc_exception_handler(Except_Type::EXC_DECR, 0);
+        ppc_state.spr[SPR::SRR0] = save_srr0;
+        return;
+    }
+
     ppc_next_instruction_address = ppc_state.spr[SPR::SRR0] & 0xFFFFFFFCUL;
 
     do_ctx_sync(); // RFI is context synchronizing
@@ -1651,19 +1698,17 @@ void dppc_interpreter::ppc_stwcx() {
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
-    // PLACEHOLDER CODE FOR STWCX - We need to check for reserve memory
     if (rc_flag == 0) {
         ppc_illegalop();
     } else {
         ppc_grab_regssab();
         ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
+        ppc_state.cr &= 0x0FFFFFFFUL; // clear CR0
+        ppc_state.cr |= (ppc_state.spr[SPR::XER] & 0x80000000UL) >> 3; // copy XER[SO] to CR0[SO]
         if (ppc_state.reserve) {
             mmu_write_vmem<uint32_t>(ppc_effective_address, ppc_result_d);
-            //mem_write_dword(ppc_effective_address, ppc_result_d);
-            ppc_state.cr |= (ppc_state.spr[SPR::XER] & 0x80000000) ? 0x30000000 : 0x20000000;
             ppc_state.reserve = false;
-        } else {
-            ppc_state.cr |= (ppc_state.spr[SPR::XER] & 0x80000000) ? 0x10000000 : 0;
+            ppc_state.cr |= 0x20000000UL; // set CR0[EQ]
         }
     }
 }

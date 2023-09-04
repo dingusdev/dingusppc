@@ -131,7 +131,7 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
 
     mmu_change_mode();
 
-    if (exception_type != Except_Type::EXC_EXT_INT) {
+    if (exception_type != Except_Type::EXC_EXT_INT && exception_type != Except_Type::EXC_DECR) {
         longjmp(exc_env, 2); /* return to the main execution loop. */
     }
 }

@@ -55,6 +55,7 @@ uint32_t ppc_next_instruction_address;    // Used for branching, setting up the 
 
 unsigned exec_flags;  // execution control flags
 bool int_pin = false; // interrupt request pin state: true - asserted
+bool dec_exception_pending = false;
 
 /* copy of local variable bb_start_la. Need for correct
    calculation of CPU cycles after setjmp that clobbers
@@ -69,7 +70,8 @@ int      icnt_factor;
 uint64_t tbr_wr_timestamp;  // stores vCPU virtual time of the last TBR write
 uint64_t rtc_timestamp;     // stores vCPU virtual time of the last RTC write
 uint64_t tbr_wr_value;      // last value written to the TBR
-uint32_t tbr_freq_ghz;      // TBR/RTC driving frequency in GHz expressed as a 32 bit fraction less than 1.0.
+uint32_t tbr_freq_ghz;      // TBR/RTC driving frequency in GHz expressed as a 32 bit fraction less than 1.0 (999.999999 MHz maximum).
+uint64_t tbr_period_ns;     // TBR/RTC period in ns expressed as a 64 bit value with 32 fractional bits (<1 Hz minimum).
 uint64_t timebase_counter;  // internal timebase counter
 uint64_t dec_wr_timestamp;  // stores vCPU virtual time of the last DEC write
 uint32_t dec_wr_value;      // last value written to the DEC register
@@ -768,6 +770,7 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, uint64_t tb_freq)
     rtc_timestamp = 0;
     tbr_wr_value = 0;
     tbr_freq_ghz = (tb_freq << 32) / NS_PER_SEC;
+    tbr_period_ns = ((uint64_t)NS_PER_SEC << 32) / tb_freq;
 
     exec_flags = 0;
 

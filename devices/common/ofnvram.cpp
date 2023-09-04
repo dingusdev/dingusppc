@@ -89,7 +89,7 @@ bool OfConfigAppl::validate() {
         return false;
 
     return true;
-};
+}
 
 uint16_t OfConfigAppl::checksum_partition() {
     uint32_t acc = 0;
@@ -178,7 +178,7 @@ const OfConfigImpl::config_dict& OfConfigAppl::get_config_vars() {
     }
 
     return _config_vars;
-};
+}
 
 void OfConfigAppl::update_partition() {
     // set checksum in the header to zero
@@ -300,7 +300,7 @@ bool OfConfigAppl::set_var(std::string& var_name, std::string& value) {
     }
 
     return true;
-};
+}
 
 uint8_t OfConfigChrp::checksum_hdr(const uint8_t* data)
 {
@@ -391,27 +391,47 @@ const OfConfigImpl::config_dict& OfConfigChrp::get_config_vars() {
 
     this->_config_vars.clear();
 
+    this->data_length = 0;
+
     if (!this->validate())
         return _config_vars;
 
     for (int pos = 0; pos < 4096;) {
         char *pname = (char *)&this->buf[pos];
+        bool got_name = false;
 
         // scan property name until '=' is encountered
         // or max length is reached
-        for (len = 0; len < 32; pos++, len++) {
-            if (pname[len] == '=' || pname[len] == '\0')
+        for (len = 0; ; pos++, len++) {
+            if (len >= 32) {
+                cout << "name > 31 chars" << endl;
                 break;
+            }
+            if (pos >= 4096) {
+                cout << "no = sign before end of partition" << endl;
+                break;
+            }
+            if (pname[len] == '=') {
+                if (len) {
+                    got_name = true;
+                }
+                else {
+                    cout << "got = sign but no name" << endl;
+                }
+                break;
+            }
+            if (pname[len] == '\0') {
+                if (len) {
+                    cout << "no = sign before termminating null" << endl;
+                }
+                else {
+                    // empty property name -> free space reached
+                }
+                break;
+            }
         }
 
-        // empty property name -> free space reached
-        if (!len) {
-            this->data_length = pos;
-            break;
-        }
-
-        if (pname[len] != '=') {
-            cout << "no = sign found or name > 31 chars" << endl;
+        if (!got_name) {
             break;
         }
 
@@ -436,8 +456,11 @@ const OfConfigImpl::config_dict& OfConfigChrp::get_config_vars() {
 
         this->_config_vars.push_back(std::make_pair(prop_name, pval));
         pos++; // skip past null terminator
+
+        this->data_length = pos; // point to after null
     }
 
+    //cout << "Read " << this->data_length << " bytes from nvram." << endl;
     return this->_config_vars;
 }
 
@@ -447,7 +470,7 @@ bool OfConfigChrp::update_partition() {
     memset(this->buf, 0, 4096);
 
     for (auto& var : this->_config_vars) {
-        if ((var.first.length() + var.second.length() + 2) >= 4096) {
+        if ((pos + var.first.length() + var.second.length() + 2) > 4096) {
             cout << "No room in the partition!" << endl;
             return false;
         }
@@ -464,6 +487,7 @@ bool OfConfigChrp::update_partition() {
         this->nvram_obj->write_byte(this->data_offset + i, this->buf[i]);
     }
 
+    //cout << "Wrote " << pos << " bytes to nvram." << endl;
     return true;
 }
 
@@ -471,25 +495,25 @@ bool OfConfigChrp::set_var(std::string& var_name, std::string& value) {
     if (!this->validate())
         return false;
 
-    bool found   = false;
+    // see if we're about to change a flag
+    if (var_name.back() == '?') {
+        if (value != "true" && value != "false") {
+            cout << "Flag value can be 'true' or 'false'" << endl;
+            return false;
+        }
+    }
+
+    unsigned free_space = 4096 - this->data_length;
+    bool found = false;
 
     // see if the user tries to change an existing property
     for (auto& var : this->_config_vars) {
         if (var.first == var_name) {
             found = true;
 
-            // see if we're about to change a flag
-            if (var_name.back() == '?') {
-                if (value != "true" && value != "false") {
-                    cout << "Flag value can be 'true' or 'false'" << endl;
-                    return false;
-                }
-            }
-
             if (value.length() > var.second.length()) {
-                unsigned free_space = 4096 - this->data_length;
-                if ((value.length() - var.second.length()) >= free_space) {
-                    cout << "No room for new data!" << endl;
+                if ((value.length() - var.second.length()) > free_space) {
+                    cout << "No room for updated nvram variable!" << endl;
                     return false;
                 }
             }
@@ -500,12 +524,15 @@ bool OfConfigChrp::set_var(std::string& var_name, std::string& value) {
     }
 
     if (!found) {
-        cout << "Attempt to change unknown variable " << var_name << endl;
-        return false;
+        if ((var_name.length() + value.length() + 2) > free_space) {
+            cout << "No room for new nvram variable!" << endl;
+            return false;
+        }
+        this->_config_vars.push_back(std::make_pair(var_name, value));
     }
 
     return this->update_partition();
-};
+}
 
 int OfConfigUtils::init()
 {
@@ -541,16 +568,27 @@ bool OfConfigUtils::open_container() {
     return false;
 }
 
-void OfConfigUtils::printenv() {
-    OfConfigImpl::config_dict   vars;
+static std::string ReplaceAll(std::string& str, const std::string& from, const std::string& to) {
+    size_t start_pos = 0;
+    while((start_pos = str.find(from, start_pos)) != std::string::npos) {
+        str.replace(start_pos, from.length(), to);
+        start_pos += to.length(); // Handles case where 'to' is a substring of 'from'
+    }
+    return str;
+}
 
+void OfConfigUtils::printenv() {
     if (!this->open_container())
         return;
 
-    vars = this->cfg_impl->get_config_vars();
+    OfConfigImpl::config_dict vars = this->cfg_impl->get_config_vars();
 
     for (auto& var : vars) {
-        cout << setw(34) << left << var.first << var.second << endl;
+        std::string val = var.second;
+        ReplaceAll(val, "\r\n", "\n");
+        ReplaceAll(val, "\r", "\n");
+        ReplaceAll(val, "\n", "\n                                  "); // 34 spaces
+        cout << setw(34) << left << var.first << val << endl; // name column has width 34
     }
 }
 
@@ -558,6 +596,8 @@ void OfConfigUtils::setenv(string var_name, string value)
 {
     if (!this->open_container())
         return;
+
+    OfConfigImpl::config_dict vars = this->cfg_impl->get_config_vars();
 
     if (!this->cfg_impl->set_var(var_name, value)) {
         cout << " Please try again" << endl;
