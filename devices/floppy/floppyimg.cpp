@@ -301,7 +301,7 @@ FloppyImgConverter* open_floppy_image(std::string& img_path)
     img_file.open(img_path, std::ios::in | std::ios::binary);
     if (img_file.fail()) {
         img_file.close();
-        LOG_F(ERROR, "Could not open specified floppy image!");
+        LOG_F(ERROR, "Could not open specified floppy image (%s)!", img_path.c_str());
         return nullptr;
     }
 
