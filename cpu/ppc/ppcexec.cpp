@@ -277,6 +277,7 @@ PPCOpcode* ppc_opcode_grabber = OpcodeGrabberNoFPU;
 void ppc_illegalop(uint32_t opcode) {
     // Zero values are used as sentinels in the TNT ROM and are thus somewhat
     // common, don't log them.
+    // Example: ciexit in Old World Open Firmware uses opcode 0.
     if (opcode) {
         PPCDisasmContext ctx;
         ctx.instr_code = opcode;
