@@ -832,41 +832,59 @@ void tlb_flush_entries(TLBFlags type)
     }
 }
 
-bool gTLBFlushBatEntries = false;
-bool gTLBFlushPatEntries = false;
+bool gTLBFlushIBatEntries = false;
+bool gTLBFlushDBatEntries = false;
+bool gTLBFlushIPatEntries = false;
+bool gTLBFlushDPatEntries = false;
 
 template <const TLBType tlb_type>
 void tlb_flush_bat_entries()
 {
-    if (!gTLBFlushBatEntries)
-        return;
-
-    tlb_flush_entries<tlb_type>(TLBE_FROM_BAT);
-
-    gTLBFlushBatEntries = false;
+    if (tlb_type == TLBType::ITLB) {
+        if (!gTLBFlushIBatEntries)
+            return;
+        tlb_flush_entries<TLBType::ITLB>(TLBE_FROM_BAT);
+        gTLBFlushIBatEntries = false;
+    } else {
+        if (!gTLBFlushDBatEntries)
+            return;
+        tlb_flush_entries<TLBType::DTLB>(TLBE_FROM_BAT);
+        gTLBFlushDBatEntries = false;
+    }
 }
 
 template <const TLBType tlb_type>
 void tlb_flush_pat_entries()
 {
-    if (!gTLBFlushPatEntries)
-        return;
-
-    tlb_flush_entries<tlb_type>(TLBE_FROM_PAT);
-
-    gTLBFlushPatEntries = false;
+    if (tlb_type == TLBType::ITLB) {
+        if (!gTLBFlushIPatEntries)
+            return;
+        tlb_flush_entries<TLBType::ITLB>(TLBE_FROM_PAT);
+        gTLBFlushIPatEntries = false;
+    } else {
+        if (!gTLBFlushDPatEntries)
+            return;
+        tlb_flush_entries<TLBType::DTLB>(TLBE_FROM_PAT);
+        gTLBFlushDPatEntries = false;
+    }
 }
 
 template <const TLBType tlb_type>
 void tlb_flush_all_entries()
 {
-    if (!gTLBFlushBatEntries && !gTLBFlushPatEntries)
-        return;
-
-    tlb_flush_entries<tlb_type>((TLBFlags)(TLBE_FROM_BAT | TLBE_FROM_PAT));
-
-    gTLBFlushBatEntries = false;
-    gTLBFlushPatEntries = false;
+    if (tlb_type == TLBType::ITLB) {
+        if (!gTLBFlushIBatEntries && !gTLBFlushIPatEntries)
+            return;
+        tlb_flush_entries<TLBType::ITLB>((TLBFlags)(TLBE_FROM_BAT | TLBE_FROM_PAT));
+        gTLBFlushIBatEntries = false;
+        gTLBFlushIPatEntries = false;
+    } else {
+        if (!gTLBFlushDBatEntries && !gTLBFlushDPatEntries)
+            return;
+        tlb_flush_entries<TLBType::DTLB>((TLBFlags)(TLBE_FROM_BAT | TLBE_FROM_PAT));
+        gTLBFlushDBatEntries = false;
+        gTLBFlushDPatEntries = false;
+    }
 }
 
 static void mpc601_bat_update(uint32_t bat_reg)
@@ -900,9 +918,11 @@ static void mpc601_bat_update(uint32_t bat_reg)
     }
 
     // MPC601 has unified BATs so we're going to flush both ITLB and DTLB
-    if (!gTLBFlushBatEntries || !gTLBFlushPatEntries) {
-        gTLBFlushBatEntries = true;
-        gTLBFlushPatEntries = true;
+    if (!gTLBFlushIBatEntries || !gTLBFlushIPatEntries || !gTLBFlushDBatEntries || !gTLBFlushDPatEntries) {
+        gTLBFlushIBatEntries = true;
+        gTLBFlushIPatEntries = true;
+        gTLBFlushDBatEntries = true;
+        gTLBFlushDPatEntries = true;
         add_ctx_sync_action(&tlb_flush_all_entries<TLBType::ITLB>);
         add_ctx_sync_action(&tlb_flush_all_entries<TLBType::DTLB>);
     }
@@ -926,9 +946,9 @@ static void ppc_ibat_update(uint32_t bat_reg)
     bat_entry->phys_hi = ppc_state.spr[upper_reg_num + 1] & hi_mask;
     bat_entry->bepi    = ppc_state.spr[upper_reg_num] & hi_mask;
 
-    if (!gTLBFlushBatEntries || !gTLBFlushPatEntries) {
-        gTLBFlushBatEntries = true;
-        gTLBFlushPatEntries = true;
+    if (!gTLBFlushIBatEntries || !gTLBFlushIPatEntries) {
+        gTLBFlushIBatEntries = true;
+        gTLBFlushIPatEntries = true;
         add_ctx_sync_action(&tlb_flush_all_entries<TLBType::ITLB>);
     }
 }
@@ -951,9 +971,9 @@ static void ppc_dbat_update(uint32_t bat_reg)
     bat_entry->phys_hi = ppc_state.spr[upper_reg_num + 1] & hi_mask;
     bat_entry->bepi    = ppc_state.spr[upper_reg_num] & hi_mask;
 
-    if (!gTLBFlushBatEntries || !gTLBFlushPatEntries) {
-        gTLBFlushBatEntries = true;
-        gTLBFlushPatEntries = true;
+    if (!gTLBFlushDBatEntries || !gTLBFlushDPatEntries) {
+        gTLBFlushDBatEntries = true;
+        gTLBFlushDPatEntries = true;
         add_ctx_sync_action(&tlb_flush_all_entries<TLBType::DTLB>);
     }
 
@@ -963,8 +983,9 @@ void mmu_pat_ctx_changed()
 {
     // Page address translation context changed so we need to flush
     // all PAT entries from both ITLB and DTLB
-    if (!gTLBFlushPatEntries) {
-        gTLBFlushPatEntries = true;
+    if (!gTLBFlushIPatEntries || !gTLBFlushDPatEntries) {
+        gTLBFlushIPatEntries = true;
+        gTLBFlushDPatEntries = true;
         add_ctx_sync_action(&tlb_flush_pat_entries<TLBType::ITLB>);
         add_ctx_sync_action(&tlb_flush_pat_entries<TLBType::DTLB>);
     }
