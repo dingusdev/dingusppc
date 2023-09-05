@@ -473,6 +473,89 @@ static void disasm_out(PPCDisasmContext &ctx) {
     cout << endl;
 }
 
+#ifdef LOG_INSTRUCTIONS
+void dumpinstructionlog(uint64_t num) {
+    if (InstructionNumber == 0)
+        return;
+    if (num > InstructionNumber) {
+        num = InstructionNumber;
+    }
+    if (num > InstructionLogSize) {
+        num = InstructionLogSize;
+    }
+
+    printf("Dumping last %llu of %llu instructions:\n", num, InstructionNumber);
+
+    uint64_t i, end;
+    i = (InstructionNumber - num) & (InstructionLogSize - 1);
+    end = (InstructionNumber) & (InstructionLogSize - 1);
+
+    do {
+        if (!power_on)
+            break;
+        InstructionRec * irec = &InstructionLog[i];
+
+        PPCDisasmContext ctx;
+        ctx.kinds = 0;
+        ctx.level = 0;
+        ctx.simplified = true;
+        ctx.instr_code = irec->ins;
+        ctx.instr_addr = irec->addr;
+
+        std::string name = get_name(irec->addr, irec->paddr, nullptr, nullptr, 0);
+
+        cout << COUT08X << ctx.instr_addr;
+        if (irec->paddr != irec->addr) {
+            cout << "->" << COUT08X << irec->paddr;
+        }
+        if (!name.empty()) {
+            cout << " " << setw(27) << left << setfill(' ') << name;
+        }
+        cout << ": " << COUT08X << ctx.instr_code;
+        cout << "    " << disassemble_single(&ctx) << setfill(' ') << left << dec;
+
+        if (ctx.instr_str.length() < 28)
+            cout << setw(28 - (int)ctx.instr_str.length()) << " ";
+        cout << " ;";
+        bool got_msr = false;
+        if (ctx.regs_in.size() > 0) {
+            cout << " in{" << COUTX;
+            for (auto & reg_name : ctx.regs_in) {
+                cout << " " << reg_name << ":";
+                if (reg_name == "msr") {
+                    cout << irec->msr;
+                    got_msr = true;
+                }
+                else
+                    cout << "?";
+            }
+            cout << " }" << dec;
+        }
+
+        if (ctx.regs_out.size() > 0) {
+            cout << " out{" << COUTX;
+            for (auto & reg_name : ctx.regs_out) {
+                cout << " " << reg_name << ":" << "?";
+            }
+            cout << " }" << dec;
+        }
+
+        if (!got_msr) {
+            cout << " misc{" << COUTX;
+            cout << " " << "msr" << ":";
+            cout << irec->msr;
+            cout << " }" << dec;
+        }
+
+        cout << endl;
+        i++;
+        if (i >= InstructionLogSize)
+            i = 0;
+    } while (i != end);
+}
+
+#endif
+
 static void print_gprs() {
     string reg_name;
     int i;
@@ -914,6 +997,28 @@ void DppcDebugger::enter_debugger() {
                     cout << exc.what() << endl;
                 }
             }
+#ifdef LOG_INSTRUCTIONS
+        } else if (cmd == "dumpinstructionlog") {
+            cmd = "";
+            uint64_t count;
+            expr_str = "";
+            ss >> expr_str;
+            if (expr_str.length() > 0) {
+                try {
+                    count = str2num(expr_str);
+                } catch (invalid_argument& exc) {
+                    cout << exc.what() << endl;
+                    count = 0;
+                }
+            } else {
+                count = InstructionNumber;
+            }
+            if (count)
+                dumpinstructionlog(count);
+        } else if (cmd == "clearinstructionlog") {
+            cmd = "";
+            InstructionNumber = 0;
+#endif
         } else if (cmd == "dump") {
             expr_str = "";
             ss >> expr_str;
