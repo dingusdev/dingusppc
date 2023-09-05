@@ -649,6 +649,7 @@ void DppcDebugger::enter_debugger() {
                     delete_prompt();
                 }
                 for (; --count >= 0;) {
+                    addr = ppc_state.pc;
                     ppc_exec_single();
                 }
             }
