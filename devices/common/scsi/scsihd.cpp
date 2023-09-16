@@ -30,7 +30,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <fstream>
 #include <cstring>
-#include <sys/stat.h>
 
 #define HDD_SECTOR_SIZE 512
 
@@ -43,17 +42,12 @@ ScsiHardDisk::ScsiHardDisk(int my_id) : ScsiDevice(my_id) {
 void ScsiHardDisk::insert_image(std::string filename) {
     //We don't want to store everything in memory, but
     //we want to keep the hard disk available.
-    this->hdd_img.open(filename, ios::out | ios::in | ios::binary);
-
-    struct stat stat_buf;
-    int rc = stat(filename.c_str(), &stat_buf);
-    if (!rc) {
-        this->img_size = stat_buf.st_size;
-        this->total_blocks = (this->img_size + HDD_SECTOR_SIZE - 1) / HDD_SECTOR_SIZE;
-    } else {
-        ABORT_F("ScsiHardDisk: could not determine file size using stat()");
+    if (!this->hdd_img.open(filename)) {
+        ABORT_F("ScsiHardDisk: could not open image file");
     }
-    this->hdd_img.seekg(0, std::ios_base::beg);
+
+    this->img_size = this->hdd_img.size();
+    this->total_blocks = (this->img_size + HDD_SECTOR_SIZE - 1) / HDD_SECTOR_SIZE;
 }
 
 void ScsiHardDisk::process_command() {
@@ -267,8 +261,7 @@ void ScsiHardDisk::read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
     transfer_size *= HDD_SECTOR_SIZE;
     uint64_t device_offset = lba * HDD_SECTOR_SIZE;
 
-    this->hdd_img.seekg(device_offset, this->hdd_img.beg);
-    this->hdd_img.read(img_buffer, transfer_size);
+    this->hdd_img.read(img_buffer, device_offset, transfer_size);
 
     this->cur_buf_cnt = transfer_size;
     this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;
@@ -288,20 +281,17 @@ void ScsiHardDisk::write(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
 
     this->incoming_size = transfer_size;
 
-    this->hdd_img.seekg(device_offset, this->hdd_img.beg);
-
-    this->post_xfer_action = [this]() {
-        this->hdd_img.write(this->img_buffer, this->incoming_size);
+    this->post_xfer_action = [this, device_offset]() {
+        this->hdd_img.write(this->img_buffer, device_offset, this->incoming_size);
     };
 }
 
 void ScsiHardDisk::seek(uint32_t lba) {
-    uint64_t device_offset = lba * HDD_SECTOR_SIZE;
-    this->hdd_img.seekg(device_offset, this->hdd_img.beg);
+    // No-op
 }
 
 void ScsiHardDisk::rewind() {
-    this->hdd_img.seekg(0, this->hdd_img.beg);
+    // No-op
 }
 
 static const PropMap SCSI_HD_Properties = {

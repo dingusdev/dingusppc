@@ -25,9 +25,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define SCSI_CDROM_H
 
 #include <devices/common/scsi/scsi.h>
+#include <utils/imgfile.h>
 
 #include <cinttypes>
-#include <fstream>
 #include <memory>
 #include <string>
 
@@ -74,7 +74,7 @@ private:
     AddrMsf lba_to_msf(const int lba);
 
 private:
-    std::fstream    cdr_img;
+    ImgFile         cdr_img;
     uint64_t        img_size;
     int             total_frames;
     int             num_tracks;

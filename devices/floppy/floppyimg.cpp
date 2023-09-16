@@ -25,13 +25,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <machines/machineproperties.h>
 #include <loguru.hpp>
 #include <memaccess.h>
+#include <utils/imgfile.h>
 
 #include <cinttypes>
 #include <cstring>
-#include <fstream>
 #include <string>
 
-static FlopImgType identify_image(std::ifstream& img_file)
+static FlopImgType identify_image(ImgFile& img_file)
 {
     // WOZ images identification strings
     static uint8_t WOZ1_SIG[] = {0x57, 0x4F, 0x5A, 0x31, 0xFF, 0x0A, 0x0D, 0x0A};
@@ -39,8 +39,7 @@ static FlopImgType identify_image(std::ifstream& img_file)
 
     uint8_t buf[8] = { 0 };
 
-    img_file.seekg(0, std::ios::beg);
-    img_file.read((char *)buf, sizeof(buf));
+    img_file.read((char *)buf, 0, sizeof(buf));
 
     // WOZ files are easily identified
     if (!std::memcmp(buf, WOZ1_SIG, sizeof(buf))) {
@@ -50,8 +49,7 @@ static FlopImgType identify_image(std::ifstream& img_file)
     } else {
         for (int offset = 0; offset <=84; offset += 84) {
             // rewind to logical block 2
-            img_file.seekg(2*BLOCK_SIZE + offset, std::ios::beg);
-            img_file.read((char *)buf, sizeof(buf));
+            img_file.read((char *)buf, 2*BLOCK_SIZE + offset, sizeof(buf));
 
             // check for HFS/MFS signature at the start of the logical block 2
             if ((buf[0] == 0x42 && buf[1] == 0x44) ||
@@ -79,26 +77,22 @@ RawFloppyImg::RawFloppyImg(std::string& file_path) : FloppyImgConverter()
 */
 int RawFloppyImg::calc_phys_params()
 {
-    std::ifstream img_file;
+    ImgFile img_file;
 
-    img_file.open(img_path, std::ios::in | std::ios::binary);
-    if (img_file.fail()) {
+    if (!img_file.open(img_path)) {
         img_file.close();
         LOG_F(ERROR, "RawFloppyImg: Could not open specified floppy image!");
         return -1;
     }
 
     // determine image size
-    img_file.seekg(0, img_file.end);
-    size_t img_size = img_file.tellg();
+    size_t img_size = img_file.size();
+    img_file.close();
     if (img_size > 2*1024*1024) {
         LOG_F(ERROR, "RawFloppyImg: image size is too large to determine disk format from image size!");
         return -1;
     }
     this->img_size = (int)img_size;
-    img_file.seekg(0, img_file.beg);
-
-    img_file.close();
 
     // verify image size
     if (this->img_size < 5*BLOCK_SIZE) {
@@ -177,17 +171,15 @@ int RawFloppyImg::calc_phys_params()
 /** Retrieve raw disk data. */
 int RawFloppyImg::get_raw_disk_data(char* buf)
 {
-    std::ifstream img_file;
+    ImgFile img_file;
 
-    img_file.open(img_path, std::ios::in | std::ios::binary);
-    if (img_file.fail()) {
+    if (!img_file.open(img_path)) {
         img_file.close();
         LOG_F(ERROR, "RawFloppyImg: Could not open specified floppy image!");
         return -1;
     }
 
-    img_file.seekg(0, img_file.beg);
-    img_file.read(buf, this->data_size);
+    img_file.read(buf, 0, this->data_size);
     img_file.close();
 
     return 0;
@@ -206,24 +198,20 @@ DiskCopy42Img::DiskCopy42Img(std::string& file_path) : FloppyImgConverter()
 }
 
 int DiskCopy42Img::calc_phys_params() {
-    std::ifstream img_file;
+    ImgFile img_file;
 
-    img_file.open(img_path, std::ios::in | std::ios::binary);
-    if (img_file.fail()) {
+    if (!img_file.open(img_path)) {
         img_file.close();
         LOG_F(ERROR, "DiskCopy42Img: could not open specified floppy image!");
         return -1;
     }
 
     // determine image size
-    img_file.seekg(0, img_file.end);
-    size_t img_size = img_file.tellg();
-    img_file.seekg(0, img_file.beg);
+    size_t img_size = img_file.size();
 
     // get data size from image
     uint8_t buf[4];
-    img_file.seekg(0x40, img_file.beg);
-    img_file.read((char *)&buf, 4);
+    img_file.read((char *)&buf, 0x40, 4);
     this->data_size = READ_DWORD_BE_U(buf);
 
     if (this->data_size > img_size) {
@@ -235,9 +223,8 @@ int DiskCopy42Img::calc_phys_params() {
 
     uint8_t disk_format = 0xFFU;
 
-    img_file.seekg(0x50, img_file.beg);
-    img_file.read((char *)&disk_format, 1);
-    img_file.read((char *)&this->format_byte, 1);
+    img_file.read((char *)&disk_format, 0x50, 1);
+    img_file.read((char *)&this->format_byte, 0x51, 1);
 
     img_file.close();
 
@@ -272,17 +259,15 @@ int DiskCopy42Img::calc_phys_params() {
 }
 
 int DiskCopy42Img::get_raw_disk_data(char* buf) {
-    std::ifstream img_file;
+    ImgFile img_file;
 
-    img_file.open(img_path, std::ios::in | std::ios::binary);
-    if (img_file.fail()) {
+    if (!img_file.open(img_path)) {
         img_file.close();
         LOG_F(ERROR, "DiskCopy42Img: could not open specified floppy image!");
         return -1;
     }
 
-    img_file.seekg(0x54, img_file.beg);
-    img_file.read(buf, this->data_size);
+    img_file.read(buf, 0x54, this->data_size);
     img_file.close();
 
     return 0;
@@ -296,10 +281,9 @@ FloppyImgConverter* open_floppy_image(std::string& img_path)
 {
     FloppyImgConverter *fconv =  nullptr;
 
-    std::ifstream img_file;
+    ImgFile img_file;
 
-    img_file.open(img_path, std::ios::in | std::ios::binary);
-    if (img_file.fail()) {
+    if (!img_file.open(img_path)) {
         img_file.close();
         LOG_F(ERROR, "Could not open specified floppy image (%s)!", img_path.c_str());
         return nullptr;
