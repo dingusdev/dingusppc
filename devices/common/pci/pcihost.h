@@ -77,12 +77,6 @@ public:
 
     virtual PCIBase *pci_find_device(uint8_t bus_num, uint8_t dev_num, uint8_t fun_num);
 
-    virtual uint32_t pci_t1_read(uint8_t dev, uint32_t fun, uint32_t reg, AccessDetails &details) {
-        return 0;
-    };
-
-    virtual void pci_t1_write(uint8_t dev, uint32_t fun, uint32_t reg, uint32_t value,
-        AccessDetails &details) {};
 
 protected:
     std::unordered_map<int, PCIBase*> dev_map;
