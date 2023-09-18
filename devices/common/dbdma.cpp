@@ -39,9 +39,18 @@ void DMAChannel::set_callbacks(DbdmaCallback start_cb, DbdmaCallback stop_cb) {
 }
 
 /* Load DMACmd from physical memory. */
-void DMAChannel::fetch_cmd(uint32_t cmd_addr, DMACmd* p_cmd) {
+DMACmd* DMAChannel::fetch_cmd(uint32_t cmd_addr, DMACmd* p_cmd, bool *is_writable) {
     MapDmaResult res = mmu_map_dma_mem(cmd_addr, 16, false);
-    memcpy((uint8_t*)p_cmd, res.host_va, 16);
+    if (is_writable) *is_writable = res.is_writable;
+    DMACmd* cmd_host = (DMACmd*)res.host_va;
+    p_cmd->req_count = READ_WORD_LE_A(&cmd_host->req_count);
+    p_cmd->cmd_bits  = cmd_host->cmd_bits;
+    p_cmd->cmd_key   = cmd_host->cmd_key;
+    p_cmd->address   = READ_DWORD_LE_A(&cmd_host->address);
+    p_cmd->cmd_arg   = READ_DWORD_LE_A(&cmd_host->cmd_arg);
+    p_cmd->res_count = READ_WORD_LE_A(&cmd_host->res_count);
+    p_cmd->xfer_stat = READ_WORD_LE_A(&cmd_host->xfer_stat);
+    return cmd_host;
 }
 
 uint8_t DMAChannel::interpret_cmd() {
@@ -56,7 +65,8 @@ uint8_t DMAChannel::interpret_cmd() {
         this->finish_cmd();
     }
 
-    fetch_cmd(this->cmd_ptr, &cmd_struct);
+    bool cmd_is_writable;
+    DMACmd *cmd_host = fetch_cmd(this->cmd_ptr, &cmd_struct, &cmd_is_writable);
 
     this->ch_stat &= ~CH_STAT_WAKE; // clear wake bit (DMA spec, 5.5.3.4)
 
@@ -78,15 +88,18 @@ uint8_t DMAChannel::interpret_cmd() {
         break;
     case DBDMA_Cmd::STORE_QUAD:
         if ((cmd_struct.cmd_key & 7) != 6)
-            LOG_F(9, "%s: Invalid key %d in STORE_QUAD", this->get_name().c_str(),
+            LOG_F(ERROR, "%s: Invalid key %d in STORE_QUAD", this->get_name().c_str(),
                 cmd_struct.cmd_key & 7);
-        this->xfer_quad(&cmd_struct, true);
+        this->xfer_quad(&cmd_struct, nullptr);
         break;
     case DBDMA_Cmd::LOAD_QUAD:
-        if ((cmd_struct.cmd_key & 7) != 6)
-            LOG_F(9, "%s: Invalid key %d in LOAD_QUAD", this->get_name().c_str(),
+        if ((cmd_struct.cmd_key & 7) != 6) {
+            LOG_F(ERROR, "%s: Invalid key %d in LOAD_QUAD", this->get_name().c_str(),
                 cmd_struct.cmd_key & 7);
-        this->xfer_quad(&cmd_struct, false);
+        }
+        if (!cmd_is_writable)
+            LOG_F(ERROR, "%s: DMACmd is not writeable!", this->get_name().c_str());
+        this->xfer_quad(&cmd_struct, cmd_host);
         break;
     case DBDMA_Cmd::NOP:
         this->finish_cmd();
@@ -155,8 +168,8 @@ void DMAChannel::finish_cmd() {
         this->update_irq();
     }
 
-    // all INPUT and OUTPUT commands update cmd.resCount
-    if (this->cur_cmd < DBDMA_Cmd::STORE_QUAD && res.is_writable) {
+    // all INPUT and OUTPUT commands including LOAD_QUAD and STORE_QUAD update cmd.resCount
+    if (this->cur_cmd < DBDMA_Cmd::NOP && res.is_writable) {
         WRITE_WORD_LE_A(&cmd_desc[12], this->queue_len & 0xFFFFUL);
     }
 
@@ -166,9 +179,8 @@ void DMAChannel::finish_cmd() {
     this->cmd_in_progress = false;
 }
 
-void DMAChannel::xfer_quad(const DMACmd *cmd_desc, const bool is_store) {
+void DMAChannel::xfer_quad(const DMACmd *cmd_desc, DMACmd *cmd_host) {
     MapDmaResult res;
-    uint8_t *src, *dst;
     uint32_t addr;
 
     // parse and fix reqCount
@@ -180,34 +192,42 @@ void DMAChannel::xfer_quad(const DMACmd *cmd_desc, const bool is_store) {
     } else {
         xfer_size = 1;
     }
+    this->queue_len = cmd_desc->req_count; // this is the value that gets written to cmd.resCount
 
-    addr = cmd_desc->address & ~(xfer_size - 1);
+    addr = cmd_desc->address;
+    if (addr & (xfer_size - 1)) {
+        LOG_F(ERROR, "%s: QUAD address 0x%08x is not aligned!", this->get_name().c_str(), addr);
+        addr &= ~(xfer_size - 1);
+    }
+
+    res = mmu_map_dma_mem(addr, xfer_size, true);
 
     // prepare data pointers and perform data transfer
-    if (is_store) {
-        res = mmu_map_dma_mem(this->cmd_ptr, 16, false);
-        src = res.host_va + 8; // move src to cmd.data32
-        res = mmu_map_dma_mem(addr, xfer_size, true);
+    if (!cmd_host) {
         if (res.type & RT_MMIO) {
-            res.dev_obj->write(res.dev_base, addr - res.dev_base,
-                read_mem_rev(src, xfer_size), xfer_size);
+            res.dev_obj->write(res.dev_base, addr - res.dev_base, cmd_desc->cmd_arg, xfer_size);
         } else if (res.is_writable) {
-            std::memcpy(res.host_va, src, xfer_size);
+            switch (xfer_size) {
+                case 1: *res.host_va = cmd_desc->cmd_arg; break;
+                case 2: WRITE_WORD_LE_A(res.host_va, cmd_desc->cmd_arg); break;
+                case 4: WRITE_DWORD_LE_A(res.host_va, cmd_desc->cmd_arg); break;
+            }
+        } else {
+            LOG_F(ERROR, "SOS: DMA access is not to RAM %08X!\n", addr);
         }
     } else {
-        res = mmu_map_dma_mem(this->cmd_ptr, 16, false);
-        if (res.is_writable) {
-            dst = res.host_va + 8; // move dst to cmd.data32
-
-            res = mmu_map_dma_mem(addr, xfer_size, true);
-            if (res.type & RT_MMIO) {
-                write_mem_rev(dst,
-                    res.dev_obj->read(res.dev_base, addr - res.dev_base, xfer_size),
-                    xfer_size);
-            } else {
-                std::memcpy(dst, res.host_va, xfer_size);
+        uint32_t value;
+        if (res.type & RT_MMIO) {
+            value = res.dev_obj->read(res.dev_base, addr - res.dev_base, xfer_size);
+        } else {
+            switch (xfer_size) {
+                case 1: value = *res.host_va; break;
+                case 2: value = READ_WORD_LE_A(res.host_va); break;
+                case 4: value = READ_DWORD_LE_A(res.host_va); break;
+                default: value = 0; break;
             }
         }
+        WRITE_DWORD_LE_A(&cmd_host->cmd_arg, value);
     }
 
     if (cmd_desc->cmd_bits & 0xC)
