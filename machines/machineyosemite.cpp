@@ -104,7 +104,7 @@ static vector<string> yosemite_devices = {
 };
 
 static const MachineDescription yosemite_descriptor = {
-    .name = "pmg3dt",
+    .name = "pmg3nw",
     .description = "Power Macintosh G3 Blue and White",
     .devices = yosemite_devices,
     .settings = yosemite_settings,
