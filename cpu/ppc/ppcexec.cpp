@@ -39,6 +39,8 @@ using namespace dppc_interpreter;
 
 MemCtrlBase* mem_ctrl_instance = 0;
 
+bool is_601 = false;
+
 bool power_on = 1;
 
 SetPRS ppc_state;
@@ -809,8 +811,9 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, uint64_t tb_freq)
     }
 
     ppc_state.spr[SPR::PVR] = cpu_version;
+    is_601 = (cpu_version >> 16) == 1;
 
-    if ((cpu_version & 0xFFFF0000) == 0x00010000) {
+    if (is_601) {
         /* MPC601 sets MSR[ME] bit during hard reset / Power-On */
         ppc_state.msr = 0x1040;
     } else {
@@ -818,7 +821,7 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, uint64_t tb_freq)
         ppc_state.spr[SPR::DEC] = 0xFFFFFFFFUL;
     }
 
-    ppc_mmu_init(cpu_version);
+    ppc_mmu_init();
 
     /* redirect code execution to reset vector */
     ppc_state.pc = 0xFFF00100;

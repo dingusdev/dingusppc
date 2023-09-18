@@ -43,8 +43,6 @@ std::function<void(uint32_t bat_reg)> dbat_update;
 PPC_BAT_entry ibat_array[4] = {{0}};
 PPC_BAT_entry dbat_array[4] = {{0}};
 
-bool is_601_MMU = false;
-
 //#define MMU_PROFILING // uncomment this to enable MMU profiling
 //#define TLB_PROFILING // uncomment this to enable SoftTLB profiling
 
@@ -501,7 +499,7 @@ static TLBEntry* itlb2_refill(uint32_t guest_va)
     /* instruction address translation if enabled */
     if (ppc_state.msr & 0x20) {
         // attempt block address translation first
-        if (is_601_MMU) {
+        if (is_601) {
             bat_res = mpc601_block_address_translation(guest_va);
         } else {
             bat_res = ppc_block_address_translation<BATType::IBAT>(guest_va);
@@ -557,7 +555,7 @@ static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write)
     /* data address translation if enabled */
     if (ppc_state.msr & 0x10) {
         // attempt block address translation first
-        if (is_601_MMU) {
+        if (is_601) {
             bat_res = mpc601_block_address_translation(guest_va);
         } else {
             bat_res = ppc_block_address_translation<BATType::DBAT>(guest_va);
@@ -970,7 +968,7 @@ void mmu_print_regs()
               i, ppc_state.spr[529+i*2]);
     }
 
-    if (!is_601_MMU) {
+    if (!is_601) {
         for (int i = 0; i < 4; i++) {
             LOG_F(INFO, "DBAT%dU = 0x%X, DBAT%dL = 0x%X",
                   i, ppc_state.spr[536+i*2],
@@ -1924,19 +1922,17 @@ uint64_t mem_read_dbg(uint32_t virt_addr, uint32_t size) {
     return ret_val;
 }
 
-void ppc_mmu_init(uint32_t cpu_version)
+void ppc_mmu_init()
 {
     mmu_exception_handler = ppc_exception_handler;
 
-    if ((cpu_version >> 16) == 1) {
-        // use 601-style BATs
+    if (is_601) {
+        // use 601-style unified BATs
         ibat_update = &mpc601_bat_update;
-        is_601_MMU = true;
     } else {
         // use PPC-style BATs
         ibat_update = &ppc_ibat_update;
         dbat_update = &ppc_dbat_update;
-        is_601_MMU = false;
     }
 
     // invalidate all IDTLB entries
