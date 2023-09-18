@@ -78,4 +78,14 @@ static inline bool bit_set(const uint64_t val, const int bit_num) {
     return !!(val & (1ULL << bit_num));
 }
 
+template <class T>
+inline void clear_bit(T &val, const int bit_num) {
+    val &= ~((T)1 << bit_num);
+}
+
+template <class T>
+inline void set_bit(T &val, const int bit_num) {
+    val |= ((T)1 << bit_num);
+}
+
 #endif // BIT_OPS_H
