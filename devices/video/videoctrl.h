@@ -24,12 +24,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef VIDEO_CTRL_H
 #define VIDEO_CTRL_H
 
+#include <devices/common/hwinterrupt.h>
 #include <devices/video/display.h>
 
 #include <cinttypes>
 #include <functional>
 
-class InterruptCtrl;
 class WindowEvent;
 
 class VideoCtrlBase {
@@ -96,6 +96,10 @@ protected:
     // interrupt suff
     InterruptCtrl* int_ctrl = nullptr;
     uint32_t       irq_id   = 0;
+    std::function<void(uint8_t irq_line_state)> vbl_cb = [this](uint8_t irq_line_state) {
+        if (this->int_ctrl)
+            this->int_ctrl->ack_int(this->irq_id, irq_line_state);
+    };
 
     std::function<void(uint8_t *dst_buf, int dst_pitch)> convert_fb_cb;
 

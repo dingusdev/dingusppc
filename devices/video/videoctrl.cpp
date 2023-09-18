@@ -84,8 +84,7 @@ void VideoCtrlBase::start_refresh_task() {
         refresh_interval,
         [this]() {
             // assert VBL interrupt
-            if (this->int_ctrl)
-                this->int_ctrl->ack_int(this->irq_id, 1);
+            this->vbl_cb(1);
             this->update_screen();
         }
     );
@@ -97,8 +96,7 @@ void VideoCtrlBase::start_refresh_task() {
         refresh_interval + vbl_duration,
         [this]() {
             // deassert VBL interrupt
-            if (this->int_ctrl)
-                this->int_ctrl->ack_int(this->irq_id, 0);
+            this->vbl_cb(0);
         }
     );
 }
