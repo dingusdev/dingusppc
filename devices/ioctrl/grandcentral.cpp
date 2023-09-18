@@ -305,25 +305,59 @@ void GrandCentral::attach_iodevice(int dev_num, IobusDevice* dev_obj)
     }
 }
 
+#define INT_TO_IRQ_ID(intx) (1 << intx)
+
 uint32_t GrandCentral::register_dev_int(IntSrc src_id) {
     switch (src_id) {
-    case IntSrc::SCSI_CURIO:    return 1 << 12;
-    case IntSrc::SCSI_MESH:     return 1 << 13;
-    case IntSrc::VIA_CUDA:      return 1 << 18;
-    case IntSrc::SWIM3:         return 1 << 19;
-    case IntSrc::CONTROL:       return 1 << 26;
-    case IntSrc::PLATINUM:      return 1 << 30;
+    case IntSrc::SCSI_CURIO : return INT_TO_IRQ_ID(0x0C);
+    case IntSrc::SCSI_MESH  : return INT_TO_IRQ_ID(0x0D);
+    case IntSrc::ETHERNET   : return INT_TO_IRQ_ID(0x0E);
+    case IntSrc::SCCA       : return INT_TO_IRQ_ID(0x0F);
+    case IntSrc::SCCB       : return INT_TO_IRQ_ID(0x10);
+    case IntSrc::DAVBUS     : return INT_TO_IRQ_ID(0x11);
+    case IntSrc::VIA_CUDA   : return INT_TO_IRQ_ID(0x12);
+    case IntSrc::SWIM3      : return INT_TO_IRQ_ID(0x13);
+    case IntSrc::NMI        : return INT_TO_IRQ_ID(0x14); // EXT0 // nmiSource in AppleGrandCentral/AppleGrandCentral.cpp
+    case IntSrc::EXT1       : return INT_TO_IRQ_ID(0x15); // EXT1 // Iridium
+
+    case IntSrc::BANDIT1    : return INT_TO_IRQ_ID(0x16); // EXT2
+    case IntSrc::PCI_A      : return INT_TO_IRQ_ID(0x17); // EXT3
+    case IntSrc::PCI_B      : return INT_TO_IRQ_ID(0x18); // EXT4
+    case IntSrc::PCI_C      : return INT_TO_IRQ_ID(0x19); // EXT5
+
+    case IntSrc::BANDIT2    : return INT_TO_IRQ_ID(0x1A); // EXT6
+    case IntSrc::PCI_D      : return INT_TO_IRQ_ID(0x1B); // EXT7
+    case IntSrc::PCI_E      : return INT_TO_IRQ_ID(0x1C); // EXT8
+    case IntSrc::PCI_F      : return INT_TO_IRQ_ID(0x1D); // EXT9
+
+    case IntSrc::CONTROL    : return INT_TO_IRQ_ID(0x1A); // EXT6
+    case IntSrc::SIXTY6     : return INT_TO_IRQ_ID(0x1B); // EXT7
+    case IntSrc::PLANB      : return INT_TO_IRQ_ID(0x1C); // EXT8
+    case IntSrc::VCI        : return INT_TO_IRQ_ID(0x1D); // EXT9
+
+    case IntSrc::PLATINUM   : return INT_TO_IRQ_ID(0x1E); // EXT10
+
     default:
         ABORT_F("%s: unknown interrupt source %d", this->name.c_str(), src_id);
     }
     return 0;
 }
 
+#define DMA_INT_TO_IRQ_ID(intx) (1 << intx)
+
 uint32_t GrandCentral::register_dma_int(IntSrc src_id) {
     switch (src_id) {
-    case IntSrc::DMA_SCSI_CURIO:    return 1 <<  0;
-    case IntSrc::DMA_SWIM3:         return 1 <<  1;
-    case IntSrc::DMA_SCSI_MESH:     return 1 << 10;
+    case IntSrc::DMA_SCSI_CURIO     : return DMA_INT_TO_IRQ_ID(0x00);
+    case IntSrc::DMA_SWIM3          : return DMA_INT_TO_IRQ_ID(0x01);
+    case IntSrc::DMA_ETHERNET_Tx    : return DMA_INT_TO_IRQ_ID(0x02);
+    case IntSrc::DMA_ETHERNET_Rx    : return DMA_INT_TO_IRQ_ID(0x03);
+    case IntSrc::DMA_SCCA_Tx        : return DMA_INT_TO_IRQ_ID(0x04);
+    case IntSrc::DMA_SCCA_Rx        : return DMA_INT_TO_IRQ_ID(0x05);
+    case IntSrc::DMA_SCCB_Tx        : return DMA_INT_TO_IRQ_ID(0x06);
+    case IntSrc::DMA_SCCB_Rx        : return DMA_INT_TO_IRQ_ID(0x07);
+    case IntSrc::DMA_DAVBUS_Tx      : return DMA_INT_TO_IRQ_ID(0x08);
+    case IntSrc::DMA_DAVBUS_Rx      : return DMA_INT_TO_IRQ_ID(0x09);
+    case IntSrc::DMA_SCSI_MESH      : return DMA_INT_TO_IRQ_ID(0x0A);
     default:
         ABORT_F("%s: unknown DMA interrupt source %d", this->name.c_str(), src_id);
     }
