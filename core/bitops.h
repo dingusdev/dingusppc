@@ -60,12 +60,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 template <class T>
 inline T extract_bits(T val, int pos, int len) {
-    return (val >> pos) & (((T)1 << len) - 1);
+    return (val >> pos) & ((len == sizeof(T) * 8) ? (T)-1 : ((T)1 << len) - 1);
 }
 
 template <class T>
 inline void insert_bits(T &old_val, T new_val, int pos, int len) {
-    T mask = (((T)1 << len) - 1) << pos;
+    T mask = ((len == sizeof(T) * 8) ? (T)-1 : ((T)1 << len) - 1) << pos;
     old_val = (old_val & ~mask) | ((new_val << pos) & mask);
 }
 
