@@ -170,6 +170,10 @@ static vector<string> pmg3_devices = {
     "Grackle", "ScreamerSnd", "Heathrow", "AtiRageGT", "AtaHardDisk", "AtapiCdrom"
 };
 
+static vector<string> pmg3twr_devices = {
+    "Grackle", "ScreamerSnd", "Heathrow", "AtiRagePro", "AtaHardDisk", "AtapiCdrom"
+};
+
 static const MachineDescription pmg3dt_descriptor = {
     .name = "pmg3dt",
     .description = "Power Macintosh G3 (Beige) Desktop",
@@ -178,4 +182,13 @@ static const MachineDescription pmg3dt_descriptor = {
     .init_func = &initialize_gossamer
 };
 
+static const MachineDescription pmg3twr_descriptor = {
+    .name = "pmg3twr",
+    .description = "Power Macintosh G3 (Beige) Tower",
+    .devices = pmg3twr_devices,
+    .settings = gossamer_settings,
+    .init_func = &initialize_gossamer
+};
+
 REGISTER_MACHINE(pmg3dt, pmg3dt_descriptor);
+REGISTER_MACHINE(pmg3twr, pmg3twr_descriptor);
