@@ -922,6 +922,9 @@ static void update_decrementer(uint32_t val) {
 
     dec_exception_pending = false;
 
+    if (is_601)
+        return;
+
     if (decrementer_timer_id) {
         //LOG_F(WARNING, "decrementer cancel timer");
         TimerManager::get_instance()->cancel_timer(decrementer_timer_id);
