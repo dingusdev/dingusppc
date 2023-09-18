@@ -331,17 +331,6 @@ uint8_t* mmu_get_dma_mem(uint32_t addr, uint32_t size, bool* is_writable)
     }
 }
 
-
-void mmu_dma_store_quad(uint32_t addr, uint32_t value) {
-    mmu_write_vmem<uint32_t>(ppc_effective_address, value);
-}
-
-uint8_t* mmu_dma_load_quad(uint32_t addr) {
-    uint32_t ret_value = mmu_read_vmem<uint32_t>(addr);
-    uint8_t ret_array[4] = {(uint8_t)ret_value, (uint8_t)(ret_value >> 8), (uint8_t)(ret_value >> 16), (uint8_t)(ret_value >> 24)}; 
-    return ret_array;
-}
-
 // primary ITLB for all MMU modes
 static std::array<TLBEntry, TLB_SIZE> itlb1_mode1;
 static std::array<TLBEntry, TLB_SIZE> itlb1_mode2;

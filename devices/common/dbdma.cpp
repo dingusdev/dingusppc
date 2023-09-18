@@ -118,19 +118,19 @@ uint8_t DMAChannel::interpret_cmd() {
     case DBDMA_Cmd::STORE_QUAD:
         if (cmd_struct.cmd_key != 6) {
             LOG_F(ERROR, "Illegal key value for STORE_QUAD");
-        } 
+        }
         else {
             if (cmd_struct.req_count & 0x4) {
                 cmd_struct.req_count = 4;
-            } 
+            }
             else if (cmd_struct.req_count & 0x2) {
                 cmd_struct.req_count = 2;
-            } 
+            }
             else {
                 cmd_struct.req_count = 1;
             }
 
-            mmu_dma_store_quad(cmd_struct.address, cmd_struct.cmd_arg);
+            //mmu_dma_store_quad(cmd_struct.address, cmd_struct.cmd_arg);
             this->queue_len       = 4;
             this->cmd_in_progress = true;
         }
@@ -139,7 +139,7 @@ uint8_t DMAChannel::interpret_cmd() {
         if (cmd_struct.cmd_key != 6) {
             LOG_F(ERROR, "Illegal key value for LOAD_QUAD");
         } else {
-            this->queue_data      = mmu_dma_load_quad(cmd_struct.address);
+            //this->queue_data      = mmu_dma_load_quad(cmd_struct.address);
             this->queue_len       = 4;
             this->cmd_in_progress = true;
         }
