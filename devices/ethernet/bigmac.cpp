@@ -124,6 +124,9 @@ void BigMac::mii_rcv_bit() {
             this->mii_reset();
         }
         break;
+    case MII_FRAME_SM::Stop:
+        this->mii_reset();
+        break;
     default:
         LOG_F(ERROR, "%s: unhandled state %d in mii_rcv_bit", this->name.c_str(),
               this->mii_state);
@@ -245,6 +248,10 @@ void BigMac::phy_reset() {
 
 uint16_t BigMac::phy_reg_read(uint8_t reg_num) {
     switch(reg_num) {
+    case PHY_BMCR:
+        return this->phy_bmcr;
+    case PHY_BMSR:
+        return 0x7809; // value from LXT970 datasheet
     case PHY_ID1:
         return (this->phy_oui >> 6) & 0xFFFFU;
     case PHY_ID2:
@@ -261,6 +268,10 @@ uint16_t BigMac::phy_reg_read(uint8_t reg_num) {
 void BigMac::phy_reg_write(uint8_t reg_num, uint16_t value) {
     switch(reg_num) {
     case PHY_BMCR:
+        if (value & 0x8000) {
+            LOG_F(INFO, "PHY reset requested");
+            value &= ~0x8000; // Reset bit is self-clearing
+        }
         this->phy_bmcr = value;
         break;
     case PHY_ANAR:

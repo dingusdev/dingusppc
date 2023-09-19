@@ -84,6 +84,7 @@ enum MII_FRAME_SM {
 /* PHY control/status registers. */
 enum {
     PHY_BMCR    = 0,
+    PHY_BMSR    = 1,
     PHY_ID1     = 2,
     PHY_ID2     = 3,
     PHY_ANAR    = 4,
