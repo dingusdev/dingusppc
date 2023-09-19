@@ -294,35 +294,54 @@ void MPC106::pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDetails &det
 }
 
 void MPC106::setup_ram() {
-    uint32_t mem_start, mem_end, ext_mem_start, ext_mem_end, bank_start, bank_end;
-    uint32_t ram_size = 0;
+    uint32_t bank_start[8];
+    uint32_t bank_end[8];
+    int bank_order[8];
+    int bank_count = 0;
+    int region_count = 0;
 
+    // get non-empty banks
     for (int bank = 0; bank < 8; bank++) {
         if (this->mem_bank_en & (1 << bank)) {
-            if (bank < 4) {
-                mem_start     = this->mem_start[0];
-                ext_mem_start = this->ext_mem_start[0];
-                mem_end       = this->mem_end[0];
-                ext_mem_end   = this->ext_mem_end[0];
-            } else {
-                mem_start     = this->mem_start[1];
-                ext_mem_start = this->ext_mem_start[1];
-                mem_end       = this->mem_end[1];
-                ext_mem_end   = this->ext_mem_end[1];
-            }
-            bank_start = (((ext_mem_start >> bank * 8) & 3) << 30) |
-                (((mem_start >> bank * 8) & 0xFF) << 20);
-            bank_end = (((ext_mem_end >> bank * 8) & 3) << 30) |
-                (((mem_end >> bank * 8) & 0xFF) << 20) | 0xFFFFFUL;
-            if (bank && bank_start != ram_size)
-                LOG_F(WARNING, "Grackle: RAM not contiguous!");
-            ram_size += bank_end - bank_start + 1;
+            int b = (bank >= 4);
+            bank_start[bank_count] = (((ext_mem_start[b] >> bank * 8) & 3) << 28) |
+                (((mem_start[b] >> bank * 8) & 0xFF) << 20);
+            bank_end[bank_count] = (((ext_mem_end[b] >> bank * 8) & 3) << 28) |
+                (((mem_end[b] >> bank * 8) & 0xFF) << 20) | 0xFFFFFUL;
+            bank_order[bank_count] = bank_count;
+            bank_count++;
         }
     }
 
-    if (!this->add_ram_region(0, ram_size)) {
-        LOG_F(WARNING, "Grackle: RAM allocation 0x%X..0x%X failed (maybe already exists?)",
-              0, ram_size - 1);
+    // sort banks by start address
+    for (int i = 0; i < bank_count; i++) {
+        for (int j = i + 1; j < bank_count; j++) {
+            if (bank_start[bank_order[j]] < bank_start[bank_order[i]]) {
+                int temp = bank_order[i];
+                bank_order[i] = bank_order[j];
+                bank_order[j] = temp;
+            }
+        }
+    }
+
+    // squash adjacent banks into memory regions
+    for (int i = 0; i < bank_count; i++) {
+        if (region_count > 0 && bank_start[bank_order[i]] == bank_end[bank_order[region_count - 1]] + 1)
+            bank_end[bank_order[region_count - 1]] = bank_end[bank_order[i]];
+        else {
+            bank_order[region_count] = bank_order[i];
+            region_count++;
+        }
+    }
+
+    // allocate memory regions
+    for (int i = 0; i < region_count; i++) {
+        uint32_t region_size = bank_end[bank_order[i]] - bank_start[bank_order[i]] + 1;
+        if (!this->add_ram_region(bank_start[bank_order[i]], region_size)) {
+            LOG_F(WARNING, "Grackle: %d MB RAM allocation 0x%X..0x%X failed (maybe already exists?)",
+                region_size / (1024 * 1024), bank_start[bank_order[i]], bank_end[bank_order[i]]
+            );
+        }
     }
 }
 
