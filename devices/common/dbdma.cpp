@@ -272,8 +272,14 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
             LOG_F(9, "CommandPtrLo set to 0x%X", this->cmd_ptr);
         }
         break;
+    case DMAReg::INT_SELECT:
+        this->int_select = value & 0xFF00FFUL;
+        break;
     case DMAReg::BRANCH_SELECT:
         this->branch_select = value & 0xFF00FFUL;
+        break;
+    case DMAReg::WAIT_SELECT:
+        this->wait_select = value & 0xFF00FFUL;
         break;
     default:
         LOG_F(WARNING, "Unsupported DMA channel register 0x%X", offset);

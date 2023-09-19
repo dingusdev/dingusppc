@@ -43,6 +43,7 @@ enum DMAReg : uint32_t {
     CMD_PTR_LO      = 12,
     INT_SELECT      = 16,
     BRANCH_SELECT   = 20,
+    WAIT_SELECT     = 24,
 };
 
 /** Channel Status bits (DBDMA spec, 5.5.3) */
@@ -119,6 +120,7 @@ private:
     uint8_t* queue_data     = 0;
     uint32_t int_select     = 0;
     uint32_t branch_select  = 0;
+    uint32_t wait_select    = 0;
 
     bool     cmd_in_progress = false;
     uint8_t  cur_cmd;
