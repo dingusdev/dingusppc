@@ -298,6 +298,7 @@ private:
     BigMac*             bmac;     // Ethernet MAC cell
 
     // DMA channels
+    std::unique_ptr<DMAChannel>     scsi_dma;
     std::unique_ptr<DMAChannel>     snd_out_dma;
     std::unique_ptr<DMAChannel>     floppy_dma;
 };
