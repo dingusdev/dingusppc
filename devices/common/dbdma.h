@@ -39,6 +39,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 enum DMAReg : uint32_t {
     CH_CTRL         = 0,
     CH_STAT         = 4,
+    CMD_PTR_HI      = 8,
     CMD_PTR_LO      = 12,
     INT_SELECT      = 16,
     BRANCH_SELECT   = 20,

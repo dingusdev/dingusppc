@@ -263,6 +263,9 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
         break;
     case DMAReg::CH_STAT:
         break; // ingore writes to ChannelStatus
+    case DMAReg::CMD_PTR_HI: // Mac OS X writes this optional register with zero
+        LOG_F(9, "CommandPtrHi set to 0x%X", value);
+        break;
     case DMAReg::CMD_PTR_LO:
         if (!(this->ch_stat & CH_STAT_RUN) && !(this->ch_stat & CH_STAT_ACTIVE)) {
             this->cmd_ptr = value;
