@@ -115,13 +115,18 @@ public:
 
     virtual void set_host(PCIHost* host_instance) {
         this->host_instance = host_instance;
-    };
+    }
 
     virtual void set_multi_function(bool is_multi_function) {
         this->hdr_type = is_multi_function ? (this->hdr_type | 0x80) : (this->hdr_type & 0x7f);
     }
+
     virtual void set_irq_pin(uint8_t irq_pin) {
         this->irq_pin = irq_pin;
+    }
+
+    virtual void pci_interrupt(uint8_t irq_line_state) {
+        this->host_instance->pci_interrupt(irq_line_state, this);
     }
 
     // MMIODevice methods
