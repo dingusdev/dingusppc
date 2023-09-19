@@ -55,8 +55,20 @@ public:
     virtual void get_cursor_position(int& x, int& y) { x = 0; y = 0; };
 
     // converters for various framebuffer pixel depths
-    virtual void convert_frame_1bpp(uint8_t *dst_buf, int dst_pitch);
+    virtual void convert_frame_1bpp_indexed(uint8_t *dst_buf, int dst_pitch);
+    virtual void convert_frame_2bpp_indexed(uint8_t *dst_buf, int dst_pitch);
+    virtual void convert_frame_4bpp_indexed(uint8_t *dst_buf, int dst_pitch);
+    virtual void convert_frame_8bpp_indexed(uint8_t *dst_buf, int dst_pitch);
+#if 0
+    virtual void convert_frame_8bpp_32LE_indexed(uint8_t *dst_buf, int dst_pitch);
+#endif
     virtual void convert_frame_8bpp(uint8_t *dst_buf, int dst_pitch);
+    virtual void convert_frame_15bpp(uint8_t *dst_buf, int dst_pitch);
+    virtual void convert_frame_15bpp_BE(uint8_t *dst_buf, int dst_pitch);
+    virtual void convert_frame_16bpp(uint8_t *dst_buf, int dst_pitch);
+    virtual void convert_frame_24bpp(uint8_t *dst_buf, int dst_pitch);
+    virtual void convert_frame_32bpp(uint8_t *dst_buf, int dst_pitch);
+    virtual void convert_frame_32bpp_BE(uint8_t *dst_buf, int dst_pitch);
 
 protected:
     // CRT controller parameters
@@ -76,8 +88,8 @@ protected:
     uint32_t    palette[256]; // internal DAC palette in RGBA format
 
     // Framebuffer parameters
-    uint8_t*    fb_ptr;
-    int         fb_pitch;
+    uint8_t*    fb_ptr = nullptr;
+    int         fb_pitch = 0;
     uint32_t    refresh_task_id = 0;
     uint32_t    vbl_end_task_id = 0;
 

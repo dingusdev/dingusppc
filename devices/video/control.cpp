@@ -267,7 +267,7 @@ void ControlVideo::enable_display()
 
     if (pixel_depth == 8) {
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
-            this->convert_frame_8bpp(dst_buf, dst_pitch);
+            this->convert_frame_8bpp_indexed(dst_buf, dst_pitch);
         };
     } else {
         ABORT_F("Control: 16bpp and 32bpp formats not supported yet!");

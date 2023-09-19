@@ -551,7 +551,7 @@ void ATIRage::crtc_update() {
             ABORT_F("%s: DAC_DIRECT set!", this->name.c_str());
         }
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
-            this->convert_frame_8bpp(dst_buf, dst_pitch);
+            this->convert_frame_8bpp_indexed(dst_buf, dst_pitch);
         };
         break;
     default:
