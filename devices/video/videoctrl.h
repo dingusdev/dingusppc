@@ -82,6 +82,7 @@ protected:
     int         hori_blank = 0;
     int         vert_blank = 0;
     int         pixel_depth;
+    int         pixel_format;
     float       pixel_clock;
     float       refresh_rate;
 
