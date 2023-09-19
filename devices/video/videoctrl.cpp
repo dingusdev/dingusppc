@@ -89,8 +89,12 @@ void VideoCtrlBase::start_refresh_task() {
         }
     );
 
-    uint64_t vbl_duration = static_cast<uint64_t>(1.0f / ((double)(this->pixel_clock) /
-        hori_total / vert_blank) * NS_PER_SEC + 0.5);
+    if (vert_blank == 0) {
+        LOG_F(ERROR, "Vertical blank is 0. Using 25 instead.");
+        vert_blank = 25;
+    }
+
+    uint64_t vbl_duration = static_cast<uint64_t>((double)hori_total * vert_blank / this->pixel_clock * NS_PER_SEC + 0.5);
     this->vbl_end_task_id = TimerManager::get_instance()->add_cyclic_timer(
         refresh_interval,
         refresh_interval + vbl_duration,
