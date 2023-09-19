@@ -121,13 +121,13 @@ void PdmOnboardVideo::set_depth_internal(int pitch)
     switch (this->pixel_depth) {
     case 1:
         this->convert_fb_cb = [this](uint8_t* dst_buf, int dst_pitch) {
-            this->convert_frame_1bpp(dst_buf, dst_pitch);
+            this->convert_frame_1bpp_indexed(dst_buf, dst_pitch);
         };
         this->fb_pitch = pitch >> 3;    // one byte contains 8 pixels
         break;
     case 8:
         this->convert_fb_cb = [this](uint8_t* dst_buf, int dst_pitch) {
-            this->convert_frame_8bpp(dst_buf, dst_pitch);
+            this->convert_frame_8bpp_indexed(dst_buf, dst_pitch);
         };
         this->fb_pitch = pitch; // one byte contains 1 pixel
         break;
@@ -239,7 +239,7 @@ void PdmOnboardVideo::disable_video_internal()
     CLUT entry #127 (%01111111) and a black pixel to #255 (%11111111).
     It requres a non-standard conversion routine implemented below.
  */
-void PdmOnboardVideo::convert_frame_1bpp(uint8_t *dst_buf, int dst_pitch)
+void PdmOnboardVideo::convert_frame_1bpp_indexed(uint8_t *dst_buf, int dst_pitch)
 {
     uint8_t  *src_buf, *src_row, pix;
     uint32_t *dst_row;

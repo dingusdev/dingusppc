@@ -72,7 +72,7 @@ protected:
     void set_depth_internal(int pitch);
     void enable_video_internal();
     void disable_video_internal();
-    void convert_frame_1bpp(uint8_t *dst_buf, int dst_pitch);
+    void convert_frame_1bpp_indexed(uint8_t *dst_buf, int dst_pitch);
 
 private:
     uint8_t     video_mode;
