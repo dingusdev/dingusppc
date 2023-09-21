@@ -30,15 +30,15 @@ BMac registers are located at offset 0x11000 starting from the I/O controller ba
 |:-------------:|:------:|:---------------------------------------------------:|
 | XIFC          | 0x000  | Transceiver interface configuration register        |
 | TXFIFOCSR     | 0x100  | Transceiver FIFO control & status register |
-| TXTH          | 0x110  |
+| TXTH          | 0x110  | Transceiver FIFO treshold |
 | RXFIFOCSR     | 0x120  | Receiver FIFO control & status register |
 | MEMADD        | 0x130  |
 | XCVRIF        | 0x160  |
 | CHIPID        | 0x170  | Chip aka Ethernet cell identification register |
 | MIFCSR        | 0x180  | Media interface control & status register |
 | SROMCSR       | 0x190  | Serial EEPROM control & status register             |
-| TXPNTR        | 0x1A0  |
-| RXPNTR        | 0x1B0  |
+| TXPNTR        | 0x1A0  | Transceiver pointer |
+| RXPNTR        | 0x1B0  | Receiver pointer |
 | STATUS        | 0x200  | Global status register |
 | INTDISABLE    | 0x210  | Global interrupt disable register |
 | TXRST         | 0x420  | Transceiver software reset                     |
@@ -54,11 +54,11 @@ BMac registers are located at offset 0x11000 starting from the I/O controller ba
 | TXMAX         | 0x4C0  | Transceiver maximum frame size register |
 | TXMIN         | 0x4D0  | Transceiver minimum frame size register |
 | PAREG         | 0x4E0  | Transceiver peak attempts register |
-| DCNT          | 0x4F0  |
-| NCCNT         | 0x500  |
-| NTCNT         | 0x510  |
-| EXCNT         | 0x520  |
-| LTCNT         | 0x530  |
+| DCNT          | 0x4F0  | Defer timer (counter ?) |
+| NCCNT         | 0x500  | Normal collision counter |
+| NTCNT         | 0x510  | Network collision counter |
+| EXCNT         | 0x520  | Excessive collision counter |
+| LTCNT         | 0x530  | Late collision counter |
 | RSEED         | 0x540  | Transceiver random number seed register |
 | TXSM          | 0x550  | Transceiver state machine register |
 | RXRST         | 0x620  | Receiver software reset register |
