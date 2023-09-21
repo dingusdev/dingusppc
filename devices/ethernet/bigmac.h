@@ -37,11 +37,37 @@ enum EthernetCellId : uint8_t {
 
 /* BigMac HW registers. */
 enum BigMacReg : uint16_t {
+    XIFC        = 0x000, // transceiver interface control
+    TX_FIFO_CSR = 0x100,
+    TX_FIFO_TH  = 0x110,
+    RX_FIFO_CSR = 0x120,
     CHIP_ID     = 0x170,
     MIF_CSR     = 0x180,
+    GLOB_STAT   = 0x200, // Apple: kSTAT, Sun: Global Status Register
+    EVENT_MASK  = 0x210, // ambiguously called INT_DISABLE in the Apple source
     SROM_CSR    = 0x190,
     TX_SW_RST   = 0x420,
+    TX_CONFIG   = 0x430,
+    PEAK_ATT    = 0x4E0, // Apple: kPAREG, Sun: PeakAttempts Register
+    NC_CNT      = 0x500, // Normal Collision Counter
+    NT_CNT      = 0x510, // Apple: Network Collision Counter
+    EX_CNT      = 0x520, // Excessive Collision Counter
+    LT_CNT      = 0x530, // Late Collision Counter
+    RNG_SEED    = 0x540,
     RX_SW_RST   = 0x620,
+    RX_CONFIG   = 0x630,
+    MAC_ADDR_2  = 0x660,
+    MAC_ADDR_1  = 0x670,
+    MAC_ADDR_0  = 0x680,
+    RX_FRM_CNT  = 0x690, // Receive Frame Counter
+    RX_LE_CNT   = 0x6A0, // Length Error Counter
+    RX_AE_CNT   = 0x6B0, // Alignment Error Counter
+    RX_FE_CNT   = 0x6C0, // FCS Error Counter
+    RX_CVE_CNT  = 0x6E0, // Code Violation Error Counter
+    HASH_TAB_3  = 0x700,
+    HASH_TAB_2  = 0x710,
+    HASH_TAB_1  = 0x720,
+    HASH_TAB_0  = 0x730,
 };
 
 /* MIF_CSR bit definitions. */
@@ -107,6 +133,9 @@ public:
     uint16_t read(uint16_t reg_offset);
     void     write(uint16_t reg_offset, uint16_t value);
 
+protected:
+    void chip_reset();
+
     // MII methods
     bool mii_rcv_value(uint16_t& var, uint8_t num_bits, uint8_t next_bit);
     void mii_rcv_bit();
@@ -127,7 +156,32 @@ private:
     uint8_t chip_id; // BigMac Chip ID
 
     // BigMac state
-    uint16_t        tx_reset = 0;
+    uint16_t        tx_reset        = 0; // self-clearing one-bit register
+    uint16_t        tx_if_ctrl      = 0;
+    uint16_t        rng_seed;
+    uint16_t        norm_coll_cnt   = 0;
+    uint16_t        net_coll_cnt    = 0;
+    uint16_t        excs_coll_cnt   = 0;
+    uint16_t        late_coll_cnt   = 0;
+    uint16_t        rcv_frame_cnt   = 0;
+    uint8_t         len_err_cnt     = 0;
+    uint8_t         align_err_cnt   = 0;
+    uint8_t         fcs_err_cnt     = 0;
+    uint8_t         cv_err_cnt      = 0;
+    uint8_t         peak_attempts   = 0;
+    uint8_t         tx_fifo_tresh   = 0;
+    bool            tx_fifo_enable  = false;
+    bool            rx_fifo_enable  = false;
+    uint16_t        tx_fifo_size    = 0;
+    uint16_t        rx_fifo_size    = 0;
+    uint16_t        hash_table[4]   = {};
+    uint16_t        mac_addr_flt[3] = {};
+    uint16_t        tx_config       = 0;
+    uint16_t        rx_config       = 0;
+
+    // Interrupt state
+    uint16_t        event_mask = 0xFFFFU; // inverted mask: 0 - enabled, 1 - disabled
+    uint16_t        stat = 0;
 
     // MII state
     uint8_t         mif_csr_old = 0;

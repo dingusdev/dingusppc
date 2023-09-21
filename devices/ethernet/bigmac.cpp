@@ -30,6 +30,13 @@ BigMac::BigMac(uint8_t id) {
     supports_types(HWCompType::MMIO_DEV | HWCompType::ETHER_MAC);
 
     this->chip_id = id;
+    this->chip_reset();
+}
+
+void BigMac::chip_reset() {
+    this->event_mask = 0xFFFFU; // disable HW events causing on-chip interrupts
+    this->stat = 0;
+
     this->phy_reset();
     this->mii_reset();
     this->srom_reset();
@@ -37,12 +44,38 @@ BigMac::BigMac(uint8_t id) {
 
 uint16_t BigMac::read(uint16_t reg_offset) {
     switch (reg_offset) {
+    case BigMacReg::XIFC:
+        return this->tx_if_ctrl;
     case BigMacReg::CHIP_ID:
         return this->chip_id;
     case BigMacReg::MIF_CSR:
         return (this->mif_csr_old & ~Mif_Data_In) | (this->mii_in_bit << 3);
+    case BigMacReg::GLOB_STAT: {
+        uint16_t old_stat = this->stat;
+        this->stat = 0; // clear-on-read
+        return old_stat;
+    }
+    case BigMacReg::EVENT_MASK:
+        return this->event_mask;
     case BigMacReg::SROM_CSR:
         return (this->srom_csr_old & ~Srom_Data_In) | (this->srom_in_bit << 2);
+    case BigMacReg::TX_SW_RST:
+        return this->tx_reset;
+    case BigMacReg::TX_CONFIG:
+        return this->tx_config;
+    case BigMacReg::PEAK_ATT: {
+            uint8_t old_val = this->peak_attempts;
+            this->peak_attempts = 0; // clear-on-read
+            return old_val;
+        }
+    case BigMacReg::NC_CNT:
+        return this->norm_coll_cnt;
+    case BigMacReg::EX_CNT:
+        return this->excs_coll_cnt;
+    case BigMacReg::LT_CNT:
+        return this->late_coll_cnt;
+    case BigMacReg::RX_CONFIG:
+        return this->rx_config;
     default:
         LOG_F(WARNING, "%s: unimplemented register at 0x%X", this->name.c_str(),
               reg_offset);
@@ -53,6 +86,20 @@ uint16_t BigMac::read(uint16_t reg_offset) {
 
 void BigMac::write(uint16_t reg_offset, uint16_t value) {
     switch (reg_offset) {
+    case BigMacReg::XIFC:
+        this->tx_if_ctrl = value;
+        break;
+    case BigMacReg::TX_FIFO_CSR:
+        this->tx_fifo_enable = !!(value & 1);
+        this->tx_fifo_size = (((value >> 1) & 0xFF) + 1) << 7;
+        break;
+    case BigMacReg::TX_FIFO_TH:
+        this->tx_fifo_tresh = value;
+        break;
+    case BigMacReg::RX_FIFO_CSR:
+        this->rx_fifo_enable = !!(value & 1);
+        this->rx_fifo_size = (((value >> 1) & 0xFF) + 1) << 7;
+        break;
     case BigMacReg::MIF_CSR:
         if (value & Mif_Data_Out_En) {
             // send bits one by one on each low-to-high transition of Mif_Clock
@@ -63,6 +110,9 @@ void BigMac::write(uint16_t reg_offset, uint16_t value) {
                 this->mii_rcv_bit();
         }
         this->mif_csr_old = value;
+        break;
+    case BigMacReg::EVENT_MASK:
+        this->event_mask = value;
         break;
     case BigMacReg::SROM_CSR:
         if (value & Srom_Chip_Select) {
@@ -80,10 +130,57 @@ void BigMac::write(uint16_t reg_offset, uint16_t value) {
             this->tx_reset = 0; // acknowledge SW reset
         }
         break;
+    case BigMacReg::TX_CONFIG:
+        this->tx_config = value;
+        break;
+    case BigMacReg::NC_CNT:
+        this->norm_coll_cnt = value;
+        break;
+    case BigMacReg::NT_CNT:
+        this->net_coll_cnt = value;
+        break;
+    case BigMacReg::EX_CNT:
+        this->excs_coll_cnt = value;
+        break;
+    case BigMacReg::LT_CNT:
+        this->late_coll_cnt = value;
+        break;
+    case BigMacReg::RNG_SEED:
+        this->rng_seed = value;
+        break;
     case BigMacReg::RX_SW_RST:
         if (!value) {
             LOG_F(INFO, "%s: receiver soft reset asserted", this->name.c_str());
         }
+        break;
+    case BigMacReg::RX_CONFIG:
+        this->rx_config = value;
+        break;
+    case BigMacReg::MAC_ADDR_0:
+    case BigMacReg::MAC_ADDR_1:
+    case BigMacReg::MAC_ADDR_2:
+        this->mac_addr_flt[8 - ((reg_offset >> 4) & 0xF)] = value;
+        break;
+    case BigMacReg::RX_FRM_CNT:
+        this->rcv_frame_cnt = value;
+        break;
+    case BigMacReg::RX_LE_CNT:
+        this->len_err_cnt = value;
+        break;
+    case BigMacReg::RX_AE_CNT:
+        this->align_err_cnt = value;
+        break;
+    case BigMacReg::RX_FE_CNT:
+        this->fcs_err_cnt = value;
+        break;
+    case BigMacReg::RX_CVE_CNT:
+        this->cv_err_cnt = value;
+        break;
+    case BigMacReg::HASH_TAB_0:
+    case BigMacReg::HASH_TAB_1:
+    case BigMacReg::HASH_TAB_2:
+    case BigMacReg::HASH_TAB_3:
+        this->hash_table[(reg_offset >> 4) & 3] = value;
         break;
     default:
         LOG_F(WARNING, "%s: unimplemented register at 0x%X is written with 0x%X",
