@@ -168,7 +168,6 @@ inline void MPC106::cfg_setup(uint32_t offset, int size, int &bus_num, int &dev_
                               int &fun_num, uint8_t &reg_offs, AccessDetails &details,
                               PCIBase *&device)
 {
-    device = NULL;
     details.size = size;
     details.offset = offset & 3;
 
@@ -183,9 +182,7 @@ inline void MPC106::cfg_setup(uint32_t offset, int size, int &bus_num, int &dev_
     }
     else {
         details.flags = PCI_CONFIG_TYPE_0;
-        if (this->dev_map.count(DEV_FUN(dev_num, fun_num))) {
-            device = this->dev_map[DEV_FUN(dev_num, fun_num)];
-        }
+        device = pci_find_device(dev_num, fun_num);
     }
 }
 

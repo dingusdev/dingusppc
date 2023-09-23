@@ -76,6 +76,7 @@ public:
     virtual void     pci_io_write_broadcast(uint32_t offset, int size, uint32_t value);
 
     virtual PCIBase *pci_find_device(uint8_t bus_num, uint8_t dev_num, uint8_t fun_num);
+    virtual PCIBase *pci_find_device(uint8_t dev_num, uint8_t fun_num);
 
     virtual void pci_interrupt(uint8_t irq_line_state, PCIBase *dev) {}
 

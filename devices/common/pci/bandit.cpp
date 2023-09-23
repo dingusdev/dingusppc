@@ -200,7 +200,6 @@ inline void BanditHost::cfg_setup(uint32_t offset, int size, int &bus_num,
                                   int &dev_num, int &fun_num, uint8_t &reg_offs,
                                   AccessDetails &details, PCIBase *&device)
 {
-    device = NULL;
     details.size = size;
     details.offset = offset & 3;
     fun_num = FUN_NUM();
@@ -219,12 +218,11 @@ inline void BanditHost::cfg_setup(uint32_t offset, int size, int &bus_num,
         for (dev_num = -1, idsel = this->config_addr; idsel; idsel >>= 1, dev_num++) {}
         LOG_F(ERROR, "%s: config_addr 0x%08x does not contain valid IDSEL",
               this->name.c_str(), (uint32_t)this->config_addr);
+        device = NULL;
         return;
     }
     dev_num = WHAT_BIT_SET(idsel);
-    if (this->dev_map.count(DEV_FUN(dev_num, fun_num))) {
-        device = this->dev_map[DEV_FUN(dev_num, fun_num)];
-    }
+    device = pci_find_device(dev_num, fun_num);
 }
 
 int BanditHost::device_postinit()

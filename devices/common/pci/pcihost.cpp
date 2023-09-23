@@ -187,14 +187,20 @@ PCIBase *PCIHost::pci_find_device(uint8_t bus_num, uint8_t dev_num, uint8_t fun_
     for (auto& bridge : this->bridge_devs) {
         if (bridge->secondary_bus <= bus_num) {
             if (bridge->secondary_bus == bus_num) {
-                if (bridge->dev_map.count(DEV_FUN(dev_num, fun_num))) {
-                    return bridge->dev_map[DEV_FUN(dev_num, fun_num)];
-                }
+                return bridge->pci_find_device(dev_num, fun_num);
             }
-            else if (bridge->subordinate_bus >= bus_num) {
+            if (bridge->subordinate_bus >= bus_num) {
                 return bridge->pci_find_device(bus_num, dev_num, fun_num);
             }
         }
+    }
+    return NULL;
+}
+
+PCIBase *PCIHost::pci_find_device(uint8_t dev_num, uint8_t fun_num)
+{
+    if (this->dev_map.count(DEV_FUN(dev_num, fun_num))) {
+        return this->dev_map[DEV_FUN(dev_num, fun_num)];
     }
     return NULL;
 }
