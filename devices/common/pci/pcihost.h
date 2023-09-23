@@ -61,6 +61,7 @@ public:
     ~PCIHost() = default;
 
     virtual bool pci_register_device(int dev_fun_num, PCIBase* dev_instance);
+    virtual void pci_unregister_device(int dev_fun_num);
 
     virtual bool pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIBase* obj);
     virtual bool pci_unregister_mmio_region(uint32_t start_addr, uint32_t size, PCIBase* obj);

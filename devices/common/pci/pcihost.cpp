@@ -34,8 +34,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 bool PCIHost::pci_register_device(int dev_fun_num, PCIBase* dev_instance)
 {
     // return false if dev_fun_num already registered
-    if (this->dev_map.count(dev_fun_num))
-        return false;
+    if (this->dev_map.count(dev_fun_num)) {
+        pci_unregister_device(dev_fun_num);
+    }
 
     int fun_num = dev_fun_num & 7;
     int dev_num = (dev_fun_num >> 3) & 0x1f;
@@ -67,6 +68,22 @@ bool PCIHost::pci_register_device(int dev_fun_num, PCIBase* dev_instance)
     }
 
     return true;
+}
+
+void PCIHost::pci_unregister_device(int dev_fun_num)
+{
+    if (!this->dev_map.count(dev_fun_num)) {
+        return;
+    }
+    PCIBase* dev_instance = this->dev_map[dev_fun_num];
+
+    HWComponent *hwc = dynamic_cast<HWComponent*>(this);
+    LOG_F(
+        ERROR, "%s: pci_unregister_device(%s) not supported yet (every PCI device needs a working destructor)",
+        hwc ? hwc->get_name().c_str() : "PCIHost", dev_instance->get_name().c_str()
+    );
+
+    delete dev_instance;
 }
 
 bool PCIHost::pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIBase* obj)
