@@ -147,6 +147,7 @@ void MeshController::perform_command(const uint8_t cmd)
 
     switch (this->cur_cmd & 0xF) {
     case SeqCmd::Arbitrate:
+        this->bus_obj->release_ctrl_lines(this->src_id);
         this->cur_state = SeqState::BUS_FREE;
         this->sequencer();
         break;
@@ -155,7 +156,8 @@ void MeshController::perform_command(const uint8_t cmd)
         this->sequencer();
         break;
     case SeqCmd::DisReselect:
-        LOG_F(INFO, "MESH: DisReselect command requested");
+        LOG_F(9, "MESH: DisReselect command requested");
+        this->int_stat |= INT_CMD_DONE;
         break;
     case SeqCmd::ResetMesh:
         this->reset(false);
