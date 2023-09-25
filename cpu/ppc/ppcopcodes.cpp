@@ -849,7 +849,7 @@ void dppc_interpreter::ppc_mtmsr() {
     // generate External Interrupt Exception
     // if CPU interrupt line is asserted
     if (ppc_state.msr & 0x8000 && int_pin) {
-        LOG_F(WARNING, "MTMSR: CPU INT pending, generate CPU exception");
+        //LOG_F(WARNING, "MTMSR: CPU INT pending, generate CPU exception");
         ppc_exception_handler(Except_Type::EXC_EXT_INT, 0);
     } else if ((ppc_state.msr & 0x8000) && dec_exception_pending) {
         dec_exception_pending = false;

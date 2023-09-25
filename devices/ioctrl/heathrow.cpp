@@ -387,6 +387,47 @@ uint32_t HeathrowIC::register_dma_int(IntSrc src_id)
 
 void HeathrowIC::ack_int(uint32_t irq_id, uint8_t irq_line_state)
 {
+#if 1
+    if (irq_id >= (1 << 20)) { // does this irq_id belong to the second set?
+        irq_id >>= (20 - 10); // adjust for non-DMA interrupt bits of the 2nd set
+        // native mode:   set IRQ bits in int_events2 on a 0-to-1 transition
+        // emulated mode: set IRQ bits in int_events2 on all transitions
+        if ((this->int_mask1 & MACIO_INT_MODE) ||
+            (irq_line_state && !(this->int_levels2 & irq_id))) {
+            this->int_events2 |= irq_id;
+        } else {
+            this->int_events2 &= ~irq_id;
+        }
+        this->int_events2 &= this->int_mask2;
+        // update IRQ line state
+        if (irq_line_state) {
+            this->int_levels2 |= irq_id;
+        } else {
+            this->int_levels2 &= ~irq_id;
+        }
+    } else {
+        irq_id <<= 11; // adjust for non-DMA interrupt bits of the first set
+        // native mode:   set IRQ bits in int_events1 on a 0-to-1 transition
+        // emulated mode: set IRQ bits in int_events1 on all transitions
+        if ((this->int_mask1 & MACIO_INT_MODE) ||
+            (irq_line_state && !(this->int_levels1 & irq_id))) {
+            this->int_events1 |= irq_id;
+        } else {
+            this->int_events1 &= ~irq_id;
+        }
+        this->int_events1 &= this->int_mask1;
+        // update IRQ line state
+        if (irq_line_state) {
+            this->int_levels1 |= irq_id;
+        } else {
+            this->int_levels1 &= ~irq_id;
+        }
+    }
+
+    this->signal_cpu_int();
+#endif
+
+#if 0
     if (this->int_mask1 & MACIO_INT_MODE) { // 68k interrupt emulation mode?
         if (irq_id >= (1 << 20)) { // irq_id in the range of int_events2?
             irq_id >>= (20 - 10); // adjust for non-DMA interrupt bits of int_events2
@@ -411,12 +452,53 @@ void HeathrowIC::ack_int(uint32_t irq_id, uint8_t irq_line_state)
         }
         this->signal_cpu_int();
     } else {
-        ABORT_F("%s: native interrupt mode not implemented", this->name.c_str());
+        LOG_F(WARNING, "%s: native interrupt mode not implemented", this->name.c_str());
     }
+#endif
 }
 
 void HeathrowIC::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state)
 {
+#if 1
+    if (irq_id >= (1 << 10)) { // does this irq_id belong to the second set?
+        irq_id >>= 10; // adjust for DMA interrupt bits of the 2nd set
+        // native mode:   set IRQ bits in int_events2 on a 0-to-1 transition
+        // emulated mode: set IRQ bits in int_events2 on all transitions
+        if ((this->int_mask1 & MACIO_INT_MODE) ||
+            (irq_line_state && !(this->int_levels2 & irq_id))) {
+            this->int_events2 |= irq_id;
+        } else {
+            this->int_events2 &= ~irq_id;
+        }
+        this->int_events2 &= this->int_mask2;
+        // update IRQ line state
+        if (irq_line_state) {
+            this->int_levels2 |= irq_id;
+        } else {
+            this->int_levels2 &= ~irq_id;
+        }
+    } else {
+        // native mode:   set IRQ bits in int_events1 on a 0-to-1 transition
+        // emulated mode: set IRQ bits in int_events1 on all transitions
+        if ((this->int_mask1 & MACIO_INT_MODE) ||
+            (irq_line_state && !(this->int_levels1 & irq_id))) {
+            this->int_events1 |= irq_id;
+        } else {
+            this->int_events1 &= ~irq_id;
+        }
+        this->int_events1 &= this->int_mask1;
+        // update IRQ line state
+        if (irq_line_state) {
+            this->int_levels1 |= irq_id;
+        } else {
+            this->int_levels1 &= ~irq_id;
+        }
+    }
+
+    this->signal_cpu_int();
+#endif
+
+#if 0
     if (this->int_mask1 & MACIO_INT_MODE) { // 68k interrupt emulation mode?
         if (irq_id >= (1 << 10)) { // irq_id in the range of int_events2?
             irq_id >>= 10; // adjust for DMA interrupt bits of int_events2
@@ -442,6 +524,7 @@ void HeathrowIC::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state)
     } else {
         ABORT_F("%s: native interrupt mode not implemented", this->name.c_str());
     }
+#endif
 }
 
 void HeathrowIC::signal_cpu_int() {
