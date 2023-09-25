@@ -315,12 +315,8 @@ void HeathrowIC::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
         this->int_mask2 |= BYTESWAP_32(value) & ~MACIO_INT_MODE;
         break;
     case MIO_INT_CLEAR2:
-        if (value & MACIO_INT_CLR) {
-            this->int_events2 = 0;
-            clear_cpu_int();
-        } else {
-            this->int_events2 &= BYTESWAP_32(value);
-        }
+        this->int_events2 &= ~(BYTESWAP_32(value) & 0x7FFFFFFFUL);
+        clear_cpu_int();
         break;
     case MIO_INT_MASK1:
         this->int_mask1 = BYTESWAP_32(value);
@@ -328,12 +324,13 @@ void HeathrowIC::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
         this->int_mask2 = (this->int_mask2 & ~MACIO_INT_MODE) | (this->int_mask1 & MACIO_INT_MODE);
         break;
     case MIO_INT_CLEAR1:
-        if (value & MACIO_INT_CLR) {
+        if ((this->int_mask1 & MACIO_INT_MODE) && (value & MACIO_INT_CLR)) {
             this->int_events1 = 0;
-            clear_cpu_int();
+            this->int_events2 = 0;
         } else {
-            this->int_events1 &= BYTESWAP_32(value);
+            this->int_events1 &= ~(BYTESWAP_32(value) & 0x7FFFFFFFUL);
         }
+        clear_cpu_int();
         break;
     case MIO_OHARE_ID:
         LOG_F(WARNING, "Attempted to write %x to MIO:ID at %x; Address : %x", value, offset, ppc_state.pc);
@@ -391,8 +388,8 @@ uint32_t HeathrowIC::register_dma_int(IntSrc src_id)
 void HeathrowIC::ack_int(uint32_t irq_id, uint8_t irq_line_state)
 {
     if (this->int_mask1 & MACIO_INT_MODE) { // 68k interrupt emulation mode?
-        if (irq_id > 0x200000) {
-            irq_id >>= 21;
+        if (irq_id >= (1 << 20)) { // irq_id in the range of int_events2?
+            irq_id >>= (20 - 10); // adjust for non-DMA interrupt bits of int_events2
             this->int_events2 |= irq_id; // signal IRQ line change
             this->int_events2 &= this->int_mask2;
             // update IRQ line state
@@ -421,13 +418,25 @@ void HeathrowIC::ack_int(uint32_t irq_id, uint8_t irq_line_state)
 void HeathrowIC::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state)
 {
     if (this->int_mask1 & MACIO_INT_MODE) { // 68k interrupt emulation mode?
-        this->int_events1 |= irq_id; // signal IRQ line change
-        this->int_events1 &= this->int_mask1;
-        // update IRQ line state
-        if (irq_line_state) {
-            this->int_levels1 |= irq_id;
+        if (irq_id >= (1 << 10)) { // irq_id in the range of int_events2?
+            irq_id >>= 10; // adjust for DMA interrupt bits of int_events2
+            this->int_events2 |= irq_id; // signal IRQ line change
+            this->int_events2 &= this->int_mask2;
+            // update IRQ line state
+            if (irq_line_state) {
+                this->int_levels2 |= irq_id;
+            } else {
+                this->int_levels2 &= ~irq_id;
+            }
         } else {
-            this->int_levels1 &= ~irq_id;
+            this->int_events1 |= irq_id; // signal IRQ line change
+            this->int_events1 &= this->int_mask1;
+            // update IRQ line state
+            if (irq_line_state) {
+                this->int_levels1 |= irq_id;
+            } else {
+                this->int_levels1 &= ~irq_id;
+            }
         }
         this->signal_cpu_int();
     } else {
