@@ -143,6 +143,8 @@ AddrMsf CdromDrive::lba_to_msf(const int lba) {
 }
 
 uint32_t CdromDrive::read_toc(uint8_t *cmd_ptr, uint8_t *data_ptr) {
+    int         tot_tracks, data_len;
+    uint8_t     start_track, session_num;
     uint8_t*    out_ptr;
     uint16_t    alloc_len   = READ_WORD_BE_U(&cmd_ptr[7]);
     bool        is_msf      = !!(cmd_ptr[1] & 2);
@@ -157,9 +159,8 @@ uint32_t CdromDrive::read_toc(uint8_t *cmd_ptr, uint8_t *data_ptr) {
         return 0;
 
     switch(format) {
-    case 0: {
-        int tot_tracks, data_len;
-        uint8_t start_track = cmd_ptr[6];
+    case 0: // Formatted TOC
+        start_track = cmd_ptr[6];
         if (!start_track) { // special case: track zero (lead-in) as starting track
             // return all tracks starting with track 1 plus lead-out
             start_track = 1;
@@ -207,19 +208,27 @@ uint32_t CdromDrive::read_toc(uint8_t *cmd_ptr, uint8_t *data_ptr) {
             }
         }
         return data_len;
-    }
-    case 1:
+    case 1: // Multi-session info
         std::memset(data_ptr, 0, 12);
         data_ptr[1] = 10; // TOC data length
         data_ptr[2] =  1; // first session number
         data_ptr[3] =  1; // last session number
+        data_ptr[5] = this->tracks[0].adr_ctrl;
+        data_ptr[6] = 1;
+        if (is_msf) {
+            AddrMsf msf = lba_to_msf(this->tracks[0].start_lba + 150);
+            data_ptr[ 8] = 0; // reserved
+            data_ptr[ 9] = msf.min;
+            data_ptr[10] = msf.sec;
+            data_ptr[11] = msf.frm;
+        }
         return 12;
-    case 2:
-    {
-        // TOC
-        int session_num = cmd_ptr[6];
+    case 2: // Raw TOC
+        session_num = cmd_ptr[6];
+        if (!session_num)
+            session_num = 1;
         if (session_num > 1) {
-            LOG_F(ERROR, "CDROM: unsupported session number %d", session_num);
+            LOG_F(ERROR, "CDROM: invalid session number %d", session_num);
             this->set_error(ScsiSense::ILLEGAL_REQ, ScsiError::INVALID_CDB);
             return 0;
         }
@@ -231,19 +240,19 @@ uint32_t CdromDrive::read_toc(uint8_t *cmd_ptr, uint8_t *data_ptr) {
         out_ptr[3] =  1; // last session number
         out_ptr += 4;
         // descriptor #1 -> first track
-        out_ptr[0] = 1;
+        out_ptr[0] = session_num;
         out_ptr[1] = this->tracks[0].adr_ctrl;
         out_ptr[3] = 0xA0; // point -> first track
         out_ptr[8] = 1; // first track number
         out_ptr += 11;
         // descriptor #2 -> last track
-        out_ptr[0] = 1;
+        out_ptr[0] = session_num;
         out_ptr[1] = this->tracks[0].adr_ctrl;
         out_ptr[3] = 0xA1; // point -> last track
         out_ptr[8] = 1; // last track number
         out_ptr += 11;
         // descriptor #3 -> lead-out
-        out_ptr[0] = 1;
+        out_ptr[0] = session_num;
         out_ptr[1] = this->tracks[0].adr_ctrl;
         out_ptr[3] = 0xA2; // point -> lead-out
         if (is_msf) {
@@ -257,7 +266,7 @@ uint32_t CdromDrive::read_toc(uint8_t *cmd_ptr, uint8_t *data_ptr) {
         }
         out_ptr += 11;
         // descriptor #4 -> data track
-        out_ptr[0] = 1;
+        out_ptr[0] = session_num;
         out_ptr[1] = this->tracks[0].adr_ctrl;
         out_ptr[3] = 1; // point -> data track
         if (is_msf) {
@@ -268,7 +277,6 @@ uint32_t CdromDrive::read_toc(uint8_t *cmd_ptr, uint8_t *data_ptr) {
             out_ptr[10] = msf.frm;
         }
         return 48;
-    }
     default:
         LOG_F(ERROR, "CDROM: unsupported format in READ_TOC");
         this->set_error(ScsiSense::ILLEGAL_REQ, ScsiError::INVALID_CDB);
