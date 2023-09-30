@@ -50,50 +50,7 @@ uint8_t DMAChannel::interpret_cmd() {
         if (this->queue_len)
             return this->cur_cmd;
 
-        // obtain real pointer to the descriptor of the completed command
-        uint8_t *cmd_desc = mmu_get_dma_mem(this->cmd_ptr, 16, &is_writable);
-
-        // get command code
-        this->cur_cmd = cmd_desc[3] >> 4;
-
-        // all commands except STOP update cmd.xferStatus and
-        // perform actions under control of "i", "b" and "w" bits
-        if (this->cur_cmd < DBDMA_Cmd::STOP) {
-            if (is_writable)
-                WRITE_WORD_LE_A(&cmd_desc[14], this->ch_stat | CH_STAT_ACTIVE);
-
-            if (cmd_desc[2] & 3) {
-                ABORT_F("DBDMA: cmd.w bit not implemented");
-            }
-
-            // react to cmd.b bit
-            if (cmd_desc[2] & 0xC) {
-                bool cond = true;
-                if ((cmd_desc[2] & 0xC) != 0xC) {
-                    uint16_t br_mask = this->branch_select >> 16;
-                    cond = (this->ch_stat & br_mask) == (this->branch_select & br_mask);
-                    if ((cmd_desc[2] & 0xC) == 0x8) { // branch if cond cleared?
-                        cond = !cond;
-                    }
-                }
-                if (cond) {
-                    this->cmd_ptr = READ_DWORD_LE_A(&cmd_desc[8]);
-                    branch_taken = true;
-                }
-            }
-
-            this->update_irq();
-        }
-
-        // all INPUT and OUTPUT commands update cmd.resCount
-        if (this->cur_cmd < DBDMA_Cmd::STORE_QUAD && is_writable) {
-            WRITE_WORD_LE_A(&cmd_desc[12], this->queue_len & 0xFFFFUL);
-        }
-
-        if (!branch_taken)
-            this->cmd_ptr += 16;
-
-        this->cmd_in_progress = false;
+        this->finish_cmd();
     }
 
     fetch_cmd(this->cmd_ptr, &cmd_struct);
@@ -116,36 +73,17 @@ uint8_t DMAChannel::interpret_cmd() {
         this->cmd_in_progress = true;
         break;
     case DBDMA_Cmd::STORE_QUAD:
-        if (cmd_struct.cmd_key != 6) {
-            LOG_F(ERROR, "Illegal key value for STORE_QUAD");
-        }
-        else {
-            if (cmd_struct.req_count & 0x4) {
-                cmd_struct.req_count = 4;
-            }
-            else if (cmd_struct.req_count & 0x2) {
-                cmd_struct.req_count = 2;
-            }
-            else {
-                cmd_struct.req_count = 1;
-            }
-
-            //mmu_dma_store_quad(cmd_struct.address, cmd_struct.cmd_arg);
-            this->queue_len       = 4;
-            this->cmd_in_progress = true;
-        }
+        if ((cmd_struct.cmd_key & 7) != 6)
+            LOG_F(9, "Invalid key %d in STORE_QUAD", cmd_struct.cmd_key & 7);
+        this->xfer_quad(&cmd_struct, true);
         break;
     case DBDMA_Cmd::LOAD_QUAD:
-        if (cmd_struct.cmd_key != 6) {
-            LOG_F(ERROR, "Illegal key value for LOAD_QUAD");
-        } else {
-            //this->queue_data      = mmu_dma_load_quad(cmd_struct.address);
-            this->queue_len       = 4;
-            this->cmd_in_progress = true;
-        }
+        if ((cmd_struct.cmd_key & 7) != 6)
+            LOG_F(9, "Invalid key %d in LOAD_QUAD", cmd_struct.cmd_key & 7);
+        this->xfer_quad(&cmd_struct, false);
         break;
     case DBDMA_Cmd::NOP:
-        LOG_F(ERROR, "Unsupported DMA Command NOP");
+        this->finish_cmd();
         break;
     case DBDMA_Cmd::STOP:
         this->ch_stat &= ~CH_STAT_ACTIVE;
@@ -158,6 +96,94 @@ uint8_t DMAChannel::interpret_cmd() {
     }
 
     return this->cur_cmd;
+}
+
+void DMAChannel::finish_cmd() {
+    DMACmd cmd_struct;
+    bool   is_writable, branch_taken = false;
+
+    // obtain real pointer to the descriptor of the command to be finished
+    uint8_t *cmd_desc = mmu_get_dma_mem(this->cmd_ptr, 16, &is_writable);
+
+    // get command code
+    this->cur_cmd = cmd_desc[3] >> 4;
+
+    // all commands except STOP update cmd.xferStatus and
+    // perform actions under control of "i", "b" and "w" bits
+    if (this->cur_cmd < DBDMA_Cmd::STOP) {
+        if (is_writable)
+            WRITE_WORD_LE_A(&cmd_desc[14], this->ch_stat | CH_STAT_ACTIVE);
+
+        if (cmd_desc[2] & 3) {
+            ABORT_F("DBDMA: cmd.w bit not implemented");
+        }
+
+        // react to cmd.b bit
+        if (cmd_desc[2] & 0xC) {
+            bool cond = true;
+            if ((cmd_desc[2] & 0xC) != 0xC) {
+                uint16_t br_mask = this->branch_select >> 16;
+                cond = (this->ch_stat & br_mask) == (this->branch_select & br_mask);
+                if ((cmd_desc[2] & 0xC) == 0x8) { // branch if cond cleared?
+                    cond = !cond;
+                }
+            }
+            if (cond) {
+                this->cmd_ptr = READ_DWORD_LE_A(&cmd_desc[8]);
+                branch_taken = true;
+            }
+        }
+
+        this->update_irq();
+    }
+
+    // all INPUT and OUTPUT commands update cmd.resCount
+    if (this->cur_cmd < DBDMA_Cmd::STORE_QUAD && is_writable) {
+        WRITE_WORD_LE_A(&cmd_desc[12], this->queue_len & 0xFFFFUL);
+    }
+
+    if (!branch_taken)
+        this->cmd_ptr += 16;
+
+    this->cmd_in_progress = false;
+}
+
+void DMAChannel::xfer_quad(const DMACmd *cmd_desc, const bool is_store) {
+    bool   is_writable;
+    uint8_t *src, *dst;
+
+    // parse and fix reqCount
+    uint32_t xfer_size = cmd_desc->req_count & 7;
+    if (xfer_size & 4) {
+        xfer_size = 4;
+    } else if (xfer_size & 2) {
+        xfer_size = 2;
+    } else {
+        xfer_size = 1;
+    }
+
+    // prepare data pointers
+    if (is_store) {
+        src = mmu_get_dma_mem(this->cmd_ptr, 16, &is_writable);
+        src += 8; // move src to cmd.data32
+        dst = mmu_get_dma_mem(cmd_desc->address & ~(xfer_size - 1), xfer_size,
+                              &is_writable);
+    } else {
+        src = mmu_get_dma_mem(cmd_desc->address & ~(xfer_size - 1), xfer_size,
+                              &is_writable);
+        dst = mmu_get_dma_mem(this->cmd_ptr, 16, &is_writable);
+        dst += 8; // move dst to cmd.data32
+    }
+
+    // perform data transfer only if the destination is writable
+    if (is_writable) {
+        std::memcpy(dst, src, xfer_size);
+    }
+
+    if (cmd_desc->cmd_bits & 0xC)
+        ABORT_F("DBDMA: cmd_bits.b should be zero for LOAD/STORE_QUAD!");
+
+    this->finish_cmd();
 }
 
 void DMAChannel::update_irq() {
@@ -366,6 +392,17 @@ void DMAChannel::start() {
 
     if (this->start_cb)
         this->start_cb();
+
+    this->cmd_in_progress = false;
+
+    // some DBDMA programs contain commands that don't transfer data
+    // between a device and memory (LOAD_QUAD, STORE_QUAD, NOP and STOP).
+    // We thus interprete the DBDMA program until a data transfer between
+    // a device and memory is queued or the channel becomes idle/dead.
+    while (!this->cmd_in_progress && !(this->ch_stat & CH_STAT_DEAD) &&
+           (this->ch_stat & CH_STAT_ACTIVE)) {
+               this->interpret_cmd();
+    }
 }
 
 void DMAChannel::resume() {

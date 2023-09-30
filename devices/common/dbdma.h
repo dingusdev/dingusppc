@@ -103,6 +103,8 @@ public:
 protected:
     void fetch_cmd(uint32_t cmd_addr, DMACmd* p_cmd);
     uint8_t interpret_cmd(void);
+    void finish_cmd();
+    void xfer_quad(const DMACmd *cmd_desc, const bool is_store);
     void update_irq();
 
     void start(void);
