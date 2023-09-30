@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -85,7 +85,7 @@ int initialize_pdm(std::string& id)
     }
 
     // get internal SCSI bus object
-    auto scsi_bus = dynamic_cast<ScsiBus*>(gMachineObj->get_comp_by_name("Scsi0"));
+    auto scsi_bus = dynamic_cast<ScsiBus*>(gMachineObj->get_comp_by_name("ScsiCurio"));
 
     std::string hd_image_path = GET_STR_PROP("hdd_img");
     if (!hd_image_path.empty()) {

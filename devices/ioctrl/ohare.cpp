@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -227,7 +227,7 @@ void OHare::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state)
 }
 
 static const vector<string> OHare_Subdevices = {
-    "NVRAM", "ViaCuda", "Scsi0", "Mesh", "Escc", "Swim3"
+    "NVRAM", "ViaCuda", "ScsiMesh", "Mesh", "Escc", "Swim3"
 };
 
 static const DeviceDescription OHare_Descriptor = {

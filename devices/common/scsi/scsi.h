@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -216,12 +216,12 @@ public:
     ScsiBus(const std::string name);
     ~ScsiBus() = default;
 
-    static std::unique_ptr<HWComponent> create_first() {
-        return std::unique_ptr<ScsiBus>(new ScsiBus("SCSIO"));
+    static std::unique_ptr<HWComponent> create_ScsiMesh() {
+        return std::unique_ptr<ScsiBus>(new ScsiBus("ScsiMesh"));
     }
 
-    static std::unique_ptr<HWComponent> create_second() {
-        return std::unique_ptr<ScsiBus>(new ScsiBus("SCSI1"));
+    static std::unique_ptr<HWComponent> create_ScsiCurio() {
+        return std::unique_ptr<ScsiBus>(new ScsiBus("ScsiCurio"));
     }
 
     // low-level state management

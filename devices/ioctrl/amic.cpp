@@ -53,8 +53,8 @@ AMIC::AMIC() : MMIODevice()
 
     // connect internal SCSI controller
     this->scsi = dynamic_cast<Sc53C94*>(gMachineObj->get_comp_by_name("Sc53C94"));
-    this->scsi_dma = std::unique_ptr<AmicScsiDma> (new AmicScsiDma());
-    this->scsi->set_dma_channel(this->scsi_dma.get());
+    this->curio_dma = std::unique_ptr<AmicScsiDma> (new AmicScsiDma());
+    this->scsi->set_dma_channel(this->curio_dma.get());
     this->scsi->set_drq_callback([this](const uint8_t drq_state) {
         if (drq_state & 1)
             via2_ifr |= VIA2_INT_SCSI_DRQ;
@@ -190,7 +190,7 @@ uint32_t AMIC::read(uint32_t rgn_start, uint32_t offset, int size)
     case AMICReg::DMA_Base_Addr_3:
         return (this->dma_base >> (3 - (offset & 3)) * 8) & 0xFF;
     case AMICReg::SCSI_DMA_Ctrl:
-        return this->scsi_dma->read_stat();
+        return this->curio_dma->read_stat();
     case AMICReg::Floppy_Addr_Ptr_0:
     case AMICReg::Floppy_Addr_Ptr_1:
     case AMICReg::Floppy_Addr_Ptr_2:
@@ -372,13 +372,13 @@ void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
     case AMICReg::SCSI_DMA_Ctrl:
         if (value & 1) { // RST bit set?
             this->scsi_addr_ptr = this->scsi_dma_base;
-            this->scsi_dma->reset(this->scsi_addr_ptr);
+            this->curio_dma->reset(this->scsi_addr_ptr);
         }
         if (value & 2) { // RUN bit set?
-            this->scsi_dma->reinit(this->scsi_dma_base);
+            this->curio_dma->reinit(this->scsi_dma_base);
             this->scsi->real_dma_xfer((value >> 6) & 1);
         }
-        this->scsi_dma->write_ctrl(value);
+        this->curio_dma->write_ctrl(value);
         break;
     case AMICReg::Enet_DMA_Rcv_Ctrl:
         LOG_F(INFO, "AMIC Ethernet Receive DMA Ctrl updated, val=%x", value);
@@ -742,7 +742,7 @@ DmaPullResult AmicSerialXmitDma::pull_data(uint32_t req_len, uint32_t *avail_len
 };
 
 static vector<string> Amic_Subdevices = {
-    "Scsi0", "Sc53C94", "Escc", "Mace", "ViaCuda", "Swim3"
+    "ScsiCurio", "Sc53C94", "Escc", "Mace", "ViaCuda", "Swim3"
 };
 
 static const DeviceDescription Amic_Descriptor = {

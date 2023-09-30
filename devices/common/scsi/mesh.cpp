@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -35,7 +35,7 @@ using namespace MeshScsi;
 
 int MeshController::device_postinit()
 {
-    this->bus_obj = dynamic_cast<ScsiBus*>(gMachineObj->get_comp_by_name("Scsi0"));
+    this->bus_obj = dynamic_cast<ScsiBus*>(gMachineObj->get_comp_by_name("ScsiMesh"));
 
     this->int_ctrl = dynamic_cast<InterruptCtrl*>(
         gMachineObj->get_comp_by_type(HWCompType::INT_CTRL));

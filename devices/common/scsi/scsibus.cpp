@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -286,13 +286,13 @@ void ScsiBus::disconnect(int dev_id)
     }
 }
 
-static const DeviceDescription Scsi0_Descriptor = {
-    ScsiBus::create_first, {}, {}
+static const DeviceDescription ScsiCurio_Descriptor = {
+    ScsiBus::create_ScsiCurio, {}, {}
 };
 
-static const DeviceDescription Scsi1_Descriptor = {
-    ScsiBus::create_second, {}, {}
+static const DeviceDescription ScsiMesh_Descriptor = {
+    ScsiBus::create_ScsiMesh, {}, {}
 };
 
-REGISTER_DEVICE(Scsi0, Scsi0_Descriptor);
-REGISTER_DEVICE(Scsi1, Scsi1_Descriptor);
+REGISTER_DEVICE(ScsiCurio, ScsiCurio_Descriptor);
+REGISTER_DEVICE(ScsiMesh, ScsiMesh_Descriptor);

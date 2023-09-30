@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -43,7 +43,7 @@ Sc53C94::Sc53C94(uint8_t chip_id, uint8_t my_id) : ScsiDevice("SC53C94", my_id)
 
 int Sc53C94::device_postinit()
 {
-    this->bus_obj = dynamic_cast<ScsiBus*>(gMachineObj->get_comp_by_name("Scsi0"));
+    this->bus_obj = dynamic_cast<ScsiBus*>(gMachineObj->get_comp_by_name("ScsiCurio"));
     this->bus_obj->register_device(7, static_cast<ScsiDevice*>(this));
 
     this->int_ctrl = dynamic_cast<InterruptCtrl*>(

@@ -157,10 +157,10 @@ private:
     ViaCuda*            viacuda;    // VIA cell with Cuda MCU attached to it
     EsccController*     escc;       // ESCC serial controller
     MeshController*     mesh;       // internal SCSI (fast)
-    Sc53C94*            ext_scsi;   // external SCSI (slow)
+    Sc53C94*            curio;      // external SCSI (slow)
     Swim3::Swim3Ctrl*   swim3;      // floppy disk controller
 
-    std::unique_ptr<DMAChannel>     ext_scsi_dma;
+    std::unique_ptr<DMAChannel>     curio_dma;
     std::unique_ptr<DMAChannel>     mesh_dma;
     std::unique_ptr<DMAChannel>     snd_out_dma;
     std::unique_ptr<DMAChannel>     floppy_dma;
@@ -318,7 +318,7 @@ private:
     BigMac*             bmac;     // Ethernet MAC cell
 
     // DMA channels
-    std::unique_ptr<DMAChannel>     scsi_dma;
+    std::unique_ptr<DMAChannel>     mesh_dma;
     std::unique_ptr<DMAChannel>     floppy_dma;
     std::unique_ptr<DMAChannel>     enet_xmit_dma;
     std::unique_ptr<DMAChannel>     enet_rcv_dma;

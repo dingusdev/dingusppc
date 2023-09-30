@@ -80,10 +80,10 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
     }
 
     // connect external SCSI controller (Curio) to its DMA channel
-    this->ext_scsi = dynamic_cast<Sc53C94*>(gMachineObj->get_comp_by_name("Sc53C94"));
-    this->ext_scsi_dma  = std::unique_ptr<DMAChannel> (new DMAChannel("curio_scsi"));
-    this->ext_scsi_dma->register_dma_int(this, this->register_dma_int(IntSrc::DMA_SCSI_CURIO));
-    this->ext_scsi->set_dma_channel(this->ext_scsi_dma.get());
+    this->curio = dynamic_cast<Sc53C94*>(gMachineObj->get_comp_by_name("Sc53C94"));
+    this->curio_dma = std::unique_ptr<DMAChannel> (new DMAChannel("curio_scsi"));
+    this->curio_dma->register_dma_int(this, this->register_dma_int(IntSrc::DMA_SCSI_CURIO));
+    this->curio->set_dma_channel(this->curio_dma.get());
 
     // connect Ethernet HW
     this->mace = dynamic_cast<MaceController*>(gMachineObj->get_comp_by_name("Mace"));
@@ -117,7 +117,7 @@ uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
 
         switch (subdev_num) {
         case 0: // Curio SCSI
-            return this->ext_scsi->read((offset >> 4) & 0xF);
+            return this->curio->read((offset >> 4) & 0xF);
         case 1: // MACE
             return this->mace->read((offset >> 4) & 0x1F);
         case 2: // ESCC compatible addressing
@@ -160,7 +160,7 @@ uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
 
         switch (dma_channel) {
         case MIO_GC_DMA_SCSI_CURIO:
-            return this->ext_scsi_dma->reg_read(offset & 0xFF, size);
+            return this->curio_dma->reg_read(offset & 0xFF, size);
         case MIO_GC_DMA_FLOPPY:
             return this->floppy_dma->reg_read(offset & 0xFF, size);
         case MIO_GC_DMA_AUDIO_OUT:
@@ -198,7 +198,7 @@ void GrandCentral::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
 
         switch (subdev_num) {
         case 0: // Curio SCSI
-            this->ext_scsi->write((offset >> 4) & 0xF, value);
+            this->curio->write((offset >> 4) & 0xF, value);
             break;
         case 1: // MACE registers
             this->mace->write((offset >> 4) & 0x1F, value);
@@ -262,7 +262,7 @@ void GrandCentral::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
 
         switch (dma_channel) {
         case MIO_GC_DMA_SCSI_CURIO:
-            this->ext_scsi_dma->reg_write(offset & 0xFF, value, size);
+            this->curio_dma->reg_write(offset & 0xFF, value, size);
             break;
         case MIO_GC_DMA_FLOPPY:
             this->floppy_dma->reg_write(offset & 0xFF, value, size);
@@ -381,7 +381,7 @@ void GrandCentral::clear_cpu_int() {
 }
 
 static const vector<string> GCSubdevices = {
-    "NVRAM", "ViaCuda", "Escc", "Scsi0", "Sc53C94", "Mace", "Swim3"
+    "NVRAM", "ViaCuda", "Escc", "ScsiCurio", "Sc53C94", "Mace", "Swim3"
 };
 
 static const DeviceDescription GC_Descriptor = {

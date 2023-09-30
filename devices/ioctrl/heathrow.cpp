@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -79,7 +79,7 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
 
     // connect SCSI HW and the corresponding DMA channel
     this->mesh = dynamic_cast<MeshController*>(gMachineObj->get_comp_by_name("MeshHeathrow"));
-    this->scsi_dma = std::unique_ptr<DMAChannel> (new DMAChannel("mesh"));
+    this->mesh_dma = std::unique_ptr<DMAChannel> (new DMAChannel("mesh"));
 
     // connect IDE HW
     this->ide_0 = dynamic_cast<IdeChannel*>(gMachineObj->get_comp_by_name("Ide0"));
@@ -121,7 +121,10 @@ void HeathrowIC::notify_bar_change(int bar_num)
 uint32_t HeathrowIC::dma_read(uint32_t offset, int size) {
     switch (offset >> 8) {
     case MIO_OHARE_DMA_MESH:
-        return this->scsi_dma->reg_read(offset & 0xFF, size);
+        if (this->mesh_dma)
+            return this->mesh_dma->reg_read(offset & 0xFF, size);
+        else
+            return 0;
     case MIO_OHARE_DMA_FLOPPY:
         return this->floppy_dma->reg_read(offset & 0xFF, size);
     case MIO_OHARE_DMA_ETH_XMIT:
@@ -140,7 +143,7 @@ uint32_t HeathrowIC::dma_read(uint32_t offset, int size) {
 void HeathrowIC::dma_write(uint32_t offset, uint32_t value, int size) {
     switch (offset >> 8) {
     case MIO_OHARE_DMA_MESH:
-        this->scsi_dma->reg_write(offset & 0xFF, value, size);
+        if (this->mesh_dma) this->mesh_dma->reg_write(offset & 0xFF, value, size);
         break;
     case MIO_OHARE_DMA_FLOPPY:
         this->floppy_dma->reg_write(offset & 0xFF, value, size);
@@ -548,7 +551,7 @@ void HeathrowIC::clear_cpu_int()
 }
 
 static const vector<string> Heathrow_Subdevices = {
-    "NVRAM", "ViaCuda", "Scsi0", "MeshHeathrow", "Escc", "Swim3", "Ide0", "Ide1",
+    "NVRAM", "ViaCuda", "ScsiMesh", "MeshHeathrow", "Escc", "Swim3", "Ide0", "Ide1",
     "BigMacHeathrow"
 };
 
