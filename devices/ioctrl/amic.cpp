@@ -557,9 +557,10 @@ DmaPullResult AmicSndOutDma::pull_data(uint32_t req_len, uint32_t *avail_len,
 
     uint32_t len = std::min((uint32_t)rem_len, req_len);
 
-    *p_data = mmu_get_dma_mem(
+    MapDmaResult res = mmu_map_dma_mem(
         (this->snd_buf_num ? this->out_buf1 : this->out_buf0) + this->cur_buf_pos,
-        len, nullptr);
+        len, false);
+    *p_data = res.host_va;
     this->cur_buf_pos += len;
     *avail_len = len;
     return DmaPullResult::MoreData;
@@ -592,12 +593,11 @@ void AmicFloppyDma::write_ctrl(uint8_t value)
 
 int AmicFloppyDma::push_data(const char* src_ptr, int len)
 {
-    bool is_writable;
-
     len = std::min((int)this->byte_count, len);
 
-    uint8_t *p_data = mmu_get_dma_mem(this->addr_ptr, len, &is_writable);
-    if (!is_writable) {
+    MapDmaResult res = mmu_map_dma_mem(this->addr_ptr, len, false);
+    uint8_t *p_data = res.host_va;
+    if (!res.is_writable) {
         ABORT_F("AMIC: attempting DMA write to read-only memory");
     }
     std::memcpy(p_data, src_ptr, len);
@@ -644,9 +644,8 @@ void AmicScsiDma::write_ctrl(uint8_t value)
 
 int AmicScsiDma::push_data(const char* src_ptr, int len)
 {
-    bool is_writable;
-
-    uint8_t *p_data = mmu_get_dma_mem(this->addr_ptr, len, &is_writable);
+    MapDmaResult res = mmu_map_dma_mem(this->addr_ptr, len, false);
+    uint8_t *p_data = res.host_va;
     std::memcpy(p_data, src_ptr, len);
 
     this->addr_ptr += len;
@@ -657,9 +656,8 @@ int AmicScsiDma::push_data(const char* src_ptr, int len)
 DmaPullResult AmicScsiDma::pull_data(uint32_t req_len, uint32_t *avail_len,
                                      uint8_t **p_data)
 {
-    bool is_writable;
-
-    *p_data = mmu_get_dma_mem(this->addr_ptr, req_len, &is_writable);
+    MapDmaResult res = mmu_map_dma_mem(this->addr_ptr, req_len, false);
+    *p_data = res.host_va;
     this->addr_ptr += req_len;
     *avail_len = req_len;
     return DmaPullResult::MoreData;
