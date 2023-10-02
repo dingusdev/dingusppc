@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -72,15 +72,16 @@ private:
     uint8_t ext_sense_code;
 
     /* DDC I2C variables. */
-    uint8_t next_state;
-    uint8_t prev_state;
-    uint8_t last_sda;
-    uint8_t last_scl;
-    int bit_count;     /* number of bits processed so far */
-    uint8_t byte;      /* byte value being currently transferred */
-    uint8_t dev_addr;  /* current device address */
-    uint8_t reg_addr;  /* current register address */
-    uint8_t* data_ptr; /* ptr to data byte to be transferred next */
+    uint8_t     next_state;
+    uint8_t     prev_state;
+    uint8_t     last_sda;
+    uint8_t     last_scl;
+    uint8_t     byte;       // byte value being currently transferred
+    uint8_t     dev_addr;   // current device address
+    uint8_t     reg_addr;   // current register address
+    uint8_t*    data_ptr;   // ptr to data byte to be transferred next
+    int         bit_count;  // number of bits processed so far
+    int         data_pos;   // current position in the data buffer
 
 /*
     uint8_t edid[128] = {

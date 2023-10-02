@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -75,6 +75,7 @@ DisplayID::DisplayID()
     this->last_sda   = 1;
     this->last_scl   = 1;
     this->data_ptr   = 0;
+    this->data_pos   = 0;
 }
 
 DisplayID::DisplayID(uint8_t std_code, uint8_t ext_code)
@@ -181,7 +182,8 @@ uint8_t DisplayID::update_ddc_i2c(uint8_t sda, uint8_t scl)
             if (this->dev_addr & 1) {
                 this->next_state = I2CState::DATA;
                 this->data_ptr   = this->edid;
-                this->byte       = *(this->data_ptr++);
+                this->data_pos   = 0;
+                this->byte       = this->data_ptr[this->data_pos++];
             } else {
                 this->next_state = I2CState::REG_ADDR;
             }
@@ -200,7 +202,10 @@ uint8_t DisplayID::update_ddc_i2c(uint8_t sda, uint8_t scl)
             if (dev_addr & 1) {
                 if (!sda) {
                     /* load next data byte */
-                    this->byte = *(this->data_ptr++);
+                    if (data_pos < 128)
+                        this->byte = this->data_ptr[this->data_pos++];
+                    else
+                        this->byte = 0;
                 } else {
                     LOG_F(ERROR, "DDC-I2C: Oops! NACK received");
                 }
