@@ -77,11 +77,11 @@ uint64_t    num_entry_replacements  = 0; // number of entry replacements
 #endif // TLB_PROFILING
 
 /** remember recently used physical memory regions for quicker translation. */
-AddressMapEntry last_read_area  = {0xFFFFFFFF, 0xFFFFFFFF};
-AddressMapEntry last_write_area = {0xFFFFFFFF, 0xFFFFFFFF};
-AddressMapEntry last_exec_area  = {0xFFFFFFFF, 0xFFFFFFFF};
-AddressMapEntry last_ptab_area  = {0xFFFFFFFF, 0xFFFFFFFF};
-AddressMapEntry last_dma_area   = {0xFFFFFFFF, 0xFFFFFFFF};
+AddressMapEntry last_read_area  = {0xFFFFFFFF, 0xFFFFFFFF, 0, 0, nullptr, nullptr};
+AddressMapEntry last_write_area = {0xFFFFFFFF, 0xFFFFFFFF, 0, 0, nullptr, nullptr};
+AddressMapEntry last_exec_area  = {0xFFFFFFFF, 0xFFFFFFFF, 0, 0, nullptr, nullptr};
+AddressMapEntry last_ptab_area  = {0xFFFFFFFF, 0xFFFFFFFF, 0, 0, nullptr, nullptr};
+AddressMapEntry last_dma_area   = {0xFFFFFFFF, 0xFFFFFFFF, 0, 0, nullptr, nullptr};
 
 void ppc_set_cur_instruction(const uint8_t* ptr) {
     ppc_cur_instruction = READ_DWORD_BE_A(ptr);
@@ -327,6 +327,38 @@ uint8_t* mmu_get_dma_mem(uint32_t addr, uint32_t size, bool* is_writable)
             ABORT_F("SOS: DMA access to unmapped memory %08X!\n", addr);
         }
     }
+}
+
+MapDmaResult mmu_map_dma_mem(uint32_t addr, uint32_t size, bool allow_mmio) {
+    MMIODevice      *devobj  = nullptr;
+    uint8_t         *host_va = nullptr;
+    uint32_t        dev_base = 0;
+    bool            is_writable;
+    AddressMapEntry *cur_dma_rgn;
+
+    if (addr >= last_dma_area.start && (addr + size) <= last_dma_area.end) {
+        cur_dma_rgn = &last_dma_area;
+    } else {
+        cur_dma_rgn = mem_ctrl_instance->find_range(addr);
+        if (!cur_dma_rgn || (addr + size) > cur_dma_rgn->end)
+            ABORT_F("SOS: DMA access to unmapped physical memory %08X!\n", addr);
+
+        last_dma_area = *cur_dma_rgn;
+    }
+
+    if ((cur_dma_rgn->type & RT_MMIO) && !allow_mmio)
+        ABORT_F("SOS: DMA access to a MMIO region is not allowed");
+
+    if (cur_dma_rgn->type & (RT_ROM | RT_RAM)) {
+        host_va  = cur_dma_rgn->mem_ptr + (addr - cur_dma_rgn->start);
+        is_writable = last_dma_area.type & RT_RAM;
+    } else { // RT_MMIO
+        devobj = cur_dma_rgn->devobj;
+        dev_base = cur_dma_rgn->start;
+        is_writable = true; // all MMIO devices must provide a write method
+    }
+
+    return MapDmaResult{cur_dma_rgn->type, is_writable, host_va, devobj, dev_base};
 }
 
 // primary ITLB for all MMU modes

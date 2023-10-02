@@ -70,6 +70,17 @@ typedef struct PATResult {
     uint8_t     pte_c_status; // status of the C bit of the PTE
 } PATResult;
 
+/** DMA memory mapping result. */
+typedef struct MapDmaResult {
+    uint32_t    type;
+    bool        is_writable;
+    // for memory regions
+    uint8_t*    host_va;
+    // for MMIO regions
+    MMIODevice* dev_obj;
+    uint32_t    dev_base;
+} MapDmaResult;
+
 #define PAGE_SIZE_BITS      12
 #define PAGE_SIZE           (1 << PAGE_SIZE_BITS)
 #define PAGE_MASK           ~(PAGE_SIZE - 1)
@@ -107,6 +118,7 @@ extern std::function<void(uint32_t bat_reg)> ibat_update;
 extern std::function<void(uint32_t bat_reg)> dbat_update;
 
 extern uint8_t* mmu_get_dma_mem(uint32_t addr, uint32_t size, bool* is_writable);
+extern MapDmaResult mmu_map_dma_mem(uint32_t addr, uint32_t size, bool allow_mmio);
 
 extern void mmu_change_mode(void);
 extern void mmu_pat_ctx_changed();
