@@ -203,7 +203,8 @@ void PdmOnboardVideo::enable_video_internal()
     LOG_F(INFO, "PDM-Video: framebuffer phys base addr = 0x%X", fb_base_phys);
 
     // set CRTC parameters
-    this->fb_ptr = mmu_get_dma_mem(fb_base_phys, PDM_FB_SIZE_MAX, nullptr);
+    MapDmaResult res = mmu_map_dma_mem(fb_base_phys, PDM_FB_SIZE_MAX, false);
+    this->fb_ptr = res.host_va;
     this->active_width  = new_width;
     this->active_height = new_height;
     this->hori_blank    = hori_blank;

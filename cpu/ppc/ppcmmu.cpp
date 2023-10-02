@@ -307,28 +307,6 @@ static PATResult page_address_translation(uint32_t la, bool is_instr_fetch,
     };
 }
 
-uint8_t* mmu_get_dma_mem(uint32_t addr, uint32_t size, bool* is_writable)
-{
-    if (addr >= last_dma_area.start && (addr + size) <= last_dma_area.end) {
-        if (is_writable)
-            *is_writable = last_dma_area.type & RT_RAM;
-        return last_dma_area.mem_ptr + (addr - last_dma_area.start);
-    } else {
-        AddressMapEntry* entry = mem_ctrl_instance->find_range(addr);
-        if (entry && entry->type & (RT_ROM | RT_RAM)) {
-            last_dma_area.start   = entry->start;
-            last_dma_area.end     = entry->end;
-            last_dma_area.mem_ptr = entry->mem_ptr;
-            last_dma_area.type    = entry->type;
-            if (is_writable)
-                *is_writable = entry->type & RT_RAM;
-            return last_dma_area.mem_ptr + (addr - last_dma_area.start);
-        } else {
-            ABORT_F("SOS: DMA access to unmapped memory %08X!\n", addr);
-        }
-    }
-}
-
 MapDmaResult mmu_map_dma_mem(uint32_t addr, uint32_t size, bool allow_mmio) {
     MMIODevice      *devobj  = nullptr;
     uint8_t         *host_va = nullptr;
