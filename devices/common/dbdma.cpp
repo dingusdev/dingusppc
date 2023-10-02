@@ -38,12 +38,13 @@ void DMAChannel::set_callbacks(DbdmaCallback start_cb, DbdmaCallback stop_cb) {
 
 /* Load DMACmd from physical memory. */
 void DMAChannel::fetch_cmd(uint32_t cmd_addr, DMACmd* p_cmd) {
-    memcpy((uint8_t*)p_cmd, mmu_get_dma_mem(cmd_addr, 16, nullptr), 16);
+    MapDmaResult res = mmu_map_dma_mem(cmd_addr, 16, false);
+    memcpy((uint8_t*)p_cmd, res.host_va, 16);
 }
 
 uint8_t DMAChannel::interpret_cmd() {
     DMACmd cmd_struct;
-    bool   is_writable, branch_taken = false;
+    MapDmaResult res;
 
     if (this->cmd_in_progress) {
         // return current command if there is data to transfer
@@ -68,7 +69,8 @@ uint8_t DMAChannel::interpret_cmd() {
             LOG_F(ERROR, "Key > 0 not implemented");
             break;
         }
-        this->queue_data = mmu_get_dma_mem(cmd_struct.address, cmd_struct.req_count, &is_writable);
+        res = mmu_map_dma_mem(cmd_struct.address, cmd_struct.req_count, false);
+        this->queue_data = res.host_va;
         this->queue_len  = cmd_struct.req_count;
         this->cmd_in_progress = true;
         break;
@@ -100,10 +102,11 @@ uint8_t DMAChannel::interpret_cmd() {
 
 void DMAChannel::finish_cmd() {
     DMACmd cmd_struct;
-    bool   is_writable, branch_taken = false;
+    bool   branch_taken = false;
 
     // obtain real pointer to the descriptor of the command to be finished
-    uint8_t *cmd_desc = mmu_get_dma_mem(this->cmd_ptr, 16, &is_writable);
+    MapDmaResult res  = mmu_map_dma_mem(this->cmd_ptr, 16, false);
+    uint8_t *cmd_desc = res.host_va;
 
     // get command code
     this->cur_cmd = cmd_desc[3] >> 4;
@@ -111,21 +114,32 @@ void DMAChannel::finish_cmd() {
     // all commands except STOP update cmd.xferStatus and
     // perform actions under control of "i", "b" and "w" bits
     if (this->cur_cmd < DBDMA_Cmd::STOP) {
-        if (is_writable)
-            WRITE_WORD_LE_A(&cmd_desc[14], this->ch_stat | CH_STAT_ACTIVE);
-
+        // react to cmd.w (wait) bits
         if (cmd_desc[2] & 3) {
-            ABORT_F("DBDMA: cmd.w bit not implemented");
+            bool cond = true;
+            if ((cmd_desc[2] & 3) != 3) {
+                uint16_t wt_mask = this->wait_select >> 16;
+                cond = (this->ch_stat & wt_mask) == (this->wait_select & wt_mask);
+                if ((cmd_desc[2] & 3) == 2) {
+                    cond = !cond; // wait if cond = false
+                }
+            }
+
+            if (cond)
+                return;
         }
 
-        // react to cmd.b bit
+        if (res.is_writable)
+            WRITE_WORD_LE_A(&cmd_desc[14], this->ch_stat | CH_STAT_ACTIVE);
+
+        // react to cmd.b (branch) bits
         if (cmd_desc[2] & 0xC) {
             bool cond = true;
             if ((cmd_desc[2] & 0xC) != 0xC) {
                 uint16_t br_mask = this->branch_select >> 16;
                 cond = (this->ch_stat & br_mask) == (this->branch_select & br_mask);
-                if ((cmd_desc[2] & 0xC) == 0x8) { // branch if cond cleared?
-                    cond = !cond;
+                if ((cmd_desc[2] & 0xC) == 0x8) {
+                    cond = !cond; // branch if cond = false
                 }
             }
             if (cond) {
@@ -138,7 +152,7 @@ void DMAChannel::finish_cmd() {
     }
 
     // all INPUT and OUTPUT commands update cmd.resCount
-    if (this->cur_cmd < DBDMA_Cmd::STORE_QUAD && is_writable) {
+    if (this->cur_cmd < DBDMA_Cmd::STORE_QUAD && res.is_writable) {
         WRITE_WORD_LE_A(&cmd_desc[12], this->queue_len & 0xFFFFUL);
     }
 
@@ -149,8 +163,9 @@ void DMAChannel::finish_cmd() {
 }
 
 void DMAChannel::xfer_quad(const DMACmd *cmd_desc, const bool is_store) {
-    bool   is_writable;
+    MapDmaResult res;
     uint8_t *src, *dst;
+    uint32_t addr;
 
     // parse and fix reqCount
     uint32_t xfer_size = cmd_desc->req_count & 7;
@@ -162,22 +177,33 @@ void DMAChannel::xfer_quad(const DMACmd *cmd_desc, const bool is_store) {
         xfer_size = 1;
     }
 
-    // prepare data pointers
-    if (is_store) {
-        src = mmu_get_dma_mem(this->cmd_ptr, 16, &is_writable);
-        src += 8; // move src to cmd.data32
-        dst = mmu_get_dma_mem(cmd_desc->address & ~(xfer_size - 1), xfer_size,
-                              &is_writable);
-    } else {
-        src = mmu_get_dma_mem(cmd_desc->address & ~(xfer_size - 1), xfer_size,
-                              &is_writable);
-        dst = mmu_get_dma_mem(this->cmd_ptr, 16, &is_writable);
-        dst += 8; // move dst to cmd.data32
-    }
+    addr = cmd_desc->address & ~(xfer_size - 1);
 
-    // perform data transfer only if the destination is writable
-    if (is_writable) {
-        std::memcpy(dst, src, xfer_size);
+    // prepare data pointers and perform data transfer
+    if (is_store) {
+        res = mmu_map_dma_mem(this->cmd_ptr, 16, false);
+        src = res.host_va + 8; // move src to cmd.data32
+        res = mmu_map_dma_mem(addr, xfer_size, true);
+        if (res.type & RT_MMIO) {
+            res.dev_obj->write(res.dev_base, addr - res.dev_base,
+                read_mem_rev(src, xfer_size), xfer_size);
+        } else if (res.is_writable) {
+            std::memcpy(res.host_va, src, xfer_size);
+        }
+    } else {
+        res = mmu_map_dma_mem(this->cmd_ptr, 16, false);
+        if (res.is_writable) {
+            dst = res.host_va + 8; // move dst to cmd.data32
+
+            res = mmu_map_dma_mem(addr, xfer_size, true);
+            if (res.type & RT_MMIO) {
+                write_mem_rev(dst,
+                    res.dev_obj->read(res.dev_base, addr - res.dev_base, xfer_size),
+                    xfer_size);
+            } else {
+                std::memcpy(dst, res.host_va, xfer_size);
+            }
+        }
     }
 
     if (cmd_desc->cmd_bits & 0xC)
@@ -187,20 +213,20 @@ void DMAChannel::xfer_quad(const DMACmd *cmd_desc, const bool is_store) {
 }
 
 void DMAChannel::update_irq() {
-    bool   is_writable;
-
     // obtain real pointer to the descriptor of the completed command
-    uint8_t *cmd_desc = mmu_get_dma_mem(this->cmd_ptr, 16, &is_writable);
+    MapDmaResult res = mmu_map_dma_mem(this->cmd_ptr, 16, false);
+    uint8_t *cmd_desc = res.host_va;
 
     // STOP doesn't generate interrupts
     if (this->cur_cmd < DBDMA_Cmd::STOP) {
+        // react to cmd.i (interrupt) bits
         if (cmd_desc[2] & 0x30) {
             bool cond = true;
             if ((cmd_desc[2] & 0x30) != 0x30) {
                 uint16_t int_mask = this->int_select >> 16;
                 cond = (this->ch_stat & int_mask) == (this->int_select & int_mask);
-                if ((cmd_desc[2] & 0x30) == 0x20) { // branch if cond cleared?
-                    cond = !cond;
+                if ((cmd_desc[2] & 0x30) == 0x20) {
+                    cond = !cond; // generate interrupt if cond = false
                 }
             }
             if (cond) {
@@ -211,24 +237,22 @@ void DMAChannel::update_irq() {
 }
 
 uint32_t DMAChannel::reg_read(uint32_t offset, int size) {
-    uint32_t res = 0;
-
     if (size != 4) {
         ABORT_F("DBDMA: non-DWORD read from a DMA channel not supported");
     }
 
     switch (offset) {
     case DMAReg::CH_CTRL:
-        res = 0; // ChannelControl reads as 0 (DBDMA spec 5.5.1, table 74)
-        break;
+        return 0; // ChannelControl reads as 0 (DBDMA spec 5.5.1, table 74)
     case DMAReg::CH_STAT:
-        res = BYTESWAP_32(this->ch_stat);
-        break;
+        return BYTESWAP_32(this->ch_stat);
+    case DMAReg::CMD_PTR_LO:
+        return BYTESWAP_32(this->cmd_ptr);
     default:
         LOG_F(WARNING, "Unsupported DMA channel register 0x%X", offset);
     }
 
-    return res;
+    return 0;
 }
 
 void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
