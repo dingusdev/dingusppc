@@ -155,8 +155,16 @@ void MeshController::perform_command(const uint8_t cmd)
         this->cur_state = SeqState::SEL_BEGIN;
         this->sequencer();
         break;
+    case SeqCmd::BusFree:
+        LOG_F(INFO, "MESH: BusFree stub invoked");
+        this->int_stat |= INT_CMD_DONE;
+        break;
+    case SeqCmd::EnaReselect:
+        LOG_F(INFO, "MESH: EnaReselect stub invoked");
+        this->int_stat |= INT_CMD_DONE;
+        break;
     case SeqCmd::DisReselect:
-        LOG_F(9, "MESH: DisReselect command requested");
+        LOG_F(9, "MESH: DisReselect stub invoked");
         this->int_stat |= INT_CMD_DONE;
         break;
     case SeqCmd::ResetMesh:
@@ -164,7 +172,7 @@ void MeshController::perform_command(const uint8_t cmd)
         this->int_stat |= INT_CMD_DONE;
         break;
     case SeqCmd::FlushFIFO:
-        LOG_F(INFO, "MESH: FlushFIFO command requested");
+        LOG_F(INFO, "MESH: FlushFIFO stub invoked");
         break;
     default:
         LOG_F(ERROR, "MESH: unsupported sequencer command 0x%X", this->cur_cmd);

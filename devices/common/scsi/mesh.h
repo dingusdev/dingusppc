@@ -61,6 +61,8 @@ enum SeqCmd : uint8_t {
     NoOperation = 0,
     Arbitrate   = 1,
     Select      = 2,
+    BusFree     = 9,
+    EnaReselect = 0xC,
     DisReselect = 0xD,
     ResetMesh   = 0xE,
     FlushFIFO   = 0xF,
@@ -107,6 +109,7 @@ public:
     MeshController(uint8_t mesh_id) {
         supports_types(HWCompType::SCSI_HOST | HWCompType::SCSI_DEV);
         this->chip_id = mesh_id;
+        this->set_name("MESH");
         this->reset(true);
     };
     ~MeshController() = default;
