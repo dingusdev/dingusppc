@@ -152,7 +152,7 @@ void ATIRage::notify_bar_change(int bar_num)
         if (this->aperture_base != (this->bars[bar_num] & 0xFFFFFFF0UL)) {
             this->aperture_base = this->bars[0] & 0xFFFFFFF0UL;
             this->host_instance->pci_register_mmio_region(this->aperture_base,
-                APERTURE_SIZE, this);
+                APERTURE_SIZE - this->vram_size, this);
             LOG_F(INFO, "ATIRage: aperture address set to 0x%08X", this->aperture_base);
         }
         break;
