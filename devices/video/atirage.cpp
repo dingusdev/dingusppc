@@ -106,9 +106,11 @@ ATIRage::ATIRage(uint16_t dev_id)
     switch (dev_id) {
     case ATI_RAGE_GT_DEV_ID:
         asic_id = 0x9A; // GT-B2U3 fabricated by UMC
+        this->cmd_fifo_size = 48;
         break;
     case ATI_RAGE_PRO_DEV_ID:
         asic_id = 0x5C; // R3B/D/P-A4 fabricated by UMC
+        this->cmd_fifo_size = 128;
         break;
     default:
         asic_id = 0xDD;
@@ -243,6 +245,9 @@ uint32_t ATIRage::read_reg(uint32_t reg_offset, uint32_t size) {
                 this->comp_index = 0; // reset color component index
             }
         }
+        break;
+    case ATI_GUI_STAT:
+        result = this->cmd_fifo_size << 16; // HACK: tell the guest the command FIFO is empty
         break;
     default:
         result = this->regs[reg_offset >> 2];

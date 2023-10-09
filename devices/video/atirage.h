@@ -84,6 +84,8 @@ private:
     uint32_t    regs[512] = {}; // internal registers
     uint8_t     plls[64]  = {}; // internal PLL registers
 
+    uint8_t     cmd_fifo_size = 0;
+
     // Video RAM variables
     std::unique_ptr<uint8_t[]>  vram_ptr;
     uint32_t    vram_size;
