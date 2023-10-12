@@ -55,6 +55,11 @@ public:
     uint8_t process_command(const uint8_t* in_data, int data_size);
     uint8_t get_output_count() { return this->output_count; };
 
+    // Polls devices that have a service request flag set. Returns the talk
+    // command corresponding to the first device that responded with data, or
+    // 0 if no device responded.
+    uint8_t poll();
+
     // callbacks meant to be called by devices
     const uint8_t*  get_input_buf() { return this->input_buf; };
     uint8_t*        get_output_buf() { return this->output_buf; };

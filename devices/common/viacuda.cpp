@@ -473,25 +473,20 @@ void ViaCuda::process_adb_command() {
 }
 
 void ViaCuda::autopoll_handler() {
-    uint8_t adb_status, output_size;
-
     if (!this->autopoll_enabled)
         return;
 
-    // send TALK R0 command to address 3 (mouse)
-    uint8_t in_data[2] = { 0x3C, 0};
+    uint8_t poll_command = this->adb_bus_obj->poll();
 
-    adb_status = this->adb_bus_obj->process_command(in_data, 1);
-
-    if (adb_status == ADB_STAT_OK) {
+    if (poll_command) {
         if (!this->old_tip || !this->treq) {
             LOG_F(WARNING, "Cuda transaction probably in progress");
         }
 
         // prepare autopoll packet
-        response_header(CUDA_PKT_ADB, adb_status | ADB_STAT_AUTOPOLL);
-        this->out_buf[2] = 0x3C; // put the proper ADB command
-        output_size = this->adb_bus_obj->get_output_count();
+        response_header(CUDA_PKT_ADB, ADB_STAT_OK | ADB_STAT_AUTOPOLL);
+        this->out_buf[2] = poll_command; // put the proper ADB command
+        uint8_t output_size = this->adb_bus_obj->get_output_count();
         if (output_size) {
             std::memcpy(&this->out_buf[3], this->adb_bus_obj->get_output_buf(), output_size);
             this->out_count += output_size;

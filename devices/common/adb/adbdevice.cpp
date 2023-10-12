@@ -39,6 +39,21 @@ int AdbDevice::device_postinit() {
     return 0;
 };
 
+uint8_t AdbDevice::poll() {
+    if (!this->srq_flag) {
+        return 0;
+    }
+    bool has_data = this->get_register_0();
+    if (!has_data) {
+        return 0;
+    }
+
+    // Register 0 in bits 0-1 (both 0)
+    // Talk command in bits 2-3 (both 1)
+    // Device address in bits 4-7
+    return 0xC | (this->my_addr << 4);
+}
+
 bool AdbDevice::talk(const uint8_t dev_addr, const uint8_t reg_num) {
     if (dev_addr == this->my_addr && !this->got_collision) {
         // see if another device already responded to this command

@@ -36,6 +36,16 @@ void AdbBus::register_device(AdbDevice* dev_obj) {
     this->devices.push_back(dev_obj);
 }
 
+uint8_t AdbBus::poll() {
+    for (auto dev : this->devices) {
+        uint8_t dev_poll = dev->poll();
+        if (dev_poll) {
+            return dev_poll;
+        }
+    }
+    return 0;
+}
+
 uint8_t AdbBus::process_command(const uint8_t* in_data, int data_size) {
     uint8_t dev_addr, dev_reg;
 
@@ -76,8 +86,12 @@ uint8_t AdbBus::process_command(const uint8_t* in_data, int data_size) {
 
         this->got_answer = false;
 
-        for (auto dev : this->devices)
+        for (auto dev : this->devices) {
             this->got_answer = dev->talk(dev_addr, dev_reg);
+            if (this->got_answer) {
+                break;
+            }
+        }
 
         if (!this->got_answer)
             return ADB_STAT_TIMEOUT;
