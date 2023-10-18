@@ -57,6 +57,7 @@ public:
     static int create(string& mach_id);
     static int create_machine_for_id(string& id, string& rom_filepath);
 
+    static void get_device_settings(DeviceDescription& dev, map<string, string> &settings);
     static int get_machine_settings(const string& id, map<string, string> &settings);
     static void set_machine_settings(map<string, string> &settings);
 
@@ -67,7 +68,6 @@ private:
     static void create_device(string& dev_name, DeviceDescription& dev);
     static void print_settings(PropMap& p);
     static void list_device_settings(DeviceDescription& dev);
-    static void get_device_settings(DeviceDescription& dev, map<string, string> &settings);
     static int  load_boot_rom(string& rom_filepath);
 
     static map<string, MachineDescription> & get_registry() {

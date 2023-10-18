@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/pci/pcihost.h>
 #include <devices/deviceregistry.h>
 #include <devices/memctrl/memctrlbase.h>
+#include <machines/machinefactory.h>
 #include <machines/machinebase.h>
 #include <endianswap.h>
 #include <loguru.hpp>
@@ -101,7 +102,10 @@ PCIDevice *PCIHost::attach_pci_device(const std::string& dev_name, int slot_id, 
     }
 
     // attempt to create device object
-    auto dev_obj = DeviceRegistry::get_descriptor(dev_name).m_create_func();
+    auto desc = DeviceRegistry::get_descriptor(dev_name);
+    map<string, string> settings;
+    MachineFactory::get_device_settings(desc, settings);
+    auto dev_obj = desc.m_create_func();
 
     if (!dev_obj->supports_type(HWCompType::PCI_DEV)) {
         HWComponent *hwc = dynamic_cast<HWComponent*>(this);
