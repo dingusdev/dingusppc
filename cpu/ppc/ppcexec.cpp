@@ -302,7 +302,7 @@ uint64_t get_virt_time_ns()
 
 uint64_t process_events()
 {
-    uint64_t slice_ns = TimerManager::get_instance()->process_timers(get_virt_time_ns());
+    uint64_t slice_ns = TimerManager::get_instance()->process_timers();
     if (slice_ns == 0) {
         // execute 10.000 cycles
         // if there are no pending timers

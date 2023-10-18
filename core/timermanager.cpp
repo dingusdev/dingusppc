@@ -110,9 +110,10 @@ void TimerManager::cancel_timer(uint32_t id)
     }
 }
 
-uint64_t TimerManager::process_timers(uint64_t time_now)
+uint64_t TimerManager::process_timers()
 {
     TimerInfo* cur_timer;
+    uint64_t time_now = get_time_now();
 
     if (this->timer_queue.empty()) {
         return 0ULL;

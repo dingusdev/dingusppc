@@ -106,7 +106,7 @@ public:
     uint32_t add_cyclic_timer(uint64_t interval, uint64_t delay, timer_cb cb);
     void cancel_timer(uint32_t id);
 
-    uint64_t process_timers(uint64_t time_now);
+    uint64_t process_timers();
 
 private:
     static TimerManager* timer_manager;
