@@ -49,6 +49,7 @@ void MeshController::reset(bool is_hard_reset)
     this->fifo_cnt      = 0;
     this->int_mask      = 0;
     this->xfer_count    = 0;
+    this->src_id        = 7;
 
     if (is_hard_reset) {
         this->bus_stat      = 0;
@@ -106,9 +107,9 @@ void MeshController::write(uint8_t reg_offset, uint8_t value)
             for (uint16_t mask = SCSI_CTRL_RST; mask >= SCSI_CTRL_SEL; mask >>= 1) {
                 if ((new_stat ^ this->bus_stat) & mask) {
                     if (new_stat & mask)
-                        this->bus_obj->assert_ctrl_line(new_stat, mask);
+                        this->bus_obj->assert_ctrl_line(this->src_id, mask);
                     else
-                        this->bus_obj->release_ctrl_line(new_stat, mask);
+                        this->bus_obj->release_ctrl_line(this->src_id, mask);
                 }
             }
             this->bus_stat = new_stat;
