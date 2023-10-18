@@ -31,8 +31,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace std;
 
-#define MIN_TIMEOUT_NS 200
-
 #define NS_PER_SEC      1E9
 #define USEC_PER_SEC    1E6
 #define NS_PER_USEC     1000UL

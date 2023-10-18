@@ -30,10 +30,6 @@ TimerManager* TimerManager::timer_manager;
 
 uint32_t TimerManager::add_oneshot_timer(uint64_t timeout, timer_cb cb)
 {
-    if (timeout <= MIN_TIMEOUT_NS) {
-        LOG_F(WARNING, "One-shot timer too short, timeout=%llu ns", (long long unsigned)timeout);
-    }
-
     TimerInfo* ti = new TimerInfo;
 
     ti->id          = ++this->id;
@@ -77,11 +73,6 @@ uint32_t TimerManager::add_immediate_timer(timer_cb cb) {
 
 uint32_t TimerManager::add_cyclic_timer(uint64_t interval, uint64_t delay, timer_cb cb)
 {
-    if (!interval || interval <= MIN_TIMEOUT_NS) {
-        LOG_F(WARNING, "Cyclic timer interval too short, timeout=%llu ns",
-            (long long unsigned)interval);
-    }
-
     TimerInfo* ti = new TimerInfo;
 
     ti->id          = ++this->id;
@@ -129,8 +120,7 @@ uint64_t TimerManager::process_timers(uint64_t time_now)
 
     // scan for expired timers
     cur_timer = this->timer_queue.top().get();
-    while (cur_timer->timeout_ns <= time_now ||
-           cur_timer->timeout_ns <= (time_now + MIN_TIMEOUT_NS)) {
+    while (cur_timer->timeout_ns <= time_now) {
         timer_cb cb = cur_timer->cb;
 
         // re-arm cyclic timers
