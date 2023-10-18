@@ -258,7 +258,10 @@ void DMAChannel::update_irq() {
                 }
             }
             if (cond) {
-                this->int_ctrl->ack_dma_int(this->irq_id, 1);
+                if (int_ctrl)
+                    this->int_ctrl->ack_dma_int(this->irq_id, 1);
+                else
+                    LOG_F(ERROR, "%s Interrupt ignored", this->get_name().c_str());
             }
         }
     }
