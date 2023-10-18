@@ -79,6 +79,8 @@ uint32_t BanditPciDevice::pci_cfg_read(uint32_t reg_offs, AccessDetails &details
         return this->mode_ctrl;
     case BANDIT_ARBUS_RD_HOLD_OFF:
         return this->rd_hold_off_cnt;
+    case BANDIT_DELAYED_AACK: // BANDIT_ONS
+        return 0;
     default:
         LOG_READ_UNIMPLEMENTED_CONFIG_REGISTER();
     }
@@ -102,6 +104,9 @@ void BanditPciDevice::pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDet
         return;
     case BANDIT_ARBUS_RD_HOLD_OFF:
         this->rd_hold_off_cnt = value & 0x1F;
+        return;
+    case BANDIT_DELAYED_AACK:
+        // implement this for CATALYST and Platinum
         return;
     default:
         LOG_WRITE_UNIMPLEMENTED_CONFIG_REGISTER();

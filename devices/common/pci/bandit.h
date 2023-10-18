@@ -60,6 +60,7 @@ enum {
     BANDIT_ADDR_MASK            = 0x48,
     BANDIT_MODE_SELECT          = 0x50,
     BANDIT_ARBUS_RD_HOLD_OFF    = 0x58,
+    BANDIT_DELAYED_AACK         = 0x60,
 };
 
 /** checks if one bit is set at time, return 0 if not */
