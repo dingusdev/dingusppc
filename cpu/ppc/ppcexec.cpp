@@ -68,6 +68,9 @@ bool dec_exception_pending = false;
 uint32_t    glob_bb_start_la;
 
 /* variables related to virtual time */
+bool     g_realtime;
+uint64_t g_nanoseconds_base;
+uint64_t g_icycles_base;
 uint64_t g_icycles;
 int      icnt_factor;
 
@@ -277,9 +280,18 @@ void ppc_main_opcode()
     OpcodeGrabber[(ppc_cur_instruction >> 26) & 0x3F]();
 }
 
+static long long now_ns()
+{
+    return duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+}
+
 uint64_t get_virt_time_ns()
 {
-    return g_icycles << icnt_factor;
+    if (g_realtime) {
+        return now_ns() - g_nanoseconds_base;
+    } else {
+        return g_icycles << icnt_factor;
+    }
 }
 
 uint64_t process_events()
@@ -868,6 +880,9 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, uint64_t tb_freq)
     TimerManager::get_instance()->set_notify_changes_cb(&force_cycle_counter_reload);
 
     // initialize time base facility
+    g_realtime = false;
+    g_nanoseconds_base = now_ns();
+    g_icycles_base = 0;
     g_icycles   = 0;
     icnt_factor = 4;
     tbr_wr_timestamp = 0;
