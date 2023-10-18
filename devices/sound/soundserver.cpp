@@ -117,6 +117,8 @@ void SoundServer::shutdown()
     case SND_STREAM_OPENED:
         close_out_stream();
         /* fall through */
+    case SND_STREAM_CLOSED:
+        /* fall through */
     case SND_SERVER_UP:
         /* fall through */
     case SND_API_READY:
@@ -219,5 +221,6 @@ void SoundServer::close_out_stream()
 {
     cubeb_stream_stop(this->out_stream);
     cubeb_stream_destroy(this->out_stream);
+    this->status = SND_STREAM_CLOSED;
     LOG_F(9, "Sound output stream closed.");
 }
