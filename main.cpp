@@ -180,6 +180,9 @@ int main(int argc, char** argv) {
 
     // graceful handling of fatal errors
     loguru::set_fatal_handler([](const loguru::Message& message) {
+        // Make sure the reason for the failure is visible (it may have been
+        // sent to the logfile only).
+        cerr << message.preamble << message.indentation << message.prefix << message.message << endl;
         enter_debugger();
 
         abort();
