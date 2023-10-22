@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 
-#if defined(__GNUG__) && !defined(__clang__) // GCC, mybe ICC but not Clang
+#if defined(__GNUG__) && !defined(__clang__)  && (defined(__x86_64__) || defined(__i386__)) // GCC, mybe ICC but not Clang
 
 #   include <x86intrin.h>
 

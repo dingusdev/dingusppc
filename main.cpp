@@ -140,7 +140,7 @@ int main(int argc, char** argv) {
         machine_str = MachineFactory::machine_name_from_rom(bootrom_path);
         if (machine_str.empty()) {
             LOG_F(ERROR, "Could not autodetect machine");
-            return 0;
+            return 1;
         }
         else {
             LOG_F(INFO, "Machine was autodetected as: %s", machine_str.c_str());
@@ -150,7 +150,7 @@ int main(int argc, char** argv) {
     /* handle overriding of machine settings from command line */
     map<string, string> settings;
     if (MachineFactory::get_machine_settings(machine_str, settings) < 0) {
-        return 0;
+        return 1;
     }
 
     CLI::App sa;
@@ -168,7 +168,7 @@ int main(int argc, char** argv) {
 
     if (SDL_Init(SDL_INIT_VIDEO)) {
         LOG_F(ERROR, "SDL_Init error: %s", SDL_GetError());
-        return 0;
+        return 1;
     }
 
     // initialize global profiler object
@@ -180,6 +180,9 @@ int main(int argc, char** argv) {
 
     // graceful handling of fatal errors
     loguru::set_fatal_handler([](const loguru::Message& message) {
+        // Make sure the reason for the failure is visible (it may have been
+        // sent to the logfile only).
+        cerr << message.preamble << message.indentation << message.prefix << message.message << endl;
         enter_debugger();
 
         abort();
@@ -206,7 +209,7 @@ int main(int argc, char** argv) {
         break;
     default:
         LOG_F(ERROR, "Invalid EXECUTION MODE");
-        return 0;
+        return 1;
     }
 
 bail:
