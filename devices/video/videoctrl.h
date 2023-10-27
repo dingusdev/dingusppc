@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <core/hostevents.h>
 #include <devices/common/hwinterrupt.h>
-#include <SDL.h>
+#include <devices/video/display.h>
 
 #include <cinttypes>
 #include <functional>
@@ -61,7 +61,6 @@ protected:
     // CRT controller parameters
     bool        crtc_on = false;
     bool        blank_on = true;
-    bool        resizing = false;
     bool        cursor_on = false;
     int         active_width;   // width of the visible display area
     int         active_height;  // height of the visible display area
@@ -88,12 +87,7 @@ protected:
     std::function<void(uint8_t *dst_buf, int dst_pitch)> convert_fb_cb;
 
 private:
-    uint32_t        disp_wnd_id = 0;
-    SDL_Window*     display_wnd = 0;
-    SDL_Renderer*   renderer = 0;
-    SDL_Texture*    disp_texture = 0;
-    SDL_Texture*    cursor_texture = 0;
-    SDL_Rect        cursor_rect; // destination rectangle for cursor drawing
+    Display display;
 };
 
 #endif // VIDEO_CTRL_H

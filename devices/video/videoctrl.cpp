@@ -23,11 +23,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <core/timermanager.h>
 #include <devices/video/videoctrl.h>
-#include <loguru.hpp>
 #include <memaccess.h>
-#include <SDL.h>
 
-#include <chrono>
 #include <cinttypes>
 
 VideoCtrlBase::VideoCtrlBase(int width, int height)
@@ -39,115 +36,45 @@ VideoCtrlBase::VideoCtrlBase(int width, int height)
 
 VideoCtrlBase::~VideoCtrlBase()
 {
-    if (this->cursor_texture) {
-        SDL_DestroyTexture(this->cursor_texture);
-    }
-
-    if (this->disp_texture) {
-        SDL_DestroyTexture(this->disp_texture);
-    }
-
-    if (this->renderer) {
-        SDL_DestroyRenderer(this->renderer);
-    }
-
-    if (this->display_wnd) {
-        SDL_DestroyWindow(this->display_wnd);
-    }
 }
 
 void VideoCtrlBase::handle_events(const WindowEvent& wnd_event) {
-    if (wnd_event.sub_type == SDL_WINDOWEVENT_SIZE_CHANGED &&
-        wnd_event.window_id == this->disp_wnd_id)
-        this->resizing = false;
+    this->display.handle_events(wnd_event);
 }
 
+// TODO: consider renaming, since it's not always a window
 void VideoCtrlBase::create_display_window(int width, int height)
 {
-    if (!this->display_wnd) { // create display window
-        this->display_wnd = SDL_CreateWindow(
-            "DingusPPC Display",
-            SDL_WINDOWPOS_UNDEFINED,
-            SDL_WINDOWPOS_UNDEFINED,
-            width, height,
-            SDL_WINDOW_OPENGL
-        );
-
-        this->disp_wnd_id = SDL_GetWindowID(this->display_wnd);
-
-        if (this->display_wnd == NULL) {
-            ABORT_F("Display: SDL_CreateWindow failed with %s", SDL_GetError());
-        }
-
-        this->renderer = SDL_CreateRenderer(this->display_wnd, -1, SDL_RENDERER_ACCELERATED);
-        if (this->renderer == NULL) {
-            ABORT_F("Display: SDL_CreateRenderer failed with %s", SDL_GetError());
-        }
-
+    bool is_initialization = this->display.configure(width, height);
+    if (is_initialization) {
         this->blank_on = true; // TODO: should be true!
-
         this->blank_display();
-    } else { // resize display window
-        SDL_SetWindowSize(this->display_wnd, width, height);
-        this->resizing = true;
     }
 
     this->active_width  = width;
     this->active_height = height;
-
-    if (this->disp_texture) {
-        SDL_DestroyTexture(this->disp_texture);
-    }
-
-    this->disp_texture = SDL_CreateTexture(
-        this->renderer,
-        SDL_PIXELFORMAT_ARGB8888,
-        SDL_TEXTUREACCESS_STREAMING,
-        width, height
-    );
-
-    if (this->disp_texture == NULL) {
-        ABORT_F("Display: SDL_CreateTexture failed with %s", SDL_GetError());
-    }
 }
 
 void VideoCtrlBase::blank_display() {
-    SDL_SetRenderDrawColor(this->renderer, 0, 0, 0, 255);
-    SDL_RenderClear(this->renderer);
-    SDL_RenderPresent(this->renderer);
+    this->display.blank();
 }
 
 void VideoCtrlBase::update_screen()
 {
-    uint8_t*    dst_buf;
-    int         dst_pitch;
-
-    //auto start_time = std::chrono::steady_clock::now();
-
-    if (this->resizing)
-        return;
-
     if (this->blank_on) {
-        this->blank_display();
+        this->display.blank();
         return;
     }
 
-    SDL_LockTexture(this->disp_texture, NULL, (void **)&dst_buf, &dst_pitch);
-
-    // texture update callback to get ARGB data from guest framebuffer
-    this->convert_fb_cb(dst_buf, dst_pitch);
-
-    SDL_UnlockTexture(this->disp_texture);
-    SDL_RenderClear(this->renderer);
-    SDL_RenderCopy(this->renderer, this->disp_texture, NULL, NULL);
-
-    // draw HW cursor if enabled
+    int cursor_x = 0;
+    int cursor_y = 0;
     if (this->cursor_on) {
-        this->get_cursor_position(cursor_rect.x, cursor_rect.y);
-        SDL_RenderCopy(this->renderer, this->cursor_texture, NULL, &cursor_rect);
+        this->get_cursor_position(cursor_x, cursor_y);
     }
 
-    SDL_RenderPresent(this->renderer);
+    this->display.update(
+        this->convert_fb_cb,
+        this->cursor_on, cursor_x, cursor_y);
 }
 
 void VideoCtrlBase::start_refresh_task() {
@@ -200,34 +127,11 @@ void VideoCtrlBase::set_palette_color(uint8_t index, uint8_t r, uint8_t g, uint8
 
 void VideoCtrlBase::setup_hw_cursor(int cursor_width, int cursor_height)
 {
-    uint8_t*    dst_buf;
-    int         dst_pitch;
-
-    if (this->cursor_texture) {
-        SDL_DestroyTexture(this->cursor_texture);
-    }
-
-    this->cursor_texture = SDL_CreateTexture(
-        this->renderer,
-        SDL_PIXELFORMAT_ARGB8888,
-        SDL_TEXTUREACCESS_STREAMING,
-        cursor_width, cursor_height
-    );
-
-    if (this->cursor_texture == NULL) {
-        ABORT_F("SDL_CreateTexture for HW cursor failed with %s", SDL_GetError());
-    }
-
-    SDL_LockTexture(this->cursor_texture, NULL, (void **)&dst_buf, &dst_pitch);
-    SDL_SetTextureBlendMode(this->cursor_texture, SDL_BLENDMODE_BLEND);
-    this->draw_hw_cursor(dst_buf, dst_pitch);
-    SDL_UnlockTexture(this->cursor_texture);
-
-    this->cursor_rect.x = 0;
-    this->cursor_rect.y = 0;
-    this->cursor_rect.w = cursor_width;
-    this->cursor_rect.h = cursor_height;
-
+    this->display.setup_hw_cursor(
+        [this](uint8_t *dst_buf, int dst_pitch) {
+            this->draw_hw_cursor(dst_buf, dst_pitch);
+        },
+        cursor_width, cursor_height);
     this->cursor_on = true;
 }
 

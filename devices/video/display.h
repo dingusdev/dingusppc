@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -19,39 +19,35 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/** @file Sound server definitions.
+/** @file Display/screen abstraction (implemented on each platform). */
 
-    This class manages host audio HW. It's directly connected
-    to a sound abstraction API (libsoundio in our case).
+#ifndef DISPLAY_H
+#define DISPLAY_H
 
-    Sound server provides a way to select between various
-    host input and output devices independendly of emulated
-    sound HW.
+#include <core/hostevents.h>
 
-    Emulated sound HW only need to process sound streams.
- */
-
-#ifndef SOUND_SERVER_H
-#define SOUND_SERVER_H
-
-#include <devices/common/hwcomponent.h>
-
+#include <functional>
 #include <memory>
 
-class SoundServer : public HWComponent {
+class Display {
 public:
-    SoundServer();
-    ~SoundServer();
+    Display();
+    ~Display();
 
-    int start();
-    void shutdown();
-    int open_out_stream(uint32_t sample_rate, void *user_data);
-    int start_out_stream();
-    void close_out_stream();
+    // Configures the display for the given width/height.
+    // Returns true if this is the first time the screen has been configured.
+    bool configure(int width, int height);
 
+    // Clears the display
+    void blank();
+
+    void update(std::function<void(uint8_t *dst_buf, int dst_pitch)> convert_fb_cb, bool draw_hw_cursor, int cursor_x, int cursor_y);
+
+    void handle_events(const WindowEvent& wnd_event);
+    void setup_hw_cursor(std::function<void(uint8_t *dst_buf, int dst_pitch)> draw_hw_cursor, int cursor_width, int cursor_height);
 private:
     class Impl; // Holds private fields
     std::unique_ptr<Impl> impl;
 };
 
-#endif /* SOUND_SERVER_H */
+#endif // DISPLAY_H

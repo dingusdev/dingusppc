@@ -29,6 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <machines/machinefactory.h>
 #include <machines/machineproperties.h>
 #include <utils/profiler.h>
+#include <main.h>
 
 #include <cinttypes>
 #include <csignal>
@@ -38,7 +39,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <sstream>
 #include <stdio.h>
 #include <CLI11.hpp>
-#include <SDL.h>
 #include <loguru.hpp>
 
 using namespace std;
@@ -49,7 +49,7 @@ void sigint_handler(int signum) {
     LOG_F(INFO, "Shutting down...");
 
     delete gMachineObj.release();
-    SDL_Quit();
+    cleanup();
     exit(0);
 }
 
@@ -57,7 +57,7 @@ void sigabrt_handler(int signum) {
     LOG_F(INFO, "Shutting down...");
 
     delete gMachineObj.release();
-    SDL_Quit();
+    cleanup();
 }
 
 static string appDescription = string(
@@ -166,8 +166,8 @@ int main(int argc, char** argv) {
     cout << "BootROM path: " << bootrom_path << endl;
     cout << "Execution mode: " << execution_mode << endl;
 
-    if (SDL_Init(SDL_INIT_VIDEO)) {
-        LOG_F(ERROR, "SDL_Init error: %s", SDL_GetError());
+    if (!init()) {
+        LOG_F(ERROR, "Cannot initialize");
         return 1;
     }
 
@@ -217,7 +217,7 @@ bail:
 
     delete gMachineObj.release();
 
-    SDL_Quit();
+    cleanup();
 
     return 0;
 }

@@ -1,0 +1,21 @@
+# Detect platform suffix
+if (EMSCRIPTEN)
+    set(PLATFORM_SUFFIX "_js$")
+else()
+    set(PLATFORM_SUFFIX "_sdl|_cubeb$")
+endif()
+
+# Function to perform a platform-specific glob
+function(platform_glob RESULT_VAR)
+    set(PLATFORM_SOURCES)
+    foreach(GLOB_PATTERN ${ARGN})
+        file(GLOB GLOB_RESULT ${GLOB_PATTERN})
+        foreach(FILE_PATH ${GLOB_RESULT})
+            get_filename_component(BASE_NAME ${FILE_PATH} NAME_WE)
+            if("${BASE_NAME}" MATCHES ${PLATFORM_SUFFIX} OR NOT "${BASE_NAME}" MATCHES "_js$|_sdl|_cubeb$")
+                list(APPEND PLATFORM_SOURCES ${FILE_PATH})
+            endif()
+        endforeach()
+    endforeach()
+    set(${RESULT_VAR} ${PLATFORM_SOURCES} PARENT_SCOPE)
+endfunction()
