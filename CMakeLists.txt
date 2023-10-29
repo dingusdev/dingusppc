@@ -116,6 +116,11 @@ platform_glob(SOURCES "${PROJECT_SOURCE_DIR}/*.cpp"
                       "${PROJECT_SOURCE_DIR}/*.hpp"
                       "${PROJECT_SOURCE_DIR}/*.h")
 
+if (APPLE)
+    platform_glob(APPLE_SOURCES "${PROJECT_SOURCE_DIR}/*.m")
+    list(APPEND SOURCES ${APPLE_SOURCES})
+endif()
+
 file(GLOB TEST_SOURCES "${PROJECT_SOURCE_DIR}/cpu/ppc/test/*.cpp")
 
 add_executable(dingusppc ${SOURCES} $<TARGET_OBJECTS:core>
@@ -142,6 +147,12 @@ else()
     target_link_libraries(dingusppc PRIVATE SDL2::SDL2 SDL2::SDL2main cubeb
                                     ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 endif()
+
+if (APPLE)
+    find_library(COCOA_LIBRARY Cocoa)
+    target_link_libraries(dingusppc PRIVATE ${COCOA_LIBRARY})
+endif()
+
 
 if (DPPC_68K_DEBUGGER)
     target_link_libraries(dingusppc PRIVATE capstone)
