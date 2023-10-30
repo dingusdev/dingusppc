@@ -116,11 +116,6 @@ This StartVec structure in ROM is not to be confused with the `@startvec` struct
 Open Firmware 2.4 lists the fields of `@startvec`:
 
 ```
-0x488 0000 FF808000 >of.next              00001000
-0x489 0004 FF808004 >of.dev-ven           00000000
-0x48A 0008 FF808008 >of.class             00000000
-0x48B 000C FF80800C >of.offset            00000000
-0x48C 0010 FF808010 >of.fcode             00000000
 0x48D 0008 FF808008 >imagesize            00000000
 0x48E 000C FF80800C >'cold2               00000000
 0x48F 0010 FF808010 >'map-page            00000000
@@ -217,7 +212,7 @@ The above is produced by this:
 ;
 
 : dumpstartvec
-    @startvec 488 4d5 dump_fields ;
+    @startvec 48d 4d5 dump_fields ;
 
 dumpstartvec
 ```
