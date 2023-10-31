@@ -145,6 +145,9 @@ int ScsiBus::switch_phase(int id, int new_phase)
     case ScsiPhase::MESSAGE_OUT:
         this->release_ctrl_line(id, SCSI_CTRL_CD | SCSI_CTRL_MSG);
         break;
+    case ScsiPhase::MESSAGE_IN:
+        this->release_ctrl_line(id, SCSI_CTRL_CD | SCSI_CTRL_MSG | SCSI_CTRL_IO);
+        break;
     }
 
     // enter new phase (low-level)
@@ -160,6 +163,9 @@ int ScsiBus::switch_phase(int id, int new_phase)
         break;
     case ScsiPhase::MESSAGE_OUT:
         this->assert_ctrl_line(id, SCSI_CTRL_CD | SCSI_CTRL_MSG);
+        break;
+    case ScsiPhase::MESSAGE_IN:
+        this->assert_ctrl_line(id, SCSI_CTRL_CD | SCSI_CTRL_MSG | SCSI_CTRL_IO);
         break;
     }
 
