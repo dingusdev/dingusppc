@@ -128,7 +128,7 @@ void HammerheadCtrl::write(uint32_t rgn_start, uint32_t offset, uint32_t value, 
 
 void HammerheadCtrl::insert_ram_dimm(int slot_num, uint32_t capacity)
 {
-    if (slot_num < 0 || slot_num >= 26) {
+    if (slot_num < 0 || slot_num >= 13) {
         ABORT_F("%s: invalid DIMM slot number %d", this->name.c_str(), slot_num);
     }
 

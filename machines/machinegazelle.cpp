@@ -77,8 +77,11 @@ int initialize_gazelle(std::string& id)
         return -1;
     }
 
-    // plug 32MB RAM DIMM into slot #0
-    psx_obj->insert_ram_dimm(0, DRAM_CAP_32MB);
+    // insert RAM DIMMs
+    psx_obj->insert_ram_dimm(0, GET_INT_PROP("rambank1_size") * DRAM_CAP_1MB);
+    psx_obj->insert_ram_dimm(1, GET_INT_PROP("rambank2_size") * DRAM_CAP_1MB);
+    psx_obj->insert_ram_dimm(2, GET_INT_PROP("rambank3_size") * DRAM_CAP_1MB);
+    psx_obj->insert_ram_dimm(3, GET_INT_PROP("rambank4_size") * DRAM_CAP_1MB);
 
     // allocate and map physical RAM
     psx_obj->map_phys_ram();
@@ -98,7 +101,7 @@ int initialize_gazelle(std::string& id)
 
 static const PropMap pm6500_settings = {
     {"rambank1_size",
-        new IntProperty(16, std::vector<uint32_t>({4, 8, 16, 32, 64, 128}))},
+        new IntProperty(32, std::vector<uint32_t>({   4, 8, 16, 32, 64, 128}))},
     {"rambank2_size",
         new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
     {"rambank3_size",
