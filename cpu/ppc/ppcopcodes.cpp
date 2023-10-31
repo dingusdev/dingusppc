@@ -778,6 +778,7 @@ void dppc_interpreter::ppc_rlwinm() {
 
 void dppc_interpreter::ppc_rlwnm() {
     ppc_grab_regssab();
+    ppc_result_b &= 31;
     unsigned rot_mb = (ppc_cur_instruction >> 6) & 31;
     unsigned rot_me = (ppc_cur_instruction >> 1) & 31;
     uint32_t mask   = rot_mask(rot_mb, rot_me);
