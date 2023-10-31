@@ -168,6 +168,7 @@ public:
         this->set_name(name);
         supports_types(HWCompType::SCSI_DEV);
         this->scsi_id = my_id;
+        this->lun = 0,
         this->cur_phase = ScsiPhase::BUS_FREE;
     };
     ~ScsiDevice() = default;
@@ -194,6 +195,7 @@ protected:
     uint8_t     cmd_buf[16] = {};
     uint8_t     msg_buf[16] = {}; // TODO: clarify how big this one should be
     int         scsi_id;
+    int         lun;
     int         initiator_id;
     int         cur_phase;
     uint8_t*    data_ptr = nullptr;
