@@ -102,7 +102,7 @@ void GrandCentral::notify_bar_change(int bar_num)
 
     if (this->base_addr != (this->bars[bar_num] & 0xFFFFFFF0UL)) {
         if (this->base_addr) {
-            LOG_F(WARNING, "GC: deallocating I/O memory not implemented");
+            LOG_F(WARNING, "%s: deallocating I/O memory not implemented", this->name.c_str());
         }
         this->base_addr = this->bars[0] & 0xFFFFFFF0UL;
         this->host_instance->pci_register_mmio_region(this->base_addr, 0x20000, this);
@@ -146,7 +146,8 @@ uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
                 result &= 0xFFFFFFFFUL >> (4 - size) * 8; // strip unused bits
                 return BYTESWAP_SIZED(result, size);
             } else {
-                LOG_F(ERROR, "GC: IOBus device #%d doesn't exist", subdev_num - 9);
+                LOG_F(ERROR, "%s: IOBus device #%d doesn't exist", this->name.c_str(),
+                      subdev_num - 9);
                 return 0;
             }
             break;
@@ -155,20 +156,20 @@ uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
                 (this->nvram_addr_hi << 5) + ((offset >> 4) & 0x1F));
         }
     } else if (offset & 0x8000) { // DMA register space
-        unsigned subdev_num = (offset >> 8) & 0xF;
+        unsigned dma_channel = (offset >> 8) & 0xF;
 
-        switch (subdev_num) {
-        case 0:
+        switch (dma_channel) {
+        case MIO_GC_DMA_SCSI_CURIO:
             return this->ext_scsi_dma->reg_read(offset & 0xFF, size);
-        case 1:
+        case MIO_GC_DMA_FLOPPY:
             return this->floppy_dma->reg_read(offset & 0xFF, size);
-        case 8:
+        case MIO_GC_DMA_AUDIO_OUT:
             return this->snd_out_dma->reg_read(offset & 0xFF, size);
-        case 10:
+        case MIO_GC_DMA_SCSI_MESH:
             return this->mesh_dma->reg_read(offset & 0xFF, size);
         default:
-            LOG_F(WARNING, "GC: unimplemented DMA register at 0x%X",
-                  this->base_addr + offset);
+            LOG_F(WARNING, "%s: unimplemented DMA register at 0x%X",
+                  this->name.c_str(), this->base_addr + offset);
         }
     } else { // Interrupt related registers
         switch (offset) {
@@ -185,7 +186,8 @@ uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
         }
     }
 
-    LOG_F(WARNING, "GC: reading from unmapped I/O memory 0x%X", this->base_addr + offset);
+    LOG_F(WARNING, "%s: reading from unmapped I/O memory 0x%X", this->name.c_str(),
+          this->base_addr + offset);
     return 0;
 }
 
@@ -231,7 +233,8 @@ void GrandCentral::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
                 this->iobus_devs[subdev_num - 10]->iodev_write(
                     (offset >> 4) & 0x1F, value);
             } else {
-                LOG_F(ERROR, "GC: IOBus device #%d doesn't exist", subdev_num - 9);
+                LOG_F(ERROR, "%s: IOBus device #%d doesn't exist", this->name.c_str(),
+                      subdev_num - 9);
             }
             break;
         case 0xD: // NVRAM High Address (IOBus dev #4)
@@ -251,28 +254,28 @@ void GrandCentral::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
                 (this->nvram_addr_hi << 5) + ((offset >> 4) & 0x1F), value);
             break;
         default:
-            LOG_F(WARNING, "GC: writing to unmapped I/O memory 0x%X",
-                  this->base_addr + offset);
+            LOG_F(WARNING, "%s: writing to unmapped I/O memory 0x%X",
+                  this->name.c_str(), this->base_addr + offset);
         }
     } else if (offset & 0x8000) { // DMA register space
-        unsigned subdev_num = (offset >> 8) & 0xF;
+        unsigned dma_channel = (offset >> 8) & 0xF;
 
-        switch (subdev_num) {
-        case 0:
+        switch (dma_channel) {
+        case MIO_GC_DMA_SCSI_CURIO:
             this->ext_scsi_dma->reg_write(offset & 0xFF, value, size);
             break;
-        case 1:
+        case MIO_GC_DMA_FLOPPY:
             this->floppy_dma->reg_write(offset & 0xFF, value, size);
             break;
-        case 8:
+        case MIO_GC_DMA_AUDIO_OUT:
             this->snd_out_dma->reg_write(offset & 0xFF, value, size);
             break;
-        case 10:
+        case MIO_GC_DMA_SCSI_MESH:
             this->mesh_dma->reg_write(offset & 0xFF, value, size);
             break;
         default:
-            LOG_F(WARNING, "GC: unimplemented DMA register at 0x%X",
-                  this->base_addr + offset);
+            LOG_F(WARNING, "%s: unimplemented DMA register at 0x%X",
+                  this->name.c_str(), this->base_addr + offset);
         }
     } else { // Interrupt related registers
         switch (offset) {
@@ -289,8 +292,8 @@ void GrandCentral::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
         case MIO_INT_LEVELS1:
             break; // ignore writes to this read-only register
         default:
-            LOG_F(WARNING, "GC: writing to unmapped I/O memory 0x%X",
-                 this->base_addr + offset);
+            LOG_F(WARNING, "%s: writing to unmapped I/O memory 0x%X",
+                 this->name.c_str(), this->base_addr + offset);
         }
     }
 }
@@ -362,9 +365,9 @@ void GrandCentral::signal_cpu_int(uint32_t irq_id) {
         if (!this->cpu_int_latch) {
             this->cpu_int_latch = true;
             ppc_assert_int();
-            LOG_F(5, "GC: CPU INT asserted, source: %d", irq_id);
+            LOG_F(5, "%s: CPU INT asserted, source: %d", this->name.c_str(), irq_id);
         } else {
-            LOG_F(5, "GC: CPU INT already latched");
+            LOG_F(5, "%s: CPU INT already latched", this->name.c_str());
         }
     }
 }

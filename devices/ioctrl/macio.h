@@ -92,6 +92,21 @@ public:
     virtual void iodev_write(uint32_t address, uint16_t value) = 0;
 };
 
+/** GrandCentral DBDMA channels. */
+enum : uint8_t {
+    MIO_GC_DMA_SCSI_CURIO    = 0,
+    MIO_GC_DMA_FLOPPY        = 1,
+    MIO_GC_DMA_ETH_XMIT      = 2,
+    MIO_GC_DMA_ETH_RCV       = 3,
+    MIO_GC_DMA_ESCC_A_XMIT   = 4,
+    MIO_GC_DMA_ESCC_A_RCV    = 5,
+    MIO_GC_DMA_ESCC_B_XMIT   = 6,
+    MIO_GC_DMA_ESCC_B_RCV    = 7,
+    MIO_GC_DMA_AUDIO_OUT     = 8,
+    MIO_GC_DMA_AUDIO_IN      = 9,
+    MIO_GC_DMA_SCSI_MESH     = 0xA,
+};
+
 class GrandCentral : public PCIDevice, public InterruptCtrl {
 public:
     GrandCentral();
