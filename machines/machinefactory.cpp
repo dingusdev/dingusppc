@@ -97,6 +97,7 @@ static const map<string, string> PropHelp = {
     {"vci_F",           "insert a VCI device 0x0F"},
     {"serial_backend",  "specifies the backend for the serial port"},
     {"emmo",            "enables/disables factory HW tests during startup"},
+    {"cpu",             "specifies CPU"},
 };
 
 bool MachineFactory::add(const string& machine_id, MachineDescription desc)

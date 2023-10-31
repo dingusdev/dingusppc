@@ -76,8 +76,22 @@ int initialize_catalyst(std::string& id)
     // allocate and map physical RAM
     platinum_obj->map_phys_ram();
 
-    // init virtual CPU and request MPC601
-    ppc_cpu_init(platinum_obj, PPC_VER::MPC601, 7833600ULL);
+    std::string cpu = GET_STR_PROP("cpu");
+    if (cpu == "601") {
+        // init virtual CPU and request MPC601
+        ppc_cpu_init(platinum_obj, PPC_VER::MPC601, 7833600ULL);
+    }
+    else if (cpu == "750") {
+        // configure CPU clocks
+        uint64_t bus_freq      = 50000000ULL;
+        uint64_t timebase_freq = bus_freq / 4;
+
+        // initialize virtual CPU and request MPC750 CPU aka G3
+        ppc_cpu_init(platinum_obj, PPC_VER::MPC750, timebase_freq);
+
+        // set CPU PLL ratio to 3.5
+        ppc_state.spr[SPR::HID1] = 0xE << 28;
+    }
 
     return 0;
 }
@@ -93,6 +107,8 @@ static const PropMap pm7200_settings = {
         new IntProperty( 0, vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
     {"emmo",
         new BinProperty(0)},
+    {"cpu",
+        new StrProperty("601", vector<std::string>({"601", "750"}))},
 };
 
 static vector<string> pm7200_devices = {

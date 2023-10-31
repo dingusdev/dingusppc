@@ -99,14 +99,27 @@ int initialize_tnt(std::string& id)
     memctrl_obj->map_phys_ram();
 
     // init virtual CPU
-    if (id == "pm7300")
+    std::string cpu = GET_STR_PROP("cpu");
+    if (cpu == "604e")
         ppc_cpu_init(memctrl_obj, PPC_VER::MPC604E, 12500000ULL);
-    else
+    else if (cpu == "601")
         ppc_cpu_init(memctrl_obj, PPC_VER::MPC601, 7833600ULL);
+    else if (cpu == "750") {
+        // configure CPU clocks
+        uint64_t bus_freq      = 50000000ULL;
+        uint64_t timebase_freq = bus_freq / 4;
+
+        // initialize virtual CPU and request MPC750 CPU aka G3
+        ppc_cpu_init(memctrl_obj, PPC_VER::MPC750, timebase_freq);
+
+        // set CPU PLL ratio to 3.5
+        ppc_state.spr[SPR::HID1] = 0xE << 28;
+    }
 
     return 0;
 }
 
+template <uint32_t cpu>
 static const PropMap pm7500_settings = {
     {"rambank1_size",
         new IntProperty(16, vector<uint32_t>({4, 8, 16, 32, 64, 128}))},
@@ -122,6 +135,12 @@ static const PropMap pm7500_settings = {
         new BinProperty(0)},
     {"has_mesh",
         new BinProperty(1)},
+    {"cpu",
+        new StrProperty(
+            cpu == PPC_VER::MPC601  ? "601" :
+            cpu == PPC_VER::MPC604  ? "604" :
+            cpu == PPC_VER::MPC604E ? "604e" :
+                            "604e", vector<std::string>({"601", "604", "604e", "750"}))},
 };
 
 static vector<string> pm7500_devices = {
@@ -132,7 +151,7 @@ static const MachineDescription pm7300_descriptor = {
     .name = "pm7300",
     .description = "Power Macintosh 7300",
     .devices = pm7500_devices,
-    .settings = pm7500_settings,
+    .settings = pm7500_settings<PPC_VER::MPC604E>,
     .init_func = &initialize_tnt
 };
 
@@ -140,7 +159,7 @@ static const MachineDescription pm7500_descriptor = {
     .name = "pm7500",
     .description = "Power Macintosh 7500",
     .devices = pm7500_devices,
-    .settings = pm7500_settings,
+    .settings = pm7500_settings<PPC_VER::MPC601>,
     .init_func = &initialize_tnt
 };
 
