@@ -616,7 +616,7 @@ static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write)
                                         (phys_addr - rgn_desc->start);
             if (rgn_desc->type == RT_ROM) {
                 // redirect writes to the dummy page for ROM regions
-                tlb_entry->host_va_offs_w = (int64_t)&dummy_page - guest_va;
+                tlb_entry->host_va_offs_w = (int64_t)&dummy_page - tag;
             } else {
                 tlb_entry->host_va_offs_w = tlb_entry->host_va_offs_r;
             }
