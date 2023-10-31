@@ -216,3 +216,19 @@ int ScsiDevice::rcv_data(const uint8_t* src_ptr, const int count)
 
     return count;
 }
+
+bool ScsiDevice::check_lun()
+{
+    if (this->cmd_buf[1] >> 5 != this->lun) {
+        LOG_F(ERROR, "%s: non-matching LUN", this->name.c_str());
+        this->status = ScsiStatus::CHECK_CONDITION;
+        this->sense  = ScsiSense::ILLEGAL_REQ;
+        this->asc    = 0x25; // Logical Unit Not Supported
+        this->ascq   = 0;
+        this->sksv   = 0;
+        this->field  = 0;
+        this->switch_phase(ScsiPhase::STATUS);
+        return false;
+    }
+    return true;
+}

@@ -182,6 +182,7 @@ public:
     virtual int  xfer_data();
     virtual int  send_data(uint8_t* dst_ptr, int count);
     virtual int  rcv_data(const uint8_t* src_ptr, const int count);
+    virtual bool check_lun();
 
     virtual bool prepare_data() = 0;
     virtual bool get_more_data() = 0;
@@ -202,7 +203,12 @@ protected:
     int         data_size;
     int         incoming_size;
     uint8_t     status;
+
     int         sense;
+    int         asc;
+    int         ascq;
+    int         sksv;
+    int         field;
 
     ScsiBus*    bus_obj;
 
