@@ -233,10 +233,16 @@ void MachineFactory::get_device_settings(DeviceDescription& dev, map<string, str
     }
 
     for (auto& p : dev.properties) {
-        settings[p.first] = p.second->get_string();
+        if (settings.count(p.first)) {
+            // This is a hack. Need to implement hierarchical paths and per device properties.
+            LOG_F(ERROR, "Duplicate setting \"%s\".", p.first.c_str());
+        }
+        else {
+            settings[p.first] = p.second->get_string();
 
-        // populate dynamic machine settings from presets
-        gMachineSettings[p.first] = unique_ptr<BasicProperty>(p.second->clone());
+            // populate dynamic machine settings from presets
+            gMachineSettings[p.first] = unique_ptr<BasicProperty>(p.second->clone());
+        }
     }
 }
 
