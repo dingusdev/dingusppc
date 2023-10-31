@@ -111,6 +111,9 @@ void GrandCentral::notify_bar_change(int bar_num)
     }
 }
 
+
+static uint8_t ENET_ROM[] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77 };
+
 uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
 {
     if (offset & 0x10000) { // Device register space
@@ -137,6 +140,8 @@ uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
             return this->viacuda->read((offset >> 9) & 0xF);
         case 8: // MESH SCSI
             return this->mesh->read((offset >> 4) & 0xF);
+        case 9: // ENET-ROM
+            return ENET_ROM[(offset >> 4) & 0x7];
         case 0xA: // IOBus dev #1
         case 0xB: // IOBus dev #2
         case 0xC: // IOBus dev #3
