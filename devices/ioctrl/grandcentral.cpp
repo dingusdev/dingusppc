@@ -33,6 +33,28 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <memory>
 
+uint16_t NvramAddrHiDev::iodev_read(uint32_t address) {
+    return nvram_addr_hi;
+}
+
+void NvramAddrHiDev::iodev_write(uint32_t address, uint16_t value) {
+    this->nvram_addr_hi = value;
+}
+
+NvramDev::NvramDev(NvramAddrHiDev *addr_hi) {
+    // NVRAM connection
+    this->nvram = dynamic_cast<NVram*>(gMachineObj->get_comp_by_name("NVRAM"));
+    this->addr_hi = addr_hi;
+}
+
+uint16_t NvramDev::iodev_read(uint32_t address) {
+    return this->nvram->read_byte((addr_hi->iodev_read(0) << 5) + address);
+}
+
+void NvramDev::iodev_write(uint32_t address, uint16_t value) {
+    this->nvram->write_byte((addr_hi->iodev_read(0) << 5) + address, value);
+}
+
 GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
 {
     supports_types(HWCompType::MMIO_DEV | HWCompType::PCI_DEV | HWCompType::INT_CTRL);
@@ -48,9 +70,6 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
     this->pci_notify_bar_change = [this](int bar_num) {
         this->notify_bar_change(bar_num);
     };
-
-    // NVRAM connection
-    this->nvram = dynamic_cast<NVram*>(gMachineObj->get_comp_by_name("NVRAM"));
 
     // connect Cuda
     this->viacuda = dynamic_cast<ViaCuda*>(gMachineObj->get_comp_by_name("ViaCuda"));
@@ -94,6 +113,14 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
     this->floppy_dma = std::unique_ptr<DMAChannel> (new DMAChannel("floppy"));
     this->swim3->set_dma_channel(this->floppy_dma.get());
     this->floppy_dma->register_dma_int(this, this->register_dma_int(IntSrc::DMA_SWIM3));
+
+    // attach IOBus Device #4 0xF301D000 ; NVRAM High Address
+    this->nvram_addr_hi_dev = std::unique_ptr<NvramAddrHiDev>(new NvramAddrHiDev());
+    attach_iodevice(3, this->nvram_addr_hi_dev.get());
+
+    // attach IOBus Device #6 0xF301F000 ; NVRAM Data
+    this->nvram_dev = std::unique_ptr<NvramDev>(new NvramDev(nvram_addr_hi_dev.get()));
+    attach_iodevice(5, this->nvram_dev.get());
 }
 
 void GrandCentral::notify_bar_change(int bar_num)
@@ -142,24 +169,27 @@ uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
             return this->mesh->read((offset >> 4) & 0xF);
         case 9: // ENET-ROM
             return ENET_ROM[(offset >> 4) & 0x7];
-        case 0xA: // IOBus dev #1
-        case 0xB: // IOBus dev #2
-        case 0xC: // IOBus dev #3
-        case 0xE: // IOBus dev #5
+        case 0xA: // IOBus device #1 ; Board register 1 and bandit1 PRSNT bits
+        case 0xB: // IOBus device #2 ; RaDACal/DACula
+        case 0xC: // IOBus device #3 ; chaos or bandit2 PRSNT bits ; sixty6
+        case 0xD: // IOBus device #4 ; NVRAM High Address
+        case 0xE: // IOBus device #5 ; sixty6 composite/s-video (not for fatman)
+        case 0xF: // IOBus device #6 ; NVRAM Data
             if (this->iobus_devs[subdev_num - 10] != nullptr) {
-                uint32_t result = this->iobus_devs[subdev_num - 10]->iodev_read(
-                    (offset >> 4) & 0x1F);
-                result &= 0xFFFFFFFFUL >> (4 - size) * 8; // strip unused bits
-                return BYTESWAP_SIZED(result, size);
+                uint64_t value = this->iobus_devs[subdev_num - 10]->iodev_read((offset >> 4) & 0x1F);
+                value |= value << 32;
+                int shift = (offset & 3) * 8;
+                switch (size) {
+                    case 1: return (uint8_t)(value >> shift);
+                    case 2: return BYTESWAP_16((uint16_t)(value >> shift));
+                    case 4: return BYTESWAP_32((uint32_t)(value >> shift));
+                }
             } else {
-                LOG_F(ERROR, "%s: IOBus device #%d doesn't exist", this->name.c_str(),
-                      subdev_num - 9);
+                LOG_F(ERROR, "%s: IOBus device #%d (unknown) read  0x%x", this->name.c_str(),
+                      subdev_num - 9, (offset >> 4) & 0x1F);
                 return 0;
             }
             break;
-        case 0xF: // NVRAM Data (IOBus dev #6)
-            return this->nvram->read_byte(
-                (this->nvram_addr_hi << 5) + ((offset >> 4) & 0x1F));
         }
     } else if (offset & 0x8000) { // DMA register space
         unsigned dma_channel = (offset >> 8) & 0xF;
@@ -231,33 +261,28 @@ void GrandCentral::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
         case 8: // MESH SCSI
             this->mesh->write((offset >> 4) & 0xF, value);
             break;
-        case 0xA: // IOBus dev #1
-        case 0xB: // IOBus dev #2
-        case 0xC: // IOBus dev #3
-        case 0xE: // IOBus dev #5
-            if (this->iobus_devs[subdev_num - 10] != nullptr) {
-                this->iobus_devs[subdev_num - 10]->iodev_write(
-                    (offset >> 4) & 0x1F, value);
-            } else {
-                LOG_F(ERROR, "%s: IOBus device #%d doesn't exist", this->name.c_str(),
-                      subdev_num - 9);
-            }
-            break;
-        case 0xD: // NVRAM High Address (IOBus dev #4)
+        case 0xA: // IOBus device #1 ; Board register 1 and bandit1 PRSNT bits
+        case 0xB: // IOBus device #2 ; RaDACal/DACula
+        case 0xC: // IOBus device #3 ; chaos or bandit2 PRSNT bits
+        case 0xD: // IOBus device #4 ; NVRAM High Address
+        case 0xE: // IOBus device #5 ; sixty6 composite/s-video (not for fatman)
+        case 0xF: // IOBus device #6 ; NVRAM Data
+            uint16_t val;
             switch (size) {
-            case 4:
-                this->nvram_addr_hi = BYTESWAP_32(value);
-                break;
-            case 2:
-                this->nvram_addr_hi = BYTESWAP_16(value);
-                break;
-            default:
-                this->nvram_addr_hi = value;
+                case 1: val = (uint8_t)value; break;
+                case 2: val = BYTESWAP_16(value); break;
+                case 4: val = (uint16_t)BYTESWAP_32(value); break;
+                default: val = 0; break;
             }
-            break;
-        case 0xF: // NVRAM Data (IOBus dev #6)
-            this->nvram->write_byte(
-                (this->nvram_addr_hi << 5) + ((offset >> 4) & 0x1F), value);
+            if (offset & 15) {
+                LOG_F(ERROR, "%s: Unexpected offset (0x%x) or size (%d) write (0x%x) to IOBus device #%d", this->name.c_str(), offset, size, value, subdev_num - 9);
+            }
+            if (this->iobus_devs[subdev_num - 10] != nullptr) {
+                this->iobus_devs[subdev_num - 10]->iodev_write((offset >> 4) & 0x1F, val);
+            } else {
+                LOG_F(ERROR, "%s: IOBus device #%d (unknown) write 0x%x = %04x", this->name.c_str(),
+                      subdev_num - 9, (offset >> 4) & 0x1F, value);
+            }
             break;
         default:
             LOG_F(WARNING, "%s: writing to unmapped I/O memory 0x%X",
@@ -307,6 +332,8 @@ void GrandCentral::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
 void GrandCentral::attach_iodevice(int dev_num, IobusDevice* dev_obj)
 {
     if (dev_num >= 0 && dev_num < 6) {
+        if (this->iobus_devs[dev_num])
+            LOG_F(ERROR, "%s: Replacing existing IOBus device #%d", this->name.c_str(), dev_num + 1);
         this->iobus_devs[dev_num] = dev_obj;
     }
 }

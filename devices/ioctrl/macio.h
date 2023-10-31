@@ -107,6 +107,29 @@ enum : uint8_t {
     MIO_GC_DMA_SCSI_MESH     = 0xA,
 };
 
+class NvramAddrHiDev: public IobusDevice {
+public:
+    // IobusDevice methods
+    uint16_t iodev_read(uint32_t address);
+    void iodev_write(uint32_t address, uint16_t value);
+
+protected:
+    uint16_t    nvram_addr_hi = 0;
+};
+
+class NvramDev: public IobusDevice {
+public:
+    NvramDev(NvramAddrHiDev *addr_hi);
+
+    // IobusDevice methods
+    uint16_t iodev_read(uint32_t address);
+    void iodev_write(uint32_t address, uint16_t value);
+
+protected:
+    NVram* nvram;
+    NvramAddrHiDev* addr_hi;
+};
+
 class GrandCentral : public PCIDevice, public InterruptCtrl {
 public:
     GrandCentral();
@@ -143,16 +166,15 @@ private:
     uint32_t    int_events    = 0;
     bool        cpu_int_latch = false;
 
-    uint32_t    nvram_addr_hi;
-
     // IOBus devices
     IobusDevice*    iobus_devs[6] = { nullptr };
+    std::unique_ptr<NvramAddrHiDev>  nvram_addr_hi_dev = nullptr;
+    std::unique_ptr<NvramDev>        nvram_dev = nullptr;
 
     // subdevice objects
     std::unique_ptr<AwacsScreamer>      awacs;   // AWACS audio codec instance
     std::unique_ptr<MeshStub>           mesh_stub = nullptr;
 
-    NVram*              nvram;      // NVRAM module
     MaceController*     mace;
     ViaCuda*            viacuda;    // VIA cell with Cuda MCU attached to it
     EsccController*     escc;       // ESCC serial controller
