@@ -73,6 +73,12 @@ namespace ScsiStatus {
 namespace ScsiMessage {
     enum : uint8_t {
         COMMAND_COMPLETE = 0,
+
+        TARGET_ROUTINE_NUMBER_MASK = 0x07,
+        LOGICAL_UNIT_NUMBER_MASK   = 0x07,
+        IS_TARGET_ROUTINE_NuMBER   = 0x20,
+        HAS_DISCONNECT_PRIVILEDGE  = 0x40,
+        IDENTIFY                   = 0x80,
     };
 };
 
@@ -210,6 +216,8 @@ protected:
     int         sksv;
     int         field;
 
+    bool        last_selection_has_atention = false;
+    uint8_t     last_selection_message = 0;
     ScsiBus*    bus_obj;
 
     action_callback pre_xfer_action  = nullptr;
