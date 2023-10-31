@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -406,13 +406,3 @@ void ScsiHardDisk::read_buffer() {
 
     this->switch_phase(ScsiPhase::DATA_IN);
 }
-
-static const PropMap SCSI_HD_Properties = {
-    {"hdd_img", new StrProperty("")},
-    {"hdd_wr_prot", new BinProperty(0)},
-};
-
-static const DeviceDescription SCSI_HD_Descriptor =
-    {ScsiHardDisk::create, {}, SCSI_HD_Properties};
-
-REGISTER_DEVICE(ScsiHD, SCSI_HD_Descriptor);

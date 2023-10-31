@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -79,10 +79,11 @@ static const map<string, string> PropHelp = {
     {"fdd_img",         "specifies path to floppy disk image"},
     {"fdd_fmt",         "specifies floppy disk format"},
     {"fdd_wr_prot",     "toggles floppy disk's write protection"},
-    {"hdd_img",         "specifies path to hard disk image"},
-    {"hdd_wr_prot",     "toggles hard disk's write protection"},
+    {"hdd_img",         "specifies path(s) to hard disk image(s)"},
+    {"hdd_img2",        "specifies path(s) to secondary hard disk image(s)"},
     {"cdr_config",      "CD-ROM device path in [bus]:[device#] format"},
-    {"cdr_img",         "specifies path to CD-ROM image"},
+    {"cdr_img",         "specifies path(s) to CD-ROM image(s)"},
+    {"cdr_img2",        "specifies path(s) to secondary CD-ROM image(s)"},
     {"mon_id",          "specifies which monitor to emulate"},
     {"pci_PERCH",       "insert a PCI device into PERCH slot"},
     {"pci_A1",          "insert a PCI device into A1 slot"},

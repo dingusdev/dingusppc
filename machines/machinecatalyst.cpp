@@ -25,6 +25,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/machineid.h>
 #include <devices/common/pci/pcidevice.h>
 #include <devices/common/pci/pcihost.h>
+#include <devices/common/scsi/scsicdrom.h>
+#include <devices/common/scsi/scsihd.h>
 #include <devices/memctrl/platinum.h>
 #include <loguru.hpp>
 #include <machines/machinebase.h>

@@ -23,10 +23,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <devices/common/hwcomponent.h>
 #include <devices/common/scsi/scsi.h>
+#include <devices/common/scsi/scsihd.h>
+#include <devices/common/scsi/scsicdrom.h>
 #include <devices/deviceregistry.h>
+#include <machines/machinebase.h>
 #include <loguru.hpp>
 
 #include <cinttypes>
+#include <sstream>
 
 ScsiBus::ScsiBus(const std::string name)
 {
@@ -289,6 +293,53 @@ void ScsiBus::disconnect(int dev_id)
     if (!(this->ctrl_lines & SCSI_CTRL_BSY) && !(this->ctrl_lines & SCSI_CTRL_SEL)) {
         this->cur_phase = ScsiPhase::BUS_FREE;
         change_bus_phase(dev_id);
+    }
+}
+
+void ScsiBus::attach_scsi_devices(const std::string bus_suffix)
+{
+    std::string path;
+    int scsi_id;
+    std::string image_path;
+
+    image_path = GET_STR_PROP("hdd_img" + bus_suffix);
+    if (!image_path.empty()) {
+        std::istringstream image_stream(image_path);
+        while (std::getline(image_stream, path, ':')) {
+            // do two passes because we skip ID 3.
+            for (scsi_id = 0; scsi_id < SCSI_MAX_DEVS * 2 && (scsi_id == 3 || this->devices[scsi_id % SCSI_MAX_DEVS]); scsi_id++) {}
+            if (scsi_id < SCSI_MAX_DEVS * 2) {
+                scsi_id = scsi_id % SCSI_MAX_DEVS;
+                std::string scsi_device_name = "ScsiHD" + bus_suffix + "," + std::to_string(scsi_id);
+                ScsiHardDisk *scsi_device = new ScsiHardDisk(scsi_device_name, scsi_id);
+                gMachineObj->add_device(scsi_device_name, std::unique_ptr<ScsiHardDisk>(scsi_device));
+                this->register_device(scsi_id, scsi_device);
+                scsi_device->insert_image(path);
+            }
+            else {
+                LOG_F(ERROR, "%s: Too many devices. HDD \"%s\" was not added.", this->get_name().c_str(), path.c_str());
+            }
+        }
+    }
+
+    image_path = GET_STR_PROP("cdr_img" + bus_suffix);
+    if (!image_path.empty()) {
+        std::istringstream image_stream(image_path);
+        while (std::getline(image_stream, path, ':')) {
+             // do two passes because we start at ID 3.
+            for (scsi_id = 3; scsi_id < SCSI_MAX_DEVS * 2 && this->devices[scsi_id % SCSI_MAX_DEVS]; scsi_id++) {}
+            if (scsi_id < SCSI_MAX_DEVS * 2) {
+                scsi_id = scsi_id % SCSI_MAX_DEVS;
+                std::string scsi_device_name = "ScsiCdrom" + bus_suffix + "," + std::to_string(scsi_id);
+                ScsiCdrom *scsi_device = new ScsiCdrom(scsi_device_name, scsi_id);
+                gMachineObj->add_device(scsi_device_name, std::unique_ptr<ScsiCdrom>(scsi_device));
+                this->register_device(scsi_id, scsi_device);
+                scsi_device->insert_image(path);
+            }
+            else {
+                LOG_F(ERROR, "%s: Too many devices. CD-ROM \"%s\" was not added.", this->get_name().c_str(), path.c_str());
+            }
+        }
     }
 }
 

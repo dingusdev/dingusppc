@@ -37,10 +37,6 @@ public:
     ScsiCdrom(std::string name, int my_id);
     ~ScsiCdrom() = default;
 
-    static std::unique_ptr<HWComponent> create() {
-        return std::unique_ptr<ScsiCdrom>(new ScsiCdrom("SCSI-CDROM", 3));
-    }
-
     virtual void process_command() override;
     virtual bool prepare_data() override;
     virtual bool get_more_data() override;

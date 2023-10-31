@@ -263,12 +263,17 @@ void MeshController::update_irq()
     }
 }
 
+static const PropMap Mesh_properties = {
+    {"hdd_img2", new StrProperty("")},
+    {"cdr_img2", new StrProperty("")},
+};
+
 static const DeviceDescription Mesh_Tnt_Descriptor = {
-    MeshController::create_for_tnt, {}, {}
+    MeshController::create_for_tnt, {}, Mesh_properties
 };
 
 static const DeviceDescription Mesh_Heathrow_Descriptor = {
-    MeshController::create_for_heathrow, {}, {}
+    MeshController::create_for_heathrow, {}, Mesh_properties
 };
 
 REGISTER_DEVICE(MeshTnt,      Mesh_Tnt_Descriptor);

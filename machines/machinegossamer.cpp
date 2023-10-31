@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -30,6 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/i2c/athens.h>
 #include <devices/common/i2c/i2cprom.h>
 #include <devices/common/machineid.h>
+#include <devices/common/scsi/scsihd.h>
 #include <devices/memctrl/mpc106.h>
 #include <devices/memctrl/spdram.h>
 #include <loguru.hpp>

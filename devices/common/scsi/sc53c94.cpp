@@ -44,7 +44,10 @@ Sc53C94::Sc53C94(uint8_t chip_id, uint8_t my_id) : ScsiDevice("SC53C94", my_id)
 int Sc53C94::device_postinit()
 {
     this->bus_obj = dynamic_cast<ScsiBus*>(gMachineObj->get_comp_by_name("ScsiCurio"));
-    this->bus_obj->register_device(7, static_cast<ScsiDevice*>(this));
+    if (this->bus_obj) {
+        this->bus_obj->register_device(7, static_cast<ScsiDevice*>(this));
+        this->bus_obj->attach_scsi_devices("");
+    }
 
     this->int_ctrl = dynamic_cast<InterruptCtrl*>(
         gMachineObj->get_comp_by_type(HWCompType::INT_CTRL));
@@ -682,8 +685,13 @@ void Sc53C94::real_dma_xfer_in()
     }
 }
 
+static const PropMap Sc53C94_properties = {
+    {"hdd_img", new StrProperty("")},
+    {"cdr_img", new StrProperty("")},
+};
+
 static const DeviceDescription Sc53C94_Descriptor = {
-    Sc53C94::create, {}, {}
+    Sc53C94::create, {}, Sc53C94_properties
 };
 
 REGISTER_DEVICE(Sc53C94, Sc53C94_Descriptor);

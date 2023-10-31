@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/machineid.h>
 #include <devices/common/pci/pcihost.h>
 #include <devices/common/pci/pcidevice.h>
+#include <devices/common/scsi/scsihd.h>
 #include <devices/ioctrl/macio.h>
 #include <devices/memctrl/hammerhead.h>
 #include <loguru.hpp>
@@ -114,7 +115,7 @@ static const PropMap pm7500_settings = {
 };
 
 static vector<string> pm7500_devices = {
-    "Hammerhead", "Bandit1", "Chaos", "MeshTnt", "GrandCentral", "ControlVideo"
+    "Hammerhead", "Bandit1", "Chaos", "ScsiMesh", "MeshTnt", "GrandCentral", "ControlVideo"
 };
 
 static const MachineDescription pm7300_descriptor = {

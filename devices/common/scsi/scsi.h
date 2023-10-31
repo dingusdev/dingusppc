@@ -239,6 +239,8 @@ public:
         return std::unique_ptr<ScsiBus>(new ScsiBus("ScsiCurio"));
     }
 
+    void attach_scsi_devices(const std::string bus_suffix);
+
     // low-level state management
     void    register_device(int id, ScsiDevice* dev_obj);
     int     current_phase() { return this->cur_phase; };
