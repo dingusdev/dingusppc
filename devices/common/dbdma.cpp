@@ -467,10 +467,10 @@ void DMAChannel::start() {
 
     this->queue_len = 0;
 
+    this->cmd_in_progress = false;
+
     if (this->start_cb)
         this->start_cb();
-
-    this->cmd_in_progress = false;
 
     // some DBDMA programs contain commands that don't transfer data
     // between a device and memory (LOAD_QUAD, STORE_QUAD, NOP and STOP).
