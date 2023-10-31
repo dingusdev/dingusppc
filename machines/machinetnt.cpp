@@ -43,20 +43,22 @@ int initialize_tnt(std::string& id)
 
     PCIHost *pci_host = dynamic_cast<PCIHost*>(gMachineObj->get_comp_by_name("Bandit1"));
 
-    // connect GrandCentral I/O controller to the PCI1 bus
-    pci_host->pci_register_device(
-        DEV_FUN(0x10,0), dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("GrandCentral")));
-
-    // get video PCI controller object
-    PCIHost *vci_host = dynamic_cast<PCIHost*>(gMachineObj->get_comp_by_name("Chaos"));
-
-    // connect built-in video device to the VCI bus
-    vci_host->pci_register_device(
-        DEV_FUN(0x0B,0), dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("ControlVideo")));
-
     // get (raw) pointer to the I/O controller
     GrandCentral* gc_obj = dynamic_cast<GrandCentral*>(gMachineObj->get_comp_by_name("GrandCentral"));
 
+    // connect GrandCentral I/O controller to the PCI1 bus
+    pci_host->pci_register_device(
+        DEV_FUN(0x10,0), gc_obj);
+
+    // get video PCI controller object
+    PCIHost *vci_host = dynamic_cast<PCIHost*>(gMachineObj->get_comp_by_name("Chaos"));
+    if (vci_host) {
+        // connect built-in video device to the VCI bus
+        vci_host->pci_register_device(
+            DEV_FUN(0x0B,0), dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("ControlVideo")));
+    }
+
+    // attach IOBus Device #1 0xF301A000
     gMachineObj->add_device("BoardReg1", std::unique_ptr<BoardRegister>(
         new BoardRegister("Board Register 1",
             0x3F                                        | // pull up all PRSNT bits
@@ -65,13 +67,23 @@ int initialize_tnt(std::string& id)
             (GET_BIN_PROP("has_mesh") << 14)            | // fast SCSI (active high)
             0x8000U                                       // pull up unused bits
     )));
-
     gc_obj->attach_iodevice(0, dynamic_cast<BoardRegister*>(gMachineObj->get_comp_by_name("BoardReg1")));
+
+    PCIHost *pci2_host = dynamic_cast<PCIHost*>(gMachineObj->get_comp_by_name_optional("Bandit2"));
+    if (pci2_host) {
+        // attach IOBus Device #3 0xF301C000
+        gMachineObj->add_device("BoardReg2", std::unique_ptr<BoardRegister>(
+            new BoardRegister("Board Register 2",
+                0x3F                                        | // pull up all PRSNT bits
+                0x8000U                                       // pull up unused bits
+        )));
+        gc_obj->attach_iodevice(2, dynamic_cast<BoardRegister*>(gMachineObj->get_comp_by_name("BoardReg2")));
+    }
 
     // get (raw) pointer to the memory controller
     memctrl_obj = dynamic_cast<HammerheadCtrl*>(gMachineObj->get_comp_by_name("Hammerhead"));
 
-    memctrl_obj->set_motherboard_id(Hammerhead::MBID_VCI0_PRESENT);
+    memctrl_obj->set_motherboard_id((vci_host ? Hammerhead::MBID_VCI0_PRESENT : 0) | (pci2_host ? Hammerhead::MBID_PCI2_PRESENT : 0));
     memctrl_obj->set_bus_speed(Hammerhead::BUS_SPEED_50_MHZ);
 
     // allocate ROM region
