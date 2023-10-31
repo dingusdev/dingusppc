@@ -39,15 +39,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace Hammerhead {
 
-#define RISC_MACHINE  0x3
-#define MACH_TYPE_TNT 0x1
-#define EXTENDED_ID   0x1 // examine some other registers to get full ID
-#define HH_CPU_ID_TNT ((RISC_MACHINE << 4) | (EXTENDED_ID << 3) | MACH_TYPE_TNT)
+#define RISC_MACHINE       0x3
+#define MACH_TYPE_TNT      0x1
+#define EXTENDED_ID_TNT    0x1 // examine some other registers to get full ID
+#define MACH_TYPE_CATALYST 0x0
+#define HH_CPU_ID_TNT      ((RISC_MACHINE << 4) | (EXTENDED_ID_TNT << 3) | MACH_TYPE_TNT)
+#define HH_CPU_ID_CATALYST ((RISC_MACHINE << 4) | 0                      | MACH_TYPE_CATALYST)
 
     // constants for the MBID field of the MOTHERBOARD_ID register
     enum {
         MBID_VCI0_PRESENT = 4,
         MBID_PCI2_PRESENT = 2,
+    };
+
+    // constants for the BURST_ROM field of the MOTHERBOARD_ID register
+    enum {
+        MBID_BURST_ROM = 1,
     };
 
     // ARBus speed constants for the CPU_SPEED register
@@ -118,7 +125,7 @@ public:
 
 private:
     uint8_t     mb_id      = Hammerhead::MBID_VCI0_PRESENT;
-    uint8_t     rom_type   = 1; // 1 - burstable ROM installed
+    uint8_t     rom_type   = Hammerhead::MBID_BURST_ROM;
     uint8_t     bus_speed  = Hammerhead::BUS_SPEED_40_MHZ;
     uint8_t     arb_config = 0;
 
