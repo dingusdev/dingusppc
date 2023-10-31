@@ -28,6 +28,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 
+namespace loguru {
+    enum : Verbosity {
+        Verbosity_INTERRUPT = loguru::Verbosity_9
+    };
+}
+
 OHare::OHare() : PCIDevice("mac-io/ohare"), InterruptCtrl()
 {
     supports_types(HWCompType::MMIO_DEV | HWCompType::PCI_DEV | HWCompType::INT_CTRL);
@@ -148,6 +154,12 @@ uint32_t OHare::read_ctrl(uint32_t offset, int size)
     uint32_t res = 0;
 
     switch (offset & 0xFC) {
+    case MIO_INT_MASK1:
+        res = this->int_mask;
+        break;
+    case MIO_INT_LEVELS1:
+        res = this->int_levels;
+        break;
     case MIO_INT_EVENTS1:
         res = this->int_events;
         break;
@@ -166,16 +178,15 @@ void OHare::write_ctrl(uint32_t offset, uint32_t value, int size)
     switch (offset) {
     case MIO_INT_MASK1:
         this->int_mask = BYTESWAP_32(value);
+        LOG_F(INFO, "%s: int_mask:0x%08x", name.c_str(), this->int_mask);
         break;
     case MIO_INT_CLEAR1:
-        if (value & MACIO_INT_CLR) {
-            this->int_events    = 0;
-            this->cpu_int_latch = false;
-            ppc_release_int();
-            LOG_F(5, "OHare: CPU INT latch cleared");
+        if ((this->int_mask & MACIO_INT_MODE) && (value & MACIO_INT_CLR)) {
+            this->int_events = 0;
         } else {
-            this->int_events &= BYTESWAP_32(value);
+            this->int_events &= ~(BYTESWAP_32(value) & 0x7FFFFFFFUL);
         }
+        clear_cpu_int();
         break;
     default:
         LOG_F(WARNING, "OHare: writing to unimplemented control register 0x%X",
@@ -208,23 +219,79 @@ void OHare::dma_write(uint32_t offset, uint32_t value, int size)
 
 uint32_t OHare::register_dev_int(IntSrc src_id)
 {
+    LOG_F(ERROR, "OHare: register_dev_int() not implemented");
     return 0;
 }
 
 uint32_t OHare::register_dma_int(IntSrc src_id)
 {
-    ABORT_F("OHare: register_dma_int() not implemented");
+    LOG_F(ERROR, "OHare: register_dma_int() not implemented");
     return 0;
 }
 
 void OHare::ack_int(uint32_t irq_id, uint8_t irq_line_state)
 {
+    // native mode:   set IRQ bits in int_events1 on a 0-to-1 transition
+    // emulated mode: set IRQ bits in int_events1 on all transitions
+#if 1
+    LOG_F(INTERRUPT, "%s: native interrupt mask:%08x events:%08x levels:%08x change:%08x state:%d", this->name.c_str(), this->int_mask, this->int_events, this->int_levels, irq_id, irq_line_state);
+#endif
+    if ((this->int_mask & MACIO_INT_MODE) ||
+        (irq_line_state && !(this->int_levels & irq_id))) {
+        this->int_events |= irq_id;
+    } else {
+        this->int_events &= ~irq_id;
+    }
+    this->int_events &= this->int_mask;
+    // update IRQ line state
+    if (irq_line_state) {
+        this->int_levels |= irq_id;
+    } else {
+        this->int_levels &= ~irq_id;
+    }
 
+    this->signal_cpu_int();
 }
 
 void OHare::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state)
 {
+    // native mode:   set IRQ bits in int_events1 on a 0-to-1 transition
+    // emulated mode: set IRQ bits in int_events1 on all transitions
+    if ((this->int_mask & MACIO_INT_MODE) ||
+        (irq_line_state && !(this->int_levels & irq_id))) {
+        this->int_events |= irq_id;
+    } else {
+        this->int_events &= ~irq_id;
+    }
+    this->int_events &= this->int_mask;
+    // update IRQ line state
+    if (irq_line_state) {
+        this->int_levels |= irq_id;
+    } else {
+        this->int_levels &= ~irq_id;
+    }
 
+    this->signal_cpu_int();
+}
+
+void OHare::signal_cpu_int() {
+    if (this->int_events) {
+        if (!this->cpu_int_latch) {
+            this->cpu_int_latch = true;
+            ppc_assert_int();
+        } else {
+            LOG_F(5, "%s: CPU INT already latched", this->name.c_str());
+        }
+    }
+}
+
+void OHare::clear_cpu_int()
+{
+    if (!this->int_events) {
+        this->cpu_int_latch = false;
+        ppc_release_int();
+        LOG_F(5, "%s: CPU INT latch cleared", this->name.c_str());
+    }
 }
 
 static const vector<string> OHare_Subdevices = {

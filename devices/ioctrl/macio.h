@@ -192,6 +192,9 @@ protected:
     uint32_t dma_read(uint32_t offset, int size);
     void dma_write(uint32_t offset, uint32_t value, int size);
 
+    void signal_cpu_int();
+    void clear_cpu_int();
+
 private:
     uint32_t    base_addr = 0;
 
@@ -284,6 +287,7 @@ protected:
     void notify_bar_change(int bar_num);
 
     void feature_control(const uint32_t value);
+
     void signal_cpu_int();
     void clear_cpu_int();
 
