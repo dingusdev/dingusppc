@@ -262,7 +262,7 @@ private:
     uint16_t    dev_ctrl_lines[SCSI_MAX_DEVS] = {};
 
     uint16_t    ctrl_lines;
-    int         cur_phase;
+    int         cur_phase = ScsiPhase::BUS_FREE;
     int         arb_winner_id;
     int         initiator_id;
     int         target_id;
