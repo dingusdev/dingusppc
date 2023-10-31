@@ -153,7 +153,7 @@ bool MemCtrlBase::add_mem_region(uint32_t start_addr, uint32_t size,
     if (!is_range_free(start_addr, size))
         return false;
 
-    uint8_t* reg_content = new uint8_t[size];
+    uint8_t* reg_content = new uint8_t[size](); /* () intializer clears the memory to zero */
 
     this->mem_regions.push_back(reg_content);
 
