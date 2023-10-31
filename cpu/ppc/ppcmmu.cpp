@@ -367,7 +367,7 @@ uint64_t    UnmappedVal = -1ULL;
 TLBEntry    UnmappedMem = {TLB_INVALID_TAG, TLBFlags::PAGE_NOPHYS, 0, 0};
 
 // Dummy page for catching writes to physical read-only pages
-static std::array<uint8_t, 4096> dummy_page;
+static std::array<uint64_t, 4096 / sizeof(uint64_t)> dummy_page;
 
 uint8_t     CurITLBMode = {0xFF}; // current ITLB mode
 uint8_t     CurDTLBMode = {0xFF}; // current DTLB mode
