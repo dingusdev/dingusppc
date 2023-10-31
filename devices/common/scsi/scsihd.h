@@ -62,7 +62,7 @@ protected:
     void read_buffer();
 
 private:
-    ImgFile         hdd_img;
+    ImgFile         disk_img;
     uint64_t        img_size;
     int             total_blocks;
     uint64_t        file_offset = 0;

@@ -42,10 +42,10 @@ ScsiHardDisk::ScsiHardDisk(std::string name, int my_id) : ScsiDevice(name, my_id
 void ScsiHardDisk::insert_image(std::string filename) {
     //We don't want to store everything in memory, but
     //we want to keep the hard disk available.
-    if (!this->hdd_img.open(filename))
+    if (!this->disk_img.open(filename))
         ABORT_F("%s: could not open image file %s", this->name.c_str(), filename.c_str());
 
-    this->img_size = this->hdd_img.size();
+    this->img_size = this->disk_img.size();
     uint64_t tb = (this->img_size + HDD_SECTOR_SIZE - 1) / HDD_SECTOR_SIZE;
     this->total_blocks = static_cast<int>(tb);
     if (this->total_blocks < 0 || tb != this->total_blocks) {
@@ -331,7 +331,7 @@ void ScsiHardDisk::read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
     transfer_size *= HDD_SECTOR_SIZE;
     uint64_t device_offset = lba * HDD_SECTOR_SIZE;
 
-    this->hdd_img.read(img_buffer, device_offset, transfer_size);
+    this->disk_img.read(img_buffer, device_offset, transfer_size);
 
     this->bytes_out = transfer_size;
 
@@ -351,7 +351,7 @@ void ScsiHardDisk::write(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
     this->incoming_size = transfer_size;
 
     this->post_xfer_action = [this, device_offset]() {
-        this->hdd_img.write(this->img_buffer, device_offset, this->incoming_size);
+        this->disk_img.write(this->img_buffer, device_offset, this->incoming_size);
     };
 }
 
