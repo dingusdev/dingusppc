@@ -109,6 +109,8 @@ enum ScsiCommand : uint8_t {
     WRITE_10                     = 0x2A,
     VERIFY_10                    = 0x2F,
     READ_LONG_10                 = 0x35,
+    WRITE_BUFFER                 = 0x3B,
+    READ_BUFFER                  = 0x3C,
     MODE_SENSE_10                = 0x5A,
     READ_12                      = 0xA8,
 
