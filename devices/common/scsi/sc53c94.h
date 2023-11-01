@@ -169,7 +169,7 @@ public:
     };
 
     // ScsiDevice methods
-    void notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param);
+    void notify(ScsiMsg msg_type, int param);
     bool prepare_data() { return false; };
     bool has_data() { return this->data_fifo_pos != 0; };
     int  send_data(uint8_t* dst_ptr, int count);

@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <cstring>
 
-void ScsiDevice::notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param)
+void ScsiDevice::notify(ScsiMsg msg_type, int param)
 {
     if (msg_type == ScsiMsg::BUS_PHASE_CHANGE) {
         switch (param) {
@@ -35,19 +35,18 @@ void ScsiDevice::notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param)
             break;
         case ScsiPhase::SELECTION:
             // check if something tries to select us
-            if (bus_obj->get_data_lines() & (1 << scsi_id)) {
+            if (this->bus_obj->get_data_lines() & (1 << scsi_id)) {
                 LOG_F(9, "ScsiDevice %d selected", this->scsi_id);
                 TimerManager::get_instance()->add_oneshot_timer(
                     BUS_SETTLE_DELAY,
-                    [this, bus_obj]() {
+                    [this]() {
                         // don't confirm selection if BSY or I/O are asserted
-                        if (bus_obj->test_ctrl_lines(SCSI_CTRL_BSY | SCSI_CTRL_IO))
+                        if (this->bus_obj->test_ctrl_lines(SCSI_CTRL_BSY | SCSI_CTRL_IO))
                             return;
-                        bus_obj->assert_ctrl_line(this->scsi_id, SCSI_CTRL_BSY);
-                        bus_obj->confirm_selection(this->scsi_id);
-                        this->initiator_id = bus_obj->get_initiator_id();
-                        this->bus_obj = bus_obj;
-                        if (bus_obj->test_ctrl_lines(SCSI_CTRL_ATN)) {
+                        this->bus_obj->assert_ctrl_line(this->scsi_id, SCSI_CTRL_BSY);
+                        this->bus_obj->confirm_selection(this->scsi_id);
+                        this->initiator_id = this->bus_obj->get_initiator_id();
+                        if (this->bus_obj->test_ctrl_lines(SCSI_CTRL_ATN)) {
                             this->switch_phase(ScsiPhase::MESSAGE_OUT);
                             if (this->msg_buf[0] != 0x80) {
                                 LOG_F(INFO, "ScsiDevice: received message 0x%X", this->msg_buf[0]);
@@ -73,7 +72,7 @@ void ScsiDevice::switch_phase(const int new_phase)
     this->bus_obj->switch_phase(this->scsi_id, this->cur_phase);
 }
 
-void ScsiDevice::next_step(ScsiBus* bus_obj)
+void ScsiDevice::next_step()
 {
     switch (this->cur_phase) {
     case ScsiPhase::COMMAND:
@@ -98,7 +97,7 @@ void ScsiDevice::next_step(ScsiBus* bus_obj)
         break;
     case ScsiPhase::MESSAGE_IN:
     case ScsiPhase::BUS_FREE:
-        bus_obj->release_ctrl_lines(this->scsi_id);
+        this->bus_obj->release_ctrl_lines(this->scsi_id);
         this->switch_phase(ScsiPhase::BUS_FREE);
         break;
     default:

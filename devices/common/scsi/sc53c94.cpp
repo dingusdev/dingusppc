@@ -538,7 +538,7 @@ void Sc53C94::update_irq()
     }
 }
 
-void Sc53C94::notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param)
+void Sc53C94::notify(ScsiMsg msg_type, int param)
 {
     switch (msg_type) {
     case ScsiMsg::CONFIRM_SEL:

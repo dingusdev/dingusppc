@@ -170,8 +170,8 @@ public:
     };
     ~ScsiDevice() = default;
 
-    virtual void notify(ScsiBus* bus_obj, ScsiMsg msg_type, int param);
-    virtual void next_step(ScsiBus* bus_obj);
+    virtual void notify(ScsiMsg msg_type, int param);
+    virtual void next_step();
     virtual void prepare_xfer(ScsiBus* bus_obj, int& bytes_in, int& bytes_out);
     virtual void switch_phase(const int new_phase);
 
@@ -181,6 +181,10 @@ public:
 
     virtual bool prepare_data() = 0;
     virtual void process_command() = 0;
+
+    void set_bus_object_ptr(ScsiBus *bus_obj_ptr) {
+        this->bus_obj = bus_obj_ptr;
+    }
 
 protected:
     uint8_t     cmd_buf[16] = {};
