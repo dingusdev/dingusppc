@@ -223,7 +223,10 @@ void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
         this->mace->write((offset >> 4) & 0x1F, value);
         return;
     case 0x10:
-        this->scsi->write((offset >> 4) & 0xF, value);
+        if (offset & 0x100)
+            this->scsi->pseudo_dma_write(value);
+        else
+            this->scsi->write((offset >> 4) & 0xF, value);
         return;
     case 0x14: // Sound registers
         switch(offset) {

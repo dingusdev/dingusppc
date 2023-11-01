@@ -164,6 +164,7 @@ public:
     uint8_t  read(uint8_t reg_offset);
     void     write(uint8_t reg_offset, uint8_t value);
     uint16_t pseudo_dma_read();
+    void     pseudo_dma_write(uint16_t data);
 
     // real DMA control
     void     real_dma_xfer(int direction);

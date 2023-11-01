@@ -190,6 +190,21 @@ uint16_t Sc53C94::pseudo_dma_read()
     return data_word;
 }
 
+void Sc53C94::pseudo_dma_write(uint16_t data) {
+    this->fifo_push((data >> 8) & 0xFFU);
+    this->fifo_push(data & 0xFFU);
+
+    // update DMA status
+    if (this->is_dma_cmd) {
+        this->xfer_count -= 2;
+        if (!this->xfer_count) {
+            this->status |= STAT_TC; // signal zero transfer count
+            //this->cur_state = SeqState::XFER_END;
+            this->sequencer();
+        }
+    }
+}
+
 void Sc53C94::update_command_reg(uint8_t cmd)
 {
     if (this->on_reset && (cmd & 0x7F) != CMD_NOP) {
