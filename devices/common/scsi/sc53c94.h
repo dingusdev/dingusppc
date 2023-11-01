@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -222,6 +222,7 @@ private:
     SeqDesc*    cmd_steps;
     bool        is_initiator;
     uint8_t     cur_cmd;
+    bool        is_dma_cmd = false;
     int         cur_bus_phase;
 
     // interrupt related stuff
