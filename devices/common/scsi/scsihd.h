@@ -59,6 +59,7 @@ protected:
     void write(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len);
     void seek(uint32_t lba);
     void rewind();
+    void read_buffer();
 
 private:
     std::fstream    hdd_img;

@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -53,7 +53,7 @@ void ScsiHardDisk::insert_image(std::string filename) {
         this->img_size = stat_buf.st_size;
         this->total_blocks = (this->img_size + HDD_SECTOR_SIZE - 1) / HDD_SECTOR_SIZE;
     } else {
-        ABORT_F("ScsiHardDisk: could not determine file size using stat()");
+        ABORT_F("SCSI-HD: could not determine file size using stat()");
     }
     this->hdd_img.seekg(0, std::ios_base::beg);
 }
@@ -72,13 +72,9 @@ void ScsiHardDisk::process_command() {
 
     // assume successful command execution
     this->status = ScsiStatus::GOOD;
+    this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;
 
     uint8_t* cmd = this->cmd_buf;
-
-    if (cmd[0] != 0 && cmd[0] != 8 && cmd[0] != 0xA && cmd[0] != 0x28
-        && cmd[0] != 0x2A && cmd[0] != 0x25) {
-        ABORT_F("SCSI-HD: untested command 0x%X", cmd[0]);
-    }
 
     switch (cmd[0]) {
     case ScsiCommand::TEST_UNIT_READY:
@@ -129,8 +125,11 @@ void ScsiHardDisk::process_command() {
     case ScsiCommand::READ_CAPACITY_10:
         this->read_capacity_10();
         break;
+    case ScsiCommand::READ_BUFFER:
+        read_buffer();
+        break;
     default:
-        LOG_F(WARNING, "SCSI_HD: unrecognized command: %x", cmd[0]);
+        LOG_F(WARNING, "SCSI-HD: unrecognized command: %x", cmd[0]);
     }
 }
 
@@ -138,7 +137,7 @@ bool ScsiHardDisk::prepare_data() {
     switch (this->cur_phase) {
     case ScsiPhase::DATA_IN:
         this->data_ptr  = (uint8_t*)this->img_buffer;
-        this->data_size = this->cur_buf_cnt;
+        this->data_size = this->bytes_out;
         break;
     case ScsiPhase::DATA_OUT:
         this->data_ptr  = (uint8_t*)this->img_buffer;
@@ -150,14 +149,14 @@ bool ScsiHardDisk::prepare_data() {
         } else {
             this->img_buffer[0] = ScsiStatus::CHECK_CONDITION;
         }
-        this->cur_buf_cnt = 1;
+        this->data_size = 1;
         break;
     case ScsiPhase::MESSAGE_IN:
         this->img_buffer[0] = this->msg_code;
-        this->cur_buf_cnt = 1;
+        this->data_size = 1;
         break;
     default:
-        LOG_F(WARNING, "SCSI_HD: unexpected phase in prepare_data");
+        LOG_F(WARNING, "SCSI-HD: unexpected phase in prepare_data");
         return false;
     }
 
@@ -181,29 +180,28 @@ void ScsiHardDisk::inquiry() {
     int alloc_len = cmd_buf[4];
 
     if (page_num) {
-        ABORT_F("SCSI_CDROM: invalid page number in INQUIRY");
+        ABORT_F("SCSI-HD: invalid page number in INQUIRY");
     }
 
     if (alloc_len >= 36) {
-        this->img_buffer[0] = 0;       // device type: Direct-access block device (hard drive)
-        this->img_buffer[1] = 0x80;    // removable media
-        this->img_buffer[2] = 2;       // ANSI version: SCSI-2
-        this->img_buffer[3] = 1;       // response data format
-        this->img_buffer[4] = 0x1F;    // additional length
+        this->img_buffer[0] = 0;    // device type: Direct-access block device
+        this->img_buffer[1] = 0;    // non-removable media
+        this->img_buffer[2] = 2;    // ANSI version: SCSI-2
+        this->img_buffer[3] = 1;    // response data format
+        this->img_buffer[4] = 0;    // additional length
         this->img_buffer[5] = 0;
         this->img_buffer[6] = 0;
-        this->img_buffer[7] = 0x18;    // supports synchronous xfers and linked commands
+        this->img_buffer[7] = 0x18; // supports synchronous xfers and linked commands
         std::memcpy(img_buffer + 8, vendor_info, 8);
         std::memcpy(img_buffer + 16, prod_info, 16);
         std::memcpy(img_buffer + 32, rev_info, 4);
 
         this->bytes_out  = 36;
-        this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;
 
         this->switch_phase(ScsiPhase::DATA_IN);
     }
     else {
-        LOG_F(WARNING, "Inappropriate Allocation Length: %d", alloc_len);
+        LOG_F(WARNING, "Allocation length too small: %d", alloc_len);
     }
 }
 
@@ -221,9 +219,57 @@ int ScsiHardDisk::mode_select_6(uint8_t param_len) {
     }
 }
 
+static char Apple_Copyright_Page_Data[] = "APPLE COMPUTER, INC   ";
+
 void ScsiHardDisk::mode_sense_6() {
-    uint8_t page_code  = this->cmd_buf[2] & 0x3F;
+    uint8_t page_code = this->cmd_buf[2] & 0x3F;
+    uint8_t page_ctrl = this->cmd_buf[2] >> 6;
     uint8_t alloc_len = this->cmd_buf[4];
+
+    this->img_buffer[ 0] = 13; // initial data size
+    this->img_buffer[ 1] =  0; // medium type
+    this->img_buffer[ 2] =  0; // medium is write enabled
+    this->img_buffer[ 3] =  8; // block description length
+
+    this->img_buffer[ 4] =  0; // density code
+    this->img_buffer[ 5] =  (this->total_blocks >> 16) & 0xFFU;
+    this->img_buffer[ 6] =  (this->total_blocks >>  8) & 0xFFU;
+    this->img_buffer[ 7] =  (this->total_blocks      ) & 0xFFU;
+    this->img_buffer[ 8] =  0;
+    this->img_buffer[ 9] =  0; // sector size MSB
+    this->img_buffer[10] =  2; // sector size
+    this->img_buffer[11] =  0; // sector size LSB
+
+    this->img_buffer[12] = page_code;
+
+    switch(page_code) {
+    case 3: // Format device page
+        this->img_buffer[13] = 22; // data size - 1
+        std::memset(&this->img_buffer[14], 0, 22);
+        // default values taken from Empire 540/1080S manual
+        this->img_buffer[15] =    6; // tracks per defect zone
+        this->img_buffer[17] =    1; // alternate sectors per zone
+        this->img_buffer[23] =   92; // sectors per track in the outermost zone
+        this->img_buffer[27] =    1; // interleave factor
+        this->img_buffer[29] =   19; // track skew factor
+        this->img_buffer[31] =   25; // cylinder skew factor
+        this->img_buffer[32] = 0x80; // SSEC=1, HSEC=0, RMB=0, SURF=0, INS=0
+        WRITE_WORD_BE_U(&this->img_buffer[24], 512); // bytes per sector
+        break;
+    case 0x30: // Copyright page for Apple certified drives
+        this->img_buffer[13] = 22; // data size - 1
+        std::memcpy(&this->img_buffer[14], Apple_Copyright_Page_Data, 22);
+        break;
+    default:
+        ABORT_F("SCSI-HD: unsupported page %d in MODE_SENSE_6", page_code);
+    };
+
+    // adjust for overall mode sense data length
+    this->img_buffer[0] += this->img_buffer[13] + 1;
+
+    this->bytes_out = std::min(alloc_len, (uint8_t)this->img_buffer[0]);
+
+    this->switch_phase(ScsiPhase::DATA_IN);
 }
 
 void ScsiHardDisk::read_capacity_10() {
@@ -247,8 +293,7 @@ void ScsiHardDisk::read_capacity_10() {
     WRITE_DWORD_BE_A(&img_buffer[0], last_lba);
     WRITE_DWORD_BE_A(&img_buffer[4], blk_len);
 
-    this->cur_buf_cnt = 8;
-    this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;
+    this->bytes_out = 8;
 
     this->switch_phase(ScsiPhase::DATA_IN);
 }
@@ -272,8 +317,7 @@ void ScsiHardDisk::read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
     this->hdd_img.seekg(device_offset, this->hdd_img.beg);
     this->hdd_img.read(img_buffer, transfer_size);
 
-    this->cur_buf_cnt = transfer_size;
-    this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;
+    this->bytes_out = transfer_size;
 
     this->switch_phase(ScsiPhase::DATA_IN);
 }
@@ -304,6 +348,24 @@ void ScsiHardDisk::seek(uint32_t lba) {
 
 void ScsiHardDisk::rewind() {
     this->hdd_img.seekg(0, this->hdd_img.beg);
+}
+
+void ScsiHardDisk::read_buffer() {
+    uint8_t  mode = this->cmd_buf[1];
+    uint32_t alloc_len = (this->cmd_buf[6] << 24) | (this->cmd_buf[7] << 16) |
+                          this->cmd_buf[8];
+
+    switch(mode) {
+    case 0: // Combined header and data mode
+        WRITE_DWORD_BE_A(&this->img_buffer[0], 0x10000); // report buffer size of 64K
+        break;
+    default:
+        ABORT_F("SCSI-HD: unsupported mode %d in READ_BUFFER", mode);
+    }
+
+    this->bytes_out = alloc_len;
+
+    this->switch_phase(ScsiPhase::DATA_IN);
 }
 
 static const PropMap SCSI_HD_Properties = {
