@@ -47,7 +47,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 AMIC::AMIC() : MMIODevice()
 {
-    this->name = "Apple Memory-mapped I/O Controller";
+    this->set_name("Apple Memory-mapped I/O Controller");
 
     supports_types(HWCompType::MMIO_DEV | HWCompType::INT_CTRL);
 
@@ -55,6 +55,13 @@ AMIC::AMIC() : MMIODevice()
     this->scsi = dynamic_cast<Sc53C94*>(gMachineObj->get_comp_by_name("Sc53C94"));
     this->scsi_dma = std::unique_ptr<AmicScsiDma> (new AmicScsiDma());
     this->scsi->set_dma_channel(this->scsi_dma.get());
+    this->scsi->set_drq_callback([this](const uint8_t drq_state) {
+        if (drq_state & 1)
+            via2_ifr |= VIA2_INT_SCSI_DRQ;
+        else
+            via2_ifr &= ~VIA2_INT_SCSI_DRQ;
+        this->update_via2_irq();
+    });
 
     // connect serial HW
     this->escc = dynamic_cast<EsccController*>(gMachineObj->get_comp_by_name("Escc"));
