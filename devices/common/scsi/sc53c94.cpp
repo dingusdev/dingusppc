@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -171,7 +171,7 @@ uint16_t Sc53C94::pseudo_dma_read()
         std:memmove(this->data_fifo, &this->data_fifo[2], this->data_fifo_pos);
 
         // update DMA status
-        if ((this->cmd_fifo[0] & 0x80)) {
+        if (this->is_dma_cmd) {
             this->xfer_count -= 2;
             if (!this->xfer_count) {
                 is_done = true;
@@ -221,9 +221,10 @@ void Sc53C94::update_command_reg(uint8_t cmd)
 void Sc53C94::exec_command()
 {
     uint8_t cmd = this->cur_cmd = this->cmd_fifo[0] & 0x7F;
-    bool    is_dma_cmd = !!(this->cmd_fifo[0] & 0x80);
 
-    if (is_dma_cmd) {
+    this->is_dma_cmd = !!(this->cmd_fifo[0] & 0x80);
+
+    if (this->is_dma_cmd) {
         if (this->config2 & CFG2_ENF) { // extended mode: 24-bit
             this->xfer_count = this->set_xfer_count & 0xFFFFFFUL;
         } else { // standard mode: 16-bit
@@ -469,7 +470,7 @@ void Sc53C94::sequencer()
         this->cur_bus_phase = this->bus_obj->current_phase();
         switch (this->cur_bus_phase) {
         case ScsiPhase::DATA_OUT:
-            if (this->cmd_fifo[0] & 0x80) {
+            if (this->is_dma_cmd) {
                 this->cur_state = SeqState::SEND_DATA;
                 break;
             }
@@ -482,7 +483,7 @@ void Sc53C94::sequencer()
             this->bus_obj->negotiate_xfer(this->data_fifo_pos, this->bytes_out);
             this->cur_state = SeqState::RCV_DATA;
             this->rcv_data();
-            if (!(this->cmd_fifo[0] & 0x80)) {
+            if (!(this->is_dma_cmd)) {
                 this->cur_state = SeqState::XFER_END;
                 this->sequencer();
             }
@@ -596,7 +597,7 @@ bool Sc53C94::rcv_data()
         return false;
     }
 
-    if ((this->cmd_fifo[0] & 0x80) && this->cur_bus_phase == ScsiPhase::DATA_IN) {
+    if (this->is_dma_cmd && this->cur_bus_phase == ScsiPhase::DATA_IN) {
         req_count = std::min((int)this->xfer_count, DATA_FIFO_MAX - this->data_fifo_pos);
     } else {
         req_count = 1;
