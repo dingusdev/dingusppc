@@ -32,6 +32,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/scsi/scsi.h>
 
 #include <cinttypes>
+#include <functional>
 #include <memory>
 
 class DmaBidirChannel;
@@ -145,6 +146,8 @@ typedef struct {
     int status;
 } SeqDesc;
 
+typedef std::function<void(const uint8_t drq_state)> DrqCb;
+
 class Sc53C94 : public ScsiDevice {
 public:
     Sc53C94(uint8_t chip_id=12, uint8_t my_id=7);
@@ -168,6 +171,10 @@ public:
     void set_dma_channel(DmaBidirChannel *dma_ch) {
         this->dma_ch = dma_ch;
     };
+
+    void set_drq_callback(DrqCb cb) {
+        this->drq_cb = cb;
+    }
 
     // ScsiDevice methods
     void notify(ScsiMsg msg_type, int param);
@@ -233,6 +240,7 @@ private:
 
     // DMA related stuff
     DmaBidirChannel*    dma_ch;
+    DrqCb               drq_cb = nullptr;
 };
 
 #endif // SC_53C94_H
