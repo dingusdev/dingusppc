@@ -282,10 +282,13 @@ void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
         }
         break;
     case AMICReg::VIA2_IFR:
-        // for each "1" in value clear the corresponding IRQ bit
-        // TODO: is bit 7 read only?
-        this->via2_ifr &= ~(value & 0x7F);
-        this->update_via2_irq();
+        // if bit 7 is set, clear the corresponding IRQ bit for each "1" in value
+        if (value & 0x80) {
+            this->via2_ifr &= ~(value & 0x7F);
+            this->update_via2_irq();
+        } else { // writing any value to VIA2_IFR with bit 7 cleared has no effect
+            LOG_F(WARNING, "%s: bit 7 of VIA2_IFR is cleared!", this->name.c_str());
+        }
         break;
     case AMICReg::VIA2_Slot_IER:
         if (value & 0x80)
@@ -300,6 +303,7 @@ void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
         } else {
             this->via2_ier &= ~value;
         }
+        this->update_via2_irq();
         break;
     case AMICReg::Ariel_Clut_Index:
         this->def_vid->set_clut_index(value);
