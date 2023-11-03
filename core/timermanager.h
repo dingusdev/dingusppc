@@ -103,6 +103,7 @@ public:
 
     // creating and cancelling timers
     uint32_t add_oneshot_timer(uint64_t timeout, timer_cb cb);
+    uint32_t add_immediate_timer(timer_cb cb);
     uint32_t add_cyclic_timer(uint64_t interval, timer_cb cb);
     uint32_t add_cyclic_timer(uint64_t interval, uint64_t delay, timer_cb cb);
     void cancel_timer(uint32_t id);
