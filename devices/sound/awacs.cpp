@@ -105,9 +105,8 @@ AwacDevicePdm::AwacDevicePdm() : AwacsBase("AWAC-PDM")
 
 uint32_t AwacDevicePdm::read_stat()
 {
-    LOG_F(INFO, "%s: status requested!", this->name.c_str());
-    // TODO: return valid status including manufacturer & device IDs
-    return 0;
+    // TODO: implement all other status bits
+    return (AWAC_REV_AWACS << 12) | (AWAC_MAKER_CRYSTAL << 8);
 }
 
 void AwacDevicePdm::write_ctrl(uint32_t addr, uint16_t value)

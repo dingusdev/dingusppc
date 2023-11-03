@@ -149,8 +149,9 @@ public:
     virtual void     snd_ctrl_write(uint32_t offset, uint32_t value, int size) = 0;
 };
 
-/** AWACs Screamer manufacturer and revision. */
+/** AWACs manufacturers and revisions. */
 #define AWAC_MAKER_CRYSTAL  1
+#define AWAC_REV_AWACS      2
 #define AWAC_REV_SCREAMER   3
 
 /** Screamer sound codec. */
