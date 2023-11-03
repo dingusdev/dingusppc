@@ -462,18 +462,23 @@ void Sc53C94::sequencer()
         }
         break;
     case SeqState::SEND_MSG:
-        this->bus_obj->negotiate_xfer(this->data_fifo_pos, this->bytes_out);
-        this->bus_obj->push_data(this->target_id, this->data_fifo, this->bytes_out);
-        this->data_fifo_pos -= this->bytes_out;
-        if (this->data_fifo_pos > 0) {
-            std::memmove(this->data_fifo, &this->data_fifo[this->bytes_out], this->data_fifo_pos);
+        if (this->data_fifo_pos < 1 && this->is_dma_cmd) {
+            this->drq_cb(1);
+            this->int_status |= INTSTAT_SR;
+            this->update_irq();
+            break;
         }
+        this->bus_obj->target_xfer_data();
         this->bus_obj->release_ctrl_line(this->my_bus_id, SCSI_CTRL_ATN);
         break;
     case SeqState::SEND_CMD:
-        this->bus_obj->negotiate_xfer(this->data_fifo_pos, this->bytes_out);
-        this->bus_obj->push_data(this->target_id, this->data_fifo, this->data_fifo_pos);
-        this->data_fifo_pos = 0;
+        if (this->data_fifo_pos < 1 && this->is_dma_cmd) {
+            this->drq_cb(1);
+            this->int_status |= INTSTAT_SR;
+            this->update_irq();
+            break;
+        }
+        this->bus_obj->target_xfer_data();
         break;
     case SeqState::CMD_COMPLETE:
         this->seq_step    = this->cmd_steps->step_num;
@@ -568,6 +573,7 @@ void Sc53C94::notify(ScsiMsg msg_type, int param)
         }
         break;
     case ScsiMsg::BUS_PHASE_CHANGE:
+        this->cur_bus_phase = param;
         if (param != ScsiPhase::BUS_FREE && this->cmd_steps != nullptr) {
             this->cmd_steps++;
             this->cur_state = this->cmd_steps->next_step;
@@ -594,7 +600,7 @@ int Sc53C94::send_data(uint8_t* dst_ptr, int count)
     this->data_fifo_pos -= actual_count;
     if (this->data_fifo_pos > 0) {
         std::memmove(this->data_fifo, &this->data_fifo[actual_count], this->data_fifo_pos);
-    } else {
+    } else if (this->cur_bus_phase == ScsiPhase::DATA_OUT) {
         this->cmd_steps++;
         this->cur_state = this->cmd_steps->next_step;
         this->sequencer();

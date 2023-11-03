@@ -48,16 +48,8 @@ void ScsiDevice::notify(ScsiMsg msg_type, int param)
                         this->initiator_id = this->bus_obj->get_initiator_id();
                         if (this->bus_obj->test_ctrl_lines(SCSI_CTRL_ATN)) {
                             this->switch_phase(ScsiPhase::MESSAGE_OUT);
-                            if (this->msg_buf[0] != 0x80) {
-                                LOG_F(INFO, "ScsiDevice: received message 0x%X", this->msg_buf[0]);
-                            }
-                        }
-                        this->switch_phase(ScsiPhase::COMMAND);
-                        this->process_command();
-                        if (this->prepare_data()) {
-                            bus_obj->assert_ctrl_line(this->scsi_id, SCSI_CTRL_REQ);
                         } else {
-                            ABORT_F("ScsiDevice: prepare_data() failed");
+                            this->switch_phase(ScsiPhase::COMMAND);
                         }
                 });
             }
@@ -75,10 +67,6 @@ void ScsiDevice::switch_phase(const int new_phase)
 void ScsiDevice::next_step()
 {
     switch (this->cur_phase) {
-    case ScsiPhase::COMMAND:
-        this->process_command();
-        this->switch_phase(ScsiPhase::DATA_IN);
-        break;
     case ScsiPhase::DATA_OUT:
         if (this->data_size >= this->incoming_size) {
             if (this->post_xfer_action != nullptr) {
@@ -92,8 +80,21 @@ void ScsiDevice::next_step()
             this->switch_phase(ScsiPhase::STATUS);
         }
         break;
+    case ScsiPhase::COMMAND:
+        this->process_command();
+        if (this->cur_phase != ScsiPhase::COMMAND) {
+            if (this->prepare_data()) {
+                this->bus_obj->assert_ctrl_line(this->scsi_id, SCSI_CTRL_REQ);
+            } else {
+                ABORT_F("ScsiDevice: prepare_data() failed");
+            }
+        }
+        break;
     case ScsiPhase::STATUS:
         this->switch_phase(ScsiPhase::MESSAGE_IN);
+        break;
+    case ScsiPhase::MESSAGE_OUT:
+        this->switch_phase(ScsiPhase::COMMAND);
         break;
     case ScsiPhase::MESSAGE_IN:
     case ScsiPhase::BUS_FREE:
@@ -112,7 +113,8 @@ void ScsiDevice::prepare_xfer(ScsiBus* bus_obj, int& bytes_in, int& bytes_out)
     switch (this->cur_phase) {
     case ScsiPhase::COMMAND:
         this->data_ptr = this->cmd_buf;
-        this->data_size = bytes_in;
+        this->data_size = 0; //bytes_in;
+        bytes_out = 0;
         break;
     case ScsiPhase::STATUS:
         this->data_ptr = &this->status;
@@ -127,6 +129,7 @@ void ScsiDevice::prepare_xfer(ScsiBus* bus_obj, int& bytes_in, int& bytes_out)
     case ScsiPhase::MESSAGE_OUT:
         this->data_ptr = this->msg_buf;
         this->data_size = bytes_in;
+        bytes_out = 0;
         break;
     case ScsiPhase::MESSAGE_IN:
         this->data_ptr = this->msg_buf;
@@ -136,6 +139,42 @@ void ScsiDevice::prepare_xfer(ScsiBus* bus_obj, int& bytes_in, int& bytes_out)
     default:
         ABORT_F("ScsiDevice: unhandled phase %d in prepare_xfer()", this->cur_phase);
     }
+}
+
+static const int CmdGroupLen[8] = {6, 10, 10, -1, -1, 12, -1, -1};
+
+int ScsiDevice::xfer_data() {
+    this->cur_phase = bus_obj->current_phase();
+
+    switch (this->cur_phase) {
+    case ScsiPhase::MESSAGE_OUT:
+        if (this->bus_obj->pull_data(this->initiator_id, this->msg_buf, 1)) {
+            if (this->msg_buf[0] & 0x80) {
+                LOG_F(9, "%s: IDENTIFY MESSAGE received, code = 0x%X",
+                      this->name.c_str(), this->msg_buf[0]);
+                this->next_step();
+            } else {
+                ABORT_F("%s: unsupported message received, code = 0x%X",
+                        this->name.c_str(), this->msg_buf[0]);
+            }
+        }
+        break;
+    case ScsiPhase::COMMAND:
+        if (this->bus_obj->pull_data(this->initiator_id, this->cmd_buf, 1)) {
+            int cmd_len = CmdGroupLen[this->cmd_buf[0] >> 5];
+            if (cmd_len < 0) {
+                ABORT_F("%s: unsupported command received, code = 0x%X",
+                        this->name.c_str(), this->msg_buf[0]);
+            }
+            if (this->bus_obj->pull_data(this->initiator_id, &this->cmd_buf[1], cmd_len - 1))
+                this->next_step();
+        }
+        break;
+    default:
+        ABORT_F("ScsiDevice: unhandled phase %d in xfer_data()", this->cur_phase);
+    }
+
+    return 0;
 }
 
 int ScsiDevice::send_data(uint8_t* dst_ptr, const int count)
@@ -159,6 +198,9 @@ int ScsiDevice::rcv_data(const uint8_t* src_ptr, const int count)
     std::memcpy(this->data_ptr, src_ptr, count);
     this->data_ptr  += count;
     this->data_size += count;
+
+    if (this->cur_phase == ScsiPhase::COMMAND)
+        this->next_step();
 
     return count;
 }

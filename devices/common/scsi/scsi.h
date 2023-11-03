@@ -176,6 +176,7 @@ public:
     virtual void switch_phase(const int new_phase);
 
     virtual bool has_data() { return this->data_size != 0; };
+    virtual int  xfer_data();
     virtual int  send_data(uint8_t* dst_ptr, int count);
     virtual int  rcv_data(const uint8_t* src_ptr, const int count);
 
@@ -243,6 +244,7 @@ public:
     void disconnect(int dev_id);
     bool pull_data(const int id, uint8_t* dst_ptr, const int size);
     bool push_data(const int id, const uint8_t* src_ptr, const int size);
+    int  target_xfer_data();
     void target_next_step();
     bool negotiate_xfer(int& bytes_in, int& bytes_out);
 

@@ -261,6 +261,10 @@ bool ScsiBus::push_data(const int id, const uint8_t* src_ptr, const int size)
     return true;
 }
 
+int ScsiBus::target_xfer_data() {
+    return this->devices[this->target_id]->xfer_data();
+}
+
 void ScsiBus::target_next_step()
 {
     this->devices[this->target_id]->next_step();
