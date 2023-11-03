@@ -55,6 +55,27 @@ uint32_t TimerManager::add_oneshot_timer(uint64_t timeout, timer_cb cb)
     return ti->id;
 }
 
+uint32_t TimerManager::add_immediate_timer(timer_cb cb) {
+    TimerInfo* ti = new TimerInfo;
+
+    ti->id          = ++this->id;
+    ti->timeout_ns  = this->get_time_now() + 10;
+    ti->interval_ns = 0;
+    ti->cb          = cb;
+
+    std::shared_ptr<TimerInfo> timer_desc(ti);
+
+    // add new timer to the timer queue
+    this->timer_queue.push(timer_desc);
+
+    // notify listeners about changes in the timer queue
+    if (!this->cb_active) {
+        this->notify_timer_changes();
+    }
+
+    return ti->id;
+}
+
 uint32_t TimerManager::add_cyclic_timer(uint64_t interval, uint64_t delay, timer_cb cb)
 {
     if (!interval || interval <= MIN_TIMEOUT_NS) {
