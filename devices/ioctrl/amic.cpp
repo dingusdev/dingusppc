@@ -67,6 +67,7 @@ AMIC::AMIC() : MMIODevice()
 
     // initialize sound HW
     this->snd_out_dma = std::unique_ptr<AmicSndOutDma> (new AmicSndOutDma());
+    this->snd_out_dma->init_interrupts(this, 2 << 8);
     this->awacs       = std::unique_ptr<AwacDevicePdm> (new AwacDevicePdm());
     this->awacs->set_dma_out(this->snd_out_dma.get());
 
@@ -169,6 +170,10 @@ uint32_t AMIC::read(uint32_t rgn_start, uint32_t offset, int size)
         return this->mon_id;
     case AMICReg::Int_Ctrl:
         return (this->int_ctrl & 0xC0) | (this->dev_irq_lines & 0x3F);
+    case AMICReg::DMA_IFR_0:
+        return this->dma_ifr0;
+    case AMICReg::DMA_IFR_1:
+        return this->dma_ifr1;
     case AMICReg::Diag_Reg:
         return 0xFE | this->emmo_pin;
     case AMICReg::DMA_Base_Addr_0:
@@ -232,18 +237,16 @@ void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
             LOG_F(9, "AMIC: Sound buffer size set to 0x%X", this->snd_buf_size);
             return;
         case AMICReg::Snd_Out_Ctrl:
-            LOG_F(9, "AMIC Sound Out Ctrl updated, val=%x", value);
             if ((value & 1) != (this->snd_out_ctrl & 1)) {
                 if (value & 1) {
-                    LOG_F(9, "AMIC Sound Out DMA enabled!");
                     this->snd_out_dma->init(this->dma_base & ~0x3FFFF,
                                             this->snd_buf_size);
                     this->snd_out_dma->enable();
                     this->awacs->set_sample_rate((this->snd_out_ctrl >> 1) & 3);
                     this->awacs->dma_out_start();
                 } else {
-                    LOG_F(9, "AMIC Sound Out DMA disabled!");
                     this->snd_out_dma->disable();
+                    this->awacs->dma_out_pause();
                 }
             }
             this->snd_out_ctrl = value;
@@ -491,7 +494,24 @@ void AMIC::ack_cpu_int(uint32_t irq_id, uint8_t irq_line_state) {
 }
 
 void AMIC::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state) {
-    ABORT_F("AMIC: ack_dma_int() not implemented");
+    if (irq_id >= 0x100) { // DMA Interrupt Flags 1
+        irq_id = (irq_id >> 8) & 0xFFU;
+        if (irq_line_state)
+            this->dma_ifr1 |= irq_id;
+        else
+            this->dma_ifr1 &= ~irq_id;
+    } else { // DMA Interrupt Flags 0
+        irq_id &= 0xFFU;
+        if (irq_line_state)
+            this->dma_ifr0 |= irq_id;
+        else
+            this->dma_ifr0 &= ~irq_id;
+    }
+    uint8_t new_irq = (this->dma_ifr0 || this->dma_ifr1) ? 1 : 0;
+    if (new_irq != this->dma_irq) {
+        this->dma_irq = new_irq;
+        this->ack_cpu_int(CPU_INT_ALL_DMA, new_irq);
+    }
 }
 
 // ============================ Sound DMA stuff ================================
@@ -510,6 +530,7 @@ void AmicSndOutDma::init(uint32_t buf_base, uint32_t buf_samples)
 
     this->snd_buf_num = 0;
     this->cur_buf_pos = 0;
+    this->irq_level = 0;
 }
 
 uint8_t AmicSndOutDma::read_stat()
@@ -517,12 +538,25 @@ uint8_t AmicSndOutDma::read_stat()
     return this->dma_out_ctrl;
 }
 
+void AmicSndOutDma::update_irq() {
+    uint8_t new_level = !!((this->dma_out_ctrl >> 4) & this->dma_out_ctrl);
+    if (new_level != this->irq_level) {
+        this->irq_level = new_level;
+        TimerManager::get_instance()->add_immediate_timer([this] {
+            this->int_ctrl->ack_dma_int(this->irq_id, this->irq_level);
+        });
+    }
+}
+
 void AmicSndOutDma::write_dma_out_ctrl(uint8_t value)
 {
     // clear interrupt flags
-    value &= ~PDM_DMA_INTS_MASK;
-    this->dma_out_ctrl = value;
-    LOG_F(9, "AMIC: Sound out DMA control set to 0x%X", value);
+    if (value & PDM_DMA_INTS_MASK) {
+        this->dma_out_ctrl &= ~(value & PDM_DMA_INTS_MASK);
+        this->update_irq();
+    }
+    // update sound output DMA interrupt enable bits
+    this->dma_out_ctrl = (this->dma_out_ctrl & 0xF1U) | (value & 0x0EU);
 }
 
 DmaPullResult AmicSndOutDma::pull_data(uint32_t req_len, uint32_t *avail_len,
@@ -535,12 +569,14 @@ DmaPullResult AmicSndOutDma::pull_data(uint32_t req_len, uint32_t *avail_len,
         if (!this->snd_buf_num) {
             // signal buffer 0 drained
             this->dma_out_ctrl |= PDM_DMA_IF0;
-            // TODO: generate IE0 interrupt if enabled
         } else {
             // signal buffer 1 drained
             this->dma_out_ctrl |= PDM_DMA_IF1;
-            // TODO: generate IE1 interrupt if enabled
         }
+
+        // generate sound out DMA interrupt if (IF0 & IE0)
+        // or (IF1 & IE1) or (ERR_IF & ERR_IE)
+        this->update_irq();
 
         // check DMA enable flag after buffer 1 was processed
         // if it's false stop delivering sound data
