@@ -96,20 +96,30 @@ public:
     void            enable()  { this->enabled = true;  };
     void            disable() { this->enabled = false; };
     uint8_t         read_stat();
+    void            update_irq();
     void            write_dma_out_ctrl(uint8_t value);
     uint32_t        get_cur_buf_pos() { return this->cur_buf_pos; };
     DmaPullResult   pull_data(uint32_t req_len, uint32_t *avail_len,
                               uint8_t **p_data);
 
-private:
-    bool        enabled;
-    uint8_t     dma_out_ctrl;
+    void init_interrupts(InterruptCtrl *int_ctrl, uint32_t irq_id) {
+        this->int_ctrl = int_ctrl;
+        this->irq_id   = irq_id;
+    };
 
-    uint32_t    out_buf0;
-    uint32_t    out_buf1;
-    uint32_t    out_buf_len;
-    uint32_t    snd_buf_num;
-    uint32_t    cur_buf_pos;
+private:
+    bool            enabled = false;
+    uint8_t         dma_out_ctrl;
+
+    uint32_t        out_buf0;
+    uint32_t        out_buf1;
+    uint32_t        out_buf_len;
+    uint32_t        snd_buf_num;
+    uint32_t        cur_buf_pos;
+
+    InterruptCtrl   *int_ctrl = nullptr;
+    uint32_t        irq_id = 0;
+    uint8_t         irq_level = 0;
 };
 
 /** AMIC-specific floppy DMA implementation. */
@@ -203,9 +213,9 @@ enum AMICReg : uint32_t {
 
     // Interrupt registers
     Int_Ctrl            = 0x2A000,
-    DMA_Int_0           = 0x2A008,
+    DMA_IFR_0           = 0x2A008,
     Bus_Err_Int_0       = 0x2A009,
-    DMA_Int_1           = 0x2A00A,
+    DMA_IFR_1           = 0x2A00A,
     Bus_Err_Int_1       = 0x2A00B,
 
     // Undocumented diagnostics register
@@ -292,6 +302,11 @@ private:
     // interrupt state
     uint8_t     int_ctrl = 0;
     uint8_t     dev_irq_lines = 0; // state of the IRQ lines
+
+    // DMA IRQ flag registers
+    uint8_t     dma_ifr0 = 0;
+    uint8_t     dma_ifr1 = 0;
+    uint8_t     dma_irq  = 0;
 
     // pseudo VIA2 state
     uint8_t     via2_ier        =    0;
