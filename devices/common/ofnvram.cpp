@@ -22,8 +22,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** Utilities for working with Apple Open Firmware and CHRP NVRAM partitions. */
 
 #include <devices/common/ofnvram.h>
+#include <devices/common/nvram.h>
 #include <endianswap.h>
-#include <loguru.hpp>
 #include <machines/machinebase.h>
 #include <memaccess.h>
 

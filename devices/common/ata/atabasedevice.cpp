@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <devices/common/ata/atabasedevice.h>
 #include <devices/common/ata/atadefs.h>
-#include <devices/deviceregistry.h>
+#include <devices/common/ata/idechannel.h>
 #include <loguru.hpp>
 
 #include <cinttypes>

@@ -32,9 +32,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <endianswap.h>
 #include <machines/machinebase.h>
 
-#include <algorithm>
 #include <loguru.hpp>
-#include <memory>
 
 AwacsBase::AwacsBase(std::string name)
 {

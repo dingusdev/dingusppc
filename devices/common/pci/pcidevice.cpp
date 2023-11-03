@@ -20,9 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <devices/common/pci/pcidevice.h>
-#include <endianswap.h>
 #include <loguru.hpp>
-#include <memaccess.h>
 
 #include <cinttypes>
 #include <fstream>

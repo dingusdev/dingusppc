@@ -30,10 +30,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define DB_DMA_H
 
 #include <devices/common/dmacore.h>
-#include <devices/common/hwinterrupt.h>
 
 #include <cinttypes>
-#include <functional>
+
+class InterruptCtrl;
 
 /** DBDMA Channel registers offsets */
 enum DMAReg : uint32_t {

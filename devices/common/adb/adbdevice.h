@@ -24,11 +24,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef ADB_DEVICE_H
 #define ADB_DEVICE_H
 
-#include <devices/common/adb/adbbus.h>
 #include <devices/common/hwcomponent.h>
 
-#include <cstring>
-#include <functional>
 #include <string>
 
 /** Common ADB device addresses/types. */

@@ -25,10 +25,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <cpu/ppc/ppcemu.h>
+#include <devices/common/hwcomponent.h>
+#include <devices/common/i2c/i2c.h>
 #include <devices/common/i2c/athens.h>
 #include <devices/common/i2c/i2cprom.h>
 #include <devices/common/machineid.h>
-#include <devices/ioctrl/macio.h>
 #include <devices/memctrl/mpc106.h>
 #include <devices/memctrl/spdram.h>
 #include <loguru.hpp>
@@ -37,7 +38,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <machines/machineproperties.h>
 
 #include <cinttypes>
-#include <memory>
 #include <string>
 
 // Bit definitions for the Gossamer system register at 0xFF000004

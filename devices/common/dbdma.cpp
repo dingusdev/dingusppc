@@ -24,6 +24,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cpu/ppc/ppcmmu.h>
 #include <devices/common/dbdma.h>
 #include <devices/common/dmacore.h>
+#include <devices/common/hwinterrupt.h>
+#include <devices/common/mmiodevice.h>
 #include <endianswap.h>
 #include <memaccess.h>
 

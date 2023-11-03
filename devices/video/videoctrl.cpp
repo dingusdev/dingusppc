@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @file Video Conroller base class implementation. */
 
 #include <core/timermanager.h>
+#include <devices/common/hwinterrupt.h>
 #include <devices/video/videoctrl.h>
 #include <memaccess.h>
 

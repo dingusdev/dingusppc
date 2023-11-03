@@ -26,10 +26,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <devices/common/adb/adb.h>
-#include <loguru.hpp>
-
-#include <cinttypes>
-#include <cstring>
 
 #if 0
 #include <thirdparty/SDL2/include/SDL.h>

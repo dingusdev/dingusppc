@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/hwcomponent.h>
 #include <devices/common/pci/pcibridge.h>
 #include <devices/common/pci/pcihost.h>
+#include <devices/deviceregistry.h>
 #include <devices/memctrl/memctrlbase.h>
 #include <machines/machinebase.h>
 #include <endianswap.h>

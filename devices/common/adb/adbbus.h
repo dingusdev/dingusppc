@@ -24,7 +24,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef ADB_BUS_H
 #define ADB_BUS_H
 
-#include <devices/common/adb/adbdevice.h>
 #include <devices/common/hwcomponent.h>
 
 #include <memory>

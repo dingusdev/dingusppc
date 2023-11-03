@@ -29,7 +29,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <fstream>
 #include <memory>
-#include <stdio.h>
 #include <string>
 
 class ScsiHardDisk : public ScsiDevice {

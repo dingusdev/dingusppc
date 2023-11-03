@@ -25,7 +25,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define ATI_MACH64_GX_H
 
 #include <devices/common/pci/pcidevice.h>
-#include <devices/video/atimach64defs.h>
 #include <devices/video/displayid.h>
 #include <devices/video/videoctrl.h>
 

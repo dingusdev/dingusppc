@@ -22,9 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @file Block storage device implementation. */
 
 #include <devices/storage/blockstoragedevice.h>
-#include <loguru.hpp>
 
-#include <stdio.h>
 #include <sys/stat.h>
 
 using namespace std;

@@ -24,12 +24,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef ADB_MOUSE_H
 #define ADB_MOUSE_H
 
-#include <core/hostevents.h>
 #include <devices/common/adb/adbdevice.h>
 #include <devices/common/hwcomponent.h>
 
 #include <memory>
 #include <string>
+
+class MouseEvent;
 
 class AdbMouse : public AdbDevice {
 public:

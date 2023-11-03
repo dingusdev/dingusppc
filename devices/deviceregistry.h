@@ -24,7 +24,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef DEVICE_REGISTRY_H
 #define DEVICE_REGISTRY_H
 
-#include <devices/common/hwcomponent.h>
 #include <machines/machineproperties.h>
 
 #include <functional>
@@ -32,6 +31,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 #include <map>
 #include <vector>
+
+class HWComponent;
 
 typedef std::function<unique_ptr<HWComponent> ()> CreateFunc;
 

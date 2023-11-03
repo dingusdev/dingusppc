@@ -25,12 +25,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define ATA_BASE_DEVICE_H
 
 #include <devices/common/ata/atadefs.h>
-#include <devices/common/ata/idechannel.h>
 #include <devices/common/hwcomponent.h>
 #include "endianswap.h"
 
 #include <cinttypes>
 #include <string>
+
+class IdeChannel;
 
 class AtaBaseDevice : public HWComponent, public AtaInterface
 {

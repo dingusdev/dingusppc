@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @file NCR53C94/Am53CF94 SCSI controller emulation. */
 
 #include <core/timermanager.h>
+#include <devices/common/dmacore.h>
 #include <devices/common/hwcomponent.h>
 #include <devices/common/hwinterrupt.h>
 #include <devices/common/scsi/sc53c94.h>

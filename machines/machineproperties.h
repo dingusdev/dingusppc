@@ -19,14 +19,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <loguru.hpp>
-
 #include <cinttypes>
 #include <limits>
 #include <map>
-#include <memory>
 #include <string>
 #include <vector>
+#include <memory>
 
 #ifndef MACHINE_PROPERTIES_H
 #define MACHINE_PROPERTIES_H

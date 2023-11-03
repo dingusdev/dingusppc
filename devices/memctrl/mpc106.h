@@ -34,14 +34,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef MPC106_H
 #define MPC106_H
 
-#include <devices/common/mmiodevice.h>
 #include <devices/common/pci/pcidevice.h>
 #include <devices/common/pci/pcihost.h>
 #include <devices/memctrl/memctrlbase.h>
 
 #include <cinttypes>
 #include <memory>
-#include <unordered_map>
 
 /** Grackle configuration space registers. */
 enum GrackleReg : uint32_t {

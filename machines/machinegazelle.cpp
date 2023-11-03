@@ -24,12 +24,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <cpu/ppc/ppcemu.h>
+#include <devices/common/hwcomponent.h>
 #include <devices/memctrl/psx.h>
+#include <devices/common/pci/pcidevice.h>
 #include <devices/common/pci/pcihost.h>
-#include <devices/ioctrl/macio.h>
 #include <machines/machinebase.h>
 #include <machines/machinefactory.h>
 #include <machines/machineproperties.h>
+#include <memctrl/memctrlbase.h>
+#include <loguru.hpp>
 
 // TODO: move it to /cpu/ppc
 int get_cpu_pll_value(const uint64_t cpu_freq_hz) {

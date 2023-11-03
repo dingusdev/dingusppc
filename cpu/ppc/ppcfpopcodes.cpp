@@ -23,18 +23,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "ppcemu.h"
 #include "ppcmmu.h"
-#include <array>
-#include <cfenv>
-#include <cfloat>
+#include <stdlib.h>
 #include <cinttypes>
 #include <cmath>
-#include <iostream>
 #include <limits>
-#include <map>
-#include <stdexcept>
-#include <stdio.h>
-#include <unordered_map>
-#include <loguru.hpp>
 
 // Used for FP calcs
 uint64_t ppc_result64_b;

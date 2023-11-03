@@ -24,7 +24,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/hwcomponent.h>
 #include <devices/common/pci/dec21154.h>
 #include <devices/deviceregistry.h>
-#include <endianswap.h>
 #include <loguru.hpp>
 
 #include <cinttypes>

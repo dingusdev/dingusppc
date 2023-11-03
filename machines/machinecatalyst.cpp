@@ -22,15 +22,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @file Constructs a Catalyst (Power Macintosh 7200) machine. */
 
 #include <cpu/ppc/ppcemu.h>
-#include <devices/common/pci/bandit.h>
-#include <devices/ioctrl/macio.h>
+#include <devices/common/hwcomponent.h>
+#include <devices/common/pci/pcidevice.h>
+#include <devices/common/pci/pcihost.h>
 #include <devices/memctrl/platinum.h>
 #include <loguru.hpp>
 #include <machines/machinebase.h>
 #include <machines/machinefactory.h>
 #include <machines/machineproperties.h>
+#include <memctrl/memctrlbase.h>
 
-#include <memory>
 #include <string>
 
 int initialize_catalyst(std::string& id)

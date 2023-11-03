@@ -21,7 +21,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "profiler.h"
 #include <iostream>
-#include <memory>
 #include <vector>
 
 /** global profiler object */

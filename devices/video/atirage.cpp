@@ -29,10 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <loguru.hpp>
 #include <memaccess.h>
 
-#include <chrono>
-#include <cstdint>
 #include <map>
-#include <memory>
 
 /* Mach64 post dividers. */
 static const int mach64_post_div[8] = {

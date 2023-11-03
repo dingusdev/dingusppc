@@ -22,7 +22,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @file Apple Desktop Bus Mouse emulation. */
 
 #include <devices/common/adb/adbmouse.h>
+#include <devices/common/adb/adbbus.h>
 #include <devices/deviceregistry.h>
+#include <core/hostevents.h>
+#include <loguru.hpp>
 
 AdbMouse::AdbMouse(std::string name) : AdbDevice(name) {
     EventManager::get_instance()->add_mouse_handler(this, &AdbMouse::event_handler);

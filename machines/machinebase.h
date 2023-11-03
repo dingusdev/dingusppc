@@ -27,11 +27,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef MACHINE_BASE_H
 #define MACHINE_BASE_H
 
-#include <devices/common/hwcomponent.h>
-
 #include <map>
 #include <memory>
 #include <string>
+
+class HWComponent;
+enum HWCompType : uint64_t;
 
 class MachineBase {
 public:

@@ -25,11 +25,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define MESH_H
 
 #include <devices/common/hwcomponent.h>
-#include <devices/common/hwinterrupt.h>
-#include <devices/common/scsi/scsi.h>
 
 #include <cinttypes>
 #include <memory>
+
+class InterruptCtrl;
+class ScsiBus;
 
 // Chip ID returned by the MESH cell inside the Heathrow ASIC
 #define HeathrowMESHID  4

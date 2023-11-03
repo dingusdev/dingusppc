@@ -22,7 +22,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @file Apple Desktop Bus Keyboard emulation. */
 
 #include <devices/common/adb/adbkeyboard.h>
+#include <devices/common/adb/adbbus.h>
 #include <devices/deviceregistry.h>
+#include <core/hostevents.h>
+#include <loguru.hpp>
 
 AdbKeyboard::AdbKeyboard(std::string name) : AdbDevice(name) {
     EventManager::get_instance()->add_keyboard_handler(this, &AdbKeyboard::event_handler);

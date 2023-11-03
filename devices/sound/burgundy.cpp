@@ -27,7 +27,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/sound/burgundy.h>
 #include <endianswap.h>
 #include <loguru.hpp>
-#include <memaccess.h>
 
 BurgundyCodec::BurgundyCodec(std::string name) : MacioSndCodec(name)
 {

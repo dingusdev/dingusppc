@@ -22,15 +22,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @file Constructs a TNT (Power Macintosh 7500, 8500 etc) machine. */
 
 #include <cpu/ppc/ppcemu.h>
-#include <devices/common/pci/bandit.h>
-#include <devices/ioctrl/macio.h>
+#include <devices/common/pci/pcihost.h>
+#include <devices/common/pci/pcidevice.h>
 #include <devices/memctrl/hammerhead.h>
 #include <loguru.hpp>
 #include <machines/machinebase.h>
 #include <machines/machinefactory.h>
 #include <machines/machineproperties.h>
 
-#include <memory>
 #include <string>
 
 int initialize_tnt(std::string& id)

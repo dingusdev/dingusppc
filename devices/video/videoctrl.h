@@ -24,12 +24,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef VIDEO_CTRL_H
 #define VIDEO_CTRL_H
 
-#include <core/hostevents.h>
-#include <devices/common/hwinterrupt.h>
 #include <devices/video/display.h>
 
 #include <cinttypes>
 #include <functional>
+
+class InterruptCtrl;
+class WindowEvent;
 
 class VideoCtrlBase {
 public:

@@ -24,13 +24,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SWIM3_H
 #define SWIM3_H
 
-#include <devices/common/dmacore.h>
 #include <devices/common/hwcomponent.h>
-#include <devices/common/hwinterrupt.h>
 #include <devices/floppy/superdrive.h>
 
 #include <cinttypes>
 #include <memory>
+
+class DmaBidirChannel;
+class InterruptCtrl;
 
 /** SWIM3 registers offsets. */
 namespace Swim3 {

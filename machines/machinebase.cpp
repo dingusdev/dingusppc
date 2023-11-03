@@ -24,7 +24,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <machines/machinebase.h>
 
 #include <map>
-#include <memory>
 #include <string>
 
 std::unique_ptr<MachineBase> gMachineObj = 0;

@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <core/timermanager.h>
 #include <devices/common/hwinterrupt.h>
 #include <devices/common/scsi/mesh.h>
+#include <devices/common/scsi/scsi.h>
 #include <devices/deviceregistry.h>
 #include <loguru.hpp>
 #include <machines/machinebase.h>

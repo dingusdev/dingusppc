@@ -24,19 +24,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef AMIC_H
 #define AMIC_H
 
+#include <devices/common/dmacore.h>
 #include <devices/common/hwinterrupt.h>
 #include <devices/common/mmiodevice.h>
-#include <devices/common/scsi/sc53c94.h>
-#include <devices/common/viacuda.h>
-#include <devices/ethernet/mace.h>
-#include <devices/floppy/swim3.h>
-#include <devices/serial/escc.h>
 #include <devices/sound/awacs.h>
 #include <devices/video/displayid.h>
 #include <devices/video/pdmonboard.h>
 
 #include <cinttypes>
 #include <memory>
+
+class EsccController;
+class MaceController;
+class Sc53C94;
+class ViaCuda;
+namespace Swim3 { class Swim3Ctrl; }
 
 /** Interrupt related constants. */
 

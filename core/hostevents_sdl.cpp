@@ -20,8 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <core/hostevents.h>
+#include <core/coresignal.h>
 #include <cpu/ppc/ppcemu.h>
-#include <loguru.hpp>
 #include <SDL.h>
 
 EventManager* EventManager::event_manager;

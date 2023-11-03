@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <core/timermanager.h>
 #include <devices/common/adb/adbdevice.h>
-#include <loguru.hpp>
+#include <devices/common/adb/adbbus.h>
 #include <machines/machinebase.h>
 
 AdbDevice::AdbDevice(std::string name) {

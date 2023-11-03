@@ -43,13 +43,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef VIACUDA_H
 #define VIACUDA_H
 
-#include <devices/common/adb/adbbus.h>
 #include <devices/common/hwcomponent.h>
-#include <devices/common/hwinterrupt.h>
 #include <devices/common/i2c/i2c.h>
 #include <devices/common/nvram.h>
 
 #include <memory>
+
+class AdbBus;
+class InterruptCtrl;
 
 #define VIA_CLOCK_HZ 783360
 

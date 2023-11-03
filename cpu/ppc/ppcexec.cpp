@@ -25,14 +25,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ppcmmu.h"
 
 #include <algorithm>
-#include <functional>
 #include <iostream>
 #include <map>
 #include <setjmp.h>
 #include <stdexcept>
 #include <stdio.h>
 #include <string>
-#include <unordered_map>
 
 using namespace std;
 using namespace dppc_interpreter;

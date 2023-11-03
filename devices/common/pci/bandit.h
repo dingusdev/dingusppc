@@ -124,7 +124,7 @@ public:
 
 private:
     uint32_t                    base_addr;
-    unique_ptr<BanditPciDevice> my_pci_device;
+    std::unique_ptr<BanditPciDevice> my_pci_device;
 };
 
 /**

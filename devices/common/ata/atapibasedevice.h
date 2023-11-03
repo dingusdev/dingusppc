@@ -25,7 +25,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define ATAPI_BASE_DEVICE_H
 
 #include <devices/common/ata/atabasedevice.h>
-#include <devices/common/ata/atadefs.h>
 
 #include <cinttypes>
 #include <string>
