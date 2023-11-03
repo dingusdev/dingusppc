@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <devices/common/ata/atadefs.h>
 #include <devices/common/ata/atapicdrom.h>
+#include <devices/common/ata/idechannel.h>
 #include <devices/common/scsi/scsi.h> // ATAPI CDROM reuses SCSI commands (sic!)
 #include <devices/deviceregistry.h>
 #include <machines/machinebase.h>
@@ -279,7 +280,7 @@ uint16_t AtapiCdrom::get_data() {
         // For Mode 1 CD-ROMs:
         int area_start;
         int area_end = 0;
-        
+
         ret_data = 0xffff;
 
         if (this->sector_areas & 0x80) {

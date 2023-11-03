@@ -22,14 +22,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef PCI_BRIDGE_H
 #define PCI_BRIDGE_H
 
-#include <devices/deviceregistry.h>
 #include <devices/common/pci/pcidevice.h>
 #include <devices/common/pci/pcihost.h>
 
 #include <cinttypes>
 #include <string>
-#include <unordered_map>
-#include <vector>
 
 /** PCI configuration space registers offsets */
 enum {

@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <core/timermanager.h>
 #include <devices/deviceregistry.h>
+#include <devices/common/dmacore.h>
 #include <devices/common/hwinterrupt.h>
 #include <devices/floppy/superdrive.h>
 #include <devices/floppy/swim3.h>
@@ -31,7 +32,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <machines/machineproperties.h>
 
 #include <cinttypes>
-#include <memory>
 #include <string>
 #include <vector>
 

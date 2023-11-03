@@ -26,18 +26,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <core/timermanager.h>
 #include <cpu/ppc/ppcemu.h>
 #include <debugger/debugger.h>
+#include <machines/machinebase.h>
 #include <machines/machinefactory.h>
-#include <machines/machineproperties.h>
 #include <utils/profiler.h>
 #include <main.h>
 
 #include <cinttypes>
 #include <csignal>
 #include <cstring>
-#include <fstream>
 #include <iostream>
-#include <sstream>
-#include <stdio.h>
 #include <CLI11.hpp>
 #include <loguru.hpp>
 

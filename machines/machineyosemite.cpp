@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/pci/dec21154.h>
 #include <devices/memctrl/mpc106.h>
 #include <devices/memctrl/spdram.h>
+#include <machines/machinebase.h>
 #include <machines/machinefactory.h>
 #include <machines/machineproperties.h>
 

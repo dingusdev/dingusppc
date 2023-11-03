@@ -22,13 +22,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @file PowerPC Memory Management Unit emulation. */
 
 #include <devices/memctrl/memctrlbase.h>
+#include <devices/common/mmiodevice.h>
 #include <memaccess.h>
 #include "ppcemu.h"
 #include "ppcmmu.h"
 
 #include <array>
 #include <cinttypes>
-#include <functional>
 #include <loguru.hpp>
 #include <stdexcept>
 

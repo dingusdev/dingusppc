@@ -24,10 +24,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef PDM_ONBOARD_H
 #define PDM_ONBOARD_H
 
-#include <devices/memctrl/hmc.h>
 #include <devices/video/videoctrl.h>
 
 #include <cinttypes>
+
+class HMC;
+class InterruptCtrl;
 
 #define PDM_VMODE_OFF   0x1F
 

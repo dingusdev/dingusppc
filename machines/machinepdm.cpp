@@ -25,7 +25,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <cpu/ppc/ppcemu.h>
+#include <devices/common/hwcomponent.h>
 #include <devices/common/machineid.h>
+#include <devices/common/mmiodevice.h>
 #include <devices/common/scsi/scsi.h>
 #include <devices/common/scsi/scsicdrom.h>
 #include <devices/common/scsi/scsihd.h>

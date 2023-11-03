@@ -20,7 +20,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <devices/common/pci/pcibridge.h>
-#include <memaccess.h>
+#include <devices/common/pci/pcidevice.h>
+#include <devices/common/pci/pcihost.h>
+#include <loguru.hpp>
 
 PCIBridge::PCIBridge(std::string name) : PCIDevice(name)
 {

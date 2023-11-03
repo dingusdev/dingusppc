@@ -24,12 +24,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef ADB_KEYBOARD_H
 #define ADB_KEYBOARD_H
 
-#include <core/hostevents.h>
 #include <devices/common/adb/adbdevice.h>
 #include <devices/common/hwcomponent.h>
 
 #include <memory>
 #include <string>
+
+class KeyboardEvent;
 
 class AdbKeyboard : public AdbDevice {
 public:

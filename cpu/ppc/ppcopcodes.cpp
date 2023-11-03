@@ -25,16 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <core/mathutils.h>
 #include "ppcemu.h"
 #include "ppcmmu.h"
-#include <array>
 #include <cinttypes>
-#include <cstring>
-#include <functional>
-#include <iostream>
-#include <stdexcept>
-#include <stdio.h>
-#include <stdlib.h>
-#include <loguru.hpp>
-#include <thread>
 #include <vector>
 
 uint32_t crf_d;

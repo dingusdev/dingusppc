@@ -29,12 +29,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SC_53C94_H
 #define SC_53C94_H
 
-#include <devices/common/dmacore.h>
 #include <devices/common/scsi/scsi.h>
-#include <devices/common/hwinterrupt.h>
 
 #include <cinttypes>
 #include <memory>
+
+class DmaBidirChannel;
+class InterruptCtrl;
 
 #define DATA_FIFO_MAX   16
 

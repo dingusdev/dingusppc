@@ -26,7 +26,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 #include <cstring>
-#include <memory>
 
 I2CProm::I2CProm(uint8_t dev_addr, int size)
 {

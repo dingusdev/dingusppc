@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <core/hostevents.h>
 #include <core/timermanager.h>
+#include <devices/common/adb/adbbus.h>
 #include <devices/common/hwinterrupt.h>
 #include <devices/common/viacuda.h>
 #include <devices/deviceregistry.h>
@@ -32,7 +33,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memaccess.h>
 
 #include <cinttypes>
-#include <memory>
 #include <string>
 #include <vector>
 

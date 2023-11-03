@@ -27,17 +27,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef MACHINE_FACTORY_H
 #define MACHINE_FACTORY_H
 
-#include <devices/deviceregistry.h>
-#include <machines/machinebase.h>
 #include <machines/machineproperties.h>
 
-#include <fstream>
-#include <functional>
 #include <map>
 #include <string>
 #include <vector>
 
 using namespace std;
+
+struct DeviceDescription;
 
 struct MachineDescription {
     string                  name;

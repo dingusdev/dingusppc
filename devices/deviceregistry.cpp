@@ -24,7 +24,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/deviceregistry.h>
 #include <devices/common/hwcomponent.h>
 
-#include <memory>
 #include <string>
 
 bool DeviceRegistry::add(const std::string name, DeviceDescription desc)

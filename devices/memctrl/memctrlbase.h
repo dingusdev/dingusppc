@@ -22,11 +22,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef MEMORY_CONTROLLER_BASE_H
 #define MEMORY_CONTROLLER_BASE_H
 
-#include <devices/common/mmiodevice.h>
-
 #include <cinttypes>
 #include <string>
 #include <vector>
+
+class MMIODevice;
 
 // Common DRAM capacities.
 enum {

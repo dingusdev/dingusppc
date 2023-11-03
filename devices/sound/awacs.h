@@ -28,14 +28,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef AWAC_H
 #define AWAC_H
 
-#include <devices/common/dmacore.h>
 #include <devices/common/hwcomponent.h>
 #include <devices/common/i2c/i2c.h>
-#include <devices/sound/soundserver.h>
 
 #include <cinttypes>
 #include <memory>
 #include <string>
+
+class DmaOutChannel;
+class SoundServer;
 
 /** Base class for the AWACs codecs. */
 class AwacsBase : public HWComponent {

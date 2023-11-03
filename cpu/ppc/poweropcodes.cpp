@@ -24,13 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "ppcemu.h"
 #include "ppcmmu.h"
-#include <array>
-#include <cmath>
-#include <iostream>
-#include <limits>
-#include <stdexcept>
-#include <stdio.h>
-#include <loguru.hpp>
+#include <stdint.h>
 
 // Affects the XER register's SO and OV Bits
 
@@ -158,7 +152,7 @@ void dppc_interpreter::power_lscbx() {
             //ppc_result_d = 0xFFFFFFFF;
             bitmask      = 0xFF000000;
             shift_amount = 24;
-        } 
+        }
         else {
             bitmask >>= 8;
             shift_amount -= 8;

@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     Author: Max Poliakovski
  */
 
+#include <devices/common/hwcomponent.h>
 #include <devices/deviceregistry.h>
 #include <devices/memctrl/memctrlbase.h>
 #include <devices/sound/soundserver.h>
@@ -36,11 +37,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <cstring>
 #include <fstream>
-#include <functional>
+#include <tuple>
 #include <iostream>
 #include <iomanip>
 #include <map>
-#include <memory>
 #include <string>
 #include <vector>
 

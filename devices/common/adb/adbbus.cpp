@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @file Apple Desktop Bus emulation. */
 
 #include <devices/common/adb/adbbus.h>
+#include <devices/common/adb/adbdevice.h>
 #include <devices/deviceregistry.h>
 #include <loguru.hpp>
 

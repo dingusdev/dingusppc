@@ -25,13 +25,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/scsi/scsihd.h>
 #include <devices/deviceregistry.h>
 #include <loguru.hpp>
-#include <machines/machinebase.h>
 #include <machines/machineproperties.h>
 #include <memaccess.h>
 
 #include <fstream>
 #include <cstring>
-#include <stdio.h>
 #include <sys/stat.h>
 
 #define HDD_SECTOR_SIZE 512

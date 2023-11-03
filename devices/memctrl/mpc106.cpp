@@ -22,17 +22,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** MPC106 (Grackle) emulation. */
 
 #include <devices/common/hwcomponent.h>
-#include <devices/common/mmiodevice.h>
 #include <devices/deviceregistry.h>
 #include <devices/memctrl/memctrlbase.h>
 #include <devices/memctrl/mpc106.h>
 #include <loguru.hpp>
-#include <memaccess.h>
 
 #include <cinttypes>
 #include <cstring>
 #include <string>
-#include <vector>
 
 MPC106::MPC106() : MemCtrlBase(), PCIDevice("Grackle"), PCIHost()
 {

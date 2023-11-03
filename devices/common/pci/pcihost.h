@@ -23,10 +23,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define PCI_HOST_H
 
 #include <core/bitops.h>
-#include <devices/deviceregistry.h>
 #include <endianswap.h>
 
-#include <array>
 #include <cinttypes>
 #include <string>
 #include <unordered_map>

@@ -26,10 +26,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <devices/memctrl/memctrlbase.h>
 
-#include <array>
 #include <cinttypes>
 #include <functional>
-#include <vector>
+
+class MMIODevice;
 
 /* Uncomment this to exhaustive MMU integrity checks. */
 //#define MMU_INTEGRITY_CHECKS

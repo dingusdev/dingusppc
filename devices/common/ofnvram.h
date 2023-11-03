@@ -24,14 +24,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef OF_NVRAM_H
 #define OF_NVRAM_H
 
-#include <devices/common/nvram.h>
-
 #include <cinttypes>
-#include <map>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
+
+class NVram;
 
 /** ========== Apple Open Firmware 1.x/2.x partition definitions. ========== */
 #define OF_NVRAM_OFFSET 0x1800

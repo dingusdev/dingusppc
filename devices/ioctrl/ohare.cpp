@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <cpu/ppc/ppcemu.h>
+#include <devices/deviceregistry.h>
 #include <devices/ioctrl/macio.h>
 #include <endianswap.h>
 #include <loguru.hpp>
