@@ -263,9 +263,16 @@ bool ScsiBus::pull_data(const int id, uint8_t* dst_ptr, const int size)
 
 bool ScsiBus::push_data(const int id, const uint8_t* src_ptr, const int size)
 {
-    if (!this->devices[id]->rcv_data(src_ptr, size)) {
-        LOG_F(ERROR, "ScsiBus: error while transferring I->T data!");
+    if (!this->devices[id]) {
+        LOG_F(ERROR, "%s: no device %d for push_data %d bytes", this->get_name().c_str(), id, size);
         return false;
+    }
+
+    if (!this->devices[id]->rcv_data(src_ptr, size)) {
+        if (size) {
+            LOG_F(ERROR, "%s: error while transferring I->T data!", this->get_name().c_str());
+            return false;
+        }
     }
 
     return true;
