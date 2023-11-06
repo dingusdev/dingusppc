@@ -135,10 +135,10 @@ bool IntProperty::check_val(uint32_t val)
 
 void BinProperty::set_string(string val)
 {
-    if ((val.compare("ON") == 0) || (val.compare("on") == 0)) {
+    if ((val.compare("ON") == 0) || (val.compare("on") == 0) || (val.compare("1") == 0) || (val.compare("yes") == 0)) {
         this->bin_val = 1;
         this->val = val;
-    } else if ((val.compare("OFF") == 0) || (val.compare("off") == 0)) {
+    } else if ((val.compare("OFF") == 0) || (val.compare("off") == 0) || (val.compare("0") == 0) || (val.compare("no") == 0)) {
         this->bin_val = 0;
         this->val = val;
     } else {
