@@ -31,7 +31,7 @@ void ScsiPhysDevice::notify(ScsiNotification notif_type, int param)
     if (notif_type == ScsiNotification::BUS_PHASE_CHANGE) {
         switch (param) {
         case ScsiPhase::RESET:
-            LOG_F(9, "device %d: bus reset aknowledged", this->scsi_id);
+            LOG_F(9, "device %d: bus reset acknowledged", this->scsi_id);
             break;
         case ScsiPhase::SELECTION:
             // check if something tries to select us
