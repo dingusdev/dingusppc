@@ -346,6 +346,8 @@ void PlatinumCtrl::insert_ram_dimm(int slot_num, uint32_t capacity) {
     }
 
     switch (capacity) {
+    case 0:
+        break;
     case DRAM_CAP_2MB:
     case DRAM_CAP_4MB:
     case DRAM_CAP_8MB:
