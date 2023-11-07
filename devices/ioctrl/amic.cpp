@@ -546,7 +546,6 @@ DmaPullResult AmicSndOutDma::pull_data(uint32_t req_len, uint32_t *avail_len,
         // if it's false stop delivering sound data
         // this will effectively stop audio playback
         if (this->snd_buf_num && !this->enabled) {
-            this->cur_buf_pos = 0;
             return DmaPullResult::NoMoreData;
         }
 
