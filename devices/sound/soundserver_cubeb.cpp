@@ -56,65 +56,6 @@ SoundServer::~SoundServer()
     this->shutdown();
 }
 
-#if 0
-int SoundServer::start()
-{
-    int err;
-
-    impl->status = SND_SERVER_DOWN;
-
-    impl->soundio = soundio_create();
-    if (!impl->soundio) {
-        LOG_F(ERROR, "Sound Server: out of memory");
-        return -1;
-    }
-
-    if ((err = soundio_connect(impl->soundio))) {
-        LOG_F(ERROR, "Unable to connect to backend: %s", soundio_strerror(err));
-        return -1;
-    }
-
-    LOG_F(INFO, "Connected to backend: %s", soundio_backend_name(soundio->current_backend));
-
-    soundio_flush_events(impl->soundio);
-
-    impl->status = SND_API_READY;
-
-    impl->out_dev_index = soundio_default_output_device_index(impl->soundio);
-    if (impl->out_dev_index < 0) {
-        LOG_F(ERROR, "Sound Server: no output device found");
-        return -1;
-    }
-
-    impl->out_device = soundio_get_output_device(this->soundio, this->out_dev_index);
-    if (!impl->out_device) {
-        LOG_F(ERROR, "Sound Server: out of memory");
-        return -1;
-    }
-
-    LOG_F(INFO, "Sound Server output device: %s", impl->out_device->name);
-
-    impl->status = SND_SERVER_UP;
-
-    return 0;
-}
-
-void SoundServer::shutdown()
-{
-    switch (impl->status) {
-    case SND_SERVER_UP:
-        soundio_device_unref(impl->out_device);
-        /* fall through */
-    case SND_API_READY:
-        soundio_destroy(impl->soundio);
-    }
-
-    impl->status = SND_SERVER_DOWN;
-
-    LOG_F(INFO, "Sound Server shut down.");
-}
-#endif
-
 int SoundServer::start()
 {
     int res;
