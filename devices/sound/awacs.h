@@ -51,6 +51,7 @@ public:
     void set_sample_rate(int sr_id);
     void dma_out_start();
     void dma_out_stop();
+    void dma_out_pause();
 
 protected:
     SoundServer     *snd_server; // SoundServer instance pointer
@@ -59,9 +60,10 @@ protected:
     int     *sr_table;  // pointer to the table of supported sample rates
     int     max_sr_id;  // maximum value for sample rate ID
 
-    bool    out_stream_ready = false;
-    int     cur_sample_rate  = -1;
-    int     out_sample_rate  = -1;
+    bool    out_stream_ready    = false;
+    bool    out_stream_running  = false;
+    int     cur_sample_rate     = -1;
+    int     out_sample_rate     = -1;
 };
 
 /** AWACs PDM-style sound codec. */

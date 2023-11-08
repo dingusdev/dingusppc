@@ -34,8 +34,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <loguru.hpp>
 
-AwacsBase::AwacsBase(std::string name)
-{
+AwacsBase::AwacsBase(std::string name) {
     supports_types(HWCompType::SND_CODEC);
 
     this->name = name;
@@ -46,8 +45,7 @@ AwacsBase::AwacsBase(std::string name)
     this->out_stream_ready = false;
 }
 
-void AwacsBase::set_sample_rate(int sr_id)
-{
+void AwacsBase::set_sample_rate(int sr_id) {
     if (sr_id > this->max_sr_id) {
         LOG_F(ERROR, "%s: invalid sample rate ID %d!", this->name.c_str(), sr_id);
     } else {
@@ -55,8 +53,7 @@ void AwacsBase::set_sample_rate(int sr_id)
     }
 };
 
-void AwacsBase::dma_out_start()
-{
+void AwacsBase::dma_out_start() {
     int     err;
     bool    reopen = false;
 
@@ -65,10 +62,11 @@ void AwacsBase::dma_out_start()
 
     if (reopen) {
         snd_server->close_out_stream();
-        this->out_stream_ready = false;
+        this->out_stream_ready   = false;
+        this->out_stream_running = false;
     }
 
-    if (!this->out_stream_ready || reopen) {
+    if (!this->out_stream_ready) {
         if ((err = this->snd_server->open_out_stream(this->cur_sample_rate,
             (void *)this->dma_out_ch))) {
             LOG_F(ERROR, "%s: unable to open sound output stream: %d",
@@ -76,26 +74,31 @@ void AwacsBase::dma_out_start()
             return;
         }
 
-        if ((err = snd_server->start_out_stream())) {
-            LOG_F(ERROR, "%s: could not start sound output stream", this->name.c_str());
-        }
-
         this->out_sample_rate  = this->cur_sample_rate;
         this->out_stream_ready = true;
     }
-}
 
-void AwacsBase::dma_out_stop()
-{
-    if (this->out_stream_ready) {
-        snd_server->close_out_stream();
-        this->out_stream_ready = false;
+    if (!this->out_stream_running) {
+        if ((err = snd_server->start_out_stream())) {
+            LOG_F(ERROR, "%s: could not start sound output stream", this->name.c_str());
+        }
     }
 }
 
+void AwacsBase::dma_out_stop() {
+    if (this->out_stream_ready) {
+        snd_server->close_out_stream();
+        this->out_stream_ready   = false;
+        this->out_stream_running = false;
+    }
+}
+
+void AwacsBase::dma_out_pause() {
+    this->out_stream_running = false;
+}
+
 //=========================== PDM-style AWACs =================================
-AwacDevicePdm::AwacDevicePdm() : AwacsBase("AWAC-PDM")
-{
+AwacDevicePdm::AwacDevicePdm() : AwacsBase("AWAC-PDM") {
     static int pdm_awac_freqs[3] = {22050, 29400, 44100};
 
     // PDM-style AWACs only supports three sample rates
@@ -103,14 +106,12 @@ AwacDevicePdm::AwacDevicePdm() : AwacsBase("AWAC-PDM")
     this->max_sr_id = 2;
 }
 
-uint32_t AwacDevicePdm::read_stat()
-{
+uint32_t AwacDevicePdm::read_stat() {
     // TODO: implement all other status bits
     return (AWAC_REV_AWACS << 12) | (AWAC_MAKER_CRYSTAL << 8);
 }
 
-void AwacDevicePdm::write_ctrl(uint32_t addr, uint16_t value)
-{
+void AwacDevicePdm::write_ctrl(uint32_t addr, uint16_t value) {
     if (addr <= 4) {
         this->ctrl_regs[addr] = value;
     } else {
@@ -120,8 +121,7 @@ void AwacDevicePdm::write_ctrl(uint32_t addr, uint16_t value)
 }
 
 //============================= Screamer AWACs ================================
-AwacsScreamer::AwacsScreamer(std::string name) : MacioSndCodec(name)
-{
+AwacsScreamer::AwacsScreamer(std::string name) : MacioSndCodec(name) {
     static int screamer_freqs[8] = {
         44100, 29400, 22050, 17640, 14700, 11025, 8820, 7350
     };
@@ -140,8 +140,7 @@ int AwacsScreamer::device_postinit() {
     return 0;
 }
 
-uint32_t AwacsScreamer::snd_ctrl_read(uint32_t offset, int size)
-{
+uint32_t AwacsScreamer::snd_ctrl_read(uint32_t offset, int size) {
     switch (offset) {
     case AWAC_SOUND_CTRL_REG:
         return this->snd_ctrl_reg;
@@ -156,8 +155,7 @@ uint32_t AwacsScreamer::snd_ctrl_read(uint32_t offset, int size)
     return 0;
 }
 
-void AwacsScreamer::snd_ctrl_write(uint32_t offset, uint32_t value, int size)
-{
+void AwacsScreamer::snd_ctrl_write(uint32_t offset, uint32_t value, int size) {
     int subframe, reg_num;
     uint16_t data;
 
