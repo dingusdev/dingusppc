@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <machines/machinebase.h>
 
 #include <map>
+#include <set>
 #include <string>
 
 std::unique_ptr<MachineBase> gMachineObj = 0;
@@ -79,9 +80,18 @@ HWComponent* MachineBase::get_comp_by_type(HWCompType type) {
 
 int MachineBase::postinit_devices()
 {
-    for (auto it = this->device_map.begin(); it != this->device_map.end(); it++) {
-        if (it->second->device_postinit()) {
-            return -1;
+    // Allow additional devices to be registered by device_postinit, in which
+    // case we'll initialize them too.
+    std::set<std::string> initialized_devices;
+    while (initialized_devices.size() < this->device_map.size()) {
+        for (auto it = this->device_map.begin(); it != this->device_map.end(); it++) {
+            if (initialized_devices.find(it->first) == initialized_devices.end()) {
+                if (it->second->device_postinit()) {
+                    LOG_F(ERROR, "Could not initialize device %s", it->first.c_str());
+                    return -1;
+                }
+                initialized_devices.insert(it->first);
+            }
         }
     }
 
