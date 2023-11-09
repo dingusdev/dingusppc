@@ -49,7 +49,7 @@ public:
     virtual void listen(const uint8_t dev_addr, const uint8_t reg_num);
     virtual uint8_t get_address() { return this->my_addr; };
 
-    // Attempts to oolls the device. Returns the talk command corresponding to
+    // Attempts to poll the device. Returns the talk command corresponding to
     // the device if it has data, 0 otherwise.
     uint8_t poll();
 
