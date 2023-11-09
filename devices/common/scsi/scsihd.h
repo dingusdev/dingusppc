@@ -45,10 +45,10 @@ public:
     bool prepare_data();
 
 protected:
-    int test_unit_ready();
-    int req_sense(uint16_t alloc_len);
-    int send_diagnostic();
-    int mode_select_6(uint8_t param_len);
+    int  test_unit_ready();
+    int  req_sense(uint16_t alloc_len);
+    int  send_diagnostic();
+    void mode_select_6(uint8_t param_len);
 
     void mode_sense_6();
     void format();
@@ -69,9 +69,9 @@ private:
 
     char            img_buffer[1 << 21]; // TODO: add proper buffer management!
 
-    uint32_t    cur_buf_cnt = 0;
-    uint8_t     error = ScsiError::NO_ERROR;
-    uint8_t     msg_code = 0;
+    uint32_t        cur_buf_cnt = 0;
+    uint8_t         error = ScsiError::NO_ERROR;
+    uint8_t         msg_code = 0;
 
     //inquiry info
     char vendor_info[8] = {'D', 'i', 'n', 'g', 'u', 's', 'D', '\0'};

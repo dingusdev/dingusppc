@@ -89,7 +89,7 @@ enum ScsiCommand : uint8_t {
     TEST_UNIT_READY              = 0x00,
     REWIND                       = 0x01,
     REQ_SENSE                    = 0x03,
-    FORMAT                       = 0x04,
+    FORMAT_UNIT                  = 0x04,
     READ_BLK_LIMITS              = 0x05,
     READ_6                       = 0x08,
     WRITE_6                      = 0x0A,

@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Generic SCSI Hard Disk emulation. */
 
+#include <core/timermanager.h>
 #include <devices/common/scsi/scsi.h>
 #include <devices/common/scsi/scsihd.h>
 #include <devices/deviceregistry.h>
@@ -43,7 +44,7 @@ void ScsiHardDisk::insert_image(std::string filename) {
     //We don't want to store everything in memory, but
     //we want to keep the hard disk available.
     if (!this->hdd_img.open(filename))
-        ABORT_F("SCSI-HD: could not determine file size using stat()");
+        ABORT_F("SCSI-HD: could not open image file %s", filename.c_str());
 
     this->img_size = this->hdd_img.size();
     this->total_blocks = (this->img_size + HDD_SECTOR_SIZE - 1) / HDD_SECTOR_SIZE;
@@ -53,7 +54,6 @@ void ScsiHardDisk::process_command() {
     uint32_t lba          = 0;
     uint16_t transfer_len = 0;
     uint16_t alloc_len    = 0;
-    uint8_t  param_len    = 0;
 
     uint8_t  page_code    = 0;
     uint8_t  subpage_code = 0;
@@ -77,6 +77,9 @@ void ScsiHardDisk::process_command() {
     case ScsiCommand::REQ_SENSE:
         alloc_len = cmd[4];
         req_sense(alloc_len);
+        break;
+    case ScsiCommand::FORMAT_UNIT:
+        this->format();
         break;
     case ScsiCommand::INQUIRY:
         this->inquiry();
@@ -107,8 +110,7 @@ void ScsiHardDisk::process_command() {
         seek(lba);
         break;
     case ScsiCommand::MODE_SELECT_6:
-        param_len = cmd[4];
-        mode_select_6(param_len);
+        mode_select_6(cmd[4]);
         break;
     case ScsiCommand::MODE_SENSE_6:
         this->mode_sense_6();
@@ -200,14 +202,21 @@ int ScsiHardDisk::send_diagnostic() {
     return 0x0;
 }
 
-int ScsiHardDisk::mode_select_6(uint8_t param_len) {
-    if (param_len == 0) {
-        return 0x0;
+void ScsiHardDisk::mode_select_6(uint8_t param_len) {
+    if (!param_len) {
+        this->switch_phase(ScsiPhase::STATUS);
+        return;
     }
-    else {
-        LOG_F(WARNING, "Mode Select calling for param length of: %d", param_len);
-        return param_len;
-    }
+
+    this->incoming_size = param_len;
+
+    std::memset(&this->img_buffer[0], 0xDD, HDD_SECTOR_SIZE);
+
+    this->post_xfer_action = [this]() {
+        // TODO: parse the received mode parameter list here
+    };
+
+    this->switch_phase(ScsiPhase::DATA_OUT);
 }
 
 static char Apple_Copyright_Page_Data[] = "APPLE COMPUTER, INC   ";
@@ -234,6 +243,10 @@ void ScsiHardDisk::mode_sense_6() {
     this->img_buffer[12] = page_code;
 
     switch(page_code) {
+    case 1: // read-write error recovery page
+        this->img_buffer[13] = 6; // data size - 1
+        std::memset(&this->img_buffer[14], 0, 6);
+        break;
     case 3: // Format device page
         this->img_buffer[13] = 22; // data size - 1
         std::memset(&this->img_buffer[14], 0, 22);
@@ -291,6 +304,14 @@ void ScsiHardDisk::read_capacity_10() {
 
 
 void ScsiHardDisk::format() {
+    LOG_F(WARNING, "SCSI-HD: attempt to format the disk!");
+
+    if (this->cmd_buf[1] & 0x10)
+        ABORT_F("SCSI-HD: defect list isn't supported yet");
+
+    TimerManager::get_instance()->add_oneshot_timer(NS_PER_SEC, [this]() {
+        this->switch_phase(ScsiPhase::STATUS);
+    });
 }
 
 void ScsiHardDisk::read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
