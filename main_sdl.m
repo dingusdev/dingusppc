@@ -19,29 +19,22 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/** @file SDL-specific main functions. */
+#include <Cocoa/Cocoa.h>
 
-#include <main.h>
-#include <loguru.hpp>
-#include <SDL.h>
+/** @file SDL-specific main function additions for macOS hosts. */
 
-#ifdef __APPLE__
-extern "C" void remap_appkit_menu_shortcuts();
-#endif
-
-bool init() {
-    if (SDL_Init(SDL_INIT_VIDEO)) {
-        LOG_F(ERROR, "SDL_Init error: %s", SDL_GetError());
-        return false;
+// Replace Command shortcuts with Control shortcuts in the menu bar, so that
+// they're not going to conflict with ones in the guest OS (but we still allow
+// some of them to be used in the host OS, e.g. Control+Q to quit).
+void remap_appkit_menu_shortcuts(void) {
+    for (NSMenuItem *menuItem in [NSApp mainMenu].itemArray) {
+        if (menuItem.hasSubmenu) {
+            for (NSMenuItem *item in menuItem.submenu.itemArray) {
+                if (item.keyEquivalentModifierMask & NSEventModifierFlagCommand) {
+                    item.keyEquivalentModifierMask &= ~NSEventModifierFlagCommand;
+                    item.keyEquivalentModifierMask |= NSEventModifierFlagControl;
+                }
+            }
+        }
     }
-
-#ifdef __APPLE__
-    remap_appkit_menu_shortcuts();
-#endif
-
-    return true;
-}
-
-void cleanup() {
-    SDL_Quit();
 }
