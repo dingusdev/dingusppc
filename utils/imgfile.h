@@ -19,33 +19,31 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/** @file ATA hard disk definitions. */
+/** @file Image file abstraction for floppy, hard drive and CD-ROM images
+ * (implemented on each platform). */
 
-#ifndef ATA_HARD_DISK_H
-#define ATA_HARD_DISK_H
+#ifndef IMGFILE_H
+#define IMGFILE_H
 
-#include <devices/common/ata/atabasedevice.h>
-#include <utils/imgfile.h>
-
+#include <cstddef>
+#include <memory>
 #include <string>
 
-#define ATA_HD_SEC_SIZE 512
-
-class AtaHardDisk : public AtaBaseDevice
-{
+class ImgFile {
 public:
-    AtaHardDisk();
-    ~AtaHardDisk() = default;
+    ImgFile();
+    ~ImgFile();
 
-    void insert_image(std::string filename);
-    int perform_command() override;
+    bool open(const std::string& img_path);
+    void close();
 
+    size_t size() const;
+
+    size_t read(void* buf, off_t offset, size_t length) const;
+    size_t write(const void* buf, off_t offset, size_t length);
 private:
-    ImgFile         hdd_img;
-    uint64_t img_size;
-    char * buffer = new char[1 <<17];
-
-    uint8_t hd_id_data[ATA_HD_SEC_SIZE] = {};
+    class Impl; // Holds private fields
+    std::unique_ptr<Impl> impl;
 };
 
-#endif // ATA_HARD_DISK_H
+#endif // IMGFILE_H

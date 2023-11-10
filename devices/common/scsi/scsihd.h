@@ -25,9 +25,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define SCSI_HD_H
 
 #include <devices/common/scsi/scsi.h>
+#include <utils/imgfile.h>
 
 #include <cinttypes>
-#include <fstream>
 #include <memory>
 #include <string>
 
@@ -60,7 +60,7 @@ protected:
     void rewind();
 
 private:
-    std::fstream    hdd_img;
+    ImgFile         hdd_img;
     uint64_t        img_size;
     int             total_blocks;
     uint64_t        file_offset = 0;

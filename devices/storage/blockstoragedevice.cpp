@@ -23,8 +23,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <devices/storage/blockstoragedevice.h>
 
-#include <sys/stat.h>
-
 using namespace std;
 
 BlockStorageDevice::BlockStorageDevice(const uint32_t cache_blocks, const uint32_t block_size) {
@@ -36,21 +34,17 @@ BlockStorageDevice::BlockStorageDevice(const uint32_t cache_blocks, const uint32
 }
 
 BlockStorageDevice::~BlockStorageDevice() {
-    if (this->img_file)
-        this->img_file.close();
+    this->img_file.close();
 }
 
 int BlockStorageDevice::set_host_file(std::string file_path) {
     this->is_ready = false;
 
-    this->img_file.open(file_path, ios::out | ios::in | ios::binary);
-
-    struct stat stat_buf;
-    int rc = stat(file_path.c_str(), &stat_buf);
-    if (rc)
+    if (!this->img_file.open(file_path)) {
         return -1;
+    }
 
-    this->size_bytes  = stat_buf.st_size;
+    this->size_bytes  = this->img_file.size();
     this->size_blocks = this->size_bytes / this->block_size;
     this->set_fpos(0);
 
@@ -61,7 +55,6 @@ int BlockStorageDevice::set_host_file(std::string file_path) {
 
 int BlockStorageDevice::set_fpos(const uint32_t lba) {
     this->cur_fpos = lba * this->block_size;
-    this->img_file.seekg(this->cur_fpos, this->img_file.beg);
     return 0;
 }
 
@@ -75,7 +68,7 @@ int BlockStorageDevice::read_begin(int nblocks, uint32_t max_len) {
         this->remain_size = 0;
     }
 
-    this->img_file.read(this->data_cache.get(), read_size);
+    this->img_file.read(this->data_cache.get(), this->cur_fpos, read_size);
     this->cur_fpos += read_size;
 
     return read_size;
@@ -95,7 +88,7 @@ int BlockStorageDevice::read_more() {
         this->remain_size = 0;
     }
 
-    this->img_file.read(this->data_cache.get(), read_size);
+    this->img_file.read(this->data_cache.get(), this->cur_fpos, read_size);
     this->cur_fpos += read_size;
 
     return read_size;

@@ -24,8 +24,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef BLOCK_STORAGE_DEVICE_H
 #define BLOCK_STORAGE_DEVICE_H
 
+#include <utils/imgfile.h>
+
 #include <cinttypes>
-#include <fstream>
 #include <memory>
 #include <string>
 
@@ -45,7 +46,7 @@ public:
     int write_begin(char *buf, int nblocks);
 
 protected:
-    std::fstream    img_file     = {};
+    ImgFile         img_file;
     uint64_t        size_bytes   = 0;   // image file size in bytes
     uint64_t        size_blocks  = 0;   // image file size in blocks
     uint64_t        cur_fpos     = 0;   // current image file pointer position

@@ -30,7 +30,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 #include <cstring>
-#include <sys/stat.h>
 
 using namespace std;
 
@@ -50,25 +49,20 @@ ScsiCdrom::ScsiCdrom(int my_id) : ScsiDevice(my_id)
 
 void ScsiCdrom::insert_image(std::string filename)
 {
-    this->cdr_img.open(filename, ios::out | ios::in | ios::binary);
-
-    struct stat stat_buf;
-    int rc = stat(filename.c_str(), &stat_buf);
-    if (!rc) {
-        this->img_size = stat_buf.st_size;
-        this->total_frames = (this->img_size + this->sector_size - 1) / this->sector_size;
-
-        // create single track descriptor
-        this->tracks[0]  = {.trk_num = 1, .adr_ctrl = 0x14, .start_lba = 0};
-        this->num_tracks = 1;
-
-        // create Lead-out descriptor containing all data
-        this->tracks[1] = {.trk_num = LEAD_OUT_TRK_NUM, .adr_ctrl = 0x14,
-            .start_lba = static_cast<uint32_t>(this->total_frames)};
-    } else {
-        ABORT_F("SCSI-CDROM: could not determine file size using stat()");
+    if (!this->cdr_img.open(filename)) {
+        ABORT_F("SCSI-CDROM: could not open image file");
     }
-    this->cdr_img.seekg(0, std::ios_base::beg);
+
+    this->img_size = this->cdr_img.size();
+    this->total_frames = (this->img_size + this->sector_size - 1) / this->sector_size;
+
+    // create single track descriptor
+    this->tracks[0]  = {.trk_num = 1, .adr_ctrl = 0x14, .start_lba = 0};
+    this->num_tracks = 1;
+
+    // create Lead-out descriptor containing all data
+    this->tracks[1] = {.trk_num = LEAD_OUT_TRK_NUM, .adr_ctrl = 0x14,
+        .start_lba = static_cast<uint32_t>(this->total_frames)};
 }
 
 void ScsiCdrom::process_command()
@@ -155,8 +149,7 @@ void ScsiCdrom::read(const uint32_t lba, const uint16_t transfer_len, const uint
     transfer_size *= this->sector_size;
     uint64_t device_offset = lba * this->sector_size;
 
-    this->cdr_img.seekg(device_offset, this->cdr_img.beg);
-    this->cdr_img.read(this->data_buf, transfer_size);
+    this->cdr_img.read(this->data_buf, device_offset, transfer_size);
 
     this->bytes_out = transfer_size;
     this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;

@@ -24,7 +24,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/ata/atahd.h>
 
 #include <cstring>
-#include <sys/stat.h>
 #include <fstream>
 #include <string>
 #include <loguru.hpp>
@@ -35,16 +34,11 @@ AtaHardDisk::AtaHardDisk() : AtaBaseDevice("ATA-HD", DEVICE_TYPE_ATA) {
 }
 
 void AtaHardDisk::insert_image(std::string filename) {
-    this->hdd_img.open(filename, std::fstream::out | std::fstream::in | std::fstream::binary);
-
-    struct stat stat_buf;
-    int rc = stat(filename.c_str(), &stat_buf);
-    if (!rc) {
-        this->img_size = stat_buf.st_size;
-    } else {
-        ABORT_F("AtaHardDisk: could not determine file size using stat()");
+    if (!this->hdd_img.open(filename)) {
+        ABORT_F("AtaHardDisk: could not open image file");
     }
-    this->hdd_img.seekg(0, std::ios_base::beg);
+
+    this->img_size = this->hdd_img.size();
 }
 
 int AtaHardDisk::perform_command()
@@ -56,7 +50,6 @@ int AtaHardDisk::perform_command()
     case NOP:
         break;
     case RECALIBRATE:
-        hdd_img.seekg(0, std::ios::beg);
         this->r_error       = 0;
         this->r_cylinder_lo = 0;
         this->r_cylinder_hi = 0;
@@ -68,8 +61,7 @@ int AtaHardDisk::perform_command()
         uint32_t sector = (r_sect_num << 16);
         sector |= ((this->r_cylinder_lo) << 8) + (this->r_cylinder_hi);
         uint64_t offset = sector * ATA_HD_SEC_SIZE;
-        hdd_img.seekg(offset, std::ios::beg);
-        hdd_img.read(buffer, sec_count * ATA_HD_SEC_SIZE);
+        hdd_img.read(buffer, offset, sec_count * ATA_HD_SEC_SIZE);
         this->r_status &= ~DRQ;
     }
     break;
@@ -80,8 +72,7 @@ int AtaHardDisk::perform_command()
         uint32_t sector    = (r_sect_num << 16);
         sector |= ((this->r_cylinder_lo) << 8) + (this->r_cylinder_hi);
         uint64_t offset = sector * ATA_HD_SEC_SIZE;
-        hdd_img.seekg(offset, std::ios::beg);
-        hdd_img.write(buffer, sec_count * ATA_HD_SEC_SIZE);
+        hdd_img.write(buffer, offset, sec_count * ATA_HD_SEC_SIZE);
         this->r_status &= ~DRQ;
     }
     break;
