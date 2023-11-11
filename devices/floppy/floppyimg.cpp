@@ -311,7 +311,7 @@ FloppyImgConverter* open_floppy_image(std::string& img_path)
         fconv = new RawFloppyImg(img_path);
     }
 
-    if (fconv->calc_phys_params()) {
+    if (fconv && fconv->calc_phys_params()) {
         delete fconv;
         return nullptr;
     }
