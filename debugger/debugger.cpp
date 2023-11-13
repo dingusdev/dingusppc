@@ -53,7 +53,7 @@ using namespace std;
 
 static uint32_t str2addr(string& addr_str) {
     try {
-        return (uint32_t)stoul(addr_str, NULL, 0);
+        return static_cast<uint32_t>(stoul(addr_str, NULL, 0));
     } catch (invalid_argument& exc) {
         throw invalid_argument(string("Cannot convert ") + addr_str);
     }
@@ -61,7 +61,7 @@ static uint32_t str2addr(string& addr_str) {
 
 static uint32_t str2num(string& num_str) {
     try {
-        return (uint32_t)stol(num_str, NULL, 0);
+        return static_cast<uint32_t>(stol(num_str, NULL, 0));
     } catch (invalid_argument& exc) {
         throw invalid_argument(string("Cannot convert ") + num_str);
     }
@@ -142,7 +142,7 @@ static uint32_t disasm_68k(uint32_t count, uint32_t address) {
             cout << uppercase << hex << insn->address << "    ";
             cout << setfill(' ');
             cout << setw(10) << left << insn->mnemonic << insn->op_str << endl;
-            address = dis_addr;
+            address = static_cast<uint32_t>(dis_addr);
         } else {
 print_bin:
             cout << uppercase << hex << address << "    ";
@@ -168,7 +168,7 @@ void exec_single_68k()
 
     /* PPC r24 contains 68k PC advanced by two bytes
        as part of instruction prefetching */
-    cur_68k_pc = get_reg(string("R24")) - 2;
+    cur_68k_pc = static_cast<uint32_t>(get_reg(string("R24")) - 2);
 
     /* PPC r29 contains base address of the emulator opcode table */
     emu_table_virt = get_reg(string("R29")) & 0xFFF80000;
@@ -178,7 +178,7 @@ void exec_single_68k()
     cur_instr_tab_entry = mmu_read_vmem<uint16_t>(NO_OPCODE, cur_68k_pc) * 8 + emu_table_virt;
 
     /* grab the PPC PC too */
-    ppc_pc = get_reg(string("PC"));
+    ppc_pc = static_cast<uint32_t>(get_reg(string("PC")));
 
     //printf("cur_instr_tab_entry = %X\n", cur_instr_tab_entry);
 
@@ -187,7 +187,7 @@ void exec_single_68k()
        one by one until the execution goes outside the opcode table. */
     while (power_on && ppc_pc >= cur_instr_tab_entry && ppc_pc < cur_instr_tab_entry + 8) {
         ppc_exec_single();
-        ppc_pc = get_reg(string("PC"));
+        ppc_pc = static_cast<uint32_t>(get_reg(string("PC")));
     }
 
     /* Getting here means we're outside the emualtor opcode table.
@@ -655,7 +655,7 @@ void DppcDebugger::enter_debugger() {
             }
         } else if (cmd == "next" || cmd == "ni") {
             addr_str = "PC";
-            addr     = (uint32_t)get_reg(addr_str) + 4;
+            addr     = static_cast<uint32_t>(get_reg(addr_str) + 4);
             ppc_exec_until(addr);
         } else if (cmd == "until") {
             if (cmd_repeat) {
@@ -738,7 +738,7 @@ void DppcDebugger::enter_debugger() {
                         }
                         else {
                         addr_str = "R24";
-                            addr     = get_reg(addr_str) - 2;
+                            addr     = static_cast<uint32_t>(get_reg(addr_str) - 2);
                         }
                         next_addr_68k = disasm_68k(1, addr);
 #endif
@@ -749,7 +749,7 @@ void DppcDebugger::enter_debugger() {
                         }
                         else {
                         addr_str = "PC";
-                        addr     = (uint32_t)get_reg(addr_str);
+                            addr     = static_cast<uint32_t>(get_reg(addr_str));
                         }
                         next_addr_ppc = disasm(1, addr);
                     }
