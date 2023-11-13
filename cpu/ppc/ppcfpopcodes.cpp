@@ -998,8 +998,7 @@ void dppc_interpreter::ppc_fcmpo() {
         cmp_c |= (1 << CRx_bit::CR_EQ);
     }
 
-    ppc_state.fpscr &= ~(FPSCR::FPRF);
-    ppc_state.fpscr |= (cmp_c << 12);
+    ppc_state.fpscr = (cmp_c >> 16);
     ppc_state.cr = ((ppc_state.cr & ~(0xF0000000 >> crf_d)) | ((cmp_c) >> crf_d));
 
     if (std::isnan(db_test_a) || std::isnan(db_test_b)) {
@@ -1032,8 +1031,7 @@ void dppc_interpreter::ppc_fcmpu() {
         cmp_c |= (1 << CRx_bit::CR_EQ);
     }
 
-    ppc_state.fpscr &= ~(FPSCR::FPRF);
-    ppc_state.fpscr |= (cmp_c << 12);
+    ppc_state.fpscr = (cmp_c >> 16);
     ppc_state.cr = ((ppc_state.cr & ~(0xF0000000 >> crf_d)) | ((cmp_c) >> crf_d));
 
     //if (std::isnan(db_test_a) || std::isnan(db_test_b)) {
