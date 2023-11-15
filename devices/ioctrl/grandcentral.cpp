@@ -58,6 +58,7 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
     // initialize sound chip and its DMA output channel, then wire them together
     this->awacs       = std::unique_ptr<AwacsScreamer> (new AwacsScreamer());
     this->snd_out_dma = std::unique_ptr<DMAChannel> (new DMAChannel("snd_out"));
+    this->snd_out_dma->register_dma_int(this, this->register_dma_int(IntSrc::DMA_DAVBUS_Tx));
     this->awacs->set_dma_out(this->snd_out_dma.get());
     this->snd_out_dma->set_callbacks(
         std::bind(&AwacsScreamer::dma_out_start, this->awacs.get()),

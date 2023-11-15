@@ -70,6 +70,7 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
     // then wire everything together
     this->snd_codec   = dynamic_cast<MacioSndCodec*>(gMachineObj->get_comp_by_type(HWCompType::SND_CODEC));
     this->snd_out_dma = std::unique_ptr<DMAChannel> (new DMAChannel("snd_out"));
+    this->snd_out_dma->register_dma_int(this, this->register_dma_int(IntSrc::DMA_DAVBUS_Tx));
     this->snd_codec->set_dma_out(this->snd_out_dma.get());
     this->snd_out_dma->set_callbacks(
         std::bind(&AwacsScreamer::dma_out_start, this->snd_codec),
