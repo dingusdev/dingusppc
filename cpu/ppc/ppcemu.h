@@ -279,12 +279,13 @@ enum FPSCR : uint32_t {
 
 //for inf and nan checks
 enum FPOP : int {
-    DIV  = 0x12,
-    SUB  = 0x14,
-    ADD  = 0x15,
-    MUL   = 0x19,
-    FMSUB = 0x1C,
-    FMADD = 0x1D,
+    DIV    = 0x12,
+    SUB    = 0x14,
+    ADD    = 0x15,
+    SQRT   = 0x16,
+    MUL    = 0x19,
+    FMSUB  = 0x1C,
+    FMADD  = 0x1D,
     FNMSUB = 0x1E,
     FNMADD = 0x1F,
 };

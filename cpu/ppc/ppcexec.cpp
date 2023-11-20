@@ -258,7 +258,7 @@ void ppc_opcode19() {
 }
 
 void ppc_opcode31() {
-    uint16_t subop_grab = (ppc_cur_instruction & 0x7FF) >> 1;
+    uint16_t subop_grab = (ppc_cur_instruction & 0x7FFUL) >> 1UL;
 
     rc_flag = ppc_cur_instruction & 0x1;
     oe_flag = ppc_cur_instruction & 0x400;
@@ -271,8 +271,8 @@ void ppc_opcode31() {
 }
 
 void ppc_opcode59() {
-    uint16_t subop_grab = (ppc_cur_instruction >> 1) & 0x1F;
-    rc_flag             = ppc_cur_instruction & 1;
+    uint16_t subop_grab = (ppc_cur_instruction & 0x3EUL) >> 1UL;
+    rc_flag             = ppc_cur_instruction & 0x1;
 #ifdef EXHAUSTIVE_DEBUG
     LOG_F(INFO, "Executing Opcode 59 table subopcode entry %n", (uint32_t)subop_grab);
 #endif    // EXHAUSTIVE_DEBUG
@@ -280,8 +280,8 @@ void ppc_opcode59() {
 }
 
 void ppc_opcode63() {
-    uint16_t subop_grab = (ppc_cur_instruction >> 1) & 0x3FF;
-    rc_flag             = ppc_cur_instruction & 1;
+    uint16_t subop_grab = (ppc_cur_instruction & 0x7FFUL) >> 1UL;
+    rc_flag             = ppc_cur_instruction & 0x1;
 #ifdef EXHAUSTIVE_DEBUG
     LOG_F(INFO, "Executing Opcode 63 table subopcode entry %n", (uint32_t)subop_grab);
 #endif    // EXHAUSTIVE_DEBUG
@@ -310,7 +310,7 @@ uint64_t process_events()
         // if there are no pending timers
         return g_icycles + 10000;
     }
-    return g_icycles + ((slice_ns + (1 << icnt_factor)) >> icnt_factor);
+    return g_icycles + ((slice_ns + (1ULL << icnt_factor)) >> icnt_factor);
 }
 
 void force_cycle_counter_reload()
