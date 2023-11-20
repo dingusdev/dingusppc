@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include <cinttypes>
 #include <cmath>
+#include <cfloat>
 #include <limits>
 
 // Used for FP calcs

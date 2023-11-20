@@ -26,7 +26,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ppcemu.h"
 #include "ppcmmu.h"
 #include <cinttypes>
-#include <cfloat>
 #include <vector>
 
 uint32_t crf_d;
