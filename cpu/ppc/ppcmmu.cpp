@@ -95,7 +95,7 @@ static BATResult mpc601_block_address_translation(uint32_t la)
     unsigned key;
 
     bool bat_hit    = false;
-    unsigned msr_pr = !!(ppc_state.msr & 0x4000);
+    unsigned msr_pr = !!(ppc_state.msr & MSR::PR);
 
     // I/O controller interface takes precedence over BAT in 601
     // Report BAT miss if T bit is set in the corresponding SR
@@ -139,7 +139,7 @@ static BATResult ppc_block_address_translation(uint32_t la)
     PPC_BAT_entry *bat_array;
 
     bool bat_hit    = false;
-    unsigned msr_pr = !!(ppc_state.msr & 0x4000);
+    unsigned msr_pr = !!(ppc_state.msr & MSR::PR);
 
     bat_array = (type == BATType::IBAT) ? ibat_array : dbat_array;
 
@@ -507,7 +507,7 @@ static TLBEntry* itlb2_refill(uint32_t guest_va)
     uint16_t flags = 0;
 
     /* instruction address translation if enabled */
-    if (ppc_state.msr & 0x20) {
+    if (ppc_state.msr & MSR::IR) {
         // attempt block address translation first
         if (is_601) {
             bat_res = mpc601_block_address_translation(guest_va);
@@ -524,8 +524,7 @@ static TLBEntry* itlb2_refill(uint32_t guest_va)
             flags |= TLBFlags::TLBE_FROM_BAT; // tell the world we come from
         } else {
             // page address translation
-            PATResult pat_res = page_address_translation(guest_va, true,
-                                                         !!(ppc_state.msr & 0x4000), 0);
+            PATResult pat_res = page_address_translation(guest_va, true, !!(ppc_state.msr & MSR::PR), 0);
             phys_addr = pat_res.phys;
             flags = TLBFlags::TLBE_FROM_PAT; // tell the world we come from
         }
@@ -563,7 +562,7 @@ static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write)
     const uint32_t tag = guest_va & ~0xFFFUL;
 
     /* data address translation if enabled */
-    if (ppc_state.msr & 0x10) {
+    if (ppc_state.msr & MSR::DR) {
         // attempt block address translation first
         if (is_601) {
             bat_res = mpc601_block_address_translation(guest_va);
@@ -587,8 +586,7 @@ static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write)
             }
         } else {
             // page address translation
-            PATResult pat_res = page_address_translation(guest_va, false,
-                                                         !!(ppc_state.msr & 0x4000), is_write);
+            PATResult pat_res = page_address_translation(guest_va, false, !!(ppc_state.msr & MSR::PR), is_write);
             phys_addr = pat_res.phys;
             flags = TLBFlags::TLBE_FROM_PAT; // tell the world we come from
             if (pat_res.prot <= 2 || pat_res.prot == 6) {
@@ -1154,8 +1152,7 @@ inline void mmu_write_vmem(uint32_t guest_va, T value)
         }
         if (!(tlb1_entry->flags & TLBFlags::PTE_SET_C)) {
             // perform full page address translation to update PTE.C bit
-            page_address_translation(guest_va, false,
-                                     !!(ppc_state.msr & 0x4000), true);
+            page_address_translation(guest_va, false, !!(ppc_state.msr & MSR::PR), true);
             tlb1_entry->flags |= TLBFlags::PTE_SET_C;
 
             // don't forget to update the secondary TLB as well
@@ -1193,8 +1190,7 @@ inline void mmu_write_vmem(uint32_t guest_va, T value)
 
         if (!(tlb2_entry->flags & TLBFlags::PTE_SET_C)) {
             // perform full page address translation to update PTE.C bit
-            page_address_translation(guest_va, false,
-                                     !!(ppc_state.msr & 0x4000), true);
+            page_address_translation(guest_va, false, !!(ppc_state.msr & MSR::PR), true);
             tlb2_entry->flags |= TLBFlags::PTE_SET_C;
         }
 
@@ -1594,7 +1590,7 @@ static uint32_t ppc_mmu_addr_translate(uint32_t la, int is_write)
     uint32_t pa; /* translated physical address */
 
     bool bat_hit    = false;
-    unsigned msr_pr = !!(ppc_state.msr & 0x4000);
+    unsigned msr_pr = !!(ppc_state.msr & MSR::PR);
 
     // Format: %XY
     // X - supervisor access bit, Y - problem/user access bit
@@ -1655,7 +1651,7 @@ static void mem_write_unaligned(uint32_t addr, uint32_t value, uint32_t size) {
         // Because such accesses suffer a performance penalty, they will be
         // presumably very rare so don't care much about performance.
         for (int i = 0; i < size; shift -= 8, addr++, phys_addr++, i++) {
-            if ((ppc_state.msr & 0x10) && (!i || !(addr & 0xFFF))) {
+            if ((ppc_state.msr & MSR::DR) && (!i || !(addr & 0xFFF))) {
                 phys_addr = ppc_mmu_addr_translate(addr, 1);
             }
 
@@ -1664,7 +1660,7 @@ static void mem_write_unaligned(uint32_t addr, uint32_t value, uint32_t size) {
         }
     } else {
         // data address translation if enabled
-        if (ppc_state.msr & 0x10) {
+        if (ppc_state.msr & MSR::DR) {
             addr = ppc_mmu_addr_translate(addr, 1);
         }
 
@@ -1758,7 +1754,7 @@ static uint32_t mem_grab_unaligned(uint32_t addr, uint32_t size) {
         // presumably very rare so don't care much about performance.
         for (int i = 0; i < size; addr++, phys_addr++, i++) {
             tlb_translate_addr(addr);
-            if ((ppc_state.msr & 0x10) && (!i || !(addr & 0xFFF))) {
+            if ((ppc_state.msr & MSR::DR) && (!i || !(addr & 0xFFF))) {
                 phys_addr = ppc_mmu_addr_translate(addr, 0);
             }
 
@@ -1769,7 +1765,7 @@ static uint32_t mem_grab_unaligned(uint32_t addr, uint32_t size) {
 
     } else {
         /* data address translation if enabled */
-        if (ppc_state.msr & 0x10) {
+        if (ppc_state.msr & MSR::DR) {
             addr = ppc_mmu_addr_translate(addr, 0);
         }
 
@@ -1791,7 +1787,7 @@ void mem_write_byte(uint32_t addr, uint8_t value) {
     mmu_write_vmem<uint8_t>(addr, value);
 
     /* data address translation if enabled */
-    if (ppc_state.msr & 0x10) {
+    if (ppc_state.msr & MSR::DR) {
         addr = ppc_mmu_addr_translate(addr, 1);
     }
 
@@ -1807,7 +1803,7 @@ void mem_write_word(uint32_t addr, uint16_t value) {
     }
 
     /* data address translation if enabled */
-    if (ppc_state.msr & 0x10) {
+    if (ppc_state.msr & MSR::DR) {
         addr = ppc_mmu_addr_translate(addr, 1);
     }
 
@@ -1823,7 +1819,7 @@ void mem_write_dword(uint32_t addr, uint32_t value) {
     }
 
     /* data address translation if enabled */
-    if (ppc_state.msr & 0x10) {
+    if (ppc_state.msr & MSR::DR) {
         addr = ppc_mmu_addr_translate(addr, 1);
     }
 
@@ -1838,7 +1834,7 @@ void mem_write_qword(uint32_t addr, uint64_t value) {
     }
 
     /* data address translation if enabled */
-    if (ppc_state.msr & 0x10) {
+    if (ppc_state.msr & MSR::DR) {
         addr = ppc_mmu_addr_translate(addr, 1);
     }
 
@@ -1850,7 +1846,7 @@ uint8_t mem_grab_byte(uint32_t addr) {
     tlb_translate_addr(addr);
 
     /* data address translation if enabled */
-    if (ppc_state.msr & 0x10) {
+    if (ppc_state.msr & MSR::DR) {
         addr = ppc_mmu_addr_translate(addr, 0);
     }
 
@@ -1865,7 +1861,7 @@ uint16_t mem_grab_word(uint32_t addr) {
     }
 
     /* data address translation if enabled */
-    if (ppc_state.msr & 0x10) {
+    if (ppc_state.msr & MSR::DR) {
         addr = ppc_mmu_addr_translate(addr, 0);
     }
 
@@ -1880,7 +1876,7 @@ uint32_t mem_grab_dword(uint32_t addr) {
     }
 
     /* data address translation if enabled */
-    if (ppc_state.msr & 0x10) {
+    if (ppc_state.msr & MSR::DR) {
         addr = ppc_mmu_addr_translate(addr, 0);
     }
 
@@ -1895,7 +1891,7 @@ uint64_t mem_grab_qword(uint32_t addr) {
     }
 
     /* data address translation if enabled */
-    if (ppc_state.msr & 0x10) {
+    if (ppc_state.msr & MSR::DR) {
         addr = ppc_mmu_addr_translate(addr, 0);
     }
 
@@ -1908,7 +1904,7 @@ static uint32_t mmu_instr_translation(uint32_t la)
     uint32_t pa; /* translated physical address */
 
     bool bat_hit    = false;
-    unsigned msr_pr = !!(ppc_state.msr & 0x4000);
+    unsigned msr_pr = !!(ppc_state.msr & MSR::PR);
 
     // Format: %XY
     // X - supervisor access bit, Y - problem/user access bit
@@ -1956,7 +1952,7 @@ uint8_t* quickinstruction_translate(uint32_t addr) {
 #endif
 
     /* perform instruction address translation if enabled */
-    if (ppc_state.msr & 0x20) {
+    if (ppc_state.msr & MSR::IR) {
         addr = mmu_instr_translation(addr);
     }
 

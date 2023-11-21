@@ -177,7 +177,7 @@ void ppc_fpu_off() {
 
 void ppc_assert_int() {
     int_pin = true;
-    if (ppc_state.msr & 0x8000) {
+    if (ppc_state.msr & MSR::EE) {
         LOG_F(5, "CPU ExtIntHandler called");
         ppc_exception_handler(Except_Type::EXC_EXT_INT, 0);
     } else {
@@ -813,9 +813,9 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, uint64_t tb_freq)
 
     if (is_601) {
         /* MPC601 sets MSR[ME] bit during hard reset / Power-On */
-        ppc_state.msr = 0x1040;
+        ppc_state.msr = (MSR::ME + MSR::IP);
     } else {
-        ppc_state.msr           = 0x40;
+        ppc_state.msr           = MSR::IP;
         ppc_state.spr[SPR::DEC] = 0xFFFFFFFFUL;
     }
 

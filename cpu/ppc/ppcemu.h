@@ -277,6 +277,24 @@ enum FPSCR : uint32_t {
     FX         = 0x80000000
 };
 
+enum MSR : int {
+    LE  = 0x1,  //little endian mode
+    RI  = 0x2,
+    DR  = 0x10,
+    IR  = 0x20,
+    IP  = 0x40,
+    FE1 = 0x100,
+    BE  = 0x200,
+    SE  = 0x400,
+    FE0 = 0x800,
+    ME  = 0x1000,
+    FP  = 0x2000,
+    PR  = 0x4000,
+    EE  = 0x8000, //external interrupt
+    ILE = 0x10000,
+    POW = 0x40000
+};
+
 //for inf and nan checks
 enum FPOP : int {
     DIV    = 0x12,

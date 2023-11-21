@@ -774,53 +774,57 @@ void dppc_interpreter::ppc_mtsr() {
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
-    if ((ppc_state.msr & 0x4000) == 0) {
-        reg_s                 = (ppc_cur_instruction >> 21) & 31;
-        grab_sr               = (ppc_cur_instruction >> 16) & 15;
-        ppc_state.sr[grab_sr] = ppc_state.gpr[reg_s];
-        mmu_pat_ctx_changed();
+    if (ppc_state.msr & MSR::PR) {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
     }
+    reg_s                 = (ppc_cur_instruction >> 21) & 31;
+    grab_sr               = (ppc_cur_instruction >> 16) & 15;
+    ppc_state.sr[grab_sr] = ppc_state.gpr[reg_s];
+    mmu_pat_ctx_changed();
 }
 
 void dppc_interpreter::ppc_mtsrin() {
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
-    if ((ppc_state.msr & 0x4000) == 0) {
-        ppc_grab_regssb();
-        grab_sr               = ppc_result_b >> 28;
-        ppc_state.sr[grab_sr] = ppc_result_d;
-        mmu_pat_ctx_changed();
+    if (ppc_state.msr & MSR::PR) {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
     }
+    ppc_grab_regssb();
+    grab_sr               = ppc_result_b >> 28;
+    ppc_state.sr[grab_sr] = ppc_result_d;
+    mmu_pat_ctx_changed();
 }
 
 void dppc_interpreter::ppc_mfsr() {
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
-    if ((ppc_state.msr & 0x4000) == 0) {
-        reg_d                = (ppc_cur_instruction >> 21) & 31;
-        grab_sr              = (ppc_cur_instruction >> 16) & 15;
-        ppc_state.gpr[reg_d] = ppc_state.sr[grab_sr];
+    if (ppc_state.msr & MSR::PR) {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
     }
+    reg_d                = (ppc_cur_instruction >> 21) & 31;
+    grab_sr              = (ppc_cur_instruction >> 16) & 15;
+    ppc_state.gpr[reg_d] = ppc_state.sr[grab_sr];
 }
 
 void dppc_interpreter::ppc_mfsrin() {
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
-    if ((ppc_state.msr & 0x4000) == 0) {
-        ppc_grab_regsdb();
-        grab_sr              = ppc_result_b >> 28;
-        ppc_state.gpr[reg_d] = ppc_state.sr[grab_sr];
+    if (ppc_state.msr & MSR::PR) {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
     }
+    ppc_grab_regsdb();
+    grab_sr              = ppc_result_b >> 28;
+    ppc_state.gpr[reg_d] = ppc_state.sr[grab_sr];
 }
 
 void dppc_interpreter::ppc_mfmsr() {
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
-    if (ppc_state.msr & 0x4000) {
+    if (ppc_state.msr & MSR::PR) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
     }
     reg_d                = (ppc_cur_instruction >> 21) & 31;
@@ -831,7 +835,7 @@ void dppc_interpreter::ppc_mtmsr() {
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
-    if (ppc_state.msr & 0x4000) {
+    if (ppc_state.msr & MSR::PR) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
     }
     reg_s         = (ppc_cur_instruction >> 21) & 31;
@@ -839,10 +843,10 @@ void dppc_interpreter::ppc_mtmsr() {
 
     // generate External Interrupt Exception
     // if CPU interrupt line is asserted
-    if (ppc_state.msr & 0x8000 && int_pin) {
+    if (ppc_state.msr & MSR::EE && int_pin) {
         //LOG_F(WARNING, "MTMSR: CPU INT pending, generate CPU exception");
         ppc_exception_handler(Except_Type::EXC_EXT_INT, 0);
-    } else if ((ppc_state.msr & 0x8000) && dec_exception_pending) {
+    } else if ((ppc_state.msr & MSR::EE) && dec_exception_pending) {
         dec_exception_pending = false;
         //LOG_F(WARNING, "MTMSR: decrementer exception triggered");
         ppc_exception_handler(Except_Type::EXC_DECR, 0);
@@ -896,7 +900,7 @@ static void trigger_decrementer_exception() {
     decrementer_timer_id = 0;
     dec_wr_value = -1;
     dec_wr_timestamp = get_virt_time_ns();
-    if (ppc_state.msr & 0x8000) {
+    if (ppc_state.msr & MSR::EE) {
         dec_exception_pending = false;
         //LOG_F(WARNING, "decrementer exception triggered");
         ppc_exception_handler(Except_Type::EXC_DECR, 0);
@@ -1426,14 +1430,14 @@ void dppc_interpreter::ppc_rfi() {
 
     // generate External Interrupt Exception
     // if CPU interrupt line is still asserted
-    if (ppc_state.msr & 0x8000 && int_pin) {
+    if (ppc_state.msr & MSR::EE && int_pin) {
         uint32_t save_srr0 = ppc_state.spr[SPR::SRR0] & 0xFFFFFFFCUL;
         ppc_exception_handler(Except_Type::EXC_EXT_INT, 0);
         ppc_state.spr[SPR::SRR0] = save_srr0;
         return;
     }
 
-    if ((ppc_state.msr & 0x8000) && dec_exception_pending) {
+    if ((ppc_state.msr & MSR::EE) && dec_exception_pending) {
         dec_exception_pending = false;
         //LOG_F(WARNING, "decrementer exception from rfi msr:0x%X", ppc_state.msr);
         uint32_t save_srr0 = ppc_state.spr[SPR::SRR0] & 0xFFFFFFFCUL;

@@ -408,6 +408,8 @@ void dppc_interpreter::ppc_fnmsub() {
     ppc_dblresult64_d = (val_reg_a * val_reg_c);
     ppc_dblresult64_d -= val_reg_b;
     ppc_dblresult64_d = -(ppc_dblresult64_d);
+    ppc_store_dfpresult_flt(reg_d);
+    fpresult_update(ppc_dblresult64_d, rc_flag);
 
     if (rc_flag)
         ppc_changecrf1(ppc_dblresult64_d);
