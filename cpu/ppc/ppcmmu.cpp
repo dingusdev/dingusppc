@@ -315,7 +315,7 @@ MapDmaResult mmu_map_dma_mem(uint32_t addr, uint32_t size, bool allow_mmio) {
     } else {
         cur_dma_rgn = mem_ctrl_instance->find_range(addr);
         if (!cur_dma_rgn || (addr + size) > cur_dma_rgn->end)
-            ABORT_F("SOS: DMA access to unmapped physical memory %08X!\n", addr);
+            ABORT_F("SOS: DMA access to unmapped physical memory %08X!", addr);
 
         last_dma_area = *cur_dma_rgn;
     }
