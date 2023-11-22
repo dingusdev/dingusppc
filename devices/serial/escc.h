@@ -31,6 +31,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memory>
 #include <string>
 
+class DmaBidirChannel;
+
 /** ESCC register positions */
 /* Please note that the registers below are provided
    by the Apple I/O controllers for accessing ESCC
@@ -130,6 +132,12 @@ public:
     uint8_t read(uint8_t reg_offset);
     void    write(uint8_t reg_offset, uint8_t value);
 
+    void dma_start();
+    void dma_stop();
+    void set_dma_channel(int ch_index, DmaBidirChannel *dma_ch) {
+        this->dma_ch[ch_index] = dma_ch;
+    };
+
 private:
     void reset();
     void write_internal(EsccChannel* ch, uint8_t value);
@@ -141,6 +149,8 @@ private:
 
     uint8_t master_int_cntrl;
     uint8_t int_vec;
+
+    DmaBidirChannel*    dma_ch[4];
 };
 
 #endif // ESCC_H
