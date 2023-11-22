@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -50,6 +50,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #endif
 
 using namespace std;
+
+#define COUTX uppercase << hex
+#define COUT0_X(w) setfill('0') << setw(w) << right << COUTX
+#define COUT016X COUT0_X(16)
+#define COUT08X COUT0_X(8)
+#define COUT04X COUT0_X(4)
 
 static uint32_t str2addr(string& addr_str) {
     try {
@@ -152,13 +158,13 @@ static uint32_t disasm_68k(uint32_t count, uint32_t address) {
         }
 
         if (cs_disasm_iter(cs_handle, &code_ptr, &code_size, &dis_addr, insn)) {
-            cout << uppercase << hex << insn->address << "    ";
+            cout << COUTX << insn->address << "    ";
             cout << setfill(' ');
             cout << setw(10) << left << insn->mnemonic << insn->op_str << endl;
             address = static_cast<uint32_t>(dis_addr);
         } else {
 print_bin:
-            cout << uppercase << hex << address << "    ";
+            cout << COUTX << address << "    ";
             cout << setfill(' ');
             cout << setw(10) << left << "dc.w" << "$" << hex <<
                 ((code[0] << 8) | code[1]) << endl;
@@ -233,21 +239,22 @@ void print_68k_regs()
 
     for (i = 0; i < 8; i++) {
         reg = "R" + to_string(i + 8);
-        cout << "D" << dec << i << " : " << uppercase << hex << get_reg(reg) << endl;
+        cout << "   D" << dec << i << " : " << COUT08X << get_reg(reg) << endl;
     }
 
     for (i = 0; i < 7; i++) {
         reg = "R" + to_string(i + 16);
-        cout << "A" << dec << i << " : " << uppercase << hex << get_reg(reg) << endl;
+        cout << "   A" << dec << i << " : " << COUT08X << get_reg(reg) << endl;
     }
 
-    cout << "A7 : " << uppercase << hex << get_reg(string("R1")) << endl;
+    cout << "   A7 : " << COUT08X << get_reg(string("R1")) << endl;
 
-    cout << "PC: " << uppercase << hex << get_reg(string("R24")) - 2 << endl;
+    cout << "   PC : " << COUT08X << get_reg(string("R24")) - 2 << endl;
 
-    cout << "SR: " << uppercase << hex << ((get_reg("R25") & 0xFF) << 8) << endl;
+    cout << "   SR : " << COUT08X << ((get_reg("R25") & 0xFF) << 8) << endl;
 
-    cout << "CCR: " << uppercase << hex << get_reg(string("R26")) << endl;
+    cout << "  CCR : " << COUT08X << get_reg(string("R26")) << endl;
+    cout << dec << setfill(' ');
 }
 
 #endif // ENABLE_68K_DEBUGGER
@@ -333,8 +340,7 @@ static void dump_mem(string& params) {
                 cout << (char)val;
                 chars_per_line += cell_size;
             } else {
-                cout << setw(cell_size * 2) << setfill('0') << right;
-                cout << uppercase << hex << val << "  ";
+                cout << COUT0_X(cell_size * 2) << val << "  ";
                 chars_per_line += cell_size * 2 + 2;
             }
         }
@@ -427,8 +433,8 @@ static uint32_t disasm(uint32_t count, uint32_t address) {
 
     for (int i = 0; power_on && i < count; i++) {
         ctx.instr_code = READ_DWORD_BE_A(mmu_translate_imem(ctx.instr_addr));
-        cout << setfill('0') << setw(8) << right << uppercase << hex << ctx.instr_addr;
-        cout << ": " << setfill('0') << setw(8) << right << uppercase << hex << ctx.instr_code;
+        cout << COUT08X << ctx.instr_addr;
+        cout << ": " << COUT08X << ctx.instr_code;
         cout << "    " << disassemble_single(&ctx) << setfill(' ') << left << endl;
     }
     return ctx.instr_addr;
@@ -442,7 +448,7 @@ static void print_gprs() {
         reg_name = "r" + to_string(i);
 
         cout << right << std::setw(5) << setfill(' ') << reg_name << " : " <<
-            setw(8) << setfill('0') << right << uppercase << hex << get_reg(reg_name) << setfill(' ');
+            COUT08X << get_reg(reg_name) << setfill(' ');
 
         if (i & 1) {
             cout << endl;
@@ -455,7 +461,7 @@ static void print_gprs() {
 
     for (auto &spr : sprs) {
         cout << right << std::setw(5) << setfill(' ') << spr << " : " <<
-            setw(8) << setfill('0') << uppercase << hex << get_reg(spr) << setfill(' ');
+            COUT08X << get_reg(spr) << setfill(' ');
 
         if (i & 1) {
             cout << endl;
@@ -472,11 +478,11 @@ static void print_fprs() {
     for (int i = 0; i < 32; i++) {
         reg_name = "f" + to_string(i);
         cout << right << std::setw(6) << setfill(' ') << reg_name << " : " <<
-            setw(16) << setfill('0') << right << uppercase << hex << ppc_state.fpr[i].int64_r <<
+            COUT016X << ppc_state.fpr[i].int64_r <<
             " = " << left << setfill(' ') << ppc_state.fpr[i].dbl64_r << endl;
     }
     cout << right << std::setw(6) << setfill(' ') << "fpscr" << " : " <<
-        setw(8) << setfill('0') << uppercase << hex << ppc_state.fpscr << setfill(' ') << endl;
+        COUT08X << ppc_state.fpscr << setfill(' ') << endl;
 }
 
 extern bool is_601;
