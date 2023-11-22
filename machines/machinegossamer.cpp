@@ -160,12 +160,14 @@ static const PropMap gossamer_settings = {
         new IntProperty(  0, vector<uint32_t>({0, 8, 16, 32, 64, 128, 256}))},
     {"emmo",
         new BinProperty(0)},
+    {"hdd_config",
+        new StrProperty("Ide0:0")},
     {"cdr_config",
         new StrProperty("Ide1:0")},
 };
 
 static vector<string> pmg3_devices = {
-    "Grackle", "ScreamerSnd", "Heathrow", "AtiRageGT", "AtapiCdrom"
+    "Grackle", "ScreamerSnd", "Heathrow", "AtiRageGT", "AtaHardDisk", "AtapiCdrom"
 };
 
 static const MachineDescription pmg3dt_descriptor = {
