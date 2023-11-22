@@ -123,6 +123,7 @@ private:
     uint32_t cmd_ptr        = 0;
     uint32_t queue_len      = 0;
     uint8_t* queue_data     = 0;
+    uint32_t res_count      = 0;
     uint32_t int_select     = 0;
     uint32_t branch_select  = 0;
     uint32_t wait_select    = 0;
