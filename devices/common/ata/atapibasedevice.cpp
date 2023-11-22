@@ -196,12 +196,6 @@ void AtapiBaseDevice::data_out_phase() {
     this->signal_data_ready();
 }
 
-void AtapiBaseDevice::signal_data_ready() {
-    this->r_status |= DRQ;
-    this->r_status &= ~BSY;
-    this->update_intrq(1);
-}
-
 void AtapiBaseDevice::present_status() {
     this->r_int_reason |= ATAPI_Int_Reason::IO;
     this->r_int_reason |= ATAPI_Int_Reason::CoD;

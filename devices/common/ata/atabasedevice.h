@@ -56,6 +56,7 @@ public:
     virtual void device_set_signature();
     void device_control(const uint8_t new_ctrl);
     void update_intrq(uint8_t new_intrq_state);
+    void signal_data_ready();
 
     bool has_data() {
         return data_ptr && xfer_cnt;

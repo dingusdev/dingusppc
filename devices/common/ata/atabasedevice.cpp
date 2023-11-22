@@ -151,3 +151,9 @@ void AtaBaseDevice::update_intrq(uint8_t new_intrq_state) {
     this->intrq_state = new_intrq_state;
     this->host_obj->report_intrq(new_intrq_state);
 }
+
+void AtaBaseDevice::signal_data_ready() {
+    this->r_status |= DRQ;
+    this->r_status &= ~BSY;
+    this->update_intrq(1);
+}

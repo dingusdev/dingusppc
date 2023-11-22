@@ -48,7 +48,6 @@ public:
 
     // methods with default implementation
     virtual void data_out_phase();
-    virtual void signal_data_ready();
     virtual void present_status();
 
 protected:
