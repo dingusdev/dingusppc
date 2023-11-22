@@ -162,7 +162,6 @@ int AtapiBaseDevice::perform_command() {
         this->data_buf[0] = 0xC0;
         this->data_buf[1] = 0x85;
         this->data_ptr = (uint16_t *)this->data_buf;
-        this->data_pos = 0;
         this->xfer_cnt = 512;
         this->status_expected = false;
         this->data_out_phase();

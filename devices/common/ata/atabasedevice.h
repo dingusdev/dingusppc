@@ -90,7 +90,6 @@ protected:
 
     uint16_t    *data_ptr = nullptr;
     uint8_t     data_buf[512] = {};
-    int         data_pos  = 0;
     int         xfer_cnt  = 0;
 };
 

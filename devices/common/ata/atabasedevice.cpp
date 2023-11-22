@@ -62,8 +62,16 @@ void AtaBaseDevice::device_set_signature() {
 uint16_t AtaBaseDevice::read(const uint8_t reg_addr) {
     switch (reg_addr) {
     case ATA_Reg::DATA:
-        LOG_F(WARNING, "Retrieving data from %s", this->name.c_str());
-        return 0xFFFFU;
+        if (this->has_data()) {
+            uint16_t ret_data = this->get_data();
+            this->xfer_cnt -= 2;
+            if (this->xfer_cnt <= 0) {
+                this->r_status &= ~DRQ;
+            }
+            return ret_data;
+        } else {
+            return 0xFFFFU;
+        }
     case ATA_Reg::ERROR:
         return this->r_error;
     case ATA_Reg::SEC_COUNT:
@@ -77,7 +85,7 @@ uint16_t AtaBaseDevice::read(const uint8_t reg_addr) {
     case ATA_Reg::DEVICE_HEAD:
         return this->r_dev_head;
     case ATA_Reg::STATUS:
-        // TODO: clear pending interrupt
+        this->update_intrq(0);
         return this->r_status;
     case ATA_Reg::ALT_STATUS:
         return this->r_status;
@@ -90,7 +98,8 @@ uint16_t AtaBaseDevice::read(const uint8_t reg_addr) {
 void AtaBaseDevice::write(const uint8_t reg_addr, const uint16_t value) {
     switch (reg_addr) {
     case ATA_Reg::DATA:
-        LOG_F(WARNING, "Pushing data to %s", this->name.c_str());
+        if (this->has_data())
+            LOG_F(WARNING, "Pushing data to %s", this->name.c_str());
         break;
     case ATA_Reg::FEATURES:
         this->r_features = value;
