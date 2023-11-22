@@ -36,6 +36,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 
 class DmaOutChannel;
+class DmaInChannel;
 class SoundServer;
 
 /** Base class for the AWACs codecs. */
@@ -48,14 +49,24 @@ public:
         this->dma_out_ch = dma_out_ch;
     };
 
+    void set_dma_in(DmaInChannel *dma_in_ch) {
+        this->dma_in_ch = dma_in_ch;
+    };
+
     void set_sample_rate(int sr_id);
     void dma_out_start();
     void dma_out_stop();
     void dma_out_pause();
+    void dma_in_start();
+    void dma_in_stop();
+    void dma_in_pause();
+    void dma_in_data();
 
 protected:
     SoundServer     *snd_server; // SoundServer instance pointer
     DmaOutChannel   *dma_out_ch; // DMA output channel instance pointer
+    DmaInChannel    *dma_in_ch; // DMA input channel instance pointer
+    uint32_t        dma_in_timer_id = 0;
 
     int     *sr_table;  // pointer to the table of supported sample rates
     int     max_sr_id;  // maximum value for sample rate ID

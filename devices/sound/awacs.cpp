@@ -26,9 +26,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     - Screamer AWACs in Beige G3
 */
 
+#include <core/timermanager.h>
 #include <devices/deviceregistry.h>
 #include <devices/sound/awacs.h>
 #include <devices/sound/soundserver.h>
+#include <devices/common/dbdma.h>
 #include <endianswap.h>
 #include <machines/machinebase.h>
 
@@ -95,6 +97,49 @@ void AwacsBase::dma_out_stop() {
 
 void AwacsBase::dma_out_pause() {
     this->out_stream_running = false;
+}
+
+static const char sound_input_data[2048] = {0};
+static int sound_in_status = 0x10;
+
+void AwacsBase::dma_in_data()
+{
+    // transfer data from sound input device
+    this->dma_in_ch->push_data(sound_input_data, sizeof(sound_input_data));
+
+    if (dma_in_ch->is_in_active()) {
+        auto dbdma_ch = dynamic_cast<DMAChannel*>(dma_in_ch);
+        sound_in_status <<= 1;
+        if (!sound_in_status)
+            sound_in_status = 1;
+        dbdma_ch->set_stat(sound_in_status);
+        LOG_F(INFO, "%s: status:%x", this->name.c_str(), sound_in_status);
+
+        this->dma_in_timer_id = TimerManager::get_instance()->add_oneshot_timer(
+            10000,
+            [this]() {
+                // re-enter the sequencer with the state specified in next_state
+                this->dma_in_timer_id = 0;
+                this->dma_in_data();
+        });
+    }
+}
+
+void AwacsBase::dma_in_start() {
+    LOG_F(ERROR, "%s: dma_in_start", this->name.c_str());
+    dma_in_data();
+}
+
+void AwacsBase::dma_in_stop() {
+    if (this->dma_in_timer_id) {
+        TimerManager::get_instance()->cancel_timer(this->dma_in_timer_id);
+        this->dma_in_timer_id = 0;
+    }
+    LOG_F(ERROR, "%s: dma_in_stop", this->name.c_str());
+}
+
+void AwacsBase::dma_in_pause() {
+    LOG_F(ERROR, "%s: dma_in_pause", this->name.c_str());
 }
 
 //=========================== PDM-style AWACs =================================
