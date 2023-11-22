@@ -79,6 +79,11 @@ enum ATAPI_Features : uint8_t {
     OVERLAP = 1 << 1
 };
 
+/** Device/Head register bits. */
+enum ATA_Dev_Head : uint8_t {
+    LBA     = 1 << 6,
+};
+
 /** Status register bits. */
 enum ATA_Status : uint8_t {
     ERR  = 0x01,
