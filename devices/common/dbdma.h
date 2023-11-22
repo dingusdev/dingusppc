@@ -91,6 +91,7 @@ public:
     void set_callbacks(DbdmaCallback start_cb, DbdmaCallback stop_cb);
     uint32_t reg_read(uint32_t offset, int size);
     void reg_write(uint32_t offset, uint32_t value, int size);
+    void set_stat(uint8_t new_stat) { this->ch_stat = (this->ch_stat & 0xff00) | new_stat; }
 
     bool            is_out_active();
     bool            is_in_active();
