@@ -83,6 +83,13 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
         std::bind(&AwacsScreamer::dma_out_start, this->awacs.get()),
         std::bind(&AwacsScreamer::dma_out_stop, this->awacs.get())
     );
+    this->snd_in_dma = std::unique_ptr<DMAChannel> (new DMAChannel("snd_in"));
+    this->snd_in_dma->register_dma_int(this, this->register_dma_int(IntSrc::DMA_DAVBUS_Rx));
+    this->awacs->set_dma_in(this->snd_in_dma.get());
+    this->snd_in_dma->set_callbacks(
+        std::bind(&AwacsScreamer::dma_in_start, this->awacs.get()),
+        std::bind(&AwacsScreamer::dma_in_stop, this->awacs.get())
+    );
 
     // connect serial HW
     this->escc = dynamic_cast<EsccController*>(gMachineObj->get_comp_by_name("Escc"));
@@ -201,6 +208,9 @@ uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
             return this->floppy_dma->reg_read(offset & 0xFF, size);
         case MIO_GC_DMA_AUDIO_OUT:
             return this->snd_out_dma->reg_read(offset & 0xFF, size);
+        case MIO_GC_DMA_AUDIO_IN:
+            //LOG_F(WARNING, "%s: Unsupported DMA channel MIO_GC_DMA_AUDIO_IN read  @%02x.%c", this->name.c_str(), offset & 0xFF, SIZE_ARG(size));
+            return 0; // this->snd_in_dma->reg_read(offset & 0xFF, size);
         case MIO_GC_DMA_SCSI_MESH:
             return this->mesh_dma->reg_read(offset & 0xFF, size);
         default:
@@ -300,6 +310,10 @@ void GrandCentral::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
             break;
         case MIO_GC_DMA_AUDIO_OUT:
             this->snd_out_dma->reg_write(offset & 0xFF, value, size);
+            break;
+        case MIO_GC_DMA_AUDIO_IN:
+            LOG_F(WARNING, "%s: Unsupported DMA channel MIO_GC_DMA_AUDIO_IN write @%02x.%c = %0*x", this->name.c_str(), offset & 0xFF, SIZE_ARG(size), size * 2, value);
+            //this->snd_in_dma->reg_write(offset & 0xFF, value, size);
             break;
         case MIO_GC_DMA_SCSI_MESH:
             this->mesh_dma->reg_write(offset & 0xFF, value, size);
