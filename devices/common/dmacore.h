@@ -35,7 +35,7 @@ class DmaOutChannel {
 public:
     DmaOutChannel(std::string name) { this->name = name; };
 
-    virtual bool            is_active() { return true; };
+    virtual bool            is_out_active() { return true; };
     virtual DmaPullResult   pull_data(uint32_t req_len, uint32_t *avail_len,
                                       uint8_t **p_data) = 0;
 
@@ -49,7 +49,9 @@ class DmaInChannel {
 public:
     DmaInChannel(std::string name) { this->name = name; };
 
-    virtual int push_data(const char* src_ptr, int len) = 0;
+    virtual bool            is_in_active() { return true; };
+    virtual int             push_data(const char* src_ptr, int len) = 0;
+
     std::string get_name(void) { return this->name; };
 
 private:

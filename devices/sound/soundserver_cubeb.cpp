@@ -108,7 +108,7 @@ long sound_out_callback(cubeb_stream *stream, void *user_data,
     long frames, out_frames;
     DmaOutChannel *dma_ch = static_cast<DmaOutChannel*>(user_data); /* C API baby! */
 
-    if (!dma_ch->is_active()) {
+    if (!dma_ch->is_out_active()) {
         return 0;
     }
 

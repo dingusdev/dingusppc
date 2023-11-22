@@ -92,7 +92,8 @@ public:
     uint32_t reg_read(uint32_t offset, int size);
     void reg_write(uint32_t offset, uint32_t value, int size);
 
-    bool            is_active();
+    bool            is_out_active();
+    bool            is_in_active();
     DmaPullResult   pull_data(uint32_t req_len, uint32_t *avail_len, uint8_t **p_data);
     int             push_data(const char* src_ptr, int len);
 

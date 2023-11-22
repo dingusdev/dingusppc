@@ -429,7 +429,16 @@ int DMAChannel::push_data(const char* src_ptr, int len) {
     return 0;
 }
 
-bool DMAChannel::is_active() {
+bool DMAChannel::is_out_active() {
+    if (this->ch_stat & CH_STAT_DEAD || !(this->ch_stat & CH_STAT_ACTIVE)) {
+        return false;
+    }
+    else {
+        return true;
+    }
+}
+
+bool DMAChannel::is_in_active() {
     if (this->ch_stat & CH_STAT_DEAD || !(this->ch_stat & CH_STAT_ACTIVE)) {
         return false;
     }
