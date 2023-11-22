@@ -40,6 +40,7 @@ void EventManager::poll_events()
         switch (event.type) {
         case SDL_QUIT:
             power_on = false;
+            power_off_reason = po_shut_down;
             break;
 
         case SDL_WINDOWEVENT: {

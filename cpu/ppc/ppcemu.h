@@ -320,7 +320,20 @@ extern jmp_buf exc_env;
 
 extern bool grab_return;
 
+enum Po_Cause : int {
+    po_none,
+    po_starting_up,
+    po_shut_down,
+    po_shutting_down,
+    po_disassemble_on,
+    po_disassemble_off,
+    po_enter_debugger,
+    po_entered_debugger,
+    po_signal_interrupt,
+};
+
 extern bool power_on;
+extern Po_Cause power_off_reason;
 extern bool int_pin;
 extern bool dec_exception_pending;
 

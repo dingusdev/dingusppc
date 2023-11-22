@@ -22,6 +22,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef DEBUGGER_H_
 #define DEBUGGER_H_
 
-void enter_debugger(void);
+void enter_debugger();
 
 #endif    // DEBUGGER_H_

@@ -121,7 +121,7 @@ static void disasm_68k(uint32_t count, uint32_t address) {
 
     cs_insn* insn = cs_malloc(cs_handle);
 
-    for (; count > 0; count--) {
+    for (; power_on && count > 0; count--) {
         /* prefetch opcode bytes (a 68k instruction can occupy 2...10 bytes) */
         for (int i = 0; i < sizeof(code); i++) {
             code[i] = mem_read_dbg(address + i, 1);
@@ -180,10 +180,10 @@ void exec_single_68k()
 
     //printf("cur_instr_tab_entry = %X\n", cur_instr_tab_entry);
 
-    /* because the first two PPC instructions for each emulated 68k once
+    /* because the first two PPC instructions for each emulated 68k opcode
        are resided in the emulator opcode table, we need to execute them
        one by one until the execution goes outside the opcode table. */
-    while (ppc_pc >= cur_instr_tab_entry && ppc_pc < cur_instr_tab_entry + 8) {
+    while (power_on && ppc_pc >= cur_instr_tab_entry && ppc_pc < cur_instr_tab_entry + 8) {
         ppc_exec_single();
         ppc_pc = get_reg(string("PC"));
     }
@@ -200,8 +200,8 @@ void exec_until_68k(uint32_t target_addr)
 
     emu_table_virt = get_reg(string("R29")) & 0xFFF80000;
 
-    while (target_addr != (get_reg(string("R24")) - 2)) {
-        ppc_pc = get_reg(string("PC"));
+    while (power_on && target_addr != (get_reg(string("R24")) - 2)) {
+        ppc_pc = static_cast<uint32_t>(get_reg(string("PC")));
 
         if (ppc_pc >= emu_table_virt && ppc_pc < (emu_table_virt + EMU_68K_TABLE_SIZE - 1)) {
             ppc_exec_single();
@@ -442,13 +442,11 @@ void enter_debugger() {
     std::stringstream ss;
     int log_level, context;
     size_t separator_pos;
+    bool did_message = false;
 
     unique_ptr<OfConfigUtils> ofnvram = unique_ptr<OfConfigUtils>(new OfConfigUtils);
 
     context = 1; /* start with the PowerPC context */
-
-    cout << "Welcome to the DingusPPC command line debugger." << endl;
-    cout << "Please enter a command or 'help'." << endl << endl;
 
 #ifndef _WIN32
     struct winsize win_size_previous;
@@ -456,30 +454,70 @@ void enter_debugger() {
 #endif
 
     while (1) {
-        cout << "dingusdbg> ";
+        if (power_off_reason == po_shut_down) {
+            power_off_reason = po_shutting_down;
+            break;
+        }
+        power_on = true;
 
-        while (1) {
-            /* reset string stream */
+        if (power_off_reason == po_starting_up) {
+            power_off_reason = po_none;
+            cmd = "go";
+        }
+        else if (power_off_reason == po_disassemble_on) {
+            inp = "si 1000000000";
             ss.str("");
             ss.clear();
-
-            cmd = "";
-            std::cin.clear();
-            getline(cin, inp, '\n');
             ss.str(inp);
             ss >> cmd;
-
-#ifndef _WIN32
-            struct winsize win_size_current;
-            ioctl(0, TIOCGWINSZ, &win_size_current);
-            if (win_size_current.ws_col != win_size_previous.ws_col || win_size_current.ws_row != win_size_previous.ws_row) {
-                win_size_previous = win_size_current;
-                if (cmd.empty()) {
-                    continue;
-                }
+        }
+        else if (power_off_reason == po_disassemble_off) {
+            power_off_reason = po_none;
+            cmd = "go";
+        }
+        else
+        {
+            if (power_off_reason == po_enter_debugger) {
+                power_off_reason = po_entered_debugger;
             }
-#endif
-            break;
+            if (!did_message) {
+                cout << "Welcome to the DingusPPC command line debugger." << endl;
+                cout << "Please enter a command or 'help'." << endl << endl;
+                did_message = true;
+            }
+
+            printf("%08X: dingusdbg> ", ppc_state.pc);
+
+            while (power_on) {
+                /* reset string stream */
+                ss.str("");
+                ss.clear();
+
+                cmd = "";
+                std::cin.clear();
+                getline(cin, inp, '\n');
+                ss.str(inp);
+                ss >> cmd;
+
+    #ifndef _WIN32
+                struct winsize win_size_current;
+                ioctl(0, TIOCGWINSZ, &win_size_current);
+                if (win_size_current.ws_col != win_size_previous.ws_col || win_size_current.ws_row != win_size_previous.ws_row) {
+                    win_size_previous = win_size_current;
+                    if (cmd.empty()) {
+                        continue;
+                    }
+                }
+    #endif
+                break;
+            }
+        }
+
+        if (power_off_reason == po_signal_interrupt) {
+            power_off_reason = po_enter_debugger;
+            // ignore command if interrupt happens because the input line is probably incomplete.
+            last_cmd = "";
+            continue;
         }
 
         if (cmd.empty() && !last_cmd.empty()) {
@@ -591,7 +629,7 @@ void enter_debugger() {
         } else if (cmd == "go") {
             cmd = "";
             power_on = true;
-            ppc_exec(); // won't return!
+            ppc_exec();
         } else if (cmd == "disas" || cmd == "da") {
             expr_str = "";
             ss >> expr_str;

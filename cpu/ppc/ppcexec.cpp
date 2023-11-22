@@ -39,7 +39,8 @@ MemCtrlBase* mem_ctrl_instance = 0;
 
 bool is_601 = false;
 
-bool power_on = 1;
+bool power_on = false;
+Po_Cause power_off_reason = po_enter_debugger;
 
 SetPRS ppc_state;
 
@@ -340,15 +341,13 @@ static void ppc_exec_inner()
         pc_real    = mmu_translate_imem(eb_start);
 
         // interpret execution block
-        while (ppc_state.pc < eb_end) {
+        while (power_on && ppc_state.pc < eb_end) {
             ppc_main_opcode();
             if (g_icycles++ >= max_cycles) {
                 max_cycles = process_events();
             }
 
             if (exec_flags) {
-                if (!power_on)
-                    break;
                 // reload cycle counter if requested
                 if (exec_flags & EXEF_TIMER) {
                     max_cycles = process_events();
@@ -445,7 +444,7 @@ static void ppc_exec_until_inner(const uint32_t goal_addr)
         pc_real    = mmu_translate_imem(eb_start);
 
         // interpret execution block
-        while ((ppc_state.pc < eb_end)) {
+        while (power_on && ppc_state.pc < eb_end) {
             ppc_main_opcode();
             if (g_icycles++ >= max_cycles) {
                 max_cycles = process_events();
@@ -484,7 +483,7 @@ static void ppc_exec_until_inner(const uint32_t goal_addr)
             if (ppc_state.pc == goal_addr)
                 break;
         }
-    } while (ppc_state.pc != goal_addr);
+    } while (power_on && ppc_state.pc != goal_addr);
 }
 
 // outer interpreter loop
@@ -498,7 +497,7 @@ void ppc_exec_until(volatile uint32_t goal_addr)
 
     do {
         ppc_exec_until_inner(goal_addr);
-    } while (ppc_state.pc != goal_addr);
+    } while (power_on && ppc_state.pc != goal_addr);
 }
 
 /** Execute PPC code until control is reached the specified region. */
@@ -512,7 +511,7 @@ static void ppc_exec_dbg_inner(const uint32_t start_addr, const uint32_t size)
 
     max_cycles = 0;
 
-    while (ppc_state.pc < start_addr || ppc_state.pc >= start_addr + size) {
+    while (power_on && (ppc_state.pc < start_addr || ppc_state.pc >= start_addr + size)) {
         // define boundaries of the next execution block
         // max execution block length = one memory page
         eb_start   = ppc_state.pc;
@@ -523,7 +522,7 @@ static void ppc_exec_dbg_inner(const uint32_t start_addr, const uint32_t size)
         pc_real    = mmu_translate_imem(eb_start);
 
         // interpret execution block
-        while ((ppc_state.pc < start_addr || ppc_state.pc >= start_addr + size)
+        while (power_on && (ppc_state.pc < start_addr || ppc_state.pc >= start_addr + size)
                 && (ppc_state.pc < eb_end)) {
             ppc_main_opcode();
             if (g_icycles++ >= max_cycles) {
@@ -572,7 +571,7 @@ void ppc_exec_dbg(volatile uint32_t start_addr, volatile uint32_t size)
         ppc_state.pc = ppc_next_instruction_address;
     }
 
-    while (ppc_state.pc < start_addr || ppc_state.pc >= start_addr + size) {
+    while (power_on && (ppc_state.pc < start_addr || ppc_state.pc >= start_addr + size)) {
         ppc_exec_dbg_inner(start_addr, size);
     }
 }

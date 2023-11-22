@@ -41,13 +41,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace std;
 
 void sigint_handler(int signum) {
-    enter_debugger();
-
-    LOG_F(INFO, "Shutting down...");
-
-    delete gMachineObj.release();
-    cleanup();
-    exit(0);
+    power_on = false;
+    power_off_reason = po_signal_interrupt;
 }
 
 void sigabrt_handler(int signum) {
@@ -180,6 +175,7 @@ int main(int argc, char** argv) {
         // Make sure the reason for the failure is visible (it may have been
         // sent to the logfile only).
         cerr << message.preamble << message.indentation << message.prefix << message.message << endl;
+        power_off_reason = po_enter_debugger;
         enter_debugger();
 
         abort();
@@ -199,9 +195,11 @@ int main(int argc, char** argv) {
 
     switch (execution_mode) {
     case interpreter:
-        ppc_exec();
+        power_off_reason = po_starting_up;
+        enter_debugger();
         break;
     case debugger:
+        power_off_reason = po_enter_debugger;
         enter_debugger();
         break;
     default:
