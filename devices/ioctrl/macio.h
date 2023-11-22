@@ -187,6 +187,13 @@ private:
     std::unique_ptr<DMAChannel>     snd_out_dma;
     std::unique_ptr<DMAChannel>     snd_in_dma;
     std::unique_ptr<DMAChannel>     floppy_dma;
+    std::unique_ptr<DMAChannel>     escc_a_tx_dma;
+    std::unique_ptr<DMAChannel>     escc_a_rx_dma;
+    std::unique_ptr<DMAChannel>     escc_b_tx_dma;
+    std::unique_ptr<DMAChannel>     escc_b_rx_dma;
+
+    uint16_t unsupported_dma_channel_read = 0;
+    uint16_t unsupported_dma_channel_write = 0;
 };
 
 class OHare : public PCIDevice, public InterruptCtrl {
