@@ -34,15 +34,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 class AtaHardDisk : public AtaBaseDevice
 {
 public:
-    AtaHardDisk();
+    AtaHardDisk(std::string name);
     ~AtaHardDisk() = default;
+
+    static std::unique_ptr<HWComponent> create() {
+        return std::unique_ptr<AtaHardDisk>(new AtaHardDisk("ATA-HD"));
+    }
+
+    int device_postinit() override;
 
     void insert_image(std::string filename);
     int perform_command() override;
 
+protected:
+    void        prepare_identify_info();
+    uint64_t    get_lba();
+
 private:
     ImgFile         hdd_img;
     uint64_t img_size;
+
+    // fictive disk geometry for CHS-to-LBA translation
+    uint16_t    cylinders;
+    uint8_t     heads;
+    uint8_t     sectors;
+
     char * buffer = new char[1 <<17];
 
     uint8_t hd_id_data[ATA_HD_SEC_SIZE] = {};
