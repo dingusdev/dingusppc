@@ -43,7 +43,7 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
         break;
 
     case Except_Type::EXC_MACHINE_CHECK:
-        if (!(ppc_state.msr & 0x1000)) {
+        if (!(ppc_state.msr & MSR::ME)) {
             /* TODO: handle internal checkstop */
         }
         ppc_state.spr[SPR::SRR0]     = ppc_state.pc & 0xFFFFFFFC;
@@ -117,7 +117,7 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
     /* copy MSR[ILE] to MSR[LE] */
     ppc_state.msr = (ppc_state.msr & 0xFFFFFFFE) | ((ppc_state.msr >> 16) & 1);
 
-    if (ppc_state.msr & 0x40) {
+    if (ppc_state.msr & MSR::IP) {
         ppc_next_instruction_address |= 0xFFF00000;
     }
 
