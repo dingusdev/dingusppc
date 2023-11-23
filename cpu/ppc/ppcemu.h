@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -298,7 +298,11 @@ enum Exc_Cause : uint32_t {
     TRAP        = 1 << (31 - 14),
 };
 
+#ifdef EXEC_FLAGS_ATOMIC
+extern std::atomic<unsigned> exec_flags;
+#else
 extern unsigned exec_flags;
+#endif
 
 extern jmp_buf exc_env;
 

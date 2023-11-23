@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -54,7 +54,11 @@ uint32_t ppc_cur_instruction;    // Current instruction for the PPC
 uint32_t ppc_effective_address;
 uint32_t ppc_next_instruction_address;    // Used for branching, setting up the NIA
 
-unsigned exec_flags;  // execution control flags
+#ifdef EXEC_FLAGS_ATOMIC
+std::atomic<unsigned> exec_flags{0}; // execution control flags
+#else
+unsigned exec_flags; // FIXME: read by main thread ppc_main_opcode; written by audio dbdma DMAChannel::update_irq .. add_immediate_timer
+#endif
 bool int_pin = false; // interrupt request pin state: true - asserted
 bool dec_exception_pending = false;
 
