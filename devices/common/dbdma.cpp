@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Descriptor-based direct memory access emulation. */
 
+#include <core/timermanager.h>
 #include <cpu/ppc/ppcmmu.h>
 #include <devices/common/dbdma.h>
 #include <devices/common/dmacore.h>
@@ -261,9 +262,11 @@ void DMAChannel::update_irq() {
                 }
             }
             if (cond) {
-                if (int_ctrl)
-                    this->int_ctrl->ack_dma_int(this->irq_id, 1);
-                else
+                if (int_ctrl) {
+                    TimerManager::get_instance()->add_immediate_timer([this] {
+                        this->int_ctrl->ack_dma_int(this->irq_id, 1);
+                    });
+                } else
                     LOG_F(ERROR, "%s Interrupt ignored", this->get_name().c_str());
             }
         }
