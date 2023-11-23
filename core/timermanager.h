@@ -28,6 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memory>
 #include <queue>
 #include <vector>
+#include <mutex>
 
 using namespace std;
 
@@ -50,16 +51,43 @@ template <typename T, class Container = std::vector<T>, class Compare = std::les
 class my_priority_queue : public std::priority_queue<T, Container, Compare> {
 public:
     bool remove_by_id(const uint32_t id){
+        std::lock_guard<std::recursive_mutex> lk(mtx);
+        auto el = this->top();
+        if (el->id == id) {
+            std::priority_queue<T, Container, Compare>::pop();
+            return true;
+        }
         auto it = std::find_if(
             this->c.begin(), this->c.end(), [id](const T& el) { return el->id == id; });
         if (it != this->c.end()) {
             this->c.erase(it);
             std::make_heap(this->c.begin(), this->c.end(), this->comp);
             return true;
-        } else {
-            return false;
         }
+        return false;
     };
+
+    void push(T val)
+    {
+        std::lock_guard<std::recursive_mutex> lk(mtx);
+        std::priority_queue<T, Container, Compare>::push(val);
+    };
+
+    T pop()
+    {
+        std::lock_guard<std::recursive_mutex> lk(mtx);
+        T val = std::priority_queue<T, Container, Compare>::top();
+        std::priority_queue<T, Container, Compare>::pop();
+        return val;
+    };
+
+    std::recursive_mutex& get_mtx()
+    {
+        return mtx;
+    }
+
+private:
+    std::recursive_mutex mtx;
 };
 
 typedef struct TimerInfo {
@@ -118,8 +146,8 @@ private:
     function<uint64_t()>   get_time_now;
     function<void()>       notify_timer_changes;
 
-    uint32_t    id = 0;
-    bool        cb_active = false; // true if a timer callback is executing
+    std::atomic<uint32_t> id{0};
+    bool        cb_active = false; // true if a timer callback is executing // FIXME: Do we need this? It gets written in main thread and read in audio thread.
 };
 
 #endif // TIMER_MANAGER_H

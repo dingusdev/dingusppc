@@ -99,12 +99,7 @@ uint32_t TimerManager::add_cyclic_timer(uint64_t interval, timer_cb cb) {
 
 void TimerManager::cancel_timer(uint32_t id)
 {
-    TimerInfo* cur_timer = this->timer_queue.top().get();
-    if (cur_timer->id == id) {
-        this->timer_queue.pop();
-    } else {
-        this->timer_queue.remove_by_id(id);
-    }
+    this->timer_queue.remove_by_id(id);
     if (!this->cb_active) {
         this->notify_timer_changes();
     }
@@ -112,24 +107,27 @@ void TimerManager::cancel_timer(uint32_t id)
 
 uint64_t TimerManager::process_timers()
 {
-    TimerInfo* cur_timer;
+    std::shared_ptr<TimerInfo> cur_timer;
     uint64_t time_now = get_time_now();
 
+{ // mtx scope
+    std::lock_guard<std::recursive_mutex> lk(this->timer_queue.get_mtx());
     if (this->timer_queue.empty()) {
         return 0ULL;
     }
 
     // scan for expired timers
-    cur_timer = this->timer_queue.top().get();
+    cur_timer = this->timer_queue.top();
+} // ] mtx scope
     while (cur_timer->timeout_ns <= time_now) {
         timer_cb cb = cur_timer->cb;
 
         // re-arm cyclic timers
         if (cur_timer->interval_ns) {
-            auto new_timer = this->timer_queue.top();
-            new_timer->timeout_ns = time_now + cur_timer->interval_ns;
-            this->timer_queue.pop();
-            this->timer_queue.push(new_timer);
+            std::lock_guard<std::recursive_mutex> lk(this->timer_queue.get_mtx());
+            cur_timer->timeout_ns = time_now + cur_timer->interval_ns;
+            this->timer_queue.remove_by_id(cur_timer->id);
+            this->timer_queue.push(cur_timer);
         } else {
             // remove one-shot timers from queue
             this->timer_queue.pop();
@@ -143,11 +141,14 @@ uint64_t TimerManager::process_timers()
         this->cb_active = false;
 
         // process next timer
+{ // [ mtx scope
+        std::lock_guard<std::recursive_mutex> lk(this->timer_queue.get_mtx());
         if (this->timer_queue.empty()) {
             return 0ULL;
         }
 
-        cur_timer = this->timer_queue.top().get();
+        cur_timer = this->timer_queue.top();
+} // ] mtx scope
     }
 
     // return time slice in nanoseconds until next timer's expiry
