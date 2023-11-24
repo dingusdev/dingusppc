@@ -415,7 +415,7 @@ void ppc_exec_single()
     process_events();
 
     if (exec_flags) {
-        if (exec_flags & EXEF_TIMER) {
+        if (!(exec_flags & ~EXEF_TIMER)) {
             ppc_state.pc += 4;
         } else {
             ppc_state.pc = ppc_next_instruction_address;
