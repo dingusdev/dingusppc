@@ -61,9 +61,10 @@ bool AdbKeyboard::get_register_0() {
         out_buf[0] = (this->key_state << 7) | (this->key & 0x7F);
         // It's possible that we get two events before the host polls us, but
         // in practice it has not come up. We need to set the key status bit to
-        // 1 (released), otherwise if we leave it empty, the host will think
-        // that the a key (code 0) is pressed.
-        out_buf[1] = 1 << 7;
+        // 1 (released), and the key to a non-existent one (0x7F). Otherwise if
+        // we leave it empty, the host will think that the 'a' key (code 0) is
+        // pressed.
+        out_buf[1] = 0xFF;
 
         this->key           = 0;
         this->key_state     = 0;
