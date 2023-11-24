@@ -162,8 +162,8 @@ private:
 
     // interrupt state
     uint32_t    int_mask      = 0;
-    uint32_t    int_levels    = 0;
-    uint32_t    int_events    = 0;
+    std::atomic<uint32_t>    int_levels{0};
+    std::atomic<uint32_t>    int_events{0};
     bool        cpu_int_latch = false;
 
     // IOBus devices
@@ -230,8 +230,8 @@ private:
 
     // interrupt state
     uint32_t    int_mask      = 0;
-    uint32_t    int_levels    = 0;
-    uint32_t    int_events    = 0;
+    std::atomic<uint32_t>    int_levels{0};
+    std::atomic<uint32_t>    int_events{0};
     bool        cpu_int_latch = false;
 
     std::unique_ptr<AwacsScreamer>  awacs; // AWACS audio codec instance
@@ -324,12 +324,12 @@ protected:
 
 private:
     uint32_t base_addr     = 0;
-    uint32_t int_events2   = 0;
+    std::atomic<uint32_t> int_events2{0};
     uint32_t int_mask2     = 0;
-    uint32_t int_levels2   = 0;
-    uint32_t int_events1   = 0;
+    std::atomic<uint32_t> int_levels2{0};
+    std::atomic<uint32_t> int_events1{0};
     uint32_t int_mask1     = 0;
-    uint32_t int_levels1   = 0;
+    std::atomic<uint32_t> int_levels1{0};
     uint32_t feat_ctrl     = 0;    // features control register
     uint32_t aux_ctrl      = 0;    // aux features control register
     bool     cpu_int_latch = false;
