@@ -340,8 +340,8 @@ private:
     uint8_t     dev_irq_lines = 0; // state of the IRQ lines
 
     // DMA IRQ flag registers
-    uint8_t     dma_ifr0 = 0;
-    uint8_t     dma_ifr1 = 0;
+    std::atomic<uint8_t>     dma_ifr0{0};
+    std::atomic<uint8_t>     dma_ifr1{0};
     uint8_t     dma_irq  = 0;
 
     // pseudo VIA2 state
