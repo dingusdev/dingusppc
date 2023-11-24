@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/adb/adbdevice.h>
 #include <devices/common/hwcomponent.h>
 
+#include <deque>
 #include <memory>
 #include <string>
 
@@ -50,9 +51,9 @@ public:
 
 
 private:
-    uint32_t key          = 0;
-    uint8_t key_state     = 0;
-    bool changed          = false;
+    std::deque<std::unique_ptr<KeyboardEvent>> pending_events;
+
+    uint8_t consume_pending_event();
 };
 
 // ADB Extended Keyboard raw key codes (most of which eventually became virtual
