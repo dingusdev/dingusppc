@@ -34,14 +34,7 @@ AdbKeyboard::AdbKeyboard(std::string name) : AdbDevice(name) {
 }
 
 void AdbKeyboard::event_handler(const KeyboardEvent& event) {
-    this->key = event.key;
-    if (event.flags & KEYBOARD_EVENT_DOWN) {
-        this->key_state = 0;
-    }
-    else if (event.flags & KEYBOARD_EVENT_UP) {
-        this->key_state = 1;
-    }
-    this->changed = true;
+    this->pending_events.push_back(std::make_unique<KeyboardEvent>(event));
 }
 
 void AdbKeyboard::reset() {
@@ -49,32 +42,42 @@ void AdbKeyboard::reset() {
     this->dev_handler_id = 2;    // Extended ADB keyboard
     this->exc_event_flag = 1;
     this->srq_flag       = 1;    // enable service requests
-    this->key            = 0;
-    this->key_state      = 0;
-    this->changed        = false;
+    this->pending_events.clear();
 }
 
 bool AdbKeyboard::get_register_0() {
-    if (this->changed) {
-        uint8_t* out_buf = this->host_obj->get_output_buf();
+    if (this->pending_events.empty()) {
+        return false;
+    }
+    uint8_t* out_buf = this->host_obj->get_output_buf();
+    out_buf[0] = this->consume_pending_event();
+    out_buf[1] = this->consume_pending_event();
+    this->host_obj->set_output_count(2);
+    return true;
+}
 
-        out_buf[0] = (this->key_state << 7) | (this->key & 0x7F);
-        // It's possible that we get two events before the host polls us, but
-        // in practice it has not come up. We need to set the key status bit to
-        // 1 (released), and the key to a non-existent one (0x7F). Otherwise if
-        // we leave it empty, the host will think that the 'a' key (code 0) is
-        // pressed.
-        out_buf[1] = 0xFF;
+uint8_t AdbKeyboard::consume_pending_event() {
+    if (this->pending_events.empty()) {
+        // In most cases we have only on pending event when the host polls us,
+        // but we need to fill two entries of the output buffer. We need to set
+        // the key status bit to 1 (released), and the key to a non-existent
+        // one (0x7F). Otherwise if we leave it empty, the host will think that
+        // the 'a' key (code 0) is pressed (status 0).
+        return 0xFF;
+    }
+    std::unique_ptr<KeyboardEvent> event = std::move(this->pending_events.front());
+    this->pending_events.pop_front();
 
-        this->key           = 0;
-        this->key_state     = 0;
-        this->changed       = false;
-
-        this->host_obj->set_output_count(2);
-        return true;
+    uint8_t key_state = 0;
+    if (event->flags & KEYBOARD_EVENT_DOWN) {
+        key_state = 0;
+    } else if (event->flags & KEYBOARD_EVENT_UP) {
+        key_state = 1;
+    } else {
+        LOG_F(WARNING, "%s: unknown keyboard event flags %x", this->name.c_str(), event->flags);
     }
 
-    return false;
+    return (key_state << 7) | (event->key & 0x7F);
 }
 
 void AdbKeyboard::set_register_2() {
