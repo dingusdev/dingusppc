@@ -32,6 +32,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <loguru.hpp>
 #include <stdexcept>
 
+//#define MMU_PROFILING // uncomment this to enable MMU profiling
+//#define TLB_PROFILING // uncomment this to enable SoftTLB profiling
+
 /* pointer to exception handler to be called when a MMU exception is occurred. */
 void (*mmu_exception_handler)(Except_Type exception_type, uint32_t srr1_bits);
 
@@ -42,9 +45,6 @@ std::function<void(uint32_t bat_reg)> dbat_update;
 /** PowerPC-style MMU BAT arrays (NULL initialization isn't prescribed). */
 PPC_BAT_entry ibat_array[4] = {{0}};
 PPC_BAT_entry dbat_array[4] = {{0}};
-
-//#define MMU_PROFILING // uncomment this to enable MMU profiling
-//#define TLB_PROFILING // uncomment this to enable SoftTLB profiling
 
 #ifdef MMU_PROFILING
 
