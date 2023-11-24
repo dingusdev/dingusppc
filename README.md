@@ -8,7 +8,7 @@ Be warned the program is highly unfinished and could use a lot of testing. Any f
 
 While many other PowerPC emus exist (PearPC, Sheepshaver), none of them currently attempt emulation of PPC Macs accurately (except for QEMU).
 
-This program aims to not only improve upon what Sheepshaver, PearPC, and other PowerPC mac emulators have done, but also to provide a better debugging environment. This currently is designed to work best with PowerPC Old World ROMs, including those of the PowerMac G3 Beige.
+This program aims to not only improve upon what Sheepshaver, PearPC, and other PowerPC mac emulators have done, but also to provide a better debugging environment. This currently is designed to work best with PowerPC Old World ROMs, including those of the PowerMac 6100, 7200, and G3 Beige.
 
 ## Implemented Features
 
@@ -44,7 +44,7 @@ Specifies the Boot ROM path (optional; looks for bootrom.bin by default)
 
 Specify machine ID (optional; will attempt to determine machine ID from the boot rom otherwise)
 
-As of now, only the Power Macintosh G3 Beige is implemented.
+As of now, the most complete machines are the Power Mac 6100 (SCSI emulation in progress) and the Power Mac G3 Beige (SCSI + ATA emulation in progress, No ATI Rage acceleration).
 
 ## How to Compile
 
@@ -69,8 +69,6 @@ make dingusppc
 ```
 You may specify another build type using the variable CMAKE_BUILD_TYPE.
 
-Future versions may drop SDL 2 as a requirement.
-
 For Raspbian, you may also need the following command:
 ```
 sudo apt install doxygen graphviz
@@ -83,7 +81,7 @@ emulation. To build the tests, use the following terminal commands:
 ```
 mkdir build
 cd build
-cmake -DCMAKE_BUILD_TYPE=Release ..
+cmake -DCMAKE_BUILD_TYPE=Release -DPPC_BUILD_PPC_TESTS=True ..
 make testppc
 ```
 
@@ -97,5 +95,4 @@ make testppc
 
 ## Compiler Requirements
 
-- GCC 4.7 or newer (i.e. CodeBlocks 13.12 or newer)
-- Visual Studio 2013 or newer
+- Any C++20 compatible compiler
