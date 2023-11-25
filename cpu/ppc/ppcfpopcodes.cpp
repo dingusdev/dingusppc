@@ -30,7 +30,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cfloat>
 
 // Used for FP calcs
-uint64_t ppc_result64_b;
 uint64_t ppc_result64_d;
 
 double ppc_dblresult64_d;
@@ -699,8 +698,8 @@ void dppc_interpreter::ppc_lfs() {
     ppc_grab_regsfpdia();
     ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
     ppc_effective_address += (reg_a) ? val_reg_a : 0;
-    ppc_result64_d = mmu_read_vmem<uint32_t>(ppc_effective_address);
-    ppc_store_sfpresult_int(reg_d);
+    float result = (float)mmu_read_vmem<uint32_t>(ppc_effective_address);
+    ppc_state.fpr[reg_d].dbl64_r = (double)result;
 }
 
 
@@ -709,8 +708,8 @@ void dppc_interpreter::ppc_lfsu() {
     if (reg_a) {
         ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
         ppc_effective_address += (reg_a) ? val_reg_a : 0;
-        ppc_result64_d = mmu_read_vmem<uint32_t>(ppc_effective_address);
-        ppc_store_sfpresult_int(reg_d);
+        float result = (float)mmu_read_vmem<uint32_t>(ppc_effective_address);
+        ppc_state.fpr[reg_d].dbl64_r = (double)result;
         ppc_state.gpr[reg_a] = ppc_effective_address;
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
@@ -720,16 +719,16 @@ void dppc_interpreter::ppc_lfsu() {
 void dppc_interpreter::ppc_lfsx() {
     ppc_grab_regsfpdiab();
     ppc_effective_address = (reg_a) ? val_reg_a + val_reg_b : val_reg_b;
-    ppc_result64_d        = mmu_read_vmem<uint32_t>(ppc_effective_address);
-    ppc_store_sfpresult_int(reg_d);
+    float result = (float)mmu_read_vmem<uint32_t>(ppc_effective_address);
+    ppc_state.fpr[reg_d].dbl64_r = (double)result;
 }
 
 void dppc_interpreter::ppc_lfsux() {
     ppc_grab_regsfpdiab();
     if (reg_a) {
         ppc_effective_address = val_reg_a + val_reg_b;
-        ppc_result64_d        = mmu_read_vmem<uint32_t>(ppc_effective_address);
-        ppc_store_sfpresult_int(reg_d);
+        float result = (float)mmu_read_vmem<uint32_t>(ppc_effective_address);
+        ppc_state.fpr[reg_d].dbl64_r = (double)result;
         ppc_state.gpr[reg_a] = ppc_effective_address;
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
