@@ -482,7 +482,6 @@ void dppc_interpreter::ppc_fnmadds() {
 void dppc_interpreter::ppc_fnmsubs() {
     ppc_grab_regsfpdabc();
 
-
     if (std::isnan(val_reg_a) || std::isnan(val_reg_c)) {
         ppc_confirm_inf_nan<MUL>(reg_a, reg_c, rc_flag);
     }
