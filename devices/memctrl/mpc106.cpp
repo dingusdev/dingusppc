@@ -60,7 +60,7 @@ int MPC106::device_postinit()
     std::string pci_dev_name;
 
     static const std::map<std::string, int> pci_slots = {
-        {"pci_PERCH", DEV_FUN(0xC,0)}, {"pci_A1", DEV_FUN(0xD,0)}, {"pci_B1", DEV_FUN(0xE,0)}, {"pci_C1", DEV_FUN(0xF,0)}
+        {"pci_PERCH", DEV_FUN(0xC,0)}, {"pci_A1", DEV_FUN(0xD,0)}, {"pci_B1", DEV_FUN(0xE,0)}, {"pci_C1", DEV_FUN(0xF,0)}, {"pci_GPU", DEV_FUN(0x12,0)}
     };
 
     for (auto& slot : pci_slots) {
@@ -350,6 +350,8 @@ static const PropMap Grackle_Properties = {
     {"pci_B1",
         new StrProperty("")},
     {"pci_C1",
+        new StrProperty("")},
+    {"pci_GPU",
         new StrProperty("")},
 };
 

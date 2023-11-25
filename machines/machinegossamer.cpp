@@ -123,8 +123,10 @@ int initialize_gossamer(std::string& id)
     // add pci devices
     grackle_obj->pci_register_device(
         DEV_FUN(0x10,0), dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("Heathrow")));
-    grackle_obj->pci_register_device(
-        DEV_FUN(0x12,0), dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name(id == "pmg3twr" ? "AtiRagePro" : "AtiRageGT")));
+
+    std::string gpu = GET_STR_PROP("pci_GPU");
+    if (gpu.empty())
+        SET_STR_PROP("pci_GPU", id == "pmg3twr" ? "AtiRagePro" : "AtiRageGT");
 
     // add Athens clock generator device and register it with the I2C host
     gMachineObj->add_device("Athens", std::unique_ptr<AthensClocks>(new AthensClocks(0x28)));
@@ -168,11 +170,11 @@ static const PropMap gossamer_settings = {
 };
 
 static vector<string> pmg3_devices = {
-    "Grackle", "ScreamerSnd", "Heathrow", "AtiRageGT", "AtaHardDisk", "AtapiCdrom"
+    "Grackle", "ScreamerSnd", "Heathrow", "AtaHardDisk", "AtapiCdrom"
 };
 
 static vector<string> pmg3twr_devices = {
-    "Grackle", "ScreamerSnd", "Heathrow", "AtiRagePro", "AtaHardDisk", "AtapiCdrom"
+    "Grackle", "ScreamerSnd", "Heathrow", "AtaHardDisk", "AtapiCdrom"
 };
 
 static const MachineDescription pmg3dt_descriptor = {
