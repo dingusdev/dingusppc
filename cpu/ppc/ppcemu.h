@@ -190,14 +190,7 @@ extern int32_t simm;
 // Used for GP calcs
 extern uint32_t ppc_result_a;
 extern uint32_t ppc_result_b;
-extern uint32_t ppc_result_c;
 extern uint32_t ppc_result_d;
-
-// Used for FP calcs
-extern uint64_t ppc_result64_a;
-extern uint64_t ppc_result64_b;
-extern uint64_t ppc_result64_c;
-extern uint64_t ppc_result64_d;
 
 /* Flags for controlling interpreter execution. */
 enum {

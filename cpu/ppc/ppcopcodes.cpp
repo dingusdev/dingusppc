@@ -39,7 +39,6 @@ int32_t simm;
 // Used for GP calcs
 uint32_t ppc_result_a = 0;
 uint32_t ppc_result_b = 0;
-uint32_t ppc_result_c = 0;
 uint32_t ppc_result_d = 0;
 
 /**
