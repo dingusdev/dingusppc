@@ -1044,7 +1044,7 @@ void dppc_interpreter::ppc_mtcrf() {
     ppc_grab_regssa();
     crm = ((ppc_cur_instruction >> 12) & 255);
     // check this
-    cr_mask += (crm & 128) ? 0xF0000000 : 0x00000000;
+    cr_mask = (crm & 128) ? 0xF0000000 : 0x00000000;
     cr_mask += (crm & 64) ? 0x0F000000 : 0x00000000;
     cr_mask += (crm & 32) ? 0x00F00000 : 0x00000000;
     cr_mask += (crm & 16) ? 0x000F0000 : 0x00000000;

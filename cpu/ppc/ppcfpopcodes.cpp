@@ -915,18 +915,19 @@ void dppc_interpreter::ppc_mffs() {
 }
 
 void dppc_interpreter::ppc_mtfsf() {
+    uint32_t cr_mask = 0;
     reg_b            = (ppc_cur_instruction >> 11) & 31;
-    uint32_t fm_mask = (ppc_cur_instruction >> 17) & 255;
-    crm += ((fm_mask & 1) == 1) ? 0xF0000000 : 0x00000000;
-    crm += (((fm_mask >> 1) & 1) == 1) ? 0x0F000000 : 0x00000000;
-    crm += (((fm_mask >> 2) & 1) == 1) ? 0x00F00000 : 0x00000000;
-    crm += (((fm_mask >> 3) & 1) == 1) ? 0x000F0000 : 0x00000000;
-    crm += (((fm_mask >> 4) & 1) == 1) ? 0x0000F000 : 0x00000000;
-    crm += (((fm_mask >> 5) & 1) == 1) ? 0x00000F00 : 0x00000000;
-    crm += (((fm_mask >> 6) & 1) == 1) ? 0x000000F0 : 0x00000000;
-    crm += (((fm_mask >> 7) & 1) == 1) ? 0x0000000F : 0x00000000;
-    uint32_t quickfprval = (uint32_t)ppc_state.fpr[reg_b].int64_r;
-    ppc_state.fpscr      = (quickfprval & crm) | (quickfprval & ~(crm));
+    crm              = (ppc_cur_instruction >> 17) & 255;
+    cr_mask          = ((crm & 1) == 1) ? 0xF0000000 : 0x00000000;
+    cr_mask += (((crm >> 1) & 1) == 1) ? 0x0F000000 : 0x00000000;
+    cr_mask += (((crm >> 2) & 1) == 1) ? 0x00F00000 : 0x00000000;
+    cr_mask += (((crm >> 3) & 1) == 1) ? 0x000F0000 : 0x00000000;
+    cr_mask += (((crm >> 4) & 1) == 1) ? 0x0000F000 : 0x00000000;
+    cr_mask += (((crm >> 5) & 1) == 1) ? 0x00000F00 : 0x00000000;
+    cr_mask += (((crm >> 6) & 1) == 1) ? 0x000000F0 : 0x00000000;
+    cr_mask += (((crm >> 7) & 1) == 1) ? 0x0000000F : 0x00000000;
+    uint32_t quickfprval = (uint32_t)(ppc_state.fpr[reg_b].int64_r & 0xFFFFFFFF);
+    ppc_state.fpscr      = (ppc_state.fpscr & ~cr_mask) | (quickfprval & cr_mask);
 
     if (rc_flag)
         ppc_fp_changecrf1();
