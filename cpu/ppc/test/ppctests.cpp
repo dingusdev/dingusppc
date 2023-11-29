@@ -168,8 +168,8 @@ static void read_test_float_data() {
     string line, token;
     int i, lineno;
 
-    uint32_t opcode, dest, src1, src2, check_xer, check_cr, check_fpscr;
-    uint64_t dest_64, src1_64, src2_64;
+    uint32_t opcode, src1, src2, check_xer, check_cr, check_fpscr;
+    uint64_t dest_64;
     //float sfp_dest, sfp_src1, sfp_src2, sfp_src3;
     double dfp_dest, dfp_src1, dfp_src2, dfp_src3;
     string rounding_mode;
