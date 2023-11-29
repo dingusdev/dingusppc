@@ -845,9 +845,8 @@ void dppc_interpreter::ppc_fmr() {
 
 void dppc_interpreter::ppc_mffs() {
     ppc_grab_regsda();
-    uint64_t fpstore1 = ppc_state.fpr[reg_d].int64_r & ((uint64_t)0xFFF80000 << 32);
-    fpstore1          |= (uint64_t)ppc_state.fpscr;
-    fp_save_uint64(fpstore1);
+
+    ppc_state.fpr[reg_d].int64_r = (uint64_t)ppc_state.fpscr;
 
     if (rc_flag)
         ppc_update_cr1();
@@ -884,8 +883,8 @@ void dppc_interpreter::ppc_mtfsfi() {
 }
 
 void dppc_interpreter::ppc_mtfsb0() {
-    crf_d = (ppc_cur_instruction >> 21) & 0x1F;
-    if ((crf_d == 0) || (crf_d > 2)) {
+    int crf_d = (ppc_cur_instruction >> 21) & 0x1F;
+    if (!crf_d || (crf_d > 2)) { // FEX and VX can't be explicitely cleared
         ppc_state.fpscr &= ~(0x80000000UL >> crf_d);
     }
 
@@ -894,8 +893,8 @@ void dppc_interpreter::ppc_mtfsb0() {
 }
 
 void dppc_interpreter::ppc_mtfsb1() {
-    crf_d = (ppc_cur_instruction >> 21) & 0x1F;
-    if ((crf_d == 0) || (crf_d > 2)) {
+    int crf_d = (ppc_cur_instruction >> 21) & 0x1F;
+    if (!crf_d || (crf_d > 2)) { // FEX and VX can't be explicitely set
         ppc_state.fpscr |= (0x80000000UL >> crf_d);
     }
 
