@@ -236,7 +236,7 @@ static void fpresult_update(double set_result) {
         }
 
         if (std::isinf(set_result))
-            ppc_state.fpscr |= FPCC_FPRCD;
+            ppc_state.fpscr |= FPCC_FUNAN;
     }
 }
 
