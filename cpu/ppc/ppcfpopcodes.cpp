@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ppcemu.h"
 #include "ppcmmu.h"
 #include <stdlib.h>
+#include <cfenv>
 #include <cinttypes>
 #include <cmath>
 #include <cfloat>
@@ -132,6 +133,30 @@ int64_t round_to_nearest(double f) {
     } else {
         return static_cast<int32_t>(static_cast<int64_t> (std::floor(f)));
     }
+}
+
+void set_host_rounding_mode(uint8_t mode) {
+    switch(mode & FPSCR::RN_MASK) {
+    case 0:
+        std::fesetround(FE_TONEAREST);
+        break;
+    case 1:
+        std::fesetround(FE_TOWARDZERO);
+        break;
+    case 2:
+        std::fesetround(FE_UPWARD);
+        break;
+    case 3:
+        std::fesetround(FE_DOWNWARD);
+        break;
+    }
+}
+
+void update_fpscr(uint32_t new_fpscr) {
+    if ((new_fpscr & FPSCR::RN_MASK) != (ppc_state.fpscr & FPSCR::RN_MASK))
+        set_host_rounding_mode(new_fpscr & FPSCR::RN_MASK);
+
+    ppc_state.fpscr = new_fpscr;
 }
 
 int64_t round_to_zero(double f) {

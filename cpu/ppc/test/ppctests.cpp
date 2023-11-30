@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "../ppcdisasm.h"
 #include "../ppcemu.h"
+#include <cfenv>
 #include <cmath>
 #include <fstream>
 #include <iomanip>
@@ -186,7 +187,7 @@ static void read_test_float_data() {
         lineno++;
 
         if (line.empty() || !line.rfind("#", 0))
-            continue; /* skip empty/comment lines */
+            continue; // skip empty/comment lines
 
         istringstream lnstream(line);
 
@@ -208,15 +209,14 @@ static void read_test_float_data() {
         check_xer   = 0;
         check_cr    = 0;
         check_fpscr = 0;
-        //sfp_dest    = 0.0;
-        //sfp_src1    = 0.0;
-        //sfp_src2    = 0.0;
-        //sfp_src3    = 0.0;
         dfp_dest    = 0.0;
         dfp_src1    = 0.0;
         dfp_src2    = 0.0;
         dfp_src3    = 0.0;
         dest_64     = 0;
+
+        // switch to default rounding
+        fesetround(FE_TONEAREST);
 
         for (i = 2; i < tokens.size(); i++) {
             if (tokens[i].rfind("frD=", 0) == 0) {
@@ -229,22 +229,6 @@ static void read_test_float_data() {
                 dfp_src3 = stod(tokens[i].substr(4), NULL);
             } else if (tokens[i].rfind("round=", 0) == 0) {
                 rounding_mode = tokens[i].substr(6, 3);
-                ppc_state.fpscr = 0;
-                if (rounding_mode.compare("RTN") == 0) {
-                    ppc_state.fpscr = 0x0;
-                } else if (rounding_mode.compare("RTZ") == 0) {
-                    ppc_state.fpscr = 0x1;
-                } else if (rounding_mode.compare("RPI") == 0) {
-                    ppc_state.fpscr = 0x2;
-                } else if (rounding_mode.compare("RNI") == 0) {
-                    ppc_state.fpscr = 0x3;
-                } else if (rounding_mode.compare("VEN") == 0) {
-                    ppc_state.fpscr = FPSCR::VE;
-                } else {
-                    cout << "ILLEGAL ROUNDING METHOD: " << tokens[i] << " in line " << lineno
-                         << ". Exiting..." << endl;
-                    exit(0);
-                }
             } else if (tokens[i].rfind("FPSCR=", 0) == 0) {
                 check_fpscr = stoul(tokens[i].substr(6), NULL, 16);
             } else if (tokens[i].rfind("CR=", 0) == 0) {
@@ -256,6 +240,22 @@ static void read_test_float_data() {
             }
         }
 
+        if (rounding_mode.compare("RTN") == 0) {
+            update_fpscr(0);
+        } else if (rounding_mode.compare("RTZ") == 0) {
+            update_fpscr(1);
+        } else if (rounding_mode.compare("RPI") == 0) {
+            update_fpscr(2);
+        } else if (rounding_mode.compare("RNI") == 0) {
+            update_fpscr(3);
+        } else if (rounding_mode.compare("VEN") == 0) {
+            update_fpscr(FPSCR::VE);
+        } else {
+            cout << "ILLEGAL ROUNDING METHOD: " << tokens[i] << " in line " << lineno
+                 << ". Exiting..." << endl;
+            exit(0);
+        }
+
         ppc_state.gpr[3] = src1;
         ppc_state.gpr[4] = src2;
 
@@ -263,13 +263,16 @@ static void read_test_float_data() {
         ppc_state.fpr[4].dbl64_r = dfp_src2;
         ppc_state.fpr[5].dbl64_r = dfp_src3;
 
-        ppc_state.cr          = 0;
+        ppc_state.cr = 0;
 
         ppc_cur_instruction = opcode;
 
         ppc_main_opcode();
 
         ntested++;
+
+        // switch to default rounding
+        fesetround(FE_TONEAREST);
 
         if ((tokens[0].rfind("FCMP") && (ppc_state.fpr[3].int64_r != dest_64)) ||
             (ppc_state.fpscr != check_fpscr) ||

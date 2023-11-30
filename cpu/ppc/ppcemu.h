@@ -402,7 +402,8 @@ extern void ppc_store_result_regd();
 extern void ppc_store_result_rega();
 
 void ppc_changecrf0(uint32_t set_result);
-void ppc_fp_changecrf1();
+void set_host_rounding_mode(uint8_t mode);
+void update_fpscr(uint32_t new_fpscr);
 
 /* Exception handlers. */
 void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits);

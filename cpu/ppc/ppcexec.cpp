@@ -751,6 +751,17 @@ void initialize_ppc_opcode_tables() {
     }
 }
 
+void ppc_fpu_init() {
+    // zero all FPRs as prescribed for MPC601
+    // For later PPC CPUs, GPR content is undefined
+    for (int i = 0; i < 32; i++) {
+        ppc_state.fpr[i].int64_r = 0;
+    }
+
+    ppc_state.fpscr = 0;
+    set_host_rounding_mode(0);
+}
+
 void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, uint64_t tb_freq)
 {
     int i;
@@ -783,12 +794,6 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, uint64_t tb_freq)
         ppc_state.gpr[i] = 0;
     }
 
-    /* zero all FPRs as prescribed for MPC601 */
-    /* For later PPC CPUs, GPR content is undefined */
-    for (i = 0; i < 32; i++) {
-        ppc_state.fpr[i].int64_r = 0;
-    }
-
     /* zero all segment registers as prescribed for MPC601 */
     /* For later PPC CPUs, SR content is undefined */
     for (i = 0; i < 16; i++) {
@@ -796,7 +801,8 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, uint64_t tb_freq)
     }
 
     ppc_state.cr    = 0;
-    ppc_state.fpscr = 0;
+
+    ppc_fpu_init();
 
     ppc_state.pc = 0;
 
