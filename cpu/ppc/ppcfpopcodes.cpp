@@ -383,7 +383,7 @@ void dppc_interpreter::ppc_fadds() {
         ppc_confirm_inf_nan<float, SUB>(reg_a, reg_b, rc_flag);
     }
 
-    float ppc_fltresult32_d = (float)(val_reg_a) + (float)val_reg_b;
+    float ppc_fltresult32_d = val_reg_a + val_reg_b;
     ppc_dblresult64_d       = (double)ppc_fltresult32_d;
     ppc_store_sfpresult_flt(reg_d);
 
