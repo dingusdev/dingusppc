@@ -28,16 +28,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <cmath>
 #include <cfloat>
-#include <limits>
 
 // Used for FP calcs
 uint64_t ppc_result64_b;
 uint64_t ppc_result64_d;
 
 double ppc_dblresult64_d;
-
-double snan = std::numeric_limits<double>::signaling_NaN();
-double qnan = std::numeric_limits<double>::quiet_NaN();
 
 // Storage and register retrieval functions for the floating point functions.
 

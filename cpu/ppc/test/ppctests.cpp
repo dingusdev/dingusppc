@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -26,14 +26,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <sstream>
 #include <string>
 #include <vector>
 
 using namespace std;
 
-int ntested; /* number of tested instructions */
-int nfailed; /* number of failed instructions */
+int ntested; // number of tested instructions
+int nfailed; // number of failed instructions
 
 void xer_ov_test(string mnem, uint32_t opcode) {
     ppc_state.gpr[3]        = 2;
@@ -165,6 +166,15 @@ static void read_test_data() {
     }
 }
 
+double double_from_string(string str) {
+    if (str == "snan")
+        return std::numeric_limits<double>::signaling_NaN();
+    else if (str == "qnan")
+        return std::numeric_limits<double>::quiet_NaN();
+    else
+        return stod(str, NULL);
+}
+
 static void read_test_float_data() {
     string line, token;
     int i, lineno;
@@ -222,11 +232,11 @@ static void read_test_float_data() {
             if (tokens[i].rfind("frD=", 0) == 0) {
                 dest_64 = stoull(tokens[i].substr(4), NULL, 16);
             } else if (tokens[i].rfind("frA=", 0) == 0) {
-                dfp_src1 = stod(tokens[i].substr(4), NULL);
+                dfp_src1 = double_from_string(tokens[i].substr(4));
             } else if (tokens[i].rfind("frB=", 0) == 0) {
-                dfp_src2 = stod(tokens[i].substr(4), NULL);
+                dfp_src2 = double_from_string(tokens[i].substr(4));
             } else if (tokens[i].rfind("frC=", 0) == 0) {
-                dfp_src3 = stod(tokens[i].substr(4), NULL);
+                dfp_src3 = double_from_string(tokens[i].substr(4));
             } else if (tokens[i].rfind("round=", 0) == 0) {
                 rounding_mode = tokens[i].substr(6, 3);
             } else if (tokens[i].rfind("FPSCR=", 0) == 0) {
