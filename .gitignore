@@ -16,6 +16,13 @@ CMakeSettings.json
 *.vcxproj
 *.vcxproj.filters
 
+# Ignore CodeLite configuration files
+*.workspace
+*.workspace.*
+compile_commands.json
+*.session
+*.tags
+
 # Ignore generated executables
 dingusppc
 dingusppc.exe
