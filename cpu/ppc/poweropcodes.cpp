@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -78,8 +78,17 @@ void dppc_interpreter::power_clcs() {
 
 void dppc_interpreter::power_div() {
     ppc_grab_regsdab();
-    ppc_result_d           = (ppc_result_a | ppc_state.spr[SPR::MQ]) / ppc_result_b;
-    ppc_state.spr[SPR::MQ] = (ppc_result_a | ppc_state.spr[SPR::MQ]) % ppc_result_b;
+
+    uint64_t dividend = ((uint64_t)ppc_result_a << 32) | ppc_state.spr[SPR::MQ];
+    int32_t  divisor  = (uint32_t)ppc_result_b;
+
+    if ((ppc_result_a == 0x80000000UL && divisor == -1) || !divisor) {
+        ppc_state.spr[SPR::MQ] = 0;
+        ppc_result_d = 0x80000000UL; // -2^31 aka INT32_MIN
+    } else {
+        ppc_result_d = dividend / divisor;
+        ppc_state.spr[SPR::MQ] = dividend % divisor;
+    }
 
     if (oe_flag)
         power_setsoov(ppc_result_b, ppc_result_a, ppc_result_d);
@@ -104,11 +113,8 @@ void dppc_interpreter::power_divs() {
 
 void dppc_interpreter::power_doz() {
     ppc_grab_regsdab();
-    if (((int32_t)ppc_result_a) > ((int32_t)ppc_result_b)) {
-        ppc_result_d = 0;
-    } else {
-        ppc_result_d = ppc_result_b - ppc_result_a;
-    }
+    ppc_result_d = ((int32_t)ppc_result_a >= (int32_t)ppc_result_b) ? 0 :
+                    ppc_result_b - ppc_result_a;
 
     if (rc_flag)
         ppc_changecrf0(ppc_result_d);
@@ -199,7 +205,7 @@ void dppc_interpreter::power_maskg() {
 
 void dppc_interpreter::power_maskir() {
     ppc_grab_regssab();
-    ppc_result_a = (ppc_result_d & ppc_result_b) | (~(ppc_result_b) & ppc_result_a);
+    ppc_result_a = (ppc_result_a & ~ppc_result_b) | (ppc_result_d & ppc_result_b);
 
     if (rc_flag)
         ppc_changecrf0(ppc_result_a);
