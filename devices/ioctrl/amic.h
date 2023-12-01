@@ -145,6 +145,24 @@ private:
     uint8_t         stat;
 };
 
+/** AMIC specific Serial Transmit DMA channel. */
+class AmicSerialXmitDma : public DmaOutChannel {
+public:
+    AmicSerialXmitDma()  = default;
+    ~AmicSerialXmitDma() = default;
+
+    void            write_ctrl(const uint8_t value);
+    uint8_t         read_stat() { return this->stat; };
+
+    DmaPullResult   pull_data(uint32_t req_len, uint32_t *avail_len,
+                                      uint8_t **p_data);
+
+private:
+    uint32_t        addr_ptr;
+    uint16_t        byte_count;
+    uint8_t         stat;
+};
+
 /** AMIC-specific SCSI DMA implementation. */
 class AmicScsiDma : public DmaBidirChannel {
 public:
@@ -327,10 +345,11 @@ private:
     ViaCuda*            viacuda;
     Swim3::Swim3Ctrl*   swim3;
 
-    std::unique_ptr<AwacDevicePdm>  awacs;
-    std::unique_ptr<AmicSndOutDma>  snd_out_dma;
-    std::unique_ptr<AmicFloppyDma>  floppy_dma;
-    std::unique_ptr<AmicScsiDma>    scsi_dma;
+    std::unique_ptr<AwacDevicePdm>      awacs;
+    std::unique_ptr<AmicSndOutDma>      snd_out_dma;
+    std::unique_ptr<AmicFloppyDma>      floppy_dma;
+    std::unique_ptr<AmicScsiDma>        scsi_dma;
+    std::unique_ptr<AmicSerialXmitDma>  escc_xmit_b_dma;
 
     // on-board video
     std::unique_ptr<DisplayID>          disp_id;

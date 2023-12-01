@@ -58,6 +58,7 @@ AMIC::AMIC() : MMIODevice()
 
     // connect serial HW
     this->escc = dynamic_cast<EsccController*>(gMachineObj->get_comp_by_name("Escc"));
+    this->escc_xmit_b_dma = std::unique_ptr<AmicSerialXmitDma>(new AmicSerialXmitDma());
 
     // connect Ethernet HW
     this->mace = dynamic_cast<MaceController*>(gMachineObj->get_comp_by_name("Mace"));
@@ -190,6 +191,8 @@ uint32_t AMIC::read(uint32_t rgn_start, uint32_t offset, int size)
         return (this->floppy_addr_ptr >> (3 - (offset & 3)) * 8) & 0xFF;
     case AMICReg::Floppy_DMA_Ctrl:
         return this->floppy_dma->read_stat();
+    case SCC_DMA_Xmt_B_Ctrl:
+        return this->escc_xmit_b_dma->read_stat();
     default:
         LOG_F(WARNING, "Unknown AMIC register read, offset=%x", offset);
     }
@@ -392,6 +395,7 @@ void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
         break;
     case AMICReg::SCC_DMA_Xmt_B_Ctrl:
         LOG_F(INFO, "AMIC SCC Transmit Ch B DMA Ctrl updated, val=%x", value);
+        this->escc_xmit_b_dma->write_ctrl(value);
         break;
     case AMICReg::SCC_DMA_Rcv_B_Ctrl:
         LOG_F(INFO, "AMIC SCC Receive Ch B DMA Ctrl updated, val=%x", value);
@@ -697,6 +701,31 @@ DmaPullResult AmicScsiDma::pull_data(uint32_t req_len, uint32_t *avail_len,
     *avail_len = req_len;
     return DmaPullResult::MoreData;
 }
+
+// =========================== Serial DMA stuff ===============================
+void AmicSerialXmitDma::write_ctrl(const uint8_t value)
+{
+    if (value & 1) { // RST bit set?
+        this->stat &= 0x7C; // clear IF, RUN and RST bits
+    }
+
+    // copy PAUSE to FROZEN
+    this->stat = (this->stat & 0xDF) | ((value & 0x10) << 1);
+
+    // copy over RELOAD, PAUSE, IE, CONT and RUN bits
+    this->stat = (this->stat & 0xA1) | (value & 0x5E);
+
+    // clear interrupt flag if requested
+    if (value & 0x80) {
+        this->stat &= 0x7F;
+    }
+}
+
+DmaPullResult AmicSerialXmitDma::pull_data(uint32_t req_len, uint32_t *avail_len,
+                                           uint8_t **p_data)
+{
+    return DmaPullResult::NoMoreData;
+};
 
 static vector<string> Amic_Subdevices = {
     "Scsi0", "Sc53C94", "Escc", "Mace", "ViaCuda", "Swim3"
