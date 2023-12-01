@@ -115,7 +115,7 @@ void dppc_interpreter::power_doz() {
     if (oe_flag)
         power_setsoov(ppc_result_a, ppc_result_b, ppc_result_d);
 
-    ppc_store_result_rega();
+    ppc_store_result_regd();
 }
 
 void dppc_interpreter::power_dozi() {
@@ -125,7 +125,7 @@ void dppc_interpreter::power_dozi() {
     } else {
         ppc_result_d = simm - ppc_result_a;
     }
-    ppc_store_result_rega();
+    ppc_store_result_regd();
 }
 
 void dppc_interpreter::power_lscbx() {
@@ -223,7 +223,7 @@ void dppc_interpreter::power_mul() {
 
 void dppc_interpreter::power_nabs() {
     ppc_grab_regsda();
-    ppc_result_d = (0x80000000 | ppc_result_a);
+    ppc_result_d = ppc_result_a & 0x80000000 ? ppc_result_a : -ppc_result_a;
 
     if (rc_flag)
         ppc_changecrf0(ppc_result_d);
