@@ -167,6 +167,14 @@ enum AdbKey {
     AdbKey_F13 =            0x69,
     AdbKey_F14 =            0x6b,
     AdbKey_F15 =            0x71,
+
+    AdbKey_ISO1=            0x0A,
+
+    AdbKey_JIS_Yen        = 0x5D,
+    AdbKey_JIS_Underscore = 0x5E,
+    AdbKey_JIS_KP_Comma   = 0x5F,
+    AdbKey_JIS_Eisu       = 0x66,
+    AdbKey_JIS_Kana       = 0x68,
 };
 
 #endif    // ADB_KEYBOARD_H

@@ -240,6 +240,40 @@ static int get_sdl_event_key_code(const SDL_KeyboardEvent &event)
     case SDLK_PRINTSCREEN:  return AdbKey_F13;
     case SDLK_SCROLLLOCK:   return AdbKey_F14;
     case SDLK_PAUSE:        return AdbKey_F15;
+
+    //International keyboard support
+
+    //Japanese keyboard
+    case SDL_SCANCODE_TO_KEYCODE(SDL_SCANCODE_INTERNATIONAL3):
+        return AdbKey_JIS_Yen;
+    case SDL_SCANCODE_TO_KEYCODE(SDL_SCANCODE_INTERNATIONAL1):
+        return AdbKey_JIS_Underscore;
+    case 0XBC:          
+        return AdbKey_JIS_KP_Comma;
+    case 0X89:
+        return AdbKey_JIS_Eisu;
+    case SDL_SCANCODE_TO_KEYCODE(SDL_SCANCODE_INTERNATIONAL2):
+        return AdbKey_JIS_Kana;
+
+    //German keyboard
+    case 0XB4:        return AdbKey_Slash;
+    case 0X5E:        return AdbKey_ISO1;
+    case 0XDF:        return AdbKey_Minus;       //Eszett
+    case 0XE4:        return AdbKey_LeftBracket; //A-umlaut
+    case 0XF6:        return AdbKey_Semicolon;   //O-umlaut
+    case 0XFC:        return AdbKey_LeftBracket; //U-umlaut
+
+    // French keyboard
+    case 0X29:        return AdbKey_Minus;             // Right parenthesis
+    case 0X43:        return AdbKey_KeypadMultiply;    // Star/Mu
+    //0XB2 is superscript 2. Which key this one is supposed to map to?
+    case 0XF9:        return AdbKey_Quote;             // U-grave
+
+    // Italian keyboard
+    case 0XE0:        return AdbKey_9;              // A-grave
+    case 0XE8:        return AdbKey_6;              // E-grave
+    case 0XEC:        return AdbKey_LeftBracket;    // I-grave
+    case 0XF2:        return AdbKey_KeypadMultiply; // O-grave
     }
     return -1;
 }
