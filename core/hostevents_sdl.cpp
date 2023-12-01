@@ -70,7 +70,7 @@ void EventManager::poll_events()
                     }
                     this->_keyboard_signal.emit(ke);
                 } else {
-                    LOG_F(WARNING, "Unknow key %x pressed", event.key.keysym.sym);
+                    LOG_F(WARNING, "Unknown key %x pressed", event.key.keysym.sym);
                 }
             }
             break;
@@ -266,7 +266,7 @@ static int get_sdl_event_key_code(const SDL_KeyboardEvent &event)
     // French keyboard
     case 0X29:        return AdbKey_Minus;             // Right parenthesis
     case 0X43:        return AdbKey_KeypadMultiply;    // Star/Mu
-    //0XB2 is superscript 2. Which key this one is supposed to map to?
+    //0XB2 is superscript 2. Which Mac key should this one map to?
     case 0XF9:        return AdbKey_Quote;             // U-grave
 
     // Italian keyboard
