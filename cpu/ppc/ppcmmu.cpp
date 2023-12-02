@@ -83,10 +83,6 @@ AddressMapEntry last_exec_area  = {0xFFFFFFFF, 0xFFFFFFFF, 0, 0, nullptr, nullpt
 AddressMapEntry last_ptab_area  = {0xFFFFFFFF, 0xFFFFFFFF, 0, 0, nullptr, nullptr};
 AddressMapEntry last_dma_area   = {0xFFFFFFFF, 0xFFFFFFFF, 0, 0, nullptr, nullptr};
 
-void ppc_set_cur_instruction(const uint8_t* ptr) {
-    ppc_cur_instruction = READ_DWORD_BE_A(ptr);
-}
-
 /** 601-style block address translation. */
 static BATResult mpc601_block_address_translation(uint32_t la)
 {
