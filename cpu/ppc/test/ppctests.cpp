@@ -113,7 +113,7 @@ static void read_test_data() {
             continue;
         }
 
-        opcode = stoul(tokens[1], NULL, 16);
+        opcode = (uint32_t)stoul(tokens[1], NULL, 16);
 
         dest      = 0;
         src1      = 0;
@@ -123,15 +123,15 @@ static void read_test_data() {
 
         for (i = 2; i < tokens.size(); i++) {
             if (tokens[i].rfind("rD=", 0) == 0) {
-                dest = stoul(tokens[i].substr(3), NULL, 16);
+                dest = (uint32_t)stoul(tokens[i].substr(3), NULL, 16);
             } else if (tokens[i].rfind("rA=", 0) == 0) {
-                src1 = stoul(tokens[i].substr(3), NULL, 16);
+                src1 = (uint32_t)stoul(tokens[i].substr(3), NULL, 16);
             } else if (tokens[i].rfind("rB=", 0) == 0) {
-                src2 = stoul(tokens[i].substr(3), NULL, 16);
+                src2 = (uint32_t)stoul(tokens[i].substr(3), NULL, 16);
             } else if (tokens[i].rfind("XER=", 0) == 0) {
-                check_xer = stoul(tokens[i].substr(4), NULL, 16);
+                check_xer = (uint32_t)stoul(tokens[i].substr(4), NULL, 16);
             } else if (tokens[i].rfind("CR=", 0) == 0) {
-                check_cr = stoul(tokens[i].substr(3), NULL, 16);
+                check_cr = (uint32_t)stoul(tokens[i].substr(3), NULL, 16);
             } else {
                 cout << "Unknown parameter " << tokens[i] << " in line " << lineno << ". Exiting..."
                      << endl;
@@ -227,7 +227,7 @@ static void read_test_float_data() {
             continue;
         }
 
-        opcode = stoul(tokens[1], NULL, 16);
+        opcode = (uint32_t)stoul(tokens[1], NULL, 16);
 
         src1        = 0;
         src2        = 0;
@@ -253,9 +253,9 @@ static void read_test_float_data() {
             } else if (tokens[i].rfind("round=", 0) == 0) {
                 rounding_mode = tokens[i].substr(6, 3);
             } else if (tokens[i].rfind("FPSCR=", 0) == 0) {
-                check_fpscr = stoul(tokens[i].substr(6), NULL, 16);
+                check_fpscr = (uint32_t)stoul(tokens[i].substr(6), NULL, 16);
             } else if (tokens[i].rfind("CR=", 0) == 0) {
-                check_cr = stoul(tokens[i].substr(3), NULL, 16);
+                check_cr = (uint32_t)stoul(tokens[i].substr(3), NULL, 16);
             } else {
                 cout << "Unknown parameter " << tokens[i] << " in line " << lineno << ". Exiting..."
                      << endl;

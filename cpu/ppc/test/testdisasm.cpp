@@ -65,15 +65,15 @@ static vector<PPCDisasmContext> read_test_data() {
         }
 
         ctx            = {0};
-        ctx.instr_addr = stoul(tokens[0], NULL, 16);
-        ctx.instr_code = stoul(tokens[1], NULL, 16);
+        ctx.instr_addr = (uint32_t)stoul(tokens[0], NULL, 16);
+        ctx.instr_code = (uint32_t)stoul(tokens[1], NULL, 16);
 
         /* build disassembly string out of comma-separated parts */
         ostringstream idisasm;
 
         /* put instruction mnemonic padded with trailing spaces */
         idisasm << tokens[2];
-        idisasm << setw(8 - tokens[2].length()) << " ";
+        idisasm << setw(8 - (int)tokens[2].length()) << " ";
 
         /* now add comma-separated operands */
         for (i = 3; i < tokens.size(); i++) {
