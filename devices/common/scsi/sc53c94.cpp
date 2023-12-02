@@ -416,13 +416,13 @@ uint8_t Sc53C94::fifo_pop()
 
 void Sc53C94::seq_defer_state(uint64_t delay_ns)
 {
-    if (seq_timer_id) {
+    if (this->seq_timer_id) {
         TimerManager::get_instance()->cancel_timer(this->seq_timer_id);
-        seq_timer_id = 0;
+        this->seq_timer_id = 0;
     }
 
     if (delay_ns) {
-        seq_timer_id = TimerManager::get_instance()->add_oneshot_timer(
+        this->seq_timer_id = TimerManager::get_instance()->add_oneshot_timer(
             delay_ns,
             [this]() {
                 // re-enter the sequencer with the state specified in next_state
@@ -431,7 +431,7 @@ void Sc53C94::seq_defer_state(uint64_t delay_ns)
                 this->sequencer();
         });
     } else {
-        seq_timer_id = TimerManager::get_instance()->add_immediate_timer(
+        this->seq_timer_id = TimerManager::get_instance()->add_immediate_timer(
             [this]() {
                 // re-enter the sequencer with the state specified in next_state
                 this->seq_timer_id = 0;
@@ -614,7 +614,7 @@ void Sc53C94::notify(ScsiMsg msg_type, int param)
         if (this->target_id == param) {
             // cancel selection timeout timer
             TimerManager::get_instance()->cancel_timer(this->seq_timer_id);
-            seq_timer_id = 0;
+            this->seq_timer_id = 0;
             this->cur_state = SeqState::SEL_END;
             this->sequencer();
         } else {
