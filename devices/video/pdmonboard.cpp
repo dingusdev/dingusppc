@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/video/pdmonboard.h>
 #include <devices/video/videoctrl.h>
 #include <machines/machinebase.h>
+#include <memaccess.h>
 #include <loguru.hpp>
 
 #include <cinttypes>
@@ -116,20 +117,38 @@ void PdmOnboardVideo::set_clut_color(uint8_t color)
     }
 }
 
-void PdmOnboardVideo::set_depth_internal(int pitch)
+void PdmOnboardVideo::set_depth_internal(int width)
 {
     switch (this->pixel_depth) {
     case 1:
         this->convert_fb_cb = [this](uint8_t* dst_buf, int dst_pitch) {
             this->convert_frame_1bpp_indexed(dst_buf, dst_pitch);
         };
-        this->fb_pitch = pitch >> 3;    // one byte contains 8 pixels
+        this->fb_pitch = width >> 3; // one byte contains 8 pixels
+        break;
+    case 2:
+        this->convert_fb_cb = [this](uint8_t* dst_buf, int dst_pitch) {
+            this->convert_frame_2bpp_indexed(dst_buf, dst_pitch);
+        };
+        this->fb_pitch = width >> 2; // one byte contains 4 pixels
+        break;
+    case 4:
+        this->convert_fb_cb = [this](uint8_t* dst_buf, int dst_pitch) {
+            this->convert_frame_4bpp_indexed(dst_buf, dst_pitch);
+        };
+        this->fb_pitch = width >> 1; // one byte contains 2 pixels
         break;
     case 8:
         this->convert_fb_cb = [this](uint8_t* dst_buf, int dst_pitch) {
             this->convert_frame_8bpp_indexed(dst_buf, dst_pitch);
         };
-        this->fb_pitch = pitch; // one byte contains 1 pixel
+        this->fb_pitch = width; // one byte contains 1 pixel
+        break;
+    case 16:
+        this->convert_fb_cb = [this](uint8_t* dst_buf, int dst_pitch) {
+            this->convert_frame_15bpp_BE(dst_buf, dst_pitch);
+        };
+        this->fb_pitch = width << 1; // 1 pixel is 2 bytes
         break;
     default:
         ABORT_F("PDM-Video: pixel depth %d not implemented yet!", this->pixel_depth);
@@ -241,29 +260,86 @@ void PdmOnboardVideo::disable_video_internal()
  */
 void PdmOnboardVideo::convert_frame_1bpp_indexed(uint8_t *dst_buf, int dst_pitch)
 {
-    uint8_t  *src_buf, *src_row, pix;
-    uint32_t *dst_row;
-    int      src_pitch, width;
-    uint32_t pixels[2];
+    uint8_t *src_row, *dst_row;
+    int     src_pitch;
+    uint64_t pixels;
 
     // prepare cached ARGB values for white & black pixels
-    pixels[0] = this->palette[127];
-    pixels[1] = this->palette[255];
+    pixels = ((uint64_t)this->palette[127] << 32) | this->palette[255];
 
-    src_buf   = this->fb_ptr;
-    src_pitch = this->fb_pitch;
-    width     = this->active_width >> 3;
+    src_pitch = this->fb_pitch - ((this->active_width + 7) >> 3);
+    dst_pitch = dst_pitch - 4 * this->active_width;
 
-    for (int h = 0; h < this->active_height; h++) {
-        src_row = &src_buf[h * src_pitch];
-        dst_row = (uint32_t *)(&dst_buf[h * dst_pitch]);
-
-        for (int x = 0; x < width; x++) {
-            pix = src_row[x];
-
-            for (int i = 0; i < 8; i++, pix <<= 1, dst_row++) {
-                *dst_row = pixels[(pix >> 7) & 1];
+    src_row = this->fb_ptr - 1;
+    dst_row = dst_buf;
+    for (int h = this->active_height; h > 0; h--) {
+        uint8_t bit = 0x00;
+        uint8_t c;
+        for (int x = this->active_width; x > 0; x--) {
+            if (!bit) {
+                src_row += 1;
+                bit = 0x80;
+                c = *src_row;
             }
+            WRITE_DWORD_LE_A(dst_row, (uint32_t)(pixels >> (!(c & bit) << 5)));
+            bit >>= 1;
+            dst_row += 4;
         }
+        src_row += src_pitch;
+        dst_row += dst_pitch;
+    }
+}
+
+void PdmOnboardVideo::convert_frame_2bpp_indexed(uint8_t *dst_buf, int dst_pitch)
+{
+    uint8_t *src_row, *dst_row;
+    int     src_pitch;
+
+    src_pitch = this->fb_pitch - (this->active_width >> 2);
+    dst_pitch = dst_pitch - 4 * this->active_width;
+
+    src_row = this->fb_ptr;
+    dst_row = dst_buf;
+    for (int h = this->active_height; h > 0; h--) {
+        uint8_t c;
+        for (int x = this->active_width >> 2; x > 0; x--) {
+            c = *src_row;
+            WRITE_DWORD_LE_A(dst_row, this->palette[c & 0xc0 | 0x3f]);
+            dst_row += 4;
+            WRITE_DWORD_LE_A(dst_row, this->palette[(c << 2) & 0xc0 | 0x3f]);
+            dst_row += 4;
+            WRITE_DWORD_LE_A(dst_row, this->palette[(c << 4) & 0xc0 | 0x3f]);
+            dst_row += 4;
+            WRITE_DWORD_LE_A(dst_row, this->palette[(uint8_t)(c << 6) | 0x3f]);
+            dst_row += 4;
+            src_row += 1;
+        }
+        src_row += src_pitch;
+        dst_row += dst_pitch;
+    }
+}
+
+void PdmOnboardVideo::convert_frame_4bpp_indexed(uint8_t *dst_buf, int dst_pitch)
+{
+    uint8_t *src_row, *dst_row;
+    int     src_pitch;
+
+    src_pitch = this->fb_pitch - (this->active_width >> 1);
+    dst_pitch = dst_pitch - 4 * this->active_width;
+
+    src_row = this->fb_ptr;
+    dst_row = dst_buf;
+    for (int h = this->active_height; h > 0; h--) {
+        uint8_t c;
+        for (int x = this->active_width >> 1; x > 0; x--) {
+            c = *src_row;
+            WRITE_DWORD_LE_A(dst_row, this->palette[c & 0xf0 | 0x0f]);
+            dst_row += 4;
+            WRITE_DWORD_LE_A(dst_row, this->palette[(uint8_t)(c << 4) | 0x0f]);
+            dst_row += 4;
+            src_row += 1;
+        }
+        src_row += src_pitch;
+        dst_row += dst_pitch;
     }
 }
