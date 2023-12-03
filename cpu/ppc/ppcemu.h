@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <devices/memctrl/memctrlbase.h>
 #include <endianswap.h>
+#include <memaccess.h>
 
 #include <cinttypes>
 #include <functional>
@@ -323,7 +324,7 @@ enum class Except_Type {
     EXC_TRACE   = 13
 };
 
-/** Programm Exception subclasses. */
+/** Program Exception subclasses. */
 enum Exc_Cause : uint32_t {
     FPU_OFF     = 1 << (31 - 11),
     ILLEGAL_OP  = 1 << (31 - 12),
@@ -352,6 +353,10 @@ extern bool oe_flag;    // Overflow flag
 extern uint32_t ppc_cur_instruction;
 extern uint32_t ppc_effective_address;
 extern uint32_t ppc_next_instruction_address;
+
+inline void ppc_set_cur_instruction(const uint8_t* ptr) {
+    ppc_cur_instruction = READ_DWORD_BE_A(ptr);
+}
 
 // Profiling Stats
 #ifdef CPU_PROFILING
