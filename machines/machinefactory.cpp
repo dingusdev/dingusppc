@@ -65,7 +65,7 @@ static const map<uint32_t, std::tuple<string, const char*>> rom_identity = {
     {0x50425820, {"pb-preg3", "PowerBook Pre-G3"}},
     {0x50444D20, {"pm6100",   "Nubus Power Mac"}},             // Piltdown Man (6100/7100/8100)
     {0x50697020, {"pippin",   "Bandai Pippin"}},               // Pippin
-    //{"Powe", "Generic Power Mac"},                           // PowerMac?
+    //{"Powe", "Generic Power Mac"},                           // Power Mac?
     {0x544E5420, {"pm7200",   "Power Mac 7xxxx/8xxx series"}}, // Trinitrotoluene :-)
     {0x5A616E7A, {"pm4400",   "Power Mac 4400/7220"}},         // Zanzibar
 };

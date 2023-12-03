@@ -5,7 +5,7 @@ MPC601 implements its own format for BAT registers that differs from the PowerPC
 
 MPC601-specific lower BAT registers has the "V" bit. If it's cleared, the corresponding BAT pair
 is invalid and won't be used for address translation. To invalidate BATs on MPC601, it's enough
-to write NULL to lower BAT registers. That's exactly what PowerMac 6100 ROM does:
+to write NULL to lower BAT registers. That's exactly what Power Mac 6100 ROM does:
  ```
 li        r0,     0
 mtspr     ibat0l, r0

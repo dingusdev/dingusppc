@@ -5,7 +5,7 @@
 [Open Firmware](https://en.wikipedia.org/wiki/Open_Firmware) is a platform-independent
 boot firmware architecture covered by an IEEE standard.
 
-All PowerMacintosh computers run Open Firmware except the very first generation
+All Power Macintosh computers run Open Firmware except the very first generation
 that uses [Nubus](https://en.wikipedia.org/wiki/NuBus) instead of
 [PCI](https://en.wikipedia.org/wiki/Peripheral_Component_Interconnect).
 
@@ -22,7 +22,7 @@ controlling the boot enviroment as by developers for developing and debugging de
 drivers.
 
 This document focuses on various aspects of Apple's Open Firmware implementation
-as found in various PowerMacintosh models.
+as found in various Power Macintosh models.
 
 ## Open Firmware Versions
 

@@ -44,7 +44,7 @@ namespace Hammerhead {
 #define EXTENDED_ID   0x1 // examine some other registers to get full ID
 #define HH_CPU_ID_TNT ((RISC_MACHINE << 4) | (EXTENDED_ID << 3) | MACH_TYPE_TNT)
 
-    // contants for the MBID field of the MOTHERBOARD_ID register
+    // constants for the MBID field of the MOTHERBOARD_ID register
     enum {
         MBID_VCI0_PRESENT = 4,
         MBID_PCI2_PRESENT = 2,

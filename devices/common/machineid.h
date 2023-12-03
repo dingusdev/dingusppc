@@ -31,7 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 
 /**
-    @file Contains definitions for PowerMacintosh machine ID registers.
+    @file Contains definitions for Power Macintosh machine ID registers.
 
     The machine ID register is a memory-based register containing hardcoded
     values the system software can read to identify machine/board it's running on.
@@ -43,7 +43,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     Machine ID register for Nubus Power Macs.
     It's located at physical address 0x5FFFFFFC and contains four bytes:
       +0 uint16_t signature = 0xA55A
-      +1 uint8_t  machine_type (3 - PowerMac)
+      +1 uint8_t  machine_type (3 - Power Mac)
       +2 uint8_t  model (0x10 = PDM, 0x12 = Carl Sagan, 0x13 = Cold Fusion)
  */
 class NubusMacID : public MMIODevice {

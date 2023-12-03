@@ -58,7 +58,7 @@ bool AdbKeyboard::get_register_0() {
 
 uint8_t AdbKeyboard::consume_pending_event() {
     if (this->pending_events.empty()) {
-        // In most cases we have only on pending event when the host polls us,
+        // In most cases we have only one pending event when the host polls us,
         // but we need to fill two entries of the output buffer. We need to set
         // the key status bit to 1 (released), and the key to a non-existent
         // one (0x7F). Otherwise if we leave it empty, the host will think that

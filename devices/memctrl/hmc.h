@@ -25,7 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
     Highspeed Memory Controller (HMC) is a custom memory
     and L2 cache controller designed especially for the
-    first generation of the PowerMacintosh computer.
+    first generation of the Power Macintosh computer.
 */
 
 #ifndef HMC_H

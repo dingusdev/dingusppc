@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/** @file Construct a PDM-style PowerMacintosh machine.
+/** @file Construct a PDM-style Power Macintosh machine.
 
     Author: Max Poliakovski
  */

@@ -2,7 +2,7 @@ get-inherited-property and map-in notes
 by joevt
 
 ==========================================================================================
-PowerMac 8600
+Power Mac 8600
 
 
 rom notes:
@@ -216,13 +216,13 @@ The method that the Radeon 7000 uses (the "AAPL,cpu-id" check) to decide whether
 
 
 ==========================================================================================
-PowerMac G3 233 (beige) Open Firmware 2.0f1:
+Power Mac G3 233 (beige) Open Firmware 2.0f1:
 
 - The PCI bridge in the G3 does not implement the add-range method which signifies that get-inherited-property returns the correct number of parameters
 - get-inherited-property is implemented the same as Open Firmware 2.4 (see below)
 
 ==========================================================================================
-PowerMac G3 300 (beige) Open Firmware 2.4:
+Power Mac G3 300 (beige) Open Firmware 2.4:
 
 - this version of Open Firmware is the best Old World Mac Open Firmware to work with since it has names for almost everything.
 

@@ -8,7 +8,7 @@ Be warned the program is highly unfinished and could use a lot of testing. Any f
 
 While many other PowerPC emus exist (PearPC, Sheepshaver), none of them currently attempt emulation of PowerPC Macs accurately (except for QEMU).
 
-This program aims to not only improve upon what Sheepshaver, PearPC, and other PowerPC Mac emulators have done, but also to provide a better debugging environment. This currently is designed to work best with PowerPC Old World ROMs, including those of the PowerMac 6100, 7200, and G3 Beige.
+This program aims to not only improve upon what Sheepshaver, PearPC, and other PowerPC Mac emulators have done, but also to provide a better debugging environment. This currently is designed to work best with PowerPC Old World ROMs, including those of the Power Mac 6100, 7200, and G3 Beige.
 
 ## Implemented Features
 
