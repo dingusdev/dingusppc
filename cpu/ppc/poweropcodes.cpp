@@ -80,13 +80,13 @@ void dppc_interpreter::power_div() {
     ppc_grab_regsdab();
 
     uint64_t dividend = ((uint64_t)ppc_result_a << 32) | ppc_state.spr[SPR::MQ];
-    int32_t  divisor  = (uint32_t)ppc_result_b;
+    int32_t  divisor  = ppc_result_b;
 
     if ((ppc_result_a == 0x80000000UL && divisor == -1) || !divisor) {
         ppc_state.spr[SPR::MQ] = 0;
         ppc_result_d = 0x80000000UL; // -2^31 aka INT32_MIN
     } else {
-        ppc_result_d = dividend / divisor;
+        ppc_result_d = (uint32_t)(dividend / divisor);
         ppc_state.spr[SPR::MQ] = dividend % divisor;
     }
 
