@@ -79,6 +79,8 @@ void VideoCtrlBase::update_screen()
 }
 
 void VideoCtrlBase::start_refresh_task() {
+    this->display.configure(this->active_width, this->active_height);
+
     uint64_t refresh_interval = static_cast<uint64_t>(1.0f / refresh_rate * NS_PER_SEC + 0.5);
     this->refresh_task_id = TimerManager::get_instance()->add_cyclic_timer(
         refresh_interval,

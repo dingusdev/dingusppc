@@ -74,7 +74,6 @@ bool Display::configure(int width, int height) {
         is_initialization = true;
     } else { // resize display window
         SDL_SetWindowSize(impl->display_wnd, width, height);
-        impl->resizing = true;
     }
 
     if (impl->disp_texture)
