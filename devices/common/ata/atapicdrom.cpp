@@ -34,7 +34,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace ata_interface;
 
-AtapiCdrom::AtapiCdrom(std::string name) : AtapiBaseDevice(name) {
+AtapiCdrom::AtapiCdrom(std::string name) : CdromDrive(), AtapiBaseDevice(name) {
     this->set_error_callback(
         [this](uint8_t sense_key, uint8_t asc) {
             this->status_error(sense_key, asc);

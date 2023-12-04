@@ -33,7 +33,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <cstring>
 
-Sc53C94::Sc53C94(uint8_t chip_id, uint8_t my_id) : ScsiDevice(my_id)
+Sc53C94::Sc53C94(uint8_t chip_id, uint8_t my_id) : ScsiDevice("SC53C94", my_id)
 {
     this->chip_id   = chip_id;
     this->my_bus_id = my_id;
@@ -110,7 +110,7 @@ uint8_t Sc53C94::read(uint8_t reg_offset)
         }
         break;
     default:
-        LOG_F(INFO, "SC53C94: reading from register %d", reg_offset);
+        LOG_F(INFO, "%s: reading from register %d", this->name.c_str(), reg_offset);
     }
     return 0;
 }
@@ -144,7 +144,7 @@ void Sc53C94::write(uint8_t reg_offset, uint8_t value)
         break;
     case Write::Reg53C94::Config_1:
         if ((value & 7) != this->my_bus_id) {
-            ABORT_F("SC53C94: HBA bus ID mismatch!");
+            ABORT_F("%s: HBA bus ID mismatch!", this->name.c_str());
         }
         this->config1 = value;
         break;
@@ -155,7 +155,8 @@ void Sc53C94::write(uint8_t reg_offset, uint8_t value)
         this->config3 = value;
         break;
     default:
-        LOG_F(INFO, "SC53C94: writing 0x%X to %d register", value, reg_offset);
+        LOG_F(INFO, "%s: writing 0x%X to %d register", this->name.c_str(), value,
+              reg_offset);
     }
 }
 
@@ -208,7 +209,7 @@ void Sc53C94::pseudo_dma_write(uint16_t data) {
 void Sc53C94::update_command_reg(uint8_t cmd)
 {
     if (this->on_reset && (cmd & 0x7F) != CMD_NOP) {
-        LOG_F(WARNING, "SC53C94: command register blocked after RESET!");
+        LOG_F(WARNING, "%s: command register blocked after RESET!", this->name.c_str());
         return;
     }
 
@@ -228,7 +229,7 @@ void Sc53C94::update_command_reg(uint8_t cmd)
             exec_command();
         }
     } else {
-        LOG_F(ERROR, "SC53C94: the top of the command FIFO overwritten!");
+        LOG_F(ERROR, "%s: the top of the command FIFO overwritten!", this->name.c_str());
         this->status |= STAT_GE; // signal IOE/Gross Error
     }
 }
@@ -268,7 +269,7 @@ void Sc53C94::exec_command()
         this->on_reset = true; // block the command register
         return;
     case CMD_RESET_BUS:
-        LOG_F(INFO, "SC53C94: resetting SCSI bus...");
+        LOG_F(INFO, "%s: resetting SCSI bus...", this->name.c_str());
         // assert RST line
         this->bus_obj->assert_ctrl_line(this->my_bus_id, SCSI_CTRL_RST);
         // release RST line after 25 us
@@ -278,7 +279,7 @@ void Sc53C94::exec_command()
                 this->bus_obj->release_ctrl_line(this->my_bus_id, SCSI_CTRL_RST);
         });
         if (!(config1 & 0x40)) {
-            LOG_F(INFO, "SC53C94: reset interrupt issued");
+            LOG_F(INFO, "%s: reset interrupt issued", this->name.c_str());
             this->int_status |= INTSTAT_SRST;
         }
         exec_next_command();
@@ -303,7 +304,7 @@ void Sc53C94::exec_command()
             {SeqState::CMD_COMPLETE, 0, INTSTAT_SR}
         };
         if (this->bus_obj->current_phase() != ScsiPhase::STATUS) {
-            ABORT_F("Sc53C94: complete steps only works in the STATUS phase");
+            ABORT_F("%s: complete steps only works in the STATUS phase", this->name.c_str());
         }
         this->seq_step = 0;
         this->cmd_steps = complete_steps_desc;
@@ -330,7 +331,7 @@ void Sc53C94::exec_command()
         this->cmd_steps = sel_no_atn_desc;
         this->cur_state = SeqState::BUS_FREE;
         this->sequencer();
-        LOG_F(9, "SC53C94: SELECT W/O ATN command started");
+        LOG_F(9, "%s: SELECT W/O ATN command started", this->name.c_str());
         break;
     case CMD_SELECT_WITH_ATN:
         static SeqDesc * sel_with_atn_desc = new SeqDesc[4]{
@@ -344,13 +345,13 @@ void Sc53C94::exec_command()
         this->cmd_steps = sel_with_atn_desc;
         this->cur_state = SeqState::BUS_FREE;
         this->sequencer();
-        LOG_F(9, "SC53C94: SELECT WITH ATN command started");
+        LOG_F(9, "%s: SELECT WITH ATN command started", this->name.c_str());
         break;
     case CMD_ENA_SEL_RESEL:
         exec_next_command();
         break;
     default:
-        LOG_F(ERROR, "SC53C94: invalid/unimplemented command 0x%X", cmd);
+        LOG_F(ERROR, "%s: invalid/unimplemented command 0x%X", this->name.c_str(), cmd);
         this->cmd_fifo_pos--; // remove invalid command from FIFO
         this->int_status |= INTSTAT_ICMD;
         this->update_irq();
@@ -373,7 +374,7 @@ void Sc53C94::fifo_push(const uint8_t data)
     if (this->data_fifo_pos < DATA_FIFO_MAX) {
         this->data_fifo[this->data_fifo_pos++] = data;
     } else {
-        LOG_F(ERROR, "SC53C94: data FIFO overflow!");
+        LOG_F(ERROR, "%s: data FIFO overflow!", this->name.c_str());
         this->status |= STAT_GE; // signal IOE/Gross Error
     }
 }
@@ -383,7 +384,7 @@ uint8_t Sc53C94::fifo_pop()
     uint8_t data = 0;
 
     if (this->data_fifo_pos < 1) {
-        LOG_F(ERROR, "SC53C94: data FIFO underflow!");
+        LOG_F(ERROR, "%s: data FIFO underflow!", this->name.c_str());
         this->status |= STAT_GE; // signal IOE/Gross Error
     } else {
         data = this->data_fifo[0];
@@ -421,7 +422,7 @@ void Sc53C94::sequencer()
         break;
     case SeqState::ARB_BEGIN:
         if (!this->bus_obj->begin_arbitration(this->my_bus_id)) {
-            LOG_F(ERROR, "SC53C94: arbitration error, bus not free!");
+            LOG_F(ERROR, "%s: arbitration error, bus not free!", this->name.c_str());
             this->bus_obj->release_ctrl_lines(this->my_bus_id);
             this->next_state = SeqState::BUS_FREE;
             this->seq_defer_state(BUS_CLEAR_DELAY);
@@ -435,7 +436,7 @@ void Sc53C94::sequencer()
             this->next_state = this->cmd_steps->next_step;
             this->seq_defer_state(BUS_CLEAR_DELAY + BUS_SETTLE_DELAY);
         } else { // arbitration lost
-            LOG_F(INFO, "SC53C94: arbitration lost!");
+            LOG_F(INFO, "%s: arbitration lost!", this->name.c_str());
             this->bus_obj->release_ctrl_lines(this->my_bus_id);
             this->next_state = SeqState::BUS_FREE;
             this->seq_defer_state(BUS_CLEAR_DELAY);
@@ -451,7 +452,7 @@ void Sc53C94::sequencer()
     case SeqState::SEL_END:
         if (this->bus_obj->end_selection(this->my_bus_id, this->target_id)) {
             this->bus_obj->release_ctrl_line(this->my_bus_id, SCSI_CTRL_SEL);
-            LOG_F(9, "SC53C94: selection completed");
+            LOG_F(9, "%s: selection completed", this->name.c_str());
         } else { // selection timeout
             this->seq_step = this->cmd_steps->step_num;
             this->int_status |= this->cmd_steps->status;
@@ -545,7 +546,7 @@ void Sc53C94::sequencer()
         }
         break;
     default:
-        ABORT_F("SC53C94: unimplemented sequencer state %d", this->cur_state);
+        ABORT_F("%s: unimplemented sequencer state %d", this->name.c_str(), this->cur_state);
     }
 }
 
@@ -569,7 +570,8 @@ void Sc53C94::notify(ScsiMsg msg_type, int param)
             this->cur_state = SeqState::SEL_END;
             this->sequencer();
         } else {
-            LOG_F(WARNING, "SC53C94: ignore invalid selection confirmation message");
+            LOG_F(WARNING, "%s: ignore invalid selection confirmation message",
+                  this->name.c_str());
         }
         break;
     case ScsiMsg::BUS_PHASE_CHANGE:
@@ -581,7 +583,8 @@ void Sc53C94::notify(ScsiMsg msg_type, int param)
         }
         break;
     default:
-        LOG_F(9, "SC53C94: ignore notification message, type: %d", msg_type);
+        LOG_F(9, "%s: ignore notification message, type: %d", this->name.c_str(),
+              msg_type);
     }
 }
 

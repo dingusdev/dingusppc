@@ -67,10 +67,9 @@ public:
     uint32_t report_capacity(uint8_t *data_ptr);
     uint32_t read_toc(uint8_t *cmd_ptr, uint8_t *data_ptr);
 
-    AddrMsf lba_to_msf(const int lba);
-
 protected:
     std::function<void(uint8_t, uint8_t)>  set_error;
+    AddrMsf lba_to_msf(const int lba);
 
     TrackDescriptor tracks[CDROM_MAX_TRACKS];
     int             num_tracks;

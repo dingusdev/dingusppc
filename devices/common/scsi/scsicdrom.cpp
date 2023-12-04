@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -37,9 +37,9 @@ static char cdrom_vendor_sony_id[] = "SONY    ";
 static char cdu8003a_product_id[]  = "CD-ROM CDU-8003A";
 static char cdu8003a_revision_id[] = "1.9a";
 
-ScsiCdrom::ScsiCdrom(int my_id) : ScsiDevice(my_id)
+ScsiCdrom::ScsiCdrom(std::string name, int my_id) : ScsiDevice(name, my_id)
 {
-    supports_types(HWCompType::SCSI_DEV);
+    //supports_types(HWCompType::SCSI_DEV);
 
     this->sector_size = 2048;
 
@@ -50,7 +50,7 @@ ScsiCdrom::ScsiCdrom(int my_id) : ScsiDevice(my_id)
 void ScsiCdrom::insert_image(std::string filename)
 {
     if (!this->cdr_img.open(filename)) {
-        ABORT_F("SCSI-CDROM: could not open image file");
+        ABORT_F("%s: could not open image file", this->name.c_str());
     }
 
     this->img_size = this->cdr_img.size();
@@ -104,7 +104,7 @@ void ScsiCdrom::process_command()
         lba      = READ_DWORD_BE_U(&this->cmd_buf[2]);
         xfer_len = READ_WORD_BE_U(&this->cmd_buf[7]);
         if (this->cmd_buf[1] & 1) {
-            ABORT_F("SCSI-CDROM: RelAdr bit set in READ_10");
+            ABORT_F("%s: RelAdr bit set in READ_10", this->name.c_str());
         }
         read(lba, xfer_len, 10);
         break;
@@ -112,7 +112,7 @@ void ScsiCdrom::process_command()
         this->read_toc();
         break;
     default:
-        ABORT_F("SCSI_CDROM: unsupported command %d", this->cmd_buf[0]);
+        ABORT_F("%s: unsupported command %d", this->name.c_str(), this->cmd_buf[0]);
     }
 }
 
@@ -130,7 +130,7 @@ bool ScsiCdrom::prepare_data()
     case ScsiPhase::STATUS:
         break;
     default:
-        LOG_F(WARNING, "SCSI_CDROM: unexpected phase in prepare_data");
+        LOG_F(WARNING, "%s: unexpected phase in prepare_data", this->name.c_str());
         return false;
     }
     return true;
@@ -163,11 +163,11 @@ void ScsiCdrom::inquiry()
     int alloc_len = cmd_buf[4];
 
     if (page_num) {
-        ABORT_F("SCSI_CDROM: invalid page number in INQUIRY");
+        ABORT_F("%s: invalid page number in INQUIRY", this->name.c_str());
     }
 
     if (alloc_len > 36) {
-        LOG_F(WARNING, "SCSI_CDROM: more than 36 bytes requested in INQUIRY");
+        LOG_F(WARNING, "%s: more than 36 bytes requested in INQUIRY", this->name.c_str());
     }
 
     this->data_buf[0] =    5; // device type: CD-ROM
@@ -225,7 +225,7 @@ void ScsiCdrom::mode_sense()
         this->data_buf[0] += 23;
         break;
     default:
-        ABORT_F("SCSI-HD: unsupported page %d in MODE_SENSE_6", page_code);
+        ABORT_F("%s: unsupported page %d in MODE_SENSE_6", this->name.c_str(), page_code);
     }
 
     this->bytes_out = this->data_buf[0];
@@ -242,11 +242,11 @@ void ScsiCdrom::read_toc()
     bool        is_msf      = !!(this->cmd_buf[1] & 2);
 
     if (this->cmd_buf[2] & 0xF) {
-        ABORT_F("SCSI-CDROM: unsupported format in READ_TOC");
+        ABORT_F("%s: unsupported format in READ_TOC", this->name.c_str());
     }
 
     if (!alloc_len) {
-        LOG_F(WARNING, "SCSI-CDROM: zero allocation length passed to READ_TOC");
+        LOG_F(WARNING, "%s: zero allocation length passed to READ_TOC", this->name.c_str());
         return;
     }
 
@@ -260,7 +260,8 @@ void ScsiCdrom::read_toc()
     } else if (start_track <= this->num_tracks) {
         tot_tracks  = (this->num_tracks - start_track) + 2;
     } else {
-        LOG_F(ERROR, "SCSI-CDROM: invalid starting track %d in READ_TOC", start_track);
+        LOG_F(ERROR, "%s: invalid starting track %d in READ_TOC", this->name.c_str(),
+              start_track);
         this->status = ScsiStatus::CHECK_CONDITION;
         this->sense  = ScsiSense::ILLEGAL_REQ;
         this->switch_phase(ScsiPhase::STATUS);
@@ -313,11 +314,11 @@ void ScsiCdrom::read_capacity()
     uint32_t lba = READ_DWORD_BE_U(&this->cmd_buf[2]);
 
     if (this->cmd_buf[1] & 1) {
-        ABORT_F("SCSI-CDROM: RelAdr bit set in READ_CAPACITY_10");
+        ABORT_F("%s: RelAdr bit set in READ_CAPACITY_10", this->name.c_str());
     }
 
     if (!(this->cmd_buf[8] & 1) && lba) {
-        LOG_F(ERROR, "SCSI-CDROM: non-zero LBA for PMI=0");
+        LOG_F(ERROR, "%s: non-zero LBA for PMI=0", this->name.c_str());
         this->status = ScsiStatus::CHECK_CONDITION;
         this->sense  = ScsiSense::ILLEGAL_REQ;
         this->switch_phase(ScsiPhase::STATUS);

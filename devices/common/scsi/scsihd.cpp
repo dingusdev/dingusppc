@@ -36,15 +36,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace std;
 
-ScsiHardDisk::ScsiHardDisk(int my_id) : ScsiDevice(my_id) {
-    supports_types(HWCompType::SCSI_DEV);
+ScsiHardDisk::ScsiHardDisk(std::string, int my_id) : ScsiDevice(name, my_id) {
 }
 
 void ScsiHardDisk::insert_image(std::string filename) {
     //We don't want to store everything in memory, but
     //we want to keep the hard disk available.
     if (!this->hdd_img.open(filename))
-        ABORT_F("SCSI-HD: could not open image file %s", filename.c_str());
+        ABORT_F("%s: could not open image file %s", this->name.c_str(), filename.c_str());
 
     this->img_size = this->hdd_img.size();
     this->total_blocks = (this->img_size + HDD_SECTOR_SIZE - 1) / HDD_SECTOR_SIZE;
@@ -122,7 +121,7 @@ void ScsiHardDisk::process_command() {
         read_buffer();
         break;
     default:
-        LOG_F(WARNING, "SCSI-HD: unrecognized command: %x", cmd[0]);
+        LOG_F(WARNING, "%s: unrecognized command: %x", this->name.c_str(), cmd[0]);
     }
 }
 
@@ -149,7 +148,7 @@ bool ScsiHardDisk::prepare_data() {
         this->data_size = 1;
         break;
     default:
-        LOG_F(WARNING, "SCSI-HD: unexpected phase in prepare_data");
+        LOG_F(WARNING, "%s: unexpected phase in prepare_data", this->name.c_str());
         return false;
     }
 
@@ -163,7 +162,8 @@ int ScsiHardDisk::test_unit_ready() {
 
 int ScsiHardDisk::req_sense(uint16_t alloc_len) {
     if (alloc_len != 252) {
-        LOG_F(WARNING, "Inappropriate Allocation Length: %d", alloc_len);
+        LOG_F(WARNING, "%s: inappropriate Allocation Length: %d", this->name.c_str(),
+              alloc_len);
     }
     return ScsiError::NO_ERROR;    // placeholder - no sense
 }
@@ -173,7 +173,7 @@ void ScsiHardDisk::inquiry() {
     int alloc_len = cmd_buf[4];
 
     if (page_num) {
-        ABORT_F("SCSI-HD: invalid page number in INQUIRY");
+        ABORT_F("%s: invalid page number in INQUIRY", this->name.c_str());
     }
 
     if (alloc_len >= 36) {
@@ -194,7 +194,8 @@ void ScsiHardDisk::inquiry() {
         this->switch_phase(ScsiPhase::DATA_IN);
     }
     else {
-        LOG_F(WARNING, "Allocation length too small: %d", alloc_len);
+        LOG_F(WARNING, "%s: allocation length too small: %d", this->name.c_str(),
+              alloc_len);
     }
 }
 
@@ -265,7 +266,7 @@ void ScsiHardDisk::mode_sense_6() {
         std::memcpy(&this->img_buffer[14], Apple_Copyright_Page_Data, 22);
         break;
     default:
-        ABORT_F("SCSI-HD: unsupported page %d in MODE_SENSE_6", page_code);
+        ABORT_F("%s: unsupported page %d in MODE_SENSE_6", this->name.c_str(), page_code);
     };
 
     // adjust for overall mode sense data length
@@ -280,11 +281,11 @@ void ScsiHardDisk::read_capacity_10() {
     uint32_t lba = READ_DWORD_BE_U(&this->cmd_buf[2]);
 
     if (this->cmd_buf[1] & 1) {
-        ABORT_F("SCSI-HD: RelAdr bit set in READ_CAPACITY_10");
+        ABORT_F("%s: RelAdr bit set in READ_CAPACITY_10", this->name.c_str());
     }
 
     if (!(this->cmd_buf[8] & 1) && lba) {
-        LOG_F(ERROR, "SCSI-HD: non-zero LBA for PMI=0");
+        LOG_F(ERROR, "%s: non-zero LBA for PMI=0", this->name.c_str());
         this->status = ScsiStatus::CHECK_CONDITION;
         this->sense  = ScsiSense::ILLEGAL_REQ;
         this->switch_phase(ScsiPhase::STATUS);
@@ -304,10 +305,10 @@ void ScsiHardDisk::read_capacity_10() {
 
 
 void ScsiHardDisk::format() {
-    LOG_F(WARNING, "SCSI-HD: attempt to format the disk!");
+    LOG_F(WARNING, "%s: attempt to format the disk!", this->name.c_str());
 
     if (this->cmd_buf[1] & 0x10)
-        ABORT_F("SCSI-HD: defect list isn't supported yet");
+        ABORT_F("%s: defect list isn't supported yet", this->name.c_str());
 
     TimerManager::get_instance()->add_oneshot_timer(NS_PER_SEC, [this]() {
         this->switch_phase(ScsiPhase::STATUS);
@@ -368,7 +369,7 @@ void ScsiHardDisk::read_buffer() {
         WRITE_DWORD_BE_A(&this->img_buffer[0], 0x10000); // report buffer size of 64K
         break;
     default:
-        ABORT_F("SCSI-HD: unsupported mode %d in READ_BUFFER", mode);
+        ABORT_F("%s: unsupported mode %d in READ_BUFFER", this->name.c_str(), mode);
     }
 
     this->bytes_out = alloc_len;

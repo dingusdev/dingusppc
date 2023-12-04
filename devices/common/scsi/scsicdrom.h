@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -51,11 +51,11 @@ typedef struct {
 
 class ScsiCdrom : public ScsiDevice {
 public:
-    ScsiCdrom(int my_id);
+    ScsiCdrom(std::string name, int my_id);
     ~ScsiCdrom() = default;
 
     static std::unique_ptr<HWComponent> create() {
-        return std::unique_ptr<ScsiCdrom>(new ScsiCdrom(3));
+        return std::unique_ptr<ScsiCdrom>(new ScsiCdrom("SCSI-CDROM", 3));
     }
 
     void insert_image(std::string filename);

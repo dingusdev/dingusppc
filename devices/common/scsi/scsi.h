@@ -164,7 +164,9 @@ typedef std::function<void()> action_callback;
 
 class ScsiDevice : public HWComponent {
 public:
-    ScsiDevice(int my_id) {
+    ScsiDevice(std::string name, int my_id) {
+        this->set_name(name);
+        supports_types(HWCompType::SCSI_DEV);
         this->scsi_id = my_id;
         this->cur_phase = ScsiPhase::BUS_FREE;
     };
