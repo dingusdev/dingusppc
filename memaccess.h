@@ -59,7 +59,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define READ_QWORD_BE_U(addr)                                                  \
     ((uint64_t((addr)[0]) << 56) | (uint64_t((addr)[1]) << 48) |               \
      (uint64_t((addr)[2]) << 40) | (uint64_t((addr)[3]) << 32) |               \
-     ((addr)[4] << 24) | ((addr)[5] << 16) | ((addr)[6] << 8)  | (addr)[7])
+     (uint64_t((addr)[4]) << 24) | ((addr)[5] << 16) | ((addr)[6] << 8)  | (addr)[7])
 
 /* read an unaligned little-endian WORD (16bit) */
 #define READ_WORD_LE_U(addr) (((addr)[1] << 8) | (addr)[0])
@@ -72,7 +72,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define READ_QWORD_LE_U(addr)                                                  \
     ((uint64_t((addr)[7]) << 56) | (uint64_t((addr)[6]) << 48) |               \
      (uint64_t((addr)[5]) << 40) | (uint64_t((addr)[4]) << 32) |               \
-     ((addr)[3] << 24) | ((addr)[2] << 16) | ((addr)[1] << 8) | (addr)[0])
+     (uint64_t((addr)[3]) << 24) | ((addr)[2] << 16) | ((addr)[1] << 8) | (addr)[0])
 
 /* write an aligned big-endian WORD (16bit) */
 #define WRITE_WORD_BE_A(addr, val) (*((uint16_t*)((addr))) = BYTESWAP_16(val))
