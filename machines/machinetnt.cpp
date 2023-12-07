@@ -115,7 +115,7 @@ static const PropMap pm7500_settings = {
 };
 
 static vector<string> pm7500_devices = {
-    "Hammerhead", "Bandit1", "Chaos", "ScsiMesh", "MeshTnt", "GrandCentral", "ControlVideo"
+    "Hammerhead", "Bandit1", "Chaos", "ScsiMesh", "MeshTnt", "GrandCentral", "ControlVideo", "Sixty6Video"
 };
 
 static const MachineDescription pm7300_descriptor = {

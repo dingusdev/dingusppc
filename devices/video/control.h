@@ -118,6 +118,8 @@ public:
         return std::unique_ptr<ControlVideo>(new ControlVideo());
     }
 
+    uint8_t* GetVram();
+
     // MMIODevice methods
     uint32_t read(uint32_t rgn_start, uint32_t offset, int size);
     void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size);

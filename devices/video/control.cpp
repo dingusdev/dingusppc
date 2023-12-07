@@ -395,6 +395,11 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
     }
 }
 
+uint8_t* ControlVideo::GetVram()
+{
+    return &this->vram_ptr[0];
+}
+
 void ControlVideo::enable_display()
 {
     int new_width, new_height, clk_divisor;
