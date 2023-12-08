@@ -685,7 +685,7 @@ void dppc_interpreter::ppc_sraw() {
         ppc_state.spr[SPR::XER] |= (ppc_result_a & 1) << 29;
     } else {
         uint32_t shift = ppc_result_b & 0x1F;
-        uint32_t mask  = (1 << shift) - 1;
+        uint32_t mask  = (1U << shift) - 1;
         ppc_result_a   = (int32_t)ppc_result_d >> shift;
         if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & mask)) {
             ppc_state.spr[SPR::XER] |= 0x20000000UL;
@@ -703,7 +703,7 @@ void dppc_interpreter::ppc_sraw() {
 void dppc_interpreter::ppc_srawi() {
     ppc_grab_regssa();
     unsigned shift = (ppc_cur_instruction >> 11) & 0x1F;
-    uint32_t mask  = (1 << shift) - 1;
+    uint32_t mask  = (1U << shift) - 1;
     ppc_result_a   = (int32_t)ppc_result_d >> shift;
     if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & mask)) {
         ppc_state.spr[SPR::XER] |= 0x20000000UL;
@@ -730,7 +730,7 @@ void dppc_interpreter::ppc_rlwimi() {
     unsigned rot_mb = (ppc_cur_instruction >> 6) & 31;
     unsigned rot_me = (ppc_cur_instruction >> 1) & 31;
     uint32_t mask   = rot_mask(rot_mb, rot_me);
-    uint32_t r      = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
+    uint32_t r      = rot_sh ? ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh))) : ppc_result_d;
     ppc_result_a    = (ppc_result_a & ~mask) | (r & mask);
     if ((ppc_cur_instruction & 0x01) == 1) {
         ppc_changecrf0(ppc_result_a);
@@ -744,7 +744,7 @@ void dppc_interpreter::ppc_rlwinm() {
     unsigned rot_mb = (ppc_cur_instruction >> 6) & 31;
     unsigned rot_me = (ppc_cur_instruction >> 1) & 31;
     uint32_t mask   = rot_mask(rot_mb, rot_me);
-    uint32_t r      = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
+    uint32_t r      = rot_sh ? ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh))) : ppc_result_d;
     ppc_result_a    = r & mask;
     if ((ppc_cur_instruction & 0x01) == 1) {
         ppc_changecrf0(ppc_result_a);
@@ -757,7 +757,8 @@ void dppc_interpreter::ppc_rlwnm() {
     unsigned rot_mb = (ppc_cur_instruction >> 6) & 31;
     unsigned rot_me = (ppc_cur_instruction >> 1) & 31;
     uint32_t mask   = rot_mask(rot_mb, rot_me);
-    uint32_t r      = ((ppc_result_d << ppc_result_b) | (ppc_result_d >> (32 - ppc_result_b)));
+    uint32_t rot    = ppc_result_b & 0x1F;
+    uint32_t r      = rot ? ((ppc_result_d << rot) | (ppc_result_d >> (32 - rot))) : ppc_result_d;
     ppc_result_a    = r & mask;
     if ((ppc_cur_instruction & 0x01) == 1) {
         ppc_changecrf0(ppc_result_a);

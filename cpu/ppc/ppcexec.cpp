@@ -161,9 +161,9 @@ static PPCOpcode SubOpcode18Grabber[] = {
 /** Instructions decoding tables for integer,
     single floating-point, and double-floating point ops respectively */
 
-PPCOpcode SubOpcode31Grabber[1024] = { ppc_illegalop };
-PPCOpcode SubOpcode59Grabber[32]   = { ppc_illegalop };
-PPCOpcode SubOpcode63Grabber[1024] = { ppc_illegalop };
+PPCOpcode SubOpcode31Grabber[1024];
+PPCOpcode SubOpcode59Grabber[32];
+PPCOpcode SubOpcode63Grabber[1024];
 
 /** Exception helpers. */
 
@@ -575,6 +575,7 @@ void ppc_exec_dbg(volatile uint32_t start_addr, volatile uint32_t size)
 }
 
 void initialize_ppc_opcode_tables() {
+    std::fill_n(SubOpcode31Grabber, 1024, ppc_illegalop);
     SubOpcode31Grabber[0]  = ppc_cmp;
     SubOpcode31Grabber[4]  = ppc_tw;
     SubOpcode31Grabber[32] = ppc_cmpl;
@@ -709,6 +710,7 @@ void initialize_ppc_opcode_tables() {
     SubOpcode31Grabber[978]  = ppc_tlbld;
     SubOpcode31Grabber[1010] = ppc_tlbli;
 
+    std::fill_n(SubOpcode59Grabber, 32, ppc_illegalop);
     SubOpcode59Grabber[18] = ppc_fdivs;
     SubOpcode59Grabber[20] = ppc_fsubs;
     SubOpcode59Grabber[21] = ppc_fadds;
@@ -720,6 +722,7 @@ void initialize_ppc_opcode_tables() {
     SubOpcode59Grabber[30] = ppc_fnmsubs;
     SubOpcode59Grabber[31] = ppc_fnmadds;
 
+    std::fill_n(SubOpcode63Grabber, 1024, ppc_illegalop);
     SubOpcode63Grabber[0]   = ppc_fcmpu;
     SubOpcode63Grabber[12]  = ppc_frsp;
     SubOpcode63Grabber[14]  = ppc_fctiw;
