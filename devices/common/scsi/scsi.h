@@ -183,6 +183,7 @@ public:
     virtual int  rcv_data(const uint8_t* src_ptr, const int count);
 
     virtual bool prepare_data() = 0;
+    virtual bool get_more_data() = 0;
     virtual void process_command() = 0;
 
     void set_bus_object_ptr(ScsiBus *bus_obj_ptr) {

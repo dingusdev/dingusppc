@@ -113,7 +113,7 @@ void ScsiDevice::prepare_xfer(ScsiBus* bus_obj, int& bytes_in, int& bytes_out)
     switch (this->cur_phase) {
     case ScsiPhase::COMMAND:
         this->data_ptr = this->cmd_buf;
-        this->data_size = 0; //bytes_in;
+        this->data_size = 0;
         bytes_out = 0;
         break;
     case ScsiPhase::STATUS:
@@ -188,6 +188,18 @@ int ScsiDevice::send_data(uint8_t* dst_ptr, const int count)
     std::memcpy(dst_ptr, this->data_ptr, actual_count);
     this->data_ptr  += actual_count;
     this->data_size -= actual_count;
+
+    // attempt to return the requested amount of data
+    // when data_size drops down to zero
+    if (!this->data_size) {
+        if (this->get_more_data() && count > actual_count) {
+            dst_ptr += actual_count;
+            actual_count = std::min(this->data_size, count - actual_count);
+            std::memcpy(dst_ptr, this->data_ptr, actual_count);
+            this->data_ptr  += actual_count;
+            this->data_size -= actual_count;
+        }
+    }
 
     return actual_count;
 }
