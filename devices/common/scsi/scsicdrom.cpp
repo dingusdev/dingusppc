@@ -37,32 +37,10 @@ static char cdrom_vendor_sony_id[] = "SONY    ";
 static char cdu8003a_product_id[]  = "CD-ROM CDU-8003A";
 static char cdu8003a_revision_id[] = "1.9a";
 
-ScsiCdrom::ScsiCdrom(std::string name, int my_id) : ScsiDevice(name, my_id)
+ScsiCdrom::ScsiCdrom(std::string name, int my_id) : CdromDrive(), ScsiDevice(name, my_id)
 {
-    //supports_types(HWCompType::SCSI_DEV);
-
-    this->sector_size = 2048;
-
     this->pre_xfer_action  = nullptr;
     this->post_xfer_action = nullptr;
-}
-
-void ScsiCdrom::insert_image(std::string filename)
-{
-    if (!this->cdr_img.open(filename)) {
-        ABORT_F("%s: could not open image file", this->name.c_str());
-    }
-
-    this->img_size = this->cdr_img.size();
-    this->total_frames = (this->img_size + this->sector_size - 1) / this->sector_size;
-
-    // create single track descriptor
-    this->tracks[0]  = {.trk_num = 1, .adr_ctrl = 0x14, .start_lba = 0};
-    this->num_tracks = 1;
-
-    // create Lead-out descriptor containing all data
-    this->tracks[1] = {.trk_num = LEAD_OUT_TRK_NUM, .adr_ctrl = 0x14,
-        .start_lba = static_cast<uint32_t>(this->total_frames)};
 }
 
 void ScsiCdrom::process_command()
@@ -74,6 +52,9 @@ void ScsiCdrom::process_command()
 
     // assume successful command execution
     this->status = ScsiStatus::GOOD;
+
+    // use internal data buffer by default
+    this->data_ptr = this->data_buf;
 
     switch (cmd_buf[0]) {
     case ScsiCommand::TEST_UNIT_READY:
@@ -120,11 +101,9 @@ bool ScsiCdrom::prepare_data()
 {
     switch (this->cur_phase) {
     case ScsiPhase::DATA_IN:
-        this->data_ptr  = (uint8_t*)this->data_buf;
         this->data_size = this->bytes_out;
         break;
     case ScsiPhase::DATA_OUT:
-        this->data_ptr  = (uint8_t*)this->data_buf;
         this->data_size = 0;
         break;
     case ScsiPhase::STATUS:
@@ -136,29 +115,29 @@ bool ScsiCdrom::prepare_data()
     return true;
 }
 
-void ScsiCdrom::read(const uint32_t lba, const uint16_t transfer_len, const uint8_t cmd_len)
-{
-    uint32_t transfer_size = transfer_len;
-
-    std::memset(this->data_buf, 0, sizeof(this->data_buf));
-
-    if (cmd_len == 6 && transfer_len == 0) {
-        transfer_size = 256;
+bool ScsiCdrom::get_more_data() {
+    if (this->data_left()) {
+        this->data_size = this->read_more();
+        this->data_ptr  = (uint8_t *)this->data_cache.get();
     }
 
-    transfer_size *= this->sector_size;
-    uint64_t device_offset = lba * this->sector_size;
+    return this->data_size != 0;
+}
 
-    this->cdr_img.read(this->data_buf, device_offset, transfer_size);
+void ScsiCdrom::read(const uint32_t lba, uint16_t nblocks, const uint8_t cmd_len)
+{
+    if (cmd_len == 6 && nblocks == 0)
+        nblocks = 256;
 
-    this->bytes_out = transfer_size;
+    this->set_fpos(lba);
+    this->data_ptr   = (uint8_t *)this->data_cache.get();
+    this->bytes_out  = this->read_begin(nblocks, UINT32_MAX);
+
     this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;
-
     this->switch_phase(ScsiPhase::DATA_IN);
 }
 
-void ScsiCdrom::inquiry()
-{
+void ScsiCdrom::inquiry() {
     int page_num  = cmd_buf[2];
     int alloc_len = cmd_buf[4];
 
@@ -195,7 +174,7 @@ void ScsiCdrom::mode_sense()
     uint8_t page_code = this->cmd_buf[2] & 0x3F;
     uint8_t alloc_len = this->cmd_buf[4];
 
-    int num_blocks = (this->img_size + this->sector_size) / this->sector_size;
+    int num_blocks = this->size_blocks;
 
     this->data_buf[ 0] =   13; // initial data size
     this->data_buf[ 1] =    0; // medium type
@@ -208,8 +187,8 @@ void ScsiCdrom::mode_sense()
     this->data_buf[ 7] = (num_blocks      ) & 0xFFU;
     this->data_buf[ 8] =    0;
     this->data_buf[ 9] =    0;
-    this->data_buf[10] = (this->sector_size >> 8) & 0xFFU;
-    this->data_buf[11] = (this->sector_size     ) & 0xFFU;
+    this->data_buf[10] = (this->block_size >> 8) & 0xFFU;
+    this->data_buf[11] = (this->block_size     ) & 0xFFU;
 
     this->data_buf[12] = page_code;
 
@@ -223,6 +202,14 @@ void ScsiCdrom::mode_sense()
         this->data_buf[13] = 22; // data size
         std::memcpy(&this->data_buf[14], Apple_Copyright_Page_Data, 22);
         this->data_buf[0] += 23;
+        break;
+    case 0x31:
+        this->data_buf[13] = 6; // data size
+        std::memset(&this->data_buf[14], 0, 6);
+        this->data_buf[14] = '.';
+        this->data_buf[15] = 'A';
+        this->data_buf[16] = 'p';
+        this->data_buf[17] = 'p';
         break;
     default:
         ABORT_F("%s: unsupported page %d in MODE_SENSE_6", this->name.c_str(), page_code);
@@ -268,7 +255,7 @@ void ScsiCdrom::read_toc()
         return;
     }
 
-    char* buf_ptr = this->data_buf;
+    uint8_t* buf_ptr = this->data_buf;
 
     int data_len = (tot_tracks * 8) + 2;
 
@@ -325,7 +312,7 @@ void ScsiCdrom::read_capacity()
         return;
     }
 
-    int last_lba = this->total_frames - 1;
+    int last_lba = this->size_blocks - 1;
 
     this->data_buf[0] = (last_lba >> 24) & 0xFFU;
     this->data_buf[1] = (last_lba >> 16) & 0xFFU;
@@ -333,18 +320,13 @@ void ScsiCdrom::read_capacity()
     this->data_buf[3] = (last_lba >>  0) & 0xFFU;
     this->data_buf[4] = 0;
     this->data_buf[5] = 0;
-    this->data_buf[6] = (this->sector_size >> 8) & 0xFFU;
-    this->data_buf[7] = this->sector_size & 0xFFU;
+    this->data_buf[6] = (this->block_size >> 8) & 0xFFU;
+    this->data_buf[7] = this->block_size & 0xFFU;
 
     this->bytes_out  = 8;
     this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;
 
     this->switch_phase(ScsiPhase::DATA_IN);
-}
-
-AddrMsf ScsiCdrom::lba_to_msf(const int lba)
-{
-    return {.min = lba / 4500, .sec = (lba / 75) % 60, .frm = lba % 75};
 }
 
 static const PropMap ScsiCdromProperties = {

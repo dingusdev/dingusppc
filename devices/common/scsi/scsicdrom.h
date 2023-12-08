@@ -25,31 +25,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define SCSI_CDROM_H
 
 #include <devices/common/scsi/scsi.h>
+#include <devices/storage/cdromdrive.h>
 #include <utils/imgfile.h>
 
 #include <cinttypes>
 #include <memory>
 #include <string>
 
-/* Original CD-ROM addressing mode expressed
-   in minutes, seconds and frames */
-typedef struct {
-    int     min;
-    int     sec;
-    int     frm;
-} AddrMsf;
-
-/* Descriptor for CD-ROM tracks in TOC */
-typedef struct {
-    uint8_t     trk_num;
-    uint8_t     adr_ctrl;
-    uint32_t    start_lba;
-} TrackDescriptor;
-
-#define CDROM_MAX_TRACKS    100
-#define LEAD_OUT_TRK_NUM    0xAA
-
-class ScsiCdrom : public ScsiDevice {
+class ScsiCdrom : public ScsiDevice, public CdromDrive {
 public:
     ScsiCdrom(std::string name, int my_id);
     ~ScsiCdrom() = default;
@@ -58,32 +41,21 @@ public:
         return std::unique_ptr<ScsiCdrom>(new ScsiCdrom("SCSI-CDROM", 3));
     }
 
-    void insert_image(std::string filename);
-
-    virtual void process_command();
-    virtual bool prepare_data();
+    virtual void process_command() override;
+    virtual bool prepare_data() override;
+    virtual bool get_more_data() override;
 
 protected:
-    void    read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len);
+    void    read(uint32_t lba, uint16_t nblocks, uint8_t cmd_len);
     void    inquiry();
     void    mode_sense();
     void    read_toc();
     void    read_capacity();
 
 private:
-    AddrMsf lba_to_msf(const int lba);
-
-private:
-    ImgFile         cdr_img;
-    uint64_t        img_size;
-    int             total_frames;
-    int             num_tracks;
-    int             sector_size;
-    bool            eject_allowed = true;
-    int             bytes_out = 0;
-    TrackDescriptor tracks[CDROM_MAX_TRACKS];
-
-    char            data_buf[1 << 18]; // TODO: proper buffer management
+    bool    eject_allowed = true;
+    int     bytes_out = 0;
+    uint8_t data_buf[2048] = {};
 };
 
 #endif // SCSI_CDROM_H
