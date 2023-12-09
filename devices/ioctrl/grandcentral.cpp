@@ -123,8 +123,10 @@ uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
         case 0xC: // IOBus dev #3
         case 0xE: // IOBus dev #5
             if (this->iobus_devs[subdev_num - 10] != nullptr) {
-                return BYTESWAP_16(this->iobus_devs[subdev_num - 10]->iodev_read(
-                    (offset >> 4) & 0x1F));
+                uint32_t result = this->iobus_devs[subdev_num - 10]->iodev_read(
+                    (offset >> 4) & 0x1F);
+                result &= 0xFFFFFFFFUL >> (4 - size) * 8; // strip unused bits
+                return BYTESWAP_SIZED(result, size);
             } else {
                 LOG_F(ERROR, "GC: IOBus device #%d doesn't exist", subdev_num - 9);
                 return 0;
