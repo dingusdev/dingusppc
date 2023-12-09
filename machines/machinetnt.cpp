@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -22,8 +22,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @file Constructs a TNT (Power Macintosh 7500, 8500 etc) machine. */
 
 #include <cpu/ppc/ppcemu.h>
+#include <devices/common/machineid.h>
 #include <devices/common/pci/pcihost.h>
 #include <devices/common/pci/pcidevice.h>
+#include <devices/ioctrl/macio.h>
 #include <devices/memctrl/hammerhead.h>
 #include <loguru.hpp>
 #include <machines/machinebase.h>
@@ -51,8 +53,25 @@ int initialize_tnt(std::string& id)
     vci_host->pci_register_device(
         DEV_FUN(0x0B,0), dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("ControlVideo")));
 
+    // get (raw) pointer to the I/O controller
+    GrandCentral* gc_obj = dynamic_cast<GrandCentral*>(gMachineObj->get_comp_by_name("GrandCentral"));
+
+    gMachineObj->add_device("BoardReg1", std::unique_ptr<BoardRegister>(
+        new BoardRegister("Board Register 1",
+            0x3F                                        | // pull up all PRSNT bits
+            ((GET_BIN_PROP("emmo") ^ 1) << 8)           | // factory tests (active low)
+            ((GET_BIN_PROP("has_sixty6") ^ 1) << 13)    | // composite video out (active low)
+            (GET_BIN_PROP("has_mesh") << 14)            | // fast SCSI (active high)
+            0x8000U                                       // pull up unused bits
+    )));
+
+    gc_obj->attach_iodevice(0, dynamic_cast<BoardRegister*>(gMachineObj->get_comp_by_name("BoardReg1")));
+
     // get (raw) pointer to the memory controller
     memctrl_obj = dynamic_cast<HammerheadCtrl*>(gMachineObj->get_comp_by_name("Hammerhead"));
+
+    memctrl_obj->set_motherboard_id(Hammerhead::MBID_VCI0_PRESENT);
+    memctrl_obj->set_bus_speed(Hammerhead::BUS_SPEED_50_MHZ);
 
     // allocate ROM region
     if (!memctrl_obj->add_rom_region(0xFFC00000, 0x400000)) {
@@ -85,6 +104,10 @@ static const PropMap pm7500_settings = {
         new IntProperty( 1, vector<uint32_t>({1, 2, 4}))},
     {"emmo",
         new BinProperty(0)},
+    {"has_sixty6",
+        new BinProperty(0)},
+    {"has_mesh",
+        new BinProperty(1)},
 };
 
 static vector<string> pm7500_devices = {
