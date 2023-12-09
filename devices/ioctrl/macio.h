@@ -119,8 +119,6 @@ protected:
 private:
     uint32_t    base_addr = 0;
 
-    uint8_t     emmo_pin; // factory tester status, active low
-
     // interrupt state
     uint32_t    int_mask      = 0;
     uint32_t    int_levels    = 0;

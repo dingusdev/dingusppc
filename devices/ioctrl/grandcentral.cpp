@@ -77,9 +77,6 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
     this->swim3 = dynamic_cast<Swim3::Swim3Ctrl*>(gMachineObj->get_comp_by_name("Swim3"));
     this->floppy_dma = std::unique_ptr<DMAChannel> (new DMAChannel());
     this->swim3->set_dma_channel(this->floppy_dma.get());
-
-    // set EMMO pin status (active low)
-    this->emmo_pin = GET_BIN_PROP("emmo") ^ 1;
 }
 
 void GrandCentral::notify_bar_change(int bar_num)
@@ -121,8 +118,7 @@ uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
         case 6:
         case 7: // VIA-CUDA
             return this->viacuda->read((offset >> 9) & 0xF);
-        case 0xA: // Board register 1 (IOBus dev #1)
-            return BYTESWAP_32(this->emmo_pin << 8);
+        case 0xA: // IOBus dev #1
         case 0xB: // IOBus dev #2
         case 0xC: // IOBus dev #3
         case 0xE: // IOBus dev #5
