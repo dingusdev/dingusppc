@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -60,10 +60,10 @@ uint32_t HammerheadCtrl::read(uint32_t rgn_start, uint32_t offset, int size)
         result = HH_CPU_ID_TNT;
         break;
     case HammerheadReg::MOTHERBOARD_ID:
-        result = MBID_VCI0_PRESENT << 5;
+        result = (this->mb_id << 5) | (this->rom_type << 4);
         break;
     case HammerheadReg::CPU_SPEED:
-        result = BUS_SPEED_33_MHZ << 5;
+        result = this->bus_speed << 5;
         break;
     case HammerheadReg::ARBITER_CONFIG:
         result = this->arb_config;

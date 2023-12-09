@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -41,7 +41,8 @@ namespace Hammerhead {
 
 #define RISC_MACHINE  0x3
 #define MACH_TYPE_TNT 0x1
-#define HH_CPU_ID_TNT ((RISC_MACHINE << 4) | (1 << 3) | MACH_TYPE_TNT)
+#define EXTENDED_ID   0x1 // examine some other registers to get full ID
+#define HH_CPU_ID_TNT ((RISC_MACHINE << 4) | (EXTENDED_ID << 3) | MACH_TYPE_TNT)
 
     // contants for the MBID field of the MOTHERBOARD_ID register
     enum {
@@ -100,14 +101,29 @@ public:
     uint32_t read(uint32_t rgn_start, uint32_t offset, int size);
     void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size);
 
+    void set_motherboard_id(const uint8_t val) {
+        this->mb_id = val & 7;
+    };
+
+    void set_rom_type(const uint8_t val) {
+        this->rom_type = val & 1;
+    };
+
+    void set_bus_speed(const uint8_t val) {
+        this->bus_speed = val & 7;
+    };
+
     void insert_ram_dimm(int slot_num, uint32_t capacity);
     void map_phys_ram();
 
 private:
+    uint8_t     mb_id      = Hammerhead::MBID_VCI0_PRESENT;
+    uint8_t     rom_type   = 1; // 1 - burstable ROM installed
+    uint8_t     bus_speed  = Hammerhead::BUS_SPEED_40_MHZ;
     uint8_t     arb_config = 0;
 
-    uint16_t    bank_base[26];
-    uint32_t    bank_size[26] = { 0 };
+    uint16_t    bank_base[26] = {};
+    uint32_t    bank_size[26] = {};
 };
 
 #endif // HAMMERHEAD_MEMCTRL_H
