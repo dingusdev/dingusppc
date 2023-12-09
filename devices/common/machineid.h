@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -24,8 +24,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <devices/common/hwcomponent.h>
 #include <devices/common/mmiodevice.h>
+#include <devices/ioctrl/macio.h>
 
 #include <cinttypes>
+#include <string>
 
 /**
     @file Contains definitions for PowerMacintosh machine ID registers.
@@ -67,6 +69,36 @@ private:
 };
 
 /**
+    TNT-style machines and derivatives provide two board registers
+    telling whether some particular piece of HW is installed or not.
+    Both board registers are attached to the IOBus of the I/O controller.
+    See machines/machinetnt.cpp for further details.
+ **/
+class BoardRegister : public HWComponent, public IobusDevice {
+public:
+    BoardRegister(std::string name, const uint16_t data) {
+        this->set_name(name);
+        supports_types(HWCompType::IOBUS_DEV);
+        this->data = data;
+    };
+    ~BoardRegister() = default;
+
+    uint16_t iodev_read(uint32_t address) {
+        return (!address) ? this->data : 0xFFFFU;
+    };
+
+    // appears read-only to guest
+    void iodev_write(uint32_t address, uint16_t value) {};
+
+    void update_bits(const uint16_t val, const uint16_t mask) {
+        this->data = (this->data & ~mask) | (val & mask);
+    };
+
+private:
+    uint16_t    data;
+};
+
+/**
     The machine ID for the Gossamer board is accesible at 0xFF000004 (phys).
     It contains a 16-bit value revealing machine's capabilities like bus speed,
     ROM speed, I/O configuration etc.
@@ -92,4 +124,4 @@ private:
     uint16_t id;
 };
 
-#endif /* MACHINE_ID_H */
+#endif // MACHINE_ID_H

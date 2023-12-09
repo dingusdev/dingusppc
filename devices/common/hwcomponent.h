@@ -39,6 +39,8 @@ enum HWCompType : uint64_t {
     I2C_DEV     = 1ULL << 9,  // I2C device
     ADB_HOST    = 1ULL << 12, // ADB host
     ADB_DEV     = 1ULL << 13, // ADB device
+    IOBUS_HOST  = 1ULL << 14, // IOBus host
+    IOBUS_DEV   = 1ULL << 15, // IOBus device
     INT_CTRL    = 1ULL << 16, // interrupt controller
     SCSI_BUS    = 1ULL << 20, // SCSI bus
     SCSI_HOST   = 1ULL << 21, // SCSI host adapter
