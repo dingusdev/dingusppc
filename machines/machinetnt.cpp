@@ -143,6 +143,14 @@ static vector<string> pm7500_devices = {
     "Hammerhead", "Bandit1", "Chaos", "ScsiMesh", "MeshTnt", "GrandCentral", "ControlVideo"
 };
 
+static vector<string> pm8500_devices = {
+    "Hammerhead", "Bandit1", "Chaos", "ScsiMesh", "MeshTnt", "GrandCentral", "ControlVideo", "Sixty6Video"
+};
+
+static vector<string> pm9500_devices = {
+    "Hammerhead", "Bandit1", "Bandit2", "ScsiMesh", "MeshTnt", "GrandCentral"
+};
+
 static const MachineDescription pm7300_descriptor = {
     .name = "pm7300",
     .description = "Power Macintosh 7300",
@@ -159,5 +167,50 @@ static const MachineDescription pm7500_descriptor = {
     .init_func = &initialize_tnt
 };
 
+static const MachineDescription pm8500_descriptor = {
+    .name = "pm8500",
+    .description = "Power Macintosh 8500",
+    .devices = pm8500_devices,
+    .settings = pm7500_settings<PPC_VER::MPC604>,
+    .init_func = &initialize_tnt
+};
+
+static const MachineDescription pm9500_descriptor = {
+    .name = "pm9500",
+    .description = "Power Macintosh 9500",
+    .devices = pm9500_devices,
+    .settings = pm7500_settings<PPC_VER::MPC604>,
+    .init_func = &initialize_tnt
+};
+
+static const MachineDescription pm7600_descriptor = {
+    .name = "pm7600",
+    .description = "Power Macintosh 7600",
+    .devices = pm7500_devices,
+    .settings = pm7500_settings<PPC_VER::MPC604E>,
+    .init_func = &initialize_tnt
+};
+
+static const MachineDescription pm8600_descriptor = {
+    .name = "pm8600",
+    .description = "Power Macintosh 8600",
+    .devices = pm8500_devices,
+    .settings = pm7500_settings<PPC_VER::MPC604E>,
+    .init_func = &initialize_tnt
+};
+
+static const MachineDescription pm9600_descriptor = {
+    .name = "pm9600",
+    .description = "Power Macintosh 9600",
+    .devices = pm9500_devices,
+    .settings = pm7500_settings<PPC_VER::MPC604E>,
+    .init_func = &initialize_tnt
+};
+
 REGISTER_MACHINE(pm7300, pm7300_descriptor);
 REGISTER_MACHINE(pm7500, pm7500_descriptor);
+REGISTER_MACHINE(pm8500, pm8500_descriptor);
+REGISTER_MACHINE(pm9500, pm9500_descriptor);
+REGISTER_MACHINE(pm7600, pm7600_descriptor);
+REGISTER_MACHINE(pm8600, pm8600_descriptor);
+REGISTER_MACHINE(pm9600, pm9600_descriptor);
