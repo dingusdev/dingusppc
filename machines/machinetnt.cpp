@@ -61,11 +61,11 @@ int initialize_tnt(std::string& id)
     // attach IOBus Device #1 0xF301A000
     gMachineObj->add_device("BoardReg1", std::unique_ptr<BoardRegister>(
         new BoardRegister("Board Register 1",
-            0x3F                                        | // pull up all PRSNT bits
-            ((GET_BIN_PROP("emmo") ^ 1) << 8)           | // factory tests (active low)
-            ((GET_BIN_PROP("has_sixty6") ^ 1) << 13)    | // composite video out (active low)
-            (GET_BIN_PROP("has_mesh") << 14)            | // fast SCSI (active high)
-            0x8000U                                       // pull up unused bits
+            0x3F                                                                       | // pull up all PRSNT bits
+            ((GET_BIN_PROP("emmo") ^ 1) << 8)                                          | // factory tests (active low)
+            ((gMachineObj->get_comp_by_name_optional("Sixty6Video") == nullptr) << 13) | // composite video out (active low)
+            ((gMachineObj->get_comp_by_name_optional("MeshTnt") != nullptr) << 14)     | // fast SCSI (active high)
+            0x8000U                                                                      // pull up unused bits
     )));
     gc_obj->attach_iodevice(0, dynamic_cast<BoardRegister*>(gMachineObj->get_comp_by_name("BoardReg1")));
 
@@ -131,10 +131,6 @@ static const PropMap pm7500_settings = {
         new IntProperty( 0, vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
     {"emmo",
         new BinProperty(0)},
-    {"has_sixty6",
-        new BinProperty(0)},
-    {"has_mesh",
-        new BinProperty(1)},
     {"cpu",
         new StrProperty(
             cpu == PPC_VER::MPC601  ? "601" :
@@ -144,7 +140,7 @@ static const PropMap pm7500_settings = {
 };
 
 static vector<string> pm7500_devices = {
-    "Hammerhead", "Bandit1", "Chaos", "ScsiMesh", "MeshTnt", "GrandCentral", "ControlVideo", "Sixty6Video"
+    "Hammerhead", "Bandit1", "Chaos", "ScsiMesh", "MeshTnt", "GrandCentral", "ControlVideo"
 };
 
 static const MachineDescription pm7300_descriptor = {

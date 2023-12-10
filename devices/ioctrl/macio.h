@@ -183,7 +183,7 @@ private:
     Swim3::Swim3Ctrl*   swim3;      // floppy disk controller
 
     std::unique_ptr<DMAChannel>     curio_dma;
-    std::unique_ptr<DMAChannel>     mesh_dma;
+    std::unique_ptr<DMAChannel>     mesh_dma = nullptr;
     std::unique_ptr<DMAChannel>     snd_out_dma;
     std::unique_ptr<DMAChannel>     snd_in_dma;
     std::unique_ptr<DMAChannel>     floppy_dma;
