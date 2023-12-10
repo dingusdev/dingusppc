@@ -36,7 +36,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace std;
 
-ScsiHardDisk::ScsiHardDisk(std::string, int my_id) : ScsiDevice(name, my_id) {
+ScsiHardDisk::ScsiHardDisk(std::string name, int my_id) : ScsiDevice(name, my_id) {
 }
 
 void ScsiHardDisk::insert_image(std::string filename) {
