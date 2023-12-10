@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -229,11 +229,24 @@ int BanditHost::device_postinit()
 {
     std::string pci_dev_name;
 
-    static const std::map<std::string, int> pci_slots = {
+    static const std::map<std::string, int> pci_slots1 = {
         {"pci_A1", DEV_FUN(0xD,0)}, {"pci_B1", DEV_FUN(0xE,0)}, {"pci_C1", DEV_FUN(0xF,0)}
     };
 
-    for (auto& slot : pci_slots) {
+    static const std::map<std::string, int> pci_slots2 = {
+        {"pci_D2", DEV_FUN(0xD,0)}, {"pci_E2", DEV_FUN(0xE,0)}, {"pci_F2", DEV_FUN(0xF,0)}
+    };
+
+    static const std::map<std::string, int> vci_slots = {
+        {"vci_D", DEV_FUN(0xD,0)}, {"vci_E", DEV_FUN(0xE,0)}, {"vci_F", DEV_FUN(0xF,0)}
+    };
+
+    for (auto& slot :
+        this->bridge_num == 0 ? vci_slots  :
+        this->bridge_num == 1 ? pci_slots1 :
+        this->bridge_num == 2 ? pci_slots2 :
+        pci_slots1
+    ) {
         pci_dev_name = GET_STR_PROP(slot.first);
         if (!pci_dev_name.empty()) {
             this->attach_pci_device(pci_dev_name, slot.second);
@@ -243,7 +256,7 @@ int BanditHost::device_postinit()
 }
 
 Bandit::Bandit(int bridge_num, std::string name, int dev_id, int rev)
-    : BanditHost()
+    : BanditHost(bridge_num)
 {
     this->name = name;
 
@@ -269,7 +282,7 @@ Bandit::Bandit(int bridge_num, std::string name, int dev_id, int rev)
     this->pci_register_device(DEV_FUN(BANDIT_DEV,0), this->my_pci_device.get());
 }
 
-Chaos::Chaos(std::string name) : BanditHost()
+Chaos::Chaos(std::string name) : BanditHost(0)
 {
     this->name = name;
 
@@ -285,7 +298,7 @@ Chaos::Chaos(std::string name) : BanditHost()
     mem_ctrl->add_mmio_region(0xF0000000UL, 0x01000000, this);
 }
 
-static const PropMap Bandit_Properties = {
+static const PropMap Bandit1_Properties = {
     {"pci_A1",
         new StrProperty("")},
     {"pci_B1",
@@ -294,18 +307,41 @@ static const PropMap Bandit_Properties = {
         new StrProperty("")},
 };
 
+static const PropMap Bandit2_Properties = {
+    {"pci_D2",
+        new StrProperty("")},
+    {"pci_E2",
+        new StrProperty("")},
+    {"pci_F2",
+        new StrProperty("")},
+};
+
+static const PropMap Chaos_Properties = {
+    {"vci_D",
+        new StrProperty("")},
+    {"vci_E",
+        new StrProperty("")},
+    {"vci_F",
+        new StrProperty("")},
+};
+
 static const DeviceDescription Bandit1_Descriptor = {
-    Bandit::create_first, {}, Bandit_Properties
+    Bandit::create_first, {}, Bandit1_Properties
+};
+
+static const DeviceDescription Bandit2_Descriptor = {
+    Bandit::create_second, {}, Bandit2_Properties
 };
 
 static const DeviceDescription PsxPci1_Descriptor = {
-    Bandit::create_psx_first, {}, Bandit_Properties
+    Bandit::create_psx_first, {}, Bandit1_Properties
 };
 
 static const DeviceDescription Chaos_Descriptor = {
-    Chaos::create, {}, {}
+    Chaos::create, {}, Chaos_Properties
 };
 
 REGISTER_DEVICE(Bandit1, Bandit1_Descriptor);
+REGISTER_DEVICE(Bandit2, Bandit2_Descriptor);
 REGISTER_DEVICE(PsxPci1, PsxPci1_Descriptor);
 REGISTER_DEVICE(Chaos,   Chaos_Descriptor);

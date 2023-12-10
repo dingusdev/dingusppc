@@ -121,7 +121,7 @@ public:
     void map_phys_ram();
 
 private:
-    uint8_t     mb_id      = Hammerhead::MBID_VCI0_PRESENT;
+    uint8_t     mb_id      = 0;
     uint8_t     rom_type   = Hammerhead::MBID_BURST_ROM;
     uint8_t     bus_speed  = Hammerhead::BUS_SPEED_40_MHZ;
     uint8_t     arb_config = 0;

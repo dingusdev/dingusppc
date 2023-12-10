@@ -70,6 +70,8 @@ enum {
  */
 class BanditHost : public PCIHost, public MMIODevice {
 public:
+    BanditHost(int bridge_num) { this->bridge_num = bridge_num; };
+
     // PCIHost methods
     virtual void pci_interrupt(uint8_t irq_line_state, PCIBase *dev) {}
 
@@ -81,6 +83,7 @@ public:
 
 protected:
     uint32_t    config_addr;
+    int         bridge_num;
 
 private:
     void cfg_setup(uint32_t offset, int size, int &bus_num, int &dev_num,
@@ -119,6 +122,10 @@ public:
 
     static std::unique_ptr<HWComponent> create_first() {
         return std::unique_ptr<Bandit>(new Bandit(1, "Bandit-PCI1"));
+    };
+
+    static std::unique_ptr<HWComponent> create_second() {
+        return std::unique_ptr<Bandit>(new Bandit(2, "Bandit-PCI2"));
     };
 
     static std::unique_ptr<HWComponent> create_psx_first() {
