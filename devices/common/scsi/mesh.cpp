@@ -262,8 +262,13 @@ void MeshController::update_irq()
     }
 }
 
-static const DeviceDescription Mesh_Descriptor = {
-    MeshController::create, {}, {}
+static const DeviceDescription Mesh_Tnt_Descriptor = {
+    MeshController::create_for_tnt, {}, {}
 };
 
-REGISTER_DEVICE(Mesh, Mesh_Descriptor);
+static const DeviceDescription Mesh_Heathrow_Descriptor = {
+    MeshController::create_for_heathrow, {}, {}
+};
+
+REGISTER_DEVICE(MeshTnt,      Mesh_Tnt_Descriptor);
+REGISTER_DEVICE(MeshHeathrow, Mesh_Heathrow_Descriptor);

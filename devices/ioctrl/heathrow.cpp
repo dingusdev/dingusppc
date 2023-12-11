@@ -78,7 +78,7 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io/heathrow"), InterruptCtrl()
     );
 
     // connect SCSI HW and the corresponding DMA channel
-    this->mesh = dynamic_cast<MeshController*>(gMachineObj->get_comp_by_name("Mesh"));
+    this->mesh = dynamic_cast<MeshController*>(gMachineObj->get_comp_by_name("MeshHeathrow"));
     this->scsi_dma = std::unique_ptr<DMAChannel> (new DMAChannel());
 
     // connect IDE HW
@@ -548,7 +548,7 @@ void HeathrowIC::clear_cpu_int()
 }
 
 static const vector<string> Heathrow_Subdevices = {
-    "NVRAM", "ViaCuda", "Scsi0", "Mesh", "Escc", "Swim3", "Ide0", "Ide1",
+    "NVRAM", "ViaCuda", "Scsi0", "MeshHeathrow", "Escc", "Swim3", "Ide0", "Ide1",
     "BigMacHeathrow"
 };
 

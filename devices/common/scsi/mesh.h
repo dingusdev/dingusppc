@@ -32,6 +32,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 class InterruptCtrl;
 class ScsiBus;
 
+// Chip ID returned by the MESH ASIC on TNT machines (Apple part 343S1146-a)
+#define TntMeshID       0xE2
+
 // Chip ID returned by the MESH cell inside the Heathrow ASIC
 #define HeathrowMESHID  4
 
@@ -115,7 +118,11 @@ public:
     };
     ~MeshController() = default;
 
-    static std::unique_ptr<HWComponent> create() {
+    static std::unique_ptr<HWComponent> create_for_tnt() {
+        return std::unique_ptr<MeshController>(new MeshController(TntMeshID));
+    }
+
+    static std::unique_ptr<HWComponent> create_for_heathrow() {
         return std::unique_ptr<MeshController>(new MeshController(HeathrowMESHID));
     }
 
