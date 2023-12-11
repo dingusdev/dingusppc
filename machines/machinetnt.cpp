@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -85,8 +85,11 @@ int initialize_tnt(std::string& id)
     // allocate and map physical RAM
     memctrl_obj->map_phys_ram();
 
-    // init virtual CPU and request MPC601
-    ppc_cpu_init(memctrl_obj, PPC_VER::MPC601, 7833600ULL);
+    // init virtual CPU
+    if (id == "pm7300")
+        ppc_cpu_init(memctrl_obj, PPC_VER::MPC604E, 12500000ULL);
+    else
+        ppc_cpu_init(memctrl_obj, PPC_VER::MPC601, 7833600ULL);
 
     return 0;
 }
@@ -111,7 +114,15 @@ static const PropMap pm7500_settings = {
 };
 
 static vector<string> pm7500_devices = {
-    "Hammerhead", "Bandit1", "Chaos", "GrandCentral", "ControlVideo"
+    "Hammerhead", "Bandit1", "Chaos", "MeshTnt", "GrandCentral", "ControlVideo"
+};
+
+static const MachineDescription pm7300_descriptor = {
+    .name = "pm7300",
+    .description = "Power Macintosh 7300",
+    .devices = pm7500_devices,
+    .settings = pm7500_settings,
+    .init_func = &initialize_tnt
 };
 
 static const MachineDescription pm7500_descriptor = {
@@ -122,4 +133,5 @@ static const MachineDescription pm7500_descriptor = {
     .init_func = &initialize_tnt
 };
 
+REGISTER_MACHINE(pm7300, pm7300_descriptor);
 REGISTER_MACHINE(pm7500, pm7500_descriptor);
