@@ -67,6 +67,16 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
     // connect serial HW
     this->escc = dynamic_cast<EsccController*>(gMachineObj->get_comp_by_name("Escc"));
 
+    // connect MESH (internal SCSI)
+    this->mesh = dynamic_cast<MeshController*>(gMachineObj->get_comp_by_name("MeshTnt"));
+    if (this->mesh == nullptr) {
+        LOG_F(WARNING, "%s: Mesh not found, install MeshStub", this->name.c_str());
+    } else {
+        this->mesh_dma = std::unique_ptr<DMAChannel> (new DMAChannel());
+        this->mesh_dma->register_dma_int(this, this->register_dma_int(IntSrc::DMA_SCSI_MESH));
+        this->mesh->set_dma_channel(this->mesh_dma.get());
+    }
+
     // connect SCSI HW
     this->scsi_0 = dynamic_cast<Sc53C94*>(gMachineObj->get_comp_by_name("Sc53C94"));
 
@@ -119,6 +129,8 @@ uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
         case 6:
         case 7: // VIA-CUDA
             return this->viacuda->read((offset >> 9) & 0xF);
+        case 8: // MESH SCSI
+            return this->mesh->read((offset >> 4) & 0xF);
         case 0xA: // IOBus dev #1
         case 0xB: // IOBus dev #2
         case 0xC: // IOBus dev #3
@@ -145,6 +157,8 @@ uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
             return this->floppy_dma->reg_read(offset & 0xFF, size);
         case 8:
             return this->snd_out_dma->reg_read(offset & 0xFF, size);
+        case 10:
+            return this->mesh_dma->reg_read(offset & 0xFF, size);
         default:
             LOG_F(WARNING, "GC: unimplemented DMA register at 0x%X",
                   this->base_addr + offset);
@@ -199,6 +213,9 @@ void GrandCentral::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
         case 7: // VIA-CUDA
             this->viacuda->write((offset >> 9) & 0xF, value);
             break;
+        case 8: // MESH SCSI
+            this->mesh->write((offset >> 4) & 0xF, value);
+            break;
         case 0xA: // IOBus dev #1
         case 0xB: // IOBus dev #2
         case 0xC: // IOBus dev #3
@@ -239,6 +256,9 @@ void GrandCentral::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
             break;
         case 8:
             this->snd_out_dma->reg_write(offset & 0xFF, value, size);
+            break;
+        case 10:
+            this->mesh_dma->reg_write(offset & 0xFF, value, size);
             break;
         default:
             LOG_F(WARNING, "GC: unimplemented DMA register at 0x%X",
