@@ -36,7 +36,6 @@ uint32_t reg_a;
 uint32_t reg_b;
 uint32_t reg_c;    // used only for floating point multiplication operations
 uint32_t xercon;
-uint32_t cmp_c;
 uint32_t crm;
 uint32_t uimm;
 uint32_t grab_sr;
@@ -1276,7 +1275,7 @@ void dppc_interpreter::ppc_cmp() {
     int crf_d = (ppc_cur_instruction >> 21) & 0x1C;
     ppc_grab_regssab();
     xercon = (ppc_state.spr[SPR::XER] & 0x80000000UL) >> 3;
-    cmp_c  = (((int32_t)ppc_result_a) == ((int32_t)ppc_result_b))
+    uint32_t cmp_c = (((int32_t)ppc_result_a) == ((int32_t)ppc_result_b))
         ? 0x20000000UL
         : (((int32_t)ppc_result_a) > ((int32_t)ppc_result_b)) ? 0x40000000UL : 0x80000000UL;
     ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
@@ -1293,7 +1292,7 @@ void dppc_interpreter::ppc_cmpi() {
     int crf_d = (ppc_cur_instruction >> 21) & 0x1C;
     ppc_grab_regsasimm();
     xercon = (ppc_state.spr[SPR::XER] & 0x80000000UL) >> 3;
-    cmp_c  = (((int32_t)ppc_result_a) == simm)
+    uint32_t cmp_c = (((int32_t)ppc_result_a) == simm)
         ? 0x20000000UL
         : (((int32_t)ppc_result_a) > simm) ? 0x40000000UL : 0x80000000UL;
     ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
@@ -1310,7 +1309,7 @@ void dppc_interpreter::ppc_cmpl() {
     int crf_d = (ppc_cur_instruction >> 21) & 0x1C;
     ppc_grab_regssab();
     xercon = (ppc_state.spr[SPR::XER] & 0x80000000UL) >> 3;
-    cmp_c  = (ppc_result_a == ppc_result_b)
+    uint32_t cmp_c = (ppc_result_a == ppc_result_b)
         ? 0x20000000UL
         : (ppc_result_a > ppc_result_b) ? 0x40000000UL : 0x80000000UL;
     ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
@@ -1327,7 +1326,7 @@ void dppc_interpreter::ppc_cmpli() {
     int crf_d = (ppc_cur_instruction >> 21) & 0x1C;
     ppc_grab_regssauimm();
     xercon = (ppc_state.spr[SPR::XER] & 0x80000000UL) >> 3;
-    cmp_c  = (ppc_result_a == uimm) ? 0x20000000UL
+    uint32_t cmp_c = (ppc_result_a == uimm) ? 0x20000000UL
                                    : (ppc_result_a > uimm) ? 0x40000000UL : 0x80000000UL;
     ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
 }

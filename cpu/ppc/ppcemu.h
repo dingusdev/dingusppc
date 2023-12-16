@@ -192,7 +192,6 @@ extern uint32_t reg_a;
 extern uint32_t reg_b;
 extern uint32_t reg_c;
 extern uint32_t xercon;
-extern uint32_t cmp_c;
 extern uint32_t crm;
 extern uint32_t br_bo;
 extern uint32_t br_bi;
