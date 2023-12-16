@@ -88,6 +88,22 @@ bool AdbMouse::get_register_0() {
     return false;
 }
 
+bool AdbMouse::get_register_1() {
+    uint8_t* out_buf = this->host_obj->get_output_buf();
+    // Identifier
+    out_buf[0] = 'a';
+    out_buf[1] = 'p';
+    out_buf[2] = 'p';
+    out_buf[3] = 'l';
+    // Slightly higher resolution of 300 units per inch
+    out_buf[4] = 300 >> 8;
+    out_buf[5] = 300 & 0xFF;
+    out_buf[6] = 1; // mouse
+    out_buf[7] = 1; // 1 button
+    this->host_obj->set_output_count(8);
+    return true;
+}
+
 void AdbMouse::set_register_3() {
     if (this->host_obj->get_input_count() < 2) // ensure we got enough data
         return;
@@ -101,9 +117,8 @@ void AdbMouse::set_register_3() {
         break;
     case 1:
     case 2:
+    case 4: // switch over to extended mouse protocol
         this->dev_handler_id = in_data[1];
-        break;
-    case 4: // extended mouse protocol isn't supported yet
         break;
     case 0xFE: // move to a new address if there was no collision
         if (!this->got_collision) {
