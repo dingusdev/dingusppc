@@ -1776,7 +1776,7 @@ void dppc_interpreter::ppc_stmw() {
 
     /* what should we do if EA is unaligned? */
     if (ppc_effective_address & 3) {
-        ppc_exception_handler(Except_Type::EXC_ALIGNMENT, 0x00000);
+        ppc_alignment_exception(ppc_effective_address);
     }
 
     for (; reg_s <= 31; reg_s++) {
@@ -2236,7 +2236,7 @@ void dppc_interpreter::ppc_eciwx() {
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
 
     if (ppc_effective_address & 0x3) {
-        ppc_exception_handler(Except_Type::EXC_ALIGNMENT, 0x0);
+        ppc_alignment_exception(ppc_effective_address);
     }
 
     ppc_result_d = mmu_read_vmem<uint32_t>(ppc_effective_address);
@@ -2256,7 +2256,7 @@ void dppc_interpreter::ppc_ecowx() {
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
 
     if (ppc_effective_address & 0x3) {
-        ppc_exception_handler(Except_Type::EXC_ALIGNMENT, 0x0);
+        ppc_alignment_exception(ppc_effective_address);
     }
 
     mmu_write_vmem<uint32_t>(ppc_effective_address, ppc_result_d);

@@ -200,3 +200,115 @@ void ppc_floating_point_exception() {
           ppc_state.pc, ppc_cur_instruction);
     // mmu_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::FPU_EXCEPTION);
 }
+
+void ppc_alignment_exception(uint32_t ea)
+{
+    uint32_t dsisr;
+
+    switch (ppc_cur_instruction & 0xfc000000) {
+        case 0x80000000: // lwz
+        case 0x90000000: // stw
+        case 0xa0000000: // lhz
+        case 0xa8000000: // lha
+        case 0xb0000000: // sth
+        case 0xb8000000: // lmw
+        case 0xc0000000: // lfs
+        case 0xc8000000: // lfd
+        case 0xd0000000: // stfs
+        case 0xd8000000: // stfd
+        case 0x84000000: // lwzu
+        case 0x94000000: // stwu
+        case 0xa4000000: // lhzu
+        case 0xac000000: // lhau
+        case 0xb4000000: // sthu
+        case 0xbc000000: // stmw
+        case 0xc4000000: // lfsu
+        case 0xcc000000: // lfdu
+        case 0xd4000000: // stfsu
+        case 0xdc000000: // stfdu
+indirect_with_immediate_index:
+            dsisr  = ((ppc_cur_instruction >> 12) & 0x00004000)  // bit  17    — Set to bit   5    of the instruction.
+                  |  ((ppc_cur_instruction >> 17) & 0x00003c00); // bits 18–21 - set to bits  1–4  of the instruction.
+            break;
+        case 0x7c000000:
+            switch (ppc_cur_instruction & 0xfc0007ff) {
+                case 0x7c000028: // lwarx (invalid form - bits 15-21 of DSISR are identical to those of lwz)
+                case 0x7c0002aa: // lwax (64-bit only)
+                case 0x7c00042a: // lswx
+                case 0x7c0004aa: // lswi
+                case 0x7c00052a: // stswx
+                case 0x7c0005aa: // stswi
+                case 0x7c0002ea: // lwaux (64 bit only)
+                case 0x7c00012c: // stwcx
+                case 0x7c00042c: // lwbrx
+                case 0x7c00052c: // stwbrx
+                case 0x7c00062c: // lhbrx
+                case 0x7c00072c: // sthbrx
+                case 0x7c00026c: // eciwx // MPC7451
+                case 0x7c00036c: // ecowx // MPC7451
+                case 0x7c00002e: // lwzx
+                case 0x7c00012e: // stwx
+                case 0x7c00022e: // lhzx
+                case 0x7c0002ae: // lhax
+                case 0x7c00032e: // sthx
+                case 0x7c00042e: // lfsx
+                case 0x7c0004ae: // lfdx
+                case 0x7c00052e: // stfsx
+                case 0x7c0005ae: // stfdx
+                case 0x7c00006e: // lwzux
+                case 0x7c00016e: // stwux
+                case 0x7c00026e: // lhzux
+                case 0x7c0002ee: // lhaux
+                case 0x7c00036e: // sthux
+                case 0x7c00046e: // lfsux
+                case 0x7c0004ee: // lfdux
+                case 0x7c00056e: // stfsux
+                case 0x7c0005ee: // stfdux
+indirect_with_index:
+                    dsisr  = ((ppc_cur_instruction << 14) & 0x00018000)  // bits 15–16 - set to bits 29–30 of the instruction.
+                          |  ((ppc_cur_instruction <<  8) & 0x00004000)  // bit  17    - set to bit  25    of the instruction.
+                          |  ((ppc_cur_instruction <<  3) & 0x00003c00); // bits 18–21 - set to bits 21–24 of the instruction.
+                    break;
+                case 0x7c0007ec:
+                    if ((ppc_cur_instruction & 0xffe007ff) == 0x7c0007ec) // dcbz
+                        goto indirect_with_index;
+                    /* fallthrough */
+                default:
+                    goto unexpected_instruction;
+            }
+            break;
+        default:
+unexpected_instruction:
+            dsisr = 0;
+            LOG_F(ERROR, "Alignment exception from unexpected instruction 0x%08x",
+                  ppc_cur_instruction);
+    }
+
+    // bits 22–26 - Set to bits  6–10 (source or destination) of the instruction.
+    // Undefined for dcbz.
+    dsisr |= ((ppc_cur_instruction >> 16) & 0x000003e0);
+
+    if ((ppc_cur_instruction & 0xfc000000) == 0xb8000000) { // lmw
+        LOG_F(ERROR, "Alignment exception from instruction 0x%08x (lmw). "
+              "What to set DSISR bits 27-31?", ppc_cur_instruction);
+        // dsisr |= ((ppc_cur_instruction >> ?) & 0x0000001f); // bits 27–31
+    }
+    else if ((ppc_cur_instruction & 0xfc0007ff) == 0x7c0004aa) { // lswi
+        LOG_F(ERROR, "Alignment exception from instruction 0x%08x (lswi). "
+              "What to set DSISR bits 27-31?", ppc_cur_instruction);
+        // dsisr |= ((ppc_cur_instruction >> ?) & 0x0000001f); // bits 27–31
+    }
+    else if ((ppc_cur_instruction & 0xfc0007ff) == 0x7c00042a) { // lswx
+        LOG_F(ERROR, "Alignment exception from instruction 0x%08x (lswx). "
+              "What to set DSISR bits 27-31?", ppc_cur_instruction);
+        // dsisr |= ((ppc_cur_instruction >> ?) & 0x0000001f); // bits 27–31
+    }
+    else {
+        // bits 27–31 - Set to bits 11–15 of the instruction (rA)
+        dsisr |= ((ppc_cur_instruction >> 16) & 0x0000001f);
+    }
+
+    ppc_state.spr[SPR::DSISR] = dsisr;
+    ppc_state.spr[SPR::DAR] = ea;
+    ppc_exception_handler(Except_Type::EXC_ALIGNMENT, 0x0);
+}

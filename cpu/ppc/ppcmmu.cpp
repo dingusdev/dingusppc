@@ -1075,19 +1075,17 @@ inline T mmu_read_vmem(uint32_t guest_va)
             iomem_reads_total++;
 #endif
             if (sizeof(T) == 8) {
-                if (guest_va & 3) {
-                    ppc_exception_handler(Except_Type::EXC_ALIGNMENT, 0x0);
-                }
-                {
-                    return (
-                        ((T)tlb2_entry->rgn_desc->devobj->read(tlb2_entry->rgn_desc->start,
-                                                               guest_va - tlb2_entry->dev_base_va,
-                                                               4) << 32) |
-                        tlb2_entry->rgn_desc->devobj->read(tlb2_entry->rgn_desc->start,
-                                                           guest_va + 4 - tlb2_entry->dev_base_va,
-                                                           4)
-                    );
-                }
+                if (guest_va & 3)
+                    ppc_alignment_exception(guest_va);
+
+                return (
+                    ((T)tlb2_entry->rgn_desc->devobj->read(tlb2_entry->rgn_desc->start,
+                                                           guest_va - tlb2_entry->dev_base_va,
+                                                           4) << 32) |
+                    tlb2_entry->rgn_desc->devobj->read(tlb2_entry->rgn_desc->start,
+                                                       guest_va + 4 - tlb2_entry->dev_base_va,
+                                                       4)
+                );
             }
             else {
                 return (
@@ -1199,19 +1197,16 @@ inline void mmu_write_vmem(uint32_t guest_va, T value)
             iomem_writes_total++;
 #endif
             if (sizeof(T) == 8) {
-                if (guest_va & 3) {
-                    ppc_exception_handler(Except_Type::EXC_ALIGNMENT, 0x0);
-                }
-                {
-                    tlb2_entry->rgn_desc->devobj->write(tlb2_entry->rgn_desc->start,
-                                                        guest_va - tlb2_entry->dev_base_va,
-                                                        value >> 32, 4);
-                    tlb2_entry->rgn_desc->devobj->write(tlb2_entry->rgn_desc->start,
-                                                        guest_va + 4 - tlb2_entry->dev_base_va,
-                                                        (uint32_t)value, 4);
-                }
-            }
-            else {
+                if (guest_va & 3)
+                    ppc_alignment_exception(guest_va);
+
+                tlb2_entry->rgn_desc->devobj->write(tlb2_entry->rgn_desc->start,
+                                                    guest_va - tlb2_entry->dev_base_va,
+                                                    value >> 32, 4);
+                tlb2_entry->rgn_desc->devobj->write(tlb2_entry->rgn_desc->start,
+                                                    guest_va + 4 - tlb2_entry->dev_base_va,
+                                                    (uint32_t)value, 4);
+            } else {
                 tlb2_entry->rgn_desc->devobj->write(tlb2_entry->rgn_desc->start,
                                                     guest_va - tlb2_entry->dev_base_va,
                                                     value, sizeof(T));
@@ -1282,7 +1277,7 @@ static T read_unaligned(uint32_t guest_va, uint8_t *host_va)
                 return READ_DWORD_BE_U(host_va);
             case 8:
                 if (guest_va & 3) {
-                    ppc_exception_handler(Except_Type::EXC_ALIGNMENT, 0x0);
+                    ppc_alignment_exception(guest_va);
                 }
                 return READ_QWORD_BE_U(host_va);
         }
@@ -1328,7 +1323,7 @@ static void write_unaligned(uint32_t guest_va, uint8_t *host_va, T value)
                 break;
             case 8:
                 if (guest_va & 3) {
-                    ppc_exception_handler(Except_Type::EXC_ALIGNMENT, 0x0);
+                    ppc_alignment_exception(guest_va);
                 }
                 WRITE_QWORD_BE_U(host_va, value);
                 break;
