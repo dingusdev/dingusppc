@@ -923,12 +923,20 @@ void dppc_interpreter::ppc_mtfsb1() {
 }
 
 void dppc_interpreter::ppc_mcrfs() {
-    crf_d        = (ppc_cur_instruction >> 23) & 7;
-    crf_d        = crf_d << 2;
-    crf_s        = (ppc_cur_instruction >> 18) & 7;
-    crf_s        = crf_d << 2;
-    ppc_state.cr = ~(ppc_state.cr & ((15 << (28 - crf_d)))) +
-        (ppc_state.fpscr & (15 << (28 - crf_s)));
+    int crf_d = (ppc_cur_instruction >> 21) & 0x1C;
+    int crf_s = (ppc_cur_instruction >> 16) & 0x1C;
+    ppc_state.cr = (
+        (ppc_state.cr & ~(0xF0000000UL >> crf_d)) |
+        (((ppc_state.fpscr << crf_s) & 0xF0000000UL) >> crf_d)
+    );
+    ppc_state.fpscr &= ~((0xF0000000UL >> crf_s) & (
+        // keep only the FPSCR bits that can be explicitly cleared
+        FPSCR::FX | FPSCR::OX |
+        FPSCR::UX | FPSCR::ZX | FPSCR::XX | FPSCR::VXSNAN |
+        FPSCR::VXISI | FPSCR::VXIDI | FPSCR::VXZDZ | FPSCR::VXIMZ |
+        FPSCR::VXVC |
+        FPSCR::VXSOFT | FPSCR::VXSQRT | FPSCR::VXCVI
+    ));
 }
 
 // Floating Point Comparisons
