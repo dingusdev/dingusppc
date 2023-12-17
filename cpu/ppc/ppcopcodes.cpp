@@ -364,10 +364,20 @@ void dppc_interpreter::ppc_subfme() {
     ppc_grab_regsda();
     uint32_t grab_xer = !!(ppc_state.spr[SPR::XER] & 0x20000000);
     ppc_result_d      = ~ppc_result_a + grab_xer - 1;
-    ppc_carry(~ppc_result_a, ppc_result_d);
 
-    if (oe_flag)
-        ppc_setsoov(0xFFFFFFFF, ppc_result_a, ppc_result_d);
+    if (ppc_result_d == ppc_result_a) {
+        // this only occurs when CA is 0 and ppc_result_a is 0x7fffffff or 0xffffffff
+        if ((int32_t)ppc_result_d > 0) {
+            ppc_state.spr[SPR::XER] |= oe_flag ? 0xE0000000UL : 0x20000000UL; // set SO,OV,CA
+        } else {
+            ppc_state.spr[SPR::XER] &= oe_flag ? ~0x60000000UL : ~0x20000000UL; // clear OV,CA
+        }
+    } else {
+        ppc_state.spr[SPR::XER] |= 0x20000000UL; // set CA
+        if (oe_flag)
+            ppc_state.spr[SPR::XER] &= ~0x40000000UL; // clear OV
+    }
+
     if (rc_flag)
         ppc_changecrf0(ppc_result_d);
 
