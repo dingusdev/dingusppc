@@ -420,6 +420,7 @@ void update_fpscr(uint32_t new_fpscr);
 /* Exception handlers. */
 void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits);
 [[noreturn]] void dbg_exception_handler(Except_Type exception_type, uint32_t srr1_bits);
+void ppc_floating_point_exception();
 
 // MEMORY DECLARATIONS
 extern MemCtrlBase* mem_ctrl_instance;

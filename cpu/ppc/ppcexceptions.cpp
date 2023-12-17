@@ -194,3 +194,9 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
 
     throw std::invalid_argument(exc_descriptor);
 }
+
+void ppc_floating_point_exception() {
+    LOG_F(ERROR, "Floating point exception at 0x%08x for instruction 0x%08x",
+          ppc_state.pc, ppc_cur_instruction);
+    // mmu_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::FPU_EXCEPTION);
+}
