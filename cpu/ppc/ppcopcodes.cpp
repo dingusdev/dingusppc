@@ -682,18 +682,20 @@ void dppc_interpreter::ppc_srw() {
 
 void dppc_interpreter::ppc_sraw() {
     ppc_grab_regssab();
+
+    // clear XER[CA] by default
+    ppc_state.spr[SPR::XER] &= ~XER::CA;
+
     if (ppc_result_b & 0x20) {
+        // fill rA with the sign bit of rS
         ppc_result_a = (int32_t)ppc_result_d >> 31;
-        ppc_state.spr[SPR::XER] |= (ppc_result_a & 1) << 29;
+        if (ppc_result_a) // if rA is negative
+            ppc_state.spr[SPR::XER] |= XER::CA;
     } else {
         uint32_t shift = ppc_result_b & 0x1F;
-        uint32_t mask  = (1U << shift) - 1;
-        ppc_result_a   = (int32_t)ppc_result_d >> shift;
-        if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & mask)) {
-            ppc_state.spr[SPR::XER] |= 0x20000000UL;
-        } else {
-            ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
-        }
+        ppc_result_a = (int32_t)ppc_result_d >> shift;
+        if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & ((1U << shift) - 1)))
+            ppc_state.spr[SPR::XER] |= XER::CA;
     }
 
     if (rc_flag)
