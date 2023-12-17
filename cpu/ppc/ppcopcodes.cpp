@@ -385,17 +385,30 @@ void dppc_interpreter::ppc_subfme() {
 
 void dppc_interpreter::ppc_subfze() {
     ppc_grab_regsda();
-    ppc_result_d = ~ppc_result_a + (ppc_state.spr[SPR::XER] & 0x20000000);
-    ppc_carry(~ppc_result_a, ppc_result_d);
+    ppc_result_d = ~ppc_result_a + !!(ppc_state.spr[SPR::XER] & 0x20000000);
 
-    if (oe_flag)
-        ppc_setsoov(0, ppc_result_a, ppc_result_d);
+    if (ppc_result_d == ppc_result_a) {
+        // this only occurs when CA is 1 and ppc_result_a is 0x00000000 or 0x80000000
+        if (ppc_result_d == 0) {
+            ppc_state.spr[SPR::XER] |= 0x20000000UL; // set CA
+            if (oe_flag)
+                ppc_state.spr[SPR::XER] &= ~0x40000000UL; // clear OV
+        } else {
+            ppc_state.spr[SPR::XER] &= ~0x20000000UL; // clear CA
+            if (oe_flag)
+                ppc_state.spr[SPR::XER] |= 0xC0000000UL; // set SO,OV
+        }
+    } else {
+        ppc_state.spr[SPR::XER] &= ~0x20000000UL; // clear CA
+        if (oe_flag)
+            ppc_state.spr[SPR::XER] &= ~0x40000000UL; // clear OV
+    }
+
     if (rc_flag)
         ppc_changecrf0(ppc_result_d);
 
     ppc_store_result_regd();
 }
-
 
 void dppc_interpreter::ppc_and() {
     ppc_grab_regssab();
