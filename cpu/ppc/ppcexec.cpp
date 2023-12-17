@@ -773,6 +773,20 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, uint64_t tb_freq)
 
     initialize_ppc_opcode_tables();
 
+    if (cpu_version == PPC_VER::MPC601) {
+        SubOpcode31Grabber[370] = ppc_illegalop; // tlbia
+        SubOpcode31Grabber[371] = ppc_illegalop; // mftb
+        SubOpcode59Grabber[24]  = ppc_illegalop; // fres
+        for (int i = 0; i < 1024; i += 32) {
+            SubOpcode63Grabber[i + 23] = ppc_illegalop; // fsel
+        }
+        SubOpcode63Grabber[26]  = ppc_illegalop; // frsqrte;
+    }
+    if (cpu_version != PPC_VER::MPC970MP) {
+        SubOpcode59Grabber[22] = ppc_illegalop; // fsqrts
+        SubOpcode63Grabber[22] = ppc_illegalop; // fsqrt
+    }
+
     // initialize emulator timers
     TimerManager::get_instance()->set_time_now_cb(&get_virt_time_ns);
     TimerManager::get_instance()->set_notify_changes_cb(&force_cycle_counter_reload);
