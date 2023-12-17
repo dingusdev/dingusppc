@@ -621,7 +621,8 @@ void dppc_interpreter::ppc_divw() {
     ppc_grab_regsdab();
 
     if (!ppc_result_b) {                                     /* handle the "anything / 0" case */
-        ppc_result_d = (ppc_result_a & 0x80000000) ? -1 : 0; /* UNDOCUMENTED! */
+        ppc_result_d = 0; // tested on G4 in Mac OS X 10.4 and Open Firmware.
+        // ppc_result_d = (ppc_result_a & 0x80000000) ? -1 : 0; /* UNDOCUMENTED! */
 
         if (oe_flag)
             ppc_state.spr[SPR::XER] |= 0xC0000000;
