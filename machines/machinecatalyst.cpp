@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -42,13 +42,13 @@ int initialize_catalyst(std::string& id)
 
     PCIHost *pci_host = dynamic_cast<PCIHost*>(gMachineObj->get_comp_by_name("Bandit1"));
 
-    // add the GrandCentral I/O controller
-    pci_host->pci_register_device(
-        DEV_FUN(0x10,0), dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("GrandCentral")));
-
     // get (raw) pointer to the I/O controller
     GrandCentral* gc_obj = dynamic_cast<GrandCentral*>(gMachineObj->get_comp_by_name("GrandCentral"));
 
+    // connect GrandCentral I/O controller to the PCI1 bus
+    pci_host->pci_register_device(DEV_FUN(0x10,0), gc_obj);
+
+    // attach IOBus Device #1 0xF301A000
     gMachineObj->add_device("BoardReg1", std::unique_ptr<BoardRegister>(
         new BoardRegister("Board Register 1",
             0x3F                                | // pull up all PRSNT bits
