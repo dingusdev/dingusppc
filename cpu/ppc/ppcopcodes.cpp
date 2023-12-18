@@ -345,9 +345,12 @@ void dppc_interpreter::ppc_subfic() {
 
 void dppc_interpreter::ppc_subfe() {
     ppc_grab_regsdab();
-    uint32_t grab_xer = !!(ppc_state.spr[SPR::XER] & 0x20000000);
-    ppc_result_d      = ~ppc_result_a + ppc_result_b + grab_xer;
-    ppc_carry(~ppc_result_a, ppc_result_d);
+    uint32_t grab_ca = !!(ppc_state.spr[SPR::XER] & XER::CA);
+    ppc_result_d     = ~ppc_result_a + ppc_result_b + grab_ca;
+    if (grab_ca && ppc_result_b == 0xFFFFFFFFUL)
+        ppc_state.spr[SPR::XER] |= XER::CA;
+    else
+        ppc_carry(~ppc_result_a, ppc_result_d);
 
     if (oe_flag)
         ppc_setsoov(ppc_result_b, ppc_result_a, ppc_result_d);
