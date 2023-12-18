@@ -484,7 +484,8 @@ void Sc53C94::sequencer()
         break;
     case SeqState::SEND_MSG:
         if (this->data_fifo_pos < 1 && this->is_dma_cmd) {
-            this->drq_cb(1);
+            if (this->drq_cb)
+                this->drq_cb(1);
             this->int_status = INTSTAT_SR;
             this->update_irq();
             break;
@@ -494,7 +495,8 @@ void Sc53C94::sequencer()
         break;
     case SeqState::SEND_CMD:
         if (this->data_fifo_pos < 1 && this->is_dma_cmd) {
-            this->drq_cb(1);
+            if (this->drq_cb)
+                this->drq_cb(1);
             this->int_status |= INTSTAT_SR;
             this->update_irq();
             break;
