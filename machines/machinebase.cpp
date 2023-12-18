@@ -58,6 +58,14 @@ HWComponent* MachineBase::get_comp_by_name(std::string name) {
     }
 }
 
+HWComponent* MachineBase::get_comp_by_name_optional(std::string name) {
+    if (this->device_map.count(name)) {
+        return this->device_map[name].get();
+    } else {
+        return nullptr;
+    }
+}
+
 HWComponent* MachineBase::get_comp_by_type(HWCompType type) {
     std::string comp_name;
     bool found = false;
