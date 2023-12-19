@@ -24,12 +24,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/ata/atahd.h>
 #include <devices/deviceregistry.h>
 #include <devices/common/ata/idechannel.h>
+#include <loguru.hpp>
 #include <machines/machinebase.h>
+#include <memaccess.h>
 
 #include <cstring>
 #include <fstream>
 #include <string>
-#include <loguru.hpp>
 
 using namespace ata_interface;
 
@@ -65,12 +66,12 @@ void AtaHardDisk::insert_image(std::string filename) {
     }
 
     this->img_size = this->hdd_img.size();
+    this->total_sectors = this->hdd_img.size() / ATA_HD_SEC_SIZE;
 }
 
-int AtaHardDisk::perform_command()
-{
-    LOG_F(INFO, "%s: command 0x%x requested", this->name.c_str(), this->r_command);
+int AtaHardDisk::perform_command() {
     this->r_status |= BSY;
+    this->r_error = 0;
 
     switch (this->r_command) {
     case NOP:
@@ -82,21 +83,31 @@ int AtaHardDisk::perform_command()
         break;
     case READ_SECTOR:
     case READ_SECTOR_NR: {
-        uint16_t sec_count = this->r_sect_count ? this->r_sect_count : 256;
-        this->xfer_cnt = sec_count * ATA_HD_SEC_SIZE;
-        uint64_t offset = this->get_lba() * ATA_HD_SEC_SIZE;
-        hdd_img.read(buffer, offset, this->xfer_cnt);
-        this->data_ptr = (uint16_t *)this->buffer;
-        this->signal_data_ready();
-    }
-    break;
+            uint16_t sec_count = this->r_sect_count ? this->r_sect_count : 256;
+            int      xfer_size = sec_count * ATA_HD_SEC_SIZE;
+            uint64_t offset    = this->get_lba() * ATA_HD_SEC_SIZE;
+            hdd_img.read(buffer, offset, xfer_size);
+            this->data_ptr = (uint16_t *)this->buffer;
+            // those commands should generate IRQ for each sector
+            this->prepare_xfer(xfer_size, ATA_HD_SEC_SIZE);
+            this->signal_data_ready();
+        }
+        break;
     case WRITE_SECTOR:
     case WRITE_SECTOR_NR: {
-        uint16_t sec_count = this->r_sect_count ? this->r_sect_count : 256;
-        uint64_t offset = this->get_lba() * ATA_HD_SEC_SIZE;
-        hdd_img.write(buffer, offset, sec_count * ATA_HD_SEC_SIZE);
-    }
-    break;
+            uint16_t sec_count = this->r_sect_count ? this->r_sect_count : 256;
+            this->cur_fpos = this->get_lba() * ATA_HD_SEC_SIZE;
+            this->data_ptr = (uint16_t *)this->buffer;
+            this->cur_data_ptr = this->data_ptr;
+            this->prepare_xfer(sec_count * ATA_HD_SEC_SIZE, ATA_HD_SEC_SIZE);
+            this->post_xfer_action = [this]() {
+                this->hdd_img.write(this->data_ptr, this->cur_fpos, this->chunk_size);
+                this->cur_fpos += this->chunk_size;
+            };
+            this->r_status |= DRQ;
+            this->r_status &= ~BSY;
+        }
+        break;
     case INIT_DEV_PARAM:
         // update fictive disk geometry with parameters from host
         this->sectors = this->r_sect_count;
@@ -104,18 +115,46 @@ int AtaHardDisk::perform_command()
         this->r_status &= ~BSY;
         this->update_intrq(1);
         break;
-    case DIAGNOSTICS: {
-        this->r_status |= DRQ;
-        int ret_code = this->r_error;
-        this->r_status &= ~DRQ;
-        return ret_code;
-    }
-    break;
+    case DIAGNOSTICS:
+        this->r_error = 1;
+        this->device_set_signature();
+        break;
+    case FLUSH_CACHE: // used by the XNU kernel driver
+        this->r_status &= ~(BSY | DRQ | ERR);
+        this->update_intrq(1);
+        break;
     case IDENTIFY_DEVICE:
         this->prepare_identify_info();
         this->data_ptr = (uint16_t *)this->data_buf;
-        this->xfer_cnt = ATA_HD_SEC_SIZE;
+        this->prepare_xfer(ATA_HD_SEC_SIZE, ATA_HD_SEC_SIZE);
         this->signal_data_ready();
+        break;
+    case SET_FEATURES:
+        if (this->r_features == 3) {
+            switch(this->r_sect_count >> 3) {
+            case 0:
+                LOG_F(INFO, "%s: default transfer mode requested", this->name.c_str());
+                break;
+            case 1:
+                LOG_F(INFO, "%s: PIO transfer mode set to 0x%X", this->name.c_str(),
+                      this->r_sect_count & 7);
+                break;
+            case 4:
+                LOG_F(INFO, "%s: Multiword DMA mode set to 0x%X", this->name.c_str(),
+                      this->r_sect_count & 7);
+                break;
+            default:
+                LOG_F(ERROR, "%s: unsupported transfer mode 0x%X", this->name.c_str(),
+                      this->r_sect_count);
+                this->r_error  |= ATA_Error::ABRT;
+                this->r_status |= ATA_Status::ERR;
+            }
+        } else {
+            LOG_F(WARNING, "%s: unsupported SET_FEATURES subcommand code 0x%X",
+                  this->name.c_str(), this->r_features);
+        }
+        this->r_status &= ~BSY;
+        this->update_intrq(1);
         break;
     default:
         LOG_F(ERROR, "%s: unknown ATA command 0x%x", this->name.c_str(), this->r_command);
@@ -131,10 +170,17 @@ void AtaHardDisk::prepare_identify_info() {
 
     std::memset(this->data_buf, 0, sizeof(this->data_buf));
 
-    buf_ptr[0] = 0x0040; // ATA device, non-removable media, non-removable drive
-    buf_ptr[1] = 965;
-    buf_ptr[3] = 5;
-    buf_ptr[6] = 17;
+    buf_ptr[ 0] = 0x0040; // ATA device, non-removable media, non-removable drive
+    buf_ptr[49] = 0x200; // report LBA support
+
+    // TODO: replace this fictive CHS geometry with the proper one
+    buf_ptr[ 1] = 965;
+    buf_ptr[ 3] = 5;
+    buf_ptr[ 6] = 17;
+
+    // report LBA capacity
+    WRITE_WORD_LE_A(&buf_ptr[60], (this->total_sectors & 0xFFFFU));
+    WRITE_WORD_LE_A(&buf_ptr[61], (this->total_sectors >> 16) & 0xFFFFU);
 }
 
 uint64_t AtaHardDisk::get_lba() {

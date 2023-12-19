@@ -51,8 +51,10 @@ protected:
     uint64_t    get_lba();
 
 private:
-    ImgFile         hdd_img;
-    uint64_t img_size;
+    ImgFile     hdd_img;
+    uint64_t    img_size = 0;
+    uint32_t    total_sectors = 0;
+    uint64_t    cur_fpos = 0;
 
     // fictive disk geometry for CHS-to-LBA translation
     uint16_t    cylinders;
