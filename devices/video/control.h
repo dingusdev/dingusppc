@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -46,36 +46,56 @@ namespace ControlRegs {
 enum ControlRegs : int {
     // 512 bytes, repeats 8 times for 4K total.
     // A register every 16 bytes, little endian, 32 bits, repeats 4 times.
-    CUR_LINE        = 0x00, // (ro)         ; current active video line
-    VFPEQ           = 0x01, // (rw) 12 bits ;
-    VFP             = 0x02, // (rw) 12 bits ;
-    VAL             = 0x03, // (rw) 12 bits ; vertical active line
-    VBP             = 0x04, // (rw) 12 bits ;
-    VBPEQ           = 0x05, // (rw) 12 bits ; vertical back porch with equalization
-    VSYNC           = 0x06, // (rw) 12 bits ;
-    VHLINE          = 0x07, // (rw) 12 bits ;
-    PIPED           = 0x08, // (rw) 10 bits ;
-    HPIX            = 0x09, // (rw) 12 bits ;
-    HFP             = 0x0A, // (rw) 12 bits ;
-    HAL             = 0x0B, // (rw) 12 bits ; horizontal active line
-    HBWAY           = 0x0C, // (rw) 12 bits ;
-    HSP             = 0x0D, // (rw) 12 bits ;
-    HEQ             = 0x0E, // (rw)  8 bits ;
-    HLFLN           = 0x0F, // (rw) 12 bits ;
-    HSERR           = 0x10, // (rw) 12 bits ;
-    CNTTST          = 0x11, // (rw) 12 bits ; Swatch counter test
-    TEST            = 0x12, // (rw) 11 bits ; ctrl
-    GBASE           = 0x13, // (rw) 22 bits, 32 byte aligned ; Graphics base address
-    ROW_WORDS       = 0x14, // (rw) 15 bits, 32 byte aligned ;
-    MON_SENSE       = 0x15, // (rw)  9 bits ; Monitor sense control & status
-    ENABLE          = 0x16, // (rw) 12 bits ; bit 7 does something
-    GSC_DIVIDE      = 0x17, // (rw)  2 bits ; graphics clock divide count
-    REFRESH_COUNT   = 0x18, // (rw) 10 bits ;
-    INT_ENABLE      = 0x19, // (rw)  4 bits ;
-    INT_STATUS      = 0x1A, // (ro)  ? bits ;
+    CUR_LINE        = 0x00, // current active video line        (ro) 12 bits
+    VFPEQ           = 0x01, // vertical front porch with EQ     (rw) 12 bits
+    VFP             = 0x02, // vertical front porch             (rw) 12 bits
+    VAL             = 0x03, // vertical active line             (rw) 12 bits
+    VBP             = 0x04, // vertical back porch              (rw) 12 bits
+    VBPEQ           = 0x05, // vertical back porch with EQ      (rw) 12 bits
+    VSYNC           = 0x06, // vertical sync starting point     (rw) 12 bits
+    VHLINE          = 0x07, // vertical half line               (rw) 12 bits
+    PIPE_DELAY      = 0x08, // controls pixel pipe delay        (rw) 12 bits
+    HPIX            = 0x09, // horizontal pixel count           (rw) 12 bits
+    HFP             = 0x0A, // horizontal front porch           (rw) 12 bits
+    HAL             = 0x0B, // horizontal active line           (rw) 12 bits
+    HBWAY           = 0x0C, // horizontal breezeway             (rw) 12 bits
+    HSP             = 0x0D, // horizontal sync starting point   (rw) 12 bits
+    HEQ             = 0x0E, // horizontal equalization          (rw) 12 bits
+    HLFLN           = 0x0F, // horizontal half line             (rw) 12 bits
+    HSERR           = 0x10, // horizontal serration             (rw) 12 bits
+    CNTTST          = 0x11, // Swatch counter test              (rw) 12 bits
+    SWATCH_CTRL     = 0x12, // Swatch timing generator control  (rw) 11 bits
+    GBASE           = 0x13, // graphics base address            (rw) 22 bits, 32 byte aligned
+    ROW_WORDS       = 0x14, // framebuffer pitch                (rw) 15 bits, 32 byte aligned
+    MON_SENSE       = 0x15, // Monitor sense control & status   (rw)  9 bits
+    MISC_ENABLES    = 0x16, // controls chip's features         (rw) 12 bits
+    GSC_DIVIDE      = 0x17, // graphics clock divide count      (rw)  2 bits
+    REFRESH_COUNT   = 0x18, // VRAM refresh counter             (rw) 10 bits
+    INT_ENABLE      = 0x19, // interrupt enable bits            (rw)  4 bits
+    INT_STATUS      = 0x1A, // interrupt status bits            (ro)  3 bits
 };
 
 }; // namespace ControlRegs
+
+// Bit definitions for the video timing generator (Swatch) control register.
+enum {
+    RESET_TIMING    = 1 <<  3, // toggle this bit to change timing parameters
+    DISABLE_TIMING  = 1 << 10, // 1 - disable video timing, 0 - enable it
+};
+
+// Bit definitions for MISC_ENABLES register.
+enum {
+    FB_ENDIAN_LITTLE    = 1 <<  1, // framebuffer endianness: 0 - big, 1 - little
+    VRAM_WIDE_MODE      = 1 <<  6, // VRAM bus width: 1 - 128bit, 0 - 64bit
+    BLANK_DISABLE       = 1 << 11, // 0 - enable blanking, 1 - disable it
+};
+
+// Bit definitions for INT_ENABLE & INT_STATUS registers.
+enum {
+    VBL_IRQ_CLR  = 1 << 3, // VBL interrupt clear  bit (INT_ENABLE)
+    VBL_IRQ_EN   = 1 << 2, // VBL interrupt enable bit (INT_ENABLE)
+    VBL_IRQ_STAT = 1 << 2, // VBL interrupt status bit (INT_STATUS)
+};
 
 namespace RadacalRegs {
 
@@ -90,7 +110,7 @@ enum RadacalRegs : uint8_t {
     CURSOR_POS_LO   = 0x11, // cursor position, low-order byte
     MISC_CTRL       = 0x20, // miscellaneus control bits
     DBL_BUF_CTRL    = 0x21, // double buffer control bits
-    //              = 0x22, // ? = 0
+    TEST_CTRL       = 0x22, // enable/disable DAC tests
 };
 
 }; // namespace RadacalRegs
@@ -135,15 +155,16 @@ private:
     uint32_t    vram_base = 0;
     uint32_t    regs_base = 0;
     uint32_t    prev_test = 0x433;
-    uint32_t    test = 0;
+    uint32_t    swatch_ctrl = 0;
     bool        display_enabled = false;
     uint32_t    clock_divider = 0;
     uint32_t    row_words = 0;
     uint32_t    fb_base = 0;
     uint16_t    swatch_params[16];
-    int         test_shift = 0;
+    int         strobe_counter = 0;
+    uint8_t     num_banks = 0;
     uint8_t     cur_mon_id = 0;
-    uint8_t     flags = 0;
+    uint8_t     enables = 0;
     uint8_t     int_enable = 0;
     uint8_t     int_status = 0;
     uint8_t     last_int_status = -1;
@@ -153,6 +174,7 @@ private:
     uint8_t     rad_addr = 0;
     uint8_t     rad_cr = 0;
     uint8_t     rad_dbl_buf_cr = 0;
+    uint8_t     tst_cr = 0;
     uint16_t    rad_cur_pos = 0;
     uint8_t     comp_index;
     uint8_t     clut_color[3];

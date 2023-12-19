@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -25,13 +25,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     - Chaos ASIC that provides data bus buffering between the video subsystem
       and the processor bus
     - Control ASIC that provides addressing and control for the video subsystem
-    - RaDACal RAMDAC ASIC for generating video stream to the monitor
+    - RaDACal RAMDAC ASIC for generating RGB video stream to the monitor
     - Athens clock generator for generating pixel clock
+
+    Some TNT boards can generate composite video output and thus include
+    two additional components:
+    - Sixty6 ASIC that converts RGB pixels stored in the VRAM to YUV color space
+    - SAA7187 encoder that converts pixels from Sixty6 to composite video signal
 
     Kudos to joevt#3510 for his precious technical help and HW hacking.
  */
 
-#include <debugger/backtrace.h>
 #include <devices/common/i2c/athens.h>
 #include <devices/common/i2c/i2c.h>
 #include <devices/deviceregistry.h>
@@ -58,6 +62,9 @@ ControlVideo::ControlVideo()
 
     // get VRAM size in MBs and convert it to bytes
     this->vram_size = GET_INT_PROP("gfxmem_size") << 20;
+
+    // calculate number of VRAM banks from VRAM size
+    this->num_banks = this->vram_size >> 21; // 2 MB => 1 bank, 4 MB >> 2 banks
 
     // allocate VRAM
     this->vram_ptr = std::unique_ptr<uint8_t[]> (new uint8_t[this->vram_size]);
@@ -92,8 +99,7 @@ ControlVideo::ControlVideo()
     this->display_id = std::unique_ptr<DisplayID> (new DisplayID());
 }
 
-void ControlVideo::notify_bar_change(int bar_num)
-{
+void ControlVideo::notify_bar_change(int bar_num) {
     switch (bar_num) {
     case 0:
         this->io_base = this->bars[bar_num] & ~3;
@@ -118,6 +124,26 @@ void ControlVideo::notify_bar_change(int bar_num)
     }
 }
 
+int ControlVideo::device_postinit() {
+    this->int_ctrl = dynamic_cast<InterruptCtrl*>(
+        gMachineObj->get_comp_by_type(HWCompType::INT_CTRL));
+    this->irq_id = 1UL << 26; // FIXME: hardcoded IRQ ID
+
+    this->vbl_cb = [this](uint8_t irq_line_state) {
+        if (irq_line_state != !!(this->int_status & VBL_IRQ_STAT)) {
+            if (irq_line_state)
+                this->int_status |= VBL_IRQ_STAT;
+            else
+                this->int_status &= ~VBL_IRQ_STAT;
+
+            if (this->int_enable & VBL_IRQ_EN)
+                this->int_ctrl->ack_int(this->irq_id, irq_line_state);
+        }
+    };
+
+    return 0;
+}
+
 static const char * get_name_controlreg(int offset) {
     switch (offset >> 4) {
     case ControlRegs::CUR_LINE      : return "CUR_LINE";
@@ -128,7 +154,7 @@ static const char * get_name_controlreg(int offset) {
     case ControlRegs::VBPEQ         : return "VBPEQ";
     case ControlRegs::VSYNC         : return "VSYNC";
     case ControlRegs::VHLINE        : return "VHLINE";
-    case ControlRegs::PIPED         : return "PIPED";
+    case ControlRegs::PIPE_DELAY    : return "PIPE_DELAY";
     case ControlRegs::HPIX          : return "HPIX";
     case ControlRegs::HFP           : return "HFP";
     case ControlRegs::HAL           : return "HAL";
@@ -138,11 +164,11 @@ static const char * get_name_controlreg(int offset) {
     case ControlRegs::HLFLN         : return "HLFLN";
     case ControlRegs::HSERR         : return "HSERR";
     case ControlRegs::CNTTST        : return "CNTTST";
-    case ControlRegs::TEST          : return "TEST";
+    case ControlRegs::SWATCH_CTRL   : return "SWATCH_CTRL";
     case ControlRegs::GBASE         : return "GBASE";
     case ControlRegs::ROW_WORDS     : return "ROW_WORDS";
     case ControlRegs::MON_SENSE     : return "MON_SENSE";
-    case ControlRegs::ENABLE        : return "ENABLE";
+    case ControlRegs::MISC_ENABLES  : return "MISC_ENABLES";
     case ControlRegs::GSC_DIVIDE    : return "GSC_DIVIDE";
     case ControlRegs::REFRESH_COUNT : return "REFRESH_COUNT";
     case ControlRegs::INT_ENABLE    : return "INT_ENABLE";
@@ -155,10 +181,19 @@ uint32_t ControlVideo::read(uint32_t rgn_start, uint32_t offset, int size)
 {
     if (rgn_start == this->vram_base) {
         if (offset >= 0x800000) {
-            return read_mem(&this->vram_ptr[offset - 0x800000], size);
+            // HACK: writing to VRAM in 128bit mode with only the standard
+            // bank populated seems to replicate the first 64bit portion of data
+            // in the second 64bit portion. This "feature" is used by
+            // the Mac OS driver to detect how much physical VRAM is installed.
+            // I handle this case here because reads from VRAM seem to happen
+            // far less frequently than writes.
+            if ((this->enables & VRAM_WIDE_MODE) && this->num_banks == 1)
+                offset &= ~8UL;
+            return read_mem(&this->vram_ptr[offset & 0x3FFFFF], size);
         }
-    
-        LOG_F(INFO, "Control: little-endian access to VRAM not supported yet");
+
+        LOG_F(ERROR, "%s: read from unmapped aperture address 0x%X", this->name.c_str(),
+              this->vram_base + offset);
         return 0;
     }
 
@@ -168,7 +203,7 @@ uint32_t ControlVideo::read(uint32_t rgn_start, uint32_t offset, int size)
         switch (offset >> 4) {
         case ControlRegs::CUR_LINE:
             value = 0; // current active video line should relate this to refresh rate
-            LOG_F(ERROR, "Control: read  CUR_LINE %03x.%c", offset, SIZE_ARG(size));
+            LOG_F(ERROR, "Control: read  CUR_LINE %03x", offset);
             break;
         case ControlRegs::VFPEQ:
         case ControlRegs::VFP:
@@ -177,7 +212,7 @@ uint32_t ControlVideo::read(uint32_t rgn_start, uint32_t offset, int size)
         case ControlRegs::VBPEQ:
         case ControlRegs::VSYNC:
         case ControlRegs::VHLINE:
-        case ControlRegs::PIPED:
+        case ControlRegs::PIPE_DELAY:
         case ControlRegs::HPIX:
         case ControlRegs::HFP:
         case ControlRegs::HAL:
@@ -187,71 +222,46 @@ uint32_t ControlVideo::read(uint32_t rgn_start, uint32_t offset, int size)
         case ControlRegs::HLFLN:
         case ControlRegs::HSERR:
             value = this->swatch_params[(offset >> 4) - ControlRegs::VFPEQ];
-            LOG_F(CONTROL, "Control: read  %s %03x.%c = %0*x", get_name_controlreg(offset), offset, SIZE_ARG(size), size * 2, value);
             break;
         case ControlRegs::CNTTST:
             value = 0;
-            LOG_F(ERROR, "Control: read  CNTTST %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
             break;
-        case ControlRegs::TEST:
-            value = this->test;
-            LOG_F(CONTROL, "Control: read  TEST %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
+        case ControlRegs::SWATCH_CTRL:
+            value = this->swatch_ctrl;
             break;
         case ControlRegs::GBASE:
             value = this->fb_base;
-            LOG_F(CONTROL, "Control: read  GBASE %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
             break;
         case ControlRegs::ROW_WORDS:
             value = this->row_words;
-            LOG_F(CONTROL, "Control: read  ROW_WORDS %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
             break;
         case ControlRegs::MON_SENSE:
             value = this->cur_mon_id << 6;
-            LOG_F(CONTROL, "Control: read  MON_SENSE %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
             break;
-        case ControlRegs::ENABLE:
-            value = this->flags;
-            LOG_F(CONTROL, "Control: read  ENABLE %03x.%c", offset, SIZE_ARG(size));
+        case ControlRegs::MISC_ENABLES:
+            value = this->enables;
             break;
         case ControlRegs::GSC_DIVIDE:
             value = this->clock_divider;
-            LOG_F(CONTROL, "Control: read  GSC_DIVIDE %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
             break;
         case ControlRegs::REFRESH_COUNT:
             value = 0;
-            LOG_F(ERROR, "Control: read  CNTTST %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
             break;
         case ControlRegs::INT_STATUS:
             value = this->int_status;
-            if (value != this->last_int_status) {
-                LOG_F(CONTROL, "Control: read  (previous %d times) INT_STATUS %03x.%c = %0*x", last_int_status_read_count, offset, SIZE_ARG(size), size * 2, value);
-                this->last_int_status = value;
-                this->last_int_status_read_count = 0;
-            }
-            else {
-                this->last_int_status_read_count++;
-            
-            }
             break;
         case ControlRegs::INT_ENABLE:
             value = this->int_enable;
-            LOG_F(CONTROL, "Control: read  INT_ENABLE %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
             break;
         default:
-            LOG_F(ERROR, "Control: read  %03x.%c", offset, SIZE_ARG(size));
+            LOG_F(ERROR, "Control: read  %03x", offset);
             value = 0;
         }
 
-        AccessDetails details;
-        details.size = size;
-        details.offset = offset & 3;
-        uint32_t result = pci_conv_rd_data(value, value, details);
-        if ((offset & 3) || (size != 4)) {
-            LOG_F(WARNING, "Control: read  %03x.%c = %08x -> %0*x", offset, SIZE_ARG(size), value, size * 2, result);
-            //dump_backtrace();
-        }
+        if (offset & 3)
+            LOG_F(WARNING, "Control: unaligned read from register 0x%X", offset >> 4);
 
-        return result;
+        return BYTESWAP_SIZED(value, size);;
     }
 
     return 0;
@@ -261,9 +271,10 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
 {
     if (rgn_start == this->vram_base) {
         if (offset >= 0x800000) {
-            write_mem(&this->vram_ptr[offset - 0x800000], value, size);
+            write_mem(&this->vram_ptr[offset & 0x3FFFFF], value, size);
         } else {
-            LOG_F(INFO, "Control: little-endian access to VRAM not supported yet");
+            LOG_F(ERROR, "%s: write to unmapped aperture address 0x%X", this->name.c_str(),
+                  this->vram_base + offset);
         }
         return;
     }
@@ -272,25 +283,11 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
         value = BYTESWAP_32(value);
 
         switch (offset >> 4) {
-        case ControlRegs::PIPED:
-            this->swatch_params[(offset >> 4) - ControlRegs::VFPEQ] = value & 0x3ff;
-            if (value & ~0x3ff)
-                LOG_F(ERROR, "Control: write PIPED %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
-            else
-                LOG_F(CONTROL, "Control: write PIPED %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
-            if (this->display_enabled) {
-                this->enable_display();
-            }
+        case ControlRegs::PIPE_DELAY:
+            this->swatch_params[(offset >> 4) - ControlRegs::VFPEQ] = value & 0x3FF;
             break;
         case ControlRegs::HEQ:
-            this->swatch_params[(offset >> 4) - ControlRegs::VFPEQ] = value & 0xff;
-            if (value & ~0xff)
-                LOG_F(ERROR, "Control: write HEQ %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
-            else
-                LOG_F(CONTROL, "Control: write HEQ %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
-            if (this->display_enabled) {
-                this->enable_display();
-            }
+            this->swatch_params[(offset >> 4) - ControlRegs::VFPEQ] = value & 0xFFU;
             break;
         case ControlRegs::VFPEQ:
         case ControlRegs::VFP:
@@ -306,110 +303,72 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
         case ControlRegs::HSP:
         case ControlRegs::HLFLN:
         case ControlRegs::HSERR:
-            this->swatch_params[(offset >> 4) - ControlRegs::VFPEQ] = value & 0xfff;
-            if (value & ~0xfff)
-                LOG_F(ERROR, "Control: write %s %03x.%c = %0*x", get_name_controlreg(offset), offset, SIZE_ARG(size), size * 2, value);
-            else
-                LOG_F(CONTROL, "Control: write %s %03x.%c = %0*x", get_name_controlreg(offset), offset, SIZE_ARG(size), size * 2, value);
-            if (this->display_enabled) {
-                this->enable_display();
-            }
+            this->swatch_params[(offset >> 4) - ControlRegs::VFPEQ] = value & 0xFFF;
             break;
         case ControlRegs::CNTTST:
-            if (value != 0)
-                LOG_F(ERROR, "Control: write CNTTST %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
-            else
-                LOG_F(CONTROL, "Control: write CNTTST %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
+            if (value)
+                LOG_F(WARNING, "%s: CNTTST set to 0x%X", this->name.c_str(), value);
             break;
-        case ControlRegs::TEST:
-            if (value & ~0x7ff)
-                LOG_F(ERROR, "Control: write TEST %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
-            else
-                LOG_F(CONTROL, "Control: write TEST %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
-            value &= 0x7ff;
-            if (this->test != value) {
-                if ((this->test & ~TEST_STROBE & 0x400) != (value & ~TEST_STROBE & 0x400)) {
-                    this->test = value;
-                    this->test_shift = 0;
-                    LOG_F(CONTROL, "New TEST value: 0x%08X", this->test);
-                } else {
-                    LOG_F(CONTROL, "TEST strobe bit flipped, new value: 0x%08X", value);
-                    this->test = value;
-                    if (++this->test_shift >= 3) {
-                        LOG_F(CONTROL, "Received TEST reg value: 0x%08X", this->test & ~TEST_STROBE);
-                        if ((this->test ^ this->prev_test) & 0x400) {
-                            if ((this->display_enabled = !(this->test & 0x400))) {
-                                this->enable_display();
-                            } else {
-                                this->disable_display();
-                            }
-                            this->prev_test = this->test;
-                        }
+        case ControlRegs::SWATCH_CTRL:
+            if ((this->swatch_ctrl ^ value) & DISABLE_TIMING) {
+                this->swatch_ctrl = value;
+                this->strobe_counter = 0;
+            } else if ((this->swatch_ctrl ^ value) & RESET_TIMING) {
+                this->swatch_ctrl = value;
+                if (value & RESET_TIMING) { // count 0-to-1 transitions
+                    this->strobe_counter++;
+                    if (this->strobe_counter >= 2) {
+                        if (value & DISABLE_TIMING)
+                            disable_display();
+                        else
+                            enable_display();
                     }
                 }
-            }
+            } else
+                this->swatch_ctrl = value;
             break;
         case ControlRegs::GBASE:
-            if (value & ~0x3fffe0)
-                LOG_F(ERROR, "Control: write GBASE %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
-            else
-                LOG_F(CONTROL, "Control: write GBASE %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
-            this->fb_base = value & 0x3fffe0;
-            if (this->display_enabled) {
-                this->enable_display();
-            }
+            this->fb_base = value & 0x3FFFE0;
             break;
         case ControlRegs::ROW_WORDS:
-            if (value & ~0x7fe0)
-                LOG_F(ERROR, "Control: write ROW_WORDS %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
-            else
-                LOG_F(CONTROL, "Control: write ROW_WORDS %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
-            this->row_words = value & 0x7fe0;
-            if (this->display_enabled) {
-                this->enable_display();
+            this->row_words = value & 0x7FE0;
+            break;
+        case ControlRegs::MON_SENSE: {
+                uint8_t dirs   = ((value >> 3) & 7) ^ 7;
+                uint8_t levels = ((value & 7) & dirs) | (dirs ^ 7);
+                this->cur_mon_id = this->display_id->read_monitor_sense(levels, dirs);
             }
             break;
-        case ControlRegs::MON_SENSE:
-            if (value & ~0x1FF)
-                LOG_F(ERROR, "Control: write MON_SENSE %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
-            else
-                LOG_F(CONTROL, "Control: write MON_SENSE %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
-            value = (value >> 3) & 7;
-            this->cur_mon_id = this->display_id->read_monitor_sense(value & 7, value ^ 7);
-            break;
-        case ControlRegs::ENABLE:
-            if (value & ~0xfff)
-                LOG_F(ERROR, "Control: write ENABLE %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
-            else
-                LOG_F(CONTROL, "Control: write ENABLE %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
-            this->flags = value & -0xfff;
+        case ControlRegs::MISC_ENABLES:
+            if ((this->enables ^ value) & BLANK_DISABLE) {
+                if (value & BLANK_DISABLE)
+                    this->blank_on = false;
+                else {
+                    this->blank_on = true;
+                    this->blank_display();
+                }
+            }
+            this->enables = value;
+            if (this->enables & FB_ENDIAN_LITTLE)
+                ABORT_F("%s: little-endian framebuffer is not implemented yet",
+                        this->name.c_str());
             break;
         case ControlRegs::GSC_DIVIDE:
-            if (value & ~0x3)
-                LOG_F(ERROR, "Control: write GSC_DIVIDE %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
-            else
-                LOG_F(CONTROL, "Control: write GSC_DIVIDE %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
             this->clock_divider = value & 3;
-            if (this->display_enabled) {
-                this->enable_display();
-            }
             break;
         case ControlRegs::REFRESH_COUNT:
-            if (value & ~0x3ff)
-                LOG_F(ERROR, "Control: write REFRESH_COUNT %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
-            else
-                LOG_F(CONTROL, "Control: write REFRESH_COUNT %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
+            LOG_F(9, "Control: VRAM refresh count set to %d", value);
             break;
         case ControlRegs::INT_ENABLE:
-            if (value & ~0xc)
-                LOG_F(ERROR, "Control: write INT_ENABLE %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
-            else {
-                //LOG_F(CONTROL, "Control: write INT_ENABLE %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
+            if ((this->int_enable ^ value) & VBL_IRQ_CLR) {
+                // clear VBL IRQ on a 1-to-0 transition of INT_ENABLE[VBL_IRQ_CLR]
+                if (!(value & VBL_IRQ_CLR))
+                    this->vbl_cb(0);
             }
-            this->int_enable = value & 0xf; // alternates between 0x04 and 0x0c
+            this->int_enable = value & 0x0F;
             break;
         default:
-            LOG_F(ERROR, "Control: write %03x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
+            LOG_F(ERROR, "Control: write %03x = %0*x", offset, size * 2, value);
         }
     }
 }
@@ -554,23 +513,13 @@ void ControlVideo::draw_hw_cursor(uint8_t *dst_buf, int dst_pitch) {
 uint16_t ControlVideo::iodev_read(uint32_t address)
 {
     uint16_t result;
+
     switch (address) {
     case RadacalRegs::MULTI:
         switch (this->rad_addr) {
         case RadacalRegs::MISC_CTRL:
             result = this->rad_cr;
-            LOG_F(RADACAL, "RaDACal: read  MISC_CTRL = 0x%02x", result);
             break;
-/*
-        case RadacalRegs::CLOCK_SELECT:
-            result = this->dac_clock_select;
-            LOG_F(RADACAL, "RaDACal: read  CLOCK_SELECT = 0x%02x", result);
-            break;
-        case RadacalRegs::DAC_TYPE:
-            result = this->dac_type;
-            LOG_F(RADACAL, "RaDACal: read  DAC_TYPE = 0x%02x", result);
-            break;
-*/
         default:
             LOG_F(ERROR, "RaDACal: read  MULTI 0x%02x", this->rad_addr);
             result = 0;
@@ -587,42 +536,41 @@ uint16_t ControlVideo::iodev_read(uint32_t address)
 
     return result;
 }
+
 void ControlVideo::iodev_write(uint32_t address, uint16_t value)
 {
     switch (address) {
     case RadacalRegs::ADDRESS:
-        LOG_F(RADACAL, "RaDACal: write ADDRESS = 0x%02x", value);
         this->rad_addr = value;
         this->comp_index = 0;
         break;
     case RadacalRegs::CURSOR_DATA:
-        LOG_F(RADACAL, "RaDACal: write CURSOR_DATA 0x%02x = 0x%02x", this->rad_addr, value);
         this->cursor_data[(this->rad_addr++) % 24] = value;
         break;
     case RadacalRegs::MULTI:
         switch (this->rad_addr) {
         case RadacalRegs::CURSOR_POS_HI:
-            LOG_F(RADACAL, "RaDACal: write CURSOR_POS_HI = 0x%02x", value);
             this->rad_cur_pos = (value << 8) | (this->rad_cur_pos & 0x00ff);
             break;
         case RadacalRegs::CURSOR_POS_LO:
-            LOG_F(RADACAL, "RaDACal: write CURSOR_POS_LO = 0x%02x", value);
             this->rad_cur_pos = (this->rad_cur_pos & 0xff00) | (value & 0x00ff);
             break;
         case RadacalRegs::MISC_CTRL:
-            LOG_F(RADACAL, "RaDACal: write MISC_CTRL = 0x%02x", value);
             this->rad_cr = value;
             break;
         case RadacalRegs::DBL_BUF_CTRL:
-            LOG_F(RADACAL, "RaDACal: write DBL_BUF_CTRL = 0x%02x", value);
             this->rad_dbl_buf_cr = value;
+            break;
+        case RadacalRegs::TEST_CTRL:
+            this->tst_cr = value;
+            if (this->tst_cr & 1)
+                LOG_F(WARNING, "RaDACal: DAC test enabled!");
             break;
         default:
             LOG_F(ERROR, "RaDACal: write MULTI 0x%02x = 0x%02x", this->rad_addr, value);
         }
         break;
     case RadacalRegs::CLUT_DATA:
-        LOG_F(RADACAL, "RaDACal: write CLUT_DATA 0x%02x = 0x%02x", this->rad_addr, value);
         this->clut_color[this->comp_index++] = value;
         if (this->comp_index >= 3) {
             this->set_palette_color(this->rad_addr, clut_color[0],
@@ -634,27 +582,6 @@ void ControlVideo::iodev_write(uint32_t address, uint16_t value)
     default:
         LOG_F(ERROR, "RaDACal: write 0x%02x = 0x%02x", address, value);
     }
-}
-
-int ControlVideo::device_postinit()
-{
-    this->int_ctrl = dynamic_cast<InterruptCtrl*>(
-        gMachineObj->get_comp_by_type(HWCompType::INT_CTRL));
-    this->irq_id = this->int_ctrl->register_dev_int(IntSrc::CONTROL);
-
-    this->vbl_cb = [this](uint8_t irq_line_state) {
-        if (irq_line_state)
-            this->int_status |= 0xc;
-        else
-            this->int_status &= ~0xc;
-
-        if (this->crtc_on && (4 & this->int_enable)) {
-            //this->pci_interrupt(irq_line_state);
-            this->int_ctrl->ack_int(this->irq_id, irq_line_state);
-        }
-    };
-
-    return 0;
 }
 
 // ========================== Device registry stuff ==========================
