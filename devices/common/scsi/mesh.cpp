@@ -175,6 +175,7 @@ void MeshController::perform_command(const uint8_t cmd)
         break;
     case SeqCmd::FlushFIFO:
         LOG_F(INFO, "MESH: FlushFIFO stub invoked");
+        this->int_stat |= INT_CMD_DONE;
         break;
     default:
         LOG_F(ERROR, "MESH: unsupported sequencer command 0x%X", this->cur_cmd);

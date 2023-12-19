@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef MESH_H
 #define MESH_H
 
+#include <devices/common/dmacore.h>
 #include <devices/common/hwcomponent.h>
 
 #include <cinttypes>
@@ -133,6 +134,10 @@ public:
     // HWComponent methods
     int device_postinit();
 
+    void set_dma_channel(DmaBidirChannel *dma_ch) {
+        this->dma_ch = dma_ch;
+    };
+
 protected:
     void    reset(bool is_hard_reset);
     void    perform_command(const uint8_t cmd);
@@ -165,6 +170,9 @@ private:
     InterruptCtrl* int_ctrl = nullptr;
     uint32_t       irq_id   = 0;
     uint8_t        irq      = 0;
+
+    // DMA related stuff
+    DmaBidirChannel*    dma_ch;
 };
 
 #endif // MESH_H
