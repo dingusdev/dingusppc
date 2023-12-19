@@ -231,11 +231,14 @@ enum CR_select : int32_t {
     CR1_field = (0xF << 24),
 };
 
+// Define bit masks for CR0.
+// To use them in other CR fields, just right shift it by 4*CR_num bits.
 enum CRx_bit : uint32_t {
-    CR_SO = 28,
-    CR_EQ = 29,
-    CR_GT = 30,
-    CR_LT = 31 };
+    CR_SO = 1UL << 28,
+    CR_EQ = 1UL << 29,
+    CR_GT = 1UL << 30,
+    CR_LT = 1UL << 31
+};
 
 enum CR1_bit : uint32_t {
     CR1_OX = 24,

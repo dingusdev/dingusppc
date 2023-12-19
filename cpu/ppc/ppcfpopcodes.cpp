@@ -943,16 +943,16 @@ void dppc_interpreter::ppc_fcmpo() {
         // TODO: test for SNAN operands
         // for now, assume that at least one of the operands is QNAN
         ppc_state.fpscr |= FPSCR::VXVC;
-        cmp_c |= (1 << CRx_bit::CR_SO);
+        cmp_c |= CRx_bit::CR_SO;
     }
     else if (db_test_a < db_test_b) {
-        cmp_c |= (1 << CRx_bit::CR_LT);
+        cmp_c |= CRx_bit::CR_LT;
     }
     else if (db_test_a > db_test_b) {
-        cmp_c |= (1 << CRx_bit::CR_GT);
+        cmp_c |= CRx_bit::CR_GT;
     }
     else {
-        cmp_c |= (1 << CRx_bit::CR_EQ);
+        cmp_c |= CRx_bit::CR_EQ;
     }
 
     ppc_state.fpscr = (ppc_state.fpscr & ~FPSCR::FPCC_MASK) | (cmp_c >> 16); // update FPCC
@@ -966,16 +966,16 @@ void dppc_interpreter::ppc_fcmpu() {
 
     if (std::isnan(db_test_a) || std::isnan(db_test_b)) {
         // TODO: test for SNAN operands
-        cmp_c |= (1 << CRx_bit::CR_SO);
+        cmp_c |= CRx_bit::CR_SO;
     }
     else if (db_test_a < db_test_b) {
-        cmp_c |= (1 << CRx_bit::CR_LT);
+        cmp_c |= CRx_bit::CR_LT;
     }
     else if (db_test_a > db_test_b) {
-        cmp_c |= (1 << CRx_bit::CR_GT);
+        cmp_c |= CRx_bit::CR_GT;
     }
     else {
-        cmp_c |= (1 << CRx_bit::CR_EQ);
+        cmp_c |= CRx_bit::CR_EQ;
     }
 
     ppc_state.fpscr = (ppc_state.fpscr & ~FPSCR::FPCC_MASK) | (cmp_c >> 16); // update FPCC
