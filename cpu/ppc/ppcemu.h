@@ -300,6 +300,12 @@ enum MSR : int {
     POW = 0x40000
 };
 
+enum XER : uint32_t {
+    CA = 1UL << 29,
+    OV = 1UL << 30,
+    SO = 1UL << 31
+};
+
 //for inf and nan checks
 enum FPOP : int {
     DIV    = 0x12,
