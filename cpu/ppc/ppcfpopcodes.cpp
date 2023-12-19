@@ -221,7 +221,7 @@ void ppc_confirm_inf_nan(int chosen_reg_1, int chosen_reg_2, bool rc_flag = fals
 
 static void fpresult_update(double set_result) {
     if (std::isnan(set_result)) {
-        ppc_state.fpscr |= FPCC_FUNAN | FPCC_FPRCD;
+        ppc_state.fpscr |= FPCC_FUNAN | FPRCD;
     } else {
         if (set_result > 0.0) {
             ppc_state.fpscr |= FPCC_POS;
@@ -940,6 +940,9 @@ void dppc_interpreter::ppc_fcmpo() {
     uint32_t cmp_c = 0;
 
     if (std::isnan(db_test_a) || std::isnan(db_test_b)) {
+        // TODO: test for SNAN operands
+        // for now, assume that at least one of the operands is QNAN
+        ppc_state.fpscr |= FPSCR::VXVC;
         cmp_c |= (1 << CRx_bit::CR_SO);
     }
     else if (db_test_a < db_test_b) {
@@ -952,12 +955,8 @@ void dppc_interpreter::ppc_fcmpo() {
         cmp_c |= (1 << CRx_bit::CR_EQ);
     }
 
-    ppc_state.fpscr = (ppc_state.fpscr & 0xFFFF0FFF) | (cmp_c >> 16); // FL,FG,FE,FU
+    ppc_state.fpscr = (ppc_state.fpscr & ~FPSCR::FPCC_MASK) | (cmp_c >> 16); // update FPCC
     ppc_state.cr = ((ppc_state.cr & ~(0xF0000000 >> crf_d)) | ((cmp_c) >> crf_d));
-
-    //if (std::isnan(db_test_a) || std::isnan(db_test_b)) {
-    //    ppc_state.fpscr |= FPSCR::FX | FPSCR::VX | FPSCR::VXSNAN;
-    //}
 }
 
 void dppc_interpreter::ppc_fcmpu() {
@@ -966,6 +965,7 @@ void dppc_interpreter::ppc_fcmpu() {
     uint32_t cmp_c = 0;
 
     if (std::isnan(db_test_a) || std::isnan(db_test_b)) {
+        // TODO: test for SNAN operands
         cmp_c |= (1 << CRx_bit::CR_SO);
     }
     else if (db_test_a < db_test_b) {
@@ -978,10 +978,6 @@ void dppc_interpreter::ppc_fcmpu() {
         cmp_c |= (1 << CRx_bit::CR_EQ);
     }
 
-    ppc_state.fpscr = (ppc_state.fpscr & 0xFFFF0FFF) | (cmp_c >> 16); // FL,FG,FE,FU
+    ppc_state.fpscr = (ppc_state.fpscr & ~FPSCR::FPCC_MASK) | (cmp_c >> 16); // update FPCC
     ppc_state.cr = ((ppc_state.cr & ~(0xF0000000 >> crf_d)) | ((cmp_c) >> crf_d));
-
-    //if (std::isnan(db_test_a) || std::isnan(db_test_b)) {
-    //    ppc_state.fpscr |= FPSCR::VX | FPSCR::VXSNAN;
-    //}
 }
