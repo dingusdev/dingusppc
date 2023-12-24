@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -362,20 +362,19 @@ void dppc_interpreter::ppc_subfe() {
 
 void dppc_interpreter::ppc_subfme() {
     ppc_grab_regsda();
-    uint32_t grab_xer = !!(ppc_state.spr[SPR::XER] & 0x20000000);
-    ppc_result_d      = ~ppc_result_a + grab_xer - 1;
+    uint32_t grab_ca = !!(ppc_state.spr[SPR::XER] & XER::CA);
+    ppc_result_d     = ~ppc_result_a + grab_ca - 1;
 
-    if (ppc_result_d == ppc_result_a) {
-        // this only occurs when CA is 0 and ppc_result_a is 0x7fffffff or 0xffffffff
-        if ((int32_t)ppc_result_d > 0) {
-            ppc_state.spr[SPR::XER] |= oe_flag ? 0xE0000000UL : 0x20000000UL; // set SO,OV,CA
-        } else {
-            ppc_state.spr[SPR::XER] &= oe_flag ? ~0x60000000UL : ~0x20000000UL; // clear OV,CA
-        }
-    } else {
-        ppc_state.spr[SPR::XER] |= 0x20000000UL; // set CA
-        if (oe_flag)
-            ppc_state.spr[SPR::XER] &= ~0x40000000UL; // clear OV
+    if (ppc_result_a == 0xFFFFFFFFUL && !grab_ca)
+        ppc_state.spr[SPR::XER] &= ~XER::CA;
+    else
+        ppc_state.spr[SPR::XER] |= XER::CA;
+
+    if (oe_flag) {
+        if (ppc_result_d == ppc_result_a && (int32_t)ppc_result_d > 0)
+            ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
+        else
+            ppc_state.spr[SPR::XER] &= ~XER::OV;
     }
 
     if (rc_flag)
