@@ -64,9 +64,15 @@ uint16_t AtaBaseDevice::read(const uint8_t reg_addr) {
     case ATA_Reg::DATA:
         if (this->has_data()) {
             uint16_t ret_data = this->get_data();
-            this->xfer_cnt -= 2;
-            if (this->xfer_cnt <= 0) {
-                this->r_status &= ~DRQ;
+            this->chunk_cnt -= 2;
+            if (this->chunk_cnt <= 0) {
+                this->xfer_cnt -= this->chunk_size;
+                if (this->xfer_cnt <= 0)
+                    this->r_status &= ~DRQ;
+                else {
+                    this->chunk_cnt = this->chunk_size;
+                    this->update_intrq(1);
+                }
             }
             return ret_data;
         } else {
@@ -98,8 +104,23 @@ uint16_t AtaBaseDevice::read(const uint8_t reg_addr) {
 void AtaBaseDevice::write(const uint8_t reg_addr, const uint16_t value) {
     switch (reg_addr) {
     case ATA_Reg::DATA:
-        if (this->has_data())
-            LOG_F(WARNING, "Pushing data to %s", this->name.c_str());
+        if (this->has_data()) {
+            *this->cur_data_ptr++ = BYTESWAP_16(value);
+            this->chunk_cnt -= 2;
+            if (this->chunk_cnt <= 0) {
+                this->post_xfer_action();
+                this->xfer_cnt -= this->chunk_size;
+                if (this->xfer_cnt <= 0) { // transfer complete?
+                    this->r_status &= ~DRQ;
+                    this->r_status &= ~BSY;
+                    this->update_intrq(1);
+                } else {
+                    this->cur_data_ptr = this->data_ptr;
+                    this->chunk_cnt = this->chunk_size;
+                    this->signal_data_ready();
+                }
+            }
+        }
         break;
     case ATA_Reg::FEATURES:
         this->r_features = value;
@@ -159,6 +180,12 @@ void AtaBaseDevice::update_intrq(uint8_t new_intrq_state) {
 
     this->intrq_state = new_intrq_state;
     this->host_obj->report_intrq(new_intrq_state);
+}
+
+void AtaBaseDevice::prepare_xfer(int xfer_size, int block_size) {
+    this->chunk_cnt  = std::min(xfer_size, block_size);
+    this->xfer_cnt   = xfer_size;
+    this->chunk_size = block_size;
 }
 
 void AtaBaseDevice::signal_data_ready() {

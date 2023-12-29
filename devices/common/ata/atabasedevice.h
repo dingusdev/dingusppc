@@ -30,6 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 #include <string>
+#include <functional>
 
 class IdeChannel;
 
@@ -69,6 +70,8 @@ public:
 protected:
     bool is_selected() { return ((this->r_dev_head >> 4) & 1) == this->my_dev_id; };
 
+    void prepare_xfer(int xfer_size, int block_size);
+
     uint8_t my_dev_id = 0; // my IDE device ID configured by the host
     uint8_t device_type = ata_interface::DEVICE_TYPE_UNKNOWN;
     uint8_t intrq_state = 0; // INTRQ deasserted
@@ -88,9 +91,14 @@ protected:
     uint8_t r_status_save;
     uint8_t r_dev_ctrl = 0x08;
 
-    uint16_t    *data_ptr = nullptr;
-    uint8_t     data_buf[512] = {};
-    int         xfer_cnt  = 0;
+    uint16_t    *data_ptr       = nullptr;
+    uint16_t    *cur_data_ptr   = nullptr;
+    uint8_t     data_buf[512]   = {};
+    int         xfer_cnt        = 0;
+    int         chunk_cnt       = 0;
+    int         chunk_size      = 0;
+
+    std::function<void()> post_xfer_action = nullptr;
 };
 
 #endif // ATA_BASE_DEVICE_H
