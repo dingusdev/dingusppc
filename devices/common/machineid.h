@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/ioctrl/macio.h>
 
 #include <cinttypes>
+#include <loguru.hpp>
 #include <string>
 
 /**
@@ -58,7 +59,14 @@ public:
     ~NubusMacID() = default;
 
     uint32_t read(uint32_t rgn_start, uint32_t offset, int size) {
-        return (offset < 4 ? this->id[offset] : 0);
+        if (size == 4 && offset == 0) {
+            return *(uint32_t*)this->id;
+        }
+        if (size == 1 && offset < 4) {
+            return this->id[offset];
+        }
+        ABORT_F("NubusMacID: invalid read size %d, offset %d!", size, offset);
+        return 0;
     };
 
     /* not writable */
