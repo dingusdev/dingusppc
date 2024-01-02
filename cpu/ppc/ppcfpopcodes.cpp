@@ -892,11 +892,16 @@ void dppc_interpreter::ppc_mtfsf() {
 }
 
 void dppc_interpreter::ppc_mtfsfi() {
-    ppc_result_b    = (ppc_cur_instruction >> 11) & 15;
-    crf_d           = (ppc_cur_instruction >> 23) & 7;
-    crf_d           = crf_d << 2;
-    ppc_state.fpscr = (ppc_state.cr & ~(0xF0000000UL >> crf_d)) |
-        ((ppc_state.spr[SPR::XER] & 0xF0000000UL) >> crf_d);
+    int crf_d    = (ppc_cur_instruction >> 21) & 0x1C;
+    uint32_t imm = (ppc_cur_instruction << 16) & 0xF0000000UL;
+
+    // prepare field mask and ensure that neither FEX nor VX will be changed
+    uint32_t mask = (0xF0000000UL >> crf_d) & ~(FPSCR::FEX | FPSCR::VX);
+
+    // copy imm to FPSCR[crf_d] under control of the field mask
+    ppc_state.fpscr = (ppc_state.fpscr & ~mask) | ((imm >> crf_d) & mask);
+
+    // TODO: update FEX and VX according to the "usual rule"
 
     if (rc_flag)
         ppc_update_cr1();
