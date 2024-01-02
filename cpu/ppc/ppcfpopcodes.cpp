@@ -873,19 +873,29 @@ void dppc_interpreter::ppc_mffs() {
 }
 
 void dppc_interpreter::ppc_mtfsf() {
+    int reg_b  = (ppc_cur_instruction >> 11) & 0x1F;
+    uint8_t fm = (ppc_cur_instruction >> 17) & 0xFF;
+
     uint32_t cr_mask = 0;
-    reg_b            = (ppc_cur_instruction >> 11) & 31;
-    crm              = (ppc_cur_instruction >> 17) & 255;
-    cr_mask          = ((crm & 1) == 1) ? 0xF0000000 : 0x00000000;
-    cr_mask += (((crm >> 1) & 1) == 1) ? 0x0F000000 : 0x00000000;
-    cr_mask += (((crm >> 2) & 1) == 1) ? 0x00F00000 : 0x00000000;
-    cr_mask += (((crm >> 3) & 1) == 1) ? 0x000F0000 : 0x00000000;
-    cr_mask += (((crm >> 4) & 1) == 1) ? 0x0000F000 : 0x00000000;
-    cr_mask += (((crm >> 5) & 1) == 1) ? 0x00000F00 : 0x00000000;
-    cr_mask += (((crm >> 6) & 1) == 1) ? 0x000000F0 : 0x00000000;
-    cr_mask += (((crm >> 7) & 1) == 1) ? 0x0000000F : 0x00000000;
-    uint32_t quickfprval = (uint32_t)(ppc_state.fpr[reg_b].int64_r & 0xFFFFFFFF);
-    ppc_state.fpscr      = (ppc_state.fpscr & ~cr_mask) | (quickfprval & cr_mask);
+
+    if (fm == 0xFFU) // the fast case
+        cr_mask = 0xFFFFFFFFUL;
+    else { // the slow case
+        if (fm & 0x80) cr_mask |= 0xF0000000UL;
+        if (fm & 0x40) cr_mask |= 0x0F000000UL;
+        if (fm & 0x20) cr_mask |= 0x00F00000UL;
+        if (fm & 0x10) cr_mask |= 0x000F0000UL;
+        if (fm & 0x08) cr_mask |= 0x0000F000UL;
+        if (fm & 0x04) cr_mask |= 0x00000F00UL;
+        if (fm & 0x02) cr_mask |= 0x000000F0UL;
+        if (fm & 0x01) cr_mask |= 0x0000000FUL;
+    }
+
+    // ensure neither FEX nor VX will be changed
+    cr_mask &= ~(FPSCR::FEX | FPSCR::VX);
+
+    // copy FPR[reg_b] to FPSCR under control of cr_mask
+    ppc_state.fpscr = (ppc_state.fpscr & ~cr_mask) | (ppc_state.fpr[reg_b].int64_r & cr_mask);
 
     if (rc_flag)
         ppc_update_cr1();
