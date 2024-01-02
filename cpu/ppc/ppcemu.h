@@ -184,15 +184,12 @@ extern int32_t simult_result;
 extern uint32_t uiadd_result;
 extern uint32_t uimult_result;
 
-extern uint32_t crf_d;
-extern uint32_t crf_s;
 extern uint32_t reg_s;
 extern uint32_t reg_d;
 extern uint32_t reg_a;
 extern uint32_t reg_b;
 extern uint32_t reg_c;
 extern uint32_t xercon;
-extern uint32_t crm;
 extern uint32_t br_bo;
 extern uint32_t br_bi;
 extern uint32_t rot_sh;

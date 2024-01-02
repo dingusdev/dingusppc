@@ -28,15 +28,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <vector>
 
-uint32_t crf_d;
-uint32_t crf_s;
 uint32_t reg_s;
 uint32_t reg_d;
 uint32_t reg_a;
 uint32_t reg_b;
 uint32_t reg_c;    // used only for floating point multiplication operations
 uint32_t xercon;
-uint32_t crm;
 uint32_t uimm;
 uint32_t grab_sr;
 uint32_t grab_inb;    // This is for grabbing the number of immediate bytes for loading and storing
