@@ -1063,19 +1063,24 @@ void dppc_interpreter::ppc_mftb() {
 }
 
 void dppc_interpreter::ppc_mtcrf() {
-    uint32_t cr_mask = 0;
     ppc_grab_regssa();
-    crm = ((ppc_cur_instruction >> 12) & 255);
-    // check this
-    cr_mask = (crm & 128) ? 0xF0000000 : 0x00000000;
-    cr_mask += (crm & 64) ? 0x0F000000 : 0x00000000;
-    cr_mask += (crm & 32) ? 0x00F00000 : 0x00000000;
-    cr_mask += (crm & 16) ? 0x000F0000 : 0x00000000;
-    cr_mask += (crm & 8) ? 0x0000F000 : 0x00000000;
-    cr_mask += (crm & 4) ? 0x00000F00 : 0x00000000;
-    cr_mask += (crm & 2) ? 0x000000F0 : 0x00000000;
-    cr_mask += (crm & 1) ? 0x0000000F : 0x00000000;
-    ppc_state.cr = (ppc_result_d & cr_mask) | (ppc_state.cr & ~(cr_mask));
+    uint8_t crm = (ppc_cur_instruction >> 12) & 0xFFU;
+
+    uint32_t cr_mask = 0;
+
+    if (crm == 0xFFU) // the fast case
+        cr_mask = 0xFFFFFFFFUL;
+    else { // the slow case
+        if (crm & 0x80) cr_mask |= 0xF0000000UL;
+        if (crm & 0x40) cr_mask |= 0x0F000000UL;
+        if (crm & 0x20) cr_mask |= 0x00F00000UL;
+        if (crm & 0x10) cr_mask |= 0x000F0000UL;
+        if (crm & 0x08) cr_mask |= 0x0000F000UL;
+        if (crm & 0x04) cr_mask |= 0x00000F00UL;
+        if (crm & 0x02) cr_mask |= 0x000000F0UL;
+        if (crm & 0x01) cr_mask |= 0x0000000FUL;
+    }
+    ppc_state.cr = (ppc_state.cr & ~cr_mask) | (ppc_result_d & cr_mask);
 }
 
 void dppc_interpreter::ppc_mcrxr() {
