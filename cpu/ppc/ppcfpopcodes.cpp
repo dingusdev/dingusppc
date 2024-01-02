@@ -626,46 +626,39 @@ void dppc_interpreter::ppc_fres() {
         ppc_update_cr1();
 }
 
-void dppc_interpreter::ppc_fctiw() {
+static void round_to_int(const uint8_t mode) {
     ppc_grab_regsfpdb();
     double val_reg_b = GET_FPR(reg_b);
 
     if (std::isnan(val_reg_b)) {
-        if (ppc_state.fpr[reg_b].int64_r & 0x0008000000000000) {
-            // isqnan
-            ppc_state.fpscr = (ppc_state.fpscr & ~(FPSCR::FR | FPSCR::FI)) | FPSCR::VXCVI;
-        }
-        else {
-            // issnan
-            ppc_state.fpscr = (ppc_state.fpscr & ~(FPSCR::FR | FPSCR::FI)) | FPSCR::VXCVI | FPSCR::VXSNAN;
-        }
+        ppc_state.fpscr &= ~(FPSCR::FR | FPSCR::FI);
+        ppc_state.fpscr |= (FPSCR::VXCVI | FPSCR::VX);
+
+        if (!(ppc_state.fpr[reg_b].int64_r & 0x0008000000000000)) // issnan
+            ppc_state.fpscr |= FPSCR::VXSNAN;
+
         if (ppc_state.fpscr & FPSCR::VE) {
+            ppc_state.fpscr |= FPSCR::FEX; // VX=1 and VE=1 cause FEX to be set
             ppc_floating_point_exception();
+        } else {
+            ppc_state.fpr[reg_d].int64_r = 0xFFF8000080000000ULL;
         }
-        else {
-            ppc_state.fpr[reg_d].int64_r = 0xfff8000080000000;
-        }
-    }
-    else if (val_reg_b > static_cast<double>(0x7fffffff)) {
-        ppc_state.fpscr = (ppc_state.fpscr & ~(FPSCR::FR | FPSCR::FI)) | FPSCR::VXCVI;
+    } else if (val_reg_b >  static_cast<double>(0x7fffffff) ||
+               val_reg_b < -static_cast<double>(0x80000000)) {
+        ppc_state.fpscr &= ~(FPSCR::FR | FPSCR::FI);
+        ppc_state.fpscr |= (FPSCR::VXCVI | FPSCR::VX);
+
         if (ppc_state.fpscr & FPSCR::VE) {
+            ppc_state.fpscr |= FPSCR::FEX; // VX=1 and VE=1 cause FEX to be set
             ppc_floating_point_exception();
+        } else {
+            if (val_reg_b >= 0.0f)
+                ppc_state.fpr[reg_d].int64_r = 0xFFF800007FFFFFFFULL;
+            else
+                ppc_state.fpr[reg_d].int64_r = 0xFFF8000080000000ULL;
         }
-        else {
-            ppc_state.fpr[reg_d].int64_r = 0xfff800007fffffff;
-        }
-    }
-    else if (val_reg_b < -static_cast<double>(0x80000000)) {
-        ppc_state.fpscr = (ppc_state.fpscr & ~(FPSCR::FR | FPSCR::FI)) | FPSCR::VXCVI;
-        if (ppc_state.fpscr & FPSCR::VE) {
-            ppc_floating_point_exception();
-        }
-        else {
-            ppc_state.fpr[reg_d].int64_r = 0xfff8000080000000;
-        }
-    }
-    else {
-        switch (ppc_state.fpscr & 0x3) {
+    } else {
+        switch (mode & 0x3) {
         case 0:
             ppc_result64_d = round_to_nearest(val_reg_b);
             break;
@@ -687,51 +680,12 @@ void dppc_interpreter::ppc_fctiw() {
         ppc_update_cr1();
 }
 
+void dppc_interpreter::ppc_fctiw() {
+    round_to_int(ppc_state.fpscr & 0x3);
+}
+
 void dppc_interpreter::ppc_fctiwz() {
-    ppc_grab_regsfpdb();
-    double val_reg_b = GET_FPR(reg_b);
-
-    if (std::isnan(val_reg_b)) {
-        if (ppc_state.fpr[reg_b].int64_r & 0x0008000000000000) {
-            // isqnan
-            ppc_state.fpscr = (ppc_state.fpscr & ~(FPSCR::FR | FPSCR::FI)) | FPSCR::VXCVI;
-        }
-        else {
-            // issnan
-            ppc_state.fpscr = (ppc_state.fpscr & ~(FPSCR::FR | FPSCR::FI)) | FPSCR::VXCVI | FPSCR::VXSNAN;
-        }
-        if (ppc_state.fpscr & FPSCR::VE) {
-            ppc_floating_point_exception();
-        }
-        else {
-            ppc_state.fpr[reg_d].int64_r = 0xfff8000080000000;
-        }
-    }
-    else if (val_reg_b > static_cast<double>(0x7fffffff)) {
-        ppc_state.fpscr = (ppc_state.fpscr & ~(FPSCR::FR | FPSCR::FI)) | FPSCR::VXCVI;
-        if (ppc_state.fpscr & FPSCR::VE) {
-            ppc_floating_point_exception();
-        }
-        else {
-            ppc_state.fpr[reg_d].int64_r = 0xfff800007fffffff;
-        }
-    }
-    else if (val_reg_b < -static_cast<double>(0x80000000)) {
-        ppc_state.fpscr = (ppc_state.fpscr & ~(FPSCR::FR | FPSCR::FI)) | FPSCR::VXCVI;
-        if (ppc_state.fpscr & FPSCR::VE) {
-            ppc_floating_point_exception();
-        }
-        else {
-            ppc_state.fpr[reg_d].int64_r = 0xfff8000080000000;
-        }
-    }
-    else {
-        uint64_t ppc_result64_d = round_to_zero(val_reg_b);
-        ppc_store_dfpresult_int(reg_d);
-    }
-
-    if (rc_flag)
-        ppc_update_cr1();
+    round_to_int(1);
 }
 
 // Floating Point Store and Load
