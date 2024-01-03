@@ -50,7 +50,7 @@ int initialize_pdm(std::string& id)
     HMC* hmc_obj = dynamic_cast<HMC*>(gMachineObj->get_comp_by_name("HMC"));
 
     if (id == "pm6100") {
-        machine_id = 0x3010;
+        machine_id = 0x3011;
     } else if (id == "pm7100") {
         machine_id = 0x3012;
     } else if (id == "pm8100") {
