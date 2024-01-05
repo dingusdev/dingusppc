@@ -216,7 +216,6 @@ static void read_test_float_data() {
 
         src1        = 0;
         src2        = 0;
-        check_xer   = 0;
         check_cr    = 0;
         check_fpscr = 0;
         dfp_dest    = 0.0;
