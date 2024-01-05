@@ -178,30 +178,15 @@ extern uint32_t tbr_freq_ghz;
 extern uint64_t tbr_period_ns;
 extern uint32_t rtc_lo, rtc_hi;
 
-// Additional steps to prevent overflow?
-extern int32_t add_result;
-extern int32_t simult_result;
-extern uint32_t uiadd_result;
-extern uint32_t uimult_result;
-
 extern uint32_t reg_s;
 extern uint32_t reg_d;
 extern uint32_t reg_a;
 extern uint32_t reg_b;
 extern uint32_t reg_c;
-extern uint32_t xercon;
-extern uint32_t br_bo;
-extern uint32_t br_bi;
-extern uint32_t rot_sh;
-extern uint32_t rot_mb;
-extern uint32_t rot_me;
 extern uint32_t uimm;
-extern uint32_t grab_sr;
-extern uint32_t grab_inb;    // This is for grabbing the number of immediate bytes for loading and storing
 extern uint32_t ppc_to;
 extern int32_t simm;
 extern int32_t adr_li;
-extern int32_t br_bd;
 
 // Used for GP calcs
 extern uint32_t ppc_result_a;
@@ -309,11 +294,7 @@ enum FPOP : int {
     SUB    = 0x14,
     ADD    = 0x15,
     SQRT   = 0x16,
-    MUL    = 0x19,
-    FMSUB  = 0x1C,
-    FMADD  = 0x1D,
-    FNMSUB = 0x1E,
-    FNMADD = 0x1F,
+    MUL    = 0x19
 };
 
 /** PowerPC exception types. */

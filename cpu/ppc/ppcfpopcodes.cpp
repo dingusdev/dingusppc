@@ -357,8 +357,11 @@ void dppc_interpreter::ppc_fnmadd() {
 void dppc_interpreter::ppc_fnmsub() {
     ppc_grab_regsfpdabc();
 
-    if (std::isnan(val_reg_a) || std::isnan(val_reg_b) || std::isnan(val_reg_c)) {
-        ppc_confirm_inf_nan<double, FNMSUB>(reg_a, reg_b, reg_c);
+    if (std::isnan(val_reg_a) || std::isnan(val_reg_c)) {
+        ppc_confirm_inf_nan<double, MUL>(reg_a, reg_c, rc_flag);
+    }
+    if (std::isnan(val_reg_b)) {
+        ppc_confirm_inf_nan<double, SUB>(reg_a, reg_b, rc_flag);
     }
 
     ppc_dblresult64_d = (val_reg_a * val_reg_c);

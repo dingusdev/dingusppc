@@ -33,10 +33,7 @@ uint32_t reg_d;
 uint32_t reg_a;
 uint32_t reg_b;
 uint32_t reg_c;    // used only for floating point multiplication operations
-uint32_t xercon;
 uint32_t uimm;
-uint32_t grab_sr;
-uint32_t grab_inb;    // This is for grabbing the number of immediate bytes for loading and storing
 uint32_t ppc_to;
 int32_t simm;
 int32_t adr_li;
@@ -798,7 +795,7 @@ void dppc_interpreter::ppc_mtsr() {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
     }
     reg_s                 = (ppc_cur_instruction >> 21) & 31;
-    grab_sr               = (ppc_cur_instruction >> 16) & 15;
+    uint32_t grab_sr      = (ppc_cur_instruction >> 16) & 15;
     ppc_state.sr[grab_sr] = ppc_state.gpr[reg_s];
     mmu_pat_ctx_changed();
 }
@@ -811,7 +808,7 @@ void dppc_interpreter::ppc_mtsrin() {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
     }
     ppc_grab_regssb();
-    grab_sr               = ppc_result_b >> 28;
+    uint32_t grab_sr      = ppc_result_b >> 28;
     ppc_state.sr[grab_sr] = ppc_result_d;
     mmu_pat_ctx_changed();
 }
@@ -824,7 +821,7 @@ void dppc_interpreter::ppc_mfsr() {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
     }
     reg_d                = (ppc_cur_instruction >> 21) & 31;
-    grab_sr              = (ppc_cur_instruction >> 16) & 15;
+    uint32_t grab_sr     = (ppc_cur_instruction >> 16) & 15;
     ppc_state.gpr[reg_d] = ppc_state.sr[grab_sr];
 }
 
@@ -836,7 +833,7 @@ void dppc_interpreter::ppc_mfsrin() {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
     }
     ppc_grab_regsdb();
-    grab_sr              = ppc_result_b >> 28;
+    uint32_t grab_sr     = ppc_result_b >> 28;
     ppc_state.gpr[reg_d] = ppc_state.sr[grab_sr];
 }
 
@@ -1156,8 +1153,8 @@ void dppc_interpreter::ppc_bc() {
     if (!(br_bo & 0x04)) {
         (ppc_state.spr[SPR::CTR])--; /* decrement CTR */
     }
-    ctr_ok = (br_bo & 0x04) || ((ppc_state.spr[SPR::CTR] != 0) == !(br_bo & 0x02));
-    cnd_ok = (br_bo & 0x10) || (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
+    ctr_ok = (br_bo & 0x04) | ((ppc_state.spr[SPR::CTR] != 0) == !(br_bo & 0x02));
+    cnd_ok = (br_bo & 0x10) | (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
 
     if (ctr_ok && cnd_ok) {
         ppc_next_instruction_address = (ppc_state.pc + br_bd);
@@ -1175,8 +1172,8 @@ void dppc_interpreter::ppc_bca() {
     if (!(br_bo & 0x04)) {
         (ppc_state.spr[SPR::CTR])--; /* decrement CTR */
     }
-    ctr_ok = (br_bo & 0x04) || ((ppc_state.spr[SPR::CTR] != 0) == !(br_bo & 0x02));
-    cnd_ok = (br_bo & 0x10) || (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
+    ctr_ok = (br_bo & 0x04) | ((ppc_state.spr[SPR::CTR] != 0) == !(br_bo & 0x02));
+    cnd_ok = (br_bo & 0x10) | (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
 
     if (ctr_ok && cnd_ok) {
         ppc_next_instruction_address = br_bd;
@@ -1194,8 +1191,8 @@ void dppc_interpreter::ppc_bcl() {
     if (!(br_bo & 0x04)) {
         (ppc_state.spr[SPR::CTR])--; /* decrement CTR */
     }
-    ctr_ok = (br_bo & 0x04) || ((ppc_state.spr[SPR::CTR] != 0) == !(br_bo & 0x02));
-    cnd_ok = (br_bo & 0x10) || (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
+    ctr_ok = (br_bo & 0x04) | ((ppc_state.spr[SPR::CTR] != 0) == !(br_bo & 0x02));
+    cnd_ok = (br_bo & 0x10) | (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
 
     if (ctr_ok && cnd_ok) {
         ppc_next_instruction_address = (ppc_state.pc + br_bd);
@@ -1214,8 +1211,8 @@ void dppc_interpreter::ppc_bcla() {
     if (!(br_bo & 0x04)) {
         (ppc_state.spr[SPR::CTR])--; /* decrement CTR */
     }
-    ctr_ok = (br_bo & 0x04) || ((ppc_state.spr[SPR::CTR] != 0) == !(br_bo & 0x02));
-    cnd_ok = (br_bo & 0x10) || (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
+    ctr_ok = (br_bo & 0x04) | ((ppc_state.spr[SPR::CTR] != 0) == !(br_bo & 0x02));
+    cnd_ok = (br_bo & 0x10) | (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
 
     if (ctr_ok && cnd_ok) {
         ppc_next_instruction_address = br_bd;
@@ -1228,7 +1225,7 @@ void dppc_interpreter::ppc_bcctr() {
     uint32_t br_bo = (ppc_cur_instruction >> 21) & 31;
     uint32_t br_bi = (ppc_cur_instruction >> 16) & 31;
 
-    uint32_t cnd_ok = (br_bo & 0x10) ||
+    uint32_t cnd_ok = (br_bo & 0x10) |
         (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
 
     if (cnd_ok) {
@@ -1241,7 +1238,7 @@ void dppc_interpreter::ppc_bcctrl() {
     uint32_t br_bo = (ppc_cur_instruction >> 21) & 31;
     uint32_t br_bi = (ppc_cur_instruction >> 16) & 31;
 
-    uint32_t cnd_ok = (br_bo & 0x10) ||
+    uint32_t cnd_ok = (br_bo & 0x10) |
         (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
 
     if (cnd_ok) {
@@ -1260,8 +1257,8 @@ void dppc_interpreter::ppc_bclr() {
     if (!(br_bo & 0x04)) {
         (ppc_state.spr[SPR::CTR])--; /* decrement CTR */
     }
-    ctr_ok = (br_bo & 0x04) || ((ppc_state.spr[SPR::CTR] != 0) == !(br_bo & 0x02));
-    cnd_ok = (br_bo & 0x10) || (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
+    ctr_ok = (br_bo & 0x04) | ((ppc_state.spr[SPR::CTR] != 0) == !(br_bo & 0x02));
+    cnd_ok = (br_bo & 0x10) | (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
 
     if (ctr_ok && cnd_ok) {
         ppc_next_instruction_address = (ppc_state.spr[SPR::LR] & 0xFFFFFFFCUL);
@@ -1278,8 +1275,8 @@ void dppc_interpreter::ppc_bclrl() {
     if (!(br_bo & 0x04)) {
         (ppc_state.spr[SPR::CTR])--; /* decrement CTR */
     }
-    ctr_ok = (br_bo & 0x04) || ((ppc_state.spr[SPR::CTR] != 0) == !(br_bo & 0x02));
-    cnd_ok = (br_bo & 0x10) || (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
+    ctr_ok = (br_bo & 0x04) | ((ppc_state.spr[SPR::CTR] != 0) == !(br_bo & 0x02));
+    cnd_ok = (br_bo & 0x10) | (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
 
     if (ctr_ok && cnd_ok) {
         ppc_next_instruction_address = (ppc_state.spr[SPR::LR] & 0xFFFFFFFCUL);
@@ -1299,7 +1296,7 @@ void dppc_interpreter::ppc_cmp() {
 
     int crf_d = (ppc_cur_instruction >> 21) & 0x1C;
     ppc_grab_regssab();
-    xercon = (ppc_state.spr[SPR::XER] & 0x80000000UL) >> 3;
+    uint32_t xercon = (ppc_state.spr[SPR::XER] & 0x80000000UL) >> 3;
     uint32_t cmp_c = (((int32_t)ppc_result_a) == ((int32_t)ppc_result_b))
         ? 0x20000000UL
         : (((int32_t)ppc_result_a) > ((int32_t)ppc_result_b)) ? 0x40000000UL : 0x80000000UL;
@@ -1316,7 +1313,7 @@ void dppc_interpreter::ppc_cmpi() {
 
     int crf_d = (ppc_cur_instruction >> 21) & 0x1C;
     ppc_grab_regsasimm();
-    xercon = (ppc_state.spr[SPR::XER] & 0x80000000UL) >> 3;
+    uint32_t xercon = (ppc_state.spr[SPR::XER] & 0x80000000UL) >> 3;
     uint32_t cmp_c = (((int32_t)ppc_result_a) == simm)
         ? 0x20000000UL
         : (((int32_t)ppc_result_a) > simm) ? 0x40000000UL : 0x80000000UL;
@@ -1333,7 +1330,7 @@ void dppc_interpreter::ppc_cmpl() {
 
     int crf_d = (ppc_cur_instruction >> 21) & 0x1C;
     ppc_grab_regssab();
-    xercon = (ppc_state.spr[SPR::XER] & 0x80000000UL) >> 3;
+    uint32_t xercon = (ppc_state.spr[SPR::XER] & 0x80000000UL) >> 3;
     uint32_t cmp_c = (ppc_result_a == ppc_result_b)
         ? 0x20000000UL
         : (ppc_result_a > ppc_result_b) ? 0x40000000UL : 0x80000000UL;
@@ -1350,7 +1347,7 @@ void dppc_interpreter::ppc_cmpli() {
 
     int crf_d = (ppc_cur_instruction >> 21) & 0x1C;
     ppc_grab_regssauimm();
-    xercon = (ppc_state.spr[SPR::XER] & 0x80000000UL) >> 3;
+    uint32_t xercon = (ppc_state.spr[SPR::XER] & 0x80000000UL) >> 3;
     uint32_t cmp_c = (ppc_result_a == uimm) ? 0x20000000UL
                                    : (ppc_result_a > uimm) ? 0x40000000UL : 0x80000000UL;
     ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
@@ -2093,7 +2090,7 @@ void dppc_interpreter::ppc_lswi() {
 #endif
     ppc_grab_regsda();
     ppc_effective_address = reg_a ? ppc_result_a : 0;
-    grab_inb              = (ppc_cur_instruction >> 11) & 0x1F;
+    uint32_t grab_inb     = (ppc_cur_instruction >> 11) & 0x1F;
     grab_inb              = grab_inb ? grab_inb : 32;
 
     while (grab_inb >= 4) {
@@ -2135,7 +2132,7 @@ void dppc_interpreter::ppc_lswx() {
     }
 
     ppc_effective_address  = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
-    grab_inb               = ppc_state.spr[SPR::XER] & 0x7F;
+    uint32_t grab_inb      = ppc_state.spr[SPR::XER] & 0x7F;
 
     while (grab_inb >= 4) {
         ppc_state.gpr[reg_d] = mmu_read_vmem<uint32_t>(ppc_effective_address);
@@ -2170,7 +2167,7 @@ void dppc_interpreter::ppc_stswi() {
 #endif
     ppc_grab_regssa();
     ppc_effective_address = reg_a ? ppc_result_a : 0;
-    grab_inb              = (ppc_cur_instruction >> 11) & 0x1F;
+    uint32_t grab_inb     = (ppc_cur_instruction >> 11) & 0x1F;
     grab_inb              = grab_inb ? grab_inb : 32;
 
     while (grab_inb >= 4) {
@@ -2206,7 +2203,7 @@ void dppc_interpreter::ppc_stswx() {
 #endif
     ppc_grab_regssab();
     ppc_effective_address = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
-    grab_inb              = ppc_state.spr[SPR::XER] & 127;
+    uint32_t grab_inb     = ppc_state.spr[SPR::XER] & 127;
 
     while (grab_inb >= 4) {
         mmu_write_vmem<uint32_t>(ppc_effective_address, ppc_state.gpr[reg_s]);
