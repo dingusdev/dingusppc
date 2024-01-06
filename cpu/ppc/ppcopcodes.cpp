@@ -1911,7 +1911,7 @@ void dppc_interpreter::ppc_lha() {
     //uint16_t val = mem_grab_word(ppc_effective_address);
     uint16_t val = mmu_read_vmem<uint16_t>(ppc_effective_address);
     if (val & 0x8000) {
-        ppc_result_d = 0xFFFF0000UL | (uint32_t)val;
+        ppc_result_d = 0xFFFF0000UL + (uint32_t)val;
     } else {
         ppc_result_d = (uint32_t)val;
     }
@@ -1929,9 +1929,9 @@ void dppc_interpreter::ppc_lhau() {
         //uint16_t val = mem_grab_word(ppc_effective_address);
         uint16_t val = mmu_read_vmem<uint16_t>(ppc_effective_address);
         if (val & 0x8000) {
-            ppc_result_d = 0xFFFF0000UL | (uint32_t)val;
+            ppc_result_d = 0xFFFF0000UL + val;
         } else {
-            ppc_result_d = (uint32_t)val;
+            ppc_result_d = val;
         }
         ppc_store_result_regd();
         ppc_result_a = ppc_effective_address;
@@ -1946,13 +1946,13 @@ void dppc_interpreter::ppc_lhaux() {
     num_int_loads++;
 #endif
     ppc_grab_regsdab();
-    ppc_effective_address = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
+    ppc_effective_address = ppc_result_a + ppc_result_b;
     //uint16_t val          = mem_grab_word(ppc_effective_address);
     uint16_t val = mmu_read_vmem<uint16_t>(ppc_effective_address);
     if (val & 0x8000) {
-        ppc_result_d = 0xFFFF0000UL | (uint32_t)val;
+        ppc_result_d = 0xFFFF0000UL + val;
     } else {
-        ppc_result_d = (uint32_t)val;
+        ppc_result_d = val;
     }
     ppc_store_result_regd();
     ppc_result_a = ppc_effective_address;
@@ -1968,9 +1968,9 @@ void dppc_interpreter::ppc_lhax() {
     //uint16_t val          = mem_grab_word(ppc_effective_address);
     uint16_t val = mmu_read_vmem<uint16_t>(ppc_effective_address);
     if (val & 0x8000) {
-        ppc_result_d = 0xFFFF0000UL | (uint32_t)val;
+        ppc_result_d = 0xFFFF0000UL + val;
     } else {
-        ppc_result_d = (uint32_t)val;
+        ppc_result_d = val;
     }
     ppc_store_result_regd();
 }
