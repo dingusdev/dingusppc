@@ -2035,7 +2035,8 @@ void dppc_interpreter::ppc_lwzux() {
         ppc_result_a = ppc_effective_address;
         ppc_store_result_regd();
         ppc_store_result_rega();
-    } else {
+    } 
+    else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
 }
@@ -2058,20 +2059,15 @@ void dppc_interpreter::ppc_lmw() {
     num_int_loads++;
 #endif
     ppc_grab_regsda();
-    ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
-    if ((reg_d > reg_a) || reg_a != 0) {
-        ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
-        // How many words to load in memory - using a do-while for this
-        do {
-            // ppc_state.gpr[reg_d] = mem_grab_dword(ppc_effective_address);
-            ppc_state.gpr[reg_d] = mmu_read_vmem<uint32_t>(ppc_effective_address);
-            ppc_effective_address += 4;
-            reg_d++;
-        } while (reg_d < 32);
-    } 
-    else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-    }
+    ppc_effective_address = int32_t(int16_t(ppc_cur_instruction & 0xFFFF));
+    ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
+    // How many words to load in memory - using a do-while for this
+    do {
+       //ppc_state.gpr[reg_d] = mem_grab_dword(ppc_effective_address);
+       ppc_state.gpr[reg_d] = mmu_read_vmem<uint32_t>(ppc_effective_address);
+       ppc_effective_address += 4;
+       reg_d++;
+    } while (reg_d < 32);
 }
 
 void dppc_interpreter::ppc_lswi() {
