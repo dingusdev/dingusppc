@@ -2117,8 +2117,7 @@ void dppc_interpreter::ppc_lswx() {
     ppc_grab_regsdab();
 
     // Invalid instruction forms
-    if ((reg_d == 0 && reg_a == 0) || (reg_d == reg_a) || (reg_d == reg_b) || \
-        (reg_d <= reg_b) || (reg_d <= reg_a)) {
+    if ((reg_d == 0 && reg_a == 0) || (reg_d == reg_a) || (reg_d == reg_b)) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
 
