@@ -184,9 +184,7 @@ extern uint32_t reg_a;
 extern uint32_t reg_b;
 extern uint32_t reg_c;
 extern uint32_t uimm;
-extern uint32_t ppc_to;
 extern int32_t simm;
-extern int32_t adr_li;
 
 // Used for GP calcs
 extern uint32_t ppc_result_a;

@@ -182,7 +182,7 @@ static void read_test_float_data() {
     uint32_t opcode, src1, src2, check_cr, check_fpscr;
     uint64_t dest_64;
     //float sfp_dest, sfp_src1, sfp_src2, sfp_src3;
-    double dfp_dest, dfp_src1, dfp_src2, dfp_src3;
+    double dfp_src1, dfp_src2, dfp_src3;
     string rounding_mode;
 
     ifstream tf2stream("ppcfloattests.csv");
@@ -218,7 +218,6 @@ static void read_test_float_data() {
         src2        = 0;
         check_cr    = 0;
         check_fpscr = 0;
-        dfp_dest    = 0.0;
         dfp_src1    = 0.0;
         dfp_src2    = 0.0;
         dfp_src3    = 0.0;

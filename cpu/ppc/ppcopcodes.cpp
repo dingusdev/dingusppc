@@ -34,9 +34,7 @@ uint32_t reg_a;
 uint32_t reg_b;
 uint32_t reg_c;    // used only for floating point multiplication operations
 uint32_t uimm;
-uint32_t ppc_to;
 int32_t simm;
-int32_t adr_li;
 
 // Used for GP calcs
 uint32_t ppc_result_a = 0;
@@ -62,27 +60,27 @@ void ppc_store_result_rega() {
 void ppc_grab_regsdasimm() {
     reg_d        = (ppc_cur_instruction >> 21) & 31;
     reg_a        = (ppc_cur_instruction >> 16) & 31;
-    simm         = (int32_t)((int16_t)((ppc_cur_instruction)&65535));
+    simm         = int32_t(int16_t(ppc_cur_instruction & 0xFFFFUL));
     ppc_result_a = ppc_state.gpr[reg_a];
 }
 
 inline void ppc_grab_regsdauimm() {
     reg_d        = (ppc_cur_instruction >> 21) & 31;
     reg_a        = (ppc_cur_instruction >> 16) & 31;
-    uimm         = (uint32_t)((uint16_t)((ppc_cur_instruction)&65535));
+    uimm         = ppc_cur_instruction & 0xFFFFUL;
     ppc_result_a = ppc_state.gpr[reg_a];
 }
 
 inline void ppc_grab_regsasimm() {
     reg_a        = (ppc_cur_instruction >> 16) & 31;
-    simm         = (int32_t)((int16_t)(ppc_cur_instruction & 65535));
+    simm         = int32_t(int16_t(ppc_cur_instruction & 0xFFFFUL));
     ppc_result_a = ppc_state.gpr[reg_a];
 }
 
 inline void ppc_grab_regssauimm() {
     reg_s        = (ppc_cur_instruction >> 21) & 31;
     reg_a        = (ppc_cur_instruction >> 16) & 31;
-    uimm         = (uint32_t)((uint16_t)((ppc_cur_instruction)&65535));
+    uimm         = ppc_cur_instruction & 0xFFFFUL;
     ppc_result_d = ppc_state.gpr[reg_s];
     ppc_result_a = ppc_state.gpr[reg_a];
 }
@@ -1087,8 +1085,7 @@ void dppc_interpreter::ppc_mcrxr() {
 void dppc_interpreter::ppc_extsb() {
     ppc_grab_regssa();
     ppc_result_d = ppc_result_d & 0xFF;
-    ppc_result_a = (ppc_result_d < 0x80) ? (ppc_result_d & 0x000000FF)
-                                         : (0xFFFFFF00UL | (ppc_result_d & 0x000000FF));
+    ppc_result_a = (int32_t(int8_t(ppc_result_d)));
 
     if (rc_flag)
         ppc_changecrf0(ppc_result_a);
@@ -1099,8 +1096,7 @@ void dppc_interpreter::ppc_extsb() {
 void dppc_interpreter::ppc_extsh() {
     ppc_grab_regssa();
     ppc_result_d = ppc_result_d & 0xFFFF;
-    ppc_result_a = (ppc_result_d < 0x8000) ? (ppc_result_d & 0x0000FFFF)
-                                           : (0xFFFF0000UL | (ppc_result_d & 0x0000FFFF));
+    ppc_result_a = (int32_t(int16_t(ppc_result_d)));
     if (rc_flag)
         ppc_changecrf0(ppc_result_a);
 
@@ -1114,30 +1110,30 @@ void dppc_interpreter::ppc_extsh() {
 
 
 void dppc_interpreter::ppc_b() {
-    uint32_t quick_test = (ppc_cur_instruction & 0x03FFFFFC);
-    adr_li              = (quick_test < 0x2000000) ? quick_test : (0xFC000000UL + quick_test);
+    uint32_t quick_test = (ppc_cur_instruction & 0x03FFFFFCUL);
+    int32_t adr_li      = (quick_test < 0x2000000UL) ? quick_test : (0xFC000000UL + quick_test);
     ppc_next_instruction_address = (uint32_t)(ppc_state.pc + adr_li);
     exec_flags = EXEF_BRANCH;
 }
 
 void dppc_interpreter::ppc_bl() {
-    uint32_t quick_test = (ppc_cur_instruction & 0x03FFFFFC);
-    adr_li              = (quick_test < 0x2000000) ? quick_test : (0xFC000000UL + quick_test);
+    uint32_t quick_test = (ppc_cur_instruction & 0x03FFFFFCUL);
+    int32_t adr_li      = (quick_test < 0x2000000UL) ? quick_test : (0xFC000000UL + quick_test);
     ppc_next_instruction_address = (uint32_t)(ppc_state.pc + adr_li);
     ppc_state.spr[SPR::LR]       = (uint32_t)(ppc_state.pc + 4);
     exec_flags = EXEF_BRANCH;
 }
 
 void dppc_interpreter::ppc_ba() {
-    uint32_t quick_test = (ppc_cur_instruction & 0x03FFFFFC);
-    adr_li              = (quick_test < 0x2000000) ? quick_test : (0xFC000000UL + quick_test);
+    uint32_t quick_test = (ppc_cur_instruction & 0x03FFFFFCUL);
+    int32_t adr_li      = (quick_test < 0x2000000UL) ? quick_test : (0xFC000000UL + quick_test);
     ppc_next_instruction_address = adr_li;
     exec_flags = EXEF_BRANCH;
 }
 
 void dppc_interpreter::ppc_bla() {
-    uint32_t quick_test = (ppc_cur_instruction & 0x03FFFFFC);
-    adr_li              = (quick_test < 0x2000000) ? quick_test : (0xFC000000UL + quick_test);
+    uint32_t quick_test = (ppc_cur_instruction & 0x03FFFFFCUL);
+    int32_t adr_li      = (quick_test < 0x2000000UL) ? quick_test : (0xFC000000UL + quick_test);
     ppc_next_instruction_address = adr_li;
     ppc_state.spr[SPR::LR]       = ppc_state.pc + 4;
     exec_flags = EXEF_BRANCH;
@@ -1486,7 +1482,7 @@ void dppc_interpreter::ppc_sc() {
 void dppc_interpreter::ppc_tw() {
     reg_a  = (ppc_cur_instruction >> 11) & 31;
     reg_b  = (ppc_cur_instruction >> 16) & 31;
-    ppc_to = (ppc_cur_instruction >> 21) & 31;
+    uint32_t ppc_to = (ppc_cur_instruction >> 21) & 31;
     if ((((int32_t)ppc_state.gpr[reg_a] < (int32_t)ppc_state.gpr[reg_b]) && (ppc_to & 0x10)) ||
         (((int32_t)ppc_state.gpr[reg_a] > (int32_t)ppc_state.gpr[reg_b]) && (ppc_to & 0x08)) ||
         (((int32_t)ppc_state.gpr[reg_a] == (int32_t)ppc_state.gpr[reg_b]) && (ppc_to & 0x04)) ||
@@ -1499,7 +1495,7 @@ void dppc_interpreter::ppc_tw() {
 void dppc_interpreter::ppc_twi() {
     simm   = (int32_t)((int16_t)((ppc_cur_instruction)&0xFFFF));
     reg_a  = (ppc_cur_instruction >> 16) & 0x1F;
-    ppc_to = (ppc_cur_instruction >> 21) & 0x1F;
+    uint32_t ppc_to = (ppc_cur_instruction >> 21) & 0x1F;
     if ((((int32_t)ppc_state.gpr[reg_a] < simm) && (ppc_to & 0x10)) ||
         (((int32_t)ppc_state.gpr[reg_a] > simm) && (ppc_to & 0x08)) ||
         (((int32_t)ppc_state.gpr[reg_a] == simm) && (ppc_to & 0x04)) ||
@@ -2034,14 +2030,14 @@ void dppc_interpreter::ppc_lwzux() {
     ppc_grab_regsdab();
     if ((reg_a != reg_d) || reg_a != 0) {
         ppc_effective_address = ppc_result_a + ppc_result_b;
+        // ppc_result_d = mem_grab_dword(ppc_effective_address);
+        ppc_result_d = mmu_read_vmem<uint32_t>(ppc_effective_address);
+        ppc_result_a = ppc_effective_address;
+        ppc_store_result_regd();
+        ppc_store_result_rega();
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
-    //ppc_result_d = mem_grab_dword(ppc_effective_address);
-    ppc_result_d = mmu_read_vmem<uint32_t>(ppc_effective_address);
-    ppc_result_a = ppc_effective_address;
-    ppc_store_result_regd();
-    ppc_store_result_rega();
 }
 
 void dppc_interpreter::ppc_lwarx() {
@@ -2063,14 +2059,19 @@ void dppc_interpreter::ppc_lmw() {
 #endif
     ppc_grab_regsda();
     ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
-    ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
-    // How many words to load in memory - using a do-while for this
-    do {
-        //ppc_state.gpr[reg_d] = mem_grab_dword(ppc_effective_address);
-        ppc_state.gpr[reg_d] = mmu_read_vmem<uint32_t>(ppc_effective_address);
-        ppc_effective_address += 4;
-        reg_d++;
-    } while (reg_d < 32);
+    if ((reg_d > reg_a) || reg_a != 0) {
+        ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
+        // How many words to load in memory - using a do-while for this
+        do {
+            // ppc_state.gpr[reg_d] = mem_grab_dword(ppc_effective_address);
+            ppc_state.gpr[reg_d] = mmu_read_vmem<uint32_t>(ppc_effective_address);
+            ppc_effective_address += 4;
+            reg_d++;
+        } while (reg_d < 32);
+    } 
+    else {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+    }
 }
 
 void dppc_interpreter::ppc_lswi() {
@@ -2116,7 +2117,8 @@ void dppc_interpreter::ppc_lswx() {
     ppc_grab_regsdab();
 
     // Invalid instruction forms
-    if ((reg_d | reg_a) == 0 || (reg_d == reg_a) || (reg_d == reg_b)) {
+    if ((reg_d == 0 && reg_a == 0) || (reg_d == reg_a) || (reg_d == reg_b) || \
+        (reg_d <= reg_b) || (reg_d <= reg_a)) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
 

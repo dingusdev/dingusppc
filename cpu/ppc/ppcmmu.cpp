@@ -130,8 +130,8 @@ static BATResult mpc601_block_address_translation(uint32_t la)
 template <const BATType type>
 static BATResult ppc_block_address_translation(uint32_t la)
 {
-    uint32_t pa;    // translated physical address
-    uint8_t  prot;  // protection bits for the translated address
+    uint32_t pa = 0;    // translated physical address
+    uint8_t  prot = 0;  // protection bits for the translated address
     PPC_BAT_entry *bat_array;
 
     bool bat_hit    = false;
