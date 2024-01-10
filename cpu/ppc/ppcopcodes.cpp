@@ -2118,38 +2118,41 @@ void dppc_interpreter::ppc_lswx() {
 #endif
     ppc_grab_regsdab();
 
+/*
     // Invalid instruction forms
     if ((reg_d == 0 && reg_a == 0) || (reg_d == reg_a) || (reg_d == reg_b)) {
+        // UNTESTED! Does invalid form really cause exception?
+        // G4 doesn't do exception
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
+*/
 
     ppc_effective_address  = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
     uint32_t grab_inb      = ppc_state.spr[SPR::XER] & 0x7F;
 
-    while (grab_inb >= 4) {
-        ppc_state.gpr[reg_d] = mmu_read_vmem<uint32_t>(ppc_effective_address);
-        reg_d++;
-        if (reg_d >= 32) {    // wrap around through GPR0
-            reg_d = 0;
+    for (;;) {
+        if (is_601 && (reg_d == reg_b || (reg_a != 0 && reg_d == reg_a))) {
+            // UNTESTED! MPC601 manual is inconsistant on whether reg_b is skipped or not
+            reg_d = (reg_d + 1) & 31; // wrap around through GPR0
         }
+        switch (grab_inb) {
+        case 0:
+            return;
+        case 1:
+            ppc_state.gpr[reg_d] = mmu_read_vmem<uint8_t>(ppc_effective_address) << 24;
+            return;
+        case 2:
+            ppc_state.gpr[reg_d] = mmu_read_vmem<uint16_t>(ppc_effective_address) << 16;
+            return;
+        case 3:
+            ppc_state.gpr[reg_d] = (mmu_read_vmem<uint16_t>(ppc_effective_address) << 16)
+                                 | (mmu_read_vmem<uint8_t>(ppc_effective_address + 2) << 8);
+            return;
+        }
+        ppc_state.gpr[reg_d] = mmu_read_vmem<uint32_t>(ppc_effective_address);
+        reg_d = (reg_d + 1) & 31; // wrap around through GPR0
         ppc_effective_address += 4;
         grab_inb -= 4;
-    }
-
-    // handle remaining bytes
-    switch (grab_inb) {
-    case 1:
-        ppc_state.gpr[reg_d] = mmu_read_vmem<uint8_t>(ppc_effective_address) << 24;
-        break;
-    case 2:
-        ppc_state.gpr[reg_d] = mmu_read_vmem<uint16_t>(ppc_effective_address) << 16;
-        break;
-    case 3:
-        ppc_state.gpr[reg_d] = mmu_read_vmem<uint16_t>(ppc_effective_address) << 16;
-        ppc_state.gpr[reg_d] += mmu_read_vmem<uint8_t>(ppc_effective_address + 2) << 8;
-        break;
-    default:
-        break;
     }
 }
 
