@@ -331,7 +331,10 @@ void dppc_interpreter::ppc_subfc() {
 void dppc_interpreter::ppc_subfic() {
     ppc_grab_regsdasimm();
     ppc_result_d = simm - ppc_result_a;
-    ppc_carry(~ppc_result_a, ppc_result_d);
+    if (simm == -1)
+        ppc_state.spr[SPR::XER] |= XER::CA;
+    else
+        ppc_carry(~ppc_result_a, ppc_result_d);
     ppc_store_result_regd();
 }
 
