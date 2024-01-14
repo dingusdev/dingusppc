@@ -167,12 +167,27 @@ static void read_test_data() {
 }
 
 double double_from_string(string str) {
-    if (str == "snan")
+    if (str ==     "snan")
         return std::numeric_limits<double>::signaling_NaN();
-    else if (str == "qnan")
+    if (str ==     "qnan")
         return std::numeric_limits<double>::quiet_NaN();
-    else
-        return stod(str, NULL);
+    if (str == "-FLT_MAX")
+        return -std::numeric_limits<float>::max();
+    if (str == "-FLT_MIN")
+        return -std::numeric_limits<float>::min();
+    if (str == "-DBL_MAX")
+        return -std::numeric_limits<double>::max();
+    if (str == "-DBL_MIN")
+        return -std::numeric_limits<double>::min();
+    if (str ==  "FLT_MIN")
+        return std::numeric_limits<float>::min();
+    if (str ==  "FLT_MAX")
+        return std::numeric_limits<float>::max();
+    if (str ==  "DBL_MIN")
+        return std::numeric_limits<double>::min();
+    if (str ==  "DBL_MAX")
+        return std::numeric_limits<double>::max();
+    return stod(str, NULL);
 }
 
 static void read_test_float_data() {
@@ -267,9 +282,10 @@ static void read_test_float_data() {
         ppc_state.gpr[3] = src1;
         ppc_state.gpr[4] = src2;
 
-        ppc_state.fpr[3].dbl64_r = dfp_src1;
-        ppc_state.fpr[4].dbl64_r = dfp_src2;
-        ppc_state.fpr[5].dbl64_r = dfp_src3;
+        ppc_state.fpr[3].dbl64_r = 0;
+        ppc_state.fpr[4].dbl64_r = dfp_src1;
+        ppc_state.fpr[5].dbl64_r = dfp_src2;
+        ppc_state.fpr[6].dbl64_r = dfp_src3;
 
         ppc_state.cr = 0;
 

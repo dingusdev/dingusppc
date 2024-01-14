@@ -1,3 +1,5 @@
+import re
+
 def gen_ppc_opcode(opc_str, imm):
     if opc_str == "ADD":
         return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x10A << 1)
@@ -100,53 +102,53 @@ def gen_ppc_opcode(opc_str, imm):
     elif opc_str == "EXTSH.":
         return (0x1F << 26) + (3 << 21) + (3 << 16) + (0x39A << 1) + 1
     elif opc_str == "FABS":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x108 << 1)
+        return (0x3F << 26) + (3 << 21) + (0 << 16) + (4 << 11) + (0x108 << 1)
     elif opc_str == "FABS.":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x108 << 1) + 1
+        return (0x3F << 26) + (3 << 21) + (0 << 16) + (4 << 11) + (0x108 << 1) + 1
     elif opc_str == "FADD":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x15 << 1)
+        return (0x3F << 26) + (3 << 21) + (4 << 16) + (5 << 11) + (0x15 << 1)
     elif opc_str == "FADD.":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x15 << 1) + 1
+        return (0x3F << 26) + (3 << 21) + (4 << 16) + (5 << 11) + (0x15 << 1) + 1
     elif opc_str == "FADDS":
-        return (0x3B << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x15 << 1)
+        return (0x3B << 26) + (3 << 21) + (4 << 16) + (5 << 11) + (0x15 << 1)
     elif opc_str == "FADDS.":
-        return (0x3B << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x15 << 1) + 1
+        return (0x3B << 26) + (3 << 21) + (4 << 16) + (5 << 11) + (0x15 << 1) + 1
     elif opc_str == "FCMPO":
-        return (0x3F << 26)+ (4 << 21) + (3 << 16) + (4 << 11) + (0x20 << 1)
+        return (0x3F << 26) + (4 << 21) + (4 << 16) + (5 << 11) + (0x20 << 1)
     elif opc_str == "FCMPU":
-        return (0x3F << 26)+ (4 << 21) + (3 << 16) + (4 << 11)
+        return (0x3F << 26) + (4 << 21) + (4 << 16) + (5 << 11)
     elif opc_str == "FCTIW":
-        return (0x3B << 26) + (3 << 16) + (4 << 11) + (0xE << 1)
+        return (0x3F << 26) + (0 << 16) + (4 << 11) + (0xE << 1)
     elif opc_str == "FCTIW.":
-        return (0x3B << 26) + (3 << 16) + (4 << 11) + (0xE << 1) + 1
+        return (0x3F << 26) + (0 << 16) + (4 << 11) + (0xE << 1) + 1
     elif opc_str == "FCTIWZ":
-        return (0x3B << 26) + (3 << 16) + (4 << 11) + (0xF << 1)
+        return (0x3F << 26) + (0 << 16) + (4 << 11) + (0xF << 1)
     elif opc_str == "FCTIWZ.":
-        return (0x3B << 26) + (3 << 16) + (4 << 11) + (0xF << 1) + 1
+        return (0x3F << 26) + (0 << 16) + (4 << 11) + (0xF << 1) + 1
     elif opc_str == "FDIV":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x12 << 1)
+        return (0x3F << 26) + (3 << 21) + (4 << 16) + (5 << 11) + (0x12 << 1)
     elif opc_str == "FDIV.":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x12 << 1) + 1
+        return (0x3F << 26) + (3 << 21) + (4 << 16) + (5 << 11) + (0x12 << 1) + 1
     elif opc_str == "FDIVS":
-        return (0x3B << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x12 << 1)
+        return (0x3B << 26) + (3 << 21) + (4 << 16) + (5 << 11) + (0x12 << 1)
     elif opc_str == "FDIVS.":
-        return (0x3B << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x12 << 1) + 1
+        return (0x3B << 26) + (3 << 21) + (4 << 16) + (5 << 11) + (0x12 << 1) + 1
     elif opc_str == "FMADD":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (5 << 6) + (0x1D << 1)
+        return (0x3F << 26) + (3 << 21) + (4 << 16) + (5 << 11) + (6 << 6) + (0x1D << 1)
     elif opc_str == "FMADD.":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (5 << 6) + (0x1D << 1) + 1
+        return (0x3F << 26) + (3 << 21) + (4 << 16) + (5 << 11) + (6 << 6) + (0x1D << 1) + 1
     elif opc_str == "FMADDS":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (5 << 6) + (0x1D << 1)
+        return (0x3B << 26) + (3 << 21) + (4 << 16) + (5 << 11) + (6 << 6) + (0x1D << 1)
     elif opc_str == "FMADDS.":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (5 << 6) + (0x1D << 1) + 1
+        return (0x3B << 26) + (3 << 21) + (4 << 16) + (5 << 11) + (6 << 6) + (0x1D << 1) + 1
     elif opc_str == "FMUL":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (5 << 6) + (0x19 << 1)
+        return (0x3F << 26) + (3 << 21) + (4 << 16) + (6 << 6) + (0x19 << 1)
     elif opc_str == "FMUL.":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (5 << 6) + (0x19 << 1) + 1
+        return (0x3F << 26) + (3 << 21) + (4 << 16) + (6 << 6) + (0x19 << 1) + 1
     elif opc_str == "FMULS":
-        return (0x3B << 26) + (3 << 21) + (3 << 16) + (5 << 6) + (0x19 << 1)
+        return (0x3B << 26) + (3 << 21) + (4 << 16) + (6 << 6) + (0x19 << 1)
     elif opc_str == "FMULS.":
-        return (0x3B << 26) + (3 << 21) + (3 << 16) + (5 << 6) + (0x19 << 1) + 1
+        return (0x3B << 26) + (3 << 21) + (4 << 16) + (6 << 6) + (0x19 << 1) + 1
     elif opc_str == "FNABS":
         return (0x3F << 26) + (3 << 21) + (4 << 11) + (0x88 << 1)
     elif opc_str == "FNABS.":
@@ -155,42 +157,40 @@ def gen_ppc_opcode(opc_str, imm):
         return (0x3F << 26) + (3 << 21) + (4 << 11) + (0x28 << 1)
     elif opc_str == "FNEG.":
         return (0x3F << 26) + (3 << 21) + (4 << 11) + (0x28 << 1) + 1
-    elif opc_str == "FMULS.":
-        return (0x3B << 26) + (3 << 21) + (3 << 16) + (4 << 6) + (0x28 << 1) + 1
     elif opc_str == "FMSUB":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (5 << 6) + (0x1C << 1)
+        return (0x3F << 26) + (3 << 21) + (4 << 16) + (5 << 11) + (6 << 6) + (0x1C << 1)
     elif opc_str == "FMSUB.":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (5 << 6) + (0x1C << 1) + 1
+        return (0x3F << 26) + (3 << 21) + (4 << 16) + (5 << 11) + (6 << 6) + (0x1C << 1) + 1
     elif opc_str == "FMSUBS":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (5 << 6) + (0x1C << 1)
+        return (0x3B << 26) + (3 << 21) + (4 << 16) + (5 << 11) + (6 << 6) + (0x1C << 1)
     elif opc_str == "FMSUBS.":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (5 << 6) + (0x1C << 1) + 1
+        return (0x3B << 26) + (3 << 21) + (4 << 16) + (5 << 11) + (6 << 6) + (0x1C << 1) + 1
     elif opc_str == "FNMADD":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (5 << 6) + (0x1F << 1)
+        return (0x3F << 26) + (3 << 21) + (4 << 16) + (5 << 11) + (6 << 6) + (0x1F << 1)
     elif opc_str == "FNMADD.":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (5 << 6) + (0x1F << 1) + 1
+        return (0x3F << 26) + (3 << 21) + (4 << 16) + (5 << 11) + (6 << 6) + (0x1F << 1) + 1
     elif opc_str == "FNMADDS":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (5 << 6) + (0x1F << 1)
+        return (0x3B << 26) + (3 << 21) + (4 << 16) + (5 << 11) + (6 << 6) + (0x1F << 1)
     elif opc_str == "FNMADDS.":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (5 << 6) + (0x1F << 1) + 1
+        return (0x3B << 26) + (3 << 21) + (4 << 16) + (5 << 11) + (6 << 6) + (0x1F << 1) + 1
     elif opc_str == "FNMSUB":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (5 << 6) + (0x1C << 1)
+        return (0x3F << 26) + (3 << 21) + (4 << 16) + (5 << 11) + (6 << 6) + (0x1E << 1)
     elif opc_str == "FNMSUB.":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (5 << 6) + (0x1C << 1) + 1
+        return (0x3F << 26) + (3 << 21) + (4 << 16) + (5 << 11) + (6 << 6) + (0x1E << 1) + 1
     elif opc_str == "FNMSUBS":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (5 << 6) + (0x1C << 1)
+        return (0x3B << 26) + (3 << 21) + (4 << 16) + (5 << 11) + (6 << 6) + (0x1E << 1)
     elif opc_str == "FNMSUBS.":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (5 << 6) + (0x1C << 1) + 1
+        return (0x3B << 26) + (3 << 21) + (4 << 16) + (5 << 11) + (6 << 6) + (0x1E << 1) + 1
     elif opc_str == "FRES":
-        return (0x3B << 26) + (3 << 21) + (4 << 11) + (0x15 << 1)
+        return (0x3B << 26) + (3 << 21) + (4 << 11) + (0x18 << 1)
     elif opc_str == "FSUB":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x14 << 1)
+        return (0x3F << 26) + (3 << 21) + (4 << 16) + (5 << 11) + (0x14 << 1)
     elif opc_str == "FSUB.":
-        return (0x3F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x14 << 1) + 1
+        return (0x3F << 26) + (3 << 21) + (4 << 16) + (5 << 11) + (0x14 << 1) + 1
     elif opc_str == "FSUBS":
-        return (0x3B << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x14 << 1)
+        return (0x3B << 26) + (3 << 21) + (4 << 16) + (5 << 11) + (0x14 << 1)
     elif opc_str == "FSUBS.":
-        return (0x3B << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x14 << 1) + 1
+        return (0x3B << 26) + (3 << 21) + (4 << 16) + (5 << 11) + (0x14 << 1) + 1
     elif opc_str == "MULHW":
         return (0x1F << 26) + (3 << 21) + (3 << 16) + (4 << 11) + (0x4B << 1)
     elif opc_str == "MULHW.":
@@ -403,6 +403,8 @@ if __name__ == "__main__":
 
                 out_file.write("\n")
 
+    floatRE = re.compile('^([\w]+\.?) +(?:\((\w+)\) )?:: (?:(fr[ABCD]) +([^ ]+) \| )?(?:(fr[ABCD]) +([^ ]+) \| )?(?:(fr[ABCD]) +([^ ]+) \| )?(?:(fr[ABCD]) +([^ ]+) \| )?FPSCR: (0x\w+) \| CR: (0x\w+)$')
+
     with open("ppcfloattest.txt", "r") as in_file:
         with open("ppcfloattests.csv", "w") as out_file:
             lineno = 0
@@ -410,153 +412,37 @@ if __name__ == "__main__":
                 lineno += 1
 
                 line = line.strip()
-                opcode = (line[0:8]).rstrip().upper()
-                out_file.write(opcode+ ",")
-                out_file.write("0x{:X}".format(gen_ppc_opcode(opcode, 0)))
+                
+                p = floatRE.match(line)
+                if p:
+                    opcode = p.group(1).upper();
+                    out_file.write(opcode+ ",")
+                    out_file.write("0x{:X}".format(gen_ppc_opcode(opcode, 0)))
 
-                pos = 10
-                checkstring = ''
-
-                while pos < len(line):
-                    if (line[pos].isalnum()):
-                        checkstring += line[pos]
-                        
-                    if ("RTN" in checkstring):
-                        if (line[pos+1:pos+2] == "I"):
-                            out_file.write(",round=RNI")
-                            checkstring = ''
-                        else:
-                            out_file.write(",round=RTN")
-                            checkstring = ''
-                        pos += 1
-                    elif ("RTZ" in checkstring):
+                    if p.group(2) == "RTNI":
+                        out_file.write(",round=RNI")
+                    elif p.group(2) == "RTN":
+                        out_file.write(",round=RTN")
+                    elif p.group(2) == "RTZ":
                         out_file.write(",round=RTZ")
-                        checkstring = ''
-                        pos += 1
-                    elif ("RTPI" in checkstring):
+                    elif p.group(2) == "RTPI":
                         out_file.write(",round=RPI")
-                        checkstring = ''
-                        pos += 1
-                    elif ("VE" in checkstring):
+                    elif p.group(2) == "VE":
                         out_file.write(",round=VEN")
-                        checkstring = ''
-                        pos += 1
-                    elif ("frD" in checkstring):
-                        out_file.write(",frD=0x" + line[pos+4:pos+20])
-                        checkstring = ''
-                    elif ("frA" in checkstring): #sloppy temp code
-                        check2 = line[pos+1:pos+10]
-                        if ("-inf" in check2):
-                            out_file.write(",frA=-inf")
-                        elif ("inf" in check2):
-                            out_file.write(",frA=inf")
-                            pos += 1
-                        elif ("nan" in check2):
-                            out_file.write(",frA=nan")
-                            pos += 1
-                        elif ("-0." or "-2." or "-4." or \
-                            "-6." or "-8." or "-7." or\
-                            "-5." or "-3." or "-1." or \
-                            "-9." in check2):
-                            get_pos = line[pos+2:pos+16].strip("|")
-                            out_file.write(",frA=" + get_pos.strip())
-                        elif ("0." or "2." or "4." or \
-                            "6." or "8." or "7." or\
-                            "5." or "3." or "1." or \
-                            "9." in check2):
-                            get_pos = line[pos+2:pos+15]
-                            out_file.write(",frA=" + get_pos.strip())
-                        checkstring = ''
-                    elif ("frB" in checkstring): #sloppy temp code
-                        check2 = line[pos+1:pos+10]
-                        if ("-inf" in check2):
-                            out_file.write(",frB=-inf")
-                        elif ("inf" in check2):
-                            out_file.write(",frB=inf")
-                            pos += 1
-                        elif ("nan" in check2):
-                            out_file.write(",frB=nan")
-                            pos += 1
-                        elif ("-0." or "-2." or "-4." or \
-                            "-6." or "-8." or "-7." or\
-                            "-5." or "-3." or "-1." or \
-                            "-9." in check2):
-                            get_pos = line[pos+2:pos+16].strip("|")
-                            out_file.write(",frB=" + get_pos.strip())
-                        elif ("0." or "2." or "4." or \
-                            "6." or "8." or "7." or\
-                            "5." or "3." or "1." or \
-                            "9." in check2):
-                            get_pos = line[pos+2:pos+15]
-                            out_file.write(",frB=" + get_pos.strip())
-                        checkstring = ''
-                    elif ("frC" in checkstring): #sloppy temp code
-                        check2 = line[pos+1:pos+10]
-                        if ("-inf" in check2):
-                            out_file.write(",frC=-inf")
-                        elif ("inf" in check2):
-                            out_file.write(",frC=inf")
-                            pos += 1
-                        elif ("nan" in check2):
-                            out_file.write(",frC=nan")
-                            pos += 1
-                        elif ("-0." or "-2." or "-4." or \
-                            "-6." or "-8." or "-7." or\
-                            "-5." or "-3." or "-1." or \
-                            "-9." in check2):
-                            get_pos = line[pos+2:pos+16].strip("|")
-                            out_file.write(",frC=" + get_pos.strip())
-                        elif ("0." or "2." or "4." or \
-                            "6." or "8." or "7." or\
-                            "5." or "3." or "1." or \
-                            "9." in check2):
-                            get_pos = line[pos+2:pos+15]
-                            out_file.write(",frC=" + get_pos.strip())
-                        checkstring = ''
-                    elif ("FPSCR" in checkstring):
-                        out_file.write(",FPSCR=" + line[pos+3:pos+13])
-                        checkstring = ''
-                    elif ("CR" in checkstring):
-                        out_file.write(",CR=0x0" + line[pos+6:pos+14])
-                        checkstring = ''
-                    pos += 1
+                    elif p.group(2) != None:
+                        print("Warning: line: [%d] unknown round \"%s\"\n" % (lineno, p.group(2)))
 
-                    # reg_id = line[pos:pos+4]
-                    # if reg_id.startswith("frD"):
-                    #     out_file.write(",frD=" + line[pos+4:pos+22])
-                    #     pos += 24
-                    # elif reg_id.startswith("frA"):
-                    #     out_file.write(",frA=" + line[pos+4:pos+14])
-                    #     pos += 16
-                    # elif reg_id.startswith("frB"):
-                    #     out_file.write(",frB=" + line[pos+4:pos+14])
-                    #     pos += 16
-                    # elif reg_id.startswith("frC"):
-                    #     out_file.write(",frC=" + line[pos+4:pos+14])
-                    #     pos += 16
-                    # elif reg_id.startswith("FPSCR:"):
-                    #     out_file.write(",FPSCR=" + line[pos+7:pos+17])
-                    #     pos += 19
-                    # elif reg_id.startswith("CR:"):
-                    #     out_file.write(",CR=" + line[pos+4:pos+14])
-                    #     pos += 17
-                    # elif reg_id.startswith("VE)"):
-                    #     out_file.write("round=VEN" + line[pos+4:pos+20])
-                    #     pos += 17
-                    # elif reg_id.startswith("TN)"):
-                    #     out_file.write("round=RTN" + line[pos+4:pos+20])
-                    #     pos += 17
-                    # elif reg_id.startswith("TZ)"):
-                    #    out_file.write("round=RTZ" + line[pos+4:pos+20])
-                    #    pos += 17
-                    # elif reg_id.startswith("NI)"):
-                    #    out_file.write("round=RNI" + line[pos+4:pos+20])
-                    #    pos += 17
-                    # elif reg_id.startswith("PI)"):
-                    #     out_file.write("round=RPI" + line[pos+4:pos+20])
-                    #     pos += 17
-                    # else:
-                    #     out_file.write("Unknown reg ID" + reg_id)
-                    #     break
+                    if p.group(3) != None:
+                        out_file.write(",%s=%s" % (p.group(3), p.group(4)))
+                    if p.group(5) != None:
+                        out_file.write(",%s=%s" % (p.group(5), p.group(6)))
+                    if p.group(7) != None:
+                        out_file.write(",%s=%s" % (p.group(7), p.group(8)))
+                    if p.group(9) != None:
+                        out_file.write(",%s=%s" % (p.group(9), p.group(10)))
 
-                out_file.write("\n")
+                    out_file.write(",FPSCR=%s" % p.group(11))
+                    out_file.write(",CR=%s" % p.group(12))
+                    out_file.write("\n")
+                else:
+                    print("Warning: line: [%d] \"%s\"\n" % (lineno, line))
