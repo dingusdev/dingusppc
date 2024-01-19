@@ -1,3 +1,24 @@
+/*
+DingusPPC - The Experimental PowerPC Macintosh emulator
+Copyright (C) 2018-23 divingkatae and maximum
+                      (theweirdo)     spatium
+
+(Contact divingkatae#1017 or powermax#2286 on Discord for more info)
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 #include <devices/video/display.h>
 #include <SDL.h>
 #include <loguru.hpp>
@@ -13,13 +34,10 @@ public:
     SDL_Rect        cursor_rect; // destination rectangle for cursor drawing
 };
 
-Display::Display(): impl(std::make_unique<Impl>())
-{
-
+Display::Display(): impl(std::make_unique<Impl>()) {
 }
 
-Display::~Display()
-{
+Display::~Display() {
     if (impl->cursor_texture) {
         SDL_DestroyTexture(impl->cursor_texture);
     }
@@ -37,8 +55,7 @@ Display::~Display()
     }
 }
 
-bool Display::configure(int width, int height)
-{
+bool Display::configure(int width, int height) {
     bool is_initialization = false;
 
     if (!impl->display_wnd) { // create display window
@@ -84,22 +101,20 @@ bool Display::configure(int width, int height)
     return is_initialization;
 }
 
-void Display::handle_events(const WindowEvent& wnd_event)
-{
+void Display::handle_events(const WindowEvent& wnd_event) {
     if (wnd_event.sub_type == SDL_WINDOWEVENT_SIZE_CHANGED &&
         wnd_event.window_id == impl->disp_wnd_id)
         impl->resizing = false;
 }
 
-void Display::blank()
-{
+void Display::blank() {
     SDL_SetRenderDrawColor(impl->renderer, 0, 0, 0, 255);
     SDL_RenderClear(impl->renderer);
     SDL_RenderPresent(impl->renderer);
 }
 
-void Display::update(std::function<void(uint8_t *dst_buf, int dst_pitch)> convert_fb_cb, bool draw_hw_cursor, int cursor_x, int cursor_y)
-{
+void Display::update(std::function<void(uint8_t *dst_buf, int dst_pitch)> convert_fb_cb,
+                     bool draw_hw_cursor, int cursor_x, int cursor_y) {
     if (impl->resizing)
         return;
 
@@ -125,8 +140,8 @@ void Display::update(std::function<void(uint8_t *dst_buf, int dst_pitch)> conver
     SDL_RenderPresent(impl->renderer);
 }
 
-void Display::setup_hw_cursor(std::function<void(uint8_t *dst_buf, int dst_pitch)> draw_hw_cursor, int cursor_width, int cursor_height)
-{
+void Display::setup_hw_cursor(std::function<void(uint8_t *dst_buf, int dst_pitch)> draw_hw_cursor,
+                              int cursor_width, int cursor_height) {
     uint8_t*    dst_buf;
     int         dst_pitch;
 
