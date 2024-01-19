@@ -101,7 +101,8 @@ protected:
             this->int_ctrl->ack_int(this->irq_id, irq_line_state);
     };
 
-    std::function<void(uint8_t *dst_buf, int dst_pitch)> convert_fb_cb;
+    std::function<void(uint8_t *dst_buf, int dst_pitch)> convert_fb_cb = nullptr;
+    std::function<void(uint8_t *dst_buf, int dst_pitch)> cursor_ovl_cb = nullptr;
 
 private:
     Display display;

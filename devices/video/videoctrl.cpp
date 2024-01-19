@@ -74,7 +74,7 @@ void VideoCtrlBase::update_screen()
     }
 
     this->display.update(
-        this->convert_fb_cb,
+        this->convert_fb_cb, this->cursor_ovl_cb,
         this->cursor_on, cursor_x, cursor_y);
 }
 

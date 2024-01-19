@@ -41,10 +41,13 @@ public:
     // Clears the display
     void blank();
 
-    void update(std::function<void(uint8_t *dst_buf, int dst_pitch)> convert_fb_cb, bool draw_hw_cursor, int cursor_x, int cursor_y);
+    void update(std::function<void(uint8_t *dst_buf, int dst_pitch)> convert_fb_cb,
+                std::function<void(uint8_t *dst_buf, int dst_pitch)> cursor_ovl_cb,
+                bool draw_hw_cursor, int cursor_x, int cursor_y);
 
     void handle_events(const WindowEvent& wnd_event);
-    void setup_hw_cursor(std::function<void(uint8_t *dst_buf, int dst_pitch)> draw_hw_cursor, int cursor_width, int cursor_height);
+    void setup_hw_cursor(std::function<void(uint8_t *dst_buf, int dst_pitch)> draw_hw_cursor,
+                         int cursor_width, int cursor_height);
 private:
     class Impl; // Holds private fields
     std::unique_ptr<Impl> impl;

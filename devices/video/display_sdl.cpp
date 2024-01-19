@@ -38,21 +38,17 @@ Display::Display(): impl(std::make_unique<Impl>()) {
 }
 
 Display::~Display() {
-    if (impl->cursor_texture) {
+    if (impl->cursor_texture)
         SDL_DestroyTexture(impl->cursor_texture);
-    }
 
-    if (impl->disp_texture) {
+    if (impl->disp_texture)
         SDL_DestroyTexture(impl->disp_texture);
-    }
 
-    if (impl->renderer) {
+    if (impl->renderer)
         SDL_DestroyRenderer(impl->renderer);
-    }
 
-    if (impl->display_wnd) {
+    if (impl->display_wnd)
         SDL_DestroyWindow(impl->display_wnd);
-    }
 }
 
 bool Display::configure(int width, int height) {
@@ -68,14 +64,12 @@ bool Display::configure(int width, int height) {
         );
 
         impl->disp_wnd_id = SDL_GetWindowID(impl->display_wnd);
-        if (impl->display_wnd == NULL) {
+        if (impl->display_wnd == NULL)
             ABORT_F("Display: SDL_CreateWindow failed with %s", SDL_GetError());
-        }
 
         impl->renderer = SDL_CreateRenderer(impl->display_wnd, -1, SDL_RENDERER_ACCELERATED);
-        if (impl->renderer == NULL) {
+        if (impl->renderer == NULL)
             ABORT_F("Display: SDL_CreateRenderer failed with %s", SDL_GetError());
-        }
 
         is_initialization = true;
     } else { // resize display window
@@ -83,9 +77,8 @@ bool Display::configure(int width, int height) {
         impl->resizing = true;
     }
 
-    if (impl->disp_texture) {
+    if (impl->disp_texture)
         SDL_DestroyTexture(impl->disp_texture);
-    }
 
     impl->disp_texture = SDL_CreateTexture(
         impl->renderer,
@@ -94,9 +87,8 @@ bool Display::configure(int width, int height) {
         width, height
     );
 
-    if (impl->disp_texture == NULL) {
+    if (impl->disp_texture == NULL)
         ABORT_F("Display: SDL_CreateTexture failed with %s", SDL_GetError());
-    }
 
     return is_initialization;
 }
@@ -114,6 +106,7 @@ void Display::blank() {
 }
 
 void Display::update(std::function<void(uint8_t *dst_buf, int dst_pitch)> convert_fb_cb,
+                     std::function<void(uint8_t *dst_buf, int dst_pitch)> cursor_ovl_cb,
                      bool draw_hw_cursor, int cursor_x, int cursor_y) {
     if (impl->resizing)
         return;
@@ -125,6 +118,10 @@ void Display::update(std::function<void(uint8_t *dst_buf, int dst_pitch)> conver
 
     // texture update callback to get ARGB data from guest framebuffer
     convert_fb_cb(dst_buf, dst_pitch);
+
+    // overlay cursor data if requested
+    if (cursor_ovl_cb != nullptr)
+        cursor_ovl_cb(dst_buf, dst_pitch);
 
     SDL_UnlockTexture(impl->disp_texture);
     SDL_RenderClear(impl->renderer);
@@ -145,9 +142,8 @@ void Display::setup_hw_cursor(std::function<void(uint8_t *dst_buf, int dst_pitch
     uint8_t*    dst_buf;
     int         dst_pitch;
 
-    if (impl->cursor_texture) {
+    if (impl->cursor_texture)
         SDL_DestroyTexture(impl->cursor_texture);
-    }
 
     impl->cursor_texture = SDL_CreateTexture(
         impl->renderer,
@@ -156,9 +152,8 @@ void Display::setup_hw_cursor(std::function<void(uint8_t *dst_buf, int dst_pitch
         cursor_width, cursor_height
     );
 
-    if (impl->cursor_texture == NULL) {
+    if (impl->cursor_texture == NULL)
         ABORT_F("SDL_CreateTexture for HW cursor failed with %s", SDL_GetError());
-    }
 
     SDL_LockTexture(impl->cursor_texture, NULL, (void **)&dst_buf, &dst_pitch);
     SDL_SetTextureBlendMode(impl->cursor_texture, SDL_BLENDMODE_BLEND);
