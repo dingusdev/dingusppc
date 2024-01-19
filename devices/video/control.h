@@ -94,7 +94,7 @@ namespace RadacalRegs {
 
 enum RadacalRegs : uint8_t {
     ADDRESS         = 0, // address register
-    CURSOR_DATA     = 1, // cursor data
+    CURSOR_CLUT     = 1, // cursor palette data
     MULTI           = 2, // multipurpose section
     CLUT_DATA       = 3, // color palette data
 
@@ -134,7 +134,8 @@ protected:
     uint16_t iodev_read(uint32_t address);
     void iodev_write(uint32_t address, uint16_t value);
 
-    // HW cursor support
+    // HW cursor support (in RaDACal)
+    void measure_hw_cursor();
     void draw_hw_cursor(uint8_t *dst_buf, int dst_pitch);
 
 private:
@@ -166,11 +167,14 @@ private:
     uint8_t     rad_addr = 0;
     uint8_t     rad_cr = 0;
     uint8_t     rad_dbl_buf_cr = 0;
-    uint8_t     tst_cr = 0;
-    uint16_t    rad_cur_pos = 0;
+    uint8_t     rad_tst_cr = 0;
+    uint16_t    rad_cur_rgn_pos = 0; // horizontal position of the cursor region
+    uint8_t     rad_cur_pos_lo = 0; // lower byte of the horizontal cursor position
+    uint16_t    rad_cur_ypos = 0;
+    uint16_t    rad_cursor_height = 0;
     uint8_t     comp_index;
     uint8_t     clut_color[3];
-    uint8_t     cursor_data[24] = { 0 };
+    uint32_t    cursor_clut[8] = {};
 };
 
 #endif // CONTROL_VIDEO_H

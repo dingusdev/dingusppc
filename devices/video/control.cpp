@@ -394,7 +394,7 @@ void ControlVideo::enable_display()
     this->active_height = new_height;
 
     // set framebuffer parameters
-    this->fb_ptr = &this->vram_ptr[this->fb_base];
+    this->fb_ptr   = &this->vram_ptr[this->fb_base];
     this->fb_pitch = this->row_words;
 
     // get pixel depth from RaDACal
@@ -463,48 +463,70 @@ void ControlVideo::disable_display()
     LOG_F(INFO, "Control: display disabled");
 }
 
+void ControlVideo::measure_hw_cursor() {
+    uint8_t *src_fw_ptr = &this->vram_ptr[this->fb_base];
+    uint8_t *src_bw_ptr = &this->vram_ptr[this->fb_base +
+                              this->fb_pitch * (this->active_height - 1)];
+    int cur_pos_y_start = -1;
+    int cur_pos_y_end   = -1;
+
+    // forward scanning to find the first line of the cursor
+    for (int h = 0; h < this->active_height; h++, src_fw_ptr += this->fb_pitch) {
+        if (((uint64_t *)src_fw_ptr)[0] | ((uint64_t *)src_fw_ptr)[1]) {
+            cur_pos_y_start = h;
+            break;
+        }
+    }
+
+    if (cur_pos_y_start < 0)
+        return; // bail out because no cursor data start was found
+
+    // backward scanning to find the last line of the cursor
+    for (int h = this->active_height - 1; h >= 0; h--, src_bw_ptr -= this->fb_pitch) {
+        if (((uint64_t *)src_bw_ptr)[0] | ((uint64_t *)src_bw_ptr)[1]) {
+            cur_pos_y_end = h;
+            break;
+        }
+    }
+
+    if (cur_pos_y_end < 0)
+        return; // bail out because no cursor data end was found
+
+    this->rad_cursor_height = cur_pos_y_end - cur_pos_y_start + 1;
+    this->rad_cur_ypos      = cur_pos_y_start;
+}
+
 void ControlVideo::draw_hw_cursor(uint8_t *dst_buf, int dst_pitch) {
     uint8_t *src_row = &this->vram_ptr[this->fb_base];
     uint8_t *dst_row = dst_buf;
-    int cur_height = this->active_height;
-    dst_pitch -= 32 * 4;
-    int src_pitch = this->fb_pitch - 16;
 
-    uint32_t color[16];
-    for (int c = 0; c < 16; c++) {
-        color[c] = (this->cursor_data[c*3] << 16) | (this->cursor_data[c*3 + 1] << 8) | (this->cursor_data[c*3 + 2]);
-    }
+    this->measure_hw_cursor();
 
-    for (int h = 0; h < cur_height; h++) {
-        for (int x = 0; x < 2; x++) {
-            uint64_t px16 = READ_QWORD_BE_A(src_row);
-            for (int p = 0; p < 16; p++) {
-                int c = px16 >> 60;
-                switch (c) {
-                    case 0:
-                        // transparent
-                        break;
-                    case 1:
-                        // 1's complement
-                        WRITE_DWORD_LE_A(dst_row, READ_DWORD_LE_A(dst_row) ^ 0xffffff);
-                        break;
-                    case 8:
-                        WRITE_DWORD_LE_A(dst_row, color[0]);
-                        break;
-                    case 9:
-                        WRITE_DWORD_LE_A(dst_row, color[1]);
-                        break;
-                    default:
-                        WRITE_DWORD_LE_A(dst_row, (c << 16) | (c << 8) | c);
-                        break;
-                }
-                px16 <<= 4;
-                dst_row += 4;
+    if (this->rad_cur_rgn_pos >= this->active_width)
+        return;
+
+    src_row += this->fb_pitch * this->rad_cur_ypos;
+    dst_row += this->rad_cur_ypos * dst_pitch + this->rad_cur_rgn_pos * sizeof(uint32_t);
+    dst_pitch -= 32 * sizeof(uint32_t);
+
+    for (int h = 0; h < this->rad_cursor_height; h++) {
+        for (int x = 0; x < 2; x++) { // two sets of 16 pixels
+            uint64_t pix_data = READ_QWORD_BE_A(src_row + x * 8);
+            if (!pix_data) { // skip processing of 16 transparent pixels
+                dst_row += 16 * sizeof(uint32_t);
+                break;
             }
-            src_row += 8;
+            for (int p = 0; p < 16; p++) {
+                uint8_t pix = pix_data >> 60; // each pixel is 4 bits wide
+                if (pix & 8) { // check control bit: 0 - transparent, 1 - opaque
+                    WRITE_DWORD_LE_A(dst_row, this->cursor_clut[pix & 7]);
+                }
+                pix_data <<= 4;
+                dst_row += sizeof(uint32_t);
+            }
         }
+        src_row += this->fb_pitch;
         dst_row += dst_pitch;
-        src_row += src_pitch;
     }
 }
 
@@ -544,26 +566,44 @@ void ControlVideo::iodev_write(uint32_t address, uint16_t value)
         this->rad_addr = value;
         this->comp_index = 0;
         break;
-    case RadacalRegs::CURSOR_DATA:
-        this->cursor_data[(this->rad_addr++) % 24] = value;
+    case RadacalRegs::CURSOR_CLUT:
+        this->clut_color[this->comp_index++] = value;
+        if (this->comp_index >= 3) {
+            this->cursor_clut[this->rad_addr & 7] = (this->clut_color[0] << 16) |
+            (this->clut_color[1] << 8) | this->clut_color[2];
+            this->rad_addr++; // auto-increment CLUT address
+            this->comp_index = 0;
+        }
         break;
     case RadacalRegs::MULTI:
         switch (this->rad_addr) {
         case RadacalRegs::CURSOR_POS_HI:
-            this->rad_cur_pos = (value << 8) | (this->rad_cur_pos & 0x00ff);
+            this->rad_cur_rgn_pos = (value << 8) | this->rad_cur_pos_lo;
             break;
         case RadacalRegs::CURSOR_POS_LO:
-            this->rad_cur_pos = (this->rad_cur_pos & 0xff00) | (value & 0x00ff);
+            this->rad_cur_pos_lo = value;
             break;
         case RadacalRegs::MISC_CTRL:
+            if (bit_changed(this->rad_cr, value, 1)) {
+                if (value & 2) {
+                    //LOG_F(WARNING, "RaDACal: HW cursor enabled!");
+                    this->measure_hw_cursor();
+                    this->cursor_ovl_cb = [this](uint8_t *dst_buf, int dst_pitch) {
+                        this->draw_hw_cursor(dst_buf, dst_pitch);
+                    };
+                } else {
+                    //LOG_F(WARNING, "RaDACal: HW cursor disabled!");
+                    this->cursor_ovl_cb = nullptr;
+                }
+            }
             this->rad_cr = value;
             break;
         case RadacalRegs::DBL_BUF_CTRL:
             this->rad_dbl_buf_cr = value;
             break;
         case RadacalRegs::TEST_CTRL:
-            this->tst_cr = value;
-            if (this->tst_cr & 1)
+            this->rad_tst_cr = value;
+            if (value & 1)
                 LOG_F(WARNING, "RaDACal: DAC test enabled!");
             break;
         default:
