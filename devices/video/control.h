@@ -33,13 +33,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <memory>
 
-#define FB_BLANK_VSYNC  (3 <<  0) // FB_BLANK_VSYNC_SUSPEND = &=  ~0x03
-#define FB_BLANK_HSYNC  (3 <<  4) // FB_BLANK_HSYNC_SUSPEND = &=  ~0x30
-                                  // FB_BLANK_POWERDOWN     = &=  ~0x33
-#define FB_BLANK_NORMAL (1 << 10) //                        = |=  0x400
-#define TEST_STROBE     (1 <<  3) // strobe bit
-#define FB_DISABLE      (1 << 10) // disable bit            = &= ~0x400
-
 // Memory-mapped registers.
 namespace ControlRegs {
 
@@ -63,7 +56,7 @@ enum ControlRegs : int {
     HEQ             = 0x0E, // horizontal equalization          (rw) 12 bits
     HLFLN           = 0x0F, // horizontal half line             (rw) 12 bits
     HSERR           = 0x10, // horizontal serration             (rw) 12 bits
-    CNTTST          = 0x11, // Swatch counter test              (rw) 12 bits
+    CNTTST          = 0x11, // Swatch counter test value        (rw) 12 bits
     SWATCH_CTRL     = 0x12, // Swatch timing generator control  (rw) 11 bits
     GBASE           = 0x13, // graphics base address            (rw) 22 bits, 32 byte aligned
     ROW_WORDS       = 0x14, // framebuffer pitch                (rw) 15 bits, 32 byte aligned
@@ -154,7 +147,6 @@ private:
     uint32_t    io_base = 0;
     uint32_t    vram_base = 0;
     uint32_t    regs_base = 0;
-    uint32_t    prev_test = 0x433;
     uint32_t    swatch_ctrl = 0;
     bool        display_enabled = false;
     uint32_t    clock_divider = 0;
