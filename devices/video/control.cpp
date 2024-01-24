@@ -337,6 +337,7 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
                 LOG_F(WARNING, "%s: CNTTST set to 0x%X", this->name.c_str(), value);
             break;
         case ControlRegs::SWATCH_CTRL:
+            value &= 0x7FF;
             if ((this->swatch_ctrl ^ value) & DISABLE_TIMING) {
                 this->swatch_ctrl = value;
                 this->strobe_counter = 0;
@@ -375,7 +376,7 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
                     this->blank_display();
                 }
             }
-            this->enables = value;
+            this->enables = value & 0xFFF;
             if (this->enables & FB_ENDIAN_LITTLE)
                 ABORT_F("%s: little-endian framebuffer is not implemented yet",
                         this->name.c_str());
