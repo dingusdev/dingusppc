@@ -385,6 +385,16 @@ void ATIRage::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size) {
             }
         }
         break;
+    case ATI_CUR_CLR0:
+    case ATI_CUR_CLR1:
+        this->setup_hw_cursor();
+        // fallthrough
+    case ATI_CUR_OFFSET:
+    case ATI_CUR_HORZ_VERT_POSN:
+    case ATI_CUR_HORZ_VERT_OFF:
+        new_value = value;
+        draw_fb = true;
+        break;
     case ATI_GP_IO:
         new_value = value;
         if (offset <= 1 && offset + size > 1) {
@@ -446,6 +456,7 @@ void ATIRage::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size) {
                 this->setup_hw_cursor();
             else
                 this->cursor_on = false;
+            draw_fb = true;
         }
         if (bit_changed(old_value, new_value, ATI_GEN_GUI_RESETB)) {
             if (!bit_set(new_value, ATI_GEN_GUI_RESETB))
@@ -549,9 +560,11 @@ void ATIRage::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int siz
 {
     if (rgn_start == this->aperture_base[0] && offset < this->aperture_size[0]) {
         if (offset < this->vram_size) { // little-endian VRAM region
+            draw_fb = true;
             return write_mem(&this->vram_ptr[offset], value, size);
         }
         if (offset >= BE_FB_OFFSET) { // big-endian VRAM region
+            draw_fb = true;
             return write_mem(&this->vram_ptr[offset & (BE_FB_OFFSET - 1)], value, size);
         }
         //if (!bit_set(this->regs[ATI_BUS_CNTL], ATI_BUS_APER_REG_DIS)) {
@@ -695,38 +708,45 @@ void ATIRage::crtc_update() {
     switch (this->pixel_format) {
     case 1:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
+            draw_fb = false;
             this->convert_frame_4bpp_indexed(dst_buf, dst_pitch);
         };
         break;
     case 2:
         if (bit_set(this->regs[ATI_DAC_CNTL], ATI_DAC_DIRECT)) {
             this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
+                draw_fb = false;
                 this->convert_frame_8bpp(dst_buf, dst_pitch);
             };
         }
         else {
             this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
+                draw_fb = false;
                 this->convert_frame_8bpp_indexed(dst_buf, dst_pitch);
             };
         }
         break;
     case 3:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
+            draw_fb = false;
             this->convert_frame_15bpp_BE(dst_buf, dst_pitch);
         };
         break;
     case 4:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
+            draw_fb = false;
             this->convert_frame_16bpp(dst_buf, dst_pitch);
         };
         break;
     case 5:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
+            draw_fb = false;
             this->convert_frame_24bpp(dst_buf, dst_pitch);
         };
         break;
     case 6:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
+            draw_fb = false;
             this->convert_frame_32bpp_BE(dst_buf, dst_pitch);
         };
         break;

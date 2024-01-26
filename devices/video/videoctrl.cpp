@@ -74,9 +74,11 @@ void VideoCtrlBase::update_screen()
         this->get_cursor_position(cursor_x, cursor_y);
     }
 
-    this->display.update(
-        this->convert_fb_cb, this->cursor_ovl_cb,
-        this->cursor_on, cursor_x, cursor_y);
+    if (draw_fb) {
+        this->display.update(
+            this->convert_fb_cb, this->cursor_ovl_cb,
+            this->cursor_on, cursor_x, cursor_y);
+    }
 }
 
 void VideoCtrlBase::start_refresh_task() {

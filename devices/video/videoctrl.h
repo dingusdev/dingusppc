@@ -85,6 +85,7 @@ protected:
     int         pixel_format;
     float       pixel_clock;
     float       refresh_rate;
+    bool        draw_fb = true;
 
     uint32_t    palette[256]; // internal DAC palette in RGBA format
 
