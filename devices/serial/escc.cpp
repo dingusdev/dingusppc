@@ -315,7 +315,11 @@ uint8_t EsccChannel::receive_byte()
 
     uint8_t c;
 
-    this->chario->rcv_char(&c);
+    if (this->chario->rcv_char_available_now()) {
+        this->chario->rcv_char(&c);
+    } else {
+        c = 0;
+    }
     this->read_regs[0] &= ~1;
     return c;
 }

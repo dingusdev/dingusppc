@@ -214,7 +214,11 @@ bool CharIoStdin::rcv_char_available()
             consecutivechars = 0;
         return 0;
     }
+    return this->rcv_char_available_now();
+}
 
+bool CharIoStdin::rcv_char_available_now()
+{
     fd_set readfds;
     FD_ZERO(&readfds);
     FD_SET(STDIN_FILENO, &readfds);
@@ -344,7 +348,11 @@ bool CharIoSocket::rcv_char_available()
             consecutivechars = 0;
         return 0;
     }
+    return rcv_char_available_now();
+}
 
+bool CharIoSocket::rcv_char_available_now()
+{
     int sel_rv = 0;
     bool havechars = false;
     fd_set readfds;
@@ -440,7 +448,7 @@ bool CharIoSocket::rcv_char_available()
 int CharIoSocket::xmit_char(uint8_t c)
 {
     if (acceptfd == -1)
-        CharIoSocket::rcv_char_available();
+        CharIoSocket::rcv_char_available_now();
 
     if (acceptfd != -1) {
         int sent = (int)send(acceptfd, &c, 1, 0);
@@ -460,7 +468,7 @@ int CharIoSocket::xmit_char(uint8_t c)
 int CharIoSocket::rcv_char(uint8_t *c)
 {
     if (acceptfd == -1)
-        CharIoSocket::rcv_char_available();
+        CharIoSocket::rcv_char_available_now();
 
     if (acceptfd != -1) {
         int received = (int)recv(acceptfd, c, 1, 0);
