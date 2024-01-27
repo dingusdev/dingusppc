@@ -37,6 +37,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <machines/machinefactory.h>
 #include <machines/machineproperties.h>
 
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -89,11 +90,32 @@ int initialize_pdm(std::string& id)
 
     std::string hd_image_path = GET_STR_PROP("hdd_img");
     if (!hd_image_path.empty()) {
-        // attach SCSI HD to the main bus, ID #0
-        auto my_hd = dynamic_cast<ScsiHardDisk*>(gMachineObj->get_comp_by_name("ScsiHD"));
-        scsi_bus->register_device(0, my_hd);
-        // insert specified disk image
-        my_hd->insert_image(hd_image_path);
+        std::istringstream hd_image_stream(hd_image_path);
+        std::string path;
+        int scsi_id = 0;
+
+        while (std::getline(hd_image_stream, path, ':')) {
+            // Avoid overlapping with the CD-ROM drive at ID 3.
+            if (scsi_id >= 3) {
+                LOG_F(WARNING, "Ignoring SCSI ID %d: only IDs 0-2 are supported", scsi_id);
+                continue;
+            }
+
+            ScsiHardDisk *scsi_hd;
+            if (scsi_id == 0) {
+                // There's always a built-in SCSI hard disk at ID #0
+                scsi_hd = dynamic_cast<ScsiHardDisk*>(gMachineObj->get_comp_by_name("ScsiHD"));
+            } else {
+                // Register additional SCSI hard disks as needed
+                std::string scsi_hd_name = "ScsiHD" + std::to_string(scsi_id);
+                scsi_hd = new ScsiHardDisk(scsi_hd_name, scsi_id);
+                gMachineObj->add_device(scsi_hd_name, std::unique_ptr<ScsiHardDisk>(scsi_hd));
+            }
+
+            scsi_bus->register_device(scsi_id, scsi_hd);
+            scsi_hd->insert_image(path);
+            scsi_id++;
+        }
     }
 
     std::string cdr_image_path = GET_STR_PROP("cdr_img");
