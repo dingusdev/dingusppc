@@ -42,8 +42,8 @@ const uint8_t compat_to_macrisc[6] = {
 EsccController::EsccController()
 {
     // allocate channels
-    this->ch_a = std::unique_ptr<EsccChannel> (new EsccChannel("A"));
-    this->ch_b = std::unique_ptr<EsccChannel> (new EsccChannel("B"));
+    this->ch_a = std::unique_ptr<EsccChannel> (new EsccChannel("ESCC_A"));
+    this->ch_b = std::unique_ptr<EsccChannel> (new EsccChannel("ESCC_B"));
 
     // attach backends
     std::string backend_name = GET_STR_PROP("serial_backend");
@@ -178,7 +178,7 @@ void EsccChannel::attach_backend(int id)
         break;
 #endif
     default:
-        LOG_F(ERROR, "ESCC: unknown backend ID %d, using NULL instead", id);
+        LOG_F(ERROR, "%s: unknown backend ID %d, using NULL instead", this->name.c_str(), id);
         this->chario = std::unique_ptr<CharIoBackEnd> (new CharIoNull);
     }
 }
@@ -227,17 +227,17 @@ void EsccChannel::write_reg(int reg_num, uint8_t value)
         if ((this->write_regs[3] ^ value) & 0x10) {
             this->write_regs[3] |= 0x10;
             this->read_regs[0] |= 0x10; // set SYNC_HUNT flag
-            LOG_F(9, "ESCC: Hunt mode entered.");
+            LOG_F(9, "%s: Hunt mode entered.", this->name.c_str());
         }
         if ((this->write_regs[3] ^ value) & 1) {
             if (value & 1) {
                 this->write_regs[3] |= 0x1;
                 this->chario->rcv_enable();
-                LOG_F(9, "ESCC: receiver enabled.");
+                LOG_F(9, "%s: receiver enabled.", this->name.c_str());
             } else {
                 this->write_regs[3] ^= 0x1;
                 this->chario->rcv_disable();
-                LOG_F(9, "ESCC: receiver disabled.");
+                LOG_F(9, "%s: receiver disabled.", this->name.c_str());
                 this->write_regs[3] |= 0x10; // enter HUNT mode
                 this->read_regs[0] |= 0x10; // set SYNC_HUNT flag
             }
@@ -277,14 +277,14 @@ void EsccChannel::write_reg(int reg_num, uint8_t value)
             this->dpll_mode = DpllMode::NRZI;
             break;
         default:
-            LOG_F(WARNING, "ESCC: unimplemented DPLL command %d", value >> 5);
+            LOG_F(WARNING, "%s: unimplemented DPLL command %d", this->name.c_str(), value >> 5);
         }
         if (value & 0x1C) { // Local Loopback, Auto Echo DTR/REQ bits set
-            LOG_F(WARNING, "ESCC: unexpected value in WR14 = 0x%X", value);
+            LOG_F(WARNING, "%s: unexpected value in WR14 = 0x%X", this->name.c_str(), value);
         }
         if (this->brg_active ^ (value & 1)) {
             this->brg_active = value & 1;
-            LOG_F(9, "ESCC: BRG %s", this->brg_active ? "enabled" : "disabled");
+            LOG_F(9, "%s: BRG %s", this->name.c_str(), this->brg_active ? "enabled" : "disabled");
         }
         return;
     }
