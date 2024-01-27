@@ -81,6 +81,7 @@ public:
 private:
     static void mysig_handler(int signum);
     bool    stdio_inited;
+    int     consecutivechars = 0;
 };
 
 /** Socket character I/O backend. */
@@ -101,6 +102,7 @@ private:
     int     sockfd = -1;
     int     acceptfd = -1;
     const char* path = 0;
+    int     consecutivechars = 0;
 };
 
 #endif // CHAR_IO_H

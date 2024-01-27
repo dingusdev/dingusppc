@@ -206,8 +206,6 @@ void CharIoStdin::rcv_disable()
 
 bool CharIoStdin::rcv_char_available()
 {
-    static int consecutivechars = 0;
-
     if (consecutivechars >= 15) {
         consecutivechars++;
         if (consecutivechars >= 400)
@@ -340,8 +338,6 @@ void CharIoSocket::rcv_disable()
 
 bool CharIoSocket::rcv_char_available()
 {
-    static int consecutivechars = 0;
-
     if (consecutivechars >= 15) {
         consecutivechars++;
         if (consecutivechars >= 800)
@@ -406,7 +402,7 @@ bool CharIoSocket::rcv_char_available_now()
                     memset(&acceptfdaddr, 0, sizeof(acceptfdaddr));
                     socklen_t len = sizeof(acceptfdaddr);
                     acceptfd = accept(sockfd, (struct sockaddr *) &acceptfdaddr, &len);
-                    if (acceptfd == -1){
+                    if (acceptfd == -1) {
                         LOG_F(INFO, "socket accept err: %s", strerror(errno));
                     }
                     else {
@@ -456,7 +452,13 @@ int CharIoSocket::xmit_char(uint8_t c)
             LOG_F(INFO, "socket accept write err: %s", strerror(errno));
         }
         if (sent == 1) {
-            // LOG_F(INFO, "socket accept write '%c'", c);
+            /*
+            if (c < ' ') {
+                LOG_F(INFO, "socket accept write '\\x%02X'", c);
+            } else {
+                LOG_F(INFO, "socket accept write '%c'", c);
+            }
+            */
         }
         else {
             LOG_F(INFO, "socket accept write %d", sent);
@@ -476,7 +478,17 @@ int CharIoSocket::rcv_char(uint8_t *c)
             LOG_F(INFO, "socket accept read err: %s", strerror(errno));
         }
         else if (received == 1) {
-            // LOG_F(INFO, "socket accept read '%c'", c ? *c : 0);
+            /*
+            if (c) {
+                if (*c < ' ') {
+                    LOG_F(INFO, "socket accept write '\\x%02X'", *c);
+                } else {
+                    LOG_F(INFO, "socket accept read '%c'", *c);
+                }
+            } else {
+                LOG_F(INFO, "socket accept read %d", received);
+            }
+            */
         }
         else {
             LOG_F(INFO, "socket accept read %d", received);
