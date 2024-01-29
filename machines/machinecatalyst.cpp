@@ -76,10 +76,6 @@ static const PropMap pm7200_settings = {
         new IntProperty( 0, vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
     {"rambank4_size",
         new IntProperty( 0, vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
-    {"gfxmem_size",
-        new IntProperty( 1, vector<uint32_t>({1, 2, 4}))},
-    {"mon_id",
-        new StrProperty("HiRes12-14in")},
     {"emmo",
         new BinProperty(0)},
 };
