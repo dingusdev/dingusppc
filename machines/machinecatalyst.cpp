@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-23 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @file Constructs a Catalyst (Power Macintosh 7200) machine. */
 
 #include <cpu/ppc/ppcemu.h>
-#include <devices/common/hwcomponent.h>
+#include <devices/common/machineid.h>
 #include <devices/common/pci/pcidevice.h>
 #include <devices/common/pci/pcihost.h>
 #include <devices/memctrl/platinum.h>
@@ -45,6 +45,19 @@ int initialize_catalyst(std::string& id)
     // add the GrandCentral I/O controller
     pci_host->pci_register_device(
         DEV_FUN(0x10,0), dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("GrandCentral")));
+
+    // get (raw) pointer to the I/O controller
+    GrandCentral* gc_obj = dynamic_cast<GrandCentral*>(gMachineObj->get_comp_by_name("GrandCentral"));
+
+    gMachineObj->add_device("BoardReg1", std::unique_ptr<BoardRegister>(
+        new BoardRegister("Board Register 1",
+            0x3F                                | // pull up all PRSNT bits
+            ((GET_BIN_PROP("emmo") ^ 1) << 8)   | // factory tests (active low)
+            (0 << 11)                           | // 2-bit box ID
+            0xE000U                               // pull up unused bits
+    )));
+
+    gc_obj->attach_iodevice(0, dynamic_cast<BoardRegister*>(gMachineObj->get_comp_by_name("BoardReg1")));
 
     // get (raw) pointer to the memory controller
     platinum_obj = dynamic_cast<PlatinumCtrl*>(gMachineObj->get_comp_by_name("Platinum"));
