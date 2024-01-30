@@ -312,9 +312,23 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
         switch (offset >> 4) {
         case ControlRegs::PIPE_DELAY:
             this->swatch_params[(offset >> 4) - ControlRegs::VFPEQ] = value & 0x3FF;
+            if (value & ~0x3FF)
+                LOG_F(ERROR, "%s: write PIPE_DELAY %03x.%c = %0*x", this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
+            else
+                LOG_F(CONTROL, "%s: write PIPE_DELAY %03x.%c = %0*x", this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
+            if (this->display_enabled) {
+                this->enable_display();
+            }
             break;
         case ControlRegs::HEQ:
             this->swatch_params[(offset >> 4) - ControlRegs::VFPEQ] = value & 0xFFU;
+            if (value & ~0xFFU)
+                LOG_F(ERROR, "%s: write HEQ %03x.%c = %0*x", this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
+            else
+                LOG_F(CONTROL, "%s: write HEQ %03x.%c = %0*x", this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
+            if (this->display_enabled) {
+                this->enable_display();
+            }
             break;
         case ControlRegs::VFPEQ:
         case ControlRegs::VFP:
@@ -331,6 +345,13 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
         case ControlRegs::HLFLN:
         case ControlRegs::HSERR:
             this->swatch_params[(offset >> 4) - ControlRegs::VFPEQ] = value & 0xFFF;
+            if (value & ~0xFFF)
+                LOG_F(ERROR, "%s: write %s %03x.%c = %0*x", this->name.c_str(), get_name_controlreg(offset), offset, SIZE_ARG(size), size * 2, value);
+            else
+                LOG_F(CONTROL, "%s: write %s %03x.%c = %0*x", this->name.c_str(), get_name_controlreg(offset), offset, SIZE_ARG(size), size * 2, value);
+            if (this->display_enabled) {
+                this->enable_display();
+            }
             break;
         case ControlRegs::CNTTST:
             if (value)
@@ -346,10 +367,13 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
                 if (value & RESET_TIMING) { // count 0-to-1 transitions
                     this->strobe_counter++;
                     if (this->strobe_counter >= 2) {
-                        if (value & DISABLE_TIMING)
+                        if (value & DISABLE_TIMING) {
                             disable_display();
-                        else
+                            this->display_enabled = false;
+                        } else {
                             enable_display();
+                            this->display_enabled = true;
+                        }
                     }
                 }
             } else
@@ -357,9 +381,15 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
             break;
         case ControlRegs::GBASE:
             this->fb_base = value & 0x3FFFE0;
+            if (this->display_enabled) {
+                this->enable_display();
+            }
             break;
         case ControlRegs::ROW_WORDS:
             this->row_words = value & 0x7FE0;
+            if (this->display_enabled) {
+                this->enable_display();
+            }
             break;
         case ControlRegs::MON_SENSE: {
                 uint8_t dirs   = ((value >> 3) & 7) ^ 7;
@@ -383,6 +413,9 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
             break;
         case ControlRegs::GSC_DIVIDE:
             this->clock_divider = value & 3;
+            if (this->display_enabled) {
+                this->enable_display();
+            }
             break;
         case ControlRegs::REFRESH_COUNT:
             LOG_F(9, "Control: VRAM refresh count set to %d", value);
