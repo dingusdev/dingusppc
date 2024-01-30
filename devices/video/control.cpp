@@ -103,9 +103,9 @@ ControlVideo::ControlVideo()
     };
     this->radacal->cursor_ctrl_cb = [this](bool cursor_on) {
         if (cursor_on) {
-            this->radacal->measure_hw_cursor(&this->vram_ptr[this->fb_base]);
+            this->radacal->measure_hw_cursor(this->fb_ptr - 16);
             this->cursor_ovl_cb = [this](uint8_t *dst_buf, int dst_pitch) {
-                this->radacal->draw_hw_cursor(&this->vram_ptr[this->fb_base],
+                this->radacal->draw_hw_cursor(this->fb_ptr - 16,
                     dst_buf, dst_pitch);
             };
         } else {
@@ -432,8 +432,20 @@ void ControlVideo::enable_display()
     this->fb_pitch = this->row_words;
 
     this->pixel_depth = this->radacal->get_pix_width();
-    if (pixel_depth > 8)
-        this->fb_ptr += 16;
+    if (swatch_params[ControlRegs::HAL-1] != swatch_params[ControlRegs::PIPE_DELAY-1] + 1 || this->pixel_depth == 32) {
+        // don't know how to calculate offset from GBASE (fb_base); it is always hard coded as + 16 in the ndrv.
+        this->fb_ptr += 16; // first 16 bytes are for 4 bpp HW cursor
+    }
+    else {
+        /*
+         Open Firmware frame buffer has these properties:
+         - GBASE == 0 // no offset from vram_ptr
+         - fb_ptr == vram_ptr // no offset from GBASE
+         - active_width == ROW_WORDS (row_words) // no offset between rows
+         - HAL == PIPE_DELAY + 1
+         - depth_mode = 0 // 8 bit indexed
+         */
+    }
 
     // get pixel depth from RaDACal
     switch (this->pixel_depth) {
