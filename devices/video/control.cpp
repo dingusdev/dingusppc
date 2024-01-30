@@ -444,7 +444,7 @@ void ControlVideo::enable_display()
         break;
     case 16:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
-            this->convert_frame_15bpp(dst_buf, dst_pitch);
+            this->convert_frame_15bpp_BE(dst_buf, dst_pitch);
         };
         break;
     case 32:
