@@ -80,6 +80,8 @@ enum {
 enum {
     SCAN_CONTROL        = 1 <<  0, // 0 - interlaced, 1 - progressive
     FB_ENDIAN_LITTLE    = 1 <<  1, // framebuffer endianness: 0 - big, 1 - little
+//  ?                   = 1 <<  4,
+//  ?                   = 1 <<  5,
     VRAM_WIDE_MODE      = 1 <<  6, // VRAM bus width: 1 - 128bit, 0 - 64bit
     BLANK_DISABLE       = 1 << 11, // 0 - enable blanking, 1 - disable it
 };
@@ -153,7 +155,7 @@ private:
     int         strobe_counter = 0;
     uint8_t     num_banks = 0;
     uint8_t     cur_mon_id = 0;
-    uint8_t     enables = 0;
+    uint16_t    enables = 0;
     uint8_t     int_enable = 0;
     uint8_t     int_status = 0;
     uint8_t     last_int_status = -1;
