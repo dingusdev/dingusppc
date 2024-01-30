@@ -92,7 +92,7 @@ public:
     ~BoardRegister() = default;
 
     uint16_t iodev_read(uint32_t address) {
-        return (!address) ? this->data : 0xFFFFU;
+        return this->data;
     };
 
     // appears read-only to guest
