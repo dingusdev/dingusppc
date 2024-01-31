@@ -47,20 +47,20 @@ enum ControlRegs : int {
     VBPEQ           = 0x05, // vertical back porch with EQ      (rw) 12 bits
     VSYNC           = 0x06, // vertical sync starting point     (rw) 12 bits
     VHLINE          = 0x07, // vertical half line               (rw) 12 bits
-    PIPE_DELAY      = 0x08, // controls pixel pipe delay        (rw) 12 bits
+    PIPE_DELAY      = 0x08, // controls pixel pipe delay        (rw) 10 bits, ndrv says 12 bits but only 10 are writable
     HPIX            = 0x09, // horizontal pixel count           (rw) 12 bits
     HFP             = 0x0A, // horizontal front porch           (rw) 12 bits
     HAL             = 0x0B, // horizontal active line           (rw) 12 bits
     HBWAY           = 0x0C, // horizontal breezeway             (rw) 12 bits
     HSP             = 0x0D, // horizontal sync starting point   (rw) 12 bits
-    HEQ             = 0x0E, // horizontal equalization          (rw) 12 bits
+    HEQ             = 0x0E, // horizontal equalization          (rw)  8 bits, ndrv says 12 bits but only 8 are writable
     HLFLN           = 0x0F, // horizontal half line             (rw) 12 bits
     HSERR           = 0x10, // horizontal serration             (rw) 12 bits
     CNTTST          = 0x11, // Swatch counter test value        (rw) 12 bits
     SWATCH_CTRL     = 0x12, // Swatch timing generator control  (rw) 11 bits
     GBASE           = 0x13, // graphics base address            (rw) 22 bits, 32 byte aligned
     ROW_WORDS       = 0x14, // framebuffer pitch                (rw) 15 bits, 32 byte aligned
-    MON_SENSE       = 0x15, // Monitor sense control & status   (rw)  9 bits
+    MON_SENSE       = 0x15, // Monitor sense control & status   (rw)  9 bits (three groups of 3-bits; the two LSB groups are writable)
     MISC_ENABLES    = 0x16, // controls chip's features         (rw) 12 bits
     GSC_DIVIDE      = 0x17, // graphics clock divide count      (rw)  2 bits
     REFRESH_COUNT   = 0x18, // VRAM refresh counter             (rw) 10 bits
@@ -72,18 +72,33 @@ enum ControlRegs : int {
 
 // Bit definitions for the video timing generator (Swatch) control register.
 enum {
+//  1               = 1 <<  0, //
+//  1               = 1 <<  1, //
+    VSYNC_POLARITY  = 1 <<  2, // 0 - negative, 1 - positive
     RESET_TIMING    = 1 <<  3, // toggle this bit to change timing parameters
+//  1               = 1 <<  4, //
+//  1               = 1 <<  5, //
+    HSYNC_POLARITY  = 1 <<  6, // 0 - negative, 1 - positive
+//  0               = 1 <<  7, //
+    INTERLACED      = 1 <<  8, // 0 - progressive, 1 = interlaced
+//  0=unused        = 1 <<  9,
     DISABLE_TIMING  = 1 << 10, // 1 - disable video timing, 0 - enable it
 };
 
 // Bit definitions for MISC_ENABLES register.
 enum {
-    SCAN_CONTROL        = 1 <<  0, // 0 - interlaced, 1 - progressive
-    FB_ENDIAN_LITTLE    = 1 <<  1, // framebuffer endianness: 0 - big, 1 - little
-//  ?                   = 1 <<  4,
-//  ?                   = 1 <<  5,
-    VRAM_WIDE_MODE      = 1 <<  6, // VRAM bus width: 1 - 128bit, 0 - 64bit
-    BLANK_DISABLE       = 1 << 11, // 0 - enable blanking, 1 - disable it
+    SCAN_CONTROL          = 1 <<  0, // 0 - interlaced, 1 - progressive; opposite of INTERLACED above
+    FB_ENDIAN_LITTLE      = 1 <<  1, // framebuffer endianness: 0 - big, 1 - little // 1 also makes ControlRegs big endian
+    DOUBLE_BUFFERING      = 1 <<  2, // the same data transfers are generated for both the standard bank of VRAM and the optional bank
+    STANDARD_BANK_DISABLE = 1 <<  3, // 0 - data transfers are to be performed for the standard bank of VRAM
+    SHIFT_CLOCK           = 1 <<  4, // shift clock is to be generated
+    DETECT_PAGE_HITS      = 1 <<  5, // VRAM state machines detect page hits on the system bus to frame buffer single beat writes
+    VRAM_WIDE_MODE        = 1 <<  6, // VRAM bus width: 1 - 128bit, 0 - 64bit
+    MHZ_30_50             = 1 <<  7, // 0 - 50 MHz, 1 - 33 MHz // setting this to 33 MHz causes system to hang
+    VSYNC_DISABLE         = 1 <<  8, // 0 - enable vertical sync, 1 - disable it
+    HSYNC_DISABLE         = 1 <<  9, // 0 - enable horizontal sync, 1 - disable it
+    CSYNC_DISABLE         = 1 << 10, // 0 - enable composite sync, 1 - disable it
+    BLANK_DISABLE         = 1 << 11, // 0 - enable blanking, 1 - disable it
 };
 
 // Bit definitions for INT_ENABLE & INT_STATUS registers.
@@ -92,24 +107,6 @@ enum {
     VBL_IRQ_EN   = 1 << 2, // VBL interrupt enable bit (INT_ENABLE)
     VBL_IRQ_STAT = 1 << 2, // VBL interrupt status bit (INT_STATUS)
 };
-
-namespace RadacalRegs {
-
-enum RadacalRegs : uint8_t {
-    ADDRESS         = 0, // address register
-    CURSOR_CLUT     = 1, // cursor palette data
-    MULTI           = 2, // multipurpose section
-    CLUT_DATA       = 3, // color palette data
-
-    // multipurpose section registers
-    CURSOR_POS_HI   = 0x10, // cursor position, high-order byte
-    CURSOR_POS_LO   = 0x11, // cursor position, low-order byte
-    MISC_CTRL       = 0x20, // miscellaneus control bits
-    DBL_BUF_CTRL    = 0x21, // double buffer control bits
-    TEST_CTRL       = 0x22, // enable/disable DAC tests
-};
-
-}; // namespace RadacalRegs
 
 class ControlVideo : public PCIDevice, public VideoCtrlBase {
 public:
