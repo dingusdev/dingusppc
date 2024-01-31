@@ -153,7 +153,7 @@ private:
     uint32_t    fb_base = 0;
     uint16_t    swatch_params[16];
     int         strobe_counter = 0;
-    uint8_t     num_banks = 0;
+    uint8_t     vram_banks = 0;
     uint8_t     cur_mon_id = 0;
     uint16_t    enables = 0;
     uint8_t     int_enable = 0;

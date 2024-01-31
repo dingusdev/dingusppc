@@ -64,8 +64,27 @@ ControlVideo::ControlVideo()
     // get VRAM size in MBs and convert it to bytes
     this->vram_size = GET_INT_PROP("gfxmem_size") << 20;
 
-    // calculate number of VRAM banks from VRAM size
-    this->num_banks = this->vram_size >> 21; // 2 MB => 1 bank, 4 MB >> 2 banks
+    // get VRAM banks
+    this->vram_banks = GET_INT_PROP("gfxmem_banks"); // bit 0: standard bank; bit 1: optional bank
+
+    switch(this->vram_banks) {
+        case 0:
+            this->vram_size = 0;
+            break;
+        case 1:
+        case 2:
+            this->vram_size = 2 << 20;
+            break;
+        default:
+            switch (this->vram_size) {
+                case 0:
+                    this->vram_banks = 0;
+                    break;
+                case 2:
+                    this->vram_banks = 1;
+                    break;
+            }
+    }
 
     // allocate VRAM
     this->vram_ptr = std::unique_ptr<uint8_t[]> (new uint8_t[this->vram_size]);
@@ -202,16 +221,64 @@ static const char * get_name_controlreg(int offset) {
 uint32_t ControlVideo::read(uint32_t rgn_start, uint32_t offset, int size)
 {
     if (rgn_start == this->vram_base) {
-        if (offset >= 0x800000) {
+        if (offset & 0x800000) { // repeats every 16MB
             // HACK: writing to VRAM in 128bit mode with only the standard
             // bank populated seems to replicate the first 64bit portion of data
             // in the second 64bit portion. This "feature" is used by
             // the Mac OS driver to detect how much physical VRAM is installed.
             // I handle this case here because reads from VRAM seem to happen
             // far less frequently than writes.
-            if ((this->enables & VRAM_WIDE_MODE) && this->num_banks == 1)
-                offset &= ~8UL;
-            return read_mem(&this->vram_ptr[offset & 0x3FFFFF], size);
+            if (this->enables & VRAM_WIDE_MODE) {
+                // Note: we ignore access to 4MB range at 0xC00000 because it is undefined for VRAM_WIDE_MODE.
+                // There is data there but it is not in the same order as the first 4MB.
+                switch (this->vram_banks) {
+                    case 0: // no banks
+                        return 0;
+                    case 1: // standard bank
+                        // FIXME: verify real Power Mac behavior with only standard bank
+                        offset &= ~8UL;
+                        return read_mem(&this->vram_ptr[offset & 0x1FFFFF], size);
+                    case 2: // optional bank
+                        // FIXME: verify real Power Mac behavior with only optional bank
+                        offset |= 8UL;
+                        return read_mem(&this->vram_ptr[offset & 0x1FFFFF], size);
+                    case 3: // both banks
+                        return read_mem(&this->vram_ptr[offset & 0x3FFFFF], size);
+                }
+            }
+            else {
+                switch (this->vram_banks) {
+                    case 0: // no banks
+                        return 0;
+                    case 1: // standard bank
+                        switch ((offset >> 21) & 3) {
+                            case 0: // mirror
+                            case 1: // mirror
+                            case 2: // standard bank
+                                return read_mem(&this->vram_ptr[offset & 0x1FFFFF], size);
+                            case 3: // optional bank
+                                return 0;
+                        }
+                    case 2: // optional bank
+                        switch ((offset >> 21) & 3) {
+                            case 0: // mirror
+                            case 1: // mirror
+                            case 2: // standard bank
+                                return 0;
+                            case 3: // optional bank
+                                return read_mem(&this->vram_ptr[offset & 0x1FFFFF], size);
+                        }
+                    case 3: // both banks
+                        switch ((offset >> 21) & 3) {
+                            case 0: // mirror
+                            case 1: // mirror
+                            case 2: // standard bank
+                                return read_mem(&this->vram_ptr[offset & 0x1FFFFF], size);
+                            case 3: // optional bank
+                                return read_mem(&this->vram_ptr[offset & 0x1FFFFF + 0x200000], size);
+                        }
+                } // switch
+            } // if not VRAM_WIDE_MODE
         }
 
         LOG_F(ERROR, "%s: read from unmapped aperture address 0x%X", this->name.c_str(),
@@ -297,8 +364,61 @@ uint32_t ControlVideo::read(uint32_t rgn_start, uint32_t offset, int size)
 void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
 {
     if (rgn_start == this->vram_base) {
-        if (offset >= 0x800000) {
-            write_mem(&this->vram_ptr[offset & 0x3FFFFF], value, size);
+        if (offset & 0x800000) {
+            if (this->enables & VRAM_WIDE_MODE) {
+                // Note: we ignore access to 4MB range at 0xC00000 because it is undefined for VRAM_WIDE_MODE.
+                // There is data there but it is not in the same order as the first 4MB.
+                switch (this->vram_banks) {
+                    case 0: // no banks
+                        return;
+                    case 1: // standard bank
+                        // FIXME: verify real Power Mac behavior with only standard bank
+                        offset &= ~8UL;
+                        return write_mem(&this->vram_ptr[offset & 0x1FFFFF], value, size);
+                    case 2: // optional bank
+                        // FIXME: verify real Power Mac behavior with only optional bank
+                        offset |= 8UL;
+                        return write_mem(&this->vram_ptr[offset & 0x1FFFFF], value, size);
+                    case 3: // both banks
+                        return write_mem(&this->vram_ptr[offset & 0x3FFFFF], value, size);
+                }
+            }
+            else {
+                switch (this->vram_banks) {
+                    case 0: // no banks
+                        return;
+                    case 1: // standard bank
+                        switch ((offset >> 21) & 3) {
+                            case 0: // mirror
+                            case 1: // mirror
+                            case 2: // standard bank
+                                return write_mem(&this->vram_ptr[offset & 0x1FFFFF], value, size);
+                            case 3: // optional bank
+                                return;
+                        }
+                    case 2: // optional bank
+                        switch ((offset >> 21) & 3) {
+                            case 0: // mirror
+                            case 1: // mirror
+                            case 3: // optional bank
+                                return write_mem(&this->vram_ptr[offset & 0x1FFFFF], value, size);
+                            case 2: // standard bank
+                                return;
+                        }
+                    case 3: // both banks
+                        switch ((offset >> 21) & 3) {
+                            case 0: // mirror
+                            case 1: // mirror
+                                write_mem(&this->vram_ptr[offset & 0x1FFFFF], value, size);
+                                write_mem(&this->vram_ptr[offset & 0x1FFFFF + 0x200000], value, size);
+                                return;
+                            case 2: // standard bank
+                                return write_mem(&this->vram_ptr[offset & 0x1FFFFF], value, size);
+                            case 3: // optional bank
+                                return write_mem(&this->vram_ptr[offset & 0x1FFFFF + 0x200000], value, size);
+                        }
+                } // switch
+            } // if not VRAM_WIDE_MODE
         } else {
             LOG_F(ERROR, "%s: write to unmapped aperture address 0x%X", this->name.c_str(),
                   this->vram_base + offset);
@@ -480,6 +600,9 @@ void ControlVideo::enable_display()
          - depth_mode = 0 // 8 bit indexed
          */
     }
+    if (this->radacal->get_dbl_buf_cr() == 0 && this->vram_banks == 3) {
+        this->fb_ptr += 0x200000;
+    }
 
     // get pixel depth from RaDACal
     switch (this->pixel_depth) {
@@ -550,8 +673,10 @@ void ControlVideo::disable_display()
 // ========================== Device registry stuff ==========================
 
 static const PropMap Control_Properties = {
+    {"gfxmem_banks",
+        new IntProperty(3, vector<uint32_t>({0, 1, 2, 3}))},
     {"gfxmem_size",
-        new IntProperty( 4, vector<uint32_t>({1, 2, 4}))},
+        new IntProperty(4, vector<uint32_t>({0, 2, 4}))},
     {"mon_id",
         new StrProperty("AppleVision1710")},
 };
