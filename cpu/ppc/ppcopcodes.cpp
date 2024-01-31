@@ -60,7 +60,7 @@ void ppc_store_result_rega() {
 void ppc_grab_regsdasimm() {
     reg_d        = (ppc_cur_instruction >> 21) & 31;
     reg_a        = (ppc_cur_instruction >> 16) & 31;
-    simm         = int32_t(int16_t(ppc_cur_instruction & 0xFFFFUL));
+    simm         = int32_t(int16_t(ppc_cur_instruction));
     ppc_result_a = ppc_state.gpr[reg_a];
 }
 
@@ -73,7 +73,7 @@ inline void ppc_grab_regsdauimm() {
 
 inline void ppc_grab_regsasimm() {
     reg_a        = (ppc_cur_instruction >> 16) & 31;
-    simm         = int32_t(int16_t(ppc_cur_instruction & 0xFFFFUL));
+    simm         = int32_t(int16_t(ppc_cur_instruction));
     ppc_result_a = ppc_state.gpr[reg_a];
 }
 
@@ -1577,7 +1577,7 @@ void dppc_interpreter::ppc_stb() {
     num_int_stores++;
 #endif
     ppc_grab_regssa();
-    ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
+    ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
     ppc_effective_address += reg_a ? ppc_result_a : 0;
     mmu_write_vmem<uint8_t>(ppc_effective_address, ppc_result_d);
     //mem_write_byte(ppc_effective_address, ppc_result_d);
@@ -1599,7 +1599,7 @@ void dppc_interpreter::ppc_stbu() {
 #endif
     ppc_grab_regssa();
     if (reg_a != 0) {
-        ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
+        ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
         ppc_effective_address += ppc_result_a;
         mmu_write_vmem<uint8_t>(ppc_effective_address, ppc_result_d);
         //mem_write_byte(ppc_effective_address, ppc_result_d);
@@ -1629,7 +1629,7 @@ void dppc_interpreter::ppc_sth() {
     num_int_stores++;
 #endif
     ppc_grab_regssa();
-    ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
+    ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
     ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
     mmu_write_vmem<uint16_t>(ppc_effective_address, ppc_result_d);
     //mem_write_word(ppc_effective_address, ppc_result_d);
@@ -1641,7 +1641,7 @@ void dppc_interpreter::ppc_sthu() {
 #endif
     ppc_grab_regssa();
     if (reg_a != 0) {
-        ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
+        ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
         ppc_effective_address += ppc_result_a;
         mmu_write_vmem<uint16_t>(ppc_effective_address, ppc_result_d);
         //mem_write_word(ppc_effective_address, ppc_result_d);
@@ -1692,7 +1692,7 @@ void dppc_interpreter::ppc_stw() {
     num_int_stores++;
 #endif
     ppc_grab_regssa();
-    ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
+    ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
     ppc_effective_address += reg_a ? ppc_result_a : 0;
     mmu_write_vmem<uint32_t>(ppc_effective_address, ppc_result_d);
     //mem_write_dword(ppc_effective_address, ppc_result_d);
@@ -1733,7 +1733,7 @@ void dppc_interpreter::ppc_stwu() {
 #endif
     ppc_grab_regssa();
     if (reg_a != 0) {
-        ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
+        ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
         ppc_effective_address += ppc_result_a;
         mmu_write_vmem<uint32_t>(ppc_effective_address, ppc_result_d);
         //mem_write_dword(ppc_effective_address, ppc_result_d);
@@ -1774,7 +1774,7 @@ void dppc_interpreter::ppc_stmw() {
     num_int_stores++;
 #endif
     ppc_grab_regssa();
-    ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
+    ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
     ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
 
     /* what should we do if EA is unaligned? */
@@ -1794,7 +1794,7 @@ void dppc_interpreter::ppc_lbz() {
     num_int_loads++;
 #endif
     ppc_grab_regsda();
-    ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
+    ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
     ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
     //ppc_result_d = mem_grab_byte(ppc_effective_address);
     ppc_result_d = mmu_read_vmem<uint8_t>(ppc_effective_address);
@@ -1806,7 +1806,7 @@ void dppc_interpreter::ppc_lbzu() {
     num_int_loads++;
 #endif
     ppc_grab_regsda();
-    ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
+    ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
     if ((reg_a != reg_d) || reg_a != 0) {
         ppc_effective_address += ppc_result_a;
         //ppc_result_d = mem_grab_byte(ppc_effective_address);
@@ -1853,7 +1853,7 @@ void dppc_interpreter::ppc_lhz() {
     num_int_loads++;
 #endif
     ppc_grab_regsda();
-    ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
+    ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
     ppc_effective_address += reg_a ? ppc_result_a : 0;
     //ppc_result_d = mem_grab_word(ppc_effective_address);
     ppc_result_d = mmu_read_vmem<uint16_t>(ppc_effective_address);
@@ -1866,7 +1866,7 @@ void dppc_interpreter::ppc_lhzu() {
 #endif
     ppc_grab_regsda();
     if ((reg_a != reg_d) || reg_a != 0) {
-        ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
+        ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
         ppc_effective_address += ppc_result_a;
         //ppc_result_d = mem_grab_word(ppc_effective_address);
         ppc_result_d = mmu_read_vmem<uint16_t>(ppc_effective_address);
@@ -1911,7 +1911,7 @@ void dppc_interpreter::ppc_lha() {
     num_int_loads++;
 #endif
     ppc_grab_regsda();
-    ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
+    ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
     ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
     //uint16_t val = mem_grab_word(ppc_effective_address);
     uint16_t val = mmu_read_vmem<uint16_t>(ppc_effective_address);
@@ -1925,7 +1925,7 @@ void dppc_interpreter::ppc_lhau() {
 #endif
     ppc_grab_regsda();
     if ((reg_a != reg_d) || reg_a != 0) {
-        ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
+        ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
         ppc_effective_address += ppc_result_a;
         //uint16_t val = mem_grab_word(ppc_effective_address);
         uint16_t val = mmu_read_vmem<uint16_t>(ppc_effective_address);
@@ -1985,7 +1985,7 @@ void dppc_interpreter::ppc_lwz() {
     num_int_loads++;
 #endif
     ppc_grab_regsda();
-    ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
+    ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
     ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
     //ppc_result_d = mem_grab_dword(ppc_effective_address);
     ppc_result_d = mmu_read_vmem<uint32_t>(ppc_effective_address);
@@ -2008,7 +2008,7 @@ void dppc_interpreter::ppc_lwzu() {
     num_int_loads++;
 #endif
     ppc_grab_regsda();
-    ppc_effective_address = (int32_t)((int16_t)(ppc_cur_instruction & 0xFFFF));
+    ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
     if ((reg_a != reg_d) || reg_a != 0) {
         ppc_effective_address += ppc_result_a;
         //ppc_result_d = mem_grab_dword(ppc_effective_address);
