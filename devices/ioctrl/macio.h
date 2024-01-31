@@ -83,7 +83,10 @@ enum {
     MIO_INT_EVENTS1 = 0x20,
     MIO_INT_MASK1   = 0x24,
     MIO_INT_CLEAR1  = 0x28,
-    MIO_INT_LEVELS1 = 0x2C
+    MIO_INT_LEVELS1 = 0x2C,
+
+    MIO_FATMAN_FLAGS = 0x34,
+    // 0x300000 bits for composite/s-video connected displays (1 = disconnected)
 };
 
 class IobusDevice {
