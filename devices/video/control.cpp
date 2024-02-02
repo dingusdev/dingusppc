@@ -282,9 +282,9 @@ uint32_t ControlVideo::read(uint32_t rgn_start, uint32_t offset, int size)
         return 0;
     }
 
-    uint32_t value;
-
     if (rgn_start == this->regs_base) {
+        uint32_t value;
+
         switch (offset >> 4) {
         case ControlRegs::CUR_LINE:
             value = 0; // current active video line should relate this to refresh rate
