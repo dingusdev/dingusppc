@@ -140,28 +140,24 @@ ControlVideo::ControlVideo()
     this->display_id = std::unique_ptr<DisplayID> (new DisplayID());
 }
 
+void ControlVideo::change_one_bar(uint32_t &aperture, uint32_t aperture_size, uint32_t aperture_new, int bar_num) {
+    if (aperture != aperture_new) {
+        if (aperture)
+            this->host_instance->pci_unregister_mmio_region(aperture, aperture_size, this);
+
+        aperture = aperture_new;
+        if (aperture)
+            this->host_instance->pci_register_mmio_region(aperture, aperture_size, this);
+
+        LOG_F(INFO, "%s: aperture[%d] set to 0x%08X", this->name.c_str(), bar_num, aperture);
+    }
+}
+
 void ControlVideo::notify_bar_change(int bar_num) {
     switch (bar_num) {
-    case 0:
-        this->io_base = this->bars[bar_num] & ~3;
-        LOG_F(INFO, "Control: I/O space address set to 0x%08X", this->io_base);
-        break;
-    case 1:
-        if (this->regs_base != (this->bars[bar_num] & 0xFFFFFFF0UL)) {
-            this->regs_base = this->bars[bar_num] & 0xFFFFFFF0UL;
-            this->host_instance->pci_register_mmio_region(this->regs_base,
-                0x1000, this);
-            LOG_F(INFO, "Control: register aperture set to 0x%08X", this->regs_base);
-        }
-        break;
-    case 2:
-        if (this->vram_base != (this->bars[bar_num] & 0xFFFFFFF0UL)) {
-            this->vram_base = this->bars[bar_num] & 0xFFFFFFF0UL;
-            this->host_instance->pci_register_mmio_region(this->vram_base,
-                0x04000000, this);
-            LOG_F(INFO, "Control: VRAM aperture set to 0x%08X", this->vram_base);
-        }
-        break;
+    case 0: change_one_bar(this->io_base  ,          4, this->bars[bar_num] & ~ 3, bar_num); break;
+    case 1: change_one_bar(this->regs_base,     0x1000, this->bars[bar_num] & ~15, bar_num); break;
+    case 2: change_one_bar(this->vram_base, 0x04000000, this->bars[bar_num] & ~15, bar_num); break;
     }
 }
 

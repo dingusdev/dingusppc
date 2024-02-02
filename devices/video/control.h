@@ -127,6 +127,7 @@ public:
     void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size);
 
 protected:
+    void change_one_bar(uint32_t &aperture, uint32_t aperture_size, uint32_t aperture_new, int bar_num);
     void notify_bar_change(int bar_num);
 
     void enable_display();
