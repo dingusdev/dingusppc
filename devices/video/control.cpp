@@ -531,8 +531,7 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
             }
             this->enables = value & 0xFFF;
             if (this->enables & FB_ENDIAN_LITTLE)
-                ABORT_F("%s: little-endian framebuffer is not implemented yet",
-                        this->name.c_str());
+                LOG_F(ERROR, "%s: little-endian framebuffer is not implemented yet", this->name.c_str());
             break;
         case ControlRegs::GSC_DIVIDE:
             this->clock_divider = value & 3;
