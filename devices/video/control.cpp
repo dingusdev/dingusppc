@@ -325,7 +325,8 @@ uint32_t ControlVideo::read(uint32_t rgn_start, uint32_t offset, int size)
             value = this->row_words;
             break;
         case ControlRegs::MON_SENSE:
-            value = this->cur_mon_id << 6;
+            value = (this->cur_mon_id << 6) | this->mon_sense;
+            LOG_F(CONTROL, "%s: read  MON_SENSE %03x.%c = %0*x", this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
             break;
         case ControlRegs::MISC_ENABLES:
             value = this->enables;
@@ -474,6 +475,7 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
             }
             break;
         case ControlRegs::CNTTST:
+            this->cnt_tst = value & 0xFFF;
             if (value)
                 LOG_F(WARNING, "%s: CNTTST set to 0x%X", this->name.c_str(), value);
             break;
@@ -512,8 +514,13 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
             }
             break;
         case ControlRegs::MON_SENSE: {
+                if (value & ~0x3F)
+                    LOG_F(ERROR, "%s: write MON_SENSE %03x.%c = %0*x", this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
+                else
+                    LOG_F(CONTROL, "%s: write MON_SENSE %03x.%c = %0*x", this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
                 uint8_t dirs   = ((value >> 3) & 7) ^ 7;
                 uint8_t levels = ((value & 7) & dirs) | (dirs ^ 7);
+                this->mon_sense = value & 0x3F;
                 this->cur_mon_id = this->display_id->read_monitor_sense(levels, dirs);
             }
             break;
