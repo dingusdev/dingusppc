@@ -52,24 +52,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #   warning "Unknown byte swapping built-ins (do it the slow way)!"
 
-#   define BYTESWAP_16(x) ((x) >> 8)  | (((x) & 0xFFUL) << 8)
+#   define BYTESWAP_16(x) (((x) >> 8)  | (((x) & 0xFFUL) << 8))
 
-#   define BYTESWAP_32(x) ((x) >> 24) | (((x) >> 8) & 0xFF00UL) | \
-                         (((x) & 0xFF00UL) << 8) | ((x) << 24)
+#   define BYTESWAP_32(x) (((x) >> 24) | (((x) >> 8) & 0xFF00UL) | \
+                         (((x) & 0xFF00UL) << 8) | ((x) << 24))
 
 #   define BYTESWAP_64(x)                       \
-         ((x) >> 56)                          | \
+        (((x) >> 56)                          | \
         (((x) & 0x00FF000000000000ULL) >> 48) | \
         (((x) & 0x0000FF0000000000ULL) >> 40) | \
         (((x) & 0x000000FF00000000ULL) >> 32) | \
         (((x) & 0x00000000FF000000ULL) << 32) | \
         (((x) & 0x0000000000FF0000ULL) << 40) | \
         (((x) & 0x000000000000FF00ULL) << 48) | \
-        (((x) & 0x00000000000000FFULL) << 56)
+        (((x) & 0x00000000000000FFULL) << 56))
 
 #endif
 
 #define BYTESWAP_SIZED(val, size) \
-    (size) == 2 ? BYTESWAP_16((val)) : ((size) == 4 ? BYTESWAP_32((val)) : (val))
+    ((size) == 2 ? BYTESWAP_16(val) : (size) == 4 ? BYTESWAP_32(val) : (val))
 
 #endif /* ENDIAN_SWAP_H */
