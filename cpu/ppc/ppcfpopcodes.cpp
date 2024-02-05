@@ -254,7 +254,6 @@ void dppc_interpreter::ppc_fsub() {
     }
 
     double ppc_dblresult64_d = val_reg_a - val_reg_b;
-
     ppc_store_dfpresult_flt(reg_d);
     fpresult_update(ppc_dblresult64_d);
 
