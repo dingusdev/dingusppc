@@ -123,11 +123,7 @@ inline void ppc_update_cr1() {
 }
 
 int32_t round_to_nearest(double f) {
-    if (f >= 0.0) {
-        return static_cast<int32_t>(static_cast<int64_t> (std::ceil(f)));
-    } else {
-        return static_cast<int32_t>(static_cast<int64_t> (std::floor(f)));
-    }
+    return static_cast<int32_t>(static_cast<int64_t> (std::floor(f + 0.5)));
 }
 
 void set_host_rounding_mode(uint8_t mode) {
