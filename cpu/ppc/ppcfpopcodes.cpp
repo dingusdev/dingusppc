@@ -869,7 +869,16 @@ void dppc_interpreter::ppc_fmr() {
 void dppc_interpreter::ppc_mffs() {
     ppc_grab_regsda();
 
-    ppc_state.fpr[reg_d].int64_r = (uint64_t)ppc_state.fpscr;
+    ppc_state.fpr[reg_d].int64_r = (uint64_t)ppc_state.fpscr | 0xFFF8000000000000ULL;
+
+    if (rc_flag)
+        ppc_update_cr1();
+}
+
+void dppc_interpreter::ppc_mffs_601() {
+    ppc_grab_regsda();
+
+    ppc_state.fpr[reg_d].int64_r = (uint64_t)ppc_state.fpscr | 0xFFFFFFFF00000000ULL;
 
     if (rc_flag)
         ppc_update_cr1();

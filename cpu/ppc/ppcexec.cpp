@@ -781,6 +781,8 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, uint64_t tb_freq)
             SubOpcode63Grabber[i + 23] = ppc_illegalop; // fsel
         }
         SubOpcode63Grabber[26]  = ppc_illegalop; // frsqrte;
+
+        SubOpcode63Grabber[583] = ppc_mffs_601;
     }
     if (cpu_version != PPC_VER::MPC970MP) {
         SubOpcode59Grabber[22] = ppc_illegalop; // fsqrts

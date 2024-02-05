@@ -521,6 +521,7 @@ extern void ppc_mtfsb1();
 extern void ppc_mcrfs();
 extern void ppc_fmr();
 extern void ppc_mffs();
+extern void ppc_mffs_601();
 extern void ppc_mtfsf();
 extern void ppc_mtfsfi();
 
