@@ -167,10 +167,10 @@ void update_fex() {
     ppc_state.fpscr = (ppc_state.fpscr & ~0x40000000) | (fex_result << 30);
 }
 
-template <typename T, const FPOP fpop>
+template <const FPOP fpop>
 void ppc_confirm_inf_nan(int chosen_reg_1, int chosen_reg_2, bool rc_flag = false) {
-    T input_a = T(ppc_state.fpr[chosen_reg_1].dbl64_r);
-    T input_b = T(ppc_state.fpr[chosen_reg_2].dbl64_r);
+    double input_a = ppc_state.fpr[chosen_reg_1].dbl64_r;
+    double input_b = ppc_state.fpr[chosen_reg_2].dbl64_r;
 
     ppc_state.fpscr &= 0x7fbfffff;
 
@@ -237,10 +237,10 @@ void dppc_interpreter::ppc_fadd() {
 
     if (std::isnan(val_reg_a) || std::isnan(val_reg_b)) {
         ppc_state.fpscr |= FPCC_FUNAN;
-        ppc_confirm_inf_nan<double, ADD>(reg_a, reg_b, rc_flag);
+        ppc_confirm_inf_nan<ADD>(reg_a, reg_b, rc_flag);
     }
 
-    ppc_dblresult64_d = double(val_reg_a + val_reg_b);
+    double ppc_dblresult64_d = val_reg_a + val_reg_b;
     ppc_store_dfpresult_flt(reg_d);
     fpresult_update(ppc_dblresult64_d);
 
@@ -253,10 +253,11 @@ void dppc_interpreter::ppc_fsub() {
 
     if (std::isnan(val_reg_a) || std::isnan(val_reg_b)) {
         ppc_state.fpscr |= FPCC_FUNAN;
-        ppc_confirm_inf_nan<double, SUB>(reg_a, reg_b, rc_flag);
+        ppc_confirm_inf_nan<SUB>(reg_a, reg_b, rc_flag);
     }
 
-    ppc_dblresult64_d = double(val_reg_a - val_reg_b);
+    double ppc_dblresult64_d = val_reg_a - val_reg_b;
+
     ppc_store_dfpresult_flt(reg_d);
     fpresult_update(ppc_dblresult64_d);
 
@@ -268,7 +269,7 @@ void dppc_interpreter::ppc_fdiv() {
     ppc_grab_regsfpdab();
 
     if (std::isnan(val_reg_a) || std::isnan(val_reg_b)) {
-        ppc_confirm_inf_nan<double, DIV>(reg_a, reg_b, rc_flag);
+        ppc_confirm_inf_nan<DIV>(reg_a, reg_b, rc_flag);
     }
 
     ppc_dblresult64_d = val_reg_a / val_reg_b;
@@ -283,7 +284,7 @@ void dppc_interpreter::ppc_fmul() {
     ppc_grab_regsfpdac();
 
     if (std::isnan(val_reg_a) || std::isnan(val_reg_c)) {
-        ppc_confirm_inf_nan<double, MUL>(reg_a, reg_c, rc_flag);
+        ppc_confirm_inf_nan<MUL>(reg_a, reg_c, rc_flag);
     }
 
     ppc_dblresult64_d = val_reg_a * val_reg_c;
@@ -298,10 +299,10 @@ void dppc_interpreter::ppc_fmadd() {
     ppc_grab_regsfpdabc();
 
     if (std::isnan(val_reg_a) || std::isnan(val_reg_c)) {
-        ppc_confirm_inf_nan<double, MUL>(reg_a, reg_c, rc_flag);
+        ppc_confirm_inf_nan<MUL>(reg_a, reg_c, rc_flag);
     }
     if (std::isnan(val_reg_b)) {
-        ppc_confirm_inf_nan<double, ADD>(reg_a, reg_b, rc_flag);
+        ppc_confirm_inf_nan<ADD>(reg_a, reg_b, rc_flag);
     }
 
     ppc_dblresult64_d = std::fma(val_reg_a, val_reg_c, val_reg_b);
@@ -316,10 +317,10 @@ void dppc_interpreter::ppc_fmsub() {
     ppc_grab_regsfpdabc();
 
     if (std::isnan(val_reg_a) || std::isnan(val_reg_c)) {
-        ppc_confirm_inf_nan<double, MUL>(reg_a, reg_c, rc_flag);
+        ppc_confirm_inf_nan<MUL>(reg_a, reg_c, rc_flag);
     }
     if (std::isnan(val_reg_b)) {
-        ppc_confirm_inf_nan<double, SUB>(reg_a, reg_b, rc_flag);
+        ppc_confirm_inf_nan<SUB>(reg_a, reg_b, rc_flag);
     }
 
     ppc_dblresult64_d = (val_reg_a * val_reg_c);
@@ -335,10 +336,10 @@ void dppc_interpreter::ppc_fnmadd() {
     ppc_grab_regsfpdabc();
 
     if (std::isnan(val_reg_a) || std::isnan(val_reg_c)) {
-        ppc_confirm_inf_nan<double, MUL>(reg_a, reg_c, rc_flag);
+        ppc_confirm_inf_nan<MUL>(reg_a, reg_c, rc_flag);
     }
     if (std::isnan(val_reg_b)) {
-        ppc_confirm_inf_nan<double, ADD>(reg_a, reg_b, rc_flag);
+        ppc_confirm_inf_nan<ADD>(reg_a, reg_b, rc_flag);
     }
 
     ppc_dblresult64_d = std::fma(val_reg_a, val_reg_c, val_reg_b);
@@ -354,10 +355,10 @@ void dppc_interpreter::ppc_fnmsub() {
     ppc_grab_regsfpdabc();
 
     if (std::isnan(val_reg_a) || std::isnan(val_reg_c)) {
-        ppc_confirm_inf_nan<double, MUL>(reg_a, reg_c, rc_flag);
+        ppc_confirm_inf_nan<MUL>(reg_a, reg_c, rc_flag);
     }
     if (std::isnan(val_reg_b)) {
-        ppc_confirm_inf_nan<double, SUB>(reg_a, reg_b, rc_flag);
+        ppc_confirm_inf_nan<SUB>(reg_a, reg_b, rc_flag);
     }
 
     ppc_dblresult64_d = (val_reg_a * val_reg_c);
@@ -374,7 +375,7 @@ void dppc_interpreter::ppc_fadds() {
     ppc_grab_regsfpdab();
 
     if (std::isnan(val_reg_a) || std::isnan(val_reg_b)) {
-        ppc_confirm_inf_nan<float, SUB>(reg_a, reg_b, rc_flag);
+        ppc_confirm_inf_nan<SUB>(reg_a, reg_b, rc_flag);
     }
 
     float ppc_fltresult32_d = val_reg_a + val_reg_b;
@@ -391,7 +392,7 @@ void dppc_interpreter::ppc_fsubs() {
     ppc_grab_regsfpdab();
 
     if (std::isnan(val_reg_a) || std::isnan(val_reg_b)) {
-        ppc_confirm_inf_nan<float, SUB>(reg_a, reg_b, rc_flag);
+        ppc_confirm_inf_nan<SUB>(reg_a, reg_b, rc_flag);
     }
 
     ppc_dblresult64_d = (float)(val_reg_a - val_reg_b);
@@ -406,7 +407,7 @@ void dppc_interpreter::ppc_fdivs() {
     ppc_grab_regsfpdab();
 
     if (std::isnan(val_reg_a) || std::isnan(val_reg_b)) {
-        ppc_confirm_inf_nan<float, DIV>(reg_a, reg_b, rc_flag);
+        ppc_confirm_inf_nan<DIV>(reg_a, reg_b, rc_flag);
     }
 
     ppc_dblresult64_d = (float)(val_reg_a / val_reg_b);
@@ -421,7 +422,7 @@ void dppc_interpreter::ppc_fmuls() {
     ppc_grab_regsfpdac();
 
     if (std::isnan(val_reg_a) || std::isnan(val_reg_c)) {
-        ppc_confirm_inf_nan<float, MUL>(reg_a, reg_c, rc_flag);
+        ppc_confirm_inf_nan<MUL>(reg_a, reg_c, rc_flag);
     }
 
     ppc_dblresult64_d = (float)(val_reg_a * val_reg_c);
@@ -436,10 +437,10 @@ void dppc_interpreter::ppc_fmadds() {
     ppc_grab_regsfpdabc();
 
     if (std::isnan(val_reg_a) || std::isnan(val_reg_c)) {
-        ppc_confirm_inf_nan<double, MUL>(reg_a, reg_c, rc_flag);
+        ppc_confirm_inf_nan<MUL>(reg_a, reg_c, rc_flag);
     }
     if (std::isnan(val_reg_b)) {
-        ppc_confirm_inf_nan<double, ADD>(reg_a, reg_b, rc_flag);
+        ppc_confirm_inf_nan<ADD>(reg_a, reg_b, rc_flag);
     }
 
     ppc_dblresult64_d = static_cast<double>(
@@ -455,10 +456,10 @@ void dppc_interpreter::ppc_fmsubs() {
     ppc_grab_regsfpdabc();
 
     if (std::isnan(val_reg_a) || std::isnan(val_reg_c)) {
-        ppc_confirm_inf_nan<double, MUL>(reg_a, reg_c, rc_flag);
+        ppc_confirm_inf_nan<MUL>(reg_a, reg_c, rc_flag);
     }
     if (std::isnan(val_reg_b)) {
-        ppc_confirm_inf_nan<double, ADD>(reg_a, reg_b, rc_flag);
+        ppc_confirm_inf_nan<ADD>(reg_a, reg_b, rc_flag);
     }
 
     float intermediate = float(val_reg_a * val_reg_c);
@@ -475,10 +476,10 @@ void dppc_interpreter::ppc_fnmadds() {
     ppc_grab_regsfpdabc();
 
     if (std::isnan(val_reg_a) || std::isnan(val_reg_c)) {
-        ppc_confirm_inf_nan<double, MUL>(reg_a, reg_c, rc_flag);
+        ppc_confirm_inf_nan<MUL>(reg_a, reg_c, rc_flag);
     }
     if (std::isnan(val_reg_b)) {
-        ppc_confirm_inf_nan<double, ADD>(reg_a, reg_b, rc_flag);
+        ppc_confirm_inf_nan<ADD>(reg_a, reg_b, rc_flag);
     }
 
     float intermediate = (float)val_reg_a * (float)val_reg_c;
@@ -497,10 +498,10 @@ void dppc_interpreter::ppc_fnmsubs() {
 
 
     if (std::isnan(val_reg_a) || std::isnan(val_reg_c)) {
-        ppc_confirm_inf_nan<double, MUL>(reg_a, reg_c, rc_flag);
+        ppc_confirm_inf_nan<MUL>(reg_a, reg_c, rc_flag);
     }
     if (std::isnan(val_reg_b)) {
-        ppc_confirm_inf_nan<double, SUB>(reg_a, reg_b, rc_flag);
+        ppc_confirm_inf_nan<SUB>(reg_a, reg_b, rc_flag);
     }
 
     float intermediate = (float)val_reg_a * (float)val_reg_c;
@@ -564,7 +565,7 @@ void dppc_interpreter::ppc_fsqrt() {
     double testd2 = (double)(GET_FPR(reg_b));
     ppc_dblresult64_d = std::sqrt(testd2);
     ppc_store_dfpresult_flt(reg_d);
-    ppc_confirm_inf_nan<double, SQRT>(0, reg_b, rc_flag);
+    ppc_confirm_inf_nan<SQRT>(0, reg_b, rc_flag);
 
     if (rc_flag)
         ppc_update_cr1();
@@ -575,7 +576,7 @@ void dppc_interpreter::ppc_fsqrts() {
     double testd2     = (double)(GET_FPR(reg_b));
     ppc_dblresult64_d = (float)std::sqrt(testd2);
     ppc_store_sfpresult_flt(reg_d);
-    ppc_confirm_inf_nan<float, SQRT>(0, reg_b, rc_flag);
+    ppc_confirm_inf_nan<SQRT>(0, reg_b, rc_flag);
 
     if (rc_flag)
         ppc_update_cr1();
@@ -584,8 +585,9 @@ void dppc_interpreter::ppc_fsqrts() {
 void dppc_interpreter::ppc_frsqrte() {
     ppc_grab_regsfpdb();
     double testd2 = (double)(GET_FPR(reg_b));
-    ppc_dblresult64_d = 1.0 / sqrt(testd2);
-    ppc_confirm_inf_nan<float, SQRT>(0, reg_b, rc_flag);
+
+    double ppc_dblresult64_d = 1.0 / sqrt(testd2);
+    ppc_confirm_inf_nan<SQRT>(0, reg_b, rc_flag);
 
     ppc_store_dfpresult_flt(reg_d);
 
