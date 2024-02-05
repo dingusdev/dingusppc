@@ -319,8 +319,7 @@ void dppc_interpreter::ppc_fmsub() {
         ppc_confirm_inf_nan<SUB>(reg_a, reg_b, rc_flag);
     }
 
-    double ppc_dblresult64_d = (val_reg_a * val_reg_c);
-    ppc_dblresult64_d -= val_reg_b;
+    double ppc_dblresult64_d = std::fma(val_reg_a, val_reg_c, -val_reg_b);
     ppc_store_dfpresult_flt(reg_d);
     fpresult_update(ppc_dblresult64_d);
 
@@ -338,8 +337,7 @@ void dppc_interpreter::ppc_fnmadd() {
         ppc_confirm_inf_nan<ADD>(reg_a, reg_b, rc_flag);
     }
 
-    double ppc_dblresult64_d = std::fma(val_reg_a, val_reg_c, val_reg_b);
-    ppc_dblresult64_d = -(ppc_dblresult64_d);
+    double ppc_dblresult64_d = -std::fma(val_reg_a, val_reg_c, val_reg_b);
     ppc_store_dfpresult_flt(reg_d);
     fpresult_update(ppc_dblresult64_d);
 
@@ -357,9 +355,7 @@ void dppc_interpreter::ppc_fnmsub() {
         ppc_confirm_inf_nan<SUB>(reg_a, reg_b, rc_flag);
     }
 
-    double ppc_dblresult64_d = (val_reg_a * val_reg_c);
-    ppc_dblresult64_d -= val_reg_b;
-    ppc_dblresult64_d = -(ppc_dblresult64_d);
+    double ppc_dblresult64_d = std::fma(-val_reg_a, val_reg_c, val_reg_b);
     ppc_store_dfpresult_flt(reg_d);
     fpresult_update(ppc_dblresult64_d);
 
@@ -439,8 +435,7 @@ void dppc_interpreter::ppc_fmadds() {
         ppc_confirm_inf_nan<ADD>(reg_a, reg_b, rc_flag);
     }
 
-    double ppc_dblresult64_d = static_cast<double>(
-        std::fma((float)val_reg_a, (float)val_reg_c, (float)val_reg_b));
+    double ppc_dblresult64_d = (float)std::fma(val_reg_a, val_reg_c, val_reg_b);
     ppc_store_sfpresult_flt(reg_d);
     fpresult_update(ppc_dblresult64_d);
 
@@ -458,9 +453,7 @@ void dppc_interpreter::ppc_fmsubs() {
         ppc_confirm_inf_nan<ADD>(reg_a, reg_b, rc_flag);
     }
 
-    float intermediate = float(val_reg_a * val_reg_c);
-    intermediate -= (float)val_reg_b;
-    double ppc_dblresult64_d = static_cast<double>(intermediate);
+    double ppc_dblresult64_d = (float)std::fma(val_reg_a, val_reg_c, -val_reg_b);
     ppc_store_sfpresult_flt(reg_d);
     fpresult_update(ppc_dblresult64_d);
 
@@ -478,10 +471,7 @@ void dppc_interpreter::ppc_fnmadds() {
         ppc_confirm_inf_nan<ADD>(reg_a, reg_b, rc_flag);
     }
 
-    float intermediate = (float)val_reg_a * (float)val_reg_c;
-    intermediate      += (float)val_reg_b;
-    intermediate       = -intermediate;
-    double ppc_dblresult64_d = static_cast<double>(intermediate);
+    double ppc_dblresult64_d = -(float)std::fma(val_reg_a, val_reg_c, val_reg_b);
     ppc_store_sfpresult_flt(reg_d);
     fpresult_update(ppc_dblresult64_d);
 
@@ -500,10 +490,7 @@ void dppc_interpreter::ppc_fnmsubs() {
         ppc_confirm_inf_nan<SUB>(reg_a, reg_b, rc_flag);
     }
 
-    float intermediate = (float)val_reg_a * (float)val_reg_c;
-    intermediate      -= (float)val_reg_b;
-    intermediate       = -intermediate;
-    double ppc_dblresult64_d  = static_cast<double>(intermediate);
+    double ppc_dblresult64_d = (float)std::fma(-val_reg_a, val_reg_c, val_reg_b);
     ppc_store_sfpresult_flt(reg_d);
     fpresult_update(ppc_dblresult64_d);
 
