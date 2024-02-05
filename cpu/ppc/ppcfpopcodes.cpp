@@ -122,7 +122,7 @@ inline void ppc_update_cr1() {
                    ((ppc_state.fpscr >> 4) & CR_select::CR1_field);
 }
 
-int64_t round_to_nearest(double f) {
+int32_t round_to_nearest(double f) {
     if (f >= 0.0) {
         return static_cast<int32_t>(static_cast<int64_t> (std::ceil(f)));
     } else {
@@ -154,15 +154,15 @@ void update_fpscr(uint32_t new_fpscr) {
     ppc_state.fpscr = new_fpscr;
 }
 
-int64_t round_to_zero(double f) {
+int32_t round_to_zero(double f) {
     return static_cast<int32_t>(std::trunc(f));
 }
 
-int64_t round_to_pos_inf(double f) {
+int32_t round_to_pos_inf(double f) {
     return static_cast<int32_t>(std::ceil(f));
 }
 
-int64_t round_to_neg_inf(double f) {
+int32_t round_to_neg_inf(double f) {
     return static_cast<int32_t>(std::floor(f));
 }
 
@@ -663,18 +663,20 @@ static void round_to_int(const uint8_t mode) {
     } else {
         switch (mode & 0x3) {
         case 0:
-            ppc_result64_d = round_to_nearest(val_reg_b);
+            ppc_result64_d = (uint32_t)round_to_nearest(val_reg_b);
             break;
         case 1:
-            ppc_result64_d = round_to_zero(val_reg_b);
+            ppc_result64_d = (uint32_t)round_to_zero(val_reg_b);
             break;
         case 2:
-            ppc_result64_d = round_to_pos_inf(val_reg_b);
+            ppc_result64_d = (uint32_t)round_to_pos_inf(val_reg_b);
             break;
         case 3:
-            ppc_result64_d = round_to_neg_inf(val_reg_b);
+            ppc_result64_d = (uint32_t)round_to_neg_inf(val_reg_b);
             break;
         }
+
+        ppc_result64_d |= 0xFFF8000000000000ULL;
 
         ppc_store_dfpresult_int(reg_d);
     }
