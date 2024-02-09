@@ -78,6 +78,7 @@ enum {
 
 // Bit definitions for MISC_ENABLES register.
 enum {
+    SCAN_CONTROL        = 1 <<  0, // 0 - interlaced, 1 - progressive
     FB_ENDIAN_LITTLE    = 1 <<  1, // framebuffer endianness: 0 - big, 1 - little
     VRAM_WIDE_MODE      = 1 <<  6, // VRAM bus width: 1 - 128bit, 0 - 64bit
     BLANK_DISABLE       = 1 << 11, // 0 - enable blanking, 1 - disable it

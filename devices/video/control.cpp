@@ -388,7 +388,9 @@ void ControlVideo::enable_display()
     new_height = swatch_params[ControlRegs::VFP-1] - swatch_params[ControlRegs::VAL-1];
 
     new_width *= clk_divisor;
-    new_height >>= 1; // FIXME: assume non-interlaced mode for now
+    if (this->enables & SCAN_CONTROL) {
+        new_height >>= 1;
+    }
 
     this->active_width  = new_width;
     this->active_height = new_height;
@@ -431,7 +433,9 @@ void ControlVideo::enable_display()
     this->vert_blank = swatch_params[ControlRegs::VAL-1] +
         (swatch_params[ControlRegs::VSYNC-1] - swatch_params[ControlRegs::VFP-1]);
 
-    this->vert_blank >>= 1;
+    if (this->enables & SCAN_CONTROL) {
+        this->vert_blank >>= 1;
+    }
 
     this->hori_total = this->hori_blank + new_width;
     this->vert_total = this->vert_blank + new_height;
