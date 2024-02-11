@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <devices/common/i2c/athens.h>
 #include <devices/common/pci/pcidevice.h>
-#include <devices/ioctrl/macio.h>
+#include <devices/video/appleramdac.h>
 #include <devices/video/displayid.h>
 #include <devices/video/videoctrl.h>
 
@@ -109,7 +109,7 @@ enum RadacalRegs : uint8_t {
 
 }; // namespace RadacalRegs
 
-class ControlVideo : public PCIDevice, public VideoCtrlBase, public IobusDevice {
+class ControlVideo : public PCIDevice, public VideoCtrlBase {
 public:
     ControlVideo();
     ~ControlVideo() = default;
@@ -131,17 +131,10 @@ protected:
     // HWComponent methods
     int device_postinit();
 
-    // IobusDevice methods for RaDACal
-    uint16_t iodev_read(uint32_t address);
-    void iodev_write(uint32_t address, uint16_t value);
-
-    // HW cursor support (in RaDACal)
-    void measure_hw_cursor();
-    void draw_hw_cursor(uint8_t *dst_buf, int dst_pitch);
-
 private:
     std::unique_ptr<DisplayID>      display_id;
     std::unique_ptr<AthensClocks>   clk_gen;
+    std::unique_ptr<AppleRamdac>    radacal = nullptr;
 
     std::unique_ptr<uint8_t[]>  vram_ptr;
 
@@ -163,19 +156,6 @@ private:
     uint8_t     int_status = 0;
     uint8_t     last_int_status = -1;
     int         last_int_status_read_count = 0;
-
-    // RaDACal internal state
-    uint8_t     rad_addr = 0;
-    uint8_t     rad_cr = 0;
-    uint8_t     rad_dbl_buf_cr = 0;
-    uint8_t     rad_tst_cr = 0;
-    uint16_t    rad_cur_rgn_pos = 0; // horizontal position of the cursor region
-    uint8_t     rad_cur_pos_lo = 0; // lower byte of the horizontal cursor position
-    uint16_t    rad_cur_ypos = 0;
-    uint16_t    rad_cursor_height = 0;
-    uint8_t     comp_index;
-    uint8_t     clut_color[3];
-    uint32_t    cursor_clut[8] = {};
 };
 
 #endif // CONTROL_VIDEO_H

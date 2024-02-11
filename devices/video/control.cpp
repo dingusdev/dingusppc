@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -39,6 +39,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/i2c/athens.h>
 #include <devices/common/i2c/i2c.h>
 #include <devices/deviceregistry.h>
+#include <devices/ioctrl/macio.h>
 #include <devices/video/control.h>
 #include <endianswap.h>
 #include <loguru.hpp>
@@ -91,9 +92,26 @@ ControlVideo::ControlVideo()
     I2CBus* i2c_bus = dynamic_cast<I2CBus*>(gMachineObj->get_comp_by_type(HWCompType::I2C_HOST));
     i2c_bus->register_device(0x28, this->clk_gen.get());
 
-    // attach IOBus Device #2 0xF301B000 ; register RaDACal with the I/O controller
+    // attach RAMDAC
+    this->radacal = std::unique_ptr<AppleRamdac>(new AppleRamdac(DacFlavour::RADACAL));
+    this->radacal->set_clut_entry_cb = [this](uint8_t index, uint8_t *colors) {
+        this->set_palette_color(index, colors[0], colors[1], colors[2], 0xFF);
+    };
+    this->radacal->cursor_ctrl_cb = [this](bool cursor_on) {
+        if (cursor_on) {
+            this->radacal->measure_hw_cursor(&this->vram_ptr[this->fb_base]);
+            this->cursor_ovl_cb = [this](uint8_t *dst_buf, int dst_pitch) {
+                this->radacal->draw_hw_cursor(&this->vram_ptr[this->fb_base],
+                    dst_buf, dst_pitch);
+            };
+        } else {
+            this->cursor_ovl_cb = nullptr;
+        }
+    };
+
+    // register RaDACal with the I/O controller as IOBus Device #2
     GrandCentral* gc_obj = dynamic_cast<GrandCentral*>(gMachineObj->get_comp_by_name("GrandCentral"));
-    gc_obj->attach_iodevice(1, this);
+    gc_obj->attach_iodevice(1, this->radacal.get());
 
     // initialize display identification
     this->display_id = std::unique_ptr<DisplayID> (new DisplayID());
@@ -381,7 +399,7 @@ void ControlVideo::enable_display()
     this->pixel_clock = this->clk_gen->get_dot_freq();
 
     // get RaDACal clock divisor
-    clk_divisor = 1 << ((rad_cr >> 6) + 1);
+    clk_divisor = this->radacal->get_clock_div();
 
     // calculate active_width and active_height from video timing parameters
     new_width  = swatch_params[ControlRegs::HFP-1] - swatch_params[ControlRegs::HAL-1];
@@ -399,23 +417,23 @@ void ControlVideo::enable_display()
     this->fb_ptr   = &this->vram_ptr[this->fb_base];
     this->fb_pitch = this->row_words;
 
+    this->pixel_depth = this->radacal->get_pix_width();
+    if (pixel_depth > 8)
+        this->fb_ptr += 16;
+
     // get pixel depth from RaDACal
-    switch ((this->rad_cr >> 2) & 3) {
-    case 0:
-        this->pixel_depth = 8;
+    switch (this->pixel_depth) {
+    case 8:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
             this->convert_frame_8bpp_indexed(dst_buf, dst_pitch);
         };
         break;
-    case 1:
-        this->pixel_depth = 16;
+    case 16:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
             this->convert_frame_15bpp(dst_buf, dst_pitch);
         };
         break;
-    case 2:
-        this->pixel_depth = 32;
-        this->fb_ptr += 16;
+    case 32:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
             this->convert_frame_32bpp_BE(dst_buf, dst_pitch);
         };
@@ -439,6 +457,8 @@ void ControlVideo::enable_display()
 
     this->hori_total = this->hori_blank + new_width;
     this->vert_total = this->vert_blank + new_height;
+
+    this->radacal->set_fb_parameters(active_width, active_height, this->fb_pitch);
 
     this->stop_refresh_task();
 
@@ -465,167 +485,6 @@ void ControlVideo::disable_display()
 {
     this->crtc_on = false;
     LOG_F(INFO, "Control: display disabled");
-}
-
-void ControlVideo::measure_hw_cursor() {
-    uint8_t *src_fw_ptr = &this->vram_ptr[this->fb_base];
-    uint8_t *src_bw_ptr = &this->vram_ptr[this->fb_base +
-                              this->fb_pitch * (this->active_height - 1)];
-    int cur_pos_y_start = -1;
-    int cur_pos_y_end   = -1;
-
-    // forward scanning to find the first line of the cursor
-    for (int h = 0; h < this->active_height; h++, src_fw_ptr += this->fb_pitch) {
-        if (((uint64_t *)src_fw_ptr)[0] | ((uint64_t *)src_fw_ptr)[1]) {
-            cur_pos_y_start = h;
-            break;
-        }
-    }
-
-    if (cur_pos_y_start < 0)
-        return; // bail out because no cursor data start was found
-
-    // backward scanning to find the last line of the cursor
-    for (int h = this->active_height - 1; h >= 0; h--, src_bw_ptr -= this->fb_pitch) {
-        if (((uint64_t *)src_bw_ptr)[0] | ((uint64_t *)src_bw_ptr)[1]) {
-            cur_pos_y_end = h;
-            break;
-        }
-    }
-
-    if (cur_pos_y_end < 0)
-        return; // bail out because no cursor data end was found
-
-    this->rad_cursor_height = cur_pos_y_end - cur_pos_y_start + 1;
-    this->rad_cur_ypos      = cur_pos_y_start;
-}
-
-void ControlVideo::draw_hw_cursor(uint8_t *dst_buf, int dst_pitch) {
-    uint8_t *src_row = &this->vram_ptr[this->fb_base];
-    uint8_t *dst_row = dst_buf;
-
-    this->measure_hw_cursor();
-
-    if (this->rad_cur_rgn_pos >= this->active_width)
-        return;
-
-    src_row += this->fb_pitch * this->rad_cur_ypos;
-    dst_row += this->rad_cur_ypos * dst_pitch + this->rad_cur_rgn_pos * sizeof(uint32_t);
-    dst_pitch -= 32 * sizeof(uint32_t);
-
-    for (int h = 0; h < this->rad_cursor_height; h++) {
-        for (int x = 0; x < 2; x++) { // two sets of 16 pixels
-            uint64_t pix_data = READ_QWORD_BE_A(src_row + x * 8);
-            if (!pix_data) { // skip processing of 16 transparent pixels
-                dst_row += 16 * sizeof(uint32_t);
-                break;
-            }
-            for (int p = 0; p < 16; p++) {
-                uint8_t pix = pix_data >> 60; // each pixel is 4 bits wide
-                if (pix & 8) { // check control bit: 0 - transparent, 1 - opaque
-                    WRITE_DWORD_LE_A(dst_row, this->cursor_clut[pix & 7]);
-                }
-                pix_data <<= 4;
-                dst_row += sizeof(uint32_t);
-            }
-        }
-        src_row += this->fb_pitch;
-        dst_row += dst_pitch;
-    }
-}
-
-// ========================== RaDACal related stuff ==========================
-
-uint16_t ControlVideo::iodev_read(uint32_t address)
-{
-    uint16_t result;
-
-    switch (address) {
-    case RadacalRegs::MULTI:
-        switch (this->rad_addr) {
-        case RadacalRegs::MISC_CTRL:
-            result = this->rad_cr;
-            break;
-        default:
-            LOG_F(ERROR, "RaDACal: read  MULTI 0x%02x", this->rad_addr);
-            result = 0;
-        }
-        break;
-    case RadacalRegs::CLUT_DATA:
-        LOG_F(ERROR, "RaDACal: read  CLUT_DATA 0x%02x", rad_addr);
-        result = 0;
-        break;
-    default:
-        LOG_F(ERROR, "RaDACal: read  0x%02x", address);
-        result = 0;
-    }
-
-    return result;
-}
-
-void ControlVideo::iodev_write(uint32_t address, uint16_t value)
-{
-    switch (address) {
-    case RadacalRegs::ADDRESS:
-        this->rad_addr = value;
-        this->comp_index = 0;
-        break;
-    case RadacalRegs::CURSOR_CLUT:
-        this->clut_color[this->comp_index++] = value;
-        if (this->comp_index >= 3) {
-            this->cursor_clut[this->rad_addr & 7] = (this->clut_color[0] << 16) |
-            (this->clut_color[1] << 8) | this->clut_color[2];
-            this->rad_addr++; // auto-increment CLUT address
-            this->comp_index = 0;
-        }
-        break;
-    case RadacalRegs::MULTI:
-        switch (this->rad_addr) {
-        case RadacalRegs::CURSOR_POS_HI:
-            this->rad_cur_rgn_pos = (value << 8) | this->rad_cur_pos_lo;
-            break;
-        case RadacalRegs::CURSOR_POS_LO:
-            this->rad_cur_pos_lo = value;
-            break;
-        case RadacalRegs::MISC_CTRL:
-            if (bit_changed(this->rad_cr, value, 1)) {
-                if (value & 2) {
-                    //LOG_F(WARNING, "RaDACal: HW cursor enabled!");
-                    this->measure_hw_cursor();
-                    this->cursor_ovl_cb = [this](uint8_t *dst_buf, int dst_pitch) {
-                        this->draw_hw_cursor(dst_buf, dst_pitch);
-                    };
-                } else {
-                    //LOG_F(WARNING, "RaDACal: HW cursor disabled!");
-                    this->cursor_ovl_cb = nullptr;
-                }
-            }
-            this->rad_cr = value;
-            break;
-        case RadacalRegs::DBL_BUF_CTRL:
-            this->rad_dbl_buf_cr = value;
-            break;
-        case RadacalRegs::TEST_CTRL:
-            this->rad_tst_cr = value;
-            if (value & 1)
-                LOG_F(WARNING, "RaDACal: DAC test enabled!");
-            break;
-        default:
-            LOG_F(ERROR, "RaDACal: write MULTI 0x%02x = 0x%02x", this->rad_addr, value);
-        }
-        break;
-    case RadacalRegs::CLUT_DATA:
-        this->clut_color[this->comp_index++] = value;
-        if (this->comp_index >= 3) {
-            this->set_palette_color(this->rad_addr, clut_color[0],
-                                    clut_color[1], clut_color[2], 0xFF);
-            this->rad_addr++; // auto-increment CLUT address
-            this->comp_index = 0;
-        }
-        break;
-    default:
-        LOG_F(ERROR, "RaDACal: write 0x%02x = 0x%02x", address, value);
-    }
 }
 
 // ========================== Device registry stuff ==========================
