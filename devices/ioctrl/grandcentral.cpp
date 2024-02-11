@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -150,12 +150,16 @@ uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
         }
     } else { // Interrupt related registers
         switch (offset) {
-        case MIO_INT_MASK1:
-            return BYTESWAP_32(this->int_mask);
-        case MIO_INT_LEVELS1:
-            return BYTESWAP_32(this->int_levels);
         case MIO_INT_EVENTS1:
             return BYTESWAP_32(this->int_events);
+        case MIO_INT_MASK1:
+            return BYTESWAP_32(this->int_mask);
+        case MIO_INT_CLEAR1:
+            // some Mac OS drivers reads from this write-only register
+            // so we return zero here as real HW does
+            return 0;
+        case MIO_INT_LEVELS1:
+            return BYTESWAP_32(this->int_levels);
         }
     }
 
@@ -245,15 +249,14 @@ void GrandCentral::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
             this->int_mask = BYTESWAP_32(value);
             break;
         case MIO_INT_CLEAR1:
-            if (value & MACIO_INT_CLR) {
-                this->int_events    = 0;
-                this->cpu_int_latch = false;
-                ppc_release_int();
-                LOG_F(5, "GC: CPU INT latch cleared");
-            } else {
-                this->int_events &= BYTESWAP_32(value);
-            }
+            if ((this->int_mask & MACIO_INT_MODE) && (value & MACIO_INT_CLR))
+                this->int_events = 0;
+            else
+                this->int_events &= ~(BYTESWAP_32(value) & 0x7FFFFFFFUL);
+            clear_cpu_int();
             break;
+        case MIO_INT_LEVELS1:
+            break; // ignore writes to this read-only register
         default:
             LOG_F(WARNING, "GC: writing to unmapped I/O memory 0x%X",
                  this->base_addr + offset);
@@ -268,8 +271,7 @@ void GrandCentral::attach_iodevice(int dev_num, IobusDevice* dev_obj)
     }
 }
 
-uint32_t GrandCentral::register_dev_int(IntSrc src_id)
-{
+uint32_t GrandCentral::register_dev_int(IntSrc src_id) {
     switch (src_id) {
     case IntSrc::VIA_CUDA:
         return 1 << 18;
@@ -278,46 +280,70 @@ uint32_t GrandCentral::register_dev_int(IntSrc src_id)
     case IntSrc::SWIM3:
         return 1 << 19;
     default:
-        ABORT_F("GC: unknown interrupt source %d", src_id);
+        ABORT_F("%s: unknown interrupt source %d", this->name.c_str(), src_id);
     }
     return 0;
 }
 
-uint32_t GrandCentral::register_dma_int(IntSrc src_id)
-{
-    ABORT_F("GC: register_dma_int() not implemened");
+uint32_t GrandCentral::register_dma_int(IntSrc src_id) {
+    switch (src_id) {
+    case IntSrc::DMA_SCSI_CURIO:    return 1 <<  0;
+    case IntSrc::DMA_SWIM3:         return 1 <<  1;
+    case IntSrc::DMA_SCSI_MESH:     return 1 << 10;
+    default:
+        ABORT_F("%s: unknown DMA interrupt source %d", this->name.c_str(), src_id);
+    }
     return 0;
 }
 
-void GrandCentral::ack_int(uint32_t irq_id, uint8_t irq_line_state)
-{
-    if (this->int_mask & MACIO_INT_MODE) { // 68k interrupt emulation mode?
-        this->int_events |= irq_id; // signal IRQ line change
-        this->int_events &= this->int_mask;
-        // update IRQ line state
-        if (irq_line_state) {
-            this->int_levels |= irq_id;
-        } else {
-            this->int_levels &= ~irq_id;
-        }
-        // signal CPU interrupt
-        if (this->int_events) {
-            if (!this->cpu_int_latch) {
-                this->cpu_int_latch = true;
-                ppc_assert_int();
-                LOG_F(5, "GC: CPU INT asserted, source: %d", irq_id);
-            } else {
-                LOG_F(5, "GC: CPU INT already latched");
-            }
-        }
+void GrandCentral::ack_int_common(uint32_t irq_id, uint8_t irq_line_state) {
+    // native mode:   set IRQ bits in int_events1 on a 0-to-1 transition
+    // emulated mode: set IRQ bits in int_events1 on all transitions
+    if ((this->int_mask & MACIO_INT_MODE) ||
+        (irq_line_state && !(this->int_levels & irq_id))) {
+        this->int_events |= irq_id;
     } else {
-        ABORT_F("GC: native interrupt mode not implemented");
+        this->int_events &= ~irq_id;
+    }
+
+    this->int_events &= this->int_mask;
+
+    // update IRQ line state
+    if (irq_line_state) {
+        this->int_levels |= irq_id;
+    } else {
+        this->int_levels &= ~irq_id;
+    }
+
+    this->signal_cpu_int(irq_id);
+}
+
+void GrandCentral::ack_int(uint32_t irq_id, uint8_t irq_line_state) {
+    this->ack_int_common(irq_id, irq_line_state);
+}
+
+void GrandCentral::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state) {
+    this->ack_int_common(irq_id, irq_line_state);
+}
+
+void GrandCentral::signal_cpu_int(uint32_t irq_id) {
+    if (this->int_events) {
+        if (!this->cpu_int_latch) {
+            this->cpu_int_latch = true;
+            ppc_assert_int();
+            LOG_F(5, "GC: CPU INT asserted, source: %d", irq_id);
+        } else {
+            LOG_F(5, "GC: CPU INT already latched");
+        }
     }
 }
 
-void GrandCentral::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state)
-{
-    ABORT_F("GC: ack_dma_int() not implemened");
+void GrandCentral::clear_cpu_int() {
+    if (!this->int_events) {
+        this->cpu_int_latch = false;
+        ppc_release_int();
+        LOG_F(5, "%s: CPU INT latch cleared", this->name.c_str());
+    }
 }
 
 static const vector<string> GCSubdevices = {

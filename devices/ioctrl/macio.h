@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -115,6 +115,9 @@ public:
 
 protected:
     void notify_bar_change(int bar_num);
+    void ack_int_common(uint32_t irq_id, uint8_t irq_line_state);
+    void signal_cpu_int(uint32_t irq_id);
+    void clear_cpu_int();
 
 private:
     uint32_t    base_addr = 0;
