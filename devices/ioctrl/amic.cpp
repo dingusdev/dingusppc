@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -425,7 +425,7 @@ uint32_t AMIC::register_dev_int(IntSrc src_id) {
     switch (src_id) {
     case IntSrc::VIA_CUDA:
         return CPU_INT_VIA1;
-    case IntSrc::SCSI1:
+    case IntSrc::SCSI_CURIO:
         return VIA2_INT_SCSI_IRQ << 8;
     case IntSrc::SWIM3:
         return VIA2_INT_SWIM3 << 8;

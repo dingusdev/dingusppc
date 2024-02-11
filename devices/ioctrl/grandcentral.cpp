@@ -273,12 +273,10 @@ void GrandCentral::attach_iodevice(int dev_num, IobusDevice* dev_obj)
 
 uint32_t GrandCentral::register_dev_int(IntSrc src_id) {
     switch (src_id) {
-    case IntSrc::VIA_CUDA:
-        return 1 << 18;
-    case IntSrc::SCSI1:
-        return 1 << 12;
-    case IntSrc::SWIM3:
-        return 1 << 19;
+    case IntSrc::SCSI_CURIO:    return 1 << 12;
+    case IntSrc::SCSI_MESH:     return 1 << 13;
+    case IntSrc::VIA_CUDA:      return 1 << 18;
+    case IntSrc::SWIM3:         return 1 << 19;
     default:
         ABORT_F("%s: unknown interrupt source %d", this->name.c_str(), src_id);
     }
