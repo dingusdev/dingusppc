@@ -364,7 +364,7 @@ void HeathrowIC::feature_control(const uint32_t value)
 uint32_t HeathrowIC::register_dev_int(IntSrc src_id)
 {
     switch (src_id) {
-    case IntSrc::SCSI1:
+    case IntSrc::SCSI_MESH:
         return 1 << 1;
     case IntSrc::IDE0:
         return 1 << 2;
