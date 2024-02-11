@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -28,14 +28,51 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** Enumerator for various interrupt sources. */
 enum IntSrc : uint32_t {
-    VIA_CUDA = 1,
-    SCSI1    = 2,
-    SWIM3    = 3,
-    SCC      = 4,
-    ETHERNET = 5,
-    NMI      = 6,
-    IDE0     = 7,
-    IDE1     = 8,
+    INT_UNKNOWN = 0,
+    VIA_CUDA,
+    SCSI_MESH,
+    SCSI_CURIO,
+    SWIM3,
+    SCCA,
+    SCCB,
+    ETHERNET,
+    NMI,
+    EXT1,
+    IDE0,
+    IDE1,
+    DAVBUS,
+    PERCH1,
+    PERCH2,
+    PCI_A,
+    PCI_B,
+    PCI_C,
+    PCI_D,
+    PCI_E,
+    PCI_F,
+    PCI_GPU,
+    PCI_PERCH,
+    BANDIT1,
+    BANDIT2,
+    CONTROL,
+    SIXTY6,
+    PLANB,
+    VCI,
+    PLATINUM,
+    DMA_SCSI_MESH,
+    DMA_SCSI_CURIO,
+    DMA_SWIM3,
+    DMA_IDE0,
+    DMA_IDE1,
+    DMA_SCCA_Tx,
+    DMA_SCCA_Rx,
+    DMA_SCCB_Tx,
+    DMA_SCCB_Rx,
+    DMA_DAVBUS_Tx,
+    DMA_DAVBUS_Rx,
+    DMA_ETHERNET_Tx,
+    DMA_ETHERNET_Rx,
+    SCSI0,
+    SCSI1,
 };
 
 /** Base class for interrupt controllers. */
