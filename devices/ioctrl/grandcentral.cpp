@@ -277,6 +277,7 @@ uint32_t GrandCentral::register_dev_int(IntSrc src_id) {
     case IntSrc::SCSI_MESH:     return 1 << 13;
     case IntSrc::VIA_CUDA:      return 1 << 18;
     case IntSrc::SWIM3:         return 1 << 19;
+    case IntSrc::CONTROL:       return 1 << 26;
     case IntSrc::PLATINUM:      return 1 << 30;
     default:
         ABORT_F("%s: unknown interrupt source %d", this->name.c_str(), src_id);
