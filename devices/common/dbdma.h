@@ -32,6 +32,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/dmacore.h>
 
 #include <cinttypes>
+#include <functional>
 
 class InterruptCtrl;
 
