@@ -87,7 +87,7 @@ int PlatinumCtrl::device_postinit() {
 
     this->int_ctrl = dynamic_cast<InterruptCtrl*>(
         gMachineObj->get_comp_by_type(HWCompType::INT_CTRL));
-    this->irq_id = 1UL << 30; // FIXME: hardcoded IRQ ID
+    this->irq_id = this->int_ctrl->register_dev_int(IntSrc::PLATINUM);
 
     this->vbl_cb = [this](uint8_t irq_line_state) {
         this->update_irq(irq_line_state, SWATCH_INT_VBL);
