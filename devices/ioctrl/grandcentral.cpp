@@ -77,8 +77,11 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
         this->mesh->set_dma_channel(this->mesh_dma.get());
     }
 
-    // connect SCSI HW
-    this->scsi_0 = dynamic_cast<Sc53C94*>(gMachineObj->get_comp_by_name("Sc53C94"));
+    // connect external SCSI controller (Curio) to its DMA channel
+    this->ext_scsi = dynamic_cast<Sc53C94*>(gMachineObj->get_comp_by_name("Sc53C94"));
+    this->ext_scsi_dma  = std::unique_ptr<DMAChannel> (new DMAChannel());
+    this->ext_scsi_dma->register_dma_int(this, this->register_dma_int(IntSrc::DMA_SCSI_CURIO));
+    this->ext_scsi->set_dma_channel(this->ext_scsi_dma.get());
 
     // connect Ethernet HW
     this->mace = dynamic_cast<MaceController*>(gMachineObj->get_comp_by_name("Mace"));
@@ -112,7 +115,7 @@ uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
 
         switch (subdev_num) {
         case 0: // Curio SCSI
-            return this->scsi_0->read((offset >> 4) & 0xF);
+            return this->ext_scsi->read((offset >> 4) & 0xF);
         case 1: // MACE
             return this->mace->read((offset >> 4) & 0x1F);
         case 2: // ESCC compatible addressing
@@ -153,6 +156,8 @@ uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
         unsigned subdev_num = (offset >> 8) & 0xF;
 
         switch (subdev_num) {
+        case 0:
+            return this->ext_scsi_dma->reg_read(offset & 0xFF, size);
         case 1:
             return this->floppy_dma->reg_read(offset & 0xFF, size);
         case 8:
@@ -189,7 +194,7 @@ void GrandCentral::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
 
         switch (subdev_num) {
         case 0: // Curio SCSI
-            this->scsi_0->write((offset >> 4) & 0xF, value);
+            this->ext_scsi->write((offset >> 4) & 0xF, value);
             break;
         case 1: // MACE registers
             this->mace->write((offset >> 4) & 0x1F, value);
@@ -251,6 +256,9 @@ void GrandCentral::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
         unsigned subdev_num = (offset >> 8) & 0xF;
 
         switch (subdev_num) {
+        case 0:
+            this->ext_scsi_dma->reg_write(offset & 0xFF, value, size);
+            break;
         case 1:
             this->floppy_dma->reg_write(offset & 0xFF, value, size);
             break;
