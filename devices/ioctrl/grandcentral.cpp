@@ -77,6 +77,7 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
     this->swim3 = dynamic_cast<Swim3::Swim3Ctrl*>(gMachineObj->get_comp_by_name("Swim3"));
     this->floppy_dma = std::unique_ptr<DMAChannel> (new DMAChannel());
     this->swim3->set_dma_channel(this->floppy_dma.get());
+    this->floppy_dma->register_dma_int(this, this->register_dma_int(IntSrc::DMA_SWIM3));
 }
 
 void GrandCentral::notify_bar_change(int bar_num)
