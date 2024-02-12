@@ -135,6 +135,7 @@ private:
 
     // subdevice objects
     std::unique_ptr<AwacsScreamer>      awacs;   // AWACS audio codec instance
+    std::unique_ptr<MeshStub>           mesh_stub = nullptr;
 
     NVram*              nvram;      // NVRAM module
     MaceController*     mace;

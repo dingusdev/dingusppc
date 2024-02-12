@@ -109,6 +109,16 @@ enum SeqState : uint32_t {
 
 }; // namespace MeshScsi
 
+class MeshStub : public HWComponent {
+public:
+    MeshStub()  = default;
+    ~MeshStub() = default;
+
+    // registers access
+    uint8_t read(uint8_t reg_offset) { return 0; };
+    void   write(uint8_t reg_offset, uint8_t value) {};
+};
+
 class MeshController : public HWComponent {
 public:
     MeshController(uint8_t mesh_id) {
