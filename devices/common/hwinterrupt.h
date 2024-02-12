@@ -71,8 +71,6 @@ enum IntSrc : uint32_t {
     DMA_DAVBUS_Rx,
     DMA_ETHERNET_Tx,
     DMA_ETHERNET_Rx,
-    SCSI0,
-    SCSI1,
 };
 
 /** Base class for interrupt controllers. */
