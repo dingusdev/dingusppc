@@ -707,12 +707,12 @@ void dppc_interpreter::ppc_sraw() {
 
     if (ppc_result_b & 0x20) {
         // fill rA with the sign bit of rS
-        ppc_result_a = (int32_t)ppc_result_d >> 31;
+        ppc_result_a = int32_t(ppc_result_d) >> 31;
         if (ppc_result_a) // if rA is negative
             ppc_state.spr[SPR::XER] |= XER::CA;
     } else {
         uint32_t shift = ppc_result_b & 0x1F;
-        ppc_result_a = (int32_t)ppc_result_d >> shift;
+        ppc_result_a   = int32_t(ppc_result_d) >> shift;
         if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & ((1U << shift) - 1)))
             ppc_state.spr[SPR::XER] |= XER::CA;
     }
@@ -725,14 +725,15 @@ void dppc_interpreter::ppc_sraw() {
 
 void dppc_interpreter::ppc_srawi() {
     ppc_grab_regssa();
-    unsigned shift = (ppc_cur_instruction >> 11) & 0x1F;
-    uint32_t mask  = (1U << shift) - 1;
-    ppc_result_a   = (int32_t)ppc_result_d >> shift;
-    if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & mask)) {
-        ppc_state.spr[SPR::XER] |= 0x20000000UL;
-    } else {
-        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
-    }
+    uint32_t shift = (ppc_cur_instruction >> 11) & 0x1F;
+
+    // clear XER[CA] by default
+    ppc_state.spr[SPR::XER] &= ~XER::CA;
+
+    if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & ((1U << shift) - 1)))
+        ppc_state.spr[SPR::XER] |= XER::CA;
+
+    ppc_result_a   = int32_t(ppc_result_d) >> shift;
 
     if (rc_flag)
         ppc_changecrf0(ppc_result_a);
@@ -1094,7 +1095,6 @@ void dppc_interpreter::ppc_mcrxr() {
 
 void dppc_interpreter::ppc_extsb() {
     ppc_grab_regssa();
-    ppc_result_d = ppc_result_d & 0xFF;
     ppc_result_a = (int32_t(int8_t(ppc_result_d)));
 
     if (rc_flag)
@@ -1105,7 +1105,6 @@ void dppc_interpreter::ppc_extsb() {
 
 void dppc_interpreter::ppc_extsh() {
     ppc_grab_regssa();
-    ppc_result_d = ppc_result_d & 0xFFFF;
     ppc_result_a = (int32_t(int16_t(ppc_result_d)));
     if (rc_flag)
         ppc_changecrf0(ppc_result_a);
@@ -1303,9 +1302,8 @@ void dppc_interpreter::ppc_cmp() {
     int crf_d = (ppc_cur_instruction >> 21) & 0x1C;
     ppc_grab_regssab();
     uint32_t xercon = (ppc_state.spr[SPR::XER] & 0x80000000UL) >> 3;
-    uint32_t cmp_c = (((int32_t)ppc_result_a) == ((int32_t)ppc_result_b))
-        ? 0x20000000UL
-        : (((int32_t)ppc_result_a) > ((int32_t)ppc_result_b)) ? 0x40000000UL : 0x80000000UL;
+    uint32_t cmp_c = (int32_t(ppc_result_a) == int32_t(ppc_result_b)) ? 0x20000000UL : \
+        (int32_t(ppc_result_a) > int32_t(ppc_result_b)) ? 0x40000000UL : 0x80000000UL;
     ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
 }
 
@@ -1320,9 +1318,8 @@ void dppc_interpreter::ppc_cmpi() {
     int crf_d = (ppc_cur_instruction >> 21) & 0x1C;
     ppc_grab_regsasimm();
     uint32_t xercon = (ppc_state.spr[SPR::XER] & 0x80000000UL) >> 3;
-    uint32_t cmp_c = (((int32_t)ppc_result_a) == simm)
-        ? 0x20000000UL
-        : (((int32_t)ppc_result_a) > simm) ? 0x40000000UL : 0x80000000UL;
+    uint32_t cmp_c = (int32_t(ppc_result_a) == simm) ? 0x20000000UL : \
+        (int32_t(ppc_result_a) > simm) ? 0x40000000UL : 0x80000000UL;
     ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
 }
 
@@ -1337,9 +1334,8 @@ void dppc_interpreter::ppc_cmpl() {
     int crf_d = (ppc_cur_instruction >> 21) & 0x1C;
     ppc_grab_regssab();
     uint32_t xercon = (ppc_state.spr[SPR::XER] & 0x80000000UL) >> 3;
-    uint32_t cmp_c = (ppc_result_a == ppc_result_b)
-        ? 0x20000000UL
-        : (ppc_result_a > ppc_result_b) ? 0x40000000UL : 0x80000000UL;
+    uint32_t cmp_c = (ppc_result_a == ppc_result_b) ? 0x20000000UL : \
+        (ppc_result_a > ppc_result_b) ? 0x40000000UL : 0x80000000UL;
     ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
 }
 
@@ -1354,8 +1350,8 @@ void dppc_interpreter::ppc_cmpli() {
     int crf_d = (ppc_cur_instruction >> 21) & 0x1C;
     ppc_grab_regssauimm();
     uint32_t xercon = (ppc_state.spr[SPR::XER] & 0x80000000UL) >> 3;
-    uint32_t cmp_c = (ppc_result_a == uimm) ? 0x20000000UL
-                                   : (ppc_result_a > uimm) ? 0x40000000UL : 0x80000000UL;
+    uint32_t cmp_c = (ppc_result_a == uimm) ? 0x20000000UL : \
+        (ppc_result_a > uimm) ? 0x40000000UL : 0x80000000UL;
     ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
 }
 
