@@ -113,11 +113,10 @@ uint32_t PlatinumCtrl::read(uint32_t rgn_start, uint32_t offset, int size) {
         }
     }
 
-    if (size != 4) {
-        LOG_F(WARNING, "%s: unsupported register access size %d!", this->name.c_str(),
-              size);
+    // non-DWORD accesses will produce undefined results according with the ERS
+    // I believe we can safely return 0 in this case
+    if (size != 4)
         return 0;
-    }
 
     switch (offset) {
     case PlatinumReg::CPU_ID:
@@ -166,6 +165,12 @@ void PlatinumCtrl::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
         else
             LOG_F(WARNING, "%s: write to unmapped aperture address 0x%X",
                   this->name.c_str(), this->fb_addr + offset);
+        return;
+    }
+
+    if (size != 4) {
+        LOG_F(WARNING, "%s: non-DWORD write access, size %d!", this->name.c_str(),
+              size);
         return;
     }
 
