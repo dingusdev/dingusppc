@@ -367,7 +367,7 @@ void dppc_interpreter::ppc_fadds() {
     ppc_grab_regsfpdab();
 
     if (std::isnan(val_reg_a) || std::isnan(val_reg_b)) {
-        ppc_confirm_inf_nan<SUB>(reg_a, reg_b, rc_flag);
+        ppc_confirm_inf_nan<ADD>(reg_a, reg_b, rc_flag);
     }
 
     float ppc_fltresult32_d = val_reg_a + val_reg_b;
