@@ -450,7 +450,7 @@ void dppc_interpreter::ppc_fmsubs() {
         ppc_confirm_inf_nan<MUL>(reg_a, reg_c, rc_flag);
     }
     if (std::isnan(val_reg_b)) {
-        ppc_confirm_inf_nan<ADD>(reg_a, reg_b, rc_flag);
+        ppc_confirm_inf_nan<SUB>(reg_a, reg_b, rc_flag);
     }
 
     double ppc_dblresult64_d = (float)std::fma(val_reg_a, val_reg_c, -val_reg_b);
