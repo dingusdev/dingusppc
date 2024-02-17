@@ -588,10 +588,8 @@ void dppc_interpreter::ppc_frsp() {
 
 void dppc_interpreter::ppc_fres() {
     ppc_grab_regsfpdb();
-    double start_num  = GET_FPR(reg_b);
-    float testf2      = (float)start_num;
-    testf2            = 1 / testf2;
-    double ppc_dblresult64_d = (double)testf2;
+    double start_num = GET_FPR(reg_b);
+    double ppc_dblresult64_d = (float)(1.0 / start_num);
     ppc_store_dfpresult_flt(reg_d);
 
     if (start_num == 0.0) {
