@@ -989,7 +989,6 @@ void dppc_interpreter::ppc_mfspr() {
 
 void dppc_interpreter::ppc_mtspr() {
     uint32_t ref_spr = (((ppc_cur_instruction >> 11) & 31) << 5) | ((ppc_cur_instruction >> 16) & 31);
-    reg_s            = (ppc_cur_instruction >> 21) & 31;
 
 #ifdef CPU_PROFILING
     if (ref_spr > 31) {
@@ -997,17 +996,20 @@ void dppc_interpreter::ppc_mtspr() {
     }
 #endif
 
-    uint32_t val = ppc_state.gpr[reg_s];
-
-    if (ref_spr != SPR::PVR) { // prevent writes to the read-only PVR
-        ppc_state.spr[ref_spr] = val;
+    if (ref_spr == SPR::PVR) { // prevent writes to the read-only PVR
+        return;
     }
 
-    if (ref_spr == SPR::SDR1) { // adapt to SDR1 changes
-        mmu_pat_ctx_changed();
-    }
+    uint32_t val = ppc_state.gpr[(ppc_cur_instruction >> 21) & 31];
+    ppc_state.spr[ref_spr] = val;
 
     switch (ref_spr) {
+    case SPR::XER:
+        ppc_state.spr[ref_spr] = val & 0xe000ff7f;
+        break;
+    case SPR::SDR1:
+        mmu_pat_ctx_changed(); // adapt to SDR1 changes
+        break;
     case SPR::RTCL_S:
         calc_rtcl_value();
         rtc_lo = val & 0x3FFFFF80UL;
