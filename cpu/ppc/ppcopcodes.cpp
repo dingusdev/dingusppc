@@ -627,7 +627,7 @@ void dppc_interpreter::ppc_divw() {
             ppc_state.spr[SPR::XER] |= 0xC0000000;
 
     } else if (ppc_result_a == 0x80000000UL && ppc_result_b == 0xFFFFFFFFUL) {
-        ppc_result_d = 0xFFFFFFFF;
+        ppc_result_d = 0; // tested on G4 in Mac OS X 10.4 and Open Firmware.
 
         if (oe_flag)
             ppc_state.spr[SPR::XER] |= 0xC0000000;
