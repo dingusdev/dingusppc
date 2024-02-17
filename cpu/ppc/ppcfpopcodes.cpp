@@ -759,7 +759,7 @@ void dppc_interpreter::ppc_stfs() {
     ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
     ppc_effective_address += (reg_a) ? val_reg_a : 0;
     float result = ppc_state.fpr[reg_s].dbl64_r;
-    mmu_write_vmem<uint32_t>(ppc_effective_address, uint32_t(result));
+    mmu_write_vmem<uint32_t>(ppc_effective_address, *(uint32_t*)(&result));
 }
 
 void dppc_interpreter::ppc_stfsu() {
@@ -768,7 +768,7 @@ void dppc_interpreter::ppc_stfsu() {
         ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
         ppc_effective_address += val_reg_a;
         float result = ppc_state.fpr[reg_s].dbl64_r;
-        mmu_write_vmem<uint32_t>(ppc_effective_address, uint32_t(result));
+        mmu_write_vmem<uint32_t>(ppc_effective_address, *(uint32_t*)(&result));
         ppc_state.gpr[reg_a] = ppc_effective_address;
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
@@ -779,7 +779,7 @@ void dppc_interpreter::ppc_stfsx() {
     ppc_grab_regsfpsiab();
     ppc_effective_address = reg_a ? (val_reg_a + val_reg_b) : val_reg_b;
     float result = ppc_state.fpr[reg_s].dbl64_r;
-    mmu_write_vmem<uint32_t>(ppc_effective_address, uint32_t(result));
+    mmu_write_vmem<uint32_t>(ppc_effective_address, *(uint32_t*)(&result));
 }
 
 void dppc_interpreter::ppc_stfsux() {
@@ -787,7 +787,7 @@ void dppc_interpreter::ppc_stfsux() {
     if (reg_a) {
         ppc_effective_address = val_reg_a + val_reg_b;
         float result = ppc_state.fpr[reg_s].dbl64_r;
-        mmu_write_vmem<uint32_t>(ppc_effective_address, uint32_t(result));
+        mmu_write_vmem<uint32_t>(ppc_effective_address, *(uint32_t*)(&result));
         ppc_state.gpr[reg_a] = ppc_effective_address;
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
