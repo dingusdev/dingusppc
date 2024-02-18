@@ -66,7 +66,7 @@ void ppc_grab_regsdasimm() {
 inline void ppc_grab_regsdauimm() {
     reg_d        = (ppc_cur_instruction >> 21) & 31;
     reg_a        = (ppc_cur_instruction >> 16) & 31;
-    uimm         = ppc_cur_instruction & 0xFFFFUL;
+    uimm         = uint16_t(ppc_cur_instruction);
     ppc_result_a = ppc_state.gpr[reg_a];
 }
 
@@ -79,7 +79,7 @@ inline void ppc_grab_regsasimm() {
 inline void ppc_grab_regssauimm() {
     reg_s        = (ppc_cur_instruction >> 21) & 31;
     reg_a        = (ppc_cur_instruction >> 16) & 31;
-    uimm         = ppc_cur_instruction & 0xFFFFUL;
+    uimm         = uint16_t(ppc_cur_instruction);
     ppc_result_d = ppc_state.gpr[reg_s];
     ppc_result_a = ppc_state.gpr[reg_a];
 }
@@ -733,7 +733,7 @@ void dppc_interpreter::ppc_srawi() {
     if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & ((1U << shift) - 1)))
         ppc_state.spr[SPR::XER] |= XER::CA;
 
-    ppc_result_a   = int32_t(ppc_result_d) >> shift;
+    ppc_result_a = int32_t(ppc_result_d) >> shift;
 
     if (rc_flag)
         ppc_changecrf0(ppc_result_a);
@@ -1057,10 +1057,10 @@ void dppc_interpreter::ppc_mftb() {
 
     switch (ref_spr) {
     case SPR::TBL_U:
-        ppc_state.gpr[reg_d] = tbr_value & 0xFFFFFFFFUL;
+        ppc_state.gpr[reg_d] = uint32_t(tbr_value);
         break;
     case SPR::TBU_U:
-        ppc_state.gpr[reg_d] = (tbr_value >> 32) & 0xFFFFFFFFUL;
+        ppc_state.gpr[reg_d] = uint32_t(tbr_value >> 32);
         break;
     default:
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
@@ -1097,7 +1097,7 @@ void dppc_interpreter::ppc_mcrxr() {
 
 void dppc_interpreter::ppc_extsb() {
     ppc_grab_regssa();
-    ppc_result_a = (int32_t(int8_t(ppc_result_d)));
+    ppc_result_a = int32_t(int8_t(ppc_result_d));
 
     if (rc_flag)
         ppc_changecrf0(ppc_result_a);
@@ -1107,7 +1107,7 @@ void dppc_interpreter::ppc_extsb() {
 
 void dppc_interpreter::ppc_extsh() {
     ppc_grab_regssa();
-    ppc_result_a = (int32_t(int16_t(ppc_result_d)));
+    ppc_result_a = int32_t(int16_t(ppc_result_d));
     if (rc_flag)
         ppc_changecrf0(ppc_result_a);
 
@@ -1236,7 +1236,7 @@ void dppc_interpreter::ppc_bcctr() {
         (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
 
     if (cnd_ok) {
-        ppc_next_instruction_address = (ppc_state.spr[SPR::CTR] & 0xFFFFFFFCUL);
+        ppc_next_instruction_address = (ppc_state.spr[SPR::CTR] & ~3UL);
         exec_flags = EXEF_BRANCH;
     }
 }
@@ -1249,7 +1249,7 @@ void dppc_interpreter::ppc_bcctrl() {
         (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
 
     if (cnd_ok) {
-        ppc_next_instruction_address = (ppc_state.spr[SPR::CTR] & 0xFFFFFFFCUL);
+        ppc_next_instruction_address = (ppc_state.spr[SPR::CTR] & ~3UL);
         exec_flags = EXEF_BRANCH;
     }
     ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
@@ -1268,7 +1268,7 @@ void dppc_interpreter::ppc_bclr() {
     cnd_ok = (br_bo & 0x10) | (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
 
     if (ctr_ok && cnd_ok) {
-        ppc_next_instruction_address = (ppc_state.spr[SPR::LR] & 0xFFFFFFFCUL);
+        ppc_next_instruction_address = (ppc_state.spr[SPR::LR] & ~3UL);
         exec_flags = EXEF_BRANCH;
     }
 }
@@ -1286,7 +1286,7 @@ void dppc_interpreter::ppc_bclrl() {
     cnd_ok = (br_bo & 0x10) | (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
 
     if (ctr_ok && cnd_ok) {
-        ppc_next_instruction_address = (ppc_state.spr[SPR::LR] & 0xFFFFFFFCUL);
+        ppc_next_instruction_address = (ppc_state.spr[SPR::LR] & ~3UL);
         exec_flags = EXEF_BRANCH;
     }
     ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
@@ -1457,7 +1457,7 @@ void dppc_interpreter::ppc_rfi() {
     // generate External Interrupt Exception
     // if CPU interrupt line is still asserted
     if (ppc_state.msr & MSR::EE && int_pin) {
-        uint32_t save_srr0 = ppc_state.spr[SPR::SRR0] & 0xFFFFFFFCUL;
+        uint32_t save_srr0 = ppc_state.spr[SPR::SRR0] & ~3UL;
         ppc_exception_handler(Except_Type::EXC_EXT_INT, 0);
         ppc_state.spr[SPR::SRR0] = save_srr0;
         return;
@@ -1466,13 +1466,13 @@ void dppc_interpreter::ppc_rfi() {
     if ((ppc_state.msr & MSR::EE) && dec_exception_pending) {
         dec_exception_pending = false;
         //LOG_F(WARNING, "decrementer exception from rfi msr:0x%X", ppc_state.msr);
-        uint32_t save_srr0 = ppc_state.spr[SPR::SRR0] & 0xFFFFFFFCUL;
+        uint32_t save_srr0 = ppc_state.spr[SPR::SRR0] & ~3UL;
         ppc_exception_handler(Except_Type::EXC_DECR, 0);
         ppc_state.spr[SPR::SRR0] = save_srr0;
         return;
     }
 
-    ppc_next_instruction_address = ppc_state.spr[SPR::SRR0] & 0xFFFFFFFCUL;
+    ppc_next_instruction_address = ppc_state.spr[SPR::SRR0] & ~3UL;
 
     do_ctx_sync(); // RFI is context synchronizing
 
@@ -2067,7 +2067,7 @@ void dppc_interpreter::ppc_lmw() {
     num_int_loads++;
 #endif
     ppc_grab_regsda();
-    ppc_effective_address = int32_t(int16_t(ppc_cur_instruction & 0xFFFF));
+    ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
     ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
     // How many words to load in memory - using a do-while for this
     do {
