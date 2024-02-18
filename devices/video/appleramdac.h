@@ -35,7 +35,8 @@ enum DacFlavour {
     DACULA,
 };
 
-#define DACULA_VENDOR_SIERRA    0x3C
+#define DACULA_VENDOR_SIERRA    0x3C // 14.3 MHz
+#define DACULA_VENDOR_OTHER     0x84 // 15 MHz
 
 constexpr auto VIDEO_XTAL = 14318180.0f; // external crystal oscillator frequency
 
@@ -109,6 +110,7 @@ protected:
     uint8_t     clk_m[2]        = {};
     uint8_t     clk_pn[2]       = {};
     uint8_t     pll_cr          = 0;
+    uint8_t     dac_vendor      = DACULA_VENDOR_SIERRA;
     uint8_t     comp_index      = 0;
     uint8_t     clut_color[3]   = {};
     uint32_t    cursor_clut[8]  = {};
