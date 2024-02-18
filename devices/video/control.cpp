@@ -94,6 +94,10 @@ ControlVideo::ControlVideo()
 
     // attach RAMDAC
     this->radacal = std::unique_ptr<AppleRamdac>(new AppleRamdac(DacFlavour::RADACAL));
+    this->radacal->get_clut_entry_cb = [this](uint8_t index, uint8_t *colors) {
+        uint8_t a;
+        this->get_palette_color(index, colors[0], colors[1], colors[2], a);
+    };
     this->radacal->set_clut_entry_cb = [this](uint8_t index, uint8_t *colors) {
         this->set_palette_color(index, colors[0], colors[1], colors[2], 0xFF);
     };

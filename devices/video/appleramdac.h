@@ -65,6 +65,7 @@ enum RamdacRegs : uint8_t {
 
 }; // namespace RamdacRegs
 
+typedef std::function<void(uint8_t index, uint8_t *colors)> GetClutEntryCallback;
 typedef std::function<void(uint8_t index, uint8_t *colors)> SetClutEntryCallback;
 typedef std::function<void(bool cursor_on)> CursorCtrlCallback;
 
@@ -89,6 +90,7 @@ public:
     void measure_hw_cursor(uint8_t *fb_ptr);
     void draw_hw_cursor(uint8_t *src_buf, uint8_t *dst_buf, int dst_pitch);
 
+    GetClutEntryCallback get_clut_entry_cb = nullptr;
     SetClutEntryCallback set_clut_entry_cb = nullptr;
     CursorCtrlCallback   cursor_ctrl_cb    = nullptr;
 
