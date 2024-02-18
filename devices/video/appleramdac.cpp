@@ -49,6 +49,16 @@ uint16_t AppleRamdac::iodev_read(uint32_t address) {
                   this->name.c_str(), this->dac_addr);
         }
         break;
+    case RamdacRegs::CLUT_DATA:
+        if (this->comp_index == 0) {
+            this->get_clut_entry_cb(this->dac_addr, this->clut_color);
+        }
+        this->comp_index++;
+        if (this->comp_index >= 3) {
+            this->dac_addr++; // auto-increment CLUT address
+            this->comp_index = 0;
+        }
+        break;
     default:
         LOG_F(WARNING, "%s: read from unsupported register at 0x%X",
               this->name.c_str(), address);
@@ -117,6 +127,9 @@ void AppleRamdac::iodev_write(uint32_t address, uint16_t value) {
         }
         break;
     case RamdacRegs::CLUT_DATA:
+        if (this->comp_index == 0) {
+            this->get_clut_entry_cb(this->dac_addr, this->clut_color);
+        }
         this->clut_color[this->comp_index++] = value;
         if (this->comp_index >= 3) {
             this->set_clut_entry_cb(this->dac_addr, this->clut_color);
