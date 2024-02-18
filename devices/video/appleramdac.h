@@ -50,17 +50,19 @@ enum RamdacRegs : uint8_t {
     // multipurpose section registers (both RaDACal & DACula)
     CURSOR_POS_HI   = 0x10, // cursor position, high-order byte
     CURSOR_POS_LO   = 0x11, // cursor position, low-order byte
-    MISC_CTRL       = 0x20, // miscellaneus control bits
-    DBL_BUF_CTRL    = 0x21, // double buffer control bits
-    TEST_CTRL       = 0x22, // enable/disable DAC tests
+    MISC_CTRL       = 0x20, // miscellaneus control bits ; Dacula: read ; when 1MB VRAM then write (mode&15) else write (mode)
+    DBL_BUF_CTRL    = 0x21, // double buffer control bits ; Dacula: write 4; Radical: set to 0 if using optional bank (bankb) in Open Firmware or for 2nd page in ndrv
+    TEST_CTRL       = 0x22, // enable/disable DAC tests ; Dacula: write 0
 
     // multipurpose section registers (DACula only)
-    PLL_CTRL        = 0x23, // phase locked loop control
-    VIDCLK_M_SET_A  = 0x24, // M parameter for the set A
-    VIDCLK_PN_SET_A = 0x25, // P & N parameters for the set A
-    VIDCLK_M_SET_B  = 0x27, // M parameter for the set B
-    VIDCLK_PN_SET_B = 0x28, // P & N parameters for the set B
-    VENDOR_ID       = 0x40,
+    PLL_CTRL        = 0x23, // phase locked loop control ; Dacula: if read 2 then write 3 else write 2 <-
+    VIDCLK_M_SET_A  = 0x24, // M parameter for the set A ; Dacula: N2 for 2
+    VIDCLK_PN_SET_A = 0x25, // P & N parameters for the set A ; Dacula: D2 for 2
+    //              = 0x26, // Dacula: write 0xc6 before changing the clock
+    VIDCLK_M_SET_B  = 0x27, // M parameter for the set B ; Dacula: N2 for 3 <-
+    VIDCLK_PN_SET_B = 0x28, // P & N parameters for the set B ; Dacula: D2 for 3 <-
+    DAC_29          = 0x29, // Dacula: linux writes 0xa6 after changing the clock ; macrom writes 0xc6
+    VENDOR_ID       = 0x40, // Dacula: DAC_TYPE 0x3c or 0x84
 };
 
 }; // namespace RamdacRegs
