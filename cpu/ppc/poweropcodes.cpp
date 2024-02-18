@@ -452,7 +452,7 @@ void dppc_interpreter::power_sriq() {
     ppc_grab_regssa();
     unsigned rot_sh        = (ppc_cur_instruction >> 11) & 31;
     ppc_result_a           = ppc_result_d >> rot_sh;
-    ppc_state.spr[SPR::MQ] = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
+    ppc_state.spr[SPR::MQ] = (ppc_result_d >> rot_sh) | (ppc_result_d << (32 - rot_sh));
 
     if (rc_flag)
         ppc_changecrf0(ppc_result_a);
