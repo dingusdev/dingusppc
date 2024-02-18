@@ -645,16 +645,16 @@ static void round_to_int(const uint8_t mode) {
         uint64_t ppc_result64_d;
         switch (mode & 0x3) {
         case 0:
-            ppc_result64_d = (uint32_t)round_to_nearest(val_reg_b);
+            ppc_result64_d = uint32_t(round_to_nearest(val_reg_b));
             break;
         case 1:
-            ppc_result64_d = (uint32_t)round_to_zero(val_reg_b);
+            ppc_result64_d = uint32_t(round_to_zero(val_reg_b));
             break;
         case 2:
-            ppc_result64_d = (uint32_t)round_to_pos_inf(val_reg_b);
+            ppc_result64_d = uint32_t(round_to_pos_inf(val_reg_b));
             break;
         case 3:
-            ppc_result64_d = (uint32_t)round_to_neg_inf(val_reg_b);
+            ppc_result64_d = uint32_t(round_to_neg_inf(val_reg_b));
             break;
         }
 
@@ -780,7 +780,7 @@ void dppc_interpreter::ppc_stfsu() {
 
 void dppc_interpreter::ppc_stfsx() {
     ppc_grab_regsfpsiab();
-    ppc_effective_address = (reg_a) ? val_reg_a + val_reg_b : val_reg_b;
+    ppc_effective_address = reg_a ? (val_reg_a + val_reg_b) : val_reg_b;
     float result = ppc_state.fpr[reg_s].dbl64_r;
     mmu_write_vmem<uint32_t>(ppc_effective_address, uint32_t(result));
 }
@@ -800,7 +800,7 @@ void dppc_interpreter::ppc_stfsux() {
 void dppc_interpreter::ppc_stfd() {
     ppc_grab_regsfpsia();
     ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
-    ppc_effective_address += (reg_a) ? val_reg_a : 0;
+    ppc_effective_address += reg_a ? val_reg_a : 0;
     mmu_write_vmem<uint64_t>(ppc_effective_address, ppc_state.fpr[reg_s].int64_r);
 }
 
@@ -818,7 +818,7 @@ void dppc_interpreter::ppc_stfdu() {
 
 void dppc_interpreter::ppc_stfdx() {
     ppc_grab_regsfpsiab();
-    ppc_effective_address = (reg_a) ? val_reg_a + val_reg_b : val_reg_b;
+    ppc_effective_address = reg_a ? (val_reg_a + val_reg_b) : val_reg_b;
     mmu_write_vmem<uint64_t>(ppc_effective_address, ppc_state.fpr[reg_s].int64_r);
 }
 
@@ -835,8 +835,8 @@ void dppc_interpreter::ppc_stfdux() {
 
 void dppc_interpreter::ppc_stfiwx() {
     ppc_grab_regsfpsiab();
-    ppc_effective_address = (reg_a) ? val_reg_a + val_reg_b : val_reg_b;
-    mmu_write_vmem<uint32_t>(ppc_effective_address, (uint32_t)(ppc_state.fpr[reg_s].int64_r));
+    ppc_effective_address = reg_a ? (val_reg_a + val_reg_b) : val_reg_b;
+    mmu_write_vmem<uint32_t>(ppc_effective_address, uint32_t(ppc_state.fpr[reg_s].int64_r));
 }
 
 // Floating Point Register Transfer
@@ -852,7 +852,7 @@ void dppc_interpreter::ppc_fmr() {
 void dppc_interpreter::ppc_mffs() {
     ppc_grab_regsda();
 
-    ppc_state.fpr[reg_d].int64_r = (uint64_t)ppc_state.fpscr | 0xFFF8000000000000ULL;
+    ppc_state.fpr[reg_d].int64_r = uint64_t(ppc_state.fpscr) | 0xFFF8000000000000ULL;
 
     if (rc_flag)
         ppc_update_cr1();
@@ -861,7 +861,7 @@ void dppc_interpreter::ppc_mffs() {
 void dppc_interpreter::ppc_mffs_601() {
     ppc_grab_regsda();
 
-    ppc_state.fpr[reg_d].int64_r = (uint64_t)ppc_state.fpscr | 0xFFFFFFFF00000000ULL;
+    ppc_state.fpr[reg_d].int64_r = uint64_t(ppc_state.fpscr) | 0xFFFFFFFF00000000ULL;
 
     if (rc_flag)
         ppc_update_cr1();
@@ -959,7 +959,6 @@ void dppc_interpreter::ppc_fcmpo() {
     if (std::isnan(db_test_a) || std::isnan(db_test_b)) {
         // TODO: test for SNAN operands
         // for now, assume that at least one of the operands is QNAN
-        ppc_state.fpscr |= FPSCR::VXVC;
         cmp_c |= CRx_bit::CR_SO;
     }
     else if (db_test_a < db_test_b) {
@@ -973,7 +972,7 @@ void dppc_interpreter::ppc_fcmpo() {
     }
 
     ppc_state.fpscr = (ppc_state.fpscr & ~FPSCR::FPCC_MASK) | (cmp_c >> 16); // update FPCC
-    ppc_state.cr = ((ppc_state.cr & ~(0xF0000000 >> crf_d)) | ((cmp_c) >> crf_d));
+    ppc_state.cr = ((ppc_state.cr & ~(0xF0000000 >> crf_d)) | (cmp_c >> crf_d));
 }
 
 void dppc_interpreter::ppc_fcmpu() {
@@ -996,5 +995,5 @@ void dppc_interpreter::ppc_fcmpu() {
     }
 
     ppc_state.fpscr = (ppc_state.fpscr & ~FPSCR::FPCC_MASK) | (cmp_c >> 16); // update FPCC
-    ppc_state.cr = ((ppc_state.cr & ~(0xF0000000 >> crf_d)) | ((cmp_c) >> crf_d));
+    ppc_state.cr    = ((ppc_state.cr & ~(0xF0000000UL >> crf_d)) | (cmp_c >> crf_d));
 }
