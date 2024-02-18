@@ -45,8 +45,8 @@ public:
     void start_refresh_task();
     void stop_refresh_task();
 
-    void get_palette_colors(uint8_t index, uint8_t& r, uint8_t& g, uint8_t& b,
-                            uint8_t& a);
+    void get_palette_color(uint8_t index, uint8_t& r, uint8_t& g, uint8_t& b,
+                           uint8_t& a);
     void set_palette_color(uint8_t index, uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 
     // HW cursor support

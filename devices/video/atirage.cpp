@@ -233,8 +233,8 @@ uint32_t ATIRage::read_reg(uint32_t reg_offset, uint32_t size) {
         case ATI_DAC_DATA:
             if (!this->comp_index) {
                 uint8_t alpha; // temp variable for unused alpha
-                get_palette_colors(this->dac_rd_index, color_buf[0],
-                                   color_buf[1], color_buf[2], alpha);
+                get_palette_color(this->dac_rd_index, color_buf[0],
+                                  color_buf[1], color_buf[2], alpha);
             }
             insert_bits<uint64_t>(result, color_buf[this->comp_index], 8, 8);
             if (++this->comp_index >= 3) {

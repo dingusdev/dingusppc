@@ -114,7 +114,7 @@ void VideoCtrlBase::stop_refresh_task() {
     }
 }
 
-void VideoCtrlBase::get_palette_colors(uint8_t index, uint8_t& r, uint8_t& g,
+void VideoCtrlBase::get_palette_color(uint8_t index, uint8_t& r, uint8_t& g,
                                        uint8_t& b, uint8_t& a)
 {
     b =  this->palette[index] & 0xFFU;
