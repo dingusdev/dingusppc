@@ -216,7 +216,7 @@ private:
     uint32_t    set_xfer_count;
     uint8_t     status;
     uint8_t     target_id;
-    uint8_t     int_status;
+    uint8_t     int_status = 0;
     uint8_t     seq_step;
     uint8_t     sel_timeout;
     uint8_t     sync_offset;

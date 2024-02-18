@@ -280,7 +280,7 @@ void Sc53C94::exec_command()
         });
         if (!(config1 & 0x40)) {
             LOG_F(INFO, "%s: reset interrupt issued", this->name.c_str());
-            this->int_status |= INTSTAT_SRST;
+            this->int_status = INTSTAT_SRST;
         }
         exec_next_command();
         break;
@@ -288,7 +288,7 @@ void Sc53C94::exec_command()
         if (!this->is_initiator) {
             // clear command FIFO
             this->cmd_fifo_pos = 0;
-            this->int_status |= INTSTAT_ICMD;
+            this->int_status = INTSTAT_ICMD;
             this->update_irq();
         } else {
             this->seq_step = 0;
@@ -316,7 +316,7 @@ void Sc53C94::exec_command()
             this->bus_obj->target_next_step();
         }
         this->bus_obj->release_ctrl_line(this->my_bus_id, SCSI_CTRL_ACK);
-        this->int_status |= INTSTAT_SR;
+        this->int_status  = INTSTAT_SR;
         this->int_status |= INTSTAT_DIS; // TODO: handle target disconnection properly
         this->update_irq();
         exec_next_command();
@@ -353,7 +353,7 @@ void Sc53C94::exec_command()
     default:
         LOG_F(ERROR, "%s: invalid/unimplemented command 0x%X", this->name.c_str(), cmd);
         this->cmd_fifo_pos--; // remove invalid command from FIFO
-        this->int_status |= INTSTAT_ICMD;
+        this->int_status = INTSTAT_ICMD;
         this->update_irq();
     }
 }
@@ -455,7 +455,7 @@ void Sc53C94::sequencer()
             LOG_F(9, "%s: selection completed", this->name.c_str());
         } else { // selection timeout
             this->seq_step = this->cmd_steps->step_num;
-            this->int_status |= this->cmd_steps->status;
+            this->int_status = this->cmd_steps->status;
             this->bus_obj->disconnect(this->my_bus_id);
             this->cur_state = SeqState::IDLE;
             this->update_irq();
@@ -465,7 +465,7 @@ void Sc53C94::sequencer()
     case SeqState::SEND_MSG:
         if (this->data_fifo_pos < 1 && this->is_dma_cmd) {
             this->drq_cb(1);
-            this->int_status |= INTSTAT_SR;
+            this->int_status = INTSTAT_SR;
             this->update_irq();
             break;
         }
@@ -482,8 +482,8 @@ void Sc53C94::sequencer()
         this->bus_obj->target_xfer_data();
         break;
     case SeqState::CMD_COMPLETE:
-        this->seq_step    = this->cmd_steps->step_num;
-        this->int_status |= this->cmd_steps->status;
+        this->seq_step   = this->cmd_steps->step_num;
+        this->int_status = this->cmd_steps->status;
         this->update_irq();
         exec_next_command();
         break;
@@ -514,7 +514,7 @@ void Sc53C94::sequencer()
         if (this->is_initiator) {
             this->bus_obj->target_next_step();
         }
-        this->int_status |= INTSTAT_SR;
+        this->int_status = INTSTAT_SR;
         this->update_irq();
         exec_next_command();
         break;
@@ -524,7 +524,7 @@ void Sc53C94::sequencer()
         // check for unexpected bus phase changes
         if (this->bus_obj->current_phase() != this->cur_bus_phase) {
             this->cmd_fifo_pos = 0; // clear command FIFO
-            this->int_status |= INTSTAT_SR;
+            this->int_status = INTSTAT_SR;
             this->update_irq();
         } else {
             this->rcv_data();
