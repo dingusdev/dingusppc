@@ -118,6 +118,7 @@ protected:
     int         video_width     = 0;
     int         video_height    = 0;
     uint32_t    fb_pitch        = 0;
+    uint32_t    cursor_timer_id = 0;
 };
 
 #endif // APPLE_RAMDAC_H
