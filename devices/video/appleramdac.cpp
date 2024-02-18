@@ -60,6 +60,7 @@ void AppleRamdac::iodev_write(uint32_t address, uint16_t value) {
     switch(address) {
     case RamdacRegs::ADDRESS:
         this->dac_addr = value;
+        this->comp_index = 0;
         break;
     case RamdacRegs::CURSOR_CLUT:
         this->clut_color[this->comp_index++] = value;
