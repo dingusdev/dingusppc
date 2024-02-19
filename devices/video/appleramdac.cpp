@@ -180,34 +180,44 @@ void AppleRamdac::measure_hw_cursor(uint8_t *fb_ptr) {
 }
 
 void AppleRamdac::draw_hw_cursor(uint8_t *src_buf, uint8_t *dst_buf, int dst_pitch) {
-    uint8_t *dst_row = dst_buf;
+    int num_pixels = this->video_width - this->cursor_xpos;
+    if (num_pixels <= 0)
+        return;
+    if (num_pixels > 32)
+        num_pixels = 32;
 
     this->measure_hw_cursor(src_buf);
 
-    if (this->cursor_xpos >= this->video_width)
-        return;
+    int num_words = unsigned(num_pixels + 15) / 16;
 
-    src_buf += this->fb_pitch * this->cursor_ypos;
-    dst_row += this->cursor_ypos * dst_pitch + this->cursor_xpos * sizeof(uint32_t);
-    dst_pitch -= 32 * sizeof(uint32_t);
+    uint64_t mask0 = (~0LL) << ((num_pixels >= 16) ? 0 : ((16 - num_pixels) * 4));
+    uint64_t mask1 = (num_pixels <= 16) ? 0LL : ((~0LL) << ((32 - num_pixels) * 4));
 
-    for (int h = 0; h < this->cursor_height; h++) {
-        for (int x = 0; x < 2; x++) { // two sets of 16 pixels
-            uint64_t pix_data = READ_QWORD_BE_A(src_buf + x * 8);
-            if (!pix_data) { // skip processing of 16 transparent pixels
-                dst_row += 16 * sizeof(uint32_t);
-                break;
-            }
-            for (int p = 0; p < 16; p++) {
+    uint8_t *src_row = src_buf + this->fb_pitch * this->cursor_ypos;
+    uint8_t *dst_row = dst_buf + this->cursor_ypos * dst_pitch +
+                           this->cursor_xpos * sizeof(uint32_t);
+
+    uint32_t *color = &this->cursor_clut[0];
+
+    for (int h = this->cursor_height; h > 0; h--) {
+        uint8_t* dst_16 = dst_row;
+        for (int x = 0; x < num_words; x++) {
+            uint8_t* dst_1 = dst_16;
+            uint64_t pix_data = READ_QWORD_BE_A(src_row + x * sizeof(uint64_t)) & (x ? mask1 : mask0);
+            while (pix_data) {
                 uint8_t pix = pix_data >> 60; // each pixel is 4 bits wide
                 if (pix & 8) { // check control bit: 0 - transparent, 1 - opaque
-                    WRITE_DWORD_LE_A(dst_row, this->cursor_clut[pix & 7]);
+                    WRITE_DWORD_LE_A(dst_1, color[pix & 7]);
+                } else if (pix & 1) {
+                    uint32_t c = (((READ_DWORD_LE_A(dst_1) >> 7) & 0x010101) * 0xFFU) ^ 0xFFFFFFU;
+                    WRITE_DWORD_LE_A(dst_1, c);
                 }
                 pix_data <<= 4;
-                dst_row += sizeof(uint32_t);
+                dst_1 += sizeof(uint32_t);
             }
+            dst_16 += 16 * sizeof(uint32_t);
         }
-        src_buf += this->fb_pitch;
+        src_row += this->fb_pitch;
         dst_row += dst_pitch;
     }
 }
