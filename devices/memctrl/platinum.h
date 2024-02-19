@@ -105,67 +105,71 @@ enum CpuSpeed3 {
 
 /** Configuration and status register offsets. */
 enum PlatinumReg : uint32_t {
-    CPU_ID          = 0x000,
-    ASIC_REVISION   = 0x010,
-    ROM_TIMING      = 0x020,
-    CACHE_CONFIG    = 0x030,
-    DRAM_TIMING     = 0x040,
-    DRAM_REFRESH    = 0x050,
-    BANK_0_BASE     = 0x060,
-    BANK_1_BASE     = 0x070,
-    BANK_2_BASE     = 0x080,
-    BANK_3_BASE     = 0x090,
-    BANK_4_BASE     = 0x0A0,
-    BANK_5_BASE     = 0x0B0,
-    BANK_6_BASE     = 0x0C0,
-    BANK_7_BASE     = 0x0D0,
-    GP_SW_SCRATCH   = 0x0E0,
-    PCI_ADDR_MASK   = 0x0F0,
-    FB_BASE_ADDR    = 0x100,
-    ROW_WORDS       = 0x120,
-    CLOCK_DIVISOR   = 0x130,
-    FB_CONFIG_1     = 0x140,
-    FB_CONFIG_2     = 0x150,
-    VMEM_PAGE_MODE  = 0x160,
-    MON_ID_SENSE    = 0x170,
-    FB_RESET        = 0x180,
-    VRAM_REFRESH    = 0x1B0,
+    CPU_ID          = 0x00, // read 0x30018140 ; read byte happens
+    ASIC_REVISION   = 0x01,
+    ROM_TIMING      = 0x02,
+    CACHE_CONFIG    = 0x03,
+    DRAM_TIMING     = 0x04,
+    DRAM_REFRESH    = 0x05,
+    BANK_0_BASE     = 0x06,
+    BANK_1_BASE     = 0x07,
+    BANK_2_BASE     = 0x08,
+    BANK_3_BASE     = 0x09, // read byte happens
+    BANK_4_BASE     = 0x0A,
+    BANK_5_BASE     = 0x0B,
+    BANK_6_BASE     = 0x0C,
+    BANK_7_BASE     = 0x0D,
+    GP_SW_SCRATCH   = 0x0E,
+    PCI_ADDR_MASK   = 0x0F,
+    FB_BASE_ADDR    = 0x10,
+    //              = 0x11,
+    ROW_WORDS       = 0x12,
+    CLOCK_DIVISOR   = 0x13, // write 0xff, 0x02
+    FB_CONFIG_1     = 0x14,
+    FB_CONFIG_2     = 0x15,
+    VMEM_PAGE_MODE  = 0x16,
+    MON_ID_SENSE    = 0x17,
+    FB_RESET        = 0x18, // write 6, 3, 7, 2
+    DBL_BUF_CNTL    = 0x19,
+    V_TEST_REG      = 0x1A,
+    VRAM_REFRESH    = 0x1B,
 
     // Swatch timing generator registers
-    SWATCH_CONFIG   = 0x200,
-    SWATCH_INT_MASK = 0x210,
-    SWATCH_INT_STAT = 0x220,
-    CLR_CURSOR_INT  = 0x230,
-    CLR_ANIM_INT    = 0x240,
-    CLR_VBL_INT     = 0x250,
-    CURSOR_LINE     = 0x260,
-    ANIMATE_LINE    = 0x270,
-    COUNTER_TEST    = 0x280,
-    SWATCH_HSERR    = 0x290,
-    SWATCH_HLFLN    = 0x2A0,
-    SWATCH_HEQ      = 0x2B0,
-    SWATCH_HSP      = 0x2C0,
-    SWATCH_HBWAY    = 0x2D0,
-    SWATCH_HBRST    = 0x2E0,
-    SWATCH_HBP      = 0x2F0,
-    SWATCH_HAL      = 0x300,
-    SWATCH_HFP      = 0x310,
-    SWATCH_HPIX     = 0x320,
-    SWATCH_VHLINE   = 0x330,
-    SWATCH_VSYNC    = 0x340,
-    SWATCH_VBPEQ    = 0x350,
-    SWATCH_VBP      = 0x360,
-    SWATCH_VAL      = 0x370,
-    SWATCH_VFP      = 0x380,
-    SWATCH_VFPEQ    = 0x390,
-    TIMING_ADJUST   = 0x3A0,
-    CURRENT_LINE    = 0x3B0,
+    SWATCH_CONFIG   = 0x20, // 0xff0 ; pxffc for 1280 modes
+    SWATCH_INT_MASK = 0x21, // 4
+    SWATCH_INT_STAT = 0x22, // 0
+    CLR_CURSOR_INT  = 0x23, // 0
+    CLR_ANIM_INT    = 0x24, // 0
+    CLR_VBL_INT     = 0x25, // 0
+    CURSOR_LINE     = 0x26, // write 0x320, 0x209, 0x299, 0x38f, 0x428
+    ANIMATE_LINE    = 0x27, // 0
+    COUNTER_TEST    = 0x28, // 0
+    FIRST_SWATCH    = 0x29,
+    SWATCH_HSERR    = 0x29,
+    SWATCH_HLFLN    = 0x2A,
+    SWATCH_HEQ      = 0x2B,
+    SWATCH_HSP      = 0x2C,
+    SWATCH_HBWAY    = 0x2D,
+    SWATCH_HBRST    = 0x2E,
+    SWATCH_HBP      = 0x2F,
+    SWATCH_HAL      = 0x30,
+    SWATCH_HFP      = 0x31,
+    SWATCH_HPIX     = 0x32,
+    SWATCH_VHLINE   = 0x33,
+    SWATCH_VSYNC    = 0x34,
+    SWATCH_VBPEQ    = 0x35,
+    SWATCH_VBP      = 0x36,
+    SWATCH_VAL      = 0x37,
+    SWATCH_VFP      = 0x38,
+    SWATCH_VFPEQ    = 0x39,
+    TIMING_ADJUST   = 0x3A,
+    CURRENT_LINE    = 0x3B, // Current Scan Line
 
     // Iridium datapath registers
-    IRIDIUM_CONFIG  = 0x4A0,
+    IRIDIUM_CONFIG  = 0x4A, // write 4
 };
 
-#define REG_TO_INDEX(reg) ((((reg) - SWATCH_HSERR) >> 4) & 0xF)
+#define REG_TO_INDEX(reg) ((reg) - FIRST_SWATCH)
 
 // FB_CONFIG_1 register bits.
 enum {

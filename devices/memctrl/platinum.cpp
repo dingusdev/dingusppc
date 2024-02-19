@@ -122,7 +122,7 @@ uint32_t PlatinumCtrl::read(uint32_t rgn_start, uint32_t offset, int size) {
     if (size != 4)
         return 0;
 
-    switch (offset) {
+    switch (offset >> 4) {
     case PlatinumReg::CPU_ID:
         return this->cpu_id;
     case PlatinumReg::DRAM_REFRESH:
@@ -135,7 +135,7 @@ uint32_t PlatinumCtrl::read(uint32_t rgn_start, uint32_t offset, int size) {
     case PlatinumReg::BANK_5_BASE:
     case PlatinumReg::BANK_6_BASE:
     case PlatinumReg::BANK_7_BASE:
-        return this->bank_base[(offset - PlatinumReg::BANK_0_BASE) >> 4];
+        return this->bank_base[(offset >> 4) - PlatinumReg::BANK_0_BASE];
     case PlatinumReg::CACHE_CONFIG:
         return 0; // report no L2 cache installed
     case PlatinumReg::FB_BASE_ADDR:
@@ -204,7 +204,7 @@ void PlatinumCtrl::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
         return;
     }
 
-    switch (offset) {
+    switch (offset >> 4) {
     case PlatinumReg::ROM_TIMING:
         this->rom_timing = value;
         break;
@@ -222,7 +222,7 @@ void PlatinumCtrl::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
     case PlatinumReg::BANK_5_BASE:
     case PlatinumReg::BANK_6_BASE:
     case PlatinumReg::BANK_7_BASE:
-        this->bank_base[(offset - PlatinumReg::BANK_0_BASE) >> 4] = value;
+        this->bank_base[(offset >> 4) - PlatinumReg::BANK_0_BASE] = value;
         break;
     case PlatinumReg::FB_BASE_ADDR:
         this->fb_addr   = value;
@@ -285,6 +285,13 @@ void PlatinumCtrl::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
         if (this->swatch_int_mask & SWATCH_INT_CURSOR)
             this->enable_cursor_int();
         break;
+    //case PlatinumReg::CLR_CURSOR_INT:
+    //case PlatinumReg::CLR_ANIM_INT:
+    //case PlatinumReg::CLR_VBL_INT:
+    //case PlatinumReg::CURSOR_LINE:
+    //case PlatinumReg::ANIMATE_LINE:
+    //case PlatinumReg::COUNTER_TEST:
+        //break;
     case PlatinumReg::SWATCH_HSERR:
     case PlatinumReg::SWATCH_HLFLN:
     case PlatinumReg::SWATCH_HEQ:
@@ -302,7 +309,7 @@ void PlatinumCtrl::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
     case PlatinumReg::SWATCH_VAL:
     case PlatinumReg::SWATCH_VFP:
     case PlatinumReg::SWATCH_VFPEQ:
-        this->swatch_params[REG_TO_INDEX(offset)] = value;
+        this->swatch_params[REG_TO_INDEX(offset >> 4)] = value;
         break;
     case PlatinumReg::TIMING_ADJUST:
         this->timing_adjust = value;
