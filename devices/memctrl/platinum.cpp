@@ -117,16 +117,15 @@ uint32_t PlatinumCtrl::read(uint32_t rgn_start, uint32_t offset, int size) {
         }
     }
 
-    // non-DWORD accesses will produce undefined results according with the ERS
-    // I believe we can safely return 0 in this case
-    if (size != 4)
-        return 0;
+    uint32_t value;
 
     switch (offset >> 4) {
     case PlatinumReg::CPU_ID:
-        return this->cpu_id;
+        value = this->cpu_id;
+        break;
     case PlatinumReg::DRAM_REFRESH:
-        return this->dram_refresh;
+        value = this->dram_refresh;
+        break;
     case PlatinumReg::BANK_0_BASE:
     case PlatinumReg::BANK_1_BASE:
     case PlatinumReg::BANK_2_BASE:
@@ -135,20 +134,27 @@ uint32_t PlatinumCtrl::read(uint32_t rgn_start, uint32_t offset, int size) {
     case PlatinumReg::BANK_5_BASE:
     case PlatinumReg::BANK_6_BASE:
     case PlatinumReg::BANK_7_BASE:
-        return this->bank_base[(offset >> 4) - PlatinumReg::BANK_0_BASE];
+        value = this->bank_base[(offset >> 4) - PlatinumReg::BANK_0_BASE];
+        break;
     case PlatinumReg::CACHE_CONFIG:
-        return 0; // report no L2 cache installed
+        value = 0; // report no L2 cache installed
+        break;
     case PlatinumReg::FB_BASE_ADDR:
-        return this->fb_addr;
+        value = this->fb_addr;
+        break;
     case PlatinumReg::MON_ID_SENSE:
-        return (this->mon_sense ^ 7);
+        value = (this->mon_sense ^ 7);
+        break;
     case PlatinumReg::SWATCH_CONFIG:
-        return this->swatch_config;
+        value = this->swatch_config;
+        break;
     case PlatinumReg::SWATCH_INT_STAT:
-        return this->swatch_int_stat;
+        value = this->swatch_int_stat;
+        break;
     case PlatinumReg::CLR_CURSOR_INT:
         this->update_irq(0, SWATCH_INT_CURSOR);
-        return 0;
+        value = 0;
+        break;
     //case PlatinumReg::CLR_ANIM_INT:
     //case PlatinumReg::CLR_VBL_INT:
     //case PlatinumReg::CURSOR_LINE:
@@ -172,17 +178,23 @@ uint32_t PlatinumCtrl::read(uint32_t rgn_start, uint32_t offset, int size) {
     case PlatinumReg::SWATCH_VAL:
     case PlatinumReg::SWATCH_VFP:
     case PlatinumReg::SWATCH_VFPEQ:
-        return this->swatch_params[REG_TO_INDEX(offset >> 4)];
+        value = this->swatch_params[REG_TO_INDEX(offset >> 4)];
+        break;
     case PlatinumReg::TIMING_ADJUST:
-        return this->timing_adjust;
+        value = this->timing_adjust;
+        break;
     case PlatinumReg::IRIDIUM_CONFIG:
-        return this->iridium_cfg;
+        value = this->iridium_cfg;
+        break;
     default:
         LOG_F(WARNING, "%s: unknown register read at offset 0x%X", this->name.c_str(),
               offset);
+        value = 0;
     }
 
-    return 0;
+    uint32_t result = (uint32_t)( (((uint64_t)value << 32) | value) >> ((8 - (offset & 3) - size) << 3)) & ( (1LL << (size << 3)) - 1 );
+
+    return result;
 }
 
 void PlatinumCtrl::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
@@ -195,12 +207,6 @@ void PlatinumCtrl::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
         else
             LOG_F(WARNING, "%s: write to unmapped aperture address 0x%X",
                   this->name.c_str(), this->fb_addr + offset);
-        return;
-    }
-
-    if (size != 4) {
-        LOG_F(WARNING, "%s: non-DWORD write access, size %d!", this->name.c_str(),
-              size);
         return;
     }
 
