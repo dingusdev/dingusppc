@@ -228,7 +228,7 @@ private:
     uint32_t    rom_timing   = 0;
     uint32_t    dram_timing  = 0xEFF;
     uint32_t    dram_refresh = 0x1F4;
-    uint32_t    bank_base[8];
+    uint32_t    bank_base[8] = {};
     uint32_t    bank_size[8] = {};
 
     // frame buffer controller state
