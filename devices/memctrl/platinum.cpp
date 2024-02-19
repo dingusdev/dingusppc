@@ -364,12 +364,10 @@ void PlatinumCtrl::enable_display() {
     this->vert_total = this->vert_blank + new_height;
 
     // set framebuffer parameters
-    this->fb_ptr   = &this->vram_ptr[this->fb_offset];
+    this->fb_ptr   = &this->vram_ptr[this->fb_offset] + 16;
     this->fb_pitch = this->row_words;
 
     this->pixel_depth = this->dacula->get_pix_width();
-    if (pixel_depth > 8)
-        this->fb_ptr += 16;
 
     // attach framebuffer conversion routine
     switch (this->pixel_depth) {
