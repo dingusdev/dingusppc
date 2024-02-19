@@ -69,9 +69,9 @@ PlatinumCtrl::PlatinumCtrl() : MemCtrlBase(), VideoCtrlBase(640, 480) {
     };
     this->dacula->cursor_ctrl_cb = [this](bool cursor_on) {
         if (cursor_on) {
-            this->dacula->measure_hw_cursor(&this->vram_ptr[this->fb_offset]);
+            this->dacula->measure_hw_cursor(this->fb_ptr - 16);
             this->cursor_ovl_cb = [this](uint8_t *dst_buf, int dst_pitch) {
-                this->dacula->draw_hw_cursor(&this->vram_ptr[this->fb_offset],
+                this->dacula->draw_hw_cursor(this->fb_ptr - 16,
                     dst_buf, dst_pitch);
             };
         } else {
