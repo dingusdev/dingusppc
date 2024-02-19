@@ -145,6 +145,30 @@ uint32_t PlatinumCtrl::read(uint32_t rgn_start, uint32_t offset, int size) {
     case PlatinumReg::CLR_CURSOR_INT:
         this->update_irq(0, SWATCH_INT_CURSOR);
         return 0;
+    //case PlatinumReg::CLR_ANIM_INT:
+    //case PlatinumReg::CLR_VBL_INT:
+    //case PlatinumReg::CURSOR_LINE:
+    //case PlatinumReg::ANIMATE_LINE:
+    //case PlatinumReg::COUNTER_TEST:
+       //break;
+    case PlatinumReg::SWATCH_HSERR:
+    case PlatinumReg::SWATCH_HLFLN:
+    case PlatinumReg::SWATCH_HEQ:
+    case PlatinumReg::SWATCH_HSP:
+    case PlatinumReg::SWATCH_HBWAY:
+    case PlatinumReg::SWATCH_HBRST:
+    case PlatinumReg::SWATCH_HBP:
+    case PlatinumReg::SWATCH_HAL:
+    case PlatinumReg::SWATCH_HFP:
+    case PlatinumReg::SWATCH_HPIX:
+    case PlatinumReg::SWATCH_VHLINE:
+    case PlatinumReg::SWATCH_VSYNC:
+    case PlatinumReg::SWATCH_VBPEQ:
+    case PlatinumReg::SWATCH_VBP:
+    case PlatinumReg::SWATCH_VAL:
+    case PlatinumReg::SWATCH_VFP:
+    case PlatinumReg::SWATCH_VFPEQ:
+        return this->swatch_params[REG_TO_INDEX(offset >> 4)];
     case PlatinumReg::TIMING_ADJUST:
         return this->timing_adjust;
     case PlatinumReg::IRIDIUM_CONFIG:
