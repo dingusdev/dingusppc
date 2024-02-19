@@ -270,7 +270,7 @@ void PlatinumCtrl::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
                     LOG_F(INFO, "%s: video enabled", this->name.c_str());
                     this->enable_display();
                 } else {
-                    this->blank_display();
+                    this->disable_display();
                 }
                 this->reset_step = 0;
             }
@@ -459,6 +459,11 @@ void PlatinumCtrl::enable_display() {
 
     this->blank_on = false;
     this->crtc_on = true;
+}
+
+void PlatinumCtrl::disable_display() {
+    this->crtc_on = false;
+    this->blank_display();
 }
 
 void PlatinumCtrl::enable_cursor_int() {
