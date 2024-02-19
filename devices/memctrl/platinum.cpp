@@ -281,7 +281,7 @@ void PlatinumCtrl::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
         break;
     case PlatinumReg::IRIDIUM_CONFIG:
         if (!(value & 1))
-            ABORT_F("%s: little-endian system bus is not implemented", this->name.c_str());
+            LOG_F(ERROR, "%s: little-endian system bus is not implemented", this->name.c_str());
         this->iridium_cfg = (this->iridium_cfg & ~7) | (value & 7);
         break;
     default:
@@ -387,7 +387,7 @@ void PlatinumCtrl::enable_display() {
         };
         break;
     default:
-        ABORT_F("%s: invalid pixel width %d", this->name.c_str(), this->pixel_depth);
+        LOG_F(ERROR, "%s: invalid pixel width %d", this->name.c_str(), this->pixel_depth);
     }
 
     this->dacula->set_fb_parameters(this->active_width, this->active_height, this->fb_pitch);
