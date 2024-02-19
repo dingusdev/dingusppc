@@ -222,6 +222,7 @@ public:
 
 protected:
     void enable_display();
+    void change_display();
     void disable_display();
     void enable_cursor_int();
     void update_irq(uint8_t irq_line_state, uint8_t irq_mask);
