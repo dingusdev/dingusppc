@@ -186,6 +186,9 @@ uint32_t PlatinumCtrl::read(uint32_t rgn_start, uint32_t offset, int size) {
     case PlatinumReg::IRIDIUM_CONFIG:
         value = this->iridium_cfg;
         break;
+    case PlatinumReg::_4B:
+        value = this->_4b;
+        break;
     default:
         LOG_F(WARNING, "%s: unknown register read at offset 0x%X", this->name.c_str(),
               offset);
@@ -324,6 +327,9 @@ void PlatinumCtrl::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
         if (!(value & 1))
             LOG_F(ERROR, "%s: little-endian system bus is not implemented", this->name.c_str());
         this->iridium_cfg = (this->iridium_cfg & ~7) | (value & 7);
+        break;
+    case PlatinumReg::_4B:
+        this->_4b = value;
         break;
     default:
         LOG_F(WARNING, "%s: unknown register write at offset 0x%X", this->name.c_str(),

@@ -167,6 +167,7 @@ enum PlatinumReg : uint32_t {
 
     // Iridium datapath registers
     IRIDIUM_CONFIG  = 0x4A, // write 4
+    _4B             = 0x4B, // read ; write 1
 };
 
 #define REG_TO_INDEX(reg) ((reg) - FIRST_SWATCH)
@@ -258,6 +259,7 @@ private:
     uint32_t    swatch_config       = 0xFFD;
     uint32_t    swatch_params[17]   = {};
     uint32_t    timing_adjust       = 0;
+    uint32_t    _4b                 = 0;
 
     // interrupt related state
     uint32_t    swatch_int_mask     = 0;
