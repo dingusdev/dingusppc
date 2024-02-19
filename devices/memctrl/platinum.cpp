@@ -195,7 +195,7 @@ uint32_t PlatinumCtrl::read(uint32_t rgn_start, uint32_t offset, int size) {
         value = 0;
     }
 
-    if (size == 4)
+    if (size == 4 && !(offset & 3))
         return value;
     else
         return extract_with_wrap_around(value, offset, size);
