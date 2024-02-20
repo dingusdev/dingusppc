@@ -234,6 +234,7 @@ void AppleRamdac::draw_hw_cursor(uint8_t *src_buf, uint8_t *dst_buf, int dst_pit
     uint8_t *src_row = src_buf + this->fb_pitch * this->cursor_ypos;
     uint8_t *dst_row = dst_buf + this->cursor_ypos * dst_pitch +
                            this->cursor_xpos * sizeof(uint32_t);
+    int src_pitch = this->fb_pitch;
 
     uint32_t *color = &this->cursor_clut[0];
 
@@ -255,7 +256,7 @@ void AppleRamdac::draw_hw_cursor(uint8_t *src_buf, uint8_t *dst_buf, int dst_pit
             }
             dst_16 += 16 * sizeof(uint32_t);
         }
-        src_row += this->fb_pitch;
+        src_row += src_pitch;
         dst_row += dst_pitch;
     }
 }
