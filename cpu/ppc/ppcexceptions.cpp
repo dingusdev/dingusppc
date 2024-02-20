@@ -310,5 +310,5 @@ unexpected_instruction:
 
     ppc_state.spr[SPR::DSISR] = dsisr;
     ppc_state.spr[SPR::DAR] = ea;
-    ppc_exception_handler(Except_Type::EXC_ALIGNMENT, 0x0);
+    mmu_exception_handler(Except_Type::EXC_ALIGNMENT, 0x0);
 }
