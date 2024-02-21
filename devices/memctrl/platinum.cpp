@@ -159,6 +159,8 @@ uint32_t PlatinumCtrl::read(uint32_t rgn_start, uint32_t offset, int size) {
 
 void PlatinumCtrl::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
 {
+    static uint8_t vid_enable_seq[] = {3, 2, 0};
+
     if (rgn_start == VRAM_REGION_BASE) {
         if (offset < this->vram_size)
             write_mem(&this->vram_ptr[offset], value, size);
@@ -220,7 +222,6 @@ void PlatinumCtrl::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
             << (value ^ 7);
         break;
     case PlatinumReg::FB_RESET:
-        static uint8_t vid_enable_seq[] = {3, 2, 0};
 
         if (value == 7 && this->crtc_on) {
             LOG_F(INFO, "%s: video disabled", this->name.c_str());
