@@ -367,7 +367,7 @@ void dppc_interpreter::power_sraiq() {
     unsigned rot_sh        = (ppc_cur_instruction >> 11) & 0x1F;
     uint32_t mask          = (1 << rot_sh) - 1;
     ppc_result_a           = (int32_t)ppc_result_d >> rot_sh;
-    ppc_state.spr[SPR::MQ] = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
+    ppc_state.spr[SPR::MQ] = (ppc_result_d >> rot_sh) | (ppc_result_d << (32 - rot_sh));
 
     if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & mask)) {
         ppc_state.spr[SPR::XER] |= 0x20000000UL;
@@ -394,7 +394,7 @@ void dppc_interpreter::power_sraq() {
         ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
     }
 
-    ppc_state.spr[SPR::MQ] = ((ppc_result_d << ppc_result_b) | (ppc_result_d >> (ppc_result_b)));
+    ppc_state.spr[SPR::MQ] = (ppc_result_d >> rot_sh) | (ppc_result_d << (32 - rot_sh));
 
     if (rc_flag)
         ppc_changecrf0(ppc_result_a);
@@ -408,7 +408,7 @@ void dppc_interpreter::power_sre() {
     unsigned rot_sh        = ppc_result_b & 31;
 
     ppc_result_a           = ppc_result_d >> rot_sh;
-    ppc_state.spr[SPR::MQ] = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
+    ppc_state.spr[SPR::MQ] = (ppc_result_d >> rot_sh) | (ppc_result_d << (32 - rot_sh));
 
     if (rc_flag)
         ppc_changecrf0(ppc_result_a);
@@ -464,7 +464,7 @@ void dppc_interpreter::power_srliq() {
     ppc_grab_regssa();
     unsigned rot_sh        = (ppc_cur_instruction >> 11) & 31;
 
-    uint32_t r             = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
+    uint32_t r             = (ppc_result_d >> rot_sh) | (ppc_result_d << (32 - rot_sh));
     unsigned mask          = power_rot_mask(rot_sh, 31);
 
     ppc_result_a           = ((r & mask) | (ppc_state.spr[SPR::MQ] & ~mask));
@@ -479,7 +479,7 @@ void dppc_interpreter::power_srliq() {
 void dppc_interpreter::power_srlq() {
     ppc_grab_regssab();
     unsigned rot_sh = ppc_result_b & 31;
-    uint32_t r      = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
+    uint32_t r      = (ppc_result_d >> rot_sh) | (ppc_result_d << (32 - rot_sh));
     unsigned mask   = power_rot_mask(rot_sh, 31);
 
     if (ppc_result_b >= 0x20) {
@@ -505,7 +505,7 @@ void dppc_interpreter::power_srq() {
         ppc_result_a = ppc_result_d >> rot_sh;
     }
 
-    ppc_state.spr[SPR::MQ] = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
+    ppc_state.spr[SPR::MQ] = (ppc_result_d >> rot_sh) | (ppc_result_d << (32 - rot_sh));
 
     if (rc_flag)
         ppc_changecrf0(ppc_result_a);
