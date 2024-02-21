@@ -546,9 +546,9 @@ void dppc_interpreter::ppc_cntlzw() {
 
     uint32_t bit_check = ppc_result_d;
 
-#ifdef USE_GCC_BUILTINS
+#ifdef __builtin_clz //for GCC and Clang users
     uint32_t lead = !bit_check ? 32 : __builtin_clz(bit_check);
-#elif defined USE_VS_BUILTINS
+#elif defined __lzcnt //for Visual C++ users
     uint32_t lead = __lzcnt(bit_check);
 #else
     uint32_t lead, mask;
