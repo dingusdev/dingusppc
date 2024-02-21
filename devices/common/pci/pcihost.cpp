@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -23,7 +23,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/pci/pcibridge.h>
 #include <devices/common/pci/pcihost.h>
 #include <devices/deviceregistry.h>
-#include <devices/memctrl/memctrlbase.h>
 #include <machines/machinefactory.h>
 #include <machines/machinebase.h>
 #include <endianswap.h>
@@ -90,7 +89,7 @@ void PCIHost::pci_unregister_device(int dev_fun_num)
     gMachineObj->remove_device(dev_instance); // calls destructor of dev_instance since it is a unique_ptr in the device_map.
 }
 
-bool PCIHost::pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIBase* obj)
+AddressMapEntry* PCIHost::pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIBase* obj)
 {
     MemCtrlBase *mem_ctrl = dynamic_cast<MemCtrlBase *>
                            (gMachineObj->get_comp_by_type(HWCompType::MEM_CTRL));

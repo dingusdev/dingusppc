@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -42,7 +42,7 @@ PCIBridgeBase::PCIBridgeBase(std::string name, PCIHeaderType hdr_type, int num_b
     this->pci_wr_bridge_control     = [this](uint16_t val) { this->bridge_control = val; };
 };
 
-bool PCIBridgeBase::pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIBase* obj)
+AddressMapEntry* PCIBridgeBase::pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIBase* obj)
 {
     // FIXME: constrain region to memory range
     return this->host_instance->pci_register_mmio_region(start_addr, size, obj);

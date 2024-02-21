@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -188,7 +188,7 @@ bool MemCtrlBase::is_range_free(uint32_t addr, uint32_t size) {
 }
 
 
-bool MemCtrlBase::add_mem_region(uint32_t start_addr, uint32_t size,
+AddressMapEntry* MemCtrlBase::add_mem_region(uint32_t start_addr, uint32_t size,
                                  uint32_t dest_addr, uint32_t type,
                                  uint8_t init_val = 0)
 {
@@ -196,7 +196,7 @@ bool MemCtrlBase::add_mem_region(uint32_t start_addr, uint32_t size,
 
     // bail out if a memory region for the given range already exists
     if (!is_range_free(start_addr, size))
-        return false;
+        return nullptr;
 
     uint8_t* reg_content = new uint8_t[size](); // allocate and clear to zero
 
@@ -233,27 +233,27 @@ bool MemCtrlBase::add_mem_region(uint32_t start_addr, uint32_t size,
         dest_addr
     );
 
-    return true;
+    return entry;
 }
 
 
-bool MemCtrlBase::add_rom_region(uint32_t start_addr, uint32_t size) {
+AddressMapEntry* MemCtrlBase::add_rom_region(uint32_t start_addr, uint32_t size) {
     return add_mem_region(start_addr, size, 0, RT_ROM);
 }
 
 
-bool MemCtrlBase::add_ram_region(uint32_t start_addr, uint32_t size) {
+AddressMapEntry* MemCtrlBase::add_ram_region(uint32_t start_addr, uint32_t size) {
     return add_mem_region(start_addr, size, 0, RT_RAM);
 }
 
 
-bool MemCtrlBase::add_mem_mirror_common(uint32_t start_addr, uint32_t dest_addr,
-                                        uint32_t offset, uint32_t size) {
+AddressMapEntry* MemCtrlBase::add_mem_mirror_common(uint32_t start_addr, uint32_t dest_addr,
+                                                    uint32_t offset, uint32_t size) {
     AddressMapEntry *entry, *ref_entry;
 
     ref_entry = find_range(dest_addr);
     if (!ref_entry)
-        return false;
+        return nullptr;
 
     // use origin's size if no size was specified
     if (!size)
@@ -262,7 +262,7 @@ bool MemCtrlBase::add_mem_mirror_common(uint32_t start_addr, uint32_t dest_addr,
     if (ref_entry->start + offset + size - 1 > ref_entry->end) {
         LOG_F(ERROR, "Partial mirror outside the origin, offset=0x%X, size=0x%X",
               offset, size);
-        return false;
+        return nullptr;
     }
 
     entry = new AddressMapEntry;
@@ -291,45 +291,45 @@ bool MemCtrlBase::add_mem_mirror_common(uint32_t start_addr, uint32_t dest_addr,
         : ""
     );
 
-    return true;
+    return entry;
 }
 
 
-bool MemCtrlBase::add_mem_mirror(uint32_t start_addr, uint32_t dest_addr) {
+AddressMapEntry* MemCtrlBase::add_mem_mirror(uint32_t start_addr, uint32_t dest_addr) {
     return this->add_mem_mirror_common(start_addr, dest_addr);
 }
 
 
-bool MemCtrlBase::add_mem_mirror_partial(uint32_t start_addr, uint32_t dest_addr,
-                                         uint32_t offset, uint32_t size) {
+AddressMapEntry* MemCtrlBase::add_mem_mirror_partial(uint32_t start_addr, uint32_t dest_addr,
+                                                     uint32_t offset, uint32_t size) {
     return this->add_mem_mirror_common(start_addr, dest_addr, offset, size);
 }
 
 
-bool MemCtrlBase::set_data(uint32_t load_addr, const uint8_t* data, uint32_t size) {
+AddressMapEntry* MemCtrlBase::set_data(uint32_t load_addr, const uint8_t* data, uint32_t size) {
     AddressMapEntry* ref_entry;
     uint32_t cpy_size;
 
     ref_entry = find_range(load_addr);
     if (!ref_entry)
-        return false;
+        return nullptr;
 
     uint32_t load_offset = load_addr - ref_entry->start;
 
     cpy_size = std::min(ref_entry->end - ref_entry->start + 1, size);
     memcpy(ref_entry->mem_ptr + load_offset, data, cpy_size);
 
-    return true;
+    return ref_entry;
 }
 
 
-bool MemCtrlBase::add_mmio_region(uint32_t start_addr, uint32_t size, MMIODevice* dev_instance)
+AddressMapEntry* MemCtrlBase::add_mmio_region(uint32_t start_addr, uint32_t size, MMIODevice* dev_instance)
 {
     AddressMapEntry *entry;
 
     // bail out if a memory region for the given range already exists
     if (!is_range_free(start_addr, size))
-        return false;
+        return nullptr;
 
     entry = new AddressMapEntry;
 
@@ -351,8 +351,9 @@ bool MemCtrlBase::add_mmio_region(uint32_t start_addr, uint32_t size, MMIODevice
             : ""
     );
 
-    return true;
+    return entry;
 }
+
 
 bool MemCtrlBase::remove_mmio_region(uint32_t start_addr, uint32_t size, MMIODevice* dev_instance)
 {

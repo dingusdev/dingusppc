@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -64,18 +64,18 @@ class MemCtrlBase {
 public:
     MemCtrlBase() = default;
     virtual ~MemCtrlBase();
-    virtual bool add_rom_region(uint32_t start_addr, uint32_t size);
-    virtual bool add_ram_region(uint32_t start_addr, uint32_t size);
-    virtual bool add_mem_mirror(uint32_t start_addr, uint32_t dest_addr);
-    virtual bool add_mem_mirror_partial(uint32_t start_addr, uint32_t dest_addr,
-                                        uint32_t offset, uint32_t size);
+    virtual AddressMapEntry* add_rom_region(uint32_t start_addr, uint32_t size);
+    virtual AddressMapEntry* add_ram_region(uint32_t start_addr, uint32_t size);
+    virtual AddressMapEntry* add_mem_mirror(uint32_t start_addr, uint32_t dest_addr);
+    virtual AddressMapEntry* add_mem_mirror_partial(uint32_t start_addr, uint32_t dest_addr,
+                                                    uint32_t offset, uint32_t size);
 
-    virtual bool add_mmio_region(uint32_t start_addr, uint32_t size,
-                                 MMIODevice* dev_instance);
+    virtual AddressMapEntry* add_mmio_region(uint32_t start_addr, uint32_t size,
+                                             MMIODevice* dev_instance);
     virtual bool remove_mmio_region(uint32_t start_addr, uint32_t size,
                                     MMIODevice* dev_instance);
 
-    virtual bool set_data(uint32_t reg_addr, const uint8_t* data, uint32_t size);
+    virtual AddressMapEntry* set_data(uint32_t reg_addr, const uint8_t* data, uint32_t size);
 
     AddressMapEntry* find_range(uint32_t addr);
     AddressMapEntry* find_range_exact(uint32_t addr, uint32_t size,
@@ -91,13 +91,13 @@ public:
     void dump_regions();
 
 protected:
-    bool add_mem_region(
+    AddressMapEntry* add_mem_region(
         uint32_t start_addr, uint32_t size, uint32_t dest_addr, uint32_t type,
         uint8_t init_val
     );
 
-    bool add_mem_mirror_common(uint32_t start_addr, uint32_t dest_addr,
-                               uint32_t offset=0, uint32_t size=0);
+    AddressMapEntry* add_mem_mirror_common(uint32_t start_addr, uint32_t dest_addr,
+                                           uint32_t offset=0, uint32_t size=0);
 
 private:
     std::vector<uint8_t*> mem_regions;

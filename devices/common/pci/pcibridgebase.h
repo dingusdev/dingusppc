@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -43,14 +43,14 @@ public:
     ~PCIBridgeBase() = default;
 
     // PCIHost methods
-    virtual bool pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIBase* obj);
-    virtual bool pci_unregister_mmio_region(uint32_t start_addr, uint32_t size, PCIBase* obj);
+    virtual AddressMapEntry* pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIBase* obj) override;
+    virtual bool           pci_unregister_mmio_region(uint32_t start_addr, uint32_t size, PCIBase* obj) override;
 
     // PCIBase methods
-    virtual uint32_t pci_cfg_read(uint32_t reg_offs, AccessDetails &details);
-    virtual void pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDetails &details);
+    virtual uint32_t pci_cfg_read(uint32_t reg_offs, AccessDetails &details) override;
+    virtual void pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDetails &details) override;
 
-    bool supports_io_space() {
+    bool supports_io_space() override {
         return true;
     };
 
@@ -69,7 +69,7 @@ public:
     std::function<void(uint16_t)>   pci_wr_bridge_control;
 
     // HWComponent methods
-    virtual int device_postinit();
+    virtual int device_postinit() override;
 
 protected:
     // PCI configuration space state

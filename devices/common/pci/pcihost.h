@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <core/bitops.h>
 #include <devices/common/hwinterrupt.h>
+#include <devices/memctrl/memctrlbase.h>
 #include <endianswap.h>
 
 #include <cinttypes>
@@ -70,8 +71,8 @@ public:
     virtual bool pci_register_device(int dev_fun_num, PCIBase* dev_instance);
     virtual void pci_unregister_device(int dev_fun_num);
 
-    virtual bool pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIBase* obj);
-    virtual bool pci_unregister_mmio_region(uint32_t start_addr, uint32_t size, PCIBase* obj);
+    virtual AddressMapEntry* pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIBase* obj);
+    virtual bool           pci_unregister_mmio_region(uint32_t start_addr, uint32_t size, PCIBase* obj);
 
     virtual void attach_pci_device(const std::string& dev_name, int slot_id);
     PCIBase *attach_pci_device(const std::string& dev_name, int slot_id,
