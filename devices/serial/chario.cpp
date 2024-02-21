@@ -49,6 +49,7 @@ int CharIoNull::rcv_char(uint8_t *c)
 
 #include <fcntl.h>
 #include <io.h>
+#include <stdio.h>
 #include <windows.h>
 
 HANDLE hInput  = GetStdHandle(STD_INPUT_HANDLE);
