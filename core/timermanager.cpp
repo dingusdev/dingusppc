@@ -54,7 +54,7 @@ uint32_t TimerManager::add_immediate_timer(timer_cb cb) {
     TimerInfo* ti = new TimerInfo;
 
     ti->id          = ++this->id;
-    ti->timeout_ns  = this->get_time_now() + 10;
+    ti->timeout_ns  = this->get_time_now();
     ti->interval_ns = 0;
     ti->cb          = cb;
 
