@@ -402,6 +402,36 @@ bool MemCtrlBase::remove_mmio_region(uint32_t start_addr, uint32_t size, MMIODev
     return (found > 0);
 }
 
+
+AddressMapEntry* MemCtrlBase::remove_region(AddressMapEntry* entry)
+{
+    int found = 0;
+
+    address_map.erase(std::remove_if(address_map.begin(), address_map.end(),
+        [entry, &found](const AddressMapEntry *cmp_entry) {
+            if (entry == cmp_entry) {
+                if (found)
+                    LOG_F(ERROR, "Removed mem region %s", get_entry_str(entry).c_str());
+                else
+                    LOG_F(INFO, "Removed mem region %s", get_entry_str(entry).c_str());
+                found++;
+                return true;
+            }
+            return false;
+        }
+    ), address_map.end());
+
+    if (found == 0) {
+        LOG_F(ERROR, "Cannot find mem region %s to remove",
+            get_entry_str(entry).c_str()
+        );
+        return nullptr;
+    }
+
+    return entry;
+}
+
+
 AddressMapEntry* MemCtrlBase::find_rom_region()
 {
     for (auto& entry : address_map) {
