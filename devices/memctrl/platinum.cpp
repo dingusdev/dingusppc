@@ -242,6 +242,7 @@ void PlatinumCtrl::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
     case PlatinumReg::BANK_6_BASE:
     case PlatinumReg::BANK_7_BASE:
         this->bank_base[(offset >> 4) - PlatinumReg::BANK_0_BASE] = value;
+        this->map_phys_ram();
         break;
     case PlatinumReg::FB_BASE_ADDR:
         this->fb_addr   = value;
@@ -406,12 +407,54 @@ void PlatinumCtrl::map_phys_ram() {
         total_ram += this->bank_size[i];
     }
 
-    if (total_ram > DRAM_CAP_64MB) {
-        ABORT_F("%s: RAM bigger than 64MB not supported yet", this->name.c_str());
+    if (!this->dram_ptr) {
+        this->dram_ptr = std::unique_ptr<uint8_t[]> (new uint8_t[total_ram]()); /* () intializer clears the memory to zero */
+        if (!this->dram_ptr) {
+            ABORT_F("%s: could not allocate RAM storage", this->name.c_str());
+        }
     }
 
-    if (!add_ram_region(0x00000000, total_ram)) {
-        ABORT_F("%s: could not allocate RAM storage", this->name.c_str());
+    ram_map.erase(std::remove_if(ram_map.begin(), ram_map.end(),
+        [this](AddressMapEntry *entry) {
+            delete this->remove_region(entry);
+            return true;
+        }
+    ), ram_map.end());
+
+    uint32_t ram_offset = 0;
+    uint32_t ram_end = 0;
+    while (1) {
+        // find first bank that exists after the last added region
+        uint32_t ram_start = -1;
+        for (int bank = 0; bank < 8; bank++) {
+            if (
+                this->bank_size[bank] && // has size
+                this->bank_base[bank] >= ram_end && // starts after the last ending
+                this->bank_base[bank] < ram_start // has earlier start
+            ) {
+                ram_start = this->bank_base[bank];
+            }
+        }
+        if (ram_start + 1 == 0)
+            break;
+        ram_end = ram_start;
+        // find the max size of this region
+        for (int bank = 0; bank < 8; bank++) {
+            if (
+                this->bank_size[bank] && // has size
+                this->bank_base[bank] <= ram_end && // starts before the end
+                this->bank_base[bank] + this->bank_size[bank] > ram_end // ends after the end
+            ) {
+                ram_end = this->bank_base[bank] + this->bank_size[bank];
+            }
+        }
+        AddressMapEntry *entry = this->add_ram_region(ram_start, ram_end - ram_start, &dram_ptr[ram_offset]);
+        if (entry) {
+            ram_map.push_back(entry);
+        } else {
+            ABORT_F("%s: could not allocate RAM storage", this->name.c_str());
+        }
+        ram_offset += ram_end - ram_start;
     }
 }
 
