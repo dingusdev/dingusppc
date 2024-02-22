@@ -52,13 +52,10 @@ uint32_t ppc_cur_instruction;    // Current instruction for the PPC
 uint32_t ppc_effective_address;
 uint32_t ppc_next_instruction_address;    // Used for branching, setting up the NIA
 
-#ifdef EXEC_FLAGS_ATOMIC
-std::atomic<unsigned> exec_flags{0}; // execution control flags
-#else
-// FIXME: read by main thread ppc_main_opcode;
+unsigned exec_flags; // execution control flags
+// FIXME: exec_timer is read by main thread ppc_main_opcode;
 // written by audio dbdma DMAChannel::update_irq .. add_immediate_timer
-unsigned exec_flags;
-#endif
+volatile bool exec_timer;
 bool int_pin = false; // interrupt request pin state: true - asserted
 bool dec_exception_pending = false;
 
@@ -296,6 +293,7 @@ uint64_t get_virt_time_ns()
 
 uint64_t process_events()
 {
+    exec_timer = false;
     uint64_t slice_ns = TimerManager::get_instance()->process_timers();
     if (slice_ns == 0) {
         // execute 10.000 cycles
@@ -308,7 +306,7 @@ uint64_t process_events()
 void force_cycle_counter_reload()
 {
     // tell the interpreter loop to reload cycle counter
-    exec_flags |= EXEF_TIMER;
+    exec_timer = true;
 }
 
 /** Execute PPC code as long as power is on. */
@@ -334,22 +332,11 @@ static void ppc_exec_inner()
         // interpret execution block
         while (power_on && ppc_state.pc < eb_end) {
             ppc_main_opcode();
-            if (g_icycles++ >= max_cycles) {
+            if (g_icycles++ >= max_cycles || exec_timer) {
                 max_cycles = process_events();
             }
 
             if (exec_flags) {
-                // reload cycle counter if requested
-                if (exec_flags & EXEF_TIMER) {
-                    max_cycles = process_events();
-                    if (!(exec_flags & ~EXEF_TIMER)) {
-                        ppc_state.pc += 4;
-                        pc_real += 4;
-                        ppc_set_cur_instruction(pc_real);
-                        exec_flags = 0;
-                        continue;
-                    }
-                }
                 // define next execution block
                 eb_start = ppc_next_instruction_address;
                 if (!(exec_flags & EXEF_RFI) && (eb_start & PAGE_MASK) == page_start) {
@@ -402,11 +389,7 @@ void ppc_exec_single()
     process_events();
 
     if (exec_flags) {
-        if (!(exec_flags & ~EXEF_TIMER)) {
-            ppc_state.pc += 4;
-        } else {
-            ppc_state.pc = ppc_next_instruction_address;
-        }
+        ppc_state.pc = ppc_next_instruction_address;
         exec_flags = 0;
     } else {
         ppc_state.pc += 4;
@@ -437,22 +420,11 @@ static void ppc_exec_until_inner(const uint32_t goal_addr)
         // interpret execution block
         while (power_on && ppc_state.pc < eb_end) {
             ppc_main_opcode();
-            if (g_icycles++ >= max_cycles) {
+            if (g_icycles++ >= max_cycles || exec_timer) {
                 max_cycles = process_events();
             }
 
             if (exec_flags) {
-                // reload cycle counter if requested
-                if (exec_flags & EXEF_TIMER) {
-                    max_cycles = process_events();
-                    if (!(exec_flags & ~EXEF_TIMER)) {
-                        ppc_state.pc += 4;
-                        pc_real += 4;
-                        ppc_set_cur_instruction(pc_real);
-                        exec_flags = 0;
-                        continue;
-                    }
-                }
                 // define next execution block
                 eb_start = ppc_next_instruction_address;
                 if (!(exec_flags & EXEF_RFI) && (eb_start & PAGE_MASK) == page_start) {
@@ -516,22 +488,11 @@ static void ppc_exec_dbg_inner(const uint32_t start_addr, const uint32_t size)
         while (power_on && (ppc_state.pc < start_addr || ppc_state.pc >= start_addr + size)
                 && (ppc_state.pc < eb_end)) {
             ppc_main_opcode();
-            if (g_icycles++ >= max_cycles) {
+            if (g_icycles++ >= max_cycles || exec_timer) {
                 max_cycles = process_events();
             }
 
             if (exec_flags) {
-                // reload cycle counter if requested
-                if (exec_flags & EXEF_TIMER) {
-                    max_cycles = process_events();
-                    if (!(exec_flags & ~EXEF_TIMER)) {
-                        ppc_state.pc += 4;
-                        pc_real += 4;
-                        ppc_set_cur_instruction(pc_real);
-                        exec_flags = 0;
-                        continue;
-                    }
-                }
                 // define next execution block
                 eb_start = ppc_next_instruction_address;
                 if (!(exec_flags & EXEF_RFI) && (eb_start & PAGE_MASK) == page_start) {
@@ -892,6 +853,7 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, uint64_t tb_freq)
     tbr_period_ns = ((uint64_t)NS_PER_SEC << 32) / tb_freq;
 
     exec_flags = 0;
+    exec_timer = false;
 
     timebase_counter = 0;
     dec_wr_value = 0;

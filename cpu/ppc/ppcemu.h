@@ -184,7 +184,6 @@ enum {
     EXEF_BRANCH    = 1 << 0,
     EXEF_EXCEPTION = 1 << 1,
     EXEF_RFI       = 1 << 2,
-    EXEF_TIMER     = 1 << 7
 };
 
 enum CR_select : int32_t {
@@ -299,11 +298,7 @@ enum Exc_Cause : uint32_t {
     TRAP        = 1 << (31 - 14),
 };
 
-#ifdef EXEC_FLAGS_ATOMIC
-extern std::atomic<unsigned> exec_flags;
-#else
 extern unsigned exec_flags;
-#endif
 
 extern jmp_buf exc_env;
 

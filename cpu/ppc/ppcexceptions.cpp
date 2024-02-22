@@ -56,7 +56,7 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
         break;
 
     case Except_Type::EXC_ISI:
-        if (exec_flags & ~EXEF_TIMER) {
+        if (exec_flags) {
             ppc_state.spr[SPR::SRR0] = ppc_next_instruction_address;
         } else {
             ppc_state.spr[SPR::SRR0] = ppc_state.pc & 0xFFFFFFFCUL;
@@ -65,7 +65,7 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
         break;
 
     case Except_Type::EXC_EXT_INT:
-        if (exec_flags & ~EXEF_TIMER) {
+        if (exec_flags) {
             ppc_state.spr[SPR::SRR0] = ppc_next_instruction_address;
         } else {
             ppc_state.spr[SPR::SRR0] = (ppc_state.pc & 0xFFFFFFFCUL) + 4;
@@ -89,7 +89,7 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
         break;
 
     case Except_Type::EXC_DECR:
-        if (exec_flags & ~EXEF_TIMER) {
+        if (exec_flags) {
             ppc_state.spr[SPR::SRR0] = ppc_next_instruction_address;
         } else {
             ppc_state.spr[SPR::SRR0] = (ppc_state.pc & 0xFFFFFFFCUL) + 4;
