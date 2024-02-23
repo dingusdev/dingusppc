@@ -39,7 +39,7 @@ inline void power_setsoov(uint32_t a, uint32_t b, uint32_t d) {
 /** mask generator for rotate and shift instructions (§ 4.2.1.4 PowerpC PEM) */
 static inline uint32_t power_rot_mask(unsigned rot_mb, unsigned rot_me) {
     uint32_t m1 = 0xFFFFFFFFUL >> rot_mb;
-    uint32_t m2 = (uint32_t)(0xFFFFFFFFUL << (31 - rot_me));
+    uint32_t m2 = uint32_t(0xFFFFFFFFUL << (31 - rot_me));
     return ((rot_mb <= rot_me) ? m2 & m1 : m1 | m2);
 }
 
@@ -79,14 +79,14 @@ void dppc_interpreter::power_clcs() {
 void dppc_interpreter::power_div() {
     ppc_grab_regsdab();
 
-    uint64_t dividend = ((uint64_t)ppc_result_a << 32) | ppc_state.spr[SPR::MQ];
+    uint64_t dividend = (uint64_t(ppc_result_a << 32)) | ppc_state.spr[SPR::MQ];
     int32_t  divisor  = ppc_result_b;
 
     if ((ppc_result_a == 0x80000000UL && divisor == -1) || !divisor) {
         ppc_state.spr[SPR::MQ] = 0;
         ppc_result_d = 0x80000000UL; // -2^31 aka INT32_MIN
     } else {
-        ppc_result_d = (uint32_t)(dividend / divisor);
+        ppc_result_d = uint32_t(dividend / divisor);
         ppc_state.spr[SPR::MQ] = dividend % divisor;
     }
 
@@ -113,7 +113,7 @@ void dppc_interpreter::power_divs() {
 
 void dppc_interpreter::power_doz() {
     ppc_grab_regsdab();
-    ppc_result_d = ((int32_t)ppc_result_a >= (int32_t)ppc_result_b) ? 0 :
+    ppc_result_d = (int32_t(ppc_result_a) >= int32_t(ppc_result_b)) ? 0 :
                     ppc_result_b - ppc_result_a;
 
     if (rc_flag)
@@ -136,7 +136,7 @@ void dppc_interpreter::power_dozi() {
 
 void dppc_interpreter::power_lscbx() {
     ppc_grab_regsdab();
-    ppc_effective_address = (reg_a == 0) ? ppc_result_b : ppc_result_a + ppc_result_b;
+    ppc_effective_address = reg_a ? (ppc_result_a + ppc_result_b) : ppc_result_b;
     //ppc_result_d          = 0xFFFFFFFF;
 
     uint8_t return_value   = 0;
