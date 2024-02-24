@@ -79,7 +79,7 @@ void dppc_interpreter::power_clcs() {
 void dppc_interpreter::power_div() {
     ppc_grab_regsdab();
 
-    uint64_t dividend = (uint64_t(ppc_result_a << 32)) | ppc_state.spr[SPR::MQ];
+    uint64_t dividend = ((uint64_t)ppc_result_a << 32) | ppc_state.spr[SPR::MQ];
     int32_t  divisor  = ppc_result_b;
 
     if ((ppc_result_a == 0x80000000UL && divisor == -1) || !divisor) {
