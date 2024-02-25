@@ -136,7 +136,7 @@ void dppc_interpreter::power_dozi() {
 
 void dppc_interpreter::power_lscbx() {
     ppc_grab_regsdab();
-    ppc_effective_address = reg_a ? ppc_result_a + ppc_result_b : ppc_result_b;
+    ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
 
     uint8_t  return_value  = 0;
     uint32_t bytes_to_load = (ppc_state.spr[SPR::XER] & 0x7F);
