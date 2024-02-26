@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -24,9 +24,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /* ATI PCI device IDs. */
 enum {
-    ATI_RAGE_PRO_DEV_ID  = 0x4750,
-    ATI_RAGE_GT_DEV_ID   = 0x4754,
-    ATI_MACH64_GX_DEV_ID = 0x4758,
+    ATI_RAGE_PRO_DEV_ID  = 0x4750, // GP
+    ATI_RAGE_GT_DEV_ID   = 0x4754, // GT
+    ATI_MACH64_GX_DEV_ID = 0x4758, // GX
+//                       = 0x5654, // VT
 };
 
 /** Mach64 register offsets. */
