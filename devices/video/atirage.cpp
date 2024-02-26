@@ -639,6 +639,7 @@ void ATIRage::draw_hw_cursor(uint8_t *dst_buf, int dst_pitch) {
                     WRITE_DWORD_BE_A(dst_row, 0);
                     break;
                 case 3: // 1's complement of display pixel
+                    WRITE_DWORD_BE_A(dst_row, 0x0000007F);
                     break;
                 }
             }
