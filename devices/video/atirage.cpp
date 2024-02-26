@@ -562,7 +562,7 @@ void ATIRage::crtc_update() {
         break;
     case 3:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
-            this->convert_frame_15bpp(dst_buf, dst_pitch);
+            this->convert_frame_15bpp_BE(dst_buf, dst_pitch);
         };
         break;
     case 4:
@@ -577,7 +577,7 @@ void ATIRage::crtc_update() {
         break;
     case 6:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
-            this->convert_frame_32bpp(dst_buf, dst_pitch);
+            this->convert_frame_32bpp_BE(dst_buf, dst_pitch);
         };
         break;
     default:
