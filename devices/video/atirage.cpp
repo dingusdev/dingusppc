@@ -275,6 +275,17 @@ uint32_t ATIRage::read_reg(uint32_t reg_offset, uint32_t size) {
     return static_cast<uint32_t>(result);
 }
 
+#define WRITE_VALUE_AND_LOG(level) \
+    do { \
+        this->regs[reg_num] = new_value; \
+        if (reg_num != ATI_CRTC_INT_CNTL) { \
+            LOG_F(level, "%s: write %s %04x.%c = %0*x = %08x", this->name.c_str(), \
+                get_reg_name(reg_num), reg_offset, SIZE_ARG(size), size * 2, \
+                (uint32_t)extract_bits<uint64_t>(value, offset * 8, size * 8), new_value \
+            ); \
+        } \
+    } while (0)
+
 void ATIRage::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size) {
     uint32_t reg_num = reg_offset >> 2;
     uint32_t offset = reg_offset & 3;
@@ -301,11 +312,9 @@ void ATIRage::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size) {
         break;
     case ATI_CRTC_OFF_PITCH:
         new_value = value;
-        if (old_value != new_value) {
-            this->regs[reg_num] = new_value;
-            this->crtc_update();
-        }
-        break;
+        WRITE_VALUE_AND_LOG(9);
+        this->crtc_update();
+        return;
     case ATI_CRTC_INT_CNTL: {
         uint32_t bits_read_only =
             (1 << ATI_CRTC_VBLANK) |
@@ -503,7 +512,7 @@ void ATIRage::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size) {
         break;
     }
 
-    this->regs[reg_num] = new_value;
+    WRITE_VALUE_AND_LOG(9);
 }
 
 bool ATIRage::io_access_allowed(uint32_t offset) {
@@ -699,6 +708,21 @@ void ATIRage::crtc_update() {
         need_recalc = true;
     }
 
+    static uint8_t bits_per_pixel[8] = {0, 4, 8, 16, 16, 24, 32, 0};
+
+    int new_fb_pitch = extract_bits<uint32_t>(this->regs[ATI_CRTC_OFF_PITCH],
+        ATI_CRTC_PITCH, ATI_CRTC_PITCH_size) * bits_per_pixel[this->pixel_format];
+    if (new_fb_pitch != this->fb_pitch) {
+        this->fb_pitch = new_fb_pitch;
+        need_recalc = true;
+    }
+    uint8_t* new_fb_ptr = &this->vram_ptr[extract_bits<uint32_t>(this->regs[ATI_CRTC_OFF_PITCH],
+        ATI_CRTC_OFFSET, ATI_CRTC_OFFSET_size) * 8];
+    if (new_fb_ptr != this->fb_ptr) {
+        this->fb_ptr = new_fb_ptr;
+        need_recalc = true;
+    }
+
     // look up which VPLL ouput is requested
     int clock_sel = extract_bits<uint32_t>(this->regs[ATI_CLOCK_CNTL], ATI_CLOCK_SEL,
                                            ATI_CLOCK_SEL_size);
@@ -780,14 +804,6 @@ void ATIRage::crtc_update() {
     default:
         LOG_F(ERROR, "%s: unsupported pixel format %d", this->name.c_str(), this->pixel_format);
     }
-
-    static uint8_t bits_per_pixel[8] = {0, 4, 8, 16, 16, 24, 32, 0};
-
-    this->fb_pitch = extract_bits<uint32_t>(this->regs[ATI_CRTC_OFF_PITCH],
-        ATI_CRTC_PITCH, ATI_CRTC_PITCH_size) * (bits_per_pixel[this->pixel_format & 7] * 8) >> 3;
-
-    this->fb_ptr = &this->vram_ptr[extract_bits<uint32_t>(this->regs[ATI_CRTC_OFF_PITCH],
-        ATI_CRTC_OFFSET, ATI_CRTC_OFFSET_size) * 8];
 
     LOG_F(INFO, "%s: primary CRT controller enabled:", this->name.c_str());
     LOG_F(INFO, "Video mode: %s",
