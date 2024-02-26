@@ -176,10 +176,10 @@ enum {
 };
 
 constexpr auto APERTURE_SIZE = 0x01000000UL; // Mach64 aperture size
+constexpr auto BE_FB_OFFSET  = 0x00800000UL; // Offset to the big-endian frame buffer
 constexpr auto MM_REGS_0_OFF = 0x007FFC00UL; // offset to memory mapped registers, block 0
 constexpr auto MM_REGS_1_OFF = 0x007FF800UL; // offset to memory mapped registers, block 1
 constexpr auto MM_REGS_2_OFF = 0x003FFC00UL; // offset to memory mapped registers, 4MB aperture
-constexpr auto BE_FB_OFFSET  = 0x00800000UL; // Offset to the big-endian frame buffer
 
 constexpr auto ATI_XTAL = 14318180.0f; // external crystal oscillator frequency
 
