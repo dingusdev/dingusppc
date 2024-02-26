@@ -278,11 +278,8 @@ void ATIRage::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size) {
         LOG_F(9, "%s: ATI_CRTC_H_TOTAL_DISP set to 0x%08X", this->name.c_str(), value);
         break;
     case ATI_CRTC_OFF_PITCH:
-        this->regs[reg_offset] = value;
-        this->fb_pitch = extract_bits<uint32_t>(value, 22, 10) * 8;
-        this->fb_ptr = &this->vram_ptr[extract_bits<uint32_t>(value, 0, 20) * 8];
-        if (bit_set(this->regs[ATI_CRTC_GEN_CNTL], 25) &&
-            !bit_set(this->regs[ATI_CRTC_GEN_CNTL], 6)) {
+        if (this->regs[reg_offset] != value) {
+            this->regs[reg_offset] = value;
             this->crtc_update();
         }
         break;
@@ -586,6 +583,13 @@ void ATIRage::crtc_update() {
     default:
         LOG_F(ERROR, "%s: unsupported pixel format %d", this->name.c_str(), pix_fmt);
     }
+
+    static uint8_t bits_per_pixel[8] = {0, 4, 8, 16, 16, 24, 32, 0};
+
+    this->fb_pitch = extract_bits<uint32_t>(this->regs[ATI_CRTC_OFF_PITCH], 22, 10) *
+        (bits_per_pixel[pix_fmt & 7] * 8) >> 3;
+
+    this->fb_ptr = &this->vram_ptr[extract_bits<uint32_t>(this->regs[ATI_CRTC_OFF_PITCH], 0, 20) * 8];
 
     LOG_F(INFO, "%s: primary CRT controller enabled:", this->name.c_str());
     LOG_F(INFO, "Video mode: %s",
