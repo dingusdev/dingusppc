@@ -468,7 +468,7 @@ void ATIRage::verbose_pixel_format(int crtc_index) {
     case 2:
         // check the undocumented DAC_DIRECT bit
         if (bit_set(this->regs[ATI_DAC_CNTL], ATI_DAC_DIRECT)) {
-            LOG_F(INFO, "%s 8 bpp direct color (RGB322)", what);
+            LOG_F(INFO, "%s 8 bpp direct color (RGB332)", what);
         } else {
             LOG_F(INFO, "%s 8 bpp with DAC palette", what);
         }
