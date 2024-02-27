@@ -825,6 +825,7 @@ void ATIRage::crtc_update() {
         return;
 
     this->draw_fb = true;
+    LOG_F(INFO, "%s: clock_sel:%d fb_div:%02x", this->name.c_str(), clock_sel, this->plls[VCLK0_FB_DIV + clock_sel]);
 
     // calculate display refresh rate
     this->refresh_rate = pixel_clock / this->hori_total / this->vert_total;
@@ -890,6 +891,7 @@ void ATIRage::crtc_update() {
          bit_set(this->regs[ATI_CRTC_GEN_CNTL], ATI_CRTC_EXT_DISP_EN) ? "extended" : "VGA");
     LOG_F(INFO, "Video width: %d px", this->active_width);
     LOG_F(INFO, "Video height: %d px", this->active_height);
+    LOG_F(INFO, "Vertical blank: %d px", this->vert_blank);
     verbose_pixel_format(0);
     LOG_F(INFO, "VPLL frequency: %f MHz", vpll_freq * 1e-6);
     LOG_F(INFO, "Pixel (dot) clock: %f MHz", this->pixel_clock * 1e-6);
