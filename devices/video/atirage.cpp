@@ -221,7 +221,7 @@ uint32_t ATIRage::read_reg(uint32_t reg_offset, uint32_t size) {
 
     switch (reg_num) {
     case ATI_CLOCK_CNTL:
-        if ((offset + size - 1) >= 2) {
+        if (offset <= 2 && offset + size > 2) {
             uint8_t pll_addr = extract_bits<uint64_t>(result, ATI_PLL_ADDR, ATI_PLL_ADDR_size);
             insert_bits<uint64_t>(result, this->plls[pll_addr], ATI_PLL_DATA, ATI_PLL_DATA_size);
         }
@@ -313,7 +313,7 @@ void ATIRage::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size) {
         break;
     case ATI_GP_IO:
         new_value = value;
-        if (offset < 2 && (offset + size - 1) >= 1) {
+        if (offset <= 1 && offset + size > 1) {
             uint8_t gpio_levels = (new_value >> 8) & 0xFFU;
             gpio_levels = ((gpio_levels & 0x30) >> 3) | (gpio_levels & 1);
             uint8_t gpio_dirs = (new_value >> 24) & 0xFFU;
@@ -325,7 +325,7 @@ void ATIRage::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size) {
         break;
     case ATI_CLOCK_CNTL:
         new_value = value;
-        if ((offset + size - 1) >= 2 && bit_set(new_value, ATI_PLL_WR_EN)) {
+        if (offset <= 2 && offset + size > 2 && bit_set(new_value, ATI_PLL_WR_EN)) {
             uint8_t pll_addr = extract_bits<uint32_t>(new_value, ATI_PLL_ADDR, ATI_PLL_ADDR_size);
             uint8_t pll_data = extract_bits<uint32_t>(new_value, ATI_PLL_DATA, ATI_PLL_DATA_size);
             this->plls[pll_addr] = pll_data;
