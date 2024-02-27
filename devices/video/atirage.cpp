@@ -801,6 +801,35 @@ void ATIRage::get_cursor_position(int& x, int& y) {
     y = extract_bits<uint32_t>(this->regs[ATI_CUR_HORZ_VERT_POSN], ATI_CUR_VERT_POSN, ATI_CUR_VERT_POSN_size);
 }
 
+int ATIRage::device_postinit()
+{
+    this->vbl_cb = [this](uint8_t irq_line_state) {
+        insert_bits<uint32_t>(this->regs[ATI_CRTC_INT_CNTL], irq_line_state, ATI_CRTC_VBLANK, 1);
+        if (irq_line_state) {
+            set_bit(this->regs[ATI_CRTC_INT_CNTL], ATI_CRTC_VBLANK_INT);
+            set_bit(this->regs[ATI_CRTC_INT_CNTL], ATI_CRTC_VLINE_INT);
+#if 1
+#else
+            set_bit(this->regs[ATI_CRTC_GEN_CNTL], ATI_CRTC_VSYNC_INT);
+#endif
+        }
+
+        bool do_interrupt =
+            bit_set(this->regs[ATI_CRTC_INT_CNTL], ATI_CRTC_VBLANK_INT_EN) ||
+            bit_set(this->regs[ATI_CRTC_INT_CNTL], ATI_CRTC_VLINE_INT_EN) ||
+#if 1
+#else
+            bit_set(this->regs[ATI_CRTC_GEN_CNTL], ATI_CRTC_VSYNC_INT_EN) ||
+#endif
+            0;
+
+        if (do_interrupt) {
+            this->pci_interrupt(irq_line_state);
+        }
+    };
+    return 0;
+}
+
 static const PropMap AtiRage_Properties = {
     {"gfxmem_size",
         new IntProperty(  2, vector<uint32_t>({2, 4, 6}))},

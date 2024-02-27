@@ -55,6 +55,9 @@ public:
         return std::unique_ptr<ATIRage>(new ATIRage(ATI_RAGE_PRO_DEV_ID));
     }
 
+    // HWComponent methods
+    int device_postinit();
+
     // MMIODevice methods
     uint32_t read(uint32_t rgn_start, uint32_t offset, int size);
     void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size);
