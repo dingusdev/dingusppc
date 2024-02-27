@@ -142,6 +142,7 @@ ATIRage::ATIRage(uint16_t dev_id)
     uint8_t mon_code = this->disp_id->read_monitor_sense(0, 0);
 
     this->regs[ATI_GP_IO] = ((mon_code & 6) << 11) | ((mon_code & 1) << 8);
+    insert_bits<uint32_t>(this->regs[ATI_GUI_STAT], 32, ATI_FIFO_CNT, ATI_FIFO_CNT_size);
 }
 
 void ATIRage::change_one_bar(uint32_t &aperture, uint32_t aperture_size, uint32_t aperture_new, int bar_num) {
