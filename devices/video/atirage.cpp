@@ -561,8 +561,11 @@ void ATIRage::crtc_update() {
         need_recalc = true;
     }
 
-    if (!need_recalc)
-        return;
+    int new_pixel_format = extract_bits<uint32_t>(this->regs[ATI_CRTC_GEN_CNTL], ATI_CRTC_PIX_WIDTH, ATI_CRTC_PIX_WIDTH_size);
+    if (new_pixel_format != this->pixel_format) {
+        this->pixel_format = new_pixel_format;
+        need_recalc = true;
+    }
 
     // look up which VPLL ouput is requested
     int clock_sel = extract_bits<uint32_t>(this->regs[ATI_CLOCK_CNTL], ATI_CLOCK_SEL, ATI_CLOCK_SEL_size);
@@ -577,15 +580,26 @@ void ATIRage::crtc_update() {
                        ((this->plls[VCLK_POST_DIV] >> (clock_sel * 2)) & 3);
 
     // pixel clock = source_freq / post_div
-    this->pixel_clock = vpll_freq / mach64_post_div[post_div_idx];
+    float new_pixel_clock = vpll_freq / mach64_post_div[post_div_idx];
+    if (new_pixel_clock != this->pixel_clock) {
+        this->pixel_clock = new_pixel_clock;
+        need_recalc = true;
+    }
+
+    if (!need_recalc)
+        return;
 
     // calculate display refresh rate
     this->refresh_rate = pixel_clock / this->hori_total / this->vert_total;
 
-    // set up frame buffer converter
-    int pix_fmt = extract_bits<uint32_t>(this->regs[ATI_CRTC_GEN_CNTL], ATI_CRTC_PIX_WIDTH, ATI_CRTC_PIX_WIDTH_size);
+    if (this->refresh_rate < 24 || this->refresh_rate > 120) {
+        LOG_F(ERROR, "%s: Refresh rate is weird. Will try 60 Hz", this->name.c_str());
+        this->refresh_rate = 60;
+        this->pixel_clock = this->refresh_rate * this->hori_total / this->vert_total;
+    }
 
-    switch (pix_fmt) {
+    // set up frame buffer converter
+    switch (this->pixel_format) {
     case 1:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
             this->convert_frame_4bpp_indexed(dst_buf, dst_pitch);
@@ -624,13 +638,13 @@ void ATIRage::crtc_update() {
         };
         break;
     default:
-        LOG_F(ERROR, "%s: unsupported pixel format %d", this->name.c_str(), pix_fmt);
+        LOG_F(ERROR, "%s: unsupported pixel format %d", this->name.c_str(), this->pixel_format);
     }
 
     static uint8_t bits_per_pixel[8] = {0, 4, 8, 16, 16, 24, 32, 0};
 
     this->fb_pitch = extract_bits<uint32_t>(this->regs[ATI_CRTC_OFF_PITCH], ATI_CRTC_PITCH, ATI_CRTC_PITCH_size) *
-        (bits_per_pixel[pix_fmt & 7] * 8) >> 3;
+        (bits_per_pixel[this->pixel_format & 7] * 8) >> 3;
 
     this->fb_ptr = &this->vram_ptr[extract_bits<uint32_t>(this->regs[ATI_CRTC_OFF_PITCH], ATI_CRTC_OFFSET, ATI_CRTC_OFFSET_size) * 8];
 
