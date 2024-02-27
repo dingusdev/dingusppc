@@ -395,6 +395,20 @@ void ATIRage::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size) {
     case ATI_CONFIG_CHIP_ID:
         new_value = old_value; // prevent writes to this read-only register
         break;
+    case ATI_CONFIG_STAT0:
+    {
+        uint32_t bits_read_only =
+#if 1
+#else
+            (1 << ATI_MACROVISION_ENABLE) |
+            (1 << ATI_ARITHMOS_ENABLE) |
+#endif
+            0;
+
+        new_value = value;
+        new_value = (old_value & bits_read_only) | (new_value & ~bits_read_only);
+        break;
+    }
     default:
         new_value = value;
         break;
