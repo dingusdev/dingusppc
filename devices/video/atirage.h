@@ -81,6 +81,8 @@ protected:
     void get_cursor_position(int& x, int& y);
 
 private:
+    void change_one_bar(uint32_t &aperture, uint32_t aperture_size, uint32_t aperture_new, int bar_num);
+
     uint32_t    regs[512] = {}; // internal registers
     uint8_t     plls[64]  = {}; // internal PLL registers
 
@@ -90,9 +92,16 @@ private:
     std::unique_ptr<uint8_t[]>  vram_ptr;
     uint32_t    vram_size;
 
-    uint32_t    aperture_base = 0;
-    uint32_t    io_base = 0;
+    // config 0x40
     uint8_t     user_cfg = 8;
+
+    // main aperture (16MB)
+    // I/O region (256 bytes)
+    // register aperture (4KB)
+    uint32_t aperture_count = 3;
+    uint32_t aperture_base[3] = { 0, 0, 0 };
+    uint32_t aperture_size[3] = { 0x1000000, 0x100, 0x1000 };
+    uint32_t aperture_flag[3] = { 0, 1, 0 };
 
     std::unique_ptr<DisplayID>  disp_id;
 

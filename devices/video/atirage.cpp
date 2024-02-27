@@ -124,12 +124,10 @@ ATIRage::ATIRage(uint16_t dev_id)
     this->class_rev   = (0x030000 << 8) | asic_id;
     this->min_gnt     = 8;
     this->irq_pin     = 1;
-
-    this->setup_bars({
-        {0, 0xFF000000UL}, // declare main aperture (16MB)
-        {1, 0xFFFFFF01UL}, // declare I/O region (256 bytes)
-        {2, 0xFFFFF000UL}  // declare register aperture (4KB)
-    });
+    for (int i = 0; i < this->aperture_count; i++) {
+        this->bars_cfg[i] = (uint32_t)(-this->aperture_size[i] | this->aperture_flag[i]);
+    }
+    this->finish_config_bars();
 
     this->pci_notify_bar_change = [this](int bar_num) {
         this->notify_bar_change(bar_num);
@@ -146,23 +144,31 @@ ATIRage::ATIRage(uint16_t dev_id)
     this->regs[ATI_GP_IO] = ((mon_code & 6) << 11) | ((mon_code & 1) << 8);
 }
 
+void ATIRage::change_one_bar(uint32_t &aperture, uint32_t aperture_size, uint32_t aperture_new, int bar_num) {
+    if (aperture != aperture_new) {
+        if (aperture)
+            this->host_instance->pci_unregister_mmio_region(aperture, aperture_size, this);
+
+        aperture = aperture_new;
+        if (aperture)
+            this->host_instance->pci_register_mmio_region(aperture, aperture_size, this);
+
+        LOG_F(INFO, "%s: aperture[%d] set to 0x%08X", this->name.c_str(), bar_num, aperture);
+    }
+}
+
 void ATIRage::notify_bar_change(int bar_num)
 {
     switch (bar_num) {
     case 0:
-        if (this->aperture_base != (this->bars[bar_num] & 0xFFFFFFF0UL)) {
-            this->aperture_base = this->bars[0] & 0xFFFFFFF0UL;
-            this->host_instance->pci_register_mmio_region(this->aperture_base,
-                APERTURE_SIZE - this->vram_size, this);
-            LOG_F(INFO, "ATIRage: aperture address set to 0x%08X", this->aperture_base);
-        }
-        break;
-    case 1:
-        this->io_base = this->bars[1] & ~3;
-        LOG_F(INFO, "ATIRage: I/O space address set to 0x%08X", this->io_base);
+        change_one_bar(this->aperture_base[bar_num], this->aperture_size[bar_num] - this->vram_size, this->bars[bar_num] & ~15, bar_num);
         break;
     case 2:
-        LOG_F(INFO, "ATIRage: register aperture address set to 0x%08X", this->bars[2]);
+        change_one_bar(this->aperture_base[bar_num], this->aperture_size[bar_num], this->bars[bar_num] & ~15, bar_num);
+        break;
+    case 1:
+        this->aperture_base[1] = this->bars[bar_num] & ~3;
+        LOG_F(INFO, "%s: I/O space address set to 0x%08X", this->name.c_str(), this->aperture_base[1]);
         break;
     }
 }
@@ -383,7 +389,7 @@ void ATIRage::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size) {
 }
 
 bool ATIRage::io_access_allowed(uint32_t offset) {
-    if (offset >= this->io_base && offset < (this->io_base + 0x100)) {
+    if (offset >= this->aperture_base[1] && offset < (this->aperture_base[1] + 0x100)) {
         if (this->command & 1) {
             return true;
         }
@@ -392,65 +398,85 @@ bool ATIRage::io_access_allowed(uint32_t offset) {
     return false;
 }
 
-
 bool ATIRage::pci_io_read(uint32_t offset, uint32_t size, uint32_t* res) {
     if (!this->io_access_allowed(offset)) {
         return false;
     }
 
-    *res = BYTESWAP_SIZED(this->read_reg(offset - this->io_base, size), size);
+    *res = BYTESWAP_SIZED(this->read_reg(offset - this->aperture_base[1], size), size);
     return true;
 }
-
 
 bool ATIRage::pci_io_write(uint32_t offset, uint32_t value, uint32_t size) {
     if (!this->io_access_allowed(offset)) {
         return false;
     }
 
-    this->write_reg(offset - this->io_base, BYTESWAP_SIZED(value, size), size);
+    this->write_reg(offset - this->aperture_base[1], BYTESWAP_SIZED(value, size), size);
     return true;
 }
 
-
 uint32_t ATIRage::read(uint32_t rgn_start, uint32_t offset, int size)
 {
-    if (offset < this->vram_size) { // little-endian VRAM region
-        return read_mem(&this->vram_ptr[offset], size);
-    }
-    else if (offset >= BE_FB_OFFSET) { // big-endian VRAM region
-        return read_mem(&this->vram_ptr[offset - BE_FB_OFFSET], size);
-    }
-    else if (offset >= MM_REGS_0_OFF) { // memory-mapped registers, block 0
-        return BYTESWAP_SIZED(this->read_reg(offset & 0x3FF, size), size);
-    }
-    else if (offset >= MM_REGS_1_OFF) { // memory-mapped registers, block 1
-        return BYTESWAP_SIZED(this->read_reg((offset & 0x3FF) + 0x400, size), size);
-    }
-    else {
-        LOG_F(WARNING, "ATI Rage: read attempt from unmapped aperture region at 0x%08X", offset);
+    if (rgn_start == this->aperture_base[0] && offset < this->aperture_size[0]) {
+        if (offset < this->vram_size) { // little-endian VRAM region
+            return read_mem(&this->vram_ptr[offset], size);
+        }
+        if (offset >= BE_FB_OFFSET) { // big-endian VRAM region
+            return read_mem(&this->vram_ptr[offset - BE_FB_OFFSET], size);
+        }
+        //if (!bit_set(this->regs[ATI_BUS_CNTL], ATI_BUS_APER_REG_DIS)) {
+            if (offset >= MM_REGS_0_OFF) { // memory-mapped registers, block 0
+                return BYTESWAP_SIZED(this->read_reg(offset & 0x3FF, size), size);
+            }
+            if (offset >= MM_REGS_1_OFF
+                //&& bit_set(this->regs[ATI_BUS_CNTL], ATI_BUS_EXT_REG_EN)
+            ) { // memory-mapped registers, block 1
+                return BYTESWAP_SIZED(this->read_reg((offset & 0x3FF) + 0x400, size), size);
+            }
+        //}
+        LOG_F(WARNING, "%s: read  unmapped aperture[0] region %08x.%c", this->name.c_str(), offset, SIZE_ARG(size));
+        return 0;
     }
 
+    if (rgn_start == this->aperture_base[2] && offset < this->aperture_size[2]) {
+        LOG_F(WARNING, "%s: read  unmapped aperture[2] region %08x.%c", this->name.c_str(), offset, SIZE_ARG(size));
+        return 0;
+    }
+
+    LOG_F(WARNING, "%s: read  unmapped aperture region %08x.%c", this->name.c_str(), offset, SIZE_ARG(size));
     return 0;
 }
 
 void ATIRage::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
 {
-    if (offset < this->vram_size) { // little-endian VRAM region
-        write_mem(&this->vram_ptr[offset], value, size);
+    if (rgn_start == this->aperture_base[0] && offset < this->aperture_size[0]) {
+        if (offset < this->vram_size) { // little-endian VRAM region
+            return write_mem(&this->vram_ptr[offset], value, size);
+        }
+        if (offset >= BE_FB_OFFSET) { // big-endian VRAM region
+            return write_mem(&this->vram_ptr[offset & (BE_FB_OFFSET - 1)], value, size);
+        }
+        //if (!bit_set(this->regs[ATI_BUS_CNTL], ATI_BUS_APER_REG_DIS)) {
+            if (offset >= MM_REGS_0_OFF) { // memory-mapped registers, block 0
+                return this->write_reg(offset & 0x3FF, BYTESWAP_SIZED(value, size), size);
+            }
+            if (offset >= MM_REGS_1_OFF
+                //&& bit_set(this->regs[ATI_BUS_CNTL], ATI_BUS_EXT_REG_EN)
+            ) { // memory-mapped registers, block 1
+                return this->write_reg((offset & 0x3FF) + 0x400, BYTESWAP_SIZED(value, size), size);
+            }
+        //}
+        LOG_F(WARNING, "%s: write unmapped aperture[0] region %08x.%c = %0*x", this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
+        return;
     }
-    else if (offset >= BE_FB_OFFSET) { // big-endian VRAM region
-        write_mem(&this->vram_ptr[offset & (BE_FB_OFFSET - 1)], value, size);
+
+    if (rgn_start == this->aperture_base[2] && offset < this->aperture_size[2]) {
+        LOG_F(WARNING, "%s: write unmapped aperture[2] region %08x.%c = %0*x", this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
+        return;
     }
-    else if (offset >= MM_REGS_0_OFF) { // memory-mapped registers, block 0
-        this->write_reg(offset & 0x3FF, BYTESWAP_SIZED(value, size), size);
-    }
-    else if (offset >= MM_REGS_1_OFF) { // memory-mapped registers, block 1
-        this->write_reg((offset & 0x3FF) + 0x400, BYTESWAP_SIZED(value, size), size);
-    }
-    else {
-        LOG_F(WARNING, "ATI Rage: write attempt to unmapped aperture region at 0x%08X", offset);
-    }
+
+    LOG_F(WARNING, "%s: write unmapped aperture region %08x.%c = %0*x", this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
 }
 
 float ATIRage::calc_pll_freq(int scale, int fb_div) {
