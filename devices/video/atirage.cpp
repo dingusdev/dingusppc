@@ -325,14 +325,23 @@ void ATIRage::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size) {
         }
         break;
     case ATI_CLOCK_CNTL:
-        new_value = value;
+    {
+        uint32_t bits_write_only =
+            (1 << ATI_CLOCK_STROBE);
+
+        new_value = value & ~bits_write_only; // clear the write only bits
+
+        uint8_t pll_addr = extract_bits<uint32_t>(new_value, ATI_PLL_ADDR, ATI_PLL_ADDR_size);
         if (offset <= 2 && offset + size > 2 && bit_set(new_value, ATI_PLL_WR_EN)) {
-            uint8_t pll_addr = extract_bits<uint32_t>(new_value, ATI_PLL_ADDR, ATI_PLL_ADDR_size);
             uint8_t pll_data = extract_bits<uint32_t>(new_value, ATI_PLL_DATA, ATI_PLL_DATA_size);
             this->plls[pll_addr] = pll_data;
             LOG_F(9, "%s: PLL #%d set to 0x%02X", this->name.c_str(), pll_addr, pll_data);
         }
+        else {
+            insert_bits<uint32_t>(new_value, this->plls[pll_addr], ATI_PLL_DATA, ATI_PLL_DATA_size);
+        }
         break;
+    }
     case ATI_DAC_REGS:
         new_value = old_value; // no change
         switch (reg_offset) {
