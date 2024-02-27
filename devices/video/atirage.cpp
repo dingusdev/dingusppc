@@ -58,6 +58,7 @@ static const std::map<uint16_t, std::string> mach64_reg_names = {
     {0x0064, "CUR_CLR1"},
     {0x0068, "CUR_OFFSET"},
     {0x006C, "CUR_HORZ_VERT_POSN"},
+    {0x0070, "CUR_HORZ_VERT_OFF"},
     {0x0078, "GP_IO"},
     {0x007C, "HW_DEBUG"},
     {0x0080, "SCRATCH_REG0"},
