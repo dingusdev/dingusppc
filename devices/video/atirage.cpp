@@ -298,6 +298,74 @@ void ATIRage::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size) {
             this->crtc_update();
         }
         break;
+    case ATI_CRTC_INT_CNTL: {
+        uint32_t bits_read_only =
+            (1 << ATI_CRTC_VBLANK) |
+            (1 << ATI_CRTC_VLINE_SYNC) |
+            (1 << ATI_CRTC_FRAME) |
+#if 1
+#else
+            (1 << ATI_CRTC2_VBLANK) |
+            (1 << ATI_CRTC2_VLINE_SYNC) |
+#endif
+            0;
+
+        uint32_t bits_AK =
+            (1 << ATI_CRTC_VBLANK_INT_AK) |
+            (1 << ATI_CRTC_VLINE_INT_AK) |
+#if 1
+            (1 << ATI_VIDEOIN_EVEN_INT_AK) |
+            (1 << ATI_VIDEOIN_ODD_INT_AK) |
+            (1 << ATI_OVERLAY_EOF_INT_AK) |
+            (1 << ATI_VMC_EC_INT_AK) |
+#else
+            (1 << ATI_SNAPSHOT_INT_AK) |
+            (1 << ATI_I2C_INT_AK) |
+            (1 << ATI_CRTC2_VBLANK_INT_AK) |
+            (1 << ATI_CRTC2_VLINE_INT_AK) |
+            (1 << ATI_CUPBUF0_INT_AK) |
+            (1 << ATI_CUPBUF1_INT_AK) |
+            (1 << ATI_OVERLAY_EOF_INT_AK) |
+            (1 << ATI_ONESHOT_CAP_INT_AK) |
+            (1 << ATI_BUSMASTER_EOL_INT_AK) |
+            (1 << ATI_GP_INT_AK) |
+            (1 << ATI_SNAPSHOT2_INT_AK) |
+            (1 << ATI_VBLANK_BIT2_INT_AK) |
+#endif
+            0;
+/*
+        uint32_t bits_EN =
+            (1 << ATI_CRTC_VBLANK_INT_EN) |
+            (1 << ATI_CRTC_VLINE_INT_EN) |
+#if 1
+            (1 << ATI_VIDEOIN_EVEN_INT_EN) |
+            (1 << ATI_VIDEOIN_ODD_INT_EN) |
+            (1 << ATI_OVERLAY_EOF_INT_EN) |
+            (1 << ATI_VMC_EC_INT_EN) |
+#else
+            (1 << ATI_SNAPSHOT_INT_EN) |
+            (1 << ATI_I2C_INT_EN) |
+            (1 << ATI_CRTC2_VBLANK_INT_EN) |
+            (1 << ATI_CRTC2_VLINE_INT_EN) |
+            (1 << ATI_CUPBUF0_INT_EN) |
+            (1 << ATI_CUPBUF1_INT_EN) |
+            (1 << ATI_OVERLAY_EOF_INT_EN) |
+            (1 << ATI_ONESHOT_CAP_INT_EN) |
+            (1 << ATI_BUSMASTER_EOL_INT_EN) |
+            (1 << ATI_GP_INT_EN) |
+            (1 << ATI_SNAPSHOT2_INT_EN) |
+#endif
+            0;
+*/
+        uint32_t bits_AKed = bits_AK & value; // AK bits that are to be AKed
+        uint32_t bits_not_AKed = bits_AK & ~value; // AK bits that are not to be AKed
+
+        new_value = value & ~bits_AKed; // clear the AKed bits
+        bits_read_only |= bits_not_AKed; // the not AKed bits will remain unchanged
+
+        new_value = (old_value & bits_read_only) | (new_value & ~bits_read_only);
+        break;
+    }
     case ATI_CRTC_GEN_CNTL:
         new_value = value;
         if (bit_changed(old_value, new_value, ATI_CRTC_DISPLAY_DIS)) {
