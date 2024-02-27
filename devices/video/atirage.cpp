@@ -287,6 +287,10 @@ void ATIRage::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size) {
         new_value = value;
         LOG_F(9, "%s: ATI_CRTC_H_TOTAL_DISP set to 0x%08X", this->name.c_str(), value);
         break;
+    case ATI_CRTC_VLINE_CRNT_VLINE:
+        new_value = old_value;
+        insert_bits<uint32_t>(new_value, value, ATI_CRTC_VLINE, ATI_CRTC_VLINE_size);
+        break;
     case ATI_CRTC_OFF_PITCH:
         new_value = value;
         if (old_value != new_value) {
