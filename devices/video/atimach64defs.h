@@ -209,14 +209,22 @@ enum {
     ATI_SCRATCH_REG1          = 0x021, // 0x0084
     ATI_SCRATCH_REG2          = 0x022, // 0x0088
     ATI_SCRATCH_REG3          = 0x023, // 0x008C
+
     ATI_CLOCK_CNTL            = 0x024, // 0x0090
-        ATI_CLOCK_SEL       =  0, ATI_CLOCK_SEL_size = 2,
-        ATI_CLOCK_STROBE    =  6,
-        ATI_PLL_WR_EN       =  9,
-        ATI_PLL_ADDR        = 10,
-            //ATI_PLL_ADDR_size  = 4, // VT,GT
-            ATI_PLL_ADDR_size  = 6, // not VT,GT
-        ATI_PLL_DATA        = 16, ATI_PLL_DATA_size  = 8,
+        ATI_CLOCK_SEL           =  0, ATI_CLOCK_SEL_size = 2,          // CT
+        ATI_CLOCK_SEL_INTERNAL  =  0, ATI_CLOCK_SEL_INTERNAL_size = 2, // CT
+        ATI_CLOCK_SEL_EXTERNAL  =  2, ATI_CLOCK_SEL_EXTERNAL_size = 2, // CT
+        ATI_CLOCK_BIT           =  2,                                  // GX ; For ICS2595
+        ATI_CLOCK_PULSE         =  3,                                  // GX ; For ICS2595
+        ATI_CLOCK_DIV           =  4, ATI_CLOCK_DIV_size          = 2, // CT ; 0=DIV1, 1=DIV2, 2=DIV4
+        ATI_CLOCK_STROBE        =  6,                                  // CT/GX
+        ATI_CLOCK_DATA          =  7,                                  // GX
+        ATI_PLL_WR_EN           =  9,                                  // CT    ; internal PLL
+        ATI_PLL_ADDR            = 10,                                  // CT    ; internal PLL
+            //ATI_PLL_ADDR_size  = 4,                                  // VT/GT ; internal PLL
+            ATI_PLL_ADDR_size  = 6,                                    // CT    ; internal PLL
+        ATI_PLL_DATA            = 16, ATI_PLL_DATA_size  = 8,          // CT    ; internal PLL
+
     ATI_CONFIG_STAT1          = 0x025, // 0x0094
     ATI_CONFIG_STAT2          = 0x026, // 0x0098
     ATI_BUS_CNTL              = 0x028, // 0x00A0
@@ -264,33 +272,48 @@ enum {
         //ATI_BUS_RDY_READ_DLY      = 31,                               // not VT/GT
 
     ATI_EXT_MEM_CNTL          = 0x02B, // 0x00AC
-        ATI_MEM_TBWC            =  0,
-        ATI_MEM_SDRAM_RESET     =  1,
-        ATI_MEM_CYC_TEST        =  2, ATI_MEM_CYC_TEST_size = 2,
-        ATI_MEM_MA_YCLK         =  4,
-        ATI_MEM_CNTL_YCLK       =  5,
-        ATI_MEM_CS_YCLK         =  6,
-        ATI_MEM_EXTND_ERST      =  7,
-        ATI_MEM_ERST_CNTL       =  8, ATI_MEM_ERST_CNTL_size = 2,
-        ATI_MEM_CAS_LATENCY     = 10, ATI_MEM_CAS_LATENCY_size = 2,
-        ATI_MEM_SSTL_EN         = 12,
-        ATI_MEM_MD_REC          = 13,
-        ATI_MEM_HCLK_DRIVE      = 14,
-        ATI_MEM_CS_DRIVE        = 15,
-        ATI_MEM_MDA_DRIVE       = 16,
-        ATI_MEM_MDB_DRIVE       = 17,
-        ATI_MEM_MDL_DRIVE       = 18,
-        ATI_MEM_GROUP_CHANGE_EN = 19,
-        ATI_MEM_MA_DRIVE        = 20,
-        ATI_MEM_CNTL_DRIVE      = 22,
-        ATI_MEM_DQM_DRIVE       = 23,
-        ATI_MEM_GCMRS           = 24, ATI_MEM_GCMRS_size = 4,
-        ATI_MEM_CS_STRAP        = 28,
-        ATI_SDRAM_MEM_CFG       = 29,
-        ATI_MEM_ALL_PAGE_DIS    = 30,
-        ATI_MEM_GROUP_FAULT_EN  = 31,
+        ATI_MEM_TBWC            =  0,                                   // not VT/GT
+        ATI_MEM_SDRAM_RESET_ext =  1,                                   // not VT/GT
+        ATI_MEM_CYC_TEST        =  2, ATI_MEM_CYC_TEST_size = 2,        // not VT/GT
+        ATI_MEM_MA_YCLK         =  4,                                   // not VT/GT
+        ATI_MEM_CNTL_YCLK       =  5,                                   // not VT/GT
+        ATI_MEM_CS_YCLK         =  6,                                   // not VT/GT
+        ATI_MEM_EXTND_ERST      =  7,                                   // not VT/GT
+        ATI_MEM_ERST_CNTL       =  8, ATI_MEM_ERST_CNTL_size = 2,       // not VT/GT
+        ATI_MEM_CAS_LATENCY     = 10, ATI_MEM_CAS_LATENCY_size = 2,     // not VT/GT
+        ATI_MEM_SSTL_EN         = 12,                                   // not VT/GT
+        ATI_MEM_MD_REC          = 13,                                   // not VT/GT
+        ATI_MEM_HCLK_DRIVE      = 14,                                   // not VT/GT
+        ATI_MEM_CS_DRIVE        = 15,                                   // not VT/GT
+        ATI_MEM_MDA_DRIVE       = 16,                                   // not VT/GT
+        ATI_MEM_MDB_DRIVE       = 17,                                   // not VT/GT
+        ATI_MEM_MDL_DRIVE       = 18,                                   // not VT/GT
+        ATI_MEM_GROUP_CHANGE_EN = 19,                                   // not VT/GT
+        ATI_MEM_MA_DRIVE        = 20,                                   // not VT/GT
+        ATI_MEM_CNTL_DRIVE      = 22,                                   // not VT/GT
+        ATI_MEM_DQM_DRIVE       = 23,                                   // not VT/GT
+        ATI_MEM_GCMRS           = 24, ATI_MEM_GCMRS_size = 4,           // not VT/GT
+        ATI_MEM_CS_STRAP        = 28,                                   // not VT/GT
+        ATI_SDRAM_MEM_CFG       = 29,                                   // not VT/GT
+        ATI_MEM_ALL_PAGE_DIS    = 30,                                   // not VT/GT
+        ATI_MEM_GROUP_FAULT_EN  = 31,                                   // not VT/GT
 
     ATI_MEM_CNTL              = 0x02C, // 0x00B0
+        ATI_MEM_SIZE            =  0, ATI_MEM_SIZE_size = 3,            // VT/GT    ; 0=512K, 1=1MB, 2=2MB, 3=4MB, 4=6MB
+        ATI_MEM_REFRESH         =  3, ATI_MEM_REFRESH_size = 4,         // VT/GT
+        ATI_MEM_CYC_LNTH_AUX    =  7, ATI_MEM_CYC_LNTH_AUX_size = 2,    // VT/GT
+        ATI_MEM_CYC_LNTH        =  9, ATI_MEM_CYC_LNTH_size = 2,        // VT/GT
+        ATI_MEM_REFRESH_RATE    = 11, ATI_MEM_REFRESH_RATE_size = 2,    // VT/GT
+        ATI_DLL_RESET           = 13,                                   // VT/GT
+        ATI_MEM_ACTV_PRE        = 14, ATI_MEM_ACTV_PRE_size = 2,        // VT/GT
+        ATI_DLL_GAIN_CNTL       = 16, ATI_DLL_GAIN_CNTL_size = 2,       // VT/GT
+        ATI_MEM_SDRAM_RESET     = 18,                                   // VT/GT
+        ATI_MEM_TILE_SELECT     = 19, ATI_MEM_TILE_SELECT_size = 2,     // VT/GT
+        ATI_LOW_LATENCY_MODE    = 21,                                   // VT/GT
+        ATI_CDE_PULLBACK        = 22,                                   // VT/GT
+        ATI_MEM_PIX_WIDTH       = 24, ATI_MEM_PIX_WIDTH_size = 3,       // VT/GT
+        ATI_MEM_OE_SELECT       = 27, ATI_MEM_OE_SELECT_size = 2,       // VT/GT
+
     ATI_MEM_VGA_WP_SEL        = 0x02D, // 0x00B4
     ATI_MEM_VGA_RP_SEL        = 0x02E, // 0x00B8
     ATI_I2C_CNTL_1            = 0x02F, // 0x00BC
@@ -319,9 +342,11 @@ enum {
         ATI_DAC_FEA_CON_EN      = 14,                               //
         ATI_DAC_PDWN            = 15,                               //
         ATI_DAC_TYPE            = 16, ATI_DAC_TYPE_size = 3,        //
+        ATI_DAC_GIO_STATE       = 24, ATI_DAC_GIO_STATE_size = 3,
         ATI_DAC_GIO_STATE_1     = 24,                               // VT/GT
         ATI_DAC_GIO_STATE_0     = 25,                               // VT/GT
         ATI_DAC_GIO_STATE_4     = 26,                               // VT/GT
+        ATI_DAC_GIO_DIR         = 27, ATI_DAC_GIO_DIR_size = 3,
         ATI_DAC_GIO_DIR_1       = 27,                               // VT/GT
         ATI_DAC_GIO_DIR_0       = 28,                               // VT/GT
         ATI_DAC_GIO_DIR_4       = 29,                               // VT/GT
@@ -347,13 +372,19 @@ enum {
         ATI_GEN_TEST_MODE       = 16, ATI_GEN_TEST_MODE_size = 4,
         ATI_GEN_TEST_CNT_EN     = 20,                                   // VT/GT
         ATI_GEN_CRC_EN          = 21,
-        ATI_GEN_DELAY_MUX       = 22, ATI_GEN_DELAY_MUX_size = 2,       // VT/GT
+        ATI_GEN_DELAY_MUX       = 22, ATI_GEN_DELAY_MUX_size = 2,       // VT A4S ; not VT-A3/A4N or GT
         ATI_GEN_TEST_CNT_VALUE  = 24, ATI_GEN_TEST_CNT_VALUE_size = 6,  // VT/GT
 
         ATI_GEN_DEBUG_MODE      = 24, ATI_GEN_DEBUG_MODE_size = 8,      // not VT/GT
 
     ATI_CUSTOM_MACRO_CNTL     = 0x035, // 0x00D4
     ATI_CONFIG_CNTL           = 0x037, // 0x00DC
+        ATI_CFG_MEM_AP_SIZE     =  0, ATI_CFG_MEM_AP_SIZE_size  =  2,   // VT/GT
+        ATI_CFG_MEM_VGA_AP_EN   =  2,                                   // VT/GT
+        ATI_CFG_MEM_AP_LOC      =  4, ATI_CFG_MEM_AP_LOC_size   = 10,   // VT/GT
+        ATI_CFG_VGA_DIS         = 19,                                   // VT/GT
+        ATI_CDE_WINDOW          = 24, ATI_CDE_WINDOW_size       =  6,   // VT
+
     ATI_CONFIG_CHIP_ID        = 0x038, // 0x00E0
         ATI_CFG_CHIP_TYPE   =  0, ATI_CFG_CHIP_TYPE_size   = 16,
         ATI_CFG_CHIP_CLASS  = 16, ATI_CFG_CHIP_CLASS_size  =  8,
@@ -374,11 +405,25 @@ enum {
     ATI_CRC_SIG               = 0x03A, // 0x00E8
 
     ATI_DST_OFF_PITCH         = 0x040, // 0x0100
+        ATI_DST_OFFSET  =  0, ATI_DST_OFFSET_size = 20,
+        ATI_DST_PITCH   = 22, ATI_DST_PITCH_size  = 10,
+
     ATI_DST_X                 = 0x041, // 0x0104
+        ATI_DST_X_pos = 0, ATI_DST_X_size = 13,
+
     ATI_DST_Y                 = 0x042, // 0x0108
+        ATI_DST_Y_pos = 0, ATI_DST_Y_size = 15,
+
     ATI_DST_Y_X               = 0x043, // 0x010C
+
     ATI_DST_WIDTH             = 0x044, // 0x0110
+        ATI_DST_WIDTH_pos               =  0, ATI_DST_WIDTH_size = 13, // VT/GT
+        ATI_DST_BRES_LENGTH_ALIAS_pos   = 13, ATI_DST_BRES_LENGTH_ALIAS_size = 3, // GT
+        DST_WIDTH_FILL_DIS  = 31,
+
     ATI_DST_HEIGHT            = 0x045, // 0x0114
+        ATI_DST_HEIGHT_pos  = 0, ATI_DST_HEIGHT_size = 15,
+
     ATI_DST_HEIGHT_WIDTH      = 0x046, // 0x0118
     ATI_DST_X_WIDTH           = 0x047, // 0x011C
     ATI_DST_BRES_LNTH         = 0x048, // 0x0120
@@ -417,22 +462,52 @@ enum {
     ATI_SCALE_VACC            = 0x07E, // 0x01F8
     ATI_SCALE_3D_CNTL         = 0x07F, // 0x01FC
     ATI_HOST_CNTL             = 0x090, // 0x0240
+
     ATI_PAT_REG0              = 0x0A0, // 0x0280
     ATI_PAT_REG1              = 0x0A1, // 0x0284
     ATI_PAT_CNTL              = 0x0A2, // 0x0288
+
     ATI_SC_LEFT               = 0x0A8, // 0x02A0
+        ATI_SC_LEFT_pos = 0, ATI_SC_LEFT_size = 13,
+
     ATI_SC_RIGHT              = 0x0A9, // 0x02A4
+        ATI_SC_RIGHT_pos = 0, ATI_SC_RIGHT_size = 13,
+
     ATI_SC_LEFT_RIGHT         = 0x0AA, // 0x02A8
+
     ATI_SC_TOP                = 0x0AB, // 0x02AC
+        ATI_SC_TOP_pos = 0, ATI_SC_TOP_size = 15,
+
     ATI_SC_BOTTOM             = 0x0AC, // 0x02B0
+        ATI_SC_BOTTOM_pos = 0, ATI_SC_BOTTOM_size = 15,
+
     ATI_SC_TOP_BOTTOM         = 0x0AD, // 0x02B4
+
     ATI_DP_BKGD_CLR           = 0x0B0, // 0x02C0
     ATI_DP_FRGD_CLR           = 0x0B1, // 0x02C4
     ATI_DP_FOG_CLR            = 0x0B1, // 0x02C4
     ATI_DP_WRITE_MSK          = 0x0B2, // 0x02C8
+
     ATI_DP_PIX_WIDTH          = 0x0B4, // 0x02D0
+        ATI_DP_DST_PIX_WIDTH        =  0, ATI_DP_DST_PIX_WIDTH_size  = 4,  // VT/GT ; 3 for VT
+        ATI_DP_SRC_PIX_WIDTH        =  8, ATI_DP_SRC_PIX_WIDTH_size  = 4,  // VT/GT ; 3 for VT
+        ATI_DP_HOST_PIX_WIDTH       = 16, ATI_DP_HOST_PIX_WIDTH_size = 4,  // VT/GT ; 3 for VT
+        ATI_DP_CI4_RGB_INDEX        = 20, ATI_DP_CI4_RGB_INDEX_size  = 4,  // GT
+        ATI_DP_BYTE_PIX_ORDER       = 24,  // VT/GT
+        ATI_DP_CONVERSION_TEMP      = 25,  // GT
+        ATI_DP_CI4_RGB_LOW_NIBBLE   = 26,  // GT
+        ATI_DP_CI4_RGB_HIGH_NIBBLE  = 27,  // GT
+        DP_SCALE_PIX_WIDTH          = 28, DP_SCALE_PIX_WIDTH_size   = 4,  // GT
+
     ATI_DP_MIX                = 0x0B5, // 0x02D4
+        ATI_DP_BKGD_MIX =  0, ATI_DP_BKGD_MIX_size = 5,
+        ATI_DP_FRGD_MIX = 16, ATI_DP_FRGD_MIX_size = 5,
+
     ATI_DP_SRC                = 0x0B6, // 0x02D8
+        ATI_DP_BKGD_SRC =  0, ATI_DP_BKGD_SRC_size = 3,
+        ATI_DP_FRGD_SRC =  8, ATI_DP_FRGD_SRC_size = 3,
+        ATI_DP_MONO_SRC = 16, ATI_DP_MONO_SRC_size = 2,
+
     ATI_DP_FRGD_CLR_MIX       = 0x0B7, // 0x02DC
     ATI_DP_FRGD_BKGD_CLR      = 0x0B8, // 0x02E0
     ATI_DST_X_Y               = 0x0BA, // 0x02E8
@@ -442,13 +517,44 @@ enum {
     ATI_DP_SET_GUI_ENGINE     = 0x0BF, // 0x02FC
     ATI_CLR_CMP_CLR           = 0x0C0, // 0x0300
     ATI_CLR_CMP_MSK           = 0x0C1, // 0x0304
+
     ATI_CLR_CMP_CNTL          = 0x0C2, // 0x0308
+        ATI_CLR_CMP_FCN =  0, ATI_CLR_CMP_FCN_size = 3, // VT/GT
+        ATI_CLR_CMP_SRC = 24, ATI_CLR_CMP_SRC_size = 2, // VT/GT ; 1 for VT
+
     ATI_FIFO_STAT             = 0x0C4, // 0x0310
         ATI_FIFO_STAT_pos =  0, ATI_FIFO_STAT_size = 16,
         ATI_FIFO_ERR      = 31,
 
     ATI_CONTEXT_MASK          = 0x0C8, // 0x0320 <-- 264VT specific
+
     ATI_GUI_TRAJ_CNTL         = 0x0CC, // 0x0330
+        ATI_DST_X_DIR              =  0,                             // VT/GT
+        ATI_DST_Y_DIR              =  1,                             // VT/GT
+        ATI_DST_Y_MAJOR            =  2,                             // VT/GT
+        ATI_DST_X_TILE             =  3,                             // VT/GT
+        ATI_DST_Y_TILE             =  4,                             // VT/GT
+        ATI_DST_LAST_PEL           =  5,                             // VT/GT
+        ATI_DST_POLYGON_EN         =  6,                             // VT/GT
+        ATI_DST_24_ROT_EN          =  7,                             // VT/GT
+        ATI_DST_24_ROT             =  8, ATI_DST_24_ROT_size = 3,    // VT/GT
+        ATI_DST_BRES_SIGN          = 11,                             // VT/GT
+        ATI_DST_POLYGON_RTEDGE_DIS = 12,                             // VT/GT
+        ATI_TRAIL_X_DIR            = 13,                             // GT
+        ATI_TRAP_FILL_DIR          = 14,                             // GT
+        ATI_TRAIL_BRES_SIGN        = 15,                             // GT
+        ATI_SRC_PATT_EN            = 16,                             // VT/GT
+        ATI_SRC_PATT_ROT_EN        = 17,                             // VT/GT
+        ATI_SRC_LINEAR_EN          = 18,                             // VT/GT
+        ATI_SRC_LINE_X_DIR         = 19,                             // VT/GT
+        ATI_SRC_TRACK_DST          = 20,                             // VT/GT
+        ATI_PAT_MONO_EN            = 23,                             // GT
+        ATI_PAT_CLR_4x2_EN         = 24,                             // VT/GT
+        ATI_PAT_CLR_8x1_EN         = 25,                             // VT/GT
+        ATI_HOST_BYTE_ALIGN        = 26,                             // VT/GT
+        ATI_HOST_BIG_ENDIAN_EN     = 28,                             // VT/GT
+        ATI_SRC_BYTE_ALIGN         = 29,                             // VT/GT
+
     ATI_GUI_STAT              = 0x0CE, // 0x0338
         ATI_GUI_ACTIVE             =  0,
         ATI_DSTX_LT_SCISSOR_LEFT   =  8,
