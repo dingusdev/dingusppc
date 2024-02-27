@@ -69,7 +69,7 @@ public:
 
 protected:
     void notify_bar_change(int bar_num);
-    const char* get_reg_name(uint32_t reg_offset);
+    const char* get_reg_name(uint32_t reg_num);
     bool io_access_allowed(uint32_t offset);
     uint32_t read_reg(uint32_t reg_offset, uint32_t size);
     void write_reg(uint32_t reg_addr, uint32_t value, uint32_t size);
