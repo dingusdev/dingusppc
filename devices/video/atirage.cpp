@@ -457,11 +457,11 @@ void ATIRage::verbose_pixel_format(int crtc_index) {
         return;
     }
 
-    uint32_t fmt = extract_bits<uint32_t>(this->regs[ATI_CRTC_GEN_CNTL], ATI_CRTC_PIX_WIDTH, ATI_CRTC_PIX_WIDTH_size);
+    uint32_t pix_fmt = extract_bits<uint32_t>(this->regs[ATI_CRTC_GEN_CNTL], ATI_CRTC_PIX_WIDTH, ATI_CRTC_PIX_WIDTH_size);
 
     const char* what = "Pixel format:";
 
-    switch (fmt) {
+    switch (pix_fmt) {
     case 1:
         LOG_F(INFO, "%s 4 bpp with DAC palette", what);
         break;
@@ -486,7 +486,7 @@ void ATIRage::verbose_pixel_format(int crtc_index) {
         LOG_F(INFO, "%s 32 bpp direct color (ARGB8888)", what);
         break;
     default:
-        LOG_F(ERROR, "%s: CRTC pixel format %d not supported", this->name.c_str(), fmt);
+        LOG_F(ERROR, "%s: CRTC pixel format %d not supported", this->name.c_str(), pix_fmt);
     }
 }
 
