@@ -504,7 +504,7 @@ void AtiMach64Gx::crtc_update()
 
     // check for unsupported modes and fail early
     if (!bit_set(this->regs[ATI_CRTC_GEN_CNTL], ATI_CRTC_EXT_DISP_EN))
-        ABORT_F("%s: VGA not supported", this->name.c_str());
+        ABORT_F("%s: Current mode is VGA which is not supported", this->name.c_str());
 
     new_width  = (extract_bits<uint32_t>(this->regs[ATI_CRTC_H_TOTAL_DISP], ATI_CRTC_H_DISP, ATI_CRTC_H_DISP_size) + 1) * 8;
     new_height =  extract_bits<uint32_t>(this->regs[ATI_CRTC_V_TOTAL_DISP], ATI_CRTC_V_DISP, ATI_CRTC_V_DISP_size) + 1;
