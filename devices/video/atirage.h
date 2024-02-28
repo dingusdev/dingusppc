@@ -79,7 +79,6 @@ protected:
     float calc_pll_freq(int scale, int fb_div);
     void verbose_pixel_format(int crtc_index);
     void crtc_update();
-    void crtc_enable();
     void draw_hw_cursor(uint8_t *dst_buf, int dst_pitch);
     void get_cursor_position(int& x, int& y);
 
