@@ -492,7 +492,7 @@ void AtiMach64Gx::verbose_pixel_format(int crtc_index) {
     }
 }
 
-void AtiMach64Gx::enable_crtc_internal()
+void AtiMach64Gx::crtc_update()
 {
     uint32_t new_width, new_height;
 
@@ -596,7 +596,7 @@ void AtiMach64Gx::rgb514_write_ind_reg(uint8_t reg_addr, uint8_t value)
         if (value == 3) {
             this->pixel_depth = 8;
             // HACK: not the best place for enabling display output!
-            this->enable_crtc_internal();
+            this->crtc_update();
         } else {
             ABORT_F("RGB514: unimplemented pixel format %d", value);
         }
