@@ -368,6 +368,10 @@ void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
     }
 
     switch (reg_num) {
+    case ATI_CRTC_H_TOTAL_DISP:
+        new_value = value;
+        LOG_F(9, "%s: ATI_CRTC_H_TOTAL_DISP set to 0x%08X", this->name.c_str(), value);
+        break;
     case ATI_CRTC_OFF_PITCH:
         new_value = value;
         this->fb_pitch = extract_bits<uint32_t>(new_value, ATI_CRTC_PITCH, ATI_CRTC_PITCH_size) * 8;
