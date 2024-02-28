@@ -790,6 +790,16 @@ void AtiMach64Gx::crtc_update()
         LOG_F(ERROR, "%s: unsupported pixel format %d", this->name.c_str(), this->pixel_format);
     }
 
+    LOG_F(INFO, "%s: primary CRT controller enabled:", this->name.c_str());
+    LOG_F(INFO, "Video mode: %s",
+        bit_set(this->regs[ATI_CRTC_GEN_CNTL], ATI_CRTC_EXT_DISP_EN) ? "extended" : "VGA");
+    LOG_F(INFO, "Video width: %d px", this->active_width);
+    LOG_F(INFO, "Video height: %d px", this->active_height);
+    LOG_F(INFO, "Vertical blank: %d px", this->vert_blank);
+    verbose_pixel_format(0);
+    LOG_F(INFO, "Pixel (dot) clock: %f MHz", this->pixel_clock * 1e-6);
+    LOG_F(INFO, "Refresh rate: %f Hz", this->refresh_rate);
+
     this->stop_refresh_task();
     this->start_refresh_task();
 
