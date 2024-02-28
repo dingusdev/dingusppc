@@ -337,42 +337,47 @@ const char* AtiMach64Gx::get_reg_name(uint32_t reg_num) {
 
 uint32_t AtiMach64Gx::read_reg(uint32_t reg_offset, uint32_t size)
 {
+    uint32_t reg_num = reg_offset >> 2;
     uint32_t offset = reg_offset & 3;
+    uint64_t result = this->regs[reg_num];
 
-    uint64_t result = this->regs[reg_offset >> 2];
-
-    if (!offset && size == 4) { // fast path
-        return static_cast<uint32_t>(result);
-    } else { // slow path
+    if (offset || size != 4) { // slow path
         if ((offset + size) > 4) {
-            result |= (uint64_t)(this->regs[(reg_offset >> 2) + 1]) << 32;
+            result |= (uint64_t)(this->regs[reg_num + 1]) << 32;
         }
-        return static_cast<uint32_t>(extract_bits<uint64_t>(result, offset * 8, size * 8));
+        result = extract_bits<uint64_t>(result, offset * 8, size * 8);
     }
+
+    return static_cast<uint32_t>(result);
 }
 
 void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
 {
+    uint32_t reg_num = reg_offset >> 2;
     uint32_t offset = reg_offset & 3;
-    reg_offset >>= 2;
+    uint32_t old_value = this->regs[reg_num];
+    uint32_t new_value;
 
     if (offset || size != 4) { // slow path
         if ((offset + size) > 4) {
             ABORT_F("%s: unaligned DWORD writes not implemented", this->name.c_str());
         }
-        uint64_t old_val = this->regs[reg_offset];
-        insert_bits<uint64_t>(old_val, value, offset * 8, size * 8);
-        value = static_cast<uint32_t>(old_val);
+        uint64_t val = old_value;
+        insert_bits<uint64_t>(val, value, offset * 8, size * 8);
+        value = static_cast<uint32_t>(val);
     }
 
-    switch (reg_offset) {
+    switch (reg_num) {
     case ATI_CRTC_OFF_PITCH:
-        this->fb_pitch = extract_bits<uint32_t>(value, ATI_CRTC_PITCH, ATI_CRTC_PITCH_size) * 8;
-        this->fb_ptr = &this->vram_ptr[extract_bits<uint32_t>(value, ATI_CRTC_OFFSET, ATI_CRTC_OFFSET_size) * 8];
+        new_value = value;
+        this->fb_pitch = extract_bits<uint32_t>(new_value, ATI_CRTC_PITCH, ATI_CRTC_PITCH_size) * 8;
+        this->fb_ptr = &this->vram_ptr[extract_bits<uint32_t>(new_value, ATI_CRTC_OFFSET, ATI_CRTC_OFFSET_size) * 8];
         break;
     case ATI_CRTC_GEN_CNTL:
-        if (bit_changed(this->regs[reg_offset], value, ATI_CRTC_DISPLAY_DIS)) {
-            if (bit_set(value, ATI_CRTC_DISPLAY_DIS)) {
+    {
+        new_value = value;
+        if (bit_changed(old_value, new_value, ATI_CRTC_DISPLAY_DIS)) {
+            if (bit_set(new_value, ATI_CRTC_DISPLAY_DIS)) {
                 this->blank_on = true;
                 this->blank_display();
             } else {
@@ -380,34 +385,41 @@ void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
             }
         }
 
-        if (bit_changed(this->regs[reg_offset], value, ATI_CRTC_ENABLE)) {
-            if (!bit_set(value, ATI_CRTC_ENABLE)) {
+        if (bit_changed(old_value, new_value, ATI_CRTC_ENABLE)) {
+            if (!bit_set(new_value, ATI_CRTC_ENABLE)) {
                 this->disable_crtc_internal();
             } else {
                 this->blank_on = false;
             }
         }
         break;
+    }
     case ATI_DAC_REGS:
+        new_value = old_value; // no change
         if (size == 1) { // only byte accesses are allowed for DAC registers
             int dac_reg_addr = ((this->regs[ATI_DAC_CNTL] & 1) << 2) | offset;
             rgb514_write_reg(dac_reg_addr, extract_bits<uint32_t>(value, offset * 8, 8));
         }
         break;
     case ATI_DAC_CNTL:
+        new_value = value;
         // monitor ID is usually accessed using 8bit writes
         if (offset == 3) {
-            uint8_t gpio_dirs   = extract_bits<uint32_t>(value, ATI_DAC_GIO_DIR, ATI_DAC_GIO_DIR_size);
-            uint8_t gpio_levels = extract_bits<uint32_t>(value, ATI_DAC_GIO_STATE, ATI_DAC_GIO_STATE_size);
+            uint8_t gpio_dirs   = extract_bits<uint32_t>(new_value, ATI_DAC_GIO_DIR, ATI_DAC_GIO_DIR_size);
+            uint8_t gpio_levels = extract_bits<uint32_t>(new_value, ATI_DAC_GIO_STATE, ATI_DAC_GIO_STATE_size);
             gpio_levels = this->disp_id->read_monitor_sense(gpio_levels, gpio_dirs);
-            insert_bits<uint32_t>(value, gpio_levels, ATI_DAC_GIO_STATE, ATI_DAC_GIO_STATE_size);
+            insert_bits<uint32_t>(new_value, gpio_levels, ATI_DAC_GIO_STATE, ATI_DAC_GIO_STATE_size);
         }
         break;
     case ATI_CONFIG_STAT0:
-        return; // prevent writes to this read-only register
+        new_value = old_value; // prevent writes to this read-only register
+        break;
+    default:
+        new_value = value;
+        break;
     }
 
-    this->regs[reg_offset] = value;
+    this->regs[reg_num] = new_value;
 }
 
 uint32_t AtiMach64Gx::read(uint32_t rgn_start, uint32_t offset, int size)
