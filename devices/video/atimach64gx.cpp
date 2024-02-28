@@ -527,15 +527,12 @@ void AtiMach64Gx::enable_crtc_internal()
     this->start_refresh_task();
 
     this->crtc_on = true;
-
-    this->crtc_enable = 1;
 }
 
 void AtiMach64Gx::disable_crtc_internal()
 {
     this->blank_on = true;
     this->blank_display();
-    this->crtc_enable = 0;
 }
 
 // ========================== IBM RGB514 related code ==========================

@@ -82,7 +82,6 @@ private:
 
     uint32_t    config_cntl;
     uint32_t    mm_regs_offset;
-    int         crtc_enable = 0;
 
     // RGB514 RAMDAC state
     uint8_t     dac_idx_lo;
