@@ -143,8 +143,7 @@ AtiMach64Gx::AtiMach64Gx()
 
     // declare expansion ROM containing FCode and Mac OS drivers
     if (this->attach_exp_rom_image(std::string("113-32900-004_Apple_MACH64.bin"))) {
-        ABORT_F("%s: could not load ROM - this device won't work properly!",
-                this->name.c_str());
+        LOG_F(WARNING, "%s: could not load ROM - this device won't work properly!", this->name.c_str());
     }
 
     // initialize display identification
