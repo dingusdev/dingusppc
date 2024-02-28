@@ -548,6 +548,12 @@ void AtiMach64Gx::crtc_update()
     // calculate display refresh rate
     this->refresh_rate = this->pixel_clock / this->hori_total / this->vert_total;
 
+    if (this->refresh_rate < 24 || this->refresh_rate > 120) {
+        LOG_F(ERROR, "%s: Refresh rate is weird. Will try 60 Hz", this->name.c_str());
+        this->refresh_rate = 60;
+        this->pixel_clock = this->refresh_rate * this->hori_total / this->vert_total;
+    }
+
     // set up frame buffer converter
     switch (this->pixel_format) {
     case 2:
