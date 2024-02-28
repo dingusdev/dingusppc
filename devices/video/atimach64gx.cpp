@@ -353,9 +353,6 @@ uint32_t AtiMach64Gx::read_reg(uint32_t reg_offset, uint32_t size)
 
 void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
 {
-    uint8_t gpio_dirs, gpio_levels;
-    int crtc_en;
-
     uint32_t offset = reg_offset & 3;
     reg_offset >>= 2;
 
@@ -370,12 +367,12 @@ void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
 
     switch (reg_offset) {
     case ATI_CRTC_OFF_PITCH:
-        this->fb_pitch = extract_bits<uint32_t>(value, 22, 10) * 8;
-        this->fb_ptr = &this->vram_ptr[extract_bits<uint32_t>(value, 0, 20) * 8];
+        this->fb_pitch = extract_bits<uint32_t>(value, ATI_CRTC_PITCH, ATI_CRTC_PITCH_size) * 8;
+        this->fb_ptr = &this->vram_ptr[extract_bits<uint32_t>(value, ATI_CRTC_OFFSET, ATI_CRTC_OFFSET_size) * 8];
         break;
     case ATI_CRTC_GEN_CNTL:
-        if (bit_changed(this->regs[reg_offset], value, 6)) {
-            if (value & 0x40) {
+        if (bit_changed(this->regs[reg_offset], value, ATI_CRTC_DISPLAY_DIS)) {
+            if (bit_set(value, ATI_CRTC_DISPLAY_DIS)) {
                 this->blank_on = true;
                 this->blank_display();
             } else {
@@ -383,8 +380,8 @@ void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
             }
         }
 
-        if (bit_changed(this->regs[reg_offset], value, 25)) {
-            if (!bit_set(value, 25)) {
+        if (bit_changed(this->regs[reg_offset], value, ATI_CRTC_ENABLE)) {
+            if (!bit_set(value, ATI_CRTC_ENABLE)) {
                 this->disable_crtc_internal();
             } else {
                 this->blank_on = false;
@@ -400,10 +397,10 @@ void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
     case ATI_DAC_CNTL:
         // monitor ID is usually accessed using 8bit writes
         if (offset == 3) {
-            gpio_dirs   = extract_bits<uint32_t>(value, 27, 3);
-            gpio_levels = extract_bits<uint32_t>(value, 24, 3);
+            uint8_t gpio_dirs   = extract_bits<uint32_t>(value, ATI_DAC_GIO_DIR, ATI_DAC_GIO_DIR_size);
+            uint8_t gpio_levels = extract_bits<uint32_t>(value, ATI_DAC_GIO_STATE, ATI_DAC_GIO_STATE_size);
             gpio_levels = this->disp_id->read_monitor_sense(gpio_levels, gpio_dirs);
-            insert_bits<uint32_t>(value, gpio_levels, 24, 3);
+            insert_bits<uint32_t>(value, gpio_levels, ATI_DAC_GIO_STATE, ATI_DAC_GIO_STATE_size);
         }
         break;
     case ATI_CONFIG_STAT0:
@@ -487,19 +484,19 @@ void AtiMach64Gx::enable_crtc_internal()
     uint32_t new_width, new_height;
 
     // check for unsupported modes and fail early
-    if (!bit_set(this->regs[ATI_CRTC_GEN_CNTL], 24))
+    if (!bit_set(this->regs[ATI_CRTC_GEN_CNTL], ATI_CRTC_EXT_DISP_EN))
         ABORT_F("%s: VGA not supported", this->name.c_str());
 
-    new_width  = (extract_bits<uint32_t>(this->regs[ATI_CRTC_H_TOTAL_DISP], 16,  8) + 1) * 8;
-    new_height =  extract_bits<uint32_t>(this->regs[ATI_CRTC_V_TOTAL_DISP], 16, 11) + 1;
+    new_width  = (extract_bits<uint32_t>(this->regs[ATI_CRTC_H_TOTAL_DISP], ATI_CRTC_H_DISP, ATI_CRTC_H_DISP_size) + 1) * 8;
+    new_height =  extract_bits<uint32_t>(this->regs[ATI_CRTC_V_TOTAL_DISP], ATI_CRTC_V_DISP, ATI_CRTC_V_DISP_size) + 1;
 
     if (new_width != this->active_width || new_height != this->active_height) {
         this->create_display_window(new_width, new_height);
     }
 
     // calculate display refresh rate
-    this->hori_total = (extract_bits<uint32_t>(this->regs[ATI_CRTC_H_TOTAL_DISP], 0, 9) + 1) * 8;
-    this->vert_total = extract_bits<uint32_t>(this->regs[ATI_CRTC_V_TOTAL_DISP], 0, 11) + 1;
+    this->hori_total = (extract_bits<uint32_t>(this->regs[ATI_CRTC_H_TOTAL_DISP], ATI_CRTC_H_TOTAL, ATI_CRTC_H_TOTAL_size) + 1) * 8;
+    this->vert_total = extract_bits<uint32_t>(this->regs[ATI_CRTC_V_TOTAL_DISP], ATI_CRTC_V_TOTAL, ATI_CRTC_V_TOTAL_size) + 1;
 
     this->refresh_rate = this->pixel_clock / this->hori_total / this->vert_total;
 
