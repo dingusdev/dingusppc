@@ -350,6 +350,9 @@ const char* AtiMach64Gx::get_reg_name(uint32_t reg_num) {
     }
 }
 
+static int64_t last_int_cntl_val = -1;
+static int64_t int_cntl_count = 1;
+
 uint32_t AtiMach64Gx::read_reg(uint32_t reg_offset, uint32_t size)
 {
     uint32_t reg_num = reg_offset >> 2;
@@ -361,6 +364,26 @@ uint32_t AtiMach64Gx::read_reg(uint32_t reg_offset, uint32_t size)
             result |= (uint64_t)(this->regs[reg_num + 1]) << 32;
         }
         result = extract_bits<uint64_t>(result, offset * 8, size * 8);
+    }
+
+    if (reg_num == ATI_CRTC_INT_CNTL) {
+        int64_t int_cntl_val = result;
+        if (int_cntl_val == last_int_cntl_val)
+            int_cntl_count++;
+        else {
+            if (int_cntl_count > 1)
+                LOG_F(WARNING, "%s: read  %s %04x.%c = %0*x (%lld times)", this->name.c_str(),
+                    get_reg_name(reg_num), reg_offset, SIZE_ARG(size), size * 2, (uint32_t)last_int_cntl_val, int_cntl_count);
+            LOG_F(WARNING, "%s: read  %s %04x.%c = %0*x", this->name.c_str(),
+                get_reg_name(reg_num), reg_offset, SIZE_ARG(size), size * 2, (uint32_t)result);
+            int_cntl_count = 1;
+            last_int_cntl_val = int_cntl_val;
+        }
+    }
+    else {
+        last_int_cntl_val = -1;
+        LOG_F(WARNING, "%s: read  %s %04x.%c = %0*x", this->name.c_str(),
+            get_reg_name(reg_num), reg_offset, SIZE_ARG(size), size * 2, (uint32_t)result);
     }
 
     return static_cast<uint32_t>(result);
@@ -500,7 +523,7 @@ void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
 
         new_value = (old_value & bits_read_only) | (new_value & ~bits_read_only);
 
-        this->regs[reg_num] = new_value;
+        WRITE_VALUE_AND_LOG();
 
         if (bit_changed(old_value, new_value, ATI_CRTC_DISPLAY_DIS)) {
             if (bit_set(new_value, ATI_CRTC_DISPLAY_DIS)) {
@@ -515,7 +538,7 @@ void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
             draw_fb = true;
             this->crtc_update();
         }
-        break;
+        return;
     }
     case ATI_OVR_CLR:
     case ATI_OVR_WID_LEFT_RIGHT:
@@ -557,11 +580,12 @@ void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
         return;
     case ATI_DAC_REGS:
         new_value = old_value; // no change
+        WRITE_VALUE_AND_LOG();
         if (size == 1) { // only byte accesses are allowed for DAC registers
             int dac_reg_addr = ((this->regs[ATI_DAC_CNTL] & 1) << 2) | offset;
             rgb514_write_reg(dac_reg_addr, extract_bits<uint32_t>(value, offset * 8, 8));
         }
-        break;
+        return;
     case ATI_DAC_CNTL:
         new_value = value;
         // monitor ID is usually accessed using 8bit writes
@@ -583,7 +607,7 @@ void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
         break;
     }
 
-    this->regs[reg_num] = new_value;
+    WRITE_VALUE_AND_LOG();
 }
 
 uint32_t AtiMach64Gx::read(uint32_t rgn_start, uint32_t offset, int size)
