@@ -64,10 +64,18 @@ protected:
     void rgb514_write_ind_reg(uint8_t reg_addr, uint8_t value);
 
 private:
+    void change_one_bar(uint32_t &aperture, uint32_t aperture_size, uint32_t aperture_new, int bar_num);
+
     uint32_t    regs[256] = {}; // internal registers
 
     int         vram_size;
-    uint32_t    aperture_base;
+
+    // main aperture (16MB)
+    const uint32_t aperture_count = 1;
+    const uint32_t aperture_size[1] = { 0x1000000 };
+    const uint32_t aperture_flag[1] = { 0 };
+    uint32_t aperture_base[1] = { 0 };
+
     uint32_t    config_cntl;
     uint32_t    mm_regs_offset;
     int         crtc_enable = 0;

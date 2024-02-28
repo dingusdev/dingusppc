@@ -43,9 +43,11 @@ AtiMach64Gx::AtiMach64Gx()
     // set up PCI configuration space header
     this->vendor_id   = PCI_VENDOR_ATI;
     this->device_id   = ATI_MACH64_GX_DEV_ID;
-    this->class_rev   = (0x030000 << 8) | 3;
-
-    this->setup_bars({{0, 0xFF000000UL}}); // declare main aperture (16MB)
+    this->class_rev   = (0x030000 << 8) | 0x03;
+    for (int i = 0; i < this->aperture_count; i++) {
+        this->bars_cfg[i] = (uint32_t)(-this->aperture_size[i] | this->aperture_flag[i]);
+    }
+    this->finish_config_bars();
 
     this->pci_notify_bar_change = [this](int bar_num) {
         this->notify_bar_change(bar_num);
@@ -61,11 +63,24 @@ AtiMach64Gx::AtiMach64Gx()
     this->disp_id = std::unique_ptr<DisplayID> (new DisplayID(0x07, 0x3A));
 
     // allocate video RAM
-    this->vram_size = 2 << 20;
+    this->vram_size = 2 << 20; // 2MB ; up to 6MB supported
     this->vram_ptr = std::unique_ptr<uint8_t[]> (new uint8_t[this->vram_size]);
 
     // set up RAMDAC identification
     this->regs[ATI_CONFIG_STAT0] = 1 << 9;
+}
+
+void AtiMach64Gx::change_one_bar(uint32_t &aperture, uint32_t aperture_size, uint32_t aperture_new, int bar_num) {
+    if (aperture != aperture_new) {
+        if (aperture)
+            this->host_instance->pci_unregister_mmio_region(aperture, aperture_size, this);
+
+        aperture = aperture_new;
+        if (aperture)
+            this->host_instance->pci_register_mmio_region(aperture, aperture_size, this);
+
+        LOG_F(INFO, "%s: aperture[%d] set to 0x%08X", this->name.c_str(), bar_num, aperture);
+    }
 }
 
 void AtiMach64Gx::notify_bar_change(int bar_num)
@@ -73,20 +88,10 @@ void AtiMach64Gx::notify_bar_change(int bar_num)
     if (bar_num) // only BAR0 is supported
         return;
 
-    if (this->aperture_base != (this->bars[bar_num] & 0xFFFFFFF0UL)) {
-        if (this->aperture_base) {
-            LOG_F(WARNING, "AtiMach64Gx: deallocating I/O memory not implemented");
-        }
-
-        this->aperture_base = this->bars[0] & 0xFFFFFFF0UL;
-        this->host_instance->pci_register_mmio_region(this->aperture_base,
-                                                      APERTURE_SIZE, this);
-
+    {
+        change_one_bar(this->aperture_base[bar_num], this->aperture_size[bar_num], this->bars[bar_num] & ~15, bar_num);
         // copy aperture address to CONFIG_CNTL:CFG_MEM_AP_LOC
-        this->config_cntl = (this->config_cntl & 0xFFFFC00FUL) |
-                            ((this->aperture_base >> 18) & 0x3FF0U);
-
-        LOG_F(INFO, "AtiMach64Gx: aperture address set to 0x%08X", this->aperture_base);
+        insert_bits<uint32_t>(this->config_cntl, this->aperture_base[0] >> 22, ATI_CFG_MEM_AP_LOC, ATI_CFG_MEM_AP_LOC_size);
     }
 }
 
@@ -263,17 +268,21 @@ void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
 
 uint32_t AtiMach64Gx::read(uint32_t rgn_start, uint32_t offset, int size)
 {
-    if (rgn_start == this->aperture_base) {
+    if (rgn_start == this->aperture_base[0]) {
         if (offset < this->vram_size) {
             return read_mem(&this->vram_ptr[offset], size);
-        } else if (offset >= this->mm_regs_offset) {
+        }
+        if (offset >= this->mm_regs_offset) {
             return BYTESWAP_SIZED(read_reg(offset - this->mm_regs_offset, size), size);
         }
+        return 0;
     }
 
     // memory mapped expansion ROM region
-    if (rgn_start == this->exp_rom_addr && offset < this->exp_rom_size) {
-        return read_mem(&this->exp_rom_data[offset], size);
+    if (rgn_start == this->exp_rom_addr) {
+        if (offset < this->exp_rom_size)
+            return read_mem(&this->exp_rom_data[offset], size);
+        return 0;
     }
 
     return 0;
@@ -281,12 +290,14 @@ uint32_t AtiMach64Gx::read(uint32_t rgn_start, uint32_t offset, int size)
 
 void AtiMach64Gx::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
 {
-    if (rgn_start == this->aperture_base) {
+    if (rgn_start == this->aperture_base[0]) {
         if (offset < this->vram_size) {
-            write_mem(&this->vram_ptr[offset], value, size);
-        } else if (offset >= this->mm_regs_offset) {
-            write_reg(offset - this->mm_regs_offset, BYTESWAP_SIZED(value, size), size);
+            return write_mem(&this->vram_ptr[offset], value, size);
         }
+        if (offset >= this->mm_regs_offset) {
+            return write_reg(offset - this->mm_regs_offset, BYTESWAP_SIZED(value, size), size);
+        }
+        return;
     }
 }
 
