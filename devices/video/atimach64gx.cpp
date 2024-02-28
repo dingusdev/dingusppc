@@ -387,7 +387,8 @@ void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
 
         if (bit_changed(old_value, new_value, ATI_CRTC_ENABLE)) {
             if (!bit_set(new_value, ATI_CRTC_ENABLE)) {
-                this->disable_crtc_internal();
+                this->blank_on = true;
+                this->blank_display();
             } else {
                 this->blank_on = false;
             }
@@ -527,12 +528,6 @@ void AtiMach64Gx::enable_crtc_internal()
     this->start_refresh_task();
 
     this->crtc_on = true;
-}
-
-void AtiMach64Gx::disable_crtc_internal()
-{
-    this->blank_on = true;
-    this->blank_display();
 }
 
 // ========================== IBM RGB514 related code ==========================

@@ -61,8 +61,6 @@ protected:
     uint32_t read_reg(uint32_t reg_offset, uint32_t size);
     void write_reg(uint32_t reg_offset, uint32_t value, uint32_t size);
     void enable_crtc_internal();
-    void disable_crtc_internal();
-
     void rgb514_write_reg(uint8_t reg_addr, uint8_t value);
     void rgb514_write_ind_reg(uint8_t reg_addr, uint8_t value);
     void verbose_pixel_format(int crtc_index);
