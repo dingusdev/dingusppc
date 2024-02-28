@@ -526,6 +526,16 @@ void AtiMach64Gx::crtc_update()
         need_recalc = true;
     }
 
+    // pixel clock = source_freq / post_div
+    int m = 8 >> (this->dac_regs[Rgb514::F0_M0] >> 6);
+    int vco_div = (this->dac_regs[Rgb514::F0_M0] & 0x3F) + 65;
+    int ref_div = (this->dac_regs[Rgb514::F1_N0] & 0x1F) * m;
+    float new_pixel_clock = ATI_XTAL * vco_div / ref_div;
+    if (new_pixel_clock != this->pixel_clock) {
+        this->pixel_clock = new_pixel_clock;
+        need_recalc = true;
+    }
+
     if (!need_recalc)
         return;
 
@@ -603,12 +613,7 @@ void AtiMach64Gx::rgb514_write_ind_reg(uint8_t reg_addr, uint8_t value)
         if (value & PLL_ENAB) {
             if ((this->dac_regs[Rgb514::PLL_CTL_1] & 3) != 1)
                 ABORT_F("RGB514: unsupported PLL source");
-
-            int m = 8 >> (this->dac_regs[Rgb514::F0_M0] >> 6);
-            int vco_div = (this->dac_regs[Rgb514::F0_M0] & 0x3F) + 65;
-            int ref_div = (this->dac_regs[Rgb514::F1_N0] & 0x1F) * m;
-            this->pixel_clock = ATI_XTAL * vco_div / ref_div;
-            LOG_F(INFO, "RGB514: dot clock set to %f Hz", this->pixel_clock);
+            this->crtc_update();
         }
         break;
     case Rgb514::PIX_FORMAT:
