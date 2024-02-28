@@ -248,32 +248,45 @@ static const uint32_t io_idx_to_reg_offset[32] = {
     ATI_CRTC_H_TOTAL_DISP,
 };
 
+enum {
+    SPARSE_IO_BASE = 0x2EC
+};
+
+bool AtiMach64Gx::io_access_allowed(uint32_t offset) {
+    if ((offset & 0xFFFF03FC) == SPARSE_IO_BASE) {
+        if (this->command & 1) {
+            return true;
+        }
+        LOG_F(WARNING, "ATI I/O space disabled in the command reg");
+    }
+    return false;
+}
+
 bool AtiMach64Gx::pci_io_read(uint32_t offset, uint32_t size, uint32_t* res)
 {
-    *res = 0;
-
-    // check for valid I/O base and I/O access permission
-    if ((offset & 0x3FC) != 0x2EC || !(this->command & 1)) {
+    if (!this->io_access_allowed(offset)) {
         return false;
     }
+
+    uint32_t result = 0;
 
     // convert ISA-style I/O address to MMIO register offset
     offset = io_idx_to_reg_offset[(offset >> 10) & 0x1F] * 4 + (offset & 3);
 
     // CONFIG_CNTL is accessible from I/O space only
     if ((offset >> 2) == ATI_CONFIG_CNTL) {
-        *res = read_mem(((uint8_t *)&this->config_cntl) + (offset & 3), size);
+        result = read_mem(((uint8_t *)&this->config_cntl) + (offset & 3), size);
     } else {
-        *res = BYTESWAP_SIZED(this->read_reg(offset, size), size);
+        result = BYTESWAP_SIZED(this->read_reg(offset, size), size);
     }
 
+    *res = result;
     return true;
 }
 
 bool AtiMach64Gx::pci_io_write(uint32_t offset, uint32_t value, uint32_t size)
 {
-    // check for valid I/O base and I/O access permission
-    if ((offset & 0x3FC) != 0x2EC || !(this->command & 1)) {
+    if (!this->io_access_allowed(offset)) {
         return false;
     }
 
