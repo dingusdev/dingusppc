@@ -913,6 +913,9 @@ const char* AtiMach64Gx::rgb514_get_reg_name(uint32_t reg_addr)
 void AtiMach64Gx::rgb514_write_ind_reg(uint8_t reg_addr, uint8_t value)
 {
     this->dac_regs[reg_addr] = value;
+    LOG_F(WARNING, "%s.rgb514: write %s %04x.b = %02x", this->name.c_str(),
+        rgb514_get_reg_name(reg_addr), reg_addr, value
+    );
 
     switch (reg_addr) {
     case Rgb514::MISC_CLK_CNTL:
