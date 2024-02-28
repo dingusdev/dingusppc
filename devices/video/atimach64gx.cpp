@@ -496,6 +496,12 @@ void AtiMach64Gx::crtc_update()
 {
     uint32_t new_width, new_height;
 
+    if (!bit_set(this->regs[ATI_CRTC_GEN_CNTL], ATI_CRTC_ENABLE) ||
+        bit_set(this->regs[ATI_CRTC_GEN_CNTL], ATI_CRTC_DISPLAY_DIS)
+    ) {
+        return;
+    }
+
     // check for unsupported modes and fail early
     if (!bit_set(this->regs[ATI_CRTC_GEN_CNTL], ATI_CRTC_EXT_DISP_EN))
         ABORT_F("%s: VGA not supported", this->name.c_str());
