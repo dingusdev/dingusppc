@@ -183,6 +183,35 @@ void AtiMach64Gx::notify_bar_change(int bar_num)
     }
 }
 
+#if 0
+uint32_t AtiMach64Gx::pci_cfg_read(uint32_t reg_offs, AccessDetails &details)
+{
+    if (reg_offs < 64) {
+        return PCIDevice::pci_cfg_read(reg_offs, details);
+    }
+
+    switch (reg_offs) {
+    default:
+        LOG_READ_UNIMPLEMENTED_CONFIG_REGISTER();
+    }
+
+    return 0;
+}
+
+void AtiMach64Gx::pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDetails &details)
+{
+    if (reg_offs < 64) {
+        PCIDevice::pci_cfg_write(reg_offs, value, details);
+        return;
+    }
+
+    switch (reg_offs) {
+    default:
+        LOG_WRITE_UNIMPLEMENTED_CONFIG_REGISTER();
+    }
+}
+#endif
+
 // map I/O register index to MMIO register offset
 static const uint32_t io_idx_to_reg_offset[32] = {
     ATI_CRTC_H_TOTAL_DISP,
