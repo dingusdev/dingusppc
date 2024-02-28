@@ -35,6 +35,94 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <string>
 
+/* Human readable Mach64 HW register names for easier debugging. */
+static const std::map<uint16_t, std::string> mach64_reg_names = {
+    #define one_reg_name(x) {ATI_ ## x, #x}
+    one_reg_name(CRTC_H_TOTAL_DISP),
+    one_reg_name(CRTC_H_SYNC_STRT_WID),
+    one_reg_name(CRTC_V_TOTAL_DISP),
+    one_reg_name(CRTC_V_SYNC_STRT_WID),
+    one_reg_name(CRTC_VLINE_CRNT_VLINE),
+    one_reg_name(CRTC_OFF_PITCH),
+    one_reg_name(CRTC_INT_CNTL),
+    one_reg_name(CRTC_GEN_CNTL),
+    one_reg_name(DSP_CONFIG),
+    one_reg_name(DSP_ON_OFF),
+    one_reg_name(MEM_BUF_CNTL),
+    one_reg_name(MEM_ADDR_CFG),
+    one_reg_name(OVR_CLR),
+    one_reg_name(OVR_WID_LEFT_RIGHT),
+    one_reg_name(OVR_WID_TOP_BOTTOM),
+    one_reg_name(CUR_CLR0),
+    one_reg_name(CUR_CLR1),
+    one_reg_name(CUR_OFFSET),
+    one_reg_name(CUR_HORZ_VERT_POSN),
+    one_reg_name(CUR_HORZ_VERT_OFF),
+    one_reg_name(GP_IO),
+    one_reg_name(HW_DEBUG),
+    one_reg_name(SCRATCH_REG0),
+    one_reg_name(SCRATCH_REG1),
+    one_reg_name(SCRATCH_REG2),
+    one_reg_name(SCRATCH_REG3),
+    one_reg_name(CLOCK_CNTL),
+    one_reg_name(BUS_CNTL),
+    one_reg_name(EXT_MEM_CNTL),
+    one_reg_name(MEM_CNTL),
+    one_reg_name(DAC_REGS),
+    one_reg_name(DAC_CNTL),
+    one_reg_name(GEN_TEST_CNTL),
+    one_reg_name(CUSTOM_MACRO_CNTL),
+    one_reg_name(CONFIG_CNTL),
+    one_reg_name(CONFIG_CHIP_ID),
+    one_reg_name(CONFIG_STAT0),
+    one_reg_name(DST_OFF_PITCH),
+    one_reg_name(DST_X),
+    one_reg_name(DST_Y),
+    one_reg_name(DST_WIDTH),
+    one_reg_name(DST_HEIGHT),
+    one_reg_name(SRC_CNTL),
+    one_reg_name(SCALE_3D_CNTL),
+    one_reg_name(PAT_REG0),
+    one_reg_name(PAT_REG1),
+    one_reg_name(SC_LEFT),
+    one_reg_name(SC_RIGHT),
+    one_reg_name(SC_TOP),
+    one_reg_name(SC_BOTTOM),
+    one_reg_name(DP_BKGD_CLR),
+    one_reg_name(DP_FRGD_CLR), // also DP_FOG_CLR for GT
+    one_reg_name(DP_WRITE_MSK),
+    one_reg_name(DP_PIX_WIDTH),
+    one_reg_name(DP_MIX),
+    one_reg_name(DP_SRC),
+    one_reg_name(CLR_CMP_CNTL),
+    one_reg_name(FIFO_STAT),
+    one_reg_name(GUI_TRAJ_CNTL),
+    one_reg_name(GUI_STAT),
+    one_reg_name(MPP_CONFIG),
+    one_reg_name(MPP_STROBE_SEQ),
+    one_reg_name(MPP_ADDR),
+    one_reg_name(MPP_DATA),
+    one_reg_name(TVO_CNTL),
+    one_reg_name(SETUP_CNTL),
+    #undef one_reg_name
+};
+
+static const std::map<uint16_t, std::string> rgb514_reg_names = {
+    #define one_reg_name(x) {Rgb514::x, #x}
+    one_reg_name(MISC_CLK_CNTL),
+    one_reg_name(HOR_SYNC_POS),
+    one_reg_name(PWR_MNMGMT),
+    one_reg_name(PIX_FORMAT),
+    one_reg_name(PLL_CTL_1),
+    one_reg_name(F0_M0),
+    one_reg_name(F1_N0),
+    one_reg_name(MISC_CNTL_1),
+    one_reg_name(MISC_CNTL_2),
+    one_reg_name(VRAM_MASK_LO),
+    one_reg_name(VRAM_MASK_HI),
+    #undef one_reg_name
+};
+
 AtiMach64Gx::AtiMach64Gx()
     : PCIDevice("ati-mach64-gx"), VideoCtrlBase(1024, 768)
 {
@@ -186,6 +274,15 @@ bool AtiMach64Gx::pci_io_write(uint32_t offset, uint32_t value, uint32_t size)
     }
 
     return true;
+}
+
+const char* AtiMach64Gx::get_reg_name(uint32_t reg_num) {
+    auto iter = mach64_reg_names.find(reg_num);
+    if (iter != mach64_reg_names.end()) {
+        return iter->second.c_str();
+    } else {
+        return "unknown Mach64 register";
+    }
 }
 
 uint32_t AtiMach64Gx::read_reg(uint32_t reg_offset, uint32_t size)
@@ -380,6 +477,16 @@ void AtiMach64Gx::rgb514_write_reg(uint8_t reg_addr, uint8_t value)
         break;
     default:
         ABORT_F("RGB514: access to unimplemented register at 0x%X", reg_addr);
+    }
+}
+
+const char* AtiMach64Gx::rgb514_get_reg_name(uint32_t reg_addr)
+{
+    auto iter = rgb514_reg_names.find(reg_addr);
+    if (iter != rgb514_reg_names.end()) {
+        return iter->second.c_str();
+    } else {
+        return "unknown rgb514 register";
     }
 }
 

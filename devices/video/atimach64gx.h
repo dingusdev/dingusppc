@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -55,6 +55,8 @@ public:
 
 protected:
     void notify_bar_change(int bar_num);
+    const char* get_reg_name(uint32_t reg_offset);
+    const char* rgb514_get_reg_name(uint32_t reg_offset);
     uint32_t read_reg(uint32_t reg_offset, uint32_t size);
     void write_reg(uint32_t reg_offset, uint32_t value, uint32_t size);
     void enable_crtc_internal();
