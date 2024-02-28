@@ -78,8 +78,8 @@ private:
     const uint32_t aperture_flag[1] = { 0 };
     uint32_t aperture_base[1] = { 0 };
 
-    uint32_t    config_cntl;
-    uint32_t    mm_regs_offset;
+    uint32_t    config_cntl = 0;
+    uint32_t    mm_regs_offset = 0;
 
     // RGB514 RAMDAC state
     uint8_t     dac_idx_lo;
