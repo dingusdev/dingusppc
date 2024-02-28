@@ -65,6 +65,7 @@ protected:
 
     void rgb514_write_reg(uint8_t reg_addr, uint8_t value);
     void rgb514_write_ind_reg(uint8_t reg_addr, uint8_t value);
+    void verbose_pixel_format(int crtc_index);
 
 private:
     void change_one_bar(uint32_t &aperture, uint32_t aperture_size, uint32_t aperture_new, int bar_num);

@@ -440,6 +440,40 @@ void AtiMach64Gx::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int
     }
 }
 
+void AtiMach64Gx::verbose_pixel_format(int crtc_index) {
+    if (crtc_index) {
+        LOG_F(ERROR, "CRTC2 not supported yet");
+        return;
+    }
+
+/*
+    int fmt = extract_bits<uint32_t>(this->regs[ATI_CRTC_GEN_CNTL], ATI_CRTC_PIX_WIDTH, ATI_CRTC_PIX_WIDTH_size);
+*/
+    int pix_fmt = this->pixel_format;
+
+    const char* what = "Pixel format:";
+
+    switch (pix_fmt) {
+    case 2:
+        LOG_F(INFO, "%s 4 bpp with DAC palette", what);
+        break;
+    case 3:
+        LOG_F(INFO, "%s 8 bpp with DAC palette", what);
+        break;
+    case 4:
+        LOG_F(INFO, "%s 15 bpp direct color (RGB555)", what);
+        break;
+    case 5:
+        LOG_F(INFO, "%s 24 bpp direct color (RGB888)", what);
+        break;
+    case 6:
+        LOG_F(INFO, "%s 32 bpp direct color (ARGB8888)", what);
+        break;
+    default:
+        LOG_F(ERROR, "%s: CRTC pixel format %d not supported", this->name.c_str(), pix_fmt);
+    }
+}
+
 void AtiMach64Gx::enable_crtc_internal()
 {
     uint32_t new_width, new_height;
