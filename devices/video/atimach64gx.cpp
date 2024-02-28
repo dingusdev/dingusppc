@@ -288,6 +288,8 @@ bool AtiMach64Gx::pci_io_read(uint32_t offset, uint32_t size, uint32_t* res)
     // CONFIG_CNTL is accessible from I/O space only
     if ((offset >> 2) == ATI_CONFIG_CNTL) {
         result = read_mem(((uint8_t *)&this->config_cntl) + (offset & 3), size);
+        LOG_F(WARNING, "%s: read  %s %04x.%c = %0*x", this->name.c_str(),
+            get_reg_name(offset >> 2), offset, SIZE_ARG(size), size * 2, (uint32_t)result);
     } else {
         result = BYTESWAP_SIZED(this->read_reg(offset, size), size);
     }
