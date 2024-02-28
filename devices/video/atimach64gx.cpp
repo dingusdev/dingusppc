@@ -404,7 +404,7 @@ void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
     case ATI_DAC_CNTL:
         new_value = value;
         // monitor ID is usually accessed using 8bit writes
-        if (offset == 3) {
+        if (offset <= 3 && offset + size > 3) {
             uint8_t gpio_dirs   = extract_bits<uint32_t>(new_value, ATI_DAC_GIO_DIR, ATI_DAC_GIO_DIR_size);
             uint8_t gpio_levels = extract_bits<uint32_t>(new_value, ATI_DAC_GIO_STATE, ATI_DAC_GIO_STATE_size);
             gpio_levels = this->disp_id->read_monitor_sense(gpio_levels, gpio_dirs);
