@@ -156,6 +156,12 @@ AtiMach64Gx::AtiMach64Gx()
 
     // set up RAMDAC identification
     this->regs[ATI_CONFIG_STAT0] = 1 << 9;
+
+    // stuff default values into chip registers
+    // this->regs[ATI_CONFIG_CHIP_ID] = (asic_id << ATI_CFG_CHIP_MAJOR) | (dev_id << ATI_CFG_CHIP_TYPE);
+
+    // set the FIFO
+    insert_bits<uint32_t>(this->regs[ATI_GUI_STAT], 32, ATI_FIFO_CNT, ATI_FIFO_CNT_size);
 }
 
 void AtiMach64Gx::change_one_bar(uint32_t &aperture, uint32_t aperture_size, uint32_t aperture_new, int bar_num) {
