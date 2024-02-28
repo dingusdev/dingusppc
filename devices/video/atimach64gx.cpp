@@ -359,6 +359,41 @@ uint32_t AtiMach64Gx::read_reg(uint32_t reg_offset, uint32_t size)
     uint32_t offset = reg_offset & 3;
     uint64_t result = this->regs[reg_num];
 
+#if 0
+    switch (reg_num) {
+    case ATI_CLOCK_CNTL:
+        if (offset <= 2 && offset + size > 2) {
+            uint8_t pll_addr = extract_bits<uint64_t>(result, ATI_PLL_ADDR, ATI_PLL_ADDR_size);
+            insert_bits<uint64_t>(result, this->plls[pll_addr], ATI_PLL_DATA, ATI_PLL_DATA_size);
+        }
+        break;
+    case ATI_DAC_REGS:
+        switch (reg_offset) {
+        case ATI_DAC_W_INDEX:
+            insert_bits<uint64_t>(result, this->dac_wr_index, 0, 8);
+            break;
+        case ATI_DAC_MASK:
+            insert_bits<uint64_t>(result, this->dac_mask, 16, 8);
+            break;
+        case ATI_DAC_R_INDEX:
+            insert_bits<uint64_t>(result, this->dac_rd_index, 24, 8);
+            break;
+        case ATI_DAC_DATA:
+            if (!this->comp_index) {
+                uint8_t alpha; // temp variable for unused alpha
+                get_palette_color(this->dac_rd_index, color_buf[0],
+                                  color_buf[1], color_buf[2], alpha);
+            }
+            insert_bits<uint64_t>(result, color_buf[this->comp_index], 8, 8);
+            if (++this->comp_index >= 3) {
+                this->dac_rd_index++; // auto-increment reading index
+                this->comp_index = 0; // reset color component index
+            }
+        }
+        break;
+    }
+#endif
+
     if (offset || size != 4) { // slow path
         if ((offset + size) > 4) {
             result |= (uint64_t)(this->regs[reg_num + 1]) << 32;
