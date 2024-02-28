@@ -451,7 +451,32 @@ void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
     }
     case ATI_CRTC_GEN_CNTL:
     {
-        new_value = value;
+        uint32_t bits_AK =
+#if 1
+#else
+            (1 << ATI_CRTC_VSYNC_INT_AK) |
+            (1 << ATI_CRTC2_VSYNC_INT_AK) |
+#endif
+            0;
+/*
+        uint32_t bits_EN =
+#if 1
+#else
+            (1 << ATI_CRTC_VSYNC_INT_EN) |
+            (1 << ATI_CRTC2_VSYNC_INT_EN) |
+#endif
+            0;
+*/
+        uint32_t bits_AKed = bits_AK & value; // AK bits that are to be AKed
+        uint32_t bits_not_AKed = bits_AK & ~value; // AK bits that are not to be AKed
+
+        new_value = value & ~bits_AKed; // clear the AKed bits
+        uint32_t bits_read_only = bits_not_AKed; // the not AKed bits will remain unchanged
+
+        new_value = (old_value & bits_read_only) | (new_value & ~bits_read_only);
+
+        this->regs[reg_num] = new_value;
+
         if (bit_changed(old_value, new_value, ATI_CRTC_DISPLAY_DIS)) {
             if (bit_set(new_value, ATI_CRTC_DISPLAY_DIS)) {
                 this->blank_on = true;
@@ -462,12 +487,7 @@ void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
         }
 
         if (bit_changed(old_value, new_value, ATI_CRTC_ENABLE)) {
-            if (!bit_set(new_value, ATI_CRTC_ENABLE)) {
-                this->blank_on = true;
-                this->blank_display();
-            } else {
-                this->blank_on = false;
-            }
+            this->crtc_update();
         }
         break;
     }
