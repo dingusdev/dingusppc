@@ -526,6 +526,12 @@ void AtiMach64Gx::crtc_update()
         need_recalc = true;
     }
 
+    int new_pixel_format = this->dac_regs[Rgb514::PIX_FORMAT];
+    if (new_pixel_format != this->pixel_format) {
+        this->pixel_format = new_pixel_format;
+        need_recalc = true;
+    }
+
     // pixel clock = source_freq / post_div
     int m = 8 >> (this->dac_regs[Rgb514::F0_M0] >> 6);
     int vco_div = (this->dac_regs[Rgb514::F0_M0] & 0x3F) + 65;
@@ -542,15 +548,35 @@ void AtiMach64Gx::crtc_update()
     // calculate display refresh rate
     this->refresh_rate = this->pixel_clock / this->hori_total / this->vert_total;
 
-    // specify framebuffer converter
-    switch (this->pixel_depth) {
-    case 8:
+    // set up frame buffer converter
+    switch (this->pixel_format) {
+    case 2:
+        this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
+            this->convert_frame_4bpp_indexed(dst_buf, dst_pitch);
+        };
+        break;
+    case 3:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
             this->convert_frame_8bpp_indexed(dst_buf, dst_pitch);
         };
         break;
+    case 4:
+        this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
+            this->convert_frame_15bpp_BE(dst_buf, dst_pitch);
+        };
+        break;
+    case 5:
+        this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
+            this->convert_frame_24bpp(dst_buf, dst_pitch);
+        };
+        break;
+    case 6:
+        this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
+            this->convert_frame_32bpp_BE(dst_buf, dst_pitch);
+        };
+        break;
     default:
-        ABORT_F("%s: unsupported pixel depth %d", this->name.c_str(), this->pixel_depth);
+        LOG_F(ERROR, "%s: unsupported pixel format %d", this->name.c_str(), this->pixel_format);
     }
 
     this->stop_refresh_task();
@@ -617,13 +643,7 @@ void AtiMach64Gx::rgb514_write_ind_reg(uint8_t reg_addr, uint8_t value)
         }
         break;
     case Rgb514::PIX_FORMAT:
-        if (value == 3) {
-            this->pixel_depth = 8;
-            // HACK: not the best place for enabling display output!
-            this->crtc_update();
-        } else {
-            ABORT_F("RGB514: unimplemented pixel format %d", value);
-        }
+        this->crtc_update();
         break;
     }
 }
