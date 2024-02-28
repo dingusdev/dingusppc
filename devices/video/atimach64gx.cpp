@@ -595,6 +595,7 @@ uint32_t AtiMach64Gx::read(uint32_t rgn_start, uint32_t offset, int size)
         if (offset >= this->mm_regs_offset && offset < this->mm_regs_offset + 0x400) {
             return BYTESWAP_SIZED(read_reg(offset - this->mm_regs_offset, size), size);
         }
+        LOG_F(WARNING, "%s: read  unmapped aperture[0] region %08x.%c", this->name.c_str(), offset, SIZE_ARG(size));
         return 0;
     }
 
@@ -602,9 +603,11 @@ uint32_t AtiMach64Gx::read(uint32_t rgn_start, uint32_t offset, int size)
     if (rgn_start == this->exp_rom_addr) {
         if (offset < this->exp_rom_size)
             return read_mem(&this->exp_rom_data[offset], size);
+        LOG_F(WARNING, "%s: read  unmapped ROM region %08x.%c", this->name.c_str(), offset, SIZE_ARG(size));
         return 0;
     }
 
+    LOG_F(WARNING, "%s: read  unmapped aperture region %08x.%c", this->name.c_str(), offset, SIZE_ARG(size));
     return 0;
 }
 
@@ -618,8 +621,12 @@ void AtiMach64Gx::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int
         if (offset >= this->mm_regs_offset && offset < this->mm_regs_offset + 0x400) {
             return write_reg(offset - this->mm_regs_offset, BYTESWAP_SIZED(value, size), size);
         }
+        LOG_F(WARNING, "%s: write unmapped aperture[0] region %08x.%c = %0*x",
+            this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
         return;
     }
+    LOG_F(WARNING, "%s: write unmapped aperture region %08x.%c = %0*x",
+        this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
 }
 
 void AtiMach64Gx::verbose_pixel_format(int crtc_index) {
