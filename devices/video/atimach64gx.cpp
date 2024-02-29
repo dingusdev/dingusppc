@@ -602,6 +602,12 @@ void AtiMach64Gx::crtc_update()
         need_recalc = true;
     }
 
+    uint32_t new_vert_blank = new_vtotal - new_height;
+    if (new_vert_blank != this->vert_blank) {
+        this->vert_blank = vert_blank;
+        need_recalc = true;
+    }
+
     int new_pixel_format = this->dac_regs[Rgb514::PIX_FORMAT];
     if (new_pixel_format != this->pixel_format) {
         this->pixel_format = new_pixel_format;
