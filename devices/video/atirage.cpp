@@ -648,6 +648,12 @@ void ATIRage::crtc_update() {
         need_recalc = true;
     }
 
+    uint32_t new_vert_blank = new_vtotal - new_height;
+    if (new_vert_blank != this->vert_blank) {
+        this->vert_blank = vert_blank;
+        need_recalc = true;
+    }
+
     int new_pixel_format = extract_bits<uint32_t>(this->regs[ATI_CRTC_GEN_CNTL], ATI_CRTC_PIX_WIDTH, ATI_CRTC_PIX_WIDTH_size);
     if (new_pixel_format != this->pixel_format) {
         this->pixel_format = new_pixel_format;
