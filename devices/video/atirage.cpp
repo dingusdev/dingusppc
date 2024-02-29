@@ -543,7 +543,7 @@ void ATIRage::crtc_update() {
     int pix_fmt = extract_bits<uint32_t>(this->regs[ATI_CRTC_GEN_CNTL], 8, 3);
 
     switch (pix_fmt) {
-        case 1:
+    case 1:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
             this->convert_frame_4bpp_indexed(dst_buf, dst_pitch);
         };
