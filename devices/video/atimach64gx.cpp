@@ -378,8 +378,7 @@ void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
         break;
     case ATI_CRTC_OFF_PITCH:
         new_value = value;
-        this->fb_pitch = extract_bits<uint32_t>(new_value, ATI_CRTC_PITCH, ATI_CRTC_PITCH_size) * 8;
-        this->fb_ptr = &this->vram_ptr[extract_bits<uint32_t>(new_value, ATI_CRTC_OFFSET, ATI_CRTC_OFFSET_size) * 8];
+        this->crtc_update();
         return;
     case ATI_CRTC_INT_CNTL:
     {
@@ -606,6 +605,19 @@ void AtiMach64Gx::crtc_update()
     int new_pixel_format = this->dac_regs[Rgb514::PIX_FORMAT];
     if (new_pixel_format != this->pixel_format) {
         this->pixel_format = new_pixel_format;
+        need_recalc = true;
+    }
+
+    static uint8_t bits_per_pixel[8] = {0, 0, 4, 8, 16, 24, 32, 0};
+
+    int new_fb_pitch = extract_bits<uint32_t>(this->regs[ATI_CRTC_OFF_PITCH], ATI_CRTC_PITCH, ATI_CRTC_PITCH_size) * bits_per_pixel[this->pixel_format];
+    if (new_fb_pitch != this->fb_pitch) {
+        this->fb_pitch = new_fb_pitch;
+        need_recalc = true;
+    }
+    uint8_t* new_fb_ptr = &this->vram_ptr[extract_bits<uint32_t>(this->regs[ATI_CRTC_OFF_PITCH], ATI_CRTC_OFFSET, ATI_CRTC_OFFSET_size) * 8];
+    if (new_fb_ptr != this->fb_ptr) {
+        this->fb_ptr = new_fb_ptr;
         need_recalc = true;
     }
 
