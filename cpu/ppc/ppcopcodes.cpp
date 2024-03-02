@@ -1911,7 +1911,7 @@ void dppc_interpreter::ppc_lha() {
 #endif
     ppc_grab_regsda();
     ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
-    ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
+    ppc_effective_address += (reg_a ? ppc_result_a : 0);
     //uint16_t val = mem_grab_word(ppc_effective_address);
     int16_t val  = mmu_read_vmem<uint16_t>(ppc_effective_address);
     ppc_result_d = int32_t(val);
@@ -2055,7 +2055,7 @@ void dppc_interpreter::ppc_lwarx() {
 #endif
     // Placeholder - Get the reservation of memory implemented!
     ppc_grab_regsdab();
-    ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
+    ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
     ppc_state.reserve     = true;
     //ppc_result_d          = mem_grab_dword(ppc_effective_address);
     ppc_result_d = mmu_read_vmem<uint32_t>(ppc_effective_address);
@@ -2068,7 +2068,7 @@ void dppc_interpreter::ppc_lmw() {
 #endif
     ppc_grab_regsda();
     ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
-    ppc_effective_address += (reg_a > 0) ? ppc_result_a : 0;
+    ppc_effective_address += (reg_a ? ppc_result_a : 0);
     // How many words to load in memory - using a do-while for this
     do {
        //ppc_state.gpr[reg_d] = mem_grab_dword(ppc_effective_address);
