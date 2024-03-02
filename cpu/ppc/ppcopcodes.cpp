@@ -2238,7 +2238,7 @@ void dppc_interpreter::ppc_eciwx() {
     }
 
     ppc_grab_regsdab();
-    ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
+    ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
 
     if (ppc_effective_address & 0x3) {
         ppc_alignment_exception(ppc_effective_address);
@@ -2258,7 +2258,7 @@ void dppc_interpreter::ppc_ecowx() {
     }
 
     ppc_grab_regssab();
-    ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
+    ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
 
     if (ppc_effective_address & 0x3) {
         ppc_alignment_exception(ppc_effective_address);
