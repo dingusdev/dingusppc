@@ -927,7 +927,9 @@ void dppc_interpreter::ppc_mtspr() {
     }
 #endif
 
-    if (ref_spr == SPR::PVR) { // prevent writes to the read-only PVR
+    if (ref_spr == SPR::PVR || (
+        ref_spr == SPR::MQ && !is_601
+    )) { // prevent writes to the read-only registers
         return;
     }
 
