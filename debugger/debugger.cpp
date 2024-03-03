@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -337,7 +337,7 @@ static void disasm(uint32_t count, uint32_t address) {
     ctx.instr_addr = address;
     ctx.simplified = true;
 
-    for (int i = 0; i < count; i++) {
+    for (int i = 0; power_on && i < count; i++) {
         ctx.instr_code = READ_DWORD_BE_A(mmu_translate_imem(ctx.instr_addr));
         cout << uppercase << hex << ctx.instr_addr;
         cout << "    " << disassemble_single(&ctx) << endl;
