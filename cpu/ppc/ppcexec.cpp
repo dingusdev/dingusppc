@@ -134,17 +134,20 @@ public:
 
 /** Primary opcode (bits 0...5) lookup table. */
 static PPCOpcode OpcodeGrabber[] = {
-    ppc_illegalop, ppc_illegalop, ppc_illegalop, ppc_twi,       ppc_illegalop, ppc_illegalop,
-    ppc_illegalop, ppc_mulli,     ppc_subfic,    power_dozi,    ppc_cmpli,     ppc_cmpi,
-    ppc_addic,     ppc_addicdot,  ppc_addi,      ppc_addis,     ppc_opcode16,  ppc_sc,
-    ppc_opcode18,  ppc_opcode19,  ppc_rlwimi,    ppc_rlwinm,    power_rlmi,    ppc_rlwnm,
-    ppc_ori,       ppc_oris,      ppc_xori,      ppc_xoris,     ppc_andidot,   ppc_andisdot,
-    ppc_illegalop, ppc_opcode31,  ppc_lwz,       ppc_lwzu,      ppc_lbz,       ppc_lbzu,
-    ppc_stw,       ppc_stwu,      ppc_stb,       ppc_stbu,      ppc_lhz,       ppc_lhzu,
-    ppc_lha,       ppc_lhau,      ppc_sth,       ppc_sthu,      ppc_lmw,       ppc_stmw,
-    ppc_lfs,       ppc_lfsu,      ppc_lfd,       ppc_lfdu,      ppc_stfs,      ppc_stfsu,
-    ppc_stfd,      ppc_stfdu,     ppc_illegalop, ppc_illegalop, ppc_illegalop, ppc_opcode59,
-    ppc_illegalop, ppc_illegalop, ppc_illegalop, ppc_opcode63};
+    ppc_illegalop, ppc_illegalop, ppc_illegalop, ppc_twi,       ppc_illegalop,
+    ppc_illegalop, ppc_illegalop, ppc_mulli,     ppc_subfic,    power_dozi,
+    ppc_cmpli,     ppc_cmpi,      ppc_addic,     ppc_addicdot,  ppc_addi,
+    ppc_addis,     ppc_opcode16,  ppc_sc,        ppc_opcode18,  ppc_opcode19,
+    ppc_rlwimi,    ppc_rlwinm,    power_rlmi,    ppc_rlwnm,     ppc_ori,
+    ppc_oris,      ppc_xori,      ppc_xoris,     ppc_andidot,   ppc_andisdot,
+    ppc_illegalop, ppc_opcode31,  ppc_lwz,       ppc_lwzu,      ppc_lbz,
+    ppc_lbzu,      ppc_stw,       ppc_stwu,      ppc_stb,       ppc_stbu,
+    ppc_lhz,       ppc_lhzu,      ppc_lha,       ppc_lhau,      ppc_sth,
+    ppc_sthu,      ppc_lmw,       ppc_stmw,      ppc_lfs,       ppc_lfsu,
+    ppc_lfd,       ppc_lfdu,      ppc_stfs,      ppc_stfsu,     ppc_stfd,
+    ppc_stfdu,     ppc_illegalop, ppc_illegalop, ppc_illegalop, ppc_opcode59,
+    ppc_illegalop, ppc_illegalop, ppc_illegalop, ppc_opcode63
+};
 
 /** Lookup tables for branch instructions. */
 static PPCOpcode SubOpcode16Grabber[] = {
@@ -847,17 +850,23 @@ void print_fprs() {
 }
 
 static map<string, int> SPRName2Num = {
-    {"XER", SPR::XER}, {"LR", SPR::LR}, {"CTR", SPR::CTR}, {"DEC", SPR::DEC}, {"PVR", SPR::PVR},
-    {"SPRG0", SPR::SPRG0}, {"SPRG1", SPR::SPRG1}, {"SPRG2", SPR::SPRG2}, {"SPRG3", SPR::SPRG3},
-    {"SRR0", SPR::SRR0}, {"SRR1", SPR::SRR1},
-    {"IBAT0U", 528}, {"IBAT0L", 529}, {"IBAT1U", 530}, {"IBAT1L", 531}, {"IBAT2U", 532}, {"IBAT2L", 533}, {"IBAT3U", 534}, {"IBAT3L", 535},
-    {"DBAT0U", 536}, {"DBAT0L", 537}, {"DBAT1U", 538}, {"DBAT1L", 539}, {"DBAT2U", 540}, {"DBAT2L", 541}, {"DBAT3U", 542}, {"DBAT3L", 543},
-    {"HID0", SPR::HID0}, {"HID1", SPR::HID1},
-    {"IABR", 1010}, {"DABR", 1013}, {"L2CR", 1017}, {"ICTC", 1019}, {"THRM1", 1020}, {"THRM2", 1021}, {"THRM3", 1022}, {"PIR", 1023},
-    {"TBL", SPR::TBL_U}, {"TBU", SPR::TBU_U},
-    {"SDR1", SPR::SDR1},
-    {"MQ", SPR::MQ}, {"RTCU", SPR::RTCU_U}, {"RTCL", SPR::RTCL_U}, {"DSISR", SPR::DSISR}, {"DAR", SPR::DAR},
-    {"MMCR0", SPR::MMCR0}, {"PMC1", SPR::PMC1}, {"PMC2", SPR::PMC2}, {"SDA", SPR::SDA}, {"SIA", SPR::SIA}, {"MMCR1", SPR::MMCR1}
+    {"XER", SPR::XER},          {"LR",     SPR::LR},    {"CTR",    SPR::CTR},
+    {"DEC", SPR::DEC},          {"PVR",    SPR::PVR},   {"SPRG0",  SPR::SPRG0},
+    {"SPRG1", SPR::SPRG1},      {"SPRG2",  SPR::SPRG2}, {"SPRG3",  SPR::SPRG3},
+    {"SRR0", SPR::SRR0},        {"SRR1",   SPR::SRR1},  {"IBAT0U", 528},
+    {"IBAT0L", 529},            {"IBAT1U", 530},        {"IBAT1L", 531},
+    {"IBAT2U", 532},            {"IBAT2L", 533},        {"IBAT3U", 534},
+    {"IBAT3L", 535},            {"DBAT0U", 536},        {"DBAT0L", 537},
+    {"DBAT1U", 538},            {"DBAT1L", 539},        {"DBAT2U", 540},
+    {"DBAT2L", 541},            {"DBAT3U", 542},        {"DBAT3L", 543},
+    {"HID0",   SPR::HID0},      {"HID1",   SPR::HID1},  {"IABR",   1010},
+    {"DABR",   1013},           {"L2CR",   1017},       {"ICTC",   1019},
+    {"THRM1",  1020},           {"THRM2",  1021},       {"THRM3",  1022},
+    {"PIR",    1023},           {"TBL",    SPR::TBL_U}, {"TBU",    SPR::TBU_U},
+    {"SDR1",   SPR::SDR1},      {"MQ",     SPR::MQ},    {"RTCU",   SPR::RTCU_U},
+    {"RTCL",   SPR::RTCL_U},    {"DSISR",  SPR::DSISR}, {"DAR",    SPR::DAR},
+    {"MMCR0",  SPR::MMCR0},     {"PMC1",   SPR::PMC1},  {"PMC2",   SPR::PMC2},
+    {"SDA",    SPR::SDA},       {"SIA",    SPR::SIA},   {"MMCR1",  SPR::MMCR1}
 };
 
 uint64_t reg_op(string& reg_name, uint64_t val, bool is_write) {
@@ -871,7 +880,9 @@ uint64_t reg_op(string& reg_name, uint64_t val, bool is_write) {
     reg_name_u = reg_name;
 
     /* convert reg_name string to uppercase */
-    std::for_each(reg_name_u.begin(), reg_name_u.end(), [](char& c) { c = ::toupper(c); });
+    std::for_each(reg_name_u.begin(), reg_name_u.end(), [](char& c) {
+        c = ::toupper(c);
+    });
 
     try {
         if (reg_name_u == "PC") {
