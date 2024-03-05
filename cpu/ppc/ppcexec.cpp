@@ -203,58 +203,59 @@ void ppc_opcode18() {
 void ppc_opcode19() {
     uint16_t subop_grab = ppc_cur_instruction & 0x7FF;
 
-#ifdef EXHAUSTIVE_DEBUG
-    uint32_t regrab = (uint32_t)subop_grab;
+#    ifdef EXHAUSTIVE_DEBUG
+    uint16_t subop_grab = ppc_cur_instruction & 0x7FF;
     LOG_F(INFO, "Executing Opcode 19 table subopcode entry", regrab);
 #endif    // EXHAUSTIVE_DEBUG
 
-    if (subop_grab == 32) {
+    switch (subop_grab) {
+    case 0:
+        ppc_mcrf();
+        break;
+    case 32:
         ppc_bclr();
-    } else if (subop_grab == 33) {
+        break;
+    case 33:
         ppc_bclrl();
-    } else if (subop_grab == 1056) {
+        break;
+    case 66:
+        ppc_crnor();
+        break;
+    case 100:
+        ppc_rfi();
+        break;
+    case 258:
+        ppc_crandc();
+        break;
+    case 300:
+        ppc_isync();
+        break;
+    case 386:
+        ppc_crxor();
+        break;
+    case 450:
+        ppc_crnand();
+        break;
+    case 514:
+        ppc_crand();
+        break;
+    case 578:
+        ppc_creqv();
+        break;
+    case 834:
+        ppc_crorc();
+        break;
+    case 898:
+        ppc_cror();
+        break;
+    case 1056:
         ppc_bcctr();
-    } else if (subop_grab == 1057) {
+        break;
+    case 1057:
         ppc_bcctrl();
-
-    } else {
-        switch (subop_grab) {
-        case 0:
-            ppc_mcrf();
-            break;
-        case 66:
-            ppc_crnor();
-            break;
-        case 100:
-            ppc_rfi();
-            break;
-        case 258:
-            ppc_crandc();
-            break;
-        case 300:
-            ppc_isync();
-            break;
-        case 386:
-            ppc_crxor();
-            break;
-        case 450:
-            ppc_crnand();
-            break;
-        case 514:
-            ppc_crand();
-            break;
-        case 578:
-            ppc_creqv();
-            break;
-        case 834:
-            ppc_crorc();
-            break;
-        case 898:
-            ppc_cror();
-            break;
-        default:
-            ppc_illegalop();
-        }
+        break;
+    default:
+        ppc_illegalop();
     }
 }
 
