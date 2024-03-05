@@ -31,9 +31,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <setjmp.h>
 #include <string>
 
-// Uncomment this to help debug the emulator further
-//#define EXHAUSTIVE_DEBUG 1
-
 // Uncomment this to have a more graceful approach to illegal opcodes
 //#define ILLEGAL_OP_SAFE 1
 
