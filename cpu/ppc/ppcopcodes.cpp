@@ -1116,35 +1116,27 @@ void dppc_interpreter::ppc_extsh() {
 
 // Branching Instructions
 
-// The last two bytes of the instruction are used for determining how the branch happens.
-// The middle 24 bytes are the 24-bit address to use for branching to.
-
-
 void dppc_interpreter::ppc_b() {
-    uint32_t quick_test = (ppc_cur_instruction & 0x03FFFFFCUL);
-    int32_t adr_li      = (quick_test < 0x2000000UL) ? quick_test : (0xFC000000UL + quick_test);
+    int32_t adr_li = int32_t(ppc_cur_instruction << 6) >> 6;
     ppc_next_instruction_address = uint32_t(ppc_state.pc + adr_li);
     exec_flags = EXEF_BRANCH;
 }
 
 void dppc_interpreter::ppc_bl() {
-    uint32_t quick_test = (ppc_cur_instruction & 0x03FFFFFCUL);
-    int32_t adr_li      = (quick_test < 0x2000000UL) ? quick_test : (0xFC000000UL + quick_test);
+    int32_t adr_li = int32_t((ppc_cur_instruction & ~3UL) << 6) >> 6;
     ppc_next_instruction_address = uint32_t(ppc_state.pc + adr_li);
     ppc_state.spr[SPR::LR]       = uint32_t(ppc_state.pc + 4);
     exec_flags = EXEF_BRANCH;
 }
 
 void dppc_interpreter::ppc_ba() {
-    uint32_t quick_test = (ppc_cur_instruction & 0x03FFFFFCUL);
-    int32_t adr_li      = (quick_test < 0x2000000UL) ? quick_test : (0xFC000000UL + quick_test);
+    int32_t adr_li = int32_t((ppc_cur_instruction & ~3UL) << 6) >> 6;
     ppc_next_instruction_address = adr_li;
     exec_flags = EXEF_BRANCH;
 }
 
 void dppc_interpreter::ppc_bla() {
-    uint32_t quick_test = (ppc_cur_instruction & 0x03FFFFFCUL);
-    int32_t adr_li      = (quick_test < 0x2000000UL) ? quick_test : (0xFC000000UL + quick_test);
+    int32_t adr_li = int32_t((ppc_cur_instruction & ~3UL) << 6) >> 6;
     ppc_next_instruction_address = adr_li;
     ppc_state.spr[SPR::LR]       = uint32_t(ppc_state.pc + 4);
     exec_flags = EXEF_BRANCH;
@@ -1155,7 +1147,7 @@ void dppc_interpreter::ppc_bc() {
     uint32_t cnd_ok;
     uint32_t br_bo = (ppc_cur_instruction >> 21) & 31;
     uint32_t br_bi = (ppc_cur_instruction >> 16) & 31;
-    int32_t br_bd  = int32_t(int16_t(ppc_cur_instruction & 0xFFFCUL));
+    int32_t br_bd  = int32_t(int16_t(ppc_cur_instruction & ~3UL));
 
     if (!(br_bo & 0x04)) {
         (ppc_state.spr[SPR::CTR])--; /* decrement CTR */
@@ -1174,7 +1166,7 @@ void dppc_interpreter::ppc_bca() {
     uint32_t cnd_ok;
     uint32_t br_bo = (ppc_cur_instruction >> 21) & 31;
     uint32_t br_bi = (ppc_cur_instruction >> 16) & 31;
-    int32_t br_bd  = int32_t(int16_t(ppc_cur_instruction & 0xFFFCUL));
+    int32_t br_bd  = int32_t(int16_t(ppc_cur_instruction & ~3UL));
 
     if (!(br_bo & 0x04)) {
         (ppc_state.spr[SPR::CTR])--; /* decrement CTR */
@@ -1193,7 +1185,7 @@ void dppc_interpreter::ppc_bcl() {
     uint32_t cnd_ok;
     uint32_t br_bo = (ppc_cur_instruction >> 21) & 31;
     uint32_t br_bi = (ppc_cur_instruction >> 16) & 31;
-    int32_t br_bd  = int32_t(int16_t(ppc_cur_instruction & 0xFFFCUL));
+    int32_t br_bd  = int32_t(int16_t(ppc_cur_instruction & ~3UL));
 
     if (!(br_bo & 0x04)) {
         (ppc_state.spr[SPR::CTR])--; /* decrement CTR */
@@ -1213,7 +1205,7 @@ void dppc_interpreter::ppc_bcla() {
     uint32_t cnd_ok;
     uint32_t br_bo = (ppc_cur_instruction >> 21) & 31;
     uint32_t br_bi = (ppc_cur_instruction >> 16) & 31;
-    int32_t br_bd  = int32_t(int16_t(ppc_cur_instruction & 0xFFFCUL));
+    int32_t br_bd  = int32_t(int16_t(ppc_cur_instruction & ~3UL));
 
     if (!(br_bo & 0x04)) {
         (ppc_state.spr[SPR::CTR])--; /* decrement CTR */
