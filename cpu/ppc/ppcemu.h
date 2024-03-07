@@ -371,7 +371,7 @@ void ppc_release_int();
 //void ppc_opcode4();
 void ppc_opcode16();
 void ppc_opcode18();
-void ppc_opcode19();
+template <bool for601> void ppc_opcode19();
 void ppc_opcode31();
 void ppc_opcode59();
 void ppc_opcode63();
@@ -416,8 +416,7 @@ extern void do_ctx_sync(void);
 
 // The functions used by the PowerPC processor
 namespace dppc_interpreter {
-extern void ppc_bcctr();
-extern void ppc_bcctrl();
+template <bool l, bool for601> extern void ppc_bcctr();
 extern void ppc_bclr();
 extern void ppc_bclrl();
 extern void ppc_crand();

@@ -137,7 +137,7 @@ static PPCOpcode OpcodeGrabber[] = {
     ppc_illegalop, ppc_illegalop, ppc_illegalop, ppc_twi,       ppc_illegalop,
     ppc_illegalop, ppc_illegalop, ppc_mulli,     ppc_subfic,    power_dozi,
     ppc_cmpli,     ppc_cmpi,      ppc_addic,     ppc_addicdot,  ppc_addi,
-    ppc_addis,     ppc_opcode16,  ppc_sc,        ppc_opcode18,  ppc_opcode19,
+    ppc_addis,     ppc_opcode16,  ppc_sc,        ppc_opcode18,  ppc_opcode19<false>,
     ppc_rlwimi,    ppc_rlwinm,    power_rlmi,    ppc_rlwnm,     ppc_ori,
     ppc_oris,      ppc_xori,      ppc_xoris,     ppc_andidot,   ppc_andisdot,
     ppc_illegalop, ppc_opcode31,  ppc_lwz,       ppc_lwzu,      ppc_lbz,
@@ -203,6 +203,7 @@ void ppc_opcode18() {
     SubOpcode18Grabber[ppc_cur_instruction & 3]();
 }
 
+template<bool for601>
 void ppc_opcode19() {
     uint16_t subop_grab = ppc_cur_instruction & 0x7FF;
 
@@ -247,15 +248,24 @@ void ppc_opcode19() {
         ppc_cror();
         break;
     case 1056:
-        ppc_bcctr();
+        if (for601)
+            ppc_bcctr<false, true>();
+        else
+            ppc_bcctr<false, false>();
         break;
     case 1057:
-        ppc_bcctrl();
+        if (for601)
+            ppc_bcctr<true, true>();
+        else
+            ppc_bcctr<true, false>();
         break;
     default:
         ppc_illegalop();
     }
 }
+
+template void ppc_opcode19<false>();
+template void ppc_opcode19<true>();
 
 void ppc_opcode31() {
     uint16_t subop_grab = (ppc_cur_instruction & 0x7FFUL) >> 1UL;
@@ -763,6 +773,7 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, uint64_t tb_freq)
     initialize_ppc_opcode_tables();
 
     if (cpu_version == PPC_VER::MPC601) {
+        OpcodeGrabber[19] = ppc_opcode19<true>;
         SubOpcode31Grabber[370] = ppc_illegalop; // tlbia
         SubOpcode31Grabber[371] = ppc_illegalop; // mftb
         SubOpcode59Grabber[24]  = ppc_illegalop; // fres
