@@ -526,8 +526,7 @@ extern void ppc_mtfsb0();
 extern void ppc_mtfsb1();
 extern void ppc_mcrfs();
 extern void ppc_fmr();
-extern void ppc_mffs();
-extern void ppc_mffs_601();
+template <bool for601> extern void ppc_mffs();
 extern void ppc_mtfsf();
 extern void ppc_mtfsfi();
 

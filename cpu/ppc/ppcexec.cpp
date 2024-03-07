@@ -730,7 +730,7 @@ void initialize_ppc_opcode_tables() {
     SubOpcode63Grabber[134] = ppc_mtfsfi;
     SubOpcode63Grabber[136] = ppc_fnabs;
     SubOpcode63Grabber[264] = ppc_fabs;
-    SubOpcode63Grabber[583] = ppc_mffs;
+    SubOpcode63Grabber[583] = ppc_mffs<false>;
     SubOpcode63Grabber[711] = ppc_mtfsf;
 
     for (int i = 0; i < 1024; i += 32) {
@@ -766,12 +766,11 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, uint64_t tb_freq)
         SubOpcode31Grabber[370] = ppc_illegalop; // tlbia
         SubOpcode31Grabber[371] = ppc_illegalop; // mftb
         SubOpcode59Grabber[24]  = ppc_illegalop; // fres
+        SubOpcode63Grabber[26]  = ppc_illegalop; // frsqrte
+        SubOpcode63Grabber[583] = ppc_mffs<true>;
         for (int i = 0; i < 1024; i += 32) {
             SubOpcode63Grabber[i + 23] = ppc_illegalop; // fsel
         }
-        SubOpcode63Grabber[26]  = ppc_illegalop; // frsqrte;
-
-        SubOpcode63Grabber[583] = ppc_mffs_601;
     }
     if (cpu_version != PPC_VER::MPC970MP) {
         SubOpcode59Grabber[22] = ppc_illegalop; // fsqrts

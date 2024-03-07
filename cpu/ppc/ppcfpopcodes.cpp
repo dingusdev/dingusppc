@@ -846,23 +846,18 @@ void dppc_interpreter::ppc_fmr() {
         ppc_update_cr1();
 }
 
+template <bool for601>
 void dppc_interpreter::ppc_mffs() {
     ppc_grab_regsda();
 
-    ppc_state.fpr[reg_d].int64_r = uint64_t(ppc_state.fpscr) | 0xFFF8000000000000ULL;
+    ppc_state.fpr[reg_d].int64_r = uint64_t(ppc_state.fpscr) | (for601 ? 0xFFFFFFFF00000000ULL : 0xFFF8000000000000ULL);
 
     if (rc_flag)
         ppc_update_cr1();
 }
 
-void dppc_interpreter::ppc_mffs_601() {
-    ppc_grab_regsda();
-
-    ppc_state.fpr[reg_d].int64_r = uint64_t(ppc_state.fpscr) | 0xFFFFFFFF00000000ULL;
-
-    if (rc_flag)
-        ppc_update_cr1();
-}
+template void dppc_interpreter::ppc_mffs<false>();
+template void dppc_interpreter::ppc_mffs<true>();
 
 void dppc_interpreter::ppc_mtfsf() {
     int reg_b  = (ppc_cur_instruction >> 11) & 0x1F;
