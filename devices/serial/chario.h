@@ -47,7 +47,8 @@ public:
     virtual int rcv_enable() { return 0; };
     virtual void rcv_disable() {};
     virtual bool rcv_char_available() = 0;
-    virtual bool rcv_char_available_now() {
+    //virtual bool rcv_char_available_now ()
+    bool rcv_char_available_now() {
         return rcv_char_available();
     }
     virtual int xmit_char(uint8_t c) = 0;
