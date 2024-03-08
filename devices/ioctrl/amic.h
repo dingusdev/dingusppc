@@ -275,7 +275,7 @@ enum AMICReg : uint32_t {
 class AMIC : public MMIODevice, public InterruptCtrl {
 public:
     AMIC();
-    ~AMIC() = default;
+    ~AMIC();
 
     static std::unique_ptr<HWComponent> create() {
         return std::unique_ptr<AMIC>(new AMIC());
@@ -336,7 +336,7 @@ private:
     uint8_t     via2_slot_ifr   = 0x7F; // reverse logic
     uint8_t     via2_slot_irq   =    0; // normal logic
 
-    uint32_t    pseudo_vbl_tid; // ID for the pseudo-VBL timer
+    uint32_t    pseudo_vbl_tid  =    0; // ID for the pseudo-VBL timer
 
     // AMIC subdevice instances
     Sc53C94*            scsi;

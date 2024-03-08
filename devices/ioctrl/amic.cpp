@@ -90,6 +90,14 @@ AMIC::AMIC() : MMIODevice()
     this->swim3->set_dma_channel(this->floppy_dma.get());
 }
 
+AMIC::~AMIC()
+{
+    if (this->pseudo_vbl_tid) {
+        TimerManager::get_instance()->cancel_timer(this->pseudo_vbl_tid);
+        this->pseudo_vbl_tid = 0;
+    }
+}
+
 int AMIC::device_postinit()
 {
     MemCtrlBase *mem_ctrl = dynamic_cast<MemCtrlBase *>
