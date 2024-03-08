@@ -66,6 +66,7 @@ AMIC::AMIC() : MMIODevice()
     // connect serial HW
     this->escc = dynamic_cast<EsccController*>(gMachineObj->get_comp_by_name("Escc"));
     this->escc_xmit_b_dma = std::unique_ptr<AmicSerialXmitDma>(new AmicSerialXmitDma("EsccBXmit"));
+    this->escc_xmit_a_dma = std::unique_ptr<AmicSerialXmitDma>(new AmicSerialXmitDma("EsccAXmit"));
 
     // connect Ethernet HW
     this->mace = dynamic_cast<MaceController*>(gMachineObj->get_comp_by_name("Mace"));
@@ -414,6 +415,7 @@ void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
         break;
     case AMICReg::SCC_DMA_Xmt_A_Ctrl:
         LOG_F(INFO, "AMIC SCC Transmit Ch A DMA Ctrl updated, val=%x", value);
+        this->escc_xmit_a_dma->write_ctrl(value);
         break;
     case AMICReg::SCC_DMA_Rcv_A_Ctrl:
         LOG_F(INFO, "AMIC SCC Receive Ch A DMA Ctrl updated, val=%x", value);

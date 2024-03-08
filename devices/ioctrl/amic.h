@@ -350,6 +350,7 @@ private:
     std::unique_ptr<AmicFloppyDma>      floppy_dma;
     std::unique_ptr<AmicScsiDma>        curio_dma;
     std::unique_ptr<AmicSerialXmitDma>  escc_xmit_b_dma;
+    std::unique_ptr<AmicSerialXmitDma>  escc_xmit_a_dma;
 
     // on-board video
     std::unique_ptr<DisplayID>          disp_id;
