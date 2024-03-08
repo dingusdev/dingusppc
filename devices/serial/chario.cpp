@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -29,6 +29,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memory>
 
 bool CharIoNull::rcv_char_available()
+{
+    return false;
+}
+
+bool CharIoNull::rcv_char_available_now()
 {
     return false;
 }
@@ -108,7 +113,12 @@ void CharIoStdin::rcv_disable() {
     LOG_F(INFO, "Winterm: receiver disabled");
 }
 
-bool CharIoStdin::rcv_char_available() {
+bool CharIoStdin::rcv_char_available()
+{
+    return this->rcv_char_available_now();
+}
+
+bool CharIoStdin::rcv_char_available_now() {
     DWORD events;
     INPUT_RECORD buffer;
 
@@ -344,7 +354,7 @@ bool CharIoSocket::rcv_char_available()
             consecutivechars = 0;
         return 0;
     }
-    return rcv_char_available_now();
+    return this->rcv_char_available_now();
 }
 
 bool CharIoSocket::rcv_char_available_now()
@@ -444,7 +454,7 @@ bool CharIoSocket::rcv_char_available_now()
 int CharIoSocket::xmit_char(uint8_t c)
 {
     if (acceptfd == -1)
-        CharIoSocket::rcv_char_available_now();
+        this->rcv_char_available_now();
 
     if (acceptfd != -1) {
         int sent = (int)send(acceptfd, &c, 1, 0);
@@ -470,7 +480,7 @@ int CharIoSocket::xmit_char(uint8_t c)
 int CharIoSocket::rcv_char(uint8_t *c)
 {
     if (acceptfd == -1)
-        CharIoSocket::rcv_char_available_now();
+        this->rcv_char_available_now();
 
     if (acceptfd != -1) {
         int received = (int)recv(acceptfd, c, 1, 0);

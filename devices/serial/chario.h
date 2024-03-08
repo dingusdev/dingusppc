@@ -47,10 +47,7 @@ public:
     virtual int rcv_enable() { return 0; };
     virtual void rcv_disable() {};
     virtual bool rcv_char_available() = 0;
-    //virtual bool rcv_char_available_now ()
-    bool rcv_char_available_now() {
-        return rcv_char_available();
-    }
+    virtual bool rcv_char_available_now() = 0;
     virtual int xmit_char(uint8_t c) = 0;
     virtual int rcv_char(uint8_t *c) = 0;
 };
@@ -62,6 +59,7 @@ public:
     ~CharIoNull() = default;
 
     bool rcv_char_available();
+    bool rcv_char_available_now();
     int xmit_char(uint8_t c);
     int rcv_char(uint8_t *c);
 };
