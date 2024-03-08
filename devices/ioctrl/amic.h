@@ -219,8 +219,10 @@ enum AMICReg : uint32_t {
     Ariel_Config        = 0x24002,
 
     // VIA2 registers
+    //                  = 0x26000,
     VIA2_Slot_IFR       = 0x26002,
     VIA2_IFR            = 0x26003,
+    //                  = 0x26010,
     VIA2_Slot_IER       = 0x26012,
     VIA2_IER            = 0x26013,
     VIA2_IFR_RBV        = 0x27A03, // RBV-compatible mirror for the VIA2_IFR
@@ -266,8 +268,12 @@ enum AMICReg : uint32_t {
     Floppy_DMA_Ctrl     = 0x32068,
 
     SCC_DMA_Xmt_A_Ctrl  = 0x32088,
+    SCC_RXA_Byte_Cnt_Hi = 0x32094, // 5 bits, read-only
+    SCC_RXA_Byte_Cnt_Lo = 0x32095, // 8 bits, read-only
     SCC_DMA_Rcv_A_Ctrl  = 0x32098,
     SCC_DMA_Xmt_B_Ctrl  = 0x320A8,
+    SCC_RXB_Byte_Cnt_Hi = 0x320B4, // 5 bits, read-only
+    SCC_RXB_Byte_Cnt_Lo = 0x320B5, // 8 bits, read-only
     SCC_DMA_Rcv_B_Ctrl  = 0x320B8,
 };
 
