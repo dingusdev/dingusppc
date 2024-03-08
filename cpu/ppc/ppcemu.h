@@ -417,8 +417,7 @@ extern void do_ctx_sync(void);
 // The functions used by the PowerPC processor
 namespace dppc_interpreter {
 template <bool l, bool for601> extern void ppc_bcctr();
-extern void ppc_bclr();
-extern void ppc_bclrl();
+template <bool l> extern void ppc_bclr();
 extern void ppc_crand();
 extern void ppc_crandc();
 extern void ppc_creqv();

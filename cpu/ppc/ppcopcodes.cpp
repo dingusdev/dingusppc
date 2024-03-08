@@ -1255,6 +1255,7 @@ template void dppc_interpreter::ppc_bcctr<false, true>();
 template void dppc_interpreter::ppc_bcctr<true, false>();
 template void dppc_interpreter::ppc_bcctr<true, true>();
 
+template <bool l>
 void dppc_interpreter::ppc_bclr() {
     uint32_t br_bo = (ppc_cur_instruction >> 21) & 31;
     uint32_t br_bi = (ppc_cur_instruction >> 16) & 31;
@@ -1271,26 +1272,14 @@ void dppc_interpreter::ppc_bclr() {
         ppc_next_instruction_address = (ppc_state.spr[SPR::LR] & ~3UL);
         exec_flags = EXEF_BRANCH;
     }
+
+    if (l)
+        ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
 }
 
-void dppc_interpreter::ppc_bclrl() {
-    uint32_t br_bo = (ppc_cur_instruction >> 21) & 31;
-    uint32_t br_bi = (ppc_cur_instruction >> 16) & 31;
-    uint32_t ctr_ok;
-    uint32_t cnd_ok;
+template void dppc_interpreter::ppc_bclr<false>();
+template void dppc_interpreter::ppc_bclr<true>();
 
-    if (!(br_bo & 0x04)) {
-        (ppc_state.spr[SPR::CTR])--; /* decrement CTR */
-    }
-    ctr_ok = (br_bo & 0x04) | ((ppc_state.spr[SPR::CTR] != 0) == !(br_bo & 0x02));
-    cnd_ok = (br_bo & 0x10) | (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
-
-    if (ctr_ok && cnd_ok) {
-        ppc_next_instruction_address = (ppc_state.spr[SPR::LR] & ~3UL);
-        exec_flags = EXEF_BRANCH;
-    }
-    ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
-}
 // Compare Instructions
 
 void dppc_interpreter::ppc_cmp() {

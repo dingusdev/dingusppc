@@ -212,10 +212,10 @@ void ppc_opcode19() {
         ppc_mcrf();
         break;
     case 32:
-        ppc_bclr();
+        ppc_bclr<false>();
         break;
     case 33:
-        ppc_bclrl();
+        ppc_bclr<true>();
         break;
     case 66:
         ppc_crnor();
