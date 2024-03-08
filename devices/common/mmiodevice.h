@@ -36,4 +36,7 @@ public:
     virtual ~MMIODevice()                                                             = default;
 };
 
+#define SIZE_ARG(size) (size == 4 ? 'l' : size == 2 ? 'w' : \
+                        size == 1 ? 'b' : '0' + size)
+
 #endif /* MMIO_DEVICE_H */
