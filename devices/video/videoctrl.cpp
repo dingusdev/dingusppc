@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/** @file Video Conroller base class implementation. */
+/** @file Video Controller base class implementation. */
 
 #include <core/timermanager.h>
 #include <devices/common/hwinterrupt.h>
@@ -37,6 +37,7 @@ VideoCtrlBase::VideoCtrlBase(int width, int height)
 
 VideoCtrlBase::~VideoCtrlBase()
 {
+    this->stop_refresh_task();
 }
 
 void VideoCtrlBase::handle_events(const WindowEvent& wnd_event) {
@@ -110,9 +111,11 @@ void VideoCtrlBase::start_refresh_task() {
 void VideoCtrlBase::stop_refresh_task() {
     if (this->refresh_task_id) {
         TimerManager::get_instance()->cancel_timer(this->refresh_task_id);
+        this->refresh_task_id = 0;
     }
     if (this->vbl_end_task_id) {
         TimerManager::get_instance()->cancel_timer(this->vbl_end_task_id);
+        this->vbl_end_task_id = 0;
     }
 }
 
