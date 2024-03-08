@@ -94,6 +94,13 @@ public:
         _post_signal.connect_method(inst, func);
     }
 
+    void disconnect_handlers() {
+        _window_signal.disconnect_all();
+        _mouse_signal.disconnect_all();
+        _keyboard_signal.disconnect_all();
+        _post_signal.disconnect_all();
+    }
+
 private:
     static EventManager* event_manager;
     EventManager() {}; // private constructor to implement a singleton

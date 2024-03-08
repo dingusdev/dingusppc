@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <core/hostevents.h>
 #include <core/timermanager.h>
 #include <devices/common/adb/adbbus.h>
+#include <cpu/ppc/ppcemu.h>
 #include <devices/common/hwinterrupt.h>
 #include <devices/common/viacuda.h>
 #include <devices/deviceregistry.h>
@@ -654,10 +655,14 @@ void ViaCuda::pseudo_command(int cmd, int data_count) {
         LOG_F(INFO, "Cuda: send %d to PB0", (int)(this->in_buf[2]));
         response_header(CUDA_PKT_PSEUDO, 0);
         break;
+    case CUDA_RESTART_SYSTEM:
+        LOG_F(INFO, "Cuda: system restart");
+        power_on = false;
+        power_off_reason = po_restart;
+        break;
     case CUDA_WARM_START:
     case CUDA_POWER_DOWN:
     case CUDA_MONO_STABLE_RESET:
-    case CUDA_RESTART_SYSTEM:
         /* really kludge temp code */
         LOG_F(INFO, "Cuda: Restart/Shutdown signal sent with command 0x%x!", cmd);
         //exit(0);

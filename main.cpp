@@ -61,6 +61,8 @@ static string appDescription = string(
     "\n"
 );
 
+void run_machine(std::string machine_str, std::string bootrom_path, uint32_t execution_mode);
+
 int main(int argc, char** argv) {
 
     uint32_t execution_mode = interpreter;
@@ -166,10 +168,6 @@ int main(int argc, char** argv) {
     // initialize global profiler object
     gProfilerObj.reset(new Profiler());
 
-    if (MachineFactory::create_machine_for_id(machine_str, bootrom_path) < 0) {
-        goto bail;
-    }
-
     // graceful handling of fatal errors
     loguru::set_fatal_handler([](const loguru::Message& message) {
         // Make sure the reason for the failure is visible (it may have been
@@ -187,9 +185,29 @@ int main(int argc, char** argv) {
     // redirect SIGABRT to our own handler
     signal(SIGABRT, sigabrt_handler);
 
+    while (true) {
+        run_machine(machine_str, bootrom_path, execution_mode);
+        if (power_off_reason == po_restarting) {
+            LOG_F(INFO, "Restarting...");
+            power_on = true;
+            continue;
+        }
+        break;
+    }
+
+    cleanup();
+
+    return 0;
+}
+
+void run_machine(std::string machine_str, std::string bootrom_path, uint32_t execution_mode) {
+    if (MachineFactory::create_machine_for_id(machine_str, bootrom_path) < 0) {
+        return;
+    }
+
     // set up system wide event polling using
     // default Macintosh polling rate of 11 ms
-    TimerManager::get_instance()->add_cyclic_timer(MSECS_TO_NSECS(11), [] {
+    uint32_t event_timer = TimerManager::get_instance()->add_cyclic_timer(MSECS_TO_NSECS(11), [] {
         EventManager::get_instance()->poll_events();
     });
 
@@ -204,15 +222,11 @@ int main(int argc, char** argv) {
         break;
     default:
         LOG_F(ERROR, "Invalid EXECUTION MODE");
-        return 1;
+        return;
     }
 
-bail:
     LOG_F(INFO, "Cleaning up...");
-
+    TimerManager::get_instance()->cancel_timer(event_timer);
+    EventManager::get_instance()->disconnect_handlers();
     delete gMachineObj.release();
-
-    cleanup();
-
-    return 0;
 }
