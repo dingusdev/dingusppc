@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <core/hostevents.h>
 #include <core/timermanager.h>
 #include <devices/common/adb/adbbus.h>
+#include <cpu/ppc/ppcemu.h>
 #include <devices/common/hwinterrupt.h>
 #include <devices/common/viacuda.h>
 #include <devices/deviceregistry.h>
@@ -86,6 +87,26 @@ ViaCuda::ViaCuda() {
     this->cuda_init();
 
     this->int_ctrl = nullptr;
+}
+
+ViaCuda::~ViaCuda()
+{
+    if (this->sr_timer_on) {
+        TimerManager::get_instance()->cancel_timer(this->sr_timer_id);
+        this->sr_timer_on = false;
+    }
+    if (this->t1_active) {
+        TimerManager::get_instance()->cancel_timer(this->t1_timer_id);
+        this->t1_active = false;
+    }
+    if (this->t2_active) {
+        TimerManager::get_instance()->cancel_timer(this->t2_timer_id);
+        this->t2_active = false;
+    }
+    if (this->treq_timer_id) {
+        TimerManager::get_instance()->cancel_timer(this->treq_timer_id);
+        this->treq_timer_id = 0;
+    }
 }
 
 int ViaCuda::device_postinit()
@@ -342,11 +363,12 @@ void ViaCuda::write(uint8_t new_state) {
                 process_packet();
 
                 // start response transaction
-                TimerManager::get_instance()->add_oneshot_timer(
+                this->treq_timer_id = TimerManager::get_instance()->add_oneshot_timer(
                     USECS_TO_NSECS(13), // delay TREQ assertion for New World
                     [this]() {
                         this->via_regs[VIA_B] &= ~CUDA_TREQ; // assert TREQ
                         this->treq = 0;
+                        this->treq_timer_id = 0;
                 });
             }
 
@@ -633,10 +655,14 @@ void ViaCuda::pseudo_command(int cmd, int data_count) {
         LOG_F(INFO, "Cuda: send %d to PB0", (int)(this->in_buf[2]));
         response_header(CUDA_PKT_PSEUDO, 0);
         break;
+    case CUDA_RESTART_SYSTEM:
+        LOG_F(INFO, "Cuda: system restart");
+        power_on = false;
+        power_off_reason = po_restart;
+        break;
     case CUDA_WARM_START:
     case CUDA_POWER_DOWN:
     case CUDA_MONO_STABLE_RESET:
-    case CUDA_RESTART_SYSTEM:
         /* really kludge temp code */
         LOG_F(INFO, "Cuda: Restart/Shutdown signal sent with command 0x%x!", cmd);
         //exit(0);

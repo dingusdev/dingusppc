@@ -77,11 +77,11 @@ uint64_t    num_entry_replacements  = 0; // number of entry replacements
 #endif // TLB_PROFILING
 
 /** remember recently used physical memory regions for quicker translation. */
-AddressMapEntry last_read_area  = {0xFFFFFFFF, 0xFFFFFFFF, 0, 0, nullptr, nullptr};
-AddressMapEntry last_write_area = {0xFFFFFFFF, 0xFFFFFFFF, 0, 0, nullptr, nullptr};
-AddressMapEntry last_exec_area  = {0xFFFFFFFF, 0xFFFFFFFF, 0, 0, nullptr, nullptr};
-AddressMapEntry last_ptab_area  = {0xFFFFFFFF, 0xFFFFFFFF, 0, 0, nullptr, nullptr};
-AddressMapEntry last_dma_area   = {0xFFFFFFFF, 0xFFFFFFFF, 0, 0, nullptr, nullptr};
+AddressMapEntry last_read_area;
+AddressMapEntry last_write_area;
+AddressMapEntry last_exec_area;
+AddressMapEntry last_ptab_area;
+AddressMapEntry last_dma_area;
 
 /** 601-style block address translation. */
 static BATResult mpc601_block_address_translation(uint32_t la)
@@ -2020,6 +2020,12 @@ static void invalidate_tlb_entries(std::array<TLBEntry, N> &tlb) {
 
 void ppc_mmu_init()
 {
+    last_read_area  = {0xFFFFFFFF, 0xFFFFFFFF, 0, 0, nullptr, nullptr};
+    last_write_area = {0xFFFFFFFF, 0xFFFFFFFF, 0, 0, nullptr, nullptr};
+    last_exec_area  = {0xFFFFFFFF, 0xFFFFFFFF, 0, 0, nullptr, nullptr};
+    last_ptab_area  = {0xFFFFFFFF, 0xFFFFFFFF, 0, 0, nullptr, nullptr};
+    last_dma_area   = {0xFFFFFFFF, 0xFFFFFFFF, 0, 0, nullptr, nullptr};
+
     mmu_exception_handler = ppc_exception_handler;
 
     if (is_601) {

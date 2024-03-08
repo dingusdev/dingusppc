@@ -322,6 +322,8 @@ enum Po_Cause : int {
     po_starting_up,
     po_shut_down,
     po_shutting_down,
+    po_restarting,
+    po_restart,
     po_disassemble_on,
     po_disassemble_off,
     po_enter_debugger,

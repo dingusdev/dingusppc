@@ -58,6 +58,14 @@ public:
         }
     }
 
+    void disconnect(int id) {
+        _slots.erase(id);
+    }
+
+    void disconnect_all() {
+        _slots.clear();
+    }
+
 private:
     mutable std::map<int, std::function<void(Args...)>> _slots;
     mutable unsigned int _current_id { 0 };

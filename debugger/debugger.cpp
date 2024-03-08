@@ -458,6 +458,10 @@ void enter_debugger() {
             power_off_reason = po_shutting_down;
             break;
         }
+        if (power_off_reason == po_restart) {
+            power_off_reason = po_restarting;
+            break;
+        }
         power_on = true;
 
         if (power_off_reason == po_starting_up) {
