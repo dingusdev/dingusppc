@@ -155,7 +155,7 @@ enum {
 class ViaCuda : public HWComponent, public I2CBus {
 public:
     ViaCuda();
-    ~ViaCuda() = default;
+    ~ViaCuda();
 
     static std::unique_ptr<HWComponent> create() {
         return std::unique_ptr<ViaCuda>(new ViaCuda());
@@ -206,6 +206,7 @@ private:
     uint8_t  old_tip;
     uint8_t  old_byteack;
     uint8_t  treq;
+    uint32_t treq_timer_id = 0;
     uint8_t  in_buf[CUDA_IN_BUF_SIZE];
     int32_t  in_count;
     uint8_t  out_buf[16];

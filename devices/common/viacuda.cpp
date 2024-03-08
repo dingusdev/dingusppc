@@ -88,6 +88,26 @@ ViaCuda::ViaCuda() {
     this->int_ctrl = nullptr;
 }
 
+ViaCuda::~ViaCuda()
+{
+    if (this->sr_timer_on) {
+        TimerManager::get_instance()->cancel_timer(this->sr_timer_id);
+        this->sr_timer_on = false;
+    }
+    if (this->t1_active) {
+        TimerManager::get_instance()->cancel_timer(this->t1_timer_id);
+        this->t1_active = false;
+    }
+    if (this->t2_active) {
+        TimerManager::get_instance()->cancel_timer(this->t2_timer_id);
+        this->t2_active = false;
+    }
+    if (this->treq_timer_id) {
+        TimerManager::get_instance()->cancel_timer(this->treq_timer_id);
+        this->treq_timer_id = 0;
+    }
+}
+
 int ViaCuda::device_postinit()
 {
     this->int_ctrl = dynamic_cast<InterruptCtrl*>(
@@ -342,11 +362,12 @@ void ViaCuda::write(uint8_t new_state) {
                 process_packet();
 
                 // start response transaction
-                TimerManager::get_instance()->add_oneshot_timer(
+                this->treq_timer_id = TimerManager::get_instance()->add_oneshot_timer(
                     USECS_TO_NSECS(13), // delay TREQ assertion for New World
                     [this]() {
                         this->via_regs[VIA_B] &= ~CUDA_TREQ; // assert TREQ
                         this->treq = 0;
+                        this->treq_timer_id = 0;
                 });
             }
 
