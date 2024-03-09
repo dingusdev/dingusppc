@@ -372,3 +372,13 @@ uint8_t *MemCtrlBase::get_region_hostmem_ptr(const uint32_t addr) {
     else
         return (addr - reg_desc->start) + reg_desc->mem_ptr;
 }
+
+
+void MemCtrlBase::dump_regions()
+{
+    int i = 0;
+    for (auto& entry : address_map) {
+        printf("%2d: %s\n", i, get_entry_str(entry).c_str());
+        i++;
+    }
+}
