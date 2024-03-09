@@ -172,8 +172,11 @@ void GrandCentral::notify_bar_change(int bar_num)
     }
 }
 
-
-static uint8_t ENET_ROM[] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77 };
+// The first 3 bytes of a MAC address is an OUI for "Apple, Inc."
+// A MAC address cannot begin with 0x10 because that will get bit-flipped to 0x08.
+// A MAC address that begins with 0x08 can be stored as bit-flipped or not bit-flipped.
+static uint8_t mac_address[] = { 0x08, 0x00, 0x07, 0x44, 0x55, 0x66, 0x00, 0x00 };
+static bool bit_flip_0x08 = false;
 
 uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
 {
@@ -206,7 +209,17 @@ uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
         case 8: // MESH SCSI
             return this->mesh->read((offset >> 4) & 0xF);
         case 9: // ENET-ROM
-            return ENET_ROM[(offset >> 4) & 0x7];
+        {
+            uint8_t val = mac_address[(offset >> 4) & 0x7];
+            if (((offset >> 4) & 0x7) < 6) {
+                if (mac_address[0] == 0x08 && bit_flip_0x08)
+                    val = (val * 0x0202020202ULL & 0x010884422010ULL) % 1023;
+            } else {
+                LOG_F(WARNING, "%s: reading byte %d of ENET_ROM using offset %x",
+                    this->name.c_str(), (offset >> 4) & 0x7, offset);
+            }
+            return val;
+        }
         case 0xA: // IOBus device #1 ; Board register 1 and bandit1 PRSNT bits
         case 0xB: // IOBus device #2 ; RaDACal/DACula
         case 0xC: // IOBus device #3 ; chaos or bandit2 PRSNT bits ; sixty6
