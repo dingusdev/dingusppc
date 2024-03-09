@@ -1162,10 +1162,10 @@ void dppc_interpreter::ppc_bc() {
         ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
 }
 
-template void dppc_interpreter::ppc_b<false, false>();
-template void dppc_interpreter::ppc_b<false, true>();
-template void dppc_interpreter::ppc_b<true, false>();
-template void dppc_interpreter::ppc_b<true, true>();
+template void dppc_interpreter::ppc_bc<false, false>();
+template void dppc_interpreter::ppc_bc<false, true>();
+template void dppc_interpreter::ppc_bc<true, false>();
+template void dppc_interpreter::ppc_bc<true, true>();
 
 template<bool l, bool for601>
 void dppc_interpreter::ppc_bcctr() {
