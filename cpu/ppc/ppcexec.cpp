@@ -151,16 +151,16 @@ static PPCOpcode OpcodeGrabber[] = {
 
 /** Lookup tables for branch instructions. */
 static PPCOpcode SubOpcode16Grabber[] = {
-    dppc_interpreter::ppc_bc,
-    dppc_interpreter::ppc_bcl,
-    dppc_interpreter::ppc_bca,
-    dppc_interpreter::ppc_bcla};
+    dppc_interpreter::ppc_bc<false, false>, //bc
+    dppc_interpreter::ppc_bc<true, false>,  //bcl
+    dppc_interpreter::ppc_bc<false, true>,  //bca
+    dppc_interpreter::ppc_bc<true, true>};  //bcla
 
 static PPCOpcode SubOpcode18Grabber[] = {
-    dppc_interpreter::ppc_b,
-    dppc_interpreter::ppc_bl,
-    dppc_interpreter::ppc_ba,
-    dppc_interpreter::ppc_bla};
+    dppc_interpreter::ppc_b<false, false>, //b
+    dppc_interpreter::ppc_b<true, false>,  //bl
+    dppc_interpreter::ppc_b<false, true>,  //ba
+    dppc_interpreter::ppc_b<true, true>};  //bla
 
 /** Instructions decoding tables for integer,
     single floating-point, and double-floating point ops respectively */

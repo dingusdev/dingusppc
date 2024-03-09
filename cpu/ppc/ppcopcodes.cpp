@@ -1116,32 +1116,27 @@ void dppc_interpreter::ppc_extsh() {
 
 // Branching Instructions
 
+template <bool l, bool a>
 void dppc_interpreter::ppc_b() {
-    int32_t adr_li = int32_t(ppc_cur_instruction << 6) >> 6;
-    ppc_next_instruction_address = uint32_t(ppc_state.pc + adr_li);
+    int32_t adr_li               = int32_t((ppc_cur_instruction & ~3UL) << 6) >> 6;
+
+    if (a)
+        ppc_next_instruction_address = adr_li;
+    else
+        ppc_next_instruction_address = uint32_t(ppc_state.pc + adr_li);
+
+    if (l)
+        ppc_state.spr[SPR::LR] = uint32_t(ppc_state.pc + 4);
+
     exec_flags = EXEF_BRANCH;
 }
 
-void dppc_interpreter::ppc_bl() {
-    int32_t adr_li = int32_t((ppc_cur_instruction & ~3UL) << 6) >> 6;
-    ppc_next_instruction_address = uint32_t(ppc_state.pc + adr_li);
-    ppc_state.spr[SPR::LR]       = uint32_t(ppc_state.pc + 4);
-    exec_flags = EXEF_BRANCH;
-}
+template void dppc_interpreter::ppc_b<false, false>();
+template void dppc_interpreter::ppc_b<false, true>();
+template void dppc_interpreter::ppc_b<true, false>();
+template void dppc_interpreter::ppc_b<true, true>();
 
-void dppc_interpreter::ppc_ba() {
-    int32_t adr_li = int32_t((ppc_cur_instruction & ~3UL) << 6) >> 6;
-    ppc_next_instruction_address = adr_li;
-    exec_flags = EXEF_BRANCH;
-}
-
-void dppc_interpreter::ppc_bla() {
-    int32_t adr_li = int32_t((ppc_cur_instruction & ~3UL) << 6) >> 6;
-    ppc_next_instruction_address = adr_li;
-    ppc_state.spr[SPR::LR]       = uint32_t(ppc_state.pc + 4);
-    exec_flags = EXEF_BRANCH;
-}
-
+template <bool l, bool a>
 void dppc_interpreter::ppc_bc() {
     uint32_t ctr_ok;
     uint32_t cnd_ok;
@@ -1156,69 +1151,21 @@ void dppc_interpreter::ppc_bc() {
     cnd_ok = (br_bo & 0x10) | (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
 
     if (ctr_ok && cnd_ok) {
-        ppc_next_instruction_address = (ppc_state.pc + br_bd);
+        if (a)
+            ppc_next_instruction_address = br_bd;
+        else
+            ppc_next_instruction_address = uint32_t(ppc_state.pc + br_bd);
         exec_flags = EXEF_BRANCH;
     }
+
+    if (l)
+        ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
 }
 
-void dppc_interpreter::ppc_bca() {
-    uint32_t ctr_ok;
-    uint32_t cnd_ok;
-    uint32_t br_bo = (ppc_cur_instruction >> 21) & 31;
-    uint32_t br_bi = (ppc_cur_instruction >> 16) & 31;
-    int32_t br_bd  = int32_t(int16_t(ppc_cur_instruction & ~3UL));
-
-    if (!(br_bo & 0x04)) {
-        (ppc_state.spr[SPR::CTR])--; /* decrement CTR */
-    }
-    ctr_ok = (br_bo & 0x04) | ((ppc_state.spr[SPR::CTR] != 0) == !(br_bo & 0x02));
-    cnd_ok = (br_bo & 0x10) | (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
-
-    if (ctr_ok && cnd_ok) {
-        ppc_next_instruction_address = br_bd;
-        exec_flags = EXEF_BRANCH;
-    }
-}
-
-void dppc_interpreter::ppc_bcl() {
-    uint32_t ctr_ok;
-    uint32_t cnd_ok;
-    uint32_t br_bo = (ppc_cur_instruction >> 21) & 31;
-    uint32_t br_bi = (ppc_cur_instruction >> 16) & 31;
-    int32_t br_bd  = int32_t(int16_t(ppc_cur_instruction & ~3UL));
-
-    if (!(br_bo & 0x04)) {
-        (ppc_state.spr[SPR::CTR])--; /* decrement CTR */
-    }
-    ctr_ok = (br_bo & 0x04) | ((ppc_state.spr[SPR::CTR] != 0) == !(br_bo & 0x02));
-    cnd_ok = (br_bo & 0x10) | (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
-
-    if (ctr_ok && cnd_ok) {
-        ppc_next_instruction_address = (ppc_state.pc + br_bd);
-        exec_flags = EXEF_BRANCH;
-    }
-    ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
-}
-
-void dppc_interpreter::ppc_bcla() {
-    uint32_t ctr_ok;
-    uint32_t cnd_ok;
-    uint32_t br_bo = (ppc_cur_instruction >> 21) & 31;
-    uint32_t br_bi = (ppc_cur_instruction >> 16) & 31;
-    int32_t br_bd  = int32_t(int16_t(ppc_cur_instruction & ~3UL));
-
-    if (!(br_bo & 0x04)) {
-        (ppc_state.spr[SPR::CTR])--; /* decrement CTR */
-    }
-    ctr_ok = (br_bo & 0x04) | ((ppc_state.spr[SPR::CTR] != 0) == !(br_bo & 0x02));
-    cnd_ok = (br_bo & 0x10) | (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
-
-    if (ctr_ok && cnd_ok) {
-        ppc_next_instruction_address = br_bd;
-        exec_flags = EXEF_BRANCH;
-    }
-    ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
-}
+template void dppc_interpreter::ppc_b<false, false>();
+template void dppc_interpreter::ppc_b<false, true>();
+template void dppc_interpreter::ppc_b<true, false>();
+template void dppc_interpreter::ppc_b<true, true>();
 
 template<bool l, bool for601>
 void dppc_interpreter::ppc_bcctr() {
