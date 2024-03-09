@@ -176,7 +176,8 @@ int main(int argc, char** argv) {
         power_off_reason = po_enter_debugger;
         enter_debugger();
 
-        abort();
+        // Ensure that NVRAM and other state is persisted before we terminate.
+        delete gMachineObj.release();
     });
 
     // redirect SIGINT to our own handler
