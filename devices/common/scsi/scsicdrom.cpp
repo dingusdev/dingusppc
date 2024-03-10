@@ -271,7 +271,15 @@ void ScsiCdrom::mode_sense_6()
         this->data_buf[17] = 'p';
         break;
     default:
-        ABORT_F("%s: unsupported page %d in MODE_SENSE_6", this->name.c_str(), page_code);
+        LOG_F(WARNING, "%s: unsupported page 0x%02x in MODE_SENSE_6", this->name.c_str(), page_code);
+        this->status = ScsiStatus::CHECK_CONDITION;
+        this->sense  = ScsiSense::ILLEGAL_REQ;
+        this->asc    = 0x24; // Invalid Field in CDB
+        this->ascq   = 0;
+        this->sksv   = 0xc0; // sksv=1, C/D=Command, BPV=0, BP=0
+        this->field  = 2;
+        this->switch_phase(ScsiPhase::STATUS);
+        return;
     }
 
     this->bytes_out = this->data_buf[0];
