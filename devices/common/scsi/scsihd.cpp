@@ -132,23 +132,23 @@ void ScsiHardDisk::process_command() {
 bool ScsiHardDisk::prepare_data() {
     switch (this->cur_phase) {
     case ScsiPhase::DATA_IN:
-        this->data_ptr  = (uint8_t*)this->img_buffer;
+        this->data_ptr  = (uint8_t*)this->data_buf;
         this->data_size = this->bytes_out;
         break;
     case ScsiPhase::DATA_OUT:
-        this->data_ptr  = (uint8_t*)this->img_buffer;
+        this->data_ptr  = (uint8_t*)this->data_buf;
         this->data_size = 0;
         break;
     case ScsiPhase::STATUS:
         if (!error) {
-            this->img_buffer[0] = ScsiStatus::GOOD;
+            this->data_buf[0] = ScsiStatus::GOOD;
         } else {
-            this->img_buffer[0] = ScsiStatus::CHECK_CONDITION;
+            this->data_buf[0] = ScsiStatus::CHECK_CONDITION;
         }
         this->data_size = 1;
         break;
     case ScsiPhase::MESSAGE_IN:
-        this->img_buffer[0] = this->msg_code;
+        this->data_buf[0] = this->msg_code;
         this->data_size = 1;
         break;
     default:
@@ -181,17 +181,17 @@ void ScsiHardDisk::inquiry() {
     }
 
     if (alloc_len >= 36) {
-        this->img_buffer[0] = 0;    // device type: Direct-access block device
-        this->img_buffer[1] = 0;    // non-removable media
-        this->img_buffer[2] = 2;    // ANSI version: SCSI-2
-        this->img_buffer[3] = 1;    // response data format
-        this->img_buffer[4] = 0;    // additional length
-        this->img_buffer[5] = 0;
-        this->img_buffer[6] = 0;
-        this->img_buffer[7] = 0x18; // supports synchronous xfers and linked commands
-        std::memcpy(img_buffer + 8, vendor_info, 8);
-        std::memcpy(img_buffer + 16, prod_info, 16);
-        std::memcpy(img_buffer + 32, rev_info, 4);
+        this->data_buf[0] = 0;    // device type: Direct-access block device
+        this->data_buf[1] = 0;    // non-removable media
+        this->data_buf[2] = 2;    // ANSI version: SCSI-2
+        this->data_buf[3] = 1;    // response data format
+        this->data_buf[4] = 0;    // additional length
+        this->data_buf[5] = 0;
+        this->data_buf[6] = 0;
+        this->data_buf[7] = 0x18; // supports synchronous xfers and linked commands
+        std::memcpy(data_buf + 8, vendor_info, 8);
+        std::memcpy(data_buf + 16, prod_info, 16);
+        std::memcpy(data_buf + 32, rev_info, 4);
 
         this->bytes_out  = 36;
 
@@ -215,7 +215,7 @@ void ScsiHardDisk::mode_select_6(uint8_t param_len) {
 
     this->incoming_size = param_len;
 
-    std::memset(&this->img_buffer[0], 0xDD, HDD_SECTOR_SIZE);
+    std::memset(&this->data_buf[0], 0xDD, HDD_SECTOR_SIZE);
 
     this->post_xfer_action = [this]() {
         // TODO: parse the received mode parameter list here
@@ -231,52 +231,52 @@ void ScsiHardDisk::mode_sense_6() {
     uint8_t page_ctrl = this->cmd_buf[2] >> 6;
     uint8_t alloc_len = this->cmd_buf[4];
 
-    this->img_buffer[ 0] = 13; // initial data size
-    this->img_buffer[ 1] =  0; // medium type
-    this->img_buffer[ 2] =  0; // medium is write enabled
-    this->img_buffer[ 3] =  8; // block description length
+    this->data_buf[ 0] = 13; // initial data size
+    this->data_buf[ 1] =  0; // medium type
+    this->data_buf[ 2] =  0; // medium is write enabled
+    this->data_buf[ 3] =  8; // block description length
 
-    this->img_buffer[ 4] =  0; // density code
-    this->img_buffer[ 5] =  (this->total_blocks >> 16) & 0xFFU;
-    this->img_buffer[ 6] =  (this->total_blocks >>  8) & 0xFFU;
-    this->img_buffer[ 7] =  (this->total_blocks      ) & 0xFFU;
-    this->img_buffer[ 8] =  0;
-    this->img_buffer[ 9] =  0; // sector size MSB
-    this->img_buffer[10] =  2; // sector size
-    this->img_buffer[11] =  0; // sector size LSB
+    this->data_buf[ 4] =  0; // density code
+    this->data_buf[ 5] =  (this->total_blocks >> 16) & 0xFFU;
+    this->data_buf[ 6] =  (this->total_blocks >>  8) & 0xFFU;
+    this->data_buf[ 7] =  (this->total_blocks      ) & 0xFFU;
+    this->data_buf[ 8] =  0;
+    this->data_buf[ 9] =  0; // sector size MSB
+    this->data_buf[10] =  2; // sector size
+    this->data_buf[11] =  0; // sector size LSB
 
-    this->img_buffer[12] = page_code;
+    this->data_buf[12] = page_code;
 
     switch(page_code) {
     case 1: // read-write error recovery page
-        this->img_buffer[13] = 6; // data size - 1
-        std::memset(&this->img_buffer[14], 0, 6);
+        this->data_buf[13] = 6; // data size - 1
+        std::memset(&this->data_buf[14], 0, 6);
         break;
     case 3: // Format device page
-        this->img_buffer[13] = 22; // data size - 1
-        std::memset(&this->img_buffer[14], 0, 22);
+        this->data_buf[13] = 22; // data size - 1
+        std::memset(&this->data_buf[14], 0, 22);
         // default values taken from Empire 540/1080S manual
-        this->img_buffer[15] =    6; // tracks per defect zone
-        this->img_buffer[17] =    1; // alternate sectors per zone
-        this->img_buffer[23] =   92; // sectors per track in the outermost zone
-        this->img_buffer[27] =    1; // interleave factor
-        this->img_buffer[29] =   19; // track skew factor
-        this->img_buffer[31] =   25; // cylinder skew factor
-        this->img_buffer[32] = 0x80; // SSEC=1, HSEC=0, RMB=0, SURF=0, INS=0
-        WRITE_WORD_BE_U(&this->img_buffer[24], 512); // bytes per sector
+        this->data_buf[15] =    6; // tracks per defect zone
+        this->data_buf[17] =    1; // alternate sectors per zone
+        this->data_buf[23] =   92; // sectors per track in the outermost zone
+        this->data_buf[27] =    1; // interleave factor
+        this->data_buf[29] =   19; // track skew factor
+        this->data_buf[31] =   25; // cylinder skew factor
+        this->data_buf[32] = 0x80; // SSEC=1, HSEC=0, RMB=0, SURF=0, INS=0
+        WRITE_WORD_BE_U(&this->data_buf[24], 512); // bytes per sector
         break;
     case 0x30: // Copyright page for Apple certified drives
-        this->img_buffer[13] = 22; // data size - 1
-        std::memcpy(&this->img_buffer[14], Apple_Copyright_Page_Data, 22);
+        this->data_buf[13] = 22; // data size - 1
+        std::memcpy(&this->data_buf[14], Apple_Copyright_Page_Data, 22);
         break;
     default:
         ABORT_F("%s: unsupported page %d in MODE_SENSE_6", this->name.c_str(), page_code);
     };
 
     // adjust for overall mode sense data length
-    this->img_buffer[0] += this->img_buffer[13] + 1;
+    this->data_buf[0] += this->data_buf[13] + 1;
 
-    this->bytes_out = std::min(alloc_len, (uint8_t)this->img_buffer[0]);
+    this->bytes_out = std::min(alloc_len, (uint8_t)this->data_buf[0]);
 
     this->switch_phase(ScsiPhase::DATA_IN);
 }
@@ -299,8 +299,8 @@ void ScsiHardDisk::read_capacity_10() {
     uint32_t last_lba = this->total_blocks - 1;
     uint32_t blk_len  = HDD_SECTOR_SIZE;
 
-    WRITE_DWORD_BE_A(&img_buffer[0], last_lba);
-    WRITE_DWORD_BE_A(&img_buffer[4], blk_len);
+    WRITE_DWORD_BE_A(&data_buf[0], last_lba);
+    WRITE_DWORD_BE_A(&data_buf[4], blk_len);
 
     this->bytes_out = 8;
 
@@ -322,7 +322,7 @@ void ScsiHardDisk::format() {
 void ScsiHardDisk::read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
     uint32_t transfer_size = transfer_len;
 
-    std::memset(img_buffer, 0, sizeof(img_buffer));
+    std::memset(data_buf, 0, sizeof(data_buf));
 
     if (cmd_len == 6 && transfer_len == 0) {
         transfer_size = 256;
@@ -331,7 +331,7 @@ void ScsiHardDisk::read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
     transfer_size *= HDD_SECTOR_SIZE;
     uint64_t device_offset = lba * HDD_SECTOR_SIZE;
 
-    this->disk_img.read(img_buffer, device_offset, transfer_size);
+    this->disk_img.read(data_buf, device_offset, transfer_size);
 
     this->bytes_out = transfer_size;
 
@@ -351,7 +351,7 @@ void ScsiHardDisk::write(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
     this->incoming_size = transfer_size;
 
     this->post_xfer_action = [this, device_offset]() {
-        this->disk_img.write(this->img_buffer, device_offset, this->incoming_size);
+        this->disk_img.write(this->data_buf, device_offset, this->incoming_size);
     };
 }
 
@@ -370,7 +370,7 @@ void ScsiHardDisk::read_buffer() {
 
     switch(mode) {
     case 0: // Combined header and data mode
-        WRITE_DWORD_BE_A(&this->img_buffer[0], 0x10000); // report buffer size of 64K
+        WRITE_DWORD_BE_A(&this->data_buf[0], 0x10000); // report buffer size of 64K
         break;
     default:
         ABORT_F("%s: unsupported mode %d in READ_BUFFER", this->name.c_str(), mode);

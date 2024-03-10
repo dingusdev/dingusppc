@@ -68,7 +68,7 @@ private:
     uint64_t        file_offset = 0;
     int             bytes_out = 0;
 
-    char            img_buffer[1 << 21]; // TODO: add proper buffer management!
+    uint8_t         data_buf[1 << 21]; // TODO: add proper buffer management!
 
     uint32_t        cur_buf_cnt = 0;
     uint8_t         error = ScsiError::NO_ERROR;
