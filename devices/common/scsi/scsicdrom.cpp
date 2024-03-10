@@ -331,6 +331,10 @@ void ScsiCdrom::read_toc()
               start_track);
         this->status = ScsiStatus::CHECK_CONDITION;
         this->sense  = ScsiSense::ILLEGAL_REQ;
+        this->asc    = 0x24; // Invalid Field in CDB
+        this->ascq   = 0;
+        this->sksv   = 0xc0; // sksv=1, C/D=Command, BPV=0, BP=0
+        this->field  = 6; // offset of start_track
         this->switch_phase(ScsiPhase::STATUS);
         return;
     }
@@ -388,6 +392,10 @@ void ScsiCdrom::read_capacity_10()
         LOG_F(ERROR, "%s: non-zero LBA for PMI=0", this->name.c_str());
         this->status = ScsiStatus::CHECK_CONDITION;
         this->sense  = ScsiSense::ILLEGAL_REQ;
+        this->asc    = 0x24; // Invalid Field in CDB
+        this->ascq   = 0;
+        this->sksv   = 0xc0; // sksv=1, C/D=Command, BPV=0, BP=0
+        this->field  = 8;
         this->switch_phase(ScsiPhase::STATUS);
         return;
     }
