@@ -87,6 +87,9 @@ void ScsiHardDisk::process_command() {
     case ScsiCommand::INQUIRY:
         this->inquiry();
         break;
+    case ScsiCommand::READ_BLK_LIMITS:
+        this->illegal_command(cmd);
+        break;
     case ScsiCommand::READ_6:
         lba = ((cmd[1] & 0x1F) << 16) + (cmd[2] << 8) + cmd[3];
         transfer_len = cmd[4];
@@ -112,20 +115,58 @@ void ScsiHardDisk::process_command() {
         lba         = ((cmd[1] & 0x1F) << 16) + (cmd[2] << 8) + cmd[3];
         seek(lba);
         break;
+    case ScsiCommand::VERIFY_6:
+        this->illegal_command(cmd);
+        break;
     case ScsiCommand::MODE_SELECT_6:
         mode_select_6(cmd[4]);
+        break;
+    case ScsiCommand::RELEASE_UNIT:
+        this->illegal_command(cmd);
+        break;
+    case ScsiCommand::ERASE_6:
+        this->illegal_command(cmd);
         break;
     case ScsiCommand::MODE_SENSE_6:
         this->mode_sense_6();
         break;
+    case ScsiCommand::START_STOP_UNIT:
+        this->illegal_command(cmd);
+        break;
+    case ScsiCommand::DIAG_RESULTS:
+        this->illegal_command(cmd);
+        break;
+    case ScsiCommand::SEND_DIAGS:
+        this->illegal_command(cmd);
+        break;
     case ScsiCommand::READ_CAPACITY_10:
         this->read_capacity_10();
+        break;
+    case ScsiCommand::VERIFY_10:
+        this->illegal_command(cmd);
         break;
     case ScsiCommand::READ_BUFFER:
         read_buffer();
         break;
+    case ScsiCommand::MODE_SENSE_10:
+        this->illegal_command(cmd);
+        break;
+    case ScsiCommand::READ_12:
+        this->illegal_command(cmd);
+        break;
+
+    // CD-ROM specific commands
+    case ScsiCommand::READ_TOC:
+        this->illegal_command(cmd);
+        break;
+    case ScsiCommand::SET_CD_SPEED:
+        this->illegal_command(cmd);
+        break;
+    case ScsiCommand::READ_CD:
+        this->illegal_command(cmd);
+        break;
     default:
-        LOG_F(WARNING, "%s: unrecognized command: %x", this->name.c_str(), cmd[0]);
+        this->illegal_command(cmd);
     }
 }
 

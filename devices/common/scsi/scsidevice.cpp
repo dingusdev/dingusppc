@@ -236,3 +236,15 @@ bool ScsiDevice::check_lun()
     }
     return true;
 }
+
+void ScsiDevice::illegal_command(const uint8_t *cmd)
+{
+    LOG_F(ERROR, "%s: unsupported command: 0x%02x", this->name.c_str(), cmd[0]);
+    this->status = ScsiStatus::CHECK_CONDITION;
+    this->sense  = ScsiSense::ILLEGAL_REQ;
+    this->asc    = 0x20; // Invalid command operation code
+    this->ascq   = 0;
+    this->sksv   = 0xc0; // sksv=1, C/D=Command, BPV=0, BP=0
+    this->field  = 0;
+    this->switch_phase(ScsiPhase::STATUS);
+}

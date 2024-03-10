@@ -189,6 +189,7 @@ public:
     virtual int  send_data(uint8_t* dst_ptr, int count);
     virtual int  rcv_data(const uint8_t* src_ptr, const int count);
     virtual bool check_lun();
+    void illegal_command(const uint8_t* cmd);
 
     virtual bool prepare_data() = 0;
     virtual bool get_more_data() = 0;

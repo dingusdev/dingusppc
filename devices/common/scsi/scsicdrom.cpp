@@ -56,44 +56,105 @@ void ScsiCdrom::process_command()
     // use internal data buffer by default
     this->data_ptr = this->data_buf;
 
-    switch (cmd_buf[0]) {
+    uint8_t* cmd = this->cmd_buf;
+
+    switch (cmd[0]) {
     case ScsiCommand::TEST_UNIT_READY:
         this->switch_phase(ScsiPhase::STATUS);
         break;
+    case ScsiCommand::REWIND:
+        this->illegal_command(cmd);
+        break;
+    case ScsiCommand::REQ_SENSE:
+        this->illegal_command(cmd);
+        break;
+    case ScsiCommand::FORMAT_UNIT:
+        this->illegal_command(cmd);
+        break;
+    case ScsiCommand::READ_BLK_LIMITS:
+        this->illegal_command(cmd);
+        break;
     case ScsiCommand::READ_6:
-        lba = ((cmd_buf[1] & 0x1F) << 16) + (cmd_buf[2] << 8) + cmd_buf[3];
-        this->read(lba, cmd_buf[4], 6);
+        lba = ((cmd[1] & 0x1F) << 16) + (cmd[2] << 8) + cmd[3];
+        this->read(lba, cmd[4], 6);
+        break;
+    case ScsiCommand::WRITE_6:
+        this->illegal_command(cmd);
+        break;
+    case ScsiCommand::SEEK_6:
+        this->illegal_command(cmd);
         break;
     case ScsiCommand::INQUIRY:
         this->inquiry();
         break;
+    case ScsiCommand::VERIFY_6:
+        this->illegal_command(cmd);
+        break;
     case ScsiCommand::MODE_SELECT_6:
-        this->incoming_size = this->cmd_buf[4];
+        this->incoming_size = cmd[4];
         this->switch_phase(ScsiPhase::DATA_OUT);
+        break;
+    case ScsiCommand::RELEASE_UNIT:
+        this->illegal_command(cmd);
+        break;
+    case ScsiCommand::ERASE_6:
+        this->illegal_command(cmd);
         break;
     case ScsiCommand::MODE_SENSE_6:
         this->mode_sense();
         break;
+    case ScsiCommand::START_STOP_UNIT:
+        this->illegal_command(cmd);
+        break;
+    case ScsiCommand::DIAG_RESULTS:
+        this->illegal_command(cmd);
+        break;
+    case ScsiCommand::SEND_DIAGS:
+        this->illegal_command(cmd);
+        break;
     case ScsiCommand::PREVENT_ALLOW_MEDIUM_REMOVAL:
-        this->eject_allowed = (this->cmd_buf[4] & 1) == 0;
+        this->eject_allowed = (cmd[4] & 1) == 0;
         this->switch_phase(ScsiPhase::STATUS);
         break;
     case ScsiCommand::READ_CAPACITY_10:
         this->read_capacity();
         break;
     case ScsiCommand::READ_10:
-        lba      = READ_DWORD_BE_U(&this->cmd_buf[2]);
-        xfer_len = READ_WORD_BE_U(&this->cmd_buf[7]);
-        if (this->cmd_buf[1] & 1) {
+        lba      = READ_DWORD_BE_U(&cmd[2]);
+        xfer_len = READ_WORD_BE_U(&cmd[7]);
+        if (cmd[1] & 1) {
             ABORT_F("%s: RelAdr bit set in READ_10", this->name.c_str());
         }
         read(lba, xfer_len, 10);
         break;
+    case ScsiCommand::WRITE_10:
+        this->illegal_command(cmd);
+        break;
+    case ScsiCommand::VERIFY_10:
+        this->illegal_command(cmd);
+        break;
+    case ScsiCommand::READ_LONG_10:
+        this->illegal_command(cmd);
+        break;
+    case ScsiCommand::MODE_SENSE_10:
+        this->illegal_command(cmd);
+        break;
+    case ScsiCommand::READ_12:
+        this->illegal_command(cmd);
+        break;
+
+    // CD-ROM specific commands
     case ScsiCommand::READ_TOC:
         this->read_toc();
         break;
+    case ScsiCommand::SET_CD_SPEED:
+        this->illegal_command(cmd);
+        break;
+    case ScsiCommand::READ_CD:
+        this->illegal_command(cmd);
+        break;
     default:
-        ABORT_F("%s: unsupported command %d", this->name.c_str(), this->cmd_buf[0]);
+        this->illegal_command(cmd);
     }
 }
 
