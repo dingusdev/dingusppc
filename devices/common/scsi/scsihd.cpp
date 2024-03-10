@@ -29,11 +29,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <machines/machineproperties.h>
 #include <memaccess.h>
 
-#include <fstream>
-#include <cstring>
-
-#define HDD_SECTOR_SIZE 512
-
 using namespace std;
 
 ScsiHardDisk::ScsiHardDisk(std::string name, int my_id) : ScsiDevice(name, my_id) {
@@ -46,7 +41,7 @@ void ScsiHardDisk::insert_image(std::string filename) {
         ABORT_F("%s: could not open image file %s", this->name.c_str(), filename.c_str());
 
     this->img_size = this->disk_img.size();
-    uint64_t tb = (this->img_size + HDD_SECTOR_SIZE - 1) / HDD_SECTOR_SIZE;
+    uint64_t tb = (this->img_size + this->sector_size - 1) / this->sector_size;
     this->total_blocks = static_cast<int>(tb);
     if (this->total_blocks < 0 || tb != this->total_blocks) {
         ABORT_F("ScsiHardDisk: file size is too large");
@@ -255,7 +250,7 @@ void ScsiHardDisk::mode_select_6(uint8_t param_len) {
 
     this->incoming_size = param_len;
 
-    std::memset(&this->data_buf[0], 0xDD, HDD_SECTOR_SIZE);
+    std::memset(&this->data_buf[0], 0xDD, this->sector_size);
 
     this->post_xfer_action = [this]() {
         // TODO: parse the received mode parameter list here
@@ -280,10 +275,7 @@ void ScsiHardDisk::mode_sense_6() {
     this->data_buf[ 5] =  (this->total_blocks >> 16) & 0xFFU;
     this->data_buf[ 6] =  (this->total_blocks >>  8) & 0xFFU;
     this->data_buf[ 7] =  (this->total_blocks      ) & 0xFFU;
-    this->data_buf[ 8] =  0;
-    this->data_buf[ 9] =  0; // sector size MSB
-    this->data_buf[10] =  2; // sector size
-    this->data_buf[11] =  0; // sector size LSB
+    WRITE_DWORD_BE_A(&this->data_buf[8], this->sector_size);
 
     this->data_buf[12] = page_code;
 
@@ -337,7 +329,7 @@ void ScsiHardDisk::read_capacity_10() {
     }
 
     uint32_t last_lba = this->total_blocks - 1;
-    uint32_t blk_len  = HDD_SECTOR_SIZE;
+    uint32_t blk_len  = this->sector_size;
 
     WRITE_DWORD_BE_A(&data_buf[0], last_lba);
     WRITE_DWORD_BE_A(&data_buf[4], blk_len);
@@ -368,8 +360,8 @@ void ScsiHardDisk::read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
         transfer_size = 256;
     }
 
-    transfer_size *= HDD_SECTOR_SIZE;
-    uint64_t device_offset = lba * HDD_SECTOR_SIZE;
+    transfer_size *= this->sector_size;
+    uint64_t device_offset = lba * this->sector_size;
 
     this->disk_img.read(data_buf, device_offset, transfer_size);
 
@@ -385,8 +377,8 @@ void ScsiHardDisk::write(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
         transfer_size = 256;
     }
 
-    transfer_size *= HDD_SECTOR_SIZE;
-    uint64_t device_offset = lba * HDD_SECTOR_SIZE;
+    transfer_size *= this->sector_size;
+    uint64_t device_offset = lba * this->sector_size;
 
     this->incoming_size = transfer_size;
 

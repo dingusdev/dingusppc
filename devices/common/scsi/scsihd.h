@@ -66,6 +66,7 @@ private:
     uint64_t        img_size;
     int             total_blocks;
     uint64_t        file_offset = 0;
+    static const int sector_size = 512;
     int             bytes_out = 0;
 
     uint8_t         data_buf[1 << 21]; // TODO: add proper buffer management!
