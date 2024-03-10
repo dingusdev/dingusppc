@@ -241,39 +241,39 @@ protected:
     void update_irq();
 
 private:
-    uint8_t     chip_id;
-    uint8_t     my_bus_id;
+    uint8_t     chip_id = 0;
+    uint8_t     my_bus_id = 0;
     ScsiBus*    bus_obj;
-    uint32_t    my_timer_id;
+    uint32_t    my_timer_id = 0;
 
     uint8_t     cmd_fifo[2];
     uint8_t     data_fifo[16];
-    int         cmd_fifo_pos;
-    int         data_fifo_pos;
-    int         bytes_out;
+    int         cmd_fifo_pos = 0;
+    int         data_fifo_pos = 0;
+    int         bytes_out = 0;
     bool        on_reset = false;
-    uint32_t    xfer_count;
-    uint32_t    set_xfer_count;
-    uint8_t     status;
-    uint8_t     target_id;
+    uint32_t    xfer_count = 0;
+    uint32_t    set_xfer_count = 0;
+    uint8_t     status = 0;
+    uint8_t     target_id = 0;
     uint8_t     int_status = 0;
-    uint8_t     seq_step;
-    uint8_t     sel_timeout;
-    uint8_t     sync_offset;
-    uint8_t     clk_factor;
-    uint8_t     config1;
-    uint8_t     config2;
-    uint8_t     config3;
+    uint8_t     seq_step = 0;
+    uint8_t     sel_timeout = 0;
+    uint8_t     sync_offset = 0;
+    uint8_t     clk_factor = 0;
+    uint8_t     config1 = 0;
+    uint8_t     config2 = 0;
+    uint8_t     config3 = 0;
 
     // sequencer state
-    uint32_t    seq_timer_id;
-    uint32_t    cur_state;
-    uint32_t    next_state;
-    SeqDesc*    cmd_steps;
-    bool        is_initiator;
-    uint8_t     cur_cmd;
+    uint32_t    seq_timer_id = 0;
+    uint32_t    cur_state = 0;
+    uint32_t    next_state = 0;
+    SeqDesc*    cmd_steps = nullptr;
+    bool        is_initiator = false;
+    uint8_t     cur_cmd = 0;
     bool        is_dma_cmd = false;
-    int         cur_bus_phase;
+    int         cur_bus_phase = 0;
 
     // interrupt related stuff
     InterruptCtrl* int_ctrl = nullptr;
@@ -281,7 +281,7 @@ private:
     uint8_t        irq      = 0;
 
     // DMA related stuff
-    DmaBidirChannel*    dma_ch;
+    DmaBidirChannel*    dma_ch = nullptr;
     DrqCb               drq_cb = nullptr;
 };
 
