@@ -60,7 +60,7 @@ void ScsiCdrom::process_command()
 
     switch (cmd[0]) {
     case ScsiCommand::TEST_UNIT_READY:
-        this->switch_phase(ScsiPhase::STATUS);
+        this->test_unit_ready();
         break;
     case ScsiCommand::REWIND:
         this->illegal_command(cmd);
@@ -196,6 +196,12 @@ void ScsiCdrom::read(const uint32_t lba, uint16_t nblocks, const uint8_t cmd_len
 
     this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;
     this->switch_phase(ScsiPhase::DATA_IN);
+}
+
+int ScsiCdrom::test_unit_ready()
+{
+    this->switch_phase(ScsiPhase::STATUS);
+    return ScsiError::NO_ERROR;
 }
 
 void ScsiCdrom::inquiry() {

@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -46,6 +46,7 @@ public:
     virtual bool get_more_data() override;
 
 protected:
+    int     test_unit_ready();
     void    read(uint32_t lba, uint16_t nblocks, uint8_t cmd_len);
     void    inquiry();
     void    mode_sense();
