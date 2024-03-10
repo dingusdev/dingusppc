@@ -38,8 +38,6 @@ static char cdu8003a_revision_id[] = "1.9a";
 
 ScsiCdrom::ScsiCdrom(std::string name, int my_id) : CdromDrive(), ScsiDevice(name, my_id)
 {
-    this->pre_xfer_action  = nullptr;
-    this->post_xfer_action = nullptr;
 }
 
 void ScsiCdrom::process_command()
