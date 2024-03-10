@@ -361,7 +361,7 @@ void ScsiHardDisk::read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
     }
 
     transfer_size *= this->sector_size;
-    uint64_t device_offset = lba * this->sector_size;
+    uint64_t device_offset = (uint64_t)lba * this->sector_size;
 
     this->disk_img.read(data_buf, device_offset, transfer_size);
 
@@ -378,7 +378,7 @@ void ScsiHardDisk::write(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
     }
 
     transfer_size *= this->sector_size;
-    uint64_t device_offset = lba * this->sector_size;
+    uint64_t device_offset = (uint64_t)lba * this->sector_size;
 
     this->incoming_size = transfer_size;
 
