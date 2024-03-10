@@ -207,7 +207,7 @@ void ScsiCdrom::inquiry() {
     }
 
     if (alloc_len > 36) {
-        LOG_F(WARNING, "%s: more than 36 bytes requested in INQUIRY", this->name.c_str());
+        LOG_F(ERROR, "%s: more than 36 bytes requested in INQUIRY", this->name.c_str());
     }
 
     this->data_buf[0] =    5; // device type: CD-ROM
@@ -221,8 +221,17 @@ void ScsiCdrom::inquiry() {
     std::memcpy(&this->data_buf[8],  vendor_info, 8);
     std::memcpy(&this->data_buf[16], prod_info, 16);
     std::memcpy(&this->data_buf[32], rev_info, 4);
+    //std::memcpy(&this->data_buf[36], serial_number, 8);
+    //etc.
 
-    this->bytes_out = 36;
+    if (alloc_len < 36) {
+        LOG_F(ERROR, "Inappropriate Allocation Length: %d", alloc_len);
+    }
+    else {
+        bzero(&this->data_buf[36], alloc_len - 36);
+    }
+
+    this->bytes_out = alloc_len;
     this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;
 
     this->switch_phase(ScsiPhase::DATA_IN);
