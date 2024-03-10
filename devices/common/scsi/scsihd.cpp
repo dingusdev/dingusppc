@@ -125,6 +125,9 @@ void ScsiHardDisk::process_command() {
         break;
     case ScsiCommand::READ_10:
         lba = READ_DWORD_BE_U(&cmd[2]);
+        if (cmd[1] & 1) {
+            ABORT_F("%s: RelAdr bit set in READ_10", this->name.c_str());
+        }
         this->read(lba, READ_WORD_BE_U(&cmd[7]), 10);
         break;
     case ScsiCommand::WRITE_10:
