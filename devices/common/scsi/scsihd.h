@@ -70,7 +70,6 @@ private:
 
     uint8_t         data_buf[1 << 21]; // TODO: add proper buffer management!
 
-    uint32_t        cur_buf_cnt = 0;
     uint8_t         error = ScsiError::NO_ERROR;
     uint8_t         msg_code = 0;
 
