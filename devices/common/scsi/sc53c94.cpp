@@ -84,25 +84,32 @@ void Sc53C94::reset_device()
 
 uint8_t Sc53C94::read(uint8_t reg_offset)
 {
-    uint8_t bus_phase, int_flags;
+    uint8_t value;
 
     switch (reg_offset) {
     case Read::Reg53C94::Xfer_Cnt_LSB:
-        return this->xfer_count & 0xFFU;
+        value = this->xfer_count & 0xFFU;
+        break;
     case Read::Reg53C94::Xfer_Cnt_MSB:
-        return (this->xfer_count >> 8) & 0xFFU;
+        value = (this->xfer_count >> 8) & 0xFFU;
+        break;
     case Read::Reg53C94::FIFO:
-        return this->fifo_pop();
+        value = this->fifo_pop();
+        break;
     case Read::Reg53C94::Command:
-        return this->cmd_fifo[0];
-    case Read::Reg53C94::Status:
+        value = this->cmd_fifo[0];
+        break;
+    case Read::Reg53C94::Status: {
+        uint8_t bus_phase;
         if (this->config2 & CFG2_ENF)
             bus_phase = this->phase_latch;
         else
             bus_phase = bus_obj->test_ctrl_lines(SCSI_CTRL_MSG | SCSI_CTRL_CD | SCSI_CTRL_IO);
-        return (this->status & 0xF8) | bus_phase;
+        value = (this->status & 0xF8) | bus_phase;
+        break;
+    }
     case Read::Reg53C94::Int_Status:
-        int_flags = this->int_status;
+        value = this->int_status;
         if (this->irq) {
             this->status &= ~(STAT_GE | STAT_PE | STAT_GCV);
             this->int_status = 0;
@@ -111,25 +118,33 @@ uint8_t Sc53C94::read(uint8_t reg_offset)
         if (this->phase_latch_closed)
             this->phase_latch_closed = false; // open the bus phase latch
         this->update_irq();
-        return int_flags;
+        break;
     case Read::Reg53C94::Seq_Step:
-        return this->seq_step;
+        value = this->seq_step;
+        break;
     case Read::Reg53C94::FIFO_Flags:
-        return (this->cur_step << 5) | (this->data_fifo_pos & 0x1F);
+        value = (this->cur_step << 5) | (this->data_fifo_pos & 0x1F);
+        break;
     case Read::Reg53C94::Config_1:
-        return this->config1;
+        value = this->config1;
+        break;
     case Read::Reg53C94::Config_3:
-        return this->config3;
+        value = this->config3;
+        break;
     case Read::Reg53C94::Config_4:
-        return this->config4;
+        value = this->config4;
+        break;
     case Read::Reg53C94::Xfer_Cnt_Hi:
-        if (this->config2 & CFG2_ENF)
-            return (this->xfer_count >> 16) & 0xFFU;
+        if (this->config2 & CFG2_ENF) {
+            value = (this->xfer_count >> 16) & 0xFFU;
+        } else {
+            value = 0;
+        }
         break;
     default:
         LOG_F(INFO, "%s: reading from register %d", this->name.c_str(), reg_offset);
     }
-    return 0;
+    return value;
 }
 
 void Sc53C94::write(uint8_t reg_offset, uint8_t value)
