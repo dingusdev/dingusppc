@@ -32,10 +32,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace std;
 
-static char cdrom_vendor_sony_id[] = "SONY    ";
-static char cdu8003a_product_id[]  = "CD-ROM CDU-8003A";
-static char cdu8003a_revision_id[] = "1.9a";
-
 ScsiCdrom::ScsiCdrom(std::string name, int my_id) : CdromDrive(), ScsiDevice(name, my_id)
 {
 }
@@ -221,9 +217,9 @@ void ScsiCdrom::inquiry() {
     this->data_buf[5] =    0;
     this->data_buf[6] =    0;
     this->data_buf[7] = 0x18; // supports synchronous xfers and linked commands
-    std::memcpy(&this->data_buf[8],  cdrom_vendor_sony_id, 8);
-    std::memcpy(&this->data_buf[16], cdu8003a_product_id, 16);
-    std::memcpy(&this->data_buf[32], cdu8003a_revision_id, 4);
+    std::memcpy(&this->data_buf[8],  vendor_info, 8);
+    std::memcpy(&this->data_buf[16], prod_info, 16);
+    std::memcpy(&this->data_buf[32], rev_info, 4);
 
     this->bytes_out = 36;
     this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;

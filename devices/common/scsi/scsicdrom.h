@@ -53,6 +53,11 @@ private:
     bool    eject_allowed = true;
     int     bytes_out = 0;
     uint8_t data_buf[2048] = {};
+
+    //inquiry info
+    char vendor_info[9] = "SONY    ";
+    char prod_info[17]  = "CD-ROM CDU-8003A";
+    char rev_info[5]    = "1.9a";
 };
 
 #endif // SCSI_CDROM_H
