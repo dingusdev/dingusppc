@@ -381,7 +381,7 @@ void ScsiCdrom::read_capacity_10()
         return;
     }
 
-    int last_lba = this->size_blocks - 1;
+    int last_lba = (int)this->size_blocks - 1;
 
     WRITE_DWORD_BE_A(&this->data_buf[0], last_lba);
     WRITE_DWORD_BE_A(&this->data_buf[4], this->block_size);
