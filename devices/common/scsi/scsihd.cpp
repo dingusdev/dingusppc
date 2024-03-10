@@ -323,6 +323,9 @@ void ScsiHardDisk::read_capacity_10() {
         return;
     }
 
+    if (!check_lun())
+        return;
+
     uint32_t last_lba = this->total_blocks - 1;
     uint32_t blk_len  = this->sector_size;
 
@@ -346,6 +349,9 @@ void ScsiHardDisk::format() {
 }
 
 void ScsiHardDisk::read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
+    if (!check_lun())
+        return;
+
     uint32_t transfer_size = transfer_len;
 
     std::memset(this->data_buf, 0, sizeof(this->data_buf));

@@ -178,6 +178,9 @@ bool ScsiCdrom::get_more_data() {
 
 void ScsiCdrom::read(uint32_t lba, uint16_t nblocks, uint8_t cmd_len)
 {
+    if (!check_lun())
+        return;
+
     if (cmd_len == 6 && nblocks == 0)
         nblocks = 256;
 
@@ -381,6 +384,9 @@ void ScsiCdrom::read_capacity_10()
         return;
     }
 
+    if (!check_lun())
+        return;
+    
     int last_lba = (int)this->size_blocks - 1;
 
     WRITE_DWORD_BE_A(&this->data_buf[0], last_lba);
