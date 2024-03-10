@@ -94,7 +94,7 @@ void ScsiCdrom::process_command()
         this->illegal_command(cmd);
         break;
     case ScsiCommand::MODE_SENSE_6:
-        this->mode_sense();
+        this->mode_sense_6();
         break;
     case ScsiCommand::START_STOP_UNIT:
         this->illegal_command(cmd);
@@ -229,7 +229,7 @@ void ScsiCdrom::inquiry() {
 
 static char Apple_Copyright_Page_Data[] = "APPLE COMPUTER, INC   ";
 
-void ScsiCdrom::mode_sense()
+void ScsiCdrom::mode_sense_6()
 {
     uint8_t page_code = this->cmd_buf[2] & 0x3F;
     //uint8_t alloc_len = this->cmd_buf[4];
