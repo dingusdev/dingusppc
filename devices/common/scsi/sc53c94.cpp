@@ -376,6 +376,8 @@ void Sc53C94::exec_next_command()
     }
 }
 
+#define DATA_FIFO_MAX   16
+
 void Sc53C94::fifo_push(const uint8_t data)
 {
     if (this->data_fifo_pos < DATA_FIFO_MAX) {
