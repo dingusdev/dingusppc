@@ -210,7 +210,17 @@ void ScsiCdrom::inquiry() {
         LOG_F(ERROR, "%s: more than 36 bytes requested in INQUIRY", this->name.c_str());
     }
 
-    this->data_buf[0] =    5; // device type: CD-ROM
+    int lun;
+    if (this->last_selection_has_atention) {
+        LOG_F(INFO, "%s: INQUIRY (%d bytes) with ATN LUN = %02x & 7", this->name.c_str(), alloc_len, this->last_selection_message);
+        lun = this->last_selection_message & 7;
+    }
+    else {
+        LOG_F(INFO, "%s: INQUIRY (%d bytes) with NO ATN LUN = %02x >> 5", this->name.c_str(), alloc_len, cmd_buf[1]);
+        lun = cmd_buf[1] >> 5;
+    }
+
+    this->data_buf[0] = (lun == this->lun) ? 5 : 0x7f; // device type: CD-ROM
     this->data_buf[1] = 0x80; // removable media
     this->data_buf[2] =    2; // ANSI version: SCSI-2
     this->data_buf[3] =    1; // response data format
