@@ -265,27 +265,35 @@ void ScsiHardDisk::inquiry() {
         ABORT_F("%s: invalid page number in INQUIRY", this->name.c_str());
     }
 
-    if (alloc_len >= 36) {
-        this->data_buf[0] = 0;    // device type: Direct-access block device
-        this->data_buf[1] = 0;    // non-removable media
-        this->data_buf[2] = 2;    // ANSI version: SCSI-2
-        this->data_buf[3] = 1;    // response data format
-        this->data_buf[4] = 0;    // additional length
-        this->data_buf[5] = 0;
-        this->data_buf[6] = 0;
-        this->data_buf[7] = 0x18; // supports synchronous xfers and linked commands
-        std::memcpy(data_buf + 8, vendor_info, 8);
-        std::memcpy(data_buf + 16, prod_info, 16);
-        std::memcpy(data_buf + 32, rev_info, 4);
-
-        this->bytes_out  = 36;
-
-        this->switch_phase(ScsiPhase::DATA_IN);
+    if (alloc_len > 36) {
+        LOG_F(INFO, "%s: %d bytes requested in INQUIRY", this->name.c_str(), alloc_len);
     }
-    else {
-        LOG_F(WARNING, "%s: allocation length too small: %d", this->name.c_str(),
+
+    this->data_buf[0] =    0; // device type: Direct-access block device
+    this->data_buf[1] =    0; // non-removable media; 0x80 = removable media
+    this->data_buf[2] =    2; // ANSI version: SCSI-2
+    this->data_buf[3] =    1; // response data format
+    this->data_buf[4] = 0x1F; // additional length
+    this->data_buf[5] =    0;
+    this->data_buf[6] =    0;
+    this->data_buf[7] = 0x18; // supports synchronous xfers and linked commands
+    std::memcpy(&this->data_buf[8], vendor_info, 8);
+    std::memcpy(&this->data_buf[16], prod_info, 16);
+    std::memcpy(&this->data_buf[32], rev_info, 4);
+    //std::memcpy(&this->data_buf[36], serial_number, 8);
+    //etc.
+
+    if (alloc_len < 36) {
+        LOG_F(ERROR, "%s: allocation length too small: %d", this->name.c_str(),
               alloc_len);
     }
+    else {
+        bzero(&this->data_buf[36], alloc_len - 36);
+    }
+
+    this->bytes_out = alloc_len;
+
+    this->switch_phase(ScsiPhase::DATA_IN);
 }
 
 int ScsiHardDisk::send_diagnostic() {
