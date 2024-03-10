@@ -269,7 +269,17 @@ void ScsiHardDisk::inquiry() {
         LOG_F(INFO, "%s: %d bytes requested in INQUIRY", this->name.c_str(), alloc_len);
     }
 
-    this->data_buf[0] =    0; // device type: Direct-access block device
+    int lun;
+    if (this->last_selection_has_atention) {
+        LOG_F(INFO, "%s: INQUIRY (%d bytes) with ATN LUN = %02x & 7", this->name.c_str(), alloc_len, this->last_selection_message);
+        lun = this->last_selection_message & 7;
+    }
+    else {
+        LOG_F(INFO, "%s: INQUIRY (%d bytes) with NO ATN LUN = %02x >> 5", this->name.c_str(), alloc_len, cmd_buf[1]);
+        lun = cmd_buf[1] >> 5;
+    }
+
+    this->data_buf[0] = (lun == this->lun) ? 0 : 0x7f; // device type: Direct-access block device (hard drive)
     this->data_buf[1] =    0; // non-removable media; 0x80 = removable media
     this->data_buf[2] =    2; // ANSI version: SCSI-2
     this->data_buf[3] =    1; // response data format
