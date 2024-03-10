@@ -63,6 +63,7 @@ private:
     int             total_blocks;
     uint64_t        file_offset = 0;
     static const int sector_size = 512;
+    bool            eject_allowed = true;
     int             bytes_out = 0;
 
     uint8_t         data_buf[1 << 21]; // TODO: add proper buffer management!

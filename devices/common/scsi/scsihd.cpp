@@ -116,6 +116,10 @@ void ScsiHardDisk::process_command() {
     case ScsiCommand::SEND_DIAGS:
         this->illegal_command(cmd);
         break;
+    case ScsiCommand::PREVENT_ALLOW_MEDIUM_REMOVAL:
+        this->eject_allowed = (cmd[4] & 1) == 0;
+        this->switch_phase(ScsiPhase::STATUS);
+        break;
     case ScsiCommand::READ_CAPACITY_10:
         this->read_capacity_10();
         break;
