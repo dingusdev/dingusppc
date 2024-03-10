@@ -84,8 +84,7 @@ void ScsiCdrom::process_command()
         this->illegal_command(cmd);
         break;
     case ScsiCommand::MODE_SELECT_6:
-        this->incoming_size = cmd[4];
-        this->switch_phase(ScsiPhase::DATA_OUT);
+        this->mode_select_6(cmd[4]);
         break;
     case ScsiCommand::RELEASE_UNIT:
         this->illegal_command(cmd);
@@ -279,6 +278,19 @@ void ScsiCdrom::mode_sense_6()
     this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;
 
     this->switch_phase(ScsiPhase::DATA_IN);
+}
+
+int ScsiCdrom::mode_select_6(uint8_t param_len)
+{
+    if (param_len == 0) {
+        return 0x0;
+    }
+    else {
+        LOG_F(ERROR, "Mode Select calling for param length of: %d", param_len);
+        this->incoming_size = param_len;
+        this->switch_phase(ScsiPhase::DATA_OUT);
+        return param_len;
+    }
 }
 
 void ScsiCdrom::read_toc()
