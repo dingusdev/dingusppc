@@ -117,7 +117,7 @@ void ScsiCdrom::process_command()
         this->switch_phase(ScsiPhase::STATUS);
         break;
     case ScsiCommand::READ_CAPACITY_10:
-        this->read_capacity();
+        this->read_capacity_10();
         break;
     case ScsiCommand::READ_10:
         lba      = READ_DWORD_BE_U(&cmd[2]);
@@ -363,7 +363,7 @@ void ScsiCdrom::read_toc()
     this->switch_phase(ScsiPhase::DATA_IN);
 }
 
-void ScsiCdrom::read_capacity()
+void ScsiCdrom::read_capacity_10()
 {
     uint32_t lba = READ_DWORD_BE_U(&this->cmd_buf[2]);
 

@@ -51,7 +51,7 @@ protected:
     void    inquiry();
     void    mode_sense();
     void    read_toc();
-    void    read_capacity();
+    void    read_capacity_10();
 
 private:
     bool    eject_allowed = true;
