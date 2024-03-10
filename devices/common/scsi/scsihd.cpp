@@ -75,7 +75,7 @@ void ScsiHardDisk::process_command() {
         test_unit_ready();
         break;
     case ScsiCommand::REWIND:
-        rewind();
+        this->illegal_command(cmd);
         break;
     case ScsiCommand::REQ_SENSE:
         alloc_len = cmd[4];
@@ -112,8 +112,7 @@ void ScsiHardDisk::process_command() {
         this->switch_phase(ScsiPhase::DATA_OUT);
         break;
     case ScsiCommand::SEEK_6:
-        lba         = ((cmd[1] & 0x1F) << 16) + (cmd[2] << 8) + cmd[3];
-        seek(lba);
+        this->illegal_command(cmd);
         break;
     case ScsiCommand::VERIFY_6:
         this->illegal_command(cmd);
@@ -394,14 +393,6 @@ void ScsiHardDisk::write(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
     this->post_xfer_action = [this, device_offset]() {
         this->disk_img.write(this->data_buf, device_offset, this->incoming_size);
     };
-}
-
-void ScsiHardDisk::seek(uint32_t lba) {
-    // No-op
-}
-
-void ScsiHardDisk::rewind() {
-    // No-op
 }
 
 void ScsiHardDisk::read_buffer() {
