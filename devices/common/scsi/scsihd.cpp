@@ -202,11 +202,59 @@ int ScsiHardDisk::test_unit_ready() {
 }
 
 int ScsiHardDisk::req_sense(uint16_t alloc_len) {
-    if (alloc_len != 252) {
-        LOG_F(WARNING, "%s: inappropriate Allocation Length: %d", this->name.c_str(),
-              alloc_len);
+    //if (!check_lun())
+    //    return;
+
+    int next_phase;
+
+    int lun;
+    if (this->last_selection_has_atention) {
+        lun = this->last_selection_message & 7;
     }
-    return ScsiError::NO_ERROR;    // placeholder - no sense
+    else {
+        lun = cmd_buf[1] >> 5;
+    }
+
+    if (lun == this->lun) {
+        this->status = ScsiStatus::GOOD;
+        this->data_buf[ 2] = this->sense;      // Reserved:0xf0, Sense Key:0x0f ; e.g. ScsiSense::ILLEGAL_REQ
+        this->data_buf[12] = this->asc;        // addition sense code
+        this->data_buf[13] = this->ascq;       // additional sense qualifier
+        this->data_buf[15] = this->sksv;       // SKSV:0x80, C/D:0x40, Reserved:0x30, BPV:8, Bit Pointer:7
+        this->data_buf[16] = this->field >> 8; // field pointer
+        this->data_buf[17] = this->field;
+    }
+    else {
+        this->data_buf[ 2] = this->sense;      // Reserved:0xf0, Sense Key:0x0f ; e.g. ScsiSense::ILLEGAL_REQ
+        this->data_buf[12] = 0x25;             // addition sense code = Logical Unit Not Supported
+        this->data_buf[13] = 0;                // additional sense qualifier
+        this->data_buf[15] = 0;                // SKSV:0x80, C/D:0x40, Reserved:0x30, BPV:8, Bit Pointer:7
+        this->data_buf[16] = 0;                // field pointer
+        this->data_buf[17] = 0;
+    }
+
+    {
+        // FIXME: there should be a way to set the VALID and ILI bits.
+        this->data_buf[ 0] = 0x70; // Valid:0x80, Error Code:0x7f
+        this->data_buf[ 1] =    0; // segment number
+        this->data_buf[ 3] =    0; // information
+        this->data_buf[ 4] =    0;
+        this->data_buf[ 5] =    0;
+        this->data_buf[ 6] =    0;
+        this->data_buf[ 7] =   10; // additional sense length
+        this->data_buf[ 8] =    0; // command specific information
+        this->data_buf[ 9] =    0;
+        this->data_buf[10] =    0;
+        this->data_buf[11] =    0;
+        this->data_buf[14] =    0; // field replaceable unit code
+        this->data_buf[18] =    0; // reserved
+        this->data_buf[19] =    0; // reserved
+    }
+
+    this->bytes_out = alloc_len; // Open Firmware 1.0.5 asks for 18 bytes.
+
+    this->switch_phase(ScsiPhase::DATA_IN);
+    return ScsiError::NO_ERROR;
 }
 
 void ScsiHardDisk::inquiry() {
