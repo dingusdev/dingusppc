@@ -179,11 +179,15 @@ bool ScsiHardDisk::prepare_data() {
         } else {
             this->data_buf[0] = ScsiStatus::CHECK_CONDITION;
         }
-        this->data_size = 1;
+        this->bytes_out = 1;
+        this->data_ptr = (uint8_t*)this->data_buf;
+        this->data_size = this->bytes_out;
         break;
     case ScsiPhase::MESSAGE_IN:
         this->data_buf[0] = this->msg_code;
-        this->data_size = 1;
+        this->bytes_out = 1;
+        this->data_ptr = (uint8_t*)this->data_buf;
+        this->data_size = this->bytes_out;
         break;
     default:
         LOG_F(WARNING, "%s: unexpected phase in prepare_data", this->name.c_str());
