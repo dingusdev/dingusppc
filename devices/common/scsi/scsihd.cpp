@@ -81,9 +81,6 @@ void ScsiHardDisk::process_command() {
     case ScsiCommand::FORMAT_UNIT:
         this->format();
         break;
-    case ScsiCommand::INQUIRY:
-        this->inquiry();
-        break;
     case ScsiCommand::READ_BLK_LIMITS:
         this->illegal_command(cmd);
         break;
@@ -92,24 +89,16 @@ void ScsiHardDisk::process_command() {
         transfer_len = cmd[4];
         read(lba, transfer_len, 6);
         break;
-    case ScsiCommand::READ_10:
-        lba          = (cmd[2] << 24) + (cmd[3] << 16) + (cmd[4] << 8) + cmd[5];
-        transfer_len = (cmd[7] << 8) + cmd[8];
-        read(lba, transfer_len, 10);
-        break;
     case ScsiCommand::WRITE_6:
         lba          = ((cmd[1] & 0x1F) << 16) + (cmd[2] << 8) + cmd[3];
         transfer_len = cmd[4];
         write(lba, transfer_len, 6);
         break;
-    case ScsiCommand::WRITE_10:
-        lba          = (cmd[2] << 24) + (cmd[3] << 16) + (cmd[4] << 8) + cmd[5];
-        transfer_len = (cmd[7] << 8) + cmd[8];
-        write(lba, transfer_len, 10);
-        this->switch_phase(ScsiPhase::DATA_OUT);
-        break;
     case ScsiCommand::SEEK_6:
         this->illegal_command(cmd);
+        break;
+    case ScsiCommand::INQUIRY:
+        this->inquiry();
         break;
     case ScsiCommand::VERIFY_6:
         this->illegal_command(cmd);
@@ -137,6 +126,17 @@ void ScsiHardDisk::process_command() {
         break;
     case ScsiCommand::READ_CAPACITY_10:
         this->read_capacity_10();
+        break;
+    case ScsiCommand::READ_10:
+        lba          = (cmd[2] << 24) + (cmd[3] << 16) + (cmd[4] << 8) + cmd[5];
+        transfer_len = (cmd[7] << 8) + cmd[8];
+        read(lba, transfer_len, 10);
+        break;
+    case ScsiCommand::WRITE_10:
+        lba          = (cmd[2] << 24) + (cmd[3] << 16) + (cmd[4] << 8) + cmd[5];
+        transfer_len = (cmd[7] << 8) + cmd[8];
+        write(lba, transfer_len, 10);
+        this->switch_phase(ScsiPhase::DATA_OUT);
         break;
     case ScsiCommand::VERIFY_10:
         this->illegal_command(cmd);
