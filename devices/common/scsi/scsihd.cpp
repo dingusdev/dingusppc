@@ -46,7 +46,7 @@ void ScsiHardDisk::insert_image(std::string filename) {
     uint64_t tb = (this->img_size + this->sector_size - 1) / this->sector_size;
     this->total_blocks = static_cast<int>(tb);
     if (this->total_blocks < 0 || tb != this->total_blocks) {
-        ABORT_F("ScsiHardDisk: file size is too large");
+        ABORT_F("%s: file size is too large", this->name.c_str());
     }
 }
 
