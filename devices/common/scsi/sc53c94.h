@@ -244,7 +244,6 @@ protected:
 private:
     uint8_t     chip_id = 0;
     uint8_t     my_bus_id = 0;
-    ScsiBus*    bus_obj;
     uint32_t    my_timer_id = 0;
 
     uint8_t     cmd_fifo[2];

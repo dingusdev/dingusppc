@@ -43,10 +43,10 @@ Sc53C94::Sc53C94(uint8_t chip_id, uint8_t my_id) : ScsiDevice("SC53C94", my_id)
 
 int Sc53C94::device_postinit()
 {
-    this->bus_obj = dynamic_cast<ScsiBus*>(gMachineObj->get_comp_by_name("ScsiCurio"));
-    if (this->bus_obj) {
-        this->bus_obj->register_device(7, static_cast<ScsiDevice*>(this));
-        this->bus_obj->attach_scsi_devices("");
+    ScsiBus* bus = dynamic_cast<ScsiBus*>(gMachineObj->get_comp_by_name("ScsiCurio"));
+    if (bus) {
+        bus->register_device(7, static_cast<ScsiDevice*>(this));
+        bus->attach_scsi_devices("");
     }
 
     this->int_ctrl = dynamic_cast<InterruptCtrl*>(
