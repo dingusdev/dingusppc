@@ -59,7 +59,7 @@ int Sc53C94::device_postinit()
 void Sc53C94::reset_device()
 {
     // part-unique ID to be read using a magic sequence
-    this->set_xfer_count = this->chip_id << 16;
+    this->xfer_count = this->chip_id << 16;
 
     this->clk_factor   = 2;
     this->sel_timeout  = 0;
