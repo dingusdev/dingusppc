@@ -56,7 +56,8 @@ bool Display::configure(int width, int height) {
 
     if (!impl->display_wnd) { // create display window
         impl->display_wnd = SDL_CreateWindow(
-            "DingusPPC Display",
+            SDL_GetRelativeMouseMode() ?
+                "DingusPPC Display (Mouse Grabbed)" : "DingusPPC Display",
             SDL_WINDOWPOS_UNDEFINED,
             SDL_WINDOWPOS_UNDEFINED,
             width, height,
