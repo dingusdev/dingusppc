@@ -504,6 +504,7 @@ void Sc53C94::sequencer()
     case SeqState::CMD_COMPLETE:
         this->seq_step   = this->cmd_steps->step_num;
         this->int_status = this->cmd_steps->status;
+        this->cur_state = SeqState::IDLE;
         this->update_irq();
         exec_next_command();
         break;
@@ -535,6 +536,7 @@ void Sc53C94::sequencer()
             this->bus_obj->target_next_step();
         }
         this->int_status = INTSTAT_SR;
+        this->cur_state = SeqState::IDLE;
         this->update_irq();
         exec_next_command();
         break;
