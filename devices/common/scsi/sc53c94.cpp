@@ -311,9 +311,9 @@ void Sc53C94::exec_command()
         break;
     case CMD_COMPLETE_STEPS:
         static SeqDesc * complete_steps_desc = new SeqDesc[3]{
-            {SeqState::RCV_STATUS,   0,          0},
-            {SeqState::RCV_MESSAGE,  0,          0},
-            {SeqState::CMD_COMPLETE, 0, INTSTAT_SR}
+            {(CMD_COMPLETE_STEPS << 8) + 1, SeqState::RCV_STATUS,   0,          0},
+            {(CMD_COMPLETE_STEPS << 8) + 2, SeqState::RCV_MESSAGE,  0,          0},
+            {(CMD_COMPLETE_STEPS << 8) + 3, SeqState::CMD_COMPLETE, 0, INTSTAT_SR}
         };
         if (this->bus_obj->current_phase() != ScsiPhase::STATUS) {
             ABORT_F("%s: complete steps only works in the STATUS phase", this->name.c_str());
@@ -335,9 +335,9 @@ void Sc53C94::exec_command()
         break;
     case CMD_SELECT_NO_ATN:
         static SeqDesc * sel_no_atn_desc = new SeqDesc[3]{
-            {SeqState::SEL_BEGIN,    0, INTSTAT_DIS            },
-            {SeqState::SEND_CMD,     3, INTSTAT_SR | INTSTAT_SO},
-            {SeqState::CMD_COMPLETE, 4, INTSTAT_SR | INTSTAT_SO},
+            {(CMD_SELECT_NO_ATN << 8) + 1, SeqState::SEL_BEGIN,    0, INTSTAT_DIS            },
+            {(CMD_SELECT_NO_ATN << 8) + 2, SeqState::SEND_CMD,     3, INTSTAT_SR | INTSTAT_SO},
+            {(CMD_SELECT_NO_ATN << 8) + 3, SeqState::CMD_COMPLETE, 4, INTSTAT_SR | INTSTAT_SO},
         };
         this->seq_step = 0;
         this->cmd_steps = sel_no_atn_desc;
@@ -347,10 +347,10 @@ void Sc53C94::exec_command()
         break;
     case CMD_SELECT_WITH_ATN:
         static SeqDesc * sel_with_atn_desc = new SeqDesc[4]{
-            {SeqState::SEL_BEGIN,    0, INTSTAT_DIS            },
-            {SeqState::SEND_MSG,     2, INTSTAT_SR | INTSTAT_SO},
-            {SeqState::SEND_CMD,     3, INTSTAT_SR | INTSTAT_SO},
-            {SeqState::CMD_COMPLETE, 4, INTSTAT_SR | INTSTAT_SO},
+            {(CMD_SELECT_WITH_ATN << 8) + 1, SeqState::SEL_BEGIN,    0, INTSTAT_DIS            },
+            {(CMD_SELECT_WITH_ATN << 8) + 2, SeqState::SEND_MSG,     2, INTSTAT_SR | INTSTAT_SO},
+            {(CMD_SELECT_WITH_ATN << 8) + 3, SeqState::SEND_CMD,     3, INTSTAT_SR | INTSTAT_SO},
+            {(CMD_SELECT_WITH_ATN << 8) + 4, SeqState::CMD_COMPLETE, 4, INTSTAT_SR | INTSTAT_SO},
         };
         this->seq_step  = 0;
         this->bytes_out = 1; // set message length

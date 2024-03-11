@@ -179,6 +179,7 @@ namespace SeqState {
 
 /** Sequence descriptor for sequencer commands. */
 typedef struct {
+    int seq_id;
     int next_step;
     int step_num;
     int status;
