@@ -384,7 +384,10 @@ void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
         }
         if (value & 2) { // RUN bit set?
             this->curio_dma->reinit(this->scsi_dma_base);
-            this->scsi->real_dma_xfer((value >> 6) & 1);
+            if (value & (1 << 6))
+                this->scsi->real_dma_xfer_out();
+            else
+                this->scsi->real_dma_xfer_in();
         }
         this->curio_dma->write_ctrl(value);
         break;

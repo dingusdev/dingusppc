@@ -207,7 +207,8 @@ public:
     void     pseudo_dma_write(uint16_t data);
 
     // real DMA control
-    void     real_dma_xfer(int direction);
+    void real_dma_xfer_out();
+    void real_dma_xfer_in();
 
     void set_dma_channel(DmaBidirChannel *dma_ch) {
         this->dma_ch = dma_ch;
