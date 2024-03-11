@@ -657,7 +657,7 @@ void Sc53C94::real_dma_xfer_out()
 {
     // transfer data from host's memory to target
 
-    while (this->xfer_count) {
+    if (this->xfer_count) {
         uint32_t got_bytes;
         uint8_t* src_ptr;
         this->dma_ch->pull_data(std::min((int)this->xfer_count, DATA_FIFO_MAX),
@@ -674,6 +674,16 @@ void Sc53C94::real_dma_xfer_out()
             this->sequencer();
         }
     }
+
+    if (this->xfer_count) {
+        this->dma_timer_id = TimerManager::get_instance()->add_oneshot_timer(
+            10000,
+            [this]() {
+                // re-enter the sequencer with the state specified in next_state
+                this->dma_timer_id = 0;
+                this->real_dma_xfer_out();
+        });
+    }
 }
 
 void Sc53C94::real_dma_xfer_in()
@@ -682,24 +692,59 @@ void Sc53C94::real_dma_xfer_in()
 
     // transfer data from target to host's memory
 
-    while (this->xfer_count) {
-        if (this->data_fifo_pos) {
-            this->dma_ch->push_data((char*)this->data_fifo, this->data_fifo_pos);
+    if (this->xfer_count && this->data_fifo_pos) {
+        this->dma_ch->push_data((char*)this->data_fifo, this->data_fifo_pos);
 
-            this->xfer_count -= this->data_fifo_pos;
-            this->data_fifo_pos = 0;
-            if (!this->xfer_count) {
-                is_done = true;
-                this->status |= STAT_TC; // signal zero transfer count
-                this->cur_state = SeqState::XFER_END;
-                this->sequencer();
-            }
-        }
-
-        // see if we need to refill FIFO
-        if (!this->data_fifo_pos && !is_done) {
+        this->xfer_count -= this->data_fifo_pos;
+        this->data_fifo_pos = 0;
+        if (!this->xfer_count) {
+            is_done = true;
+            this->status |= STAT_TC; // signal zero transfer count
+            this->cur_state = SeqState::XFER_END;
             this->sequencer();
         }
+    }
+
+    // see if we need to refill FIFO
+    if (!this->data_fifo_pos && !is_done) {
+        this->sequencer();
+        this->dma_timer_id = TimerManager::get_instance()->add_oneshot_timer(
+            10000,
+            [this]() {
+                // re-enter the sequencer with the state specified in next_state
+                this->dma_timer_id = 0;
+                this->real_dma_xfer_in();
+        });
+    }
+}
+
+void Sc53C94::dma_wait() {
+    if (this->cur_bus_phase == ScsiPhase::DATA_IN && this->cur_state == SeqState::RCV_DATA) {
+        real_dma_xfer_in();
+    }
+    else if (this->cur_bus_phase == ScsiPhase::DATA_OUT && this->cur_state == SeqState::SEND_DATA) {
+        real_dma_xfer_out();
+    }
+    else {
+        this->dma_timer_id = TimerManager::get_instance()->add_oneshot_timer(
+            10000,
+            [this]() {
+                this->dma_timer_id = 0;
+                this->dma_wait();
+        });
+    }
+}
+
+void Sc53C94::dma_start()
+{
+    dma_wait();
+}
+
+void Sc53C94::dma_stop()
+{
+    if (this->dma_timer_id) {
+        TimerManager::get_instance()->cancel_timer(this->dma_timer_id);
+        this->dma_timer_id = 0;
     }
 }
 
