@@ -215,14 +215,14 @@ void Sc53C94::pseudo_dma_write(uint16_t data) {
 
 void Sc53C94::update_command_reg(uint8_t cmd)
 {
-    if (this->on_reset && (cmd & 0x7F) != CMD_NOP) {
+    if (this->on_reset && (cmd & CMD_OPCODE) != CMD_NOP) {
         LOG_F(WARNING, "%s: command register blocked after RESET!", this->name.c_str());
         return;
     }
 
     // NOTE: Reset Device (chip), Reset Bus and DMA Stop commands execute
     // immediately while all others are placed into the command FIFO
-    switch (cmd & 0x7F) {
+    switch (cmd & CMD_OPCODE) {
     case CMD_RESET_DEVICE:
     case CMD_RESET_BUS:
     case CMD_DMA_STOP:
@@ -564,7 +564,7 @@ void Sc53C94::update_irq()
     uint8_t new_irq = !!(this->int_status != 0);
     if (new_irq != this->irq) {
         this->irq = new_irq;
-        this->status = (this->status & 0x7F) | (new_irq << 7);
+        this->status = (this->status & ~STAT_INT) | (new_irq << 7);
         this->int_ctrl->ack_int(this->irq_id, new_irq);
     }
 }
