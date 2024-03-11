@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef DMA_CORE_H
 #define DMA_CORE_H
 
+#include <cstdint>
 #include <string>
 
 enum DmaPullResult : int {
