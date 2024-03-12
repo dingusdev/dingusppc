@@ -101,6 +101,8 @@ int PlatinumCtrl::device_postinit() {
 }
 
 uint32_t PlatinumCtrl::read(uint32_t rgn_start, uint32_t offset, int size) {
+    uint32_t value;
+
     if (rgn_start == VRAM_REGION_BASE) {
         if (offset < this->vram_size) {
             // HACK: half bank configurations should return invalid data
@@ -116,8 +118,6 @@ uint32_t PlatinumCtrl::read(uint32_t rgn_start, uint32_t offset, int size) {
             return (uint32_t)-1;
         }
     }
-
-    uint32_t value;
 
     switch (offset >> 4) {
     case PlatinumReg::CPU_ID:
@@ -195,9 +195,10 @@ uint32_t PlatinumCtrl::read(uint32_t rgn_start, uint32_t offset, int size) {
         value = 0;
     }
 
-    uint32_t result = (uint32_t)( (((uint64_t)value << 32) | value) >> ((8 - (offset & 3) - size) << 3)) & ( (1LL << (size << 3)) - 1 );
-
-    return result;
+    if (size == 4)
+        return value;
+    else
+        return extract_with_wrap_around(value, offset, size);
 }
 
 void PlatinumCtrl::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
