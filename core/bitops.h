@@ -88,4 +88,9 @@ inline void set_bit(T &val, const int bit_num) {
     val |= ((T)1 << bit_num);
 }
 
+static inline uint32_t extract_with_wrap_around(uint32_t val, int pos, int size) {
+    return (uint32_t)((((uint64_t)val << 32) | val) >> ((8 - (pos & 3) - size) << 3)) &
+        ((1LL << (size << 3)) - 1);
+}
+
 #endif // BIT_OPS_H

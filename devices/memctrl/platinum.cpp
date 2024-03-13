@@ -101,6 +101,8 @@ int PlatinumCtrl::device_postinit() {
 }
 
 uint32_t PlatinumCtrl::read(uint32_t rgn_start, uint32_t offset, int size) {
+    uint32_t value;
+
     if (rgn_start == VRAM_REGION_BASE) {
         if (offset < this->vram_size) {
             // HACK: half bank configurations should return invalid data
@@ -116,8 +118,6 @@ uint32_t PlatinumCtrl::read(uint32_t rgn_start, uint32_t offset, int size) {
             return (uint32_t)-1;
         }
     }
-
-    uint32_t value;
 
     switch (offset >> 4) {
     case PlatinumReg::CPU_ID:
@@ -186,8 +186,8 @@ uint32_t PlatinumCtrl::read(uint32_t rgn_start, uint32_t offset, int size) {
     case PlatinumReg::IRIDIUM_CONFIG:
         value = this->iridium_cfg;
         break;
-    case PlatinumReg::_4B:
-        value = this->_4b;
+    case PlatinumReg::POWER_DOWN_CTRL:
+        value = this->power_down_ctrl;
         break;
     default:
         LOG_F(WARNING, "%s: unknown register read at offset 0x%X", this->name.c_str(),
@@ -195,9 +195,10 @@ uint32_t PlatinumCtrl::read(uint32_t rgn_start, uint32_t offset, int size) {
         value = 0;
     }
 
-    uint32_t result = (uint32_t)( (((uint64_t)value << 32) | value) >> ((8 - (offset & 3) - size) << 3)) & ( (1LL << (size << 3)) - 1 );
-
-    return result;
+    if (size == 4)
+        return value;
+    else
+        return extract_with_wrap_around(value, offset, size);
 }
 
 void PlatinumCtrl::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
@@ -328,8 +329,10 @@ void PlatinumCtrl::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
             LOG_F(ERROR, "%s: little-endian system bus is not implemented", this->name.c_str());
         this->iridium_cfg = (this->iridium_cfg & ~7) | (value & 7);
         break;
-    case PlatinumReg::_4B:
-        this->_4b = value;
+    case PlatinumReg::POWER_DOWN_CTRL:
+        this->power_down_ctrl = value;
+        if (value & 1)
+            LOG_F(INFO, "%s: power down mode enabled", this->name.c_str());
         break;
     default:
         LOG_F(WARNING, "%s: unknown register write at offset 0x%X", this->name.c_str(),
