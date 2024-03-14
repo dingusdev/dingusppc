@@ -28,6 +28,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <loguru.hpp>
 #include <machines/machineproperties.h>
 #include <memaccess.h>
+#include <fstream>
+#include <cstring>
 
 using namespace std;
 
