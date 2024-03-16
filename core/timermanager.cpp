@@ -25,6 +25,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "timermanager.h"
 
 #include <cinttypes>
+#include <memory>
+#include <mutex>
 
 TimerManager* TimerManager::timer_manager;
 
