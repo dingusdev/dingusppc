@@ -106,7 +106,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         (addr)[1] = ((uint64_t)(val) >> 48) & 0xFF;                            \
         (addr)[2] = ((uint64_t)(val) >> 40) & 0xFF;                            \
         (addr)[3] = ((uint64_t)(val) >> 32) & 0xFF;                            \
-        (addr)[4] = ((val) >> 24) & 0xFF;                                      \
+        (addr)[4] = ((uint64_t)(val) >> 24) & 0xFF;                            \
         (addr)[5] = ((val) >> 16) & 0xFF;                                      \
         (addr)[6] = ((val) >> 8) & 0xFF;                                       \
         (addr)[7] = (val) & 0xFF;                                              \
