@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef TIMER_MANAGER_H
 #define TIMER_MANAGER_H
 
+#include <atomic>
 #include <algorithm>
 #include <cinttypes>
 #include <functional>
