@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -30,6 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 
 #define ATA_HD_SEC_SIZE 512
+#define ATA_BIOS_LIMIT  16514064
 
 class AtaHardDisk : public AtaBaseDevice
 {
@@ -49,6 +50,7 @@ public:
 protected:
     void        prepare_identify_info();
     uint64_t    get_lba();
+    void        calc_chs_params();
 
 private:
     ImgFile     hdd_img;

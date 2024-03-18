@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -67,6 +67,7 @@ void AtaHardDisk::insert_image(std::string filename) {
 
     this->img_size = this->hdd_img.size();
     this->total_sectors = this->hdd_img.size() / ATA_HD_SEC_SIZE;
+    this->calc_chs_params();
 }
 
 int AtaHardDisk::perform_command() {
@@ -171,12 +172,14 @@ void AtaHardDisk::prepare_identify_info() {
     std::memset(this->data_buf, 0, sizeof(this->data_buf));
 
     buf_ptr[ 0] = 0x0040; // ATA device, non-removable media, non-removable drive
-    buf_ptr[49] = 0x200; // report LBA support
+    buf_ptr[49] = 0x0200; // report LBA support
 
-    // TODO: replace this fictive CHS geometry with the proper one
-    buf_ptr[ 1] = 965;
-    buf_ptr[ 3] = 5;
-    buf_ptr[ 6] = 17;
+    buf_ptr[ 1] = this->cylinders;
+    buf_ptr[ 3] = this->heads;
+    buf_ptr[ 6] = this->sectors;
+
+    buf_ptr[57] = this->total_sectors & 0xFFFFU;
+    buf_ptr[58] = (this->total_sectors >> 16) & 0xFFFFU;
 
     // report LBA capacity
     WRITE_WORD_LE_A(&buf_ptr[60], (this->total_sectors & 0xFFFFU));
@@ -198,6 +201,53 @@ uint64_t AtaHardDisk::get_lba() {
         } else
             return (this->heads * c + h) * this->sectors + s - 1;
     }
+}
+
+void AtaHardDisk::calc_chs_params() {
+    unsigned num_blocks, heads, sectors, max_sectors;
+
+    LOG_F(INFO, "%s: total sectors %d", this->name.c_str(), this->total_sectors);
+
+    // use PC BIOS limit to keep number of sectors small for smaller disks
+    if (this->total_sectors >= ATA_BIOS_LIMIT)
+        max_sectors = 255;
+    else
+        max_sectors = 63;
+
+    num_blocks = this->total_sectors;
+
+    for (heads = 16; heads > 0; heads--)
+        if (!(num_blocks % heads))
+            break;
+
+    this->heads = heads;
+
+    if (!heads) {
+        LOG_F(WARNING, "%s: could not find a suitable number of heads",
+              this->name.c_str());
+        return;
+    }
+
+    num_blocks /= heads;
+
+    for (sectors = max_sectors; sectors > 0; sectors--) {
+        if (!(num_blocks % sectors)) {
+            if (num_blocks / sectors < 65536)
+                break;
+        }
+    }
+
+    this->sectors = sectors;
+
+    if (!sectors) {
+        LOG_F(WARNING, "%s: could not find a suitable CHS translation",
+              this->name.c_str());
+        return;
+    }
+
+    this->cylinders = num_blocks / sectors;
+    LOG_F(INFO, "%s: C=%d, H=%d, S=%d", this->name.c_str(), this->cylinders,
+          this->heads, this->sectors);
 }
 
 static const PropMap AtaHardDiskProperties = {
