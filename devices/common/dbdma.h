@@ -109,6 +109,7 @@ public:
     ~DMAChannel() = default;
 
     void set_callbacks(DbdmaCallback start_cb, DbdmaCallback stop_cb);
+    void set_data_callbacks(DbdmaCallback in_cb, DbdmaCallback out_cb, DbdmaCallback flush_cb);
     uint32_t reg_read(uint32_t offset, int size);
     void reg_write(uint32_t offset, uint32_t value, int size);
     void set_stat(uint8_t new_stat) { this->ch_stat = (this->ch_stat & 0xff00) | new_stat; }
@@ -117,6 +118,10 @@ public:
     bool            is_in_active();
     DmaPullResult   pull_data(uint32_t req_len, uint32_t *avail_len, uint8_t **p_data);
     int             push_data(const char* src_ptr, int len);
+    int             get_pull_data_remaining() { return this->queue_len; }
+    int             get_push_data_remaining() { return this->queue_len; }
+    void            end_pull_data();
+    void            end_push_data();
 
     void register_dma_int(InterruptCtrl* int_ctrl_obj, uint32_t irq_id) {
         this->int_ctrl = int_ctrl_obj;
@@ -138,6 +143,9 @@ protected:
 private:
     std::function<void(void)> start_cb = nullptr; // DMA channel start callback
     std::function<void(void)> stop_cb  = nullptr; // DMA channel stop callback
+    std::function<void(void)> in_cb    = nullptr; // DMA channel in callback
+    std::function<void(void)> out_cb   = nullptr; // DMA channel out callback
+    std::function<void(void)> flush_cb = nullptr; // DMA channel flush callback
 
     uint16_t ch_stat        = 0;
     uint32_t cmd_ptr        = 0;

@@ -39,6 +39,12 @@ void DMAChannel::set_callbacks(DbdmaCallback start_cb, DbdmaCallback stop_cb) {
     this->stop_cb  = stop_cb;
 }
 
+void DMAChannel::set_data_callbacks(DbdmaCallback in_cb, DbdmaCallback out_cb, DbdmaCallback flush_cb) {
+    this->in_cb    = in_cb;
+    this->out_cb   = out_cb;
+    this->flush_cb = flush_cb;
+}
+
 /* Load DMACmd from physical memory. */
 DMACmd* DMAChannel::fetch_cmd(uint32_t cmd_addr, DMACmd* p_cmd, bool *is_writable) {
     MapDmaResult res = mmu_map_dma_mem(cmd_addr, 16, false);
@@ -88,6 +94,18 @@ uint8_t DMAChannel::interpret_cmd() {
             this->queue_data = res.host_va;
             this->res_count  = 0;
             this->cmd_in_progress = true;
+            switch (this->cur_cmd) {
+            case DBDMA_Cmd::OUTPUT_MORE:
+            case DBDMA_Cmd::OUTPUT_LAST:
+                if (this->out_cb)
+                    this->out_cb();
+                break;
+            case DBDMA_Cmd::INPUT_MORE:
+            case DBDMA_Cmd::INPUT_LAST:
+                if (this->in_cb)
+                    this->in_cb();
+                break;
+            }
         } else
             this->finish_cmd();
         break;
@@ -153,6 +171,7 @@ void DMAChannel::finish_cmd() {
 
         if (res.is_writable)
             WRITE_WORD_LE_A(&cmd_desc[14], this->ch_stat | CH_STAT_ACTIVE);
+        this->ch_stat &= ~CH_STAT_FLUSH;
 
         // react to cmd.b (branch) bits
         if (cmd_desc[2] & 0xC) {
@@ -320,9 +339,13 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
         // That means we need to update memory before channel operation
         // is aborted to prevent data loss.
         if (new_stat & CH_STAT_FLUSH) {
-            // NOTE: because this implementation doesn't currently support
-            // partial memory updates no special action is taken here
-            new_stat &= ~CH_STAT_FLUSH;
+            if (this->cur_cmd <= DBDMA_Cmd::INPUT_LAST && this->flush_cb && (new_stat & CH_STAT_ACTIVE) && !(this->ch_stat & CH_STAT_DEAD)) {
+                this->flush_cb();
+            } else {
+                // NOTE: because this implementation doesn't currently support
+                // partial memory updates no special action is taken here
+                new_stat &= ~CH_STAT_FLUSH;
+            }
             this->ch_stat = new_stat;
         }
 
@@ -444,6 +467,40 @@ int DMAChannel::push_data(const char* src_ptr, int len) {
     }
 
     return 0;
+}
+
+void DMAChannel::end_pull_data() {
+    if (this->ch_stat & CH_STAT_DEAD || !(this->ch_stat & CH_STAT_ACTIVE)) {
+        // dead or idle channel? -> no more data
+        LOG_F(WARNING, "%s: Ending Dead/idle channel -> no more data", this->get_name().c_str());
+        return;
+    }
+
+    if (this->queue_len) {
+        this->queue_len = 0;
+    } else {
+        this->ch_stat &= ~CH_STAT_FLUSH;
+    }
+
+    // proceed with the DBDMA program
+    this->interpret_cmd();
+}
+
+void DMAChannel::end_push_data() {
+    if (this->ch_stat & CH_STAT_DEAD || !(this->ch_stat & CH_STAT_ACTIVE)) {
+        LOG_F(WARNING, "%s: Attempt to end push data to dead/idle channel",
+            this->get_name().c_str());
+        return;
+    }
+
+    if (this->queue_len) {
+        this->queue_len = 0;
+    } else {
+        this->ch_stat &= ~CH_STAT_FLUSH;
+    }
+
+    // proceed with the DBDMA program
+    this->interpret_cmd();
 }
 
 bool DMAChannel::is_out_active() {
