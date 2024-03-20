@@ -404,11 +404,29 @@ void ATIRage::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size) {
         break;
     case ATI_CUR_CLR0:
     case ATI_CUR_CLR1:
-        this->setup_hw_cursor();
-        // fallthrough
+        new_value = value;
+        this->cursor_dirty = true;
+        draw_fb = true;
+        WRITE_VALUE_AND_LOG(ATICURSOR);
+        return;
     case ATI_CUR_OFFSET:
-    case ATI_CUR_HORZ_VERT_POSN:
+        new_value = value;
+        if (old_value != new_value)
+            this->cursor_dirty = true;
+        draw_fb = true;
+        WRITE_VALUE_AND_LOG(ATICURSOR);
+        return;
     case ATI_CUR_HORZ_VERT_OFF:
+        new_value = value;
+        if (
+            extract_bits<uint32_t>(new_value, ATI_CUR_VERT_OFF, ATI_CUR_VERT_OFF_size) !=
+            extract_bits<uint32_t>(old_value, ATI_CUR_VERT_OFF, ATI_CUR_VERT_OFF_size)
+        )
+            this->cursor_dirty = true;
+        draw_fb = true;
+        WRITE_VALUE_AND_LOG(ATICURSOR);
+        return;
+    case ATI_CUR_HORZ_VERT_POSN:
         new_value = value;
         draw_fb = true;
         break;
@@ -472,7 +490,7 @@ void ATIRage::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size) {
         new_value = value;
         if (bit_changed(old_value, new_value, ATI_GEN_CUR_ENABLE)) {
             if (bit_set(new_value, ATI_GEN_CUR_ENABLE))
-                this->setup_hw_cursor();
+                this->cursor_on = true;
             else
                 this->cursor_on = false;
             draw_fb = true;
