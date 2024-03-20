@@ -1206,7 +1206,7 @@ static T read_unaligned(uint32_t guest_va, uint8_t *host_va)
     T result = 0;
 
     // is it a misaligned cross-page read?
-    if (((guest_va & 0xFFF) + sizeof(T)) > 0x1000) {
+    if ((sizeof(T) > 1) && ((guest_va & 0xFFF) + sizeof(T)) > 0x1000) {
 #ifdef MMU_PROFILING
         unaligned_crossp_r++;
 #endif
@@ -1249,7 +1249,7 @@ static void write_unaligned(uint32_t guest_va, uint8_t *host_va, T value)
     }
 
     // is it a misaligned cross-page write?
-    if (((guest_va & 0xFFF) + sizeof(T)) > 0x1000) {
+    if ((sizeof(T) > 1) && ((guest_va & 0xFFF) + sizeof(T)) > 0x1000) {
 #ifdef MMU_PROFILING
         unaligned_crossp_w++;
 #endif
