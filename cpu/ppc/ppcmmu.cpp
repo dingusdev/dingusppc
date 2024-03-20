@@ -377,7 +377,7 @@ void mmu_change_mode()
     uint8_t mmu_mode;
 
     // switch ITLB tables first
-    mmu_mode = ((ppc_state.msr >> 4) & 0x2) | ((ppc_state.msr >> 14) & 1);
+    mmu_mode = ((!!(ppc_state.msr & MSR::IR)) << 1) | !!(ppc_state.msr & MSR::PR);
 
     if (CurITLBMode != mmu_mode) {
         switch(mmu_mode) {
@@ -402,7 +402,7 @@ void mmu_change_mode()
     }
 
     // then switch DTLB tables
-    mmu_mode = ((ppc_state.msr >> 3) & 0x2) | ((ppc_state.msr >> 14) & 1);
+    mmu_mode = ((!!(ppc_state.msr & MSR::DR)) << 1) | !!(ppc_state.msr & MSR::PR);
 
     if (CurDTLBMode != mmu_mode) {
         switch(mmu_mode) {
