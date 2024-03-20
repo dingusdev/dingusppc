@@ -115,7 +115,7 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
     ppc_state.spr[SPR::SRR1] = (ppc_state.msr & 0x0000FF73) | srr1_bits;
     ppc_state.msr &= 0xFFFB1041;
     /* copy MSR[ILE] to MSR[LE] */
-    ppc_state.msr = (ppc_state.msr & 0xFFFFFFFE) | ((ppc_state.msr >> 16) & 1);
+    ppc_state.msr = (ppc_state.msr & ~MSR::LE) | !!(ppc_state.msr & MSR::ILE);
 
     if (ppc_state.msr & MSR::IP) {
         ppc_next_instruction_address |= 0xFFF00000;
