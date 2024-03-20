@@ -578,6 +578,15 @@ void DMAChannel::resume() {
     }
 
     LOG_F(INFO, "%s: Resuming DMA channel", this->get_name().c_str());
+
+    // some DBDMA programs contain commands that don't transfer data
+    // between a device and memory (LOAD_QUAD, STORE_QUAD, NOP and STOP).
+    // We thus interprete the DBDMA program until a data transfer between
+    // a device and memory is queued or the channel becomes idle/dead.
+    while (!this->cmd_in_progress && !(this->ch_stat & CH_STAT_DEAD) &&
+           (this->ch_stat & CH_STAT_ACTIVE)) {
+               this->interpret_cmd();
+    }
 }
 
 void DMAChannel::abort() {
