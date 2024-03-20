@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define ESCC_H
 
 #include <devices/common/hwcomponent.h>
+#include <devices/common/dbdma.h>
 #include <devices/serial/chario.h>
 
 #include <cinttypes>
@@ -104,7 +105,55 @@ public:
     void send_byte(uint8_t value);
     uint8_t receive_byte();
 
+    void set_dma_channel(int dir_index, DmaBidirChannel *dma_ch) {
+        this->dma_ch[dir_index] = dma_ch;
+        auto dbdma_ch = dynamic_cast<DMAChannel*>(dma_ch);
+        if (dbdma_ch) {
+            switch (dir_index) {
+            case 0:
+                dbdma_ch->set_callbacks(
+                    std::bind(&EsccChannel::dma_start_tx, this),
+                    std::bind(&EsccChannel::dma_stop_tx, this)
+                );
+                dbdma_ch->set_data_callbacks(
+                    std::bind(&EsccChannel::dma_in_tx, this),
+                    std::bind(&EsccChannel::dma_out_tx, this),
+                    std::bind(&EsccChannel::dma_flush_tx, this)
+                );
+                break;
+            case 1:
+                dbdma_ch->set_callbacks(
+                    std::bind(&EsccChannel::dma_start_rx, this),
+                    std::bind(&EsccChannel::dma_stop_rx, this)
+                );
+                dbdma_ch->set_data_callbacks(
+                    std::bind(&EsccChannel::dma_in_rx, this),
+                    std::bind(&EsccChannel::dma_out_rx, this),
+                    std::bind(&EsccChannel::dma_flush_rx, this)
+                );
+                break;
+            }
+        }
+    };
+
 private:
+    uint32_t timer_id_tx = 0;
+    uint32_t timer_id_rx = 0;
+
+    void dma_start_tx();
+    void dma_stop_tx();
+    void dma_in_tx();
+    void dma_out_tx();
+    void dma_flush_tx();
+
+    void dma_start_rx();
+    void dma_stop_rx();
+    void dma_in_rx();
+    void dma_out_rx();
+    void dma_flush_rx();
+
+    DmaBidirChannel*    dma_ch[2];
+
     std::string     name;
     uint8_t         read_regs[16];
     uint8_t         write_regs[16];
@@ -132,10 +181,11 @@ public:
     uint8_t read(uint8_t reg_offset);
     void    write(uint8_t reg_offset, uint8_t value);
 
-    void dma_start();
-    void dma_stop();
-    void set_dma_channel(int ch_index, DmaBidirChannel *dma_ch) {
-        this->dma_ch[ch_index] = dma_ch;
+    void set_dma_channel(int ch_dir_index, DmaBidirChannel *dma_ch) {
+        switch (ch_dir_index >> 1) {
+        case 0: ch_a->set_dma_channel(ch_dir_index & 1, dma_ch); break;
+        case 1: ch_b->set_dma_channel(ch_dir_index & 1, dma_ch); break;
+        }
     };
 
 private:
@@ -149,8 +199,6 @@ private:
 
     uint8_t master_int_cntrl;
     uint8_t int_vec;
-
-    DmaBidirChannel*    dma_ch[4];
 };
 
 #endif // ESCC_H

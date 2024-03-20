@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Enhanced Serial Communications Controller (ESCC) emulation. */
 
+#include <core/timermanager.h>
 #include <devices/deviceregistry.h>
 #include <devices/serial/chario.h>
 #include <devices/serial/escc.h>
@@ -322,6 +323,97 @@ uint8_t EsccChannel::receive_byte()
     }
     this->read_regs[0] &= ~1;
     return c;
+}
+
+void EsccChannel::dma_start_tx()
+{
+
+}
+
+void EsccChannel::dma_start_rx()
+{
+
+}
+
+void EsccChannel::dma_stop_tx()
+{
+    if (this->timer_id_tx) {
+        TimerManager::get_instance()->cancel_timer(this->timer_id_tx);
+        this->timer_id_tx = 0;
+    }
+}
+
+void EsccChannel::dma_stop_rx()
+{
+    if (this->timer_id_rx) {
+        TimerManager::get_instance()->cancel_timer(this->timer_id_rx);
+        this->timer_id_rx = 0;
+    }
+}
+
+void EsccChannel::dma_in_tx()
+{
+    LOG_F(ERROR, "%s: Unexpected DMA INPUT command for transmit.", this->name.c_str());
+}
+
+void EsccChannel::dma_in_rx()
+{
+    if (dma_ch[1]->get_push_data_remaining()) {
+        this->timer_id_rx = TimerManager::get_instance()->add_oneshot_timer(
+            0,
+            [this]() {
+                this->timer_id_rx = 0;
+                char c = receive_byte();
+                int xx = dma_ch[1]->push_data(&c, 1);
+                this->dma_in_rx();
+        });
+    }
+}
+
+void EsccChannel::dma_out_tx()
+{
+    this->timer_id_tx = TimerManager::get_instance()->add_oneshot_timer(
+        10,
+        [this]() {
+            this->timer_id_tx = 0;
+            uint8_t *data;
+            uint32_t avail_len;
+
+            if (dma_ch[1]->pull_data(256, &avail_len, &data) == MoreData) {
+                while(avail_len) {
+                    this->send_byte(*data++);
+                    avail_len--;
+                }
+                this->dma_out_tx();
+            }
+    });
+}
+
+void EsccChannel::dma_out_rx()
+{
+    LOG_F(ERROR, "%s: Unexpected DMA OUTPUT command for receive.", this->name.c_str());
+}
+
+void EsccChannel::dma_flush_tx()
+{
+    this->dma_stop_tx();
+    this->timer_id_tx = TimerManager::get_instance()->add_oneshot_timer(
+        10,
+        [this]() {
+            this->timer_id_tx = 0;
+            dma_ch[1]->end_pull_data();
+    });
+}
+
+void EsccChannel::dma_flush_rx()
+{
+    this->dma_stop_rx();
+    this->timer_id_rx = TimerManager::get_instance()->add_oneshot_timer(
+        10,
+        [this]() {
+            this->timer_id_rx = 0;
+            dma_ch[1]->end_push_data();
+    });
 }
 
 static const vector<string> CharIoBackends = {"null", "stdio", "socket"};
