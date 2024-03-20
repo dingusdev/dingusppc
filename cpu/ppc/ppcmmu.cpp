@@ -1197,6 +1197,12 @@ template void mmu_write_vmem<uint64_t>(uint32_t guest_va, uint64_t value);
 template <class T>
 static T read_unaligned(uint32_t guest_va, uint8_t *host_va)
 {
+    if ((sizeof(T) == 8) && (guest_va & 3)) {
+#ifndef PPC_TESTS
+        ppc_alignment_exception(guest_va);
+#endif
+    }
+
     T result = 0;
 
     // is it a misaligned cross-page read?
@@ -1222,9 +1228,6 @@ static T read_unaligned(uint32_t guest_va, uint8_t *host_va)
             case 4:
                 return READ_DWORD_BE_U(host_va);
             case 8:
-                if (guest_va & 3) {
-                    ppc_alignment_exception(guest_va);
-                }
                 return READ_QWORD_BE_U(host_va);
         }
     }
@@ -1239,6 +1242,12 @@ template uint64_t read_unaligned<uint64_t>(uint32_t guest_va, uint8_t *host_va);
 template <class T>
 static void write_unaligned(uint32_t guest_va, uint8_t *host_va, T value)
 {
+    if ((sizeof(T) == 8) && (guest_va & 3)) {
+#ifndef PPC_TESTS
+        ppc_alignment_exception(guest_va);
+#endif
+    }
+
     // is it a misaligned cross-page write?
     if (((guest_va & 0xFFF) + sizeof(T)) > 0x1000) {
 #ifdef MMU_PROFILING
@@ -1268,9 +1277,6 @@ static void write_unaligned(uint32_t guest_va, uint8_t *host_va, T value)
                 WRITE_DWORD_BE_U(host_va, value);
                 break;
             case 8:
-                if (guest_va & 3) {
-                    ppc_alignment_exception(guest_va);
-                }
                 WRITE_QWORD_BE_U(host_va, value);
                 break;
         }
