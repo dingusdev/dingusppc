@@ -334,7 +334,7 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
     switch (offset) {
     case DMAReg::CH_CTRL:
         mask     = value >> 16;
-        new_stat = (value & mask & 0xF0FFU) | (old_stat & ~mask);
+        new_stat = (value & mask & 0xF0FFU) | (old_stat & ~(mask & 0xC0FF));
         LOG_F(9, "%s: New ChannelStatus value = 0x%X", this->get_name().c_str(), new_stat);
 
         // update ch_stat.s0...s7 if requested (needed for interrupt generation)
