@@ -75,6 +75,7 @@ protected:
     bool        crtc_on = false;
     bool        blank_on = true;
     bool        cursor_on = false;
+    bool        cursor_dirty = false;
     int         active_width;   // width of the visible display area
     int         active_height;  // height of the visible display area
     int         hori_total = 0;
