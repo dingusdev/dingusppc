@@ -170,9 +170,7 @@ void DMAChannel::finish_cmd() {
                 return;
         }
 
-        if (res.is_writable)
-            WRITE_WORD_LE_A(&cmd_desc[14], this->ch_stat | CH_STAT_ACTIVE);
-        this->ch_stat &= ~CH_STAT_FLUSH;
+        this->ch_stat &= ~CH_STAT_BT;
 
         // react to cmd.b (branch) bits
         if (cmd_desc[2] & 0xC) {
@@ -187,11 +185,16 @@ void DMAChannel::finish_cmd() {
             if (cond) {
                 this->cmd_ptr = READ_DWORD_LE_A(&cmd_desc[8]);
                 branch_taken = true;
+                this->ch_stat |= CH_STAT_BT;
             }
         }
 
         this->update_irq();
     }
+
+    if (res.is_writable)
+        WRITE_WORD_LE_A(&cmd_desc[14], this->ch_stat | CH_STAT_ACTIVE);
+    this->ch_stat &= ~(CH_STAT_FLUSH | CH_STAT_BT);
 
     // all INPUT and OUTPUT commands including LOAD_QUAD and STORE_QUAD update cmd.resCount
     if (this->cur_cmd < DBDMA_Cmd::NOP && res.is_writable) {
