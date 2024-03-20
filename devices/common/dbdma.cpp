@@ -372,9 +372,13 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
                 this->ch_stat = new_stat;
             }
         } else if ((new_stat & CH_STAT_WAKE) != (old_stat & CH_STAT_WAKE)) {
-            new_stat |= CH_STAT_ACTIVE;
-            this->ch_stat = new_stat;
-            this->resume();
+            if (new_stat & CH_STAT_WAKE) {
+                new_stat |= CH_STAT_ACTIVE;
+                this->ch_stat = new_stat;
+                this->resume();
+            } else {
+                LOG_F(ERROR, "%s: Attempt to clear wake status bit 0x%04x", this->get_name().c_str(), CH_STAT_WAKE);
+            }
         } else if ((new_stat & CH_STAT_PAUSE) != (old_stat & CH_STAT_PAUSE)) {
             if (new_stat & CH_STAT_PAUSE) {
                 new_stat &= ~CH_STAT_ACTIVE;
