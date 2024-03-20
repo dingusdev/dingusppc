@@ -757,42 +757,38 @@ void ATIRage::crtc_update() {
     this->crtc_on = true;
 }
 
-void ATIRage::draw_hw_cursor(uint8_t *dst_buf, int dst_pitch) {
-    uint8_t *src_buf, *src_row, *dst_row, px4;
-
-    int vert_offset = extract_bits<uint32_t>(this->regs[ATI_CUR_HORZ_VERT_OFF], ATI_CUR_VERT_OFF, ATI_CUR_VERT_OFF_size);
-
-    src_buf = &this->vram_ptr[this->regs[ATI_CUR_OFFSET] * 8];
-
+void ATIRage::draw_hw_cursor(uint8_t* dst_row, int dst_pitch) {
+    int vert_offset = extract_bits<uint32_t>(
+        this->regs[ATI_CUR_HORZ_VERT_OFF], ATI_CUR_VERT_OFF, ATI_CUR_VERT_OFF_size);
     int cur_height = 64 - vert_offset;
 
     uint32_t color0 = this->regs[ATI_CUR_CLR0] | 0x000000FFUL;
     uint32_t color1 = this->regs[ATI_CUR_CLR1] | 0x000000FFUL;
 
-    for (int h = 0; h < cur_height; h++) {
-        dst_row = &dst_buf[h * dst_pitch];
-        src_row = &src_buf[h * 16];
+    uint64_t* src_row = (uint64_t*)&this->vram_ptr[this->regs[ATI_CUR_OFFSET] * 8];
+    dst_pitch -= 64 * 4;
 
-        for (int x = 0; x < 16; x++) {
-            px4 = src_row[x];
-
-            for (int p = 0; p < 4; p++, px4 >>= 2, dst_row += 4) {
-                switch(px4 & 3) {
-                case 0: // cursor color 0
+    for (int h = cur_height; h > 0; h--) {
+        for (int x = 2; x > 0; x--) {
+            uint64_t px = *src_row++;
+            for (int p = 32; p > 0; p--, px >>= 2, dst_row += 4) {
+                switch (px & 3) {
+                case 0:    // cursor color 0
                     WRITE_DWORD_BE_A(dst_row, color0);
                     break;
-                case 1: // cursor color 1
+                case 1:    // cursor color 1
                     WRITE_DWORD_BE_A(dst_row, color1);
                     break;
-                case 2: // transparent
+                case 2:    // transparent
                     WRITE_DWORD_BE_A(dst_row, 0);
                     break;
-                case 3: // 1's complement of display pixel
+                case 3:    // 1's complement of display pixel
                     WRITE_DWORD_BE_A(dst_row, 0x0000007F);
                     break;
                 }
             }
         }
+        dst_row += dst_pitch;
     }
 }
 
