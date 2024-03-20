@@ -546,6 +546,7 @@ void DMAChannel::start() {
     if (this->ch_stat & CH_STAT_PAUSE) {
         LOG_F(WARNING, "%s: Cannot start DMA channel, PAUSE bit is set",
             this->get_name().c_str());
+        this->ch_stat &= ~CH_STAT_ACTIVE; // TODO: Test this in Open Firmware.
         return;
     }
 
