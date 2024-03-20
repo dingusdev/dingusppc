@@ -569,7 +569,7 @@ void DppcDebugger::enter_debugger() {
 
 #ifndef _WIN32
     struct winsize win_size_previous;
-    ioctl(0, TIOCGWINSZ, &win_size_previous);
+    ioctl(STDIN_FILENO, TIOCGWINSZ, &win_size_previous);
 #endif
 
     while (1) {
@@ -629,7 +629,7 @@ void DppcDebugger::enter_debugger() {
 
     #ifndef _WIN32
                 struct winsize win_size_current;
-                ioctl(0, TIOCGWINSZ, &win_size_current);
+                ioctl(STDIN_FILENO, TIOCGWINSZ, &win_size_current);
                 if (win_size_current.ws_col != win_size_previous.ws_col || win_size_current.ws_row != win_size_previous.ws_row) {
                     win_size_previous = win_size_current;
                     if (cmd.empty()) {
