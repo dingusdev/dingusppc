@@ -726,7 +726,8 @@ void AtiMach64Gx::draw_hw_cursor(uint8_t *dst_buf, int dst_pitch) {
 }
 
 void AtiMach64Gx::get_cursor_position(int& x, int& y) {
-    x = extract_bits<uint32_t>(this->regs[ATI_CUR_HORZ_VERT_POSN], ATI_CUR_HORZ_POSN, ATI_CUR_HORZ_POSN_size);
+    x = extract_bits<uint32_t>(this->regs[ATI_CUR_HORZ_VERT_POSN], ATI_CUR_HORZ_POSN, ATI_CUR_HORZ_POSN_size) -
+        extract_bits<uint32_t>(this->regs[ATI_CUR_HORZ_VERT_OFF ], ATI_CUR_HORZ_OFF , ATI_CUR_HORZ_OFF_size );
     y = extract_bits<uint32_t>(this->regs[ATI_CUR_HORZ_VERT_POSN], ATI_CUR_VERT_POSN, ATI_CUR_VERT_POSN_size);
 }
 
