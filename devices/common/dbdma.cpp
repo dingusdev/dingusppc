@@ -368,15 +368,17 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
             // FLUSH=1 should update memory for INPUT_MORE & INPUT_LAST commands
             // when the channel is active and not dead.
             // Setting FLUSH to 0 has no effect.
-            if ((data & CH_STAT_FLUSH) &&
+            if (
+                (data & CH_STAT_FLUSH) &&
                 this->cur_cmd <= DBDMA_Cmd::INPUT_LAST &&
                 (this->ch_stat & CH_STAT_ACTIVE) &&
-                !(this->ch_stat & CH_STAT_DEAD)) {
-                    if (this->dev_obj != nullptr)
-                        this->dev_obj->notify(this, DMA_MSG_FLUSH);
-                    if (this->flush_cb)
-                        this->flush_cb();
-                }
+                !(this->ch_stat & CH_STAT_DEAD)
+            ) {
+                if (this->dev_obj != nullptr)
+                    this->dev_obj->notify(this, DMA_MSG_FLUSH);
+                if (this->flush_cb)
+                    this->flush_cb();
+            }
             this->ch_stat &= ~CH_STAT_FLUSH;
         }
 
