@@ -131,6 +131,7 @@ uint8_t DMAChannel::interpret_cmd() {
     case DBDMA_Cmd::STOP:
         this->ch_stat &= ~CH_STAT_ACTIVE;
         this->cmd_in_progress = false;
+        this->finish_cmd();
         break;
     default:
         LOG_F(ERROR, "%s: Unsupported DMA command 0x%X", this->get_name().c_str(),
@@ -202,7 +203,7 @@ void DMAChannel::finish_cmd() {
         this->res_count = 0;
     }
 
-    if (!branch_taken)
+    if (this->cur_cmd < DBDMA_Cmd::STOP && !branch_taken)
         this->cmd_ptr += 16;
 
     this->cmd_in_progress = false;
