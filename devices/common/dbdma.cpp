@@ -189,8 +189,6 @@ void DMAChannel::finish_cmd() {
                 this->ch_stat |= CH_STAT_BT;
             }
         }
-
-        this->update_irq();
     }
 
     if (res.is_writable)
@@ -205,6 +203,10 @@ void DMAChannel::finish_cmd() {
 
     if (this->cur_cmd < DBDMA_Cmd::STOP && !branch_taken)
         this->cmd_ptr += 16;
+
+    if (this->cur_cmd < DBDMA_Cmd::STOP) {
+        this->update_irq();
+    }
 
     this->cmd_in_progress = false;
 }
