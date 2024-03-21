@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -22,19 +22,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/memctrl/memctrlbase.h>
 #include <devices/common/mmiodevice.h>
 
-#include <algorithm>    // to shut up MSVC errors (:
+#include <algorithm>
 #include <cstring>
 #include <string>
 #include <vector>
 #include <loguru.hpp>
-
-static inline bool match_mem_entry(const AddressMapEntry* entry,
-                                   const uint32_t start, const uint32_t end,
-                                   MMIODevice* dev_instance)
-{
-    return start == entry->start && end == entry->end &&
-        (!dev_instance || dev_instance == entry->devobj);
-}
 
 MemCtrlBase::~MemCtrlBase() {
     for (auto& entry : address_map) {
@@ -48,6 +40,15 @@ MemCtrlBase::~MemCtrlBase() {
     }
     this->mem_regions.clear();
     this->address_map.clear();
+}
+
+
+static inline bool match_mem_entry(const AddressMapEntry* entry,
+                                   const uint32_t start, const uint32_t end,
+                                   MMIODevice* dev_instance)
+{
+    return start == entry->start && end == entry->end &&
+        (!dev_instance || dev_instance == entry->devobj);
 }
 
 
@@ -149,11 +150,11 @@ bool MemCtrlBase::add_mem_region(uint32_t start_addr, uint32_t size,
 {
     AddressMapEntry *entry;
 
-    /* error if a memory region for the given range already exists */
+    // bail out if a memory region for the given range already exists
     if (!is_range_free(start_addr, size))
         return false;
 
-    uint8_t* reg_content = new uint8_t[size](); /* () intializer clears the memory to zero */
+    uint8_t* reg_content = new uint8_t[size](); // allocate and clear to zero
 
     this->mem_regions.push_back(reg_content);
 
@@ -249,7 +250,7 @@ bool MemCtrlBase::add_mmio_region(uint32_t start_addr, uint32_t size, MMIODevice
 {
     AddressMapEntry *entry;
 
-    /* error if a memory region for the given range already exists */
+    // bail out if a memory region for the given range already exists
     if (!is_range_free(start_addr, size))
         return false;
 
