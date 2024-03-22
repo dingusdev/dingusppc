@@ -178,19 +178,6 @@ extern uint32_t tbr_freq_ghz;
 extern uint64_t tbr_period_ns;
 extern uint32_t rtc_lo, rtc_hi;
 
-extern uint32_t reg_s;
-extern uint32_t reg_d;
-extern uint32_t reg_a;
-extern uint32_t reg_b;
-extern uint32_t reg_c;
-extern uint32_t uimm;
-extern int32_t simm;
-
-// Used for GP calcs
-extern uint32_t ppc_result_a;
-extern uint32_t ppc_result_b;
-extern uint32_t ppc_result_d;
-
 /* Flags for controlling interpreter execution. */
 enum {
     EXEF_BRANCH    = 1 << 0,
@@ -382,23 +369,6 @@ void initialize_ppc_opcode_tables();
 
 extern double fp_return_double(uint32_t reg);
 extern uint64_t fp_return_uint64(uint32_t reg);
-
-extern void ppc_grab_regsda();
-extern void ppc_grab_regsdb();
-
-extern void ppc_grab_regssa();
-extern void ppc_grab_regssb();
-
-extern void ppc_grab_regsdab();
-extern void ppc_grab_regssab();
-
-extern void ppc_grab_regsdasimm();
-extern void ppc_grab_regsdauimm();
-extern void ppc_grab_regsasimm();
-extern void ppc_grab_regssauimm();
-
-extern void ppc_store_result_regd();
-extern void ppc_store_result_rega();
 
 void ppc_changecrf0(uint32_t set_result);
 void set_host_rounding_mode(uint8_t mode);
