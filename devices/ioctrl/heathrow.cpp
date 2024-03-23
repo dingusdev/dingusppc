@@ -341,7 +341,7 @@ void HeathrowIC::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
     case MIO_OHARE_FEAT_CTRL:
         this->feature_control(BYTESWAP_32(value));
         break;
-    case 0x3C:
+    case MIO_AUX_CTRL:
         LOG_F(9, "write %x to MIO:Aux_Ctrl register", value);
         this->aux_ctrl = value;
         break;

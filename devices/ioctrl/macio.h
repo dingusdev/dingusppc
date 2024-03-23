@@ -263,6 +263,7 @@ private:
 enum {
     MIO_OHARE_ID        = 0x34, // IDs register
     MIO_OHARE_FEAT_CTRL = 0x38, // feature control register
+    MIO_AUX_CTRL        = 0x3C,
 };
 
 /** O'Hare/Heathrow DBDMA channels. */
