@@ -512,7 +512,7 @@ void dppc_interpreter::ppc_mulli() {
 }
 
 void dppc_interpreter::ppc_divw() {
-    uint32_t ppc_result_d;
+    uint32_t ppc_result_d = 0;
     ppc_grab_regsdab(ppc_cur_instruction);
 
     if (!ppc_result_b) {                                     /* handle the "anything / 0" case */
@@ -542,7 +542,7 @@ void dppc_interpreter::ppc_divw() {
 }
 
 void dppc_interpreter::ppc_divwu() {
-    uint32_t ppc_result_d;
+    uint32_t ppc_result_d = 0;
     ppc_grab_regsdab(ppc_cur_instruction);
 
     if (!ppc_result_b) { /* division by zero */
@@ -604,7 +604,7 @@ void dppc_interpreter::ppc_sraw() {
 
     if (ppc_result_b & 0x20) {
         // fill rA with the sign bit of rS
-        uint32_t ppc_result_a = int32_t(ppc_result_d) >> 31;
+        ppc_result_a = int32_t(ppc_result_d) >> 31;
         if (ppc_result_a) // if rA is negative
             ppc_state.spr[SPR::XER] |= XER::CA;
     } else {

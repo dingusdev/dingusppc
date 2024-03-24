@@ -94,7 +94,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     uint32_t ppc_result_b   = ppc_state.gpr[reg_b];
 
 #define ppc_store_iresult_reg(reg, ppc_result)\
-    ppc_state.gpr[(reg)] = ppc_result;
+    ppc_state.gpr[reg] = ppc_result;
 
 #define ppc_store_sfpresult_int(reg, ppc_result64_d)\
      ppc_state.fpr[(reg)].int64_r = ppc_result64_d;
