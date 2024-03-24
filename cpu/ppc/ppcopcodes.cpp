@@ -107,8 +107,8 @@ void dppc_interpreter::ppc_addi() {
         ppc_state.gpr[reg_d] = (reg_a == 0) ? simm : (ppc_result_a + simm);
 }
 
-template void dppc_interpreter::ppc_addi<LSHFT>();
-template void dppc_interpreter::ppc_addi<RSHFT>();
+template void dppc_interpreter::ppc_addi<SHFT0>();
+template void dppc_interpreter::ppc_addi<SHFT1>();
 
 template <bool rec>
 void dppc_interpreter::ppc_addic() {
@@ -344,8 +344,8 @@ void dppc_interpreter::ppc_andirc() {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 } 
 
-template void dppc_interpreter::ppc_andirc<LSHFT>();
-template void dppc_interpreter::ppc_andirc<RSHFT>();
+template void dppc_interpreter::ppc_andirc<SHFT0>();
+template void dppc_interpreter::ppc_andirc<SHFT1>();
 
 template <bool shift>
 void dppc_interpreter::ppc_ori() {
@@ -354,8 +354,8 @@ void dppc_interpreter::ppc_ori() {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::ppc_ori<LSHFT>();
-template void dppc_interpreter::ppc_ori<RSHFT>();
+template void dppc_interpreter::ppc_ori<SHFT0>();
+template void dppc_interpreter::ppc_ori<SHFT1>();
 
 template <bool shift>
 void dppc_interpreter::ppc_xori() {
@@ -364,8 +364,8 @@ void dppc_interpreter::ppc_xori() {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::ppc_xori<LSHFT>();
-template void dppc_interpreter::ppc_xori<RSHFT>();
+template void dppc_interpreter::ppc_xori<SHFT0>();
+template void dppc_interpreter::ppc_xori<SHFT1>();
 
 template <int bool_op, bool rec>
 void dppc_interpreter::ppc_do_bool() {
@@ -612,10 +612,10 @@ void dppc_interpreter::ppc_shift() {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::ppc_shift<LSHFT, RC0>();
-template void dppc_interpreter::ppc_shift<LSHFT, RC1>();
-template void dppc_interpreter::ppc_shift<RSHFT, RC0>();
-template void dppc_interpreter::ppc_shift<RSHFT, RC1>();
+template void dppc_interpreter::ppc_shift<SHFT0, RC0>();
+template void dppc_interpreter::ppc_shift<SHFT0, RC1>();
+template void dppc_interpreter::ppc_shift<SHFT1, RC0>();
+template void dppc_interpreter::ppc_shift<SHFT1, RC1>();
 
 template <bool rec>
 void dppc_interpreter::ppc_sraw() {
@@ -1386,12 +1386,10 @@ void dppc_interpreter::ppc_sync() {
 
 void dppc_interpreter::ppc_icbi() {
     /* placeholder */
-    ppc_illegalop();
 }
 
 void dppc_interpreter::ppc_dcbf() {
     /* placeholder */
-    ppc_illegalop();
 }
 
 void dppc_interpreter::ppc_dcbi() {
@@ -1399,12 +1397,10 @@ void dppc_interpreter::ppc_dcbi() {
     num_supervisor_instrs++;
 #endif
     /* placeholder */
-    ppc_illegalop();
 }
 
 void dppc_interpreter::ppc_dcbst() {
     /* placeholder */
-    ppc_illegalop();
 }
 
 void dppc_interpreter::ppc_dcbt() {
@@ -1937,7 +1933,6 @@ void dppc_interpreter::ppc_tlbia() {
     num_supervisor_instrs++;
 #endif
     /* placeholder */
-    ppc_illegalop();
 }
 
 void dppc_interpreter::ppc_tlbld() {
@@ -1945,7 +1940,6 @@ void dppc_interpreter::ppc_tlbld() {
     num_supervisor_instrs++;
 #endif
     /* placeholder */
-    ppc_illegalop();
 }
 
 void dppc_interpreter::ppc_tlbli() {
@@ -1953,7 +1947,6 @@ void dppc_interpreter::ppc_tlbli() {
     num_supervisor_instrs++;
 #endif
     /* placeholder */
-    ppc_illegalop();
 }
 
 void dppc_interpreter::ppc_tlbsync() {
@@ -1961,5 +1954,4 @@ void dppc_interpreter::ppc_tlbsync() {
     num_supervisor_instrs++;
 #endif
     /* placeholder */
-    ppc_illegalop();
 }

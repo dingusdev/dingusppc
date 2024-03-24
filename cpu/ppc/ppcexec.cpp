@@ -134,17 +134,18 @@ public:
 /** Opcode lookup tables. */
 
 /** Primary opcode (bits 0...5) lookup table. */
-static PPCOpcode OpcodeGrabber[] = {
+ static PPCOpcode OpcodeGrabber[] = {
     ppc_illegalop, ppc_illegalop, ppc_illegalop, ppc_twi,       
     ppc_illegalop, ppc_illegalop, ppc_illegalop, ppc_mulli,     
     ppc_subfic,    power_dozi,    ppc_cmpli,     ppc_cmpi,      
-    ppc_addic<false>, ppc_addic<true>, 
-    ppc_addi<false>,  ppc_addi<true>,     
-    ppc_opcode16,  ppc_sc,        ppc_opcode18,  ppc_opcode19<false>,
+    ppc_addic<RC0>,    ppc_addic<RC1>, 
+    ppc_addi<SHFT0>,   ppc_addi<SHFT1>,     
+    ppc_opcode16,      ppc_sc,
+    ppc_opcode18,      ppc_opcode19<NOT601>,
     ppc_rlwimi,    ppc_rlwinm,    power_rlmi,    ppc_rlwnm,     
-    ppc_ori<false>,    ppc_ori<true>, 
-    ppc_xori<false>,   ppc_xori<true>,     
-    ppc_andirc<false>, ppc_andirc<true>,
+    ppc_ori<SHFT0>,    ppc_ori<SHFT1>, 
+    ppc_xori<SHFT0>,   ppc_xori<SHFT1>,     
+    ppc_andirc<SHFT0>, ppc_andirc<SHFT1>,
     ppc_illegalop,     ppc_opcode31,  
     ppc_lz<uint32_t>,  ppc_lzu<uint32_t>, 
     ppc_lz<uint8_t>,   ppc_lzu<uint8_t>,      
@@ -161,17 +162,17 @@ static PPCOpcode OpcodeGrabber[] = {
 };
 
 /** Lookup tables for branch instructions. */
-static PPCOpcode SubOpcode16Grabber[] = {
-    dppc_interpreter::ppc_bc<false, false>, //bc
-    dppc_interpreter::ppc_bc<true, false>,  //bcl
-    dppc_interpreter::ppc_bc<false, true>,  //bca
-    dppc_interpreter::ppc_bc<true, true>};  //bcla
+const static PPCOpcode SubOpcode16Grabber[] = {
+    dppc_interpreter::ppc_bc<LK0, AA0>,     // bc
+    dppc_interpreter::ppc_bc<LK1, AA0>,     // bcl
+    dppc_interpreter::ppc_bc<LK0, AA1>,     // bca
+    dppc_interpreter::ppc_bc<LK1, AA1>};    // bcla
 
-static PPCOpcode SubOpcode18Grabber[] = {
-    dppc_interpreter::ppc_b<false, false>, //b
-    dppc_interpreter::ppc_b<true, false>,  //bl
-    dppc_interpreter::ppc_b<false, true>,  //ba
-    dppc_interpreter::ppc_b<true, true>};  //bla
+const static PPCOpcode SubOpcode18Grabber[] = {
+    dppc_interpreter::ppc_b<LK0, AA0>,      // b
+    dppc_interpreter::ppc_b<LK1, AA0>,      // bl
+    dppc_interpreter::ppc_b<LK0, AA1>,      // ba
+    dppc_interpreter::ppc_b<LK1, AA1>};     // bla
 
 /** Instructions decoding tables for integer,
     single floating-point, and double-floating point ops respectively */
@@ -690,8 +691,8 @@ void initialize_ppc_opcode_tables() {
     SubOpcode31Grabber[620] = ppc_eciwx;
     SubOpcode31Grabber[876] = ppc_ecowx;
 
-    SubOpcode31Grabber[48]   = ppc_shift<LSHFT, RC0>;
-    SubOpcode31Grabber[49]   = ppc_shift<LSHFT, RC1>;
+    SubOpcode31Grabber[48]   = ppc_shift<SHFT1, RC0>;
+    SubOpcode31Grabber[49]   = ppc_shift<SHFT1, RC1>;
     SubOpcode31Grabber[56]   = ppc_do_bool<bool_and, RC0>;
     SubOpcode31Grabber[57]   = ppc_do_bool<bool_and, RC1>;
     SubOpcode31Grabber[120]  = ppc_do_bool<bool_andc, RC0>;
@@ -706,8 +707,8 @@ void initialize_ppc_opcode_tables() {
     SubOpcode31Grabber[825]  = ppc_do_bool<bool_orc, RC1>;
     SubOpcode31Grabber[888]  = ppc_do_bool<bool_or, RC0>;
     SubOpcode31Grabber[889]  = ppc_do_bool<bool_or, RC1>;
-    SubOpcode31Grabber[1072] = ppc_shift<RSHFT, RC0>;
-    SubOpcode31Grabber[1073] = ppc_shift<RSHFT, RC1>;
+    SubOpcode31Grabber[1072] = ppc_shift<SHFT0, RC0>;
+    SubOpcode31Grabber[1073] = ppc_shift<SHFT0, RC1>;
     SubOpcode31Grabber[1584] = ppc_sraw<RC0>;
     SubOpcode31Grabber[1585] = ppc_sraw<RC1>;
     SubOpcode31Grabber[1648] = ppc_srawi<RC0>;

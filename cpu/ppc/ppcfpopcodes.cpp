@@ -886,8 +886,8 @@ void dppc_interpreter::ppc_fmr() {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_fmr<false>();
-template void dppc_interpreter::ppc_fmr<true>();
+template void dppc_interpreter::ppc_fmr<RC0>();
+template void dppc_interpreter::ppc_fmr<RC1>();
 
 template <bool for601, bool rec>
 void dppc_interpreter::ppc_mffs() {
@@ -899,10 +899,10 @@ void dppc_interpreter::ppc_mffs() {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_mffs<false, false>();
-template void dppc_interpreter::ppc_mffs<false, true>();
-template void dppc_interpreter::ppc_mffs<true, false>();
-template void dppc_interpreter::ppc_mffs<true, true>();
+template void dppc_interpreter::ppc_mffs<NOT601, RC0>();
+template void dppc_interpreter::ppc_mffs<NOT601, RC1>();
+template void dppc_interpreter::ppc_mffs<IS601, RC0>();
+template void dppc_interpreter::ppc_mffs<IS601, RC1>();
 
 template <bool rec>
 void dppc_interpreter::ppc_mtfsf() {
@@ -934,8 +934,8 @@ void dppc_interpreter::ppc_mtfsf() {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_mtfsf<false>();
-template void dppc_interpreter::ppc_mtfsf<true>();
+template void dppc_interpreter::ppc_mtfsf<RC0>();
+template void dppc_interpreter::ppc_mtfsf<RC1>();
 
 template <bool rec>
 void dppc_interpreter::ppc_mtfsfi() {
@@ -954,8 +954,8 @@ void dppc_interpreter::ppc_mtfsfi() {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_mtfsfi<false>();
-template void dppc_interpreter::ppc_mtfsfi<true>();
+template void dppc_interpreter::ppc_mtfsfi<RC0>();
+template void dppc_interpreter::ppc_mtfsfi<RC1>();
 
 template <bool rec>
 void dppc_interpreter::ppc_mtfsb0() {
@@ -968,8 +968,8 @@ void dppc_interpreter::ppc_mtfsb0() {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_mtfsb0<false>();
-template void dppc_interpreter::ppc_mtfsb0<true>();
+template void dppc_interpreter::ppc_mtfsb0<RC0>();
+template void dppc_interpreter::ppc_mtfsb0<RC1>();
 
 template <bool rec>
 void dppc_interpreter::ppc_mtfsb1() {
@@ -982,8 +982,8 @@ void dppc_interpreter::ppc_mtfsb1() {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_mtfsb1<false>();
-template void dppc_interpreter::ppc_mtfsb1<true>();
+template void dppc_interpreter::ppc_mtfsb1<RC0>();
+template void dppc_interpreter::ppc_mtfsb1<RC1>();
 
 void dppc_interpreter::ppc_mcrfs() {
     int crf_d = (ppc_cur_instruction >> 21) & 0x1C;
