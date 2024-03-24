@@ -331,9 +331,6 @@ extern bool is_601;        // For PowerPC 601 Emulation
 extern bool is_altivec;    // For Altivec Emulation
 extern bool is_64bit;      // For PowerPC G5 Emulation
 
-extern bool rc_flag;    // Record flag
-extern bool oe_flag;    // Overflow flag
-
 // Important Addressing Integers
 extern uint32_t ppc_cur_instruction;
 extern uint32_t ppc_effective_address;
@@ -391,6 +388,35 @@ extern void add_ctx_sync_action(const std::function<void()> &);
 extern void do_ctx_sync(void);
 
 // The functions used by the PowerPC processor
+
+enum bool_fun { 
+    bool_and  = 1, 
+    bool_andc = 2,
+    bool_eqv  = 3,
+    bool_nand = 4,
+    bool_nor  = 5,
+    bool_or   = 6,
+    bool_orc  = 7,
+    bool_xor  = 8,
+};
+
+enum field_setting { 
+    LK0 = 0,
+    LK1 = 1, 
+    AA0 = 0, 
+    AA1 = 1,
+    LSHFT = 0,
+    RSHFT = 1,
+    RC0 = 0,
+    RC1 = 1,
+    OV0 = 0,
+    OV1 = 1,
+    CARRY0 = 0,
+    CARRY1 = 1,
+    IS601  = 0,
+    NOT601 = 1
+};
+
 namespace dppc_interpreter {
 template <bool l, bool for601> extern void ppc_bcctr();
 template <bool l> extern void ppc_bclr();
@@ -404,72 +430,55 @@ extern void ppc_crorc();
 extern void ppc_crxor();
 extern void ppc_isync();
 
-extern void ppc_add();
-extern void ppc_addc();
-extern void ppc_adde();
-extern void ppc_addme();
-extern void ppc_addze();
-extern void ppc_and();
-extern void ppc_andc();
+template <int bool_op, bool rec> extern void ppc_do_bool();
+
+template <bool carry, bool rec, bool ov> extern void ppc_add();
+template <bool rec, bool ov> extern void ppc_adde();
+template <bool rec, bool ov> extern void ppc_addme();
+template <bool rec, bool ov> extern void ppc_addze();
 extern void ppc_cmp();
 extern void ppc_cmpl();
-extern void ppc_cntlzw();
+template <bool rec> extern void ppc_cntlzw();
 extern void ppc_dcbf();
 extern void ppc_dcbi();
 extern void ppc_dcbst();
 extern void ppc_dcbt();
 extern void ppc_dcbtst();
 extern void ppc_dcbz();
-extern void ppc_divw();
-extern void ppc_divwu();
+template <bool rec, bool ov> extern void ppc_divw();
+template <bool rec, bool ov> extern void ppc_divwu();
 extern void ppc_eciwx();
 extern void ppc_ecowx();
 extern void ppc_eieio();
-extern void ppc_eqv();
-extern void ppc_extsb();
-extern void ppc_extsh();
+template <class T, bool rec>extern void ppc_exts();
 extern void ppc_icbi();
 extern void ppc_mftb();
-extern void ppc_lhzux();
-extern void ppc_lhzx();
 extern void ppc_lhaux();
 extern void ppc_lhax();
 extern void ppc_lhbrx();
 extern void ppc_lwarx();
-extern void ppc_lbzux();
-extern void ppc_lbzx();
 extern void ppc_lwbrx();
-extern void ppc_lwzux();
-extern void ppc_lwzx();
+template <class T> extern void ppc_lzx();
+template <class T> extern void ppc_lzux();
 extern void ppc_mcrxr();
 extern void ppc_mfcr();
-extern void ppc_mulhwu();
-extern void ppc_mulhw();
-extern void ppc_mullw();
-extern void ppc_nand();
-extern void ppc_neg();
-extern void ppc_nor();
-extern void ppc_or();
-extern void ppc_orc();
-extern void ppc_slw();
-extern void ppc_srw();
-extern void ppc_sraw();
-extern void ppc_srawi();
-extern void ppc_stbx();
-extern void ppc_stbux();
+template <bool rec> extern void ppc_mulhwu();
+template <bool rec> extern void ppc_mulhw();
+template <bool rec, bool ov> extern void ppc_mullw();
+template <bool rec, bool ov> extern void ppc_neg();
+template <bool left, bool rec> extern void ppc_shift();
+template <bool rec> extern void ppc_sraw();
+template <bool rec> extern void ppc_srawi();
+template <class T> extern void ppc_stx();
+template <class T> extern void ppc_stux();
 extern void ppc_stfiwx();
-extern void ppc_sthx();
-extern void ppc_sthux();
 extern void ppc_sthbrx();
-extern void ppc_stwx();
 extern void ppc_stwcx();
-extern void ppc_stwux();
 extern void ppc_stwbrx();
-extern void ppc_subf();
-extern void ppc_subfc();
-extern void ppc_subfe();
-extern void ppc_subfme();
-extern void ppc_subfze();
+template <bool carry, bool rec, bool ov> extern void ppc_subf();
+template <bool rec, bool ov> extern void ppc_subfe();
+template <bool rec, bool ov> extern void ppc_subfme();
+template <bool rec, bool ov> extern void ppc_subfze();
 extern void ppc_sync();
 extern void ppc_tlbia();
 extern void ppc_tlbie();
@@ -477,7 +486,6 @@ extern void ppc_tlbli();
 extern void ppc_tlbld();
 extern void ppc_tlbsync();
 extern void ppc_tw();
-extern void ppc_xor();
 
 extern void ppc_lswi();
 extern void ppc_lswx();
@@ -496,52 +504,39 @@ extern void ppc_mfspr();
 extern void ppc_mtmsr();
 extern void ppc_mtspr();
 
-extern void ppc_mtfsb0();
-extern void ppc_mtfsb1();
+template <bool rec> extern void ppc_mtfsb0();
+template <bool rec> extern void ppc_mtfsb1();
 extern void ppc_mcrfs();
-extern void ppc_fmr();
-template <bool for601> extern void ppc_mffs();
-extern void ppc_mtfsf();
-extern void ppc_mtfsfi();
+template <bool rec> extern void ppc_fmr();
+template <bool for601, bool rec> extern void ppc_mffs();
+template <bool rec> extern void ppc_mtfsf();
+template <bool rec> extern void ppc_mtfsfi();
 
-extern void ppc_addi();
-extern void ppc_addic();
-extern void ppc_addicdot();
-extern void ppc_addis();
-extern void ppc_andidot();
-extern void ppc_andisdot();
+template <bool shift> extern void ppc_addi();
+template <bool rec> extern void ppc_addic();
+template <bool shift> extern void ppc_andirc();
 template <bool l, bool a> extern void ppc_b();
 template <bool l, bool a> extern void ppc_bc();
 extern void ppc_cmpi();
 extern void ppc_cmpli();
-extern void ppc_lbz();
-extern void ppc_lbzu();
+template <class T> extern void ppc_lz();
+template <class T> extern void ppc_lzu();
 extern void ppc_lha();
 extern void ppc_lhau();
-extern void ppc_lhz();
-extern void ppc_lhzu();
-extern void ppc_lwz();
-extern void ppc_lwzu();
 extern void ppc_lmw();
 extern void ppc_mulli();
-extern void ppc_ori();
-extern void ppc_oris();
+template <bool shift> extern void ppc_ori();
 extern void ppc_rfi();
 extern void ppc_rlwimi();
 extern void ppc_rlwinm();
 extern void ppc_rlwnm();
 extern void ppc_sc();
-extern void ppc_stb();
-extern void ppc_stbu();
-extern void ppc_sth();
-extern void ppc_sthu();
-extern void ppc_stw();
-extern void ppc_stwu();
+template <class T> extern void ppc_st();
+template <class T> extern void ppc_stu();
 extern void ppc_stmw();
 extern void ppc_subfic();
 extern void ppc_twi();
-extern void ppc_xori();
-extern void ppc_xoris();
+template <bool shift> extern void ppc_xori();
 
 extern void ppc_lfs();
 extern void ppc_lfsu();
@@ -560,66 +555,66 @@ extern void ppc_stfdu();
 extern void ppc_stfdx();
 extern void ppc_stfdux();
 
-extern void ppc_fadd();
-extern void ppc_fsub();
-extern void ppc_fmul();
-extern void ppc_fdiv();
-extern void ppc_fadds();
-extern void ppc_fsubs();
-extern void ppc_fmuls();
-extern void ppc_fdivs();
-extern void ppc_fmadd();
-extern void ppc_fmsub();
-extern void ppc_fnmadd();
-extern void ppc_fnmsub();
-extern void ppc_fmadds();
-extern void ppc_fmsubs();
-extern void ppc_fnmadds();
-extern void ppc_fnmsubs();
-extern void ppc_fabs();
-extern void ppc_fnabs();
-extern void ppc_fneg();
-extern void ppc_fsel();
-extern void ppc_fres();
-extern void ppc_fsqrts();
-extern void ppc_fsqrt();
-extern void ppc_frsqrte();
-extern void ppc_frsp();
-extern void ppc_fctiw();
-extern void ppc_fctiwz();
+template <bool rec> extern void ppc_fadd();
+template <bool rec> extern void ppc_fsub();
+template <bool rec> extern void ppc_fmul();
+template <bool rec> extern void ppc_fdiv();
+template <bool rec> extern void ppc_fadds();
+template <bool rec> extern void ppc_fsubs();
+template <bool rec> extern void ppc_fmuls();
+template <bool rec> extern void ppc_fdivs();
+template <bool rec> extern void ppc_fmadd();
+template <bool rec> extern void ppc_fmsub();
+template <bool rec> extern void ppc_fnmadd();
+template <bool rec> extern void ppc_fnmsub();
+template <bool rec> extern void ppc_fmadds();
+template <bool rec> extern void ppc_fmsubs();
+template <bool rec> extern void ppc_fnmadds();
+template <bool rec> extern void ppc_fnmsubs();
+template <bool rec> extern void ppc_fabs();
+template <bool rec> extern void ppc_fnabs();
+template <bool rec> extern void ppc_fneg();
+template <bool rec> extern void ppc_fsel();
+template <bool rec> extern void ppc_fres();
+template <bool rec> extern void ppc_fsqrts();
+template <bool rec> extern void ppc_fsqrt();
+template <bool rec> extern void ppc_frsqrte();
+template <bool rec> extern void ppc_frsp();
+template <bool rec> extern void ppc_fctiw();
+template <bool rec> extern void ppc_fctiwz();
 
 extern void ppc_fcmpo();
 extern void ppc_fcmpu();
 
 // Power-specific instructions
-extern void power_abs();
+template <bool rec, bool ov> extern void power_abs();
 extern void power_clcs();
-extern void power_div();
-extern void power_divs();
-extern void power_doz();
+template <bool rec, bool ov> extern void power_div();
+template <bool rec, bool ov> extern void power_divs();
+template <bool rec, bool ov> extern void power_doz();
 extern void power_dozi();
-extern void power_lscbx();
-extern void power_maskg();
-extern void power_maskir();
-extern void power_mul();
-extern void power_nabs();
+template <bool rec> extern void power_lscbx();
+template <bool rec> extern void power_maskg();
+template <bool rec> extern void power_maskir();
+template <bool rec, bool ov> extern void power_mul();
+template <bool rec, bool ov> extern void power_nabs();
 extern void power_rlmi();
-extern void power_rrib();
-extern void power_sle();
-extern void power_sleq();
-extern void power_sliq();
-extern void power_slliq();
-extern void power_sllq();
-extern void power_slq();
-extern void power_sraiq();
-extern void power_sraq();
-extern void power_sre();
-extern void power_srea();
-extern void power_sreq();
-extern void power_sriq();
-extern void power_srliq();
-extern void power_srlq();
-extern void power_srq();
+template <bool rec> extern void power_rrib();
+template <bool rec> extern void power_sle();
+template <bool rec> extern void power_sleq();
+template <bool rec> extern void power_sliq();
+template <bool rec> extern void power_slliq();
+template <bool rec> extern void power_sllq();
+template <bool rec> extern void power_slq();
+template <bool rec> extern void power_sraiq();
+template <bool rec> extern void power_sraq();
+template <bool rec> extern void power_sre();
+template <bool rec> extern void power_srea();
+template <bool rec> extern void power_sreq();
+template <bool rec> extern void power_sriq();
+template <bool rec> extern void power_srliq();
+template <bool rec> extern void power_srlq();
+template <bool rec> extern void power_srq();
 }    // namespace dppc_interpreter
 
 // AltiVec instructions
