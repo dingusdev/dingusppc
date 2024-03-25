@@ -1438,7 +1438,7 @@ void dppc_interpreter::ppc_st() {
     ppc_grab_regssa(ppc_cur_instruction);
     ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
     ppc_effective_address += reg_a ? ppc_result_a : 0;
-    mmu_write_vmem<uint8_t>(ppc_effective_address, ppc_result_d);
+    mmu_write_vmem<T>(ppc_effective_address, ppc_result_d);
 }
 
 template void dppc_interpreter::ppc_st<uint8_t>();
