@@ -391,7 +391,7 @@ void mmu_change_mode()
                 break;
             case 1:
                 // user mode can't disable translations
-                LOG_F(ERROR, "instruction mmu mode 1 is invalid!");
+                //LOG_F(ERROR, "instruction mmu mode 1 is invalid!"); // this happens alot. Maybe it's not invalid?
                 mmu_mode = 3;
             case 3: // user mode with instruction translation enabled
                 pCurITLB1 = &itlb1_mode3[0];

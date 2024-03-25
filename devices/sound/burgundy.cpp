@@ -62,7 +62,9 @@ uint32_t BurgundyCodec::snd_ctrl_read(uint32_t offset, int size) {
 }
 
 void BurgundyCodec::snd_ctrl_write(uint32_t offset, uint32_t value, int size) {
-    uint8_t reg_addr, cur_byte, last_byte;
+    uint8_t reg_addr;
+    uint8_t cur_byte;
+    //uint8_t last_byte;
 
     value = BYTESWAP_32(value);
 
@@ -71,7 +73,7 @@ void BurgundyCodec::snd_ctrl_write(uint32_t offset, uint32_t value, int size) {
         this->last_ctrl_data = value;
         reg_addr  = (value >> 12) & 0xFF;
         cur_byte  = (value >>  8) & 3;
-        last_byte = (value >> 10) & 3;
+        //last_byte = (value >> 10) & 3;
         if (value & BURGUNDY_REG_WR) {
             uint32_t mask = 0xFFU << (cur_byte * 8);
             this->reg_array[reg_addr] = (this->reg_array[reg_addr] & ~mask) |

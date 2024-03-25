@@ -528,7 +528,7 @@ void dppc_interpreter::ppc_mulli() {
 
 template <bool rec, bool ov>
 void dppc_interpreter::ppc_divw() {
-    uint32_t ppc_result_d;
+    uint32_t ppc_result_d = 0;
     ppc_grab_regsdab(ppc_cur_instruction);
 
     if (!ppc_result_b) {                                     /* handle the "anything / 0" case */
@@ -564,7 +564,7 @@ template void dppc_interpreter::ppc_divw<RC1, OV1>();
 
 template <bool rec, bool ov>
 void dppc_interpreter::ppc_divwu() {
-    uint32_t ppc_result_d;
+    uint32_t ppc_result_d = 0;
     ppc_grab_regsdab(ppc_cur_instruction);
 
     if (!ppc_result_b) { /* division by zero */

@@ -75,6 +75,7 @@ protected:
     bool        crtc_on = false;
     bool        blank_on = true;
     bool        cursor_on = false;
+    bool        cursor_dirty = false;
     int         active_width;   // width of the visible display area
     int         active_height;  // height of the visible display area
     int         hori_total = 0;
@@ -85,6 +86,7 @@ protected:
     int         pixel_format;
     float       pixel_clock;
     float       refresh_rate;
+    bool        draw_fb = true;
 
     uint32_t    palette[256]; // internal DAC palette in RGBA format
 

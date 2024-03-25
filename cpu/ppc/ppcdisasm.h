@@ -24,12 +24,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 #include <string>
+#include <vector>
 
 typedef struct PPCDisasmContext {
     uint32_t instr_addr;
     uint32_t instr_code;
     std::string instr_str;
     bool simplified; /* true if we should output simplified mnemonics */
+    std::vector<std::string> regs_in;
+    std::vector<std::string> regs_out;
 } PPCDisasmContext;
 
 std::string disassemble_single(PPCDisasmContext* ctx);

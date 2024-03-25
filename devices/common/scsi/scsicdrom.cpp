@@ -28,7 +28,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <machines/machineproperties.h>
 #include <memaccess.h>
 
-#include <cinttypes>
 #include <cstring>
 
 using namespace std;
@@ -239,7 +238,7 @@ static char Apple_Copyright_Page_Data[] = "APPLE COMPUTER, INC   ";
 void ScsiCdrom::mode_sense()
 {
     uint8_t page_code = this->cmd_buf[2] & 0x3F;
-    uint8_t alloc_len = this->cmd_buf[4];
+    //uint8_t alloc_len = this->cmd_buf[4];
 
     int num_blocks = this->size_blocks;
 

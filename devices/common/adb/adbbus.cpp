@@ -96,7 +96,7 @@ uint8_t AdbBus::process_command(const uint8_t* in_data, int data_size) {
         if (!this->got_answer)
             return ADB_STAT_TIMEOUT;
     } else {
-        ABORT_F("%s: unsupported ADB command 0x%X", this->name.c_str(), cmd_byte);
+        LOG_F(ERROR, "%s: unsupported ADB command 0x%X", this->name.c_str(), cmd_byte);
     }
 
     return ADB_STAT_OK;
