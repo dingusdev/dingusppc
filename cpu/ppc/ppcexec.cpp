@@ -33,6 +33,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <string>
 
+#ifdef __APPLE__
+#include <mach/mach_time.h>
+#undef EXC_SYSCALL
+static struct mach_timebase_info timebase_info;
+static uint64_t
+ConvertHostTimeToNanos2(uint64_t host_time)
+{
+    if (timebase_info.numer == timebase_info.denom)
+        return host_time;
+    long double answer = host_time;
+    answer *= timebase_info.numer;
+    answer /= timebase_info.denom;
+    return (uint64_t)answer;
+}
+#endif
+
 using namespace std;
 using namespace dppc_interpreter;
 
@@ -65,7 +81,7 @@ bool dec_exception_pending = false;
 uint32_t    glob_bb_start_la;
 
 /* variables related to virtual time */
-bool     g_realtime;
+const bool g_realtime = false;
 uint64_t g_nanoseconds_base;
 uint64_t g_icycles_base;
 uint64_t g_icycles;
@@ -277,9 +293,13 @@ void ppc_main_opcode()
     OpcodeGrabber[(ppc_cur_instruction >> 26) & 0x3F]();
 }
 
-static long long now_ns() {
+long long now_ns() {
+#ifdef __APPLE__
+    return ConvertHostTimeToNanos2(mach_absolute_time());
+#else
     return std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+#endif
 }
 
 uint64_t get_virt_time_ns()
@@ -841,7 +861,9 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool include_601,
     TimerManager::get_instance()->set_notify_changes_cb(&force_cycle_counter_reload);
 
     // initialize time base facility
-    g_realtime = false;
+#ifdef __APPLE__
+    mach_timebase_info(&timebase_info);
+#endif
     g_nanoseconds_base = now_ns();
     g_icycles_base = 0;
     g_icycles = 0;
