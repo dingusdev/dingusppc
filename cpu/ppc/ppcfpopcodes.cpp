@@ -30,11 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cmath>
 #include <cfloat>
 
-// Used for FP calcs
-
 // Storage and register retrieval functions for the floating point functions.
-
-#define GET_FPR(reg)    ppc_state.fpr[(reg)].dbl64_r
 
 double fp_return_double(uint32_t reg) {
     return ppc_state.fpr[reg].dbl64_r;

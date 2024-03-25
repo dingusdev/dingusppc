@@ -166,10 +166,10 @@ void dppc_interpreter::ppc_adde() {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template void dppc_interpreter::ppc_adde<RC0, OV0>();;
-template void dppc_interpreter::ppc_adde<false, true>();
-template void dppc_interpreter::ppc_adde<true, false>();
-template void dppc_interpreter::ppc_adde<true, true>();
+template void dppc_interpreter::ppc_adde<RC0, OV0>();
+template void dppc_interpreter::ppc_adde<RC0, OV1>();
+template void dppc_interpreter::ppc_adde<RC1, OV0>();
+template void dppc_interpreter::ppc_adde<RC1, OV1>();
 
 template <bool rec, bool ov>
 void dppc_interpreter::ppc_addme() {
@@ -191,10 +191,10 @@ void dppc_interpreter::ppc_addme() {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template void dppc_interpreter::ppc_addme<RC0, OV0>();;
-template void dppc_interpreter::ppc_addme<false, true>();
-template void dppc_interpreter::ppc_addme<true, false>();
-template void dppc_interpreter::ppc_addme<true, true>();
+template void dppc_interpreter::ppc_addme<RC0, OV0>();
+template void dppc_interpreter::ppc_addme<RC0, OV1>();
+template void dppc_interpreter::ppc_addme<RC1, OV0>();
+template void dppc_interpreter::ppc_addme<RC1, OV1>();
 
 template <bool rec, bool ov>
 void dppc_interpreter::ppc_addze() {
@@ -216,10 +216,10 @@ void dppc_interpreter::ppc_addze() {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template void dppc_interpreter::ppc_addze<RC0, OV0>();;
-template void dppc_interpreter::ppc_addze<false, true>();
-template void dppc_interpreter::ppc_addze<true, false>();
-template void dppc_interpreter::ppc_addze<true, true>();
+template void dppc_interpreter::ppc_addze<RC0, OV0>();
+template void dppc_interpreter::ppc_addze<RC0, OV1>();
+template void dppc_interpreter::ppc_addze<RC1, OV0>();
+template void dppc_interpreter::ppc_addze<RC1, OV1>();
 
 void dppc_interpreter::ppc_subfic() {
     ppc_grab_regsdasimm(ppc_cur_instruction);
@@ -246,14 +246,14 @@ void dppc_interpreter::ppc_subf() {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template void dppc_interpreter::ppc_subf<false, false, false>();
-template void dppc_interpreter::ppc_subf<false, false, true>();
-template void dppc_interpreter::ppc_subf<false, true, false>();
-template void dppc_interpreter::ppc_subf<false, true, true>();
-template void dppc_interpreter::ppc_subf<true, false, false>();
-template void dppc_interpreter::ppc_subf<true, false, true>();
-template void dppc_interpreter::ppc_subf<true, true, false>();
-template void dppc_interpreter::ppc_subf<true, true, true>();
+template void dppc_interpreter::ppc_subf<CARRY0, RC0, OV0>();
+template void dppc_interpreter::ppc_subf<CARRY0, RC0, OV1>();
+template void dppc_interpreter::ppc_subf<CARRY0, RC1, OV0>();
+template void dppc_interpreter::ppc_subf<CARRY0, RC1, OV1>();
+template void dppc_interpreter::ppc_subf<CARRY1, RC0, OV0>();
+template void dppc_interpreter::ppc_subf<CARRY1, RC0, OV1>();
+template void dppc_interpreter::ppc_subf<CARRY1, RC1, OV0>();
+template void dppc_interpreter::ppc_subf<CARRY1, RC1, OV1>();
 
 template <bool rec, bool ov>
 void dppc_interpreter::ppc_subfe() {
@@ -273,10 +273,10 @@ void dppc_interpreter::ppc_subfe() {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template void dppc_interpreter::ppc_subfe<RC0, OV0>();;
-template void dppc_interpreter::ppc_subfe<false, true>();
-template void dppc_interpreter::ppc_subfe<true, false>();
-template void dppc_interpreter::ppc_subfe<true, true>();
+template void dppc_interpreter::ppc_subfe<RC0, OV0>();
+template void dppc_interpreter::ppc_subfe<RC0, OV1>();
+template void dppc_interpreter::ppc_subfe<RC1, OV0>();
+template void dppc_interpreter::ppc_subfe<RC1, OV1>();
 
 template <bool rec, bool ov>
 void dppc_interpreter::ppc_subfme() {
@@ -302,10 +302,10 @@ void dppc_interpreter::ppc_subfme() {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template void dppc_interpreter::ppc_subfme<RC0, OV0>();;
-template void dppc_interpreter::ppc_subfme<false, true>();
-template void dppc_interpreter::ppc_subfme<true, false>();
-template void dppc_interpreter::ppc_subfme<true, true>();
+template void dppc_interpreter::ppc_subfme<RC0, OV0>();
+template void dppc_interpreter::ppc_subfme<RC0, OV1>();
+template void dppc_interpreter::ppc_subfme<RC1, OV0>();
+template void dppc_interpreter::ppc_subfme<RC1, OV1>();
 
 template <bool rec, bool ov>
 void dppc_interpreter::ppc_subfze() {
@@ -331,10 +331,10 @@ void dppc_interpreter::ppc_subfze() {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template void dppc_interpreter::ppc_subfze<RC0, OV0>();;
-template void dppc_interpreter::ppc_subfze<false, true>();
-template void dppc_interpreter::ppc_subfze<true, false>();
-template void dppc_interpreter::ppc_subfze<true, true>();
+template void dppc_interpreter::ppc_subfze<RC0, OV0>();
+template void dppc_interpreter::ppc_subfze<RC0, OV1>();
+template void dppc_interpreter::ppc_subfze<RC1, OV0>();
+template void dppc_interpreter::ppc_subfze<RC1, OV1>();
 
 template <bool shift>
 void dppc_interpreter::ppc_andirc() {
@@ -350,7 +350,7 @@ template void dppc_interpreter::ppc_andirc<SHFT1>();
 template <bool shift>
 void dppc_interpreter::ppc_ori() {
     ppc_grab_regssauimm(ppc_cur_instruction);
-    ppc_result_a = shift ? (ppc_result_d ^ (uimm << 16)) : (ppc_result_d ^ uimm);
+    ppc_result_a = shift ? (ppc_result_d | (uimm << 16)) : (ppc_result_d | uimm);
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
@@ -393,22 +393,22 @@ void dppc_interpreter::ppc_do_bool() {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::ppc_do_bool<bool_and, false>();
-template void dppc_interpreter::ppc_do_bool<bool_andc, false>();
-template void dppc_interpreter::ppc_do_bool<bool_eqv, false>();
-template void dppc_interpreter::ppc_do_bool<bool_nand, false>();
-template void dppc_interpreter::ppc_do_bool<bool_nor, false>();
-template void dppc_interpreter::ppc_do_bool<bool_or, false>();
-template void dppc_interpreter::ppc_do_bool<bool_orc, false>();
-template void dppc_interpreter::ppc_do_bool<bool_xor, false>();
-template void dppc_interpreter::ppc_do_bool<bool_and, true>();
-template void dppc_interpreter::ppc_do_bool<bool_andc, true>();
-template void dppc_interpreter::ppc_do_bool<bool_eqv, true>();
-template void dppc_interpreter::ppc_do_bool<bool_nand, true>();
-template void dppc_interpreter::ppc_do_bool<bool_nor, true>();
-template void dppc_interpreter::ppc_do_bool<bool_or, true>();
-template void dppc_interpreter::ppc_do_bool<bool_orc, true>();
-template void dppc_interpreter::ppc_do_bool<bool_xor, true>();
+template void dppc_interpreter::ppc_do_bool<bool_and, RC0>();
+template void dppc_interpreter::ppc_do_bool<bool_andc, RC0>();
+template void dppc_interpreter::ppc_do_bool<bool_eqv, RC0>();
+template void dppc_interpreter::ppc_do_bool<bool_nand, RC0>();
+template void dppc_interpreter::ppc_do_bool<bool_nor, RC0>();
+template void dppc_interpreter::ppc_do_bool<bool_or, RC0>();
+template void dppc_interpreter::ppc_do_bool<bool_orc, RC0>();
+template void dppc_interpreter::ppc_do_bool<bool_xor, RC0>();
+template void dppc_interpreter::ppc_do_bool<bool_and, RC1>();
+template void dppc_interpreter::ppc_do_bool<bool_andc, RC1>();
+template void dppc_interpreter::ppc_do_bool<bool_eqv, RC1>();
+template void dppc_interpreter::ppc_do_bool<bool_nand, RC1>();
+template void dppc_interpreter::ppc_do_bool<bool_nor, RC1>();
+template void dppc_interpreter::ppc_do_bool<bool_or, RC1>();
+template void dppc_interpreter::ppc_do_bool<bool_orc, RC1>();
+template void dppc_interpreter::ppc_do_bool<bool_xor, RC1>();
 
 template <bool rec, bool ov>
 void dppc_interpreter::ppc_neg() {
@@ -429,9 +429,9 @@ void dppc_interpreter::ppc_neg() {
 }
 
 template void dppc_interpreter::ppc_neg<RC0, OV0>();;
-template void dppc_interpreter::ppc_neg<false, true>();
-template void dppc_interpreter::ppc_neg<true, false>();
-template void dppc_interpreter::ppc_neg<true, true>();
+template void dppc_interpreter::ppc_neg<RC0, OV1>();
+template void dppc_interpreter::ppc_neg<RC1, OV0>();
+template void dppc_interpreter::ppc_neg<RC1, OV1>();
 
 template <bool rec>
 void dppc_interpreter::ppc_cntlzw() {
@@ -514,10 +514,10 @@ void dppc_interpreter::ppc_mullw() {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template void dppc_interpreter::ppc_mullw<RC0, OV0>();;
-template void dppc_interpreter::ppc_mullw<false, true>();
-template void dppc_interpreter::ppc_mullw<true, false>();
-template void dppc_interpreter::ppc_mullw<true, true>();
+template void dppc_interpreter::ppc_mullw<RC0, OV0>();
+template void dppc_interpreter::ppc_mullw<RC0, OV1>();
+template void dppc_interpreter::ppc_mullw<RC1, OV0>();
+template void dppc_interpreter::ppc_mullw<RC1, OV1>();
 
 void dppc_interpreter::ppc_mulli() {
     ppc_grab_regsdasimm(ppc_cur_instruction);
@@ -558,9 +558,9 @@ void dppc_interpreter::ppc_divw() {
 }
 
 template void dppc_interpreter::ppc_divw<RC0, OV0>();;
-template void dppc_interpreter::ppc_divw<false, true>();
-template void dppc_interpreter::ppc_divw<true, false>();
-template void dppc_interpreter::ppc_divw<true, true>();
+template void dppc_interpreter::ppc_divw<RC0, OV1>();
+template void dppc_interpreter::ppc_divw<RC1, OV0>();
+template void dppc_interpreter::ppc_divw<RC1, OV1>();
 
 template <bool rec, bool ov>
 void dppc_interpreter::ppc_divwu() {
@@ -589,9 +589,9 @@ void dppc_interpreter::ppc_divwu() {
 }
 
 template void dppc_interpreter::ppc_divwu<RC0, OV0>();;
-template void dppc_interpreter::ppc_divwu<false, true>();
-template void dppc_interpreter::ppc_divwu<true, false>();
-template void dppc_interpreter::ppc_divwu<true, true>();
+template void dppc_interpreter::ppc_divwu<RC0, OV1>();
+template void dppc_interpreter::ppc_divwu<RC1, OV0>();
+template void dppc_interpreter::ppc_divwu<RC1, OV1>();
 
 // Value shifting
 
@@ -626,7 +626,7 @@ void dppc_interpreter::ppc_sraw() {
 
     if (ppc_result_b & 0x20) {
         // fill rA with the sign bit of rS
-        uint32_t ppc_result_a = int32_t(ppc_result_d) >> 31;
+        ppc_result_a = int32_t(ppc_result_d) >> 31;
         if (ppc_result_a) // if rA is negative
             ppc_state.spr[SPR::XER] |= XER::CA;
     } else {
@@ -1032,10 +1032,10 @@ void dppc_interpreter::ppc_exts() {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::ppc_exts<int8_t, false>();
-template void dppc_interpreter::ppc_exts<int16_t, false>();
-template void dppc_interpreter::ppc_exts<int8_t, true>();
-template void dppc_interpreter::ppc_exts<int16_t, true>();
+template void dppc_interpreter::ppc_exts<int8_t, RC0>();
+template void dppc_interpreter::ppc_exts<int16_t, RC0>();
+template void dppc_interpreter::ppc_exts<int8_t, RC1>();
+template void dppc_interpreter::ppc_exts<int16_t, RC1>();
 
 // Branching Instructions
 
