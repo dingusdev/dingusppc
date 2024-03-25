@@ -263,11 +263,11 @@ void ppc_opcode19() {
         if (for601)
             ppc_bcctr<RC0, IS601>();
         else
-            ppc_bcctr<RC1, NOT601>();
+            ppc_bcctr<RC0, NOT601>();
         break;
     case 1057:
         if (for601)
-            ppc_bcctr<RC0, IS601>();
+            ppc_bcctr<RC1, IS601>();
         else
             ppc_bcctr<RC1, NOT601>();
         break;
