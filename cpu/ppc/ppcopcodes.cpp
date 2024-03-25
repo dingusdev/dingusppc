@@ -130,9 +130,9 @@ void dppc_interpreter::ppc_add() {
     
     if (carry)
         ppc_carry(ppc_result_a, ppc_result_d);
-    if (rec)
-        ppc_setsoov(ppc_result_a, ~ppc_result_b, ppc_result_d);
     if (ov)
+        ppc_setsoov(ppc_result_a, ~ppc_result_b, ppc_result_d);
+    if (rec)
         ppc_changecrf0(ppc_result_d);
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
