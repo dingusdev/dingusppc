@@ -61,7 +61,6 @@ int initialize_pdm(std::string& id)
     }
 
     // create machine ID register
-    //gMachineObj->add_component("MachineID", new NubusMacID(machine_id));
     gMachineObj->add_device("MachineID", std::unique_ptr<NubusMacID>(new NubusMacID(machine_id)));
     hmc_obj->add_mmio_region(0x5FFFFFFC, 4,
         dynamic_cast<MMIODevice*>(gMachineObj->get_comp_by_name("MachineID")));
@@ -78,9 +77,15 @@ int initialize_pdm(std::string& id)
         return -1;
     }
 
-    // add 8MB of soldered on-board RAM
-    if (!hmc_obj->add_ram_region(0x00000000, 0x800000)) {
-        LOG_F(ERROR, "Could not allocate built-in RAM region!");
+    uint32_t bank_a_size = GET_INT_PROP("rambank1_size");
+    uint32_t bank_b_size = GET_INT_PROP("rambank2_size");
+    if (bank_b_size && bank_a_size != bank_b_size) {
+        LOG_F(ERROR, "rambank1_size and rambank2_size should have equal size");
+        return -1;
+    }
+
+    if (hmc_obj->install_ram(BANK_SIZE_8MB, bank_a_size << 20, bank_b_size << 20)) {
+        LOG_F(ERROR, "Failed to allocate RAM!");
         return -1;
     }
 
@@ -100,9 +105,9 @@ static const vector<string> PDMBuiltinMonitorIDs = {
 
 static const PropMap pm6100_settings = {
     {"rambank1_size",
-        new IntProperty(0, vector<uint32_t>({0, 8, 16, 32, 64, 128}))},
+        new IntProperty(0, vector<uint32_t>({0, 2, 4, 8, 16, 32, 64, 128}))},
     {"rambank2_size",
-        new IntProperty(0, vector<uint32_t>({0, 8, 16, 32, 64, 128}))},
+        new IntProperty(0, vector<uint32_t>({0, 2, 4, 8, 16, 32, 64, 128}))},
     {"mon_id",
         new StrProperty("HiRes12-14in", PDMBuiltinMonitorIDs)},
     {"emmo",
