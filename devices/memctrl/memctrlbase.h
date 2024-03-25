@@ -66,6 +66,8 @@ public:
     virtual bool add_rom_region(uint32_t start_addr, uint32_t size);
     virtual bool add_ram_region(uint32_t start_addr, uint32_t size);
     virtual bool add_mem_mirror(uint32_t start_addr, uint32_t dest_addr);
+    virtual bool add_mem_mirror_partial(uint32_t start_addr, uint32_t dest_addr,
+                                        uint32_t offset, uint32_t size);
 
     virtual bool add_mmio_region(uint32_t start_addr, uint32_t size,
                                  MMIODevice* dev_instance);
@@ -88,6 +90,9 @@ protected:
         uint32_t start_addr, uint32_t size, uint32_t dest_addr, uint32_t type,
         uint8_t init_val
     );
+
+    bool add_mem_mirror_common(uint32_t start_addr, uint32_t dest_addr,
+                               uint32_t offset=0, uint32_t size=0);
 
 private:
     std::vector<uint8_t*> mem_regions;

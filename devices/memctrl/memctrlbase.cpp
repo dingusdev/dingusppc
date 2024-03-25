@@ -165,7 +165,7 @@ bool MemCtrlBase::add_mem_region(uint32_t start_addr, uint32_t size,
     entry->end     = end;
     entry->mirror  = dest_addr;
     entry->type    = type;
-    entry->devobj  = 0;
+    entry->devobj  = nullptr;
     entry->mem_ptr = reg_content;
 
     this->address_map.push_back(entry);
@@ -192,7 +192,8 @@ bool MemCtrlBase::add_ram_region(uint32_t start_addr, uint32_t size) {
 }
 
 
-bool MemCtrlBase::add_mem_mirror(uint32_t start_addr, uint32_t dest_addr) {
+bool MemCtrlBase::add_mem_mirror_common(uint32_t start_addr, uint32_t dest_addr,
+                                        uint32_t offset, uint32_t size) {
     AddressMapEntry *entry, *ref_entry;
 
     ref_entry = find_range(dest_addr);
@@ -201,13 +202,23 @@ bool MemCtrlBase::add_mem_mirror(uint32_t start_addr, uint32_t dest_addr) {
 
     entry = new AddressMapEntry;
 
-    uint32_t end   = start_addr + (ref_entry->end - ref_entry->start);
+    // use origin's size if no size was specified
+    if (!size)
+        size = ref_entry->end - ref_entry->start + 1;
+
+    if (ref_entry->start + offset + size - 1 > ref_entry->end) {
+        LOG_F(ERROR, "Partial mirror outside the origin, offset=0x%X, size=0x%X",
+              offset, size);
+        return false;
+    }
+
+    uint32_t end   = start_addr + size - 1;
     entry->start   = start_addr;
     entry->end     = end;
     entry->mirror  = dest_addr;
     entry->type    = ref_entry->type | RT_MIRROR;
-    entry->devobj  = 0;
-    entry->mem_ptr = ref_entry->mem_ptr;
+    entry->devobj  = nullptr;
+    entry->mem_ptr = ref_entry->mem_ptr + offset;
 
     this->address_map.push_back(entry);
 
@@ -218,7 +229,7 @@ bool MemCtrlBase::add_mem_mirror(uint32_t start_addr, uint32_t dest_addr) {
         entry->type & RT_MMIO ? "MMIO," : "",
         entry->type & RT_MIRROR ? "MIRROR," : "",
         dest_addr,
-        ref_entry->start, ref_entry->end,
+        ref_entry->start + offset, ref_entry->end,
         ref_entry->devobj ? " (" : "",
             ref_entry->devobj ? ref_entry->devobj->get_name().c_str() : "",
             ref_entry->devobj ? ")"
@@ -226,6 +237,17 @@ bool MemCtrlBase::add_mem_mirror(uint32_t start_addr, uint32_t dest_addr) {
     );
 
     return true;
+}
+
+
+bool MemCtrlBase::add_mem_mirror(uint32_t start_addr, uint32_t dest_addr) {
+    return this->add_mem_mirror_common(start_addr, dest_addr);
+}
+
+
+bool MemCtrlBase::add_mem_mirror_partial(uint32_t start_addr, uint32_t dest_addr,
+                                         uint32_t offset, uint32_t size) {
+    return this->add_mem_mirror_common(start_addr, dest_addr, offset, size);
 }
 
 
