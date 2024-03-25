@@ -659,7 +659,7 @@ void initialize_ppc_opcode_tables() {
     SubOpcode31Grabber[174]  = ppc_lzx<uint8_t>;
     SubOpcode31Grabber[238]  = ppc_lzux<uint8_t>;
     SubOpcode31Grabber[558]  = ppc_lzx<uint16_t>;
-    SubOpcode31Grabber[662]  = ppc_lzux<uint16_t>;
+    SubOpcode31Grabber[622]  = ppc_lzux<uint16_t>;
     SubOpcode31Grabber[686]  = ppc_lhax;
     SubOpcode31Grabber[750]  = ppc_lhaux;
     SubOpcode31Grabber[1066] = ppc_lswx;
