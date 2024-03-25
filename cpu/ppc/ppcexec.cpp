@@ -725,7 +725,7 @@ void initialize_ppc_opcode_tables() {
 
     SubOpcode31Grabber[38]   = ppc_mfcr;
     SubOpcode31Grabber[166]  = ppc_mfmsr;
-    SubOpcode31Grabber[144]  = ppc_mtcrf;
+    SubOpcode31Grabber[288]  = ppc_mtcrf;
     SubOpcode31Grabber[292]  = ppc_mtmsr;
     SubOpcode31Grabber[420]  = ppc_mtsr;
     SubOpcode31Grabber[484]  = ppc_mtsrin;
@@ -809,13 +809,13 @@ void initialize_ppc_opcode_tables() {
     SubOpcode31Grabber[2000] = power_nabs<RC0, OV1>;
     SubOpcode31Grabber[2001] = power_nabs<RC1, OV1>;
 
-    SubOpcode31Grabber[306]  = ppc_tlbie;
-    SubOpcode31Grabber[370]  = ppc_tlbia;
-    SubOpcode31Grabber[566]  = ppc_tlbsync;
-    SubOpcode31Grabber[854]  = ppc_eieio;
-    SubOpcode31Grabber[982]  = ppc_icbi;
-    SubOpcode31Grabber[978]  = ppc_tlbld;
-    SubOpcode31Grabber[1010] = ppc_tlbli;
+    SubOpcode31Grabber[612]  = ppc_tlbie;
+    SubOpcode31Grabber[740]  = ppc_tlbia;
+    SubOpcode31Grabber[1132] = ppc_tlbsync;
+    SubOpcode31Grabber[1708] = ppc_eieio;
+    SubOpcode31Grabber[1964] = ppc_icbi;
+    SubOpcode31Grabber[1956] = ppc_tlbld;
+    SubOpcode31Grabber[2020] = ppc_tlbli;
 
     std::fill_n(SubOpcode59Grabber, 64, ppc_illegalop);
     SubOpcode59Grabber[36] = ppc_fdivs<RC0>;
