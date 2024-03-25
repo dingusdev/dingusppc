@@ -127,7 +127,7 @@ template <bool carry, bool rec, bool ov>
 void dppc_interpreter::ppc_add() {
     ppc_grab_regsdab(ppc_cur_instruction);
     uint32_t ppc_result_d = ppc_result_a + ppc_result_b;
-    
+
     if (carry)
         ppc_carry(ppc_result_a, ppc_result_d);
     if (ov)
@@ -528,7 +528,7 @@ void dppc_interpreter::ppc_mulli() {
 
 template <bool rec, bool ov>
 void dppc_interpreter::ppc_divw() {
-    uint32_t ppc_result_d = 0;
+    uint32_t ppc_result_d;
     ppc_grab_regsdab(ppc_cur_instruction);
 
     if (!ppc_result_b) {                                     /* handle the "anything / 0" case */
@@ -564,7 +564,7 @@ template void dppc_interpreter::ppc_divw<RC1, OV1>();
 
 template <bool rec, bool ov>
 void dppc_interpreter::ppc_divwu() {
-    uint32_t ppc_result_d = 0;
+    uint32_t ppc_result_d;
     ppc_grab_regsdab(ppc_cur_instruction);
 
     if (!ppc_result_b) { /* division by zero */
@@ -1597,7 +1597,6 @@ void dppc_interpreter::ppc_lzx() {
 #endif
     ppc_grab_regsdab(ppc_cur_instruction);
     ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
-    // ppc_result_d          = mem_grab_byte(ppc_effective_address);
     uint32_t ppc_result_d = mmu_read_vmem<T>(ppc_effective_address);
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
