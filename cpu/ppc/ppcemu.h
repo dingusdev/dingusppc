@@ -413,8 +413,8 @@ enum field_setting {
     OV1 = 1,
     CARRY0 = 0,
     CARRY1 = 1,
-    IS601  = 0,
-    NOT601 = 1
+    IS601  = 1,
+    NOT601 = 0
 };
 
 namespace dppc_interpreter {
