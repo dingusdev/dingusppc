@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -676,11 +676,12 @@ static inline uint32_t rot_mask(unsigned rot_mb, unsigned rot_me) {
 
 void dppc_interpreter::ppc_rlwimi() {
     ppc_grab_regssa(ppc_cur_instruction);
-    unsigned rot_sh = (ppc_cur_instruction >> 11) & 31;
-    unsigned rot_mb = (ppc_cur_instruction >> 6) & 31;
-    unsigned rot_me = (ppc_cur_instruction >> 1) & 31;
+    unsigned rot_sh = (ppc_cur_instruction >> 11) & 0x1F;
+    unsigned rot_mb = (ppc_cur_instruction >> 6) & 0x1F;
+    unsigned rot_me = (ppc_cur_instruction >> 1) & 0x1F;
     uint32_t mask   = rot_mask(rot_mb, rot_me);
-    uint32_t r      = rot_sh ? ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh))) : ppc_result_d;
+    uint32_t r      = rot_sh ? ((ppc_result_d << rot_sh) |
+                      (ppc_result_d >> (32 - rot_sh))) : ppc_result_d;
     ppc_result_a    = (ppc_result_a & ~mask) | (r & mask);
     if ((ppc_cur_instruction & 0x01) == 1) {
         ppc_changecrf0(ppc_result_a);
@@ -690,11 +691,12 @@ void dppc_interpreter::ppc_rlwimi() {
 
 void dppc_interpreter::ppc_rlwinm() {
     ppc_grab_regssa(ppc_cur_instruction);
-    unsigned rot_sh = (ppc_cur_instruction >> 11) & 31;
-    unsigned rot_mb = (ppc_cur_instruction >> 6) & 31;
-    unsigned rot_me = (ppc_cur_instruction >> 1) & 31;
+    unsigned rot_sh = (ppc_cur_instruction >> 11) & 0x1F;
+    unsigned rot_mb = (ppc_cur_instruction >> 6) & 0x1F;
+    unsigned rot_me = (ppc_cur_instruction >> 1) & 0x1F;
     uint32_t mask   = rot_mask(rot_mb, rot_me);
-    uint32_t r      = rot_sh ? ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh))) : ppc_result_d;
+    uint32_t r      = rot_sh ? ((ppc_result_d << rot_sh) |
+                      (ppc_result_d >> (32 - rot_sh))) : ppc_result_d;
     ppc_result_a    = r & mask;
     if ((ppc_cur_instruction & 0x01) == 1) {
         ppc_changecrf0(ppc_result_a);
@@ -704,12 +706,13 @@ void dppc_interpreter::ppc_rlwinm() {
 
 void dppc_interpreter::ppc_rlwnm() {
     ppc_grab_regssab(ppc_cur_instruction);
-    ppc_result_b &= 31;
-    unsigned rot_mb = (ppc_cur_instruction >> 6) & 31;
-    unsigned rot_me = (ppc_cur_instruction >> 1) & 31;
+    ppc_result_b &= 0x1F;
+    unsigned rot_mb = (ppc_cur_instruction >> 6) & 0x1F;
+    unsigned rot_me = (ppc_cur_instruction >> 1) & 0x1F;
     uint32_t mask   = rot_mask(rot_mb, rot_me);
     uint32_t rot    = ppc_result_b & 0x1F;
-    uint32_t r      = rot ? ((ppc_result_d << rot) | (ppc_result_d >> (32 - rot))) : ppc_result_d;
+    uint32_t r      = rot ? ((ppc_result_d << rot) |
+                      (ppc_result_d >> (32 - rot))) : ppc_result_d;
     ppc_result_a    = r & mask;
     if ((ppc_cur_instruction & 0x01) == 1) {
         ppc_changecrf0(ppc_result_a);
@@ -718,7 +721,7 @@ void dppc_interpreter::ppc_rlwnm() {
 }
 
 void dppc_interpreter::ppc_mfcr() {
-    int reg_d            = (ppc_cur_instruction >> 21) & 31;
+    int reg_d            = (ppc_cur_instruction >> 21) & 0x1F;
     ppc_state.gpr[reg_d] = ppc_state.cr;
 }
 
@@ -729,8 +732,8 @@ void dppc_interpreter::ppc_mtsr() {
     if (ppc_state.msr & MSR::PR) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
     }
-    int reg_s             = (ppc_cur_instruction >> 21) & 31;
-    uint32_t grab_sr      = (ppc_cur_instruction >> 16) & 15;
+    int reg_s             = (ppc_cur_instruction >> 21) & 0x1F;
+    uint32_t grab_sr      = (ppc_cur_instruction >> 16) & 0x0F;
     ppc_state.sr[grab_sr] = ppc_state.gpr[reg_s];
     mmu_pat_ctx_changed();
 }
@@ -755,8 +758,8 @@ void dppc_interpreter::ppc_mfsr() {
     if (ppc_state.msr & MSR::PR) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
     }
-    int reg_d            = (ppc_cur_instruction >> 21) & 31;
-    uint32_t grab_sr     = (ppc_cur_instruction >> 16) & 15;
+    int reg_d            = (ppc_cur_instruction >> 21) & 0x1F;
+    uint32_t grab_sr     = (ppc_cur_instruction >> 16) & 0x0F;
     ppc_state.gpr[reg_d] = ppc_state.sr[grab_sr];
 }
 
@@ -779,7 +782,7 @@ void dppc_interpreter::ppc_mfmsr() {
     if (ppc_state.msr & MSR::PR) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
     }
-    uint32_t reg_d       = (ppc_cur_instruction >> 21) & 31;
+    uint32_t reg_d       = (ppc_cur_instruction >> 21) & 0x1F;
     ppc_state.gpr[reg_d] = ppc_state.msr;
 }
 
@@ -790,7 +793,7 @@ void dppc_interpreter::ppc_mtmsr() {
     if (ppc_state.msr & MSR::PR) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
     }
-    uint32_t reg_s = (ppc_cur_instruction >> 21) & 31;
+    uint32_t reg_s = (ppc_cur_instruction >> 21) & 0x1F;
     ppc_state.msr = ppc_state.gpr[reg_s];
 
     // generate External Interrupt Exception
@@ -888,7 +891,8 @@ static void update_decrementer(uint32_t val) {
 }
 
 void dppc_interpreter::ppc_mfspr() {
-    uint32_t ref_spr = (((ppc_cur_instruction >> 11) & 31) << 5) | ((ppc_cur_instruction >> 16) & 31);
+    uint32_t ref_spr = (((ppc_cur_instruction >> 11) & 0x1F) << 5) |
+                        ((ppc_cur_instruction >> 16) & 0x1F);
 
 #ifdef CPU_PROFILING
     if (ref_spr > 31) {
@@ -910,11 +914,12 @@ void dppc_interpreter::ppc_mfspr() {
         break;
     }
 
-    ppc_state.gpr[(ppc_cur_instruction >> 21) & 31] = ppc_state.spr[ref_spr];
+    ppc_state.gpr[(ppc_cur_instruction >> 21) & 0x1F] = ppc_state.spr[ref_spr];
 }
 
 void dppc_interpreter::ppc_mtspr() {
-    uint32_t ref_spr = (((ppc_cur_instruction >> 11) & 31) << 5) | ((ppc_cur_instruction >> 16) & 31);
+    uint32_t ref_spr = (((ppc_cur_instruction >> 11) & 0x1F) << 5) |
+                        ((ppc_cur_instruction >> 16) & 0x1F);
 
 #ifdef CPU_PROFILING
     if (ref_spr > 31) {
@@ -926,7 +931,7 @@ void dppc_interpreter::ppc_mtspr() {
         return;
     }
 
-    uint32_t val = ppc_state.gpr[(ppc_cur_instruction >> 21) & 31];
+    uint32_t val = ppc_state.gpr[(ppc_cur_instruction >> 21) & 0x1F];
     ppc_state.spr[ref_spr] = val;
 
     switch (ref_spr) {
@@ -976,8 +981,9 @@ void dppc_interpreter::ppc_mtspr() {
 }
 
 void dppc_interpreter::ppc_mftb() {
-    uint32_t ref_spr = (((ppc_cur_instruction >> 11) & 31) << 5) | ((ppc_cur_instruction >> 16) & 31);
-    int reg_d = (ppc_cur_instruction >> 21) & 31;
+    uint32_t ref_spr = (((ppc_cur_instruction >> 11) & 0x1F) << 5) |
+                        ((ppc_cur_instruction >> 16) & 0x1F);
+    int reg_d = (ppc_cur_instruction >> 21) & 0x1F;
 
     uint64_t tbr_value = calc_tbr_value();
 
@@ -1041,7 +1047,7 @@ template void dppc_interpreter::ppc_exts<int16_t, RC1>();
 
 template <field_lk l, field_aa a>
 void dppc_interpreter::ppc_b() {
-    int32_t adr_li               = int32_t((ppc_cur_instruction & ~3UL) << 6) >> 6;
+    int32_t adr_li = int32_t((ppc_cur_instruction & ~3UL) << 6) >> 6;
 
     if (a)
         ppc_next_instruction_address = adr_li;
@@ -1063,8 +1069,8 @@ template <field_lk l, field_aa a>
 void dppc_interpreter::ppc_bc() {
     uint32_t ctr_ok;
     uint32_t cnd_ok;
-    uint32_t br_bo = (ppc_cur_instruction >> 21) & 31;
-    uint32_t br_bi = (ppc_cur_instruction >> 16) & 31;
+    uint32_t br_bo = (ppc_cur_instruction >> 21) & 0x1F;
+    uint32_t br_bi = (ppc_cur_instruction >> 16) & 0x1F;
     int32_t br_bd  = int32_t(int16_t(ppc_cur_instruction & ~3UL));
 
     if (!(br_bo & 0x04)) {
@@ -1094,8 +1100,8 @@ template<field_lk l, field_601 for601>
 void dppc_interpreter::ppc_bcctr() {
     uint32_t ctr_ok;
     uint32_t cnd_ok;
-    uint32_t br_bo = (ppc_cur_instruction >> 21) & 31;
-    uint32_t br_bi = (ppc_cur_instruction >> 16) & 31;
+    uint32_t br_bo = (ppc_cur_instruction >> 21) & 0x1F;
+    uint32_t br_bi = (ppc_cur_instruction >> 16) & 0x1F;
 
     uint32_t ctr = ppc_state.spr[SPR::CTR];
     uint32_t new_ctr;
@@ -1127,8 +1133,8 @@ template void dppc_interpreter::ppc_bcctr<LK1, IS601>();
 
 template <field_lk l>
 void dppc_interpreter::ppc_bclr() {
-    uint32_t br_bo = (ppc_cur_instruction >> 21) & 31;
-    uint32_t br_bi = (ppc_cur_instruction >> 16) & 31;
+    uint32_t br_bo = (ppc_cur_instruction >> 21) & 0x1F;
+    uint32_t br_bi = (ppc_cur_instruction >> 16) & 0x1F;
     uint32_t ctr_ok;
     uint32_t cnd_ok;
 
@@ -1309,9 +1315,9 @@ void dppc_interpreter::ppc_rfi() {
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
-    uint32_t new_srr1_val        = (ppc_state.spr[SPR::SRR1] & 0x87C0FF73UL);
-    uint32_t new_msr_val         = (ppc_state.msr & ~(0x87C0FF73UL));
-    ppc_state.msr                = (new_msr_val | new_srr1_val) & 0xFFFBFFFFUL;
+    uint32_t new_srr1_val   = (ppc_state.spr[SPR::SRR1] & 0x87C0FF73UL);
+    uint32_t new_msr_val    = (ppc_state.msr & ~0x87C0FF73UL);
+    ppc_state.msr           = (new_msr_val | new_srr1_val) & 0xFFFBFFFFUL;
 
     // generate External Interrupt Exception
     // if CPU interrupt line is still asserted
@@ -1347,9 +1353,9 @@ void dppc_interpreter::ppc_sc() {
 }
 
 void dppc_interpreter::ppc_tw() {
-    uint32_t reg_a  = (ppc_cur_instruction >> 11) & 31;
-    uint32_t reg_b  = (ppc_cur_instruction >> 16) & 31;
-    uint32_t ppc_to = (ppc_cur_instruction >> 21) & 31;
+    uint32_t reg_a  = (ppc_cur_instruction >> 11) & 0x1F;
+    uint32_t reg_b  = (ppc_cur_instruction >> 16) & 0x1F;
+    uint32_t ppc_to = (ppc_cur_instruction >> 21) & 0x1F;
     if (((int32_t(ppc_state.gpr[reg_a]) < int32_t(ppc_state.gpr[reg_b])) && (ppc_to & 0x10)) ||
         ((int32_t(ppc_state.gpr[reg_a]) > int32_t(ppc_state.gpr[reg_b])) && (ppc_to & 0x08)) ||
         ((int32_t(ppc_state.gpr[reg_a]) == int32_t(ppc_state.gpr[reg_b])) && (ppc_to & 0x04)) ||
@@ -1785,7 +1791,7 @@ void dppc_interpreter::ppc_lswx() {
     for (;;) {
         if (is_601 && (reg_d == reg_b || (reg_a != 0 && reg_d == reg_a))) {
             // UNTESTED! MPC601 manual is inconsistant on whether reg_b is skipped or not
-            reg_d = (reg_d + 1) & 31; // wrap around through GPR0
+            reg_d = (reg_d + 1) & 0x1F; // wrap around through GPR0
         }
         switch (grab_inb) {
         case 0:
@@ -1802,7 +1808,7 @@ void dppc_interpreter::ppc_lswx() {
             return;
         }
         ppc_state.gpr[reg_d] = mmu_read_vmem<uint32_t>(ppc_effective_address);
-        reg_d = (reg_d + 1) & 31; // wrap around through GPR0
+        reg_d = (reg_d + 1) & 0x1F; // wrap around through GPR0
         ppc_effective_address += 4;
         grab_inb -= 4;
     }
@@ -1924,7 +1930,7 @@ void dppc_interpreter::ppc_tlbie() {
     num_supervisor_instrs++;
 #endif
 
-    tlb_flush_entry(ppc_state.gpr[(ppc_cur_instruction >> 11) & 31]);
+    tlb_flush_entry(ppc_state.gpr[(ppc_cur_instruction >> 11) & 0x1F]);
 }
 
 void dppc_interpreter::ppc_tlbia() {
