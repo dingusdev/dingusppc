@@ -31,9 +31,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 inline void power_setsoov(uint32_t a, uint32_t b, uint32_t d) {
     if ((a ^ b) & (a ^ d) & 0x80000000UL) {
-        ppc_state.spr[SPR::XER] |= 0xC0000000UL;
+        ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
     } else {
-        ppc_state.spr[SPR::XER] &= 0xBFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= ~XER::OV;
     }
 }
 
@@ -51,7 +51,7 @@ void dppc_interpreter::power_abs() {
     if (ppc_result_a == 0x80000000) {
         ppc_result_d = ppc_result_a;
         if (ov)
-            ppc_state.spr[SPR::XER] |= 0xC0000000;
+            ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
 
     } else {
         ppc_result_d = ppc_result_a & 0x7FFFFFFF;
@@ -286,7 +286,7 @@ void dppc_interpreter::power_nabs() {
     if (rec)
         ppc_changecrf0(ppc_result_d);
     if (ov)
-        ppc_state.spr[SPR::XER] &= 0xBFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= ~XER::OV;
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
@@ -458,9 +458,9 @@ void dppc_interpreter::power_sraiq() {
     ppc_state.spr[SPR::MQ] = (ppc_result_d >> rot_sh) | (ppc_result_d << (32 - rot_sh));
 
     if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & mask)) {
-        ppc_state.spr[SPR::XER] |= 0x20000000UL;
+        ppc_state.spr[SPR::XER] |= XER::CA;
     } else {
-        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= ~XER::CA;
     }
 
     if (rec)
@@ -481,9 +481,9 @@ void dppc_interpreter::power_sraq() {
     ppc_state.spr[SPR::MQ] = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
 
     if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & mask)) {
-        ppc_state.spr[SPR::XER] |= 0x20000000UL;
+        ppc_state.spr[SPR::XER] |= XER::CA;
     } else {
-        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= ~XER::CA;
     }
 
     ppc_state.spr[SPR::MQ] = (ppc_result_d >> rot_sh) | (ppc_result_d << (32 - rot_sh));
@@ -523,9 +523,9 @@ void dppc_interpreter::power_srea() {
     ppc_state.spr[SPR::MQ] = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
 
     if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & rot_sh)) {
-        ppc_state.spr[SPR::XER] |= 0x20000000UL;
+        ppc_state.spr[SPR::XER] |= XER::CA;
     } else {
-        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= ~XER::CA;
     }
 
     if (rec)
