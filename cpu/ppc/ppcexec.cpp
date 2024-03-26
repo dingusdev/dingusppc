@@ -575,316 +575,227 @@ void ppc_exec_dbg(volatile uint32_t start_addr, volatile uint32_t size)
     }
 }
 
+#define OP(opcode, subopcode, fn) \
+    SubOpcode ## opcode ## Grabber[((subopcode)<<1)] = fn;
+
+#define OPd(opcode, subopcode, fn) \
+    SubOpcode ## opcode ## Grabber[((subopcode)<<1)] = fn<RC0>; \
+    SubOpcode ## opcode ## Grabber[((subopcode)<<1)+1] = fn<RC1>;
+
+#define OPt(opcode, subopcode, fn) \
+    SubOpcode ## opcode ## Grabber[((subopcode)<<1)] = fn; \
+    SubOpcode ## opcode ## Grabber[((subopcode)<<1)+1] = fn;
+
+#define OPod(opcode, subopcode, fn) \
+    SubOpcode ## opcode ## Grabber[((subopcode)<<1)] = fn<RC0, OV0>; \
+    SubOpcode ## opcode ## Grabber[((subopcode)<<1)+1] = fn<RC1, OV0>; \
+    SubOpcode ## opcode ## Grabber[1024+((subopcode)<<1)] = fn<RC0, OV1>; \
+    SubOpcode ## opcode ## Grabber[1024+((subopcode)<<1)+1] = fn<RC1, OV1>;
+
+#define OPdc(opcode, subopcode, fn, carry) \
+    SubOpcode ## opcode ## Grabber[((subopcode)<<1)] = fn<carry, RC0>; \
+    SubOpcode ## opcode ## Grabber[((subopcode)<<1)+1] = fn<carry, RC1>;
+
+#define OPcod(opcode, subopcode, fn, carry) \
+    SubOpcode ## opcode ## Grabber[((subopcode)<<1)] = fn<carry, RC0, OV0>; \
+    SubOpcode ## opcode ## Grabber[((subopcode)<<1)+1] = fn<carry, RC1, OV0>; \
+    SubOpcode ## opcode ## Grabber[1024+((subopcode)<<1)] = fn<carry, RC0, OV1>; \
+    SubOpcode ## opcode ## Grabber[1024+((subopcode)<<1)+1] = fn<carry, RC1, OV1>;
+
+#define OP31(subopcode, fn) OP(31, subopcode, fn)
+#define OP31d(subopcode, fn) OPd(31, subopcode, fn)
+#define OP31od(subopcode, fn) OPod(31, subopcode, fn)
+#define OP31dc(subopcode, fn, carry) OPdc(31, subopcode, fn, carry)
+#define OP31cod(subopcode, fn, carry) OPcod(31, subopcode, fn, carry)
+
+#define OP59(subopcode, fn) OP(59, subopcode, fn)
+#define OP59d(subopcode, fn) OPd(59, subopcode, fn)
+#define OP59t(subopcode, fn) OPt(59, subopcode, fn)
+
+#define OP63(subopcode, fn) OP(63, subopcode, fn)
+#define OP63d(subopcode, fn) OPd(63, subopcode, fn)
+#define OP63t(subopcode, fn) OPt(63, subopcode, fn)
+#define OP63dc(subopcode, fn, carry) OPdc(63, subopcode, fn, carry)
+
 void initialize_ppc_opcode_tables() {
     std::fill_n(SubOpcode31Grabber, 2048, ppc_illegalop);
-    SubOpcode31Grabber[0]  = ppc_cmp;
-    SubOpcode31Grabber[8]  = ppc_tw;
-    SubOpcode31Grabber[64] = ppc_cmpl;
+    OP31(0,      ppc_cmp);
+    OP31(4,      ppc_tw);
+    OP31(32,     ppc_cmpl);
 
-    SubOpcode31Grabber[16]    = ppc_subf<CARRY1, RC0, OV0>;
-    SubOpcode31Grabber[17]    = ppc_subf<CARRY1, RC1, OV0>;
-    SubOpcode31Grabber[80]    = ppc_subf<CARRY0, RC0, OV0>;
-    SubOpcode31Grabber[81]    = ppc_subf<CARRY0, RC1, OV0>;
-    SubOpcode31Grabber[208]   = ppc_neg<RC0, OV0>;
-    SubOpcode31Grabber[209]   = ppc_neg<RC1, OV0>;
-    SubOpcode31Grabber[272]   = ppc_subfe<RC0, OV0>;
-    SubOpcode31Grabber[273]   = ppc_subfe<RC1, OV0>;
-    SubOpcode31Grabber[400]   = ppc_subfze<RC0, OV0>;
-    SubOpcode31Grabber[401]   = ppc_subfze<RC1, OV0>;
-    SubOpcode31Grabber[464]   = ppc_subfme<RC0, OV0>;
-    SubOpcode31Grabber[465]   = ppc_subfme<RC1, OV0>;
+    OP31cod(8,   ppc_subf, CARRY1);
+    OP31cod(40,  ppc_subf, CARRY0);
+    OP31od(104,  ppc_neg);
+    OP31od(136,  ppc_subfe);
+    OP31od(200,  ppc_subfze);
+    OP31od(232,  ppc_subfme);
 
-    SubOpcode31Grabber[1040]  = ppc_subf<CARRY1, RC0, OV1>;
-    SubOpcode31Grabber[1041]  = ppc_subf<CARRY1, RC1, OV1>;
-    SubOpcode31Grabber[1104]  = ppc_subf<CARRY0, RC0, OV1>;
-    SubOpcode31Grabber[1105]  = ppc_subf<CARRY0, RC1, OV1>;
-    SubOpcode31Grabber[1232]  = ppc_neg<RC0, OV1>;
-    SubOpcode31Grabber[1233]  = ppc_neg<RC1, OV1>;
-    SubOpcode31Grabber[1296]  = ppc_subfe<RC0, OV1>;
-    SubOpcode31Grabber[1297]  = ppc_subfe<RC1, OV1>;
-    SubOpcode31Grabber[1424]  = ppc_subfze<RC0, OV1>;
-    SubOpcode31Grabber[1425]  = ppc_subfze<RC1, OV1>;
-    SubOpcode31Grabber[1488]  = ppc_subfme<RC0, OV1>;
-    SubOpcode31Grabber[1489]  = ppc_subfme<RC1, OV1>;
+    OP31cod(10,  ppc_add, CARRY1);
+    OP31od(138,  ppc_adde);
+    OP31od(202,  ppc_addze);
+    OP31od(234,  ppc_addme);
+    OP31cod(266, ppc_add, CARRY0);
 
-    SubOpcode31Grabber[20]   = ppc_add<CARRY1, RC0, OV0>;
-    SubOpcode31Grabber[21]   = ppc_add<CARRY1, RC1, OV0>;
-    SubOpcode31Grabber[276]  = ppc_adde<RC0, OV0>;
-    SubOpcode31Grabber[277]  = ppc_adde<RC1, OV0>;
-    SubOpcode31Grabber[404]  = ppc_addze<RC0, OV0>;
-    SubOpcode31Grabber[405]  = ppc_addze<RC1, OV0>;
-    SubOpcode31Grabber[468]  = ppc_addme<RC0, OV0>;
-    SubOpcode31Grabber[469]  = ppc_addme<RC1, OV0>;
-    SubOpcode31Grabber[532]  = ppc_add<CARRY0, RC0, OV0>;
-    SubOpcode31Grabber[533]  = ppc_add<CARRY0, RC1, OV0>;
+    OP31d(11,    ppc_mulhwu);
+    OP31d(75,    ppc_mulhw);
+    OP31od(235,  ppc_mullw);
+    OP31od(459,  ppc_divwu);
+    OP31od(491,  ppc_divw);
 
-    SubOpcode31Grabber[1044] = ppc_add<CARRY1, RC0, OV1>;
-    SubOpcode31Grabber[1045] = ppc_add<CARRY1, RC1, OV1>;
-    SubOpcode31Grabber[1300] = ppc_adde<RC0, OV1>;
-    SubOpcode31Grabber[1301] = ppc_adde<RC1, OV1>;
-    SubOpcode31Grabber[1428] = ppc_addze<RC0, OV1>;
-    SubOpcode31Grabber[1429] = ppc_addze<RC1, OV1>;
-    SubOpcode31Grabber[1492] = ppc_addme<RC0, OV1>;
-    SubOpcode31Grabber[1493] = ppc_addme<RC1, OV1>;
-    SubOpcode31Grabber[1556] = ppc_add<CARRY0, RC0, OV1>;
-    SubOpcode31Grabber[1557] = ppc_add<CARRY0, RC1, OV1>;
+    OP31(20,     ppc_lwarx);
+    OP31(23,     ppc_lzx<uint32_t>);
+    OP31(55,     ppc_lzux<uint32_t>);
+    OP31(87,     ppc_lzx<uint8_t>);
+    OP31(119,    ppc_lzux<uint8_t>);
+    OP31(279,    ppc_lzx<uint16_t>);
+    OP31(311,    ppc_lzux<uint16_t>);
+    OP31(343,    ppc_lhax);
+    OP31(375,    ppc_lhaux);
+    OP31(533,    ppc_lswx);
+    OP31(534,    ppc_lwbrx);
+    OP31(535,    ppc_lfsx);
+    OP31(567,    ppc_lfsux);
+    OP31(597,    ppc_lswi);
+    OP31(599,    ppc_lfdx);
+    OP31(631,    ppc_lfdux);
+    OP31(790,    ppc_lhbrx);
 
-    SubOpcode31Grabber[22]   = ppc_mulhwu<RC0>;
-    SubOpcode31Grabber[23]   = ppc_mulhwu<RC1>;
-    SubOpcode31Grabber[150]  = ppc_mulhw<RC0>;
-    SubOpcode31Grabber[151]  = ppc_mulhw<RC1>;
-    SubOpcode31Grabber[470]  = ppc_mullw<RC0, OV0>;
-    SubOpcode31Grabber[471]  = ppc_mullw<RC1, OV0>;
-    SubOpcode31Grabber[918]  = ppc_divwu<RC0, OV0>;
-    SubOpcode31Grabber[919]  = ppc_divwu<RC1, OV0>;
-    SubOpcode31Grabber[982]  = ppc_divw<RC0, OV0>;
-    SubOpcode31Grabber[983]  = ppc_divw<RC1, OV0>;
+    SubOpcode31Grabber[(150<<1)+1] = ppc_stwcx; // No Rc=0 variant.
+    OP31(151,    ppc_stx<uint32_t>);
+    OP31(183,    ppc_stux<uint32_t>);
+    OP31(215,    ppc_stx<uint8_t>);
+    OP31(247,    ppc_stux<uint8_t>);
+    OP31(407,    ppc_stx<uint16_t>);
+    OP31(439,    ppc_stux<uint16_t>);
+    OP31(661,    ppc_stswx);
+    OP31(662,    ppc_stwbrx);
+    OP31(663,    ppc_stfsx);
+    OP31(695,    ppc_stfsux);
+    OP31(725,    ppc_stswi);
+    OP31(727,    ppc_stfdx);
+    OP31(759,    ppc_stfdux);
+    OP31(918,    ppc_sthbrx);
+    OP31(983,    ppc_stfiwx);
 
-    SubOpcode31Grabber[1494] = ppc_mullw<RC0, OV1>;
-    SubOpcode31Grabber[1495] = ppc_mullw<RC1, OV1>;
-    SubOpcode31Grabber[1942] = ppc_divwu<RC0, OV1>;
-    SubOpcode31Grabber[1943] = ppc_divwu<RC1, OV1>;
-    SubOpcode31Grabber[2006] = ppc_divw<RC0, OV1>;
-    SubOpcode31Grabber[2007] = ppc_divw<RC1, OV1>;
+    OP31(310,    ppc_eciwx);
+    OP31(438,    ppc_ecowx);
 
-    SubOpcode31Grabber[40]   = ppc_lwarx;
-    SubOpcode31Grabber[46]   = ppc_lzx<uint32_t>;
-    SubOpcode31Grabber[110]  = ppc_lzux<uint32_t>;
-    SubOpcode31Grabber[174]  = ppc_lzx<uint8_t>;
-    SubOpcode31Grabber[238]  = ppc_lzux<uint8_t>;
-    SubOpcode31Grabber[558]  = ppc_lzx<uint16_t>;
-    SubOpcode31Grabber[622]  = ppc_lzux<uint16_t>;
-    SubOpcode31Grabber[686]  = ppc_lhax;
-    SubOpcode31Grabber[750]  = ppc_lhaux;
-    SubOpcode31Grabber[1066] = ppc_lswx;
-    SubOpcode31Grabber[1068] = ppc_lwbrx;
-    SubOpcode31Grabber[1070] = ppc_lfsx;
-    SubOpcode31Grabber[1134] = ppc_lfsux;
-    SubOpcode31Grabber[1194] = ppc_lswi;
-    SubOpcode31Grabber[1198] = ppc_lfdx;
-    SubOpcode31Grabber[1262] = ppc_lfdux;
-    SubOpcode31Grabber[1580] = ppc_lhbrx;
+    OP31dc(24,   ppc_shift, SHFT1);
+    OP31dc(28,   ppc_do_bool, bool_and);
+    OP31dc(60,   ppc_do_bool, bool_andc);
+    OP31dc(124,  ppc_do_bool, bool_nor);
+    OP31dc(284,  ppc_do_bool, bool_eqv);
+    OP31dc(316,  ppc_do_bool, bool_xor);
+    OP31dc(412,  ppc_do_bool, bool_orc);
+    OP31dc(444,  ppc_do_bool, bool_or);
+    OP31dc(476,  ppc_do_bool, bool_nand);
+    OP31dc(536,  ppc_shift, SHFT0);
+    OP31d(792,   ppc_sraw);
+    OP31d(824,   ppc_srawi);
+    OP31dc(922,  ppc_exts, int16_t);
+    OP31dc(954,  ppc_exts, int8_t);
 
-    SubOpcode31Grabber[301]  = ppc_stwcx;
-    SubOpcode31Grabber[302]  = ppc_stx<uint32_t>;
-    SubOpcode31Grabber[366]  = ppc_stux<uint32_t>;
-    SubOpcode31Grabber[430]  = ppc_stx<uint8_t>;
-    SubOpcode31Grabber[494]  = ppc_stux<uint8_t>;
-    SubOpcode31Grabber[814]  = ppc_stx<uint16_t>;
-    SubOpcode31Grabber[878]  = ppc_stux<uint16_t>;
-    SubOpcode31Grabber[1322] = ppc_stswx;
-    SubOpcode31Grabber[1324] = ppc_stwbrx;
-    SubOpcode31Grabber[1326] = ppc_stfsx;
-    SubOpcode31Grabber[1390] = ppc_stfsux;
-    SubOpcode31Grabber[1450] = ppc_stswi;
-    SubOpcode31Grabber[1454] = ppc_stfdx;
-    SubOpcode31Grabber[1518] = ppc_stfdux;
-    SubOpcode31Grabber[1836] = ppc_sthbrx;
-    SubOpcode31Grabber[1966] = ppc_stfiwx;
+    OP31d(26,    ppc_cntlzw);
 
-    SubOpcode31Grabber[620] = ppc_eciwx;
-    SubOpcode31Grabber[876] = ppc_ecowx;
+    OP31(19,     ppc_mfcr);
+    OP31(83,     ppc_mfmsr);
+    OP31(144,    ppc_mtcrf);
+    OP31(146,    ppc_mtmsr);
+    OP31(210,    ppc_mtsr);
+    OP31(242,    ppc_mtsrin);
+    OP31(339,    ppc_mfspr);
+    OP31(371,    ppc_mftb);
+    OP31(467,    ppc_mtspr);
+    OP31(512,    ppc_mcrxr);
+    OP31(595,    ppc_mfsr);
+    OP31(659,    ppc_mfsrin);
 
-    SubOpcode31Grabber[48]   = ppc_shift<SHFT1, RC0>;
-    SubOpcode31Grabber[49]   = ppc_shift<SHFT1, RC1>;
-    SubOpcode31Grabber[56]   = ppc_do_bool<bool_and, RC0>;
-    SubOpcode31Grabber[57]   = ppc_do_bool<bool_and, RC1>;
-    SubOpcode31Grabber[120]  = ppc_do_bool<bool_andc, RC0>;
-    SubOpcode31Grabber[121]  = ppc_do_bool<bool_andc, RC1>;
-    SubOpcode31Grabber[248]  = ppc_do_bool<bool_nor, RC0>;
-    SubOpcode31Grabber[249]  = ppc_do_bool<bool_nor, RC1>;
-    SubOpcode31Grabber[568]  = ppc_do_bool<bool_eqv, RC0>;
-    SubOpcode31Grabber[569]  = ppc_do_bool<bool_eqv, RC1>;
-    SubOpcode31Grabber[632]  = ppc_do_bool<bool_xor, RC0>;
-    SubOpcode31Grabber[633]  = ppc_do_bool<bool_xor, RC1>;
-    SubOpcode31Grabber[824]  = ppc_do_bool<bool_orc, RC0>;
-    SubOpcode31Grabber[825]  = ppc_do_bool<bool_orc, RC1>;
-    SubOpcode31Grabber[888]  = ppc_do_bool<bool_or, RC0>;
-    SubOpcode31Grabber[889]  = ppc_do_bool<bool_or, RC1>;
-    SubOpcode31Grabber[952]  = ppc_do_bool<bool_nand, RC0>;
-    SubOpcode31Grabber[953]  = ppc_do_bool<bool_nand, RC1>;
-    SubOpcode31Grabber[1072] = ppc_shift<SHFT0, RC0>;
-    SubOpcode31Grabber[1073] = ppc_shift<SHFT0, RC1>;
-    SubOpcode31Grabber[1584] = ppc_sraw<RC0>;
-    SubOpcode31Grabber[1585] = ppc_sraw<RC1>;
-    SubOpcode31Grabber[1648] = ppc_srawi<RC0>;
-    SubOpcode31Grabber[1649] = ppc_srawi<RC1>;
-    SubOpcode31Grabber[1844] = ppc_exts<int16_t, RC0>;
-    SubOpcode31Grabber[1845] = ppc_exts<int16_t, RC1>;
-    SubOpcode31Grabber[1908] = ppc_exts<int8_t, RC0>;
-    SubOpcode31Grabber[1909] = ppc_exts<int8_t, RC1>;
+    OP31(54,     ppc_dcbst);
+    OP31(86,     ppc_dcbf);
+    OP31(246,    ppc_dcbtst);
+    OP31(278,    ppc_dcbt);
+    OP31(598,    ppc_sync);
+    OP31(470,    ppc_dcbi);
+    OP31(1014,   ppc_dcbz);
 
-    SubOpcode31Grabber[52] = ppc_cntlzw<RC0>;
-    SubOpcode31Grabber[53] = ppc_cntlzw<RC1>;
+    if (is_601) {
+        OP31d(29, power_maskg);
+        OP31od(107, power_mul);
+        OP31d(152, power_slq);
+        OP31d(153, power_sle);
+        OP31d(184, power_sliq);
+        OP31d(216, power_sllq);
+        OP31d(217, power_sleq);
+        OP31d(248, power_slliq);
+        OP31od(264, power_doz);
+        OP31d(277, power_lscbx);
+        OP31od(331, power_div);
+        OP31od(360, power_abs);
+        OP31od(363, power_divs);
+        OP31od(488, power_nabs);
+        OP31(531, power_clcs);
+        OP31d(537, power_rrib);
+        OP31d(541, power_maskir);
+        OP31d(664, power_srq);
+        OP31d(665, power_sre);
+        OP31d(696, power_sriq);
+        OP31d(728, power_srlq);
+        OP31d(729, power_sreq);
+        OP31d(760, power_srliq);
+        OP31d(920, power_sraq);
+        OP31d(921, power_srea);
+        OP31d(952, power_sraiq);
+    }
 
-    SubOpcode31Grabber[38]   = ppc_mfcr;
-    SubOpcode31Grabber[166]  = ppc_mfmsr;
-    SubOpcode31Grabber[288]  = ppc_mtcrf;
-    SubOpcode31Grabber[292]  = ppc_mtmsr;
-    SubOpcode31Grabber[420]  = ppc_mtsr;
-    SubOpcode31Grabber[484]  = ppc_mtsrin;
-    SubOpcode31Grabber[678]  = ppc_mfspr;
-    SubOpcode31Grabber[742]  = ppc_mftb;
-    SubOpcode31Grabber[934]  = ppc_mtspr;
-    SubOpcode31Grabber[1024] = ppc_mcrxr;
-    SubOpcode31Grabber[1190] = ppc_mfsr;
-    SubOpcode31Grabber[1318] = ppc_mfsrin;
-
-    SubOpcode31Grabber[108]  = ppc_dcbst;
-    SubOpcode31Grabber[172]  = ppc_dcbf;
-    SubOpcode31Grabber[492]  = ppc_dcbtst;
-    SubOpcode31Grabber[556]  = ppc_dcbt;
-    SubOpcode31Grabber[940]  = ppc_dcbi;
-    SubOpcode31Grabber[1196] = ppc_sync;
-    SubOpcode31Grabber[2028] = ppc_dcbz;
-
-    SubOpcode31Grabber[58]   = power_maskg<RC0>;
-    SubOpcode31Grabber[59]   = power_maskg<RC1>;
-    SubOpcode31Grabber[214]  = power_mul<RC0, OV0>;
-    SubOpcode31Grabber[215]  = power_mul<RC1, OV0>;
-    SubOpcode31Grabber[304]  = power_slq<RC0>;
-    SubOpcode31Grabber[305]  = power_slq<RC1>;
-    SubOpcode31Grabber[306]  = power_sle<RC0>;
-    SubOpcode31Grabber[306]  = power_sle<RC1>;
-    SubOpcode31Grabber[368]  = power_sliq<RC0>;
-    SubOpcode31Grabber[369]  = power_sliq<RC1>;
-    SubOpcode31Grabber[432]  = power_sllq<RC0>;
-    SubOpcode31Grabber[433]  = power_sllq<RC1>;
-    SubOpcode31Grabber[434]  = power_sleq<RC0>;
-    SubOpcode31Grabber[435]  = power_sleq<RC1>;
-    SubOpcode31Grabber[496]  = power_slliq<RC0>;
-    SubOpcode31Grabber[497]  = power_slliq<RC1>;
-    SubOpcode31Grabber[528]  = power_doz<RC0, OV0>;
-    SubOpcode31Grabber[529]  = power_doz<RC1, OV0>;
-    SubOpcode31Grabber[554]  = power_lscbx<RC0>;
-    SubOpcode31Grabber[555]  = power_lscbx<RC1>;
-    SubOpcode31Grabber[662]  = power_div<RC0, OV0>;
-    SubOpcode31Grabber[663]  = power_div<RC1, OV0>;
-    SubOpcode31Grabber[720]  = power_abs<RC0, OV0>;
-    SubOpcode31Grabber[721]  = power_abs<RC1, OV0>;
-    SubOpcode31Grabber[726]  = power_divs<RC0, OV0>;
-    SubOpcode31Grabber[727]  = power_divs<RC1, OV0>;
-    SubOpcode31Grabber[976]  = power_nabs<RC0, OV0>;
-    SubOpcode31Grabber[977]  = power_nabs<RC1, OV0>;
-    SubOpcode31Grabber[1062] = power_clcs;
-    SubOpcode31Grabber[1074] = power_rrib<RC0>;
-    SubOpcode31Grabber[1075] = power_rrib<RC1>;
-    SubOpcode31Grabber[1082] = power_maskir<RC0>;
-    SubOpcode31Grabber[1083] = power_maskir<RC1>;
-    SubOpcode31Grabber[1328] = power_srq<RC0>;
-    SubOpcode31Grabber[1329] = power_srq<RC1>;
-    SubOpcode31Grabber[1330] = power_sre<RC0>;
-    SubOpcode31Grabber[1331] = power_sre<RC1>;
-    SubOpcode31Grabber[1332] = power_sriq<RC0>;
-    SubOpcode31Grabber[1333] = power_sriq<RC1>;
-    SubOpcode31Grabber[1456] = power_srlq<RC0>;
-    SubOpcode31Grabber[1457] = power_srlq<RC1>;
-    SubOpcode31Grabber[1458] = power_sreq<RC0>;
-    SubOpcode31Grabber[1459] = power_sreq<RC1>;
-    SubOpcode31Grabber[1520] = power_srliq<RC0>;
-    SubOpcode31Grabber[1521] = power_srliq<RC1>;
-    SubOpcode31Grabber[1840] = power_sraq<RC0>;
-    SubOpcode31Grabber[1841] = power_sraq<RC1>;
-    SubOpcode31Grabber[1842] = power_srea<RC0>;
-    SubOpcode31Grabber[1843] = power_srea<RC1>;
-    SubOpcode31Grabber[1904] = power_sraiq<RC0>;
-    SubOpcode31Grabber[1905] = power_sraiq<RC1>;
-
-    SubOpcode31Grabber[1238] = power_mul<RC0, OV1>;
-    SubOpcode31Grabber[1239] = power_mul<RC1, OV1>;
-    SubOpcode31Grabber[1552] = power_doz<RC0, OV1>;
-    SubOpcode31Grabber[1553] = power_doz<RC1, OV1>;
-    SubOpcode31Grabber[1686] = power_div<RC0, OV1>;
-    SubOpcode31Grabber[1687] = power_div<RC1, OV1>;
-    SubOpcode31Grabber[1744] = power_abs<RC0, OV1>;
-    SubOpcode31Grabber[1745] = power_abs<RC1, OV1>;
-    SubOpcode31Grabber[1750] = power_divs<RC0, OV1>;
-    SubOpcode31Grabber[1751] = power_divs<RC1, OV1>;
-    SubOpcode31Grabber[2000] = power_nabs<RC0, OV1>;
-    SubOpcode31Grabber[2001] = power_nabs<RC1, OV1>;
-
-    SubOpcode31Grabber[612]  = ppc_tlbie;
-    SubOpcode31Grabber[740]  = ppc_tlbia;
-    SubOpcode31Grabber[1132] = ppc_tlbsync;
-    SubOpcode31Grabber[1708] = ppc_eieio;
-    SubOpcode31Grabber[1964] = ppc_icbi;
-    SubOpcode31Grabber[1956] = ppc_tlbld;
-    SubOpcode31Grabber[2020] = ppc_tlbli;
+    OP31(306,    ppc_tlbie);
+    OP31(370,    ppc_tlbia);
+    OP31(566,    ppc_tlbsync);
+    OP31(854,    ppc_eieio);
+    OP31(982,    ppc_icbi);
+    OP31(978,    ppc_tlbld);
+    OP31(1010,   ppc_tlbli);
 
     std::fill_n(SubOpcode59Grabber, 64, ppc_illegalop);
-    SubOpcode59Grabber[36] = ppc_fdivs<RC0>;
-    SubOpcode59Grabber[37] = ppc_fdivs<RC1>;
-    SubOpcode59Grabber[40] = ppc_fsubs<RC0>;
-    SubOpcode59Grabber[41] = ppc_fsubs<RC1>;
-    SubOpcode59Grabber[42] = ppc_fadds<RC0>;
-    SubOpcode59Grabber[43] = ppc_fadds<RC1>;
-    SubOpcode59Grabber[44] = ppc_fsqrts<RC0>;
-    SubOpcode59Grabber[45] = ppc_fsqrts<RC1>;
-    SubOpcode59Grabber[48] = ppc_fres<RC0>;
-    SubOpcode59Grabber[49] = ppc_fres<RC1>;
-    SubOpcode59Grabber[50] = ppc_fmuls<RC0>;
-    SubOpcode59Grabber[51] = ppc_fmuls<RC1>;
-    SubOpcode59Grabber[56] = ppc_fmsubs<RC0>;
-    SubOpcode59Grabber[57] = ppc_fmsubs<RC1>;
-    SubOpcode59Grabber[58] = ppc_fmadds<RC0>;
-    SubOpcode59Grabber[59] = ppc_fmadds<RC1>;
-    SubOpcode59Grabber[60] = ppc_fnmsubs<RC0>;
-    SubOpcode59Grabber[61] = ppc_fnmsubs<RC1>;
-    SubOpcode59Grabber[62] = ppc_fnmadds<RC0>;
-    SubOpcode59Grabber[63] = ppc_fnmadds<RC1>;
+    OP59d(18,    ppc_fdivs);
+    OP59d(20,    ppc_fsubs);
+    OP59d(21,    ppc_fadds);
+    OP59d(22,    ppc_fsqrts);
+    OP59d(24,    ppc_fres);
+    OP59d(25,    ppc_fmuls);
+    OP59d(28,    ppc_fmsubs);
+    OP59d(29,    ppc_fmadds);
+    OP59d(30,    ppc_fnmsubs);
+    OP59d(31,    ppc_fnmadds);
 
     std::fill_n(SubOpcode63Grabber, 2048, ppc_illegalop);
-    SubOpcode63Grabber[0]    = ppc_fcmpu;
-    SubOpcode63Grabber[24]   = ppc_frsp<RC0>;
-    SubOpcode63Grabber[25]   = ppc_frsp<RC1>;
-    SubOpcode63Grabber[28]   = ppc_fctiw<RC0>;
-    SubOpcode63Grabber[29]   = ppc_fctiw<RC1>;
-    SubOpcode63Grabber[30]   = ppc_fctiwz<RC0>;
-    SubOpcode63Grabber[31]   = ppc_fctiwz<RC1>;
-    SubOpcode63Grabber[36]   = ppc_fdiv<RC0>;
-    SubOpcode63Grabber[37]   = ppc_fdiv<RC1>;
-    SubOpcode63Grabber[40]   = ppc_fsub<RC0>;
-    SubOpcode63Grabber[41]   = ppc_fsub<RC1>;
-    SubOpcode63Grabber[42]   = ppc_fadd<RC0>;
-    SubOpcode63Grabber[43]   = ppc_fadd<RC1>;
-    SubOpcode63Grabber[44]   = ppc_fsqrt<RC0>;
-    SubOpcode63Grabber[45]   = ppc_fsqrt<RC1>;
-    SubOpcode63Grabber[52]   = ppc_frsqrte<RC0>;
-    SubOpcode63Grabber[53]   = ppc_frsqrte<RC1>;
-    SubOpcode63Grabber[64]   = ppc_fcmpo;
-    SubOpcode63Grabber[76]   = ppc_mtfsb1<RC0>;
-    SubOpcode63Grabber[77]   = ppc_mtfsb1<RC1>;
-    SubOpcode63Grabber[80]   = ppc_fneg<RC0>;
-    SubOpcode63Grabber[81]   = ppc_fneg<RC1>;
-    SubOpcode63Grabber[128]  = ppc_mcrfs;
-    SubOpcode63Grabber[140]  = ppc_mtfsb0<RC0>;
-    SubOpcode63Grabber[141]  = ppc_mtfsb0<RC1>;
-    SubOpcode63Grabber[144]  = ppc_fmr<RC0>;
-    SubOpcode63Grabber[145]  = ppc_fmr<RC1>;
-    SubOpcode63Grabber[268]  = ppc_mtfsfi<RC0>;
-    SubOpcode63Grabber[269]  = ppc_mtfsfi<RC1>;
-    SubOpcode63Grabber[272]  = ppc_fnabs<RC0>;
-    SubOpcode63Grabber[273]  = ppc_fnabs<RC1>;
-    SubOpcode63Grabber[528]  = ppc_fabs<RC0>;
-    SubOpcode63Grabber[529]  = ppc_fabs<RC1>;
-    SubOpcode63Grabber[1166] = ppc_mffs<NOT601, RC0>;
-    SubOpcode63Grabber[1167] = ppc_mffs<NOT601, RC1>;
-    SubOpcode63Grabber[1422] = ppc_mtfsf<RC0>;
-    SubOpcode63Grabber[1423] = ppc_mtfsf<RC1>;
+    OP63(0,      ppc_fcmpu);
+    OP63d(12,    ppc_frsp);
+    OP63d(14,    ppc_fctiw);
+    OP63d(15,    ppc_fctiwz);
+    OP63d(18,    ppc_fdiv);
+    OP63d(20,    ppc_fsub);
+    OP63d(21,    ppc_fadd);
+    OP63d(22,    ppc_fsqrt);
+    OP63d(26,    ppc_frsqrte);
+    OP63(32,     ppc_fcmpo);
+    OP63d(38,    ppc_mtfsb1);
+    OP63d(40,    ppc_fneg);
+    OP63(64,     ppc_mcrfs);
+    OP63d(70,    ppc_mtfsb0);
+    OP63d(72,    ppc_fmr);
+    OP63d(134,   ppc_mtfsfi);
+    OP63d(136,   ppc_fnabs);
+    OP63d(264,   ppc_fabs);
+    OP63dc(583,  ppc_mffs, NOT601);
+    OP63d(711,   ppc_mtfsf);
 
-    for (int i = 0; i < 2048; i += 64) {
-        SubOpcode63Grabber[i + 46] = ppc_fsel<RC0>;
-        SubOpcode63Grabber[i + 47] = ppc_fsel<RC1>;
-        SubOpcode63Grabber[i + 50] = ppc_fmul<RC0>;
-        SubOpcode63Grabber[i + 51] = ppc_fmul<RC1>;
-        SubOpcode63Grabber[i + 56] = ppc_fmsub<RC0>;
-        SubOpcode63Grabber[i + 57] = ppc_fmsub<RC1>;
-        SubOpcode63Grabber[i + 58] = ppc_fmadd<RC0>;
-        SubOpcode63Grabber[i + 59] = ppc_fmadd<RC1>;
-        SubOpcode63Grabber[i + 60] = ppc_fnmsub<RC0>;
-        SubOpcode63Grabber[i + 61] = ppc_fnmsub<RC1>;
-        SubOpcode63Grabber[i + 62] = ppc_fnmadd<RC0>;
-        SubOpcode63Grabber[i + 63] = ppc_fnmadd<RC1>;
+    for (int i = 0; i < 1024; i += 32) {
+        OP63d(i + 23, ppc_fsel);
+        OP63d(i + 25, ppc_fmul);
+        OP63d(i + 28, ppc_fmsub);
+        OP63d(i + 29, ppc_fmadd);
+        OP63d(i + 30, ppc_fnmsub);
+        OP63d(i + 31, ppc_fnmadd);
     }
 }
 
@@ -908,23 +819,22 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, uint64_t tb_freq)
     initialize_ppc_opcode_tables();
 
     if (cpu_version == PPC_VER::MPC601) {
-        OpcodeGrabber[19]        = ppc_opcode19<IS601>;
-        SubOpcode31Grabber[740]  = ppc_illegalop; // tlbia
-        SubOpcode31Grabber[742]  = ppc_illegalop; // mftb
-        SubOpcode59Grabber[48]   = ppc_illegalop; // fres
-        SubOpcode63Grabber[52]   = ppc_illegalop; // frsqrte
-        SubOpcode63Grabber[1166] = ppc_mffs<IS601, RC0>;
-        SubOpcode63Grabber[1167] = ppc_mffs<IS601, RC1>;
-        for (int i = 0; i < 2048; i += 64) {
-            SubOpcode63Grabber[i + 46] = ppc_illegalop; // fsel
-            SubOpcode63Grabber[i + 47] = ppc_illegalop; // fsel.
+        OpcodeGrabber[19] = ppc_opcode19<IS601>;
+        OP31(370,   ppc_illegalop); // tlbia
+        OP31(371,   ppc_illegalop); // mftb
+        OP59t(24,   ppc_illegalop); // fres
+        OP63t(26,   ppc_illegalop); // frsqrte
+        OP63dc(583, ppc_mffs, IS601);
+        for (int i = 0; i < 1024; i += 32) {
+            OP63t(i + 23, ppc_illegalop); // fsel
         }
+    } else {
+        OpcodeGrabber[9]  = ppc_illegalop; // dozi
+        OpcodeGrabber[22] = ppc_illegalop; // rlmi and rlmi.
     }
     if (cpu_version != PPC_VER::MPC970MP) {
-        SubOpcode59Grabber[44] = ppc_illegalop; // fsqrts
-        SubOpcode59Grabber[45] = ppc_illegalop; // fsqrts.
-        SubOpcode63Grabber[44] = ppc_illegalop; // fsqrt
-        SubOpcode63Grabber[45] = ppc_illegalop; // fsqrt.
+        OP59t(22, ppc_illegalop); // fsqrts
+        OP63t(22, ppc_illegalop); // fsqrt
     }
 
     // initialize emulator timers
