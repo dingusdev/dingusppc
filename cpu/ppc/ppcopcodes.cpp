@@ -52,17 +52,17 @@ void ppc_changecrf0(uint32_t set_result) {
 // Affects the XER register's Carry Bit
 inline void ppc_carry(uint32_t a, uint32_t b) {
     if (b < a) {
-        ppc_state.spr[SPR::XER] |= 0x20000000UL;
+        ppc_state.spr[SPR::XER] |= XER::CA;
     } else {
-        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= ~XER::CA;
     }
 }
 
 inline void ppc_carry_sub(uint32_t a, uint32_t b) {
     if (b >= a) {
-        ppc_state.spr[SPR::XER] |= 0x20000000UL;
+        ppc_state.spr[SPR::XER] |= XER::CA;
     } else {
-        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= ~XER::CA;
     }
 }
 
@@ -70,9 +70,9 @@ inline void ppc_carry_sub(uint32_t a, uint32_t b) {
 
 inline void ppc_setsoov(uint32_t a, uint32_t b, uint32_t d) {
     if ((a ^ b) & (a ^ d) & 0x80000000UL) {
-        ppc_state.spr[SPR::XER] |= 0xC0000000UL;
+        ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
     } else {
-        ppc_state.spr[SPR::XER] &= 0xBFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= ~XER::OV;
     }
 }
 
@@ -149,13 +149,13 @@ template void dppc_interpreter::ppc_add<CARRY1, RC1, OV1>();
 template <field_rc rec, field_ov ov>
 void dppc_interpreter::ppc_adde() {
     ppc_grab_regsdab(ppc_cur_instruction);
-    uint32_t xer_ca       = !!(ppc_state.spr[SPR::XER] & 0x20000000);
+    uint32_t xer_ca       = !!(ppc_state.spr[SPR::XER] & XER::CA);
     uint32_t ppc_result_d = ppc_result_a + ppc_result_b + xer_ca;
 
     if ((ppc_result_d < ppc_result_a) || (xer_ca && (ppc_result_d == ppc_result_a))) {
-        ppc_state.spr[SPR::XER] |= 0x20000000UL;
+        ppc_state.spr[SPR::XER] |= XER::CA;
     } else {
-        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= ~XER::CA;
     }
 
     if (ov)
@@ -174,13 +174,13 @@ template void dppc_interpreter::ppc_adde<RC1, OV1>();
 template <field_rc rec, field_ov ov>
 void dppc_interpreter::ppc_addme() {
     ppc_grab_regsda(ppc_cur_instruction);
-    uint32_t xer_ca       = !!(ppc_state.spr[SPR::XER] & 0x20000000);
+    uint32_t xer_ca       = !!(ppc_state.spr[SPR::XER] & XER::CA);
     uint32_t ppc_result_d = ppc_result_a + xer_ca - 1;
 
     if (((xer_ca - 1) < 0xFFFFFFFFUL) || (ppc_result_d < ppc_result_a)) {
-        ppc_state.spr[SPR::XER] |= 0x20000000UL;
+        ppc_state.spr[SPR::XER] |= XER::CA;
     } else {
-        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= ~XER::CA;
     }
 
     if (ov)
@@ -199,13 +199,13 @@ template void dppc_interpreter::ppc_addme<RC1, OV1>();
 template <field_rc rec, field_ov ov>
 void dppc_interpreter::ppc_addze() {
     ppc_grab_regsda(ppc_cur_instruction);
-    uint32_t grab_xer     = !!(ppc_state.spr[SPR::XER] & 0x20000000);
+    uint32_t grab_xer     = !!(ppc_state.spr[SPR::XER] & XER::CA);
     uint32_t ppc_result_d = ppc_result_a + grab_xer;
 
     if (ppc_result_d < ppc_result_a) {
-        ppc_state.spr[SPR::XER] |= 0x20000000UL;
+        ppc_state.spr[SPR::XER] |= XER::CA;
     } else {
-        ppc_state.spr[SPR::XER] &= 0xDFFFFFFFUL;
+        ppc_state.spr[SPR::XER] &= ~XER::CA;
     }
 
     if (ov)
@@ -342,7 +342,7 @@ void dppc_interpreter::ppc_andirc() {
     ppc_result_a = shift ? (ppc_result_d & (uimm << 16)) : (ppc_result_d & uimm);
     ppc_changecrf0(ppc_result_a);
     ppc_store_iresult_reg(reg_a, ppc_result_a);
-} 
+}
 
 template void dppc_interpreter::ppc_andirc<SHFT0>();
 template void dppc_interpreter::ppc_andirc<SHFT1>();
@@ -417,9 +417,9 @@ void dppc_interpreter::ppc_neg() {
 
     if (ov) {
         if (ppc_result_a == 0x80000000)
-            ppc_state.spr[SPR::XER] |= 0xC0000000;
+            ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
         else
-            ppc_state.spr[SPR::XER] &= 0xBFFFFFFF;
+            ppc_state.spr[SPR::XER] &= ~XER::OV;
     }
 
     if (rec)
@@ -500,9 +500,9 @@ void dppc_interpreter::ppc_mullw() {
 
     if (ov) {
         if (product != int64_t(int32_t(product))) {
-            ppc_state.spr[SPR::XER] |= 0xC0000000UL;
+            ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
         } else {
-            ppc_state.spr[SPR::XER] &= 0xBFFFFFFFUL;
+            ppc_state.spr[SPR::XER] &= ~XER::OV;
         }
     }
 
@@ -531,24 +531,24 @@ void dppc_interpreter::ppc_divw() {
     uint32_t ppc_result_d;
     ppc_grab_regsdab(ppc_cur_instruction);
 
-    if (!ppc_result_b) {                                     /* handle the "anything / 0" case */
+    if (!ppc_result_b) { // handle the "anything / 0" case
         ppc_result_d = 0; // tested on G4 in Mac OS X 10.4 and Open Firmware.
         // ppc_result_d = (ppc_result_a & 0x80000000) ? -1 : 0; /* UNDOCUMENTED! */
 
         if (ov)
-            ppc_state.spr[SPR::XER] |= 0xC0000000;
+            ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
 
     } else if (ppc_result_a == 0x80000000UL && ppc_result_b == 0xFFFFFFFFUL) {
         ppc_result_d = 0; // tested on G4 in Mac OS X 10.4 and Open Firmware.
 
         if (ov)
-            ppc_state.spr[SPR::XER] |= 0xC0000000;
+            ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
 
-    } else { /* normal signed devision */
+    } else { // normal signed devision
         ppc_result_d = int32_t(ppc_result_a) / int32_t(ppc_result_b);
 
         if (ov)
-            ppc_state.spr[SPR::XER] &= 0xBFFFFFFFUL;
+            ppc_state.spr[SPR::XER] &= ~XER::OV;
     }
 
     if (rec)
@@ -567,11 +567,11 @@ void dppc_interpreter::ppc_divwu() {
     uint32_t ppc_result_d;
     ppc_grab_regsdab(ppc_cur_instruction);
 
-    if (!ppc_result_b) { /* division by zero */
+    if (!ppc_result_b) { // division by zero
         ppc_result_d = 0;
 
         if (ov)
-            ppc_state.spr[SPR::XER] |= 0xC0000000;
+            ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
 
         if (rec)
             ppc_state.cr |= 0x20000000;
@@ -580,7 +580,7 @@ void dppc_interpreter::ppc_divwu() {
         ppc_result_d = ppc_result_a / ppc_result_b;
 
         if (ov)
-            ppc_state.spr[SPR::XER] &= 0xBFFFFFFFUL;
+            ppc_state.spr[SPR::XER] &= ~XER::OV;
     }
     if (rec)
         ppc_changecrf0(ppc_result_d);
@@ -600,7 +600,7 @@ void dppc_interpreter::ppc_shift() {
     ppc_grab_regssab(ppc_cur_instruction);
     if (ppc_result_b & 0x20) {
         ppc_result_a = 0;
-    } 
+    }
     else {
         ppc_result_a = shift ? (ppc_result_d << (ppc_result_b & 0x1F))
                             : (ppc_result_d >> (ppc_result_b & 0x1F));
@@ -1162,7 +1162,7 @@ void dppc_interpreter::ppc_cmp() {
 
     int crf_d = (ppc_cur_instruction >> 21) & 0x1C;
     ppc_grab_regssab(ppc_cur_instruction);
-    uint32_t xercon = (ppc_state.spr[SPR::XER] & 0x80000000UL) >> 3;
+    uint32_t xercon = (ppc_state.spr[SPR::XER] & XER::SO) >> 3;
     uint32_t cmp_c = (int32_t(ppc_result_a) == int32_t(ppc_result_b)) ? 0x20000000UL : \
         (int32_t(ppc_result_a) > int32_t(ppc_result_b)) ? 0x40000000UL : 0x80000000UL;
     ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
@@ -1178,7 +1178,7 @@ void dppc_interpreter::ppc_cmpi() {
 
     int crf_d = (ppc_cur_instruction >> 21) & 0x1C;
     ppc_grab_regsasimm(ppc_cur_instruction);
-    uint32_t xercon = (ppc_state.spr[SPR::XER] & 0x80000000UL) >> 3;
+    uint32_t xercon = (ppc_state.spr[SPR::XER] & XER::SO) >> 3;
     uint32_t cmp_c = (int32_t(ppc_result_a) == simm) ? 0x20000000UL : \
         (int32_t(ppc_result_a) > simm) ? 0x40000000UL : 0x80000000UL;
     ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
@@ -1194,7 +1194,7 @@ void dppc_interpreter::ppc_cmpl() {
 
     int crf_d = (ppc_cur_instruction >> 21) & 0x1C;
     ppc_grab_regssab(ppc_cur_instruction);
-    uint32_t xercon = (ppc_state.spr[SPR::XER] & 0x80000000UL) >> 3;
+    uint32_t xercon = (ppc_state.spr[SPR::XER] & XER::SO) >> 3;
     uint32_t cmp_c = (ppc_result_a == ppc_result_b) ? 0x20000000UL : \
         (ppc_result_a > ppc_result_b) ? 0x40000000UL : 0x80000000UL;
     ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
@@ -1210,7 +1210,7 @@ void dppc_interpreter::ppc_cmpli() {
 
     int crf_d = (ppc_cur_instruction >> 21) & 0x1C;
     ppc_grab_regssauimm(ppc_cur_instruction);
-    uint32_t xercon = (ppc_state.spr[SPR::XER] & 0x80000000UL) >> 3;
+    uint32_t xercon = (ppc_state.spr[SPR::XER] & XER::SO) >> 3;
     uint32_t cmp_c = (ppc_result_a == uimm) ? 0x20000000UL : \
         (ppc_result_a > uimm) ? 0x40000000UL : 0x80000000UL;
     ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
@@ -1515,7 +1515,7 @@ void dppc_interpreter::ppc_stwcx() {
     ppc_grab_regssab(ppc_cur_instruction);
     ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
     ppc_state.cr &= 0x0FFFFFFFUL; // clear CR0
-    ppc_state.cr |= (ppc_state.spr[SPR::XER] & 0x80000000UL) >> 3; // copy XER[SO] to CR0[SO]
+    ppc_state.cr |= (ppc_state.spr[SPR::XER] & XER::SO) >> 3; // copy XER[SO] to CR0[SO]
     if (ppc_state.reserve) {
         mmu_write_vmem<uint32_t>(ppc_effective_address, ppc_result_d);
         ppc_state.reserve = false;
