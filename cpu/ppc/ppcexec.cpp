@@ -873,8 +873,8 @@ void initialize_ppc_opcode_tables() {
     SubOpcode63Grabber[273]  = ppc_fnabs<RC1>;
     SubOpcode63Grabber[528]  = ppc_fabs<RC0>;
     SubOpcode63Grabber[529]  = ppc_fabs<RC1>;
-    SubOpcode63Grabber[1166] = ppc_mffs<IS601, RC0>;
-    SubOpcode63Grabber[1167] = ppc_mffs<IS601, RC1>;
+    SubOpcode63Grabber[1166] = ppc_mffs<NOT601, RC0>;
+    SubOpcode63Grabber[1167] = ppc_mffs<NOT601, RC1>;
     SubOpcode63Grabber[1422] = ppc_mtfsf<RC0>;
     SubOpcode63Grabber[1423] = ppc_mtfsf<RC1>;
 
