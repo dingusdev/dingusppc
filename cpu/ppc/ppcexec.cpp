@@ -822,6 +822,10 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, uint64_t tb_freq)
         OpcodeGrabber[19] = ppc_opcode19<IS601>;
         OP31(370,   ppc_illegalop); // tlbia
         OP31(371,   ppc_illegalop); // mftb
+        OP31(566,   ppc_illegalop); // tlbsync
+        OP31(978,   ppc_illegalop); // tlbld    // 603e and later
+        OP31(983,   ppc_illegalop); // stfiwx
+        OP31(1010,  ppc_illegalop); // tlbli    // 603e and later
         OP59t(24,   ppc_illegalop); // fres
         OP63t(26,   ppc_illegalop); // frsqrte
         OP63dc(583, ppc_mffs, IS601);
