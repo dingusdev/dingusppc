@@ -200,8 +200,6 @@ bool MemCtrlBase::add_mem_mirror_common(uint32_t start_addr, uint32_t dest_addr,
     if (!ref_entry)
         return false;
 
-    entry = new AddressMapEntry;
-
     // use origin's size if no size was specified
     if (!size)
         size = ref_entry->end - ref_entry->start + 1;
@@ -211,6 +209,8 @@ bool MemCtrlBase::add_mem_mirror_common(uint32_t start_addr, uint32_t dest_addr,
               offset, size);
         return false;
     }
+
+    entry = new AddressMapEntry;
 
     uint32_t end   = start_addr + size - 1;
     entry->start   = start_addr;
