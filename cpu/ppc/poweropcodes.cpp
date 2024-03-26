@@ -44,7 +44,7 @@ static inline uint32_t power_rot_mask(unsigned rot_mb, unsigned rot_me) {
     return ((rot_mb <= rot_me) ? m2 & m1 : m1 | m2);
 }
 
-template <bool rec, bool ov>
+template <field_rc rec, field_ov ov>
 void dppc_interpreter::power_abs() {
     uint32_t ppc_result_d;
     ppc_grab_regsda(ppc_cur_instruction);
@@ -85,7 +85,7 @@ void dppc_interpreter::power_clcs() {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template <bool rec, bool ov>
+template <field_rc rec, field_ov ov>
 void dppc_interpreter::power_div() {
     uint32_t ppc_result_d;
     ppc_grab_regsdab(ppc_cur_instruction);
@@ -114,7 +114,7 @@ template void dppc_interpreter::power_div<RC0, OV1>();
 template void dppc_interpreter::power_div<RC1, OV0>();
 template void dppc_interpreter::power_div<RC1, OV1>();
 
-template <bool rec, bool ov>
+template <field_rc rec, field_ov ov>
 void dppc_interpreter::power_divs() {
     ppc_grab_regsdab(ppc_cur_instruction);
     uint32_t ppc_result_d  = ppc_result_a / ppc_result_b;
@@ -133,7 +133,7 @@ template void dppc_interpreter::power_divs<RC0, OV1>();
 template void dppc_interpreter::power_divs<RC1, OV0>();
 template void dppc_interpreter::power_divs<RC1, OV1>();
 
-template <bool rec, bool ov>
+template <field_rc rec, field_ov ov>
 void dppc_interpreter::power_doz() {
     ppc_grab_regsdab(ppc_cur_instruction);
     uint32_t ppc_result_d = (int32_t(ppc_result_a) >= int32_t(ppc_result_b))\
@@ -163,7 +163,7 @@ void dppc_interpreter::power_dozi() {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template <bool rec>
+template <field_rc rec>
 void dppc_interpreter::power_lscbx() {
     ppc_grab_regsdab(ppc_cur_instruction);
     ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
@@ -214,7 +214,7 @@ void dppc_interpreter::power_lscbx() {
 template void dppc_interpreter::power_lscbx<RC0>();
 template void dppc_interpreter::power_lscbx<RC1>();
 
-template <bool rec>
+template <field_rc rec>
 void dppc_interpreter::power_maskg() {
     ppc_grab_regssab(ppc_cur_instruction);
     uint32_t mask_start  = ppc_result_d & 31;
@@ -240,9 +240,9 @@ void dppc_interpreter::power_maskg() {
 }
 
 template void dppc_interpreter::power_maskg<RC0>();
-template void dppc_interpreter::power_maskg<true>();
+template void dppc_interpreter::power_maskg<RC1>();
 
-template <bool rec>
+template <field_rc rec>
 void dppc_interpreter::power_maskir() {
     ppc_grab_regssab(ppc_cur_instruction);
     ppc_result_a = (ppc_result_a & ~ppc_result_b) | (ppc_result_d & ppc_result_b);
@@ -254,9 +254,9 @@ void dppc_interpreter::power_maskir() {
 }
 
 template void dppc_interpreter::power_maskir<RC0>();
-template void dppc_interpreter::power_maskir<true>();
+template void dppc_interpreter::power_maskir<RC1>();
 
-template <bool rec, bool ov>
+template <field_rc rec, field_ov ov>
 void dppc_interpreter::power_mul() {
     ppc_grab_regsdab(ppc_cur_instruction);
     uint64_t product;
@@ -278,7 +278,7 @@ template void dppc_interpreter::power_mul<RC0, OV1>();
 template void dppc_interpreter::power_mul<RC1, OV0>();
 template void dppc_interpreter::power_mul<RC1, OV1>();
 
-template <bool rec, bool ov>
+template <field_rc rec, field_ov ov>
 void dppc_interpreter::power_nabs() {
     ppc_grab_regsda(ppc_cur_instruction);
     uint32_t ppc_result_d = ppc_result_a & 0x80000000 ? ppc_result_a : -ppc_result_a;
@@ -313,7 +313,7 @@ void dppc_interpreter::power_rlmi() {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template <bool rec>
+template <field_rc rec>
 void dppc_interpreter::power_rrib() {
     ppc_grab_regssab(ppc_cur_instruction);
 
@@ -332,7 +332,7 @@ void dppc_interpreter::power_rrib() {
 template void dppc_interpreter::power_rrib<RC0>();
 template void dppc_interpreter::power_rrib<RC1>();
 
-template <bool rec>
+template <field_rc rec>
 void dppc_interpreter::power_sle() {
     ppc_grab_regssab(ppc_cur_instruction);
     unsigned rot_sh = ppc_result_b & 31;
@@ -351,7 +351,7 @@ void dppc_interpreter::power_sle() {
 template void dppc_interpreter::power_sle<RC0>();
 template void dppc_interpreter::power_sle<RC1>();
 
-template <bool rec>
+template <field_rc rec>
 void dppc_interpreter::power_sleq() {
     ppc_grab_regssab(ppc_cur_instruction);
     unsigned rot_sh = ppc_result_b & 31;
@@ -370,7 +370,7 @@ void dppc_interpreter::power_sleq() {
 template void dppc_interpreter::power_sleq<RC0>();
 template void dppc_interpreter::power_sleq<RC1>();
 
-template <bool rec>
+template <field_rc rec>
 void dppc_interpreter::power_sliq() {
     ppc_grab_regssa(ppc_cur_instruction);
     unsigned rot_sh      = (ppc_cur_instruction >> 11) & 31;
@@ -387,7 +387,7 @@ void dppc_interpreter::power_sliq() {
 template void dppc_interpreter::power_sliq<RC0>();
 template void dppc_interpreter::power_sliq<RC1>();
 
-template <bool rec>
+template <field_rc rec>
 void dppc_interpreter::power_slliq() {
     ppc_grab_regssa(ppc_cur_instruction);
     unsigned rot_sh      = (ppc_cur_instruction >> 11) & 31;
@@ -406,7 +406,7 @@ void dppc_interpreter::power_slliq() {
 template void dppc_interpreter::power_slliq<RC0>();
 template void dppc_interpreter::power_slliq<RC1>();
 
-template <bool rec>
+template <field_rc rec>
 void dppc_interpreter::power_sllq() {
     ppc_grab_regssab(ppc_cur_instruction);
     unsigned rot_sh      = ppc_result_b & 31;
@@ -429,7 +429,7 @@ void dppc_interpreter::power_sllq() {
 template void dppc_interpreter::power_sllq<RC0>();
 template void dppc_interpreter::power_sllq<RC1>();
 
-template <bool rec>
+template <field_rc rec>
 void dppc_interpreter::power_slq() {
     ppc_grab_regssab(ppc_cur_instruction);
     unsigned rot_sh = ppc_result_b & 31;
@@ -449,7 +449,7 @@ void dppc_interpreter::power_slq() {
 template void dppc_interpreter::power_slq<RC0>();
 template void dppc_interpreter::power_slq<RC1>();
 
-template <bool rec>
+template <field_rc rec>
 void dppc_interpreter::power_sraiq() {
     ppc_grab_regssa(ppc_cur_instruction);
     unsigned rot_sh        = (ppc_cur_instruction >> 11) & 0x1F;
@@ -472,7 +472,7 @@ void dppc_interpreter::power_sraiq() {
 template void dppc_interpreter::power_sraiq<RC0>();
 template void dppc_interpreter::power_sraiq<RC1>();
 
-template <bool rec>
+template <field_rc rec>
 void dppc_interpreter::power_sraq() {
     ppc_grab_regssab(ppc_cur_instruction);
     unsigned rot_sh        = ppc_result_b & 0x1F;
@@ -497,7 +497,7 @@ void dppc_interpreter::power_sraq() {
 template void dppc_interpreter::power_sraq<RC0>();
 template void dppc_interpreter::power_sraq<RC1>();
 
-template <bool rec>
+template <field_rc rec>
 void dppc_interpreter::power_sre() {
     ppc_grab_regssab(ppc_cur_instruction);
 
@@ -515,7 +515,7 @@ void dppc_interpreter::power_sre() {
 template void dppc_interpreter::power_sre<RC0>();
 template void dppc_interpreter::power_sre<RC1>();
 
-template <bool rec>
+template <field_rc rec>
 void dppc_interpreter::power_srea() {
     ppc_grab_regssab(ppc_cur_instruction);
     unsigned rot_sh        = ppc_result_b & 0x1F;
@@ -537,7 +537,7 @@ void dppc_interpreter::power_srea() {
 template void dppc_interpreter::power_srea<RC0>();
 template void dppc_interpreter::power_srea<RC1>();
 
-template <bool rec>
+template <field_rc rec>
 void dppc_interpreter::power_sreq() {
     ppc_grab_regssab(ppc_cur_instruction);
     unsigned rot_sh      = ppc_result_b & 31;
@@ -555,7 +555,7 @@ void dppc_interpreter::power_sreq() {
 template void dppc_interpreter::power_sreq<RC0>();
 template void dppc_interpreter::power_sreq<RC1>();
 
-template <bool rec>
+template <field_rc rec>
 void dppc_interpreter::power_sriq() {
     ppc_grab_regssa(ppc_cur_instruction);
     unsigned rot_sh        = (ppc_cur_instruction >> 11) & 31;
@@ -571,7 +571,7 @@ void dppc_interpreter::power_sriq() {
 template void dppc_interpreter::power_sriq<RC0>();
 template void dppc_interpreter::power_sriq<RC1>();
 
-template <bool rec>
+template <field_rc rec>
 void dppc_interpreter::power_srliq() {
     ppc_grab_regssa(ppc_cur_instruction);
     unsigned rot_sh        = (ppc_cur_instruction >> 11) & 31;
@@ -591,7 +591,7 @@ void dppc_interpreter::power_srliq() {
 template void dppc_interpreter::power_srliq<RC0>();
 template void dppc_interpreter::power_srliq<RC1>();
 
-template <bool rec>
+template <field_rc rec>
 void dppc_interpreter::power_srlq() {
     ppc_grab_regssab(ppc_cur_instruction);
     unsigned rot_sh = ppc_result_b & 31;
@@ -614,7 +614,7 @@ void dppc_interpreter::power_srlq() {
 template void dppc_interpreter::power_srlq<RC0>();
 template void dppc_interpreter::power_srlq<RC1>();
 
-template <bool rec>
+template <field_rc rec>
 void dppc_interpreter::power_srq() {
     ppc_grab_regssab(ppc_cur_instruction);
     unsigned rot_sh = ppc_result_b & 31;

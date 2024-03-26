@@ -215,7 +215,7 @@ void ppc_opcode18() {
     SubOpcode18Grabber[ppc_cur_instruction & 3]();
 }
 
-template<bool for601>
+template<field_601 for601>
 void ppc_opcode19() {
     uint16_t subop_grab = ppc_cur_instruction & 0x7FF;
 
@@ -224,10 +224,10 @@ void ppc_opcode19() {
         ppc_mcrf();
         break;
     case 32:
-        ppc_bclr<false>();
+        ppc_bclr<LK0>();
         break;
     case 33:
-        ppc_bclr<true>();
+        ppc_bclr<LK1>();
         break;
     case 66:
         ppc_crnor();
@@ -260,16 +260,10 @@ void ppc_opcode19() {
         ppc_cror();
         break;
     case 1056:
-        if (for601)
-            ppc_bcctr<RC0, IS601>();
-        else
-            ppc_bcctr<RC0, NOT601>();
+        ppc_bcctr<LK0, for601>();
         break;
     case 1057:
-        if (for601)
-            ppc_bcctr<RC1, IS601>();
-        else
-            ppc_bcctr<RC1, NOT601>();
+        ppc_bcctr<LK1, for601>();
         break;
     default:
         ppc_illegalop();

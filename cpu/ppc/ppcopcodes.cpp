@@ -98,7 +98,7 @@ comparisons needed. This means loads of functions, but less CPU cycles needed to
 function (theoretically).
 **/
 
-template <bool shift>
+template <field_shift shift>
 void dppc_interpreter::ppc_addi() {
     ppc_grab_regsdasimm(ppc_cur_instruction);
     if (shift)
@@ -110,7 +110,7 @@ void dppc_interpreter::ppc_addi() {
 template void dppc_interpreter::ppc_addi<SHFT0>();
 template void dppc_interpreter::ppc_addi<SHFT1>();
 
-template <bool rec>
+template <field_rc rec>
 void dppc_interpreter::ppc_addic() {
     ppc_grab_regsdasimm(ppc_cur_instruction);
     uint32_t ppc_result_d = (ppc_result_a + simm);
@@ -123,7 +123,7 @@ void dppc_interpreter::ppc_addic() {
 template void dppc_interpreter::ppc_addic<RC0>();
 template void dppc_interpreter::ppc_addic<RC1>();;
 
-template <bool carry, bool rec, bool ov>
+template <field_carry carry, field_rc rec, field_ov ov>
 void dppc_interpreter::ppc_add() {
     ppc_grab_regsdab(ppc_cur_instruction);
     uint32_t ppc_result_d = ppc_result_a + ppc_result_b;
@@ -146,7 +146,7 @@ template void dppc_interpreter::ppc_add<CARRY1, RC1, OV0>();
 template void dppc_interpreter::ppc_add<CARRY1, RC0, OV1>();
 template void dppc_interpreter::ppc_add<CARRY1, RC1, OV1>();
 
-template <bool rec, bool ov>
+template <field_rc rec, field_ov ov>
 void dppc_interpreter::ppc_adde() {
     ppc_grab_regsdab(ppc_cur_instruction);
     uint32_t xer_ca       = !!(ppc_state.spr[SPR::XER] & 0x20000000);
@@ -171,7 +171,7 @@ template void dppc_interpreter::ppc_adde<RC0, OV1>();
 template void dppc_interpreter::ppc_adde<RC1, OV0>();
 template void dppc_interpreter::ppc_adde<RC1, OV1>();
 
-template <bool rec, bool ov>
+template <field_rc rec, field_ov ov>
 void dppc_interpreter::ppc_addme() {
     ppc_grab_regsda(ppc_cur_instruction);
     uint32_t xer_ca       = !!(ppc_state.spr[SPR::XER] & 0x20000000);
@@ -196,7 +196,7 @@ template void dppc_interpreter::ppc_addme<RC0, OV1>();
 template void dppc_interpreter::ppc_addme<RC1, OV0>();
 template void dppc_interpreter::ppc_addme<RC1, OV1>();
 
-template <bool rec, bool ov>
+template <field_rc rec, field_ov ov>
 void dppc_interpreter::ppc_addze() {
     ppc_grab_regsda(ppc_cur_instruction);
     uint32_t grab_xer     = !!(ppc_state.spr[SPR::XER] & 0x20000000);
@@ -231,7 +231,7 @@ void dppc_interpreter::ppc_subfic() {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template <bool carry, bool rec, bool ov>
+template <field_carry carry, field_rc rec, field_ov ov>
 void dppc_interpreter::ppc_subf() {
     ppc_grab_regsdab(ppc_cur_instruction);
     uint32_t ppc_result_d = ppc_result_b - ppc_result_a;
@@ -255,7 +255,7 @@ template void dppc_interpreter::ppc_subf<CARRY1, RC0, OV1>();
 template void dppc_interpreter::ppc_subf<CARRY1, RC1, OV0>();
 template void dppc_interpreter::ppc_subf<CARRY1, RC1, OV1>();
 
-template <bool rec, bool ov>
+template <field_rc rec, field_ov ov>
 void dppc_interpreter::ppc_subfe() {
     ppc_grab_regsdab(ppc_cur_instruction);
     uint32_t grab_ca      = !!(ppc_state.spr[SPR::XER] & XER::CA);
@@ -278,7 +278,7 @@ template void dppc_interpreter::ppc_subfe<RC0, OV1>();
 template void dppc_interpreter::ppc_subfe<RC1, OV0>();
 template void dppc_interpreter::ppc_subfe<RC1, OV1>();
 
-template <bool rec, bool ov>
+template <field_rc rec, field_ov ov>
 void dppc_interpreter::ppc_subfme() {
     ppc_grab_regsda(ppc_cur_instruction);
     uint32_t grab_ca      = !!(ppc_state.spr[SPR::XER] & XER::CA);
@@ -307,7 +307,7 @@ template void dppc_interpreter::ppc_subfme<RC0, OV1>();
 template void dppc_interpreter::ppc_subfme<RC1, OV0>();
 template void dppc_interpreter::ppc_subfme<RC1, OV1>();
 
-template <bool rec, bool ov>
+template <field_rc rec, field_ov ov>
 void dppc_interpreter::ppc_subfze() {
     ppc_grab_regsda(ppc_cur_instruction);
     uint32_t grab_ca      = !!(ppc_state.spr[SPR::XER] & XER::CA);
@@ -336,7 +336,7 @@ template void dppc_interpreter::ppc_subfze<RC0, OV1>();
 template void dppc_interpreter::ppc_subfze<RC1, OV0>();
 template void dppc_interpreter::ppc_subfze<RC1, OV1>();
 
-template <bool shift>
+template <field_shift shift>
 void dppc_interpreter::ppc_andirc() {
     ppc_grab_regssauimm(ppc_cur_instruction);
     ppc_result_a = shift ? (ppc_result_d & (uimm << 16)) : (ppc_result_d & uimm);
@@ -347,7 +347,7 @@ void dppc_interpreter::ppc_andirc() {
 template void dppc_interpreter::ppc_andirc<SHFT0>();
 template void dppc_interpreter::ppc_andirc<SHFT1>();
 
-template <bool shift>
+template <field_shift shift>
 void dppc_interpreter::ppc_ori() {
     ppc_grab_regssauimm(ppc_cur_instruction);
     ppc_result_a = shift ? (ppc_result_d | (uimm << 16)) : (ppc_result_d | uimm);
@@ -357,7 +357,7 @@ void dppc_interpreter::ppc_ori() {
 template void dppc_interpreter::ppc_ori<SHFT0>();
 template void dppc_interpreter::ppc_ori<SHFT1>();
 
-template <bool shift>
+template <field_shift shift>
 void dppc_interpreter::ppc_xori() {
     ppc_grab_regssauimm(ppc_cur_instruction);
     ppc_result_a = shift ? (ppc_result_d ^ (uimm << 16)) : (ppc_result_d ^ uimm);
@@ -367,7 +367,7 @@ void dppc_interpreter::ppc_xori() {
 template void dppc_interpreter::ppc_xori<SHFT0>();
 template void dppc_interpreter::ppc_xori<SHFT1>();
 
-template <int bool_op, bool rec>
+template <bool_fun bool_op, field_rc rec>
 void dppc_interpreter::ppc_do_bool() {
     ppc_grab_regssab(ppc_cur_instruction);
     if (bool_op == bool_fun::bool_and)
@@ -410,7 +410,7 @@ template void dppc_interpreter::ppc_do_bool<bool_or, RC1>();
 template void dppc_interpreter::ppc_do_bool<bool_orc, RC1>();
 template void dppc_interpreter::ppc_do_bool<bool_xor, RC1>();
 
-template <bool rec, bool ov>
+template <field_rc rec, field_ov ov>
 void dppc_interpreter::ppc_neg() {
     ppc_grab_regsda(ppc_cur_instruction);
     uint32_t ppc_result_d = ~(ppc_result_a) + 1;
@@ -433,7 +433,7 @@ template void dppc_interpreter::ppc_neg<RC0, OV1>();
 template void dppc_interpreter::ppc_neg<RC1, OV0>();
 template void dppc_interpreter::ppc_neg<RC1, OV1>();
 
-template <bool rec>
+template <field_rc rec>
 void dppc_interpreter::ppc_cntlzw() {
     ppc_grab_regssa(ppc_cur_instruction);
 
@@ -463,7 +463,7 @@ void dppc_interpreter::ppc_cntlzw() {
 template void dppc_interpreter::ppc_cntlzw<RC0>();
 template void dppc_interpreter::ppc_cntlzw<RC1>();;
 
-template <bool rec>
+template <field_rc rec>
 void dppc_interpreter::ppc_mulhwu() {
     ppc_grab_regsdab(ppc_cur_instruction);
     uint64_t product = uint64_t(ppc_result_a) * uint64_t(ppc_result_b);
@@ -478,7 +478,7 @@ void dppc_interpreter::ppc_mulhwu() {
 template void dppc_interpreter::ppc_mulhwu<RC0>();
 template void dppc_interpreter::ppc_mulhwu<RC1>();;
 
-template <bool rec>
+template <field_rc rec>
 void dppc_interpreter::ppc_mulhw() {
     ppc_grab_regsdab(ppc_cur_instruction);
     int64_t product = int64_t(int32_t(ppc_result_a)) * int64_t(int32_t(ppc_result_b));
@@ -493,7 +493,7 @@ void dppc_interpreter::ppc_mulhw() {
 template void dppc_interpreter::ppc_mulhw<RC0>();
 template void dppc_interpreter::ppc_mulhw<RC1>();;
 
-template <bool rec, bool ov>
+template <field_rc rec, field_ov ov>
 void dppc_interpreter::ppc_mullw() {
     ppc_grab_regsdab(ppc_cur_instruction);
     int64_t product = int64_t(int32_t(ppc_result_a)) * int64_t(int32_t(ppc_result_b));
@@ -526,7 +526,7 @@ void dppc_interpreter::ppc_mulli() {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template <bool rec, bool ov>
+template <field_rc rec, field_ov ov>
 void dppc_interpreter::ppc_divw() {
     uint32_t ppc_result_d;
     ppc_grab_regsdab(ppc_cur_instruction);
@@ -562,7 +562,7 @@ template void dppc_interpreter::ppc_divw<RC0, OV1>();
 template void dppc_interpreter::ppc_divw<RC1, OV0>();
 template void dppc_interpreter::ppc_divw<RC1, OV1>();
 
-template <bool rec, bool ov>
+template <field_rc rec, field_ov ov>
 void dppc_interpreter::ppc_divwu() {
     uint32_t ppc_result_d;
     ppc_grab_regsdab(ppc_cur_instruction);
@@ -595,14 +595,14 @@ template void dppc_interpreter::ppc_divwu<RC1, OV1>();
 
 // Value shifting
 
-template <bool left, bool rec>
+template <field_shift shift, field_rc rec>
 void dppc_interpreter::ppc_shift() {
     ppc_grab_regssab(ppc_cur_instruction);
     if (ppc_result_b & 0x20) {
         ppc_result_a = 0;
     } 
     else {
-        ppc_result_a = left ? (ppc_result_d << (ppc_result_b & 0x1F))
+        ppc_result_a = shift ? (ppc_result_d << (ppc_result_b & 0x1F))
                             : (ppc_result_d >> (ppc_result_b & 0x1F));
     }
 
@@ -617,7 +617,7 @@ template void dppc_interpreter::ppc_shift<SHFT0, RC1>();
 template void dppc_interpreter::ppc_shift<SHFT1, RC0>();
 template void dppc_interpreter::ppc_shift<SHFT1, RC1>();
 
-template <bool rec>
+template <field_rc rec>
 void dppc_interpreter::ppc_sraw() {
     ppc_grab_regssab(ppc_cur_instruction);
 
@@ -645,7 +645,7 @@ void dppc_interpreter::ppc_sraw() {
 template void dppc_interpreter::ppc_sraw<RC0>();
 template void dppc_interpreter::ppc_sraw<RC1>();;
 
-template <bool rec>
+template <field_rc rec>
 void dppc_interpreter::ppc_srawi() {
     ppc_grab_regssa(ppc_cur_instruction);
     uint32_t shift = (ppc_cur_instruction >> 11) & 0x1F;
@@ -1021,7 +1021,7 @@ void dppc_interpreter::ppc_mcrxr() {
     ppc_state.spr[SPR::XER] &= 0x0FFFFFFF;
 }
 
-template <class T, bool rec>
+template <class T, field_rc rec>
 void dppc_interpreter::ppc_exts() {
     ppc_grab_regssa(ppc_cur_instruction);
     ppc_result_a = int32_t(T(ppc_result_d));
@@ -1039,7 +1039,7 @@ template void dppc_interpreter::ppc_exts<int16_t, RC1>();
 
 // Branching Instructions
 
-template <bool l, bool a>
+template <field_lk l, field_aa a>
 void dppc_interpreter::ppc_b() {
     int32_t adr_li               = int32_t((ppc_cur_instruction & ~3UL) << 6) >> 6;
 
@@ -1059,7 +1059,7 @@ template void dppc_interpreter::ppc_b<LK0, AA1>();
 template void dppc_interpreter::ppc_b<LK1, AA0>();
 template void dppc_interpreter::ppc_b<LK1, AA1>();
 
-template <bool l, bool a>
+template <field_lk l, field_aa a>
 void dppc_interpreter::ppc_bc() {
     uint32_t ctr_ok;
     uint32_t cnd_ok;
@@ -1090,7 +1090,7 @@ template void dppc_interpreter::ppc_bc<LK0, AA1>();
 template void dppc_interpreter::ppc_bc<LK1, AA0>();
 template void dppc_interpreter::ppc_bc<LK1, AA1>();
 
-template<bool l, bool for601>
+template<field_lk l, field_601 for601>
 void dppc_interpreter::ppc_bcctr() {
     uint32_t ctr_ok;
     uint32_t cnd_ok;
@@ -1125,7 +1125,7 @@ template void dppc_interpreter::ppc_bcctr<LK0, IS601>();
 template void dppc_interpreter::ppc_bcctr<LK1, NOT601>();
 template void dppc_interpreter::ppc_bcctr<LK1, IS601>();
 
-template <bool l>
+template <field_lk l>
 void dppc_interpreter::ppc_bclr() {
     uint32_t br_bo = (ppc_cur_instruction >> 21) & 31;
     uint32_t br_bi = (ppc_cur_instruction >> 16) & 31;
