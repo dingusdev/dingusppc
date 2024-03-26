@@ -81,12 +81,12 @@ typedef struct MapDmaResult {
     uint32_t    dev_base;
 } MapDmaResult;
 
-#define PAGE_SIZE_BITS      12
-#define PAGE_SIZE           (1 << PAGE_SIZE_BITS)
-#define PAGE_MASK           ~(PAGE_SIZE - 1)
-#define TLB_SIZE            4096
-#define TLB2_WAYS           4
-#define TLB_INVALID_TAG     0xFFFFFFFF
+constexpr uint32_t PPC_PAGE_SIZE_BITS = 12;
+constexpr uint32_t PPC_PAGE_SIZE      = (1 << PPC_PAGE_SIZE_BITS);
+constexpr uint32_t PPC_PAGE_MASK      = ~(PPC_PAGE_SIZE - 1);
+constexpr uint32_t TLB_SIZE           = 4096;
+constexpr uint32_t TLB2_WAYS          = 4;
+constexpr uint32_t TLB_INVALID_TAG    = 0xFFFFFFFF;
 
 typedef struct TLBEntry {
     uint32_t    tag;

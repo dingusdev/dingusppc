@@ -433,9 +433,9 @@ static TLBEntry* tlb2_target_entry(uint32_t gp_va)
     TLBEntry *tlb_entry;
 
     if (tlb_type == TLBType::ITLB) {
-        tlb_entry = &pCurITLB2[((gp_va >> PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
+        tlb_entry = &pCurITLB2[((gp_va >> PPC_PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
     } else {
-        tlb_entry = &pCurDTLB2[((gp_va >> PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
+        tlb_entry = &pCurDTLB2[((gp_va >> PPC_PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
     }
 
     // select the target from invalid blocks first
@@ -656,9 +656,9 @@ static inline TLBEntry* lookup_secondary_tlb(uint32_t guest_va, uint32_t tag) {
     TLBEntry *tlb_entry;
 
     if (tlb_type == TLBType::ITLB) {
-        tlb_entry = &pCurITLB2[((guest_va >> PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
+        tlb_entry = &pCurITLB2[((guest_va >> PPC_PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
     } else {
-        tlb_entry = &pCurDTLB2[((guest_va >> PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
+        tlb_entry = &pCurDTLB2[((guest_va >> PPC_PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
     }
 
     if (tlb_entry->tag == tag) {
@@ -694,6 +694,22 @@ static inline TLBEntry* lookup_secondary_tlb(uint32_t guest_va, uint32_t tag) {
     return tlb_entry;
 }
 
+static void tlb_flush_primary_entry(TLBEntry *tlb1, uint32_t tag) {
+    TLBEntry *tlb_entry = &tlb1[(tag >> PPC_PAGE_SIZE_BITS) & tlb_size_mask];
+    if (tlb_entry->tag == tag) {
+        tlb_entry->tag = TLB_INVALID_TAG;
+    }
+}
+
+static void tlb_flush_secondary_entry(TLBEntry *tlb2, uint32_t tag) {
+    TLBEntry *tlb_entry = &tlb2[((tag >> PPC_PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
+    for (int i = 0; i < TLB2_WAYS; i++) {
+        if (tlb_entry[i].tag == tag) {
+            tlb_entry[i].tag = TLB_INVALID_TAG;
+        }
+    }
+}
+
 uint8_t *mmu_translate_imem(uint32_t vaddr, uint32_t *paddr)
 {
     TLBEntry *tlb1_entry, *tlb2_entry;
@@ -706,7 +722,7 @@ uint8_t *mmu_translate_imem(uint32_t vaddr, uint32_t *paddr)
     const uint32_t tag = vaddr & ~0xFFFUL;
 
     // look up guest virtual address in the primary ITLB
-    tlb1_entry = &pCurITLB1[(vaddr >> PAGE_SIZE_BITS) & tlb_size_mask];
+    tlb1_entry = &pCurITLB1[(vaddr >> PPC_PAGE_SIZE_BITS) & tlb_size_mask];
     if (tlb1_entry->tag == tag) { // primary ITLB hit -> fast path
 #ifdef TLB_PROFILING
         num_primary_itlb_hits++;
@@ -745,7 +761,7 @@ uint8_t *mmu_translate_imem(uint32_t vaddr, uint32_t *paddr)
 
 static void tlb_flush_primary_entry(std::array<TLBEntry, TLB_SIZE> &tlb1, uint32_t tag)
 {
-    TLBEntry *tlb_entry = &tlb1[(tag >> PAGE_SIZE_BITS) & tlb_size_mask];
+    TLBEntry *tlb_entry = &tlb1[(tag >> PPC_PAGE_SIZE_BITS) & tlb_size_mask];
     if (tlb_entry->tag == tag) {
         tlb_entry->tag = TLB_INVALID_TAG;
         //LOG_F(INFO, "Invalidated primary TLB entry at 0x%X", ea);
@@ -754,7 +770,7 @@ static void tlb_flush_primary_entry(std::array<TLBEntry, TLB_SIZE> &tlb1, uint32
 
 static void tlb_flush_secondary_entry(std::array<TLBEntry, TLB_SIZE*TLB2_WAYS> &tlb2, uint32_t tag)
 {
-    TLBEntry *tlb_entry = &tlb2[((tag >> PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
+    TLBEntry *tlb_entry = &tlb2[((tag >> PPC_PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
     for (int i = 0; i < TLB2_WAYS; i++) {
         if (tlb_entry[i].tag == tag) {
             tlb_entry[i].tag = TLB_INVALID_TAG;
@@ -986,7 +1002,7 @@ inline T mmu_read_vmem(uint32_t guest_va)
     const uint32_t tag = guest_va & ~0xFFFUL;
 
     // look up guest virtual address in the primary TLB
-    tlb1_entry = &pCurDTLB1[(guest_va >> PAGE_SIZE_BITS) & tlb_size_mask];
+    tlb1_entry = &pCurDTLB1[(guest_va >> PPC_PAGE_SIZE_BITS) & tlb_size_mask];
     if (tlb1_entry->tag == tag) { // primary TLB hit -> fast path
 #ifdef TLB_PROFILING
         num_primary_dtlb_hits++;
@@ -1080,7 +1096,7 @@ inline void mmu_write_vmem(uint32_t guest_va, T value)
     const uint32_t tag = guest_va & ~0xFFFUL;
 
     // look up guest virtual address in the primary TLB
-    tlb1_entry = &pCurDTLB1[(guest_va >> PAGE_SIZE_BITS) & tlb_size_mask];
+    tlb1_entry = &pCurDTLB1[(guest_va >> PPC_PAGE_SIZE_BITS) & tlb_size_mask];
     if (tlb1_entry->tag == tag) { // primary TLB hit -> fast path
 #ifdef TLB_PROFILING
         num_primary_dtlb_hits++;
@@ -1473,7 +1489,7 @@ bool mmu_translate_dbg(uint32_t guest_va, uint32_t &guest_pa) {
         const uint32_t tag = guest_va & ~0xFFFUL;
 
         // look up guest virtual address in the primary TLB
-        tlb1_entry = &pCurDTLB1[(guest_va >> PAGE_SIZE_BITS) & tlb_size_mask];
+        tlb1_entry = &pCurDTLB1[(guest_va >> PPC_PAGE_SIZE_BITS) & tlb_size_mask];
 
         do {
             if (tlb1_entry->tag != tag) {
