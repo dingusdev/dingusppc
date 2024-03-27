@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <endianswap.h>
 #include <memaccess.h>
 
+#include <atomic>
 #include <cinttypes>
 #include <functional>
 #include <setjmp.h>

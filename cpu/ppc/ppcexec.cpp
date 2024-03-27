@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ppcmmu.h"
 
 #include <algorithm>
+#include <cstring>
 #include <iostream>
 #include <map>
 #include <setjmp.h>
