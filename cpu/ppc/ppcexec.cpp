@@ -580,6 +580,16 @@ void ppc_exec_dbg(volatile uint32_t start_addr, volatile uint32_t size)
     }
 }
 
+/*
+Opcode table macros:
+- d is for dot (RC).
+- o is for overflow (OV).
+- c is for carry CARRY0/CARRY1. It also works for other options:
+  SHFT0/SHFT1, RIGHT0/LEFT1, uint8_t/uint16_t/uint32_t, and int8_t/int16_t.
+- t is for two. It's like d for dot but for when the function used for Rc=0 and Rc=1
+  is the same (usually for illegal_op).
+ */
+
 #define OP(opcode, subopcode, fn) \
     SubOpcode ## opcode ## Grabber[((subopcode)<<1)] = fn;
 
