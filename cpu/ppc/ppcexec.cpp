@@ -55,7 +55,9 @@ uint32_t ppc_next_instruction_address;    // Used for branching, setting up the 
 #ifdef EXEC_FLAGS_ATOMIC
 std::atomic<unsigned> exec_flags{0}; // execution control flags
 #else
-unsigned exec_flags; // FIXME: read by main thread ppc_main_opcode; written by audio dbdma DMAChannel::update_irq .. add_immediate_timer
+// FIXME: read by main thread ppc_main_opcode;
+// written by audio dbdma DMAChannel::update_irq .. add_immediate_timer
+unsigned exec_flags;
 #endif
 bool int_pin = false; // interrupt request pin state: true - asserted
 bool dec_exception_pending = false;
@@ -73,8 +75,10 @@ int      icnt_factor;
 uint64_t tbr_wr_timestamp;  // stores vCPU virtual time of the last TBR write
 uint64_t rtc_timestamp;     // stores vCPU virtual time of the last RTC write
 uint64_t tbr_wr_value;      // last value written to the TBR
-uint32_t tbr_freq_ghz;      // TBR/RTC driving frequency in GHz expressed as a 32 bit fraction less than 1.0 (999.999999 MHz maximum).
-uint64_t tbr_period_ns;     // TBR/RTC period in ns expressed as a 64 bit value with 32 fractional bits (<1 Hz minimum).
+uint32_t tbr_freq_ghz;      // TBR/RTC driving frequency in GHz expressed as a
+                            // 32 bit fraction less than 1.0 (999.999999 MHz maximum).
+uint64_t tbr_period_ns;     // TBR/RTC period in ns expressed as a 64 bit value
+                            // with 32 fractional bits (<1 Hz minimum).
 uint64_t timebase_counter;  // internal timebase counter
 uint64_t dec_wr_timestamp;  // stores vCPU virtual time of the last DEC write
 uint32_t dec_wr_value;      // last value written to the DEC register
@@ -136,30 +140,30 @@ public:
 
 /** Primary opcode (bits 0...5) lookup table. */
  static PPCOpcode OpcodeGrabber[] = {
-    ppc_illegalop, ppc_illegalop, ppc_illegalop, ppc_twi,       
-    ppc_illegalop, ppc_illegalop, ppc_illegalop, ppc_mulli,     
-    ppc_subfic,    power_dozi,    ppc_cmpli,     ppc_cmpi,      
-    ppc_addic<RC0>,    ppc_addic<RC1>, 
-    ppc_addi<SHFT0>,   ppc_addi<SHFT1>,     
-    ppc_opcode16,      ppc_sc,
-    ppc_opcode18,      ppc_opcode19<NOT601>,
-    ppc_rlwimi,    ppc_rlwinm,    power_rlmi,    ppc_rlwnm,     
-    ppc_ori<SHFT0>,    ppc_ori<SHFT1>, 
-    ppc_xori<SHFT0>,   ppc_xori<SHFT1>,     
-    ppc_andirc<SHFT0>, ppc_andirc<SHFT1>,
-    ppc_illegalop,     ppc_opcode31,  
-    ppc_lz<uint32_t>,  ppc_lzu<uint32_t>, 
-    ppc_lz<uint8_t>,   ppc_lzu<uint8_t>,      
-    ppc_st<uint32_t>,  ppc_stu<uint32_t>,
-    ppc_st<uint8_t>,   ppc_stu<uint8_t>,
-    ppc_lz<uint16_t>,  ppc_lzu<uint16_t>, 
-    ppc_lha,           ppc_lhau,
-    ppc_st<uint16_t>,  ppc_stu<uint16_t>,
-    ppc_lmw,       ppc_stmw,      
-    ppc_lfs,       ppc_lfsu,      ppc_lfd,       ppc_lfdu,
-    ppc_stfs,      ppc_stfsu,     ppc_stfd,      ppc_stfdu,     
-    ppc_illegalop, ppc_illegalop, ppc_illegalop, ppc_opcode59,
-    ppc_illegalop, ppc_illegalop, ppc_illegalop, ppc_opcode63
+    ppc_illegalop,      ppc_illegalop,          ppc_illegalop,  ppc_twi,
+    ppc_illegalop,      ppc_illegalop,          ppc_illegalop,  ppc_mulli,
+    ppc_subfic,         power_dozi,             ppc_cmpli,      ppc_cmpi,
+    ppc_addic<RC0>,     ppc_addic<RC1>,
+    ppc_addi<SHFT0>,    ppc_addi<SHFT1>,
+    ppc_opcode16,       ppc_sc,
+    ppc_opcode18,       ppc_opcode19<NOT601>,
+    ppc_rlwimi,         ppc_rlwinm,             power_rlmi,     ppc_rlwnm,
+    ppc_ori<SHFT0>,     ppc_ori<SHFT1>,
+    ppc_xori<SHFT0>,    ppc_xori<SHFT1>,
+    ppc_andirc<SHFT0>,  ppc_andirc<SHFT1>,
+    ppc_illegalop,      ppc_opcode31,
+    ppc_lz<uint32_t>,   ppc_lzu<uint32_t>,
+    ppc_lz<uint8_t>,    ppc_lzu<uint8_t>,
+    ppc_st<uint32_t>,   ppc_stu<uint32_t>,
+    ppc_st<uint8_t>,    ppc_stu<uint8_t>,
+    ppc_lz<uint16_t>,   ppc_lzu<uint16_t>,
+    ppc_lha,            ppc_lhau,
+    ppc_st<uint16_t>,   ppc_stu<uint16_t>,
+    ppc_lmw,            ppc_stmw,
+    ppc_lfs,            ppc_lfsu,               ppc_lfd,        ppc_lfdu,
+    ppc_stfs,           ppc_stfsu,              ppc_stfd,       ppc_stfdu,
+    ppc_illegalop,      ppc_illegalop,          ppc_illegalop,  ppc_opcode59,
+    ppc_illegalop,      ppc_illegalop,          ppc_illegalop,  ppc_opcode63
 };
 
 /** Lookup tables for branch instructions. */
@@ -720,32 +724,32 @@ void initialize_ppc_opcode_tables() {
     OP31(1014,   ppc_dcbz);
 
     if (is_601) {
-        OP31d(29, power_maskg);
+        OP31d(29,   power_maskg);
         OP31od(107, power_mul);
-        OP31d(152, power_slq);
-        OP31d(153, power_sle);
-        OP31d(184, power_sliq);
-        OP31d(216, power_sllq);
-        OP31d(217, power_sleq);
-        OP31d(248, power_slliq);
+        OP31d(152,  power_slq);
+        OP31d(153,  power_sle);
+        OP31d(184,  power_sliq);
+        OP31d(216,  power_sllq);
+        OP31d(217,  power_sleq);
+        OP31d(248,  power_slliq);
         OP31od(264, power_doz);
-        OP31d(277, power_lscbx);
+        OP31d(277,  power_lscbx);
         OP31od(331, power_div);
         OP31od(360, power_abs);
         OP31od(363, power_divs);
         OP31od(488, power_nabs);
-        OP31(531, power_clcs);
-        OP31d(537, power_rrib);
-        OP31d(541, power_maskir);
-        OP31d(664, power_srq);
-        OP31d(665, power_sre);
-        OP31d(696, power_sriq);
-        OP31d(728, power_srlq);
-        OP31d(729, power_sreq);
-        OP31d(760, power_srliq);
-        OP31d(920, power_sraq);
-        OP31d(921, power_srea);
-        OP31d(952, power_sraiq);
+        OP31(531,   power_clcs);
+        OP31d(537,  power_rrib);
+        OP31d(541,  power_maskir);
+        OP31d(664,  power_srq);
+        OP31d(665,  power_sre);
+        OP31d(696,  power_sriq);
+        OP31d(728,  power_srlq);
+        OP31d(729,  power_sreq);
+        OP31d(760,  power_srliq);
+        OP31d(920,  power_sraq);
+        OP31d(921,  power_srea);
+        OP31d(952,  power_sraiq);
     }
 
     OP31(306,    ppc_tlbie);
