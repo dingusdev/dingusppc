@@ -799,22 +799,14 @@ void initialize_ppc_opcode_tables() {
     }
 }
 
-void ppc_fpu_init() {
-    // zero all FPRs as prescribed for MPC601
-    // For later PPC CPUs, GPR content is undefined
-    for (int i = 0; i < 32; i++) {
-        ppc_state.fpr[i].int64_r = 0;
-    }
-
-    ppc_state.fpscr = 0;
-    set_host_rounding_mode(0);
-}
-
 void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, uint64_t tb_freq)
 {
     int i;
 
     mem_ctrl_instance = mem_ctrl;
+
+    std::memset(&ppc_state, 0, sizeof(ppc_state));
+    set_host_rounding_mode(0);
 
     ppc_state.spr[SPR::PVR] = cpu_version;
     is_601                  = (cpu_version >> 16) == 1;
@@ -862,31 +854,6 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, uint64_t tb_freq)
     timebase_counter = 0;
     dec_wr_value = 0;
 
-    /* zero all GPRs as prescribed for MPC601 */
-    /* For later PPC CPUs, GPR content is undefined */
-    for (i = 0; i < 32; i++) {
-        ppc_state.gpr[i] = 0;
-    }
-
-    /* zero all segment registers as prescribed for MPC601 */
-    /* For later PPC CPUs, SR content is undefined */
-    for (i = 0; i < 16; i++) {
-        ppc_state.sr[i] = 0;
-    }
-
-    ppc_state.cr    = 0;
-
-    ppc_fpu_init();
-
-    ppc_state.pc = 0;
-
-    ppc_state.tbr[0] = 0;
-    ppc_state.tbr[1] = 0;
-
-    /* zero all SPRs */
-    for (i = 0; i < 1024; i++) {
-        ppc_state.spr[i] = 0;
-    }
 
     if (is_601) {
         /* MPC601 sets MSR[ME] bit during hard reset / Power-On */
