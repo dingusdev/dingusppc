@@ -378,6 +378,11 @@ typedef enum {
 } field_shift;
 
 typedef enum {
+    RIGHT0,
+    LEFT1,
+} field_direction;
+
+typedef enum {
     RC0,
     RC1,
 } field_rc;
@@ -486,7 +491,7 @@ template <field_rc rec> extern void ppc_mulhwu();
 template <field_rc rec> extern void ppc_mulhw();
 template <field_rc rec, field_ov ov> extern void ppc_mullw();
 template <field_rc rec, field_ov ov> extern void ppc_neg();
-template <field_shift shift, field_rc rec> extern void ppc_shift();
+template <field_direction shift, field_rc rec> extern void ppc_shift();
 template <field_rc rec> extern void ppc_sraw();
 template <field_rc rec> extern void ppc_srawi();
 template <class T> extern void ppc_stx();

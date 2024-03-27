@@ -695,7 +695,7 @@ void initialize_ppc_opcode_tables() {
     OP31(310,    ppc_eciwx);
     OP31(438,    ppc_ecowx);
 
-    OP31dc(24,   ppc_shift, SHFT1);
+    OP31dc(24,   ppc_shift, LEFT1); // slw
     OP31dc(28,   ppc_logical, ppc_and);
     OP31dc(60,   ppc_logical, ppc_andc);
     OP31dc(124,  ppc_logical, ppc_nor);
@@ -704,7 +704,7 @@ void initialize_ppc_opcode_tables() {
     OP31dc(412,  ppc_logical, ppc_orc);
     OP31dc(444,  ppc_logical, ppc_or);
     OP31dc(476,  ppc_logical, ppc_nand);
-    OP31dc(536,  ppc_shift, SHFT0);
+    OP31dc(536,  ppc_shift, RIGHT0); // srw
     OP31d(792,   ppc_sraw);
     OP31d(824,   ppc_srawi);
     OP31dc(922,  ppc_exts, int16_t);

@@ -595,15 +595,15 @@ template void dppc_interpreter::ppc_divwu<RC1, OV1>();
 
 // Value shifting
 
-template <field_shift shift, field_rc rec>
+template <field_direction isleft, field_rc rec>
 void dppc_interpreter::ppc_shift() {
     ppc_grab_regssab(ppc_cur_instruction);
     if (ppc_result_b & 0x20) {
         ppc_result_a = 0;
     }
     else {
-        ppc_result_a = shift ? (ppc_result_d << (ppc_result_b & 0x1F))
-                            : (ppc_result_d >> (ppc_result_b & 0x1F));
+        ppc_result_a = isleft ? (ppc_result_d << (ppc_result_b & 0x1F))
+                              : (ppc_result_d >> (ppc_result_b & 0x1F));
     }
 
     if (rec)
@@ -612,10 +612,10 @@ void dppc_interpreter::ppc_shift() {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::ppc_shift<SHFT0, RC0>();
-template void dppc_interpreter::ppc_shift<SHFT0, RC1>();
-template void dppc_interpreter::ppc_shift<SHFT1, RC0>();
-template void dppc_interpreter::ppc_shift<SHFT1, RC1>();
+template void dppc_interpreter::ppc_shift<RIGHT0, RC0>();
+template void dppc_interpreter::ppc_shift<RIGHT0, RC1>();
+template void dppc_interpreter::ppc_shift<LEFT1, RC0>();
+template void dppc_interpreter::ppc_shift<LEFT1, RC1>();
 
 template <field_rc rec>
 void dppc_interpreter::ppc_sraw() {
