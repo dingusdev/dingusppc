@@ -816,6 +816,9 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, uint64_t tb_freq)
 
     mem_ctrl_instance = mem_ctrl;
 
+    ppc_state.spr[SPR::PVR] = cpu_version;
+    is_601                  = (cpu_version >> 16) == 1;
+
     initialize_ppc_opcode_tables();
 
     if (cpu_version == PPC_VER::MPC601) {
@@ -884,9 +887,6 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, uint64_t tb_freq)
     for (i = 0; i < 1024; i++) {
         ppc_state.spr[i] = 0;
     }
-
-    ppc_state.spr[SPR::PVR] = cpu_version;
-    is_601 = (cpu_version >> 16) == 1;
 
     if (is_601) {
         /* MPC601 sets MSR[ME] bit during hard reset / Power-On */
