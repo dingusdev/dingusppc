@@ -352,15 +352,15 @@ extern uint64_t exceptions_processed;
 
 // instruction enums
 typedef enum {
-    bool_and  = 1,
-    bool_andc = 2,
-    bool_eqv  = 3,
-    bool_nand = 4,
-    bool_nor  = 5,
-    bool_or   = 6,
-    bool_orc  = 7,
-    bool_xor  = 8,
-} bool_fun;
+    ppc_and  = 1,
+    ppc_andc = 2,
+    ppc_eqv  = 3,
+    ppc_nand = 4,
+    ppc_nor  = 5,
+    ppc_or   = 6,
+    ppc_orc  = 7,
+    ppc_xor  = 8,
+} logical_fun;
 
 typedef enum {
     LK0,
@@ -450,7 +450,7 @@ extern void ppc_crorc();
 extern void ppc_crxor();
 extern void ppc_isync();
 
-template <bool_fun bool_op, field_rc rec> extern void ppc_do_bool();
+template <logical_fun logical_op, field_rc rec> extern void ppc_logical();
 
 template <field_carry carry, field_rc rec, field_ov ov> extern void ppc_add();
 template <field_rc rec, field_ov ov> extern void ppc_adde();

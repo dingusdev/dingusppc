@@ -367,24 +367,24 @@ void dppc_interpreter::ppc_xori() {
 template void dppc_interpreter::ppc_xori<SHFT0>();
 template void dppc_interpreter::ppc_xori<SHFT1>();
 
-template <bool_fun bool_op, field_rc rec>
-void dppc_interpreter::ppc_do_bool() {
+template <logical_fun logical_op, field_rc rec>
+void dppc_interpreter::ppc_logical() {
     ppc_grab_regssab(ppc_cur_instruction);
-    if (bool_op == bool_fun::bool_and)
+    if (logical_op == logical_fun::ppc_and)
         ppc_result_a = ppc_result_d & ppc_result_b;
-    else if (bool_op == bool_fun::bool_andc)
+    else if (logical_op == logical_fun::ppc_andc)
         ppc_result_a = ppc_result_d & ~(ppc_result_b);
-    else if (bool_op == bool_fun::bool_eqv)
+    else if (logical_op == logical_fun::ppc_eqv)
         ppc_result_a = ~(ppc_result_d ^ ppc_result_b);
-    else if (bool_op == bool_fun::bool_nand)
+    else if (logical_op == logical_fun::ppc_nand)
         ppc_result_a = ~(ppc_result_d & ppc_result_b);
-    else if (bool_op == bool_fun::bool_nor)
+    else if (logical_op == logical_fun::ppc_nor)
         ppc_result_a = ~(ppc_result_d | ppc_result_b);
-    else if (bool_op == bool_fun::bool_or)
+    else if (logical_op == logical_fun::ppc_or)
         ppc_result_a = ppc_result_d | ppc_result_b;
-    else if (bool_op == bool_fun::bool_orc)
+    else if (logical_op == logical_fun::ppc_orc)
         ppc_result_a = ppc_result_d | ~(ppc_result_b);
-    else if (bool_op == bool_fun::bool_xor)
+    else if (logical_op == logical_fun::ppc_xor)
         ppc_result_a = ppc_result_d ^ ppc_result_b;
 
     if (rec)
@@ -393,22 +393,22 @@ void dppc_interpreter::ppc_do_bool() {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::ppc_do_bool<bool_and, RC0>();
-template void dppc_interpreter::ppc_do_bool<bool_andc, RC0>();
-template void dppc_interpreter::ppc_do_bool<bool_eqv, RC0>();
-template void dppc_interpreter::ppc_do_bool<bool_nand, RC0>();
-template void dppc_interpreter::ppc_do_bool<bool_nor, RC0>();
-template void dppc_interpreter::ppc_do_bool<bool_or, RC0>();
-template void dppc_interpreter::ppc_do_bool<bool_orc, RC0>();
-template void dppc_interpreter::ppc_do_bool<bool_xor, RC0>();
-template void dppc_interpreter::ppc_do_bool<bool_and, RC1>();
-template void dppc_interpreter::ppc_do_bool<bool_andc, RC1>();
-template void dppc_interpreter::ppc_do_bool<bool_eqv, RC1>();
-template void dppc_interpreter::ppc_do_bool<bool_nand, RC1>();
-template void dppc_interpreter::ppc_do_bool<bool_nor, RC1>();
-template void dppc_interpreter::ppc_do_bool<bool_or, RC1>();
-template void dppc_interpreter::ppc_do_bool<bool_orc, RC1>();
-template void dppc_interpreter::ppc_do_bool<bool_xor, RC1>();
+template void dppc_interpreter::ppc_logical<ppc_and, RC0>();
+template void dppc_interpreter::ppc_logical<ppc_andc, RC0>();
+template void dppc_interpreter::ppc_logical<ppc_eqv, RC0>();
+template void dppc_interpreter::ppc_logical<ppc_nand, RC0>();
+template void dppc_interpreter::ppc_logical<ppc_nor, RC0>();
+template void dppc_interpreter::ppc_logical<ppc_or, RC0>();
+template void dppc_interpreter::ppc_logical<ppc_orc, RC0>();
+template void dppc_interpreter::ppc_logical<ppc_xor, RC0>();
+template void dppc_interpreter::ppc_logical<ppc_and, RC1>();
+template void dppc_interpreter::ppc_logical<ppc_andc, RC1>();
+template void dppc_interpreter::ppc_logical<ppc_eqv, RC1>();
+template void dppc_interpreter::ppc_logical<ppc_nand, RC1>();
+template void dppc_interpreter::ppc_logical<ppc_nor, RC1>();
+template void dppc_interpreter::ppc_logical<ppc_or, RC1>();
+template void dppc_interpreter::ppc_logical<ppc_orc, RC1>();
+template void dppc_interpreter::ppc_logical<ppc_xor, RC1>();
 
 template <field_rc rec, field_ov ov>
 void dppc_interpreter::ppc_neg() {
