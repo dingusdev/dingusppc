@@ -139,32 +139,7 @@ public:
 /** Opcode lookup tables. */
 
 /** Primary opcode (bits 0...5) lookup table. */
- static PPCOpcode OpcodeGrabber[] = {
-    ppc_illegalop,      ppc_illegalop,          ppc_illegalop,  ppc_twi,
-    ppc_illegalop,      ppc_illegalop,          ppc_illegalop,  ppc_mulli,
-    ppc_subfic,         power_dozi,             ppc_cmpli,      ppc_cmpi,
-    ppc_addic<RC0>,     ppc_addic<RC1>,
-    ppc_addi<SHFT0>,    ppc_addi<SHFT1>,
-    ppc_opcode16,       ppc_sc,
-    ppc_opcode18,       ppc_opcode19<NOT601>,
-    ppc_rlwimi,         ppc_rlwinm,             power_rlmi,     ppc_rlwnm,
-    ppc_ori<SHFT0>,     ppc_ori<SHFT1>,
-    ppc_xori<SHFT0>,    ppc_xori<SHFT1>,
-    ppc_andirc<SHFT0>,  ppc_andirc<SHFT1>,
-    ppc_illegalop,      ppc_opcode31,
-    ppc_lz<uint32_t>,   ppc_lzu<uint32_t>,
-    ppc_lz<uint8_t>,    ppc_lzu<uint8_t>,
-    ppc_st<uint32_t>,   ppc_stu<uint32_t>,
-    ppc_st<uint8_t>,    ppc_stu<uint8_t>,
-    ppc_lz<uint16_t>,   ppc_lzu<uint16_t>,
-    ppc_lha,            ppc_lhau,
-    ppc_st<uint16_t>,   ppc_stu<uint16_t>,
-    ppc_lmw,            ppc_stmw,
-    ppc_lfs,            ppc_lfsu,               ppc_lfd,        ppc_lfdu,
-    ppc_stfs,           ppc_stfsu,              ppc_stfd,       ppc_stfdu,
-    ppc_illegalop,      ppc_illegalop,          ppc_illegalop,  ppc_opcode59,
-    ppc_illegalop,      ppc_illegalop,          ppc_illegalop,  ppc_opcode63
-};
+static PPCOpcode OpcodeGrabber[64];
 
 /** Lookup tables for branch instructions. */
 const static PPCOpcode SubOpcode16Grabber[] = {
@@ -182,9 +157,9 @@ const static PPCOpcode SubOpcode18Grabber[] = {
 /** Instructions decoding tables for integer,
     single floating-point, and double-floating point ops respectively */
 
-PPCOpcode SubOpcode31Grabber[2048];
-PPCOpcode SubOpcode59Grabber[64];
-PPCOpcode SubOpcode63Grabber[2048];
+static PPCOpcode SubOpcode31Grabber[2048];
+static PPCOpcode SubOpcode59Grabber[64];
+static PPCOpcode SubOpcode63Grabber[2048];
 
 /** Exception helpers. */
 
@@ -586,53 +561,113 @@ Opcode table macros:
 - o is for overflow (OV).
 - c is for carry CARRY0/CARRY1. It also works for other options:
   SHFT0/SHFT1, RIGHT0/LEFT1, uint8_t/uint16_t/uint32_t, and int8_t/int16_t.
-- t is for two. It's like d for dot but for when the function used for Rc=0 and Rc=1
-  is the same (usually for illegal_op).
  */
 
-#define OP(opcode, subopcode, fn) \
-    SubOpcode ## opcode ## Grabber[((subopcode)<<1)] = fn;
+#define OP(opcode, fn) \
+do { \
+    OpcodeGrabber[opcode] = fn; \
+} while (0)
 
-#define OPd(opcode, subopcode, fn) \
-    SubOpcode ## opcode ## Grabber[((subopcode)<<1)] = fn<RC0>; \
-    SubOpcode ## opcode ## Grabber[((subopcode)<<1)+1] = fn<RC1>;
+#define OPX(opcode, subopcode, fn) \
+do { \
+    opcode ## Grabber[((subopcode)<<1)] = fn; \
+} while (0)
 
-#define OPt(opcode, subopcode, fn) \
-    SubOpcode ## opcode ## Grabber[((subopcode)<<1)] = fn; \
-    SubOpcode ## opcode ## Grabber[((subopcode)<<1)+1] = fn;
+#define OPXd(opcode, subopcode, fn) \
+do { \
+    opcode ## Grabber[((subopcode)<<1)] = fn<RC0>; \
+    opcode ## Grabber[((subopcode)<<1)+1] = fn<RC1>; \
+} while (0)
 
-#define OPod(opcode, subopcode, fn) \
-    SubOpcode ## opcode ## Grabber[((subopcode)<<1)] = fn<RC0, OV0>; \
-    SubOpcode ## opcode ## Grabber[((subopcode)<<1)+1] = fn<RC1, OV0>; \
-    SubOpcode ## opcode ## Grabber[1024+((subopcode)<<1)] = fn<RC0, OV1>; \
-    SubOpcode ## opcode ## Grabber[1024+((subopcode)<<1)+1] = fn<RC1, OV1>;
+#define OPXod(opcode, subopcode, fn) \
+do { \
+    opcode ## Grabber[((subopcode)<<1)] = fn<RC0, OV0>; \
+    opcode ## Grabber[((subopcode)<<1)+1] = fn<RC1, OV0>; \
+    opcode ## Grabber[1024+((subopcode)<<1)] = fn<RC0, OV1>; \
+    opcode ## Grabber[1024+((subopcode)<<1)+1] = fn<RC1, OV1>; \
+} while (0)
 
-#define OPdc(opcode, subopcode, fn, carry) \
-    SubOpcode ## opcode ## Grabber[((subopcode)<<1)] = fn<carry, RC0>; \
-    SubOpcode ## opcode ## Grabber[((subopcode)<<1)+1] = fn<carry, RC1>;
+#define OPXdc(opcode, subopcode, fn, carry) \
+do { \
+    opcode ## Grabber[((subopcode)<<1)] = fn<carry, RC0>; \
+    opcode ## Grabber[((subopcode)<<1)+1] = fn<carry, RC1>; \
+} while (0)
 
-#define OPcod(opcode, subopcode, fn, carry) \
-    SubOpcode ## opcode ## Grabber[((subopcode)<<1)] = fn<carry, RC0, OV0>; \
-    SubOpcode ## opcode ## Grabber[((subopcode)<<1)+1] = fn<carry, RC1, OV0>; \
-    SubOpcode ## opcode ## Grabber[1024+((subopcode)<<1)] = fn<carry, RC0, OV1>; \
-    SubOpcode ## opcode ## Grabber[1024+((subopcode)<<1)+1] = fn<carry, RC1, OV1>;
+#define OPXcod(opcode, subopcode, fn, carry) \
+do { \
+    opcode ## Grabber[((subopcode)<<1)] = fn<carry, RC0, OV0>; \
+    opcode ## Grabber[((subopcode)<<1)+1] = fn<carry, RC1, OV0>; \
+    opcode ## Grabber[1024+((subopcode)<<1)] = fn<carry, RC0, OV1>; \
+    opcode ## Grabber[1024+((subopcode)<<1)+1] = fn<carry, RC1, OV1>; \
+} while (0)
 
-#define OP31(subopcode, fn) OP(31, subopcode, fn)
-#define OP31d(subopcode, fn) OPd(31, subopcode, fn)
-#define OP31od(subopcode, fn) OPod(31, subopcode, fn)
-#define OP31dc(subopcode, fn, carry) OPdc(31, subopcode, fn, carry)
-#define OP31cod(subopcode, fn, carry) OPcod(31, subopcode, fn, carry)
+#define OP31(subopcode, fn) OPX(SubOpcode31, subopcode, fn)
+#define OP31d(subopcode, fn) OPXd(SubOpcode31, subopcode, fn)
+#define OP31od(subopcode, fn) OPXod(SubOpcode31, subopcode, fn)
+#define OP31dc(subopcode, fn, carry) OPXdc(SubOpcode31, subopcode, fn, carry)
+#define OP31cod(subopcode, fn, carry) OPXcod(SubOpcode31, subopcode, fn, carry)
 
-#define OP59(subopcode, fn) OP(59, subopcode, fn)
-#define OP59d(subopcode, fn) OPd(59, subopcode, fn)
-#define OP59t(subopcode, fn) OPt(59, subopcode, fn)
+#define OP59d(subopcode, fn) OPXd(SubOpcode59, subopcode, fn)
 
-#define OP63(subopcode, fn) OP(63, subopcode, fn)
-#define OP63d(subopcode, fn) OPd(63, subopcode, fn)
-#define OP63t(subopcode, fn) OPt(63, subopcode, fn)
-#define OP63dc(subopcode, fn, carry) OPdc(63, subopcode, fn, carry)
+#define OP63(subopcode, fn) OPX(SubOpcode63, subopcode, fn)
+#define OP63d(subopcode, fn) OPXd(SubOpcode63, subopcode, fn)
+#define OP63dc(subopcode, fn, carry) OPXdc(SubOpcode63, subopcode, fn, carry)
 
 void initialize_ppc_opcode_tables() {
+    std::fill_n(OpcodeGrabber, 64, ppc_illegalop);
+    OP(3,  ppc_twi);
+    //OP(4,  ppc_opcode4); - Altivec instructions not emulated yet. Uncomment once they're implemented.
+    OP(7,  ppc_mulli);
+    OP(8,  ppc_subfic);
+    if (is_601) OP(9, power_dozi);
+    OP(10, ppc_cmpli);
+    OP(11, ppc_cmpi);
+    OP(12, ppc_addic<RC0>);
+    OP(13, ppc_addic<RC1>);
+    OP(14, ppc_addi<SHFT0>);
+    OP(15, ppc_addi<SHFT1>);
+    OP(16, ppc_opcode16);
+    OP(17, ppc_sc);
+    OP(18, ppc_opcode18);
+    if (is_601) OP(19, ppc_opcode19<IS601>); else OP(19, ppc_opcode19<NOT601>);
+    OP(20, ppc_rlwimi);
+    OP(21, ppc_rlwinm);
+    if (is_601) OP(22, power_rlmi);
+    OP(23, ppc_rlwnm);
+    OP(24, ppc_ori<SHFT0>);
+    OP(25, ppc_ori<SHFT1>);
+    OP(26, ppc_xori<SHFT0>);
+    OP(27, ppc_xori<SHFT1>);
+    OP(28, ppc_andirc<SHFT0>);
+    OP(29, ppc_andirc<SHFT1>);
+    OP(31, ppc_opcode31);
+    OP(32, ppc_lz<uint32_t>);
+    OP(33, ppc_lzu<uint32_t>);
+    OP(34, ppc_lz<uint8_t>);
+    OP(35, ppc_lzu<uint8_t>);
+    OP(36, ppc_st<uint32_t>);
+    OP(37, ppc_stu<uint32_t>);
+    OP(38, ppc_st<uint8_t>);
+    OP(39, ppc_stu<uint8_t>);
+    OP(40, ppc_lz<uint16_t>);
+    OP(41, ppc_lzu<uint16_t>);
+    OP(42, ppc_lha);
+    OP(43, ppc_lhau);
+    OP(44, ppc_st<uint16_t>);
+    OP(45, ppc_stu<uint16_t>);
+    OP(46, ppc_lmw);
+    OP(47, ppc_stmw);
+    OP(48, ppc_lfs);
+    OP(49, ppc_lfsu);
+    OP(50, ppc_lfd);
+    OP(51, ppc_lfdu);
+    OP(52, ppc_stfs);
+    OP(53, ppc_stfsu);
+    OP(54, ppc_stfd);
+    OP(55, ppc_stfdu);
+    OP(59, ppc_opcode59);
+    OP(63, ppc_opcode63);
+
     std::fill_n(SubOpcode31Grabber, 2048, ppc_illegalop);
     OP31(0,      ppc_cmp);
     OP31(4,      ppc_tw);
@@ -690,7 +725,7 @@ void initialize_ppc_opcode_tables() {
     OP31(727,    ppc_stfdx);
     OP31(759,    ppc_stfdux);
     OP31(918,    ppc_sthbrx);
-    OP31(983,    ppc_stfiwx);
+    if (!is_601) OP31(983, ppc_stfiwx);
 
     OP31(310,    ppc_eciwx);
     OP31(438,    ppc_ecowx);
@@ -719,7 +754,7 @@ void initialize_ppc_opcode_tables() {
     OP31(210,    ppc_mtsr);
     OP31(242,    ppc_mtsrin);
     OP31(339,    ppc_mfspr);
-    OP31(371,    ppc_mftb);
+    if (!is_601) OP31(371, ppc_mftb);
     OP31(467,    ppc_mtspr);
     OP31(512,    ppc_mcrxr);
     OP31(595,    ppc_mfsr);
@@ -763,19 +798,19 @@ void initialize_ppc_opcode_tables() {
     }
 
     OP31(306,    ppc_tlbie);
-    OP31(370,    ppc_tlbia);
-    OP31(566,    ppc_tlbsync);
+    if (!is_601) OP31(370, ppc_tlbia);
+    if (!is_601) OP31(566, ppc_tlbsync);
     OP31(854,    ppc_eieio);
     OP31(982,    ppc_icbi);
-    OP31(978,    ppc_tlbld);
-    OP31(1010,   ppc_tlbli);
+    if (!is_601) OP31(978, ppc_tlbld);
+    if (!is_601) OP31(1010, ppc_tlbli);
 
     std::fill_n(SubOpcode59Grabber, 64, ppc_illegalop);
     OP59d(18,    ppc_fdivs);
     OP59d(20,    ppc_fsubs);
     OP59d(21,    ppc_fadds);
-    OP59d(22,    ppc_fsqrts);
-    OP59d(24,    ppc_fres);
+    if (ppc_state.spr[SPR::PVR] == PPC_VER::MPC970MP) OP59d(22, ppc_fsqrts);
+    if (!is_601) OP59d(24, ppc_fres);
     OP59d(25,    ppc_fmuls);
     OP59d(28,    ppc_fmsubs);
     OP59d(29,    ppc_fmadds);
@@ -790,8 +825,8 @@ void initialize_ppc_opcode_tables() {
     OP63d(18,    ppc_fdiv);
     OP63d(20,    ppc_fsub);
     OP63d(21,    ppc_fadd);
-    OP63d(22,    ppc_fsqrt);
-    OP63d(26,    ppc_frsqrte);
+    if (ppc_state.spr[SPR::PVR] == PPC_VER::MPC970MP) OP63d(22, ppc_fsqrt);
+    if (!is_601) OP63d(26, ppc_frsqrte);
     OP63(32,     ppc_fcmpo);
     OP63d(38,    ppc_mtfsb1);
     OP63d(40,    ppc_fneg);
@@ -801,11 +836,11 @@ void initialize_ppc_opcode_tables() {
     OP63d(134,   ppc_mtfsfi);
     OP63d(136,   ppc_fnabs);
     OP63d(264,   ppc_fabs);
-    OP63dc(583,  ppc_mffs, NOT601);
+    if (is_601) OP63dc(583, ppc_mffs, IS601); else OP63dc(583, ppc_mffs, NOT601);
     OP63d(711,   ppc_mtfsf);
 
     for (int i = 0; i < 1024; i += 32) {
-        OP63d(i + 23, ppc_fsel);
+        if (!is_601) OP63d(i + 23, ppc_fsel);
         OP63d(i + 25, ppc_fmul);
         OP63d(i + 28, ppc_fmsub);
         OP63d(i + 29, ppc_fmadd);
@@ -824,32 +859,9 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, uint64_t tb_freq)
     set_host_rounding_mode(0);
 
     ppc_state.spr[SPR::PVR] = cpu_version;
-    is_601                  = (cpu_version >> 16) == 1;
+    is_601 = (cpu_version >> 16) == 1;
 
     initialize_ppc_opcode_tables();
-
-    if (cpu_version == PPC_VER::MPC601) {
-        OpcodeGrabber[19] = ppc_opcode19<IS601>;
-        OP31(370,   ppc_illegalop); // tlbia
-        OP31(371,   ppc_illegalop); // mftb
-        OP31(566,   ppc_illegalop); // tlbsync
-        OP31(978,   ppc_illegalop); // tlbld    // 603e and later
-        OP31(983,   ppc_illegalop); // stfiwx
-        OP31(1010,  ppc_illegalop); // tlbli    // 603e and later
-        OP59t(24,   ppc_illegalop); // fres
-        OP63t(26,   ppc_illegalop); // frsqrte
-        OP63dc(583, ppc_mffs, IS601);
-        for (int i = 0; i < 1024; i += 32) {
-            OP63t(i + 23, ppc_illegalop); // fsel
-        }
-    } else {
-        OpcodeGrabber[9]  = ppc_illegalop; // dozi
-        OpcodeGrabber[22] = ppc_illegalop; // rlmi and rlmi.
-    }
-    if (cpu_version != PPC_VER::MPC970MP) {
-        OP59t(22, ppc_illegalop); // fsqrts
-        OP63t(22, ppc_illegalop); // fsqrt
-    }
 
     // initialize emulator timers
     TimerManager::get_instance()->set_time_now_cb(&get_virt_time_ns);
