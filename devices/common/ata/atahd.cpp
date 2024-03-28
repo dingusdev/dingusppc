@@ -209,50 +209,51 @@ uint64_t AtaHardDisk::get_lba() {
 }
 
 void AtaHardDisk::calc_chs_params() {
-    unsigned num_blocks, heads, sectors, max_sectors;
+    unsigned num_blocks, heads, sectors, max_sectors, cylinders, max_cylinders;
 
     LOG_F(INFO, "%s: total sectors %d", this->name.c_str(), this->total_sectors);
 
+    if (this->total_sectors >= REAL_CHS_LIMIT) {
+        heads = 16;
+        sectors = 255;
+        cylinders = 65535;
+        LOG_F(WARNING, "%s: exceeds max CHS translation",
+              this->name.c_str());
+        goto done;
+    }
+
     // use PC BIOS limit to keep number of sectors small for smaller disks
-    if (this->total_sectors >= ATA_BIOS_LIMIT)
+    if (this->total_sectors >= ATA_BIOS_LIMIT) {
         max_sectors = 255;
-    else
+        max_cylinders = 65535;
+    } else {
         max_sectors = 63;
+        max_cylinders = 16383;
+    }
 
     num_blocks = this->total_sectors;
 
     for (heads = 16; heads > 0; heads--)
-        if (!(num_blocks % heads))
-            break;
+        for (sectors = max_sectors; sectors > 0; sectors--)
+            if (!(num_blocks % (heads * sectors)))
+                if (heads * sectors * max_cylinders >= num_blocks) {
+                    cylinders = num_blocks / (heads * sectors);
+                    goto done;
+                }
 
+    heads = 16;
+    sectors = (num_blocks + heads * max_cylinders - 1) / (heads * max_cylinders);
+    cylinders = (num_blocks + heads * sectors - 1) / (heads * sectors);
+
+    LOG_F(WARNING, "%s: could not find a suitable CHS translation; increased sectors to %d",
+          this->name.c_str(), heads * sectors * cylinders);
+
+done:
     this->heads = heads;
-
-    if (!heads) {
-        LOG_F(WARNING, "%s: could not find a suitable number of heads",
-              this->name.c_str());
-        return;
-    }
-
-    num_blocks /= heads;
-
-    for (sectors = max_sectors; sectors > 0; sectors--) {
-        if (!(num_blocks % sectors)) {
-            if (num_blocks / sectors < 65536)
-                break;
-        }
-    }
-
     this->sectors = sectors;
-
-    if (!sectors) {
-        LOG_F(WARNING, "%s: could not find a suitable CHS translation",
-              this->name.c_str());
-        return;
-    }
-
-    this->cylinders = num_blocks / sectors;
-    LOG_F(INFO, "%s: C=%d, H=%d, S=%d", this->name.c_str(), this->cylinders,
-          this->heads, this->sectors);
+    this->cylinders = cylinders;
+    LOG_F(INFO, "%s: C=%d, H=%d, S=%d", this->name.c_str(), cylinders,
+          heads, sectors);
 }
 
 static const PropMap AtaHardDiskProperties = {
