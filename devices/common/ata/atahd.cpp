@@ -63,14 +63,16 @@ int AtaHardDisk::device_postinit() {
 
 void AtaHardDisk::insert_image(std::string filename) {
     if (!this->hdd_img.open(filename)) {
-        ABORT_F("%s: could not open image file \"%s\"", this->name.c_str(), filename.c_str());
+        ABORT_F("%s: could not open image file \"%s\"", this->name.c_str(),
+                filename.c_str());
     }
 
     this->img_size = this->hdd_img.size();
     uint64_t sectors = this->hdd_img.size() / ATA_HD_SEC_SIZE;
     this->total_sectors = (uint32_t)sectors;
     if (sectors != this->total_sectors) {
-        ABORT_F("%s: image file \"%s\" is too big", this->name.c_str(), filename.c_str());
+        ABORT_F("%s: image file \"%s\" is too big", this->name.c_str(),
+                filename.c_str());
     }
     this->calc_chs_params();
 }
