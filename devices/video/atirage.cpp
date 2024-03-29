@@ -146,16 +146,19 @@ ATIRage::ATIRage(uint16_t dev_id)
     set_bit(regs[ATI_CRTC_GEN_CNTL], ATI_CRTC_DISPLAY_DIS); // because blank_on is true
 }
 
-void ATIRage::change_one_bar(uint32_t &aperture, uint32_t aperture_size, uint32_t aperture_new, int bar_num) {
+void ATIRage::change_one_bar(uint32_t &aperture, uint32_t aperture_size,
+                             uint32_t aperture_new, int bar_num) {
     if (aperture != aperture_new) {
         if (aperture)
-            this->host_instance->pci_unregister_mmio_region(aperture, aperture_size, this);
+            this->host_instance->pci_unregister_mmio_region(aperture,
+                                                            aperture_size, this);
 
         aperture = aperture_new;
         if (aperture)
             this->host_instance->pci_register_mmio_region(aperture, aperture_size, this);
 
-        LOG_F(INFO, "%s: aperture[%d] set to 0x%08X", this->name.c_str(), bar_num, aperture);
+        LOG_F(INFO, "%s: aperture[%d] set to 0x%08X", this->name.c_str(),
+              bar_num, aperture);
     }
 }
 
@@ -163,14 +166,19 @@ void ATIRage::notify_bar_change(int bar_num)
 {
     switch (bar_num) {
     case 0:
-        change_one_bar(this->aperture_base[bar_num], this->aperture_size[bar_num] - this->vram_size, this->bars[bar_num] & ~15, bar_num);
+        change_one_bar(this->aperture_base[bar_num],
+                       this->aperture_size[bar_num] - this->vram_size,
+                       this->bars[bar_num] & ~15, bar_num);
         break;
     case 2:
-        change_one_bar(this->aperture_base[bar_num], this->aperture_size[bar_num], this->bars[bar_num] & ~15, bar_num);
+        change_one_bar(this->aperture_base[bar_num],
+                       this->aperture_size[bar_num],
+                       this->bars[bar_num] & ~15, bar_num);
         break;
     case 1:
         this->aperture_base[1] = this->bars[bar_num] & ~3;
-        LOG_F(INFO, "%s: I/O space address set to 0x%08X", this->name.c_str(), this->aperture_base[1]);
+        LOG_F(INFO, "%s: I/O space address set to 0x%08X", this->name.c_str(),
+              this->aperture_base[1]);
         break;
     }
 }
@@ -407,21 +415,23 @@ void ATIRage::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size) {
                                 ((gpio_levels & 6) << 3) | (gpio_levels & 1), 8, 8);
         }
         break;
-    case ATI_CLOCK_CNTL:
-    {
+    case ATI_CLOCK_CNTL: {
         uint32_t bits_write_only =
             (1 << ATI_CLOCK_STROBE);
 
         new_value = value & ~bits_write_only; // clear the write only bits
 
-        uint8_t pll_addr = extract_bits<uint32_t>(new_value, ATI_PLL_ADDR, ATI_PLL_ADDR_size);
+        uint8_t pll_addr = extract_bits<uint32_t>(new_value, ATI_PLL_ADDR,
+                                                  ATI_PLL_ADDR_size);
         if (offset <= 2 && offset + size > 2 && bit_set(new_value, ATI_PLL_WR_EN)) {
-            uint8_t pll_data = extract_bits<uint32_t>(new_value, ATI_PLL_DATA, ATI_PLL_DATA_size);
+            uint8_t pll_data = extract_bits<uint32_t>(new_value, ATI_PLL_DATA,
+                                                      ATI_PLL_DATA_size);
             this->plls[pll_addr] = pll_data;
             LOG_F(9, "%s: PLL #%d set to 0x%02X", this->name.c_str(), pll_addr, pll_data);
         }
         else {
-            insert_bits<uint32_t>(new_value, this->plls[pll_addr], ATI_PLL_DATA, ATI_PLL_DATA_size);
+            insert_bits<uint32_t>(new_value, this->plls[pll_addr], ATI_PLL_DATA,
+                                  ATI_PLL_DATA_size);
         }
         break;
     }
@@ -543,16 +553,19 @@ uint32_t ATIRage::read(uint32_t rgn_start, uint32_t offset, int size)
                 return BYTESWAP_SIZED(this->read_reg((offset & 0x3FF) + 0x400, size), size);
             }
         //}
-        LOG_F(WARNING, "%s: read  unmapped aperture[0] region %08x.%c", this->name.c_str(), offset, SIZE_ARG(size));
+        LOG_F(WARNING, "%s: read  unmapped aperture[0] region %08x.%c",
+              this->name.c_str(), offset, SIZE_ARG(size));
         return 0;
     }
 
     if (rgn_start == this->aperture_base[2] && offset < this->aperture_size[2]) {
-        LOG_F(WARNING, "%s: read  unmapped aperture[2] region %08x.%c", this->name.c_str(), offset, SIZE_ARG(size));
+        LOG_F(WARNING, "%s: read  unmapped aperture[2] region %08x.%c",
+              this->name.c_str(), offset, SIZE_ARG(size));
         return 0;
     }
 
-    LOG_F(WARNING, "%s: read  unmapped aperture region %08x.%c", this->name.c_str(), offset, SIZE_ARG(size));
+    LOG_F(WARNING, "%s: read  unmapped aperture region %08x.%c",
+          this->name.c_str(), offset, SIZE_ARG(size));
     return 0;
 }
 
@@ -574,19 +587,23 @@ void ATIRage::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int siz
             if (offset >= MM_REGS_1_OFF
                 //&& bit_set(this->regs[ATI_BUS_CNTL], ATI_BUS_EXT_REG_EN)
             ) { // memory-mapped registers, block 1
-                return this->write_reg((offset & 0x3FF) + 0x400, BYTESWAP_SIZED(value, size), size);
+                return this->write_reg((offset & 0x3FF) + 0x400,
+                                        BYTESWAP_SIZED(value, size), size);
             }
         //}
-        LOG_F(WARNING, "%s: write unmapped aperture[0] region %08x.%c = %0*x", this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
+        LOG_F(WARNING, "%s: write unmapped aperture[0] region %08x.%c = %0*x",
+              this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
         return;
     }
 
     if (rgn_start == this->aperture_base[2] && offset < this->aperture_size[2]) {
-        LOG_F(WARNING, "%s: write unmapped aperture[2] region %08x.%c = %0*x", this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
+        LOG_F(WARNING, "%s: write unmapped aperture[2] region %08x.%c = %0*x",
+              this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
         return;
     }
 
-    LOG_F(WARNING, "%s: write unmapped aperture region %08x.%c = %0*x", this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
+    LOG_F(WARNING, "%s: write unmapped aperture region %08x.%c = %0*x",
+          this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
 }
 
 float ATIRage::calc_pll_freq(int scale, int fb_div) {
@@ -599,7 +616,8 @@ void ATIRage::verbose_pixel_format(int crtc_index) {
         return;
     }
 
-    uint32_t pix_fmt = extract_bits<uint32_t>(this->regs[ATI_CRTC_GEN_CNTL], ATI_CRTC_PIX_WIDTH, ATI_CRTC_PIX_WIDTH_size);
+    uint32_t pix_fmt = extract_bits<uint32_t>(this->regs[ATI_CRTC_GEN_CNTL],
+                                              ATI_CRTC_PIX_WIDTH, ATI_CRTC_PIX_WIDTH_size);
 
     const char* what = "Pixel format:";
 
@@ -644,16 +662,22 @@ void ATIRage::crtc_update() {
 
     bool need_recalc = false;
 
-    new_width  = (extract_bits<uint32_t>(this->regs[ATI_CRTC_H_TOTAL_DISP], ATI_CRTC_H_DISP, ATI_CRTC_H_DISP_size) + 1) * 8;
-    new_height = extract_bits<uint32_t>(this->regs[ATI_CRTC_V_TOTAL_DISP], ATI_CRTC_V_DISP, ATI_CRTC_V_DISP_size) + 1;
+    new_width  = (extract_bits<uint32_t>(this->regs[ATI_CRTC_H_TOTAL_DISP],
+                                         ATI_CRTC_H_DISP,
+                                         ATI_CRTC_H_DISP_size) + 1) * 8;
+    new_height = extract_bits<uint32_t>(this->regs[ATI_CRTC_V_TOTAL_DISP],
+                                        ATI_CRTC_V_DISP, ATI_CRTC_V_DISP_size) + 1;
 
     if (new_width != this->active_width || new_height != this->active_height) {
         this->create_display_window(new_width, new_height);
         need_recalc = true;
     }
 
-    new_htotal = (extract_bits<uint32_t>(this->regs[ATI_CRTC_H_TOTAL_DISP], ATI_CRTC_H_TOTAL, ATI_CRTC_H_TOTAL_size) + 1) * 8;
-    new_vtotal = extract_bits<uint32_t>(this->regs[ATI_CRTC_V_TOTAL_DISP], ATI_CRTC_V_TOTAL, ATI_CRTC_V_TOTAL_size) + 1;
+    new_htotal = (extract_bits<uint32_t>(this->regs[ATI_CRTC_H_TOTAL_DISP],
+                                         ATI_CRTC_H_TOTAL,
+                                         ATI_CRTC_H_TOTAL_size) + 1) * 8;
+    new_vtotal = extract_bits<uint32_t>(this->regs[ATI_CRTC_V_TOTAL_DISP],
+                                        ATI_CRTC_V_TOTAL, ATI_CRTC_V_TOTAL_size) + 1;
 
     if (new_htotal != this->hori_total || new_vtotal != this->vert_total) {
         this->hori_total = new_htotal;
@@ -667,14 +691,17 @@ void ATIRage::crtc_update() {
         need_recalc = true;
     }
 
-    int new_pixel_format = extract_bits<uint32_t>(this->regs[ATI_CRTC_GEN_CNTL], ATI_CRTC_PIX_WIDTH, ATI_CRTC_PIX_WIDTH_size);
+    int new_pixel_format = extract_bits<uint32_t>(this->regs[ATI_CRTC_GEN_CNTL],
+                                                  ATI_CRTC_PIX_WIDTH,
+                                                  ATI_CRTC_PIX_WIDTH_size);
     if (new_pixel_format != this->pixel_format) {
         this->pixel_format = new_pixel_format;
         need_recalc = true;
     }
 
     // look up which VPLL ouput is requested
-    int clock_sel = extract_bits<uint32_t>(this->regs[ATI_CLOCK_CNTL], ATI_CLOCK_SEL, ATI_CLOCK_SEL_size);
+    int clock_sel = extract_bits<uint32_t>(this->regs[ATI_CLOCK_CNTL], ATI_CLOCK_SEL,
+                                           ATI_CLOCK_SEL_size);
 
     // calculate VPLL output frequency
     float vpll_freq = calc_pll_freq(2, this->plls[VCLK0_FB_DIV + clock_sel]);
@@ -756,10 +783,11 @@ void ATIRage::crtc_update() {
 
     static uint8_t bits_per_pixel[8] = {0, 4, 8, 16, 16, 24, 32, 0};
 
-    this->fb_pitch = extract_bits<uint32_t>(this->regs[ATI_CRTC_OFF_PITCH], ATI_CRTC_PITCH, ATI_CRTC_PITCH_size) *
-        (bits_per_pixel[this->pixel_format & 7] * 8) >> 3;
+    this->fb_pitch = extract_bits<uint32_t>(this->regs[ATI_CRTC_OFF_PITCH],
+        ATI_CRTC_PITCH, ATI_CRTC_PITCH_size) * (bits_per_pixel[this->pixel_format & 7] * 8) >> 3;
 
-    this->fb_ptr = &this->vram_ptr[extract_bits<uint32_t>(this->regs[ATI_CRTC_OFF_PITCH], ATI_CRTC_OFFSET, ATI_CRTC_OFFSET_size) * 8];
+    this->fb_ptr = &this->vram_ptr[extract_bits<uint32_t>(this->regs[ATI_CRTC_OFF_PITCH],
+        ATI_CRTC_OFFSET, ATI_CRTC_OFFSET_size) * 8];
 
     LOG_F(INFO, "%s: primary CRT controller enabled:", this->name.c_str());
     LOG_F(INFO, "Video mode: %s",
