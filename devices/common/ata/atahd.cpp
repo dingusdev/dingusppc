@@ -44,6 +44,10 @@ int AtaHardDisk::device_postinit() {
         return -1;
     }
 
+    std::string hdd_image_path = GET_STR_PROP("hdd_img");
+    if (hdd_image_path.empty())
+        return 0;
+
     std::string bus_id;
     uint32_t    dev_num;
 
@@ -52,10 +56,7 @@ int AtaHardDisk::device_postinit() {
     auto bus_obj = dynamic_cast<IdeChannel*>(gMachineObj->get_comp_by_name(bus_id));
     bus_obj->register_device(dev_num, this);
 
-    std::string hdd_image_path = GET_STR_PROP("hdd_img");
-    if (!hdd_image_path.empty()) {
-        this->insert_image(hdd_image_path);
-    }
+    this->insert_image(hdd_image_path);
 
     return 0;
 }
