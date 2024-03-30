@@ -228,7 +228,7 @@ void ScsiCdrom::inquiry() {
         LOG_F(ERROR, "Inappropriate Allocation Length: %d", alloc_len);
     }
     else {
-        bzero(&this->data_buf[36], alloc_len - 36);
+        memset(&this->data_buf[36], 0, alloc_len - 36);
     }
 
     this->bytes_out = alloc_len;
