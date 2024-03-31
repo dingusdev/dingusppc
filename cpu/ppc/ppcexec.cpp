@@ -845,7 +845,8 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, uint64_t tb_freq)
     g_nanoseconds_base = now_ns();
     g_icycles_base = 0;
     g_icycles = 0;
-    icnt_factor = 6;
+    //icnt_factor      = 6;
+    icnt_factor = 4;
     tbr_wr_timestamp = 0;
     rtc_timestamp = 0;
     tbr_wr_value = 0;
