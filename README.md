@@ -57,7 +57,15 @@ You will also have to recursive clone or run
 git submodule update --init --recursive
 ```
 
-This is because the CubeB and Capstone modules are not included by default. All other components are already included in the thirdparty folder and compiled along with the rest of DingusPPC.
+This is because the CubeB, Capstone, and SDL2 modules are not included by default.
+
+For SDL2, Linux users may also have run:
+
+```
+sudo apt install libsdl2-dev
+```
+
+ CLI11 and loguru are already included in the thirdparty folder and compiled along with the rest of DingusPPC.
 
 For example, to build the project in a Unix-like environment, you will need to run
 the following commands in the OS terminal:
