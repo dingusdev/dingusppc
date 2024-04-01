@@ -288,7 +288,7 @@ void ScsiHardDisk::inquiry() {
               alloc_len);
     }
     else {
-        bzero(&this->data_buf[36], alloc_len - 36);
+        memset(&this->data_buf[36], 0, alloc_len - 36);
     }
 
     this->bytes_out = alloc_len;
