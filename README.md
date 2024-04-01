@@ -59,7 +59,7 @@ git submodule update --init --recursive
 
 This is because the CubeB, Capstone, and SDL2 modules are not included by default.
 
-For SDL2, Linux users may also have run:
+For SDL2, Linux users may also have to run:
 
 ```
 sudo apt install libsdl2-dev
