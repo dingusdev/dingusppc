@@ -93,6 +93,16 @@ inline static bool check_snan(int check_reg) {
         ((check_int & (0x1ULL << 51)) == 0ULL));
 }
 
+inline static void snan_single_check(int reg_a) {
+    if (check_snan(reg_a))
+        ppc_state.fpscr |= FX | VX | VXSNAN;
+}
+
+inline static void snan_double_check(int reg_a, int reg_b) {
+    if (check_snan(reg_a) || check_snan(reg_b))
+        ppc_state.fpscr |= FX | VX | VXSNAN;
+}
+
 inline static bool check_qnan(int check_reg) {
     uint64_t check_int = ppc_state.fpr[check_reg].int64_r;
     return (((check_int & (0x7FFULL << 52)) == (0x7FFULL << 52)) &&
@@ -122,6 +132,8 @@ template <field_rc rec>
 void dppc_interpreter::ppc_fadd() {
     ppc_grab_regsfpdab(ppc_cur_instruction);
 
+    snan_double_check(reg_a, reg_b);
+
     double ppc_dblresult64_d = val_reg_a + val_reg_b;
     ppc_store_dfpresult_flt(reg_d, ppc_dblresult64_d);
     fpresult_update(ppc_dblresult64_d);
@@ -136,6 +148,8 @@ template void dppc_interpreter::ppc_fadd<RC1>();
 template <field_rc rec>
 void dppc_interpreter::ppc_fsub() {
     ppc_grab_regsfpdab(ppc_cur_instruction);
+
+    snan_double_check(reg_a, reg_b);
 
     double ppc_dblresult64_d = val_reg_a - val_reg_b;
     ppc_store_dfpresult_flt(reg_d, ppc_dblresult64_d);
@@ -152,6 +166,8 @@ template <field_rc rec>
 void dppc_interpreter::ppc_fdiv() {
     ppc_grab_regsfpdab(ppc_cur_instruction);
 
+    snan_double_check(reg_a, reg_b);
+
     double ppc_dblresult64_d = val_reg_a / val_reg_b;
     ppc_store_dfpresult_flt(reg_d, ppc_dblresult64_d);
     fpresult_update(ppc_dblresult64_d);
@@ -166,6 +182,8 @@ template void dppc_interpreter::ppc_fdiv<RC1>();
 template <field_rc rec>
 void dppc_interpreter::ppc_fmul() {
     ppc_grab_regsfpdac(ppc_cur_instruction);
+
+    snan_double_check(reg_a, reg_c);
 
     double ppc_dblresult64_d = val_reg_a * val_reg_c;
     ppc_store_dfpresult_flt(reg_d, ppc_dblresult64_d);
@@ -182,6 +200,9 @@ template <field_rc rec>
 void dppc_interpreter::ppc_fmadd() {
     ppc_grab_regsfpdabc(ppc_cur_instruction);
 
+    snan_double_check(reg_a, reg_c);
+    snan_single_check(reg_b);
+
     double ppc_dblresult64_d = std::fma(val_reg_a, val_reg_c, val_reg_b);
     ppc_store_dfpresult_flt(reg_d, ppc_dblresult64_d);
     fpresult_update(ppc_dblresult64_d);
@@ -196,6 +217,9 @@ template void dppc_interpreter::ppc_fmadd<RC1>();
 template <field_rc rec>
 void dppc_interpreter::ppc_fmsub() {
     ppc_grab_regsfpdabc(ppc_cur_instruction);
+
+    snan_double_check(reg_a, reg_c);
+    snan_single_check(reg_b);
 
     double ppc_dblresult64_d = std::fma(val_reg_a, val_reg_c, -val_reg_b);
     ppc_store_dfpresult_flt(reg_d, ppc_dblresult64_d);
@@ -212,6 +236,9 @@ template <field_rc rec>
 void dppc_interpreter::ppc_fnmadd() {
     ppc_grab_regsfpdabc(ppc_cur_instruction);
 
+    snan_double_check(reg_a, reg_c);
+    snan_single_check(reg_b);
+
     double ppc_dblresult64_d = -std::fma(val_reg_a, val_reg_c, val_reg_b);
     ppc_store_dfpresult_flt(reg_d, ppc_dblresult64_d);
     fpresult_update(ppc_dblresult64_d);
@@ -227,6 +254,9 @@ template <field_rc rec>
 void dppc_interpreter::ppc_fnmsub() {
     ppc_grab_regsfpdabc(ppc_cur_instruction);
 
+    snan_double_check(reg_a, reg_c);
+    snan_single_check(reg_b);
+
     double ppc_dblresult64_d = -std::fma(val_reg_a, val_reg_c, -val_reg_b);
     ppc_store_dfpresult_flt(reg_d, ppc_dblresult64_d);
     fpresult_update(ppc_dblresult64_d);
@@ -241,6 +271,8 @@ template void dppc_interpreter::ppc_fnmsub<RC1>();
 template <field_rc rec>
 void dppc_interpreter::ppc_fadds() {
     ppc_grab_regsfpdab(ppc_cur_instruction);
+
+    snan_double_check(reg_a, reg_b);
 
     double ppc_dblresult64_d = (float)(val_reg_a + val_reg_b);
     ppc_store_sfpresult_flt(reg_d, ppc_dblresult64_d);
@@ -258,6 +290,8 @@ template <field_rc rec>
 void dppc_interpreter::ppc_fsubs() {
     ppc_grab_regsfpdab(ppc_cur_instruction);
 
+    snan_double_check(reg_a, reg_b);
+
     double ppc_dblresult64_d = (float)(val_reg_a - val_reg_b);
     ppc_store_sfpresult_flt(reg_d, ppc_dblresult64_d);
     fpresult_update(ppc_dblresult64_d);
@@ -272,6 +306,8 @@ template void dppc_interpreter::ppc_fsubs<RC1>();
 template <field_rc rec>
 void dppc_interpreter::ppc_fdivs() {
     ppc_grab_regsfpdab(ppc_cur_instruction);
+
+    snan_double_check(reg_a, reg_b);
 
     double ppc_dblresult64_d = (float)(val_reg_a / val_reg_b);
     ppc_store_sfpresult_flt(reg_d, ppc_dblresult64_d);
@@ -288,6 +324,8 @@ template <field_rc rec>
 void dppc_interpreter::ppc_fmuls() {
     ppc_grab_regsfpdac(ppc_cur_instruction);
 
+    snan_double_check(reg_a, reg_c);
+
     double ppc_dblresult64_d = (float)(val_reg_a * val_reg_c);
     ppc_store_sfpresult_flt(reg_d, ppc_dblresult64_d);
     fpresult_update(ppc_dblresult64_d);
@@ -302,6 +340,9 @@ template void dppc_interpreter::ppc_fmuls<RC1>();
 template <field_rc rec>
 void dppc_interpreter::ppc_fmadds() {
     ppc_grab_regsfpdabc(ppc_cur_instruction);
+
+    snan_double_check(reg_a, reg_c);
+    snan_single_check(reg_b);
 
     double ppc_dblresult64_d = (float)std::fma(val_reg_a, val_reg_c, val_reg_b);
     ppc_store_sfpresult_flt(reg_d, ppc_dblresult64_d);
@@ -318,6 +359,9 @@ template <field_rc rec>
 void dppc_interpreter::ppc_fmsubs() {
     ppc_grab_regsfpdabc(ppc_cur_instruction);
 
+    snan_double_check(reg_a, reg_c);
+    snan_single_check(reg_b);
+
     double ppc_dblresult64_d = (float)std::fma(val_reg_a, val_reg_c, -val_reg_b);
     ppc_store_sfpresult_flt(reg_d, ppc_dblresult64_d);
     fpresult_update(ppc_dblresult64_d);
@@ -332,6 +376,9 @@ template void dppc_interpreter::ppc_fmsubs<RC1>();
 template <field_rc rec>
 void dppc_interpreter::ppc_fnmadds() {
     ppc_grab_regsfpdabc(ppc_cur_instruction);
+
+    snan_double_check(reg_a, reg_c);
+    snan_single_check(reg_b);
 
     double ppc_dblresult64_d = -(float)std::fma(val_reg_a, val_reg_c, val_reg_b);
     ppc_store_sfpresult_flt(reg_d, ppc_dblresult64_d);
@@ -348,6 +395,9 @@ template <field_rc rec>
 void dppc_interpreter::ppc_fnmsubs() {
     ppc_grab_regsfpdabc(ppc_cur_instruction);
 
+    snan_double_check(reg_a, reg_c);
+    snan_single_check(reg_b);
+
     double ppc_dblresult64_d = -(float)std::fma(val_reg_a, val_reg_c, -val_reg_b);
     ppc_store_sfpresult_flt(reg_d, ppc_dblresult64_d);
     fpresult_update(ppc_dblresult64_d);
@@ -362,6 +412,8 @@ template void dppc_interpreter::ppc_fnmsubs<RC1>();
 template <field_rc rec>
 void dppc_interpreter::ppc_fabs() {
     ppc_grab_regsfpdb(ppc_cur_instruction);
+
+    snan_single_check(reg_b);
 
     double ppc_dblresult64_d = abs(GET_FPR(reg_b));
 
@@ -378,6 +430,8 @@ template <field_rc rec>
 void dppc_interpreter::ppc_fnabs() {
     ppc_grab_regsfpdb(ppc_cur_instruction);
 
+    snan_single_check(reg_b);
+
     double ppc_dblresult64_d = abs(GET_FPR(reg_b));
     ppc_dblresult64_d = -ppc_dblresult64_d;
 
@@ -393,6 +447,8 @@ template void dppc_interpreter::ppc_fnabs<RC1>();
 template <field_rc rec>
 void dppc_interpreter::ppc_fneg() {
     ppc_grab_regsfpdb(ppc_cur_instruction);
+
+    snan_single_check(reg_b);
 
     double ppc_dblresult64_d = -(GET_FPR(reg_b));
 
@@ -423,6 +479,9 @@ template void dppc_interpreter::ppc_fsel<RC1>();
 template <field_rc rec>
 void dppc_interpreter::ppc_fsqrt() {
     ppc_grab_regsfpdb(ppc_cur_instruction);
+
+    snan_single_check(reg_b);
+
     double testd2 = (double)(GET_FPR(reg_b));
     double ppc_dblresult64_d = std::sqrt(testd2);
     ppc_store_dfpresult_flt(reg_d, ppc_dblresult64_d);
@@ -437,7 +496,10 @@ template void dppc_interpreter::ppc_fsqrt<RC1>();
 template <field_rc rec>
 void dppc_interpreter::ppc_fsqrts() {
     ppc_grab_regsfpdb(ppc_cur_instruction);
-    double testd2     = (double)(GET_FPR(reg_b));
+
+    snan_single_check(reg_b);
+
+    double testd2            = (double)(GET_FPR(reg_b));
     double ppc_dblresult64_d = (float)std::sqrt(testd2);
     ppc_store_sfpresult_flt(reg_d, ppc_dblresult64_d);
 
@@ -451,10 +513,10 @@ template void dppc_interpreter::ppc_fsqrts<RC1>();
 template <field_rc rec>
 void dppc_interpreter::ppc_frsqrte() {
     ppc_grab_regsfpdb(ppc_cur_instruction);
-    double testd2 = (double)(GET_FPR(reg_b));
+    snan_single_check(reg_b);
 
+    double testd2            = (double)(GET_FPR(reg_b));
     double ppc_dblresult64_d = 1.0 / sqrt(testd2);
-
     ppc_store_dfpresult_flt(reg_d, ppc_dblresult64_d);
 
     if (rec)
@@ -467,6 +529,8 @@ template void dppc_interpreter::ppc_frsqrte<RC1>();
 template <field_rc rec>
 void dppc_interpreter::ppc_frsp() {
     ppc_grab_regsfpdb(ppc_cur_instruction);
+    snan_single_check(reg_b);
+
     double ppc_dblresult64_d = (float)(GET_FPR(reg_b));
     ppc_store_dfpresult_flt(reg_d, ppc_dblresult64_d);
 
@@ -480,6 +544,9 @@ template void dppc_interpreter::ppc_frsp<RC1>();
 template <field_rc rec>
 void dppc_interpreter::ppc_fres() {
     ppc_grab_regsfpdb(ppc_cur_instruction);
+
+    snan_single_check(reg_b);
+
     double start_num = GET_FPR(reg_b);
     double ppc_dblresult64_d = (float)(1.0 / start_num);
     ppc_store_dfpresult_flt(reg_d, ppc_dblresult64_d);
@@ -510,7 +577,7 @@ static void round_to_int(const uint8_t mode, field_rc rec) {
         ppc_state.fpscr &= ~(FPSCR::FR | FPSCR::FI);
         ppc_state.fpscr |= (FPSCR::VXCVI | FPSCR::VX);
 
-        if (!(ppc_state.fpr[reg_b].int64_r & 0x0008000000000000)) // issnan
+        if (check_snan(reg_b)) // issnan
             ppc_state.fpscr |= FPSCR::VXSNAN;
 
         if (ppc_state.fpscr & FPSCR::VE) {
