@@ -264,14 +264,14 @@ uint32_t ATIRage::read_reg(uint32_t reg_offset, uint32_t size) {
         }
         break;
     case ATI_GUI_STAT:
-        result = uint64_t(this->cmd_fifo_size << 16); // HACK: tell the guest the command FIFO is empty
+        result = uint64_t(this->cmd_fifo_size << 16); // HACK: pretend empty FIFO
         break;
     case ATI_DP_BKGD_CLR:
     case ATI_DP_FRGD_CLR:
         uint32_t pix_fmt = extract_bits<uint32_t>(
             this->regs[ATI_CRTC_GEN_CNTL], ATI_CRTC_PIX_WIDTH, ATI_CRTC_PIX_WIDTH_size);
 
-        switch (pix_fmt) { 
+        switch (pix_fmt) {
         case 1:
             result = result & 0x1;
             break;
@@ -561,26 +561,10 @@ void ATIRage::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size) {
         break;
     }
     case ATI_DST_WIDTH:
-        new_value                     = value & 0x7FFF;
-        this->regs[ATI_DST_BRES_LNTH] = new_value;
-        break;
-    case ATI_DST_HEIGHT:
-        new_value                     = value & 0x7FFF;
-        this->regs[ATI_DST_BRES_LNTH] = new_value;
-        break;
-    case ATI_DST_BRES_ERR:
-        new_value = value & 0x3FFFF;
-        if (new_value > -1) {
-            new_value += this->regs[ATI_DST_BRES_INC];
-        } else {
-            new_value += this->regs[ATI_DST_BRES_DEC];
-        }
-        break;
-    case ATI_DST_BRES_INC:
-        new_value = value & 0x3FFFF;
-        break;
-    case ATI_DST_BRES_DEC:
-        new_value = -(value & 0x3FFFF);
+    case ATI_DST_HEIGHT_WIDTH:
+    case ATI_DST_X_WIDTH:
+    case ATI_DST_BRES_LNTH:
+        this->begin_drawing(reg_num, value);
         break;
     default:
         new_value = value;
@@ -976,6 +960,90 @@ int ATIRage::device_postinit()
     };
     return 0;
 }
+
+// =================================== Draw Engine =====================================
+void ATIRage::begin_drawing(uint32_t initiator, uint32_t value) {
+    switch(initiator) {
+    case ATI_DST_HEIGHT_WIDTH:
+        this->regs[ATI_DST_HEIGHT_WIDTH] = value;
+        this->draw_rect(extract_bits<uint32_t>(value, 16, 14), extract_bits<uint32_t>(value, 0, 15));
+        break;
+    default:
+        LOG_F(WARNING, "%s: unimplemented engine operation, initiator=0x%X", this->name.c_str(),
+              initiator);
+    }
+}
+
+void ATIRage::draw_rect(uint32_t width, uint32_t height) {
+    uint8_t frgd_src = extract_bits<uint32_t>(this->regs[ATI_DP_SRC], ATI_DP_FRGD_SRC, ATI_DP_FRGD_SRC_size);
+    uint8_t bkgd_src = extract_bits<uint32_t>(this->regs[ATI_DP_SRC], ATI_DP_BKGD_SRC, ATI_DP_BKGD_SRC_size);
+    uint8_t mono_src = extract_bits<uint32_t>(this->regs[ATI_DP_SRC], ATI_DP_MONO_SRC, ATI_DP_MONO_SRC_size);
+
+    if (frgd_src == 1 && !mono_src) { // rectangle fill with foreground color
+        this->fill_rect(width, height);
+    } else {
+        LOG_F(WARNING, "%s: unimplemented rectangle draw op, DP_FRGD_SRC=0x%X", this->name.c_str(),
+              frgd_src);
+    }
+}
+
+void ATIRage::fill_rect(uint32_t dst_width, uint32_t dst_height) {
+    uint8_t frgd_mix = extract_bits<uint32_t>(this->regs[ATI_DP_MIX], ATI_DP_FRGD_MIX, ATI_DP_FRGD_MIX_size);
+    uint8_t bkgd_mix = extract_bits<uint32_t>(this->regs[ATI_DP_MIX], ATI_DP_BKGD_MIX, ATI_DP_BKGD_MIX_size);
+
+    // check for non-trivial operations
+    if (frgd_mix != 7 || bkgd_mix != 3) {
+        LOG_F(WARNING, "%s: unimplemented rectangle fill op, DP_FRGD_MIX=0x%X, DP_BKGD_MIX=0x%X",
+              this->name.c_str(), frgd_mix, bkgd_mix);
+        return;
+    }
+
+    if (this->regs[ATI_CLR_CMP_CNTL]) {
+        LOG_F(WARNING, "%s: color comparator not implemented yet, CLR_CMP_CNTL=0x%X", this->name.c_str(),
+              this->regs[ATI_CLR_CMP_CNTL]);
+        return;
+    }
+
+    // check pixel formats
+    uint8_t src_pix_fmt = extract_bits<uint32_t>(this->regs[ATI_DP_PIX_WIDTH], ATI_DP_SRC_PIX_WIDTH,
+                                                 ATI_DP_SRC_PIX_WIDTH_size);
+    uint8_t dst_pix_fmt = extract_bits<uint32_t>(this->regs[ATI_DP_PIX_WIDTH], ATI_DP_DST_PIX_WIDTH,
+                                                 ATI_DP_DST_PIX_WIDTH_size);
+
+    if (src_pix_fmt != 6 || dst_pix_fmt != src_pix_fmt) {
+        LOG_F(WARNING, "%s: unsupported pixel format conversion, DP_SRC_PIX_WIDTH=0x%X, DP_DST_PIX_WIDTH=0x%X",
+              this->name.c_str(), src_pix_fmt, dst_pix_fmt);
+    }
+
+    // grab trajectory params
+    int dst_offs   = extract_bits<uint32_t>(this->regs[ATI_DST_OFF_PITCH], ATI_DST_OFFSET, ATI_DST_OFFSET_size);
+    int dst_pitch  = extract_bits<uint32_t>(this->regs[ATI_DST_OFF_PITCH], ATI_DST_PITCH, ATI_DST_PITCH_size);
+    int dst_x      = extract_bits<uint32_t>(this->regs[ATI_DST_X], ATI_DST_X_pos, ATI_DST_X_size);
+    int dst_y      = extract_bits<uint32_t>(this->regs[ATI_DST_Y], ATI_DST_Y_pos, ATI_DST_Y_size);
+
+    dst_offs  *= 8;
+    dst_pitch *= 8;
+
+    int x_inc = (this->regs[ATI_DST_CNTL] & 1) ? 1 : -1;
+    int y_inc = (this->regs[ATI_DST_CNTL] & 2) ? 1 : -1;
+
+    uint32_t pix = BYTESWAP_32(this->regs[ATI_DP_FRGD_CLR] & this->regs[ATI_DP_WRITE_MSK]);
+
+    uint32_t* dst_ptr = (uint32_t*)&this->vram_ptr[dst_offs];
+    dst_ptr += dst_y * dst_pitch;
+
+    int x_pos, width;
+
+    dst_pitch *= y_inc;
+
+    for (; dst_height-- > 0; dst_ptr += dst_pitch) {
+        for (x_pos = dst_x, width = dst_width; width-- > 0; x_pos += x_inc) {
+            dst_ptr[x_pos] = pix;
+        }
+    }
+}
+
+// ================================== Device config ====================================
 
 static const PropMap AtiRage_Properties = {
     {"gfxmem_size",
