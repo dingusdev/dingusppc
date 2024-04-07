@@ -487,6 +487,7 @@ enum {
     ATI_DP_FRGD_CLR           = 0x0B1, // 0x02C4
     ATI_DP_FOG_CLR            = 0x0B1, // 0x02C4
     ATI_DP_WRITE_MSK          = 0x0B2, // 0x02C8
+    ATI_DP_CHAIN_MSK          = 0x0B3, // 0x02CC
 
     ATI_DP_PIX_WIDTH          = 0x0B4, // 0x02D0
         ATI_DP_DST_PIX_WIDTH        =  0, ATI_DP_DST_PIX_WIDTH_size  = 4,  // VT/GT ; 3 for VT
