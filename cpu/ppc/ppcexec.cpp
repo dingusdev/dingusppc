@@ -277,9 +277,9 @@ void ppc_main_opcode()
     OpcodeGrabber[(ppc_cur_instruction >> 26) & 0x3F]();
 }
 
-static long long now_ns()
-{
-    return duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+static long long now_ns() {
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(
+        std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 }
 
 uint64_t get_virt_time_ns()
