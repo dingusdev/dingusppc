@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -53,7 +53,7 @@ void AwacsBase::set_sample_rate(int sr_id) {
     } else {
         this->cur_sample_rate = this->sr_table[sr_id];
     }
-};
+}
 
 void AwacsBase::dma_out_start() {
     int     err;
@@ -103,8 +103,7 @@ void AwacsBase::dma_out_pause() {
 static const char sound_input_data[2048] = {0};
 static int sound_in_status = 0x10;
 
-void AwacsBase::dma_in_data()
-{
+void AwacsBase::dma_in_data() {
     // transfer data from sound input device
     this->dma_in_ch->push_data(sound_input_data, sizeof(sound_input_data));
 
