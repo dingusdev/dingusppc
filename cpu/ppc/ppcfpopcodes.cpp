@@ -40,13 +40,13 @@ uint64_t fp_return_uint64(uint32_t reg) {
     return ppc_state.fpr[reg].int64_r;
 }
 
-inline void ppc_update_cr1() {
+inline static void ppc_update_cr1() {
     // copy FPSCR[FX|FEX|VX|OX] to CR1
     ppc_state.cr = (ppc_state.cr & ~CR_select::CR1_field) |
                    ((ppc_state.fpscr >> 4) & CR_select::CR1_field);
 }
 
-int32_t round_to_nearest(double f) {
+static int32_t round_to_nearest(double f) {
     return static_cast<int32_t>(static_cast<int64_t> (std::floor(f + 0.5)));
 }
 
@@ -74,35 +74,30 @@ void update_fpscr(uint32_t new_fpscr) {
     ppc_state.fpscr = new_fpscr;
 }
 
-int32_t round_to_zero(double f) {
+static int32_t round_to_zero(double f) {
     return static_cast<int32_t>(std::trunc(f));
 }
 
-int32_t round_to_pos_inf(double f) {
+static int32_t round_to_pos_inf(double f) {
     return static_cast<int32_t>(std::ceil(f));
 }
 
-int32_t round_to_neg_inf(double f) {
+static int32_t round_to_neg_inf(double f) {
     return static_cast<int32_t>(std::floor(f));
 }
 
-inline bool check_snan(int check_reg) {
+inline static bool check_snan(int check_reg) {
     uint64_t check_int = ppc_state.fpr[check_reg].int64_r;
     return (((check_int & (0x7FFULL << 52)) == (0x7FFULL << 52)) &&
         ((check_int & ~(0xFFFULL << 52)) != 0ULL) &&
         ((check_int & (0x1ULL << 51)) == 0ULL));
 }
 
-inline bool check_qnan(int check_reg) {
+inline static bool check_qnan(int check_reg) {
     uint64_t check_int = ppc_state.fpr[check_reg].int64_r;
     return (((check_int & (0x7FFULL << 52)) == (0x7FFULL << 52)) &&
         ((check_int & ~(0xFFFULL << 52)) == 0ULL) && 
         ((check_int & (0x1ULL << 51)) == (0x1ULL << 51)));
-}
-
-void update_fex() {
-    int fex_result  = !!((ppc_state.fpscr & (ppc_state.fpscr << 22)) & 0x3E000000);
-    ppc_state.fpscr = (ppc_state.fpscr & ~FEX) | (fex_result << 30);
 }
 
 static void fpresult_update(double set_result) {
