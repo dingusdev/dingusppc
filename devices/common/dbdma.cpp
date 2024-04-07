@@ -81,11 +81,14 @@ uint8_t DMAChannel::interpret_cmd() {
             LOG_F(ERROR, "%s: Key > 0 not implemented", this->get_name().c_str());
             break;
         }
-        res = mmu_map_dma_mem(cmd_struct.address, cmd_struct.req_count, false);
-        this->queue_data = res.host_va;
         this->queue_len  = cmd_struct.req_count;
-        this->res_count  = 0;
-        this->cmd_in_progress = true;
+        if (this->queue_len) {
+            res = mmu_map_dma_mem(cmd_struct.address, cmd_struct.req_count, false);
+            this->queue_data = res.host_va;
+            this->res_count  = 0;
+            this->cmd_in_progress = true;
+        } else
+            this->finish_cmd();
         break;
     case DBDMA_Cmd::STORE_QUAD:
         if ((cmd_struct.cmd_key & 7) != 6)
