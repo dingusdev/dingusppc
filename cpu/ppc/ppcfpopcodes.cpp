@@ -227,7 +227,7 @@ template <field_rc rec>
 void dppc_interpreter::ppc_fnmsub() {
     ppc_grab_regsfpdabc(ppc_cur_instruction);
 
-    double ppc_dblresult64_d = std::fma(-val_reg_a, val_reg_c, val_reg_b);
+    double ppc_dblresult64_d = -std::fma(val_reg_a, val_reg_c, -val_reg_b);
     ppc_store_dfpresult_flt(reg_d, ppc_dblresult64_d);
     fpresult_update(ppc_dblresult64_d);
 
@@ -242,8 +242,7 @@ template <field_rc rec>
 void dppc_interpreter::ppc_fadds() {
     ppc_grab_regsfpdab(ppc_cur_instruction);
 
-    float ppc_fltresult32_d = val_reg_a + val_reg_b;
-    double ppc_dblresult64_d = (double)ppc_fltresult32_d;
+    double ppc_dblresult64_d = (float)(val_reg_a + val_reg_b);
     ppc_store_sfpresult_flt(reg_d, ppc_dblresult64_d);
 
     fpresult_update(ppc_dblresult64_d);
@@ -349,7 +348,7 @@ template <field_rc rec>
 void dppc_interpreter::ppc_fnmsubs() {
     ppc_grab_regsfpdabc(ppc_cur_instruction);
 
-    double ppc_dblresult64_d = (float)std::fma(-val_reg_a, val_reg_c, val_reg_b);
+    double ppc_dblresult64_d = -(float)std::fma(val_reg_a, val_reg_c, -val_reg_b);
     ppc_store_sfpresult_flt(reg_d, ppc_dblresult64_d);
     fpresult_update(ppc_dblresult64_d);
 
