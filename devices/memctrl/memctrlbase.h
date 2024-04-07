@@ -30,6 +30,7 @@ class MMIODevice;
 
 /* Common DRAM capacities. */
 enum {
+    DRAM_CAP_1MB    = (1 << 20),
     DRAM_CAP_2MB    = (1 << 21),
     DRAM_CAP_4MB    = (1 << 22),
     DRAM_CAP_8MB    = (1 << 23),
