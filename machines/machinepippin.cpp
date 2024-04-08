@@ -21,6 +21,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Bandai/Atmark Pippin emulation. */
 
+/**
+    Kudos to Keith Kaisershot @ blitter.net for his precious technical help!
+*/
+
 #include <cpu/ppc/ppcemu.h>
 #include <devices/common/pci/pcihost.h>
 #include <devices/ioctrl/macio.h>

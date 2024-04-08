@@ -23,6 +23,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
     Aspen is a custom memory controller and PCI bridge
     designed especially for Pippin.
+
+    Kudos to Keith Kaisershot @ blitter.net for his precious technical help!
 */
 
 #ifndef ASPEN_MEMCTRL_H
