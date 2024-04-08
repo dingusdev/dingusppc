@@ -586,6 +586,9 @@ void ControlVideo::enable_display()
     // set framebuffer parameters
     this->fb_ptr   = &this->vram_ptr[this->fb_base];
     this->fb_pitch = this->row_words;
+    if (~this->enables & SCAN_CONTROL) {
+        this->fb_pitch >>= 1;
+    }
 
     this->pixel_depth = this->radacal->get_pix_width();
     if (swatch_params[ControlRegs::HAL-1] != swatch_params[ControlRegs::PIPE_DELAY-1] + 1 || this->pixel_depth == 32) {
@@ -650,7 +653,10 @@ void ControlVideo::enable_display()
     // set up periodic timer for display updates
     if (this->active_width > 0 && this->active_height > 0 && this->pixel_clock > 0) {
         this->refresh_rate = (double)(this->pixel_clock) / (this->hori_total * this->vert_total);
-        LOG_F(INFO, "Control: refresh rate set to %f Hz", this->refresh_rate);
+        if (~this->enables & SCAN_CONTROL) {
+            this->refresh_rate *= 2;
+        }
+        LOG_F(INFO, "%s: refresh rate set to %f Hz", this->name.c_str(), this->refresh_rate);
 
         this->start_refresh_task();
 
