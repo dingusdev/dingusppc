@@ -193,10 +193,7 @@ void BanditHost::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int 
         break;
 
     case 2: // CONFIG_ADDR
-        if (this->is_aspen)
-            this->config_addr = value;
-        else
-            BYTESWAP_32(value);
+        this->config_addr = (this->is_aspen) ? value : BYTESWAP_32(value);
         break;
 
     default: // I/O space
