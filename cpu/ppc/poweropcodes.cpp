@@ -306,17 +306,19 @@ template void dppc_interpreter::power_maskir<RC1>();
 template <field_rc rec, field_ov ov>
 void dppc_interpreter::power_mul() {
     ppc_grab_regsdab(ppc_cur_instruction);
-    uint64_t product;
+    int64_t product        = int64_t(int32_t(ppc_result_a)) * int32_t(ppc_result_b);
+    uint32_t ppc_result_d  = uint32_t(uint64_t(product) >> 32);
+    ppc_state.spr[SPR::MQ] = uint32_t(product);
 
-    product                = ((uint64_t)ppc_result_a) * ((uint64_t)ppc_result_b);
-    uint32_t ppc_result_d  = ((uint32_t)(product >> 32));
-    ppc_state.spr[SPR::MQ] = ((uint32_t)(product));
-
+    if (ov) {
+        if (uint64_t(product >> 31) + 1 & ~1) {
+            ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
+        } else {
+            ppc_state.spr[SPR::XER] &= ~XER::OV;
+        }
+    }
     if (rec)
-        ppc_changecrf0(ppc_result_d);
-    if (ov)
-        power_setsoov(ppc_result_a, ppc_result_b, ppc_result_d);
-
+        ppc_changecrf0(uint32_t(product));
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
