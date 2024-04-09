@@ -175,13 +175,18 @@ template void dppc_interpreter::power_divs<RC1, OV1>();
 template <field_rc rec, field_ov ov>
 void dppc_interpreter::power_doz() {
     ppc_grab_regsdab(ppc_cur_instruction);
-    uint32_t ppc_result_d = (int32_t(ppc_result_a) >= int32_t(ppc_result_b)) ? 0 :
-                             ppc_result_b - ppc_result_a;
+    uint32_t ppc_result_d = (int32_t(ppc_result_a) < int32_t(ppc_result_b)) ?
+        ppc_result_b - ppc_result_a : 0;
 
+    if (ov) {
+        if (int32_t(ppc_result_d) < 0) {
+            ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
+        } else {
+            ppc_state.spr[SPR::XER] &= ~XER::OV;
+        }
+    }
     if (rec)
         ppc_changecrf0(ppc_result_d);
-    if (ov)
-        power_setsoov(ppc_result_a, ppc_result_b, ppc_result_d);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
