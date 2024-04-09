@@ -565,9 +565,10 @@ void dppc_interpreter::power_srea() {
     ppc_grab_regssab(ppc_cur_instruction);
     unsigned rot_sh        = ppc_result_b & 0x1F;
     ppc_result_a           = (int32_t)ppc_result_d >> rot_sh;
-    ppc_state.spr[SPR::MQ] = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
+    uint32_t r             = ((ppc_result_d >> rot_sh) | (ppc_result_d << (32 - rot_sh)));
+    uint32_t mask          = -1U >> rot_sh;
 
-    if ((int32_t(ppc_result_d) < 0) && (ppc_result_d & rot_sh)) {
+    if ((int32_t(ppc_result_d) < 0) && (r & ~mask)) {
         ppc_state.spr[SPR::XER] |= XER::CA;
     } else {
         ppc_state.spr[SPR::XER] &= ~XER::CA;
@@ -577,6 +578,7 @@ void dppc_interpreter::power_srea() {
         ppc_changecrf0(ppc_result_a);
 
     ppc_store_iresult_reg(reg_a, ppc_result_a);
+    ppc_state.spr[SPR::MQ] = r;
 }
 
 template void dppc_interpreter::power_srea<RC0>();
