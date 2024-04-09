@@ -458,14 +458,11 @@ template <field_rc rec>
 void dppc_interpreter::power_sllq() {
     ppc_grab_regssab(ppc_cur_instruction);
     unsigned rot_sh = ppc_result_b & 0x1F;
-    uint32_t r      = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
-    uint32_t mask   = power_rot_mask(0, 31 - rot_sh);
 
-    if (ppc_result_b >= 0x20) {
-        ppc_result_a = (ppc_state.spr[SPR::MQ] & mask);
-    }
-    else {
-        ppc_result_a = ((r & mask) | (ppc_state.spr[SPR::MQ] & ~mask));
+    if (ppc_result_b & 0x20) {
+        ppc_result_a = ppc_state.spr[SPR::MQ] & (-1U << rot_sh);
+    } else {
+        ppc_result_a = ((ppc_result_d << rot_sh) | (ppc_state.spr[SPR::MQ] & ((1 << rot_sh) - 1)));
     }
 
     if (rec)
