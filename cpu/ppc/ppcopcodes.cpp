@@ -888,8 +888,8 @@ static void update_decrementer(uint32_t val) {
 }
 
 void dppc_interpreter::ppc_mfspr() {
-    uint32_t ref_spr = (((ppc_cur_instruction >> 11) & 0x1F) << 5) |
-                        ((ppc_cur_instruction >> 16) & 0x1F);
+    ppc_grab_dab(ppc_cur_instruction);
+    uint32_t ref_spr = (reg_b << 5) | reg_a;
 
 #ifdef CPU_PROFILING
     if (ref_spr > 31) {
@@ -911,12 +911,12 @@ void dppc_interpreter::ppc_mfspr() {
         break;
     }
 
-    ppc_state.gpr[(ppc_cur_instruction >> 21) & 0x1F] = ppc_state.spr[ref_spr];
+    ppc_state.gpr[reg_d] = ppc_state.spr[ref_spr];
 }
 
 void dppc_interpreter::ppc_mtspr() {
-    uint32_t ref_spr = (((ppc_cur_instruction >> 11) & 0x1F) << 5) |
-                        ((ppc_cur_instruction >> 16) & 0x1F);
+    ppc_grab_dab(ppc_cur_instruction);
+    uint32_t ref_spr = (reg_b << 5) | reg_a;
 
 #ifdef CPU_PROFILING
     if (ref_spr > 31) {
@@ -930,7 +930,7 @@ void dppc_interpreter::ppc_mtspr() {
         return;
     }
 
-    uint32_t val = ppc_state.gpr[(ppc_cur_instruction >> 21) & 0x1F];
+    uint32_t val = ppc_state.gpr[reg_d];
     ppc_state.spr[ref_spr] = val;
 
     switch (ref_spr) {
@@ -980,9 +980,8 @@ void dppc_interpreter::ppc_mtspr() {
 }
 
 void dppc_interpreter::ppc_mftb() {
-    uint32_t ref_spr = (((ppc_cur_instruction >> 11) & 0x1F) << 5) |
-                        ((ppc_cur_instruction >> 16) & 0x1F);
-    int reg_d = (ppc_cur_instruction >> 21) & 0x1F;
+    ppc_grab_dab(ppc_cur_instruction);
+    uint32_t ref_spr = (reg_b << 5) | reg_a;
 
     uint64_t tbr_value = calc_tbr_value();
 
