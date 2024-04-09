@@ -864,8 +864,8 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool include_601,
         /* MPC601 sets MSR[ME] bit during hard reset / Power-On */
         ppc_state.msr = (MSR::ME + MSR::IP);
     } else {
-        ppc_state.msr           = MSR::IP;
-        ppc_state.spr[SPR::DEC] = 0xFFFFFFFFUL;
+        ppc_state.msr             = MSR::IP;
+        ppc_state.spr[SPR::DEC_S] = 0xFFFFFFFFUL;
     }
 
     ppc_mmu_init();
@@ -885,10 +885,10 @@ void print_fprs() {
 }
 
 static map<string, int> SPRName2Num = {
-    {"XER", SPR::XER},          {"LR",     SPR::LR},    {"CTR",    SPR::CTR},
-    {"DEC", SPR::DEC},          {"PVR",    SPR::PVR},   {"SPRG0",  SPR::SPRG0},
-    {"SPRG1", SPR::SPRG1},      {"SPRG2",  SPR::SPRG2}, {"SPRG3",  SPR::SPRG3},
-    {"SRR0", SPR::SRR0},        {"SRR1",   SPR::SRR1},  {"IBAT0U", 528},
+    {"XER",    SPR::XER},       {"LR",     SPR::LR},    {"CTR",    SPR::CTR},
+    {"DEC",    SPR::DEC_S},     {"PVR",    SPR::PVR},   {"SPRG0",  SPR::SPRG0},
+    {"SPRG1",  SPR::SPRG1},     {"SPRG2",  SPR::SPRG2}, {"SPRG3",  SPR::SPRG3},
+    {"SRR0",   SPR::SRR0},      {"SRR1",   SPR::SRR1},  {"IBAT0U", 528},
     {"IBAT0L", 529},            {"IBAT1U", 530},        {"IBAT1L", 531},
     {"IBAT2U", 532},            {"IBAT2L", 533},        {"IBAT3U", 534},
     {"IBAT3L", 535},            {"DBAT0U", 536},        {"DBAT0L", 537},
@@ -897,9 +897,9 @@ static map<string, int> SPRName2Num = {
     {"HID0",   SPR::HID0},      {"HID1",   SPR::HID1},  {"IABR",   1010},
     {"DABR",   1013},           {"L2CR",   1017},       {"ICTC",   1019},
     {"THRM1",  1020},           {"THRM2",  1021},       {"THRM3",  1022},
-    {"PIR",    1023},           {"TBL",    SPR::TBL_U}, {"TBU",    SPR::TBU_U},
-    {"SDR1",   SPR::SDR1},      {"MQ",     SPR::MQ},    {"RTCU",   SPR::RTCU_U},
-    {"RTCL",   SPR::RTCL_U},    {"DSISR",  SPR::DSISR}, {"DAR",    SPR::DAR},
+    {"PIR",    1023},           {"TBL",    SPR::TBL_S}, {"TBU",    SPR::TBU_S},
+    {"SDR1",   SPR::SDR1},      {"MQ",     SPR::MQ},    {"RTCU",   SPR::RTCU_S},
+    {"RTCL",   SPR::RTCL_S},    {"DSISR",  SPR::DSISR}, {"DAR",    SPR::DAR},
     {"MMCR0",  SPR::MMCR0},     {"PMC1",   SPR::PMC1},  {"PMC2",   SPR::PMC2},
     {"SDA",    SPR::SDA},       {"SIA",    SPR::SIA},   {"MMCR1",  SPR::MMCR1}
 };
@@ -974,6 +974,13 @@ uint64_t reg_op(string& reg_name, uint64_t val, bool is_write) {
             reg_num_str = reg_name_u.substr(3);
             reg_num     = (unsigned)stoul(reg_num_str, NULL, 0);
             if (reg_num < 1024) {
+                switch (reg_num) {
+                case SPR::DEC_U  : reg_num = SPR::DEC_S  ; break;
+                case SPR::RTCL_U : reg_num = SPR::RTCL_S ; break;
+                case SPR::RTCU_U : reg_num = SPR::RTCU_S ; break;
+                case SPR::TBL_U  : reg_num = SPR::TBL_S  ; break;
+                case SPR::TBU_U  : reg_num = SPR::TBU_S  ; break;
+                }
                 if (is_write)
                     ppc_state.spr[reg_num] = (uint32_t)val;
                 return ppc_state.spr[reg_num];

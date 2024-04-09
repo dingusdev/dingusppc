@@ -898,20 +898,42 @@ void dppc_interpreter::ppc_mfspr() {
     }
 
     switch (ref_spr) {
+    case SPR::MQ:
+        if (!is_601) {
+            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        }
+        ppc_state.gpr[reg_d] = ppc_state.spr[ref_spr];
+        break;
     case SPR::RTCL_U:
+        if (!is_601) {
+            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        }
         calc_rtcl_value();
-        ppc_state.spr[SPR::RTCL_U] = rtc_lo & 0x3FFFFF80UL;
+        ppc_state.gpr[reg_d] =
+        ppc_state.spr[SPR::RTCL_S] = rtc_lo & 0x3FFFFF80UL;
+        ppc_state.spr[SPR::RTCU_S] = rtc_hi;
         break;
     case SPR::RTCU_U:
+        if (!is_601) {
+            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        }
         calc_rtcl_value();
-        ppc_state.spr[SPR::RTCU_U] = rtc_hi;
+        ppc_state.gpr[reg_d] =
+        ppc_state.spr[SPR::RTCU_S] = rtc_hi;
+        ppc_state.spr[SPR::RTCL_S] = rtc_lo;
         break;
-    case SPR::DEC:
-        ppc_state.spr[SPR::DEC] = calc_dec_value();
+    case SPR::DEC_U:
+        if (!is_601) {
+            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        }
+        // fallthrough
+    case SPR::DEC_S:
+        ppc_state.gpr[reg_d] = ppc_state.spr[SPR::DEC_S] = calc_dec_value();
         break;
+    default:
+        // FIXME: Unknown SPR should be noop or illegal instruction.
+        ppc_state.gpr[reg_d] = ppc_state.spr[ref_spr];
     }
-
-    ppc_state.gpr[reg_d] = ppc_state.spr[ref_spr];
 }
 
 void dppc_interpreter::ppc_mtspr() {
@@ -927,38 +949,54 @@ void dppc_interpreter::ppc_mtspr() {
         }
     }
 
-    if (ref_spr == SPR::PVR || (
-        ref_spr == SPR::MQ && !is_601
-    )) { // prevent writes to the read-only registers
-        return;
-    }
-
     uint32_t val = ppc_state.gpr[reg_d];
-    ppc_state.spr[ref_spr] = val;
 
     switch (ref_spr) {
+    case SPR::MQ:
+        if (!is_601) {
+            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        }
+        ppc_state.spr[ref_spr] = val;
+        break;
+    case SPR::RTCL_U:
+    case SPR::RTCU_U:
+    case SPR::DEC_U:
+        if (!is_601) {
+            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        }
+        break;
     case SPR::XER:
         ppc_state.spr[ref_spr] = val & 0xe000ff7f;
         break;
     case SPR::SDR1:
+        ppc_state.spr[ref_spr] = val;
         mmu_pat_ctx_changed(); // adapt to SDR1 changes
         break;
     case SPR::RTCL_S:
         calc_rtcl_value();
-        rtc_lo = val & 0x3FFFFF80UL;
+        ppc_state.spr[RTCL_S] = rtc_lo = val & 0x3FFFFF80UL;
+        ppc_state.spr[RTCU_S] = rtc_hi;
         break;
     case SPR::RTCU_S:
         calc_rtcl_value();
-        rtc_hi = val;
+        ppc_state.spr[RTCL_S] = rtc_lo;
+        ppc_state.spr[RTCU_S] = rtc_hi = val;
         break;
-    case SPR::DEC:
+    case SPR::DEC_S:
+        ppc_state.spr[DEC_S] = val;
         update_decrementer(val);
         break;
     case SPR::TBL_S:
         update_timebase(0xFFFFFFFF00000000ULL, val);
+        ppc_state.spr[TBL_S] = val;
+        ppc_state.spr[TBU_S] = tbr_wr_value >> 32;
         break;
     case SPR::TBU_S:
         update_timebase(0x00000000FFFFFFFFULL, uint64_t(val) << 32);
+        ppc_state.spr[TBL_S] = (uint32_t)tbr_wr_value;
+        ppc_state.spr[TBU_S] = val;
+        break;
+    case SPR::PVR:
         break;
     case 528:
     case 529:
@@ -968,6 +1006,7 @@ void dppc_interpreter::ppc_mtspr() {
     case 533:
     case 534:
     case 535:
+        ppc_state.spr[ref_spr] = val;
         ibat_update(ref_spr);
         break;
     case 536:
@@ -978,7 +1017,11 @@ void dppc_interpreter::ppc_mtspr() {
     case 541:
     case 542:
     case 543:
+        ppc_state.spr[ref_spr] = val;
         dbat_update(ref_spr);
+    default:
+        // FIXME: Unknown SPR should be noop or illegal instruction.
+        ppc_state.spr[ref_spr] = val;
     }
 }
 
@@ -990,10 +1033,14 @@ void dppc_interpreter::ppc_mftb() {
 
     switch (ref_spr) {
     case SPR::TBL_U:
-        ppc_state.gpr[reg_d] = uint32_t(tbr_value);
+        ppc_state.gpr[reg_d] =
+        ppc_state.spr[TBL_S] = uint32_t(tbr_value);
+        ppc_state.spr[TBU_S] = uint32_t(tbr_value >> 32);
         break;
     case SPR::TBU_U:
-        ppc_state.gpr[reg_d] = uint32_t(tbr_value >> 32);
+        ppc_state.gpr[reg_d] =
+        ppc_state.spr[TBU_S] = uint32_t(tbr_value >> 32);
+        ppc_state.spr[TBL_S] = uint32_t(tbr_value);
         break;
     default:
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);

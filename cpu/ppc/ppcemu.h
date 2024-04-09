@@ -85,17 +85,18 @@ extern SetPRS ppc_state;
 
 /** symbolic names for frequently used SPRs */
 enum SPR : int {
-    MQ      = 0,
+    MQ      = 0,   // MQ (601)
     XER     = 1,
-    RTCU_U  = 4,   // user RTCU
-    RTCL_U  = 5,   // user RTCL
+    RTCU_U  = 4,   // user mode RTCU (601)
+    RTCL_U  = 5,   // user mode RTCL (601)
+    DEC_U   = 6,   // user mode decrementer (601)
     LR      = 8,
     CTR     = 9,
     DSISR   = 18,
     DAR     = 19,
-    RTCU_S  = 20,  // supervisor RTCU
-    RTCL_S  = 21,  // supervisor RTCL
-    DEC     = 22,  // decrementer
+    RTCU_S  = 20,  // supervisor RTCU (601)
+    RTCL_S  = 21,  // supervisor RTCL (601)
+    DEC_S   = 22,  // supervisor decrementer
     SDR1    = 25,
     SRR0    = 26,
     SRR1    = 27,
