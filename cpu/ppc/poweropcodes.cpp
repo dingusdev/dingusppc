@@ -281,7 +281,7 @@ void dppc_interpreter::power_maskg() {
     ppc_result_a = insert_mask;
 
     if (rec)
-        ppc_changecrf0(ppc_result_d);
+        ppc_changecrf0(ppc_result_a);
 
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
