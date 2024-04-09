@@ -140,16 +140,31 @@ template void dppc_interpreter::power_div<RC1, OV1>();
 
 template <field_rc rec, field_ov ov>
 void dppc_interpreter::power_divs() {
+    uint32_t ppc_result_d;
+    int32_t remainder;
     ppc_grab_regsdab(ppc_cur_instruction);
-    uint32_t ppc_result_d  = ppc_result_a / ppc_result_b;
-    ppc_state.spr[SPR::MQ] = (ppc_result_a % ppc_result_b);
 
-    if (ov)
-        power_setsoov(ppc_result_b, ppc_result_a, ppc_result_d);
+    if (!ppc_result_b) { // handle the "anything / 0" case
+        ppc_result_d = -1;
+        remainder = ppc_result_a;
+        if (ov)
+            ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
+    } else if (ppc_result_a == 0x80000000U && ppc_result_b == 0xFFFFFFFFU) {
+        ppc_result_d = 0x80000000U;
+        remainder = 0;
+        if (ov)
+            ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
+    } else { // normal signed devision
+        ppc_result_d = int32_t(ppc_result_a) / int32_t(ppc_result_b);
+        remainder = (int32_t(ppc_result_a) % int32_t(ppc_result_b));
+        if (ov)
+            ppc_state.spr[SPR::XER] &= ~XER::OV;
+    }
     if (rec)
-        ppc_changecrf0(ppc_result_d);
+        ppc_changecrf0(remainder);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_state.spr[SPR::MQ] = remainder;
 }
 
 template void dppc_interpreter::power_divs<RC0, OV0>();
