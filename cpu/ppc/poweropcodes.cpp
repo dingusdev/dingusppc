@@ -521,8 +521,8 @@ template <field_rc rec>
 void dppc_interpreter::power_sraq() {
     ppc_grab_regssab(ppc_cur_instruction);
     unsigned rot_sh        = ppc_result_b & 0x1F;
-    uint32_t mask          = (1 << rot_sh) - 1;
-    ppc_result_a           = (int32_t)ppc_result_d >> rot_sh;
+    uint32_t mask          = (ppc_result_b & 0x20) ? -1 : (1 << rot_sh) - 1;
+    ppc_result_a           = (int32_t)ppc_result_d >> ((ppc_result_b & 0x20) ? 31 : rot_sh);
     ppc_state.spr[SPR::MQ] = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
 
     if ((int32_t(ppc_result_d) < 0) && (ppc_result_d & mask)) {
