@@ -642,10 +642,9 @@ void dppc_interpreter::power_srlq() {
     uint32_t r      = (ppc_result_d >> rot_sh) | (ppc_result_d << (32 - rot_sh));
     unsigned mask   = power_rot_mask(rot_sh, 31);
 
-    if (ppc_result_b >= 0x20) {
+    if (ppc_result_b & 0x20) {
         ppc_result_a = (ppc_state.spr[SPR::MQ] & mask);
-    }
-    else {
+    } else {
         ppc_result_a = ((r & mask) | (ppc_state.spr[SPR::MQ] & ~mask));
     }
 
