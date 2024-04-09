@@ -1,43 +1,265 @@
-name: CMake
-
+name: CI
 on:
   push:
     branches: [ master ]
   pull_request:
     branches: [ master ]
-
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
-
 jobs:
   build:
     # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
     # You can convert this to a matrix build if you need cross-platform coverage.
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
     - name: install_dependencies
       run: |
           sudo apt-get update -y -qq
           sudo apt-get install libsdl2-dev
-
     - name: init_submodules
       run: git submodule update --init --recursive
-
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DDPPC_68K_DEBUGGER=ON
-
     - name: Build
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: DingusPPC-LINUX
+        path: ${{github.workspace}}/build/bin
     - name: Test
       working-directory: ${{github.workspace}}/build
       # Execute tests defined by the CMake configuration.
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ctest -C ${{env.BUILD_TYPE}}
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        cache-name: [msys64-cache]
+    env:
+      MSYSTEM: MINGW64
+      FF_SCRIPT_SECTIONS: '0'
+      CONFIGURE_ARGS: '--target-list=x86_64-softmmu --without-default-devices -Ddebug=false -Doptimization=0'
+      TEST_ARGS: '--no-suite qtest'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Set up MSYS2
+        run: |
+          Write-Output "Acquiring msys2.exe installer at $(Get-Date -Format u)"
+          If ( !(Test-Path -Path msys64\var\cache ) ) {
+              mkdir msys64\var\cache
+          }
+          Invoke-WebRequest "https://repo.msys2.org/distrib/msys2-x86_64-latest.sfx.exe.sig" -outfile "msys2.exe.sig"
+          if ( Test-Path -Path msys64\var\cache\msys2.exe.sig ) {
+              Write-Output "Cached installer sig" ;
+              if ( ((Get-FileHash msys2.exe.sig).Hash -ne (Get-FileHash msys64\var\cache\msys2.exe.sig).Hash) ) {
+                  Write-Output "Mis-matched installer sig, new installer download required" ;
+                  Remove-Item -Path msys64\var\cache\msys2.exe.sig ;
+                  if ( Test-Path -Path msys64\var\cache\msys2.exe ) {
+                      Remove-Item -Path msys64\var\cache\msys2.exe
+                  }
+              } else {
+                  Write-Output "Matched installer sig, cached installer still valid"
+              }
+          } else {
+              Write-Output "No cached installer sig, new installer download required" ;
+              if ( Test-Path -Path msys64\var\cache\msys2.exe ) {
+                  Remove-Item -Path msys64\var\cache\msys2.exe
+              }
+          }
+          if ( !(Test-Path -Path msys64\var\cache\msys2.exe ) ) {
+              Write-Output "Fetching latest installer" ;
+              Invoke-WebRequest "https://repo.msys2.org/distrib/msys2-x86_64-latest.sfx.exe" -outfile "msys64\var\cache\msys2.exe" ;
+              Copy-Item -Path msys2.exe.sig -Destination msys64\var\cache\msys2.exe.sig
+          } else {
+              Write-Output "Using cached installer"
+          }
+          Write-Output "Invoking msys2.exe installer at $(Get-Date -Format u)"
+          msys64\var\cache\msys2.exe -y
+          ((Get-Content -path .\msys64\etc\post-install\07-pacman-key.post -Raw) -replace '--refresh-keys', '--version') | Set-Content -Path .\msys64\etc\post-install\07-pacman-key.post
+          .\msys64\usr\bin\bash -lc "sed -i 's/^CheckSpace/#CheckSpace/g' /etc/pacman.conf"
+          .\msys64\usr\bin\bash -lc 'pacman --noconfirm -Syuu'  # Core update
+          .\msys64\usr\bin\bash -lc 'pacman --noconfirm -Syuu'  # Normal update
+          taskkill /F /FI "MODULES eq msys-2.0.dll"
+      - name: Install dependencies
+        run: |
+          Write-Output "Installing mingw packages at $(Get-Date -Format u)"
+          .\msys64\usr\bin\bash -lc 'pacman -Sy --noconfirm --needed \
+          bison \
+          diffutils \
+          flex \
+          tar \
+          doxygen \
+          cmake \
+          wget \
+          git \
+          grep \
+          make \
+          rsync \
+          ninja \
+          glib2-devel \
+          patch \
+          sed \
+          mingw-w64-x86_64-cmake \
+          mingw-w64-x86_64-binutils \
+          mingw-w64-x86_64-doxygen \
+          mingw-w64-x86_64-capstone \
+          mingw-w64-x86_64-ccache \
+          mingw-w64-x86_64-curl \
+          mingw-w64-x86_64-cyrus-sasl \
+          mingw-w64-x86_64-dtc \
+          mingw-w64-x86_64-gcc \
+          mingw-w64-x86_64-glib2 \
+          mingw-w64-x86_64-gnutls \
+          mingw-w64-x86_64-gtk3 \
+          mingw-w64-x86_64-libgcrypt \
+          mingw-w64-x86_64-libjpeg-turbo \
+          mingw-w64-x86_64-libnfs \
+          mingw-w64-x86_64-libpng \
+          mingw-w64-x86_64-libssh \
+          mingw-w64-x86_64-libtasn1 \
+          mingw-w64-x86_64-libusb \
+          mingw-w64-x86_64-lzo2 \
+          mingw-w64-x86_64-libslirp \
+          mingw-w64-x86_64-nettle \
+          mingw-w64-x86_64-clang \
+          mingw-w64-x86_64-ninja \
+          mingw-w64-x86_64-pixman \
+          mingw-w64-x86_64-pkgconf \
+          mingw-w64-x86_64-python \
+          mingw-w64-x86_64-SDL2 \
+          mingw-w64-x86_64-SDL2_image \
+          mingw-w64-x86_64-snappy \
+          mingw-w64-x86_64-spice \
+          mingw-w64-x86_64-usbredir \
+          mingw-w64-x86_64-zstd \
+          mingw-w64-x86_64-make'
+      - name: init_submodules
+        run: git submodule update --init --recursive
+      - name: Build
+        run: |
+          Write-Output "Running build at $(Get-Date -Format u)"
+          $env:CHERE_INVOKING = 'yes'  # Preserve the current working directory
+          $env:MSYS = 'winsymlinks:native' # Enable native Windows symlink
+          $env:CCACHE_BASEDIR = "$env:CI_PROJECT_DIR"
+          $env:CCACHE_DIR = "$env:CCACHE_BASEDIR/ccache"
+          $env:CCACHE_MAXSIZE = "500M"
+          $env:CCACHE_DEPEND = 1 # cache misses are too expensive with preprocessor mode
+          $env:CC = "ccache gcc"
+          mkdir build
+          cd build
+          D:\a\dingusppc\dingusppc\msys64\usr\bin\bash -lc "ccache --zero-stats"
+          D:\a\dingusppc\dingusppc\msys64\usr\bin\bash -lc "cmake -DCMAKE_BUILD_TYPE=Release -DPPC_BUILD_PPC_TESTS=True .. && ninja"
+          D:\a\dingusppc\dingusppc\msys64\usr\bin\bash -lc "ccache --show-stats"
+          Write-Output "Finished build at $(Get-Date -Format u)"
+
+          
+  vsbuild-CLANG:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup msbuild
+      if: inputs.configuration != 'CMake'
+      uses: microsoft/setup-msbuild@v1
+    - name: Setup VCPKG
+      run: |
+        vcpkg integrate install
+        vcpkg install pthread:x64-windows
+        vcpkg install pthreads:x64-windows
+        vcpkg install pthread-stubs:x64-windows
+        vcpkg install pthreadpool:x64-windows
+        vcpkg install 
+    - name: init_submodules
+      run: git submodule update --init --recursive
+    - name: Build
+      shell: cmd
+      run: |
+        mkdir build
+        cd build
+        call "%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+        cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl -DPPC_BUILD_PPC_TESTS=True -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows ..
+        nmake
+    - name: Upload artifact
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: DingusPPC-CLANG
+        path: ${{github.workspace}}/build/bin
+
+
+
+  vsbuild-MSVC:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup msbuild
+      if: inputs.configuration != 'CMake'
+      uses: microsoft/setup-msbuild@v1
+    - name: Setup VCPKG
+      run: |
+        vcpkg integrate install
+        vcpkg install pthread:x64-windows
+        vcpkg install pthreads:x64-windows
+        vcpkg install pthread-stubs:x64-windows
+        vcpkg install pthreadpool:x64-windows
+        vcpkg install 
+    - name: init_submodules
+      run: git submodule update --init --recursive
+    - name: Build
+      shell: cmd
+      run: |
+        mkdir build
+        cd build
+        call "%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+        cmake -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release -DPPC_BUILD_PPC_TESTS=True -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows ..
+        nmake
+    - name: Upload artifact
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: DingusPPC-MSVC
+        path: ${{github.workspace}}/build/bin
+
+
+
+
+
+  vsbuild-MSVC-MSBUILD:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup msbuild
+      if: inputs.configuration != 'CMake'
+      uses: microsoft/setup-msbuild@v1
+    - name: Setup VCPKG
+      run: |
+        vcpkg integrate install
+        vcpkg install pthread:x64-windows
+        vcpkg install pthreads:x64-windows
+        vcpkg install pthread-stubs:x64-windows
+        vcpkg install pthreadpool:x64-windows
+        vcpkg install 
+    - name: init_submodules
+      run: git submodule update --init --recursive
+    - name: Build
+      shell: cmd
+      run: |
+        mkdir build
+        cd build
+        call "%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+        cmake -G "Visual Studio 17 2022" -DCMAKE_BUILD_TYPE=Release -DPPC_BUILD_PPC_TESTS=True -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows ..
+        msbuild dingusppc.sln
+    - name: Upload artifact
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: DingusPPC-MSBUILD
+        path: ${{github.workspace}}/build/bin
