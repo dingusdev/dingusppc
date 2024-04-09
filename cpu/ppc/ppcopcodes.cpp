@@ -69,7 +69,7 @@ inline void ppc_carry_sub(uint32_t a, uint32_t b) {
 // Affects the XER register's SO and OV Bits
 
 inline void ppc_setsoov(uint32_t a, uint32_t b, uint32_t d) {
-    if ((a ^ b) & (a ^ d) & 0x80000000UL) {
+    if (int32_t((a ^ b) & (a ^ d)) < 0) {
         ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
     } else {
         ppc_state.spr[SPR::XER] &= ~XER::OV;
@@ -533,7 +533,7 @@ void dppc_interpreter::ppc_divw() {
 
     if (!ppc_result_b) { // handle the "anything / 0" case
         ppc_result_d = 0; // tested on G4 in Mac OS X 10.4 and Open Firmware.
-        // ppc_result_d = (ppc_result_a & 0x80000000) ? -1 : 0; /* UNDOCUMENTED! */
+        // ppc_result_d = (int32_t(ppc_result_a) < 0) ? -1 : 0; /* UNDOCUMENTED! */
 
         if (ov)
             ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
@@ -632,7 +632,7 @@ void dppc_interpreter::ppc_sraw() {
     } else {
         uint32_t shift = ppc_result_b & 0x1F;
         ppc_result_a   = int32_t(ppc_result_d) >> shift;
-        if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & ((1U << shift) - 1)))
+        if ((int32_t(ppc_result_d) < 0) && (ppc_result_d & ((1U << shift) - 1)))
             ppc_state.spr[SPR::XER] |= XER::CA;
     }
 
@@ -652,7 +652,7 @@ void dppc_interpreter::ppc_srawi() {
     // clear XER[CA] by default
     ppc_state.spr[SPR::XER] &= ~XER::CA;
 
-    if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & ((1U << rot_sh) - 1)))
+    if ((int32_t(ppc_result_d) < 0) && (ppc_result_d & ((1U << rot_sh) - 1)))
         ppc_state.spr[SPR::XER] |= XER::CA;
 
     ppc_result_a = int32_t(ppc_result_d) >> rot_sh;

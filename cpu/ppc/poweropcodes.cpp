@@ -281,7 +281,7 @@ template void dppc_interpreter::power_mul<RC1, OV1>();
 template <field_rc rec, field_ov ov>
 void dppc_interpreter::power_nabs() {
     ppc_grab_regsda(ppc_cur_instruction);
-    uint32_t ppc_result_d = ppc_result_a & 0x80000000 ? ppc_result_a : -ppc_result_a;
+    uint32_t ppc_result_d = (int32_t(ppc_result_a) < 0) ? ppc_result_a : -ppc_result_a;
 
     if (rec)
         ppc_changecrf0(ppc_result_d);
@@ -317,7 +317,7 @@ template <field_rc rec>
 void dppc_interpreter::power_rrib() {
     ppc_grab_regssab(ppc_cur_instruction);
 
-    if (ppc_result_d & 0x80000000) {
+    if (int32_t(ppc_result_d) < 0) {
         ppc_result_a |= ((ppc_result_d & 0x80000000) >> ppc_result_b);
     } else {
         ppc_result_a &= ~((ppc_result_d & 0x80000000) >> ppc_result_b);
@@ -454,7 +454,7 @@ void dppc_interpreter::power_sraiq() {
     ppc_result_a           = (int32_t)ppc_result_d >> rot_sh;
     ppc_state.spr[SPR::MQ] = (ppc_result_d >> rot_sh) | (ppc_result_d << (32 - rot_sh));
 
-    if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & mask)) {
+    if ((int32_t(ppc_result_d) < 0) && (ppc_result_d & mask)) {
         ppc_state.spr[SPR::XER] |= XER::CA;
     } else {
         ppc_state.spr[SPR::XER] &= ~XER::CA;
@@ -477,7 +477,7 @@ void dppc_interpreter::power_sraq() {
     ppc_result_a           = (int32_t)ppc_result_d >> rot_sh;
     ppc_state.spr[SPR::MQ] = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
 
-    if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & mask)) {
+    if ((int32_t(ppc_result_d) < 0) && (ppc_result_d & mask)) {
         ppc_state.spr[SPR::XER] |= XER::CA;
     } else {
         ppc_state.spr[SPR::XER] &= ~XER::CA;
@@ -519,7 +519,7 @@ void dppc_interpreter::power_srea() {
     ppc_result_a           = (int32_t)ppc_result_d >> rot_sh;
     ppc_state.spr[SPR::MQ] = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
 
-    if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & rot_sh)) {
+    if ((int32_t(ppc_result_d) < 0) && (ppc_result_d & rot_sh)) {
         ppc_state.spr[SPR::XER] |= XER::CA;
     } else {
         ppc_state.spr[SPR::XER] &= ~XER::CA;
