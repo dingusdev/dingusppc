@@ -27,16 +27,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ppcmmu.h"
 #include <stdint.h>
 
-// Affects the XER register's SO and OV Bits
-
-inline void power_setsoov(uint32_t a, uint32_t b, uint32_t d) {
-    if ((a ^ b) & (a ^ d) & 0x80000000UL) {
-        ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
-    } else {
-        ppc_state.spr[SPR::XER] &= ~XER::OV;
-    }
-}
-
 /** mask generator for rotate and shift instructions (§ 4.2.1.4 PowerpC PEM) */
 static inline uint32_t power_rot_mask(unsigned rot_mb, unsigned rot_me) {
     uint32_t m1 = 0xFFFFFFFFU >> rot_mb;
