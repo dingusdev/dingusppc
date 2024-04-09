@@ -33,20 +33,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // Affects CR Field 0 - For integer operations
 void ppc_changecrf0(uint32_t set_result) {
-    ppc_state.cr &= 0x0FFFFFFFUL;
-
-    if (set_result == 0) {
-        ppc_state.cr |= 0x20000000UL;
-    } else {
-        if (set_result & 0x80000000) {
-            ppc_state.cr |= 0x80000000UL;
-        } else {
-            ppc_state.cr |= 0x40000000UL;
-        }
-    }
-
-    /* copy XER[SO] into CR0[SO]. */
-    ppc_state.cr |= (ppc_state.spr[SPR::XER] >> 3) & 0x10000000UL;
+    ppc_state.cr =
+        (ppc_state.cr & 0x0FFFFFFFU) // clear CR0
+        | (
+            (set_result == 0) ?
+                CRx_bit::CR_EQ
+            : (int32_t(set_result) < 0) ?
+                CRx_bit::CR_LT
+            :
+                CRx_bit::CR_GT
+        )
+        | ((ppc_state.spr[SPR::XER] & XER::SO) >> 3); // copy XER[SO] into CR0[SO].
 }
 
 // Affects the XER register's Carry Bit
