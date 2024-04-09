@@ -98,23 +98,39 @@ void dppc_interpreter::power_div() {
     uint32_t ppc_result_d;
     ppc_grab_regsdab(ppc_cur_instruction);
 
-    uint64_t dividend = ((uint64_t)ppc_result_a << 32) | ppc_state.spr[SPR::MQ];
-    int32_t  divisor  = ppc_result_b;
+    int64_t dividend = (uint64_t(ppc_result_a) << 32) | ppc_state.spr[SPR::MQ];
+    int32_t divisor = ppc_result_b;
+    int64_t quotient;
+    int32_t remainder;
 
-    if ((ppc_result_a == 0x80000000UL && divisor == -1) || !divisor) {
-        ppc_state.spr[SPR::MQ] = 0;
-        ppc_result_d  = 0x80000000UL;    // -2^31 aka INT32_MIN
+    if (dividend == -0x80000000 && divisor == -1) {
+        remainder = 0;
+        ppc_result_d = 0x80000000U; // -2^31 aka INT32_MIN
+        if (ov)
+            ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
+    } else if (!divisor) {
+        remainder = 0;
+        ppc_result_d = 0x80000000U; // -2^31 aka INT32_MIN
+        if (ov)
+            ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
     } else {
-        ppc_result_d  = uint32_t(dividend / divisor);
-        ppc_state.spr[SPR::MQ] = dividend % divisor;
+        quotient = dividend / divisor;
+        remainder = dividend % divisor;
+        ppc_result_d = uint32_t(quotient);
+        if (ov) {
+            if (((quotient >> 31) + 1) & ~1) {
+                ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
+            } else {
+                ppc_state.spr[SPR::XER] &= ~XER::OV;
+            }
+        }
     }
 
-    if (ov)
-        power_setsoov(ppc_result_b, ppc_result_a, ppc_result_d);
     if (rec)
-        ppc_changecrf0(ppc_result_d);
+        ppc_changecrf0(remainder);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_state.spr[SPR::MQ] = remainder;
 }
 
 template void dppc_interpreter::power_div<RC0, OV0>();
