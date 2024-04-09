@@ -52,9 +52,10 @@ void dppc_interpreter::power_abs() {
         ppc_result_d = ppc_result_a;
         if (ov)
             ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
-
     } else {
-        ppc_result_d = ppc_result_a & 0x7FFFFFFF;
+        ppc_result_d = (int32_t(ppc_result_a) < 0) ? -ppc_result_a : ppc_result_a;
+        if (ov)
+            ppc_state.spr[SPR::XER] &= ~XER::OV;
     }
 
     if (rec)
