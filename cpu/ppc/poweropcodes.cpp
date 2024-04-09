@@ -365,11 +365,12 @@ void dppc_interpreter::power_rlmi() {
 template <field_rc rec>
 void dppc_interpreter::power_rrib() {
     ppc_grab_regssab(ppc_cur_instruction);
+    unsigned rot_sh = ppc_result_b & 0x1F;
 
     if (int32_t(ppc_result_d) < 0) {
-        ppc_result_a |= ((ppc_result_d & 0x80000000) >> ppc_result_b);
+        ppc_result_a |= (0x80000000U >> rot_sh);
     } else {
-        ppc_result_a &= ~((ppc_result_d & 0x80000000) >> ppc_result_b);
+        ppc_result_a &= ~(0x80000000U >> rot_sh);
     }
 
     if (rec)
