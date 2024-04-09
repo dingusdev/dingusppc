@@ -332,10 +332,10 @@ void dppc_interpreter::power_nabs() {
     ppc_grab_regsda(ppc_cur_instruction);
     uint32_t ppc_result_d = (int32_t(ppc_result_a) < 0) ? ppc_result_a : -ppc_result_a;
 
-    if (rec)
-        ppc_changecrf0(ppc_result_d);
     if (ov)
         ppc_state.spr[SPR::XER] &= ~XER::OV;
+    if (rec)
+        ppc_changecrf0(ppc_result_d);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
