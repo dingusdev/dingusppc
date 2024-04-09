@@ -58,7 +58,7 @@ int initialize_pippin(std::string& id) {
     aspen_obj->insert_ram_dimm(3, GET_INT_PROP("rambank4_size")); // RAM expansion slot
 
     // init virtual CPU
-    ppc_cpu_init(aspen_obj, PPC_VER::MPC603, 16500000ULL);
+    ppc_cpu_init(aspen_obj, PPC_VER::MPC603, false, 16500000ULL);
 
     return 0;
 }

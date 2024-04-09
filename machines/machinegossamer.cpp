@@ -146,7 +146,7 @@ int initialize_gossamer(std::string& id)
     uint64_t timebase_freq = bus_freq / 4;
 
     // initialize virtual CPU and request MPC750 CPU aka G3
-    ppc_cpu_init(grackle_obj, PPC_VER::MPC750, timebase_freq);
+    ppc_cpu_init(grackle_obj, PPC_VER::MPC750, false, timebase_freq);
 
     // set CPU PLL ratio to 3.5
     ppc_state.spr[SPR::HID1] = 0xE << 28;

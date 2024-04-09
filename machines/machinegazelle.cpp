@@ -77,7 +77,7 @@ int initialize_gazelle(std::string& id)
     uint64_t timebase_freq = bus_freq / 4;
 
     // init virtual CPU and request MPC603ev
-    ppc_cpu_init(psx_obj, PPC_VER::MPC603EV, timebase_freq);
+    ppc_cpu_init(psx_obj, PPC_VER::MPC603EV, false, timebase_freq);
 
     // CPU frequency is hardcoded to 225 MHz for now
     ppc_state.spr[SPR::HID1] = get_cpu_pll_value(225000000) << 28;

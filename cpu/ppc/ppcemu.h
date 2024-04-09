@@ -398,7 +398,7 @@ typedef enum {
 } field_601;
 
 // Function prototypes
-extern void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, uint64_t tb_freq);
+extern void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool include_601, uint64_t tb_freq);
 extern void ppc_mmu_init();
 
 void ppc_illegalop();
@@ -414,7 +414,7 @@ void ppc_opcode31();
 void ppc_opcode59();
 void ppc_opcode63();
 
-void initialize_ppc_opcode_tables();
+void initialize_ppc_opcode_tables(bool include_601);
 
 extern double fp_return_double(uint32_t reg);
 extern uint64_t fp_return_uint64(uint32_t reg);

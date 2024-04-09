@@ -586,13 +586,13 @@ do { \
 #define OP63d(subopcode, fn) OPXd(SubOpcode63, subopcode, fn)
 #define OP63dc(subopcode, fn, carry) OPXdc(SubOpcode63, subopcode, fn, carry)
 
-void initialize_ppc_opcode_tables() {
+void initialize_ppc_opcode_tables(bool include_601) {
     std::fill_n(OpcodeGrabber, 64, ppc_illegalop);
     OP(3,  ppc_twi);
     //OP(4,  ppc_opcode4); - Altivec instructions not emulated yet. Uncomment once they're implemented.
     OP(7,  ppc_mulli);
     OP(8,  ppc_subfic);
-    if (is_601) OP(9, power_dozi);
+    if (is_601 || include_601) OP(9, power_dozi);
     OP(10, ppc_cmpli);
     OP(11, ppc_cmpi);
     OP(12, ppc_addic<RC0>);
@@ -605,7 +605,7 @@ void initialize_ppc_opcode_tables() {
     if (is_601) OP(19, ppc_opcode19<IS601>); else OP(19, ppc_opcode19<NOT601>);
     OP(20, ppc_rlwimi);
     OP(21, ppc_rlwinm);
-    if (is_601) OP(22, power_rlmi);
+    if (is_601 || include_601) OP(22, power_rlmi);
     OP(23, ppc_rlwnm);
     OP(24, ppc_ori<SHFT0>);
     OP(25, ppc_ori<SHFT1>);
@@ -741,7 +741,7 @@ void initialize_ppc_opcode_tables() {
     OP31(470,    ppc_dcbi);
     OP31(1014,   ppc_dcbz);
 
-    if (is_601) {
+    if (is_601 || include_601) {
         OP31d(29,   power_maskg);
         OP31od(107, power_mul);
         OP31d(152,  power_slq);
@@ -822,7 +822,7 @@ void initialize_ppc_opcode_tables() {
     }
 }
 
-void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, uint64_t tb_freq)
+void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool include_601, uint64_t tb_freq)
 {
     int i;
 
@@ -834,7 +834,7 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, uint64_t tb_freq)
     ppc_state.spr[SPR::PVR] = cpu_version;
     is_601 = (cpu_version >> 16) == 1;
 
-    initialize_ppc_opcode_tables();
+    initialize_ppc_opcode_tables(include_601);
 
     // initialize emulator timers
     TimerManager::get_instance()->set_time_now_cb(&get_virt_time_ns);

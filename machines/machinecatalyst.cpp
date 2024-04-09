@@ -79,7 +79,7 @@ int initialize_catalyst(std::string& id)
     std::string cpu = GET_STR_PROP("cpu");
     if (cpu == "601") {
         // init virtual CPU and request MPC601
-        ppc_cpu_init(platinum_obj, PPC_VER::MPC601, 7833600ULL);
+        ppc_cpu_init(platinum_obj, PPC_VER::MPC601, true, 7833600ULL);
     }
     else if (cpu == "750") {
         // configure CPU clocks
@@ -87,7 +87,7 @@ int initialize_catalyst(std::string& id)
         uint64_t timebase_freq = bus_freq / 4;
 
         // initialize virtual CPU and request MPC750 CPU aka G3
-        ppc_cpu_init(platinum_obj, PPC_VER::MPC750, timebase_freq);
+        ppc_cpu_init(platinum_obj, PPC_VER::MPC750, false, timebase_freq);
 
         // set CPU PLL ratio to 3.5
         ppc_state.spr[SPR::HID1] = 0xE << 28;

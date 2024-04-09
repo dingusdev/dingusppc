@@ -101,16 +101,16 @@ int initialize_tnt(std::string& id)
     // init virtual CPU
     std::string cpu = GET_STR_PROP("cpu");
     if (cpu == "604e")
-        ppc_cpu_init(memctrl_obj, PPC_VER::MPC604E, 12500000ULL);
+        ppc_cpu_init(memctrl_obj, PPC_VER::MPC604E, false, 12500000ULL);
     else if (cpu == "601")
-        ppc_cpu_init(memctrl_obj, PPC_VER::MPC601, 7833600ULL);
+        ppc_cpu_init(memctrl_obj, PPC_VER::MPC601, true, 7833600ULL);
     else if (cpu == "750") {
         // configure CPU clocks
         uint64_t bus_freq      = 50000000ULL;
         uint64_t timebase_freq = bus_freq / 4;
 
         // initialize virtual CPU and request MPC750 CPU aka G3
-        ppc_cpu_init(memctrl_obj, PPC_VER::MPC750, timebase_freq);
+        ppc_cpu_init(memctrl_obj, PPC_VER::MPC750, false, timebase_freq);
 
         // set CPU PLL ratio to 3.5
         ppc_state.spr[SPR::HID1] = 0xE << 28;

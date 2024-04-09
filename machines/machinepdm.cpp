@@ -90,7 +90,7 @@ int initialize_pdm(std::string& id)
     }
 
     // Init virtual CPU and request MPC601
-    ppc_cpu_init(hmc_obj, PPC_VER::MPC601, 7812500ULL);
+    ppc_cpu_init(hmc_obj, PPC_VER::MPC601, true, 7812500ULL);
 
     return 0;
 }
