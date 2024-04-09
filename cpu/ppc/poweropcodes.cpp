@@ -662,7 +662,7 @@ void dppc_interpreter::power_srq() {
     ppc_grab_regssab(ppc_cur_instruction);
     unsigned rot_sh = ppc_result_b & 0x1F;
 
-    if (ppc_result_b >= 0x20) {
+    if (ppc_result_b & 0x20) {
         ppc_result_a = 0;
     } else {
         ppc_result_a = ppc_result_d >> rot_sh;
