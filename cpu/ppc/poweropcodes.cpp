@@ -588,10 +588,10 @@ template <field_rc rec>
 void dppc_interpreter::power_sreq() {
     ppc_grab_regssab(ppc_cur_instruction);
     unsigned rot_sh = ppc_result_b & 0x1F;
-    unsigned mask   = power_rot_mask(rot_sh, 31);
+    uint32_t mask   = -1U >> rot_sh;
 
-    ppc_result_a           = ((rot_sh & mask) | (ppc_state.spr[SPR::MQ] & ~mask));
-    ppc_state.spr[SPR::MQ] = rot_sh;
+    ppc_result_a           = (ppc_result_d >> rot_sh) | (ppc_state.spr[SPR::MQ] & ~mask);
+    ppc_state.spr[SPR::MQ] = (ppc_result_d >> rot_sh) | (ppc_result_d << (32 - rot_sh));
 
     if (rec)
         ppc_changecrf0(ppc_result_a);
