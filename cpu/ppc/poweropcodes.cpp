@@ -77,10 +77,17 @@ void dppc_interpreter::power_clcs() {
     case 13: //data cache line size
     case 14: //minimum line size
     case 15: //maximum line size
-        ppc_result_d = 64;
-        break;
-    default:
-        ppc_result_d = 0;
+    default: ppc_result_d = is_601 ? 64 :     32; break;
+    case  7:
+    case 23: ppc_result_d = is_601 ? 64 :      0; break;
+    case  8:
+    case  9:
+    case 24:
+    case 25: ppc_result_d = is_601 ? 64 :      4; break;
+    case 10:
+    case 11:
+    case 26:
+    case 27: ppc_result_d = is_601 ? 64 : 0x4000; break;
     }
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
