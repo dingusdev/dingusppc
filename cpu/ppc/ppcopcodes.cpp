@@ -647,16 +647,15 @@ template void dppc_interpreter::ppc_sraw<RC1>();
 
 template <field_rc rec>
 void dppc_interpreter::ppc_srawi() {
-    ppc_grab_regssa(ppc_cur_instruction);
-    uint32_t shift = (ppc_cur_instruction >> 11) & 0x1F;
+    ppc_grab_regssash(ppc_cur_instruction);
 
     // clear XER[CA] by default
     ppc_state.spr[SPR::XER] &= ~XER::CA;
 
-    if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & ((1U << shift) - 1)))
+    if ((ppc_result_d & 0x80000000UL) && (ppc_result_d & ((1U << rot_sh) - 1)))
         ppc_state.spr[SPR::XER] |= XER::CA;
 
-    ppc_result_a = int32_t(ppc_result_d) >> shift;
+    ppc_result_a = int32_t(ppc_result_d) >> rot_sh;
 
     if (rec)
         ppc_changecrf0(ppc_result_a);
@@ -675,8 +674,7 @@ static inline uint32_t rot_mask(unsigned rot_mb, unsigned rot_me) {
 }
 
 void dppc_interpreter::ppc_rlwimi() {
-    ppc_grab_regssa(ppc_cur_instruction);
-    unsigned rot_sh = (ppc_cur_instruction >> 11) & 0x1F;
+    ppc_grab_regssash(ppc_cur_instruction);
     unsigned rot_mb = (ppc_cur_instruction >> 6) & 0x1F;
     unsigned rot_me = (ppc_cur_instruction >> 1) & 0x1F;
     uint32_t mask   = rot_mask(rot_mb, rot_me);
@@ -690,8 +688,7 @@ void dppc_interpreter::ppc_rlwimi() {
 }
 
 void dppc_interpreter::ppc_rlwinm() {
-    ppc_grab_regssa(ppc_cur_instruction);
-    unsigned rot_sh = (ppc_cur_instruction >> 11) & 0x1F;
+    ppc_grab_regssash(ppc_cur_instruction);
     unsigned rot_mb = (ppc_cur_instruction >> 6) & 0x1F;
     unsigned rot_me = (ppc_cur_instruction >> 1) & 0x1F;
     uint32_t mask   = rot_mask(rot_mb, rot_me);
@@ -1820,10 +1817,9 @@ void dppc_interpreter::ppc_stswi() {
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
-    ppc_grab_regssa(ppc_cur_instruction);
+    ppc_grab_regssash(ppc_cur_instruction);
     ppc_effective_address = reg_a ? ppc_result_a : 0;
-    uint32_t grab_inb     = (ppc_cur_instruction >> 11) & 0x1F;
-    grab_inb              = grab_inb ? grab_inb : 32;
+    uint32_t grab_inb = rot_sh ? rot_sh : 32;
 
     while (grab_inb >= 4) {
         mmu_write_vmem<uint32_t>(ppc_effective_address, ppc_state.gpr[reg_s]);

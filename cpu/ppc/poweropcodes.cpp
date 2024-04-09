@@ -372,8 +372,7 @@ template void dppc_interpreter::power_sleq<RC1>();
 
 template <field_rc rec>
 void dppc_interpreter::power_sliq() {
-    ppc_grab_regssa(ppc_cur_instruction);
-    unsigned rot_sh      = (ppc_cur_instruction >> 11) & 0x1F;
+    ppc_grab_regssash(ppc_cur_instruction);
 
     ppc_result_a           = ppc_result_d << rot_sh;
     ppc_state.spr[SPR::MQ] = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
@@ -389,8 +388,7 @@ template void dppc_interpreter::power_sliq<RC1>();
 
 template <field_rc rec>
 void dppc_interpreter::power_slliq() {
-    ppc_grab_regssa(ppc_cur_instruction);
-    unsigned rot_sh = (ppc_cur_instruction >> 11) & 0x1F;
+    ppc_grab_regssash(ppc_cur_instruction);
     uint32_t r      = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
     uint32_t mask   = power_rot_mask(0, 31 - rot_sh);
 
@@ -451,8 +449,7 @@ template void dppc_interpreter::power_slq<RC1>();
 
 template <field_rc rec>
 void dppc_interpreter::power_sraiq() {
-    ppc_grab_regssa(ppc_cur_instruction);
-    unsigned rot_sh        = (ppc_cur_instruction >> 11) & 0x1F;
+    ppc_grab_regssash(ppc_cur_instruction);
     uint32_t mask          = (1 << rot_sh) - 1;
     ppc_result_a           = (int32_t)ppc_result_d >> rot_sh;
     ppc_state.spr[SPR::MQ] = (ppc_result_d >> rot_sh) | (ppc_result_d << (32 - rot_sh));
@@ -557,8 +554,7 @@ template void dppc_interpreter::power_sreq<RC1>();
 
 template <field_rc rec>
 void dppc_interpreter::power_sriq() {
-    ppc_grab_regssa(ppc_cur_instruction);
-    unsigned rot_sh        = (ppc_cur_instruction >> 11) & 0x1F;
+    ppc_grab_regssash(ppc_cur_instruction);
     ppc_result_a           = ppc_result_d >> rot_sh;
     ppc_state.spr[SPR::MQ] = (ppc_result_d >> rot_sh) | (ppc_result_d << (32 - rot_sh));
 
@@ -573,8 +569,7 @@ template void dppc_interpreter::power_sriq<RC1>();
 
 template <field_rc rec>
 void dppc_interpreter::power_srliq() {
-    ppc_grab_regssa(ppc_cur_instruction);
-    unsigned rot_sh = (ppc_cur_instruction >> 11) & 0x1F;
+    ppc_grab_regssash(ppc_cur_instruction);
     uint32_t r      = (ppc_result_d >> rot_sh) | (ppc_result_d << (32 - rot_sh));
     unsigned mask   = power_rot_mask(rot_sh, 31);
 

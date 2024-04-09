@@ -74,6 +74,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     uint32_t ppc_result_d = ppc_state.gpr[reg_s]; \
     uint32_t ppc_result_a = ppc_state.gpr[reg_a];
 
+#define ppc_grab_regssash(opcode) \
+    uint32_t reg_s        = (opcode >> 21) & 31; \
+    uint32_t reg_a        = (opcode >> 16) & 31; \
+    uint32_t rot_sh       = (opcode >> 11) & 31; \
+    uint32_t ppc_result_d = ppc_state.gpr[reg_s]; \
+    uint32_t ppc_result_a = ppc_state.gpr[reg_a];
 
 #define ppc_grab_regssb(opcode) \
     uint32_t reg_s = (opcode >> 21) & 31; \
