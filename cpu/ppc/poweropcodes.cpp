@@ -39,8 +39,8 @@ inline void power_setsoov(uint32_t a, uint32_t b, uint32_t d) {
 
 /** mask generator for rotate and shift instructions (§ 4.2.1.4 PowerpC PEM) */
 static inline uint32_t power_rot_mask(unsigned rot_mb, unsigned rot_me) {
-    uint32_t m1 = 0xFFFFFFFFUL >> rot_mb;
-    uint32_t m2 = uint32_t(0xFFFFFFFFUL << (31 - rot_me));
+    uint32_t m1 = 0xFFFFFFFFU >> rot_mb;
+    uint32_t m2 = 0xFFFFFFFFU << (31 - rot_me);
     return ((rot_mb <= rot_me) ? m2 & m1 : m1 | m2);
 }
 
