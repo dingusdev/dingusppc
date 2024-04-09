@@ -888,11 +888,14 @@ void dppc_interpreter::ppc_mfspr() {
     ppc_grab_dab(ppc_cur_instruction);
     uint32_t ref_spr = (reg_b << 5) | reg_a;
 
+    if (ref_spr & 0x10) {
 #ifdef CPU_PROFILING
-    if (ref_spr > 31) {
         num_supervisor_instrs++;
-    }
 #endif
+        if (ppc_state.msr & MSR::PR) {
+            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
+        }
+    }
 
     switch (ref_spr) {
     case SPR::RTCL_U:
@@ -915,11 +918,14 @@ void dppc_interpreter::ppc_mtspr() {
     ppc_grab_dab(ppc_cur_instruction);
     uint32_t ref_spr = (reg_b << 5) | reg_a;
 
+    if (ref_spr & 0x10) {
 #ifdef CPU_PROFILING
-    if (ref_spr > 31) {
         num_supervisor_instrs++;
-    }
 #endif
+        if (ppc_state.msr & MSR::PR) {
+            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
+        }
+    }
 
     if (ref_spr == SPR::PVR || (
         ref_spr == SPR::MQ && !is_601
