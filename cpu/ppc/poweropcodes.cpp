@@ -212,47 +212,50 @@ void dppc_interpreter::power_lscbx() {
     ppc_grab_regsdab(ppc_cur_instruction);
     ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
 
-    uint8_t  return_value  = 0;
     uint32_t bytes_to_load = (ppc_state.spr[SPR::XER] & 0x7F);
-    uint32_t bytes_copied  = 0;
+    uint32_t bytes_remaining = bytes_to_load;
     uint8_t  matching_byte = (uint8_t)(ppc_state.spr[SPR::XER] >> 8);
-    uint32_t ppc_result_d  = 0;
+    uint32_t ppc_result_d = 0;
+    bool     is_match = false;
 
     // for storing each byte
-    uint32_t bitmask      = 0xFF000000;
     uint8_t  shift_amount = 24;
 
-    while (bytes_to_load > 0) {
-        return_value = mmu_read_vmem<uint8_t>(ppc_effective_address);
+    while (bytes_remaining > 0) {
+        uint8_t return_value = mmu_read_vmem<uint8_t>(ppc_effective_address);
 
-        ppc_result_d = (ppc_result_d & ~bitmask) | (return_value << shift_amount);
+        ppc_result_d |= return_value << shift_amount;
         if (!shift_amount) {
             if (reg_d != reg_a && reg_d != reg_b)
                 ppc_store_iresult_reg(reg_d, ppc_result_d);
             reg_d        = (reg_d + 1) & 0x1F;
-            bitmask      = 0xFF000000;
+            ppc_result_d = 0;
             shift_amount = 24;
         } else {
-            bitmask >>= 8;
             shift_amount -= 8;
         }
 
         ppc_effective_address++;
-        bytes_copied++;
-        bytes_to_load--;
+        bytes_remaining--;
 
-        if (return_value == matching_byte)
+        if (return_value == matching_byte) {
+            is_match = true;
             break;
+        }
     }
 
-    // store partiallly loaded register if any
+    // store partially loaded register if any
     if (shift_amount != 24 && reg_d != reg_a && reg_d != reg_b)
         ppc_store_iresult_reg(reg_d, ppc_result_d);
 
-    ppc_state.spr[SPR::XER] = (ppc_state.spr[SPR::XER] & ~0x7F) | bytes_copied;
+    ppc_state.spr[SPR::XER] = (ppc_state.spr[SPR::XER] & ~0x7F) | (bytes_to_load - bytes_remaining);
 
-    if (rec)
-        ppc_changecrf0(ppc_result_d);
+    if (rec) {
+        ppc_state.cr =
+            (ppc_state.cr & 0x0FFFFFFFUL) |
+            (is_match ? CRx_bit::CR_EQ : 0) |
+            ((ppc_state.spr[SPR::XER] & XER::SO) >> 3);
+    }
 }
 
 template void dppc_interpreter::power_lscbx<RC0>();
