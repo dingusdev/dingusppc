@@ -694,22 +694,6 @@ static inline TLBEntry* lookup_secondary_tlb(uint32_t guest_va, uint32_t tag) {
     return tlb_entry;
 }
 
-static void tlb_flush_primary_entry(TLBEntry *tlb1, uint32_t tag) {
-    TLBEntry *tlb_entry = &tlb1[(tag >> PPC_PAGE_SIZE_BITS) & tlb_size_mask];
-    if (tlb_entry->tag == tag) {
-        tlb_entry->tag = TLB_INVALID_TAG;
-    }
-}
-
-static void tlb_flush_secondary_entry(TLBEntry *tlb2, uint32_t tag) {
-    TLBEntry *tlb_entry = &tlb2[((tag >> PPC_PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
-    for (int i = 0; i < TLB2_WAYS; i++) {
-        if (tlb_entry[i].tag == tag) {
-            tlb_entry[i].tag = TLB_INVALID_TAG;
-        }
-    }
-}
-
 uint8_t *mmu_translate_imem(uint32_t vaddr, uint32_t *paddr)
 {
     TLBEntry *tlb1_entry, *tlb2_entry;
