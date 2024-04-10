@@ -127,6 +127,24 @@ static void fpresult_update(double set_result) {
     }
 }
 
+static void ppc_update_vx() {
+    uint32_t fpscr_check = ppc_state.fpscr & 0x1F80700U;
+    if (fpscr_check)
+        ppc_state.fpscr |= VX;
+    else
+        ppc_state.fpscr &= ~VX;
+}
+
+static void ppc_update_fex() {
+    uint32_t fpscr_check = (((ppc_state.fpscr >> 25) & 0x1F) & 
+        ((ppc_state.fpscr >> 3) & 0x1F));
+
+    if (fpscr_check)
+        ppc_state.fpscr |= VX;
+    else
+        ppc_state.fpscr &= ~VX;
+}
+
 // Floating Point Arithmetic
 template <field_rc rec>
 void dppc_interpreter::ppc_fadd() {
@@ -879,7 +897,9 @@ void dppc_interpreter::ppc_mtfsfi() {
     // copy imm to FPSCR[crf_d] under control of the field mask
     ppc_state.fpscr = (ppc_state.fpscr & ~mask) | ((imm >> crf_d) & mask);
 
-    // TODO: update FEX and VX according to the "usual rule"
+    // Update FEX and VX according to the "usual rule"
+    ppc_update_vx();
+    ppc_update_fex();
 
     if (rec)
         ppc_update_cr1();
