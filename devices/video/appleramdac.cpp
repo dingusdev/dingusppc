@@ -160,7 +160,7 @@ int AppleRamdac::get_dot_freq() {
     uint8_t n = this->clk_pn[this->pll_cr & 1] & 0x1F;
 
     double dot_freq;
-    if (this->dac_vendor == DACULA_VENDOR_OTHER)
+    if (this->dac_vendor == DACULA_VENDOR_ATT)
         dot_freq = 15000000.0f * (double)m / ((double)n + 2) / (double)(1 << p);
     else if (this->dac_vendor == DACULA_VENDOR_SIERRA)
         dot_freq = 14318180.0f * (double)m / ((double)n * (double)(1 << p));
