@@ -47,20 +47,20 @@ enum ControlRegs : int {
     VBPEQ           = 0x05, // vertical back porch with EQ      (rw) 12 bits
     VSYNC           = 0x06, // vertical sync starting point     (rw) 12 bits
     VHLINE          = 0x07, // vertical half line               (rw) 12 bits
-    PIPE_DELAY      = 0x08, // controls pixel pipe delay        (rw) 10 bits, ndrv says 12 bits but only 10 are writable
+    PIPE_DELAY      = 0x08, // controls pixel pipe delay        (rw) ndrv says 12 bits but only 10 are writable
     HPIX            = 0x09, // horizontal pixel count           (rw) 12 bits
     HFP             = 0x0A, // horizontal front porch           (rw) 12 bits
     HAL             = 0x0B, // horizontal active line           (rw) 12 bits
     HBWAY           = 0x0C, // horizontal breezeway             (rw) 12 bits
     HSP             = 0x0D, // horizontal sync starting point   (rw) 12 bits
-    HEQ             = 0x0E, // horizontal equalization          (rw)  8 bits, ndrv says 12 bits but only 8 are writable
+    HEQ             = 0x0E, // horizontal equalization          (rw) ndrv says 12 bits but only 8 are writable
     HLFLN           = 0x0F, // horizontal half line             (rw) 12 bits
     HSERR           = 0x10, // horizontal serration             (rw) 12 bits
     CNTTST          = 0x11, // Swatch counter test value        (rw) 12 bits
     SWATCH_CTRL     = 0x12, // Swatch timing generator control  (rw) 11 bits
     GBASE           = 0x13, // graphics base address            (rw) 22 bits, 32 byte aligned
     ROW_WORDS       = 0x14, // framebuffer pitch                (rw) 15 bits, 32 byte aligned
-    MON_SENSE       = 0x15, // Monitor sense control & status   (rw)  9 bits (three groups of 3-bits; the two LSB groups are writable)
+    MON_SENSE       = 0x15, // Monitor sense control & status   (rw)  9 bits
     MISC_ENABLES    = 0x16, // controls chip's features         (rw) 12 bits
     GSC_DIVIDE      = 0x17, // graphics clock divide count      (rw)  2 bits
     REFRESH_COUNT   = 0x18, // VRAM refresh counter             (rw) 10 bits
@@ -72,33 +72,34 @@ enum ControlRegs : int {
 
 // Bit definitions for the video timing generator (Swatch) control register.
 enum {
-//  1               = 1 <<  0, //
-//  1               = 1 <<  1, //
+    VSYNC_CNT_LOAD  = 1 <<  0, //
+    VSYNC_CNT_STOP  = 1 <<  1, //
     VSYNC_POLARITY  = 1 <<  2, // 0 - negative, 1 - positive
     RESET_TIMING    = 1 <<  3, // toggle this bit to change timing parameters
-//  1               = 1 <<  4, //
-//  1               = 1 <<  5, //
+    HSYNC_CNT_LOAD  = 1 <<  4, //
+    HSYNC_CNT_STOP  = 1 <<  5, //
     HSYNC_POLARITY  = 1 <<  6, // 0 - negative, 1 - positive
-//  0               = 1 <<  7, //
-    INTERLACED      = 1 <<  8, // 0 - progressive, 1 = interlaced
-//  0=unused        = 1 <<  9,
+    ADJ_FIELD_ONE   = 1 <<  7, // 1- field  I parameters are increased by 1
+    ADJ_FIELD_TWO   = 1 <<  8, // 1- field II parameters are increased by 1
+    TEST_ENABLE     = 1 <<  9, // counter test enable, probably unimplemented in Control
     DISABLE_TIMING  = 1 << 10, // 1 - disable video timing, 0 - enable it
 };
 
 // Bit definitions for MISC_ENABLES register.
 enum {
-    SCAN_CONTROL          = 1 <<  0, // 0 - interlaced, 1 - progressive; opposite of INTERLACED above
-    FB_ENDIAN_LITTLE      = 1 <<  1, // framebuffer endianness: 0 - big, 1 - little // 1 also makes ControlRegs big endian
-    DOUBLE_BUFFERING      = 1 <<  2, // the same data transfers are generated for both the standard bank of VRAM and the optional bank
-    STANDARD_BANK_DISABLE = 1 <<  3, // 0 - data transfers are to be performed for the standard bank of VRAM
-    SHIFT_CLOCK           = 1 <<  4, // shift clock is to be generated
-    DETECT_PAGE_HITS      = 1 <<  5, // VRAM state machines detect page hits on the system bus to frame buffer single beat writes
-    VRAM_WIDE_MODE        = 1 <<  6, // VRAM bus width: 1 - 128bit, 0 - 64bit
-    MHZ_30_50             = 1 <<  7, // 0 - 50 MHz, 1 - 33 MHz // setting this to 33 MHz causes system to hang
-    VSYNC_DISABLE         = 1 <<  8, // 0 - enable vertical sync, 1 - disable it
-    HSYNC_DISABLE         = 1 <<  9, // 0 - enable horizontal sync, 1 - disable it
-    CSYNC_DISABLE         = 1 << 10, // 0 - enable composite sync, 1 - disable it
-    BLANK_DISABLE         = 1 << 11, // 0 - enable blanking, 1 - disable it
+    SCAN_CONTROL        = 1 <<  0, // 0 - interlaced, 1 - progressive
+    FB_ENDIAN_LITTLE    = 1 <<  1, // framebuffer endianness: 0 - big, 1 - little,
+                                   // 1 also makes ControlRegs big endian
+    DOUBLE_BUFFERING    = 1 <<  2, // 1 - enables double buffering
+    STD_BANK_DISABLE    = 1 <<  3, // 0 - standard VRAM bank enabled, 1 - disabled
+    PAGE_DETECT_ENABLE  = 1 <<  4, // always enabled (set to 1) in the driver
+    REFRESH_TIMING      = 1 <<  5, // ?
+    VRAM_WIDE_MODE      = 1 <<  6, // VRAM bus width: 1 - 128bit, 0 - 64bit
+    TRISTATE_OUTPUTS    = 1 <<  7, // 1 - causes outputs to be tristated
+    VSYNC_DISABLE       = 1 <<  8, // 0 - enable vertical sync, 1 - disable it
+    HSYNC_DISABLE       = 1 <<  9, // 0 - enable horizontal sync, 1 - disable it
+    CSYNC_DISABLE       = 1 << 10, // 0 - enable composite sync, 1 - disable it
+    BLANK_DISABLE       = 1 << 11, // 0 - enable blanking, 1 - disable it
 };
 
 // Bit definitions for INT_ENABLE & INT_STATUS registers.
@@ -124,7 +125,8 @@ public:
     void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size);
 
 protected:
-    void change_one_bar(uint32_t &aperture, uint32_t aperture_size, uint32_t aperture_new, int bar_num);
+    void change_one_bar(uint32_t &aperture, uint32_t aperture_size, uint32_t aperture_new,
+                        int bar_num);
     void notify_bar_change(int bar_num);
 
     void enable_display();
