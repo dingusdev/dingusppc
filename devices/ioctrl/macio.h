@@ -273,6 +273,53 @@ enum {
     MIO_AUX_CTRL        = 0x3C,
 };
 
+/** MIO_OHARE_ID bits. */
+enum {
+    MIO_OH_ID_FP                       = 0x70000000, // Flat panel ID
+    MIO_OH_ID_MON                      = 0x00300000, // Monitor ID (mon_id?=1, no s-video/composite=3 but only if fatman exists).
+    MIO_OH_ID_MB                       = 0x0000F000, // Media Bay ID (0,1=swim, 3=ata, 5=pci, 7=?)
+    MIO_OH_ID_CPU                      = 0x000000E0, // CPUID field
+    MIO_OH_ID_DISABLE_SCSI_TERMINATORS = 0x00000010, // clear this bit to disable-scsi-terminators - read this bit for emmo_pin
+    MIO_OH_ID_ENABLE_SCSI_TERMINATORS  = 0x00000008, // set this bit to enable-scsi-terminators
+    MIO_OH_ID_DO_SCSI_TERMINATORS      = 0x00000001, // set this bit to enable or disable scsi-terminators
+};
+
+/** MIO_OHARE_FEAT_CTRL bits. */
+enum {
+    MIO_OH_FC_IN_USE_LED               = 1 <<  0,
+    MIO_OH_FC_NOT_MB_PWR               = 1 <<  1,
+    MIO_OH_FC_PCI_MB_EN                = 1 <<  2,
+    MIO_OH_FC_IDE_MB_EN                = 1 <<  3,
+    MIO_OH_FC_FLOPPY_EN                = 1 <<  4,
+    MIO_OH_FC_IDE_INT_EN               = 1 <<  5,
+    MIO_OH_FC_NOT_IDE0_RESET           = 1 <<  6,
+    MIO_OH_FC_NOT_MB_RESET             = 1 <<  7,
+    MIO_OH_FC_IOBUS_EN                 = 1 <<  8,
+    MIO_OH_FC_SCC_CELL_EN              = 1 <<  9,
+    MIO_OH_FC_SCSI_CELL_EN             = 1 << 10,
+    MIO_OH_FC_SWIM_CELL_EN             = 1 << 11,
+    MIO_OH_FC_SND_PWR                  = 1 << 12,
+    MIO_OH_FC_SND_CLK_EN               = 1 << 13,
+    MIO_OH_FC_SCC_A_ENABLE             = 1 << 14,
+    MIO_OH_FC_SCC_B_ENABLE             = 1 << 15,
+    MIO_OH_FC_NOT_PORT_VIA_DESKTOP_VIA = 1 << 16,
+    MIO_OH_FC_NOT_PWM_MON_ID           = 1 << 17,
+    MIO_OH_FC_NOT_HOOKPB_MB_CNT        = 1 << 18,
+    MIO_OH_FC_NOT_SWIM3_CLONEFLOPPY    = 1 << 19,
+    MIO_OH_FC_AUD22RUN                 = 1 << 20,
+    MIO_OH_FC_SCSI_LINKMODE            = 1 << 21,
+    MIO_OH_FC_ARB_BYPASS               = 1 << 22,
+    MIO_OH_FC_NOT_IDE1_RESET           = 1 << 23,
+    MIO_OH_FC_SLOW_SCC_PCLK            = 1 << 24,
+    MIO_OH_FC_RESET_SCC                = 1 << 25,
+    MIO_OH_FC_MFDC_CELL_EN             = 1 << 26,
+    MIO_OH_FC_USE_MFDC                 = 1 << 27,
+    MIO_OH_FC_RESVD28                  = 1 << 28,
+    MIO_OH_FC_RESVD29                  = 1 << 29,
+    MIO_OH_FC_RESVD30                  = 1 << 30,
+    MIO_OH_FC_RESVD31                  = 1 << 31,
+};
+
 /** O'Hare/Heathrow DBDMA channels. */
 enum : uint8_t {
     MIO_OHARE_DMA_MESH          = 0,
