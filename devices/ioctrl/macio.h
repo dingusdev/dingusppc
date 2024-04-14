@@ -312,7 +312,8 @@ enum {
 
 /** MIO_OHARE_FEAT_CTRL bits. */
 enum {
-    MIO_OH_FC_IN_USE_LED               = 1 <<  0,
+    MIO_OH_FC_IN_USE_LED               = 1 <<  0, // modem serial port in use in Open Firmware
+                                                  // controls display sense on Beige G3 desktop
     MIO_OH_FC_NOT_MB_PWR               = 1 <<  1,
     MIO_OH_FC_PCI_MB_EN                = 1 <<  2,
     MIO_OH_FC_IDE_MB_EN                = 1 <<  3,
