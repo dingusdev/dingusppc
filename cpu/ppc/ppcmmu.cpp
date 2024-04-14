@@ -81,7 +81,6 @@ AddressMapEntry last_read_area;
 AddressMapEntry last_write_area;
 AddressMapEntry last_exec_area;
 AddressMapEntry last_ptab_area;
-AddressMapEntry last_dma_area;
 
 /** 601-style block address translation. */
 static BATResult mpc601_block_address_translation(uint32_t la)
@@ -310,22 +309,16 @@ MapDmaResult mmu_map_dma_mem(uint32_t addr, uint32_t size, bool allow_mmio) {
     bool            is_writable;
     AddressMapEntry *cur_dma_rgn;
 
-    if (addr >= last_dma_area.start && (addr + size) <= last_dma_area.end) {
-        cur_dma_rgn = &last_dma_area;
-    } else {
-        cur_dma_rgn = mem_ctrl_instance->find_range(addr);
-        if (!cur_dma_rgn || (addr + size) > cur_dma_rgn->end)
-            ABORT_F("SOS: DMA access to unmapped physical memory %08X!", addr);
-
-        last_dma_area = *cur_dma_rgn;
-    }
+    cur_dma_rgn = mem_ctrl_instance->find_range(addr);
+    if (!cur_dma_rgn || (addr + size) > cur_dma_rgn->end)
+        ABORT_F("SOS: DMA access to unmapped physical memory %08X!", addr);
 
     if ((cur_dma_rgn->type & RT_MMIO) && !allow_mmio)
         ABORT_F("SOS: DMA access to a MMIO region is not allowed");
 
     if (cur_dma_rgn->type & (RT_ROM | RT_RAM)) {
         host_va  = cur_dma_rgn->mem_ptr + (addr - cur_dma_rgn->start);
-        is_writable = last_dma_area.type & RT_RAM;
+        is_writable = cur_dma_rgn->type & RT_RAM;
     } else { // RT_MMIO
         devobj = cur_dma_rgn->devobj;
         dev_base = cur_dma_rgn->start;
@@ -1532,7 +1525,6 @@ void ppc_mmu_init()
     last_write_area = {0xFFFFFFFF, 0xFFFFFFFF, 0, 0, nullptr, nullptr};
     last_exec_area  = {0xFFFFFFFF, 0xFFFFFFFF, 0, 0, nullptr, nullptr};
     last_ptab_area  = {0xFFFFFFFF, 0xFFFFFFFF, 0, 0, nullptr, nullptr};
-    last_dma_area   = {0xFFFFFFFF, 0xFFFFFFFF, 0, 0, nullptr, nullptr};
 
     mmu_exception_handler = ppc_exception_handler;
 
