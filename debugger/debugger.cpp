@@ -19,6 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <core/timermanager.h>
 #include <cpu/ppc/ppcdisasm.h>
 #include <cpu/ppc/ppcemu.h>
 #include <cpu/ppc/ppcmmu.h>
@@ -1163,9 +1164,10 @@ void DppcDebugger::enter_debugger() {
                 cout << exc.what() << endl;
                 continue;
             }
-            ViaCuda* via_obj = dynamic_cast<ViaCuda*>(gMachineObj->get_comp_by_name("ViaCuda"));
-            ppc_state.pc -= 4;
-            via_obj->assert_int(irq_bit);
+            TimerManager::get_instance()->add_oneshot_timer(0, [irq_bit](){
+                ViaCuda* via_obj = dynamic_cast<ViaCuda*>(gMachineObj->get_comp_by_name("ViaCuda"));
+                via_obj->assert_int(irq_bit);
+            });
 #endif
         } else {
             if (!cmd.empty()) {
