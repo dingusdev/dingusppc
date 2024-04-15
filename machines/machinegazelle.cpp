@@ -34,6 +34,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memctrl/memctrlbase.h>
 #include <loguru.hpp>
 
+static std::vector<PciIrqMap> psx_irq_map = {
+    {nullptr , DEV_FUN(0x0B,0), IntSrc::BANDIT1},
+    {"pci_A1", DEV_FUN(0x0D,0), IntSrc::PCI_A},
+    {"pci_B1", DEV_FUN(0x0E,0), IntSrc::PCI_B},
+    {"pci_C1", DEV_FUN(0x0F,0), IntSrc::PCI_C},
+    {nullptr , DEV_FUN(0x10,0),              }, // OHare
+    {"pci_E1", DEV_FUN(0x11,0), IntSrc::PCI_E},
+    {"pci_F1", DEV_FUN(0x12,0), IntSrc::PCI_F},
+};
+
 // TODO: move it to /cpu/ppc
 int get_cpu_pll_value(const uint64_t cpu_freq_hz) {
     switch (cpu_freq_hz / 1000000) {
@@ -53,6 +63,7 @@ int initialize_gazelle(std::string& id)
     LOG_F(INFO, "Building machine Gazelle...");
 
     PCIHost *pci_host = dynamic_cast<PCIHost*>(gMachineObj->get_comp_by_name("PsxPci1"));
+    pci_host->set_irq_map(psx_irq_map);
 
     // register O'Hare I/O controller with the main PCI bus
     pci_host->pci_register_device(

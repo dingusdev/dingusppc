@@ -29,6 +29,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <machines/machinefactory.h>
 #include <machines/machineproperties.h>
 
+static const std::vector<PciIrqMap> grackle_irq_map = {
+    {nullptr  , DEV_FUN(0x00,0)                 }, // Grackle
+    {nullptr  , DEV_FUN(0x0D,0)                 }, // Dec21154Yosemite
+    {"pci_J12", DEV_FUN(0x10,0), IntSrc::PCI_J12}, // GPU PCI slot, 66 MHz
+};
+
+// 33 MHz PCI devices behind the DEC21154 PCI-to-PCI bridge
+static const std::vector<PciIrqMap> pci_bridge_irq_map = {
+    {"pci_FireWire", DEV_FUN(0x00,0), IntSrc::FIREWIRE},
+    {"pci_UltraATA", DEV_FUN(0x01,0), IntSrc::ATA     },
+    {"pci_J11"     , DEV_FUN(0x02,0), IntSrc::PCI_J11 },
+    {"pci_J10"     , DEV_FUN(0x03,0), IntSrc::PCI_J10 },
+    {"pci_J9"      , DEV_FUN(0x04,0), IntSrc::PCI_J9  },
+    {nullptr       , DEV_FUN(0x05,0)                  }, // Heathrow
+    {"pci_USB"     , DEV_FUN(0x06,0), IntSrc::USB     },
+};
+
 static void setup_ram_slot(std::string name, int i2c_addr, int capacity_megs) {
     if (!capacity_megs)
         return;
@@ -48,16 +65,18 @@ int initialize_yosemite(std::string& id)
 
     // get pointer to the memory controller/primary PCI bridge object
     MPC106* grackle_obj = dynamic_cast<MPC106*>(gMachineObj->get_comp_by_name("Grackle"));
+    grackle_obj->set_irq_map(grackle_irq_map);
 
     // get pointer to the bridge of the secondary PCI bus
-    DecPciBridge *sec_bridge = dynamic_cast<DecPciBridge*>(gMachineObj->get_comp_by_name("Dec21154"));
+    DecPciBridge *sec_bridge = dynamic_cast<DecPciBridge*>(gMachineObj->get_comp_by_name("Dec21154Yosemite"));
+    sec_bridge->set_irq_map(pci_bridge_irq_map);
 
     // attach PCI devices to the PCI bridges
     grackle_obj->pci_register_device(DEV_FUN(16,0),
         dynamic_cast<PCIBase*>(gMachineObj->get_comp_by_name("AtiRage128")));
 
-    grackle_obj->pci_register_device(DEV_FUN(13,0),
-        dynamic_cast<PCIBase*>(gMachineObj->get_comp_by_name("Dec21154")));
+    // 00:0D.0 PCI Bridge
+    grackle_obj->pci_register_device(DEV_FUN(0x0D,0), dynamic_cast<PCIBase*>(sec_bridge));
 
     // register CMD646U2 PCI Ultra ATA Controller
     sec_bridge->pci_register_device(DEV_FUN(1,0),
@@ -65,29 +84,6 @@ int initialize_yosemite(std::string& id)
 
     sec_bridge->pci_register_device(DEV_FUN(5,0),
         dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("Heathrow")));
-
-    InterruptCtrl *int_ctrl_obj =
-        dynamic_cast<InterruptCtrl*>(gMachineObj->get_comp_by_type(HWCompType::INT_CTRL));
-
-    static const std::vector<PciIrqMap> grackle_irq_map = {
-        {"pci_J12", DEV_FUN(0x10,0), 1 << 22} // GPU PCI slot, 66 MHz
-    };
-
-    grackle_obj->set_interrupt_controller(int_ctrl_obj);
-    grackle_obj->set_irq_map(grackle_irq_map);
-
-    // 33 MHz PCI devices behind the DEC21154 PCI-to-PCI bridge
-    static const std::vector<PciIrqMap> pci_bridge_irq_map = {
-        {"pci_FireWire", DEV_FUN(0x00,0), 1 << 21},
-        {"pci_UltraATA", DEV_FUN(0x01,0), 1 << 26},
-        {"pci_J11",      DEV_FUN(0x02,0), 1 << 23},
-        {"pci_J10",      DEV_FUN(0x03,0), 1 << 24},
-        {"pci_J9",       DEV_FUN(0x04,0), 1 << 25},
-        {"pci_USB",      DEV_FUN(0x06,0), 1 << 28}
-    };
-
-    sec_bridge->set_interrupt_controller(int_ctrl_obj);
-    sec_bridge->set_irq_map(pci_bridge_irq_map);
 
     // allocate ROM region
     if (!grackle_obj->add_rom_region(0xFFF00000, 0x100000)) {
@@ -132,8 +128,13 @@ static const PropMap yosemite_settings = {
 };
 
 static vector<string> yosemite_devices = {
-    "Grackle", "Dec21154", "CmdAta", "BurgundySnd", "Heathrow", "AtaHardDisk",
-    "AtapiCdrom"
+    "Grackle",
+    "Dec21154Yosemite",
+    "CmdAta",
+    "BurgundySnd",
+    "Heathrow",
+    "AtaHardDisk",
+    "AtapiCdrom",
 };
 
 static const MachineDescription yosemite_descriptor = {

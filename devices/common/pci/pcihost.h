@@ -53,7 +53,7 @@ typedef struct AccessDetails {
 typedef struct {
     const char *    slot_name;
     int             dev_fun_num;
-    uint32_t        irq_id;
+    IntSrc          int_src;
 } PciIrqMap;
 
 class PCIBase;
@@ -86,16 +86,16 @@ public:
     virtual PCIBase *pci_find_device(uint8_t bus_num, uint8_t dev_num, uint8_t fun_num);
     virtual PCIBase *pci_find_device(uint8_t dev_num, uint8_t fun_num);
 
-    virtual void pci_interrupt(uint8_t irq_line_state, PCIBase *dev) {}
-
     virtual void set_irq_map(const std::vector<PciIrqMap> &irq_map) {
         this->my_irq_map = irq_map;
     };
+    virtual int pcihost_device_postinit();
 
-    virtual IntDetails register_pci_int(PCIBase* dev_instance);
+    virtual bool register_pci_int(PCIBase* dev_instance);
     virtual void set_interrupt_controller(InterruptCtrl * int_ctrl_obj) {
         this->int_ctrl = int_ctrl_obj;
     };
+    virtual InterruptCtrl *get_interrupt_controller();
 
 protected:
     std::unordered_map<int, PCIBase*> dev_map;

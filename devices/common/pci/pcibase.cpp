@@ -301,3 +301,21 @@ void PCIBase::pci_wr_exp_rom_bar(uint32_t data)
         }
     }
 }
+
+void PCIBase::pci_interrupt(uint8_t irq_line_state) {
+    if (!(this->command & 0x0400)) {
+        if (!this->int_details.int_ctrl_obj)
+            this->host_instance->register_pci_int(this);
+        if (this->int_details.int_ctrl_obj && this->int_details.irq_id)
+            this->int_details.int_ctrl_obj->ack_int(this->int_details.irq_id, irq_line_state);
+        else
+            LOG_F(ERROR, "Unhandled interrupt from device %s", this->get_name().c_str());
+        /* A pci device should set the interrupt status bit when an interrupt occurs
+         * and it should clear the interrupt status bit when its interrupt bits are cleared.
+         * The interrupt status bit is new to PCI Local Bus Specification Revision 2.3
+         * and Power Macs use PCI Local Bus Specification Revision 2.0. Some PCI cards
+         * might not implement this bit.
+        */
+        //this->status |= 0x0008;
+    }
+}

@@ -41,6 +41,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <string>
 
+static const std::vector<PciIrqMap> grackle_irq_map = {
+    {nullptr    , DEV_FUN(0x00,0),                    }, // Grackle
+    {"pci_PERCH", DEV_FUN(0x0C,0), IntSrc::PCI_PERCH  },
+    {"pci_A1"   , DEV_FUN(0x0D,0), IntSrc::PCI_A      },
+    {"pci_B1"   , DEV_FUN(0x0E,0), IntSrc::PCI_B      },
+    {"pci_C1"   , DEV_FUN(0x0F,0), IntSrc::PCI_C      },
+    {nullptr    , DEV_FUN(0x10,0),                    }, // Heathrow
+    {"pci_GPU"  , DEV_FUN(0x12,0), IntSrc::PCI_GPU    },
+};
+
 // Bit definitions for the Gossamer system register at 0xFF000004
 enum : uint16_t {
     FDC_TYPE_SWIM3  = (1 << 15), // Macintosh style floppy disk controller
@@ -96,6 +106,7 @@ int initialize_gossamer(std::string& id)
 
     // get pointer to the memory controller/PCI host bridge object
     MPC106* grackle_obj = dynamic_cast<MPC106*>(gMachineObj->get_comp_by_name("Grackle"));
+    grackle_obj->set_irq_map(grackle_irq_map);
 
     // configure the Gossamer system register
     uint16_t sys_reg = FDC_TYPE_SWIM3 | BURST_ROM_TRUE

@@ -78,11 +78,6 @@ public:
     bool pci_io_read(uint32_t offset, uint32_t size, uint32_t* res) override;
     bool pci_io_write(uint32_t offset, uint32_t value, uint32_t size) override;
 
-    int device_postinit() override {
-        this->irq_info = this->host_instance->register_pci_int(this);
-        return 0;
-    };
-
 private:
     void    notify_bar_change(int bar_num);
     uint8_t read_config_reg(uint32_t reg_offset);
@@ -108,8 +103,6 @@ private:
 
     uint8_t     mrdmode = 0;
     uint8_t     udma_time_cr = 0;
-
-    IntDetails  irq_info = {};
 };
 
 #endif // CMD646_IDE_H

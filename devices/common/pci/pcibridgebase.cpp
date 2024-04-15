@@ -85,3 +85,7 @@ void PCIBridgeBase::pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDetai
         return PCIBase::pci_cfg_write(reg_offs, value, details);
     }
 }
+
+int PCIBridgeBase::device_postinit() {
+    return this->pcihost_device_postinit();
+}

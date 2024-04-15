@@ -44,6 +44,10 @@ public:
         return std::unique_ptr<DecPciBridge>(new DecPciBridge("DEC21154"));
     }
 
+    static std::unique_ptr<HWComponent> create_yosemite() {
+        return std::unique_ptr<DecPciBridge>(new DecPciBridge("DEC21154Yosemite"));
+    }
+
     // PCIDevice methods
     uint32_t pci_cfg_read(uint32_t reg_offs, AccessDetails &details);
     void pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDetails &details);

@@ -36,6 +36,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <string>
 
+static std::vector<PciIrqMap> bandit1_irq_map = {
+    {nullptr , DEV_FUN(0x0B,0), IntSrc::BANDIT1},
+    {"pci_A1", DEV_FUN(0x0D,0), IntSrc::PCI_A},
+    {"pci_B1", DEV_FUN(0x0E,0), IntSrc::PCI_B},
+    {"pci_C1", DEV_FUN(0x0F,0), IntSrc::PCI_C},
+    {nullptr , DEV_FUN(0x10,0),              }, // GrandCentral
+};
+
 int initialize_catalyst(std::string& id)
 {
     LOG_F(INFO, "Building machine Catalyst...");
@@ -43,6 +51,7 @@ int initialize_catalyst(std::string& id)
     PlatinumCtrl* platinum_obj;
 
     PCIHost *pci_host = dynamic_cast<PCIHost*>(gMachineObj->get_comp_by_name("Bandit1"));
+    pci_host->set_irq_map(bandit1_irq_map);
 
     // get (raw) pointer to the I/O controller
     GrandCentral* gc_obj = dynamic_cast<GrandCentral*>(gMachineObj->get_comp_by_name("GrandCentral"));

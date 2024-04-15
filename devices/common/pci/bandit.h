@@ -73,9 +73,6 @@ class BanditHost : public PCIHost, public MMIODevice {
 public:
     BanditHost(int bridge_num) { this->bridge_num = bridge_num; };
 
-    // PCIHost methods
-    virtual void pci_interrupt(uint8_t irq_line_state, PCIBase *dev) {}
-
     // MMIODevice methods
     uint32_t read(uint32_t rgn_start, uint32_t offset, int size);
     void    write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size);

@@ -383,14 +383,15 @@ uint32_t HeathrowIC::register_dev_int(IntSrc src_id)
 {
     switch (src_id) {
     case IntSrc::SCSI_MESH  : return INT_TO_IRQ_ID(0x0C);
-    case IntSrc::IDE0       : return INT_TO_IRQ_ID(0x0D);
+    case IntSrc::IDE0       : return INT_TO_IRQ_ID(0x0D); // Beige G3 first IDE controller, or Yosemite ata-3
     case IntSrc::IDE1       : return INT_TO_IRQ_ID(0x0E);
     case IntSrc::SCCA       : return INT_TO_IRQ_ID(0x0F);
     case IntSrc::SCCB       : return INT_TO_IRQ_ID(0x10);
     case IntSrc::DAVBUS     : return INT_TO_IRQ_ID(0x11);
     case IntSrc::VIA_CUDA   : return INT_TO_IRQ_ID(0x12);
     case IntSrc::SWIM3      : return INT_TO_IRQ_ID(0x13);
-    case IntSrc::NMI        : return INT_TO_IRQ_ID(0x14); // nmiSource in AppleHeathrow/Heathrow.cpp
+    case IntSrc::NMI        : return INT_TO_IRQ_ID(0x14); // nmiSource in AppleHeathrow/Heathrow.cpp; programmer-switch in B&W G3
+
     case IntSrc::PERCH2     : return INT_TO_IRQ_ID(0x15);
     case IntSrc::PCI_GPU    : return INT_TO_IRQ_ID(0x16);
     case IntSrc::PCI_A      : return INT_TO_IRQ_ID(0x17);
@@ -398,7 +399,17 @@ uint32_t HeathrowIC::register_dev_int(IntSrc src_id)
     case IntSrc::PCI_C      : return INT_TO_IRQ_ID(0x19);
     case IntSrc::PERCH1     : return INT_TO_IRQ_ID(0x1A);
     case IntSrc::PCI_PERCH  : return INT_TO_IRQ_ID(0x1C);
+
+    case IntSrc::FIREWIRE   : return INT_TO_IRQ_ID(0x15); // Yosemite built-in PCI FireWire
+    case IntSrc::PCI_J12    : return INT_TO_IRQ_ID(0x16); // Yosemite 32-bit 66MHz slot for GPU
+    case IntSrc::PCI_J11    : return INT_TO_IRQ_ID(0x17); // Yosemite 64-bit 33MHz slot
+    case IntSrc::PCI_J10    : return INT_TO_IRQ_ID(0x18); // Yosemite 64-bit 33MHz slot
+    case IntSrc::PCI_J9     : return INT_TO_IRQ_ID(0x19); // Yosemite 64-bit 33MHz slot
+    case IntSrc::ATA        : return INT_TO_IRQ_ID(0x1A); // Yosemite PCI pci-ata
+    case IntSrc::USB        : return INT_TO_IRQ_ID(0x1C); // Yosemite PCI usb
+
     case IntSrc::ETHERNET   : return INT_TO_IRQ_ID(0x2A);
+
     default:
         ABORT_F("Heathrow: unknown interrupt source %d", src_id);
     }

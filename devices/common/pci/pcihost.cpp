@@ -145,7 +145,16 @@ PCIBase *PCIHost::attach_pci_device(const std::string& dev_name, int slot_id, co
     return dev;
 }
 
-IntDetails PCIHost::register_pci_int(PCIBase* dev_instance) {
+InterruptCtrl *PCIHost::get_interrupt_controller() {
+    if (!this->int_ctrl) {
+        InterruptCtrl *int_ctrl_obj =
+            dynamic_cast<InterruptCtrl*>(gMachineObj->get_comp_by_type(HWCompType::INT_CTRL));
+        this->int_ctrl = int_ctrl_obj;
+    }
+    return this->int_ctrl;
+}
+
+bool PCIHost::register_pci_int(PCIBase* dev_instance) {
     bool dev_found   = false;
     int  dev_fun_num = 0;
 
@@ -160,10 +169,24 @@ IntDetails PCIHost::register_pci_int(PCIBase* dev_instance) {
         ABORT_F("register_pci_int: requested device not found");
 
     for (auto& irq : this->my_irq_map) {
-        if (irq.dev_fun_num == dev_fun_num)
-            return {this->int_ctrl, irq.irq_id};
+        if (irq.dev_fun_num == dev_fun_num) {
+            IntDetails new_int_detail;
+            new_int_detail.int_ctrl_obj = this->get_interrupt_controller();
+            if (new_int_detail.int_ctrl_obj && irq.int_src)
+                new_int_detail.irq_id = new_int_detail.int_ctrl_obj->register_dev_int(irq.int_src);
+            dev_instance->set_int_details(new_int_detail);
+            return true;
+        }
     }
-    ABORT_F("register_pci_int: no IRQ map for device 0x%X", dev_fun_num);
+
+    PCIBridgeBase *self = dynamic_cast<PCIBridgeBase*>(this);
+    if (self) {
+        if (!self->int_details.int_ctrl_obj)
+            self->host_instance->register_pci_int(self);
+        dev_instance->set_int_details(self->int_details);
+        return true;
+    }
+    return false;
 }
 
 bool PCIHost::pci_io_read_loop(uint32_t offset, int size, uint32_t &res)
@@ -244,4 +267,20 @@ PCIBase *PCIHost::pci_find_device(uint8_t dev_num, uint8_t fun_num)
         return this->dev_map[DEV_FUN(dev_num, fun_num)];
     }
     return NULL;
+}
+
+int PCIHost::pcihost_device_postinit()
+{
+    std::string pci_dev_name;
+
+    for (auto& slot : this->my_irq_map) {
+        if (slot.slot_name) {
+            pci_dev_name = GET_STR_PROP(slot.slot_name);
+            if (!pci_dev_name.empty()) {
+                this->attach_pci_device(pci_dev_name, slot.dev_fun_num, std::string("@") + slot.slot_name);
+            }
+        }
+    }
+
+    return 0;
 }

@@ -450,6 +450,9 @@ uint32_t GrandCentral::register_dev_int(IntSrc src_id) {
 
     case IntSrc::PLATINUM   : return INT_TO_IRQ_ID(0x1E); // EXT10
 
+    case IntSrc::PIPPIN_F   : return INT_TO_IRQ_ID(0x1D); // EXT9
+    case IntSrc::PIPPIN_E   : return INT_TO_IRQ_ID(0x1E); // EXT10
+
     default:
         ABORT_F("%s: unknown interrupt source %d", this->name.c_str(), src_id);
     }

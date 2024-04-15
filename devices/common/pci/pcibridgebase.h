@@ -68,6 +68,9 @@ public:
     std::function<uint16_t()>       pci_rd_bridge_control;
     std::function<void(uint16_t)>   pci_wr_bridge_control;
 
+    // HWComponent methods
+    virtual int device_postinit();
+
 protected:
     // PCI configuration space state
     uint8_t     primary_bus = 0;

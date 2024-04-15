@@ -77,6 +77,7 @@ typedef struct {
 } BarConfig;
 
 class PCIBase : public MMIODevice {
+friend class PCIHost;
 public:
     PCIBase(std::string name, PCIHeaderType hdr_type, int num_bars);
     virtual ~PCIBase() = default;
@@ -126,9 +127,11 @@ public:
         this->irq_pin = irq_pin;
     }
 
-    virtual void pci_interrupt(uint8_t irq_line_state) {
-        this->host_instance->pci_interrupt(irq_line_state, this);
+    virtual void set_int_details(IntDetails &int_details) {
+        this->int_details = int_details;
     }
+
+    virtual void pci_interrupt(uint8_t irq_line_state);
 
     // MMIODevice methods
     virtual uint32_t read(uint32_t rgn_start, uint32_t offset, int size) { return 0; }
@@ -174,6 +177,8 @@ protected:
 
     // 0 = not writable; 1 = bit is enabled in command register
     uint16_t    command_cfg = 0xffff - (1<<3) - (1<<7); // disable: special cycles and stepping
+
+    IntDetails  int_details = { 0 };
 };
 
 inline uint32_t pci_cfg_log(uint32_t value, AccessDetails &details) {

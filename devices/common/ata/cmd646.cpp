@@ -228,7 +228,7 @@ void CmdIdeCtrl::update_irq(const int ch_num, const uint8_t irq_level) {
         this->mrdmode &= ~(ch_num ? BM_CH1_INT : BM_CH0_INT);
 
     if (!irq_level || forward_irq)
-        this->irq_info.int_ctrl_obj->ack_int(this->irq_info.irq_id, irq_level);
+        this->pci_interrupt(irq_level);
 }
 
 static const DeviceDescription CmdIde_Descriptor = {

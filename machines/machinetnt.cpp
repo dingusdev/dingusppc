@@ -35,6 +35,27 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <string>
 
+static std::vector<PciIrqMap> bandit1_irq_map = {
+    {nullptr , DEV_FUN(0x0B,0), IntSrc::BANDIT1},
+    {"pci_A1", DEV_FUN(0x0D,0), IntSrc::PCI_A},
+    {"pci_B1", DEV_FUN(0x0E,0), IntSrc::PCI_B},
+    {"pci_C1", DEV_FUN(0x0F,0), IntSrc::PCI_C},
+    {nullptr , DEV_FUN(0x10,0),              }, // GrandCentral
+};
+
+static std::vector<PciIrqMap> bandit2_irq_map = {
+    {nullptr , DEV_FUN(0x0B,0), IntSrc::BANDIT2},
+    {"pci_D2", DEV_FUN(0x0D,0), IntSrc::PCI_D},
+    {"pci_E2", DEV_FUN(0x0E,0), IntSrc::PCI_E},
+    {"pci_F2", DEV_FUN(0x0F,0), IntSrc::PCI_F},
+};
+
+static std::vector<PciIrqMap> chaos_irq_map = {
+    {nullptr,  DEV_FUN(0x0B,0), IntSrc::CONTROL},
+    {"vci_D",  DEV_FUN(0x0D,0), IntSrc::PLANB},
+    {"vci_E",  DEV_FUN(0x0E,0), IntSrc::VCI  },
+};
+
 int initialize_tnt(std::string& id)
 {
     LOG_F(INFO, "Building machine TNT...");
@@ -42,6 +63,7 @@ int initialize_tnt(std::string& id)
     HammerheadCtrl* memctrl_obj;
 
     PCIHost *pci_host = dynamic_cast<PCIHost*>(gMachineObj->get_comp_by_name("Bandit1"));
+    pci_host->set_irq_map(bandit1_irq_map);
 
     // get (raw) pointer to the I/O controller
     GrandCentral* gc_obj = dynamic_cast<GrandCentral*>(gMachineObj->get_comp_by_name("GrandCentral"));
@@ -53,6 +75,7 @@ int initialize_tnt(std::string& id)
     // get video PCI controller object
     PCIHost *vci_host = dynamic_cast<PCIHost*>(gMachineObj->get_comp_by_name("Chaos"));
     if (vci_host) {
+        vci_host->set_irq_map(chaos_irq_map);
         // connect built-in video device to the VCI bus
         vci_host->pci_register_device(
             DEV_FUN(0x0B,0), dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("ControlVideo")));
@@ -71,6 +94,7 @@ int initialize_tnt(std::string& id)
 
     PCIHost *pci2_host = dynamic_cast<PCIHost*>(gMachineObj->get_comp_by_name_optional("Bandit2"));
     if (pci2_host) {
+        pci2_host->set_irq_map(bandit2_irq_map);
         // attach IOBus Device #3 0xF301C000
         gMachineObj->add_device("BoardReg2", std::unique_ptr<BoardRegister>(
             new BoardRegister("Board Register 2",

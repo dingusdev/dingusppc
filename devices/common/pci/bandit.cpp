@@ -235,32 +235,7 @@ inline void BanditHost::cfg_setup(uint32_t offset, int size, int &bus_num,
 }
 
 int BanditHost::device_postinit() {
-    std::string pci_dev_name;
-
-    static const std::map<std::string, int> pci_slots1 = {
-        {"pci_A1", DEV_FUN(0xD,0)}, {"pci_B1", DEV_FUN(0xE,0)}, {"pci_C1", DEV_FUN(0xF,0)}
-    };
-
-    static const std::map<std::string, int> pci_slots2 = {
-        {"pci_D2", DEV_FUN(0xD,0)}, {"pci_E2", DEV_FUN(0xE,0)}, {"pci_F2", DEV_FUN(0xF,0)}
-    };
-
-    static const std::map<std::string, int> vci_slots = {
-        {"vci_D", DEV_FUN(0xD,0)}, {"vci_E", DEV_FUN(0xE,0)}, {"vci_F", DEV_FUN(0xF,0)}
-    };
-
-    for (auto& slot :
-        this->bridge_num == 0 ? vci_slots  :
-        this->bridge_num == 1 ? pci_slots1 :
-        this->bridge_num == 2 ? pci_slots2 :
-        pci_slots1
-    ) {
-        pci_dev_name = GET_STR_PROP(slot.first);
-        if (!pci_dev_name.empty()) {
-            this->attach_pci_device(pci_dev_name, slot.second);
-        }
-    }
-    return 0;
+    return this->pcihost_device_postinit();
 }
 
 Bandit::Bandit(int bridge_num, std::string name, int dev_id, int rev)
@@ -346,7 +321,18 @@ static const PropMap Chaos_Properties = {
         new StrProperty("")},
     {"vci_E",
         new StrProperty("")},
-    {"vci_F",
+};
+
+static const PropMap PsxPci1_Properties = {
+    {"pci_A1",
+        new StrProperty("")},
+    {"pci_B1",
+        new StrProperty("")},
+    {"pci_C1",
+        new StrProperty("")},
+    {"pci_E1",
+        new StrProperty("")},
+    {"pci_F1",
         new StrProperty("")},
 };
 
@@ -359,7 +345,7 @@ static const DeviceDescription Bandit2_Descriptor = {
 };
 
 static const DeviceDescription PsxPci1_Descriptor = {
-    Bandit::create_psx_first, {}, Bandit1_Properties
+    Bandit::create_psx_first, {}, PsxPci1_Properties
 };
 
 static const DeviceDescription Chaos_Descriptor = {

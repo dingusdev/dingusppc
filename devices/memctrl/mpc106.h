@@ -82,8 +82,6 @@ public:
     uint32_t read(uint32_t rgn_start, uint32_t offset, int size);
     void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size);
 
-    virtual void pci_interrupt(uint8_t irq_line_state, PCIBase *dev);
-
     int device_postinit();
 
 protected:
@@ -115,14 +113,6 @@ private:
     uint32_t mem_end[2]         = {};
     uint32_t ext_mem_end[2]     = {};
     uint8_t  mem_bank_en        = 0;
-
-    // interrupt related stuff
-    InterruptCtrl* int_ctrl = nullptr;
-    uint32_t irq_id_PCI_A     = 0;
-    uint32_t irq_id_PCI_B     = 0;
-    uint32_t irq_id_PCI_C     = 0;
-    uint32_t irq_id_PCI_GPU   = 0;
-    uint32_t irq_id_PCI_PERCH = 0;
 };
 
 #endif // MPC106_H

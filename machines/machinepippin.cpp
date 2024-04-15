@@ -33,10 +33,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <machines/machinefactory.h>
 #include <loguru.hpp>
 
+static std::vector<PciIrqMap> aspen_irq_map = {
+//  {nullptr , DEV_FUN(0x0B,0), IntSrc::BANDIT1 },
+//  {"pci_A1", DEV_FUN(0x0D,0), IntSrc::PCI_A   },
+    {"pci_B1", DEV_FUN(0x0E,0), IntSrc::PIPPIN_E},
+    {"pci_C1", DEV_FUN(0x0F,0), IntSrc::PIPPIN_F},
+    {nullptr , DEV_FUN(0x10,0),                 }, // GrandCentral
+};
+
 int initialize_pippin(std::string& id) {
     LOG_F(INFO, "Building machine Pippin...");
 
     PCIHost *pci_host = dynamic_cast<PCIHost*>(gMachineObj->get_comp_by_name("AspenPci1"));
+    pci_host->set_irq_map(aspen_irq_map);
 
     // connect GrandCentral I/O controller to the PCI1 bus
     pci_host->pci_register_device(DEV_FUN(0x10,0),
