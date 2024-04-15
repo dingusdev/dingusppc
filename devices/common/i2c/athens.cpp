@@ -54,7 +54,12 @@ AthensClocks::AthensClocks(uint8_t dev_addr)
     // - dot clock VCO is disabled
     // - dot clock = reference clock / 2
     this->regs[AthensRegs::P2_MUX2] = 0x62;
+}
 
+AthensClocks::AthensClocks(uint8_t dev_addr, const float crystal_freq)
+    : AthensClocks(dev_addr)
+{
+    this->xtal_freq = crystal_freq;
 }
 
 void AthensClocks::start_transaction()
@@ -132,13 +137,13 @@ int AthensClocks::get_dot_freq()
 
     switch (mux) {
     case 0: // clock source -> dot cock VCO
-        out_freq = ATHENS_XTAL * ((float)n2 / (float)(d2 * post_div));
+        out_freq = this->xtal_freq * ((float)n2 / (float)(d2 * post_div));
         break;
     case 1: // clock source -> system clock VCO
         LOG_F(WARNING, "%s: system clock VCO not supported yet!", this->name.c_str());
         break;
     case 2: // clock source -> crystal frequency
-        out_freq = ATHENS_XTAL / post_div;
+        out_freq = this->xtal_freq / post_div;
         break;
     case 3:
         LOG_F(WARNING, "%s: attempt to use reserved Mux value!", this->name.c_str());

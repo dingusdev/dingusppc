@@ -53,6 +53,7 @@ class AthensClocks : public I2CDevice, public HWComponent
 {
 public:
     AthensClocks(uint8_t dev_addr);
+    AthensClocks(uint8_t dev_addr, const float crystal_freq);
     ~AthensClocks() = default;
 
     // I2CDevice methods
@@ -69,6 +70,7 @@ private:
     uint8_t     my_addr = 0;
     uint8_t     reg_num = 0;
     int         pos = 0;
+    float       xtal_freq = ATHENS_XTAL;
 
     uint8_t     regs[ATHENS_NUM_REGS] = {};
 };
