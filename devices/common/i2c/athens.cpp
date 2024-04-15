@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -44,8 +44,16 @@ AthensClocks::AthensClocks(uint8_t dev_addr)
 
     this->my_addr = dev_addr;
 
-    // set up power on values
+    // This initialization is not prescribed
+    // but let's set them to acceptable values anyway
+    this->regs[AthensRegs::D2] = 2;
+    this->regs[AthensRegs::N2] = 2;
+
+    // set P2_MUX2 on power up as follows:
+    // - dot clock VCO is disabled
+    // - dot clock = reference clock / 2
     this->regs[AthensRegs::P2_MUX2] = 0x62;
+
 }
 
 void AthensClocks::start_transaction()
@@ -72,9 +80,6 @@ bool AthensClocks::send_byte(uint8_t data)
             return false; // return NACK
         }
         this->regs[this->reg_num] = data;
-        if (reg_num == 3) {
-            LOG_F(INFO, "Athens: dot clock frequency set to %d Hz", get_dot_freq());
-        }
         break;
     default:
         LOG_F(WARNING, "Athens: too much data received!");
@@ -137,6 +142,8 @@ int AthensClocks::get_dot_freq()
         LOG_F(WARNING, "Athens: attempt to use reserved Mux value!");
         break;
     }
+
+    LOG_F(INFO, "Athens: dot clock frequency set to %f Hz", out_freq);
 
     return static_cast<int>(out_freq + 0.5f);
 }
