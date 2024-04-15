@@ -1,4 +1,4 @@
-The PowerPC is the main processor behind Power Macs.
+The PowerPC is the main processor behind Power Macs. Currently, DingusPPC only implements the 32-bit variant.
 
 # General Notes
 
