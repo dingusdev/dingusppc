@@ -132,6 +132,7 @@ AtiMach64Gx::AtiMach64Gx()
     this->vendor_id   = PCI_VENDOR_ATI;
     this->device_id   = ATI_MACH64_GX_DEV_ID;
     this->class_rev   = (0x030000 << 8) | 0x03;
+    this->irq_pin     = 1;
     for (int i = 0; i < this->aperture_count; i++) {
         this->bars_cfg[i] = (uint32_t)(-this->aperture_size[i] | this->aperture_flag[i]);
     }
@@ -761,7 +762,7 @@ void AtiMach64Gx::get_cursor_position(int& x, int& y) {
 int AtiMach64Gx::device_postinit()
 {
     this->vbl_cb = [this](uint8_t irq_line_state) {
-        insert_bits<uint32_t>(this->regs[ATI_CRTC_INT_CNTL], irq_line_state, ATI_CRTC_VBLANK, 1);
+        insert_bits<uint32_t>(this->regs[ATI_CRTC_INT_CNTL], irq_line_state, ATI_CRTC_VBLANK, irq_line_state);
         if (irq_line_state) {
             set_bit(this->regs[ATI_CRTC_INT_CNTL], ATI_CRTC_VBLANK_INT);
             set_bit(this->regs[ATI_CRTC_INT_CNTL], ATI_CRTC_VLINE_INT);
