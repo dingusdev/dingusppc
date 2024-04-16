@@ -88,7 +88,7 @@ protected:
     float       refresh_rate;
     bool        draw_fb = true;
 
-    uint32_t    palette[256]; // internal DAC palette in RGBA format
+    uint32_t    palette[256] = {0}; // internal DAC palette in RGBA format
 
     // Framebuffer parameters
     uint8_t*    fb_ptr = nullptr;
