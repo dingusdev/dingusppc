@@ -87,12 +87,12 @@ private:
     uint32_t    mm_regs_offset = 0;
 
     // RGB514 RAMDAC state
-    uint8_t     dac_idx_lo;
-    uint8_t     dac_idx_hi;
-    uint8_t     clut_index;
-    uint8_t     comp_index;
-    uint8_t     clut_color[3];
-    uint8_t     dac_regs[256];
+    uint8_t     dac_idx_lo = 0;
+    uint8_t     dac_idx_hi = 0;
+    uint8_t     clut_index = 0;
+    uint8_t     comp_index = 0;
+    uint8_t     clut_color[3] = {0};
+    uint8_t     dac_regs[256] = {0};
 
     std::unique_ptr<DisplayID>  disp_id;
     std::unique_ptr<uint8_t[]>  vram_ptr;

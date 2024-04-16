@@ -797,6 +797,7 @@ void AtiMach64Gx::rgb514_write_reg(uint8_t reg_addr, uint8_t value)
     switch (reg_addr) {
     case Rgb514::CLUT_ADDR_WR:
         this->clut_index = value;
+        this->comp_index = 0;
         break;
     case Rgb514::CLUT_DATA:
         this->clut_color[this->comp_index++] = value;
