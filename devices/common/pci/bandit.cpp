@@ -143,8 +143,21 @@ void BanditPciDevice::verbose_address_space()
 
 uint32_t BanditHost::read(uint32_t rgn_start, uint32_t offset, int size)
 {
-    switch (offset >> 22) {
-    case 3: // CONFIG_DATA
+    switch (offset >> 21) {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+        // I/O space
+        return pci_io_read_broadcast(offset & 0x007FFFFF, size);
+
+    case 4:
+    case 5:
+        // CONFIG_ADDR
+        return (this->is_aspen) ? this->config_addr : BYTESWAP_32(this->config_addr);
+
+    case 6:
+        // CONFIG_DATA
         int bus_num, dev_num, fun_num;
         uint8_t reg_offs;
         AccessDetails details;
@@ -160,18 +173,46 @@ uint32_t BanditHost::read(uint32_t rgn_start, uint32_t offset, int size)
         LOG_READ_NON_EXISTENT_PCI_DEVICE();
         return 0xFFFFFFFFUL; // PCI spec §6.1
 
-    case 2: // CONFIG_ADDR
-        return (this->is_aspen) ? this->config_addr : BYTESWAP_32(this->config_addr);
+    case 7:
+        // Interrupt
+        LOG_F(ERROR, "%s: Interrupt Acknowledge Cycle 0x%08x unsupported", this->name.c_str(), offset & 0x001FFFFF);
+        break;
 
-    default: // I/O space
-        return pci_io_read_broadcast(offset, size);
+    case 8:
+    case 9:
+    case 10:
+    case 11:
+    case 12:
+    case 13:
+    case 14:
+        // 24-Bit Memory Address
+    case 15:
+        // 24-Bit Memory Address or VGA Device Access
+        LOG_F(ERROR, "%s: Pass-Through read 0x%08x unsupported", this->name.c_str(), offset & 0x00FFFFFF);
+        break;
     }
+    return 0;
 }
 
 void BanditHost::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
 {
-    switch (offset >> 22) {
-    case 3: // CONFIG_DATA
+    switch (offset >> 21) {
+    case 0:
+    case 1:
+    case 2:
+    case 3:
+        // I/O space
+        pci_io_write_broadcast(offset & 0x007FFFFF, size, value);
+        break;
+
+    case 4:
+    case 5:
+        // CONFIG_ADDR
+        this->config_addr = (this->is_aspen) ? value : BYTESWAP_32(value);
+        break;
+
+    case 6:
+        // CONFIG_DATA
         int bus_num, dev_num, fun_num;
         uint8_t reg_offs;
         AccessDetails details;
@@ -192,12 +233,23 @@ void BanditHost::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int 
         LOG_WRITE_NON_EXISTENT_PCI_DEVICE();
         break;
 
-    case 2: // CONFIG_ADDR
-        this->config_addr = (this->is_aspen) ? value : BYTESWAP_32(value);
+    case 7:
+        // Special
+        LOG_F(ERROR, "%s: Special Cycle 0x%08x unsupported", this->name.c_str(), offset & 0x001FFFFF);
         break;
 
-    default: // I/O space
-        pci_io_write_broadcast(offset, size, value);
+    case 8:
+    case 9:
+    case 10:
+    case 11:
+    case 12:
+    case 13:
+    case 14:
+        // 24-Bit Memory Address
+    case 15:
+        // 24-Bit Memory Address or VGA Device Access
+        LOG_F(ERROR, "%s: Pass-Through read 0x%08x unsupported", this->name.c_str(), offset & 0x00FFFFFF);
+        break;
     }
 }
 
@@ -252,11 +304,12 @@ Bandit::Bandit(int bridge_num, std::string name, int dev_id, int rev)
 
     // add memory mapped I/O region for Bandit control registers
     // This region has the following layout:
-    // base_addr +  0x000000 --> I/O space
-    // base_addr +  0x800000 --> CONFIG_ADDR
-    // base_addr +  0xC00000 --> CONFIG_DATA
-    // base_addr + 0x1000000 --> pass-through memory space (not included below)
-    mem_ctrl->add_mmio_region(base_addr, 0x01000000, this);
+    // base_addr + 0x00000000 --> I/O space
+    // base_addr + 0x00800000 --> CONFIG_ADDR
+    // base_addr + 0x00C00000 --> CONFIG_DATA
+    // base_addr + 0x00E00000 --> Special(W)/Interrupt(R)
+    // base_addr + 0x01000000 --> pass-through memory space ; grandcentral exists here for pci1
+    mem_ctrl->add_mmio_region(base_addr, bridge_num == 1 ? 0x01000000 : 0x02000000, this);
 
     // connnect Bandit PCI device
     this->my_pci_device = std::unique_ptr<BanditPciDevice>(
