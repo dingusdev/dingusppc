@@ -137,6 +137,7 @@ PCIBase *PCIHost::attach_pci_device(const std::string& dev_name, int slot_id, co
     gMachineObj->add_device(dev_name + dev_suffix, std::move(dev_obj));
 
     PCIBase *dev = dynamic_cast<PCIBase*>(gMachineObj->get_comp_by_name(dev_name + dev_suffix));
+    dev->set_name(dev->get_name() + dev_suffix);
 
     // register device with the PCI host
     this->pci_register_device(slot_id, dev);
