@@ -166,7 +166,7 @@ void GrandCentral::notify_bar_change(int bar_num)
         }
         this->base_addr = this->bars[0] & 0xFFFFFFF0UL;
         this->host_instance->pci_register_mmio_region(this->base_addr, 0x20000, this);
-        LOG_F(INFO, "%s: base address set to 0x%X", this->pci_name.c_str(), this->base_addr);
+        LOG_F(INFO, "%s: base address set to 0x%X", this->get_name().c_str(), this->base_addr);
     }
 }
 

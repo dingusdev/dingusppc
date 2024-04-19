@@ -122,7 +122,7 @@ void BanditPciDevice::verbose_address_space()
         return;
     }
 
-    LOG_F(INFO, "%s address spaces:", this->pci_name.c_str());
+    LOG_F(INFO, "%s address spaces:", this->get_name().c_str());
 
     // verbose coarse aka 256MB memory regions
     for (mask = 0x10000, bit_pos = 0; mask != 0x80000000UL; mask <<= 1, bit_pos++) {

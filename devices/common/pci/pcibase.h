@@ -142,7 +142,6 @@ protected:
     void map_exp_rom_mem();
     void unmap_exp_rom_mem();
 
-    std::string pci_name;      // human-readable device name
     PCIHost*    host_instance; // host bridge instance to call back
 
     // PCI configuration space state (type 0, 1, and 2)

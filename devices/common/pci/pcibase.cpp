@@ -32,7 +32,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 PCIBase::PCIBase(std::string name, PCIHeaderType hdr_type, int num_bars)
 {
     this->name = name;
-    this->pci_name = name;
     this->hdr_type = hdr_type;
     this->num_bars = num_bars;
 
@@ -162,17 +161,17 @@ int PCIBase::attach_exp_rom_image(const std::string img_path)
 
         if (exp_rom_image_size == this->exp_rom_size) {
             LOG_F(INFO, "%s: loaded expansion rom (%d bytes).",
-            this->pci_name.c_str(), this->exp_rom_size);
+            this->get_name().c_str(), this->exp_rom_size);
         }
         else {
             LOG_F(WARNING, "%s: loaded expansion rom (%d bytes adjusted to %d bytes).",
-            this->pci_name.c_str(), (int)exp_rom_image_size, this->exp_rom_size);
+            this->get_name().c_str(), (int)exp_rom_image_size, this->exp_rom_size);
         }
 
         this->exp_bar_cfg  = ~(this->exp_rom_size - 1);
     }
     catch (const std::exception& exc) {
-        LOG_F(ERROR, "%s: %s", this->pci_name.c_str(), exc.what());
+        LOG_F(ERROR, "%s: %s", this->get_name().c_str(), exc.what());
         result = -1;
     }
 
@@ -192,7 +191,7 @@ void PCIBase::set_bar_value(int bar_num, uint32_t value)
         case PCIBarType::Io_32_Bit:
             this->bars[bar_num] = (value & bar_cfg & ~3) | (bar_cfg & 3);
             if (value != 0xFFFFFFFFUL && (value & ~3) != (value & bar_cfg & ~3)) {
-                LOG_F(ERROR, "%s: BAR %d cannot be 0x%08x (set to 0x%08x)", this->pci_name.c_str(), bar_num, (value & ~3), (value & bar_cfg & ~3));
+                LOG_F(ERROR, "%s: BAR %d cannot be 0x%08x (set to 0x%08x)", this->get_name().c_str(), bar_num, (value & ~3), (value & bar_cfg & ~3));
             }
             break;
 
@@ -201,7 +200,7 @@ void PCIBase::set_bar_value(int bar_num, uint32_t value)
         case PCIBarType::Mem_64_Bit_Lo:
             this->bars[bar_num] = (value & bar_cfg & ~0xF) | (bar_cfg & 0xF);
             if (value != 0xFFFFFFFFUL && (value & ~0xF) != (value & bar_cfg & ~0xF)) {
-                LOG_F(ERROR, "%s: BAR %d cannot be 0x%08x (set to 0x%08x)", this->pci_name.c_str(), bar_num, (value & ~0xF), (value & bar_cfg & ~0xF));
+                LOG_F(ERROR, "%s: BAR %d cannot be 0x%08x (set to 0x%08x)", this->get_name().c_str(), bar_num, (value & ~0xF), (value & bar_cfg & ~0xF));
             }
             break;
 
@@ -239,11 +238,11 @@ void PCIBase::finish_config_bars()
             case 2:
                 if (bar_num >= num_bars - 1) {
                     ABORT_F("%s: BAR %d cannot be 64-bit",
-                            this->pci_name.c_str(), bar_num);
+                            this->get_name().c_str(), bar_num);
                 }
                 else if (this->bars_cfg[bar_num+1] == 0) {
                     ABORT_F("%s: 64-bit BAR %d has zero for upper 32 bits",
-                            this->pci_name.c_str(), bar_num);
+                            this->get_name().c_str(), bar_num);
                 }
                 else {
                     bars_typ[bar_num++] = PCIBarType::Mem_64_Bit_Lo;
@@ -252,7 +251,7 @@ void PCIBase::finish_config_bars()
                 break;
             default:
                 ABORT_F("%s: invalid or unsupported PCI space type %d for BAR %d",
-                        this->pci_name.c_str(), pci_space_type, bar_num);
+                        this->get_name().c_str(), pci_space_type, bar_num);
             } // switch pci_space_type
         }
     } // for bar_num
