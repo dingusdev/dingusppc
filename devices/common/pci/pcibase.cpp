@@ -41,7 +41,10 @@ PCIBase::PCIBase(std::string name, PCIHeaderType hdr_type, int num_bars)
     this->pci_rd_lat_timer  = [this]() { return this->lat_timer; };
     this->pci_rd_cache_lnsz = [this]() { return this->cache_ln_sz; };
 
-    this->pci_wr_stat       = [](uint16_t val) {};
+    this->pci_wr_stat       = [this](uint16_t val) {
+        this->status &= ~(0b1111100100000000 & val);
+    };
+
     this->pci_wr_cmd        = [this](uint16_t cmd) {
         /*
             FIXME: should register or unregister BAR mmio regions if (cmd & 2) changes.
