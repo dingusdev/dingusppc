@@ -483,6 +483,7 @@ void ATIRage::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size) {
                                         color_buf[1], color_buf[2], 0xFF);
                 this->dac_wr_index++; // auto-increment color index
                 this->comp_index = 0; // reset color component index
+                draw_fb = true;
             }
         }
         break;
@@ -772,6 +773,8 @@ void ATIRage::crtc_update() {
 
     if (!need_recalc)
         return;
+
+    this->draw_fb = true;
 
     // calculate display refresh rate
     this->refresh_rate = pixel_clock / this->hori_total / this->vert_total;
