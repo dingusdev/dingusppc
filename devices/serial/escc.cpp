@@ -73,36 +73,47 @@ void EsccController::reset()
 
 uint8_t EsccController::read(uint8_t reg_offset)
 {
-    uint8_t result = 0;
+    uint8_t value;
 
     switch(reg_offset) {
     case EsccReg::Port_B_Cmd:
         LOG_F(9, "ESCC: reading Port B register RR%d", this->reg_ptr);
         if (this->reg_ptr == 2) {
             // TODO: implement interrupt vector modifications
-            result = this->int_vec;
+            value = this->int_vec;
         } else {
-            result = this->ch_b->read_reg(this->reg_ptr);
+            value = this->ch_b->read_reg(this->reg_ptr);
         }
         this->reg_ptr = 0;
         break;
     case EsccReg::Port_A_Cmd:
         LOG_F(9, "ESCC: reading Port A register RR%d", this->reg_ptr);
         if (this->reg_ptr == 2) {
-            return this->int_vec;
+            value = this->int_vec;
         } else {
-            return this->ch_a->read_reg(this->reg_ptr);
+            value = this->ch_a->read_reg(this->reg_ptr);
         }
         break;
     case EsccReg::Port_B_Data:
-        return this->ch_b->receive_byte();
+        value = this->ch_b->receive_byte();
+        break;
     case EsccReg::Port_A_Data:
-        return this->ch_a->receive_byte();
+        value = this->ch_a->receive_byte();
+        break;
+    case EsccReg::Enh_Reg_B:
+        LOG_F(WARNING, "ESCC_B: reading from unimplemented register 0x%x", reg_offset);
+        value = 0;
+        break;
+    case EsccReg::Enh_Reg_A:
+        LOG_F(WARNING, "ESCC_A: reading from unimplemented register 0x%x", reg_offset);
+        value = 0;
+        break;
     default:
-        LOG_F(9, "ESCC: reading from unimplemented register 0x%x", reg_offset);
+        LOG_F(WARNING, "ESCC: reading from unimplemented register 0x%x", reg_offset);
+        value = 0;
     }
 
-    return result;
+    return value;
 }
 
 void EsccController::write(uint8_t reg_offset, uint8_t value)
