@@ -43,6 +43,7 @@ void DMAChannel::set_data_callbacks(DbdmaCallback in_cb, DbdmaCallback out_cb, D
     this->in_cb    = in_cb;
     this->out_cb   = out_cb;
     this->flush_cb = flush_cb;
+    this->has_data_callbacks = in_cb || out_cb || flush_cb;
 }
 
 /* Load DMACmd from physical memory. */
@@ -60,16 +61,32 @@ DMACmd* DMAChannel::fetch_cmd(uint32_t cmd_addr, DMACmd* p_cmd, bool *is_writabl
     return cmd_host;
 }
 
-uint8_t DMAChannel::interpret_cmd() {
+void DMAChannel::schedule_cmd() {
+    if (!interpret_timer_id) {
+        interpret_timer_id = TimerManager::get_instance()->add_oneshot_timer(1000000, [this] {
+            interpret_timer_id = 0;
+            if (this->ch_stat & CH_STAT_ACTIVE) {
+                this->interpret_cmd();
+            }
+        });
+    }
+}
+
+void DMAChannel::interpret_cmd() {
     DMACmd cmd_struct;
     MapDmaResult res;
 
     if (this->cmd_in_progress) {
-        // return current command if there is data to transfer
+        // if there is data remaining to transfer then the command is not finished
         if (this->queue_len)
-            return this->cur_cmd;
+            return;
 
+        // if there is no data remaining to transfer then the command is finished and the program should procede to the next command
         this->finish_cmd();
+        if (this->has_data_callbacks) {
+            schedule_cmd();
+            return;
+        }
     }
 
     bool cmd_is_writable;
@@ -140,7 +157,11 @@ uint8_t DMAChannel::interpret_cmd() {
         this->ch_stat &= ~CH_STAT_ACTIVE;
     }
 
-    return this->cur_cmd;
+    if (this->has_data_callbacks) {
+        if (this->has_data_callbacks) {
+            schedule_cmd();
+        }
+    }
 }
 
 void DMAChannel::finish_cmd() {
