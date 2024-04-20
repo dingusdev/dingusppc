@@ -574,9 +574,6 @@ void AtiMach64Gx::verbose_pixel_format(int crtc_index) {
         return;
     }
 
-/*
-    int fmt = extract_bits<uint32_t>(this->regs[ATI_CRTC_GEN_CNTL], ATI_CRTC_PIX_WIDTH, ATI_CRTC_PIX_WIDTH_size);
-*/
     int pix_fmt = this->pixel_format;
 
     const char* what = "Pixel format:";
