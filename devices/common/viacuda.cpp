@@ -270,7 +270,7 @@ void ViaCuda::write(int reg, uint8_t value) {
 
 uint16_t ViaCuda::calc_counter_val(const uint16_t last_val, const uint64_t& last_time)
 {
-    // calcualte current counter value based on elapsed time and timer frequency
+    // calculate current counter value based on elapsed time and timer frequency
     uint64_t cur_time = TimerManager::get_instance()->current_time_ns();
     uint32_t diff = (cur_time - last_time) / this->via_clk_dur;
     return last_val - diff;
