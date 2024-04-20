@@ -114,6 +114,19 @@ static const std::map<uint16_t, std::string> mach64_reg_names = {
     #undef one_reg_name
 };
 
+static const std::map<uint16_t, std::string> rgb514_reg_names = {
+    #define one_reg_name(x) {Rgb514::x, #x}
+    one_reg_name(CLUT_ADDR_WR),
+    one_reg_name(CLUT_DATA),
+    one_reg_name(CLUT_MASK),
+    one_reg_name(CLUT_ADDR_RD),
+    one_reg_name(INDEX_LOW),
+    one_reg_name(INDEX_HIGH),
+    one_reg_name(INDEX_DATA),
+    one_reg_name(INDEX_CNTL),
+    #undef one_reg_name
+};
+
 static const std::map<uint16_t, std::string> rgb514_ind_reg_names = {
     #define one_reg_name(x) {Rgb514::x, #x}
     one_reg_name(MISC_CLK_CNTL),
@@ -948,8 +961,21 @@ int AtiMach64Gx::device_postinit()
 }
 
 // ========================== IBM RGB514 related code ==========================
+const char* AtiMach64Gx::rgb514_get_reg_name(uint32_t reg_addr)
+{
+    auto iter = rgb514_reg_names.find(reg_addr);
+    if (iter != rgb514_reg_names.end()) {
+        return iter->second.c_str();
+    } else {
+        return "unknown rgb514 register";
+    }
+}
+
 void AtiMach64Gx::rgb514_write_reg(uint8_t reg_addr, uint8_t value)
 {
+    LOG_F(ATIMACH64, "%s.rgb514: write %s %04x.b = %02x", this->name.c_str(),
+        rgb514_get_reg_name(reg_addr), reg_addr, value
+    );
     switch (reg_addr) {
     case Rgb514::CLUT_ADDR_WR:
         this->clut_index = value;
