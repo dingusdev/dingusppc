@@ -123,7 +123,7 @@ static const std::map<uint16_t, std::string> rgb514_reg_names = {
 };
 
 AtiMach64Gx::AtiMach64Gx()
-    : PCIDevice("ati-mach64-gx"), VideoCtrlBase(1024, 768)
+    : PCIDevice("ati-mach64-gx"), VideoCtrlBase(640, 480)
 {
     supports_types(HWCompType::MMIO_DEV | HWCompType::PCI_DEV);
 
@@ -148,10 +148,10 @@ AtiMach64Gx::AtiMach64Gx()
     }
 
     // initialize display identification
-    this->disp_id = std::unique_ptr<DisplayID> (new DisplayID(0x07, 0x3A));
+    this->disp_id = std::unique_ptr<DisplayID> (new DisplayID());
 
     // allocate video RAM
-    this->vram_size = 2 << 20; // 2MB ; up to 6MB supported
+    this->vram_size = GET_INT_PROP("gfxmem_size") << 20; // convert MBs to bytes
     this->vram_ptr = std::unique_ptr<uint8_t[]> (new uint8_t[this->vram_size]);
 
     // set up RAMDAC identification
@@ -864,8 +864,15 @@ void AtiMach64Gx::rgb514_write_ind_reg(uint8_t reg_addr, uint8_t value)
     }
 }
 
+static const PropMap AtiMach64gx_Properties = {
+    {"gfxmem_size",
+        new IntProperty(  2, vector<uint32_t>({2, 4, 6}))},
+    {"mon_id",
+        new StrProperty("")},
+};
+
 static const DeviceDescription AtiMach64Gx_Descriptor = {
-    AtiMach64Gx::create, {}, {}
+    AtiMach64Gx::create, {}, AtiMach64gx_Properties
 };
 
 REGISTER_DEVICE(AtiMach64Gx, AtiMach64Gx_Descriptor);
