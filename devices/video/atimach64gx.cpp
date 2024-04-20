@@ -26,7 +26,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <core/bitops.h>
 #include <devices/deviceregistry.h>
-#include <devices/video/atimach64defs.h>
 #include <devices/video/atimach64gx.h>
 #include <devices/video/displayid.h>
 #include <devices/video/rgb514defs.h>
@@ -190,7 +189,7 @@ void AtiMach64Gx::notify_bar_change(int bar_num)
     change_one_bar(this->aperture_base[bar_num], this->aperture_size[bar_num],
                    this->bars[bar_num] & ~15, bar_num);
     // copy aperture address to CONFIG_CNTL:CFG_MEM_AP_LOC
-    insert_bits<uint32_t>(this->config_cntl, this->aperture_base[0] >> 22,
+    insert_bits<uint32_t>(this->config_cntl[0], this->aperture_base[0] >> 22,
                           ATI_CFG_MEM_AP_LOC, ATI_CFG_MEM_AP_LOC_size);
 }
 
@@ -306,22 +305,31 @@ bool AtiMach64Gx::pci_io_write(uint32_t offset, uint32_t value, uint32_t size)
 
     // CONFIG_CNTL is accessible from I/O space only
     if ((offset >> 2) == ATI_CONFIG_CNTL) {
+        if (size + (offset & 3) > 4)
+            LOG_F(ERROR, "%s: size + offset > 4!", this->name.c_str());
         write_mem(((uint8_t *)&this->config_cntl) + (offset & 3), value, size);
-        switch (this->config_cntl & 3) {
-        case 0:
-            LOG_F(WARNING, "%s: linear aperture disabled!", this->name.c_str());
-            break;
-        case 1:
-            LOG_F(INFO, "%s: aperture size set to 4MB", this->name.c_str());
-            this->mm_regs_offset = MM_REGS_2_OFF;
-            break;
-        case 2:
-            LOG_F(INFO, "%s: aperture size set to 8MB", this->name.c_str());
-            this->mm_regs_offset = MM_REGS_0_OFF;
-            break;
-        default:
-            LOG_F(ERROR, "%s: invalid aperture size in CONFIG_CNTL", this->name.c_str());
+        if (offset == ATI_CONFIG_CNTL << 2) {
+            switch (extract_bits<uint32_t>(this->config_cntl[0], ATI_CFG_MEM_AP_SIZE, ATI_CFG_MEM_AP_SIZE_size)) {
+            case 0:
+                LOG_F(WARNING, "%s: CONFIG_CNTL linear aperture disabled!", this->name.c_str());
+                break;
+            case 1:
+                LOG_F(INFO, "%s: CONFIG_CNTL aperture size set to 4MB", this->name.c_str());
+                this->mm_regs_offset = MM_REGS_2_OFF;
+                break;
+            case 2:
+                LOG_F(INFO, "%s: CONFIG_CNTL aperture size set to 8MB", this->name.c_str());
+                this->mm_regs_offset = MM_REGS_0_OFF;
+                break;
+            default:
+                LOG_F(ERROR, "%s: CONFIG_CNTL invalid aperture size", this->name.c_str());
+            }
         }
+
+        LOG_F(INFO, "%s: write %s %04x.%c = %0*x = %08x", this->name.c_str(),
+            get_reg_name(offset >> 2), offset, SIZE_ARG(size), size * 2,
+            value, this->config_cntl[0]
+        );
     } else {
         this->write_reg(offset, BYTESWAP_SIZED(value, size), size);
     }

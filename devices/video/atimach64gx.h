@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/pci/pcidevice.h>
 #include <devices/video/displayid.h>
 #include <devices/video/videoctrl.h>
+#include <devices/video/atimach64defs.h>
 
 #include <cinttypes>
 #include <memory>
@@ -83,8 +84,8 @@ private:
     const uint32_t aperture_flag[1] = { 0 };
     uint32_t aperture_base[1] = { 0 };
 
-    uint32_t    config_cntl = 0;
-    uint32_t    mm_regs_offset = 0;
+    uint32_t    config_cntl[2] = { 2, 0 };
+    uint32_t    mm_regs_offset = MM_REGS_0_OFF;
 
     // RGB514 RAMDAC state
     uint8_t     dac_idx_lo = 0;
