@@ -502,6 +502,39 @@ void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
         }
         break;
     }
+    case ATI_OVR_CLR:
+    case ATI_OVR_WID_LEFT_RIGHT:
+    case ATI_OVR_WID_TOP_BOTTOM:
+        new_value = value;
+        if (value != 0) {
+            LOG_F(ERROR, "%s: Unhandled value 0x%08x.", this->name.c_str(), value);
+        }
+        return;
+    case ATI_CUR_CLR0:
+    case ATI_CUR_CLR1:
+        new_value = value;
+        this->cursor_dirty = true;
+        draw_fb = true;
+        return;
+    case ATI_CUR_OFFSET:
+        new_value = value;
+        if (old_value != new_value)
+            this->cursor_dirty = true;
+        draw_fb = true;
+        return;
+    case ATI_CUR_HORZ_VERT_OFF:
+        new_value = value;
+        if (
+            extract_bits<uint32_t>(new_value, ATI_CUR_VERT_OFF, ATI_CUR_VERT_OFF_size) !=
+            extract_bits<uint32_t>(old_value, ATI_CUR_VERT_OFF, ATI_CUR_VERT_OFF_size)
+        )
+            this->cursor_dirty = true;
+        draw_fb = true;
+        return;
+    case ATI_CUR_HORZ_VERT_POSN:
+        new_value = value;
+        draw_fb = true;
+        return;
     case ATI_DAC_REGS:
         new_value = old_value; // no change
         if (size == 1) { // only byte accesses are allowed for DAC registers
@@ -559,6 +592,7 @@ void AtiMach64Gx::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int
 {
     if (rgn_start == this->aperture_base[0]) {
         if (offset < this->vram_size) {
+            draw_fb = true;
             return write_mem(&this->vram_ptr[offset], value, size);
         }
         if (offset >= this->mm_regs_offset && offset < this->mm_regs_offset + 0x400) {
@@ -677,6 +711,8 @@ void AtiMach64Gx::crtc_update()
     if (!need_recalc)
         return;
 
+    this->draw_fb = true;
+
     // calculate display refresh rate
     this->refresh_rate = this->pixel_clock / this->hori_total / this->vert_total;
 
@@ -690,26 +726,31 @@ void AtiMach64Gx::crtc_update()
     switch (this->pixel_format) {
     case 2:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
+            draw_fb = false;
             this->convert_frame_4bpp_indexed(dst_buf, dst_pitch);
         };
         break;
     case 3:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
+            draw_fb = false;
             this->convert_frame_8bpp_indexed(dst_buf, dst_pitch);
         };
         break;
     case 4:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
+            draw_fb = false;
             this->convert_frame_15bpp_BE(dst_buf, dst_pitch);
         };
         break;
     case 5:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
+            draw_fb = false;
             this->convert_frame_24bpp(dst_buf, dst_pitch);
         };
         break;
     case 6:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
+            draw_fb = false;
             this->convert_frame_32bpp_BE(dst_buf, dst_pitch);
         };
         break;
@@ -812,6 +853,7 @@ void AtiMach64Gx::rgb514_write_reg(uint8_t reg_addr, uint8_t value)
                                     clut_color[1], clut_color[2], 0xFF);
             this->clut_index++;
             this->comp_index = 0;
+            draw_fb = true;
         }
         break;
     case Rgb514::CLUT_MASK:
