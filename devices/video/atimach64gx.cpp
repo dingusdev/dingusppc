@@ -34,6 +34,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <string>
 
+namespace loguru {
+    enum : Verbosity {
+        Verbosity_ATIMACH64 = loguru::Verbosity_9,
+        Verbosity_ATIINTERRUPT = loguru::Verbosity_9,
+        Verbosity_ATICURSOR = loguru::Verbosity_9
+    };
+}
+
 /* Human readable Mach64 HW register names for easier debugging. */
 static const std::map<uint16_t, std::string> mach64_reg_names = {
     #define one_reg_name(x) {ATI_ ## x, #x}
@@ -106,7 +114,7 @@ static const std::map<uint16_t, std::string> mach64_reg_names = {
     #undef one_reg_name
 };
 
-static const std::map<uint16_t, std::string> rgb514_reg_names = {
+static const std::map<uint16_t, std::string> rgb514_ind_reg_names = {
     #define one_reg_name(x) {Rgb514::x, #x}
     one_reg_name(MISC_CLK_CNTL),
     one_reg_name(HOR_SYNC_POS),
@@ -288,7 +296,7 @@ bool AtiMach64Gx::pci_io_read(uint32_t offset, uint32_t size, uint32_t* res)
     // CONFIG_CNTL is accessible from I/O space only
     if ((offset >> 2) == ATI_CONFIG_CNTL) {
         result = read_mem(((uint8_t *)&this->config_cntl) + (offset & 3), size);
-        LOG_F(WARNING, "%s: read  %s %04x.%c = %0*x", this->name.c_str(),
+        LOG_F(ATIMACH64, "%s: read  %s %04x.%c = %0*x", this->name.c_str(),
             get_reg_name(offset >> 2), offset, SIZE_ARG(size), size * 2, (uint32_t)result);
     } else {
         result = BYTESWAP_SIZED(this->read_reg(offset, size), size);
@@ -407,9 +415,9 @@ uint32_t AtiMach64Gx::read_reg(uint32_t reg_offset, uint32_t size)
             int_cntl_count++;
         else {
             if (int_cntl_count > 1)
-                LOG_F(WARNING, "%s: read  %s %04x.%c = %0*x (%lld times)", this->name.c_str(),
+                LOG_F(ATIINTERRUPT, "%s: read  %s %04x.%c = %0*x (%lld times)", this->name.c_str(),
                     get_reg_name(reg_num), reg_offset, SIZE_ARG(size), size * 2, (uint32_t)last_int_cntl_val, int_cntl_count);
-            LOG_F(WARNING, "%s: read  %s %04x.%c = %0*x", this->name.c_str(),
+            LOG_F(ATIINTERRUPT, "%s: read  %s %04x.%c = %0*x", this->name.c_str(),
                 get_reg_name(reg_num), reg_offset, SIZE_ARG(size), size * 2, (uint32_t)result);
             int_cntl_count = 1;
             last_int_cntl_val = int_cntl_val;
@@ -417,17 +425,17 @@ uint32_t AtiMach64Gx::read_reg(uint32_t reg_offset, uint32_t size)
     }
     else {
         last_int_cntl_val = -1;
-        LOG_F(WARNING, "%s: read  %s %04x.%c = %0*x", this->name.c_str(),
+        LOG_F(ATIMACH64, "%s: read  %s %04x.%c = %0*x", this->name.c_str(),
             get_reg_name(reg_num), reg_offset, SIZE_ARG(size), size * 2, (uint32_t)result);
     }
 
     return static_cast<uint32_t>(result);
 }
 
-#define WRITE_VALUE_AND_LOG() \
+#define WRITE_VALUE_AND_LOG(level) \
     do { \
         this->regs[reg_num] = new_value; \
-        LOG_F(9, "%s: write %s %04x.%c = %0*x = %08x", this->name.c_str(), \
+        LOG_F(level, "%s: write %s %04x.%c = %0*x = %08x", this->name.c_str(), \
             get_reg_name(reg_num), reg_offset, SIZE_ARG(size), size * 2, \
             (uint32_t)extract_bits<uint64_t>(value, offset * 8, size * 8), new_value \
         ); \
@@ -452,7 +460,6 @@ void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
     switch (reg_num) {
     case ATI_CRTC_H_TOTAL_DISP:
         new_value = value;
-        LOG_F(9, "%s: ATI_CRTC_H_TOTAL_DISP set to 0x%08X", this->name.c_str(), value);
         break;
     case ATI_CRTC_VLINE_CRNT_VLINE:
         new_value = old_value;
@@ -460,7 +467,7 @@ void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
         break;
     case ATI_CRTC_OFF_PITCH:
         new_value = value;
-        WRITE_VALUE_AND_LOG();
+        WRITE_VALUE_AND_LOG(ATIMACH64);
         this->crtc_update();
         return;
     case ATI_CRTC_INT_CNTL:
@@ -530,7 +537,8 @@ void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
         bits_read_only |= bits_not_AKed; // the not AKed bits will remain unchanged
 
         new_value = (old_value & bits_read_only) | (new_value & ~bits_read_only);
-        break;
+        WRITE_VALUE_AND_LOG(ATIINTERRUPT);
+        return;
     }
     case ATI_CRTC_GEN_CNTL:
     {
@@ -558,8 +566,6 @@ void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
 
         new_value = (old_value & bits_read_only) | (new_value & ~bits_read_only);
 
-        WRITE_VALUE_AND_LOG();
-
         if (bit_changed(old_value, new_value, ATI_CRTC_DISPLAY_DIS)) {
             if (bit_set(new_value, ATI_CRTC_DISPLAY_DIS)) {
                 this->blank_on = true;
@@ -568,6 +574,8 @@ void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
                 this->blank_on = false;
             }
         }
+
+        WRITE_VALUE_AND_LOG(ATIMACH64);
 
         if (bit_changed(old_value, new_value, ATI_CRTC_ENABLE)) {
             draw_fb = true;
@@ -579,7 +587,7 @@ void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
     case ATI_OVR_WID_LEFT_RIGHT:
     case ATI_OVR_WID_TOP_BOTTOM:
         new_value = value;
-        WRITE_VALUE_AND_LOG();
+        WRITE_VALUE_AND_LOG(ATIMACH64);
         if (value != 0) {
             LOG_F(ERROR, "%s: Unhandled value 0x%08x.", this->name.c_str(), value);
         }
@@ -589,14 +597,14 @@ void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
         new_value = value;
         this->cursor_dirty = true;
         draw_fb = true;
-        WRITE_VALUE_AND_LOG();
+        WRITE_VALUE_AND_LOG(ATICURSOR);
         return;
     case ATI_CUR_OFFSET:
         new_value = value;
         if (old_value != new_value)
             this->cursor_dirty = true;
         draw_fb = true;
-        WRITE_VALUE_AND_LOG();
+        WRITE_VALUE_AND_LOG(ATICURSOR);
         return;
     case ATI_CUR_HORZ_VERT_OFF:
         new_value = value;
@@ -606,16 +614,16 @@ void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
         )
             this->cursor_dirty = true;
         draw_fb = true;
-        WRITE_VALUE_AND_LOG();
+        WRITE_VALUE_AND_LOG(ATICURSOR);
         return;
     case ATI_CUR_HORZ_VERT_POSN:
         new_value = value;
         draw_fb = true;
-        WRITE_VALUE_AND_LOG();
+        WRITE_VALUE_AND_LOG(ATICURSOR);
         return;
     case ATI_DAC_REGS:
         new_value = old_value; // no change
-        WRITE_VALUE_AND_LOG();
+        WRITE_VALUE_AND_LOG(ATIMACH64);
         if (size == 1) { // only byte accesses are allowed for DAC registers
             int dac_reg_addr = ((this->regs[ATI_DAC_CNTL] & 1) << 2) | offset;
             rgb514_write_reg(dac_reg_addr, extract_bits<uint32_t>(value, offset * 8, 8));
@@ -642,7 +650,7 @@ void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
         break;
     }
 
-    WRITE_VALUE_AND_LOG();
+    WRITE_VALUE_AND_LOG(ATIMACH64);
 }
 
 uint32_t AtiMach64Gx::read(uint32_t rgn_start, uint32_t offset, int size)
@@ -928,7 +936,7 @@ int AtiMach64Gx::device_postinit()
 #endif
             0;
 
-        LOG_F(WARNING, "%s: irq_line_state:%d do_interrupt:%d CRTC_INT_CNTL:%08x",
+        LOG_F(ATIINTERRUPT, "%s: irq_line_state:%d do_interrupt:%d CRTC_INT_CNTL:%08x",
               this->name.c_str(), irq_line_state, do_interrupt,
               this->regs[ATI_CRTC_INT_CNTL]);
 
@@ -976,21 +984,21 @@ void AtiMach64Gx::rgb514_write_reg(uint8_t reg_addr, uint8_t value)
     }
 }
 
-const char* AtiMach64Gx::rgb514_get_reg_name(uint32_t reg_addr)
+const char* AtiMach64Gx::rgb514_get_ind_reg_name(uint32_t reg_addr)
 {
-    auto iter = rgb514_reg_names.find(reg_addr);
-    if (iter != rgb514_reg_names.end()) {
+    auto iter = rgb514_ind_reg_names.find(reg_addr);
+    if (iter != rgb514_ind_reg_names.end()) {
         return iter->second.c_str();
     } else {
-        return "unknown rgb514 register";
+        return "unknown indirect rgb514 register";
     }
 }
 
 void AtiMach64Gx::rgb514_write_ind_reg(uint8_t reg_addr, uint8_t value)
 {
     this->dac_regs[reg_addr] = value;
-    LOG_F(WARNING, "%s.rgb514: write %s %04x.b = %02x", this->name.c_str(),
-        rgb514_get_reg_name(reg_addr), reg_addr, value
+    LOG_F(ATIMACH64, "%s.rgb514: write %s %04x.b = %02x", this->name.c_str(),
+        rgb514_get_ind_reg_name(reg_addr), reg_addr, value
     );
 
     switch (reg_addr) {
