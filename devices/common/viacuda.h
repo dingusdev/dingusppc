@@ -48,6 +48,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/nvram.h>
 
 #include <memory>
+#include <chrono>
 
 class AdbBus;
 class InterruptCtrl;
@@ -213,7 +214,10 @@ private:
     int32_t  out_count;
     int32_t  out_pos;
     uint8_t  poll_rate;
-    int32_t  real_time = 0;
+    uint32_t last_time = 0;
+    uint32_t time_offset = 0;
+    std::chrono::time_point<std::chrono::system_clock> mac_epoch;
+    uint8_t  one_sec_mode = 0;
     bool     file_server;
     uint16_t device_mask = 0;
 
@@ -247,6 +251,7 @@ private:
     void process_packet();
     void process_adb_command();
     void pseudo_command(int cmd, int data_count);
+    uint32_t calc_real_time();
 
     void null_out_handler(void);
     void pram_out_handler(void);
