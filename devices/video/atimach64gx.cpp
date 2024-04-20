@@ -539,7 +539,7 @@ uint32_t AtiMach64Gx::read(uint32_t rgn_start, uint32_t offset, int size)
         if (offset < this->vram_size) {
             return read_mem(&this->vram_ptr[offset], size);
         }
-        if (offset >= this->mm_regs_offset) {
+        if (offset >= this->mm_regs_offset && offset < this->mm_regs_offset + 0x400) {
             return BYTESWAP_SIZED(read_reg(offset - this->mm_regs_offset, size), size);
         }
         return 0;
@@ -561,7 +561,7 @@ void AtiMach64Gx::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int
         if (offset < this->vram_size) {
             return write_mem(&this->vram_ptr[offset], value, size);
         }
-        if (offset >= this->mm_regs_offset) {
+        if (offset >= this->mm_regs_offset && offset < this->mm_regs_offset + 0x400) {
             return write_reg(offset - this->mm_regs_offset, BYTESWAP_SIZED(value, size), size);
         }
         return;
