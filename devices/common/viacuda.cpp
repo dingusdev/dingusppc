@@ -139,37 +139,49 @@ void ViaCuda::cuda_init() {
 }
 
 uint8_t ViaCuda::read(int reg) {
+    uint8_t value;
     /* reading from some VIA registers triggers special actions */
     switch (reg & 0xF) {
     case VIA_B:
-        return (this->via_regs[VIA_B]);
+        value = (this->via_regs[VIA_B]);
+        break;
     case VIA_A:
     case VIA_ANH:
+        value = this->via_regs[reg & 0xF];
         LOG_F(WARNING, "Attempted read from VIA Port A!");
         break;
     case VIA_IER:
-        return (this->_via_ier | 0x80); // bit 7 always reads as "1"
+        value = (this->_via_ier | 0x80); // bit 7 always reads as "1"
+        break;
     case VIA_IFR:
-        return this->_via_ifr;
+        value = this->_via_ifr;
+        break;
     case VIA_T1CL:
         this->_via_ifr &= ~VIA_IF_T1;
         update_irq();
-        return this->calc_counter_val(this->t1_counter, this->t1_start_time) & 0xFFU;
+        value = this->calc_counter_val(this->t1_counter, this->t1_start_time) & 0xFFU;
+        break;
     case VIA_T1CH:
-        return this->calc_counter_val(this->t1_counter, this->t1_start_time) >> 8;
+        value = this->calc_counter_val(this->t1_counter, this->t1_start_time) >> 8;
+        break;
     case VIA_T2CL:
         this->_via_ifr &= ~VIA_IF_T2;
         update_irq();
-        return this->calc_counter_val(this->t2_counter, this->t2_start_time) & 0xFFU;
+        value = this->calc_counter_val(this->t2_counter, this->t2_start_time) & 0xFFU;
+        break;
     case VIA_T2CH:
-        return this->calc_counter_val(this->t2_counter, this->t2_start_time) >> 8;
+        value = this->calc_counter_val(this->t2_counter, this->t2_start_time) >> 8;
+        break;
     case VIA_SR:
+        value = this->via_regs[reg & 0xF];
         this->_via_ifr &= ~VIA_IF_SR;
         update_irq();
         break;
+    default:
+        value = this->via_regs[reg & 0xF];
     }
 
-    return (this->via_regs[reg & 0xF]);
+    return value;
 }
 
 void ViaCuda::write(int reg, uint8_t value) {
