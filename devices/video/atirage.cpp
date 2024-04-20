@@ -895,7 +895,7 @@ void ATIRage::get_cursor_position(int& x, int& y) {
 int ATIRage::device_postinit()
 {
     this->vbl_cb = [this](uint8_t irq_line_state) {
-        insert_bits<uint32_t>(this->regs[ATI_CRTC_INT_CNTL], irq_line_state, ATI_CRTC_VBLANK, 1);
+        insert_bits<uint32_t>(this->regs[ATI_CRTC_INT_CNTL], irq_line_state, ATI_CRTC_VBLANK, irq_line_state);
         if (irq_line_state) {
             set_bit(this->regs[ATI_CRTC_INT_CNTL], ATI_CRTC_VBLANK_INT);
             set_bit(this->regs[ATI_CRTC_INT_CNTL], ATI_CRTC_VLINE_INT);
