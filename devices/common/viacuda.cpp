@@ -726,11 +726,16 @@ void ViaCuda::pseudo_command() {
         response_header(CUDA_PKT_PSEUDO, 0);
         break;
     case CUDA_SET_POWER_MESSAGES:
+        LOG_F(WARNING, "Cuda: unsupported pseudo command 0x%X SET_POWER_MESSAGES", cmd);
         response_header(CUDA_PKT_PSEUDO, 0);
         break;
     case CUDA_READ_WRITE_I2C:
         response_header(CUDA_PKT_PSEUDO, 0);
         i2c_simple_transaction(this->in_buf[2], &this->in_buf[3], this->in_count - 3);
+        break;
+    case CUDA_TIMER_TICKLE:
+        LOG_F(WARNING, "Cuda: unsupported pseudo command 0x%X TIMER_TICKLE - Byte Sent: 0x%02x", cmd, this->in_buf[2]);
+        response_header(CUDA_PKT_PSEUDO, 0);
         break;
     case CUDA_COMB_FMT_I2C:
         response_header(CUDA_PKT_PSEUDO, 0);
