@@ -189,7 +189,7 @@ void ViaCuda::write(int reg, uint8_t value) {
 
     switch (reg & 0xF) {
     case VIA_B:
-        write(value);
+        this->write(value);
         break;
     case VIA_A:
     case VIA_ANH:
