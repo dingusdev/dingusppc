@@ -269,7 +269,7 @@ bool AtiMach64Gx::io_access_allowed(uint32_t offset) {
         if (this->command & 1) {
             return true;
         }
-        LOG_F(WARNING, "ATI I/O space disabled in the command reg");
+        LOG_F(WARNING, "%s: I/O space disabled in the command reg", this->name.c_str());
     }
     return false;
 }
