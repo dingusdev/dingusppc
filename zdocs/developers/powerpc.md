@@ -41,7 +41,8 @@ Up to 128 instruction entries and 128 data entries can be stored at a time.
 
 
 # Special Registers
-| Register Name                     | Register Number      | Purpose                                               | :-------------------------------- | :--------------------- | :---------------------------------------------------- |
+
+| Register Name                     | Register Number      | Purpose                                               | :-------------------------------- | :------------------- | :---------------------------------------------------- |
 | Multiply Quotient Register (MQ)   | 0                    | (601 only)                                            |
 | Integer Exception (XER)           | 1                    |                                                       |
 | RTC Upper Register (RTCU)         | 4                    | (601 only)                                            |
