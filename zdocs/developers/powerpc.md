@@ -42,7 +42,8 @@ Up to 128 instruction entries and 128 data entries can be stored at a time.
 
 # Special Registers
 
-| Register Name                     | Register Number      | Purpose                                               | :-------------------------------- | :------------------- | :---------------------------------------------------- |
+| Register Name                     | Register Number      | Purpose                                               |
+| :-------------------------------- | :------------------- | :---------------------------------------------------- |
 | Multiply Quotient Register (MQ)   | 0                    | (601 only)                                            |
 | Integer Exception (XER)           | 1                    |                                                       |
 | RTC Upper Register (RTCU)         | 4                    | (601 only)                                            |
@@ -76,5 +77,7 @@ Up to 128 instruction entries and 128 data entries can be stored at a time.
 * Apple's memcpy routine uses double floating-point registers rather than general purpose registers to load and store 2 32-bit values at once. As the PowerPC usually operates on at least a 64-bit bus and floating-point processing comes with the processors by default, this saves some instructions and results in slightly faster speeds.
 
 * As the PowerPC does not have an instruction to load an immediate 32-bit value, it's common to see a lis/ori coding pattern.
+
+* The 603 relies on the instructions tlbld and tlbli to assist in TLB reloading.
 
 * To accomodate for early programs compiled on PowerPC 601 Macs, the classic Mac OS has to emulate the POWER instructions that were removed from later processors.
