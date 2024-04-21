@@ -133,7 +133,12 @@ static uint32_t disasm_68k(uint32_t count, uint32_t address) {
     for (; power_on && count > 0; count--) {
         // prefetch opcode bytes (a 68k instruction can occupy 2...12 bytes)
         for (int i = 0; i < sizeof(code); i++) {
-            code[i] = mem_read_dbg(address + i, 1);
+            try {
+                code[i] = mem_read_dbg(address + i, 1);
+            }
+            catch(...) {
+                printf("<memerror>");
+            }
         }
 
         const uint8_t *code_ptr  = code;
