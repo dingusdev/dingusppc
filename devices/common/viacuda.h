@@ -250,7 +250,7 @@ private:
     void error_response(uint32_t error);
     void process_packet();
     void process_adb_command();
-    void pseudo_command(int cmd, int data_count);
+    void pseudo_command();
     uint32_t calc_real_time();
 
     void null_out_handler(void);

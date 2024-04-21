@@ -496,7 +496,7 @@ void ViaCuda::process_packet() {
         for (int i = 0; i < this->in_count; i++) {
             LOG_F(9, "0x%X ,", this->in_buf[i]);
         }
-        pseudo_command(this->in_buf[1], this->in_count - 2);
+        pseudo_command();
         break;
     default:
         LOG_F(ERROR, "Cuda: unsupported packet type = %d", this->in_buf[0]);
@@ -573,9 +573,10 @@ void ViaCuda::autopoll_handler() {
     }
 }
 
-void ViaCuda::pseudo_command(int cmd, int data_count) {
+void ViaCuda::pseudo_command() {
     uint16_t    addr;
     int         i;
+    int         cmd = this->in_buf[1];
 
     switch (cmd) {
     case CUDA_START_STOP_AUTOPOLL:
