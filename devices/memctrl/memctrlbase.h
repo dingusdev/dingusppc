@@ -86,6 +86,8 @@ public:
 
     AddressMapEntry* find_rom_region();
 
+    uint8_t *get_region_hostmem_ptr(const uint32_t addr);
+
 protected:
     bool add_mem_region(
         uint32_t start_addr, uint32_t size, uint32_t dest_addr, uint32_t type,

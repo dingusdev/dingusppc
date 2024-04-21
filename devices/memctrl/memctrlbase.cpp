@@ -350,3 +350,14 @@ AddressMapEntry* MemCtrlBase::find_rom_region()
 
     return nullptr;
 }
+
+uint8_t *MemCtrlBase::get_region_hostmem_ptr(const uint32_t addr) {
+    AddressMapEntry *reg_desc = this->find_range(addr);
+    if (reg_desc == nullptr || reg_desc->type == RT_MMIO)
+        return nullptr;
+
+    if (reg_desc->type == RT_MIRROR)
+        return (addr - reg_desc->mirror) + reg_desc->mem_ptr;
+    else
+        return (addr - reg_desc->start) + reg_desc->mem_ptr;
+}
