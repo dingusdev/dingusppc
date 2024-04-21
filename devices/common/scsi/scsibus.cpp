@@ -73,7 +73,8 @@ void ScsiBus::change_bus_phase(int initiator_id)
 
 void ScsiBus::assert_ctrl_line(int initiator_id, uint16_t mask)
 {
-    DCHECK_F(initiator_id >= 0 && initiator_id < SCSI_MAX_DEVS, "ScsiBus: invalid initiator ID %d", initiator_id);
+    DCHECK_F(initiator_id >= 0 && initiator_id < SCSI_MAX_DEVS,
+             "ScsiBus: invalid initiator ID %d", initiator_id);
 
     uint16_t new_state = 0xFFFFU & mask;
 
@@ -264,7 +265,8 @@ bool ScsiBus::pull_data(const int id, uint8_t* dst_ptr, const int size)
 bool ScsiBus::push_data(const int id, const uint8_t* src_ptr, const int size)
 {
     if (!this->devices[id]) {
-        LOG_F(ERROR, "%s: no device %d for push_data %d bytes", this->get_name().c_str(), id, size);
+        LOG_F(ERROR, "%s: no device %d for push_data %d bytes",
+              this->get_name().c_str(), id, size);
         return false;
     }
 
@@ -314,17 +316,22 @@ void ScsiBus::attach_scsi_devices(const std::string bus_suffix)
         std::istringstream image_stream(image_path);
         while (std::getline(image_stream, path, ':')) {
             // do two passes because we skip ID 3.
-            for (scsi_id = 0; scsi_id < SCSI_MAX_DEVS * 2 && (scsi_id == 3 || this->devices[scsi_id % SCSI_MAX_DEVS]); scsi_id++) {}
+            for (scsi_id = 0; scsi_id < SCSI_MAX_DEVS * 2 && (scsi_id == 3 ||
+                 this->devices[scsi_id % SCSI_MAX_DEVS]); scsi_id++) {}
+
             if (scsi_id < SCSI_MAX_DEVS * 2) {
                 scsi_id = scsi_id % SCSI_MAX_DEVS;
-                std::string scsi_device_name = "ScsiHD" + bus_suffix + "," + std::to_string(scsi_id);
+                std::string scsi_device_name = "ScsiHD" + bus_suffix + "," +
+                                               std::to_string(scsi_id);
                 ScsiHardDisk *scsi_device = new ScsiHardDisk(scsi_device_name, scsi_id);
-                gMachineObj->add_device(scsi_device_name, std::unique_ptr<ScsiHardDisk>(scsi_device));
+                gMachineObj->add_device(scsi_device_name,
+                                        std::unique_ptr<ScsiHardDisk>(scsi_device));
                 this->register_device(scsi_id, scsi_device);
                 scsi_device->insert_image(path);
             }
             else {
-                LOG_F(ERROR, "%s: Too many devices. HDD \"%s\" was not added.", this->get_name().c_str(), path.c_str());
+                LOG_F(ERROR, "%s: Too many devices. HDD \"%s\" was not added.",
+                      this->get_name().c_str(), path.c_str());
             }
         }
     }
@@ -334,17 +341,22 @@ void ScsiBus::attach_scsi_devices(const std::string bus_suffix)
         std::istringstream image_stream(image_path);
         while (std::getline(image_stream, path, ':')) {
              // do two passes because we start at ID 3.
-            for (scsi_id = 3; scsi_id < SCSI_MAX_DEVS * 2 && this->devices[scsi_id % SCSI_MAX_DEVS]; scsi_id++) {}
+            for (scsi_id = 3; scsi_id < SCSI_MAX_DEVS * 2 &&
+                 this->devices[scsi_id % SCSI_MAX_DEVS]; scsi_id++) {}
+
             if (scsi_id < SCSI_MAX_DEVS * 2) {
                 scsi_id = scsi_id % SCSI_MAX_DEVS;
-                std::string scsi_device_name = "ScsiCdrom" + bus_suffix + "," + std::to_string(scsi_id);
+                std::string scsi_device_name = "ScsiCdrom" + bus_suffix + "," +
+                                               std::to_string(scsi_id);
                 ScsiCdrom *scsi_device = new ScsiCdrom(scsi_device_name, scsi_id);
-                gMachineObj->add_device(scsi_device_name, std::unique_ptr<ScsiCdrom>(scsi_device));
+                gMachineObj->add_device(scsi_device_name,
+                                        std::unique_ptr<ScsiCdrom>(scsi_device));
                 this->register_device(scsi_id, scsi_device);
                 scsi_device->insert_image(path);
             }
             else {
-                LOG_F(ERROR, "%s: Too many devices. CD-ROM \"%s\" was not added.", this->get_name().c_str(), path.c_str());
+                LOG_F(ERROR, "%s: Too many devices. CD-ROM \"%s\" was not added.",
+                      this->get_name().c_str(), path.c_str());
             }
         }
     }
@@ -359,4 +371,4 @@ static const DeviceDescription ScsiMesh_Descriptor = {
 };
 
 REGISTER_DEVICE(ScsiCurio, ScsiCurio_Descriptor);
-REGISTER_DEVICE(ScsiMesh, ScsiMesh_Descriptor);
+REGISTER_DEVICE(ScsiMesh,  ScsiMesh_Descriptor);
