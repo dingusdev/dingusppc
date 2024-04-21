@@ -1,5 +1,7 @@
 Using a combination of a 6522 along with some integrated circuits, the VIA Cuda is a microcontroller that heavily controls system operations. It's largely similar to Egret (used in many 68k Macs), but removes some commands.
 
+In many New World Macs, the Cuda itself is emulated within various VLSI chips.
+
 The usual offset for a VIA Cuda is IOBase (ex.: 0xF3000000 for Power Mac G3 Beige) + 0x16000. The registers are spaced out by 0x200 bytes on the Heathrow.
 
 # Usage

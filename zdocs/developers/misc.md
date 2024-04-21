@@ -2,6 +2,10 @@
 
 The Old World ROM is always 4 megabytes (MB). The first three MB are reserved for the 68k code, while the last MB is for the PowerPC boot-up code.
 
+New World ROMs are 1 MB stubs containing OpenFirmware and some basic drivers, but has an additional ROM stored on the Mac's hard disk to provide Toolbox functionality. The ROMs stored on the Mac's hard disk also had updates distributed.
+
+Within Apple, the project to overhaul Mac OS ROM code from separate portable, low-end, and high-end branches into a single codebase was called SuperMario.
+
 # Serial
 
 For serial, it replicates the functionality of a Zilog ESCC. There are two different ports - one located at (MacIOBase) + 0x13000 for the printer, and the other at (MacIOBase) + 0x13020 for the modem.
@@ -63,6 +67,8 @@ Some New World Macs do have a SWIM 3 driver present, but this normally goes unus
 
 Mac OS relies on 8 KB of NVRAM at minimum to run properly. It's usually found at IOBase (ex.: 0xF3000000 for Power Mac G3 Beige) + 0x60000.
 
+On a physical machine, one has to hold the Command/Apple, Option, P and R keys together. However, using DingusPPC, one can simply delete the nvram.bin file instead.
+
 # PMU
 
 | Command Name     | Number | Functionality                |
@@ -77,6 +83,16 @@ Mac OS relies on 8 KB of NVRAM at minimum to run properly. It's usually found at
 | PMUPmgrPWRoff    | 0x7E   |
 | PMUResetCPU      | 0xD0   |
 
+# USB
+
+
+
+# FireWire
+
+Present in several New World Macs is a FireWire controller. Mac OS Classic normally only supports FireWire 400.
+
 # Miscellaneous
 
-The Power Mac G3 Beige has an additional register at 0xFF000004, which is dubbed varyingly as the "cpu-id" (by Open Firmware), the ""systemReg" (display driver) or "MachineID" (platform driver).
+* In order for the mouse to move, it generally needs to use the Vertical Blanking Interrupt (VBL) present on the video controller. However, the Pippin instead uses a virtual timer task to accomplish, as there is a bug that prevents the VBL from working in the Taos graphics controller.
+
+* The Power Mac G3 Beige has an additional register at 0xFF000004, which is dubbed varyingly as the "cpu-id" (by Open Firmware), the ""systemReg" (display driver) or "MachineID" (platform driver).

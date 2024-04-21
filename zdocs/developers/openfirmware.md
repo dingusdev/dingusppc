@@ -43,6 +43,20 @@ as found in various Power Macintosh models.
 
 *TBD*
 
+## Packages
+
+| Package Name   | Purpose                                       | Versions |
+|:--------------:|:---------------------------------------------:|:--------:|
+| obp-tftp       | OpenBoot PROM with tftp                       | 1.0.5+   |
+| aix-boot       |                                               | 1.0.5+   |
+| xcoff-loader   |                                               | 1.0.5+   |
+| mac-files      | Handle hard drives formatted with HFS         | 1.0.5+   |
+| mac-parts      | Find a partition with a Mac OS installed      | 1.0.5+   |
+| fat-files      | Handle hard drives formatted with FAT(16?)    | 1.0.5+   |
+| iso-9660-files | Handle CD ROM images formatted with ISO 9660  | 1.0.5+   |
+| telnet         |                                               | 3.0+     |
+
+
 ## Open Firmware image
 
 ### Old World Macs

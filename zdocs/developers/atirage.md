@@ -1,4 +1,4 @@
-The ATI Rage is a video card that comes bundled with early Power Mac G3s and New World Macs (like the first revisions of the iMac G3).
+The ATI Rage is a video card that comes bundled with early Power Mac G3s and New World Macs (like the first revisions of the iMac G3). Its predecessor was the ATI Mach 64 GX, used in earlier Old World Macs.
 
 # Memory Map
 

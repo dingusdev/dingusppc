@@ -22,7 +22,7 @@ DingusPPC uses two windows when booted up; a command line window and a monitor w
 
 ## Commands
 
-DingusPPC is operated using the command line interface. As such, we will list the commands as required.
+DingusPPC is operated using the command line interface. As such, we will list the commands as required. These commands are separated by spaces.
 
 ```
 -r, --realtime
@@ -78,6 +78,12 @@ fdd_img
 Set the floppy disk image
 
 ```
+fdd_wr_prot=1
+```
+
+Set the floppy to read-only
+
+```
 hdd_img
 ```
 
@@ -102,8 +108,8 @@ emmo
 Access the factory tests
 
 ```
-serial_backend stdio
-serial_backend socket
+serial_backend=stdio
+serial_backend=socket
 ```
 
 Change where the output of OpenFirmware is directed to, either to the command line (with stdio) or a Unix socket (unavailable in Windows builds). OpenFirmware 1.x outputs here by default.
@@ -133,7 +139,7 @@ Currently, ISO images are supported. However, support is not yet implemented for
 
 ### Hard Disks
 
-Because Sheepshaver, Basilisk II, and Mini vMac operate on raw disks, it is required to a program such as BlueSCSI to make their hard disk images work in an emulator like DingusPPC. This is because the Mac OS normally requires certain values in the hard disks that these emulators don't normally 
+Because Sheepshaver, Basilisk II, and Mini vMac operate on raw disks, it is required to a program such as BlueSCSI to make their hard disk images work in an emulator like DingusPPC. This is because the Mac OS normally requires certain values in the hard disks that these emulators don't normally insert into the images. You may also need a third-party utility to create an HFS or HFS+ disk image.
 
 ### OS Support
 

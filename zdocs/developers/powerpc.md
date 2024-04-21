@@ -36,7 +36,25 @@ Up to 128 instruction entries and 128 data entries can be stored at a time.
 | Time Base Facility (TBR)          | 2                      | Calculate, Store, and Load 32-bit fixed-point numbers |
 | Condition Register                | 1                      | Stores conditions based on the results of fixed-point operations |
 | Floating Point Condition Register | 1                      | Stores conditions based on the results of floating-point operations |
+| Vector Status and Control Register (VSCR) | 1              | Stores conditions based on the results of vector operations |
 | Machine State Register            | 1                      |                                                       |
+
+
+# Special Registers
+| Register Name                     | Register Number      | Purpose                                               | :-------------------------------- | :--------------------- | :---------------------------------------------------- |
+| Multiply Quotient Register (MQ)   | 0                    | (601 only)                                            |
+| Integer Exception (XER)           | 1                    |                                                       |
+| RTC Upper Register (RTCU)         | 4                    | (601 only)                                            |
+| RTC Lower Register (RTCL)         | 5                    | (601 only)                                            |
+| Link Register (LR)                | 8                    |                                                       |
+| Counter Quotient Register (CTR)   | 9                    |                                                       |
+| Vector Save/Restore               | 256                  | (G4+)                                                 |
+| Time Base Lower (TBL)             | 268                  | (603+)                                                |
+| Time Base Upper (TBU)             | 269                  | (603+)                                                |
+| External Access (EAR)             | 282                  |                                                       |
+| Processor Version (PVR)           | 287                  |                                                       |
+| Hardware Implementation 0 (HID0)  | 1008                 |                                                       |
+| Hardware Implementation 1 (HID1)  | 1009                 |                                                       |
 
 # HID 0
 
@@ -57,3 +75,5 @@ Up to 128 instruction entries and 128 data entries can be stored at a time.
 * Apple's memcpy routine uses double floating-point registers rather than general purpose registers to load and store 2 32-bit values at once. As the PowerPC usually operates on at least a 64-bit bus and floating-point processing comes with the processors by default, this saves some instructions and results in slightly faster speeds.
 
 * As the PowerPC does not have an instruction to load an immediate 32-bit value, it's common to see a lis/ori coding pattern.
+
+* To accomodate for early programs compiled on PowerPC 601 Macs, the classic Mac OS has to emulate the POWER instructions that were removed from later processors.
