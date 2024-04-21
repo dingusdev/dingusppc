@@ -157,7 +157,7 @@ protected:
 
 private:
     uint8_t     chip_id;
-    uint8_t     int_mask;
+    uint8_t     int_mask = 0;
     uint8_t     int_stat = 0;
     uint8_t     sync_params;
     uint8_t     src_id;
@@ -165,7 +165,7 @@ private:
     uint8_t     cur_cmd;
     uint8_t     error;
     uint8_t     fifo_cnt;
-    uint8_t     exception;
+    uint8_t     exception = 0;
     uint32_t    xfer_count;
 
     ScsiBus*    bus_obj;
