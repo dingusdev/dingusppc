@@ -73,8 +73,10 @@ void ScsiBus::change_bus_phase(int initiator_id)
 
 void ScsiBus::assert_ctrl_line(int initiator_id, uint16_t mask)
 {
-    DCHECK_F(initiator_id >= 0 && initiator_id < SCSI_MAX_DEVS,
-             "%s: invalid initiator ID %d", this->get_name().c_str(), initiator_id);
+    if (!(initiator_id >= 0 && initiator_id < SCSI_MAX_DEVS)) {
+        LOG_F(ERROR, "%s: invalid initiator ID %d", this->get_name().c_str(), initiator_id);
+        return;
+    }
 
     uint16_t new_state = 0xFFFFU & mask;
 
@@ -93,7 +95,9 @@ void ScsiBus::assert_ctrl_line(int initiator_id, uint16_t mask)
 
 void ScsiBus::release_ctrl_line(int id, uint16_t mask)
 {
-    DCHECK_F(id >= 0 && id < SCSI_MAX_DEVS, "%s: invalid initiator ID %d", this->get_name().c_str(), id);
+    if (!(id >= 0 && id < SCSI_MAX_DEVS)) {
+        LOG_F(ERROR, "%s: invalid initiator ID %d", this->get_name().c_str(), id);
+    }
 
     uint16_t new_state = 0;
 
