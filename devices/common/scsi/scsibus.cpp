@@ -52,7 +52,7 @@ ScsiBus::ScsiBus(const std::string name)
 void ScsiBus::register_device(int id, ScsiDevice* dev_obj)
 {
     if (this->devices[id] != nullptr) {
-        ABORT_F("ScsiBus: device with ID %d already registered", id);
+        ABORT_F("%s: device with ID %d already registered", this->get_name().c_str(), id);
     }
 
     this->devices[id] = dev_obj;
@@ -74,7 +74,7 @@ void ScsiBus::change_bus_phase(int initiator_id)
 void ScsiBus::assert_ctrl_line(int initiator_id, uint16_t mask)
 {
     DCHECK_F(initiator_id >= 0 && initiator_id < SCSI_MAX_DEVS,
-             "ScsiBus: invalid initiator ID %d", initiator_id);
+             "%s: invalid initiator ID %d", this->get_name().c_str(), initiator_id);
 
     uint16_t new_state = 0xFFFFU & mask;
 
@@ -93,7 +93,7 @@ void ScsiBus::assert_ctrl_line(int initiator_id, uint16_t mask)
 
 void ScsiBus::release_ctrl_line(int id, uint16_t mask)
 {
-    DCHECK_F(id >= 0 && id < SCSI_MAX_DEVS, "ScsiBus: invalid initiator ID %d", id);
+    DCHECK_F(id >= 0 && id < SCSI_MAX_DEVS, "%s: invalid initiator ID %d", this->get_name().c_str(), id);
 
     uint16_t new_state = 0;
 
@@ -255,7 +255,7 @@ bool ScsiBus::pull_data(const int id, uint8_t* dst_ptr, const int size)
     }
 
     if (!this->devices[id]->send_data(dst_ptr, size)) {
-        LOG_F(ERROR, "ScsiBus: error while transferring T->I data!");
+        LOG_F(ERROR, "%s: error while transferring T->I data!", this->get_name().c_str());
         return false;
     }
 
