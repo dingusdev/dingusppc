@@ -19,6 +19,24 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+//#define CURSOR_LO_DELAY
+/* Uncomment this to add a delay before allowing the low byte of the cursor
+   position to be latched. In that case, a write to the high byte of the
+   cursor position latches the low byte immediately since the high byte is
+   expected to always be the second byte written. This change solves the issue
+   described below.
+
+   The horizontal position of the cursor may be incorrect between the times
+   when the low byte and the high byte are written. This is true when both
+   bytes change such as when the position changes from 0xFF to 0x100. This is
+   usually not a problem since the position usually changes only during a VBL.
+
+   In the case of Open Firmware, there is at least 2 ms between writes so
+   the cursor position could be incorrect for a third of the refresh cycle.
+   Open Firmware doesn't use VBLs. It also doesn't usually use a hardware
+   cursor so this change isn't usually useful.
+*/
+
 /** Definitions for the Apple RAMDAC ASICs (RaDACal & DACula). */
 
 #ifndef APPLE_RAMDAC_H
@@ -107,7 +125,6 @@ protected:
     uint16_t    cursor_xpos     = 0; // horizontal position of the cursor region
     uint16_t    cursor_ypos     = 0;
     uint16_t    cursor_height   = 0;
-    uint8_t     cursor_pos_lo   = 0;
     uint8_t     clk_m[2]        = {};
     uint8_t     clk_pn[2]       = {};
     uint8_t     pll_cr          = 0;
@@ -118,7 +135,10 @@ protected:
     int         video_width     = 0;
     int         video_height    = 0;
     uint32_t    fb_pitch        = 0;
+#ifdef CURSOR_LO_DELAY
+    uint8_t     cursor_pos_lo   = 0;
     uint32_t    cursor_timer_id = 0;
+#endif
 };
 
 #endif // APPLE_RAMDAC_H
