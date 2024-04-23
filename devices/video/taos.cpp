@@ -33,7 +33,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <string>
 
-TaosVideo::TaosVideo() : VideoCtrlBase(640, 480) {
+TaosVideo::TaosVideo() : VideoCtrlBase() {
     set_name("Taos");
 
     supports_types(HWCompType::MMIO_DEV);

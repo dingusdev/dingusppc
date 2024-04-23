@@ -34,7 +34,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace Platinum;
 
-PlatinumCtrl::PlatinumCtrl() : MemCtrlBase(), VideoCtrlBase(640, 480) {
+PlatinumCtrl::PlatinumCtrl() : MemCtrlBase(), VideoCtrlBase() {
     set_name("Platinum");
 
     supports_types(HWCompType::MEM_CTRL | HWCompType::MMIO_DEV);

@@ -123,7 +123,7 @@ static const std::map<uint16_t, std::string> rgb514_reg_names = {
 };
 
 AtiMach64Gx::AtiMach64Gx()
-    : PCIDevice("ati-mach64-gx"), VideoCtrlBase(640, 480)
+    : PCIDevice("ati-mach64-gx"), VideoCtrlBase()
 {
     supports_types(HWCompType::MMIO_DEV | HWCompType::PCI_DEV);
 

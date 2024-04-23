@@ -89,7 +89,7 @@ static const std::map<uint16_t, std::string> mach64_reg_names = {
 };
 
 ATIRage::ATIRage(uint16_t dev_id)
-    : PCIDevice("ati-rage"), VideoCtrlBase(640, 480)
+    : PCIDevice("ati-rage"), VideoCtrlBase()
 {
     uint8_t asic_id;
 
