@@ -68,9 +68,7 @@ ViaCuda::ViaCuda() {
 
     // intialize counters/timers
     this->t1_counter  = 0xFFFF;
-    this->t1_active = false;
     this->t2_counter  = 0xFFFF;
-    this->t2_active = false;
 
     // calculate VIA clock duration in ns
     this->via_clk_dur = 1.0f / VIA_CLOCK_HZ * NS_PER_SEC;
@@ -102,17 +100,17 @@ ViaCuda::ViaCuda() {
 
 ViaCuda::~ViaCuda()
 {
-    if (this->sr_timer_on) {
+    if (this->sr_timer_id) {
         TimerManager::get_instance()->cancel_timer(this->sr_timer_id);
-        this->sr_timer_on = false;
+        this->sr_timer_id = 0;
     }
-    if (this->t1_active) {
+    if (this->t1_timer_id) {
         TimerManager::get_instance()->cancel_timer(this->t1_timer_id);
-        this->t1_active = false;
+        this->t1_timer_id = 0;
     }
-    if (this->t2_active) {
+    if (this->t2_timer_id) {
         TimerManager::get_instance()->cancel_timer(this->t2_timer_id);
-        this->t2_active = false;
+        this->t2_timer_id = 0;
     }
     if (this->treq_timer_id) {
         TimerManager::get_instance()->cancel_timer(this->treq_timer_id);
@@ -226,9 +224,9 @@ void ViaCuda::write(int reg, uint8_t value) {
             ABORT_F("Unsupported VIA T1 mode, ACR=0x%X", this->via_regs[VIA_ACR]);
         }
         // cancel active T1 timer task
-        if (this->t1_active) {
+        if (this->t1_timer_id) {
             TimerManager::get_instance()->cancel_timer(this->t1_timer_id);
-            this->t1_active = false;
+            this->t1_timer_id = 0;
         }
         // clear T1 flag in IFR
         this->_via_ifr &= ~VIA_IF_T1;
@@ -242,19 +240,19 @@ void ViaCuda::write(int reg, uint8_t value) {
         this->t1_timer_id = TimerManager::get_instance()->add_oneshot_timer(
             static_cast<uint64_t>(this->via_clk_dur * (this->t1_counter + 3) + 0.5f),
             [this]() {
+                this->t1_timer_id = 0;
                 this->assert_t1_int();
             }
         );
-        this->t1_active = true;
         break;
     case VIA_T2CH:
         if (this->via_regs[VIA_ACR] & 0x20) {
             ABORT_F("VIA T2 pulse count mode not supported!");
         }
         // cancel active T2 timer task
-        if (this->t2_active) {
+        if (this->t2_timer_id) {
             TimerManager::get_instance()->cancel_timer(this->t2_timer_id);
-            this->t2_active = false;
+            this->t2_timer_id = 0;
         }
         // clear T2 flag in IFR
         this->_via_ifr &= ~VIA_IF_T2;
@@ -268,10 +266,10 @@ void ViaCuda::write(int reg, uint8_t value) {
         this->t2_timer_id = TimerManager::get_instance()->add_oneshot_timer(
             static_cast<uint64_t>(this->via_clk_dur * (this->t2_counter + 3) + 0.5f),
             [this]() {
+                this->t2_timer_id = 0;
                 this->assert_t2_int();
             }
         );
-        this->t2_active = true;
         break;
     case VIA_SR:
         this->_via_ifr &= ~VIA_IF_SR;
@@ -310,20 +308,17 @@ void ViaCuda::update_irq()
 }
 
 void ViaCuda::assert_sr_int() {
-    this->sr_timer_on = false;
     this->_via_ifr |= VIA_IF_SR;
     update_irq();
 }
 
 void ViaCuda::assert_t1_int() {
     this->_via_ifr |= VIA_IF_T1;
-    this->t1_active = false;
     update_irq();
 }
 
 void ViaCuda::assert_t2_int() {
     this->_via_ifr |= VIA_IF_T2;
-    this->t2_active = false;
     update_irq();
 }
 
@@ -356,14 +351,17 @@ void ViaCuda::assert_ctrl_line(ViaLine line)
 }
 
 void ViaCuda::schedule_sr_int(uint64_t timeout_ns) {
-    if (this->sr_timer_on) {
+    if (this->sr_timer_id) {
         TimerManager::get_instance()->cancel_timer(this->sr_timer_id);
-        this->sr_timer_on = false;
+        this->sr_timer_id = 0;
     }
     this->sr_timer_id = TimerManager::get_instance()->add_oneshot_timer(
         timeout_ns,
-        [this]() { this->assert_sr_int(); });
-    this->sr_timer_on = true;
+        [this]() {
+            this->sr_timer_id = 0;
+            this->assert_sr_int();
+        }
+    );
 }
 
 void ViaCuda::write(uint8_t new_state) {

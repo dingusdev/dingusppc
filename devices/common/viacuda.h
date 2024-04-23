@@ -182,16 +182,13 @@ private:
 
     // VIA internal state
     uint32_t sr_timer_id = 0;
-    bool     sr_timer_on = false;
 
     // timer 1 state
-    bool     t1_active;
     uint16_t t1_counter;
     uint32_t t1_timer_id = 0;
     uint64_t t1_start_time = 0;
 
     // timer 2 state
-    bool     t2_active;
     uint16_t t2_counter;
     uint32_t t2_timer_id = 0;
     uint64_t t2_start_time = 0;
