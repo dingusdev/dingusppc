@@ -82,6 +82,9 @@ AddressMapEntry last_write_area;
 AddressMapEntry last_exec_area;
 AddressMapEntry last_ptab_area;
 
+/** Dummy pages for catching writes to physical read-only pages */
+static std::array<uint64_t, 8192 / sizeof(uint64_t)> dummy_page;
+
 /** 601-style block address translation. */
 static BATResult mpc601_block_address_translation(uint32_t la)
 {
@@ -358,9 +361,6 @@ uint32_t tlb_size_mask = TLB_SIZE - 1;
 // fake TLB entry for handling of unmapped memory accesses
 uint64_t    UnmappedVal = -1ULL;
 TLBEntry    UnmappedMem = {TLB_INVALID_TAG, TLBFlags::PAGE_NOPHYS, 0, 0};
-
-// Dummy page for catching writes to physical read-only pages
-static std::array<uint64_t, 4096 / sizeof(uint64_t)> dummy_page;
 
 uint8_t     CurITLBMode = {0xFF}; // current ITLB mode
 uint8_t     CurDTLBMode = {0xFF}; // current DTLB mode
