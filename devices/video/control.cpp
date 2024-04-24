@@ -591,7 +591,10 @@ void ControlVideo::enable_display()
     }
 
     this->pixel_depth = this->radacal->get_pix_width();
-    if (swatch_params[ControlRegs::HAL-1] != swatch_params[ControlRegs::PIPE_DELAY-1] + 1 || this->pixel_depth == 32) {
+    if (swatch_params[ControlRegs::HAL-1] != swatch_params[ControlRegs::PIPE_DELAY-1] + 1 ||
+        this->pixel_depth == 32 ||
+        (this->pixel_depth == 16 && this->active_width == 1280)
+    ) {
         // don't know how to calculate offset from GBASE (fb_base); it is always hard coded as + 16 in the ndrv.
         this->fb_ptr += 16; // first 16 bytes are for 4 bpp HW cursor
     }
