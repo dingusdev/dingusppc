@@ -102,6 +102,8 @@ int initialize_tnt(std::string& id)
     std::string cpu = GET_STR_PROP("cpu");
     if (cpu == "604e")
         ppc_cpu_init(memctrl_obj, PPC_VER::MPC604E, false, 12500000ULL);
+    else if (cpu == "604")
+        ppc_cpu_init(memctrl_obj, PPC_VER::MPC604, false, 12500000ULL);
     else if (cpu == "601")
         ppc_cpu_init(memctrl_obj, PPC_VER::MPC601, true, 7833600ULL);
     else if (cpu == "750") {
