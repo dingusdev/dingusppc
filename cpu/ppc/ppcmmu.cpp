@@ -313,11 +313,23 @@ MapDmaResult mmu_map_dma_mem(uint32_t addr, uint32_t size, bool allow_mmio) {
     AddressMapEntry *cur_dma_rgn;
 
     cur_dma_rgn = mem_ctrl_instance->find_range(addr);
-    if (!cur_dma_rgn || (addr + size) > cur_dma_rgn->end)
-        ABORT_F("SOS: DMA access to unmapped physical memory %08X!", addr);
+    if (!cur_dma_rgn) {
+        ABORT_F("SOS: DMA access to unmapped physical memory 0x%08X..0x%08X!",
+            addr, addr + size - 1
+        );
+    }
 
-    if ((cur_dma_rgn->type & RT_MMIO) && !allow_mmio)
-        ABORT_F("SOS: DMA access to a MMIO region is not allowed");
+    if (addr + size - 1 > cur_dma_rgn->end) {
+        ABORT_F("SOS: DMA access to unmapped physical memory 0x%08X..0x%08X because size extends outside region 0x%08X..0x%08X!",
+            addr, addr + size - 1, cur_dma_rgn->start, cur_dma_rgn->end
+        );
+    }
+
+    if ((cur_dma_rgn->type & RT_MMIO) && !allow_mmio) {
+        ABORT_F("SOS: DMA access to a MMIO region 0x%08X..0x%08X (%s) for physical memory 0x%08X..0x%08X is not allowed.",
+            cur_dma_rgn->start, cur_dma_rgn->end, cur_dma_rgn->devobj->get_name().c_str(), addr, addr + size - 1
+        );
+    }
 
     if (cur_dma_rgn->type & (RT_ROM | RT_RAM)) {
         host_va  = cur_dma_rgn->mem_ptr + (addr - cur_dma_rgn->start);
