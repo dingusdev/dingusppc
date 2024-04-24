@@ -113,7 +113,7 @@ int AthensClocks::get_dot_freq()
         22, 27, 28, 31, 35, 37, 38, 42, 49, 55, 56, 78,  125
     };
 
-    if (this->regs[AthensRegs::P2_MUX2] & 0xC0) {
+    if (this->regs[AthensRegs::P2_MUX2] & 0x80) {
         LOG_F(INFO, "%s: dot clock disabled", this->name.c_str());
         return 0;
     }
