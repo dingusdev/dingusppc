@@ -724,7 +724,7 @@ void ATIRage::crtc_update() {
 
     uint32_t new_vert_blank = new_vtotal - new_height;
     if (new_vert_blank != this->vert_blank) {
-        this->vert_blank = vert_blank;
+        this->vert_blank = new_vert_blank;
         need_recalc = true;
     }
 
