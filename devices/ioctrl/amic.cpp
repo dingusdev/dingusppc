@@ -132,7 +132,15 @@ uint32_t AMIC::read(uint32_t rgn_start, uint32_t offset, int size)
     case 1:
         return this->viacuda->read(offset >> 9);
     case 4: // SCC registers
-        return this->escc->read(compat_to_macrisc[(offset >> 1) & 0xF]);
+        if ((offset & 0xF) < 0x0C)
+            return this->escc->read(compat_to_macrisc[(offset >> 1) & 0xF]);
+        else
+            LOG_F(ERROR, "AMIC SCC read  @%x.%c", offset, SIZE_ARG(size));
+        return 0;
+    case 0x8:
+    case 0x9:
+        LOG_F(WARNING, "AMIC Ethernet ID Rom read  @%x.%c", offset, SIZE_ARG(size));
+        return 0;
     case 0xA: // MACE registers
         return this->mace->read((offset >> 4) & 0x1F);
     case 0x10: // SCSI registers
@@ -227,8 +235,12 @@ void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
     case 1:
         this->viacuda->write(offset >> 9, value);
         return;
-    case 4:
-        this->escc->write(compat_to_macrisc[(offset >> 1) & 0xF], value);
+    case 4: // SCC registers
+        if ((offset & 0xF) < 0x0C)
+            this->escc->write(compat_to_macrisc[(offset >> 1) & 0xF], value);
+        else
+            LOG_F(ERROR, "AMIC SCC write @%x.%c = %0*x",
+                offset, SIZE_ARG(size), size * 2, value);
         return;
     case 0xA: // MACE registers
         this->mace->write((offset >> 4) & 0x1F, value);

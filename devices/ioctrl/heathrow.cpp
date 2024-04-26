@@ -184,8 +184,14 @@ uint32_t HeathrowIC::read(uint32_t rgn_start, uint32_t offset, int size) {
         res = BYTESWAP_SIZED(this->bmac->read(offset & 0xFFFU), size);
         break;
     case 0x12: // ESCC compatible addressing
-        if ((offset & 0xFF) < 16) {
-            return this->escc->read(compat_to_macrisc[(offset >> 1) & 0xF]);
+        if ((offset & 0xFF) < 0x0C) {
+            res = this->escc->read(compat_to_macrisc[(offset >> 1) & 0xF]);
+            break;
+        }
+        if ((offset & 0xFF) < 0x60) {
+            res = 0;
+            LOG_F(ERROR, "%s: ESCC compatible read  @%x.%c", this->name.c_str(), offset, SIZE_ARG(size));
+            break;
         }
         // fallthrough
     case 0x13: // ESCC MacRISC addressing
@@ -235,8 +241,13 @@ void HeathrowIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int 
         this->bmac->write(offset & 0xFFFU, BYTESWAP_SIZED(value, size));
         break;
     case 0x12: // ESCC compatible addressing
-        if ((offset & 0xFF) < 16) {
+        if ((offset & 0xFF) < 0x0C) {
             this->escc->write(compat_to_macrisc[(offset >> 1) & 0xF], value);
+            break;
+        }
+        if ((offset & 0xFF) < 0x60) {
+            LOG_F(ERROR, "%s: SCC write @%x.%c = %0*x", this->name.c_str(),
+                offset, SIZE_ARG(size), size * 2, value);
             break;
         }
         // fallthrough
