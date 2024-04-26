@@ -104,6 +104,8 @@ public:
     void write_reg(int reg_num, uint8_t value);
     void send_byte(uint8_t value);
     uint8_t receive_byte();
+    uint8_t get_enh_reg();
+    void set_enh_reg(uint8_t value);
 
     void set_dma_channel(int dir_index, DmaBidirChannel *dma_ch) {
         this->dma_ch[dir_index] = dma_ch;
@@ -163,6 +165,7 @@ private:
     uint8_t         dpll_clock_src;
     uint8_t         brg_active;
     uint8_t         brg_clock_src;
+    uint8_t         enh_reg = 0;
 
     std::unique_ptr<CharIoBackEnd>  chario;
 };

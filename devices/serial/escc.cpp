@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -101,12 +101,10 @@ uint8_t EsccController::read(uint8_t reg_offset)
         value = this->ch_a->receive_byte();
         break;
     case EsccReg::Enh_Reg_B:
-        LOG_F(WARNING, "ESCC_B: reading from unimplemented register 0x%x", reg_offset);
-        value = 0;
+        value = this->ch_b->get_enh_reg();
         break;
     case EsccReg::Enh_Reg_A:
-        LOG_F(WARNING, "ESCC_A: reading from unimplemented register 0x%x", reg_offset);
-        value = 0;
+        value = this->ch_a->get_enh_reg();
         break;
     default:
         LOG_F(WARNING, "ESCC: reading from unimplemented register 0x%x", reg_offset);
@@ -130,6 +128,12 @@ void EsccController::write(uint8_t reg_offset, uint8_t value)
         break;
     case EsccReg::Port_A_Data:
         this->ch_a->send_byte(value);
+        break;
+    case EsccReg::Enh_Reg_B:
+        this->ch_b->set_enh_reg(value);
+        break;
+    case EsccReg::Enh_Reg_A:
+        this->ch_a->set_enh_reg(value);
         break;
     default:
         LOG_F(9, "ESCC: writing 0x%X to unimplemented register 0x%x", value, reg_offset);
@@ -334,6 +338,26 @@ uint8_t EsccChannel::receive_byte()
     }
     this->read_regs[0] &= ~1;
     return c;
+}
+
+uint8_t EsccChannel::get_enh_reg()
+{
+    return this->enh_reg;
+}
+
+void EsccChannel::set_enh_reg(uint8_t value)
+{
+    uint8_t changed_bits = value ^ this->enh_reg;
+    if (changed_bits & 0x10) {
+        if (value & 0x10)
+            LOG_F(ERROR, "%s: CTS connected to GPIO; DCD connected to GND", this->name.c_str());
+        else
+            LOG_F(INFO, "%s: CTS connected to TRXC_In_l; DCD connected to GPIO", this->name.c_str());
+        this->enh_reg = value & 0x10;
+    } else if (changed_bits & ~0x10) {
+        if (value & ~0x10)
+            LOG_F(ERROR, "%s: Ignoring attempt to set Enh_Reg bits 0x%02x", this->name.c_str(), value & ~0x10);
+    }
 }
 
 void EsccChannel::dma_start_tx()
