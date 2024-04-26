@@ -64,29 +64,6 @@ enum LocalTalkReg : uint8_t {
     Detect_AB   = 0xB,
 };
 
-enum WR0Cmd : uint8_t {
-    Point_High = 1,
-};
-
-/** ESCC reset commands. */
-enum {
-    RESET_ESCC = 0xC0,
-    RESET_CH_A = 0x80,
-    RESET_CH_B = 0x40
-};
-
-/** DPLL commands in WR14. */
-enum {
-    DPLL_NULL_CMD           = 0,
-    DPLL_ENTER_SRC_MODE     = 1,
-    DPLL_RST_MISSING_CLK    = 2,
-    DPLL_DISABLE            = 3,
-    DPLL_SET_SRC_BGR        = 4,
-    DPLL_SET_SRC_RTXC       = 5,
-    DPLL_SET_FM_MODE        = 6,
-    DPLL_SET_NRZI_MODE      = 7
-};
-
 enum DpllMode : uint8_t {
     NRZI = 0,
     FM   = 1
@@ -161,7 +138,7 @@ private:
     uint8_t         write_regs[16];
     uint8_t         wr7_enh;
     uint8_t         dpll_active;
-    uint8_t         dpll_mode;
+    DpllMode        dpll_mode;
     uint8_t         dpll_clock_src;
     uint8_t         brg_active;
     uint8_t         brg_clock_src;
