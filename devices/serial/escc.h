@@ -171,6 +171,7 @@ public:
 private:
     void reset();
     void write_internal(EsccChannel* ch, uint8_t value);
+    uint8_t read_internal(EsccChannel* ch);
 
     std::unique_ptr<EsccChannel>    ch_a;
     std::unique_ptr<EsccChannel>    ch_b;

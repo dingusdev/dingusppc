@@ -80,20 +80,10 @@ uint8_t EsccController::read(uint8_t reg_offset)
 
     switch(reg_offset) {
     case EsccReg::Port_B_Cmd:
-        if (this->reg_ptr == RR2) {
-            // TODO: implement interrupt vector modifications
-            value = this->int_vec;
-        } else {
-            value = this->ch_b->read_reg(this->reg_ptr);
-        }
-        this->reg_ptr = RR0; // or WR0
+        value = this->read_internal(this->ch_b.get());
         break;
     case EsccReg::Port_A_Cmd:
-        if (this->reg_ptr == RR2) {
-            value = this->int_vec;
-        } else {
-            value = this->ch_a->read_reg(this->reg_ptr);
-        }
+        value = this->read_internal(this->ch_a.get());
         break;
     case EsccReg::Port_B_Data:
         value = this->ch_b->receive_byte();
@@ -139,6 +129,21 @@ void EsccController::write(uint8_t reg_offset, uint8_t value)
     default:
         LOG_F(9, "ESCC: writing 0x%X to unimplemented register 0x%x", value, reg_offset);
     }
+}
+
+uint8_t EsccController::read_internal(EsccChannel *ch)
+{
+    uint8_t value;
+    switch (this->reg_ptr) {
+    case RR2:
+        // TODO: implement interrupt vector modifications
+        value = this->int_vec;
+        break;
+    default:
+        value = ch->read_reg(this->reg_ptr);
+    }
+    this->reg_ptr = RR0; // or WR0
+    return value;
 }
 
 void EsccController::write_internal(EsccChannel *ch, uint8_t value)
