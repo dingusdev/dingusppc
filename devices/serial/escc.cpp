@@ -226,7 +226,7 @@ void EsccChannel::reset(bool hw_reset)
 
     this->read_regs[RR0] &= 0x38;
     this->read_regs[RR0] |= 0x44;
-    this->read_regs[RR1]  = 0x06;
+    this->read_regs[RR1]  = 0x06 | RR1_ALL_SENT; // HACK: also set ALL_SENT flag.
     this->read_regs[RR3]  = 0x00;
     this->read_regs[RR10] = 0x00;
 
