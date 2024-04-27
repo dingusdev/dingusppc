@@ -60,13 +60,15 @@ EsccController::EsccController()
     );
     this->ch_b->attach_backend(CHARIO_BE_NULL);
 
-    this->reg_ptr = WR0; // or RR0
+    this->master_int_cntrl = 0;
+    this->reset();
 }
 
 void EsccController::reset()
 {
     this->master_int_cntrl &= ~(WR9_NO_VECTOR | WR9_VECTOR_INCLUDES_STATUS);
     this->master_int_cntrl |= WR9_FORCE_HARDWARE_RESET;
+    this->reg_ptr = WR0; // or RR0
 
     this->ch_a->reset(true);
     this->ch_b->reset(true);
@@ -209,6 +211,8 @@ void EsccChannel::reset(bool hw_reset)
         We use hex values here instead of enums to more
         easily compare with the z85c30 data sheet.
     */
+
+    this->write_regs[WR0] = 0;
     this->write_regs[WR1] &= 0x24;
     this->write_regs[WR3] &= 0xFE;
     this->write_regs[WR4] |= 0x04;

@@ -134,9 +134,9 @@ private:
     DmaBidirChannel*    dma_ch[2];
 
     std::string     name;
-    uint8_t         read_regs[16];
-    uint8_t         write_regs[16];
-    uint8_t         wr7_enh;
+    uint8_t         read_regs[16] = {};
+    uint8_t         write_regs[16] = {};
+    uint8_t         wr7_enh = 0;
     uint8_t         dpll_active;
     DpllMode        dpll_mode;
     uint8_t         dpll_clock_src;
@@ -177,8 +177,8 @@ private:
 
     int reg_ptr; // register pointer for reading/writing (same for both channels)
 
-    uint8_t master_int_cntrl;
-    uint8_t int_vec;
+    uint8_t master_int_cntrl = 0;
+    uint8_t int_vec = 0;
 };
 
 #endif // ESCC_H
