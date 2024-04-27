@@ -66,7 +66,9 @@ protected:
     uint32_t read_reg(uint32_t reg_offset, uint32_t size);
     void write_reg(uint32_t reg_offset, uint32_t value, uint32_t size);
     void crtc_update();
+    uint8_t rgb514_read_reg(uint8_t reg_addr);
     void rgb514_write_reg(uint8_t reg_addr, uint8_t value);
+    uint8_t rgb514_read_ind_reg(uint8_t reg_addr);
     void rgb514_write_ind_reg(uint8_t reg_addr, uint8_t value);
     void verbose_pixel_format(int crtc_index);
     void draw_hw_cursor(uint8_t *dst_buf, int dst_pitch);
@@ -91,9 +93,15 @@ private:
     // RGB514 RAMDAC state
     uint8_t     dac_idx_lo = 0;
     uint8_t     dac_idx_hi = 0;
+
     uint8_t     clut_index = 0;
     uint8_t     comp_index = 0;
     uint8_t     clut_color[3] = {0};
+
+    uint8_t     clut_index_rd = 0;
+    uint8_t     comp_index_rd = 0;
+    uint8_t     clut_color_rd[3] = {0};
+
     uint8_t     dac_regs[256] = {0};
 
     std::unique_ptr<DisplayID>  disp_id;

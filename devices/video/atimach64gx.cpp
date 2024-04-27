@@ -380,40 +380,14 @@ uint32_t AtiMach64Gx::read_reg(uint32_t reg_offset, uint32_t size)
     uint32_t offset = reg_offset & 3;
     uint64_t result = this->regs[reg_num];
 
-#if 0
     switch (reg_num) {
-    case ATI_CLOCK_CNTL:
-        if (offset <= 2 && offset + size > 2) {
-            uint8_t pll_addr = extract_bits<uint64_t>(result, ATI_PLL_ADDR, ATI_PLL_ADDR_size);
-            insert_bits<uint64_t>(result, this->plls[pll_addr], ATI_PLL_DATA, ATI_PLL_DATA_size);
-        }
-        break;
     case ATI_DAC_REGS:
-        switch (reg_offset) {
-        case ATI_DAC_W_INDEX:
-            insert_bits<uint64_t>(result, this->dac_wr_index, 0, 8);
-            break;
-        case ATI_DAC_MASK:
-            insert_bits<uint64_t>(result, this->dac_mask, 16, 8);
-            break;
-        case ATI_DAC_R_INDEX:
-            insert_bits<uint64_t>(result, this->dac_rd_index, 24, 8);
-            break;
-        case ATI_DAC_DATA:
-            if (!this->comp_index) {
-                uint8_t alpha; // temp variable for unused alpha
-                get_palette_color(this->dac_rd_index, color_buf[0],
-                                  color_buf[1], color_buf[2], alpha);
-            }
-            insert_bits<uint64_t>(result, color_buf[this->comp_index], 8, 8);
-            if (++this->comp_index >= 3) {
-                this->dac_rd_index++; // auto-increment reading index
-                this->comp_index = 0; // reset color component index
-            }
+        if (size == 1) { // only byte accesses are allowed for DAC registers
+            int dac_reg_addr = ((this->regs[ATI_DAC_CNTL] & 1) << 2) | offset;
+            insert_bits<uint64_t>(result, rgb514_read_reg(dac_reg_addr), 0, 8);
         }
         break;
     }
-#endif
 
     if (offset || size != 4) { // slow path
         if ((offset + size) > 4) {
@@ -971,6 +945,56 @@ const char* AtiMach64Gx::rgb514_get_reg_name(uint32_t reg_addr)
     }
 }
 
+uint8_t AtiMach64Gx::rgb514_read_reg(uint8_t reg_addr)
+{
+    uint8_t value;
+    switch (reg_addr) {
+    case Rgb514::CLUT_ADDR_WR:
+        value = this->clut_index;
+        break;
+    case Rgb514::CLUT_DATA:
+        if (!this->comp_index_rd) {
+            uint8_t alpha; // temp variable for unused alpha
+            get_palette_color(this->clut_index_rd, this->clut_color_rd[0],
+                              this->clut_color_rd[1], this->clut_color_rd[2], alpha);
+        }
+        value = this->clut_color_rd[this->comp_index_rd];
+        LOG_F(ATIMACH64, "%s.rgb514: read  CLUT_DATA [%02x].%c = %02x",
+            this->name.c_str(), this->clut_index, "rgb"[comp_index], value);
+        if (++this->comp_index_rd >= 3) {
+            this->clut_index_rd++; // auto-increment reading index
+            this->comp_index_rd = 0; // reset color component index
+        }
+        return value;
+    case Rgb514::CLUT_MASK:
+        value = 0xFF;
+        break;
+    case Rgb514::CLUT_ADDR_RD:
+        value = this->clut_index_rd;
+        break;
+    case Rgb514::INDEX_LOW:
+        value = this->dac_idx_lo;
+        break;
+    case Rgb514::INDEX_HIGH:
+        value = this->dac_idx_hi;
+        break;
+    case Rgb514::INDEX_DATA:
+        value = this->rgb514_read_ind_reg((this->dac_idx_hi << 8) + this->dac_idx_lo);
+        break;
+    default:
+        value = 0;
+        LOG_F(ERROR, "%s.rgb514: read  %s %04x.b = %02x", this->name.c_str(),
+            rgb514_get_reg_name(reg_addr), reg_addr, value
+        );
+    }
+
+    LOG_F(ATIMACH64, "%s.rgb514: read  %s %04x.b = %02x", this->name.c_str(),
+        rgb514_get_reg_name(reg_addr), reg_addr, value
+    );
+
+    return value;
+}
+
 void AtiMach64Gx::rgb514_write_reg(uint8_t reg_addr, uint8_t value)
 {
     LOG_F(ATIMACH64, "%s.rgb514: write %s %04x.b = %02x", this->name.c_str(),
@@ -982,6 +1006,8 @@ void AtiMach64Gx::rgb514_write_reg(uint8_t reg_addr, uint8_t value)
         this->comp_index = 0;
         break;
     case Rgb514::CLUT_DATA:
+        LOG_F(ATIMACH64, "%s.rgb514: write CLUT_DATA [%02x].%c = %02x",
+            this->name.c_str(), this->clut_index, "rgb"[comp_index], value);
         this->clut_color[this->comp_index++] = value;
         if (this->comp_index >= 3) {
             this->set_palette_color(this->clut_index, clut_color[0],
@@ -996,6 +1022,10 @@ void AtiMach64Gx::rgb514_write_reg(uint8_t reg_addr, uint8_t value)
             LOG_F(WARNING, "RGB514: pixel mask set to 0x%X", value);
         }
         break;
+    case Rgb514::CLUT_ADDR_RD:
+        this->clut_index_rd = value;
+        this->comp_index_rd = 0;
+        break;
     case Rgb514::INDEX_LOW:
         this->dac_idx_lo = value;
         break;
@@ -1006,7 +1036,9 @@ void AtiMach64Gx::rgb514_write_reg(uint8_t reg_addr, uint8_t value)
         this->rgb514_write_ind_reg((this->dac_idx_hi << 8) + this->dac_idx_lo, value);
         break;
     default:
-        ABORT_F("RGB514: access to unimplemented register at 0x%X", reg_addr);
+        LOG_F(ERROR, "%s.rgb514: write %s %04x.b = %02x", this->name.c_str(),
+            rgb514_get_reg_name(reg_addr), reg_addr, value
+        );
     }
 }
 
@@ -1018,6 +1050,15 @@ const char* AtiMach64Gx::rgb514_get_ind_reg_name(uint32_t reg_addr)
     } else {
         return "unknown indirect rgb514 register";
     }
+}
+
+uint8_t AtiMach64Gx::rgb514_read_ind_reg(uint8_t reg_addr)
+{
+    uint8_t value = this->dac_regs[reg_addr];
+    LOG_F(ATIMACH64, "%s.rgb514: read  %s %04x.b = %02x", this->name.c_str(),
+        rgb514_get_ind_reg_name(reg_addr), reg_addr, value
+    );
+    return value;
 }
 
 void AtiMach64Gx::rgb514_write_ind_reg(uint8_t reg_addr, uint8_t value)
