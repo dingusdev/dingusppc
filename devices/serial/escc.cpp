@@ -283,6 +283,9 @@ void EsccChannel::write_reg(int reg_num, uint8_t value)
             return;
         }
         break;
+    case WR8:
+        this->send_byte(value);
+        return;
     case WR14:
         switch (value & WR14_DPLL_COMMAND_BITS) {
         case WR14_DPLL_NULL_COMMAND:
@@ -330,6 +333,9 @@ uint8_t EsccChannel::read_reg(int reg_num)
         if (this->chario->rcv_char_available()) {
             this->read_regs[RR0] |= RR0_RX_CHARACTER_AVAILABLE;
         }
+        break;
+    case RR8:
+        return this->receive_byte();
     }
     return this->read_regs[reg_num];
 }
@@ -338,6 +344,7 @@ void EsccChannel::send_byte(uint8_t value)
 {
     // TODO: put one byte into the Data FIFO
 
+    this->write_regs[WR8] = value;
     this->chario->xmit_char(value);
 }
 
@@ -353,6 +360,7 @@ uint8_t EsccChannel::receive_byte()
         c = 0;
     }
     this->read_regs[RR0] &= ~RR0_RX_CHARACTER_AVAILABLE;
+    this->read_regs[RR8] = c;
     return c;
 }
 
