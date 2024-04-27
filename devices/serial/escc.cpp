@@ -66,7 +66,7 @@ EsccController::EsccController()
 
 void EsccController::reset()
 {
-    this->master_int_cntrl &= ~(WR9_NO_VECTOR | WR9_VECTOR_INCLUDES_STATUS);
+    this->master_int_cntrl &= (WR9_NO_VECTOR | WR9_VECTOR_INCLUDES_STATUS);
     this->master_int_cntrl |= WR9_FORCE_HARDWARE_RESET;
     this->reg_ptr = WR0; // or RR0
 
@@ -240,10 +240,13 @@ void EsccChannel::reset(bool hw_reset)
     this->brg_clock_src = 0;
 
     if (hw_reset) {
+        this->write_regs[WR9] &= 0x03; // clear all except (WR9_NO_VECTOR | WR9_VECTOR_INCLUDES_STATUS)
+        this->write_regs[WR9] |= 0xC0; // set WR9_FORCE_HARDWARE_RESET
         this->write_regs[WR10] = 0;
         this->write_regs[WR11] = 8;
         this->write_regs[WR14] &= 0xC0;
     } else {
+        this->write_regs[WR9] &= ~0x20; // clear WR9_INTERRUPT_MASKING_WITHOUT_INTACK
         this->write_regs[WR10] &= 0x60;
         this->write_regs[WR14] &= 0xC3;
     }
