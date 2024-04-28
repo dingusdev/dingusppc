@@ -57,10 +57,14 @@ enum Swim3Reg : uint8_t {
 
 /** Mode register bits. */
 enum {
-    SWIM3_INT_ENA = 0x01,
-    SWIM3_GO      = 0x08,
-    SWIM3_WR_MODE = 0x10,
-    SWIM3_GO_STEP = 0x80,
+    SWIM3_INT_ENA     = 0x01,
+    SWIM3_DRIVE_1     = 0x02,
+    SWIM3_DRIVE_2     = 0x04,
+    SWIM3_GO          = 0x08,
+    SWIM3_WR_MODE     = 0x10,
+    SWIM3_HEAD_SELECT = 0x20,
+    SWIM3_FORMAT_MODE = 0x40,
+    SWIM3_GO_STEP     = 0x80,
 };
 
 /** Interrupt flags. */
@@ -69,6 +73,7 @@ enum {
     INT_STEP_DONE  = 0x02,
     INT_ID_READ    = 0x04,
     INT_SECT_DONE  = 0x08,
+    INT_SENSE      = 0x10, // unused by SWIM3 driver
 };
 
 // SWIM3 internal states.

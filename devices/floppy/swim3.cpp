@@ -92,8 +92,8 @@ uint8_t Swim3Ctrl::read(uint8_t reg_offset)
     case Swim3Reg::Setup:
         return this->setup_reg;
     case Swim3Reg::Handshake_Mode1:
-        if (this->mode_reg & 2) { // internal drive?
-            status_addr = ((this->mode_reg & 0x20) >> 2) | (this->phase_lines & 7);
+        if (this->mode_reg & SWIM3_DRIVE_1) { // internal drive?
+            status_addr = ((this->mode_reg & SWIM3_HEAD_SELECT) >> 2) | (this->phase_lines & 7);
             rddata_val  = this->int_drive->status(status_addr) & 1;
 
             // transfer rddata_val to both bit 2 (RDDATA) and bit 3 (SENSE)
@@ -140,14 +140,14 @@ void Swim3Ctrl::write(uint8_t reg_offset, uint8_t value)
     case Swim3Reg::Phase:
         this->phase_lines = value & 0xF;
         if (this->phase_lines & 8) { // CA3 aka LSTRB high -> sending a command to the drive
-            if (this->mode_reg & 2) { // if internal drive is selected
+            if (this->mode_reg & SWIM3_DRIVE_1) { // if internal drive is selected
                 this->int_drive->command(
-                    ((this->mode_reg & 0x20) >> 3) | (this->phase_lines & 3),
+                    ((this->mode_reg & SWIM3_HEAD_SELECT) >> 3) | (this->phase_lines & 3),
                     (value >> 2) & 1
                 );
             }
-        } else if (this->phase_lines == 4 && (this->mode_reg & 2)) {
-            status_addr = ((this->mode_reg & 0x20) >> 2) | (this->phase_lines & 7);
+        } else if (this->phase_lines == 4 && (this->mode_reg & SWIM3_DRIVE_1)) {
+            status_addr = ((this->mode_reg & SWIM3_HEAD_SELECT) >> 2) | (this->phase_lines & 7);
             this->rd_line = this->int_drive->status(status_addr) & 1;
         }
         break;
@@ -239,7 +239,7 @@ void Swim3Ctrl::start_stepping()
         return;
     }
 
-    if ((((this->mode_reg & 0x20) >> 3) | (this->phase_lines & 3))
+    if ((((this->mode_reg & SWIM3_HEAD_SELECT) >> 3) | (this->phase_lines & 3))
         != MacSuperdrive::CommandAddr::Do_Step) {
         LOG_F(WARNING, "SWIM3: invalid command address on the phase lines!");
         return;
