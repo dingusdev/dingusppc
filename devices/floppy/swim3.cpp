@@ -57,7 +57,7 @@ Swim3Ctrl::Swim3Ctrl()
     // Attach virtual Superdrive to the internal drive connector
     // TODO: make SWIM3/drive wiring user selectable
     this->int_drive = std::unique_ptr<MacSuperdrive::MacSuperDrive>
-        (new MacSuperdrive::MacSuperDrive());
+        (new MacSuperdrive::MacSuperDrive("Superdrive1"));
 }
 
 int Swim3Ctrl::device_postinit()

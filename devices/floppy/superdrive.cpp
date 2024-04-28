@@ -30,9 +30,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace MacSuperdrive;
 
-MacSuperDrive::MacSuperDrive()
+MacSuperDrive::MacSuperDrive(std::string name)
 {
-    this->name = "Superdrive";
+    this->set_name(name);
     this->supported_types = HWCompType::FLOPPY_DRV;
 
     this->eject_latch = 0; // eject latch is off
@@ -57,7 +57,7 @@ void MacSuperDrive::command(uint8_t addr, uint8_t value)
 {
     uint8_t new_motor_stat;
 
-    LOG_F(9, "Superdrive: command addr=0x%X, value=%d", addr, value);
+    LOG_F(9, "%s: command addr=0x%X, value=%d", this->get_name().c_str(), addr, value);
 
     switch(addr) {
     case CommandAddr::Step_Direction:
@@ -81,17 +81,17 @@ void MacSuperDrive::command(uint8_t addr, uint8_t value)
                 this->sector_start_time = 0;
                 this->init_track_search(-1);
                 this->is_ready = 1;
-                LOG_F(INFO, "Superdrive: turn spindle motor on");
+                LOG_F(INFO, "%s: turn spindle motor on", this->get_name().c_str());
             } else {
                 this->motor_on_time = 0;
                 this->is_ready = 0;
-                LOG_F(INFO, "Superdrive: turn spindle motor off");
+                LOG_F(INFO, "%s: turn spindle motor off", this->get_name().c_str());
             }
         }
         break;
     case CommandAddr::Eject_Disk:
         if (value) {
-            LOG_F(INFO, "Superdrive: disk ejected");
+            LOG_F(INFO, "%s: disk ejected", this->get_name().c_str());
             this->eject_latch = 1;
             this->reset_params();
         }
@@ -107,13 +107,13 @@ void MacSuperDrive::command(uint8_t addr, uint8_t value)
         }
         break;
     default:
-        LOG_F(WARNING, "Superdrive: unimplemented command, addr=0x%X", addr);
+        LOG_F(WARNING, "%s: unimplemented command, addr=0x%X", this->get_name().c_str(), addr);
     }
 }
 
 uint8_t MacSuperDrive::status(uint8_t addr)
 {
-    LOG_F(9, "Superdrive: status request, addr = 0x%X", addr);
+    LOG_F(9, "%s: status request, addr = 0x%X", this->get_name().c_str(), addr);
 
     switch(addr) {
     case StatusAddr::Step_Status:
@@ -145,7 +145,7 @@ uint8_t MacSuperDrive::status(uint8_t addr)
     case StatusAddr::Media_Kind:
         return this->media_kind ^ 1; // reverse logic!
     default:
-        LOG_F(WARNING, "Superdrive: unimplemented status request, addr=0x%X", addr);
+        LOG_F(WARNING, "%s: unimplemented status request, addr=0x%X", this->get_name().c_str(), addr);
         return 0;
     }
 }
@@ -153,7 +153,7 @@ uint8_t MacSuperDrive::status(uint8_t addr)
 int MacSuperDrive::insert_disk(std::string& img_path, int write_flag = 0)
 {
     if (this->has_disk) {
-        LOG_F(ERROR, "Superdrive: drive is not empty!");
+        LOG_F(ERROR, "%s: drive is not empty!", this->get_name().c_str());
         return -1;
     }
 
@@ -250,7 +250,7 @@ void MacSuperDrive::init_track_search(int pos)
         // pick random sector number
         uint64_t seed = TimerManager::get_instance()->current_time_ns() >> 8;
         this->cur_sector = seed % this->sectors_per_track[this->cur_track];
-        LOG_F(9, "Superdrive: current sector number set to %d", this->cur_sector);
+        LOG_F(9, "%s: current sector number set to %d", this->get_name().c_str(), this->cur_sector);
     } else {
         this->cur_sector = pos;
     }
