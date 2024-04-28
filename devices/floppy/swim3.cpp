@@ -410,7 +410,7 @@ static const PropMap Swim3_Properties = {
     {"fdd_img",
         new StrProperty("")},
     {"fdd_wr_prot",
-        new BinProperty(0)},
+        new BinProperty(1)},
     {"fdd_fmt",
         new StrProperty("", FloppyFormats)},
 };
