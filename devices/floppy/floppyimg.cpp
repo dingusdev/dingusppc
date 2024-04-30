@@ -285,7 +285,7 @@ FloppyImgConverter* open_floppy_image(std::string& img_path)
 
     if (!img_file.open(img_path)) {
         img_file.close();
-        LOG_F(ERROR, "Could not open specified floppy image (%s)!", img_path.c_str());
+        LOG_F(ERROR, "Could not open specified floppy image (\"%s\")!", img_path.c_str());
         return nullptr;
     }
 
@@ -295,19 +295,19 @@ FloppyImgConverter* open_floppy_image(std::string& img_path)
 
     switch(itype) {
     case FlopImgType::RAW:
-        LOG_F(INFO, "Raw floppy image");
+        LOG_F(INFO, "Raw floppy image (\"%s\")", img_path.c_str());
         fconv = new RawFloppyImg(img_path);
         break;
     case FlopImgType::DC42:
-        LOG_F(INFO, "Disk Copy 4.2 image");
+        LOG_F(INFO, "Disk Copy 4.2 image (\"%s\")", img_path.c_str());
         fconv = new DiskCopy42Img(img_path);
         break;
     case FlopImgType::WOZ1:
     case FlopImgType::WOZ2:
-        LOG_F(INFO, "WOZ v%s image", (itype == FlopImgType::WOZ2) ? "2" : "1");
+        LOG_F(INFO, "WOZ v%s image (\"%s\")", (itype == FlopImgType::WOZ2) ? "2" : "1", img_path.c_str());
         break;
     default:
-        LOG_F(WARNING, "Unknown image format - assume RAW");
+        LOG_F(WARNING, "Unknown image format - assume RAW (\"%s\")", img_path.c_str());
         fconv = new RawFloppyImg(img_path);
     }
 
