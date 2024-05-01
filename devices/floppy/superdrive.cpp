@@ -55,8 +55,6 @@ void MacSuperDrive::reset_params()
 
 void MacSuperDrive::command(uint8_t addr, uint8_t value)
 {
-    uint8_t new_motor_stat;
-
     LOG_F(9, "%s: command addr=0x%X, value=%d", this->get_name().c_str(), addr, value);
 
     switch(addr) {
@@ -72,22 +70,7 @@ void MacSuperDrive::command(uint8_t addr, uint8_t value)
         }
         break;
     case CommandAddr::Motor_On_Off:
-        new_motor_stat = value ^ 1;
-        if (this->motor_stat != new_motor_stat) {
-            this->motor_stat = new_motor_stat;
-            if (new_motor_stat) {
-                this->motor_on_time = TimerManager::get_instance()->current_time_ns();
-                this->track_start_time = 0;
-                this->sector_start_time = 0;
-                this->init_track_search(-1);
-                this->is_ready = 1;
-                LOG_F(INFO, "%s: turn spindle motor on", this->get_name().c_str());
-            } else {
-                this->motor_on_time = 0;
-                this->is_ready = 0;
-                LOG_F(INFO, "%s: turn spindle motor off", this->get_name().c_str());
-            }
-        }
+        this->set_motor_stat(value ^ 1);
         break;
     case CommandAddr::Eject_Disk:
         if (value) {
@@ -109,6 +92,25 @@ void MacSuperDrive::command(uint8_t addr, uint8_t value)
         break;
     default:
         LOG_F(WARNING, "%s: unimplemented command, addr=0x%X", this->get_name().c_str(), addr);
+    }
+}
+
+void MacSuperDrive::set_motor_stat(uint8_t new_motor_stat)
+{
+    if (this->motor_stat != new_motor_stat) {
+        this->motor_stat = new_motor_stat;
+        if (new_motor_stat) {
+            this->motor_on_time = TimerManager::get_instance()->current_time_ns();
+            this->track_start_time = 0;
+            this->sector_start_time = 0;
+            this->init_track_search(-1);
+            this->is_ready = 1;
+            LOG_F(INFO, "%s: turn spindle motor on", this->get_name().c_str());
+        } else {
+            this->motor_on_time = 0;
+            this->is_ready = 0;
+            LOG_F(INFO, "%s: turn spindle motor off", this->get_name().c_str());
+        }
     }
 }
 
