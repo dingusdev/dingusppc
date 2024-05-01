@@ -117,40 +117,56 @@ void MacSuperDrive::set_motor_stat(uint8_t new_motor_stat)
 uint8_t MacSuperDrive::status(uint8_t addr)
 {
     LOG_F(9, "%s: status request, addr = 0x%X", this->get_name().c_str(), addr);
+    uint8_t value;
 
     switch(addr) {
     case StatusAddr::Step_Status:
-        return 1; // not sure what should be returned here
+        value = 1; // not sure what should be returned here
+        break;
     case StatusAddr::Motor_Status:
-        return this->motor_stat ^ 1; // reverse logic
+        value = this->motor_stat ^ 1; // reverse logic
+        break;
     case StatusAddr::Eject_Latch:
-        return this->eject_latch;
+        value = this->eject_latch;
+        break;
     case StatusAddr::Select_Head_0:
-        return this->cur_head = 0;
+        value = this->cur_head = 0;
+        break;
     case StatusAddr::MFM_Support:
-        return 1; // Superdrive does support MFM encoding scheme
+        value = 1; // Superdrive does support MFM encoding scheme
+        break;
     case StatusAddr::Double_Sided:
-        return 1; // yes, Superdrive is double sided
+        value = 1; // yes, Superdrive is double sided
+        break;
     case StatusAddr::Drive_Exists:
-        return 0; // tell the world I'm here
+        value = 0; // tell the world I'm here
+        break;
     case StatusAddr::Disk_In_Drive:
-        return this->has_disk ^ 1;   // reverse logic (active low)!
+        value = this->has_disk ^ 1;   // reverse logic (active low)!
+        break;
     case StatusAddr::Write_Protect:
-        return this->wr_protect ^ 1; // reverse logic
+        value = this->wr_protect ^ 1; // reverse logic
+        break;
     case StatusAddr::Track_Zero:
-        return this->track_zero ^ 1; // reverse logic
+        value = this->track_zero ^ 1; // reverse logic
+        break;
     case StatusAddr::Select_Head_1:
-        return this->cur_head = 1;
+        value = this->cur_head = 1;
+        break;
     case StatusAddr::Drive_Mode:
-        return this->drive_mode;
+        value = this->drive_mode;
+        break;
     case StatusAddr::Drive_Ready:
-        return this->is_ready ^ 1;   // reverse logic
+        value = this->is_ready ^ 1;   // reverse logic
+        break;
     case StatusAddr::Media_Kind:
-        return this->media_kind ^ 1; // reverse logic!
+        value = this->media_kind ^ 1; // reverse logic!
+        break;
     default:
         LOG_F(WARNING, "%s: unimplemented status request, addr=0x%X", this->get_name().c_str(), addr);
-        return 0;
+        value = 0;
     }
+    return value;
 }
 
 int MacSuperDrive::insert_disk(std::string& img_path, int write_flag = 0)
