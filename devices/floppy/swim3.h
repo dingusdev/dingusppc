@@ -103,6 +103,7 @@ public:
     };
 
 protected:
+    void    reset();
     void    update_irq();
     void    start_stepping();
     void    do_step();
@@ -118,7 +119,7 @@ private:
 
     DmaBidirChannel*    dma_ch;
 
-    uint8_t timer_val = 0; // internal timer that decrements at a 1 us rate
+    uint8_t timer_val; // internal timer that decrements at a 1 us rate
     uint8_t setup_reg;
     uint8_t mode_reg;
     uint8_t error;

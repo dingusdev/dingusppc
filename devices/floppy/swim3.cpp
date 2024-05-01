@@ -42,6 +42,16 @@ Swim3Ctrl::Swim3Ctrl()
     this->name = "SWIM3";
     this->supported_types = HWCompType::FLOPPY_CTRL;
 
+    this->reset();
+
+    // Attach virtual Superdrive to the internal drive connector
+    // TODO: make SWIM3/drive wiring user selectable
+    this->int_drive = std::unique_ptr<MacSuperdrive::MacSuperDrive>
+        (new MacSuperdrive::MacSuperDrive("Superdrive1"));
+}
+
+void Swim3Ctrl::reset()
+{
     this->setup_reg  = 0;
     this->mode_reg   = 0;
     this->int_reg    = 0;
@@ -54,10 +64,24 @@ Swim3Ctrl::Swim3Ctrl()
 
     this->cur_state = SWIM3_IDLE;
 
-    // Attach virtual Superdrive to the internal drive connector
-    // TODO: make SWIM3/drive wiring user selectable
-    this->int_drive = std::unique_ptr<MacSuperdrive::MacSuperDrive>
-        (new MacSuperdrive::MacSuperDrive("Superdrive1"));
+    this->cur_track     = 0xFF;
+    this->cur_sector    = 0x7F;
+
+    this->timer_val     = 0;
+    this->phase_lines   = 0;
+
+    if (this->one_us_timer_id) {
+        TimerManager::get_instance()->cancel_timer(this->one_us_timer_id);
+        this->one_us_timer_id = 0;
+    }
+    if (this->step_timer_id) {
+        TimerManager::get_instance()->cancel_timer(this->step_timer_id);
+        this->step_timer_id = 0;
+    }
+    if (this->access_timer_id) {
+        TimerManager::get_instance()->cancel_timer(this->access_timer_id);
+        this->access_timer_id = 0;
+    }
 }
 
 int Swim3Ctrl::device_postinit()
