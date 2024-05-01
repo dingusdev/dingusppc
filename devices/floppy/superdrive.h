@@ -94,6 +94,9 @@ typedef struct SectorHdr {
     int     format;
 } SectorHdr;
 
+std::string get_command_name(uint8_t addr);
+std::string get_status_name(uint8_t addr);
+
 class MacSuperDrive : public HWComponent {
 public:
     MacSuperDrive(std::string name);

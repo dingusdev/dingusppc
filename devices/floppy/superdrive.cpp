@@ -28,7 +28,50 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 
+namespace loguru {
+    enum : Verbosity {
+        Verbosity_READWRITE = loguru::Verbosity_9,
+        Verbosity_SUPERDRIVE = loguru::Verbosity_9,
+    };
+}
+
 using namespace MacSuperdrive;
+
+std::string MacSuperdrive::get_command_name(uint8_t addr)
+{
+    switch (addr) {
+    #define one_command(x) case CommandAddr::x: return #x;
+    one_command(Step_Direction)
+    one_command(Do_Step)
+    one_command(Motor_On_Off)
+    one_command(Eject_Disk)
+    one_command(Reset_Eject_Latch)
+    one_command(Switch_Drive_Mode)
+    default: return "unknown";
+    }
+}
+
+std::string MacSuperdrive::get_status_name(uint8_t addr)
+{
+    switch (addr) {
+    #define one_status(x) case StatusAddr::x: return #x;
+    one_status(Step_Status)
+    one_status(Motor_Status)
+    one_status(Eject_Latch)
+    one_status(Select_Head_0)
+    one_status(MFM_Support)
+    one_status(Double_Sided)
+    one_status(Drive_Exists)
+    one_status(Disk_In_Drive)
+    one_status(Write_Protect)
+    one_status(Track_Zero)
+    one_status(Select_Head_1)
+    one_status(Drive_Mode)
+    one_status(Drive_Ready)
+    one_status(Media_Kind)
+    default: return "unknown";
+    }
+}
 
 MacSuperDrive::MacSuperDrive(std::string name)
 {
@@ -55,7 +98,8 @@ void MacSuperDrive::reset_params()
 
 void MacSuperDrive::command(uint8_t addr, uint8_t value)
 {
-    LOG_F(9, "%s: command addr=0x%X, value=%d", this->get_name().c_str(), addr, value);
+    LOG_F(SUPERDRIVE, "%s: command %-17s addr=0x%X, value=%d",
+        this->get_name().c_str(), get_command_name(addr).c_str(), addr, value);
 
     switch(addr) {
     case CommandAddr::Step_Direction:
@@ -121,7 +165,6 @@ void MacSuperDrive::set_motor_stat(uint8_t new_motor_stat)
 
 uint8_t MacSuperDrive::status(uint8_t addr)
 {
-    LOG_F(9, "%s: status request, addr = 0x%X", this->get_name().c_str(), addr);
     uint8_t value;
 
     switch(addr) {
@@ -171,6 +214,7 @@ uint8_t MacSuperDrive::status(uint8_t addr)
         LOG_F(WARNING, "%s: unimplemented status request, addr=0x%X", this->get_name().c_str(), addr);
         value = 0;
     }
+    LOG_F(SUPERDRIVE, "%s: status %-13s 0x%X = %d", this->get_name().c_str(), get_status_name(addr).c_str(), addr, value);
     return value;
 }
 
@@ -390,6 +434,8 @@ SectorHdr MacSuperDrive::current_sector_header()
 
 char* MacSuperDrive::get_sector_data_ptr(int sector_num)
 {
+    LOG_F(READWRITE, "%s: get_sector_data_ptr track:%d head:%d sector:%d",
+        this->get_name().c_str(), this->cur_track, this->cur_head, sector_num);
     return this->disk_data.get() +
         ((this->track2lblk[this->cur_track] +
          (this->cur_head * this->sectors_per_track[this->cur_track]) +
