@@ -66,6 +66,10 @@ void MacSuperDrive::command(uint8_t addr, uint8_t value)
             this->cur_track += this->step_dir;
             if (this->cur_track < 0)
                 this->cur_track = 0;
+            else if (this->cur_track >= this->num_tracks) {
+                LOG_F(ERROR, "%s: track:%d is greater than max track:%d", this->get_name().c_str(), this->cur_track, this->num_tracks - 1);
+                this->cur_track = this->num_tracks - 1;
+            }
             this->track_zero = this->cur_track == 0;
         }
         break;
