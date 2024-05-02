@@ -46,13 +46,14 @@ Swim3Ctrl::Swim3Ctrl()
 
     // Attach virtual Superdrive to the internal drive connector
     // TODO: make SWIM3/drive wiring user selectable
-    this->int_drive = std::unique_ptr<MacSuperdrive::MacSuperDrive>
+    this->drive_1 = std::unique_ptr<MacSuperdrive::MacSuperDrive>
         (new MacSuperdrive::MacSuperDrive("Superdrive1"));
 }
 
 void Swim3Ctrl::reset()
 {
     this->setup_reg  = 0;
+    this->selected_drive = nullptr;
     this->mode_reg   = 0;
     this->int_reg    = 0;
     this->int_flags  = 0;
@@ -94,7 +95,7 @@ int Swim3Ctrl::device_postinit()
     std::string fd_image_path = GET_STR_PROP("fdd_img");
     int fd_write_prot = GET_BIN_PROP("fdd_wr_prot");
     if (!fd_image_path.empty()) {
-        this->int_drive->insert_disk(fd_image_path, fd_write_prot);
+        this->drive_1->insert_disk(fd_image_path, fd_write_prot);
     }
 
     return 0;
@@ -116,13 +117,16 @@ uint8_t Swim3Ctrl::read(uint8_t reg_offset)
     case Swim3Reg::Setup:
         return this->setup_reg;
     case Swim3Reg::Handshake_Mode1:
-        if (this->mode_reg & SWIM3_DRIVE_1) { // internal drive?
+        if (this->selected_drive) {
             status_addr = ((this->mode_reg & SWIM3_HEAD_SELECT) >> 2) | (this->phase_lines & 7);
-            rddata_val  = this->int_drive->status(status_addr) & 1;
+            rddata_val  = this->selected_drive->status(status_addr) & 1;
 
             // transfer rddata_val to both bit 2 (RDDATA) and bit 3 (SENSE)
             // because those signals seem to be historically wired together
             return (rddata_val << 2) | (rddata_val << 3);
+        }
+        else {
+            LOG_F(ERROR, "SWIM3: read Handshake_Mode1; no drive selected yet");
         }
         return 0xC; // report both RdData & Sense high
     case Swim3Reg::Interrupt_Flags:
@@ -164,41 +168,31 @@ void Swim3Ctrl::write(uint8_t reg_offset, uint8_t value)
     case Swim3Reg::Phase:
         this->phase_lines = value & 0xF;
         if (this->phase_lines & 8) { // CA3 aka LSTRB high -> sending a command to the drive
-            if (this->mode_reg & SWIM3_DRIVE_1) { // if internal drive is selected
-                this->int_drive->command(
-                    ((this->mode_reg & SWIM3_HEAD_SELECT) >> 3) | (this->phase_lines & 3),
-                    (value >> 2) & 1
-                );
-            }
-        } else if (this->phase_lines == 4 && (this->mode_reg & SWIM3_DRIVE_1)) {
+            uint8_t command_addr = ((this->mode_reg & SWIM3_HEAD_SELECT) >> 3) | (this->phase_lines & 3);
+            uint8_t val = (value >> 2) & 1;
+            if (this->selected_drive) {
+                this->selected_drive->command(command_addr, val);
+            } else
+                LOG_F(ERROR, "SWIM3: command %-17s addr=0x%X, value=%d; no drive selected yet",
+                    MacSuperdrive::get_command_name(command_addr).c_str(), command_addr, val);
+        } else if (this->phase_lines == 4) {
+            // Select_Head_0 or Select_Head_1
             status_addr = ((this->mode_reg & SWIM3_HEAD_SELECT) >> 2) | (this->phase_lines & 7);
-            this->rd_line = this->int_drive->status(status_addr) & 1;
+            if (this->selected_drive)
+                this->rd_line = this->selected_drive->status(status_addr) & 1;
+            else
+                LOG_F(ERROR, "SWIM3: status %-13s 0x%X; no drive selected yet",
+                    MacSuperdrive::get_status_name(status_addr).c_str(), status_addr);
         }
         break;
     case Swim3Reg::Setup:
         this->setup_reg = value;
         break;
     case Swim3Reg::Status_Mode0:
-        // ones in value clear the corresponding bits in the mode register
-        if ((this->mode_reg & value) & (SWIM3_GO | SWIM3_GO_STEP)) {
-            if (value & SWIM3_GO_STEP) {
-                stop_stepping();
-            } else {
-                stop_disk_access();
-            }
-        }
-        this->mode_reg &= ~value;
+        this->mode_change(this->mode_reg & ~value);
         break;
     case Swim3Reg::Handshake_Mode1:
-        // ones in value set the corresponding bits in the mode register
-        if ((this->mode_reg ^ value) & (SWIM3_GO | SWIM3_GO_STEP)) {
-            if (value & SWIM3_GO_STEP) {
-                start_stepping();
-            } else {
-                start_disk_access();
-            }
-        }
-        this->mode_reg |= value;
+        this->mode_change(this->mode_reg | value);
         break;
     case Swim3Reg::Step:
         this->step_count = value;
@@ -235,7 +229,10 @@ void Swim3Ctrl::do_step()
 {
     if (this->mode_reg & SWIM3_GO_STEP && this->step_count) { // are we still stepping?
         // instruct the drive to perform single step in current direction
-        this->int_drive->command(MacSuperdrive::CommandAddr::Do_Step, 0);
+        if (this->selected_drive)
+            this->selected_drive->command(MacSuperdrive::CommandAddr::Do_Step, 0);
+        else
+            LOG_F(ERROR, "SWIM3: do_step; no drive selected yet");
         if (--this->step_count == 0) {
             if (this->step_timer_id) {
                 this->stop_stepping();
@@ -317,8 +314,13 @@ void Swim3Ctrl::start_disk_access()
 
     this->target_sect = this->first_sec;
 
+    if (!this->selected_drive) {
+        LOG_F(ERROR, "SWIM3: start_disk_access; no drive selected yet");
+        return;
+    }
+
     this->access_timer_id = TimerManager::get_instance()->add_oneshot_timer(
-        this->int_drive->sync_to_disk(),
+        this->selected_drive->sync_to_disk(),
         [this]() {
             this->cur_state = SWIM3_ADDR_MARK_SEARCH;
             this->disk_access();
@@ -331,9 +333,14 @@ void Swim3Ctrl::disk_access()
     MacSuperdrive::SectorHdr hdr;
     uint64_t delay;
 
+    if (!this->selected_drive) {
+        LOG_F(ERROR, "SWIM3: disk access; no drive selected yet");
+        return;
+    }
+
     switch(this->cur_state) {
     case SWIM3_ADDR_MARK_SEARCH:
-        hdr = this->int_drive->current_sector_header();
+        hdr = this->selected_drive->current_sector_header();
         // update the corresponding SWIM3 registers
         this->cur_track  = ((hdr.side & 1) << 7) | (hdr.track & 0x7F);
         this->cur_sector = 0x80 /* CRC/checksum valid */ | (hdr.sector & 0x7F);
@@ -344,16 +351,16 @@ void Swim3Ctrl::disk_access()
         if ((this->cur_sector & 0x7F) == this->target_sect) {
             // sector matches -> transfer its data
             this->cur_state = SWIM3_DATA_XFER;
-            delay = this->int_drive->sector_data_delay();
+            delay = this->selected_drive->sector_data_delay();
         } else {
             // move to next address mark
             this->cur_state = SWIM3_ADDR_MARK_SEARCH;
-            delay = this->int_drive->next_sector_delay();
+            delay = this->selected_drive->next_sector_delay();
         }
         break;
     case SWIM3_DATA_XFER:
         // transfer sector data over DMA
-        this->dma_ch->push_data(this->int_drive->get_sector_data_ptr(this->cur_sector & 0x7F), 512);
+        this->dma_ch->push_data(this->selected_drive->get_sector_data_ptr(this->cur_sector & 0x7F), 512);
         if (--this->xfer_cnt == 0) {
             this->stop_disk_access();
             // generate sector_done interrupt
@@ -362,7 +369,7 @@ void Swim3Ctrl::disk_access()
             return;
         }
         this->cur_state = SWIM3_ADDR_MARK_SEARCH;
-        delay = this->int_drive->next_addr_mark_delay(&this->target_sect);
+        delay = this->selected_drive->next_addr_mark_delay(&this->target_sect);
         break;
     default:
         LOG_F(ERROR, "SWIM3: unknown disk access phase 0x%X", this->cur_state);
@@ -422,6 +429,57 @@ uint8_t Swim3Ctrl::calc_timer_val()
     } else {
         return (this->timer_val - us_elapsed) & 0xFFU;
     }
+}
+
+void Swim3Ctrl::mode_change(uint8_t new_mode)
+{
+    uint8_t changed_bits = this->mode_reg ^ new_mode;
+
+    if (changed_bits & (SWIM3_DRIVE_1 | SWIM3_DRIVE_2)) {
+        this->selected_drive = nullptr;
+        this->cur_track = 0xFF;
+        this->cur_sector = 0x7F;
+
+        switch (new_mode & (SWIM3_DRIVE_1 | SWIM3_DRIVE_2)) {
+        case 0:
+            break;
+        case SWIM3_DRIVE_1:
+            if (this->drive_1)
+                this->selected_drive = this->drive_1.get();
+            break;
+        case SWIM3_DRIVE_2:
+            break;
+        case SWIM3_DRIVE_1 | SWIM3_DRIVE_2:
+            LOG_F(ERROR, "SWIM3: both drives selected, selecting drive 1");
+            if (this->drive_1)
+                this->selected_drive = this->drive_1.get();
+            break;
+        }
+        if (this->xfer_cnt) {
+            LOG_F(ERROR, "SWIM3: selecting drive while xfer still in progress");
+        }
+    }
+
+    if (changed_bits & SWIM3_GO_STEP) {
+        if (new_mode & SWIM3_GO_STEP)
+            start_stepping();
+        else
+            stop_stepping();
+        if (changed_bits & SWIM3_GO) {
+            LOG_F(ERROR, "SWIM3: attempt to change GO and GO_STEP, ignoring GO");
+        }
+    }
+    else
+    if (changed_bits & SWIM3_GO) {
+        if (new_mode & SWIM3_GO)
+            start_disk_access();
+        else {
+            stop_disk_access();
+            this->cur_sector &= ~0x80;
+        }
+    }
+
+    this->mode_reg = new_mode;
 }
 
 // floppy disk formats properties for the cases
