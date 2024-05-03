@@ -463,7 +463,7 @@ void PlatinumCtrl::enable_display() {
     bool did_size_change = false;
     bool did_refresh_rate_change = false;
     bool did_depth_change = false;
-    
+
     int clock_divisor = this->dacula->get_clock_div();
 
     this->pixel_clock = this->dacula->get_dot_freq();
@@ -543,7 +543,7 @@ void PlatinumCtrl::enable_display() {
     if (new_refresh_rate != this->refresh_rate)
         did_refresh_rate_change = true;
     this->refresh_rate = new_refresh_rate;
-    
+
     this->start_refresh_task();
 
     if (did_size_change)
