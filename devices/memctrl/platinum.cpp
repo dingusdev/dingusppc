@@ -501,6 +501,9 @@ void PlatinumCtrl::enable_display() {
     // set framebuffer parameters
     this->fb_ptr   = &this->vram_ptr[this->fb_offset] + 16;
     this->fb_pitch = this->row_words;
+    if (this->fb_config_1 & CFG1_INTERLACE) {
+        this->fb_pitch >>= 1;
+    }
 
     int new_pixel_depth = this->dacula->get_pix_width();
     if (new_pixel_depth != this->pixel_depth)
@@ -540,6 +543,10 @@ void PlatinumCtrl::enable_display() {
     }
 
     float new_refresh_rate = (double)(this->pixel_clock) / (this->hori_total * this->vert_total);
+    if (this->fb_config_1 & CFG1_INTERLACE) {
+        new_refresh_rate *= 2;
+    }
+
     if (new_refresh_rate != this->refresh_rate)
         did_refresh_rate_change = true;
     this->refresh_rate = new_refresh_rate;
