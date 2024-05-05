@@ -168,7 +168,7 @@ void AppleRamdac::iodev_write(uint32_t address, uint16_t value) {
 }
 
 int AppleRamdac::get_clock_div() {
-    return 1 << ((dac_cr >> 6) + 1);
+    return 1 << (((dac_cr >> 6) + 1) & 3);
 }
 
 int AppleRamdac::get_pix_width() {
