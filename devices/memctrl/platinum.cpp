@@ -145,6 +145,9 @@ uint32_t PlatinumCtrl::read(uint32_t rgn_start, uint32_t offset, int size) {
     case PlatinumReg::MON_ID_SENSE:
         value = (this->mon_sense ^ 7);
         break;
+    case PlatinumReg::FB_TEST:
+        value = this->fb_test;
+        break;
     case PlatinumReg::SWATCH_CONFIG:
         value = this->swatch_config;
         break;
@@ -295,6 +298,11 @@ void PlatinumCtrl::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
             LOG_F(ERROR, "%s: display reset written with 0x%X", this->name.c_str(), value);
         }
 
+        break;
+    case PlatinumReg::FB_TEST:
+        this->fb_test =
+            (this->fb_test & ~(SENSE_LINE_OUTPUT_DATA | SYNCS_OUTPUT_ENABLE | FORCED_SYNC_LEVELS)) |
+            (value         &  (SENSE_LINE_OUTPUT_DATA | SYNCS_OUTPUT_ENABLE | FORCED_SYNC_LEVELS));
         break;
     case PlatinumReg::VRAM_REFRESH:
         this->vram_refresh = value;
