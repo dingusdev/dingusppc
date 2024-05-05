@@ -43,7 +43,7 @@ typedef struct {
     const char *  apple_enum;
     const char *  name;
     const char *  description;
-    MonitorRes    resolutions[4];
+    MonitorRes    resolutions[10];
 } MonitorInfo;
 
 /** Mapping between monitor IDs and their sense codes. */
@@ -100,7 +100,8 @@ static const std::map<std::string, MonitorInfo> MonitorIdToCode = {
         4, 0x0A,
         "kESCFourNTSC",
         "NTSC",
-        "NTSC underscan 512x384, overscan", {
+        "", {
+            { 512, 384,  12.2727, 15.7  , 59.94},
             { 640, 480,  12.2727, 15.7  , 59.94}
         }
     }},
@@ -109,7 +110,7 @@ static const std::map<std::string, MonitorInfo> MonitorIdToCode = {
         "kESCFivePortrait",
         "Portrait RGB",
         "RGB 15\", 15\" Tilt", {
-            { 640, 870,  57.2834,  0    ,  0   }
+            { 640, 870,  57.2834,  0    , 75   }
         }
     }},
     { "Multiscan15in", {
@@ -117,8 +118,8 @@ static const std::map<std::string, MonitorInfo> MonitorIdToCode = {
         "kESCSixMSB1",
         "MultiScan Band-1 (12\" thru 16\")",
         "Multiple Scan 13, 14\"", {
-            { 640, 480,  67     ,  0    ,  0   },
-            { 832, 624,  75     ,  0    ,  0   }
+            { 640, 480,   0     ,  0    , 67   },
+            { 832, 624,   0     ,  0    , 75   }
         }
     }},
     { "Multiscan17in", {
@@ -126,9 +127,9 @@ static const std::map<std::string, MonitorInfo> MonitorIdToCode = {
         "kESCSixMSB2",
         "MultiScan Band-2 (13\" thru 19\")",
         "Multiple Scan 16, 17\"", {
-            { 640, 480,  67     ,  0    ,  0   },
-            { 832, 624,  75     ,  0    ,  0   },
-            {1024, 768,  75     ,  0    ,  0   }
+            { 640, 480,   0     ,  0    , 67   },
+            { 832, 624,   0     ,  0    , 75   },
+            {1024, 768,   0     ,  0    , 75   }
         }
     }},
     { "Multiscan20in", {
@@ -136,10 +137,13 @@ static const std::map<std::string, MonitorInfo> MonitorIdToCode = {
         "kESCSixMSB3",
         "MultiScan Band-3 (13\" thru 21\")",
         "Multiple Scan 20, 21\"", {
-            { 640, 480,  67     ,  0    ,  0   },
-            { 832, 624,  75     ,  0    ,  0   },
-            {1024, 768,  75     ,  0    ,  0   },
-            {1152, 870,  75     ,  0    ,  0   }
+            { 640, 480,   0     ,  0    , 67   },
+            { 640, 480,   0     ,  0    ,120   }, // control; not platinum
+            { 832, 624,   0     ,  0    , 75   },
+            {1024, 768,   0     ,  0    , 74.9 },
+            {1152, 870,   0     ,  0    , 75   },
+            {1280, 960,   0     ,  0    , 75   },
+            {1280,1024,   0     ,  0    , 75   }
         }
     }},
     { "HiRes12-14in", {
@@ -164,7 +168,8 @@ static const std::map<std::string, MonitorInfo> MonitorIdToCode = {
         "kESCSevenNTSC",
         "NTSC",
         "NTSC w/convolution (Alternate)", {
-            { 640, 480,  12.2727,  0    ,  0   }
+            { 512, 384,  12.2727,  0    ,  60  },
+            { 640, 480,  12.2727,  0    ,  60  }
         }
     }},
     { "VGA-SVGA", {
@@ -172,9 +177,16 @@ static const std::map<std::string, MonitorInfo> MonitorIdToCode = {
         "kESCSevenVGA",
         "VGA",
         "VGA", {
-            { 640, 480,  25.175 , 31.47 , 59.95},
-            { 800, 600,  36     , 35.16 , 56   },
-            {1024, 768,  35.16  , 60           }
+            { 640, 480,  0      , 0     , 60   },
+            { 640, 480,  0      , 0     ,120   }, // control; not platinum
+            { 800, 600,  0      , 0     , 60   },
+            { 800, 600,  0      , 0     , 72   },
+            { 800, 600,  0      , 0     , 75   },
+            {1024, 768,  0      , 0     , 60   },
+            {1024, 768,  0      , 0     , 70   },
+            {1024, 768,  0      , 0     , 75   },
+            {1280, 960,  0      , 0     , 75   },
+            {1280,1024,  0      , 0     , 75   }
         }
     }},
     { "MacRGB16in", {
@@ -199,7 +211,7 @@ static const std::map<std::string, MonitorInfo> MonitorIdToCode = {
         "kESCSeven19Inch",
         "Third-Party 19",
         "RGB 19\", 19\" Color", {
-            {1024, 768,  80      , 0    ,  0   }
+            {1024, 768,  80      , 0    , 74.9 }
         }
     }},
     { "DDC", {
