@@ -148,6 +148,9 @@ uint32_t PlatinumCtrl::read(uint32_t rgn_start, uint32_t offset, int size) {
     case PlatinumReg::FB_TEST:
         value = this->fb_test;
         break;
+    case PlatinumReg::VRAM_REFRESH:
+        value = this->vram_refresh;
+        break;
     case PlatinumReg::SWATCH_CONFIG:
         value = this->swatch_config;
         break;
