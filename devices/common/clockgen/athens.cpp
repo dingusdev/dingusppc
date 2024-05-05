@@ -118,7 +118,7 @@ int AthensClocks::get_dot_freq()
         return 0;
     }
 
-    float out_freq = 0.0f;
+    float out_freq = 50000000.0; // for 800x600 72Hz
 
     int d2 = this->regs[AthensRegs::D2];
     int n2 = this->regs[AthensRegs::N2];
@@ -150,7 +150,7 @@ int AthensClocks::get_dot_freq()
         break;
     }
 
-    LOG_F(INFO, "%s: dot clock frequency set to %f Hz", this->name.c_str(), out_freq);
+    LOG_F(INFO, "%s: dot clock frequency set to %f MHz", this->name.c_str(), out_freq / 1000000.0);
 
     return static_cast<int>(out_freq + 0.5f);
 }
