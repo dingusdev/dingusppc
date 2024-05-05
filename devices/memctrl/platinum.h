@@ -105,78 +105,147 @@ enum CpuSpeed3 {
 
 /** Configuration and status register offsets. */
 enum PlatinumReg : uint32_t {
-    CPU_ID          = 0x00, // read 0x30018140 ; read byte happens
-    ASIC_REVISION   = 0x01,
-    ROM_TIMING      = 0x02,
-    CACHE_CONFIG    = 0x03,
-    DRAM_TIMING     = 0x04,
-    DRAM_REFRESH    = 0x05,
-    BANK_0_BASE     = 0x06,
-    BANK_1_BASE     = 0x07,
-    BANK_2_BASE     = 0x08,
-    BANK_3_BASE     = 0x09, // read byte happens
-    BANK_4_BASE     = 0x0A,
-    BANK_5_BASE     = 0x0B,
-    BANK_6_BASE     = 0x0C,
-    BANK_7_BASE     = 0x0D,
-    GP_SW_SCRATCH   = 0x0E,
-    PCI_ADDR_MASK   = 0x0F,
-    FB_BASE_ADDR    = 0x10,
+    CPU_ID          = 0x00, // Catalyst CPU ID Register ; read 0x30018140 ; read byte happens
+    ASIC_REVISION   = 0x01, // Platinum Revision/Test Register
+    ROM_TIMING      = 0x02, // ROM Timing Configuration Register
+    CACHE_CONFIG    = 0x03, // Cache Configuration Register
+    DRAM_TIMING     = 0x04, // DRAM Timing Configuration Register
+    DRAM_REFRESH    = 0x05, // DRAM Refresh Timing
+    BANK_0_BASE     = 0x06, // DRAM Bank 0 Base Address Register
+    BANK_1_BASE     = 0x07, // DRAM Bank 1 Base Address Register
+    BANK_2_BASE     = 0x08, // DRAM Bank 2 Base Address Register
+    BANK_3_BASE     = 0x09, // DRAM Bank 3 Base Address Register ; read byte happens
+    BANK_4_BASE     = 0x0A, // DRAM Bank 4 Base Address Register
+    BANK_5_BASE     = 0x0B, // DRAM Bank 5 Base Address Register
+    BANK_6_BASE     = 0x0C, // DRAM Bank 6 Base Address Register
+    BANK_7_BASE     = 0x0D, // DRAM Bank 7 Base Address Register
+    GP_SW_SCRATCH   = 0x0E, // General Purpose Software Register
+    PCI_ADDR_MASK   = 0x0F, // PCI Address Mask Register
+    FB_BASE_ADDR    = 0x10, // Frame Buffer/Display Base Addresses
     //              = 0x11,
-    ROW_WORDS       = 0x12,
-    CLOCK_DIVISOR   = 0x13, // write 0xff, 0x02
-    FB_CONFIG_1     = 0x14,
-    FB_CONFIG_2     = 0x15,
-    VMEM_PAGE_MODE  = 0x16,
-    MON_ID_SENSE    = 0x17,
-    FB_RESET        = 0x18, // write 6, 3, 7, 2
-    DBL_BUF_CNTL    = 0x19,
-    V_TEST_REG      = 0x1A,
-    VRAM_REFRESH    = 0x1B,
+    ROW_WORDS       = 0x12, // Row Words
+    CLOCK_DIVISOR   = 0x13, // Video Clock Configuration ; write 0xff, 0x02
+    FB_CONFIG_1     = 0x14, // Frame Buffer Configuration 1
+    FB_CONFIG_2     = 0x15, // Frame Buffer Configuration 2
+    VMEM_PAGE_MODE  = 0x16, // Page Mode Enable
+    MON_ID_SENSE    = 0x17, // Monitor ID Sense Lines ; Sense Line Enable
+    FB_RESET        = 0x18, // Frame Buffer Reset ; Reset ; write 6, 3, 7, 2
+    DBL_BUF_CNTL    = 0x19, // Double Buffer Control
+    FB_TEST         = 0x1A, // Frame Buffer Test
+    VRAM_REFRESH    = 0x1B, // VRAM Refresh Timing
 
     // Swatch timing generator registers
-    SWATCH_CONFIG   = 0x20, // 0xff0 ; pxffc for 1280 modes
-    SWATCH_INT_MASK = 0x21, // 4
-    SWATCH_INT_STAT = 0x22, // 0
-    CLR_CURSOR_INT  = 0x23, // 0
-    CLR_ANIM_INT    = 0x24, // 0
-    CLR_VBL_INT     = 0x25, // 0
-    CURSOR_LINE     = 0x26, // write 0x320, 0x209, 0x299, 0x38f, 0x428
-    ANIMATE_LINE    = 0x27, // 0
-    COUNTER_TEST    = 0x28, // 0
+    SWATCH_CONFIG   = 0x20, // Swatch Mode ; 0xff0 ; pxffc for 1280 modes
+    SWATCH_INT_MASK = 0x21, // Interrupt Mask ; 4
+    SWATCH_INT_STAT = 0x22, // Interrupt Status ; 0
+    CLR_CURSOR_INT  = 0x23, // Clear Cursor Interrupt ; 0
+    CLR_ANIM_INT    = 0x24, // Clear Animation Line Interrupt ; 0
+    CLR_VBL_INT     = 0x25, // Clear VBL Interrupt ; 0
+    CURSOR_LINE     = 0x26, // Cursor Line ; write 0x320, 0x209, 0x299, 0x38f, 0x428
+    ANIMATE_LINE    = 0x27, // Animation Line ; 0
+    COUNTER_TEST    = 0x28, // Counter Test ; 0
     FIRST_SWATCH    = 0x29,
-    SWATCH_HSERR    = 0x29,
-    SWATCH_HLFLN    = 0x2A,
-    SWATCH_HEQ      = 0x2B,
-    SWATCH_HSP      = 0x2C,
-    SWATCH_HBWAY    = 0x2D,
-    SWATCH_HBRST    = 0x2E,
-    SWATCH_HBP      = 0x2F,
-    SWATCH_HAL      = 0x30,
-    SWATCH_HFP      = 0x31,
-    SWATCH_HPIX     = 0x32,
-    SWATCH_VHLINE   = 0x33,
-    SWATCH_VSYNC    = 0x34,
-    SWATCH_VBPEQ    = 0x35,
-    SWATCH_VBP      = 0x36,
-    SWATCH_VAL      = 0x37,
-    SWATCH_VFP      = 0x38,
-    SWATCH_VFPEQ    = 0x39,
-    TIMING_ADJUST   = 0x3A,
+    SWATCH_HSERR    = 0x29, // Horizontal Serration Pulse
+    SWATCH_HLFLN    = 0x2A, // Horizontal Half Line
+    SWATCH_HEQ      = 0x2B, // Horizontal Equalization Pulse
+    SWATCH_HSP      = 0x2C, // Horizontal Sync Pulse
+    SWATCH_HBWAY    = 0x2D, // Horizontal Beezeway
+    SWATCH_HBRST    = 0x2E, // Horizontal Burst Gate
+    SWATCH_HBP      = 0x2F, // Horizontal Back Porch
+    SWATCH_HAL      = 0x30, // Horizontal Active Line
+    SWATCH_HFP      = 0x31, // Horizontal Front Porch
+    SWATCH_HPIX     = 0x32, // Horizontal Pixels
+    SWATCH_VHLINE   = 0x33, // Vertical Half Lines
+    SWATCH_VSYNC    = 0x34, // Vertical Sync Pulse
+    SWATCH_VBPEQ    = 0x35, // Vertical Back Porch Equalization
+    SWATCH_VBP      = 0x36, // Vertical Back Porch
+    SWATCH_VAL      = 0x37, // Vertical Active Line
+    SWATCH_VFP      = 0x38, // Vertical Front Porch
+    SWATCH_VFPEQ    = 0x39, // Vertical Front Porch Equalization
+    TIMING_ADJUST   = 0x3A, // Timing Adjust
     CURRENT_LINE    = 0x3B, // Current Scan Line
 
     // Iridium datapath registers
-    IRIDIUM_CONFIG  = 0x4A, // write 4
-    POWER_DOWN_CTRL = 0x4B, // 1-bit register, writing "1" enables power down mode
+    FG_COLOR        = 0x40, // Foreground Color
+    BG_COLOR        = 0x41, // Background Color
+    SRC_BASE        = 0x42, // Source Image Base Address
+    DST_BASE        = 0x43, // Destination Image Base Address
+    ROW_BYTES       = 0x44, // Source/Destination RowBytes
+    DST_SIZE        = 0x45, // Destination Size (H, V pixels)
+    QDA_CNTL        = 0x46, // Control 1
+    QDA_CMD         = 0x47, // Control 2
+    QDA_STATUS      = 0x48, // Command/Status
+    QDA_PTR         = 0x49, // Command List Pointer
+    IRIDIUM_CONFIG  = 0x4A, // System Configuration Register ; write 4
+    POWER_DOWN_CTRL = 0x4B, // Sleep (power down) Mode Enable ; 1-bit register, writing "1" enables power down mode
 };
 
 #define REG_TO_INDEX(reg) ((reg) - FIRST_SWATCH)
 
+// DRAM_TIMING register bits.
+enum {
+    DT_SLOW_ADDRESS_ONLY_CYCLE = 1 << 12,
+    DT_QDA_READ_RAS_DELAY      = 1 << 11,
+    DT_QDA_READ_CAS_DELAY_1    = 1 << 10,
+    DT_QDA_READ_CAS_DELAY_2    = 1 <<  9,
+    DT_PAGE_MODE               = 1 <<  8,
+    DT_READ_RAS_DELAY          = 1 <<  7,
+    DT_READ_CAS_DELAY_1        = 1 <<  6,
+    DT_READ_CAS_DELAY_2        = 1 <<  5,
+    DT_WRITE_RAS_DELAY         = 1 <<  4,
+    DT_WRITE_CAS_DELAY         = 1 <<  3,
+    DT_RAS_PRECHARGE           = 1 <<  2,
+    DT_CBR_DELAY_1             = 1 <<  1,
+    DT_CBR_DELAY_2             = 1 <<  0,
+    DT_DEFAULT                 = 0xEFF,
+};
+
+// DRAM_REFRESH register bits.
+enum {
+    DRAM_REFRESH_INTERVAL            = 0x7FF,
+    DRAM_REFRESH_INTERVAL_DEFAULT    = 500, // (Bus clock speed (in MHz) x DRAM refresh period (in μs)) - 20
+};
+
 // FB_CONFIG_1 register bits.
 enum {
-    CFG1_INTERLACE  = (1 <<  2), // 1 - interlaced video enabled
-    CFG1_VID_ENABLE = (1 <<  4), // 1 - display refresh enabled
-    CFG1_FULL_BANKS = (1 << 12), // full VRAM banks (64-bit) access enable
+    CFG1_VRAMS_2MBIT          =  1 <<  0, // 2 MB VRAMs
+    CFG1_SAM_512BIT           =  1 <<  1, // 512 Bit SAM
+    CFG1_INTERLACE            =  1 <<  2, // 1 - interlaced video enabled
+    CFG1_WORD_INTERLEAVE      =  1 <<  3, // unused in Platinum
+    CFG1_VID_ENABLE           =  1 <<  4, // 1 - display refresh enabled
+    CFG1_VRAM_REFRESH_COUNT   =  7 <<  5, // unused in Platinum
+    CFG1_ROM_SPEED            = 15 <<  8, // unused in Platinum = 0xF
+    CFG1_FULL_BANKS           =  1 << 12, // full VRAM banks (64-bit) access enable
+};
+
+// FB_CONFIG_2 register bits.
+enum {
+    CFG2_QDA_READ_RAS_DELAY    = 1 << 12,
+    CFG2_QDA_READ_CAS_DELAY_1  = 1 << 11,
+    CFG2_QDA_READ_CAS_DELAY_2  = 1 << 10,
+    CFG2_READ_RAS_DELAY        = 1 <<  9,
+    CFG2_READ_CAS_DELAY_1      = 1 <<  8,
+    CFG2_READ_CAS_DELAY_2      = 1 <<  7,
+    CFG2_WRITE_RAS_DELAY       = 1 <<  6,
+    CFG2_WRITE_CAS_DELAY       = 1 <<  5,
+    CFG2_RAS_PRECHARGE         = 1 <<  4,
+    CFG2_CBR_DELAY_1           = 1 <<  3,
+    CFG2_CBR_DELAY_2           = 1 <<  2,
+    CFG2_XFER_DELAY_1          = 1 <<  1,
+    CFG2_XFER_DELAY_2          = 1 <<  0,
+    CFG2_ALL_BITS              = 0x1FFF,
+};
+
+// VMEM_PAGE_MODE register bits
+enum {
+    PAGE_MODE_ENABLE      = 1 << 0,
+};
+
+// MON_ID_SENSE register bits.
+enum {
+    SENSE_BITS            = 7 << 0,
+    INVERSE_SENSE_PINS    = 7 << 0, INVERSE_SENSE_PINS_pos = 0,
+    INVERSE_SENSE_BITS    = 7 << 3, INVERSE_SENSE_BITS_pos = 3,
 };
 
 // FB_RESET register bits.
@@ -184,6 +253,7 @@ enum {
     VRAM_SM_RESET     = (1 << 0), // VRAM state machine reset
     VREFRESH_SM_RESET = (1 << 1), // Video refresh state machine reset
     SWATCH_RESET      = (1 << 2), // Swatch reset
+    FB_RESET_DEFAULT  = 7,
 };
 
 // SWATCH_INT_MASK register bits.
@@ -193,8 +263,34 @@ enum {
     SWATCH_INT_CURSOR = (1 << 2)
 };
 
-#define DAMFB_VERSION_PLATINUM  6 // DAMFB cell version in the Platinum ASIC
-#define IRIDIUM_VENDOR_VLSI     0 // Vendor ID for the Iridium ASIC => VLSI
+// FB_TEST register bits.
+enum {
+    SENSE_LINE_OUTPUT_DATA_pos  = 16, SENSE_LINE_OUTPUT_DATA_size = 3,
+    SENSE_LINE_OUTPUT_DATA      = 7 << SENSE_LINE_OUTPUT_DATA_pos,
+    SYNCS_OUTPUT_ENABLE         = 1 << 15,
+    DAFB_VERSION_NUMBER_pos     = 9,  DAFB_VERSION_NUMBER_size    = 3,
+        DAFB_VERSION_PLATINUM   = 6, // DAFB cell version in the Platinum ASIC
+    FORCED_VSYNC_LEVEL          = 1 << 3,
+    FORCED_HSYNC_LEVEL          = 1 << 2,
+    FORCED_CSYNC_LEVEL          = 1 << 1,
+    FORCED_SYNC_LEVELS          = 7 << 1,
+};
+
+// VRAM_REFRESH register bits.
+enum {
+    VRAM_REFRESH_INTERVAL            = 0x7FF,
+    VRAM_REFRESH_INTERVAL_DEFAULT    = 500, // (Bus clock speed (in MHz) x VRAM refresh period (in μs)) - 20
+};
+
+// IRIDIUM_CONFIG register bits.
+enum {
+    IRIDIUM_REVISION_pos    = 28,    IRIDIUM_REVISION_size = 4,
+    IRIDIUM_VENDOR_pos      = 24,    IRIDIUM_VENDOR_size   = 4,
+        IRIDIUM_VENDOR_VLSI = 0, // Vendor ID for the Iridium ASIC => VLSI
+        IRIDIUM_VENDOR_TI   = 1,
+    DISPLAY_PIXEL_DEPTH_pos = 1,    DISPLAY_PIXEL_DEPTH_size = 2,
+    BIG_ENDIAN_BUS          = 1,
+};
 
 constexpr auto VRAM_REGION_BASE     = 0xF1000000UL;
 constexpr auto PLATINUM_IOREG_BASE  = 0xF8000000UL;
@@ -233,24 +329,24 @@ private:
 
     // memory controller state
     uint32_t    rom_timing   = 0;
-    uint32_t    dram_timing  = 0xEFF;
-    uint32_t    dram_refresh = 0x1F4;
+    uint32_t    dram_timing  = Platinum::DT_DEFAULT;
+    uint32_t    dram_refresh = Platinum::DRAM_REFRESH_INTERVAL_DEFAULT;
     uint32_t    bank_base[8] = {};
     uint32_t    bank_size[8] = {};
 
     // frame buffer controller state
     uint32_t    fb_addr       = Platinum::VRAM_REGION_BASE;
     uint32_t    fb_offset     = 0;
-    uint32_t    fb_config_1   = 0x1F00;
-    uint32_t    fb_config_2   = 0x1FFF;
+    uint32_t    fb_config_1   = Platinum::CFG1_FULL_BANKS + Platinum::CFG1_ROM_SPEED;
+    uint32_t    fb_config_2   = Platinum::CFG2_ALL_BITS;
     uint32_t    clock_divisor = 0;
     uint32_t    row_words     = 0;
-    uint32_t    fb_reset      = 7;
+    uint32_t    fb_reset      = Platinum::FB_RESET_DEFAULT;
     int         reset_step    = 0;
-    uint32_t    fb_test       = DAMFB_VERSION_PLATINUM << 9;
-    uint32_t    vram_refresh  = 0x1F4;
+    uint32_t    fb_test       = Platinum::DAFB_VERSION_PLATINUM << Platinum::DAFB_VERSION_NUMBER_pos;
+    uint32_t    vram_refresh  = Platinum::VRAM_REFRESH_INTERVAL_DEFAULT;
     uint32_t    vram_size     = 0;
-    uint32_t    iridium_cfg   = (IRIDIUM_VENDOR_VLSI << 24) | 1; // big-endian bus
+    uint32_t    iridium_cfg   = (Platinum::IRIDIUM_VENDOR_VLSI << Platinum::IRIDIUM_VENDOR_pos) | Platinum::BIG_ENDIAN_BUS;
     uint8_t     vram_megs     = 0;
     uint8_t     half_bank     = 0;
     uint8_t     half_access   = 0;
