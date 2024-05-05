@@ -143,7 +143,7 @@ uint32_t PlatinumCtrl::read(uint32_t rgn_start, uint32_t offset, int size) {
         value = this->fb_addr;
         break;
     case PlatinumReg::MON_ID_SENSE:
-        value = (this->mon_sense ^ 7);
+        value = this->mon_sense;
         break;
     case PlatinumReg::FB_TEST:
         value = this->fb_test;
@@ -268,11 +268,12 @@ void PlatinumCtrl::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
         break;
     case PlatinumReg::MON_ID_SENSE:
         value &= 7;
-        this->mon_sense = this->display_id->read_monitor_sense(value, value ^ 7)
-            << (value ^ 7);
+        uint8_t dirs   = value ^ 7;
+        uint8_t levels = (this->fb_test >> SENSE_LINE_OUTPUT_DATA_pos) & 7;
+        levels = (levels & dirs) | (dirs ^ 7);
+        this->mon_sense = (dirs << 3) | (this->display_id->read_monitor_sense(levels, dirs) ^ 7);
         break;
     case PlatinumReg::FB_RESET:
-
         if (value == 7 && this->crtc_on) {
             LOG_F(INFO, "%s: video disabled", this->name.c_str());
             this->reset_step = 0;
