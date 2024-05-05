@@ -248,7 +248,10 @@ void PlatinumCtrl::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
         this->change_display();
         break;
     case PlatinumReg::FB_CONFIG_1:
-        this->fb_config_1 = value;
+        LOG_F(INFO, "%s: write FB_CONFIG_1 %03x.%c = %0*x", this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
+        this->fb_config_1 =
+            (this->fb_config_1 & ~(CFG1_FULL_BANKS | CFG1_VID_ENABLE | CFG1_INTERLACE | CFG1_SAM_512BIT | CFG1_VRAMS_2MBIT)) |
+            (value             &  (CFG1_FULL_BANKS | CFG1_VID_ENABLE | CFG1_INTERLACE | CFG1_SAM_512BIT | CFG1_VRAMS_2MBIT));
         this->half_bank = !!(this->vram_megs == 1 && (value & CFG1_FULL_BANKS));
         break;
     case PlatinumReg::FB_CONFIG_2:
