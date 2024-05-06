@@ -733,8 +733,12 @@ void ViaCuda::pseudo_command() {
         power_on = false;
         power_off_reason = po_restart;
         break;
-    case CUDA_WARM_START:
     case CUDA_POWER_DOWN:
+        LOG_F(INFO, "Cuda: system shutdown");
+        power_on = false;
+        power_off_reason = po_shut_down;
+        break;
+    case CUDA_WARM_START:
     case CUDA_MONO_STABLE_RESET:
         /* really kludge temp code */
         LOG_F(INFO, "Cuda: Restart/Shutdown signal sent with command 0x%x!", cmd);

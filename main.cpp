@@ -211,6 +211,15 @@ int main(int argc, char** argv) {
             power_on = true;
             continue;
         }
+        if (power_off_reason == po_shutting_down) {
+            if (execution_mode != debugger) {
+                LOG_F(INFO, "Shutdown.");
+                break;
+            }
+            LOG_F(INFO, "Shutdown...");
+            power_on = true;
+            continue;
+        }
         break;
     }
 

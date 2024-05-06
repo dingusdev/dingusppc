@@ -306,10 +306,12 @@ extern jmp_buf exc_env;
 enum Po_Cause : int {
     po_none,
     po_starting_up,
+    po_quit,
+    po_quitting,
     po_shut_down,
     po_shutting_down,
-    po_restarting,
     po_restart,
+    po_restarting,
     po_disassemble_on,
     po_disassemble_off,
     po_enter_debugger,
