@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/adb/adbbus.h>
 #include <devices/deviceregistry.h>
 #include <core/hostevents.h>
+#include <memaccess.h>
 #include <loguru.hpp>
 
 AdbMouse::AdbMouse(std::string name) : AdbDevice(name) {
@@ -37,8 +38,14 @@ void AdbMouse::event_handler(const MouseEvent& event) {
     if (event.flags & MOUSE_EVENT_MOTION) {
         this->x_rel += event.xrel;
         this->y_rel += event.yrel;
+        this->x_abs = event.xabs;
+        this->y_abs = event.yabs;
+        if (this->device_class == TABLET)
+            this->changed = true;
     } else if (event.flags & MOUSE_EVENT_BUTTON) {
-        this->buttons_state = event.buttons_state;
+        this->buttons_state = event.buttons_state & ((1 << this->num_buttons) - 1);
+        this->x_abs = event.xabs;
+        this->y_abs = event.yabs;
         this->changed = true;
     }
 }
@@ -50,38 +57,50 @@ void AdbMouse::reset() {
     this->srq_flag = 1; // enable service requests
     this->x_rel = 0;
     this->y_rel = 0;
+    this->x_abs = 0;
+    this->y_abs = 0;
     this->buttons_state = 0;
     this->changed = false;
 }
 
 bool AdbMouse::get_register_0() {
     if (this->x_rel || this->y_rel || this->changed) {
+        uint8_t* p;
         uint8_t* out_buf = this->host_obj->get_output_buf();
 
-        uint8_t button1_state = (this->buttons_state ^ 1) << 7;
+        static const uint8_t buttons_to_bits[] = {0, 7, 7, 10, 10, 13, 13, 16, 16};
+        static const uint8_t bits_to_bits[]    = {0, 7, 7, 7, 7, 7, 7, 7, 10, 10, 10, 13, 13, 13, 16, 16, 16};
+        int total_bits = std::max(buttons_to_bits[this->num_buttons], bits_to_bits[this->num_bits]);
 
-        // report Y-axis motion
-        if (this->y_rel < -64)
-            out_buf[0] = 0x40 | button1_state;
-        else if (this->y_rel > 63)
-            out_buf[0] = 0x3F | button1_state;
-        else
-            out_buf[0] = (this->y_rel & 0x7F) | button1_state;
+        for (int axis = 0; axis < 2; axis++) {
+            int bits = this->num_bits;
+            int32_t val = axis ? this->device_class == TABLET ? this->x_abs : this->x_rel
+                               : this->device_class == TABLET ? this->y_abs : this->y_rel;
+            if (val < (-1 << (bits - 1)))
+                val = -1 << (bits - 1);
+            else if (val >= (1 << (bits - 1)))
+                val = (1 << (bits - 1)) - 1;
+            int bits_remaining = total_bits;
+            p = &out_buf[axis];
+            int button = axis;
+            bits = 7;
 
-        // report X-axis motion
-        if (this->x_rel < -64)
-            out_buf[1] = 0x40 | 0x80;
-        else if (this->x_rel > 63)
-            out_buf[1] = 0x3F | 0x80;
-        else
-            out_buf[1] = (this->x_rel & 0x7F) | 0x80;
+            while (bits_remaining > 0) {
+                *p = (val & ((1 << bits) - 1)) | (((this->buttons_state >> button) ^ 1) << bits) | (*p << (bits + 1));
+                val >>= bits;
+                bits_remaining -= bits;
+                p = bits == 7 ? &out_buf[2] : p + 1;
+                button += 2;
+                bits = 3;
+            }
+        }
 
         // reset accumulated motion data and button change flag
         this->x_rel     = 0;
         this->y_rel     = 0;
         this->changed   = false;
 
-        this->host_obj->set_output_count(2);
+        this->host_obj->set_output_count(p - out_buf);
         return true;
     }
 
@@ -96,10 +115,9 @@ bool AdbMouse::get_register_1() {
     out_buf[2] = 'p';
     out_buf[3] = 'l';
     // Slightly higher resolution of 300 units per inch
-    out_buf[4] = 300 >> 8;
-    out_buf[5] = 300 & 0xFF;
-    out_buf[6] = 1; // mouse
-    out_buf[7] = 1; // 1 button
+    WRITE_WORD_BE_A(&out_buf[4], resolution);
+    out_buf[6] = device_class;
+    out_buf[7] = num_buttons;
     this->host_obj->set_output_count(8);
     return true;
 }

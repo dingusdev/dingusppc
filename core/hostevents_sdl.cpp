@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -89,6 +89,8 @@ void EventManager::poll_events()
                 MouseEvent me;
                 me.xrel  = event.motion.xrel;
                 me.yrel  = event.motion.yrel;
+                me.xabs  = event.motion.x;
+                me.yabs  = event.motion.y;
                 me.flags = MOUSE_EVENT_MOTION;
                 this->_mouse_signal.emit(me);
             }
@@ -96,7 +98,16 @@ void EventManager::poll_events()
 
         case SDL_MOUSEBUTTONDOWN: {
                 MouseEvent me;
-                me.buttons_state = 1;
+                Uint8 adb_button;
+                switch (event.button.button) {
+                    case SDL_BUTTON_LEFT   : adb_button = 0; break;
+                    case SDL_BUTTON_MIDDLE : adb_button = 2; break;
+                    case SDL_BUTTON_RIGHT  : adb_button = 1; break;
+                    default                : adb_button = event.button.button - 1;
+                }
+                me.buttons_state = (this->buttons_state |= (1 << adb_button));
+                me.xabs  = event.button.x;
+                me.yabs  = event.button.y;
                 me.flags = MOUSE_EVENT_BUTTON;
                 this->_mouse_signal.emit(me);
             }
@@ -104,7 +115,16 @@ void EventManager::poll_events()
 
         case SDL_MOUSEBUTTONUP: {
                 MouseEvent me;
-                me.buttons_state = 0;
+                Uint8 adb_button;
+                switch (event.button.button) {
+                    case SDL_BUTTON_LEFT   : adb_button = 0; break;
+                    case SDL_BUTTON_MIDDLE : adb_button = 2; break;
+                    case SDL_BUTTON_RIGHT  : adb_button = 1; break;
+                    default                : adb_button = event.button.button - 1;
+                }
+                me.buttons_state = (this->buttons_state &= ~(1 << adb_button));
+                me.xabs  = event.button.x;
+                me.yabs  = event.button.y;
                 me.flags = MOUSE_EVENT_BUTTON;
                 this->_mouse_signal.emit(me);
             }

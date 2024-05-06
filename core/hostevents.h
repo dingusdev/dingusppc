@@ -50,6 +50,8 @@ public:
     uint32_t    flags;
     uint32_t    xrel;
     uint32_t    yrel;
+    uint32_t    xabs;
+    uint32_t    yabs;
     uint8_t     buttons_state;
 };
 
@@ -115,6 +117,7 @@ private:
     uint64_t    key_downs = 0;
     uint64_t    key_ups = 0;
     uint64_t    mouse_motions = 0;
+    uint8_t     buttons_state = 0;
 };
 
 #endif // EVENT_MANAGER_H
