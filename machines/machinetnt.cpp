@@ -83,7 +83,8 @@ int initialize_tnt(std::string& id)
     // get (raw) pointer to the memory controller
     memctrl_obj = dynamic_cast<HammerheadCtrl*>(gMachineObj->get_comp_by_name("Hammerhead"));
 
-    memctrl_obj->set_motherboard_id((vci_host ? Hammerhead::MBID_VCI0_PRESENT : 0) | (pci2_host ? Hammerhead::MBID_PCI2_PRESENT : 0));
+    memctrl_obj->set_motherboard_id((vci_host ? Hammerhead::MBID_VCI0_PRESENT : 0) |
+                                    (pci2_host ? Hammerhead::MBID_PCI2_PRESENT : 0));
     memctrl_obj->set_bus_speed(Hammerhead::BUS_SPEED_50_MHZ);
 
     // allocate ROM region
@@ -138,15 +139,19 @@ static const PropMap pm7500_settings = {
             cpu == PPC_VER::MPC601  ? "601" :
             cpu == PPC_VER::MPC604  ? "604" :
             cpu == PPC_VER::MPC604E ? "604e" :
-                            "604e", vector<std::string>({"601", "604", "604e", "750"}))},
+            "604e", vector<std::string>({"601", "604", "604e", "750"})
+        )
+    },
 };
 
 static vector<string> pm7500_devices = {
-    "Hammerhead", "Bandit1", "Chaos", "ScsiMesh", "MeshTnt", "GrandCentral", "ControlVideo"
+    "Hammerhead", "Bandit1", "Chaos", "ScsiMesh", "MeshTnt", "GrandCentral",
+    "ControlVideo"
 };
 
 static vector<string> pm8500_devices = {
-    "Hammerhead", "Bandit1", "Chaos", "ScsiMesh", "MeshTnt", "GrandCentral", "ControlVideo", "Sixty6Video"
+    "Hammerhead", "Bandit1", "Chaos", "ScsiMesh", "MeshTnt", "GrandCentral",
+    "ControlVideo", "Sixty6Video"
 };
 
 static vector<string> pm9500_devices = {
