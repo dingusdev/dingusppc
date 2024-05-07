@@ -45,7 +45,7 @@ protected:
     int     test_unit_ready();
     void    read(uint32_t lba, uint16_t nblocks, uint8_t cmd_len);
     void    inquiry();
-    int     mode_select_6(uint8_t param_len);
+    void    mode_select_6(uint8_t param_len);
 
     void    mode_sense_6();
     void    read_toc();

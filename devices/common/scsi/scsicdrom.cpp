@@ -307,17 +307,21 @@ void ScsiCdrom::mode_sense_6()
     this->switch_phase(ScsiPhase::DATA_IN);
 }
 
-int ScsiCdrom::mode_select_6(uint8_t param_len)
+void ScsiCdrom::mode_select_6(uint8_t param_len)
 {
-    if (param_len == 0) {
-        return 0x0;
-    }
-    else {
-        LOG_F(ERROR, "Mode Select calling for param length of: %d", param_len);
-        this->incoming_size = param_len;
-        this->switch_phase(ScsiPhase::DATA_OUT);
-        return param_len;
-    }
+    if (!param_len)
+        return;
+
+    this->incoming_size = param_len;
+
+    std::memset(&this->data_buf[0], 0, 512);
+
+    this->post_xfer_action = [this]() {
+        // TODO: parse the received mode parameter list here
+        LOG_F(INFO, "Mode Select: received mode parameter list");
+    };
+
+    this->switch_phase(ScsiPhase::DATA_OUT);
 }
 
 void ScsiCdrom::read_toc()
