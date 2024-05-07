@@ -212,11 +212,13 @@ void ScsiCdrom::inquiry() {
 
     int lun;
     if (this->last_selection_has_atention) {
-        LOG_F(INFO, "%s: INQUIRY (%d bytes) with ATN LUN = %02x & 7", this->name.c_str(), alloc_len, this->last_selection_message);
+        LOG_F(9, "%s: INQUIRY (%d bytes) with ATN LUN = %02x & 7", this->name.c_str(),
+              alloc_len, this->last_selection_message);
         lun = this->last_selection_message & 7;
     }
     else {
-        LOG_F(INFO, "%s: INQUIRY (%d bytes) with NO ATN LUN = %02x >> 5", this->name.c_str(), alloc_len, cmd_buf[1]);
+        LOG_F(9, "%s: INQUIRY (%d bytes) with NO ATN LUN = %02x >> 5", this->name.c_str(),
+              alloc_len, cmd_buf[1]);
         lun = cmd_buf[1] >> 5;
     }
 
@@ -425,7 +427,7 @@ void ScsiCdrom::read_capacity_10()
 
     if (!check_lun())
         return;
-    
+
     int last_lba = (int)this->size_blocks - 1;
 
     WRITE_DWORD_BE_A(&this->data_buf[0], last_lba);
