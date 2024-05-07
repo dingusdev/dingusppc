@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @file MESH (Macintosh Enhanced SCSI Hardware) controller emulation. */
 
 #include <core/timermanager.h>
+#include <devices/common/hwcomponent.h>
 #include <devices/common/hwinterrupt.h>
 #include <devices/common/scsi/mesh.h>
 #include <devices/common/scsi/scsi.h>
@@ -35,6 +36,10 @@ using namespace MeshScsi;
 
 int MeshController::device_postinit() {
     this->bus_obj = dynamic_cast<ScsiBus*>(gMachineObj->get_comp_by_name("ScsiMesh"));
+    if (bus_obj) {
+        bus_obj->register_device(7, static_cast<ScsiDevice*>(this));
+        bus_obj->attach_scsi_devices("2");
+    }
 
     this->int_ctrl = dynamic_cast<InterruptCtrl*>(
         gMachineObj->get_comp_by_type(HWCompType::INT_CTRL));
@@ -45,15 +50,15 @@ int MeshController::device_postinit() {
 
 void MeshController::reset(bool is_hard_reset) {
     this->cur_cmd       = SeqCmd::NoOperation;
-    this->fifo_cnt      = 0;
+    this->fifo_pos      = 0;
     this->int_mask      = 0;
     this->exception     = 0;
     this->xfer_count    = 0;
     this->src_id        = 7;
 
     if (is_hard_reset) {
-        this->bus_stat      = 0;
-        this->sync_params   = (0 << 16) | 2; // fast async operation (guessed)
+        this->bus_stat    = 0;
+        this->sync_params = (0 << 16) | 2; // fast async operation (guessed)
     }
 }
 
@@ -63,6 +68,8 @@ uint8_t MeshController::read(uint8_t reg_offset) {
         return this->xfer_count & 0xFFU;
     case MeshReg::XferCount1:
         return (this->xfer_count >> 8) & 0xFFU;
+    case MeshReg::FIFO:
+        return this->fifo_pop();
     case MeshReg::Sequence:
         return this->cur_cmd;
     case MeshReg::BusStatus0:
@@ -70,7 +77,7 @@ uint8_t MeshController::read(uint8_t reg_offset) {
     case MeshReg::BusStatus1:
         return this->bus_obj->test_ctrl_lines(0xE000U) >> 8;
     case MeshReg::FIFOCount:
-        return this->fifo_cnt;
+        return this->fifo_pos;
     case MeshReg::Exception:
         return this->exception;
     case MeshReg::Error:
@@ -96,6 +103,15 @@ void MeshController::write(uint8_t reg_offset, uint8_t value) {
     uint16_t new_stat;
 
     switch(reg_offset) {
+    case MeshReg::XferCount0:
+        this->xfer_count = (this->xfer_count & ~0xFFU) | value;
+        break;
+    case MeshReg::XferCount1:
+        this->xfer_count = (this->xfer_count & ~0xFF00U) | (value << 8);
+        break;
+    case MeshReg::FIFO:
+        this->fifo_push(value);
+        break;
     case MeshReg::Sequence:
         perform_command(value);
         break;
@@ -143,21 +159,73 @@ void MeshController::perform_command(const uint8_t cmd) {
 
     this->int_stat &= ~INT_CMD_DONE;
 
+    this->is_dma_cmd = !!(this->cur_cmd & 0x80);
+
     switch (this->cur_cmd & 0xF) {
     case SeqCmd::Arbitrate:
         this->exception &= EXC_ARB_LOST;
         this->bus_obj->release_ctrl_lines(this->src_id);
-        this->cur_state = SeqState::BUS_FREE;
+        this->cur_state = Scsi_Bus_Controller::SeqState::BUS_FREE;
         this->sequencer();
         break;
     case SeqCmd::Select:
+        this->assert_atn = !!(this->cur_cmd & 0x20);
         this->exception &= EXC_SEL_TIMEOUT;
-        this->cur_state = SeqState::SEL_BEGIN;
+        this->cur_state = Scsi_Bus_Controller::SeqState::SEL_BEGIN;
+        this->sequencer();
+        break;
+    case SeqCmd::Command:
+        if (this->bus_obj->current_phase() != ScsiPhase::COMMAND)
+            LOG_F(WARNING, "%s: not in COMMAND phase", this->name.c_str());
+        this->cur_state = Scsi_Bus_Controller::SeqState::SEND_CMD;
+        if (this->fifo_pos)
+            this->sequencer();
+        break;
+    case SeqCmd::Status:
+        if (this->bus_obj->current_phase() != ScsiPhase::STATUS)
+            LOG_F(WARNING, "%s: not in STATUS phase", this->name.c_str());
+        this->to_xfer = this->xfer_count;
+        this->cur_state = Scsi_Bus_Controller::SeqState::RCV_STATUS;
+        this->sequencer();
+        break;
+    case SeqCmd::DataOut:
+        if (this->bus_obj->current_phase() != ScsiPhase::DATA_OUT)
+            LOG_F(WARNING, "%s: not in DATA OUT phase", this->name.c_str());
+        this->to_xfer = this->xfer_count ? this->xfer_count : 65536;
+        this->cur_state = Scsi_Bus_Controller::SeqState::XFER_BEGIN;
+        this->sequencer();
+        break;
+    case SeqCmd::DataIn:
+        if (this->bus_obj->current_phase() != ScsiPhase::DATA_IN)
+            LOG_F(WARNING, "%s: not in DATA IN phase", this->name.c_str());
+        this->to_xfer = this->xfer_count ? this->xfer_count : 65536;
+        this->cur_state = Scsi_Bus_Controller::SeqState::XFER_BEGIN;
+        this->sequencer();
+        break;
+    case SeqCmd::MessageOut:
+        if (this->bus_obj->current_phase() != ScsiPhase::MESSAGE_OUT)
+            LOG_F(WARNING, "%s: not in MESSAGE OUT phase", this->name.c_str());
+        this->to_xfer = this->xfer_count;
+        this->cur_state = Scsi_Bus_Controller::SeqState::SEND_MSG;
+        this->sequencer();
+        break;
+    case SeqCmd::MessageIn:
+        if (this->bus_obj->current_phase() != ScsiPhase::MESSAGE_IN)
+            LOG_F(WARNING, "%s: not in MESSAGE IN phase", this->name.c_str());
+        this->to_xfer = this->xfer_count;
+        this->cur_state = Scsi_Bus_Controller::SeqState::RCV_MESSAGE;
         this->sequencer();
         break;
     case SeqCmd::BusFree:
-        LOG_F(INFO, "MESH: BusFree stub invoked");
-        this->int_stat |= INT_CMD_DONE;
+        this->bus_obj->release_ctrl_line(this->src_id, SCSI_CTRL_ACK);
+        // generate phase mismatch exception
+        // if the target is still connected
+        if (this->bus_obj->test_ctrl_lines(SCSI_CTRL_BSY)) {
+            this->exception |= EXC_PHASE_MM;
+            this->int_stat  |= INT_EXCEPTION;
+        } else // say ok because we got the expected bus free phase
+            this->int_stat |= INT_CMD_DONE;
+        this->update_irq();
         break;
     case SeqCmd::EnaReselect:
         LOG_F(9, "MESH: EnaReselect stub invoked");
@@ -170,93 +238,32 @@ void MeshController::perform_command(const uint8_t cmd) {
     case SeqCmd::ResetMesh:
         this->reset(false);
         this->int_stat |= INT_CMD_DONE;
+        update_irq();
         break;
     case SeqCmd::FlushFIFO:
-        LOG_F(INFO, "MESH: FlushFIFO stub invoked");
-        this->int_stat |= INT_CMD_DONE;
+        this->fifo_pos = 0;
         break;
     default:
         LOG_F(ERROR, "MESH: unsupported sequencer command 0x%X", this->cur_cmd);
     }
 }
 
-void MeshController::seq_defer_state(uint64_t delay_ns) {
-    seq_timer_id = TimerManager::get_instance()->add_oneshot_timer(
-        delay_ns,
-        [this]() {
-            // re-enter the sequencer with the state specified in next_state
-            this->cur_state = this->next_state;
-            this->sequencer();
-    });
+void MeshController::step_completed() {
+    this->int_stat |= INT_CMD_DONE;
+    update_irq();
 }
 
-void MeshController::sequencer()
-{
-    switch (this->cur_state) {
-    case SeqState::IDLE:
-        break;
-    case SeqState::BUS_FREE:
-        if (this->bus_obj->current_phase() == ScsiPhase::BUS_FREE) {
-            this->next_state = SeqState::ARB_BEGIN;
-            this->seq_defer_state(BUS_FREE_DELAY + BUS_SETTLE_DELAY);
-        } else { // continue waiting
-            this->next_state = SeqState::BUS_FREE;
-            this->seq_defer_state(BUS_FREE_DELAY);
-        }
-        break;
-    case SeqState::ARB_BEGIN:
-        if (!this->bus_obj->begin_arbitration(this->src_id)) {
-            LOG_F(ERROR, "MESH: arbitration error, bus not free!");
-            this->bus_obj->release_ctrl_lines(this->src_id);
-            this->next_state = SeqState::BUS_FREE;
-            this->seq_defer_state(BUS_CLEAR_DELAY);
-            break;
-        }
-        this->next_state = SeqState::ARB_END;
-        this->seq_defer_state(ARB_DELAY);
-        break;
-    case SeqState::ARB_END:
-        if (this->bus_obj->end_arbitration(this->src_id) &&
-            !this->bus_obj->test_ctrl_lines(SCSI_CTRL_SEL)) { // arbitration won
-            this->bus_obj->assert_ctrl_line(this->src_id, SCSI_CTRL_SEL);
-        } else { // arbitration lost
-            LOG_F(INFO, "MESH: arbitration lost!");
-            this->bus_obj->release_ctrl_lines(this->src_id);
-            this->exception |= EXC_ARB_LOST;
-            this->int_stat  |= INT_EXCEPTION;
-        }
-        this->int_stat |= INT_CMD_DONE;
-        update_irq();
-        break;
-    case SeqState::SEL_BEGIN:
-        this->bus_obj->begin_selection(this->src_id, this->dst_id, this->cur_cmd & 0x20);
-        this->next_state = SeqState::SEL_END;
-        this->seq_defer_state(SEL_TIME_OUT);
-        break;
-    case SeqState::SEL_END:
-        if (this->bus_obj->end_selection(this->src_id, this->dst_id)) {
-            this->bus_obj->release_ctrl_line(this->src_id, SCSI_CTRL_SEL);
-            LOG_F(9, "MESH: selection completed");
-        } else { // selection timeout
-            this->bus_obj->disconnect(this->src_id);
-            this->cur_state = SeqState::IDLE;
-            this->exception |= EXC_SEL_TIMEOUT;
-            this->int_stat  |= INT_EXCEPTION;
-        }
-        this->int_stat |= INT_CMD_DONE;
-        update_irq();
+void MeshController::report_error(const int error) {
+    switch(error) {
+    case SEL_TIMEOUT:
+        this->exception |= EXC_SEL_TIMEOUT;
+        this->int_stat  |= INT_EXCEPTION;
         break;
     default:
-        ABORT_F("MESH: unimplemented sequencer state %d", this->cur_state);
+        ABORT_F("%s: unhandled error %d", this->name.c_str(), error);
     }
-}
-
-void MeshController::update_irq() {
-    uint8_t new_irq = !!(this->int_stat & this->int_mask);
-    if (new_irq != this->irq) {
-        this->irq = new_irq;
-        this->int_ctrl->ack_int(this->irq_id, new_irq);
-    }
+    this->int_stat |= INT_CMD_DONE;
+    update_irq();
 }
 
 static const PropMap Mesh_properties = {

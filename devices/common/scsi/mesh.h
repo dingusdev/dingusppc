@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -25,106 +25,96 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define MESH_H
 
 #include <devices/common/dmacore.h>
-#include <devices/common/hwcomponent.h>
+#include <devices/common/scsi/scsibusctrl.h>
 
 #include <cinttypes>
 #include <memory>
-
-class InterruptCtrl;
-class ScsiBus;
 
 // Chip ID returned by the MESH ASIC on TNT machines (Apple part 343S1146-a)
 #define TntMeshID       0xE2
 
 // Chip ID returned by the MESH cell inside the Heathrow ASIC
-#define HeathrowMESHID  4
+#define HeathrowMeshID  4
 
 namespace MeshScsi {
+    /** MESH registers offsets. */
+    enum MeshReg : uint8_t {
+        XferCount0 = 0,
+        XferCount1 = 1,
+        FIFO       = 2,
+        Sequence   = 3,
+        BusStatus0 = 4,
+        BusStatus1 = 5,
+        FIFOCount  = 6,
+        Exception  = 7,
+        Error      = 8,
+        IntMask    = 9,
+        Interrupt  = 0xA,
+        SourceID   = 0xB,
+        DestID     = 0xC,
+        SyncParms  = 0xD,
+        MeshID     = 0xE,
+        SelTimeOut = 0xF
+    };
 
-// MESH registers offsets.
-enum MeshReg : uint8_t {
-    XferCount0 = 0,
-    XferCount1 = 1,
-    FIFO       = 2,
-    Sequence   = 3,
-    BusStatus0 = 4,
-    BusStatus1 = 5,
-    FIFOCount  = 6,
-    Exception  = 7,
-    Error      = 8,
-    IntMask    = 9,
-    Interrupt  = 0xA,
-    SourceID   = 0xB,
-    DestID     = 0xC,
-    SyncParms  = 0xD,
-    MeshID     = 0xE,
-    SelTimeOut = 0xF
-};
+    /** MESH Sequencer commands. */
+    enum SeqCmd : uint8_t {
+        NoOperation     = 0x0,
+        Arbitrate       = 0x1,
+        Select          = 0x2,
+        Command         = 0x3,
+        Status          = 0x4,
+        DataOut         = 0x5,
+        DataIn          = 0x6,
+        MessageOut      = 0x7,
+        MessageIn       = 0x8,
+        BusFree         = 0x9,
+        EnaParityCheck  = 0xA,
+        DisParityCheck  = 0xB,
+        EnaReselect     = 0xC,
+        DisReselect     = 0xD,
+        ResetMesh       = 0xE,
+        FlushFIFO       = 0xF
+    };
 
-// MESH Sequencer commands.
-enum SeqCmd : uint8_t {
-    NoOperation = 0,
-    Arbitrate   = 1,
-    Select      = 2,
-    BusFree     = 9,
-    EnaReselect = 0xC,
-    DisReselect = 0xD,
-    ResetMesh   = 0xE,
-    FlushFIFO   = 0xF,
-};
+    /** Exception register bits. */
+    enum {
+        EXC_SEL_TIMEOUT = 1 << 0,
+        EXC_PHASE_MM    = 1 << 1,
+        EXC_ARB_LOST    = 1 << 2,
+    };
 
-// Exception register bits.
-enum {
-    EXC_SEL_TIMEOUT = 1 << 0,
-    EXC_PHASE_MM    = 1 << 1,
-    EXC_ARB_LOST    = 1 << 2,
-};
-
-// Interrupt register bits.
-enum {
-    INT_CMD_DONE    = 1 << 0,
-    INT_EXCEPTION   = 1 << 1,
-    INT_ERROR       = 1 << 2,
-    INT_MASK        = INT_CMD_DONE | INT_EXCEPTION | INT_ERROR
-};
-
-
-enum SeqState : uint32_t {
-    IDLE = 0,
-    BUS_FREE,
-    ARB_BEGIN,
-    ARB_END,
-    SEL_BEGIN,
-    SEL_END,
-    SEND_MSG,
-    SEND_CMD,
-    CMD_COMPLETE,
-    XFER_BEGIN,
-    XFER_END,
-    SEND_DATA,
-    RCV_DATA,
-    RCV_STATUS,
-    RCV_MESSAGE,
-};
-
+    /** Interrupt register bits. */
+    enum {
+        INT_CMD_DONE    = 1 << 0,
+        INT_EXCEPTION   = 1 << 1,
+        INT_ERROR       = 1 << 2,
+        INT_MASK        = INT_CMD_DONE | INT_EXCEPTION | INT_ERROR
+    };
 }; // namespace MeshScsi
 
-class MeshStub : public HWComponent {
+class MeshBase {
+public:
+    MeshBase()  = default;
+    ~MeshBase() = default;
+    virtual uint8_t read(uint8_t reg_offset) = 0;
+    virtual void    write(uint8_t reg_offset, uint8_t value) = 0;
+};
+
+class MeshStub : public MeshBase {
 public:
     MeshStub()  = default;
     ~MeshStub() = default;
 
     // registers access
-    uint8_t read(uint8_t reg_offset) { return 0; };
-    void   write(uint8_t reg_offset, uint8_t value) {};
+    uint8_t read(uint8_t reg_offset) override { return 0; };
+    void   write(uint8_t reg_offset, uint8_t value) override {};
 };
 
-class MeshController : public HWComponent {
+class MeshController : public ScsiBusController, public MeshBase {
 public:
-    MeshController(uint8_t mesh_id) {
-        supports_types(HWCompType::SCSI_HOST | HWCompType::SCSI_DEV);
+    MeshController(uint8_t mesh_id) : ScsiBusController("MESH", 7) {
         this->chip_id = mesh_id;
-        this->set_name("MESH");
         this->reset(true);
     };
     ~MeshController() = default;
@@ -134,55 +124,31 @@ public:
     }
 
     static std::unique_ptr<HWComponent> create_for_heathrow() {
-        return std::unique_ptr<MeshController>(new MeshController(HeathrowMESHID));
+        return std::unique_ptr<MeshController>(new MeshController(HeathrowMeshID));
     }
 
-    // MESH registers access
-    uint8_t read(uint8_t reg_offset);
-    void   write(uint8_t reg_offset, uint8_t value);
+    // MeshBase methods
+    uint8_t read(uint8_t reg_offset) override;
+    void   write(uint8_t reg_offset, uint8_t value) override;
 
     // HWComponent methods
-    int device_postinit();
+    int device_postinit() override;
 
-    void set_dma_channel(DmaBidirChannel *dma_ch) {
-        this->dma_ch = dma_ch;
-    };
+    // ScsiBusController methods
+    void step_completed() override;
+    void report_error(const int error) override;
 
 protected:
     void    reset(bool is_hard_reset);
     void    perform_command(const uint8_t cmd);
-    void    seq_defer_state(uint64_t delay_ns);
-    void    sequencer();
-    void    update_irq();
 
 private:
     uint8_t     chip_id;
-    uint8_t     int_mask = 0;
-    uint8_t     int_stat = 0;
     uint8_t     sync_params;
-    uint8_t     src_id;
-    uint8_t     dst_id;
     uint8_t     cur_cmd;
     uint8_t     error;
-    uint8_t     fifo_cnt;
-    uint8_t     exception = 0;
-    uint32_t    xfer_count;
-
-    ScsiBus*    bus_obj;
+    uint8_t     exception  = 0;
     uint16_t    bus_stat;
-
-    // Sequencer state
-    uint32_t    seq_timer_id;
-    uint32_t    cur_state;
-    uint32_t    next_state;
-
-    // interrupt related stuff
-    InterruptCtrl* int_ctrl = nullptr;
-    uint32_t       irq_id   = 0;
-    uint8_t        irq      = 0;
-
-    // DMA related stuff
-    DmaBidirChannel*    dma_ch;
 };
 
 #endif // MESH_H

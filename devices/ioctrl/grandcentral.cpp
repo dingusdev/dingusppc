@@ -115,7 +115,8 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
     } else {
         this->mesh_dma = std::unique_ptr<DMAChannel> (new DMAChannel("mesh_scsi"));
         this->mesh_dma->register_dma_int(this, this->register_dma_int(IntSrc::DMA_SCSI_MESH));
-        this->mesh->set_dma_channel(this->mesh_dma.get());
+        this->mesh_dma->connect(this->mesh);
+        this->mesh->connect(this->mesh_dma.get());
     }
 
     // connect external SCSI controller (Curio) to its DMA channel
