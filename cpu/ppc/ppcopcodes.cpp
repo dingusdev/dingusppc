@@ -1048,7 +1048,7 @@ void dppc_interpreter::ppc_mftb() {
 }
 
 void dppc_interpreter::ppc_mtcrf() {
-    ppc_grab_regssa(ppc_cur_instruction);
+    ppc_grab_s(ppc_cur_instruction);
     uint8_t crm = (ppc_cur_instruction >> 12) & 0xFFU;
 
     uint32_t cr_mask = 0;
@@ -1215,7 +1215,7 @@ void dppc_interpreter::ppc_cmp() {
 #endif
 
     int crf_d = (ppc_cur_instruction >> 21) & 0x1C;
-    ppc_grab_regssab(ppc_cur_instruction);
+    ppc_grab_regsab(ppc_cur_instruction);
     uint32_t xercon = (ppc_state.spr[SPR::XER] & XER::SO) >> 3;
     uint32_t cmp_c = (int32_t(ppc_result_a) == int32_t(ppc_result_b)) ? 0x20000000UL : \
         (int32_t(ppc_result_a) > int32_t(ppc_result_b)) ? 0x40000000UL : 0x80000000UL;
@@ -1247,7 +1247,7 @@ void dppc_interpreter::ppc_cmpl() {
 #endif
 
     int crf_d = (ppc_cur_instruction >> 21) & 0x1C;
-    ppc_grab_regssab(ppc_cur_instruction);
+    ppc_grab_regsab(ppc_cur_instruction);
     uint32_t xercon = (ppc_state.spr[SPR::XER] & XER::SO) >> 3;
     uint32_t cmp_c = (ppc_result_a == ppc_result_b) ? 0x20000000UL : \
         (ppc_result_a > ppc_result_b) ? 0x40000000UL : 0x80000000UL;
@@ -1261,7 +1261,6 @@ void dppc_interpreter::ppc_cmpli() {
         return;
     }
 #endif
-
     int crf_d = (ppc_cur_instruction >> 21) & 0x1C;
     ppc_grab_regssauimm(ppc_cur_instruction);
     uint32_t xercon = (ppc_state.spr[SPR::XER] & XER::SO) >> 3;

@@ -29,7 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <string>
 
-class AtapiCdrom : public AtapiBaseDevice, public CdromDrive {
+class AtapiCdrom : public CdromDrive, public AtapiBaseDevice {
 public:
     AtapiCdrom(std::string name);
     ~AtapiCdrom() = default;

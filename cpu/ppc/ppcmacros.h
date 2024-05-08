@@ -36,54 +36,68 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     uint32_t uimm         = uint16_t(opcode); \
     uint32_t ppc_result_a = ppc_state.gpr[reg_a];
 
-#    define ppc_grab_regsasimm(opcode) \
+#define ppc_grab_regsasimm(opcode) \
     int reg_a             = (opcode >> 16) & 31; \
     int32_t simm          = int32_t(int16_t(opcode)); \
     uint32_t ppc_result_a = ppc_state.gpr[reg_a];
 
-#    define ppc_grab_regssauimm(opcode) \
+#define ppc_grab_regssauimm(opcode) \
     int reg_s             = (opcode >> 21) & 31; \
     int reg_a             = (opcode >> 16) & 31; \
     uint32_t uimm         = uint16_t(opcode); \
     uint32_t ppc_result_d = ppc_state.gpr[reg_s]; \
     uint32_t ppc_result_a = ppc_state.gpr[reg_a];
 
+#define ppc_grab_da(opcode)\
+    int reg_d = (opcode >> 21) & 31;\
+    int reg_a = (opcode >> 16) & 31;\
+
 #define ppc_grab_dab(opcode) \
     int reg_d = (opcode >> 21) & 31; \
     int reg_a = (opcode >> 16) & 31; \
     int reg_b = (opcode >> 11) & 31;
 
+#define ppc_grab_s(opcode) \
+    int reg_s             = (opcode >> 21) & 31; \
+    uint32_t ppc_result_d = ppc_state.gpr[reg_s];
+
 #define ppc_grab_regsdab(opcode) \
     int reg_d             = (opcode >> 21) & 31; \
-    uint32_t reg_a        = (opcode >> 16) & 31; \
-    uint32_t reg_b        = (opcode >> 11) & 31; \
+    int reg_a             = (opcode >> 16) & 31; \
+    int reg_b             = (opcode >> 11) & 31; \
     uint32_t ppc_result_a = ppc_state.gpr[reg_a]; \
     uint32_t ppc_result_b = ppc_state.gpr[reg_b]; 
 
 #define ppc_grab_regssab(opcode) \
-    uint32_t reg_s        = (opcode >> 21) & 31; \
-    uint32_t reg_a        = (opcode >> 16) & 31; \
-    uint32_t reg_b        = (opcode >> 11) & 31; \
+    int reg_s             = (opcode >> 21) & 31; \
+    int reg_a             = (opcode >> 16) & 31; \
+    int reg_b             = (opcode >> 11) & 31; \
     uint32_t ppc_result_d = ppc_state.gpr[reg_s]; \
     uint32_t ppc_result_a = ppc_state.gpr[reg_a]; \
     uint32_t ppc_result_b = ppc_state.gpr[reg_b]; \
 
-#define ppc_grab_regssa(opcode) \
-    uint32_t reg_s        = (opcode >> 21) & 31; \
-    uint32_t reg_a        = (opcode >> 16) & 31; \
+#define ppc_grab_regsab(opcode) \
+    int reg_a             = (opcode >> 16) & 31;\
+    int reg_b             = (opcode >> 11) & 31;\
+    uint32_t ppc_result_a = ppc_state.gpr[reg_a];\
+    uint32_t ppc_result_b = ppc_state.gpr[reg_b];  
+
+    #define ppc_grab_regssa(opcode) \
+    int reg_s             = (opcode >> 21) & 31; \
+    int reg_a             = (opcode >> 16) & 31; \
     uint32_t ppc_result_d = ppc_state.gpr[reg_s]; \
     uint32_t ppc_result_a = ppc_state.gpr[reg_a];
 
 #define ppc_grab_regssash(opcode) \
-    uint32_t reg_s        = (opcode >> 21) & 31; \
-    uint32_t reg_a        = (opcode >> 16) & 31; \
-    uint32_t rot_sh       = (opcode >> 11) & 31; \
+    int reg_s             = (opcode >> 21) & 31; \
+    int reg_a             = (opcode >> 16) & 31; \
+    int rot_sh            = (opcode >> 11) & 31; \
     uint32_t ppc_result_d = ppc_state.gpr[reg_s]; \
     uint32_t ppc_result_a = ppc_state.gpr[reg_a];
 
 #define ppc_grab_regssb(opcode) \
-    uint32_t reg_s = (opcode >> 21) & 31; \
-    uint32_t reg_b = (opcode >> 11) & 31; \
+    int reg_s             = (opcode >> 21) & 31; \
+    int reg_b             = (opcode >> 11) & 31; \
     uint32_t ppc_result_d   = ppc_state.gpr[reg_s]; \
     uint32_t ppc_result_b   = ppc_state.gpr[reg_b]; \
 

@@ -61,7 +61,7 @@ template void dppc_interpreter::power_abs<RC1, OV1>();
 
 void dppc_interpreter::power_clcs() {
     uint32_t ppc_result_d;
-    ppc_grab_regsda(ppc_cur_instruction);
+    ppc_grab_da(ppc_cur_instruction);
     switch (reg_a) {
     case 12: //instruction cache line size
     case 13: //data cache line size

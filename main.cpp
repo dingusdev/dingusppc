@@ -40,12 +40,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace std;
 
-void sigint_handler(int signum) {
+static void sigint_handler(int signum) {
     power_on = false;
     power_off_reason = po_signal_interrupt;
 }
 
-void sigabrt_handler(int signum) {
+static void sigabrt_handler(int signum) {
     LOG_F(INFO, "Shutting down...");
 
     delete gMachineObj.release();
