@@ -1261,8 +1261,7 @@ void dppc_interpreter::ppc_cmpli() {
         return;
     }
 #endif
-    int crf_d = (ppc_cur_instruction >> 21) & 0x1C;
-    ppc_grab_regssauimm(ppc_cur_instruction);
+    ppc_grab_crfd_regsauimm(ppc_cur_instruction);
     uint32_t xercon = (ppc_state.spr[SPR::XER] & XER::SO) >> 3;
     uint32_t cmp_c = (ppc_result_a == uimm) ? 0x20000000UL : \
         (ppc_result_a > uimm) ? 0x40000000UL : 0x80000000UL;
@@ -1467,7 +1466,7 @@ void dppc_interpreter::ppc_dcbtst() {
 }
 
 void dppc_interpreter::ppc_dcbz() {
-    ppc_grab_regsdab(ppc_cur_instruction);
+    ppc_grab_regsab(ppc_cur_instruction);
     ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
 
     ppc_effective_address &= 0xFFFFFFE0UL; // align EA on a 32-byte boundary

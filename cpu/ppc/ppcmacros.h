@@ -48,6 +48,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     uint32_t ppc_result_d = ppc_state.gpr[reg_s]; \
     uint32_t ppc_result_a = ppc_state.gpr[reg_a];
 
+#define ppc_grab_crfd_regsauimm(opcode) \
+    int crf_d             = (opcode >> 21) & 0x1C; \
+    int reg_a             = (opcode >> 16) & 31; \
+    uint32_t uimm         = uint16_t(opcode); \
+    uint32_t ppc_result_a = ppc_state.gpr[reg_a];
+
 #define ppc_grab_da(opcode)\
     int reg_d = (opcode >> 21) & 31;\
     int reg_a = (opcode >> 16) & 31;\
