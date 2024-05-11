@@ -315,7 +315,9 @@ void GrandCentral::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
                 default: val = 0; break;
             }
             if (offset & 15) {
-                LOG_F(ERROR, "%s: Unexpected offset (0x%x) or size (%d) write (0x%x) to IOBus device #%d", this->name.c_str(), offset, size, value, subdev_num - 9);
+                LOG_F(ERROR,
+                      "%s: Unexpected offset (0x%x) or size (%d) write (0x%x) to IOBus device #%d",
+                      this->name.c_str(), offset, size, value, subdev_num - 9);
             }
             if (this->iobus_devs[subdev_num - 10] != nullptr) {
                 this->iobus_devs[subdev_num - 10]->iodev_write((offset >> 4) & 0x1F, val);
@@ -354,7 +356,8 @@ void GrandCentral::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
             this->snd_out_dma->reg_write(offset & 0xFF, value, size);
             break;
         case MIO_GC_DMA_AUDIO_IN:
-            LOG_F(WARNING, "%s: Unsupported DMA channel DMA_AUDIO_IN write @%02x.%c = %0*x", this->name.c_str(), offset & 0xFF, SIZE_ARG(size), size * 2, value);
+            LOG_F(WARNING, "%s: Unsupported DMA channel DMA_AUDIO_IN write @%02x.%c = %0*x",
+                  this->name.c_str(), offset & 0xFF, SIZE_ARG(size), size * 2, value);
             //this->snd_in_dma->reg_write(offset & 0xFF, value, size);
             break;
         case MIO_GC_DMA_SCSI_MESH:
