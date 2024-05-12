@@ -63,56 +63,76 @@ Shows the configurable properties, such as the selected disc image and the ram b
 ### Properties
 
 ```
-rambank1_size X
-rambank2_size X
-rambank3_size X
-rambank4_size X
+--rambank1_size X
+--rambank2_size X
+--rambank3_size X
+--rambank4_size X
 ```
 
 Set the RAM sizes to use, with X being an integer of a power of 2 up to 256.
 
 ```
-fdd_img
+--fdd_img TEXT:FILE
 ```
 
 Set the floppy disk image
 
 ```
-fdd_wr_prot=1
+--fdd_wr_prot=1
 ```
 
 Set the floppy to read-only
 
 ```
-hdd_img
+--hdd_img TEXT:FILE
 ```
 
 Set the hard disk image
 
 ```
-cdr_img
+--cdr_img TEXT:FILE
 ```
 
 Set the CD ROM image
 
 ```
-cpu
+--cpu
 ```
 
 Change which version of the PowerPC CPU to use
 
 ```
-emmo
+--emmo
 ```
 
 Access the factory tests
 
 ```
-serial_backend=stdio
-serial_backend=socket
+--serial_backend=stdio
+--serial_backend=socket
 ```
 
 Change where the output of OpenFirmware is directed to, either to the command line (with stdio) or a Unix socket (unavailable in Windows builds). OpenFirmware 1.x outputs here by default.
+
+### Command Line Examples
+
+```
+dingusppc -b bootrom-6100.bin --rambank1_size 64 --rambank2_size 64 --hdd_img "System_712.dsk"
+```
+
+The user has specified their own ROM file, which is for a Power Macintosh 6100 and has also set up two separate RAM banks to use 64 MB. Note that if a second RAM bank is to be specified for the 6100, it should be the same size as the first RAM bank. With only a hard disk specified, the machine will immediately boot to the OS on the hard disk.
+
+```
+dingusppc -b "Power_Mac_G3_Beige.ROM" -r --rambank1_size 128 --fdd_img "DiskTools_8.5.img"
+```
+
+Here, the user has attached a floppy disk image. They've chosen to boot it from a G3 and the first RAM bank is set to 128 MB.
+
+```
+dingusppc -b "Power_Mac_G3_Beige.ROM" -d --rambank1_size 64 --rambank2_size 64 --cdr_img "OpenDarwin_662.cdr"
+```
+
+The debugger will be turned on here, due to the presence of `-d`. The CD ROM image will be loaded in.
 
 ## Accessing OpenFirmware
 

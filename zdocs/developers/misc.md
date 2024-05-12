@@ -83,9 +83,13 @@ On a physical machine, one has to hold the Command/Apple, Option, P and R keys t
 | PMUPmgrPWRoff    | 0x7E   |
 | PMUResetCPU      | 0xD0   |
 
+# DACula
+
+This video RAMDAC appears to be exclusive to the Power Mac 7200.
+
 # USB
 
-
+Support is only present in New World Macs, despite the presence of strings in the Power Mac G3 Beige ROM. Most Macs support 1.1, with 2.0 support present in G5 Macs.
 
 # FireWire
 
