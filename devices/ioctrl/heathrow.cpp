@@ -310,7 +310,7 @@ void HeathrowIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int 
     case 0x17:
         this->viacuda->write((offset >> 9) & 0xF, value);
         break;
-    case 0x20: // IDE O
+    case 0x20: // IDE 0
         this->ide_0->write((offset >> 4) & 0x1F, value, size);
         break;
     case 0x21: // IDE 1
