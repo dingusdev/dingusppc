@@ -62,7 +62,7 @@ static string appDescription = string(
     "\n"
 );
 
-void run_machine(std::string machine_str, std::string bootrom_path, uint32_t execution_mode);
+void run_machine(std::string machine_str, std::string bootrom_path, uint32_t execution_mode, uint32_t profiling_interval_ms);
 
 int main(int argc, char** argv) {
 
@@ -84,6 +84,12 @@ int main(int argc, char** argv) {
 
     app.add_option("-b,--bootrom", bootrom_path, "Specifies BootROM path")
         ->check(CLI::ExistingFile);
+
+    uint32_t profiling_interval_ms = 0;
+#ifdef CPU_PROFILING
+    app.add_option("--profiling-interval-ms", profiling_interval_ms,
+        "Specifies periodic interval (in ms) at which to output CPU profiling information");
+#endif
 
     CLI::Option* machine_opt = app.add_option("-m,--machine",
         machine_str, "Specify machine ID");
@@ -188,7 +194,7 @@ int main(int argc, char** argv) {
     signal(SIGABRT, sigabrt_handler);
 
     while (true) {
-        run_machine(machine_str, bootrom_path, execution_mode);
+        run_machine(machine_str, bootrom_path, execution_mode, profiling_interval_ms);
         if (power_off_reason == po_restarting) {
             LOG_F(INFO, "Restarting...");
             power_on = true;
@@ -202,7 +208,7 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-void run_machine(std::string machine_str, std::string bootrom_path, uint32_t execution_mode) {
+void run_machine(std::string machine_str, std::string bootrom_path, uint32_t execution_mode, uint32_t profiling_interval_ms) {
     if (MachineFactory::create_machine_for_id(machine_str, bootrom_path) < 0) {
         return;
     }
@@ -212,6 +218,15 @@ void run_machine(std::string machine_str, std::string bootrom_path, uint32_t exe
     uint32_t event_timer = TimerManager::get_instance()->add_cyclic_timer(MSECS_TO_NSECS(11), [] {
         EventManager::get_instance()->poll_events();
     });
+
+#ifdef CPU_PROFILING
+    uint32_t profiling_timer;
+    if (profiling_interval_ms > 0) {
+        profiling_timer = TimerManager::get_instance()->add_cyclic_timer(MSECS_TO_NSECS(profiling_interval_ms), [] {
+            gProfilerObj->print_profile("PPC_CPU");
+        });
+    }
+#endif
 
     switch (execution_mode) {
     case interpreter:
@@ -229,6 +244,11 @@ void run_machine(std::string machine_str, std::string bootrom_path, uint32_t exe
 
     LOG_F(INFO, "Cleaning up...");
     TimerManager::get_instance()->cancel_timer(event_timer);
+#ifdef CPU_PROFILING
+    if (profiling_interval_ms > 0) {
+        TimerManager::get_instance()->cancel_timer(profiling_timer);
+    }
+#endif
     EventManager::get_instance()->disconnect_handlers();
     delete gMachineObj.release();
 }
