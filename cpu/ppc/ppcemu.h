@@ -177,6 +177,7 @@ extern uint64_t rtc_timestamp;
 extern uint64_t tbr_wr_value;
 extern uint32_t dec_wr_value;
 extern uint32_t tbr_freq_ghz;
+extern uint32_t tbr_freq_shift;
 extern uint64_t tbr_period_ns;
 extern uint32_t rtc_lo, rtc_hi;
 

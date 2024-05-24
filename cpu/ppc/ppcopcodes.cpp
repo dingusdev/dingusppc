@@ -819,6 +819,7 @@ void dppc_interpreter::ppc_mtmsr(uint32_t opcode) {
     }
 }
 
+#if 0
 static inline void calc_rtcl_value()
 {
     uint64_t new_ts = get_virt_time_ns();
@@ -832,22 +833,47 @@ static inline void calc_rtcl_value()
     }
     rtc_timestamp = new_ts;
 }
+#else
+static inline void calc_rtcl_value()
+{
+    uint64_t adj;
+    uint32_t adj_lo;
+    uint64_t new_ts = get_virt_time_ns();
+    uint64_t diff = new_ts - rtc_timestamp;
+    _u32xu64(tbr_freq_ghz, diff, adj, adj_lo);
+    if (tbr_freq_shift)
+        adj = (adj << tbr_freq_shift) + (adj_lo >> (32 - tbr_freq_shift));
+    uint64_t rtc_l = adj + rtc_lo;
+    if (rtc_l >= ONE_BILLION_NS) { // check RTCL overflow
+        rtc_hi += (uint32_t)(rtc_l / ONE_BILLION_NS);
+        rtc_lo  = rtc_l % ONE_BILLION_NS;
+    }
+    else {
+        rtc_lo = (uint32_t)rtc_l;
+    }
+    rtc_timestamp = new_ts;
+}
+#endif
 
 static inline uint64_t calc_tbr_value()
 {
-    uint64_t tbr_inc;
-    uint32_t tbr_inc_lo;
+    uint64_t adj;
+    uint32_t adj_lo;
     uint64_t diff = get_virt_time_ns() - tbr_wr_timestamp;
-    _u32xu64(tbr_freq_ghz, diff, tbr_inc, tbr_inc_lo);
-    return (tbr_wr_value + tbr_inc);
+    _u32xu64(tbr_freq_ghz, diff, adj, adj_lo);
+    if (tbr_freq_shift)
+        adj = (adj << tbr_freq_shift) + (adj_lo >> (32 - tbr_freq_shift));
+    return (tbr_wr_value + adj);
 }
 
 static inline uint32_t calc_dec_value() {
-    uint64_t dec_adj;
-    uint32_t dec_adj_lo;
+    uint64_t adj;
+    uint32_t adj_lo;
     uint64_t diff = get_virt_time_ns() - dec_wr_timestamp;
-    _u32xu64(tbr_freq_ghz, diff, dec_adj, dec_adj_lo);
-    return (dec_wr_value - static_cast<uint32_t>(dec_adj));
+    _u32xu64(tbr_freq_ghz, diff, adj, adj_lo);
+    if (tbr_freq_shift)
+        adj = (adj << tbr_freq_shift) + (adj_lo >> (32 - tbr_freq_shift));
+    return (dec_wr_value - static_cast<uint32_t>(adj));
 }
 
 static void update_timebase(uint64_t mask, uint64_t new_val)
@@ -943,8 +969,13 @@ void dppc_interpreter::ppc_mfspr(uint32_t opcode) {
         }
         // fallthrough
     case SPR::DEC_S:
-        ppc_state.gpr[reg_d] = ppc_state.spr[SPR::DEC_S] = calc_dec_value();
+    {
+        uint32_t val = calc_dec_value();
+        if (is_601)
+            val &= ~0x7F;
+        ppc_state.gpr[reg_d] = ppc_state.spr[SPR::DEC_S] = val;
         break;
+    }
     default:
         // FIXME: Unknown SPR should be noop or illegal instruction.
         ppc_state.gpr[reg_d] = ppc_state.spr[ref_spr];
@@ -1000,6 +1031,8 @@ void dppc_interpreter::ppc_mtspr(uint32_t opcode) {
         ppc_state.spr[RTCU_S] = rtc_hi = val;
         break;
     case SPR::DEC_S:
+        if (is_601)
+            val &= ~0x7F;
         ppc_state.spr[DEC_S] = val;
         update_decrementer(val);
         break;
