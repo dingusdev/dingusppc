@@ -63,11 +63,9 @@ void PdmOnboardVideo::set_video_mode(uint8_t new_mode)
     case PdmVideoMode::VGA:
         if (this->video_mode != (new_mode & 0x1F)) {
             this->video_mode = new_mode & 0x1F;
-            LOG_F(INFO, "PDM-Video: video mode set to 0x%X", this->video_mode);
+            LOG_F(INFO, "PDM-Video: video mode changed to 0x%X", this->video_mode);
         }
-        if (!this->blanking) {
-            this->enable_video_internal();
-        }
+        this->enable_video_internal();
         break;
     default:
         LOG_F(9, "PDM-Video: video disabled, new mode = 0x%X", new_mode & 0x1F);
@@ -165,7 +163,8 @@ void PdmOnboardVideo::enable_video_internal()
     case PdmVideoMode::Rgb16in:
     case PdmVideoMode::VGA:
         if (this->pixel_depth > 8) {
-            ABORT_F("PDM-Video: no 16bpp support in mode %d!", this->video_mode);
+            LOG_F(ERROR, "PDM-Video: no 16bpp support in mode %d!", this->video_mode);
+            this->pixel_depth = 8;
         }
     default:
         break;
@@ -210,10 +209,6 @@ void PdmOnboardVideo::enable_video_internal()
         break;
     default:
         ABORT_F("PDM-Video: invalid video mode %d", this->video_mode);
-    }
-
-    if (new_width != this->active_width || new_height != this->active_height) {
-        LOG_F(WARNING, "Display window resizing not implemented yet!");
     }
 
     // figure out where our framebuffer is located
