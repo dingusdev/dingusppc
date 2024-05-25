@@ -344,6 +344,9 @@ void Sixty6Video::enable_display()
 
     // get pixel depth
     switch (this->pixel_format) {
+    default:
+        LOG_F(ERROR, "Sixty6: Invalid pixel format %d!", this->pixel_format);
+        // fallthrough
     case 1:
         this->pixel_depth = 8;
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
@@ -356,9 +359,6 @@ void Sixty6Video::enable_display()
             this->convert_frame_15bpp_BE(dst_buf, dst_pitch);
         };
         break;
-    default:
-        LOG_F(ERROR, "Sixty6: Invalid pixel format %d!", this->pixel_format);
-        // fallthrough
     case 3:
         this->pixel_depth = 32;
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
