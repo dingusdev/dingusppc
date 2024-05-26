@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <loguru.hpp>
 #include "ppcemu.h"
 #include "ppcmmu.h"
+#include "ppcdisasm.h"
 
 #include <algorithm>
 #include <cstring>
@@ -109,6 +110,9 @@ uint64_t num_supervisor_instrs;
 uint64_t num_int_loads;
 uint64_t num_int_stores;
 uint64_t exceptions_processed;
+#ifdef CPU_PROFILING_OPS
+std::unordered_map<uint32_t, uint64_t> num_opcodes;
+#endif
 
 #include "utils/profiler.h"
 #include <memory>
@@ -139,6 +143,30 @@ public:
         vars.push_back({.name = "Exceptions processed",
                         .format = ProfileVarFmt::DEC,
                         .value = exceptions_processed});
+
+        // Generate top N op counts with readable names.
+#ifdef CPU_PROFILING_OPS
+        PPCDisasmContext ctx;
+        ctx.instr_addr = 0;
+        ctx.simplified = false;
+        std::vector<std::pair<std::string, uint64_t>> op_name_counts;
+        for (const auto& pair : num_opcodes) {
+            ctx.instr_code = pair.first;
+            auto op_name = disassemble_single(&ctx);
+            op_name_counts.emplace_back(op_name, pair.second);
+        }
+        size_t top_ops_size = std::min(op_name_counts.size(), size_t(20));
+        std::partial_sort(op_name_counts.begin(), op_name_counts.begin() + top_ops_size, op_name_counts.end(), [](const auto& a, const auto& b) {
+            return b.second < a.second;
+        });
+        op_name_counts.resize(top_ops_size);
+        for (const auto& pair : op_name_counts) {
+            vars.push_back({.name = "Instruction " + pair.first,
+                            .format = ProfileVarFmt::COUNT,
+                            .value = pair.second,
+                            .count_total = num_executed_instrs});
+        }
+#endif
     };
 
     void reset() {
@@ -147,6 +175,9 @@ public:
         num_int_loads = 0;
         num_int_stores = 0;
         exceptions_processed = 0;
+#ifdef CPU_PROFILING_OPS
+        num_opcodes.clear();
+#endif
     };
 };
 
@@ -289,6 +320,9 @@ void ppc_main_opcode()
 {
 #ifdef CPU_PROFILING
     num_executed_instrs++;
+#if defined(CPU_PROFILING_OPS)
+    num_opcodes[ppc_cur_instruction]++;
+#endif
 #endif
     OpcodeGrabber[(ppc_cur_instruction >> 26) & 0x3F]();
 }

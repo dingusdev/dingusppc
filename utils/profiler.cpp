@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "profiler.h"
+#include <iomanip>
 #include <iostream>
 #include <vector>
 
@@ -50,6 +51,11 @@ void Profiler::print_profile(std::string name)
         return;
     }
 
+    // Set a locale so we get thousands separators when outputting numbers.
+    // Would be nice if we could use the default locale, but that does not
+    // appear to work.
+    std::cout.imbue(std::locale("en_US.UTF-8"));
+
     std::cout << std::endl;
     std::cout << "Summary of the profile '" << name << "':" << std::endl;
     std::cout << "------------------------------------------" << std::endl;
@@ -61,13 +67,24 @@ void Profiler::print_profile(std::string name)
     // ask the corresponding profile class to fill its variables for us
     prof_it->second->populate_variables(vars);
 
+    int name_width = 10;
     for (auto& var : vars) {
+        name_width = std::max(name_width, int(var.name.length()));
+    }
+
+    for (auto& var : vars) {
+        std::cout << std::left << std::setw(name_width) << var.name << " : ";
         switch(var.format) {
         case ProfileVarFmt::DEC:
-            std::cout << var.name << " : " << var.value << std::endl;
+            std::cout << var.value << std::endl;
             break;
         case ProfileVarFmt::HEX:
-            std::cout << var.name << " : " << std::hex << var.value << std::endl;
+            std::cout << std::hex << var.value << std::endl;
+            break;
+        case ProfileVarFmt::COUNT:
+            std::cout << var.value << std::fixed << std::setprecision(2) << " ("
+                      << (double(var.value) / double(var.count_total) * 100)
+                      << "%)" << std::endl;
             break;
         default:
             std::cout << "Unknown value in variable " << var.name << std::endl;
