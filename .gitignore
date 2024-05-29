@@ -4,6 +4,7 @@ out/
 
 # Ignore compiled object files
 .vs/
+.vscode/
 *.o
 *.d
 
