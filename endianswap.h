@@ -28,12 +28,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef ENDIAN_SWAP_H
 #define ENDIAN_SWAP_H
 
+//Shamelessly taken from an endian detection routine written by lovell and Arritmic
+//(See: https://github.com/Arritmic/farmhash/blob/master/src/farmhash.h)
+
 #ifdef __GNUG__ /* GCC, ICC and Clang */
 
 #   ifdef __APPLE__
 #       include <machine/endian.h>
-#   else
+#   elif defined(__linux__) || defined(__CYGWIN__) || defined( __GNUC__ ) && !defined(_WIN32) || defined( __GNU_LIBRARY__ )
 #       include <endian.h>
+#   elif defined(__OpenBSD__) || defined(__NetBSD__) || defined(__FreeBSD__) || defined(__DragonFly__) || defined(__s390x__)
+#       include <sys/endian.h>
 #   endif
 
 #   define BYTESWAP_16(x) (__builtin_bswap16 (x))
