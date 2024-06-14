@@ -459,7 +459,7 @@ void enter_debugger() {
     ioctl(0, TIOCGWINSZ, &win_size_previous);
 #endif
 
-    while (1) {
+    while (!feof(stdin)) {
         if (power_off_reason == po_shut_down) {
             power_off_reason = po_shutting_down;
             break;
