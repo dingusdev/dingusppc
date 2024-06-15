@@ -6,13 +6,13 @@ The BeBox is a dual PowerPC 603(e) CPU setup. As it was designed with the intent
 
 It also has a unique 37-pin connector dubbed the Geekport to allow hobbyists to create unique devices.
 
-##Known components
+### Known components
 
 * MPC105 PCI Bridge (Codename: Eagle) - Predecessor to the MPC106 (Grackle); Used for bridging between the motherboard and PCI slots
 * Intel 82378ZB - Used for bridging between the motherboard and ISA slots
 * bq3285 - Used for the Real-Time Clock
 
-##Motherboard registers
+### Motherboard registers
 
 | Register name               | Address        | Default value  |
 |:---------------------------:|:--------------:|:--------------:|
@@ -23,7 +23,7 @@ It also has a unique 37-pin connector dubbed the Geekport to allow hobbyists to 
 | Proc. resets, other stuff   | 0x7FFFF4F0     |                |
 
 
-##Memory Map
+### Memory Map
 
 | Region                      | Starting Address | Ending Address   |
 |:---------------------------:|:----------------:|:----------------:|
@@ -35,7 +35,7 @@ It also has a unique 37-pin connector dubbed the Geekport to allow hobbyists to 
 | PCI Memory                  | 0xC0000000       | 0xFEFFFFFF       |
 | ROM/Flash                   | 0xFF000000       | 0xFFFFFFFF       |
 
-## Sources
+### Sources
 
 * https://www.haiku-os.org/legacy-docs/benewsletter/Issue1-27.html
 * https://www.cebix.net/downloads/bebox/82378zb.pdf
