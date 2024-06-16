@@ -530,6 +530,11 @@ void enter_debugger() {
             continue;
         }
 
+        if (feof(stdin)) {
+            printf("eof -> quit\n");
+            cmd = "quit";
+        }
+
         cmd_repeat = cmd.empty() && !last_cmd.empty();
         if (cmd_repeat) {
             cmd = last_cmd;
