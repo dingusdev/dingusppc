@@ -1589,7 +1589,7 @@ void dppc_interpreter::ppc_stmw() {
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
-    ppc_grab_regssa(ppc_cur_instruction);
+    ppc_grab_regssa_stmw(ppc_cur_instruction);
     ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
     ppc_effective_address += reg_a ? ppc_result_a : 0;
 
@@ -1864,7 +1864,7 @@ void dppc_interpreter::ppc_stswi() {
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
-    ppc_grab_regssash(ppc_cur_instruction);
+    ppc_grab_regssash_stswi(ppc_cur_instruction);
     ppc_effective_address = reg_a ? ppc_result_a : 0;
     uint32_t grab_inb = rot_sh ? rot_sh : 32;
 
@@ -1899,7 +1899,7 @@ void dppc_interpreter::ppc_stswx() {
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
-    ppc_grab_regssab(ppc_cur_instruction);
+    ppc_grab_regssab_stswx(ppc_cur_instruction);
     ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
     uint32_t grab_inb     = ppc_state.spr[SPR::XER] & 127;
 

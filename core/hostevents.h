@@ -116,7 +116,6 @@ private:
     uint64_t    unhandled_events = 0;
     uint64_t    key_downs = 0;
     uint64_t    key_ups = 0;
-    uint64_t    mouse_motions = 0;
     uint8_t     buttons_state = 0;
 };
 

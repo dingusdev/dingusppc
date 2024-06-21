@@ -172,7 +172,7 @@ uint16_t Sc53C94::pseudo_dma_read()
         // remove one word from FIFO
         data_word = (this->data_fifo[0] << 8) | this->data_fifo[1];
         this->data_fifo_pos -= 2;
-        std:memmove(this->data_fifo, &this->data_fifo[2], this->data_fifo_pos);
+        std::memmove(this->data_fifo, &this->data_fifo[2], this->data_fifo_pos);
 
         // update DMA status
         if (this->is_dma_cmd) {
@@ -403,7 +403,7 @@ uint8_t Sc53C94::fifo_pop()
     } else {
         data = this->data_fifo[0];
         this->data_fifo_pos--;
-        std:memmove(this->data_fifo, &this->data_fifo[1], this->data_fifo_pos);
+        std::memmove(this->data_fifo, &this->data_fifo[1], this->data_fifo_pos);
     }
 
     return data;
