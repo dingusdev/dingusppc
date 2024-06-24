@@ -28,6 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/memctrl/mpc106.h>
 #include <loguru.hpp>
 
+#include <algorithm>
 #include <cinttypes>
 #include <cstring>
 #include <string>

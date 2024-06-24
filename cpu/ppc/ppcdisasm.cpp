@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define _CRT_SECURE_NO_WARNINGS /* shut up MSVC regarding the unsafe strcpy/strcat */
 
 #include "ppcdisasm.h"
+#include <algorithm>
 #include <cstring>
 #include <functional> /* without this, MSVC doesn't understand std::function */
 #include <iostream>
