@@ -447,7 +447,9 @@ void enter_debugger() {
     size_t separator_pos;
     bool did_message = false;
     uint32_t next_addr_ppc;
+#ifdef ENABLE_68K_DEBUGGER
     uint32_t next_addr_68k;
+#endif
     bool cmd_repeat;
 
     unique_ptr<OfConfigUtils> ofnvram = unique_ptr<OfConfigUtils>(new OfConfigUtils);

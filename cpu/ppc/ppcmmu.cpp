@@ -797,7 +797,7 @@ static void tlb_flush_entries(std::array<TLBEntry, N> &tlb, TLBFlags type) {
 template <const TLBType tlb_type>
 void tlb_flush_entries(TLBFlags type)
 {
-    TLBEntry *m1_tlb, *m2_tlb, *m3_tlb;
+    //TLBEntry *m1_tlb, *m2_tlb, *m3_tlb;
     int i;
 
     if (tlb_type == TLBType::ITLB) {

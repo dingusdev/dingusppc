@@ -205,7 +205,7 @@ int ScsiHardDisk::req_sense(uint16_t alloc_len) {
     //if (!check_lun())
     //    return;
 
-    int next_phase;
+    //int next_phase;
 
     int lun;
     if (this->last_selection_has_atention) {
