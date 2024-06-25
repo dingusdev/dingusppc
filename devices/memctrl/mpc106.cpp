@@ -24,7 +24,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/hwcomponent.h>
 #include <devices/common/hwinterrupt.h>
 #include <devices/deviceregistry.h>
-#include <devices/memctrl/memctrlbase.h>
 #include <devices/memctrl/mpc106.h>
 #include <loguru.hpp>
 
@@ -88,7 +87,7 @@ void MPC106::pci_interrupt(uint8_t irq_line_state, PCIBase *dev) {
             return p.second == dev;
         }
     );
- 
+
     if (it == dev_map.end()) {
         LOG_F(ERROR, "Interrupt from unknown device %s", dev->get_name().c_str());
     }

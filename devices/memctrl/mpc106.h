@@ -36,6 +36,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <devices/common/pci/pcidevice.h>
 #include <devices/common/pci/pcihost.h>
+#include <devices/memctrl/memctrlbase.h>
 #include <machines/machinebase.h>
 
 #include <cinttypes>
