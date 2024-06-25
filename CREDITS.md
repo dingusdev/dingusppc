@@ -14,6 +14,8 @@
 - webspacecreations
 - leap0x7b
 - sdkmap
+- dressupgeekout
+- kth5
 
 ## Testing
 
@@ -29,6 +31,7 @@
 - Emaculation
 - GitHub
 - PenguinPPC
+- VirtuallyFun
 - The makers of Loguru, SDL2, Capstone, and CLI11
 - The developers of other PowerPC Mac emulators, past and present
-- All those preserving the software of 68k and PowerPC Macs
+- All those preserving the software and source code of 68k and PowerPC Macs
