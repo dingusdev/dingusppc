@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -60,7 +60,9 @@ int MPC106::device_postinit()
     std::string pci_dev_name;
 
     static const std::map<std::string, int> pci_slots = {
-        {"pci_PERCH", DEV_FUN(0xC,0)}, {"pci_A1", DEV_FUN(0xD,0)}, {"pci_B1", DEV_FUN(0xE,0)}, {"pci_C1", DEV_FUN(0xF,0)}, {"pci_GPU", DEV_FUN(0x12,0)}
+        {"pci_PERCH", DEV_FUN(0xC,0)}, {"pci_A1", DEV_FUN(0xD,0)},
+        {"pci_B1",    DEV_FUN(0xE,0)}, {"pci_C1", DEV_FUN(0xF,0)},
+        {"pci_GPU",   DEV_FUN(0x12,0)}
     };
 
     for (auto& slot : pci_slots) {
@@ -72,6 +74,7 @@ int MPC106::device_postinit()
 
     this->int_ctrl = dynamic_cast<InterruptCtrl*>(
         gMachineObj->get_comp_by_type(HWCompType::INT_CTRL));
+
     this->irq_id_PCI_A     = this->int_ctrl->register_dev_int(IntSrc::PCI_A    );
     this->irq_id_PCI_B     = this->int_ctrl->register_dev_int(IntSrc::PCI_B    );
     this->irq_id_PCI_C     = this->int_ctrl->register_dev_int(IntSrc::PCI_C    );
@@ -100,7 +103,8 @@ void MPC106::pci_interrupt(uint8_t irq_line_state, PCIBase *dev) {
             case DEV_FUN(0x0F,0): irq_id = this->irq_id_PCI_C    ; break;
             case DEV_FUN(0x12,0): irq_id = this->irq_id_PCI_GPU  ; break;
             default:
-                LOG_F(ERROR, "Interrupt from device %s at unexpected device/function %02x.%x", dev->get_name().c_str(), it->first >> 3, it->first & 7);
+                LOG_F(ERROR, "Interrupt from device %s at unexpected device/function %02x.%x",
+                      dev->get_name().c_str(), it->first >> 3, it->first & 7);
                 return;
         }
         if (this->int_ctrl)
