@@ -515,7 +515,7 @@ namespace loguru
 		argv[argc] = nullptr;
 	}
 
-	static long long now_ns()
+	static long long loguru_now_ns()
 	{
 		return duration_cast<nanoseconds>(high_resolution_clock::now().time_since_epoch()).count();
 	}
@@ -1578,7 +1578,7 @@ namespace loguru
 				}
 			}
 #if LOGURU_VERBOSE_SCOPE_ENDINGS
-			auto duration_sec = static_cast<double>(now_ns() - _start_time_ns) / 1e9;
+			auto duration_sec = static_cast<double>(loguru_now_ns() - _start_time_ns) / 1e9;
 #if LOGURU_USE_FMTLIB
 			auto buff = textprintf("{:.{}f} s: {:s}", duration_sec, LOGURU_SCOPE_TIME_PRECISION, _name);
 #else
@@ -1596,7 +1596,7 @@ namespace loguru
 		if (_verbosity <= current_verbosity_cutoff()) {
 			std::lock_guard<std::recursive_mutex> lock(s_mutex);
 			_indent_stderr = (_verbosity <= g_stderr_verbosity);
-			_start_time_ns = now_ns();
+			_start_time_ns = loguru_now_ns();
 			vsnprintf(_name, sizeof(_name), format, vlist);
 			log_to_everywhere(1, _verbosity, _file, _line, "{ ", _name);
 
