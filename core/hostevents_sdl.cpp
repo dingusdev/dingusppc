@@ -56,7 +56,7 @@ void EventManager::poll_events()
         case SDL_KEYUP: {
                 // Internal shortcuts to trigger mouse grab, intentionally not
                 // sent to the host.
-                if (event.key.keysym.sym == SDLK_g && SDL_GetModState() == KMOD_LCTRL) {
+                if (SDL_GetModState() & KMOD_LCTRL && event.key.keysym.sym == SDLK_g) {
                     if (event.type == SDL_KEYUP) {
                         toggle_mouse_grab(event.key);
                     }
