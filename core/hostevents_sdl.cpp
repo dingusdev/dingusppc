@@ -25,7 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/adb/adbkeyboard.h>
 #include <loguru.hpp>
 #include <SDL.h>
-
+#include <stdio.h>
 EventManager* EventManager::event_manager;
 
 static int get_sdl_event_key_code(const SDL_KeyboardEvent &event);
@@ -56,7 +56,7 @@ void EventManager::poll_events()
         case SDL_KEYUP: {
                 // Internal shortcuts to trigger mouse grab, intentionally not
                 // sent to the host.
-                if (event.key.keysym.sym == SDLK_g && SDL_GetModState() == KMOD_LCTRL) {
+            if (SDL_GetModState() & KMOD_LCTRL && event.key.keysym.sym == SDLK_g) {
                     if (event.type == SDL_KEYUP) {
                         toggle_mouse_grab(event.key);
                     }
