@@ -120,7 +120,10 @@ void TaosVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int s
         this->row_words = value;
         break;
     case COLOR_MODE:
-        this->color_mode = value;
+        if (this->color_mode != value) {
+            this->color_mode = value;
+            enable_display();
+        }
         break;
     case VIDEO_MODE:
         this->video_mode = value >> 30;
@@ -129,6 +132,8 @@ void TaosVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int s
         if (bit_changed(this->crt_ctrl, value, ENABLE_VIDEO_OUT)) {
             if (bit_set(value, ENABLE_VIDEO_OUT))
                 enable_display();
+            else
+                disable_display();
         }
         this->crt_ctrl = value;
         break;
@@ -218,7 +223,15 @@ void TaosVideo::enable_display() {
     this->start_refresh_task();
 
     this->blank_on = false;
-    this->crtc_on = true;
+    this->crtc_on  = true;
+}
+
+void TaosVideo::disable_display() {
+    this->stop_refresh_task();
+    this->blank_display();
+
+    this->blank_on = true;
+    this->crtc_on  = false;
 }
 
 void TaosVideo::convert_frame_15bpp_indexed(uint8_t *dst_buf, int dst_pitch) {

@@ -174,6 +174,7 @@ public:
 
 private:
     void enable_display();
+    void disable_display();
     void convert_frame_15bpp_indexed(uint8_t *dst_buf, int dst_pitch);
 
     std::unique_ptr<AthensClocks>   clk_gen = nullptr;
