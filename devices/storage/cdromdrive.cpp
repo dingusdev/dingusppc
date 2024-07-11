@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -138,8 +138,17 @@ uint32_t CdromDrive::report_capacity(uint8_t *data_ptr) {
     return 8;
 }
 
+uint8_t CdromDrive::hex_to_bcd(const uint8_t val) {
+    uint8_t hi = val / 10;
+    uint8_t lo = val % 10;
+    return (hi << 4) | lo;
+}
+
 AddrMsf CdromDrive::lba_to_msf(const int lba) {
-    return {lba / 4500, /*.min*/ (lba / 75) % 60, /*.sec*/ lba % 75 /*.frm*/};
+    return {hex_to_bcd( lba / 4500),     /*.min*/
+            hex_to_bcd((lba / 75) % 60), /*.sec*/
+            hex_to_bcd( lba % 75)        /*.frm*/
+    };
 }
 
 uint32_t CdromDrive::read_toc(uint8_t *cmd_ptr, uint8_t *data_ptr) {

@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -69,6 +69,7 @@ public:
 
 protected:
     std::function<void(uint8_t, uint8_t)>  set_error;
+    uint8_t hex_to_bcd(const uint8_t val);
     AddrMsf lba_to_msf(const int lba);
 
     TrackDescriptor tracks[CDROM_MAX_TRACKS];
