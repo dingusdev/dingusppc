@@ -91,7 +91,8 @@ uint32_t TaosVideo::read(uint32_t rgn_start, uint32_t offset, int size) {
     case CRT_CTRL:
         return this->crt_ctrl;
     case GPIO_IN:
-        return ((this->mon_id << 29) | (vsync_active << 25)) & ~this->gpio_cfg;
+        return ((this->mon_id << GPIO_MONID) | (1 << GPIO_CDTRAY) |
+                (vsync_active << GPIO_VSYNC)) & ~this->gpio_cfg;
     case INT_ENABLES:
         return this->int_enables;
     case TAOS_VERSION:

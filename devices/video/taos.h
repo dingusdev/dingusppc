@@ -111,6 +111,13 @@ enum {
     MON_ID_VGA  = 6  // GPIO_0 = "1", GPIO_1 = "1", GPIO_2 = "0"
 };
 
+/** Definitions for the GPIO pins. */
+enum {
+    GPIO_MONID      = 29, // GPIO 0..2 are monitor identification pins
+    GPIO_CDTRAY     = 27, // GPIO 4: "1" - CD-ROM tray is closed
+    GPIO_VSYNC      = 25, // GPIO 6: vertical synch input (active low)
+};
+
 /** Broktree Bt856 digital video encoder. */
 class Bt856 : public I2CDevice, public HWComponent {
 public:
