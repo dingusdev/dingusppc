@@ -66,17 +66,11 @@ void ScsiHardDisk::process_command() {
     case ScsiCommand::TEST_UNIT_READY:
         this->test_unit_ready();
         break;
-    case ScsiCommand::REWIND:
-        this->illegal_command(cmd);
-        break;
     case ScsiCommand::REQ_SENSE:
         this->req_sense(cmd[4]);
         break;
     case ScsiCommand::FORMAT_UNIT:
         this->format();
-        break;
-    case ScsiCommand::READ_BLK_LIMITS:
-        this->illegal_command(cmd);
         break;
     case ScsiCommand::READ_6:
         lba = ((cmd[1] & 0x1F) << 16) + (cmd[2] << 8) + cmd[3];
@@ -86,35 +80,14 @@ void ScsiHardDisk::process_command() {
         lba = ((cmd[1] & 0x1F) << 16) + (cmd[2] << 8) + cmd[3];
         this->write(lba, cmd[4], 6);
         break;
-    case ScsiCommand::SEEK_6:
-        this->illegal_command(cmd);
-        break;
     case ScsiCommand::INQUIRY:
         this->inquiry();
-        break;
-    case ScsiCommand::VERIFY_6:
-        this->illegal_command(cmd);
         break;
     case ScsiCommand::MODE_SELECT_6:
         mode_select_6(cmd[4]);
         break;
-    case ScsiCommand::RELEASE_UNIT:
-        this->illegal_command(cmd);
-        break;
-    case ScsiCommand::ERASE_6:
-        this->illegal_command(cmd);
-        break;
     case ScsiCommand::MODE_SENSE_6:
         this->mode_sense_6();
-        break;
-    case ScsiCommand::START_STOP_UNIT:
-        this->illegal_command(cmd);
-        break;
-    case ScsiCommand::DIAG_RESULTS:
-        this->illegal_command(cmd);
-        break;
-    case ScsiCommand::SEND_DIAGS:
-        this->illegal_command(cmd);
         break;
     case ScsiCommand::PREVENT_ALLOW_MEDIUM_REMOVAL:
         this->eject_allowed = (cmd[4] & 1) == 0;
@@ -135,28 +108,8 @@ void ScsiHardDisk::process_command() {
         this->write(lba, READ_WORD_BE_U(&cmd[7]), 10);
         this->switch_phase(ScsiPhase::DATA_OUT);
         break;
-    case ScsiCommand::VERIFY_10:
-        this->illegal_command(cmd);
-        break;
     case ScsiCommand::READ_BUFFER:
         read_buffer();
-        break;
-    case ScsiCommand::MODE_SENSE_10:
-        this->illegal_command(cmd);
-        break;
-    case ScsiCommand::READ_12:
-        this->illegal_command(cmd);
-        break;
-
-    // CD-ROM specific commands
-    case ScsiCommand::READ_TOC:
-        this->illegal_command(cmd);
-        break;
-    case ScsiCommand::SET_CD_SPEED:
-        this->illegal_command(cmd);
-        break;
-    case ScsiCommand::READ_CD:
-        this->illegal_command(cmd);
         break;
     default:
         this->illegal_command(cmd);
