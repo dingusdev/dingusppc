@@ -216,7 +216,7 @@ uint32_t CdromDrive::read_toc(uint8_t *cmd_ptr, uint8_t *data_ptr) {
                 out_ptr += 4;
             }
         }
-        return data_len;
+        return alloc_len;
     case 1: // Multi-session info
         std::memset(data_ptr, 0, 12);
         data_ptr[1] = 10; // TOC data length

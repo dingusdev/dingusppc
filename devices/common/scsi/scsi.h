@@ -200,6 +200,8 @@ public:
         this->bus_obj = bus_obj_ptr;
     }
 
+    void report_error(uint8_t sense_key, uint8_t asc);
+
 protected:
     uint8_t     cmd_buf[16] = {};
     uint8_t     msg_buf[16] = {}; // TODO: clarify how big this one should be

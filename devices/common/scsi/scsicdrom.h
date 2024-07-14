@@ -48,7 +48,6 @@ protected:
     void    mode_select_6(uint8_t param_len);
 
     void    mode_sense_6();
-    void    read_toc();
     void    read_capacity_10();
 
 private:

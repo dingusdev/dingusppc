@@ -34,6 +34,11 @@ using namespace std;
 
 ScsiCdrom::ScsiCdrom(std::string name, int my_id) : CdromDrive(), ScsiDevice(name, my_id)
 {
+    this->set_error_callback(
+        [this](uint8_t sense_key, uint8_t asc) {
+            this->report_error(sense_key, asc);
+        }
+    );
 }
 
 void ScsiCdrom::process_command()
@@ -85,7 +90,11 @@ void ScsiCdrom::process_command()
 
     // CD-ROM specific commands
     case ScsiCommand::READ_TOC:
-        this->read_toc();
+        this->bytes_out = read_toc(cmd, this->data_buf);
+        if (this->status == ScsiStatus::GOOD) {
+            this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;
+            this->switch_phase(ScsiPhase::DATA_IN);
+        }
         break;
     default:
         LOG_F(ERROR, "%s: unsupported command 0x%X", this->name.c_str(), cmd[0]);
@@ -268,85 +277,6 @@ void ScsiCdrom::mode_select_6(uint8_t param_len)
     };
 
     this->switch_phase(ScsiPhase::DATA_OUT);
-}
-
-void ScsiCdrom::read_toc()
-{
-    int         tot_tracks;
-    uint8_t     start_track = this->cmd_buf[6];
-    uint16_t    alloc_len   = (this->cmd_buf[7] << 8) + this->cmd_buf[8];
-    bool        is_msf      = !!(this->cmd_buf[1] & 2);
-
-    if (this->cmd_buf[2] & 0xF) {
-        ABORT_F("%s: unsupported format in READ_TOC", this->name.c_str());
-    }
-
-    if (!alloc_len) {
-        LOG_F(WARNING, "%s: zero allocation length passed to READ_TOC", this->name.c_str());
-        return;
-    }
-
-    if (!start_track) { // special case: track zero (lead-in) as starting track
-        // return all tracks starting with track 1 plus lead-out
-        start_track = 1;
-        tot_tracks  = this->num_tracks + 1;
-    } else if (start_track == LEAD_OUT_TRK_NUM) {
-        start_track = this->num_tracks + 1;
-        tot_tracks  = 1;
-    } else if (start_track <= this->num_tracks) {
-        tot_tracks  = (this->num_tracks - start_track) + 2;
-    } else {
-        LOG_F(ERROR, "%s: invalid starting track %d in READ_TOC", this->name.c_str(),
-              start_track);
-        this->status = ScsiStatus::CHECK_CONDITION;
-        this->sense  = ScsiSense::ILLEGAL_REQ;
-        this->asc    = ScsiError::INVALID_CDB;
-        this->ascq   = 0;
-        this->sksv   = 0xc0; // sksv=1, C/D=Command, BPV=0, BP=0
-        this->field  = 6; // offset of start_track
-        this->switch_phase(ScsiPhase::STATUS);
-        return;
-    }
-
-    uint8_t* buf_ptr = this->data_buf;
-
-    int data_len = (tot_tracks * 8) + 2;
-
-    // write TOC data header
-    *buf_ptr++ = (data_len >> 8) & 0xFFU;
-    *buf_ptr++ = (data_len >> 0) & 0xFFU;
-    *buf_ptr++ = 1; // 1st track number
-    *buf_ptr++ = this->num_tracks; // last track number
-
-    for (int tx = 0; tx < tot_tracks; tx++) {
-        if ((buf_ptr - this->data_buf + 8) > alloc_len)
-            break; // exit the loop if the output buffer length is exhausted
-
-        TrackDescriptor& td = this->tracks[start_track + tx - 1];
-
-        *buf_ptr++ = 0; // reserved
-        *buf_ptr++ = td.adr_ctrl;
-        *buf_ptr++ = td.trk_num;
-        *buf_ptr++ = 0; // reserved
-
-        if (is_msf) {
-            AddrMsf msf = lba_to_msf(td.start_lba + 150);
-            *buf_ptr++ = 0; // reserved
-            *buf_ptr++ = msf.min;
-            *buf_ptr++ = msf.sec;
-            *buf_ptr++ = msf.frm;
-        } else {
-            *buf_ptr++ = (td.start_lba >> 24) & 0xFFU;
-            *buf_ptr++ = (td.start_lba >> 16) & 0xFFU;
-            *buf_ptr++ = (td.start_lba >>  8) & 0xFFU;
-            *buf_ptr++ = (td.start_lba >>  0) & 0xFFU;
-        }
-    }
-
-    this->bytes_out  = alloc_len;
-    this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;
-
-    this->switch_phase(ScsiPhase::DATA_IN);
 }
 
 void ScsiCdrom::read_capacity_10()

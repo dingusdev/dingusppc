@@ -246,3 +246,12 @@ void ScsiDevice::illegal_command(const uint8_t *cmd) {
     this->field  = 0;
     this->switch_phase(ScsiPhase::STATUS);
 }
+
+void ScsiDevice::report_error(uint8_t sense_key, uint8_t asc) {
+    this->status = ScsiStatus::CHECK_CONDITION;
+    this->sense  = sense_key;
+    this->asc    = asc;
+    this->ascq   = 0;
+    this->sksv   = 0xC0; // sksv=1, C/D=Command, BPV=0, BP=0
+    this->switch_phase(ScsiPhase::STATUS);
+}
