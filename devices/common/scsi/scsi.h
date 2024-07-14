@@ -142,16 +142,17 @@ enum ScsiSense : int {
 };
 
 enum ScsiError : int {
-    NO_ERROR            = 0x00,
-    NO_SECTOR           = 0x01,
-    WRITE_FAULT         = 0x03,
-    DEV_NOT_READY       = 0x04,
-    INVALID_CMD         = 0x20,
-    INVALID_LBA         = 0x21,
-    INVALID_CDB         = 0x24,
-    INVALID_LUN         = 0x25,
-    WRITE_PROTECT       = 0x27,
-    MEDIUM_NOT_PRESENT  = 0x3A,
+    NO_ERROR                = 0x00,
+    NO_SECTOR               = 0x01,
+    WRITE_FAULT             = 0x03,
+    DEV_NOT_READY           = 0x04,
+    INVALID_CMD             = 0x20,
+    INVALID_LBA             = 0x21,
+    INVALID_CDB             = 0x24,
+    INVALID_LUN             = 0x25,
+    WRITE_PROTECT           = 0x27,
+    SAVING_NOT_SUPPORTED    = 0x39,
+    MEDIUM_NOT_PRESENT      = 0x3A,
 };
 
 /** Standard SCSI bus timing values measured in ns. */

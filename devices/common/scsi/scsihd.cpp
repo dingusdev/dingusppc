@@ -226,7 +226,7 @@ int ScsiHardDisk::req_sense(uint16_t alloc_len) {
     }
     else {
         this->data_buf[ 2] = this->sense;      // Reserved:0xf0, Sense Key:0x0f ; e.g. ScsiSense::ILLEGAL_REQ
-        this->data_buf[12] = 0x25;             // addition sense code = Logical Unit Not Supported
+        this->data_buf[12] = ScsiError::INVALID_LUN; // addition sense code = Logical Unit Not Supported
         this->data_buf[13] = 0;                // additional sense qualifier
         this->data_buf[15] = 0;                // SKSV:0x80, C/D:0x40, Reserved:0x30, BPV:8, Bit Pointer:7
         this->data_buf[16] = 0;                // field pointer
@@ -339,9 +339,9 @@ void ScsiHardDisk::mode_sense_6() {
         LOG_F(INFO, "%s: page_ctrl 1 CHANGEABLE VALUES is not implemented", this->name.c_str());
         this->status = ScsiStatus::CHECK_CONDITION;
         this->sense  = ScsiSense::ILLEGAL_REQ;
-        this->asc    = 0x24; // Invalid Field in CDB
+        this->asc    = ScsiError::INVALID_CDB;
         this->ascq   = 0;
-        this->sksv   = 0xc0; // sksv=1, C/D=Command, BPV=0, BP=0
+        this->sksv   = 0xC0; // sksv=1, C/D=Command, BPV=0, BP=0
         this->field  = 2;
         this->switch_phase(ScsiPhase::STATUS);
         return;
@@ -351,9 +351,9 @@ void ScsiHardDisk::mode_sense_6() {
         LOG_F(ERROR, "%s: page_ctrl 2 DEFAULT VALUES is not implemented", this->name.c_str());
         this->status = ScsiStatus::CHECK_CONDITION;
         this->sense  = ScsiSense::ILLEGAL_REQ;
-        this->asc    = 0x24; // Invalid Field in CDB
+        this->asc    = ScsiError::INVALID_CDB;
         this->ascq   = 0;
-        this->sksv   = 0xc0; // sksv=1, C/D=Command, BPV=0, BP=0
+        this->sksv   = 0xC0; // sksv=1, C/D=Command, BPV=0, BP=0
         this->field  = 2;
         this->switch_phase(ScsiPhase::STATUS);
         return;
@@ -363,7 +363,7 @@ void ScsiHardDisk::mode_sense_6() {
         LOG_F(INFO, "%s: page_ctrl 3 SAVED VALUES is not implemented", this->name.c_str());
         this->status = ScsiStatus::CHECK_CONDITION;
         this->sense  = ScsiSense::ILLEGAL_REQ;
-        this->asc    = 0x39; // Saving Parameters Not Supported
+        this->asc    = SAVING_NOT_SUPPORTED;
         this->ascq   = 0;
         this->sksv   = 0;
         this->field  = 0;
@@ -428,9 +428,9 @@ void ScsiHardDisk::mode_sense_6() {
         LOG_F(WARNING, "%s: unsupported page 0x%02x in MODE_SENSE_6", this->name.c_str(), page_code);
         this->status = ScsiStatus::CHECK_CONDITION;
         this->sense  = ScsiSense::ILLEGAL_REQ;
-        this->asc    = 0x24; // Invalid Field in CDB
+        this->asc    = ScsiError::INVALID_CDB;
         this->ascq   = 0;
-        this->sksv   = 0xc0; // sksv=1, C/D=Command, BPV=0, BP=0
+        this->sksv   = 0xC0; // sksv=1, C/D=Command, BPV=0, BP=0
         this->field  = 2;
         this->switch_phase(ScsiPhase::STATUS);
         return;
@@ -438,9 +438,9 @@ void ScsiHardDisk::mode_sense_6() {
         LOG_F(WARNING, "%s: unsupported page/subpage %02xh/%02xh in MODE_SENSE_6", this->name.c_str(), page_code, sub_page_code);
         this->status = ScsiStatus::CHECK_CONDITION;
         this->sense  = ScsiSense::ILLEGAL_REQ;
-        this->asc    = 0x24; // Invalid Field in CDB
+        this->asc    = ScsiError::INVALID_CDB;
         this->ascq   = 0;
-        this->sksv   = 0xc0; // sksv=1, C/D=Command, BPV=0, BP=0
+        this->sksv   = 0xC0; // sksv=1, C/D=Command, BPV=0, BP=0
         this->field  = 3;
         this->switch_phase(ScsiPhase::STATUS);
         return;
@@ -465,9 +465,9 @@ void ScsiHardDisk::read_capacity_10() {
         LOG_F(ERROR, "%s: non-zero LBA for PMI=0", this->name.c_str());
         this->status = ScsiStatus::CHECK_CONDITION;
         this->sense  = ScsiSense::ILLEGAL_REQ;
-        this->asc    = 0x24; // Invalid Field in CDB
+        this->asc    = ScsiError::INVALID_CDB;
         this->ascq   = 0;
-        this->sksv   = 0xc0; // sksv=1, C/D=Command, BPV=0, BP=0
+        this->sksv   = 0xC0; // sksv=1, C/D=Command, BPV=0, BP=0
         this->field  = 8;
         this->switch_phase(ScsiPhase::STATUS);
         return;
