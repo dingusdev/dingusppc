@@ -221,13 +221,12 @@ int ScsiDevice::rcv_data(const uint8_t* src_ptr, const int count)
     return count;
 }
 
-bool ScsiDevice::check_lun()
-{
+bool ScsiDevice::check_lun() {
     if (this->cmd_buf[1] >> 5 != this->lun) {
         LOG_F(ERROR, "%s: non-matching LUN", this->name.c_str());
         this->status = ScsiStatus::CHECK_CONDITION;
         this->sense  = ScsiSense::ILLEGAL_REQ;
-        this->asc    = 0x25; // Logical Unit Not Supported
+        this->asc    = ScsiError::INVALID_LUN;
         this->ascq   = 0;
         this->sksv   = 0;
         this->field  = 0;
@@ -237,14 +236,13 @@ bool ScsiDevice::check_lun()
     return true;
 }
 
-void ScsiDevice::illegal_command(const uint8_t *cmd)
-{
+void ScsiDevice::illegal_command(const uint8_t *cmd) {
     LOG_F(ERROR, "%s: unsupported command: 0x%02x", this->name.c_str(), cmd[0]);
     this->status = ScsiStatus::CHECK_CONDITION;
     this->sense  = ScsiSense::ILLEGAL_REQ;
-    this->asc    = 0x20; // Invalid command operation code
+    this->asc    = ScsiError::INVALID_CMD;
     this->ascq   = 0;
-    this->sksv   = 0xc0; // sksv=1, C/D=Command, BPV=0, BP=0
+    this->sksv   = 0xC0; // sksv=1, C/D=Command, BPV=0, BP=0
     this->field  = 0;
     this->switch_phase(ScsiPhase::STATUS);
 }
