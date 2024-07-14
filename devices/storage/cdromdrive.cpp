@@ -30,12 +30,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cstring>
 #include <string>
 
-CdromDrive::CdromDrive() : BlockStorageDevice(31, 2048, 0xfffffffe) {
+CdromDrive::CdromDrive() : BlockStorageDevice(31, CDR_STD_DATA_SIZE, 0xfffffffe) {
     this->is_writeable = false;
 }
 
 void CdromDrive::insert_image(std::string filename) {
-    this->set_host_file(filename);
+    if (this->set_host_file(filename) < 0)
+        ABORT_F("Could not open CD-ROM image file, %s", filename.c_str());
+
+    this->detect_raw_image();
 
     // create single track descriptor
     this->tracks[0]  = {1, /*.trk_num*/ 0x14, /*.adr_ctrl*/ 0 /*.start_lba*/};
@@ -44,6 +47,29 @@ void CdromDrive::insert_image(std::string filename) {
     // create Lead-out descriptor containing all data
     this->tracks[1] = {LEAD_OUT_TRK_NUM, /*.trk_num*/ 0x14, /*.adr_ctrl*/
         static_cast<uint32_t>(this->size_blocks + 1) /*.start_lba*/};
+}
+
+bool CdromDrive::detect_raw_image() {
+    uint8_t block_hdr[16];
+
+    // let's see if the image data starts with the Mode 1/2 sync pattern
+    this->img_file.read(block_hdr, 0, sizeof(block_hdr));
+
+    for (int i = 1; i <= 10; i++)
+        if (block_hdr[i] != 0xFF)
+            return false;
+
+    if (block_hdr[0] != 0 || block_hdr[11] != 0)
+        return false;
+
+    // for now, we only support Mode 1 images
+    if (block_hdr[15] == 1) {
+        this->set_block_size(2352);
+        this->data_offset = 16;
+        return true;
+    }
+
+    return false;
 }
 
 static char cdrom_vendor_dingus_id[] = "DINGUS  ";

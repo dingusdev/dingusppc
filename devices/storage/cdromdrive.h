@@ -46,6 +46,7 @@ typedef struct {
 
 #define CDROM_MAX_TRACKS    100
 #define LEAD_OUT_TRK_NUM    0xAA
+#define CDR_STD_DATA_SIZE   2048
 
 class CdromDrive : public BlockStorageDevice {
 public:
@@ -71,6 +72,7 @@ protected:
     std::function<void(uint8_t, uint8_t)>  set_error;
     uint8_t hex_to_bcd(const uint8_t val);
     AddrMsf lba_to_msf(const int lba);
+    bool    detect_raw_image();
 
     TrackDescriptor tracks[CDROM_MAX_TRACKS];
     int             num_tracks;
