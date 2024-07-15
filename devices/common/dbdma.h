@@ -103,7 +103,7 @@ namespace DBDMA_Cmd {
 
 typedef std::function<void(void)> DbdmaCallback;
 
-class DMAChannel : public DmaBidirChannel {
+class DMAChannel : public DmaBidirChannel, public DmaChannel {
 public:
     DMAChannel(std::string name) : DmaBidirChannel(name) {}
     ~DMAChannel() = default;
@@ -134,6 +134,7 @@ protected:
     void finish_cmd();
     void xfer_quad(const DMACmd *cmd_desc, DMACmd *cmd_host);
     void update_irq();
+    void xfer_from_device();
 
     void start(void);
     void resume(void);

@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define DMA_CORE_H
 
 #include <cstdint>
+#include <cinttypes>
 #include <string>
 
 enum DmaPullResult : int {
@@ -74,5 +75,53 @@ public:
 private:
     std::string name;
 };
+
+// ---------------------- New DMA API -------------------------
+enum DmaMsg : unsigned {
+    CH_START    = 1,
+    CH_STOP,
+    DATA_AVAIL,
+};
+
+enum XferDir : unsigned {
+    DMA_DIR_UNDEF       = 0,
+    DMA_DIR_TO_DEV,
+    DMA_DIR_FROM_DEV,
+};
+
+class DmaChannel;
+
+class DmaDevice {
+public:
+    DmaDevice()  = default;
+    ~DmaDevice() = default;
+
+    void connect(DmaChannel *ch_obj) { this->channel_obj = ch_obj; };
+    void notify(DmaMsg msg) {};
+    virtual int xfer_from(uint8_t *buf, int len) { return len; };
+
+protected:
+    DmaChannel* channel_obj = nullptr;
+};
+
+class DmaChannel {
+public:
+    DmaChannel()  = default;
+    ~DmaChannel() = default;
+
+    void connect(DmaDevice *dev_obj) { this->dev_obj = dev_obj; };
+    void notify(DmaMsg msg) {};
+
+protected:
+    DmaDevice*  dev_obj  = nullptr;
+    XferDir     xfer_dir = DMA_DIR_UNDEF;
+};
+
+/*
+    TODO: write CONNECT macro that
+    - constructs both DmaChannel and DmaDevice objects
+    - calls connect() method on both objects
+    - initializes DMA interrupts
+*/
 
 #endif // DMA_CORE_H

@@ -102,6 +102,7 @@ uint8_t DMAChannel::interpret_cmd() {
                 break;
             case DBDMA_Cmd::INPUT_MORE:
             case DBDMA_Cmd::INPUT_LAST:
+                this->xfer_from_device();
                 if (this->in_cb)
                     this->in_cb();
                 break;
@@ -404,6 +405,20 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
         LOG_F(WARNING, "%s: Unsupported DMA channel register write at 0x%X",
             this->get_name().c_str(), offset);
     }
+}
+
+void DMAChannel::xfer_from_device() {
+    if (this->dev_obj == nullptr)
+        return;
+
+    this->xfer_dir = DMA_DIR_FROM_DEV;
+
+    if (!this->dev_obj->xfer_from(this->queue_data, this->queue_len)) {
+        this->queue_len = 0;
+        this->finish_cmd();
+    }
+
+    this->interpret_cmd();
 }
 
 DmaPullResult DMAChannel::pull_data(uint32_t req_len, uint32_t *avail_len, uint8_t **p_data)
