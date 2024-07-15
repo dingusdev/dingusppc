@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -164,4 +164,4 @@ private:
     uint32_t       irq_id   = 0;
 };
 
-#endif /* DB_DMA_H */
+#endif // DB_DMA_H

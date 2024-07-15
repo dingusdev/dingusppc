@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -339,7 +339,9 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
         // That means we need to update memory before channel operation
         // is aborted to prevent data loss.
         if (new_stat & CH_STAT_FLUSH) {
-            if (this->cur_cmd <= DBDMA_Cmd::INPUT_LAST && this->flush_cb && (new_stat & CH_STAT_ACTIVE) && !(this->ch_stat & CH_STAT_DEAD)) {
+            if (this->cur_cmd <= DBDMA_Cmd::INPUT_LAST &&
+                this->flush_cb && (new_stat & CH_STAT_ACTIVE) &&
+                !(this->ch_stat & CH_STAT_DEAD)) {
                 this->flush_cb();
             } else {
                 // NOTE: because this implementation doesn't currently support
@@ -378,7 +380,8 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
         break; // ingore writes to ChannelStatus
     case DMAReg::CMD_PTR_HI:
         if (value != 0) {
-            LOG_F(WARNING, "%s: Unsupported DMA channel register write @%02x.%c = %0*x", this->get_name().c_str(), offset, SIZE_ARG(size), size * 2, value);
+            LOG_F(WARNING, "%s: Unsupported DMA channel register write @%02x.%c = %0*x",
+                  this->get_name().c_str(), offset, SIZE_ARG(size), size * 2, value);
         }
         break;
     case DMAReg::CMD_PTR_LO:
@@ -472,7 +475,8 @@ int DMAChannel::push_data(const char* src_ptr, int len) {
 void DMAChannel::end_pull_data() {
     if (this->ch_stat & CH_STAT_DEAD || !(this->ch_stat & CH_STAT_ACTIVE)) {
         // dead or idle channel? -> no more data
-        LOG_F(WARNING, "%s: Ending Dead/idle channel -> no more data", this->get_name().c_str());
+        LOG_F(WARNING, "%s: Ending Dead/idle channel -> no more data",
+              this->get_name().c_str());
         return;
     }
 
