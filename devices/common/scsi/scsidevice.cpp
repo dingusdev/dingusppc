@@ -95,6 +95,7 @@ void ScsiDevice::next_step()
         }
         break;
     case ScsiPhase::STATUS:
+        this->bus_obj->release_ctrl_line(this->scsi_id, SCSI_CTRL_REQ);
         this->switch_phase(ScsiPhase::MESSAGE_IN);
         break;
     case ScsiPhase::MESSAGE_OUT:
