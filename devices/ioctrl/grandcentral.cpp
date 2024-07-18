@@ -107,16 +107,18 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
     this->escc->set_dma_channel(3, this->escc_b_rx_dma.get());
 
     // connect MESH (internal SCSI)
-    this->mesh = dynamic_cast<MeshController*>(gMachineObj->get_comp_by_name_optional("MeshTnt"));
+    this->mesh = dynamic_cast<MeshBase*>(gMachineObj->get_comp_by_name_optional("MeshTnt"));
     if (this->mesh == nullptr) {
         LOG_F(WARNING, "%s: Mesh not found, using MeshStub instead", this->name.c_str());
         this->mesh_stub = std::unique_ptr<MeshStub>(new MeshStub());
-        this->mesh = dynamic_cast<MeshController*>(this->mesh_stub.get());
+        this->mesh = dynamic_cast<MeshBase*>(this->mesh_stub.get());
     } else {
+        MeshController *mesh_obj =
+            dynamic_cast<MeshController*>(gMachineObj->get_comp_by_name_optional("MeshTnt"));
         this->mesh_dma = std::unique_ptr<DMAChannel> (new DMAChannel("mesh_scsi"));
         this->mesh_dma->register_dma_int(this, this->register_dma_int(IntSrc::DMA_SCSI_MESH));
-        this->mesh_dma->connect(this->mesh);
-        this->mesh->connect(this->mesh_dma.get());
+        this->mesh_dma->connect(mesh_obj);
+        mesh_obj->connect(this->mesh_dma.get());
     }
 
     // connect external SCSI controller (Curio) to its DMA channel
@@ -186,10 +188,7 @@ uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
         case 7: // VIA-CUDA
             return this->viacuda->read((offset >> 9) & 0xF);
         case 8: // MESH SCSI
-            if (this->mesh)
-                return this->mesh->read((offset >> 4) & 0xF);
-            else if (this->mesh_stub)
-                return this->mesh_stub->read((offset >> 4) & 0xF);
+            return this->mesh->read((offset >> 4) & 0xF);
         case 9: // ENET-ROM
             return ENET_ROM[(offset >> 4) & 0x7];
         case 0xA: // IOBus device #1 ; Board register 1 and bandit1 PRSNT bits
@@ -297,10 +296,7 @@ void GrandCentral::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
             this->viacuda->write((offset >> 9) & 0xF, value);
             break;
         case 8: // MESH SCSI
-            if (this->mesh)
-                this->mesh->write((offset >> 4) & 0xF, value);
-            else if (this->mesh_stub)
-                this->mesh_stub->write((offset >> 4) & 0xF, value);
+            this->mesh->write((offset >> 4) & 0xF, value);
             break;
         case 0xA: // IOBus device #1 ; Board register 1 and bandit1 PRSNT bits
         case 0xB: // IOBus device #2 ; RaDACal/DACula

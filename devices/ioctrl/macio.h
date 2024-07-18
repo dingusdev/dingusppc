@@ -178,7 +178,7 @@ private:
     MaceController*     mace;
     ViaCuda*            viacuda;    // VIA cell with Cuda MCU attached to it
     EsccController*     escc;       // ESCC serial controller
-    MeshController*     mesh;       // internal SCSI (fast)
+    MeshBase*           mesh;       // internal SCSI (fast)
     Sc53C94*            curio;      // external SCSI (slow)
     Swim3::Swim3Ctrl*   swim3;      // floppy disk controller
 
