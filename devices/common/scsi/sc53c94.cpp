@@ -328,8 +328,7 @@ void Sc53C94::exec_command()
             this->bus_obj->target_next_step();
         }
         this->bus_obj->release_ctrl_line(this->my_bus_id, SCSI_CTRL_ACK);
-        this->int_status  = INTSTAT_SR;
-        this->int_status |= INTSTAT_DIS; // TODO: handle target disconnection properly
+        this->int_status = INTSTAT_DIS; // TODO: handle target disconnection properly
         this->update_irq();
         exec_next_command();
         break;
