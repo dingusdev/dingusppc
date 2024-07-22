@@ -93,8 +93,13 @@ int initialize_tnt(std::string& id)
         return -1;
     }
 
-    // plug 16MB RAM DIMM into slot #0
-    memctrl_obj->insert_ram_dimm(0, DRAM_CAP_16MB);
+    // populate RAM banks from configuration properties
+    for (int bank_num = 0; bank_num <= 3; bank_num++) {
+        std::string bn = {char('1' + bank_num)};
+        int bank_size = GET_INT_PROP("rambank" + bn + "_size");
+        if (bank_size)
+            memctrl_obj->insert_ram_dimm(bank_num, bank_size * DRAM_CAP_1MB);
+    }
 
     // allocate and map physical RAM
     memctrl_obj->map_phys_ram();
