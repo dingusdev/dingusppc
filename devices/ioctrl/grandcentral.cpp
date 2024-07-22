@@ -129,6 +129,13 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
 
     // connect Ethernet HW
     this->mace = dynamic_cast<MaceController*>(gMachineObj->get_comp_by_name("Mace"));
+    this->enet_tx_dma = std::unique_ptr<DMAChannel> (new DMAChannel("mace_enet_tx"));
+    this->enet_tx_dma->register_dma_int(this, this->register_dma_int(IntSrc::DMA_ETHERNET_Tx));
+    this->enet_rx_dma = std::unique_ptr<DMAChannel> (new DMAChannel("mace_enet_rx"));
+    this->enet_rx_dma->register_dma_int(this, this->register_dma_int(IntSrc::DMA_ETHERNET_Rx));
+    this->enet_tx_dma->connect(this->mace);
+    this->enet_rx_dma->connect(this->mace);
+    this->mace->connect(this->enet_rx_dma.get());
 
     // connect floppy disk HW
     this->swim3 = dynamic_cast<Swim3::Swim3Ctrl*>(gMachineObj->get_comp_by_name("Swim3"));
@@ -221,6 +228,10 @@ uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
             return this->curio_dma->reg_read(offset & 0xFF, size);
         case MIO_GC_DMA_FLOPPY:
             return this->floppy_dma->reg_read(offset & 0xFF, size);
+        case MIO_GC_DMA_ETH_XMIT:
+            return this->enet_tx_dma->reg_read(offset & 0xFF, size);
+        case MIO_GC_DMA_ETH_RCV:
+            return this->enet_rx_dma->reg_read(offset & 0xFF, size);
         case MIO_GC_DMA_ESCC_A_XMIT:
             return this->escc_a_tx_dma->reg_read(offset & 0xFF, size);
         case MIO_GC_DMA_ESCC_A_RCV:
@@ -336,6 +347,12 @@ void GrandCentral::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
             break;
         case MIO_GC_DMA_FLOPPY:
             this->floppy_dma->reg_write(offset & 0xFF, value, size);
+            break;
+        case MIO_GC_DMA_ETH_XMIT:
+            this->enet_tx_dma->reg_write(offset & 0xFF, value, size);
+            break;
+        case MIO_GC_DMA_ETH_RCV:
+            this->enet_rx_dma->reg_write(offset & 0xFF, value, size);
             break;
         case MIO_GC_DMA_ESCC_A_XMIT:
             this->escc_a_tx_dma->reg_write(offset & 0xFF, value, size);

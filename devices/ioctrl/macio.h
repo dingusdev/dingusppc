@@ -175,9 +175,9 @@ private:
     std::unique_ptr<AwacsScreamer>      awacs;   // AWACS audio codec instance
     std::unique_ptr<MeshStub>           mesh_stub = nullptr;
 
-    MaceController*     mace;
+    MaceController*     mace;       // Ethernet cell within Curio
     ViaCuda*            viacuda;    // VIA cell with Cuda MCU attached to it
-    EsccController*     escc;       // ESCC serial controller
+    EsccController*     escc;       // ESCC serial controller cell within Curio
     MeshBase*           mesh;       // internal SCSI (fast)
     Sc53C94*            curio;      // external SCSI (slow)
     Swim3::Swim3Ctrl*   swim3;      // floppy disk controller
@@ -187,6 +187,8 @@ private:
     std::unique_ptr<DMAChannel>     snd_out_dma;
     std::unique_ptr<DMAChannel>     snd_in_dma;
     std::unique_ptr<DMAChannel>     floppy_dma;
+    std::unique_ptr<DMAChannel>     enet_tx_dma;
+    std::unique_ptr<DMAChannel>     enet_rx_dma;
     std::unique_ptr<DMAChannel>     escc_a_tx_dma;
     std::unique_ptr<DMAChannel>     escc_a_rx_dma;
     std::unique_ptr<DMAChannel>     escc_b_tx_dma;

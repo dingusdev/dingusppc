@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -24,58 +24,74 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef MACE_H
 #define MACE_H
 
+#include <devices/common/dmacore.h>
 #include <devices/common/hwcomponent.h>
 
 #include <cinttypes>
 #include <memory>
 
-// MACE Chip ID from AMD datasheet
-// TODO: compare with real HW
-#define MACE_ID 0x3940
+/** Known MACE chip IDs. */
+#define MACE_ID_REV_B0 0x0940 // Darwin-0.3 source
+#define MACE_ID_REV_A2 0x0941 // Darwin-0.3 source & Curio datasheet
 
-// MACE registers offsets
+/** MACE registers offsets. */
 // Refer to the Am79C940 datasheet for details
 namespace MaceEnet {
+    enum MaceReg : uint8_t {
+        Rcv_FIFO        =  0,
+        Xmit_FIFO       =  1,
+        Xmit_Frame_Ctrl =  2,
+        Xmit_Frame_Stat =  3,
+        Xmit_Retry_Cnt  =  4,
+        Rcv_Frame_Ctrl  =  5,
+        Rcv_Frame_Stat  =  6,
+        FIFO_Frame_Cnt  =  7,
+        Interrupt       =  8,
+        Interrupt_Mask  =  9,
+        Poll            = 10,
+        BIU_Config_Ctrl = 11,
+        FIFO_Config     = 12,
+        MAC_Config_Ctrl = 13,
+        PLS_Config_Ctrl = 14,
+        PHY_Config_Ctrl = 15,
+        Chip_ID_Lo      = 16,
+        Chip_ID_Hi      = 17,
+        Int_Addr_Config = 18,
+        Log_Addr_Flt    = 20,
+        Phys_Addr       = 21,
+        Missed_Pkt_Cnt  = 24,
+        Runt_Pkt_Cnt    = 26, // not used in Macintosh?
+        Rcv_Collis_Cnt  = 27, // not used in Macintosh?
+        User_Test       = 29,
+        Rsrvd_Test_1    = 30, // not used in Macintosh?
+        Rsrvd_Test_2    = 31, // not used in Macintosh?
+    };
 
-enum MaceReg : uint8_t {
-    Rcv_FIFO        = 0,
-    Xmit_FIFO       = 1,
-    Xmit_Frame_Ctrl = 2,
-    Xmit_Frame_Stat = 3,
-    Xmit_Retry_Cnt  = 4,
-    Rcv_Frame_Ctrl  = 5,
-    Rcv_Frame_Stat  = 6,
-    FIFO_Frame_Cnt  = 7,
-    Interrupt       = 8,
-    Interrupt_Mask  = 9,
-    Poll            = 0x0A,
-    BIU_Config_Ctrl = 0x0B,
-    FIFO_Config     = 0x0C,
-    MAC_Config_Ctrl = 0x0D,
-    PLS_Config_Ctrl = 0x0E,
-    PHY_Config_Ctrl = 0x0F,
-    Chip_ID_Lo      = 0x10,
-    Chip_ID_Hi      = 0x11,
-    Addr_Config     = 0x12,
-    Log_Addr_Flt    = 0x14,
-    Phys_Addr       = 0x15,
-    Missed_Pkt_Cnt  = 0x18,
-    Runt_Pkt_Cnt    = 0x1A, // not used in Macintosh?
-    Rcv_Collis_Cnt  = 0x1B, // not used in Macintosh?
-    User_Test       = 0x1D,
-    Rsrvd_Test_1    = 0x1E, // not used in Macintosh?
-    Rsrvd_Test_2    = 0x1F, // not used in Macintosh?
-};
+    /** Bit definitions for BIU_Config_Ctrl register. */
+    enum {
+        BIU_SWRST   = 1 << 0,
+    };
+
+    /** Bit definitions for the internal configuration register. */
+    enum {
+        IAC_LOGADDR = 1 << 1,
+        IAC_PHYADDR = 1 << 2,
+        IAC_ADDRCHG = 1 << 7
+    };
 
 }; // namespace MaceEnet
 
-class MaceController : public HWComponent {
+class MaceController : public DmaDevice, public HWComponent {
 public:
-    MaceController(uint16_t id) { this->chip_id = id; };
+    MaceController(uint16_t id) {
+        this->chip_id = id;
+        this->set_name("MACE");
+        this->supports_types(HWCompType::MMIO_DEV | HWCompType::ETHER_MAC);
+    };
     ~MaceController() = default;
 
     static std::unique_ptr<HWComponent> create() {
-        return std::unique_ptr<MaceController>(new MaceController(MACE_ID));
+        return std::unique_ptr<MaceController>(new MaceController(MACE_ID_REV_A2));
     }
 
     // MACE registers access
@@ -84,6 +100,17 @@ public:
 
 private:
     uint16_t    chip_id; // per-instance MACE Chip ID
+    uint8_t     addr_cfg  = 0;
+    uint8_t     addr_ptr  = 0;
+    uint8_t     rcv_fc    = 1;
+    uint8_t     biu_ctrl  = 0;
+    uint8_t     mac_cfg   = 0;
+    uint64_t    phys_addr = 0;
+    uint64_t    log_addr  = 0;
+
+    // interrupt stuff
+    uint8_t     int_stat  = 0;
+    uint8_t     int_mask  = 0;
 };
 
 #endif // MACE_H
