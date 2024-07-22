@@ -195,8 +195,7 @@ void DMAChannel::finish_cmd() {
 
     // all INPUT and OUTPUT commands including LOAD_QUAD and STORE_QUAD update cmd.resCount
     if (this->cur_cmd < DBDMA_Cmd::NOP && res.is_writable) {
-        WRITE_WORD_LE_A(&cmd_desc[12], this->res_count);
-        this->queue_len = 0;
+        WRITE_WORD_LE_A(&cmd_desc[12], this->queue_len);
         this->res_count = 0;
     }
 
