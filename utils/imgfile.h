@@ -37,10 +37,10 @@ public:
     bool open(const std::string& img_path);
     void close();
 
-    size_t size() const;
+    uint64_t size() const;
 
-    size_t read(void* buf, off_t offset, size_t length) const;
-    size_t write(const void* buf, off_t offset, size_t length);
+    uint64_t read(void* buf, uint64_t offset, uint64_t length) const;
+    uint64_t write(const void* buf, uint64_t offset, uint64_t length);
 private:
     class Impl; // Holds private fields
     std::unique_ptr<Impl> impl;
