@@ -115,19 +115,11 @@ void MeshController::write(uint8_t reg_offset, uint8_t value) {
     case MeshReg::Sequence:
         perform_command(value);
         break;
+    case MeshReg::BusStatus0:
+        this->update_bus_status((this->bus_stat & 0xFF00U) | value);
+        break;
     case MeshReg::BusStatus1:
-        new_stat = value << 8;
-        if (new_stat != this->bus_stat) {
-            for (uint16_t mask = SCSI_CTRL_RST; mask >= SCSI_CTRL_SEL; mask >>= 1) {
-                if ((new_stat ^ this->bus_stat) & mask) {
-                    if (new_stat & mask)
-                        this->bus_obj->assert_ctrl_line(this->src_id, mask);
-                    else
-                        this->bus_obj->release_ctrl_line(this->src_id, mask);
-                }
-            }
-            this->bus_stat = new_stat;
-        }
+        this->update_bus_status((this->bus_stat & 0xFFU) | (value << 8));
         break;
     case MeshReg::IntMask:
         this->int_mask = value;
@@ -246,6 +238,36 @@ void MeshController::perform_command(const uint8_t cmd) {
     default:
         LOG_F(ERROR, "MESH: unsupported sequencer command 0x%X", this->cur_cmd);
     }
+}
+
+void MeshController::update_bus_status(const uint16_t new_stat) {
+    uint16_t mask;
+
+    // update the lower part (BusStatus0)
+    if ((new_stat ^ this->bus_stat) & 0xFF) {
+        for (mask = SCSI_CTRL_REQ; mask >= SCSI_CTRL_IO; mask >>= 1) {
+            if ((new_stat ^ this->bus_stat) & mask) {
+                if (new_stat & mask)
+                    this->bus_obj->assert_ctrl_line(this->src_id, mask);
+                else
+                    this->bus_obj->release_ctrl_line(this->src_id, mask);
+            }
+        }
+    }
+
+    // update the upper part (BusStatus1)
+    if ((new_stat ^ this->bus_stat) & 0xFF00U) {
+        for (mask = SCSI_CTRL_RST; mask >= SCSI_CTRL_SEL; mask >>= 1) {
+            if ((new_stat ^ this->bus_stat) & mask) {
+                if (new_stat & mask)
+                    this->bus_obj->assert_ctrl_line(this->src_id, mask);
+                else
+                    this->bus_obj->release_ctrl_line(this->src_id, mask);
+            }
+        }
+    }
+
+    this->bus_stat = new_stat;
 }
 
 void MeshController::step_completed() {

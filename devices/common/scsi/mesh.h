@@ -141,6 +141,7 @@ public:
 protected:
     void    reset(bool is_hard_reset);
     void    perform_command(const uint8_t cmd);
+    void    update_bus_status(const uint16_t new_stat);
 
 private:
     uint8_t     chip_id;
