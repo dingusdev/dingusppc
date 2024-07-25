@@ -150,6 +150,7 @@ private:
     uint8_t     error;
     uint8_t     exception  = 0;
     uint16_t    bus_stat;
+    bool        check_parity = true;
 };
 
 #endif // MESH_H

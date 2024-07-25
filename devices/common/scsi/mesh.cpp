@@ -219,6 +219,12 @@ void MeshController::perform_command(const uint8_t cmd) {
             this->int_stat |= INT_CMD_DONE;
         this->update_irq();
         break;
+    case SeqCmd::EnaParityCheck:
+        this->check_parity = true;
+        break;
+    case SeqCmd::DisParityCheck:
+        this->check_parity = false;
+        break;
     case SeqCmd::EnaReselect:
         LOG_F(9, "MESH: EnaReselect stub invoked");
         this->int_stat |= INT_CMD_DONE;
