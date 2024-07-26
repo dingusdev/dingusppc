@@ -691,6 +691,9 @@ void ViaCuda::pseudo_command() {
         this->one_sec_mode = this->in_buf[2];
         response_header(CUDA_PKT_PSEUDO, 0);
         break;
+    case CUDA_SET_POWER_MESSAGES:
+        response_header(CUDA_PKT_PSEUDO, 0);
+        break;
     case CUDA_READ_WRITE_I2C:
         response_header(CUDA_PKT_PSEUDO, 0);
         i2c_simple_transaction(this->in_buf[2], &this->in_buf[3], this->in_count - 3);
