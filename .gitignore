@@ -1,11 +1,14 @@
 # Ignore binary files
 out/
+vcpkg/
 *.bin
 
 # Ignore compiled object files
 .vs/
 .vscode/
 *.o
+*.out
+*.obj
 *.d
 
 # Ignore CMake system files
@@ -31,6 +34,7 @@ dingusppc.exe
 # Ignore system files
 .DS_Store
 Thumb.db
+ehthumbs.db
 
 # IDE ignores
 build
