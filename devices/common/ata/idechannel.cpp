@@ -66,7 +66,7 @@ void IdeChannel::register_device(int id, AtaInterface* dev_obj) {
 
     this->devices[id] = dev_obj;
 
-    ((AtaBaseDevice*)dev_obj)->set_host(this);
+    ((AtaBaseDevice*)dev_obj)->set_host(this, id);
 }
 
 uint32_t IdeChannel::read(const uint8_t reg_addr, const int size)
