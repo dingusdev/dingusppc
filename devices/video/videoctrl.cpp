@@ -81,7 +81,10 @@ void VideoCtrlBase::update_screen()
         }
         this->display.update(
             this->convert_fb_cb, this->cursor_ovl_cb,
-            this->cursor_on, cursor_x, cursor_y);
+            this->cursor_on, cursor_x, cursor_y,
+            this->draw_fb_is_dynamic);
+    } else if (this->draw_fb_is_dynamic) {
+        this->display.update_skipped();
     }
 }
 
