@@ -164,6 +164,8 @@ AtiMach64Gx::AtiMach64Gx()
     insert_bits<uint32_t>(this->regs[ATI_GUI_STAT], 32, ATI_FIFO_CNT, ATI_FIFO_CNT_size);
 
     set_bit(regs[ATI_CRTC_GEN_CNTL], ATI_CRTC_DISPLAY_DIS); // because blank_on is true
+
+    this->draw_fb_is_dynamic = true;
 }
 
 void AtiMach64Gx::change_one_bar(uint32_t &aperture, uint32_t aperture_size,

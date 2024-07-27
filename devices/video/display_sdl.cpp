@@ -107,7 +107,8 @@ void Display::blank() {
 
 void Display::update(std::function<void(uint8_t *dst_buf, int dst_pitch)> convert_fb_cb,
                      std::function<void(uint8_t *dst_buf, int dst_pitch)> cursor_ovl_cb,
-                     bool draw_hw_cursor, int cursor_x, int cursor_y) {
+                     bool draw_hw_cursor, int cursor_x, int cursor_y,
+                     bool fb_known_to_be_changed) {
     if (impl->resizing)
         return;
 
@@ -135,6 +136,10 @@ void Display::update(std::function<void(uint8_t *dst_buf, int dst_pitch)> conver
     }
 
     SDL_RenderPresent(impl->renderer);
+}
+
+void Display::update_skipped() {
+    // SDL implementation does not care about skipped updates.
 }
 
 void Display::setup_hw_cursor(std::function<void(uint8_t *dst_buf, int dst_pitch)> draw_hw_cursor,

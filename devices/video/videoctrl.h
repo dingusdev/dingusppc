@@ -86,7 +86,12 @@ protected:
     int         pixel_format;
     float       pixel_clock;
     float       refresh_rate;
+
+    // Implementations may choose to track framebuffer writes and set draw_fb
+    // to false if updates can be skipped. If the do this, they should set
+    // draw_fb_is_dynamic at initialization time.
     bool        draw_fb = true;
+    bool        draw_fb_is_dynamic = false;
 
     uint32_t    palette[256] = {0}; // internal DAC palette in RGBA format
 
