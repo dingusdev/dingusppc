@@ -168,7 +168,18 @@ bool MemCtrlBase::add_mem_region(uint32_t start_addr, uint32_t size,
     entry->devobj  = nullptr;
     entry->mem_ptr = reg_content;
 
-    this->address_map.push_back(entry);
+    // Keep address_map sorted, that way the RAM region (which starts at 0 and
+    // is most often requested) will be found by find_range on the first
+    // iteration.
+    this->address_map.insert(
+        std::upper_bound(
+            this->address_map.begin(),
+            this->address_map.end(),
+            entry,
+            [](const auto& lhs, const auto& rhs) {
+                return lhs->start < rhs->start;
+            }),
+            entry);
 
     LOG_F(INFO, "Added mem region 0x%X..0x%X (%s%s%s%s) -> 0x%X", start_addr, end,
         entry->type & RT_ROM ? "ROM," : "",
