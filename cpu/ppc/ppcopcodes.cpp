@@ -728,8 +728,10 @@ void dppc_interpreter::ppc_mtsr() {
     }
     int reg_s             = (ppc_cur_instruction >> 21) & 0x1F;
     uint32_t grab_sr      = (ppc_cur_instruction >> 16) & 0x0F;
-    ppc_state.sr[grab_sr] = ppc_state.gpr[reg_s];
-    mmu_pat_ctx_changed();
+   if (ppc_state.sr[grab_sr] != ppc_state.gpr[reg_s]) {
+        ppc_state.sr[grab_sr] = ppc_state.gpr[reg_s];
+        mmu_pat_ctx_changed();
+   }
 }
 
 void dppc_interpreter::ppc_mtsrin() {
@@ -741,8 +743,10 @@ void dppc_interpreter::ppc_mtsrin() {
     }
     ppc_grab_regssb(ppc_cur_instruction);
     uint32_t grab_sr      = ppc_result_b >> 28;
-    ppc_state.sr[grab_sr] = ppc_result_d;
-    mmu_pat_ctx_changed();
+    if (ppc_state.sr[grab_sr] != ppc_result_d) {
+        ppc_state.sr[grab_sr] = ppc_result_d;
+        mmu_pat_ctx_changed();
+    }
 }
 
 void dppc_interpreter::ppc_mfsr() {
@@ -969,8 +973,10 @@ void dppc_interpreter::ppc_mtspr() {
         ppc_state.spr[ref_spr] = val & 0xe000ff7f;
         break;
     case SPR::SDR1:
-        ppc_state.spr[ref_spr] = val;
-        mmu_pat_ctx_changed(); // adapt to SDR1 changes
+        if (ppc_state.spr[ref_spr] != val) {
+            ppc_state.spr[ref_spr] = val;
+            mmu_pat_ctx_changed(); // adapt to SDR1 changes
+        }
         break;
     case SPR::RTCL_S:
         calc_rtcl_value();
