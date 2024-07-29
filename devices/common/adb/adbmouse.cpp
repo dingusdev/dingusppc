@@ -100,7 +100,15 @@ bool AdbMouse::get_register_0() {
         this->y_rel     = 0;
         this->changed   = false;
 
-        this->host_obj->set_output_count(p - out_buf);
+        uint8_t count = (uint8_t)(p - out_buf);
+        // should never happen, but check just in case
+        if (((size_t)p - (size_t)out_buf) > UINT8_MAX)
+            count = UINT8_MAX;
+        // if the mouse is in standard protocol then only send first 2 bytes
+        // BUGBUG: what should tablet do here?
+        if (this->device_class == MOUSE && this->dev_handler_id == 1)
+            count = 2;
+        this->host_obj->set_output_count(count);
         return true;
     }
 
