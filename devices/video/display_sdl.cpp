@@ -97,6 +97,9 @@ void Display::handle_events(const WindowEvent& wnd_event) {
     if (wnd_event.sub_type == SDL_WINDOWEVENT_SIZE_CHANGED &&
         wnd_event.window_id == impl->disp_wnd_id)
         impl->resizing = false;
+    if (wnd_event.sub_type == SDL_WINDOWEVENT_EXPOSED &&
+        wnd_event.window_id == impl->disp_wnd_id)
+        SDL_RenderPresent(impl->renderer);
 }
 
 void Display::blank() {
