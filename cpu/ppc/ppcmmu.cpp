@@ -797,21 +797,28 @@ static void tlb_flush_entries(std::array<TLBEntry, N> &tlb, TLBFlags type) {
 template <const TLBType tlb_type>
 void tlb_flush_entries(TLBFlags type)
 {
-    //TLBEntry *m1_tlb, *m2_tlb, *m3_tlb;
-    int i;
-
+    // Mode 1 is real addressing and thus can't contain any PAT entries by definition.
+    bool flush_mode1 = type != TLBE_FROM_PAT;
     if (tlb_type == TLBType::ITLB) {
-        tlb_flush_entries(itlb1_mode1, type);
+        if (flush_mode1) {
+            tlb_flush_entries(itlb1_mode1, type);
+        }
         tlb_flush_entries(itlb1_mode2, type);
         tlb_flush_entries(itlb1_mode3, type);
-        tlb_flush_entries(itlb2_mode1, type);
+        if (flush_mode1) {
+            tlb_flush_entries(itlb2_mode1, type);
+        }
         tlb_flush_entries(itlb2_mode2, type);
         tlb_flush_entries(itlb2_mode3, type);
     } else {
-        tlb_flush_entries(dtlb1_mode1, type);
+        if (flush_mode1) {
+            tlb_flush_entries(dtlb1_mode1, type);
+        }
         tlb_flush_entries(dtlb1_mode2, type);
         tlb_flush_entries(dtlb1_mode3, type);
-        tlb_flush_entries(dtlb2_mode1, type);
+        if (flush_mode1) {
+            tlb_flush_entries(dtlb2_mode1, type);
+        }
         tlb_flush_entries(dtlb2_mode2, type);
         tlb_flush_entries(dtlb2_mode3, type);
     }
