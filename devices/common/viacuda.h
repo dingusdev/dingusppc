@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -57,22 +57,22 @@ class InterruptCtrl;
 
 /** VIA register offsets. */
 enum {
-    VIA_B    = 0x00, /* input/output register B */
-    VIA_A    = 0x01, /* input/output register A */
-    VIA_DIRB = 0x02, /* direction B */
-    VIA_DIRA = 0x03, /* direction A */
-    VIA_T1CL = 0x04, /* low-order  timer 1 counter */
-    VIA_T1CH = 0x05, /* high-order timer 1 counter */
-    VIA_T1LL = 0x06, /* low-order  timer 1 latches */
-    VIA_T1LH = 0x07, /* high-order timer 1 latches */
-    VIA_T2CL = 0x08, /* low-order  timer 2 latches */
-    VIA_T2CH = 0x09, /* high-order timer 2 counter */
-    VIA_SR   = 0x0A, /* shift register */
-    VIA_ACR  = 0x0B, /* auxiliary control register */
-    VIA_PCR  = 0x0C, /* periheral control register */
-    VIA_IFR  = 0x0D, /* interrupt flag register */
-    VIA_IER  = 0x0E, /* interrupt enable register */
-    VIA_ANH  = 0x0F, /* input/output register A, no handshake */
+    VIA_B    = 0x00, // input/output register B
+    VIA_A    = 0x01, // input/output register A
+    VIA_DIRB = 0x02, // direction B
+    VIA_DIRA = 0x03, // direction A
+    VIA_T1CL = 0x04, // low-order  timer 1 counter
+    VIA_T1CH = 0x05, // high-order timer 1 counter
+    VIA_T1LL = 0x06, // low-order  timer 1 latches
+    VIA_T1LH = 0x07, // high-order timer 1 latches
+    VIA_T2CL = 0x08, // low-order  timer 2 latches
+    VIA_T2CH = 0x09, // high-order timer 2 counter
+    VIA_SR   = 0x0A, // shift register
+    VIA_ACR  = 0x0B, // auxiliary control register
+    VIA_PCR  = 0x0C, // periheral control register
+    VIA_IFR  = 0x0D, // interrupt flag register
+    VIA_IER  = 0x0E, // interrupt enable register
+    VIA_ANH  = 0x0F, // input/output register A, no handshake
 };
 
 /** VIA interrupt flags */
@@ -93,11 +93,11 @@ enum class ViaLine {
     CB2
 };
 
-/** Cuda communication signals. */
+/** Cuda communication signals (active low -> 0 - true, 1 - false). */
 enum {
-    CUDA_TIP     = 0x20, /* transaction in progress: 0 - true, 1 - false */
-    CUDA_BYTEACK = 0x10, /* byte acknowledge: 0 - true, 1 - false */
-    CUDA_TREQ    = 0x08  /* Cuda requests transaction from host */
+    CUDA_TIP     = 0x20, // transaction in progress
+    CUDA_BYTEACK = 0x10, // byte acknowledge/handshake
+    CUDA_TREQ    = 0x08  // Cuda requests transaction from host
 };
 
 /** Cuda packet types. */
@@ -111,41 +111,41 @@ enum {
 
 /** Cuda pseudo commands. */
 enum {
-    CUDA_WARM_START          = 0x00, /* warm start */
-    CUDA_START_STOP_AUTOPOLL = 0x01, /* start/stop device auto-polling */
-    CUDA_READ_MCU_MEM        = 0x02, /* read internal Cuda memory */
-    CUDA_GET_REAL_TIME       = 0x03, /* get real time */
-    CUDA_READ_PRAM           = 0x07, /* read parameter RAM */
-    CUDA_WRITE_MCU_MEM       = 0x08, /* write internal Cuda memory */
-    CUDA_SET_REAL_TIME       = 0x09, /* set real time */
-    CUDA_POWER_DOWN          = 0x0A, /* power down system */
-    CUDA_WRITE_PRAM          = 0x0C, /* write parameter RAM */
-    CUDA_MONO_STABLE_RESET   = 0x0D, /* mono stable reset */
-    CUDA_RESTART_SYSTEM      = 0x11, /* restart system */
-    CUDA_FILE_SERVER_FLAG    = 0x13, /* set file server flag */
-    CUDA_SET_AUTOPOLL_RATE   = 0x14, /* set auto-polling rate */
-    CUDA_GET_AUTOPOLL_RATE   = 0x16, /* get auto-polling rate */
-    CUDA_SET_DEVICE_LIST     = 0x19, /* set device list */
-    CUDA_GET_DEVICE_LIST     = 0x1A, /* get device list */
-    CUDA_ONE_SECOND_MODE     = 0x1B, /* one second interrupt mode */
-    CUDA_SET_POWER_MESSAGES  = 0x21, /* set power message flag */
-    CUDA_READ_WRITE_I2C      = 0x22, /* read/write I2C device */
-    CUDA_COMB_FMT_I2C        = 0x25, /* combined format I2C transaction */
-    CUDA_OUT_PB0             = 0x26, /* output one bit to Cuda's PB0 line */
+    CUDA_WARM_START          = 0x00, // warm start
+    CUDA_START_STOP_AUTOPOLL = 0x01, // start/stop device auto-polling
+    CUDA_READ_MCU_MEM        = 0x02, // read internal Cuda memory
+    CUDA_GET_REAL_TIME       = 0x03, // get real time
+    CUDA_READ_PRAM           = 0x07, // read parameter RAM
+    CUDA_WRITE_MCU_MEM       = 0x08, // write internal Cuda memory
+    CUDA_SET_REAL_TIME       = 0x09, // set real time
+    CUDA_POWER_DOWN          = 0x0A, // power down system
+    CUDA_WRITE_PRAM          = 0x0C, // write parameter RAM
+    CUDA_MONO_STABLE_RESET   = 0x0D, // mono stable reset
+    CUDA_RESTART_SYSTEM      = 0x11, // restart system
+    CUDA_FILE_SERVER_FLAG    = 0x13, // set file server flag
+    CUDA_SET_AUTOPOLL_RATE   = 0x14, // set auto-polling rate
+    CUDA_GET_AUTOPOLL_RATE   = 0x16, // get auto-polling rate
+    CUDA_SET_DEVICE_LIST     = 0x19, // set device list
+    CUDA_GET_DEVICE_LIST     = 0x1A, // get device list
+    CUDA_ONE_SECOND_MODE     = 0x1B, // one second interrupt mode
+    CUDA_SET_POWER_MESSAGES  = 0x21, // set power message flag
+    CUDA_READ_WRITE_I2C      = 0x22, // read/write I2C device
+    CUDA_COMB_FMT_I2C        = 0x25, // combined format I2C transaction
+    CUDA_OUT_PB0             = 0x26, // output one bit to Cuda's PB0 line
 };
 
 /** Cuda error codes. */
 enum {
-    CUDA_ERR_BAD_PKT  = 1, /* invalid packet type */
-    CUDA_ERR_BAD_CMD  = 2, /* invalid pseudo command */
-    CUDA_ERR_BAD_SIZE = 3, /* invalid packet size */
-    CUDA_ERR_BAD_PAR  = 4, /* invalid parameter */
-    CUDA_ERR_I2C      = 5  /* invalid I2C data or no acknowledge */
+    CUDA_ERR_BAD_PKT  = 1, // invalid packet type
+    CUDA_ERR_BAD_CMD  = 2, // invalid pseudo command
+    CUDA_ERR_BAD_SIZE = 3, // invalid packet size
+    CUDA_ERR_BAD_PAR  = 4, // invalid parameter
+    CUDA_ERR_I2C      = 5  // invalid I2C data or no acknowledge
 };
 
 #define CUDA_IN_BUF_SIZE    256
 
-/** PRAM addresses within Cuda's internal memory */
+/** PRAM addresses within Cuda's internal memory. */
 #define CUDA_PRAM_START 0x100 // starting address of PRAM
 #define CUDA_PRAM_END   0x1FF // last byte of PRAM
 #define CUDA_ROM_START  0xF00 // starting address of ROM containing Cuda FW
@@ -264,4 +264,4 @@ private:
         uint8_t dev_addr, uint8_t sub_addr, uint8_t dev_addr1, const uint8_t* in_buf, int in_bytes);
 };
 
-#endif /* VIACUDA_H */
+#endif // VIACUDA_H
