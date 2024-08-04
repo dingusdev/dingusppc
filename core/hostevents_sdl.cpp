@@ -304,6 +304,16 @@ static int get_sdl_event_key_code(const SDL_KeyboardEvent &event)
     case 0XE8:        return AdbKey_6;              // E-grave
     case 0XEC:        return AdbKey_LeftBracket;    // I-grave
     case 0XF2:        return AdbKey_KeypadMultiply; // O-grave
+
+    // Spanish keyboard
+    case 0XA1:        return AdbKey_Comma;        // Inverted question mark
+    case 0XBA:        return AdbKey_6;            // Backslash
+    case 0XE7:        return AdbKey_Slash;        // C-cedilla
+    case 0XF1:        return AdbKey_Semicolon;    // N-tilde
+    case 0X4000002f:
+        return AdbKey_LeftBracket;    // Acute
+    case 0X40000034:
+        return AdbKey_Semicolon;    // Acute
     }
     return -1;
 }
