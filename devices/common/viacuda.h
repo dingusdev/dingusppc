@@ -177,12 +177,23 @@ public:
 
 private:
     // VIA virtual HW registers
-    uint8_t via_regs[16];
+    uint8_t  via_portb  = 0;
+    uint8_t  via_porta  = 0;
+    uint8_t  via_ddrb   = 0;
+    uint8_t  via_ddra   = 0;
+    uint8_t  via_t1cl   = 0xFF;
+    uint8_t  via_t1ll   = 0xFF;
+    uint8_t  via_t1lh   = 0xFF;
+    uint8_t  via_t2cl   = 0xFF;
+    uint8_t  via_sr;
+    uint8_t  via_acr    = 0;
+    uint8_t  via_pcr    = 0;
 
     float via_clk_dur; // one VIA clock duration = 1,27655 us
 
     // VIA internal state
     uint32_t sr_timer_id = 0;
+    uint8_t  last_orb = 0; // last value written to the ORB register.
 
     // timer 1 state
     uint16_t t1_counter;
@@ -260,8 +271,8 @@ private:
 
     /* I2C related methods */
     void i2c_simple_transaction(uint8_t dev_addr, const uint8_t* in_buf, int in_bytes);
-    void i2c_comb_transaction(
-        uint8_t dev_addr, uint8_t sub_addr, uint8_t dev_addr1, const uint8_t* in_buf, int in_bytes);
+    void i2c_comb_transaction(uint8_t dev_addr, uint8_t sub_addr, uint8_t dev_addr1,
+                              const uint8_t* in_buf, int in_bytes);
 };
 
 #endif // VIACUDA_H

@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -47,24 +47,21 @@ ViaCuda::ViaCuda() {
     // VIA reset clears all internal registers to logic 0
     // except timers/counters and the shift register
     // as stated in the 6522 datasheet
-    this->via_regs[VIA_A]    = 0;
-    this->via_regs[VIA_B]    = 0;
-    this->via_regs[VIA_DIRB] = 0;
-    this->via_regs[VIA_DIRA] = 0;
-    this->via_regs[VIA_IER]  = 0;
-    this->via_regs[VIA_ACR]  = 0;
-    this->via_regs[VIA_PCR]  = 0;
-    this->via_regs[VIA_IFR]  = 0;
+    this->via_porta = 0;
+    this->via_portb = 0;
+    this->via_ddrb  = 0;
+    this->via_ddra  = 0;
+    this->via_acr   = 0;
+    this->via_pcr   = 0;
 
     // load maximum value into the timer registers for safety
     // (not prescribed in the 6522 datasheet)
-    this->via_regs[VIA_T1LL] = 0xFF;
-    this->via_regs[VIA_T1LH] = 0xFF;
-    this->via_regs[VIA_T2CL] = 0xFF;
-    this->via_regs[VIA_T2CH] = 0xFF;
+    this->via_t1ll  = 0xFF;
+    this->via_t1lh  = 0xFF;
+    this->via_t2cl  = 0xFF;
 
-    this->_via_ifr = 0; // all flags cleared
-    this->_via_ier = 0; // all interrupts disabled
+    this->_via_ifr  = 0; // all flags cleared
+    this->_via_ier  = 0; // all interrupts disabled
 
     // intialize counters/timers
     this->t1_counter  = 0xFFFF;
@@ -138,72 +135,150 @@ void ViaCuda::cuda_init() {
 
 uint8_t ViaCuda::read(int reg) {
     uint8_t value;
-    /* reading from some VIA registers triggers special actions */
+
     switch (reg & 0xF) {
     case VIA_B:
-        value = (this->via_regs[VIA_B]);
-        break;
+        return this->via_portb; //(this->via_portb & ~this->via_ddrb) | this->last_orb;
     case VIA_A:
     case VIA_ANH:
-        value = this->via_regs[reg & 0xF];
         LOG_F(WARNING, "Attempted read from VIA Port A!");
-        break;
-    case VIA_IER:
-        value = (this->_via_ier | 0x80); // bit 7 always reads as "1"
-        break;
-    case VIA_IFR:
-        value = this->_via_ifr;
-        break;
+        return this->via_porta;
+    case VIA_DIRB:
+        return this->via_ddrb;
+    case VIA_DIRA:
+        return this->via_ddra;
     case VIA_T1CL:
         this->_via_ifr &= ~VIA_IF_T1;
         update_irq();
-        value = this->calc_counter_val(this->t1_counter, this->t1_start_time) & 0xFFU;
-        break;
+        return this->calc_counter_val(this->t1_counter, this->t1_start_time) & 0xFFU;
     case VIA_T1CH:
-        value = this->calc_counter_val(this->t1_counter, this->t1_start_time) >> 8;
-        break;
+        return this->calc_counter_val(this->t1_counter, this->t1_start_time) >> 8;
+    case VIA_T1LL:
+        return this->via_t1ll;
+    case VIA_T1LH:
+        return this->via_t1lh;
     case VIA_T2CL:
         this->_via_ifr &= ~VIA_IF_T2;
         update_irq();
-        value = this->calc_counter_val(this->t2_counter, this->t2_start_time) & 0xFFU;
-        break;
+        return this->calc_counter_val(this->t2_counter, this->t2_start_time) & 0xFFU;
     case VIA_T2CH:
-        value = this->calc_counter_val(this->t2_counter, this->t2_start_time) >> 8;
-        break;
+        return this->calc_counter_val(this->t2_counter, this->t2_start_time) >> 8;
     case VIA_SR:
-        value = this->via_regs[reg & 0xF];
+        value = this->via_sr;
         this->_via_ifr &= ~VIA_IF_SR;
         update_irq();
-        break;
-    default:
-        value = this->via_regs[reg & 0xF];
+        return value;
+    case VIA_ACR:
+        return this->via_acr;
+    case VIA_PCR:
+        return this->via_pcr;
+    case VIA_IFR:
+        return this->_via_ifr;
+    case VIA_IER:
+        return (this->_via_ier | 0x80); // bit 7 always reads as "1"
     }
 
-    return value;
+    return 0; // should never happen!
 }
 
 void ViaCuda::write(int reg, uint8_t value) {
-    this->via_regs[reg & 0xF] = value;
-
     switch (reg & 0xF) {
     case VIA_B:
-        this->write(value);
+        this->last_orb = value & this->via_ddrb;
+        this->via_portb = (this->via_portb & ~this->via_ddrb) | this->last_orb;
+        // ensure the proper VIA configuration before calling Cuda
+        if ((this->via_ddrb & 0x38) == 0x30)
+            this->write(this->via_portb);
         break;
     case VIA_A:
     case VIA_ANH:
+        this->via_porta = value;
         LOG_F(WARNING, "Attempted write to VIA Port A!");
         break;
     case VIA_DIRB:
+        this->via_ddrb = value;
         LOG_F(9, "VIA_DIRB = 0x%X", value);
         break;
     case VIA_DIRA:
+        this->via_ddra = value;
         LOG_F(9, "VIA_DIRA = 0x%X", value);
         break;
-    case VIA_PCR:
-        LOG_F(9, "VIA_PCR = 0x%X", value);
+    case VIA_T1CL:
+        this->via_t1cl = value;
+        break;
+    case VIA_T1CH:
+        if (this->via_acr & 0xC0) {
+            ABORT_F("Unsupported VIA T1 mode, ACR=0x%X", this->via_acr);
+        }
+        // cancel active T1 timer task
+        if (this->t1_timer_id) {
+            TimerManager::get_instance()->cancel_timer(this->t1_timer_id);
+            this->t1_timer_id = 0;
+        }
+        // clear T1 flag in IFR
+        this->_via_ifr &= ~VIA_IF_T1;
+        update_irq();
+        // load initial value into counter 1
+        this->t1_counter = (value << 8) | this->via_t1cl;
+        // TODO: delay for one phase 2 clock
+        // sample current vCPU time and remember it
+        this->t1_start_time = TimerManager::get_instance()->current_time_ns();
+        // set up timout timer for T1
+        this->t1_timer_id = TimerManager::get_instance()->add_oneshot_timer(
+            static_cast<uint64_t>(this->via_clk_dur * (this->t1_counter + 3) + 0.5f),
+            [this]() {
+                this->t1_timer_id = 0;
+                this->assert_t1_int();
+            }
+        );
+        break;
+    case VIA_T1LL:
+        this->via_t1ll = value;
+        break;
+    case VIA_T1LH:
+        this->via_t1lh = value;
+        break;
+    case VIA_T2CL:
+        this->via_t2cl = value;
+        break;
+    case VIA_T2CH:
+        if (this->via_acr & 0x20) {
+            ABORT_F("VIA T2 pulse count mode not supported!");
+        }
+        // cancel active T2 timer task
+        if (this->t2_timer_id) {
+            TimerManager::get_instance()->cancel_timer(this->t2_timer_id);
+            this->t2_timer_id = 0;
+        }
+        // clear T2 flag in IFR
+        this->_via_ifr &= ~VIA_IF_T2;
+        update_irq();
+        // load initial value into counter 2
+        this->t2_counter = (value << 8) | this->via_t2cl;
+        // TODO: delay for one phase 2 clock
+        // sample current vCPU time and remember it
+        this->t2_start_time = TimerManager::get_instance()->current_time_ns();
+        // set up timeout timer for T2
+        this->t2_timer_id = TimerManager::get_instance()->add_oneshot_timer(
+            static_cast<uint64_t>(this->via_clk_dur * (this->t2_counter + 3) + 0.5f),
+            [this]() {
+                this->t2_timer_id = 0;
+                this->assert_t2_int();
+            }
+        );
+        break;
+    case VIA_SR:
+        this->via_sr = value;
+        this->_via_ifr &= ~VIA_IF_SR;
+        update_irq();
         break;
     case VIA_ACR:
+        this->via_acr = value;
         LOG_F(9, "VIA_ACR = 0x%X", value);
+        break;
+    case VIA_PCR:
+        this->via_pcr = value;
+        LOG_F(9, "VIA_PCR = 0x%X", value);
         break;
     case VIA_IFR:
         // for each "1" in value clear the corresponding flags
@@ -218,62 +293,6 @@ void ViaCuda::write(int reg, uint8_t value) {
         }
         update_irq();
         print_enabled_ints();
-        break;
-    case VIA_T1CH:
-        if (this->via_regs[VIA_ACR] & 0xC0) {
-            ABORT_F("Unsupported VIA T1 mode, ACR=0x%X", this->via_regs[VIA_ACR]);
-        }
-        // cancel active T1 timer task
-        if (this->t1_timer_id) {
-            TimerManager::get_instance()->cancel_timer(this->t1_timer_id);
-            this->t1_timer_id = 0;
-        }
-        // clear T1 flag in IFR
-        this->_via_ifr &= ~VIA_IF_T1;
-        update_irq();
-        // load initial value into counter 1
-        this->t1_counter = (value << 8) | this->via_regs[VIA_T1CL];
-        // TODO: delay for one phase 2 clock
-        // sample current vCPU time and remember it
-        this->t1_start_time = TimerManager::get_instance()->current_time_ns();
-        // set up timout timer for T1
-        this->t1_timer_id = TimerManager::get_instance()->add_oneshot_timer(
-            static_cast<uint64_t>(this->via_clk_dur * (this->t1_counter + 3) + 0.5f),
-            [this]() {
-                this->t1_timer_id = 0;
-                this->assert_t1_int();
-            }
-        );
-        break;
-    case VIA_T2CH:
-        if (this->via_regs[VIA_ACR] & 0x20) {
-            ABORT_F("VIA T2 pulse count mode not supported!");
-        }
-        // cancel active T2 timer task
-        if (this->t2_timer_id) {
-            TimerManager::get_instance()->cancel_timer(this->t2_timer_id);
-            this->t2_timer_id = 0;
-        }
-        // clear T2 flag in IFR
-        this->_via_ifr &= ~VIA_IF_T2;
-        update_irq();
-        // load initial value into counter 2
-        this->t2_counter = (value << 8) | this->via_regs[VIA_T2CL];
-        // TODO: delay for one phase 2 clock
-        // sample current vCPU time and remember it
-        this->t2_start_time = TimerManager::get_instance()->current_time_ns();
-        // set up timeout timer for T2
-        this->t2_timer_id = TimerManager::get_instance()->add_oneshot_timer(
-            static_cast<uint64_t>(this->via_clk_dur * (this->t2_counter + 3) + 0.5f),
-            [this]() {
-                this->t2_timer_id = 0;
-                this->assert_t2_int();
-            }
-        );
-        break;
-    case VIA_SR:
-        this->_via_ifr &= ~VIA_IF_SR;
-        update_irq();
         break;
     }
 }
@@ -368,7 +387,7 @@ void ViaCuda::write(uint8_t new_state) {
     int new_tip     = !!(new_state & CUDA_TIP);
     int new_byteack = !!(new_state & CUDA_BYTEACK);
 
-    /* return if there is no state change */
+    // return if there is no state change
     if (new_tip == this->old_tip && new_byteack == this->old_byteack)
         return;
 
@@ -377,7 +396,7 @@ void ViaCuda::write(uint8_t new_state) {
 
     if (new_tip) {
         if (new_byteack) {
-            this->via_regs[VIA_B] |= CUDA_TREQ; // negate TREQ
+            this->via_portb |= CUDA_TREQ; // negate TREQ
             this->treq = 1;
 
             if (this->in_count) {
@@ -387,7 +406,7 @@ void ViaCuda::write(uint8_t new_state) {
                 this->treq_timer_id = TimerManager::get_instance()->add_oneshot_timer(
                     USECS_TO_NSECS(13), // delay TREQ assertion for New World
                     [this]() {
-                        this->via_regs[VIA_B] &= ~CUDA_TREQ; // assert TREQ
+                        this->via_portb &= ~CUDA_TREQ; // assert TREQ
                         this->treq = 0;
                         this->treq_timer_id = 0;
                 });
@@ -396,7 +415,7 @@ void ViaCuda::write(uint8_t new_state) {
             this->in_count = 0;
         } else {
             LOG_F(9, "Cuda: enter sync state");
-            this->via_regs[VIA_B] &= ~CUDA_TREQ; // assert TREQ
+            this->via_portb &= ~CUDA_TREQ; // assert TREQ
             this->treq      = 0;
             this->in_count  = 0;
             this->out_count = 0;
@@ -405,9 +424,9 @@ void ViaCuda::write(uint8_t new_state) {
         // send dummy byte as idle acknowledge or attention
         schedule_sr_int(USECS_TO_NSECS(61));
     } else {
-        if (this->via_regs[VIA_ACR] & 0x10) { // data transfer: Host --> Cuda
+        if (this->via_acr & 0x10) { // data transfer: Host --> Cuda
             if (this->in_count < sizeof(this->in_buf)) {
-                this->in_buf[this->in_count++] = this->via_regs[VIA_SR];
+                this->in_buf[this->in_count++] = this->via_sr;
                 // tell the system we've read the byte after 71 usecs
                 schedule_sr_int(USECS_TO_NSECS(71));
             } else {
@@ -423,22 +442,22 @@ void ViaCuda::write(uint8_t new_state) {
 
 /* sends zeros to host ad infinitum */
 void ViaCuda::null_out_handler() {
-    this->via_regs[VIA_SR] = 0;
+    this->via_sr = 0;
 }
 
 /* sends PRAM content to host ad infinitum */
 void ViaCuda::pram_out_handler()
 {
-    this->via_regs[VIA_SR] = this->pram_obj->read_byte(this->cur_pram_addr++);
+    this->via_sr = this->pram_obj->read_byte(this->cur_pram_addr++);
 }
 
 /* sends data from out_buf until exhausted, then switches to next_out_handler */
 void ViaCuda::out_buf_handler() {
     if (this->out_pos < this->out_count) {
-        this->via_regs[VIA_SR] = this->out_buf[this->out_pos++];
+        this->via_sr = this->out_buf[this->out_pos++];
         if (!this->is_open_ended && this->out_pos >= this->out_count) {
             // tell the host this will be the last byte
-            this->via_regs[VIA_B] |= CUDA_TREQ; // negate TREQ
+            this->via_portb |= CUDA_TREQ; // negate TREQ
             this->treq = 1;
         }
     } else if (this->is_open_ended) {
@@ -447,7 +466,7 @@ void ViaCuda::out_buf_handler() {
         (this->*out_handler)();
     } else {
         this->out_count = 0;
-        this->via_regs[VIA_B] |= CUDA_TREQ; // negate TREQ
+        this->via_portb |= CUDA_TREQ; // negate TREQ
         this->treq = 1;
     }
 }
@@ -533,7 +552,7 @@ void ViaCuda::autopoll_handler() {
         }
 
         // assert TREQ
-        this->via_regs[VIA_B] &= ~CUDA_TREQ;
+        this->via_portb &= ~CUDA_TREQ;
         this->treq = 0;
 
         // draw guest system's attention
@@ -562,7 +581,7 @@ void ViaCuda::autopoll_handler() {
             this->last_time = this_time;
 
             // assert TREQ
-            this->via_regs[VIA_B] &= ~CUDA_TREQ;
+            this->via_portb &= ~CUDA_TREQ;
             this->treq = 0;
 
             // draw guest system's attention
@@ -736,7 +755,7 @@ uint32_t ViaCuda::calc_real_time() {
 
 /* sends data from the current I2C to host ad infinitum */
 void ViaCuda::i2c_handler() {
-    this->receive_byte(this->curr_i2c_addr, &this->via_regs[VIA_SR]);
+    this->receive_byte(this->curr_i2c_addr, &this->via_sr);
 }
 
 void ViaCuda::i2c_simple_transaction(uint8_t dev_addr, const uint8_t* in_buf, int in_bytes) {
