@@ -80,4 +80,8 @@ Up to 128 instruction entries and 128 data entries can be stored at a time.
 
 * The 603 relies on the instructions tlbld and tlbli to assist in TLB reloading.
 
-* To accomodate for early programs compiled on PowerPC 601 Macs, the classic Mac OS has to emulate the POWER instructions that were removed from later processors.
+* To accommodate for early programs compiled on PowerPC 601 Macs, the classic Mac OS has to emulate the POWER instructions that were removed from later processors.
+
+# References
+
+http://www.ibmfiles.com/ibmfiles/powerpc/itso_powerpc_inside_view.pdf

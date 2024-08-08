@@ -10,24 +10,6 @@ Within Apple, the project to overhaul Mac OS ROM code from separate portable, lo
 
 For serial, it replicates the functionality of a Zilog ESCC. There are two different ports - one located at (MacIOBase) + 0x13000 for the printer, and the other at (MacIOBase) + 0x13020 for the modem.
 
-# DBDMA
-
-The Description-Based Direct Memory Access relies on memory-based descriptions, minimizing CPU interrupts.
-
-| Channel           | Number |
-|:-----------------:|:------:|
-| SCSI0             | 0x0    |
-| FLOPPY            | 0x1    |
-| ETHERNET TRANSMIT | 0x2    |
-| ETHERNET RECIEVE  | 0x3    |
-| SCC TRANSMIT A    | 0x4    |
-| SCC RECIEVE A     | 0x5    |
-| SCC TRANSMIT B    | 0x6    |
-| SCC RECIEVE B     | 0x7    |
-| AUDIO OUT         | 0x8    |
-| AUDIO IN          | 0x9    |
-| SCSI1             | 0xA    |
-
 # NCR 53C94
 
 The NCR 53C94 is the SCSI controller.

@@ -8,7 +8,11 @@
 - joevt
 - mihaip
 
-## Building
+## NT4/PPC fork
+
+- Wack0
+
+## DevOps
 
 - Waqar144
 - webspacecreations
@@ -16,6 +20,8 @@
 - sdkmap
 - dressupgeekout
 - kth5
+- dyharlan
+- roytam1
 
 ## Testing
 

@@ -1,6 +1,6 @@
 # Heathrow ASIC
 
-The Heathrow ASIC is an intergrated I/O controller designed for use in Power
+The Heathrow ASIC is an integrated I/O controller designed for use in Power
 Macintosh G3 computers.
 
 Its predecessors are Grand Central and O'Hare ASICs used in other Power Macintosh
@@ -17,7 +17,7 @@ I/O hardware to the PCI-based Power Macintosh. That legacy hardware has
 existed long before Power Macintosh was introduced. It includes:
 - versatile interface adapter (VIA)
 - Sander-Woz integrated machine (SWIM) that is a floppy disk controller
-- CUDA MCU that controls ADB, parameter RAM, realtime clock and power management
+- CUDA MCU that controls ADB, parameter RAM, real time clock and power management
 - serial communication controller (SCC)
 - Macintosh Enhanced SCSI Hardware (MESH)
 
@@ -90,7 +90,7 @@ Macintosh firmware configures the Heathrow ASIC to live at address `0xF3000000`.
 | 0x30   | UnknownReg30      | Not much is known about this register          |
 | 0x34   | HeathrowIDs       | bits for identifying media bay features?       |
 | 0x38   | FeatureControl    | bits for controlling Heathrow operation        |
-| 0x3C   | AuxControl        | auxilary control bits                          |
+| 0x3C   | AuxControl        | auxiliary control bits                          |
 
 ### Device DMA spaces
 
