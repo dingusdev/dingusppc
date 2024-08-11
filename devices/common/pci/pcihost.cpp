@@ -168,11 +168,20 @@ bool PCIHost::pci_io_write_loop(uint32_t offset, int size, uint32_t value)
 uint32_t PCIHost::pci_io_read_broadcast(uint32_t offset, int size)
 {
     uint32_t res;
+
     // broadcast I/O request to devices that support I/O space
     // until a device returns true that means "request accepted"
     if (pci_io_read_loop (offset, size, res)) {
         return res;
     }
+
+    // broadcast I/O request to devices sitting behind PCI-to-PCI bridges
+    for (auto& dev : this->bridge_devs) {
+        if (dev->pci_io_read_loop(offset, size, res))
+            return res;
+    }
+
+    // no device has accepted the request -> report error
     HWComponent *hwc = dynamic_cast<HWComponent*>(this);
     LOG_F(
         ERROR, "%s: Attempt to read from unmapped PCI I/O space @%08x.%c",
@@ -190,6 +199,14 @@ void PCIHost::pci_io_write_broadcast(uint32_t offset, int size, uint32_t value)
     if (pci_io_write_loop(offset, size, value)) {
         return;
     }
+
+    // broadcast I/O request to devices sitting behind PCI-to-PCI bridges
+    for (auto& dev : this->bridge_devs) {
+        if (dev->pci_io_write_loop(offset, size, value))
+            return;
+    }
+
+    // no device has accepted the request -> report error
     HWComponent *hwc = dynamic_cast<HWComponent*>(this);
     LOG_F(
         ERROR, "%s: Attempt to write to unmapped PCI I/O space @%08x.%c = %0*x",
