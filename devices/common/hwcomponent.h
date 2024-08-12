@@ -46,6 +46,7 @@ enum HWCompType : uint64_t {
     SCSI_HOST   = 1ULL << 21, // SCSI host adapter
     SCSI_DEV    = 1ULL << 22, // SCSI device
     IDE_BUS     = 1ULL << 23, // IDE bus
+    IDE_HOST    = 1ULL << 24, // IDE host controller
     IDE_DEV     = 1ULL << 25, // IDE device
     SND_CODEC   = 1ULL << 30, // sound codec
     SND_SERVER  = 1ULL << 31, // host sound server
