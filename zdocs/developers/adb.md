@@ -2,6 +2,8 @@ The Apple Desktop Bus is a bit-serial peripheral bus, Apple themselves cited a 2
 
 The device commands are in the form of single byte strings. The first four bits are to signal which of the 16 devices are to be used. The next two bits are for which action to execute (talk, listen, flush, or reset). These are followed by two bits which determine the register to reference (register 0 is usually a communications register, while register 3 is used for device info).
 
+Heathrow and Paddington-based Macintoshes have a Master Cell, which is a fully-featured ADB implementation for hardware, but isn't used by Mac OS itself.
+
 # Commands
 
 | Command Name                | Number |

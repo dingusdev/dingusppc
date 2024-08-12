@@ -14,14 +14,22 @@ The Description-Based Direct Memory Access (DBDMA) relies on memory-based descri
 | AUDIO IN          | 0x9    |
 | SCSI1             | 0xA    |
 
+What's notable about the registers is that they are in little-endian format.
+
 | Register          | Offset |
 |:-----------------:|:------:|
 | ChannelControl    | 0x00   |
 | ChannelStatus     | 0x04   |
+| CommandPtrHi      | 0x08   |
 | CommandPtrLo      | 0x0C   |
 | InterruptSelect   | 0x10   |
 | BranchSelect      | 0x14   |
 | WaitSelect        | 0x18   |
+| TransferMode      | 0x1C   |
+| Data2PtrHi        | 0x20   |
+| Data2PtrLo        | 0x24   |
+| BranchPtrHi       | 0x2C   |
+| BranchPtrLo       | 0x30   |
 
 | Command           | Value  |
 |:-----------------:|:------:|

@@ -14,7 +14,7 @@ For serial, it replicates the functionality of a Zilog ESCC. There are two diffe
 
 The NCR 53C94 is the SCSI controller.
 
-# Register Map
+## Register Map
 
 | Offset | Read functionality       |Write functionality        |
 |:------:|:------------------------:|:-------------------------:|
@@ -33,18 +33,6 @@ The NCR 53C94 is the SCSI controller.
 | 0xC    | Configuration 3          | Configuration 3           |
 | 0xF    |                          | Reserve FIFO Byte (Cfg 2) |
 
-# SWIM 3
-
-The SWIM 3 (Sanders-Wozniak integrated machine 3) is the floppy drive disk controller. As can be inferred by the name, the SWIM III chip is the improvement of a combination of floppy disk driver designs by Steve Wozniak (who worked on his own floppy drive controller for early Apple computers) and Wendell B. Sander (who worked on an MFM-compatible IBM floppy drive controller).
-
-The SWIM chip is resided on the logic board physically and is located at IOBase + 0x15000 in the device tree. It sits between the I/O controller and the floppy disk connector. Its function is to translate the I/O commands to specialized signals to drive the floppy disk drive, i.e. disk spinning speed, head position, phase sync, etc.
-
-Unlike its predecessor, it allowed some DMA capability.
-
-The floppy drives themselves were provided by Sony.
-
-Some New World Macs do have a SWIM 3 driver present, but this normally goes unused due to no floppy drive being connected.
-
 # NVRAM
 
 Mac OS relies on 8 KB of NVRAM at minimum to run properly. It's usually found at IOBase (ex.: 0xF3000000 for Power Mac G3 Beige) + 0x60000.
@@ -55,15 +43,21 @@ On a physical machine, one has to hold the Command/Apple, Option, P and R keys t
 
 | Command Name     | Number | Functionality                |
 |:----------------:|:------:|:----------------------------:|
+| PMUpowerCntl     | 0x10   | Power Plane/Clock Control    |
+| kPMUpowerRead    | 0x18   | Turns ADB auto-polling off   |
 | PMUpMgrADB       | 0x20   | Send ADB command             |
-| PMUpMgrADBoff    | 0x21   |
+| PMUpMgrADBoff    | 0x21   | Turns ADB auto-polling off   |
 | PMUxPramWrite    | 0x32   |
-| PMUtimeRead      | 0x38   |
+| PMUtimeRead      | 0x38   | Read time from clock
 | PMUxPramRead     | 0x3A   |
 | PMUmaskInts      | 0x70   |
 | PMUreadINT       | 0x78   |
 | PMUPmgrPWRoff    | 0x7E   |
+| PMUsleepReq      | 0x7F   |
 | PMUResetCPU      | 0xD0   |
+| PMUwritePmgrRAM  | 0xE0   |
+| PMUdownloadStatus| 0xE2   |
+| PMUreadPmgrRAM   | 0xE8   |
 
 # DACula
 
@@ -71,7 +65,7 @@ This video RAMDAC appears to be exclusive to the Power Mac 7200.
 
 # USB
 
-Support is only present in New World Macs, despite the presence of strings in the Power Mac G3 Beige ROM. Most Macs support 1.1, with 2.0 support present in G5 Macs.
+Support is only present in New World Macs, despite the presence of strings in the Power Mac G3 Beige ROM. Most Macs support 1.1, with 2.0 support present in G5 Macs. Both it and Firewire follow the Open Host Controller Interface (OHCI) standard.
 
 # FireWire
 
@@ -79,6 +73,6 @@ Present in several New World Macs is a FireWire controller. Mac OS Classic norma
 
 # Miscellaneous
 
-* In order for the mouse to move, it generally needs to use the Vertical Blanking Interrupt (VBL) present on the video controller. However, the Pippin instead uses a virtual timer task to accomplish, as there is a bug that prevents the VBL from working in the Taos graphics controller.
+* In order for the mouse to move, it generally needs to use the Vertical Blanking Interrupt (VBL) present on the video controller. However, the Pippin instead uses a virtual timer task to accomplish this, as there is a bug that prevents the VBL from working in the Taos graphics controller.
 
 * The Power Mac G3 Beige has an additional register at 0xFF000004, which is dubbed varyingly as the "cpu-id" (by Open Firmware), the ""systemReg" (display driver) or "MachineID" (platform driver).

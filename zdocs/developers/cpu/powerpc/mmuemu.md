@@ -84,7 +84,7 @@ are exceptions from this rule, for example, video memory.
 
 When no translation for a virtual address was found in either cache, a full address
 translation including the full page table walk is performed. This path is the
-slowest one. Fortunately, the probabilty that this path will be taken seems to be
+slowest one. Fortunately, the probability that this path will be taken seems to be
 very low.
 
 The complete algorithm looks like that:

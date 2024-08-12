@@ -28,7 +28,7 @@ DingusPPC is operated using the command line interface. As such, we will list th
 -r, --realtime
 ```
 
-Run the emulator in runtime (using the interpeter).
+Run the emulator in runtime (using the interpreter).
 
 ```
 -d, --debugger

@@ -282,7 +282,7 @@ from "Writing FCode Programs For PCI"
 \ in the PCI node. If the add-range method is present in an Apple ROM, the map-in
 \ method is broken. If the add-range property is absent, the map-in method behaves
 \ correctly.
-\ The following methods allow the FCode driver to accomodate both broken and working
+\ The following methods allow the FCode driver to accommodate both broken and working
 \ map-in methods.
 
 : map-in-broken? ( -- flag )
