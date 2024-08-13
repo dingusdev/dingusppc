@@ -34,7 +34,7 @@ namespace loguru {
     };
 }
 
-OHare::OHare() : PCIDevice("mac-io/ohare"), InterruptCtrl()
+OHare::OHare() : PCIDevice("mac-io_ohare"), InterruptCtrl()
 {
     supports_types(HWCompType::MMIO_DEV | HWCompType::PCI_DEV | HWCompType::INT_CTRL);
 

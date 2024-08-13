@@ -55,7 +55,7 @@ void NvramDev::iodev_write(uint32_t address, uint16_t value) {
     this->nvram->write_byte((addr_hi->iodev_read(0) << 5) + address, value);
 }
 
-GrandCentral::GrandCentral() : PCIDevice("mac-io/grandcentral"), InterruptCtrl()
+GrandCentral::GrandCentral() : PCIDevice("mac-io_grandcentral"), InterruptCtrl()
 {
     supports_types(HWCompType::MMIO_DEV | HWCompType::PCI_DEV | HWCompType::INT_CTRL);
 
