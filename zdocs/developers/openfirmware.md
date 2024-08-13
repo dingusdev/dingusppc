@@ -24,6 +24,102 @@ drivers.
 This document focuses on various aspects of Apple's Open Firmware implementation
 as found in various Power Macintosh models.
 
+## ROM Layout
+
+### Old World ROMs
+
+There's a 3 MiB Classic section and a 1 MiB PowerPC section.
+Use [tbxi](https://github.com/elliotnunn/tbxi) to split the ROM into parts.
+
+### New World ROMs
+
+The ROM only contains the 1MiB PowerPC section. The ROM is divided into sections:
+
+| Name                     | Firmware Updater Section Name | Start      | Size       | Comments                                                               |
+|:------------------------:|:-----------------------------:|:-----------------------:|:----------------------------------------------------------------------:|
+| Start                    | bb                            | 0xfff00000 | 0x00003f00 | Exception Vectors.                                                     |
+| Recovery                 | rec                           | 0xfff08000 | 0x00078000 | Usually same as ROM Image.                                             |
+| Rom Image                | boot                          | 0xfff80000 | 0x00080000 | Usually same as Recovery.                                              |
+| System Configuration	   | sys                           | 0xfff03f00 | 0x00000080 | Contains Model specific info. Doesn't exist in early New World Macs. Three bytes in the System Configuration comprise the Mac Product ID. |
+|                          | tst                           | 0xfff03f80 | 0x00000080 | Contains unit specific info: Serial Number, MAC address.               |
+| NVRAM                    | nv                            | 0x00004000 | 0x00004000 | Contains two copies of NVRAM, 8K each.                                 |
+
+At the beginning of the Recovery and Rom Image is a header listing subsections. The list differs depending on the firmware version.
+
+The earliest New World ROMs include all of Open Firmware (main fcode image and driver fcode images) in the Open Firmware subsection. RTAS is an fcode image.
+
+| Offset | Index | @startvec address field | @startvec size field |
+|:------:|:-----:|:-----------------------:|:--------------------:|
+| 0x00   |       | >dir.inst0              | >dir.inst1           |
+| 0x08   |       | >dir.filler0            | >dir.filler1         |
+| 0x10   | 0     | >dir.HWINIT             | >dir.HWINIT-size     |
+| 0x18   | 1     | >dir.NUB                | >dir.NUB-size        |
+| 0x20   | 2     | >dir.OF                 | >dir.OF-size         |
+| 0x28   | 3     | >dir.RTAS               | >dir.RTAS-size       |
+| 0x30   | 4     | >dir.RTAS-LDR           | >dir.RTAS-LDR-size   |
+| 0x38   | 5     | >dir.RTAS-BE            | >dir.RTAS-BE-size    |
+| 0x40   | 6     | >dir.RTAS-LE            | >dir.RTAS-LE-size    |
+| 0x48   | 7     | >dir.BOOT-BEEP          | >dir.BOOT-BEEP-size  |
+
+Newer ROMs did away with the RTAS stuff:
+
+| Offset | Index | @startvec address field | @startvec size field |
+|:------:|:-----:|:-----------------------:|:--------------------:|
+| 0x00   |       | >dir.inst0              | >dir.inst1           |
+| 0x08   |       | >dir.filler0            | >dir.filler1         |
+| 0x10   | 0     | >dir.HWINIT             | >dir.HWINIT-size     |
+| 0x18   | 1     | >dir.NUB                | >dir.NUB-size        |
+| 0x20   | 2     | >dir.OF                 | >dir.OF-size         |
+| 0x28   | 3     | >dir.unused0            | >dir.unused0-size    |
+| 0x30   | 4     | >dir.unused1            | >dir.unused1-size    |
+| 0x38   | 5     | >dir.unused2            | >dir.unused2-size    |
+| 0x40   | 6     | >dir.unused3            | >dir.unused3         |
+| 0x48   | 7     | >dir.BOOT-BEEP          | >dir.BOOT-BEEP-size  |
+
+Starting approximate 2002-11-11 and later, this is the ROM header or first part of @startvec. Different Macs with the same firmware version may include different driver fcode images if the ROM is not large enough to contain all drivers.
+
+| Offset | Index | @startvec address field | @startvec size field |
+|:------:|:-----:|:-----------------------:|:--------------------:|
+| 0x00   |       | >dir.inst0              | >dir.inst1           |
+| 0x08   |       | >dir.filler0            | >dir.filler1         |
+| 0x10   |  0    | >dir.HWINIT             | >dir.HWINIT-size     |
+| 0x18   |  1    | >dir.OF                 | >dir.OF-size         |
+| 0x20   |  2    | >dir.Driver1            | >dir.Driver1-size    |
+| 0x28   |  3    | >dir.Driver2            | >dir.Driver2-size    |
+| 0x30   |  4    | >dir.Driver3            | >dir.Driver3-size    |
+| 0x38   |  5    | >dir.Driver4            | >dir.Driver4-size    |
+| 0x40   |  6    | >dir.Driver5            | >dir.Driver5-size    |
+| 0x48   |  7    | >dir.Driver6            | >dir.Driver6-size    |
+| 0x50   |  8    | >dir.Driver7            | >dir.Driver7-size    |
+| 0x58   |  9    | >dir.Driver8            | >dir.Driver8-size    |
+| 0x60   | 10    | >dir.Driver9            | >dir.Driver9-size    |
+| 0x68   | 11    | >dir.Driver10           | >dir.Driver10-size   |
+| 0x70   | 12    | >dir.Driver11           | >dir.Driver11-size   |
+| 0x78   | 13    | >dir.Driver12           | >dir.Driver12-size   |
+| 0x80   | 14    | >dir.Driver13           | >dir.Driver13-size   |
+| 0x88   | 15    | >dir.Driver14           | >dir.Driver14-size   |
+| 0x90   | 16    | >dir.Driver15           | >dir.Driver15-size   |
+| 0x98   | 17    | >dir.BOOT-BEEP          | >dir.BOOT-BEEP-size  |
+
+The latest firmware versions have driver fcode images in one subsection and each driver fcode image has a name and is individually compressed.
+
+| Offset | Index | @startvec address field | @startvec size field  |
+|:------:|:-----:|:-----------------------:|:---------------------:|
+| 0x00   |       | >dir.inst0              | >dir.inst1            |
+| 0x08   |       | >dir.filler0            | >dir.filler1          |
+| 0x10   | 0     | >dir.HWINIT             | >dir.HWINIT-size      |
+| 0x18   | 1     | >dir.OF                 | >dir.OF-size          |
+| 0x20   | 2     | >dir.dV1.Drivers        | >dir.dV1.Drivers-size |
+| 0x28   | 3     | >dir.BOOT-BEEP          | >dir.BOOT-BEEP-size   |
+
+The offset for each of the parts is at least 4 byte aligned and has the least significant bit set to 1 if it is lzss compressed.
+Only early New World Macs (B&W G3, iMac G3 233-333, PowerBook G3 Lombard) have the RTAS (fcode) and RTAS-BE (executable) parts.
+There don't appear to be any ROMs that have NUB, RTAS_LDR, or RTAS-LE.
+RTAS is not included in later ROMs so the four parts 3-6 are always 0x00000000 for offset and size.
+Since Recovery is smaller than Rom Image, some newer ROMs have BOOT-BEEP of the Recovery section pointing to BOOT-BEEP of the Rom Image section.
+
+The `>dir.*` fields in the ROM are for the offset and size of the compressed parts. The `>dir.*` fields also exist in RAM starting from `@startvec` but they store the address and size of the parts uncompressed.
+
 ## Open Firmware Versions
 
 ### Old World Macs
@@ -39,9 +135,44 @@ as found in various Power Macintosh models.
 | Power Macintosh 6500                 | Gazelle          | 2.0.3         | 0x330000        |
 | Power Macintosh G3 v3                | Gossamer         | 2.4           | 0x320000        |
 
-### NewWorld Macs
+### New World Macs
 
-*TBD*
+| Date       | OF version | Machine                   |
+|:----------:|:----------:|:-------------------------:|
+| 1999-04-01 | 1.0f1      | PowerBook G3 Lombard      |
+| 1999-04-09 | 1.1f4      | B&W G3                    |
+| 1999-04-23 | 1.3f2      | iMac (233 - 333 MHz)      |
+
+Newer firmware versions occasionally received firmware updates which could be applied to multiple models so it doesn't make sense to associate a model to a firmware version.
+Versions 4.x.x are for 32-bit Power Macs. Version 5.x.x are for 64-bit Power Macs.
+
+| Date       | OF version |
+|:----------:|:----------:|
+| 2000-02-17 | 3.2.4f1    |
+| 2000-07-10 |   3.2f1    |
+| 2000-08-11 | 3.2.7f2    |
+| 2001-03-20 | 4.1.7f4    |
+| 2001-03-21 | 4.1.8f5    |
+| 2001-08-01 | 4.2.3f1    |
+| 2001-08-16 | 4.2.5f1    |
+| 2001-09-14 | 4.1.9f1    |
+| 2001-10-11 | 4.2.8f1    |
+| 2001-11-20 | 4.2.9f1    |
+| 2002-09-30 | 4.4.8f2    |
+| 2002-11-11 | 4.5.4f1    |
+| 2003-02-20 | 4.6.0f1    |
+| 2003-08-22 | 4.6.8f4    |
+| 2003-11-21 | 5.1.4f0    |
+| 2004-04-06 | 4.8.5f0    |
+| 2004-09-21 | 5.1.5f2    |
+| 2004-09-23 | 4.8.7f1    |
+| 2004-10-26 | 5.1.8f7    |
+| 2005-01-21 | 4.9.1f1    |
+| 2005-03-23 | 4.8.9f4    |
+| 2005-07-12 | 4.9.4f1    |
+| 2005-09-22 | 4.9.5f3    |
+| 2005-09-30 | 5.2.7f1    |
+| 2005-10-05 | 4.9.6f0    |
 
 ## Packages
 
@@ -235,28 +366,30 @@ dumpstartvec
 
 Apple's Open Firmware contains a small kernel implemented in the native PowerPC code. This kernel performs the following actions:
 
-* set up memory translation for OF execution
-* relocate itself from ROM to RAM
-* initialize Forth runtime environment
-* recompile OF main image from FCode to native PPC code
-* pass control to recompiled OF that starts building the device tree
-* process low-level exceptions
+* Set up memory translations for OF execution.
+* Relocate itself from ROM to RAM.
+* Initialize the Forth runtime environment which includes a dictionary of words. All words are native PPC code.
+* Interpret Forth or fcode which adds more words (with PPC code) and data to the dictionary.
+* Process low-level exceptions.
 
 ## Open Firmware and the Macintosh boot process
 
 ### Old World Macs
 
 1. In response to power coming on, HWInit code in the Power Macintosh ROM performs initialization of the memory controller and the basic I/O facilities as well as some self-testing. After that, the startup chime is played.
-2. HWInit passes control to Open Firmware kernel that prepares OF execution from RAM. OF builds the **device tree** - a platform-independent description of the attached HW.
-3. OF returns control to HWInit that initializes several low-level data structures required by the Nanokernel.
-4. HWInit passes control to the Nanokernel that initializes the native execution environment and the 68k emulator.
-5. 68k emulator executes the start-up code in the Macintosh ROM that initializes various managers.
-6. The device tree generated by the Open Firmware in step 2 is imported by the Expansion Bus Manager initialization code and stored in the **NameRegistry**.
-7. An operating system is located and loaded.
+2. HWInit passes control to Open Firmware kernel that prepares OF execution from RAM. `cold-load` is executed.
+3. `cold-load` begins interpreting of the main fcode image (`@startvec` `>fcimage`) compiling words to PowerPC code and building the **device tree** - a platform-independent description of the attached HW. The main fcode image and driver fcode images (`@startvec` `>fcfiles`) are interpreted from ROM.
+4. `cold-load` passes control to `@startvec` `>'cold-init` which tests for snag keys, optionally executes `nvramrc`, and boots the OS (either by returning to HWInit or executing a `boot` command) or enters the Open Firmware command line.
+5. OF returns control to HWInit that initializes several low-level data structures required by the Nanokernel.
+6. HWInit passes control to the Nanokernel that initializes the native execution environment and the 68k emulator.
+7. 68k emulator executes the start-up code in the Macintosh ROM that initializes various managers.
+8. The device tree generated by Open Firmware in step 3 is imported by the Expansion Bus Manager initialization code and stored in the **NameRegistry**.
+9. An operating system is located and loaded.
 
 ### New World Macs
 
-*TBD*
+The PowerPC part is similar to Old World Macs except the Open Firmware and OF Driver subsections need to be decompressed into RAM.
+For Classic Mac OS, Open Firmware loads and boots a file of type `tbxi`. This is a New World ROM file in the System Folder which replaces the first 3MiB of the Old World ROM.
 
 ## Open Firmware bugs
 
@@ -264,9 +397,9 @@ Apple OF is known to contain numerous bugs. The following table lists some recen
 
 | OF version affected | Bug description |
 |:-------------------:|-----------------|
-| 2.0f1, 2.4          | A numerical overflow in `um/mod` used by  `get-usecs-60x` causes the OF console to become unresponsive after approx. 71 minutes. You have to restart your computer once the bug is triggered. |
-| 1.0.5               | /chaos/control `fill-rectangle` is ( ? color y x w h -- ) instead of ( color x y w h -- ) |
-|                     | `$find` is ( name-str name-len -- xt true | pstr name-str name-len false ) instead of ( name-str name-len -- xt true | name-str name-len false ) |
-| 2.4                 | string literal buffers `"` on the command line are 256 bytes but will overflow if you enter more than 256 bytes. |
+| 1.0.5               | `fill-rectangle` in /chaos/control is ( ? color y x w h -- ) but it should be ( color x y w h -- ). This is corrected by Control2.c of BootX which is used to boot Mac OS X. |
+|                     | `$find` is ( name-str name-len -- xt true | pstr name-str name-len false ) but it should be ( name-str name-len -- xt true | name-str name-len false ) |
+| 2.0f1, 2.4          | `us` uses `get-usecs` to convert a 64-bit timebase value to a 32-bit microseconds value. That's enough for 71 minutes. After that, anything that uses `us` will cause the OF console to become unresponsive requiring a restart. In Open Firmware 3.x and later, `get-usecs` returns a 64-bit value. |
+| 2.4                 | string literal buffers `"` on the command line will overflow if the string is more than 256 bytes. |
 
 `get-inherited-property notes.txt` discusses known bugs regarding get-inherited-property and map-in in Open Firmware 1.0.5.
