@@ -96,6 +96,7 @@ ATIRage::ATIRage(uint16_t dev_id)
     supports_types(HWCompType::MMIO_DEV | HWCompType::PCI_DEV);
 
     this->vram_size = GET_INT_PROP("gfxmem_size") << 20; // convert MBs to bytes
+    this->framebuffer_size = std::min(this->vram_size, ((uint32_t)8 << 20) - 0x800);
 
     // allocate video RAM
     this->vram_ptr = std::unique_ptr<uint8_t[]> (new uint8_t[this->vram_size]);
@@ -620,7 +621,7 @@ bool ATIRage::pci_io_write(uint32_t offset, uint32_t value, uint32_t size) {
 uint32_t ATIRage::read(uint32_t rgn_start, uint32_t offset, int size)
 {
     if (rgn_start == this->aperture_base[0] && offset < this->aperture_size[0]) {
-        if (offset < this->vram_size) { // little-endian VRAM region
+        if (offset < this->framebuffer_size) { // little-endian VRAM region
             return read_mem(&this->vram_ptr[offset], size);
         }
         if (offset >= BE_FB_OFFSET) { // big-endian VRAM region
@@ -664,7 +665,7 @@ uint32_t ATIRage::read(uint32_t rgn_start, uint32_t offset, int size)
 void ATIRage::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
 {
     if (rgn_start == this->aperture_base[0] && offset < this->aperture_size[0]) {
-        if (offset < this->vram_size) { // little-endian VRAM region
+        if (offset < this->framebuffer_size) { // little-endian VRAM region
             draw_fb = true;
             return write_mem(&this->vram_ptr[offset], value, size);
         }
@@ -978,7 +979,7 @@ int ATIRage::device_postinit()
 
 static const PropMap AtiRage_Properties = {
     {"gfxmem_size",
-        new IntProperty(  2, std::vector<uint32_t>({2, 4, 6}))},
+        new IntProperty(2, std::vector<uint32_t>({2, 4, 6, 8}))},
     {"mon_id",
         new StrProperty("")},
 };

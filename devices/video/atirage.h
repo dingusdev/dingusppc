@@ -94,6 +94,7 @@ private:
     // Video RAM variables
     std::unique_ptr<uint8_t[]>  vram_ptr;
     uint32_t    vram_size;
+    uint32_t    framebuffer_size;
 
     // config 0x40
     uint8_t     user_cfg = 8;
