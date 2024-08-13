@@ -47,10 +47,11 @@ uint32_t HammerheadCtrl::read(uint32_t rgn_start, uint32_t offset, int size)
     if (offset >= HammerheadReg::BANK_0_BASE_MSB &&
         offset <= HammerheadReg::BANK_25_BASE_LSB) {
         offset = (offset - HammerheadReg::BANK_0_BASE_MSB) >> 4;
+        int bank = offset >> 1;
         if (offset & 1) { // return the LSB part
-            result = bank_base[offset >> 1] & 0xFFU;
+            result = bank_base[bank] & 0xFFU;
         } else { // return the MSB part
-            result = bank_base[offset >> 1] >> 8;
+            result = bank_base[bank] >> 8;
         }
         goto finish;
     }
@@ -94,13 +95,14 @@ void HammerheadCtrl::write(uint32_t rgn_start, uint32_t offset, uint32_t value, 
     if (offset >= HammerheadReg::BANK_0_BASE_MSB &&
         offset <= HammerheadReg::BANK_25_BASE_LSB) {
         offset = (offset - HammerheadReg::BANK_0_BASE_MSB) >> 4;
+        int bank = offset >> 1;
         if (offset & 1) { // update the LSB part
-            bank_base[offset >> 1] = (bank_base[offset >> 1] & 0xFF00U) | value;
+            bank_base[bank] = (bank_base[bank] & 0xFF00U) | value;
         } else { // update the MSB part
-            bank_base[offset >> 1] = (bank_base[offset >> 1] & 0x00FFU) | (value << 8);
+            bank_base[bank] = (bank_base[bank] & 0x00FFU) | (value << 8);
         }
         LOG_F(INFO, "%s: bank base #%d set to 0x%X", this->name.c_str(),
-              offset >> 1, bank_base[offset >> 1]);
+              bank, bank_base[bank]);
         return;
     }
 
