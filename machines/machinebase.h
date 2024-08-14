@@ -40,6 +40,7 @@ public:
     ~MachineBase();
 
     void add_device(std::string name, std::unique_ptr<HWComponent> dev_obj);
+    void remove_device(HWComponent* dev_obj);
     HWComponent* get_comp_by_name(std::string name);
     HWComponent* get_comp_by_name_optional(std::string name);
     HWComponent* get_comp_by_type(HWCompType type);

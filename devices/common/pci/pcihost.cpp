@@ -75,15 +75,17 @@ void PCIHost::pci_unregister_device(int dev_fun_num)
     if (!this->dev_map.count(dev_fun_num)) {
         return;
     }
-    PCIBase* dev_instance = this->dev_map[dev_fun_num];
+    auto dev_instance = this->dev_map[dev_fun_num];
 
     HWComponent *hwc = dynamic_cast<HWComponent*>(this);
     LOG_F(
-        ERROR, "%s: pci_unregister_device(%s) not supported yet (every PCI device needs a working destructor)",
+        // FIXME: need destructors to remove memory regions and downstream devices.
+        ERROR, "%s: pci_unregister_device(%s) not supported yet (every PCI device needs a working destructor to unregister memory and downstream devices etc.)",
         hwc ? hwc->get_name().c_str() : "PCIHost", dev_instance->get_name().c_str()
     );
 
-    delete dev_instance;
+    this->dev_map.erase(dev_fun_num);
+    gMachineObj->remove_device(dev_instance); // calls destructor of dev_instance since it is a unique_ptr in the device_map.
 }
 
 bool PCIHost::pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIBase* obj)

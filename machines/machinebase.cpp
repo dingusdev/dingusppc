@@ -49,6 +49,14 @@ void MachineBase::add_device(std::string name, std::unique_ptr<HWComponent> dev_
     this->device_map[name] = std::move(dev_obj);
 }
 
+void MachineBase::remove_device(HWComponent* dev_obj) {
+    for (auto it = this->device_map.begin(); it != this->device_map.end(); ++it)
+        if (it->second.get() == dev_obj) {
+            this->device_map.erase(it->first);
+            break;
+        }
+}
+
 HWComponent* MachineBase::get_comp_by_name(std::string name) {
     if (this->device_map.count(name)) {
         return this->device_map[name].get();
