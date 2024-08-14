@@ -577,12 +577,21 @@ void GrandCentral::clear_cpu_int() {
     }
 }
 
-static const std::vector<std::string> GCSubdevices = {
+static const std::vector<std::string> GrandCentralCatalyst_Subdevices = {
     "NVRAM", "ViaCuda", "Escc", "Sc53C94", "Mace", "Swim3"
 };
 
-static const DeviceDescription GC_Descriptor = {
-    GrandCentral::create, GCSubdevices, {}
+static const std::vector<std::string> GrandCentralTnt_Subdevices = {
+    "NVRAM", "ViaCuda", "Escc", "Sc53C94", "MeshTnt", "Mace", "Swim3"
 };
 
-REGISTER_DEVICE(GrandCentral, GC_Descriptor);
+static const DeviceDescription GrandCentralCatalyst_Descriptor = {
+    GrandCentral::create, GrandCentralCatalyst_Subdevices, {}
+};
+
+static const DeviceDescription GrandCentralTnt_Descriptor = {
+    GrandCentral::create, GrandCentralTnt_Subdevices, {}
+};
+
+REGISTER_DEVICE(GrandCentralCatalyst, GrandCentralCatalyst_Descriptor);
+REGISTER_DEVICE(GrandCentralTnt, GrandCentralTnt_Descriptor);

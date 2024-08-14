@@ -86,7 +86,7 @@ PlatinumCtrl::PlatinumCtrl() : MemCtrlBase(), VideoCtrlBase() {
 
 int PlatinumCtrl::device_postinit() {
     // attach IOBus Device #2 0xF301B000 ; register DACula with the I/O controller
-    GrandCentral* gc_obj = dynamic_cast<GrandCentral*>(gMachineObj->get_comp_by_name("GrandCentral"));
+    GrandCentral* gc_obj = dynamic_cast<GrandCentral*>(gMachineObj->get_comp_by_name("GrandCentralCatalyst"));
     gc_obj->attach_iodevice(1, this->dacula.get());
 
     this->int_ctrl = dynamic_cast<InterruptCtrl*>(

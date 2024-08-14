@@ -66,7 +66,7 @@ int initialize_tnt(std::string& id)
     pci_host->set_irq_map(bandit1_irq_map);
 
     // get (raw) pointer to the I/O controller
-    GrandCentral* gc_obj = dynamic_cast<GrandCentral*>(gMachineObj->get_comp_by_name("GrandCentral"));
+    GrandCentral* gc_obj = dynamic_cast<GrandCentral*>(gMachineObj->get_comp_by_name("GrandCentralTnt"));
 
     // connect GrandCentral I/O controller to the PCI1 bus
     pci_host->pci_register_device(
@@ -175,16 +175,16 @@ static_const_pm7500_settings(604)
 static_const_pm7500_settings(604e)
 
 static std::vector<std::string> pm7500_devices = {
-    "Hammerhead", "Bandit1", "MeshTnt", "GrandCentral", "Chaos"
+    "Hammerhead", "Bandit1", "GrandCentralTnt", "Chaos"
 };
 
 static std::vector<std::string> pm8500_devices = {
-    "Hammerhead", "Bandit1", "MeshTnt", "GrandCentral", "Chaos",
+    "Hammerhead", "Bandit1", "GrandCentralTnt", "Chaos",
     "Sixty6Video"
 };
 
 static std::vector<std::string> pm9500_devices = {
-    "Hammerhead", "Bandit1", "Bandit2", "MeshTnt", "GrandCentral"
+    "Hammerhead", "Bandit1", "GrandCentralTnt", "Bandit2",
 };
 
 static const MachineDescription pm7300_descriptor = {

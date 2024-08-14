@@ -49,7 +49,7 @@ int initialize_pippin(std::string& id) {
 
     // connect GrandCentral I/O controller to the PCI1 bus
     pci_host->pci_register_device(DEV_FUN(0x10,0),
-        dynamic_cast<GrandCentral*>(gMachineObj->get_comp_by_name("GrandCentral")));
+        dynamic_cast<GrandCentral*>(gMachineObj->get_comp_by_name("GrandCentralTnt")));
 
     // get (raw) pointer to the memory controller
     AspenCtrl* aspen_obj = dynamic_cast<AspenCtrl*>(gMachineObj->get_comp_by_name("Aspen"));
@@ -87,14 +87,14 @@ static const PropMap Pippin_Settings = {
         new StrProperty("AppleJack,Keyboard")},
 };
 
-static std::vector<std::string> Pippin_Devices = {
-    "Aspen", "AspenPci1", "MeshTnt", "GrandCentral", "TaosVideo"
+static std::vector<std::string> Pippin_devices = {
+    "Aspen", "AspenPci1", "GrandCentralTnt", "TaosVideo"
 };
 
 static const MachineDescription Pippin_Descriptor = {
     .name = "pippin",
     .description = "Bandai Pippin",
-    .devices = Pippin_Devices,
+    .devices = Pippin_devices,
     .settings = Pippin_Settings,
     .init_func = &initialize_pippin
 };

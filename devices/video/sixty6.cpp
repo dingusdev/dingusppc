@@ -46,7 +46,7 @@ Sixty6Video::Sixty6Video()
     i2c_bus->register_device(0x44, this->saa7187.get());
 
     // get (raw) pointer to the I/O controller
-    GrandCentral* gc_obj = dynamic_cast<GrandCentral*>(gMachineObj->get_comp_by_name("GrandCentral"));
+    GrandCentral* gc_obj = dynamic_cast<GrandCentral*>(gMachineObj->get_comp_by_name("GrandCentralTnt"));
 
     // attach IOBus Device #3 0xF301C000 ; sixty6
     gc_obj->attach_iodevice(2, this);

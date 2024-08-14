@@ -54,7 +54,7 @@ int initialize_catalyst(std::string& id)
     pci_host->set_irq_map(bandit1_irq_map);
 
     // get (raw) pointer to the I/O controller
-    GrandCentral* gc_obj = dynamic_cast<GrandCentral*>(gMachineObj->get_comp_by_name("GrandCentral"));
+    GrandCentral* gc_obj = dynamic_cast<GrandCentral*>(gMachineObj->get_comp_by_name("GrandCentralCatalyst"));
 
     // connect GrandCentral I/O controller to the PCI1 bus
     pci_host->pci_register_device(DEV_FUN(0x10,0), gc_obj);
@@ -124,7 +124,7 @@ static const PropMap pm7200_settings = {
 };
 
 static std::vector<std::string> pm7200_devices = {
-    "Platinum", "Bandit1", "GrandCentral"
+    "Platinum", "Bandit1", "GrandCentralCatalyst"
 };
 
 static const MachineDescription pm7200_descriptor = {
