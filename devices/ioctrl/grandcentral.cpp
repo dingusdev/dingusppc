@@ -578,7 +578,7 @@ void GrandCentral::clear_cpu_int() {
 }
 
 static const std::vector<std::string> GCSubdevices = {
-    "NVRAM", "ViaCuda", "Escc", "ScsiCurio", "Sc53C94", "Mace", "Swim3"
+    "NVRAM", "ViaCuda", "Escc", "Sc53C94", "Mace", "Swim3"
 };
 
 static const DeviceDescription GC_Descriptor = {

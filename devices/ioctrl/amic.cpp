@@ -827,7 +827,7 @@ DmaPullResult AmicSerialXmitDma::pull_data(uint32_t req_len, uint32_t *avail_len
 };
 
 static std::vector<std::string> Amic_Subdevices = {
-    "ScsiCurio", "Sc53C94", "Escc", "Mace", "ViaCuda", "Swim3"
+    "Sc53C94", "Escc", "Mace", "ViaCuda", "Swim3"
 };
 
 static const DeviceDescription Amic_Descriptor = {

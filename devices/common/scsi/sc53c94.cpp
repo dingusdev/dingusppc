@@ -924,8 +924,12 @@ static const PropMap Sc53C94_properties = {
     {"cdr_img", new StrProperty("")},
 };
 
+static const std::vector<std::string> Sc53C94_Subdevices = {
+    "ScsiCurio"
+};
+
 static const DeviceDescription Sc53C94_Descriptor = {
-    Sc53C94::create, {}, Sc53C94_properties
+    Sc53C94::create, Sc53C94_Subdevices, Sc53C94_properties
 };
 
 REGISTER_DEVICE(Sc53C94, Sc53C94_Descriptor);
