@@ -69,6 +69,10 @@ int initialize_gazelle(std::string& id)
     pci_host->pci_register_device(
         DEV_FUN(0x10,0), dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("OHare")));
 
+    std::string gpu = GET_STR_PROP("pci_F1");
+    if (gpu.empty())
+        SET_STR_PROP("pci_F1", "AtiRageGT");
+
     PsxCtrl* psx_obj = dynamic_cast<PsxCtrl*>(gMachineObj->get_comp_by_name("Psx"));
 
     // allocate ROM region
