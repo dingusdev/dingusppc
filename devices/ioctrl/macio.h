@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -140,8 +140,8 @@ public:
     }
 
     // MMIO device methods
-    uint32_t read(uint32_t rgn_start, uint32_t offset, int size);
-    void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size);
+    uint32_t read(uint32_t rgn_start, uint32_t offset, int size) override;
+    void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size) override;
 
     // InterruptCtrl methods
     void attach_iodevice(int dev_num, IobusDevice* dev_obj);
@@ -219,17 +219,14 @@ public:
 
 protected:
     void notify_bar_change(int bar_num);
-
-    uint32_t read_ctrl(uint32_t offset, int size);
-    void write_ctrl(uint32_t offset, uint32_t value, int size);
-
     void ack_int_common(uint64_t irq_id, uint8_t irq_line_state);
     uint32_t mio_ctrl_read(uint32_t offset, int size);
     uint32_t mio_ctrl_read_aligned(uint32_t offset);
     void mio_ctrl_write(uint32_t offset, uint32_t value, int size);
-
     uint32_t dma_read(uint32_t offset, int size);
     void dma_write(uint32_t offset, uint32_t value, int size);
+
+    void feature_control(const uint32_t value);
 
     void signal_cpu_int();
     void clear_cpu_int();
@@ -244,12 +241,23 @@ private:
     bool        cpu_int_latch = false;
     uint32_t    feat_ctrl     = 0;    // features control register
 
-    std::unique_ptr<AwacsScreamer>  awacs; // AWACS audio codec instance
+    // subdevice objects
+    MacioSndCodec*      snd_codec; // audio codec instance
+
+    NVram*              nvram;    // NVRAM
+    ViaCuda*            viacuda;  // VIA cell with Cuda MCU attached to it
+    MeshController*     mesh;     // MESH SCSI cell instance
+    EsccController*     escc;     // ESCC serial controller
+    IdeChannel*         ide_0;    // Internal ATA
+    Swim3::Swim3Ctrl*   swim3;    // floppy disk controller
+
+    // DMA channels
+    std::unique_ptr<DMAChannel>     mesh_dma;
+    std::unique_ptr<DMAChannel>     floppy_dma;
     std::unique_ptr<DMAChannel>     snd_out_dma;
 
-    NVram*              nvram;   // NVRAM module
-    ViaCuda*            viacuda; // VIA cell with Cuda MCU attached to it
-    EsccController*     escc;    // ESCC serial controller
+    uint16_t unsupported_dma_channel_read = 0;
+    uint16_t unsupported_dma_channel_write = 0;
 };
 
 /**
