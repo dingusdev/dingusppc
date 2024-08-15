@@ -89,7 +89,7 @@ public:
 
 const WorkingDirectoryValidator WorkingDirectory;
 
-void run_machine(std::string machine_str, std::string bootrom_path, uint32_t execution_mode, uint32_t profiling_interval_ms);
+void run_machine(std::string machine_str, char *rom_data, size_t rom_size, uint32_t execution_mode, uint32_t profiling_interval_ms);
 
 int main(int argc, char** argv) {
 
@@ -178,17 +178,27 @@ int main(int argc, char** argv) {
         loguru::init(argc, argv);
     }
 
+    auto rom_data = std::unique_ptr<char[]>(new char[4 * 1024 * 1024]);
+    memset(&rom_data[0], 0, 4 * 1024 * 1024);
+    size_t rom_size = MachineFactory::read_boot_rom(bootrom_path, &rom_data[0]);
+    if (!rom_size) {
+        return 1;
+    }
+
+    string machine_str_from_rom = MachineFactory::machine_name_from_rom(&rom_data[0], rom_size);
+    if (machine_str_from_rom.empty()) {
+        LOG_F(ERROR, "Could not autodetect machine from ROM.");
+    } else {
+        LOG_F(INFO, "Machine detected from ROM as: %s", machine_str_from_rom.c_str());
+    }
     if (*machine_opt) {
         LOG_F(INFO, "Machine option was passed in: %s", machine_str.c_str());
     } else {
-        machine_str = MachineFactory::machine_name_from_rom(bootrom_path);
+        machine_str = machine_str_from_rom;
+    }
         if (machine_str.empty()) {
-            LOG_F(ERROR, "Could not autodetect machine");
+        LOG_F(ERROR, "Must specificy a machine or provide a supported ROM.");
             return 1;
-        }
-        else {
-            LOG_F(INFO, "Machine was autodetected as: %s", machine_str.c_str());
-        }
     }
 
     // Hook to allow properties to be read from the command-line, regardless
@@ -249,7 +259,7 @@ int main(int argc, char** argv) {
     signal(SIGABRT, sigabrt_handler);
 
     while (true) {
-        run_machine(machine_str, bootrom_path, execution_mode, profiling_interval_ms);
+        run_machine(machine_str, &rom_data[0], rom_size, execution_mode, profiling_interval_ms);
         if (power_off_reason == po_restarting) {
             LOG_F(INFO, "Restarting...");
             power_on = true;
@@ -272,8 +282,13 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-void run_machine(std::string machine_str, std::string bootrom_path, uint32_t execution_mode, uint32_t profiling_interval_ms) {
-    if (MachineFactory::create_machine_for_id(machine_str, bootrom_path) < 0) {
+void run_machine(std::string machine_str, char *rom_data, size_t rom_size, uint32_t execution_mode,
+    uint32_t
+#ifdef CPU_PROFILING
+    profiling_interval_ms
+#endif
+) {
+    if (MachineFactory::create_machine_for_id(machine_str, rom_data, rom_size) < 0) {
         return;
     }
 

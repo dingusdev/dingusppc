@@ -54,10 +54,11 @@ public:
 
     static bool add(const std::string& machine_id, MachineDescription desc);
 
-    static std::string machine_name_from_rom(std::string& rom_filepath);
+    static size_t read_boot_rom(std::string& rom_filepath, char *rom_data);
+    static std::string machine_name_from_rom(char *rom_data, size_t rom_size);
 
     static int create(std::string& mach_id);
-    static int create_machine_for_id(std::string& id, std::string& rom_filepath);
+    static int create_machine_for_id(std::string& id, char *rom_data, size_t rom_size);
 
     static void register_device_settings(const std::string &name);
     static int  register_machine_settings(const std::string& id);
@@ -71,7 +72,7 @@ private:
     static void create_device(std::string& dev_name, DeviceDescription& dev);
     static void print_settings(const PropMap& p);
     static void list_device_settings(DeviceDescription& dev);
-    static int  load_boot_rom(std::string& rom_filepath);
+    static int  load_boot_rom(char *rom_data, size_t rom_size);
     static void register_settings(const PropMap& p);
 
     static std::map<std::string, MachineDescription> & get_registry() {
