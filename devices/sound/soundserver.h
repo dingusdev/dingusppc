@@ -38,6 +38,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <memory>
 
+class DmaOutChannel;
+
 class SoundServer : public HWComponent {
 public:
     SoundServer();
@@ -45,12 +47,13 @@ public:
 
     int start();
     void shutdown();
-    int open_out_stream(uint32_t sample_rate, void *user_data);
+    int open_out_stream(uint32_t sample_rate, DmaOutChannel *user_data);
     int start_out_stream();
     void close_out_stream();
 
+    class Impl; // Holds implementation-specific fields
+
 private:
-    class Impl; // Holds private fields
     std::unique_ptr<Impl> impl;
 };
 

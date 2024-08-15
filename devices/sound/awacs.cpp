@@ -69,8 +69,7 @@ void AwacsBase::dma_out_start() {
     }
 
     if (!this->out_stream_ready) {
-        if ((err = this->snd_server->open_out_stream(this->cur_sample_rate,
-            (void *)this->dma_out_ch))) {
+        if ((err = this->snd_server->open_out_stream(this->cur_sample_rate, this->dma_out_ch))) {
             LOG_F(ERROR, "%s: unable to open sound output stream: %d",
                   this->name.c_str(), err);
             return;
