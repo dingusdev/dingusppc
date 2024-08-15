@@ -23,8 +23,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cpu/ppc/ppcemu.h>
 #include <devices/common/pci/dec21154.h>
+#include <devices/deviceregistry.h>
 #include <devices/memctrl/mpc106.h>
 #include <devices/memctrl/spdram.h>
+#include <machines/machine.h>
 #include <machines/machinebase.h>
 #include <machines/machinefactory.h>
 #include <machines/machineproperties.h>
@@ -59,8 +61,12 @@ static void setup_ram_slot(std::string name, int i2c_addr, int capacity_megs) {
     i2c_bus->register_device(i2c_addr, ram_dimm);
 }
 
-int initialize_yosemite(std::string& id)
-{
+class MachineYosemite : public Machine {
+public:
+    int initialize(const std::string &id);
+};
+
+int MachineYosemite::initialize(const std::string &id) {
     LOG_F(INFO, "Building machine Yosemite...");
 
     // get pointer to the memory controller/primary PCI bridge object
@@ -135,12 +141,16 @@ static std::vector<std::string> yosemite_devices = {
     "AtapiCdrom",
 };
 
+static const DeviceDescription MachineYosemite_descriptor = {
+    Machine::create<MachineYosemite>, yosemite_devices, yosemite_settings
+};
+
+REGISTER_DEVICE(MachineYosemite, MachineYosemite_descriptor);
+
 static const MachineDescription yosemite_descriptor = {
     .name = "pmg3nw",
     .description = "Power Macintosh G3 Blue and White",
-    .devices = yosemite_devices,
-    .settings = yosemite_settings,
-    .init_func = &initialize_yosemite
+    .machine_root = "MachineYosemite",
 };
 
 REGISTER_MACHINE(pmg3nw, yosemite_descriptor);

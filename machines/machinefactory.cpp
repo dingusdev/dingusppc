@@ -165,11 +165,9 @@ int MachineFactory::create(string& mach_id)
     gMachineObj->add_device("SoundServer", std::unique_ptr<SoundServer>(new SoundServer()));
 
     // recursively create device objects
-    for (auto& dev_name : it->second.devices) {
-        create_device(dev_name, DeviceRegistry::get_descriptor(dev_name));
-    }
+    create_device(it->second.machine_root, DeviceRegistry::get_descriptor(it->second.machine_root));
 
-    if (it->second.init_func(mach_id)) {
+    if (!gMachineObj->get_comp_by_name(it->second.machine_root)) {
         LOG_F(ERROR, "Machine initialization function failed!");
         return -1;
     }
@@ -192,11 +190,7 @@ void MachineFactory::list_properties()
     for (auto& mach : get_registry()) {
         cout << mach.second.description << " supported properties:" << endl << endl;
 
-        print_settings(mach.second.settings);
-
-        for (auto& d : mach.second.devices) {
-            list_device_settings(DeviceRegistry::get_descriptor(d));
-        }
+        list_device_settings(DeviceRegistry::get_descriptor(mach.second.machine_root));
     }
 
     cout << endl;
@@ -267,22 +261,9 @@ int MachineFactory::register_machine_settings(const std::string& id)
 {
     auto it = get_registry().find(id);
     if (it != get_registry().end()) {
-        auto props = it->second.settings;
-
         gMachineSettings.clear();
 
-        register_settings(props);
-
-        std::cout << endl << "Machine " << id << " Settings" << endl
-                   << std::string(36, '-') << endl;
-        for (auto& p : props) {
-            std::cout << std::setw(24) << std::right << p.first << " : "
-                      << gMachineSettings[p.first]->get_string() << endl;
-        }
-
-        for (auto& dev : it->second.devices) {
-            register_device_settings(dev);
-        }
+        register_device_settings(it->second.machine_root);
     } else {
         LOG_F(ERROR, "Unknown machine id %s", id.c_str());
         return -1;

@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -38,11 +38,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 struct DeviceDescription;
 
 struct MachineDescription {
-    std::string                       name;
-    std::string                       description;
-    std::vector<std::string>          devices;
-    PropMap                           settings;
-    std::function<int(std::string&)>  init_func;
+    std::string                  name;
+    std::string                  description;
+    std::string                  machine_root;
 };
 
 typedef std::function<std::optional<std::string>(const std::string&)> GetSettingValueFunc;

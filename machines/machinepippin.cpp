@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -27,8 +27,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cpu/ppc/ppcemu.h>
 #include <devices/common/pci/pcihost.h>
+#include <devices/deviceregistry.h>
 #include <devices/ioctrl/macio.h>
 #include <devices/memctrl/aspen.h>
+#include <machines/machine.h>
 #include <machines/machinebase.h>
 #include <machines/machinefactory.h>
 #include <loguru.hpp>
@@ -41,7 +43,12 @@ static std::vector<PciIrqMap> aspen_irq_map = {
     {nullptr , DEV_FUN(0x10,0),                 }, // GrandCentral
 };
 
-int initialize_pippin(std::string& id) {
+class MachinePippin : public Machine {
+public:
+    int initialize(const std::string &id);
+};
+
+int MachinePippin::initialize(const std::string &id) {
     LOG_F(INFO, "Building machine Pippin...");
 
     PCIHost *pci_host = dynamic_cast<PCIHost*>(gMachineObj->get_comp_by_name("AspenPci1"));
@@ -72,7 +79,7 @@ int initialize_pippin(std::string& id) {
     return 0;
 }
 
-static const PropMap Pippin_Settings = {
+static const PropMap Pippin_settings = {
     {"rambank1_size",
         new IntProperty(4, std::vector<uint32_t>({4}))}, // fixed size
     {"rambank2_size",
@@ -91,12 +98,16 @@ static std::vector<std::string> Pippin_devices = {
     "Aspen", "AspenPci1", "GrandCentralTnt", "TaosVideo"
 };
 
+static const DeviceDescription MachinePippin_descriptor = {
+    Machine::create<MachinePippin>, Pippin_devices, Pippin_settings
+};
+
+REGISTER_DEVICE(MachinePippin, MachinePippin_descriptor);
+
 static const MachineDescription Pippin_Descriptor = {
     .name = "pippin",
     .description = "Bandai Pippin",
-    .devices = Pippin_devices,
-    .settings = Pippin_Settings,
-    .init_func = &initialize_pippin
+    .machine_root = "MachinePippin",
 };
 
 REGISTER_MACHINE(pippin, Pippin_Descriptor);

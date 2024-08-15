@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -31,8 +31,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/scsi/scsi.h>
 #include <devices/common/scsi/scsicdrom.h>
 #include <devices/common/scsi/scsihd.h>
+#include <devices/deviceregistry.h>
 #include <devices/memctrl/hmc.h>
 #include <loguru.hpp>
+#include <machines/machine.h>
 #include <machines/machinebase.h>
 #include <machines/machinefactory.h>
 #include <machines/machineproperties.h>
@@ -40,8 +42,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 #include <vector>
 
-int initialize_pdm(std::string& id)
-{
+class MachinePdm : public Machine {
+public:
+    static std::unique_ptr<HWComponent> create6100() {
+        return Machine::create_with_id<MachinePdm>("pm6100");
+    }
+
+    static std::unique_ptr<HWComponent> create7100() {
+        return Machine::create_with_id<MachinePdm>("pm7100");
+    }
+
+    static std::unique_ptr<HWComponent> create8100() {
+        return Machine::create_with_id<MachinePdm>("pm8100");
+    }
+
+    int initialize(const std::string &id);
+};
+
+int MachinePdm::initialize(const std::string &id) {
     LOG_F(INFO, "Building machine PDM...");
 
     uint16_t machine_id;
@@ -118,13 +136,41 @@ static std::vector<std::string> pm6100_devices = {
     "HMC", "Amic"
 };
 
+static const DeviceDescription MachinePdm6100_descriptor = {
+    MachinePdm::create6100, pm6100_devices, pm6100_settings
+};
+
+static const DeviceDescription MachinePdm7100_descriptor = {
+    MachinePdm::create7100, pm6100_devices, pm6100_settings
+};
+
+static const DeviceDescription MachinePdm8100_descriptor = {
+    MachinePdm::create8100, pm6100_devices, pm6100_settings
+};
+
+REGISTER_DEVICE(MachinePdm6100, MachinePdm6100_descriptor);
+REGISTER_DEVICE(MachinePdm7100, MachinePdm7100_descriptor);
+REGISTER_DEVICE(MachinePdm8100, MachinePdm8100_descriptor);
+
 static const MachineDescription pm6100_descriptor = {
     .name = "pm6100",
     .description = "Power Macintosh 6100",
-    .devices = pm6100_devices,
-    .settings = pm6100_settings,
-    .init_func = initialize_pdm
+    .machine_root = "MachinePdm6100",
+};
+
+static const MachineDescription pm7100_descriptor = {
+    .name = "pm7100",
+    .description = "Power Macintosh 7100",
+    .machine_root = "MachinePdm7100",
+};
+
+static const MachineDescription pm8100_descriptor = {
+    .name = "pm8100",
+    .description = "Power Macintosh 8100",
+    .machine_root = "MachinePdm8100",
 };
 
 // self-registration with the MachineFactory
 REGISTER_MACHINE(pm6100, pm6100_descriptor);
+REGISTER_MACHINE(pm7100, pm7100_descriptor);
+REGISTER_MACHINE(pm8100, pm8100_descriptor);

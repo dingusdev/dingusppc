@@ -31,9 +31,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/i2c/i2cprom.h>
 #include <devices/common/machineid.h>
 #include <devices/common/scsi/scsihd.h>
+#include <devices/deviceregistry.h>
 #include <devices/memctrl/mpc106.h>
 #include <devices/memctrl/spdram.h>
 #include <loguru.hpp>
+#include <machines/machine.h>
 #include <machines/machinebase.h>
 #include <machines/machinefactory.h>
 #include <machines/machineproperties.h>
@@ -100,8 +102,20 @@ static void setup_ram_slot(std::string name, int i2c_addr, int capacity_megs) {
     i2c_bus->register_device(i2c_addr, ram_dimm);
 }
 
-int initialize_gossamer(std::string& id)
-{
+class MachineGossamer : public Machine {
+public:
+    static std::unique_ptr<HWComponent> create_desktop() {
+        return Machine::create_with_id<MachineGossamer>("pmg3dt");
+    }
+
+    static std::unique_ptr<HWComponent> create_tower() {
+        return Machine::create_with_id<MachineGossamer>("pmg3twr");
+    }
+
+    int initialize(const std::string &id);
+};
+
+int MachineGossamer::initialize(const std::string &id) {
     LOG_F(INFO, "Building machine Gossamer...");
 
     // get pointer to the memory controller/PCI host bridge object
@@ -203,20 +217,27 @@ static std::vector<std::string> pmg3twr_devices = {
     "Grackle", "ScreamerSnd", "Heathrow", "AtaHardDisk", "AtapiCdrom"
 };
 
+static const DeviceDescription MachineGossamerDesktop_descriptor = {
+    MachineGossamer::create_desktop, pmg3_devices, gossamer_desktop_settings
+};
+
+static const DeviceDescription MachineGossamerTower_descriptor = {
+    MachineGossamer::create_tower, pmg3twr_devices, gossamer_tower_settings
+};
+
+REGISTER_DEVICE(MachineGossamerDesktop, MachineGossamerDesktop_descriptor);
+REGISTER_DEVICE(MachineGossamerTower, MachineGossamerTower_descriptor);
+
 static const MachineDescription pmg3dt_descriptor = {
     .name = "pmg3dt",
     .description = "Power Macintosh G3 (Beige) Desktop",
-    .devices = pmg3_devices,
-    .settings = gossamer_desktop_settings,
-    .init_func = &initialize_gossamer
+    .machine_root = "MachineGossamerDesktop",
 };
 
 static const MachineDescription pmg3twr_descriptor = {
     .name = "pmg3twr",
     .description = "Power Macintosh G3 (Beige) Tower",
-    .devices = pmg3twr_devices,
-    .settings = gossamer_tower_settings,
-    .init_func = &initialize_gossamer
+    .machine_root = "MachineGossamerTower",
 };
 
 REGISTER_MACHINE(pmg3dt, pmg3dt_descriptor);

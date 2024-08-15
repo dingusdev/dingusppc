@@ -53,6 +53,7 @@ enum HWCompType : uint64_t {
     FLOPPY_CTRL = 1ULL << 32, // floppy disk controller
     FLOPPY_DRV  = 1ULL << 33, // floppy disk drive
     ETHER_MAC   = 1ULL << 40, // Ethernet media access controller
+    MACHINE     = 1ULL << 41, // machine root
 };
 
 /** Base class for HW components. */

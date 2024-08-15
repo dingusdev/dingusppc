@@ -22,9 +22,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @file Construct the Bondi machine (iMac G3). */
 
 #include <cpu/ppc/ppcemu.h>
+#include <devices/deviceregistry.h>
 #include <devices/ioctrl/macio.h>
 #include <devices/memctrl/mpc106.h>
 #include <devices/memctrl/spdram.h>
+#include <machines/machine.h>
 #include <machines/machinebase.h>
 #include <machines/machinefactory.h>
 #include <machines/machineproperties.h>
@@ -52,7 +54,12 @@ static void setup_ram_slot(std::string name, int i2c_addr, int capacity_megs) {
     i2c_bus->register_device(i2c_addr, ram_dimm);
 }
 
-int initialize_bondi(std::string& id) {
+class MachineBondi : public Machine {
+public:
+    int initialize(const std::string &id);
+};
+
+int MachineBondi::initialize(const std::string &id) {
     LOG_F(INFO, "Building machine Bondi...");
 
     // get pointer to the memory controller/primary PCI bridge object
@@ -105,11 +112,16 @@ static const PropMap bondi_settings = {
 static std::vector<std::string> bondi_devices = {
     "Grackle", "BurgundySnd", "Paddington", "AtaHardDisk", "AtapiCdrom"};
 
+static const DeviceDescription MachineBondi_descriptor = {
+    Machine::create<MachineBondi>, bondi_devices, bondi_settings
+};
+
+REGISTER_DEVICE(MachineBondi, MachineBondi_descriptor);
+
 static const MachineDescription bondi_descriptor = {
     .name        = "imacg3",
     .description = "iMac G3 Bondi Blue",
-    .devices     = bondi_devices,
-    .settings    = bondi_settings,
-    .init_func   = &initialize_bondi};
+    .machine_root = "MachineBondi",
+};
 
 REGISTER_MACHINE(imacg3, bondi_descriptor);
