@@ -170,6 +170,7 @@ int MachineFactory::create(string& mach_id)
 
     if (!gMachineObj->get_comp_by_name(it->second.machine_root)) {
         LOG_F(ERROR, "Machine initialization function failed!");
+        gMachineObj->clear_devices();
         return -1;
     }
 

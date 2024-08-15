@@ -39,6 +39,7 @@ public:
     MachineBase(std::string name);
     ~MachineBase();
 
+    void clear_devices();
     void add_device(std::string name, std::unique_ptr<HWComponent> dev_obj);
     void remove_device(HWComponent* dev_obj);
     HWComponent* get_comp_by_name(std::string name);

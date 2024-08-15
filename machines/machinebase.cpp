@@ -33,10 +33,14 @@ MachineBase::MachineBase(std::string name) {
     this->name = name;
 
     /* initialize internal maps */
-    this->device_map.clear();
+    this->clear_devices();
 }
 
 MachineBase::~MachineBase() {
+    this->clear_devices();
+}
+
+void MachineBase::clear_devices() {
     this->device_map.clear();
 }
 
