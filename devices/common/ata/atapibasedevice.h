@@ -55,6 +55,7 @@ protected:
     uint16_t    r_byte_count;
     bool        status_expected = false;
 
+    alignas(uint16_t)
     uint8_t     cmd_pkt[12] = {};
 };
 
