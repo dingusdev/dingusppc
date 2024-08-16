@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -165,14 +165,22 @@ void PCIBridge::pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDetails &
 
 bool PCIBridge::pci_io_read(uint32_t offset, uint32_t size, uint32_t* res)
 {
-    if (!(this->command & 1)) return false;
-    if (offset < this->io_base_32 || offset + size >= this->io_limit_32) return false;
+    if (!(this->command & 1))
+        return false;
+
+    if (offset < this->io_base_32 || offset + size >= this->io_limit_32)
+        return false;
+
     return this->pci_io_read_loop(offset, size, *res);
 }
 
 bool PCIBridge::pci_io_write(uint32_t offset, uint32_t value, uint32_t size)
 {
-    if (!(this->command & 1)) return false;
-    if (offset < this->io_base_32 || offset + size >= this->io_limit_32) return false;
+    if (!(this->command & 1))
+        return false;
+
+    if (offset < this->io_base_32 || offset + size >= this->io_limit_32)
+        return false;
+
     return this->pci_io_write_loop(offset, size, value);
 }
