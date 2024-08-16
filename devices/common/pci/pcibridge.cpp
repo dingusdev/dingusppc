@@ -174,5 +174,5 @@ bool PCIBridge::pci_io_write(uint32_t offset, uint32_t value, uint32_t size)
 {
     if (!(this->command & 1)) return false;
     if (offset < this->io_base_32 || offset + size >= this->io_limit_32) return false;
-    return this->pci_io_read_loop(offset, size, value);
+    return this->pci_io_write_loop(offset, size, value);
 }
