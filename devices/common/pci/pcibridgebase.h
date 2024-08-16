@@ -50,6 +50,10 @@ public:
     virtual uint32_t pci_cfg_read(uint32_t reg_offs, AccessDetails &details);
     virtual void pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDetails &details);
 
+    bool supports_io_space() {
+        return true;
+    };
+
     // plugin interface for using in the derived classes
     std::function<uint8_t()>        pci_rd_primary_bus;
     std::function<void(uint8_t)>    pci_wr_primary_bus;

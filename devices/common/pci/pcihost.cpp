@@ -171,15 +171,8 @@ uint32_t PCIHost::pci_io_read_broadcast(uint32_t offset, int size)
 
     // broadcast I/O request to devices that support I/O space
     // until a device returns true that means "request accepted"
-    if (pci_io_read_loop (offset, size, res)) {
+    if (pci_io_read_loop(offset, size, res))
         return res;
-    }
-
-    // broadcast I/O request to devices sitting behind PCI-to-PCI bridges
-    for (auto& dev : this->bridge_devs) {
-        if (dev->pci_io_read_loop(offset, size, res))
-            return res;
-    }
 
     // no device has accepted the request -> report error
     HWComponent *hwc = dynamic_cast<HWComponent*>(this);
@@ -196,15 +189,8 @@ void PCIHost::pci_io_write_broadcast(uint32_t offset, int size, uint32_t value)
 {
     // broadcast I/O request to devices that support I/O space
     // until a device returns true that means "request accepted"
-    if (pci_io_write_loop(offset, size, value)) {
+    if (pci_io_write_loop(offset, size, value))
         return;
-    }
-
-    // broadcast I/O request to devices sitting behind PCI-to-PCI bridges
-    for (auto& dev : this->bridge_devs) {
-        if (dev->pci_io_write_loop(offset, size, value))
-            return;
-    }
 
     // no device has accepted the request -> report error
     HWComponent *hwc = dynamic_cast<HWComponent*>(this);
