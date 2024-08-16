@@ -96,6 +96,7 @@ protected:
 
     uint16_t    *data_ptr       = nullptr;
     uint16_t    *cur_data_ptr   = nullptr;
+    alignas(uint16_t)
     uint8_t     data_buf[512]   = {};
     int         xfer_cnt        = 0;
     int         chunk_cnt       = 0;
