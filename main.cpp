@@ -104,9 +104,11 @@ int main(int argc, char** argv) {
     string bootrom_path("bootrom.bin");
     string working_directory_path(".");
 
-    app.add_flag("-r,--realtime", realtime_enabled,
+    auto execution_mode_group = app.add_option_group("execution mode")
+        ->require_option(-1);
+    execution_mode_group->add_flag("-r,--realtime", realtime_enabled,
         "Run the emulator in real-time");
-    app.add_flag("-d,--debugger", debugger_enabled,
+    execution_mode_group->add_flag("-d,--debugger", debugger_enabled,
         "Enter the built-in debugger");
     app.add_option("-w,--workingdir", working_directory_path, "Specifies working directory")
         ->check(WorkingDirectory);
@@ -158,8 +160,6 @@ int main(int argc, char** argv) {
     }
 
     if (debugger_enabled) {
-        if (realtime_enabled)
-            cout << "Both realtime and debugger enabled! Using debugger" << endl;
         execution_mode = debugger;
     }
 
