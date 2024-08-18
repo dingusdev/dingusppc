@@ -76,6 +76,7 @@ bool AdbMouse::get_register_0(uint8_t buttons_state, bool force) {
         static const uint8_t buttons_to_bits[] = {0, 7, 7, 10, 10, 13, 13, 16, 16};
         static const uint8_t bits_to_bits[]    = {0, 7, 7, 7, 7, 7, 7, 7, 10, 10, 10, 13, 13, 13, 16, 16, 16};
         int total_bits = std::max(buttons_to_bits[this->num_buttons], bits_to_bits[this->num_bits]);
+        uint8_t buttons_state = ~this->buttons_state;
 
         for (int axis = 0; axis < 2; axis++) {
             int bits = this->num_bits;
@@ -91,7 +92,7 @@ bool AdbMouse::get_register_0(uint8_t buttons_state, bool force) {
             bits = 7;
 
             while (bits_remaining > 0) {
-                *p = (val & ((1 << bits) - 1)) | (((buttons_state >> button) ^ 1) << bits) | (*p << (bits + 1));
+                *p = (val & ((1 << bits) - 1)) | (((buttons_state >> button) & 1) << bits) | (*p << (bits + 1));
                 val >>= bits;
                 bits_remaining -= bits;
                 p = bits == 7 ? &out_buf[2] : p + 1;
