@@ -75,11 +75,19 @@ bool AdbMouse::get_register_0(uint8_t buttons_state, bool force) {
 
         static const uint8_t buttons_to_bits[] = {0, 7, 7, 10, 10, 13, 13, 16, 16};
         static const uint8_t bits_to_bits[]    = {0, 7, 7, 7, 7, 7, 7, 7, 10, 10, 10, 13, 13, 13, 16, 16, 16};
-        int total_bits = std::max(buttons_to_bits[this->num_buttons], bits_to_bits[this->num_bits]);
+        int num_bits, total_bits;
+        // if the mouse is in standard protocol then only send first 2 bytes
+        // BUGBUG: what should tablet do here?
+        if (this->device_class == MOUSE && this->dev_handler_id == 1) {
+            num_bits = total_bits = 7;
+        } else {
+            num_bits = this->num_bits;
+            total_bits = std::max(buttons_to_bits[this->num_buttons], bits_to_bits[num_bits]);
+        }
         uint8_t buttons_state = ~this->buttons_state;
 
         for (int axis = 0; axis < 2; axis++) {
-            int bits = this->num_bits;
+            int bits = num_bits;
             int32_t val = axis ? this->device_class == TABLET ? this->x_abs : this->x_rel
                                : this->device_class == TABLET ? this->y_abs : this->y_rel;
             if (val < (-1 << (bits - 1)))
@@ -107,13 +115,6 @@ bool AdbMouse::get_register_0(uint8_t buttons_state, bool force) {
         this->changed   = false;
 
         uint8_t count = (uint8_t)(p - out_buf);
-        // should never happen, but check just in case
-        if (((size_t)p - (size_t)out_buf) > UINT8_MAX)
-            count = UINT8_MAX;
-        // if the mouse is in standard protocol then only send first 2 bytes
-        // BUGBUG: what should tablet do here?
-        if (this->device_class == MOUSE && this->dev_handler_id == 1)
-            count = 2;
         this->host_obj->set_output_count(count);
         return should_update;
     }
