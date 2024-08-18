@@ -80,6 +80,9 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io_heathrow"), InterruptCtrl()
     // connect SCSI HW and the corresponding DMA channel
     this->mesh = dynamic_cast<MeshController*>(gMachineObj->get_comp_by_name("MeshHeathrow"));
     this->mesh_dma = std::unique_ptr<DMAChannel> (new DMAChannel("mesh"));
+    this->mesh_dma->register_dma_int(this, this->register_dma_int(IntSrc::DMA_SCSI_MESH));
+    this->mesh_dma->connect(this->mesh);
+    this->mesh->connect(this->mesh_dma.get());
 
     // connect IDE HW
     this->ide_0 = dynamic_cast<IdeChannel*>(gMachineObj->get_comp_by_name("Ide0"));
