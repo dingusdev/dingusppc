@@ -62,11 +62,7 @@ Po_Cause power_off_reason = po_enter_debugger;
 
 SetPRS ppc_state;
 
-bool grab_return;
-bool grab_breakpoint;
-
 uint32_t ppc_cur_instruction;    // Current instruction for the PPC
-uint32_t ppc_effective_address;
 uint32_t ppc_next_instruction_address;    // Used for branching, setting up the NIA
 
 unsigned exec_flags; // execution control flags
