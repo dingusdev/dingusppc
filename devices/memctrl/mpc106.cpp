@@ -324,7 +324,8 @@ static const PropMap Grackle_Properties = {
 };
 
 static const DeviceDescription Grackle_Descriptor = {
-    MPC106::create, {}, Grackle_Properties
+    MPC106::create, {}, Grackle_Properties,
+    HWCompType::MEM_CTRL | HWCompType::MMIO_DEV | HWCompType::PCI_HOST | HWCompType::PCI_DEV
 };
 
 REGISTER_DEVICE(Grackle, Grackle_Descriptor);

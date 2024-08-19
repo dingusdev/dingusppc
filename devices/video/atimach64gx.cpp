@@ -1090,7 +1090,7 @@ static const PropMap AtiMach64gx_Properties = {
 };
 
 static const DeviceDescription AtiMach64Gx_Descriptor = {
-    AtiMach64Gx::create, {}, AtiMach64gx_Properties
+    AtiMach64Gx::create, {}, AtiMach64gx_Properties, HWCompType::MMIO_DEV | HWCompType::PCI_DEV
 };
 
 REGISTER_DEVICE(AtiMach64Gx, AtiMach64Gx_Descriptor);

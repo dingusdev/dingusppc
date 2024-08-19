@@ -172,7 +172,7 @@ uint8_t AdbMouse::get_buttons_state() const {
 }
 
 static const DeviceDescription AdbMouse_Descriptor = {
-    AdbMouse::create, {}, {}
+    AdbMouse::create, {}, {}, HWCompType::ADB_DEV
 };
 
 REGISTER_DEVICE(AdbMouse, AdbMouse_Descriptor);

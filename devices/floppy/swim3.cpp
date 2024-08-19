@@ -40,7 +40,7 @@ using namespace Swim3;
 Swim3Ctrl::Swim3Ctrl()
 {
     this->name = "SWIM3";
-    this->supported_types = HWCompType::FLOPPY_CTRL;
+    supports_types(HWCompType::FLOPPY_CTRL);
 
     this->reset();
 
@@ -440,7 +440,7 @@ static const PropMap Swim3_Properties = {
 };
 
 static const DeviceDescription Swim3_Descriptor = {
-    Swim3Ctrl::create, {}, Swim3_Properties
+    Swim3Ctrl::create, {}, Swim3_Properties, HWCompType::FLOPPY_CTRL
 };
 
 REGISTER_DEVICE(Swim3, Swim3_Descriptor);

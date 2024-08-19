@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -40,6 +40,8 @@ struct DeviceDescription {
     CreateFunc                m_create_func;
     std::vector<std::string>  subdev_list;
     PropMap                   properties;
+    uint64_t                  supports_types;
+    std::string               description;
 };
 
 class DeviceRegistry

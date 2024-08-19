@@ -861,7 +861,7 @@ static const vector<string> Cuda_Subdevices = {
 };
 
 static const DeviceDescription ViaCuda_Descriptor = {
-    ViaCuda::create, Cuda_Subdevices, {}
+    ViaCuda::create, Cuda_Subdevices, {}, HWCompType::ADB_HOST | HWCompType::I2C_HOST
 };
 
 REGISTER_DEVICE(ViaCuda, ViaCuda_Descriptor);

@@ -117,11 +117,11 @@ void MacioIdeChannel::write(const uint8_t reg_addr, const uint32_t val, const in
 }
 
 static const DeviceDescription Ide0_Descriptor = {
-    MacioIdeChannel::create_first, {}, {}
+    MacioIdeChannel::create_first, {}, {}, HWCompType::IDE_BUS
 };
 
 static const DeviceDescription Ide1_Descriptor = {
-    MacioIdeChannel::create_second, {}, {}
+    MacioIdeChannel::create_second, {}, {}, HWCompType::IDE_BUS
 };
 
 REGISTER_DEVICE(Ide0, Ide0_Descriptor);

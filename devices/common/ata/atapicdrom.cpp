@@ -438,7 +438,7 @@ static const PropMap AtapiCdrom_Properties = {
 };
 
 static const DeviceDescription AtapiCdrom_Descriptor = {
-    AtapiCdrom::create, {}, AtapiCdrom_Properties
+    AtapiCdrom::create, {}, AtapiCdrom_Properties, HWCompType::IDE_DEV
 };
 
 REGISTER_DEVICE(AtapiCdrom, AtapiCdrom_Descriptor);

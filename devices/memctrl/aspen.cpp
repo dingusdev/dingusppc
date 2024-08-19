@@ -172,7 +172,7 @@ int AspenCtrl::map_phys_ram() {
 }
 
 static const DeviceDescription Aspen_Descriptor = {
-    AspenCtrl::create, {}, {}
+    AspenCtrl::create, {}, {}, HWCompType::MEM_CTRL | HWCompType::MMIO_DEV
 };
 
 REGISTER_DEVICE(Aspen, Aspen_Descriptor);

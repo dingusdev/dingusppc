@@ -94,7 +94,7 @@ void AdbAppleJack::set_register_3() {
 }
 
 static const DeviceDescription AdbAppleJack_Descriptor = {
-    AdbAppleJack::create, {}, {}
+    AdbAppleJack::create, {}, {}, HWCompType::ADB_DEV
 };
 
 REGISTER_DEVICE(AdbAppleJack, AdbAppleJack_Descriptor);

@@ -205,7 +205,7 @@ int HMC::install_ram(uint32_t mb_bank_size, uint32_t bank_a_size, uint32_t bank_
 }
 
 static const DeviceDescription Hmc_Descriptor = {
-    HMC::create, {}, {}
+    HMC::create, {}, {}, HWCompType::MEM_CTRL | HWCompType::MMIO_DEV
 };
 
 REGISTER_DEVICE(HMC, Hmc_Descriptor);

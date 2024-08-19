@@ -394,23 +394,23 @@ static const std::vector<std::string> Chaos_Subdevices = {
 };
 
 static const DeviceDescription Bandit1_Descriptor = {
-    Bandit::create_first, {}, Bandit1_Properties
+    Bandit::create_first, {}, Bandit1_Properties, HWCompType::PCI_HOST
 };
 
 static const DeviceDescription Bandit2_Descriptor = {
-    Bandit::create_second, {}, Bandit2_Properties
+    Bandit::create_second, {}, Bandit2_Properties, HWCompType::PCI_HOST
 };
 
 static const DeviceDescription PsxPci1_Descriptor = {
-    Bandit::create_psx_first, {}, PsxPci1_Properties
+    Bandit::create_psx_first, {}, PsxPci1_Properties, HWCompType::PCI_HOST
 };
 
 static const DeviceDescription Chaos_Descriptor = {
-    Chaos::create, Chaos_Subdevices, Chaos_Properties
+    Chaos::create, Chaos_Subdevices, Chaos_Properties, HWCompType::PCI_HOST
 };
 
 static const DeviceDescription AspenPci1_Descriptor = {
-    AspenPci::create, {}, Bandit1_Properties
+    AspenPci::create, {}, Bandit1_Properties, HWCompType::PCI_HOST
 };
 
 REGISTER_DEVICE(Bandit1,    Bandit1_Descriptor);

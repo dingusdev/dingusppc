@@ -493,7 +493,8 @@ static const std::vector<std::string> OHare_Subdevices = {
 };
 
 static const DeviceDescription OHare_Descriptor = {
-    OHare::create, OHare_Subdevices, {
-}};
+    OHare::create, OHare_Subdevices, {},
+    HWCompType::MMIO_DEV | HWCompType::PCI_DEV | HWCompType::INT_CTRL
+};
 
 REGISTER_DEVICE(OHare, OHare_Descriptor);

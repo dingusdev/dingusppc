@@ -831,7 +831,7 @@ static std::vector<std::string> Amic_Subdevices = {
 };
 
 static const DeviceDescription Amic_Descriptor = {
-    AMIC::create, Amic_Subdevices, {}
+    AMIC::create, Amic_Subdevices, {}, HWCompType::MMIO_DEV | HWCompType::INT_CTRL
 };
 
 REGISTER_DEVICE(Amic, Amic_Descriptor);

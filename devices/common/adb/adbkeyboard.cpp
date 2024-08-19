@@ -111,7 +111,7 @@ void AdbKeyboard::set_register_3() {
 }
 
 static const DeviceDescription AdbKeyboard_Descriptor = {
-    AdbKeyboard::create, {}, {}
+    AdbKeyboard::create, {}, {}, HWCompType::ADB_DEV
 };
 
 REGISTER_DEVICE(AdbKeyboard, AdbKeyboard_Descriptor);

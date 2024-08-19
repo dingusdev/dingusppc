@@ -985,11 +985,11 @@ static const PropMap AtiRage_Properties = {
 };
 
 static const DeviceDescription AtiRageGT_Descriptor = {
-    ATIRage::create_gt, {}, AtiRage_Properties
+    ATIRage::create_gt, {}, AtiRage_Properties, HWCompType::MMIO_DEV | HWCompType::PCI_DEV
 };
 
 static const DeviceDescription AtiRagePro_Descriptor = {
-    ATIRage::create_pro, {}, AtiRage_Properties
+    ATIRage::create_pro, {}, AtiRage_Properties, HWCompType::MMIO_DEV | HWCompType::PCI_DEV
 };
 
 REGISTER_DEVICE(AtiRageGT, AtiRageGT_Descriptor);

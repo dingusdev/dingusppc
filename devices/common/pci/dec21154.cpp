@@ -102,11 +102,11 @@ static const PropMap Dec21154Yosemite_Properties = {
 };
 
 static const DeviceDescription Dec21154_Descriptor = {
-    DecPciBridge::create, {}, {}
+    DecPciBridge::create, {}, {}, HWCompType::PCI_HOST | HWCompType::PCI_DEV
 };
 
 static const DeviceDescription Dec21154Yosemite_Descriptor = {
-    DecPciBridge::create_yosemite, {}, Dec21154Yosemite_Properties
+    DecPciBridge::create_yosemite, {}, Dec21154Yosemite_Properties, HWCompType::PCI_HOST | HWCompType::PCI_DEV
 };
 
 REGISTER_DEVICE(Dec21154, Dec21154_Descriptor);

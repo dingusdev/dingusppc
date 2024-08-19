@@ -546,7 +546,8 @@ static const vector<string> Heathrow_Subdevices = {
 };
 
 static const DeviceDescription Heathrow_Descriptor = {
-    HeathrowIC::create, Heathrow_Subdevices, {}
+    HeathrowIC::create, Heathrow_Subdevices, {},
+    HWCompType::MMIO_DEV | HWCompType::PCI_DEV | HWCompType::INT_CTRL
 };
 
 REGISTER_DEVICE(Heathrow, Heathrow_Descriptor);

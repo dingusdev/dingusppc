@@ -618,7 +618,7 @@ static const PropMap Platinum_Properties = {
 };
 
 static const DeviceDescription Platinum_Descriptor = {
-    PlatinumCtrl::create, {}, Platinum_Properties
+    PlatinumCtrl::create, {}, Platinum_Properties, HWCompType::MEM_CTRL | HWCompType::MMIO_DEV
 };
 
 REGISTER_DEVICE(Platinum, Platinum_Descriptor);

@@ -486,7 +486,7 @@ static const PropMap Escc_Properties = {
 };
 
 static const DeviceDescription Escc_Descriptor = {
-    EsccController::create, {}, Escc_Properties
+    EsccController::create, {}, Escc_Properties, HWCompType::MMIO_DEV
 };
 
 REGISTER_DEVICE(Escc, Escc_Descriptor);

@@ -267,7 +267,7 @@ static const PropMap Taos_Properties = {
 };
 
 static const DeviceDescription Taos_Descriptor = {
-    TaosVideo::create, {}, Taos_Properties
+    TaosVideo::create, {}, Taos_Properties, HWCompType::MMIO_DEV
 };
 
 REGISTER_DEVICE(TaosVideo, Taos_Descriptor);

@@ -99,7 +99,7 @@ void BurgundyCodec::snd_ctrl_write(uint32_t offset, uint32_t value, int size) {
 }
 
 static const DeviceDescription Burgundy_Descriptor = {
-    BurgundyCodec::create, {}, {}
+    BurgundyCodec::create, {}, {}, HWCompType::SND_CODEC
 };
 
 REGISTER_DEVICE(BurgundySnd, Burgundy_Descriptor);

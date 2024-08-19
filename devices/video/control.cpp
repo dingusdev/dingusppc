@@ -58,7 +58,7 @@ namespace loguru {
 ControlVideo::ControlVideo()
     : PCIDevice("Control-Video"), VideoCtrlBase()
 {
-    supports_types(HWCompType::PCI_HOST | HWCompType::PCI_DEV);
+    supports_types(HWCompType::PCI_DEV);
 
     // get VRAM size in MBs and convert it to bytes
     this->vram_size = GET_INT_PROP("gfxmem_size") << 20;
@@ -702,7 +702,7 @@ static const PropMap Control_Properties = {
 };
 
 static const DeviceDescription Control_Descriptor = {
-    ControlVideo::create, {}, Control_Properties
+    ControlVideo::create, {}, Control_Properties, HWCompType::PCI_DEV
 };
 
 REGISTER_DEVICE(ControlVideo, Control_Descriptor);

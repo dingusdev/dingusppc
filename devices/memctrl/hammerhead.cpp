@@ -170,7 +170,7 @@ void HammerheadCtrl::map_phys_ram()
 }
 
 static const DeviceDescription Hammerhead_Descriptor = {
-    HammerheadCtrl::create, {}, {}
+    HammerheadCtrl::create, {}, {}, HWCompType::MEM_CTRL | HWCompType::MMIO_DEV
 };
 
 REGISTER_DEVICE(Hammerhead, Hammerhead_Descriptor);

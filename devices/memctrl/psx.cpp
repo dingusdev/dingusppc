@@ -122,7 +122,7 @@ void PsxCtrl::map_phys_ram()
 }
 
 static const DeviceDescription Psx_Descriptor = {
-    PsxCtrl::create, {}, {}
+    PsxCtrl::create, {}, {}, HWCompType::MEM_CTRL | HWCompType::MMIO_DEV
 };
 
 REGISTER_DEVICE(Psx, Psx_Descriptor);

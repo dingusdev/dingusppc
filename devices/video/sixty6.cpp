@@ -441,7 +441,7 @@ static const PropMap Sixty6_Properties = {
 };
 
 static const DeviceDescription Sixty6_Descriptor = {
-    Sixty6Video::create, {}, Sixty6_Properties
+    Sixty6Video::create, {}, Sixty6_Properties, HWCompType::MMIO_DEV
 };
 
 REGISTER_DEVICE(Sixty6Video, Sixty6_Descriptor);

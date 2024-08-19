@@ -444,11 +444,11 @@ void BigMac::srom_xmit_bit(const uint8_t bit_val) {
 }
 
 static const DeviceDescription BigMac_Heathrow_Descriptor = {
-    BigMac::create_for_heathrow, {}, {}
+    BigMac::create_for_heathrow, {}, {}, HWCompType::MMIO_DEV | HWCompType::ETHER_MAC
 };
 
 static const DeviceDescription BigMac_Paddington_Descriptor = {
-    BigMac::create_for_paddington, {}, {}
+    BigMac::create_for_paddington, {}, {}, HWCompType::MMIO_DEV | HWCompType::ETHER_MAC
 };
 
 REGISTER_DEVICE(BigMacHeathrow, BigMac_Heathrow_Descriptor);

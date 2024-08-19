@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -113,7 +113,7 @@ void MaceController::write(uint8_t reg_offset, uint8_t value)
 }
 
 static const DeviceDescription Mace_Descriptor = {
-    MaceController::create, {}, {}
+    MaceController::create, {}, {}, HWCompType::MMIO_DEV | HWCompType::ETHER_MAC
 };
 
 REGISTER_DEVICE(Mace, Mace_Descriptor);

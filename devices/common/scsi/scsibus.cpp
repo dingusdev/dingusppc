@@ -377,11 +377,11 @@ void ScsiBus::attach_scsi_devices(const std::string bus_suffix)
 }
 
 static const DeviceDescription ScsiCurio_Descriptor = {
-    ScsiBus::create_ScsiCurio, {}, {}
+    ScsiBus::create_ScsiCurio, {}, {}, HWCompType::SCSI_BUS
 };
 
 static const DeviceDescription ScsiMesh_Descriptor = {
-    ScsiBus::create_ScsiMesh, {}, {}
+    ScsiBus::create_ScsiMesh, {}, {}, HWCompType::SCSI_BUS
 };
 
 REGISTER_DEVICE(ScsiCurio, ScsiCurio_Descriptor);

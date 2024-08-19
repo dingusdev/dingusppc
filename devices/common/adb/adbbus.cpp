@@ -133,7 +133,7 @@ static const PropMap AdbBus_Properties = {
 };
 
 static const DeviceDescription AdbBus_Descriptor = {
-    AdbBus::create, {}, AdbBus_Properties
+    AdbBus::create, {}, AdbBus_Properties, HWCompType::ADB_HOST
 };
 
 REGISTER_DEVICE(AdbBus, AdbBus_Descriptor);

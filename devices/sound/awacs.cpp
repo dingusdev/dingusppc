@@ -249,7 +249,7 @@ void AwacsScreamer::snd_ctrl_write(uint32_t offset, uint32_t value, int size) {
 }
 
 static const DeviceDescription Screamer_Descriptor = {
-    AwacsScreamer::create, {}, {}
+    AwacsScreamer::create, {}, {}, HWCompType::SND_CODEC
 };
 
 REGISTER_DEVICE(ScreamerSnd, Screamer_Descriptor);

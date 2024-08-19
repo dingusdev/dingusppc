@@ -929,7 +929,7 @@ static const std::vector<std::string> Sc53C94_Subdevices = {
 };
 
 static const DeviceDescription Sc53C94_Descriptor = {
-    Sc53C94::create, Sc53C94_Subdevices, Sc53C94_properties
+    Sc53C94::create, Sc53C94_Subdevices, Sc53C94_properties, HWCompType::SCSI_HOST | HWCompType::SCSI_DEV
 };
 
 REGISTER_DEVICE(Sc53C94, Sc53C94_Descriptor);
