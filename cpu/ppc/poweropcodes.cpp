@@ -200,7 +200,7 @@ void dppc_interpreter::power_dozi() {
 template <field_rc rec>
 void dppc_interpreter::power_lscbx() {
     ppc_grab_regsdab(ppc_cur_instruction);
-    uint32_t ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
+    uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
 
     uint32_t bytes_to_load = (ppc_state.spr[SPR::XER] & 0x7F);
     uint32_t bytes_remaining = bytes_to_load;
@@ -212,7 +212,7 @@ void dppc_interpreter::power_lscbx() {
     uint8_t  shift_amount = 24;
 
     while (bytes_remaining > 0) {
-        uint8_t return_value = mmu_read_vmem<uint8_t>(ppc_effective_address);
+        uint8_t return_value = mmu_read_vmem<uint8_t>(ea);
 
         ppc_result_d |= return_value << shift_amount;
         if (!shift_amount) {
@@ -225,7 +225,7 @@ void dppc_interpreter::power_lscbx() {
             shift_amount -= 8;
         }
 
-        ppc_effective_address++;
+        ea++;
         bytes_remaining--;
 
         if (return_value == matching_byte) {
