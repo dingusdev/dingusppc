@@ -303,8 +303,6 @@ extern unsigned exec_flags;
 
 extern jmp_buf exc_env;
 
-extern bool grab_return;
-
 enum Po_Cause : int {
     po_none,
     po_starting_up,

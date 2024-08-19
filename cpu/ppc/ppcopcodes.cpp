@@ -1395,7 +1395,6 @@ void dppc_interpreter::ppc_rfi() {
 
     mmu_change_mode();
 
-    grab_return = true;
     exec_flags = EXEF_RFI;
 }
 
