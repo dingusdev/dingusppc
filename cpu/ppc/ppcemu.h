@@ -330,7 +330,6 @@ extern bool is_64bit;      // For PowerPC G5 Emulation
 
 // Important Addressing Integers
 extern uint32_t ppc_cur_instruction;
-extern uint32_t ppc_effective_address;
 extern uint32_t ppc_next_instruction_address;
 
 inline void ppc_set_cur_instruction(const uint8_t* ptr) {

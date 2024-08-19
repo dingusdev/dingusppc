@@ -200,7 +200,7 @@ void dppc_interpreter::power_dozi() {
 template <field_rc rec>
 void dppc_interpreter::power_lscbx() {
     ppc_grab_regsdab(ppc_cur_instruction);
-    ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
+    uint32_t ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
 
     uint32_t bytes_to_load = (ppc_state.spr[SPR::XER] & 0x7F);
     uint32_t bytes_remaining = bytes_to_load;

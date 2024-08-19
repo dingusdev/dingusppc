@@ -1473,7 +1473,7 @@ void dppc_interpreter::ppc_dcbtst() {
 
 void dppc_interpreter::ppc_dcbz() {
     ppc_grab_regsab(ppc_cur_instruction);
-    ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
+    uint32_t ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
 
     ppc_effective_address &= 0xFFFFFFE0UL; // align EA on a 32-byte boundary
 
@@ -1494,7 +1494,7 @@ void dppc_interpreter::ppc_st() {
     num_int_stores++;
 #endif
     ppc_grab_regssa(ppc_cur_instruction);
-    ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
+    uint32_t ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
     ppc_effective_address += reg_a ? ppc_result_a : 0;
     mmu_write_vmem<T>(ppc_effective_address, ppc_result_d);
 }
@@ -1509,7 +1509,7 @@ void dppc_interpreter::ppc_stx() {
     num_int_stores++;
 #endif
     ppc_grab_regssab(ppc_cur_instruction);
-    ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
+    uint32_t ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
     mmu_write_vmem<T>(ppc_effective_address, ppc_result_d);
 }
 
@@ -1524,7 +1524,7 @@ void dppc_interpreter::ppc_stu() {
 #endif
     ppc_grab_regssa(ppc_cur_instruction);
     if (reg_a != 0) {
-        ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
+        uint32_t ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
         ppc_effective_address += ppc_result_a;
         mmu_write_vmem<T>(ppc_effective_address, ppc_result_d);
         ppc_state.gpr[reg_a] = ppc_effective_address;
@@ -1544,7 +1544,7 @@ void dppc_interpreter::ppc_stux() {
 #endif
     ppc_grab_regssab(ppc_cur_instruction);
     if (reg_a != 0) {
-        ppc_effective_address = ppc_result_a + ppc_result_b;
+        uint32_t ppc_effective_address = ppc_result_a + ppc_result_b;
         mmu_write_vmem<T>(ppc_effective_address, ppc_result_d);
         ppc_state.gpr[reg_a] = ppc_effective_address;
     } else {
@@ -1561,8 +1561,8 @@ void dppc_interpreter::ppc_sthbrx() {
     num_int_stores++;
 #endif
     ppc_grab_regssab(ppc_cur_instruction);
-    ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
-    ppc_result_d          = uint32_t(BYTESWAP_16(uint16_t(ppc_result_d)));
+    uint32_t ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
+    ppc_result_d = uint32_t(BYTESWAP_16(uint16_t(ppc_result_d)));
     mmu_write_vmem<uint16_t>(ppc_effective_address, ppc_result_d);
 }
 
@@ -1571,7 +1571,7 @@ void dppc_interpreter::ppc_stwcx() {
     num_int_stores++;
 #endif
     ppc_grab_regssab(ppc_cur_instruction);
-    ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
+    uint32_t ppc_effective_address = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
     ppc_state.cr &= 0x0FFFFFFFUL; // clear CR0
     ppc_state.cr |= (ppc_state.spr[SPR::XER] & XER::SO) >> 3; // copy XER[SO] to CR0[SO]
     if (ppc_state.reserve) {
@@ -1586,7 +1586,7 @@ void dppc_interpreter::ppc_stwbrx() {
     num_int_stores++;
 #endif
     ppc_grab_regssab(ppc_cur_instruction);
-    ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
+    uint32_t ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
     ppc_result_d          = BYTESWAP_32(ppc_result_d);
     mmu_write_vmem<uint32_t>(ppc_effective_address, ppc_result_d);
 }
@@ -1596,7 +1596,7 @@ void dppc_interpreter::ppc_stmw() {
     num_int_stores++;
 #endif
     ppc_grab_regssa_stmw(ppc_cur_instruction);
-    ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
+    uint32_t ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
     ppc_effective_address += reg_a ? ppc_result_a : 0;
 
     /* what should we do if EA is unaligned? */
@@ -1616,7 +1616,7 @@ void dppc_interpreter::ppc_lz() {
     num_int_loads++;
 #endif
     ppc_grab_regsda(ppc_cur_instruction);
-    ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
+    uint32_t ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
     ppc_effective_address += reg_a ? ppc_result_a : 0;
     uint32_t ppc_result_d = mmu_read_vmem<T>(ppc_effective_address);
     ppc_store_iresult_reg(reg_d, ppc_result_d);
@@ -1632,7 +1632,7 @@ void dppc_interpreter::ppc_lzu() {
     num_int_loads++;
 #endif
     ppc_grab_regsda(ppc_cur_instruction);
-    ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
+    uint32_t ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
     if ((reg_a != reg_d) && reg_a != 0) {
         ppc_effective_address += ppc_result_a;
         uint32_t ppc_result_d = mmu_read_vmem<T>(ppc_effective_address);
@@ -1654,7 +1654,7 @@ void dppc_interpreter::ppc_lzx() {
     num_int_loads++;
 #endif
     ppc_grab_regsdab(ppc_cur_instruction);
-    ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
+    uint32_t ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
     uint32_t ppc_result_d = mmu_read_vmem<T>(ppc_effective_address);
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
@@ -1670,7 +1670,7 @@ void dppc_interpreter::ppc_lzux() {
 #endif
     ppc_grab_regsdab(ppc_cur_instruction);
     if ((reg_a != reg_d) && reg_a != 0) {
-        ppc_effective_address = ppc_result_a + ppc_result_b;
+        uint32_t ppc_effective_address = ppc_result_a + ppc_result_b;
         uint32_t ppc_result_d = mmu_read_vmem<T>(ppc_effective_address);
         ppc_result_a          = ppc_effective_address;
         ppc_store_iresult_reg(reg_d, ppc_result_d);
@@ -1689,7 +1689,7 @@ void dppc_interpreter::ppc_lha() {
     num_int_loads++;
 #endif
     ppc_grab_regsda(ppc_cur_instruction);
-    ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
+    uint32_t ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
     ppc_effective_address += (reg_a ? ppc_result_a : 0);
     int16_t val = mmu_read_vmem<uint16_t>(ppc_effective_address);
     ppc_store_iresult_reg(reg_d, int32_t(val));
@@ -1701,7 +1701,7 @@ void dppc_interpreter::ppc_lhau() {
 #endif
     ppc_grab_regsda(ppc_cur_instruction);
     if ((reg_a != reg_d) && reg_a != 0) {
-        ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
+        uint32_t ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
         ppc_effective_address += ppc_result_a;
         int16_t val = mmu_read_vmem<uint16_t>(ppc_effective_address);
         ppc_store_iresult_reg(reg_d, int32_t(val));
@@ -1718,7 +1718,7 @@ void dppc_interpreter::ppc_lhaux() {
 #endif
     ppc_grab_regsdab(ppc_cur_instruction);
     if ((reg_a != reg_d) && reg_a != 0) {
-        ppc_effective_address = ppc_result_a + ppc_result_b;
+        uint32_t ppc_effective_address = ppc_result_a + ppc_result_b;
         int16_t val = mmu_read_vmem<uint16_t>(ppc_effective_address);
         ppc_store_iresult_reg(reg_d, int32_t(val));
         uint32_t ppc_result_a = ppc_effective_address;
@@ -1734,7 +1734,7 @@ void dppc_interpreter::ppc_lhax() {
     num_int_loads++;
 #endif
     ppc_grab_regsdab(ppc_cur_instruction);
-    ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
+    uint32_t ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
     int16_t val = mmu_read_vmem<uint16_t>(ppc_effective_address);
     ppc_store_iresult_reg(reg_d, int32_t(val));
 }
@@ -1744,7 +1744,7 @@ void dppc_interpreter::ppc_lhbrx() {
     num_int_loads++;
 #endif
     ppc_grab_regsdab(ppc_cur_instruction);
-    ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
+    uint32_t ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
     uint32_t ppc_result_d = uint32_t(BYTESWAP_16(mmu_read_vmem<uint16_t>(ppc_effective_address)));
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
@@ -1754,7 +1754,7 @@ void dppc_interpreter::ppc_lwbrx() {
     num_int_loads++;
 #endif
     ppc_grab_regsdab(ppc_cur_instruction);
-    ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
+    uint32_t ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
     uint32_t ppc_result_d = BYTESWAP_32(mmu_read_vmem<uint32_t>(ppc_effective_address));
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
@@ -1765,7 +1765,7 @@ void dppc_interpreter::ppc_lwarx() {
 #endif
     // Placeholder - Get the reservation of memory implemented!
     ppc_grab_regsdab(ppc_cur_instruction);
-    ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
+    uint32_t ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
     ppc_state.reserve     = true;
     uint32_t ppc_result_d = mmu_read_vmem<uint32_t>(ppc_effective_address);
     ppc_store_iresult_reg(reg_d, ppc_result_d);
@@ -1776,7 +1776,7 @@ void dppc_interpreter::ppc_lmw() {
     num_int_loads++;
 #endif
     ppc_grab_regsda(ppc_cur_instruction);
-    ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
+    uint32_t ppc_effective_address = int32_t(int16_t(ppc_cur_instruction));
     ppc_effective_address += (reg_a ? ppc_result_a : 0);
     // How many words to load in memory - using a do-while for this
     do {
@@ -1791,9 +1791,9 @@ void dppc_interpreter::ppc_lswi() {
     num_int_loads++;
 #endif
     ppc_grab_regsda(ppc_cur_instruction);
-    ppc_effective_address = reg_a ? ppc_result_a : 0;
-    uint32_t grab_inb     = (ppc_cur_instruction >> 11) & 0x1F;
-    grab_inb              = grab_inb ? grab_inb : 32;
+    uint32_t ppc_effective_address = reg_a ? ppc_result_a : 0;
+    uint32_t grab_inb              = (ppc_cur_instruction >> 11) & 0x1F;
+    grab_inb                       = grab_inb ? grab_inb : 32;
 
     while (grab_inb >= 4) {
         ppc_state.gpr[reg_d] = mmu_read_vmem<uint32_t>(ppc_effective_address);
@@ -1837,7 +1837,7 @@ void dppc_interpreter::ppc_lswx() {
     }
 */
 
-    ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
+    uint32_t ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
     uint32_t grab_inb      = ppc_state.spr[SPR::XER] & 0x7F;
 
     for (;;) {
@@ -1871,7 +1871,7 @@ void dppc_interpreter::ppc_stswi() {
     num_int_stores++;
 #endif
     ppc_grab_regssash_stswi(ppc_cur_instruction);
-    ppc_effective_address = reg_a ? ppc_result_a : 0;
+    uint32_t ppc_effective_address = reg_a ? ppc_result_a : 0;
     uint32_t grab_inb = rot_sh ? rot_sh : 32;
 
     while (grab_inb >= 4) {
@@ -1906,8 +1906,8 @@ void dppc_interpreter::ppc_stswx() {
     num_int_stores++;
 #endif
     ppc_grab_regssab_stswx(ppc_cur_instruction);
-    ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
-    uint32_t grab_inb     = ppc_state.spr[SPR::XER] & 127;
+    uint32_t ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
+    uint32_t grab_inb = ppc_state.spr[SPR::XER] & 127;
 
     while (grab_inb >= 4) {
         mmu_write_vmem<uint32_t>(ppc_effective_address, ppc_state.gpr[reg_s]);
@@ -1945,7 +1945,7 @@ void dppc_interpreter::ppc_eciwx() {
     }
 
     ppc_grab_regsdab(ppc_cur_instruction);
-    ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
+    uint32_t ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
 
     if (ppc_effective_address & 0x3) {
         ppc_alignment_exception(ppc_effective_address);
@@ -1965,7 +1965,7 @@ void dppc_interpreter::ppc_ecowx() {
     }
 
     ppc_grab_regssab(ppc_cur_instruction);
-    ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
+    uint32_t ppc_effective_address = ppc_result_b + (reg_a ? ppc_result_a : 0);
 
     if (ppc_effective_address & 0x3) {
         ppc_alignment_exception(ppc_effective_address);
