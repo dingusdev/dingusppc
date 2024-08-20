@@ -125,12 +125,15 @@ static const PropMap yosemite_settings = {
         new IntProperty(  0, vector<uint32_t>({0, 8, 16, 32, 64, 128, 256}))},
     {"emmo",
         new BinProperty(0)},
+    {"hdd_config",
+        new StrProperty("CmdAta0:0")},
     {"cdr_config",
         new StrProperty("Ide0:0")},
 };
 
 static vector<string> yosemite_devices = {
-    "Grackle", "Dec21154", "CmdAta", "BurgundySnd", "Heathrow", "AtapiCdrom"
+    "Grackle", "Dec21154", "CmdAta", "BurgundySnd", "Heathrow", "AtaHardDisk",
+    "AtapiCdrom"
 };
 
 static const MachineDescription yosemite_descriptor = {
