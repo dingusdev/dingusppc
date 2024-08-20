@@ -46,6 +46,9 @@ void AtaBaseDevice::device_reset(bool is_soft_reset) {
 
     // Diagnostic code
     this->r_error = 1; // device 0 passed, device 1 passed or not present
+
+    // disable interrupts
+    this->r_dev_ctrl |= ATA_CTRL::IEN;
 }
 
 void AtaBaseDevice::device_set_signature() {
