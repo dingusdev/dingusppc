@@ -122,8 +122,10 @@ int AtaHardDisk::perform_command() {
         }
         break;
     case DIAGNOSTICS:
-        this->r_error = 1;
+        this->r_error = 1; // device 0 passed, device 1 passed or not present
         this->device_set_signature();
+        this->r_status &= ~BSY;
+        this->update_intrq(1);
         break;
     case INIT_DEV_PARAM:
         // update fictive disk geometry with parameters from host
