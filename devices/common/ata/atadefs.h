@@ -137,6 +137,7 @@ enum ATA_Cmd : uint8_t {
     ATAPI_SERVICE                        = 0xA2,
     READ_MULTIPLE                        = 0xC4,
     WRITE_MULTIPLE                       = 0xC5,
+    SET_MULTIPLE_MODE                    = 0xC6,
     READ_DMA                             = 0xC8,
     WRITE_DMA                            = 0xCA,
     STANDBY_IMMEDIATE_E0                 = 0xE0,

@@ -69,9 +69,10 @@ private:
     uint8_t     heads;
     uint8_t     sectors;
 
-    char * buffer = new char[1 <<17];
+    uint8_t     sec_per_block    = 8; // sectors per block for READ_MULTIPLE/WRITE_MULTIPLE
+    bool        multiple_enabled = true; // READ_MULTIPLE/WRITE_MULTIPLE enabled
 
-    //uint8_t hd_id_data[ATA_HD_SEC_SIZE] = {};
+    char * buffer = new char[1 <<17];
 };
 
 #endif // ATA_HARD_DISK_H

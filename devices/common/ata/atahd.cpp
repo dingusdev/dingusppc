@@ -28,6 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <machines/machinebase.h>
 #include <memaccess.h>
 
+#include <bitset>
 #include <cstring>
 #include <fstream>
 #include <string>
@@ -116,6 +117,10 @@ int AtaHardDisk::perform_command() {
             this->r_status &= ~BSY;
         }
         break;
+    case DIAGNOSTICS:
+        this->r_error = 1;
+        this->device_set_signature();
+        break;
     case INIT_DEV_PARAM:
         // update fictive disk geometry with parameters from host
         this->sectors = this->r_sect_count;
@@ -123,9 +128,18 @@ int AtaHardDisk::perform_command() {
         this->r_status &= ~BSY;
         this->update_intrq(1);
         break;
-    case DIAGNOSTICS:
-        this->r_error = 1;
-        this->device_set_signature();
+    case SET_MULTIPLE_MODE: // this command is mandatory for ATA devices
+        if (!this->r_sect_count || this->r_sect_count > 128 ||
+            std::bitset<8>(this->r_sect_count).count() != 1) { // power of two?
+            this->multiple_enabled = false;
+            this->r_error  |= ABRT;
+            this->r_status |= ERR;
+        } else {
+            this->sec_per_block = this->r_sect_count;
+            this->multiple_enabled = true;
+        }
+        this->r_status &= ~BSY;
+        this->update_intrq(1);
         break;
     case FLUSH_CACHE: // used by the XNU kernel driver
         this->r_status &= ~(BSY | DRQ | ERR);
@@ -184,6 +198,7 @@ void AtaHardDisk::prepare_identify_info() {
     std::memset(this->data_buf, 0, sizeof(this->data_buf));
 
     buf_ptr[ 0] = 0x0040; // ATA device, non-removable media, non-removable drive
+    buf_ptr[47] = this->sec_per_block; // block size of READ_MULTIPLE/WRITE_MULTIPLE
     buf_ptr[49] = 0x0200; // report LBA support
 
     buf_ptr[ 1] = this->cylinders;
