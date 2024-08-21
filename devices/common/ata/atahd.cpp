@@ -85,10 +85,14 @@ int AtaHardDisk::perform_command() {
     switch (this->r_command) {
     case NOP:
         break;
-    case RECALIBRATE:
-        this->r_error       = 0;
-        this->r_cylinder_lo = 0;
+    case RECALIBRATE: // is optional in ATA-3; disappeared in >= ATA-4
+        // OF 3.1.1 won't boot off the drive that reports error for this command
         this->r_cylinder_hi = 0;
+        this->r_cylinder_lo = 0;
+        this->r_dev_head   &= 0xF0;
+        this->r_sect_num    = (this->r_dev_head & ATA_Dev_Head::LBA) ? 0 : 1;
+        this->r_status     &= ~BSY;
+        this->update_intrq(1);
         break;
     case READ_SECTOR:
     case READ_SECTOR_NR: {
