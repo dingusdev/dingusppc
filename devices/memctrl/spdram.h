@@ -70,6 +70,11 @@ public:
 
     void set_capacity(int capacity_megs) {
         switch (capacity_megs) {
+        case 16:
+            this->eeprom_data[3] = 0xC; /* 12 rows    */
+            this->eeprom_data[4] = 0x7; /* 7  columns */
+            this->eeprom_data[5] = 0x1; /* one bank   */
+            break;
         case 32:
             this->eeprom_data[3] = 0xC; /* 12 rows    */
             this->eeprom_data[4] = 0x8; /* 8  columns */
