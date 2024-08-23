@@ -30,6 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <loguru.hpp>
 
 #include <cinttypes>
+#include <cpu/ppc/ppcemu.h>
 
 bool PCIHost::pci_register_device(int dev_fun_num, PCIBase* dev_instance)
 {
@@ -227,7 +228,8 @@ uint32_t PCIHost::pci_io_read_broadcast(uint32_t offset, int size)
         hwc ? hwc->get_name().c_str() : "PCIHost", offset,
         SIZE_ARG(size)
     );
-    // FIXME: add machine check exception (DEFAULT CATCH!, code=FFF00200)
+    // machine check exception (DEFAULT CATCH!, code=FFF00200)
+    ppc_exception_handler(Except_Type::EXC_MACHINE_CHECK, 0);
     return 0;
 }
 
