@@ -85,6 +85,9 @@ int AtaHardDisk::perform_command() {
     switch (this->r_command) {
     case NOP:
         break;
+    case ATAPI_SOFT_RESET: // for ATA devices, is a no-op
+        this->r_status &= ~BSY;
+        break;
     case RECALIBRATE: // is optional in ATA-3; disappeared in >= ATA-4
         // OF 3.1.1 won't boot off the drive that reports error for this command
         this->r_cylinder_hi = 0;
@@ -94,25 +97,48 @@ int AtaHardDisk::perform_command() {
         this->r_status     &= ~BSY;
         this->update_intrq(1);
         break;
+    case READ_MULTIPLE:
     case READ_SECTOR:
     case READ_SECTOR_NR: {
             uint16_t sec_count = this->r_sect_count ? this->r_sect_count : 256;
             int      xfer_size = sec_count * ATA_HD_SEC_SIZE;
             uint64_t offset    = this->get_lba() * ATA_HD_SEC_SIZE;
+            uint32_t ints_size = ATA_HD_SEC_SIZE;
+            if (this->r_command == READ_MULTIPLE) {
+                if (this->multiple_sector_count == 0) {
+                    LOG_F(ERROR, "%s: READ MULTIPLE with SET MULTIPLE==0", this->name.c_str());
+                    this->r_status |= ERR;
+                    this->r_status &= ~BSY;
+                    break;
+                }
+                ints_size *= this->multiple_sector_count;
+            }
             hdd_img.read(buffer, offset, xfer_size);
             this->data_ptr = (uint16_t *)this->buffer;
             // those commands should generate IRQ for each sector
-            this->prepare_xfer(xfer_size, ATA_HD_SEC_SIZE);
+            this->prepare_xfer(xfer_size, ints_size);
             this->signal_data_ready();
         }
         break;
+    case WRITE_MULTIPLE:
     case WRITE_SECTOR:
     case WRITE_SECTOR_NR: {
             uint16_t sec_count = this->r_sect_count ? this->r_sect_count : 256;
             this->cur_fpos = this->get_lba() * ATA_HD_SEC_SIZE;
             this->data_ptr = (uint16_t *)this->buffer;
             this->cur_data_ptr = this->data_ptr;
-            this->prepare_xfer(sec_count * ATA_HD_SEC_SIZE, ATA_HD_SEC_SIZE);
+            uint32_t xfer_size = sec_count * ATA_HD_SEC_SIZE;
+            uint32_t ints_size = ATA_HD_SEC_SIZE;
+            if (this->r_command == WRITE_MULTIPLE) {
+                if (this->multiple_sector_count == 0) {
+                    LOG_F(ERROR, "%s: WRITE MULTIPLE with SET MULTIPLE==0", this->name.c_str());
+                    this->r_status |= ERR;
+                    this->r_status &= ~BSY;
+                    break;
+                }
+                ints_size *= this->multiple_sector_count;
+            }
+            this->prepare_xfer(xfer_size, ints_size);
             this->post_xfer_action = [this]() {
                 this->hdd_img.write(this->data_ptr, this->cur_fpos, this->chunk_size);
                 this->cur_fpos += this->chunk_size;
@@ -124,6 +150,11 @@ int AtaHardDisk::perform_command() {
     case DIAGNOSTICS:
         this->r_error = 1; // device 0 passed, device 1 passed or not present
         this->device_set_signature();
+        this->r_status &= ~BSY;
+        this->update_intrq(1);
+        break;
+    case READ_VERIFY:
+        // verify sectors are readable, just no-op
         this->r_status &= ~BSY;
         this->update_intrq(1);
         break;
