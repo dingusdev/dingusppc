@@ -365,10 +365,10 @@ static void print_gprs() {
         }
     }
 
-    array<string,6> sprs = {"pc", "lr", "cr", "ctr", "xer", "msr"};
+    array<string, 8> sprs = {"pc", "lr", "cr", "ctr", "xer", "msr", "srr0", "srr1"};
 
     for (auto &spr : sprs) {
-        cout << right << std::setw(3) << setfill(' ') << spr << " : " <<
+        cout << right << std::setw(4) << setfill(' ') << spr << " : " <<
             setw(8) << setfill('0') << uppercase << hex << get_reg(spr) << setfill(' ');
 
         if (i & 1) {
