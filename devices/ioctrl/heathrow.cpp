@@ -106,6 +106,10 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io_heathrow"), InterruptCtrl()
     this->emmo_pin = GET_BIN_PROP("emmo") ^ 1;
 }
 
+void HeathrowIC::set_media_bay_id(uint8_t id) {
+    this->mb_id = id;
+}
+
 void HeathrowIC::notify_bar_change(int bar_num)
 {
     if (bar_num) // only BAR0 is supported
