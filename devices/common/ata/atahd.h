@@ -69,6 +69,9 @@ private:
     uint8_t     heads;
     uint8_t     sectors;
 
+    //number of sectors for r/w multiple
+    uint8_t multiple_sector_count = 0;
+
     uint8_t     sec_per_block    = 8; // sectors per block for READ_MULTIPLE/WRITE_MULTIPLE
     bool        multiple_enabled = true; // READ_MULTIPLE/WRITE_MULTIPLE enabled
 
