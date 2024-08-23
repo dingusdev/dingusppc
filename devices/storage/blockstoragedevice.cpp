@@ -76,7 +76,7 @@ int BlockStorageDevice::set_block_size(const int blk_size) {
 }
 
 int BlockStorageDevice::set_fpos(const uint32_t lba) {
-    this->cur_fpos = lba * this->raw_blk_size;
+    this->cur_fpos = (uint64_t)lba * (uint64_t)this->raw_blk_size;
     return 0;
 }
 
