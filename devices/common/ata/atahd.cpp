@@ -105,13 +105,13 @@ int AtaHardDisk::perform_command() {
             uint64_t offset    = this->get_lba() * ATA_HD_SEC_SIZE;
             uint32_t ints_size = ATA_HD_SEC_SIZE;
             if (this->r_command == READ_MULTIPLE) {
-                if (this->multiple_sector_count == 0) {
+                if (this->sec_per_block == 0) {
                     LOG_F(ERROR, "%s: READ MULTIPLE with SET MULTIPLE==0", this->name.c_str());
                     this->r_status |= ERR;
                     this->r_status &= ~BSY;
                     break;
                 }
-                ints_size *= this->multiple_sector_count;
+                ints_size *= this->sec_per_block;
             }
             hdd_img.read(buffer, offset, xfer_size);
             this->data_ptr = (uint16_t *)this->buffer;
@@ -130,13 +130,13 @@ int AtaHardDisk::perform_command() {
             uint32_t xfer_size = sec_count * ATA_HD_SEC_SIZE;
             uint32_t ints_size = ATA_HD_SEC_SIZE;
             if (this->r_command == WRITE_MULTIPLE) {
-                if (this->multiple_sector_count == 0) {
+                if (this->sec_per_block == 0) {
                     LOG_F(ERROR, "%s: WRITE MULTIPLE with SET MULTIPLE==0", this->name.c_str());
                     this->r_status |= ERR;
                     this->r_status &= ~BSY;
                     break;
                 }
-                ints_size *= this->multiple_sector_count;
+                ints_size *= this->sec_per_block;
             }
             this->prepare_xfer(xfer_size, ints_size);
             this->post_xfer_action = [this]() {
