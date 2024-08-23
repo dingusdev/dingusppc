@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -69,6 +69,24 @@ void EventManager::poll_events(uint32_t kbd_locale) {
                         we.window_id = event.window.windowID;
                         this->_window_signal.emit(we);
                     }
+                    return;
+                }
+                // Ralt+delete => ctrl+alt+del
+                if (event.key.keysym.sym == SDLK_DELETE && (SDL_GetModState() & KMOD_RALT) != 0) {
+                    KeyboardEvent ke{};
+                    ke.key = AdbKey_Control;
+
+                    if (event.type == SDL_KEYDOWN) {
+                        ke.flags = KEYBOARD_EVENT_DOWN;
+                        key_downs++;
+                    } else {
+                        ke.flags = KEYBOARD_EVENT_UP;
+                        key_ups++;
+                    }
+
+                    this->_keyboard_signal.emit(ke);
+                    ke.key = AdbKey_Delete;
+                    this->_keyboard_signal.emit(ke);
                     return;
                 }
                 int key_code = get_sdl_event_key_code(event.key, kbd_locale);
