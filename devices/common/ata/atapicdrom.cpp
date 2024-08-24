@@ -157,6 +157,14 @@ void AtapiCdrom::perform_packet_command() {
     case ScsiCommand::READ_6:
         lba      = this->cmd_pkt[1] << 16 | READ_WORD_BE_U(&this->cmd_pkt[2]);
         xfer_len = this->cmd_pkt[4];
+
+        // if transfer length is zero then just complete command
+        if (xfer_len == 0) {
+            this->status_good();
+            this->present_status();
+            break;
+        }
+
         if (this->r_features & ATAPI_Features::DMA) {
             LOG_F(WARNING, "ATAPI DMA transfer requsted");
         }
@@ -170,6 +178,14 @@ void AtapiCdrom::perform_packet_command() {
     case ScsiCommand::READ_10:
         lba      = READ_DWORD_BE_U(&this->cmd_pkt[2]);
         xfer_len = READ_WORD_BE_U(&this->cmd_pkt[7]);
+
+        // if transfer length is zero then just complete command
+        if (xfer_len == 0) {
+            this->status_good();
+            this->present_status();
+            break;
+        }
+
         if (this->r_features & ATAPI_Features::DMA) {
             LOG_F(WARNING, "ATAPI DMA transfer requsted");
         }
@@ -183,6 +199,14 @@ void AtapiCdrom::perform_packet_command() {
     case ScsiCommand::READ_12:
         lba      = READ_DWORD_BE_U(&this->cmd_pkt[2]);
         xfer_len = READ_DWORD_BE_U(&this->cmd_pkt[6]);
+
+        // if transfer length is zero then just complete command
+        if (xfer_len == 0) {
+            this->status_good();
+            this->present_status();
+            break;
+        }
+
         if (this->r_features & ATAPI_Features::DMA) {
             LOG_F(WARNING, "ATAPI DMA transfer requsted");
         }
@@ -203,6 +227,18 @@ void AtapiCdrom::perform_packet_command() {
     {
         lba = READ_DWORD_BE_U(&this->cmd_pkt[2]);
         xfer_len = (this->cmd_pkt[6] << 16) | READ_WORD_BE_U(&this->cmd_pkt[7]);
+        if (this->cmd_pkt[9] == 0 && (this->cmd_pkt[10] & 7) == 0) {
+            // Treat as a non-data command.
+            xfer_len = 0;
+        }
+
+        // if transfer length is zero then just complete command
+        if (xfer_len == 0) {
+            this->status_good();
+            this->present_status();
+            break;
+        }
+
         if (this->cmd_pkt[1] || (this->cmd_pkt[9] & ~0xf8) || ((this->cmd_pkt[9] & 0xf8) == 0) || this->cmd_pkt[10])
             LOG_F(WARNING, "%s: unsupported READ_CD params: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X",
                 this->name.c_str(),
