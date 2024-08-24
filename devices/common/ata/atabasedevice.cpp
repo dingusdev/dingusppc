@@ -119,8 +119,11 @@ void AtaBaseDevice::write(const uint8_t reg_addr, const uint16_t value) {
                 if (this->xfer_cnt <= 0) { // transfer complete?
                     this->xfer_cnt = 0;
                     this->r_status &= ~DRQ;
-                    this->r_status &= ~BSY;
-                    this->update_intrq(1);
+                    //LOG_F(INFO, "%s: write complete", name.c_str());
+                    TimerManager::get_instance()->add_oneshot_timer(USECS_TO_NSECS(100), [this]() {
+                        this->r_status &= ~BSY;
+                        this->update_intrq(1);
+                    });
                 } else {
                     this->cur_data_ptr = this->data_ptr;
                     this->chunk_cnt = std::min(this->xfer_cnt, this->chunk_size);
