@@ -176,6 +176,13 @@ void AtapiCdrom::perform_packet_command() {
         this->data_out_phase();
         break;
     case ScsiCommand::READ_10:
+        if (this->xfer_cnt > 0) {
+            LOG_F(ERROR, "%s: READ(10) when transfer already in progress", name.c_str());
+
+            this->status_error(ScsiSense::NOT_READY, ScsiError::DEV_NOT_READY);
+            this->present_status();
+            break;
+        }
         lba      = READ_DWORD_BE_U(&this->cmd_pkt[2]);
         xfer_len = READ_WORD_BE_U(&this->cmd_pkt[7]);
 
