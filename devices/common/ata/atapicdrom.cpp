@@ -31,6 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memaccess.h>
 
 #include <string>
+#include <core/timermanager.h>
 
 using namespace ata_interface;
 
@@ -201,7 +202,12 @@ void AtapiCdrom::perform_packet_command() {
         this->r_byte_count = this->xfer_cnt;
         this->data_ptr = (uint16_t*)this->data_cache.get();
         this->status_good();
-        this->data_out_phase();
+        #if 0
+            TimerManager::get_instance()->add_oneshot_timer(
+                USECS_TO_NSECS(100), [this]() { this->data_out_phase(); });
+        #else
+            this->data_out_phase();
+        #endif
         break;
     case ScsiCommand::READ_12:
         lba      = READ_DWORD_BE_U(&this->cmd_pkt[2]);
