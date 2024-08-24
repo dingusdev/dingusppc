@@ -115,6 +115,30 @@ int main(int argc, char** argv) {
     power_on = true;
     ppc_exec_until(0xC4);
 
+#if SUPPORTS_PPC_LITTLE_ENDIAN_MODE
+    #warning PPC endian mode enabled
+    LOG_F(INFO, "PPC endian mode enabled");
+#else
+    #warning PPC endian mode disabled
+    LOG_F(INFO, "PPC endian mode disabled");
+#endif
+
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+    #warning Memory endian mode enabled
+    LOG_F(INFO, "Memory endian mode enabled");
+#else
+    #warning Memory endian mode disabled
+    LOG_F(INFO, "Memory endian mode disabled");
+#endif
+
+#ifdef LOG_INSTRUCTIONS
+    #warning Log instructions enabled
+    LOG_F(INFO, "Log instructions enabled");
+#else
+    #warning Log instructions disabled
+    LOG_F(INFO, "Log instructions disabled");
+#endif
+
     LOG_F(INFO, "Checksum: 0x%08X", ppc_state.gpr[3]);
     uint32_t checksum = ppc_state.gpr[3];
 

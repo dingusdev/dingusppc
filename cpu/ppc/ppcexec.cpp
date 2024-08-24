@@ -227,6 +227,23 @@ void ppc_msr_did_change(uint32_t old_msr_val, uint32_t new_msr_val, bool set_nex
     }
 }
 
+void ppc_change_endian(bool newLE) {
+#if SUPPORTS_PPC_LITTLE_ENDIAN_MODE
+    if (ppc_state.is_LE != newLE) {
+        LOG_F(INFO, "changed endian to %s", newLE ? "LE" : "BE");
+        ppc_state.is_LE = newLE;
+        power_on = false;
+        power_off_reason = po_endian_switch;
+    }
+#else
+    if (newLE) {
+        LOG_F(ERROR, "unsupported endian %s", newLE ? "LE" : "BE");
+        power_on = false;
+        power_off_reason = po_enter_debugger;
+    }
+#endif
+}
+
 PPCOpcode* ppc_opcode_grabber = OpcodeGrabberNoFPU;
 
 /** Exception helpers. */
@@ -331,7 +348,7 @@ typedef enum {
 } ppc_exec_type_t;
 
 // inner interpreter loop
-template <ppc_exec_type_t exec_type>
+template <ppc_exec_type_t exec_type, endian_switch endian>
 static void ppc_exec_inner(uint32_t start_addr, uint32_t size)
 {
     uint64_t max_cycles = 0;
@@ -367,7 +384,10 @@ static void ppc_exec_inner(uint32_t start_addr, uint32_t size)
             // define next execution block
             eb_start = ppc_next_instruction_address;
             if (!(exec_flags & EXEF_RFI) && (eb_start & PPC_PAGE_MASK) == page_start) {
-                INCPC((int)eb_start - (int)ppc_state.pc);
+                if (endian == big_end)
+                    INCPC((int)eb_start - (int)ppc_state.pc);
+                else
+                    pc_real = mmu_translate_imem(eb_start ATPCP); // &pcp
             } else {
                 page_start = eb_start & PPC_PAGE_MASK;
                 eb_end = page_start + PPC_PAGE_SIZE - 1;
@@ -375,9 +395,12 @@ static void ppc_exec_inner(uint32_t start_addr, uint32_t size)
             }
             ppc_state.pc = eb_start;
             exec_flags = 0;
-        } else { [[likely]]
+        } else [[likely]] {
             ppc_state.pc += 4;
-            INCPC(4);
+            if (endian == big_end)
+                INCPC(4);
+            else
+                pc_real = mmu_translate_imem(ppc_state.pc ATPCP); // &pcp
         }
 
         if (exec_type == until)
@@ -389,7 +412,8 @@ static void ppc_exec_inner(uint32_t start_addr, uint32_t size)
 /** Execute PPC code as long as power is on. */
 
 // inner interpreter loop
-template void ppc_exec_inner<main>(uint32_t start_addr, uint32_t size);
+template void ppc_exec_inner<main, big_end>(uint32_t start_addr, uint32_t size);
+template void ppc_exec_inner<main, little_end>(uint32_t start_addr, uint32_t size);
 
 // outer interpreter loop
 void ppc_exec()
@@ -401,7 +425,17 @@ void ppc_exec()
     }
 
     while (power_on) {
-        ppc_exec_inner<main>(0, 0);
+#if SUPPORTS_PPC_LITTLE_ENDIAN_MODE
+        if (ppc_state.is_LE)
+            ppc_exec_inner<main, little_end>(0, 0);
+        else
+#endif
+        [[likely]] {
+            ppc_exec_inner<main, big_end>(0, 0);
+        }
+        if (!power_on && power_off_reason == po_endian_switch) [[unlikely]] {
+            power_on = true;
+        }
     }
 }
 
@@ -433,7 +467,8 @@ void ppc_exec_single()
 /** Execute PPC code until goal_addr is reached. */
 
 // inner interpreter loop
-template void ppc_exec_inner<until>(uint32_t start_addr, uint32_t size);
+template void ppc_exec_inner<until, big_end>(uint32_t start_addr, uint32_t size);
+template void ppc_exec_inner<until, little_end>(uint32_t start_addr, uint32_t size);
 
 // outer interpreter loop
 void ppc_exec_until(volatile uint32_t goal_addr) {
@@ -444,7 +479,17 @@ void ppc_exec_until(volatile uint32_t goal_addr) {
     }
 
     while (power_on) {
-        ppc_exec_inner<until>(goal_addr, 0);
+#if SUPPORTS_PPC_LITTLE_ENDIAN_MODE
+        if (ppc_state.is_LE)
+            ppc_exec_inner<until, little_end>(goal_addr, 0);
+        else
+#endif
+        [[likely]] {
+            ppc_exec_inner<until, big_end>(goal_addr, 0);
+        }
+        if (!power_on && power_off_reason == po_endian_switch) [[unlikely]] {
+            power_on = true;
+        }
         if (ppc_state.pc == goal_addr)
             break;
     }
@@ -453,7 +498,8 @@ void ppc_exec_until(volatile uint32_t goal_addr) {
 /** Execute PPC code until control is reached the specified region. */
 
 // inner interpreter loop
-template void ppc_exec_inner<debug>(uint32_t start_addr, uint32_t size);
+template void ppc_exec_inner<debug, big_end>(uint32_t start_addr, uint32_t size);
+template void ppc_exec_inner<debug, little_end>(uint32_t start_addr, uint32_t size);
 
 // outer interpreter loop
 void ppc_exec_dbg(volatile uint32_t start_addr, volatile uint32_t size)
@@ -465,7 +511,17 @@ void ppc_exec_dbg(volatile uint32_t start_addr, volatile uint32_t size)
     }
 
     while (power_on && (ppc_state.pc < start_addr || ppc_state.pc >= start_addr + size)) {
-        ppc_exec_inner<debug>(start_addr, size);
+#if SUPPORTS_PPC_LITTLE_ENDIAN_MODE
+        if (ppc_state.is_LE)
+            ppc_exec_inner<debug, little_end>(start_addr, size);
+        else
+#endif
+        [[likely]] {
+            ppc_exec_inner<debug, big_end>(start_addr, size);
+        }
+        if (!power_on && power_off_reason == po_endian_switch) [[unlikely]] {
+            power_on = true;
+        }
     }
 }
 
@@ -906,6 +962,7 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool do_include_6
     } else {
         new_msr_val = MSR::IP;
         ppc_state.spr[SPR::DEC_S] = 0xFFFFFFFFUL;
+        ppc_change_endian((new_msr_val & MSR::LE) != 0);
     }
     ppc_msr_did_change(new_msr_val, new_msr_val, false);
 
@@ -968,6 +1025,9 @@ static uint64_t reg_op(string& reg_name, uint64_t val, bool is_write) {
             if (is_write) {
                 uint32_t old_msr_val = ppc_state.msr;
                 uint32_t new_msr_val = (uint32_t)val;
+                if (!is_601) {
+                    ppc_change_endian((new_msr_val & MSR::LE) != 0);
+                }
                 ppc_msr_did_change(old_msr_val, new_msr_val, false);
             }
             return ppc_state.msr;
@@ -1023,8 +1083,13 @@ static uint64_t reg_op(string& reg_name, uint64_t val, bool is_write) {
                 case SPR::TBL_U  : reg_num = SPR::TBL_S  ; break;
                 case SPR::TBU_U  : reg_num = SPR::TBU_S  ; break;
                 }
-                if (is_write)
+                if (is_write) {
                     ppc_state.spr[reg_num] = (uint32_t)val;
+                    if (reg_num == SPR::HID0)
+                        if (is_601) {
+                            ppc_change_endian((val & 0x10000000) != 0);
+                        }
+                }
                 return ppc_state.spr[reg_num];
             }
         }

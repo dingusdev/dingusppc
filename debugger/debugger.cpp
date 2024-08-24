@@ -430,6 +430,21 @@ static uint32_t disasm(PPCDisasmContext &ctx) {
     cout << COUT08X << ctx.instr_addr;
     cout << ": " << COUT08X << ctx.instr_code;
     cout << "    " << disassemble_single(&ctx) << setfill(' ') << right << dec;
+
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+    bool needs_swap = false;
+    if (mem_ctrl_instance != nullptr)
+        needs_swap = mem_ctrl_instance->needs_swap_endian(false);
+#endif
+
+    uint32_t phys_addr;
+    uint8_t* real_addr = mmu_translate_imem(ctx.instr_addr, &phys_addr);
+    ctx.instr_code =
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+        needs_swap ? READ_DWORD_LE_A(real_addr) :
+#endif
+        READ_DWORD_BE_A(real_addr);
+
     return ctx.instr_addr;
 }
 

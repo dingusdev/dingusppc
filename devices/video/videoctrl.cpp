@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <core/timermanager.h>
 #include <devices/common/hwinterrupt.h>
 #include <devices/video/videoctrl.h>
+#include <devices/memctrl/memctrlbase.h>
 #include <memaccess.h>
 
 #include <cinttypes>
@@ -316,10 +317,24 @@ void VideoCtrlBase::convert_frame_8bpp(uint8_t *dst_buf, int dst_pitch)
     }
 }
 
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+bool VideoCtrlBase::needs_swap_endian() {
+    extern MemCtrlBase* mem_ctrl_instance;
+    return mem_ctrl_instance->needs_swap_endian(!this->framebuffer_in_main_memory());
+}
+#endif
+
 // RGB555
 template <VideoCtrlBase::fb_endian endian>
 void VideoCtrlBase::convert_frame_15bpp(uint8_t *dst_buf, int dst_pitch)
 {
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+    if (needs_swap_endian()) {
+        convert_frame_15bpp<endian == BE ? LE : BE>(dst_buf, dst_pitch);
+        return;
+    }
+#endif
+
     uint8_t *src_row, *dst_row;
     int     src_pitch;
 
@@ -349,6 +364,13 @@ template void VideoCtrlBase::convert_frame_15bpp<VideoCtrlBase::LE>(uint8_t *dst
 template <VideoCtrlBase::fb_endian endian>
 void VideoCtrlBase::convert_frame_16bpp(uint8_t *dst_buf, int dst_pitch)
 {
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+    if (needs_swap_endian()) {
+        convert_frame_16bpp<endian == BE ? LE : BE>(dst_buf, dst_pitch);
+        return;
+    }
+#endif
+
     uint8_t *src_row, *dst_row;
     int     src_pitch;
 
@@ -402,6 +424,13 @@ void VideoCtrlBase::convert_frame_24bpp(uint8_t *dst_buf, int dst_pitch)
 template <VideoCtrlBase::fb_endian endian>
 void VideoCtrlBase::convert_frame_32bpp(uint8_t *dst_buf, int dst_pitch)
 {
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+    if (needs_swap_endian()) {
+        convert_frame_32bpp<endian == BE ? LE : BE>(dst_buf, dst_pitch);
+        return;
+    }
+#endif
+
     uint32_t *src_row, *dst_row;
     int     src_pitch;
 

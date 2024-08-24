@@ -69,6 +69,11 @@ public:
     }
 
 protected:
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+    bool framebuffer_in_main_memory(void) override {
+        return true;
+    }
+#endif
     void    set_depth_internal(int width);
     void    enable_video_internal();
     void    disable_video_internal();
