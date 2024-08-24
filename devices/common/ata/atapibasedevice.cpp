@@ -149,6 +149,11 @@ int AtapiBaseDevice::perform_command() {
     this->r_status |= BSY;
 
     switch (this->r_command) {
+    case ATAPI_SOFT_RESET:
+        this->device_reset(true);
+        this->device_set_signature();
+        this->r_status &= ~BSY;
+        break;
     case ATAPI_PACKET:
         this->data_ptr = (uint16_t *)this->cmd_pkt;
         this->xfer_cnt = sizeof(this->cmd_pkt);
