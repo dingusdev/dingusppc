@@ -59,6 +59,12 @@ int MPC106::device_postinit()
     return this->pcihost_device_postinit();
 }
 
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+bool MPC106::needs_swap_endian(bool is_mmio) {
+    return is_mmio && needs_swap_endian_pci();
+}
+#endif
+
 uint32_t MPC106::read(uint32_t rgn_start, uint32_t offset, int size) {
     if (rgn_start == 0xFE000000) {
         return pci_io_read_broadcast(offset, size);

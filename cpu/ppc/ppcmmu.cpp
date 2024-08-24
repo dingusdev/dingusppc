@@ -85,6 +85,37 @@ AddressMapEntry last_ptab_area;
 /** Dummy pages for catching writes to physical read-only pages */
 static std::array<uint64_t, 8192 / sizeof(uint64_t)> dummy_page;
 
+#if SUPPORTS_PPC_LITTLE_ENDIAN_MODE || SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+template <class T>
+static inline uint32_t mem_munge_constant() {
+    switch (sizeof(T)) {
+    case 1: return 7;
+    case 2: return 6;
+    case 4: return 4;
+    case 8: return 0;
+    }
+}
+
+template <class T>
+static uint32_t mem_munge_address(uint32_t guest_va) {
+    if (sizeof(T) == sizeof(uint64_t)) {
+        // 64 bit access. do nothing, handle later.
+        return guest_va;
+    }
+
+    uint32_t align_offset = guest_va & (sizeof(T) - 1);
+    if (align_offset == 0)
+        return guest_va ^ mem_munge_constant<T>();
+
+    // align the address
+    guest_va &= ~(sizeof(T) - 1);
+    // munge it
+    guest_va ^= mem_munge_constant<T>();
+    // and subtract the offset
+    return guest_va - align_offset;
+}
+#endif
+
 /** 601-style block address translation. */
 static BATResult mpc601_block_address_translation(uint32_t la)
 {
@@ -174,6 +205,10 @@ static inline uint8_t* calc_pteg_addr(uint32_t hash)
     pteg_addr = sdr1_val & 0xFE000000;
     pteg_addr |= (sdr1_val & 0x01FF0000) | (((sdr1_val & 0x1FF) << 16) & ((hash & 0x7FC00) << 6));
     pteg_addr |= (hash & 0x3FF) << 6;
+    #if 0 && SUPPORTS_PPC_LITTLE_ENDIAN_MODE
+    if (ppc_state.is_LE)
+        pteg_addr ^= mem_munge_constant<uint32_t>();
+    #endif
 
     if (pteg_addr >= last_ptab_area.start && pteg_addr <= last_ptab_area.end) {
         return last_ptab_area.mem_ptr + (pteg_addr - last_ptab_area.start);
@@ -195,6 +230,9 @@ static bool search_pteg(uint8_t* pteg_addr, uint8_t** ret_pte_addr, uint32_t vsi
 {
     /* construct PTE matching word */
     uint32_t pte_check = 0x80000000 | (vsid << 7) | (pteg_num << 6) | (page_index >> 10);
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+    bool swap = mem_ctrl_instance->needs_swap_endian(false);
+#endif
 
 #ifdef MMU_INTEGRITY_CHECKS
     /* PTEG integrity check that ensures that all matching PTEs have
@@ -217,7 +255,12 @@ static bool search_pteg(uint8_t* pteg_addr, uint8_t** ret_pte_addr, uint32_t vsi
     }
 #else
     for (int i = 0; i < 8; i++, pteg_addr += 8) {
-        if (pte_check == READ_DWORD_BE_A(pteg_addr)) {
+        if (pte_check == (
+            #if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+                swap ? (READ_DWORD_LE_A(pteg_addr)) :
+            #endif
+            (READ_DWORD_BE_A(pteg_addr))
+        )) {
             *ret_pte_addr = pteg_addr;
             return true;
         }
@@ -269,7 +312,25 @@ static PATResult page_address_translation(uint32_t la, bool is_instr_fetch,
         }
     }
 
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+    size_t pte_addr2S = (size_t)pte_addr;
+    #if 0 && SUPPORTS_PPC_LITTLE_ENDIAN_MODE
+    if (ppc_state.is_LE) {
+        pte_addr2S ^= mem_munge_constant<uint32_t>();
+        pte_addr2S += 4;
+        pte_addr2S ^= mem_munge_constant<uint32_t>();
+    } else
+    #endif
+    {
+        pte_addr2S += 4;
+    }
+
+    uint8_t* pte_addr2 = (uint8_t*)pte_addr2S;
+    bool swap = mem_ctrl_instance->needs_swap_endian(false);
+    pte_word2 = swap ? (READ_DWORD_LE_A(pte_addr2)) : (READ_DWORD_BE_A(pte_addr2));
+#else
     pte_word2 = READ_DWORD_BE_A(pte_addr + 4);
+#endif
 
     key = (((sr_val >> 29) & 1) & msr_pr) | (((sr_val >> 30) & 1) & (msr_pr ^ 1));
 
@@ -292,10 +353,23 @@ static PATResult page_address_translation(uint32_t la, bool is_instr_fetch,
 
     /* update R and C bits */
     /* For simplicity, R is set on each access, C is set only for writes */
-    pte_addr[6] |= 0x01;
-    if (is_write) {
-        pte_addr[7] |= 0x80;
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+    if (swap) {
+        pte_addr2[1] |= 0x01;
+        if (is_write) {
+            pte_addr2[0] |= 0x80;
+        }
+    } else {
+        pte_addr2[2] |= 0x01;
+        if (is_write) {
+            pte_addr2[3] |= 0x80;
+        }
     }
+#else
+    pte_addr[6] |= 0x01;
+    if (is_write)
+        pte_addr[7] |= 0x80;
+#endif
 
     /* return physical address, access protection and C status */
     return PATResult{
@@ -733,6 +807,12 @@ static inline TLBEntry* lookup_secondary_tlb(uint32_t guest_va, uint32_t tag) {
 
 uint8_t *mmu_translate_imem(uint32_t vaddr, uint32_t *paddr)
 {
+#if SUPPORTS_PPC_LITTLE_ENDIAN_MODE
+    if (ppc_state.is_LE) {
+        vaddr ^= mem_munge_constant<uint32_t>();
+    }
+#endif
+
     TLBEntry *tlb1_entry, *tlb2_entry;
     uint8_t *host_va;
 
@@ -1014,26 +1094,66 @@ void mmu_pat_ctx_changed()
     }
 }
 
+#if SUPPORTS_PPC_LITTLE_ENDIAN_MODE
+    #if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+        #define ARGS_SWAP_MUNGED , bool needs_swap, bool munged
+        #define SWAP_MUNGED , needs_swap, munged
+    #else
+        #define ARGS_SWAP_MUNGED , bool munged
+        #define SWAP_MUNGED , munged
+    #endif
+#else
+    #if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+        #define ARGS_SWAP_MUNGED , bool needs_swap, bool munged
+        #define SWAP_MUNGED , needs_swap, munged
+    #else
+        #define ARGS_SWAP_MUNGED
+        #define SWAP_MUNGED
+    #endif
+#endif
+
 // Forward declarations.
 template <class T>
-static T read_unaligned(uint32_t opcode, uint32_t guest_va, uint8_t *host_va);
+static T read_unaligned(uint32_t opcode, uint32_t guest_va, uint8_t *host_va ARGS_SWAP_MUNGED);
 template <class T>
-static void write_unaligned(uint32_t opcode, uint32_t guest_va, uint8_t *host_va, T value);
+static void write_unaligned(uint32_t opcode, uint32_t guest_va, uint8_t *host_va, T value ARGS_SWAP_MUNGED);
 
 template <class T>
 inline T mmu_read_vmem(uint32_t opcode, uint32_t guest_va)
 {
+#if SUPPORTS_PPC_LITTLE_ENDIAN_MODE || SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+    bool munged = false;
+#endif
+#if SUPPORTS_PPC_LITTLE_ENDIAN_MODE
+    if (ppc_state.is_LE) {
+        guest_va = mem_munge_address<T>(guest_va);
+        munged = true;
+    }
+#endif
+
     TLBEntry *tlb1_entry, *tlb2_entry;
     uint8_t *host_va;
 
     const uint32_t tag = guest_va & ~0xFFFUL;
 
     // look up guest virtual address in the primary TLB
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+    bool needs_swap = false;
+#endif
     tlb1_entry = &pCurDTLB1[(guest_va >> PPC_PAGE_SIZE_BITS) & tlb_size_mask];
     if (tlb1_entry->tag == tag) { // primary TLB hit -> fast path
 #ifdef TLB_PROFILING
         num_primary_dtlb_hits++;
 #endif
+
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+        needs_swap = mem_ctrl_instance->needs_swap_endian(false);
+        if (needs_swap) {
+            guest_va = mem_munge_address<T>(guest_va);
+            munged ^= 1;
+        }
+#endif
+
         host_va = (uint8_t *)(tlb1_entry->host_va_offs_r + guest_va);
     } else {
         // primary TLB miss -> look up address in the secondary TLB
@@ -1058,30 +1178,69 @@ inline T mmu_read_vmem(uint32_t opcode, uint32_t guest_va)
         if (tlb2_entry->flags & TLBFlags::PAGE_MEM) { // is it a real memory region?
             // refill the primary TLB
             *tlb1_entry = *tlb2_entry;
+
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+            needs_swap = mem_ctrl_instance->needs_swap_endian(false);
+            if (needs_swap) {
+                guest_va = mem_munge_address<T>(guest_va);
+                munged ^= 1;
+            }
+#endif
+
             host_va = (uint8_t *)(tlb1_entry->host_va_offs_r + guest_va);
         } else { // otherwise, it's an access to a memory-mapped device
 #ifdef MMU_PROFILING
             iomem_reads_total++;
 #endif
+
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+            needs_swap = mem_ctrl_instance->needs_swap_endian(tlb2_entry->rgn_desc);
+            if (needs_swap) {
+                guest_va = mem_munge_address<T>(guest_va);
+                munged ^= 1;
+            }
+#endif
+
             if (sizeof(T) == 8) {
                 if (guest_va & 3)
                     ppc_alignment_exception(opcode, guest_va);
 
+                uint32_t valueLow = tlb2_entry->rgn_desc->devobj->read(
+                    tlb2_entry->rgn_desc->start,
+                    static_cast<uint32_t>(guest_va - tlb2_entry->dev_base_va),
+                    4);
+
+                uint32_t valueHigh = tlb2_entry->rgn_desc->devobj->read(
+                    tlb2_entry->rgn_desc->start,
+                    static_cast<uint32_t>(guest_va + 4 - tlb2_entry->dev_base_va),
+                    4);
+
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+                if (needs_swap) {
+                    uint32_t temp = valueHigh;
+                    valueHigh = BYTESWAP_32(valueLow);
+                    valueLow  = BYTESWAP_32(temp);
+                }
+#endif
+
                 return (
-                    ((T)tlb2_entry->rgn_desc->devobj->read(tlb2_entry->rgn_desc->start,
-                                                           static_cast<uint32_t>(guest_va - tlb2_entry->dev_base_va),
-                                                           4) << 32) |
-                    tlb2_entry->rgn_desc->devobj->read(tlb2_entry->rgn_desc->start,
-                                                       static_cast<uint32_t>(guest_va + 4 - tlb2_entry->dev_base_va),
-                                                       4)
+                    ((T)(valueLow) << 32) | valueHigh
                 );
             }
             else {
-                return (
+                T value = (
                     tlb2_entry->rgn_desc->devobj->read(tlb2_entry->rgn_desc->start,
                                                        static_cast<uint32_t>(guest_va - tlb2_entry->dev_base_va),
                                                        sizeof(T))
                 );
+
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+                if (needs_swap && sizeof(T) > 1) {
+                    value = BYTESWAP_SIZED(value, sizeof(T));
+                }
+#endif
+
+                return value;
             }
         }
     }
@@ -1092,7 +1251,11 @@ inline T mmu_read_vmem(uint32_t opcode, uint32_t guest_va)
 
     // handle unaligned memory accesses
     if (sizeof(T) > 1 && (guest_va & (sizeof(T) - 1))) {
-        return read_unaligned<T>(opcode, guest_va, host_va);
+#if SUPPORTS_PPC_LITTLE_ENDIAN_MODE || SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+        if (munged)
+            guest_va = mem_munge_address<T>(guest_va);
+#endif
+        return read_unaligned<T>(opcode, guest_va, host_va SWAP_MUNGED);
     }
 
     // handle aligned memory accesses
@@ -1100,11 +1263,23 @@ inline T mmu_read_vmem(uint32_t opcode, uint32_t guest_va)
         case 1:
             return *host_va;
         case 2:
-            return READ_WORD_BE_A(host_va);
+            return
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+                needs_swap ? (READ_WORD_LE_A(host_va)) :
+#endif
+                (READ_WORD_BE_A(host_va));
         case 4:
-            return READ_DWORD_BE_A(host_va);
+            return
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+                needs_swap ? (READ_DWORD_LE_A(host_va)) :
+#endif
+                (READ_DWORD_BE_A(host_va));
         case 8:
-            return READ_QWORD_BE_A(host_va);
+            return
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+                needs_swap ? (READ_QWORD_LE_A(host_va)) :
+#endif
+                (READ_QWORD_BE_A(host_va));
     }
 }
 
@@ -1117,12 +1292,25 @@ template uint64_t mmu_read_vmem<uint64_t>(uint32_t opcode, uint32_t guest_va);
 template <class T>
 inline void mmu_write_vmem(uint32_t opcode, uint32_t guest_va, T value)
 {
+#if SUPPORTS_PPC_LITTLE_ENDIAN_MODE || SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+    bool munged = false;
+#endif
+#if SUPPORTS_PPC_LITTLE_ENDIAN_MODE
+    if (ppc_state.is_LE) {
+        guest_va = mem_munge_address<T>(guest_va);
+        munged = true;
+    }
+#endif
+
     TLBEntry *tlb1_entry, *tlb2_entry;
     uint8_t *host_va;
 
     const uint32_t tag = guest_va & ~0xFFFUL;
 
     // look up guest virtual address in the primary TLB
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+    bool needs_swap = false;
+#endif
     tlb1_entry = &pCurDTLB1[(guest_va >> PPC_PAGE_SIZE_BITS) & tlb_size_mask];
     if (tlb1_entry->tag == tag) { // primary TLB hit -> fast path
 #ifdef TLB_PROFILING
@@ -1144,6 +1332,13 @@ inline void mmu_write_vmem(uint32_t opcode, uint32_t guest_va, T value)
                 tlb2_entry->flags |= TLBFlags::PTE_SET_C;
             }
         }
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+        needs_swap = mem_ctrl_instance->needs_swap_endian(false);
+        if (needs_swap) {
+            guest_va = mem_munge_address<T>(guest_va);
+            munged ^= 1;
+        }
+#endif
         host_va = (uint8_t *)(tlb1_entry->host_va_offs_w + guest_va);
     } else {
         // primary TLB miss -> look up address in the secondary TLB
@@ -1180,22 +1375,58 @@ inline void mmu_write_vmem(uint32_t opcode, uint32_t guest_va, T value)
         if (tlb2_entry->flags & TLBFlags::PAGE_MEM) { // is it a real memory region?
             // refill the primary TLB
             *tlb1_entry = *tlb2_entry;
+
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+            needs_swap = mem_ctrl_instance->needs_swap_endian(false);
+            if (needs_swap) {
+                guest_va = mem_munge_address<T>(guest_va);
+                munged ^= 1;
+            }
+#endif
+
             host_va = (uint8_t *)(tlb1_entry->host_va_offs_w + guest_va);
         } else { // otherwise, it's an access to a memory-mapped device
 #ifdef MMU_PROFILING
             iomem_writes_total++;
 #endif
+
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+            needs_swap = mem_ctrl_instance->needs_swap_endian(tlb2_entry->rgn_desc);
+            if (needs_swap) {
+                guest_va = mem_munge_address<T>(guest_va);
+                munged ^= 1;
+            }
+#endif
+
             if (sizeof(T) == 8) {
                 if (guest_va & 3)
                     ppc_alignment_exception(opcode, guest_va);
 
+                uint32_t valueLow, valueHigh;
+                valueLow = value >> 32;
+                valueHigh = (uint32_t)value;
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+                if (needs_swap) {
+                    valueHigh = BYTESWAP_32(valueLow);
+                    valueLow  = (uint32_t)value;
+                    valueLow  = BYTESWAP_32(valueLow);
+                }
+#endif
+
                 tlb2_entry->rgn_desc->devobj->write(tlb2_entry->rgn_desc->start,
                                                     static_cast<uint32_t>(guest_va - tlb2_entry->dev_base_va),
-                                                    value >> 32, 4);
+                                                    valueLow, 4);
                 tlb2_entry->rgn_desc->devobj->write(tlb2_entry->rgn_desc->start,
                                                     static_cast<uint32_t>(guest_va + 4 - tlb2_entry->dev_base_va),
-                                                    (uint32_t)value, 4);
+                                                    valueHigh, 4);
             } else {
+
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+                if (needs_swap && sizeof(T) > 1) {
+                    value = BYTESWAP_SIZED(value, sizeof(T));
+                }
+#endif
+
                 tlb2_entry->rgn_desc->devobj->write(tlb2_entry->rgn_desc->start,
                                                     static_cast<uint32_t>(guest_va - tlb2_entry->dev_base_va),
                                                     value, sizeof(T));
@@ -1208,9 +1439,51 @@ inline void mmu_write_vmem(uint32_t opcode, uint32_t guest_va, T value)
     dmem_writes_total++;
 #endif
 
+#ifdef VERIFY_DATA_WRITE
+    if (verify) {
+        uint32_t savedphys = tlb1_entry->phys_tag;
+        tlb_flush_primary_entry(pCurDTLB1, tag);
+        tlb_flush_secondary_entry(pCurDTLB2, tag);
+        tlb2_entry = dtlb2_refill(guest_va, 0);
+        if (tlb2_entry->phys_tag != savedphys) {
+            LOG_F(ERROR, "mmu_read_vmem; phystag mismatch address:0x%08x tag:0x%08x phys:0x%08x correctedphys:%08x",
+                guest_va, tag, savedphys, tlb2_entry->phys_tag);
+            dump_backtrace();
+        }
+    }
+#endif
+
+#ifdef WATCH_POINT
+    if (guest_va >= 0x30B404 && guest_va < 0x30B408) {
+        if (!watch_point_dma || value == 0x12000000) {
+            if ((uint32_t*)((uint64_t)(host_va) & ~3) != watch_point_dma) {
+                LOG_F(ERROR, "mmu_write_vmem; writing to cpu_type host_va changed from 0x%llx to 0x%llx",
+                    (uint64_t)watch_point_dma, (uint64_t)host_va & ~3);
+                watch_point_dma = (uint32_t*)((uint64_t)(host_va) & ~3);
+            }
+            got_watch_point_value = true;
+        }
+        LOG_F(ERROR, "mmu_write_vmem; writing to cpu_type value:0x%08llx size:%d guest_pa:0x%08x host_va:0x%llx",
+            (uint64_t)value, (int)sizeof(T), guest_pa, (uint64_t)host_va);
+        dump_backtrace();
+    }
+#endif
+
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+    // swap now if needed
+    if (needs_swap && sizeof(T) > 1) {
+        value = BYTESWAP_SIZED(value, sizeof(T));
+    }
+#endif
+
     // handle unaligned memory accesses
     if (sizeof(T) > 1 && (guest_va & (sizeof(T) - 1))) {
-        write_unaligned<T>(opcode, guest_va, host_va, value);
+        // unmunge the guest_va if it was munged
+#if SUPPORTS_PPC_LITTLE_ENDIAN_MODE || SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+        if (munged)
+            guest_va = mem_munge_address<T>(guest_va);
+#endif
+        write_unaligned<T>(opcode, guest_va, host_va, value SWAP_MUNGED);
         return;
     }
 
@@ -1238,7 +1511,7 @@ template void mmu_write_vmem<uint32_t>(uint32_t opcode, uint32_t guest_va, uint3
 template void mmu_write_vmem<uint64_t>(uint32_t opcode, uint32_t guest_va, uint64_t value);
 
 template <class T>
-static T read_unaligned(uint32_t opcode, uint32_t guest_va, uint8_t *host_va)
+static T read_unaligned(uint32_t opcode, uint32_t guest_va, uint8_t *host_va ARGS_SWAP_MUNGED)
 {
     if ((sizeof(T) == 8) && (guest_va & 3)) {
 #ifndef PPC_TESTS
@@ -1257,8 +1530,38 @@ static T read_unaligned(uint32_t opcode, uint32_t guest_va, uint8_t *host_va)
         // Because such accesses suffer a performance penalty, they will be
         // presumably very rare so don't waste time optimizing the code below.
         for (int i = 0; i < sizeof(T); guest_va++, i++) {
-            result = (result << 8) | mmu_read_vmem<uint8_t>(opcode, guest_va);
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+            if (needs_swap) {
+                T value = mmu_read_vmem<uint8_t>(opcode, guest_va);
+                value <<= (i * 8);
+                result |= value;
+            } else
+#endif
+            {
+                result = (result << 8) | mmu_read_vmem<uint8_t>(opcode, guest_va);
+            }
         }
+#if SUPPORTS_PPC_LITTLE_ENDIAN_MODE || SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+    } else if (sizeof(T) == sizeof(uint64_t) && munged) {
+        // Munged host address for an unaligned 64-bit read.
+        // Check for cross-page read, to read the upper 32 bits correctly.
+        if (((guest_va & 0xFFF) + 12) > 0x1000) {
+            // Add the pre-munged address, as munging is a no-op for uint64_t, but not for uint32_t.
+            result = mmu_read_vmem<uint32_t>(opcode, guest_va + mem_munge_address<uint32_t>(8));
+        } else {
+            result =
+                #if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+                    needs_swap ? (READ_DWORD_LE_U(host_va + 8)) :
+                #endif
+                (READ_DWORD_BE_U(host_va + 8));
+        }
+        result <<= 32;
+        result |=
+            #if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+                needs_swap ? (READ_DWORD_LE_U(host_va)) :
+            #endif
+            (READ_DWORD_BE_U(host_va));
+#endif
     } else {
 #ifdef MMU_PROFILING
         unaligned_reads++;
@@ -1267,23 +1570,35 @@ static T read_unaligned(uint32_t opcode, uint32_t guest_va, uint8_t *host_va)
             case 1:
                 return *host_va;
             case 2:
-                return READ_WORD_BE_U(host_va);
+                return
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+                    needs_swap ? (READ_WORD_LE_U(host_va)) :
+#endif
+                    (READ_WORD_BE_U(host_va));
             case 4:
-                return READ_DWORD_BE_U(host_va);
+                return
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+                    needs_swap ? (READ_DWORD_LE_U(host_va)) :
+#endif
+                    (READ_DWORD_BE_U(host_va));
             case 8:
-                return READ_QWORD_BE_U(host_va);
+                return
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+                    needs_swap ? (READ_QWORD_LE_U(host_va)) :
+#endif
+                    (READ_QWORD_BE_U(host_va));
         }
     }
     return result;
 }
 
 // explicitely instantiate all required read_unaligned variants
-template uint16_t read_unaligned<uint16_t>(uint32_t opcode, uint32_t guest_va, uint8_t *host_va);
-template uint32_t read_unaligned<uint32_t>(uint32_t opcode, uint32_t guest_va, uint8_t *host_va);
-template uint64_t read_unaligned<uint64_t>(uint32_t opcode, uint32_t guest_va, uint8_t *host_va);
+template uint16_t read_unaligned<uint16_t>(uint32_t opcode, uint32_t guest_va, uint8_t* host_va ARGS_SWAP_MUNGED);
+template uint32_t read_unaligned<uint32_t>(uint32_t opcode, uint32_t guest_va, uint8_t* host_va ARGS_SWAP_MUNGED);
+template uint64_t read_unaligned<uint64_t>(uint32_t opcode, uint32_t guest_va, uint8_t* host_va ARGS_SWAP_MUNGED);
 
 template <class T>
-static void write_unaligned(uint32_t opcode, uint32_t guest_va, uint8_t *host_va, T value)
+static void write_unaligned(uint32_t opcode, uint32_t guest_va, uint8_t *host_va, T value ARGS_SWAP_MUNGED)
 {
     if ((sizeof(T) == 8) && (guest_va & 3)) {
 #ifndef PPC_TESTS
@@ -1305,6 +1620,36 @@ static void write_unaligned(uint32_t opcode, uint32_t guest_va, uint8_t *host_va
         for (int i = 0; i < sizeof(T); shift -= 8, guest_va++, i++) {
             mmu_write_vmem<uint8_t>(opcode, guest_va, (value >> shift) & 0xFF);
         }
+#if SUPPORTS_PPC_LITTLE_ENDIAN_MODE || SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+    } else if (sizeof(T) == sizeof(uint64_t) && munged) {
+        // Munged host address for an unaligned 64-bit write.
+        // Check for cross-page write, to write the upper 32 bits correctly.
+        uint32_t value32 = (value >> 32);
+        if (((guest_va & 0xFFF) + 12) > 0x1000) {
+    #if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+            // The value is endianness swapped already if needs_swap is true, so swap it back in that case.
+            if (needs_swap) {
+                value32 = (uint32_t)value;
+                value32 = BYTESWAP_32(value32);
+            }
+    #endif
+            // Add the pre-munged address, as munging is a no-op for uint64_t, but not for uint32_t.
+            mmu_write_vmem<uint32_t>(opcode, guest_va + mem_munge_address<uint32_t>(8), value32);
+        } else {
+            // Not cross-page, so just write via host address.
+            WRITE_DWORD_BE_U(host_va + 8, value32);
+        }
+        // Write the lower 32 bits.
+    #if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+        if (needs_swap) {
+            value32 = (value >> 32);
+        } else
+    #endif
+        {
+            value32 = (uint32_t)value;
+        }
+        WRITE_DWORD_BE_U(host_va, value32);
+#endif
     } else {
 #ifdef MMU_PROFILING
         unaligned_writes++;
@@ -1327,9 +1672,9 @@ static void write_unaligned(uint32_t opcode, uint32_t guest_va, uint8_t *host_va
 }
 
 // explicitely instantiate all required write_unaligned variants
-template void write_unaligned<uint16_t>(uint32_t opcode, uint32_t guest_va, uint8_t *host_va, uint16_t value);
-template void write_unaligned<uint32_t>(uint32_t opcode, uint32_t guest_va, uint8_t *host_va, uint32_t value);
-template void write_unaligned<uint64_t>(uint32_t opcode, uint32_t guest_va, uint8_t *host_va, uint64_t value);
+template void write_unaligned<uint16_t>(uint32_t opcode, uint32_t guest_va, uint8_t *host_va, uint16_t value ARGS_SWAP_MUNGED);
+template void write_unaligned<uint32_t>(uint32_t opcode, uint32_t guest_va, uint8_t *host_va, uint32_t value ARGS_SWAP_MUNGED);
+template void write_unaligned<uint64_t>(uint32_t opcode, uint32_t guest_va, uint8_t *host_va, uint64_t value ARGS_SWAP_MUNGED);
 
 
 /* MMU profiling. */

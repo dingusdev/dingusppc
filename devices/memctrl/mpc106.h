@@ -162,6 +162,11 @@ enum {
     ROMNAL_MASK         = 15 << ROMNAL_SHIFT,
 };
 
+/* PICR1 bit definitions. */
+enum {
+    PICR1_LE_MODE = 0x20
+};
+
 class MPC106 : public MemCtrlBase, public PCIDevice, public PCIHost {
 public:
     MPC106();
@@ -173,6 +178,10 @@ public:
 
     uint32_t read(uint32_t rgn_start, uint32_t offset, int size) override;
     void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size) override;
+
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+    bool needs_swap_endian(bool is_mmio) override;
+#endif
 
     int device_postinit() override;
 
@@ -187,6 +196,12 @@ private:
     inline void cfg_setup(uint32_t offset, int size, int &bus_num, int &dev_num,
                           int &fun_num, uint8_t &reg_offs, AccessDetails &details,
                           PCIBase *&device);
+
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+    inline bool needs_swap_endian_pci() {
+        return (picr1 & PICR1_LE_MODE) != 0;
+    }
+#endif
 
     uint32_t config_addr;
 

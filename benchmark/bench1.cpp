@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -114,6 +114,30 @@ int main(int argc, char** argv) {
     ppc_state.gpr[5] = 0;         // sum
     power_on = true;
     ppc_exec_until(0xC4);
+
+#if SUPPORTS_PPC_LITTLE_ENDIAN_MODE
+    #warning PPC endian mode enabled
+    LOG_F(INFO, "PPC endian mode enabled");
+#else
+    #warning PPC endian mode disabled
+    LOG_F(INFO, "PPC endian mode disabled");
+#endif
+
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+    #warning Memory endian mode enabled
+    LOG_F(INFO, "Memory endian mode enabled");
+#else
+    #warning Memory endian mode disabled
+    LOG_F(INFO, "Memory endian mode disabled");
+#endif
+
+#ifdef LOG_INSTRUCTIONS
+    #warning Log instructions enabled
+    LOG_F(INFO, "Log instructions enabled");
+#else
+    #warning Log instructions disabled
+    LOG_F(INFO, "Log instructions disabled");
+#endif
 
     LOG_F(INFO, "Checksum: 0x%08X", ppc_state.gpr[3]);
     uint32_t checksum = ppc_state.gpr[3];

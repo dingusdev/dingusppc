@@ -45,7 +45,7 @@ enum EXEC_MODE:uint32_t {
     jit             = 3
 };
 
-enum endian_switch { big_end = 0, little_end = 1 };
+typedef enum { big_end = 0, little_end = 1 } endian_switch;
 
 typedef void (*PPCOpcode)(uint32_t opcode);
 
@@ -79,6 +79,9 @@ typedef struct struct_ppc_state {
     uint32_t msr;
     uint32_t sr[16];
     bool reserve;    // reserve bit used for lwarx and stcwx
+#if SUPPORTS_PPC_LITTLE_ENDIAN_MODE
+    bool is_LE;
+#endif
 } SetPRS;
 
 extern SetPRS ppc_state;
@@ -351,7 +354,8 @@ enum Po_Cause : int {
     po_enter_debugger,
     po_entered_debugger,
     po_signal_interrupt,
-    po_benchmark_exception
+    po_benchmark_exception,
+    po_endian_switch,
 };
 
 extern bool power_on;
@@ -372,7 +376,13 @@ extern bool is_deterministic;
 extern uint32_t ppc_next_instruction_address;
 
 inline uint32_t ppc_read_instruction(const uint8_t* ptr) {
+#if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
+    extern MemCtrlBase* mem_ctrl_instance;
+    bool needs_swap = mem_ctrl_instance->needs_swap_endian(false);
+    return needs_swap ? READ_DWORD_LE_A(ptr) : READ_DWORD_BE_A(ptr);
+#else
     return READ_DWORD_BE_A(ptr);
+#endif
 }
 
 // Profiling Stats
@@ -683,6 +693,7 @@ extern void ppc_exec_dbg(uint32_t start_addr, uint32_t size);
 
 extern PPCOpcode* ppc_opcode_grabber;
 extern void ppc_msr_did_change(uint32_t old_msr_val, uint32_t new_msr_val, bool set_next_instruction_address = true);
+extern void ppc_change_endian(bool newLE);
 
 /* debugging support API */
 uint64_t get_reg(std::string reg_name); /* get content of the register reg_name */
