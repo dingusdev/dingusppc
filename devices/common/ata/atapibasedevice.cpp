@@ -87,7 +87,6 @@ uint16_t AtapiBaseDevice::read(const uint8_t reg_addr) {
         return this->r_dev_head;
     case ATA_Reg::STATUS:
         this->update_intrq(0);
-        return this->r_status;
     case ATA_Reg::ALT_STATUS:
         if (this->r_status & BSY && this->data_available()) {
             this->r_byte_count = this->request_data();
