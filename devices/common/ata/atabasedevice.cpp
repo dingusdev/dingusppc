@@ -76,7 +76,8 @@ uint16_t AtaBaseDevice::read(const uint8_t reg_addr) {
                     this->r_status &= ~DRQ;
                 } else {
                     this->chunk_cnt = std::min(this->xfer_cnt, this->chunk_size);
-                    this->update_intrq(1);
+                    TimerManager::get_instance()->add_oneshot_timer(
+                        USECS_TO_NSECS(100), [this]() { this->update_intrq(1); });
                 }
             }
             return ret_data;
