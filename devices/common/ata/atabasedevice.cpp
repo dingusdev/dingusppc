@@ -127,7 +127,10 @@ void AtaBaseDevice::write(const uint8_t reg_addr, const uint16_t value) {
                 } else {
                     this->cur_data_ptr = this->data_ptr;
                     this->chunk_cnt = std::min(this->xfer_cnt, this->chunk_size);
-                    this->signal_data_ready();
+                    //LOG_F(INFO, "%s: write needs more data (left: 0x%x)", name.c_str(), xfer_cnt);
+                    TimerManager::get_instance()->add_oneshot_timer(USECS_TO_NSECS(100), [this]() {
+                        this->signal_data_ready();
+                    });
                 }
             }
         }
