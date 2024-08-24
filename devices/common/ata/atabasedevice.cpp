@@ -146,6 +146,10 @@ void AtaBaseDevice::write(const uint8_t reg_addr, const uint16_t value) {
         this->r_dev_head = value;
         break;
     case ATA_Reg::COMMAND:
+        if ((this->r_status & BSY) != 0) {
+            LOG_F(ERROR, "%s: tried to perform command %x when busy", name.c_str(), value);
+            break;
+        }
         this->r_command = value;
         if (is_selected() || this->r_command == DIAGNOSTICS) {
             perform_command();
