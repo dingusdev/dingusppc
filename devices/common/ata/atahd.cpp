@@ -106,7 +106,7 @@ int AtaHardDisk::perform_command() {
             uint32_t ints_size = ATA_HD_SEC_SIZE;
             if (this->r_command == READ_MULTIPLE) {
                 if (this->sec_per_block == 0) {
-                    LOG_F(ERROR, "%s: READ MULTIPLE with SET MULTIPLE==0", this->name.c_str());
+                    LOG_F(ERROR, "%s: cannot do a READ_MULTIPLE with unset sec_per_block", this->name.c_str());
                     this->r_status |= ERR;
                     this->r_status &= ~BSY;
                     break;
@@ -131,7 +131,7 @@ int AtaHardDisk::perform_command() {
             uint32_t ints_size = ATA_HD_SEC_SIZE;
             if (this->r_command == WRITE_MULTIPLE) {
                 if (this->sec_per_block == 0) {
-                    LOG_F(ERROR, "%s: WRITE MULTIPLE with SET MULTIPLE==0", this->name.c_str());
+                    LOG_F(ERROR, "%s: cannot do a WRITE_MULTIPLE with unset sec_per_block", this->name.c_str());
                     this->r_status |= ERR;
                     this->r_status &= ~BSY;
                     break;
@@ -140,8 +140,9 @@ int AtaHardDisk::perform_command() {
             }
             this->prepare_xfer(xfer_size, ints_size);
             this->post_xfer_action = [this]() {
-                this->hdd_img.write(this->data_ptr, this->cur_fpos, this->chunk_size);
-                this->cur_fpos += this->chunk_size;
+                uint64_t write_len = (this->cur_data_ptr - this->data_ptr) * sizeof(this->data_ptr[0]);
+                this->hdd_img.write(this->data_ptr, this->cur_fpos, write_len);
+                this->cur_fpos += write_len;
             };
             this->r_status |= DRQ;
             this->r_status &= ~BSY;
@@ -168,10 +169,12 @@ int AtaHardDisk::perform_command() {
     case SET_MULTIPLE_MODE: // this command is mandatory for ATA devices
         if (!this->r_sect_count || this->r_sect_count > 128 ||
             std::bitset<8>(this->r_sect_count).count() != 1) { // power of two?
+            LOG_F(ERROR, "%s: SET_MULTIPLE_MODE not suported, invalid r_sect_count (%d)", this->name.c_str(), this->r_sect_count);
             this->multiple_enabled = false;
             this->r_error  |= ABRT;
             this->r_status |= ERR;
         } else {
+            LOG_F(INFO, "%s: SET_MULTIPLE_MODE, r_sect_count=%d", this->name.c_str(), this->r_sect_count);
             this->sec_per_block = this->r_sect_count;
             this->multiple_enabled = true;
         }
@@ -235,8 +238,20 @@ void AtaHardDisk::prepare_identify_info() {
     std::memset(this->data_buf, 0, sizeof(this->data_buf));
 
     buf_ptr[ 0] = 0x0040; // ATA device, non-removable media, non-removable drive
-    buf_ptr[47] = this->sec_per_block; // block size of READ_MULTIPLE/WRITE_MULTIPLE
     buf_ptr[49] = 0x0200; // report LBA support
+
+    // Maximum number of logical sectors per data block that the device supports
+    // for READ_MULTIPLE/WRITE_MULTIPLE commands.
+    const int max_sec_per_block = 8;
+    if (max_sec_per_block > 1) {
+        buf_ptr[47] = 0x8000 | max_sec_per_block;
+    }
+    // If bit 8 of word 59 is set to one, then bits 7:0 indicate the number of
+    // logical sectors that shall be transferred per data block for
+    // READ_MULTIPLE/WRITE_MULTIPLE commands.
+    if (this->sec_per_block) {
+        buf_ptr[59] = 0x100 | this->sec_per_block;
+    }
 
     buf_ptr[ 1] = this->cylinders;
     buf_ptr[ 3] = this->heads;

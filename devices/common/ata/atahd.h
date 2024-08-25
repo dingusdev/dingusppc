@@ -69,8 +69,8 @@ private:
     uint8_t     heads;
     uint8_t     sectors;
 
-    uint8_t     sec_per_block    = 8; // sectors per block for READ_MULTIPLE/WRITE_MULTIPLE
-    bool        multiple_enabled = true; // READ_MULTIPLE/WRITE_MULTIPLE enabled
+    uint8_t     sec_per_block    = 0; // sectors per block for READ_MULTIPLE/WRITE_MULTIPLE
+    bool        multiple_enabled = false; // READ_MULTIPLE/WRITE_MULTIPLE enabled
 
     char * buffer = new char[1 <<17];
 };
