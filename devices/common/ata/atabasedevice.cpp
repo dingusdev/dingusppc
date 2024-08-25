@@ -70,10 +70,11 @@ uint16_t AtaBaseDevice::read(const uint8_t reg_addr) {
             this->chunk_cnt -= 2;
             if (this->chunk_cnt <= 0) {
                 this->xfer_cnt -= this->chunk_size;
-                if (this->xfer_cnt <= 0)
+                if (this->xfer_cnt <= 0) {
+                    this->xfer_cnt = 0;
                     this->r_status &= ~DRQ;
-                else {
-                    this->chunk_cnt = this->chunk_size;
+                } else {
+                    this->chunk_cnt = std::min(this->xfer_cnt, this->chunk_size);
                     this->update_intrq(1);
                 }
             }
@@ -114,12 +115,13 @@ void AtaBaseDevice::write(const uint8_t reg_addr, const uint16_t value) {
                 this->post_xfer_action();
                 this->xfer_cnt -= this->chunk_size;
                 if (this->xfer_cnt <= 0) { // transfer complete?
+                    this->xfer_cnt = 0;
                     this->r_status &= ~DRQ;
                     this->r_status &= ~BSY;
                     this->update_intrq(1);
                 } else {
                     this->cur_data_ptr = this->data_ptr;
-                    this->chunk_cnt = this->chunk_size;
+                    this->chunk_cnt = std::min(this->xfer_cnt, this->chunk_size);
                     this->signal_data_ready();
                 }
             }
