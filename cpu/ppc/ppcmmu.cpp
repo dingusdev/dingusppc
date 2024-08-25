@@ -137,19 +137,19 @@ static BATResult ppc_block_address_translation(uint32_t la)
     PPC_BAT_entry *bat_array;
 
     bool bat_hit    = false;
-    unsigned msr_pr = !!(ppc_state.msr & MSR::PR);
+    unsigned msr_pr = (ppc_state.msr & MSR::PR) != 0;
 
     bat_array = (type == BATType::IBAT) ? ibat_array : dbat_array;
 
     // Format: %XY
     // X - supervisor access bit, Y - problem/user access bit
     // Those bits are mutually exclusive
-    unsigned access_bits = ((msr_pr ^ 1) << 1) | msr_pr;
+    unsigned access_bits = ((!msr_pr) << 1) | msr_pr;
 
     for (int bat_index = 0; bat_index < 4; bat_index++) {
         PPC_BAT_entry* bat_entry = &bat_array[bat_index];
 
-        if ((bat_entry->access & access_bits) && ((la & bat_entry->hi_mask) == bat_entry->bepi)) {
+        if ((bat_entry->access & access_bits) != 0 && ((la & bat_entry->hi_mask) == bat_entry->bepi)) {
             bat_hit = true;
 
 #ifdef MMU_PROFILING
