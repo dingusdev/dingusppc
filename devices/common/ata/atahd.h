@@ -30,6 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 
 #define ATA_HD_SEC_SIZE 512
+#define SECTORS_PER_INT 16
 
 // C:16383 x H:16 x S:63 = C:1032 x H:254 x S:63 = 8063.5078125 MiB = 8.46 GB
 #define ATA_BIOS_LIMIT  16514064
@@ -69,8 +70,7 @@ private:
     uint8_t     heads;
     uint8_t     sectors;
 
-    uint8_t     sec_per_block    = 0; // sectors per block for READ_MULTIPLE/WRITE_MULTIPLE
-    bool        multiple_enabled = false; // READ_MULTIPLE/WRITE_MULTIPLE enabled
+    uint8_t     sectors_per_int  = 0; // sectors per interrupt for READ_MULTIPLE/WRITE_MULTIPLE
 
     char * buffer = new char[1 <<17];
 };

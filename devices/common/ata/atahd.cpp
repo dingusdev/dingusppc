@@ -105,13 +105,13 @@ int AtaHardDisk::perform_command() {
             uint64_t offset    = this->get_lba() * ATA_HD_SEC_SIZE;
             uint32_t ints_size = ATA_HD_SEC_SIZE;
             if (this->r_command == READ_MULTIPLE) {
-                if (this->sec_per_block == 0) {
-                    LOG_F(ERROR, "%s: cannot do a READ_MULTIPLE with unset sec_per_block", this->name.c_str());
+                if (!this->sectors_per_int) {
+                    LOG_F(ERROR, "%s: READ_MULTIPLE disabled", this->name.c_str());
                     this->r_status |= ERR;
                     this->r_status &= ~BSY;
                     break;
                 }
-                ints_size *= this->sec_per_block;
+                ints_size *= this->sectors_per_int;
             }
             hdd_img.read(buffer, offset, xfer_size);
             this->data_ptr = (uint16_t *)this->buffer;
@@ -130,13 +130,13 @@ int AtaHardDisk::perform_command() {
             uint32_t xfer_size = sec_count * ATA_HD_SEC_SIZE;
             uint32_t ints_size = ATA_HD_SEC_SIZE;
             if (this->r_command == WRITE_MULTIPLE) {
-                if (this->sec_per_block == 0) {
-                    LOG_F(ERROR, "%s: cannot do a WRITE_MULTIPLE with unset sec_per_block", this->name.c_str());
+                if (!this->sectors_per_int) {
+                    LOG_F(ERROR, "%s: WRITE_MULTIPLE disabled", this->name.c_str());
                     this->r_status |= ERR;
                     this->r_status &= ~BSY;
                     break;
                 }
-                ints_size *= this->sec_per_block;
+                ints_size *= this->sectors_per_int;
             }
             this->prepare_xfer(xfer_size, ints_size);
             this->post_xfer_action = [this]() {
@@ -154,8 +154,7 @@ int AtaHardDisk::perform_command() {
         this->r_status &= ~BSY;
         this->update_intrq(1);
         break;
-    case READ_VERIFY:
-        // verify sectors are readable, just no-op
+    case READ_VERIFY: // verify sectors are readable, just no-op
         this->r_status &= ~BSY;
         this->update_intrq(1);
         break;
@@ -167,16 +166,16 @@ int AtaHardDisk::perform_command() {
         this->update_intrq(1);
         break;
     case SET_MULTIPLE_MODE: // this command is mandatory for ATA devices
-        if (!this->r_sect_count || this->r_sect_count > 128 ||
+        if (!this->r_sect_count || this->r_sect_count > SECTORS_PER_INT ||
             std::bitset<8>(this->r_sect_count).count() != 1) { // power of two?
-            LOG_F(ERROR, "%s: SET_MULTIPLE_MODE not suported, invalid r_sect_count (%d)", this->name.c_str(), this->r_sect_count);
-            this->multiple_enabled = false;
+            LOG_F(ERROR, "%s: invalid parameter %d for SET_MULTIPLE_MODE",
+                  this->name.c_str(), this->r_sect_count);
             this->r_error  |= ABRT;
             this->r_status |= ERR;
         } else {
-            LOG_F(INFO, "%s: SET_MULTIPLE_MODE, r_sect_count=%d", this->name.c_str(), this->r_sect_count);
-            this->sec_per_block = this->r_sect_count;
-            this->multiple_enabled = true;
+            LOG_F(9, "%s: SET_MULTIPLE_MODE, r_sect_count=%d", this->name.c_str(),
+                  this->r_sect_count);
+            this->sectors_per_int  = this->r_sect_count;
         }
         this->r_status &= ~BSY;
         this->update_intrq(1);
@@ -242,16 +241,13 @@ void AtaHardDisk::prepare_identify_info() {
 
     // Maximum number of logical sectors per data block that the device supports
     // for READ_MULTIPLE/WRITE_MULTIPLE commands.
-    const int max_sec_per_block = 8;
-    if (max_sec_per_block > 1) {
-        buf_ptr[47] = 0x8000 | max_sec_per_block;
-    }
+    buf_ptr[47] = 0x8000 | SECTORS_PER_INT;
+
     // If bit 8 of word 59 is set to one, then bits 7:0 indicate the number of
     // logical sectors that shall be transferred per data block for
     // READ_MULTIPLE/WRITE_MULTIPLE commands.
-    if (this->sec_per_block) {
-        buf_ptr[59] = 0x100 | this->sec_per_block;
-    }
+    if (this->sectors_per_int)
+        buf_ptr[59] = 0x100 | this->sectors_per_int;
 
     buf_ptr[ 1] = this->cylinders;
     buf_ptr[ 3] = this->heads;
