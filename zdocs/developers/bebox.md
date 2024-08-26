@@ -10,6 +10,7 @@ It also has a unique 37-pin connector dubbed the Geekport to allow hobbyists to 
 
 * MPC105 PCI Bridge (Codename: Eagle) - Predecessor to the MPC106 (Grackle); Used for bridging between the motherboard and PCI slots
 * Intel 82378ZB - Used for bridging between the motherboard and ISA slots
+* SYM53C810A - SCSI I/O Processor
 * bq3285 - Used for the Real-Time Clock
 
 ### Motherboard registers

@@ -14,7 +14,7 @@ The Description-Based Direct Memory Access (DBDMA) relies on memory-based descri
 | AUDIO IN          | 0x9    |
 | SCSI1             | 0xA    |
 
-What's notable about the registers is that they are in little-endian format.
+What's notable about the registers is that they are in little-endian format, thus Mac OS uses the stwbrx and lwbrx instructions to store values.
 
 | Register          | Offset |
 |:-----------------:|:------:|
@@ -52,7 +52,20 @@ What's notable about the registers is that they are in little-endian format.
 | KEY_SYSTEM        | 0x6    |
 | KEY_DEVICE        | 0x7    |
 
-# References
+## Control Register
+
+| Value       | Offset |
+|:-----------:|:------:|
+| Branch      | 0x100  |
+| Active      | 0x400  |
+| Dead        | 0x800  |
+| Wake        | 0x1000 |
+| Flush       | 0x2000 |
+| Pause       | 0x4000 |
+| Run         | 0x8000 |
+
+
+## References
 
 * https://stuff.mit.edu/afs/sipb/contrib/doc/specs/protocol/chrp/chrp_io.pdf
 * https://stuff.mit.edu/afs/sipb/contrib/doc/specs/protocol/chrp/chrp_hrpa.pdf

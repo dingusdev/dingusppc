@@ -26,6 +26,16 @@ All registers are 32-bit here.
 | Codec Status      | 0x20   |
 | Clipping Count    | 0x30   |
 | Byte Swapping     | 0x40   |
+| Frame Count       | 0x50   |
+
+##Sound Control Register bits
+
+| Register                  | Bit Mask |
+|:-------------------------:|:--------:|
+| Input Subframe Select     | 0x000F   |
+| Output Subframe Select    | 0x00F0   |
+| Sound Rate                | 0x0700   |
+| Error                     | 0x0800   |
 
 
 Separate volume controls exist for the CD drive and the microphone.
