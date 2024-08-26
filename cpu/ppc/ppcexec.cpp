@@ -323,7 +323,7 @@ void ppc_main_opcode()
     OpcodeGrabber[(ppc_cur_instruction >> 26) & 0x3F]();
 }
 
-long long cpu_now_ns() {
+static long long cpu_now_ns() {
 #ifdef __APPLE__
     return ConvertHostTimeToNanos2(mach_absolute_time());
 #else
@@ -341,7 +341,7 @@ uint64_t get_virt_time_ns()
     }
 }
 
-uint64_t process_events()
+static uint64_t process_events()
 {
     exec_timer = false;
     uint64_t slice_ns = TimerManager::get_instance()->process_timers();
@@ -353,7 +353,7 @@ uint64_t process_events()
     return g_icycles + ((slice_ns + (1ULL << icnt_factor)) >> icnt_factor);
 }
 
-void force_cycle_counter_reload()
+static void force_cycle_counter_reload()
 {
     // tell the interpreter loop to reload cycle counter
     exec_timer = true;
@@ -874,8 +874,6 @@ void initialize_ppc_opcode_tables(bool include_601) {
 
 void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool include_601, uint64_t tb_freq)
 {
-    int i;
-
     mem_ctrl_instance = mem_ctrl;
 
     std::memset(&ppc_state, 0, sizeof(ppc_state));
@@ -956,7 +954,7 @@ static map<string, int> SPRName2Num = {
     {"SDA",    SPR::SDA},       {"SIA",    SPR::SIA},   {"MMCR1",  SPR::MMCR1}
 };
 
-uint64_t reg_op(string& reg_name, uint64_t val, bool is_write) {
+static uint64_t reg_op(string& reg_name, uint64_t val, bool is_write) {
     string reg_name_u, reg_num_str;
     unsigned reg_num;
     map<string, int>::iterator spr;
