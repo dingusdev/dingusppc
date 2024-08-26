@@ -44,7 +44,7 @@ public:
 protected:
     int     test_unit_ready();
     void    read(uint32_t lba, uint16_t nblocks, uint8_t cmd_len);
-    void    inquiry();
+    uint32_t inquiry(uint8_t *cmd_ptr, uint8_t *data_ptr) override;
     void    mode_select_6(uint8_t param_len);
 
     void    mode_sense_6();

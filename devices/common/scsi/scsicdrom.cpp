@@ -65,7 +65,9 @@ void ScsiCdrom::process_command()
         this->read(lba, cmd[4], 6);
         break;
     case ScsiCommand::INQUIRY:
-        this->inquiry();
+        this->bytes_out = this->inquiry(cmd, this->data_buf);
+        this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;
+        this->switch_phase(ScsiPhase::DATA_IN);
         break;
     case ScsiCommand::MODE_SELECT_6:
         this->mode_select_6(cmd[4]);
@@ -151,55 +153,53 @@ int ScsiCdrom::test_unit_ready()
     return ScsiError::NO_ERROR;
 }
 
-void ScsiCdrom::inquiry() {
-    int page_num  = cmd_buf[2];
-    int alloc_len = cmd_buf[4];
+uint32_t ScsiCdrom::inquiry(uint8_t *cmd_ptr, uint8_t *data_ptr) {
+    int page_num  = cmd_ptr[2];
+    int alloc_len = cmd_ptr[4];
 
     if (page_num) {
         ABORT_F("%s: invalid page number in INQUIRY", this->name.c_str());
     }
 
     if (alloc_len > 36) {
-        LOG_F(ERROR, "%s: more than 36 bytes requested in INQUIRY", this->name.c_str());
+        LOG_F(WARNING, "%s: more than 36 bytes requested in INQUIRY", this->name.c_str());
     }
 
     int lun;
     if (this->last_selection_has_atention) {
-        LOG_F(9, "%s: INQUIRY (%d bytes) with ATN LUN = %02x & 7", this->name.c_str(),
-              alloc_len, this->last_selection_message);
+        LOG_F(INFO, "%s: INQUIRY (%d bytes) with ATN LUN = %02x & 7", this->name.c_str(),
+            alloc_len, this->last_selection_message);
         lun = this->last_selection_message & 7;
     }
     else {
-        LOG_F(9, "%s: INQUIRY (%d bytes) with NO ATN LUN = %02x >> 5", this->name.c_str(),
-              alloc_len, cmd_buf[1]);
-        lun = cmd_buf[1] >> 5;
+        LOG_F(INFO, "%s: INQUIRY (%d bytes) with NO ATN LUN = %02x >> 5", this->name.c_str(),
+            alloc_len, cmd_ptr[1]);
+        lun = cmd_ptr[1] >> 5;
     }
 
-    this->data_buf[0] = (lun == this->lun) ? 5 : 0x7f; // device type: CD-ROM
-    this->data_buf[1] = 0x80; // removable media
-    this->data_buf[2] =    2; // ANSI version: SCSI-2
-    this->data_buf[3] =    1; // response data format
-    this->data_buf[4] = 0x1F; // additional length
-    this->data_buf[5] =    0;
-    this->data_buf[6] =    0;
-    this->data_buf[7] = 0x18; // supports synchronous xfers and linked commands
-    std::memcpy(&this->data_buf[8],  vendor_info, 8);
-    std::memcpy(&this->data_buf[16], prod_info, 16);
-    std::memcpy(&this->data_buf[32], rev_info, 4);
-    //std::memcpy(&this->data_buf[36], serial_number, 8);
+    data_ptr[0] = (lun == this->lun) ? 5 : 0x7f; // device type: CD-ROM
+    data_ptr[1] = 0x80; // removable media
+    data_ptr[2] =    2; // ANSI version: SCSI-2
+    data_ptr[3] =    1; // response data format
+    data_ptr[4] = 0x1F; // additional length
+    data_ptr[5] =    0;
+    data_ptr[6] =    0;
+    data_ptr[7] = 0x18; // supports synchronous xfers and linked commands
+    std::memcpy(&data_ptr[8], vendor_info, 8);
+    std::memcpy(&data_ptr[16], prod_info, 16);
+    std::memcpy(&data_ptr[32], rev_info, 4);
+    //std::memcpy(&data_ptr[36], serial_number, 8);
     //etc.
 
     if (alloc_len < 36) {
-        LOG_F(ERROR, "Inappropriate Allocation Length: %d", alloc_len);
+        LOG_F(ERROR, "%s: allocation length too small: %d", this->name.c_str(),
+            alloc_len);
     }
     else {
-        memset(&this->data_buf[36], 0, alloc_len - 36);
+        memset(&data_ptr[36], 0, alloc_len - 36);
     }
 
-    this->bytes_out = alloc_len;
-    this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;
-
-    this->switch_phase(ScsiPhase::DATA_IN);
+    return alloc_len;
 }
 
 static char Apple_Copyright_Page_Data[] = "APPLE COMPUTER, INC   ";

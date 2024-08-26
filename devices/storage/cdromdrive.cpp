@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -77,10 +77,15 @@ static char cdrom_product_id[]  = "DINGUS CD-ROM   ";
 static char cdrom_revision_id[] = "1.0 ";
 
 uint32_t CdromDrive::inquiry(uint8_t *cmd_ptr, uint8_t *data_ptr) {
-    uint8_t alloc_len = cmd_ptr[4];
+    int page_num  = cmd_ptr[2];
+    int alloc_len = cmd_ptr[4];
+
+    if (page_num) {
+        ABORT_F("%s: invalid page number in INQUIRY", "CdromDrive");
+    }
 
     if (alloc_len > 36) {
-        LOG_F(WARNING, "CD-ROM: more than 36 bytes requested in INQUIRY");
+        LOG_F(WARNING, "%s: more than 36 bytes requested in INQUIRY", "CdromDrive");
     }
 
     data_ptr[0] =    5; // device type: CD-ROM
@@ -94,8 +99,18 @@ uint32_t CdromDrive::inquiry(uint8_t *cmd_ptr, uint8_t *data_ptr) {
     std::memcpy(&data_ptr[8],  cdrom_vendor_dingus_id, 8);
     std::memcpy(&data_ptr[16], cdrom_product_id, 16);
     std::memcpy(&data_ptr[32], cdrom_revision_id, 4);
+    //std::memcpy(&data_ptr[36], serial_number, 8);
+    //etc.
 
-    return 36;
+    if (alloc_len < 36) {
+        LOG_F(ERROR, "%s: allocation length too small: %d", "CdromDrive",
+            alloc_len);
+    }
+    else {
+        memset(&data_ptr[36], 0, alloc_len - 36);
+    }
+
+    return alloc_len;
 }
 
 uint32_t CdromDrive::mode_sense_ex(bool is_sense_6, uint8_t* cmd_ptr, uint8_t* data_ptr) {

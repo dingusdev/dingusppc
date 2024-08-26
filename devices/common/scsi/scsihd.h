@@ -49,7 +49,7 @@ protected:
 
     void mode_sense_6();
     void format();
-    void inquiry();
+    uint32_t inquiry(uint8_t *cmd_ptr, uint8_t *data_ptr);
     void read_capacity_10();
     void read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len);
     void write(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len);
