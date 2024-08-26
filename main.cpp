@@ -72,18 +72,27 @@ int main(int argc, char** argv) {
     app.allow_windows_style_options(); /* we want Windows-style options */
     app.allow_extras();
 
-    bool   realtime_enabled, debugger_enabled;
-    string machine_str;
+    bool   realtime_enabled = false;
+    bool   debugger_enabled = false;
     string bootrom_path("bootrom.bin");
 
     app.add_flag("-r,--realtime", realtime_enabled,
         "Run the emulator in real-time");
-
     app.add_flag("-d,--debugger", debugger_enabled,
         "Enter the built-in debugger");
-
     app.add_option("-b,--bootrom", bootrom_path, "Specifies BootROM path")
         ->check(CLI::ExistingFile);
+
+    bool              log_to_stderr = false;
+    loguru::Verbosity log_verbosity = loguru::Verbosity_INFO;
+    bool              log_no_uptime = false;
+    app.add_flag("--log-to-stderr", log_to_stderr,
+        "Send internal logging to stderr (instead of dingusppc.log)");
+    app.add_flag("--log-verbosity", log_verbosity,
+        "Adjust logging verbosity (default is 0 a.k.a. INFO)")
+        ->check(CLI::Number);
+    app.add_flag("--log-no-uptime", log_no_uptime,
+        "Disable the uptime preamble of logged messages");
 
     uint32_t profiling_interval_ms = 0;
 #ifdef CPU_PROFILING
@@ -91,6 +100,7 @@ int main(int argc, char** argv) {
         "Specifies periodic interval (in ms) at which to output CPU profiling information");
 #endif
 
+    string       machine_str;
     CLI::Option* machine_opt = app.add_option("-m,--machine",
         machine_str, "Specify machine ID");
 
@@ -118,20 +128,21 @@ int main(int argc, char** argv) {
     if (debugger_enabled) {
         if (realtime_enabled)
             cout << "Both realtime and debugger enabled! Using debugger" << endl;
-        execution_mode = 1;
+        execution_mode = debugger;
     }
 
     /* initialize logging */
     loguru::g_preamble_date    = false;
     loguru::g_preamble_time    = false;
     loguru::g_preamble_thread  = false;
+    loguru::g_preamble_uptime  = !log_no_uptime;
 
-    if (!execution_mode) {
+    if (execution_mode == interpreter && !log_to_stderr) {
         loguru::g_stderr_verbosity = loguru::Verbosity_OFF;
         loguru::init(argc, argv);
-        loguru::add_file("dingusppc.log", loguru::Append, 0);
+        loguru::add_file("dingusppc.log", loguru::Append, log_verbosity);
     } else {
-        loguru::g_stderr_verbosity = loguru::Verbosity_INFO;
+        loguru::g_stderr_verbosity = log_verbosity;
         loguru::init(argc, argv);
     }
 
