@@ -72,9 +72,9 @@ protected:
     void set_depth_internal(int width);
     void enable_video_internal();
     void disable_video_internal();
-    void convert_frame_1bpp_indexed(uint8_t *dst_buf, int dst_pitch);
-    void convert_frame_2bpp_indexed(uint8_t *dst_buf, int dst_pitch);
-    void convert_frame_4bpp_indexed(uint8_t *dst_buf, int dst_pitch);
+    void convert_frame_1bpp_indexed(uint8_t *dst_buf, int dst_pitch) override;
+    void convert_frame_2bpp_indexed(uint8_t *dst_buf, int dst_pitch) override;
+    void convert_frame_4bpp_indexed(uint8_t *dst_buf, int dst_pitch) override;
 
 private:
     uint8_t     video_mode;
