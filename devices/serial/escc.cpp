@@ -425,7 +425,7 @@ void EsccChannel::dma_in_rx()
             [this]() {
                 this->timer_id_rx = 0;
                 char c = receive_byte();
-                int xx = dma_ch[1]->push_data(&c, 1);
+                dma_ch[1]->push_data(&c, 1);
                 this->dma_in_rx();
         });
     }
