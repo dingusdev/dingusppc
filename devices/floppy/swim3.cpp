@@ -400,7 +400,7 @@ void Swim3Ctrl::init_timer(const uint8_t start_val)
     this->one_us_timer_start = TimerManager::get_instance()->current_time_ns();
 
     this->one_us_timer_id = TimerManager::get_instance()->add_oneshot_timer(
-        this->timer_val * NS_PER_USEC,
+        uint32_t(this->timer_val) * NS_PER_USEC,
         [this]() {
             this->timer_val = 0;
             this->int_flags |= INT_TIMER_DONE;
