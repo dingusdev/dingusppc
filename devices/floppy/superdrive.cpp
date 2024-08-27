@@ -284,7 +284,7 @@ uint64_t MacSuperDrive::sync_to_disk()
 {
     uint64_t cur_time_ns, track_time_ns;
 
-    uint64_t track_delay = this->get_current_track_delay() * NS_PER_SEC;
+    uint64_t track_delay = uint64_t(this->get_current_track_delay() * NS_PER_SEC);
 
     // look how much ns have been elapsed since the last motor enabling
     cur_time_ns = TimerManager::get_instance()->current_time_ns() - this->motor_on_time;
