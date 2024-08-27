@@ -226,7 +226,7 @@ void ppc_alignment_exception(uint32_t ea)
         case 0xcc000000: // lfdu
         case 0xd4000000: // stfsu
         case 0xdc000000: // stfdu
-indirect_with_immediate_index:
+            // indirect with immediate index
             dsisr  = ((ppc_cur_instruction >> 12) & 0x00004000)  // bit  17    — Set to bit   5    of the instruction.
                   |  ((ppc_cur_instruction >> 17) & 0x00003c00); // bits 18–21 - set to bits  1–4  of the instruction.
             break;
