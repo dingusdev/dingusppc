@@ -59,6 +59,28 @@ int initialize_yosemite(std::string& id)
     sec_bridge->pci_register_device(DEV_FUN(5,0),
         dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("Heathrow")));
 
+    InterruptCtrl *int_ctrl_obj =
+        dynamic_cast<InterruptCtrl*>(gMachineObj->get_comp_by_type(HWCompType::INT_CTRL));
+
+    static const std::vector<PciIrqMap> grackle_irq_map = {
+        {"Main_GPU", DEV_FUN(0x10,0), 1 << 22}
+    };
+
+    grackle_obj->set_interrupt_controller(int_ctrl_obj);
+    grackle_obj->set_irq_map(grackle_irq_map);
+
+    static const std::vector<PciIrqMap> pci_bridge_irq_map = {
+        {"FireWire", DEV_FUN(0x00,0), 1 << 21},
+        {"UltraATA", DEV_FUN(0x01,0), 1 << 26},
+        {"Slot_J11", DEV_FUN(0x02,0), 1 << 23},
+        {"Slot_J10", DEV_FUN(0x03,0), 1 << 24},
+        {"Slot_J9" , DEV_FUN(0x04,0), 1 << 25},
+        {"USB_OHCI", DEV_FUN(0x06,0), 1 << 28}
+    };
+
+    sec_bridge->set_interrupt_controller(int_ctrl_obj);
+    sec_bridge->set_irq_map(pci_bridge_irq_map);
+
     // allocate ROM region
     if (!grackle_obj->add_rom_region(0xFFF00000, 0x100000)) {
         LOG_F(ERROR, "Could not allocate ROM region!");
