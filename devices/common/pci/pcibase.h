@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -142,7 +142,7 @@ protected:
     void unmap_exp_rom_mem();
 
     std::string pci_name;      // human-readable device name
-    PCIHost* host_instance;    // host bridge instance to call back
+    PCIHost*    host_instance; // host bridge instance to call back
 
     // PCI configuration space state (type 0, 1, and 2)
     uint16_t    vendor_id;

@@ -88,4 +88,9 @@ public:
     virtual void ack_dma_int(uint32_t irq_id, uint8_t irq_line_state) = 0;
 };
 
+typedef struct {
+    InterruptCtrl   *int_ctrl_obj;
+    uint32_t        irq_id;
+} IntDetails;
+
 #endif // HW_INTERRUPT_H

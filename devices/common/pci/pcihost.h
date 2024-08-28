@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define PCI_HOST_H
 
 #include <core/bitops.h>
+#include <devices/common/hwinterrupt.h>
 #include <endianswap.h>
 
 #include <cinttypes>
@@ -48,6 +49,12 @@ typedef struct AccessDetails {
 } AccessDetails;
 
 #define DEV_FUN(dev_num,fun_num) (((dev_num) << 3) | (fun_num))
+
+typedef struct {
+    const char *    slot_name;
+    int             dev_fun_num;
+    uint32_t        irq_id;
+} PciIrqMap;
 
 class PCIBase;
 class PCIBridgeBase;
@@ -81,10 +88,22 @@ public:
 
     virtual void pci_interrupt(uint8_t irq_line_state, PCIBase *dev) {}
 
+    virtual void set_irq_map(const std::vector<PciIrqMap> &irq_map) {
+        this->my_irq_map = irq_map;
+    };
+
+    virtual IntDetails register_pci_int(PCIBase* dev_instance);
+    virtual void set_interrupt_controller(InterruptCtrl * int_ctrl_obj) {
+        this->int_ctrl = int_ctrl_obj;
+    };
+
 protected:
     std::unordered_map<int, PCIBase*> dev_map;
     std::vector<PCIBase*>             io_space_devs;
     std::vector<PCIBridgeBase*>       bridge_devs;
+    std::vector<PciIrqMap>            my_irq_map;
+
+    InterruptCtrl   *int_ctrl = nullptr;
 };
 
 // Helpers for data conversion in the PCI Configuration space.

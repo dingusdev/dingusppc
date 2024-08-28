@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -143,6 +143,27 @@ PCIBase *PCIHost::attach_pci_device(const std::string& dev_name, int slot_id, co
     this->pci_register_device(slot_id, dev);
 
     return dev;
+}
+
+IntDetails PCIHost::register_pci_int(PCIBase* dev_instance) {
+    bool dev_found   = false;
+    int  dev_fun_num = 0;
+
+    for (auto& dev : this->dev_map) {
+        if (dev.second == dev_instance) {
+            dev_fun_num = dev.first;
+            dev_found = true;
+        }
+    }
+
+    if (!dev_found)
+        ABORT_F("register_pci_int: requested device not found");
+
+    for (auto& irq : this->my_irq_map) {
+        if (irq.dev_fun_num == dev_fun_num)
+            return {this->int_ctrl, irq.irq_id};
+    }
+    ABORT_F("register_pci_int: no IRQ map for device 0x%X", dev_fun_num);
 }
 
 bool PCIHost::pci_io_read_loop(uint32_t offset, int size, uint32_t &res)
