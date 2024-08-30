@@ -66,8 +66,6 @@ uint32_t ppc_cur_instruction;    // Current instruction for the PPC
 uint32_t ppc_next_instruction_address;    // Used for branching, setting up the NIA
 
 unsigned exec_flags; // execution control flags
-// FIXME: exec_timer is read by main thread ppc_main_opcode;
-// written by audio dbdma DMAChannel::update_irq .. add_immediate_timer
 volatile bool exec_timer;
 bool int_pin = false; // interrupt request pin state: true - asserted
 bool dec_exception_pending = false;
