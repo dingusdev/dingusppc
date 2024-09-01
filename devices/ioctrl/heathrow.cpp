@@ -266,14 +266,14 @@ void HeathrowIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int 
         this->escc->write((offset >> 4) & 0xF, value);
         break;
     case 0x14:
-        this->snd_codec->snd_ctrl_write(offset - 0x14000, value, size);
+        this->snd_codec->snd_ctrl_write(offset & 0xFF, value, size);
         break;
     case 0x15: // SWIM3
         this->swim3->write((offset >> 4) & 0xF, value);
         break;
     case 0x16: // VIA-CUDA
     case 0x17:
-        this->viacuda->write((offset - 0x16000) >> 9, value);
+        this->viacuda->write((offset >> 9) & 0xF, value);
         break;
     case 0x20: // IDE O
         this->ide_0->write((offset >> 4) & 0x1F, value, size);
