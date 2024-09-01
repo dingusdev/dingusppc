@@ -240,10 +240,10 @@ void HeathrowIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int 
 
     switch (sub_addr) {
     case 0:
-        mio_ctrl_write(offset, value, size);
+        this->mio_ctrl_write(offset, value, size);
         break;
     case 8:
-        dma_write(offset - 0x8000, value, size);
+        this->dma_write(offset & 0x7FFF, value, size);
         break;
     case 0x10: // SCSI
         this->mesh->write((offset >> 4) & 0xF, value);
