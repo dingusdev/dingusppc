@@ -172,7 +172,7 @@ void HeathrowIC::dma_write(uint32_t offset, uint32_t value, int size) {
 
 
 uint32_t HeathrowIC::read(uint32_t rgn_start, uint32_t offset, int size) {
-    uint32_t res = 0;
+    uint32_t value;
 
     LOG_F(9, "%s: reading from offset %x", this->name.c_str(), offset);
 
@@ -180,54 +180,57 @@ uint32_t HeathrowIC::read(uint32_t rgn_start, uint32_t offset, int size) {
 
     switch (sub_addr) {
     case 0:
-        res = mio_ctrl_read(offset, size);
+        value = mio_ctrl_read(offset, size);
         break;
     case 8:
-        res = dma_read(offset - 0x8000, size);
+        value = dma_read(offset & 0x7FFF, size);
         break;
     case 0x10: // SCSI
-        res = this->mesh->read((offset >> 4) & 0xF);
+        value = this->mesh->read((offset >> 4) & 0xF);
         break;
     case 0x11: // Ethernet
-        res = BYTESWAP_SIZED(this->bmac->read(offset & 0xFFFU), size);
+        value = BYTESWAP_SIZED(this->bmac->read(offset & 0xFFFU), size);
         break;
     case 0x12: // ESCC compatible addressing
         if ((offset & 0xFF) < 0x0C) {
-            res = this->escc->read(compat_to_macrisc[(offset >> 1) & 0xF]);
+            value = this->escc->read(compat_to_macrisc[(offset >> 1) & 0xF]);
             break;
         }
         if ((offset & 0xFF) < 0x60) {
-            res = 0;
+            value = 0;
             LOG_F(ERROR, "%s: ESCC compatible read  @%x.%c", this->name.c_str(), offset, SIZE_ARG(size));
             break;
         }
         // fallthrough
     case 0x13: // ESCC MacRISC addressing
-        return this->escc->read((offset >> 4) & 0xF);
+        value = this->escc->read((offset >> 4) & 0xF);
+        break;
     case 0x14:
-        res = this->snd_codec->snd_ctrl_read(offset - 0x14000, size);
+        value = this->snd_codec->snd_ctrl_read(offset & 0xFF, size);
         break;
     case 0x15: // SWIM3
-        return this->swim3->read((offset >> 4 )& 0xF);
+        value = this->swim3->read((offset >> 4) & 0xF);
+        break;
     case 0x16: // VIA-CUDA
     case 0x17:
-        res = this->viacuda->read((offset - 0x16000) >> 9);
+        value = this->viacuda->read((offset >> 9) & 0xF);
         break;
     case 0x20: // IDE 0
-        res = this->ide_0->read((offset >> 4) & 0x1F, size);
+        value = this->ide_0->read((offset >> 4) & 0x1F, size);
         break;
     case 0x21: // IDE 1
-        res = this->ide_1->read((offset >> 4) & 0x1F, size);
+        value = this->ide_1->read((offset >> 4) & 0x1F, size);
         break;
     default:
         if (sub_addr >= 0x60) {
-            res = this->nvram->read_byte((offset - 0x60000) >> 4);
+            value = this->nvram->read_byte((offset >> 4) & 0x1FFF);
         } else {
+            value = 0;
             LOG_F(WARNING, "Attempting to read from unmapped I/O space: %x", offset);
         }
     }
 
-    return res;
+    return value;
 }
 
 void HeathrowIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size) {
@@ -288,47 +291,49 @@ void HeathrowIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int 
 }
 
 uint32_t HeathrowIC::mio_ctrl_read(uint32_t offset, int size) {
-    uint32_t res = 0;
+    uint32_t value;
 
     switch (offset & 0xFC) {
     case MIO_INT_EVENTS2:
-        res = this->int_events2;
+        value = this->int_events2;
         break;
     case MIO_INT_MASK2:
-        res = this->int_mask2;
+        value = this->int_mask2;
         break;
     case MIO_INT_LEVELS2:
-        res = this->int_levels2;
+        value = this->int_levels2;
         break;
     case MIO_INT_EVENTS1:
-        res = this->int_events1;
+        value = this->int_events1;
         break;
     case MIO_INT_MASK1:
-        res = this->int_mask1;
+        value = this->int_mask1;
         break;
     case MIO_INT_LEVELS1:
-        res = this->int_levels1;
+        value = this->int_levels1;
         break;
     case MIO_INT_CLEAR1:
     case MIO_INT_CLEAR2:
         // some Mac OS drivers reads from those write-only registers
         // so we return zero here as real HW does
+        value = 0;
         break;
     case MIO_OHARE_ID:
         LOG_F(9, "read from MIO:ID register at Address %x", ppc_state.pc);
-        res = (this->fp_id << 24) | (this->mon_id << 16) | (this->mb_id << 8) |
-              (this->cpu_id | (this->emmo_pin << 4));
+        value = (this->fp_id << 24) | (this->mon_id << 16) | (this->mb_id << 8) |
+            (this->cpu_id | (this->emmo_pin << 4));
         break;
     case MIO_OHARE_FEAT_CTRL:
         LOG_F(9, "read from MIO:Feat_Ctrl register");
-        res = this->feat_ctrl;
+        value = this->feat_ctrl;
         break;
     default:
+        value = 0;
         LOG_F(WARNING, "read from unknown MIO register at %x", offset);
         break;
     }
 
-    return BYTESWAP_32(res);
+    return BYTESWAP_32(value);
 }
 
 void HeathrowIC::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
