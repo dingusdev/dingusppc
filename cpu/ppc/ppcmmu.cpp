@@ -372,7 +372,7 @@ uint32_t tlb_size_mask = TLB_SIZE - 1;
 
 // fake TLB entry for handling of unmapped memory accesses
 uint64_t    UnmappedVal = -1ULL;
-TLBEntry    UnmappedMem = {TLB_INVALID_TAG, TLBFlags::PAGE_NOPHYS, 0, 0};
+TLBEntry    UnmappedMem = {TLB_INVALID_TAG, TLBFlags::PAGE_NOPHYS, 0, {{0}}};
 
 uint8_t     CurITLBMode = {0xFF}; // current ITLB mode
 uint8_t     CurDTLBMode = {0xFF}; // current DTLB mode

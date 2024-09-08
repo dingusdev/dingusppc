@@ -134,17 +134,4 @@ extern T mmu_read_vmem(uint32_t guest_va);
 template <class T>
 extern void mmu_write_vmem(uint32_t guest_va, T value);
 
-//====================== Deprecated calls =========================
-#if 0
-extern void mem_write_byte(uint32_t addr, uint8_t value);
-extern void mem_write_word(uint32_t addr, uint16_t value);
-extern void mem_write_dword(uint32_t addr, uint32_t value);
-extern void mem_write_qword(uint32_t addr, uint64_t value);
-extern uint8_t mem_grab_byte(uint32_t addr);
-extern uint16_t mem_grab_word(uint32_t addr);
-extern uint32_t mem_grab_dword(uint32_t addr);
-extern uint64_t mem_grab_qword(uint32_t addr);
-extern uint8_t* quickinstruction_translate(uint32_t address_grab);
-#endif
-
 #endif    // PPCMMU_H

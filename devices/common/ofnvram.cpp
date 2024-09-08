@@ -60,7 +60,7 @@ static uint32_t str2env(string& num_str) {
 
 bool OfConfigAppl::validate() {
     int             i;
-    OfConfigHdrAppl hdr;
+    OfConfigHdrAppl hdr{};
 
     if (this->nvram_obj == nullptr)
         return false;
@@ -151,9 +151,9 @@ const OfConfigImpl::config_dict& OfConfigAppl::get_config_vars() {
 
     // populate the remaining variables
     for (auto& var : of_vars) {
-        auto name   = var.first;
-        auto type   = std::get<0>(var.second);
-        auto offset = std::get<1>(var.second);
+        auto& name   = var.first;
+        auto  type   = std::get<0>(var.second);
+        auto  offset = std::get<1>(var.second);
 
         switch (type) {
         case OF_VAR_TYPE_INT:
@@ -354,7 +354,7 @@ bool OfConfigChrp::validate()
     if (!of_part_found)
         return false;
 
-    OfConfigHdrChrp  hdr;
+    OfConfigHdrChrp hdr{};
 
     // read OF partition header
     for (i = 0; i < sizeof(OfConfigHdrChrp); i++) {

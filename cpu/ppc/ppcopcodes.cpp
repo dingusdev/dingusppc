@@ -47,7 +47,7 @@ void ppc_changecrf0(uint32_t set_result) {
 }
 
 // Affects the XER register's Carry Bit
-inline void ppc_carry(uint32_t a, uint32_t b) {
+inline static void ppc_carry(uint32_t a, uint32_t b) {
     if (b < a) {
         ppc_state.spr[SPR::XER] |= XER::CA;
     } else {
@@ -55,7 +55,7 @@ inline void ppc_carry(uint32_t a, uint32_t b) {
     }
 }
 
-inline void ppc_carry_sub(uint32_t a, uint32_t b) {
+inline static void ppc_carry_sub(uint32_t a, uint32_t b) {
     if (b >= a) {
         ppc_state.spr[SPR::XER] |= XER::CA;
     } else {
@@ -65,7 +65,7 @@ inline void ppc_carry_sub(uint32_t a, uint32_t b) {
 
 // Affects the XER register's SO and OV Bits
 
-inline void ppc_setsoov(uint32_t a, uint32_t b, uint32_t d) {
+inline static void ppc_setsoov(uint32_t a, uint32_t b, uint32_t d) {
     if (int32_t((a ^ b) & (a ^ d)) < 0) {
         ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
     } else {
@@ -84,7 +84,7 @@ void do_ctx_sync() {
     }
 }
 
-void add_ctx_sync_action(const CtxSyncCallback &cb) {
+static void add_ctx_sync_action(const CtxSyncCallback& cb) {
     gCtxSyncCallbacks.push_back(cb);
 }
 

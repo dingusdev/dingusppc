@@ -746,7 +746,7 @@ void dppc_interpreter::ppc_stfs() {
     ppc_grab_regsfpsia(ppc_cur_instruction);
     uint32_t ea = int32_t(int16_t(ppc_cur_instruction));
     ea += (reg_a) ? val_reg_a : 0;
-    float result = ppc_state.fpr[reg_s].dbl64_r;
+    float result = float(ppc_state.fpr[reg_s].dbl64_r);
     mmu_write_vmem<uint32_t>(ea, *(uint32_t*)(&result));
 }
 
@@ -755,7 +755,7 @@ void dppc_interpreter::ppc_stfsu() {
     if (reg_a != 0) {
         uint32_t ea = int32_t(int16_t(ppc_cur_instruction));
         ea += val_reg_a;
-        float result = ppc_state.fpr[reg_s].dbl64_r;
+        float result = float(ppc_state.fpr[reg_s].dbl64_r);
         mmu_write_vmem<uint32_t>(ea, *(uint32_t*)(&result));
         ppc_state.gpr[reg_a] = ea;
     } else {
@@ -766,7 +766,7 @@ void dppc_interpreter::ppc_stfsu() {
 void dppc_interpreter::ppc_stfsx() {
     ppc_grab_regsfpsiab(ppc_cur_instruction);
     uint32_t ea = val_reg_b + (reg_a ? val_reg_a : 0);
-    float result = ppc_state.fpr[reg_s].dbl64_r;
+    float result = float(ppc_state.fpr[reg_s].dbl64_r);
     mmu_write_vmem<uint32_t>(ea, *(uint32_t*)(&result));
 }
 
@@ -774,7 +774,7 @@ void dppc_interpreter::ppc_stfsux() {
     ppc_grab_regsfpsiab(ppc_cur_instruction);
     if (reg_a) {
         uint32_t ea = val_reg_a + val_reg_b;
-        float result = ppc_state.fpr[reg_s].dbl64_r;
+        float result = float(ppc_state.fpr[reg_s].dbl64_r);
         mmu_write_vmem<uint32_t>(ea, *(uint32_t*)(&result));
         ppc_state.gpr[reg_a] = ea;
     } else {

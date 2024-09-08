@@ -100,7 +100,7 @@ uint8_t MeshController::read(uint8_t reg_offset) {
 }
 
 void MeshController::write(uint8_t reg_offset, uint8_t value) {
-    uint16_t new_stat;
+    //uint16_t new_stat;
 
     switch(reg_offset) {
     case MeshReg::XferCount0:
