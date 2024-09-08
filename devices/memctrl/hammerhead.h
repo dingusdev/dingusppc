@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -62,6 +62,11 @@ namespace Hammerhead {
         BUS_SPEED_50_MHZ = 3
     };
 
+    // bits for the ARBITER_CONFIG register
+    enum {
+        TWO_CPU = 1 << 1,
+    };
+
     // bus master IDs for the WHO_AM_I register
     enum {
         BM_VIDEO_BRIDGE  = 1 << 4,
@@ -69,6 +74,11 @@ namespace Hammerhead {
         BM_PCI_BRIDGE_2  = 1 << 2,
         BM_PRIMARY_CPU   = 1 << 1,
         BM_SECONDARY_CPU = 1 << 0
+    };
+
+    // Interrupt bits for the INT_REG register
+    enum {
+        SEC_INT = 1 << 7,
     };
 
     // Configuration and status registers.
@@ -85,6 +95,7 @@ namespace Hammerhead {
         ARBITER_CONFIG   =  0x90,
         ARBUS_TIMEOUT    =  0xA0,
         WHO_AM_I         =  0xB0,
+        INT_REG          =  0xC0,
         L2_CACHE_CONFIG  =  0xE0,
         BANK_0_BASE_MSB  = 0x1C0,
         BANK_25_BASE_LSB = 0x4F0,
