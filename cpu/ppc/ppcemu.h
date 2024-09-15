@@ -83,7 +83,7 @@ typedef struct struct_ppc_instr {
     };
 } SetInstr;
 
-SetInstr instr;
+extern SetInstr instr;
 
 typedef struct struct_ppc_state {
     FPR_storage fpr[32];
@@ -98,7 +98,7 @@ typedef struct struct_ppc_state {
     bool reserve;    // reserve bit used for lwarx and stcwx
 } SetPRS;
 
-SetPRS ppc_state;
+extern SetPRS ppc_state;
 
 /** symbolic names for frequently used SPRs */
 enum SPR : int {
@@ -423,7 +423,6 @@ void ppc_fpu_off();
 void ppc_assert_int();
 void ppc_release_int();
 
-void (*ref_instr)();
 void decode_instr();
 void initialize_ppc_opcode_tables(bool include_601);
 

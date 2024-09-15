@@ -982,6 +982,7 @@ void dppc_interpreter::ppc_mtspr() {
     case 543:
         ppc_state.spr[ref_spr] = val;
         dbat_update(ref_spr);
+        break;
     default:
         // FIXME: Unknown SPR should be noop or illegal instruction.
         ppc_state.spr[ref_spr] = val;
@@ -1037,8 +1038,8 @@ void dppc_interpreter::ppc_mtcrf() {
 }
 
 void dppc_interpreter::ppc_mcrxr() {
-    ppc_state.cr = (ppc_state.cr & ~(0xF0000000UL >> instr.arg4)) |
-        ((ppc_state.spr[SPR::XER] & 0xF0000000UL) >> instr.arg4);
+    ppc_state.cr = (ppc_state.cr & ~(0xF0000000UL >> instr.arg0)) |
+        ((ppc_state.spr[SPR::XER] & 0xF0000000UL) >> instr.arg0);
     ppc_state.spr[SPR::XER] &= 0x0FFFFFFF;
 }
 

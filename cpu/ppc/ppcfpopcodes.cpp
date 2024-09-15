@@ -638,7 +638,7 @@ static void round_to_int(const uint8_t mode, field_rc rec) {
                 ppc_state.fpr[instr.arg0].int64_r = 0xFFF8000080000000ULL;
         }
     } else {
-        uint64_t ppc_result64_d;
+        uint64_t ppc_result64_d = 0;
         switch (mode & 0x3) {
         case 0:
             ppc_result64_d = uint32_t(round_to_nearest(val_reg_b));
@@ -875,7 +875,8 @@ void dppc_interpreter::ppc_mtfsf() {
     cr_mask &= ~(FPSCR::FEX | FPSCR::VX);
 
     // copy FPR[reg_b] to FPSCR under control of cr_mask
-    ppc_state.fpscr = (ppc_state.fpscr & ~cr_mask) | (ppc_state.fpr[instr.arg2].int64_r & cr_mask);
+    ppc_state.fpscr = (ppc_state.fpscr & ~cr_mask) |
+        (ppc_state.fpr[instr.arg2].int64_r & cr_mask);
 
     if (rec)
         ppc_update_cr1();
@@ -905,9 +906,8 @@ template void dppc_interpreter::ppc_mtfsfi<RC1>();
 
 template <field_rc rec>
 void dppc_interpreter::ppc_mtfsb0() {
-    int crf_d = (ppc_cur_instruction >> 21) & 0x1F;
-    if (!crf_d || (crf_d > 2)) { // FEX and VX can't be explicitly cleared
-        ppc_state.fpscr &= ~(0x80000000UL >> crf_d);
+    if (!instr.arg0 || (instr.arg0 > 2)) {    // FEX and VX can't be explicitly cleared
+        ppc_state.fpscr &= ~(0x80000000UL >> instr.arg0);
     }
 
     if (rec)
@@ -919,9 +919,8 @@ template void dppc_interpreter::ppc_mtfsb0<RC1>();
 
 template <field_rc rec>
 void dppc_interpreter::ppc_mtfsb1() {
-    int crf_d = (ppc_cur_instruction >> 21) & 0x1F;
-    if (!crf_d || (crf_d > 2)) { // FEX and VX can't be explicitly set
-        ppc_state.fpscr |= (0x80000000UL >> crf_d);
+    if (!instr.arg0 || (instr.arg0 > 2)) {    // FEX and VX can't be explicitly set
+        ppc_state.fpscr |= (0x80000000UL >> instr.arg0);
     }
 
     if (rec)

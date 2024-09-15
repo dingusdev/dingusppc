@@ -56,6 +56,10 @@ using namespace dppc_interpreter;
 
 MemCtrlBase* mem_ctrl_instance = 0;
 
+void (*ref_instr)();
+SetPRS ppc_state;
+SetInstr instr;
+
 bool is_601 = false;
 
 bool power_on = false;
@@ -245,7 +249,7 @@ void ppc_opcode19() {
     switch (subop_grab) {
     case 0:
         ref_instr = ppc_mcrf;
-        ppc_grab_regs_crf(ppc_cur_instruction);
+        ppc_grab_regs_crfds(ppc_cur_instruction);
         break;
     case 32:
         ref_instr = ppc_bclr<LK0>;
@@ -311,17 +315,21 @@ template void ppc_opcode19<IS601>();
 
 static void ppc_opcode31() {
     uint16_t subop_grab = ppc_cur_instruction & 0x7FFUL;
-    ref_instr           = SubOpcode59Grabber[subop_grab];
+    ref_instr           = SubOpcode31Grabber[subop_grab];
     
     switch ((subop_grab >> 1)) {
     case 0:
     case 32:
         ppc_grab_crfd_regsab(ppc_cur_instruction);
+        break;
     case 8:
         ppc_grab_tw(ppc_cur_instruction);
         break;
     case 83:
         ppc_grab_d(ppc_cur_instruction);
+        break;
+    case 144:
+        ppc_grab_crfd(ppc_cur_instruction);
         break;
     case 210:
     case 595:
@@ -343,16 +351,24 @@ static void ppc_opcode59() {
 
 static void ppc_opcode63() {
     uint16_t subop_grab = ppc_cur_instruction & 0x7FFUL;
-    ref_instr           = SubOpcode59Grabber[subop_grab];
+    ref_instr           = SubOpcode63Grabber[subop_grab];
     
     switch ((subop_grab >> 1)) {
     case 0:
     case 32:
         ppc_grab_regsfpsab(ppc_cur_instruction);
         break;
+    case 38:
+    case 70:
+        ppc_grab_crfd(ppc_cur_instruction);
+        break;
     case 64:
-        ppc_grab_regs_crf(ppc_cur_instruction);
+        ppc_grab_regs_crfds(ppc_cur_instruction);
+        break;
     case 134:
+        ppc_grab_mtfsfi(ppc_cur_instruction);
+        break;
+    case 711:
     default:
         ppc_grab_regsfpdabc(ppc_cur_instruction);
     }
@@ -375,10 +391,12 @@ static void ppc_main_opcode() {
     case 20: case 21:
     case 22: case 23:
         ppc_grab_regs_sab_rot(ppc_cur_instruction);
+        break;
     case 24: case 25:
     case 26: case 27:
     case 28: case 29:
         ppc_grab_regs_sauimm(ppc_cur_instruction);
+        break;
     case 32: case 33: case 34: case 35:
     case 36: case 37: case 38: case 39:
     case 40: case 31: case 42: case 43:
@@ -386,6 +404,7 @@ static void ppc_main_opcode() {
     case 48: case 49: case 50: case 51:
     case 52: case 53: case 54: case 55:
         ppc_grab_regs_da_addr(ppc_cur_instruction);
+        break;
     }
 }
 
@@ -1014,7 +1033,7 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool include_601,
     tbr_wr_timestamp = 0;
     rtc_timestamp = 0;
     tbr_wr_value = 0;
-    tbr_freq_ghz = (tb_freq << 32) / NS_PER_SEC;
+    tbr_freq_ghz  = uint32_t((tb_freq << 32) / NS_PER_SEC);
     tbr_period_ns = ((uint64_t)NS_PER_SEC << 32) / tb_freq;
 
     exec_flags = 0;

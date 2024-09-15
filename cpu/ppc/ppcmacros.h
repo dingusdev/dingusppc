@@ -40,6 +40,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define crf_s(opcode)   ((opcode >> 16) & 0x1C)
 #define crm(opcode)     ((opcode >> 12) & 0xFFU)
 #define fcrm(opcode)    crm(opcode)
+#define fmmask(opcode)  ((opcode >> 17) & 0xFFU)
 #define br_bo(opcode)   reg_d(opcode)
 #define br_bi(opcode)   reg_a(opcode)
 #define br_bd(opcode)   int32_t(int16_t(opcode & ~3UL))
@@ -56,18 +57,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define ppc_grab_tw(opcode) \
     instr.i_simm = simm(opcode); \
     instr.arg1 = reg_a(opcode); \
-    instr.arg0 = trap_to(opcode); 
+    instr.arg0 = trap_to(opcode); \
+
+#define ppc_grab_crfd(opcode) \
+    instr.arg0 = crf_d(opcode);
 
 #define ppc_grab_mcrxr(opcode) \
-    instr.arg0 = crf_d(opcode);
+    instr.arg0 = crf_d(opcode); \
+    instr.arg4 = crf_d(opcode); \
 
 #define ppc_grab_sr(opcode) \
     instr.arg0 = reg_d(opcode); \
-    instr.arg1 = segreg(opcode);
+    instr.arg1 = segreg(opcode); \
 
 #define ppc_grab_mtfsfi(opcode) \
     instr.arg0 = reg_d(opcode); \
-    instr.mask = mtfsfi_mask(opcode);
+    instr.mask = mtfsfi_mask(opcode); \
+
+#define ppc_grab_mtfsf(opcode) \
+    instr.arg2 = reg_b(opcode); \
+    instr.mask = fmmask(opcode);\
 
 #define ppc_grab_regs_dasimm(opcode) \
     instr.arg0 = reg_d(opcode); \
@@ -85,15 +94,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     instr.addr   = adr_d(opcode); \
 
 #define ppc_grab_branch(opcode) \
-    instr.addr = adr_li(opcode);
+    instr.addr = adr_li(opcode); \
 
 #define ppc_grab_branch_cond(opcode) \
     instr.arg0 = br_bo(opcode); \
-    instr.arg1 = br_bi(opcode);
-
-#define ppc_grab_branch_cond(opcode) \
-    instr.arg0 = br_bo(opcode); \
-    instr.arg1 = br_bi(opcode);
+    instr.arg1 = br_bi(opcode); \
 
 #define ppc_grab_d(opcode) \
     instr.arg0 = reg_d(opcode);
@@ -126,7 +131,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define ppc_grab_s(opcode) \
     instr.arg0 = reg_s(opcode); \
 
-#define ppc_grab_regs_crf(opcode) \
+#define ppc_grab_regs_crfds(opcode) \
     instr.arg0 = crf_d(opcode); \
     instr.arg1 = crf_s(opcode); \
 

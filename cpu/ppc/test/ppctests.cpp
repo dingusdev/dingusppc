@@ -33,6 +33,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace std;
 
+void (*ref_instr)();
+
 int ntested; // number of tested instructions
 int nfailed; // number of failed instructions
 
