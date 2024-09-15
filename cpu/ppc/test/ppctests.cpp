@@ -42,12 +42,13 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
 }
 #endif
 
-void xer_ov_test(string mnem, uint32_t opcode) {
+static void xer_ov_test(string mnem, uint32_t opcode) {
     ppc_state.gpr[3]        = 2;
     ppc_state.gpr[4]        = 2;
     ppc_state.spr[SPR::XER] = 0xFFFFFFFF;
     ppc_cur_instruction     = opcode;
-    ppc_main_opcode();
+    decode_instr();
+    ref_instr();
     if (ppc_state.spr[SPR::XER] & 0x40000000UL) {
         cout << "Invalid " << mnem << " emulation! XER[OV] should not be set." << endl;
         nfailed++;
@@ -55,7 +56,7 @@ void xer_ov_test(string mnem, uint32_t opcode) {
     ntested++;
 }
 
-void xer_update_test() {
+static void xer_update_test() {
     xer_ov_test("ADDCO", 0x7C632414);
     xer_ov_test("ADDCO.", 0x7C632415);
     xer_ov_test("ADDO", 0x7C632614);
@@ -153,7 +154,8 @@ static void read_test_data() {
 
         ppc_cur_instruction = opcode;
 
-        ppc_main_opcode();
+        decode_instr();
+        ref_instr();
 
         ntested++;
 
@@ -172,7 +174,7 @@ static void read_test_data() {
     }
 }
 
-double double_from_string(string str) {
+static double double_from_string(string str) {
     if (str ==     "snan")
         return std::numeric_limits<double>::signaling_NaN();
     if (str ==     "qnan")
@@ -297,7 +299,8 @@ static void read_test_float_data() {
 
         ppc_cur_instruction = opcode;
 
-        ppc_main_opcode();
+        decode_instr();
+        ref_instr();
 
         ntested++;
 

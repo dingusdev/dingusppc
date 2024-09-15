@@ -68,6 +68,23 @@ fpscr = FP Status and Condition Register
    sr = Segment Register
 **/
 
+typedef struct struct_ppc_instr {
+    uint8_t arg0;
+    uint8_t arg1;
+    uint8_t arg2;
+    uint8_t arg3;
+    uint8_t arg4;
+    int32_t addr;
+    int32_t mask;
+
+    union {
+        int32_t i_simm;
+        uint32_t i_uimm;
+    };
+} SetInstr;
+
+SetInstr instr;
+
 typedef struct struct_ppc_state {
     FPR_storage fpr[32];
     uint32_t pc;    // Referred as the CIA in the PPC manual
@@ -81,7 +98,7 @@ typedef struct struct_ppc_state {
     bool reserve;    // reserve bit used for lwarx and stcwx
 } SetPRS;
 
-extern SetPRS ppc_state;
+SetPRS ppc_state;
 
 /** symbolic names for frequently used SPRs */
 enum SPR : int {
@@ -406,14 +423,8 @@ void ppc_fpu_off();
 void ppc_assert_int();
 void ppc_release_int();
 
-//void ppc_opcode4();
-void ppc_opcode16();
-void ppc_opcode18();
-template <field_601 for601> void ppc_opcode19();
-void ppc_opcode31();
-void ppc_opcode59();
-void ppc_opcode63();
-
+void (*ref_instr)();
+void decode_instr();
 void initialize_ppc_opcode_tables(bool include_601);
 
 extern double fp_return_double(uint32_t reg);
@@ -645,7 +656,6 @@ template <field_rc rec> extern void power_srq();
 
 extern uint64_t get_virt_time_ns(void);
 
-extern void ppc_main_opcode(void);
 extern void ppc_exec(void);
 extern void ppc_exec_single(void);
 extern void ppc_exec_until(uint32_t goal_addr);
