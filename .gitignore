@@ -20,6 +20,9 @@ CMakeSettings.json
 *.vcxproj
 *.vcxproj.filters
 
+# Ignore Visual Studio auto-save recovery folder
+enc_temp_folder/
+
 # Ignore CodeLite configuration files
 *.workspace
 *.workspace.*

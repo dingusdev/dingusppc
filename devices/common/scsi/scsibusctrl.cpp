@@ -279,7 +279,7 @@ uint8_t ScsiBusController::fifo_pop() {
     if (this->fifo_pos) {
         data = this->data_fifo[0];
         if (--this->fifo_pos)
-            std:memmove(this->data_fifo, &this->data_fifo[1], this->fifo_pos);
+            std::memmove(this->data_fifo, &this->data_fifo[1], this->fifo_pos);
     }
 
     // see if we need to refill FIFO

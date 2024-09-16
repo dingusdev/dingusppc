@@ -666,7 +666,7 @@ template void dppc_interpreter::ppc_srawi<RC1>();
 /** mask generator for rotate and shift instructions (§ 4.2.1.4 PowerpC PEM) */
 static inline uint32_t rot_mask(unsigned rot_mb, unsigned rot_me) {
     uint32_t m1 = 0xFFFFFFFFUL >> rot_mb;
-    uint32_t m2 = (uint32_t)(0xFFFFFFFFUL << (31 - rot_me));
+    uint32_t m2 = uint32_t(0xFFFFFFFFUL << (31 - rot_me));
     return ((rot_mb <= rot_me) ? m2 & m1 : m1 | m2);
 }
 

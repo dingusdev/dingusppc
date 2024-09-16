@@ -103,6 +103,12 @@ inline static void snan_double_check(int reg_a, int reg_b) {
         ppc_state.fpscr |= FX | VX | VXSNAN;
 }
 
+inline static void max_double_check(double value_a, double value_b) {
+    if (((value_a == DBL_MAX) && (value_b == DBL_MAX)) ||
+        ((value_a == -DBL_MAX) && (value_b == -DBL_MAX)))
+        ppc_state.fpscr |= FX | OX | XX | FI;
+}
+
 inline static bool check_qnan(int check_reg) {
     uint64_t check_int = ppc_state.fpr[check_reg].int64_r;
     return (((check_int & (0x7FFULL << 52)) == (0x7FFULL << 52)) &&
@@ -151,10 +157,12 @@ void dppc_interpreter::ppc_fadd() {
     ppc_grab_regsfpdab(ppc_cur_instruction);
 
     snan_double_check(reg_a, reg_b);
+    max_double_check(val_reg_a, val_reg_b);
 
     double ppc_dblresult64_d = val_reg_a + val_reg_b;
     ppc_store_dfpresult_flt(reg_d, ppc_dblresult64_d);
     fpresult_update(ppc_dblresult64_d);
+    ppc_update_fex();
 
     if (rec)
         ppc_update_cr1();
@@ -170,6 +178,7 @@ void dppc_interpreter::ppc_fsub() {
     snan_double_check(reg_a, reg_b);
 
     double ppc_dblresult64_d = val_reg_a - val_reg_b;
+
     ppc_store_dfpresult_flt(reg_d, ppc_dblresult64_d);
     fpresult_update(ppc_dblresult64_d);
 
@@ -311,6 +320,7 @@ void dppc_interpreter::ppc_fsubs() {
     snan_double_check(reg_a, reg_b);
 
     double ppc_dblresult64_d = (float)(val_reg_a - val_reg_b);
+
     ppc_store_sfpresult_flt(reg_d, ppc_dblresult64_d);
     fpresult_update(ppc_dblresult64_d);
 

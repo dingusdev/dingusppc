@@ -253,6 +253,10 @@ void run_machine(std::string machine_str, std::string bootrom_path, uint32_t exe
         power_off_reason = po_starting_up;
         enter_debugger();
         break;
+    case threaded_int:
+        power_off_reason = po_starting_up;
+        enter_debugger();
+        break;
     case debugger:
         power_off_reason = po_enter_debugger;
         enter_debugger();
