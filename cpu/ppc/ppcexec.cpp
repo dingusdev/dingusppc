@@ -56,7 +56,6 @@ using namespace dppc_interpreter;
 
 MemCtrlBase* mem_ctrl_instance = 0;
 
-void (*ref_instr)();
 SetPRS ppc_state;
 SetInstr instr;
 
@@ -233,80 +232,63 @@ void ppc_release_int() {
 /** Opcode decoding functions. */
 
 static void ppc_opcode16() {
-    ref_instr = SubOpcode16Grabber[ppc_cur_instruction & 3];
+    instr.sub_op = ppc_cur_instruction & 0x3;
     ppc_grab_branch(ppc_cur_instruction);
 }
 
 static void ppc_opcode18() {
-    ref_instr = SubOpcode18Grabber[ppc_cur_instruction & 3];
+    instr.sub_op = ppc_cur_instruction & 0x3;
     ppc_grab_branch(ppc_cur_instruction);
 }
 
 template<field_601 for601>
 void ppc_opcode19() {
-    uint16_t subop_grab = ppc_cur_instruction & 0x7FF;
+    instr.sub_op = ppc_cur_instruction & 0x7FF;
 
-    switch (subop_grab) {
+    switch (instr.sub_op) {
     case 0:
-        ref_instr = ppc_mcrf;
         ppc_grab_regs_crfds(ppc_cur_instruction);
         break;
     case 32:
-        ref_instr = ppc_bclr<LK0>;
         ppc_grab_branch_cond(ppc_cur_instruction);
         break;
     case 33:
-        ref_instr = ppc_bclr<LK1>;
         ppc_grab_branch_cond(ppc_cur_instruction);
         break;
     case 66:
-        ref_instr = ppc_crnor;
         ppc_grab_dab(ppc_cur_instruction);
         break;
     case 100:
-        ref_instr = ppc_rfi;
         break;
     case 258:
-        ref_instr = ppc_crandc;
         ppc_grab_dab(ppc_cur_instruction);
         break;
     case 300:
-        ref_instr = ppc_isync;
         break;
     case 386:
-        ref_instr = ppc_crxor;
         ppc_grab_dab(ppc_cur_instruction);
         break;
     case 450:
-        ref_instr = ppc_crnand;
         ppc_grab_dab(ppc_cur_instruction);
         break;
     case 514:
-        ref_instr = ppc_crand;
         ppc_grab_dab(ppc_cur_instruction);
         break;
     case 578:
-        ref_instr = ppc_creqv;
         ppc_grab_dab(ppc_cur_instruction);
         break;
     case 834:
-        ref_instr = ppc_crorc;
         ppc_grab_dab(ppc_cur_instruction);
         break;
     case 898:
-        ref_instr = ppc_cror;
         ppc_grab_dab(ppc_cur_instruction);
         break;
     case 1056:
-        ref_instr = ppc_bcctr<LK0, for601>;
         ppc_grab_branch_cond(ppc_cur_instruction);
         break;
     case 1057:
-        ref_instr = ppc_bcctr<LK1, for601>;
         ppc_grab_branch_cond(ppc_cur_instruction);
         break;
-    default:
-        ppc_illegalop();
     }
 }
 
@@ -314,10 +296,9 @@ template void ppc_opcode19<NOT601>();
 template void ppc_opcode19<IS601>();
 
 static void ppc_opcode31() {
-    uint16_t subop_grab = ppc_cur_instruction & 0x7FFUL;
-    ref_instr           = SubOpcode31Grabber[subop_grab];
+    instr.sub_op = ppc_cur_instruction & 0x7FFUL;
     
-    switch ((subop_grab >> 1)) {
+    switch ((instr.sub_op >> 1)) {
     case 0:
     case 32:
         ppc_grab_crfd_regsab(ppc_cur_instruction);
@@ -344,16 +325,14 @@ static void ppc_opcode31() {
 }
 
 static void ppc_opcode59() {
-    uint16_t subop_grab = ppc_cur_instruction & 0x3FUL;
-    ref_instr           = SubOpcode59Grabber[subop_grab];
+    instr.sub_op = ppc_cur_instruction & 0x3FUL;
     ppc_grab_regsfpdabc(ppc_cur_instruction);
 }
 
 static void ppc_opcode63() {
-    uint16_t subop_grab = ppc_cur_instruction & 0x7FFUL;
-    ref_instr           = SubOpcode63Grabber[subop_grab];
+    instr.sub_op = ppc_cur_instruction & 0x7FFUL;
     
-    switch ((subop_grab >> 1)) {
+    switch ((instr.sub_op >> 1)) {
     case 0:
     case 32:
         ppc_grab_regsfpsab(ppc_cur_instruction);
@@ -376,10 +355,8 @@ static void ppc_opcode63() {
 
 /* Dispatch using main opcode */
 static void ppc_main_opcode() {
-    uint32_t main_op = (ppc_cur_instruction >> 26) & 0x3F;
-    ref_instr        = OpcodeGrabber[main_op];
 
-    switch (main_op) { 
+    switch (instr.main_op) { 
     case 3:
         ppc_grab_twi(ppc_cur_instruction);
         break;
@@ -409,8 +386,8 @@ static void ppc_main_opcode() {
 }
 
 void decode_instr() {
-    uint32_t main_op = (ppc_cur_instruction >> 26) & 0x3F;
-    switch (main_op) { 
+    instr.main_op = (ppc_cur_instruction >> 26) & 0x3F;
+    switch (instr.main_op) { 
     case 16:
         ppc_opcode16();
         break;
@@ -443,6 +420,87 @@ void decode_instr() {
         num_opcodes[ppc_cur_instruction]++;
     #endif
     #endif
+}
+
+template <field_601 for601>
+inline static void exec_op19() {
+    switch (instr.sub_op) {
+    case 0:
+        ppc_mcrf();
+        break;
+    case 32:
+        ppc_bclr<LK0>();
+        break;
+    case 33:
+        ppc_bclr<LK1>();
+        break;
+    case 66:
+        ppc_crnor();
+        break;
+    case 100:
+        ppc_rfi();
+        break;
+    case 258:
+        ppc_crandc();
+        break;
+    case 300:
+        ppc_isync();
+        break;
+    case 386:
+        ppc_crxor();
+        break;
+    case 450:
+        ppc_crnand();
+        break;
+    case 514:
+        ppc_crand();
+        break;
+    case 578:
+        ppc_creqv();
+        break;
+    case 834:
+        ppc_crorc();
+        break;
+    case 898:
+        ppc_cror();
+        break;
+    case 1056:
+        ppc_bcctr<LK0, for601>();
+        break;
+    case 1057:
+        ppc_bcctr<LK1, for601>();
+        break;
+    default:
+        ppc_illegalop();
+    }
+}
+
+void exec_instr() {
+    switch (instr.main_op) {
+    case 16:
+        SubOpcode16Grabber[instr.sub_op]();
+        break;
+    case 18:
+        SubOpcode18Grabber[instr.sub_op]();
+        break;
+    case 19:
+        if (is_601)
+            exec_op19<IS601>();
+        else
+            exec_op19<NOT601>();
+        break;
+    case 31:
+        SubOpcode31Grabber[instr.sub_op]();
+        break;
+    case 59:
+        SubOpcode59Grabber[instr.sub_op]();
+        break;
+    case 63:
+        SubOpcode63Grabber[instr.sub_op]();
+        break;
+    default:
+        OpcodeGrabber[instr.main_op]();
+    }
 }
 
 static long long cpu_now_ns() {
@@ -504,7 +562,7 @@ static void ppc_exec_inner()
 
         // interpret execution block
         while (power_on && ppc_state.pc < eb_end) {
-            ref_instr();
+            exec_instr();
             if (g_icycles++ >= max_cycles || exec_timer) {
                 max_cycles = process_events();
             }
@@ -560,7 +618,8 @@ void ppc_exec_single()
     }
 
     mmu_translate_imem(ppc_state.pc);
-    ref_instr();
+    decode_instr();
+    exec_instr();
     g_icycles++;
     process_events();
 
@@ -596,7 +655,7 @@ static void ppc_exec_until_inner(const uint32_t goal_addr)
 
         // interpret execution block
         while (power_on && ppc_state.pc < eb_end) {
-            ref_instr();
+            exec_instr();
             if (g_icycles++ >= max_cycles || exec_timer) {
                 max_cycles = process_events();
             }
@@ -630,7 +689,7 @@ static void ppc_exec_until_inner(const uint32_t goal_addr)
 }
 
 // outer interpreter loop
-void ppc_exec_until(volatile uint32_t goal_addr)
+void ppc_exec_until(uint32_t goal_addr)
 {
     if (setjmp(exc_env)) {
         // process low-level exceptions
@@ -668,7 +727,7 @@ static void ppc_exec_dbg_inner(const uint32_t start_addr, const uint32_t size)
         // interpret execution block
         while (power_on && (ppc_state.pc < start_addr || ppc_state.pc >= start_addr + size)
                 && (ppc_state.pc < eb_end)) {
-            ref_instr();
+            exec_instr();
             if (g_icycles++ >= max_cycles || exec_timer) {
                 max_cycles = process_events();
             }
@@ -699,7 +758,7 @@ static void ppc_exec_dbg_inner(const uint32_t start_addr, const uint32_t size)
 }
 
 // outer interpreter loop
-void ppc_exec_dbg(volatile uint32_t start_addr, volatile uint32_t size)
+void ppc_exec_dbg(uint32_t start_addr, uint32_t size)
 {
     if (setjmp(exc_env)) {
         // process low-level exceptions

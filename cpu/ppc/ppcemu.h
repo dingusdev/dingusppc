@@ -76,6 +76,8 @@ typedef struct struct_ppc_instr {
     uint8_t arg4;
     int32_t addr;
     int32_t mask;
+    uint8_t main_op;
+    uint16_t sub_op;
 
     union {
         int32_t i_simm;
@@ -424,6 +426,7 @@ void ppc_assert_int();
 void ppc_release_int();
 
 void decode_instr();
+void exec_instr();
 void initialize_ppc_opcode_tables(bool include_601);
 
 extern double fp_return_double(uint32_t reg);

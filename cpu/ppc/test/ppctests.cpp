@@ -33,8 +33,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace std;
 
-void (*ref_instr)();
-
 int ntested; // number of tested instructions
 int nfailed; // number of failed instructions
 
@@ -50,7 +48,7 @@ static void xer_ov_test(string mnem, uint32_t opcode) {
     ppc_state.spr[SPR::XER] = 0xFFFFFFFF;
     ppc_cur_instruction     = opcode;
     decode_instr();
-    ref_instr();
+    exec_instr();
     if (ppc_state.spr[SPR::XER] & 0x40000000UL) {
         cout << "Invalid " << mnem << " emulation! XER[OV] should not be set." << endl;
         nfailed++;
@@ -155,9 +153,9 @@ static void read_test_data() {
         ppc_state.cr            = 0;
 
         ppc_cur_instruction = opcode;
-
+        
         decode_instr();
-        ref_instr();
+        exec_instr();
 
         ntested++;
 
@@ -302,7 +300,7 @@ static void read_test_float_data() {
         ppc_cur_instruction = opcode;
 
         decode_instr();
-        ref_instr();
+        exec_instr();
 
         ntested++;
 
