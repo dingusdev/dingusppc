@@ -61,10 +61,10 @@ int main(int argc, char** argv) {
 
     constexpr uint64_t tbr_freq = 16705000;
 
-    ppc_cpu_init(grackle_obj, PPC_VER::MPC750, tbr_freq);
+    ppc_cpu_init(grackle_obj, PPC_VER::MPC750, false, tbr_freq);
 
     /* load executable code into RAM at address 0 */
-    for (i = 0; i < sizeof(cs_code); i++) {
+    for (i = 0; i < sizeof(cs_code) / sizeof(cs_code[0]); i++) {
         mmu_write_vmem<uint32_t>(i*4, cs_code[i]);
     }
 
