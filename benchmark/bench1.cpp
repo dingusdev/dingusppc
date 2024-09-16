@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "cpu/ppc/ppcmmu.h"
 #include "devices/memctrl/mpc106.h"
 #include <thirdparty/loguru/loguru.hpp>
+#include <debugger/debugger.h>
 
 uint32_t cs_code[] = {
     0x3863FFFC, 0x7C861671, 0x41820090, 0x70600002, 0x41E2001C, 0xA0030004,
@@ -38,6 +39,8 @@ uint32_t cs_code[] = {
     0x7C650194, 0x4E800020
 };
 
+// 0x7FFFFFFC is the max
+constexpr uint32_t test_size = 0x800000;
 
 int main(int argc, char** argv) {
     int i;
@@ -53,7 +56,7 @@ int main(int argc, char** argv) {
     MPC106* grackle_obj = new MPC106;
 
     /* we need some RAM */
-    if (!grackle_obj->add_ram_region(0, 0x9000)) {
+    if (!grackle_obj->add_ram_region(0, 0x1000 + test_size)) {
         LOG_F(ERROR, "Could not create RAM region");
         delete(grackle_obj);
         return -1;
@@ -70,16 +73,34 @@ int main(int argc, char** argv) {
 
     srand(0xCAFEBABE);
 
-    for (i = 0; i < 32768; i++) {
-        mmu_write_vmem<uint8_t>(0x1000+i, rand() % 256);
+    LOG_F(INFO, "Test size is 0x%X", test_size);
+    LOG_F(INFO, "First few bytes:");
+    for (i = 0; i < test_size; i++) {
+        uint8_t val = rand() % 256;
+        mmu_write_vmem<uint8_t>(0x1000+i, val);
+        if (i < 64) {
+            printf("%02x", val);
+            if (i % 32 == 31)
+                printf("\n");
+        }
     }
+    printf("\n");
 
+    power_on = true;
+
+#if 0
     /* prepare benchmark code execution */
     ppc_state.pc = 0;
-    ppc_state.gpr[3] = 0x1000; // buf
-    ppc_state.gpr[4] = 0x8000; // len
-    ppc_state.gpr[5] = 0;      // sum
+    ppc_state.gpr[3] = 0x1000;    // buf
+    ppc_state.gpr[4] = test_size; // len
+    ppc_state.gpr[5] = 0;         // sum
+    enter_debugger();
+#endif
 
+    ppc_state.pc = 0;
+    ppc_state.gpr[3] = 0x1000;    // buf
+    ppc_state.gpr[4] = test_size; // len
+    ppc_state.gpr[5] = 0;         // sum
     ppc_exec_until(0xC4);
 
     LOG_F(INFO, "Checksum: 0x%08X", ppc_state.gpr[3]);
@@ -92,9 +113,9 @@ int main(int argc, char** argv) {
 
     for (i = 0; i < 5; i++) {
         ppc_state.pc = 0;
-        ppc_state.gpr[3] = 0x1000; // buf
-        ppc_state.gpr[4] = 0x8000; // len
-        ppc_state.gpr[5] = 0;      // sum
+        ppc_state.gpr[3] = 0x1000;    // buf
+        ppc_state.gpr[4] = test_size; // len
+        ppc_state.gpr[5] = 0;         // sum
 
         auto start_time = std::chrono::steady_clock::now();
 
