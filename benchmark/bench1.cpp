@@ -40,10 +40,12 @@ uint32_t cs_code[] = {
 };
 
 // 0x7FFFFFFC is the max
-constexpr uint32_t test_size = 0x800000;
+constexpr uint32_t test_size = 0x8000;
+constexpr uint32_t test_samples = 200;
+constexpr uint32_t test_iterations = 5;
 
 int main(int argc, char** argv) {
-    int i;
+    int i, j;
 
     /* initialize logging */
     loguru::g_preamble_date    = false;
@@ -73,20 +75,23 @@ int main(int argc, char** argv) {
 
     srand(0xCAFEBABE);
 
-    LOG_F(INFO, "Test size is 0x%X", test_size);
+    LOG_F(INFO, "Test size: 0x%X", test_size);
     LOG_F(INFO, "First few bytes:");
+    bool did_lf = false;
     for (i = 0; i < test_size; i++) {
         uint8_t val = rand() % 256;
         mmu_write_vmem<uint8_t>(0x1000+i, val);
         if (i < 64) {
             printf("%02x", val);
-            if (i % 32 == 31)
+            did_lf = false;
+            if (i % 32 == 31) {
                 printf("\n");
+                did_lf = true;
+            }
         }
     }
-    printf("\n");
-
-    power_on = true;
+    if (!did_lf)
+        printf("\n");
 
 #if 0
     /* prepare benchmark code execution */
@@ -101,32 +106,43 @@ int main(int argc, char** argv) {
     ppc_state.gpr[3] = 0x1000;    // buf
     ppc_state.gpr[4] = test_size; // len
     ppc_state.gpr[5] = 0;         // sum
+    power_on = true;
     ppc_exec_until(0xC4);
 
     LOG_F(INFO, "Checksum: 0x%08X", ppc_state.gpr[3]);
+    uint32_t checksum = ppc_state.gpr[3];
 
     // run the clock once for cache fill etc.
-    auto start_time   = std::chrono::steady_clock::now();
-    auto end_time     = std::chrono::steady_clock::now();
-    auto time_elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
-    LOG_F(INFO, "Time elapsed (dry run): %lld ns", time_elapsed.count());
-
-    for (i = 0; i < 5; i++) {
-        ppc_state.pc = 0;
-        ppc_state.gpr[3] = 0x1000;    // buf
-        ppc_state.gpr[4] = test_size; // len
-        ppc_state.gpr[5] = 0;         // sum
-
-        auto start_time = std::chrono::steady_clock::now();
-
-        ppc_exec_until(0xC4);
-
-        auto end_time = std::chrono::steady_clock::now();
-
-        LOG_F(INFO, "Checksum: 0x%08X", ppc_state.gpr[3]);
-
+    uint64_t overhead = -1;
+    for (j = 0; j < test_samples; j++) {
+        auto start_time   = std::chrono::steady_clock::now();
+        auto end_time     = std::chrono::steady_clock::now();
         auto time_elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
-        LOG_F(INFO, "Time elapsed (run #%d): %lld ns", i, time_elapsed.count());
+        if (time_elapsed.count() < overhead)
+            overhead = time_elapsed.count();
+    }
+    LOG_F(INFO, "Overhead Time: %lld ns", overhead);
+
+    for (i = 0; i < test_iterations; i++) {
+        uint64_t best_sample = -1;
+        for (j = 0; j < test_samples; j++) {
+            ppc_state.pc = 0;
+            ppc_state.gpr[3] = 0x1000;    // buf
+            ppc_state.gpr[4] = test_size; // len
+            ppc_state.gpr[5] = 0;         // sum
+            power_on = true;
+
+            auto start_time   = std::chrono::steady_clock::now();
+                ppc_exec_until(0xC4);
+            auto end_time     = std::chrono::steady_clock::now();
+            auto time_elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
+            if (time_elapsed.count() < best_sample)
+                best_sample = time_elapsed.count();
+        }
+        if (ppc_state.gpr[3] != checksum)
+            LOG_F(INFO, "Checksum: 0x%08X", ppc_state.gpr[3]);
+        best_sample -= overhead;
+        LOG_F(INFO, "(run #%d) Time: %lld ns Performance: %.4lf MiB/s", i, best_sample, 1E9 * test_size / (best_sample * 1024 * 1024));
     }
 
     delete(grackle_obj);
