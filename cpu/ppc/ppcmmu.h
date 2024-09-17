@@ -130,8 +130,8 @@ uint8_t *mmu_translate_imem(uint32_t vaddr, uint32_t *paddr = nullptr);
 bool mmu_translate_dbg(uint32_t guest_va, uint32_t &guest_pa);
 
 template <class T>
-extern T mmu_read_vmem(uint32_t guest_va);
+extern T mmu_read_vmem(uint32_t guest_va, uint32_t instr);
 template <class T>
-extern void mmu_write_vmem(uint32_t guest_va, T value);
+extern void mmu_write_vmem(uint32_t guest_va, uint32_t instr, T value);
 
 #endif    // PPCMMU_H

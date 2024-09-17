@@ -62,7 +62,6 @@ Po_Cause power_off_reason = po_enter_debugger;
 
 SetPRS ppc_state;
 
-uint32_t ppc_cur_instruction;    // Current instruction for the PPC
 uint32_t ppc_next_instruction_address;    // Used for branching, setting up the NIA
 
 unsigned exec_flags; // execution control flags
@@ -185,7 +184,7 @@ static PPCOpcode OpcodeGrabber[64];
 
 /** Lookup tables for branch instructions. */
 const static PPCOpcode SubOpcode16Grabber[] = {
-    dppc_interpreter::ppc_bc<LK0, AA0>,     // bc
+    dppc_interpreter::ppc_bc<LK0, AA0>,    // bc
     dppc_interpreter::ppc_bc<LK1, AA0>,     // bcl
     dppc_interpreter::ppc_bc<LK0, AA1>,     // bca
     dppc_interpreter::ppc_bc<LK1, AA1>};    // bcla
@@ -229,97 +228,96 @@ void ppc_release_int() {
 
 /** Opcode decoding functions. */
 
-void ppc_opcode16() {
-    SubOpcode16Grabber[ppc_cur_instruction & 3]();
+static void ppc_opcode16(uint32_t instr) {
+    SubOpcode16Grabber[instr & 3](instr);
 }
 
-void ppc_opcode18() {
-    SubOpcode18Grabber[ppc_cur_instruction & 3]();
+static void ppc_opcode18(uint32_t instr) {
+    SubOpcode18Grabber[instr & 3](instr);
 }
 
 template<field_601 for601>
-void ppc_opcode19() {
-    uint16_t subop_grab = ppc_cur_instruction & 0x7FF;
+void ppc_opcode19(uint32_t instr) {
+    uint16_t subop_grab = instr & 0x7FF;
 
     switch (subop_grab) {
     case 0:
-        ppc_mcrf();
+        ppc_mcrf(instr);
         break;
     case 32:
-        ppc_bclr<LK0>();
+        ppc_bclr<LK0>(instr);
         break;
     case 33:
-        ppc_bclr<LK1>();
+        ppc_bclr<LK1>(instr);
         break;
     case 66:
-        ppc_crnor();
+        ppc_crnor(instr);
         break;
     case 100:
-        ppc_rfi();
+        ppc_rfi(instr);
         break;
     case 258:
-        ppc_crandc();
+        ppc_crandc(instr);
         break;
     case 300:
-        ppc_isync();
+        ppc_isync(instr);
         break;
     case 386:
-        ppc_crxor();
+        ppc_crxor(instr);
         break;
     case 450:
-        ppc_crnand();
+        ppc_crnand(instr);
         break;
     case 514:
-        ppc_crand();
+        ppc_crand(instr);
         break;
     case 578:
-        ppc_creqv();
+        ppc_creqv(instr);
         break;
     case 834:
-        ppc_crorc();
+        ppc_crorc(instr);
         break;
     case 898:
-        ppc_cror();
+        ppc_cror(instr);
         break;
     case 1056:
-        ppc_bcctr<LK0, for601>();
+        ppc_bcctr<LK0, for601>(instr);
         break;
     case 1057:
-        ppc_bcctr<LK1, for601>();
+        ppc_bcctr<LK1, for601>(instr);
         break;
     default:
         ppc_illegalop();
     }
 }
 
-template void ppc_opcode19<NOT601>();
-template void ppc_opcode19<IS601>();
+template void ppc_opcode19<NOT601>(uint32_t);
+template void ppc_opcode19<IS601>(uint32_t);
 
-void ppc_opcode31() {
-    uint16_t subop_grab = ppc_cur_instruction & 0x7FFUL;
-    SubOpcode31Grabber[subop_grab]();
+void ppc_opcode31(uint32_t instr) {
+    uint16_t subop_grab = instr & 0x7FFUL;
+    SubOpcode31Grabber[subop_grab](instr);
 }
 
-void ppc_opcode59() {
-    uint16_t subop_grab = ppc_cur_instruction & 0x3FUL;
-    SubOpcode59Grabber[subop_grab]();
+void ppc_opcode59(uint32_t instr) {
+    uint16_t subop_grab = instr & 0x3FUL;
+    SubOpcode59Grabber[subop_grab](instr);
 }
 
-void ppc_opcode63() {
-    uint16_t subop_grab = ppc_cur_instruction & 0x7FFUL;
-    SubOpcode63Grabber[subop_grab]();
+void ppc_opcode63(uint32_t instr) {
+    uint16_t subop_grab = instr & 0x7FFUL;
+    SubOpcode63Grabber[subop_grab](instr);
 }
 
 /* Dispatch using main opcode */
-void ppc_main_opcode()
-{
+void ppc_main_opcode(uint32_t instr) {
 #ifdef CPU_PROFILING
     num_executed_instrs++;
 #if defined(CPU_PROFILING_OPS)
-    num_opcodes[ppc_cur_instruction]++;
+    num_opcodes[instr]++;
 #endif
 #endif
-    OpcodeGrabber[(ppc_cur_instruction >> 26) & 0x3F]();
+    OpcodeGrabber[(instr >> 26) & 0x3F](instr);
 }
 
 static long long cpu_now_ns() {
@@ -365,6 +363,7 @@ static void ppc_exec_inner()
     uint64_t max_cycles;
     uint32_t page_start, eb_start, eb_end;
     uint8_t* pc_real;
+    uint32_t instr = 0;
 
     max_cycles = 0;
 
@@ -376,11 +375,12 @@ static void ppc_exec_inner()
         eb_end     = page_start + PPC_PAGE_SIZE - 1;
         exec_flags = 0;
 
-        pc_real    = mmu_translate_imem(eb_start);
+        pc_real = mmu_translate_imem(eb_start);
+        instr   = ppc_set_cur_instruction(pc_real);
 
         // interpret execution block
         while (power_on && ppc_state.pc < eb_end) {
-            ppc_main_opcode();
+            ppc_main_opcode(instr);
             if (g_icycles++ >= max_cycles || exec_timer) {
                 max_cycles = process_events();
             }
@@ -394,7 +394,8 @@ static void ppc_exec_inner()
                 } else {
                     page_start = eb_start & PPC_PAGE_MASK;
                     eb_end = page_start + PPC_PAGE_SIZE - 1;
-                    pc_real = mmu_translate_imem(eb_start);
+                    pc_real    = mmu_translate_imem(eb_start);
+                    instr      = ppc_set_cur_instruction(pc_real);
                 }
                 ppc_state.pc = eb_start;
                 exec_flags = 0;
@@ -433,7 +434,11 @@ void ppc_exec_single()
     }
 
     mmu_translate_imem(ppc_state.pc);
-    ppc_main_opcode();
+
+    uint8_t* pc_real = mmu_translate_imem(ppc_state.pc);
+    uint32_t instr   = ppc_set_cur_instruction(pc_real);
+    ppc_main_opcode(instr);
+
     g_icycles++;
     process_events();
 
@@ -453,6 +458,7 @@ static void ppc_exec_until_inner(const uint32_t goal_addr)
     uint64_t max_cycles;
     uint32_t page_start, eb_start, eb_end;
     uint8_t* pc_real;
+    uint32_t instr;
 
     max_cycles = 0;
 
@@ -464,11 +470,12 @@ static void ppc_exec_until_inner(const uint32_t goal_addr)
         eb_end     = page_start + PPC_PAGE_SIZE - 1;
         exec_flags = 0;
 
-        pc_real    = mmu_translate_imem(eb_start);
+        pc_real = mmu_translate_imem(eb_start);
+        instr   = ppc_set_cur_instruction(pc_real);
 
         // interpret execution block
         while (power_on && ppc_state.pc < eb_end) {
-            ppc_main_opcode();
+            ppc_main_opcode(instr);
             if (g_icycles++ >= max_cycles || exec_timer) {
                 max_cycles = process_events();
             }
@@ -482,7 +489,8 @@ static void ppc_exec_until_inner(const uint32_t goal_addr)
                 } else {
                     page_start = eb_start & PPC_PAGE_MASK;
                     eb_end = page_start + PPC_PAGE_SIZE - 1;
-                    pc_real = mmu_translate_imem(eb_start);
+                    pc_real    = mmu_translate_imem(eb_start);
+                    instr      = ppc_set_cur_instruction(pc_real);
                 }
                 ppc_state.pc = eb_start;
                 exec_flags = 0;
@@ -520,6 +528,7 @@ static void ppc_exec_dbg_inner(const uint32_t start_addr, const uint32_t size)
     uint64_t max_cycles;
     uint32_t page_start, eb_start, eb_end;
     uint8_t* pc_real;
+    uint32_t instr = 0;
 
     max_cycles = 0;
 
@@ -531,12 +540,13 @@ static void ppc_exec_dbg_inner(const uint32_t start_addr, const uint32_t size)
         eb_end     = page_start + PPC_PAGE_SIZE - 1;
         exec_flags = 0;
 
-        pc_real    = mmu_translate_imem(eb_start);
+        pc_real = mmu_translate_imem(eb_start);
+        instr   = ppc_set_cur_instruction(pc_real);
 
         // interpret execution block
         while (power_on && (ppc_state.pc < start_addr || ppc_state.pc >= start_addr + size)
                 && (ppc_state.pc < eb_end)) {
-            ppc_main_opcode();
+            ppc_main_opcode(instr);
             if (g_icycles++ >= max_cycles || exec_timer) {
                 max_cycles = process_events();
             }
@@ -550,7 +560,8 @@ static void ppc_exec_dbg_inner(const uint32_t start_addr, const uint32_t size)
                 } else {
                     page_start = eb_start & PPC_PAGE_MASK;
                     eb_end = page_start + PPC_PAGE_SIZE - 1;
-                    pc_real = mmu_translate_imem(eb_start);
+                    pc_real    = mmu_translate_imem(eb_start);
+                    instr      = ppc_set_cur_instruction(pc_real);
                 }
                 ppc_state.pc = eb_start;
                 exec_flags = 0;
