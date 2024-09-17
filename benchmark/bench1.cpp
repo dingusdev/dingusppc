@@ -27,6 +27,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <thirdparty/loguru/loguru.hpp>
 #include <debugger/debugger.h>
 
+void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
+    power_on = false;
+}
+
 uint32_t cs_code[] = {
     0x3863FFFC, 0x7C861671, 0x41820090, 0x70600002, 0x41E2001C, 0xA0030004,
     0x3884FFFE, 0x38630002, 0x5486F0BF, 0x7CA50114, 0x41820070, 0x70C60003,
@@ -36,7 +40,7 @@ uint32_t cs_code[] = {
     0x80C30008, 0x7CA50114, 0x80E3000C, 0x7CA53114, 0x85030010, 0x7CA53914,
     0x4200FFE0, 0x7CA54114, 0x70800002, 0x41E20010, 0xA0030004, 0x38630002,
     0x7CA50114, 0x70800001, 0x41E20010, 0x88030004, 0x5400402E, 0x7CA50114,
-    0x7C650194, 0x4E800020
+    0x7C650194, /* 0x4E800020 */ 0x00005AF0
 };
 
 // 0x7FFFFFFC is the max
@@ -123,26 +127,29 @@ int main(int argc, char** argv) {
     }
     LOG_F(INFO, "Overhead Time: %lld ns", overhead);
 
-    for (i = 0; i < test_iterations; i++) {
-        uint64_t best_sample = -1;
-        for (j = 0; j < test_samples; j++) {
-            ppc_state.pc = 0;
-            ppc_state.gpr[3] = 0x1000;    // buf
-            ppc_state.gpr[4] = test_size; // len
-            ppc_state.gpr[5] = 0;         // sum
-            power_on = true;
+    for (int theproc = 0; theproc < 2; theproc++) {
+        LOG_F(INFO, "Doing %s", theproc ? "ppc_exec_until" : "ppc_exec");
+        for (i = 0; i < test_iterations; i++) {
+            uint64_t best_sample = -1;
+            for (j = 0; j < test_samples; j++) {
+                ppc_state.pc = 0;
+                ppc_state.gpr[3] = 0x1000;    // buf
+                ppc_state.gpr[4] = test_size; // len
+                ppc_state.gpr[5] = 0;         // sum
+                power_on = true;
 
-            auto start_time   = std::chrono::steady_clock::now();
-                ppc_exec_until(0xC4);
-            auto end_time     = std::chrono::steady_clock::now();
-            auto time_elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
-            if (time_elapsed.count() < best_sample)
-                best_sample = time_elapsed.count();
+                auto start_time   = std::chrono::steady_clock::now();
+                    (theproc) ? ppc_exec_until(0xC4) : ppc_exec();
+                auto end_time     = std::chrono::steady_clock::now();
+                auto time_elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time);
+                if (time_elapsed.count() < best_sample)
+                    best_sample = time_elapsed.count();
+            }
+            if (ppc_state.gpr[3] != checksum)
+                LOG_F(INFO, "Checksum: 0x%08X", ppc_state.gpr[3]);
+            best_sample -= overhead;
+            LOG_F(INFO, "(%d) %lld ns, %.4lf MiB/s", i+1, best_sample, 1E9 * test_size / (best_sample * 1024 * 1024));
         }
-        if (ppc_state.gpr[3] != checksum)
-            LOG_F(INFO, "Checksum: 0x%08X", ppc_state.gpr[3]);
-        best_sample -= overhead;
-        LOG_F(INFO, "(run #%d) Time: %lld ns Performance: %.4lf MiB/s", i, best_sample, 1E9 * test_size / (best_sample * 1024 * 1024));
     }
 
     delete(grackle_obj);

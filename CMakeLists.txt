@@ -180,9 +180,13 @@ if (DPPC_BUILD_PPC_TESTS)
 endif()
 
 if (DPPC_BUILD_BENCHMARKS)
-    file(GLOB BENCH_SOURCES "${PROJECT_SOURCE_DIR}/benchmark/*.cpp")
+    add_compile_options("-DPPC_BENCHMARKS")
+    file(GLOB BENCH_SOURCES "${PROJECT_SOURCE_DIR}/benchmark/*.cpp"
+                            "${PROJECT_SOURCE_DIR}/cpu/ppc/*.cpp"
+                            "${PROJECT_SOURCE_DIR}/cpu/ppc/*.h"
+                            )
     add_executable(bench1 ${BENCH_SOURCES} $<TARGET_OBJECTS:core>
-                                           $<TARGET_OBJECTS:cpu_ppc>
+                                           # $<TARGET_OBJECTS:cpu_ppc>
                                            $<TARGET_OBJECTS:debugger>
                                            $<TARGET_OBJECTS:devices>
                                            $<TARGET_OBJECTS:machines>
