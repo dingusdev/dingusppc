@@ -399,7 +399,7 @@ typedef enum {
 extern void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool include_601, uint64_t tb_freq);
 extern void ppc_mmu_init();
 
-void ppc_illegalop();
+void ppc_illegalop(uint32_t null_val=0);
 void ppc_fpu_off();
 void ppc_assert_int();
 void ppc_release_int();

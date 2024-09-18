@@ -54,10 +54,10 @@ void dppc_interpreter::power_abs(uint32_t instr) {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template void dppc_interpreter::power_abs<RC0, OV0>(uint32_t);
-template void dppc_interpreter::power_abs<RC0, OV1>(uint32_t);
-template void dppc_interpreter::power_abs<RC1, OV0>(uint32_t);
-template void dppc_interpreter::power_abs<RC1, OV1>(uint32_t);
+template void dppc_interpreter::power_abs<RC0, OV0>(uint32_t instr);
+template void dppc_interpreter::power_abs<RC0, OV1>(uint32_t instr);
+template void dppc_interpreter::power_abs<RC1, OV0>(uint32_t instr);
+template void dppc_interpreter::power_abs<RC1, OV1>(uint32_t instr);
 
 void dppc_interpreter::power_clcs(uint32_t instr) {
     uint32_t ppc_result_d;
@@ -123,10 +123,10 @@ void dppc_interpreter::power_div(uint32_t instr) {
     ppc_state.spr[SPR::MQ] = remainder;
 }
 
-template void dppc_interpreter::power_div<RC0, OV0>(uint32_t);
-template void dppc_interpreter::power_div<RC0, OV1>(uint32_t);
-template void dppc_interpreter::power_div<RC1, OV0>(uint32_t);
-template void dppc_interpreter::power_div<RC1, OV1>(uint32_t);
+template void dppc_interpreter::power_div<RC0, OV0>(uint32_t instr);
+template void dppc_interpreter::power_div<RC0, OV1>(uint32_t instr);
+template void dppc_interpreter::power_div<RC1, OV0>(uint32_t instr);
+template void dppc_interpreter::power_div<RC1, OV1>(uint32_t instr);
 
 template <field_rc rec, field_ov ov>
 void dppc_interpreter::power_divs(uint32_t instr) {
@@ -157,10 +157,10 @@ void dppc_interpreter::power_divs(uint32_t instr) {
     ppc_state.spr[SPR::MQ] = remainder;
 }
 
-template void dppc_interpreter::power_divs<RC0, OV0>(uint32_t);
-template void dppc_interpreter::power_divs<RC0, OV1>(uint32_t);
-template void dppc_interpreter::power_divs<RC1, OV0>(uint32_t);
-template void dppc_interpreter::power_divs<RC1, OV1>(uint32_t);
+template void dppc_interpreter::power_divs<RC0, OV0>(uint32_t instr);
+template void dppc_interpreter::power_divs<RC0, OV1>(uint32_t instr);
+template void dppc_interpreter::power_divs<RC1, OV0>(uint32_t instr);
+template void dppc_interpreter::power_divs<RC1, OV1>(uint32_t instr);
 
 template <field_rc rec, field_ov ov>
 void dppc_interpreter::power_doz(uint32_t instr) {
@@ -181,10 +181,10 @@ void dppc_interpreter::power_doz(uint32_t instr) {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template void dppc_interpreter::power_doz<RC0, OV0>(uint32_t);
-template void dppc_interpreter::power_doz<RC0, OV1>(uint32_t);
-template void dppc_interpreter::power_doz<RC1, OV0>(uint32_t);
-template void dppc_interpreter::power_doz<RC1, OV1>(uint32_t);
+template void dppc_interpreter::power_doz<RC0, OV0>(uint32_t instr);
+template void dppc_interpreter::power_doz<RC0, OV1>(uint32_t instr);
+template void dppc_interpreter::power_doz<RC1, OV0>(uint32_t instr);
+template void dppc_interpreter::power_doz<RC1, OV1>(uint32_t instr);
 
 void dppc_interpreter::power_dozi(uint32_t instr) {
     uint32_t ppc_result_d;
@@ -248,8 +248,8 @@ void dppc_interpreter::power_lscbx(uint32_t instr) {
     }
 }
 
-template void dppc_interpreter::power_lscbx<RC0>(uint32_t);
-template void dppc_interpreter::power_lscbx<RC1>(uint32_t);
+template void dppc_interpreter::power_lscbx<RC0>(uint32_t instr);
+template void dppc_interpreter::power_lscbx<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::power_maskg(uint32_t instr) {
@@ -276,8 +276,8 @@ void dppc_interpreter::power_maskg(uint32_t instr) {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::power_maskg<RC0>(uint32_t);
-template void dppc_interpreter::power_maskg<RC1>(uint32_t);
+template void dppc_interpreter::power_maskg<RC0>(uint32_t instr);
+template void dppc_interpreter::power_maskg<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::power_maskir(uint32_t instr) {
@@ -290,8 +290,8 @@ void dppc_interpreter::power_maskir(uint32_t instr) {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::power_maskir<RC0>(uint32_t);
-template void dppc_interpreter::power_maskir<RC1>(uint32_t);
+template void dppc_interpreter::power_maskir<RC0>(uint32_t instr);
+template void dppc_interpreter::power_maskir<RC1>(uint32_t instr);
 
 template <field_rc rec, field_ov ov>
 void dppc_interpreter::power_mul(uint32_t instr) {
@@ -312,10 +312,10 @@ void dppc_interpreter::power_mul(uint32_t instr) {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template void dppc_interpreter::power_mul<RC0, OV0>(uint32_t);
-template void dppc_interpreter::power_mul<RC0, OV1>(uint32_t);
-template void dppc_interpreter::power_mul<RC1, OV0>(uint32_t);
-template void dppc_interpreter::power_mul<RC1, OV1>(uint32_t);
+template void dppc_interpreter::power_mul<RC0, OV0>(uint32_t instr);
+template void dppc_interpreter::power_mul<RC0, OV1>(uint32_t instr);
+template void dppc_interpreter::power_mul<RC1, OV0>(uint32_t instr);
+template void dppc_interpreter::power_mul<RC1, OV1>(uint32_t instr);
 
 template <field_rc rec, field_ov ov>
 void dppc_interpreter::power_nabs(uint32_t instr) {
@@ -330,10 +330,10 @@ void dppc_interpreter::power_nabs(uint32_t instr) {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template void dppc_interpreter::power_nabs<RC0, OV0>(uint32_t);
-template void dppc_interpreter::power_nabs<RC0, OV1>(uint32_t);
-template void dppc_interpreter::power_nabs<RC1, OV0>(uint32_t);
-template void dppc_interpreter::power_nabs<RC1, OV1>(uint32_t);
+template void dppc_interpreter::power_nabs<RC0, OV0>(uint32_t instr);
+template void dppc_interpreter::power_nabs<RC0, OV1>(uint32_t instr);
+template void dppc_interpreter::power_nabs<RC1, OV0>(uint32_t instr);
+template void dppc_interpreter::power_nabs<RC1, OV1>(uint32_t instr);
 
 void dppc_interpreter::power_rlmi(uint32_t instr) {
     ppc_grab_regssab(instr);
@@ -369,8 +369,8 @@ void dppc_interpreter::power_rrib(uint32_t instr) {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::power_rrib<RC0>(uint32_t);
-template void dppc_interpreter::power_rrib<RC1>(uint32_t);
+template void dppc_interpreter::power_rrib<RC0>(uint32_t instr);
+template void dppc_interpreter::power_rrib<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::power_sle(uint32_t instr) {
@@ -388,8 +388,8 @@ void dppc_interpreter::power_sle(uint32_t instr) {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::power_sle<RC0>(uint32_t);
-template void dppc_interpreter::power_sle<RC1>(uint32_t);
+template void dppc_interpreter::power_sle<RC0>(uint32_t instr);
+template void dppc_interpreter::power_sle<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::power_sleq(uint32_t instr) {
@@ -407,8 +407,8 @@ void dppc_interpreter::power_sleq(uint32_t instr) {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::power_sleq<RC0>(uint32_t);
-template void dppc_interpreter::power_sleq<RC1>(uint32_t);
+template void dppc_interpreter::power_sleq<RC0>(uint32_t instr);
+template void dppc_interpreter::power_sleq<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::power_sliq(uint32_t instr) {
@@ -423,8 +423,8 @@ void dppc_interpreter::power_sliq(uint32_t instr) {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::power_sliq<RC0>(uint32_t);
-template void dppc_interpreter::power_sliq<RC1>(uint32_t);
+template void dppc_interpreter::power_sliq<RC0>(uint32_t instr);
+template void dppc_interpreter::power_sliq<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::power_slliq(uint32_t instr) {
@@ -441,8 +441,8 @@ void dppc_interpreter::power_slliq(uint32_t instr) {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::power_slliq<RC0>(uint32_t);
-template void dppc_interpreter::power_slliq<RC1>(uint32_t);
+template void dppc_interpreter::power_slliq<RC0>(uint32_t instr);
+template void dppc_interpreter::power_slliq<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::power_sllq(uint32_t instr) {
@@ -461,8 +461,8 @@ void dppc_interpreter::power_sllq(uint32_t instr) {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::power_sllq<RC0>(uint32_t);
-template void dppc_interpreter::power_sllq<RC1>(uint32_t);
+template void dppc_interpreter::power_sllq<RC0>(uint32_t instr);
+template void dppc_interpreter::power_sllq<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::power_slq(uint32_t instr) {
@@ -482,8 +482,8 @@ void dppc_interpreter::power_slq(uint32_t instr) {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::power_slq<RC0>(uint32_t);
-template void dppc_interpreter::power_slq<RC1>(uint32_t);
+template void dppc_interpreter::power_slq<RC0>(uint32_t instr);
+template void dppc_interpreter::power_slq<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::power_sraiq(uint32_t instr) {
@@ -504,8 +504,8 @@ void dppc_interpreter::power_sraiq(uint32_t instr) {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::power_sraiq<RC0>(uint32_t);
-template void dppc_interpreter::power_sraiq<RC1>(uint32_t);
+template void dppc_interpreter::power_sraiq<RC0>(uint32_t instr);
+template void dppc_interpreter::power_sraiq<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::power_sraq(uint32_t instr) {
@@ -529,8 +529,8 @@ void dppc_interpreter::power_sraq(uint32_t instr) {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::power_sraq<RC0>(uint32_t);
-template void dppc_interpreter::power_sraq<RC1>(uint32_t);
+template void dppc_interpreter::power_sraq<RC0>(uint32_t instr);
+template void dppc_interpreter::power_sraq<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::power_sre(uint32_t instr) {
@@ -547,8 +547,8 @@ void dppc_interpreter::power_sre(uint32_t instr) {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::power_sre<RC0>(uint32_t);
-template void dppc_interpreter::power_sre<RC1>(uint32_t);
+template void dppc_interpreter::power_sre<RC0>(uint32_t instr);
+template void dppc_interpreter::power_sre<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::power_srea(uint32_t instr) {
@@ -571,8 +571,8 @@ void dppc_interpreter::power_srea(uint32_t instr) {
     ppc_state.spr[SPR::MQ] = r;
 }
 
-template void dppc_interpreter::power_srea<RC0>(uint32_t);
-template void dppc_interpreter::power_srea<RC1>(uint32_t);
+template void dppc_interpreter::power_srea<RC0>(uint32_t instr);
+template void dppc_interpreter::power_srea<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::power_sreq(uint32_t instr) {
@@ -589,8 +589,8 @@ void dppc_interpreter::power_sreq(uint32_t instr) {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::power_sreq<RC0>(uint32_t);
-template void dppc_interpreter::power_sreq<RC1>(uint32_t);
+template void dppc_interpreter::power_sreq<RC0>(uint32_t instr);
+template void dppc_interpreter::power_sreq<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::power_sriq(uint32_t instr) {
@@ -604,8 +604,8 @@ void dppc_interpreter::power_sriq(uint32_t instr) {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::power_sriq<RC0>(uint32_t);
-template void dppc_interpreter::power_sriq<RC1>(uint32_t);
+template void dppc_interpreter::power_sriq<RC0>(uint32_t instr);
+template void dppc_interpreter::power_sriq<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::power_srliq(uint32_t instr) {
@@ -622,8 +622,8 @@ void dppc_interpreter::power_srliq(uint32_t instr) {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::power_srliq<RC0>(uint32_t);
-template void dppc_interpreter::power_srliq<RC1>(uint32_t);
+template void dppc_interpreter::power_srliq<RC0>(uint32_t instr);
+template void dppc_interpreter::power_srliq<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::power_srlq(uint32_t instr) {
@@ -644,8 +644,8 @@ void dppc_interpreter::power_srlq(uint32_t instr) {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::power_srlq<RC0>(uint32_t);
-template void dppc_interpreter::power_srlq<RC1>(uint32_t);
+template void dppc_interpreter::power_srlq<RC0>(uint32_t instr);
+template void dppc_interpreter::power_srlq<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::power_srq(uint32_t instr) {
@@ -666,5 +666,5 @@ void dppc_interpreter::power_srq(uint32_t instr) {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::power_srq<RC0>(uint32_t);
-template void dppc_interpreter::power_srq<RC1>(uint32_t);
+template void dppc_interpreter::power_srq<RC0>(uint32_t instr);
+template void dppc_interpreter::power_srq<RC1>(uint32_t instr);

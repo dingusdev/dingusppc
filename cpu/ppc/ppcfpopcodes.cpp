@@ -168,8 +168,8 @@ void dppc_interpreter::ppc_fadd(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_fadd<RC0>(uint32_t);
-template void dppc_interpreter::ppc_fadd<RC1>(uint32_t);
+template void dppc_interpreter::ppc_fadd<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_fadd<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_fsub(uint32_t instr) {
@@ -186,8 +186,8 @@ void dppc_interpreter::ppc_fsub(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_fsub<RC0>(uint32_t);
-template void dppc_interpreter::ppc_fsub<RC1>(uint32_t);
+template void dppc_interpreter::ppc_fsub<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_fsub<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_fdiv(uint32_t instr) {
@@ -203,8 +203,8 @@ void dppc_interpreter::ppc_fdiv(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_fdiv<RC0>(uint32_t);
-template void dppc_interpreter::ppc_fdiv<RC1>(uint32_t);
+template void dppc_interpreter::ppc_fdiv<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_fdiv<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_fmul(uint32_t instr) {
@@ -220,8 +220,8 @@ void dppc_interpreter::ppc_fmul(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_fmul<RC0>(uint32_t);
-template void dppc_interpreter::ppc_fmul<RC1>(uint32_t);
+template void dppc_interpreter::ppc_fmul<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_fmul<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_fmadd(uint32_t instr) {
@@ -238,8 +238,8 @@ void dppc_interpreter::ppc_fmadd(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_fmadd<RC0>(uint32_t);
-template void dppc_interpreter::ppc_fmadd<RC1>(uint32_t);
+template void dppc_interpreter::ppc_fmadd<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_fmadd<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_fmsub(uint32_t instr) {
@@ -256,8 +256,8 @@ void dppc_interpreter::ppc_fmsub(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_fmsub<RC0>(uint32_t);
-template void dppc_interpreter::ppc_fmsub<RC1>(uint32_t);
+template void dppc_interpreter::ppc_fmsub<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_fmsub<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_fnmadd(uint32_t instr) {
@@ -274,8 +274,8 @@ void dppc_interpreter::ppc_fnmadd(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_fnmadd<RC0>(uint32_t);
-template void dppc_interpreter::ppc_fnmadd<RC1>(uint32_t);
+template void dppc_interpreter::ppc_fnmadd<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_fnmadd<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_fnmsub(uint32_t instr) {
@@ -292,8 +292,8 @@ void dppc_interpreter::ppc_fnmsub(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_fnmsub<RC0>(uint32_t);
-template void dppc_interpreter::ppc_fnmsub<RC1>(uint32_t);
+template void dppc_interpreter::ppc_fnmsub<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_fnmsub<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_fadds(uint32_t instr) {
@@ -310,8 +310,8 @@ void dppc_interpreter::ppc_fadds(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_fadds<RC0>(uint32_t);
-template void dppc_interpreter::ppc_fadds<RC1>(uint32_t);
+template void dppc_interpreter::ppc_fadds<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_fadds<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_fsubs(uint32_t instr) {
@@ -328,8 +328,8 @@ void dppc_interpreter::ppc_fsubs(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_fsubs<RC0>(uint32_t);
-template void dppc_interpreter::ppc_fsubs<RC1>(uint32_t);
+template void dppc_interpreter::ppc_fsubs<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_fsubs<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_fdivs(uint32_t instr) {
@@ -345,8 +345,8 @@ void dppc_interpreter::ppc_fdivs(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_fdivs<RC0>(uint32_t);
-template void dppc_interpreter::ppc_fdivs<RC1>(uint32_t);
+template void dppc_interpreter::ppc_fdivs<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_fdivs<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_fmuls(uint32_t instr) {
@@ -362,8 +362,8 @@ void dppc_interpreter::ppc_fmuls(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_fmuls<RC0>(uint32_t);
-template void dppc_interpreter::ppc_fmuls<RC1>(uint32_t);
+template void dppc_interpreter::ppc_fmuls<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_fmuls<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_fmadds(uint32_t instr) {
@@ -380,8 +380,8 @@ void dppc_interpreter::ppc_fmadds(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_fmadds<RC0>(uint32_t);
-template void dppc_interpreter::ppc_fmadds<RC1>(uint32_t);
+template void dppc_interpreter::ppc_fmadds<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_fmadds<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_fmsubs(uint32_t instr) {
@@ -398,8 +398,8 @@ void dppc_interpreter::ppc_fmsubs(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_fmsubs<RC0>(uint32_t);
-template void dppc_interpreter::ppc_fmsubs<RC1>(uint32_t);
+template void dppc_interpreter::ppc_fmsubs<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_fmsubs<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_fnmadds(uint32_t instr) {
@@ -416,8 +416,8 @@ void dppc_interpreter::ppc_fnmadds(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_fnmadds<RC0>(uint32_t);
-template void dppc_interpreter::ppc_fnmadds<RC1>(uint32_t);
+template void dppc_interpreter::ppc_fnmadds<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_fnmadds<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_fnmsubs(uint32_t instr) {
@@ -434,8 +434,8 @@ void dppc_interpreter::ppc_fnmsubs(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_fnmsubs<RC0>(uint32_t);
-template void dppc_interpreter::ppc_fnmsubs<RC1>(uint32_t);
+template void dppc_interpreter::ppc_fnmsubs<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_fnmsubs<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_fabs(uint32_t instr) {
@@ -451,8 +451,8 @@ void dppc_interpreter::ppc_fabs(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_fabs<RC0>(uint32_t);
-template void dppc_interpreter::ppc_fabs<RC1>(uint32_t);
+template void dppc_interpreter::ppc_fabs<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_fabs<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_fnabs(uint32_t instr) {
@@ -469,8 +469,8 @@ void dppc_interpreter::ppc_fnabs(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_fnabs<RC0>(uint32_t);
-template void dppc_interpreter::ppc_fnabs<RC1>(uint32_t);
+template void dppc_interpreter::ppc_fnabs<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_fnabs<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_fneg(uint32_t instr) {
@@ -486,8 +486,8 @@ void dppc_interpreter::ppc_fneg(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_fneg<RC0>(uint32_t);
-template void dppc_interpreter::ppc_fneg<RC1>(uint32_t);
+template void dppc_interpreter::ppc_fneg<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_fneg<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_fsel(uint32_t instr) {
@@ -501,8 +501,8 @@ void dppc_interpreter::ppc_fsel(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_fsel<RC0>(uint32_t);
-template void dppc_interpreter::ppc_fsel<RC1>(uint32_t);
+template void dppc_interpreter::ppc_fsel<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_fsel<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_fsqrt(uint32_t instr) {
@@ -518,8 +518,8 @@ void dppc_interpreter::ppc_fsqrt(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_fsqrt<RC0>(uint32_t);
-template void dppc_interpreter::ppc_fsqrt<RC1>(uint32_t);
+template void dppc_interpreter::ppc_fsqrt<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_fsqrt<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_fsqrts(uint32_t instr) {
@@ -535,8 +535,8 @@ void dppc_interpreter::ppc_fsqrts(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_fsqrts<RC0>(uint32_t);
-template void dppc_interpreter::ppc_fsqrts<RC1>(uint32_t);
+template void dppc_interpreter::ppc_fsqrts<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_fsqrts<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_frsqrte(uint32_t instr) {
@@ -551,8 +551,8 @@ void dppc_interpreter::ppc_frsqrte(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_frsqrte<RC0>(uint32_t);
-template void dppc_interpreter::ppc_frsqrte<RC1>(uint32_t);
+template void dppc_interpreter::ppc_frsqrte<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_frsqrte<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_frsp(uint32_t instr) {
@@ -566,8 +566,8 @@ void dppc_interpreter::ppc_frsp(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_frsp<RC0>(uint32_t);
-template void dppc_interpreter::ppc_frsp<RC1>(uint32_t);
+template void dppc_interpreter::ppc_frsp<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_frsp<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_fres(uint32_t instr) {
@@ -594,8 +594,8 @@ void dppc_interpreter::ppc_fres(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_fres<RC0>(uint32_t);
-template void dppc_interpreter::ppc_fres<RC1>(uint32_t);
+template void dppc_interpreter::ppc_fres<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_fres<RC1>(uint32_t instr);
 
 static void round_to_int(uint32_t instr, const uint8_t mode, field_rc rec) {
     ppc_grab_regsfpdb(instr);
@@ -659,16 +659,16 @@ void dppc_interpreter::ppc_fctiw(uint32_t instr) {
     round_to_int(instr, ppc_state.fpscr & 0x3, rec);
 }
 
-template void dppc_interpreter::ppc_fctiw<RC0>(uint32_t);
-template void dppc_interpreter::ppc_fctiw<RC1>(uint32_t);
+template void dppc_interpreter::ppc_fctiw<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_fctiw<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_fctiwz(uint32_t instr) {
     round_to_int(instr, 1, rec);
 }
 
-template void dppc_interpreter::ppc_fctiwz<RC0>(uint32_t);
-template void dppc_interpreter::ppc_fctiwz<RC1>(uint32_t);
+template void dppc_interpreter::ppc_fctiwz<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_fctiwz<RC1>(uint32_t instr);
 
 // Floating Point Store and Load
 
@@ -845,8 +845,8 @@ void dppc_interpreter::ppc_fmr(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_fmr<RC0>(uint32_t);
-template void dppc_interpreter::ppc_fmr<RC1>(uint32_t);
+template void dppc_interpreter::ppc_fmr<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_fmr<RC1>(uint32_t instr);
 
 template <field_601 for601, field_rc rec>
 void dppc_interpreter::ppc_mffs(uint32_t instr) {
@@ -858,10 +858,10 @@ void dppc_interpreter::ppc_mffs(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_mffs<NOT601, RC0>(uint32_t);
-template void dppc_interpreter::ppc_mffs<NOT601, RC1>(uint32_t);
-template void dppc_interpreter::ppc_mffs<IS601, RC0>(uint32_t);
-template void dppc_interpreter::ppc_mffs<IS601, RC1>(uint32_t);
+template void dppc_interpreter::ppc_mffs<NOT601, RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_mffs<NOT601, RC1>(uint32_t instr);
+template void dppc_interpreter::ppc_mffs<IS601, RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_mffs<IS601, RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_mtfsf(uint32_t instr) {
@@ -893,8 +893,8 @@ void dppc_interpreter::ppc_mtfsf(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_mtfsf<RC0>(uint32_t);
-template void dppc_interpreter::ppc_mtfsf<RC1>(uint32_t);
+template void dppc_interpreter::ppc_mtfsf<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_mtfsf<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_mtfsfi(uint32_t instr) {
@@ -915,8 +915,8 @@ void dppc_interpreter::ppc_mtfsfi(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_mtfsfi<RC0>(uint32_t);
-template void dppc_interpreter::ppc_mtfsfi<RC1>(uint32_t);
+template void dppc_interpreter::ppc_mtfsfi<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_mtfsfi<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_mtfsb0(uint32_t instr) {
@@ -929,8 +929,8 @@ void dppc_interpreter::ppc_mtfsb0(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_mtfsb0<RC0>(uint32_t);
-template void dppc_interpreter::ppc_mtfsb0<RC1>(uint32_t);
+template void dppc_interpreter::ppc_mtfsb0<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_mtfsb0<RC1>(uint32_t instr);
 
 template <field_rc rec>
 void dppc_interpreter::ppc_mtfsb1(uint32_t instr) {
@@ -943,8 +943,8 @@ void dppc_interpreter::ppc_mtfsb1(uint32_t instr) {
         ppc_update_cr1();
 }
 
-template void dppc_interpreter::ppc_mtfsb1<RC0>(uint32_t);
-template void dppc_interpreter::ppc_mtfsb1<RC1>(uint32_t);
+template void dppc_interpreter::ppc_mtfsb1<RC0>(uint32_t instr);
+template void dppc_interpreter::ppc_mtfsb1<RC1>(uint32_t instr);
 
 void dppc_interpreter::ppc_mcrfs(uint32_t instr) {
     int crf_d = (instr >> 21) & 0x1C;

@@ -125,7 +125,7 @@ extern void mmu_change_mode(void);
 extern void mmu_pat_ctx_changed();
 extern void tlb_flush_entry(uint32_t ea);
 
-extern uint64_t mem_read_dbg(uint32_t virt_addr, uint32_t size);
+extern uint64_t mem_read_dbg(uint32_t virt_addr, uint32_t instr, uint32_t size);
 uint8_t *mmu_translate_imem(uint32_t vaddr, uint32_t *paddr = nullptr);
 bool mmu_translate_dbg(uint32_t guest_va, uint32_t &guest_pa);
 

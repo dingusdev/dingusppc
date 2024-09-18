@@ -204,7 +204,7 @@ static PPCOpcode SubOpcode63Grabber[2048];
 
 /** Exception helpers. */
 
-void ppc_illegalop() {
+void ppc_illegalop(uint32_t null_val) {
     ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
 }
 
