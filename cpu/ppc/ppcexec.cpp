@@ -390,7 +390,7 @@ static void ppc_exec_inner()
                 eb_start = ppc_next_instruction_address;
                 if (!(exec_flags & EXEF_RFI) && (eb_start & PPC_PAGE_MASK) == page_start) {
                     pc_real += (int)eb_start - (int)ppc_state.pc;
-                    ppc_set_cur_instruction(pc_real);
+                    instr    = ppc_set_cur_instruction(pc_real);
                 } else {
                     page_start = eb_start & PPC_PAGE_MASK;
                     eb_end = page_start + PPC_PAGE_SIZE - 1;
@@ -401,8 +401,8 @@ static void ppc_exec_inner()
                 exec_flags = 0;
             } else {
                 ppc_state.pc += 4;
-                pc_real += 4;
-                ppc_set_cur_instruction(pc_real);
+                pc_real      += 4;
+                instr         = ppc_set_cur_instruction(pc_real);
             }
         }
     }
@@ -485,7 +485,7 @@ static void ppc_exec_until_inner(const uint32_t goal_addr)
                 eb_start = ppc_next_instruction_address;
                 if (!(exec_flags & EXEF_RFI) && (eb_start & PPC_PAGE_MASK) == page_start) {
                     pc_real += (int)eb_start - (int)ppc_state.pc;
-                    ppc_set_cur_instruction(pc_real);
+                    instr    = ppc_set_cur_instruction(pc_real);
                 } else {
                     page_start = eb_start & PPC_PAGE_MASK;
                     eb_end = page_start + PPC_PAGE_SIZE - 1;
@@ -497,7 +497,7 @@ static void ppc_exec_until_inner(const uint32_t goal_addr)
             } else {
                 ppc_state.pc += 4;
                 pc_real += 4;
-                ppc_set_cur_instruction(pc_real);
+                instr = ppc_set_cur_instruction(pc_real);
             }
 
             if (ppc_state.pc == goal_addr)
@@ -556,7 +556,7 @@ static void ppc_exec_dbg_inner(const uint32_t start_addr, const uint32_t size)
                 eb_start = ppc_next_instruction_address;
                 if (!(exec_flags & EXEF_RFI) && (eb_start & PPC_PAGE_MASK) == page_start) {
                     pc_real += (int)eb_start - (int)ppc_state.pc;
-                    ppc_set_cur_instruction(pc_real);
+                    instr    = ppc_set_cur_instruction(pc_real);
                 } else {
                     page_start = eb_start & PPC_PAGE_MASK;
                     eb_end = page_start + PPC_PAGE_SIZE - 1;
@@ -568,7 +568,7 @@ static void ppc_exec_dbg_inner(const uint32_t start_addr, const uint32_t size)
             } else {
                 ppc_state.pc += 4;
                 pc_real += 4;
-                ppc_set_cur_instruction(pc_real);
+                instr    = ppc_set_cur_instruction(pc_real);
             }
         }
     }

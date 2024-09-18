@@ -1425,7 +1425,7 @@ public:
 };
 #endif
 
-uint64_t mem_read_dbg(uint32_t virt_addr, uint32_t instr, uint32_t size) {
+uint64_t mem_read_dbg(uint32_t virt_addr, uint32_t size) {
     uint32_t save_dsisr, save_dar;
     uint64_t ret_val;
 
@@ -1437,19 +1437,19 @@ uint64_t mem_read_dbg(uint32_t virt_addr, uint32_t instr, uint32_t size) {
     try {
         switch (size) {
         case 1:
-            ret_val = mmu_read_vmem<uint8_t>(virt_addr, instr);
+            ret_val = mmu_read_vmem<uint8_t>(virt_addr, 0);
             break;
         case 2:
-            ret_val = mmu_read_vmem<uint16_t>(virt_addr, instr);
+            ret_val = mmu_read_vmem<uint16_t>(virt_addr, 0);
             break;
         case 4:
-            ret_val = mmu_read_vmem<uint32_t>(virt_addr, instr);
+            ret_val = mmu_read_vmem<uint32_t>(virt_addr, 0);
             break;
         case 8:
-            ret_val = mmu_read_vmem<uint64_t>(virt_addr, instr);
+            ret_val = mmu_read_vmem<uint64_t>(virt_addr, 0);
             break;
         default:
-            ret_val = mmu_read_vmem<uint8_t>(virt_addr, instr);
+            ret_val = mmu_read_vmem<uint8_t>(virt_addr, 0);
         }
     } catch (std::invalid_argument& exc) {
         /* restore MMU-related CPU state */
