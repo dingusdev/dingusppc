@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
 
     /* load executable code into RAM at address 0 */
     for (i = 0; i < sizeof(cs_code) / sizeof(cs_code[0]); i++) {
-        mmu_write_vmem<uint32_t>(i*4, cs_code[i]);
+        mmu_write_vmem<uint32_t>(i * 4, 0, cs_code[i]);
     }
 
     srand(0xCAFEBABE);
@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
     bool did_lf = false;
     for (i = 0; i < test_size; i++) {
         uint8_t val = rand() % 256;
-        mmu_write_vmem<uint8_t>(0x1000+i, val);
+        mmu_write_vmem<uint8_t>(0x1000 + i, 0, val);
         if (i < 64) {
             printf("%02x", val);
             did_lf = false;

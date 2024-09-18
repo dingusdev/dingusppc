@@ -124,7 +124,7 @@ static uint32_t disasm_68k(uint32_t count, uint32_t address) {
     for (; power_on && count > 0; count--) {
         /* prefetch opcode bytes (a 68k instruction can occupy 2...10 bytes) */
         for (int i = 0; i < sizeof(code); i++) {
-            code[i] = mem_read_dbg(address + i, 1);
+            code[i] = mem_read_dbg(address + i, 0, 1);
         }
 
         const uint8_t *code_ptr  = code;
@@ -161,7 +161,7 @@ print_bin:
 #define EMU_68K_TABLE_SIZE 0x80000
 
 /** Execute one emulated 68k instruction. */
-void exec_single_68k()
+void exec_single_68k(uint32_t instr)
 {
     uint32_t emu_table_virt, cur_68k_pc, cur_instr_tab_entry, ppc_pc;
 
@@ -174,7 +174,7 @@ void exec_single_68k()
 
     /* calculate address of the current opcode table entry as follows:
        get_word(68k_PC) * entry_size + table_base */
-    cur_instr_tab_entry = mmu_read_vmem<uint16_t>(cur_68k_pc) * 8 + emu_table_virt;
+    cur_instr_tab_entry = mmu_read_vmem<uint16_t>(((cur_68k_pc) * 8 + emu_table_virt), instr);
 
     /* grab the PPC PC too */
     ppc_pc = get_reg(string("PC"));
@@ -314,7 +314,7 @@ static void dump_mem(string& params) {
                 cout << endl;
                 chars_per_line = 0;
             }
-            val = mem_read_dbg(addr, cell_size);
+            val = mem_read_dbg(addr, 0, cell_size);
             if (is_char) {
                 cout << (char)val;
                 chars_per_line += cell_size;
@@ -621,7 +621,7 @@ void enter_debugger() {
             if (context == 2) {
 #ifdef ENABLE_68K_DEBUGGER
                 for (; --count >= 0;) {
-                    exec_single_68k();
+                    exec_single_68k(0);
                 }
 #endif
             } else {

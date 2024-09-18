@@ -984,7 +984,7 @@ void mmu_pat_ctx_changed()
 
 // Forward declarations.
 template <class T>
-static T read_unaligned(uint32_t guest_va, uint32_t instr, uint8_t* host_va);
+static T read_unaligned(uint32_t guest_va, uint8_t* host_va, uint32_t instr);
 template <class T>
 static void write_unaligned(uint32_t guest_va, uint8_t* host_va, uint32_t instr, T value);
 
@@ -1059,7 +1059,7 @@ inline T mmu_read_vmem(uint32_t guest_va, uint32_t instr) {
 
     // handle unaligned memory accesses
     if (sizeof(T) > 1 && (guest_va & (sizeof(T) - 1))) {
-        return read_unaligned<T>(guest_va, host_va);
+        return read_unaligned<T>(guest_va, host_va, instr);
     }
 
     // handle aligned memory accesses
@@ -1153,7 +1153,7 @@ inline void mmu_write_vmem(uint32_t guest_va, uint32_t instr, T value) {
 #endif
             if (sizeof(T) == 8) {
                 if (guest_va & 3)
-                    ppc_alignment_exception(guest_va);
+                    ppc_alignment_exception(guest_va, instr);
 
                 tlb2_entry->rgn_desc->devobj->write(tlb2_entry->rgn_desc->start,
                                                     static_cast<uint32_t>(guest_va - tlb2_entry->dev_base_va),
@@ -1176,7 +1176,7 @@ inline void mmu_write_vmem(uint32_t guest_va, uint32_t instr, T value) {
 
     // handle unaligned memory accesses
     if (sizeof(T) > 1 && (guest_va & (sizeof(T) - 1))) {
-        write_unaligned<T>(guest_va, host_va, value);
+        write_unaligned<T>(guest_va, host_va, instr, value);
         return;
     }
 
@@ -1252,7 +1252,7 @@ static void write_unaligned(uint32_t guest_va, uint8_t *host_va, uint32_t instr,
 {
     if ((sizeof(T) == 8) && (guest_va & 3)) {
 #ifndef PPC_TESTS
-        ppc_alignment_exception(guest_va);
+        ppc_alignment_exception(guest_va, instr);
 #endif
     }
 
@@ -1268,7 +1268,7 @@ static void write_unaligned(uint32_t guest_va, uint8_t *host_va, uint32_t instr,
         uint32_t shift = (sizeof(T) - 1) * 8;
 
         for (int i = 0; i < sizeof(T); shift -= 8, guest_va++, i++) {
-            mmu_write_vmem<uint8_t>(guest_va, uint32_t instr, (value >> shift) & 0xFF);
+            mmu_write_vmem<uint8_t>(guest_va, instr, ((value >> shift) & 0xFF));
         }
     } else {
 #ifdef MMU_PROFILING
