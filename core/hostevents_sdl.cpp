@@ -334,7 +334,7 @@ static int get_sdl_event_key_code(const SDL_KeyboardEvent &event, uint32_t kbd_l
             return AdbKey_JIS_Yen;
     case SDL_SCANCODE_TO_KEYCODE(SDL_SCANCODE_INTERNATIONAL1):
         return AdbKey_JIS_Underscore;
-    case 0XBC:          
+    case 0XBC:
         return AdbKey_JIS_KP_Comma;
     case 0X89:
         return AdbKey_JIS_Eisu;
