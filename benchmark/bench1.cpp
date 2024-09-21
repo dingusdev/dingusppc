@@ -43,8 +43,7 @@ uint32_t cs_code[] = {
     0x7C650194, /* 0x4E800020 */ 0x00005AF0
 };
 
-// 0x7FFFFFFC is the max
-constexpr uint32_t test_size = 0x8000;
+constexpr uint32_t test_size = 0x8000; // 0x7FFFFFFC is the max
 constexpr uint32_t test_samples = 200;
 constexpr uint32_t test_iterations = 5;
 
