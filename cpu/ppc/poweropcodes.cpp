@@ -34,8 +34,7 @@ static inline uint32_t power_rot_mask(unsigned rot_mb, unsigned rot_me) {
     return ((rot_mb <= rot_me) ? m2 & m1 : m1 | m2);
 }
 
-template <field_rc rec, field_ov ov>
-void dppc_interpreter::power_abs(uint32_t instr) {
+POWEROPCODEOVREC (abs,
     uint32_t ppc_result_d;
     ppc_grab_regsda(instr);
     if (ppc_result_a == 0x80000000) {
@@ -51,15 +50,15 @@ void dppc_interpreter::power_abs(uint32_t instr) {
     if (rec)
         ppc_changecrf0(ppc_result_d);
 
-    ppc_store_iresult_reg(reg_d, ppc_result_d);
-}
+    ppc_state.gpr[reg_d] = ppc_result_d;
+)
 
 template void dppc_interpreter::power_abs<RC0, OV0>(uint32_t instr);
 template void dppc_interpreter::power_abs<RC0, OV1>(uint32_t instr);
 template void dppc_interpreter::power_abs<RC1, OV0>(uint32_t instr);
 template void dppc_interpreter::power_abs<RC1, OV1>(uint32_t instr);
 
-void dppc_interpreter::power_clcs(uint32_t instr) {
+POWEROPCODE (clcs,
     uint32_t ppc_result_d;
     ppc_grab_da(instr);
     switch (reg_a) {
@@ -80,11 +79,10 @@ void dppc_interpreter::power_clcs(uint32_t instr) {
     case 27: ppc_result_d = is_601 ? 64 : 0x4000; break;
     }
 
-    ppc_store_iresult_reg(reg_d, ppc_result_d);
-}
+    ppc_state.gpr[reg_d] = ppc_result_d;
+)
 
-template <field_rc rec, field_ov ov>
-void dppc_interpreter::power_div(uint32_t instr) {
+POWEROPCODEOVREC (div,
     uint32_t ppc_result_d;
     ppc_grab_regsdab(instr);
 
@@ -119,17 +117,16 @@ void dppc_interpreter::power_div(uint32_t instr) {
     if (rec)
         ppc_changecrf0(remainder);
 
-    ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_state.gpr[reg_d] = ppc_result_d;
     ppc_state.spr[SPR::MQ] = remainder;
-}
+)
 
 template void dppc_interpreter::power_div<RC0, OV0>(uint32_t instr);
 template void dppc_interpreter::power_div<RC0, OV1>(uint32_t instr);
 template void dppc_interpreter::power_div<RC1, OV0>(uint32_t instr);
 template void dppc_interpreter::power_div<RC1, OV1>(uint32_t instr);
 
-template <field_rc rec, field_ov ov>
-void dppc_interpreter::power_divs(uint32_t instr) {
+POWEROPCODEOVREC (divs,
     uint32_t ppc_result_d;
     int32_t remainder;
     ppc_grab_regsdab(instr);
@@ -153,17 +150,16 @@ void dppc_interpreter::power_divs(uint32_t instr) {
     if (rec)
         ppc_changecrf0(remainder);
 
-    ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_state.gpr[reg_d] = ppc_result_d;
     ppc_state.spr[SPR::MQ] = remainder;
-}
+)
 
 template void dppc_interpreter::power_divs<RC0, OV0>(uint32_t instr);
 template void dppc_interpreter::power_divs<RC0, OV1>(uint32_t instr);
 template void dppc_interpreter::power_divs<RC1, OV0>(uint32_t instr);
 template void dppc_interpreter::power_divs<RC1, OV1>(uint32_t instr);
 
-template <field_rc rec, field_ov ov>
-void dppc_interpreter::power_doz(uint32_t instr) {
+POWEROPCODEOVREC (doz,
     ppc_grab_regsdab(instr);
     uint32_t ppc_result_d = (int32_t(ppc_result_a) < int32_t(ppc_result_b)) ?
         ppc_result_b - ppc_result_a : 0;
@@ -178,15 +174,15 @@ void dppc_interpreter::power_doz(uint32_t instr) {
     if (rec)
         ppc_changecrf0(ppc_result_d);
 
-    ppc_store_iresult_reg(reg_d, ppc_result_d);
-}
+    ppc_state.gpr[reg_d] = ppc_result_d;
+)
 
 template void dppc_interpreter::power_doz<RC0, OV0>(uint32_t instr);
 template void dppc_interpreter::power_doz<RC0, OV1>(uint32_t instr);
 template void dppc_interpreter::power_doz<RC1, OV0>(uint32_t instr);
 template void dppc_interpreter::power_doz<RC1, OV1>(uint32_t instr);
 
-void dppc_interpreter::power_dozi(uint32_t instr) {
+POWEROPCODE (dozi,
     uint32_t ppc_result_d;
     ppc_grab_regsdasimm(instr);
     if (((int32_t)ppc_result_a) > simm) {
@@ -194,11 +190,10 @@ void dppc_interpreter::power_dozi(uint32_t instr) {
     } else {
         ppc_result_d = simm - ppc_result_a;
     }
-    ppc_store_iresult_reg(reg_d, ppc_result_d);
-}
+    ppc_state.gpr[reg_d] = ppc_result_d;
+)
 
-template <field_rc rec>
-void dppc_interpreter::power_lscbx(uint32_t instr) {
+POWEROPCODEREC (lscbx,
     ppc_grab_regsdab(instr);
     uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
 
@@ -217,7 +212,7 @@ void dppc_interpreter::power_lscbx(uint32_t instr) {
         ppc_result_d |= return_value << shift_amount;
         if (!shift_amount) {
             if (reg_d != reg_a && reg_d != reg_b)
-                ppc_store_iresult_reg(reg_d, ppc_result_d);
+                ppc_state.gpr[reg_d] = ppc_result_d;
             reg_d        = (reg_d + 1) & 0x1F;
             ppc_result_d = 0;
             shift_amount = 24;
@@ -236,7 +231,7 @@ void dppc_interpreter::power_lscbx(uint32_t instr) {
 
     // store partially loaded register if any
     if (shift_amount != 24 && reg_d != reg_a && reg_d != reg_b)
-        ppc_store_iresult_reg(reg_d, ppc_result_d);
+        ppc_state.gpr[reg_d] = ppc_result_d;
 
     ppc_state.spr[SPR::XER] = (ppc_state.spr[SPR::XER] & ~0x7F) | (bytes_to_load - bytes_remaining);
 
@@ -246,13 +241,12 @@ void dppc_interpreter::power_lscbx(uint32_t instr) {
             (is_match ? CRx_bit::CR_EQ : 0) |
             ((ppc_state.spr[SPR::XER] & XER::SO) >> 3);
     }
-}
+)
 
 template void dppc_interpreter::power_lscbx<RC0>(uint32_t instr);
 template void dppc_interpreter::power_lscbx<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::power_maskg(uint32_t instr) {
+POWEROPCODEREC (maskg,
     ppc_grab_regssab(instr);
     uint32_t mask_start  = ppc_result_d & 0x1F;
     uint32_t mask_end    = ppc_result_b & 0x1F;
@@ -273,28 +267,26 @@ void dppc_interpreter::power_maskg(uint32_t instr) {
     if (rec)
         ppc_changecrf0(ppc_result_a);
 
-    ppc_store_iresult_reg(reg_a, ppc_result_a);
+    ppc_state.gpr[reg_a] = ppc_result_a;
 }
 
 template void dppc_interpreter::power_maskg<RC0>(uint32_t instr);
 template void dppc_interpreter::power_maskg<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::power_maskir(uint32_t instr) {
+POWEROPCODEREC (maskir,
     ppc_grab_regssab(instr);
     ppc_result_a = (ppc_result_a & ~ppc_result_b) | (ppc_result_d & ppc_result_b);
 
     if (rec)
         ppc_changecrf0(ppc_result_a);
 
-    ppc_store_iresult_reg(reg_a, ppc_result_a);
+    ppc_state.gpr[reg_a] = ppc_result_a;
 }
 
 template void dppc_interpreter::power_maskir<RC0>(uint32_t instr);
 template void dppc_interpreter::power_maskir<RC1>(uint32_t instr);
 
-template <field_rc rec, field_ov ov>
-void dppc_interpreter::power_mul(uint32_t instr) {
+POWEROPCODEOVREC (mul,
     ppc_grab_regsdab(instr);
     int64_t product        = int64_t(int32_t(ppc_result_a)) * int32_t(ppc_result_b);
     uint32_t ppc_result_d  = uint32_t(uint64_t(product) >> 32);
@@ -309,7 +301,7 @@ void dppc_interpreter::power_mul(uint32_t instr) {
     }
     if (rec)
         ppc_changecrf0(uint32_t(product));
-    ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_state.gpr[reg_d] = ppc_result_d;
 }
 
 template void dppc_interpreter::power_mul<RC0, OV0>(uint32_t instr);
@@ -317,8 +309,7 @@ template void dppc_interpreter::power_mul<RC0, OV1>(uint32_t instr);
 template void dppc_interpreter::power_mul<RC1, OV0>(uint32_t instr);
 template void dppc_interpreter::power_mul<RC1, OV1>(uint32_t instr);
 
-template <field_rc rec, field_ov ov>
-void dppc_interpreter::power_nabs(uint32_t instr) {
+POWEROPCODEOVREC (nabs,
     ppc_grab_regsda(instr);
     uint32_t ppc_result_d = (int32_t(ppc_result_a) < 0) ? ppc_result_a : -ppc_result_a;
 
@@ -327,7 +318,7 @@ void dppc_interpreter::power_nabs(uint32_t instr) {
     if (rec)
         ppc_changecrf0(ppc_result_d);
 
-    ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_state.gpr[reg_d] = ppc_result_d;
 }
 
 template void dppc_interpreter::power_nabs<RC0, OV0>(uint32_t instr);
@@ -335,7 +326,7 @@ template void dppc_interpreter::power_nabs<RC0, OV1>(uint32_t instr);
 template void dppc_interpreter::power_nabs<RC1, OV0>(uint32_t instr);
 template void dppc_interpreter::power_nabs<RC1, OV1>(uint32_t instr);
 
-void dppc_interpreter::power_rlmi(uint32_t instr) {
+POWEROPCODE (rlmi,
     ppc_grab_regssab(instr);
     unsigned rot_mb      = (instr >> 6) & 0x1F;
     unsigned rot_me      = (instr >> 1) & 0x1F;
@@ -349,11 +340,10 @@ void dppc_interpreter::power_rlmi(uint32_t instr) {
     if ((instr & 0x01) == 1)
         ppc_changecrf0(ppc_result_a);
 
-    ppc_store_iresult_reg(reg_a, ppc_result_a);
+    ppc_state.gpr[reg_a] = ppc_result_a;
 }
 
-template <field_rc rec>
-void dppc_interpreter::power_rrib(uint32_t instr) {
+POWEROPCODEREC (rrib,
     ppc_grab_regssab(instr);
     unsigned rot_sh = ppc_result_b & 0x1F;
 
@@ -366,33 +356,31 @@ void dppc_interpreter::power_rrib(uint32_t instr) {
     if (rec)
         ppc_changecrf0(ppc_result_a);
 
-    ppc_store_iresult_reg(reg_a, ppc_result_a);
+    ppc_state.gpr[reg_a] = ppc_result_a;
 }
 
 template void dppc_interpreter::power_rrib<RC0>(uint32_t instr);
 template void dppc_interpreter::power_rrib<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::power_sle(uint32_t instr) {
+POWEROPCODEREC (sle,
     ppc_grab_regssab(instr);
     unsigned rot_sh = ppc_result_b & 0x1F;
 
     ppc_result_a           = ppc_result_d << rot_sh;
     ppc_state.spr[SPR::MQ] = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
 
-    ppc_store_iresult_reg(reg_a, ppc_result_a);
+    ppc_state.gpr[reg_a] = ppc_result_a;
 
     if (rec)
         ppc_changecrf0(ppc_result_a);
 
-    ppc_store_iresult_reg(reg_a, ppc_result_a);
-}
+    ppc_state.gpr[reg_a] = ppc_result_a;
+)
 
 template void dppc_interpreter::power_sle<RC0>(uint32_t instr);
 template void dppc_interpreter::power_sle<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::power_sleq(uint32_t instr) {
+POWEROPCODEREC (sleq,
     ppc_grab_regssab(instr);
     unsigned rot_sh = ppc_result_b & 0x1F;
     uint32_t r      = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
@@ -404,14 +392,13 @@ void dppc_interpreter::power_sleq(uint32_t instr) {
     if (rec)
         ppc_changecrf0(ppc_result_a);
 
-    ppc_store_iresult_reg(reg_a, ppc_result_a);
-}
+    ppc_state.gpr[reg_a] = ppc_result_a;
+)
 
 template void dppc_interpreter::power_sleq<RC0>(uint32_t instr);
 template void dppc_interpreter::power_sleq<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::power_sliq(uint32_t instr) {
+POWEROPCODEREC (sliq,
     ppc_grab_regssash(instr);
 
     ppc_result_a           = ppc_result_d << rot_sh;
@@ -420,14 +407,13 @@ void dppc_interpreter::power_sliq(uint32_t instr) {
     if (rec)
         ppc_changecrf0(ppc_result_a);
 
-    ppc_store_iresult_reg(reg_a, ppc_result_a);
-}
+    ppc_state.gpr[reg_a] = ppc_result_a;
+)
 
 template void dppc_interpreter::power_sliq<RC0>(uint32_t instr);
 template void dppc_interpreter::power_sliq<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::power_slliq(uint32_t instr) {
+POWEROPCODEREC (slliq,
     ppc_grab_regssash(instr);
     uint32_t r      = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
     uint32_t mask   = power_rot_mask(0, 31 - rot_sh);
@@ -438,14 +424,13 @@ void dppc_interpreter::power_slliq(uint32_t instr) {
     if (rec)
         ppc_changecrf0(ppc_result_a);
 
-    ppc_store_iresult_reg(reg_a, ppc_result_a);
-}
+    ppc_state.gpr[reg_a] = ppc_result_a;
+)
 
 template void dppc_interpreter::power_slliq<RC0>(uint32_t instr);
 template void dppc_interpreter::power_slliq<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::power_sllq(uint32_t instr) {
+POWEROPCODEREC (sllq,
     ppc_grab_regssab(instr);
     unsigned rot_sh = ppc_result_b & 0x1F;
 
@@ -458,14 +443,13 @@ void dppc_interpreter::power_sllq(uint32_t instr) {
     if (rec)
         ppc_changecrf0(ppc_result_a);
 
-    ppc_store_iresult_reg(reg_a, ppc_result_a);
-}
+    ppc_state.gpr[reg_a] = ppc_result_a;
+)
 
 template void dppc_interpreter::power_sllq<RC0>(uint32_t instr);
 template void dppc_interpreter::power_sllq<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::power_slq(uint32_t instr) {
+POWEROPCODEREC (slq,
     ppc_grab_regssab(instr);
     unsigned rot_sh = ppc_result_b & 0x1F;
 
@@ -479,14 +463,13 @@ void dppc_interpreter::power_slq(uint32_t instr) {
         ppc_changecrf0(ppc_result_a);
 
     ppc_state.spr[SPR::MQ] = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
-    ppc_store_iresult_reg(reg_a, ppc_result_a);
-}
+    ppc_state.gpr[reg_a] = ppc_result_a;
+)
 
 template void dppc_interpreter::power_slq<RC0>(uint32_t instr);
 template void dppc_interpreter::power_slq<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::power_sraiq(uint32_t instr) {
+POWEROPCODEREC (sraiq,
     ppc_grab_regssash(instr);
     uint32_t mask          = (1 << rot_sh) - 1;
     ppc_result_a           = (int32_t)ppc_result_d >> rot_sh;
@@ -501,14 +484,13 @@ void dppc_interpreter::power_sraiq(uint32_t instr) {
     if (rec)
         ppc_changecrf0(ppc_result_a);
 
-    ppc_store_iresult_reg(reg_a, ppc_result_a);
-}
+    ppc_state.gpr[reg_a] = ppc_result_a;
+)
 
 template void dppc_interpreter::power_sraiq<RC0>(uint32_t instr);
 template void dppc_interpreter::power_sraiq<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::power_sraq(uint32_t instr) {
+POWEROPCODEREC (sraq,
     ppc_grab_regssab(instr);
     unsigned rot_sh        = ppc_result_b & 0x1F;
     uint32_t mask          = (ppc_result_b & 0x20) ? -1 : (1 << rot_sh) - 1;
@@ -526,14 +508,13 @@ void dppc_interpreter::power_sraq(uint32_t instr) {
     if (rec)
         ppc_changecrf0(ppc_result_a);
 
-    ppc_store_iresult_reg(reg_a, ppc_result_a);
-}
+    ppc_state.gpr[reg_a] = ppc_result_a;
+)
 
 template void dppc_interpreter::power_sraq<RC0>(uint32_t instr);
 template void dppc_interpreter::power_sraq<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::power_sre(uint32_t instr) {
+POWEROPCODEREC (sre,
     ppc_grab_regssab(instr);
 
     unsigned rot_sh = ppc_result_b & 0x1F;
@@ -544,14 +525,13 @@ void dppc_interpreter::power_sre(uint32_t instr) {
     if (rec)
         ppc_changecrf0(ppc_result_a);
 
-    ppc_store_iresult_reg(reg_a, ppc_result_a);
-}
+    ppc_state.gpr[reg_a] = ppc_result_a;
+)
 
 template void dppc_interpreter::power_sre<RC0>(uint32_t instr);
 template void dppc_interpreter::power_sre<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::power_srea(uint32_t instr) {
+POWEROPCODEREC (srea,
     ppc_grab_regssab(instr);
     unsigned rot_sh        = ppc_result_b & 0x1F;
     ppc_result_a           = (int32_t)ppc_result_d >> rot_sh;
@@ -567,15 +547,14 @@ void dppc_interpreter::power_srea(uint32_t instr) {
     if (rec)
         ppc_changecrf0(ppc_result_a);
 
-    ppc_store_iresult_reg(reg_a, ppc_result_a);
+    ppc_state.gpr[reg_a] = ppc_result_a;
     ppc_state.spr[SPR::MQ] = r;
-}
+)
 
 template void dppc_interpreter::power_srea<RC0>(uint32_t instr);
 template void dppc_interpreter::power_srea<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::power_sreq(uint32_t instr) {
+POWEROPCODEREC (sreq,
     ppc_grab_regssab(instr);
     unsigned rot_sh = ppc_result_b & 0x1F;
     uint32_t mask   = -1U >> rot_sh;
@@ -586,14 +565,13 @@ void dppc_interpreter::power_sreq(uint32_t instr) {
     if (rec)
         ppc_changecrf0(ppc_result_a);
 
-    ppc_store_iresult_reg(reg_a, ppc_result_a);
-}
+    ppc_state.gpr[reg_a] = ppc_result_a;
+)
 
 template void dppc_interpreter::power_sreq<RC0>(uint32_t instr);
 template void dppc_interpreter::power_sreq<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::power_sriq(uint32_t instr) {
+POWEROPCODEREC (sriq,
     ppc_grab_regssash(instr);
     ppc_result_a           = ppc_result_d >> rot_sh;
     ppc_state.spr[SPR::MQ] = (ppc_result_d >> rot_sh) | (ppc_result_d << (32 - rot_sh));
@@ -601,14 +579,13 @@ void dppc_interpreter::power_sriq(uint32_t instr) {
     if (rec)
         ppc_changecrf0(ppc_result_a);
 
-    ppc_store_iresult_reg(reg_a, ppc_result_a);
-}
+    ppc_state.gpr[reg_a] = ppc_result_a;
+)
 
 template void dppc_interpreter::power_sriq<RC0>(uint32_t instr);
 template void dppc_interpreter::power_sriq<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::power_srliq(uint32_t instr) {
+POWEROPCODEREC (srliq,
     ppc_grab_regssash(instr);
     uint32_t r      = (ppc_result_d >> rot_sh) | (ppc_result_d << (32 - rot_sh));
     unsigned mask   = power_rot_mask(rot_sh, 31);
@@ -619,14 +596,13 @@ void dppc_interpreter::power_srliq(uint32_t instr) {
     if (rec)
         ppc_changecrf0(ppc_result_a);
 
-    ppc_store_iresult_reg(reg_a, ppc_result_a);
-}
+    ppc_state.gpr[reg_a] = ppc_result_a;
+)
 
 template void dppc_interpreter::power_srliq<RC0>(uint32_t instr);
 template void dppc_interpreter::power_srliq<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::power_srlq(uint32_t instr) {
+POWEROPCODEREC (srlq,
     ppc_grab_regssab(instr);
     unsigned rot_sh = ppc_result_b & 0x1F;
     uint32_t r      = (ppc_result_d >> rot_sh) | (ppc_result_d << (32 - rot_sh));
@@ -641,14 +617,13 @@ void dppc_interpreter::power_srlq(uint32_t instr) {
     if (rec)
         ppc_changecrf0(ppc_result_a);
 
-    ppc_store_iresult_reg(reg_a, ppc_result_a);
-}
+    ppc_state.gpr[reg_a] = ppc_result_a;
+)
 
 template void dppc_interpreter::power_srlq<RC0>(uint32_t instr);
 template void dppc_interpreter::power_srlq<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::power_srq(uint32_t instr) {
+POWEROPCODEREC (srq,
     ppc_grab_regssab(instr);
     unsigned rot_sh = ppc_result_b & 0x1F;
 
@@ -663,8 +638,8 @@ void dppc_interpreter::power_srq(uint32_t instr) {
     if (rec)
         ppc_changecrf0(ppc_result_a);
 
-    ppc_store_iresult_reg(reg_a, ppc_result_a);
-}
+    ppc_state.gpr[reg_a] = ppc_result_a;
+)
 
 template void dppc_interpreter::power_srq<RC0>(uint32_t instr);
 template void dppc_interpreter::power_srq<RC1>(uint32_t instr);

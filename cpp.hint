@@ -1,0 +1,18 @@
+// Hint files help the Visual Studio IDE interpret Visual C++ identifiers
+// such as names of functions and macros.
+// For more information see https://go.microsoft.com/fwlink/?linkid=865984
+#define OPCODEREC(op, __VA_ARGS__) template <field_rc rec> void dppc_interpreter::ppc_##op(uint32_t instr) { __VA_ARGS__ }
+#define OPCODESHIFT(op, __VA_ARGS__) template <field_shift shift> void dppc_interpreter::ppc_##op(uint32_t instr) { __VA_ARGS__ }
+#define OPCODEOVREC(op, __VA_ARGS__) template <field_rc rec, field_ov ov> void dppc_interpreter::ppc_##op(uint32_t instr) { __VA_ARGS__ }
+#define OPCODE(op, __VA_ARGS__) void dppc_interpreter::ppc_##op(uint32_t instr) {##__VA_ARGS__ }
+#define OPCODECARRY(op, __VA_ARGS__) template <field_carry carry, field_rc rec, field_ov ov> void dppc_interpreter::ppc_##op(uint32_t instr) { __VA_ARGS__ }
+// Hint files help the Visual Studio IDE interpret Visual C++ identifiers
+// such as names of functions and macros.
+// For more information see https://go.microsoft.com/fwlink/?linkid=865984
+#define POWEROPCODEREC(op, __VA_ARGS__) template <field_rc rec> void dppc_interpreter::power_##op(uint32_t instr) { __VA_ARGS__ }
+#define POWEROPCODEOVREC(op, __VA_ARGS__) template <field_rc rec, field_ov ov> void dppc_interpreter::power_##op(uint32_t instr) { __VA_ARGS__ }
+#define OPCODELOGIC(op, __VA_ARGS__) template <logical_fun logical_op, field_rc rec> void dppc_interpreter::ppc_##op(uint32_t instr) { __VA_ARGS__ }
+#define OPCODELKAA(op, __VA_ARGS__) template <field_lk l, field_aa a> void dppc_interpreter::ppc_##op(uint32_t instr) { __VA_ARGS__ }
+#define OPCODE601L(op, __VA_ARGS__) template <field_lk l, field_601 for601, field_rc rec> void dppc_interpreter::ppc_##op(uint32_t instr) { __VA_ARGS__ }
+#define POWEROPCODE(op, __VA_ARGS__) void dppc_interpreter::power_##op(uint32_t instr) {##__VA_ARGS__ }
+#define OPCODEMEM(op, __VA_ARGS__) template <class T> void dppc_interpreter::ppc_##op(uint32_t instr) { __VA_ARGS__ }
