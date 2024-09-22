@@ -80,7 +80,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     int reg_b             = (opcode >> 11) & 31; \
     uint32_t ppc_result_d = ppc_state.gpr[reg_s]; \
     uint32_t ppc_result_a = ppc_state.gpr[reg_a]; \
-    uint32_t ppc_result_b = ppc_state.gpr[reg_b]; \
+    uint32_t ppc_result_b = ppc_state.gpr[reg_b];
 
 #define ppc_grab_regssab_stswx(opcode) \
     int reg_s             = (opcode >> 21) & 31; \
@@ -123,7 +123,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     int reg_s             = (opcode >> 21) & 31; \
     int reg_b             = (opcode >> 11) & 31; \
     uint32_t ppc_result_d   = ppc_state.gpr[reg_s]; \
-    uint32_t ppc_result_b   = ppc_state.gpr[reg_b]; \
+    uint32_t ppc_result_b   = ppc_state.gpr[reg_b];
 
 
 #define ppc_grab_regsda(opcode) \
@@ -136,9 +136,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     int reg_d = (opcode >> 21) & 31; \
     uint32_t reg_b = (opcode >> 11) & 31; \
     uint32_t ppc_result_b   = ppc_state.gpr[reg_b];
-
-#define ppc_store_iresult_reg(reg, ppc_result)\
-    ppc_state.gpr[reg] = ppc_result;
 
 #define ppc_store_sfpresult_int(reg, ppc_result64_d)\
      ppc_state.fpr[(reg)].int64_r = ppc_result64_d;
@@ -156,7 +153,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         int reg_d = (opcode >> 21) & 31; \
         int reg_b = (opcode >> 11) & 31;
 
-#define GET_FPR(reg)                                                                               \
+#define GET_FPR(reg) \
     ppc_state.fpr[(reg)].dbl64_r 
 
 #define ppc_grab_regsfpdiab(opcode) \

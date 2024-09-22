@@ -152,8 +152,7 @@ static void ppc_update_fex() {
 }
 
 // Floating Point Arithmetic
-template <field_rc rec>
-void dppc_interpreter::ppc_fadd(uint32_t instr) {
+OPCODEREC (fadd,
     ppc_grab_regsfpdab(instr);
 
     snan_double_check(reg_a, reg_b);
@@ -166,13 +165,12 @@ void dppc_interpreter::ppc_fadd(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_fadd<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_fadd<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_fsub(uint32_t instr) {
+OPCODEREC (fsub,
     ppc_grab_regsfpdab(instr);
 
     snan_double_check(reg_a, reg_b);
@@ -184,13 +182,12 @@ void dppc_interpreter::ppc_fsub(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_fsub<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_fsub<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_fdiv(uint32_t instr) {
+OPCODEREC (fdiv,
     ppc_grab_regsfpdab(instr);
 
     snan_double_check(reg_a, reg_b);
@@ -201,13 +198,12 @@ void dppc_interpreter::ppc_fdiv(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_fdiv<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_fdiv<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_fmul(uint32_t instr) {
+OPCODEREC (fmul,
     ppc_grab_regsfpdac(instr);
 
     snan_double_check(reg_a, reg_c);
@@ -218,13 +214,12 @@ void dppc_interpreter::ppc_fmul(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_fmul<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_fmul<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_fmadd(uint32_t instr) {
+OPCODEREC (fmadd,
     ppc_grab_regsfpdabc(instr);
 
     snan_double_check(reg_a, reg_c);
@@ -236,13 +231,12 @@ void dppc_interpreter::ppc_fmadd(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_fmadd<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_fmadd<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_fmsub(uint32_t instr) {
+OPCODEREC (fmsub,
     ppc_grab_regsfpdabc(instr);
 
     snan_double_check(reg_a, reg_c);
@@ -254,13 +248,12 @@ void dppc_interpreter::ppc_fmsub(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_fmsub<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_fmsub<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_fnmadd(uint32_t instr) {
+OPCODEREC (fnmadd,
     ppc_grab_regsfpdabc(instr);
 
     snan_double_check(reg_a, reg_c);
@@ -272,13 +265,12 @@ void dppc_interpreter::ppc_fnmadd(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_fnmadd<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_fnmadd<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_fnmsub(uint32_t instr) {
+OPCODEREC (fnmsub,
     ppc_grab_regsfpdabc(instr);
 
     snan_double_check(reg_a, reg_c);
@@ -290,13 +282,12 @@ void dppc_interpreter::ppc_fnmsub(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_fnmsub<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_fnmsub<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_fadds(uint32_t instr) {
+OPCODEREC (fadds,
     ppc_grab_regsfpdab(instr);
 
     snan_double_check(reg_a, reg_b);
@@ -308,13 +299,12 @@ void dppc_interpreter::ppc_fadds(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_fadds<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_fadds<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_fsubs(uint32_t instr) {
+OPCODEREC (fsubs,
     ppc_grab_regsfpdab(instr);
 
     snan_double_check(reg_a, reg_b);
@@ -326,13 +316,12 @@ void dppc_interpreter::ppc_fsubs(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_fsubs<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_fsubs<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_fdivs(uint32_t instr) {
+OPCODEREC (fdivs,
     ppc_grab_regsfpdab(instr);
 
     snan_double_check(reg_a, reg_b);
@@ -343,13 +332,12 @@ void dppc_interpreter::ppc_fdivs(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_fdivs<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_fdivs<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_fmuls(uint32_t instr) {
+OPCODEREC (fmuls,
     ppc_grab_regsfpdac(instr);
 
     snan_double_check(reg_a, reg_c);
@@ -360,13 +348,12 @@ void dppc_interpreter::ppc_fmuls(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_fmuls<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_fmuls<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_fmadds(uint32_t instr) {
+OPCODEREC (fmadds,
     ppc_grab_regsfpdabc(instr);
 
     snan_double_check(reg_a, reg_c);
@@ -378,13 +365,12 @@ void dppc_interpreter::ppc_fmadds(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_fmadds<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_fmadds<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_fmsubs(uint32_t instr) {
+OPCODEREC (fmsubs,
     ppc_grab_regsfpdabc(instr);
 
     snan_double_check(reg_a, reg_c);
@@ -396,13 +382,12 @@ void dppc_interpreter::ppc_fmsubs(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_fmsubs<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_fmsubs<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_fnmadds(uint32_t instr) {
+OPCODEREC (fnmadds,
     ppc_grab_regsfpdabc(instr);
 
     snan_double_check(reg_a, reg_c);
@@ -414,13 +399,12 @@ void dppc_interpreter::ppc_fnmadds(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_fnmadds<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_fnmadds<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_fnmsubs(uint32_t instr) {
+OPCODEREC (fnmsubs,
     ppc_grab_regsfpdabc(instr);
 
     snan_double_check(reg_a, reg_c);
@@ -432,13 +416,12 @@ void dppc_interpreter::ppc_fnmsubs(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_fnmsubs<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_fnmsubs<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_fabs(uint32_t instr) {
+OPCODEREC (fabs,
     ppc_grab_regsfpdb(instr);
 
     snan_single_check(reg_b);
@@ -449,13 +432,12 @@ void dppc_interpreter::ppc_fabs(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_fabs<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_fabs<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_fnabs(uint32_t instr) {
+OPCODEREC(fnabs,
     ppc_grab_regsfpdb(instr);
 
     snan_single_check(reg_b);
@@ -467,13 +449,12 @@ void dppc_interpreter::ppc_fnabs(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_fnabs<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_fnabs<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_fneg(uint32_t instr) {
+OPCODEREC(fneg,
     ppc_grab_regsfpdb(instr);
 
     snan_single_check(reg_b);
@@ -484,13 +465,12 @@ void dppc_interpreter::ppc_fneg(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_fneg<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_fneg<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_fsel(uint32_t instr) {
+OPCODEREC(fsel,
     ppc_grab_regsfpdabc(instr);
 
     double ppc_dblresult64_d = (val_reg_a >= -0.0) ? val_reg_c : val_reg_b;
@@ -499,13 +479,12 @@ void dppc_interpreter::ppc_fsel(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_fsel<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_fsel<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_fsqrt(uint32_t instr) {
+OPCODEREC(fsqrt,
     ppc_grab_regsfpdb(instr);
 
     snan_single_check(reg_b);
@@ -516,13 +495,12 @@ void dppc_interpreter::ppc_fsqrt(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_fsqrt<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_fsqrt<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_fsqrts(uint32_t instr) {
+OPCODEREC(fsqrts,
     ppc_grab_regsfpdb(instr);
 
     snan_single_check(reg_b);
@@ -533,13 +511,12 @@ void dppc_interpreter::ppc_fsqrts(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_fsqrts<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_fsqrts<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_frsqrte(uint32_t instr) {
+OPCODEREC (frsqrte,
     ppc_grab_regsfpdb(instr);
     snan_single_check(reg_b);
 
@@ -549,13 +526,12 @@ void dppc_interpreter::ppc_frsqrte(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_frsqrte<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_frsqrte<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_frsp(uint32_t instr) {
+OPCODEREC (frsp,
     ppc_grab_regsfpdb(instr);
     snan_single_check(reg_b);
 
@@ -564,13 +540,12 @@ void dppc_interpreter::ppc_frsp(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_frsp<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_frsp<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_fres(uint32_t instr) {
+OPCODEREC (fres,
     ppc_grab_regsfpdb(instr);
 
     snan_single_check(reg_b);
@@ -592,7 +567,7 @@ void dppc_interpreter::ppc_fres(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_fres<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_fres<RC1>(uint32_t instr);
@@ -654,33 +629,31 @@ static void round_to_int(uint32_t instr, const uint8_t mode, field_rc rec) {
         ppc_update_cr1();
 }
 
-template <field_rc rec>
-void dppc_interpreter::ppc_fctiw(uint32_t instr) {
+OPCODEREC (fctiw,
     round_to_int(instr, ppc_state.fpscr & 0x3, rec);
-}
+)
 
 template void dppc_interpreter::ppc_fctiw<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_fctiw<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_fctiwz(uint32_t instr) {
+OPCODEREC (fctiwz,
     round_to_int(instr, 1, rec);
-}
+)
 
 template void dppc_interpreter::ppc_fctiwz<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_fctiwz<RC1>(uint32_t instr);
 
 // Floating Point Store and Load
 
-void dppc_interpreter::ppc_lfs(uint32_t instr) {
+OPCODE (lfs,
     ppc_grab_regsfpdia(instr);
     uint32_t ea = int32_t(int16_t(instr));
     ea += (reg_a) ? val_reg_a : 0;
     uint32_t result              = mmu_read_vmem<uint32_t>(ea, instr);
     ppc_state.fpr[reg_d].dbl64_r = *(float*)(&result);
-}
+)
 
-void dppc_interpreter::ppc_lfsu(uint32_t instr) {
+OPCODE (lfsu,
     ppc_grab_regsfpdia(instr);
     if (reg_a) {
         uint32_t ea = int32_t(int16_t(instr));
@@ -691,16 +664,16 @@ void dppc_interpreter::ppc_lfsu(uint32_t instr) {
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
-}
+)
 
-void dppc_interpreter::ppc_lfsx(uint32_t instr) {
+OPCODE (lfsx,
     ppc_grab_regsfpdiab(instr);
     uint32_t ea = val_reg_b + (reg_a ? val_reg_a : 0);
     uint32_t result              = mmu_read_vmem<uint32_t>(ea, instr);
     ppc_state.fpr[reg_d].dbl64_r = *(float*)(&result);
-}
+)
 
-void dppc_interpreter::ppc_lfsux(uint32_t instr) {
+OPCODE (lfsux,
     ppc_grab_regsfpdiab(instr);
     if (reg_a) {
         uint32_t ea = val_reg_a + val_reg_b;
@@ -710,17 +683,17 @@ void dppc_interpreter::ppc_lfsux(uint32_t instr) {
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
-}
+)
 
-void dppc_interpreter::ppc_lfd(uint32_t instr) {
+OPCODE (lfd,
     ppc_grab_regsfpdia(instr);
     uint32_t ea = int32_t(int16_t(instr));
     ea += (reg_a) ? val_reg_a : 0;
     uint64_t ppc_result64_d = mmu_read_vmem<uint64_t>(ea, instr);
     ppc_store_dfpresult_int(reg_d, ppc_result64_d);
-}
+)
 
-void dppc_interpreter::ppc_lfdu(uint32_t instr) {
+OPCODE (lfdu,
     ppc_grab_regsfpdia(instr);
     if (reg_a != 0) {
         uint32_t ea = int32_t(int16_t(instr));
@@ -731,16 +704,16 @@ void dppc_interpreter::ppc_lfdu(uint32_t instr) {
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
-}
+)
 
-void dppc_interpreter::ppc_lfdx(uint32_t instr) {
+OPCODE (lfdx,
     ppc_grab_regsfpdiab(instr);
     uint32_t ea = val_reg_b + (reg_a ? val_reg_a : 0);
     uint64_t ppc_result64_d = mmu_read_vmem<uint64_t>(ea, instr);
     ppc_store_dfpresult_int(reg_d, ppc_result64_d);
-}
+)
 
-void dppc_interpreter::ppc_lfdux(uint32_t instr) {
+OPCODE (lfdux,
     ppc_grab_regsfpdiab(instr);
     if (reg_a) {
         uint32_t ea = val_reg_a + val_reg_b;
@@ -750,17 +723,17 @@ void dppc_interpreter::ppc_lfdux(uint32_t instr) {
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
-}
+)
 
-void dppc_interpreter::ppc_stfs(uint32_t instr) {
+OPCODE (stfs,
     ppc_grab_regsfpsia(instr);
     uint32_t ea = int32_t(int16_t(instr));
     ea += (reg_a) ? val_reg_a : 0;
     float result = float(ppc_state.fpr[reg_s].dbl64_r);
     mmu_write_vmem<uint32_t>(ea, instr, *(uint32_t*)(&result));
-}
+)
 
-void dppc_interpreter::ppc_stfsu(uint32_t instr) {
+OPCODE (stfsu,
     ppc_grab_regsfpsia(instr);
     if (reg_a != 0) {
         uint32_t ea = int32_t(int16_t(instr));
@@ -771,16 +744,16 @@ void dppc_interpreter::ppc_stfsu(uint32_t instr) {
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
-}
+)
 
-void dppc_interpreter::ppc_stfsx(uint32_t instr) {
+OPCODE (stfsx,
     ppc_grab_regsfpsiab(instr);
     uint32_t ea = val_reg_b + (reg_a ? val_reg_a : 0);
     float result = float(ppc_state.fpr[reg_s].dbl64_r);
     mmu_write_vmem<uint32_t>(ea, instr, *(uint32_t*)(&result));
-}
+)
 
-void dppc_interpreter::ppc_stfsux(uint32_t instr) {
+OPCODE (stfsux,
     ppc_grab_regsfpsiab(instr);
     if (reg_a) {
         uint32_t ea = val_reg_a + val_reg_b;
@@ -790,16 +763,16 @@ void dppc_interpreter::ppc_stfsux(uint32_t instr) {
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
-}
+)
 
-void dppc_interpreter::ppc_stfd(uint32_t instr) {
+OPCODE (stfd,
     ppc_grab_regsfpsia(instr);
     uint32_t ea = int32_t(int16_t(instr));
     ea += reg_a ? val_reg_a : 0;
     mmu_write_vmem<uint64_t>(ea, instr, ppc_state.fpr[reg_s].int64_r);
-}
+)
 
-void dppc_interpreter::ppc_stfdu(uint32_t instr) {
+OPCODE (stfdu,
     ppc_grab_regsfpsia(instr);
     if (reg_a != 0) {
         uint32_t ea = int32_t(int16_t(instr));
@@ -809,15 +782,15 @@ void dppc_interpreter::ppc_stfdu(uint32_t instr) {
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
-}
+)
 
-void dppc_interpreter::ppc_stfdx(uint32_t instr) {
+OPCODE (stfdx,
     ppc_grab_regsfpsiab(instr);
     uint32_t ea = val_reg_b + (reg_a ? val_reg_a : 0);
     mmu_write_vmem<uint64_t>(ea, instr, ppc_state.fpr[reg_s].int64_r);
-}
+)
 
-void dppc_interpreter::ppc_stfdux(uint32_t instr) {
+OPCODE (stfdux,
     ppc_grab_regsfpsiab(instr);
     if (reg_a != 0) {
         uint32_t ea = val_reg_a + val_reg_b;
@@ -826,45 +799,42 @@ void dppc_interpreter::ppc_stfdux(uint32_t instr) {
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
-}
+)
 
-void dppc_interpreter::ppc_stfiwx(uint32_t instr) {
+OPCODE (stfiwx,
     ppc_grab_regsfpsiab(instr);
     uint32_t ea = val_reg_b + (reg_a ? val_reg_a : 0);
     mmu_write_vmem<uint32_t>(ea, instr, uint32_t(ppc_state.fpr[reg_s].int64_r));
-}
+)
 
 // Floating Point Register Transfer
 
-template <field_rc rec>
-void dppc_interpreter::ppc_fmr(uint32_t instr) {
+OPCODEREC (fmr,
     ppc_grab_regsfpdb(instr);
     ppc_state.fpr[reg_d].dbl64_r = ppc_state.fpr[reg_b].dbl64_r;
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_fmr<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_fmr<RC1>(uint32_t instr);
 
-template <field_601 for601, field_rc rec>
-void dppc_interpreter::ppc_mffs(uint32_t instr) {
+OPCODE601REC (mffs,
     int reg_d = (instr >> 21) & 31;
 
     ppc_state.fpr[reg_d].int64_r = uint64_t(ppc_state.fpscr) | (for601 ? 0xFFFFFFFF00000000ULL : 0xFFF8000000000000ULL);
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_mffs<NOT601, RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_mffs<NOT601, RC1>(uint32_t instr);
 template void dppc_interpreter::ppc_mffs<IS601, RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_mffs<IS601, RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_mtfsf(uint32_t instr) {
+OPCODEREC (mtfsf,
     int reg_b  = (instr >> 11) & 0x1F;
     uint8_t fm = (instr >> 17) & 0xFF;
 
@@ -891,13 +861,12 @@ void dppc_interpreter::ppc_mtfsf(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_mtfsf<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_mtfsf<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_mtfsfi(uint32_t instr) {
+OPCODEREC (mtfsfi,
     int crf_d    = (instr >> 21) & 0x1C;
     uint32_t imm = (instr << 16) & 0xF0000000UL;
 
@@ -913,13 +882,12 @@ void dppc_interpreter::ppc_mtfsfi(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_mtfsfi<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_mtfsfi<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_mtfsb0(uint32_t instr) {
+OPCODEREC (mtfsb0,
     int crf_d = (instr >> 21) & 0x1F;
     if (!crf_d || (crf_d > 2)) { // FEX and VX can't be explicitly cleared
         ppc_state.fpscr &= ~(0x80000000UL >> crf_d);
@@ -927,13 +895,12 @@ void dppc_interpreter::ppc_mtfsb0(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_mtfsb0<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_mtfsb0<RC1>(uint32_t instr);
 
-template <field_rc rec>
-void dppc_interpreter::ppc_mtfsb1(uint32_t instr) {
+OPCODEREC (mtfsb1,
     int crf_d = (instr >> 21) & 0x1F;
     if (!crf_d || (crf_d > 2)) { // FEX and VX can't be explicitly set
         ppc_state.fpscr |= (0x80000000UL >> crf_d);
@@ -941,12 +908,12 @@ void dppc_interpreter::ppc_mtfsb1(uint32_t instr) {
 
     if (rec)
         ppc_update_cr1();
-}
+)
 
 template void dppc_interpreter::ppc_mtfsb1<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_mtfsb1<RC1>(uint32_t instr);
 
-void dppc_interpreter::ppc_mcrfs(uint32_t instr) {
+OPCODE (mcrfs,
     int crf_d = (instr >> 21) & 0x1C;
     int crf_s = (instr >> 16) & 0x1C;
     ppc_state.cr = (
@@ -961,11 +928,11 @@ void dppc_interpreter::ppc_mcrfs(uint32_t instr) {
         FPSCR::VXVC |
         FPSCR::VXSOFT | FPSCR::VXSQRT | FPSCR::VXCVI
     ));
-}
+)
 
 // Floating Point Comparisons
 
-void dppc_interpreter::ppc_fcmpo(uint32_t instr) {
+OPCODE (fcmpo,
     ppc_grab_regsfpsab(instr);
 
     uint32_t cmp_c = 0;
@@ -994,9 +961,9 @@ void dppc_interpreter::ppc_fcmpo(uint32_t instr) {
     ppc_state.fpscr = (ppc_state.fpscr & ~FPSCR::FPCC_MASK) | (cmp_c >> 16); // update FPCC
     ppc_state.cr = ((ppc_state.cr & ~(0xF0000000 >> crf_d)) | (cmp_c >> crf_d));
 
-}
+)
 
-void dppc_interpreter::ppc_fcmpu(uint32_t instr) {
+OPCODE (fcmpu,
     ppc_grab_regsfpsab(instr);
 
     uint32_t cmp_c = 0;
@@ -1021,4 +988,4 @@ void dppc_interpreter::ppc_fcmpu(uint32_t instr) {
     ppc_state.fpscr = (ppc_state.fpscr & ~FPSCR::FPCC_MASK) | (cmp_c >> 16); // update FPCC
     ppc_state.cr    = ((ppc_state.cr & ~(0xF0000000UL >> crf_d)) | (cmp_c >> crf_d));
 
-}
+)
