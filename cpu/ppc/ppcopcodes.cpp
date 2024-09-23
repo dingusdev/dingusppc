@@ -47,29 +47,30 @@ void ppc_changecrf0(uint32_t set_result) {
 }
 
 // Affects the XER register's Carry Bit
-inline void ppc_carry(uint32_t a, uint32_t b) {
+
+inline static void ppc_carry(uint32_t a, uint32_t b) {
     if (b < a) {
-        ppc_state.spr[SPR::XER] |= XER::CA;
+        ppc_set_xer(XER::CA);
     } else {
-        ppc_state.spr[SPR::XER] &= ~XER::CA;
+        ppc_unset_xer(XER::CA);
     }
 }
 
-inline void ppc_carry_sub(uint32_t a, uint32_t b) {
+inline static void ppc_carry_sub(uint32_t a, uint32_t b) {
     if (b >= a) {
-        ppc_state.spr[SPR::XER] |= XER::CA;
+        ppc_set_xer(XER::CA);
     } else {
-        ppc_state.spr[SPR::XER] &= ~XER::CA;
+        ppc_unset_xer(XER::CA);
     }
 }
 
 // Affects the XER register's SO and OV Bits
 
-inline void ppc_setsoov(uint32_t a, uint32_t b, uint32_t d) {
+inline static void ppc_setsoov(uint32_t a, uint32_t b, uint32_t d) {
     if (int32_t((a ^ b) & (a ^ d)) < 0) {
-        ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
+        ppc_set_xer(XER::SO | XER::OV);
     } else {
-        ppc_state.spr[SPR::XER] &= ~XER::OV;
+        ppc_unset_xer(XER::OV);
     }
 }
 
@@ -112,7 +113,7 @@ OPCODEREC (addic,
     ppc_carry(ppc_result_a, ppc_result_d);
     if (rec)
         ppc_changecrf0(ppc_result_d);
-    ppc_state.gpr[reg_d] = ppc_result_d;
+    ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
 template void dppc_interpreter::ppc_addic<RC0>(uint32_t instr);
@@ -128,7 +129,7 @@ OPCODECARRY (add,
         ppc_setsoov(ppc_result_a, ~ppc_result_b, ppc_result_d);
     if (rec)
         ppc_changecrf0(ppc_result_d);
-    ppc_state.gpr[reg_d] = ppc_result_d;
+    ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
 template void dppc_interpreter::ppc_add<CARRY0, RC0, OV0>(uint32_t instr);
@@ -146,9 +147,9 @@ OPCODEOVREC (adde,
     uint32_t ppc_result_d = ppc_result_a + ppc_result_b + xer_ca;
 
     if ((ppc_result_d < ppc_result_a) || (xer_ca && (ppc_result_d == ppc_result_a))) {
-        ppc_state.spr[SPR::XER] |= XER::CA;
+        ppc_set_xer(XER::CA);
     } else {
-        ppc_state.spr[SPR::XER] &= ~XER::CA;
+        ppc_unset_xer(XER::CA);
     }
 
     if (ov)
@@ -156,7 +157,7 @@ OPCODEOVREC (adde,
     if (rec)
         ppc_changecrf0(ppc_result_d);
 
-    ppc_state.gpr[reg_d] = ppc_result_d;
+    ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
 template void dppc_interpreter::ppc_adde<RC0, OV0>(uint32_t instr);
@@ -170,9 +171,9 @@ OPCODEOVREC (addme,
     uint32_t ppc_result_d = ppc_result_a + xer_ca - 1;
 
     if (((xer_ca - 1) < 0xFFFFFFFFUL) || (ppc_result_d < ppc_result_a)) {
-        ppc_state.spr[SPR::XER] |= XER::CA;
+        ppc_set_xer(XER::CA);
     } else {
-        ppc_state.spr[SPR::XER] &= ~XER::CA;
+        ppc_unset_xer(XER::CA);
     }
 
     if (ov)
@@ -180,7 +181,7 @@ OPCODEOVREC (addme,
     if (rec)
         ppc_changecrf0(ppc_result_d);
 
-    ppc_state.gpr[reg_d] = ppc_result_d;
+    ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
 template void dppc_interpreter::ppc_addme<RC0, OV0>(uint32_t instr);
@@ -194,9 +195,9 @@ OPCODEOVREC (addze,
     uint32_t ppc_result_d = ppc_result_a + grab_xer;
 
     if (ppc_result_d < ppc_result_a) {
-        ppc_state.spr[SPR::XER] |= XER::CA;
+        ppc_set_xer(XER::CA);
     } else {
-        ppc_state.spr[SPR::XER] &= ~XER::CA;
+        ppc_unset_xer(XER::CA);
     }
 
     if (ov)
@@ -204,7 +205,7 @@ OPCODEOVREC (addze,
     if (rec)
         ppc_changecrf0(ppc_result_d);
 
-    ppc_state.gpr[reg_d] = ppc_result_d;
+    ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
 template void dppc_interpreter::ppc_addze<RC0, OV0>(uint32_t instr);
@@ -212,14 +213,16 @@ template void dppc_interpreter::ppc_addze<RC0, OV1>(uint32_t instr);
 template void dppc_interpreter::ppc_addze<RC1, OV0>(uint32_t instr);
 template void dppc_interpreter::ppc_addze<RC1, OV1>(uint32_t instr);
 
-OPCODE(subfic,
+OPCODE (subfic,
     ppc_grab_regsdasimm(instr);
     uint32_t ppc_result_d = simm - ppc_result_a;
-    if (simm == -1)
-        ppc_state.spr[SPR::XER] |= XER::CA;
-    else
+    if (simm == -1) { 
+        ppc_set_xer(XER::CA);
+    } 
+    else { 
         ppc_carry(~ppc_result_a, ppc_result_d);
-    ppc_state.gpr[reg_d] = ppc_result_d;
+    }
+    ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
 OPCODECARRY (subf,
@@ -233,7 +236,7 @@ OPCODECARRY (subf,
     if (rec)
         ppc_changecrf0(ppc_result_d);
 
-    ppc_state.gpr[reg_d] = ppc_result_d;
+    ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
 template void dppc_interpreter::ppc_subf<CARRY0, RC0, OV0>(uint32_t instr);
@@ -250,7 +253,7 @@ OPCODEOVREC (subfe,
     uint32_t grab_ca      = !!(ppc_state.spr[SPR::XER] & XER::CA);
     uint32_t ppc_result_d = ~ppc_result_a + ppc_result_b + grab_ca;
     if (grab_ca && ppc_result_b == 0xFFFFFFFFUL)
-        ppc_state.spr[SPR::XER] |= XER::CA;
+        ppc_set_xer(XER::CA);
     else
         ppc_carry(~ppc_result_a, ppc_result_d);
 
@@ -259,7 +262,7 @@ OPCODEOVREC (subfe,
     if (rec)
         ppc_changecrf0(ppc_result_d);
 
-    ppc_state.gpr[reg_d] = ppc_result_d;
+    ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
 template void dppc_interpreter::ppc_subfe<RC0, OV0>(uint32_t instr);
@@ -273,21 +276,21 @@ OPCODEOVREC (subfme,
     uint32_t ppc_result_d = ~ppc_result_a + grab_ca - 1;
 
     if (ppc_result_a == 0xFFFFFFFFUL && !grab_ca)
-        ppc_state.spr[SPR::XER] &= ~XER::CA;
+        ppc_unset_xer(XER::CA);
     else
-        ppc_state.spr[SPR::XER] |= XER::CA;
+        ppc_set_xer(XER::CA);
 
     if (ov) {
         if (ppc_result_d == ppc_result_a && int32_t(ppc_result_d) > 0)
-            ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
+            ppc_set_xer(XER::SO | XER::OV);
         else
-            ppc_state.spr[SPR::XER] &= ~XER::OV;
+            ppc_unset_xer(XER::OV);
     }
 
     if (rec)
         ppc_changecrf0(ppc_result_d);
 
-    ppc_state.gpr[reg_d] = ppc_result_d;
+    ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
 template void dppc_interpreter::ppc_subfme<RC0, OV0>(uint32_t instr);
@@ -300,22 +303,27 @@ OPCODEOVREC (subfze,
     uint32_t grab_ca      = !!(ppc_state.spr[SPR::XER] & XER::CA);
     uint32_t ppc_result_d = ~ppc_result_a + grab_ca;
 
-    if (!ppc_result_d && grab_ca) // special case: ppc_result_d = 0 and CA=1
-        ppc_state.spr[SPR::XER] |= XER::CA;
-    else
-        ppc_state.spr[SPR::XER] &= ~XER::CA;
-
-    if (ov) {
-        if (ppc_result_d && ppc_result_d == ppc_result_a)
-            ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
-        else
-            ppc_state.spr[SPR::XER] &= ~XER::OV;
+    if (!ppc_result_d && grab_ca) {    // special case: ppc_result_d = 0 and CA=1
+        ppc_set_xer(XER::CA);
+    } 
+    else { 
+        ppc_unset_xer(XER::CA); 
     }
 
-    if (rec)
-        ppc_changecrf0(ppc_result_d);
+    if (ov) {
+        if (ppc_result_d && ppc_result_d == ppc_result_a) {
+            ppc_set_xer(XER::SO | XER::OV);
+        } 
+        else {
+            ppc_unset_xer(XER::OV);
+        }
+    }
 
-    ppc_state.gpr[reg_d] = ppc_result_d;
+    if (rec) {   
+        ppc_changecrf0(ppc_result_d); 
+    }
+
+    ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
 template void dppc_interpreter::ppc_subfze<RC0, OV0>(uint32_t instr);
@@ -327,7 +335,7 @@ OPCODESHIFT (andirc,
     ppc_grab_regssauimm(instr);
     ppc_result_a = shift ? (ppc_result_d & (uimm << 16)) : (ppc_result_d & uimm);
     ppc_changecrf0(ppc_result_a);
-    ppc_state.gpr[reg_a] = ppc_result_a;
+    ppc_store_iresult_reg(reg_a, ppc_result_a);;
 )
 
 template void dppc_interpreter::ppc_andirc<SHFT0>(uint32_t instr);
@@ -336,7 +344,7 @@ template void dppc_interpreter::ppc_andirc<SHFT1>(uint32_t instr);
 OPCODESHIFT (ori,
     ppc_grab_regssauimm(instr);
     ppc_result_a = shift ? (ppc_result_d | (uimm << 16)) : (ppc_result_d | uimm);
-    ppc_state.gpr[reg_a] = ppc_result_a;
+    ppc_store_iresult_reg(reg_a, ppc_result_a);;
 )
 
 template void dppc_interpreter::ppc_ori<SHFT0>(uint32_t instr);
@@ -345,7 +353,7 @@ template void dppc_interpreter::ppc_ori<SHFT1>(uint32_t instr);
 OPCODESHIFT (xori,
     ppc_grab_regssauimm(instr);
     ppc_result_a = shift ? (ppc_result_d ^ (uimm << 16)) : (ppc_result_d ^ uimm);
-    ppc_state.gpr[reg_a] = ppc_result_a;
+    ppc_store_iresult_reg(reg_a, ppc_result_a);;
 )
 
 template void dppc_interpreter::ppc_xori<SHFT0>(uint32_t instr);
@@ -373,7 +381,7 @@ OPCODELOGIC(logical,
     if (rec)
         ppc_changecrf0(ppc_result_a);
 
-    ppc_state.gpr[reg_a] = ppc_result_a;
+    ppc_store_iresult_reg(reg_a, ppc_result_a);;
 )
 
 template void dppc_interpreter::ppc_logical<ppc_and, RC0>(uint32_t instr);
@@ -399,15 +407,15 @@ OPCODEOVREC (neg,
 
     if (ov) {
         if (ppc_result_a == 0x80000000)
-            ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
+            ppc_set_xer(XER::SO | XER::OV);
         else
-            ppc_state.spr[SPR::XER] &= ~XER::OV;
+            ppc_unset_xer(XER::OV);
     }
 
     if (rec)
         ppc_changecrf0(ppc_result_d);
 
-    ppc_state.gpr[reg_d] = ppc_result_d;
+    ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
 template void dppc_interpreter::ppc_neg<RC0, OV0>(uint32_t instr);
@@ -420,25 +428,26 @@ OPCODEREC (cntlzw,
 
     uint32_t bit_check = ppc_result_d;
 
-#ifdef __builtin_clz //for GCC and Clang users
-    uint32_t lead = !bit_check ? 32 : __builtin_clz(bit_check);
-#elif defined __lzcnt //for Visual C++ users
-    uint32_t lead = __lzcnt(bit_check);
-#else
-    uint32_t lead, mask;
+    #ifdef __builtin_clz //for GCC and Clang users
+        uint32_t lead = !bit_check ? 32 : __builtin_clz(bit_check);
+    #elif defined __lzcnt //for Visual C++ users
+        uint32_t lead = __lzcnt(bit_check);
+    #else
+    
+    uint32_t lead, mask = 0;
 
     for (mask = 0x80000000UL, lead = 0; mask != 0; lead++, mask >>= 1) {
-        if (bit_check & mask)
+        if (bit_check & mask) {
             break;
+        }
     }
 #endif
     ppc_result_a = lead;
 
-    if (rec) {
+    if (rec) 
         ppc_changecrf0(ppc_result_a);
-    }
 
-    ppc_state.gpr[reg_a] = ppc_result_a;
+    ppc_store_iresult_reg(reg_a, ppc_result_a);;
 )
 
 template void dppc_interpreter::ppc_cntlzw<RC0>(uint32_t instr);
@@ -452,7 +461,7 @@ OPCODEREC (mulhwu,
     if (rec)
         ppc_changecrf0(ppc_result_d);
 
-    ppc_state.gpr[reg_d] = ppc_result_d;
+    ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
 template void dppc_interpreter::ppc_mulhwu<RC0>(uint32_t instr);
@@ -466,7 +475,7 @@ OPCODEREC (mulhw,
     if (rec)
         ppc_changecrf0(ppc_result_d);
 
-    ppc_state.gpr[reg_d] = ppc_result_d;
+    ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
 template void dppc_interpreter::ppc_mulhw<RC0>(uint32_t instr);
@@ -478,9 +487,9 @@ OPCODEOVREC (mullw,
 
     if (ov) {
         if (product != int64_t(int32_t(product))) {
-            ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
+            ppc_set_xer(XER::SO | XER::OV);
         } else {
-            ppc_state.spr[SPR::XER] &= ~XER::OV;
+            ppc_unset_xer(XER::OV);
         }
     }
 
@@ -489,7 +498,7 @@ OPCODEOVREC (mullw,
     if (rec)
         ppc_changecrf0(ppc_result_d);
 
-    ppc_state.gpr[reg_d] = ppc_result_d;
+    ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
 template void dppc_interpreter::ppc_mullw<RC0, OV0>(uint32_t instr);
@@ -501,7 +510,7 @@ OPCODE (mulli,
     ppc_grab_regsdasimm(instr);
     int64_t product          = int64_t(int32_t(ppc_result_a)) * int64_t(int32_t(simm));
     uint32_t ppc_result_d    = uint32_t(product);
-    ppc_state.gpr[reg_d] = ppc_result_d;
+    ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
 OPCODEOVREC (divw,
@@ -513,25 +522,25 @@ OPCODEOVREC (divw,
         // ppc_result_d = (int32_t(ppc_result_a) < 0) ? -1 : 0; /* UNDOCUMENTED! */
 
         if (ov)
-            ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
+            ppc_set_xer(XER::SO | XER::OV);
 
     } else if (ppc_result_a == 0x80000000UL && ppc_result_b == 0xFFFFFFFFUL) {
         ppc_result_d = 0; // tested on G4 in Mac OS X 10.4 and Open Firmware.
 
         if (ov)
-            ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
+            ppc_set_xer(XER::SO | XER::OV);
 
     } else { // normal signed devision
         ppc_result_d = int32_t(ppc_result_a) / int32_t(ppc_result_b);
 
         if (ov)
-            ppc_state.spr[SPR::XER] &= ~XER::OV;
+            ppc_unset_xer(XER::OV);
     }
 
     if (rec)
         ppc_changecrf0(ppc_result_d);
 
-    ppc_state.gpr[reg_d] = ppc_result_d;
+    ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
 template void dppc_interpreter::ppc_divw<RC0, OV0>(uint32_t instr);
@@ -546,21 +555,21 @@ OPCODEOVREC (divwu,
     if (!ppc_result_b) { // division by zero
 
         if (ov)
-            ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
+            ppc_set_xer(XER::SO | XER::OV);
 
         if (rec)
-            ppc_state.cr |= 0x20000000;
+            ppc_state.cr |= XER::CA;
 
     } else {
         ppc_result_d = ppc_result_a / ppc_result_b;
 
         if (ov)
-            ppc_state.spr[SPR::XER] &= ~XER::OV;
+            ppc_unset_xer(XER::OV);
     }
     if (rec)
         ppc_changecrf0(ppc_result_d);
 
-    ppc_state.gpr[reg_d] = ppc_result_d;
+    ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
 template void dppc_interpreter::ppc_divwu<RC0, OV0>(uint32_t instr);
@@ -583,7 +592,7 @@ OPCODESHIFTREC (shift,
     if (rec)
         ppc_changecrf0(ppc_result_a);
 
-    ppc_state.gpr[reg_a] = ppc_result_a;
+    ppc_store_iresult_reg(reg_a, ppc_result_a);;
 )
 
 template void dppc_interpreter::ppc_shift<RIGHT0, RC0>(uint32_t instr);
@@ -595,24 +604,24 @@ OPCODEREC (sraw,
     ppc_grab_regssab(instr);
 
     // clear XER[CA] by default
-    ppc_state.spr[SPR::XER] &= ~XER::CA;
+    ppc_unset_xer(XER::CA);
 
     if (ppc_result_b & 0x20) {
         // fill rA with the sign bit of rS
         ppc_result_a = int32_t(ppc_result_d) >> 31;
         if (ppc_result_a) // if rA is negative
-            ppc_state.spr[SPR::XER] |= XER::CA;
+            ppc_set_xer(XER::CA);
     } else {
         uint32_t shift = ppc_result_b & 0x1F;
         ppc_result_a   = int32_t(ppc_result_d) >> shift;
         if ((int32_t(ppc_result_d) < 0) && (ppc_result_d & ((1U << shift) - 1)))
-            ppc_state.spr[SPR::XER] |= XER::CA;
+            ppc_set_xer(XER::CA);
     }
 
     if (rec)
         ppc_changecrf0(ppc_result_a);
 
-    ppc_state.gpr[reg_a] = ppc_result_a;
+    ppc_store_iresult_reg(reg_a, ppc_result_a);;
 )
 
 template void dppc_interpreter::ppc_sraw<RC0>(uint32_t instr);
@@ -622,17 +631,18 @@ OPCODEREC (srawi,
     ppc_grab_regssash(instr);
 
     // clear XER[CA] by default
-    ppc_state.spr[SPR::XER] &= ~XER::CA;
+    ppc_unset_xer(XER::CA);
 
-    if ((int32_t(ppc_result_d) < 0) && (ppc_result_d & ((1U << rot_sh) - 1)))
-        ppc_state.spr[SPR::XER] |= XER::CA;
+    if ((int32_t(ppc_result_d) < 0) && (ppc_result_d & ((1U << rot_sh) - 1))) {
+        ppc_set_xer(XER::CA);
+    }
 
     ppc_result_a = int32_t(ppc_result_d) >> rot_sh;
 
     if (rec)
         ppc_changecrf0(ppc_result_a);
 
-    ppc_state.gpr[reg_a] = ppc_result_a;
+    ppc_store_iresult_reg(reg_a, ppc_result_a);
 )
 
 template void dppc_interpreter::ppc_srawi<RC0>(uint32_t instr);
@@ -656,7 +666,7 @@ OPCODE(rlwimi,
     if ((instr & 0x01) == 1) {
         ppc_changecrf0(ppc_result_a);
     }
-    ppc_state.gpr[reg_a] = ppc_result_a;
+    ppc_store_iresult_reg(reg_a, ppc_result_a);;
 )
 
 OPCODE (rlwinm,
@@ -670,7 +680,7 @@ OPCODE (rlwinm,
     if ((instr & 0x01) == 1) {
         ppc_changecrf0(ppc_result_a);
     }
-    ppc_state.gpr[reg_a] = ppc_result_a;
+    ppc_store_iresult_reg(reg_a, ppc_result_a);;
 )
 
 OPCODE (rlwnm,
@@ -686,7 +696,7 @@ OPCODE (rlwnm,
     if ((instr & 0x01) == 1) {
         ppc_changecrf0(ppc_result_a);
     }
-    ppc_state.gpr[reg_a] = ppc_result_a;
+    ppc_store_iresult_reg(reg_a, ppc_result_a);;
 )
 
 OPCODE(mfcr,
@@ -1063,7 +1073,7 @@ OPCODEEXTSIGN (exts,
     if (rec)
         ppc_changecrf0(ppc_result_a);
 
-    ppc_state.gpr[reg_a] = ppc_result_a;
+    ppc_store_iresult_reg(reg_a, ppc_result_a);;
 )
 
 template void dppc_interpreter::ppc_exts<int8_t, RC0>(uint32_t instr);
@@ -1092,9 +1102,9 @@ template void dppc_interpreter::ppc_b<LK0, AA1>(uint32_t instr);
 template void dppc_interpreter::ppc_b<LK1, AA0>(uint32_t instr);
 template void dppc_interpreter::ppc_b<LK1, AA1>(uint32_t instr);
 
-OPCODELKAA (bc,
-    uint32_t ctr_ok;
-    uint32_t cnd_ok;
+OPCODELKAA (bc, 
+    uint32_t ctr_ok = 0;
+    uint32_t cnd_ok = 0;
     uint32_t br_bo = (instr >> 21) & 0x1F;
     uint32_t br_bi = (instr >> 16) & 0x1F;
     int32_t br_bd  = int32_t(int16_t(instr & ~3UL));
@@ -1123,8 +1133,8 @@ template void dppc_interpreter::ppc_bc<LK1, AA0>(uint32_t instr);
 template void dppc_interpreter::ppc_bc<LK1, AA1>(uint32_t instr);
 
 OPCODE601L (bcctr,
-    uint32_t ctr_ok;
-    uint32_t cnd_ok;
+    uint32_t ctr_ok = 0;
+    uint32_t cnd_ok = 0;
     uint32_t br_bo = (instr >> 21) & 0x1F;
     uint32_t br_bi = (instr >> 16) & 0x1F;
 
@@ -1260,18 +1270,18 @@ OPCODE (crand,
     ppc_grab_dab(instr);
     uint8_t ir = (ppc_state.cr >> (31 - reg_a)) & (ppc_state.cr >> (31 - reg_b));
     if (ir & 1) {
-        ppc_state.cr |= (0x80000000UL >> reg_d);
+        ppc_set_cr(0x80000000UL >> reg_d);
     } else {
-        ppc_state.cr &= ~(0x80000000UL >> reg_d);
+        ppc_unset_cr(0x80000000UL >> reg_d);
     }
 )
 
 OPCODE (crandc,
     ppc_grab_dab(instr);
     if ((ppc_state.cr & (0x80000000UL >> reg_a)) && !(ppc_state.cr & (0x80000000UL >> reg_b))) {
-        ppc_state.cr |= (0x80000000UL >> reg_d);
+        ppc_set_cr(0x80000000UL >> reg_d);
     } else {
-        ppc_state.cr &= ~(0x80000000UL >> reg_d);
+        ppc_unset_cr(0x80000000UL >> reg_d);
     }
 )
 
@@ -1279,9 +1289,9 @@ OPCODE (creqv,
     ppc_grab_dab(instr);
     uint8_t ir = (ppc_state.cr >> (31 - reg_a)) ^ (ppc_state.cr >> (31 - reg_b));
     if (ir & 1) { // compliment is implemented by swapping the following if/else bodies
-        ppc_state.cr &= ~(0x80000000UL >> reg_d);
+        ppc_unset_cr(0x80000000UL >> reg_d);
     } else {
-        ppc_state.cr |= (0x80000000UL >> reg_d);
+        ppc_set_cr(0x80000000UL >> reg_d);
     }
 )
 
@@ -1289,9 +1299,9 @@ OPCODE (crnand,
     ppc_grab_dab(instr);
     uint8_t ir = (ppc_state.cr >> (31 - reg_a)) & (ppc_state.cr >> (31 - reg_b));
     if (ir & 1) {
-        ppc_state.cr &= ~(0x80000000UL >> reg_d);
+        ppc_unset_cr(0x80000000UL >> reg_d);
     } else {
-        ppc_state.cr |= (0x80000000UL >> reg_d);
+        ppc_set_cr(0x80000000UL >> reg_d);
     }
 )
 
@@ -1299,9 +1309,9 @@ OPCODE (crnor,
     ppc_grab_dab(instr);
     uint8_t ir = (ppc_state.cr >> (31 - reg_a)) | (ppc_state.cr >> (31 - reg_b));
     if (ir & 1) {
-        ppc_state.cr &= ~(0x80000000UL >> reg_d);
+        ppc_unset_cr(0x80000000UL >> reg_d);
     } else {
-        ppc_state.cr |= (0x80000000UL >> reg_d);
+        ppc_set_cr(0x80000000UL >> reg_d);
     }
 )
 
@@ -1309,18 +1319,18 @@ OPCODE (cror,
     ppc_grab_dab(instr);
     uint8_t ir = (ppc_state.cr >> (31 - reg_a)) | (ppc_state.cr >> (31 - reg_b));
     if (ir & 1) {
-        ppc_state.cr |= (0x80000000UL >> reg_d);
+        ppc_set_cr(0x80000000UL >> reg_d);
     } else {
-        ppc_state.cr &= ~(0x80000000UL >> reg_d);
+        ppc_unset_cr(0x80000000UL >> reg_d);
     }
 )
 
 OPCODE (crorc,
     ppc_grab_dab(instr);
     if ((ppc_state.cr & (0x80000000UL >> reg_a)) || !(ppc_state.cr & (0x80000000UL >> reg_b))) {
-        ppc_state.cr |= (0x80000000UL >> reg_d);
+        ppc_set_cr(0x80000000UL >> reg_d);
     } else {
-        ppc_state.cr &= ~(0x80000000UL >> reg_d);
+        ppc_unset_cr(0x80000000UL >> reg_d);
     }
 )
 
@@ -1328,9 +1338,9 @@ OPCODE (crxor,
     ppc_grab_dab(instr);
     uint8_t ir = (ppc_state.cr >> (31 - reg_a)) ^ (ppc_state.cr >> (31 - reg_b));
     if (ir & 1) {
-        ppc_state.cr |= (0x80000000UL >> reg_d);
+        ppc_set_cr(0x80000000UL >> reg_d);
     } else {
-        ppc_state.cr &= ~(0x80000000UL >> reg_d);
+        ppc_unset_cr(0x80000000UL >> reg_d);
     }
 )
 
@@ -1579,14 +1589,14 @@ OPCODE (stmw,
 )
 
 OPCODEMEM (lz,
-#ifdef CPU_PROFILING
-    num_int_loads++;
-#endif
+    #ifdef CPU_PROFILING
+        num_int_loads++;
+    #endif
     ppc_grab_regsda(instr);
     uint32_t ea = int32_t(int16_t(instr));
     ea += reg_a ? ppc_result_a : 0;
     uint32_t ppc_result_d = mmu_read_vmem<T>(ea, instr);
-    ppc_state.gpr[reg_d] = ppc_result_d;
+    ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
 template void dppc_interpreter::ppc_lz<uint8_t>(uint32_t instr);
@@ -1594,17 +1604,17 @@ template void dppc_interpreter::ppc_lz<uint16_t>(uint32_t instr);
 template void dppc_interpreter::ppc_lz<uint32_t>(uint32_t instr);
 
 OPCODEMEM (lzu,
-#ifdef CPU_PROFILING
-    num_int_loads++;
-#endif
+    #ifdef CPU_PROFILING
+        num_int_loads++;
+    #endif
     ppc_grab_regsda(instr);
     uint32_t ea = int32_t(int16_t(instr));
     if ((reg_a != reg_d) && reg_a != 0) {
         ea += ppc_result_a;
         uint32_t ppc_result_d = mmu_read_vmem<T>(ea, instr);
         uint32_t ppc_result_a = ea;
-        ppc_state.gpr[reg_d] = ppc_result_d;
-        ppc_state.gpr[reg_a] = ppc_result_a;
+        ppc_store_iresult_reg(reg_d, ppc_result_d);
+        ppc_store_iresult_reg(reg_a, ppc_result_a);;
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
@@ -1615,13 +1625,13 @@ template void dppc_interpreter::ppc_lzu<uint16_t>(uint32_t instr);
 template void dppc_interpreter::ppc_lzu<uint32_t>(uint32_t instr);
 
 OPCODEMEM (lzx,
-#ifdef CPU_PROFILING
-    num_int_loads++;
-#endif
+    #ifdef CPU_PROFILING
+        num_int_loads++;
+    #endif
     ppc_grab_regsdab(instr);
     uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
     uint32_t ppc_result_d = mmu_read_vmem<T>(ea, instr);
-    ppc_state.gpr[reg_d] = ppc_result_d;
+    ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
 template void dppc_interpreter::ppc_lzx<uint8_t>(uint32_t instr);
@@ -1629,16 +1639,16 @@ template void dppc_interpreter::ppc_lzx<uint16_t>(uint32_t instr);
 template void dppc_interpreter::ppc_lzx<uint32_t>(uint32_t instr);
 
 OPCODEMEM (lzux,
-#ifdef CPU_PROFILING
-    num_int_loads++;
-#endif
+    #ifdef CPU_PROFILING
+        num_int_loads++;
+    #endif
     ppc_grab_regsdab(instr);
     if ((reg_a != reg_d) && reg_a != 0) {
         uint32_t ea = ppc_result_a + ppc_result_b;
         uint32_t ppc_result_d = mmu_read_vmem<T>(ea, instr);
         ppc_result_a          = ea;
-        ppc_state.gpr[reg_d] = ppc_result_d;
-        ppc_state.gpr[reg_a] = ppc_result_a;
+        ppc_store_iresult_reg(reg_d, ppc_result_d);
+        ppc_store_iresult_reg(reg_a, ppc_result_a);;
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
@@ -1670,7 +1680,7 @@ OPCODE (lhau,
         int16_t val = mmu_read_vmem<uint16_t>(ea, instr);
         ppc_state.gpr[reg_d] = int32_t(val);
         uint32_t ppc_result_a = ea;
-        ppc_state.gpr[reg_a] = ppc_result_a;
+        ppc_store_iresult_reg(reg_a, ppc_result_a);;
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
@@ -1686,7 +1696,7 @@ OPCODE (lhaux,
         int16_t val = mmu_read_vmem<uint16_t>(ea, instr);
         ppc_state.gpr[reg_d] = int32_t(val);
         uint32_t ppc_result_a = ea;
-        ppc_state.gpr[reg_a] = ppc_result_a;
+        ppc_store_iresult_reg(reg_a, ppc_result_a);;
     }
     else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
@@ -1710,7 +1720,7 @@ OPCODE (lhbrx,
     ppc_grab_regsdab(instr);
     uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
     uint32_t ppc_result_d = uint32_t(BYTESWAP_16(mmu_read_vmem<uint16_t>(ea, instr)));
-    ppc_state.gpr[reg_d] = ppc_result_d;
+    ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
 OPCODE (lwbrx,
@@ -1720,7 +1730,7 @@ OPCODE (lwbrx,
     ppc_grab_regsdab(instr);
     uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
     uint32_t ppc_result_d = BYTESWAP_32(mmu_read_vmem<uint32_t>(ea, instr));
-    ppc_state.gpr[reg_d] = ppc_result_d;
+    ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
 OPCODE (lwarx,
@@ -1732,7 +1742,7 @@ OPCODE (lwarx,
     uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
     ppc_state.reserve     = true;
     uint32_t ppc_result_d = mmu_read_vmem<uint32_t>(ea, instr);
-    ppc_state.gpr[reg_d] = ppc_result_d;
+    ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
 OPCODE (lmw,
@@ -1917,7 +1927,7 @@ OPCODE (eciwx,
 
     uint32_t ppc_result_d = mmu_read_vmem<uint32_t>(ea, instr);
 
-    ppc_state.gpr[reg_d] = ppc_result_d;
+    ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
 OPCODE (ecowx,

@@ -40,11 +40,11 @@ POWEROPCODEOVREC (abs,
     if (ppc_result_a == 0x80000000) {
         ppc_result_d = ppc_result_a;
         if (ov)
-            ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
+            ppc_set_xer(XER::SO | XER::OV);
     } else {
         ppc_result_d = (int32_t(ppc_result_a) < 0) ? -ppc_result_a : ppc_result_a;
         if (ov)
-            ppc_state.spr[SPR::XER] &= ~XER::OV;
+            ppc_unset_xer(XER::SO | XER::OV);
     }
 
     if (rec)
@@ -58,25 +58,30 @@ template void dppc_interpreter::power_abs<RC0, OV1>(uint32_t instr);
 template void dppc_interpreter::power_abs<RC1, OV0>(uint32_t instr);
 template void dppc_interpreter::power_abs<RC1, OV1>(uint32_t instr);
 
-POWEROPCODE (clcs,
-    uint32_t ppc_result_d;
-    ppc_grab_da(instr);
+POWEROPCODE (clcs, 
+    ppc_grab_da(instr); 
+    uint32_t ppc_result_d = 0;
+
     switch (reg_a) {
     case 12: //instruction cache line size
     case 13: //data cache line size
     case 14: //minimum line size
     case 15: //maximum line size
-    default: ppc_result_d = is_601 ? 64 :     32; break;
+    default: 
+        ppc_result_d = is_601 ? 64 :     32; break;
     case  7:
-    case 23: ppc_result_d = is_601 ? 64 :      0; break;
+    case 23: 
+        ppc_result_d = is_601 ? 64 :      0; break;
     case  8:
     case  9:
     case 24:
-    case 25: ppc_result_d = is_601 ? 64 :      4; break;
+    case 25: 
+        ppc_result_d = is_601 ? 64 :      4; break;
     case 10:
     case 11:
     case 26:
-    case 27: ppc_result_d = is_601 ? 64 : 0x4000; break;
+    case 27: 
+        ppc_result_d = is_601 ? 64 : 0x4000; break;
     }
 
     ppc_state.gpr[reg_d] = ppc_result_d;
@@ -95,21 +100,21 @@ POWEROPCODEOVREC (div,
         remainder = 0;
         ppc_result_d = 0x80000000U; // -2^31 aka INT32_MIN
         if (ov)
-            ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
+            ppc_set_xer(XER::SO | XER::OV);
     } else if (!divisor) {
         remainder = 0;
         ppc_result_d = 0x80000000U; // -2^31 aka INT32_MIN
         if (ov)
-            ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
+            ppc_set_xer(XER::SO | XER::OV);
     } else {
         quotient = dividend / divisor;
         remainder = dividend % divisor;
         ppc_result_d = uint32_t(quotient);
         if (ov) {
             if (((quotient >> 31) + 1) & ~1) {
-                ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
+                ppc_set_xer(XER::SO | XER::OV);
             } else {
-                ppc_state.spr[SPR::XER] &= ~XER::OV;
+                ppc_unset_xer(XER::SO | XER::OV);
             }
         }
     }
@@ -118,7 +123,7 @@ POWEROPCODEOVREC (div,
         ppc_changecrf0(remainder);
 
     ppc_state.gpr[reg_d] = ppc_result_d;
-    ppc_state.spr[SPR::MQ] = remainder;
+    power_store_mq(remainder);
 )
 
 template void dppc_interpreter::power_div<RC0, OV0>(uint32_t instr);
@@ -135,23 +140,23 @@ POWEROPCODEOVREC (divs,
         ppc_result_d = -1;
         remainder = ppc_result_a;
         if (ov)
-            ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
+            ppc_set_xer(XER::SO | XER::OV);
     } else if (ppc_result_a == 0x80000000U && ppc_result_b == 0xFFFFFFFFU) {
         ppc_result_d = 0x80000000U;
         remainder = 0;
         if (ov)
-            ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
+            ppc_set_xer(XER::SO | XER::OV);
     } else { // normal signed devision
         ppc_result_d = int32_t(ppc_result_a) / int32_t(ppc_result_b);
         remainder = (int32_t(ppc_result_a) % int32_t(ppc_result_b));
         if (ov)
-            ppc_state.spr[SPR::XER] &= ~XER::OV;
+            ppc_unset_xer(XER::SO | XER::OV);
     }
     if (rec)
         ppc_changecrf0(remainder);
 
     ppc_state.gpr[reg_d] = ppc_result_d;
-    ppc_state.spr[SPR::MQ] = remainder;
+    power_store_mq(remainder);;
 )
 
 template void dppc_interpreter::power_divs<RC0, OV0>(uint32_t instr);
@@ -166,9 +171,9 @@ POWEROPCODEOVREC (doz,
 
     if (ov) {
         if (int32_t(ppc_result_d) < 0) {
-            ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
+            ppc_set_xer(XER::SO | XER::OV);
         } else {
-            ppc_state.spr[SPR::XER] &= ~XER::OV;
+            ppc_unset_xer(XER::SO | XER::OV);
         }
     }
     if (rec)
@@ -294,9 +299,9 @@ POWEROPCODEOVREC (mul,
 
     if (ov) {
         if (uint64_t(product >> 31) + 1 & ~1) {
-            ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
+            ppc_set_xer(XER::SO | XER::OV);
         } else {
-            ppc_state.spr[SPR::XER] &= ~XER::OV;
+            ppc_unset_xer(XER::SO | XER::OV);
         }
     }
     if (rec)
@@ -314,7 +319,7 @@ POWEROPCODEOVREC (nabs,
     uint32_t ppc_result_d = (int32_t(ppc_result_a) < 0) ? ppc_result_a : -ppc_result_a;
 
     if (ov)
-        ppc_state.spr[SPR::XER] &= ~XER::OV;
+        ppc_unset_xer(XER::SO | XER::OV);
     if (rec)
         ppc_changecrf0(ppc_result_d);
 
