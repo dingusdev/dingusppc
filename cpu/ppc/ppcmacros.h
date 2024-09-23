@@ -23,6 +23,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define PPC_MACROS_H
 
 #include <cinttypes>
+#include "ppcemu.h"
+
+
+#define ppc_set_cr(entry) \
+    ppc_state.cr |= entry;
+
+#define ppc_unset_cr(entry) \
+    ppc_state.cr &= ~entry;
+
+#define ppc_get_xer \
+    return ppc_state.spr[SPR::XER];
+
+#define ppc_set_xer(entry) \
+    ppc_state.spr[SPR::XER] |= entry;
+
+#define ppc_unset_xer(entry) \
+     ppc_state.spr[SPR::XER] &= ~entry;
+
+#define power_store_mq(entry) \
+    ppc_state.spr[SPR::MQ] = entry;
 
 #define ppc_grab_regsdasimm(opcode) \
     int reg_d             = (opcode >> 21) & 31; \
@@ -53,6 +73,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     int reg_a             = (opcode >> 16) & 31; \
     uint32_t uimm         = uint16_t(opcode); \
     uint32_t ppc_result_a = ppc_state.gpr[reg_a];
+
+#define ppc_grab_crfds(opcode) \
+    int crf_d = (instr >> 21) & 0x1C; \
+    int crf_s = (instr >> 16) & 0x1C;
 
 #define ppc_grab_da(opcode)\
     int reg_d = (opcode >> 21) & 31;\
@@ -125,20 +149,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     uint32_t ppc_result_d   = ppc_state.gpr[reg_s]; \
     uint32_t ppc_result_b   = ppc_state.gpr[reg_b];
 
-
 #define ppc_grab_regsda(opcode) \
     int reg_d             = (opcode >> 21) & 31; \
     uint32_t reg_a        = (opcode >> 16) & 31; \
     uint32_t ppc_result_a = ppc_state.gpr[reg_a];
-
 
 #define ppc_grab_regsdb(opcode) \
     int reg_d = (opcode >> 21) & 31; \
     uint32_t reg_b = (opcode >> 11) & 31; \
     uint32_t ppc_result_b   = ppc_state.gpr[reg_b];
 
+#define ppc_store_iresult_reg(reg, ppc_result) \
+    ppc_state.gpr[reg] = ppc_result;
+
 #define ppc_store_sfpresult_int(reg, ppc_result64_d)\
-     ppc_state.fpr[(reg)].int64_r = ppc_result64_d;
+    ppc_state.fpr[(reg)].int64_r = ppc_result64_d;
 
 #define ppc_store_sfpresult_flt(reg, ppc_dblresult64_d)\
     ppc_state.fpr[(reg)].dbl64_r = ppc_dblresult64_d;
@@ -209,5 +234,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         double val_reg_a = GET_FPR(reg_a); \
         double val_reg_b = GET_FPR(reg_b); \
         double val_reg_c = GET_FPR(reg_c);
+
+#define ppc_grab_mtfsf(opcode) \
+    int reg_b  = (opcode >> 11) & 0x1F; \
+    uint8_t fm = (opcode >> 17) & 0xFF;
+
+#define ppc_grab_mtfsfi(opcode) \
+    int crf_d    = (opcode >> 21) & 0x1C; \
+    uint32_t imm = (opcode << 16) & 0xF0000000UL;
+
+#define ppc_grab_crfd(opcode) \
+    int crf_d    = (opcode >> 21) & 0x1C;
 
 #endif    // PPC_MACROS_H

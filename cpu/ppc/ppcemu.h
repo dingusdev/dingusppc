@@ -428,203 +428,203 @@ extern void do_ctx_sync(void);
 // The functions used by the PowerPC processor
 
 namespace dppc_interpreter {
-template <field_lk l, field_601 for601> extern void ppc_bcctr(uint32_t instr);
-template <field_lk l> extern void ppc_bclr(uint32_t instr);
-extern void ppc_crand(uint32_t instr);
-extern void ppc_crandc(uint32_t instr);
-extern void ppc_creqv(uint32_t instr);
-extern void ppc_crnand(uint32_t instr);
-extern void ppc_crnor(uint32_t instr);
-extern void ppc_cror(uint32_t instr);
-extern void ppc_crorc(uint32_t instr);
-extern void ppc_crxor(uint32_t instr);
-extern void ppc_isync(uint32_t instr);
+template <field_lk l, field_601 for601> void ppc_bcctr(uint32_t instr);
+template <field_lk l> void ppc_bclr(uint32_t instr);
+void ppc_crand(uint32_t instr);
+void ppc_crandc(uint32_t instr);
+void ppc_creqv(uint32_t instr);
+void ppc_crnand(uint32_t instr);
+void ppc_crnor(uint32_t instr);
+void ppc_cror(uint32_t instr);
+void ppc_crorc(uint32_t instr);
+void ppc_crxor(uint32_t instr);
+void ppc_isync(uint32_t instr);
 
-template <logical_fun logical_op, field_rc rec> extern void ppc_logical(uint32_t instr);
+template <logical_fun logical_op, field_rc rec> void ppc_logical(uint32_t instr);
 
-template <field_carry carry, field_rc rec, field_ov ov> extern void ppc_add(uint32_t instr);
-template <field_rc rec, field_ov ov> extern void ppc_adde(uint32_t instr);
-template <field_rc rec, field_ov ov> extern void ppc_addme(uint32_t instr);
-template <field_rc rec, field_ov ov> extern void ppc_addze(uint32_t instr);
-extern void ppc_cmp(uint32_t instr);
-extern void ppc_cmpl(uint32_t instr);
-template <field_rc rec> extern void ppc_cntlzw(uint32_t instr);
-extern void ppc_dcbf(uint32_t instr);
-extern void ppc_dcbi(uint32_t instr);
-extern void ppc_dcbst(uint32_t instr);
-extern void ppc_dcbt(uint32_t instr);
-extern void ppc_dcbtst(uint32_t instr);
-extern void ppc_dcbz(uint32_t instr);
-template <field_rc rec, field_ov ov> extern void ppc_divw(uint32_t instr);
-template <field_rc rec, field_ov ov> extern void ppc_divwu(uint32_t instr);
-extern void ppc_eciwx(uint32_t instr);
-extern void ppc_ecowx(uint32_t instr);
-extern void ppc_eieio(uint32_t instr);
-template <class T, field_rc rec>extern void ppc_exts(uint32_t instr);
-extern void ppc_icbi(uint32_t instr);
-extern void ppc_mftb(uint32_t instr);
-extern void ppc_lhaux(uint32_t instr);
-extern void ppc_lhax(uint32_t instr);
-extern void ppc_lhbrx(uint32_t instr);
-extern void ppc_lwarx(uint32_t instr);
-extern void ppc_lwbrx(uint32_t instr);
-template <class T> extern void ppc_lzx(uint32_t instr);
-template <class T> extern void ppc_lzux(uint32_t instr);
-extern void ppc_mcrxr(uint32_t instr);
-extern void ppc_mfcr(uint32_t instr);
-template <field_rc rec> extern void ppc_mulhwu(uint32_t instr);
-template <field_rc rec> extern void ppc_mulhw(uint32_t instr);
-template <field_rc rec, field_ov ov> extern void ppc_mullw(uint32_t instr);
-template <field_rc rec, field_ov ov> extern void ppc_neg(uint32_t instr);
-template <field_direction shift, field_rc rec> extern void ppc_shift(uint32_t instr);
-template <field_rc rec> extern void ppc_sraw(uint32_t instr);
-template <field_rc rec> extern void ppc_srawi(uint32_t instr);
-template <class T> extern void ppc_stx(uint32_t instr);
-template <class T> extern void ppc_stux(uint32_t instr);
-extern void ppc_stfiwx(uint32_t instr);
-extern void ppc_sthbrx(uint32_t instr);
-extern void ppc_stwcx(uint32_t instr);
-extern void ppc_stwbrx(uint32_t instr);
-template <field_carry carry, field_rc rec, field_ov ov> extern void ppc_subf(uint32_t instr);
-template <field_rc rec, field_ov ov> extern void ppc_subfe(uint32_t instr);
-template <field_rc rec, field_ov ov> extern void ppc_subfme(uint32_t instr);
-template <field_rc rec, field_ov ov> extern void ppc_subfze(uint32_t instr);
-extern void ppc_sync(uint32_t instr);
-extern void ppc_tlbia(uint32_t instr);
-extern void ppc_tlbie(uint32_t instr);
-extern void ppc_tlbli(uint32_t instr);
-extern void ppc_tlbld(uint32_t instr);
-extern void ppc_tlbsync(uint32_t instr);
-extern void ppc_tw(uint32_t instr);
+template <field_carry carry, field_rc rec, field_ov ov> void ppc_add(uint32_t instr);
+template <field_rc rec, field_ov ov> void ppc_adde(uint32_t instr);
+template <field_rc rec, field_ov ov> void ppc_addme(uint32_t instr);
+template <field_rc rec, field_ov ov> void ppc_addze(uint32_t instr);
+void ppc_cmp(uint32_t instr);
+void ppc_cmpl(uint32_t instr);
+template <field_rc rec> void ppc_cntlzw(uint32_t instr);
+void ppc_dcbf(uint32_t instr);
+void ppc_dcbi(uint32_t instr);
+void ppc_dcbst(uint32_t instr);
+void ppc_dcbt(uint32_t instr);
+void ppc_dcbtst(uint32_t instr);
+void ppc_dcbz(uint32_t instr);
+template <field_rc rec, field_ov ov> void ppc_divw(uint32_t instr);
+template <field_rc rec, field_ov ov> void ppc_divwu(uint32_t instr);
+void ppc_eciwx(uint32_t instr);
+void ppc_ecowx(uint32_t instr);
+void ppc_eieio(uint32_t instr);
+template <class T, field_rc rec>void ppc_exts(uint32_t instr);
+void ppc_icbi(uint32_t instr);
+void ppc_mftb(uint32_t instr);
+void ppc_lhaux(uint32_t instr);
+void ppc_lhax(uint32_t instr);
+void ppc_lhbrx(uint32_t instr);
+void ppc_lwarx(uint32_t instr);
+void ppc_lwbrx(uint32_t instr);
+template <class T> void ppc_lzx(uint32_t instr);
+template <class T> void ppc_lzux(uint32_t instr);
+void ppc_mcrxr(uint32_t instr);
+void ppc_mfcr(uint32_t instr);
+template <field_rc rec> void ppc_mulhwu(uint32_t instr);
+template <field_rc rec> void ppc_mulhw(uint32_t instr);
+template <field_rc rec, field_ov ov> void ppc_mullw(uint32_t instr);
+template <field_rc rec, field_ov ov> void ppc_neg(uint32_t instr);
+template <field_direction shift, field_rc rec> void ppc_shift(uint32_t instr);
+template <field_rc rec> void ppc_sraw(uint32_t instr);
+template <field_rc rec> void ppc_srawi(uint32_t instr);
+template <class T> void ppc_stx(uint32_t instr);
+template <class T> void ppc_stux(uint32_t instr);
+void ppc_stfiwx(uint32_t instr);
+void ppc_sthbrx(uint32_t instr);
+void ppc_stwcx(uint32_t instr);
+void ppc_stwbrx(uint32_t instr);
+template <field_carry carry, field_rc rec, field_ov ov> void ppc_subf(uint32_t instr);
+template <field_rc rec, field_ov ov> void ppc_subfe(uint32_t instr);
+template <field_rc rec, field_ov ov> void ppc_subfme(uint32_t instr);
+template <field_rc rec, field_ov ov> void ppc_subfze(uint32_t instr);
+void ppc_sync(uint32_t instr);
+void ppc_tlbia(uint32_t instr);
+void ppc_tlbie(uint32_t instr);
+void ppc_tlbli(uint32_t instr);
+void ppc_tlbld(uint32_t instr);
+void ppc_tlbsync(uint32_t instr);
+void ppc_tw(uint32_t instr);
 
-extern void ppc_lswi(uint32_t instr);
-extern void ppc_lswx(uint32_t instr);
-extern void ppc_stswi(uint32_t instr);
-extern void ppc_stswx(uint32_t instr);
+void ppc_lswi(uint32_t instr);
+void ppc_lswx(uint32_t instr);
+void ppc_stswi(uint32_t instr);
+void ppc_stswx(uint32_t instr);
 
-extern void ppc_mfsr(uint32_t instr);
-extern void ppc_mfsrin(uint32_t instr);
-extern void ppc_mtsr(uint32_t instr);
-extern void ppc_mtsrin(uint32_t instr);
+void ppc_mfsr(uint32_t instr);
+void ppc_mfsrin(uint32_t instr);
+void ppc_mtsr(uint32_t instr);
+void ppc_mtsrin(uint32_t instr);
 
-extern void ppc_mcrf(uint32_t instr);
-extern void ppc_mtcrf(uint32_t instr);
-extern void ppc_mfmsr(uint32_t instr);
-extern void ppc_mfspr(uint32_t instr);
-extern void ppc_mtmsr(uint32_t instr);
-extern void ppc_mtspr(uint32_t instr);
+void ppc_mcrf(uint32_t instr);
+void ppc_mtcrf(uint32_t instr);
+void ppc_mfmsr(uint32_t instr);
+void ppc_mfspr(uint32_t instr);
+void ppc_mtmsr(uint32_t instr);
+void ppc_mtspr(uint32_t instr);
 
-template <field_rc rec> extern void ppc_mtfsb0(uint32_t instr);
-template <field_rc rec> extern void ppc_mtfsb1(uint32_t instr);
-extern void ppc_mcrfs(uint32_t instr);
-template <field_rc rec> extern void ppc_fmr(uint32_t instr);
-template <field_601 for601, field_rc rec> extern void ppc_mffs(uint32_t instr);
-template <field_rc rec> extern void ppc_mtfsf(uint32_t instr);
-template <field_rc rec> extern void ppc_mtfsfi(uint32_t instr);
+template <field_rc rec> void ppc_mtfsb0(uint32_t instr);
+template <field_rc rec> void ppc_mtfsb1(uint32_t instr);
+void ppc_mcrfs(uint32_t instr);
+template <field_rc rec> void ppc_fmr(uint32_t instr);
+template <field_601 for601, field_rc rec> void ppc_mffs(uint32_t instr);
+template <field_rc rec> void ppc_mtfsf(uint32_t instr);
+template <field_rc rec> void ppc_mtfsfi(uint32_t instr);
 
-template <field_shift shift> extern void ppc_addi(uint32_t instr);
-template <field_rc rec> extern void ppc_addic(uint32_t instr);
-template <field_shift shift> extern void ppc_andirc(uint32_t instr);
-template <field_lk l, field_aa a> extern void ppc_b(uint32_t instr);
-template <field_lk l, field_aa a> extern void ppc_bc(uint32_t instr);
-extern void ppc_cmpi(uint32_t instr);
-extern void ppc_cmpli(uint32_t instr);
-template <class T> extern void ppc_lz(uint32_t instr);
-template <class T> extern void ppc_lzu(uint32_t instr);
-extern void ppc_lha(uint32_t instr);
-extern void ppc_lhau(uint32_t instr);
-extern void ppc_lmw(uint32_t instr);
-extern void ppc_mulli(uint32_t instr);
-template <field_shift shift> extern void ppc_ori(uint32_t instr);
-extern void ppc_rfi(uint32_t instr);
-extern void ppc_rlwimi(uint32_t instr);
-extern void ppc_rlwinm(uint32_t instr);
-extern void ppc_rlwnm(uint32_t instr);
-extern void ppc_sc(uint32_t instr);
-template <class T> extern void ppc_st(uint32_t instr);
-template <class T> extern void ppc_stu(uint32_t instr);
-extern void ppc_stmw(uint32_t instr);
-extern void ppc_subfic(uint32_t instr);
-extern void ppc_twi(uint32_t instr);
-template <field_shift shift> extern void ppc_xori(uint32_t instr);
+template <field_shift shift> void ppc_addi(uint32_t instr);
+template <field_rc rec> void ppc_addic(uint32_t instr);
+template <field_shift shift> void ppc_andirc(uint32_t instr);
+template <field_lk l, field_aa a> void ppc_b(uint32_t instr);
+template <field_lk l, field_aa a> void ppc_bc(uint32_t instr);
+void ppc_cmpi(uint32_t instr);
+void ppc_cmpli(uint32_t instr);
+template <class T> void ppc_lz(uint32_t instr);
+template <class T> void ppc_lzu(uint32_t instr);
+void ppc_lha(uint32_t instr);
+void ppc_lhau(uint32_t instr);
+void ppc_lmw(uint32_t instr);
+void ppc_mulli(uint32_t instr);
+template <field_shift shift> void ppc_ori(uint32_t instr);
+void ppc_rfi(uint32_t instr);
+void ppc_rlwimi(uint32_t instr);
+void ppc_rlwinm(uint32_t instr);
+void ppc_rlwnm(uint32_t instr);
+void ppc_sc(uint32_t instr);
+template <class T> void ppc_st(uint32_t instr);
+template <class T> void ppc_stu(uint32_t instr);
+void ppc_stmw(uint32_t instr);
+void ppc_subfic(uint32_t instr);
+void ppc_twi(uint32_t instr);
+template <field_shift shift> void ppc_xori(uint32_t instr);
 
-extern void ppc_lfs(uint32_t instr);
-extern void ppc_lfsu(uint32_t instr);
-extern void ppc_lfsx(uint32_t instr);
-extern void ppc_lfsux(uint32_t instr);
-extern void ppc_lfd(uint32_t instr);
-extern void ppc_lfdu(uint32_t instr);
-extern void ppc_lfdx(uint32_t instr);
-extern void ppc_lfdux(uint32_t instr);
-extern void ppc_stfs(uint32_t instr);
-extern void ppc_stfsu(uint32_t instr);
-extern void ppc_stfsx(uint32_t instr);
-extern void ppc_stfsux(uint32_t instr);
-extern void ppc_stfd(uint32_t instr);
-extern void ppc_stfdu(uint32_t instr);
-extern void ppc_stfdx(uint32_t instr);
-extern void ppc_stfdux(uint32_t instr);
+void ppc_lfs(uint32_t instr);
+void ppc_lfsu(uint32_t instr);
+void ppc_lfsx(uint32_t instr);
+void ppc_lfsux(uint32_t instr);
+void ppc_lfd(uint32_t instr);
+void ppc_lfdu(uint32_t instr);
+void ppc_lfdx(uint32_t instr);
+void ppc_lfdux(uint32_t instr);
+void ppc_stfs(uint32_t instr);
+void ppc_stfsu(uint32_t instr);
+void ppc_stfsx(uint32_t instr);
+void ppc_stfsux(uint32_t instr);
+void ppc_stfd(uint32_t instr);
+void ppc_stfdu(uint32_t instr);
+void ppc_stfdx(uint32_t instr);
+void ppc_stfdux(uint32_t instr);
 
-template <field_rc rec> extern void ppc_fadd(uint32_t instr);
-template <field_rc rec> extern void ppc_fsub(uint32_t instr);
-template <field_rc rec> extern void ppc_fmul(uint32_t instr);
-template <field_rc rec> extern void ppc_fdiv(uint32_t instr);
-template <field_rc rec> extern void ppc_fadds(uint32_t instr);
-template <field_rc rec> extern void ppc_fsubs(uint32_t instr);
-template <field_rc rec> extern void ppc_fmuls(uint32_t instr);
-template <field_rc rec> extern void ppc_fdivs(uint32_t instr);
-template <field_rc rec> extern void ppc_fmadd(uint32_t instr);
-template <field_rc rec> extern void ppc_fmsub(uint32_t instr);
-template <field_rc rec> extern void ppc_fnmadd(uint32_t instr);
-template <field_rc rec> extern void ppc_fnmsub(uint32_t instr);
-template <field_rc rec> extern void ppc_fmadds(uint32_t instr);
-template <field_rc rec> extern void ppc_fmsubs(uint32_t instr);
-template <field_rc rec> extern void ppc_fnmadds(uint32_t instr);
-template <field_rc rec> extern void ppc_fnmsubs(uint32_t instr);
-template <field_rc rec> extern void ppc_fabs(uint32_t instr);
-template <field_rc rec> extern void ppc_fnabs(uint32_t instr);
-template <field_rc rec> extern void ppc_fneg(uint32_t instr);
-template <field_rc rec> extern void ppc_fsel(uint32_t instr);
-template <field_rc rec> extern void ppc_fres(uint32_t instr);
-template <field_rc rec> extern void ppc_fsqrts(uint32_t instr);
-template <field_rc rec> extern void ppc_fsqrt(uint32_t instr);
-template <field_rc rec> extern void ppc_frsqrte(uint32_t instr);
-template <field_rc rec> extern void ppc_frsp(uint32_t instr);
-template <field_rc rec> extern void ppc_fctiw(uint32_t instr);
-template <field_rc rec> extern void ppc_fctiwz(uint32_t instr);
+template <field_rc rec> void ppc_fadd(uint32_t instr);
+template <field_rc rec> void ppc_fsub(uint32_t instr);
+template <field_rc rec> void ppc_fmul(uint32_t instr);
+template <field_rc rec> void ppc_fdiv(uint32_t instr);
+template <field_rc rec> void ppc_fadds(uint32_t instr);
+template <field_rc rec> void ppc_fsubs(uint32_t instr);
+template <field_rc rec> void ppc_fmuls(uint32_t instr);
+template <field_rc rec> void ppc_fdivs(uint32_t instr);
+template <field_rc rec> void ppc_fmadd(uint32_t instr);
+template <field_rc rec> void ppc_fmsub(uint32_t instr);
+template <field_rc rec> void ppc_fnmadd(uint32_t instr);
+template <field_rc rec> void ppc_fnmsub(uint32_t instr);
+template <field_rc rec> void ppc_fmadds(uint32_t instr);
+template <field_rc rec> void ppc_fmsubs(uint32_t instr);
+template <field_rc rec> void ppc_fnmadds(uint32_t instr);
+template <field_rc rec> void ppc_fnmsubs(uint32_t instr);
+template <field_rc rec> void ppc_fabs(uint32_t instr);
+template <field_rc rec> void ppc_fnabs(uint32_t instr);
+template <field_rc rec> void ppc_fneg(uint32_t instr);
+template <field_rc rec> void ppc_fsel(uint32_t instr);
+template <field_rc rec> void ppc_fres(uint32_t instr);
+template <field_rc rec> void ppc_fsqrts(uint32_t instr);
+template <field_rc rec> void ppc_fsqrt(uint32_t instr);
+template <field_rc rec> void ppc_frsqrte(uint32_t instr);
+template <field_rc rec> void ppc_frsp(uint32_t instr);
+template <field_rc rec> void ppc_fctiw(uint32_t instr);
+template <field_rc rec> void ppc_fctiwz(uint32_t instr);
 
-extern void ppc_fcmpo(uint32_t instr);
-extern void ppc_fcmpu(uint32_t instr);
+void ppc_fcmpo(uint32_t instr);
+void ppc_fcmpu(uint32_t instr);
 
 // Power-specific instructions
-template <field_rc rec, field_ov ov> extern void power_abs(uint32_t instr);
-extern void power_clcs(uint32_t instr);
-template <field_rc rec, field_ov ov> extern void power_div(uint32_t instr);
-template <field_rc rec, field_ov ov> extern void power_divs(uint32_t instr);
-template <field_rc rec, field_ov ov> extern void power_doz(uint32_t instr);
-extern void power_dozi(uint32_t instr);
-template <field_rc rec> extern void power_lscbx(uint32_t instr);
-template <field_rc rec> extern void power_maskg(uint32_t instr);
-template <field_rc rec> extern void power_maskir(uint32_t instr);
-template <field_rc rec, field_ov ov> extern void power_mul(uint32_t instr);
-template <field_rc rec, field_ov ov> extern void power_nabs(uint32_t instr);
-extern void power_rlmi(uint32_t instr);
-template <field_rc rec> extern void power_rrib(uint32_t instr);
-template <field_rc rec> extern void power_sle(uint32_t instr);
-template <field_rc rec> extern void power_sleq(uint32_t instr);
-template <field_rc rec> extern void power_sliq(uint32_t instr);
-template <field_rc rec> extern void power_slliq(uint32_t instr);
-template <field_rc rec> extern void power_sllq(uint32_t instr);
-template <field_rc rec> extern void power_slq(uint32_t instr);
-template <field_rc rec> extern void power_sraiq(uint32_t instr);
-template <field_rc rec> extern void power_sraq(uint32_t instr);
-template <field_rc rec> extern void power_sre(uint32_t instr);
-template <field_rc rec> extern void power_srea(uint32_t instr);
-template <field_rc rec> extern void power_sreq(uint32_t instr);
-template <field_rc rec> extern void power_sriq(uint32_t instr);
-template <field_rc rec> extern void power_srliq(uint32_t instr);
-template <field_rc rec> extern void power_srlq(uint32_t instr);
-template <field_rc rec> extern void power_srq(uint32_t instr);
+template <field_rc rec, field_ov ov> void power_abs(uint32_t instr);
+void power_clcs(uint32_t instr);
+template <field_rc rec, field_ov ov> void power_div(uint32_t instr);
+template <field_rc rec, field_ov ov> void power_divs(uint32_t instr);
+template <field_rc rec, field_ov ov> void power_doz(uint32_t instr);
+void power_dozi(uint32_t instr);
+template <field_rc rec> void power_lscbx(uint32_t instr);
+template <field_rc rec> void power_maskg(uint32_t instr);
+template <field_rc rec> void power_maskir(uint32_t instr);
+template <field_rc rec, field_ov ov> void power_mul(uint32_t instr);
+template <field_rc rec, field_ov ov> void power_nabs(uint32_t instr);
+void power_rlmi(uint32_t instr);
+template <field_rc rec> void power_rrib(uint32_t instr);
+template <field_rc rec> void power_sle(uint32_t instr);
+template <field_rc rec> void power_sleq(uint32_t instr);
+template <field_rc rec> void power_sliq(uint32_t instr);
+template <field_rc rec> void power_slliq(uint32_t instr);
+template <field_rc rec> void power_sllq(uint32_t instr);
+template <field_rc rec> void power_slq(uint32_t instr);
+template <field_rc rec> void power_sraiq(uint32_t instr);
+template <field_rc rec> void power_sraq(uint32_t instr);
+template <field_rc rec> void power_sre(uint32_t instr);
+template <field_rc rec> void power_srea(uint32_t instr);
+template <field_rc rec> void power_sreq(uint32_t instr);
+template <field_rc rec> void power_sriq(uint32_t instr);
+template <field_rc rec> void power_srliq(uint32_t instr);
+template <field_rc rec> void power_srlq(uint32_t instr);
+template <field_rc rec> void power_srq(uint32_t instr);
 }    // namespace dppc_interpreter
 
 // AltiVec instructions
@@ -633,93 +633,110 @@ template <field_rc rec> extern void power_srq(uint32_t instr);
 
 // G5+ instructions
 
+#undef OPCODE
 #define OPCODE(op, ...) \
     void dppc_interpreter::ppc_##op(uint32_t instr) {  \
         ##__VA_ARGS__ \
     }
+
+#undef POWEROPCODE
 #define POWEROPCODE(op, ...) \
     void dppc_interpreter::power_##op(uint32_t instr) { \
         ##__VA_ARGS__ \
     }
 
+#undef OPCODESHIFT
 #define OPCODESHIFT(op, ...) \
     template <field_shift shift> \
     void dppc_interpreter::ppc_##op(uint32_t instr) {  \
         __VA_ARGS__  \
     }
 
+#undef OPCODESHIFTREC
 #define OPCODESHIFTREC(op, ...) \
-    template field_direction isleft, field_rc rec > \
+    template <field_direction isleft, field_rc rec > \
     void dppc_interpreter::ppc_##op(uint32_t instr) { \
         __VA_ARGS__  \
     }
 
+#undef OPCODECARRY
 #define OPCODECARRY(op, ...) \
     template <field_carry carry, field_rc rec, field_ov ov> \
     void dppc_interpreter::ppc_##op(uint32_t instr) { \
         __VA_ARGS__   \
     }
 
+#undef OPCODEOVREC
 #define OPCODEOVREC(op, ...) \
     template <field_rc rec, field_ov ov> \
     void dppc_interpreter::ppc_##op(uint32_t instr) { \
         __VA_ARGS__ \
     }
 
+#undef OPCODEEXTSIGN
 #define OPCODEEXTSIGN(op, ...)\
     template <class T, field_rc rec>\
     void dppc_interpreter::ppc_##op(uint32_t instr) {\
         __VA_ARGS__ \
     }
 
+#undef POWEROPCODEOVREC
 #define POWEROPCODEOVREC(op, ...) \
     template <field_rc rec, field_ov ov> \
     void dppc_interpreter::power_##op(uint32_t instr) { \
         __VA_ARGS__   \
     }
 
+#undef OPCODEREC
 #define OPCODEREC(op, ...) \
     template <field_rc rec> \
     void dppc_interpreter::ppc_##op(uint32_t instr) { \
         __VA_ARGS__ \
     }   
 
+#undef POWEROPCODEREC
 #define POWEROPCODEREC(op, ...) \
     template <field_rc rec> \
     void dppc_interpreter::power_##op(uint32_t instr) { \
         __VA_ARGS__ \
     }
 
+#undef OPCODELOGIC
 #define OPCODELOGIC(op, ...) \
     template <logical_fun logical_op, field_rc rec>  \
     void dppc_interpreter::ppc_##op(uint32_t instr) { \
         __VA_ARGS__ \
     }   
 
+#undef OPCODELKAA
 #define OPCODELKAA(op, ...) \
-template <field_lk l, field_aa a> \
+    template <field_lk l, field_aa a> \
     void dppc_interpreter::ppc_##op(uint32_t instr) { \
     __VA_ARGS__ \
     }
 
+#undef OPCODEMEM
 #define OPCODEMEM(op, ...) \
     template <class T> \
     void dppc_interpreter::ppc_##op(uint32_t instr) { \
         __VA_ARGS__  \
     }
 
+#undef OPCODE601REC
 #define OPCODE601REC(op, ...)  \
     template <field_601 for601, field_rc rec> \
     void dppc_interpreter::ppc_##op(uint32_t instr) { \
         __VA_ARGS__  \
     }
 
+#undef OPCODE601L
 #define OPCODE601L(op, ...) \
     template <field_lk l,  field_601 for601, field_rc rec>  \
     void dppc_interpreter::ppc_##op(uint32_t instr) { \
         __VA_ARGS__ \
     }
 
+#undef OPCODEL
 #define OPCODEL(op, ...) \
     template <field_lk l, field_601 for601, field_rc rec>  \
     void dppc_interpreter::ppc_##op(uint32_t instr) { \

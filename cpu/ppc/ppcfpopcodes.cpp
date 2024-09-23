@@ -133,7 +133,7 @@ static void fpresult_update(double set_result) {
     }
 }
 
-static void ppc_update_vx() {
+inline int ppc_update_vx() {
     uint32_t fpscr_check = ppc_state.fpscr & 0x1F80700U;
     if (fpscr_check)
         ppc_state.fpscr |= VX;
@@ -141,7 +141,7 @@ static void ppc_update_vx() {
         ppc_state.fpscr &= ~VX;
 }
 
-static void ppc_update_fex() {
+inline int ppc_update_fex() {
     uint32_t fpscr_check = (((ppc_state.fpscr >> 25) & 0x1F) &
         ((ppc_state.fpscr >> 3) & 0x1F));
 
@@ -835,13 +835,13 @@ template void dppc_interpreter::ppc_mffs<IS601, RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_mffs<IS601, RC1>(uint32_t instr);
 
 OPCODEREC (mtfsf,
-    int reg_b  = (instr >> 11) & 0x1F;
-    uint8_t fm = (instr >> 17) & 0xFF;
+    ppc_grab_mtfsf(instr);
 
     uint32_t cr_mask = 0;
 
-    if (fm == 0xFFU) // the fast case
+    if (fm == 0xFFU) {    // the fast case
         cr_mask = 0xFFFFFFFFUL;
+    }
     else { // the slow case
         if (fm & 0x80) cr_mask |= 0xF0000000UL;
         if (fm & 0x40) cr_mask |= 0x0F000000UL;
@@ -859,16 +859,16 @@ OPCODEREC (mtfsf,
     // copy FPR[reg_b] to FPSCR under control of cr_mask
     ppc_state.fpscr = (ppc_state.fpscr & ~cr_mask) | (ppc_state.fpr[reg_b].int64_r & cr_mask);
 
-    if (rec)
+    if (rec) {
         ppc_update_cr1();
+    }
 )
 
 template void dppc_interpreter::ppc_mtfsf<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_mtfsf<RC1>(uint32_t instr);
 
-OPCODEREC (mtfsfi,
-    int crf_d    = (instr >> 21) & 0x1C;
-    uint32_t imm = (instr << 16) & 0xF0000000UL;
+OPCODEREC (mtfsfi, 
+    ppc_grab_mtfsfi(instr);
 
     // prepare field mask and ensure that neither FEX nor VX will be changed
     uint32_t mask = (0xF0000000UL >> crf_d) & ~(FPSCR::FEX | FPSCR::VX);
@@ -880,8 +880,9 @@ OPCODEREC (mtfsfi,
     ppc_update_vx();
     ppc_update_fex();
 
-    if (rec)
+    if (rec) { 
         ppc_update_cr1();
+    }
 )
 
 template void dppc_interpreter::ppc_mtfsfi<RC0>(uint32_t instr);
@@ -901,21 +902,21 @@ template void dppc_interpreter::ppc_mtfsb0<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_mtfsb0<RC1>(uint32_t instr);
 
 OPCODEREC (mtfsb1,
-    int crf_d = (instr >> 21) & 0x1F;
+    ppc_grab_crfd(instr);
     if (!crf_d || (crf_d > 2)) { // FEX and VX can't be explicitly set
         ppc_state.fpscr |= (0x80000000UL >> crf_d);
     }
 
-    if (rec)
+    if (rec) { 
         ppc_update_cr1();
+    }
 )
 
 template void dppc_interpreter::ppc_mtfsb1<RC0>(uint32_t instr);
 template void dppc_interpreter::ppc_mtfsb1<RC1>(uint32_t instr);
 
-OPCODE (mcrfs,
-    int crf_d = (instr >> 21) & 0x1C;
-    int crf_s = (instr >> 16) & 0x1C;
+OPCODE (mcrfs, 
+    ppc_grab_crfds(instr);
     ppc_state.cr = (
         (ppc_state.cr & ~(0xF0000000UL >> crf_d)) |
         (((ppc_state.fpscr << crf_s) & 0xF0000000UL) >> crf_d)
