@@ -633,110 +633,94 @@ template <field_rc rec> void power_srq(uint32_t instr);
 
 // G5+ instructions
 
-#undef OPCODE
 #define OPCODE(op, ...) \
     void dppc_interpreter::ppc_##op(uint32_t instr) {  \
         ##__VA_ARGS__ \
     }
 
-#undef POWEROPCODE
 #define POWEROPCODE(op, ...) \
     void dppc_interpreter::power_##op(uint32_t instr) { \
         ##__VA_ARGS__ \
     }
 
-#undef OPCODESHIFT
 #define OPCODESHIFT(op, ...) \
     template <field_shift shift> \
     void dppc_interpreter::ppc_##op(uint32_t instr) {  \
         __VA_ARGS__  \
     }
 
-#undef OPCODESHIFTREC
 #define OPCODESHIFTREC(op, ...) \
     template <field_direction isleft, field_rc rec > \
     void dppc_interpreter::ppc_##op(uint32_t instr) { \
         __VA_ARGS__  \
     }
 
-#undef OPCODECARRY
 #define OPCODECARRY(op, ...) \
     template <field_carry carry, field_rc rec, field_ov ov> \
     void dppc_interpreter::ppc_##op(uint32_t instr) { \
         __VA_ARGS__   \
     }
 
-#undef OPCODEOVREC
 #define OPCODEOVREC(op, ...) \
     template <field_rc rec, field_ov ov> \
     void dppc_interpreter::ppc_##op(uint32_t instr) { \
         __VA_ARGS__ \
     }
 
-#undef OPCODEEXTSIGN
 #define OPCODEEXTSIGN(op, ...)\
     template <class T, field_rc rec>\
     void dppc_interpreter::ppc_##op(uint32_t instr) {\
         __VA_ARGS__ \
     }
 
-#undef POWEROPCODEOVREC
 #define POWEROPCODEOVREC(op, ...) \
     template <field_rc rec, field_ov ov> \
     void dppc_interpreter::power_##op(uint32_t instr) { \
         __VA_ARGS__   \
     }
 
-#undef OPCODEREC
 #define OPCODEREC(op, ...) \
     template <field_rc rec> \
     void dppc_interpreter::ppc_##op(uint32_t instr) { \
         __VA_ARGS__ \
     }   
 
-#undef POWEROPCODEREC
 #define POWEROPCODEREC(op, ...) \
     template <field_rc rec> \
     void dppc_interpreter::power_##op(uint32_t instr) { \
         __VA_ARGS__ \
     }
 
-#undef OPCODELOGIC
 #define OPCODELOGIC(op, ...) \
     template <logical_fun logical_op, field_rc rec>  \
     void dppc_interpreter::ppc_##op(uint32_t instr) { \
         __VA_ARGS__ \
     }   
 
-#undef OPCODELKAA
 #define OPCODELKAA(op, ...) \
     template <field_lk l, field_aa a> \
     void dppc_interpreter::ppc_##op(uint32_t instr) { \
     __VA_ARGS__ \
     }
 
-#undef OPCODEMEM
 #define OPCODEMEM(op, ...) \
     template <class T> \
     void dppc_interpreter::ppc_##op(uint32_t instr) { \
         __VA_ARGS__  \
     }
 
-#undef OPCODE601REC
 #define OPCODE601REC(op, ...)  \
     template <field_601 for601, field_rc rec> \
     void dppc_interpreter::ppc_##op(uint32_t instr) { \
         __VA_ARGS__  \
     }
 
-#undef OPCODE601L
 #define OPCODE601L(op, ...) \
     template <field_lk l,  field_601 for601, field_rc rec>  \
     void dppc_interpreter::ppc_##op(uint32_t instr) { \
         __VA_ARGS__ \
     }
 
-#undef OPCODEL
 #define OPCODEL(op, ...) \
     template <field_lk l, field_601 for601, field_rc rec>  \
     void dppc_interpreter::ppc_##op(uint32_t instr) { \
