@@ -635,12 +635,12 @@ template <field_rc rec> void power_srq(uint32_t instr);
 
 #define OPCODE(op, ...) \
     void dppc_interpreter::ppc_##op(uint32_t instr) {  \
-        ##__VA_ARGS__ \
+        __VA_ARGS__ \
     }
 
 #define POWEROPCODE(op, ...) \
     void dppc_interpreter::power_##op(uint32_t instr) { \
-        ##__VA_ARGS__ \
+        __VA_ARGS__ \
     }
 
 #define OPCODESHIFT(op, ...) \
@@ -716,13 +716,13 @@ template <field_rc rec> void power_srq(uint32_t instr);
     }
 
 #define OPCODE601L(op, ...) \
-    template <field_lk l,  field_601 for601, field_rc rec>  \
+    template <field_lk l, field_601 for601>  \
     void dppc_interpreter::ppc_##op(uint32_t instr) { \
         __VA_ARGS__ \
     }
 
 #define OPCODEL(op, ...) \
-    template <field_lk l, field_601 for601, field_rc rec>  \
+    template <field_lk l>  \
     void dppc_interpreter::ppc_##op(uint32_t instr) { \
         __VA_ARGS__  \
     }

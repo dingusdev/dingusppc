@@ -27,22 +27,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
 #define ppc_set_cr(entry) \
-    ppc_state.cr |= entry;
+    ppc_state.cr |= entry
 
 #define ppc_unset_cr(entry) \
-    ppc_state.cr &= ~entry;
-
-#define ppc_get_xer \
-    return ppc_state.spr[SPR::XER];
+    ppc_state.cr &= ~entry
 
 #define ppc_set_xer(entry) \
-    ppc_state.spr[SPR::XER] |= entry;
+    ppc_state.spr[SPR::XER] |= entry
 
 #define ppc_unset_xer(entry) \
-     ppc_state.spr[SPR::XER] &= ~entry;
+     ppc_state.spr[SPR::XER] &= ~entry
 
 #define power_store_mq(entry) \
-    ppc_state.spr[SPR::MQ] = entry;
+    ppc_state.spr[SPR::MQ] = entry
+
+#define power_store_ctr(entry) \
+    ppc_state.spr[SPR::CTR] = entry
+
+#define power_store_mq(entry) \
+    ppc_state.spr[SPR::MQ] = entry
 
 #define ppc_grab_regsdasimm(opcode) \
     int reg_d             = (opcode >> 21) & 31; \
@@ -160,19 +163,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     uint32_t ppc_result_b   = ppc_state.gpr[reg_b];
 
 #define ppc_store_iresult_reg(reg, ppc_result) \
-    ppc_state.gpr[reg] = ppc_result;
+    ppc_state.gpr[reg] = ppc_result
 
 #define ppc_store_sfpresult_int(reg, ppc_result64_d)\
-    ppc_state.fpr[(reg)].int64_r = ppc_result64_d;
+    ppc_state.fpr[(reg)].int64_r = ppc_result64_d
 
 #define ppc_store_sfpresult_flt(reg, ppc_dblresult64_d)\
-    ppc_state.fpr[(reg)].dbl64_r = ppc_dblresult64_d;
+    ppc_state.fpr[(reg)].dbl64_r = ppc_dblresult64_d
 
 #define ppc_store_dfpresult_int(reg, ppc_result64_d)\
-    ppc_state.fpr[(reg)].int64_r = ppc_result64_d;
+    ppc_state.fpr[(reg)].int64_r = ppc_result64_d
 
 #define ppc_store_dfpresult_flt(reg, ppc_dblresult64_d)\
-    ppc_state.fpr[(reg)].dbl64_r = ppc_dblresult64_d;
+    ppc_state.fpr[(reg)].dbl64_r = ppc_dblresult64_d
 
 #define ppc_grab_regsfpdb(opcode) \
         int reg_d = (opcode >> 21) & 31; \
