@@ -318,6 +318,12 @@ void ppc_main_opcode(uint32_t instr) {
 #endif
 #endif
     OpcodeGrabber[(instr >> 26) & 0x3F](instr);
+
+#ifdef CPU_PROFILING
+    uint32_t load_chk = (instr >> 26);
+    if ((load_chk > 31) && (load_chk < 59))
+        num_int_loads++;
+#endif
 }
 
 static long long cpu_now_ns() {
