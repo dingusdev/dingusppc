@@ -44,7 +44,7 @@ POWEROPCODEOVREC (abs,
     } else {
         ppc_result_d = (int32_t(ppc_result_a) < 0) ? -ppc_result_a : ppc_result_a;
         if (ov)
-            ppc_unset_xer(XER::SO | XER::OV);
+            ppc_unset_xer(XER::OV);
     }
 
     if (rec)
@@ -114,7 +114,7 @@ POWEROPCODEOVREC (div,
             if (((quotient >> 31) + 1) & ~1) {
                 ppc_set_xer(XER::SO | XER::OV);
             } else {
-                ppc_unset_xer(XER::SO | XER::OV);
+                ppc_unset_xer(XER::OV);
             }
         }
     }
@@ -150,7 +150,7 @@ POWEROPCODEOVREC (divs,
         ppc_result_d = int32_t(ppc_result_a) / int32_t(ppc_result_b);
         remainder = (int32_t(ppc_result_a) % int32_t(ppc_result_b));
         if (ov)
-            ppc_unset_xer(XER::SO | XER::OV);
+            ppc_unset_xer(XER::OV);
     }
     if (rec)
         ppc_changecrf0(remainder);
@@ -173,7 +173,7 @@ POWEROPCODEOVREC (doz,
         if (int32_t(ppc_result_d) < 0) {
             ppc_set_xer(XER::SO | XER::OV);
         } else {
-            ppc_unset_xer(XER::SO | XER::OV);
+            ppc_unset_xer(XER::OV);
         }
     }
     if (rec)
@@ -301,7 +301,7 @@ POWEROPCODEOVREC (mul,
         if (uint64_t(product >> 31) + 1 & ~1) {
             ppc_set_xer(XER::SO | XER::OV);
         } else {
-            ppc_unset_xer(XER::SO | XER::OV);
+            ppc_unset_xer(XER::OV);
         }
     }
     if (rec)
@@ -319,7 +319,7 @@ POWEROPCODEOVREC (nabs,
     uint32_t ppc_result_d = (int32_t(ppc_result_a) < 0) ? ppc_result_a : -ppc_result_a;
 
     if (ov)
-        ppc_unset_xer(XER::SO | XER::OV);
+        ppc_unset_xer(XER::OV);
     if (rec)
         ppc_changecrf0(ppc_result_d);
 
