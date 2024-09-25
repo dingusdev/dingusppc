@@ -36,6 +36,12 @@ using namespace std;
 int ntested; // number of tested instructions
 int nfailed; // number of failed instructions
 
+#if defined(PPC_TESTS)
+void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
+    power_on = false;
+}
+#endif
+
 static void xer_ov_test(string mnem, uint32_t opcode) {
     ppc_state.gpr[3]        = 2;
     ppc_state.gpr[4]        = 2;

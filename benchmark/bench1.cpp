@@ -27,9 +27,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <thirdparty/loguru/loguru.hpp>
 #include <debugger/debugger.h>
 
+#if defined(PPC_BENCHMARKS)
 void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
     power_on = false;
 }
+#endif
 
 uint32_t cs_code[] = {
     0x3863FFFC, 0x7C861671, 0x41820090, 0x70600002, 0x41E2001C, 0xA0030004,
