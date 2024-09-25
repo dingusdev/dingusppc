@@ -345,9 +345,9 @@ static uint64_t process_events()
     exec_timer = false;
     uint64_t slice_ns = TimerManager::get_instance()->process_timers();
     if (slice_ns == 0) {
-        // execute 10.000 cycles
+        // execute 25.000 cycles
         // if there are no pending timers
-        return g_icycles + 10000;
+        return g_icycles + 25000;
     }
     return g_icycles + (slice_ns >> icnt_factor) + 1;
 }
