@@ -388,6 +388,7 @@ void GrandCentral::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
         switch (offset) {
         case MIO_INT_MASK1:
             this->int_mask = BYTESWAP_32(value);
+            this->signal_cpu_int(this->int_events & this->int_mask);
             break;
         case MIO_INT_CLEAR1:
             if ((this->int_mask & MACIO_INT_MODE) && (value & MACIO_INT_CLR))
@@ -474,22 +475,14 @@ uint32_t GrandCentral::register_dma_int(IntSrc src_id) {
 }
 
 void GrandCentral::ack_int_common(uint32_t irq_id, uint8_t irq_line_state) {
-    // native mode:   set IRQ bits in int_events1 on a 0-to-1 transition
-    // emulated mode: set IRQ bits in int_events1 on all transitions
-//#if 1
-//    if (irq_id & ~(INT_TO_IRQ_ID(0x12) | INT_TO_IRQ_ID(0x1A)))
-//        LOG_F(INTERRUPT, "%s: native interrupt mask:%08x events:%08x levels:%08x change:%08x state:%d",
- //           this->name.c_str(), this->int_mask, this->int_events + 0, this->int_levels + 0, irq_id, irq_line_state
- //       );
-//#endif
+    // native mode:   set IRQ bits in int_events on a 0-to-1 transition
+    // emulated mode: set IRQ bits in int_events on all transitions
     if ((this->int_mask & MACIO_INT_MODE) ||
         (irq_line_state && !(this->int_levels & irq_id))) {
         this->int_events |= irq_id;
     } else {
         this->int_events &= ~irq_id;
     }
-
-    this->int_events &= this->int_mask;
 
     // update IRQ line state
     if (irq_line_state) {
@@ -510,7 +503,7 @@ void GrandCentral::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state) {
 }
 
 void GrandCentral::signal_cpu_int(uint32_t irq_id) {
-    if (this->int_events) {
+    if (this->int_events & this->int_mask) {
         if (!this->cpu_int_latch) {
             this->cpu_int_latch = true;
             ppc_assert_int();
@@ -522,7 +515,7 @@ void GrandCentral::signal_cpu_int(uint32_t irq_id) {
 }
 
 void GrandCentral::clear_cpu_int() {
-    if (!this->int_events) {
+    if (!(this->int_events & this->int_mask) && this->cpu_int_latch) {
         this->cpu_int_latch = false;
         ppc_release_int();
         LOG_F(5, "%s: CPU INT latch cleared", this->name.c_str());
