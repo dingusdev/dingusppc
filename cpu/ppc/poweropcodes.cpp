@@ -23,7 +23,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Any shared opcodes are in ppcopcodes.cpp
 
 #include "ppcemu.h"
-#include "ppcmacros.h"
+#include "ppcdecodemacros.h"
+#include "ppcopmacros.h"
 #include "ppcmmu.h"
 #include <stdint.h>
 
@@ -52,11 +53,6 @@ POWEROPCODEOVREC (abs,
 
     ppc_state.gpr[reg_d] = ppc_result_d;
 )
-
-template void dppc_interpreter::power_abs<RC0, OV0>(uint32_t instr);
-template void dppc_interpreter::power_abs<RC0, OV1>(uint32_t instr);
-template void dppc_interpreter::power_abs<RC1, OV0>(uint32_t instr);
-template void dppc_interpreter::power_abs<RC1, OV1>(uint32_t instr);
 
 POWEROPCODE (clcs, 
     ppc_grab_da(instr); 
@@ -126,11 +122,6 @@ POWEROPCODEOVREC (div,
     power_store_mq(remainder);
 )
 
-template void dppc_interpreter::power_div<RC0, OV0>(uint32_t instr);
-template void dppc_interpreter::power_div<RC0, OV1>(uint32_t instr);
-template void dppc_interpreter::power_div<RC1, OV0>(uint32_t instr);
-template void dppc_interpreter::power_div<RC1, OV1>(uint32_t instr);
-
 POWEROPCODEOVREC (divs,
     uint32_t ppc_result_d;
     int32_t remainder;
@@ -159,11 +150,6 @@ POWEROPCODEOVREC (divs,
     power_store_mq(remainder);;
 )
 
-template void dppc_interpreter::power_divs<RC0, OV0>(uint32_t instr);
-template void dppc_interpreter::power_divs<RC0, OV1>(uint32_t instr);
-template void dppc_interpreter::power_divs<RC1, OV0>(uint32_t instr);
-template void dppc_interpreter::power_divs<RC1, OV1>(uint32_t instr);
-
 POWEROPCODEOVREC (doz,
     ppc_grab_regsdab(instr);
     uint32_t ppc_result_d = (int32_t(ppc_result_a) < int32_t(ppc_result_b)) ?
@@ -181,11 +167,6 @@ POWEROPCODEOVREC (doz,
 
     ppc_state.gpr[reg_d] = ppc_result_d;
 )
-
-template void dppc_interpreter::power_doz<RC0, OV0>(uint32_t instr);
-template void dppc_interpreter::power_doz<RC0, OV1>(uint32_t instr);
-template void dppc_interpreter::power_doz<RC1, OV0>(uint32_t instr);
-template void dppc_interpreter::power_doz<RC1, OV1>(uint32_t instr);
 
 POWEROPCODE (dozi, 
     ppc_grab_regsdasimm(instr); 
@@ -251,9 +232,6 @@ POWEROPCODEREC (lscbx,
     }
 )
 
-template void dppc_interpreter::power_lscbx<RC0>(uint32_t instr);
-template void dppc_interpreter::power_lscbx<RC1>(uint32_t instr);
-
 POWEROPCODEREC (maskg,
     ppc_grab_regssab(instr);
     uint32_t mask_start  = ppc_result_d & 0x1F;
@@ -279,9 +257,6 @@ POWEROPCODEREC (maskg,
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
 
-template void dppc_interpreter::power_maskg<RC0>(uint32_t instr);
-template void dppc_interpreter::power_maskg<RC1>(uint32_t instr);
-
 POWEROPCODEREC (maskir,
     ppc_grab_regssab(instr);
     ppc_result_a = (ppc_result_a & ~ppc_result_b) | (ppc_result_d & ppc_result_b);
@@ -291,9 +266,6 @@ POWEROPCODEREC (maskir,
 
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
-
-template void dppc_interpreter::power_maskir<RC0>(uint32_t instr);
-template void dppc_interpreter::power_maskir<RC1>(uint32_t instr);
 
 POWEROPCODEOVREC (mul,
     ppc_grab_regsdab(instr);
@@ -313,11 +285,6 @@ POWEROPCODEOVREC (mul,
     ppc_state.gpr[reg_d] = ppc_result_d;
 )
 
-template void dppc_interpreter::power_mul<RC0, OV0>(uint32_t instr);
-template void dppc_interpreter::power_mul<RC0, OV1>(uint32_t instr);
-template void dppc_interpreter::power_mul<RC1, OV0>(uint32_t instr);
-template void dppc_interpreter::power_mul<RC1, OV1>(uint32_t instr);
-
 POWEROPCODEOVREC (nabs,
     ppc_grab_regsda(instr);
     uint32_t ppc_result_d = (int32_t(ppc_result_a) < 0) ? ppc_result_a : -ppc_result_a;
@@ -329,11 +296,6 @@ POWEROPCODEOVREC (nabs,
 
     ppc_state.gpr[reg_d] = ppc_result_d;
 )
-
-template void dppc_interpreter::power_nabs<RC0, OV0>(uint32_t instr);
-template void dppc_interpreter::power_nabs<RC0, OV1>(uint32_t instr);
-template void dppc_interpreter::power_nabs<RC1, OV0>(uint32_t instr);
-template void dppc_interpreter::power_nabs<RC1, OV1>(uint32_t instr);
 
 POWEROPCODE (rlmi,
     ppc_grab_regssab(instr);
@@ -368,9 +330,6 @@ POWEROPCODEREC (rrib,
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
 
-template void dppc_interpreter::power_rrib<RC0>(uint32_t instr);
-template void dppc_interpreter::power_rrib<RC1>(uint32_t instr);
-
 POWEROPCODEREC (sle,
     ppc_grab_regssab(instr);
     unsigned rot_sh = ppc_result_b & 0x1F;
@@ -385,9 +344,6 @@ POWEROPCODEREC (sle,
 
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
-
-template void dppc_interpreter::power_sle<RC0>(uint32_t instr);
-template void dppc_interpreter::power_sle<RC1>(uint32_t instr);
 
 POWEROPCODEREC (sleq,
     ppc_grab_regssab(instr);
@@ -404,9 +360,6 @@ POWEROPCODEREC (sleq,
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
 
-template void dppc_interpreter::power_sleq<RC0>(uint32_t instr);
-template void dppc_interpreter::power_sleq<RC1>(uint32_t instr);
-
 POWEROPCODEREC (sliq,
     ppc_grab_regssash(instr);
 
@@ -418,9 +371,6 @@ POWEROPCODEREC (sliq,
 
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
-
-template void dppc_interpreter::power_sliq<RC0>(uint32_t instr);
-template void dppc_interpreter::power_sliq<RC1>(uint32_t instr);
 
 POWEROPCODEREC (slliq,
     ppc_grab_regssash(instr);
@@ -435,9 +385,6 @@ POWEROPCODEREC (slliq,
 
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
-
-template void dppc_interpreter::power_slliq<RC0>(uint32_t instr);
-template void dppc_interpreter::power_slliq<RC1>(uint32_t instr);
 
 POWEROPCODEREC (sllq,
     ppc_grab_regssab(instr);
@@ -454,9 +401,6 @@ POWEROPCODEREC (sllq,
 
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
-
-template void dppc_interpreter::power_sllq<RC0>(uint32_t instr);
-template void dppc_interpreter::power_sllq<RC1>(uint32_t instr);
 
 POWEROPCODEREC (slq,
     ppc_grab_regssab(instr);
@@ -475,9 +419,6 @@ POWEROPCODEREC (slq,
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
 
-template void dppc_interpreter::power_slq<RC0>(uint32_t instr);
-template void dppc_interpreter::power_slq<RC1>(uint32_t instr);
-
 POWEROPCODEREC (sraiq,
     ppc_grab_regssash(instr);
     uint32_t mask          = (1 << rot_sh) - 1;
@@ -495,9 +436,6 @@ POWEROPCODEREC (sraiq,
 
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
-
-template void dppc_interpreter::power_sraiq<RC0>(uint32_t instr);
-template void dppc_interpreter::power_sraiq<RC1>(uint32_t instr);
 
 POWEROPCODEREC (sraq,
     ppc_grab_regssab(instr);
@@ -520,9 +458,6 @@ POWEROPCODEREC (sraq,
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
 
-template void dppc_interpreter::power_sraq<RC0>(uint32_t instr);
-template void dppc_interpreter::power_sraq<RC1>(uint32_t instr);
-
 POWEROPCODEREC (sre,
     ppc_grab_regssab(instr);
 
@@ -536,9 +471,6 @@ POWEROPCODEREC (sre,
 
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
-
-template void dppc_interpreter::power_sre<RC0>(uint32_t instr);
-template void dppc_interpreter::power_sre<RC1>(uint32_t instr);
 
 POWEROPCODEREC (srea,
     ppc_grab_regssab(instr);
@@ -560,9 +492,6 @@ POWEROPCODEREC (srea,
     ppc_state.spr[SPR::MQ] = r;
 )
 
-template void dppc_interpreter::power_srea<RC0>(uint32_t instr);
-template void dppc_interpreter::power_srea<RC1>(uint32_t instr);
-
 POWEROPCODEREC (sreq,
     ppc_grab_regssab(instr);
     unsigned rot_sh = ppc_result_b & 0x1F;
@@ -577,9 +506,6 @@ POWEROPCODEREC (sreq,
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
 
-template void dppc_interpreter::power_sreq<RC0>(uint32_t instr);
-template void dppc_interpreter::power_sreq<RC1>(uint32_t instr);
-
 POWEROPCODEREC (sriq,
     ppc_grab_regssash(instr);
     ppc_result_a           = ppc_result_d >> rot_sh;
@@ -590,9 +516,6 @@ POWEROPCODEREC (sriq,
 
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
-
-template void dppc_interpreter::power_sriq<RC0>(uint32_t instr);
-template void dppc_interpreter::power_sriq<RC1>(uint32_t instr);
 
 POWEROPCODEREC (srliq,
     ppc_grab_regssash(instr);
@@ -607,9 +530,6 @@ POWEROPCODEREC (srliq,
 
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
-
-template void dppc_interpreter::power_srliq<RC0>(uint32_t instr);
-template void dppc_interpreter::power_srliq<RC1>(uint32_t instr);
 
 POWEROPCODEREC (srlq,
     ppc_grab_regssab(instr);
@@ -629,9 +549,6 @@ POWEROPCODEREC (srlq,
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
 
-template void dppc_interpreter::power_srlq<RC0>(uint32_t instr);
-template void dppc_interpreter::power_srlq<RC1>(uint32_t instr);
-
 POWEROPCODEREC (srq,
     ppc_grab_regssab(instr);
     unsigned rot_sh = ppc_result_b & 0x1F;
@@ -649,6 +566,3 @@ POWEROPCODEREC (srq,
 
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
-
-template void dppc_interpreter::power_srq<RC0>(uint32_t instr);
-template void dppc_interpreter::power_srq<RC1>(uint32_t instr);

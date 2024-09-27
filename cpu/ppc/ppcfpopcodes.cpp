@@ -22,7 +22,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // The floating point opcodes for the processor - ppcfpopcodes.cpp
 
 #include "ppcemu.h"
-#include "ppcmacros.h"
+#include "ppcdecodemacros.h"
+#include "ppcopmacros.h"
 #include "ppcmmu.h"
 #include <stdlib.h>
 #include <cfenv>
@@ -128,6 +129,10 @@ static void fpresult_update(double set_result) {
             ppc_state.fpscr |= FPCC_ZERO;
         }
 
+        if (std::fetestexcept(FE_INEXACT)) {
+            ppc_state.fpscr |= XX;
+        }
+
         if (std::isinf(set_result))
             ppc_state.fpscr |= FPCC_FUNAN;
     }
@@ -167,9 +172,6 @@ OPCODEREC (fadd,
         ppc_update_cr1();
 )
 
-template void dppc_interpreter::ppc_fadd<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_fadd<RC1>(uint32_t instr);
-
 OPCODEREC (fsub,
     ppc_grab_regsfpdab(instr);
 
@@ -184,9 +186,6 @@ OPCODEREC (fsub,
         ppc_update_cr1();
 )
 
-template void dppc_interpreter::ppc_fsub<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_fsub<RC1>(uint32_t instr);
-
 OPCODEREC (fdiv,
     ppc_grab_regsfpdab(instr);
 
@@ -200,9 +199,6 @@ OPCODEREC (fdiv,
         ppc_update_cr1();
 )
 
-template void dppc_interpreter::ppc_fdiv<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_fdiv<RC1>(uint32_t instr);
-
 OPCODEREC (fmul,
     ppc_grab_regsfpdac(instr);
 
@@ -215,9 +211,6 @@ OPCODEREC (fmul,
     if (rec)
         ppc_update_cr1();
 )
-
-template void dppc_interpreter::ppc_fmul<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_fmul<RC1>(uint32_t instr);
 
 OPCODEREC (fmadd,
     ppc_grab_regsfpdabc(instr);
@@ -233,9 +226,6 @@ OPCODEREC (fmadd,
         ppc_update_cr1();
 )
 
-template void dppc_interpreter::ppc_fmadd<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_fmadd<RC1>(uint32_t instr);
-
 OPCODEREC (fmsub,
     ppc_grab_regsfpdabc(instr);
 
@@ -249,9 +239,6 @@ OPCODEREC (fmsub,
     if (rec)
         ppc_update_cr1();
 )
-
-template void dppc_interpreter::ppc_fmsub<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_fmsub<RC1>(uint32_t instr);
 
 OPCODEREC (fnmadd,
     ppc_grab_regsfpdabc(instr);
@@ -267,9 +254,6 @@ OPCODEREC (fnmadd,
         ppc_update_cr1();
 )
 
-template void dppc_interpreter::ppc_fnmadd<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_fnmadd<RC1>(uint32_t instr);
-
 OPCODEREC (fnmsub,
     ppc_grab_regsfpdabc(instr);
 
@@ -283,9 +267,6 @@ OPCODEREC (fnmsub,
     if (rec)
         ppc_update_cr1();
 )
-
-template void dppc_interpreter::ppc_fnmsub<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_fnmsub<RC1>(uint32_t instr);
 
 OPCODEREC (fadds,
     ppc_grab_regsfpdab(instr);
@@ -301,9 +282,6 @@ OPCODEREC (fadds,
         ppc_update_cr1();
 )
 
-template void dppc_interpreter::ppc_fadds<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_fadds<RC1>(uint32_t instr);
-
 OPCODEREC (fsubs,
     ppc_grab_regsfpdab(instr);
 
@@ -318,9 +296,6 @@ OPCODEREC (fsubs,
         ppc_update_cr1();
 )
 
-template void dppc_interpreter::ppc_fsubs<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_fsubs<RC1>(uint32_t instr);
-
 OPCODEREC (fdivs,
     ppc_grab_regsfpdab(instr);
 
@@ -334,9 +309,6 @@ OPCODEREC (fdivs,
         ppc_update_cr1();
 )
 
-template void dppc_interpreter::ppc_fdivs<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_fdivs<RC1>(uint32_t instr);
-
 OPCODEREC (fmuls,
     ppc_grab_regsfpdac(instr);
 
@@ -349,9 +321,6 @@ OPCODEREC (fmuls,
     if (rec)
         ppc_update_cr1();
 )
-
-template void dppc_interpreter::ppc_fmuls<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_fmuls<RC1>(uint32_t instr);
 
 OPCODEREC (fmadds,
     ppc_grab_regsfpdabc(instr);
@@ -367,9 +336,6 @@ OPCODEREC (fmadds,
         ppc_update_cr1();
 )
 
-template void dppc_interpreter::ppc_fmadds<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_fmadds<RC1>(uint32_t instr);
-
 OPCODEREC (fmsubs,
     ppc_grab_regsfpdabc(instr);
 
@@ -383,9 +349,6 @@ OPCODEREC (fmsubs,
     if (rec)
         ppc_update_cr1();
 )
-
-template void dppc_interpreter::ppc_fmsubs<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_fmsubs<RC1>(uint32_t instr);
 
 OPCODEREC (fnmadds,
     ppc_grab_regsfpdabc(instr);
@@ -401,9 +364,6 @@ OPCODEREC (fnmadds,
         ppc_update_cr1();
 )
 
-template void dppc_interpreter::ppc_fnmadds<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_fnmadds<RC1>(uint32_t instr);
-
 OPCODEREC (fnmsubs,
     ppc_grab_regsfpdabc(instr);
 
@@ -418,9 +378,6 @@ OPCODEREC (fnmsubs,
         ppc_update_cr1();
 )
 
-template void dppc_interpreter::ppc_fnmsubs<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_fnmsubs<RC1>(uint32_t instr);
-
 OPCODEREC (fabs,
     ppc_grab_regsfpdb(instr);
 
@@ -433,9 +390,6 @@ OPCODEREC (fabs,
     if (rec)
         ppc_update_cr1();
 )
-
-template void dppc_interpreter::ppc_fabs<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_fabs<RC1>(uint32_t instr);
 
 OPCODEREC(fnabs,
     ppc_grab_regsfpdb(instr);
@@ -451,9 +405,6 @@ OPCODEREC(fnabs,
         ppc_update_cr1();
 )
 
-template void dppc_interpreter::ppc_fnabs<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_fnabs<RC1>(uint32_t instr);
-
 OPCODEREC(fneg,
     ppc_grab_regsfpdb(instr);
 
@@ -467,9 +418,6 @@ OPCODEREC(fneg,
         ppc_update_cr1();
 )
 
-template void dppc_interpreter::ppc_fneg<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_fneg<RC1>(uint32_t instr);
-
 OPCODEREC(fsel,
     ppc_grab_regsfpdabc(instr);
 
@@ -480,9 +428,6 @@ OPCODEREC(fsel,
     if (rec)
         ppc_update_cr1();
 )
-
-template void dppc_interpreter::ppc_fsel<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_fsel<RC1>(uint32_t instr);
 
 OPCODEREC(fsqrt,
     ppc_grab_regsfpdb(instr);
@@ -497,9 +442,6 @@ OPCODEREC(fsqrt,
         ppc_update_cr1();
 )
 
-template void dppc_interpreter::ppc_fsqrt<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_fsqrt<RC1>(uint32_t instr);
-
 OPCODEREC(fsqrts,
     ppc_grab_regsfpdb(instr);
 
@@ -513,9 +455,6 @@ OPCODEREC(fsqrts,
         ppc_update_cr1();
 )
 
-template void dppc_interpreter::ppc_fsqrts<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_fsqrts<RC1>(uint32_t instr);
-
 OPCODEREC (frsqrte,
     ppc_grab_regsfpdb(instr);
     snan_single_check(reg_b);
@@ -528,9 +467,6 @@ OPCODEREC (frsqrte,
         ppc_update_cr1();
 )
 
-template void dppc_interpreter::ppc_frsqrte<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_frsqrte<RC1>(uint32_t instr);
-
 OPCODEREC (frsp,
     ppc_grab_regsfpdb(instr);
     snan_single_check(reg_b);
@@ -541,9 +477,6 @@ OPCODEREC (frsp,
     if (rec)
         ppc_update_cr1();
 )
-
-template void dppc_interpreter::ppc_frsp<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_frsp<RC1>(uint32_t instr);
 
 OPCODEREC (fres,
     ppc_grab_regsfpdb(instr);
@@ -568,9 +501,6 @@ OPCODEREC (fres,
     if (rec)
         ppc_update_cr1();
 )
-
-template void dppc_interpreter::ppc_fres<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_fres<RC1>(uint32_t instr);
 
 static void round_to_int(uint32_t instr, const uint8_t mode, field_rc rec) {
     ppc_grab_regsfpdb(instr);
@@ -633,15 +563,9 @@ OPCODEREC (fctiw,
     round_to_int(instr, ppc_state.fpscr & 0x3, rec);
 )
 
-template void dppc_interpreter::ppc_fctiw<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_fctiw<RC1>(uint32_t instr);
-
 OPCODEREC (fctiwz,
     round_to_int(instr, 1, rec);
 )
-
-template void dppc_interpreter::ppc_fctiwz<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_fctiwz<RC1>(uint32_t instr);
 
 // Floating Point Store and Load
 
@@ -817,9 +741,6 @@ OPCODEREC (fmr,
         ppc_update_cr1();
 )
 
-template void dppc_interpreter::ppc_fmr<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_fmr<RC1>(uint32_t instr);
-
 OPCODE601REC (mffs,
     int reg_d = (instr >> 21) & 31;
 
@@ -828,11 +749,6 @@ OPCODE601REC (mffs,
     if (rec)
         ppc_update_cr1();
 )
-
-template void dppc_interpreter::ppc_mffs<NOT601, RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_mffs<NOT601, RC1>(uint32_t instr);
-template void dppc_interpreter::ppc_mffs<IS601, RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_mffs<IS601, RC1>(uint32_t instr);
 
 OPCODEREC (mtfsf,
     ppc_grab_mtfsf(instr);
@@ -864,9 +780,6 @@ OPCODEREC (mtfsf,
     }
 )
 
-template void dppc_interpreter::ppc_mtfsf<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_mtfsf<RC1>(uint32_t instr);
-
 OPCODEREC (mtfsfi, 
     ppc_grab_mtfsfi(instr);
 
@@ -885,9 +798,6 @@ OPCODEREC (mtfsfi,
     }
 )
 
-template void dppc_interpreter::ppc_mtfsfi<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_mtfsfi<RC1>(uint32_t instr);
-
 OPCODEREC (mtfsb0,
     int crf_d = (instr >> 21) & 0x1F;
     if (!crf_d || (crf_d > 2)) { // FEX and VX can't be explicitly cleared
@@ -897,9 +807,6 @@ OPCODEREC (mtfsb0,
     if (rec)
         ppc_update_cr1();
 )
-
-template void dppc_interpreter::ppc_mtfsb0<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_mtfsb0<RC1>(uint32_t instr);
 
 OPCODEREC (mtfsb1,
     ppc_grab_crfd(instr);
@@ -911,9 +818,6 @@ OPCODEREC (mtfsb1,
         ppc_update_cr1();
     }
 )
-
-template void dppc_interpreter::ppc_mtfsb1<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_mtfsb1<RC1>(uint32_t instr);
 
 OPCODE (mcrfs, 
     ppc_grab_crfds(instr);

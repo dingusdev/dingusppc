@@ -24,7 +24,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <core/timermanager.h>
 #include <core/mathutils.h>
 #include "ppcemu.h"
-#include "ppcmacros.h"
+#include "ppcdecodemacros.h"
+#include "ppcopmacros.h"
 #include "ppcmmu.h"
 #include <cinttypes>
 #include <vector>
@@ -104,9 +105,6 @@ OPCODESHIFT (addi,
         ppc_state.gpr[reg_d] = (reg_a == 0) ? simm : (ppc_result_a + simm);
 )
 
-template void dppc_interpreter::ppc_addi<SHFT0>(uint32_t instr);
-template void dppc_interpreter::ppc_addi<SHFT1>(uint32_t instr);
-
 OPCODEREC (addic,
     ppc_grab_regsdasimm(instr);
     uint32_t ppc_result_d = (ppc_result_a + simm);
@@ -115,9 +113,6 @@ OPCODEREC (addic,
         ppc_changecrf0(ppc_result_d);
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
-
-template void dppc_interpreter::ppc_addic<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_addic<RC1>(uint32_t instr);
 
 OPCODECARRY (add,
     ppc_grab_regsdab(instr);
@@ -131,15 +126,6 @@ OPCODECARRY (add,
         ppc_changecrf0(ppc_result_d);
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
-
-template void dppc_interpreter::ppc_add<CARRY0, RC0, OV0>(uint32_t instr);
-template void dppc_interpreter::ppc_add<CARRY0, RC1, OV0>(uint32_t instr);
-template void dppc_interpreter::ppc_add<CARRY0, RC0, OV1>(uint32_t instr);
-template void dppc_interpreter::ppc_add<CARRY0, RC1, OV1>(uint32_t instr);
-template void dppc_interpreter::ppc_add<CARRY1, RC0, OV0>(uint32_t instr);
-template void dppc_interpreter::ppc_add<CARRY1, RC1, OV0>(uint32_t instr);
-template void dppc_interpreter::ppc_add<CARRY1, RC0, OV1>(uint32_t instr);
-template void dppc_interpreter::ppc_add<CARRY1, RC1, OV1>(uint32_t instr);
 
 OPCODEOVREC (adde,
     ppc_grab_regsdab(instr);
@@ -160,11 +146,6 @@ OPCODEOVREC (adde,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-template void dppc_interpreter::ppc_adde<RC0, OV0>(uint32_t instr);
-template void dppc_interpreter::ppc_adde<RC0, OV1>(uint32_t instr);
-template void dppc_interpreter::ppc_adde<RC1, OV0>(uint32_t instr);
-template void dppc_interpreter::ppc_adde<RC1, OV1>(uint32_t instr);
-
 OPCODEOVREC (addme,
     ppc_grab_regsda(instr);
     uint32_t xer_ca       = !!(ppc_state.spr[SPR::XER] & XER::CA);
@@ -184,11 +165,6 @@ OPCODEOVREC (addme,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-template void dppc_interpreter::ppc_addme<RC0, OV0>(uint32_t instr);
-template void dppc_interpreter::ppc_addme<RC0, OV1>(uint32_t instr);
-template void dppc_interpreter::ppc_addme<RC1, OV0>(uint32_t instr);
-template void dppc_interpreter::ppc_addme<RC1, OV1>(uint32_t instr);
-
 OPCODEOVREC (addze,
     ppc_grab_regsda(instr);
     uint32_t grab_xer     = !!(ppc_state.spr[SPR::XER] & XER::CA);
@@ -207,11 +183,6 @@ OPCODEOVREC (addze,
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
-
-template void dppc_interpreter::ppc_addze<RC0, OV0>(uint32_t instr);
-template void dppc_interpreter::ppc_addze<RC0, OV1>(uint32_t instr);
-template void dppc_interpreter::ppc_addze<RC1, OV0>(uint32_t instr);
-template void dppc_interpreter::ppc_addze<RC1, OV1>(uint32_t instr);
 
 OPCODE (subfic,
     ppc_grab_regsdasimm(instr);
@@ -239,15 +210,6 @@ OPCODECARRY (subf,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-template void dppc_interpreter::ppc_subf<CARRY0, RC0, OV0>(uint32_t instr);
-template void dppc_interpreter::ppc_subf<CARRY0, RC0, OV1>(uint32_t instr);
-template void dppc_interpreter::ppc_subf<CARRY0, RC1, OV0>(uint32_t instr);
-template void dppc_interpreter::ppc_subf<CARRY0, RC1, OV1>(uint32_t instr);
-template void dppc_interpreter::ppc_subf<CARRY1, RC0, OV0>(uint32_t instr);
-template void dppc_interpreter::ppc_subf<CARRY1, RC0, OV1>(uint32_t instr);
-template void dppc_interpreter::ppc_subf<CARRY1, RC1, OV0>(uint32_t instr);
-template void dppc_interpreter::ppc_subf<CARRY1, RC1, OV1>(uint32_t instr);
-
 OPCODEOVREC (subfe,
     ppc_grab_regsdab(instr);
     uint32_t grab_ca      = !!(ppc_state.spr[SPR::XER] & XER::CA);
@@ -264,11 +226,6 @@ OPCODEOVREC (subfe,
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
-
-template void dppc_interpreter::ppc_subfe<RC0, OV0>(uint32_t instr);
-template void dppc_interpreter::ppc_subfe<RC0, OV1>(uint32_t instr);
-template void dppc_interpreter::ppc_subfe<RC1, OV0>(uint32_t instr);
-template void dppc_interpreter::ppc_subfe<RC1, OV1>(uint32_t instr);
 
 OPCODEOVREC (subfme,
     ppc_grab_regsda(instr);
@@ -292,11 +249,6 @@ OPCODEOVREC (subfme,
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
-
-template void dppc_interpreter::ppc_subfme<RC0, OV0>(uint32_t instr);
-template void dppc_interpreter::ppc_subfme<RC0, OV1>(uint32_t instr);
-template void dppc_interpreter::ppc_subfme<RC1, OV0>(uint32_t instr);
-template void dppc_interpreter::ppc_subfme<RC1, OV1>(uint32_t instr);
 
 OPCODEOVREC (subfze,
     ppc_grab_regsda(instr);
@@ -326,11 +278,6 @@ OPCODEOVREC (subfze,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-template void dppc_interpreter::ppc_subfze<RC0, OV0>(uint32_t instr);
-template void dppc_interpreter::ppc_subfze<RC0, OV1>(uint32_t instr);
-template void dppc_interpreter::ppc_subfze<RC1, OV0>(uint32_t instr);
-template void dppc_interpreter::ppc_subfze<RC1, OV1>(uint32_t instr);
-
 OPCODESHIFT (andirc,
     ppc_grab_regssauimm(instr);
     ppc_result_a = shift ? (ppc_result_d & (uimm << 16)) : (ppc_result_d & uimm);
@@ -338,26 +285,17 @@ OPCODESHIFT (andirc,
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 )
 
-template void dppc_interpreter::ppc_andirc<SHFT0>(uint32_t instr);
-template void dppc_interpreter::ppc_andirc<SHFT1>(uint32_t instr);
-
 OPCODESHIFT (ori,
     ppc_grab_regssauimm(instr);
     ppc_result_a = shift ? (ppc_result_d | (uimm << 16)) : (ppc_result_d | uimm);
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 )
 
-template void dppc_interpreter::ppc_ori<SHFT0>(uint32_t instr);
-template void dppc_interpreter::ppc_ori<SHFT1>(uint32_t instr);
-
 OPCODESHIFT (xori,
     ppc_grab_regssauimm(instr);
     ppc_result_a = shift ? (ppc_result_d ^ (uimm << 16)) : (ppc_result_d ^ uimm);
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 )
-
-template void dppc_interpreter::ppc_xori<SHFT0>(uint32_t instr);
-template void dppc_interpreter::ppc_xori<SHFT1>(uint32_t instr);
 
 OPCODELOGIC(logical,
     ppc_grab_regssab(instr);
@@ -384,23 +322,6 @@ OPCODELOGIC(logical,
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 )
 
-template void dppc_interpreter::ppc_logical<ppc_and, RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_logical<ppc_andc, RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_logical<ppc_eqv, RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_logical<ppc_nand, RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_logical<ppc_nor, RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_logical<ppc_or, RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_logical<ppc_orc, RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_logical<ppc_xor, RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_logical<ppc_and, RC1>(uint32_t instr);
-template void dppc_interpreter::ppc_logical<ppc_andc, RC1>(uint32_t instr);
-template void dppc_interpreter::ppc_logical<ppc_eqv, RC1>(uint32_t instr);
-template void dppc_interpreter::ppc_logical<ppc_nand, RC1>(uint32_t instr);
-template void dppc_interpreter::ppc_logical<ppc_nor, RC1>(uint32_t instr);
-template void dppc_interpreter::ppc_logical<ppc_or, RC1>(uint32_t instr);
-template void dppc_interpreter::ppc_logical<ppc_orc, RC1>(uint32_t instr);
-template void dppc_interpreter::ppc_logical<ppc_xor, RC1>(uint32_t instr);
-
 OPCODEOVREC (neg,
     ppc_grab_regsda(instr);
     uint32_t ppc_result_d = ~(ppc_result_a) + 1;
@@ -417,11 +338,6 @@ OPCODEOVREC (neg,
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
-
-template void dppc_interpreter::ppc_neg<RC0, OV0>(uint32_t instr);
-template void dppc_interpreter::ppc_neg<RC0, OV1>(uint32_t instr);
-template void dppc_interpreter::ppc_neg<RC1, OV0>(uint32_t instr);
-template void dppc_interpreter::ppc_neg<RC1, OV1>(uint32_t instr);
 
 
 #ifdef __builtin_clz    // for GCC and Clang users
@@ -469,9 +385,6 @@ OPCODEREC (cntlzw,
 )
 #endif
 
-template void dppc_interpreter::ppc_cntlzw<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_cntlzw<RC1>(uint32_t instr);
-
 OPCODEREC (mulhwu,
     ppc_grab_regsdab(instr);
     uint64_t product = uint64_t(ppc_result_a) * uint64_t(ppc_result_b);
@@ -483,9 +396,6 @@ OPCODEREC (mulhwu,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-template void dppc_interpreter::ppc_mulhwu<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_mulhwu<RC1>(uint32_t instr);
-
 OPCODEREC (mulhw,
     ppc_grab_regsdab(instr);
     int64_t product = int64_t(int32_t(ppc_result_a)) * int64_t(int32_t(ppc_result_b));
@@ -496,9 +406,6 @@ OPCODEREC (mulhw,
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
-
-template void dppc_interpreter::ppc_mulhw<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_mulhw<RC1>(uint32_t instr);
 
 OPCODEOVREC (mullw,
     ppc_grab_regsdab(instr);
@@ -519,11 +426,6 @@ OPCODEOVREC (mullw,
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
-
-template void dppc_interpreter::ppc_mullw<RC0, OV0>(uint32_t instr);
-template void dppc_interpreter::ppc_mullw<RC0, OV1>(uint32_t instr);
-template void dppc_interpreter::ppc_mullw<RC1, OV0>(uint32_t instr);
-template void dppc_interpreter::ppc_mullw<RC1, OV1>(uint32_t instr);
 
 OPCODE (mulli,
     ppc_grab_regsdasimm(instr);
@@ -562,11 +464,6 @@ OPCODEOVREC (divw,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-template void dppc_interpreter::ppc_divw<RC0, OV0>(uint32_t instr);
-template void dppc_interpreter::ppc_divw<RC0, OV1>(uint32_t instr);
-template void dppc_interpreter::ppc_divw<RC1, OV0>(uint32_t instr);
-template void dppc_interpreter::ppc_divw<RC1, OV1>(uint32_t instr);
-
 OPCODEOVREC (divwu,
     uint32_t ppc_result_d = 0;
     ppc_grab_regsdab(instr);
@@ -591,11 +488,6 @@ OPCODEOVREC (divwu,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-template void dppc_interpreter::ppc_divwu<RC0, OV0>(uint32_t instr);
-template void dppc_interpreter::ppc_divwu<RC0, OV1>(uint32_t instr);
-template void dppc_interpreter::ppc_divwu<RC1, OV0>(uint32_t instr);
-template void dppc_interpreter::ppc_divwu<RC1, OV1>(uint32_t instr);
-
 // Value shifting
 
 OPCODESHIFTREC (shift,
@@ -613,11 +505,6 @@ OPCODESHIFTREC (shift,
 
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 )
-
-template void dppc_interpreter::ppc_shift<RIGHT0, RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_shift<RIGHT0, RC1>(uint32_t instr);
-template void dppc_interpreter::ppc_shift<LEFT1, RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_shift<LEFT1, RC1>(uint32_t instr);
 
 OPCODEREC (sraw,
     ppc_grab_regssab(instr);
@@ -643,9 +530,6 @@ OPCODEREC (sraw,
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 )
 
-template void dppc_interpreter::ppc_sraw<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_sraw<RC1>(uint32_t instr);
-
 OPCODEREC (srawi,
     ppc_grab_regssash(instr);
 
@@ -664,9 +548,6 @@ OPCODEREC (srawi,
 
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 )
-
-template void dppc_interpreter::ppc_srawi<RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_srawi<RC1>(uint32_t instr);
 
 /** mask generator for rotate and shift instructions (§ 4.2.1.4 PowerpC PEM) */
 static inline uint32_t rot_mask(unsigned rot_mb, unsigned rot_me) {
@@ -1096,11 +977,6 @@ OPCODEEXTSIGN (exts,
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 )
 
-template void dppc_interpreter::ppc_exts<int8_t, RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_exts<int16_t, RC0>(uint32_t instr);
-template void dppc_interpreter::ppc_exts<int8_t, RC1>(uint32_t instr);
-template void dppc_interpreter::ppc_exts<int16_t, RC1>(uint32_t instr);
-
 // Branching Instructions
 
 OPCODELKAA (b,
@@ -1116,11 +992,6 @@ OPCODELKAA (b,
 
     exec_flags = EXEF_BRANCH;
 )
-
-template void dppc_interpreter::ppc_b<LK0, AA0>(uint32_t instr);
-template void dppc_interpreter::ppc_b<LK0, AA1>(uint32_t instr);
-template void dppc_interpreter::ppc_b<LK1, AA0>(uint32_t instr);
-template void dppc_interpreter::ppc_b<LK1, AA1>(uint32_t instr);
 
 OPCODELKAA (bc, 
     uint32_t ctr_ok = 0;
@@ -1146,11 +1017,6 @@ OPCODELKAA (bc,
     if (l)
         ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
 )
-
-template void dppc_interpreter::ppc_bc<LK0, AA0>(uint32_t instr);
-template void dppc_interpreter::ppc_bc<LK0, AA1>(uint32_t instr);
-template void dppc_interpreter::ppc_bc<LK1, AA0>(uint32_t instr);
-template void dppc_interpreter::ppc_bc<LK1, AA1>(uint32_t instr);
 
 OPCODE601L (bcctr,
     uint32_t ctr_ok = 0;
@@ -1181,11 +1047,6 @@ OPCODE601L (bcctr,
         ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
 )
 
-template void dppc_interpreter::ppc_bcctr<LK0, NOT601>(uint32_t instr);
-template void dppc_interpreter::ppc_bcctr<LK0, IS601>(uint32_t instr);
-template void dppc_interpreter::ppc_bcctr<LK1, NOT601>(uint32_t instr);
-template void dppc_interpreter::ppc_bcctr<LK1, IS601>(uint32_t instr);
-
 OPCODEL (bclr,
     uint32_t br_bo = (instr >> 21) & 0x1F;
     uint32_t br_bi = (instr >> 16) & 0x1F;
@@ -1206,9 +1067,6 @@ OPCODEL (bclr,
     if (l)
         ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
 )
-
-template void dppc_interpreter::ppc_bclr<LK0>(uint32_t instr);
-template void dppc_interpreter::ppc_bclr<LK1>(uint32_t instr);
 
 // Compare Instructions
 
@@ -1500,10 +1358,6 @@ OPCODEMEM (st,
     mmu_write_vmem<T>(ea, instr, ppc_result_d);
 )
 
-template void dppc_interpreter::ppc_st<uint8_t>(uint32_t instr);
-template void dppc_interpreter::ppc_st<uint16_t>(uint32_t instr);
-template void dppc_interpreter::ppc_st<uint32_t>(uint32_t instr);
-
 OPCODEMEM (stx,
 #ifdef CPU_PROFILING
     num_int_stores++;
@@ -1512,10 +1366,6 @@ OPCODEMEM (stx,
     uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
     mmu_write_vmem<T>(ea, instr, ppc_result_d);
 )
-
-template void dppc_interpreter::ppc_stx<uint8_t>(uint32_t instr);
-template void dppc_interpreter::ppc_stx<uint16_t>(uint32_t instr);
-template void dppc_interpreter::ppc_stx<uint32_t>(uint32_t instr);
 
 OPCODEMEM (stu,
 #ifdef CPU_PROFILING
@@ -1532,10 +1382,6 @@ OPCODEMEM (stu,
     }
 )
 
-template void dppc_interpreter::ppc_stu<uint8_t>(uint32_t instr);
-template void dppc_interpreter::ppc_stu<uint16_t>(uint32_t instr);
-template void dppc_interpreter::ppc_stu<uint32_t>(uint32_t instr);
-
 OPCODEMEM (stux,
 #ifdef CPU_PROFILING
     num_int_stores++;
@@ -1549,10 +1395,6 @@ OPCODEMEM (stux,
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
 )
-
-template void dppc_interpreter::ppc_stux<uint8_t>(uint32_t instr);
-template void dppc_interpreter::ppc_stux<uint16_t>(uint32_t instr);
-template void dppc_interpreter::ppc_stux<uint32_t>(uint32_t instr);
 
 OPCODE (sthbrx,
 #ifdef CPU_PROFILING
@@ -1616,10 +1458,6 @@ OPCODEMEM (lz,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-template void dppc_interpreter::ppc_lz<uint8_t>(uint32_t instr);
-template void dppc_interpreter::ppc_lz<uint16_t>(uint32_t instr);
-template void dppc_interpreter::ppc_lz<uint32_t>(uint32_t instr);
-
 OPCODEMEM (lzu,
     ppc_grab_regsda(instr);
     uint32_t ea = int32_t(int16_t(instr));
@@ -1634,20 +1472,12 @@ OPCODEMEM (lzu,
     }
 )
 
-template void dppc_interpreter::ppc_lzu<uint8_t>(uint32_t instr);
-template void dppc_interpreter::ppc_lzu<uint16_t>(uint32_t instr);
-template void dppc_interpreter::ppc_lzu<uint32_t>(uint32_t instr);
-
 OPCODEMEM (lzx,
     ppc_grab_regsdab(instr);
     uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
     uint32_t ppc_result_d = mmu_read_vmem<T>(ea, instr);
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
-
-template void dppc_interpreter::ppc_lzx<uint8_t>(uint32_t instr);
-template void dppc_interpreter::ppc_lzx<uint16_t>(uint32_t instr);
-template void dppc_interpreter::ppc_lzx<uint32_t>(uint32_t instr);
 
 OPCODEMEM (lzux,
     ppc_grab_regsdab(instr);
@@ -1661,10 +1491,6 @@ OPCODEMEM (lzux,
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
 )
-
-template void dppc_interpreter::ppc_lzux<uint8_t>(uint32_t instr);
-template void dppc_interpreter::ppc_lzux<uint16_t>(uint32_t instr);
-template void dppc_interpreter::ppc_lzux<uint32_t>(uint32_t instr);
 
 OPCODE (lha,
 #ifdef CPU_PROFILING
