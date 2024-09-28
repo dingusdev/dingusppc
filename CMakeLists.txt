@@ -114,7 +114,8 @@ include_directories("${PROJECT_SOURCE_DIR}"
 platform_glob(SOURCES "${PROJECT_SOURCE_DIR}/*.cpp"
                       "${PROJECT_SOURCE_DIR}/*.c"
                       "${PROJECT_SOURCE_DIR}/*.hpp"
-                      "${PROJECT_SOURCE_DIR}/*.h")
+                      "${PROJECT_SOURCE_DIR}/*.h"
+                      "${PROJECT_SOURCE_DIR}/*.include")
 
 if (APPLE)
     platform_glob(APPLE_SOURCES "${PROJECT_SOURCE_DIR}/*.m")
@@ -184,6 +185,7 @@ if (DPPC_BUILD_BENCHMARKS)
     file(GLOB BENCH_SOURCES "${PROJECT_SOURCE_DIR}/benchmark/*.cpp"
                             "${PROJECT_SOURCE_DIR}/cpu/ppc/*.cpp"
                             "${PROJECT_SOURCE_DIR}/cpu/ppc/*.h"
+                            "${PROJECT_SOURCE_DIR}/cpu/ppc/*.include"
                             )
     add_executable(bench1 ${BENCH_SOURCES} $<TARGET_OBJECTS:core>
                                            # $<TARGET_OBJECTS:cpu_ppc>

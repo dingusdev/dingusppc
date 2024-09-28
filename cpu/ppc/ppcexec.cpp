@@ -371,7 +371,7 @@ static void ppc_exec_inner()
     uint8_t* pc_real;
     uint32_t instr = 0;
     uint32_t i_params[5] = {0};
-    uint32_t f_params[4] = {0};
+    double f_params[4] = {0};
 
     max_cycles = 0;
 
