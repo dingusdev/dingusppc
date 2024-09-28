@@ -316,6 +316,7 @@ void HeathrowIC::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
     switch (offset & 0xFC) {
     case MIO_INT_MASK2:
         this->int_mask2 |= BYTESWAP_32(value) & ~MACIO_INT_MODE;
+        this->signal_cpu_int();
         break;
     case MIO_INT_CLEAR2:
         this->int_events2 &= ~(BYTESWAP_32(value) & 0x7FFFFFFFUL);
@@ -325,6 +326,7 @@ void HeathrowIC::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
         this->int_mask1 = BYTESWAP_32(value);
         // copy IntMode bit to InterruptMask2 register
         this->int_mask2 = (this->int_mask2 & ~MACIO_INT_MODE) | (this->int_mask1 & MACIO_INT_MODE);
+        this->signal_cpu_int();
         break;
     case MIO_INT_CLEAR1:
         if ((this->int_mask1 & MACIO_INT_MODE) && (value & MACIO_INT_CLR)) {
@@ -455,7 +457,6 @@ void HeathrowIC::ack_int(uint32_t irq_id, uint8_t irq_line_state)
         } else {
             this->int_events2 &= ~irq_id;
         }
-        this->int_events2 &= this->int_mask2;
         // update IRQ line state
         if (irq_line_state) {
             this->int_levels2 |= irq_id;
@@ -476,7 +477,6 @@ void HeathrowIC::ack_int(uint32_t irq_id, uint8_t irq_line_state)
         } else {
             this->int_events1 &= ~irq_id;
         }
-        this->int_events1 &= this->int_mask1;
         // update IRQ line state
         if (irq_line_state) {
             this->int_levels1 |= irq_id;
@@ -531,7 +531,6 @@ void HeathrowIC::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state)
         } else {
             this->int_events2 &= ~irq_id;
         }
-        this->int_events2 &= this->int_mask2;
         // update IRQ line state
         if (irq_line_state) {
             this->int_levels2 |= irq_id;
@@ -548,7 +547,6 @@ void HeathrowIC::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state)
         } else {
             this->int_events1 &= ~irq_id;
         }
-        this->int_events1 &= this->int_mask1;
         // update IRQ line state
         if (irq_line_state) {
             this->int_levels1 |= irq_id;
@@ -591,7 +589,7 @@ void HeathrowIC::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state)
 }
 
 void HeathrowIC::signal_cpu_int() {
-    if (this->int_events1 || this->int_events2) {
+    if ((this->int_events1 & this->int_mask1) || (this->int_events2 & this->int_mask2)) {
         if (!this->cpu_int_latch) {
             this->cpu_int_latch = true;
             ppc_assert_int();
@@ -603,7 +601,8 @@ void HeathrowIC::signal_cpu_int() {
 
 void HeathrowIC::clear_cpu_int()
 {
-    if (!this->int_events1 && !this->int_events2) {
+    if (!(this->int_events1 & this->int_mask1) && !(this->int_events2 & this->int_mask2) &&
+        this->cpu_int_latch) {
         this->cpu_int_latch = false;
         ppc_release_int();
         LOG_F(5, "Heathrow: CPU INT latch cleared");
