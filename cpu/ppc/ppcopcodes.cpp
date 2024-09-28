@@ -232,20 +232,26 @@ OPCODEOVREC (subfme,
     uint32_t grab_ca      = !!(ppc_state.spr[SPR::XER] & XER::CA);
     uint32_t ppc_result_d = ~ppc_result_a + grab_ca - 1;
 
-    if (ppc_result_a == 0xFFFFFFFFUL && !grab_ca)
-        ppc_unset_xer(XER::CA);
-    else
+    if (ppc_result_a == 0xFFFFFFFFUL && !grab_ca) {
+        ppc_unset_xer(XER::CA); 
+    } 
+    else {
         ppc_set_xer(XER::CA);
-
-    if (ov) {
-        if (ppc_result_d == ppc_result_a && int32_t(ppc_result_d) > 0)
-            ppc_set_xer(XER::SO | XER::OV);
-        else
-            ppc_unset_xer(XER::OV);
     }
 
-    if (rec)
-        ppc_changecrf0(ppc_result_d);
+    if (ov) {
+        if (ppc_result_d == ppc_result_a && int32_t(ppc_result_d) > 0) {
+            ppc_set_xer(XER::SO | XER::OV);
+        } 
+        else {
+            ppc_unset_xer(XER::OV);
+        }
+    }
+
+    if (rec) {   
+        ppc_changecrf0(ppc_result_d); 
+    }
+        
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
@@ -276,7 +282,7 @@ OPCODEOVREC (subfze,
     }
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
-)
+ )
 
 OPCODESHIFT (andirc,
     ppc_grab_regssauimm(instr);
@@ -442,16 +448,19 @@ OPCODEOVREC (divw,
         ppc_result_d = 0; // tested on G4 in Mac OS X 10.4 and Open Firmware.
         // ppc_result_d = (int32_t(ppc_result_a) < 0) ? -1 : 0; /* UNDOCUMENTED! */
 
-        if (ov)
+        if (ov) {
             ppc_set_xer(XER::SO | XER::OV);
+        }
 
-    } else if (ppc_result_a == 0x80000000UL && ppc_result_b == 0xFFFFFFFFUL) {
+    } 
+    else if (ppc_result_a == 0x80000000UL && ppc_result_b == 0xFFFFFFFFUL) {
         ppc_result_d = 0; // tested on G4 in Mac OS X 10.4 and Open Firmware.
 
         if (ov)
             ppc_set_xer(XER::SO | XER::OV);
 
-    } else { // normal signed devision
+    } 
+    else { // normal signed devision
         ppc_result_d = int32_t(ppc_result_a) / int32_t(ppc_result_b);
 
         if (ov)
@@ -470,20 +479,26 @@ OPCODEOVREC (divwu,
 
     if (!ppc_result_b) { // division by zero
 
-        if (ov)
+        if (ov) {
             ppc_set_xer(XER::SO | XER::OV);
+        }
 
-        if (rec)
+        if (rec) {
             ppc_state.cr |= XER::CA;
+        }
+            
 
     } else {
         ppc_result_d = ppc_result_a / ppc_result_b;
 
-        if (ov)
+        if (ov) {
             ppc_unset_xer(XER::OV);
-    }
-    if (rec)
+        }
+    } 
+    if (rec) {
         ppc_changecrf0(ppc_result_d);
+
+    }
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
@@ -496,13 +511,12 @@ OPCODESHIFTREC (shift,
         ppc_result_a = 0;
     }
     else {
-        ppc_result_a = isleft ? (ppc_result_d << (ppc_result_b & 0x1F))
-                              : (ppc_result_d >> (ppc_result_b & 0x1F));
-    }
-
-    if (rec)
+        ppc_result_a = (isleft ? (ppc_result_d << (ppc_result_b & 0x1F))
+                              : (ppc_result_d >> (ppc_result_b & 0x1F)));
+    } 
+    if (rec) { 
         ppc_changecrf0(ppc_result_a);
-
+    }
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 )
 
@@ -1007,10 +1021,12 @@ OPCODELKAA (bc,
     cnd_ok = (br_bo & 0x10) | (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
 
     if (ctr_ok && cnd_ok) {
-        if (a)
+        if (a) {
             ppc_next_instruction_address = br_bd;
-        else
+        } 
+        else {
             ppc_next_instruction_address = uint32_t(ppc_state.pc + br_bd);
+        }
         exec_flags = EXEF_BRANCH;
     }
 
@@ -1391,7 +1407,8 @@ OPCODEMEM (stux,
         uint32_t ea = ppc_result_a + ppc_result_b;
         mmu_write_vmem<T>(ea, instr, ppc_result_d);
         ppc_state.gpr[reg_a] = ea;
-    } else {
+    } 
+    else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
 )

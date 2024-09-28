@@ -117,7 +117,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     void dppc_interpreter::ppc_##op(uint32_t instr) {                                              \
         __VA_ARGS__                                                                                \
     }                                                                                              \
-    template void dppc_interpreter::ppc_##op<ppc_and, RC0>(uint32_t instr)                         \
+    template void dppc_interpreter::ppc_##op<ppc_and, RC0>(uint32_t instr);                        \
     template void dppc_interpreter::ppc_##op<ppc_andc, RC0>(uint32_t instr);                       \
     template void dppc_interpreter::ppc_##op<ppc_eqv, RC0>(uint32_t instr);                        \
     template void dppc_interpreter::ppc_##op<ppc_nand, RC0>(uint32_t instr);                       \

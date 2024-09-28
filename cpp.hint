@@ -16,3 +16,5 @@
 #define OPCODESHIFTREC(op, __VA_ARGS__) template <field_direction isleft, field_rc rec > void dppc_interpreter::ppc_##op(uint32_t instr) { __VA_ARGS__ }
 #define OPCODE601REC(op, __VA_ARGS__) template <field_601 for601, field_rc rec> void dppc_interpreter::ppc_##op(uint32_t instr) { __VA_ARGS__ }
 #define OPCODEEXTSIGN(op, __VA_ARGS__) template <class T, field_rc rec> void dppc_interpreter::ppc_##op(uint32_t instr) { __VA_ARGS__ }
+#define ppc_store_iresult_reg(reg, ppc_result) ppc_state.gpr[reg] = ppc_result
+#define ppc_set_xer(entry) ppc_state.spr[SPR::XER] |= entry
