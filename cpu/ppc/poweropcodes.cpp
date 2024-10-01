@@ -24,8 +24,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "ppcemu.h"
 #include "ppcdecodemacros.h"
-#include "ppcopmacros.h"
-#include "poweropcodes.include"
 #include "ppcmmu.h"
 #include <stdint.h>
 
@@ -36,3 +34,5 @@ static inline uint32_t power_rot_mask(unsigned rot_mb, unsigned rot_me) {
     return ((rot_mb <= rot_me) ? m2 & m1 : m1 | m2);
 }
 
+#include "ppcopmacros.h"
+#include "poweropcodes.include"

@@ -25,8 +25,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <core/mathutils.h>
 #include "ppcemu.h"
 #include "ppcdecodemacros.h"
-#include "ppcopmacros.h"
-#include "ppcopcodes.include"
 #include "ppcmmu.h"
 #include <cinttypes>
 #include <vector>
@@ -177,3 +175,6 @@ static void update_decrementer(uint32_t val) {
         trigger_decrementer_exception
     );
 }
+
+#include "ppcopmacros.h"
+#include "ppcopcodes.include"

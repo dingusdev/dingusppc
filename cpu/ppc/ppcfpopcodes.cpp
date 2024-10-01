@@ -23,8 +23,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "ppcemu.h"
 #include "ppcdecodemacros.h"
-#include "ppcopmacros.h"
-#include "ppcfpopcodes.include"
 #include "ppcmmu.h"
 #include <stdlib.h>
 #include <cfenv>
@@ -212,3 +210,6 @@ inline static void round_to_int(uint32_t instr, const uint8_t mode, field_rc rec
     if (rec)
         ppc_update_cr1();
 }
+
+#include "ppcopmacros.h"
+#include "ppcfpopcodes.include"

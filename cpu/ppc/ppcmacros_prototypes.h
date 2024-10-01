@@ -23,65 +23,65 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define PPCMACROS_PROTTYPES_H
 
 #    define OPCODE(op, ...)                                                                        \
-        void dppc_interpreter::ppc_##op(uint32_t instr)
+        void ppc_##op(uint32_t instr)
 
 #    define POWEROPCODE(op, ...)                                                                   \
-        void dppc_interpreter::power_##op(uint32_t instr)
+        void power_##op(uint32_t instr)
 
 #    define OPCODESHIFT(op, ...)                                                                   \
         template <field_shift shift>                                                               \
-        void dppc_interpreter::ppc_##op(uint32_t instr)
+        void ppc_##op(uint32_t instr)
 
 #    define OPCODESHIFTREC(op, ...)                                                                \
         template <field_direction isleft, field_rc rec>                                            \
-        void dppc_interpreter::ppc_##op(uint32_t instr)
+        void ppc_##op(uint32_t instr)
 
 #    define OPCODECARRY(op, ...)                                                                   \
         template <field_carry carry, field_rc rec, field_ov ov>                                    \
-        void dppc_interpreter::ppc_##op(uint32_t instr)
+        void ppc_##op(uint32_t instr)
 
 #    define OPCODEOVREC(op, ...)                                                                   \
         template <field_rc rec, field_ov ov>                                                       \
-        void dppc_interpreter::ppc_##op(uint32_t instr)
+        void ppc_##op(uint32_t instr)
 
 #    define OPCODEEXTSIGN(op, ...)                                                                 \
         template <class T, field_rc rec>                                                           \
-        void dppc_interpreter::ppc_##op(uint32_t instr)
+        void ppc_##op(uint32_t instr)
 
 #    define POWEROPCODEOVREC(op, ...)                                                              \
         template <field_rc rec, field_ov ov>                                                       \
-        void dppc_interpreter::power_##op(uint32_t instr)
+        void power_##op(uint32_t instr)
 
 #    define OPCODEREC(op, ...)                                                                     \
         template <field_rc rec>                                                                    \
-        void dppc_interpreter::ppc_##op(uint32_t instr)
+        void ppc_##op(uint32_t instr)
 
 #    define POWEROPCODEREC(op, ...)                                                                \
         template <field_rc rec>                                                                    \
-        void dppc_interpreter::power_##op(uint32_t instr)
+        void power_##op(uint32_t instr)
 
 #    define OPCODELOGIC(op, ...)                                                                   \
         template <logical_fun logical_op, field_rc rec>                                            \
-        void dppc_interpreter::ppc_##op(uint32_t instr)
+        void ppc_##op(uint32_t instr)
 
 #    define OPCODELKAA(op, ...)                                                                    \
         template <field_lk l, field_aa a>                                                          \
-        void dppc_interpreter::ppc_##op(uint32_t instr)
+        void ppc_##op(uint32_t instr)
 
 #    define OPCODEMEM(op, ...)                                                                     \
         template <class T>                                                                         \
-        void dppc_interpreter::ppc_##op(uint32_t instr)
+        void ppc_##op(uint32_t instr)
 
 #    define OPCODE601REC(op, ...)                                                                  \
         template <field_601 for601, field_rc rec>                                                  \
-        void dppc_interpreter::ppc_##op(uint32_t instr)
+        void ppc_##op(uint32_t instr)
 
 #    define OPCODE601L(op, ...)                                                                    \
         template <field_lk l, field_601 for601>                                                    \
-        void dppc_interpreter::ppc_##op(uint32_t instr)
+        void ppc_##op(uint32_t instr)
 
 #    define OPCODEL(op, ...)                                                                       \
         template <field_lk l>                                                                      \
-        void dppc_interpreter::ppc_##op(uint32_t instr)
+        void ppc_##op(uint32_t instr)
 
 #endif /* PPCEMU_H */
