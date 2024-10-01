@@ -31,6 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 jmp_buf exc_env; /* Global exception environment. */
 
+#if !defined(PPC_TESTS) && !defined(PPC_BENCHMARKS)
 void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
 #ifdef CPU_PROFILING
     exceptions_processed++;
@@ -135,7 +136,7 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
         longjmp(exc_env, 2); /* return to the main execution loop. */
     }
 }
-
+#endif
 
 [[noreturn]] void dbg_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
     std::string exc_descriptor;
