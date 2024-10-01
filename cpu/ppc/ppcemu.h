@@ -425,21 +425,6 @@ extern MemCtrlBase* mem_ctrl_instance;
 extern void add_ctx_sync_action(const std::function<void()> &);
 extern void do_ctx_sync(void);
 
-// The functions used by the PowerPC processor
-#include "ppcmacros_prototypes.h"
-
-namespace dppc_interpreter {
-    #include "ppcopcodes.include"
-    #include "poweropcodes.include"
-    #include "ppcfpopcodes.include"
-
-// AltiVec instructions
-
-// 64-bit instructions
-
-// G5+ instructions
-}    // namespace dppc_interpreter
-
 extern uint64_t get_virt_time_ns(void);
 
 extern void ppc_main_opcode(uint32_t instr);
@@ -452,5 +437,14 @@ extern void ppc_exec_dbg(uint32_t start_addr, uint32_t size);
 void print_fprs(void);                   /* print content of the floating-point registers  */
 uint64_t get_reg(std::string reg_name); /* get content of the register reg_name */
 void set_reg(std::string reg_name, uint64_t val); /* set reg_name to val */
+
+// The functions used by the PowerPC processor
+#include "ppcmacros_prototypes.h"
+
+namespace dppc_interpreter {
+#include "ppcopcodes.include"
+#include "poweropcodes.include"
+#include "ppcfpopcodes.include"
+}    // namespace dppc_interpreter
 
 #endif /* PPCEMU_H */

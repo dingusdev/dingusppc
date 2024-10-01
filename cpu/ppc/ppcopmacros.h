@@ -52,9 +52,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         __VA_ARGS__                                                                                \
     }                                                                                              \
     template void dppc_interpreter::ppc_##op<RIGHT0, RC0>(uint32_t instr);                         \
-    template void dppc_interpreter::ppc_##op<LEFT1, RC0>(uint32_t instr);                          \
+    template void dppc_interpreter::ppc_##op<LEFT1,  RC0>(uint32_t instr);                         \
     template void dppc_interpreter::ppc_##op<RIGHT0, RC1>(uint32_t instr);                         \
-    template void dppc_interpreter::ppc_##op<LEFT1, RC1>(uint32_t instr);                      
+    template void dppc_interpreter::ppc_##op<LEFT1,  RC1>(uint32_t instr);
 
 #undef OPCODECARRY
 #define OPCODECARRY(op, ...)                                                                       \
@@ -91,7 +91,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     template void dppc_interpreter::ppc_##op<int8_t, RC0>(uint32_t instr);                         \
     template void dppc_interpreter::ppc_##op<int16_t, RC0>(uint32_t instr);                        \
     template void dppc_interpreter::ppc_##op<int8_t, RC1>(uint32_t instr);                         \
-    template void dppc_interpreter::ppc_##op<int16_t, RC1>(uint32_t instr);                        
+    template void dppc_interpreter::ppc_##op<int16_t, RC1>(uint32_t instr);
 
 #undef POWEROPCODEOVREC
 #define POWEROPCODEOVREC(op, ...)                                                                  \
@@ -120,7 +120,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         __VA_ARGS__                                                                                \
     }                                                                                              \
     template void dppc_interpreter::power_##op<RC0>(uint32_t instr);                               \
-    template void dppc_interpreter::power_##op<RC1>(uint32_t instr);                             
+    template void dppc_interpreter::power_##op<RC1>(uint32_t instr);
 
 #undef OPCODELOGIC
 #define OPCODELOGIC(op, ...)                                                                       \
@@ -176,7 +176,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     template void dppc_interpreter::ppc_##op<IS601, RC0>(uint32_t instr);                          \
     template void dppc_interpreter::ppc_##op<NOT601, RC1>(uint32_t instr);                         \
     template void dppc_interpreter::ppc_##op<IS601, RC1>(uint32_t instr);                          \
-                             
 
 #undef OPCODE601L
 #define OPCODE601L(op, ...)                                                                        \
@@ -188,7 +187,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     template void dppc_interpreter::ppc_##op<LK0, IS601>(uint32_t instr);                          \
     template void dppc_interpreter::ppc_##op<LK1, NOT601>(uint32_t instr);                         \
     template void dppc_interpreter::ppc_##op<LK1, IS601>(uint32_t instr);                          \
-                             
 
 #undef OPCODEL
 #define OPCODEL(op, ...)                                                                           \

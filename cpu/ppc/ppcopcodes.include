@@ -1,14 +1,9 @@
-#include "ppcopmacros.h"
-#include "ppcemu.h"
-
 OPCODESHIFT (addi,
     ppc_grab_regsdasimm(instr);
-    if (shift){
+    if (shift)
         ppc_state.gpr[reg_d] = (reg_a == 0) ? (simm << 16) : (ppc_result_a + (simm << 16));
-    }
-    else{
+    else
         ppc_state.gpr[reg_d] = (reg_a == 0) ? simm : (ppc_result_a + simm);
-    }
 )
 
 OPCODEREC (addic,
