@@ -1,3 +1,6 @@
+#include "ppcopmacros.h"
+#include "ppcemu.h"
+
 POWEROPCODEOVREC (abs,
     uint32_t ppc_result_d;
     ppc_grab_regsda(instr);

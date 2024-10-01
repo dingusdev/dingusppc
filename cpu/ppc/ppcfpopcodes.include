@@ -1,3 +1,6 @@
+#include "ppcopmacros.h"
+#include "ppcemu.h"
+
 // Floating Point Arithmetic
 OPCODEREC (fadd,
     ppc_grab_regsfpdab(instr);

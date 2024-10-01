@@ -51,10 +51,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     void dppc_interpreter::ppc_##op(uint32_t instr) {                                              \
         __VA_ARGS__                                                                                \
     }                                                                                              \
-    template void dppc_interpreter::ppc_##op<SHFT0, RC0>(uint32_t instr);                          \
-    template void dppc_interpreter::ppc_##op<SHFT1, RC0>(uint32_t instr);                          \
-    template void dppc_interpreter::ppc_##op<SHFT0, RC1>(uint32_t instr);                          \
-    template void dppc_interpreter::ppc_##op<SHFT1, RC1>(uint32_t instr);                      
+    template void dppc_interpreter::ppc_##op<RIGHT0, RC0>(uint32_t instr);                         \
+    template void dppc_interpreter::ppc_##op<LEFT1, RC0>(uint32_t instr);                          \
+    template void dppc_interpreter::ppc_##op<RIGHT0, RC1>(uint32_t instr);                         \
+    template void dppc_interpreter::ppc_##op<LEFT1, RC1>(uint32_t instr);                      
 
 #undef OPCODECARRY
 #define OPCODECARRY(op, ...)                                                                       \
