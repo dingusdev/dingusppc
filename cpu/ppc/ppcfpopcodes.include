@@ -1,5 +1,5 @@
 // Floating Point Arithmetic
-OPCODEREC (fadd,
+OPCODEREC (fadd, 63, 21,
     ppc_grab_regsfpdab(instr);
 
     snan_double_check(reg_a, reg_b);
@@ -14,7 +14,7 @@ OPCODEREC (fadd,
         ppc_update_cr1();
 )
 
-OPCODEREC (fsub,
+OPCODEREC (fsub, 63, 20,
     ppc_grab_regsfpdab(instr);
 
     snan_double_check(reg_a, reg_b);
@@ -28,7 +28,7 @@ OPCODEREC (fsub,
         ppc_update_cr1();
 )
 
-OPCODEREC (fdiv,
+OPCODEREC (fdiv, 63, 18,
     ppc_grab_regsfpdab(instr);
 
     snan_double_check(reg_a, reg_b);
@@ -41,7 +41,7 @@ OPCODEREC (fdiv,
         ppc_update_cr1();
 )
 
-OPCODEREC (fmul,
+OPCODERECF (fmul, 63, 25,
     ppc_grab_regsfpdac(instr);
 
     snan_double_check(reg_a, reg_c);
@@ -54,7 +54,7 @@ OPCODEREC (fmul,
         ppc_update_cr1();
 )
 
-OPCODEREC (fmadd,
+OPCODERECF (fmadd, 63, 29,
     ppc_grab_regsfpdabc(instr);
 
     snan_double_check(reg_a, reg_c);
@@ -68,7 +68,7 @@ OPCODEREC (fmadd,
         ppc_update_cr1();
 )
 
-OPCODEREC (fmsub,
+OPCODERECF (fmsub, 63, 28,
     ppc_grab_regsfpdabc(instr);
 
     snan_double_check(reg_a, reg_c);
@@ -82,7 +82,7 @@ OPCODEREC (fmsub,
         ppc_update_cr1();
 )
 
-OPCODEREC (fnmadd,
+OPCODERECF (fnmadd, 63, 31,
     ppc_grab_regsfpdabc(instr);
 
     snan_double_check(reg_a, reg_c);
@@ -96,7 +96,7 @@ OPCODEREC (fnmadd,
         ppc_update_cr1();
 )
 
-OPCODEREC (fnmsub,
+OPCODERECF (fnmsub, 63, 30,
     ppc_grab_regsfpdabc(instr);
 
     snan_double_check(reg_a, reg_c);
@@ -110,7 +110,7 @@ OPCODEREC (fnmsub,
         ppc_update_cr1();
 )
 
-OPCODEREC (fadds,
+OPCODEREC (fadds, 59, 21,
     ppc_grab_regsfpdab(instr);
 
     snan_double_check(reg_a, reg_b);
@@ -124,7 +124,7 @@ OPCODEREC (fadds,
         ppc_update_cr1();
 )
 
-OPCODEREC (fsubs,
+OPCODEREC (fsubs, 59, 20,
     ppc_grab_regsfpdab(instr);
 
     snan_double_check(reg_a, reg_b);
@@ -138,7 +138,7 @@ OPCODEREC (fsubs,
         ppc_update_cr1();
 )
 
-OPCODEREC (fdivs,
+OPCODEREC (fdivs, 59, 18,
     ppc_grab_regsfpdab(instr);
 
     snan_double_check(reg_a, reg_b);
@@ -151,7 +151,7 @@ OPCODEREC (fdivs,
         ppc_update_cr1();
 )
 
-OPCODEREC (fmuls,
+OPCODEREC (fmuls, 59, 25,
     ppc_grab_regsfpdac(instr);
 
     snan_double_check(reg_a, reg_c);
@@ -164,7 +164,7 @@ OPCODEREC (fmuls,
         ppc_update_cr1();
 )
 
-OPCODEREC (fmadds,
+OPCODEREC (fmadds, 59, 29,
     ppc_grab_regsfpdabc(instr);
 
     snan_double_check(reg_a, reg_c);
@@ -178,7 +178,7 @@ OPCODEREC (fmadds,
         ppc_update_cr1();
 )
 
-OPCODEREC (fmsubs,
+OPCODEREC (fmsubs, 59, 28,
     ppc_grab_regsfpdabc(instr);
 
     snan_double_check(reg_a, reg_c);
@@ -192,7 +192,7 @@ OPCODEREC (fmsubs,
         ppc_update_cr1();
 )
 
-OPCODEREC (fnmadds,
+OPCODEREC (fnmadds, 59, 31,
     ppc_grab_regsfpdabc(instr);
 
     snan_double_check(reg_a, reg_c);
@@ -206,7 +206,7 @@ OPCODEREC (fnmadds,
         ppc_update_cr1();
 )
 
-OPCODEREC (fnmsubs,
+OPCODEREC (fnmsubs, 59, 30,
     ppc_grab_regsfpdabc(instr);
 
     snan_double_check(reg_a, reg_c);
@@ -220,7 +220,7 @@ OPCODEREC (fnmsubs,
         ppc_update_cr1();
 )
 
-OPCODEREC (fabs,
+OPCODEREC (fabs, 63, 264,
     ppc_grab_regsfpdb(instr);
 
     snan_single_check(reg_b);
@@ -233,7 +233,7 @@ OPCODEREC (fabs,
         ppc_update_cr1();
 )
 
-OPCODEREC(fnabs,
+OPCODEREC(fnabs, 63, 136,
     ppc_grab_regsfpdb(instr);
 
     snan_single_check(reg_b);
@@ -247,7 +247,7 @@ OPCODEREC(fnabs,
         ppc_update_cr1();
 )
 
-OPCODEREC(fneg,
+OPCODEREC(fneg, 63, 40,
     ppc_grab_regsfpdb(instr);
 
     snan_single_check(reg_b);
@@ -260,7 +260,7 @@ OPCODEREC(fneg,
         ppc_update_cr1();
 )
 
-OPCODEREC(fsel,
+OPCODERECF(fsel, 63, 23,
     ppc_grab_regsfpdabc(instr);
 
     double ppc_dblresult64_d = (val_reg_a >= -0.0) ? val_reg_c : val_reg_b;
@@ -271,7 +271,7 @@ OPCODEREC(fsel,
         ppc_update_cr1();
 )
 
-OPCODEREC(fsqrt,
+OPCODEREC(fsqrt, 63, 22
     ppc_grab_regsfpdb(instr);
 
     snan_single_check(reg_b);
@@ -284,7 +284,7 @@ OPCODEREC(fsqrt,
         ppc_update_cr1();
 )
 
-OPCODEREC(fsqrts,
+OPCODEREC(fsqrts, 59, 22,
     ppc_grab_regsfpdb(instr);
 
     snan_single_check(reg_b);
@@ -297,7 +297,7 @@ OPCODEREC(fsqrts,
         ppc_update_cr1();
 )
 
-OPCODEREC (frsqrte,
+OPCODEREC (frsqrte, 63, 26,
     ppc_grab_regsfpdb(instr);
     snan_single_check(reg_b);
 
@@ -309,7 +309,7 @@ OPCODEREC (frsqrte,
         ppc_update_cr1();
 )
 
-OPCODEREC (frsp,
+OPCODEREC (frsp, 63, 12,
     ppc_grab_regsfpdb(instr);
     snan_single_check(reg_b);
 
@@ -320,7 +320,7 @@ OPCODEREC (frsp,
         ppc_update_cr1();
 )
 
-OPCODEREC (fres,
+OPCODEREC (fres, 63, 24,
     ppc_grab_regsfpdb(instr);
 
     snan_single_check(reg_b);
@@ -344,17 +344,17 @@ OPCODEREC (fres,
         ppc_update_cr1();
 )
 
-OPCODEREC (fctiw,
+OPCODEREC (fctiw, 63, 14,
     round_to_int(instr, ppc_state.fpscr & 0x3, rec);
 )
 
-OPCODEREC (fctiwz,
+OPCODEREC (fctiwz, 63, 15,
     round_to_int(instr, 1, rec);
 )
 
 // Floating Point Store and Load
 
-OPCODE (lfs,
+OPCODE (lfs, , 48,
     ppc_grab_regsfpdia(instr);
     uint32_t ea = int32_t(int16_t(instr));
     ea += (reg_a) ? val_reg_a : 0;
@@ -362,7 +362,7 @@ OPCODE (lfs,
     ppc_state.fpr[reg_d].dbl64_r = *(float*)(&result);
 )
 
-OPCODE (lfsu,
+OPCODE (lfsu, , 49,
     ppc_grab_regsfpdia(instr);
     if (reg_a) {
         uint32_t ea = int32_t(int16_t(instr));
@@ -375,14 +375,14 @@ OPCODE (lfsu,
     }
 )
 
-OPCODE (lfsx,
+OPCODE (lfsx, 31, 535,
     ppc_grab_regsfpdiab(instr);
     uint32_t ea = val_reg_b + (reg_a ? val_reg_a : 0);
     uint32_t result              = mmu_read_vmem<uint32_t>(ea, instr);
     ppc_state.fpr[reg_d].dbl64_r = *(float*)(&result);
 )
 
-OPCODE (lfsux,
+OPCODE (lfsux, 31, 567,
     ppc_grab_regsfpdiab(instr);
     if (reg_a) {
         uint32_t ea = val_reg_a + val_reg_b;
@@ -394,7 +394,7 @@ OPCODE (lfsux,
     }
 )
 
-OPCODE (lfd,
+OPCODE (lfd, , 50,
     ppc_grab_regsfpdia(instr);
     uint32_t ea = int32_t(int16_t(instr));
     ea += (reg_a) ? val_reg_a : 0;
@@ -402,7 +402,7 @@ OPCODE (lfd,
     ppc_store_dfpresult_int(reg_d, ppc_result64_d);
 )
 
-OPCODE (lfdu,
+OPCODE (lfdu, , 51,
     ppc_grab_regsfpdia(instr);
     if (reg_a != 0) {
         uint32_t ea = int32_t(int16_t(instr));
@@ -415,14 +415,14 @@ OPCODE (lfdu,
     }
 )
 
-OPCODE (lfdx,
+OPCODE (lfdx, 61, 599,
     ppc_grab_regsfpdiab(instr);
     uint32_t ea = val_reg_b + (reg_a ? val_reg_a : 0);
     uint64_t ppc_result64_d = mmu_read_vmem<uint64_t>(ea, instr);
     ppc_store_dfpresult_int(reg_d, ppc_result64_d);
 )
 
-OPCODE (lfdux,
+OPCODE (lfdux, 31, 631,
     ppc_grab_regsfpdiab(instr);
     if (reg_a) {
         uint32_t ea = val_reg_a + val_reg_b;
@@ -434,7 +434,7 @@ OPCODE (lfdux,
     }
 )
 
-OPCODE (stfs,
+OPCODE (stfs, , 52,
     ppc_grab_regsfpsia(instr);
     uint32_t ea = int32_t(int16_t(instr));
     ea += (reg_a) ? val_reg_a : 0;
@@ -442,7 +442,7 @@ OPCODE (stfs,
     mmu_write_vmem<uint32_t>(ea, instr, *(uint32_t*)(&result));
 )
 
-OPCODE (stfsu,
+OPCODE (stfsu, , 53,
     ppc_grab_regsfpsia(instr);
     if (reg_a != 0) {
         uint32_t ea = int32_t(int16_t(instr));
@@ -455,14 +455,14 @@ OPCODE (stfsu,
     }
 )
 
-OPCODE (stfsx,
+OPCODE (stfsx, 31, 663,
     ppc_grab_regsfpsiab(instr);
     uint32_t ea = val_reg_b + (reg_a ? val_reg_a : 0);
     float result = float(ppc_state.fpr[reg_s].dbl64_r);
     mmu_write_vmem<uint32_t>(ea, instr, *(uint32_t*)(&result));
 )
 
-OPCODE (stfsux,
+OPCODE (stfsux, 31, 695,
     ppc_grab_regsfpsiab(instr);
     if (reg_a) {
         uint32_t ea = val_reg_a + val_reg_b;
@@ -474,14 +474,14 @@ OPCODE (stfsux,
     }
 )
 
-OPCODE (stfd,
+OPCODE (stfd, , 54,
     ppc_grab_regsfpsia(instr);
     uint32_t ea = int32_t(int16_t(instr));
     ea += reg_a ? val_reg_a : 0;
     mmu_write_vmem<uint64_t>(ea, instr, ppc_state.fpr[reg_s].int64_r);
 )
 
-OPCODE (stfdu,
+OPCODE (stfdu, , 55,
     ppc_grab_regsfpsia(instr);
     if (reg_a != 0) {
         uint32_t ea = int32_t(int16_t(instr));
@@ -493,13 +493,13 @@ OPCODE (stfdu,
     }
 )
 
-OPCODE (stfdx,
+OPCODE (stfdx, 31, 727,
     ppc_grab_regsfpsiab(instr);
     uint32_t ea = val_reg_b + (reg_a ? val_reg_a : 0);
     mmu_write_vmem<uint64_t>(ea, instr, ppc_state.fpr[reg_s].int64_r);
 )
 
-OPCODE (stfdux,
+OPCODE (stfdux, 31, 759,
     ppc_grab_regsfpsiab(instr);
     if (reg_a != 0) {
         uint32_t ea = val_reg_a + val_reg_b;
@@ -510,7 +510,7 @@ OPCODE (stfdux,
     }
 )
 
-OPCODE (stfiwx,
+OPCODE (stfiwx, 31, 983,
     ppc_grab_regsfpsiab(instr);
     uint32_t ea = val_reg_b + (reg_a ? val_reg_a : 0);
     mmu_write_vmem<uint32_t>(ea, instr, uint32_t(ppc_state.fpr[reg_s].int64_r));
@@ -518,7 +518,7 @@ OPCODE (stfiwx,
 
 // Floating Point Register Transfer
 
-OPCODEREC (fmr,
+OPCODEREC (fmr, 63, 72,
     ppc_grab_regsfpdb(instr);
     ppc_state.fpr[reg_d].dbl64_r = ppc_state.fpr[reg_b].dbl64_r;
 
@@ -526,7 +526,7 @@ OPCODEREC (fmr,
         ppc_update_cr1();
 )
 
-OPCODE601REC (mffs,
+OPCODE601REC (mffs, 63, 583,
     int reg_d = (instr >> 21) & 31;
 
     ppc_state.fpr[reg_d].int64_r = uint64_t(ppc_state.fpscr) | (for601 ? 0xFFFFFFFF00000000ULL : 0xFFF8000000000000ULL);
@@ -535,7 +535,7 @@ OPCODE601REC (mffs,
         ppc_update_cr1();
 )
 
-OPCODEREC (mtfsf,
+OPCODEREC (mtfsf, 63, 711,
     ppc_grab_mtfsf(instr);
 
     uint32_t cr_mask = 0;
@@ -565,7 +565,7 @@ OPCODEREC (mtfsf,
     }
 )
 
-OPCODEREC (mtfsfi, 
+OPCODEREC (mtfsfi, 63, 134,
     ppc_grab_mtfsfi(instr);
 
     // prepare field mask and ensure that neither FEX nor VX will be changed
@@ -583,7 +583,7 @@ OPCODEREC (mtfsfi,
     }
 )
 
-OPCODEREC (mtfsb0,
+OPCODEREC (mtfsb0, 63, 70,
     int crf_d = (instr >> 21) & 0x1F;
     if (!crf_d || (crf_d > 2)) { // FEX and VX can't be explicitly cleared
         ppc_state.fpscr &= ~(0x80000000UL >> crf_d);
@@ -593,7 +593,7 @@ OPCODEREC (mtfsb0,
         ppc_update_cr1();
 )
 
-OPCODEREC (mtfsb1,
+OPCODEREC (mtfsb1, 63, 38,
     ppc_grab_crfd(instr);
     if (!crf_d || (crf_d > 2)) { // FEX and VX can't be explicitly set
         ppc_state.fpscr |= (0x80000000UL >> crf_d);
@@ -604,7 +604,7 @@ OPCODEREC (mtfsb1,
     }
 )
 
-OPCODE (mcrfs, 
+OPCODE (mcrfs, 63, 64,
     ppc_grab_crfds(instr);
     ppc_state.cr = (
         (ppc_state.cr & ~(0xF0000000UL >> crf_d)) |
@@ -622,7 +622,7 @@ OPCODE (mcrfs,
 
 // Floating Point Comparisons
 
-OPCODE (fcmpo,
+OPCODE (fcmpo, 63, 32,
     ppc_grab_regsfpsab(instr);
 
     uint32_t cmp_c = 0;
@@ -653,7 +653,7 @@ OPCODE (fcmpo,
 
 )
 
-OPCODE (fcmpu,
+OPCODE (fcmpu, 63, 0,
     ppc_grab_regsfpsab(instr);
 
     uint32_t cmp_c = 0;

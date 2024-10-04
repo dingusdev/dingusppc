@@ -1,4 +1,4 @@
-OPCODESHIFT (addi,
+OPCODESHIFT (addi, , 14,
     ppc_grab_regsdasimm(instr);
     if (shift)
         ppc_state.gpr[reg_d] = (reg_a == 0) ? (simm << 16) : (ppc_result_a + (simm << 16));
@@ -6,7 +6,7 @@ OPCODESHIFT (addi,
         ppc_state.gpr[reg_d] = (reg_a == 0) ? simm : (ppc_result_a + simm);
 )
 
-OPCODEREC (addic,
+OPCODEREC (addic, , 12,
     ppc_grab_regsdasimm(instr);
     uint32_t ppc_result_d = (ppc_result_a + simm);
     ppc_carry(ppc_result_a, ppc_result_d);
@@ -15,7 +15,7 @@ OPCODEREC (addic,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-OPCODECARRY (add,
+OPCODECARRY (add, 31, 10,
     ppc_grab_regsdab(instr);
     uint32_t ppc_result_d = ppc_result_a + ppc_result_b;
 
@@ -28,7 +28,7 @@ OPCODECARRY (add,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-OPCODEOVREC (adde,
+OPCODEOVREC (adde, 31, 138,
     ppc_grab_regsdab(instr);
     uint32_t xer_ca       = !!(ppc_state.spr[SPR::XER] & XER::CA);
     uint32_t ppc_result_d = ppc_result_a + ppc_result_b + xer_ca;
@@ -47,7 +47,7 @@ OPCODEOVREC (adde,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-OPCODEOVREC (addme,
+OPCODEOVREC (addme, 31, 234,
     ppc_grab_regsda(instr);
     uint32_t xer_ca       = !!(ppc_state.spr[SPR::XER] & XER::CA);
     uint32_t ppc_result_d = ppc_result_a + xer_ca - 1;
@@ -66,7 +66,7 @@ OPCODEOVREC (addme,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-OPCODEOVREC (addze,
+OPCODEOVREC (addze, 31, 202,
     ppc_grab_regsda(instr);
     uint32_t grab_xer     = !!(ppc_state.spr[SPR::XER] & XER::CA);
     uint32_t ppc_result_d = ppc_result_a + grab_xer;
@@ -85,7 +85,7 @@ OPCODEOVREC (addze,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-OPCODE (subfic,
+OPCODE (subfic, , 8,
     ppc_grab_regsdasimm(instr);
     uint32_t ppc_result_d = simm - ppc_result_a;
     if (simm == -1) { 
@@ -97,7 +97,7 @@ OPCODE (subfic,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-OPCODECARRY (subf,
+OPCODECARRY (subf, 31, 8,
     ppc_grab_regsdab(instr);
     uint32_t ppc_result_d = ppc_result_b - ppc_result_a;
 
@@ -111,7 +111,7 @@ OPCODECARRY (subf,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-OPCODEOVREC (subfe,
+OPCODEOVREC (subfe, 31, 136,
     ppc_grab_regsdab(instr);
     uint32_t grab_ca      = !!(ppc_state.spr[SPR::XER] & XER::CA);
     uint32_t ppc_result_d = ~ppc_result_a + ppc_result_b + grab_ca;
@@ -128,7 +128,7 @@ OPCODEOVREC (subfe,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-OPCODEOVREC (subfme,
+OPCODEOVREC (subfme, 31, 232,
     ppc_grab_regsda(instr);
     uint32_t grab_ca      = !!(ppc_state.spr[SPR::XER] & XER::CA);
     uint32_t ppc_result_d = ~ppc_result_a + grab_ca - 1;
@@ -157,7 +157,7 @@ OPCODEOVREC (subfme,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-OPCODEOVREC (subfze,
+OPCODEOVREC (subfze, 31, 200,
     ppc_grab_regsda(instr);
     uint32_t grab_ca      = !!(ppc_state.spr[SPR::XER] & XER::CA);
     uint32_t ppc_result_d = ~ppc_result_a + grab_ca;
@@ -185,26 +185,26 @@ OPCODEOVREC (subfze,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
  )
 
-OPCODESHIFT (andirc,
+OPCODESHIFT (andirc, , 28,
     ppc_grab_regssauimm(instr);
     ppc_result_a = shift ? (ppc_result_d & (uimm << 16)) : (ppc_result_d & uimm);
     ppc_changecrf0(ppc_result_a);
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 )
 
-OPCODESHIFT (ori,
+OPCODESHIFT (ori, , 24,
     ppc_grab_regssauimm(instr);
     ppc_result_a = shift ? (ppc_result_d | (uimm << 16)) : (ppc_result_d | uimm);
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 )
 
-OPCODESHIFT (xori,
+OPCODESHIFT (xori, , 26,
     ppc_grab_regssauimm(instr);
     ppc_result_a = shift ? (ppc_result_d ^ (uimm << 16)) : (ppc_result_d ^ uimm);
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 )
 
-OPCODELOGIC(logical,
+OPCODELOGIC(logical, 31, 28
     ppc_grab_regssab(instr);
     if (logical_op == logical_fun::ppc_and)
         ppc_result_a = ppc_result_d & ppc_result_b;
@@ -229,7 +229,7 @@ OPCODELOGIC(logical,
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 )
 
-OPCODEOVREC (neg,
+OPCODEOVREC (neg, 31, 104,
     ppc_grab_regsda(instr);
     uint32_t ppc_result_d = ~(ppc_result_a) + 1;
 
@@ -248,7 +248,7 @@ OPCODEOVREC (neg,
 
 
 #ifdef __builtin_clz    // for GCC and Clang users
-OPCODEREC (cntlzw,
+OPCODEREC (cntlzw, 31, 26,
     ppc_grab_regssa(instr);
 
     uint32_t bit_check = ppc_result_d;
@@ -260,7 +260,7 @@ OPCODEREC (cntlzw,
     ppc_store_iresult_reg(reg_a, lead);
         )
 #elif defined __lzcnt    // for Visual C++ users
-OPCODEREC (cntlzw,
+OPCODEREC (cntlzw, 31, 26,
     ppc_grab_regssa(instr);
 
     uint32_t bit_check = ppc_result_d;
@@ -272,7 +272,7 @@ OPCODEREC (cntlzw,
     ppc_store_iresult_reg(reg_a, lead);
 )
 #else
-OPCODEREC (cntlzw,
+OPCODEREC (cntlzw, 31, 26,
     ppc_grab_regssa(instr);
 
     uint32_t bit_check = ppc_result_d;
@@ -292,7 +292,7 @@ OPCODEREC (cntlzw,
 )
 #endif
 
-OPCODEREC (mulhwu,
+OPCODEREC (mulhwu, 31, 11,
     ppc_grab_regsdab(instr);
     uint64_t product = uint64_t(ppc_result_a) * uint64_t(ppc_result_b);
     uint32_t ppc_result_d = uint32_t(product >> 32);
@@ -303,7 +303,7 @@ OPCODEREC (mulhwu,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-OPCODEREC (mulhw,
+OPCODEREC (mulhw, 31, 75,
     ppc_grab_regsdab(instr);
     int64_t product = int64_t(int32_t(ppc_result_a)) * int64_t(int32_t(ppc_result_b));
     uint32_t ppc_result_d = product >> 32;
@@ -314,7 +314,7 @@ OPCODEREC (mulhw,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-OPCODEOVREC (mullw,
+OPCODEOVREC (mullw, 31, 235,
     ppc_grab_regsdab(instr);
     int64_t product = int64_t(int32_t(ppc_result_a)) * int64_t(int32_t(ppc_result_b));
 
@@ -334,14 +334,14 @@ OPCODEOVREC (mullw,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-OPCODE (mulli,
+OPCODE (mulli, , 7,
     ppc_grab_regsdasimm(instr);
     int64_t product          = int64_t(int32_t(ppc_result_a)) * int64_t(int32_t(simm));
     uint32_t ppc_result_d    = uint32_t(product);
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-OPCODEOVREC (divw,
+OPCODEOVREC (divw, 31, 491
     uint32_t ppc_result_d = 0;
     ppc_grab_regsdab(instr);
 
@@ -374,7 +374,7 @@ OPCODEOVREC (divw,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-OPCODEOVREC (divwu,
+OPCODEOVREC (divwu, 31, 459,
     uint32_t ppc_result_d = 0;
     ppc_grab_regsdab(instr);
 
@@ -406,7 +406,7 @@ OPCODEOVREC (divwu,
 
 // Value shifting
 
-OPCODESHIFTREC (shift,
+OPCODESHIFTREC (shift, 31, 24,
     ppc_grab_regssab(instr);
     if (ppc_result_b & 0x20) {
         ppc_result_a = 0;
@@ -421,7 +421,7 @@ OPCODESHIFTREC (shift,
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 )
 
-OPCODEREC (sraw,
+OPCODEREC (sraw, 31, 792,
     ppc_grab_regssab(instr);
 
     // clear XER[CA] by default
@@ -445,7 +445,7 @@ OPCODEREC (sraw,
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 )
 
-OPCODEREC (srawi,
+OPCODEREC (srawi, 31, 824,
     ppc_grab_regssash(instr);
 
     // clear XER[CA] by default
@@ -464,7 +464,7 @@ OPCODEREC (srawi,
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 )
 
-OPCODE(rlwimi,
+OPCODE(rlwimi, , 20,
     ppc_grab_regssash(instr);
     unsigned rot_mb = (instr >> 6) & 0x1F;
     unsigned rot_me = (instr >> 1) & 0x1F;
@@ -478,7 +478,7 @@ OPCODE(rlwimi,
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 )
 
-OPCODE (rlwinm,
+OPCODE (rlwinm, , 21,
     ppc_grab_regssash(instr);
     unsigned rot_mb = (instr >> 6) & 0x1F;
     unsigned rot_me = (instr >> 1) & 0x1F;
@@ -492,7 +492,7 @@ OPCODE (rlwinm,
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 )
 
-OPCODE (rlwnm,
+OPCODE (rlwnm, , 23,
     ppc_grab_regssab(instr);
     ppc_result_b &= 0x1F;
     unsigned rot_mb = (instr >> 6) & 0x1F;
@@ -508,12 +508,12 @@ OPCODE (rlwnm,
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 )
 
-OPCODE(mfcr,
+OPCODE(mfcr, 31, 19,
     int reg_d            = (instr >> 21) & 0x1F;
     ppc_state.gpr[reg_d] = ppc_state.cr;
 )
 
-OPCODE (mtsr,
+OPCODE (mtsr, 31, 210,
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
@@ -528,7 +528,7 @@ OPCODE (mtsr,
    }
 )
 
-OPCODE (mtsrin,
+OPCODE (mtsrin, 31, 242,
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
@@ -543,7 +543,7 @@ OPCODE (mtsrin,
     }
 )
 
-OPCODE (mfsr,
+OPCODE (mfsr, 31, 595,
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
@@ -555,7 +555,7 @@ OPCODE (mfsr,
     ppc_state.gpr[reg_d] = ppc_state.sr[grab_sr];
 )
 
-OPCODE (mfsrin,
+OPCODE (mfsrin, 31, 659,
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
@@ -567,7 +567,7 @@ OPCODE (mfsrin,
     ppc_state.gpr[reg_d] = ppc_state.sr[grab_sr];
 )
 
-OPCODE (mfmsr,
+OPCODE (mfmsr, 31, 83,
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
@@ -578,7 +578,7 @@ OPCODE (mfmsr,
     ppc_state.gpr[reg_d] = ppc_state.msr;
 )
 
-OPCODE (mtmsr,
+OPCODE (mtmsr, 31, 146,
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
@@ -602,7 +602,7 @@ OPCODE (mtmsr,
     }
 )
 
-OPCODE (mfspr,
+OPCODE (mfspr, 13, 339,
     ppc_grab_dab(instr);
     uint32_t ref_spr = (reg_b << 5) | reg_a;
 
@@ -654,7 +654,7 @@ OPCODE (mfspr,
     }
 )
 
-OPCODE (mtspr,
+OPCODE (mtspr, 31, 467,
     ppc_grab_dab(instr);
     uint32_t ref_spr = (reg_b << 5) | reg_a;
 
@@ -745,7 +745,7 @@ OPCODE (mtspr,
     }
 )
 
-OPCODE (mftb,
+OPCODE (mftb, 31, 371,
     ppc_grab_dab(instr);
     uint32_t ref_spr = (reg_b << 5) | reg_a;
 
@@ -767,7 +767,7 @@ OPCODE (mftb,
      }
 )
 
-OPCODE (mtcrf,
+OPCODE (mtcrf, 31, 144
     ppc_grab_s(instr);
     uint8_t crm = (instr >> 12) & 0xFFU;
 
@@ -807,7 +807,7 @@ OPCODEEXTSIGN (exts,
 
 // Branching Instructions
 
-OPCODELKAA (b,
+OPCODELKAA (b, , 18,
     int32_t adr_li = int32_t((instr & ~3UL) << 6) >> 6;
 
     if (a)
@@ -821,7 +821,7 @@ OPCODELKAA (b,
     exec_flags = EXEF_BRANCH;
 )
 
-OPCODELKAA (bc, 
+OPCODELKAA (bc, , 16,
     uint32_t ctr_ok = 0;
     uint32_t cnd_ok = 0;
     uint32_t br_bo = (instr >> 21) & 0x1F;
@@ -848,7 +848,7 @@ OPCODELKAA (bc,
         ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
 )
 
-OPCODE601L (bcctr,
+OPCODE601L (bcctr, 19, 1056,
     uint32_t ctr_ok = 0;
     uint32_t cnd_ok = 0;
     uint32_t br_bo = (instr >> 21) & 0x1F;
@@ -877,7 +877,7 @@ OPCODE601L (bcctr,
         ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
 )
 
-OPCODEL (bclr,
+OPCODEL (bclr, 32,
     uint32_t br_bo = (instr >> 21) & 0x1F;
     uint32_t br_bi = (instr >> 16) & 0x1F;
     uint32_t ctr_ok = 0;
@@ -900,7 +900,7 @@ OPCODEL (bclr,
 
 // Compare Instructions
 
-OPCODE (cmp,
+OPCODE (cmp, 31, 0,
 #ifdef CHECK_INVALID
     if (instr & 0x200000) {
         LOG_F(WARNING, "Invalid CMP instruction form (L=1)!");
@@ -916,7 +916,7 @@ OPCODE (cmp,
     ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
 )
 
-OPCODE (cmpi,
+OPCODE (cmpi, , 11,
 #ifdef CHECK_INVALID
     if (instr & 0x200000) {
         LOG_F(WARNING, "Invalid CMPI instruction form (L=1)!");
@@ -932,7 +932,7 @@ OPCODE (cmpi,
     ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
 )
 
-OPCODE (cmpl,
+OPCODE (cmpl, 31, 32,
 #ifdef CHECK_INVALID
     if (instr & 0x200000) {
         LOG_F(WARNING, "Invalid CMPL instruction form (L=1)!");
@@ -948,7 +948,7 @@ OPCODE (cmpl,
     ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
 )
 
-OPCODE (cmpli,
+OPCODE (cmpli, , 10,
 #ifdef CHECK_INVALID
     if (instr & 0x200000) {
         LOG_F(WARNING, "Invalid CMPLI instruction form (L=1)!");
@@ -964,7 +964,7 @@ OPCODE (cmpli,
 
 // Condition Register Changes
 
-OPCODE (mcrf,
+OPCODE (mcrf, 19, 0,
     int crf_d       = (instr >> 21) & 0x1C;
     int crf_s       = (instr >> 16) & 0x1C;
 
@@ -974,7 +974,7 @@ OPCODE (mcrf,
     ppc_state.cr = (ppc_state.cr & ~(0xf0000000UL >> crf_d)) | (grab_s << (28 - crf_d));
 )
 
-OPCODE (crand,
+OPCODE (crand, 19, 514,
     ppc_grab_dab(instr);
     uint8_t ir = (ppc_state.cr >> (31 - reg_a)) & (ppc_state.cr >> (31 - reg_b));
     if (ir & 1) {
@@ -984,7 +984,7 @@ OPCODE (crand,
     }
 )
 
-OPCODE (crandc,
+OPCODE (crandc, 19, 258,
     ppc_grab_dab(instr);
     if ((ppc_state.cr & (0x80000000UL >> reg_a)) && !(ppc_state.cr & (0x80000000UL >> reg_b))) {
         ppc_set_cr(0x80000000UL >> reg_d);
@@ -993,7 +993,7 @@ OPCODE (crandc,
     }
 )
 
-OPCODE (creqv,
+OPCODE (creqv, 19, 578,
     ppc_grab_dab(instr);
     uint8_t ir = (ppc_state.cr >> (31 - reg_a)) ^ (ppc_state.cr >> (31 - reg_b));
     if (ir & 1) { // compliment is implemented by swapping the following if/else bodies
@@ -1003,7 +1003,7 @@ OPCODE (creqv,
     }
 )
 
-OPCODE (crnand,
+OPCODE (crnand, 19, 450,
     ppc_grab_dab(instr);
     uint8_t ir = (ppc_state.cr >> (31 - reg_a)) & (ppc_state.cr >> (31 - reg_b));
     if (ir & 1) {
@@ -1013,7 +1013,7 @@ OPCODE (crnand,
     }
 )
 
-OPCODE (crnor,
+OPCODE (crnor, 19, 66,
     ppc_grab_dab(instr);
     uint8_t ir = (ppc_state.cr >> (31 - reg_a)) | (ppc_state.cr >> (31 - reg_b));
     if (ir & 1) {
@@ -1023,7 +1023,7 @@ OPCODE (crnor,
     }
 )
 
-OPCODE (cror,
+OPCODE (cror, 19, 898,
     ppc_grab_dab(instr);
     uint8_t ir = (ppc_state.cr >> (31 - reg_a)) | (ppc_state.cr >> (31 - reg_b));
     if (ir & 1) {
@@ -1033,7 +1033,7 @@ OPCODE (cror,
     }
 )
 
-OPCODE (crorc,
+OPCODE (crorc, 19, 834,
     ppc_grab_dab(instr);
     if ((ppc_state.cr & (0x80000000UL >> reg_a)) || !(ppc_state.cr & (0x80000000UL >> reg_b))) {
         ppc_set_cr(0x80000000UL >> reg_d);
@@ -1042,7 +1042,7 @@ OPCODE (crorc,
     }
 )
 
-OPCODE (crxor,
+OPCODE (crxor, 19, 386,
     ppc_grab_dab(instr);
     uint8_t ir = (ppc_state.cr >> (31 - reg_a)) ^ (ppc_state.cr >> (31 - reg_b));
     if (ir & 1) {
@@ -1054,7 +1054,7 @@ OPCODE (crxor,
 
 // Processor MGMT Fns.
 
-OPCODE (rfi,
+OPCODE (rfi, 19, 100,
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
@@ -1089,12 +1089,12 @@ OPCODE (rfi,
     exec_flags = EXEF_RFI;
 )
 
-OPCODE (sc,
+OPCODE (sc, , 17,
     do_ctx_sync(); // SC is context synchronizing!
     ppc_exception_handler(Except_Type::EXC_SYSCALL, 0x20000);
 )
 
-OPCODE (tw,
+OPCODE (tw, 31, 4,
     uint32_t reg_a  = (instr >> 11) & 0x1F;
     uint32_t reg_b  = (instr >> 16) & 0x1F;
     uint32_t ppc_to = (instr >> 21) & 0x1F;
@@ -1107,7 +1107,7 @@ OPCODE (tw,
     }
 )
 
-OPCODE (twi,
+OPCODE (twi, , 3,
     int32_t simm    = int32_t(int16_t(instr));
     uint32_t reg_a  = (instr >> 16) & 0x1F;
     uint32_t ppc_to = (instr >> 21) & 0x1F;
@@ -1120,48 +1120,48 @@ OPCODE (twi,
     }
 )
 
-OPCODE (eieio,
+OPCODE (eieio, 31, 854,
     /* placeholder */
 )
 
-OPCODE (isync,
+OPCODE (isync, 19, 300,
     do_ctx_sync();
 )
 
-OPCODE (sync,
+OPCODE (sync, 31, 598,
     /* placeholder */
 )
 
-OPCODE (icbi,
+OPCODE (icbi, 31, 982,
     /* placeholder */
 )
 
-OPCODE (dcbf,
+OPCODE (dcbf, 31, 86,
     /* placeholder */
 )
 
-OPCODE (dcbi,
+OPCODE (dcbi, 31, 470,
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
     /* placeholder */
 )
 
-OPCODE (dcbst,
+OPCODE (dcbst, 31, 54,
     /* placeholder */
 )
 
-OPCODE (dcbt,
+OPCODE (dcbt, 31, 278,
     // Not needed, the HDI reg is touched to no-op this instruction.
     return;
 )
 
-OPCODE (dcbtst,
+OPCODE (dcbtst, 31, 246,
     // Not needed, the HDI reg is touched to no-op this instruction.
     return;
 )
 
-OPCODE (dcbz,
+OPCODE (dcbz, 31, 1014,
     ppc_grab_regsab(instr);
     uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
 
@@ -1178,7 +1178,7 @@ OPCODE (dcbz,
 
 // Integer Load and Store Functions
 
-OPCODEMEM (st,
+OPCODEMEM (st, , 36,
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
@@ -1188,7 +1188,7 @@ OPCODEMEM (st,
     mmu_write_vmem<T>(ea, instr, ppc_result_d);
 )
 
-OPCODEMEM (stx,
+OPCODEMEM (stx, 31, 151,
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
@@ -1197,7 +1197,7 @@ OPCODEMEM (stx,
     mmu_write_vmem<T>(ea, instr, ppc_result_d);
 )
 
-OPCODEMEM (stu,
+OPCODEMEM (stu, , 37,
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
@@ -1212,7 +1212,7 @@ OPCODEMEM (stu,
     }
 )
 
-OPCODEMEM (stux,
+OPCODEMEM (stux, 31, 183,
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
@@ -1227,7 +1227,7 @@ OPCODEMEM (stux,
     }
 )
 
-OPCODE (sthbrx,
+OPCODE (sthbrx, 31, 918,
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
@@ -1237,7 +1237,7 @@ OPCODE (sthbrx,
     mmu_write_vmem<uint16_t>(ea, instr, ppc_result_d);
 )
 
-OPCODE (stwcx,
+OPCODE (stwcx, 31, 301,
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
@@ -1252,7 +1252,7 @@ OPCODE (stwcx,
     }
 )
 
-OPCODE (stwbrx,
+OPCODE (stwbrx, 31, 662,
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
@@ -1262,7 +1262,7 @@ OPCODE (stwbrx,
     mmu_write_vmem<uint32_t>(ea, instr, ppc_result_d);
 )
 
-OPCODE (stmw,
+OPCODE (stmw, , 47,
     ppc_grab_regssa_stmw(instr);
     uint32_t ea = int32_t(int16_t(instr));
     ea += reg_a ? ppc_result_a : 0;
@@ -1278,7 +1278,7 @@ OPCODE (stmw,
     }
 )
 
-OPCODEMEM (lz,
+OPCODEMEM (lz, , 32,
     #ifdef CPU_PROFILING
         num_int_loads++;
     #endif
@@ -1289,7 +1289,7 @@ OPCODEMEM (lz,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-OPCODEMEM (lzu,
+OPCODEMEM (lzu, , 33,
     ppc_grab_regsda(instr);
     uint32_t ea = int32_t(int16_t(instr));
     if ((reg_a != reg_d) && reg_a != 0) {
@@ -1303,14 +1303,14 @@ OPCODEMEM (lzu,
     }
 )
 
-OPCODEMEM (lzx,
+OPCODEMEM (lzx, 31, 23
     ppc_grab_regsdab(instr);
     uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
     uint32_t ppc_result_d = mmu_read_vmem<T>(ea, instr);
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-OPCODEMEM (lzux,
+OPCODEMEM (lzux, 31, 55,
     ppc_grab_regsdab(instr);
     if ((reg_a != reg_d) && reg_a != 0) {
         uint32_t ea = ppc_result_a + ppc_result_b;
@@ -1323,7 +1323,7 @@ OPCODEMEM (lzux,
     }
 )
 
-OPCODE (lha,
+OPCODE (lha, , 42,
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1334,7 +1334,7 @@ OPCODE (lha,
     ppc_state.gpr[reg_d] = int32_t(val);
 )
 
-OPCODE (lhau,
+OPCODE (lhau, , 43,
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1351,7 +1351,7 @@ OPCODE (lhau,
     }
 )
 
-OPCODE (lhaux,
+OPCODE (lhaux, 31, 375,
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1368,7 +1368,7 @@ OPCODE (lhaux,
     }
 )
 
-OPCODE (lhax,
+OPCODE (lhax, 31, 343,
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1378,7 +1378,7 @@ OPCODE (lhax,
     ppc_state.gpr[reg_d] = int32_t(val);
 )
 
-OPCODE (lhbrx,
+OPCODE (lhbrx, 31, 790,
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1388,7 +1388,7 @@ OPCODE (lhbrx,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-OPCODE (lwbrx,
+OPCODE (lwbrx, 31, 534,
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1398,7 +1398,7 @@ OPCODE (lwbrx,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-OPCODE (lwarx,
+OPCODE (lwarx, 31, 20,
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1410,7 +1410,7 @@ OPCODE (lwarx,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-OPCODE (lmw,
+OPCODE (lmw, , 46,
     ppc_grab_regsda(instr);
     uint32_t ea = int32_t(int16_t(instr));
     ea += (reg_a ? ppc_result_a : 0);
@@ -1458,7 +1458,7 @@ OPCODE (lswi,
     }
 )
 
-OPCODE (lswx,
+OPCODE (lswx, 31, 533,
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1502,7 +1502,7 @@ OPCODE (lswx,
     }
 )
 
-OPCODE (stswi,
+OPCODE (stswi, 31, 725,
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
@@ -1537,7 +1537,7 @@ OPCODE (stswi,
     }
 )
 
-OPCODE (stswx,
+OPCODE (stswx, 31, 661,
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
@@ -1572,7 +1572,7 @@ OPCODE (stswx,
     }
 )
 
-OPCODE (eciwx,
+OPCODE (eciwx, 31, 310,
     uint32_t ear_enable = 0x80000000;
 
     // error if EAR[E] != 1
@@ -1592,7 +1592,7 @@ OPCODE (eciwx,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-OPCODE (ecowx,
+OPCODE (ecowx, 31, 438,
     uint32_t ear_enable = 0x80000000;
 
     // error if EAR[E] != 1
@@ -1612,7 +1612,7 @@ OPCODE (ecowx,
 
 // TLB Instructions
 
-OPCODE (tlbie,
+OPCODE (tlbie, 31, 306,
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
@@ -1620,28 +1620,28 @@ OPCODE (tlbie,
     tlb_flush_entry(ppc_state.gpr[(instr >> 11) & 0x1F]);
 )
 
-OPCODE (tlbia,
+OPCODE (tlbia, 31, 370,
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
     /* placeholder */
 )
 
-OPCODE (tlbld,
+OPCODE (tlbld, 31, 978,
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
     /* placeholder */
 )
 
-OPCODE (tlbli,
+OPCODE (tlbli, 31, 1010,
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
     /* placeholder */
 )
 
-OPCODE (tlbsync,
+OPCODE (tlbsync, 31, 566,
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif

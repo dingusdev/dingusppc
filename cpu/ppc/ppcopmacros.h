@@ -25,19 +25,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define PPCOPMACROS_H
 
 #undef OPCODE
-#define OPCODE(op, ...)                                                                            \
+#define OPCODE(op, grabber, number ...)                                                            \
     void dppc_interpreter::ppc_##op(uint32_t instr) {                                              \
         __VA_ARGS__                                                                                \
     }
 
 #undef POWEROPCODE
-#define POWEROPCODE(op, ...)                                                                       \
+#define POWEROPCODE(op, grabber, number ...)                                                       \
     void dppc_interpreter::power_##op(uint32_t instr) {                                            \
         __VA_ARGS__                                                                                \
     }
 
 #undef OPCODESHIFT
-#define OPCODESHIFT(op, ...)                                                                       \
+#define OPCODESHIFT(op, grabber, number ...)                                                       \
     template <field_shift shift>                                                                   \
     void dppc_interpreter::ppc_##op(uint32_t instr) {                                              \
         __VA_ARGS__                                                                                \
@@ -46,7 +46,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     template void dppc_interpreter::ppc_##op<SHFT1>(uint32_t instr);
 
 #undef OPCODESHIFTREC
-#define OPCODESHIFTREC(op, ...)                                                                    \
+#define OPCODESHIFTREC(op, grabber, number ...)                                                    \
     template <field_direction isleft, field_rc rec>                                                \
     void dppc_interpreter::ppc_##op(uint32_t instr) {                                              \
         __VA_ARGS__                                                                                \
@@ -57,7 +57,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     template void dppc_interpreter::ppc_##op<LEFT1,  RC1>(uint32_t instr);
 
 #undef OPCODECARRY
-#define OPCODECARRY(op, ...)                                                                       \
+#define OPCODECARRY(op, grabber, number ...)                                                       \
     template <field_carry carry, field_rc rec, field_ov ov>                                        \
     void dppc_interpreter::ppc_##op(uint32_t instr) {                                              \
         __VA_ARGS__                                                                                \
@@ -72,7 +72,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     template void dppc_interpreter::ppc_##op<CARRY1, RC1, OV1>(uint32_t instr);
 
 #undef OPCODEOVREC
-#define OPCODEOVREC(op, ...)                                                                       \
+#define OPCODEOVREC(op, grabber, number ...)                                                       \
     template <field_rc rec, field_ov ov>                                                           \
     void dppc_interpreter::ppc_##op(uint32_t instr) {                                              \
         __VA_ARGS__                                                                                \
@@ -83,7 +83,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     template void dppc_interpreter::ppc_##op<RC1, OV1>(uint32_t instr);
 
 #undef OPCODEEXTSIGN
-#define OPCODEEXTSIGN(op, ...)                                                                     \
+#define OPCODEEXTSIGN(op, grabber, number ...)                                                     \
     template <class T, field_rc rec>                                                               \
     void dppc_interpreter::ppc_##op(uint32_t instr) {                                              \
         __VA_ARGS__                                                                                \
@@ -94,7 +94,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     template void dppc_interpreter::ppc_##op<int16_t, RC1>(uint32_t instr);
 
 #undef POWEROPCODEOVREC
-#define POWEROPCODEOVREC(op, ...)                                                                  \
+#define POWEROPCODEOVREC(op, grabber, number ...)                                                  \
     template <field_rc rec, field_ov ov>                                                           \
     void dppc_interpreter::power_##op(uint32_t instr) {                                            \
         __VA_ARGS__                                                                                \
@@ -105,7 +105,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     template void dppc_interpreter::power_##op<RC1, OV1>(uint32_t instr);
 
 #undef OPCODEREC
-#define OPCODEREC(op, ...)                                                                         \
+#define OPCODEREC(op, grabber, number ...)                                                         \
+    template <field_rc rec>                                                                        \
+    void dppc_interpreter::ppc_##op(uint32_t instr) {                                              \
+        __VA_ARGS__                                                                                \
+    }                                                                                              \
+    template void dppc_interpreter::ppc_##op<RC0>(uint32_t instr);                                 \
+    template void dppc_interpreter::ppc_##op<RC1>(uint32_t instr);                                 \
+
+#undef OPCODERECF
+#define OPCODERECF(op, grabber, number ...)                                                        \
     template <field_rc rec>                                                                        \
     void dppc_interpreter::ppc_##op(uint32_t instr) {                                              \
         __VA_ARGS__                                                                                \
@@ -114,7 +123,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     template void dppc_interpreter::ppc_##op<RC1>(uint32_t instr);                                 \
 
 #undef POWEROPCODEREC
-#define POWEROPCODEREC(op, ...)                                                                    \
+#define POWEROPCODEREC(op, grabber, number ...)                                                    \
     template <field_rc rec>                                                                        \
     void dppc_interpreter::power_##op(uint32_t instr) {                                            \
         __VA_ARGS__                                                                                \
@@ -123,7 +132,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     template void dppc_interpreter::power_##op<RC1>(uint32_t instr);
 
 #undef OPCODELOGIC
-#define OPCODELOGIC(op, ...)                                                                       \
+#define OPCODELOGIC(op, grabber, number ...)                                                       \
     template <logical_fun logical_op, field_rc rec>                                                \
     void dppc_interpreter::ppc_##op(uint32_t instr) {                                              \
         __VA_ARGS__                                                                                \
@@ -146,7 +155,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     template void dppc_interpreter::ppc_##op<ppc_xor, RC1>(uint32_t instr);
 
 #undef OPCODELKAA
-#define OPCODELKAA(op, ...)                                                                        \
+#define OPCODELKAA(op, grabber, number ...)                                                        \
     template <field_lk l, field_aa a>                                                              \
     void dppc_interpreter::ppc_##op(uint32_t instr) {                                              \
         __VA_ARGS__                                                                                \
@@ -157,7 +166,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     template void dppc_interpreter::ppc_##op<LK1, AA1>(uint32_t instr);
 
 #undef OPCODEMEM
-#define OPCODEMEM(op, ...)                                                                         \
+#define OPCODEMEM(op, grabber, number ...)                                                         \
     template <class T>                                                                             \
     void dppc_interpreter::ppc_##op(uint32_t instr) {                                              \
         __VA_ARGS__                                                                                \
@@ -167,7 +176,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     template void dppc_interpreter::ppc_##op<uint32_t>(uint32_t instr);
 
 #undef OPCODE601REC
-#define OPCODE601REC(op, ...)                                                                      \
+#define OPCODE601REC(op, grabber, number ...)                                                      \
     template <field_601 for601, field_rc rec>                                                      \
     void dppc_interpreter::ppc_##op(uint32_t instr) {                                              \
         __VA_ARGS__                                                                                \
@@ -178,7 +187,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     template void dppc_interpreter::ppc_##op<IS601, RC1>(uint32_t instr);                          \
 
 #undef OPCODE601L
-#define OPCODE601L(op, ...)                                                                        \
+#define OPCODE601L(op, grabber, number ...)                                                        \
     template <field_lk l, field_601 for601>                                                        \
     void dppc_interpreter::ppc_##op(uint32_t instr) {                                              \
         __VA_ARGS__                                                                                \
@@ -189,7 +198,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     template void dppc_interpreter::ppc_##op<LK1, IS601>(uint32_t instr);                          \
 
 #undef OPCODEL
-#define OPCODEL(op, ...)                                                                           \
+#define OPCODEL(op, grabber, number ...)                                                           \
     template <field_lk l>                                                                          \
     void dppc_interpreter::ppc_##op(uint32_t instr) {                                              \
         __VA_ARGS__                                                                                \

@@ -65,6 +65,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         template <field_rc rec>                                                                    \
         void ppc_##op(uint32_t instr);
 
+#    undef OPCODERECF
+#    define OPCODERECF(op, ...)                                                                    \
+        template <field_rc rec>                                                                    \
+        void ppc_##op(uint32_t instr);
+
 #    undef POWEROPCODEREC
 #    define POWEROPCODEREC(op, ...)                                                                \
         template <field_rc rec>                                                                    \

@@ -1,4 +1,4 @@
-POWEROPCODEOVREC (abs,
+POWEROPCODEOVREC (abs, 31, 360,
     uint32_t ppc_result_d;
     ppc_grab_regsda(instr);
     if (ppc_result_a == 0x80000000) {
@@ -17,7 +17,7 @@ POWEROPCODEOVREC (abs,
     ppc_state.gpr[reg_d] = ppc_result_d;
 )
 
-POWEROPCODE (clcs, 
+POWEROPCODE (clcs, 31, 531,
     ppc_grab_da(instr); 
     uint32_t ppc_result_d = 0;
 
@@ -46,7 +46,7 @@ POWEROPCODE (clcs,
     ppc_state.gpr[reg_d] = ppc_result_d;
 )
 
-POWEROPCODEOVREC (div,
+POWEROPCODEOVREC (div, 31, 331,
     uint32_t ppc_result_d;
     ppc_grab_regsdab(instr);
 
@@ -85,7 +85,7 @@ POWEROPCODEOVREC (div,
     power_store_mq(remainder);
 )
 
-POWEROPCODEOVREC (divs,
+POWEROPCODEOVREC (divs, 31, 363,
     uint32_t ppc_result_d;
     int32_t remainder;
     ppc_grab_regsdab(instr);
@@ -113,7 +113,7 @@ POWEROPCODEOVREC (divs,
     power_store_mq(remainder);;
 )
 
-POWEROPCODEOVREC (doz,
+POWEROPCODEOVREC (doz, 31, 264,
     ppc_grab_regsdab(instr);
     uint32_t ppc_result_d = (int32_t(ppc_result_a) < int32_t(ppc_result_b)) ?
         ppc_result_b - ppc_result_a : 0;
@@ -131,7 +131,7 @@ POWEROPCODEOVREC (doz,
     ppc_state.gpr[reg_d] = ppc_result_d;
 )
 
-POWEROPCODE (dozi, 
+POWEROPCODE (dozi, , 9,
     ppc_grab_regsdasimm(instr); 
     uint32_t ppc_result_d = 0;
     if (((int32_t)ppc_result_a) > simm) {
@@ -143,7 +143,7 @@ POWEROPCODE (dozi,
     ppc_state.gpr[reg_d] = ppc_result_d;
 )
 
-POWEROPCODEREC (lscbx,
+POWEROPCODEREC (lscbx, 31, 277,
     ppc_grab_regsdab(instr);
     uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
 
@@ -195,7 +195,7 @@ POWEROPCODEREC (lscbx,
     }
 )
 
-POWEROPCODEREC (maskg,
+POWEROPCODEREC (maskg, 31, 29,
     ppc_grab_regssab(instr);
     uint32_t mask_start  = ppc_result_d & 0x1F;
     uint32_t mask_end    = ppc_result_b & 0x1F;
@@ -220,7 +220,7 @@ POWEROPCODEREC (maskg,
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
 
-POWEROPCODEREC (maskir,
+POWEROPCODEREC (maskir, 31, 541,
     ppc_grab_regssab(instr);
     ppc_result_a = (ppc_result_a & ~ppc_result_b) | (ppc_result_d & ppc_result_b);
 
@@ -230,7 +230,7 @@ POWEROPCODEREC (maskir,
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
 
-POWEROPCODEOVREC (mul,
+POWEROPCODEOVREC (mul, 31, 107,
     ppc_grab_regsdab(instr);
     int64_t product        = int64_t(int32_t(ppc_result_a)) * int32_t(ppc_result_b);
     uint32_t ppc_result_d  = uint32_t(uint64_t(product) >> 32);
@@ -248,7 +248,7 @@ POWEROPCODEOVREC (mul,
     ppc_state.gpr[reg_d] = ppc_result_d;
 )
 
-POWEROPCODEOVREC (nabs,
+POWEROPCODEOVREC (nabs, 31, 488,
     ppc_grab_regsda(instr);
     uint32_t ppc_result_d = (int32_t(ppc_result_a) < 0) ? ppc_result_a : -ppc_result_a;
 
@@ -260,7 +260,7 @@ POWEROPCODEOVREC (nabs,
     ppc_state.gpr[reg_d] = ppc_result_d;
 )
 
-POWEROPCODE (rlmi,
+POWEROPCODE (rlmi, , 22,
     ppc_grab_regssab(instr);
     unsigned rot_mb      = (instr >> 6) & 0x1F;
     unsigned rot_me      = (instr >> 1) & 0x1F;
@@ -277,7 +277,7 @@ POWEROPCODE (rlmi,
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
 
-POWEROPCODEREC (rrib,
+POWEROPCODEREC (rrib, 31, 537,
     ppc_grab_regssab(instr);
     unsigned rot_sh = ppc_result_b & 0x1F;
 
@@ -293,7 +293,7 @@ POWEROPCODEREC (rrib,
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
 
-POWEROPCODEREC (sle,
+POWEROPCODEREC (sle, 31, 153,
     ppc_grab_regssab(instr);
     unsigned rot_sh = ppc_result_b & 0x1F;
 
@@ -308,7 +308,7 @@ POWEROPCODEREC (sle,
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
 
-POWEROPCODEREC (sleq,
+POWEROPCODEREC (sleq, 31, 217,
     ppc_grab_regssab(instr);
     unsigned rot_sh = ppc_result_b & 0x1F;
     uint32_t r      = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
@@ -323,7 +323,7 @@ POWEROPCODEREC (sleq,
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
 
-POWEROPCODEREC (sliq,
+POWEROPCODEREC (sliq, 31, 184,
     ppc_grab_regssash(instr);
 
     ppc_result_a           = ppc_result_d << rot_sh;
@@ -335,7 +335,7 @@ POWEROPCODEREC (sliq,
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
 
-POWEROPCODEREC (slliq,
+POWEROPCODEREC (slliq, 31, 248,
     ppc_grab_regssash(instr);
     uint32_t r      = ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh)));
     uint32_t mask   = power_rot_mask(0, 31 - rot_sh);
@@ -349,7 +349,7 @@ POWEROPCODEREC (slliq,
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
 
-POWEROPCODEREC (sllq,
+POWEROPCODEREC (sllq, 31, 216,
     ppc_grab_regssab(instr);
     unsigned rot_sh = ppc_result_b & 0x1F;
 
@@ -365,7 +365,7 @@ POWEROPCODEREC (sllq,
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
 
-POWEROPCODEREC (slq,
+POWEROPCODEREC (slq, 31, 152,
     ppc_grab_regssab(instr);
     unsigned rot_sh = ppc_result_b & 0x1F;
 
@@ -382,7 +382,7 @@ POWEROPCODEREC (slq,
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
 
-POWEROPCODEREC (sraiq,
+POWEROPCODEREC (sraiq, 31, 952,
     ppc_grab_regssash(instr);
     uint32_t mask          = (1 << rot_sh) - 1;
     ppc_result_a           = (int32_t)ppc_result_d >> rot_sh;
@@ -400,7 +400,7 @@ POWEROPCODEREC (sraiq,
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
 
-POWEROPCODEREC (sraq,
+POWEROPCODEREC (sraq, 31, 920,
     ppc_grab_regssab(instr);
     unsigned rot_sh        = ppc_result_b & 0x1F;
     uint32_t mask          = (ppc_result_b & 0x20) ? -1 : (1 << rot_sh) - 1;
@@ -421,7 +421,7 @@ POWEROPCODEREC (sraq,
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
 
-POWEROPCODEREC (sre,
+POWEROPCODEREC (sre, 31, 665,
     ppc_grab_regssab(instr);
 
     unsigned rot_sh = ppc_result_b & 0x1F;
@@ -435,7 +435,7 @@ POWEROPCODEREC (sre,
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
 
-POWEROPCODEREC (srea,
+POWEROPCODEREC (srea, 31, 921,
     ppc_grab_regssab(instr);
     unsigned rot_sh        = ppc_result_b & 0x1F;
     ppc_result_a           = (int32_t)ppc_result_d >> rot_sh;
@@ -455,7 +455,7 @@ POWEROPCODEREC (srea,
     ppc_state.spr[SPR::MQ] = r;
 )
 
-POWEROPCODEREC (sreq,
+POWEROPCODEREC (sreq, 31, 729,
     ppc_grab_regssab(instr);
     unsigned rot_sh = ppc_result_b & 0x1F;
     uint32_t mask   = -1U >> rot_sh;
@@ -469,7 +469,7 @@ POWEROPCODEREC (sreq,
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
 
-POWEROPCODEREC (sriq,
+POWEROPCODEREC (sriq, 31, 696,
     ppc_grab_regssash(instr);
     ppc_result_a           = ppc_result_d >> rot_sh;
     ppc_state.spr[SPR::MQ] = (ppc_result_d >> rot_sh) | (ppc_result_d << (32 - rot_sh));
@@ -480,7 +480,7 @@ POWEROPCODEREC (sriq,
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
 
-POWEROPCODEREC (srliq,
+POWEROPCODEREC (srliq, 31, 760,
     ppc_grab_regssash(instr);
     uint32_t r      = (ppc_result_d >> rot_sh) | (ppc_result_d << (32 - rot_sh));
     unsigned mask   = power_rot_mask(rot_sh, 31);
@@ -494,7 +494,7 @@ POWEROPCODEREC (srliq,
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
 
-POWEROPCODEREC (srlq,
+POWEROPCODEREC (srlq, 31, 728,
     ppc_grab_regssab(instr);
     unsigned rot_sh = ppc_result_b & 0x1F;
     uint32_t r      = (ppc_result_d >> rot_sh) | (ppc_result_d << (32 - rot_sh));
@@ -512,7 +512,7 @@ POWEROPCODEREC (srlq,
     ppc_state.gpr[reg_a] = ppc_result_a;
 )
 
-POWEROPCODEREC (srq,
+POWEROPCODEREC (srq, 31, 664,
     ppc_grab_regssab(instr);
     unsigned rot_sh = ppc_result_b & 0x1F;
 
