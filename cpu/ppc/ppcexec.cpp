@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ppcemu.h"
 #include "ppcmmu.h"
 #include "ppcdisasm.h"
+#include "ppcoptablemacros.h"
 
 #include <algorithm>
 #include <cstring>
@@ -183,17 +184,9 @@ public:
 static PPCOpcode OpcodeGrabber[64];
 
 /** Lookup tables for branch instructions. */
-const static PPCOpcode Opcode16Grabber[] = {
-    dppc_interpreter::ppc_bc<LK0, AA0>,    // bc
-    dppc_interpreter::ppc_bc<LK1, AA0>,     // bcl
-    dppc_interpreter::ppc_bc<LK0, AA1>,     // bca
-    dppc_interpreter::ppc_bc<LK1, AA1>};    // bcla
+static PPCOpcode Opcode16Grabber[4];    // bcla
 
-const static PPCOpcode Opcode18Grabber[] = {
-    dppc_interpreter::ppc_b<LK0, AA0>,      // b
-    dppc_interpreter::ppc_b<LK1, AA0>,      // bl
-    dppc_interpreter::ppc_b<LK0, AA1>,      // ba
-    dppc_interpreter::ppc_b<LK1, AA1>};     // bla
+static PPCOpcode Opcode18Grabber[4];     // bla
 
 /** Instructions decoding tables for integer,
     single floating-point, and double-floating point ops respectively */
@@ -657,238 +650,12 @@ do { \
 
 inline void initialize_ppc_opcode_tables(bool include_601) {
     std::fill_n(OpcodeGrabber, 64, ppc_illegalop);
-    OP(3,  ppc_twi);
-    //OP(4,  ppc_opcode4); - Altivec instructions not emulated yet. Uncomment once they're implemented.
-    OP(7,  ppc_mulli);
-    OP(8,  ppc_subfic);
-    if (is_601 || include_601) OP(9, power_dozi);
-    OP(10, ppc_cmpli);
-    OP(11, ppc_cmpi);
-    OP(12, ppc_addic<RC0>);
-    OP(13, ppc_addic<RC1>);
-    OP(14, ppc_addi<SHFT0>);
-    OP(15, ppc_addi<SHFT1>);
-    OP(16, ppc_opcode16);
-    OP(17, ppc_sc);
-    OP(18, ppc_opcode18);
-    if (is_601) OP(19, ppc_opcode19<IS601>); else OP(19, ppc_opcode19<NOT601>);
-    OP(20, ppc_rlwimi);
-    OP(21, ppc_rlwinm);
-    if (is_601 || include_601) OP(22, power_rlmi);
-    OP(23, ppc_rlwnm);
-    OP(24, ppc_ori<SHFT0>);
-    OP(25, ppc_ori<SHFT1>);
-    OP(26, ppc_xori<SHFT0>);
-    OP(27, ppc_xori<SHFT1>);
-    OP(28, ppc_andirc<SHFT0>);
-    OP(29, ppc_andirc<SHFT1>);
-    OP(31, ppc_opcode31);
-    OP(32, ppc_lz<uint32_t>);
-    OP(33, ppc_lzu<uint32_t>);
-    OP(34, ppc_lz<uint8_t>);
-    OP(35, ppc_lzu<uint8_t>);
-    OP(36, ppc_st<uint32_t>);
-    OP(37, ppc_stu<uint32_t>);
-    OP(38, ppc_st<uint8_t>);
-    OP(39, ppc_stu<uint8_t>);
-    OP(40, ppc_lz<uint16_t>);
-    OP(41, ppc_lzu<uint16_t>);
-    OP(42, ppc_lha);
-    OP(43, ppc_lhau);
-    OP(44, ppc_st<uint16_t>);
-    OP(45, ppc_stu<uint16_t>);
-    OP(46, ppc_lmw);
-    OP(47, ppc_stmw);
-    OP(48, ppc_lfs);
-    OP(49, ppc_lfsu);
-    OP(50, ppc_lfd);
-    OP(51, ppc_lfdu);
-    OP(52, ppc_stfs);
-    OP(53, ppc_stfsu);
-    OP(54, ppc_stfd);
-    OP(55, ppc_stfdu);
-    OP(59, ppc_opcode59);
-    OP(63, ppc_opcode63);
-
+    std::fill_n(Opcode16Grabber, 3, ppc_illegalop);
+    std::fill_n(Opcode18Grabber, 3, ppc_illegalop);
+    std::fill_n(Opcode19Grabber, 2048, ppc_illegalop);
     std::fill_n(Opcode31Grabber, 2048, ppc_illegalop);
-    OP31(0,      ppc_cmp);
-    OP31(4,      ppc_tw);
-    OP31(32,     ppc_cmpl);
-
-    OP31cod(8,   ppc_subf, CARRY1);
-    OP31cod(40,  ppc_subf, CARRY0);
-    OP31od(104,  ppc_neg);
-    OP31od(136,  ppc_subfe);
-    OP31od(200,  ppc_subfze);
-    OP31od(232,  ppc_subfme);
-
-    OP31cod(10,  ppc_add, CARRY1);
-    OP31od(138,  ppc_adde);
-    OP31od(202,  ppc_addze);
-    OP31od(234,  ppc_addme);
-    OP31cod(266, ppc_add, CARRY0);
-
-    OP31d(11,    ppc_mulhwu);
-    OP31d(75,    ppc_mulhw);
-    OP31od(235,  ppc_mullw);
-    OP31od(459,  ppc_divwu);
-    OP31od(491,  ppc_divw);
-
-    OP31(20,     ppc_lwarx);
-    OP31(23,     ppc_lzx<uint32_t>);
-    OP31(55,     ppc_lzux<uint32_t>);
-    OP31(87,     ppc_lzx<uint8_t>);
-    OP31(119,    ppc_lzux<uint8_t>);
-    OP31(279,    ppc_lzx<uint16_t>);
-    OP31(311,    ppc_lzux<uint16_t>);
-    OP31(343,    ppc_lhax);
-    OP31(375,    ppc_lhaux);
-    OP31(533,    ppc_lswx);
-    OP31(534,    ppc_lwbrx);
-    OP31(535,    ppc_lfsx);
-    OP31(567,    ppc_lfsux);
-    OP31(597,    ppc_lswi);
-    OP31(599,    ppc_lfdx);
-    OP31(631,    ppc_lfdux);
-    OP31(790,    ppc_lhbrx);
-
-    Opcode31Grabber[(150<<1)+1] = ppc_stwcx; // No Rc=0 variant.
-    OP31(151,    ppc_stx<uint32_t>);
-    OP31(183,    ppc_stux<uint32_t>);
-    OP31(215,    ppc_stx<uint8_t>);
-    OP31(247,    ppc_stux<uint8_t>);
-    OP31(407,    ppc_stx<uint16_t>);
-    OP31(439,    ppc_stux<uint16_t>);
-    OP31(661,    ppc_stswx);
-    OP31(662,    ppc_stwbrx);
-    OP31(663,    ppc_stfsx);
-    OP31(695,    ppc_stfsux);
-    OP31(725,    ppc_stswi);
-    OP31(727,    ppc_stfdx);
-    OP31(759,    ppc_stfdux);
-    OP31(918,    ppc_sthbrx);
-    if (!is_601) OP31(983, ppc_stfiwx);
-
-    OP31(310,    ppc_eciwx);
-    OP31(438,    ppc_ecowx);
-
-    OP31dc(24,   ppc_shift, LEFT1); // slw
-    OP31dc(28,   ppc_logical, ppc_and);
-    OP31dc(60,   ppc_logical, ppc_andc);
-    OP31dc(124,  ppc_logical, ppc_nor);
-    OP31dc(284,  ppc_logical, ppc_eqv);
-    OP31dc(316,  ppc_logical, ppc_xor);
-    OP31dc(412,  ppc_logical, ppc_orc);
-    OP31dc(444,  ppc_logical, ppc_or);
-    OP31dc(476,  ppc_logical, ppc_nand);
-    OP31dc(536,  ppc_shift, RIGHT0); // srw
-    OP31d(792,   ppc_sraw);
-    OP31d(824,   ppc_srawi);
-    OP31dc(922,  ppc_exts, int16_t);
-    OP31dc(954,  ppc_exts, int8_t);
-
-    OP31d(26,    ppc_cntlzw);
-
-    OP31(19,     ppc_mfcr);
-    OP31(83,     ppc_mfmsr);
-    OP31(144,    ppc_mtcrf);
-    OP31(146,    ppc_mtmsr);
-    OP31(210,    ppc_mtsr);
-    OP31(242,    ppc_mtsrin);
-    OP31(339,    ppc_mfspr);
-    if (!is_601) OP31(371, ppc_mftb);
-    OP31(467,    ppc_mtspr);
-    OP31(512,    ppc_mcrxr);
-    OP31(595,    ppc_mfsr);
-    OP31(659,    ppc_mfsrin);
-
-    OP31(54,     ppc_dcbst);
-    OP31(86,     ppc_dcbf);
-    OP31(246,    ppc_dcbtst);
-    OP31(278,    ppc_dcbt);
-    OP31(598,    ppc_sync);
-    OP31(470,    ppc_dcbi);
-    OP31(1014,   ppc_dcbz);
-
-    if (is_601 || include_601) {
-        OP31d(29,   power_maskg);
-        OP31od(107, power_mul);
-        OP31d(152,  power_slq);
-        OP31d(153,  power_sle);
-        OP31d(184,  power_sliq);
-        OP31d(216,  power_sllq);
-        OP31d(217,  power_sleq);
-        OP31d(248,  power_slliq);
-        OP31od(264, power_doz);
-        OP31d(277,  power_lscbx);
-        OP31od(331, power_div);
-        OP31od(360, power_abs);
-        OP31od(363, power_divs);
-        OP31od(488, power_nabs);
-        OP31(531,   power_clcs);
-        OP31d(537,  power_rrib);
-        OP31d(541,  power_maskir);
-        OP31d(664,  power_srq);
-        OP31d(665,  power_sre);
-        OP31d(696,  power_sriq);
-        OP31d(728,  power_srlq);
-        OP31d(729,  power_sreq);
-        OP31d(760,  power_srliq);
-        OP31d(920,  power_sraq);
-        OP31d(921,  power_srea);
-        OP31d(952,  power_sraiq);
-    }
-
-    OP31(306,    ppc_tlbie);
-    if (!is_601) OP31(370, ppc_tlbia);
-    if (!is_601) OP31(566, ppc_tlbsync);
-    OP31(854,    ppc_eieio);
-    OP31(982,    ppc_icbi);
-    if (!is_601) OP31(978, ppc_tlbld);
-    if (!is_601) OP31(1010, ppc_tlbli);
-
     std::fill_n(Opcode59Grabber, 64, ppc_illegalop);
-    OP59d(18,    ppc_fdivs);
-    OP59d(20,    ppc_fsubs);
-    OP59d(21,    ppc_fadds);
-    if (ppc_state.spr[SPR::PVR] == PPC_VER::MPC970MP) OP59d(22, ppc_fsqrts);
-    if (!is_601) OP59d(24, ppc_fres);
-    OP59d(25,    ppc_fmuls);
-    OP59d(28,    ppc_fmsubs);
-    OP59d(29,    ppc_fmadds);
-    OP59d(30,    ppc_fnmsubs);
-    OP59d(31,    ppc_fnmadds);
-
     std::fill_n(Opcode63Grabber, 2048, ppc_illegalop);
-    OP63(0,      ppc_fcmpu);
-    OP63d(12,    ppc_frsp);
-    OP63d(14,    ppc_fctiw);
-    OP63d(15,    ppc_fctiwz);
-    OP63d(18,    ppc_fdiv);
-    OP63d(20,    ppc_fsub);
-    OP63d(21,    ppc_fadd);
-    if (ppc_state.spr[SPR::PVR] == PPC_VER::MPC970MP) OP63d(22, ppc_fsqrt);
-    if (!is_601) OP63d(26, ppc_frsqrte);
-    OP63(32,     ppc_fcmpo);
-    OP63d(38,    ppc_mtfsb1);
-    OP63d(40,    ppc_fneg);
-    OP63(64,     ppc_mcrfs);
-    OP63d(70,    ppc_mtfsb0);
-    OP63d(72,    ppc_fmr);
-    OP63d(134,   ppc_mtfsfi);
-    OP63d(136,   ppc_fnabs);
-    OP63d(264,   ppc_fabs);
-    if (is_601) OP63dc(583, ppc_mffs, IS601); else OP63dc(583, ppc_mffs, NOT601);
-    OP63d(711,   ppc_mtfsf);
-
-    for (int i = 0; i < 1024; i += 32) {
-        if (!is_601) OP63d(i + 23, ppc_fsel);
-        OP63d(i + 25, ppc_fmul);
-        OP63d(i + 28, ppc_fmsub);
-        OP63d(i + 29, ppc_fmadd);
-        OP63d(i + 30, ppc_fnmsub);
-        OP63d(i + 31, ppc_fnmadd);
-    }
 
     #include "ppcopcodes.include"
     #include "poweropcodes.include"
@@ -952,8 +719,9 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool include_601,
 }
 
 void print_fprs() {
-    for (int i = 0; i < 32; i++)
+    for (int i = 0; i < 32; i++) {
         cout << "FPR " << dec << i << " : " << ppc_state.fpr[i].dbl64_r << endl;
+    }
 }
 
 static map<string, int> SPRName2Num = {

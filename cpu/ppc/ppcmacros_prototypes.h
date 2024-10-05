@@ -22,87 +22,100 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef PPCMACROS_PROTTYPES_H
 #define PPCMACROS_PROTTYPES_H
 
-#    undef OPCODE
-#    define OPCODE(op, ...)                                                                        \
+#undef OPCODE
+#define OPCODE(op, grabber, number, ...)                                       \
         void ppc_##op(uint32_t instr);
 
-#    undef POWEROPCODE
-#    define POWEROPCODE(op, ...)                                                                   \
+#undef OPCODE31
+#define OPCODE31(op, grabber, number, ...) \
+    void ppc_##op(uint32_t instr);
+
+#undef POWEROPCODE
+#define POWEROPCODE(op, grabber, number, ...)                                  \
+    void power_##op(uint32_t instr);
+
+#undef POWEROPCODE31
+#define POWEROPCODE31(op, grabber, number, ...) \
+    void power_##op(uint32_t instr);
+
+#undef OPCODESHIFT
+#define OPCODESHIFT(op, grabber, number, ...)                                  \
+        template <field_shift shift>                                           \
+        void ppc_##op(uint32_t instr);
+
+#undef OPCODESHIFTREC
+#define OPCODESHIFTREC(op, grabber, number, ...)                               \
+        template <field_direction isleft, field_rc rec>                        \
+        void ppc_##op(uint32_t instr);
+
+#undef OPCODECARRY
+#define OPCODECARRY(op, grabber, number, ...)                                  \
+        template <field_carry carry, field_rc rec, field_ov ov>                \
+        void ppc_##op(uint32_t instr);
+
+#undef OPCODEOVREC
+#define OPCODEOVREC(op, grabber, number, ...)                                  \
+        template <field_rc rec, field_ov ov>                                   \
+        void ppc_##op(uint32_t instr);
+
+#undef OPCODEEXTSIGN
+#define OPCODEEXTSIGN(op, grabber, number, ...)                                \
+        template <class T, field_rc rec>                                       \
+        void ppc_##op(uint32_t instr);
+
+#undef POWEROPCODEOVREC
+#define POWEROPCODEOVREC(op, grabber, number, ...)                             \
+        template <field_rc rec, field_ov ov>                                   \
         void power_##op(uint32_t instr);
 
-#    undef OPCODESHIFT
-#    define OPCODESHIFT(op, ...)                                                                   \
-        template <field_shift shift>                                                               \
+#undef OPCODEREC
+#define OPCODEREC(op, grabber, number, ...)                                    \
+        template <field_rc rec>                                                \
         void ppc_##op(uint32_t instr);
 
-#    undef OPCODESHIFTREC
-#    define OPCODESHIFTREC(op, ...)                                                                \
-        template <field_direction isleft, field_rc rec>                                            \
+#undef OPCODERECF
+#define OPCODERECF(op, grabber, number, ...)                                   \
+        template <field_rc rec>                                                \
         void ppc_##op(uint32_t instr);
 
-#    undef OPCODECARRY
-#    define OPCODECARRY(op, ...)                                                                   \
-        template <field_carry carry, field_rc rec, field_ov ov>                                    \
-        void ppc_##op(uint32_t instr);
-
-#    undef OPCODEOVREC
-#    define OPCODEOVREC(op, ...)                                                                   \
-        template <field_rc rec, field_ov ov>                                                       \
-        void ppc_##op(uint32_t instr);
-
-#    undef OPCODEEXTSIGN
-#    define OPCODEEXTSIGN(op, ...)                                                                 \
-        template <class T, field_rc rec>                                                           \
-        void ppc_##op(uint32_t instr);
-
-#    undef POWEROPCODEOVREC
-#    define POWEROPCODEOVREC(op, ...)                                                              \
-        template <field_rc rec, field_ov ov>                                                       \
+#undef POWEROPCODEREC
+#define POWEROPCODEREC(op, grabber, number, ...)                               \
+        template <field_rc rec>                                                \
         void power_##op(uint32_t instr);
 
-#    undef OPCODEREC
-#    define OPCODEREC(op, ...)                                                                     \
-        template <field_rc rec>                                                                    \
+#undef OPCODELOGIC
+#define OPCODELOGIC(op, grabber, number, ...)                                  \
+        template <logical_fun logical_op, field_rc rec>                        \
         void ppc_##op(uint32_t instr);
 
-#    undef OPCODERECF
-#    define OPCODERECF(op, ...)                                                                    \
-        template <field_rc rec>                                                                    \
+#undef OPCODELKAA
+#define OPCODELKAA(op, grabber, number, ...)                                   \
+        template <field_lk l, field_aa a>                                      \
         void ppc_##op(uint32_t instr);
 
-#    undef POWEROPCODEREC
-#    define POWEROPCODEREC(op, ...)                                                                \
-        template <field_rc rec>                                                                    \
-        void power_##op(uint32_t instr);
-
-#    undef OPCODELOGIC
-#    define OPCODELOGIC(op, ...)                                                                   \
-        template <logical_fun logical_op, field_rc rec>                                            \
+#undef OPCODEMEM
+#define OPCODEMEM(op, grabber, number, ...)                                    \
+        template <class T>                                                     \
         void ppc_##op(uint32_t instr);
 
-#    undef OPCODELKAA
-#    define OPCODELKAA(op, ...)                                                                    \
-        template <field_lk l, field_aa a>                                                          \
+#undef OPCODEMEMINDEXED
+#define OPCODEMEMINDEXED(op, grabber, number, ...)                             \
+    template <class T>                                                         \
+    void ppc_##op(uint32_t instr);
+
+#undef OPCODE601REC
+#define OPCODE601REC(op, grabber, number, ...)                                 \
+        template <field_601 for601, field_rc rec>                              \
         void ppc_##op(uint32_t instr);
 
-#    undef OPCODEMEM
-#    define OPCODEMEM(op, ...)                                                                     \
-        template <class T>                                                                         \
+#undef OPCODE601L
+#define OPCODE601L(op, grabber, number, ...)                                   \
+        template <field_lk l, field_601 for601>                                \
         void ppc_##op(uint32_t instr);
 
-#    undef OPCODE601REC
-#    define OPCODE601REC(op, ...)                                                                  \
-        template <field_601 for601, field_rc rec>                                                  \
-        void ppc_##op(uint32_t instr);
-
-#    undef OPCODE601L
-#    define OPCODE601L(op, ...)                                                                    \
-        template <field_lk l, field_601 for601>                                                    \
-        void ppc_##op(uint32_t instr);
-
-#    undef OPCODEL
-#    define OPCODEL(op, ...)                                                                       \
-        template <field_lk l>                                                                      \
+#undef OPCODEL
+#define OPCODEL(op, grabber, number, ...)                                      \
+        template <field_lk l>                                                  \
         void ppc_##op(uint32_t instr);
 
 #endif /* PPCEMU_H */

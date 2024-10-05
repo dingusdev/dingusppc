@@ -17,7 +17,7 @@ POWEROPCODEOVREC (abs, 31, 360,
     ppc_state.gpr[reg_d] = ppc_result_d;
 )
 
-POWEROPCODE (clcs, 31, 531,
+POWEROPCODE31 (clcs, 31, 531,
     ppc_grab_da(instr); 
     uint32_t ppc_result_d = 0;
 

@@ -6,7 +6,7 @@ OPCODESHIFT (addi, , 14,
         ppc_state.gpr[reg_d] = (reg_a == 0) ? simm : (ppc_result_a + simm);
 )
 
-OPCODEREC (addic, , 12,
+OPCODEREC (addic, , 6,
     ppc_grab_regsdasimm(instr);
     uint32_t ppc_result_d = (ppc_result_a + simm);
     ppc_carry(ppc_result_a, ppc_result_d);
@@ -204,7 +204,7 @@ OPCODESHIFT (xori, , 26,
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 )
 
-OPCODELOGIC(logical, 31, 28
+OPCODELOGIC(logical, 31, 28,
     ppc_grab_regssab(instr);
     if (logical_op == logical_fun::ppc_and)
         ppc_result_a = ppc_result_d & ppc_result_b;
@@ -341,7 +341,7 @@ OPCODE (mulli, , 7,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-OPCODEOVREC (divw, 31, 491
+OPCODEOVREC (divw, 31, 491,
     uint32_t ppc_result_d = 0;
     ppc_grab_regsdab(instr);
 
@@ -508,12 +508,12 @@ OPCODE (rlwnm, , 23,
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 )
 
-OPCODE(mfcr, 31, 19,
+OPCODE31(mfcr, 31, 19,
     int reg_d            = (instr >> 21) & 0x1F;
     ppc_state.gpr[reg_d] = ppc_state.cr;
 )
 
-OPCODE (mtsr, 31, 210,
+OPCODE31 (mtsr, 31, 210,
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
@@ -528,7 +528,7 @@ OPCODE (mtsr, 31, 210,
    }
 )
 
-OPCODE (mtsrin, 31, 242,
+OPCODE31 (mtsrin, 31, 242,
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
@@ -543,7 +543,7 @@ OPCODE (mtsrin, 31, 242,
     }
 )
 
-OPCODE (mfsr, 31, 595,
+OPCODE31 (mfsr, 31, 595,
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
@@ -555,7 +555,7 @@ OPCODE (mfsr, 31, 595,
     ppc_state.gpr[reg_d] = ppc_state.sr[grab_sr];
 )
 
-OPCODE (mfsrin, 31, 659,
+OPCODE31 (mfsrin, 31, 659,
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
@@ -602,7 +602,7 @@ OPCODE (mtmsr, 31, 146,
     }
 )
 
-OPCODE (mfspr, 13, 339,
+OPCODE31 (mfspr, 13, 339,
     ppc_grab_dab(instr);
     uint32_t ref_spr = (reg_b << 5) | reg_a;
 
@@ -654,7 +654,7 @@ OPCODE (mfspr, 13, 339,
     }
 )
 
-OPCODE (mtspr, 31, 467,
+OPCODE31 (mtspr, 31, 467,
     ppc_grab_dab(instr);
     uint32_t ref_spr = (reg_b << 5) | reg_a;
 
@@ -745,7 +745,7 @@ OPCODE (mtspr, 31, 467,
     }
 )
 
-OPCODE (mftb, 31, 371,
+OPCODE31 (mftb, 31, 371,
     ppc_grab_dab(instr);
     uint32_t ref_spr = (reg_b << 5) | reg_a;
 
@@ -767,7 +767,7 @@ OPCODE (mftb, 31, 371,
      }
 )
 
-OPCODE (mtcrf, 31, 144
+OPCODE31 (mtcrf, 31, 144,
     ppc_grab_s(instr);
     uint8_t crm = (instr >> 12) & 0xFFU;
 
@@ -788,14 +788,14 @@ OPCODE (mtcrf, 31, 144
     ppc_state.cr = (ppc_state.cr & ~cr_mask) | (ppc_result_d & cr_mask);
 )
 
-OPCODE (mcrxr,
+OPCODE31 (mcrxr, 31, 512,
     int crf_d    = (instr >> 21) & 0x1C;
     ppc_state.cr = (ppc_state.cr & ~(0xF0000000UL >> crf_d)) |
         ((ppc_state.spr[SPR::XER] & 0xF0000000UL) >> crf_d);
     ppc_state.spr[SPR::XER] &= 0x0FFFFFFF;
 )
 
-OPCODEEXTSIGN (exts,
+OPCODEEXTSIGN (exts, 31, 922,
     ppc_grab_regssa(instr);
     ppc_result_a = int32_t(T(ppc_result_d));
 
@@ -807,7 +807,7 @@ OPCODEEXTSIGN (exts,
 
 // Branching Instructions
 
-OPCODELKAA (b, , 18,
+OPCODELKAA (b, 18, 0,
     int32_t adr_li = int32_t((instr & ~3UL) << 6) >> 6;
 
     if (a)
@@ -821,7 +821,7 @@ OPCODELKAA (b, , 18,
     exec_flags = EXEF_BRANCH;
 )
 
-OPCODELKAA (bc, , 16,
+OPCODELKAA (bc, 16, 0,
     uint32_t ctr_ok = 0;
     uint32_t cnd_ok = 0;
     uint32_t br_bo = (instr >> 21) & 0x1F;
@@ -900,7 +900,7 @@ OPCODEL (bclr, 32,
 
 // Compare Instructions
 
-OPCODE (cmp, 31, 0,
+OPCODE31 (cmp, 31, 0,
 #ifdef CHECK_INVALID
     if (instr & 0x200000) {
         LOG_F(WARNING, "Invalid CMP instruction form (L=1)!");
@@ -932,7 +932,7 @@ OPCODE (cmpi, , 11,
     ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
 )
 
-OPCODE (cmpl, 31, 32,
+OPCODE31 (cmpl, 31, 32,
 #ifdef CHECK_INVALID
     if (instr & 0x200000) {
         LOG_F(WARNING, "Invalid CMPL instruction form (L=1)!");
@@ -1094,7 +1094,7 @@ OPCODE (sc, , 17,
     ppc_exception_handler(Except_Type::EXC_SYSCALL, 0x20000);
 )
 
-OPCODE (tw, 31, 4,
+OPCODE31 (tw, 31, 4,
     uint32_t reg_a  = (instr >> 11) & 0x1F;
     uint32_t reg_b  = (instr >> 16) & 0x1F;
     uint32_t ppc_to = (instr >> 21) & 0x1F;
@@ -1120,7 +1120,7 @@ OPCODE (twi, , 3,
     }
 )
 
-OPCODE (eieio, 31, 854,
+OPCODE31 (eieio, 31, 854,
     /* placeholder */
 )
 
@@ -1128,40 +1128,40 @@ OPCODE (isync, 19, 300,
     do_ctx_sync();
 )
 
-OPCODE (sync, 31, 598,
+OPCODE31 (sync, 31, 598,
     /* placeholder */
 )
 
-OPCODE (icbi, 31, 982,
+OPCODE31 (icbi, 31, 982,
     /* placeholder */
 )
 
-OPCODE (dcbf, 31, 86,
+OPCODE31 (dcbf, 31, 86,
     /* placeholder */
 )
 
-OPCODE (dcbi, 31, 470,
+OPCODE31 (dcbi, 31, 470,
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
     /* placeholder */
 )
 
-OPCODE (dcbst, 31, 54,
+OPCODE31 (dcbst, 31, 54,
     /* placeholder */
 )
 
-OPCODE (dcbt, 31, 278,
+OPCODE31 (dcbt, 31, 278,
     // Not needed, the HDI reg is touched to no-op this instruction.
     return;
 )
 
-OPCODE (dcbtst, 31, 246,
+OPCODE31 (dcbtst, 31, 246,
     // Not needed, the HDI reg is touched to no-op this instruction.
     return;
 )
 
-OPCODE (dcbz, 31, 1014,
+OPCODE31 (dcbz, 31, 1014,
     ppc_grab_regsab(instr);
     uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
 
@@ -1188,7 +1188,7 @@ OPCODEMEM (st, , 36,
     mmu_write_vmem<T>(ea, instr, ppc_result_d);
 )
 
-OPCODEMEM (stx, 31, 151,
+OPCODEMEMINDEXED (stx, 31, 151,
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
@@ -1212,7 +1212,7 @@ OPCODEMEM (stu, , 37,
     }
 )
 
-OPCODEMEM (stux, 31, 183,
+OPCODEMEMINDEXED (stux, 31, 183,
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
@@ -1303,14 +1303,14 @@ OPCODEMEM (lzu, , 33,
     }
 )
 
-OPCODEMEM (lzx, 31, 23
+OPCODEMEMINDEXED (lzx, 31, 23
     ppc_grab_regsdab(instr);
     uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
     uint32_t ppc_result_d = mmu_read_vmem<T>(ea, instr);
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-OPCODEMEM (lzux, 31, 55,
+OPCODEMEMINDEXED (lzux, 31, 55,
     ppc_grab_regsdab(instr);
     if ((reg_a != reg_d) && reg_a != 0) {
         uint32_t ea = ppc_result_a + ppc_result_b;
@@ -1351,7 +1351,7 @@ OPCODE (lhau, , 43,
     }
 )
 
-OPCODE (lhaux, 31, 375,
+OPCODE31 (lhaux, 31, 375,
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1368,7 +1368,7 @@ OPCODE (lhaux, 31, 375,
     }
 )
 
-OPCODE (lhax, 31, 343,
+OPCODE31 (lhax, 31, 343,
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1378,7 +1378,7 @@ OPCODE (lhax, 31, 343,
     ppc_state.gpr[reg_d] = int32_t(val);
 )
 
-OPCODE (lhbrx, 31, 790,
+OPCODE31 (lhbrx, 31, 790,
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1388,7 +1388,7 @@ OPCODE (lhbrx, 31, 790,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-OPCODE (lwbrx, 31, 534,
+OPCODE31 (lwbrx, 31, 534,
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1398,7 +1398,7 @@ OPCODE (lwbrx, 31, 534,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-OPCODE (lwarx, 31, 20,
+OPCODE31 (lwarx, 31, 20,
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1422,7 +1422,7 @@ OPCODE (lmw, , 46,
     } while (reg_d < 32);
 )
 
-OPCODE (lswi,
+OPCODE31 (lswi, 31, 597,
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1458,7 +1458,7 @@ OPCODE (lswi,
     }
 )
 
-OPCODE (lswx, 31, 533,
+OPCODE31 (lswx, 31, 533,
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1502,7 +1502,7 @@ OPCODE (lswx, 31, 533,
     }
 )
 
-OPCODE (stswi, 31, 725,
+OPCODE31 (stswi, 31, 725,
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
@@ -1537,7 +1537,7 @@ OPCODE (stswi, 31, 725,
     }
 )
 
-OPCODE (stswx, 31, 661,
+OPCODE31 (stswx, 31, 661,
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
@@ -1572,7 +1572,7 @@ OPCODE (stswx, 31, 661,
     }
 )
 
-OPCODE (eciwx, 31, 310,
+OPCODE31 (eciwx, 31, 310,
     uint32_t ear_enable = 0x80000000;
 
     // error if EAR[E] != 1
@@ -1592,7 +1592,7 @@ OPCODE (eciwx, 31, 310,
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 )
 
-OPCODE (ecowx, 31, 438,
+OPCODE31 (ecowx, 31, 438,
     uint32_t ear_enable = 0x80000000;
 
     // error if EAR[E] != 1
@@ -1612,7 +1612,7 @@ OPCODE (ecowx, 31, 438,
 
 // TLB Instructions
 
-OPCODE (tlbie, 31, 306,
+OPCODE31 (tlbie, 31, 306,
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
@@ -1620,28 +1620,28 @@ OPCODE (tlbie, 31, 306,
     tlb_flush_entry(ppc_state.gpr[(instr >> 11) & 0x1F]);
 )
 
-OPCODE (tlbia, 31, 370,
+OPCODE31 (tlbia, 31, 370,
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
     /* placeholder */
 )
 
-OPCODE (tlbld, 31, 978,
+OPCODE31 (tlbld, 31, 978,
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
     /* placeholder */
 )
 
-OPCODE (tlbli, 31, 1010,
+OPCODE31 (tlbli, 31, 1010,
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
     /* placeholder */
 )
 
-OPCODE (tlbsync, 31, 566,
+OPCODE31 (tlbsync, 31, 566,
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
