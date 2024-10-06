@@ -271,7 +271,7 @@ OPCODERECF(fsel, 63, 23,
         ppc_update_cr1();
 )
 
-OPCODEREC(fsqrt, 63, 22
+OPCODEREC(fsqrt, 63, 22,
     ppc_grab_regsfpdb(instr);
 
     snan_single_check(reg_b);
@@ -375,14 +375,14 @@ OPCODE (lfsu, , 49,
     }
 )
 
-OPCODE (lfsx, 31, 535,
+OPCODE31 (lfsx, 31, 535,
     ppc_grab_regsfpdiab(instr);
     uint32_t ea = val_reg_b + (reg_a ? val_reg_a : 0);
     uint32_t result              = mmu_read_vmem<uint32_t>(ea, instr);
     ppc_state.fpr[reg_d].dbl64_r = *(float*)(&result);
 )
 
-OPCODE (lfsux, 31, 567,
+OPCODE31 (lfsux, 31, 567,
     ppc_grab_regsfpdiab(instr);
     if (reg_a) {
         uint32_t ea = val_reg_a + val_reg_b;
@@ -415,14 +415,14 @@ OPCODE (lfdu, , 51,
     }
 )
 
-OPCODE (lfdx, 61, 599,
+OPCODE31 (lfdx, 31, 599,
     ppc_grab_regsfpdiab(instr);
     uint32_t ea = val_reg_b + (reg_a ? val_reg_a : 0);
     uint64_t ppc_result64_d = mmu_read_vmem<uint64_t>(ea, instr);
     ppc_store_dfpresult_int(reg_d, ppc_result64_d);
 )
 
-OPCODE (lfdux, 31, 631,
+OPCODE31 (lfdux, 31, 631,
     ppc_grab_regsfpdiab(instr);
     if (reg_a) {
         uint32_t ea = val_reg_a + val_reg_b;
@@ -455,14 +455,14 @@ OPCODE (stfsu, , 53,
     }
 )
 
-OPCODE (stfsx, 31, 663,
+OPCODE31 (stfsx, 31, 663,
     ppc_grab_regsfpsiab(instr);
     uint32_t ea = val_reg_b + (reg_a ? val_reg_a : 0);
     float result = float(ppc_state.fpr[reg_s].dbl64_r);
     mmu_write_vmem<uint32_t>(ea, instr, *(uint32_t*)(&result));
 )
 
-OPCODE (stfsux, 31, 695,
+OPCODE31 (stfsux, 31, 695,
     ppc_grab_regsfpsiab(instr);
     if (reg_a) {
         uint32_t ea = val_reg_a + val_reg_b;
@@ -493,13 +493,13 @@ OPCODE (stfdu, , 55,
     }
 )
 
-OPCODE (stfdx, 31, 727,
+OPCODE31 (stfdx, 31, 727,
     ppc_grab_regsfpsiab(instr);
     uint32_t ea = val_reg_b + (reg_a ? val_reg_a : 0);
     mmu_write_vmem<uint64_t>(ea, instr, ppc_state.fpr[reg_s].int64_r);
 )
 
-OPCODE (stfdux, 31, 759,
+OPCODE31 (stfdux, 31, 759,
     ppc_grab_regsfpsiab(instr);
     if (reg_a != 0) {
         uint32_t ea = val_reg_a + val_reg_b;
@@ -510,7 +510,7 @@ OPCODE (stfdux, 31, 759,
     }
 )
 
-OPCODE (stfiwx, 31, 983,
+OPCODE31 (stfiwx, 31, 983,
     ppc_grab_regsfpsiab(instr);
     uint32_t ea = val_reg_b + (reg_a ? val_reg_a : 0);
     mmu_write_vmem<uint32_t>(ea, instr, uint32_t(ppc_state.fpr[reg_s].int64_r));

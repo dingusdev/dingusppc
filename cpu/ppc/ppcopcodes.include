@@ -602,7 +602,7 @@ OPCODE (mtmsr, 31, 146,
     }
 )
 
-OPCODE31 (mfspr, 13, 339,
+OPCODE31 (mfspr, 31, 339,
     ppc_grab_dab(instr);
     uint32_t ref_spr = (reg_b << 5) | reg_a;
 
@@ -877,7 +877,7 @@ OPCODE601L (bcctr, 19, 1056,
         ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
 )
 
-OPCODEL (bclr, 32,
+OPCODEL (bclr, 19, 32,
     uint32_t br_bo = (instr >> 21) & 0x1F;
     uint32_t br_bi = (instr >> 16) & 0x1F;
     uint32_t ctr_ok = 0;
@@ -1303,7 +1303,7 @@ OPCODEMEM (lzu, , 33,
     }
 )
 
-OPCODEMEMINDEXED (lzx, 31, 23
+OPCODEMEMINDEXED (lzx, 31, 23,
     ppc_grab_regsdab(instr);
     uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
     uint32_t ppc_result_d = mmu_read_vmem<T>(ea, instr);

@@ -19,9 +19,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef PPCMACROS_PROTTYPES_H
-#define PPCMACROS_PROTTYPES_H
-
 #undef OPCODE
 #define OPCODE(op, grabber, number, ...)                                       \
         void ppc_##op(uint32_t instr);
@@ -117,5 +114,3 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define OPCODEL(op, grabber, number, ...)                                      \
         template <field_lk l>                                                  \
         void ppc_##op(uint32_t instr);
-
-#endif /* PPCEMU_H */
