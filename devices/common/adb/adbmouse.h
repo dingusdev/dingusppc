@@ -35,19 +35,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 class MouseEvent;
 
 class AdbMouse : public AdbDevice {
-
+public:
 enum DeviceClass {
     TABLET      = 0,
     MOUSE       = 1,
     TRACKBALL   = 2,
 };
 
-public:
-    AdbMouse(std::string name);
+    AdbMouse(
+        std::string name, uint8_t device_class, int num_buttons, int num_bits, uint16_t resolution);
     ~AdbMouse() = default;
 
     static std::unique_ptr<HWComponent> create() {
-        return std::unique_ptr<AdbMouse>(new AdbMouse("ADB-MOUSE"));
+#ifdef ABSOLUTE
+        uint8_t  device_class = TABLET;
+        int      num_buttons = 3;
+        int      num_bits = 16;
+        uint16_t resolution = 72;
+#else
+        uint8_t  device_class = MOUSE;
+        int      num_buttons = 3;
+        int      num_bits = 10;
+        uint16_t resolution = 300;
+#endif
+        return std::unique_ptr<AdbMouse>(
+            new AdbMouse("ADB-MOUSE", device_class, num_buttons, num_bits, resolution));
     }
 
     void reset() override;
@@ -57,6 +69,10 @@ public:
     bool get_register_1() override;
     void set_register_3() override;
 
+protected:
+    bool get_register_0(uint8_t buttons_state, bool force);
+    uint8_t get_buttons_state() const;
+
 private:
     int32_t  x_rel = 0;
     int32_t  y_rel = 0;
@@ -64,17 +80,10 @@ private:
     int32_t  y_abs = 0;
     uint8_t  buttons_state = 0;
     bool     changed = false;
-#ifdef ABSOLUTE
-    uint8_t  device_class = TABLET;
-    int      num_buttons = 3;
-    int      num_bits = 16;
-    uint16_t resolution = 72;
-#else
-    uint8_t  device_class = MOUSE;
-    int      num_buttons = 3;
-    int      num_bits = 10;
-    uint16_t resolution = 300;
-#endif
+    uint8_t  device_class;
+    int      num_buttons;
+    int      num_bits;
+    uint16_t resolution;
 };
 
 #endif // ADB_MOUSE_H

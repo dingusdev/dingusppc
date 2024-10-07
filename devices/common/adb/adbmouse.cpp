@@ -28,7 +28,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memaccess.h>
 #include <loguru.hpp>
 
-AdbMouse::AdbMouse(std::string name) : AdbDevice(name) {
+AdbMouse::AdbMouse(
+    std::string name, uint8_t device_class, int num_buttons, int num_bits, uint16_t resolution) : AdbDevice(name), device_class(device_class), num_buttons(num_buttons), num_bits(num_bits), resolution(resolution) {
     EventManager::get_instance()->add_mouse_handler(this, &AdbMouse::event_handler);
 
     this->reset();
@@ -63,8 +64,10 @@ void AdbMouse::reset() {
     this->changed = false;
 }
 
-bool AdbMouse::get_register_0() {
-    if (this->x_rel || this->y_rel || this->changed) {
+bool AdbMouse::get_register_0(uint8_t buttons_state, bool force) {
+    bool should_update = this->x_rel || this->y_rel || this->changed || force;
+
+    if (should_update) {
         uint8_t* p;
         uint8_t* out_buf = this->host_obj->get_output_buf();
 
@@ -86,7 +89,7 @@ bool AdbMouse::get_register_0() {
             bits = 7;
 
             while (bits_remaining > 0) {
-                *p = (val & ((1 << bits) - 1)) | (((this->buttons_state >> button) ^ 1) << bits) | (*p << (bits + 1));
+                *p = (val & ((1 << bits) - 1)) | (((buttons_state >> button) ^ 1) << bits) | (*p << (bits + 1));
                 val >>= bits;
                 bits_remaining -= bits;
                 p = bits == 7 ? &out_buf[2] : p + 1;
@@ -109,10 +112,14 @@ bool AdbMouse::get_register_0() {
         if (this->device_class == MOUSE && this->dev_handler_id == 1)
             count = 2;
         this->host_obj->set_output_count(count);
-        return true;
+        return should_update;
     }
 
     return false;
+}
+
+bool AdbMouse::get_register_0() {
+    return get_register_0(this->buttons_state, false);
 }
 
 bool AdbMouse::get_register_1() {
@@ -154,6 +161,10 @@ void AdbMouse::set_register_3() {
     default:
         LOG_F(WARNING, "%s: unknown handler ID = 0x%X", this->name.c_str(), in_data[1]);
     }
+}
+
+uint8_t AdbMouse::get_buttons_state() const {
+    return this->buttons_state;
 }
 
 static const DeviceDescription AdbMouse_Descriptor = {
