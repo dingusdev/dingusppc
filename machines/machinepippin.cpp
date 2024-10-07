@@ -74,6 +74,8 @@ static const PropMap Pippin_Settings = {
         new IntProperty(0, vector<uint32_t>({0, 1, 4, 8, 16}))},
     {"emmo",
         new BinProperty(0)},
+    {"adb_devices",
+        new StrProperty("AppleJack,Keyboard")},
 };
 
 static vector<string> Pippin_Devices = {
