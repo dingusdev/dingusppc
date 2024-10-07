@@ -45,11 +45,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         template <field_direction isleft, field_rc rec>                        \
         void ppc_##op(uint32_t instr);
 
-#undef OPCODECARRY
-#define OPCODECARRY(op, grabber, number, ...)                                  \
-        template <field_carry carry, field_rc rec, field_ov ov>                \
-        void ppc_##op(uint32_t instr);
-
 #undef OPCODEOVREC
 #define OPCODEOVREC(op, grabber, number, ...)                                  \
         template <field_rc rec, field_ov ov>                                   \

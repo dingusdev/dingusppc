@@ -583,7 +583,7 @@ OPCODEREC (mtfsfi, 63, 134,
     }
 )
 
-OPCODEREC (mtfsb0, 63, 70,
+OPCODE31 (mtfsb0, 63, 70,
     int crf_d = (instr >> 21) & 0x1F;
     if (!crf_d || (crf_d > 2)) { // FEX and VX can't be explicitly cleared
         ppc_state.fpscr &= ~(0x80000000UL >> crf_d);
@@ -593,7 +593,7 @@ OPCODEREC (mtfsb0, 63, 70,
         ppc_update_cr1();
 )
 
-OPCODEREC (mtfsb1, 63, 38,
+OPCODE31 (mtfsb1, 63, 38,
     ppc_grab_crfd(instr);
     if (!crf_d || (crf_d > 2)) { // FEX and VX can't be explicitly set
         ppc_state.fpscr |= (0x80000000UL >> crf_d);
@@ -604,7 +604,7 @@ OPCODEREC (mtfsb1, 63, 38,
     }
 )
 
-OPCODE (mcrfs, 63, 64,
+OPCODE31 (mcrfs, 63, 64,
     ppc_grab_crfds(instr);
     ppc_state.cr = (
         (ppc_state.cr & ~(0xF0000000UL >> crf_d)) |
@@ -622,7 +622,7 @@ OPCODE (mcrfs, 63, 64,
 
 // Floating Point Comparisons
 
-OPCODE (fcmpo, 63, 32,
+OPCODE31 (fcmpo, 63, 32,
     ppc_grab_regsfpsab(instr);
 
     uint32_t cmp_c = 0;

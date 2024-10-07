@@ -222,7 +222,7 @@ void ppc_release_int() {
 
 /** Opcode decoding functions. */
 
-static void ppc_opcode16(uint32_t instr) {
+static void ppc_opcode16(uint32_t subop, uint32_t instr) {
     Opcode16Grabber[instr & 3](instr);
 }
 
@@ -289,8 +289,6 @@ template void ppc_opcode19<NOT601>(uint32_t);
 template void ppc_opcode19<IS601>(uint32_t);
 
 void ppc_opcode31(uint32_t instr) {
-    uint16_t subop_grab = instr & 0x7FFUL;
-    Opcode31Grabber[subop_grab](instr);
 }
 
 void ppc_opcode59(uint32_t instr) {
@@ -311,7 +309,35 @@ void ppc_main_opcode(uint32_t instr) {
     num_opcodes[instr]++;
 #endif
 #endif
-    OpcodeGrabber[(instr >> 26) & 0x3F](instr);
+    uint32_t opcode = (instr >> 26) & 63;
+    switch (opcode) {
+        case 16: 
+            Opcode16Grabber[instr & 3](instr);
+            break;
+        case 18:
+            Opcode16Grabber[instr & 3](instr); 
+            break;
+        case 19:
+            if (is_601)
+                ppc_opcode19<IS601>(instr);
+            else
+                ppc_opcode19<NOT601>(instr);
+            break;
+        case 31:
+            uint16_t subop_grab = instr & 0x7FFUL;
+            Opcode31Grabber[subop_grab](instr);
+            break;
+        case 59:
+            uint16_t subop_grab = instr & 0x7FFUL;
+            Opcode31Grabber[subop_grab](instr);
+            break;
+        case 63:
+            uint16_t subop_grab = instr & 0x7FFUL;
+            Opcode31Grabber[subop_grab](instr);
+            break;
+        default:
+            OpcodeGrabber[opcode](instr);
+    }
 
 #ifdef CPU_PROFILING
     uint32_t load_chk = (instr >> 26);

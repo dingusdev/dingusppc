@@ -63,21 +63,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     template void dppc_interpreter::ppc_##op<RIGHT0, RC1>(uint32_t instr);                         \
     template void dppc_interpreter::ppc_##op<LEFT1,  RC1>(uint32_t instr);
 
-#undef OPCODECARRY
-#define OPCODECARRY(op, grabber, number, ...)                                                      \
-    template <field_carry carry, field_rc rec, field_ov ov>                                        \
-    void dppc_interpreter::ppc_##op(uint32_t instr) {                                              \
-        __VA_ARGS__                                                                                \
-    }                                                                                              \
-    template void dppc_interpreter::ppc_##op<CARRY0, RC0, OV0>(uint32_t instr);                    \
-    template void dppc_interpreter::ppc_##op<CARRY0, RC1, OV0>(uint32_t instr);                    \
-    template void dppc_interpreter::ppc_##op<CARRY0, RC0, OV1>(uint32_t instr);                    \
-    template void dppc_interpreter::ppc_##op<CARRY0, RC1, OV1>(uint32_t instr);                    \
-    template void dppc_interpreter::ppc_##op<CARRY1, RC0, OV0>(uint32_t instr);                    \
-    template void dppc_interpreter::ppc_##op<CARRY1, RC1, OV0>(uint32_t instr);                    \
-    template void dppc_interpreter::ppc_##op<CARRY1, RC0, OV1>(uint32_t instr);                    \
-    template void dppc_interpreter::ppc_##op<CARRY1, RC1, OV1>(uint32_t instr);
-
 #undef OPCODEOVREC
 #define OPCODEOVREC(op, grabber, number, ...)                                                      \
     template <field_rc rec, field_ov ov>                                                           \

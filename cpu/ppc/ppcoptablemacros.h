@@ -49,17 +49,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     Opcode##grabber##Grabber[number + (1 << 9)    ] = ppc_##op<RIGHT0, RC0>;        \
     Opcode##grabber##Grabber[number + (1 << 9) + 1] = ppc_##op<RIGHT0, RC1>;        \
 
-#undef OPCODECARRY
-#define OPCODECARRY(op, grabber, number, ...)                                       \
-    Opcode##grabber##Grabber[number                ] = ppc_##op<CARRY0, RC0, OV0>;  \
-    Opcode##grabber##Grabber[number             + 1] = ppc_##op<CARRY0, RC1, OV0>;  \
-    Opcode##grabber##Grabber[number             + 2] = ppc_##op<CARRY0, RC0, OV1>;  \
-    Opcode##grabber##Grabber[number             + 3] = ppc_##op<CARRY0, RC1, OV1>;  \
-    Opcode##grabber##Grabber[number + (1 << 10)    ] = ppc_##op<CARRY1, RC0, OV0>;  \
-    Opcode##grabber##Grabber[number + (1 << 10) + 1] = ppc_##op<CARRY1, RC1, OV0>;  \
-    Opcode##grabber##Grabber[number + (1 << 10) + 2] = ppc_##op<CARRY1, RC0, OV1>;  \
-    Opcode##grabber##Grabber[number + (1 << 10) + 3] = ppc_##op<CARRY1, RC1, OV1>;
-
 #undef OPCODEOVREC
 #define OPCODEOVREC(op, grabber, number, ...)                                       \
     Opcode##grabber##Grabber[number    ] = ppc_##op<RC0, OV0>;                      \
@@ -90,8 +79,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #undef OPCODERECF
 #define OPCODERECF(op, grabber, number, ...)                                        \
-    Opcode##grabber##Grabber[ number << 1     ] = ppc_##op<RC0>;                    \
-    Opcode##grabber##Grabber[(number << 1) + 1] = ppc_##op<RC1>;                    \
+    for (int i = 0; i < 2048; i += 32) {                                            \
+        Opcode##grabber##Grabber[(number + i) << 1 ]       = ppc_##op<RC0>;         \
+        Opcode##grabber##Grabber[((number + i) << 1) + 1]  = ppc_##op<RC1>;         \
+    }
 
 #undef POWEROPCODEREC
 #define POWEROPCODEREC(op, grabber, number, ...)                                    \
