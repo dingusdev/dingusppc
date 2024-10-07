@@ -5,7 +5,7 @@
 * Interpreter (with 601, FPU, and MMU support)
 * IDE and SCSI 
 * Floppy disk image reading (Raw, Disk Copy 4.2, WOZ v1 and v2)
-* ADB mouse and keyboard emulation
+* ADB mouse, keyboard, and AppleJack (Pippin) controller emulation
 * Some audio support
 * Basic video output support (i.e. ATI Rage, Control, Platinum)
 
@@ -110,6 +110,12 @@ Access the factory tests
 ```
 --serial_backend=stdio
 --serial_backend=socket
+```
+
+Set the ADB devices to attach, comma-separated
+
+```
+--adb_devices TEXT
 ```
 
 Change where the output of OpenFirmware is directed to, either to the command line (with stdio) or a Unix socket (unavailable in Windows builds). OpenFirmware 1.x outputs here by default.
