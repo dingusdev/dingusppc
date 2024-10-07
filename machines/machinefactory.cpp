@@ -98,6 +98,7 @@ static const map<string, string> PropHelp = {
     {"serial_backend",  "specifies the backend for the serial port"},
     {"emmo",            "enables/disables factory HW tests during startup"},
     {"cpu",             "specifies CPU"},
+    {"adb_devices",     "specifies which ADB device(s) to attach"},
 };
 
 bool MachineFactory::add(const string& machine_id, MachineDescription desc)

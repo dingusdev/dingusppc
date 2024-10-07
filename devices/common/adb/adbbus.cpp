@@ -25,11 +25,37 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/adb/adbdevice.h>
 #include <devices/deviceregistry.h>
 #include <loguru.hpp>
+#include <machines/machinebase.h>
+#include <sstream>
 
 AdbBus::AdbBus(std::string name) {
     this->set_name(name);
     supports_types(HWCompType::ADB_HOST);
     this->devices.clear();
+}
+
+int AdbBus::device_postinit() {
+    std::string adb_device_list = GET_STR_PROP("adb_devices");
+    if (adb_device_list.empty())
+        return 0;
+
+    std::string adb_device;
+    std::istringstream adb_device_stream(adb_device_list);
+
+    while (getline(adb_device_stream, adb_device, ',')) {
+        string dev_name = "Adb" + adb_device;
+
+        if (dev_name == this->name)
+            continue; // don't register a second ADB bus
+
+        if (DeviceRegistry::device_registered(dev_name)) {
+            gMachineObj->add_device(dev_name, DeviceRegistry::get_descriptor(dev_name).m_create_func());
+        } else {
+            LOG_F(WARNING, "Unknown specified ADB device \"%s\"", adb_device.c_str());
+        }
+    }
+
+    return 0;
 }
 
 void AdbBus::register_device(AdbDevice* dev_obj) {
@@ -102,8 +128,12 @@ uint8_t AdbBus::process_command(const uint8_t* in_data, int data_size) {
     return ADB_STAT_OK;
 }
 
+static const PropMap AdbBus_Properties = {
+    {"adb_devices", new StrProperty("Mouse,Keyboard")},
+};
+
 static const DeviceDescription AdbBus_Descriptor = {
-    AdbBus::create, {}, {}
+    AdbBus::create, {}, AdbBus_Properties
 };
 
 REGISTER_DEVICE(AdbBus, AdbBus_Descriptor);

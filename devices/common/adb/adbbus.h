@@ -51,6 +51,8 @@ public:
         return std::unique_ptr<AdbBus>(new AdbBus("ADB-BUS"));
     }
 
+    int device_postinit() override;
+
     void register_device(AdbDevice* dev_obj);
     uint8_t process_command(const uint8_t* in_data, int data_size);
     uint8_t get_output_count() { return this->output_count; };
