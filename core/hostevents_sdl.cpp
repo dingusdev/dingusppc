@@ -130,6 +130,52 @@ void EventManager::poll_events()
             }
             break;
 
+        case SDL_CONTROLLERBUTTONDOWN: {
+                GamepadEvent ge;
+                switch (event.cbutton.button) {
+                    case SDL_CONTROLLER_BUTTON_BACK:          ge.button = GamepadButton::FrontLeft;    break;
+                    case SDL_CONTROLLER_BUTTON_GUIDE:         ge.button = GamepadButton::FrontMiddle;  break;
+                    case SDL_CONTROLLER_BUTTON_START:         ge.button = GamepadButton::FrontRight;   break;
+                    case SDL_CONTROLLER_BUTTON_Y:             ge.button = GamepadButton::Blue;         break;
+                    case SDL_CONTROLLER_BUTTON_X:             ge.button = GamepadButton::Yellow;       break;
+                    case SDL_CONTROLLER_BUTTON_DPAD_UP:       ge.button = GamepadButton::Up;           break;
+                    case SDL_CONTROLLER_BUTTON_DPAD_LEFT:     ge.button = GamepadButton::Left;         break;
+                    case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:    ge.button = GamepadButton::Right;        break;
+                    case SDL_CONTROLLER_BUTTON_DPAD_DOWN:     ge.button = GamepadButton::Down;         break;
+                    case SDL_CONTROLLER_BUTTON_A:             ge.button = GamepadButton::Red;          break;
+                    case SDL_CONTROLLER_BUTTON_B:             ge.button = GamepadButton::Green;        break;
+                    case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER: ge.button = GamepadButton::RightTrigger; break;
+                    case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:  ge.button = GamepadButton::LeftTrigger;  break;
+                }
+                ge.gamepad_id = event.cbutton.which;
+                ge.flags = GAMEPAD_EVENT_DOWN;
+                this->_gamepad_signal.emit(ge);
+            }
+            break;
+
+        case SDL_CONTROLLERBUTTONUP: {
+                GamepadEvent ge;
+                switch (event.cbutton.button) {
+                    case SDL_CONTROLLER_BUTTON_BACK:          ge.button = GamepadButton::FrontLeft;    break;
+                    case SDL_CONTROLLER_BUTTON_GUIDE:         ge.button = GamepadButton::FrontMiddle;  break;
+                    case SDL_CONTROLLER_BUTTON_START:         ge.button = GamepadButton::FrontRight;   break;
+                    case SDL_CONTROLLER_BUTTON_Y:             ge.button = GamepadButton::Blue;         break;
+                    case SDL_CONTROLLER_BUTTON_X:             ge.button = GamepadButton::Yellow;       break;
+                    case SDL_CONTROLLER_BUTTON_DPAD_UP:       ge.button = GamepadButton::Up;           break;
+                    case SDL_CONTROLLER_BUTTON_DPAD_LEFT:     ge.button = GamepadButton::Left;         break;
+                    case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:    ge.button = GamepadButton::Right;        break;
+                    case SDL_CONTROLLER_BUTTON_DPAD_DOWN:     ge.button = GamepadButton::Down;         break;
+                    case SDL_CONTROLLER_BUTTON_A:             ge.button = GamepadButton::Red;          break;
+                    case SDL_CONTROLLER_BUTTON_B:             ge.button = GamepadButton::Green;        break;
+                    case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER: ge.button = GamepadButton::RightTrigger; break;
+                    case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:  ge.button = GamepadButton::LeftTrigger;  break;
+                }
+                ge.gamepad_id = event.cbutton.which;
+                ge.flags = GAMEPAD_EVENT_UP;
+                this->_gamepad_signal.emit(ge);
+            }
+            break;
+
         default:
             unhandled_events++;
         }

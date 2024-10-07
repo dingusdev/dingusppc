@@ -30,9 +30,17 @@ extern "C" void remap_appkit_menu_shortcuts();
 #endif
 
 bool init() {
-    if (SDL_Init(SDL_INIT_VIDEO)) {
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER)) {
         LOG_F(ERROR, "SDL_Init error: %s", SDL_GetError());
         return false;
+    }
+
+    int num_joysticks = SDL_NumJoysticks();
+    for (int i = 0; i < num_joysticks; ++i) {
+        if (SDL_IsGameController(i)) {
+            SDL_GameControllerOpen(i); /* only support one controller for now */
+            break;
+        }
     }
 
 #ifdef __APPLE__

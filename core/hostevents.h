@@ -40,6 +40,8 @@ enum : uint32_t {
     MOUSE_EVENT_BUTTON = 1 << 1,
     KEYBOARD_EVENT_DOWN = 1 << 0,
     KEYBOARD_EVENT_UP = 1 << 1,
+    GAMEPAD_EVENT_DOWN = 1 << 0,
+    GAMEPAD_EVENT_UP = 1 << 1,
 };
 
 class MouseEvent {
@@ -63,6 +65,36 @@ public:
     uint32_t flags;
     uint32_t key;
     uint16_t keys_state;
+};
+
+/* AppleJack bits 3-7 are supported but unused */
+enum GamepadButton : uint8_t {
+    Red =          14,
+    Green =        15,
+    Yellow =       9,
+    Blue =         8,
+
+    FrontLeft =    0,
+    FrontMiddle =  1,
+    FrontRight =   2,
+
+    LeftTrigger =  17,
+    RightTrigger = 16,
+
+    Up =           10,
+    Down =         13,
+    Left =         11,
+    Right =        12,
+};
+
+class GamepadEvent {
+public:
+    GamepadEvent() = default;
+    ~GamepadEvent() = default;
+
+    uint32_t gamepad_id;
+    uint32_t flags;
+    uint8_t button;
 };
 
 class EventManager {
@@ -92,6 +124,11 @@ public:
     }
 
     template <typename T>
+    void add_gamepad_handler(T* inst, void (T::*func)(const GamepadEvent&)) {
+        _gamepad_signal.connect_method(inst, func);
+    }
+
+    template <typename T>
     void add_post_handler(T *inst, void (T::*func)()) {
         _post_signal.connect_method(inst, func);
     }
@@ -110,6 +147,7 @@ private:
     CoreSignal<const WindowEvent&>     _window_signal;
     CoreSignal<const MouseEvent&>      _mouse_signal;
     CoreSignal<const KeyboardEvent&>   _keyboard_signal;
+    CoreSignal<const GamepadEvent&>    _gamepad_signal;
     CoreSignal<>                       _post_signal;
 
     uint64_t    events_captured = 0;
