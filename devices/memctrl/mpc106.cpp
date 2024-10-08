@@ -314,20 +314,41 @@ void MPC106::setup_ram() {
     }
 }
 
-static const PropMap Grackle_Properties = {
-    {"pci_PERCH",
-        new StrProperty("")},
-    {"pci_A1",
-        new StrProperty("")},
-    {"pci_B1",
-        new StrProperty("")},
-    {"pci_C1",
-        new StrProperty("")},
+static const PropMap GrackleGossamer_Properties = {
+    {"pci_PERCH", new StrProperty("")},
+    {"pci_A1"   , new StrProperty("")},
+    {"pci_B1"   , new StrProperty("")},
+    {"pci_C1"   , new StrProperty("")},
+//  {"pci_GPU"  , new StrProperty("")},
 };
 
-static const DeviceDescription Grackle_Descriptor = {
-    MPC106::create, {}, Grackle_Properties,
+static const PropMap GrackleYosemite_Properties = {
+//  {"pci_J12", new StrProperty("")},
+};
+
+static const PropMap GrackleBondi_Properties = {
+    {"pci_A1"   , new StrProperty("")},
+    {"pci_B1"   , new StrProperty("")},
+    {"pci_C1"   , new StrProperty("")},
+//  {"pci_GPU"  , new StrProperty("")},
+    {"pci_PERCH", new StrProperty("")},
+};
+
+static const DeviceDescription GrackleGossamer_Descriptor = {
+    MPC106::create, {}, GrackleGossamer_Properties,
     HWCompType::MEM_CTRL | HWCompType::MMIO_DEV | HWCompType::PCI_HOST | HWCompType::PCI_DEV
 };
 
-REGISTER_DEVICE(Grackle, Grackle_Descriptor);
+static const DeviceDescription GrackleYosemite_Descriptor = {
+    MPC106::create, {}, GrackleYosemite_Properties,
+    HWCompType::MEM_CTRL | HWCompType::MMIO_DEV | HWCompType::PCI_HOST | HWCompType::PCI_DEV
+};
+
+static const DeviceDescription GrackleBondi_Descriptor = {
+    MPC106::create, {}, GrackleBondi_Properties,
+    HWCompType::MEM_CTRL | HWCompType::MMIO_DEV | HWCompType::PCI_HOST | HWCompType::PCI_DEV
+};
+
+REGISTER_DEVICE(GrackleGossamer, GrackleGossamer_Descriptor);
+REGISTER_DEVICE(GrackleYosemite, GrackleYosemite_Descriptor);
+REGISTER_DEVICE(GrackleBondi   , GrackleBondi_Descriptor   );

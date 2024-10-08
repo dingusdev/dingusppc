@@ -136,7 +136,7 @@ int MachineGossamer::initialize(const std::string &id) {
     LOG_F(INFO, "Building machine Gossamer...");
 
     // get pointer to the memory controller/PCI host bridge object
-    MPC106* grackle_obj = dynamic_cast<MPC106*>(gMachineObj->get_comp_by_name("Grackle"));
+    MPC106* grackle_obj = dynamic_cast<MPC106*>(gMachineObj->get_comp_by_name("GrackleGossamer"));
     grackle_obj->set_irq_map(grackle_irq_map);
 
     // configure the Gossamer system register
@@ -235,11 +235,11 @@ static const PropMap gossamer_tower_settings = {
 };
 
 static std::vector<std::string> pmg3_devices = {
-    "Grackle", "ScreamerSnd", "Heathrow", "AtaHardDisk", "AtapiCdrom"
+    "GrackleGossamer", "ScreamerSnd", "Heathrow", "AtaHardDisk", "AtapiCdrom"
 };
 
 static std::vector<std::string> pmg3twr_devices = {
-    "Grackle", "ScreamerSnd", "Heathrow", "AtaHardDisk", "AtapiCdrom"
+    "GrackleGossamer", "ScreamerSnd", "Heathrow", "AtaHardDisk", "AtapiCdrom"
 };
 
 static const DeviceDescription MachineGossamerDesktop_descriptor = {

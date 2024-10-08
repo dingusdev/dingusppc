@@ -70,7 +70,7 @@ int MachineYosemite::initialize(const std::string &id) {
     LOG_F(INFO, "Building machine Yosemite...");
 
     // get pointer to the memory controller/primary PCI bridge object
-    MPC106* grackle_obj = dynamic_cast<MPC106*>(gMachineObj->get_comp_by_name("Grackle"));
+    MPC106* grackle_obj = dynamic_cast<MPC106*>(gMachineObj->get_comp_by_name("GrackleYosemite"));
     grackle_obj->set_irq_map(grackle_irq_map);
 
     // get pointer to the bridge of the secondary PCI bus
@@ -132,7 +132,7 @@ static const PropMap yosemite_settings = {
 };
 
 static std::vector<std::string> yosemite_devices = {
-    "Grackle",
+    "GrackleYosemite",
     "Dec21154Yosemite",
     "CmdAta",
     "BurgundySnd",
