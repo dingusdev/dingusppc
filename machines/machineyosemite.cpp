@@ -121,6 +121,8 @@ static const PropMap yosemite_settings = {
         new StrProperty("CmdAta0:0")},
     {"cdr_config",
         new StrProperty("Ide0:0")},
+    {"pci_J12",
+        new StrProperty("AtiMach64Gx")},
 };
 
 static std::vector<std::string> yosemite_devices = {

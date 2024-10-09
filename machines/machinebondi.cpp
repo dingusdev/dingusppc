@@ -97,6 +97,7 @@ static const PropMap bondi_settings = {
     {"emmo", new BinProperty(0)},
     {"hdd_config", new StrProperty("Ide0:0")},
     {"cdr_config", new StrProperty("Ide1:0")},
+    {"pci_GPU", new StrProperty("AtiRagePro")},
 };
 
 static std::vector<std::string> bondi_devices = {
