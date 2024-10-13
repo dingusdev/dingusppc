@@ -526,6 +526,7 @@ void DppcDebugger::enter_debugger() {
                 power_off_reason = po_entered_debugger;
             }
             if (!did_message) {
+                cout << endl;
                 cout << "Welcome to the DingusPPC command line debugger." << endl;
                 cout << "Please enter a command or 'help'." << endl << endl;
                 did_message = true;
