@@ -7,6 +7,7 @@
 - maximumspatium
 - joevt
 - mihaip
+- kkaisershot
 
 ## NT4/PPC fork
 

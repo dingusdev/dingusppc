@@ -84,7 +84,7 @@ void do_ctx_sync() {
     }
 }
 
-void add_ctx_sync_action(const CtxSyncCallback& cb) {
+static void add_ctx_sync_action(const CtxSyncCallback& cb) {
     gCtxSyncCallbacks.push_back(cb);
 }
 
