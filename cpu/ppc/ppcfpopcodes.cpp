@@ -313,7 +313,7 @@ void dppc_interpreter::ppc_fnmadd() {
     snan_single_check(reg_b);
 
     double ppc_dblresult64_d = -std::fma(val_reg_a, val_reg_c, val_reg_b);
-    if (isnan(ppc_dblresult64_d)) {
+    if (std::isnan(ppc_dblresult64_d)) {
         ppc_dblresult64_d = -ppc_dblresult64_d;
     }
     ppc_store_dfpresult_flt(reg_d, ppc_dblresult64_d);
@@ -482,7 +482,7 @@ void dppc_interpreter::ppc_fmsubs() {
 
 
     double ppc_dblresult64_d = (float)std::fma(val_reg_a, val_reg_c, -val_reg_b);
-    if (isnan(ppc_dblresult64_d)) {
+    if (std::isnan(ppc_dblresult64_d)) {
         ppc_dblresult64_d = -ppc_dblresult64_d;
     }
     ppc_store_sfpresult_flt(reg_d, ppc_dblresult64_d);
@@ -510,7 +510,7 @@ void dppc_interpreter::ppc_fnmadds() {
     snan_single_check(reg_b);
 
     double ppc_dblresult64_d = -(float)std::fma(val_reg_a, val_reg_c, val_reg_b);
-    if (isnan(ppc_dblresult64_d)) {
+    if (std::isnan(ppc_dblresult64_d)) {
         ppc_dblresult64_d = -ppc_dblresult64_d;
     }
     ppc_store_sfpresult_flt(reg_d, ppc_dblresult64_d);
