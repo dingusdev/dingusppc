@@ -293,24 +293,27 @@ void DMAChannel::update_irq() {
 }
 
 uint32_t DMAChannel::reg_read(uint32_t offset, int size) {
-    if (size != 4) {
-        ABORT_F("%s: non-DWORD read from a DMA channel not supported",
-            this->get_name().c_str());
-    }
+    uint32_t result = 0;
 
-    switch (offset) {
+    switch (offset & ~3) {
     case DMAReg::CH_CTRL:
-        return 0; // ChannelControl reads as 0 (DBDMA spec 5.5.1, table 74)
+        result = 0; // ChannelControl reads as 0 (DBDMA spec 5.5.1, table 74)
+        break;
     case DMAReg::CH_STAT:
-        return BYTESWAP_32(this->ch_stat);
+        result = this->ch_stat;
+        break;
     case DMAReg::CMD_PTR_LO:
-        return BYTESWAP_32(this->cmd_ptr);
+        result = this->cmd_ptr;
+        break;
     default:
         LOG_F(WARNING, "%s: Unsupported DMA channel register read at 0x%X",
             this->get_name().c_str(), offset);
     }
 
-    return 0;
+    if ((offset & 3) || size != 4)
+        return BYTESWAP_SIZED(result >> ((offset & 3) * 8), size);
+    else
+        return BYTESWAP_32(result);
 }
 
 void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
