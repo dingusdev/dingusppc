@@ -41,7 +41,7 @@ NvramDev::NvramDev(NvramAddrHiDev *addr_hi) {
 
 GrandCentral::GrandCentral() : PCIDevice("mac-io_grandcentral"), InterruptCtrl()
 {
-    supports_types(HWCompType::MMIO_DEV | HWCompType::PCI_DEV | HWCompType::INT_CTRL);
+    supports_types(HWCompType::IOBUS_HOST | HWCompType::MMIO_DEV | HWCompType::PCI_DEV | HWCompType::INT_CTRL);
 
     // populate my PCI config header
     this->vendor_id   = PCI_VENDOR_APPLE;
