@@ -384,11 +384,12 @@ void AtapiCdrom::status_error(uint8_t sense_key, uint8_t asc) {
     this->r_status |= ATA_Status::ERR;
 }
 
-static const PropMap AtapiCdromProperties = {
+static const PropMap AtapiCdrom_Properties = {
     {"cdr_img", new StrProperty("")},
 };
 
-static const DeviceDescription AtapiCdromDescriptor =
-    {AtapiCdrom::create, {}, AtapiCdromProperties};
+static const DeviceDescription AtapiCdrom_Descriptor = {
+    AtapiCdrom::create, {}, AtapiCdrom_Properties
+};
 
-REGISTER_DEVICE(AtapiCdrom, AtapiCdromDescriptor);
+REGISTER_DEVICE(AtapiCdrom, AtapiCdrom_Descriptor);
