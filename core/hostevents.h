@@ -35,6 +35,12 @@ public:
     uint32_t    window_id;
 };
 
+enum : uint16_t {
+    // Standard SDL window event types are uint8_t's, we add our own custom
+    // events after that.
+    WINDOW_SCALE_QUALITY_TOGGLE = 1 << 8,
+};
+
 enum : uint32_t {
     MOUSE_EVENT_MOTION = 1 << 0,
     MOUSE_EVENT_BUTTON = 1 << 1,
