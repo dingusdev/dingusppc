@@ -108,6 +108,8 @@ int main(int argc, char** argv) {
     app.allow_windows_style_options(); /* we want Windows-style options */
     app.allow_extras();
 
+    app.set_help_all_flag("--help-all", "Print this help message, help for subcommands, and exit");
+
     bool realtime_enabled = false;
     bool debugger_enabled = false;
     bool deterministic_interactive = false;
@@ -122,20 +124,21 @@ int main(int argc, char** argv) {
     string bootrom_path("bootrom.bin");
     string working_directory_path(".");
 
-    auto execution_mode_group = app.add_option_group("execution mode")
+    auto emu = app.add_subcommand("", "Emulation");
+    auto execution_mode_group = emu->add_option_group("execution mode")
         ->require_option(-1);
     execution_mode_group->add_flag("-r,--realtime", realtime_enabled,
         "Run the emulator in real-time");
     execution_mode_group->add_flag("-d,--debugger", debugger_enabled,
         "Enter the built-in debugger");
-    app.add_option("-k,--keyboard", keyboard_string, "Specify keyboard ID");
-    app.add_option("-w,--workingdir", working_directory_path, "Specifies working directory")
-        ->check(WorkingDirectory);
-    app.add_option("-b,--bootrom", bootrom_path, "Specifies BootROM path")
-        ->check(CLI::ExistingFile);
-    auto deterministic_opt = app.add_flag("--deterministic", is_deterministic,
+    emu->add_option("-k,--keyboard", keyboard_string, "Specify keyboard ID");
+    emu->add_option("-w,--workingdir", working_directory_path, "Specifies working directory")
+        ->check(WorkingDirectory)->capture_default_str();
+    auto bootrom_opt = emu->add_option("-b,--bootrom", bootrom_path, "Specifies BootROM path")
+        ->check(CLI::ExistingFile)->capture_default_str();
+    auto deterministic_opt = emu->add_flag("--deterministic", is_deterministic,
         "Use deterministic execution");
-    app.add_option("--deterministic-mode", deterministic_mode,
+    emu->add_option("--deterministic-mode", deterministic_mode,
         "Select deterministic features (strict or interactive)")
         ->needs(deterministic_opt)
         ->check(CLI::IsMember({"strict", "interactive"}));
@@ -143,12 +146,12 @@ int main(int argc, char** argv) {
     bool              log_to_stderr = false;
     loguru::Verbosity log_verbosity = loguru::Verbosity_INFO;
     bool              log_no_uptime = false;
-    app.add_flag("--log-to-stderr", log_to_stderr,
+    emu->add_flag("--log-to-stderr", log_to_stderr,
         "Send internal logging to stderr (instead of dingusppc.log)");
-    app.add_option("--log-verbosity", log_verbosity,
+    emu->add_option("--log-verbosity", log_verbosity,
         "Adjust logging verbosity (default is 0 a.k.a. INFO)")
         ->check(CLI::Number);
-    app.add_flag("--log-no-uptime", log_no_uptime,
+    emu->add_flag("--log-no-uptime", log_no_uptime,
         "Disable the uptime preamble of logged messages");
 
     std::vector<std::string> env_vars;
@@ -157,12 +160,12 @@ int main(int argc, char** argv) {
 
     uint32_t profiling_interval_ms = 0;
 #ifdef CPU_PROFILING
-    app.add_option("--profiling-interval-ms", profiling_interval_ms,
+    emu->add_option("--profiling-interval-ms", profiling_interval_ms,
         "Specifies periodic interval (in ms) at which to output CPU profiling information");
 #endif
 
     string       machine_str;
-    CLI::Option* machine_opt = app.add_option("-m,--machine",
+    CLI::Option* machine_opt = emu->add_option("-m,--machine",
         machine_str, "Specify machine ID");
 
     auto list_cmd = app.add_subcommand("list",
@@ -186,6 +189,15 @@ int main(int argc, char** argv) {
             cout << "Unknown list subcommand " << sub_arg << endl;
         }
         return 0;
+    }
+
+    if (bootrom_opt->count() == 0) {
+        // it was not specified on the command line, so validate the default file name.
+        std::string msg = bootrom_opt->get_validator()->operator()(bootrom_path);
+        if (!msg.empty()) {
+            CLI::ParseError e(msg, CLI::ExitCodes::ValidationError);
+            return app.exit(e);
+        }
     }
 
     if (debugger_enabled) {
@@ -234,6 +246,7 @@ int main(int argc, char** argv) {
     // of when they are registered.
     MachineFactory::get_setting_value = [&](const std::string& name) -> std::optional<std::string> {
         CLI::App sa;
+        sa.allow_windows_style_options();
         sa.allow_extras();
 
         std::string value;
