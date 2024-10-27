@@ -326,11 +326,12 @@ done:
           heads, sectors);
 }
 
-static const PropMap AtaHardDiskProperties = {
+static const PropMap AtaHardDisk_Properties = {
     {"hdd_img", new StrProperty("")},
 };
 
-static const DeviceDescription AtaHardDiskDescriptor =
-    {AtaHardDisk::create, {}, AtaHardDiskProperties};
+static const DeviceDescription AtaHardDisk_Descriptor = {
+    AtaHardDisk::create, {}, AtaHardDisk_Properties
+};
 
-REGISTER_DEVICE(AtaHardDisk, AtaHardDiskDescriptor);
+REGISTER_DEVICE(AtaHardDisk, AtaHardDisk_Descriptor);
