@@ -356,7 +356,7 @@ static void print_gprs() {
     for (i = 0; i < 32; i++) {
         reg_name = "r" + to_string(i);
 
-        cout << right << std::setw(3) << setfill(' ') << reg_name << " : " <<
+        cout << right << std::setw(5) << setfill(' ') << reg_name << " : " <<
             setw(8) << setfill('0') << right << uppercase << hex << get_reg(reg_name) << setfill(' ');
 
         if (i & 1) {
@@ -369,7 +369,7 @@ static void print_gprs() {
     array<string, 8> sprs = {"pc", "lr", "cr", "ctr", "xer", "msr", "srr0", "srr1"};
 
     for (auto &spr : sprs) {
-        cout << right << std::setw(4) << setfill(' ') << spr << " : " <<
+        cout << right << std::setw(5) << setfill(' ') << spr << " : " <<
             setw(8) << setfill('0') << uppercase << hex << get_reg(spr) << setfill(' ');
 
         if (i & 1) {
@@ -398,30 +398,30 @@ extern bool is_601;
 
 static void print_mmu_regs()
 {
-    printf("MSR : 0x%08X\n", ppc_state.msr);
+    printf(" msr : %08X\n", ppc_state.msr);
 
     printf("\nBAT registers:\n");
 
     for (int i = 0; i < 4; i++) {
-        printf("IBAT%dU : 0x%08X, IBAT%dL : 0x%08X\n",
+        printf(" ibat%du : %08X   ibat%dl : %08X\n",
               i, ppc_state.spr[528+i*2],
               i, ppc_state.spr[529+i*2]);
     }
 
     if (!is_601) {
         for (int i = 0; i < 4; i++) {
-            printf("DBAT%dU : 0x%08X, DBAT%dL : 0x%08X\n",
+            printf(" dbat%du : %08X   dbat%dl : %08X\n",
                   i, ppc_state.spr[536+i*2],
                   i, ppc_state.spr[537+i*2]);
         }
     }
 
     printf("\n");
-    printf("SDR1 : 0x%08X\n", ppc_state.spr[SPR::SDR1]);
+    printf(" sdr1 : %08X\n", ppc_state.spr[SPR::SDR1]);
     printf("\nSegment registers:\n");
 
     for (int i = 0; i < 16; i++) {
-        printf("SR%-2d : 0x%08X\n", i, ppc_state.sr[i]);
+        printf(" %ssr%d : %08X\n", (i < 10) ? " " : "", i, ppc_state.sr[i]);
     }
 }
 
