@@ -78,6 +78,7 @@ static void show_help() {
     cout << "  until X      -- execute until address X is reached" << endl;
     cout << "  go           -- exit debugger and continue emulator execution" << endl;
     cout << "  regs         -- dump content of the GRPs" << endl;
+    cout << "  fregs         -- dump content of the FPRs" << endl;
     cout << "  mregs        -- dump content of the MMU registers" << endl;
     cout << "  set R=X      -- assign value X to register R" << endl;
     cout << "                  if R=loglevel, set the internal" << endl;
@@ -381,6 +382,18 @@ static void print_gprs() {
     }
 }
 
+static void print_fprs() {
+    string reg_name;
+    for (int i = 0; i < 32; i++) {
+        reg_name = "f" + to_string(i);
+        cout << right << std::setw(6) << setfill(' ') << reg_name << " : " <<
+            setw(16) << setfill('0') << right << uppercase << hex << ppc_state.fpr[i].int64_r <<
+            " = " << left << setfill(' ') << ppc_state.fpr[i].dbl64_r << endl;
+    }
+    cout << right << std::setw(6) << setfill(' ') << "fpscr" << " : " <<
+        setw(8) << setfill('0') << uppercase << hex << ppc_state.fpscr << setfill(' ') << endl;
+}
+
 extern bool is_601;
 
 static void print_mmu_regs()
@@ -590,6 +603,9 @@ void DppcDebugger::enter_debugger() {
             } else {
                 print_gprs();
             }
+        } else if (cmd == "fregs") {
+            cmd = "";
+            print_fprs();
         } else if (cmd == "mregs") {
             cmd = "";
             print_mmu_regs();

@@ -871,11 +871,6 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool do_include_6
 #endif
 }
 
-void print_fprs() {
-    for (int i = 0; i < 32; i++)
-        cout << "FPR " << dec << i << " : " << ppc_state.fpr[i].dbl64_r << endl;
-}
-
 static map<string, int> SPRName2Num = {
     {"XER",    SPR::XER},       {"LR",     SPR::LR},    {"CTR",    SPR::CTR},
     {"DEC",    SPR::DEC_S},     {"PVR",    SPR::PVR},   {"SPRG0",  SPR::SPRG0},
