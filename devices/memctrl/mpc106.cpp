@@ -251,11 +251,13 @@ void MPC106::setup_ram() {
     // get non-empty banks
     for (int bank = 0; bank < 8; bank++) {
         if (this->mem_bank_en & (1 << bank)) {
-            int b = (bank >= 4);
-            bank_start[bank_count] = (((ext_mem_start[b] >> bank * 8) & 3) << 28) |
-                (((mem_start[b] >> bank * 8) & 0xFF) << 20);
-            bank_end[bank_count] = (((ext_mem_end[b] >> bank * 8) & 3) << 28) |
-                (((mem_end[b] >> bank * 8) & 0xFF) << 20) | 0xFFFFFUL;
+            int word = bank >> 2;
+            int byte = bank & 3;
+            int shift = byte * 8;
+            bank_start[bank_count] = (((ext_mem_start[word] >> shift) & 3) << 28) |
+                ((((mem_start[word]) >> shift) & 0xFF) << 20);
+            bank_end  [bank_count] = (((ext_mem_end  [word] >> shift) & 3) << 28) |
+                ((((mem_end  [word]) >> shift) & 0xFF) << 20) | 0xFFFFFU;
             bank_order[bank_count] = bank_count;
             bank_count++;
         }
