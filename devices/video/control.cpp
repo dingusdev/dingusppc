@@ -630,12 +630,12 @@ void ControlVideo::enable_display()
         break;
     case 16:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
-            this->convert_frame_15bpp_BE(dst_buf, dst_pitch);
+            this->convert_frame_15bpp<BE>(dst_buf, dst_pitch);
         };
         break;
     case 32:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
-            this->convert_frame_32bpp_BE(dst_buf, dst_pitch);
+            this->convert_frame_32bpp<BE>(dst_buf, dst_pitch);
         };
         break;
     default:
