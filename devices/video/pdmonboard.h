@@ -79,9 +79,9 @@ protected:
     void    disable_video_internal();
     void    set_fb_base();
 
-    void convert_frame_1bpp_indexed(uint8_t *dst_buf, int dst_pitch) override;
-    void convert_frame_2bpp_indexed(uint8_t *dst_buf, int dst_pitch) override;
-    void convert_frame_4bpp_indexed(uint8_t *dst_buf, int dst_pitch) override;
+    void pdm_convert_frame_1bpp_indexed(uint8_t *dst_buf, int dst_pitch);
+    void pdm_convert_frame_2bpp_indexed(uint8_t *dst_buf, int dst_pitch);
+    void pdm_convert_frame_4bpp_indexed(uint8_t *dst_buf, int dst_pitch);
 
 private:
     uint8_t     video_mode;

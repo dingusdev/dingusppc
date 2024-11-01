@@ -34,6 +34,11 @@ class WindowEvent;
 
 class VideoCtrlBase {
 public:
+    typedef enum {
+        BE = 0,
+        LE = 1,
+    } fb_endian;
+
     VideoCtrlBase(int width = 640, int height = 480);
     ~VideoCtrlBase();
 
@@ -57,20 +62,21 @@ public:
     virtual void get_cursor_position(int& x, int& y) { x = 0; y = 0; };
 
     // converters for various framebuffer pixel depths
-    virtual void convert_frame_1bpp_indexed(uint8_t *dst_buf, int dst_pitch);
-    virtual void convert_frame_2bpp_indexed(uint8_t *dst_buf, int dst_pitch);
-    virtual void convert_frame_4bpp_indexed(uint8_t *dst_buf, int dst_pitch);
-    virtual void convert_frame_8bpp_indexed(uint8_t *dst_buf, int dst_pitch);
+    void convert_frame_1bpp_indexed(uint8_t *dst_buf, int dst_pitch);
+    void convert_frame_2bpp_indexed(uint8_t *dst_buf, int dst_pitch);
+    void convert_frame_4bpp_indexed(uint8_t *dst_buf, int dst_pitch);
+    void convert_frame_8bpp_indexed(uint8_t *dst_buf, int dst_pitch);
 #if 0
-    virtual void convert_frame_8bpp_32LE_indexed(uint8_t *dst_buf, int dst_pitch);
+    void convert_frame_8bpp_32LE_indexed(uint8_t *dst_buf, int dst_pitch);
 #endif
-    virtual void convert_frame_8bpp(uint8_t *dst_buf, int dst_pitch);
-    virtual void convert_frame_15bpp(uint8_t *dst_buf, int dst_pitch);
-    virtual void convert_frame_15bpp_BE(uint8_t *dst_buf, int dst_pitch);
-    virtual void convert_frame_16bpp(uint8_t *dst_buf, int dst_pitch);
-    virtual void convert_frame_24bpp(uint8_t *dst_buf, int dst_pitch);
-    virtual void convert_frame_32bpp(uint8_t *dst_buf, int dst_pitch);
-    virtual void convert_frame_32bpp_BE(uint8_t *dst_buf, int dst_pitch);
+    void convert_frame_8bpp(uint8_t *dst_buf, int dst_pitch);
+    template <VideoCtrlBase::fb_endian endian>
+    void convert_frame_15bpp(uint8_t *dst_buf, int dst_pitch);
+    template <VideoCtrlBase::fb_endian endian>
+    void convert_frame_16bpp(uint8_t *dst_buf, int dst_pitch);
+    void convert_frame_24bpp(uint8_t *dst_buf, int dst_pitch);
+    template <VideoCtrlBase::fb_endian endian>
+    void convert_frame_32bpp(uint8_t *dst_buf, int dst_pitch);
 
 protected:
 #if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
