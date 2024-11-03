@@ -33,7 +33,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <cstring>
 
-Sc53C94::Sc53C94(uint8_t chip_id, uint8_t my_id) : ScsiDevice("SC53C94", my_id)
+Sc53C94::Sc53C94(uint8_t chip_id, uint8_t my_id) : ScsiDevice("SC53C94", my_id), DmaDevice()
 {
     this->chip_id   = chip_id;
     this->my_bus_id = my_id;
@@ -749,6 +749,73 @@ void Sc53C94::dma_stop()
         TimerManager::get_instance()->cancel_timer(this->dma_timer_id);
         this->dma_timer_id = 0;
     }
+}
+
+int Sc53C94::xfer_from(uint8_t *buf, int len) {
+    if (len > this->xfer_count + this->data_fifo_pos)
+        LOG_F(WARNING, "%s: DMA xfer len > command xfer len", this->name.c_str());
+
+    if (this->data_fifo_pos) {
+        int fifo_bytes = std::min(this->data_fifo_pos, len);
+        std::memcpy(buf, this->data_fifo, fifo_bytes);
+        this->data_fifo_pos -= fifo_bytes;
+        this->xfer_count -= fifo_bytes;
+        len -= fifo_bytes;
+        buf += fifo_bytes;
+        if (!this->xfer_count) {
+            this->status |= STAT_TC; // signal zero transfer count
+            this->cur_state = SeqState::XFER_END;
+            this->sequencer();
+            return 0;
+        }
+    }
+
+    if (this->bus_obj->pull_data(this->target_id, buf, this->xfer_count)) {
+        this->xfer_count = 0;
+        this->status |= STAT_TC; // signal zero transfer count
+        this->cur_state = SeqState::XFER_END;
+        this->sequencer();
+        return 0;
+    }
+
+    return len;
+}
+
+int Sc53C94::xfer_to(uint8_t *buf, int len) {
+    if (!this->xfer_count)
+        return len;
+
+    // Being in the DATA_OUT phase means that we're about to move
+    // a big chunk of data. The real device uses its FIFO as buffer.
+    // For simplicity, the code below transfers the whole chunk at once.
+    // This can be broken into smaller chunks later if desired.
+    if (this->cur_bus_phase == ScsiPhase::DATA_OUT) {
+        if (this->bus_obj->push_data(this->target_id, buf, len)) {
+            this->xfer_count -= len;
+            if (!this->xfer_count) {
+                this->status |= STAT_TC; // signal zero transfer count
+                this->cur_state = SeqState::XFER_END;
+                this->sequencer();
+            }
+            len = 0;
+        } else
+            LOG_F(WARNING, "%s: xfer_to failed to transfer data", this->name.c_str());
+    }
+
+    if (this->xfer_count) {
+        // fill in the data FIFO first
+        uint32_t fifo_bytes = std::min(len, DATA_FIFO_MAX - this->data_fifo_pos);
+        std::memcpy(&this->data_fifo[this->data_fifo_pos], buf, fifo_bytes);
+        len -= fifo_bytes;
+        this->data_fifo_pos += fifo_bytes;
+        this->xfer_count -= fifo_bytes;
+        if (!this->xfer_count) {
+            this->status |= STAT_TC; // signal zero transfer count
+            this->sequencer();
+        }
+    }
+
+    return len;
 }
 
 static const PropMap Sc53C94_properties = {

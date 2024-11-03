@@ -125,7 +125,9 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io_grandcentral"), InterruptCtrl()
     this->curio = dynamic_cast<Sc53C94*>(gMachineObj->get_comp_by_name("Sc53C94"));
     this->curio_dma = std::unique_ptr<DMAChannel> (new DMAChannel("curio_scsi"));
     this->curio_dma->register_dma_int(this, this->register_dma_int(IntSrc::DMA_SCSI_CURIO));
-    this->curio->set_dma_channel(this->curio_dma.get());
+    this->curio_dma->connect(this->curio);
+    this->curio->connect(this->curio_dma.get());
+    //this->curio->set_dma_channel(this->curio_dma.get());
     this->curio->set_drq_callback([this](const uint8_t drq_state) {
         this->curio_dma->set_stat((drq_state & 1) << 5);
     });

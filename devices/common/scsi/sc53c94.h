@@ -187,7 +187,7 @@ typedef struct {
 
 typedef std::function<void(const uint8_t drq_state)> DrqCb;
 
-class Sc53C94 : public ScsiDevice {
+class Sc53C94 : public ScsiDevice, public DmaDevice {
 public:
     Sc53C94(uint8_t chip_id=12, uint8_t my_id=7);
     ~Sc53C94() = default;
@@ -234,6 +234,10 @@ public:
     bool has_data() { return this->data_fifo_pos != 0; };
     int  send_data(uint8_t* dst_ptr, int count);
     void process_command() {};
+
+    // DmaChannel methods
+    int xfer_from(uint8_t *buf, int len); // Must be marked override!
+    int xfer_to(uint8_t *buf, int len);   // Must be marked override!
 
 protected:
     void reset_device();
