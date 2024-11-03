@@ -99,6 +99,7 @@ public:
     void connect(DmaChannel *ch_obj) { this->channel_obj = ch_obj; };
     void notify(DmaMsg msg) {};
     virtual int xfer_from(uint8_t *buf, int len) { return len; };
+    virtual int xfer_to(uint8_t *buf, int len) { return len; };
 
 protected:
     DmaChannel* channel_obj = nullptr;
