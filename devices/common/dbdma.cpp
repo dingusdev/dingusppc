@@ -97,6 +97,7 @@ uint8_t DMAChannel::interpret_cmd() {
             switch (this->cur_cmd) {
             case DBDMA_Cmd::OUTPUT_MORE:
             case DBDMA_Cmd::OUTPUT_LAST:
+                this->xfer_to_device();
                 if (this->out_cb)
                     this->out_cb();
                 break;
@@ -427,6 +428,20 @@ void DMAChannel::xfer_from_device() {
     this->xfer_dir = DMA_DIR_FROM_DEV;
 
     if (!this->dev_obj->xfer_from(this->queue_data, this->queue_len)) {
+        this->queue_len = 0;
+        this->finish_cmd();
+    }
+
+    this->interpret_cmd();
+}
+
+void DMAChannel::xfer_to_device() {
+    if (this->dev_obj == nullptr)
+        return;
+
+    this->xfer_dir = DMA_DIR_TO_DEV;
+
+    if (!this->dev_obj->xfer_to(this->queue_data, this->queue_len)) {
         this->queue_len = 0;
         this->finish_cmd();
     }
