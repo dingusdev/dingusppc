@@ -203,6 +203,36 @@ enum {
         ATI_CUR_VERT_OFF    = 16, ATI_CUR_VERT_OFF_size = 6,
 
     ATI_GP_IO                 = 0x01E, // 0x0078
+        ATI_GP_IO_0      =  0,                    // 0x0078
+        ATI_GP_IO_1      =  1,
+        ATI_GP_IO_2      =  2,
+        ATI_GP_IO_3      =  3,
+        ATI_GP_IO_4      =  4,
+        ATI_GP_IO_5      =  5,
+        ATI_GP_IO_6      =  6,
+        ATI_GP_IO_7      =  7,
+        ATI_GP_IO_8      =  8, // sense 0 level   // 0x0079
+        ATI_GP_IO_9      =  9,
+        ATI_GP_IO_A      = 10,
+        ATI_GP_IO_B      = 11,
+        ATI_GP_IO_C      = 12, // sense 1 level
+        ATI_GP_IO_D      = 13, // sense 2 level
+        ATI_GP_IO_DIR_0  = 16,                    // 0x007A
+        ATI_GP_IO_DIR_1  = 17,
+        ATI_GP_IO_DIR_2  = 18,
+        ATI_GP_IO_DIR_3  = 19,
+        ATI_GP_IO_DIR_4  = 20,
+        ATI_GP_IO_DIR_5  = 21,
+        ATI_GP_IO_DIR_6  = 22,
+        ATI_GP_IO_DIR_7  = 23,
+        ATI_GP_IO_DIR_8  = 24, // sense 0 dir     // 0x007B
+        ATI_GP_IO_DIR_9  = 25,
+        ATI_GP_IO_DIR_A  = 26,
+        ATI_GP_IO_DIR_B  = 27,
+        ATI_GP_IO_DIR_C  = 28, // sense 1 dir
+        ATI_GP_IO_DIR_D  = 29, // sense 2 dir
+        ATI_MPP_IO_DRIVE = 30,
+        ATI_I2C_IO_DRIVE = 31,
 
     ATI_HW_DEBUG              = 0x01F, // 0x007C
     ATI_SCRATCH_REG0          = 0x020, // 0x0080
