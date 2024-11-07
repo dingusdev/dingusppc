@@ -440,8 +440,10 @@ void ATIRage::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size) {
         if (offset <= 1 && offset + size > 1) {
             uint8_t gpio_levels = (new_value >> 8) & 0xFFU;
             gpio_levels = ((gpio_levels & 0x30) >> 3) | (gpio_levels & 1);
+            gpio_levels ^= 7;
             uint8_t gpio_dirs = (new_value >> 24) & 0xFFU;
             gpio_dirs = ((gpio_dirs & 0x30) >> 3) | (gpio_dirs & 1);
+            gpio_levels &= ~gpio_dirs;
             gpio_levels = this->disp_id->read_monitor_sense(gpio_levels, gpio_dirs);
             insert_bits<uint32_t>(new_value,
                                 ((gpio_levels & 6) << 3) | (gpio_levels & 1), 8, 8);
