@@ -54,11 +54,21 @@ void EventManager::poll_events()
 
         case SDL_KEYDOWN:
         case SDL_KEYUP: {
-                // Internal shortcuts to trigger mouse grab, intentionally not
-                // sent to the host.
+                // Internal shortcuts, intentionally not sent to the host.
+                // Control-G: mouse grab
                 if (event.key.keysym.sym == SDLK_g && SDL_GetModState() & KMOD_LCTRL) {
                     if (event.type == SDL_KEYUP) {
                         toggle_mouse_grab(event.key);
+                    }
+                    return;
+                }
+                // Control-S: scale quality
+                if (event.key.keysym.sym == SDLK_s && SDL_GetModState() & KMOD_LCTRL) {
+                    if (event.type == SDL_KEYUP) {
+                        WindowEvent we;
+                        we.sub_type  = WINDOW_SCALE_QUALITY_TOGGLE;
+                        we.window_id = event.window.windowID;
+                        this->_window_signal.emit(we);
                     }
                     return;
                 }
