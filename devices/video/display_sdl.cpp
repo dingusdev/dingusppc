@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/video/display.h>
 #include <SDL.h>
 #include <loguru.hpp>
+#include <string>
 
 class Display::Impl {
 public:
@@ -59,8 +60,7 @@ bool Display::configure(int width, int height) {
 
     if (!impl->display_wnd) { // create display window
         impl->display_wnd = SDL_CreateWindow(
-            SDL_GetRelativeMouseMode() ?
-                "DingusPPC Display (Mouse Grabbed)" : "DingusPPC Display",
+            "",
             SDL_WINDOWPOS_UNDEFINED,
             SDL_WINDOWPOS_UNDEFINED,
             width, height,
@@ -80,6 +80,7 @@ bool Display::configure(int width, int height) {
         impl->renderer_scale_x = static_cast<double>(drawable_width) / width;
         impl->renderer_scale_y = static_cast<float>(drawable_height) / height;
 
+        update_window_title();
         is_initialization = true;
     } else { // resize display window
         SDL_SetWindowSize(impl->display_wnd, width, height);
@@ -102,22 +103,54 @@ bool Display::configure(int width, int height) {
 }
 
 void Display::handle_events(const WindowEvent& wnd_event) {
-    if (wnd_event.sub_type == SDL_WINDOWEVENT_SIZE_CHANGED &&
-        wnd_event.window_id == impl->disp_wnd_id)
-        impl->resizing = false;
-    if (wnd_event.sub_type == SDL_WINDOWEVENT_EXPOSED &&
-        wnd_event.window_id == impl->disp_wnd_id)
-        SDL_RenderPresent(impl->renderer);
-    if (wnd_event.sub_type == WINDOW_SCALE_QUALITY_TOGGLE &&
-        wnd_event.window_id == impl->disp_wnd_id) {
-        auto current_quality = SDL_GetHint(SDL_HINT_RENDER_SCALE_QUALITY);
-        auto new_quality = current_quality == NULL || strcmp(current_quality, "nearest") == 0 ? "best" : "nearest";
-        SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, new_quality);
-        // We need the window/texture to be recreated to pick up the hint change.
-        int width, height;
-        SDL_GetWindowSize(impl->display_wnd, &width, &height);
-        this->configure(width, height);
+    switch (wnd_event.sub_type) {
+
+    case SDL_WINDOWEVENT_SIZE_CHANGED:
+        if (wnd_event.window_id == impl->disp_wnd_id) {
+            this->update_window_title();
+            impl->resizing = false;
+        }
+        break;
+
+    case SDL_WINDOWEVENT_EXPOSED:
+        if (wnd_event.window_id == impl->disp_wnd_id) {
+            SDL_RenderPresent(impl->renderer);
+        }
+        break;
+
+    case DPPC_WINDOWEVENT_WINDOW_SCALE_QUALITY_TOGGLE:
+        if (wnd_event.window_id == impl->disp_wnd_id) {
+            auto current_quality = SDL_GetHint(SDL_HINT_RENDER_SCALE_QUALITY);
+            auto new_quality = current_quality == NULL || strcmp(current_quality, "nearest") == 0 ? "best" : "nearest";
+            SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, new_quality);
+            // We need the window/texture to be recreated to pick up the hint change.
+            int width, height;
+            SDL_GetWindowSize(impl->display_wnd, &width, &height);
+            this->configure(width, height);
+        }
+        break;
+
+    case DPPC_WINDOWEVENT_MOUSE_GRAB_CHANGED:
+        this->update_window_title();
+        break;
+
     }
+}
+
+void Display::update_window_title()
+{
+    std::string old_window_title = SDL_GetWindowTitle(impl->display_wnd);
+
+    int width, height;
+    SDL_GetWindowSize(impl->display_wnd, &width, &height);
+    bool is_relative = SDL_GetRelativeMouseMode();
+
+    std::string new_window_title = "DingusPPC Display " + std::to_string(width) + "x" + std::to_string(height);
+    if (is_relative)
+        new_window_title += " (🖱 Grabbed)";
+
+    if (new_window_title != old_window_title)
+        SDL_SetWindowTitle(impl->display_wnd, new_window_title.c_str());
 }
 
 void Display::blank() {

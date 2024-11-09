@@ -36,9 +36,10 @@ public:
 };
 
 enum : uint16_t {
-    // Standard SDL window event types are uint8_t's, we add our own custom
-    // events after that.
-    WINDOW_SCALE_QUALITY_TOGGLE = 1 << 8,
+    // Standard SDL window event types are uint8_t's.
+    // We add our own custom events after that.
+    DPPC_WINDOWEVENT_WINDOW_SCALE_QUALITY_TOGGLE = 1 << 8,
+    DPPC_WINDOWEVENT_MOUSE_GRAB_CHANGED,
 };
 
 enum : uint32_t {

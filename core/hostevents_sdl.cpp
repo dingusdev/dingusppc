@@ -58,6 +58,10 @@ void EventManager::poll_events(uint32_t kbd_locale) {
                 if (event.key.keysym.sym == SDLK_g && SDL_GetModState() & KMOD_LCTRL) {
                     if (event.type == SDL_KEYUP) {
                         toggle_mouse_grab(event.key);
+                        WindowEvent we;
+                        we.sub_type  = DPPC_WINDOWEVENT_MOUSE_GRAB_CHANGED;
+                        we.window_id = event.window.windowID;
+                        this->_window_signal.emit(we);
                     }
                     return;
                 }
@@ -65,7 +69,7 @@ void EventManager::poll_events(uint32_t kbd_locale) {
                 if (event.key.keysym.sym == SDLK_s && SDL_GetModState() & KMOD_LCTRL) {
                     if (event.type == SDL_KEYUP) {
                         WindowEvent we{};
-                        we.sub_type  = WINDOW_SCALE_QUALITY_TOGGLE;
+                        we.sub_type  = DPPC_WINDOWEVENT_WINDOW_SCALE_QUALITY_TOGGLE;
                         we.window_id = event.window.windowID;
                         this->_window_signal.emit(we);
                     }
@@ -396,7 +400,6 @@ static void toggle_mouse_grab(const SDL_KeyboardEvent &event) {
     SDL_Window *window = SDL_GetWindowFromID(event.windowID);
     if (SDL_GetRelativeMouseMode()) {
         SDL_SetRelativeMouseMode(SDL_FALSE);
-        SDL_SetWindowTitle(window, "DingusPPC Display");
     } else {
         // If the mouse is initially outside the window, move it to the middle,
         // so that clicks are handled by the window (instead making it lose
@@ -410,6 +413,5 @@ static void toggle_mouse_grab(const SDL_KeyboardEvent &event) {
             SDL_WarpMouseInWindow(window, window_width / 2, window_height / 2);
         }
         SDL_SetRelativeMouseMode(SDL_TRUE);
-        SDL_SetWindowTitle(window, "DingusPPC Display (Mouse Grabbed)");
     }
 }

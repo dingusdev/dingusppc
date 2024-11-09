@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -58,6 +58,7 @@ public:
     void handle_events(const WindowEvent& wnd_event);
     void setup_hw_cursor(std::function<void(uint8_t *dst_buf, int dst_pitch)> draw_hw_cursor,
                          int cursor_width, int cursor_height);
+    void update_window_title();
 private:
     class Impl; // Holds private fields
     std::unique_ptr<Impl> impl;
