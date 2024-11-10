@@ -22,10 +22,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <utils/imgfile.h>
 
 #include <fstream>
+#include <sstream>
+#include <memory>
+
+extern bool is_deterministic;
 
 class ImgFile::Impl {
 public:
-    std::fstream stream;
+    std::unique_ptr<std::iostream> stream;
 };
 
 ImgFile::ImgFile(): impl(std::make_unique<Impl>())
@@ -37,31 +41,43 @@ ImgFile::~ImgFile() = default;
 
 bool ImgFile::open(const std::string &img_path)
 {
-    impl->stream.open(img_path, std::ios::in | std::ios::out | std::ios::binary);
-    return !impl->stream.fail();
+    if (is_deterministic) {
+        // Avoid writes to the underlying file by reading it all in memory and
+        // only operating on that.
+        auto mem_stream = std::make_unique<std::stringstream>();
+        std::ifstream temp(img_path, std::ios::in | std::ios::binary);
+        if (!temp) return false;
+        *mem_stream << temp.rdbuf();
+        impl->stream = std::move(mem_stream);
+    } else {
+        auto file_stream = std::make_unique<std::fstream>(img_path, std::ios::in | std::ios::out | std::ios::binary);
+        if (!file_stream->is_open()) return false;
+        impl->stream = std::move(file_stream);
+    }
+    return impl->stream && impl->stream->good();
 }
 
 void ImgFile::close()
 {
-    impl->stream.close();
+    impl->stream.reset();
 }
 
 uint64_t ImgFile::size() const
 {
-    impl->stream.seekg(0, impl->stream.end);
-    return impl->stream.tellg();
+    impl->stream->seekg(0, impl->stream->end);
+    return impl->stream->tellg();
 }
 
 uint64_t ImgFile::read(void* buf, uint64_t offset, uint64_t length) const
 {
-    impl->stream.seekg(offset, std::ios::beg);
-    impl->stream.read((char *)buf, length);
-    return impl->stream.gcount();
+    impl->stream->seekg(offset, std::ios::beg);
+    impl->stream->read((char *)buf, length);
+    return impl->stream->gcount();
 }
 
 uint64_t ImgFile::write(const void* buf, uint64_t offset, uint64_t length)
 {
-    impl->stream.seekg(offset, std::ios::beg);
-    impl->stream.write((const char *)buf, length);
-    return impl->stream.gcount();
+    impl->stream->seekg(offset, std::ios::beg);
+    impl->stream->write((const char *)buf, length);
+    return impl->stream->gcount();
 }

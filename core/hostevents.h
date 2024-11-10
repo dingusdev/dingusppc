@@ -146,6 +146,11 @@ public:
         _post_signal.disconnect_all();
     }
 
+    void disable_input_handlers() {
+        _mouse_signal.disable();
+        _keyboard_signal.disable();
+    }
+
 private:
     static EventManager* event_manager;
     EventManager() {}; // private constructor to implement a singleton

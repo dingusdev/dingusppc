@@ -57,6 +57,8 @@ MemCtrlBase* mem_ctrl_instance = 0;
 
 bool is_601 = false;
 
+bool is_deterministic = false;
+
 bool power_on = false;
 Po_Cause power_off_reason = po_enter_debugger;
 

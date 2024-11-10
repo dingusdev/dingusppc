@@ -19,30 +19,40 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif // NOMINMAX
+
+#include <core/timermanager.h>
+#include <cpu/ppc/ppcemu.h>
 #include <devices/common/dmacore.h>
 #include <devices/sound/soundserver.h>
 #include <endianswap.h>
 
+#include <algorithm>
+#include <functional>
 #include <loguru.hpp>
 #include <cubeb/cubeb.h>
 #ifdef _WIN32
 #include <objbase.h>
 #endif
 
-enum {
+typedef enum {
     SND_SERVER_DOWN = 0,
     SND_API_READY,
     SND_SERVER_UP,
     SND_STREAM_OPENED,
     SND_STREAM_CLOSED
-};
+} Status;
 
 class SoundServer::Impl {
 public:
-    int status;                     /* server status */
+    Status status = SND_SERVER_DOWN;
     cubeb *cubeb_ctx;
-
     cubeb_stream *out_stream;
+
+    uint32_t deterministic_poll_timer = 0;
+    std::function<void()> deterministic_poll_cb;
 };
 
 SoundServer::SoundServer(): impl(std::make_unique<Impl>())
@@ -91,6 +101,10 @@ void SoundServer::shutdown()
         /* fall through */
     case SND_API_READY:
         cubeb_destroy(impl->cubeb_ctx);
+        break;
+    case SND_SERVER_DOWN:
+        // Nothing to do.
+        break;
     }
 
     impl->status = SND_SERVER_DOWN;
@@ -148,8 +162,30 @@ static void status_callback(cubeb_stream *stream, void *user_data, cubeb_state s
     LOG_F(9, "Cubeb status callback fired, status = %d", state);
 }
 
-int SoundServer::open_out_stream(uint32_t sample_rate, void *user_data)
+int SoundServer::open_out_stream(uint32_t sample_rate, DmaOutChannel *dma_ch)
 {
+    if (is_deterministic) {
+        impl->deterministic_poll_cb = [dma_ch] {
+            if (!dma_ch->is_out_active()) {
+               return;
+            }
+            // Drain the DMA buffer, but don't do anything else.
+            int req_size = std::max(dma_ch->get_pull_data_remaining(), 1024);
+            int out_size = 0;
+            while (req_size > 0) {
+                uint8_t *chunk;
+                uint32_t chunk_size;
+                if (!dma_ch->pull_data(req_size, &chunk_size, &chunk)) {
+                    req_size -= chunk_size;
+                } else {
+                    break;
+                }
+            }
+        };
+        impl->status = SND_STREAM_OPENED;
+        LOG_F(9, "Deterministic sound output callback set up.");
+        return 0;
+    }
     int res;
     uint32_t latency_frames;
     cubeb_stream_params params;
@@ -170,7 +206,7 @@ int SoundServer::open_out_stream(uint32_t sample_rate, void *user_data)
 
     res = cubeb_stream_init(impl->cubeb_ctx, &impl->out_stream, "SndOut stream",
                             NULL, NULL, NULL, &params, latency_frames,
-                            sound_out_callback, status_callback, user_data);
+                            sound_out_callback, status_callback, dma_ch);
     if (res != CUBEB_OK) {
         LOG_F(ERROR, "Could not open sound output stream, error: %d", res);
         return -1;
@@ -185,11 +221,22 @@ int SoundServer::open_out_stream(uint32_t sample_rate, void *user_data)
 
 int SoundServer::start_out_stream()
 {
+    if (is_deterministic) {
+        LOG_F(9, "Starting sound output deterministic polling.");
+        impl->deterministic_poll_timer = TimerManager::get_instance()->add_cyclic_timer(MSECS_TO_NSECS(10), impl->deterministic_poll_cb);
+        return 0;
+    }
     return cubeb_stream_start(impl->out_stream);
 }
 
 void SoundServer::close_out_stream()
 {
+    if (is_deterministic) {
+        LOG_F(9, "Stopping sound output deterministic polling.");
+        TimerManager::get_instance()->cancel_timer(impl->deterministic_poll_timer);
+        impl->status = SND_STREAM_CLOSED;
+        return;
+    }
     cubeb_stream_stop(impl->out_stream);
     cubeb_stream_destroy(impl->out_stream);
     impl->status = SND_STREAM_CLOSED;

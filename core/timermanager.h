@@ -31,8 +31,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <vector>
 #include <mutex>
 
-using namespace std;
-
 #define NS_PER_SEC      1000000000
 #define USEC_PER_SEC    1000000
 #define NS_PER_USEC     1000
@@ -42,7 +40,7 @@ using namespace std;
 #define USECS_TO_NSECS(us) (us) * NS_PER_USEC
 #define MSECS_TO_NSECS(ms) (ms) * NS_PER_MSEC
 
-typedef function<void()> timer_cb;
+typedef std::function<void()> timer_cb;
 
 /** Extend std::priority_queue as suggested here:
     https://stackoverflow.com/a/36711682
@@ -101,7 +99,7 @@ typedef struct TimerInfo {
 // Custom comparator for sorting our timer queue in ascending order
 class MyGtComparator {
 public:
-    bool operator()(const shared_ptr<TimerInfo>& l, const shared_ptr<TimerInfo>& r) {
+    bool operator()(const std::shared_ptr<TimerInfo>& l, const std::shared_ptr<TimerInfo>& r) {
         return l.get()->timeout_ns > r.get()->timeout_ns;
     }
 };
@@ -116,7 +114,7 @@ public:
     };
 
     // callback for retrieving current time
-    void set_time_now_cb(const function<uint64_t()> &cb) {
+    void set_time_now_cb(const std::function<uint64_t()> &cb) {
         this->get_time_now = cb;
     };
 
@@ -142,10 +140,10 @@ private:
     TimerManager(){}; // private constructor to implement a singleton
 
     // timer queue
-    my_priority_queue<shared_ptr<TimerInfo>, vector<shared_ptr<TimerInfo>>, MyGtComparator> timer_queue;
+    my_priority_queue<std::shared_ptr<TimerInfo>, std::vector<std::shared_ptr<TimerInfo>>, MyGtComparator> timer_queue;
 
-    function<uint64_t()>   get_time_now;
-    function<void()>       notify_timer_changes;
+    std::function<uint64_t()>   get_time_now;
+    std::function<void()>       notify_timer_changes;
 
     std::atomic<uint32_t> id{0};
     bool        cb_active = false; // true if a timer callback is executing // FIXME: Do we need this? It gets written in main thread and read in audio thread.
