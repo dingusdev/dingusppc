@@ -328,6 +328,9 @@ extern bool is_601;        // For PowerPC 601 Emulation
 extern bool is_altivec;    // For Altivec Emulation
 extern bool is_64bit;      // For PowerPC G5 Emulation
 
+// Make execution deterministic (ignore external input, used a fixed date, etc.)
+extern bool is_deterministic;
+
 // Important Addressing Integers
 extern uint32_t ppc_cur_instruction;
 extern uint32_t ppc_next_instruction_address;

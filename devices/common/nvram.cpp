@@ -19,6 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <cpu/ppc/ppcemu.h>
 #include <devices/common/hwcomponent.h>
 #include <devices/common/nvram.h>
 #include <devices/deviceregistry.h>
@@ -81,6 +82,10 @@ void NVram::init() {
 }
 
 void NVram::save() {
+    if (is_deterministic) {
+        LOG_F(INFO, "Skipping NVRAM write to \"%s\" in deterministic mode", this->file_name.c_str());
+        return;
+    }
     ofstream f(this->file_name, ios::out | ios::binary);
 
     /* write file identification */

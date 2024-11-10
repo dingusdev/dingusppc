@@ -53,6 +53,9 @@ public:
 
     // Calls all connected slots.
     void emit(Args... args) {
+        if (!_is_enabled) {
+            return;
+        }
         for (auto const& it : _slots) {
             it.second(args...);
         }
@@ -66,9 +69,22 @@ public:
         _slots.clear();
     }
 
+    void disable() {
+        _is_enabled = false;
+    }
+
+    void enable() {
+        _is_enabled = true;
+    }
+
+    bool is_enabled() {
+        return _is_enabled;
+    }
+
 private:
     mutable std::map<int, std::function<void(Args...)>> _slots;
     mutable unsigned int _current_id { 0 };
+    mutable bool _is_enabled { true };
 };
 
 #endif // CORE_SIGNAL_H

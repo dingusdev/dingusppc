@@ -751,7 +751,22 @@ void ViaCuda::pseudo_command() {
 }
 
 uint32_t ViaCuda::calc_real_time() {
-    auto end = std::chrono::system_clock::now();
+    std::chrono::time_point<std::chrono::system_clock> end;
+    if (is_deterministic) {
+        // March 24, 2001 was the public release date of Mac OS X.
+        std::tm tm = {
+            .tm_sec  = 0,
+            .tm_min  = 0,
+            .tm_hour = 12,
+            .tm_mday = 24,
+            .tm_mon  = 3 - 1,
+            .tm_year = 2001 - 1900,
+            .tm_isdst = 0
+        };
+        end = std::chrono::system_clock::from_time_t(std::mktime(&tm));
+    } else {
+        end = std::chrono::system_clock::now();
+    }
     auto elapsed_systemclock = end - this->mac_epoch;
     auto elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(elapsed_systemclock);
     return uint32_t(elapsed_seconds.count());

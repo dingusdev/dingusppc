@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <core/hostevents.h>
 #include <core/timermanager.h>
 #include <cpu/ppc/ppcemu.h>
+#include <cpu/ppc/ppcdisasm.h>
 #include <debugger/debugger.h>
 #include <machines/machinebase.h>
 #include <machines/machinefactory.h>
@@ -82,6 +83,8 @@ int main(int argc, char** argv) {
         "Enter the built-in debugger");
     app.add_option("-b,--bootrom", bootrom_path, "Specifies BootROM path")
         ->check(CLI::ExistingFile);
+    app.add_flag("--deterministic", is_deterministic,
+        "Make execution deterministic");
 
     bool              log_to_stderr = false;
     loguru::Verbosity log_verbosity = loguru::Verbosity_INFO;
@@ -177,6 +180,9 @@ int main(int argc, char** argv) {
 
     cout << "BootROM path: " << bootrom_path << endl;
     cout << "Execution mode: " << execution_mode << endl;
+    if (is_deterministic) {
+        cout << "Using deterministic execution mode, input will be ignored." << endl;
+    }
 
     if (!init()) {
         LOG_F(ERROR, "Cannot initialize");
@@ -233,6 +239,21 @@ void run_machine(std::string machine_str, std::string bootrom_path, uint32_t exe
         return;
     }
 
+    uint32_t deterministic_timer;
+    if (is_deterministic) {
+        EventManager::get_instance()->disable_input_handlers();
+        // Log the PC and instruction every second to make it easier to validate
+        // that execution is the same every time.
+        deterministic_timer = TimerManager::get_instance()->add_cyclic_timer(MSECS_TO_NSECS(100), [] {
+            PPCDisasmContext ctx;
+            ctx.instr_code = ppc_cur_instruction;
+            ctx.instr_addr = 0;
+            ctx.simplified = false;
+            auto op_name = disassemble_single(&ctx);
+            LOG_F(INFO, "TS=%016llu PC=0x%08x executing %s", get_virt_time_ns(), ppc_state.pc, op_name.c_str());
+        });
+    }
+
     // set up system wide event polling using
     // default Macintosh polling rate of 11 ms
     uint32_t event_timer = TimerManager::get_instance()->add_cyclic_timer(MSECS_TO_NSECS(11), [] {
@@ -273,6 +294,9 @@ void run_machine(std::string machine_str, std::string bootrom_path, uint32_t exe
         TimerManager::get_instance()->cancel_timer(profiling_timer);
     }
 #endif
+    if (is_deterministic) {
+        TimerManager::get_instance()->cancel_timer(deterministic_timer);
+    }
     EventManager::get_instance()->disconnect_handlers();
     delete gMachineObj.release();
 }
