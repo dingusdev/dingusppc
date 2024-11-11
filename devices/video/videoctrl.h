@@ -103,7 +103,7 @@ protected:
 
     // interrupt suff
     InterruptCtrl* int_ctrl = nullptr;
-    uint32_t       irq_id   = 0;
+    uint64_t       irq_id   = 0;
     std::function<void(uint8_t irq_line_state)> vbl_cb = [this](uint8_t irq_line_state) {
         if (this->int_ctrl)
             this->int_ctrl->ack_int(this->irq_id, irq_line_state);

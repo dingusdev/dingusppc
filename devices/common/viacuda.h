@@ -207,7 +207,7 @@ private:
 
     // VIA interrupt related stuff
     InterruptCtrl* int_ctrl;
-    uint32_t       irq_id;
+    uint64_t       irq_id;
     uint8_t        _via_ifr;
     uint8_t        _via_ier;
     uint8_t        old_ifr = 0;

@@ -113,7 +113,7 @@ protected:
 
     // interrupt related stuff
     InterruptCtrl*  int_ctrl = nullptr;
-    uint32_t        irq_id   = 0;
+    uint64_t        irq_id   = 0;
     uint8_t         irq      = 0;
     uint8_t         int_mask = 0;
     uint8_t         int_stat = 0;

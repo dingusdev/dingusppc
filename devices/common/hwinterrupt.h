@@ -30,9 +30,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 enum IntSrc : uint32_t {
     INT_UNKNOWN = 0,
     VIA_CUDA,
+    VIA2,
     SCSI_MESH,
     SCSI_CURIO,
     SWIM3,
+    ESCC,
     SCCA,
     SCCB,
     ETHERNET,
@@ -58,6 +60,7 @@ enum IntSrc : uint32_t {
     PLANB,
     VCI,
     PLATINUM,
+    DMA_ALL,
     DMA_SCSI_MESH,
     DMA_SCSI_CURIO,
     DMA_SWIM3,
@@ -80,6 +83,16 @@ enum IntSrc : uint32_t {
     USB,
     PIPPIN_E,
     PIPPIN_F,
+    ZIVA,
+    PCI_CARDBUS,
+    MEDIA_BAY,
+    SLOT_ALL,
+    SLOT_0,
+    SLOT_1,
+    SLOT_2,
+    SLOT_PDS,
+    SLOT_VDS,
+    VBL,
 };
 
 /** Base class for interrupt controllers. */
@@ -89,17 +102,17 @@ public:
     virtual ~InterruptCtrl() = default;
 
     // register interrupt sources for a device
-    virtual uint32_t register_dev_int(IntSrc src_id) = 0;
-    virtual uint32_t register_dma_int(IntSrc src_id) = 0;
+    virtual uint64_t register_dev_int(IntSrc src_id) = 0;
+    virtual uint64_t register_dma_int(IntSrc src_id) = 0;
 
     // acknowledge HW interrupt
-    virtual void ack_int(uint32_t irq_id, uint8_t irq_line_state)     = 0;
-    virtual void ack_dma_int(uint32_t irq_id, uint8_t irq_line_state) = 0;
+    virtual void ack_int(uint64_t irq_id, uint8_t irq_line_state)     = 0;
+    virtual void ack_dma_int(uint64_t irq_id, uint8_t irq_line_state) = 0;
 };
 
 typedef struct {
     InterruptCtrl   *int_ctrl_obj;
-    uint32_t        irq_id;
+    uint64_t        irq_id;
 } IntDetails;
 
 #endif // HW_INTERRUPT_H

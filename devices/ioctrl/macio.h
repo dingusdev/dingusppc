@@ -144,17 +144,17 @@ public:
     void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size);
 
     // InterruptCtrl methods
-    uint32_t register_dev_int(IntSrc src_id);
-    uint32_t register_dma_int(IntSrc src_id);
-    void ack_int(uint32_t irq_id, uint8_t irq_line_state);
-    void ack_dma_int(uint32_t irq_id, uint8_t irq_line_state);
-
     void attach_iodevice(int dev_num, IobusDevice* dev_obj);
+
+    uint64_t register_dev_int(IntSrc src_id) override;
+    uint64_t register_dma_int(IntSrc src_id) override;
+    void ack_int(uint64_t irq_id, uint8_t irq_line_state) override;
+    void ack_dma_int(uint64_t irq_id, uint8_t irq_line_state) override;
 
 protected:
     void notify_bar_change(int bar_num);
-    void ack_int_common(uint32_t irq_id, uint8_t irq_line_state);
-    void signal_cpu_int(uint32_t irq_id);
+    void ack_int_common(uint64_t irq_id, uint8_t irq_line_state);
+    void signal_cpu_int(uint64_t irq_id);
     void clear_cpu_int();
 
 private:
@@ -208,19 +208,26 @@ public:
     }
 
     // MMIO device methods
-    uint32_t read(uint32_t rgn_start, uint32_t offset, int size);
-    void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size);
+    uint32_t read(uint32_t rgn_start, uint32_t offset, int size) override;
+    void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size) override;
 
     // InterruptCtrl methods
-    uint32_t register_dev_int(IntSrc src_id);
-    uint32_t register_dma_int(IntSrc src_id);
-    void ack_int(uint32_t irq_id, uint8_t irq_line_state);
-    void ack_dma_int(uint32_t irq_id, uint8_t irq_line_state);
+    uint64_t register_dev_int(IntSrc src_id) override;
+    uint64_t register_dma_int(IntSrc src_id) override;
+    void ack_int(uint64_t irq_id, uint8_t irq_line_state) override;
+    void ack_dma_int(uint64_t irq_id, uint8_t irq_line_state) override;
 
 protected:
     void notify_bar_change(int bar_num);
+
     uint32_t read_ctrl(uint32_t offset, int size);
     void write_ctrl(uint32_t offset, uint32_t value, int size);
+
+    void ack_int_common(uint64_t irq_id, uint8_t irq_line_state);
+    uint32_t mio_ctrl_read(uint32_t offset, int size);
+    uint32_t mio_ctrl_read_aligned(uint32_t offset);
+    void mio_ctrl_write(uint32_t offset, uint32_t value, int size);
+
     uint32_t dma_read(uint32_t offset, int size);
     void dma_write(uint32_t offset, uint32_t value, int size);
 
@@ -235,6 +242,7 @@ private:
     std::atomic<uint32_t>    int_levels{0};
     std::atomic<uint32_t>    int_events{0};
     bool        cpu_int_latch = false;
+    uint32_t    feat_ctrl     = 0;    // features control register
 
     std::unique_ptr<AwacsScreamer>  awacs; // AWACS audio codec instance
     std::unique_ptr<DMAChannel>     snd_out_dma;
@@ -350,14 +358,14 @@ public:
     void set_media_bay_id(uint8_t id);
 
     // MMIO device methods
-    uint32_t read(uint32_t rgn_start, uint32_t offset, int size);
-    void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size);
+    uint32_t read(uint32_t rgn_start, uint32_t offset, int size) override;
+    void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size) override;
 
     // InterruptCtrl methods
-    uint32_t register_dev_int(IntSrc src_id);
-    uint32_t register_dma_int(IntSrc src_id);
-    void ack_int(uint32_t irq_id, uint8_t irq_line_state);
-    void ack_dma_int(uint32_t irq_id, uint8_t irq_line_state);
+    uint64_t register_dev_int(IntSrc src_id) override;
+    uint64_t register_dma_int(IntSrc src_id) override;
+    void ack_int(uint64_t irq_id, uint8_t irq_line_state) override;
+    void ack_dma_int(uint64_t irq_id, uint8_t irq_line_state) override;
 
 protected:
     uint32_t dma_read(uint32_t offset, int size);
@@ -367,23 +375,24 @@ protected:
     void mio_ctrl_write(uint32_t offset, uint32_t value, int size);
 
     void notify_bar_change(int bar_num);
+    void ack_int_common(uint64_t irq_id, uint8_t irq_line_state);
 
-    void feature_control(const uint32_t value);
+    void feature_control(uint32_t value);
 
     void signal_cpu_int();
     void clear_cpu_int();
 
 private:
     uint32_t base_addr     = 0;
-    std::atomic<uint32_t> int_events2{0};
-    uint32_t int_mask2     = 0;
-    std::atomic<uint32_t> int_levels2{0};
-    std::atomic<uint32_t> int_events1{0};
-    uint32_t int_mask1     = 0;
-    std::atomic<uint32_t> int_levels1{0};
+
+    // interrupt state
+    uint64_t int_mask      = 0;
+    std::atomic<uint64_t> int_levels{0};
+    std::atomic<uint64_t> int_events{0};
+    bool     cpu_int_latch = false;
+
     uint32_t feat_ctrl     = 0;    // features control register
     uint32_t aux_ctrl      = 0;    // aux features control register
-    bool     cpu_int_latch = false;
 
     uint8_t  cpu_id = 0xE0; // CPUID field (LSB of the MIO_HEAT_ID)
     uint8_t  mb_id  = 0x70; // Media Bay ID (bits 15:8 of the MIO_HEAT_ID)

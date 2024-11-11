@@ -75,8 +75,8 @@ AMIC::AMIC() : MMIODevice()
     this->viacuda = dynamic_cast<ViaCuda*>(gMachineObj->get_comp_by_name("ViaCuda"));
 
     // initialize sound HW
-    this->snd_out_dma = std::unique_ptr<AmicSndOutDma> (new AmicSndOutDma());
-    this->snd_out_dma->init_interrupts(this, 2 << 8);
+    this->snd_out_dma = std::unique_ptr<AmicSndOutDma>(new AmicSndOutDma());
+    this->snd_out_dma->init_interrupts(this, DMA1_INT_SOUND << DMA1_INT_SHIFT);
     this->awacs       = std::unique_ptr<AwacDevicePdm> (new AwacDevicePdm());
     this->awacs->set_dma_out(this->snd_out_dma.get());
 
@@ -448,50 +448,63 @@ void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
 }
 
 // ======================== Interrupt related stuff ==========================
-uint32_t AMIC::register_dev_int(IntSrc src_id) {
+uint64_t AMIC::register_dev_int(IntSrc src_id) {
     switch (src_id) {
-    case IntSrc::VIA_CUDA:
-        return CPU_INT_VIA1;
-    case IntSrc::SCSI_CURIO:
-        return VIA2_INT_SCSI_IRQ << 8;
-    case IntSrc::SWIM3:
-        return VIA2_INT_SWIM3 << 8;
-    case IntSrc::NMI:
-        return CPU_INT_NMI;
+    case IntSrc::VIA_CUDA      : return CPU_INT_VIA1      << CPU_INT_SHIFT;
+    case IntSrc::VIA2          : return CPU_INT_VIA2      << CPU_INT_SHIFT;
+    case IntSrc::ESCC          : return CPU_INT_ESCC      << CPU_INT_SHIFT;
+    case IntSrc::ETHERNET      : return CPU_INT_ENET      << CPU_INT_SHIFT;
+    case IntSrc::DMA_ALL       : return CPU_INT_ALL_DMA   << CPU_INT_SHIFT;
+    case IntSrc::NMI           : return CPU_INT_NMI       << CPU_INT_SHIFT;
+
+    case IntSrc::DMA_SCSI_CURIO: return VIA2_INT_SCSI_DRQ << VIA2_INT_SHIFT;
+    case IntSrc::SLOT_ALL      : return VIA2_INT_ALL_SLOT << VIA2_INT_SHIFT;
+    case IntSrc::SCSI_CURIO    : return VIA2_INT_SCSI_IRQ << VIA2_INT_SHIFT;
+    case IntSrc::DAVBUS        : return VIA2_INT_SOUND    << VIA2_INT_SHIFT;
+    case IntSrc::SWIM3         : return VIA2_INT_SWIM3    << VIA2_INT_SHIFT;
+
+    case IntSrc::SLOT_0        : return SLOT_INT_SLOT_0   << SLOT_INT_SHIFT;
+    case IntSrc::SLOT_1        : return SLOT_INT_SLOT_1   << SLOT_INT_SHIFT;
+    case IntSrc::SLOT_2        : return SLOT_INT_SLOT_2   << SLOT_INT_SHIFT;
+    case IntSrc::SLOT_PDS      : return SLOT_INT_SLOT_PDS << SLOT_INT_SHIFT;
+    case IntSrc::SLOT_VDS      : return SLOT_INT_SLOT_VDS << SLOT_INT_SHIFT;
+    case IntSrc::VBL           : return SLOT_INT_VBL      << SLOT_INT_SHIFT;
+
+    case IntSrc::DMA_DAVBUS_Tx : return DMA1_INT_SOUND    << DMA1_INT_SHIFT;
     default:
         ABORT_F("AMIC: unknown interrupt source %d", src_id);
     }
     return 0;
 }
 
-uint32_t AMIC::register_dma_int(IntSrc src_id) {
+uint64_t AMIC::register_dma_int(IntSrc src_id) {
     ABORT_F("AMIC: register_dma_int() not implemented");
     return 0;
 }
 
-void AMIC::ack_int(uint32_t irq_id, uint8_t irq_line_state) {
+void AMIC::ack_int(uint64_t irq_id, uint8_t irq_line_state) {
     // dispatch cascaded AMIC interrupts from various sources
     // irq_id format: 00DDCCBBAA where
     // - AA -> CPU interrupts
     // - BB -> pseudo VIA2 interrupts
     // - CC -> slot interrupts
-    if (irq_id < 0x100) {
-        this->ack_cpu_int(irq_id, irq_line_state);
-    } else if (irq_id < 0x10000) {
-        this->ack_via2_int(irq_id >> 8, irq_line_state);
-    } else if (irq_id < 0x1000000) {
-        this->ack_slot_int(irq_id >> 16, irq_line_state);
+    if (irq_id >> SLOT_INT_SHIFT) {
+        this->ack_slot_int(irq_id >> SLOT_INT_SHIFT, irq_line_state);
+    } else if (irq_id >> VIA2_INT_SHIFT) {
+        this->ack_via2_int(irq_id >> VIA2_INT_SHIFT, irq_line_state);
+    } else if (irq_id >> CPU_INT_SHIFT) {
+        this->ack_cpu_int(irq_id >> CPU_INT_SHIFT, irq_line_state);
     } else {
-        ABORT_F("AMIC: unknown interrupt source ID 0x%X", irq_id);
+        ABORT_F("AMIC: unknown interrupt source ID 0x%llX", irq_id);
     }
 }
 
-void AMIC::ack_slot_int(uint32_t irq_id, uint8_t irq_line_state) {
+void AMIC::ack_slot_int(uint8_t slot_int, uint8_t irq_line_state) {
     // CAUTION: reverse logic (0 - true, 1 - false) in the IFR register!
     if (irq_line_state) {
-        this->via2_slot_ifr &= ~irq_id;
+        this->via2_slot_ifr &= ~slot_int;
     } else {
-        this->via2_slot_ifr |= irq_id;
+        this->via2_slot_ifr |= slot_int;
     }
     uint8_t new_irq = !!(~this->via2_slot_ifr & this->via2_slot_ier & 0x7F);
     if (new_irq != this->via2_slot_irq) {
@@ -509,26 +522,26 @@ void AMIC::update_via2_irq() {
     }
 }
 
-void AMIC::ack_via2_int(uint32_t irq_id, uint8_t irq_line_state) {
+void AMIC::ack_via2_int(uint8_t via2_int, uint8_t irq_line_state) {
     if (irq_line_state) {
-        this->via2_ifr |= irq_id;
+        this->via2_ifr |= via2_int;
     } else {
-        this->via2_ifr &= ~irq_id;
+        this->via2_ifr &= ~via2_int;
     }
     this->update_via2_irq();
 }
 
-void AMIC::ack_cpu_int(uint32_t irq_id, uint8_t irq_line_state) {
+void AMIC::ack_cpu_int(uint8_t cpu_int, uint8_t irq_line_state) {
     if (this->int_ctrl & CPU_INT_MODE) { // 68k interrupt emulation mode?
         if (irq_line_state) {
-            this->dev_irq_lines |= irq_id;
+            this->dev_irq_lines |= cpu_int;
         } else {
-            this->dev_irq_lines &= ~irq_id;
+            this->dev_irq_lines &= ~cpu_int;
         }
         if (!(this->int_ctrl & CPU_INT_FLAG)) {
             this->int_ctrl |= CPU_INT_FLAG;
             ppc_assert_int();
-            LOG_F(5, "AMIC: CPU INT asserted, source: %d", irq_id);
+            LOG_F(5, "AMIC: CPU INT asserted, source: 0x%02x", cpu_int);
         } else {
             LOG_F(5, "AMIC: CPU INT already latched");
         }
@@ -538,15 +551,15 @@ void AMIC::ack_cpu_int(uint32_t irq_id, uint8_t irq_line_state) {
     }
 }
 
-void AMIC::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state) {
-    if (irq_id >= 0x100) { // DMA Interrupt Flags 1
-        irq_id = (irq_id >> 8) & 0xFFU;
+void AMIC::ack_dma_int(uint64_t irq_id, uint8_t irq_line_state) {
+    if (irq_id >> DMA1_INT_SHIFT) { // DMA Interrupt Flags 1
+        irq_id = (irq_id >> DMA1_INT_SHIFT) & 0xFFU;
         if (irq_line_state)
             this->dma_ifr1 |= irq_id;
         else
             this->dma_ifr1 &= ~irq_id;
-    } else { // DMA Interrupt Flags 0
-        irq_id &= 0xFFU;
+    } else if (irq_id >> DMA0_INT_SHIFT) { // DMA Interrupt Flags 0
+        irq_id = (irq_id >> DMA0_INT_SHIFT) & 0xFFU;
         if (irq_line_state)
             this->dma_ifr0 |= irq_id;
         else
@@ -588,7 +601,7 @@ void AmicSndOutDma::update_irq() {
     if (new_level != this->irq_level) {
         this->irq_level = new_level;
         TimerManager::get_instance()->add_immediate_timer([this] {
-            this->int_ctrl->ack_dma_int(this->irq_id, this->irq_level);
+            this->int_ctrl->ack_dma_int(this->snd_dma_irq_id, this->irq_level);
         });
     }
 }

@@ -217,19 +217,51 @@ void OHare::dma_write(uint32_t offset, uint32_t value, int size)
     }
 }
 
-uint32_t OHare::register_dev_int(IntSrc src_id)
+/*
+Commenting out temporarily due to compile issues
+
+void OHare::feature_control(uint32_t value)
+{
+    LOG_F(9, "write %x to MIO:Feat_Ctrl register", value);
+
+    this->feat_ctrl = value;
+
+    if (!(this->feat_ctrl & 1)) {
+        LOG_F(9, "%s: Monitor sense enabled", this->get_name().c_str());
+    } else {
+        LOG_F(9, "%s: Monitor sense disabled", this->get_name().c_str());
+    }
+}
+*/
+
+#define INT_TO_IRQ_ID(intx) (1 << intx)
+
+uint64_t OHare::register_dev_int(IntSrc src_id)
 {
     LOG_F(ERROR, "OHare: register_dev_int() not implemented");
     return 0;
 }
 
-uint32_t OHare::register_dma_int(IntSrc src_id)
+uint64_t OHare::register_dma_int(IntSrc src_id)
 {
-    LOG_F(ERROR, "OHare: register_dma_int() not implemented");
+    switch (src_id) {
+    case IntSrc::DMA_SCSI_MESH: return INT_TO_IRQ_ID(0x00);
+    case IntSrc::DMA_SWIM3    : return INT_TO_IRQ_ID(0x01);
+    case IntSrc::DMA_IDE0     : return INT_TO_IRQ_ID(0x02);
+    //
+    case IntSrc::DMA_SCCA_Tx  : return INT_TO_IRQ_ID(0x04);
+    case IntSrc::DMA_SCCA_Rx  : return INT_TO_IRQ_ID(0x05);
+    case IntSrc::DMA_SCCB_Tx  : return INT_TO_IRQ_ID(0x06);
+    case IntSrc::DMA_SCCB_Rx  : return INT_TO_IRQ_ID(0x07);
+    case IntSrc::DMA_DAVBUS_Tx: return INT_TO_IRQ_ID(0x08);
+    case IntSrc::DMA_DAVBUS_Rx: return INT_TO_IRQ_ID(0x09);
+    default:
+        ABORT_F("%s: unknown DMA interrupt source %d", this->name.c_str(), src_id);
+    }
     return 0;
 }
 
-void OHare::ack_int(uint32_t irq_id, uint8_t irq_line_state)
+void OHare::ack_int_common(uint64_t irq_id, uint8_t irq_line_state)
 {
     // native mode:   set IRQ bits in int_events1 on a 0-to-1 transition
     // emulated mode: set IRQ bits in int_events1 on all transitions
@@ -240,22 +272,22 @@ void OHare::ack_int(uint32_t irq_id, uint8_t irq_line_state)
 #endif
     if ((this->int_mask & MACIO_INT_MODE) ||
         (irq_line_state && !(this->int_levels & irq_id))) {
-        this->int_events |= irq_id;
+        this->int_events |= (uint32_t)irq_id;
     } else {
-        this->int_events &= ~irq_id;
+        this->int_events &= ~(uint32_t)irq_id;
     }
     this->int_events &= this->int_mask;
     // update IRQ line state
     if (irq_line_state) {
-        this->int_levels |= irq_id;
+        this->int_levels |= (uint32_t)irq_id;
     } else {
-        this->int_levels &= ~irq_id;
+        this->int_levels &= ~(uint32_t)irq_id;
     }
 
     this->signal_cpu_int();
 }
 
-void OHare::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state)
+void OHare::ack_int(uint64_t irq_id, uint8_t irq_line_state)
 {
     // native mode:   set IRQ bits in int_events1 on a 0-to-1 transition
     // emulated mode: set IRQ bits in int_events1 on all transitions
@@ -272,8 +304,12 @@ void OHare::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state)
     } else {
         this->int_levels &= ~irq_id;
     }
+    this->ack_int_common(irq_id, irq_line_state);
+}
 
-    this->signal_cpu_int();
+void OHare::ack_dma_int(uint64_t irq_id, uint8_t irq_line_state)
+{
+    this->ack_int_common(irq_id, irq_line_state);
 }
 
 void OHare::signal_cpu_int() {
@@ -301,7 +337,7 @@ static const std::vector<std::string> OHare_Subdevices = {
 };
 
 static const DeviceDescription OHare_Descriptor = {
-    OHare::create, OHare_Subdevices, {}
-};
+    OHare::create, OHare_Subdevices, {
+}};
 
 REGISTER_DEVICE(OHare, OHare_Descriptor);

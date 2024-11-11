@@ -299,22 +299,22 @@ uint32_t HeathrowIC::mio_ctrl_read(uint32_t offset, int size) {
 
     switch (offset & 0xFC) {
     case MIO_INT_EVENTS2:
-        value = this->int_events2;
+        value = this->int_events >> 32;
         break;
     case MIO_INT_MASK2:
-        value = this->int_mask2;
+        value = this->int_mask >> 32;
         break;
     case MIO_INT_LEVELS2:
-        value = this->int_levels2;
+        value = this->int_levels >> 32;
         break;
     case MIO_INT_EVENTS1:
-        value = this->int_events1;
+        value = uint32_t(this->int_events);
         break;
     case MIO_INT_MASK1:
-        value = this->int_mask1;
+        value = uint32_t(this->int_mask);
         break;
     case MIO_INT_LEVELS1:
-        value = this->int_levels1;
+        value = uint32_t(int_levels);
         break;
     case MIO_INT_CLEAR1:
     case MIO_INT_CLEAR2:
@@ -343,25 +343,24 @@ uint32_t HeathrowIC::mio_ctrl_read(uint32_t offset, int size) {
 void HeathrowIC::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
     switch (offset & 0xFC) {
     case MIO_INT_MASK2:
-        this->int_mask2 |= BYTESWAP_32(value) & ~MACIO_INT_MODE;
+        this->int_mask |= uint64_t(BYTESWAP_32(value) & ~MACIO_INT_MODE) << 32;
         this->signal_cpu_int();
         break;
     case MIO_INT_CLEAR2:
-        this->int_events2 &= ~(BYTESWAP_32(value) & 0x7FFFFFFFUL);
+        this->int_events &= ~(uint64_t(BYTESWAP_32(value) & 0x7FFFFFFFUL) << 32);
         clear_cpu_int();
         break;
     case MIO_INT_MASK1:
-        this->int_mask1 = BYTESWAP_32(value);
+        this->int_mask = (this->int_mask & 0x7FFFFFFF00000000ULL) | BYTESWAP_32(value);
         // copy IntMode bit to InterruptMask2 register
-        this->int_mask2 = (this->int_mask2 & ~MACIO_INT_MODE) | (this->int_mask1 & MACIO_INT_MODE);
+        this->int_mask |= uint64_t(this->int_mask & MACIO_INT_MODE) << 32;
         this->signal_cpu_int();
         break;
     case MIO_INT_CLEAR1:
-        if ((this->int_mask1 & MACIO_INT_MODE) && (value & MACIO_INT_CLR)) {
-            this->int_events1 = 0;
-            this->int_events2 = 0;
+        if ((this->int_mask & MACIO_INT_MODE) && (value & MACIO_INT_CLR)) {
+            this->int_events = 0;
         } else {
-            this->int_events1 &= ~(BYTESWAP_32(value) & 0x7FFFFFFFUL);
+            this->int_events &= ~uint64_t(BYTESWAP_32(value) & 0x7FFFFFFFUL);
         }
         clear_cpu_int();
         break;
@@ -381,7 +380,7 @@ void HeathrowIC::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
     }
 }
 
-void HeathrowIC::feature_control(const uint32_t value)
+void HeathrowIC::feature_control(uint32_t value)
 {
     LOG_F(9, "write %x to MIO:Feat_Ctrl register", value);
 
@@ -394,22 +393,9 @@ void HeathrowIC::feature_control(const uint32_t value)
     }
 }
 
-#define FIRST_INT1_BIT 12 // The first ten are DMA, the next 2 appear to be unused.
-                          // We'll map 1:1 the INT1 bits 31..12 (0x1F..0x0C) as IRQ_ID bits.
-#define FIRST_INT2_BIT  2 // Skip the first two which are Ethernet DMA.
-                          // We'll map INT2 bits 13..2 (interrupts 45..34 or 0x2D..0x22) as IRQ_ID bits 11..0.
-#define FIRST_INT1_IRQ_ID_BIT 12 // Same as INT1_BIT so there won't be any shifting required.
-#define FIRST_INT2_IRQ_ID_BIT  0
+#define INT_TO_IRQ_ID(intx) (1ULL << intx)
 
-#define INT1_TO_IRQ_ID(int1) (1 << (int1 - FIRST_INT1_BIT + FIRST_INT1_IRQ_ID_BIT))
-#define INT2_TO_IRQ_ID(int2) (1 << (int2 - FIRST_INT2_BIT + FIRST_INT2_IRQ_ID_BIT - 32))
-#define INT_TO_IRQ_ID(intx) (intx < 32 ? INT1_TO_IRQ_ID(intx) : INT2_TO_IRQ_ID(intx))
-
-#define IS_INT1(irq_id) (irq_id >= 1 << FIRST_INT1_IRQ_ID_BIT)
-#define IRQ_ID_TO_INT1_MASK(irq_id) (irq_id <<= (FIRST_INT1_BIT - FIRST_INT1_IRQ_ID_BIT))
-#define IRQ_ID_TO_INT2_MASK(irq_id) (irq_id <<= (FIRST_INT2_BIT - FIRST_INT2_IRQ_ID_BIT))
-
-uint32_t HeathrowIC::register_dev_int(IntSrc src_id)
+uint64_t HeathrowIC::register_dev_int(IntSrc src_id)
 {
     switch (src_id) {
     case IntSrc::SCSI_MESH  : return INT_TO_IRQ_ID(0x0C);
@@ -446,193 +432,65 @@ uint32_t HeathrowIC::register_dev_int(IntSrc src_id)
     return 0;
 }
 
-#define FIRST_DMA_INT1_BIT  0 // bit 0 is SCSI DMA
-#define FIRST_DMA_INT2_BIT  0 // bit 0 is Ethernet DMA Tx
-#define FIRST_DMA_INT1_IRQ_ID_BIT  0
-#define FIRST_DMA_INT2_IRQ_ID_BIT 16 // There's only 10 INT1 DMA bits but we'll put INT2 DMA bits in the upper 16 bits
-
-#define DMA_INT1_TO_IRQ_ID(int1) (1 << (int1 - FIRST_DMA_INT1_BIT + FIRST_DMA_INT1_IRQ_ID_BIT))
-#define DMA_INT2_TO_IRQ_ID(int2) (1 << (int2 - FIRST_DMA_INT2_BIT + FIRST_DMA_INT2_IRQ_ID_BIT - 32))
-#define DMA_INT_TO_IRQ_ID(intx) (intx < 32 ? DMA_INT1_TO_IRQ_ID(intx) : DMA_INT2_TO_IRQ_ID(intx))
-
-#define IS_DMA_INT1(irq_id) (irq_id < 1 << FIRST_DMA_INT2_IRQ_ID_BIT)
-#define DMA_IRQ_ID_TO_INT1_MASK(irq_id) (irq_id <<= (FIRST_DMA_INT1_BIT - FIRST_DMA_INT1_IRQ_ID_BIT))
-#define DMA_IRQ_ID_TO_INT2_MASK(irq_id) (irq_id >>= (FIRST_DMA_INT2_IRQ_ID_BIT - FIRST_DMA_INT2_BIT))
-
-uint32_t HeathrowIC::register_dma_int(IntSrc src_id)
+uint64_t HeathrowIC::register_dma_int(IntSrc src_id)
 {
     switch (src_id) {
-    case IntSrc::DMA_SCSI_MESH      : return DMA_INT_TO_IRQ_ID(0x00);
-    case IntSrc::DMA_SWIM3          : return DMA_INT_TO_IRQ_ID(0x01);
-    case IntSrc::DMA_IDE0           : return DMA_INT_TO_IRQ_ID(0x02);
-    case IntSrc::DMA_IDE1           : return DMA_INT_TO_IRQ_ID(0x03);
-    case IntSrc::DMA_SCCA_Tx        : return DMA_INT_TO_IRQ_ID(0x04);
-    case IntSrc::DMA_SCCA_Rx        : return DMA_INT_TO_IRQ_ID(0x05);
-    case IntSrc::DMA_SCCB_Tx        : return DMA_INT_TO_IRQ_ID(0x06);
-    case IntSrc::DMA_SCCB_Rx        : return DMA_INT_TO_IRQ_ID(0x07);
-    case IntSrc::DMA_DAVBUS_Tx      : return DMA_INT_TO_IRQ_ID(0x08);
-    case IntSrc::DMA_DAVBUS_Rx      : return DMA_INT_TO_IRQ_ID(0x09);
-    case IntSrc::DMA_ETHERNET_Tx    : return DMA_INT_TO_IRQ_ID(0x20);
-    case IntSrc::DMA_ETHERNET_Rx    : return DMA_INT_TO_IRQ_ID(0x21);
+    case IntSrc::DMA_SCSI_MESH      : return INT_TO_IRQ_ID(0x00);
+    case IntSrc::DMA_SWIM3          : return INT_TO_IRQ_ID(0x01);
+    case IntSrc::DMA_IDE0           : return INT_TO_IRQ_ID(0x02);
+    case IntSrc::DMA_IDE1           : return INT_TO_IRQ_ID(0x03);
+    case IntSrc::DMA_SCCA_Tx        : return INT_TO_IRQ_ID(0x04);
+    case IntSrc::DMA_SCCA_Rx        : return INT_TO_IRQ_ID(0x05);
+    case IntSrc::DMA_SCCB_Tx        : return INT_TO_IRQ_ID(0x06);
+    case IntSrc::DMA_SCCB_Rx        : return INT_TO_IRQ_ID(0x07);
+    case IntSrc::DMA_DAVBUS_Tx      : return INT_TO_IRQ_ID(0x08);
+    case IntSrc::DMA_DAVBUS_Rx      : return INT_TO_IRQ_ID(0x09);
+    case IntSrc::DMA_ETHERNET_Tx    : return INT_TO_IRQ_ID(0x20);
+    case IntSrc::DMA_ETHERNET_Rx    : return INT_TO_IRQ_ID(0x21);
     default:
         ABORT_F("Heathrow: unknown DMA interrupt source %d", src_id);
     }
     return 0;
 }
 
-void HeathrowIC::ack_int(uint32_t irq_id, uint8_t irq_line_state)
+void HeathrowIC::ack_int_common(uint64_t irq_id, uint8_t irq_line_state)
 {
-#if 1
-    if (!IS_INT1(irq_id)) { // does this irq_id belong to the second set?
-        IRQ_ID_TO_INT2_MASK(irq_id);
+    // native mode:   set IRQ bits in int_events on a 0-to-1 transition
+    // emulated mode: set IRQ bits in int_events on all transitions
 #if 0
-        LOG_F(INFO, "%s: native interrupt events:%08x.%08x levels:%08x.%08x change2:%08x state:%d",
-            this->name.c_str(), this->int_events1 + 0, this->int_events2 + 0,
-            this->int_levels1 + 0, this->int_levels2 + 0, irq_id, irq_line_state
-        );
+    LOG_F(INTERRUPT, "%s: native interrupt events:%08x.%08x levels:%08x.%08x change:%08x.%08x state:%d",
+        this->name.c_str(), uint32_t(this->int_events >> 32), uint32_t(this->int_events), uint32_t(this->int_levels >> 32),
+        uint32_t(this->int_levels), uint32_t(irq_id >> 32), uint32_t(irq_id), irq_line_state
+    );
 #endif
-        // native mode:   set IRQ bits in int_events2 on a 0-to-1 transition
-        // emulated mode: set IRQ bits in int_events2 on all transitions
-        if ((this->int_mask1 & MACIO_INT_MODE) ||
-            (irq_line_state && !(this->int_levels2 & irq_id))) {
-            this->int_events2 |= irq_id;
-        } else {
-            this->int_events2 &= ~irq_id;
-        }
-        // update IRQ line state
-        if (irq_line_state) {
-            this->int_levels2 |= irq_id;
-        } else {
-            this->int_levels2 &= ~irq_id;
-        }
+    if ((this->int_mask & MACIO_INT_MODE) ||
+        (irq_line_state && !(this->int_levels & irq_id))) {
+        this->int_events |= irq_id;
     } else {
-        IRQ_ID_TO_INT1_MASK(irq_id);
-        // native mode:   set IRQ bits in int_events1 on a 0-to-1 transition
-        // emulated mode: set IRQ bits in int_events1 on all transitions
-#if 0
-        LOG_F(INFO, "%s: native interrupt events:%08x.%08x levels:%08x.%08x change1:%08x state:%d",
-            this->name.c_str(), this->int_events1 + 0, this->int_events2 + 0,
-            this->int_levels1 + 0, this->int_levels2 + 0, irq_id, irq_line_state);
-#endif
-        if ((this->int_mask1 & MACIO_INT_MODE) ||
-            (irq_line_state && !(this->int_levels1 & irq_id))) {
-            this->int_events1 |= irq_id;
-        } else {
-            this->int_events1 &= ~irq_id;
-        }
-        // update IRQ line state
-        if (irq_line_state) {
-            this->int_levels1 |= irq_id;
-        } else {
-            this->int_levels1 &= ~irq_id;
-        }
+        this->int_events &= ~irq_id;
+    }
+    // update IRQ line state
+    if (irq_line_state) {
+        this->int_levels |= irq_id;
+    } else {
+        this->int_levels &= ~irq_id;
     }
 
     this->signal_cpu_int();
-#endif
-
-#if 0
-    if (this->int_mask1 & MACIO_INT_MODE) { // 68k interrupt emulation mode?
-        if (!IS_INT1(irq_id)) {
-            IRQ_ID_TO_INT2_MASK(irq_id);
-            this->int_events2 |= irq_id; // signal IRQ line change
-            this->int_events2 &= this->int_mask2;
-            // update IRQ line state
-            if (irq_line_state) {
-                this->int_levels2 |= irq_id;
-            } else {
-                this->int_levels2 &= ~irq_id;
-            }
-        } else {
-            IRQ_ID_TO_INT1_MASK(irq_id);
-            this->int_events1 |= irq_id; // signal IRQ line change
-            this->int_events1 &= this->int_mask1;
-            // update IRQ line state
-            if (irq_line_state) {
-                this->int_levels1 |= irq_id;
-            } else {
-                this->int_levels1 &= ~irq_id;
-            }
-        }
-        this->signal_cpu_int();
-    } else {
-        LOG_F(WARNING, "%s: native interrupt mode not implemented", this->name.c_str());
-    }
-#endif
 }
 
-void HeathrowIC::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state)
+void HeathrowIC::ack_int(uint64_t irq_id, uint8_t irq_line_state)
 {
-#if 1
-    if (!IS_DMA_INT1(irq_id)) {
-        DMA_IRQ_ID_TO_INT2_MASK(irq_id);
-        // native mode:   set IRQ bits in int_events2 on a 0-to-1 transition
-        // emulated mode: set IRQ bits in int_events2 on all transitions
-        if ((this->int_mask1 & MACIO_INT_MODE) ||
-            (irq_line_state && !(this->int_levels2 & irq_id))) {
-            this->int_events2 |= irq_id;
-        } else {
-            this->int_events2 &= ~irq_id;
-        }
-        // update IRQ line state
-        if (irq_line_state) {
-            this->int_levels2 |= irq_id;
-        } else {
-            this->int_levels2 &= ~irq_id;
-        }
-    } else {
-        DMA_IRQ_ID_TO_INT1_MASK(irq_id);
-        // native mode:   set IRQ bits in int_events1 on a 0-to-1 transition
-        // emulated mode: set IRQ bits in int_events1 on all transitions
-        if ((this->int_mask1 & MACIO_INT_MODE) ||
-            (irq_line_state && !(this->int_levels1 & irq_id))) {
-            this->int_events1 |= irq_id;
-        } else {
-            this->int_events1 &= ~irq_id;
-        }
-        // update IRQ line state
-        if (irq_line_state) {
-            this->int_levels1 |= irq_id;
-        } else {
-            this->int_levels1 &= ~irq_id;
-        }
-    }
+    this->ack_int_common(irq_id, irq_line_state);
+}
 
-    this->signal_cpu_int();
-#endif
-
-#if 0
-    if (this->int_mask1 & MACIO_INT_MODE) { // 68k interrupt emulation mode?
-        if (!IS_DMA_INT1(irq_id)) {
-            DMA_IRQ_ID_TO_INT2_MASK(irq_id);
-            this->int_events2 |= irq_id; // signal IRQ line change
-            this->int_events2 &= this->int_mask2;
-            // update IRQ line state
-            if (irq_line_state) {
-                this->int_levels2 |= irq_id;
-            } else {
-                this->int_levels2 &= ~irq_id;
-            }
-        } else {
-            DMA_IRQ_ID_TO_INT1_MASK(irq_id);
-            this->int_events1 |= irq_id; // signal IRQ line change
-            this->int_events1 &= this->int_mask1;
-            // update IRQ line state
-            if (irq_line_state) {
-                this->int_levels1 |= irq_id;
-            } else {
-                this->int_levels1 &= ~irq_id;
-            }
-        }
-        this->signal_cpu_int();
-    } else {
-        ABORT_F("%s: native interrupt mode not implemented", this->name.c_str());
-    }
-#endif
+void HeathrowIC::ack_dma_int(uint64_t irq_id, uint8_t irq_line_state)
+{
+    this->ack_int_common(irq_id, irq_line_state);
 }
 
 void HeathrowIC::signal_cpu_int() {
-    if ((this->int_events1 & this->int_mask1) || (this->int_events2 & this->int_mask2)) {
+    if (this->int_events & this->int_mask) {
         if (!this->cpu_int_latch) {
             this->cpu_int_latch = true;
             ppc_assert_int();
@@ -644,8 +502,7 @@ void HeathrowIC::signal_cpu_int() {
 
 void HeathrowIC::clear_cpu_int()
 {
-    if (!(this->int_events1 & this->int_mask1) && !(this->int_events2 & this->int_mask2) &&
-        this->cpu_int_latch) {
+    if (!(this->int_events & this->int_mask) && this->cpu_int_latch) {
         this->cpu_int_latch = false;
         ppc_release_int();
         LOG_F(5, "Heathrow: CPU INT latch cleared");

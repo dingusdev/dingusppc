@@ -434,7 +434,7 @@ void GrandCentral::attach_iodevice(int dev_num, IobusDevice* dev_obj)
 
 #define INT_TO_IRQ_ID(intx) (1 << intx)
 
-uint32_t GrandCentral::register_dev_int(IntSrc src_id) {
+uint64_t GrandCentral::register_dev_int(IntSrc src_id) {
     switch (src_id) {
     case IntSrc::SCSI_CURIO : return INT_TO_IRQ_ID(0x0C);
     case IntSrc::SCSI_MESH  : return INT_TO_IRQ_ID(0x0D);
@@ -473,61 +473,60 @@ uint32_t GrandCentral::register_dev_int(IntSrc src_id) {
     return 0;
 }
 
-#define DMA_INT_TO_IRQ_ID(intx) (1 << intx)
-
-uint32_t GrandCentral::register_dma_int(IntSrc src_id) {
+uint64_t GrandCentral::register_dma_int(IntSrc src_id) {
     switch (src_id) {
-    case IntSrc::DMA_SCSI_CURIO     : return DMA_INT_TO_IRQ_ID(0x00);
-    case IntSrc::DMA_SWIM3          : return DMA_INT_TO_IRQ_ID(0x01);
-    case IntSrc::DMA_ETHERNET_Tx    : return DMA_INT_TO_IRQ_ID(0x02);
-    case IntSrc::DMA_ETHERNET_Rx    : return DMA_INT_TO_IRQ_ID(0x03);
-    case IntSrc::DMA_SCCA_Tx        : return DMA_INT_TO_IRQ_ID(0x04);
-    case IntSrc::DMA_SCCA_Rx        : return DMA_INT_TO_IRQ_ID(0x05);
-    case IntSrc::DMA_SCCB_Tx        : return DMA_INT_TO_IRQ_ID(0x06);
-    case IntSrc::DMA_SCCB_Rx        : return DMA_INT_TO_IRQ_ID(0x07);
-    case IntSrc::DMA_DAVBUS_Tx      : return DMA_INT_TO_IRQ_ID(0x08);
-    case IntSrc::DMA_DAVBUS_Rx      : return DMA_INT_TO_IRQ_ID(0x09);
-    case IntSrc::DMA_SCSI_MESH      : return DMA_INT_TO_IRQ_ID(0x0A);
+    case IntSrc::DMA_SCSI_CURIO : return INT_TO_IRQ_ID(0x00);
+    case IntSrc::DMA_SWIM3      : return INT_TO_IRQ_ID(0x01);
+    case IntSrc::DMA_ETHERNET_Tx: return INT_TO_IRQ_ID(0x02);
+    case IntSrc::DMA_ETHERNET_Rx: return INT_TO_IRQ_ID(0x03);
+    case IntSrc::DMA_SCCA_Tx    : return INT_TO_IRQ_ID(0x04);
+    case IntSrc::DMA_SCCA_Rx    : return INT_TO_IRQ_ID(0x05);
+    case IntSrc::DMA_SCCB_Tx    : return INT_TO_IRQ_ID(0x06);
+    case IntSrc::DMA_SCCB_Rx    : return INT_TO_IRQ_ID(0x07);
+    case IntSrc::DMA_DAVBUS_Tx  : return INT_TO_IRQ_ID(0x08);
+    case IntSrc::DMA_DAVBUS_Rx  : return INT_TO_IRQ_ID(0x09);
+    case IntSrc::DMA_SCSI_MESH  : return INT_TO_IRQ_ID(0x0A);
     default:
         ABORT_F("%s: unknown DMA interrupt source %d", this->name.c_str(), src_id);
     }
     return 0;
 }
 
-void GrandCentral::ack_int_common(uint32_t irq_id, uint8_t irq_line_state) {
+void GrandCentral::ack_int_common(uint64_t irq_id, uint8_t irq_line_state) {
     // native mode:   set IRQ bits in int_events on a 0-to-1 transition
     // emulated mode: set IRQ bits in int_events on all transitions
+
     if ((this->int_mask & MACIO_INT_MODE) ||
         (irq_line_state && !(this->int_levels & irq_id))) {
-        this->int_events |= irq_id;
+        this->int_events |= (uint32_t)irq_id;
     } else {
-        this->int_events &= ~irq_id;
+        this->int_events &= ~(uint32_t)irq_id;
     }
 
     // update IRQ line state
     if (irq_line_state) {
-        this->int_levels |= irq_id;
+        this->int_levels |= (uint32_t)irq_id;
     } else {
-        this->int_levels &= ~irq_id;
+        this->int_levels &= ~(uint32_t)irq_id;
     }
 
     this->signal_cpu_int(irq_id);
 }
 
-void GrandCentral::ack_int(uint32_t irq_id, uint8_t irq_line_state) {
+void GrandCentral::ack_int(uint64_t irq_id, uint8_t irq_line_state) {
     this->ack_int_common(irq_id, irq_line_state);
 }
 
-void GrandCentral::ack_dma_int(uint32_t irq_id, uint8_t irq_line_state) {
+void GrandCentral::ack_dma_int(uint64_t irq_id, uint8_t irq_line_state) {
     this->ack_int_common(irq_id, irq_line_state);
 }
 
-void GrandCentral::signal_cpu_int(uint32_t irq_id) {
+void GrandCentral::signal_cpu_int(uint64_t irq_id) {
     if (this->int_events & this->int_mask) {
         if (!this->cpu_int_latch) {
             this->cpu_int_latch = true;
             ppc_assert_int();
-            LOG_F(5, "%s: CPU INT asserted, source: %d", this->name.c_str(), irq_id);
+            LOG_F(5, "%s: CPU INT asserted, source: 0x%08llx", this->name.c_str(), irq_id);
         } else {
             LOG_F(5, "%s: CPU INT already latched", this->name.c_str());
         }
