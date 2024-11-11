@@ -115,6 +115,16 @@ void EventManager::poll_events() {
                     }
                     return;
                 }
+                // Control-L: log toggle
+                if (event.key.keysym.sym == SDLK_l && (SDL_GetModState() & KMOD_ALL) == KMOD_LCTRL) {
+                    if (event.type == SDL_KEYUP) {
+                        loguru::g_stderr_verbosity = loguru::g_stderr_verbosity == loguru::Verbosity_MAX ?
+                            loguru::Verbosity_INFO
+                        :
+                            loguru::Verbosity_MAX;
+                    }
+                    return;
+                }
                 // Ralt+delete => ctrl+alt+del
                 if (event.key.keysym.sym == SDLK_DELETE && ((SDL_GetModState() & KMOD_ALL) == KMOD_RALT) != 0) {
                     KeyboardEvent ke{};
