@@ -60,15 +60,17 @@ DMACmd* DMAChannel::fetch_cmd(uint32_t cmd_addr, DMACmd* p_cmd, bool *is_writabl
     return cmd_host;
 }
 
-uint8_t DMAChannel::interpret_cmd() {
+void DMAChannel::interpret_cmd() {
     DMACmd cmd_struct;
     MapDmaResult res;
 
     if (this->cmd_in_progress) {
-        // return current command if there is data to transfer
+        // if there is data remaining to transfer then the command is not finished
         if (this->queue_len)
-            return this->cur_cmd;
+            return;
 
+        // if there is no data remaining to transfer then the command is finished
+        // and the program should procede to the next command
         this->finish_cmd();
     }
 
@@ -142,8 +144,6 @@ uint8_t DMAChannel::interpret_cmd() {
         this->ch_stat |= CH_STAT_DEAD;
         this->ch_stat &= ~CH_STAT_ACTIVE;
     }
-
-    return this->cur_cmd;
 }
 
 void DMAChannel::finish_cmd() {
