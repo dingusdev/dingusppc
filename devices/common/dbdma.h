@@ -129,9 +129,8 @@ public:
     };
 
 protected:
-    static DMACmd* fetch_cmd(uint32_t cmd_addr, DMACmd* p_cmd, bool *is_writable);
-    void schedule_cmd();
-    void interpret_cmd();
+    DMACmd* fetch_cmd(uint32_t cmd_addr, DMACmd* p_cmd, bool *is_writable);
+    uint8_t interpret_cmd(void);
     void finish_cmd();
     void xfer_quad(const DMACmd *cmd_desc, DMACmd *cmd_host);
     void update_irq();
@@ -148,8 +147,6 @@ private:
     std::function<void(void)> in_cb    = nullptr; // DMA channel in callback
     std::function<void(void)> out_cb   = nullptr; // DMA channel out callback
     std::function<void(void)> flush_cb = nullptr; // DMA channel flush callback
-    bool has_data_callbacks = false;
-    uint32_t interpret_timer_id = 0;
 
     uint16_t ch_stat        = 0;
     uint32_t cmd_ptr        = 0;
