@@ -1142,7 +1142,7 @@ void dppc_interpreter::ppc_bc() {
     }
 
     if (l)
-        ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
+        ppc_state.spr[SPR::LR] = uint32_t(ppc_state.pc + 4);
 }
 
 template void dppc_interpreter::ppc_bc<LK0, AA0>();
@@ -1159,16 +1159,17 @@ void dppc_interpreter::ppc_bcctr() {
 
     uint32_t ctr = ppc_state.spr[SPR::CTR];
     uint32_t new_ctr;
+
     if (for601) {
         new_ctr = ctr - 1;
-        if (!(br_bo & 0x04)) {
-            ppc_state.spr[SPR::CTR] = new_ctr; /* decrement CTR */
-        }
-    }
-    else {
+        if (!(br_bo & 0x04))
+            ppc_state.spr[SPR::CTR] = new_ctr;
+        ctr_ok = (br_bo & 0x04) | ((new_ctr != 0) == !(br_bo & 0x02));
+    } else {
         new_ctr = ctr;
+        ctr_ok  = 1;
     }
-    ctr_ok = (br_bo & 0x04) | ((new_ctr != 0) == !(br_bo & 0x02));
+
     cnd_ok = (br_bo & 0x10) | (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
 
     if (ctr_ok && cnd_ok) {
@@ -1177,7 +1178,7 @@ void dppc_interpreter::ppc_bcctr() {
     }
 
     if (l)
-        ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
+        ppc_state.spr[SPR::LR] = uint32_t(ppc_state.pc + 4);
 }
 
 template void dppc_interpreter::ppc_bcctr<LK0, NOT601>();
@@ -1204,7 +1205,7 @@ void dppc_interpreter::ppc_bclr() {
     }
 
     if (l)
-        ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
+        ppc_state.spr[SPR::LR] = uint32_t(ppc_state.pc + 4);
 }
 
 template void dppc_interpreter::ppc_bclr<LK0>();
