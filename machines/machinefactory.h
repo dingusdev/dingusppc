@@ -29,7 +29,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <machines/machineproperties.h>
 
+#include <functional>
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -45,6 +47,8 @@ struct MachineDescription {
     function<int(string&)>  init_func;
 };
 
+typedef std::function<std::optional<std::string>(const std::string&)> GetSettingValueFunc;
+
 class MachineFactory
 {
 public:
@@ -57,18 +61,20 @@ public:
     static int create(string& mach_id);
     static int create_machine_for_id(string& id, string& rom_filepath);
 
-    static void get_device_settings(DeviceDescription& dev, map<string, string> &settings);
-    static int get_machine_settings(const string& id, map<string, string> &settings);
-    static void set_machine_settings(map<string, string> &settings);
+    static void register_device_settings(const std::string &name);
+    static int  register_machine_settings(const std::string& id);
 
     static void list_machines();
     static void list_properties();
 
+    static GetSettingValueFunc get_setting_value;
+
 private:
     static void create_device(string& dev_name, DeviceDescription& dev);
-    static void print_settings(PropMap& p);
+    static void print_settings(const PropMap& p);
     static void list_device_settings(DeviceDescription& dev);
     static int  load_boot_rom(string& rom_filepath);
+    static void register_settings(const PropMap& p);
 
     static map<string, MachineDescription> & get_registry() {
         static map<string, MachineDescription> machine_registry;

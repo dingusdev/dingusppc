@@ -162,21 +162,30 @@ int main(int argc, char** argv) {
         }
     }
 
-    /* handle overriding of machine settings from command line */
-    map<string, string> settings;
-    if (MachineFactory::get_machine_settings(machine_str, settings) < 0) {
+    // Hook to allow properties to be read from the command-line, regardless
+    // of when they are registered.
+    MachineFactory::get_setting_value = [&](const std::string& name) -> std::optional<std::string> {
+        CLI::App sa;
+        sa.allow_extras();
+
+        std::string value;
+        sa.add_option("--" + name, value);
+        try {
+            sa.parse(app.remaining_for_passthrough());
+        } catch (const CLI::Error& e) {
+            ABORT_F("Cannot parse CLI: %s", e.get_name().c_str());
+        }
+
+        if (sa.count("--" + name) > 0) {
+            return value;
+        } else {
+            return std::nullopt;
+        }
+    };
+
+    if (MachineFactory::register_machine_settings(machine_str) < 0) {
         return 1;
     }
-
-    CLI::App sa;
-    sa.allow_extras();
-
-    for (auto& s : settings) {
-        sa.add_option("--" + s.first, s.second);
-    }
-    sa.parse(app.remaining_for_passthrough()); /* TODO: handle exceptions! */
-
-    MachineFactory::set_machine_settings(settings);
 
     cout << "BootROM path: " << bootrom_path << endl;
     cout << "Execution mode: " << execution_mode << endl;
