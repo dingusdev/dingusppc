@@ -60,7 +60,7 @@ typedef struct {
     uint32_t    ow_expected_checksum;
     uint32_t    nw_product_id;
     uint32_t    nw_subconfig_expected_checksum; // checksum of the system config section but without the firmware version and date
-    const char *id_str;                         // Bootstrap string located at offset 0x30D064 (PCI Macs) or 0x30C064 (Nubus Macs)
+    const char *id_str;                         // Bootstrap string located at offset 0x30D064 (PCI Macs) or 0x30C064 (NuBus Macs)
     const char *nw_firmware_updater_name;
     const char *nw_openfirmware_name;
     const char *dppc_machine;
@@ -109,10 +109,10 @@ static rom_info rom_identity[] = {
     { 0x067c32f2, 1024, 0x064dc91d,           0, 0,    nullptr           , 0, 0, nullptr   , nullptr                      , "Performa 580 & 588"                                },
     { 0x077d10f3, 2048, 0x5bf10fd1,           0, 0,    nullptr           , 0, 0, nullptr   , nullptr                      , "Quadra 660av & 840av"                              },
 
-    { 0x077d20f2, 4096, 0x9feb69b3,           0, 0,    "Boot PDM 601 1.0", 0, 0, "pm6100"  , "Nubus Power Mac"            , "Power Mac 6100 & 7100 & 8100"                      }, // Piltdown Man
-    { 0x077d22f1, 4096, 0x9c7c98f7,           0, 0,    "Boot PDM 601 1.0", 0, 0, "pm9150"  , "Nubus Power Mac"            , "Workgroup Server 9150-80"                          }, // Piltdown Man
-    { 0x077d23f1, 4096, 0x9b7a3aad,           0, 0,    "Boot PDM 601 1.1", 0, 0, "pm7100"  , "Nubus Power Mac"            , "Power Mac 7100 (newer)"                            }, // Piltdown Man
-    { 0x077d25f1, 4096, 0x9b037f6f,           0, 0,    "Boot PDM 601 1.1", 0, 0, "pm9150"  , "Nubus Power Mac"            , "Workgroup Server 9150-120"                         }, // Piltdown Man
+    { 0x077d20f2, 4096, 0x9feb69b3,           0, 0,    "Boot PDM 601 1.0", 0, 0, "pm6100"  , "NuBus Power Mac"            , "Power Mac 6100 & 7100 & 8100"                      }, // Piltdown Man
+    { 0x077d22f1, 4096, 0x9c7c98f7,           0, 0,    "Boot PDM 601 1.0", 0, 0, "pm9150"  , "NuBus Power Mac"            , "Workgroup Server 9150-80"                          }, // Piltdown Man
+    { 0x077d23f1, 4096, 0x9b7a3aad,           0, 0,    "Boot PDM 601 1.1", 0, 0, "pm7100"  , "NuBus Power Mac"            , "Power Mac 7100 (newer)"                            }, // Piltdown Man
+    { 0x077d25f1, 4096, 0x9b037f6f,           0, 0,    "Boot PDM 601 1.1", 0, 0, "pm9150"  , "NuBus Power Mac"            , "Workgroup Server 9150-120"                         }, // Piltdown Man
     { 0x077d26f1, 4096, 0x63abfd3f,           0, 0,    "Boot Cordyceps 6", 0, 0, "pm5200"  , "Power Mac 5200/6200 series" , "Power Mac & Performa 5200,5300,6200,6300"          }, // Cordyceps
     { 0x077d28a5, 4096, 0x67a1aa96,           0, 0,    "..0.....Boot TNT", 0, 0, nullptr   , nullptr                      , "TNT A5c1"                                          },
     { 0x077d28f1, 4096, 0x96cd923d,           0, 0,    "Boot TNT 0.1p..]", 0, 0, "pm7200"  , "Power Mac 7xxxx/8xxx series", "Power Mac 7200&7500&8500&9500 v1"                  }, // TNT Trinitrotoluene

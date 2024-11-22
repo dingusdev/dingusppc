@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** AWAC sound device emulation.
 
     Currently supported audio codecs:
-    - PDM AWACs in Nubus Power Macintosh models
+    - PDM AWACs in NuBus Power Macintosh models
     - Screamer AWACs in Beige G3
 */
 

@@ -70,9 +70,9 @@ enum : uint64_t {
 /** Slot interrupt flag/enable register bits. */
 enum : uint64_t {
     SLOT_INT_SHIFT      = 16,
-    SLOT_INT_SLOT_0     = 1 << 2, // (R) ColdFusion Nubus slot 0 interrupt
-    SLOT_INT_SLOT_1     = 1 << 3, // (R) ColdFusion Nubus slot 1 interrupt
-    SLOT_INT_SLOT_2     = 1 << 4, // (R) ColdFusion Nubus slot 2 interrupt
+    SLOT_INT_SLOT_0     = 1 << 2, // (R) ColdFusion NuBus slot 0 interrupt
+    SLOT_INT_SLOT_1     = 1 << 3, // (R) ColdFusion NuBus slot 1 interrupt
+    SLOT_INT_SLOT_2     = 1 << 4, // (R) ColdFusion NuBus slot 2 interrupt
     SLOT_INT_SLOT_VDS   = 1 << 5, // (R) ColdFusion video direct slot interrupt
     SLOT_INT_SLOT_PDS   = 1 << 5, // (R) PDM processor direct slot interrupt
     SLOT_INT_VBL        = 1 << 6, // (R) built-in video VBL interrupt
