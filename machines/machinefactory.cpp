@@ -203,7 +203,7 @@ void MachineFactory::list_device_settings(DeviceDescription& dev)
     print_settings(dev.properties);
 }
 
-void MachineFactory::print_settings(PropMap& prop_map)
+void MachineFactory::print_settings(const PropMap& prop_map)
 {
     string help;
 
@@ -237,27 +237,25 @@ void MachineFactory::print_settings(PropMap& prop_map)
     }
 }
 
-void MachineFactory::get_device_settings(DeviceDescription& dev, map<string, string> &settings)
+void MachineFactory::register_device_settings(const std::string& name)
 {
+    auto dev = DeviceRegistry::get_descriptor(name);
     for (auto& d : dev.subdev_list) {
-        get_device_settings(DeviceRegistry::get_descriptor(d), settings);
+        register_device_settings(d);
     }
 
-    for (auto& p : dev.properties) {
-        if (settings.count(p.first)) {
-            // This is a hack. Need to implement hierarchical paths and per device properties.
-            LOG_F(ERROR, "Duplicate setting \"%s\".", p.first.c_str());
-        }
-        else {
-            settings[p.first] = p.second->get_string();
-
-            // populate dynamic machine settings from presets
-            gMachineSettings[p.first] = unique_ptr<BasicProperty>(p.second->clone());
+    register_settings(dev.properties);
+    if (!dev.properties.empty()) {
+        std::cout << "Device " << name << " Settings" << endl
+                  << std::string(36, '-') << endl;
+        for (auto& p : dev.properties) {
+            std::cout << std::setw(24) << std::right << p.first << " : "
+                      << gMachineSettings[p.first]->get_string() << endl;
         }
     }
 }
 
-int MachineFactory::get_machine_settings(const string& id, map<string, string> &settings)
+int MachineFactory::register_machine_settings(const std::string& id)
 {
     auto it = get_registry().find(id);
     if (it != get_registry().end()) {
@@ -265,15 +263,17 @@ int MachineFactory::get_machine_settings(const string& id, map<string, string> &
 
         gMachineSettings.clear();
 
-        for (auto& p : props) {
-            settings[p.first] = p.second->get_string();
+        register_settings(props);
 
-            // populate dynamic machine settings from presets
-            gMachineSettings[p.first] = unique_ptr<BasicProperty>(p.second->clone());
+        std::cout << endl << "Machine " << id << " Settings" << endl
+                   << std::string(36, '-') << endl;
+        for (auto& p : props) {
+            std::cout << std::setw(24) << std::right << p.first << " : "
+                      << gMachineSettings[p.first]->get_string() << endl;
         }
 
         for (auto& dev : it->second.devices) {
-            get_device_settings(DeviceRegistry::get_descriptor(dev), settings);
+            register_device_settings(dev);
         }
     } else {
         LOG_F(ERROR, "Unknown machine id %s", id.c_str());
@@ -283,17 +283,22 @@ int MachineFactory::get_machine_settings(const string& id, map<string, string> &
     return 0;
 }
 
-void MachineFactory::set_machine_settings(map<string, string> &settings) {
-    for (auto& s : settings) {
-        gMachineSettings.at(s.first)->set_string(s.second);
+void MachineFactory::register_settings(const PropMap& props) {
+    for (auto& p : props) {
+        if (gMachineSettings.count(p.first)) {
+            // This is a hack. Need to implement hierarchical paths and per device properties.
+            LOG_F(ERROR, "Duplicate setting \"%s\".", p.first.c_str());
+        }
+        else {
+            auto clone = p.second->clone();
+            auto override_value = get_setting_value(p.first);
+            if (override_value) {
+                clone->set_string(*override_value);
+            }
+            gMachineSettings[p.first] = std::unique_ptr<BasicProperty>(clone);
+        }
     }
 
-    // print machine settings summary
-    cout << endl << "Machine settings summary: " << endl;
-
-    for (auto& p : gMachineSettings) {
-        cout << p.first << " : " << p.second->get_string() << endl;
-    }
 }
 
 string MachineFactory::machine_name_from_rom(string& rom_filepath) {
@@ -412,3 +417,5 @@ int MachineFactory::create_machine_for_id(string& id, string& rom_filepath) {
 
     return 0;
 }
+
+GetSettingValueFunc MachineFactory::get_setting_value;
