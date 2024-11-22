@@ -71,10 +71,6 @@ int initialize_yosemite(std::string& id)
     DecPciBridge *sec_bridge = dynamic_cast<DecPciBridge*>(gMachineObj->get_comp_by_name("Dec21154Yosemite"));
     sec_bridge->set_irq_map(pci_bridge_irq_map);
 
-    // attach PCI devices to the PCI bridges
-    grackle_obj->pci_register_device(DEV_FUN(16,0),
-        dynamic_cast<PCIBase*>(gMachineObj->get_comp_by_name("AtiRage128")));
-
     // 00:0D.0 PCI Bridge
     grackle_obj->pci_register_device(DEV_FUN(0x0D,0), dynamic_cast<PCIBase*>(sec_bridge));
 
