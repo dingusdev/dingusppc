@@ -132,8 +132,19 @@ void AtapiCdrom::perform_packet_command() {
             this->data_out_phase();
         }
         break;
+    case ScsiCommand::MODE_SENSE_6:
+        this->xfer_cnt = this->mode_sense_ex(true, this->cmd_pkt, this->data_buf);
+        if (!this->xfer_cnt) {
+            this->present_status();
+        } else {
+            this->r_byte_count = this->xfer_cnt;
+            this->data_ptr     = (uint16_t*)this->data_buf;
+            this->status_good();
+            this->data_out_phase();
+        }
+        break;
     case ScsiCommand::MODE_SENSE_10:
-        this->xfer_cnt = this->mode_sense_ex(this->cmd_pkt, this->data_buf);
+        this->xfer_cnt = this->mode_sense_ex(false, this->cmd_pkt, this->data_buf);
         if (!this->xfer_cnt) {
             this->present_status();
         } else {

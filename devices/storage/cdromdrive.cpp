@@ -98,11 +98,11 @@ uint32_t CdromDrive::inquiry(uint8_t *cmd_ptr, uint8_t *data_ptr) {
     return 36;
 }
 
-uint32_t CdromDrive::mode_sense_ex(uint8_t *cmd_ptr, uint8_t *data_ptr) {
+uint32_t CdromDrive::mode_sense_ex(bool is_sense_6, uint8_t* cmd_ptr, uint8_t* data_ptr) {
     uint8_t *resp_ptr;
 
     uint8_t page_code = cmd_ptr[2] & 0x3F;
-    uint8_t alloc_len = READ_WORD_BE_U(&cmd_ptr[7]);
+    uint8_t alloc_len = is_sense_6 ? READ_WORD_BE_U(&cmd_ptr[4]) : READ_WORD_BE_U(&cmd_ptr[7]);
 
     std::memset(data_ptr, 0, alloc_len);
 
@@ -137,7 +137,17 @@ uint32_t CdromDrive::mode_sense_ex(uint8_t *cmd_ptr, uint8_t *data_ptr) {
         WRITE_WORD_BE_A(&resp_ptr[14], 706); // report current speed (4x)
         data_ptr[1] += 20; // adjust overall length
         break;
+    case 0x31:
+        resp_ptr[1] = 14;    // page data length
+        std::memset(&resp_ptr[2], 0, 14);
+        resp_ptr[8] = 0x31;
+        resp_ptr[9] = 6;
+        resp_ptr[10] = '.';
+        resp_ptr[11] = 'A';
+        resp_ptr[12] = 'p';
+        resp_ptr[13] = 'p';
     default:
+        LOG_F(ERROR, "ATAPI CD-ROM: Invalid Page Code 0x%x", page_code);
         this->set_error(ScsiSense::ILLEGAL_REQ, ScsiError::INVALID_CDB);
         return 0;
     }

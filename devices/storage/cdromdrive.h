@@ -62,7 +62,7 @@ public:
     void insert_image(std::string filename);
 
     virtual uint32_t inquiry(uint8_t *cmd_ptr, uint8_t *data_ptr);
-    virtual uint32_t mode_sense_ex(uint8_t *cmd_ptr, uint8_t *data_ptr);
+    virtual uint32_t mode_sense_ex(bool is_sense_6, uint8_t *cmd_ptr, uint8_t *data_ptr);
     virtual uint32_t request_sense(uint8_t *data_ptr, uint8_t sense_key, uint8_t asc,
                                    uint8_t ascq);
     virtual uint32_t report_capacity(uint8_t *data_ptr);
