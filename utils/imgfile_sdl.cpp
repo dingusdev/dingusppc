@@ -79,6 +79,8 @@ uint64_t ImgFile::write(const void* buf, uint64_t offset, uint64_t length)
 {
     impl->stream->seekg(offset, std::ios::beg);
     impl->stream->write((const char *)buf, length);
-    impl->stream->flush();
+    #if defined(WIN32) || defined(__APPLE__) || defined(__linux)
+        impl->stream->flush();
+    #endif
     return impl->stream->gcount();
 }
