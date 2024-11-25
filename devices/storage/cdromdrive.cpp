@@ -146,6 +146,8 @@ uint32_t CdromDrive::mode_sense_ex(bool is_sense_6, uint8_t* cmd_ptr, uint8_t* d
         resp_ptr[11] = 'A';
         resp_ptr[12] = 'p';
         resp_ptr[13] = 'p';
+        data_ptr[1] += 2;    // adjust overall length
+        break;
     default:
         LOG_F(ERROR, "ATAPI CD-ROM: Invalid Page Code 0x%x", page_code);
         this->set_error(ScsiSense::ILLEGAL_REQ, ScsiError::INVALID_CDB);
