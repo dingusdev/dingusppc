@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <utils/imgfile.h>
+#include <loguru.hpp>
 
 #include <fstream>
 #include <sstream>
@@ -59,17 +60,29 @@ bool ImgFile::open(const std::string &img_path)
 
 void ImgFile::close()
 {
+    if (!impl->stream) {
+        LOG_F(WARNING, "ImgFile::close before disk was opened, ignoring.");
+        return;
+    }
     impl->stream.reset();
 }
 
 uint64_t ImgFile::size() const
 {
+    if (!impl->stream) {
+        LOG_F(WARNING, "ImgFile::size before disk was opened, ignoring.");
+        return 0;
+    }
     impl->stream->seekg(0, impl->stream->end);
     return impl->stream->tellg();
 }
 
 uint64_t ImgFile::read(void* buf, uint64_t offset, uint64_t length) const
 {
+    if (!impl->stream) {
+        LOG_F(WARNING, "ImgFile::read before disk was opened, ignoring.");
+        return 0;
+    }
     impl->stream->seekg(offset, std::ios::beg);
     impl->stream->read((char *)buf, length);
     return impl->stream->gcount();
@@ -77,6 +90,10 @@ uint64_t ImgFile::read(void* buf, uint64_t offset, uint64_t length) const
 
 uint64_t ImgFile::write(const void* buf, uint64_t offset, uint64_t length)
 {
+    if (!impl->stream) {
+        LOG_F(WARNING, "ImgFile::write before disk was opened, ignoring.");
+        return 0;
+    }
     impl->stream->seekg(offset, std::ios::beg);
     impl->stream->write((const char *)buf, length);
     #if defined(WIN32) || defined(__APPLE__) || defined(__linux)
