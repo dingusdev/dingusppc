@@ -150,8 +150,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         int reg_d = (opcode >> 21) & 31; \
         int reg_b = (opcode >> 11) & 31;
 
-#define GET_FPR(reg)                                                                               \
+#define GET_FPR(reg) \
     ppc_state.fpr[(reg)].dbl64_r 
+
+#define FPR_INT(reg)\
+    ppc_state.fpr[reg].int64_r
 
 #define ppc_grab_regsfpdiab(opcode) \
         int reg_d          = (opcode >> 21) & 31; \

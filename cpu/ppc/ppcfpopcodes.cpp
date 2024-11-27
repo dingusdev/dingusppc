@@ -816,18 +816,11 @@ template <field_rc rec>
 void dppc_interpreter::ppc_fneg() {
     ppc_grab_regsfpdb(ppc_cur_instruction);
 
-    double ppc_dblresult64_d = -(GET_FPR(reg_b));
+    uint64_t ppc_result64_d = FPR_INT(reg_b) ^ 0x8000000000000000U;
 
-    if (std::isnan(GET_FPR(reg_b))) {
-        ppc_dblresult64_d = std::numeric_limits<double>::quiet_NaN();
-    } 
-    
-    if (snan_single_check(reg_b)) {
-        uint64_t qnan = 0x7FFC000000000000;
-        ppc_store_fpresult_int(reg_d, qnan);
-    } else {
-        ppc_store_fpresult_flt(reg_d, ppc_dblresult64_d);
-    }
+    ppc_store_fpresult_int(reg_d, ppc_result64_d);
+
+    snan_single_check(reg_d);
 
     if (rec)
         ppc_update_cr1();
