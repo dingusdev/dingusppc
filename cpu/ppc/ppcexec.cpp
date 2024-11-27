@@ -56,6 +56,7 @@ using namespace dppc_interpreter;
 MemCtrlBase* mem_ctrl_instance = 0;
 
 bool is_601 = false;
+bool include_601 = false;
 
 bool is_deterministic = false;
 
@@ -637,7 +638,7 @@ do { \
 #define OP63d(subopcode, fn) OPXd(SubOpcode63, subopcode, fn)
 #define OP63dc(subopcode, fn, carry) OPXdc(SubOpcode63, subopcode, fn, carry)
 
-void initialize_ppc_opcode_tables(bool include_601) {
+void initialize_ppc_opcode_tables() {
     std::fill_n(OpcodeGrabber, 64, ppc_illegalop);
     OP(3,  ppc_twi);
     //OP(4,  ppc_opcode4); - Altivec instructions not emulated yet. Uncomment once they're implemented.
@@ -873,7 +874,7 @@ void initialize_ppc_opcode_tables(bool include_601) {
     }
 }
 
-void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool include_601, uint64_t tb_freq)
+void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool do_include_601, uint64_t tb_freq)
 {
     mem_ctrl_instance = mem_ctrl;
 
@@ -882,8 +883,9 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool include_601,
 
     ppc_state.spr[SPR::PVR] = cpu_version;
     is_601 = (cpu_version >> 16) == 1;
+    include_601 = !is_601 & do_include_601;
 
-    initialize_ppc_opcode_tables(include_601);
+    initialize_ppc_opcode_tables();
 
     // initialize emulator timers
     TimerManager::get_instance()->set_time_now_cb(&get_virt_time_ns);

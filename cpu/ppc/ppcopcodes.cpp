@@ -903,7 +903,7 @@ void dppc_interpreter::ppc_mfspr() {
 
     switch (ref_spr) {
     case SPR::MQ:
-        if (!is_601) {
+        if (!(is_601 || include_601)) {
             ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
         }
         ppc_state.gpr[reg_d] = ppc_state.spr[ref_spr];
@@ -957,10 +957,10 @@ void dppc_interpreter::ppc_mtspr() {
 
     switch (ref_spr) {
     case SPR::MQ:
-        if (!is_601) {
+        if (is_601 || include_601)
+            ppc_state.spr[ref_spr] = val;
+        else
             ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-        }
-        ppc_state.spr[ref_spr] = val;
         break;
     case SPR::RTCL_U:
     case SPR::RTCU_U:

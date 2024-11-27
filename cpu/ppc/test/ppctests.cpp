@@ -321,7 +321,8 @@ static void read_test_float_data() {
 }
 
 int main() {
-    initialize_ppc_opcode_tables(true); //kludge
+    is_601 = true;
+    initialize_ppc_opcode_tables(); //kludge
 
     cout << "Running DingusPPC emulator tests..." << endl << endl;
 

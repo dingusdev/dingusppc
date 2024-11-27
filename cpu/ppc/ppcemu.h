@@ -325,6 +325,7 @@ extern bool int_pin;
 extern bool dec_exception_pending;
 
 extern bool is_601;        // For PowerPC 601 Emulation
+extern bool include_601;   // For non-PowerPC 601 emulation with 601 extras (matches Mac OS 9 environment which can emulate MPC 601 instructions)
 extern bool is_altivec;    // For Altivec Emulation
 extern bool is_64bit;      // For PowerPC G5 Emulation
 
@@ -417,7 +418,7 @@ void ppc_opcode31();
 void ppc_opcode59();
 void ppc_opcode63();
 
-void initialize_ppc_opcode_tables(bool include_601);
+void initialize_ppc_opcode_tables();
 
 extern double fp_return_double(uint32_t reg);
 extern uint64_t fp_return_uint64(uint32_t reg);
