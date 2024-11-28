@@ -153,7 +153,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define GET_FPR(reg) \
     ppc_state.fpr[(reg)].dbl64_r 
 
-#define FPR_INT(reg)\
+#define FPR_INT(reg) \
     ppc_state.fpr[reg].int64_r
 
 #define ppc_grab_regsfpdiab(opcode) \
