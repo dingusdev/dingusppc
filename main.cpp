@@ -24,8 +24,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <core/hostevents.h>
 #include <core/timermanager.h>
-#include <cpu/ppc/ppcemu.h>
 #include <cpu/ppc/ppcdisasm.h>
+#include <cpu/ppc/ppcemu.h>
+#include <cpu/ppc/ppcmmu.h>
 #include <debugger/debugger.h>
 #include <machines/machinebase.h>
 #include <machines/machinefactory.h>
@@ -255,8 +256,8 @@ void run_machine(std::string machine_str, std::string bootrom_path, uint32_t exe
         // that execution is the same every time.
         deterministic_timer = TimerManager::get_instance()->add_cyclic_timer(MSECS_TO_NSECS(1000), [] {
             PPCDisasmContext ctx;
-            ctx.instr_code = ppc_cur_instruction;
-            ctx.instr_addr = 0;
+            ctx.instr_code = ppc_read_instruction(mmu_translate_imem(ppc_state.pc));
+            ctx.instr_addr = ppc_state.pc;
             ctx.simplified = false;
             auto op_name = disassemble_single(&ctx);
             LOG_F(INFO, "TS=%016llu PC=0x%08x executing %s", get_virt_time_ns(), ppc_state.pc, op_name.c_str());
