@@ -253,7 +253,7 @@ void run_machine(std::string machine_str, std::string bootrom_path, uint32_t exe
         EventManager::get_instance()->disable_input_handlers();
         // Log the PC and instruction every second to make it easier to validate
         // that execution is the same every time.
-        deterministic_timer = TimerManager::get_instance()->add_cyclic_timer(MSECS_TO_NSECS(100), [] {
+        deterministic_timer = TimerManager::get_instance()->add_cyclic_timer(MSECS_TO_NSECS(1000), [] {
             PPCDisasmContext ctx;
             ctx.instr_code = ppc_cur_instruction;
             ctx.instr_addr = 0;
