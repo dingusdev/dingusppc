@@ -65,7 +65,6 @@ Po_Cause power_off_reason = po_enter_debugger;
 
 SetPRS ppc_state;
 
-uint32_t ppc_cur_instruction;    // Current instruction for the PPC
 uint32_t ppc_next_instruction_address;    // Used for branching, setting up the NIA
 
 unsigned exec_flags; // execution control flags
@@ -208,12 +207,8 @@ static PPCOpcode SubOpcode63Grabber[2048];
 
 /** Exception helpers. */
 
-void ppc_illegalop() {
+void ppc_illegalop(uint32_t opcode) {
     ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-}
-
-void ppc_fpu_off() {
-    ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::FPU_OFF);
 }
 
 void ppc_assert_int() {
@@ -232,97 +227,97 @@ void ppc_release_int() {
 
 /** Opcode decoding functions. */
 
-void ppc_opcode16() {
-    SubOpcode16Grabber[ppc_cur_instruction & 3]();
+static void ppc_opcode16(uint32_t opcode) {
+    SubOpcode16Grabber[opcode & 3](opcode);
 }
 
-void ppc_opcode18() {
-    SubOpcode18Grabber[ppc_cur_instruction & 3]();
+static void ppc_opcode18(uint32_t opcode) {
+    SubOpcode18Grabber[opcode & 3](opcode);
 }
 
 template<field_601 for601>
-void ppc_opcode19() {
-    uint16_t subop_grab = ppc_cur_instruction & 0x7FF;
+static void ppc_opcode19(uint32_t opcode) {
+    uint16_t subop_grab = opcode & 0x7FF;
 
     switch (subop_grab) {
     case 0:
-        ppc_mcrf();
+        ppc_mcrf(opcode);
         break;
     case 32:
-        ppc_bclr<LK0>();
+        ppc_bclr<LK0>(opcode);
         break;
     case 33:
-        ppc_bclr<LK1>();
+        ppc_bclr<LK1>(opcode);
         break;
     case 66:
-        ppc_crnor();
+        ppc_crnor(opcode);
         break;
     case 100:
-        ppc_rfi();
+        ppc_rfi(opcode);
         break;
     case 258:
-        ppc_crandc();
+        ppc_crandc(opcode);
         break;
     case 300:
-        ppc_isync();
+        ppc_isync(opcode);
         break;
     case 386:
-        ppc_crxor();
+        ppc_crxor(opcode);
         break;
     case 450:
-        ppc_crnand();
+        ppc_crnand(opcode);
         break;
     case 514:
-        ppc_crand();
+        ppc_crand(opcode);
         break;
     case 578:
-        ppc_creqv();
+        ppc_creqv(opcode);
         break;
     case 834:
-        ppc_crorc();
+        ppc_crorc(opcode);
         break;
     case 898:
-        ppc_cror();
+        ppc_cror(opcode);
         break;
     case 1056:
-        ppc_bcctr<LK0, for601>();
+        ppc_bcctr<LK0, for601>(opcode);
         break;
     case 1057:
-        ppc_bcctr<LK1, for601>();
+        ppc_bcctr<LK1, for601>(opcode);
         break;
     default:
-        ppc_illegalop();
+        ppc_illegalop(opcode);
     }
 }
 
-template void ppc_opcode19<NOT601>();
-template void ppc_opcode19<IS601>();
+template void ppc_opcode19<NOT601>(uint32_t opcode);
+template void ppc_opcode19<IS601>(uint32_t opcode);
 
-void ppc_opcode31() {
-    uint16_t subop_grab = ppc_cur_instruction & 0x7FFUL;
-    SubOpcode31Grabber[subop_grab]();
+static void ppc_opcode31(uint32_t opcode) {
+    uint16_t subop_grab = opcode & 0x7FFUL;
+    SubOpcode31Grabber[subop_grab](opcode);
 }
 
-void ppc_opcode59() {
-    uint16_t subop_grab = ppc_cur_instruction & 0x3FUL;
-    SubOpcode59Grabber[subop_grab]();
+static void ppc_opcode59(uint32_t opcode) {
+    uint16_t subop_grab = opcode & 0x3FUL;
+    SubOpcode59Grabber[subop_grab](opcode);
 }
 
-void ppc_opcode63() {
-    uint16_t subop_grab = ppc_cur_instruction & 0x7FFUL;
-    SubOpcode63Grabber[subop_grab]();
+static void ppc_opcode63(uint32_t opcode) {
+    uint16_t subop_grab = opcode & 0x7FFUL;
+    SubOpcode63Grabber[subop_grab](opcode);
 }
 
 /* Dispatch using main opcode */
-void ppc_main_opcode()
+void ppc_main_opcode(uint32_t opcode)
 {
 #ifdef CPU_PROFILING
     num_executed_instrs++;
 #if defined(CPU_PROFILING_OPS)
-    num_opcodes[ppc_cur_instruction]++;
+    num_opcodes[opcode]++;
 #endif
 #endif
-    OpcodeGrabber[(ppc_cur_instruction >> 26) & 0x3F]();
+    OpcodeGrabber[(opcode >> 26) & 0x3F](opcode);
 }
 
 static long long cpu_now_ns() {
@@ -367,6 +362,7 @@ static void ppc_exec_inner()
 {
     uint64_t max_cycles;
     uint32_t page_start, eb_start, eb_end;
+    uint32_t opcode;
     uint8_t* pc_real;
 
     max_cycles = 0;
@@ -380,10 +376,11 @@ static void ppc_exec_inner()
         exec_flags = 0;
 
         pc_real    = mmu_translate_imem(eb_start);
+        opcode = ppc_read_instruction(pc_real);
 
         // interpret execution block
         while (power_on && ppc_state.pc < eb_end) {
-            ppc_main_opcode();
+            ppc_main_opcode(opcode);
             if (g_icycles++ >= max_cycles || exec_timer) {
                 max_cycles = process_events();
             }
@@ -393,18 +390,19 @@ static void ppc_exec_inner()
                 eb_start = ppc_next_instruction_address;
                 if (!(exec_flags & EXEF_RFI) && (eb_start & PPC_PAGE_MASK) == page_start) {
                     pc_real += (int)eb_start - (int)ppc_state.pc;
-                    ppc_set_cur_instruction(pc_real);
+                    opcode = ppc_read_instruction(pc_real);
                 } else {
                     page_start = eb_start & PPC_PAGE_MASK;
                     eb_end = page_start + PPC_PAGE_SIZE - 1;
                     pc_real = mmu_translate_imem(eb_start);
+                    opcode = ppc_read_instruction(pc_real);
                 }
                 ppc_state.pc = eb_start;
                 exec_flags = 0;
             } else {
                 ppc_state.pc += 4;
                 pc_real += 4;
-                ppc_set_cur_instruction(pc_real);
+                opcode = ppc_read_instruction(pc_real);
             }
         }
     }
@@ -435,8 +433,9 @@ void ppc_exec_single()
         return;
     }
 
-    mmu_translate_imem(ppc_state.pc);
-    ppc_main_opcode();
+    uint8_t* pc_real = mmu_translate_imem(ppc_state.pc);
+    uint32_t opcode = ppc_read_instruction(pc_real);
+    ppc_main_opcode(opcode);
     g_icycles++;
     process_events();
 
@@ -456,6 +455,7 @@ static void ppc_exec_until_inner(const uint32_t goal_addr)
     uint64_t max_cycles;
     uint32_t page_start, eb_start, eb_end;
     uint8_t* pc_real;
+    uint32_t opcode;
 
     max_cycles = 0;
 
@@ -468,10 +468,11 @@ static void ppc_exec_until_inner(const uint32_t goal_addr)
         exec_flags = 0;
 
         pc_real    = mmu_translate_imem(eb_start);
+        opcode = ppc_read_instruction(pc_real);
 
         // interpret execution block
         while (power_on && ppc_state.pc < eb_end) {
-            ppc_main_opcode();
+            ppc_main_opcode(opcode);
             if (g_icycles++ >= max_cycles || exec_timer) {
                 max_cycles = process_events();
             }
@@ -481,18 +482,19 @@ static void ppc_exec_until_inner(const uint32_t goal_addr)
                 eb_start = ppc_next_instruction_address;
                 if (!(exec_flags & EXEF_RFI) && (eb_start & PPC_PAGE_MASK) == page_start) {
                     pc_real += (int)eb_start - (int)ppc_state.pc;
-                    ppc_set_cur_instruction(pc_real);
+                    opcode = ppc_read_instruction(pc_real);
                 } else {
                     page_start = eb_start & PPC_PAGE_MASK;
                     eb_end = page_start + PPC_PAGE_SIZE - 1;
                     pc_real = mmu_translate_imem(eb_start);
+                    opcode = ppc_read_instruction(pc_real);
                 }
                 ppc_state.pc = eb_start;
                 exec_flags = 0;
             } else {
                 ppc_state.pc += 4;
                 pc_real += 4;
-                ppc_set_cur_instruction(pc_real);
+                opcode = ppc_read_instruction(pc_real);
             }
 
             if (ppc_state.pc == goal_addr)
@@ -523,6 +525,7 @@ static void ppc_exec_dbg_inner(const uint32_t start_addr, const uint32_t size)
     uint64_t max_cycles;
     uint32_t page_start, eb_start, eb_end;
     uint8_t* pc_real;
+    uint32_t opcode;
 
     max_cycles = 0;
 
@@ -535,11 +538,12 @@ static void ppc_exec_dbg_inner(const uint32_t start_addr, const uint32_t size)
         exec_flags = 0;
 
         pc_real    = mmu_translate_imem(eb_start);
+        opcode = ppc_read_instruction(pc_real);
 
         // interpret execution block
         while (power_on && (ppc_state.pc < start_addr || ppc_state.pc >= start_addr + size)
                 && (ppc_state.pc < eb_end)) {
-            ppc_main_opcode();
+            ppc_main_opcode(opcode);
             if (g_icycles++ >= max_cycles || exec_timer) {
                 max_cycles = process_events();
             }
@@ -549,18 +553,19 @@ static void ppc_exec_dbg_inner(const uint32_t start_addr, const uint32_t size)
                 eb_start = ppc_next_instruction_address;
                 if (!(exec_flags & EXEF_RFI) && (eb_start & PPC_PAGE_MASK) == page_start) {
                     pc_real += (int)eb_start - (int)ppc_state.pc;
-                    ppc_set_cur_instruction(pc_real);
+                    opcode = ppc_read_instruction(pc_real);
                 } else {
                     page_start = eb_start & PPC_PAGE_MASK;
                     eb_end = page_start + PPC_PAGE_SIZE - 1;
                     pc_real = mmu_translate_imem(eb_start);
+                    opcode = ppc_read_instruction(pc_real);
                 }
                 ppc_state.pc = eb_start;
                 exec_flags = 0;
             } else {
                 ppc_state.pc += 4;
                 pc_real += 4;
-                ppc_set_cur_instruction(pc_real);
+                opcode = ppc_read_instruction(pc_real);
             }
         }
     }

@@ -46,8 +46,7 @@ void xer_ov_test(string mnem, uint32_t opcode) {
     ppc_state.gpr[3]        = 2;
     ppc_state.gpr[4]        = 2;
     ppc_state.spr[SPR::XER] = 0xFFFFFFFF;
-    ppc_cur_instruction     = opcode;
-    ppc_main_opcode();
+    ppc_main_opcode(opcode);
     if (ppc_state.spr[SPR::XER] & 0x40000000UL) {
         cout << "Invalid " << mnem << " emulation! XER[OV] should not be set." << endl;
         nfailed++;
@@ -151,9 +150,7 @@ static void read_test_data() {
         ppc_state.spr[SPR::XER] = 0;
         ppc_state.cr            = 0;
 
-        ppc_cur_instruction = opcode;
-
-        ppc_main_opcode();
+        ppc_main_opcode(opcode);
 
         ntested++;
 
@@ -295,9 +292,7 @@ static void read_test_float_data() {
 
         ppc_state.cr = 0;
 
-        ppc_cur_instruction = opcode;
-
-        ppc_main_opcode();
+        ppc_main_opcode(opcode);
 
         ntested++;
 

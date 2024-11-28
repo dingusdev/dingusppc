@@ -89,7 +89,7 @@ emulation. To build the tests, use the following terminal commands:
 ```
 mkdir build
 cd build
-cmake -DCMAKE_BUILD_TYPE=Release -DPPC_BUILD_PPC_TESTS=True ..
+cmake -DCMAKE_BUILD_TYPE=Release -DDPPC_BUILD_PPC_TESTS=True ..
 make testppc
 ```
 

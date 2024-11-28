@@ -196,17 +196,17 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
     throw std::invalid_argument(exc_descriptor);
 }
 
-void ppc_floating_point_exception() {
+void ppc_floating_point_exception(uint32_t opcode) {
     LOG_F(ERROR, "Floating point exception at 0x%08x for instruction 0x%08x",
-          ppc_state.pc, ppc_cur_instruction);
+          ppc_state.pc, opcode);
     // mmu_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::FPU_EXCEPTION);
 }
 
-void ppc_alignment_exception(uint32_t ea)
+void ppc_alignment_exception(uint32_t opcode, uint32_t ea)
 {
     uint32_t dsisr;
 
-    switch (ppc_cur_instruction & 0xfc000000) {
+    switch (opcode & 0xfc000000) {
         case 0x80000000: // lwz
         case 0x90000000: // stw
         case 0xa0000000: // lhz
@@ -228,11 +228,11 @@ void ppc_alignment_exception(uint32_t ea)
         case 0xd4000000: // stfsu
         case 0xdc000000: // stfdu
             // indirect with immediate index
-            dsisr  = ((ppc_cur_instruction >> 12) & 0x00004000)  // bit  17    — Set to bit   5    of the instruction.
-                  |  ((ppc_cur_instruction >> 17) & 0x00003c00); // bits 18–21 - set to bits  1–4  of the instruction.
+            dsisr  = ((opcode >> 12) & 0x00004000)  // bit  17    — Set to bit   5    of the instruction.
+                  |  ((opcode >> 17) & 0x00003c00); // bits 18–21 - set to bits  1–4  of the instruction.
             break;
         case 0x7c000000:
-            switch (ppc_cur_instruction & 0xfc0007ff) {
+            switch (opcode & 0xfc0007ff) {
                 case 0x7c000028: // lwarx (invalid form - bits 15-21 of DSISR are identical to those of lwz)
                 case 0x7c0002aa: // lwax (64-bit only)
                 case 0x7c00042a: // lswx
@@ -266,12 +266,12 @@ void ppc_alignment_exception(uint32_t ea)
                 case 0x7c00056e: // stfsux
                 case 0x7c0005ee: // stfdux
 indirect_with_index:
-                    dsisr  = ((ppc_cur_instruction << 14) & 0x00018000)  // bits 15–16 - set to bits 29–30 of the instruction.
-                          |  ((ppc_cur_instruction <<  8) & 0x00004000)  // bit  17    - set to bit  25    of the instruction.
-                          |  ((ppc_cur_instruction <<  3) & 0x00003c00); // bits 18–21 - set to bits 21–24 of the instruction.
+                    dsisr  = ((opcode << 14) & 0x00018000)  // bits 15–16 - set to bits 29–30 of the instruction.
+                          |  ((opcode <<  8) & 0x00004000)  // bit  17    - set to bit  25    of the instruction.
+                          |  ((opcode <<  3) & 0x00003c00); // bits 18–21 - set to bits 21–24 of the instruction.
                     break;
                 case 0x7c0007ec:
-                    if ((ppc_cur_instruction & 0xffe007ff) == 0x7c0007ec) // dcbz
+                    if ((opcode & 0xffe007ff) == 0x7c0007ec) // dcbz
                         goto indirect_with_index;
                     /* fallthrough */
                 default:
@@ -282,31 +282,31 @@ indirect_with_index:
 unexpected_instruction:
             dsisr = 0;
             LOG_F(ERROR, "Alignment exception from unexpected instruction 0x%08x",
-                  ppc_cur_instruction);
+                  opcode);
     }
 
     // bits 22–26 - Set to bits  6–10 (source or destination) of the instruction.
     // Undefined for dcbz.
-    dsisr |= ((ppc_cur_instruction >> 16) & 0x000003e0);
+    dsisr |= ((opcode >> 16) & 0x000003e0);
 
-    if ((ppc_cur_instruction & 0xfc000000) == 0xb8000000) { // lmw
+    if ((opcode & 0xfc000000) == 0xb8000000) { // lmw
         LOG_F(ERROR, "Alignment exception from instruction 0x%08x (lmw). "
-              "What to set DSISR bits 27-31?", ppc_cur_instruction);
-        // dsisr |= ((ppc_cur_instruction >> ?) & 0x0000001f); // bits 27–31
+              "What to set DSISR bits 27-31?", opcode);
+        // dsisr |= ((opcode >> ?) & 0x0000001f); // bits 27–31
     }
-    else if ((ppc_cur_instruction & 0xfc0007ff) == 0x7c0004aa) { // lswi
+    else if ((opcode & 0xfc0007ff) == 0x7c0004aa) { // lswi
         LOG_F(ERROR, "Alignment exception from instruction 0x%08x (lswi). "
-              "What to set DSISR bits 27-31?", ppc_cur_instruction);
-        // dsisr |= ((ppc_cur_instruction >> ?) & 0x0000001f); // bits 27–31
+              "What to set DSISR bits 27-31?", opcode);
+        // dsisr |= ((opcode >> ?) & 0x0000001f); // bits 27–31
     }
-    else if ((ppc_cur_instruction & 0xfc0007ff) == 0x7c00042a) { // lswx
+    else if ((opcode & 0xfc0007ff) == 0x7c00042a) { // lswx
         LOG_F(ERROR, "Alignment exception from instruction 0x%08x (lswx). "
-              "What to set DSISR bits 27-31?", ppc_cur_instruction);
-        // dsisr |= ((ppc_cur_instruction >> ?) & 0x0000001f); // bits 27–31
+              "What to set DSISR bits 27-31?", opcode);
+        // dsisr |= ((opcode >> ?) & 0x0000001f); // bits 27–31
     }
     else {
         // bits 27–31 - Set to bits 11–15 of the instruction (rA)
-        dsisr |= ((ppc_cur_instruction >> 16) & 0x0000001f);
+        dsisr |= ((opcode >> 16) & 0x0000001f);
     }
 
     ppc_state.spr[SPR::DSISR] = dsisr;

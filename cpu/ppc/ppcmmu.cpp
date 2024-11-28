@@ -741,7 +741,6 @@ uint8_t *mmu_translate_imem(uint32_t vaddr, uint32_t *paddr)
         host_va = (uint8_t *)(tlb1_entry->host_va_offs_r + vaddr);
     }
 
-    ppc_set_cur_instruction(host_va);
     if (paddr)
         *paddr = tlb1_entry->phys_tag | (vaddr & 0xFFFUL);
 
@@ -985,12 +984,12 @@ void mmu_pat_ctx_changed()
 
 // Forward declarations.
 template <class T>
-static T read_unaligned(uint32_t guest_va, uint8_t *host_va);
+static T read_unaligned(uint32_t opcode, uint32_t guest_va, uint8_t *host_va);
 template <class T>
-static void write_unaligned(uint32_t guest_va, uint8_t *host_va, T value);
+static void write_unaligned(uint32_t opcode, uint32_t guest_va, uint8_t *host_va, T value);
 
 template <class T>
-inline T mmu_read_vmem(uint32_t guest_va)
+inline T mmu_read_vmem(uint32_t opcode, uint32_t guest_va)
 {
     TLBEntry *tlb1_entry, *tlb2_entry;
     uint8_t *host_va;
@@ -1034,7 +1033,7 @@ inline T mmu_read_vmem(uint32_t guest_va)
 #endif
             if (sizeof(T) == 8) {
                 if (guest_va & 3)
-                    ppc_alignment_exception(guest_va);
+                    ppc_alignment_exception(opcode, guest_va);
 
                 return (
                     ((T)tlb2_entry->rgn_desc->devobj->read(tlb2_entry->rgn_desc->start,
@@ -1061,7 +1060,7 @@ inline T mmu_read_vmem(uint32_t guest_va)
 
     // handle unaligned memory accesses
     if (sizeof(T) > 1 && (guest_va & (sizeof(T) - 1))) {
-        return read_unaligned<T>(guest_va, host_va);
+        return read_unaligned<T>(opcode, guest_va, host_va);
     }
 
     // handle aligned memory accesses
@@ -1078,13 +1077,13 @@ inline T mmu_read_vmem(uint32_t guest_va)
 }
 
 // explicitely instantiate all required mmu_read_vmem variants
-template uint8_t  mmu_read_vmem<uint8_t>(uint32_t guest_va);
-template uint16_t mmu_read_vmem<uint16_t>(uint32_t guest_va);
-template uint32_t mmu_read_vmem<uint32_t>(uint32_t guest_va);
-template uint64_t mmu_read_vmem<uint64_t>(uint32_t guest_va);
+template uint8_t  mmu_read_vmem<uint8_t>(uint32_t opcode, uint32_t guest_va);
+template uint16_t mmu_read_vmem<uint16_t>(uint32_t opcode, uint32_t guest_va);
+template uint32_t mmu_read_vmem<uint32_t>(uint32_t opcode, uint32_t guest_va);
+template uint64_t mmu_read_vmem<uint64_t>(uint32_t opcode, uint32_t guest_va);
 
 template <class T>
-inline void mmu_write_vmem(uint32_t guest_va, T value)
+inline void mmu_write_vmem(uint32_t opcode, uint32_t guest_va, T value)
 {
     TLBEntry *tlb1_entry, *tlb2_entry;
     uint8_t *host_va;
@@ -1156,7 +1155,7 @@ inline void mmu_write_vmem(uint32_t guest_va, T value)
 #endif
             if (sizeof(T) == 8) {
                 if (guest_va & 3)
-                    ppc_alignment_exception(guest_va);
+                    ppc_alignment_exception(opcode, guest_va);
 
                 tlb2_entry->rgn_desc->devobj->write(tlb2_entry->rgn_desc->start,
                                                     static_cast<uint32_t>(guest_va - tlb2_entry->dev_base_va),
@@ -1179,7 +1178,7 @@ inline void mmu_write_vmem(uint32_t guest_va, T value)
 
     // handle unaligned memory accesses
     if (sizeof(T) > 1 && (guest_va & (sizeof(T) - 1))) {
-        write_unaligned<T>(guest_va, host_va, value);
+        write_unaligned<T>(opcode, guest_va, host_va, value);
         return;
     }
 
@@ -1201,17 +1200,17 @@ inline void mmu_write_vmem(uint32_t guest_va, T value)
 }
 
 // explicitely instantiate all required mmu_write_vmem variants
-template void mmu_write_vmem<uint8_t>(uint32_t guest_va,   uint8_t value);
-template void mmu_write_vmem<uint16_t>(uint32_t guest_va, uint16_t value);
-template void mmu_write_vmem<uint32_t>(uint32_t guest_va, uint32_t value);
-template void mmu_write_vmem<uint64_t>(uint32_t guest_va, uint64_t value);
+template void mmu_write_vmem<uint8_t> (uint32_t opcode, uint32_t guest_va, uint8_t value);
+template void mmu_write_vmem<uint16_t>(uint32_t opcode, uint32_t guest_va, uint16_t value);
+template void mmu_write_vmem<uint32_t>(uint32_t opcode, uint32_t guest_va, uint32_t value);
+template void mmu_write_vmem<uint64_t>(uint32_t opcode, uint32_t guest_va, uint64_t value);
 
 template <class T>
-static T read_unaligned(uint32_t guest_va, uint8_t *host_va)
+static T read_unaligned(uint32_t opcode, uint32_t guest_va, uint8_t *host_va)
 {
     if ((sizeof(T) == 8) && (guest_va & 3)) {
 #ifndef PPC_TESTS
-        ppc_alignment_exception(guest_va);
+        ppc_alignment_exception(opcode, guest_va);
 #endif
     }
 
@@ -1226,7 +1225,7 @@ static T read_unaligned(uint32_t guest_va, uint8_t *host_va)
         // Because such accesses suffer a performance penalty, they will be
         // presumably very rare so don't waste time optimizing the code below.
         for (int i = 0; i < sizeof(T); guest_va++, i++) {
-            result = (result << 8) | mmu_read_vmem<uint8_t>(guest_va);
+            result = (result << 8) | mmu_read_vmem<uint8_t>(opcode, guest_va);
         }
     } else {
 #ifdef MMU_PROFILING
@@ -1247,16 +1246,16 @@ static T read_unaligned(uint32_t guest_va, uint8_t *host_va)
 }
 
 // explicitely instantiate all required read_unaligned variants
-template uint16_t read_unaligned<uint16_t>(uint32_t guest_va, uint8_t *host_va);
-template uint32_t read_unaligned<uint32_t>(uint32_t guest_va, uint8_t *host_va);
-template uint64_t read_unaligned<uint64_t>(uint32_t guest_va, uint8_t *host_va);
+template uint16_t read_unaligned<uint16_t>(uint32_t opcode, uint32_t guest_va, uint8_t *host_va);
+template uint32_t read_unaligned<uint32_t>(uint32_t opcode, uint32_t guest_va, uint8_t *host_va);
+template uint64_t read_unaligned<uint64_t>(uint32_t opcode, uint32_t guest_va, uint8_t *host_va);
 
 template <class T>
-static void write_unaligned(uint32_t guest_va, uint8_t *host_va, T value)
+static void write_unaligned(uint32_t opcode, uint32_t guest_va, uint8_t *host_va, T value)
 {
     if ((sizeof(T) == 8) && (guest_va & 3)) {
 #ifndef PPC_TESTS
-        ppc_alignment_exception(guest_va);
+        ppc_alignment_exception(opcode, guest_va);
 #endif
     }
 
@@ -1272,7 +1271,7 @@ static void write_unaligned(uint32_t guest_va, uint8_t *host_va, T value)
         uint32_t shift = (sizeof(T) - 1) * 8;
 
         for (int i = 0; i < sizeof(T); shift -= 8, guest_va++, i++) {
-            mmu_write_vmem<uint8_t>(guest_va, (value >> shift) & 0xFF);
+            mmu_write_vmem<uint8_t>(opcode, guest_va, (value >> shift) & 0xFF);
         }
     } else {
 #ifdef MMU_PROFILING
@@ -1296,9 +1295,9 @@ static void write_unaligned(uint32_t guest_va, uint8_t *host_va, T value)
 }
 
 // explicitely instantiate all required write_unaligned variants
-template void write_unaligned<uint16_t>(uint32_t guest_va, uint8_t *host_va, uint16_t value);
-template void write_unaligned<uint32_t>(uint32_t guest_va, uint8_t *host_va, uint32_t value);
-template void write_unaligned<uint64_t>(uint32_t guest_va, uint8_t *host_va, uint64_t value);
+template void write_unaligned<uint16_t>(uint32_t opcode, uint32_t guest_va, uint8_t *host_va, uint16_t value);
+template void write_unaligned<uint32_t>(uint32_t opcode, uint32_t guest_va, uint8_t *host_va, uint32_t value);
+template void write_unaligned<uint64_t>(uint32_t opcode, uint32_t guest_va, uint8_t *host_va, uint64_t value);
 
 
 /* MMU profiling. */
@@ -1426,7 +1425,7 @@ public:
 };
 #endif
 
-uint64_t mem_read_dbg(uint32_t virt_addr, uint32_t size) {
+uint64_t mem_read_dbg(uint32_t opcode, uint32_t virt_addr, uint32_t size) {
     uint32_t save_dsisr, save_dar;
     uint64_t ret_val;
 
@@ -1438,19 +1437,19 @@ uint64_t mem_read_dbg(uint32_t virt_addr, uint32_t size) {
     try {
         switch (size) {
         case 1:
-            ret_val = mmu_read_vmem<uint8_t>(virt_addr);
+            ret_val = mmu_read_vmem<uint8_t>(opcode, virt_addr);
             break;
         case 2:
-            ret_val = mmu_read_vmem<uint16_t>(virt_addr);
+            ret_val = mmu_read_vmem<uint16_t>(opcode, virt_addr);
             break;
         case 4:
-            ret_val = mmu_read_vmem<uint32_t>(virt_addr);
+            ret_val = mmu_read_vmem<uint32_t>(opcode, virt_addr);
             break;
         case 8:
-            ret_val = mmu_read_vmem<uint64_t>(virt_addr);
+            ret_val = mmu_read_vmem<uint64_t>(opcode, virt_addr);
             break;
         default:
-            ret_val = mmu_read_vmem<uint8_t>(virt_addr);
+            ret_val = mmu_read_vmem<uint8_t>(opcode, virt_addr);
         }
     } catch (std::invalid_argument& exc) {
         /* restore MMU-related CPU state */

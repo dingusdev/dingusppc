@@ -124,7 +124,7 @@ static uint32_t disasm_68k(uint32_t count, uint32_t address) {
     for (; power_on && count > 0; count--) {
         /* prefetch opcode bytes (a 68k instruction can occupy 2...10 bytes) */
         for (int i = 0; i < sizeof(code); i++) {
-            code[i] = mem_read_dbg(address + i, 1);
+            code[i] = mem_read_dbg(0, address + i, 1);
         }
 
         const uint8_t *code_ptr  = code;
@@ -174,7 +174,7 @@ void exec_single_68k()
 
     /* calculate address of the current opcode table entry as follows:
        get_word(68k_PC) * entry_size + table_base */
-    cur_instr_tab_entry = mmu_read_vmem<uint16_t>(cur_68k_pc) * 8 + emu_table_virt;
+    cur_instr_tab_entry = mmu_read_vmem<uint16_t>(0, cur_68k_pc) * 8 + emu_table_virt;
 
     /* grab the PPC PC too */
     ppc_pc = get_reg(string("PC"));
@@ -314,7 +314,7 @@ static void dump_mem(string& params) {
                 cout << endl;
                 chars_per_line = 0;
             }
-            val = mem_read_dbg(addr, cell_size);
+            val = mem_read_dbg(0, addr, cell_size);
             if (is_char) {
                 cout << (char)val;
                 chars_per_line += cell_size;
