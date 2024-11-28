@@ -30,16 +30,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cmath>
 #include <cfloat>
 
-// Storage and register retrieval functions for the floating point functions.
-
-double fp_return_double(uint32_t reg) {
-    return ppc_state.fpr[reg].dbl64_r;
-}
-
-uint64_t fp_return_uint64(uint32_t reg) {
-    return ppc_state.fpr[reg].int64_r;
-}
-
 inline static void ppc_update_cr1() {
     // copy FPSCR[FX|FEX|VX|OX] to CR1
     ppc_state.cr = (ppc_state.cr & ~CR_select::CR1_field) |

@@ -212,10 +212,6 @@ void ppc_illegalop() {
     ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
 }
 
-void ppc_fpu_off() {
-    ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::FPU_OFF);
-}
-
 void ppc_assert_int() {
     int_pin = true;
     if (ppc_state.msr & MSR::EE) {
@@ -232,16 +228,16 @@ void ppc_release_int() {
 
 /** Opcode decoding functions. */
 
-void ppc_opcode16() {
+static void ppc_opcode16() {
     SubOpcode16Grabber[ppc_cur_instruction & 3]();
 }
 
-void ppc_opcode18() {
+static void ppc_opcode18() {
     SubOpcode18Grabber[ppc_cur_instruction & 3]();
 }
 
 template<field_601 for601>
-void ppc_opcode19() {
+static void ppc_opcode19() {
     uint16_t subop_grab = ppc_cur_instruction & 0x7FF;
 
     switch (subop_grab) {
@@ -298,17 +294,17 @@ void ppc_opcode19() {
 template void ppc_opcode19<NOT601>();
 template void ppc_opcode19<IS601>();
 
-void ppc_opcode31() {
+static void ppc_opcode31() {
     uint16_t subop_grab = ppc_cur_instruction & 0x7FFUL;
     SubOpcode31Grabber[subop_grab]();
 }
 
-void ppc_opcode59() {
+static void ppc_opcode59() {
     uint16_t subop_grab = ppc_cur_instruction & 0x3FUL;
     SubOpcode59Grabber[subop_grab]();
 }
 
-void ppc_opcode63() {
+static void ppc_opcode63() {
     uint16_t subop_grab = ppc_cur_instruction & 0x7FFUL;
     SubOpcode63Grabber[subop_grab]();
 }
