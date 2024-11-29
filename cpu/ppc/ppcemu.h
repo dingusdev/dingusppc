@@ -400,6 +400,9 @@ typedef enum {
     IS601,
 } field_601;
 
+// Placeholder value for cases where we don't have a currently-executing instruction.
+constexpr uint32_t NO_OPCODE = 0;
+
 // Function prototypes
 extern void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool include_601, uint64_t tb_freq);
 extern void ppc_mmu_init();
