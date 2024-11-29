@@ -106,7 +106,6 @@ void ScsiHardDisk::process_command() {
     case ScsiCommand::WRITE_10:
         lba = READ_DWORD_BE_U(&cmd[2]);
         this->write(lba, READ_WORD_BE_U(&cmd[7]), 10);
-        this->switch_phase(ScsiPhase::DATA_OUT);
         break;
     case ScsiCommand::READ_BUFFER:
         read_buffer();
@@ -488,6 +487,8 @@ void ScsiHardDisk::write(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
     this->post_xfer_action = [this, device_offset]() {
         this->disk_img.write(this->data_buf, device_offset, this->incoming_size);
     };
+
+    this->switch_phase(ScsiPhase::DATA_OUT);
 }
 
 void ScsiHardDisk::read_buffer() {
