@@ -189,10 +189,11 @@ void DMAChannel::finish_cmd() {
                 this->ch_stat |= CH_STAT_BT;
             }
         }
+
+        if (res.is_writable)
+            WRITE_WORD_LE_A(&cmd_desc[14], this->ch_stat | CH_STAT_ACTIVE);
     }
 
-    if (res.is_writable)
-        WRITE_WORD_LE_A(&cmd_desc[14], this->ch_stat | CH_STAT_ACTIVE);
     this->ch_stat &= ~(CH_STAT_FLUSH | CH_STAT_BT);
 
     // all INPUT and OUTPUT commands including LOAD_QUAD and STORE_QUAD update cmd.resCount
