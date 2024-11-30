@@ -95,6 +95,7 @@ void MacSuperDrive::command(uint8_t addr, uint8_t value)
             this->eject_latch = 1;
             this->reset_params();
         }
+        break;
     case CommandAddr::Reset_Eject_Latch:
         if (value) {
             this->eject_latch = 0;
