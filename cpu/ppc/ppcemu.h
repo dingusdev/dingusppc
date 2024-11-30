@@ -411,7 +411,7 @@ void ppc_illegalop(uint32_t opcode);
 void ppc_assert_int();
 void ppc_release_int();
 
-void initialize_ppc_opcode_tables();
+void initialize_ppc_opcode_table();
 
 void ppc_changecrf0(uint32_t set_result);
 void set_host_rounding_mode(uint8_t mode);
