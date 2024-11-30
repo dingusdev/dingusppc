@@ -208,7 +208,7 @@ int main(int argc, char** argv) {
         // sent to the logfile only).
         cerr << message.preamble << message.indentation << message.prefix << message.message << endl;
         power_off_reason = po_enter_debugger;
-        enter_debugger();
+        DppcDebugger::get_instance()->enter_debugger();
 
         // Ensure that NVRAM and other state is persisted before we terminate.
         delete gMachineObj.release();
@@ -282,15 +282,15 @@ void run_machine(std::string machine_str, std::string bootrom_path, uint32_t exe
     switch (execution_mode) {
     case interpreter:
         power_off_reason = po_starting_up;
-        enter_debugger();
+        DppcDebugger::get_instance()->enter_debugger();
         break;
     case threaded_int:
         power_off_reason = po_starting_up;
-        enter_debugger();
+        DppcDebugger::get_instance()->enter_debugger();
         break;
     case debugger:
         power_off_reason = po_enter_debugger;
-        enter_debugger();
+        DppcDebugger::get_instance()->enter_debugger();
         break;
     default:
         LOG_F(ERROR, "Invalid EXECUTION MODE");

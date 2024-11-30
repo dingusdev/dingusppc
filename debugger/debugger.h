@@ -22,6 +22,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef DEBUGGER_H_
 #define DEBUGGER_H_
 
-void enter_debugger();
+#include <memory>
+
+class DppcDebugger {
+public:
+    static DppcDebugger* get_instance() {
+        if (!debugger_obj) {
+            debugger_obj = std::unique_ptr<DppcDebugger>(new DppcDebugger());
+        }
+        return debugger_obj.get();
+    };
+
+    void enter_debugger();
+
+private:
+    inline static std::unique_ptr<DppcDebugger> debugger_obj{nullptr};
+    explicit DppcDebugger(); // private constructor to implement a singleton
+};
 
 #endif    // DEBUGGER_H_

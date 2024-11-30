@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cpu/ppc/ppcdisasm.h>
 #include <cpu/ppc/ppcemu.h>
 #include <cpu/ppc/ppcmmu.h>
+#include <debugger/debugger.h>
 #include <devices/common/hwinterrupt.h>
 #include <devices/common/ofnvram.h>
 #include "memaccess.h"
@@ -445,7 +446,11 @@ static void delete_prompt() {
 #endif
 }
 
-void enter_debugger() {
+DppcDebugger::DppcDebugger() {
+
+}
+
+void DppcDebugger::enter_debugger() {
     string inp, cmd, addr_str, expr_str, reg_expr, last_cmd, reg_value_str,
            inst_string, inst_num_str, profile_name, sub_cmd;
     uint32_t addr, inst_grab;
