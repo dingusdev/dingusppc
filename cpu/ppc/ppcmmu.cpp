@@ -1469,6 +1469,48 @@ uint64_t mem_read_dbg(uint32_t virt_addr, uint32_t size) {
     return ret_val;
 }
 
+void mem_write_dbg(uint32_t virt_addr, uint64_t value, int size) {
+    uint32_t save_dsisr, save_dar;
+    uint64_t ret_val;
+
+    // save MMU-related CPU state
+    save_dsisr            = ppc_state.spr[SPR::DSISR];
+    save_dar              = ppc_state.spr[SPR::DAR];
+    mmu_exception_handler = dbg_exception_handler;
+
+    try {
+        switch (size) {
+        case 1:
+            mmu_write_vmem<uint8_t>(NO_OPCODE, virt_addr, value);
+            break;
+        case 2:
+            mmu_write_vmem<uint16_t>(NO_OPCODE, virt_addr, value);
+            break;
+        case 4:
+            mmu_write_vmem<uint32_t>(NO_OPCODE, virt_addr, value);
+            break;
+        case 8:
+            mmu_write_vmem<uint64_t>(NO_OPCODE, virt_addr, value);
+            break;
+        default:
+            mmu_write_vmem<uint8_t>(NO_OPCODE, virt_addr, value);
+        }
+    } catch (std::invalid_argument& exc) {
+        // restore MMU-related CPU state
+        mmu_exception_handler     = ppc_exception_handler;
+        ppc_state.spr[SPR::DSISR] = save_dsisr;
+        ppc_state.spr[SPR::DAR]   = save_dar;
+
+        // rethrow MMU exception
+        throw exc;
+    }
+
+    // restore MMU-related CPU state
+    mmu_exception_handler     = ppc_exception_handler;
+    ppc_state.spr[SPR::DSISR] = save_dsisr;
+    ppc_state.spr[SPR::DAR]   = save_dar;
+}
+
 bool mmu_translate_dbg(uint32_t guest_va, uint32_t &guest_pa) {
     uint32_t save_dsisr, save_dar;
     bool is_mapped;
