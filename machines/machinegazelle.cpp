@@ -98,18 +98,18 @@ int initialize_gazelle(std::string& id)
 
 static const PropMap pm6500_settings = {
     {"rambank1_size",
-        new IntProperty(16, vector<uint32_t>({4, 8, 16, 32, 64, 128}))},
+        new IntProperty(16, std::vector<uint32_t>({4, 8, 16, 32, 64, 128}))},
     {"rambank2_size",
-        new IntProperty( 0, vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
+        new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
     {"rambank3_size",
-        new IntProperty( 0, vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
+        new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
     {"rambank4_size",
-        new IntProperty( 0, vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
+        new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
     {"emmo",
         new BinProperty(0)},
 };
 
-static vector<string> pm6500_devices = {
+static std::vector<std::string> pm6500_devices = {
     "Psx", "PsxPci1", "OHare"
 };
 

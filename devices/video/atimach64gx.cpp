@@ -923,7 +923,7 @@ void AtiMach64Gx::rgb514_write_ind_reg(uint8_t reg_addr, uint8_t value)
 
 static const PropMap AtiMach64gx_Properties = {
     {"gfxmem_size",
-        new IntProperty(  2, vector<uint32_t>({2, 4, 6}))},
+        new IntProperty(  2, std::vector<uint32_t>({2, 4, 6}))},
     {"mon_id",
         new StrProperty("")},
 };

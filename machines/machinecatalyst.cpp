@@ -107,20 +107,20 @@ int initialize_catalyst(std::string& id)
 
 static const PropMap pm7200_settings = {
     {"rambank1_size",
-        new IntProperty(16, vector<uint32_t>({4, 8, 16, 32, 64, 128}))},
+        new IntProperty(16, std::vector<uint32_t>({4, 8, 16, 32, 64, 128}))},
     {"rambank2_size",
-        new IntProperty( 0, vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
+        new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
     {"rambank3_size",
-        new IntProperty( 0, vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
+        new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
     {"rambank4_size",
-        new IntProperty( 0, vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
+        new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
     {"emmo",
         new BinProperty(0)},
     {"cpu",
-        new StrProperty("601", vector<std::string>({"601", "750"}))},
+        new StrProperty("601", std::vector<std::string>({"601", "750"}))},
 };
 
-static vector<string> pm7200_devices = {
+static std::vector<std::string> pm7200_devices = {
     "Platinum", "Bandit1", "GrandCentral"
 };
 

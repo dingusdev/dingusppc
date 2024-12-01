@@ -43,7 +43,7 @@ int AdbBus::device_postinit() {
     std::istringstream adb_device_stream(adb_device_list);
 
     while (getline(adb_device_stream, adb_device, ',')) {
-        string dev_name = "Adb" + adb_device;
+        std::string dev_name = "Adb" + adb_device;
 
         if (dev_name == this->name)
             continue; // don't register a second ADB bus

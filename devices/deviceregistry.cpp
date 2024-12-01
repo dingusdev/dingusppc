@@ -36,7 +36,7 @@ bool DeviceRegistry::add(const std::string name, DeviceDescription desc)
     return true;
 }
 
-bool DeviceRegistry::device_registered(const string dev_name)
+bool DeviceRegistry::device_registered(const std::string dev_name)
 {
     if (get_registry().find(dev_name) != get_registry().end()) {
         return true;
@@ -45,7 +45,7 @@ bool DeviceRegistry::device_registered(const string dev_name)
     return false;
 }
 
-unique_ptr<HWComponent> DeviceRegistry::create(const std::string& name)
+std::unique_ptr<HWComponent> DeviceRegistry::create(const std::string& name)
 {
     auto it = get_registry().find(name);
     if (it != get_registry().end()) {

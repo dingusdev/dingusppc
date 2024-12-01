@@ -259,7 +259,7 @@ Bandit::Bandit(int bridge_num, std::string name, int dev_id, int rev)
     mem_ctrl->add_mmio_region(base_addr, 0x01000000, this);
 
     // connnect Bandit PCI device
-    this->my_pci_device = unique_ptr<BanditPciDevice>(
+    this->my_pci_device = std::unique_ptr<BanditPciDevice>(
         new BanditPciDevice(bridge_num, name, dev_id, rev)
     );
     this->pci_register_device(DEV_FUN(BANDIT_DEV,0), this->my_pci_device.get());

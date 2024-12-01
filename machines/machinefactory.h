@@ -35,16 +35,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 #include <vector>
 
-using namespace std;
-
 struct DeviceDescription;
 
 struct MachineDescription {
-    string                  name;
-    string                  description;
-    vector<string>          devices;
-    PropMap                 settings;
-    function<int(string&)>  init_func;
+    std::string                       name;
+    std::string                       description;
+    std::vector<std::string>          devices;
+    PropMap                           settings;
+    std::function<int(std::string&)>  init_func;
 };
 
 typedef std::function<std::optional<std::string>(const std::string&)> GetSettingValueFunc;
@@ -54,12 +52,12 @@ class MachineFactory
 public:
     MachineFactory() = delete;
 
-    static bool add(const string& machine_id, MachineDescription desc);
+    static bool add(const std::string& machine_id, MachineDescription desc);
 
-    static string machine_name_from_rom(string& rom_filepath);
+    static std::string machine_name_from_rom(std::string& rom_filepath);
 
-    static int create(string& mach_id);
-    static int create_machine_for_id(string& id, string& rom_filepath);
+    static int create(std::string& mach_id);
+    static int create_machine_for_id(std::string& id, std::string& rom_filepath);
 
     static void register_device_settings(const std::string &name);
     static int  register_machine_settings(const std::string& id);
@@ -70,14 +68,14 @@ public:
     static GetSettingValueFunc get_setting_value;
 
 private:
-    static void create_device(string& dev_name, DeviceDescription& dev);
+    static void create_device(std::string& dev_name, DeviceDescription& dev);
     static void print_settings(const PropMap& p);
     static void list_device_settings(DeviceDescription& dev);
-    static int  load_boot_rom(string& rom_filepath);
+    static int  load_boot_rom(std::string& rom_filepath);
     static void register_settings(const PropMap& p);
 
-    static map<string, MachineDescription> & get_registry() {
-        static map<string, MachineDescription> machine_registry;
+    static std::map<std::string, MachineDescription> & get_registry() {
+        static std::map<std::string, MachineDescription> machine_registry;
         return machine_registry;
     }
 };

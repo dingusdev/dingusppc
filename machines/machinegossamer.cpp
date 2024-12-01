@@ -167,11 +167,11 @@ int initialize_gossamer(std::string& id)
 
 static const PropMap gossamer_settings = {
     {"rambank1_size",
-        new IntProperty(256, vector<uint32_t>({8, 16, 32, 64, 128, 256}))},
+        new IntProperty(256, std::vector<uint32_t>({8, 16, 32, 64, 128, 256}))},
     {"rambank2_size",
-        new IntProperty(  0, vector<uint32_t>({0, 8, 16, 32, 64, 128, 256}))},
+        new IntProperty(  0, std::vector<uint32_t>({0, 8, 16, 32, 64, 128, 256}))},
     {"rambank3_size",
-        new IntProperty(  0, vector<uint32_t>({0, 8, 16, 32, 64, 128, 256}))},
+        new IntProperty(  0, std::vector<uint32_t>({0, 8, 16, 32, 64, 128, 256}))},
     {"emmo",
         new BinProperty(0)},
     {"hdd_config",
@@ -180,11 +180,11 @@ static const PropMap gossamer_settings = {
         new StrProperty("Ide1:0")},
 };
 
-static vector<string> pmg3_devices = {
+static std::vector<std::string> pmg3_devices = {
     "Grackle", "ScreamerSnd", "Heathrow", "AtaHardDisk", "AtapiCdrom"
 };
 
-static vector<string> pmg3twr_devices = {
+static std::vector<std::string> pmg3twr_devices = {
     "Grackle", "ScreamerSnd", "Heathrow", "AtaHardDisk", "AtapiCdrom"
 };
 

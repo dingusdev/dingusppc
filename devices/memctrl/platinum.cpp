@@ -501,7 +501,7 @@ void PlatinumCtrl::update_irq(uint8_t irq_line_state, uint8_t irq_mask) {
 // ========================== Device registry stuff ==========================
 static const PropMap Platinum_Properties = {
     {"gfxmem_size",
-        new IntProperty(1, vector<uint32_t>({1, 2, 4}))},
+        new IntProperty(1, std::vector<uint32_t>({1, 2, 4}))},
     {"mon_id",
         new StrProperty("HiRes12-14in")},
 };
