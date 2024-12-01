@@ -1837,28 +1837,26 @@ void dppc_interpreter::ppc_lswx(uint32_t opcode) {
 */
 
     uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
-    uint32_t grab_inb      = ppc_state.spr[SPR::XER] & 0x7F;
+    int grab_inb = ppc_state.spr[SPR::XER] & 0x7F;
 
-    for (;;) {
+    while (grab_inb > 0) {
         if (is_601 && (reg_d == reg_b || (reg_a != 0 && reg_d == reg_a))) {
-            // UNTESTED! MPC601 manual is inconsistant on whether reg_b is skipped or not
-            reg_d = (reg_d + 1) & 0x1F; // wrap around through GPR0
+            /* skip loading reg_b for MPC601 */
+        } else {
+            switch (grab_inb) {
+            case 1:
+                ppc_state.gpr[reg_d] = mmu_read_vmem<uint8_t>(opcode, ea) << 24;
+                return;
+            case 2:
+                ppc_state.gpr[reg_d] = mmu_read_vmem<uint16_t>(opcode, ea) << 16;
+                return;
+            case 3:
+                ppc_state.gpr[reg_d] = (mmu_read_vmem<uint16_t>(opcode, ea) << 16)
+                                     | (mmu_read_vmem<uint8_t>(opcode, ea + 2) << 8);
+                return;
+            }
+            ppc_state.gpr[reg_d] = mmu_read_vmem<uint32_t>(opcode, ea);
         }
-        switch (grab_inb) {
-        case 0:
-            return;
-        case 1:
-            ppc_state.gpr[reg_d] = mmu_read_vmem<uint8_t>(opcode, ea) << 24;
-            return;
-        case 2:
-            ppc_state.gpr[reg_d] = mmu_read_vmem<uint16_t>(opcode, ea) << 16;
-            return;
-        case 3:
-            ppc_state.gpr[reg_d] = (mmu_read_vmem<uint16_t>(opcode, ea) << 16)
-                                 | (mmu_read_vmem<uint8_t>(opcode, ea + 2) << 8);
-            return;
-        }
-        ppc_state.gpr[reg_d] = mmu_read_vmem<uint32_t>(opcode, ea);
         reg_d = (reg_d + 1) & 0x1F; // wrap around through GPR0
         ea += 4;
         grab_inb -= 4;
