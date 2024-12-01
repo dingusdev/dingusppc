@@ -108,13 +108,13 @@ int initialize_yosemite(std::string& id)
 
 static const PropMap yosemite_settings = {
     {"rambank1_size",
-        new IntProperty(256, vector<uint32_t>({8, 16, 32, 64, 128, 256}))},
+        new IntProperty(256, std::vector<uint32_t>({8, 16, 32, 64, 128, 256}))},
     {"rambank2_size",
-        new IntProperty(  0, vector<uint32_t>({0, 8, 16, 32, 64, 128, 256}))},
+        new IntProperty(  0, std::vector<uint32_t>({0, 8, 16, 32, 64, 128, 256}))},
     {"rambank3_size",
-        new IntProperty(  0, vector<uint32_t>({0, 8, 16, 32, 64, 128, 256}))},
+        new IntProperty(  0, std::vector<uint32_t>({0, 8, 16, 32, 64, 128, 256}))},
     {"rambank4_size",
-        new IntProperty(  0, vector<uint32_t>({0, 8, 16, 32, 64, 128, 256}))},
+        new IntProperty(  0, std::vector<uint32_t>({0, 8, 16, 32, 64, 128, 256}))},
     {"emmo",
         new BinProperty(0)},
     {"hdd_config",
@@ -123,7 +123,7 @@ static const PropMap yosemite_settings = {
         new StrProperty("Ide0:0")},
 };
 
-static vector<string> yosemite_devices = {
+static std::vector<std::string> yosemite_devices = {
     "Grackle",
     "Dec21154Yosemite",
     "CmdAta",

@@ -74,20 +74,20 @@ int initialize_pippin(std::string& id) {
 
 static const PropMap Pippin_Settings = {
     {"rambank1_size",
-        new IntProperty(4, vector<uint32_t>({4}))}, // fixed size
+        new IntProperty(4, std::vector<uint32_t>({4}))}, // fixed size
     {"rambank2_size",
-        new IntProperty(1, vector<uint32_t>({1}))}, // fixed size
+        new IntProperty(1, std::vector<uint32_t>({1}))}, // fixed size
     {"rambank3_size",
-        new IntProperty(0, vector<uint32_t>({0, 1, 4, 8, 16}))},
+        new IntProperty(0, std::vector<uint32_t>({0, 1, 4, 8, 16}))},
     {"rambank4_size",
-        new IntProperty(0, vector<uint32_t>({0, 1, 4, 8, 16}))},
+        new IntProperty(0, std::vector<uint32_t>({0, 1, 4, 8, 16}))},
     {"emmo",
         new BinProperty(0)},
     {"adb_devices",
         new StrProperty("AppleJack,Keyboard")},
 };
 
-static vector<string> Pippin_Devices = {
+static std::vector<std::string> Pippin_Devices = {
     "Aspen", "AspenPci1", "ScsiMesh", "MeshTnt", "GrandCentral", "TaosVideo"
 };
 

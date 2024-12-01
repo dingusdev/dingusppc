@@ -34,12 +34,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 class HWComponent;
 
-typedef std::function<unique_ptr<HWComponent> ()> CreateFunc;
+typedef std::function<std::unique_ptr<HWComponent> ()> CreateFunc;
 
 struct DeviceDescription {
-    CreateFunc      m_create_func;
-    vector<string>  subdev_list;
-    PropMap         properties;
+    CreateFunc                m_create_func;
+    std::vector<std::string>  subdev_list;
+    PropMap                   properties;
 };
 
 class DeviceRegistry
@@ -47,17 +47,17 @@ class DeviceRegistry
 public:
     DeviceRegistry() = delete;
 
-    static bool add(const string name, DeviceDescription desc);
+    static bool add(const std::string name, DeviceDescription desc);
 
-    static bool device_registered(const string dev_name);
+    static bool device_registered(const std::string dev_name);
 
-    static unique_ptr<HWComponent> create(const string& name);
+    static std::unique_ptr<HWComponent> create(const std::string& name);
 
     static DeviceDescription& get_descriptor(const std::string& name);
 
 private:
-    static map<string, DeviceDescription> & get_registry() {
-        static map<string, DeviceDescription> device_registry;
+    static std::map<std::string, DeviceDescription> & get_registry() {
+        static std::map<std::string, DeviceDescription> device_registry;
         return device_registry;
     }
 };

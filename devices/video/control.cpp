@@ -685,9 +685,9 @@ void ControlVideo::disable_display()
 
 static const PropMap Control_Properties = {
     {"gfxmem_banks",
-        new IntProperty(3, vector<uint32_t>({0, 1, 2, 3}))},
+        new IntProperty(3, std::vector<uint32_t>({0, 1, 2, 3}))},
     {"gfxmem_size",
-        new IntProperty(4, vector<uint32_t>({0, 2, 4}))},
+        new IntProperty(4, std::vector<uint32_t>({0, 2, 4}))},
     {"mon_id",
         new StrProperty("AppleVision1710")},
 };

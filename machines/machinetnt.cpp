@@ -154,13 +154,13 @@ int initialize_tnt(std::string& id)
 template <uint32_t cpu>
 static const PropMap pm7500_settings = {
     {"rambank1_size",
-        new IntProperty(16, vector<uint32_t>({4, 8, 16, 32, 64, 128}))},
+        new IntProperty(16, std::vector<uint32_t>({4, 8, 16, 32, 64, 128}))},
     {"rambank2_size",
-        new IntProperty( 0, vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
+        new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
     {"rambank3_size",
-        new IntProperty( 0, vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
+        new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
     {"rambank4_size",
-        new IntProperty( 0, vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
+        new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
     {"emmo",
         new BinProperty(0)},
     {"cpu",
@@ -168,22 +168,22 @@ static const PropMap pm7500_settings = {
             cpu == PPC_VER::MPC601  ? "601" :
             cpu == PPC_VER::MPC604  ? "604" :
             cpu == PPC_VER::MPC604E ? "604e" :
-            "604e", vector<std::string>({"601", "604", "604e", "750"})
+            "604e", std::vector<std::string>({"601", "604", "604e", "750"})
         )
     },
 };
 
-static vector<string> pm7500_devices = {
+static std::vector<std::string> pm7500_devices = {
     "Hammerhead", "Bandit1", "Chaos", "ScsiMesh", "MeshTnt", "GrandCentral",
     "ControlVideo"
 };
 
-static vector<string> pm8500_devices = {
+static std::vector<std::string> pm8500_devices = {
     "Hammerhead", "Bandit1", "Chaos", "ScsiMesh", "MeshTnt", "GrandCentral",
     "ControlVideo", "Sixty6Video"
 };
 
-static vector<string> pm9500_devices = {
+static std::vector<std::string> pm9500_devices = {
     "Hammerhead", "Bandit1", "Bandit2", "ScsiMesh", "MeshTnt", "GrandCentral"
 };
 

@@ -477,7 +477,7 @@ void EsccChannel::dma_flush_rx()
     });
 }
 
-static const vector<string> CharIoBackends = {"null", "stdio", "socket"};
+static const std::vector<std::string> CharIoBackends = {"null", "stdio", "socket"};
 
 static const PropMap Escc_Properties = {
     {"serial_backend", new StrProperty("null", CharIoBackends)},

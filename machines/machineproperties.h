@@ -29,8 +29,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef MACHINE_PROPERTIES_H
 #define MACHINE_PROPERTIES_H
 
-using namespace std;
-
 /** Property types. */
 enum PropType : int {
     PROP_TYPE_UNKNOWN   = 0,
@@ -49,7 +47,7 @@ enum CheckType : int {
 /** Abstract base class for properties. */
 class BasicProperty {
 public:
-    BasicProperty(PropType type, string val) {
+    BasicProperty(PropType type, std::string val) {
         this->type = type;
         set_string(val);
     }
@@ -59,11 +57,11 @@ public:
     /* Clone method for copying derived property objects. */
     virtual BasicProperty* clone() const = 0;
 
-    virtual string get_string() {
+    virtual std::string get_string() {
         return this->val;
     }
 
-    virtual void set_string(string str) {
+    virtual void set_string(std::string str) {
         this->val = str;
     }
 
@@ -72,15 +70,15 @@ public:
     }
 
 protected:
-    PropType    type;
-    string      val;
+    PropType         type;
+    std::string      val;
 };
 
 
 /** Property class that holds a string value. */
 class StrProperty : public BasicProperty {
 public:
-    StrProperty(string str)
+    StrProperty(std::string str)
         : BasicProperty(PROP_TYPE_STRING, str)
     {
         this->check_type = CHECK_TYPE_NONE;
@@ -88,7 +86,7 @@ public:
     }
 
     /* construct a string property with a list of valid values. */
-    StrProperty(string str, vector<string> vec)
+    StrProperty(std::string str, std::vector<std::string> vec)
         : BasicProperty(PROP_TYPE_STRING, str)
     {
         this->check_type = CHECK_TYPE_LIST;
@@ -98,16 +96,16 @@ public:
     BasicProperty* clone() const { return new StrProperty(*this); }
 
     /* override BasicProperty::set_string() and perform checks */
-    void set_string(string str);
+    void set_string(std::string str);
 
-    string get_valid_values_as_str();
+    std::string get_valid_values_as_str();
 
 protected:
-    bool check_val(string str);
+    bool check_val(std::string str);
 
 private:
-    CheckType       check_type;
-    vector<string>  vec;
+    CheckType                 check_type;
+    std::vector<std::string>  vec;
 };
 
 /** Property class that holds an integer value. */
@@ -115,7 +113,7 @@ class IntProperty : public BasicProperty {
 public:
     /* construct an integer property without value check. */
     IntProperty(uint32_t val)
-        : BasicProperty(PROP_TYPE_INTEGER, to_string(val))
+        : BasicProperty(PROP_TYPE_INTEGER, std::to_string(val))
     {
         this->int_val    = val;
         this->min        = std::numeric_limits<uint32_t>::min();
@@ -126,7 +124,7 @@ public:
 
     /* construct an integer property with a predefined range. */
     IntProperty(uint32_t val, uint32_t min, uint32_t max)
-        : BasicProperty(PROP_TYPE_INTEGER, to_string(val))
+        : BasicProperty(PROP_TYPE_INTEGER, std::to_string(val))
     {
         this->int_val    = val;
         this->min        = min;
@@ -136,8 +134,8 @@ public:
     }
 
     /* construct an integer property with a list of valid values. */
-    IntProperty(uint32_t val, vector<uint32_t> vec)
-        : BasicProperty(PROP_TYPE_INTEGER, to_string(val))
+    IntProperty(uint32_t val, std::vector<uint32_t> vec)
+        : BasicProperty(PROP_TYPE_INTEGER, std::to_string(val))
     {
         this->int_val    = val;
         this->min        = std::numeric_limits<uint32_t>::min();
@@ -150,17 +148,17 @@ public:
 
     uint32_t get_int();
 
-    string get_valid_values_as_str();
+    std::string get_valid_values_as_str();
 
 protected:
     bool check_val(uint32_t val);
 
 private:
-    uint32_t            int_val;
-    CheckType           check_type;
-    uint32_t            min;
-    uint32_t            max;
-    vector<uint32_t>    vec;
+    uint32_t                 int_val;
+    CheckType                check_type;
+    uint32_t                 min;
+    uint32_t                 max;
+    std::vector<uint32_t>    vec;
 };
 
 /** Property class that holds a binary value. */
@@ -175,10 +173,10 @@ public:
     BasicProperty* clone() const { return new BinProperty(*this); }
 
     // override BasicProperty::set_string() and perform checks
-    void set_string(string str);
+    void set_string(std::string str);
 
-    string get_valid_values_as_str() {
-        return string("on, off, ON, OFF");
+    std::string get_valid_values_as_str() {
+        return std::string("on, off, ON, OFF");
     };
 
     int get_val() { return this->bin_val; };
@@ -187,13 +185,13 @@ private:
     int     bin_val;
 };
 
-void parse_device_path(string dev_path, string& bus_id, uint32_t& dev_num);
+void parse_device_path(std::string dev_path, std::string& bus_id, uint32_t& dev_num);
 
 /** Special map type for specifying machine presets. */
-typedef map<string, BasicProperty*> PropMap;
+typedef std::map<std::string, BasicProperty*> PropMap;
 
 /** Global map that holds settings for the running machine. */
-extern map<string, unique_ptr<BasicProperty>> gMachineSettings;
+extern std::map<std::string, std::unique_ptr<BasicProperty>> gMachineSettings;
 
 /** Conveniency macros to hide complex casts. */
 #define SET_STR_PROP(name, value) \
