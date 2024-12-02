@@ -529,14 +529,20 @@ void dppc_interpreter::ppc_divw(uint32_t opcode) {
     ppc_grab_regsdab(opcode);
 
     if (!ppc_result_b) { // handle the "anything / 0" case
-        ppc_result_d = 0; // tested on G4 in Mac OS X 10.4 and Open Firmware.
+        if (is_601)
+            ppc_result_d = (int32_t(ppc_result_a) < 0) ? 1 : -1; // tested on 601 in Mac OS 9.1
+        else
+            ppc_result_d = 0; // tested on G4 in Mac OS X 10.4 and Open Firmware.
         // ppc_result_d = (int32_t(ppc_result_a) < 0) ? -1 : 0; /* UNDOCUMENTED! */
 
         if (ov)
             ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
 
     } else if (ppc_result_a == 0x80000000UL && ppc_result_b == 0xFFFFFFFFUL) {
-        ppc_result_d = 0; // tested on G4 in Mac OS X 10.4 and Open Firmware.
+        if (is_601)
+            ppc_result_d = 0x80000000U; // tested on 601 in Mac OS 9.1
+        else
+            ppc_result_d = 0; // tested on G4 in Mac OS X 10.4 and Open Firmware.
 
         if (ov)
             ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
