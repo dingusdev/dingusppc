@@ -62,22 +62,24 @@ template void dppc_interpreter::power_abs<RC1, OV1>(uint32_t opcode);
 void dppc_interpreter::power_clcs(uint32_t opcode) {
     uint32_t ppc_result_d;
     ppc_grab_da(opcode);
-    switch (reg_a) {
-    case 12: //instruction cache line size
-    case 13: //data cache line size
-    case 14: //minimum line size
-    case 15: //maximum line size
-    default: ppc_result_d = is_601 ? 64 :     32; break;
-    case  7:
-    case 23: ppc_result_d = is_601 ? 64 :      0; break;
-    case  8:
-    case  9:
-    case 24:
-    case 25: ppc_result_d = is_601 ? 64 :      4; break;
-    case 10:
-    case 11:
-    case 26:
-    case 27: ppc_result_d = is_601 ? 64 : 0x4000; break;
+    switch (reg_a & 15) {
+    case    0:
+    case    1:
+    case    2:
+    case    3:
+    case  0xC: //instruction cache line size
+    case  0xD: //data cache line size
+    case  0xE: //minimum line size
+    case  0xF: //maximum line size
+               ppc_result_d = is_601 ? 0x40 : 0x20; break;
+    case    4:
+    case    5:
+    case    6: ppc_result_d = 0x20; break;
+    case    7: ppc_result_d = is_601 ? 1 : 0; break;
+    case    8:
+    case    9: ppc_result_d = is_601 ? 8 : 4; break;
+    case  0xA:
+    case  0xB: ppc_result_d = is_601 ? 0x8000 : 0x4000; break;
     }
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
