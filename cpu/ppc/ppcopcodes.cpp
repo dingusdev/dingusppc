@@ -565,7 +565,10 @@ void dppc_interpreter::ppc_divwu(uint32_t opcode) {
     ppc_grab_regsdab(opcode);
 
     if (!ppc_result_b) { // division by zero
-        ppc_result_d = 0;
+        if (is_601)
+            ppc_result_d = -1; // tested on 601 in Mac OS 9.1
+        else
+            ppc_result_d = 0;
 
         if (ov)
             ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
