@@ -232,7 +232,15 @@ template <field_rc rec>
 void dppc_interpreter::ppc_fdiv(uint32_t opcode) {
     ppc_grab_regsfpdab(opcode);
 
-    double ppc_dblresult64_d = val_reg_a / val_reg_b;
+    double ppc_dblresult64_d;
+
+    if (is_601 && FPR_INT(reg_b) == 0x8000000000000000 && val_reg_a > 0) {
+        ppc_dblresult64_d = val_reg_b;
+        fpresult_update(ppc_dblresult64_d);
+        return;
+    }
+
+    ppc_dblresult64_d = val_reg_a / val_reg_b;
 
     if (val_reg_b == 0.0) {
         ppc_state.fpscr |= 0xa0000000;
