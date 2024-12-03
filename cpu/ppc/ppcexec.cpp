@@ -445,86 +445,80 @@ Opcode table macros:
 - r is for raw (adding custom entries to the table)
  */
 
+#define OPr(opcode, mod, fn) \
+do { \
+    OpcodeGrabber[((opcode) << 11) | (mod)] = fn; \
+} while (0)
+
+#define OPr_fp(opcode, mod, fn) \
+do { \
+    OPr(opcode, mod, fn); \
+    OpcodeGrabberNoFPU[((opcode) << 11) | (mod)] = ppc_fpu_off; \
+} while (0)
+
 #define OP(opcode, fn) \
 do { \
-for (uint32_t mod = 0; mod < 2048; mod++) { \
-    OpcodeGrabber[((opcode) << 11) | mod] = fn; \
-} \
+    for (uint32_t mod = 0; mod < 2048; mod++) { \
+        OPr(opcode, mod, fn); \
+    } \
 } while (0)
 
 #define OP_fp(opcode, fn) \
 do { \
-for (uint32_t mod = 0; mod < 2048; mod++) { \
-    OpcodeGrabber[((opcode) << 11) | mod] = fn; \
-    OpcodeGrabberNoFPU[((opcode) << 11) | mod] = ppc_fpu_off; \
-} \
+    for (uint32_t mod = 0; mod < 2048; mod++) { \
+        OPr_fp(opcode, mod, fn); \
+    } \
 } while (0)
 
-#define OPX(opcode, subopcode, fn) \
-do { \
-    OpcodeGrabber[((opcode) << 11) | ((subopcode)<<1)] = fn; \
-} while (0)
+#define OPX(opcode, subopcode, fn) OPr(opcode, (subopcode)<<1, fn)
 
-#define OPX_fp(opcode, subopcode, fn) \
-do { \
-    OpcodeGrabber[((opcode) << 11) | ((subopcode)<<1)] = fn; \
-    OpcodeGrabberNoFPU[((opcode) << 11) | ((subopcode)<<1)] = ppc_fpu_off; \
-} while (0)
+#define OPX_fp(opcode, subopcode, fn) OPr_fp(opcode, (subopcode)<<1, fn)
 
 #define OPXd(opcode, subopcode, fn) \
 do { \
-    OpcodeGrabber[((opcode) << 11) | ((subopcode)<<1) | 0x000] = fn<RC0>; \
-    OpcodeGrabber[((opcode) << 11) | ((subopcode)<<1) | 0x001] = fn<RC1>; \
+    OPr(opcode, ((subopcode)<<1) | 0, fn<RC0>); \
+    OPr(opcode, ((subopcode)<<1) | 1, fn<RC1>); \
 } while (0)
 
 #define OPXd_fp(opcode, subopcode, fn) \
 do { \
-    OpcodeGrabber[((opcode) << 11) | ((subopcode)<<1) | 0x000] = fn<RC0>; \
-    OpcodeGrabber[((opcode) << 11) | ((subopcode)<<1) | 0x001] = fn<RC1>; \
-    OpcodeGrabberNoFPU[((opcode) << 11) | ((subopcode)<<1) | 0x000] = ppc_fpu_off; \
-    OpcodeGrabberNoFPU[((opcode) << 11) | ((subopcode)<<1) | 0x001] = ppc_fpu_off; \
+    OPr_fp(opcode, ((subopcode)<<1) | 0, fn<RC0>); \
+    OPr_fp(opcode, ((subopcode)<<1) | 1, fn<RC1>); \
 } while (0)
 
 #define OPXod(opcode, subopcode, fn) \
 do { \
-    OpcodeGrabber[((opcode) << 11) | ((subopcode)<<1) | 0x000] = fn<RC0, OV0>; \
-    OpcodeGrabber[((opcode) << 11) | ((subopcode)<<1) | 0x001] = fn<RC1, OV0>; \
-    OpcodeGrabber[((opcode) << 11) | ((subopcode)<<1) | 0x400] = fn<RC0, OV1>; \
-    OpcodeGrabber[((opcode) << 11) | ((subopcode)<<1) | 0x401] = fn<RC1, OV1>; \
+    OPr(opcode, ((subopcode)<<1) | 0x000, (fn<RC0, OV0>)); \
+    OPr(opcode, ((subopcode)<<1) | 0x001, (fn<RC1, OV0>)); \
+    OPr(opcode, ((subopcode)<<1) | 0x400, (fn<RC0, OV1>)); \
+    OPr(opcode, ((subopcode)<<1) | 0x401, (fn<RC1, OV1>)); \
 } while (0)
 
 #define OPXdc(opcode, subopcode, fn, carry) \
 do { \
-    OpcodeGrabber[((opcode) << 11) | ((subopcode)<<1) | 0x000] = fn<carry, RC0>; \
-    OpcodeGrabber[((opcode) << 11) | ((subopcode)<<1) | 0x001] = fn<carry, RC1>; \
+    OPr(opcode, ((subopcode)<<1) | 0, (fn<carry, RC0>)); \
+    OPr(opcode, ((subopcode)<<1) | 1, (fn<carry, RC1>)); \
 } while (0)
 
 #define OPXdc_fp(opcode, subopcode, fn, carry) \
 do { \
-    OpcodeGrabber[((opcode) << 11) | ((subopcode)<<1) | 0x000] = fn<carry, RC0>; \
-    OpcodeGrabber[((opcode) << 11) | ((subopcode)<<1) | 0x001] = fn<carry, RC1>; \
-    OpcodeGrabberNoFPU[((opcode) << 11) | ((subopcode)<<1) | 0x000] = ppc_fpu_off; \
-    OpcodeGrabberNoFPU[((opcode) << 11) | ((subopcode)<<1) | 0x001] = ppc_fpu_off; \
+    OPr_fp(opcode, ((subopcode)<<1) | 0, (fn<carry, RC0>)); \
+    OPr_fp(opcode, ((subopcode)<<1) | 1, (fn<carry, RC1>)); \
 } while (0)
 
 #define OPXcod(opcode, subopcode, fn, carry) \
 do { \
-    OpcodeGrabber[((opcode) << 11) | ((subopcode)<<1) | 0x000] = fn<carry, RC0, OV0>; \
-    OpcodeGrabber[((opcode) << 11) | ((subopcode)<<1) | 0x001] = fn<carry, RC1, OV0>; \
-    OpcodeGrabber[((opcode) << 11) | ((subopcode)<<1) | 0x400] = fn<carry, RC0, OV1>; \
-    OpcodeGrabber[((opcode) << 11) | ((subopcode)<<1) | 0x401] = fn<carry, RC1, OV1>; \
+    OPr(opcode, ((subopcode)<<1) | 0x000, (fn<carry, RC0, OV0>)); \
+    OPr(opcode, ((subopcode)<<1) | 0x001, (fn<carry, RC1, OV0>)); \
+    OPr(opcode, ((subopcode)<<1) | 0x400, (fn<carry, RC0, OV1>)); \
+    OPr(opcode, ((subopcode)<<1) | 0x401, (fn<carry, RC1, OV1>)); \
 } while (0)
 
 #define OPla(opcode, subopcode, fn) \
 do { \
-for (uint32_t mod = 0; mod < 512; mod++) { \
-    OpcodeGrabber[((opcode) << 11) | (mod << 2) | (subopcode)] = fn; \
-} \
-} while (0)
-
-#define OPr(opcode, mod, fn) \
-do { \
-    OpcodeGrabber[((opcode) << 11) | (mod)] = fn; \
+    for (uint32_t mod = 0; mod < 512; mod++) { \
+        OPr(opcode, (mod << 2) | (subopcode), fn); \
+    } \
 } while (0)
 
 #define OP31(subopcode, fn) OPX(31, subopcode, fn)
@@ -538,10 +532,7 @@ do { \
 #define OP63d(subopcode, fn) OPXd_fp(63, subopcode, fn)
 #define OP63dc(subopcode, fn, carry) OPXdc_fp(63, subopcode, fn, carry)
 
-#define OP59d(subopcode, fn) \
-do { \
-    OPXd_fp(59, (subopcode), fn); \
-} while (0)
+#define OP59d(subopcode, fn) OPXd_fp(59, (subopcode), fn)
 
 #define OP59cd(subopcode, fn) \
 do { \
