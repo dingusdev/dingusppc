@@ -737,10 +737,10 @@ void dppc_interpreter::ppc_mtsr(uint32_t opcode) {
     }
     int reg_s             = (opcode >> 21) & 0x1F;
     uint32_t grab_sr      = (opcode >> 16) & 0x0F;
-   if (ppc_state.sr[grab_sr] != ppc_state.gpr[reg_s]) {
+    if (ppc_state.sr[grab_sr] != ppc_state.gpr[reg_s]) {
         ppc_state.sr[grab_sr] = ppc_state.gpr[reg_s];
         mmu_pat_ctx_changed();
-   }
+    }
 }
 
 void dppc_interpreter::ppc_mtsrin(uint32_t opcode) {
