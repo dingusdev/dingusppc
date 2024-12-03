@@ -42,7 +42,7 @@ ImgFile::~ImgFile() = default;
 
 bool ImgFile::open(const std::string &img_path)
 {
-    if (is_deterministic && false) {
+    if (is_deterministic) {
         // Avoid writes to the underlying file by reading it all in memory and
         // only operating on that.
         auto mem_stream = std::make_unique<std::stringstream>();
@@ -90,9 +90,6 @@ uint64_t ImgFile::read(void* buf, uint64_t offset, uint64_t length) const
 
 uint64_t ImgFile::write(const void* buf, uint64_t offset, uint64_t length)
 {
-    if (is_deterministic) {
-        return length;
-    }
     if (!impl->stream) {
         LOG_F(WARNING, "ImgFile::write before disk was opened, ignoring.");
         return 0;
