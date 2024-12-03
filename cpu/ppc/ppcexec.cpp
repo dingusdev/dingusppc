@@ -558,9 +558,21 @@ do { \
 
 #define OP59d(subopcode, fn) \
 do { \
-for (uint32_t mod = 0; mod < 16; mod++) { \
-    OPXd(59, (mod << 5) | (subopcode), fn); \
-} \
+    OPXd(59, (subopcode), fn); \
+} while (0)
+
+#define OP59cd(subopcode, fn) \
+do { \
+    for (uint32_t ccccc = 0; ccccc < 32; ccccc++) { \
+        OPXd(59, (ccccc << 5) | (subopcode), fn); \
+    } \
+} while (0)
+
+#define OP4_ccccc10xxxx(subopcode, fn) \
+do { \
+    for (uint32_t ccccc = 0; ccccc < 32; ccccc++) { \
+        OPr(4, (ccccc << 6) | (subopcode), fn); \
+    } \
 } while (0)
 
 void initialize_ppc_opcode_table() {
@@ -779,11 +791,11 @@ void initialize_ppc_opcode_table() {
     OP59d(21,    ppc_fadds);
     if (ppc_state.spr[SPR::PVR] == PPC_VER::MPC970MP) OP59d(22, ppc_fsqrts);
     if (!is_601) OP59d(24, ppc_fres);
-    OP59d(25,    ppc_fmuls);
-    OP59d(28,    ppc_fmsubs);
-    OP59d(29,    ppc_fmadds);
-    OP59d(30,    ppc_fnmsubs);
-    OP59d(31,    ppc_fnmadds);
+    OP59cd(25,   ppc_fmuls);
+    OP59cd(28,   ppc_fmsubs);
+    OP59cd(29,   ppc_fmadds);
+    OP59cd(30,   ppc_fnmsubs);
+    OP59cd(31,   ppc_fnmadds);
 
     OP63(0,      ppc_fcmpu);
     OP63d(12,    ppc_frsp);
