@@ -489,7 +489,7 @@ Opcode table macros:
 - o is for overflow (OV).
 - c is for carry CARRY0/CARRY1. It also works for other options:
   SHFT0/SHFT1, RIGHT0/LEFT1, uint8_t/uint16_t/uint32_t, and int8_t/int16_t.
-- a is for address mode (AA).
+- a is for absolute address (AA).
 - l is for link register (LK).
 - r is for raw (adding custom entries to the table)
  */
