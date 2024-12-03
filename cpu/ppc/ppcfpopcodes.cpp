@@ -808,7 +808,7 @@ template <field_rc rec>
 void dppc_interpreter::ppc_fsel(uint32_t opcode) {
     ppc_grab_regsfpdabc(opcode);
 
-    double ppc_dblresult64_d = (val_reg_a >= -0.0) ? val_reg_c : val_reg_b;
+    double ppc_dblresult64_d = (std::isnan(val_reg_a) || (val_reg_a < 0.0)) ? val_reg_b : val_reg_c;
 
     ppc_store_fpresult_flt(reg_d, ppc_dblresult64_d);
 
