@@ -491,7 +491,7 @@ void PlatinumCtrl::enable_display() {
     if (did_refresh_rate_change)
         LOG_F(INFO, "%s: refresh rate set to %f Hz", this->name.c_str(), this->refresh_rate);
     if (this->blank_on == true || this->crtc_on == false)
-        LOG_F(PLATINUM, "%s: display enabled", this->name.c_str());
+        LOG_F(INFO, "%s: display enabled", this->name.c_str());
 
     this->blank_on = false;
     this->crtc_on = true;
