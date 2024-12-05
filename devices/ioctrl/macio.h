@@ -406,6 +406,7 @@ private:
     std::unique_ptr<DMAChannel>     floppy_dma;
     std::unique_ptr<DMAChannel>     enet_xmit_dma;
     std::unique_ptr<DMAChannel>     enet_rcv_dma;
+    std::unique_ptr<DMAChannel>     escc_b_rcv_dma;
     std::unique_ptr<DMAChannel>     snd_out_dma;
 };
 
