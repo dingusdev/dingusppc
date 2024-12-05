@@ -34,6 +34,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace std;
 
 ScsiHardDisk::ScsiHardDisk(std::string name, int my_id) : ScsiDevice(name, my_id) {
+    this->data_buf_size = 1 << 22;
+    this->data_buf_obj = std::unique_ptr<uint8_t[]>(new uint8_t[this->data_buf_size]);
+    this->data_buf = this->data_buf_obj.get();
 }
 
 void ScsiHardDisk::insert_image(std::string filename) {
@@ -461,12 +464,13 @@ void ScsiHardDisk::read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
     }
     transfer_size *= this->sector_size;
 
-    size_t data_buf_size = sizeof(this->data_buf);
-    if (transfer_size > data_buf_size) {
-        ABORT_F("%s: cannot read %d bytes (%d sectors * %d bytes/sector), maximum size is %lu bytes",
-            this->name.c_str(), transfer_size, transfer_len, this->sector_size, data_buf_size);
+    if (transfer_size > this->data_buf_size) {
+        while (transfer_size > this->data_buf_size)
+            this->data_buf_size <<= 1;
+        this->data_buf_obj = std::unique_ptr<uint8_t[]>(new uint8_t[this->data_buf_size]);
+        this->data_buf = this->data_buf_obj.get();
     }
-    std::memset(this->data_buf, 0, data_buf_size);
+    std::memset(this->data_buf, 0, transfer_size);
 
     uint64_t device_offset = (uint64_t)lba * this->sector_size;
 
@@ -484,10 +488,11 @@ void ScsiHardDisk::write(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
     }
     transfer_size *= this->sector_size;
 
-    size_t data_buf_size = sizeof(this->data_buf);
-    if (transfer_size > data_buf_size) {
-        ABORT_F("%s: cannot write %d bytes (%d sectors * %d bytes/sector), maximum size is %lu bytes",
-            this->name.c_str(), transfer_size, transfer_len, this->sector_size, data_buf_size);
+    if (transfer_size > this->data_buf_size) {
+        while (transfer_size > this->data_buf_size)
+            this->data_buf_size <<= 1;
+        this->data_buf_obj = std::unique_ptr<uint8_t[]>(new uint8_t[this->data_buf_size]);
+        this->data_buf = this->data_buf_obj.get();
     }
 
     uint64_t device_offset = (uint64_t)lba * this->sector_size;

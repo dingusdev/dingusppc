@@ -66,7 +66,9 @@ private:
     bool            eject_allowed = true;
     int             bytes_out = 0;
 
-    uint8_t         data_buf[1 << 21]; // TODO: add proper buffer management!
+    std::unique_ptr<uint8_t[]> data_buf_obj = nullptr;
+    uint8_t*        data_buf = nullptr;
+    uint32_t        data_buf_size = 0;
 
     uint8_t         error = ScsiError::NO_ERROR;
     uint8_t         msg_code = 0;
