@@ -1531,14 +1531,21 @@ void dppc_interpreter::ppc_stu(uint32_t opcode) {
     num_int_stores++;
 #endif
     ppc_grab_regssa(opcode);
-    if (reg_a != 0) {
-        uint32_t ea = int32_t(int16_t(opcode));
-        ea += ppc_result_a;
-        mmu_write_vmem<T>(opcode, ea, ppc_result_d);
-        ppc_state.gpr[reg_a] = ea;
-    } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-    }
+
+    if (reg_a == 0) {
+        if (is_601) {
+            ppc_result_a = 0;
+        } 
+        else {
+            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+            return;
+        }
+    } 
+
+    uint32_t ea = int32_t(int16_t(opcode));
+    ea += ppc_result_a;
+    mmu_write_vmem<T>(opcode, ea, ppc_result_d);
+    ppc_state.gpr[reg_a] = ea;
 }
 
 template void dppc_interpreter::ppc_stu<uint8_t>(uint32_t opcode);
@@ -1551,13 +1558,20 @@ void dppc_interpreter::ppc_stux(uint32_t opcode) {
     num_int_stores++;
 #endif
     ppc_grab_regssab(opcode);
-    if (reg_a != 0) {
-        uint32_t ea = ppc_result_a + ppc_result_b;
-        mmu_write_vmem<T>(opcode, ea, ppc_result_d);
-        ppc_state.gpr[reg_a] = ea;
-    } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-    }
+
+    if (reg_a == 0) {
+        if (is_601) {
+            ppc_result_a = 0;
+        }
+        else {
+            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+            return;
+        }
+    } 
+
+    uint32_t ea = ppc_result_a + ppc_result_b;
+    mmu_write_vmem<T>(opcode, ea, ppc_result_d);
+    ppc_state.gpr[reg_a] = ea;
 }
 
 template void dppc_interpreter::ppc_stux<uint8_t>(uint32_t opcode);
@@ -1644,9 +1658,11 @@ void dppc_interpreter::ppc_lzu(uint32_t opcode) {
     if ((reg_a != reg_d) && reg_a != 0) {
         ea += ppc_result_a;
         uint32_t ppc_result_d = mmu_read_vmem<T>(opcode, ea);
-        uint32_t ppc_result_a = ea;
         ppc_store_iresult_reg(reg_d, ppc_result_d);
-        ppc_store_iresult_reg(reg_a, ppc_result_a);
+        if (!(is_601 && (reg_a == 0))) {
+            uint32_t ppc_result_a = ea;
+            ppc_store_iresult_reg(reg_a, ppc_result_a);
+        }
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
@@ -1680,9 +1696,11 @@ void dppc_interpreter::ppc_lzux(uint32_t opcode) {
     if ((reg_a != reg_d) && reg_a != 0) {
         uint32_t ea = ppc_result_a + ppc_result_b;
         uint32_t ppc_result_d = mmu_read_vmem<T>(opcode, ea);
-        ppc_result_a          = ea;
         ppc_store_iresult_reg(reg_d, ppc_result_d);
-        ppc_store_iresult_reg(reg_a, ppc_result_a);
+        if (!(is_601 && (reg_a == 0))) {
+            uint32_t ppc_result_a = ea;
+            ppc_store_iresult_reg(reg_a, ppc_result_a);
+        }
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
@@ -1715,6 +1733,10 @@ void dppc_interpreter::ppc_lhau(uint32_t opcode) {
         ppc_store_iresult_reg(reg_d, int32_t(val));
         uint32_t ppc_result_a = ea;
         ppc_store_iresult_reg(reg_a, ppc_result_a);
+        if (!(is_601 && (reg_a == 0))) {
+            uint32_t ppc_result_a = ea;
+            ppc_store_iresult_reg(reg_a, ppc_result_a);
+        }
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
@@ -1731,6 +1753,10 @@ void dppc_interpreter::ppc_lhaux(uint32_t opcode) {
         ppc_store_iresult_reg(reg_d, int32_t(val));
         uint32_t ppc_result_a = ea;
         ppc_store_iresult_reg(reg_a, ppc_result_a);
+        if (!(is_601 && (reg_a == 0))) {
+            uint32_t ppc_result_a = ea;
+            ppc_store_iresult_reg(reg_a, ppc_result_a);
+        }
     }
     else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
