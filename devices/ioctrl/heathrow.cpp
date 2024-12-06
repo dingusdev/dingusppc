@@ -88,6 +88,9 @@ HeathrowIC::HeathrowIC() : PCIDevice("mac-io_heathrow"), InterruptCtrl()
     // connect serial HW
     this->escc = dynamic_cast<EsccController*>(gMachineObj->get_comp_by_name("Escc"));
 
+    // connect DBDMA
+    this->escc_b_rcv_dma = std::unique_ptr<DMAChannel>(new DMAChannel("DBDMABRx"));
+
     // connect floppy disk HW and initialize its DMA channel
     this->swim3 = dynamic_cast<Swim3::Swim3Ctrl*>(gMachineObj->get_comp_by_name("Swim3"));
     this->floppy_dma = std::unique_ptr<DMAChannel> (new DMAChannel("floppy"));
