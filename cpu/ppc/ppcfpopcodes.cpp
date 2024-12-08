@@ -1028,21 +1028,15 @@ void dppc_interpreter::ppc_lfs(uint32_t opcode) {
 void dppc_interpreter::ppc_lfsu(uint32_t opcode) {
     ppc_grab_regsfpdia(opcode);
 
-    if (reg_a == 0) {
-        if (is_601) {
-            val_reg_a = 0;
-        } else {
-            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-            return;
-        }
-    } 
-
-    uint32_t ea = int32_t(int16_t(opcode));
-    ea += val_reg_a;
-    uint32_t result = mmu_read_vmem<uint32_t>(opcode, ea);
-    ppc_state.fpr[reg_d].dbl64_r = *(float*)(&result);
-    if (reg_a != 0) //accounting for the 601's skipping of updating Reg A
-        ppc_state.gpr[reg_a] = ea;
+    if (reg_a != 0) {
+        uint32_t ea = int32_t(int16_t(opcode));
+        ea += val_reg_a;
+        uint32_t result              = mmu_read_vmem<uint32_t>(opcode, ea);
+        ppc_state.fpr[reg_d].dbl64_r = *(float*)(&result);
+    }
+    else {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+    }
 }
 
 void dppc_interpreter::ppc_lfsx(uint32_t opcode) {
@@ -1055,21 +1049,16 @@ void dppc_interpreter::ppc_lfsx(uint32_t opcode) {
 void dppc_interpreter::ppc_lfsux(uint32_t opcode) {
     ppc_grab_regsfpdiab(opcode);
 
-    if (reg_a == 0) {
-        if (is_601) {
-            val_reg_a = 0;
-        } else {
-            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-            return;
-        }
+    
+    if (reg_a != 0) {
+        uint32_t ea                  = val_reg_a + val_reg_b;
+        uint32_t result              = mmu_read_vmem<uint32_t>(opcode, ea);
+        ppc_state.fpr[reg_d].dbl64_r = *(float*)(&result);
     } 
-
-    uint32_t ea = val_reg_a + val_reg_b;
-    uint32_t result = mmu_read_vmem<uint32_t>(opcode, ea);
-    ppc_state.fpr[reg_d].dbl64_r = *(float*)(&result);
-
-    if (reg_a != 0)    // accounting for the 601's skipping of updating Reg A
-        ppc_state.gpr[reg_a] = ea;
+    else {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        return;
+    }
 }
 
 void dppc_interpreter::ppc_lfd(uint32_t opcode) {
@@ -1083,22 +1072,16 @@ void dppc_interpreter::ppc_lfd(uint32_t opcode) {
 void dppc_interpreter::ppc_lfdu(uint32_t opcode) {
     ppc_grab_regsfpdia(opcode);
 
-    if (reg_a == 0) {
-        if (is_601) {
-            val_reg_a = 0;
-        } else {
-            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-            return;
-        }
+    if (reg_a != 0) {
+        uint32_t ea = int32_t(int16_t(opcode));
+        ea += val_reg_a;
+        uint64_t ppc_result64_d = mmu_read_vmem<uint64_t>(opcode, ea);
+        ppc_store_fpresult_int(reg_d, ppc_result64_d);
     } 
-
-    uint32_t ea = int32_t(int16_t(opcode));
-    ea += val_reg_a;
-    uint64_t ppc_result64_d = mmu_read_vmem<uint64_t>(opcode, ea);
-    ppc_store_fpresult_int(reg_d, ppc_result64_d);
-
-    if (reg_a != 0)    // accounting for the 601's skipping of updating Reg A
-        ppc_state.gpr[reg_a] = ea;
+        
+    else {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+    } 
 }
 
 void dppc_interpreter::ppc_lfdx(uint32_t opcode) {
@@ -1111,21 +1094,14 @@ void dppc_interpreter::ppc_lfdx(uint32_t opcode) {
 void dppc_interpreter::ppc_lfdux(uint32_t opcode) {
     ppc_grab_regsfpdiab(opcode);
     
-    if (reg_a == 0) {
-        if (is_601) {
-            val_reg_a = 0;
-        } else {
-            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-            return;
-        }
+    if (reg_a != 0) {
+        uint32_t ea             = val_reg_a + val_reg_b;
+        uint64_t ppc_result64_d = mmu_read_vmem<uint64_t>(opcode, ea);
+        ppc_store_fpresult_int(reg_d, ppc_result64_d);
     } 
-
-    uint32_t ea = val_reg_a + val_reg_b;
-    uint64_t ppc_result64_d = mmu_read_vmem<uint64_t>(opcode, ea);
-    ppc_store_fpresult_int(reg_d, ppc_result64_d);
-
-    if (reg_a != 0)    // accounting for the 601's skipping of updating Reg A
-        ppc_state.gpr[reg_a] = ea;
+    else {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+    }
 }
 
 void dppc_interpreter::ppc_stfs(uint32_t opcode) {
@@ -1139,20 +1115,16 @@ void dppc_interpreter::ppc_stfs(uint32_t opcode) {
 void dppc_interpreter::ppc_stfsu(uint32_t opcode) {
     ppc_grab_regsfpsia(opcode);
 
-    if (reg_a == 0) {
-        if (is_601) {
-            val_reg_a = 0;
-        } else {
-            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-            return;
-        }
+    if (reg_a != 0) {
+        uint32_t ea = int32_t(int16_t(opcode));
+        ea += val_reg_a;
+        float result = float(ppc_state.fpr[reg_s].dbl64_r);
+        mmu_write_vmem<uint32_t>(opcode, ea, *(uint32_t*)(&result));
+        ppc_state.gpr[reg_a] = ea;
+        } 
+    else {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     } 
-
-    uint32_t ea = int32_t(int16_t(opcode));
-    ea += val_reg_a;
-    float result = float(ppc_state.fpr[reg_s].dbl64_r);
-    mmu_write_vmem<uint32_t>(opcode, ea, *(uint32_t*)(&result));
-    ppc_state.gpr[reg_a] = ea;
 }
 
 void dppc_interpreter::ppc_stfsx(uint32_t opcode) {
@@ -1165,19 +1137,16 @@ void dppc_interpreter::ppc_stfsx(uint32_t opcode) {
 void dppc_interpreter::ppc_stfsux(uint32_t opcode) {
     ppc_grab_regsfpsiab(opcode);
 
-    if (reg_a == 0) {
-        if (is_601) {
-            val_reg_a = 0;
-        } else {
-            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-            return;
-        }
+    if (reg_a != 0) {
+        uint32_t ea  = val_reg_a + val_reg_b;
+        float result = float(ppc_state.fpr[reg_s].dbl64_r);
+        mmu_write_vmem<uint32_t>(opcode, ea, *(uint32_t*)(&result));
+        ppc_state.gpr[reg_a] = ea;
     } 
+    else {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+    }
         
-    uint32_t ea = val_reg_a + val_reg_b;
-    float result = float(ppc_state.fpr[reg_s].dbl64_r);
-    mmu_write_vmem<uint32_t>(opcode, ea, *(uint32_t*)(&result));
-    ppc_state.gpr[reg_a] = ea;
 }
 
 void dppc_interpreter::ppc_stfd(uint32_t opcode) {
@@ -1190,19 +1159,16 @@ void dppc_interpreter::ppc_stfd(uint32_t opcode) {
 void dppc_interpreter::ppc_stfdu(uint32_t opcode) {
     ppc_grab_regsfpsia(opcode);
 
-    if (reg_a == 0) {
-        if (is_601) {
-            val_reg_a = 0;
-        } else {
-            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-            return;
-        }
+    if (reg_a != 0) {
+        uint32_t ea = int32_t(int16_t(opcode));
+        ea += val_reg_a;
+        mmu_write_vmem<uint64_t>(opcode, ea, ppc_state.fpr[reg_s].int64_r);
+        ppc_state.gpr[reg_a] = ea;
+    } 
+    else {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     } 
 
-    uint32_t ea = int32_t(int16_t(opcode));
-    ea += val_reg_a;
-    mmu_write_vmem<uint64_t>(opcode, ea, ppc_state.fpr[reg_s].int64_r);
-    ppc_state.gpr[reg_a] = ea;
 }
 
 void dppc_interpreter::ppc_stfdx(uint32_t opcode) {
@@ -1214,18 +1180,14 @@ void dppc_interpreter::ppc_stfdx(uint32_t opcode) {
 void dppc_interpreter::ppc_stfdux(uint32_t opcode) {
     ppc_grab_regsfpsiab(opcode);
 
-    if (reg_a == 0) {
-        if (is_601) {
-            val_reg_a = 0;
-        } else {
-            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-            return;
-        }
+    if (reg_a != 0) {
+        uint32_t ea = val_reg_a + val_reg_b;
+        mmu_write_vmem<uint64_t>(opcode, ea, ppc_state.fpr[reg_s].int64_r);
+        ppc_state.gpr[reg_a] = ea;
     } 
-
-    uint32_t ea = val_reg_a + val_reg_b;
-    mmu_write_vmem<uint64_t>(opcode, ea, ppc_state.fpr[reg_s].int64_r);
-    ppc_state.gpr[reg_a] = ea;
+    else {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+    } 
 }
 
 void dppc_interpreter::ppc_stfiwx(uint32_t opcode) {
