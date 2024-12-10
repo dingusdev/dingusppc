@@ -1031,8 +1031,9 @@ void dppc_interpreter::ppc_lfsu(uint32_t opcode) {
     if (reg_a != 0) {
         uint32_t ea = int32_t(int16_t(opcode));
         ea += val_reg_a;
-        uint32_t result              = mmu_read_vmem<uint32_t>(opcode, ea);
-        ppc_state.fpr[reg_d].dbl64_r = *(float*)(&result);
+        uint32_t result = mmu_read_vmem<uint32_t>(opcode, ea);
+        ppc_store_fpresult_flt(reg_d, *(float*)(&result));
+        ppc_store_iresult_reg(reg_a, ea);
     }
     else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
@@ -1049,12 +1050,12 @@ void dppc_interpreter::ppc_lfsx(uint32_t opcode) {
 void dppc_interpreter::ppc_lfsux(uint32_t opcode) {
     ppc_grab_regsfpdiab(opcode);
 
-    
     if (reg_a != 0) {
-        uint32_t ea                  = val_reg_a + val_reg_b;
-        uint32_t result              = mmu_read_vmem<uint32_t>(opcode, ea);
-        ppc_state.fpr[reg_d].dbl64_r = *(float*)(&result);
-    } 
+        uint32_t ea = val_reg_a + val_reg_b;
+        uint32_t result = mmu_read_vmem<uint32_t>(opcode, ea);
+        ppc_store_fpresult_flt(reg_d, *(float*)(&result));
+        ppc_store_iresult_reg(reg_a, ea);
+    }
     else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
         return;
@@ -1077,11 +1078,11 @@ void dppc_interpreter::ppc_lfdu(uint32_t opcode) {
         ea += val_reg_a;
         uint64_t ppc_result64_d = mmu_read_vmem<uint64_t>(opcode, ea);
         ppc_store_fpresult_int(reg_d, ppc_result64_d);
-    } 
-        
+        ppc_store_iresult_reg(reg_a, ea);
+    }
     else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-    } 
+    }
 }
 
 void dppc_interpreter::ppc_lfdx(uint32_t opcode) {
@@ -1093,12 +1094,13 @@ void dppc_interpreter::ppc_lfdx(uint32_t opcode) {
 
 void dppc_interpreter::ppc_lfdux(uint32_t opcode) {
     ppc_grab_regsfpdiab(opcode);
-    
+
     if (reg_a != 0) {
-        uint32_t ea             = val_reg_a + val_reg_b;
+        uint32_t ea = val_reg_a + val_reg_b;
         uint64_t ppc_result64_d = mmu_read_vmem<uint64_t>(opcode, ea);
         ppc_store_fpresult_int(reg_d, ppc_result64_d);
-    } 
+        ppc_store_iresult_reg(reg_a, ea);
+    }
     else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
