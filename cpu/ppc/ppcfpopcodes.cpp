@@ -77,7 +77,7 @@ static int32_t round_to_neg_inf(double f) {
 }
 
 inline static bool check_snan(int check_reg) {
-    uint64_t check_int = ppc_state.fpr[check_reg].int64_r;
+    uint64_t check_int = FPR_INT(check_reg);
     return (((check_int & (0x7FFULL << 52)) == (0x7FFULL << 52)) &&
         ((check_int & ~(0xFFFULL << 52)) != 0ULL) &&
         ((check_int & (0x1ULL << 51)) == 0ULL));
@@ -106,7 +106,7 @@ inline static void max_double_check(double value_a, double value_b) {
 }
 
 inline static bool check_qnan(int check_reg) {
-    uint64_t check_int = ppc_state.fpr[check_reg].int64_r;
+    uint64_t check_int = FPR_INT(check_reg);
     return (((check_int & (0x7FFULL << 52)) == (0x7FFULL << 52)) &&
         ((check_int & (0x1ULL << 51)) == (0x1ULL << 51)));
 }
@@ -952,7 +952,7 @@ static void round_to_int(uint32_t opcode, const uint8_t mode, field_rc rec) {
             ppc_state.fpscr |= FPSCR::FEX; // VX=1 and VE=1 cause FEX to be set
             ppc_floating_point_exception(opcode);
         } else {
-            ppc_state.fpr[reg_d].int64_r = 0xFFF8000080000000ULL;
+            ppc_store_fpresult_int(reg_d, 0xFFF8000080000000ULL);
         }
     } else if (val_reg_b >  static_cast<double>(0x7fffffff) ||
                val_reg_b < -static_cast<double>(0x80000000)) {
@@ -964,9 +964,9 @@ static void round_to_int(uint32_t opcode, const uint8_t mode, field_rc rec) {
             ppc_floating_point_exception(opcode);
         } else {
             if (val_reg_b >= 0.0f)
-                ppc_state.fpr[reg_d].int64_r = 0xFFF800007FFFFFFFULL;
+                ppc_store_fpresult_int(reg_d, 0xFFF800007FFFFFFFULL);
             else
-                ppc_state.fpr[reg_d].int64_r = 0xFFF8000080000000ULL;
+                ppc_store_fpresult_int(reg_d, 0xFFF8000080000000ULL);
         }
     } else {
         uint64_t ppc_result64_d;
@@ -1017,7 +1017,7 @@ void dppc_interpreter::ppc_lfs(uint32_t opcode) {
     uint32_t ea = int32_t(int16_t(opcode));
     ea += (reg_a) ? val_reg_a : 0;
     uint32_t result = mmu_read_vmem<uint32_t>(opcode, ea);
-    ppc_state.fpr[reg_d].dbl64_r = *(float*)(&result);
+    ppc_store_fpresult_flt(reg_d, *(float*)(&result));
 }
 
 void dppc_interpreter::ppc_lfsu(uint32_t opcode) {
@@ -1038,8 +1038,8 @@ void dppc_interpreter::ppc_lfsu(uint32_t opcode) {
 void dppc_interpreter::ppc_lfsx(uint32_t opcode) {
     ppc_grab_regsfpdiab(opcode);
     uint32_t ea = val_reg_b + (reg_a ? val_reg_a : 0);
-    uint32_t result       = mmu_read_vmem<uint32_t>(opcode, ea);
-    ppc_state.fpr[reg_d].dbl64_r = *(float*)(&result);
+    uint32_t result = mmu_read_vmem<uint32_t>(opcode, ea);
+    ppc_store_fpresult_flt(reg_d, *(float*)(&result));
 }
 
 void dppc_interpreter::ppc_lfsux(uint32_t opcode) {
@@ -1105,7 +1105,7 @@ void dppc_interpreter::ppc_stfs(uint32_t opcode) {
     ppc_grab_regsfpsia(opcode);
     uint32_t ea = int32_t(int16_t(opcode));
     ea += (reg_a) ? val_reg_a : 0;
-    float result = float(ppc_state.fpr[reg_s].dbl64_r);
+    float result = float(GET_FPR(reg_s));
     mmu_write_vmem<uint32_t>(opcode, ea, *(uint32_t*)(&result));
 }
 
@@ -1115,10 +1115,10 @@ void dppc_interpreter::ppc_stfsu(uint32_t opcode) {
     if (reg_a != 0) {
         uint32_t ea = int32_t(int16_t(opcode));
         ea += val_reg_a;
-        float result = float(ppc_state.fpr[reg_s].dbl64_r);
+        float result = float(GET_FPR(reg_s));
         mmu_write_vmem<uint32_t>(opcode, ea, *(uint32_t*)(&result));
-        ppc_state.gpr[reg_a] = ea;
-        } 
+        ppc_store_iresult_reg(reg_a, ea);
+    }
     else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
@@ -1127,7 +1127,7 @@ void dppc_interpreter::ppc_stfsu(uint32_t opcode) {
 void dppc_interpreter::ppc_stfsx(uint32_t opcode) {
     ppc_grab_regsfpsiab(opcode);
     uint32_t ea = val_reg_b + (reg_a ? val_reg_a : 0);
-    float result = float(ppc_state.fpr[reg_s].dbl64_r);
+    float result = float(GET_FPR(reg_s));
     mmu_write_vmem<uint32_t>(opcode, ea, *(uint32_t*)(&result));
 }
 
@@ -1135,11 +1135,11 @@ void dppc_interpreter::ppc_stfsux(uint32_t opcode) {
     ppc_grab_regsfpsiab(opcode);
 
     if (reg_a != 0) {
-        uint32_t ea  = val_reg_a + val_reg_b;
-        float result = float(ppc_state.fpr[reg_s].dbl64_r);
+        uint32_t ea = val_reg_a + val_reg_b;
+        float result = float(GET_FPR(reg_s));
         mmu_write_vmem<uint32_t>(opcode, ea, *(uint32_t*)(&result));
-        ppc_state.gpr[reg_a] = ea;
-    } 
+        ppc_store_iresult_reg(reg_a, ea);
+    }
     else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
@@ -1149,7 +1149,7 @@ void dppc_interpreter::ppc_stfd(uint32_t opcode) {
     ppc_grab_regsfpsia(opcode);
     uint32_t ea = int32_t(int16_t(opcode));
     ea += reg_a ? val_reg_a : 0;
-    mmu_write_vmem<uint64_t>(opcode, ea, ppc_state.fpr[reg_s].int64_r);
+    mmu_write_vmem<uint64_t>(opcode, ea, FPR_INT(reg_s));
 }
 
 void dppc_interpreter::ppc_stfdu(uint32_t opcode) {
@@ -1158,9 +1158,9 @@ void dppc_interpreter::ppc_stfdu(uint32_t opcode) {
     if (reg_a != 0) {
         uint32_t ea = int32_t(int16_t(opcode));
         ea += val_reg_a;
-        mmu_write_vmem<uint64_t>(opcode, ea, ppc_state.fpr[reg_s].int64_r);
-        ppc_state.gpr[reg_a] = ea;
-    } 
+        mmu_write_vmem<uint64_t>(opcode, ea, FPR_INT(reg_s));
+        ppc_store_iresult_reg(reg_a, ea);
+    }
     else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
@@ -1169,7 +1169,7 @@ void dppc_interpreter::ppc_stfdu(uint32_t opcode) {
 void dppc_interpreter::ppc_stfdx(uint32_t opcode) {
     ppc_grab_regsfpsiab(opcode);
     uint32_t ea = val_reg_b + (reg_a ? val_reg_a : 0);
-    mmu_write_vmem<uint64_t>(opcode, ea, ppc_state.fpr[reg_s].int64_r);
+    mmu_write_vmem<uint64_t>(opcode, ea, FPR_INT(reg_s));
 }
 
 void dppc_interpreter::ppc_stfdux(uint32_t opcode) {
@@ -1177,9 +1177,9 @@ void dppc_interpreter::ppc_stfdux(uint32_t opcode) {
 
     if (reg_a != 0) {
         uint32_t ea = val_reg_a + val_reg_b;
-        mmu_write_vmem<uint64_t>(opcode, ea, ppc_state.fpr[reg_s].int64_r);
-        ppc_state.gpr[reg_a] = ea;
-    } 
+        mmu_write_vmem<uint64_t>(opcode, ea, FPR_INT(reg_s));
+        ppc_store_iresult_reg(reg_a, ea);
+    }
     else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
@@ -1188,7 +1188,7 @@ void dppc_interpreter::ppc_stfdux(uint32_t opcode) {
 void dppc_interpreter::ppc_stfiwx(uint32_t opcode) {
     ppc_grab_regsfpsiab(opcode);
     uint32_t ea = val_reg_b + (reg_a ? val_reg_a : 0);
-    mmu_write_vmem<uint32_t>(opcode, ea, uint32_t(ppc_state.fpr[reg_s].int64_r));
+    mmu_write_vmem<uint32_t>(opcode, ea, uint32_t(FPR_INT(reg_s)));
 }
 
 // Floating Point Register Transfer
@@ -1196,7 +1196,7 @@ void dppc_interpreter::ppc_stfiwx(uint32_t opcode) {
 template <field_rc rec>
 void dppc_interpreter::ppc_fmr(uint32_t opcode) {
     ppc_grab_regsfpdb(opcode);
-    ppc_state.fpr[reg_d].dbl64_r = ppc_state.fpr[reg_b].dbl64_r;
+    ppc_store_fpresult_flt(reg_d, GET_FPR(reg_b));
 
     if (rec)
         ppc_update_cr1();
@@ -1209,7 +1209,7 @@ template <field_601 for601, field_rc rec>
 void dppc_interpreter::ppc_mffs(uint32_t opcode) {
     int reg_d = (opcode >> 21) & 31;
 
-    ppc_state.fpr[reg_d].int64_r = uint64_t(ppc_state.fpscr) | (for601 ? 0xFFFFFFFF00000000ULL : 0xFFF8000000000000ULL);
+    ppc_store_fpresult_int(reg_d, uint64_t(ppc_state.fpscr) | (for601 ? 0xFFFFFFFF00000000ULL : 0xFFF8000000000000ULL));
 
     if (rec)
         ppc_update_cr1();
@@ -1244,7 +1244,7 @@ void dppc_interpreter::ppc_mtfsf(uint32_t opcode) {
     cr_mask &= ~(FPSCR::FEX | FPSCR::VX);
 
     // copy FPR[reg_b] to FPSCR under control of cr_mask
-    ppc_state.fpscr = (ppc_state.fpscr & ~cr_mask) | (ppc_state.fpr[reg_b].int64_r & cr_mask);
+    ppc_state.fpscr = (ppc_state.fpscr & ~cr_mask) | (FPR_INT(reg_b) & cr_mask);
 
     if (rec)
         ppc_update_cr1();
