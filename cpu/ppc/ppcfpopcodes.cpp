@@ -302,7 +302,6 @@ void dppc_interpreter::ppc_fmul(uint32_t opcode) {
 
     fpresult_update(ppc_dblresult64_d);
 
-
     if (rec)
         ppc_update_cr1();
 }
@@ -341,7 +340,6 @@ void dppc_interpreter::ppc_fmadd(uint32_t opcode) {
     }
 
     fpresult_update(ppc_dblresult64_d);
-
 
     if (rec)
         ppc_update_cr1();
@@ -425,10 +423,8 @@ void dppc_interpreter::ppc_fnmadd(uint32_t opcode) {
         ppc_store_fpresult_flt(reg_d, ppc_dblresult64_d);
     }
 
-
     ppc_store_fpresult_flt(reg_d, ppc_dblresult64_d);
     fpresult_update(ppc_dblresult64_d);
-
 
     if (rec)
         ppc_update_cr1();
@@ -605,7 +601,6 @@ void dppc_interpreter::ppc_fmuls(uint32_t opcode) {
     }
 
     fpresult_update(ppc_dblresult64_d);
-
 
     if (rec)
         ppc_update_cr1();
@@ -1126,7 +1121,7 @@ void dppc_interpreter::ppc_stfsu(uint32_t opcode) {
         } 
     else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-    } 
+    }
 }
 
 void dppc_interpreter::ppc_stfsx(uint32_t opcode) {
@@ -1148,7 +1143,6 @@ void dppc_interpreter::ppc_stfsux(uint32_t opcode) {
     else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
-        
 }
 
 void dppc_interpreter::ppc_stfd(uint32_t opcode) {
@@ -1169,8 +1163,7 @@ void dppc_interpreter::ppc_stfdu(uint32_t opcode) {
     } 
     else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-    } 
-
+    }
 }
 
 void dppc_interpreter::ppc_stfdx(uint32_t opcode) {
@@ -1189,7 +1182,7 @@ void dppc_interpreter::ppc_stfdux(uint32_t opcode) {
     } 
     else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-    } 
+    }
 }
 
 void dppc_interpreter::ppc_stfiwx(uint32_t opcode) {
@@ -1357,7 +1350,6 @@ void dppc_interpreter::ppc_fcmpo(uint32_t opcode) {
     ppc_state.fpscr &= ~VE; //kludge to pass tests
     ppc_state.fpscr = (ppc_state.fpscr & ~FPSCR::FPCC_MASK) | (cmp_c >> 16); // update FPCC
     ppc_state.cr = ((ppc_state.cr & ~(0xF0000000 >> crf_d)) | (cmp_c >> crf_d));
-
 }
 
 void dppc_interpreter::ppc_fcmpu(uint32_t opcode) {
@@ -1384,5 +1376,4 @@ void dppc_interpreter::ppc_fcmpu(uint32_t opcode) {
     ppc_state.fpscr &= ~VE; //kludge to pass tests
     ppc_state.fpscr = (ppc_state.fpscr & ~FPSCR::FPCC_MASK) | (cmp_c >> 16); // update FPCC
     ppc_state.cr    = ((ppc_state.cr & ~(0xF0000000UL >> crf_d)) | (cmp_c >> crf_d));
-
 }
