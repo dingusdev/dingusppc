@@ -116,10 +116,6 @@ void PsxCtrl::map_phys_ram()
         total_ram += this->bank_sizes[i];
     }
 
-    if (total_ram > DRAM_CAP_32MB) {
-        ABORT_F("PSX: RAM bigger than 32MB not supported yet");
-    }
-
     if (!add_ram_region(0x00000000, total_ram)) {
         ABORT_F("PSX: could not allocate RAM storage");
     }
