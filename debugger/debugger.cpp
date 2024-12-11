@@ -86,6 +86,9 @@ static void show_help() {
     cout << "  dump NT,X      -- dump N memory cells of size T at address X" << endl;
     cout << "                    T can be b(byte), w(word), d(double)," << endl;
     cout << "                    q(quad) or c(character)." << endl;
+    cout << "  setmem X=V.T   -- set memory at address X to value V of size T" << endl;
+    cout << "                    T can be b(byte), w(word), d(double)," << endl;
+    cout << "                    q(quad) or c(character)." << endl;
     cout << "  profile C N    -- run subcommand C on profile N" << endl;
     cout << "                    supported subcommands:" << endl;
     cout << "                    'show' - show profile report" << endl;
@@ -335,6 +338,82 @@ static void dump_mem(string& params) {
     }
 
     cout << endl << endl;
+}
+
+static void patch_mem(string& params) {
+    int value_size = 1;
+    uint32_t addr, value;
+    string addr_str, value_str, size_str;
+
+    if (params.find_first_of("=") == std::string::npos) {
+        cout << "setmem: not enough arguments specified. Try 'help'." << endl;
+        return;
+    }
+
+    addr_str  = params.substr(0, params.find_first_of("="));
+    value_str = params.substr(params.find_first_of("=") + 1);
+
+    if (value_str.find_first_of(".") == std::string::npos) {
+        cout << "setmem: no value size specified. Try 'help'." << endl;
+        return;
+    }
+
+    size_str  = value_str.substr(value_str.find_first_of(".") + 1);
+    value_str = value_str.substr(0, value_str.find_first_of("."));
+
+    bool is_char = false;
+
+    switch (size_str.back()) {
+    case 'b':
+    case 'B':
+        value_size = 1;
+        break;
+    case 'w':
+    case 'W':
+        value_size = 2;
+        break;
+    case 'd':
+    case 'D':
+        value_size = 4;
+        break;
+    case 'q':
+    case 'Q':
+        value_size = 8;
+        break;
+    case 'c':
+    case 'C':
+        value_size = 1;
+        is_char   = true;
+        break;
+    default:
+        cout << "Invalid value size " << size_str << endl;
+        return;
+    }
+
+    try {
+        addr = str2addr(addr_str);
+    } catch (invalid_argument& exc) {
+        try {
+            // number conversion failed, trying reg name
+            addr = get_reg(addr_str);
+        } catch (invalid_argument& exc) {
+            cout << exc.what() << endl;
+            return;
+        }
+    }
+
+    try {
+        value = str2num(value_str);
+    } catch (invalid_argument& exc) {
+        cout << exc.what() << endl;
+        return;
+    }
+
+    try {
+        mem_write_dbg(addr, value, value_size);
+    } catch (invalid_argument& exc) {
+        cout << exc.what() << endl;
+    }
 }
 
 static uint32_t disasm(uint32_t count, uint32_t address) {
@@ -785,6 +864,10 @@ void DppcDebugger::enter_debugger() {
             expr_str = "";
             ss >> expr_str;
             dump_mem(expr_str);
+        } else if (cmd == "setmem") {
+            expr_str = "";
+            ss >> expr_str;
+            patch_mem(expr_str);
 #ifdef ENABLE_68K_DEBUGGER
         } else if (cmd == "context") {
             cmd = "";
