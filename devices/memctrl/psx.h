@@ -40,11 +40,11 @@ namespace PsxReg {
         DRAM_Config     =  4,
         DRAM_Refresh    =  5,
         Flash_Config    =  6,
-        Page1_Mapping   =  8,
-        Page2_Mapping   =  9,
-        Page3_Mapping   = 10,
-        Page4_Mapping   = 11,
-        Page5_Mapping   = 12,
+        Page_Mappings_1 =  8,
+        Page_Mappings_2 =  9,
+        Page_Mappings_3 = 10,
+        Page_Mappings_4 = 11,
+        Page_Mappings_5 = 12,
         Bus_Timeout     = 13
     };
 } // namespace PsxReg
@@ -81,8 +81,10 @@ private:
     uint32_t    dram_cfg;
     uint32_t    dram_refresh;
     uint32_t    flash_cfg;
-    uint32_t    pages_cfg[5];
-    uint32_t    bank_sizes[5] = {};
+    uint32_t    pages_cfg[5] = {0x88888888,0x88888888,0x88888888,0x88888888,0x88888888};
+    uint32_t    bank_size[5] = {};
+    std::unique_ptr<uint8_t[]>      dram_ptr = nullptr;
+    std::vector<AddressMapEntry*>   ram_map;
 };
 
 #endif // PSX_MEMCTRL_H

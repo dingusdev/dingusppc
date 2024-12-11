@@ -90,9 +90,6 @@ int MachineGazelle::initialize(const std::string &id) {
     psx_obj->insert_ram_dimm(3, GET_INT_PROP("rambank4_size") * DRAM_CAP_1MB);
     psx_obj->insert_ram_dimm(4, GET_INT_PROP("rambank5_size") * DRAM_CAP_1MB);
 
-    // allocate and map physical RAM
-    psx_obj->map_phys_ram();
-
     // configure CPU clocks
     uint64_t bus_freq      = 50000000ULL;
     uint64_t timebase_freq = bus_freq / 4;
