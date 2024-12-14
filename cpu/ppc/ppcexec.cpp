@@ -254,9 +254,15 @@ static void force_cycle_counter_reload()
     exec_timer = true;
 }
 
-/** Execute PPC code as long as power is on. */
+typedef enum {
+    main,
+    until,
+    debug,
+} ppc_exec_type_t;
+
 // inner interpreter loop
-static void ppc_exec_inner()
+template <ppc_exec_type_t exec_type>
+static void ppc_exec_inner(uint32_t start_addr, uint32_t size)
 {
     uint64_t max_cycles;
     uint32_t page_start, eb_start, eb_end;
@@ -266,6 +272,10 @@ static void ppc_exec_inner()
     max_cycles = 0;
 
     while (power_on) {
+        if (exec_type == debug)
+            if (ppc_state.pc >= start_addr && ppc_state.pc < start_addr + size)
+                break;
+
         // define boundaries of the next execution block
         // max execution block length = one memory page
         eb_start   = ppc_state.pc;
@@ -278,6 +288,10 @@ static void ppc_exec_inner()
 
         // interpret execution block
         while (power_on && ppc_state.pc < eb_end) {
+            if (exec_type == debug)
+                if (ppc_state.pc >= start_addr && ppc_state.pc < start_addr + size)
+                    break;
+
             ppc_main_opcode(opcode);
             if (g_icycles++ >= max_cycles || exec_timer) {
                 max_cycles = process_events();
@@ -302,9 +316,22 @@ static void ppc_exec_inner()
                 pc_real += 4;
                 opcode = ppc_read_instruction(pc_real);
             }
+
+            if (exec_type == until)
+                if (ppc_state.pc == start_addr)
+                    break;
         }
+
+        if (exec_type == until)
+            if (ppc_state.pc == start_addr)
+                break;
     }
 }
+
+/** Execute PPC code as long as power is on. */
+
+// inner interpreter loop
+template void ppc_exec_inner<main>(uint32_t start_addr, uint32_t size);
 
 // outer interpreter loop
 void ppc_exec()
@@ -316,7 +343,7 @@ void ppc_exec()
     }
 
     while (power_on) {
-        ppc_exec_inner();
+        ppc_exec_inner<main>(0, 0);
     }
 }
 
@@ -348,58 +375,7 @@ void ppc_exec_single()
 /** Execute PPC code until goal_addr is reached. */
 
 // inner interpreter loop
-static void ppc_exec_until_inner(const uint32_t goal_addr)
-{
-    uint64_t max_cycles;
-    uint32_t page_start, eb_start, eb_end;
-    uint8_t* pc_real;
-    uint32_t opcode;
-
-    max_cycles = 0;
-
-    do {
-        // define boundaries of the next execution block
-        // max execution block length = one memory page
-        eb_start   = ppc_state.pc;
-        page_start = eb_start & PPC_PAGE_MASK;
-        eb_end     = page_start + PPC_PAGE_SIZE - 1;
-        exec_flags = 0;
-
-        pc_real    = mmu_translate_imem(eb_start);
-        opcode = ppc_read_instruction(pc_real);
-
-        // interpret execution block
-        while (power_on && ppc_state.pc < eb_end) {
-            ppc_main_opcode(opcode);
-            if (g_icycles++ >= max_cycles || exec_timer) {
-                max_cycles = process_events();
-            }
-
-            if (exec_flags) {
-                // define next execution block
-                eb_start = ppc_next_instruction_address;
-                if (!(exec_flags & EXEF_RFI) && (eb_start & PPC_PAGE_MASK) == page_start) {
-                    pc_real += (int)eb_start - (int)ppc_state.pc;
-                    opcode = ppc_read_instruction(pc_real);
-                } else {
-                    page_start = eb_start & PPC_PAGE_MASK;
-                    eb_end = page_start + PPC_PAGE_SIZE - 1;
-                    pc_real = mmu_translate_imem(eb_start);
-                    opcode = ppc_read_instruction(pc_real);
-                }
-                ppc_state.pc = eb_start;
-                exec_flags = 0;
-            } else {
-                ppc_state.pc += 4;
-                pc_real += 4;
-                opcode = ppc_read_instruction(pc_real);
-            }
-
-            if (ppc_state.pc == goal_addr)
-                break;
-        }
-    } while (power_on && ppc_state.pc != goal_addr);
-}
+template void ppc_exec_inner<until>(uint32_t start_addr, uint32_t size);
 
 // outer interpreter loop
 void ppc_exec_until(volatile uint32_t goal_addr)
@@ -410,64 +386,17 @@ void ppc_exec_until(volatile uint32_t goal_addr)
         ppc_state.pc = ppc_next_instruction_address;
     }
 
-    do {
-        ppc_exec_until_inner(goal_addr);
-    } while (power_on && ppc_state.pc != goal_addr);
+    while (power_on) {
+        ppc_exec_inner<until>(goal_addr, 0);
+        if (ppc_state.pc == goal_addr)
+            break;
+    }
 }
 
 /** Execute PPC code until control is reached the specified region. */
 
 // inner interpreter loop
-static void ppc_exec_dbg_inner(const uint32_t start_addr, const uint32_t size)
-{
-    uint64_t max_cycles;
-    uint32_t page_start, eb_start, eb_end;
-    uint8_t* pc_real;
-    uint32_t opcode;
-
-    max_cycles = 0;
-
-    while (power_on && (ppc_state.pc < start_addr || ppc_state.pc >= start_addr + size)) {
-        // define boundaries of the next execution block
-        // max execution block length = one memory page
-        eb_start   = ppc_state.pc;
-        page_start = eb_start & PPC_PAGE_MASK;
-        eb_end     = page_start + PPC_PAGE_SIZE - 1;
-        exec_flags = 0;
-
-        pc_real    = mmu_translate_imem(eb_start);
-        opcode = ppc_read_instruction(pc_real);
-
-        // interpret execution block
-        while (power_on && (ppc_state.pc < start_addr || ppc_state.pc >= start_addr + size)
-                && (ppc_state.pc < eb_end)) {
-            ppc_main_opcode(opcode);
-            if (g_icycles++ >= max_cycles || exec_timer) {
-                max_cycles = process_events();
-            }
-
-            if (exec_flags) {
-                // define next execution block
-                eb_start = ppc_next_instruction_address;
-                if (!(exec_flags & EXEF_RFI) && (eb_start & PPC_PAGE_MASK) == page_start) {
-                    pc_real += (int)eb_start - (int)ppc_state.pc;
-                    opcode = ppc_read_instruction(pc_real);
-                } else {
-                    page_start = eb_start & PPC_PAGE_MASK;
-                    eb_end = page_start + PPC_PAGE_SIZE - 1;
-                    pc_real = mmu_translate_imem(eb_start);
-                    opcode = ppc_read_instruction(pc_real);
-                }
-                ppc_state.pc = eb_start;
-                exec_flags = 0;
-            } else {
-                ppc_state.pc += 4;
-                pc_real += 4;
-                opcode = ppc_read_instruction(pc_real);
-            }
-        }
-    }
-}
+template void ppc_exec_inner<debug>(uint32_t start_addr, uint32_t size);
 
 // outer interpreter loop
 void ppc_exec_dbg(volatile uint32_t start_addr, volatile uint32_t size)
@@ -479,7 +408,7 @@ void ppc_exec_dbg(volatile uint32_t start_addr, volatile uint32_t size)
     }
 
     while (power_on && (ppc_state.pc < start_addr || ppc_state.pc >= start_addr + size)) {
-        ppc_exec_dbg_inner(start_addr, size);
+        ppc_exec_inner<debug>(start_addr, size);
     }
 }
 
