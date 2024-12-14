@@ -72,7 +72,7 @@ private:
     uint8_t         msg_code = 0;
 
     //inquiry info
-    char vendor_info[8] = {'D', 'i', 'n', 'g', 'u', 's', 'D', '\0'};
+    char vendor_info[8] = {'Q', 'U', 'A', 'N', 'T', 'U', 'M', '\0'};
     char prod_info[16]  = {'E', 'm', 'u', 'l', 'a', 't', 'e', 'd', ' ', 'D', 'i', 's', 'k', '\0'};
     char rev_info[4]    = {'d', 'i', '0', '1'};
 };
