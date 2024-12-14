@@ -109,14 +109,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define ppc_grab_regssash(opcode) \
     int reg_s             = (opcode >> 21) & 31; \
     int reg_a             = (opcode >> 16) & 31; \
-    int rot_sh            = (opcode >> 11) & 31; \
+    unsigned rot_sh       = (opcode >> 11) & 31; \
     uint32_t ppc_result_d = ppc_state.gpr[reg_s]; \
     uint32_t ppc_result_a = ppc_state.gpr[reg_a];
 
 #define ppc_grab_regssash_stswi(opcode) \
     int reg_s             = (opcode >> 21) & 31; \
     int reg_a             = (opcode >> 16) & 31; \
-    int rot_sh            = (opcode >> 11) & 31; \
+    unsigned rot_sh       = (opcode >> 11) & 31; \
     uint32_t ppc_result_a = ppc_state.gpr[reg_a];
 
 #define ppc_grab_regssb(opcode) \
