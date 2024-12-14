@@ -454,7 +454,7 @@ void dppc_interpreter::power_sllq(uint32_t opcode) {
     if (ppc_result_b & 0x20) {
         ppc_result_a = ppc_state.spr[SPR::MQ] & (-1U << rot_sh);
     } else {
-        ppc_result_a = ((ppc_result_d << rot_sh) | (ppc_state.spr[SPR::MQ] & ((1UL << rot_sh) - 1)));
+        ppc_result_a = ((ppc_result_d << rot_sh) | (ppc_state.spr[SPR::MQ] & ((1U << rot_sh) - 1)));
     }
 
     if (rec)
@@ -490,7 +490,7 @@ template void dppc_interpreter::power_slq<RC1>(uint32_t opcode);
 template <field_rc rec>
 void dppc_interpreter::power_sraiq(uint32_t opcode) {
     ppc_grab_regssash(opcode);
-    uint32_t mask          = (1UL << rot_sh) - 1;
+    uint32_t mask          = (1U << rot_sh) - 1;
     ppc_result_a           = (int32_t)ppc_result_d >> rot_sh;
     ppc_state.spr[SPR::MQ] = rot_sh ? ((ppc_result_d >> rot_sh) | (ppc_result_d << (32 - rot_sh))) : ppc_result_d;
 
@@ -513,7 +513,7 @@ template <field_rc rec>
 void dppc_interpreter::power_sraq(uint32_t opcode) {
     ppc_grab_regssab(opcode);
     unsigned rot_sh        = ppc_result_b & 0x1F;
-    uint32_t mask          = (ppc_result_b & 0x20) ? -1 : (1UL << rot_sh) - 1;
+    uint32_t mask          = (ppc_result_b & 0x20) ? -1 : (1U << rot_sh) - 1;
     ppc_result_a           = (int32_t)ppc_result_d >> ((ppc_result_b & 0x20) ? 31 : rot_sh);
     ppc_state.spr[SPR::MQ] = rot_sh ? ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh))) : ppc_result_d;
 
