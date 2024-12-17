@@ -1487,7 +1487,7 @@ void mem_write_dbg(uint32_t virt_addr, uint64_t value, int size) {
             mmu_write_vmem<uint16_t>(NO_OPCODE, virt_addr, value);
             break;
         case 4:
-            mmu_write_vmem<uint32_t>(NO_OPCODE, virt_addr, value);
+            mmu_write_vmem<uint32_t>(NO_OPCODE, virt_addr, uint32_t(value));
             break;
         case 8:
             mmu_write_vmem<uint64_t>(NO_OPCODE, virt_addr, value);
