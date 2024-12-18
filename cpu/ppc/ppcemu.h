@@ -317,6 +317,7 @@ enum Po_Cause : int {
     po_enter_debugger,
     po_entered_debugger,
     po_signal_interrupt,
+    po_benchmark_exception
 };
 
 extern bool power_on;
