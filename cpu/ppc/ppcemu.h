@@ -333,8 +333,14 @@ extern bool is_64bit;      // For PowerPC G5 Emulation
 // Make execution deterministic (ignore external input, used a fixed date, etc.)
 extern bool is_deterministic;
 
-// Important Addressing Integers
-extern uint32_t ppc_next_instruction_address;
+//Instruction Handling
+inline void ppc_next_instruction() {
+    ppc_state.pc += 4;
+}
+
+inline void ppc_set_instruction(uint32_t new_pc) {
+    ppc_state.pc = new_pc;
+}
 
 inline uint32_t ppc_read_instruction(const uint8_t* ptr) {
     return READ_DWORD_BE_A(ptr);

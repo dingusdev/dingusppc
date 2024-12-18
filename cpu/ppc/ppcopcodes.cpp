@@ -21,29 +21,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // General opcodes for the processor - ppcopcodes.cpp
 
-#include <core/timermanager.h>
-#include <core/mathutils.h>
 #include "ppcemu.h"
 #include "ppcmacros.h"
 #include "ppcmmu.h"
 #include <cinttypes>
+#include <core/mathutils.h>
+#include <core/timermanager.h>
 #include <vector>
 
-//Extract the registers desired and the values of the registers.
+// Extract the registers desired and the values of the registers.
 
 // Affects CR Field 0 - For integer operations
 void ppc_changecrf0(uint32_t set_result) {
-    ppc_state.cr =
-        (ppc_state.cr & 0x0FFFFFFFU) // clear CR0
-        | (
-            (set_result == 0) ?
-                CRx_bit::CR_EQ
-            : (int32_t(set_result) < 0) ?
-                CRx_bit::CR_LT
-            :
-                CRx_bit::CR_GT
-        )
-        | ((ppc_state.spr[SPR::XER] & XER::SO) >> 3); // copy XER[SO] into CR0[SO].
+    ppc_state.cr = (ppc_state.cr & 0x0FFFFFFFU)    // clear CR0
+        | ((set_result == 0)               ? CRx_bit::CR_EQ
+               : (int32_t(set_result) < 0) ? CRx_bit::CR_LT
+                                           : CRx_bit::CR_GT) |
+        ((ppc_state.spr[SPR::XER] & XER::SO) >> 3);    // copy XER[SO] into CR0[SO].
 }
 
 // Affects the XER register's Carry Bit
@@ -102,6 +96,7 @@ void dppc_interpreter::ppc_addi(uint32_t opcode) {
         ppc_state.gpr[reg_d] = (reg_a == 0) ? (simm << 16) : (ppc_result_a + (simm << 16));
     else
         ppc_state.gpr[reg_d] = (reg_a == 0) ? simm : (ppc_result_a + simm);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_addi<SHFT0>(uint32_t opcode);
@@ -115,6 +110,7 @@ void dppc_interpreter::ppc_addic(uint32_t opcode) {
     if (rec)
         ppc_changecrf0(ppc_result_d);
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_addic<RC0>(uint32_t opcode);
@@ -132,6 +128,7 @@ void dppc_interpreter::ppc_add(uint32_t opcode) {
     if (rec)
         ppc_changecrf0(ppc_result_d);
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_add<CARRY0, RC0, OV0>(uint32_t opcode);
@@ -161,6 +158,7 @@ void dppc_interpreter::ppc_adde(uint32_t opcode) {
         ppc_changecrf0(ppc_result_d);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_adde<RC0, OV0>(uint32_t opcode);
@@ -186,6 +184,7 @@ void dppc_interpreter::ppc_addme(uint32_t opcode) {
         ppc_changecrf0(ppc_result_d);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_addme<RC0, OV0>(uint32_t opcode);
@@ -211,6 +210,7 @@ void dppc_interpreter::ppc_addze(uint32_t opcode) {
         ppc_changecrf0(ppc_result_d);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_addze<RC0, OV0>(uint32_t opcode);
@@ -226,6 +226,7 @@ void dppc_interpreter::ppc_subfic(uint32_t opcode) {
     else
         ppc_carry(~ppc_result_a, ppc_result_d);
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_next_instruction();
 }
 
 template <field_carry carry, field_rc rec, field_ov ov>
@@ -241,6 +242,7 @@ void dppc_interpreter::ppc_subf(uint32_t opcode) {
         ppc_changecrf0(ppc_result_d);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_subf<CARRY0, RC0, OV0>(uint32_t opcode);
@@ -268,6 +270,7 @@ void dppc_interpreter::ppc_subfe(uint32_t opcode) {
         ppc_changecrf0(ppc_result_d);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_subfe<RC0, OV0>(uint32_t opcode);
@@ -297,6 +300,7 @@ void dppc_interpreter::ppc_subfme(uint32_t opcode) {
         ppc_changecrf0(ppc_result_d);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_subfme<RC0, OV0>(uint32_t opcode);
@@ -310,7 +314,7 @@ void dppc_interpreter::ppc_subfze(uint32_t opcode) {
     uint32_t grab_ca      = !!(ppc_state.spr[SPR::XER] & XER::CA);
     uint32_t ppc_result_d = ~ppc_result_a + grab_ca;
 
-    if (!ppc_result_d && grab_ca) // special case: ppc_result_d = 0 and CA=1
+    if (!ppc_result_d && grab_ca)    // special case: ppc_result_d = 0 and CA=1
         ppc_state.spr[SPR::XER] |= XER::CA;
     else
         ppc_state.spr[SPR::XER] &= ~XER::CA;
@@ -326,6 +330,7 @@ void dppc_interpreter::ppc_subfze(uint32_t opcode) {
         ppc_changecrf0(ppc_result_d);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_subfze<RC0, OV0>(uint32_t opcode);
@@ -339,6 +344,7 @@ void dppc_interpreter::ppc_andirc(uint32_t opcode) {
     ppc_result_a = shift ? (ppc_result_d & (uimm << 16)) : (ppc_result_d & uimm);
     ppc_changecrf0(ppc_result_a);
     ppc_store_iresult_reg(reg_a, ppc_result_a);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_andirc<SHFT0>(uint32_t opcode);
@@ -349,6 +355,7 @@ void dppc_interpreter::ppc_ori(uint32_t opcode) {
     ppc_grab_regssauimm(opcode);
     ppc_result_a = shift ? (ppc_result_d | (uimm << 16)) : (ppc_result_d | uimm);
     ppc_store_iresult_reg(reg_a, ppc_result_a);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_ori<SHFT0>(uint32_t opcode);
@@ -359,6 +366,7 @@ void dppc_interpreter::ppc_xori(uint32_t opcode) {
     ppc_grab_regssauimm(opcode);
     ppc_result_a = shift ? (ppc_result_d ^ (uimm << 16)) : (ppc_result_d ^ uimm);
     ppc_store_iresult_reg(reg_a, ppc_result_a);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_xori<SHFT0>(uint32_t opcode);
@@ -388,6 +396,7 @@ void dppc_interpreter::ppc_logical(uint32_t opcode) {
         ppc_changecrf0(ppc_result_a);
 
     ppc_store_iresult_reg(reg_a, ppc_result_a);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_logical<ppc_and, RC0>(uint32_t opcode);
@@ -423,6 +432,7 @@ void dppc_interpreter::ppc_neg(uint32_t opcode) {
         ppc_changecrf0(ppc_result_d);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_neg<RC0, OV0>(uint32_t opcode);
@@ -436,9 +446,9 @@ void dppc_interpreter::ppc_cntlzw(uint32_t opcode) {
 
     uint32_t bit_check = ppc_result_d;
 
-#ifdef __builtin_clz //for GCC and Clang users
+#ifdef __builtin_clz    // for GCC and Clang users
     uint32_t lead = !bit_check ? 32 : __builtin_clz(bit_check);
-#elif defined __lzcnt //for Visual C++ users
+#elif defined __lzcnt    // for Visual C++ users
     uint32_t lead = __lzcnt(bit_check);
 #else
     uint32_t lead, mask;
@@ -455,6 +465,7 @@ void dppc_interpreter::ppc_cntlzw(uint32_t opcode) {
     }
 
     ppc_store_iresult_reg(reg_a, ppc_result_a);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_cntlzw<RC0>(uint32_t opcode);
@@ -463,13 +474,14 @@ template void dppc_interpreter::ppc_cntlzw<RC1>(uint32_t opcode);
 template <field_rc rec>
 void dppc_interpreter::ppc_mulhwu(uint32_t opcode) {
     ppc_grab_regsdab(opcode);
-    uint64_t product = uint64_t(ppc_result_a) * uint64_t(ppc_result_b);
+    uint64_t product      = uint64_t(ppc_result_a) * uint64_t(ppc_result_b);
     uint32_t ppc_result_d = uint32_t(product >> 32);
 
     if (rec)
         ppc_changecrf0(ppc_result_d);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_mulhwu<RC0>(uint32_t opcode);
@@ -478,13 +490,14 @@ template void dppc_interpreter::ppc_mulhwu<RC1>(uint32_t opcode);
 template <field_rc rec>
 void dppc_interpreter::ppc_mulhw(uint32_t opcode) {
     ppc_grab_regsdab(opcode);
-    int64_t product = int64_t(int32_t(ppc_result_a)) * int64_t(int32_t(ppc_result_b));
+    int64_t product       = int64_t(int32_t(ppc_result_a)) * int64_t(int32_t(ppc_result_b));
     uint32_t ppc_result_d = product >> 32;
 
     if (rec)
         ppc_changecrf0(ppc_result_d);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_mulhw<RC0>(uint32_t opcode);
@@ -509,6 +522,7 @@ void dppc_interpreter::ppc_mullw(uint32_t opcode) {
         ppc_changecrf0(ppc_result_d);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_mullw<RC0, OV0>(uint32_t opcode);
@@ -518,9 +532,10 @@ template void dppc_interpreter::ppc_mullw<RC1, OV1>(uint32_t opcode);
 
 void dppc_interpreter::ppc_mulli(uint32_t opcode) {
     ppc_grab_regsdasimm(opcode);
-    int64_t product          = int64_t(int32_t(ppc_result_a)) * int64_t(int32_t(simm));
-    uint32_t ppc_result_d    = uint32_t(product);
+    int64_t product       = int64_t(int32_t(ppc_result_a)) * int64_t(int32_t(simm));
+    uint32_t ppc_result_d = uint32_t(product);
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_next_instruction();
 }
 
 template <field_rc rec, field_ov ov>
@@ -528,11 +543,11 @@ void dppc_interpreter::ppc_divw(uint32_t opcode) {
     uint32_t ppc_result_d;
     ppc_grab_regsdab(opcode);
 
-    if (!ppc_result_b) { // handle the "anything / 0" case
+    if (!ppc_result_b) {    // handle the "anything / 0" case
         if (is_601)
-            ppc_result_d = (int32_t(ppc_result_a) < 0) ? 1 : -1; // tested on 601 in Mac OS 9.1
+            ppc_result_d = (int32_t(ppc_result_a) < 0) ? 1 : -1;    // tested on 601 in Mac OS 9.1
         else
-            ppc_result_d = 0; // tested on G4 in Mac OS X 10.4 and Open Firmware.
+            ppc_result_d = 0;    // tested on G4 in Mac OS X 10.4 and Open Firmware.
         // ppc_result_d = (int32_t(ppc_result_a) < 0) ? -1 : 0; /* UNDOCUMENTED! */
 
         if (ov)
@@ -540,14 +555,14 @@ void dppc_interpreter::ppc_divw(uint32_t opcode) {
 
     } else if (ppc_result_a == 0x80000000UL && ppc_result_b == 0xFFFFFFFFUL) {
         if (is_601)
-            ppc_result_d = 0x80000000U; // tested on 601 in Mac OS 9.1
+            ppc_result_d = 0x80000000U;    // tested on 601 in Mac OS 9.1
         else
-            ppc_result_d = 0; // tested on G4 in Mac OS X 10.4 and Open Firmware.
+            ppc_result_d = 0;    // tested on G4 in Mac OS X 10.4 and Open Firmware.
 
         if (ov)
             ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
 
-    } else { // normal signed devision
+    } else {    // normal signed devision
         ppc_result_d = int32_t(ppc_result_a) / int32_t(ppc_result_b);
 
         if (ov)
@@ -558,6 +573,7 @@ void dppc_interpreter::ppc_divw(uint32_t opcode) {
         ppc_changecrf0(ppc_result_d);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_divw<RC0, OV0>(uint32_t opcode);
@@ -570,9 +586,9 @@ void dppc_interpreter::ppc_divwu(uint32_t opcode) {
     uint32_t ppc_result_d;
     ppc_grab_regsdab(opcode);
 
-    if (!ppc_result_b) { // division by zero
+    if (!ppc_result_b) {    // division by zero
         if (is_601)
-            ppc_result_d = -1; // tested on 601 in Mac OS 9.1
+            ppc_result_d = -1;    // tested on 601 in Mac OS 9.1
         else
             ppc_result_d = 0;
 
@@ -592,6 +608,7 @@ void dppc_interpreter::ppc_divwu(uint32_t opcode) {
         ppc_changecrf0(ppc_result_d);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_divwu<RC0, OV0>(uint32_t opcode);
@@ -606,8 +623,7 @@ void dppc_interpreter::ppc_shift(uint32_t opcode) {
     ppc_grab_regssab(opcode);
     if (ppc_result_b & 0x20) {
         ppc_result_a = 0;
-    }
-    else {
+    } else {
         ppc_result_a = isleft ? (ppc_result_d << (ppc_result_b & 0x1F))
                               : (ppc_result_d >> (ppc_result_b & 0x1F));
     }
@@ -616,6 +632,7 @@ void dppc_interpreter::ppc_shift(uint32_t opcode) {
         ppc_changecrf0(ppc_result_a);
 
     ppc_store_iresult_reg(reg_a, ppc_result_a);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_shift<RIGHT0, RC0>(uint32_t opcode);
@@ -633,7 +650,7 @@ void dppc_interpreter::ppc_sraw(uint32_t opcode) {
     if (ppc_result_b & 0x20) {
         // fill rA with the sign bit of rS
         ppc_result_a = int32_t(ppc_result_d) >> 31;
-        if (ppc_result_a) // if rA is negative
+        if (ppc_result_a)    // if rA is negative
             ppc_state.spr[SPR::XER] |= XER::CA;
     } else {
         uint32_t shift = ppc_result_b & 0x1F;
@@ -646,6 +663,7 @@ void dppc_interpreter::ppc_sraw(uint32_t opcode) {
         ppc_changecrf0(ppc_result_a);
 
     ppc_store_iresult_reg(reg_a, ppc_result_a);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_sraw<RC0>(uint32_t opcode);
@@ -667,6 +685,7 @@ void dppc_interpreter::ppc_srawi(uint32_t opcode) {
         ppc_changecrf0(ppc_result_a);
 
     ppc_store_iresult_reg(reg_a, ppc_result_a);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_srawi<RC0>(uint32_t opcode);
@@ -684,13 +703,13 @@ void dppc_interpreter::ppc_rlwimi(uint32_t opcode) {
     unsigned rot_mb = (opcode >> 6) & 0x1F;
     unsigned rot_me = (opcode >> 1) & 0x1F;
     uint32_t mask   = rot_mask(rot_mb, rot_me);
-    uint32_t r      = rot_sh ? ((ppc_result_d << rot_sh) |
-                      (ppc_result_d >> (32 - rot_sh))) : ppc_result_d;
-    ppc_result_a    = (ppc_result_a & ~mask) | (r & mask);
+    uint32_t r = rot_sh ? ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh))) : ppc_result_d;
+    ppc_result_a = (ppc_result_a & ~mask) | (r & mask);
     if ((opcode & 0x01) == 1) {
         ppc_changecrf0(ppc_result_a);
     }
     ppc_store_iresult_reg(reg_a, ppc_result_a);
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_rlwinm(uint32_t opcode) {
@@ -698,13 +717,13 @@ void dppc_interpreter::ppc_rlwinm(uint32_t opcode) {
     unsigned rot_mb = (opcode >> 6) & 0x1F;
     unsigned rot_me = (opcode >> 1) & 0x1F;
     uint32_t mask   = rot_mask(rot_mb, rot_me);
-    uint32_t r      = rot_sh ? ((ppc_result_d << rot_sh) |
-                      (ppc_result_d >> (32 - rot_sh))) : ppc_result_d;
-    ppc_result_a    = r & mask;
+    uint32_t r = rot_sh ? ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh))) : ppc_result_d;
+    ppc_result_a = r & mask;
     if ((opcode & 0x01) == 1) {
         ppc_changecrf0(ppc_result_a);
     }
     ppc_store_iresult_reg(reg_a, ppc_result_a);
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_rlwnm(uint32_t opcode) {
@@ -714,13 +733,13 @@ void dppc_interpreter::ppc_rlwnm(uint32_t opcode) {
     unsigned rot_me = (opcode >> 1) & 0x1F;
     uint32_t mask   = rot_mask(rot_mb, rot_me);
     uint32_t rot    = ppc_result_b & 0x1F;
-    uint32_t r      = rot ? ((ppc_result_d << rot) |
-                      (ppc_result_d >> (32 - rot))) : ppc_result_d;
+    uint32_t r      = rot ? ((ppc_result_d << rot) | (ppc_result_d >> (32 - rot))) : ppc_result_d;
     ppc_result_a    = r & mask;
     if ((opcode & 0x01) == 1) {
         ppc_changecrf0(ppc_result_a);
     }
     ppc_store_iresult_reg(reg_a, ppc_result_a);
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_mfcr(uint32_t opcode) {
@@ -735,12 +754,13 @@ void dppc_interpreter::ppc_mtsr(uint32_t opcode) {
     if (ppc_state.msr & MSR::PR) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
     }
-    int reg_s             = (opcode >> 21) & 0x1F;
-    uint32_t grab_sr      = (opcode >> 16) & 0x0F;
+    int reg_s        = (opcode >> 21) & 0x1F;
+    uint32_t grab_sr = (opcode >> 16) & 0x0F;
     if (ppc_state.sr[grab_sr] != ppc_state.gpr[reg_s]) {
         ppc_state.sr[grab_sr] = ppc_state.gpr[reg_s];
         mmu_pat_ctx_changed();
     }
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_mtsrin(uint32_t opcode) {
@@ -751,11 +771,12 @@ void dppc_interpreter::ppc_mtsrin(uint32_t opcode) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
     }
     ppc_grab_regssb(opcode);
-    uint32_t grab_sr      = ppc_result_b >> 28;
+    uint32_t grab_sr = ppc_result_b >> 28;
     if (ppc_state.sr[grab_sr] != ppc_result_d) {
         ppc_state.sr[grab_sr] = ppc_result_d;
         mmu_pat_ctx_changed();
     }
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_mfsr(uint32_t opcode) {
@@ -768,6 +789,7 @@ void dppc_interpreter::ppc_mfsr(uint32_t opcode) {
     int reg_d            = (opcode >> 21) & 0x1F;
     uint32_t grab_sr     = (opcode >> 16) & 0x0F;
     ppc_state.gpr[reg_d] = ppc_state.sr[grab_sr];
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_mfsrin(uint32_t opcode) {
@@ -780,6 +802,7 @@ void dppc_interpreter::ppc_mfsrin(uint32_t opcode) {
     ppc_grab_regsdb(opcode);
     uint32_t grab_sr     = ppc_result_b >> 28;
     ppc_state.gpr[reg_d] = ppc_state.sr[grab_sr];
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_mfmsr(uint32_t opcode) {
@@ -791,6 +814,7 @@ void dppc_interpreter::ppc_mfmsr(uint32_t opcode) {
     }
     uint32_t reg_d       = (opcode >> 21) & 0x1F;
     ppc_state.gpr[reg_d] = ppc_state.msr;
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_mtmsr(uint32_t opcode) {
@@ -801,38 +825,36 @@ void dppc_interpreter::ppc_mtmsr(uint32_t opcode) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
     }
     uint32_t reg_s = (opcode >> 21) & 0x1F;
-    ppc_state.msr = ppc_state.gpr[reg_s];
+    ppc_state.msr  = ppc_state.gpr[reg_s];
 
     // generate External Interrupt Exception
     // if CPU interrupt line is asserted
     if (ppc_state.msr & MSR::EE && int_pin) {
-        //LOG_F(WARNING, "MTMSR: CPU INT pending, generate CPU exception");
+        // LOG_F(WARNING, "MTMSR: CPU INT pending, generate CPU exception");
         ppc_exception_handler(Except_Type::EXC_EXT_INT, 0);
     } else if ((ppc_state.msr & MSR::EE) && dec_exception_pending) {
         dec_exception_pending = false;
-        //LOG_F(WARNING, "MTMSR: decrementer exception triggered");
+        // LOG_F(WARNING, "MTMSR: decrementer exception triggered");
         ppc_exception_handler(Except_Type::EXC_DECR, 0);
     } else {
         mmu_change_mode();
+        ppc_next_instruction();
     }
 }
 
-static inline void calc_rtcl_value()
-{
+static inline void calc_rtcl_value() {
     uint64_t new_ts = get_virt_time_ns();
-    uint64_t rtc_l = new_ts - rtc_timestamp + rtc_lo;
-    if (rtc_l >= ONE_BILLION_NS) { // check RTCL overflow
+    uint64_t rtc_l  = new_ts - rtc_timestamp + rtc_lo;
+    if (rtc_l >= ONE_BILLION_NS) {    // check RTCL overflow
         rtc_hi += (uint32_t)(rtc_l / ONE_BILLION_NS);
-        rtc_lo  = rtc_l % ONE_BILLION_NS;
-    }
-    else {
+        rtc_lo = rtc_l % ONE_BILLION_NS;
+    } else {
         rtc_lo = (uint32_t)rtc_l;
     }
     rtc_timestamp = new_ts;
 }
 
-static inline uint64_t calc_tbr_value()
-{
+static inline uint64_t calc_tbr_value() {
     uint64_t tbr_inc;
     uint32_t tbr_inc_lo;
     uint64_t diff = get_virt_time_ns() - tbr_wr_timestamp;
@@ -848,11 +870,10 @@ static inline uint32_t calc_dec_value() {
     return (dec_wr_value - static_cast<uint32_t>(dec_adj));
 }
 
-static void update_timebase(uint64_t mask, uint64_t new_val)
-{
+static void update_timebase(uint64_t mask, uint64_t new_val) {
     uint64_t tbr_value = calc_tbr_value();
-    tbr_wr_value = (tbr_value & mask) | new_val;
-    tbr_wr_timestamp = get_virt_time_ns();
+    tbr_wr_value       = (tbr_value & mask) | new_val;
+    tbr_wr_timestamp   = get_virt_time_ns();
 }
 
 
@@ -860,21 +881,20 @@ static uint32_t decrementer_timer_id = 0;
 
 static void trigger_decrementer_exception() {
     decrementer_timer_id = 0;
-    dec_wr_value = -1;
-    dec_wr_timestamp = get_virt_time_ns();
+    dec_wr_value         = -1;
+    dec_wr_timestamp     = get_virt_time_ns();
     if (ppc_state.msr & MSR::EE) {
         dec_exception_pending = false;
-        //LOG_F(WARNING, "decrementer exception triggered");
+        // LOG_F(WARNING, "decrementer exception triggered");
         ppc_exception_handler(Except_Type::EXC_DECR, 0);
-    }
-    else {
-        //LOG_F(WARNING, "decrementer exception pending");
+    } else {
+        // LOG_F(WARNING, "decrementer exception pending");
         dec_exception_pending = true;
     }
 }
 
 static void update_decrementer(uint32_t val) {
-    dec_wr_value = val;
+    dec_wr_value     = val;
     dec_wr_timestamp = get_virt_time_ns();
 
     dec_exception_pending = false;
@@ -883,18 +903,16 @@ static void update_decrementer(uint32_t val) {
         return;
 
     if (decrementer_timer_id) {
-        //LOG_F(WARNING, "decrementer cancel timer");
+        // LOG_F(WARNING, "decrementer cancel timer");
         TimerManager::get_instance()->cancel_timer(decrementer_timer_id);
     }
 
     uint64_t time_out;
     uint32_t time_out_lo;
     _u32xu64(val, tbr_period_ns, time_out, time_out_lo);
-    //LOG_F(WARNING, "decrementer:0x%08X ns:%llu", val, time_out);
+    // LOG_F(WARNING, "decrementer:0x%08X ns:%llu", val, time_out);
     decrementer_timer_id = TimerManager::get_instance()->add_oneshot_timer(
-        time_out,
-        trigger_decrementer_exception
-    );
+        time_out, trigger_decrementer_exception);
 }
 
 void dppc_interpreter::ppc_mfspr(uint32_t opcode) {
@@ -922,18 +940,16 @@ void dppc_interpreter::ppc_mfspr(uint32_t opcode) {
             ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
         }
         calc_rtcl_value();
-        ppc_state.gpr[reg_d] =
-        ppc_state.spr[SPR::RTCL_S] = rtc_lo & 0x3FFFFF80UL;
-        ppc_state.spr[SPR::RTCU_S] = rtc_hi;
+        ppc_state.gpr[reg_d] = ppc_state.spr[SPR::RTCL_S] = rtc_lo & 0x3FFFFF80UL;
+        ppc_state.spr[SPR::RTCU_S]                        = rtc_hi;
         break;
     case SPR::RTCU_U:
         if (!is_601) {
             ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
         }
         calc_rtcl_value();
-        ppc_state.gpr[reg_d] =
-        ppc_state.spr[SPR::RTCU_S] = rtc_hi;
-        ppc_state.spr[SPR::RTCL_S] = rtc_lo;
+        ppc_state.gpr[reg_d] = ppc_state.spr[SPR::RTCU_S] = rtc_hi;
+        ppc_state.spr[SPR::RTCL_S]                        = rtc_lo;
         break;
     case SPR::DEC_U:
         if (!is_601) {
@@ -942,10 +958,12 @@ void dppc_interpreter::ppc_mfspr(uint32_t opcode) {
         // fallthrough
     case SPR::DEC_S:
         ppc_state.gpr[reg_d] = ppc_state.spr[SPR::DEC_S] = calc_dec_value();
+        ppc_next_instruction();
         break;
     default:
         // FIXME: Unknown SPR should be noop or illegal instruction.
         ppc_state.gpr[reg_d] = ppc_state.spr[ref_spr];
+        ppc_next_instruction();
     }
 }
 
@@ -966,10 +984,13 @@ void dppc_interpreter::ppc_mtspr(uint32_t opcode) {
 
     switch (ref_spr) {
     case SPR::MQ:
-        if (is_601 || include_601)
+        if (is_601 || include_601){
             ppc_state.spr[ref_spr] = val;
-        else
+            ppc_next_instruction();
+        } 
+        else {
             ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        }
         break;
     case SPR::RTCL_U:
     case SPR::RTCU_U:
@@ -980,38 +1001,46 @@ void dppc_interpreter::ppc_mtspr(uint32_t opcode) {
         break;
     case SPR::XER:
         ppc_state.spr[ref_spr] = val & 0xe000ff7f;
+        ppc_next_instruction();
         break;
     case SPR::SDR1:
         if (ppc_state.spr[ref_spr] != val) {
             ppc_state.spr[ref_spr] = val;
-            mmu_pat_ctx_changed(); // adapt to SDR1 changes
+            mmu_pat_ctx_changed();    // adapt to SDR1 changes
         }
+        ppc_next_instruction();
         break;
     case SPR::RTCL_S:
         calc_rtcl_value();
         ppc_state.spr[RTCL_S] = rtc_lo = val & 0x3FFFFF80UL;
-        ppc_state.spr[RTCU_S] = rtc_hi;
+        ppc_state.spr[RTCU_S]          = rtc_hi;
+        ppc_next_instruction();
         break;
     case SPR::RTCU_S:
         calc_rtcl_value();
         ppc_state.spr[RTCL_S] = rtc_lo;
         ppc_state.spr[RTCU_S] = rtc_hi = val;
+        ppc_next_instruction();
         break;
     case SPR::DEC_S:
         ppc_state.spr[DEC_S] = val;
         update_decrementer(val);
+        ppc_next_instruction();
         break;
     case SPR::TBL_S:
         update_timebase(0xFFFFFFFF00000000ULL, val);
         ppc_state.spr[TBL_S] = val;
         ppc_state.spr[TBU_S] = tbr_wr_value >> 32;
+        ppc_next_instruction();
         break;
     case SPR::TBU_S:
         update_timebase(0x00000000FFFFFFFFULL, uint64_t(val) << 32);
         ppc_state.spr[TBL_S] = (uint32_t)tbr_wr_value;
         ppc_state.spr[TBU_S] = val;
+        ppc_next_instruction();
         break;
     case SPR::PVR:
+        ppc_next_instruction();
         break;
     case 528:
     case 529:
@@ -1034,9 +1063,11 @@ void dppc_interpreter::ppc_mtspr(uint32_t opcode) {
     case 543:
         ppc_state.spr[ref_spr] = val;
         dbat_update(ref_spr);
+        ppc_next_instruction();
     default:
         // FIXME: Unknown SPR should be noop or illegal instruction.
         ppc_state.spr[ref_spr] = val;
+        ppc_next_instruction();
     }
 }
 
@@ -1048,18 +1079,18 @@ void dppc_interpreter::ppc_mftb(uint32_t opcode) {
 
     switch (ref_spr) {
     case SPR::TBL_U:
-        ppc_state.gpr[reg_d] =
-        ppc_state.spr[TBL_S] = uint32_t(tbr_value);
-        ppc_state.spr[TBU_S] = uint32_t(tbr_value >> 32);
+        ppc_state.gpr[reg_d] = ppc_state.spr[TBL_S] = uint32_t(tbr_value);
+        ppc_state.spr[TBU_S]                        = uint32_t(tbr_value >> 32);
+        ppc_next_instruction();
         break;
     case SPR::TBU_U:
-        ppc_state.gpr[reg_d] =
-        ppc_state.spr[TBU_S] = uint32_t(tbr_value >> 32);
-        ppc_state.spr[TBL_S] = uint32_t(tbr_value);
+        ppc_state.gpr[reg_d] = ppc_state.spr[TBU_S] = uint32_t(tbr_value >> 32);
+        ppc_state.spr[TBL_S]                        = uint32_t(tbr_value);
+        ppc_next_instruction();
         break;
     default:
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-     }
+    }
 }
 
 void dppc_interpreter::ppc_mtcrf(uint32_t opcode) {
@@ -1068,19 +1099,28 @@ void dppc_interpreter::ppc_mtcrf(uint32_t opcode) {
 
     uint32_t cr_mask = 0;
 
-    if (crm == 0xFFU) // the fast case
+    if (crm == 0xFFU)    // the fast case
         cr_mask = 0xFFFFFFFFUL;
-    else { // the slow case
-        if (crm & 0x80) cr_mask |= 0xF0000000UL;
-        if (crm & 0x40) cr_mask |= 0x0F000000UL;
-        if (crm & 0x20) cr_mask |= 0x00F00000UL;
-        if (crm & 0x10) cr_mask |= 0x000F0000UL;
-        if (crm & 0x08) cr_mask |= 0x0000F000UL;
-        if (crm & 0x04) cr_mask |= 0x00000F00UL;
-        if (crm & 0x02) cr_mask |= 0x000000F0UL;
-        if (crm & 0x01) cr_mask |= 0x0000000FUL;
+    else {    // the slow case
+        if (crm & 0x80)
+            cr_mask |= 0xF0000000UL;
+        if (crm & 0x40)
+            cr_mask |= 0x0F000000UL;
+        if (crm & 0x20)
+            cr_mask |= 0x00F00000UL;
+        if (crm & 0x10)
+            cr_mask |= 0x000F0000UL;
+        if (crm & 0x08)
+            cr_mask |= 0x0000F000UL;
+        if (crm & 0x04)
+            cr_mask |= 0x00000F00UL;
+        if (crm & 0x02)
+            cr_mask |= 0x000000F0UL;
+        if (crm & 0x01)
+            cr_mask |= 0x0000000FUL;
     }
     ppc_state.cr = (ppc_state.cr & ~cr_mask) | (ppc_result_d & cr_mask);
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_mcrxr(uint32_t opcode) {
@@ -1088,6 +1128,7 @@ void dppc_interpreter::ppc_mcrxr(uint32_t opcode) {
     ppc_state.cr = (ppc_state.cr & ~(0xF0000000UL >> crf_d)) |
         ((ppc_state.spr[SPR::XER] & 0xF0000000UL) >> crf_d);
     ppc_state.spr[SPR::XER] &= 0x0FFFFFFF;
+    ppc_next_instruction();
 }
 
 template <class T, field_rc rec>
@@ -1099,6 +1140,7 @@ void dppc_interpreter::ppc_exts(uint32_t opcode) {
         ppc_changecrf0(ppc_result_a);
 
     ppc_store_iresult_reg(reg_a, ppc_result_a);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_exts<int8_t, RC0>(uint32_t opcode);
@@ -1113,9 +1155,9 @@ void dppc_interpreter::ppc_b(uint32_t opcode) {
     int32_t adr_li = int32_t((opcode & ~3UL) << 6) >> 6;
 
     if (a)
-        ppc_next_instruction_address = adr_li;
+        ppc_set_instruction(adr_li);
     else
-        ppc_next_instruction_address = uint32_t(ppc_state.pc + adr_li);
+        ppc_set_instruction(uint32_t(ppc_state.pc + adr_li));
 
     if (l)
         ppc_state.spr[SPR::LR] = uint32_t(ppc_state.pc + 4);
@@ -1144,9 +1186,9 @@ void dppc_interpreter::ppc_bc(uint32_t opcode) {
 
     if (ctr_ok && cnd_ok) {
         if (a)
-            ppc_next_instruction_address = br_bd;
+            ppc_set_instruction(br_bd);
         else
-            ppc_next_instruction_address = uint32_t(ppc_state.pc + br_bd);
+            ppc_set_instruction(uint32_t(ppc_state.pc + br_bd));
         exec_flags = EXEF_BRANCH;
     }
 
@@ -1159,7 +1201,7 @@ template void dppc_interpreter::ppc_bc<LK0, AA1>(uint32_t opcode);
 template void dppc_interpreter::ppc_bc<LK1, AA0>(uint32_t opcode);
 template void dppc_interpreter::ppc_bc<LK1, AA1>(uint32_t opcode);
 
-template<field_lk l, field_601 for601>
+template <field_lk l, field_601 for601>
 void dppc_interpreter::ppc_bcctr(uint32_t opcode) {
     uint32_t ctr_ok;
     uint32_t cnd_ok;
@@ -1173,15 +1215,14 @@ void dppc_interpreter::ppc_bcctr(uint32_t opcode) {
         if (!(br_bo & 0x04)) {
             ppc_state.spr[SPR::CTR] = new_ctr; /* decrement CTR */
         }
-    }
-    else {
+    } else {
         new_ctr = ctr;
     }
     ctr_ok = (br_bo & 0x04) | ((new_ctr != 0) == !(br_bo & 0x02));
     cnd_ok = (br_bo & 0x10) | (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
 
     if (ctr_ok && cnd_ok) {
-        ppc_next_instruction_address = (ctr & ~3UL);
+        ppc_set_instruction(ctr & ~3UL);
         exec_flags = EXEF_BRANCH;
     }
 
@@ -1208,7 +1249,7 @@ void dppc_interpreter::ppc_bclr(uint32_t opcode) {
     cnd_ok = (br_bo & 0x10) | (!(ppc_state.cr & (0x80000000UL >> br_bi)) == !(br_bo & 0x08));
 
     if (ctr_ok && cnd_ok) {
-        ppc_next_instruction_address = (ppc_state.spr[SPR::LR] & ~3UL);
+        ppc_set_instruction(ppc_state.spr[SPR::LR] & ~3UL);
         exec_flags = EXEF_BRANCH;
     }
 
@@ -1232,9 +1273,11 @@ void dppc_interpreter::ppc_cmp(uint32_t opcode) {
     int crf_d = (opcode >> 21) & 0x1C;
     ppc_grab_regsab(opcode);
     uint32_t xercon = (ppc_state.spr[SPR::XER] & XER::SO) >> 3;
-    uint32_t cmp_c = (int32_t(ppc_result_a) == int32_t(ppc_result_b)) ? 0x20000000UL : \
-        (int32_t(ppc_result_a) > int32_t(ppc_result_b)) ? 0x40000000UL : 0x80000000UL;
-    ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
+    uint32_t cmp_c  = (int32_t(ppc_result_a) == int32_t(ppc_result_b)) ? 0x20000000UL
+         : (int32_t(ppc_result_a) > int32_t(ppc_result_b))             ? 0x40000000UL
+                                                                       : 0x80000000UL;
+    ppc_state.cr    = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_cmpi(uint32_t opcode) {
@@ -1248,9 +1291,11 @@ void dppc_interpreter::ppc_cmpi(uint32_t opcode) {
     int crf_d = (opcode >> 21) & 0x1C;
     ppc_grab_regsasimm(opcode);
     uint32_t xercon = (ppc_state.spr[SPR::XER] & XER::SO) >> 3;
-    uint32_t cmp_c = (int32_t(ppc_result_a) == simm) ? 0x20000000UL : \
-        (int32_t(ppc_result_a) > simm) ? 0x40000000UL : 0x80000000UL;
-    ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
+    uint32_t cmp_c  = (int32_t(ppc_result_a) == simm) ? 0x20000000UL
+         : (int32_t(ppc_result_a) > simm)             ? 0x40000000UL
+                                                      : 0x80000000UL;
+    ppc_state.cr    = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_cmpl(uint32_t opcode) {
@@ -1264,9 +1309,11 @@ void dppc_interpreter::ppc_cmpl(uint32_t opcode) {
     int crf_d = (opcode >> 21) & 0x1C;
     ppc_grab_regsab(opcode);
     uint32_t xercon = (ppc_state.spr[SPR::XER] & XER::SO) >> 3;
-    uint32_t cmp_c = (ppc_result_a == ppc_result_b) ? 0x20000000UL : \
-        (ppc_result_a > ppc_result_b) ? 0x40000000UL : 0x80000000UL;
-    ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
+    uint32_t cmp_c  = (ppc_result_a == ppc_result_b) ? 0x20000000UL
+         : (ppc_result_a > ppc_result_b)             ? 0x40000000UL
+                                                     : 0x80000000UL;
+    ppc_state.cr    = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_cmpli(uint32_t opcode) {
@@ -1278,21 +1325,24 @@ void dppc_interpreter::ppc_cmpli(uint32_t opcode) {
 #endif
     ppc_grab_crfd_regsauimm(opcode);
     uint32_t xercon = (ppc_state.spr[SPR::XER] & XER::SO) >> 3;
-    uint32_t cmp_c = (ppc_result_a == uimm) ? 0x20000000UL : \
-        (ppc_result_a > uimm) ? 0x40000000UL : 0x80000000UL;
-    ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
+    uint32_t cmp_c  = (ppc_result_a == uimm) ? 0x20000000UL
+         : (ppc_result_a > uimm)             ? 0x40000000UL
+                                             : 0x80000000UL;
+    ppc_state.cr    = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
+    ppc_next_instruction();
 }
 
 // Condition Register Changes
 
 void dppc_interpreter::ppc_mcrf(uint32_t opcode) {
-    int crf_d       = (opcode >> 21) & 0x1C;
-    int crf_s       = (opcode >> 16) & 0x1C;
+    int crf_d = (opcode >> 21) & 0x1C;
+    int crf_s = (opcode >> 16) & 0x1C;
 
     // extract and right justify source flags field
     uint32_t grab_s = (ppc_state.cr >> (28 - crf_s)) & 0xF;
 
     ppc_state.cr = (ppc_state.cr & ~(0xf0000000UL >> crf_d)) | (grab_s << (28 - crf_d));
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_crand(uint32_t opcode) {
@@ -1303,6 +1353,7 @@ void dppc_interpreter::ppc_crand(uint32_t opcode) {
     } else {
         ppc_state.cr &= ~(0x80000000UL >> reg_d);
     }
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_crandc(uint32_t opcode) {
@@ -1312,15 +1363,17 @@ void dppc_interpreter::ppc_crandc(uint32_t opcode) {
     } else {
         ppc_state.cr &= ~(0x80000000UL >> reg_d);
     }
+    ppc_next_instruction();
 }
 void dppc_interpreter::ppc_creqv(uint32_t opcode) {
     ppc_grab_dab(opcode);
     uint8_t ir = (ppc_state.cr >> (31 - reg_a)) ^ (ppc_state.cr >> (31 - reg_b));
-    if (ir & 1) { // compliment is implemented by swapping the following if/else bodies
+    if (ir & 1) {    // compliment is implemented by swapping the following if/else bodies
         ppc_state.cr &= ~(0x80000000UL >> reg_d);
     } else {
         ppc_state.cr |= (0x80000000UL >> reg_d);
     }
+    ppc_next_instruction();
 }
 void dppc_interpreter::ppc_crnand(uint32_t opcode) {
     ppc_grab_dab(opcode);
@@ -1330,6 +1383,7 @@ void dppc_interpreter::ppc_crnand(uint32_t opcode) {
     } else {
         ppc_state.cr |= (0x80000000UL >> reg_d);
     }
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_crnor(uint32_t opcode) {
@@ -1340,6 +1394,7 @@ void dppc_interpreter::ppc_crnor(uint32_t opcode) {
     } else {
         ppc_state.cr |= (0x80000000UL >> reg_d);
     }
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_cror(uint32_t opcode) {
@@ -1350,6 +1405,7 @@ void dppc_interpreter::ppc_cror(uint32_t opcode) {
     } else {
         ppc_state.cr &= ~(0x80000000UL >> reg_d);
     }
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_crorc(uint32_t opcode) {
@@ -1359,6 +1415,7 @@ void dppc_interpreter::ppc_crorc(uint32_t opcode) {
     } else {
         ppc_state.cr &= ~(0x80000000UL >> reg_d);
     }
+    ppc_next_instruction();
 }
 void dppc_interpreter::ppc_crxor(uint32_t opcode) {
     ppc_grab_dab(opcode);
@@ -1368,6 +1425,7 @@ void dppc_interpreter::ppc_crxor(uint32_t opcode) {
     } else {
         ppc_state.cr &= ~(0x80000000UL >> reg_d);
     }
+    ppc_next_instruction();
 }
 
 // Processor MGMT Fns.
@@ -1376,9 +1434,9 @@ void dppc_interpreter::ppc_rfi(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
-    uint32_t new_srr1_val   = (ppc_state.spr[SPR::SRR1] & 0x87C0FF73UL);
-    uint32_t new_msr_val    = (ppc_state.msr & ~0x87C0FF73UL);
-    ppc_state.msr           = (new_msr_val | new_srr1_val) & 0xFFFBFFFFUL;
+    uint32_t new_srr1_val = (ppc_state.spr[SPR::SRR1] & 0x87C0FF73UL);
+    uint32_t new_msr_val  = (ppc_state.msr & ~0x87C0FF73UL);
+    ppc_state.msr         = (new_msr_val | new_srr1_val) & 0xFFFBFFFFUL;
 
     // generate External Interrupt Exception
     // if CPU interrupt line is still asserted
@@ -1391,16 +1449,16 @@ void dppc_interpreter::ppc_rfi(uint32_t opcode) {
 
     if ((ppc_state.msr & MSR::EE) && dec_exception_pending) {
         dec_exception_pending = false;
-        //LOG_F(WARNING, "decrementer exception from rfi msr:0x%X", ppc_state.msr);
+        // LOG_F(WARNING, "decrementer exception from rfi msr:0x%X", ppc_state.msr);
         uint32_t save_srr0 = ppc_state.spr[SPR::SRR0] & ~3UL;
         ppc_exception_handler(Except_Type::EXC_DECR, 0);
         ppc_state.spr[SPR::SRR0] = save_srr0;
         return;
     }
 
-    ppc_next_instruction_address = ppc_state.spr[SPR::SRR0] & ~3UL;
+    ppc_set_instruction(ppc_state.spr[SPR::SRR0] & ~3UL);
 
-    do_ctx_sync(); // RFI is context synchronizing
+    do_ctx_sync();    // RFI is context synchronizing
 
     mmu_change_mode();
 
@@ -1408,7 +1466,7 @@ void dppc_interpreter::ppc_rfi(uint32_t opcode) {
 }
 
 void dppc_interpreter::ppc_sc(uint32_t opcode) {
-    do_ctx_sync(); // SC is context synchronizing!
+    do_ctx_sync();    // SC is context synchronizing!
     ppc_exception_handler(Except_Type::EXC_SYSCALL, 0x20000);
 }
 
@@ -1423,6 +1481,7 @@ void dppc_interpreter::ppc_tw(uint32_t opcode) {
         ((ppc_state.gpr[reg_a] > ppc_state.gpr[reg_b]) && (ppc_to & 0x01))) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::TRAP);
     }
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_twi(uint32_t opcode) {
@@ -1436,26 +1495,32 @@ void dppc_interpreter::ppc_twi(uint32_t opcode) {
         (ppc_state.gpr[reg_a] > uint32_t(simm) && (ppc_to & 0x01))) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::TRAP);
     }
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_eieio(uint32_t opcode) {
     /* placeholder */
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_isync(uint32_t opcode) {
     do_ctx_sync();
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_sync(uint32_t opcode) {
     /* placeholder */
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_icbi(uint32_t opcode) {
     /* placeholder */
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_dcbf(uint32_t opcode) {
     /* placeholder */
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_dcbi(uint32_t opcode) {
@@ -1463,19 +1528,23 @@ void dppc_interpreter::ppc_dcbi(uint32_t opcode) {
     num_supervisor_instrs++;
 #endif
     /* placeholder */
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_dcbst(uint32_t opcode) {
     /* placeholder */
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_dcbt(uint32_t opcode) {
     // Not needed, the HDI reg is touched to no-op this instruction.
+    ppc_next_instruction();
     return;
 }
 
 void dppc_interpreter::ppc_dcbtst(uint32_t opcode) {
     // Not needed, the HDI reg is touched to no-op this instruction.
+    ppc_next_instruction();
     return;
 }
 
@@ -1483,14 +1552,16 @@ void dppc_interpreter::ppc_dcbz(uint32_t opcode) {
     ppc_grab_regsab(opcode);
     uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
 
-    ea &= 0xFFFFFFE0UL; // align EA on a 32-byte boundary
+    ea &= 0xFFFFFFE0UL;    // align EA on a 32-byte boundary
 
     // the following is not especially efficient but necessary
     // to make BlockZero under Mac OS 8.x and later to work
-    mmu_write_vmem<uint64_t>(opcode, ea +  0, 0);
-    mmu_write_vmem<uint64_t>(opcode, ea +  8, 0);
+    mmu_write_vmem<uint64_t>(opcode, ea + 0, 0);
+    mmu_write_vmem<uint64_t>(opcode, ea + 8, 0);
     mmu_write_vmem<uint64_t>(opcode, ea + 16, 0);
     mmu_write_vmem<uint64_t>(opcode, ea + 24, 0);
+
+    ppc_next_instruction();
 }
 
 
@@ -1505,6 +1576,7 @@ void dppc_interpreter::ppc_st(uint32_t opcode) {
     uint32_t ea = int32_t(int16_t(opcode));
     ea += reg_a ? ppc_result_a : 0;
     mmu_write_vmem<T>(opcode, ea, ppc_result_d);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_st<uint8_t>(uint32_t opcode);
@@ -1519,6 +1591,7 @@ void dppc_interpreter::ppc_stx(uint32_t opcode) {
     ppc_grab_regssab(opcode);
     uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
     mmu_write_vmem<T>(opcode, ea, ppc_result_d);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_stx<uint8_t>(uint32_t opcode);
@@ -1537,11 +1610,10 @@ void dppc_interpreter::ppc_stu(uint32_t opcode) {
         ea += ppc_result_a;
         mmu_write_vmem<T>(opcode, ea, ppc_result_d);
         ppc_state.gpr[reg_a] = ea;
-    } 
-    else {
+    } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-    } 
-
+    }
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_stu<uint8_t>(uint32_t opcode);
@@ -1559,10 +1631,10 @@ void dppc_interpreter::ppc_stux(uint32_t opcode) {
         uint32_t ea = ppc_result_a + ppc_result_b;
         mmu_write_vmem<T>(opcode, ea, ppc_result_d);
         ppc_state.gpr[reg_a] = ea;
-    }
-    else {
+    } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-    } 
+    }
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_stux<uint8_t>(uint32_t opcode);
@@ -1574,9 +1646,10 @@ void dppc_interpreter::ppc_sthbrx(uint32_t opcode) {
     num_int_stores++;
 #endif
     ppc_grab_regssab(opcode);
-    uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
+    uint32_t ea  = ppc_result_b + (reg_a ? ppc_result_a : 0);
     ppc_result_d = uint32_t(BYTESWAP_16(uint16_t(ppc_result_d)));
     mmu_write_vmem<uint16_t>(opcode, ea, ppc_result_d);
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_stwcx(uint32_t opcode) {
@@ -1585,13 +1658,14 @@ void dppc_interpreter::ppc_stwcx(uint32_t opcode) {
 #endif
     ppc_grab_regssab(opcode);
     uint32_t ea = (reg_a == 0) ? ppc_result_b : (ppc_result_a + ppc_result_b);
-    ppc_state.cr &= 0x0FFFFFFFUL; // clear CR0
-    ppc_state.cr |= (ppc_state.spr[SPR::XER] & XER::SO) >> 3; // copy XER[SO] to CR0[SO]
+    ppc_state.cr &= 0x0FFFFFFFUL;                                // clear CR0
+    ppc_state.cr |= (ppc_state.spr[SPR::XER] & XER::SO) >> 3;    // copy XER[SO] to CR0[SO]
     if (ppc_state.reserve) {
         mmu_write_vmem<uint32_t>(opcode, ea, ppc_result_d);
         ppc_state.reserve = false;
-        ppc_state.cr |= 0x20000000UL; // set CR0[EQ]
+        ppc_state.cr |= 0x20000000UL;    // set CR0[EQ]
     }
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_stwbrx(uint32_t opcode) {
@@ -1599,9 +1673,10 @@ void dppc_interpreter::ppc_stwbrx(uint32_t opcode) {
     num_int_stores++;
 #endif
     ppc_grab_regssab(opcode);
-    uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
-    ppc_result_d          = BYTESWAP_32(ppc_result_d);
+    uint32_t ea  = ppc_result_b + (reg_a ? ppc_result_a : 0);
+    ppc_result_d = BYTESWAP_32(ppc_result_d);
     mmu_write_vmem<uint32_t>(opcode, ea, ppc_result_d);
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_stmw(uint32_t opcode) {
@@ -1621,6 +1696,8 @@ void dppc_interpreter::ppc_stmw(uint32_t opcode) {
         mmu_write_vmem<uint32_t>(opcode, ea, ppc_state.gpr[reg_s]);
         ea += 4;
     }
+
+    ppc_next_instruction();
 }
 
 template <class T>
@@ -1633,6 +1710,7 @@ void dppc_interpreter::ppc_lz(uint32_t opcode) {
     ea += reg_a ? ppc_result_a : 0;
     uint32_t ppc_result_d = mmu_read_vmem<T>(opcode, ea);
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_lz<uint8_t>(uint32_t opcode);
@@ -1655,6 +1733,7 @@ void dppc_interpreter::ppc_lzu(uint32_t opcode) {
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_lzu<uint8_t>(uint32_t opcode);
@@ -1667,9 +1746,10 @@ void dppc_interpreter::ppc_lzx(uint32_t opcode) {
     num_int_loads++;
 #endif
     ppc_grab_regsdab(opcode);
-    uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
+    uint32_t ea           = ppc_result_b + (reg_a ? ppc_result_a : 0);
     uint32_t ppc_result_d = mmu_read_vmem<T>(opcode, ea);
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_lzx<uint8_t>(uint32_t opcode);
@@ -1683,7 +1763,7 @@ void dppc_interpreter::ppc_lzux(uint32_t opcode) {
 #endif
     ppc_grab_regsdab(opcode);
     if ((reg_a != reg_d) && reg_a != 0) {
-        uint32_t ea = ppc_result_a + ppc_result_b;
+        uint32_t ea           = ppc_result_a + ppc_result_b;
         uint32_t ppc_result_d = mmu_read_vmem<T>(opcode, ea);
         ppc_store_iresult_reg(reg_d, ppc_result_d);
         ppc_result_a = ea;
@@ -1691,6 +1771,7 @@ void dppc_interpreter::ppc_lzux(uint32_t opcode) {
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
+    ppc_next_instruction();
 }
 
 template void dppc_interpreter::ppc_lzux<uint8_t>(uint32_t opcode);
@@ -1706,6 +1787,7 @@ void dppc_interpreter::ppc_lha(uint32_t opcode) {
     ea += (reg_a ? ppc_result_a : 0);
     int16_t val = mmu_read_vmem<uint16_t>(opcode, ea);
     ppc_store_iresult_reg(reg_d, int32_t(val));
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_lhau(uint32_t opcode) {
@@ -1723,6 +1805,7 @@ void dppc_interpreter::ppc_lhau(uint32_t opcode) {
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_lhaux(uint32_t opcode) {
@@ -1736,10 +1819,10 @@ void dppc_interpreter::ppc_lhaux(uint32_t opcode) {
         ppc_store_iresult_reg(reg_d, int32_t(val));
         uint32_t ppc_result_a = ea;
         ppc_store_iresult_reg(reg_a, ppc_result_a);
-    }
-    else {
+    } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
     }
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_lhax(uint32_t opcode) {
@@ -1750,6 +1833,7 @@ void dppc_interpreter::ppc_lhax(uint32_t opcode) {
     uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
     int16_t val = mmu_read_vmem<uint16_t>(opcode, ea);
     ppc_store_iresult_reg(reg_d, int32_t(val));
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_lhbrx(uint32_t opcode) {
@@ -1757,9 +1841,10 @@ void dppc_interpreter::ppc_lhbrx(uint32_t opcode) {
     num_int_loads++;
 #endif
     ppc_grab_regsdab(opcode);
-    uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
+    uint32_t ea           = ppc_result_b + (reg_a ? ppc_result_a : 0);
     uint32_t ppc_result_d = uint32_t(BYTESWAP_16(mmu_read_vmem<uint16_t>(opcode, ea)));
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_lwbrx(uint32_t opcode) {
@@ -1767,9 +1852,10 @@ void dppc_interpreter::ppc_lwbrx(uint32_t opcode) {
     num_int_loads++;
 #endif
     ppc_grab_regsdab(opcode);
-    uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
+    uint32_t ea           = ppc_result_b + (reg_a ? ppc_result_a : 0);
     uint32_t ppc_result_d = BYTESWAP_32(mmu_read_vmem<uint32_t>(opcode, ea));
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_lwarx(uint32_t opcode) {
@@ -1778,10 +1864,11 @@ void dppc_interpreter::ppc_lwarx(uint32_t opcode) {
 #endif
     // Placeholder - Get the reservation of memory implemented!
     ppc_grab_regsdab(opcode);
-    uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
+    uint32_t ea           = ppc_result_b + (reg_a ? ppc_result_a : 0);
     ppc_state.reserve     = true;
     uint32_t ppc_result_d = mmu_read_vmem<uint32_t>(opcode, ea);
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_lmw(uint32_t opcode) {
@@ -1793,10 +1880,12 @@ void dppc_interpreter::ppc_lmw(uint32_t opcode) {
     ea += (reg_a ? ppc_result_a : 0);
     // How many words to load in memory - using a do-while for this
     do {
-       ppc_state.gpr[reg_d] = mmu_read_vmem<uint32_t>(opcode, ea);
-       ea += 4;
-       reg_d++;
+        ppc_state.gpr[reg_d] = mmu_read_vmem<uint32_t>(opcode, ea);
+        ea += 4;
+        reg_d++;
     } while (reg_d < 32);
+
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_lswi(uint32_t opcode) {
@@ -1804,9 +1893,9 @@ void dppc_interpreter::ppc_lswi(uint32_t opcode) {
     num_int_loads++;
 #endif
     ppc_grab_regsda(opcode);
-    uint32_t ea = reg_a ? ppc_result_a : 0;
-    uint32_t grab_inb              = (opcode >> 11) & 0x1F;
-    grab_inb                       = grab_inb ? grab_inb : 32;
+    uint32_t ea       = reg_a ? ppc_result_a : 0;
+    uint32_t grab_inb = (opcode >> 11) & 0x1F;
+    grab_inb          = grab_inb ? grab_inb : 32;
 
     while (grab_inb >= 4) {
         ppc_state.gpr[reg_d] = mmu_read_vmem<uint32_t>(opcode, ea);
@@ -1833,6 +1922,8 @@ void dppc_interpreter::ppc_lswi(uint32_t opcode) {
     default:
         break;
     }
+
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_lswx(uint32_t opcode) {
@@ -1841,16 +1932,16 @@ void dppc_interpreter::ppc_lswx(uint32_t opcode) {
 #endif
     ppc_grab_regsdab(opcode);
 
-/*
-    // Invalid instruction forms
-    if ((reg_d == 0 && reg_a == 0) || (reg_d == reg_a) || (reg_d == reg_b)) {
-        // UNTESTED! Does invalid form really cause exception?
-        // G4 doesn't do exception
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-    }
-*/
+    /*
+        // Invalid instruction forms
+        if ((reg_d == 0 && reg_a == 0) || (reg_d == reg_a) || (reg_d == reg_b)) {
+            // UNTESTED! Does invalid form really cause exception?
+            // G4 doesn't do exception
+            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        }
+    */
 
-    uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
+    uint32_t ea  = ppc_result_b + (reg_a ? ppc_result_a : 0);
     int grab_inb = ppc_state.spr[SPR::XER] & 0x7F;
 
     while (grab_inb > 0) {
@@ -1865,16 +1956,18 @@ void dppc_interpreter::ppc_lswx(uint32_t opcode) {
                 ppc_state.gpr[reg_d] = mmu_read_vmem<uint16_t>(opcode, ea) << 16;
                 return;
             case 3:
-                ppc_state.gpr[reg_d] = (mmu_read_vmem<uint16_t>(opcode, ea) << 16)
-                                     | (mmu_read_vmem<uint8_t>(opcode, ea + 2) << 8);
+                ppc_state.gpr[reg_d] = (mmu_read_vmem<uint16_t>(opcode, ea) << 16) |
+                    (mmu_read_vmem<uint8_t>(opcode, ea + 2) << 8);
                 return;
             }
             ppc_state.gpr[reg_d] = mmu_read_vmem<uint32_t>(opcode, ea);
         }
-        reg_d = (reg_d + 1) & 0x1F; // wrap around through GPR0
+        reg_d = (reg_d + 1) & 0x1F;    // wrap around through GPR0
         ea += 4;
         grab_inb -= 4;
     }
+
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_stswi(uint32_t opcode) {
@@ -1882,7 +1975,7 @@ void dppc_interpreter::ppc_stswi(uint32_t opcode) {
     num_int_stores++;
 #endif
     ppc_grab_regssash_stswi(opcode);
-    uint32_t ea = reg_a ? ppc_result_a : 0;
+    uint32_t ea       = reg_a ? ppc_result_a : 0;
     uint32_t grab_inb = rot_sh ? rot_sh : 32;
 
     while (grab_inb >= 4) {
@@ -1910,6 +2003,8 @@ void dppc_interpreter::ppc_stswi(uint32_t opcode) {
     default:
         break;
     }
+
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_stswx(uint32_t opcode) {
@@ -1917,7 +2012,7 @@ void dppc_interpreter::ppc_stswx(uint32_t opcode) {
     num_int_stores++;
 #endif
     ppc_grab_regssab_stswx(opcode);
-    uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
+    uint32_t ea       = ppc_result_b + (reg_a ? ppc_result_a : 0);
     uint32_t grab_inb = ppc_state.spr[SPR::XER] & 127;
 
     while (grab_inb >= 4) {
@@ -1945,6 +2040,8 @@ void dppc_interpreter::ppc_stswx(uint32_t opcode) {
     default:
         break;
     }
+
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_eciwx(uint32_t opcode) {
@@ -1965,6 +2062,7 @@ void dppc_interpreter::ppc_eciwx(uint32_t opcode) {
     uint32_t ppc_result_d = mmu_read_vmem<uint32_t>(opcode, ea);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_ecowx(uint32_t opcode) {
@@ -1983,6 +2081,7 @@ void dppc_interpreter::ppc_ecowx(uint32_t opcode) {
     }
 
     mmu_write_vmem<uint32_t>(opcode, ea, ppc_result_d);
+    ppc_next_instruction();
 }
 
 // TLB Instructions
@@ -1993,6 +2092,7 @@ void dppc_interpreter::ppc_tlbie(uint32_t opcode) {
 #endif
 
     tlb_flush_entry(ppc_state.gpr[(opcode >> 11) & 0x1F]);
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_tlbia(uint32_t opcode) {
@@ -2000,6 +2100,7 @@ void dppc_interpreter::ppc_tlbia(uint32_t opcode) {
     num_supervisor_instrs++;
 #endif
     /* placeholder */
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_tlbld(uint32_t opcode) {
@@ -2007,6 +2108,7 @@ void dppc_interpreter::ppc_tlbld(uint32_t opcode) {
     num_supervisor_instrs++;
 #endif
     /* placeholder */
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_tlbli(uint32_t opcode) {
@@ -2014,6 +2116,7 @@ void dppc_interpreter::ppc_tlbli(uint32_t opcode) {
     num_supervisor_instrs++;
 #endif
     /* placeholder */
+    ppc_next_instruction();
 }
 
 void dppc_interpreter::ppc_tlbsync(uint32_t opcode) {
@@ -2021,4 +2124,5 @@ void dppc_interpreter::ppc_tlbsync(uint32_t opcode) {
     num_supervisor_instrs++;
 #endif
     /* placeholder */
+    ppc_next_instruction();
 }

@@ -36,6 +36,7 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
 #ifdef CPU_PROFILING
     exceptions_processed++;
 #endif
+    uint32_t ppc_next_instruction_address;
 
     switch (exception_type) {
     case Except_Type::EXC_SYSTEM_RESET:
@@ -58,7 +59,7 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
 
     case Except_Type::EXC_ISI:
         if (exec_flags) {
-            ppc_state.spr[SPR::SRR0] = ppc_next_instruction_address;
+            ppc_state.spr[SPR::SRR0] = ppc_state.pc + 4;
         } else {
             ppc_state.spr[SPR::SRR0] = ppc_state.pc & 0xFFFFFFFCUL;
         }
@@ -123,6 +124,7 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
     }
 
     exec_flags = EXEF_EXCEPTION;
+    ppc_set_instruction(ppc_next_instruction_address);
 
     // perform context synchronization for recoverable exceptions
     if (exception_type != Except_Type::EXC_MACHINE_CHECK &&

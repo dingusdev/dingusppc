@@ -65,8 +65,6 @@ Po_Cause power_off_reason = po_enter_debugger;
 
 SetPRS ppc_state;
 
-uint32_t ppc_next_instruction_address;    // Used for branching, setting up the NIA
-
 unsigned exec_flags; // execution control flags
 // FIXME: exec_timer is read by main thread ppc_main_opcode;
 // written by audio dbdma DMAChannel::update_irq .. add_immediate_timer
@@ -291,7 +289,7 @@ static void ppc_exec_inner(uint32_t start_addr, uint32_t size)
 
         if (exec_flags) {
             // define next execution block
-            eb_start = ppc_next_instruction_address;
+            eb_start = ppc_state.pc;
             if (!(exec_flags & EXEF_RFI) && (eb_start & PPC_PAGE_MASK) == page_start) {
                 pc_real += (int)eb_start - (int)ppc_state.pc;
             } else {
@@ -323,7 +321,6 @@ void ppc_exec()
     if (setjmp(exc_env)) {
         // process low-level exceptions
         //LOG_F(9, "PPC-EXEC: low_level exception raised!");
-        ppc_state.pc = ppc_next_instruction_address;
     }
 
     while (power_on) {
@@ -337,7 +334,6 @@ void ppc_exec_single()
     if (setjmp(exc_env)) {
         // process low-level exceptions
         //LOG_F(9, "PPC-EXEC: low_level exception raised!");
-        ppc_state.pc = ppc_next_instruction_address;
         exec_flags = 0;
         return;
     }
@@ -349,10 +345,7 @@ void ppc_exec_single()
     process_events();
 
     if (exec_flags) {
-        ppc_state.pc = ppc_next_instruction_address;
         exec_flags = 0;
-    } else {
-        ppc_state.pc += 4;
     }
 }
 
@@ -367,7 +360,6 @@ void ppc_exec_until(volatile uint32_t goal_addr)
     if (setjmp(exc_env)) {
         // process low-level exceptions
         //LOG_F(9, "PPC-EXEC: low_level exception raised!");
-        ppc_state.pc = ppc_next_instruction_address;
     }
 
     while (power_on) {
@@ -388,7 +380,6 @@ void ppc_exec_dbg(volatile uint32_t start_addr, volatile uint32_t size)
     if (setjmp(exc_env)) {
         // process low-level exceptions
         //LOG_F(9, "PPC-EXEC: low_level exception raised!");
-        ppc_state.pc = ppc_next_instruction_address;
     }
 
     while (power_on && (ppc_state.pc < start_addr || ppc_state.pc >= start_addr + size)) {
