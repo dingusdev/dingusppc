@@ -1076,6 +1076,7 @@ void dppc_interpreter::ppc_lfsu(uint32_t opcode) {
         ppc_store_iresult_reg(reg_a, ea);
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        return;
     }
     ppc_next_instruction();
 }
@@ -1123,6 +1124,7 @@ void dppc_interpreter::ppc_lfdu(uint32_t opcode) {
         ppc_store_iresult_reg(reg_a, ea);
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        return;
     }
     ppc_next_instruction();
 }
@@ -1145,6 +1147,7 @@ void dppc_interpreter::ppc_lfdux(uint32_t opcode) {
         ppc_store_iresult_reg(reg_a, ea);
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        return;
     }
 
     ppc_next_instruction();
@@ -1170,6 +1173,7 @@ void dppc_interpreter::ppc_stfsu(uint32_t opcode) {
         ppc_store_iresult_reg(reg_a, ea);
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        return;
     }
 
     ppc_next_instruction();
@@ -1193,6 +1197,7 @@ void dppc_interpreter::ppc_stfsux(uint32_t opcode) {
         ppc_store_iresult_reg(reg_a, ea);
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        return;
     }
 
     ppc_next_instruction();
@@ -1216,6 +1221,7 @@ void dppc_interpreter::ppc_stfdu(uint32_t opcode) {
         ppc_store_iresult_reg(reg_a, ea);
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        return;
     }
 
     ppc_next_instruction();
@@ -1237,6 +1243,7 @@ void dppc_interpreter::ppc_stfdux(uint32_t opcode) {
         ppc_store_iresult_reg(reg_a, ea);
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        return;
     }
 
     ppc_next_instruction();

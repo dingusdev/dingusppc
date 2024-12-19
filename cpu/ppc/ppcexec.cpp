@@ -300,7 +300,6 @@ static void ppc_exec_inner(uint32_t start_addr, uint32_t size)
             ppc_state.pc = eb_start;
             exec_flags = 0;
         } else { [[likely]]
-            ppc_state.pc += 4;
             pc_real += 4;
         }
 
@@ -321,6 +320,7 @@ void ppc_exec()
     if (setjmp(exc_env)) {
         // process low-level exceptions
         //LOG_F(9, "PPC-EXEC: low_level exception raised!");
+        ppc_state.pc += 4;
     }
 
     while (power_on) {
@@ -334,6 +334,7 @@ void ppc_exec_single()
     if (setjmp(exc_env)) {
         // process low-level exceptions
         //LOG_F(9, "PPC-EXEC: low_level exception raised!");
+        ppc_state.pc += 4;
         exec_flags = 0;
         return;
     }
@@ -360,6 +361,7 @@ void ppc_exec_until(volatile uint32_t goal_addr)
     if (setjmp(exc_env)) {
         // process low-level exceptions
         //LOG_F(9, "PPC-EXEC: low_level exception raised!");
+        ppc_state.pc += 4;
     }
 
     while (power_on) {
@@ -380,6 +382,7 @@ void ppc_exec_dbg(volatile uint32_t start_addr, volatile uint32_t size)
     if (setjmp(exc_env)) {
         // process low-level exceptions
         //LOG_F(9, "PPC-EXEC: low_level exception raised!");
+        ppc_state.pc += 4;
     }
 
     while (power_on && (ppc_state.pc < start_addr || ppc_state.pc >= start_addr + size)) {
@@ -740,8 +743,8 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool do_include_6
     set_host_rounding_mode(0);
 
     ppc_state.spr[SPR::PVR] = cpu_version;
-    is_601 = (cpu_version >> 16) == 1;
-    include_601 = !is_601 & do_include_601;
+    is_601                  = (cpu_version >> 16) == 1;
+    include_601             = !is_601 && do_include_601;
 
     initialize_ppc_opcode_table();
 
