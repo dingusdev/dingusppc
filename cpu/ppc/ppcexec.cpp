@@ -265,6 +265,7 @@ static void ppc_exec_inner(uint32_t start_addr, uint32_t size)
     uint64_t max_cycles = 0;
     uint32_t page_start, eb_start, eb_end = 0;
     uint32_t opcode;
+    uint32_t pc_old;
     uint8_t* pc_real;
 
     while (power_on) {
@@ -282,6 +283,7 @@ static void ppc_exec_inner(uint32_t start_addr, uint32_t size)
             pc_real    = mmu_translate_imem(eb_start);
         }
 
+        pc_old = ppc_state.pc;
         opcode = ppc_read_instruction(pc_real);
         ppc_main_opcode(opcode);
         if (g_icycles++ >= max_cycles || exec_timer)
@@ -291,7 +293,7 @@ static void ppc_exec_inner(uint32_t start_addr, uint32_t size)
             // define next execution block
             eb_start = ppc_state.pc;
             if (!(exec_flags & EXEF_RFI) && (eb_start & PPC_PAGE_MASK) == page_start) {
-                pc_real += (int)eb_start - (int)ppc_state.pc;
+                pc_real += (int)eb_start - (int)pc_old;
             } else {
                 page_start = eb_start & PPC_PAGE_MASK;
                 eb_end = page_start + PPC_PAGE_SIZE - 1;
@@ -299,7 +301,9 @@ static void ppc_exec_inner(uint32_t start_addr, uint32_t size)
             }
             ppc_state.pc = eb_start;
             exec_flags = 0;
-        } else { [[likely]]
+        } 
+        else {
+            [[likely]]
             pc_real += 4;
         }
 
