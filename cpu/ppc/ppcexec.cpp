@@ -185,8 +185,8 @@ static PPCOpcode OpcodeGrabber[64 * 2048];
 
 /** Exception helpers. */
 
-void ppc_illegalop(uint32_t opcode) {
-    ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP, 0);
+uint32_t ppc_illegalop(uint32_t opcode) {
+    return ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP, 0);
 }
 
 void ppc_assert_int() {
@@ -280,7 +280,6 @@ static void ppc_exec_inner(uint32_t start_addr, uint32_t size)
             eb_start   = ppc_state.pc;
             page_start = eb_start & PPC_PAGE_MASK;
             eb_end     = page_start + PPC_PAGE_SIZE - 1;
-            exec_flags = 0;
             pc_real    = mmu_translate_imem(eb_start);
         }
 
@@ -300,7 +299,6 @@ static void ppc_exec_inner(uint32_t start_addr, uint32_t size)
                 pc_real = mmu_translate_imem(eb_start);
             }
             ppc_state.pc = eb_start;
-            exec_flags = 0;
         } else { [[likely]]
             ppc_state.pc += 4;
             pc_real += 4;
@@ -351,7 +349,6 @@ void ppc_exec_single()
 
     if (exec_flags) {
         ppc_state.pc = ppc_next_instruction_address;
-        exec_flags = 0;
     } else {
         ppc_state.pc += 4;
     }

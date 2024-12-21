@@ -37,7 +37,7 @@ int ntested; // number of tested instructions
 int nfailed; // number of failed instructions
 
 #if defined(PPC_TESTS)
-void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
+void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits, uint32_t exec_flags) {
     power_on = false;
 }
 #endif

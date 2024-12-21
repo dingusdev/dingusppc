@@ -406,7 +406,7 @@ constexpr uint32_t NO_OPCODE = 0;
 extern void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool include_601, uint64_t tb_freq);
 extern void ppc_mmu_init();
 
-void ppc_illegalop(uint32_t opcode);
+uint32_t ppc_illegalop(uint32_t opcode);
 void ppc_assert_int();
 void ppc_release_int();
 
@@ -417,7 +417,8 @@ void set_host_rounding_mode(uint8_t mode);
 void update_fpscr(uint32_t new_fpscr);
 
 /* Exception handlers. */
-uint32_t ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits, uint32_t exec_flags);
+uint32_t ppc_exception_handler(
+    Except_Type exception_type, uint32_t srr1_bits, uint32_t exec_flags = 0);
 [[noreturn]] uint32_t dbg_exception_handler(
     Except_Type exception_type, uint32_t srr1_bits, uint32_t exec_flags);
 void ppc_floating_point_exception(uint32_t opcode);

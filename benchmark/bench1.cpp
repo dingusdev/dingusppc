@@ -28,9 +28,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <debugger/debugger.h>
 
 #if defined(PPC_BENCHMARKS)
-uint32_t ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
+uint32_t ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits, uint32_t exec_flags) {
     power_on = false;
     power_off_reason = po_benchmark_exception;
+    return 0;
 }
 #endif
 
@@ -105,7 +106,7 @@ int main(int argc, char** argv) {
     ppc_state.gpr[3] = 0x1000;    // buf
     ppc_state.gpr[4] = test_size; // len
     ppc_state.gpr[5] = 0;         // sum
-    enter_debugger();
+    DppcDebugger::get_instance()->enter_debugger();
 #endif
 
     ppc_state.pc = 0;

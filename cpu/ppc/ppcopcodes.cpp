@@ -102,6 +102,7 @@ uint32_t dppc_interpreter::ppc_addi(uint32_t opcode) {
         ppc_state.gpr[reg_d] = (reg_a == 0) ? (simm << 16) : (ppc_result_a + (simm << 16));
     else
         ppc_state.gpr[reg_d] = (reg_a == 0) ? simm : (ppc_result_a + simm);
+    return 0;
 }
 
 template uint32_t dppc_interpreter::ppc_addi<SHFT0>(uint32_t opcode);
@@ -115,6 +116,7 @@ uint32_t dppc_interpreter::ppc_addic(uint32_t opcode) {
     if (rec)
         ppc_changecrf0(ppc_result_d);
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    return 0;
 }
 
 template uint32_t dppc_interpreter::ppc_addic<RC0>(uint32_t opcode);
@@ -132,6 +134,7 @@ uint32_t dppc_interpreter::ppc_add(uint32_t opcode) {
     if (rec)
         ppc_changecrf0(ppc_result_d);
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    return 0;
 }
 
 template uint32_t dppc_interpreter::ppc_add<CARRY0, RC0, OV0>(uint32_t opcode);
@@ -161,6 +164,7 @@ uint32_t dppc_interpreter::ppc_adde(uint32_t opcode) {
         ppc_changecrf0(ppc_result_d);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    return 0;
 }
 
 template uint32_t dppc_interpreter::ppc_adde<RC0, OV0>(uint32_t opcode);
@@ -186,6 +190,7 @@ uint32_t dppc_interpreter::ppc_addme(uint32_t opcode) {
         ppc_changecrf0(ppc_result_d);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    return 0;
 }
 
 template uint32_t dppc_interpreter::ppc_addme<RC0, OV0>(uint32_t opcode);
@@ -211,6 +216,7 @@ uint32_t dppc_interpreter::ppc_addze(uint32_t opcode) {
         ppc_changecrf0(ppc_result_d);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    return 0;
 }
 
 template uint32_t dppc_interpreter::ppc_addze<RC0, OV0>(uint32_t opcode);
@@ -226,6 +232,7 @@ uint32_t dppc_interpreter::ppc_subfic(uint32_t opcode) {
     else
         ppc_carry(~ppc_result_a, ppc_result_d);
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    return 0;
 }
 
 template <field_carry carry, field_rc rec, field_ov ov>
@@ -241,6 +248,7 @@ uint32_t dppc_interpreter::ppc_subf(uint32_t opcode) {
         ppc_changecrf0(ppc_result_d);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    return 0;
 }
 
 template uint32_t dppc_interpreter::ppc_subf<CARRY0, RC0, OV0>(uint32_t opcode);
@@ -268,6 +276,7 @@ uint32_t dppc_interpreter::ppc_subfe(uint32_t opcode) {
         ppc_changecrf0(ppc_result_d);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    return 0;
 }
 
 template uint32_t dppc_interpreter::ppc_subfe<RC0, OV0>(uint32_t opcode);
@@ -297,6 +306,7 @@ uint32_t dppc_interpreter::ppc_subfme(uint32_t opcode) {
         ppc_changecrf0(ppc_result_d);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    return 0;
 }
 
 template uint32_t dppc_interpreter::ppc_subfme<RC0, OV0>(uint32_t opcode);
@@ -326,6 +336,7 @@ uint32_t dppc_interpreter::ppc_subfze(uint32_t opcode) {
         ppc_changecrf0(ppc_result_d);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    return 0;
 }
 
 template uint32_t dppc_interpreter::ppc_subfze<RC0, OV0>(uint32_t opcode);
@@ -339,6 +350,7 @@ uint32_t dppc_interpreter::ppc_andirc(uint32_t opcode) {
     ppc_result_a = shift ? (ppc_result_d & (uimm << 16)) : (ppc_result_d & uimm);
     ppc_changecrf0(ppc_result_a);
     ppc_store_iresult_reg(reg_a, ppc_result_a);
+    return 0;
 }
 
 template uint32_t dppc_interpreter::ppc_andirc<SHFT0>(uint32_t opcode);
@@ -349,6 +361,7 @@ uint32_t dppc_interpreter::ppc_ori(uint32_t opcode) {
     ppc_grab_regssauimm(opcode);
     ppc_result_a = shift ? (ppc_result_d | (uimm << 16)) : (ppc_result_d | uimm);
     ppc_store_iresult_reg(reg_a, ppc_result_a);
+    return 0;
 }
 
 template uint32_t dppc_interpreter::ppc_ori<SHFT0>(uint32_t opcode);
@@ -359,6 +372,7 @@ uint32_t dppc_interpreter::ppc_xori(uint32_t opcode) {
     ppc_grab_regssauimm(opcode);
     ppc_result_a = shift ? (ppc_result_d ^ (uimm << 16)) : (ppc_result_d ^ uimm);
     ppc_store_iresult_reg(reg_a, ppc_result_a);
+    return 0;
 }
 
 template uint32_t dppc_interpreter::ppc_xori<SHFT0>(uint32_t opcode);
@@ -388,6 +402,7 @@ uint32_t dppc_interpreter::ppc_logical(uint32_t opcode) {
         ppc_changecrf0(ppc_result_a);
 
     ppc_store_iresult_reg(reg_a, ppc_result_a);
+    return 0;
 }
 
 template uint32_t dppc_interpreter::ppc_logical<ppc_and, RC0>(uint32_t opcode);
@@ -423,6 +438,7 @@ uint32_t dppc_interpreter::ppc_neg(uint32_t opcode) {
         ppc_changecrf0(ppc_result_d);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    return 0;
 }
 
 template uint32_t dppc_interpreter::ppc_neg<RC0, OV0>(uint32_t opcode);
@@ -455,6 +471,7 @@ uint32_t dppc_interpreter::ppc_cntlzw(uint32_t opcode) {
     }
 
     ppc_store_iresult_reg(reg_a, ppc_result_a);
+    return 0;
 }
 
 template uint32_t dppc_interpreter::ppc_cntlzw<RC0>(uint32_t opcode);
@@ -470,6 +487,7 @@ uint32_t dppc_interpreter::ppc_mulhwu(uint32_t opcode) {
         ppc_changecrf0(ppc_result_d);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    return 0;
 }
 
 template uint32_t dppc_interpreter::ppc_mulhwu<RC0>(uint32_t opcode);
@@ -485,6 +503,7 @@ uint32_t dppc_interpreter::ppc_mulhw(uint32_t opcode) {
         ppc_changecrf0(ppc_result_d);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    return 0;
 }
 
 template uint32_t dppc_interpreter::ppc_mulhw<RC0>(uint32_t opcode);
@@ -509,6 +528,7 @@ uint32_t dppc_interpreter::ppc_mullw(uint32_t opcode) {
         ppc_changecrf0(ppc_result_d);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    return 0;
 }
 
 template uint32_t dppc_interpreter::ppc_mullw<RC0, OV0>(uint32_t opcode);
@@ -521,6 +541,7 @@ uint32_t dppc_interpreter::ppc_mulli(uint32_t opcode) {
     int64_t product          = int64_t(int32_t(ppc_result_a)) * int64_t(int32_t(simm));
     uint32_t ppc_result_d    = uint32_t(product);
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    return 0;
 }
 
 template <field_rc rec, field_ov ov>
@@ -558,6 +579,7 @@ uint32_t dppc_interpreter::ppc_divw(uint32_t opcode) {
         ppc_changecrf0(ppc_result_d);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    return 0;
 }
 
 template uint32_t dppc_interpreter::ppc_divw<RC0, OV0>(uint32_t opcode);
@@ -592,6 +614,7 @@ uint32_t dppc_interpreter::ppc_divwu(uint32_t opcode) {
         ppc_changecrf0(ppc_result_d);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    return 0;
 }
 
 template uint32_t dppc_interpreter::ppc_divwu<RC0, OV0>(uint32_t opcode);
@@ -616,6 +639,7 @@ uint32_t dppc_interpreter::ppc_shift(uint32_t opcode) {
         ppc_changecrf0(ppc_result_a);
 
     ppc_store_iresult_reg(reg_a, ppc_result_a);
+    return 0;
 }
 
 template uint32_t dppc_interpreter::ppc_shift<RIGHT0, RC0>(uint32_t opcode);
@@ -646,6 +670,7 @@ uint32_t dppc_interpreter::ppc_sraw(uint32_t opcode) {
         ppc_changecrf0(ppc_result_a);
 
     ppc_store_iresult_reg(reg_a, ppc_result_a);
+    return 0;
 }
 
 template uint32_t dppc_interpreter::ppc_sraw<RC0>(uint32_t opcode);
@@ -667,6 +692,7 @@ uint32_t dppc_interpreter::ppc_srawi(uint32_t opcode) {
         ppc_changecrf0(ppc_result_a);
 
     ppc_store_iresult_reg(reg_a, ppc_result_a);
+    return 0;
 }
 
 template uint32_t dppc_interpreter::ppc_srawi<RC0>(uint32_t opcode);
@@ -691,6 +717,7 @@ uint32_t dppc_interpreter::ppc_rlwimi(uint32_t opcode) {
         ppc_changecrf0(ppc_result_a);
     }
     ppc_store_iresult_reg(reg_a, ppc_result_a);
+    return 0;
 }
 
 uint32_t dppc_interpreter::ppc_rlwinm(uint32_t opcode) {
@@ -705,6 +732,7 @@ uint32_t dppc_interpreter::ppc_rlwinm(uint32_t opcode) {
         ppc_changecrf0(ppc_result_a);
     }
     ppc_store_iresult_reg(reg_a, ppc_result_a);
+    return 0;
 }
 
 uint32_t dppc_interpreter::ppc_rlwnm(uint32_t opcode) {
@@ -721,11 +749,13 @@ uint32_t dppc_interpreter::ppc_rlwnm(uint32_t opcode) {
         ppc_changecrf0(ppc_result_a);
     }
     ppc_store_iresult_reg(reg_a, ppc_result_a);
+    return 0;
 }
 
 uint32_t dppc_interpreter::ppc_mfcr(uint32_t opcode) {
     int reg_d            = (opcode >> 21) & 0x1F;
     ppc_state.gpr[reg_d] = ppc_state.cr;
+    return 0;
 }
 
 uint32_t dppc_interpreter::ppc_mtsr(uint32_t opcode) {
@@ -741,6 +771,7 @@ uint32_t dppc_interpreter::ppc_mtsr(uint32_t opcode) {
         ppc_state.sr[grab_sr] = ppc_state.gpr[reg_s];
         mmu_pat_ctx_changed();
     }
+    return 0;
 }
 
 uint32_t dppc_interpreter::ppc_mtsrin(uint32_t opcode) {
@@ -756,6 +787,7 @@ uint32_t dppc_interpreter::ppc_mtsrin(uint32_t opcode) {
         ppc_state.sr[grab_sr] = ppc_result_d;
         mmu_pat_ctx_changed();
     }
+    return 0;
 }
 
 uint32_t dppc_interpreter::ppc_mfsr(uint32_t opcode) {
@@ -768,6 +800,7 @@ uint32_t dppc_interpreter::ppc_mfsr(uint32_t opcode) {
     int reg_d            = (opcode >> 21) & 0x1F;
     uint32_t grab_sr     = (opcode >> 16) & 0x0F;
     ppc_state.gpr[reg_d] = ppc_state.sr[grab_sr];
+    return 0;
 }
 
 uint32_t dppc_interpreter::ppc_mfsrin(uint32_t opcode) {
@@ -780,6 +813,7 @@ uint32_t dppc_interpreter::ppc_mfsrin(uint32_t opcode) {
     ppc_grab_regsdb(opcode);
     uint32_t grab_sr     = ppc_result_b >> 28;
     ppc_state.gpr[reg_d] = ppc_state.sr[grab_sr];
+    return 0;
 }
 
 uint32_t dppc_interpreter::ppc_mfmsr(uint32_t opcode) {
@@ -791,6 +825,7 @@ uint32_t dppc_interpreter::ppc_mfmsr(uint32_t opcode) {
     }
     uint32_t reg_d       = (opcode >> 21) & 0x1F;
     ppc_state.gpr[reg_d] = ppc_state.msr;
+    return 0;
 }
 
 uint32_t dppc_interpreter::ppc_mtmsr(uint32_t opcode) {
@@ -815,6 +850,7 @@ uint32_t dppc_interpreter::ppc_mtmsr(uint32_t opcode) {
     } else {
         mmu_change_mode();
     }
+    return 0;
 }
 
 static inline void calc_rtcl_value()
@@ -947,6 +983,7 @@ uint32_t dppc_interpreter::ppc_mfspr(uint32_t opcode) {
         // FIXME: Unknown SPR should be noop or illegal instruction.
         ppc_state.gpr[reg_d] = ppc_state.spr[ref_spr];
     }
+    return 0;
 }
 
 uint32_t dppc_interpreter::ppc_mtspr(uint32_t opcode) {
@@ -1038,6 +1075,7 @@ uint32_t dppc_interpreter::ppc_mtspr(uint32_t opcode) {
         // FIXME: Unknown SPR should be noop or illegal instruction.
         ppc_state.spr[ref_spr] = val;
     }
+    return 0;
 }
 
 uint32_t dppc_interpreter::ppc_mftb(uint32_t opcode) {
@@ -1059,7 +1097,8 @@ uint32_t dppc_interpreter::ppc_mftb(uint32_t opcode) {
         break;
     default:
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP, 0);
-     }
+    }
+    return 0;
 }
 
 uint32_t dppc_interpreter::ppc_mtcrf(uint32_t opcode) {
@@ -1081,6 +1120,7 @@ uint32_t dppc_interpreter::ppc_mtcrf(uint32_t opcode) {
         if (crm & 0x01) cr_mask |= 0x0000000FUL;
     }
     ppc_state.cr = (ppc_state.cr & ~cr_mask) | (ppc_result_d & cr_mask);
+    return 0;
 }
 
 uint32_t dppc_interpreter::ppc_mcrxr(uint32_t opcode) {
@@ -1088,6 +1128,7 @@ uint32_t dppc_interpreter::ppc_mcrxr(uint32_t opcode) {
     ppc_state.cr = (ppc_state.cr & ~(0xF0000000UL >> crf_d)) |
         ((ppc_state.spr[SPR::XER] & 0xF0000000UL) >> crf_d);
     ppc_state.spr[SPR::XER] &= 0x0FFFFFFF;
+    return 0;
 }
 
 template <class T, field_rc rec>
@@ -1099,6 +1140,7 @@ uint32_t dppc_interpreter::ppc_exts(uint32_t opcode) {
         ppc_changecrf0(ppc_result_a);
 
     ppc_store_iresult_reg(reg_a, ppc_result_a);
+    return 0;
 }
 
 template uint32_t dppc_interpreter::ppc_exts<int8_t, RC0>(uint32_t opcode);

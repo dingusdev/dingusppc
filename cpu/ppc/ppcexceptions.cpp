@@ -32,7 +32,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 jmp_buf exc_env; /* Global exception environment. */
 
 #if !defined(PPC_TESTS) && !defined(PPC_BENCHMARKS)
-uint32_t ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits, uint32_t exec_flags = 0) {
+uint32_t ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits, uint32_t exec_flags) {
 #ifdef CPU_PROFILING
     exceptions_processed++;
 #endif
