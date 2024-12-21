@@ -67,7 +67,6 @@ SetPRS ppc_state;
 
 uint32_t ppc_next_instruction_address;    // Used for branching, setting up the NIA
 
-unsigned exec_flags; // execution control flags
 // FIXME: exec_timer is read by main thread ppc_main_opcode;
 // written by audio dbdma DMAChannel::update_irq .. add_immediate_timer
 volatile bool exec_timer;
@@ -187,14 +186,14 @@ static PPCOpcode OpcodeGrabber[64 * 2048];
 /** Exception helpers. */
 
 void ppc_illegalop(uint32_t opcode) {
-    ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+    ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP, 0);
 }
 
 void ppc_assert_int() {
     int_pin = true;
     if (ppc_state.msr & MSR::EE) {
         LOG_F(5, "CPU ExtIntHandler called");
-        ppc_exception_handler(Except_Type::EXC_EXT_INT, 0);
+        ppc_exception_handler(Except_Type::EXC_EXT_INT, 0, 0);
     } else {
         LOG_F(5, "CPU IRQ ignored!");
     }
@@ -207,7 +206,7 @@ void ppc_release_int() {
 /** Opcode decoding functions. */
 
 /* Dispatch using primary and modifier opcode */
-void ppc_main_opcode(uint32_t opcode)
+uint32_t ppc_main_opcode(uint32_t opcode)
 {
 #ifdef CPU_PROFILING
     num_executed_instrs++;
@@ -215,7 +214,7 @@ void ppc_main_opcode(uint32_t opcode)
     num_opcodes[opcode]++;
 #endif
 #endif
-    OpcodeGrabber[(opcode >> 15 & 0x1F800) | (opcode & 0x7FF)](opcode);
+    return OpcodeGrabber[(opcode >> 15 & 0x1F800) | (opcode & 0x7FF)](opcode);
 }
 
 static long long cpu_now_ns() {
@@ -267,6 +266,7 @@ static void ppc_exec_inner(uint32_t start_addr, uint32_t size)
     uint64_t max_cycles = 0;
     uint32_t page_start, eb_start, eb_end = 0;
     uint32_t opcode;
+    uint32_t exec_flags;    // execution control flags
     uint8_t* pc_real;
 
     while (power_on) {
@@ -285,7 +285,7 @@ static void ppc_exec_inner(uint32_t start_addr, uint32_t size)
         }
 
         opcode = ppc_read_instruction(pc_real);
-        ppc_main_opcode(opcode);
+        exec_flags = ppc_main_opcode(opcode);
         if (g_icycles++ >= max_cycles || exec_timer)
             max_cycles = process_events();
 
@@ -334,17 +334,18 @@ void ppc_exec()
 /** Execute one PPC instruction. */
 void ppc_exec_single()
 {
+    uint32_t exec_flags = 0;
+
     if (setjmp(exc_env)) {
         // process low-level exceptions
         //LOG_F(9, "PPC-EXEC: low_level exception raised!");
         ppc_state.pc = ppc_next_instruction_address;
-        exec_flags = 0;
         return;
     }
 
     uint8_t* pc_real = mmu_translate_imem(ppc_state.pc);
     uint32_t opcode = ppc_read_instruction(pc_real);
-    ppc_main_opcode(opcode);
+    exec_flags = ppc_main_opcode(opcode);
     g_icycles++;
     process_events();
 
@@ -772,7 +773,6 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool do_include_6
     tbr_freq_ghz = (tb_freq << 32) / NS_PER_SEC;
     tbr_period_ns = ((uint64_t)NS_PER_SEC << 32) / tb_freq;
 
-    exec_flags = 0;
     exec_timer = false;
 
     timebase_counter = 0;

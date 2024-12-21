@@ -96,7 +96,7 @@ function (theoretically).
 **/
 
 template <field_shift shift>
-void dppc_interpreter::ppc_addi(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_addi(uint32_t opcode) {
     ppc_grab_regsdasimm(opcode);
     if (shift)
         ppc_state.gpr[reg_d] = (reg_a == 0) ? (simm << 16) : (ppc_result_a + (simm << 16));
@@ -104,11 +104,11 @@ void dppc_interpreter::ppc_addi(uint32_t opcode) {
         ppc_state.gpr[reg_d] = (reg_a == 0) ? simm : (ppc_result_a + simm);
 }
 
-template void dppc_interpreter::ppc_addi<SHFT0>(uint32_t opcode);
-template void dppc_interpreter::ppc_addi<SHFT1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_addi<SHFT0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_addi<SHFT1>(uint32_t opcode);
 
 template <field_rc rec>
-void dppc_interpreter::ppc_addic(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_addic(uint32_t opcode) {
     ppc_grab_regsdasimm(opcode);
     uint32_t ppc_result_d = (ppc_result_a + simm);
     ppc_carry(ppc_result_a, ppc_result_d);
@@ -117,11 +117,11 @@ void dppc_interpreter::ppc_addic(uint32_t opcode) {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template void dppc_interpreter::ppc_addic<RC0>(uint32_t opcode);
-template void dppc_interpreter::ppc_addic<RC1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_addic<RC0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_addic<RC1>(uint32_t opcode);
 
 template <field_carry carry, field_rc rec, field_ov ov>
-void dppc_interpreter::ppc_add(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_add(uint32_t opcode) {
     ppc_grab_regsdab(opcode);
     uint32_t ppc_result_d = ppc_result_a + ppc_result_b;
 
@@ -134,17 +134,17 @@ void dppc_interpreter::ppc_add(uint32_t opcode) {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template void dppc_interpreter::ppc_add<CARRY0, RC0, OV0>(uint32_t opcode);
-template void dppc_interpreter::ppc_add<CARRY0, RC1, OV0>(uint32_t opcode);
-template void dppc_interpreter::ppc_add<CARRY0, RC0, OV1>(uint32_t opcode);
-template void dppc_interpreter::ppc_add<CARRY0, RC1, OV1>(uint32_t opcode);
-template void dppc_interpreter::ppc_add<CARRY1, RC0, OV0>(uint32_t opcode);
-template void dppc_interpreter::ppc_add<CARRY1, RC1, OV0>(uint32_t opcode);
-template void dppc_interpreter::ppc_add<CARRY1, RC0, OV1>(uint32_t opcode);
-template void dppc_interpreter::ppc_add<CARRY1, RC1, OV1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_add<CARRY0, RC0, OV0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_add<CARRY0, RC1, OV0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_add<CARRY0, RC0, OV1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_add<CARRY0, RC1, OV1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_add<CARRY1, RC0, OV0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_add<CARRY1, RC1, OV0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_add<CARRY1, RC0, OV1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_add<CARRY1, RC1, OV1>(uint32_t opcode);
 
 template <field_rc rec, field_ov ov>
-void dppc_interpreter::ppc_adde(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_adde(uint32_t opcode) {
     ppc_grab_regsdab(opcode);
     uint32_t xer_ca       = !!(ppc_state.spr[SPR::XER] & XER::CA);
     uint32_t ppc_result_d = ppc_result_a + ppc_result_b + xer_ca;
@@ -163,13 +163,13 @@ void dppc_interpreter::ppc_adde(uint32_t opcode) {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template void dppc_interpreter::ppc_adde<RC0, OV0>(uint32_t opcode);
-template void dppc_interpreter::ppc_adde<RC0, OV1>(uint32_t opcode);
-template void dppc_interpreter::ppc_adde<RC1, OV0>(uint32_t opcode);
-template void dppc_interpreter::ppc_adde<RC1, OV1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_adde<RC0, OV0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_adde<RC0, OV1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_adde<RC1, OV0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_adde<RC1, OV1>(uint32_t opcode);
 
 template <field_rc rec, field_ov ov>
-void dppc_interpreter::ppc_addme(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_addme(uint32_t opcode) {
     ppc_grab_regsda(opcode);
     uint32_t xer_ca       = !!(ppc_state.spr[SPR::XER] & XER::CA);
     uint32_t ppc_result_d = ppc_result_a + xer_ca - 1;
@@ -188,13 +188,13 @@ void dppc_interpreter::ppc_addme(uint32_t opcode) {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template void dppc_interpreter::ppc_addme<RC0, OV0>(uint32_t opcode);
-template void dppc_interpreter::ppc_addme<RC0, OV1>(uint32_t opcode);
-template void dppc_interpreter::ppc_addme<RC1, OV0>(uint32_t opcode);
-template void dppc_interpreter::ppc_addme<RC1, OV1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_addme<RC0, OV0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_addme<RC0, OV1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_addme<RC1, OV0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_addme<RC1, OV1>(uint32_t opcode);
 
 template <field_rc rec, field_ov ov>
-void dppc_interpreter::ppc_addze(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_addze(uint32_t opcode) {
     ppc_grab_regsda(opcode);
     uint32_t grab_xer     = !!(ppc_state.spr[SPR::XER] & XER::CA);
     uint32_t ppc_result_d = ppc_result_a + grab_xer;
@@ -213,12 +213,12 @@ void dppc_interpreter::ppc_addze(uint32_t opcode) {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template void dppc_interpreter::ppc_addze<RC0, OV0>(uint32_t opcode);
-template void dppc_interpreter::ppc_addze<RC0, OV1>(uint32_t opcode);
-template void dppc_interpreter::ppc_addze<RC1, OV0>(uint32_t opcode);
-template void dppc_interpreter::ppc_addze<RC1, OV1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_addze<RC0, OV0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_addze<RC0, OV1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_addze<RC1, OV0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_addze<RC1, OV1>(uint32_t opcode);
 
-void dppc_interpreter::ppc_subfic(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_subfic(uint32_t opcode) {
     ppc_grab_regsdasimm(opcode);
     uint32_t ppc_result_d = simm - ppc_result_a;
     if (simm == -1)
@@ -229,7 +229,7 @@ void dppc_interpreter::ppc_subfic(uint32_t opcode) {
 }
 
 template <field_carry carry, field_rc rec, field_ov ov>
-void dppc_interpreter::ppc_subf(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_subf(uint32_t opcode) {
     ppc_grab_regsdab(opcode);
     uint32_t ppc_result_d = ppc_result_b - ppc_result_a;
 
@@ -243,17 +243,17 @@ void dppc_interpreter::ppc_subf(uint32_t opcode) {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template void dppc_interpreter::ppc_subf<CARRY0, RC0, OV0>(uint32_t opcode);
-template void dppc_interpreter::ppc_subf<CARRY0, RC0, OV1>(uint32_t opcode);
-template void dppc_interpreter::ppc_subf<CARRY0, RC1, OV0>(uint32_t opcode);
-template void dppc_interpreter::ppc_subf<CARRY0, RC1, OV1>(uint32_t opcode);
-template void dppc_interpreter::ppc_subf<CARRY1, RC0, OV0>(uint32_t opcode);
-template void dppc_interpreter::ppc_subf<CARRY1, RC0, OV1>(uint32_t opcode);
-template void dppc_interpreter::ppc_subf<CARRY1, RC1, OV0>(uint32_t opcode);
-template void dppc_interpreter::ppc_subf<CARRY1, RC1, OV1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_subf<CARRY0, RC0, OV0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_subf<CARRY0, RC0, OV1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_subf<CARRY0, RC1, OV0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_subf<CARRY0, RC1, OV1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_subf<CARRY1, RC0, OV0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_subf<CARRY1, RC0, OV1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_subf<CARRY1, RC1, OV0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_subf<CARRY1, RC1, OV1>(uint32_t opcode);
 
 template <field_rc rec, field_ov ov>
-void dppc_interpreter::ppc_subfe(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_subfe(uint32_t opcode) {
     ppc_grab_regsdab(opcode);
     uint32_t grab_ca      = !!(ppc_state.spr[SPR::XER] & XER::CA);
     uint32_t ppc_result_d = ~ppc_result_a + ppc_result_b + grab_ca;
@@ -270,13 +270,13 @@ void dppc_interpreter::ppc_subfe(uint32_t opcode) {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template void dppc_interpreter::ppc_subfe<RC0, OV0>(uint32_t opcode);
-template void dppc_interpreter::ppc_subfe<RC0, OV1>(uint32_t opcode);
-template void dppc_interpreter::ppc_subfe<RC1, OV0>(uint32_t opcode);
-template void dppc_interpreter::ppc_subfe<RC1, OV1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_subfe<RC0, OV0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_subfe<RC0, OV1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_subfe<RC1, OV0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_subfe<RC1, OV1>(uint32_t opcode);
 
 template <field_rc rec, field_ov ov>
-void dppc_interpreter::ppc_subfme(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_subfme(uint32_t opcode) {
     ppc_grab_regsda(opcode);
     uint32_t grab_ca      = !!(ppc_state.spr[SPR::XER] & XER::CA);
     uint32_t ppc_result_d = ~ppc_result_a + grab_ca - 1;
@@ -299,13 +299,13 @@ void dppc_interpreter::ppc_subfme(uint32_t opcode) {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template void dppc_interpreter::ppc_subfme<RC0, OV0>(uint32_t opcode);
-template void dppc_interpreter::ppc_subfme<RC0, OV1>(uint32_t opcode);
-template void dppc_interpreter::ppc_subfme<RC1, OV0>(uint32_t opcode);
-template void dppc_interpreter::ppc_subfme<RC1, OV1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_subfme<RC0, OV0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_subfme<RC0, OV1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_subfme<RC1, OV0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_subfme<RC1, OV1>(uint32_t opcode);
 
 template <field_rc rec, field_ov ov>
-void dppc_interpreter::ppc_subfze(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_subfze(uint32_t opcode) {
     ppc_grab_regsda(opcode);
     uint32_t grab_ca      = !!(ppc_state.spr[SPR::XER] & XER::CA);
     uint32_t ppc_result_d = ~ppc_result_a + grab_ca;
@@ -328,44 +328,44 @@ void dppc_interpreter::ppc_subfze(uint32_t opcode) {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template void dppc_interpreter::ppc_subfze<RC0, OV0>(uint32_t opcode);
-template void dppc_interpreter::ppc_subfze<RC0, OV1>(uint32_t opcode);
-template void dppc_interpreter::ppc_subfze<RC1, OV0>(uint32_t opcode);
-template void dppc_interpreter::ppc_subfze<RC1, OV1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_subfze<RC0, OV0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_subfze<RC0, OV1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_subfze<RC1, OV0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_subfze<RC1, OV1>(uint32_t opcode);
 
 template <field_shift shift>
-void dppc_interpreter::ppc_andirc(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_andirc(uint32_t opcode) {
     ppc_grab_regssauimm(opcode);
     ppc_result_a = shift ? (ppc_result_d & (uimm << 16)) : (ppc_result_d & uimm);
     ppc_changecrf0(ppc_result_a);
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::ppc_andirc<SHFT0>(uint32_t opcode);
-template void dppc_interpreter::ppc_andirc<SHFT1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_andirc<SHFT0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_andirc<SHFT1>(uint32_t opcode);
 
 template <field_shift shift>
-void dppc_interpreter::ppc_ori(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_ori(uint32_t opcode) {
     ppc_grab_regssauimm(opcode);
     ppc_result_a = shift ? (ppc_result_d | (uimm << 16)) : (ppc_result_d | uimm);
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::ppc_ori<SHFT0>(uint32_t opcode);
-template void dppc_interpreter::ppc_ori<SHFT1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_ori<SHFT0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_ori<SHFT1>(uint32_t opcode);
 
 template <field_shift shift>
-void dppc_interpreter::ppc_xori(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_xori(uint32_t opcode) {
     ppc_grab_regssauimm(opcode);
     ppc_result_a = shift ? (ppc_result_d ^ (uimm << 16)) : (ppc_result_d ^ uimm);
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::ppc_xori<SHFT0>(uint32_t opcode);
-template void dppc_interpreter::ppc_xori<SHFT1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_xori<SHFT0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_xori<SHFT1>(uint32_t opcode);
 
 template <logical_fun logical_op, field_rc rec>
-void dppc_interpreter::ppc_logical(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_logical(uint32_t opcode) {
     ppc_grab_regssab(opcode);
     if (logical_op == logical_fun::ppc_and)
         ppc_result_a = ppc_result_d & ppc_result_b;
@@ -390,25 +390,25 @@ void dppc_interpreter::ppc_logical(uint32_t opcode) {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::ppc_logical<ppc_and, RC0>(uint32_t opcode);
-template void dppc_interpreter::ppc_logical<ppc_andc, RC0>(uint32_t opcode);
-template void dppc_interpreter::ppc_logical<ppc_eqv, RC0>(uint32_t opcode);
-template void dppc_interpreter::ppc_logical<ppc_nand, RC0>(uint32_t opcode);
-template void dppc_interpreter::ppc_logical<ppc_nor, RC0>(uint32_t opcode);
-template void dppc_interpreter::ppc_logical<ppc_or, RC0>(uint32_t opcode);
-template void dppc_interpreter::ppc_logical<ppc_orc, RC0>(uint32_t opcode);
-template void dppc_interpreter::ppc_logical<ppc_xor, RC0>(uint32_t opcode);
-template void dppc_interpreter::ppc_logical<ppc_and, RC1>(uint32_t opcode);
-template void dppc_interpreter::ppc_logical<ppc_andc, RC1>(uint32_t opcode);
-template void dppc_interpreter::ppc_logical<ppc_eqv, RC1>(uint32_t opcode);
-template void dppc_interpreter::ppc_logical<ppc_nand, RC1>(uint32_t opcode);
-template void dppc_interpreter::ppc_logical<ppc_nor, RC1>(uint32_t opcode);
-template void dppc_interpreter::ppc_logical<ppc_or, RC1>(uint32_t opcode);
-template void dppc_interpreter::ppc_logical<ppc_orc, RC1>(uint32_t opcode);
-template void dppc_interpreter::ppc_logical<ppc_xor, RC1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_logical<ppc_and, RC0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_logical<ppc_andc, RC0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_logical<ppc_eqv, RC0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_logical<ppc_nand, RC0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_logical<ppc_nor, RC0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_logical<ppc_or, RC0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_logical<ppc_orc, RC0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_logical<ppc_xor, RC0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_logical<ppc_and, RC1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_logical<ppc_andc, RC1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_logical<ppc_eqv, RC1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_logical<ppc_nand, RC1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_logical<ppc_nor, RC1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_logical<ppc_or, RC1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_logical<ppc_orc, RC1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_logical<ppc_xor, RC1>(uint32_t opcode);
 
 template <field_rc rec, field_ov ov>
-void dppc_interpreter::ppc_neg(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_neg(uint32_t opcode) {
     ppc_grab_regsda(opcode);
     uint32_t ppc_result_d = ~(ppc_result_a) + 1;
 
@@ -425,13 +425,13 @@ void dppc_interpreter::ppc_neg(uint32_t opcode) {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template void dppc_interpreter::ppc_neg<RC0, OV0>(uint32_t opcode);
-template void dppc_interpreter::ppc_neg<RC0, OV1>(uint32_t opcode);
-template void dppc_interpreter::ppc_neg<RC1, OV0>(uint32_t opcode);
-template void dppc_interpreter::ppc_neg<RC1, OV1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_neg<RC0, OV0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_neg<RC0, OV1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_neg<RC1, OV0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_neg<RC1, OV1>(uint32_t opcode);
 
 template <field_rc rec>
-void dppc_interpreter::ppc_cntlzw(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_cntlzw(uint32_t opcode) {
     ppc_grab_regssa(opcode);
 
     uint32_t bit_check = ppc_result_d;
@@ -457,11 +457,11 @@ void dppc_interpreter::ppc_cntlzw(uint32_t opcode) {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::ppc_cntlzw<RC0>(uint32_t opcode);
-template void dppc_interpreter::ppc_cntlzw<RC1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_cntlzw<RC0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_cntlzw<RC1>(uint32_t opcode);
 
 template <field_rc rec>
-void dppc_interpreter::ppc_mulhwu(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_mulhwu(uint32_t opcode) {
     ppc_grab_regsdab(opcode);
     uint64_t product = uint64_t(ppc_result_a) * uint64_t(ppc_result_b);
     uint32_t ppc_result_d = uint32_t(product >> 32);
@@ -472,11 +472,11 @@ void dppc_interpreter::ppc_mulhwu(uint32_t opcode) {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template void dppc_interpreter::ppc_mulhwu<RC0>(uint32_t opcode);
-template void dppc_interpreter::ppc_mulhwu<RC1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_mulhwu<RC0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_mulhwu<RC1>(uint32_t opcode);
 
 template <field_rc rec>
-void dppc_interpreter::ppc_mulhw(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_mulhw(uint32_t opcode) {
     ppc_grab_regsdab(opcode);
     int64_t product = int64_t(int32_t(ppc_result_a)) * int64_t(int32_t(ppc_result_b));
     uint32_t ppc_result_d = product >> 32;
@@ -487,11 +487,11 @@ void dppc_interpreter::ppc_mulhw(uint32_t opcode) {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template void dppc_interpreter::ppc_mulhw<RC0>(uint32_t opcode);
-template void dppc_interpreter::ppc_mulhw<RC1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_mulhw<RC0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_mulhw<RC1>(uint32_t opcode);
 
 template <field_rc rec, field_ov ov>
-void dppc_interpreter::ppc_mullw(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_mullw(uint32_t opcode) {
     ppc_grab_regsdab(opcode);
     int64_t product = int64_t(int32_t(ppc_result_a)) * int64_t(int32_t(ppc_result_b));
 
@@ -511,12 +511,12 @@ void dppc_interpreter::ppc_mullw(uint32_t opcode) {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template void dppc_interpreter::ppc_mullw<RC0, OV0>(uint32_t opcode);
-template void dppc_interpreter::ppc_mullw<RC0, OV1>(uint32_t opcode);
-template void dppc_interpreter::ppc_mullw<RC1, OV0>(uint32_t opcode);
-template void dppc_interpreter::ppc_mullw<RC1, OV1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_mullw<RC0, OV0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_mullw<RC0, OV1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_mullw<RC1, OV0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_mullw<RC1, OV1>(uint32_t opcode);
 
-void dppc_interpreter::ppc_mulli(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_mulli(uint32_t opcode) {
     ppc_grab_regsdasimm(opcode);
     int64_t product          = int64_t(int32_t(ppc_result_a)) * int64_t(int32_t(simm));
     uint32_t ppc_result_d    = uint32_t(product);
@@ -524,7 +524,7 @@ void dppc_interpreter::ppc_mulli(uint32_t opcode) {
 }
 
 template <field_rc rec, field_ov ov>
-void dppc_interpreter::ppc_divw(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_divw(uint32_t opcode) {
     uint32_t ppc_result_d;
     ppc_grab_regsdab(opcode);
 
@@ -560,13 +560,13 @@ void dppc_interpreter::ppc_divw(uint32_t opcode) {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template void dppc_interpreter::ppc_divw<RC0, OV0>(uint32_t opcode);
-template void dppc_interpreter::ppc_divw<RC0, OV1>(uint32_t opcode);
-template void dppc_interpreter::ppc_divw<RC1, OV0>(uint32_t opcode);
-template void dppc_interpreter::ppc_divw<RC1, OV1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_divw<RC0, OV0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_divw<RC0, OV1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_divw<RC1, OV0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_divw<RC1, OV1>(uint32_t opcode);
 
 template <field_rc rec, field_ov ov>
-void dppc_interpreter::ppc_divwu(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_divwu(uint32_t opcode) {
     uint32_t ppc_result_d;
     ppc_grab_regsdab(opcode);
 
@@ -594,15 +594,15 @@ void dppc_interpreter::ppc_divwu(uint32_t opcode) {
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
-template void dppc_interpreter::ppc_divwu<RC0, OV0>(uint32_t opcode);
-template void dppc_interpreter::ppc_divwu<RC0, OV1>(uint32_t opcode);
-template void dppc_interpreter::ppc_divwu<RC1, OV0>(uint32_t opcode);
-template void dppc_interpreter::ppc_divwu<RC1, OV1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_divwu<RC0, OV0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_divwu<RC0, OV1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_divwu<RC1, OV0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_divwu<RC1, OV1>(uint32_t opcode);
 
 // Value shifting
 
 template <field_direction isleft, field_rc rec>
-void dppc_interpreter::ppc_shift(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_shift(uint32_t opcode) {
     ppc_grab_regssab(opcode);
     if (ppc_result_b & 0x20) {
         ppc_result_a = 0;
@@ -618,13 +618,13 @@ void dppc_interpreter::ppc_shift(uint32_t opcode) {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::ppc_shift<RIGHT0, RC0>(uint32_t opcode);
-template void dppc_interpreter::ppc_shift<RIGHT0, RC1>(uint32_t opcode);
-template void dppc_interpreter::ppc_shift<LEFT1, RC0>(uint32_t opcode);
-template void dppc_interpreter::ppc_shift<LEFT1, RC1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_shift<RIGHT0, RC0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_shift<RIGHT0, RC1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_shift<LEFT1, RC0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_shift<LEFT1, RC1>(uint32_t opcode);
 
 template <field_rc rec>
-void dppc_interpreter::ppc_sraw(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_sraw(uint32_t opcode) {
     ppc_grab_regssab(opcode);
 
     // clear XER[CA] by default
@@ -648,11 +648,11 @@ void dppc_interpreter::ppc_sraw(uint32_t opcode) {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::ppc_sraw<RC0>(uint32_t opcode);
-template void dppc_interpreter::ppc_sraw<RC1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_sraw<RC0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_sraw<RC1>(uint32_t opcode);
 
 template <field_rc rec>
-void dppc_interpreter::ppc_srawi(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_srawi(uint32_t opcode) {
     ppc_grab_regssash(opcode);
 
     // clear XER[CA] by default
@@ -669,8 +669,8 @@ void dppc_interpreter::ppc_srawi(uint32_t opcode) {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::ppc_srawi<RC0>(uint32_t opcode);
-template void dppc_interpreter::ppc_srawi<RC1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_srawi<RC0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_srawi<RC1>(uint32_t opcode);
 
 /** mask generator for rotate and shift instructions (§ 4.2.1.4 PowerpC PEM) */
 static inline uint32_t rot_mask(unsigned rot_mb, unsigned rot_me) {
@@ -679,7 +679,7 @@ static inline uint32_t rot_mask(unsigned rot_mb, unsigned rot_me) {
     return ((rot_mb <= rot_me) ? m2 & m1 : m1 | m2);
 }
 
-void dppc_interpreter::ppc_rlwimi(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_rlwimi(uint32_t opcode) {
     ppc_grab_regssash(opcode);
     unsigned rot_mb = (opcode >> 6) & 0x1F;
     unsigned rot_me = (opcode >> 1) & 0x1F;
@@ -693,7 +693,7 @@ void dppc_interpreter::ppc_rlwimi(uint32_t opcode) {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-void dppc_interpreter::ppc_rlwinm(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_rlwinm(uint32_t opcode) {
     ppc_grab_regssash(opcode);
     unsigned rot_mb = (opcode >> 6) & 0x1F;
     unsigned rot_me = (opcode >> 1) & 0x1F;
@@ -707,7 +707,7 @@ void dppc_interpreter::ppc_rlwinm(uint32_t opcode) {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-void dppc_interpreter::ppc_rlwnm(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_rlwnm(uint32_t opcode) {
     ppc_grab_regssab(opcode);
     ppc_result_b &= 0x1F;
     unsigned rot_mb = (opcode >> 6) & 0x1F;
@@ -723,17 +723,17 @@ void dppc_interpreter::ppc_rlwnm(uint32_t opcode) {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-void dppc_interpreter::ppc_mfcr(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_mfcr(uint32_t opcode) {
     int reg_d            = (opcode >> 21) & 0x1F;
     ppc_state.gpr[reg_d] = ppc_state.cr;
 }
 
-void dppc_interpreter::ppc_mtsr(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_mtsr(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
     if (ppc_state.msr & MSR::PR) {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED, 0);
     }
     int reg_s             = (opcode >> 21) & 0x1F;
     uint32_t grab_sr      = (opcode >> 16) & 0x0F;
@@ -743,12 +743,12 @@ void dppc_interpreter::ppc_mtsr(uint32_t opcode) {
     }
 }
 
-void dppc_interpreter::ppc_mtsrin(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_mtsrin(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
     if (ppc_state.msr & MSR::PR) {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED, 0);
     }
     ppc_grab_regssb(opcode);
     uint32_t grab_sr      = ppc_result_b >> 28;
@@ -758,47 +758,47 @@ void dppc_interpreter::ppc_mtsrin(uint32_t opcode) {
     }
 }
 
-void dppc_interpreter::ppc_mfsr(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_mfsr(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
     if (ppc_state.msr & MSR::PR) {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED, 0);
     }
     int reg_d            = (opcode >> 21) & 0x1F;
     uint32_t grab_sr     = (opcode >> 16) & 0x0F;
     ppc_state.gpr[reg_d] = ppc_state.sr[grab_sr];
 }
 
-void dppc_interpreter::ppc_mfsrin(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_mfsrin(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
     if (ppc_state.msr & MSR::PR) {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED, 0);
     }
     ppc_grab_regsdb(opcode);
     uint32_t grab_sr     = ppc_result_b >> 28;
     ppc_state.gpr[reg_d] = ppc_state.sr[grab_sr];
 }
 
-void dppc_interpreter::ppc_mfmsr(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_mfmsr(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
     if (ppc_state.msr & MSR::PR) {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED, 0);
     }
     uint32_t reg_d       = (opcode >> 21) & 0x1F;
     ppc_state.gpr[reg_d] = ppc_state.msr;
 }
 
-void dppc_interpreter::ppc_mtmsr(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_mtmsr(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
     if (ppc_state.msr & MSR::PR) {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED, 0);
     }
     uint32_t reg_s = (opcode >> 21) & 0x1F;
     ppc_state.msr = ppc_state.gpr[reg_s];
@@ -807,11 +807,11 @@ void dppc_interpreter::ppc_mtmsr(uint32_t opcode) {
     // if CPU interrupt line is asserted
     if (ppc_state.msr & MSR::EE && int_pin) {
         //LOG_F(WARNING, "MTMSR: CPU INT pending, generate CPU exception");
-        ppc_exception_handler(Except_Type::EXC_EXT_INT, 0);
+        ppc_exception_handler(Except_Type::EXC_EXT_INT, 0, 0);
     } else if ((ppc_state.msr & MSR::EE) && dec_exception_pending) {
         dec_exception_pending = false;
         //LOG_F(WARNING, "MTMSR: decrementer exception triggered");
-        ppc_exception_handler(Except_Type::EXC_DECR, 0);
+        ppc_exception_handler(Except_Type::EXC_DECR, 0, 0);
     } else {
         mmu_change_mode();
     }
@@ -865,7 +865,7 @@ static void trigger_decrementer_exception() {
     if (ppc_state.msr & MSR::EE) {
         dec_exception_pending = false;
         //LOG_F(WARNING, "decrementer exception triggered");
-        ppc_exception_handler(Except_Type::EXC_DECR, 0);
+        ppc_exception_handler(Except_Type::EXC_DECR, 0, 0);
     }
     else {
         //LOG_F(WARNING, "decrementer exception pending");
@@ -897,7 +897,7 @@ static void update_decrementer(uint32_t val) {
     );
 }
 
-void dppc_interpreter::ppc_mfspr(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_mfspr(uint32_t opcode) {
     ppc_grab_dab(opcode);
     uint32_t ref_spr = (reg_b << 5) | reg_a;
 
@@ -906,20 +906,20 @@ void dppc_interpreter::ppc_mfspr(uint32_t opcode) {
         num_supervisor_instrs++;
 #endif
         if (ppc_state.msr & MSR::PR) {
-            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
+            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED, 0);
         }
     }
 
     switch (ref_spr) {
     case SPR::MQ:
         if (!(is_601 || include_601)) {
-            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP, 0);
         }
         ppc_state.gpr[reg_d] = ppc_state.spr[ref_spr];
         break;
     case SPR::RTCL_U:
         if (!is_601) {
-            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP, 0);
         }
         calc_rtcl_value();
         ppc_state.gpr[reg_d] =
@@ -928,7 +928,7 @@ void dppc_interpreter::ppc_mfspr(uint32_t opcode) {
         break;
     case SPR::RTCU_U:
         if (!is_601) {
-            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP, 0);
         }
         calc_rtcl_value();
         ppc_state.gpr[reg_d] =
@@ -937,7 +937,7 @@ void dppc_interpreter::ppc_mfspr(uint32_t opcode) {
         break;
     case SPR::DEC_U:
         if (!is_601) {
-            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP, 0);
         }
         // fallthrough
     case SPR::DEC_S:
@@ -949,7 +949,7 @@ void dppc_interpreter::ppc_mfspr(uint32_t opcode) {
     }
 }
 
-void dppc_interpreter::ppc_mtspr(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_mtspr(uint32_t opcode) {
     ppc_grab_dab(opcode);
     uint32_t ref_spr = (reg_b << 5) | reg_a;
 
@@ -958,7 +958,7 @@ void dppc_interpreter::ppc_mtspr(uint32_t opcode) {
         num_supervisor_instrs++;
 #endif
         if (ppc_state.msr & MSR::PR) {
-            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
+            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED, 0);
         }
     }
 
@@ -969,13 +969,13 @@ void dppc_interpreter::ppc_mtspr(uint32_t opcode) {
         if (is_601 || include_601)
             ppc_state.spr[ref_spr] = val;
         else
-            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP, 0);
         break;
     case SPR::RTCL_U:
     case SPR::RTCU_U:
     case SPR::DEC_U:
         if (!is_601) {
-            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP, 0);
         }
         break;
     case SPR::XER:
@@ -1040,7 +1040,7 @@ void dppc_interpreter::ppc_mtspr(uint32_t opcode) {
     }
 }
 
-void dppc_interpreter::ppc_mftb(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_mftb(uint32_t opcode) {
     ppc_grab_dab(opcode);
     uint32_t ref_spr = (reg_b << 5) | reg_a;
 
@@ -1058,11 +1058,11 @@ void dppc_interpreter::ppc_mftb(uint32_t opcode) {
         ppc_state.spr[TBL_S] = uint32_t(tbr_value);
         break;
     default:
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP, 0);
      }
 }
 
-void dppc_interpreter::ppc_mtcrf(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_mtcrf(uint32_t opcode) {
     ppc_grab_s(opcode);
     uint8_t crm = (opcode >> 12) & 0xFFU;
 
@@ -1083,7 +1083,7 @@ void dppc_interpreter::ppc_mtcrf(uint32_t opcode) {
     ppc_state.cr = (ppc_state.cr & ~cr_mask) | (ppc_result_d & cr_mask);
 }
 
-void dppc_interpreter::ppc_mcrxr(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_mcrxr(uint32_t opcode) {
     int crf_d    = (opcode >> 21) & 0x1C;
     ppc_state.cr = (ppc_state.cr & ~(0xF0000000UL >> crf_d)) |
         ((ppc_state.spr[SPR::XER] & 0xF0000000UL) >> crf_d);
@@ -1091,7 +1091,7 @@ void dppc_interpreter::ppc_mcrxr(uint32_t opcode) {
 }
 
 template <class T, field_rc rec>
-void dppc_interpreter::ppc_exts(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_exts(uint32_t opcode) {
     ppc_grab_regssa(opcode);
     ppc_result_a = int32_t(T(ppc_result_d));
 
@@ -1101,15 +1101,15 @@ void dppc_interpreter::ppc_exts(uint32_t opcode) {
     ppc_store_iresult_reg(reg_a, ppc_result_a);
 }
 
-template void dppc_interpreter::ppc_exts<int8_t, RC0>(uint32_t opcode);
-template void dppc_interpreter::ppc_exts<int16_t, RC0>(uint32_t opcode);
-template void dppc_interpreter::ppc_exts<int8_t, RC1>(uint32_t opcode);
-template void dppc_interpreter::ppc_exts<int16_t, RC1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_exts<int8_t, RC0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_exts<int16_t, RC0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_exts<int8_t, RC1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_exts<int16_t, RC1>(uint32_t opcode);
 
 // Branching Instructions
 
 template <field_lk l, field_aa a>
-void dppc_interpreter::ppc_b(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_b(uint32_t opcode) {
     int32_t adr_li = int32_t((opcode & ~3UL) << 6) >> 6;
 
     if (a)
@@ -1120,21 +1120,22 @@ void dppc_interpreter::ppc_b(uint32_t opcode) {
     if (l)
         ppc_state.spr[SPR::LR] = uint32_t(ppc_state.pc + 4);
 
-    exec_flags = EXEF_BRANCH;
+    return EXEF_BRANCH;
 }
 
-template void dppc_interpreter::ppc_b<LK0, AA0>(uint32_t opcode);
-template void dppc_interpreter::ppc_b<LK0, AA1>(uint32_t opcode);
-template void dppc_interpreter::ppc_b<LK1, AA0>(uint32_t opcode);
-template void dppc_interpreter::ppc_b<LK1, AA1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_b<LK0, AA0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_b<LK0, AA1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_b<LK1, AA0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_b<LK1, AA1>(uint32_t opcode);
 
 template <field_lk l, field_aa a>
-void dppc_interpreter::ppc_bc(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_bc(uint32_t opcode) {
     uint32_t ctr_ok;
     uint32_t cnd_ok;
     uint32_t br_bo = (opcode >> 21) & 0x1F;
     uint32_t br_bi = (opcode >> 16) & 0x1F;
     int32_t br_bd  = int32_t(int16_t(opcode & ~3UL));
+    uint32_t exec_flags = 0;
 
     if (!(br_bo & 0x04)) {
         (ppc_state.spr[SPR::CTR])--; /* decrement CTR */
@@ -1152,19 +1153,22 @@ void dppc_interpreter::ppc_bc(uint32_t opcode) {
 
     if (l)
         ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
+
+    return exec_flags;
 }
 
-template void dppc_interpreter::ppc_bc<LK0, AA0>(uint32_t opcode);
-template void dppc_interpreter::ppc_bc<LK0, AA1>(uint32_t opcode);
-template void dppc_interpreter::ppc_bc<LK1, AA0>(uint32_t opcode);
-template void dppc_interpreter::ppc_bc<LK1, AA1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_bc<LK0, AA0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_bc<LK0, AA1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_bc<LK1, AA0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_bc<LK1, AA1>(uint32_t opcode);
 
 template<field_lk l, field_601 for601>
-void dppc_interpreter::ppc_bcctr(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_bcctr(uint32_t opcode) {
     uint32_t ctr_ok;
     uint32_t cnd_ok;
     uint32_t br_bo = (opcode >> 21) & 0x1F;
-    uint32_t br_bi = (opcode >> 16) & 0x1F;
+    uint32_t br_bi      = (opcode >> 16) & 0x1F;
+    uint32_t exec_flags = 0;
 
     uint32_t ctr = ppc_state.spr[SPR::CTR];
     uint32_t new_ctr;
@@ -1187,19 +1191,22 @@ void dppc_interpreter::ppc_bcctr(uint32_t opcode) {
 
     if (l)
         ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
+
+    return exec_flags;
 }
 
-template void dppc_interpreter::ppc_bcctr<LK0, NOT601>(uint32_t opcode);
-template void dppc_interpreter::ppc_bcctr<LK0, IS601>(uint32_t opcode);
-template void dppc_interpreter::ppc_bcctr<LK1, NOT601>(uint32_t opcode);
-template void dppc_interpreter::ppc_bcctr<LK1, IS601>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_bcctr<LK0, NOT601>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_bcctr<LK0, IS601>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_bcctr<LK1, NOT601>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_bcctr<LK1, IS601>(uint32_t opcode);
 
 template <field_lk l>
-void dppc_interpreter::ppc_bclr(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_bclr(uint32_t opcode) {
     uint32_t br_bo = (opcode >> 21) & 0x1F;
     uint32_t br_bi = (opcode >> 16) & 0x1F;
     uint32_t ctr_ok;
     uint32_t cnd_ok;
+    uint32_t exec_flags = 0;
 
     if (!(br_bo & 0x04)) {
         (ppc_state.spr[SPR::CTR])--; /* decrement CTR */
@@ -1214,14 +1221,16 @@ void dppc_interpreter::ppc_bclr(uint32_t opcode) {
 
     if (l)
         ppc_state.spr[SPR::LR] = ppc_state.pc + 4;
+
+    return exec_flags;
 }
 
-template void dppc_interpreter::ppc_bclr<LK0>(uint32_t opcode);
-template void dppc_interpreter::ppc_bclr<LK1>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_bclr<LK0>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_bclr<LK1>(uint32_t opcode);
 
 // Compare Instructions
 
-void dppc_interpreter::ppc_cmp(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_cmp(uint32_t opcode) {
 #ifdef CHECK_INVALID
     if (opcode & 0x200000) {
         LOG_F(WARNING, "Invalid CMP instruction form (L=1)!");
@@ -1235,9 +1244,10 @@ void dppc_interpreter::ppc_cmp(uint32_t opcode) {
     uint32_t cmp_c = (int32_t(ppc_result_a) == int32_t(ppc_result_b)) ? 0x20000000UL : \
         (int32_t(ppc_result_a) > int32_t(ppc_result_b)) ? 0x40000000UL : 0x80000000UL;
     ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
+    return 0;
 }
 
-void dppc_interpreter::ppc_cmpi(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_cmpi(uint32_t opcode) {
 #ifdef CHECK_INVALID
     if (opcode & 0x200000) {
         LOG_F(WARNING, "Invalid CMPI instruction form (L=1)!");
@@ -1250,10 +1260,11 @@ void dppc_interpreter::ppc_cmpi(uint32_t opcode) {
     uint32_t xercon = (ppc_state.spr[SPR::XER] & XER::SO) >> 3;
     uint32_t cmp_c = (int32_t(ppc_result_a) == simm) ? 0x20000000UL : \
         (int32_t(ppc_result_a) > simm) ? 0x40000000UL : 0x80000000UL;
-    ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
+    ppc_state.cr    = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
+    return 0;
 }
 
-void dppc_interpreter::ppc_cmpl(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_cmpl(uint32_t opcode) {
 #ifdef CHECK_INVALID
     if (opcode & 0x200000) {
         LOG_F(WARNING, "Invalid CMPL instruction form (L=1)!");
@@ -1266,10 +1277,11 @@ void dppc_interpreter::ppc_cmpl(uint32_t opcode) {
     uint32_t xercon = (ppc_state.spr[SPR::XER] & XER::SO) >> 3;
     uint32_t cmp_c = (ppc_result_a == ppc_result_b) ? 0x20000000UL : \
         (ppc_result_a > ppc_result_b) ? 0x40000000UL : 0x80000000UL;
-    ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
+    ppc_state.cr    = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
+    return 0;
 }
 
-void dppc_interpreter::ppc_cmpli(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_cmpli(uint32_t opcode) {
 #ifdef CHECK_INVALID
     if (opcode & 0x200000) {
         LOG_F(WARNING, "Invalid CMPLI instruction form (L=1)!");
@@ -1280,12 +1292,13 @@ void dppc_interpreter::ppc_cmpli(uint32_t opcode) {
     uint32_t xercon = (ppc_state.spr[SPR::XER] & XER::SO) >> 3;
     uint32_t cmp_c = (ppc_result_a == uimm) ? 0x20000000UL : \
         (ppc_result_a > uimm) ? 0x40000000UL : 0x80000000UL;
-    ppc_state.cr = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
+    ppc_state.cr    = ((ppc_state.cr & ~(0xf0000000UL >> crf_d)) | ((cmp_c + xercon) >> crf_d));
+    return 0;
 }
 
 // Condition Register Changes
 
-void dppc_interpreter::ppc_mcrf(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_mcrf(uint32_t opcode) {
     int crf_d       = (opcode >> 21) & 0x1C;
     int crf_s       = (opcode >> 16) & 0x1C;
 
@@ -1293,9 +1306,10 @@ void dppc_interpreter::ppc_mcrf(uint32_t opcode) {
     uint32_t grab_s = (ppc_state.cr >> (28 - crf_s)) & 0xF;
 
     ppc_state.cr = (ppc_state.cr & ~(0xf0000000UL >> crf_d)) | (grab_s << (28 - crf_d));
+    return 0;
 }
 
-void dppc_interpreter::ppc_crand(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_crand(uint32_t opcode) {
     ppc_grab_dab(opcode);
     uint8_t ir = (ppc_state.cr >> (31 - reg_a)) & (ppc_state.cr >> (31 - reg_b));
     if (ir & 1) {
@@ -1303,17 +1317,19 @@ void dppc_interpreter::ppc_crand(uint32_t opcode) {
     } else {
         ppc_state.cr &= ~(0x80000000UL >> reg_d);
     }
+    return 0;
 }
 
-void dppc_interpreter::ppc_crandc(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_crandc(uint32_t opcode) {
     ppc_grab_dab(opcode);
     if ((ppc_state.cr & (0x80000000UL >> reg_a)) && !(ppc_state.cr & (0x80000000UL >> reg_b))) {
         ppc_state.cr |= (0x80000000UL >> reg_d);
     } else {
         ppc_state.cr &= ~(0x80000000UL >> reg_d);
     }
+    return 0;
 }
-void dppc_interpreter::ppc_creqv(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_creqv(uint32_t opcode) {
     ppc_grab_dab(opcode);
     uint8_t ir = (ppc_state.cr >> (31 - reg_a)) ^ (ppc_state.cr >> (31 - reg_b));
     if (ir & 1) { // compliment is implemented by swapping the following if/else bodies
@@ -1321,8 +1337,9 @@ void dppc_interpreter::ppc_creqv(uint32_t opcode) {
     } else {
         ppc_state.cr |= (0x80000000UL >> reg_d);
     }
+    return 0;
 }
-void dppc_interpreter::ppc_crnand(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_crnand(uint32_t opcode) {
     ppc_grab_dab(opcode);
     uint8_t ir = (ppc_state.cr >> (31 - reg_a)) & (ppc_state.cr >> (31 - reg_b));
     if (ir & 1) {
@@ -1330,9 +1347,10 @@ void dppc_interpreter::ppc_crnand(uint32_t opcode) {
     } else {
         ppc_state.cr |= (0x80000000UL >> reg_d);
     }
+    return 0;
 }
 
-void dppc_interpreter::ppc_crnor(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_crnor(uint32_t opcode) {
     ppc_grab_dab(opcode);
     uint8_t ir = (ppc_state.cr >> (31 - reg_a)) | (ppc_state.cr >> (31 - reg_b));
     if (ir & 1) {
@@ -1340,9 +1358,10 @@ void dppc_interpreter::ppc_crnor(uint32_t opcode) {
     } else {
         ppc_state.cr |= (0x80000000UL >> reg_d);
     }
+    return 0;
 }
 
-void dppc_interpreter::ppc_cror(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_cror(uint32_t opcode) {
     ppc_grab_dab(opcode);
     uint8_t ir = (ppc_state.cr >> (31 - reg_a)) | (ppc_state.cr >> (31 - reg_b));
     if (ir & 1) {
@@ -1350,17 +1369,19 @@ void dppc_interpreter::ppc_cror(uint32_t opcode) {
     } else {
         ppc_state.cr &= ~(0x80000000UL >> reg_d);
     }
+    return 0;
 }
 
-void dppc_interpreter::ppc_crorc(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_crorc(uint32_t opcode) {
     ppc_grab_dab(opcode);
     if ((ppc_state.cr & (0x80000000UL >> reg_a)) || !(ppc_state.cr & (0x80000000UL >> reg_b))) {
         ppc_state.cr |= (0x80000000UL >> reg_d);
     } else {
         ppc_state.cr &= ~(0x80000000UL >> reg_d);
     }
+    return 0;
 }
-void dppc_interpreter::ppc_crxor(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_crxor(uint32_t opcode) {
     ppc_grab_dab(opcode);
     uint8_t ir = (ppc_state.cr >> (31 - reg_a)) ^ (ppc_state.cr >> (31 - reg_b));
     if (ir & 1) {
@@ -1368,11 +1389,12 @@ void dppc_interpreter::ppc_crxor(uint32_t opcode) {
     } else {
         ppc_state.cr &= ~(0x80000000UL >> reg_d);
     }
+    return 0;
 }
 
 // Processor MGMT Fns.
 
-void dppc_interpreter::ppc_rfi(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_rfi(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
@@ -1384,18 +1406,18 @@ void dppc_interpreter::ppc_rfi(uint32_t opcode) {
     // if CPU interrupt line is still asserted
     if (ppc_state.msr & MSR::EE && int_pin) {
         uint32_t save_srr0 = ppc_state.spr[SPR::SRR0] & ~3UL;
-        ppc_exception_handler(Except_Type::EXC_EXT_INT, 0);
+        ppc_exception_handler(Except_Type::EXC_EXT_INT, 0, 0);
         ppc_state.spr[SPR::SRR0] = save_srr0;
-        return;
+        return 0;
     }
 
     if ((ppc_state.msr & MSR::EE) && dec_exception_pending) {
         dec_exception_pending = false;
         //LOG_F(WARNING, "decrementer exception from rfi msr:0x%X", ppc_state.msr);
         uint32_t save_srr0 = ppc_state.spr[SPR::SRR0] & ~3UL;
-        ppc_exception_handler(Except_Type::EXC_DECR, 0);
+        ppc_exception_handler(Except_Type::EXC_DECR, 0, 0);
         ppc_state.spr[SPR::SRR0] = save_srr0;
-        return;
+        return 0;
     }
 
     ppc_next_instruction_address = ppc_state.spr[SPR::SRR0] & ~3UL;
@@ -1404,15 +1426,16 @@ void dppc_interpreter::ppc_rfi(uint32_t opcode) {
 
     mmu_change_mode();
 
-    exec_flags = EXEF_RFI;
+    return EXEF_RFI;
 }
 
-void dppc_interpreter::ppc_sc(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_sc(uint32_t opcode) {
     do_ctx_sync(); // SC is context synchronizing!
-    ppc_exception_handler(Except_Type::EXC_SYSCALL, 0x20000);
+    ppc_exception_handler(Except_Type::EXC_SYSCALL, 0x20000, 0);
+    return 0;
 }
 
-void dppc_interpreter::ppc_tw(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_tw(uint32_t opcode) {
     uint32_t reg_a  = (opcode >> 11) & 0x1F;
     uint32_t reg_b  = (opcode >> 16) & 0x1F;
     uint32_t ppc_to = (opcode >> 21) & 0x1F;
@@ -1421,11 +1444,12 @@ void dppc_interpreter::ppc_tw(uint32_t opcode) {
         ((int32_t(ppc_state.gpr[reg_a]) == int32_t(ppc_state.gpr[reg_b])) && (ppc_to & 0x04)) ||
         ((ppc_state.gpr[reg_a] < ppc_state.gpr[reg_b]) && (ppc_to & 0x02)) ||
         ((ppc_state.gpr[reg_a] > ppc_state.gpr[reg_b]) && (ppc_to & 0x01))) {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::TRAP);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::TRAP, 0);
     }
+    return 0;
 }
 
-void dppc_interpreter::ppc_twi(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_twi(uint32_t opcode) {
     int32_t simm    = int32_t(int16_t(opcode));
     uint32_t reg_a  = (opcode >> 16) & 0x1F;
     uint32_t ppc_to = (opcode >> 21) & 0x1F;
@@ -1434,52 +1458,60 @@ void dppc_interpreter::ppc_twi(uint32_t opcode) {
         ((int32_t(ppc_state.gpr[reg_a]) == simm) && (ppc_to & 0x04)) ||
         (ppc_state.gpr[reg_a] < uint32_t(simm) && (ppc_to & 0x02)) ||
         (ppc_state.gpr[reg_a] > uint32_t(simm) && (ppc_to & 0x01))) {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::TRAP);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::TRAP, 0);
     }
+    return 0;
 }
 
-void dppc_interpreter::ppc_eieio(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_eieio(uint32_t opcode) {
     /* placeholder */
+    return 0;
 }
 
-void dppc_interpreter::ppc_isync(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_isync(uint32_t opcode) {
     do_ctx_sync();
+    return 0;
 }
 
-void dppc_interpreter::ppc_sync(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_sync(uint32_t opcode) {
     /* placeholder */
+    return 0;
 }
 
-void dppc_interpreter::ppc_icbi(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_icbi(uint32_t opcode) {
     /* placeholder */
+    return 0;
 }
 
-void dppc_interpreter::ppc_dcbf(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_dcbf(uint32_t opcode) {
     /* placeholder */
+    return 0;
 }
 
-void dppc_interpreter::ppc_dcbi(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_dcbi(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
     /* placeholder */
+    return 0;
 }
 
-void dppc_interpreter::ppc_dcbst(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_dcbst(uint32_t opcode) {
     /* placeholder */
+    return 0;
 }
 
-void dppc_interpreter::ppc_dcbt(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_dcbt(uint32_t opcode) {
     // Not needed, the HDI reg is touched to no-op this instruction.
-    return;
+    return 0;
 }
 
-void dppc_interpreter::ppc_dcbtst(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_dcbtst(uint32_t opcode) {
     // Not needed, the HDI reg is touched to no-op this instruction.
-    return;
+    return 0;
 }
 
-void dppc_interpreter::ppc_dcbz(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_dcbz(uint32_t opcode) {
     ppc_grab_regsab(opcode);
     uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
 
@@ -1491,13 +1523,15 @@ void dppc_interpreter::ppc_dcbz(uint32_t opcode) {
     mmu_write_vmem<uint64_t>(opcode, ea +  8, 0);
     mmu_write_vmem<uint64_t>(opcode, ea + 16, 0);
     mmu_write_vmem<uint64_t>(opcode, ea + 24, 0);
+
+    return 0;
 }
 
 
 // Integer Load and Store Functions
 
 template <class T>
-void dppc_interpreter::ppc_st(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_st(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
@@ -1505,28 +1539,30 @@ void dppc_interpreter::ppc_st(uint32_t opcode) {
     uint32_t ea = int32_t(int16_t(opcode));
     ea += reg_a ? ppc_result_a : 0;
     mmu_write_vmem<T>(opcode, ea, ppc_result_d);
+    return 0;
 }
 
-template void dppc_interpreter::ppc_st<uint8_t>(uint32_t opcode);
-template void dppc_interpreter::ppc_st<uint16_t>(uint32_t opcode);
-template void dppc_interpreter::ppc_st<uint32_t>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_st<uint8_t>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_st<uint16_t>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_st<uint32_t>(uint32_t opcode);
 
 template <class T>
-void dppc_interpreter::ppc_stx(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_stx(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
     ppc_grab_regssab(opcode);
     uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
     mmu_write_vmem<T>(opcode, ea, ppc_result_d);
+    return 0;
 }
 
-template void dppc_interpreter::ppc_stx<uint8_t>(uint32_t opcode);
-template void dppc_interpreter::ppc_stx<uint16_t>(uint32_t opcode);
-template void dppc_interpreter::ppc_stx<uint32_t>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_stx<uint8_t>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_stx<uint16_t>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_stx<uint32_t>(uint32_t opcode);
 
 template <class T>
-void dppc_interpreter::ppc_stu(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_stu(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
@@ -1539,17 +1575,18 @@ void dppc_interpreter::ppc_stu(uint32_t opcode) {
         ppc_state.gpr[reg_a] = ea;
     } 
     else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP, 0);
     } 
-
+    
+    return 0;
 }
 
-template void dppc_interpreter::ppc_stu<uint8_t>(uint32_t opcode);
-template void dppc_interpreter::ppc_stu<uint16_t>(uint32_t opcode);
-template void dppc_interpreter::ppc_stu<uint32_t>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_stu<uint8_t>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_stu<uint16_t>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_stu<uint32_t>(uint32_t opcode);
 
 template <class T>
-void dppc_interpreter::ppc_stux(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_stux(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
@@ -1561,15 +1598,16 @@ void dppc_interpreter::ppc_stux(uint32_t opcode) {
         ppc_state.gpr[reg_a] = ea;
     }
     else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-    } 
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP, 0);
+    }
+    return 0;
 }
 
-template void dppc_interpreter::ppc_stux<uint8_t>(uint32_t opcode);
-template void dppc_interpreter::ppc_stux<uint16_t>(uint32_t opcode);
-template void dppc_interpreter::ppc_stux<uint32_t>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_stux<uint8_t>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_stux<uint16_t>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_stux<uint32_t>(uint32_t opcode);
 
-void dppc_interpreter::ppc_sthbrx(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_sthbrx(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
@@ -1577,9 +1615,10 @@ void dppc_interpreter::ppc_sthbrx(uint32_t opcode) {
     uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
     ppc_result_d = uint32_t(BYTESWAP_16(uint16_t(ppc_result_d)));
     mmu_write_vmem<uint16_t>(opcode, ea, ppc_result_d);
+    return 0;
 }
 
-void dppc_interpreter::ppc_stwcx(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_stwcx(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
@@ -1592,9 +1631,10 @@ void dppc_interpreter::ppc_stwcx(uint32_t opcode) {
         ppc_state.reserve = false;
         ppc_state.cr |= 0x20000000UL; // set CR0[EQ]
     }
+    return 0;
 }
 
-void dppc_interpreter::ppc_stwbrx(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_stwbrx(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
@@ -1602,9 +1642,10 @@ void dppc_interpreter::ppc_stwbrx(uint32_t opcode) {
     uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
     ppc_result_d          = BYTESWAP_32(ppc_result_d);
     mmu_write_vmem<uint32_t>(opcode, ea, ppc_result_d);
+    return 0;
 }
 
-void dppc_interpreter::ppc_stmw(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_stmw(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
@@ -1621,10 +1662,11 @@ void dppc_interpreter::ppc_stmw(uint32_t opcode) {
         mmu_write_vmem<uint32_t>(opcode, ea, ppc_state.gpr[reg_s]);
         ea += 4;
     }
+    return 0;
 }
 
 template <class T>
-void dppc_interpreter::ppc_lz(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_lz(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1633,14 +1675,15 @@ void dppc_interpreter::ppc_lz(uint32_t opcode) {
     ea += reg_a ? ppc_result_a : 0;
     uint32_t ppc_result_d = mmu_read_vmem<T>(opcode, ea);
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    return 0;
 }
 
-template void dppc_interpreter::ppc_lz<uint8_t>(uint32_t opcode);
-template void dppc_interpreter::ppc_lz<uint16_t>(uint32_t opcode);
-template void dppc_interpreter::ppc_lz<uint32_t>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_lz<uint8_t>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_lz<uint16_t>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_lz<uint32_t>(uint32_t opcode);
 
 template <class T>
-void dppc_interpreter::ppc_lzu(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_lzu(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1653,16 +1696,17 @@ void dppc_interpreter::ppc_lzu(uint32_t opcode) {
         uint32_t ppc_result_a = ea;
         ppc_store_iresult_reg(reg_a, ppc_result_a);
     } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP, 0);
     }
+    return 0;
 }
 
-template void dppc_interpreter::ppc_lzu<uint8_t>(uint32_t opcode);
-template void dppc_interpreter::ppc_lzu<uint16_t>(uint32_t opcode);
-template void dppc_interpreter::ppc_lzu<uint32_t>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_lzu<uint8_t>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_lzu<uint16_t>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_lzu<uint32_t>(uint32_t opcode);
 
 template <class T>
-void dppc_interpreter::ppc_lzx(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_lzx(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1670,14 +1714,15 @@ void dppc_interpreter::ppc_lzx(uint32_t opcode) {
     uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
     uint32_t ppc_result_d = mmu_read_vmem<T>(opcode, ea);
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    return 0;
 }
 
-template void dppc_interpreter::ppc_lzx<uint8_t>(uint32_t opcode);
-template void dppc_interpreter::ppc_lzx<uint16_t>(uint32_t opcode);
-template void dppc_interpreter::ppc_lzx<uint32_t>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_lzx<uint8_t>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_lzx<uint16_t>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_lzx<uint32_t>(uint32_t opcode);
 
 template <class T>
-void dppc_interpreter::ppc_lzux(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_lzux(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1689,15 +1734,16 @@ void dppc_interpreter::ppc_lzux(uint32_t opcode) {
         ppc_result_a = ea;
         ppc_store_iresult_reg(reg_a, ppc_result_a);
     } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP, 0);
     }
+    return 0;
 }
 
-template void dppc_interpreter::ppc_lzux<uint8_t>(uint32_t opcode);
-template void dppc_interpreter::ppc_lzux<uint16_t>(uint32_t opcode);
-template void dppc_interpreter::ppc_lzux<uint32_t>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_lzux<uint8_t>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_lzux<uint16_t>(uint32_t opcode);
+template uint32_t dppc_interpreter::ppc_lzux<uint32_t>(uint32_t opcode);
 
-void dppc_interpreter::ppc_lha(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_lha(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1706,9 +1752,10 @@ void dppc_interpreter::ppc_lha(uint32_t opcode) {
     ea += (reg_a ? ppc_result_a : 0);
     int16_t val = mmu_read_vmem<uint16_t>(opcode, ea);
     ppc_store_iresult_reg(reg_d, int32_t(val));
+    return 0;
 }
 
-void dppc_interpreter::ppc_lhau(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_lhau(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1721,11 +1768,12 @@ void dppc_interpreter::ppc_lhau(uint32_t opcode) {
         uint32_t ppc_result_a = ea;
         ppc_store_iresult_reg(reg_a, ppc_result_a);
     } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP, 0);
     }
+    return 0;
 }
 
-void dppc_interpreter::ppc_lhaux(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_lhaux(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1738,11 +1786,12 @@ void dppc_interpreter::ppc_lhaux(uint32_t opcode) {
         ppc_store_iresult_reg(reg_a, ppc_result_a);
     }
     else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP, 0);
     }
+    return 0;
 }
 
-void dppc_interpreter::ppc_lhax(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_lhax(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1750,9 +1799,10 @@ void dppc_interpreter::ppc_lhax(uint32_t opcode) {
     uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
     int16_t val = mmu_read_vmem<uint16_t>(opcode, ea);
     ppc_store_iresult_reg(reg_d, int32_t(val));
+    return 0;
 }
 
-void dppc_interpreter::ppc_lhbrx(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_lhbrx(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1760,9 +1810,10 @@ void dppc_interpreter::ppc_lhbrx(uint32_t opcode) {
     uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
     uint32_t ppc_result_d = uint32_t(BYTESWAP_16(mmu_read_vmem<uint16_t>(opcode, ea)));
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    return 0;
 }
 
-void dppc_interpreter::ppc_lwbrx(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_lwbrx(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1770,9 +1821,10 @@ void dppc_interpreter::ppc_lwbrx(uint32_t opcode) {
     uint32_t ea = ppc_result_b + (reg_a ? ppc_result_a : 0);
     uint32_t ppc_result_d = BYTESWAP_32(mmu_read_vmem<uint32_t>(opcode, ea));
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    return 0;
 }
 
-void dppc_interpreter::ppc_lwarx(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_lwarx(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1782,9 +1834,10 @@ void dppc_interpreter::ppc_lwarx(uint32_t opcode) {
     ppc_state.reserve     = true;
     uint32_t ppc_result_d = mmu_read_vmem<uint32_t>(opcode, ea);
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+    return 0;
 }
 
-void dppc_interpreter::ppc_lmw(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_lmw(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1797,9 +1850,10 @@ void dppc_interpreter::ppc_lmw(uint32_t opcode) {
        ea += 4;
        reg_d++;
     } while (reg_d < 32);
+    return 0;
 }
 
-void dppc_interpreter::ppc_lswi(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_lswi(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1833,9 +1887,11 @@ void dppc_interpreter::ppc_lswi(uint32_t opcode) {
     default:
         break;
     }
+
+    return 0;
 }
 
-void dppc_interpreter::ppc_lswx(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_lswx(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
@@ -1860,14 +1916,14 @@ void dppc_interpreter::ppc_lswx(uint32_t opcode) {
             switch (grab_inb) {
             case 1:
                 ppc_state.gpr[reg_d] = mmu_read_vmem<uint8_t>(opcode, ea) << 24;
-                return;
+                return 0;
             case 2:
                 ppc_state.gpr[reg_d] = mmu_read_vmem<uint16_t>(opcode, ea) << 16;
-                return;
+                return 0;
             case 3:
-                ppc_state.gpr[reg_d] = (mmu_read_vmem<uint16_t>(opcode, ea) << 16)
-                                     | (mmu_read_vmem<uint8_t>(opcode, ea + 2) << 8);
-                return;
+                ppc_state.gpr[reg_d] = (mmu_read_vmem<uint16_t>(opcode, ea) << 16) |
+                    (mmu_read_vmem<uint8_t>(opcode, ea + 2) << 8);
+                return 0;
             }
             ppc_state.gpr[reg_d] = mmu_read_vmem<uint32_t>(opcode, ea);
         }
@@ -1875,9 +1931,11 @@ void dppc_interpreter::ppc_lswx(uint32_t opcode) {
         ea += 4;
         grab_inb -= 4;
     }
+
+    return 0;
 }
 
-void dppc_interpreter::ppc_stswi(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_stswi(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
@@ -1910,9 +1968,11 @@ void dppc_interpreter::ppc_stswi(uint32_t opcode) {
     default:
         break;
     }
+
+    return 0;
 }
 
-void dppc_interpreter::ppc_stswx(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_stswx(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_stores++;
 #endif
@@ -1945,14 +2005,16 @@ void dppc_interpreter::ppc_stswx(uint32_t opcode) {
     default:
         break;
     }
+
+    return 0;
 }
 
-void dppc_interpreter::ppc_eciwx(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_eciwx(uint32_t opcode) {
     uint32_t ear_enable = 0x80000000;
 
     // error if EAR[E] != 1
     if (!(ppc_state.spr[282] && ear_enable)) {
-        ppc_exception_handler(Except_Type::EXC_DSI, 0x0);
+        ppc_exception_handler(Except_Type::EXC_DSI, 0x0, 0);
     }
 
     ppc_grab_regsdab(opcode);
@@ -1965,14 +2027,16 @@ void dppc_interpreter::ppc_eciwx(uint32_t opcode) {
     uint32_t ppc_result_d = mmu_read_vmem<uint32_t>(opcode, ea);
 
     ppc_store_iresult_reg(reg_d, ppc_result_d);
+
+    return 0;
 }
 
-void dppc_interpreter::ppc_ecowx(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_ecowx(uint32_t opcode) {
     uint32_t ear_enable = 0x80000000;
 
     // error if EAR[E] != 1
     if (!(ppc_state.spr[282] && ear_enable)) {
-        ppc_exception_handler(Except_Type::EXC_DSI, 0x0);
+        ppc_exception_handler(Except_Type::EXC_DSI, 0x0, 0);
     }
 
     ppc_grab_regssab(opcode);
@@ -1983,42 +2047,48 @@ void dppc_interpreter::ppc_ecowx(uint32_t opcode) {
     }
 
     mmu_write_vmem<uint32_t>(opcode, ea, ppc_result_d);
+    return 0;
 }
 
 // TLB Instructions
 
-void dppc_interpreter::ppc_tlbie(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_tlbie(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
 
     tlb_flush_entry(ppc_state.gpr[(opcode >> 11) & 0x1F]);
+    return 0;
 }
 
-void dppc_interpreter::ppc_tlbia(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_tlbia(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
     /* placeholder */
+    return 0;
 }
 
-void dppc_interpreter::ppc_tlbld(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_tlbld(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
     /* placeholder */
+    return 0;
 }
 
-void dppc_interpreter::ppc_tlbli(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_tlbli(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
     /* placeholder */
+    return 0;
 }
 
-void dppc_interpreter::ppc_tlbsync(uint32_t opcode) {
+uint32_t dppc_interpreter::ppc_tlbsync(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
     /* placeholder */
+    return 0;
 }

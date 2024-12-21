@@ -229,7 +229,7 @@ uint32_t PCIHost::pci_io_read_broadcast(uint32_t offset, int size)
         SIZE_ARG(size)
     );
     // machine check exception (DEFAULT CATCH!, code=FFF00200)
-    ppc_exception_handler(Except_Type::EXC_MACHINE_CHECK, 0);
+    ppc_exception_handler(Except_Type::EXC_MACHINE_CHECK, 0, 0);
     return 0;
 }
 

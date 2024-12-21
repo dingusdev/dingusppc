@@ -32,7 +32,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 jmp_buf exc_env; /* Global exception environment. */
 
 #if !defined(PPC_TESTS) && !defined(PPC_BENCHMARKS)
-void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
+uint32_t ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits, uint32_t exec_flags = 0) {
 #ifdef CPU_PROFILING
     exceptions_processed++;
 #endif
@@ -135,10 +135,12 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
     if (exception_type != Except_Type::EXC_EXT_INT && exception_type != Except_Type::EXC_DECR) {
         longjmp(exc_env, 2); /* return to the main execution loop. */
     }
+
+    return exec_flags;
 }
 #endif
 
-[[noreturn]] void dbg_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
+[[noreturn]] uint32_t dbg_exception_handler(Except_Type exception_type, uint32_t srr1_bits, uint32_t exec_flags) {
     std::string exc_descriptor;
 
     switch (exception_type) {
@@ -311,5 +313,5 @@ unexpected_instruction:
 
     ppc_state.spr[SPR::DSISR] = dsisr;
     ppc_state.spr[SPR::DAR] = ea;
-    ppc_exception_handler(Except_Type::EXC_ALIGNMENT, 0x0);
+    ppc_exception_handler(Except_Type::EXC_ALIGNMENT, 0x0, 0);
 }

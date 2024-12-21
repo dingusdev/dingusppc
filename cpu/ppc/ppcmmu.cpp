@@ -36,7 +36,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //#define TLB_PROFILING // uncomment this to enable SoftTLB profiling
 
 /* pointer to exception handler to be called when a MMU exception is occurred. */
-void (*mmu_exception_handler)(Except_Type exception_type, uint32_t srr1_bits);
+uint32_t (*mmu_exception_handler)(Except_Type exception_type, uint32_t srr1_bits, uint32_t exec_flags);
 
 /* pointers to BAT update functions. */
 std::function<void(uint32_t bat_reg)> ibat_update;
@@ -250,7 +250,7 @@ static PATResult page_address_translation(uint32_t la, bool is_instr_fetch,
 
     /* instruction fetch from a no-execute segment will cause ISI exception */
     if ((sr_val & 0x10000000) && is_instr_fetch) {
-        mmu_exception_handler(Except_Type::EXC_ISI, 0x10000000);
+        mmu_exception_handler(Except_Type::EXC_ISI, 0x10000000, 0);
     }
 
     page_index = (la >> 12) & 0xFFFF;
@@ -260,11 +260,11 @@ static PATResult page_address_translation(uint32_t la, bool is_instr_fetch,
     if (!search_pteg(calc_pteg_addr(pteg_hash1), &pte_addr, vsid, page_index, 0)) {
         if (!search_pteg(calc_pteg_addr(~pteg_hash1), &pte_addr, vsid, page_index, 1)) {
             if (is_instr_fetch) {
-                mmu_exception_handler(Except_Type::EXC_ISI, 0x40000000);
+                mmu_exception_handler(Except_Type::EXC_ISI, 0x40000000, 0);
             } else {
                 ppc_state.spr[SPR::DSISR] = 0x40000000 | (is_write << 25);
                 ppc_state.spr[SPR::DAR]   = la;
-                mmu_exception_handler(Except_Type::EXC_DSI, 0);
+                mmu_exception_handler(Except_Type::EXC_DSI, 0, 0);
             }
         }
     }
@@ -282,11 +282,11 @@ static PATResult page_address_translation(uint32_t la, bool is_instr_fetch,
     // write access with PP = %11
     if ((key && (!pp || (pp == 1 && is_write))) || (pp == 3 && is_write)) {
         if (is_instr_fetch) {
-            mmu_exception_handler(Except_Type::EXC_ISI, 0x08000000);
+            mmu_exception_handler(Except_Type::EXC_ISI, 0x08000000, 0);
         } else {
             ppc_state.spr[SPR::DSISR] = 0x08000000 | (is_write << 25);
             ppc_state.spr[SPR::DAR]   = la;
-            mmu_exception_handler(Except_Type::EXC_DSI, 0);
+            mmu_exception_handler(Except_Type::EXC_DSI, 0, 0);
         }
     }
 
@@ -527,7 +527,7 @@ static TLBEntry* itlb2_refill(uint32_t guest_va)
             // check block protection
             // only PP = 0 (no access) causes ISI exception
             if (!bat_res.prot) {
-                mmu_exception_handler(Except_Type::EXC_ISI, 0x08000000);
+                mmu_exception_handler(Except_Type::EXC_ISI, 0x08000000, 0);
             }
             phys_addr = bat_res.phys;
             flags |= TLBFlags::TLBE_FROM_BAT; // tell the world we come from
@@ -588,7 +588,7 @@ static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write, bool is_dbg = fal
                 LOG_F(9, "Attempt to write to read-only region, LA=0x%08X, PC=0x%08X!", guest_va, ppc_state.pc);
                 ppc_state.spr[SPR::DSISR] = 0x08000000 | (is_write << 25);
                 ppc_state.spr[SPR::DAR]   = guest_va;
-                mmu_exception_handler(Except_Type::EXC_DSI, 0);
+                mmu_exception_handler(Except_Type::EXC_DSI, 0, 0);
             }
             phys_addr = bat_res.phys;
             flags = TLBFlags::PTE_SET_C; // prevent PTE.C updates for BAT
@@ -1099,7 +1099,7 @@ inline void mmu_write_vmem(uint32_t opcode, uint32_t guest_va, T value)
         if (!(tlb1_entry->flags & TLBFlags::PAGE_WRITABLE)) {
             ppc_state.spr[SPR::DSISR] = 0x08000000 | (1 << 25);
             ppc_state.spr[SPR::DAR]   = guest_va;
-            mmu_exception_handler(Except_Type::EXC_DSI, 0);
+            mmu_exception_handler(Except_Type::EXC_DSI, 0, 0);
         }
         if (!(tlb1_entry->flags & TLBFlags::PTE_SET_C)) {
             // perform full page address translation to update PTE.C bit
@@ -1136,7 +1136,7 @@ inline void mmu_write_vmem(uint32_t opcode, uint32_t guest_va, T value)
         if (!(tlb2_entry->flags & TLBFlags::PAGE_WRITABLE)) {
             ppc_state.spr[SPR::DSISR] = 0x08000000 | (1 << 25);
             ppc_state.spr[SPR::DAR]   = guest_va;
-            mmu_exception_handler(Except_Type::EXC_DSI, 0);
+            mmu_exception_handler(Except_Type::EXC_DSI, 0, 0);
         }
 
         if (!(tlb2_entry->flags & TLBFlags::PTE_SET_C)) {
