@@ -322,7 +322,8 @@ uint32_t ControlVideo::read(uint32_t rgn_start, uint32_t offset, int size)
             break;
         case ControlRegs::MON_SENSE:
             value = (this->cur_mon_id << 6) | this->mon_sense;
-            LOG_F(CONTROL, "%s: read  MON_SENSE %03x.%c = %0*x", this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
+            LOG_F(CONTROL, "%s: read  MON_SENSE %03x.%c = %0*x", this->name.c_str(),
+                  offset, SIZE_ARG(size), size * 2, value);
             break;
         case ControlRegs::MISC_ENABLES:
             value = this->enables;
@@ -349,7 +350,8 @@ uint32_t ControlVideo::read(uint32_t rgn_start, uint32_t offset, int size)
         details.offset = offset & 3;
         uint32_t result = pci_conv_rd_data(value, value, details);
         if ((offset & 3) || (size != 4)) {
-            LOG_F(WARNING, "%s: read  %s %03x.%c = %08x -> %0*x", this->name.c_str(), get_name_controlreg(offset), offset, SIZE_ARG(size), value, size * 2, result);
+            LOG_F(WARNING, "%s: read  %s %03x.%c = %08x -> %0*x", this->name.c_str(),
+                  get_name_controlreg(offset), offset, SIZE_ARG(size), value, size * 2, result);
         }
 
         return result;
@@ -430,9 +432,11 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
         case ControlRegs::PIPE_DELAY:
             this->swatch_params[(offset >> 4) - ControlRegs::VFPEQ] = value & 0x3FF;
             if (value & ~0x3FF)
-                LOG_F(ERROR, "%s: write PIPE_DELAY %03x.%c = %0*x", this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
+                LOG_F(ERROR, "%s: write PIPE_DELAY %03x.%c = %0*x", this->name.c_str(),
+                      offset, SIZE_ARG(size), size * 2, value);
             else
-                LOG_F(CONTROL, "%s: write PIPE_DELAY %03x.%c = %0*x", this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
+                LOG_F(CONTROL, "%s: write PIPE_DELAY %03x.%c = %0*x", this->name.c_str(),
+                      offset, SIZE_ARG(size), size * 2, value);
             if (this->display_enabled) {
                 this->enable_display();
             }
@@ -440,9 +444,11 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
         case ControlRegs::HEQ:
             this->swatch_params[(offset >> 4) - ControlRegs::VFPEQ] = value & 0xFFU;
             if (value & ~0xFFU)
-                LOG_F(ERROR, "%s: write HEQ %03x.%c = %0*x", this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
+                LOG_F(ERROR, "%s: write HEQ %03x.%c = %0*x", this->name.c_str(),
+                      offset, SIZE_ARG(size), size * 2, value);
             else
-                LOG_F(CONTROL, "%s: write HEQ %03x.%c = %0*x", this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
+                LOG_F(CONTROL, "%s: write HEQ %03x.%c = %0*x", this->name.c_str(),
+                      offset, SIZE_ARG(size), size * 2, value);
             if (this->display_enabled) {
                 this->enable_display();
             }
@@ -463,9 +469,11 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
         case ControlRegs::HSERR:
             this->swatch_params[(offset >> 4) - ControlRegs::VFPEQ] = value & 0xFFF;
             if (value & ~0xFFF)
-                LOG_F(ERROR, "%s: write %s %03x.%c = %0*x", this->name.c_str(), get_name_controlreg(offset), offset, SIZE_ARG(size), size * 2, value);
+                LOG_F(ERROR, "%s: write %s %03x.%c = %0*x", this->name.c_str(),
+                      get_name_controlreg(offset), offset, SIZE_ARG(size), size * 2, value);
             else
-                LOG_F(CONTROL, "%s: write %s %03x.%c = %0*x", this->name.c_str(), get_name_controlreg(offset), offset, SIZE_ARG(size), size * 2, value);
+                LOG_F(CONTROL, "%s: write %s %03x.%c = %0*x", this->name.c_str(),
+                      get_name_controlreg(offset), offset, SIZE_ARG(size), size * 2, value);
             if (this->display_enabled) {
                 this->enable_display();
             }
@@ -511,9 +519,11 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
             break;
         case ControlRegs::MON_SENSE: {
                 if (value & ~0x3F)
-                    LOG_F(ERROR, "%s: write MON_SENSE %03x.%c = %0*x", this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
+                    LOG_F(ERROR, "%s: write MON_SENSE %03x.%c = %0*x", this->name.c_str(),
+                          offset, SIZE_ARG(size), size * 2, value);
                 else
-                    LOG_F(CONTROL, "%s: write MON_SENSE %03x.%c = %0*x", this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
+                    LOG_F(CONTROL, "%s: write MON_SENSE %03x.%c = %0*x", this->name.c_str(),
+                          offset, SIZE_ARG(size), size * 2, value);
                 uint8_t dirs   = ((value >> 3) & 7) ^ 7;
                 uint8_t levels = ((value & 7) & dirs) | (dirs ^ 7);
                 this->mon_sense = value & 0x3F;
