@@ -22,7 +22,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @file Taos video controller emulation. */
 
 #include <core/bitops.h>
-#include <devices/common/i2c/athens.h>
 #include <devices/deviceregistry.h>
 #include <devices/memctrl/memctrlbase.h>
 #include <devices/video/taos.h>

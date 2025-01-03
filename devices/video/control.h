@@ -24,7 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef CONTROL_VIDEO_H
 #define CONTROL_VIDEO_H
 
-#include <devices/common/i2c/athens.h>
+#include <devices/common/clockgen/athens.h>
 #include <devices/common/pci/pcidevice.h>
 #include <devices/video/appleramdac.h>
 #include <devices/video/displayid.h>

@@ -28,6 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef TAOS_VIDEO_H
 #define TAOS_VIDEO_H
 
+#include <devices/common/clockgen/athens.h>
 #include <devices/common/i2c/i2c.h>
 #include <devices/common/mmiodevice.h>
 #include <devices/video/videoctrl.h>

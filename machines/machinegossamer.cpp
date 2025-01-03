@@ -25,9 +25,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <cpu/ppc/ppcemu.h>
+#include <devices/common/clockgen/athens.h>
 #include <devices/common/hwcomponent.h>
 #include <devices/common/i2c/i2c.h>
-#include <devices/common/i2c/athens.h>
 #include <devices/common/i2c/i2cprom.h>
 #include <devices/common/machineid.h>
 #include <devices/common/scsi/scsihd.h>

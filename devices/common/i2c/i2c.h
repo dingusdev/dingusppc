@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-24 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -27,10 +27,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef I2C_H
 #define I2C_H
 
-#include <stdexcept>
-#include <cstring>
-#include <string>
 #include <loguru.hpp>
+
+#include <cinttypes>
+#include <cstring>
+#include <stdexcept>
+#include <string>
 
 /** Base class for I2C devices */
 class I2CDevice {

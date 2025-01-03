@@ -31,7 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     This is helpful especially for calculating video parameters.
  */
 
-#include <devices/common/i2c/athens.h>
+#include <devices/common/clockgen/athens.h>
 #include <loguru.hpp>
 
 #include <algorithm>
