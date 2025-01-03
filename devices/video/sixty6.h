@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define SIXTY6_VIDEO_H
 
 #include <devices/ioctrl/macio.h>
+#include <devices/video/saa7187.h>
 #include <devices/video/videoctrl.h>
 
 #include <cinttypes>

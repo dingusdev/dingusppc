@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file SAA7187 Digital video encoder emulation. */
 
-#include <devices/common/i2c/saa7187.h>
+#include <devices/video/saa7187.h>
 #include <loguru.hpp>
 
 Saa7187VideoEncoder::Saa7187VideoEncoder(uint8_t dev_addr)

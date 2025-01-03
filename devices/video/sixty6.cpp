@@ -21,11 +21,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file TNT on-board NTSC/PAL video output emulation. */
 
-#include <devices/video/sixty6.h>
-#include <devices/video/control.h>
-#include <devices/common/i2c/saa7187.h>
 #include <devices/common/machineid.h>
 #include <devices/deviceregistry.h>
+#include <devices/video/control.h>
+#include <devices/video/sixty6.h>
+#include <loguru.hpp>
 #include <machines/machinebase.h>
 
 namespace loguru {
