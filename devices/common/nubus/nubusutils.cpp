@@ -62,7 +62,8 @@ int load_declaration_rom(const std::string rom_path, int slot_num)
         uint64_t rom_size = rom_file.tellg();
 
         if (rom_size > 16 * 1024 * 1024)
-            throw std::runtime_error("declaration ROM image " + rom_path + " size " + std::to_string(rom_size) + " is too large");
+            throw std::runtime_error("declaration ROM image " + rom_path + " size " +
+                                     std::to_string(rom_size) + " is too large");
 
         // load it
         auto rom_data = std::unique_ptr<uint8_t[]> (new uint8_t[rom_size]);
@@ -72,13 +73,16 @@ int load_declaration_rom(const std::string rom_path, int slot_num)
         // verify image data
         uint8_t byte_lane = rom_data[rom_size - 1];
         if ((byte_lane & 0xF) != ((byte_lane >> 4) ^ 0xF))
-            throw std::runtime_error("declaration ROM image " + rom_path + " has invalid byte lane value");
+            throw std::runtime_error("declaration ROM image " + rom_path +
+                                     " has invalid byte lane value");
 
         if (READ_DWORD_BE_A(&rom_data[rom_size - 6]) != 0x5A932BC7UL)
-            throw std::runtime_error("declaration ROM image " + rom_path + " has invalid test pattern");
+            throw std::runtime_error("declaration ROM image " + rom_path +
+                                     " has invalid test pattern");
 
         if (rom_data[rom_size - 7] != 1)
-            throw std::runtime_error("declaration ROM image " + rom_path + " has unsupported format");
+            throw std::runtime_error("declaration ROM image " + rom_path +
+                                     " has unsupported format");
 
         uint32_t crc   = READ_DWORD_BE_A(&rom_data[rom_size - 12]);
         int hdr_length = READ_DWORD_BE_A(&rom_data[rom_size - 16]);
@@ -93,8 +97,8 @@ int load_declaration_rom(const std::string rom_path, int slot_num)
 
         if (test_crc != crc) {
             std::stringstream err;
-            err << "declaration ROM image " + rom_path + " has invalid CRC, expected = 0x" << std::hex << crc
-                << ", got = 0x" << std::hex << test_crc;
+            err << "declaration ROM image " + rom_path + " has invalid CRC, expected = 0x"
+                << std::hex << crc << ", got = 0x" << std::hex << test_crc;
             throw std::runtime_error(err.str());
         }
 
@@ -107,17 +111,20 @@ int load_declaration_rom(const std::string rom_path, int slot_num)
         }
 
         // padded_len is the size in bytes of all pages needed to contain all the bytes of the ROM
-        uint32_t padded_len = uint32_t(((rom_size * 4 + lanes_used - 1) / lanes_used + 4095) / 4096 * 4096);
+        uint32_t padded_len =
+            uint32_t(((rom_size * 4 + lanes_used - 1) / lanes_used + 4095) / 4096 * 4096);
 
         if (padded_len > 16 * 1024 * 1024)
-            throw std::runtime_error("declaration ROM image " + rom_path + " size " + std::to_string(rom_size) + " is too large");
+            throw std::runtime_error("declaration ROM image " + rom_path + " size " +
+                                     std::to_string(rom_size) + " is too large");
 
         // calculate starting physical address of the ROM
         uint32_t rom_phys_start = (0xF0FFFFFFUL | ((slot_num & 0xF) << 24)) - padded_len + 1;
 
         auto mem_crtl = dynamic_cast<MemCtrlBase*>(gMachineObj->get_comp_by_type(HWCompType::MEM_CTRL));
         if (!mem_crtl->add_rom_region(rom_phys_start, padded_len))
-            throw std::runtime_error("could not allocate ROM space for declaration ROM image " + rom_path);
+            throw std::runtime_error("could not allocate ROM space for declaration ROM image " +
+                                     rom_path);
 
         int data_pos = int(rom_size) - 1;
 
