@@ -111,7 +111,7 @@ static void show_help() {
 
 static uint32_t disasm_68k(uint32_t count, uint32_t address) {
     csh cs_handle;
-    uint8_t code[10];
+    uint8_t code[12];
     size_t code_size;
     uint64_t dis_addr;
 
@@ -123,7 +123,7 @@ static uint32_t disasm_68k(uint32_t count, uint32_t address) {
     cs_insn* insn = cs_malloc(cs_handle);
 
     for (; power_on && count > 0; count--) {
-        /* prefetch opcode bytes (a 68k instruction can occupy 2...10 bytes) */
+        // prefetch opcode bytes (a 68k instruction can occupy 2...12 bytes)
         for (int i = 0; i < sizeof(code); i++) {
             code[i] = mem_read_dbg(address + i, 1);
         }
