@@ -455,14 +455,17 @@ void ScsiHardDisk::read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
         return;
 
     uint32_t transfer_size = transfer_len;
-
-    std::memset(this->data_buf, 0, sizeof(this->data_buf));
-
     if (cmd_len == 6 && transfer_len == 0) {
         transfer_size = 256;
     }
-
     transfer_size *= this->sector_size;
+
+    size_t data_buf_size = sizeof(this->data_buf);
+    if (transfer_size > data_buf_size) {
+        ABORT_F("%s: cannot read %d bytes (%d sectors * %d bytes/sector), maximum size is %lu bytes", this->name.c_str(), transfer_size, transfer_len, this->sector_size, data_buf_size);
+    }
+    std::memset(this->data_buf, 0, data_buf_size);
+
     uint64_t device_offset = (uint64_t)lba * this->sector_size;
 
     this->disk_img.read(this->data_buf, device_offset, transfer_size);
@@ -474,12 +477,16 @@ void ScsiHardDisk::read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
 
 void ScsiHardDisk::write(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
     uint32_t transfer_size = transfer_len;
-
     if (cmd_len == 6 && transfer_len == 0) {
         transfer_size = 256;
     }
-
     transfer_size *= this->sector_size;
+
+    size_t data_buf_size = sizeof(this->data_buf);
+    if (transfer_size > data_buf_size) {
+        ABORT_F("%s: cannot write %d bytes (%d sectors * %d bytes/sector), maximum size is %lu bytes", this->name.c_str(), transfer_size, transfer_len, this->sector_size, data_buf_size);
+    }
+
     uint64_t device_offset = (uint64_t)lba * this->sector_size;
 
     this->incoming_size = transfer_size;
