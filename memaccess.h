@@ -56,7 +56,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     ((((uint8_t*)(addr))[0] << 24) | (((uint8_t*)(addr))[1] << 16) |           \
      (((uint8_t*)(addr))[2] <<  8) |  ((uint8_t*)(addr))[3]         )
 
-/* read an unaligned big-endian QWORD (32bit) */
+/* read an unaligned big-endian QWORD (64bit) */
 #define READ_QWORD_BE_U(addr)                                                  \
     ((uint64_t(((uint8_t*)(addr))[0]) << 56) | (uint64_t(((uint8_t*)(addr))[1]) << 48) | \
      (uint64_t(((uint8_t*)(addr))[2]) << 40) | (uint64_t(((uint8_t*)(addr))[3]) << 32) | \
@@ -71,7 +71,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     ((((uint8_t*)(addr))[3] << 24) | (((uint8_t*)(addr))[2] << 16) |           \
      (((uint8_t*)(addr))[1] <<  8) |  ((uint8_t*)(addr))[0]         )
 
-/* read an unaligned little-endian DWORD (64bit) */
+/* read an unaligned little-endian QWORD (64bit) */
 #define READ_QWORD_LE_U(addr)                                                  \
     ((uint64_t(((uint8_t*)(addr))[7]) << 56) | (uint64_t(((uint8_t*)(addr))[6]) << 48) | \
      (uint64_t(((uint8_t*)(addr))[5]) << 40) | (uint64_t(((uint8_t*)(addr))[4]) << 32) | \
@@ -103,7 +103,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         ((uint8_t*)(addr))[3] = (uint8_t)(val);                                \
     } while (0)
 
-/* write an unaligned big-endian DWORD (64bit) */
+/* write an unaligned big-endian QWORD (64bit) */
 #define WRITE_QWORD_BE_U(addr, val)                                            \
     do {                                                                       \
         ((uint8_t*)(addr))[0] = ((uint64_t)(val) >> 56);                       \
@@ -141,7 +141,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         ((uint8_t*)(addr))[3] = ((val) >> 24);                                 \
     } while (0)
 
-/* write an unaligned little-endian DWORD (64bit) */
+/* write an unaligned little-endian QWORD (64bit) */
 #define WRITE_QWORD_LE_U(addr, val)                                            \
     do {                                                                       \
         ((uint8_t*)(addr))[0] =   (uint8_t)(val)       ;                       \
