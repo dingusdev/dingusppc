@@ -189,8 +189,8 @@ bool MemCtrlBase::is_range_free(uint32_t addr, uint32_t size) {
 
 
 AddressMapEntry* MemCtrlBase::add_mem_region(uint32_t start_addr, uint32_t size,
-                                 uint32_t dest_addr, uint32_t type,
-                                 uint8_t init_val = 0)
+                                             uint32_t dest_addr,  uint32_t type,
+                                             uint8_t  *mem_ptr = nullptr)
 {
     AddressMapEntry *entry;
 
@@ -198,9 +198,10 @@ AddressMapEntry* MemCtrlBase::add_mem_region(uint32_t start_addr, uint32_t size,
     if (!is_range_free(start_addr, size))
         return nullptr;
 
-    uint8_t* reg_content = new uint8_t[size](); // allocate and clear to zero
-
-    this->mem_regions.push_back(reg_content);
+    if (!mem_ptr) {
+        mem_ptr = new uint8_t[size](); // allocate and clear to zero
+        this->mem_regions.push_back(mem_ptr);
+    }
 
     entry = new AddressMapEntry;
 
@@ -210,7 +211,7 @@ AddressMapEntry* MemCtrlBase::add_mem_region(uint32_t start_addr, uint32_t size,
     entry->mirror  = dest_addr;
     entry->type    = type;
     entry->devobj  = nullptr;
-    entry->mem_ptr = reg_content;
+    entry->mem_ptr = mem_ptr;
 
     // Keep address_map sorted, that way the RAM region (which starts at 0 and
     // is most often requested) will be found by find_range on the first
@@ -244,6 +245,11 @@ AddressMapEntry* MemCtrlBase::add_rom_region(uint32_t start_addr, uint32_t size)
 
 AddressMapEntry* MemCtrlBase::add_ram_region(uint32_t start_addr, uint32_t size) {
     return add_mem_region(start_addr, size, 0, RT_RAM);
+}
+
+AddressMapEntry* MemCtrlBase::add_ram_region(uint32_t start_addr, uint32_t size,
+                                             uint8_t *mem_ptr) {
+    return add_mem_region(start_addr, size, 0, RT_RAM, mem_ptr);
 }
 
 

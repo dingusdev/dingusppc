@@ -66,6 +66,8 @@ public:
     virtual ~MemCtrlBase();
     virtual AddressMapEntry* add_rom_region(uint32_t start_addr, uint32_t size);
     virtual AddressMapEntry* add_ram_region(uint32_t start_addr, uint32_t size);
+    virtual AddressMapEntry* add_ram_region(uint32_t start_addr, uint32_t size,
+                                            uint8_t *mem_ptr);
     virtual AddressMapEntry* add_mem_mirror(uint32_t start_addr, uint32_t dest_addr);
     virtual AddressMapEntry* add_mem_mirror_partial(uint32_t start_addr, uint32_t dest_addr,
                                                     uint32_t offset, uint32_t size);
@@ -93,7 +95,7 @@ public:
 protected:
     AddressMapEntry* add_mem_region(
         uint32_t start_addr, uint32_t size, uint32_t dest_addr, uint32_t type,
-        uint8_t init_val
+        uint8_t  *mem_ptr
     );
 
     AddressMapEntry* add_mem_mirror_common(uint32_t start_addr, uint32_t dest_addr,
