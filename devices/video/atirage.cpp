@@ -398,7 +398,8 @@ void ATIRage::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size) {
 
 
         if (bit_changed(old_value, new_value, ATI_CRTC_ENABLE)
-            || extract_bits(old_value, ATI_CRTC_PIX_WIDTH, ATI_CRTC_PIX_WIDTH_size) != extract_bits(new_value, ATI_CRTC_PIX_WIDTH, ATI_CRTC_PIX_WIDTH_size)
+            || extract_bits(old_value, ATI_CRTC_PIX_WIDTH, ATI_CRTC_PIX_WIDTH_size) !=
+            extract_bits(new_value, ATI_CRTC_PIX_WIDTH, ATI_CRTC_PIX_WIDTH_size)
         ) {
             draw_fb = true;
             if (bit_set(new_value, ATI_CRTC_ENABLE) &&

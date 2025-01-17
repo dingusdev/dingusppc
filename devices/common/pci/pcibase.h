@@ -47,7 +47,9 @@ enum {
     PCI_CFG_BAR0                = 0x10, // base address register 0 (type 0, 1, and 2)
     PCI_CFG_BAR1                = 0x14, // base address register 1 (type 0 and 1)
     PCI_CFG_DWORD_13            = 0x34, // capabilities pointer (type 0 and 1)
-    PCI_CFG_DWORD_15            = 0x3C, // Max_Lat, Min_Gnt (Type 0); Bridge Control (Type 1 and 2); Int_Pin and Int_Line registers (type 0, 1, and 2)
+    PCI_CFG_DWORD_15            = 0x3C, // Max_Lat, Min_Gnt (Type 0)
+                                        // Bridge Control (Type 1 and 2)
+                                        // Int_Pin and Int_Line registers (type 0, 1, and 2)
 };
 
 /** PCI Vendor IDs for devices used in Power Macintosh computers. */

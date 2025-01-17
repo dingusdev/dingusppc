@@ -29,7 +29,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <loguru.hpp>
 
 AdbMouse::AdbMouse(
-    std::string name, uint8_t device_class, int num_buttons, int num_bits, uint16_t resolution) : AdbDevice(name), device_class(device_class), num_buttons(num_buttons), num_bits(num_bits), resolution(resolution) {
+    std::string name, uint8_t device_class, int num_buttons, int num_bits, uint16_t resolution
+) : AdbDevice(name), device_class(device_class), num_buttons(num_buttons), num_bits(num_bits), resolution(resolution)
+{
     EventManager::get_instance()->add_mouse_handler(this, &AdbMouse::event_handler);
 
     this->reset();

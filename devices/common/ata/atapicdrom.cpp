@@ -241,7 +241,8 @@ void AtapiCdrom::perform_packet_command() {
         else {
             disk_image_byte_count = (this->r_byte_count / bytes_per_block) * this->block_size; // whole blocks
             if ((this->r_byte_count % bytes_per_block) > bytes_prolog) { // partial block
-                int disk_image_byte_count_partial_block = (this->r_byte_count % bytes_per_block) - bytes_prolog; // remove prolog from partial block
+                int disk_image_byte_count_partial_block =
+                    (this->r_byte_count % bytes_per_block) - bytes_prolog; // remove prolog from partial block
                 if (disk_image_byte_count_partial_block > this->block_size) { // partial block includes some epilog?
                     disk_image_byte_count_partial_block = this->block_size; // // remove epilog from partial block
                 }
@@ -252,7 +253,8 @@ void AtapiCdrom::perform_packet_command() {
 
         int disk_image_bytes_received = this->read_begin(xfer_len, disk_image_byte_count);
 
-        int bytes_received = (disk_image_bytes_received / this->block_size) * bytes_per_block + bytes_prolog + (disk_image_bytes_received % this->block_size); // whole blocks + prolog + partial block
+        int bytes_received = (disk_image_bytes_received / this->block_size) * bytes_per_block + bytes_prolog +
+            (disk_image_bytes_received % this->block_size); // whole blocks + prolog + partial block
         if (bytes_received > this->r_byte_count) { // if partial epilog or partial prolog
             bytes_received = this->r_byte_count; // confine to r_byte_count
         }

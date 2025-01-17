@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -215,7 +215,8 @@ enum
     WR3_SYNC_CHARACTER_LOAD_INHIBIT                         = 1 << 1,
     WR3_RX_ENABLE                                           = 1 << 0,
 
-// WR4  - Transmit/Receiver Miscellaneous Parameters and Modes // Transmit/Receive miscellaneous parameters and codes, clock rate, number of sync characters, stop bits, parity
+// WR4  - Transmit/Receiver Miscellaneous Parameters and Modes
+// Transmit/Receive miscellaneous parameters and codes, clock rate, number of sync characters, stop bits, parity
 
     WR4_CLOCK_RATE                                          = 3 << 6,
         WR4_X1_CLOCK_MODE                                   = 0 << 6,
@@ -257,7 +258,8 @@ enum
 
 // WR8  - Transmit buffer
 
-// WR9  - Master Interrupt Control // Master interrupt control and reset (accessed through either channel), reset bits, control interrupt daisy chain
+// WR9  - Master Interrupt Control
+// Master interrupt control and reset (accessed through either channel), reset bits, control interrupt daisy chain
 
     WR9_RESET_COMMAND_BITS                                  = 3 << 6,
         WR9_NO_RESET                                        = 0 << 6,
@@ -272,7 +274,8 @@ enum
     WR9_NO_VECTOR                                           = 1 << 1,
     WR9_VECTOR_INCLUDES_STATUS                              = 1 << 0,
 
-// WR10 - Miscellaneous Transmitter/Receiver Control Bits // Miscellaneous transmitter/receiver control bits, NRZI, NRZ, FM encoding, CRC reset
+// WR10 - Miscellaneous Transmitter/Receiver Control Bits
+// Miscellaneous transmitter/receiver control bits, NRZI, NRZ, FM encoding, CRC reset
 
     WR10_CRC_PRESET                                         = 1 << 7,
     WR10_DATA_ENCODING                                      = 3 << 5,
@@ -318,7 +321,8 @@ enum
 
 // WR13 - Upper Byte of Baud Rate Generator Time Constant
 
-// WR14 - Miscellaneous Control Bits // Miscellaneous control bits: baud rate generator, Phase-Locked Loop control, auto echo, local loopback
+// WR14 - Miscellaneous Control Bits
+// Miscellaneous control bits: baud rate generator, Phase-Locked Loop control, auto echo, local loopback
 
     WR14_DPLL_COMMAND_BITS                                  = 7 << 5,
         WR14_DPLL_NULL_COMMAND                              = 0 << 5,
@@ -335,7 +339,8 @@ enum
     WR14_BR_GENERATOR_SOURCE                                = 1 << 1,
     WR14_BR_GENERATOR_ENABLE                                = 1 << 0,
 
-// WR15 - External/Status Interrupt Control // External/Status interrupt control information-control external conditions causing interrupts
+// WR15 - External/Status Interrupt Control
+// External/Status interrupt control information-control external conditions causing interrupts
 
     WR15_SDLC_HDLC_ENHANCEMENT_ENABLE                       = 1 << 0,
     WR15_ZERO_COUNT_IE                                      = 1 << 1,

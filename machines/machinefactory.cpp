@@ -60,7 +60,7 @@ typedef struct {
     uint32_t    ow_expected_checksum;
     uint32_t    nw_product_id;
     uint32_t    nw_subconfig_expected_checksum; // checksum of the system config section but without the firmware version and date
-    const char *id_str;                         // Bootstrap string located at offset 0x30D064 (PCI Macs) or 0x30C064 (Nubus Macs) to machine name and description.
+    const char *id_str;                         // Bootstrap string located at offset 0x30D064 (PCI Macs) or 0x30C064 (Nubus Macs)
     const char *nw_firmware_updater_name;
     const char *nw_openfirmware_name;
     const char *dppc_machine;
@@ -788,10 +788,13 @@ string MachineFactory::machine_name_from_rom(char *rom_data, size_t rom_size) {
                 (info->nw_product_id    && info->nw_product_id    == nw_product_id   )
             ) {
                 int match_count = 1
-                    + (info->ow_expected_checksum           && info->ow_expected_checksum           == ow_checksum_stored               )
-                    + (info->ow_expected_checksum           && info->ow_expected_checksum           == ow_checksum_calculated           )
-                    + (info->nw_subconfig_expected_checksum && info->nw_subconfig_expected_checksum == nw_subconfig_checksum_calculated )
-                    + (info->id_str                         && strcmp(rom_id_str, info->id_str) == 0)
+                    + (info->ow_expected_checksum           
+                        && info->ow_expected_checksum == ow_checksum_stored)
+                    + (info->ow_expected_checksum           
+                        && info->ow_expected_checksum == ow_checksum_calculated)
+                    + (info->nw_subconfig_expected_checksum 
+                        && info->nw_subconfig_expected_checksum == nw_subconfig_checksum_calculated)
+                    + (info->id_str && strcmp(rom_id_str, info->id_str) == 0)
                     ;
 
                 if (!match_pass) {
@@ -870,7 +873,8 @@ string MachineFactory::machine_name_from_rom(char *rom_data, size_t rom_size) {
             if (firmware_version < 0xffff)
                 LOG_F(INFO, "    ROM Version: %x.%03x", (firmware_version >> 12) & 15, firmware_version & 0xfff);
             else
-                LOG_F(INFO, "    ROM Version: %x.%x.%03x", firmware_version >> 16, (firmware_version >> 12) & 15, firmware_version & 0xfff);
+                LOG_F(INFO, "    ROM Version: %x.%x.%03x",
+                    firmware_version >> 16, (firmware_version >> 12) & 15, firmware_version & 0xfff);
             if (has_nw_config) {
                 LOG_F(INFO, "    Product ID: 0x%04x.%02x 0x%08x = %s%d,%d",
                     nw_product_id >> 8, nw_product_id & 0xff,

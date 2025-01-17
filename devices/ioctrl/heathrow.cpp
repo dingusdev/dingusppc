@@ -390,8 +390,10 @@ void HeathrowIC::feature_control(const uint32_t value)
     }
 }
 
-#define FIRST_INT1_BIT 12 // The first ten are DMA, the next 2 appear to be unused. We'll map 1:1 the INT1 bits 31..12 (0x1F..0x0C) as IRQ_ID bits.
-#define FIRST_INT2_BIT  2 // Skip the first two which are Ethernet DMA. We'll map INT2 bits 13..2 (interrupts 45..34 or 0x2D..0x22) as IRQ_ID bits 11..0.
+#define FIRST_INT1_BIT 12 // The first ten are DMA, the next 2 appear to be unused.
+                          // We'll map 1:1 the INT1 bits 31..12 (0x1F..0x0C) as IRQ_ID bits.
+#define FIRST_INT2_BIT  2 // Skip the first two which are Ethernet DMA.
+                          // We'll map INT2 bits 13..2 (interrupts 45..34 or 0x2D..0x22) as IRQ_ID bits 11..0.
 #define FIRST_INT1_IRQ_ID_BIT 12 // Same as INT1_BIT so there won't be any shifting required.
 #define FIRST_INT2_IRQ_ID_BIT  0
 
@@ -481,7 +483,8 @@ void HeathrowIC::ack_int(uint32_t irq_id, uint8_t irq_line_state)
         IRQ_ID_TO_INT2_MASK(irq_id);
 #if 0
         LOG_F(INFO, "%s: native interrupt events:%08x.%08x levels:%08x.%08x change2:%08x state:%d",
-            this->name.c_str(), this->int_events1 + 0, this->int_events2 + 0, this->int_levels1 + 0, this->int_levels2 + 0, irq_id, irq_line_state
+            this->name.c_str(), this->int_events1 + 0, this->int_events2 + 0,
+            this->int_levels1 + 0, this->int_levels2 + 0, irq_id, irq_line_state
         );
 #endif
         // native mode:   set IRQ bits in int_events2 on a 0-to-1 transition
@@ -504,7 +507,8 @@ void HeathrowIC::ack_int(uint32_t irq_id, uint8_t irq_line_state)
         // emulated mode: set IRQ bits in int_events1 on all transitions
 #if 0
         LOG_F(INFO, "%s: native interrupt events:%08x.%08x levels:%08x.%08x change1:%08x state:%d",
-            this->name.c_str(), this->int_events1 + 0, this->int_events2 + 0, this->int_levels1 + 0, this->int_levels2 + 0, irq_id, irq_line_state);
+            this->name.c_str(), this->int_events1 + 0, this->int_events2 + 0,
+            this->int_levels1 + 0, this->int_levels2 + 0, irq_id, irq_line_state);
 #endif
         if ((this->int_mask1 & MACIO_INT_MODE) ||
             (irq_line_state && !(this->int_levels1 & irq_id))) {

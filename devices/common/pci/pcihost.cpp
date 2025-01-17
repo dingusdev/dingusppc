@@ -81,7 +81,8 @@ void PCIHost::pci_unregister_device(int dev_fun_num)
     HWComponent *hwc = dynamic_cast<HWComponent*>(this);
     LOG_F(
         // FIXME: need destructors to remove memory regions and downstream devices.
-        ERROR, "%s: pci_unregister_device(%s) not supported yet (every PCI device needs a working destructor to unregister memory and downstream devices etc.)",
+        ERROR, "%s: pci_unregister_device(%s) not supported yet (every PCI device needs "
+            "a working destructor to unregister memory and downstream devices etc.)",
         hwc ? hwc->get_name().c_str() : "PCIHost", dev_instance->get_name().c_str()
     );
 

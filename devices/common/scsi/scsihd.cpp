@@ -223,7 +223,8 @@ void ScsiHardDisk::inquiry() {
 
     int lun;
     if (this->last_selection_has_atention) {
-        LOG_F(INFO, "%s: INQUIRY (%d bytes) with ATN LUN = %02x & 7", this->name.c_str(), alloc_len, this->last_selection_message);
+        LOG_F(INFO, "%s: INQUIRY (%d bytes) with ATN LUN = %02x & 7",
+            this->name.c_str(), alloc_len, this->last_selection_message);
         lun = this->last_selection_message & 7;
     }
     else {
@@ -462,7 +463,8 @@ void ScsiHardDisk::read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
 
     size_t data_buf_size = sizeof(this->data_buf);
     if (transfer_size > data_buf_size) {
-        ABORT_F("%s: cannot read %d bytes (%d sectors * %d bytes/sector), maximum size is %lu bytes", this->name.c_str(), transfer_size, transfer_len, this->sector_size, data_buf_size);
+        ABORT_F("%s: cannot read %d bytes (%d sectors * %d bytes/sector), maximum size is %lu bytes",
+            this->name.c_str(), transfer_size, transfer_len, this->sector_size, data_buf_size);
     }
     std::memset(this->data_buf, 0, data_buf_size);
 
@@ -484,7 +486,8 @@ void ScsiHardDisk::write(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
 
     size_t data_buf_size = sizeof(this->data_buf);
     if (transfer_size > data_buf_size) {
-        ABORT_F("%s: cannot write %d bytes (%d sectors * %d bytes/sector), maximum size is %lu bytes", this->name.c_str(), transfer_size, transfer_len, this->sector_size, data_buf_size);
+        ABORT_F("%s: cannot write %d bytes (%d sectors * %d bytes/sector), maximum size is %lu bytes",
+            this->name.c_str(), transfer_size, transfer_len, this->sector_size, data_buf_size);
     }
 
     uint64_t device_offset = (uint64_t)lba * this->sector_size;

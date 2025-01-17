@@ -93,22 +93,26 @@ uint16_t Sixty6Video::iodev_read(uint32_t address)
                         last_control_1_count++;
                     } else {
                         if (last_control_1_count) {
-                            LOG_F(SIXTY6_INTERRUPT, "Sixty6: read  %d:CONTROL_1 = %02x x %d", address, last_control_1_value, last_control_1_count);
+                            LOG_F(SIXTY6_INTERRUPT, "Sixty6: read  %d:CONTROL_1 = %02x x %d",
+                                address, last_control_1_value, last_control_1_count);
                         }
                         last_control_1_value = value;
                         last_control_1_count = 0;
-                        LOG_F(SIXTY6_INTERRUPT, "Sixty6: read  %d:CONTROL_1 = %02x x %d", address, last_control_1_value, last_control_1_count);
+                        LOG_F(SIXTY6_INTERRUPT, "Sixty6: read  %d:CONTROL_1 = %02x x %d",
+                            address, last_control_1_value, last_control_1_count);
                     }
                     break;
                 default:
                     value = 0;
-                    LOG_F(ERROR, "Sixty6: read  %d:CONTROL_DATA 0x%02x = %02x", address, this->control_addr, value);
+                    LOG_F(ERROR, "Sixty6: read  %d:CONTROL_DATA 0x%02x = %02x",
+                        address, this->control_addr, value);
             }
             break;
 
         case Sixty6BaseReg::CONTROL_ADDR:
             value = this->control_addr;
-            LOG_F(SIXTY6_INTERRUPT, "Sixty6: read  %d:CONTROL_ADDR = %02x", address, value);
+            LOG_F(SIXTY6_INTERRUPT, "Sixty6: read  %d:CONTROL_ADDR = %02x",
+                address, value);
             break;
     }
     return value;
@@ -412,7 +416,8 @@ int Sixty6Video::device_postinit()
             this->control_1 |= 0x80;
         else
             this->control_1 &= ~0x80;
-        LOG_F(SIXTY6_INTERRUPT, "Sixty6: interrupt state:%d doit:%d", irq_line_state, ((this->control_1 & 0x40) && this->crtc_on));
+        LOG_F(SIXTY6_INTERRUPT, "Sixty6: interrupt state:%d doit:%d",
+            irq_line_state, ((this->control_1 & 0x40) && this->crtc_on));
 
         if (this->interrupt_enabled && this->crtc_on) {
             //this->pci_interrupt(irq_line_state);

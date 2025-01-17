@@ -302,10 +302,11 @@ static void read_test_float_data() {
         if ((tokens[0].rfind("FCMP") && (ppc_state.fpr[3].int64_r != dest_64)) ||
             (ppc_state.fpscr != check_fpscr) ||
             (ppc_state.cr != check_cr)) {
-            cout << "Mismatch: instr=" << tokens[0] << ", src1=" << scientific << dfp_src1 << ", src2=" << scientific << dfp_src2 << ", src3=" << scientific << dfp_src3 << endl;
+            cout << "Mismatch: instr=" << tokens[0] << ", src1=" << scientific << dfp_src1
+                 << ", src2=" << scientific << dfp_src2 << ", src3=" << scientific << dfp_src3 << endl;
             cout << "expected: dest=0x" << hex << dest_64 << ", FPSCR=0x" << hex << check_fpscr
                  << ", CR=0x"
-                << hex << check_cr << endl;
+                 << hex << check_cr << endl;
             cout << "got: dest=0x" << hex << ppc_state.fpr[3].int64_r << ", FPSCR=0x" << hex
                  << ppc_state.fpscr << ", CR=0x" << hex << ppc_state.cr << endl;
             cout << "Test file line #: " << dec << lineno << endl << endl;

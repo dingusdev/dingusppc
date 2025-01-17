@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -146,7 +146,9 @@ private:
     std::function<void()>       notify_timer_changes;
 
     std::atomic<uint32_t> id{0};
-    bool        cb_active = false; // true if a timer callback is executing // FIXME: Do we need this? It gets written in main thread and read in audio thread.
+
+    // FIXME: Do we need this? It gets written in main thread and read in audio thread.
+    bool cb_active = false; // true if a timer callback is executing
 };
 
 #endif // TIMER_MANAGER_H

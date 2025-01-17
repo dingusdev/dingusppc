@@ -70,7 +70,9 @@ enum RamdacRegs : uint8_t {
     CURSOR_POS_HI   = 0x10, // cursor position, high-order byte
     CURSOR_POS_LO   = 0x11, // cursor position, low-order byte
     MISC_CTRL       = 0x20, // miscellaneus control bits ; Dacula: read ; when 1MB VRAM then write (mode&15) else write (mode)
-    DBL_BUF_CTRL    = 0x21, // double buffer control bits ; Dacula: write 4; Radical: set to 0 if using optional bank (bankb) in Open Firmware or for 2nd page in ndrv
+    DBL_BUF_CTRL    = 0x21, // double buffer control bits ;
+                            // - Dacula: write 4;
+                            // - Radical: set to 0 if using optional bank (bankb) in Open Firmware or for 2nd page in ndrv
     TEST_CTRL       = 0x22, // enable/disable DAC tests ; Dacula: write 0
 
     // multipurpose section registers (DACula only)

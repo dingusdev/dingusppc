@@ -327,7 +327,8 @@ extern bool int_pin;
 extern bool dec_exception_pending;
 
 extern bool is_601;        // For PowerPC 601 Emulation
-extern bool include_601;   // For non-PowerPC 601 emulation with 601 extras (matches Mac OS 9 environment which can emulate MPC 601 instructions)
+extern bool include_601;   // For non-PowerPC 601 emulation with 601 extras
+                           // (matches Mac OS 9 environment which can emulate MPC 601 instructions)
 extern bool is_altivec;    // For Altivec Emulation
 extern bool is_64bit;      // For PowerPC G5 Emulation
 

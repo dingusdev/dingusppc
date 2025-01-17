@@ -275,7 +275,9 @@ void EsccChannel::write_reg(int reg_num, uint8_t value)
                 this->read_regs[RR0] |= RR0_SYNC_HUNT;
             }
         }
-        this->write_regs[WR3] = (this->write_regs[WR3] & (WR3_RX_ENABLE | WR3_ENTER_HUNT_MODE)) | (value & ~(WR3_RX_ENABLE | WR3_ENTER_HUNT_MODE));
+        this->write_regs[WR3] =
+            (this->write_regs[WR3] & (WR3_RX_ENABLE | WR3_ENTER_HUNT_MODE)) |
+            (value & ~(WR3_RX_ENABLE | WR3_ENTER_HUNT_MODE));
         return;
     case WR7:
         if (this->write_regs[WR15] & WR15_SDLC_HDLC_ENHANCEMENT_ENABLE) {

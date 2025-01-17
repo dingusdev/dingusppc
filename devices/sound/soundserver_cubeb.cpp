@@ -223,7 +223,8 @@ int SoundServer::start_out_stream()
 {
     if (is_deterministic) {
         LOG_F(9, "Starting sound output deterministic polling.");
-        impl->deterministic_poll_timer = TimerManager::get_instance()->add_cyclic_timer(MSECS_TO_NSECS(10), impl->deterministic_poll_cb);
+        impl->deterministic_poll_timer =
+            TimerManager::get_instance()->add_cyclic_timer(MSECS_TO_NSECS(10), impl->deterministic_poll_cb);
         return 0;
     }
     return cubeb_stream_start(impl->out_stream);

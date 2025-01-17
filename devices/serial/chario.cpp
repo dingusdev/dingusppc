@@ -394,7 +394,10 @@ bool CharIoSocket::rcv_char_available_now()
                 int received = (int)recv(this->sockfd, &c, 1, 0);
                 if (received == -1) {
                     if (this->acceptfd == -1) {
-                        //LOG_F(INFO, "socket sock read (not accepted yet) err: %s", strerror(errno)); // this happens once before accept
+                        #if 0
+                            LOG_F(INFO, "socket sock read (not accepted yet) err: %s",
+                                strerror(errno)); // this happens once before accept
+                        #endif
                     }
                     else {
                         LOG_F(INFO, "socket sock read err: %s", strerror(errno)); // should never happen

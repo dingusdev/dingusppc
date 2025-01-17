@@ -153,9 +153,12 @@ public:
             op_name_counts.emplace_back(op_name, pair.second);
         }
         size_t top_ops_size = std::min(op_name_counts.size(), size_t(20));
-        std::partial_sort(op_name_counts.begin(), op_name_counts.begin() + top_ops_size, op_name_counts.end(), [](const auto& a, const auto& b) {
-            return b.second < a.second;
-        });
+        std::partial_sort(
+            op_name_counts.begin(), op_name_counts.begin() + top_ops_size, op_name_counts.end(),
+            [](const auto& a, const auto& b) {
+                return b.second < a.second;
+            }
+        );
         op_name_counts.resize(top_ops_size);
         for (const auto& pair : op_name_counts) {
             vars.push_back({.name = "Instruction " + pair.first,

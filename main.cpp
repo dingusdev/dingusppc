@@ -90,7 +90,10 @@ public:
 
 const WorkingDirectoryValidator WorkingDirectory;
 
-void run_machine(std::string machine_str, char *rom_data, size_t rom_size, uint32_t execution_mode, uint32_t profiling_interval_ms);
+void run_machine(
+    std::string machine_str, char *rom_data, size_t rom_size, uint32_t execution_mode,
+    uint32_t profiling_interval_ms
+);
 
 int main(int argc, char** argv) {
 
