@@ -105,6 +105,10 @@ void PsxCtrl::insert_ram_dimm(int slot_num, uint32_t capacity)
     case DRAM_CAP_32MB:
         this->bank_size[slot_num] = capacity;
         break;
+    case DRAM_CAP_64MB:
+        this->bank_size[slot_num + 0] = capacity / 2;
+        this->bank_size[slot_num + 1] = capacity / 2;
+        break;
     default:
         ABORT_F("PSX: unsupported DRAM capacity %d", capacity);
     }

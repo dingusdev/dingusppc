@@ -84,11 +84,9 @@ int MachineGazelle::initialize(const std::string &id) {
     }
 
     // insert RAM DIMMs
-    psx_obj->insert_ram_dimm(0, GET_INT_PROP("rambank1_size") * DRAM_CAP_1MB);
-    psx_obj->insert_ram_dimm(1, GET_INT_PROP("rambank2_size") * DRAM_CAP_1MB);
-    psx_obj->insert_ram_dimm(2, GET_INT_PROP("rambank3_size") * DRAM_CAP_1MB);
-    psx_obj->insert_ram_dimm(3, GET_INT_PROP("rambank4_size") * DRAM_CAP_1MB);
-    psx_obj->insert_ram_dimm(4, GET_INT_PROP("rambank5_size") * DRAM_CAP_1MB);
+    psx_obj->insert_ram_dimm(0, GET_INT_PROP("rambank0_size") * DRAM_CAP_1MB);
+    psx_obj->insert_ram_dimm(1, GET_INT_PROP("rambank1_size") * DRAM_CAP_1MB);
+    psx_obj->insert_ram_dimm(3, GET_INT_PROP("rambank2_size") * DRAM_CAP_1MB);
 
     // configure CPU clocks
     uint64_t bus_freq      = 50000000ULL;
@@ -104,16 +102,12 @@ int MachineGazelle::initialize(const std::string &id) {
 }
 
 static const PropMap pm6500_settings = {
+    {"rambank0_size",
+        new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32    }))},
     {"rambank1_size",
-        new IntProperty(32, std::vector<uint32_t>({   4, 8, 16, 32}))},
+        new IntProperty(32, std::vector<uint32_t>({   4, 8, 16, 32, 64}))},
     {"rambank2_size",
-        new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32}))},
-    {"rambank3_size",
-        new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32}))},
-    {"rambank4_size",
-        new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32}))},
-    {"rambank5_size",
-        new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32}))},
+        new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64}))},
     {"emmo",
         new BinProperty(0)},
     {"hdd_config",
