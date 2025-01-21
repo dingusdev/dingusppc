@@ -184,10 +184,25 @@ public:
     primary opcode (bits 0...5) and modifier (bits 21...31). */
 static PPCOpcode OpcodeGrabber[64 * 2048];
 
+/** Alternate lookup table when floating point instructions are disabled.
+    Floating point instructions are mapped to ppc_fpu_off,
+    everything else is the same.*/
+static PPCOpcode OpcodeGrabberNoFPU[64 * 2048];
+
+static PPCOpcode* curOpcodeGrabber = OpcodeGrabberNoFPU;
+
+void ppc_msr_did_change() {
+    curOpcodeGrabber = ppc_state.msr & MSR::FP ? OpcodeGrabber : OpcodeGrabberNoFPU;
+}
+
 /** Exception helpers. */
 
 void ppc_illegalop(uint32_t opcode) {
     ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+}
+
+void ppc_fpu_off(uint32_t opcode) {
+    ppc_exception_handler(Except_Type::EXC_NO_FPU, Exc_Cause::FPU_OFF);
 }
 
 void ppc_assert_int() {
@@ -215,7 +230,7 @@ void ppc_main_opcode(uint32_t opcode)
     num_opcodes[opcode]++;
 #endif
 #endif
-    OpcodeGrabber[(opcode >> 15 & 0x1F800) | (opcode & 0x7FF)](opcode);
+    curOpcodeGrabber[(opcode >> 15 & 0x1F800) | (opcode & 0x7FF)](opcode);
 }
 
 static long long cpu_now_ns() {
@@ -414,15 +429,37 @@ for (uint32_t mod = 0; mod < 2048; mod++) { \
 } \
 } while (0)
 
+#define OP_fp(opcode, fn) \
+do { \
+for (uint32_t mod = 0; mod < 2048; mod++) { \
+    OpcodeGrabber[((opcode) << 11) | mod] = fn; \
+    OpcodeGrabberNoFPU[((opcode) << 11) | mod] = ppc_fpu_off; \
+} \
+} while (0)
+
 #define OPX(opcode, subopcode, fn) \
 do { \
     OpcodeGrabber[((opcode) << 11) | ((subopcode)<<1)] = fn; \
+} while (0)
+
+#define OPX_fp(opcode, subopcode, fn) \
+do { \
+    OpcodeGrabber[((opcode) << 11) | ((subopcode)<<1)] = fn; \
+    OpcodeGrabberNoFPU[((opcode) << 11) | ((subopcode)<<1)] = ppc_fpu_off; \
 } while (0)
 
 #define OPXd(opcode, subopcode, fn) \
 do { \
     OpcodeGrabber[((opcode) << 11) | ((subopcode)<<1) | 0x000] = fn<RC0>; \
     OpcodeGrabber[((opcode) << 11) | ((subopcode)<<1) | 0x001] = fn<RC1>; \
+} while (0)
+
+#define OPXd_fp(opcode, subopcode, fn) \
+do { \
+    OpcodeGrabber[((opcode) << 11) | ((subopcode)<<1) | 0x000] = fn<RC0>; \
+    OpcodeGrabber[((opcode) << 11) | ((subopcode)<<1) | 0x001] = fn<RC1>; \
+    OpcodeGrabberNoFPU[((opcode) << 11) | ((subopcode)<<1) | 0x000] = ppc_fpu_off; \
+    OpcodeGrabberNoFPU[((opcode) << 11) | ((subopcode)<<1) | 0x001] = ppc_fpu_off; \
 } while (0)
 
 #define OPXod(opcode, subopcode, fn) \
@@ -437,6 +474,14 @@ do { \
 do { \
     OpcodeGrabber[((opcode) << 11) | ((subopcode)<<1) | 0x000] = fn<carry, RC0>; \
     OpcodeGrabber[((opcode) << 11) | ((subopcode)<<1) | 0x001] = fn<carry, RC1>; \
+} while (0)
+
+#define OPXdc_fp(opcode, subopcode, fn, carry) \
+do { \
+    OpcodeGrabber[((opcode) << 11) | ((subopcode)<<1) | 0x000] = fn<carry, RC0>; \
+    OpcodeGrabber[((opcode) << 11) | ((subopcode)<<1) | 0x001] = fn<carry, RC1>; \
+    OpcodeGrabberNoFPU[((opcode) << 11) | ((subopcode)<<1) | 0x000] = ppc_fpu_off; \
+    OpcodeGrabberNoFPU[((opcode) << 11) | ((subopcode)<<1) | 0x001] = ppc_fpu_off; \
 } while (0)
 
 #define OPXcod(opcode, subopcode, fn, carry) \
@@ -460,36 +505,33 @@ do { \
 } while (0)
 
 #define OP31(subopcode, fn) OPX(31, subopcode, fn)
+#define OP31_fp(subopcode, fn) OPX_fp(31, subopcode, fn)
 #define OP31d(subopcode, fn) OPXd(31, subopcode, fn)
 #define OP31od(subopcode, fn) OPXod(31, subopcode, fn)
 #define OP31dc(subopcode, fn, carry) OPXdc(31, subopcode, fn, carry)
 #define OP31cod(subopcode, fn, carry) OPXcod(31, subopcode, fn, carry)
 
-#define OP63(subopcode, fn) OPX(63, subopcode, fn)
-#define OP63d(subopcode, fn) OPXd(63, subopcode, fn)
-#define OP63dc(subopcode, fn, carry) OPXdc(63, subopcode, fn, carry)
+#define OP63(subopcode, fn) OPX_fp(63, subopcode, fn)
+#define OP63d(subopcode, fn) OPXd_fp(63, subopcode, fn)
+#define OP63dc(subopcode, fn, carry) OPXdc_fp(63, subopcode, fn, carry)
 
 #define OP59d(subopcode, fn) \
 do { \
-    OPXd(59, (subopcode), fn); \
+    OPXd_fp(59, (subopcode), fn); \
 } while (0)
 
 #define OP59cd(subopcode, fn) \
 do { \
     for (uint32_t ccccc = 0; ccccc < 32; ccccc++) { \
-        OPXd(59, (ccccc << 5) | (subopcode), fn); \
-    } \
-} while (0)
-
-#define OP4_ccccc10xxxx(subopcode, fn) \
-do { \
-    for (uint32_t ccccc = 0; ccccc < 32; ccccc++) { \
-        OPr(4, (ccccc << 6) | (subopcode), fn); \
+        OPXd_fp(59, (ccccc << 5) | (subopcode), fn); \
     } \
 } while (0)
 
 void initialize_ppc_opcode_table() {
-    std::fill_n(OpcodeGrabber, 64 * 2048, ppc_illegalop);
+    auto opcodeGrabberSize = sizeof(OpcodeGrabber) / sizeof(OpcodeGrabber[0]);
+    std::fill_n(OpcodeGrabber, opcodeGrabberSize, ppc_illegalop);
+    std::fill_n(OpcodeGrabberNoFPU, opcodeGrabberSize, ppc_illegalop);
+
     OP(3,  ppc_twi);
     //OP(4,  ppc_opcode4); - Altivec instructions not emulated yet. Uncomment once they're implemented.
     OP(7,  ppc_mulli);
@@ -528,14 +570,14 @@ void initialize_ppc_opcode_table() {
     OP(45, ppc_stu<uint16_t>);
     OP(46, ppc_lmw);
     OP(47, ppc_stmw);
-    OP(48, ppc_lfs);
-    OP(49, ppc_lfsu);
-    OP(50, ppc_lfd);
-    OP(51, ppc_lfdu);
-    OP(52, ppc_stfs);
-    OP(53, ppc_stfsu);
-    OP(54, ppc_stfd);
-    OP(55, ppc_stfdu);
+    OP_fp(48, ppc_lfs);
+    OP_fp(49, ppc_lfsu);
+    OP_fp(50, ppc_lfd);
+    OP_fp(51, ppc_lfdu);
+    OP_fp(52, ppc_stfs);
+    OP_fp(53, ppc_stfsu);
+    OP_fp(54, ppc_stfd);
+    OP_fp(55, ppc_stfdu);
 
     OPla(16, 0x0, (dppc_interpreter::ppc_bc<LK0, AA0>)); // bc
     OPla(16, 0x1, (dppc_interpreter::ppc_bc<LK1, AA0>)); // bcl
@@ -597,11 +639,11 @@ void initialize_ppc_opcode_table() {
     OP31(375,    ppc_lhaux);
     OP31(533,    ppc_lswx);
     OP31(534,    ppc_lwbrx);
-    OP31(535,    ppc_lfsx);
-    OP31(567,    ppc_lfsux);
+    OP31_fp(535,    ppc_lfsx);
+    OP31_fp(567,    ppc_lfsux);
     OP31(597,    ppc_lswi);
-    OP31(599,    ppc_lfdx);
-    OP31(631,    ppc_lfdux);
+    OP31_fp(599,    ppc_lfdx);
+    OP31_fp(631,    ppc_lfdux);
     OP31(790,    ppc_lhbrx);
 
     OPr(31, (150<<1) | 1, ppc_stwcx); // No Rc=0 variant.
@@ -613,13 +655,13 @@ void initialize_ppc_opcode_table() {
     OP31(439,    ppc_stux<uint16_t>);
     OP31(661,    ppc_stswx);
     OP31(662,    ppc_stwbrx);
-    OP31(663,    ppc_stfsx);
-    OP31(695,    ppc_stfsux);
+    OP31_fp(663,    ppc_stfsx);
+    OP31_fp(695,    ppc_stfsux);
     OP31(725,    ppc_stswi);
-    OP31(727,    ppc_stfdx);
-    OP31(759,    ppc_stfdux);
+    OP31_fp(727,    ppc_stfdx);
+    OP31_fp(759,    ppc_stfdux);
     OP31(918,    ppc_sthbrx);
-    if (!is_601) OP31(983, ppc_stfiwx);
+    if (!is_601) OP31_fp(983, ppc_stfiwx);
 
     OP31(310,    ppc_eciwx);
     OP31(438,    ppc_ecowx);
@@ -739,6 +781,12 @@ void initialize_ppc_opcode_table() {
         OP63d(i + 30, ppc_fnmsub);
         OP63d(i + 31, ppc_fnmadd);
     }
+
+    for (auto i = 0; i < opcodeGrabberSize; i++) {
+        if (OpcodeGrabberNoFPU[i] != ppc_fpu_off) {
+            OpcodeGrabberNoFPU[i] = OpcodeGrabber[i];
+        }
+    }
 }
 
 void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool do_include_601, uint64_t tb_freq)
@@ -788,6 +836,7 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool do_include_6
     }
 
     ppc_mmu_init();
+    ppc_msr_did_change();
 
     /* redirect code execution to reset vector */
     ppc_state.pc = 0xFFF00100;
@@ -845,8 +894,10 @@ static uint64_t reg_op(string& reg_name, uint64_t val, bool is_write) {
             return ppc_state.pc;
         }
         if (reg_name_u == "MSR") {
-            if (is_write)
+            if (is_write) {
                 ppc_state.msr = (uint32_t)val;
+                ppc_msr_did_change();
+            }
             return ppc_state.msr;
         }
         if (reg_name_u == "CR") {
