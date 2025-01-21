@@ -646,6 +646,8 @@ extern void ppc_exec_single(void);
 extern void ppc_exec_until(uint32_t goal_addr);
 extern void ppc_exec_dbg(uint32_t start_addr, uint32_t size);
 
+extern void ppc_msr_did_change();
+
 /* debugging support API */
 void print_fprs(void);                   /* print content of the floating-point registers  */
 uint64_t get_reg(std::string reg_name); /* get content of the register reg_name */
