@@ -648,8 +648,8 @@ extern void ppc_exec_single(void);
 extern void ppc_exec_until(uint32_t goal_addr);
 extern void ppc_exec_dbg(uint32_t start_addr, uint32_t size);
 
-extern PPCOpcode *ppc_opcode_grabber();
-extern void ppc_msr_did_change(uint32_t old_msr_val, bool set_next_instruction_address = true);
+extern PPCOpcode* ppc_opcode_grabber;
+extern void ppc_msr_did_change(uint32_t old_msr_val, uint32_t new_msr_val, bool set_next_instruction_address = true);
 
 /* debugging support API */
 void print_fprs(void);                   /* print content of the floating-point registers  */

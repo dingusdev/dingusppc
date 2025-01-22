@@ -192,22 +192,27 @@ static PPCOpcode OpcodeGrabber[64 * 2048];
     everything else is the same.*/
 static PPCOpcode OpcodeGrabberNoFPU[64 * 2048];
 
-void ppc_msr_did_change(uint32_t old_msr_val, bool set_next_instruction_address) {
-    bool old_fp = old_msr_val & MSR::FP;
-    bool new_fp = ppc_state.msr & MSR::FP;
-    if (old_fp != new_fp) {
+void ppc_msr_did_change(uint32_t old_msr_val, uint32_t new_msr_val, bool set_next_instruction_address) {
+    ppc_state.msr = new_msr_val;
+    if ((old_msr_val ^ new_msr_val) & MSR::FP) {
+        bool newFP = (new_msr_val & MSR::FP) != 0;
+        ppc_opcode_grabber = newFP ? OpcodeGrabber : OpcodeGrabberNoFPU;
+        //LOG_F(INFO, "changed FP to %s", newFP ? "yes" : "no");
+#if 1
         exec_flags |= EXEF_OPC_DECODER;
         if (set_next_instruction_address) {
             // Even though we're setting an exception flag, we want normal
             // instruction execution to continue.
             ppc_next_instruction_address = ppc_state.pc + 4;
         }
+#else
+        power_on = false;
+        power_off_reason = po_endian_switch;
+#endif
     }
 }
 
-PPCOpcode* ppc_opcode_grabber() {
-    return ppc_state.msr & MSR::FP ? OpcodeGrabber : OpcodeGrabberNoFPU;
-}
+PPCOpcode* ppc_opcode_grabber = OpcodeGrabberNoFPU;
 
 /** Exception helpers. */
 
@@ -296,7 +301,7 @@ static void ppc_exec_inner(uint32_t start_addr, uint32_t size)
     uint64_t max_cycles = 0;
     uint32_t page_start, eb_start, eb_end = 0;
     uint32_t opcode;
-    PPCOpcode* opcode_grabber = ppc_opcode_grabber();
+    PPCOpcode* opcode_grabber = ppc_opcode_grabber;
     uint8_t* pc_real;
 
     while (power_on) {
@@ -321,7 +326,7 @@ static void ppc_exec_inner(uint32_t start_addr, uint32_t size)
 
         if (exec_flags) {
             if (exec_flags & EXEF_OPC_DECODER) [[unlikely]] {
-                opcode_grabber = ppc_opcode_grabber();
+                opcode_grabber = ppc_opcode_grabber;
             }
             // define next execution block
             eb_start = ppc_next_instruction_address;
@@ -377,7 +382,7 @@ void ppc_exec_single()
 
     uint8_t* pc_real = mmu_translate_imem(ppc_state.pc);
     uint32_t opcode = ppc_read_instruction(pc_real);
-    ppc_main_opcode(ppc_opcode_grabber(), opcode);
+    ppc_main_opcode(ppc_opcode_grabber, opcode);
     g_icycles++;
     process_events();
 
@@ -395,18 +400,15 @@ void ppc_exec_single()
 template void ppc_exec_inner<until>(uint32_t start_addr, uint32_t size);
 
 // outer interpreter loop
-void ppc_exec_until(volatile uint32_t goal_addr)
-{
+void ppc_exec_until(volatile uint32_t goal_addr) {
     if (setjmp(exc_env)) {
         // process low-level exceptions
-        //LOG_F(9, "PPC-EXEC: low_level exception raised!");
+        // LOG_F(9, "PPC-EXEC: low_level exception raised!");
         ppc_state.pc = ppc_next_instruction_address;
     }
 
     while (power_on) {
         ppc_exec_inner<until>(goal_addr, 0);
-        if (ppc_state.pc == goal_addr)
-            break;
     }
 }
 
@@ -845,13 +847,15 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool do_include_6
     dec_wr_value = 0;
 
 
+    uint32_t new_msr_val;
     if (is_601) {
         /* MPC601 sets MSR[ME] bit during hard reset / Power-On */
-        ppc_state.msr = (MSR::ME + MSR::IP);
+        new_msr_val = (MSR::ME + MSR::IP);
     } else {
-        ppc_state.msr             = MSR::IP;
+        new_msr_val = MSR::IP;
         ppc_state.spr[SPR::DEC_S] = 0xFFFFFFFFUL;
     }
+    ppc_msr_did_change(new_msr_val, new_msr_val, false);
 
     ppc_mmu_init();
 
@@ -913,8 +917,8 @@ static uint64_t reg_op(string& reg_name, uint64_t val, bool is_write) {
         if (reg_name_u == "MSR") {
             if (is_write) {
                 uint32_t old_msr_val = ppc_state.msr;
-                ppc_state.msr = (uint32_t)val;
-                ppc_msr_did_change(old_msr_val);
+                uint32_t new_msr_val = (uint32_t)val;
+                ppc_msr_did_change(old_msr_val, new_msr_val, false);
             }
             return ppc_state.msr;
         }
