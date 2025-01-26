@@ -801,8 +801,9 @@ void dppc_interpreter::ppc_mtmsr(uint32_t opcode) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
     }
     uint32_t reg_s = (opcode >> 21) & 0x1F;
+    uint32_t old_msr_val = ppc_state.msr;
     ppc_state.msr = ppc_state.gpr[reg_s];
-    ppc_msr_did_change();
+    ppc_msr_did_change(old_msr_val);
 
     // generate External Interrupt Exception
     // if CPU interrupt line is asserted
@@ -1377,10 +1378,11 @@ void dppc_interpreter::ppc_rfi(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
+    uint32_t old_msr_val    = ppc_state.msr;
     uint32_t new_srr1_val   = (ppc_state.spr[SPR::SRR1] & 0x87C0FF73UL);
     uint32_t new_msr_val    = (ppc_state.msr & ~0x87C0FF73UL);
     ppc_state.msr           = (new_msr_val | new_srr1_val) & 0xFFFBFFFFUL;
-    ppc_msr_did_change();
+    ppc_msr_did_change(old_msr_val);
 
     // generate External Interrupt Exception
     // if CPU interrupt line is still asserted
@@ -1406,7 +1408,7 @@ void dppc_interpreter::ppc_rfi(uint32_t opcode) {
 
     mmu_change_mode();
 
-    exec_flags = EXEF_RFI;
+    exec_flags |= EXEF_RFI;
 }
 
 void dppc_interpreter::ppc_sc(uint32_t opcode) {
