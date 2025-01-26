@@ -182,9 +182,10 @@ extern uint32_t rtc_lo, rtc_hi;
 
 /* Flags for controlling interpreter execution. */
 enum {
-    EXEF_BRANCH    = 1 << 0,
-    EXEF_EXCEPTION = 1 << 1,
-    EXEF_RFI       = 1 << 2,
+    EXEF_BRANCH         = 1 << 0, // Branch taken, target PC is is in ppc_next_instruction_address
+    EXEF_EXCEPTION      = 1 << 1, // Exception handler invoked
+    EXEF_RFI            = 1 << 2, // RFI instruction executed
+    EXEF_OPC_DECODER    = 1 << 3, // Opcode decoder has changed
 };
 
 enum CR_select : int32_t {
@@ -640,13 +641,14 @@ template <field_rc rec> extern void power_srq(uint32_t opcode);
 
 extern uint64_t get_virt_time_ns(void);
 
-extern void ppc_main_opcode(uint32_t opcode);
+extern void ppc_main_opcode(PPCOpcode* ppc_opcode_grabber, uint32_t opcode);
 extern void ppc_exec(void);
 extern void ppc_exec_single(void);
 extern void ppc_exec_until(uint32_t goal_addr);
 extern void ppc_exec_dbg(uint32_t start_addr, uint32_t size);
 
-extern void ppc_msr_did_change();
+extern PPCOpcode *ppc_opcode_grabber();
+extern void ppc_msr_did_change(uint32_t old_msr_val, bool set_next_instruction_address = true);
 
 /* debugging support API */
 void print_fprs(void);                   /* print content of the floating-point registers  */

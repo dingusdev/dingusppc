@@ -189,10 +189,21 @@ static PPCOpcode OpcodeGrabber[64 * 2048];
     everything else is the same.*/
 static PPCOpcode OpcodeGrabberNoFPU[64 * 2048];
 
-static PPCOpcode* curOpcodeGrabber = OpcodeGrabberNoFPU;
+void ppc_msr_did_change(uint32_t old_msr_val, bool set_next_instruction_address) {
+    bool old_fp = old_msr_val & MSR::FP;
+    bool new_fp = ppc_state.msr & MSR::FP;
+    if (old_fp != new_fp) {
+        exec_flags |= EXEF_OPC_DECODER;
+        if (set_next_instruction_address) {
+            // Even though we're setting an exception flag, we want normal
+            // instruction execution to continue.
+            ppc_next_instruction_address = ppc_state.pc + 4;
+        }
+    }
+}
 
-void ppc_msr_did_change() {
-    curOpcodeGrabber = ppc_state.msr & MSR::FP ? OpcodeGrabber : OpcodeGrabberNoFPU;
+PPCOpcode* ppc_opcode_grabber() {
+    return ppc_state.msr & MSR::FP ? OpcodeGrabber : OpcodeGrabberNoFPU;
 }
 
 /** Exception helpers. */
@@ -222,7 +233,7 @@ void ppc_release_int() {
 /** Opcode decoding functions. */
 
 /* Dispatch using primary and modifier opcode */
-void ppc_main_opcode(uint32_t opcode)
+void ppc_main_opcode(PPCOpcode *opcodeGrabber, uint32_t opcode)
 {
 #ifdef CPU_PROFILING
     num_executed_instrs++;
@@ -230,7 +241,7 @@ void ppc_main_opcode(uint32_t opcode)
     num_opcodes[opcode]++;
 #endif
 #endif
-    curOpcodeGrabber[(opcode >> 15 & 0x1F800) | (opcode & 0x7FF)](opcode);
+    opcodeGrabber[(opcode >> 15 & 0x1F800) | (opcode & 0x7FF)](opcode);
 }
 
 static long long cpu_now_ns() {
@@ -282,6 +293,7 @@ static void ppc_exec_inner(uint32_t start_addr, uint32_t size)
     uint64_t max_cycles = 0;
     uint32_t page_start, eb_start, eb_end = 0;
     uint32_t opcode;
+    PPCOpcode* opcode_grabber = ppc_opcode_grabber();
     uint8_t* pc_real;
 
     while (power_on) {
@@ -300,11 +312,14 @@ static void ppc_exec_inner(uint32_t start_addr, uint32_t size)
         }
 
         opcode = ppc_read_instruction(pc_real);
-        ppc_main_opcode(opcode);
-        if (g_icycles++ >= max_cycles || exec_timer)
+        ppc_main_opcode(opcode_grabber, opcode);
+        if (g_icycles++ >= max_cycles || exec_timer) [[unlikely]]
             max_cycles = process_events();
 
         if (exec_flags) {
+            if (exec_flags & EXEF_OPC_DECODER) [[unlikely]] {
+                opcode_grabber = ppc_opcode_grabber();
+            }
             // define next execution block
             eb_start = ppc_next_instruction_address;
             if (!(exec_flags & EXEF_RFI) && (eb_start & PPC_PAGE_MASK) == page_start) {
@@ -359,7 +374,7 @@ void ppc_exec_single()
 
     uint8_t* pc_real = mmu_translate_imem(ppc_state.pc);
     uint32_t opcode = ppc_read_instruction(pc_real);
-    ppc_main_opcode(opcode);
+    ppc_main_opcode(ppc_opcode_grabber(), opcode);
     g_icycles++;
     process_events();
 
@@ -836,7 +851,6 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool do_include_6
     }
 
     ppc_mmu_init();
-    ppc_msr_did_change();
 
     /* redirect code execution to reset vector */
     ppc_state.pc = 0xFFF00100;
@@ -895,8 +909,9 @@ static uint64_t reg_op(string& reg_name, uint64_t val, bool is_write) {
         }
         if (reg_name_u == "MSR") {
             if (is_write) {
+                uint32_t old_msr_val = ppc_state.msr;
                 ppc_state.msr = (uint32_t)val;
-                ppc_msr_did_change();
+                ppc_msr_did_change(old_msr_val);
             }
             return ppc_state.msr;
         }

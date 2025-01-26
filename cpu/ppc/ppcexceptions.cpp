@@ -57,7 +57,7 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
         break;
 
     case Except_Type::EXC_ISI:
-        if (exec_flags) {
+        if (exec_flags & ~EXEF_OPC_DECODER) {
             ppc_state.spr[SPR::SRR0] = ppc_next_instruction_address;
         } else {
             ppc_state.spr[SPR::SRR0] = ppc_state.pc & 0xFFFFFFFCUL;
@@ -66,7 +66,7 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
         break;
 
     case Except_Type::EXC_EXT_INT:
-        if (exec_flags) {
+        if (exec_flags & ~EXEF_OPC_DECODER) {
             ppc_state.spr[SPR::SRR0] = ppc_next_instruction_address;
         } else {
             ppc_state.spr[SPR::SRR0] = (ppc_state.pc & 0xFFFFFFFCUL) + 4;
@@ -90,7 +90,7 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
         break;
 
     case Except_Type::EXC_DECR:
-        if (exec_flags) {
+        if (exec_flags & ~EXEF_OPC_DECODER) {
             ppc_state.spr[SPR::SRR0] = ppc_next_instruction_address;
         } else {
             ppc_state.spr[SPR::SRR0] = (ppc_state.pc & 0xFFFFFFFCUL) + 4;
@@ -114,10 +114,12 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
     }
 
     ppc_state.spr[SPR::SRR1] = (ppc_state.msr & 0x0000FF73) | srr1_bits;
+    uint32_t old_msr_val = ppc_state.msr;
     ppc_state.msr &= 0xFFFB1041;
     /* copy MSR[ILE] to MSR[LE] */
     ppc_state.msr = (ppc_state.msr & ~MSR::LE) | !!(ppc_state.msr & MSR::ILE);
-    ppc_msr_did_change();
+    // Don't clobber the ppc_next_instruction_address value
+    ppc_msr_did_change(old_msr_val, false);
 
     if (ppc_state.msr & MSR::IP) {
         ppc_next_instruction_address |= 0xFFF00000;

@@ -46,7 +46,7 @@ void xer_ov_test(string mnem, uint32_t opcode) {
     ppc_state.gpr[3]        = 2;
     ppc_state.gpr[4]        = 2;
     ppc_state.spr[SPR::XER] = 0xFFFFFFFF;
-    ppc_main_opcode(opcode);
+    ppc_main_opcode(ppc_opcode_grabber(), opcode);
     if (ppc_state.spr[SPR::XER] & 0x40000000UL) {
         cout << "Invalid " << mnem << " emulation! XER[OV] should not be set." << endl;
         nfailed++;
@@ -150,7 +150,7 @@ static void read_test_data() {
         ppc_state.spr[SPR::XER] = 0;
         ppc_state.cr            = 0;
 
-        ppc_main_opcode(opcode);
+        ppc_main_opcode(ppc_opcode_grabber(), opcode);
 
         ntested++;
 
@@ -292,7 +292,7 @@ static void read_test_float_data() {
 
         ppc_state.cr = 0;
 
-        ppc_main_opcode(opcode);
+        ppc_main_opcode(ppc_opcode_grabber(), opcode);
 
         ntested++;
 
@@ -318,6 +318,9 @@ static void read_test_float_data() {
 int main() {
     is_601 = true;
     initialize_ppc_opcode_table(); //kludge
+    // MPC601 sets MSR[ME] bit during hard reset / Power-On.
+    // Also set MSR[FP] bit so we can test FPU instructions.
+    ppc_state.msr = (MSR::ME | MSR::IP | MSR::FP);
 
     cout << "Running DingusPPC emulator tests..." << endl << endl;
 
