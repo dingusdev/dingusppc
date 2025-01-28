@@ -150,45 +150,29 @@ int initialize_tnt(std::string& id)
     return 0;
 }
 
-template <uint32_t cpu>
-static const PropMap pm7500_settings = {
-    {"rambank0_size",
-        new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
-    {"rambank1_size",
-        new IntProperty(16, std::vector<uint32_t>({   4, 8, 16, 32, 64, 128}))},
-    {"rambank2_size",
-        new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
-    {"rambank3_size",
-        new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
-    {"rambank4_size",
-        new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
-    {"rambank5_size",
-        new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
-    {"rambank6_size",
-        new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
-    {"rambank7_size",
-        new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
-    {"rambank8_size",
-        new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
-    {"rambank9_size",
-        new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
-    {"rambank10_size",
-        new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
-    {"rambank11_size",
-        new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
-    {"rambank12_size",
-        new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))},
-    {"emmo",
-        new BinProperty(0)},
-    {"cpu",
-        new StrProperty(
-            cpu == PPC_VER::MPC601  ? "601" :
-            cpu == PPC_VER::MPC604  ? "604" :
-            cpu == PPC_VER::MPC604E ? "604e" :
-            "604e", std::vector<std::string>({"601", "604", "604e", "750"})
-        )
-    },
+// If this is templated, it hits a compiler bug in MSVC, so use #define instead.
+#define static_const_pm7500_settings(cpu) \
+static const PropMap pm7500_settings_ ## cpu = { \
+    {"rambank0_size" , new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))}, \
+    {"rambank1_size" , new IntProperty(16, std::vector<uint32_t>({   4, 8, 16, 32, 64, 128}))}, \
+    {"rambank2_size" , new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))}, \
+    {"rambank3_size" , new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))}, \
+    {"rambank4_size" , new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))}, \
+    {"rambank5_size" , new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))}, \
+    {"rambank6_size" , new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))}, \
+    {"rambank7_size" , new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))}, \
+    {"rambank8_size" , new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))}, \
+    {"rambank9_size" , new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))}, \
+    {"rambank10_size", new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))}, \
+    {"rambank11_size", new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))}, \
+    {"rambank12_size", new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))}, \
+    {"emmo", new BinProperty(0)}, \
+    {"cpu", new StrProperty(# cpu, std::vector<std::string>({"601", "604", "604e", "750"}))}, \
 };
+
+static_const_pm7500_settings(601)
+static_const_pm7500_settings(604)
+static_const_pm7500_settings(604e)
 
 static std::vector<std::string> pm7500_devices = {
     "Hammerhead", "Bandit1", "Chaos", "ScsiMesh", "MeshTnt", "GrandCentral",
@@ -208,7 +192,7 @@ static const MachineDescription pm7300_descriptor = {
     .name = "pm7300",
     .description = "Power Macintosh 7300",
     .devices = pm7500_devices,
-    .settings = pm7500_settings<PPC_VER::MPC604E>,
+    .settings = pm7500_settings_604e,
     .init_func = &initialize_tnt
 };
 
@@ -216,7 +200,7 @@ static const MachineDescription pm7500_descriptor = {
     .name = "pm7500",
     .description = "Power Macintosh 7500",
     .devices = pm7500_devices,
-    .settings = pm7500_settings<PPC_VER::MPC601>,
+    .settings    = pm7500_settings_601,
     .init_func = &initialize_tnt
 };
 
@@ -224,7 +208,7 @@ static const MachineDescription pm8500_descriptor = {
     .name = "pm8500",
     .description = "Power Macintosh 8500",
     .devices = pm8500_devices,
-    .settings = pm7500_settings<PPC_VER::MPC604>,
+    .settings    = pm7500_settings_604,
     .init_func = &initialize_tnt
 };
 
@@ -232,7 +216,7 @@ static const MachineDescription pm9500_descriptor = {
     .name = "pm9500",
     .description = "Power Macintosh 9500",
     .devices = pm9500_devices,
-    .settings = pm7500_settings<PPC_VER::MPC604>,
+    .settings    = pm7500_settings_604,
     .init_func = &initialize_tnt
 };
 
@@ -240,7 +224,7 @@ static const MachineDescription pm7600_descriptor = {
     .name = "pm7600",
     .description = "Power Macintosh 7600",
     .devices = pm7500_devices,
-    .settings = pm7500_settings<PPC_VER::MPC604E>,
+    .settings    = pm7500_settings_604e,
     .init_func = &initialize_tnt
 };
 
@@ -248,7 +232,7 @@ static const MachineDescription pm8600_descriptor = {
     .name = "pm8600",
     .description = "Power Macintosh 8600",
     .devices = pm8500_devices,
-    .settings = pm7500_settings<PPC_VER::MPC604E>,
+    .settings    = pm7500_settings_604e,
     .init_func = &initialize_tnt
 };
 
@@ -256,7 +240,7 @@ static const MachineDescription pm9600_descriptor = {
     .name = "pm9600",
     .description = "Power Macintosh 9600",
     .devices = pm9500_devices,
-    .settings = pm7500_settings<PPC_VER::MPC604E>,
+    .settings    = pm7500_settings_604e,
     .init_func = &initialize_tnt
 };
 
