@@ -28,11 +28,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 EventManager* EventManager::event_manager;
 
-static int get_sdl_event_key_code(const SDL_KeyboardEvent &event);
+static int get_sdl_event_key_code(const SDL_KeyboardEvent& event, uint32_t kbd_locale);
 static void toggle_mouse_grab(const SDL_KeyboardEvent &event);
 
-void EventManager::poll_events()
-{
+void EventManager::poll_events(uint32_t kbd_locale) {
     SDL_Event event;
 
     while (SDL_PollEvent(&event)) {
@@ -45,7 +44,7 @@ void EventManager::poll_events()
             break;
 
         case SDL_WINDOWEVENT: {
-                WindowEvent we;
+                WindowEvent we{};
                 we.sub_type  = event.window.event;
                 we.window_id = event.window.windowID;
                 this->_window_signal.emit(we);
@@ -65,16 +64,16 @@ void EventManager::poll_events()
                 // Control-S: scale quality
                 if (event.key.keysym.sym == SDLK_s && SDL_GetModState() & KMOD_LCTRL) {
                     if (event.type == SDL_KEYUP) {
-                        WindowEvent we;
+                        WindowEvent we{};
                         we.sub_type  = WINDOW_SCALE_QUALITY_TOGGLE;
                         we.window_id = event.window.windowID;
                         this->_window_signal.emit(we);
                     }
                     return;
                 }
-                int key_code = get_sdl_event_key_code(event.key);
+                int key_code = get_sdl_event_key_code(event.key, kbd_locale);
                 if (key_code != -1) {
-                    KeyboardEvent ke;
+                    KeyboardEvent ke{};
                     ke.key = key_code;
                     if (event.type == SDL_KEYDOWN) {
                         ke.flags = KEYBOARD_EVENT_DOWN;
@@ -96,7 +95,7 @@ void EventManager::poll_events()
             break;
 
         case SDL_MOUSEMOTION: {
-                MouseEvent me;
+                MouseEvent me{};
                 me.xrel  = event.motion.xrel;
                 me.yrel  = event.motion.yrel;
                 me.xabs  = event.motion.x;
@@ -107,7 +106,7 @@ void EventManager::poll_events()
             break;
 
         case SDL_MOUSEBUTTONDOWN: {
-                MouseEvent me;
+                MouseEvent me{};
                 Uint8 adb_button;
                 switch (event.button.button) {
                     case SDL_BUTTON_LEFT   : adb_button = 0; break;
@@ -124,7 +123,7 @@ void EventManager::poll_events()
             break;
 
         case SDL_MOUSEBUTTONUP: {
-                MouseEvent me;
+                MouseEvent me{};
                 Uint8 adb_button;
                 switch (event.button.button) {
                     case SDL_BUTTON_LEFT   : adb_button = 0; break;
@@ -141,7 +140,7 @@ void EventManager::poll_events()
             break;
 
         case SDL_CONTROLLERBUTTONDOWN: {
-                GamepadEvent ge;
+                GamepadEvent ge{};
                 switch (event.cbutton.button) {
                     case SDL_CONTROLLER_BUTTON_BACK:          ge.button = GamepadButton::FrontLeft;    break;
                     case SDL_CONTROLLER_BUTTON_GUIDE:         ge.button = GamepadButton::FrontMiddle;  break;
@@ -164,7 +163,7 @@ void EventManager::poll_events()
             break;
 
         case SDL_CONTROLLERBUTTONUP: {
-                GamepadEvent ge;
+                GamepadEvent ge{};
                 switch (event.cbutton.button) {
                     case SDL_CONTROLLER_BUTTON_BACK:          ge.button = GamepadButton::FrontLeft;    break;
                     case SDL_CONTROLLER_BUTTON_GUIDE:         ge.button = GamepadButton::FrontMiddle;  break;
@@ -196,7 +195,7 @@ void EventManager::poll_events()
 }
 
 
-static int get_sdl_event_key_code(const SDL_KeyboardEvent &event)
+static int get_sdl_event_key_code(const SDL_KeyboardEvent &event, uint32_t kbd_locale)
 {
     switch (event.keysym.sym) {
     case SDLK_a:            return AdbKey_A;
@@ -331,7 +330,8 @@ static int get_sdl_event_key_code(const SDL_KeyboardEvent &event)
 
     //Japanese keyboard
     case SDL_SCANCODE_TO_KEYCODE(SDL_SCANCODE_INTERNATIONAL3):
-        return AdbKey_JIS_Yen;
+        if (kbd_locale == Jpn_JPN)
+            return AdbKey_JIS_Yen;
     case SDL_SCANCODE_TO_KEYCODE(SDL_SCANCODE_INTERNATIONAL1):
         return AdbKey_JIS_Underscore;
     case 0XBC:          

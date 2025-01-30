@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -73,6 +73,17 @@ public:
     uint16_t keys_state;
 };
 
+
+enum KeyboardLocale : uint32_t {
+    Eng_USA = 0,
+    Eng_GBR = 1,
+    Fra_FRA = 10,
+    Deu_DEU = 20,
+    Ita_ITA = 30,
+    Spa_ESP = 40,
+    Jpn_JPN = 80,
+};
+
 /* AppleJack bits 3-7 are supported but unused */
 enum GamepadButton : uint8_t {
     Red =          14,
@@ -112,7 +123,7 @@ public:
         return event_manager;
     };
 
-    void poll_events();
+    void poll_events(uint32_t kbd_locale);
 
     template <typename T>
     void add_window_handler(T *inst, void (T::*func)(const WindowEvent&)) {

@@ -37,6 +37,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <csignal>
 #include <cstring>
 #include <iostream>
+#include <optional>
 #include <CLI11.hpp>
 #include <loguru.hpp>
 
@@ -60,7 +61,7 @@ static void sigabrt_handler(int signum) {
 }
 
 static string appDescription = string(
-    "\nDingusPPC - Alpha 1.01 (10/31/2024)          "
+    "\nDingusPPC - Alpha 1.02 (5/10/2025)           "
     "\nWritten by divingkatae, maximumspatium,      "
     "\njoevt, mihaip, kkaisershot, et. al.          "
     "\n(c) 2018-2024 The DingusPPC Dev Team.        "
@@ -99,8 +100,10 @@ int main(int argc, char** argv) {
     app.allow_windows_style_options(); /* we want Windows-style options */
     app.allow_extras();
 
-    bool   realtime_enabled = false;
-    bool   debugger_enabled = false;
+    bool realtime_enabled = false;
+    bool debugger_enabled = false;
+    uint32_t keyboard_id  = 0;
+
     string bootrom_path("bootrom.bin");
     string working_directory_path(".");
 
@@ -110,6 +113,7 @@ int main(int argc, char** argv) {
         "Run the emulator in real-time");
     execution_mode_group->add_flag("-d,--debugger", debugger_enabled,
         "Enter the built-in debugger");
+    app.add_option("-k,--keyboard", keyboard_id, "Specify keyboard ID");
     app.add_option("-w,--workingdir", working_directory_path, "Specifies working directory")
         ->check(WorkingDirectory);
     app.add_option("-b,--bootrom", bootrom_path, "Specifies BootROM path")
@@ -179,7 +183,7 @@ int main(int argc, char** argv) {
     }
 
     auto rom_data = std::unique_ptr<char[]>(new char[4 * 1024 * 1024]);
-    memset(&rom_data[0], 0, 4 * 1024 * 1024);
+    memset(&rom_data[0], 0, static_cast<size_t>(4 * 1024 * 1024));
     size_t rom_size = MachineFactory::read_boot_rom(bootrom_path, &rom_data[0]);
     if (!rom_size) {
         return 1;
@@ -309,8 +313,8 @@ void run_machine(std::string machine_str, char *rom_data, size_t rom_size, uint3
 
     // set up system wide event polling using
     // default Macintosh polling rate of 11 ms
-    uint32_t event_timer = TimerManager::get_instance()->add_cyclic_timer(MSECS_TO_NSECS(11), [] {
-        EventManager::get_instance()->poll_events();
+    uint32_t event_timer = TimerManager::get_instance()->add_cyclic_timer(MSECS_TO_NSECS(11), [] { 
+        EventManager::get_instance()->poll_events(Eng_USA);
     });
 
 #ifdef CPU_PROFILING
