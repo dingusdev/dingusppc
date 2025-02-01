@@ -70,6 +70,8 @@ static string appDescription = string(
     "\n"
 );
 
+uint32_t keyboard_id = 0;
+
 /// Check for an existing directory (returns error message if check fails)
 class WorkingDirectoryValidator : public CLI::detail::ExistingDirectoryValidator {
 public:
@@ -91,8 +93,8 @@ public:
 const WorkingDirectoryValidator WorkingDirectory;
 
 void run_machine(
-    std::string machine_str, char *rom_data, size_t rom_size, uint32_t execution_mode,
-    uint32_t profiling_interval_ms
+    std::string machine_str, char *rom_data, size_t rom_size, uint32_t execution_mode
+    ,uint32_t profiling_interval_ms
 );
 
 int main(int argc, char** argv) {
@@ -105,7 +107,12 @@ int main(int argc, char** argv) {
 
     bool realtime_enabled = false;
     bool debugger_enabled = false;
-    uint32_t keyboard_id  = 0;
+    string keyboard_string = "Eng_USA";
+
+    const std::map<std::string, int> kbd_map{
+        {"Eng_USA", 0}, {"Eng_GBR", 1}, {"Fra_FRA", 10}, {"Deu_DEU", 20}, 
+        {"Ita_ITA", 30},{"Spa_ESP", 40}, {"Jpn_JPN", 80},
+    };
 
     string bootrom_path("bootrom.bin");
     string working_directory_path(".");
@@ -116,7 +123,7 @@ int main(int argc, char** argv) {
         "Run the emulator in real-time");
     execution_mode_group->add_flag("-d,--debugger", debugger_enabled,
         "Enter the built-in debugger");
-    app.add_option("-k,--keyboard", keyboard_id, "Specify keyboard ID");
+    app.add_option("-k,--keyboard", keyboard_string, "Specify keyboard ID");
     app.add_option("-w,--workingdir", working_directory_path, "Specifies working directory")
         ->check(WorkingDirectory);
     app.add_option("-b,--bootrom", bootrom_path, "Specifies BootROM path")
@@ -265,8 +272,15 @@ int main(int argc, char** argv) {
     // redirect SIGABRT to our own handler
     signal(SIGABRT, sigabrt_handler);
 
+    keyboard_id = kbd_map.at(keyboard_string);
+
     while (true) {
-        run_machine(machine_str, &rom_data[0], rom_size, execution_mode, profiling_interval_ms);
+        run_machine(
+            machine_str,
+            &rom_data[0],
+            rom_size,
+            execution_mode,
+            profiling_interval_ms);
         if (power_off_reason == po_restarting) {
             LOG_F(INFO, "Restarting...");
             power_on = true;
@@ -289,10 +303,12 @@ int main(int argc, char** argv) {
     return 0;
 }
 
-void run_machine(std::string machine_str, char *rom_data, size_t rom_size, uint32_t execution_mode,
+void run_machine(std::string machine_str, char* rom_data,
+    size_t rom_size,
+    uint32_t execution_mode,
     uint32_t
 #ifdef CPU_PROFILING
-    profiling_interval_ms
+     profiling_interval_ms
 #endif
 ) {
     if (MachineFactory::create_machine_for_id(machine_str, rom_data, rom_size) < 0) {
@@ -317,7 +333,7 @@ void run_machine(std::string machine_str, char *rom_data, size_t rom_size, uint3
     // set up system wide event polling using
     // default Macintosh polling rate of 11 ms
     uint32_t event_timer = TimerManager::get_instance()->add_cyclic_timer(MSECS_TO_NSECS(11), [] { 
-        EventManager::get_instance()->poll_events(Eng_USA);
+        EventManager::get_instance()->poll_events(keyboard_id);
     });
 
 #ifdef CPU_PROFILING
