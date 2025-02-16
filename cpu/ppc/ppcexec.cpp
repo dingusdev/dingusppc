@@ -410,6 +410,8 @@ void ppc_exec_until(volatile uint32_t goal_addr) {
 
     while (power_on) {
         ppc_exec_inner<until>(goal_addr, 0);
+        if (ppc_state.pc == goal_addr)
+            break;
     }
 }
 
