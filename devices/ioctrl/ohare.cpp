@@ -465,7 +465,7 @@ void OHare::clear_cpu_int()
 }
 
 static const std::vector<std::string> OHare_Subdevices = {
-    "ViaCuda", "ScsiMesh", "MeshHeathrow", "Escc", "Swim3", "Ide0"
+    "NVRAM", "ViaCuda", "ScsiMesh", "MeshHeathrow", "Escc", "Swim3", "Ide0"
 };
 
 static const DeviceDescription OHare_Descriptor = {
