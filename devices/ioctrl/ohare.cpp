@@ -50,7 +50,7 @@ OHare::OHare() : PCIDevice("mac-io_ohare"), InterruptCtrl()
 
     // populate my PCI config header
     this->vendor_id   = PCI_VENDOR_APPLE;
-    this->device_id   = 0x0007;
+    this->device_id   = MIO_DEV_ID_OHARE;
     this->class_rev   = 0xFF000001;
     this->cache_ln_sz = 8;
 

@@ -70,6 +70,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <memory>
 
+/** PCI device IDs for various MacIO ASICs. */
+enum {
+    MIO_DEV_ID_GRANDCENTRAL = 0x0002,
+    MIO_DEV_ID_OHARE        = 0x0007,
+    MIO_DEV_ID_HEATHROW     = 0x0010,
+    MIO_DEV_ID_PADDINGTON   = 0x0017,
+};
+
 /** Interrupt related constants. */
 #define MACIO_INT_CLR    0x80UL       // clears bits in the interrupt events registers
 #define MACIO_INT_MODE   0x80000000UL // interrupt mode: 0 - native, 1 - 68k-style
