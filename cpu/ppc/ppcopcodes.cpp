@@ -1378,6 +1378,11 @@ void dppc_interpreter::ppc_rfi(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
+    if (ppc_state.msr & MSR::PR) {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
+        return;
+    }
+
     uint32_t old_msr_val    = ppc_state.msr;
     uint32_t new_srr1_val   = (ppc_state.spr[SPR::SRR1] & 0x87C0FF73UL);
     uint32_t new_msr_val    = (ppc_state.msr & ~0x87C0FF73UL);
@@ -1468,6 +1473,10 @@ void dppc_interpreter::ppc_dcbi(uint32_t opcode) {
     num_supervisor_instrs++;
 #endif
     /* placeholder */
+    if (ppc_state.msr & MSR::PR) {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
+        return;
+    }
 }
 
 void dppc_interpreter::ppc_dcbst(uint32_t opcode) {
@@ -1996,6 +2005,10 @@ void dppc_interpreter::ppc_tlbie(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_supervisor_instrs++;
 #endif
+    if (ppc_state.msr & MSR::PR) {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
+        return;
+    }
 
     tlb_flush_entry(ppc_state.gpr[(opcode >> 11) & 0x1F]);
 }
@@ -2005,6 +2018,12 @@ void dppc_interpreter::ppc_tlbia(uint32_t opcode) {
     num_supervisor_instrs++;
 #endif
     /* placeholder */
+    if (ppc_state.msr & MSR::PR) {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
+        return;
+    }
+
+    LOG_F(ERROR, "tlbia needs to be implemented!");
 }
 
 void dppc_interpreter::ppc_tlbld(uint32_t opcode) {
@@ -2026,4 +2045,8 @@ void dppc_interpreter::ppc_tlbsync(uint32_t opcode) {
     num_supervisor_instrs++;
 #endif
     /* placeholder */
+    if (ppc_state.msr & MSR::PR) {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
+        return;
+    }
 }
