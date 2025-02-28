@@ -94,10 +94,10 @@ uint64_t ImgFile::write(const void* buf, uint64_t offset, uint64_t length)
         LOG_F(WARNING, "ImgFile::write before disk was opened, ignoring.");
         return 0;
     }
-    impl->stream->seekg(offset, std::ios::beg);
+    impl->stream->seekp(offset, std::ios::beg);
     impl->stream->write((const char *)buf, length);
     #if defined(WIN32) || defined(__APPLE__) || defined(__linux)
         impl->stream->flush();
     #endif
-    return impl->stream->gcount();
+    return uint64_t(impl->stream->tellp()) - offset;
 }
