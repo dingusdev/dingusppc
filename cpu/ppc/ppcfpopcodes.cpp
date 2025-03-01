@@ -244,7 +244,6 @@ void dppc_interpreter::ppc_fdiv(uint32_t opcode) {
 
     if (val_reg_b == 0.0) {
         ppc_state.fpscr |= FX | VX;
-        ppc_dblresult64_d = -ppc_dblresult64_d;
     }
 
     if (std::isinf(val_reg_a) && std::isinf(val_reg_b)) {
@@ -541,7 +540,6 @@ void dppc_interpreter::ppc_fdivs(uint32_t opcode) {
     double ppc_dblresult64_d = (float)(val_reg_a / val_reg_b);
     if (val_reg_b == 0.0) {
         ppc_state.fpscr |= FX | VX;
-        ppc_dblresult64_d = -ppc_dblresult64_d;
     }
 
     if (std::isinf(val_reg_a) && std::isinf(val_reg_b)) {
