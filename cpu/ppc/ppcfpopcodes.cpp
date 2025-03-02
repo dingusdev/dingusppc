@@ -237,6 +237,10 @@ void dppc_interpreter::ppc_fdiv(uint32_t opcode) {
     if (is_601 && FPR_INT(reg_b) == 0x8000000000000000 && val_reg_a > 0) {
         ppc_dblresult64_d = val_reg_b;
         fpresult_update(ppc_dblresult64_d);
+
+        if (rec)
+            ppc_update_cr1();
+
         return;
     }
 
