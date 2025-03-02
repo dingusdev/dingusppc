@@ -385,7 +385,9 @@ void mmu_change_mode()
     mmu_mode = ((!!(ppc_state.msr & MSR::IR)) << 1) | !!(ppc_state.msr & MSR::PR);
 
     if (CurITLBMode != mmu_mode) {
-        switch(mmu_mode) {
+        switch (mmu_mode) {
+            case 1: // user mode can't disable translations
+                mmu_mode = 0;
             case 0: // real address mode
                 pCurITLB1 = &itlb1_mode1[0];
                 pCurITLB2 = &itlb2_mode1[0];
@@ -394,10 +396,6 @@ void mmu_change_mode()
                 pCurITLB1 = &itlb1_mode2[0];
                 pCurITLB2 = &itlb2_mode2[0];
                 break;
-            case 1:
-                // user mode can't disable translations
-                //LOG_F(ERROR, "instruction mmu mode 1 is invalid!"); // this happens alot. Maybe it's not invalid?
-                mmu_mode = 3;
             case 3: // user mode with instruction translation enabled
                 pCurITLB1 = &itlb1_mode3[0];
                 pCurITLB2 = &itlb2_mode3[0];
@@ -410,7 +408,9 @@ void mmu_change_mode()
     mmu_mode = ((!!(ppc_state.msr & MSR::DR)) << 1) | !!(ppc_state.msr & MSR::PR);
 
     if (CurDTLBMode != mmu_mode) {
-        switch(mmu_mode) {
+        switch (mmu_mode) {
+            case 1: // user mode can't disable translations
+                mmu_mode = 0;
             case 0: // real address mode
                 pCurDTLB1 = &dtlb1_mode1[0];
                 pCurDTLB2 = &dtlb2_mode1[0];
@@ -419,10 +419,6 @@ void mmu_change_mode()
                 pCurDTLB1 = &dtlb1_mode2[0];
                 pCurDTLB2 = &dtlb2_mode2[0];
                 break;
-            case 1:
-                // user mode can't disable translations
-                LOG_F(ERROR, "data mmu mode 1 is invalid!");
-                mmu_mode = 3;
             case 3: // user mode with data translation enabled
                 pCurDTLB1 = &dtlb1_mode3[0];
                 pCurDTLB2 = &dtlb2_mode3[0];
