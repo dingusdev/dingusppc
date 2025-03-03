@@ -322,6 +322,9 @@ bool OfConfigChrp::validate()
     bool    wip = true;
     bool    of_part_found = false;
 
+    if (this->nvram_obj == nullptr)
+        return false;
+
     // search the entire 8KB NVRAM for CHRP OF config partition.
     // Bail out if an unknown partition or free space is encountered.
     // Skip over known partitions.
@@ -592,16 +595,12 @@ void OfConfigUtils::printenv() {
     }
 }
 
-void OfConfigUtils::setenv(string var_name, string value)
+bool OfConfigUtils::setenv(string var_name, string value)
 {
     if (!this->open_container())
-        return;
+        return false;
 
     OfConfigImpl::config_dict vars = this->cfg_impl->get_config_vars();
 
-    if (!this->cfg_impl->set_var(var_name, value)) {
-        cout << " Please try again" << endl;
-    } else {
-        cout << " ok" << endl; // mimic Forth
-    }
+    return this->cfg_impl->set_var(var_name, value);
 }

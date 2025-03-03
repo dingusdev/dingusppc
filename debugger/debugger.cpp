@@ -784,9 +784,15 @@ void DppcDebugger::enter_debugger() {
             ss >> var_name;
             std::istream::sentry se(ss); // skip white space
             getline(ss, value); // get everything up to eol
-            if (ofnvram->init())
+            if (ofnvram->init()) {
+                cout << " Cannot open NVRAM" << endl;
                 continue;
-            ofnvram->setenv(var_name, value);
+            }
+            if (!ofnvram->setenv(var_name, value)) {
+                cout << " Please try again" << endl;
+            } else {
+                cout << " ok" << endl; // mimic Forth
+            }
  #ifndef _WIN32
         } else if (cmd == "nvedit") {
             cmd = "";

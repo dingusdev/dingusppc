@@ -134,7 +134,7 @@ public:
 
     int  init();
     void printenv();
-    void setenv(std::string var_name, std::string value);
+    bool setenv(std::string var_name, std::string value);
 
 protected:
     bool open_container();

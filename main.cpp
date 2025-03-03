@@ -28,6 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cpu/ppc/ppcemu.h>
 #include <cpu/ppc/ppcmmu.h>
 #include <debugger/debugger.h>
+#include <devices/common/ofnvram.h>
 #include <machines/machinebase.h>
 #include <machines/machinefactory.h>
 #include <utils/profiler.h>
@@ -94,6 +95,7 @@ const WorkingDirectoryValidator WorkingDirectory;
 
 void run_machine(
     std::string machine_str, char *rom_data, size_t rom_size, uint32_t execution_mode
+    ,const std::vector<std::string> &env_vars
     ,uint32_t profiling_interval_ms
 );
 
@@ -110,7 +112,7 @@ int main(int argc, char** argv) {
     string keyboard_string = "Eng_USA";
 
     const std::map<std::string, int> kbd_map{
-        {"Eng_USA", 0}, {"Eng_GBR", 1}, {"Fra_FRA", 10}, {"Deu_DEU", 20}, 
+        {"Eng_USA", 0}, {"Eng_GBR", 1}, {"Fra_FRA", 10}, {"Deu_DEU", 20},
         {"Ita_ITA", 30},{"Spa_ESP", 40}, {"Jpn_JPN", 80},
     };
 
@@ -141,6 +143,10 @@ int main(int argc, char** argv) {
         ->check(CLI::Number);
     app.add_flag("--log-no-uptime", log_no_uptime,
         "Disable the uptime preamble of logged messages");
+
+    std::vector<std::string> env_vars;
+    app.add_option("--setenv", env_vars, "Set OpenFirmware variables at startup")
+        ->take_all();
 
     uint32_t profiling_interval_ms = 0;
 #ifdef CPU_PROFILING
@@ -280,6 +286,7 @@ int main(int argc, char** argv) {
             &rom_data[0],
             rom_size,
             execution_mode,
+            env_vars,
             profiling_interval_ms);
         if (power_off_reason == po_restarting) {
             LOG_F(INFO, "Restarting...");
@@ -306,6 +313,7 @@ int main(int argc, char** argv) {
 void run_machine(std::string machine_str, char* rom_data,
     size_t rom_size,
     uint32_t execution_mode,
+    const std::vector<std::string> &env_vars,
     uint32_t
 #ifdef CPU_PROFILING
      profiling_interval_ms
@@ -313,6 +321,28 @@ void run_machine(std::string machine_str, char* rom_data,
 ) {
     if (MachineFactory::create_machine_for_id(machine_str, rom_data, rom_size) < 0) {
         return;
+    }
+
+    if (!env_vars.empty()) {
+        OfConfigUtils ofnvram;
+        if (!ofnvram.init()) {
+            for (const auto &env_var : env_vars) {
+                auto pos = env_var.find('=');
+                if (pos != std::string::npos) {
+                    std::string name = env_var.substr(0, pos);
+                    std::string value = env_var.substr(pos + 1);
+                    if (ofnvram.setenv(name, value)) {
+                        LOG_F(INFO, "Set OpenFirmware variable %ss to %s", name.c_str(), value.c_str());
+                    } else {
+                        LOG_F(WARNING, "Cannot set OpenFirmware variable %s to %s", name.c_str(), value.c_str());
+                    }
+                } else {
+                    LOG_F(WARNING, "Invalid format for --setenv: %s", env_var.c_str());
+                }
+            }
+        } else {
+            LOG_F(WARNING, "Cannot initialize NVRAM wrapper, will not set OpenFirmware variables");
+        }
     }
 
     uint32_t deterministic_timer;
@@ -332,7 +362,7 @@ void run_machine(std::string machine_str, char* rom_data,
 
     // set up system wide event polling using
     // default Macintosh polling rate of 11 ms
-    uint32_t event_timer = TimerManager::get_instance()->add_cyclic_timer(MSECS_TO_NSECS(11), [] { 
+    uint32_t event_timer = TimerManager::get_instance()->add_cyclic_timer(MSECS_TO_NSECS(11), [] {
         EventManager::get_instance()->poll_events(keyboard_id);
     });
 
