@@ -145,7 +145,7 @@ int main(int argc, char** argv) {
         "Disable the uptime preamble of logged messages");
 
     std::vector<std::string> env_vars;
-    app.add_option("--setenv", env_vars, "Set OpenFirmware variables at startup")
+    app.add_option("--setenv", env_vars, "Set Open Firmware variables at startup")
         ->take_all();
 
     uint32_t profiling_interval_ms = 0;
@@ -332,16 +332,16 @@ void run_machine(std::string machine_str, char* rom_data,
                     std::string name = env_var.substr(0, pos);
                     std::string value = env_var.substr(pos + 1);
                     if (ofnvram.setenv(name, value)) {
-                        LOG_F(INFO, "Set OpenFirmware variable %ss to %s", name.c_str(), value.c_str());
+                        LOG_F(INFO, "Set Open Firmware variable %s to %s", name.c_str(), value.c_str());
                     } else {
-                        LOG_F(WARNING, "Cannot set OpenFirmware variable %s to %s", name.c_str(), value.c_str());
+                        LOG_F(WARNING, "Cannot set Open Firmware variable %s to %s", name.c_str(), value.c_str());
                     }
                 } else {
                     LOG_F(WARNING, "Invalid format for --setenv: %s", env_var.c_str());
                 }
             }
         } else {
-            LOG_F(WARNING, "Cannot initialize NVRAM wrapper, will not set OpenFirmware variables");
+            LOG_F(WARNING, "Cannot initialize NVRAM wrapper, will not set Open Firmware variables");
         }
     }
 
