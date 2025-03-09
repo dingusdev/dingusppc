@@ -95,6 +95,8 @@ enum {
     AWAC_SOUND_CTRL_REG   = 0x00,
     AWAC_CODEC_CTRL_REG   = 0x10,
     AWAC_CODEC_STATUS_REG = 0x20,
+    AWAC_CLIP_COUNT       = 0x30,
+    AWAC_BYTE_SWAP        = 0x40,
 };
 
 /** Apple source calls this kValidData but doesn't explain
@@ -185,7 +187,8 @@ public:
 private:
     uint32_t snd_ctrl_reg    = 0;
     uint16_t control_regs[8] = {}; // control registers, each 12-bits wide
-    uint8_t  is_busy         = 0;
+    uint8_t is_busy          = 0;
+    uint32_t clip_count      = 0;
 
     std::unique_ptr<AudioProcessor> audio_proc;
 };

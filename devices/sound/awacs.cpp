@@ -192,6 +192,8 @@ uint32_t AwacsScreamer::snd_ctrl_read(uint32_t offset, int size) {
         return this->is_busy;
     case AWAC_CODEC_STATUS_REG:
         return (AWAC_AVAILABLE << 8) | (AWAC_MAKER_CRYSTAL << 16) | (AWAC_REV_SCREAMER << 20);
+    case AWAC_CLIP_COUNT:
+        return this->clip_count;
     default:
         LOG_F(ERROR, "%s: unsupported register at offset 0x%X", this->name.c_str(), offset);
     }
@@ -217,6 +219,8 @@ void AwacsScreamer::snd_ctrl_write(uint32_t offset, uint32_t value, int size) {
         if (!subframe)
             this->control_regs[reg_num] = data;
         break;
+    case AWAC_CLIP_COUNT:
+        this->clip_count = BYTESWAP_32(value);
     default:
         LOG_F(ERROR, "%s: unsupported register at offset 0x%X", this->name.c_str(),
               offset);
