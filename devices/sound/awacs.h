@@ -97,6 +97,7 @@ enum {
     AWAC_CODEC_STATUS_REG = 0x20,
     AWAC_CLIP_COUNT       = 0x30,
     AWAC_BYTE_SWAP        = 0x40,
+    AWAC_FRAME_COUNT      = 0x50,
 };
 
 /** Apple source calls this kValidData but doesn't explain
@@ -189,6 +190,8 @@ private:
     uint16_t control_regs[8] = {}; // control registers, each 12-bits wide
     uint8_t is_busy          = 0;
     uint32_t clip_count      = 0;
+    uint32_t byte_swap       = 0;
+    uint32_t frame_count     = 0;
 
     std::unique_ptr<AudioProcessor> audio_proc;
 };
