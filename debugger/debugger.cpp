@@ -78,7 +78,7 @@ static void show_help() {
     cout << "  until X      -- execute until address X is reached" << endl;
     cout << "  go           -- exit debugger and continue emulator execution" << endl;
     cout << "  regs         -- dump content of the GRPs" << endl;
-    cout << "  fregs         -- dump content of the FPRs" << endl;
+    cout << "  fregs        -- dump content of the FPRs" << endl;
     cout << "  mregs        -- dump content of the MMU registers" << endl;
     cout << "  set R=X      -- assign value X to register R" << endl;
     cout << "                  if R=loglevel, set the internal" << endl;
