@@ -188,7 +188,7 @@ public:
 private:
     uint32_t snd_ctrl_reg    = 0;
     uint16_t control_regs[8] = {}; // control registers, each 12-bits wide
-    uint8_t is_busy          = 0;
+    uint8_t  is_busy         = 0;
     uint32_t clip_count      = 0;
     uint32_t byte_swap       = 0;
     uint32_t frame_count     = 0;

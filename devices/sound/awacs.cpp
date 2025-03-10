@@ -185,28 +185,34 @@ int AwacsScreamer::device_postinit() {
 }
 
 uint32_t AwacsScreamer::snd_ctrl_read(uint32_t offset, int size) {
-    uint32_t return_val = 0;
+    uint32_t value;
 
     switch (offset) {
     case AWAC_SOUND_CTRL_REG:
-        return this->snd_ctrl_reg;
+        value = this->snd_ctrl_reg;
+        break;
     case AWAC_CODEC_CTRL_REG:
-        return this->is_busy;
+        value = this->is_busy;
+        break;
     case AWAC_CODEC_STATUS_REG:
-        return (AWAC_AVAILABLE << 8) | (AWAC_MAKER_CRYSTAL << 16) | (AWAC_REV_SCREAMER << 20);
+        value = (AWAC_AVAILABLE << 8) | (AWAC_MAKER_CRYSTAL << 16) | (AWAC_REV_SCREAMER << 20);
+        break;
     case AWAC_CLIP_COUNT:
-        return_val = this->clip_count;
-        this->clip_count    = 0;
-        return return_val;
+        value = this->clip_count;
+        this->clip_count = 0;
+        break;
     case AWAC_BYTE_SWAP:
-        return this->byte_swap ? 0 : 1;
+        value = this->byte_swap ? 0 : 1;
+        break;
     case AWAC_FRAME_COUNT:
-        return this->frame_count;
+        value = this->frame_count;
+        break;
     default:
         LOG_F(ERROR, "%s: unsupported register at offset 0x%X", this->name.c_str(), offset);
+        value = 0;
     }
 
-    return 0;
+    return value;
 }
 
 void AwacsScreamer::snd_ctrl_write(uint32_t offset, uint32_t value, int size) {
@@ -229,10 +235,13 @@ void AwacsScreamer::snd_ctrl_write(uint32_t offset, uint32_t value, int size) {
         break;
     case AWAC_CLIP_COUNT:
         this->clip_count = BYTESWAP_32(value);
+        break;
     case AWAC_BYTE_SWAP:
         this->byte_swap = BYTESWAP_32(value);
+        break;
     case AWAC_FRAME_COUNT:
         this->frame_count = BYTESWAP_32(value);
+        break;
     default:
         LOG_F(ERROR, "%s: unsupported register at offset 0x%X", this->name.c_str(),
               offset);
