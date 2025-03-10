@@ -46,10 +46,10 @@ MPC106::MPC106() : MemCtrlBase(), PCIDevice("Grackle"), PCIHost()
     this->status      = 0x80;
 
     // add PCI/ISA I/O space, 64K for now
-    add_mmio_region(0xFE000000, 0x10000, this);
+    this->add_mmio_region(0xFE000000, 0x10000, this);
 
     // add memory mapped I/O region for MPC106 registers
-    add_mmio_region(0xFEC00000, 0x300000, this);
+    this->add_mmio_region(0xFEC00000, 0x300000, this);
 }
 
 int MPC106::device_postinit()

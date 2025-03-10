@@ -36,7 +36,7 @@ HMC::HMC() : MemCtrlBase()
     supports_types(HWCompType::MEM_CTRL | HWCompType::MMIO_DEV);
 
     // add memory mapped I/O region for the HMC control register
-    add_mmio_region(0x50F40000, 0x10000, this);
+    this->add_mmio_region(0x50F40000, 0x10000, this);
 
     this->ctrl_reg = 0ULL;
     this->bit_pos = 0;

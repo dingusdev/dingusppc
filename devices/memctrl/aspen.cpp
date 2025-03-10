@@ -31,7 +31,7 @@ AspenCtrl::AspenCtrl() : MemCtrlBase() {
     supports_types(HWCompType::MEM_CTRL | HWCompType::MMIO_DEV);
 
     // add MMIO region for the configuration and status registers
-    add_mmio_region(0xF8000000, 0x800, this);
+    this->add_mmio_region(0xF8000000, 0x800, this);
 }
 
 int AspenCtrl::device_postinit() {

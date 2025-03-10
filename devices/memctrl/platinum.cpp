@@ -40,10 +40,10 @@ PlatinumCtrl::PlatinumCtrl() : MemCtrlBase(), VideoCtrlBase() {
     supports_types(HWCompType::MEM_CTRL | HWCompType::MMIO_DEV);
 
     // add MMIO region for VRAM
-    add_mmio_region(VRAM_REGION_BASE, 0x01000000, this);
+    this->add_mmio_region(VRAM_REGION_BASE, 0x01000000, this);
 
     // add MMIO region for the configuration and status registers
-    add_mmio_region(PLATINUM_IOREG_BASE, 0x500, this);
+    this->add_mmio_region(PLATINUM_IOREG_BASE, 0x500, this);
 
     // get VRAM size
     this->vram_megs = GET_INT_PROP("gfxmem_size");
