@@ -113,11 +113,9 @@ protected:
     void    stop_disk_access();
     void    init_timer(const uint8_t start_val);
     uint8_t calc_timer_val();
-    void    mode_change(uint8_t new_mode);
 
 private:
-    std::unique_ptr<MacSuperdrive::MacSuperDrive> drive_1;
-    MacSuperdrive::MacSuperDrive *selected_drive;
+    std::unique_ptr<MacSuperdrive::MacSuperDrive> int_drive;
 
     DmaBidirChannel*    dma_ch;
 
