@@ -290,8 +290,8 @@ void Swim3Ctrl::stop_stepping()
     // cancel stepping task
     if (this->step_timer_id) {
         TimerManager::get_instance()->cancel_timer(this->step_timer_id);
+        this->step_timer_id = 0;
     }
-    this->step_timer_id = 0;
     this->step_count = 0; // not sure this one is required
 }
 
@@ -382,8 +382,8 @@ void Swim3Ctrl::stop_disk_access()
     // cancel disk access timer
     if (this->access_timer_id) {
         TimerManager::get_instance()->cancel_timer(this->access_timer_id);
+        this->access_timer_id = 0;
     }
-    this->access_timer_id = 0;
 }
 
 void Swim3Ctrl::init_timer(const uint8_t start_val)
