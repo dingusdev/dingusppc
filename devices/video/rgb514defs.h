@@ -26,9 +26,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef IBM_RGB514_DEFS_H
 #define IBM_RGB514_DEFS_H
 
-namespace Rgb514 {
+constexpr auto PLL_ENAB = 1;
 
-#define PLL_ENAB    1
+namespace Rgb514 {
 
 /** RGB514 direct register addresses. */
 enum {

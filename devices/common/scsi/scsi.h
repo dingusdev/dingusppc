@@ -156,14 +156,14 @@ enum ScsiError : int {
 };
 
 /** Standard SCSI bus timing values measured in ns. */
-#define BUS_SETTLE_DELAY    400
-#define BUS_FREE_DELAY      800
-#define BUS_CLEAR_DELAY     800
-#define ARB_DELAY           2400
-#define SEL_ABORT_TIME      200000
-#define SEL_TIME_OUT        250000000
+constexpr auto BUS_SETTLE_DELAY = 400;
+constexpr auto BUS_FREE_DELAY   = 800;
+constexpr auto BUS_CLEAR_DELAY  = 800;
+constexpr auto ARB_DELAY        = 2400;
+constexpr auto SEL_ABORT_TIME   = 200000;
+constexpr auto SEL_TIME_OUT     = 250000000;
 
-#define SCSI_MAX_DEVS   8
+constexpr auto SCSI_MAX_DEVS    = 8;
 
 class ScsiBus;
 
@@ -246,9 +246,18 @@ public:
 
     // low-level state management
     void    register_device(int id, ScsiDevice* dev_obj);
-    int     current_phase() { return this->cur_phase; };
-    int     get_initiator_id() { return this->initiator_id; };
-    int     get_target_id() { return this->target_id; };
+
+    int current_phase() const {
+        return this->cur_phase;
+    };
+
+    int get_initiator_id() const {
+        return this->initiator_id;
+    };
+
+    int get_target_id() const {
+        return this->target_id;
+    };
 
     // reading/writing control lines
     void        assert_ctrl_line(int id, uint16_t mask);

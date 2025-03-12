@@ -53,7 +53,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 class AdbBus;
 class InterruptCtrl;
 
-#define VIA_CLOCK_HZ 783360
+constexpr auto VIA_CLOCK_HZ = 783360;
 
 /** VIA register offsets. */
 enum {
@@ -143,16 +143,16 @@ enum {
     CUDA_ERR_I2C      = 5  // invalid I2C data or no acknowledge
 };
 
-#define CUDA_IN_BUF_SIZE    256
+constexpr auto CUDA_IN_BUF_SIZE = 256;
 
 /** PRAM addresses within Cuda's internal memory. */
-#define CUDA_PRAM_START 0x100 // starting address of PRAM
-#define CUDA_PRAM_END   0x1FF // last byte of PRAM
-#define CUDA_ROM_START  0xF00 // starting address of ROM containing Cuda FW
+constexpr auto CUDA_PRAM_START    = 0x100;    // starting address of PRAM
+constexpr auto CUDA_PRAM_END      = 0x1FF;    // last byte of PRAM
+constexpr auto CUDA_ROM_START     = 0xF00;    // starting address of ROM containing Cuda FW
 
 /** Latest Cuda Firmware version. */
-#define CUDA_FW_VERSION_MAJOR   0x0002
-#define CUDA_FW_VERSION_MINOR   0x0029
+constexpr auto CUDA_FW_VERSION_MAJOR = 0x0002;
+constexpr auto CUDA_FW_VERSION_MINOR = 0x0029;
 
 class ViaCuda : public HWComponent, public I2CBus {
 public:

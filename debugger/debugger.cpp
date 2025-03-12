@@ -112,7 +112,7 @@ static void show_help() {
 
 static uint32_t disasm_68k(uint32_t count, uint32_t address) {
     csh cs_handle;
-    uint8_t code[12];
+    uint8_t code[12]{};
     size_t code_size;
     uint64_t dis_addr;
 
@@ -160,7 +160,7 @@ print_bin:
 }
 
 /* emulator opcode table size --> 512 KB */
-#define EMU_68K_TABLE_SIZE 0x80000
+constexpr auto EMU_68K_TABLE_SIZE = 0x80000;
 
 /** Execute one emulated 68k instruction. */
 void exec_single_68k()
@@ -476,7 +476,7 @@ void DppcDebugger::enter_debugger() {
     uint32_t next_addr_68k;
 #endif
     bool cmd_repeat;
-    int repeat_count;
+    int repeat_count = 0;
 
     unique_ptr<OfConfigUtils> ofnvram = unique_ptr<OfConfigUtils>(new OfConfigUtils);
 

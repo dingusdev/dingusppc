@@ -75,7 +75,7 @@ public:
 
     int install_ram(uint32_t mb_bank_size, uint32_t bank_a_size, uint32_t bank_b_size);
 
-    uint64_t get_control_reg(void) {
+    uint64_t get_control_reg(void) const {
         return this->ctrl_reg;
     };
 

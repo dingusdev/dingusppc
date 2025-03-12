@@ -30,7 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 #include <vector>
 
-#define ADB_MAX_DATA_SIZE   8
+constexpr auto ADB_MAX_DATA_SIZE = 8;
 
 /** ADB status. */
 enum {

@@ -29,15 +29,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <string>
 
-#define ATA_HD_SEC_SIZE 512
-#define SECTORS_PER_INT 16
+constexpr auto ATA_HD_SEC_SIZE = 512;
+constexpr auto SECTORS_PER_INT = 16;
 
 // C:16383 x H:16 x S:63 = C:1032 x H:254 x S:63 = 8063.5078125 MiB = 8.46 GB
-#define ATA_BIOS_LIMIT  16514064
+constexpr auto ATA_BIOS_LIMIT = 16514064;
 // C:65535 x H:16 x S:255 = 127.498 GiB = 136.900 GB = largest identify
-#define REAL_CHS_LIMIT  267382800
+constexpr auto REAL_CHS_LIMIT = 267382800;
 // C:65536 x H:16 x S:255 = 127.500 GiB = 136.902 GB = largest address
-#define CHS_LIMIT       267386880
+constexpr auto CHS_LIMIT = 267386880;
 
 class AtaHardDisk : public AtaBaseDevice
 {

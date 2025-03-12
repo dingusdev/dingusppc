@@ -31,6 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/video/displayid.h>
 #include <devices/video/pdmonboard.h>
 
+#include <atomic>
 #include <cinttypes>
 #include <memory>
 

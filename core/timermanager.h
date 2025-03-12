@@ -31,11 +31,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <vector>
 #include <mutex>
 
-#define NS_PER_SEC      1000000000
-#define USEC_PER_SEC    1000000
-#define NS_PER_USEC     1000
-#define NS_PER_MSEC     1000000
-#define ONE_BILLION_NS  1000000000
+constexpr auto NS_PER_SEC     = 1000000000;
+constexpr auto USEC_PER_SEC   = 1000000;
+constexpr auto NS_PER_USEC    = 1000;
+constexpr auto NS_PER_MSEC    = 1000000;
+constexpr auto ONE_BILLION_NS = 1000000000;
 
 #define USECS_TO_NSECS(us) (us) * NS_PER_USEC
 #define MSECS_TO_NSECS(ms) (ms) * NS_PER_MSEC

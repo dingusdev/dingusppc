@@ -46,7 +46,7 @@ enum {
     GPIO_OUT    = 14, // 0x38
 };
 
-#define ASPEN_REV_1 0x01000000
+constexpr auto ASPEN_REV_1 = 0x01000000;
 
 /** Aspen RAM bank size bits. */
 enum {

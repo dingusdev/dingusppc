@@ -36,10 +36,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <memory>
 
-#define TAOS_IOREG_BASE         0xF0800000
-#define TAOS_VRAM_REGION_BASE   0xF0000000
-#define TAOS_CLUT_BASE          0xF1000000
-#define TAOS_CHIP_VERSION       0xA5000000
+constexpr auto TAOS_IOREG_BASE       = 0xF0800000;
+constexpr auto TAOS_VRAM_REGION_BASE = 0xF0000000;
+constexpr auto TAOS_CLUT_BASE        = 0xF1000000;
+constexpr auto TAOS_CHIP_VERSION     = 0xA5000000;
 
 /** Taos register definitions. */
 // The implemented bits always start with the most significant bit (bit 31).

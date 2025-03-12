@@ -71,7 +71,9 @@ public:
     }
 
 protected:
-    bool is_selected() { return ((this->r_dev_head >> 4) & 1) == this->my_dev_id; };
+    bool is_selected() const {
+        return ((this->r_dev_head >> 4) & 1) == this->my_dev_id;
+    };
 
     void prepare_xfer(int xfer_size, int block_size);
 
@@ -82,7 +84,7 @@ protected:
     IdeChannel* host_obj = nullptr;
 
     // IDE aka task file registers
-    uint8_t r_error;
+    uint8_t r_error = 0;
     uint8_t r_features;
     uint8_t r_sect_count;
     uint8_t r_sect_num;

@@ -58,7 +58,7 @@ enum : int {
     SEL_TIMEOUT,
 };
 
-#define DATA_FIFO_DEPTH 16
+constexpr auto DATA_FIFO_DEPTH = 16;
 
 class ScsiBusController : public ScsiDevice, public DmaDevice {
 public:

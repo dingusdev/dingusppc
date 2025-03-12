@@ -36,7 +36,7 @@ enum {
 };
 
 /** Number of internal registers implemented in Burgundy. */
-#define BURGUNDY_NUM_REGS   123
+constexpr auto BURGUNDY_NUM_REGS = 123;
 
 class BurgundyCodec : public MacioSndCodec {
 public:

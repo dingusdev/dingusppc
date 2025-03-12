@@ -29,7 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 
-#define ATHENS_NUM_REGS 8
+constexpr auto ATHENS_NUM_REGS = 8;
 
 /** Default external crystal oscillator frequency. */
 constexpr auto ATHENS_XTAL = 31334400.0f;

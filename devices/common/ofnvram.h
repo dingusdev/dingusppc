@@ -33,9 +33,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 class NVram;
 
 /** ========== Apple Open Firmware 1.x/2.x partition definitions. ========== */
-#define OF_NVRAM_OFFSET 0x1800
-#define OF_NVRAM_SIG    0x1275
-#define OF_CFG_SIZE     0x800
+constexpr auto OF_NVRAM_OFFSET = 0x1800;
+constexpr auto OF_NVRAM_SIG = 0x1275;
+constexpr auto OF_CFG_SIZE = 0x800;
 
 // OF Variable types
 enum {

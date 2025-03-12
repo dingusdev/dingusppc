@@ -31,14 +31,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <memory>
 
-#define DEV_ID_CMD646   0x646
-#define MY_DEV_CLASS    0x010180 // mass storage | IDE controller | IDE master
-#define MY_REV_ID       7
+constexpr auto DEV_ID_CMD646 = 0x646;
+constexpr auto MY_DEV_CLASS  = 0x010180;    // mass storage | IDE controller | IDE master;
+constexpr auto MY_REV_ID     = 7;
 
 // Offset for converting addresses of the device control block registers
 // defined in the PCI IDE Controller specification, rev. 1.0 3/4/94
 // to the addresses used in IdeChannel
-#define DEV_CTRL_BLK_OFFSET 0x14
+constexpr auto DEV_CTRL_BLK_OFFSET = 0x14;
 
 /** CMD646 control/status registers. */
 enum {

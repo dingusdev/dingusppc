@@ -44,9 +44,9 @@ typedef struct {
     uint32_t    start_lba;
 } TrackDescriptor;
 
-#define CDROM_MAX_TRACKS    100
-#define LEAD_OUT_TRK_NUM    0xAA
-#define CDR_STD_DATA_SIZE   2048
+constexpr auto CDROM_MAX_TRACKS = 100;
+constexpr auto LEAD_OUT_TRK_NUM = 0xAA;
+constexpr auto CDR_STD_DATA_SIZE = 2048;
 
 class CdromDrive : public BlockStorageDevice {
 public:

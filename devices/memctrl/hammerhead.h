@@ -38,10 +38,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memory>
 
 namespace Hammerhead {
-    #define RISC_MACHINE  0x3
-    #define MACH_TYPE_TNT 0x1
-    #define EXTENDED_ID   0x1 // examine some other registers to get full ID
-    #define HH_CPU_ID_TNT ((RISC_MACHINE << 4) | (EXTENDED_ID << 3) | MACH_TYPE_TNT)
+    constexpr auto RISC_MACHINE  = 0x3;
+    constexpr auto MACH_TYPE_TNT = 0x1;
+    constexpr auto EXTENDED_ID   = 0x1;    // examine some other registers to get full ID;
+    constexpr auto HH_CPU_ID_TNT = ((RISC_MACHINE << 4) | (EXTENDED_ID << 3) | MACH_TYPE_TNT);
 
     // constants for the MBID field of the MOTHERBOARD_ID register
     enum {
