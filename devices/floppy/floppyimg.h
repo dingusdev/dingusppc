@@ -27,7 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <string>
 
-constexpr auto BLOCK_SIZE = 512;      // size in bytes of a logical block;
+constexpr auto BLOCK_SIZE = 512;      // size in bytes of a logical block
 
 #define MFM_HD_SIZE (BLOCK_SIZE*2880) // maximal size of a high-density floppy
 
@@ -52,31 +52,31 @@ public:
 
     int get_data_size() const {
         return this->data_size;
-    };
+    }
 
     int get_disk_rec_method() const {
         return this->rec_method;
-    };
+    }
 
     int get_number_of_tracks() const {
         return this->num_tracks;
-    };
+    }
 
     int get_number_of_sides() const {
         return this->num_sides;
-    };
+    }
 
     int get_sectors_per_side() const {
         return this->num_sectors;
-    };
+    }
 
     int get_rec_density() const {
         return this->density;
-    };
+    }
 
     uint8_t get_format_byte() const {
         return this->format_byte;
-    };
+    }
 
 protected:
     std::string img_path;

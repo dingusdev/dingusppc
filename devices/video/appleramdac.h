@@ -53,7 +53,7 @@ enum DacFlavour {
     DACULA,
 };
 
-constexpr auto DACULA_VENDOR_SIERRA = 0x3C;    // 14.3 MHz;
+constexpr auto DACULA_VENDOR_SIERRA = 0x3C;    // 14.3 MHz
 constexpr auto DACULA_VENDOR_ATT    = 0x84;    // 15 MHz
 
 constexpr auto VIDEO_XTAL = 14318180.0f; // external crystal oscillator frequency

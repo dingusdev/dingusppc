@@ -50,7 +50,7 @@ public:
 
     virtual int perform_command() = 0;
 
-    int get_device_id() override { return this->my_dev_id; };
+    int get_device_id() override { return this->my_dev_id; }
 
     void pdiag_callback() override {
         this->r_error &= 0x7F;
@@ -62,7 +62,7 @@ public:
     void update_intrq(uint8_t new_intrq_state);
     void signal_data_ready();
 
-    bool has_data() {
+    bool has_data() const {
         return data_ptr && xfer_cnt;
     }
 
@@ -73,7 +73,7 @@ public:
 protected:
     bool is_selected() const {
         return ((this->r_dev_head >> 4) & 1) == this->my_dev_id;
-    };
+    }
 
     void prepare_xfer(int xfer_size, int block_size);
 

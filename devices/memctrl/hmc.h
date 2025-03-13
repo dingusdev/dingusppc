@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -77,7 +77,7 @@ public:
 
     uint64_t get_control_reg(void) const {
         return this->ctrl_reg;
-    };
+    }
 
 protected:
     void remap_ram_regions();

@@ -31,8 +31,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memory>
 
 /** Known MACE chip IDs. */
-constexpr auto MACE_ID_REV_B0 = 0x0940;    // Darwin-0.3 source;
-constexpr auto MACE_ID_REV_A2 = 0x0941;    // Darwin-0.3 source & Curio datasheet;
+constexpr auto MACE_ID_REV_B0 = 0x0940;    // Darwin-0.3 source
+constexpr auto MACE_ID_REV_A2 = 0x0941;    // Darwin-0.3 source & Curio datasheet
 
 /** MACE registers offsets. */
 // Refer to the Am79C940 datasheet for details

@@ -32,7 +32,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memory>
 
 constexpr auto DEV_ID_CMD646 = 0x646;
-constexpr auto MY_DEV_CLASS  = 0x010180;    // mass storage | IDE controller | IDE master;
+constexpr auto MY_DEV_CLASS  = 0x010180;    // mass storage | IDE controller | IDE master
 constexpr auto MY_REV_ID     = 7;
 
 // Offset for converting addresses of the device control block registers

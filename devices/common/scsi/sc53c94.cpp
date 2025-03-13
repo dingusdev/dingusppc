@@ -433,7 +433,7 @@ void Sc53C94::sequencer()
     case SeqState::BUS_FREE:
         if (this->bus_obj->current_phase() == ScsiPhase::BUS_FREE) {
             this->next_state = SeqState::ARB_BEGIN;
-            this->seq_defer_state(uint64_t(BUS_FREE_DELAY) + BUS_SETTLE_DELAY);
+            this->seq_defer_state(BUS_FREE_DELAY + BUS_SETTLE_DELAY);
         } else { // continue waiting
             this->next_state = SeqState::BUS_FREE;
             this->seq_defer_state(BUS_FREE_DELAY);
@@ -453,7 +453,7 @@ void Sc53C94::sequencer()
     case SeqState::ARB_END:
         if (this->bus_obj->end_arbitration(this->my_bus_id)) { // arbitration won
             this->next_state = this->cmd_steps->next_step;
-            this->seq_defer_state(uint64_t(BUS_CLEAR_DELAY) + BUS_SETTLE_DELAY);
+            this->seq_defer_state(BUS_CLEAR_DELAY + BUS_SETTLE_DELAY);
         } else { // arbitration lost
             LOG_F(INFO, "%s: arbitration lost!", this->name.c_str());
             this->bus_obj->release_ctrl_lines(this->my_bus_id);
