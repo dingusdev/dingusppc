@@ -42,6 +42,50 @@ MemCtrlBase::~MemCtrlBase() {
     this->address_map.clear();
 }
 
+static std::string get_type_str(uint32_t type) {
+    std::string str;
+    if (type & RT_ROM) {
+        if (str.length())
+            str += ",";
+        str += "ROM";
+    };
+    if (type & RT_RAM) {
+        if (str.length())
+            str += ",";
+        str += "RAM";
+    };
+    if (type & RT_MMIO) {
+        if (str.length())
+            str += ",";
+        str += "MMIO";
+    };
+    if (type & RT_MIRROR) {
+        if (str.length())
+            str += ",";
+        str += "MIRROR";
+    };
+    return str;
+}
+
+
+static std::string get_entry_str(const AddressMapEntry* entry) {
+    std::string str;
+    char buf[50];
+    if (entry) {
+        snprintf(buf, sizeof(buf), "0x%08X..0x%08X", entry->start, entry->end);
+        str = std::string(buf) + " (" + get_type_str(entry->type) + ")";
+        if (entry->devobj)
+            str += " (" + entry->devobj->get_name() + ")";
+        if (entry->type & RT_MIRROR) {
+            snprintf(buf, sizeof(buf), " -> 0x%08X", entry->mirror);
+            str += std::string(buf);
+        }
+    } else {
+        str = "null";
+    }
+    return str;
+}
+
 
 static inline bool match_mem_entry(const AddressMapEntry* entry,
                                    const uint32_t start, const uint32_t end,
