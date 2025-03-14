@@ -31,10 +31,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 class HMC;
 class InterruptCtrl;
 
-#define PDM_VMODE_OFF   0x1F
+constexpr auto PDM_VMODE_OFF = 0x1F;
 
 /** Max. size of our framebuffer in bytes (RGB 13-inch, 16 bpp) */
-#define PDM_FB_SIZE_MAX (640 * 480 * 2)
+constexpr auto PDM_FB_SIZE_MAX = (640 * 480 * 2);
 
 /** Fixed video modes supported by the PDM on-board video. */
 enum PdmVideoMode : uint8_t {
@@ -50,14 +50,14 @@ public:
     PdmOnboardVideo();
     ~PdmOnboardVideo() = default;
 
-    uint8_t get_video_mode() {
+    uint8_t get_video_mode() const {
         return ((this->video_mode & 0x1F) | this->blanking);
     };
 
     void set_video_mode(uint8_t new_mode);
     void set_pixel_depth(uint8_t depth);
     void set_vdac_config(uint8_t config);
-    uint8_t get_vdac_config() {
+    uint8_t get_vdac_config() const {
         return this->vdac_mode;
     };
     void set_clut_index(uint8_t index);
