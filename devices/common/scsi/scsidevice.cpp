@@ -50,7 +50,6 @@ void ScsiDevice::notify(ScsiMsg msg_type, int param)
                             this->switch_phase(ScsiPhase::MESSAGE_OUT);
                             this->last_selection_has_atention = true;
                             this->last_selection_message = this->msg_buf[0];
-                            //LOG_F(SCSIDEVICE, "%s: received message:0x%02x", this->get_name().c_str(), this->msg_buf[0]);
                         } else {
                             this->last_selection_has_atention = false;
                             this->switch_phase(ScsiPhase::COMMAND);
