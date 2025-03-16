@@ -23,10 +23,18 @@
 - kth5
 - dyharlan
 - roytam1
+- mrpapersonic
 
 ## Testing
 
 - LagLifeYT
+
+## 3rd Party Libraries
+
+- [Capstone](https://github.com/capstone-engine/capstone)
+- [CLI11](https://github.com/CLIUtils/CLI11)
+- [Loguru](https://github.com/emilk/loguru)
+- [SDL 2](https://github.com/libsdl-org/SDL)
 
 ## Thanks
 
