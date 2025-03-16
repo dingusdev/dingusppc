@@ -30,12 +30,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #ifdef __GNUG__ /* GCC, ICC and Clang */
 
-#   ifdef __APPLE__
-#       include <machine/endian.h>
-#   else
-#       include <endian.h>
-#   endif
-
 #   define BYTESWAP_16(x) (__builtin_bswap16 (x))
 #   define BYTESWAP_32(x) (__builtin_bswap32 (x))
 #   define BYTESWAP_64(x) (__builtin_bswap64 (x))
@@ -48,24 +42,58 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #   define BYTESWAP_32(x) (_byteswap_ulong (x))
 #   define BYTESWAP_64(x) (_byteswap_uint64 (x))
 
+#elif __has_include(<byteswap.h>) /* Many unixes */
+
+#   include <byteswap.h>
+
+#   define BYTESWAP_16(x) (bswap_16(x))
+#   define BYTESWAP_32(x) (bswap_32(x))
+#   define BYTESWAP_64(x) (bswap_64(x))
+
+// TODO: C++23 has std::byteswap
+
 #else
 
-#   warning "Unknown byte swapping built-ins (do it the slow way)!"
+// #warning is not standard until C++23:
+//
+// #   warning "Unknown byte swapping built-ins (do it the slow way)!"
 
-#   define BYTESWAP_16(x) (((x) >> 8)  | (((x) & 0xFFUL) << 8))
+#   include <cstdint>
 
-#   define BYTESWAP_32(x) (((x) >> 24) | (((x) >> 8) & 0xFF00UL) | \
-                         (((x) & 0xFF00UL) << 8) | ((x) << 24))
+// Most optimizing compilers will translate these functions directly
+// into their native instructions (e.g. bswap on x86).
+inline std::uint16_t byteswap_16_impl(std::uint16_t x)
+{
+    return (x >> 8) | (x << 8);
+}
 
-#   define BYTESWAP_64(x)                       \
-        (((x) >> 56)                          | \
-        (((x) & 0x00FF000000000000ULL) >> 40) | \
-        (((x) & 0x0000FF0000000000ULL) >> 24) | \
-        (((x) & 0x000000FF00000000ULL) >> 8) | \
-        (((x) & 0x00000000FF000000ULL) << 8) | \
-        (((x) & 0x0000000000FF0000ULL) << 24) | \
-        (((x) & 0x000000000000FF00ULL) << 40) | \
-        (((x) & 0x00000000000000FFULL) << 56))
+inline std::uint32_t byteswap_32_impl(std::uint32_t x)
+{
+  	return (
+  		  ((x & UINT32_C(0x000000FF)) << 24)
+  		| ((x & UINT32_C(0x0000FF00)) << 8)
+  		| ((x & UINT32_C(0x00FF0000)) >> 8)
+  		| ((x & UINT32_C(0xFF000000)) >> 24)
+  		);
+}
+
+inline std::uint64_t byteswap_64_impl(std::uint64_t x)
+{
+	return (
+		  ((x & UINT64_C(0x00000000000000FF)) << 56)
+		| ((x & UINT64_C(0x000000000000FF00)) << 40)
+		| ((x & UINT64_C(0x0000000000FF0000)) << 24)
+		| ((x & UINT64_C(0x00000000FF000000)) << 8)
+		| ((x & UINT64_C(0x000000FF00000000)) >> 8)
+		| ((x & UINT64_C(0x0000FF0000000000)) >> 24)
+		| ((x & UINT64_C(0x00FF000000000000)) >> 40)
+		| ((x & UINT64_C(0xFF00000000000000)) >> 56)
+		);
+}
+
+#   define BYTESWAP_16(x) (byteswap_16_impl(x))
+#   define BYTESWAP_32(x) (byteswap_32_impl(x))
+#   define BYTESWAP_64(x) (byteswap_64_impl(x))
 
 #endif
 
