@@ -128,14 +128,12 @@ enum {
     CMD_ISDMA                           = 0x80,
 };
 
-/** Status register bits. **/
+/** Status register bits. */
 enum {
-  //SCSI_CTRL_IO    = 0x01, // Input/Output
-  //SCSI_CTRL_CD    = 0x02, // Command/Data
-  //SCSI_CTRL_MSG   = 0x04, // Message
-  //STAT_GCV        = 0x08, // Group Code Valid
+    STAT_PHASE_MASK = 0x07, // mask for I/O, Command and Message bits
+    STAT_GCV        = 0x08, // Group Code Valid
     STAT_TC         = 0x10, // Terminal count (NCR) / count to zero (AMD)
-  //STAT_PE         = 0x20, // Parity Error
+    STAT_PE         = 0x20, // Parity Error
     STAT_GE         = 0x40, // Gross Error (NCR) / Illegal Operation Error (AMD)
     STAT_INT        = 0x80, // Interrupt
 };
@@ -152,6 +150,7 @@ enum {
     INTSTAT_SEL     = 0x01, // selected as a target without attention
 };
 
+/** Configuration register 2 bits. */
 enum {
     CFG2_ENF        = 0x40, // Am53CF94: enable features (ENF) bit
 };

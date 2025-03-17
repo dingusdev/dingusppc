@@ -74,12 +74,13 @@ void Sc53C94::reset_device()
 
     this->seq_step = 0;
 
-    this->status = 0;
+    this->status    &= STAT_PHASE_MASK; // reset doesn't affect bus phase bits
+    this->int_status = 0;
 }
 
 uint8_t Sc53C94::read(uint8_t reg_offset)
 {
-    uint8_t status, int_status;
+    uint8_t bus_phase, int_flags;
 
     switch (reg_offset) {
     case Read::Reg53C94::Xfer_Cnt_LSB:
@@ -91,14 +92,21 @@ uint8_t Sc53C94::read(uint8_t reg_offset)
     case Read::Reg53C94::Command:
         return this->cmd_fifo[0];
     case Read::Reg53C94::Status:
-        status = bus_obj->test_ctrl_lines(SCSI_CTRL_MSG | SCSI_CTRL_CD | SCSI_CTRL_IO);
-        return (this->status & 0xF8) | status;
+        if (this->config2 & CFG2_ENF) {
+            LOG_F(WARNING, "%s: phase latch not implemented", this->name.c_str());
+            bus_phase = SCSI_CTRL_MSG; // use reserved bus phase
+        } else
+            bus_phase = bus_obj->test_ctrl_lines(SCSI_CTRL_MSG | SCSI_CTRL_CD | SCSI_CTRL_IO);
+        return (this->status & 0xF8) | bus_phase;
     case Read::Reg53C94::Int_Status:
-        int_status = this->int_status;
-        this->seq_step = 0;
-        this->int_status = 0;
+        int_flags = this->int_status;
+        if (this->irq) {
+            this->status &= ~(STAT_GE | STAT_PE | STAT_GCV);
+            this->int_status = 0;
+            this->seq_step = 0;
+        }
         this->update_irq();
-        return int_status;
+        return int_flags;
     case Read::Reg53C94::Seq_Step:
         return this->seq_step;
     case Read::Reg53C94::FIFO_Flags:
