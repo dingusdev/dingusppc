@@ -367,8 +367,6 @@ static void patch_mem(string& params) {
     size_str  = value_str.substr(value_str.find_first_of(".") + 1);
     value_str = value_str.substr(0, value_str.find_first_of("."));
 
-    bool is_char = false;
-
     switch (size_str.back()) {
     case 'b':
     case 'B':
@@ -389,7 +387,6 @@ static void patch_mem(string& params) {
     case 'c':
     case 'C':
         value_size = 1;
-        is_char   = true;
         break;
     default:
         cout << "Invalid value size " << size_str << endl;
