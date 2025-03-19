@@ -436,7 +436,7 @@ namespace loguru
 
 	Text textprintf(const char* format, ...)
 	{
-		va_list vlist = nullptr;
+		va_list vlist = {};
 		va_start(vlist, format);
 		auto result = vtextprintf(format, vlist);
 		va_end(vlist);
@@ -1514,7 +1514,7 @@ namespace loguru
 #else
 	void log(Verbosity verbosity, const char* file, unsigned line, const char* format, ...)
 	{
-		va_list vlist = nullptr;
+		va_list vlist = {};
 		va_start(vlist, format);
 		vlog(verbosity, file, line, format, vlist);
 		va_end(vlist);
@@ -1528,7 +1528,7 @@ namespace loguru
 
 	void raw_log(Verbosity verbosity, const char* file, unsigned line, const char* format, ...)
 	{
-		va_list vlist = nullptr;
+		va_list vlist = {};
 		va_start(vlist, format);
 		auto buff = vtextprintf(format, vlist);
 		auto message = Message{verbosity, file, line, "", "", "", buff.c_str()};
@@ -1559,7 +1559,7 @@ namespace loguru
 	LogScopeRAII::LogScopeRAII(Verbosity verbosity, const char* file, unsigned line, const char* format, ...) :
 		_verbosity(verbosity), _file(file), _line(line)
 	{
-		va_list vlist = nullptr;
+		va_list vlist = {};
 		va_start(vlist, format);
 		this->Init(format, vlist);
 		va_end(vlist);
@@ -1628,7 +1628,7 @@ namespace loguru
 #else
 	void log_and_abort(int stack_trace_skip, const char* expr, const char* file, unsigned line, const char* format, ...)
 	{
-		va_list vlist = nullptr;
+		va_list vlist = {};
 		va_start(vlist, format);
 		auto buff = vtextprintf(format, vlist);
 		log_to_everywhere(stack_trace_skip + 1, Verbosity_FATAL, file, line, expr, buff.c_str());
@@ -1669,7 +1669,7 @@ namespace loguru
 
 	std::string strprintf(const char* format, ...)
 	{
-		va_list vlist = nullptr;
+		va_list vlist = {};
 		va_start(vlist, format);
 		auto result = vstrprintf(format, vlist);
 		va_end(vlist);
