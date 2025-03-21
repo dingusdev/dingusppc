@@ -263,7 +263,32 @@ uint32_t ATIRage::read_reg(uint32_t reg_offset, uint32_t size) {
         }
         break;
     case ATI_GUI_STAT:
-        result = this->cmd_fifo_size << 16; // HACK: tell the guest the command FIFO is empty
+        result = uint64_t(this->cmd_fifo_size << 16); // HACK: tell the guest the command FIFO is empty
+        break;
+    case ATI_DP_BKGD_CLR:
+    case ATI_DP_FRGD_CLR:
+        uint32_t pix_fmt = extract_bits<uint32_t>(
+            this->regs[ATI_CRTC_GEN_CNTL], ATI_CRTC_PIX_WIDTH, ATI_CRTC_PIX_WIDTH_size);
+
+        switch (pix_fmt) { 
+        case 1:
+            result = result & 0x1;
+            break;
+        case 2:
+            result = result & 0xFF;
+            break;
+        case 3:
+        case 4:
+            result = result & 0xFFFF;
+            break;
+        case 5:
+            result = result & 0xFFFFFF;
+            break;
+        case 6:
+            break;
+        default:
+            LOG_F(ERROR, "Incorrect bit depth");
+        }
         break;
     }
 
@@ -534,6 +559,28 @@ void ATIRage::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size) {
         new_value = (old_value & bits_read_only) | (new_value & ~bits_read_only);
         break;
     }
+    case ATI_DST_WIDTH:
+        new_value                     = value & 0x7FFF;
+        this->regs[ATI_DST_BRES_LNTH] = new_value;
+        break;
+    case ATI_DST_HEIGHT:
+        new_value                     = value & 0x7FFF;
+        this->regs[ATI_DST_BRES_LNTH] = new_value;
+        break;
+    case ATI_DST_BRES_ERR:
+        new_value = value & 0x3FFFF;
+        if (new_value > -1) {
+            new_value += this->regs[ATI_DST_BRES_INC];
+        } else {
+            new_value += this->regs[ATI_DST_BRES_DEC];
+        }
+        break;
+    case ATI_DST_BRES_INC:
+        new_value = value & 0x3FFFF;
+        break;
+    case ATI_DST_BRES_DEC:
+        new_value = -(value & 0x3FFFF);
+        break;
     default:
         new_value = value;
         break;
@@ -577,7 +624,7 @@ uint32_t ATIRage::read(uint32_t rgn_start, uint32_t offset, int size)
             return read_mem(&this->vram_ptr[offset], size);
         }
         if (offset >= BE_FB_OFFSET) { // big-endian VRAM region
-            return read_mem(&this->vram_ptr[offset - BE_FB_OFFSET], size);
+            return read_mem(&this->vram_ptr[uint64_t(offset) - BE_FB_OFFSET], size);
         }
         //if (!bit_set(this->regs[ATI_BUS_CNTL], ATI_BUS_APER_REG_DIS)) {
             if (offset >= MM_REGS_0_OFF) { // memory-mapped registers, block 0
@@ -651,7 +698,7 @@ void ATIRage::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int siz
           this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
 }
 
-float ATIRage::calc_pll_freq(int scale, int fb_div) {
+float ATIRage::calc_pll_freq(int scale, int fb_div) const {
     return (ATI_XTAL * scale * fb_div) / this->plls[PLL_REF_DIV];
 }
 

@@ -76,7 +76,7 @@ protected:
     bool io_access_allowed(uint32_t offset);
     uint32_t read_reg(uint32_t reg_offset, uint32_t size);
     void write_reg(uint32_t reg_addr, uint32_t value, uint32_t size);
-    float calc_pll_freq(int scale, int fb_div);
+    float calc_pll_freq(int scale, int fb_div) const;
     void verbose_pixel_format(int crtc_index);
     void crtc_update();
     void draw_hw_cursor(uint8_t *dst_buf, int dst_pitch);
