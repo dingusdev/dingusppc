@@ -72,6 +72,7 @@ void Sc53C94::reset_device()
     this->data_fifo_pos = 0;
     this->data_fifo[0]  = 0;
 
+    this->cur_step = 0;
     this->seq_step = 0;
 
     this->status    &= STAT_PHASE_MASK; // reset doesn't affect bus phase bits
@@ -110,7 +111,7 @@ uint8_t Sc53C94::read(uint8_t reg_offset)
     case Read::Reg53C94::Seq_Step:
         return this->seq_step;
     case Read::Reg53C94::FIFO_Flags:
-        return (this->seq_step << 5) | (this->data_fifo_pos & 0x1F);
+        return (this->cur_step << 5) | (this->data_fifo_pos & 0x1F);
     case Read::Reg53C94::Config_1:
         return this->config1;
     case Read::Reg53C94::Config_3:
@@ -338,7 +339,7 @@ void Sc53C94::exec_command()
             {2, ScsiPhase::COMMAND, SeqState::SEND_CMD,     INTSTAT_SR | INTSTAT_SO},
             {4, -1,                 SeqState::CMD_COMPLETE, INTSTAT_SR | INTSTAT_SO},
         };
-        this->seq_step = 0;
+        this->seq_step = this-> cur_step = 0;
         this->cmd_steps = sel_no_atn_desc;
         this->cur_state = SeqState::BUS_FREE;
         this->sequencer();
@@ -350,7 +351,7 @@ void Sc53C94::exec_command()
             {2, ScsiPhase::COMMAND,     SeqState::SEND_CMD,     INTSTAT_SR | INTSTAT_SO},
             {4, -1,                     SeqState::CMD_COMPLETE, INTSTAT_SR | INTSTAT_SO},
         };
-        this->seq_step  = 0;
+        this->seq_step = this->cur_step = 0;
         this->bytes_out = 1; // set message length
         this->cmd_steps = sel_with_atn_desc;
         this->cur_state = SeqState::BUS_FREE;
@@ -625,7 +626,8 @@ void Sc53C94::notify(ScsiMsg msg_type, int param)
                 this->cmd_steps++;
                 this->seq_defer_state(0);
             } else {
-                this->seq_step   = this->cmd_steps->step_num;
+                this->cur_step   = this->cmd_steps->step_num;
+                this->seq_step   = this->cur_step;
                 this->int_status = this->cmd_steps->status;
                 this->update_irq();
                 if (this->cmd_steps->next_state == SeqState::CMD_COMPLETE)

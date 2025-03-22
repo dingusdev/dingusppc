@@ -286,6 +286,7 @@ private:
     uint8_t     cur_cmd = 0;
     bool        is_dma_cmd = false;
     int         cur_bus_phase = 0;
+    uint8_t     cur_step = 0; // internal step counter for multistep commands
 
     // interrupt related stuff
     InterruptCtrl* int_ctrl = nullptr;
