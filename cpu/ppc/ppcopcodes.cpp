@@ -2018,6 +2018,12 @@ void dppc_interpreter::ppc_tlbia(uint32_t opcode) {
     num_supervisor_instrs++;
 #endif
     /* placeholder */
+    if (ppc_state.msr & MSR::PR) {
+        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
+        return;
+    }
+
+    LOG_F(ERROR, "tlbia needs to be implemented!");
 }
 
 void dppc_interpreter::ppc_tlbld(uint32_t opcode) {
