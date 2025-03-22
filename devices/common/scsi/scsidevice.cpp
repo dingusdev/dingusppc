@@ -47,9 +47,8 @@ void ScsiDevice::notify(ScsiMsg msg_type, int param)
                         this->bus_obj->confirm_selection(this->scsi_id);
                         this->initiator_id = this->bus_obj->get_initiator_id();
                         if (this->bus_obj->test_ctrl_lines(SCSI_CTRL_ATN)) {
-                            this->switch_phase(ScsiPhase::MESSAGE_OUT);
                             this->last_selection_has_atention = true;
-                            this->last_selection_message = this->msg_buf[0];
+                            this->switch_phase(ScsiPhase::MESSAGE_OUT);
                         } else {
                             this->last_selection_has_atention = false;
                             this->switch_phase(ScsiPhase::COMMAND);
@@ -161,6 +160,8 @@ int ScsiDevice::xfer_data() {
                 ABORT_F("%s: unsupported message received, code = 0x%X",
                         this->name.c_str(), this->msg_buf[0]);
             }
+            if (this->last_selection_has_atention)
+                this->last_selection_message = this->msg_buf[0];
         }
         break;
     case ScsiPhase::COMMAND:

@@ -176,11 +176,11 @@ namespace SeqState {
     };
 };
 
-/** Sequence descriptor for sequencer commands. */
+/** Sequence descriptor for multistep commands. */
 typedef struct {
-    int seq_id;
-    int next_step;
     int step_num;
+    int expected_phase;
+    int next_state;
     int status;
 } SeqDesc;
 

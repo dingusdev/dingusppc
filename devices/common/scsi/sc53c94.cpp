@@ -266,6 +266,8 @@ void Sc53C94::exec_command()
         }
     }
 
+    this->cmd_steps = nullptr; // assume a single-step command for now
+
     // simple commands will be executed immediately
     // complex commands will be broken into multiple steps
     // and handled by the sequencer
@@ -311,24 +313,15 @@ void Sc53C94::exec_command()
             this->int_status = INTSTAT_ICMD;
             this->update_irq();
         } else {
-            this->seq_step = 0;
-            this->cmd_steps = nullptr;
             this->cur_state = SeqState::XFER_BEGIN;
             this->sequencer();
         }
         break;
     case CMD_COMPLETE_STEPS:
-        static SeqDesc * complete_steps_desc = new SeqDesc[3]{
-            {(CMD_COMPLETE_STEPS << 8) + 1, SeqState::RCV_STATUS,   0,          0},
-            {(CMD_COMPLETE_STEPS << 8) + 2, SeqState::RCV_MESSAGE,  0,          0},
-            {(CMD_COMPLETE_STEPS << 8) + 3, SeqState::CMD_COMPLETE, 0, INTSTAT_SR | INTSTAT_SO}
-        };
         if (this->bus_obj->current_phase() != ScsiPhase::STATUS) {
             ABORT_F("%s: complete steps only works in the STATUS phase", this->name.c_str());
         }
-        this->seq_step = 0;
-        this->cmd_steps = complete_steps_desc;
-        this->cur_state = this->cmd_steps->next_step;
+        this->cur_state = SeqState::RCV_STATUS;
         this->sequencer();
         break;
     case CMD_MSG_ACCEPTED:
@@ -341,10 +334,9 @@ void Sc53C94::exec_command()
         exec_next_command();
         break;
     case CMD_SELECT_NO_ATN:
-        static SeqDesc * sel_no_atn_desc = new SeqDesc[3]{
-            {(CMD_SELECT_NO_ATN << 8) + 1, SeqState::SEL_BEGIN,    0, INTSTAT_DIS            },
-            {(CMD_SELECT_NO_ATN << 8) + 2, SeqState::SEND_CMD,     3, INTSTAT_SR | INTSTAT_SO},
-            {(CMD_SELECT_NO_ATN << 8) + 3, SeqState::CMD_COMPLETE, 4, INTSTAT_SR | INTSTAT_SO},
+        static SeqDesc * sel_no_atn_desc = new SeqDesc[2]{
+            {2, ScsiPhase::COMMAND, SeqState::SEND_CMD,     INTSTAT_SR | INTSTAT_SO},
+            {4, -1,                 SeqState::CMD_COMPLETE, INTSTAT_SR | INTSTAT_SO},
         };
         this->seq_step = 0;
         this->cmd_steps = sel_no_atn_desc;
@@ -353,11 +345,10 @@ void Sc53C94::exec_command()
         LOG_F(9, "%s: SELECT W/O ATN command started", this->name.c_str());
         break;
     case CMD_SELECT_WITH_ATN:
-        static SeqDesc * sel_with_atn_desc = new SeqDesc[4]{
-            {(CMD_SELECT_WITH_ATN << 8) + 1, SeqState::SEL_BEGIN,    0, INTSTAT_DIS            },
-            {(CMD_SELECT_WITH_ATN << 8) + 2, SeqState::SEND_MSG,     2, INTSTAT_SR | INTSTAT_SO},
-            {(CMD_SELECT_WITH_ATN << 8) + 3, SeqState::SEND_CMD,     3, INTSTAT_SR | INTSTAT_SO},
-            {(CMD_SELECT_WITH_ATN << 8) + 4, SeqState::CMD_COMPLETE, 4, INTSTAT_SR | INTSTAT_SO},
+        static SeqDesc * sel_with_atn_desc = new SeqDesc[3]{
+            {0, ScsiPhase::MESSAGE_OUT, SeqState::SEND_MSG,     INTSTAT_SR | INTSTAT_SO},
+            {2, ScsiPhase::COMMAND,     SeqState::SEND_CMD,     INTSTAT_SR | INTSTAT_SO},
+            {4, -1,                     SeqState::CMD_COMPLETE, INTSTAT_SR | INTSTAT_SO},
         };
         this->seq_step  = 0;
         this->bytes_out = 1; // set message length
@@ -423,14 +414,24 @@ void Sc53C94::seq_defer_state(uint64_t delay_ns)
         seq_timer_id = 0;
     }
 
-    seq_timer_id = TimerManager::get_instance()->add_oneshot_timer(
-        delay_ns,
-        [this]() {
-            // re-enter the sequencer with the state specified in next_state
-            this->seq_timer_id = 0;
-            this->cur_state = this->next_state;
-            this->sequencer();
-    });
+    if (delay_ns) {
+        seq_timer_id = TimerManager::get_instance()->add_oneshot_timer(
+            delay_ns,
+            [this]() {
+                // re-enter the sequencer with the state specified in next_state
+                this->seq_timer_id = 0;
+                this->cur_state = this->next_state;
+                this->sequencer();
+        });
+    } else {
+        seq_timer_id = TimerManager::get_instance()->add_immediate_timer(
+            [this]() {
+                // re-enter the sequencer with the state specified in next_state
+                this->seq_timer_id = 0;
+                this->cur_state = this->next_state;
+                this->sequencer();
+        });
+    }
 }
 
 void Sc53C94::sequencer()
@@ -460,7 +461,7 @@ void Sc53C94::sequencer()
         break;
     case SeqState::ARB_END:
         if (this->bus_obj->end_arbitration(this->my_bus_id)) { // arbitration won
-            this->next_state = this->cmd_steps->next_step;
+            this->next_state = SeqState::SEL_BEGIN;
             this->seq_defer_state(BUS_CLEAR_DELAY + BUS_SETTLE_DELAY);
         } else { // arbitration lost
             LOG_F(INFO, "%s: arbitration lost!", this->name.c_str());
@@ -481,8 +482,8 @@ void Sc53C94::sequencer()
             this->bus_obj->release_ctrl_line(this->my_bus_id, SCSI_CTRL_SEL);
             LOG_F(9, "%s: selection completed", this->name.c_str());
         } else { // selection timeout
-            this->seq_step = this->cmd_steps->step_num;
-            this->int_status = this->cmd_steps->status;
+            this->seq_step = 0;
+            this->int_status = INTSTAT_DIS;
             this->bus_obj->disconnect(this->my_bus_id);
             this->cur_state = SeqState::IDLE;
             this->update_irq();
@@ -511,8 +512,7 @@ void Sc53C94::sequencer()
         this->bus_obj->target_xfer_data();
         break;
     case SeqState::CMD_COMPLETE:
-        this->seq_step   = this->cmd_steps->step_num;
-        this->int_status = this->cmd_steps->status;
+        this->int_status = INTSTAT_SR | INTSTAT_SO;
         this->cur_state = SeqState::IDLE;
         this->update_irq();
         exec_next_command();
@@ -568,11 +568,17 @@ void Sc53C94::sequencer()
         if (this->is_initiator) {
             if (this->cur_state == SeqState::RCV_STATUS) {
                 this->bus_obj->target_next_step();
+                if (this->cur_bus_phase == ScsiPhase::MESSAGE_IN) {
+                    this->bus_obj->assert_ctrl_line(this->my_bus_id, SCSI_CTRL_REQ);
+                    this->cur_state = SeqState::RCV_MESSAGE;
+                    this->sequencer();
+                }
             } else if (this->cur_state == SeqState::RCV_MESSAGE) {
                 this->bus_obj->assert_ctrl_line(this->my_bus_id, SCSI_CTRL_ACK);
-                this->cmd_steps++;
-                this->cur_state = this->cmd_steps->next_step;
-                this->sequencer();
+                if (this->cur_cmd == CMD_COMPLETE_STEPS) {
+                    this->cur_state = SeqState::CMD_COMPLETE;
+                    this->sequencer();
+                }
             }
         }
         break;
@@ -602,16 +608,29 @@ void Sc53C94::notify(ScsiMsg msg_type, int param)
             this->cur_state = SeqState::SEL_END;
             this->sequencer();
         } else {
-            LOG_F(WARNING, "%s: ignore invalid selection confirmation message",
+            LOG_F(WARNING, "%s: invalid selection confirmation message ignored",
                   this->name.c_str());
         }
         break;
     case ScsiMsg::BUS_PHASE_CHANGE:
         this->cur_bus_phase = param;
-        if (param != ScsiPhase::BUS_FREE && this->cmd_steps != nullptr) {
-            this->cmd_steps++;
-            this->cur_state = this->cmd_steps->next_step;
-            this->sequencer();
+        if (param == ScsiPhase::BUS_FREE) { // target want to disconnect
+            this->int_status = INTSTAT_DIS;
+            this->update_irq();
+            this->cur_state  = SeqState::IDLE;
+        }
+        if (this->cmd_steps != nullptr) {
+            if (this->cur_bus_phase == this->cmd_steps->expected_phase) {
+                this->next_state = this->cmd_steps->next_state;
+                this->cmd_steps++;
+                this->seq_defer_state(0);
+            } else {
+                this->seq_step   = this->cmd_steps->step_num;
+                this->int_status = this->cmd_steps->status;
+                this->update_irq();
+                if (this->cmd_steps->next_state == SeqState::CMD_COMPLETE)
+                    this->exec_next_command();
+            }
         }
         break;
     default:
@@ -636,8 +655,7 @@ int Sc53C94::send_data(uint8_t* dst_ptr, int count)
     if (this->data_fifo_pos > 0) {
         std::memmove(this->data_fifo, &this->data_fifo[actual_count], this->data_fifo_pos);
     } else if (this->cur_bus_phase == ScsiPhase::DATA_OUT) {
-        this->cmd_steps++;
-        this->cur_state = this->cmd_steps->next_step;
+        ABORT_F("%s: don't know what to do next!", this->name.c_str());
         this->sequencer();
     }
 
