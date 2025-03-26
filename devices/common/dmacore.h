@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -96,10 +96,11 @@ public:
     DmaDevice()  = default;
     ~DmaDevice() = default;
 
-    void connect(DmaChannel *ch_obj) { this->channel_obj = ch_obj; };
-    void notify(DmaMsg msg) {};
-    virtual int xfer_from(uint8_t *buf, int len) { return len; };
-    virtual int xfer_to(uint8_t *buf, int len) { return len; };
+    virtual void connect(DmaChannel *ch_obj) { this->channel_obj = ch_obj; };
+    virtual void notify(DmaMsg msg) {};
+    virtual int  xfer_from(uint8_t *buf, int len) { return len; };
+    virtual int  xfer_to(uint8_t *buf, int len) { return len; };
+    virtual int  tell_xfer_size() { return 0; };
 
 protected:
     DmaChannel* channel_obj = nullptr;
@@ -110,8 +111,10 @@ public:
     DmaChannel()  = default;
     ~DmaChannel() = default;
 
-    void connect(DmaDevice *dev_obj) { this->dev_obj = dev_obj; };
-    void notify(DmaMsg msg) {};
+    virtual void connect(DmaDevice *dev_obj) { this->dev_obj = dev_obj; };
+    virtual void notify(DmaMsg msg) {};
+    virtual bool is_ready() { return false; };
+    virtual void xfer_retry() {};
 
 protected:
     DmaDevice*  dev_obj  = nullptr;
