@@ -88,7 +88,7 @@ uint8_t DMAChannel::interpret_cmd() {
             LOG_F(ERROR, "%s: Key > 0 not implemented", this->get_name().c_str());
             break;
         }
-        this->queue_len  = cmd_struct.req_count;
+        this->queue_len = cmd_struct.req_count;
         if (this->queue_len) {
             res = mmu_map_dma_mem(cmd_struct.address, cmd_struct.req_count, false);
             this->queue_data = res.host_va;
@@ -447,6 +447,24 @@ void DMAChannel::xfer_to_device() {
     }
 
     this->interpret_cmd();
+}
+
+void DMAChannel::xfer_retry() {
+    if (this->xfer_dir == DMA_DIR_UNDEF)
+        return;
+
+    if (this->xfer_dir == DMA_DIR_FROM_DEV)
+        this->xfer_from_device();
+    else
+        this->xfer_to_device();
+}
+
+bool DMAChannel::is_ready() {
+    if (this->ch_stat   & CH_STAT_DEAD  || !(this->ch_stat  & CH_STAT_ACTIVE) ||
+        this->xfer_dir == DMA_DIR_UNDEF ||   this->cur_cmd >= DBDMA_Cmd::NOP)
+        return false;
+
+    return true;
 }
 
 DmaPullResult DMAChannel::pull_data(uint32_t req_len, uint32_t *avail_len, uint8_t **p_data)

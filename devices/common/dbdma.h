@@ -123,6 +123,9 @@ public:
     void            end_pull_data();
     void            end_push_data();
 
+    bool is_ready();   // TODO: must be marked override
+    void xfer_retry(); // TODO: must be marked override
+
     void register_dma_int(InterruptCtrl* int_ctrl_obj, uint64_t irq_id) {
         this->int_ctrl = int_ctrl_obj;
         this->irq_id   = irq_id;
