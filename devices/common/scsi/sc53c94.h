@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -196,7 +196,7 @@ public:
     }
 
     // HWComponent methods
-    int device_postinit();
+    int device_postinit() override;
 
     // 53C94 registers access
     uint8_t  read(uint8_t reg_offset);
@@ -227,16 +227,16 @@ public:
     }
 
     // ScsiDevice methods
-    void notify(ScsiMsg msg_type, int param);
-    bool prepare_data() { return false; };
-    bool get_more_data() { return false; };
-    bool has_data() { return this->data_fifo_pos != 0; };
-    int  send_data(uint8_t* dst_ptr, int count);
-    void process_command() {};
+    void notify(ScsiMsg msg_type, int param) override;
+    bool prepare_data() override { return false; };
+    bool get_more_data() override { return false; };
+    bool has_data() override { return this->data_fifo_pos != 0; };
+    int  send_data(uint8_t* dst_ptr, int count) override;
+    void process_command() override {};
 
     // DmaChannel methods
-    int xfer_from(uint8_t *buf, int len); // Must be marked override!
-    int xfer_to(uint8_t *buf, int len);   // Must be marked override!
+    int xfer_from(uint8_t *buf, int len) override;
+    int xfer_to(uint8_t *buf, int len) override;
 
 protected:
     void reset_device();
