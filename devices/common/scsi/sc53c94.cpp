@@ -532,6 +532,10 @@ void Sc53C94::sequencer()
             this->sequencer();
             break;
         case ScsiPhase::DATA_IN:
+            if (this->is_dma_cmd && this->channel_obj->is_ready()) {
+                this->channel_obj->xfer_retry();
+                break;
+            }
             this->bus_obj->negotiate_xfer(this->data_fifo_pos, this->bytes_out);
             this->cur_state = SeqState::RCV_DATA;
             this->rcv_data();
@@ -539,6 +543,10 @@ void Sc53C94::sequencer()
                 this->cur_state = SeqState::XFER_END;
                 this->sequencer();
             }
+            break;
+        default:
+            ABORT_F("%s: unsupported phase %d in XFER_BEGIN", this->name.c_str(),
+                    this->cur_bus_phase);
         }
         break;
     case SeqState::XFER_END:
@@ -780,6 +788,12 @@ void Sc53C94::dma_stop()
 }
 
 int Sc53C94::xfer_from(uint8_t *buf, int len) {
+    if (this->cur_cmd != CMD_XFER || !this->is_dma_cmd ||
+        this->cur_bus_phase != ScsiPhase::DATA_IN) {
+        LOG_F(9, "%s: ignoring DMA data transfer request", this->name.c_str());
+        return len;
+    }
+
     if (len > this->xfer_count + this->data_fifo_pos)
         LOG_F(WARNING, "%s: DMA xfer len > command xfer len", this->name.c_str());
 
@@ -810,8 +824,11 @@ int Sc53C94::xfer_from(uint8_t *buf, int len) {
 }
 
 int Sc53C94::xfer_to(uint8_t *buf, int len) {
-    if (!this->xfer_count)
+    if (!this->xfer_count   || this->cur_cmd != CMD_XFER || !this->is_dma_cmd ||
+        this->cur_bus_phase != ScsiPhase::DATA_OUT) {
+        LOG_F(9, "%s: ignoring DMA data transfer request", this->name.c_str());
         return len;
+    }
 
     // Being in the DATA_OUT phase means that we're about to move
     // a big chunk of data. The real device uses its FIFO as buffer.
