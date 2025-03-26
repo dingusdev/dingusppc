@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -74,16 +74,16 @@ public:
     virtual void report_error(const int error) = 0;
 
     // ScsiDevice methods
-    void notify(ScsiMsg msg_type, int param);
-    bool prepare_data() { return false; };
-    bool get_more_data() { return false; };
-    bool has_data() { return false; };
+    void notify(ScsiMsg msg_type, int param) override;
+    bool prepare_data() override { return false; };
+    bool get_more_data() override { return false; };
+    bool has_data() override { return false; };
     bool rcv_data();
-    int  send_data(uint8_t* dst_ptr, int count);
-    void process_command() {};
+    int  send_data(uint8_t* dst_ptr, int count) override;
+    void process_command() override {};
 
     // DmaDevice methods
-    int xfer_from(uint8_t *buf, int len); // must be marked OVERRIDE!
+    int xfer_from(uint8_t *buf, int len) override;
 
 protected:
     void seq_defer_state(uint64_t delay_ns);
