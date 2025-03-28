@@ -190,8 +190,8 @@ static rom_info rom_identity[] = {
 
     {     0x10f1, 1024, 0,        0,          0, 0, nullptr       , nullptr    , nullptr   , nullptr                      , "PowerBook G3 Lombard"                              }, // PowerBook1,1
     {     0x11f4, 1024, 0,        0,          0, 0, nullptr       , nullptr    , "pmg3nw"  , "Power Mac Yosemite"         , "Power Mac B&W G3"                                  }, // PowerMac1,1
-    {     0x13f2, 1024, 0,        0,          0, 0, nullptr       , nullptr    , nullptr   , nullptr                      , "iMac (233 MHz) (Bondi Blue)"                       }, // iMac,1
-    {     0x13f3, 1024, 0,        0,          0, 0, nullptr       , nullptr    , nullptr   , nullptr                      , "iMac (266,333 MHz) (Tray Loading)"                 }, // iMac,1
+    {     0x13f2, 1024, 0,        0,          0, 0, nullptr       , nullptr    , "imacg3"  , "iMac G3 Bondi"              , "iMac (233 MHz) (Bondi Blue)"                       }, // iMac,1
+    {     0x13f3, 1024, 0,        0,          0, 0, nullptr       , nullptr    , "imacg3"  , "iMac G3 Tray Loading"       , "iMac (266,333 MHz) (Tray Loading)"                 }, // iMac,1
 
     {          0, 1024, 0, 0x008100, 0x266f2e55, 0, "Kihei"       , "P7"       , nullptr   , nullptr                      , "iMac G3 (Slot Loading)"                            }, // PowerMac2,1 // 2001-09-14 419f1
     {          0, 1024, 0, 0x008100, 0x55402f54, 0, "Kihei"       , "P7"       , nullptr   , nullptr                      , "iMac G3 (Slot Loading)"                            }, // PowerMac2,1
