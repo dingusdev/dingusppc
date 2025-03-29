@@ -142,7 +142,7 @@ The debugger will be turned on here, due to the presence of `-d`. The CD ROM ima
 
 ## Accessing OpenFirmware
 
-After booting from a PCI Power Mac ROM without any disk images, enter the debugger and change the NVRAM property `auto-boot?` to false. Quit of the emulator and boot it back up to access it.
+After booting from a PCI Power Mac ROM without any disk images, enter the debugger and change the NVRAM property `auto-boot?` to false. Exit out of the emulator and boot it back up to access it.
 
 ## Supported machines
 

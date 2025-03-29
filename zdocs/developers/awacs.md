@@ -28,7 +28,7 @@ All registers are 32-bit here.
 | Byte Swapping     | 0x40   |
 | Frame Count       | 0x50   |
 
-##Sound Control Register bits
+## Sound Control Register bits
 
 | Register                  | Bit Mask |
 |:-------------------------:|:--------:|

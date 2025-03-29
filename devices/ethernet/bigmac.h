@@ -61,6 +61,7 @@ enum BigMacReg : uint16_t {
     PA_LEN      = 0x480, // Apple: PA Len, Sun: PA Size
     PA_PAT      = 0x490, 
     TX_SFD      = 0x4A0,
+    JAM_SIZE    = 0x4B0,
     TX_MAX      = 0x4C0, // Max frame size
     TX_MIN      = 0x4D0, // Min frame size
     PEAK_ATT    = 0x4E0, // Apple: kPAREG, Sun: PeakAttempts Register
@@ -82,6 +83,7 @@ enum BigMacReg : uint16_t {
     RX_LE_CNT   = 0x6A0, // Length Error Counter
     RX_AE_CNT   = 0x6B0, // Alignment Error Counter
     RX_FE_CNT   = 0x6C0, // FCS Error Counter
+    RX_ST_MCHN  = 0x6D0, // RX State Machine
     RX_CVE_CNT  = 0x6E0, // Code Violation Error Counter
     HASH_TAB_3  = 0x700,
     HASH_TAB_2  = 0x710,
