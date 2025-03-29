@@ -41,28 +41,30 @@ enum BigMacReg : uint16_t {
     TX_FIFO_CSR = 0x100,
     TX_FIFO_TH  = 0x110,
     RX_FIFO_CSR = 0x120,
-    MEM_ADD     = 0x130,
-    MEM_DATA_HI = 0x140,
-    MEM_DATA_LO = 0x150,
+    MEM_ADD     = 0x130, // Memory Address
+    MEM_DATA_HI = 0x140, // Memory Data High
+    MEM_DATA_LO = 0x150, // Memory Data Low
+    XCVR_IF     = 0x160, // Transceiver IF Control
     CHIP_ID     = 0x170,
     MIF_CSR     = 0x180,
+    SROM_CSR    = 0x190,
+    TX_PNTR     = 0x1A0, // Apple: TX Pointer
+    RX_PNTR     = 0x1B0, // Apple: RX Pointer
     GLOB_STAT   = 0x200, // Apple: kSTAT, Sun: Global Status Register
     EVENT_MASK  = 0x210, // ambiguously called INT_DISABLE in the Apple source
-    SROM_CSR    = 0x190,
-    TX_PNTR     = 0x1A0,
-    RX_PNTR     = 0x1B0,
     TX_SW_RST   = 0x420,
     TX_CONFIG   = 0x430,
     IPG_1       = 0x440, // Inter Packet Gap 1 
     IPG_2       = 0x450,
-    A_LIMIT     = 0x460,
+    A_LIMIT     = 0x460, // Attempt Limit
     SLOT        = 0x470,
     PA_LEN      = 0x480, // Apple: PA Len, Sun: PA Size
     PA_PAT      = 0x490, 
     TX_SFD      = 0x4A0,
-    TX_MAX      = 0x4C0,
-    TX_MIN      = 0x4D0,
+    TX_MAX      = 0x4C0, // Max frame size
+    TX_MIN      = 0x4D0, // Min frame size
     PEAK_ATT    = 0x4E0, // Apple: kPAREG, Sun: PeakAttempts Register
+    DEFER_TMR   = 0x4F0, // Also called DCNT by Apple
     NC_CNT      = 0x500, // Normal Collision Counter
     NT_CNT      = 0x510, // Apple: Network Collision Counter
     EX_CNT      = 0x520, // Excessive Collision Counter
@@ -71,6 +73,8 @@ enum BigMacReg : uint16_t {
     TX_SM       = 0x550,
     RX_SW_RST   = 0x620,
     RX_CONFIG   = 0x630,
+    RX_MAX      = 0x640,
+    RX_MIN      = 0x650,
     MAC_ADDR_2  = 0x660,
     MAC_ADDR_1  = 0x670,
     MAC_ADDR_0  = 0x680,
@@ -83,6 +87,10 @@ enum BigMacReg : uint16_t {
     HASH_TAB_2  = 0x710,
     HASH_TAB_1  = 0x720,
     HASH_TAB_0  = 0x730,
+    AFR_2       = 0x740, // Address Filter 2
+    AFR_1       = 0x750, // Address Filter 1
+    AFR_0       = 0x760, // Address Filter 0
+    AFC_R       = 0x770, // Address Filter Mask
 };
 
 /* MIF_CSR bit definitions. */
