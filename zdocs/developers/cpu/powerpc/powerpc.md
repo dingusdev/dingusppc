@@ -111,7 +111,7 @@ PowerPC supports both big-endian and little-endian modes. Mac OS largely operate
 
 * To accommodate for early programs compiled on PowerPC 601 Macs, the classic Mac OS has to emulate the POWER instructions that were removed from later processors.
 
-* BeOS uses the exception handler by deliberating invoking a supervisor-level instruction while the PR bit is set in the MSR.
+* BeOS uses the exception handler by deliberately invoking a supervisor-level instruction while the PR bit is set in the MSR.
 
 * Mac OS X touches the FP bit in the MSR to performing floating-point operations.
 

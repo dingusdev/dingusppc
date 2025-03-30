@@ -118,7 +118,7 @@ Set the ADB devices to attach, comma-separated
 --adb_devices TEXT
 ```
 
-Change where the output of OpenFirmware is directed to, either to the command line (with stdio) or a Unix socket (unavailable in Windows builds). OpenFirmware 1.x outputs here by default.
+Change where the output of Open Firmware is directed to, either to the command line (with stdio) or a Unix socket (unavailable in Windows builds). Open Firmware 1.x outputs here by default.
 
 ### Command Line Examples
 
@@ -140,7 +140,7 @@ dingusppc -b "Power_Mac_G3_Beige.ROM" -d --rambank1_size 64 --rambank2_size 64 -
 
 The debugger will be turned on here, due to the presence of `-d`. The CD ROM image will be loaded in.
 
-## Accessing OpenFirmware
+## Accessing Open Firmware
 
 After booting from a PCI Power Mac ROM without any disk images, enter the debugger and change the NVRAM property `auto-boot?` to false. Exit out of the emulator and boot it back up to access it.
 
