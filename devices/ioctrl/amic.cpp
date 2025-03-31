@@ -55,6 +55,8 @@ AMIC::AMIC() : MMIODevice()
     this->scsi = dynamic_cast<Sc53C94*>(gMachineObj->get_comp_by_name("Sc53C94"));
     this->curio_dma = std::unique_ptr<AmicScsiDma> (new AmicScsiDma());
     this->scsi->set_dma_channel(this->curio_dma.get());
+    this->curio_dma->connect(this->scsi);
+    this->scsi->connect(this->curio_dma.get());
     this->scsi->set_drq_callback([this](const uint8_t drq_state) {
         if (drq_state & 1)
             via2_ifr |= VIA2_INT_SCSI_DRQ;
@@ -400,9 +402,9 @@ void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
         if (value & 2) { // RUN bit set?
             this->curio_dma->reinit(this->scsi_dma_base);
             if (value & (1 << 6))
-                this->scsi->real_dma_xfer_out();
+                this->curio_dma->xfer_to_device();
             else
-                this->scsi->real_dma_xfer_in();
+                this->curio_dma->xfer_from_device();
         }
         this->curio_dma->write_ctrl(value);
         break;
@@ -733,6 +735,52 @@ void AmicScsiDma::write_ctrl(uint8_t value)
     if (value & 0x80) {
         this->stat &= 0x7F;
     }
+}
+
+bool AmicScsiDma::is_ready() {
+    return (this->stat & 2) ? true : false;
+}
+
+void AmicScsiDma::xfer_from_device() {
+    if (this->dev_obj == nullptr)
+        return;
+
+    this->xfer_dir = DMA_DIR_FROM_DEV;
+
+    uint32_t len = this->dev_obj->tell_xfer_size();
+
+    MapDmaResult res = mmu_map_dma_mem(this->addr_ptr, len, false);
+
+    int got_bytes = this->dev_obj->xfer_from(res.host_va, len);
+    if (got_bytes > 0) {
+        this->addr_ptr += got_bytes;
+    }
+}
+
+void AmicScsiDma::xfer_to_device() {
+    if (this->dev_obj == nullptr)
+        return;
+
+    this->xfer_dir = DMA_DIR_TO_DEV;
+
+    uint32_t len = this->dev_obj->tell_xfer_size();
+
+    MapDmaResult res = mmu_map_dma_mem(this->addr_ptr, len, false);
+
+    int got_bytes = this->dev_obj->xfer_to(res.host_va, len);
+    if (got_bytes > 0) {
+        this->addr_ptr += got_bytes;
+    }
+}
+
+void AmicScsiDma::xfer_retry() {
+    if (this->xfer_dir == DMA_DIR_UNDEF)
+        return;
+
+    if (this->xfer_dir == DMA_DIR_FROM_DEV)
+        this->xfer_from_device();
+    else
+        this->xfer_to_device();
 }
 
 int AmicScsiDma::push_data(const char* src_ptr, int len)

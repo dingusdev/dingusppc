@@ -517,8 +517,8 @@ void Sc53C94::sequencer()
         this->cur_bus_phase = this->bus_obj->current_phase();
         switch (this->cur_bus_phase) {
         case ScsiPhase::DATA_OUT:
-            if (this->is_dma_cmd) {
-                this->cur_state = SeqState::SEND_DATA;
+            if (this->is_dma_cmd && this->channel_obj->is_ready()) {
+                this->channel_obj->xfer_retry();
                 break;
             }
             this->bus_obj->push_data(this->target_id, this->data_fifo, this->data_fifo_pos);

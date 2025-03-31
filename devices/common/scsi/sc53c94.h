@@ -234,9 +234,12 @@ public:
     int  send_data(uint8_t* dst_ptr, int count) override;
     void process_command() override {};
 
-    // DmaChannel methods
+    // DmaDevice methods
     int xfer_from(uint8_t *buf, int len) override;
     int xfer_to(uint8_t *buf, int len) override;
+    int tell_xfer_size() override {
+        return this->xfer_count;
+    };
 
 protected:
     void reset_device();
