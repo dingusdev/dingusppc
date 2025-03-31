@@ -303,18 +303,6 @@ void ScsiHardDisk::mode_sense_6() {
         return;
     }
 
-    if (page_ctrl == 2) {
-        LOG_F(ERROR, "%s: page_ctrl 2 DEFAULT VALUES is not implemented", this->name.c_str());
-        this->status = ScsiStatus::CHECK_CONDITION;
-        this->sense  = ScsiSense::ILLEGAL_REQ;
-        this->asc    = ScsiError::INVALID_CDB;
-        this->ascq   = 0;
-        this->sksv   = 0xC0; // sksv=1, C/D=Command, BPV=0, BP=0
-        this->field  = 2;
-        this->switch_phase(ScsiPhase::STATUS);
-        return;
-    }
-
     if (page_ctrl == 3) {
         LOG_F(INFO, "%s: page_ctrl 3 SAVED VALUES is not implemented", this->name.c_str());
         this->status = ScsiStatus::CHECK_CONDITION;
