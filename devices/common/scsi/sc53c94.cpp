@@ -495,22 +495,17 @@ void Sc53C94::sequencer()
         if (this->data_fifo_pos < 1 && this->is_dma_cmd) {
             if (this->drq_cb)
                 this->drq_cb(1);
-            this->int_status = INTSTAT_SR;
-            this->update_irq();
-            break;
+        } else {
+            this->bus_obj->target_xfer_data();
+            this->bus_obj->release_ctrl_line(this->my_bus_id, SCSI_CTRL_ATN);
         }
-        this->bus_obj->target_xfer_data();
-        this->bus_obj->release_ctrl_line(this->my_bus_id, SCSI_CTRL_ATN);
         break;
     case SeqState::SEND_CMD:
         if (this->data_fifo_pos < 1 && this->is_dma_cmd) {
             if (this->drq_cb)
                 this->drq_cb(1);
-            this->int_status |= INTSTAT_SR;
-            this->update_irq();
-            break;
-        }
-        this->bus_obj->target_xfer_data();
+        } else
+            this->bus_obj->target_xfer_data();
         break;
     case SeqState::CMD_COMPLETE:
         this->int_status = INTSTAT_SR | INTSTAT_SO;
