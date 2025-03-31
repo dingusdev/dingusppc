@@ -114,17 +114,17 @@ public:
     void reg_write(uint32_t offset, uint32_t value, int size);
     void set_stat(uint8_t new_stat) { this->ch_stat = (this->ch_stat & 0xff00) | new_stat; }
 
-    bool            is_out_active();
-    bool            is_in_active();
-    DmaPullResult   pull_data(uint32_t req_len, uint32_t *avail_len, uint8_t **p_data);
-    int             push_data(const char* src_ptr, int len);
-    int             get_pull_data_remaining() { return this->queue_len; }
-    int             get_push_data_remaining() { return this->queue_len; }
-    void            end_pull_data();
-    void            end_push_data();
+    bool            is_out_active() override;
+    bool            is_in_active() override;
+    DmaPullResult   pull_data(uint32_t req_len, uint32_t *avail_len, uint8_t **p_data) override;
+    int             push_data(const char* src_ptr, int len) override;
+    int             get_pull_data_remaining() override { return this->queue_len; }
+    int             get_push_data_remaining() override { return this->queue_len; }
+    void            end_pull_data() override;
+    void            end_push_data() override;
 
-    bool is_ready();   // TODO: must be marked override
-    void xfer_retry(); // TODO: must be marked override
+    bool            is_ready() override;
+    void            xfer_retry() override;
 
     void register_dma_int(InterruptCtrl* int_ctrl_obj, uint64_t irq_id) {
         this->int_ctrl = int_ctrl_obj;
