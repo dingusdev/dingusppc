@@ -427,7 +427,8 @@ void DMAChannel::xfer_from_device() {
 
     this->xfer_dir = DMA_DIR_FROM_DEV;
 
-    if (!this->dev_obj->xfer_from(this->queue_data, this->queue_len)) {
+    int got_bytes = this->dev_obj->xfer_from(this->queue_data, this->queue_len);
+    if (got_bytes == this->queue_len) {
         this->queue_len = 0;
         this->finish_cmd();
     }
@@ -441,7 +442,8 @@ void DMAChannel::xfer_to_device() {
 
     this->xfer_dir = DMA_DIR_TO_DEV;
 
-    if (!this->dev_obj->xfer_to(this->queue_data, this->queue_len)) {
+    int got_bytes = this->dev_obj->xfer_to(this->queue_data, this->queue_len);
+    if (got_bytes == this->queue_len) {
         this->queue_len = 0;
         this->finish_cmd();
     }

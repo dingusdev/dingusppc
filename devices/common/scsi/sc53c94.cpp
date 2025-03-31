@@ -783,47 +783,52 @@ void Sc53C94::dma_stop()
 }
 
 int Sc53C94::xfer_from(uint8_t *buf, int len) {
+    int bytes_moved = 0;
+
     if (this->cur_cmd != CMD_XFER || !this->is_dma_cmd ||
         this->cur_bus_phase != ScsiPhase::DATA_IN) {
         LOG_F(9, "%s: ignoring DMA data transfer request", this->name.c_str());
-        return len;
+        return bytes_moved;
     }
 
-    if (len > this->xfer_count + this->data_fifo_pos)
-        LOG_F(WARNING, "%s: DMA xfer len > command xfer len", this->name.c_str());
+    len = std::min(len, (int)(this->xfer_count));
 
     if (this->data_fifo_pos) {
         int fifo_bytes = std::min(this->data_fifo_pos, len);
         std::memcpy(buf, this->data_fifo, fifo_bytes);
         this->data_fifo_pos -= fifo_bytes;
         this->xfer_count -= fifo_bytes;
+        bytes_moved += fifo_bytes;
         len -= fifo_bytes;
         buf += fifo_bytes;
         if (!this->xfer_count) {
             this->status |= STAT_TC; // signal zero transfer count
             this->cur_state = SeqState::XFER_END;
             this->sequencer();
-            return 0;
+            return bytes_moved;
         }
     }
 
     if (this->bus_obj->pull_data(this->target_id, buf, this->xfer_count)) {
+        bytes_moved += this->xfer_count;
         this->xfer_count = 0;
         this->status |= STAT_TC; // signal zero transfer count
         this->cur_state = SeqState::XFER_END;
         this->sequencer();
-        return 0;
     }
 
-    return len;
+    return bytes_moved;
 }
 
 int Sc53C94::xfer_to(uint8_t *buf, int len) {
-    if (!this->xfer_count   || this->cur_cmd != CMD_XFER || !this->is_dma_cmd ||
-        this->cur_bus_phase != ScsiPhase::DATA_OUT) {
+    int bytes_moved = 0;
+
+    if (!this->xfer_count || !this->is_dma_cmd) {
         LOG_F(9, "%s: ignoring DMA data transfer request", this->name.c_str());
-        return len;
+        return bytes_moved;
     }
+
+    len = std::min(len, (int)(this->xfer_count));
 
     // Being in the DATA_OUT phase means that we're about to move
     // a big chunk of data. The real device uses its FIFO as buffer.
@@ -832,6 +837,7 @@ int Sc53C94::xfer_to(uint8_t *buf, int len) {
     if (this->cur_bus_phase == ScsiPhase::DATA_OUT) {
         if (this->bus_obj->push_data(this->target_id, buf, len)) {
             this->xfer_count -= len;
+            bytes_moved += len;
             if (!this->xfer_count) {
                 this->status |= STAT_TC; // signal zero transfer count
                 this->cur_state = SeqState::XFER_END;
@@ -849,13 +855,14 @@ int Sc53C94::xfer_to(uint8_t *buf, int len) {
         len -= fifo_bytes;
         this->data_fifo_pos += fifo_bytes;
         this->xfer_count -= fifo_bytes;
+        bytes_moved += fifo_bytes;
         if (!this->xfer_count) {
             this->status |= STAT_TC; // signal zero transfer count
             this->sequencer();
         }
     }
 
-    return len;
+    return bytes_moved;
 }
 
 static const PropMap Sc53C94_properties = {
