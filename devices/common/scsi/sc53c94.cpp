@@ -799,7 +799,6 @@ int Sc53C94::xfer_from(uint8_t *buf, int len) {
         this->data_fifo_pos -= fifo_bytes;
         this->xfer_count -= fifo_bytes;
         bytes_moved += fifo_bytes;
-        len -= fifo_bytes;
         buf += fifo_bytes;
         if (!this->xfer_count) {
             this->status |= STAT_TC; // signal zero transfer count
@@ -852,7 +851,6 @@ int Sc53C94::xfer_to(uint8_t *buf, int len) {
         // fill in the data FIFO first
         uint32_t fifo_bytes = std::min(len, DATA_FIFO_MAX - this->data_fifo_pos);
         std::memcpy(&this->data_fifo[this->data_fifo_pos], buf, fifo_bytes);
-        len -= fifo_bytes;
         this->data_fifo_pos += fifo_bytes;
         this->xfer_count -= fifo_bytes;
         bytes_moved += fifo_bytes;
