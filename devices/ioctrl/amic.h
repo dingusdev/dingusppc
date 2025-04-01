@@ -175,19 +175,15 @@ private:
 };
 
 /** AMIC-specific SCSI DMA implementation. */
-class AmicScsiDma : public DmaBidirChannel, public DmaChannel {
+class AmicScsiDma : public DmaChannel {
 public:
-    AmicScsiDma() : DmaBidirChannel("Scsi") {}
-    ~AmicScsiDma()  = default;
+    AmicScsiDma()  = default;
+    ~AmicScsiDma() = default;
 
     void            reinit(const uint32_t addr_ptr);
     void            reset(const uint32_t addr_ptr);
     void            write_ctrl(const uint8_t value);
     uint8_t         read_stat() { return this->stat; };
-
-    int             push_data(const char* src_ptr, int len) override;
-    DmaPullResult   pull_data(uint32_t req_len, uint32_t *avail_len,
-                                      uint8_t **p_data) override;
 
     void            xfer_to_device();
     void            xfer_from_device();

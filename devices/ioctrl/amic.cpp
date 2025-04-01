@@ -54,7 +54,6 @@ AMIC::AMIC() : MMIODevice()
     // connect internal SCSI controller
     this->scsi = dynamic_cast<Sc53C94*>(gMachineObj->get_comp_by_name("Sc53C94"));
     this->curio_dma = std::unique_ptr<AmicScsiDma> (new AmicScsiDma());
-    this->scsi->set_dma_channel(this->curio_dma.get());
     this->curio_dma->connect(this->scsi);
     this->scsi->connect(this->curio_dma.get());
     this->scsi->set_drq_callback([this](const uint8_t drq_state) {
@@ -781,27 +780,6 @@ void AmicScsiDma::xfer_retry() {
         this->xfer_from_device();
     else
         this->xfer_to_device();
-}
-
-int AmicScsiDma::push_data(const char* src_ptr, int len)
-{
-    MapDmaResult res = mmu_map_dma_mem(this->addr_ptr, len, false);
-    uint8_t *p_data = res.host_va;
-    std::memcpy(p_data, src_ptr, len);
-
-    this->addr_ptr += len;
-
-    return 0;
-}
-
-DmaPullResult AmicScsiDma::pull_data(uint32_t req_len, uint32_t *avail_len,
-                                     uint8_t **p_data)
-{
-    MapDmaResult res = mmu_map_dma_mem(this->addr_ptr, req_len, false);
-    *p_data = res.host_va;
-    this->addr_ptr += req_len;
-    *avail_len = req_len;
-    return DmaPullResult::MoreData;
 }
 
 // =========================== Serial DMA stuff ===============================
