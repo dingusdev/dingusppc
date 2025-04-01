@@ -339,7 +339,7 @@ void Sc53C94::exec_command()
             {2, ScsiPhase::COMMAND, SeqState::SEND_CMD,     INTSTAT_SR | INTSTAT_SO},
             {4, -1,                 SeqState::CMD_COMPLETE, INTSTAT_SR | INTSTAT_SO},
         };
-        this->seq_step = this-> cur_step = 0;
+        this->seq_step = this->cur_step = 0;
         this->cmd_steps = sel_no_atn_desc;
         this->cur_state = SeqState::BUS_FREE;
         this->sequencer();
