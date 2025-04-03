@@ -125,6 +125,14 @@ void EventManager::poll_events() {
                     }
                     return;
                 }
+                // Control-D: debugger
+                if (event.key.keysym.sym == SDLK_d && (SDL_GetModState() & KMOD_ALL) == KMOD_LCTRL) {
+                    if (event.type == SDL_KEYUP) {
+                        power_on = false;
+                        power_off_reason = po_enter_debugger;
+                    }
+                    return;
+                }
                 // Ralt+delete => ctrl+alt+del
                 if (event.key.keysym.sym == SDLK_DELETE && ((SDL_GetModState() & KMOD_ALL) == KMOD_RALT) != 0) {
                     KeyboardEvent ke{};
