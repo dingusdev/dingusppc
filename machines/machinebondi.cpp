@@ -93,7 +93,7 @@ int initialize_bondi(std::string& id) {
 }
 
 static const PropMap bondi_settings = {
-    {"rambank1_size", new IntProperty(128, std::vector<uint32_t>({32, 64, 128}))},
+    {"rambank1_size", new IntProperty(128, std::vector<uint32_t>({32, 64, 128, 256, 512, 1024}))},
     {"emmo", new BinProperty(0)},
     {"hdd_config", new StrProperty("Ide0:0")},
     {"cdr_config", new StrProperty("Ide1:0")},
