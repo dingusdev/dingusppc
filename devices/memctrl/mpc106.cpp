@@ -263,6 +263,11 @@ void MPC106::setup_ram() {
         }
     }
 
+    LOG_F(INFO, "banks:");
+    for (int i = 0; i < bank_count; i++) {
+        LOG_F(INFO, "bank %d: [%08X..%08X]", i, bank_start[i], bank_end[i]);
+    }
+
     // sort banks by start address
     for (int i = 0; i < bank_count; i++) {
         for (int j = i + 1; j < bank_count; j++) {
@@ -274,15 +279,23 @@ void MPC106::setup_ram() {
         }
     }
 
-    // squash adjacent banks into memory regions
+    // squash adjacent or overlapping banks into memory regions
+    bool overlapping_regions = false;
     for (int i = 0; i < bank_count; i++) {
-        if (region_count > 0 && bank_start[bank_order[i]] == bank_end[bank_order[region_count - 1]] + 1)
-            bank_end[bank_order[region_count - 1]] = bank_end[bank_order[i]];
-        else {
+        if (region_count > 0 && bank_start[bank_order[i]] <= bank_end[bank_order[region_count - 1]] + 1) {
+            if (bank_start[bank_order[i]] < bank_end[bank_order[region_count - 1]] + 1) {
+                overlapping_regions = true;
+            }
+            if (bank_end[bank_order[i]] > bank_end[bank_order[region_count - 1]])
+                bank_end[bank_order[region_count - 1]] = bank_end[bank_order[i]];
+        } else {
             bank_order[region_count] = bank_order[i];
             region_count++;
         }
     }
+
+    if (overlapping_regions)
+        LOG_F(ERROR, "overlapping regions");
 
     // allocate memory regions
     for (int i = 0; i < region_count; i++) {
