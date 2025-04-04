@@ -197,6 +197,9 @@ extern std::map<std::string, std::unique_ptr<BasicProperty>> gMachineSettings;
 #define GET_STR_PROP(name) \
     dynamic_cast<StrProperty*>(gMachineSettings.at(name).get())->get_string()
 
+#define SET_STR_PROP(name, value) \
+     dynamic_cast<StrProperty*>(gMachineSettings.at(name).get())->set_string(value)
+
 #define GET_INT_PROP(name) \
     dynamic_cast<IntProperty*>(gMachineSettings.at(name).get())->get_int()
 
