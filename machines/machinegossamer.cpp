@@ -167,11 +167,11 @@ int initialize_gossamer(std::string& id)
 
 static const PropMap gossamer_settings = {
     {"rambank1_size",
-        new IntProperty(256, std::vector<uint32_t>({8, 16, 32, 64, 128, 256}))},
+        new IntProperty(256, std::vector<uint32_t>({8, 16, 32, 64, 128, 256, 512}))},
     {"rambank2_size",
-        new IntProperty(  0, std::vector<uint32_t>({0, 8, 16, 32, 64, 128, 256}))},
+        new IntProperty(  0, std::vector<uint32_t>({0, 8, 16, 32, 64, 128, 256, 512}))},
     {"rambank3_size",
-        new IntProperty(  0, std::vector<uint32_t>({0, 8, 16, 32, 64, 128, 256}))},
+        new IntProperty(  0, std::vector<uint32_t>({0, 8, 16, 32, 64, 128, 256, 512}))},
     {"emmo",
         new BinProperty(0)},
     {"hdd_config",
