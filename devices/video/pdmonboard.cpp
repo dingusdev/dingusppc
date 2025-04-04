@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -211,14 +211,8 @@ void PdmOnboardVideo::enable_video_internal()
         ABORT_F("PDM-Video: invalid video mode %d", this->video_mode);
     }
 
-    // figure out where our framebuffer is located
-    uint64_t hmc_control = this->hmc_obj->get_control_reg();
-    uint32_t fb_base_phys = ((hmc_control >> HMC_VBASE_BIT) & 1) ? 0 : 0x100000;
-    LOG_F(INFO, "PDM-Video: framebuffer phys base addr = 0x%X", fb_base_phys);
-
     // set CRTC parameters
-    MapDmaResult res = mmu_map_dma_mem(fb_base_phys, PDM_FB_SIZE_MAX, false);
-    this->fb_ptr = res.host_va;
+    this->set_fb_base();
     this->active_width  = new_width;
     this->active_height = new_height;
     this->hori_blank    = hori_blank;
@@ -229,6 +223,12 @@ void PdmOnboardVideo::enable_video_internal()
     this->set_depth_internal(new_width);
 
     this->stop_refresh_task();
+
+    this->vbl_cb = [this](uint8_t irq_line_state) {
+        this->set_fb_base();
+        if (this->int_ctrl)
+            this->int_ctrl->ack_int(this->irq_id, irq_line_state);
+    };
 
     // set up video refresh timer
     this->refresh_rate = (double)(this->pixel_clock) / hori_total / vert_total;
@@ -247,6 +247,18 @@ void PdmOnboardVideo::disable_video_internal()
     this->blanking = 0x80;
     this->crtc_on = false;
     LOG_F(9, "PDM-Video: video disabled");
+}
+
+void PdmOnboardVideo::set_fb_base() {
+    // figure out where our framebuffer is located
+    uint64_t hmc_control = this->hmc_obj->get_control_reg();
+    uint8_t  vmem_loc = (hmc_control >> HMC_VBASE_BIT) & 1;
+    if (this->fb_loc != vmem_loc) {
+        uint32_t fb_base_phys = vmem_loc ? 0 : 0x100000;
+        MapDmaResult res = mmu_map_dma_mem(fb_base_phys, PDM_FB_SIZE_MAX, false);
+        this->fb_ptr = res.host_va;
+        this->fb_loc = vmem_loc;
+    }
 }
 
 /** Ariel II has a weird 1bpp mode where a white pixel is mapped to

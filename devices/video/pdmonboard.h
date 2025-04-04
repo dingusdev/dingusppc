@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -69,9 +69,11 @@ public:
     };
 
 protected:
-    void set_depth_internal(int width);
-    void enable_video_internal();
-    void disable_video_internal();
+    void    set_depth_internal(int width);
+    void    enable_video_internal();
+    void    disable_video_internal();
+    void    set_fb_base();
+
     void convert_frame_1bpp_indexed(uint8_t *dst_buf, int dst_pitch) override;
     void convert_frame_2bpp_indexed(uint8_t *dst_buf, int dst_pitch) override;
     void convert_frame_4bpp_indexed(uint8_t *dst_buf, int dst_pitch) override;
@@ -82,6 +84,7 @@ private:
     uint8_t     vdac_mode;
     uint8_t     clut_index;
     uint8_t     comp_index;
+    uint8_t     fb_loc = 0;
     uint8_t     clut_color[3];
 
     HMC*        hmc_obj;
