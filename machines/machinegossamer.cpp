@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -135,10 +135,6 @@ int initialize_gossamer(std::string& id)
     grackle_obj->pci_register_device(
         DEV_FUN(0x10,0), dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("Heathrow")));
 
-    std::string gpu = GET_STR_PROP("pci_GPU");
-    if (gpu.empty())
-        SET_STR_PROP("pci_GPU", id == "pmg3twr" ? "AtiRagePro" : "AtiRageGT");
-
     // add Athens clock generator device and register it with the I2C host
     gMachineObj->add_device("Athens", std::unique_ptr<AthensClocks>(new AthensClocks(0x28)));
     I2CBus* i2c_bus = dynamic_cast<I2CBus*>(gMachineObj->get_comp_by_type(HWCompType::I2C_HOST));
@@ -165,7 +161,7 @@ int initialize_gossamer(std::string& id)
     return 0;
 }
 
-static const PropMap gossamer_settings = {
+static const PropMap gossamer_desktop_settings = {
     {"rambank1_size",
         new IntProperty(256, std::vector<uint32_t>({8, 16, 32, 64, 128, 256, 512}))},
     {"rambank2_size",
@@ -178,6 +174,25 @@ static const PropMap gossamer_settings = {
         new StrProperty("Ide0:0")},
     {"cdr_config",
         new StrProperty("Ide1:0")},
+    {"pci_GPU",
+        new StrProperty("AtiRageGT")},
+};
+
+static const PropMap gossamer_tower_settings = {
+    {"rambank1_size",
+        new IntProperty(256, std::vector<uint32_t>({8, 16, 32, 64, 128, 256, 512}))},
+    {"rambank2_size",
+        new IntProperty(  0, std::vector<uint32_t>({0, 8, 16, 32, 64, 128, 256, 512}))},
+    {"rambank3_size",
+        new IntProperty(  0, std::vector<uint32_t>({0, 8, 16, 32, 64, 128, 256, 512}))},
+    {"emmo",
+        new BinProperty(0)},
+    {"hdd_config",
+        new StrProperty("Ide0:0")},
+    {"cdr_config",
+        new StrProperty("Ide1:0")},
+    {"pci_GPU",
+        new StrProperty("AtiRagePro")},
 };
 
 static std::vector<std::string> pmg3_devices = {
@@ -192,7 +207,7 @@ static const MachineDescription pmg3dt_descriptor = {
     .name = "pmg3dt",
     .description = "Power Macintosh G3 (Beige) Desktop",
     .devices = pmg3_devices,
-    .settings = gossamer_settings,
+    .settings = gossamer_desktop_settings,
     .init_func = &initialize_gossamer
 };
 
@@ -200,7 +215,7 @@ static const MachineDescription pmg3twr_descriptor = {
     .name = "pmg3twr",
     .description = "Power Macintosh G3 (Beige) Tower",
     .devices = pmg3twr_devices,
-    .settings = gossamer_settings,
+    .settings = gossamer_tower_settings,
     .init_func = &initialize_gossamer
 };
 
