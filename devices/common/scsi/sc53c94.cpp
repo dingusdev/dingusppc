@@ -72,6 +72,9 @@ void Sc53C94::reset_device()
     this->data_fifo_pos = 0;
     this->data_fifo[0]  = 0;
 
+    this->sync_period = 5;
+    this->sync_offset = 0;
+
     this->cur_step = 0;
     this->seq_step = 0;
 
@@ -147,6 +150,9 @@ void Sc53C94::write(uint8_t reg_offset, uint8_t value)
         break;
     case Write::Reg53C94::Sel_Timeout:
         this->sel_timeout = value;
+        break;
+    case Write::Reg53C94::Sync_Period:
+        this->sync_period = value;
         break;
     case Write::Reg53C94::Sync_Offset:
         this->sync_offset = value;

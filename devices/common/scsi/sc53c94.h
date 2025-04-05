@@ -274,6 +274,7 @@ private:
     uint8_t     int_status = 0;
     uint8_t     seq_step = 0;
     uint8_t     sel_timeout = 0;
+    uint8_t     sync_period = 5;
     uint8_t     sync_offset = 0;
     uint8_t     clk_factor = 0;
     uint8_t     config1 = 0;
