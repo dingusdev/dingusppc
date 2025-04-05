@@ -115,14 +115,12 @@ static const PropMap pm6500_settings = {
         new BinProperty(0)},
     {"hdd_config",
         new StrProperty("Ide0:0")},
-    {"cdr_config",
-        new StrProperty("Ide1:0")},
     {"pci_F1",
         new StrProperty("AtiRageGT")},
 };
 
 static std::vector<std::string> pm6500_devices = {
-    "Psx", "PsxPci1", "ScreamerSnd", "OHare", "AtaHardDisk" /*, "AtapiCdrom" */
+    "Psx", "PsxPci1", "ScreamerSnd", "OHare", "AtaHardDisk"
 };
 
 static const MachineDescription pm6500_descriptor = {
