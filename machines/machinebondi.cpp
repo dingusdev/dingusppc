@@ -64,9 +64,6 @@ int initialize_bondi(std::string& id) {
 
     grackle_obj->pci_register_device(DEV_FUN(0x10,0), heathrow);
 
-    grackle_obj->pci_register_device(
-        DEV_FUN(0x12,0), dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("AtiMach64Gx")));
-
     // allocate ROM region
     if (!grackle_obj->add_rom_region(0xFFF00000, 0x100000)) {
         LOG_F(ERROR, "Could not allocate ROM region!");
@@ -101,7 +98,7 @@ static const PropMap bondi_settings = {
 };
 
 static std::vector<std::string> bondi_devices = {
-    "Grackle", "BurgundySnd", "Heathrow", "AtiMach64Gx", "AtaHardDisk", "AtapiCdrom"};
+    "Grackle", "BurgundySnd", "Heathrow", "AtaHardDisk", "AtapiCdrom"};
 
 static const MachineDescription bondi_descriptor = {
     .name        = "imacg3",
