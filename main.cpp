@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -228,7 +228,7 @@ int main(int argc, char** argv) {
         sa.allow_extras();
 
         std::string value;
-        sa.add_option("--" + name, value);
+        sa.add_option("--" + name, value)->expected(0,1);
         try {
             sa.parse(app.remaining_for_passthrough());
         } catch (const CLI::Error& e) {
