@@ -150,6 +150,11 @@ enum {
     INTSTAT_SEL     = 0x01, // selected as a target without attention
 };
 
+/** Configuration register 1 bits. */
+enum {
+    CFG1_DISR       = 0x40, // disable interrupt on SCSI reset
+};
+
 /** Configuration register 2 bits. */
 enum {
     CFG2_ENF        = 0x40, // Am53CF94: enable features (ENF) bit

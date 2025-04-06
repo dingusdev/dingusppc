@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -258,9 +258,9 @@ void Sc53C94::update_command_reg(uint8_t cmd)
 
 void Sc53C94::exec_command()
 {
-    uint8_t cmd = this->cur_cmd = this->cmd_fifo[0] & 0x7F;
+    uint8_t cmd = this->cur_cmd = this->cmd_fifo[0] & CMD_OPCODE;
 
-    this->is_dma_cmd = !!(this->cmd_fifo[0] & 0x80);
+    this->is_dma_cmd = !!(this->cmd_fifo[0] & CMD_ISDMA);
 
     if (this->is_dma_cmd) {
         if (this->config2 & CFG2_ENF) { // extended mode: 24-bit
@@ -307,7 +307,7 @@ void Sc53C94::exec_command()
                 my_timer_id = 0;
                 this->bus_obj->release_ctrl_line(this->my_bus_id, SCSI_CTRL_RST);
         });
-        if (!(config1 & 0x40)) {
+        if (!(config1 & CFG1_DISR)) {
             LOG_F(INFO, "%s: reset interrupt issued", this->name.c_str());
             this->int_status = INTSTAT_SRST;
         }
