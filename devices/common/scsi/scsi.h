@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -82,13 +82,10 @@ namespace ScsiMessage {
     };
 };
 
-enum ScsiMsg : int {
+/** Internal notification codes for our SCSI implementation. */
+enum ScsiNotification : int {
     CONFIRM_SEL = 1,
     BUS_PHASE_CHANGE,
-    SEND_CMD_BEGIN,
-    SEND_CMD_END,
-    MESSAGE_BEGIN,
-    MESSAGE_END,
 };
 
 enum ScsiCommand : uint8_t {
@@ -180,7 +177,7 @@ public:
     };
     ~ScsiDevice() = default;
 
-    virtual void notify(ScsiMsg msg_type, int param);
+    virtual void notify(ScsiNotification notif_type, int param);
     virtual void next_step();
     virtual void prepare_xfer(ScsiBus* bus_obj, int& bytes_in, int& bytes_out);
     virtual void switch_phase(const int new_phase);

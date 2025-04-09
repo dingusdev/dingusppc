@@ -607,10 +607,10 @@ void Sc53C94::update_irq()
     }
 }
 
-void Sc53C94::notify(ScsiMsg msg_type, int param)
+void Sc53C94::notify(ScsiNotification notif_type, int param)
 {
-    switch (msg_type) {
-    case ScsiMsg::CONFIRM_SEL:
+    switch (notif_type) {
+    case ScsiNotification::CONFIRM_SEL:
         if (this->target_id == param) {
             // cancel selection timeout timer
             TimerManager::get_instance()->cancel_timer(this->seq_timer_id);
@@ -622,7 +622,7 @@ void Sc53C94::notify(ScsiMsg msg_type, int param)
                   this->name.c_str());
         }
         break;
-    case ScsiMsg::BUS_PHASE_CHANGE:
+    case ScsiNotification::BUS_PHASE_CHANGE:
         this->cur_bus_phase = param;
         if (param == ScsiPhase::BUS_FREE) { // target want to disconnect
             this->int_status = INTSTAT_DIS;
@@ -646,7 +646,7 @@ void Sc53C94::notify(ScsiMsg msg_type, int param)
         break;
     default:
         LOG_F(9, "%s: ignore notification message, type: %d", this->name.c_str(),
-              msg_type);
+              notif_type);
     }
 }
 

@@ -160,9 +160,9 @@ void ScsiBusController::sequencer() {
     }
 }
 
-void ScsiBusController::notify(ScsiMsg msg_type, int param) {
-    switch (msg_type) {
-    case ScsiMsg::CONFIRM_SEL:
+void ScsiBusController::notify(ScsiNotification notif_type, int param) {
+    switch (notif_type) {
+    case ScsiNotification::CONFIRM_SEL:
         if (this->dst_id == param) {
             // cancel selection timeout timer
             TimerManager::get_instance()->cancel_timer(this->seq_timer_id);
@@ -174,7 +174,7 @@ void ScsiBusController::notify(ScsiMsg msg_type, int param) {
                   this->name.c_str());
         }
         break;
-    case ScsiMsg::BUS_PHASE_CHANGE:
+    case ScsiNotification::BUS_PHASE_CHANGE:
         this->cur_bus_phase = param;
 #if 0
         if (param != ScsiPhase::BUS_FREE && this->cmd_steps != nullptr) {
@@ -186,7 +186,7 @@ void ScsiBusController::notify(ScsiMsg msg_type, int param) {
         break;
     default:
         LOG_F(9, "%s: ignore notification message, type: %d", this->name.c_str(),
-              msg_type);
+              notif_type);
     }
 }
 

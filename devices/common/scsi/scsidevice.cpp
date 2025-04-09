@@ -26,9 +26,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <cstring>
 
-void ScsiDevice::notify(ScsiMsg msg_type, int param)
+void ScsiDevice::notify(ScsiNotification notif_type, int param)
 {
-    if (msg_type == ScsiMsg::BUS_PHASE_CHANGE) {
+    if (notif_type == ScsiNotification::BUS_PHASE_CHANGE) {
         switch (param) {
         case ScsiPhase::RESET:
             LOG_F(9, "ScsiDevice %d: bus reset aknowledged", this->scsi_id);

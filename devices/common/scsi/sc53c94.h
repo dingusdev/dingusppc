@@ -227,7 +227,7 @@ public:
     }
 
     // ScsiDevice methods
-    void notify(ScsiMsg msg_type, int param) override;
+    void notify(ScsiNotification notif_type, int param) override;
     bool prepare_data() override { return false; };
     bool get_more_data() override { return false; };
     bool has_data() override { return this->data_fifo_pos != 0; };
