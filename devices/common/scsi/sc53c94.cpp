@@ -345,6 +345,21 @@ void Sc53C94::exec_command()
         this->update_irq();
         exec_next_command();
         break;
+    case CMD_XFER_PAD_BYTES:
+        if (this->bus_obj->current_phase() != ScsiPhase::COMMAND)
+            ABORT_F("%s: unsupported phase %d in CMD_XFER_PAD_BYTES",
+                    this->name.c_str(), this->bus_obj->current_phase());
+        std::memset(this->data_fifo, 0, DATA_FIFO_MAX);
+        // FIXME: does the non-DMA version of this command use the transfer counter?
+        this->data_fifo_pos = std::min((int)this->set_xfer_count, DATA_FIFO_MAX);
+        this->cur_state = SeqState::SEND_CMD;
+        this->sequencer();
+        if (this->bus_obj->current_phase() != ScsiPhase::COMMAND) {
+            this->int_status |= INTSTAT_SR;
+            this->update_irq();
+            exec_next_command();
+        }
+        break;
     case CMD_RESET_ATN:
         this->bus_obj->release_ctrl_line(this->my_bus_id, SCSI_CTRL_ATN);
         exec_next_command();
@@ -406,8 +421,6 @@ void Sc53C94::exec_next_command()
         }
     }
 }
-
-constexpr auto DATA_FIFO_MAX = 16;
 
 void Sc53C94::fifo_push(const uint8_t data)
 {

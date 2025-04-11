@@ -94,7 +94,7 @@ enum {
     CMD_XFER                            = 0x10,
     CMD_COMPLETE_STEPS                  = 0x11,
     CMD_MSG_ACCEPTED                    = 0x12,
-  //CMD_TRANSFER_PAD_BYTES              = 0x18,
+    CMD_XFER_PAD_BYTES                  = 0x18,
     CMD_SET_ATN                         = 0x1A, // no interrupt
     CMD_RESET_ATN                       = 0x1B, // no interrupt
 
@@ -182,6 +182,8 @@ namespace SeqState {
     };
 };
 
+constexpr auto DATA_FIFO_MAX = 16;
+
 /** Sequence descriptor for multistep commands. */
 typedef struct {
     int step_num;
@@ -268,7 +270,7 @@ private:
     uint32_t    my_timer_id = 0;
 
     uint8_t     cmd_fifo[2];
-    uint8_t     data_fifo[16];
+    uint8_t     data_fifo[DATA_FIFO_MAX];
     int         cmd_fifo_pos = 0;
     int         data_fifo_pos = 0;
     int         bytes_out = 0;
