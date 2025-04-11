@@ -96,7 +96,7 @@ enum {
     CMD_MSG_ACCEPTED                    = 0x12,
   //CMD_TRANSFER_PAD_BYTES              = 0x18,
     CMD_SET_ATN                         = 0x1A, // no interrupt
-  //CMD_RESET_ATN                       = 0x1B, // no interrupt
+    CMD_RESET_ATN                       = 0x1B, // no interrupt
 
     // Target commands
   //CMD_SEND_MESSAGE                    = 0x20,

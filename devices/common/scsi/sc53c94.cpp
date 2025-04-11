@@ -345,6 +345,10 @@ void Sc53C94::exec_command()
         this->update_irq();
         exec_next_command();
         break;
+    case CMD_RESET_ATN:
+        this->bus_obj->release_ctrl_line(this->my_bus_id, SCSI_CTRL_ATN);
+        exec_next_command();
+        break;
     case CMD_SELECT_NO_ATN:
         static SeqDesc * sel_no_atn_desc = new SeqDesc[2]{
             {2, ScsiPhase::COMMAND, SeqState::SEND_CMD,     INTSTAT_SR | INTSTAT_SO},
