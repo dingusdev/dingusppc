@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -92,6 +92,9 @@ void ScsiHardDisk::process_command() {
         break;
     case ScsiCommand::MODE_SENSE_6:
         this->mode_sense_6();
+        break;
+    case ScsiCommand::START_STOP_UNIT:
+        this->switch_phase(ScsiPhase::STATUS);
         break;
     case ScsiCommand::PREVENT_ALLOW_MEDIUM_REMOVAL:
         this->eject_allowed = (cmd[4] & 1) == 0;
