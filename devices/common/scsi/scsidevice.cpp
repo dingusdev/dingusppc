@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -45,6 +45,7 @@ void ScsiDevice::notify(ScsiNotification notif_type, int param)
                             return;
                         this->bus_obj->assert_ctrl_line(this->scsi_id, SCSI_CTRL_BSY);
                         this->bus_obj->confirm_selection(this->scsi_id);
+                        this->seq_steps = nullptr;
                         this->initiator_id = this->bus_obj->get_initiator_id();
                         if (this->bus_obj->test_ctrl_lines(SCSI_CTRL_ATN)) {
                             this->last_selection_has_atention = true;
@@ -66,8 +67,36 @@ void ScsiDevice::switch_phase(const int new_phase)
     this->bus_obj->switch_phase(this->scsi_id, this->cur_phase);
 }
 
+bool ScsiDevice::allow_phase_change() {
+    if (this->bus_obj->test_ctrl_lines(SCSI_CTRL_ATN | SCSI_CTRL_ACK) ==
+                                      (SCSI_CTRL_ATN | SCSI_CTRL_ACK))
+        ABORT_F("%s: reject message requested", this->name.c_str());
+
+    if (this->data_size || this->bus_obj->test_ctrl_lines(SCSI_CTRL_ACK))
+        return false;
+    else
+        return true;
+}
+
 void ScsiDevice::next_step()
 {
+    // special case: data transfers during MESSAGE_IN phase
+    // require handshaking. Rejecting needs to be detected too.
+    if (bus_obj->current_phase() == ScsiPhase::MESSAGE_IN &&
+        !this->allow_phase_change())
+        return;
+
+    // check for puggable sequences and follow them if applicable
+    if (this->seq_steps && *this->seq_steps >= 0) {
+        if (this->cur_phase == *this->seq_steps) {
+            this->seq_steps++;
+            if (*this->seq_steps >= 0) {
+                this->switch_phase(*this->seq_steps);
+                return;
+            }
+        }
+    }
+
     switch (this->cur_phase) {
     case ScsiPhase::DATA_OUT:
         if (this->data_size >= this->incoming_size) {
@@ -94,6 +123,8 @@ void ScsiDevice::next_step()
         break;
     case ScsiPhase::STATUS:
         this->bus_obj->release_ctrl_line(this->scsi_id, SCSI_CTRL_REQ);
+        this->data_ptr  = this->msg_buf;
+        this->data_size = 1;
         this->switch_phase(ScsiPhase::MESSAGE_IN);
         break;
     case ScsiPhase::MESSAGE_OUT:
@@ -102,6 +133,7 @@ void ScsiDevice::next_step()
     case ScsiPhase::MESSAGE_IN:
     case ScsiPhase::BUS_FREE:
         this->bus_obj->release_ctrl_lines(this->scsi_id);
+        this->seq_steps = nullptr;
         this->switch_phase(ScsiPhase::BUS_FREE);
         break;
     default:
@@ -135,9 +167,6 @@ void ScsiDevice::prepare_xfer(ScsiBus* bus_obj, int& bytes_in, int& bytes_out)
         bytes_out = 0;
         break;
     case ScsiPhase::MESSAGE_IN:
-        this->data_ptr = this->msg_buf;
-        this->data_size = 1;
-        bytes_out = 1;
         break;
     default:
         ABORT_F("ScsiDevice: unhandled phase %d in prepare_xfer()", this->cur_phase);
@@ -152,13 +181,11 @@ int ScsiDevice::xfer_data() {
     switch (this->cur_phase) {
     case ScsiPhase::MESSAGE_OUT:
         if (this->bus_obj->pull_data(this->initiator_id, this->msg_buf, 1)) {
-            if (this->msg_buf[0] & 0x80) {
+            if (this->msg_buf[0] & ScsiMessage::IDENTIFY) {
                 LOG_F(9, "%s: IDENTIFY MESSAGE received, code = 0x%X",
                       this->name.c_str(), this->msg_buf[0]);
-                this->next_step();
             } else {
-                ABORT_F("%s: unsupported message received, code = 0x%X",
-                        this->name.c_str(), this->msg_buf[0]);
+                this->process_message();
             }
             if (this->last_selection_has_atention)
                 this->last_selection_message = this->msg_buf[0];
@@ -255,4 +282,30 @@ void ScsiDevice::report_error(uint8_t sense_key, uint8_t asc) {
     this->ascq   = 0;
     this->sksv   = 0xC0; // sksv=1, C/D=Command, BPV=0, BP=0
     this->switch_phase(ScsiPhase::STATUS);
+}
+
+void ScsiDevice::process_message() {
+    static int sdtr_response_seq[4] = {ScsiPhase::MESSAGE_OUT, ScsiPhase::MESSAGE_IN,
+                                       ScsiPhase::COMMAND, -1};
+
+    if (this->msg_buf[0] == 1) { // extended messages
+        if (!this->bus_obj->pull_data(this->initiator_id, &this->msg_buf[1], 1) ||
+            !this->bus_obj->pull_data(this->initiator_id, &this->msg_buf[2], this->msg_buf[1]))
+            ABORT_F("%s: incomplete message received", this->name.c_str());
+
+        switch(this->msg_buf[2]) {
+        case ScsiExtMessage::SYNCH_XFER_REQ:
+            LOG_F(INFO, "%s: SDTR message received", this->name.c_str());
+            // confirm synchronous transfer capability by sending back the SDTR message
+            this->seq_steps = sdtr_response_seq;
+            this->data_ptr = this->msg_buf;
+            this->data_size = 5;
+            break;
+        default:
+            LOG_F(ERROR, "%s: unsupported message %d", this->name.c_str(), this->msg_buf[2]);
+        }
+    } else if ((this->msg_buf[0] >> 4) == 2) { // two-byte messages
+        if (!this->bus_obj->pull_data(this->initiator_id, &this->msg_buf[1], 1))
+            ABORT_F("%s: incomplete message received", this->name.c_str());
+    }
 }

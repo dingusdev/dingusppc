@@ -573,6 +573,14 @@ void Sc53C94::sequencer()
                 this->sequencer();
             }
             break;
+        case ScsiPhase::MESSAGE_IN:
+        case ScsiPhase::MESSAGE_OUT:
+            this->cur_state = (this->cur_bus_phase == ScsiPhase::MESSAGE_OUT) ?
+                               SeqState::SEND_MSG : SeqState::RCV_MESSAGE;
+            this->sequencer();
+            this->cur_state = SeqState::XFER_END;
+            this->sequencer();
+            break;
         default:
             ABORT_F("%s: unsupported phase %d in XFER_BEGIN", this->name.c_str(),
                     this->cur_bus_phase);

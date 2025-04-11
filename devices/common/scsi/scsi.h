@@ -47,6 +47,7 @@ enum {
     SCSI_CTRL_RST = 1 << 15,
 };
 
+/** SCSI bus phases. */
 namespace ScsiPhase {
     enum : int {
         BUS_FREE = 0,
@@ -63,6 +64,7 @@ namespace ScsiPhase {
     };
 };
 
+/** SCSI status codes. */
 namespace ScsiStatus {
     enum : uint8_t {
         GOOD = 0,
@@ -70,6 +72,7 @@ namespace ScsiStatus {
     };
 };
 
+/** Standard message codes. */
 namespace ScsiMessage {
     enum : uint8_t {
         COMMAND_COMPLETE = 0,
@@ -79,6 +82,15 @@ namespace ScsiMessage {
         IS_TARGET_ROUTINE_NuMBER   = 0x20,
         HAS_DISCONNECT_PRIVILEDGE  = 0x40,
         IDENTIFY                   = 0x80,
+    };
+};
+
+/** Extended message codes. */
+namespace ScsiExtMessage {
+    enum : uint8_t {
+        MODIFY_DATA_PTR = 0,
+        SYNCH_XFER_REQ  = 1,
+        WIDE_XFER_REQ   = 3,
     };
 };
 
@@ -181,6 +193,7 @@ public:
     virtual void next_step();
     virtual void prepare_xfer(ScsiBus* bus_obj, int& bytes_in, int& bytes_out);
     virtual void switch_phase(const int new_phase);
+    virtual bool allow_phase_change();
 
     virtual bool has_data() { return this->data_size != 0; };
     virtual int  xfer_data();
@@ -192,6 +205,7 @@ public:
     virtual bool prepare_data() = 0;
     virtual bool get_more_data() = 0;
     virtual void process_command() = 0;
+    virtual void process_message();
 
     void set_bus_object_ptr(ScsiBus *bus_obj_ptr) {
         this->bus_obj = bus_obj_ptr;
@@ -220,6 +234,8 @@ protected:
     bool        last_selection_has_atention = false;
     uint8_t     last_selection_message = 0;
     ScsiBus*    bus_obj;
+
+    int         *seq_steps = nullptr;
 
     action_callback pre_xfer_action  = nullptr;
     action_callback post_xfer_action = nullptr;
