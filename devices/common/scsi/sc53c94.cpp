@@ -310,6 +310,7 @@ void Sc53C94::exec_command()
         if (!(config1 & CFG1_DISR)) {
             LOG_F(INFO, "%s: reset interrupt issued", this->name.c_str());
             this->int_status = INTSTAT_SRST;
+            this->update_irq();
         }
         exec_next_command();
         break;
