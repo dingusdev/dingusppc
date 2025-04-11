@@ -332,11 +332,16 @@ void Sc53C94::exec_command()
         this->sequencer();
         break;
     case CMD_MSG_ACCEPTED:
+        // Don't release ACK if ATN is asserted.
+        // Executing this command with ATN true means that
+        // the initiator wants to reject the current message.
+        // That should be recognized and handled by the target.
+        if (!this->bus_obj->test_ctrl_lines(SCSI_CTRL_ATN))
+            this->bus_obj->release_ctrl_line(this->my_bus_id, SCSI_CTRL_ACK);
         if (this->is_initiator) {
             this->bus_obj->target_next_step();
         }
-        this->bus_obj->release_ctrl_line(this->my_bus_id, SCSI_CTRL_ACK);
-        this->int_status = INTSTAT_DIS; // TODO: handle target disconnection properly
+        this->int_status |= INTSTAT_SR;
         this->update_irq();
         exec_next_command();
         break;
