@@ -111,13 +111,13 @@ enum {
   //CMD_RECEIVE_DATA                    = 0x2A,
   //CMD_RECEIVE_COMMAND_STEPS           = 0x2B,
     CMD_DMA_STOP                        = 0x04, // no interrupt
-    CMD_ACCESS_FIFO_COMMAND             = 0x05,
+  //CMD_ACCESS_FIFO_COMMAND             = 0x05,
 
     // Idle Commands
   //CMD_RESELECT_STEPS                  = 0x40,
     CMD_SELECT_NO_ATN                   = 0x41,
     CMD_SELECT_WITH_ATN                 = 0x42,
-  //CMD_SELECT_WITH_ATN_AND_STOP        = 0x43,
+    CMD_SELECT_WITH_ATN_AND_STOP        = 0x43,
     CMD_ENA_SEL_RESEL                   = 0x44, // no interrupt
   //CMD_DISABLE_SEL_RESEL               = 0x45,
   //CMD_SELECT_WITH_ATN3_STEPS          = 0x46,
@@ -170,6 +170,7 @@ namespace SeqState {
         SEL_BEGIN,
         SEL_END,
         SEND_MSG,
+        SEND_MSG_EX,
         SEND_CMD,
         CMD_COMPLETE,
         XFER_BEGIN,

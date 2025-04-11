@@ -373,6 +373,18 @@ void Sc53C94::exec_command()
         this->sequencer();
         LOG_F(9, "%s: SELECT WITH ATN command started", this->name.c_str());
         break;
+    case CMD_SELECT_WITH_ATN_AND_STOP:
+        static SeqDesc * sel_with_atn_stop_desc = new SeqDesc[3]{
+            {0, ScsiPhase::MESSAGE_OUT, SeqState::SEND_MSG_EX,  INTSTAT_SR | INTSTAT_SO},
+            {1, -1,                     SeqState::CMD_COMPLETE, INTSTAT_SR | INTSTAT_SO},
+        };
+        this->seq_step = this->cur_step = 0;
+        this->bytes_out = 1; // set message length
+        this->cmd_steps = sel_with_atn_stop_desc;
+        this->cur_state = SeqState::BUS_FREE;
+        this->sequencer();
+        LOG_F(9, "%s: SELECT WITH ATN AND STOP command started", this->name.c_str());
+        break;
     case CMD_ENA_SEL_RESEL:
         exec_next_command();
         break;
@@ -507,12 +519,19 @@ void Sc53C94::sequencer()
         }
         break;
     case SeqState::SEND_MSG:
+    case SeqState::SEND_MSG_EX:
         if (this->data_fifo_pos < 1 && this->is_dma_cmd) {
             if (this->drq_cb)
                 this->drq_cb(1);
         } else {
             this->bus_obj->target_xfer_data();
-            this->bus_obj->release_ctrl_line(this->my_bus_id, SCSI_CTRL_ATN);
+            if (this->cur_state == SeqState::SEND_MSG_EX) {
+                this->notify(ScsiNotification::BUS_PHASE_CHANGE, ScsiPhase::MESSAGE_OUT);
+            } else {
+                this->bus_obj->release_ctrl_line(this->my_bus_id, SCSI_CTRL_ATN);
+                if (this->cmd_steps)
+                    this->bus_obj->target_next_step();
+            }
         }
         break;
     case SeqState::SEND_CMD:
