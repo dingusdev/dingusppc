@@ -77,7 +77,8 @@ static std::string get_entry_str(const AddressMapEntry* entry) {
         if (entry->devobj)
             str += " (" + entry->devobj->get_name() + ")";
         if (entry->type & RT_MIRROR) {
-            snprintf(buf, sizeof(buf), " -> 0x%08X", entry->mirror);
+            snprintf(buf, sizeof(buf), " -> 0x%08X..0x%08X", entry->mirror,
+                entry->mirror + entry->end - entry->start);
             str += std::string(buf);
         }
     } else {
