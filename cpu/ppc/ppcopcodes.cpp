@@ -1427,20 +1427,15 @@ void dppc_interpreter::ppc_rfi(uint32_t opcode) {
 
     ppc_msr_did_change(ppc_state.msr, new_msr_val);
 
-    // generate External Interrupt Exception
-    // if CPU interrupt line is still asserted
-    if (ppc_state.msr & MSR::EE && int_pin) {
+    // setting MSR[EE] may enable pending exceptions
+    if ((ppc_state.msr & MSR::EE) && (int_pin || dec_exception_pending)) {
         uint32_t save_srr0 = ppc_state.spr[SPR::SRR0] & ~3UL;
-        ppc_exception_handler(Except_Type::EXC_EXT_INT, 0);
-        ppc_state.spr[SPR::SRR0] = save_srr0;
-        return;
-    }
-
-    if ((ppc_state.msr & MSR::EE) && dec_exception_pending) {
-        dec_exception_pending = false;
-        //LOG_F(WARNING, "decrementer exception from rfi msr:0x%X", ppc_state.msr);
-        uint32_t save_srr0 = ppc_state.spr[SPR::SRR0] & ~3UL;
-        ppc_exception_handler(Except_Type::EXC_DECR, 0);
+        if (int_pin) // check for pending external exceptions (higher priority)
+            ppc_exception_handler(Except_Type::EXC_EXT_INT, 0);
+        else {
+            dec_exception_pending = false;
+            ppc_exception_handler(Except_Type::EXC_DECR, 0);
+        }
         ppc_state.spr[SPR::SRR0] = save_srr0;
         return;
     }
