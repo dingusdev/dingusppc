@@ -245,22 +245,54 @@ enum FPSCR : uint32_t {
     FX          = 1UL << 31
 };
 
+/** Bit definitions for the Machine State Register (MSR). */
 enum MSR : int {
-    LE  = 0x1,  //little endian mode
-    RI  = 0x2,
-    DR  = 0x10,
-    IR  = 0x20,
-    IP  = 0x40,
-    FE1 = 0x100,
-    BE  = 0x200,
-    SE  = 0x400,
-    FE0 = 0x800,
-    ME  = 0x1000,
-    FP  = 0x2000,
-    PR  = 0x4000,
-    EE  = 0x8000, //external interrupt
-    ILE = 0x10000,
-    POW = 0x40000
+// ----------------------------------------------------------------------------------------
+//        64-bit             // 32-bit  // Notes for MPC601 (601), PowerPC (PPC),
+//                           //         // MPC750 (750), Altivec (AV), Power ISA (ISA)
+// ----------------------------------------------------------------------------------------
+    LE   = (1 << (63 - 63)), // 31      // Little-endian mode enable (not 601);
+                                        // Little-Endian Mode (ISA)
+    RI   = (1 << (63 - 62)), // 30      // Recoverable exception (not 601);
+                                        // Recoverable Interrupt (ISA)
+    PM   = (1 << (63 - 61)), // 29      // Performance monitor marked mode (750);
+                                        // Performance Monitor Mark (PMM for ISA)
+//       = (1 << (63 - 60)), // 28      // Reserved
+    DR   = (1 << (63 - 59)), // 27      // Data address translation (DT on 601);
+                                        // Data Relocate (ISA)
+    IR   = (1 << (63 - 58)), // 26      // Instruction address translation (IT on 601);
+                                        // Instruction Relocate (ISA)
+    IP   = (1 << (63 - 57)), // 25      // Exception prefix (EP); Reserved (ISA)
+//       = (1 << (63 - 56)), // 24      // Reserved (AL for POWER)
+    FE1  = (1 << (63 - 55)), // 23      // Floating-point exception mode 1
+    BE   = (1 << (63 - 54)), // 22      // Branch trace enable (Optional, not 601);
+                                        // Trace Enable (TE): Branch Trace (ISA)
+    SE   = (1 << (63 - 53)), // 21      // Single-step trace enable (Optional);
+                                        // Trace Enable (TE): Single Step Trace (ISA)
+    FE0  = (1 << (63 - 52)), // 20      // Floating-point exception mode 0
+    ME   = (1 << (63 - 51)), // 19      // Machine check enable;
+                                        // Machine Check Interrupt Enable (ISA)
+    FP   = (1 << (63 - 50)), // 18      // Floating-point available
+    PR   = (1 << (63 - 49)), // 17      // Privilege level; Problem State (ISA)
+    EE   = (1 << (63 - 48)), // 16      // External exception enable (601);
+                                        // External interrupt enable
+// ----------------------------------------------------------------------------------------
+    ILE  = (1 << (63 - 47)), // 15      // Exception little-endian mode (not 601, not ISA)
+    TGPR = (1 << (63 - 46)), // 14      // Temporary GPR remapping (603e)
+    POW  = (1 << (63 - 45)), // 13      // Power management enable (not 601, not ISA)
+//       = (1 << (63 - 44)), // 12      // Reserved
+//       = (1 << (63 - 42)), // 10      // Reserved
+//  S    = (1 << (63 - 41)), //  9      // Secure (ISA)
+//  VSX  = (1 << (63 - 40)), //  8      // VSX Available (ISA)
+//       = (1 << (63 - 39)), //  7      // Reserved
+    VEC  = (1 << (63 - 38)), //  6      // AltiVec available (AV); Vector Available (ISA)
+// ----------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------
+//  HV   = (1ULL << (63 -  3)), //      // Hypervisor State (ISA)
+//  ISF  = (1ULL << (63 -  2)), //      // Exception 64-bit mode (optional, PPC)
+//       = (1ULL << (63 -  1)), //      // Reserved
+//  SF   = (1ULL << (63 -  0)), //      // Sixty-four bit mode (PowerPC, PowerISA)
+// ----------------------------------------------------------------------------------------
 };
 
 enum XER : uint32_t {
