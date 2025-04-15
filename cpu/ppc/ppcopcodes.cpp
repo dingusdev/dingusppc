@@ -1416,12 +1416,16 @@ void dppc_interpreter::ppc_rfi(uint32_t opcode) {
         return;
     }
 
-    uint32_t old_msr_val    = ppc_state.msr;
-    uint32_t new_srr1_val   = (ppc_state.spr[SPR::SRR1] & 0x87C0FF73UL);
-    uint32_t new_msr_val    = (ppc_state.msr & ~0x87C0FF73UL);
+    // keep 0, 5-9, 16-23, 25-27, 30-31 bits; exclude POW, ILE, and Reserved bits.
+    const uint32_t msr_bits_to_replace = 0x87C0FF73UL;
+    const uint32_t msr_bits_to_clear   = MSR::POW;
 
-    new_msr_val             = (new_msr_val | new_srr1_val) & 0xFFFBFFFFUL;
-    ppc_msr_did_change(old_msr_val, new_msr_val);
+    uint32_t bits_from_srr1 =  ppc_state.spr[SPR::SRR1] &
+                              (msr_bits_to_replace & ~msr_bits_to_clear);
+    uint32_t new_msr_val    = (ppc_state.msr & ~(msr_bits_to_replace | msr_bits_to_clear)) |
+                               bits_from_srr1;
+
+    ppc_msr_did_change(ppc_state.msr, new_msr_val);
 
     // generate External Interrupt Exception
     // if CPU interrupt line is still asserted
@@ -1584,10 +1588,10 @@ void dppc_interpreter::ppc_stu(uint32_t opcode) {
         ea += ppc_result_a;
         mmu_write_vmem<T>(opcode, ea, ppc_result_d);
         ppc_state.gpr[reg_a] = ea;
-    } 
+    }
     else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-    } 
+    }
 
 }
 
@@ -1609,7 +1613,7 @@ void dppc_interpreter::ppc_stux(uint32_t opcode) {
     }
     else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
-    } 
+    }
 }
 
 template void dppc_interpreter::ppc_stux<uint8_t>(uint32_t opcode);
