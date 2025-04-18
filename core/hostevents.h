@@ -40,6 +40,7 @@ enum : uint16_t {
     // We add our own custom events after that.
     DPPC_WINDOWEVENT_WINDOW_SCALE_QUALITY_TOGGLE = 1 << 8,
     DPPC_WINDOWEVENT_MOUSE_GRAB_CHANGED,
+    DPPC_WINDOWEVENT_WINDOW_FULL_SCREEN_TOGGLE
 };
 
 enum : uint32_t {

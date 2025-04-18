@@ -29,14 +29,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <functional>
 #include <memory>
 
+class VideoCtrlBase;
+
 class Display {
 public:
+    enum {
+        not_full_screen,
+        full_screen_int,
+        full_screen,
+    };
+
     Display();
     ~Display();
+
+    void set_video_ctrl(VideoCtrlBase* video_ctrl) {
+        this->video_ctrl = video_ctrl;
+    }
 
     // Configures the display for the given width/height.
     // Returns true if this is the first time the screen has been configured.
     bool configure(int width, int height);
+
+    void configure_dest();
+    void configure_texture();
 
     // Clears the display
     void blank();
@@ -62,6 +77,8 @@ public:
 private:
     class Impl; // Holds private fields
     std::unique_ptr<Impl> impl;
+    VideoCtrlBase* video_ctrl = nullptr;
+    int full_screen_mode = not_full_screen;
 };
 
 #endif // DISPLAY_H

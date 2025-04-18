@@ -77,6 +77,16 @@ void EventManager::poll_events(uint32_t kbd_locale) {
                     }
                     return;
                 }
+                // Control-F: fullscreen
+                if (event.key.keysym.sym == SDLK_f && (SDL_GetModState() & KMOD_ALL) == KMOD_LCTRL) {
+                    if (event.type == SDL_KEYUP) {
+                        WindowEvent we{};
+                        we.sub_type  = DPPC_WINDOWEVENT_WINDOW_FULL_SCREEN_TOGGLE;
+                        we.window_id = event.window.windowID;
+                        this->_window_signal.emit(we);
+                    }
+                    return;
+                }
                 // Ralt+delete => ctrl+alt+del
                 if (event.key.keysym.sym == SDLK_DELETE && ((SDL_GetModState() & KMOD_ALL) == KMOD_RALT) != 0) {
                     KeyboardEvent ke{};

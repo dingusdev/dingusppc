@@ -41,6 +41,8 @@ public:
     void create_display_window(int width, int height);
     void blank_display();
     void update_screen(void);
+    void set_draw_fb();
+    void set_cursor_dirty();
 
     void start_refresh_task();
     void stop_refresh_task();

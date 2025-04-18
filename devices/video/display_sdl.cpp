@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <devices/video/display.h>
+#include <devices/video/videoctrl.h>
 #include <SDL.h>
 #include <loguru.hpp>
 #include <string>
@@ -35,6 +36,9 @@ public:
     SDL_Texture*    disp_texture = 0;
     SDL_Texture*    cursor_texture = 0;
     SDL_Rect        cursor_rect; // destination rectangle for cursor drawing
+    int             display_width;
+    int             display_height;
+    SDL_Rect        dest_rect;
 };
 
 Display::Display(): impl(std::make_unique<Impl>()) {
@@ -58,6 +62,9 @@ Display::~Display() {
 bool Display::configure(int width, int height) {
     bool is_initialization = false;
 
+    impl->display_width = width;
+    impl->display_height = height;
+
     if (!impl->display_wnd) { // create display window
         impl->display_wnd = SDL_CreateWindow(
             "",
@@ -75,17 +82,53 @@ bool Display::configure(int width, int height) {
         if (impl->renderer == NULL)
             ABORT_F("Display: SDL_CreateRenderer failed with %s", SDL_GetError());
 
-        int drawable_width, drawable_height;
-        SDL_GetRendererOutputSize(impl->renderer, &drawable_width, &drawable_height);
-        impl->renderer_scale_x = static_cast<double>(drawable_width) / width;
-        impl->renderer_scale_y = static_cast<float>(drawable_height) / height;
+        SDL_RendererInfo info;
+        SDL_GetRendererInfo(impl->renderer, &info);
+        LOG_F(INFO, "Renderer \"%s\" max size: %d x %d", info.name, info.max_texture_width, info.max_texture_height);
+
+        this->configure_dest();
 
         update_window_title();
         is_initialization = true;
     } else { // resize display window
         SDL_SetWindowSize(impl->display_wnd, width, height);
+        this->configure_dest();
     }
 
+    configure_texture();
+
+    return is_initialization;
+}
+
+void Display::configure_dest() {
+    int drawable_width, drawable_height;
+    SDL_GetRendererOutputSize(impl->renderer, &drawable_width, &drawable_height);
+
+    double scale = std::min(
+        static_cast<double>(drawable_width) / impl->display_width,
+        static_cast<double>(drawable_height) / impl->display_height
+    );
+
+    if (this->full_screen_mode == full_screen_int) {
+        double new_scale = floor(scale);
+        if (scale == new_scale)
+            this->full_screen_mode = full_screen;
+        else
+            scale = floor(scale);
+    }
+
+    LOG_F(INFO, "drawable: %d x %d  display: %d x %d  scale: %f",
+        drawable_width, drawable_height, impl->display_width, impl->display_height, scale);
+
+    impl->dest_rect.w = scale * impl->display_width;
+    impl->dest_rect.h = scale * impl->display_height;
+    impl->dest_rect.x = (drawable_width  - impl->dest_rect.w) / 2,
+    impl->dest_rect.y = (drawable_height - impl->dest_rect.h) / 2,
+    impl->renderer_scale_x = scale;
+    impl->renderer_scale_y = scale;
+}
+
+void Display::configure_texture() {
     if (impl->disp_texture)
         SDL_DestroyTexture(impl->disp_texture);
 
@@ -93,13 +136,11 @@ bool Display::configure(int width, int height) {
         impl->renderer,
         SDL_PIXELFORMAT_ARGB8888,
         SDL_TEXTUREACCESS_STREAMING,
-        width, height
+        impl->display_width, impl->display_height
     );
 
     if (impl->disp_texture == NULL)
         ABORT_F("Display: SDL_CreateTexture failed with %s", SDL_GetError());
-
-    return is_initialization;
 }
 
 void Display::handle_events(const WindowEvent& wnd_event) {
@@ -109,6 +150,7 @@ void Display::handle_events(const WindowEvent& wnd_event) {
         if (wnd_event.window_id == impl->disp_wnd_id) {
             this->update_window_title();
             impl->resizing = false;
+            video_ctrl->set_draw_fb();
         }
         break;
 
@@ -124,9 +166,34 @@ void Display::handle_events(const WindowEvent& wnd_event) {
             auto new_quality = current_quality == NULL || strcmp(current_quality, "nearest") == 0 ? "best" : "nearest";
             SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, new_quality);
             // We need the window/texture to be recreated to pick up the hint change.
-            int width, height;
-            SDL_GetWindowSize(impl->display_wnd, &width, &height);
-            this->configure(width, height);
+
+            this->configure_texture();
+            video_ctrl->set_draw_fb();
+            video_ctrl->set_cursor_dirty();
+        }
+        break;
+
+    case DPPC_WINDOWEVENT_WINDOW_FULL_SCREEN_TOGGLE:
+        if (wnd_event.window_id == impl->disp_wnd_id) {
+            switch (this->full_screen_mode) {
+            case not_full_screen:
+                SDL_SetWindowFullscreen(impl->display_wnd, SDL_WINDOW_FULLSCREEN_DESKTOP);
+                this->full_screen_mode = full_screen_int;
+                break;
+            case full_screen_int:
+                SDL_SetWindowFullscreen(impl->display_wnd, SDL_WINDOW_FULLSCREEN_DESKTOP);
+                this->full_screen_mode = full_screen;
+                break;
+            case full_screen:
+                SDL_SetWindowFullscreen(impl->display_wnd, 0);
+                this->full_screen_mode = not_full_screen;
+                SDL_SetWindowSize(impl->display_wnd, impl->display_width, impl->display_height);
+                break;
+            }
+
+            this->configure_dest();
+            video_ctrl->set_draw_fb();
+            video_ctrl->set_cursor_dirty();
         }
         break;
 
@@ -180,12 +247,12 @@ void Display::update(std::function<void(uint8_t *dst_buf, int dst_pitch)> conver
 
     SDL_UnlockTexture(impl->disp_texture);
     SDL_RenderClear(impl->renderer);
-    SDL_RenderCopy(impl->renderer, impl->disp_texture, NULL, NULL);
+    SDL_RenderCopy(impl->renderer, impl->disp_texture, NULL, &impl->dest_rect);
 
     // draw HW cursor if enabled
     if (draw_hw_cursor) {
-        impl->cursor_rect.x = cursor_x * impl->renderer_scale_x;
-        impl->cursor_rect.y = cursor_y * impl->renderer_scale_y;
+        impl->cursor_rect.x = cursor_x * impl->renderer_scale_x + impl->dest_rect.x;
+        impl->cursor_rect.y = cursor_y * impl->renderer_scale_y + impl->dest_rect.y;
         SDL_RenderCopy(impl->renderer, impl->cursor_texture, NULL, &impl->cursor_rect);
     }
 
