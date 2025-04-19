@@ -3,28 +3,27 @@
 ## Implemented Features
 
 * Interpreter (with 601, FPU, and MMU support)
-* IDE and SCSI 
+* IDE and SCSI
 * Floppy disk image reading (Raw, Disk Copy 4.2, WOZ v1 and v2)
-* ADB mouse, keyboard, and AppleJack (Pippin) controller emulation
+* ADB mouse, keyboard, and AppleJack (Pippin) controller
 * Some audio support
 * Basic video output support (i.e. ATI Rage, Control, Platinum)
 
 ## Known Working OSes
 
-* Disk Tools (7.1.2 - 8.5) 
-* Mac OS 7.1.2 - 9.2.2 (from CD)
-* Mac OS 7.5.3 - 9.2.2 (from Hard Disk)
+* Disk Tools (7.1.2 - 8.5)
+* Mac OS 7.1.2 - 9.2.2 (from CD or Hard Disk)
 * OpenDarwin 6.6.2
 
 ## Disk Initialization
 
-To initialize a disk, you'll first need to boot Disk Tools from a floppy disk image along with a blank hard disk image you want to initialize. 
+To initialize a disk, you'll first need to boot Disk Tools from a floppy disk image along with a blank hard disk image you want to initialize.
 
-Once booted, start up the Hard Disk Setup program and initialize the drive listed. It may be listed as not mounted.
+Once booted, start up the Hard Disk Setup application and initialize the drive listed. It may be listed as not mounted.
 
-Once the disk has been initialized, you will need to reboot the machine with the appropriate installation media, such as from a CD-ROM image.
+Once the disk has been initialized, you will need to reboot the machine with the appropriate installation media, such as a CD-ROM image.
 
-Make sure the disk is appropriately size for the OS you want to install and follow the instructions from the installer carefully.
+Make sure the disk is appropriately sized for the OS you want to install and follow the instructions from the installer carefully.
 
 You may also want to use a third-party program like BlueSCSI to convert a raw HFS image from an emulator like SheepShaver.
 
@@ -81,7 +80,7 @@ Shows the configurable properties, such as the selected disc image and the ram b
 --rambank4_size X
 ```
 
-Set the RAM sizes to use, with X being an integer of a power of 2 up to 256.
+Set the RAM sizes to use, with X being an integer of a power of 2 up to 1024 (depending on the emulated machine).
 
 ```
 --fdd_img TEXT:FILE
@@ -124,13 +123,13 @@ Access the factory tests
 --serial_backend=socket
 ```
 
-Set the ADB devices to attach, comma-separated
+Change where the output of Open Firmware is directed to, either to the command line (with stdio) or a Unix socket (unavailable in Windows builds). Open Firmware 1.x outputs here by default.
 
 ```
 --adb_devices TEXT
 ```
 
-Change where the output of Open Firmware is directed to, either to the command line (with stdio) or a Unix socket (unavailable in Windows builds). Open Firmware 1.x outputs here by default.
+Set the ADB devices to attach, comma-separated.
 
 ### Command Line Examples
 
@@ -138,7 +137,7 @@ Change where the output of Open Firmware is directed to, either to the command l
 dingusppc -b bootrom-6100.bin --rambank1_size 64 --rambank2_size 64 --hdd_img "System_712.dsk"
 ```
 
-The user has specified their own ROM file, which is for a Power Macintosh 6100 and has also set up two separate RAM banks to use 64 MB. Note that if a second RAM bank is to be specified for the 6100, it should be the same size as the first RAM bank. With only a hard disk specified, the machine will immediately boot to the OS on the hard disk.
+The user has specified their own ROM file, which is for a Power Macintosh 6100 and has also set up two separate RAM banks to use 64 MB each. Note that if a second RAM bank is to be specified for the 6100, it should be the same size as the first RAM bank. With only a hard disk specified, the machine will immediately boot to the OS on the hard disk.
 
 ```
 dingusppc -b "Power_Mac_G3_Beige.ROM" -r --rambank1_size 128 --fdd_img "DiskTools_8.5.img"
@@ -160,16 +159,18 @@ After booting from a PCI Power Mac ROM without any disk images, enter the debugg
 
 The machines that currently work the best are the Power Mac 6100, the Power Mac 7500, and the Power Mac G3.
 
-Early implementations for the Power Mac G3 Blue and White and the Apple Pippin are also present.
+Early implementations of the iMac G3, Power Mac G3 Blue and White, and Apple Pippin are also present.
 
 ## Debugger
 
-The debugger can be used to not only see what code is being executed at a given moment, but also see what is stored in an NVRAM portion.
+The debugger can be used to show what code is currently being executed, the contents of memory as hex or 68K assembly or PowerPC assembly, NVRAM variables, memory regions, and CPU registers. It can also be used to change memory, registers, and nvram variables. It can step through instructions one at a time or many instructions at once.
 
 ## Quirks
 ### Mouse Grabbing
 
-While the emulator window is in focus, press Control and G to access.
+While the emulator display window is in focus, press Control-G to hide the host mouse cursor to control the guest mouse cursor directly. Press Control-G to show the host mouse cursor again and control the guest mouse cursor only when the host mouse cursor is within the emulator display window.
+
+Press Control-S to toggle the scaling method of the emulator display window. The methods are nearest (best used when the scale factor is an integer value) and linear (or smooth mode which is not as sharp but helps display quality when the scale factor is not an integer value).
 
 ### CD ROM Images
 
