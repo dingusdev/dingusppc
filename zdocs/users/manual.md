@@ -16,6 +16,18 @@
 * Mac OS 7.5.3 - 9.2.2 (from Hard Disk)
 * OpenDarwin 6.6.2
 
+## Disk Initialization
+
+To initialize a disk, you'll first need to boot Disk Tools from a floppy disk image along with a blank hard disk image you want to initialize. 
+
+Once booted, start up the Hard Disk Setup program and initialize the drive listed. It may be listed as not mounted.
+
+Once the disk has been initialized, you will need to reboot the machine with the appropriate installation media, such as from a CD-ROM image.
+
+Make sure the disk is appropriately size for the OS you want to install and follow the instructions from the installer carefully.
+
+You may also want to use a third-party program like BlueSCSI to convert a raw HFS image from an emulator like SheepShaver.
+
 ## Windows
 
 DingusPPC uses two windows when booted up; a command line window and a monitor window to display the machine.

@@ -62,10 +62,10 @@ static void sigabrt_handler(int signum) {
 }
 
 static string appDescription = string(
-    "\nDingusPPC - Alpha 1.02 (3/14/2025)           "
+    "\nDingusPPC - Alpha 1.03 (5/10/2025)           "
     "\nWritten by divingkatae, maximumspatium,      "
     "\njoevt, mihaip, kkaisershot, et. al.          "
-    "\n(c) 2018-2024 The DingusPPC Dev Team.        "
+    "\n(c) 2018-2025 The DingusPPC Dev Team.        "
     "\nThis is a build intended for testing.        "
     "\nUse at your own discretion.                  "
     "\n"

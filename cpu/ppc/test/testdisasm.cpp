@@ -73,7 +73,7 @@ static vector<PPCDisasmContext> read_test_data() {
 
         /* put instruction mnemonic padded with trailing spaces */
         idisasm << tokens[2];
-        idisasm << setw(8 - (int)tokens[2].length()) << " ";
+        idisasm << setw(streamsize(8) - (int)tokens[2].length()) << " ";
 
         /* now add comma-separated operands */
         for (i = 3; i < tokens.size(); i++) {

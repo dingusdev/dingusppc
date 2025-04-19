@@ -313,6 +313,10 @@ def gen_rot_opcode(opc_str, sh, mb, me):
         return (0x15 << 26) + (4 << 21) + (3 << 16) + (sh << 11) + (mb << 6) + (me << 1)
     elif opc_str == "RLWINM.":
         return (0x15 << 26) + (4 << 21) + (3 << 16) + (sh << 11) + (mb << 6) + (me << 1) + 1
+    elif opc_str == "RLWNM":
+        return (0x17 << 26) + (4 << 21) + (3 << 16) + (3 << 11) + (mb << 6) + (me << 1)
+    elif opc_str == "RLWNM.":
+        return (0x17 << 26) + (4 << 21) + (3 << 16) + (3 << 11) + (mb << 6) + (me << 1) + 1
 
 def extract_imm(line):
     pos = 12

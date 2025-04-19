@@ -104,7 +104,7 @@ enum {
     what it actually means. It seems like it's used to check
     if the sound codec is available.
  */
-#define AWAC_AVAILABLE 0x40
+constexpr auto AWAC_AVAILABLE = 0x40;
 
 
 /** Audio processor chip (TDA7433) emulation. */
@@ -166,9 +166,9 @@ public:
 };
 
 /** AWACs manufacturers and revisions. */
-#define AWAC_MAKER_CRYSTAL  1
-#define AWAC_REV_AWACS      2
-#define AWAC_REV_SCREAMER   3
+constexpr auto AWAC_MAKER_CRYSTAL = 1;
+constexpr auto AWAC_REV_AWACS     = 2;
+constexpr auto AWAC_REV_SCREAMER  = 3;
 
 /** Screamer sound codec. */
 class AwacsScreamer : public MacioSndCodec {
