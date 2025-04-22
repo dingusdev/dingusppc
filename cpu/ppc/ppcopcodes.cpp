@@ -842,7 +842,7 @@ static inline void calc_rtcl_value()
     uint64_t diff = new_ts - rtc_timestamp;
     _u32xu64(tbr_freq_ghz, diff, adj, adj_lo);
     if (tbr_freq_shift)
-        adj = (adj << tbr_freq_shift) + (adj_lo >> (32 - tbr_freq_shift));
+        adj = (adj << tbr_freq_shift) + (uint64_t(adj_lo) >> (32 - tbr_freq_shift));
     uint64_t rtc_l = adj + rtc_lo;
     if (rtc_l >= ONE_BILLION_NS) { // check RTCL overflow
         rtc_hi += (uint32_t)(rtc_l / ONE_BILLION_NS);
@@ -862,7 +862,7 @@ static inline uint64_t calc_tbr_value()
     uint64_t diff = get_virt_time_ns() - tbr_wr_timestamp;
     _u32xu64(tbr_freq_ghz, diff, adj, adj_lo);
     if (tbr_freq_shift)
-        adj = (adj << tbr_freq_shift) + (adj_lo >> (32 - tbr_freq_shift));
+        adj = (adj << tbr_freq_shift) + (uint64_t(adj_lo) >> (32 - tbr_freq_shift));
     return (tbr_wr_value + adj);
 }
 
@@ -872,7 +872,7 @@ static inline uint32_t calc_dec_value() {
     uint64_t diff = get_virt_time_ns() - dec_wr_timestamp;
     _u32xu64(tbr_freq_ghz, diff, adj, adj_lo);
     if (tbr_freq_shift)
-        adj = (adj << tbr_freq_shift) + (adj_lo >> (32 - tbr_freq_shift));
+        adj = (adj << tbr_freq_shift) + (uint64_t(adj_lo) >> (32 - tbr_freq_shift));
     return (dec_wr_value - static_cast<uint32_t>(adj));
 }
 

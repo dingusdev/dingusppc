@@ -35,8 +35,10 @@ class Display {
 public:
     enum {
         not_full_screen,
+        full_screen_small,
         full_screen_int,
         full_screen,
+        full_screen_no_bars,
     };
 
     Display();
@@ -52,6 +54,7 @@ public:
 
     void configure_dest();
     void configure_texture();
+    void update_window_size();
 
     // Clears the display
     void blank();
@@ -79,6 +82,8 @@ private:
     std::unique_ptr<Impl> impl;
     VideoCtrlBase* video_ctrl = nullptr;
     int full_screen_mode = not_full_screen;
+    double scale_full_screen;
+    double scale_window;
 };
 
 #endif // DISPLAY_H

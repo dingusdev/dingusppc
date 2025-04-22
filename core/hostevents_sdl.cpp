@@ -87,6 +87,26 @@ void EventManager::poll_events(uint32_t kbd_locale) {
                     }
                     return;
                 }
+                // Control-+: bigger
+                if (event.key.keysym.sym == SDLK_EQUALS && (SDL_GetModState() & KMOD_ALL) == KMOD_LCTRL) {
+                    if (event.type == SDL_KEYUP) {
+                        WindowEvent we{};
+                        we.sub_type  = DPPC_WINDOWEVENT_WINDOW_BIGGER;
+                        we.window_id = event.window.windowID;
+                        this->_window_signal.emit(we);
+                    }
+                    return;
+                }
+                // Control--: smaller
+                if (event.key.keysym.sym == SDLK_MINUS && (SDL_GetModState() & KMOD_ALL) == KMOD_LCTRL) {
+                    if (event.type == SDL_KEYUP) {
+                        WindowEvent we{};
+                        we.sub_type  = DPPC_WINDOWEVENT_WINDOW_SMALLER;
+                        we.window_id = event.window.windowID;
+                        this->_window_signal.emit(we);
+                    }
+                    return;
+                }
                 // Ralt+delete => ctrl+alt+del
                 if (event.key.keysym.sym == SDLK_DELETE && ((SDL_GetModState() & KMOD_ALL) == KMOD_RALT) != 0) {
                     KeyboardEvent ke{};

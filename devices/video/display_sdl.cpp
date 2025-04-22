@@ -33,11 +33,15 @@ public:
     SDL_Renderer*   renderer = 0;
     double          renderer_scale_x; // scaling factor from guest OS to host OS
     double          renderer_scale_y;
+    double          default_scale_x;
+    double          default_scale_y;
     SDL_Texture*    disp_texture = 0;
     SDL_Texture*    cursor_texture = 0;
     SDL_Rect        cursor_rect; // destination rectangle for cursor drawing
-    int             display_width;
-    int             display_height;
+    int             display_w;
+    int             display_h;
+    double          drawable_w;
+    double          drawable_h;
     SDL_Rect        dest_rect;
 };
 
@@ -62,15 +66,15 @@ Display::~Display() {
 bool Display::configure(int width, int height) {
     bool is_initialization = false;
 
-    impl->display_width = width;
-    impl->display_height = height;
+    impl->display_w = width;
+    impl->display_h = height;
 
     if (!impl->display_wnd) { // create display window
         impl->display_wnd = SDL_CreateWindow(
             "",
             SDL_WINDOWPOS_UNDEFINED,
             SDL_WINDOWPOS_UNDEFINED,
-            width, height,
+            impl->display_w, impl->display_h,
             SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI
         );
 
@@ -86,12 +90,20 @@ bool Display::configure(int width, int height) {
         SDL_GetRendererInfo(impl->renderer, &info);
         LOG_F(INFO, "Renderer \"%s\" max size: %d x %d", info.name, info.max_texture_width, info.max_texture_height);
 
+        int w, h;
+        SDL_GetRendererOutputSize(impl->renderer, &w, &h);
+        impl->drawable_w = w;
+        impl->drawable_h = h;
+        impl->default_scale_x = impl->drawable_w / impl->display_w;
+        impl->default_scale_y = impl->drawable_h / impl->display_h;
+        this->scale_window = impl->default_scale_x;
         this->configure_dest();
 
         update_window_title();
         is_initialization = true;
     } else { // resize display window
-        SDL_SetWindowSize(impl->display_wnd, width, height);
+        this->update_window_size();
+        impl->resizing = true;
         this->configure_dest();
     }
 
@@ -100,30 +112,68 @@ bool Display::configure(int width, int height) {
     return is_initialization;
 }
 
+void Display::update_window_size() {
+    impl->drawable_w = this->scale_window * impl->display_w;
+    impl->drawable_h = this->scale_window * impl->display_h;
+    SDL_SetWindowSize(impl->display_wnd,
+        impl->drawable_w / impl->default_scale_x,
+        impl->drawable_h / impl->default_scale_y);
+}
+
 void Display::configure_dest() {
-    int drawable_width, drawable_height;
-    SDL_GetRendererOutputSize(impl->renderer, &drawable_width, &drawable_height);
-
-    double scale = std::min(
-        static_cast<double>(drawable_width) / impl->display_width,
-        static_cast<double>(drawable_height) / impl->display_height
-    );
-
-    if (this->full_screen_mode == full_screen_int) {
-        double new_scale = floor(scale);
-        if (scale == new_scale)
-            this->full_screen_mode = full_screen;
-        else
-            scale = floor(scale);
+    if (this->full_screen_mode > not_full_screen) {
+        if (this->scale_full_screen == 0.0) {
+            int w, h;
+            SDL_SetWindowFullscreen(impl->display_wnd, SDL_WINDOW_FULLSCREEN_DESKTOP);
+            SDL_GetRendererOutputSize(impl->renderer, &w, &h);
+            impl->drawable_w = w;
+            impl->drawable_h = h;
+        }
     }
 
-    LOG_F(INFO, "drawable: %d x %d  display: %d x %d  scale: %f",
-        drawable_width, drawable_height, impl->display_width, impl->display_height, scale);
+    double scalex = impl->drawable_w / impl->display_w;
+    double scaley = impl->drawable_h / impl->display_h;
+    double scale_full = std::min(scalex, scaley);
+    double scale_full_int = floor(scale_full);
+    double scale_full_no_bars = std::max(scalex, scaley);
+    double scale;
 
-    impl->dest_rect.w = scale * impl->display_width;
-    impl->dest_rect.h = scale * impl->display_height;
-    impl->dest_rect.x = (drawable_width  - impl->dest_rect.w) / 2,
-    impl->dest_rect.y = (drawable_height - impl->dest_rect.h) / 2,
+    if (this->full_screen_mode > not_full_screen) {
+        if (this->scale_full_screen == 0.0) {
+            switch (this->full_screen_mode) {
+                case full_screen_int:
+                    this->scale_full_screen = scale_full_int;
+                    break;
+                case full_screen:
+                    this->scale_full_screen = scale_full;
+                    break;
+                case full_screen_no_bars:
+                    this->scale_full_screen = scale_full_no_bars;
+                    break;
+            }
+        }
+        scale = this->scale_full_screen;
+
+        if (scale >= scale_full_no_bars)
+            this->full_screen_mode = full_screen_no_bars;
+        else if (scale >= scale_full)
+            this->full_screen_mode = full_screen;
+        else if (scale >= scale_full_int)
+            this->full_screen_mode = full_screen_int;
+        else
+            this->full_screen_mode = full_screen_small;
+    }
+    else {
+        scale = this->scale_window = scale_full;
+    }
+
+    LOG_F(INFO, "drawable: %.0f x %.0f  display: %d x %d  scale: %.3f",
+        impl->drawable_w, impl->drawable_h, impl->display_w, impl->display_h, scale);
+
+    impl->dest_rect.w = std::round(scale * impl->display_w);
+    impl->dest_rect.h = std::round(scale * impl->display_h);
+    impl->dest_rect.x = std::round((impl->drawable_w - impl->dest_rect.w) / 2.0),
+    impl->dest_rect.y = std::round((impl->drawable_h - impl->dest_rect.h) / 2.0),
     impl->renderer_scale_x = scale;
     impl->renderer_scale_y = scale;
 }
@@ -136,7 +186,7 @@ void Display::configure_texture() {
         impl->renderer,
         SDL_PIXELFORMAT_ARGB8888,
         SDL_TEXTUREACCESS_STREAMING,
-        impl->display_width, impl->display_height
+        impl->display_w, impl->display_h
     );
 
     if (impl->disp_texture == NULL)
@@ -148,6 +198,22 @@ void Display::handle_events(const WindowEvent& wnd_event) {
 
     case SDL_WINDOWEVENT_SIZE_CHANGED:
         if (wnd_event.window_id == impl->disp_wnd_id) {
+            int ww, wh;
+            SDL_GetWindowSize(impl->display_wnd, &ww, &wh);
+            int w, h;
+            SDL_GetRendererOutputSize(impl->renderer, &w, &h);
+            double new_default_scale_x = w / ww;
+            double new_default_scale_y = w / ww;
+            if (new_default_scale_x != impl->default_scale_x || new_default_scale_y != impl->default_scale_y) {
+                // recalculate scale when switching between Retina and Low Resolution modes
+                impl->drawable_w = impl->drawable_w * new_default_scale_x / impl->default_scale_x;
+                impl->drawable_h = impl->drawable_h * new_default_scale_y / impl->default_scale_y;
+                this->scale_window = this->scale_window * new_default_scale_x / impl->default_scale_x;
+                impl->default_scale_x = new_default_scale_x;
+                impl->default_scale_y = new_default_scale_y;
+                this->configure_dest();
+            }
+
             this->update_window_title();
             impl->resizing = false;
             video_ctrl->set_draw_fb();
@@ -165,8 +231,8 @@ void Display::handle_events(const WindowEvent& wnd_event) {
             auto current_quality = SDL_GetHint(SDL_HINT_RENDER_SCALE_QUALITY);
             auto new_quality = current_quality == NULL || strcmp(current_quality, "nearest") == 0 ? "best" : "nearest";
             SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, new_quality);
-            // We need the window/texture to be recreated to pick up the hint change.
 
+            // We need the window/texture to be recreated to pick up the hint change.
             this->configure_texture();
             video_ctrl->set_draw_fb();
             video_ctrl->set_cursor_dirty();
@@ -177,18 +243,45 @@ void Display::handle_events(const WindowEvent& wnd_event) {
         if (wnd_event.window_id == impl->disp_wnd_id) {
             switch (this->full_screen_mode) {
             case not_full_screen:
-                SDL_SetWindowFullscreen(impl->display_wnd, SDL_WINDOW_FULLSCREEN_DESKTOP);
+            case full_screen_small:
                 this->full_screen_mode = full_screen_int;
+                this->scale_full_screen = 0.0;
                 break;
             case full_screen_int:
-                SDL_SetWindowFullscreen(impl->display_wnd, SDL_WINDOW_FULLSCREEN_DESKTOP);
                 this->full_screen_mode = full_screen;
+                this->scale_full_screen = 0.0;
                 break;
             case full_screen:
+                this->full_screen_mode = full_screen_no_bars;
+                this->scale_full_screen = 0.0;
+                break;
+            case full_screen_no_bars:
                 SDL_SetWindowFullscreen(impl->display_wnd, 0);
                 this->full_screen_mode = not_full_screen;
-                SDL_SetWindowSize(impl->display_wnd, impl->display_width, impl->display_height);
+                this->update_window_size();
                 break;
+            }
+
+            this->configure_dest();
+            video_ctrl->set_draw_fb();
+            video_ctrl->set_cursor_dirty();
+        }
+        break;
+
+    case DPPC_WINDOWEVENT_WINDOW_BIGGER:
+    case DPPC_WINDOWEVENT_WINDOW_SMALLER:
+        if (wnd_event.window_id == impl->disp_wnd_id) {
+            if (this->full_screen_mode == not_full_screen) {
+                if (wnd_event.sub_type == DPPC_WINDOWEVENT_WINDOW_BIGGER)
+                    this->scale_window = this->scale_window * std::pow(2.0, 1.0/8.0);
+                else
+                    this->scale_window = this->scale_window / std::pow(2.0, 1.0/8.0);
+                this->update_window_size();
+            } else {
+                if (wnd_event.sub_type == DPPC_WINDOWEVENT_WINDOW_BIGGER)
+                    this->scale_full_screen = this->scale_full_screen * std::pow(2.0, 1.0/8.0);
+                else
+                    this->scale_full_screen = this->scale_full_screen / std::pow(2.0, 1.0/8.0);
             }
 
             this->configure_dest();
@@ -212,7 +305,9 @@ void Display::update_window_title()
     SDL_GetWindowSize(impl->display_wnd, &width, &height);
     bool is_relative = SDL_GetRelativeMouseMode();
 
-    std::string new_window_title = "DingusPPC Display " + std::to_string(width) + "x" + std::to_string(height);
+    std::string new_window_title = "DingusPPC Display " +
+        std::to_string(impl->display_w) + "x" + std::to_string(impl->display_h)
+        + " " + std::to_string(int(std::round(impl->renderer_scale_x * 100))) + "%";
     if (is_relative)
         new_window_title += " (🖱 Grabbed)";
 
