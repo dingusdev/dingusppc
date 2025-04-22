@@ -25,6 +25,8 @@
 - roytam1
 - mrpapersonic
 - Randrianasulu
+- lefp
+- mathstuf
 
 ## Testing
 
