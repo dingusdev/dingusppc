@@ -77,6 +77,8 @@ public:
     void setup_hw_cursor(std::function<void(uint8_t *dst_buf, int dst_pitch)> draw_hw_cursor,
                          int cursor_width, int cursor_height);
     void update_window_title();
+    void toggle_mouse_grab();
+    void update_mouse_grab();
 private:
     class Impl; // Holds private fields
     std::unique_ptr<Impl> impl;

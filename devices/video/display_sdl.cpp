@@ -117,6 +117,7 @@ void Display::update_window_size() {
     SDL_SetWindowSize(impl->display_wnd,
         impl->drawable_w / impl->default_scale_x,
         impl->drawable_h / impl->default_scale_y);
+    this->update_mouse_grab(); // make sure the mouse is still inside the window
 }
 
 void Display::configure_dest() {
@@ -289,9 +290,37 @@ void Display::handle_events(const WindowEvent& wnd_event) {
         break;
 
     case DPPC_WINDOWEVENT_MOUSE_GRAB_CHANGED:
+        this->toggle_mouse_grab();
         this->update_window_title();
         break;
 
+    }
+}
+
+void Display::toggle_mouse_grab()
+{
+    if (SDL_GetRelativeMouseMode()) {
+        SDL_SetRelativeMouseMode(SDL_FALSE);
+    } else {
+        this->update_mouse_grab();
+        SDL_SetRelativeMouseMode(SDL_TRUE);
+    }
+}
+
+void Display::update_mouse_grab()
+{
+    if (SDL_GetRelativeMouseMode()) {
+        // If the mouse is initially outside the window, move it to the middle,
+        // so that clicks are handled by the window (instead making it lose
+        // focus, at least with macOS hosts).
+        int mouse_x, mouse_y, window_x, window_y, window_width, window_height;
+        SDL_GetGlobalMouseState(&mouse_x, &mouse_y);
+        SDL_GetWindowPosition(impl->display_wnd, &window_x, &window_y);
+        SDL_GetWindowSize(impl->display_wnd, &window_width, &window_height);
+        if (mouse_x < window_x || mouse_x >= window_x + window_width ||
+                mouse_y < window_y || mouse_y >= window_y + window_height) {
+            SDL_WarpMouseInWindow(impl->display_wnd, window_width / 2, window_height / 2);
+        }
     }
 }
 

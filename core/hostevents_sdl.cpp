@@ -29,7 +29,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 EventManager* EventManager::event_manager;
 
 static int get_sdl_event_key_code(const SDL_KeyboardEvent& event, uint32_t kbd_locale);
-static void toggle_mouse_grab(const SDL_KeyboardEvent &event);
 
 constexpr int KMOD_ALL = KMOD_LSHIFT | KMOD_RSHIFT | KMOD_LCTRL | KMOD_RCTRL | KMOD_LALT | KMOD_RALT | KMOD_LGUI | KMOD_RGUI;
 
@@ -59,7 +58,6 @@ void EventManager::poll_events(uint32_t kbd_locale) {
                 // Control-G: mouse grab
                 if (event.key.keysym.sym == SDLK_g && (SDL_GetModState() & KMOD_ALL) == KMOD_LCTRL) {
                     if (event.type == SDL_KEYUP) {
-                        toggle_mouse_grab(event.key);
                         WindowEvent we;
                         we.sub_type  = DPPC_WINDOWEVENT_MOUSE_GRAB_CHANGED;
                         we.window_id = event.window.windowID;
@@ -426,24 +424,4 @@ static int get_sdl_event_key_code(const SDL_KeyboardEvent &event, uint32_t kbd_l
         return AdbKey_Semicolon;    // Acute
     }
     return -1;
-}
-
-static void toggle_mouse_grab(const SDL_KeyboardEvent &event) {
-    SDL_Window *window = SDL_GetWindowFromID(event.windowID);
-    if (SDL_GetRelativeMouseMode()) {
-        SDL_SetRelativeMouseMode(SDL_FALSE);
-    } else {
-        // If the mouse is initially outside the window, move it to the middle,
-        // so that clicks are handled by the window (instead making it lose
-        // focus, at least with macOS hosts).
-        int mouse_x, mouse_y, window_x, window_y, window_width, window_height;
-        SDL_GetGlobalMouseState(&mouse_x, &mouse_y);
-        SDL_GetWindowPosition(window, &window_x, &window_y);
-        SDL_GetWindowSize(window, &window_width, &window_height);
-        if (mouse_x < window_x || mouse_x >= window_x + window_width ||
-                mouse_y < window_y || mouse_y >= window_y + window_height) {
-            SDL_WarpMouseInWindow(window, window_width / 2, window_height / 2);
-        }
-        SDL_SetRelativeMouseMode(SDL_TRUE);
-    }
 }
