@@ -311,6 +311,7 @@ MapDmaResult mmu_map_dma_mem(uint32_t addr, uint32_t size, bool allow_mmio) {
     uint32_t        dev_base = 0;
     bool            is_writable;
     AddressMapEntry *cur_dma_rgn;
+    AddressMapEntry *next_dma_rgn;
 
     cur_dma_rgn = mem_ctrl_instance->find_range(addr);
     if (!cur_dma_rgn) {
@@ -320,9 +321,44 @@ MapDmaResult mmu_map_dma_mem(uint32_t addr, uint32_t size, bool allow_mmio) {
     }
 
     if (addr + size - 1 > cur_dma_rgn->end) {
-        ABORT_F("SOS: DMA access to unmapped physical memory 0x%08X..0x%08X because size extends outside region 0x%08X..0x%08X!",
-            addr, addr + size - 1, cur_dma_rgn->start, cur_dma_rgn->end
-        );
+        if (cur_dma_rgn->type & (RT_ROM | RT_RAM))
+            LOG_F(WARNING, "this region: 0x%08X..0x%08X (host: 0x%08llX..0x%08llX)",
+                cur_dma_rgn->start, cur_dma_rgn->end,
+                uint64_t(cur_dma_rgn->mem_ptr),
+                uint64_t(cur_dma_rgn->mem_ptr + cur_dma_rgn->end - cur_dma_rgn->start)
+            );
+        else
+            LOG_F(ERROR, "this region: 0x%08X..0x%08X",
+                cur_dma_rgn->start, cur_dma_rgn->end
+            );
+        next_dma_rgn = mem_ctrl_instance->find_range(cur_dma_rgn->end + 1);
+        if (next_dma_rgn) {
+            if (next_dma_rgn->type & (RT_ROM | RT_RAM))
+                LOG_F(WARNING, "next region: 0x%08X..0x%08X (host: 0x%08llX..0x%08llX)",
+                    next_dma_rgn->start, next_dma_rgn->end,
+                    uint64_t(next_dma_rgn->mem_ptr),
+                    uint64_t(next_dma_rgn->mem_ptr + next_dma_rgn->end - next_dma_rgn->start)
+                );
+            else
+                LOG_F(ERROR, "next region: 0x%08X..0x%08X",
+                    next_dma_rgn->start, next_dma_rgn->end
+                );
+        }
+        if (next_dma_rgn &&
+            (cur_dma_rgn->type & (RT_ROM | RT_RAM)) &&
+            ((cur_dma_rgn->type & (RT_ROM | RT_RAM)) == (next_dma_rgn->type & (RT_ROM | RT_RAM))) &&
+            (next_dma_rgn->mem_ptr == cur_dma_rgn->mem_ptr + cur_dma_rgn->end - cur_dma_rgn->start + 1) &&
+            (addr + size - 1 <= next_dma_rgn->end)
+        ) {
+            LOG_F(INFO, "DMA to physical memory 0x%08X..0x%08X is OK!"
+                " The regions are the same type and adjacent in host and guest spaces.",
+                addr, addr + size - 1
+            );
+        } else {
+            ABORT_F("SOS: DMA access to unmapped physical memory 0x%08X..0x%08X because size extends outside region!",
+                addr, addr + size - 1
+            );
+        }
     }
 
     if ((cur_dma_rgn->type & RT_MMIO) && !allow_mmio) {
