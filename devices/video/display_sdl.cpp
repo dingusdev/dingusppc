@@ -27,7 +27,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 class Display::Impl {
 public:
-    bool            resizing = false;
     uint32_t        disp_wnd_id = 0;
     SDL_Window*     display_wnd = 0;
     SDL_Renderer*   renderer = 0;
@@ -103,7 +102,6 @@ bool Display::configure(int width, int height) {
         is_initialization = true;
     } else { // resize display window
         this->update_window_size();
-        impl->resizing = true;
         this->configure_dest();
     }
 
@@ -216,7 +214,6 @@ void Display::handle_events(const WindowEvent& wnd_event) {
             }
 
             this->update_window_title();
-            impl->resizing = false;
             video_ctrl->set_draw_fb();
         }
         break;
@@ -354,10 +351,7 @@ void Display::update(std::function<void(uint8_t *dst_buf, int dst_pitch)> conver
                      std::function<void(uint8_t *dst_buf, int dst_pitch)> cursor_ovl_cb,
                      bool draw_hw_cursor, int cursor_x, int cursor_y,
                      bool fb_known_to_be_changed) {
-    if (impl->resizing)
-        return;
-
-    uint8_t*    dst_buf;
+    uint8_t*    dst_buf = nullptr;
     int         dst_pitch;
 
     SDL_LockTexture(impl->disp_texture, NULL, (void **)&dst_buf, &dst_pitch);
