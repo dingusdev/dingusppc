@@ -323,7 +323,7 @@ static void ppc_exec_inner(uint32_t start_addr, uint32_t size)
 
         opcode = ppc_read_instruction(pc_real);
         ppc_main_opcode(opcode_grabber, opcode);
-        if (g_icycles++ >= max_cycles || exec_timer) [[unlikely]]
+        if (g_icycles++ >= max_cycles || exec_timer) [[likely]]
             max_cycles = process_events();
 
         if (exec_flags) {

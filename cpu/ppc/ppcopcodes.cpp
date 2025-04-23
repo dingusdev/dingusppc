@@ -29,6 +29,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <vector>
 
+#ifdef __SSE2__
+#include <immintrin.h>
+#endif
+
 //Extract the registers desired and the values of the registers.
 
 // Affects CR Field 0 - For integer operations
@@ -680,17 +684,30 @@ static inline uint32_t rot_mask(unsigned rot_mb, unsigned rot_me) {
 }
 
 void dppc_interpreter::ppc_rlwimi(uint32_t opcode) {
+#ifdef __SSE2__
+    ppc_grab_regssash(opcode);
+
+    const uint32_t rot_mb = (opcode >> 6) & 0x1F;
+    const uint32_t rot_me = (opcode >> 1) & 0x1F;
+    uint32_t mask         = rot_mask(rot_mb, rot_me);
+    uint32_t r            = rot_sh ? _rotl(ppc_result_d, rot_sh) : ppc_result_d;
+    ppc_result_a          = (ppc_result_a & ~mask) | (r & mask);
+    if (opcode & 0x01) {
+        ppc_changecrf0(ppc_result_a);
+    }
+    ppc_store_iresult_reg(reg_a, ppc_result_a);
+#else
     ppc_grab_regssash(opcode);
     unsigned rot_mb = (opcode >> 6) & 0x1F;
     unsigned rot_me = (opcode >> 1) & 0x1F;
     uint32_t mask   = rot_mask(rot_mb, rot_me);
-    uint32_t r      = rot_sh ? ((ppc_result_d << rot_sh) |
-                      (ppc_result_d >> (32 - rot_sh))) : ppc_result_d;
-    ppc_result_a    = (ppc_result_a & ~mask) | (r & mask);
+    uint32_t r = rot_sh ? ((ppc_result_d << rot_sh) | (ppc_result_d >> (32 - rot_sh))) : ppc_result_d;
+    ppc_result_a = (ppc_result_a & ~mask) | (r & mask);
     if ((opcode & 0x01) == 1) {
         ppc_changecrf0(ppc_result_a);
     }
     ppc_store_iresult_reg(reg_a, ppc_result_a);
+#endif
 }
 
 void dppc_interpreter::ppc_rlwinm(uint32_t opcode) {
