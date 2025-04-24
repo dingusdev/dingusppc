@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -154,9 +154,7 @@ static void ppc_update_vx() {
 }
 
 static void ppc_update_fex() {
-    uint32_t fpscr_check = (((ppc_state.fpscr >> 25) & 0x1F) &
-        ((ppc_state.fpscr >> 3) & 0x1F));
-
+    uint32_t fpscr_check = (ppc_state.fpscr >> 22) & ppc_state.fpscr & 0x0F8;
     if (fpscr_check)
         ppc_state.fpscr |= VX;
     else
