@@ -684,10 +684,9 @@ void dppc_interpreter::ppc_rlwimi(uint32_t opcode) {
     unsigned rot_mb = (opcode >> 6) & 0x1F;
     unsigned rot_me = (opcode >> 1) & 0x1F;
     uint32_t mask   = rot_mask(rot_mb, rot_me);
-    uint32_t r      = rot_sh ? ((ppc_result_d << rot_sh) |
-                      (ppc_result_d >> (32 - rot_sh))) : ppc_result_d;
+    uint32_t r      = ROTL_32(ppc_result_d, rot_sh);
     ppc_result_a    = (ppc_result_a & ~mask) | (r & mask);
-    if ((opcode & 0x01) == 1) {
+    if (opcode & 1) {
         ppc_changecrf0(ppc_result_a);
     }
     ppc_store_iresult_reg(reg_a, ppc_result_a);
@@ -698,10 +697,9 @@ void dppc_interpreter::ppc_rlwinm(uint32_t opcode) {
     unsigned rot_mb = (opcode >> 6) & 0x1F;
     unsigned rot_me = (opcode >> 1) & 0x1F;
     uint32_t mask   = rot_mask(rot_mb, rot_me);
-    uint32_t r      = rot_sh ? ((ppc_result_d << rot_sh) |
-                      (ppc_result_d >> (32 - rot_sh))) : ppc_result_d;
+    uint32_t r      = ROTL_32(ppc_result_d, rot_sh);
     ppc_result_a    = r & mask;
-    if ((opcode & 0x01) == 1) {
+    if (opcode & 1) {
         ppc_changecrf0(ppc_result_a);
     }
     ppc_store_iresult_reg(reg_a, ppc_result_a);
@@ -709,15 +707,12 @@ void dppc_interpreter::ppc_rlwinm(uint32_t opcode) {
 
 void dppc_interpreter::ppc_rlwnm(uint32_t opcode) {
     ppc_grab_regssab(opcode);
-    ppc_result_b &= 0x1F;
     unsigned rot_mb = (opcode >> 6) & 0x1F;
     unsigned rot_me = (opcode >> 1) & 0x1F;
     uint32_t mask   = rot_mask(rot_mb, rot_me);
-    uint32_t rot    = ppc_result_b & 0x1F;
-    uint32_t r      = rot ? ((ppc_result_d << rot) |
-                      (ppc_result_d >> (32 - rot))) : ppc_result_d;
+    uint32_t r      = ROTL_32(ppc_result_d, ppc_result_b);
     ppc_result_a    = r & mask;
-    if ((opcode & 0x01) == 1) {
+    if (opcode & 1) {
         ppc_changecrf0(ppc_result_a);
     }
     ppc_store_iresult_reg(reg_a, ppc_result_a);
