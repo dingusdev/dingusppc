@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // The Power-specific opcodes for the processor - ppcopcodes.cpp
 // Any shared opcodes are in ppcopcodes.cpp
 
+#include <core/bitops.h>
 #include "ppcemu.h"
 #include "ppcmacros.h"
 #include "ppcmmu.h"

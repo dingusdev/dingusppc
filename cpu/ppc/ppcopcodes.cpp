@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // General opcodes for the processor - ppcopcodes.cpp
 
+#include <core/bitops.h>
 #include <core/timermanager.h>
 #include <core/mathutils.h>
 #include "ppcemu.h"
