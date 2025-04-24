@@ -78,7 +78,7 @@ public:
                          int cursor_width, int cursor_height);
     void update_window_title();
     void toggle_mouse_grab();
-    void update_mouse_grab();
+    void update_mouse_grab(bool will_be_grabbed);
 private:
     class Impl; // Holds private fields
     std::unique_ptr<Impl> impl;

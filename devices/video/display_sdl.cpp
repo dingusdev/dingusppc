@@ -117,7 +117,7 @@ void Display::update_window_size() {
     SDL_SetWindowSize(impl->display_wnd,
         impl->drawable_w / impl->default_scale_x,
         impl->drawable_h / impl->default_scale_y);
-    this->update_mouse_grab(); // make sure the mouse is still inside the window
+    this->update_mouse_grab(false); // make sure the mouse is still inside the window
 }
 
 void Display::configure_dest() {
@@ -302,24 +302,29 @@ void Display::toggle_mouse_grab()
     if (SDL_GetRelativeMouseMode()) {
         SDL_SetRelativeMouseMode(SDL_FALSE);
     } else {
-        this->update_mouse_grab();
+        this->update_mouse_grab(true);
         SDL_SetRelativeMouseMode(SDL_TRUE);
     }
 }
 
-void Display::update_mouse_grab()
+void Display::update_mouse_grab(bool will_be_grabbed)
 {
-    if (SDL_GetRelativeMouseMode()) {
+    bool is_grabbed = SDL_GetRelativeMouseMode();
+    if (will_be_grabbed || is_grabbed) {
         // If the mouse is initially outside the window, move it to the middle,
         // so that clicks are handled by the window (instead making it lose
         // focus, at least with macOS hosts).
-        int mouse_x, mouse_y, window_x, window_y, window_width, window_height;
-        SDL_GetGlobalMouseState(&mouse_x, &mouse_y);
+        int window_x, window_y, window_width, window_height, mouse_x, mouse_y;
         SDL_GetWindowPosition(impl->display_wnd, &window_x, &window_y);
         SDL_GetWindowSize(impl->display_wnd, &window_width, &window_height);
+        SDL_GetGlobalMouseState(&mouse_x, &mouse_y);
         if (mouse_x < window_x || mouse_x >= window_x + window_width ||
                 mouse_y < window_y || mouse_y >= window_y + window_height) {
+            if (is_grabbed)
+                SDL_SetRelativeMouseMode(SDL_FALSE);
             SDL_WarpMouseInWindow(impl->display_wnd, window_width / 2, window_height / 2);
+            if (is_grabbed)
+                SDL_SetRelativeMouseMode(SDL_TRUE);
         }
     }
 }
@@ -330,12 +335,12 @@ void Display::update_window_title()
 
     int width, height;
     SDL_GetWindowSize(impl->display_wnd, &width, &height);
-    bool is_relative = SDL_GetRelativeMouseMode();
+    bool is_grabbed = SDL_GetRelativeMouseMode();
 
     std::string new_window_title = "DingusPPC Display " +
         std::to_string(impl->display_w) + "x" + std::to_string(impl->display_h)
         + " " + std::to_string(int(std::round(impl->renderer_scale_x * 100))) + "%";
-    if (is_relative)
+    if (is_grabbed)
         new_window_title += " (🖱 Grabbed)";
 
     if (new_window_title != old_window_title)
