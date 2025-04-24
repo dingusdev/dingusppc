@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/video/videoctrl.h>
 #include <SDL.h>
 #include <loguru.hpp>
+#include <cmath>
 #include <string>
 
 class Display::Impl {
@@ -383,7 +384,7 @@ void Display::update_skipped() {
 
 void Display::setup_hw_cursor(std::function<void(uint8_t *dst_buf, int dst_pitch)> draw_hw_cursor,
                               int cursor_width, int cursor_height) {
-    uint8_t*    dst_buf;
+    uint8_t*    dst_buf = nullptr;
     int         dst_pitch;
 
     if (impl->cursor_texture)
