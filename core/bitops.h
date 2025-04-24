@@ -48,12 +48,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
     inline unsigned ROTL_32(unsigned x, unsigned n) {
         n &= 0x1F;
-        return (x << n) | (x >> (32 - n));
+        if (n)
+            return (x << n) | (x >> (32 - n));
+        return x;
     }
 
     inline unsigned ROTR_32(unsigned x, unsigned n) {
         n &= 0x1F;
-        return (x >> n) | (x << (32 - n));
+        if (n)
+            return (x >> n) | (x << (32 - n));
+        return x;
     }
 
 #endif
