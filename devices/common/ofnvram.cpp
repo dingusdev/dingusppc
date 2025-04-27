@@ -591,7 +591,7 @@ void OfConfigUtils::printenv() {
         ReplaceAll(val, "\r\n", "\n");
         ReplaceAll(val, "\r", "\n");
         ReplaceAll(val, "\n", "\n                                  "); // 34 spaces
-        cout << setw(34) << left << var.first << val << endl; // name column has width 34
+        cout << setw(34) << left << var.first << val << right << endl; // name column has width 34
     }
 }
 
