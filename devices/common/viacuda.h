@@ -146,6 +146,8 @@ enum {
 constexpr auto CUDA_IN_BUF_SIZE = 256;
 
 /** PRAM addresses within Cuda's internal memory. */
+//                                = 0xA1;     // byte, read/write 0x00 (Power Mac 6100)
+//                                = 0xB3;     // 2 bytes, write 0x3020 (Power Mac 6100)
 constexpr auto CUDA_PRAM_START    = 0x100;    // starting address of PRAM
 constexpr auto CUDA_PRAM_END      = 0x1FF;    // last byte of PRAM
 constexpr auto CUDA_ROM_START     = 0xF00;    // starting address of ROM containing Cuda FW
