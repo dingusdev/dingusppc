@@ -125,8 +125,6 @@ int AMIC::device_postinit()
 
 uint32_t AMIC::read(uint32_t rgn_start, uint32_t offset, int size)
 {
-    uint32_t  phase_val;
-
     // subdevices registers
     switch(offset >> 12) {
     case 0: // VIA1 registers
@@ -158,14 +156,15 @@ uint32_t AMIC::read(uint32_t rgn_start, uint32_t offset, int size)
             return (this->awacs->read_stat() >> (offset & 3) * 8) & 0xFF;
         case AMICReg::Snd_Phase0:
         case AMICReg::Snd_Phase1:
-        case AMICReg::Snd_Phase2:
+        case AMICReg::Snd_Phase2: {
             // the sound phase register is organized as follows:
             // 000000oo oooooooo oopppppp where 'o' is the 12-bit offset
             // into the DMA buffer and 'p' is an undocumented prescale value
             // HWInit doesn't care about. Let's hope it will be sufficient
             // to return 0 for prescale.
-            phase_val = this->snd_out_dma->get_cur_buf_pos() << 6;
+            uint32_t  phase_val = this->snd_out_dma->get_cur_buf_pos() << 6;
             return (phase_val >> ((2 - (offset & 3)) * 8)) & 0xFF;
+        }
         case AMICReg::Snd_Out_Ctrl:
             return this->snd_out_ctrl;
         case AMICReg::Snd_Out_DMA:
