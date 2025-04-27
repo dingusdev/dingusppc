@@ -41,7 +41,7 @@ using namespace std;
 static std::string hex2str(uint32_t n)
 {
    std::stringstream ss;
-   ss << setw(8) << setfill('0') << hex << n;
+   ss << setw(8) << right << setfill('0') << hex << n;
    return ss.str();
 }
 
