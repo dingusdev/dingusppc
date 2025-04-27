@@ -223,7 +223,8 @@ uint32_t AMIC::read(uint32_t rgn_start, uint32_t offset, int size)
         return 0;
     case SCC_DMA_Rcv_A_Ctrl: {
         uint32_t value = std::rand() & (-1U >> (32 - size * 8));
-        LOG_F(WARNING, "AMIC SCC Receive Ch A DMA Ctrl read  @%x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
+        LOG_F(WARNING, "AMIC SCC Receive Ch A DMA Ctrl read  @%x.%c = %0*x", offset,
+            SIZE_ARG(size), size * 2, value);
         return value;
     }
     case SCC_DMA_Xmt_B_Ctrl:
@@ -234,8 +235,10 @@ uint32_t AMIC::read(uint32_t rgn_start, uint32_t offset, int size)
         return 0;
     case SCC_DMA_Rcv_B_Ctrl: {
         uint32_t value = std::rand() & (-1U >> (32 - size * 8));
-        LOG_F(WARNING, "AMIC SCC Receive Ch B DMA Ctrl read  @%x.%c = %0*x", offset, SIZE_ARG(size), size * 2, value);
+        LOG_F(WARNING, "AMIC SCC Receive Ch B DMA Ctrl read  @%x.%c = %0*x",
+            offset, SIZE_ARG(size), size * 2, value);
         return value;
+    }
     default:
         LOG_F(WARNING, "Unknown AMIC register read, offset=%x", offset);
     }
