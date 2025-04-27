@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -91,7 +91,7 @@ void Profiler::print_profile(std::string name)
         }
     }
 
-    std::cout << std::endl;
+    std::cout << std::right << std::endl;
 }
 
 void Profiler::reset_profile(std::string name)
