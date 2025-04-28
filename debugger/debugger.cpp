@@ -160,14 +160,14 @@ static uint32_t disasm_68k(uint32_t count, uint32_t address) {
         if (cs_disasm_iter(cs_handle, &code_ptr, &code_size, &dis_addr, insn)) {
             cout << COUTX << insn->address << "    ";
             cout << setfill(' ');
-            cout << setw(10) << left << insn->mnemonic << insn->op_str << endl;
+            cout << setw(10) << left << insn->mnemonic << insn->op_str << right << endl;
             address = static_cast<uint32_t>(dis_addr);
         } else {
 print_bin:
             cout << COUTX << address << "    ";
             cout << setfill(' ');
             cout << setw(10) << left << "dc.w" << "$" << hex <<
-                ((code[0] << 8) | code[1]) << endl;
+                ((code[0] << 8) | code[1]) << right << endl;
             address += 2;
         }
     }
@@ -435,7 +435,7 @@ static uint32_t disasm(uint32_t count, uint32_t address) {
         ctx.instr_code = READ_DWORD_BE_A(mmu_translate_imem(ctx.instr_addr));
         cout << COUT08X << ctx.instr_addr;
         cout << ": " << COUT08X << ctx.instr_code;
-        cout << "    " << disassemble_single(&ctx) << setfill(' ') << left << endl;
+        cout << "    " << disassemble_single(&ctx) << setfill(' ') << right << endl;
     }
     return ctx.instr_addr;
 }
