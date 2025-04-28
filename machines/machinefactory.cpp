@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -474,7 +474,7 @@ void MachineFactory::list_machines()
     cout << endl << "Supported machines:" << endl << endl;
 
     for (auto& m : get_registry()) {
-        cout << setw(13) << m.first << "\t\t" << m.second.description << endl;
+        cout << setw(13) << right << m.first << "\t\t" << m.second.description << endl;
     }
 
     cout << endl;
@@ -562,7 +562,7 @@ void MachineFactory::print_settings(const PropMap& prop_map)
         else
             help = "";
 
-        cout << setw(13) << p.first << "\t\t" << help << endl;
+        cout << setw(13) << right << p.first << "\t\t" << help << endl;
 
         cout << setw(13) << "\t\t\t" "Valid values: ";
 
