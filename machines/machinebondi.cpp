@@ -72,9 +72,13 @@ int initialize_bondi(std::string& id) {
 
     // configure RAM slots
     // First ram slot is enumerated twice for some reason, the second slot is never enumerated, so
-    // put half the ram in each slot.
-    setup_ram_slot("RAM_DIMM_1", 0x50, GET_INT_PROP("rambank1_size") / 2);
-    setup_ram_slot("RAM_DIMM_2", 0x51, GET_INT_PROP("rambank1_size") / 2);
+    // make sure both slots have the same RAM.
+    uint32_t bank_1_size = GET_INT_PROP("rambank1_size");
+    uint32_t bank_2_size = GET_INT_PROP("rambank2_size");
+    if (bank_1_size != bank_2_size)
+        LOG_F(ERROR, "rambank1_size and rambank2_size should have equal size");
+    setup_ram_slot("RAM_DIMM_1", 0x50, bank_1_size);
+    setup_ram_slot("RAM_DIMM_2", 0x51, bank_2_size);
 
     // configure CPU clocks
     uint64_t bus_freq      = 66820000ULL;
@@ -90,7 +94,8 @@ int initialize_bondi(std::string& id) {
 }
 
 static const PropMap bondi_settings = {
-    {"rambank1_size", new IntProperty(128, std::vector<uint32_t>({32, 64, 128, 256, 512, 1024}))},
+    {"rambank1_size", new IntProperty(128, std::vector<uint32_t>({8, 16, 32, 64, 128, 256, 512}))},
+    {"rambank2_size", new IntProperty(128, std::vector<uint32_t>({8, 16, 32, 64, 128, 256, 512}))},
     {"emmo", new BinProperty(0)},
     {"hdd_config", new StrProperty("Ide0:0")},
     {"cdr_config", new StrProperty("Ide1:0")},
