@@ -206,7 +206,7 @@ static rom_info rom_identity[] = {
     {          0, 1024, 0, 0x010200, 0xe27f2d68, 0, "Tessera"     , "P80"      , nullptr   , nullptr                      , "iMac G4 (Flat Panel)"                              }, // PowerMac4,2
     {          0, 1024, 0, 0x010202, 0xc32928ab, 0, "P80"         , nullptr    , nullptr   , nullptr                      , "iMac G4 (Flat Panel)"                              }, // PowerMac4,2
     {          0, 1024, 0, 0x010202, 0xe3512d6a, 0, "Insp"        , nullptr    , nullptr   , nullptr                      , "iMac G4 (Flat Panel)"                              }, // PowerMac4,2
-    {          0, 1024, 0, 0x010202, 0xfaf12da6, 0, "P80|Insp"    , nullptr    , nullptr   , nullptr                      , "iMac G4 (Flat Panel)"                              }, // PowerMac4,2 // 2002-04-08 440f1
+    {          0, 1024, 0, 0x010202, 0xfaf12da6, 0, "P80|Insp"    , nullptr    , nullptr   , nullptr                      , "iMac G4 (Flat Panel)"                              }, // PowerMac4,2 // 2002-04-08 440f1 // 2002-05-17 441f1
     {          0, 1024, 0, 0x010203,          0, 0, nullptr       , "P80"      , nullptr   , nullptr                      , "iMac G4 (Flat Panel)"                              }, // PowerMac4,2
     {          0, 1024, 0, 0x010300, 0xe27f2d68, 0, "Infinity"    , nullptr    , nullptr   , nullptr                      , nullptr                                             }, // PowerMac4,3
     {          0, 1024, 0, 0x010400, 0xa0972cec, 0, "Beyond"      , "P62"      , nullptr   , nullptr                      , "eMac G4"                                           }, // PowerMac4,4
