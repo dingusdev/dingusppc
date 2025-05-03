@@ -289,8 +289,12 @@ void Display::handle_events(const WindowEvent& wnd_event) {
         }
         break;
 
+    case DPPC_WINDOWEVENT_MOUSE_GRAB_TOGGLE:
+        if (wnd_event.window_id == impl->disp_wnd_id)
+            this->toggle_mouse_grab();
+        break;
+
     case DPPC_WINDOWEVENT_MOUSE_GRAB_CHANGED:
-        this->toggle_mouse_grab();
         this->update_window_title();
         break;
 

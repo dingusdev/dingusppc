@@ -59,6 +59,9 @@ void EventManager::poll_events(uint32_t kbd_locale) {
                 if (event.key.keysym.sym == SDLK_g && (SDL_GetModState() & KMOD_ALL) == KMOD_LCTRL) {
                     if (event.type == SDL_KEYUP) {
                         WindowEvent we;
+                        we.sub_type  = DPPC_WINDOWEVENT_MOUSE_GRAB_TOGGLE;
+                        we.window_id = event.window.windowID;
+                        this->_window_signal.emit(we);
                         we.sub_type  = DPPC_WINDOWEVENT_MOUSE_GRAB_CHANGED;
                         we.window_id = event.window.windowID;
                         this->_window_signal.emit(we);
