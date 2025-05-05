@@ -13,6 +13,7 @@
 
 * Disk Tools (7.1.2 - 8.5)
 * Mac OS 7.1.2 - 9.2.2 (from CD or Hard Disk)
+* Mac OS X 10.0 - 10.3
 * OpenDarwin 6.6.2
 
 ## Disk Initialization
@@ -80,7 +81,7 @@ Shows the configurable properties, such as the selected disc image and the ram b
 --rambank4_size X
 ```
 
-Set the RAM sizes to use, with X being an integer of a power of 2 up to 1024 (depending on the emulated machine).
+Set the RAM sizes to use, with X being an integer of a power of 2 up to 512 (depending on the emulated machine).
 
 ```
 --fdd_img TEXT:FILE
@@ -182,7 +183,11 @@ Because Sheepshaver, Basilisk II, and Mini vMac operate on raw disks, it is requ
 
 ### OS Support
 
-Currently, the Power Mac 6100 cannot boot any OS image containing Mac OS 8.0 or newer.
+Currently, the Power Mac 6100 cannot boot any OS image containing Mac OS 9.0 or newer.
+
+### ATI Mach Support
+
+The GUI engine is currently not fully implemented. As such, UI elements might not be rendered when trying to use this video card. To circumenvent this, you may wish to move the ATI Accelerator extension to the Extensions (Disabled) folder.
 
 ### Currently Unimplemented Features
 

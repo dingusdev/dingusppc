@@ -63,6 +63,25 @@ On a physical machine, one has to hold the Command/Apple, Option, P and R keys t
 
 This video RAMDAC appears to be exclusive to the Power Mac 7200.
 
+# Ariel
+
+Video controller used by the Power Mac 6100. It can support up to 16-bit color.
+
+| Register Name    | Address  |
+|:----------------:|:--------:|
+| Address          | 0x24000  |
+| Color Data       | 0x24001  |
+| Control          | 0x24002  |
+| Key Color        | 0x24003  |
+| Video Mode       | 0x28000  |
+| Color            | 0x28001  |
+| Monitor ID       | 0x28002  |
+| Video Test       | 0x28003  |
+| Horiz. Test High | 0x28004  |
+| Horiz. Test Low  | 0x28005  |
+| Vert. Test High  | 0x28006  |
+| Vert. Test Low   | 0x28007  |
+
 # USB
 
 Support is only present in New World Macs, despite the presence of strings in the Power Mac G3 Beige ROM. Most Macs support 1.1, with 2.0 support present in G5 Macs. Both it and Firewire follow the Open Host Controller Interface (OHCI) standard.
