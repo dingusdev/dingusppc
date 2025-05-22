@@ -75,6 +75,9 @@ void ScsiHardDisk::process_command() {
     case ScsiCommand::FORMAT_UNIT:
         this->format();
         break;
+    case ScsiCommand::REASSIGN:
+        this->reassign();
+        break;
     case ScsiCommand::READ_6:
         lba = ((cmd[1] & 0x1F) << 16) + (cmd[2] << 8) + cmd[3];
         this->read(lba, cmd[4], 6);
@@ -443,6 +446,18 @@ void ScsiHardDisk::format() {
     TimerManager::get_instance()->add_oneshot_timer(NS_PER_SEC, [this]() {
         this->switch_phase(ScsiPhase::STATUS);
     });
+}
+
+void ScsiHardDisk::reassign() {
+    LOG_F(WARNING, "%s: attempt to reassign blocks on the disk!", this->name.c_str());
+    
+    this->status = ScsiStatus::GOOD;
+    this->sense  = ScsiSense::NO_SENSE;
+    this->asc    = ScsiError::NO_ERROR;
+    this->valid  = false;
+
+    TimerManager::get_instance()->add_oneshot_timer(
+        NS_PER_SEC, [this]() { this->switch_phase(ScsiPhase::STATUS); });
 }
 
 void ScsiHardDisk::read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {

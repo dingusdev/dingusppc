@@ -106,6 +106,7 @@ enum ScsiCommand : uint8_t {
     REQ_SENSE                    = 0x03,
     FORMAT_UNIT                  = 0x04,
     READ_BLK_LIMITS              = 0x05,
+    REASSIGN                     = 0x07,
     READ_6                       = 0x08,
     WRITE_6                      = 0x0A,
     SEEK_6                       = 0x0B,
@@ -230,6 +231,7 @@ protected:
     int         ascq;
     int         sksv;
     int         field;
+    bool        valid;
 
     bool        last_selection_has_atention = false;
     uint8_t     last_selection_message = 0;
