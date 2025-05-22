@@ -112,7 +112,7 @@ void SoundServer::shutdown()
     LOG_F(INFO, "Sound Server shut down.");
 }
 
-long sound_out_callback(cubeb_stream *stream, void *user_data,
+static long sound_out_callback(cubeb_stream* stream, void* user_data,
                         void const *input_buffer, void *output_buffer,
                         long req_frames)
 {
@@ -171,7 +171,6 @@ int SoundServer::open_out_stream(uint32_t sample_rate, DmaOutChannel *dma_ch)
             }
             // Drain the DMA buffer, but don't do anything else.
             int req_size = std::max(dma_ch->get_pull_data_remaining(), 1024);
-            int out_size = 0;
             while (req_size > 0) {
                 uint8_t *chunk;
                 uint32_t chunk_size;
@@ -188,13 +187,14 @@ int SoundServer::open_out_stream(uint32_t sample_rate, DmaOutChannel *dma_ch)
     }
     int res;
     uint32_t latency_frames;
-    cubeb_stream_params params;
+    cubeb_stream_params params = {
+        CUBEB_SAMPLE_S16NE,     //format
+        sample_rate,            //rate
+        2,                      //channels
+        CUBEB_LAYOUT_STEREO,    //layout
+        CUBEB_STREAM_PREF_NONE  //prefs
 
-    params.format = CUBEB_SAMPLE_S16NE;
-    params.rate = sample_rate;
-    params.channels = 2;
-    params.layout = CUBEB_LAYOUT_STEREO;
-    params.prefs = CUBEB_STREAM_PREF_NONE;
+    };
 
     res = cubeb_get_min_latency(impl->cubeb_ctx, &params, &latency_frames);
     if (res != CUBEB_OK) {
