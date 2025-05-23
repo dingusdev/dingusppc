@@ -188,12 +188,11 @@ int SoundServer::open_out_stream(uint32_t sample_rate, DmaOutChannel *dma_ch)
     int res;
     uint32_t latency_frames;
     cubeb_stream_params params = {
-        CUBEB_SAMPLE_S16NE,     //format
-        sample_rate,            //rate
-        2,                      //channels
-        CUBEB_LAYOUT_STEREO,    //layout
-        CUBEB_STREAM_PREF_NONE  //prefs
-
+        .format   = CUBEB_SAMPLE_S16NE,
+        .rate     = sample_rate,
+        .channels = 2,
+        .layout   = CUBEB_LAYOUT_STEREO,
+        .prefs    = CUBEB_STREAM_PREF_NONE
     };
 
     res = cubeb_get_min_latency(impl->cubeb_ctx, &params, &latency_frames);
