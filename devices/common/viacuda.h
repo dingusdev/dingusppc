@@ -24,8 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     Versatile interface adapter (VIA) is an old I/O controller that can be found
     in nearly every Macintosh computer. In the 68k era, VIA was used to control
     various peripheral devices. In a Power Macintosh, its function is limited
-    to the I/O interface with the Cuda MCU. I therefore decided to put VIA
-    emulation code here.
+    to the I/O interface with the Cuda MCU and some basic timer functionality.
 
     Cuda MCU is a multipurpose IC built around a custom version of the Motorola
     MC68HC05 microcontroller. It provides several functions including:
@@ -183,9 +182,6 @@ private:
     uint8_t  via_porta  = 0;
     uint8_t  via_ddrb   = 0;
     uint8_t  via_ddra   = 0;
-    uint8_t  via_t1cl   = 0xFF;
-    uint8_t  via_t1ll   = 0xFF;
-    uint8_t  via_t1lh   = 0xFF;
     uint8_t  via_t2cl   = 0xFF;
     uint8_t  via_sr;
     uint8_t  via_acr    = 0;
@@ -198,8 +194,10 @@ private:
     uint8_t  last_orb = 0; // last value written to the ORB register.
 
     // timer 1 state
-    uint16_t t1_counter;
-    uint32_t t1_timer_id = 0;
+    uint8_t  via_t1ll;          // low-order latch
+    uint8_t  via_t1lh;          // high-order latch
+    uint16_t t1_counter;        // internal counter
+    uint32_t t1_timer_id   = 0;
     uint64_t t1_start_time = 0;
 
     // timer 2 state

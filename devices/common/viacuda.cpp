@@ -204,7 +204,7 @@ void ViaCuda::write(int reg, uint8_t value) {
         LOG_F(9, "VIA_DIRA = 0x%X", value);
         break;
     case VIA_T1CL:
-        this->via_t1cl = value;
+        this->via_t1ll = value; // writes to T1CL are redirected to T1LL
         break;
     case VIA_T1CH:
         if (this->via_acr & 0xC0) {
@@ -218,8 +218,10 @@ void ViaCuda::write(int reg, uint8_t value) {
         // clear T1 flag in IFR
         this->_via_ifr &= ~VIA_IF_T1;
         update_irq();
-        // load initial value into counter 1
-        this->t1_counter = (value << 8) | this->via_t1cl;
+        // load the high-order latch from the current T1CH value
+        this->via_t1lh = value;
+        // load the T1 counter from the corresponding latches
+        this->t1_counter = (this->via_t1lh << 8) | this->via_t1ll;
         // TODO: delay for one phase 2 clock
         // sample current vCPU time and remember it
         this->t1_start_time = TimerManager::get_instance()->current_time_ns();
@@ -227,6 +229,8 @@ void ViaCuda::write(int reg, uint8_t value) {
         this->t1_timer_id = TimerManager::get_instance()->add_oneshot_timer(
             static_cast<uint64_t>(this->via_clk_dur * (this->t1_counter + 3) + 0.5f),
             [this]() {
+                // reload the T1 counter from the corresponding latches
+                this->t1_counter = (this->via_t1lh << 8) | this->via_t1ll;
                 this->t1_timer_id = 0;
                 this->assert_t1_int();
             }
@@ -237,6 +241,9 @@ void ViaCuda::write(int reg, uint8_t value) {
         break;
     case VIA_T1LH:
         this->via_t1lh = value;
+        // writes to T1LH clear T1 interrupt in the Apple VIA cell
+        this->_via_ifr &= ~VIA_IF_T1;
+        update_irq();
         break;
     case VIA_T2CL:
         this->via_t2cl = value;
