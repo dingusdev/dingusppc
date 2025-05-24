@@ -182,7 +182,6 @@ private:
     uint8_t  via_porta  = 0;
     uint8_t  via_ddrb   = 0;
     uint8_t  via_ddra   = 0;
-    uint8_t  via_t2cl   = 0xFF;
     uint8_t  via_sr;
     uint8_t  via_acr    = 0;
     uint8_t  via_pcr    = 0;
@@ -201,7 +200,8 @@ private:
     uint64_t t1_start_time = 0;
 
     // timer 2 state
-    uint16_t t2_counter;
+    uint8_t  via_t2ll;          // low-order latch (write-only)
+    uint16_t t2_counter;        // internal counter
     uint32_t t2_timer_id = 0;
     uint64_t t2_start_time = 0;
 

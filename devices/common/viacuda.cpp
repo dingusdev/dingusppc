@@ -58,7 +58,6 @@ ViaCuda::ViaCuda() {
     // (not prescribed in the 6522 datasheet)
     this->via_t1ll  = 0xFF;
     this->via_t1lh  = 0xFF;
-    this->via_t2cl  = 0xFF;
 
     this->_via_ifr  = 0; // all flags cleared
     this->_via_ier  = 0; // all interrupts disabled
@@ -246,12 +245,12 @@ void ViaCuda::write(int reg, uint8_t value) {
         update_irq();
         break;
     case VIA_T2CL:
-        this->via_t2cl = value;
+        this->via_t2ll = value; // writes to T2CL are redirected to T2LL
         break;
     case VIA_T2CH:
-        if (this->via_acr & 0x20) {
-            ABORT_F("VIA T2 pulse count mode not supported!");
-        }
+        if (this->via_acr & 0x20)
+            ABORT_F("VIA T2 pulse counting mode not supported!");
+
         // cancel active T2 timer task
         if (this->t2_timer_id) {
             TimerManager::get_instance()->cancel_timer(this->t2_timer_id);
@@ -261,7 +260,7 @@ void ViaCuda::write(int reg, uint8_t value) {
         this->_via_ifr &= ~VIA_IF_T2;
         update_irq();
         // load initial value into counter 2
-        this->t2_counter = (value << 8) | this->via_t2cl;
+        this->t2_counter = (value << 8) | this->via_t2ll;
         // TODO: delay for one phase 2 clock
         // sample current vCPU time and remember it
         this->t2_start_time = TimerManager::get_instance()->current_time_ns();
