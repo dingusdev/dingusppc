@@ -353,13 +353,25 @@ void ScsiHardDisk::mode_sense_6() {
         // default values taken from Empire 540/1080S manual
         WRITE_WORD_BE_U(&p_buf[ 2],   6); // tracks per defect zone
         WRITE_WORD_BE_U(&p_buf[ 4],   1); // alternate sectors per zone
-        WRITE_WORD_BE_U(&p_buf[10],  92); // sectors per track in the outermost zone
+        WRITE_WORD_BE_U(&p_buf[10],  64); // sectors per track in the outermost zone
         WRITE_WORD_BE_U(&p_buf[12], 512); // bytes per sector
         WRITE_WORD_BE_U(&p_buf[14],   1); // interleave factor
         WRITE_WORD_BE_U(&p_buf[16],  19); // track skew factor
         WRITE_WORD_BE_U(&p_buf[18],  25); // cylinder skew factor
         p_buf[20] = 0x80; // SSEC=1, HSEC=0, RMB=0, SURF=0, INS=0
         p_buf += page_size;
+        got_page = true;
+    }
+
+    if (page_code == 4 || page_code == 0x3f) { // Rigid Disk Drive Geometry Page
+        page_size = 24;
+        p_buf[0]  =  4; // page code
+        p_buf[1]  = page_size - 2; // page length
+        std::memset(&p_buf[2], 0, 22);
+        int num_cylinders = this->total_blocks / 64 / 4;
+        p_buf[2] = (num_cylinders >> 16) & 0xFF;
+        WRITE_WORD_BE_U(&p_buf[3], num_cylinders & 0xFFFFU); // number of cylinders
+        p_buf[5] = 4; // number of heads
         got_page = true;
     }
 
