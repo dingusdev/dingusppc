@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -206,9 +206,6 @@ void ViaCuda::write(int reg, uint8_t value) {
         this->via_t1ll = value; // writes to T1CL are redirected to T1LL
         break;
     case VIA_T1CH:
-        if (this->via_acr & 0xC0) {
-            ABORT_F("Unsupported VIA T1 mode, ACR=0x%X", this->via_acr);
-        }
         // cancel active T1 timer task
         if (this->t1_timer_id) {
             TimerManager::get_instance()->cancel_timer(this->t1_timer_id);
@@ -221,19 +218,7 @@ void ViaCuda::write(int reg, uint8_t value) {
         this->via_t1lh = value;
         // load the T1 counter from the corresponding latches
         this->t1_counter = (this->via_t1lh << 8) | this->via_t1ll;
-        // TODO: delay for one phase 2 clock
-        // sample current vCPU time and remember it
-        this->t1_start_time = TimerManager::get_instance()->current_time_ns();
-        // set up timout timer for T1
-        this->t1_timer_id = TimerManager::get_instance()->add_oneshot_timer(
-            static_cast<uint64_t>(this->via_clk_dur * (this->t1_counter + 3) + 0.5f),
-            [this]() {
-                // reload the T1 counter from the corresponding latches
-                this->t1_counter = (this->via_t1lh << 8) | this->via_t1ll;
-                this->t1_timer_id = 0;
-                this->assert_t1_int();
-            }
-        );
+        this->activate_t1();
         break;
     case VIA_T1LL:
         this->via_t1ll = value;
@@ -248,9 +233,6 @@ void ViaCuda::write(int reg, uint8_t value) {
         this->via_t2ll = value; // writes to T2CL are redirected to T2LL
         break;
     case VIA_T2CH:
-        if (this->via_acr & 0x20)
-            ABORT_F("VIA T2 pulse counting mode not supported!");
-
         // cancel active T2 timer task
         if (this->t2_timer_id) {
             TimerManager::get_instance()->cancel_timer(this->t2_timer_id);
@@ -279,7 +261,7 @@ void ViaCuda::write(int reg, uint8_t value) {
         update_irq();
         break;
     case VIA_ACR:
-        this->via_acr = value;
+        this->via_acr = value & VIA_ACR_IMPL_BITS;
         LOG_F(9, "VIA_ACR = 0x%X", value);
         break;
     case VIA_PCR:
@@ -309,6 +291,24 @@ uint16_t ViaCuda::calc_counter_val(const uint16_t last_val, const uint64_t& last
     uint64_t cur_time = TimerManager::get_instance()->current_time_ns();
     uint32_t diff = uint32_t((cur_time - last_time) / this->via_clk_dur);
     return last_val - diff;
+}
+
+void ViaCuda::activate_t1() {
+    // TODO: delay for one phase 2 clock
+    // sample current vCPU time and remember it
+    this->t1_start_time = TimerManager::get_instance()->current_time_ns();
+    // set up timout timer for T1
+    this->t1_timer_id = TimerManager::get_instance()->add_oneshot_timer(
+        static_cast<uint64_t>(this->via_clk_dur * (this->t1_counter + 3) + 0.5f),
+        [this]() {
+            // reload the T1 counter from the corresponding latches
+            this->t1_counter = (this->via_t1lh << 8) | this->via_t1ll;
+            this->t1_timer_id = 0;
+            this->assert_t1_int();
+            if (this->via_acr & 0x40)
+                this->activate_t1();
+        }
+    );
 }
 
 void ViaCuda::print_enabled_ints() {

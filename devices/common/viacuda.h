@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -91,6 +91,9 @@ enum class ViaLine {
     CB1,
     CB2
 };
+
+// for masking unimplemented bits in the Apple VIA cell.
+constexpr uint8_t VIA_ACR_IMPL_BITS = 0x5C;
 
 /** Cuda communication signals (active low -> 0 - true, 1 - false). */
 enum {
@@ -251,6 +254,7 @@ private:
     void assert_t2_int();
     void schedule_sr_int(uint64_t timeout_ns);
     uint16_t calc_counter_val(const uint16_t last_val, const uint64_t& last_time);
+    void activate_t1();
 
     // CUDA methods
     void cuda_init();
