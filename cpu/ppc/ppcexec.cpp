@@ -66,6 +66,10 @@ Po_Cause power_off_reason = po_enter_debugger;
 
 SetPRS ppc_state;
 
+uint32_t pcp;
+#    define ATPCP
+#    define INCPC(amount) pc_real += (amount)
+
 uint32_t ppc_next_instruction_address;    // Used for branching, setting up the NIA
 
 unsigned exec_flags; // execution control flags
