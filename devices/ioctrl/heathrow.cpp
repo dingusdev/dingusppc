@@ -424,8 +424,6 @@ void HeathrowIC::feature_control(uint32_t value)
     }
 }
 
-#define INT_TO_IRQ_ID(intx) (1ULL << intx)
-
 uint64_t HeathrowIC::register_dev_int(IntSrc src_id)
 {
     switch (src_id) {

@@ -82,6 +82,8 @@ enum {
 #define MACIO_INT_CLR    0x80UL       // clears bits in the interrupt events registers
 #define MACIO_INT_MODE   0x80000000UL // interrupt mode: 0 - native, 1 - 68k-style
 
+#define INT_TO_IRQ_ID(intx) (1ULL << intx)
+
 /** Offsets to common MacIO interrupt registers. */
 enum {
     MIO_INT_EVENTS2 = 0x10,

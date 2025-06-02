@@ -383,8 +383,6 @@ void OHare::feature_control(const uint32_t value)
     }
 }
 
-#define INT_TO_IRQ_ID(intx) (1 << intx)
-
 uint64_t OHare::register_dev_int(IntSrc src_id)
 {
     switch (src_id) {

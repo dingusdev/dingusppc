@@ -468,8 +468,6 @@ void GrandCentral::attach_iodevice(int dev_num, IobusDevice* dev_obj)
     }
 }
 
-#define INT_TO_IRQ_ID(intx) (1 << intx)
-
 uint64_t GrandCentral::register_dev_int(IntSrc src_id) {
     switch (src_id) {
     case IntSrc::SCSI_CURIO : return INT_TO_IRQ_ID(0x0C);
