@@ -69,6 +69,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 #include <memory>
+#include <string>
 
 /** PCI device IDs for various MacIO ASICs. */
 enum {
@@ -138,6 +139,48 @@ public:
 protected:
     NVram* nvram;
     NvramAddrHiDev* addr_hi;
+};
+
+/** This class provides common building blocks for various MacIO ASICs. */
+class MacIoBase : public PCIDevice, public InterruptCtrl {
+public:
+    MacIoBase(std::string name, uint16_t dev_id, uint8_t rev=1);
+    ~MacIoBase() = default;
+
+    uint64_t register_dma_int(IntSrc src_id) override;
+    void ack_int(uint64_t irq_id, uint8_t irq_line_state) override;
+    void ack_dma_int(uint64_t irq_id, uint8_t irq_line_state) override;
+
+protected:
+    void notify_bar_change(int bar_num);
+    void ack_int_common(uint64_t irq_id, uint8_t irq_line_state);
+    void signal_cpu_int();
+    void clear_cpu_int();
+
+    // PCI device state
+    uint32_t    iomem_size = 0;
+    uint32_t    base_addr  = 0;
+
+    // interrupt state
+    uint64_t int_mask      = 0;
+    bool     cpu_int_latch = false;
+    std::atomic<uint64_t> int_levels{0};
+    std::atomic<uint64_t> int_events{0};
+
+    // Subdevice objects
+    ViaCuda*            viacuda;   // VIA cell with Cuda MCU attached to it
+    Swim3::Swim3Ctrl*   swim3;     // floppy disk controller
+    MacioSndCodec*      snd_codec; // audio codec instance
+    EsccController*     escc;      // ESCC serial controller
+
+    // DMA channels
+    std::unique_ptr<DMAChannel>     floppy_dma;
+    std::unique_ptr<DMAChannel>     snd_out_dma;
+    std::unique_ptr<DMAChannel>     snd_in_dma;
+    std::unique_ptr<DMAChannel>     escc_a_tx_dma;
+    std::unique_ptr<DMAChannel>     escc_a_rx_dma;
+    std::unique_ptr<DMAChannel>     escc_b_tx_dma;
+    std::unique_ptr<DMAChannel>     escc_b_rx_dma;
 };
 
 class GrandCentral : public PCIDevice, public InterruptCtrl {
