@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -42,7 +42,7 @@ static const std::vector<PciIrqMap> pci_bridge_irq_map = {
     {"pci_J11"     , DEV_FUN(0x02,0), IntSrc::PCI_J11 },
     {"pci_J10"     , DEV_FUN(0x03,0), IntSrc::PCI_J10 },
     {"pci_J9"      , DEV_FUN(0x04,0), IntSrc::PCI_J9  },
-    {nullptr       , DEV_FUN(0x05,0)                  }, // Heathrow
+    {nullptr       , DEV_FUN(0x05,0)                  }, // Paddington
     {"pci_USB"     , DEV_FUN(0x06,0), IntSrc::USB     },
 };
 
@@ -79,7 +79,7 @@ int initialize_yosemite(std::string& id)
         dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("CmdAta")));
 
     sec_bridge->pci_register_device(DEV_FUN(5,0),
-        dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("Heathrow")));
+        dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("Paddington")));
 
     // allocate ROM region
     if (!grackle_obj->add_rom_region(0xFFF00000, 0x100000)) {
@@ -130,7 +130,7 @@ static std::vector<std::string> yosemite_devices = {
     "Dec21154Yosemite",
     "CmdAta",
     "BurgundySnd",
-    "Heathrow",
+    "Paddington",
     "AtaHardDisk",
     "AtapiCdrom",
 };
