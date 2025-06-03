@@ -548,4 +548,4 @@ static const DeviceDescription Heathrow_Descriptor = {
     HWCompType::MMIO_DEV | HWCompType::PCI_DEV | HWCompType::INT_CTRL
 };
 
-REGISTER_DEVICE(Heathrow, Heathrow_Descriptor);
+REGISTER_DEVICE(heathrow, Heathrow_Descriptor);

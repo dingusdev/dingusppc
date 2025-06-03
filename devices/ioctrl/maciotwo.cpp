@@ -436,5 +436,5 @@ static const DeviceDescription Paddington_Descriptor = {
 };
 
 REGISTER_DEVICE(ohare, OHare_Descriptor);
-REGISTER_DEVICE(heathrow, Heathrow_Descriptor);
+REGISTER_DEVICE(Heathrow, Heathrow_Descriptor);
 REGISTER_DEVICE(Paddington, Paddington_Descriptor);

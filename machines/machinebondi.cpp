@@ -59,7 +59,7 @@ int initialize_bondi(std::string& id) {
     MPC106* grackle_obj = dynamic_cast<MPC106*>(gMachineObj->get_comp_by_name("Grackle"));
     grackle_obj->set_irq_map(grackle_irq_map);
 
-    HeathrowIC* heathrow = dynamic_cast<HeathrowIC*>(gMachineObj->get_comp_by_name("Heathrow"));
+    MacIoTwo* heathrow = dynamic_cast<MacIoTwo*>(gMachineObj->get_comp_by_name("Heathrow"));
     heathrow->set_media_bay_id(0x30);
 
     grackle_obj->pci_register_device(DEV_FUN(0x10,0), heathrow);
