@@ -378,30 +378,6 @@ private:
     uint16_t unsupported_dma_channel_write = 0;
 };
 
-/**
-    Heathrow ASIC emulation
-
-    Heathrow is a MIO-compliant ASIC used in the Gossamer architecture. It's
-    hard-wired to PCI device number 16. Its I/O memory (512Kb) will be configured
-    by the Macintosh firmware to live at 0xF3000000.
-
-    Emulated subdevices and their offsets within Heathrow I/O space:
-    ----------------------------------------------------------------
-    mesh(SCSI)     register space: 0x00010000, DMA space: 0x00008000
-    bmac(ethernet) register space: 0x00011000, DMA space: 0x00008200, 0x00008300
-    escc(compat)   register space: 0x00012000, size: 0x00001000
-                        DMA space: 0x00008400, size: 0x00000400
-    escc(MacRISC)  register space: 0x00013000, size: 0x00001000
-                        DMA space: 0x00008400, size: 0x00000400
-    escc:ch-a      register space: 0x00013020, DMA space: 0x00008400, 0x00008500
-    escc:ch-b      register space: 0x00013000, DMA space: 0x00008600, 0x00008700
-    davbus(sound)  register space: 0x00014000, DMA space: 0x00008800, 0x00008900
-    SWIM3(floppy)  register space: 0x00015000, DMA space: 0x00008100
-    NVRAM          register space: 0x00060000, size: 0x00020000
-    IDE            register space: 0x00020000, DMA space: 0x00008b00
-    VIA-CUDA       register space: 0x00016000, size: 0x00002000
-*/
-
 /** O'Hare/Heathrow specific registers. */
 enum {
     MIO_OHARE_ID        = 0x34, // IDs register
@@ -471,84 +447,6 @@ enum : uint8_t {
     MIO_OHARE_DMA_AUDIO_IN      = 9,
     MIO_OHARE_DMA_IDE0          = 0xB,
     MIO_OHARE_DMA_IDE1          = 0xC
-};
-
-class HeathrowIC : public PCIDevice, public InterruptCtrl {
-public:
-    HeathrowIC();
-    ~HeathrowIC() = default;
-
-    static std::unique_ptr<HWComponent> create() {
-        return std::unique_ptr<HeathrowIC>(new HeathrowIC());
-    }
-
-    void set_media_bay_id(uint8_t id);
-
-    // MMIO device methods
-    uint32_t read(uint32_t rgn_start, uint32_t offset, int size) override;
-    void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size) override;
-
-    // InterruptCtrl methods
-    uint64_t register_dev_int(IntSrc src_id) override;
-    uint64_t register_dma_int(IntSrc src_id) override;
-    void ack_int(uint64_t irq_id, uint8_t irq_line_state) override;
-    void ack_dma_int(uint64_t irq_id, uint8_t irq_line_state) override;
-
-protected:
-    uint32_t dma_read(uint32_t offset, int size);
-    void dma_write(uint32_t offset, uint32_t value, int size);
-
-    uint32_t mio_ctrl_read(uint32_t offset, int size);
-    void mio_ctrl_write(uint32_t offset, uint32_t value, int size);
-
-    void notify_bar_change(int bar_num);
-    void ack_int_common(uint64_t irq_id, uint8_t irq_line_state);
-
-    void feature_control(uint32_t value);
-
-    void signal_cpu_int();
-    void clear_cpu_int();
-
-private:
-    uint32_t base_addr     = 0;
-
-    // interrupt state
-    uint64_t int_mask      = 0;
-    std::atomic<uint64_t> int_levels{0};
-    std::atomic<uint64_t> int_events{0};
-    bool     cpu_int_latch = false;
-
-    uint32_t feat_ctrl     = 0;    // features control register
-    uint32_t aux_ctrl      = 0;    // aux features control register
-
-    uint8_t  cpu_id = 0xE0; // CPUID field (LSB of the MIO_HEAT_ID)
-    uint8_t  mb_id  = 0x70; // Media Bay ID (bits 15:8 of the MIO_HEAT_ID)
-    uint8_t  mon_id = 0x10; // Monitor ID (bits 23:16 of the MIO_HEAT_ID)
-    uint8_t  fp_id  = 0x70; // Flat panel ID (MSB of the MIO_HEAT_ID)
-    uint8_t  emmo_pin;      // factory tester status, active low
-
-    // subdevice objects
-    MacioSndCodec*      snd_codec; // audio codec instance
-
-    NVram*              nvram;    // NVRAM
-    ViaCuda*            viacuda;  // VIA cell with Cuda MCU attached to it
-    MeshController*     mesh;     // MESH SCSI cell instance
-    EsccController*     escc;     // ESCC serial controller
-    IdeChannel*         ide_0;    // Internal ATA
-    IdeChannel*         ide_1;    // Media Bay ATA
-    Swim3::Swim3Ctrl*   swim3;    // floppy disk controller
-    BigMac*             bmac;     // Ethernet MAC cell
-
-    // DMA channels
-    std::unique_ptr<DMAChannel>     mesh_dma;
-    std::unique_ptr<DMAChannel>     floppy_dma;
-    std::unique_ptr<DMAChannel>     enet_xmit_dma;
-    std::unique_ptr<DMAChannel>     enet_rcv_dma;
-    std::unique_ptr<DMAChannel>     escc_b_rcv_dma;
-    std::unique_ptr<DMAChannel>     snd_out_dma;
-
-    uint16_t unsupported_dma_channel_read = 0;
-    uint16_t unsupported_dma_channel_write = 0;
 };
 
 #endif /* MACIO_H */
