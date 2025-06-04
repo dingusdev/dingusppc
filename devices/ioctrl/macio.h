@@ -87,20 +87,14 @@ enum {
 
 /** Offsets to common MacIO interrupt registers. */
 enum {
-    MIO_INT_EVENTS2 = 0x10,
-    MIO_INT_MASK2   = 0x14,
-    MIO_INT_CLEAR2  = 0x18,
-    MIO_INT_LEVELS2 = 0x1C,
+    MIO_INT_EVENTS2 = 0x10, // Heathrow/Paddington only
+    MIO_INT_MASK2   = 0x14, // Heathrow/Paddington only
+    MIO_INT_CLEAR2  = 0x18, // Heathrow/Paddington only
+    MIO_INT_LEVELS2 = 0x1C, // Heathrow/Paddington only
     MIO_INT_EVENTS1 = 0x20,
     MIO_INT_MASK1   = 0x24,
     MIO_INT_CLEAR1  = 0x28,
     MIO_INT_LEVELS1 = 0x2C
-};
-
-class IobusDevice {
-public:
-    virtual uint16_t iodev_read(uint32_t address) = 0;
-    virtual void iodev_write(uint32_t address, uint16_t value) = 0;
 };
 
 /** GrandCentral DBDMA channels. */
@@ -116,6 +110,12 @@ enum : uint8_t {
     MIO_GC_DMA_AUDIO_OUT     = 8,
     MIO_GC_DMA_AUDIO_IN      = 9,
     MIO_GC_DMA_SCSI_MESH     = 0xA,
+};
+
+class IobusDevice {
+public:
+    virtual uint16_t iodev_read(uint32_t address) = 0;
+    virtual void iodev_write(uint32_t address, uint16_t value) = 0;
 };
 
 class NvramAddrHiDev: public IobusDevice {
@@ -251,71 +251,6 @@ private:
     uint16_t unsupported_dma_channel_write = 0;
 };
 
-/** Implementation class for O'Hare/Heathrow/Paddington devices. */
-class MacIoTwo : public MacIoBase {
-public:
-    MacIoTwo(std::string name, uint16_t dev_id);
-    ~MacIoTwo() = default;
-
-    static std::unique_ptr<HWComponent> create_ohare() {
-        return std::unique_ptr<MacIoTwo>(new MacIoTwo("ohare", MIO_DEV_ID_OHARE));
-    }
-
-    static std::unique_ptr<HWComponent> create_heathrow() {
-        return std::unique_ptr<MacIoTwo>(new MacIoTwo("heathrow", MIO_DEV_ID_HEATHROW));
-    }
-
-    static std::unique_ptr<HWComponent> create_paddington() {
-        return std::unique_ptr<MacIoTwo>(new MacIoTwo("paddington", MIO_DEV_ID_PADDINGTON));
-    }
-
-    void set_media_bay_id(uint8_t id) {
-        this->mb_id = id;
-    }
-
-    // MMIO device methods
-    uint32_t read(uint32_t rgn_start, uint32_t offset, int size) override;
-    void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size) override;
-
-    // InterruptCtrl methods
-    uint64_t register_dev_int(IntSrc src_id) override;
-    uint64_t register_dma_int(IntSrc src_id) override;
-
-protected:
-    uint32_t dma_read(uint32_t offset, int size);
-    void dma_write(uint32_t offset, uint32_t value, int size);
-
-    uint32_t mio_ctrl_read(uint32_t offset, int size);
-    void mio_ctrl_write(uint32_t offset, uint32_t value, int size);
-
-    void feature_control(uint32_t value);
-
-private:
-    uint32_t feat_ctrl     = 0;    // features control register
-    uint32_t aux_ctrl      = 0;    // aux features control register
-
-    uint8_t  cpu_id = 0xE0; // CPUID field (LSB of the MIO_HEAT_ID)
-    uint8_t  mb_id  = 0x70; // Media Bay ID (bits 15:8 of the MIO_HEAT_ID)
-    uint8_t  mon_id = 0x10; // Monitor ID (bits 23:16 of the MIO_HEAT_ID)
-    uint8_t  fp_id  = 0x70; // Flat panel ID (MSB of the MIO_HEAT_ID)
-    uint8_t  emmo   = 0x01; // factory tester status, active low
-
-    // Subdevice object pointers
-    NVram*              nvram;    // NVRAM
-    MeshController*     mesh;     // MESH SCSI cell instance
-    IdeChannel*         ide_0;    // Internal ATA
-    IdeChannel*         ide_1;    // Media Bay ATA
-    BigMac*             bmac;     // Ethernet MAC cell
-
-    // DMA channels
-    std::unique_ptr<DMAChannel>     mesh_dma;
-    std::unique_ptr<DMAChannel>     enet_xmit_dma;
-    std::unique_ptr<DMAChannel>     enet_rcv_dma;
-
-    uint16_t unsupported_dma_channel_read = 0;
-    uint16_t unsupported_dma_channel_write = 0;
-};
-
 /** O'Hare/Heathrow specific registers. */
 enum {
     MIO_OHARE_ID        = 0x34, // IDs register
@@ -385,6 +320,71 @@ enum : uint8_t {
     MIO_OHARE_DMA_AUDIO_IN      = 9,
     MIO_OHARE_DMA_IDE0          = 0xB,
     MIO_OHARE_DMA_IDE1          = 0xC
+};
+
+/** Implementation class for O'Hare/Heathrow/Paddington devices. */
+class MacIoTwo : public MacIoBase {
+public:
+    MacIoTwo(std::string name, uint16_t dev_id);
+    ~MacIoTwo() = default;
+
+    static std::unique_ptr<HWComponent> create_ohare() {
+        return std::unique_ptr<MacIoTwo>(new MacIoTwo("ohare", MIO_DEV_ID_OHARE));
+    }
+
+    static std::unique_ptr<HWComponent> create_heathrow() {
+        return std::unique_ptr<MacIoTwo>(new MacIoTwo("heathrow", MIO_DEV_ID_HEATHROW));
+    }
+
+    static std::unique_ptr<HWComponent> create_paddington() {
+        return std::unique_ptr<MacIoTwo>(new MacIoTwo("paddington", MIO_DEV_ID_PADDINGTON));
+    }
+
+    void set_media_bay_id(uint8_t id) {
+        this->mb_id = id;
+    }
+
+    // MMIO device methods
+    uint32_t read(uint32_t rgn_start, uint32_t offset, int size) override;
+    void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size) override;
+
+    // InterruptCtrl methods
+    uint64_t register_dev_int(IntSrc src_id) override;
+    uint64_t register_dma_int(IntSrc src_id) override;
+
+protected:
+    uint32_t dma_read(uint32_t offset, int size);
+    void dma_write(uint32_t offset, uint32_t value, int size);
+
+    uint32_t mio_ctrl_read(uint32_t offset, int size);
+    void mio_ctrl_write(uint32_t offset, uint32_t value, int size);
+
+    void feature_control(uint32_t value);
+
+private:
+    uint32_t feat_ctrl     = 0;    // features control register
+    uint32_t aux_ctrl      = 0;    // aux features control register
+
+    uint8_t  cpu_id = 0xE0; // CPUID field (LSB of the MIO_HEAT_ID)
+    uint8_t  mb_id  = 0x70; // Media Bay ID (bits 15:8 of the MIO_HEAT_ID)
+    uint8_t  mon_id = 0x10; // Monitor ID (bits 23:16 of the MIO_HEAT_ID)
+    uint8_t  fp_id  = 0x70; // Flat panel ID (MSB of the MIO_HEAT_ID)
+    uint8_t  emmo   = 0x01; // factory tester status, active low
+
+    // Subdevice object pointers
+    NVram*              nvram;    // NVRAM
+    MeshController*     mesh;     // MESH SCSI cell instance
+    IdeChannel*         ide_0;    // Internal ATA
+    IdeChannel*         ide_1;    // Media Bay ATA
+    BigMac*             bmac;     // Ethernet MAC cell
+
+    // DMA channels
+    std::unique_ptr<DMAChannel>     mesh_dma;
+    std::unique_ptr<DMAChannel>     enet_xmit_dma;
+    std::unique_ptr<DMAChannel>     enet_rcv_dma;
+
+    uint16_t unsupported_dma_channel_read = 0;
+    uint16_t unsupported_dma_channel_write = 0;
 };
 
 #endif /* MACIO_H */
