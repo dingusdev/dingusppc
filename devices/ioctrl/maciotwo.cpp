@@ -435,6 +435,6 @@ static const DeviceDescription Paddington_Descriptor = {
     HWCompType::MMIO_DEV | HWCompType::PCI_DEV | HWCompType::INT_CTRL
 };
 
-REGISTER_DEVICE(ohare, OHare_Descriptor);
+REGISTER_DEVICE(OHare, OHare_Descriptor);
 REGISTER_DEVICE(Heathrow, Heathrow_Descriptor);
 REGISTER_DEVICE(Paddington, Paddington_Descriptor);
