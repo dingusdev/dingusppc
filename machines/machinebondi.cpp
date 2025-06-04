@@ -59,10 +59,10 @@ int initialize_bondi(std::string& id) {
     MPC106* grackle_obj = dynamic_cast<MPC106*>(gMachineObj->get_comp_by_name("Grackle"));
     grackle_obj->set_irq_map(grackle_irq_map);
 
-    MacIoTwo* heathrow = dynamic_cast<MacIoTwo*>(gMachineObj->get_comp_by_name("Heathrow"));
-    heathrow->set_media_bay_id(0x30);
+    MacIoTwo* mio_obj = dynamic_cast<MacIoTwo*>(gMachineObj->get_comp_by_name("Paddington"));
+    mio_obj->set_media_bay_id(0x30);
 
-    grackle_obj->pci_register_device(DEV_FUN(0x10,0), heathrow);
+    grackle_obj->pci_register_device(DEV_FUN(0x10,0), mio_obj);
 
     // allocate ROM region
     if (!grackle_obj->add_rom_region(0xFFF00000, 0x100000)) {
@@ -103,7 +103,7 @@ static const PropMap bondi_settings = {
 };
 
 static std::vector<std::string> bondi_devices = {
-    "Grackle", "BurgundySnd", "Heathrow", "AtaHardDisk", "AtapiCdrom"};
+    "Grackle", "BurgundySnd", "Paddington", "AtaHardDisk", "AtapiCdrom"};
 
 static const MachineDescription bondi_descriptor = {
     .name        = "imacg3",
