@@ -34,7 +34,9 @@
 #include <atomic>
 #include <cctype>
 #include <chrono>
+#include <cinttypes>
 #include <cstdarg>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -579,15 +581,18 @@ namespace loguru
 
 	Text errno_as_text()
 	{
-		char buff[256];
 	#if defined(__GLIBC__) && defined(_GNU_SOURCE)
 		// GNU Version
+        char buff[256];
 		return Text(STRDUP(strerror_r(errno, buff, sizeof(buff))));
-	#elif defined(__APPLE__) || _POSIX_C_SOURCE >= 200112L
+#    elif defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) ||  \
+        (defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 200112L)
 		// XSI Version
+        char buff[256];
 		strerror_r(errno, buff, sizeof(buff));
 		return Text(strdup(buff));
-	#elif defined(_WIN32)
+#    elif defined(_WIN32)
+        char buff[256];
 		strerror_s(buff, sizeof(buff), errno);
 		return Text(STRDUP(buff));
 	#else
@@ -1081,11 +1086,17 @@ namespace loguru
 			} else {
 				buffer[0] = 0;
 			}
+		#elif defined(__FreeBSD__) || defined(__OpenBSD__)
+			pthread_get_name_np(pthread_self(), buffer, length);
 		#elif LOGURU_PTHREADS
 			// Ask the OS about the thread name.
 			// This is what we *want* to do on all platforms, but
 			// only some platforms support it (currently).
-			pthread_getname_np(pthread_self(), buffer, length);
+			#if defined(__FreeBSD__) || defined(__OpenBSD__)
+				pthread_get_name_np(pthread_self(), buffer, length);
+			#else
+				pthread_getname_np(pthread_self(), buffer, length);
+			#endif
 		#elif LOGURU_WINTHREADS
 			snprintf(buffer, static_cast<size_t>(length), "%s", thread_name_buffer());
 		#else
@@ -1105,8 +1116,14 @@ namespace loguru
 			#elif defined(__FreeBSD__)
 				long thread_id;
 				(void)thr_self(&thread_id);
+			#elif defined(__OpenBSD__)
+				pid_t thread_id = getthrid();
 			#elif LOGURU_PTHREADS
-				uint64_t thread_id = (uint64_t)pthread_self();
+				#ifdef __OpenBSD__
+					uintptr_t thread_id = reinterpret_cast<uintptr_t>(pthread_self());
+				#else
+					uint64_t thread_id = static_cast<uint64_t>(pthread_self());
+				#endif
 			#else
 				// This ID does not correllate to anything we can get from the OS,
 				// so this is the worst way to get the ID.
@@ -1114,9 +1131,15 @@ namespace loguru
 			#endif
 
 			if (right_align_hex_id) {
-				snprintf(buffer, static_cast<size_t>(length), "%*X", static_cast<int>(length - 1), static_cast<unsigned>(thread_id));
+                    snprintf(
+                        buffer,
+                        static_cast<size_t>(length),
+                        "%*" PRIX64,
+                        static_cast<int>(length - 1),
+                        static_cast<uint64_t>(thread_id));
 			} else {
-				snprintf(buffer, static_cast<size_t>(length), "%X", static_cast<unsigned>(thread_id));
+                snprintf(
+                    buffer, static_cast<size_t>(length), "%" PRIX64, static_cast<uint64_t>(thread_id));
 			}
 		}
 	}
