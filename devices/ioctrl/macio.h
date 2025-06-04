@@ -316,68 +316,6 @@ private:
     uint16_t unsupported_dma_channel_write = 0;
 };
 
-class OHare : public PCIDevice, public InterruptCtrl {
-public:
-    OHare();
-    ~OHare() = default;
-
-    static std::unique_ptr<HWComponent> create() {
-        return std::unique_ptr<OHare>(new OHare());
-    }
-
-    // MMIO device methods
-    uint32_t read(uint32_t rgn_start, uint32_t offset, int size) override;
-    void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size) override;
-
-    // InterruptCtrl methods
-    uint64_t register_dev_int(IntSrc src_id) override;
-    uint64_t register_dma_int(IntSrc src_id) override;
-    void ack_int(uint64_t irq_id, uint8_t irq_line_state) override;
-    void ack_dma_int(uint64_t irq_id, uint8_t irq_line_state) override;
-
-protected:
-    void notify_bar_change(int bar_num);
-    void ack_int_common(uint64_t irq_id, uint8_t irq_line_state);
-    uint32_t mio_ctrl_read(uint32_t offset, int size);
-    uint32_t mio_ctrl_read_aligned(uint32_t offset);
-    void mio_ctrl_write(uint32_t offset, uint32_t value, int size);
-    uint32_t dma_read(uint32_t offset, int size);
-    void dma_write(uint32_t offset, uint32_t value, int size);
-
-    void feature_control(const uint32_t value);
-
-    void signal_cpu_int();
-    void clear_cpu_int();
-
-private:
-    uint32_t    base_addr = 0;
-
-    // interrupt state
-    uint32_t    int_mask      = 0;
-    std::atomic<uint32_t>    int_levels{0};
-    std::atomic<uint32_t>    int_events{0};
-    bool        cpu_int_latch = false;
-    uint32_t    feat_ctrl     = 0;    // features control register
-
-    // subdevice objects
-    MacioSndCodec*      snd_codec; // audio codec instance
-
-    NVram*              nvram;    // NVRAM
-    ViaCuda*            viacuda;  // VIA cell with Cuda MCU attached to it
-    MeshController*     mesh;     // MESH SCSI cell instance
-    EsccController*     escc;     // ESCC serial controller
-    IdeChannel*         ide_0;    // Internal ATA
-    Swim3::Swim3Ctrl*   swim3;    // floppy disk controller
-
-    // DMA channels
-    std::unique_ptr<DMAChannel>     mesh_dma;
-    std::unique_ptr<DMAChannel>     floppy_dma;
-    std::unique_ptr<DMAChannel>     snd_out_dma;
-
-    uint16_t unsupported_dma_channel_read = 0;
-    uint16_t unsupported_dma_channel_write = 0;
-};
-
 /** O'Hare/Heathrow specific registers. */
 enum {
     MIO_OHARE_ID        = 0x34, // IDs register
