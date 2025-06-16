@@ -782,7 +782,7 @@ uint8_t *mmu_translate_imem(uint32_t vaddr, uint32_t *paddr)
 static void tlb_flush_primary_entry(std::array<TLBEntry, TLB_SIZE> &tlb1, uint32_t tag)
 {
     TLBEntry *tlb_entry = &tlb1[(tag >> PPC_PAGE_SIZE_BITS) & tlb_size_mask];
-    if (tlb_entry->tag == tag) {
+    if (tlb_entry->tag != TLB_INVALID_TAG && (tlb_entry->tag & TLB_VPS_MASK) == tag) {
         tlb_entry->tag = TLB_INVALID_TAG;
         //LOG_F(INFO, "Invalidated primary TLB entry at 0x%X", tag);
     }
@@ -792,7 +792,7 @@ static void tlb_flush_secondary_entry(std::array<TLBEntry, TLB_SIZE*TLB2_WAYS> &
 {
     TLBEntry *tlb_entry = &tlb2[((tag >> PPC_PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
     for (int i = 0; i < TLB2_WAYS; i++) {
-        if (tlb_entry[i].tag == tag) {
+        if (tlb_entry->tag != TLB_INVALID_TAG && (tlb_entry->tag & TLB_VPS_MASK) == tag) {
             tlb_entry[i].tag = TLB_INVALID_TAG;
             //LOG_F(INFO, "Invalidated secondary TLB entry at 0x%X", tag);
         }
@@ -801,7 +801,7 @@ static void tlb_flush_secondary_entry(std::array<TLBEntry, TLB_SIZE*TLB2_WAYS> &
 
 void tlb_flush_entry(uint32_t ea)
 {
-    const uint32_t tag = ea & 0x0FFFF000UL;
+    const uint32_t tag = ea & TLB_VPS_MASK;
     tlb_flush_primary_entry(itlb1_mode1, tag);
     tlb_flush_secondary_entry(itlb2_mode1, tag);
     tlb_flush_primary_entry(itlb1_mode2, tag);

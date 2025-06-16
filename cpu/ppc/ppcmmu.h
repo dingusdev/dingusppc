@@ -87,6 +87,7 @@ constexpr uint32_t PPC_PAGE_MASK      = ~(PPC_PAGE_SIZE - 1);
 constexpr uint32_t TLB_SIZE           = 4096;
 constexpr uint32_t TLB2_WAYS          = 4;
 constexpr uint32_t TLB_INVALID_TAG    = 0xFFFFFFFF;
+constexpr uint32_t TLB_VPS_MASK       = 0x0FFFF000; // mask for TLB invalidation
 
 typedef struct TLBEntry {
     uint32_t    tag;
