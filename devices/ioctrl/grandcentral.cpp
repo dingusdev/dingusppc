@@ -33,26 +33,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <memory>
 
-uint16_t NvramAddrHiDev::iodev_read(uint32_t address) {
-    return nvram_addr_hi;
-}
-
-void NvramAddrHiDev::iodev_write(uint32_t address, uint16_t value) {
-    this->nvram_addr_hi = value;
-}
-
 NvramDev::NvramDev(NvramAddrHiDev *addr_hi) {
     // NVRAM connection
     this->nvram = dynamic_cast<NVram*>(gMachineObj->get_comp_by_name("NVRAM"));
     this->addr_hi = addr_hi;
-}
-
-uint16_t NvramDev::iodev_read(uint32_t address) {
-    return this->nvram->read_byte((addr_hi->iodev_read(0) << 5) + address);
-}
-
-void NvramDev::iodev_write(uint32_t address, uint16_t value) {
-    this->nvram->write_byte((addr_hi->iodev_read(0) << 5) + address, value);
 }
 
 GrandCentral::GrandCentral() : PCIDevice("mac-io_grandcentral"), InterruptCtrl()

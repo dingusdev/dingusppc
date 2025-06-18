@@ -121,8 +121,13 @@ public:
 class NvramAddrHiDev: public IobusDevice {
 public:
     // IobusDevice methods
-    uint16_t iodev_read(uint32_t address);
-    void iodev_write(uint32_t address, uint16_t value);
+    uint16_t iodev_read(uint32_t address) {
+        return nvram_addr_hi;
+    }
+
+    void iodev_write(uint32_t address, uint16_t value) {
+        this->nvram_addr_hi = value;
+    }
 
 protected:
     uint16_t    nvram_addr_hi = 0;
@@ -133,12 +138,17 @@ public:
     NvramDev(NvramAddrHiDev *addr_hi);
 
     // IobusDevice methods
-    uint16_t iodev_read(uint32_t address);
-    void iodev_write(uint32_t address, uint16_t value);
+    uint16_t iodev_read(uint32_t address) {
+        return this->nvram->read_byte((addr_hi->iodev_read(0) << 5) + address);
+    }
+
+    void iodev_write(uint32_t address, uint16_t value) {
+        this->nvram->write_byte((addr_hi->iodev_read(0) << 5) + address, value);
+    }
 
 protected:
-    NVram* nvram;
-    NvramAddrHiDev* addr_hi;
+    NVram* nvram = nullptr;
+    NvramAddrHiDev* addr_hi = nullptr;
 };
 
 /** This class provides common building blocks for various MacIO ASICs. */
@@ -298,8 +308,8 @@ enum {
     MIO_OH_FC_NOT_IDE1_RESET           = 1 << 23,
     MIO_OH_FC_SLOW_SCC_PCLK            = 1 << 24,
     MIO_OH_FC_RESET_SCC                = 1 << 25,
-    MIO_OH_FC_MFDC_CELL_EN             = 1 << 26,
-    MIO_OH_FC_USE_MFDC                 = 1 << 27,
+    MIO_OH_FC_MFDC_CELL_EN             = 1 << 26, // Heathrow/Paddington only
+    MIO_OH_FC_USE_MFDC                 = 1 << 27, // Heathrow/Paddington only
     MIO_OH_FC_RESVD28                  = 1 << 28,
     MIO_OH_FC_RESVD29                  = 1 << 29,
     MIO_OH_FC_RESVD30                  = 1 << 30,
