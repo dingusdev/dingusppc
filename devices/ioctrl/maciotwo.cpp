@@ -273,7 +273,7 @@ uint32_t MacIoTwo::mio_ctrl_read(uint32_t offset, int size) {
         break;
     case MIO_INT_CLEAR1:
     case MIO_INT_CLEAR2:
-        // some Mac OS drivers reads from those write-only registers
+        // some Mac OS drivers read from these write-only registers
         // so we return zero here as real HW does
         value = 0;
         break;
