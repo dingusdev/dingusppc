@@ -362,11 +362,24 @@ uint64_t MacIoTwo::register_dev_int(IntSrc src_id) {
     case IntSrc::SWIM3      : return INT_TO_IRQ_ID(0x13);
     case IntSrc::NMI        : return INT_TO_IRQ_ID(0x14); // nmiSource in AppleHeathrow/Heathrow.cpp; programmer-switch in B&W G3
 
+    case IntSrc::BANDIT1    : return INT_TO_IRQ_ID(0x16);
+    case IntSrc::PCI_E      : return (this->device_id == MIO_DEV_ID_OHARE)
+                                   ? INT_TO_IRQ_ID(0x16) // same interrupt as bandit
+                                   : INT_TO_IRQ_ID(0x18); // Lombard GPU
+    case IntSrc::PCI_F      : return INT_TO_IRQ_ID(0x18);
+    case IntSrc::PCI_A      : return INT_TO_IRQ_ID(0x17);
+    case IntSrc::PCI_B      : return (this->device_id == MIO_DEV_ID_OHARE)
+                                   ? INT_TO_IRQ_ID(0x19)
+                                   : INT_TO_IRQ_ID(0x18);
+//  case IntSrc::???        : return INT_TO_IRQ_ID(0x1A);
+//  case IntSrc::???        : return INT_TO_IRQ_ID(0x1B);
+    case IntSrc::PCI_C      : return (this->device_id == MIO_DEV_ID_OHARE)
+                                   ? INT_TO_IRQ_ID(0x1C)
+                                   : INT_TO_IRQ_ID(0x19);
+
     case IntSrc::PERCH2     : return INT_TO_IRQ_ID(0x15);
     case IntSrc::PCI_GPU    : return INT_TO_IRQ_ID(0x16);
-    case IntSrc::PCI_A      : return INT_TO_IRQ_ID(0x17);
-    case IntSrc::PCI_B      : return INT_TO_IRQ_ID(0x18);
-    case IntSrc::PCI_C      : return INT_TO_IRQ_ID(0x19);
+    case IntSrc::PCI_CARDBUS: return INT_TO_IRQ_ID(0x16);
     case IntSrc::PERCH1     : return INT_TO_IRQ_ID(0x1A);
     case IntSrc::PCI_PERCH  : return INT_TO_IRQ_ID(0x1C);
 
