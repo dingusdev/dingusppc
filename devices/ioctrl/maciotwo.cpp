@@ -44,11 +44,13 @@ MacIoTwo::MacIoTwo(std::string name, uint16_t dev_id) : MacIoBase(name, dev_id) 
     this->ide0_dma->connect(this->ide_0);
     this->ide_0->connect(this->ide0_dma.get());
 
-    this->ide_1 = dynamic_cast<IdeChannel*>(gMachineObj->get_comp_by_name("Ide1"));
+    this->ide_1 = dynamic_cast<IdeChannel*>(gMachineObj->get_comp_by_name_optional("Ide1"));
     this->ide1_dma = std::unique_ptr<DMAChannel> (new DMAChannel("Ide1-Dma"));
     this->ide1_dma->register_dma_int(this, this->register_dma_int(IntSrc::DMA_IDE1));
-    this->ide1_dma->connect(this->ide_1);
-    this->ide_1->connect(this->ide1_dma.get());
+    if (this->ide_1) {
+        this->ide1_dma->connect(this->ide_1);
+        this->ide_1->connect(this->ide1_dma.get());
+    }
 
     // connect Ethernet HW (Heathrow and Paddington)
     if (this->device_id != MIO_DEV_ID_OHARE) {
@@ -111,7 +113,7 @@ uint32_t MacIoTwo::read(uint32_t rgn_start, uint32_t offset, int size) {
         value = this->ide_0->read((offset >> 4) & 0x1F, size);
         break;
     case 0x21: // IDE 1
-        value = this->ide_1->read((offset >> 4) & 0x1F, size);
+        value = this->ide_1 ? this->ide_1->read((offset >> 4) & 0x1F, size) : 0;
         break;
     default:
         if (sub_addr >= 0x60) {
@@ -173,7 +175,8 @@ void MacIoTwo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int si
         this->ide_0->write((offset >> 4) & 0x1F, value, size);
         break;
     case 0x21: // IDE 1
-        this->ide_1->write((offset >> 4) & 0x1F, value, size);
+        if (this->ide_1)
+            this->ide_1->write((offset >> 4) & 0x1F, value, size);
         break;
     default:
         if (sub_addr >= 0x60) {
