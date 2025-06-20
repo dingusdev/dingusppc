@@ -291,7 +291,7 @@ uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
         case MIO_INT_MASK1:
             return BYTESWAP_32(this->int_mask);
         case MIO_INT_CLEAR1:
-            // some Mac OS drivers reads from this write-only register
+            // some Mac OS drivers read from this write-only register
             // so we return zero here as real HW does
             return 0;
         case MIO_INT_LEVELS1:
