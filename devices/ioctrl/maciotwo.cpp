@@ -80,7 +80,7 @@ uint32_t MacIoTwo::read(uint32_t rgn_start, uint32_t offset, int size) {
         if ((offset & 0xFF) < 0x60) {
             value = 0;
             LOG_F(ERROR, "%s: ESCC compatible read  @%x.%c", this->name.c_str(),
-                  offset, SIZE_ARG(size));
+                offset, SIZE_ARG(size));
             break;
         }
         // fallthrough
@@ -210,8 +210,9 @@ uint32_t MacIoTwo::dma_read(uint32_t offset, int size) {
         if (!(unsupported_dma_channel_read & (1 << dma_channel))) {
             unsupported_dma_channel_read |= (1 << dma_channel);
             LOG_F(WARNING, "%s: Unsupported DMA channel %d %s read  @%02x.%c",
-                  this->name.c_str(), dma_channel, get_name_dma(dma_channel),
-                  offset & 0xFF, SIZE_ARG(size));
+                this->name.c_str(), dma_channel, get_name_dma(dma_channel),
+                offset & 0xFF, SIZE_ARG(size));
+            return 0;
         }
     }
 
@@ -243,8 +244,8 @@ void MacIoTwo::dma_write(uint32_t offset, uint32_t value, int size) {
         if (!(unsupported_dma_channel_write & (1 << dma_channel))) {
             unsupported_dma_channel_write |= (1 << dma_channel);
             LOG_F(WARNING, "%s: Unsupported DMA channel %d %s write @%02x.%c = %0*x",
-                  this->name.c_str(), dma_channel, get_name_dma(dma_channel),
-                  offset & 0xFF, SIZE_ARG(size), size * 2, value);
+                this->name.c_str(), dma_channel, get_name_dma(dma_channel),
+                offset & 0xFF, SIZE_ARG(size), size * 2, value);
         }
     }
 }
