@@ -212,7 +212,6 @@ uint32_t MacIoTwo::dma_read(uint32_t offset, int size) {
             LOG_F(WARNING, "%s: Unsupported DMA channel %d %s read  @%02x.%c",
                 this->name.c_str(), dma_channel, get_name_dma(dma_channel),
                 offset & 0xFF, SIZE_ARG(size));
-            return 0;
         }
     }
 
