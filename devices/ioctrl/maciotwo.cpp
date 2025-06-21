@@ -378,7 +378,6 @@ uint64_t MacIoTwo::register_dev_int(IntSrc src_id) {
 
     case IntSrc::PERCH2     : return INT_TO_IRQ_ID(0x15);
     case IntSrc::PCI_GPU    : return INT_TO_IRQ_ID(0x16);
-    case IntSrc::PCI_CARDBUS: return INT_TO_IRQ_ID(0x16);
     case IntSrc::PERCH1     : return INT_TO_IRQ_ID(0x1A);
     case IntSrc::PCI_PERCH  : return INT_TO_IRQ_ID(0x1C);
 
