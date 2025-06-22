@@ -35,15 +35,15 @@ enum DmaPullResult : int {
 
 class DmaOutChannel {
 public:
-    DmaOutChannel(std::string name) { this->name = name; };
+    DmaOutChannel(std::string name) { this->name = name; }
 
-    virtual bool            is_out_active() { return true; };
+    virtual bool            is_out_active() { return true; }
     virtual DmaPullResult   pull_data(uint32_t req_len, uint32_t *avail_len,
                                       uint8_t **p_data) = 0;
-    virtual int             get_pull_data_remaining() { return 1; };
-    virtual void            end_pull_data() { };
+    virtual int             get_pull_data_remaining() { return 1; }
+    virtual void            end_pull_data() {}
 
-    std::string get_name(void) { return this->name; };
+    std::string get_name(void) { return this->name; }
 
 private:
     std::string name;
@@ -51,14 +51,14 @@ private:
 
 class DmaInChannel {
 public:
-    DmaInChannel(std::string name) { this->name = name; };
+    DmaInChannel(std::string name) { this->name = name; }
 
-    virtual bool            is_in_active() { return true; };
+    virtual bool            is_in_active() { return true; }
     virtual int             push_data(const char* src_ptr, int len) = 0;
-    virtual int             get_push_data_remaining() { return 1; };
-    virtual void            end_push_data() { };
+    virtual int             get_push_data_remaining() { return 1; }
+    virtual void            end_push_data() {}
 
-    std::string get_name(void) { return this->name; };
+    std::string get_name(void) { return this->name; }
 
 private:
     std::string name;
@@ -68,9 +68,9 @@ private:
 class DmaBidirChannel : public DmaOutChannel, public DmaInChannel {
 public:
     DmaBidirChannel(std::string name) : DmaOutChannel(name + " Out"),
-        DmaInChannel(name + std::string(" In")) { this->name = name; };
+        DmaInChannel(name + std::string(" In")) { this->name = name; }
 
-    std::string get_name(void) { return this->name; };
+    std::string get_name(void) { return this->name; }
 
 private:
     std::string name;
@@ -96,11 +96,11 @@ public:
     DmaDevice()  = default;
     ~DmaDevice() = default;
 
-    virtual void connect(DmaChannel *ch_obj) { this->channel_obj = ch_obj; };
-    virtual void notify(DmaMsg msg) {};
-    virtual int  xfer_from(uint8_t *buf, int len) { return len; };
-    virtual int  xfer_to(uint8_t *buf, int len) { return len; };
-    virtual int  tell_xfer_size() { return 0; };
+    virtual void connect(DmaChannel *ch_obj) { this->channel_obj = ch_obj; }
+    virtual void notify(DmaMsg msg) {}
+    virtual int  xfer_from(uint8_t *buf, int len) { return len; }
+    virtual int  xfer_to(uint8_t *buf, int len) { return len; }
+    virtual int  tell_xfer_size() { return 0; }
 
 protected:
     DmaChannel* channel_obj = nullptr;
@@ -111,10 +111,10 @@ public:
     DmaChannel()  = default;
     ~DmaChannel() = default;
 
-    virtual void connect(DmaDevice *dev_obj) { this->dev_obj = dev_obj; };
-    virtual void notify(DmaMsg msg) {};
-    virtual bool is_ready() { return false; };
-    virtual void xfer_retry() {};
+    virtual void connect(DmaDevice *dev_obj) { this->dev_obj = dev_obj; }
+    virtual void notify(DmaMsg msg) {}
+    virtual bool is_ready() { return false; }
+    virtual void xfer_retry() {}
 
 protected:
     DmaDevice*  dev_obj  = nullptr;
