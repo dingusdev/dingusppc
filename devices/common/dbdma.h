@@ -129,7 +129,7 @@ public:
     void register_dma_int(InterruptCtrl* int_ctrl_obj, uint64_t irq_id) {
         this->int_ctrl = int_ctrl_obj;
         this->irq_id   = irq_id;
-    };
+    }
 
 protected:
     DMACmd* fetch_cmd(uint32_t cmd_addr, DMACmd* p_cmd, bool *is_writable);
