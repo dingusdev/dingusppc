@@ -200,10 +200,7 @@ uint32_t MacIoTwo::dma_read(uint32_t offset, int size) {
     int dma_channel = offset >> 8;
     switch (dma_channel) {
     case MIO_OHARE_DMA_MESH:
-        if (this->mesh_dma)
-            return this->mesh_dma->reg_read(offset & 0xFF, size);
-        else
-            return 0;
+        return this->mesh_dma->reg_read(offset & 0xFF, size);
     case MIO_OHARE_DMA_FLOPPY:
         return this->floppy_dma->reg_read(offset & 0xFF, size);
     case MIO_OHARE_DMA_ETH_XMIT:
@@ -230,7 +227,7 @@ void MacIoTwo::dma_write(uint32_t offset, uint32_t value, int size) {
     int dma_channel = offset >> 8;
     switch (dma_channel) {
     case MIO_OHARE_DMA_MESH:
-        if (this->mesh_dma) this->mesh_dma->reg_write(offset & 0xFF, value, size);
+        this->mesh_dma->reg_write(offset & 0xFF, value, size);
         break;
     case MIO_OHARE_DMA_FLOPPY:
         this->floppy_dma->reg_write(offset & 0xFF, value, size);
