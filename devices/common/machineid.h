@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -55,7 +55,7 @@ public:
         this->id[2] = (id >> 8) & 0xFF;
         this->id[3] = id & 0xFF;
         supports_types(HWCompType::MMIO_DEV);
-    };
+    }
     ~NubusMacID() = default;
 
     uint32_t read(uint32_t rgn_start, uint32_t offset, int size) {
@@ -67,10 +67,10 @@ public:
         }
         ABORT_F("NubusMacID: invalid read size %d, offset %d!", size, offset);
         return 0;
-    };
+    }
 
     /* not writable */
-    void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size) {};
+    void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size) {}
 
 private:
     uint8_t id[4];
@@ -88,19 +88,19 @@ public:
         this->set_name(name);
         supports_types(HWCompType::IOBUS_DEV);
         this->data = data;
-    };
+    }
     ~BoardRegister() = default;
 
     uint16_t iodev_read(uint32_t address) {
         return this->data;
-    };
+    }
 
     // appears read-only to guest
-    void iodev_write(uint32_t address, uint16_t value) {};
+    void iodev_write(uint32_t address, uint16_t value) {}
 
     void update_bits(const uint16_t val, const uint16_t mask) {
         this->data = (this->data & ~mask) | (val & mask);
-    };
+    }
 
 private:
     uint16_t    data;
@@ -118,15 +118,15 @@ public:
         this->id = id;
         this->name = "Machine-id";
         supports_types(HWCompType::MMIO_DEV);
-    };
+    }
     ~GossamerID() = default;
 
     uint32_t read(uint32_t rgn_start, uint32_t offset, int size) {
         return ((offset == 4 && size == 2) ? this->id : 0);
-    };
+    }
 
     /* not writable */
-    void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size) {};
+    void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size) {}
 
 private:
     uint16_t id;
