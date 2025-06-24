@@ -108,7 +108,7 @@ private:
 // New World implementation
 class OfConfigChrp : public OfConfigImpl {
 public:
-    OfConfigChrp(NVram* nvram_obj) { this->nvram_obj = nvram_obj; };
+    OfConfigChrp(NVram* nvram_obj) { this->nvram_obj = nvram_obj; }
     ~OfConfigChrp() = default;
 
     bool validate();

@@ -87,7 +87,7 @@ public:
         this->chip_id = id;
         this->set_name("MACE");
         this->supports_types(HWCompType::MMIO_DEV | HWCompType::ETHER_MAC);
-    };
+    }
     ~MaceController() = default;
 
     static std::unique_ptr<HWComponent> create() {
