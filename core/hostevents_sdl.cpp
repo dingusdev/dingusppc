@@ -63,7 +63,7 @@ void EventManager::poll_events() {
 
                 // Internal shortcuts, intentionally not sent to the host.
                 // Control-G: mouse grab
-                if (event.key.keysym.sym == SDLK_g && (SDL_GetModState() & KMOD_ALL) == KMOD_LCTRL) {
+                if (event.key.keysym.sym == SDLK_g && (event.key.keysym.mod & KMOD_ALL) == KMOD_LCTRL) {
                     if (event.type == SDL_KEYUP) {
                         WindowEvent we;
                         we.sub_type  = DPPC_WINDOWEVENT_MOUSE_GRAB_TOGGLE;
@@ -76,7 +76,7 @@ void EventManager::poll_events() {
                     return;
                 }
                 // Control-S: scale quality
-                if (event.key.keysym.sym == SDLK_s && (SDL_GetModState() & KMOD_ALL) == KMOD_LCTRL) {
+                if (event.key.keysym.sym == SDLK_s && (event.key.keysym.mod & KMOD_ALL) == KMOD_LCTRL) {
                     if (event.type == SDL_KEYUP) {
                         WindowEvent we{};
                         we.sub_type  = DPPC_WINDOWEVENT_WINDOW_SCALE_QUALITY_TOGGLE;
@@ -86,7 +86,7 @@ void EventManager::poll_events() {
                     return;
                 }
                 // Control-F: fullscreen
-                if (event.key.keysym.sym == SDLK_f && (SDL_GetModState() & KMOD_ALL) == KMOD_LCTRL) {
+                if (event.key.keysym.sym == SDLK_f && (event.key.keysym.mod & KMOD_ALL) == KMOD_LCTRL) {
                     if (event.type == SDL_KEYUP) {
                         WindowEvent we{};
                         we.sub_type  = DPPC_WINDOWEVENT_WINDOW_FULL_SCREEN_TOGGLE;
@@ -96,7 +96,7 @@ void EventManager::poll_events() {
                     return;
                 }
                 // Control-+: bigger
-                if (event.key.keysym.sym == SDLK_EQUALS && (SDL_GetModState() & KMOD_ALL) == KMOD_LCTRL) {
+                if (event.key.keysym.sym == SDLK_EQUALS && (event.key.keysym.mod & KMOD_ALL) == KMOD_LCTRL) {
                     if (event.type == SDL_KEYUP) {
                         WindowEvent we{};
                         we.sub_type  = DPPC_WINDOWEVENT_WINDOW_BIGGER;
@@ -106,7 +106,7 @@ void EventManager::poll_events() {
                     return;
                 }
                 // Control--: smaller
-                if (event.key.keysym.sym == SDLK_MINUS && (SDL_GetModState() & KMOD_ALL) == KMOD_LCTRL) {
+                if (event.key.keysym.sym == SDLK_MINUS && (event.key.keysym.mod & KMOD_ALL) == KMOD_LCTRL) {
                     if (event.type == SDL_KEYUP) {
                         WindowEvent we{};
                         we.sub_type  = DPPC_WINDOWEVENT_WINDOW_SMALLER;
@@ -116,7 +116,7 @@ void EventManager::poll_events() {
                     return;
                 }
                 // Control-L: log toggle
-                if (event.key.keysym.sym == SDLK_l && (SDL_GetModState() & KMOD_ALL) == KMOD_LCTRL) {
+                if (event.key.keysym.sym == SDLK_l && (event.key.keysym.mod & KMOD_ALL) == KMOD_LCTRL) {
                     if (event.type == SDL_KEYUP) {
                         loguru::g_stderr_verbosity = loguru::g_stderr_verbosity == loguru::Verbosity_MAX ?
                             loguru::Verbosity_INFO
@@ -126,7 +126,7 @@ void EventManager::poll_events() {
                     return;
                 }
                 // Control-D: debugger
-                if (event.key.keysym.sym == SDLK_d && (SDL_GetModState() & KMOD_ALL) == KMOD_LCTRL) {
+                if (event.key.keysym.sym == SDLK_d && (event.key.keysym.mod & KMOD_ALL) == KMOD_LCTRL) {
                     if (event.type == SDL_KEYUP) {
                         power_on = false;
                         power_off_reason = po_enter_debugger;
@@ -134,7 +134,7 @@ void EventManager::poll_events() {
                     return;
                 }
                 // Ralt+delete => ctrl+alt+del
-                if (event.key.keysym.sym == SDLK_DELETE && ((SDL_GetModState() & KMOD_ALL) == KMOD_RALT) != 0) {
+                if (event.key.keysym.sym == SDLK_DELETE && ((event.key.keysym.mod & KMOD_ALL) == KMOD_RALT) != 0) {
                     KeyboardEvent ke{};
                     ke.key = AdbKey_Control;
 
@@ -164,7 +164,7 @@ void EventManager::poll_events() {
                     }
                     // Caps Lock is a special case, since it's a toggle key
                     if (ke.key == AdbKey_CapsLock) {
-                        ke.flags = SDL_GetModState() & KMOD_CAPS ?
+                        ke.flags = event.key.keysym.mod & KMOD_CAPS ?
                             KEYBOARD_EVENT_DOWN : KEYBOARD_EVENT_UP;
                     }
                     this->_keyboard_signal.emit(ke);
