@@ -129,6 +129,7 @@ public:
 
     void poll_events();
     void set_keyboard_locale(uint32_t keyboard_id);
+    void post_keyboard_state_events();
 
     template <typename T>
     void add_window_handler(T *inst, void (T::*func)(const WindowEvent&)) {

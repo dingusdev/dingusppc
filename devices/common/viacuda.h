@@ -244,6 +244,7 @@ private:
 
     AdbBus* adb_bus_obj = nullptr;
     bool    autopoll_enabled = false;
+    bool    do_post_keyboard_state_events = false;
 
     // VIA methods
     void print_enabled_ints(); // print enabled VIA interrupts and their sources

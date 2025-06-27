@@ -541,6 +541,11 @@ void ViaCuda::process_adb_command() {
 }
 
 void ViaCuda::autopoll_handler() {
+    if (this->do_post_keyboard_state_events && !(!this->old_tip || !this->treq)) {
+        EventManager::get_instance()->post_keyboard_state_events();
+        this->do_post_keyboard_state_events = false;
+    }
+
     uint8_t poll_command = this->autopoll_enabled ? this->adb_bus_obj->poll() : 0;
 
     if (poll_command) {
@@ -606,9 +611,11 @@ void ViaCuda::pseudo_command() {
         if (this->in_buf[2]) {
             LOG_F(INFO, "Cuda: autopoll started, rate: %d ms", this->poll_rate);
             this->autopoll_enabled = true;
+            this->do_post_keyboard_state_events = true;
         } else {
             LOG_F(INFO, "Cuda: autopoll stopped");
             this->autopoll_enabled = false;
+            this->do_post_keyboard_state_events = false;
         }
         response_header(CUDA_PKT_PSEUDO, 0);
         break;
