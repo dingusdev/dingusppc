@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -1340,7 +1340,7 @@ template void write_unaligned<uint64_t>(uint32_t opcode, uint32_t guest_va, uint
 
 class MMUProfile : public BaseProfile {
 public:
-    MMUProfile() : BaseProfile("PPC_MMU") {};
+    MMUProfile() : BaseProfile("PPC_MMU") {}
 
     void populate_variables(std::vector<ProfileVar>& vars) {
         vars.clear();
@@ -1388,7 +1388,7 @@ public:
         vars.push_back({.name = "Unaligned Crosspage Writes Total",
                         .format = ProfileVarFmt::DEC,
                         .value = unaligned_crossp_w});
-    };
+    }
 
     void reset() {
         dmem_reads_total   = 0;
@@ -1402,7 +1402,7 @@ public:
         unaligned_writes   = 0;
         unaligned_crossp_r = 0;
         unaligned_crossp_w = 0;
-    };
+    }
 };
 #endif
 
@@ -1414,7 +1414,7 @@ public:
 
 class TLBProfile : public BaseProfile {
 public:
-    TLBProfile() : BaseProfile("PPC:MMU:TLB") {};
+    TLBProfile() : BaseProfile("PPC:MMU:TLB") {}
 
     void populate_variables(std::vector<ProfileVar>& vars) {
         vars.clear();
@@ -1446,14 +1446,14 @@ public:
         vars.push_back({.name = "Number of replaced TLB entries",
             .format = ProfileVarFmt::DEC,
             .value = num_entry_replacements});
-    };
+    }
 
     void reset() {
         num_primary_dtlb_hits   = 0;
         num_secondary_dtlb_hits = 0;
         num_dtlb_refills        = 0;
         num_entry_replacements = 0;
-    };
+    }
 };
 #endif
 

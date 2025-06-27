@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -118,7 +118,7 @@ std::unordered_map<uint32_t, uint64_t> num_opcodes;
 
 class CPUProfile : public BaseProfile {
 public:
-    CPUProfile() : BaseProfile("PPC_CPU") {};
+    CPUProfile() : BaseProfile("PPC_CPU") {}
 
     void populate_variables(std::vector<ProfileVar>& vars) {
         vars.clear();
@@ -169,7 +169,7 @@ public:
                             .count_total = num_executed_instrs});
         }
 #endif
-    };
+    }
 
     void reset() {
         num_executed_instrs = 0;
@@ -180,7 +180,7 @@ public:
 #ifdef CPU_PROFILING_OPS
         num_opcodes.clear();
 #endif
-    };
+    }
 };
 
 #endif

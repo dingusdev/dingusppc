@@ -64,13 +64,13 @@ public:
             return true;
         }
         return false;
-    };
+    }
 
     void push(T val)
     {
         std::lock_guard<std::recursive_mutex> lk(mtx);
         std::priority_queue<T, Container, Compare>::push(val);
-    };
+    }
 
     T pop()
     {
@@ -78,7 +78,7 @@ public:
         T val = std::priority_queue<T, Container, Compare>::top();
         std::priority_queue<T, Container, Compare>::pop();
         return val;
-    };
+    }
 
     std::recursive_mutex& get_mtx()
     {
@@ -111,20 +111,20 @@ public:
             timer_manager = new TimerManager();
         }
         return timer_manager;
-    };
+    }
 
     // callback for retrieving current time
     void set_time_now_cb(const std::function<uint64_t()> &cb) {
         this->get_time_now = cb;
-    };
+    }
 
     // callback for acknowledging time changes
     void set_notify_changes_cb(const timer_cb &cb) {
         this->notify_timer_changes = cb;
-    };
+    }
 
     // return current virtual time in nanoseconds
-    uint64_t current_time_ns() { return get_time_now(); };
+    uint64_t current_time_ns() { return get_time_now(); }
 
     // creating and cancelling timers
     uint32_t add_oneshot_timer(uint64_t timeout, timer_cb cb);
@@ -137,7 +137,7 @@ public:
 
 private:
     static TimerManager* timer_manager;
-    TimerManager(){}; // private constructor to implement a singleton
+    TimerManager(){} // private constructor to implement a singleton
 
     // timer queue
     my_priority_queue<std::shared_ptr<TimerInfo>, std::vector<std::shared_ptr<TimerInfo>>, MyGtComparator> timer_queue;

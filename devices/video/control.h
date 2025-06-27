@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -68,7 +68,7 @@ enum ControlRegs : int {
     INT_STATUS      = 0x1A, // interrupt status bits            (ro)  3 bits
 };
 
-}; // namespace ControlRegs
+} // namespace ControlRegs
 
 // Bit definitions for the video timing generator (Swatch) control register.
 enum {

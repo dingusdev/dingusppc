@@ -168,7 +168,7 @@ public:
         : BasicProperty(PROP_TYPE_BINARY, (val & 1) ? "on" : "off")
     {
         this->bin_val = val & 1;
-    };
+    }
 
     BasicProperty* clone() const { return new BinProperty(*this); }
 
@@ -177,9 +177,9 @@ public:
 
     std::string get_valid_values_as_str() {
         return std::string("on, off, ON, OFF");
-    };
+    }
 
-    int get_val() { return this->bin_val; };
+    int get_val() { return this->bin_val; }
 
 private:
     int     bin_val;

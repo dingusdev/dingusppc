@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -47,7 +47,7 @@ namespace PsxReg {
         Page5_Mapping   = 12,
         Bus_Timeout     = 13
     };
-}; // namespace PsxReg
+} // namespace PsxReg
 
 /** Bus (aka CPU) speed constants. */
 enum {
@@ -64,7 +64,7 @@ public:
 
     static std::unique_ptr<HWComponent> create() {
         return std::unique_ptr<PsxCtrl>(new PsxCtrl(1, "PSX-PCI1"));
-    };
+    }
 
     // MMIODevice methods
     uint32_t read(uint32_t rgn_start, uint32_t offset, int size);

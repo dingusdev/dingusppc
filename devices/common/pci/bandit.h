@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -71,7 +71,7 @@ enum {
  */
 class BanditHost : public PCIHost, public MMIODevice {
 public:
-    BanditHost(int bridge_num) { this->bridge_num = bridge_num; };
+    BanditHost(int bridge_num) { this->bridge_num = bridge_num; }
 
     // MMIODevice methods
     uint32_t read(uint32_t rgn_start, uint32_t offset, int size) override;
@@ -121,15 +121,15 @@ public:
 
     static std::unique_ptr<HWComponent> create_first() {
         return std::unique_ptr<Bandit>(new Bandit(1, "Bandit-PCI1"));
-    };
+    }
 
     static std::unique_ptr<HWComponent> create_second() {
         return std::unique_ptr<Bandit>(new Bandit(2, "Bandit-PCI2"));
-    };
+    }
 
     static std::unique_ptr<HWComponent> create_psx_first() {
         return std::unique_ptr<Bandit>(new Bandit(1, "PSX-PCI1", 8, 0));
-    };
+    }
 
 private:
     std::unique_ptr<BanditPciDevice> my_pci_device;
@@ -146,7 +146,7 @@ public:
 
     static std::unique_ptr<HWComponent> create() {
         return std::unique_ptr<Chaos>(new Chaos("VCI0"));
-    };
+    }
 };
 
 /**
@@ -159,7 +159,7 @@ public:
 
     static std::unique_ptr<HWComponent> create() {
         return std::unique_ptr<AspenPci>(new AspenPci("Aspen-PCI1"));
-    };
+    }
 };
 
 #endif // BANDIT_PCI_H

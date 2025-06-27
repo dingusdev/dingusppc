@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -106,19 +106,19 @@ public:
     ~AmicSndOutDma() = default;
 
     void            init(uint32_t buf_base, uint32_t buf_samples);
-    void            enable()  { this->enabled = true;  };
-    void            disable() { this->enabled = false; };
+    void            enable()  { this->enabled = true;  }
+    void            disable() { this->enabled = false; }
     uint8_t         read_stat();
     void            update_irq();
     void            write_dma_out_ctrl(uint8_t value);
-    uint32_t        get_cur_buf_pos() { return this->cur_buf_pos; };
+    uint32_t        get_cur_buf_pos() { return this->cur_buf_pos; }
     DmaPullResult   pull_data(uint32_t req_len, uint32_t *avail_len,
                               uint8_t **p_data);
 
     void init_interrupts(InterruptCtrl *int_ctrl, uint64_t irq_id) {
         this->int_ctrl = int_ctrl;
         this->snd_dma_irq_id = irq_id;
-    };
+    }
 
 private:
     bool            enabled = false;
@@ -144,7 +144,7 @@ public:
     void            reinit(const uint32_t addr_ptr, const uint16_t byte_cnt);
     void            reset(const uint32_t addr_ptr);
     void            write_ctrl(const uint8_t value);
-    uint8_t         read_stat() { return this->stat; };
+    uint8_t         read_stat() { return this->stat; }
 
     int             push_data(const char* src_ptr, int len);
     DmaPullResult   pull_data(uint32_t req_len, uint32_t *avail_len,
@@ -163,7 +163,7 @@ public:
     ~AmicSerialXmitDma() = default;
 
     void            write_ctrl(const uint8_t value);
-    uint8_t         read_stat() { return this->stat; };
+    uint8_t         read_stat() { return this->stat; }
 
     DmaPullResult   pull_data(uint32_t req_len, uint32_t *avail_len,
                                       uint8_t **p_data);
@@ -183,7 +183,7 @@ public:
     void            reinit(const uint32_t addr_ptr);
     void            reset(const uint32_t addr_ptr);
     void            write_ctrl(const uint8_t value);
-    uint8_t         read_stat() { return this->stat; };
+    uint8_t         read_stat() { return this->stat; }
 
     void            xfer_to_device();
     void            xfer_from_device();

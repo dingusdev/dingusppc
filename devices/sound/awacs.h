@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -47,11 +47,11 @@ public:
 
     void set_dma_out(DmaOutChannel *dma_out_ch) {
         this->dma_out_ch = dma_out_ch;
-    };
+    }
 
     void set_dma_in(DmaInChannel *dma_in_ch) {
         this->dma_in_ch = dma_in_ch;
-    };
+    }
 
     void set_sample_rate(int sr_id);
     void dma_out_start();
@@ -115,7 +115,7 @@ public:
 
     void start_transaction() {
         this->pos = 0;
-    };
+    }
 
     bool send_subaddress(uint8_t sub_addr) {
         if ((sub_addr & 0xF) > 6)
@@ -127,7 +127,7 @@ public:
               this->sub_addr, this->auto_inc);
         this->pos++;
         return true;
-    };
+    }
 
     bool send_byte(uint8_t data) {
         if (!this->pos) {
@@ -142,13 +142,13 @@ public:
         } else {
             return false; // invalid sub_addr -> no acknowledge
         }
-    };
+    }
 
     bool receive_byte(uint8_t* p_data) {
         *p_data = this->regs[this->sub_addr];
         LOG_F(9, "TDA7433 byte 0x%X sent", *p_data);
         return true;
-    };
+    }
 
 private:
     uint8_t regs[7] = {}; // control registers, see TDA7433 datasheet
@@ -160,7 +160,7 @@ private:
 /** Sound codec interface with the typical MacIO access. */
 class MacioSndCodec : public AwacsBase {
 public:
-    MacioSndCodec(std::string name) : AwacsBase(name) {};
+    MacioSndCodec(std::string name) : AwacsBase(name) {}
     virtual uint32_t snd_ctrl_read(uint32_t offset, int size) = 0;
     virtual void     snd_ctrl_write(uint32_t offset, uint32_t value, int size) = 0;
 };

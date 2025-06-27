@@ -101,7 +101,7 @@ namespace Hammerhead {
         BANK_25_BASE_LSB = 0x4F0,
     };
 
-}; // namespace Hammerhead
+} // namespace Hammerhead
 
 class HammerheadCtrl : public MemCtrlBase, public MMIODevice {
 public:
@@ -118,15 +118,15 @@ public:
 
     void set_motherboard_id(const uint8_t val) {
         this->mb_id = val & 7;
-    };
+    }
 
     void set_rom_type(const uint8_t val) {
         this->rom_type = val & 1;
-    };
+    }
 
     void set_bus_speed(const uint8_t val) {
         this->bus_speed = val & 7;
-    };
+    }
 
     void insert_ram_dimm(int slot_num, uint32_t capacity);
     void map_phys_ram();

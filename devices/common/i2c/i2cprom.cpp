@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -54,17 +54,17 @@ void I2CProm::set_memory(int start, const uint8_t* in_data, int size)
 
 void I2CProm::start_transaction() {
     this->pos = 0;
-};
+}
 
 bool I2CProm::send_subaddress(uint8_t sub_addr) {
     this->pos = sub_addr;
     return true;
-};
+}
 
 bool I2CProm::send_byte(uint8_t data) {
     LOG_F(9, "I2CRom: 0x%X received", data);
     return true;
-};
+}
 
 bool I2CProm::receive_byte(uint8_t* p_data) {
     if (this->pos >= this->rom_size) {
@@ -72,4 +72,4 @@ bool I2CProm::receive_byte(uint8_t* p_data) {
     }
     *p_data = this->data[this->pos++];
     return true;
-};
+}

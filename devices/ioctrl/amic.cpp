@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -823,7 +823,7 @@ DmaPullResult AmicSerialXmitDma::pull_data(uint32_t req_len, uint32_t *avail_len
                                            uint8_t **p_data)
 {
     return DmaPullResult::NoMoreData;
-};
+}
 
 static std::vector<std::string> Amic_Subdevices = {
     "Sc53C94", "Escc", "Mace", "ViaCuda", "Swim3"

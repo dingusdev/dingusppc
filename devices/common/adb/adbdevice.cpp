@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -37,7 +37,7 @@ int AdbDevice::device_postinit() {
     this->host_obj->register_device(this);
 
     return 0;
-};
+}
 
 uint8_t AdbDevice::poll() {
     if (!this->srq_flag) {

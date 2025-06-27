@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -126,18 +126,18 @@ public:
         supports_types(HWCompType::I2C_DEV);
 
         this->my_addr = dev_addr;
-    };
+    }
 
     ~Bt856() = default;
 
     // I2CDevice methods
     void start_transaction() {
         this->pos = 0; // reset read/write position
-    };
+    }
 
     bool send_subaddress(uint8_t sub_addr) {
         return true;
-    };
+    }
 
     bool send_byte(uint8_t data) {
         switch (this->pos) {
@@ -153,12 +153,12 @@ public:
             return false; // return NACK
         }
         return true;
-    };
+    }
 
     bool receive_byte(uint8_t* p_data) {
         *p_data = 0x60; // return my device ID
         return true;
-    };
+    }
 
 private:
     uint8_t     my_addr = 0;

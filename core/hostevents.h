@@ -125,7 +125,7 @@ public:
             event_manager = new EventManager();
         }
         return event_manager;
-    };
+    }
 
     void poll_events();
     void set_keyboard_locale(uint32_t keyboard_id);
@@ -171,7 +171,7 @@ public:
 
 private:
     static EventManager* event_manager;
-    EventManager() {}; // private constructor to implement a singleton
+    EventManager() {} // private constructor to implement a singleton
 
     CoreSignal<const WindowEvent&>     _window_signal;
     CoreSignal<const MouseEvent&>      _mouse_signal;

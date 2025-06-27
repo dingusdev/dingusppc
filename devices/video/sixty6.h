@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -41,7 +41,7 @@ enum Sixty6BaseReg : uint32_t {
     CONTROL_ADDR        = 0x03,
 };
 
-};
+}
 
 namespace Sixty6Reg {
 
@@ -95,7 +95,7 @@ enum Sixty6Reg : uint32_t {
     // registers 0x99..0xff are read only and read from registers 0x19..0x7F.
 };
 
-};
+}
 
 class Saa7187VideoEncoder;
 class ControlVideo;

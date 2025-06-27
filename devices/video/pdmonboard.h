@@ -52,21 +52,21 @@ public:
 
     uint8_t get_video_mode() const {
         return ((this->video_mode & 0x1F) | this->blanking);
-    };
+    }
 
     void set_video_mode(uint8_t new_mode);
     void set_pixel_depth(uint8_t depth);
     void set_vdac_config(uint8_t config);
     uint8_t get_vdac_config() const {
         return this->vdac_mode;
-    };
+    }
     void set_clut_index(uint8_t index);
     void set_clut_color(uint8_t color);
 
     void init_interrupts(InterruptCtrl *int_ctrl, uint32_t vbl_irq_id) {
         this->int_ctrl = int_ctrl;
         this->irq_id = vbl_irq_id;
-    };
+    }
 
 protected:
     void    set_depth_internal(int width);

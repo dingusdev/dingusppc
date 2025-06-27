@@ -50,7 +50,7 @@ namespace Scsi_Bus_Controller {
         RCV_STATUS,
         RCV_MESSAGE,
     };
-};
+}
 
 /** Sequencer error codes. */
 enum : int {
@@ -75,12 +75,12 @@ public:
 
     // ScsiDevice methods
     void notify(ScsiNotification notif_type, int param) override;
-    bool prepare_data() override { return false; };
-    bool get_more_data() override { return false; };
-    bool has_data() override { return false; };
+    bool prepare_data() override { return false; }
+    bool get_more_data() override { return false; }
+    bool has_data() override { return false; }
     bool rcv_data();
     int  send_data(uint8_t* dst_ptr, int count) override;
-    void process_command() override {};
+    void process_command() override {}
 
     // DmaDevice methods
     int xfer_from(uint8_t *buf, int len) override;

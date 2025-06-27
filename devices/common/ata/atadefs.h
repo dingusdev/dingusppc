@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -151,7 +151,7 @@ enum ATA_Cmd : uint8_t {
     SET_FEATURES                         = 0xEF,
 };
 
-}; // namespace ata_interface
+} // namespace ata_interface
 
 /** Interface for ATA devices. */
 class AtaInterface {
@@ -162,7 +162,7 @@ public:
     virtual void write(const uint8_t reg_addr, const uint16_t val) = 0;
 
     virtual int  get_device_id() = 0;
-    virtual void pdiag_callback() {};
+    virtual void pdiag_callback() {}
 };
 
 /** Dummy ATA device. */
@@ -178,12 +178,12 @@ public:
         // to prevent the software from waiting for a long time
         // for empty slots
         return 0xFF7FU;
-    };
+    }
 
-    void write(const uint8_t reg_addr, const uint16_t val) override {};
+    void write(const uint8_t reg_addr, const uint16_t val) override {}
 
     // invalid device ID means no real device is present
-    int get_device_id() override { return ata_interface::DEVICE_ID_INVALID; };
+    int get_device_id() override { return ata_interface::DEVICE_ID_INVALID; }
 };
 
 #endif // ATA_INTERFACE_H

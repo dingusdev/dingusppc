@@ -48,22 +48,22 @@ static std::string get_type_str(uint32_t type) {
         if (str.length())
             str += ",";
         str += "ROM";
-    };
+    }
     if (type & RT_RAM) {
         if (str.length())
             str += ",";
         str += "RAM";
-    };
+    }
     if (type & RT_MMIO) {
         if (str.length())
             str += ",";
         str += "MMIO";
-    };
+    }
     if (type & RT_MIRROR) {
         if (str.length())
             str += ",";
         str += "MIRROR";
-    };
+    }
     return str;
 }
 

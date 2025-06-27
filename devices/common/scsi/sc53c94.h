@@ -58,7 +58,7 @@ namespace Read {
         Xfer_Cnt_Hi  = 0xE, // Current Transfer Count Register High ; Am53CF94 extension
                             //
     };
-};
+}
 
 /** 53C94 write registers */
 namespace Write {
@@ -80,7 +80,7 @@ namespace Write {
         Xfer_Cnt_Hi  = 0xE, // Start Transfer Count Register High ; Am53CF94 extension
         Data_Align   = 0xF, // Data Alignment Register
     };
-};
+}
 
 /** NCR53C94/Am53CF94 commands. */
 enum {
@@ -180,7 +180,7 @@ namespace SeqState {
         RCV_STATUS,
         RCV_MESSAGE,
     };
-};
+}
 
 constexpr auto DATA_FIFO_MAX = 16;
 
@@ -228,7 +228,7 @@ public:
                 std::bind(&Sc53C94::dma_stop, this)
             );
         }
-    };
+    }
 
     void set_drq_callback(DrqCb cb) {
         this->drq_cb = cb;
@@ -236,18 +236,18 @@ public:
 
     // ScsiDevice methods
     void notify(ScsiNotification notif_type, int param) override;
-    bool prepare_data() override { return false; };
-    bool get_more_data() override { return false; };
-    bool has_data() override { return this->data_fifo_pos != 0; };
+    bool prepare_data() override { return false; }
+    bool get_more_data() override { return false; }
+    bool has_data() override { return this->data_fifo_pos != 0; }
     int  send_data(uint8_t* dst_ptr, int count) override;
-    void process_command() override {};
+    void process_command() override {}
 
     // DmaDevice methods
     int xfer_from(uint8_t *buf, int len) override;
     int xfer_to(uint8_t *buf, int len) override;
     int tell_xfer_size() override {
         return this->xfer_count;
-    };
+    }
 
 protected:
     void reset_device();

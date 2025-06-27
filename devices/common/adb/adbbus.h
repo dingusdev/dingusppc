@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -55,7 +55,7 @@ public:
 
     void register_device(AdbDevice* dev_obj);
     uint8_t process_command(const uint8_t* in_data, int data_size);
-    uint8_t get_output_count() { return this->output_count; };
+    uint8_t get_output_count() { return this->output_count; }
 
     // Polls devices that have a service request flag set. Returns the talk
     // command corresponding to the first device that responded with data, or
@@ -63,11 +63,11 @@ public:
     uint8_t poll();
 
     // callbacks meant to be called by devices
-    const uint8_t*  get_input_buf() { return this->input_buf; };
-    uint8_t*        get_output_buf() { return this->output_buf; };
-    uint8_t         get_input_count() { return this->input_count; };
-    void            set_output_count(uint8_t count) { this->output_count = count; };
-    bool            already_answered() { return this->got_answer; };
+    const uint8_t*  get_input_buf() { return this->input_buf; }
+    uint8_t*        get_output_buf() { return this->output_buf; }
+    uint8_t         get_input_count() { return this->input_count; }
+    void            set_output_count(uint8_t count) { this->output_count = count; }
+    bool            already_answered() { return this->got_answer; }
 
 private:
     std::vector<AdbDevice*> devices;

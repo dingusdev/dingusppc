@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -60,6 +60,6 @@ enum {
     VRAM_MASK_HI    = 0x0091,
 };
 
-}; // namespace Rgb514
+} // namespace Rgb514
 
 #endif // IBM_RGB514_DEFS_H

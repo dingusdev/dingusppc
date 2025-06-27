@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -139,7 +139,7 @@ bool CmdIdeCtrl::pci_io_write(uint32_t offset, uint32_t value, uint32_t size) {
         return false;
 
     return true;
-};
+}
 
 uint8_t CmdIdeCtrl::read_config_reg(uint32_t reg_offset) {
     switch(reg_offset) {

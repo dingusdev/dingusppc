@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -44,7 +44,7 @@ typedef struct ProfileVar {
 /** Base class for user-defined profiles. */
 class BaseProfile {
 public:
-    BaseProfile(std::string name) { this->name = name; };
+    BaseProfile(std::string name) { this->name = name; }
 
     virtual ~BaseProfile() = default;
 

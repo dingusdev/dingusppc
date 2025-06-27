@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -44,7 +44,7 @@ public:
     // PCI device methods
     bool supports_io_space(void) {
         return true;
-    };
+    }
 
     // I/O space access methods
     bool pci_io_read(uint32_t offset, uint32_t size, uint32_t* res);

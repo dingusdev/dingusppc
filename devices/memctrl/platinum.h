@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -295,7 +295,7 @@ enum {
 constexpr auto VRAM_REGION_BASE     = 0xF1000000UL;
 constexpr auto PLATINUM_IOREG_BASE  = 0xF8000000UL;
 
-}; // namespace Platinum
+} // namespace Platinum
 
 class PlatinumCtrl : public MemCtrlBase, public VideoCtrlBase, public MMIODevice {
 public:

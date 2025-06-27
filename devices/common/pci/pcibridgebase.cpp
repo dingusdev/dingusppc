@@ -40,7 +40,7 @@ PCIBridgeBase::PCIBridgeBase(std::string name, PCIHeaderType hdr_type, int num_b
     };
     this->pci_wr_sec_status         = [this](uint16_t val) {};
     this->pci_wr_bridge_control     = [this](uint16_t val) { this->bridge_control = val; };
-};
+}
 
 AddressMapEntry* PCIBridgeBase::pci_register_mmio_region(uint32_t start_addr, uint32_t size, PCIBase* obj)
 {

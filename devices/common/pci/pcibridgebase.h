@@ -52,7 +52,7 @@ public:
 
     bool supports_io_space() override {
         return true;
-    };
+    }
 
     // plugin interface for using in the derived classes
     std::function<uint8_t()>        pci_rd_primary_bus;

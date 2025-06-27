@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -74,7 +74,7 @@ private:
 class MacioIdeChannel : public IdeChannel
 {
 public:
-    MacioIdeChannel(const std::string name) : IdeChannel(name) {};
+    MacioIdeChannel(const std::string name) : IdeChannel(name) {}
     ~MacioIdeChannel() = default;
 
     static std::unique_ptr<HWComponent> create_first() {

@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -64,7 +64,7 @@ public:
         this->dev_addr = addr;
         this->pos      = 0;
         supports_types(HWCompType::RAM);
-    };
+    }
 
     ~SpdSdram168() = default;
 
@@ -109,22 +109,22 @@ public:
             throw std::invalid_argument(std::string("Unsupported capacity!"));
         }
         LOG_F(INFO, "SDRAM capacity set to %dMB, I2C addr = 0x%X", capacity_megs, this->dev_addr);
-    };
+    }
 
     void start_transaction() {
         this->pos = 0;
-    };
+    }
 
     bool send_subaddress(uint8_t sub_addr) {
         this->pos = sub_addr;
         LOG_F(9, "SDRAM subaddress set to 0x%X", sub_addr);
         return true;
-    };
+    }
 
     bool send_byte(uint8_t data) {
         LOG_F(9, "SDRAM byte 0x%X received", data);
         return true;
-    };
+    }
 
     bool receive_byte(uint8_t* p_data) {
         if (this->pos >= this->eeprom_data[0]) {
@@ -133,7 +133,7 @@ public:
         LOG_F(9, "SDRAM sending EEPROM byte 0x%X", this->eeprom_data[this->pos]);
         *p_data = this->eeprom_data[this->pos++];
         return true;
-    };
+    }
 
 private:
     uint8_t dev_addr; /* I2C address */

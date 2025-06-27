@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -44,8 +44,8 @@ public:
     CharIoBackEnd() = default;
     virtual ~CharIoBackEnd() = default;
 
-    virtual int rcv_enable() { return 0; };
-    virtual void rcv_disable() {};
+    virtual int rcv_enable() { return 0; }
+    virtual void rcv_disable() {}
     virtual bool rcv_char_available() = 0;
     virtual bool rcv_char_available_now() = 0;
     virtual int xmit_char(uint8_t c) = 0;
@@ -67,7 +67,7 @@ public:
 /** Stdin character I/O backend. */
 class CharIoStdin : public CharIoBackEnd  {
 public:
-    CharIoStdin() { this->stdio_inited = false; };
+    CharIoStdin() { this->stdio_inited = false; }
     ~CharIoStdin() = default;
 
     int rcv_enable();

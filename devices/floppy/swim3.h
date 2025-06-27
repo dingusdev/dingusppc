@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-21 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -100,7 +100,7 @@ public:
 
     void set_dma_channel(DmaBidirChannel *dma_ch) {
         this->dma_ch = dma_ch;
-    };
+    }
 
 protected:
     void    reset();
@@ -151,6 +151,6 @@ private:
     uint8_t        irq      = 0;
 };
 
-}; // namespace Swim3
+} // namespace Swim3
 
 #endif // SWIM3_H

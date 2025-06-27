@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -72,7 +72,7 @@ enum DpllMode : uint8_t {
 /** ESCC Channel class. */
 class EsccChannel {
 public:
-    EsccChannel(std::string name) { this->name = name; };
+    EsccChannel(std::string name) { this->name = name; }
     ~EsccChannel() = default;
 
     void attach_backend(int id);
@@ -113,7 +113,7 @@ public:
                 break;
             }
         }
-    };
+    }
 
 private:
     uint32_t timer_id_tx = 0;
@@ -166,7 +166,7 @@ public:
         case 0: ch_a->set_dma_channel(ch_dir_index & 1, dma_ch); break;
         case 1: ch_b->set_dma_channel(ch_dir_index & 1, dma_ch); break;
         }
-    };
+    }
 
 private:
     void reset();

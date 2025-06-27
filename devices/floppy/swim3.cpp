@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -98,7 +98,7 @@ int Swim3Ctrl::device_postinit()
     }
 
     return 0;
-};
+}
 
 uint8_t Swim3Ctrl::read(uint8_t reg_offset)
 {

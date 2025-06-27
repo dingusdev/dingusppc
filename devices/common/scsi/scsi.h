@@ -62,7 +62,7 @@ namespace ScsiPhase {
         MESSAGE_OUT,
         RESET,
     };
-};
+}
 
 /** SCSI status codes. */
 namespace ScsiStatus {
@@ -70,7 +70,7 @@ namespace ScsiStatus {
         GOOD = 0,
         CHECK_CONDITION = 2,
     };
-};
+}
 
 /** Standard message codes. */
 namespace ScsiMessage {
@@ -83,7 +83,7 @@ namespace ScsiMessage {
         HAS_DISCONNECT_PRIVILEDGE  = 0x40,
         IDENTIFY                   = 0x80,
     };
-};
+}
 
 /** Extended message codes. */
 namespace ScsiExtMessage {
@@ -92,7 +92,7 @@ namespace ScsiExtMessage {
         SYNCH_XFER_REQ  = 1,
         WIDE_XFER_REQ   = 3,
     };
-};
+}
 
 /** Internal notification codes for our SCSI implementation. */
 enum ScsiNotification : int {
@@ -187,7 +187,7 @@ public:
         this->scsi_id = my_id;
         this->lun = 0,
         this->cur_phase = ScsiPhase::BUS_FREE;
-    };
+    }
     ~ScsiDevice() = default;
 
     virtual void notify(ScsiNotification notif_type, int param);
@@ -196,7 +196,7 @@ public:
     virtual void switch_phase(const int new_phase);
     virtual bool allow_phase_change();
 
-    virtual bool has_data() { return this->data_size != 0; };
+    virtual bool has_data() { return this->data_size != 0; }
     virtual int  xfer_data();
     virtual int  send_data(uint8_t* dst_ptr, int count);
     virtual int  rcv_data(const uint8_t* src_ptr, const int count);
@@ -281,7 +281,7 @@ public:
     uint16_t    test_ctrl_lines(uint16_t mask);
 
     // reading/writing data lines
-    uint8_t get_data_lines() { return this->data_lines; };
+    uint8_t get_data_lines() { return this->data_lines; }
 
     // high-level control/status
     int  switch_phase(int id, int new_phase);

@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -43,7 +43,7 @@ public:
     void set_host(IdeChannel* host, uint8_t dev_id) {
         this->host_obj = host;
         this->my_dev_id = dev_id;
-    };
+    }
 
     uint16_t read(const uint8_t reg_addr) override;
     void write(const uint8_t reg_addr, const uint16_t value) override;
@@ -54,7 +54,7 @@ public:
 
     void pdiag_callback() override {
         this->r_error &= 0x7F;
-    };
+    }
 
     virtual void device_reset(bool is_soft_reset);
     virtual void device_set_signature();

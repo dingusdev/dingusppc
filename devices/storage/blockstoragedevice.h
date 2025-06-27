@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -41,7 +41,7 @@ public:
 
     int set_fpos(const uint32_t lba);
     int read_begin(int nblocks, uint32_t max_len);
-    int data_left() { return this->remain_size; };
+    int data_left() { return this->remain_size; }
     int read_more();
     int write_begin(char *buf, int nblocks);
 

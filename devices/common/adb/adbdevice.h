@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -47,7 +47,7 @@ public:
     virtual void reset() = 0;
     virtual bool talk(const uint8_t dev_addr, const uint8_t reg_num);
     virtual void listen(const uint8_t dev_addr, const uint8_t reg_num);
-    virtual uint8_t get_address() { return this->my_addr; };
+    virtual uint8_t get_address() { return this->my_addr; }
 
     // Attempts to poll the device. Returns the talk command corresponding to
     // the device if it has data, 0 otherwise.
@@ -56,15 +56,15 @@ public:
 protected:
     uint8_t gen_random_address();
 
-    virtual bool get_register_0() { return false; };
-    virtual bool get_register_1() { return false; };
-    virtual bool get_register_2() { return false; };
+    virtual bool get_register_0() { return false; }
+    virtual bool get_register_1() { return false; }
+    virtual bool get_register_2() { return false; }
     virtual bool get_register_3();
 
-    virtual void set_register_0() {};
-    virtual void set_register_1() {};
-    virtual void set_register_2() {};
-    virtual void set_register_3() {};
+    virtual void set_register_0() {}
+    virtual void set_register_1() {}
+    virtual void set_register_2() {}
+    virtual void set_register_3() {}
 
     uint8_t exc_event_flag = 0;
     uint8_t srq_flag = 0;

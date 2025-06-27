@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -86,7 +86,7 @@ enum RamdacRegs : uint8_t {
     VENDOR_ID       = 0x40, // Dacula: DAC_TYPE 0x3c or 0x84
 };
 
-}; // namespace RamdacRegs
+} // namespace RamdacRegs
 
 typedef std::function<void(uint8_t index, uint8_t *colors)> GetClutEntryCallback;
 typedef std::function<void(uint8_t index, uint8_t *colors)> SetClutEntryCallback;
@@ -109,7 +109,7 @@ public:
         this->video_width  = width;
         this->video_height = height;
         this->fb_pitch     = pitch;
-    };
+    }
 
     void measure_hw_cursor(uint8_t *fb_ptr);
     void draw_hw_cursor(uint8_t *src_buf, uint8_t *dst_buf, int dst_pitch);

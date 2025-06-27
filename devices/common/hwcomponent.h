@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -63,22 +63,22 @@ public:
 
     virtual std::string get_name(void) {
         return this->name;
-    };
+    }
     virtual void set_name(std::string name) {
         this->name = name;
-    };
+    }
 
     virtual bool supports_type(HWCompType type) {
         return !!(this->supported_types & type);
-    };
+    }
 
     virtual void supports_types(uint64_t types) {
         this->supported_types = types;
-    };
+    }
 
     virtual int device_postinit() {
         return 0;
-    };
+    }
 
 protected:
     std::string name;

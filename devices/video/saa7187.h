@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -116,7 +116,7 @@ enum Saa7187Regs : uint8_t { // i2c address is 0x44; fatman is at 0x46?
     last_reg = 0x7e,
 };
 
-}; // namespace Saa7187Regs
+} // namespace Saa7187Regs
 
 class Saa7187VideoEncoder : public I2CDevice, public HWComponent
 {

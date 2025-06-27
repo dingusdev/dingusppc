@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -58,8 +58,8 @@ public:
 
     // HW cursor support
     void setup_hw_cursor(int cursor_width=64, int cur_height=64);
-    virtual void draw_hw_cursor(uint8_t *dst_buf, int dst_pitch) {};
-    virtual void get_cursor_position(int& x, int& y) { x = 0; y = 0; };
+    virtual void draw_hw_cursor(uint8_t *dst_buf, int dst_pitch) {}
+    virtual void get_cursor_position(int& x, int& y) { x = 0; y = 0; }
 
     // converters for various framebuffer pixel depths
     void convert_frame_1bpp_indexed(uint8_t *dst_buf, int dst_pitch);

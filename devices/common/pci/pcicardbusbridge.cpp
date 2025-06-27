@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -126,7 +126,7 @@ PCICardbusBridge::PCICardbusBridge(std::string name) : PCIBridgeBase(name, PCI_H
         this->io_limit_1    = (val & this->io_1_cfg);
         this->io_limit_1_32 = this->io_limit_1 + 4;
     };
-};
+}
 
 uint32_t PCICardbusBridge::pci_cfg_read(uint32_t reg_offs, AccessDetails &details)
 {

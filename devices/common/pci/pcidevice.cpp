@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -29,7 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 PCIDevice::PCIDevice(std::string name) : PCIBase(name, PCI_HEADER_TYPE_0, 6)
 {
-};
+}
 
 uint32_t PCIDevice::pci_cfg_read(uint32_t reg_offs, AccessDetails &details)
 {

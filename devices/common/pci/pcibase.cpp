@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -57,7 +57,7 @@ PCIBase::PCIBase(std::string name, PCIHeaderType hdr_type, int num_bars)
     this->pci_wr_cache_lnsz = [this](uint8_t val) { this->cache_ln_sz = val; };
 
     this->pci_notify_bar_change = [](int bar_num) {};
-};
+}
 
 uint32_t PCIBase::pci_cfg_read(uint32_t reg_offs, AccessDetails &details)
 {

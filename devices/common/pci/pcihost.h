@@ -65,7 +65,7 @@ public:
     PCIHost() {
         this->dev_map.clear();
         io_space_devs.clear();
-    };
+    }
     ~PCIHost() = default;
 
     virtual bool pci_register_device(int dev_fun_num, PCIBase* dev_instance);
@@ -89,13 +89,13 @@ public:
 
     virtual void set_irq_map(const std::vector<PciIrqMap> &irq_map) {
         this->my_irq_map = irq_map;
-    };
+    }
     virtual int pcihost_device_postinit();
 
     virtual bool register_pci_int(PCIBase* dev_instance);
     virtual void set_interrupt_controller(InterruptCtrl * int_ctrl_obj) {
         this->int_ctrl = int_ctrl_obj;
-    };
+    }
     virtual InterruptCtrl *get_interrupt_controller();
 
 protected:

@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -47,7 +47,7 @@ enum AthensRegs: uint8_t {
     P1      = 7
 };
 
-}; // namespace AthensRegs
+} // namespace AthensRegs
 
 class AthensClocks : public I2CDevice, public HWComponent
 {

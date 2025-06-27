@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -86,16 +86,16 @@ public:
 
     virtual bool supports_io_space() {
         return has_io_space;
-    };
+    }
 
     /* I/O space access methods */
     virtual bool pci_io_read(uint32_t offset, uint32_t size, uint32_t* res) {
         return false;
-    };
+    }
 
     virtual bool pci_io_write(uint32_t offset, uint32_t value, uint32_t size) {
         return false;
-    };
+    }
 
     // configuration space access methods
     virtual uint32_t pci_cfg_read(uint32_t reg_offs, AccessDetails &details);
