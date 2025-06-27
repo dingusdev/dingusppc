@@ -58,6 +58,9 @@ void EventManager::poll_events() {
 
         case SDL_KEYDOWN:
         case SDL_KEYUP: {
+                if (event.key.repeat)
+                    break;
+
                 // Internal shortcuts, intentionally not sent to the host.
                 // Control-G: mouse grab
                 if (event.key.keysym.sym == SDLK_g && (SDL_GetModState() & KMOD_ALL) == KMOD_LCTRL) {
