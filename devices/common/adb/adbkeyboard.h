@@ -128,6 +128,10 @@ enum AdbKey {
     AdbKey_Command =        0x37,
     AdbKey_CapsLock =       0x39,
 
+    AdbKey_RightControl   = 0x7d,
+    AdbKey_RightShift     = 0x7b,
+    AdbKey_RightOption    = 0x7c,
+
     AdbKey_ArrowUp =        0x3e,
     AdbKey_ArrowDown =      0x3d,
     AdbKey_ArrowLeft =      0x3b,

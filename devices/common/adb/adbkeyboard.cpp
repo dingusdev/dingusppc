@@ -77,6 +77,14 @@ uint8_t AdbKeyboard::consume_pending_event() {
         LOG_F(WARNING, "%s: unknown keyboard event flags %x", this->name.c_str(), event->flags);
     }
 
+    if (this->dev_handler_id != 3) {
+        switch (event->key) {
+            case AdbKey_RightControl : event->key = AdbKey_Control; break;
+            case AdbKey_RightShift   : event->key = AdbKey_Shift  ; break;
+            case AdbKey_RightOption  : event->key = AdbKey_Option ; break;
+        }
+    }
+
     return (key_state << 7) | (event->key & 0x7F);
 }
 

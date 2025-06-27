@@ -335,11 +335,11 @@ static int get_sdl_event_key_code(const SDL_KeyboardEvent &event, uint32_t kbd_l
     case SDLK_PAGEDOWN:     return AdbKey_PageDown;
 
     case SDLK_LCTRL:        return AdbKey_Control;
-    case SDLK_RCTRL:        return AdbKey_Control;
+    case SDLK_RCTRL:        return AdbKey_RightControl;
     case SDLK_LSHIFT:       return AdbKey_Shift;
-    case SDLK_RSHIFT:       return AdbKey_Shift;
+    case SDLK_RSHIFT:       return AdbKey_RightShift;
     case SDLK_LALT:         return AdbKey_Option;
-    case SDLK_RALT:         return AdbKey_Option;
+    case SDLK_RALT:         return AdbKey_RightOption;
     case SDLK_LGUI:         return AdbKey_Command;
     case SDLK_RGUI:         return AdbKey_Command;
     case SDLK_MENU:         return AdbKey_Grave;
