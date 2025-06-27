@@ -84,12 +84,16 @@ void AdbDevice::listen(const uint8_t dev_addr, const uint8_t reg_num) {
         switch(reg_num & 3) {
         case 0:
             this->set_register_0();
+            break;
         case 1:
             this->set_register_1();
+            break;
         case 2:
             this->set_register_2();
+            break;
         case 3:
             this->set_register_3();
+            break;
         }
     }
 }
