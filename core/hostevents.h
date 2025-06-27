@@ -127,7 +127,8 @@ public:
         return event_manager;
     };
 
-    void poll_events(uint32_t kbd_locale);
+    void poll_events();
+    void set_keyboard_locale(uint32_t keyboard_id);
 
     template <typename T>
     void add_window_handler(T *inst, void (T::*func)(const WindowEvent&)) {
@@ -181,6 +182,7 @@ private:
     uint64_t    key_downs = 0;
     uint64_t    key_ups = 0;
     uint8_t     buttons_state = 0;
+    uint32_t    kbd_locale = 0;
 };
 
 #endif // EVENT_MANAGER_H

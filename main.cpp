@@ -71,7 +71,7 @@ static string appDescription = string(
     "\n"
 );
 
-uint32_t keyboard_id = 0;
+static uint32_t keyboard_id = 0;
 
 /// Check for an existing directory (returns error message if check fails)
 class WorkingDirectoryValidator : public CLI::detail::ExistingDirectoryValidator {
@@ -360,10 +360,12 @@ void run_machine(std::string machine_str, char* rom_data,
         });
     }
 
+    EventManager::get_instance()->set_keyboard_locale(keyboard_id);
+
     // set up system wide event polling using
     // default Macintosh polling rate of 11 ms
     uint32_t event_timer = TimerManager::get_instance()->add_cyclic_timer(MSECS_TO_NSECS(11), [] {
-        EventManager::get_instance()->poll_events(keyboard_id);
+        EventManager::get_instance()->poll_events();
     });
 
 #ifdef CPU_PROFILING

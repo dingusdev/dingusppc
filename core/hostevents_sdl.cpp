@@ -32,7 +32,11 @@ static int get_sdl_event_key_code(const SDL_KeyboardEvent& event, uint32_t kbd_l
 
 constexpr int KMOD_ALL = KMOD_LSHIFT | KMOD_RSHIFT | KMOD_LCTRL | KMOD_RCTRL | KMOD_LALT | KMOD_RALT | KMOD_LGUI | KMOD_RGUI;
 
-void EventManager::poll_events(uint32_t kbd_locale) {
+void EventManager::set_keyboard_locale(uint32_t keyboard_id) {
+    this->kbd_locale = keyboard_id;
+}
+
+void EventManager::poll_events() {
     SDL_Event event;
 
     while (SDL_PollEvent(&event)) {
@@ -126,7 +130,7 @@ void EventManager::poll_events(uint32_t kbd_locale) {
                     this->_keyboard_signal.emit(ke);
                     return;
                 }
-                int key_code = get_sdl_event_key_code(event.key, kbd_locale);
+                int key_code = get_sdl_event_key_code(event.key, this->kbd_locale);
                 if (key_code != -1) {
                     KeyboardEvent ke{};
                     ke.key = key_code;
