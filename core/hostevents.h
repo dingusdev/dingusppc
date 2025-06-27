@@ -75,7 +75,6 @@ public:
 
     uint32_t flags;
     uint32_t key;
-    uint16_t keys_state;
 };
 
 
