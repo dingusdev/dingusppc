@@ -370,7 +370,7 @@ static int get_sdl_event_key_code(const SDL_KeyboardEvent &event, uint32_t kbd_l
     case SDLK_DOWN:         return AdbKey_ArrowDown;
     case SDLK_LEFT:         return AdbKey_ArrowLeft;
     case SDLK_RIGHT:        return AdbKey_ArrowRight;
-;
+
     case SDLK_KP_0:         return AdbKey_Keypad0;
     case SDLK_KP_1:         return AdbKey_Keypad1;
     case SDLK_KP_2:         return AdbKey_Keypad2;
@@ -389,7 +389,7 @@ static int get_sdl_event_key_code(const SDL_KeyboardEvent &event, uint32_t kbd_l
     case SDLK_KP_ENTER:     return AdbKey_KeypadEnter;
     case SDLK_KP_EQUALS:    return AdbKey_KeypadEquals;
     case SDLK_NUMLOCKCLEAR: return AdbKey_KeypadClear;
-;
+
     case SDLK_F1:           return AdbKey_F1;
     case SDLK_F2:           return AdbKey_F2;
     case SDLK_F3:           return AdbKey_F3;
