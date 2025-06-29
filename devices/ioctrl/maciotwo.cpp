@@ -431,7 +431,7 @@ uint64_t MacIoTwo::register_dma_int(IntSrc src_id) {
 
 //===========================================================================
 static const std::vector<std::string> OHare_Subdevices = {
-    "NVRAM", "ViaCuda", "MeshHeathrow", "Escc", "Swim3", "Ide0", "Ide1"
+    "NVRAM", "ViaCuda", "MeshTnt", "Escc", "Swim3", "Ide0", "Ide1"
 };
 
 static const std::vector<std::string> Heathrow_Subdevices = {
