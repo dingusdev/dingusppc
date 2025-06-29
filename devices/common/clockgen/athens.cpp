@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -75,10 +75,9 @@ bool AthensClocks::send_subaddress(uint8_t sub_addr)
 
 bool AthensClocks::send_byte(uint8_t data)
 {
-    switch (this->pos) {
+    switch (this->pos++) {
     case 0:
         this->reg_num = data;
-        this->pos++;
         break;
     case 1:
         if (this->reg_num >= ATHENS_NUM_REGS) {
@@ -90,7 +89,7 @@ bool AthensClocks::send_byte(uint8_t data)
         break;
     default:
         LOG_F(WARNING, "%s: too much data received!", this->name.c_str());
-        return false; // return NACK
+        //return false; // return NACK
     }
     return true;
 }
@@ -103,6 +102,8 @@ bool AthensClocks::receive_byte(uint8_t* p_data)
 
 int AthensClocks::get_sys_freq()
 {
+    LOG_F(ERROR, "%s: sys clock calculation not implemented yet", this->name.c_str());
+
     return 0;
 }
 
