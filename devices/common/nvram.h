@@ -45,11 +45,13 @@ public:
 
     uint8_t read_byte(uint32_t offset);
     void write_byte(uint32_t offset, uint8_t value);
+    uint32_t get_of_nvram_offset() { return of_nvram_offset; }
 
 private:
     std::string file_name; // file name for the backing file
     uint16_t    ram_size;  // NVRAM size
     std::unique_ptr<uint8_t[]>  storage;
+    uint32_t of_nvram_offset = 0;
 
     void init();
     void save();

@@ -67,7 +67,7 @@ bool OfConfigAppl::validate() {
 
     // read OF partition header
     for (i = 0; i < sizeof(OfConfigHdrAppl); i++) {
-        ((uint8_t*)&hdr)[i] = this->nvram_obj->read_byte(OF_NVRAM_OFFSET + i);
+        ((uint8_t*)&hdr)[i] = this->nvram_obj->read_byte(this->nvram_obj->get_of_nvram_offset() + i);
     }
 
     // validate partition signature and version
@@ -81,7 +81,7 @@ bool OfConfigAppl::validate() {
 
     // read the entire partition into the local buffer
     for (i = 0; i < this->size; i++) {
-        this->buf[i] = this->nvram_obj->read_byte(OF_NVRAM_OFFSET + i);
+        this->buf[i] = this->nvram_obj->read_byte(this->nvram_obj->get_of_nvram_offset() + i);
     }
 
     // verify partition checksum
@@ -161,7 +161,7 @@ const OfConfigImpl::config_dict& OfConfigAppl::get_config_vars() {
                 hex2str(READ_DWORD_BE_A(&this->buf[offset]))));
             break;
         case OF_VAR_TYPE_STR:
-            uint16_t str_offset = READ_WORD_BE_A(&this->buf[offset]) - OF_NVRAM_OFFSET;
+            uint16_t str_offset = READ_WORD_BE_A(&this->buf[offset]) - this->nvram_obj->get_of_nvram_offset();
             uint16_t str_len    = READ_WORD_BE_A(&this->buf[offset+2]);
 
             if ((str_offset + str_len) > OF_CFG_SIZE) {
@@ -194,7 +194,7 @@ void OfConfigAppl::update_partition() {
 
     // write the entire partition back to NVRAM
     for (int i = 0; i < this->size; i++) {
-        this->nvram_obj->write_byte(OF_NVRAM_OFFSET + i, this->buf[i]);
+        this->nvram_obj->write_byte(this->nvram_obj->get_of_nvram_offset() + i, this->buf[i]);
     }
 }
 
@@ -266,8 +266,8 @@ bool OfConfigAppl::set_var(std::string& var_name, std::string& value) {
         }
 
         // remove the old string
-        std::memmove(&this->buf[top + str_len - OF_NVRAM_OFFSET],
-            &this->buf[top - OF_NVRAM_OFFSET], str_offset - top);
+        std::memmove(&this->buf[top + str_len - this->nvram_obj->get_of_nvram_offset()],
+            &this->buf[top - this->nvram_obj->get_of_nvram_offset()], str_offset - top);
 
         for (auto& var : of_vars) {
             auto type   = std::get<0>(var.second);
@@ -284,7 +284,7 @@ bool OfConfigAppl::set_var(std::string& var_name, std::string& value) {
         // copy new string into NVRAM buffer char by char
         i = 0;
         for(char& ch : value) {
-            this->buf[top + i - OF_NVRAM_OFFSET] = ch == '\x0A' ? '\x0D' : ch;
+            this->buf[top + i - this->nvram_obj->get_of_nvram_offset()] = ch == '\x0A' ? '\x0D' : ch;
             i++;
         }
 

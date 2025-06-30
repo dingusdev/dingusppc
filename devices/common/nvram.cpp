@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cpu/ppc/ppcemu.h>
 #include <devices/common/hwcomponent.h>
 #include <devices/common/nvram.h>
+#include <devices/common/ofnvram.h>
 #include <devices/deviceregistry.h>
 
 #include <cinttypes>
@@ -45,6 +46,9 @@ NVram::NVram(std::string file_name, uint32_t ram_size)
 
     this->file_name = file_name;
     this->ram_size  = ram_size;
+
+    if (ram_size == 8192)
+        this->of_nvram_offset = OF_NVRAM_OFFSET;
 
     // allocate memory storage and fill it with zeroes
     this->storage = std::unique_ptr<uint8_t[]>(new uint8_t[ram_size] ());
