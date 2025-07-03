@@ -102,7 +102,7 @@ typedef struct TimerInfo {
 // Custom comparator for sorting our timer queue in ascending order
 class MyGtComparator {
 public:
-    bool operator()(const std::shared_ptr<TimerInfo>& l, const std::shared_ptr<TimerInfo>& r) {
+    bool operator()(const std::shared_ptr<TimerInfo>& l, const std::shared_ptr<TimerInfo>& r) const {
         return l.get()->timeout_ns > r.get()->timeout_ns ||
             (l.get()->timeout_ns == r.get()->timeout_ns && l.get()->id > r.get()->id);
     }
@@ -128,7 +128,7 @@ public:
     }
 
     // return current virtual time in nanoseconds
-    uint64_t current_time_ns() { return get_time_now(); }
+    uint64_t current_time_ns() const { return get_time_now(); }
 
     // creating and cancelling timers
     uint32_t add_absolute_timer(uint64_t timeout_ns, uint64_t interval, timer_cb cb);
