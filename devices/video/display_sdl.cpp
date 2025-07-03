@@ -26,6 +26,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cmath>
 #include <string>
 
+static const char * get_full_screen_mode_string(int scale_mode) {
+#define onemode(x) case Display::x: return #x ;
+    switch(scale_mode) {
+        onemode(not_full_screen)
+        onemode(full_screen_int)
+        onemode(full_screen)
+        onemode(full_screen_no_bars)
+        default: return "unknown";
+    }
+}
+
 class Display::Impl {
 public:
     uint32_t        disp_wnd_id = 0;
@@ -112,23 +123,32 @@ bool Display::configure(int width, int height) {
 }
 
 void Display::update_window_size() {
+    if (this->full_screen_mode != not_full_screen)
+        return;
     impl->drawable_w = this->scale_window * impl->display_w;
     impl->drawable_h = this->scale_window * impl->display_h;
     SDL_SetWindowSize(impl->display_wnd,
         impl->drawable_w / impl->default_scale_x,
         impl->drawable_h / impl->default_scale_y);
+    LOG_F(INFO, "update_window_size drawable: %4.0f x %-4.0f  display: %4d x %-4d  scale: %.3f",
+        impl->drawable_w, impl->drawable_h, impl->display_w, impl->display_h, impl->renderer_scale_x);
     this->update_mouse_grab(false); // make sure the mouse is still inside the window
 }
 
 void Display::configure_dest() {
-    if (this->full_screen_mode > not_full_screen) {
-        if (this->scale_full_screen == 0.0) {
+    bool should_set_full_screen = this->full_screen_mode > not_full_screen;
+    if (this->is_set_full_screen != should_set_full_screen) {
+        if (should_set_full_screen) {
             int w, h;
             SDL_SetWindowFullscreen(impl->display_wnd, SDL_WINDOW_FULLSCREEN_DESKTOP);
             SDL_GetRendererOutputSize(impl->renderer, &w, &h);
             impl->drawable_w = w;
             impl->drawable_h = h;
+        } else {
+            SDL_SetWindowFullscreen(impl->display_wnd, 0);
+            this->update_window_size();
         }
+        this->is_set_full_screen = should_set_full_screen;
     }
 
     double scalex = impl->drawable_w / impl->display_w;
@@ -138,8 +158,12 @@ void Display::configure_dest() {
     double scale_full_no_bars = std::max(scalex, scaley);
     double scale;
 
-    if (this->full_screen_mode > not_full_screen) {
-        if (this->scale_full_screen == 0.0) {
+    if (this->full_screen_mode == not_full_screen) {
+        scale = this->scale_window = scale_full;
+        this->full_screen_mode_forward = full_screen_int;
+        this->full_screen_mode_reverse = full_screen_no_bars;
+    } else {
+        if (!use_scale_full_screen || this->scale_full_screen == 0.0) {
             switch (this->full_screen_mode) {
                 case full_screen_int:
                     this->scale_full_screen = scale_full_int;
@@ -154,21 +178,29 @@ void Display::configure_dest() {
         }
         scale = this->scale_full_screen;
 
-        if (scale >= scale_full_no_bars)
-            this->full_screen_mode = full_screen_no_bars;
-        else if (scale >= scale_full)
+        if (scale == scale_full) {
+            // scale_full is preferable to scale_full_int
             this->full_screen_mode = full_screen;
-        else if (scale >= scale_full_int)
-            this->full_screen_mode = full_screen_int;
-        else
-            this->full_screen_mode = full_screen_small;
-    }
-    else {
-        scale = this->scale_window = scale_full;
-    }
+        }
 
-    LOG_F(INFO, "drawable: %.0f x %.0f  display: %d x %d  scale: %.3f",
-        impl->drawable_w, impl->drawable_h, impl->display_w, impl->display_h, scale);
+        if (scale >= scale_full_no_bars)
+            this->full_screen_mode_forward = not_full_screen;
+        else if (scale >= scale_full)
+            this->full_screen_mode_forward = full_screen_no_bars;
+        else if (scale >= scale_full_int)
+            this->full_screen_mode_forward = full_screen;
+        else
+            this->full_screen_mode_forward = full_screen_int;
+
+        if (scale <= scale_full_int)
+            this->full_screen_mode_reverse = not_full_screen;
+        else if (scale <= scale_full)
+            this->full_screen_mode_reverse = full_screen_int;
+        else if (scale <= scale_full_no_bars)
+            this->full_screen_mode_reverse = full_screen;
+        else
+            this->full_screen_mode_reverse = full_screen_no_bars;
+    }
 
     impl->dest_rect.w = std::round(scale * impl->display_w);
     impl->dest_rect.h = std::round(scale * impl->display_h);
@@ -176,6 +208,15 @@ void Display::configure_dest() {
     impl->dest_rect.y = std::round((impl->drawable_h - impl->dest_rect.h) / 2.0),
     impl->renderer_scale_x = scale;
     impl->renderer_scale_y = scale;
+
+    LOG_F(INFO, "configure_dest     drawable: %4.0f x %-4.0f  display: %4d x %-4d  scale: %.3f"
+        " (int: %.3f  full: %.3f  nobars: %.3f)  mode: %s  forward: %s  reverse: %s",
+        impl->drawable_w, impl->drawable_h, impl->display_w, impl->display_h, impl->renderer_scale_x,
+        scale_full_int, scale_full, scale_full_no_bars,
+        get_full_screen_mode_string(this->full_screen_mode),
+        get_full_screen_mode_string(this->full_screen_mode_forward),
+        get_full_screen_mode_string(this->full_screen_mode_reverse)
+    );
 }
 
 void Display::configure_texture() {
@@ -239,27 +280,18 @@ void Display::handle_events(const WindowEvent& wnd_event) {
         break;
 
     case DPPC_WINDOWEVENT_WINDOW_FULL_SCREEN_TOGGLE:
-        if (wnd_event.window_id == impl->disp_wnd_id) {
-            switch (this->full_screen_mode) {
-            case not_full_screen:
-            case full_screen_small:
-                this->full_screen_mode = full_screen_int;
-                this->scale_full_screen = 0.0;
+    case DPPC_WINDOWEVENT_WINDOW_FULL_SCREEN_TOGGLE_REVERSE:
+        {
+            if (wnd_event.window_id != impl->disp_wnd_id)
                 break;
-            case full_screen_int:
-                this->full_screen_mode = full_screen;
-                this->scale_full_screen = 0.0;
-                break;
-            case full_screen:
-                this->full_screen_mode = full_screen_no_bars;
-                this->scale_full_screen = 0.0;
-                break;
-            case full_screen_no_bars:
-                SDL_SetWindowFullscreen(impl->display_wnd, 0);
-                this->full_screen_mode = not_full_screen;
-                this->update_window_size();
-                break;
-            }
+
+            if (wnd_event.sub_type == DPPC_WINDOWEVENT_WINDOW_FULL_SCREEN_TOGGLE)
+                this->full_screen_mode = this->full_screen_mode_forward;
+            else
+                this->full_screen_mode = this->full_screen_mode_reverse;
+
+            if (this->full_screen_mode > not_full_screen)
+                this->use_scale_full_screen = false;
 
             this->configure_dest();
             video_ctrl->set_draw_fb();
@@ -277,6 +309,7 @@ void Display::handle_events(const WindowEvent& wnd_event) {
                     this->scale_window = this->scale_window / std::pow(2.0, 1.0/8.0);
                 this->update_window_size();
             } else {
+                this->use_scale_full_screen = true;
                 if (wnd_event.sub_type == DPPC_WINDOWEVENT_WINDOW_BIGGER)
                     this->scale_full_screen = this->scale_full_screen * std::pow(2.0, 1.0/8.0);
                 else

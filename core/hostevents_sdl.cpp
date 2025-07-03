@@ -95,6 +95,16 @@ void EventManager::poll_events() {
                     }
                     return;
                 }
+                // Control-Shift-F: fullscreen reverse
+                if (event.key.keysym.sym == SDLK_f && (event.key.keysym.mod & KMOD_ALL) == (KMOD_LCTRL | KMOD_LSHIFT)) {
+                    if (event.type == SDL_KEYUP) {
+                        WindowEvent we{};
+                        we.sub_type  = DPPC_WINDOWEVENT_WINDOW_FULL_SCREEN_TOGGLE_REVERSE;
+                        we.window_id = event.window.windowID;
+                        this->_window_signal.emit(we);
+                    }
+                    return;
+                }
                 // Control-+: bigger
                 if (event.key.keysym.sym == SDLK_EQUALS && (event.key.keysym.mod & KMOD_ALL) == KMOD_LCTRL) {
                     if (event.type == SDL_KEYUP) {

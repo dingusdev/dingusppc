@@ -35,7 +35,6 @@ class Display {
 public:
     enum {
         not_full_screen,
-        full_screen_small,
         full_screen_int,
         full_screen,
         full_screen_no_bars,
@@ -84,6 +83,10 @@ private:
     std::unique_ptr<Impl> impl;
     VideoCtrlBase* video_ctrl = nullptr;
     int full_screen_mode = not_full_screen;
+    int full_screen_mode_forward = not_full_screen;
+    int full_screen_mode_reverse = not_full_screen;
+    bool use_scale_full_screen = false;
+    bool is_set_full_screen = false;
     double scale_full_screen;
     double scale_window;
 };
