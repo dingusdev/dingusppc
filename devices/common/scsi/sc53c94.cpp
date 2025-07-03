@@ -97,7 +97,11 @@ uint8_t Sc53C94::read(uint8_t reg_offset)
         return this->cmd_fifo[0];
     case Read::Reg53C94::Status:
         if (this->config2 & CFG2_ENF) {
-            LOG_F(WARNING, "%s: phase latch not implemented", this->name.c_str());
+            static bool log_it = true;
+            if (log_it) {
+                LOG_F(WARNING, "%s: phase latch not implemented", this->name.c_str());
+                log_it = false;
+            }
             bus_phase = SCSI_CTRL_MSG; // use reserved bus phase
         } else
             bus_phase = bus_obj->test_ctrl_lines(SCSI_CTRL_MSG | SCSI_CTRL_CD | SCSI_CTRL_IO);
