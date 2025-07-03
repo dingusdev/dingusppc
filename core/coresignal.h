@@ -52,7 +52,7 @@ public:
     }
 
     // Calls all connected slots.
-    void emit(Args... args) {
+    void emit(Args... args) const {
         if (!_is_enabled) {
             return;
         }
@@ -77,7 +77,7 @@ public:
         _is_enabled = true;
     }
 
-    bool is_enabled() {
+    bool is_enabled() const {
         return _is_enabled;
     }
 
