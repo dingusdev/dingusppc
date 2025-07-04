@@ -272,7 +272,7 @@ enum {
 enum {
     MIO_OH_ID_FP                       = 0x70000000, // Flat panel ID
     MIO_OH_ID_MON                      = 0x00300000, // Monitor ID (mon_id?=1, no s-video/composite=3 but only if fatman exists).
-    MIO_OH_ID_MB                       = 0x0000F000, // Media Bay ID (0,1=swim, 3=ata, 5=pci, 7=?)
+    MIO_OH_ID_MB                       = 0x0000F000, // Media Bay ID (0,1=swim, 3=ata, 5=pci, 7=?, 4=TAM)
     MIO_OH_ID_CPU                      = 0x000000E0, // CPUID field
     MIO_OH_ID_DISABLE_SCSI_TERMINATORS = 0x00000010, // clear this bit to disable-scsi-terminators - read this bit for emmo_pin
     MIO_OH_ID_ENABLE_SCSI_TERMINATORS  = 0x00000008, // set this bit to enable-scsi-terminators
