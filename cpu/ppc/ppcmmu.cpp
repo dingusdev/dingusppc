@@ -792,7 +792,7 @@ static void tlb_flush_secondary_entry(std::array<TLBEntry, TLB_SIZE*TLB2_WAYS> &
 {
     TLBEntry *tlb_entry = &tlb2[((tag >> PPC_PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
     for (int i = 0; i < TLB2_WAYS; i++) {
-        if (tlb_entry->tag != TLB_INVALID_TAG && (tlb_entry->tag & TLB_VPS_MASK) == tag) {
+        if (tlb_entry[i].tag != TLB_INVALID_TAG && (tlb_entry[i].tag & TLB_VPS_MASK) == tag) {
             tlb_entry[i].tag = TLB_INVALID_TAG;
             //LOG_F(INFO, "Invalidated secondary TLB entry at 0x%X", tag);
         }
