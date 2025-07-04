@@ -43,7 +43,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     Machine ID register for NuBus Power Macs.
     It's located at physical address 0x5FFFFFFC and contains four bytes:
       +0 uint16_t signature = 0xA55A
-      +1 uint8_t  machine_type (3 - Power Mac)
+      +1 uint8_t  machine_type (0x30 - Power Mac)
       +2 uint8_t  model (0x10 = PDM, 0x12 = Carl Sagan, 0x13 = Cold Fusion)
  */
 class NubusMacID : public MMIODevice {
