@@ -264,9 +264,10 @@ static rom_info rom_identity[] = {
     {          0, 1024, 0, 0x110102, 0x6b1d2f73, 0, "P29Fat"      , "P29"      , nullptr   , nullptr                      , "iBook G3 (Dual USB Snow)"                          }, // PowerBook4,1
     {          0, 1024, 0, 0x110102, 0x98ef3072, 0, "MarbleFat"   , "P29"      , nullptr   , nullptr                      , "iBook G3 (Dual USB Snow)"                          }, // PowerBook4,1
     {          0, 1024, 0, 0x110103, 0x58762f44, 0, "P29fat100"   , "P29"      , nullptr   , nullptr                      , "iBook G3 (Dual USB Snow)"                          }, // PowerBook4,1
-    {          0, 1024, 0, 0x110103, 0x86483043, 0, "Mrblfat100"  , "P29"      , nullptr   , nullptr                      , "iBook G3 (Dual USB Snow)"                          }, // PowerBook4,1
+    {          0, 1024, 0, 0x110103, 0x86483043, 0, "Mrblfat100"  , "P29"      , nullptr   , nullptr                      , "iBook G3/600 (Late 2001 Snow)"                     }, // PowerBook4,1 // 2001-09-12 427f1
     {          0, 1024, 0, 0x110200, 0x4c372fb6, 0, "Diesel"      , "P54"      , nullptr   , nullptr                      , "iBook G3/600 14-Inch (Early 2002 Snow)"            }, // PowerBook4,2
     {          0, 1024, 0, 0x110200, 0x573b2f41, 0, "P54"         , "P54"      , nullptr   , nullptr                      , "iBook G3/600 14-Inch (Early 2002 Snow)"            }, // PowerBook4,2
+    {          0, 1024, 0, 0x110200, 0x850d3040, 0, nullptr       , "P54"      , nullptr   , nullptr                      , "iBook G3/600 14-Inch (Early 2002 Snow)"            }, // PowerBook4,2 // 2001-12-06 432f1
     {          0, 1024, 0, 0x110300, 0x58e12d5c, 0, "P72"         , "P72"      , nullptr   , nullptr                      , "iBook G3 (Snow)"                                   }, // PowerBook4,3 // 2002-11-11 454f1
     {          0, 1024, 0, 0x110300, 0xb98a30be, 0, "Nectr"       , "P72"      , nullptr   , nullptr                      , "iBook G3 (Snow)"                                   }, // PowerBook4,3
     {          0, 1024, 0, 0x110301, 0x594a2d5d, 0, "P73"         , "P73"      , nullptr   , nullptr                      , "iBook G3 (Snow)"                                   }, // PowerBook4,3
@@ -285,7 +286,7 @@ static rom_info rom_identity[] = {
     {          0, 1024, 0, 0x118603,          0, 0, nullptr       , "U210"     , nullptr   , nullptr                      , nullptr                                             }, // PowerBook6,6
     {          0, 1024, 0, 0x118701,          0, 0, nullptr       , "Q72B"     , nullptr   , nullptr                      , "iBook G4 12-Inch (Mid-2005 - Opaque)"              }, // PowerBook6,7
     {          0, 1024, 0, 0x118709,          0, 0, nullptr       , "Q73B"     , nullptr   , nullptr                      , "iBook G4 12-Inch (Mid-2005 - Opaque)"              }, // PowerBook6,7
-    {          0, 1024, 0, 0x11870c,          0, 0, nullptr       , "Q73B-Best", nullptr   , nullptr                      , "iBook G4 12-Inch (Mid-2005 - Opaque)"              }, // PowerBook6,7
+    {          0, 1024, 0, 0x11870c, 0x091929b6, 0, nullptr       , "Q73B-Best", nullptr   , nullptr                      , "iBook G4 14-Inch (Mid-2005 - Opaque)"              }, // PowerBook6,7 // 2005-07-05 493f0
     {          0, 1024, 0, 0x118801,          0, 0, nullptr       , "Q54B"     , nullptr   , nullptr                      , "PowerBook G4 1.5 12 inch (Aluminum)"               }, // PowerBook6,8
     {          0, 1024, 0, 0x20c100, 0x85e72bd1, 0, "P5"          , "P5"       , nullptr   , nullptr                      , "Power Mac G4 (AGP Graphics) Sawtooth"              }, // PowerMac3,1
     {          0, 1024, 0, 0x20c100, 0xb3b92cd0, 0, "Sawtooth"    , "P5"       , nullptr   , nullptr                      , "Power Mac G4 (AGP Graphics) Sawtooth"              }, // PowerMac3,1
@@ -364,7 +365,7 @@ static rom_info rom_identity[] = {
     {          0, 1024, 0, 0x30c501,          0, 0, nullptr       , "P881G"    , nullptr   , nullptr                      , "PowerBook G4 (Titanum)"                            }, // PowerBook3,5
     {          0, 1024, 0, 0x314100, 0x6ece5388, 0, "P84i"        , nullptr    , nullptr   , nullptr                      , "PowerBook G4 1.0 17 inch (Aluminum)"               }, // PowerBook5,1
     {          0, 1024, 0, 0x314103, 0x5c13264b, 0, nullptr       , "P84"      , nullptr   , nullptr                      , "PowerBook G4 1.0 17 inch (Aluminum)"               }, // PowerBook5,1 // 2003-02-18 462f1
-    {          0, 1024, 0, 0x314202,          0, 0, nullptr       , "Q16-EVT"  , nullptr   , nullptr                      , "PowerBook G4 15 inch (FW 800 - Aluminum)"          }, // PowerBook5,2
+    {          0, 1024, 0, 0x314202, 0xf60a284b, 0, nullptr       , "Q16-EVT"  , nullptr   , nullptr                      , "PowerBook G4 15 inch (FW 800 - Aluminum)"          }, // PowerBook5,2 // 2003-09-04 471f1
     {          0, 1024, 0, 0x314301,          0, 0, nullptr       , "Q41"      , nullptr   , nullptr                      , "PowerBook G4 1.33 17 inch (Aluminum)"              }, // PowerBook5,3
     {          0, 1024, 0, 0x314401,          0, 0, nullptr       , "Q16A"     , nullptr   , nullptr                      , "PowerBook G4 15 inch (Aluminum)"                   }, // PowerBook5,4
     {          0, 1024, 0, 0x314501,          0, 0, nullptr       , "Q41A"     , nullptr   , nullptr                      , "PowerBook G4 1.5 17 inch (Aluminum)"               }, // PowerBook5,5
