@@ -367,7 +367,7 @@ void ViaCuda::assert_ctrl_line(ViaLine line)
         this->_via_ifr |= VIA_IF_CB1;
         break;
     case ViaLine::CB2:
-        this->_via_ifr |= VIA_IF_CB1;
+        this->_via_ifr |= VIA_IF_CB2;
         break;
     default:
         ABORT_F("Assertion of unknown VIA line requested!");
