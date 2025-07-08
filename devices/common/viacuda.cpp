@@ -270,7 +270,8 @@ void ViaCuda::write(int reg, uint8_t value) {
         break;
     case VIA_IFR:
         // for each "1" in value clear the corresponding flags
-        this->_via_ifr &= ~value;
+        // bit 7 is ignored
+        this->_via_ifr &= ~(value & 0x7F);
         update_irq();
         break;
     case VIA_IER:
@@ -320,15 +321,15 @@ void ViaCuda::print_enabled_ints() {
     }
 }
 
-void ViaCuda::update_irq()
-{
+void ViaCuda::update_irq() {
     uint8_t active_ints = this->_via_ifr & this->_via_ier & 0x7F;
-    if (active_ints != this->old_ifr) {
-        uint8_t new_irq = !!active_ints;
-        this->_via_ifr  = (active_ints) | (new_irq << 7);
-        this->old_ifr = active_ints;
-        LOG_F(6, "VIA: assert IRQ, IFR=0x%02X", this->_via_ifr);
-        this->int_ctrl->ack_int(this->irq_id, new_irq);
+    uint8_t irq_state   = !!active_ints;
+    // let CPU know when irq_state is "1" or it changes from "1" to "0"
+    if (irq_state || (irq_state != (this->_via_ifr >> 7))) {
+        this->_via_ifr = (irq_state << 7) | (this->_via_ifr & 0x7F);
+        LOG_F(6, "%s: signal IRQ line change to 0x%X, IFR=0x%02X",
+              this->name.c_str(), irq_state, this->_via_ifr);
+        this->int_ctrl->ack_int(this->irq_id, irq_state);
     }
 }
 

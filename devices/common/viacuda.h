@@ -209,11 +209,10 @@ private:
     uint64_t t2_start_time = 0;
 
     // VIA interrupt related stuff
-    InterruptCtrl* int_ctrl;
+    InterruptCtrl* int_ctrl = nullptr;
     uint64_t       irq_id;
-    uint8_t        _via_ifr;
-    uint8_t        _via_ier;
-    uint8_t        old_ifr = 0;
+    uint8_t        _via_ifr = 0;
+    uint8_t        _via_ier = 0;
 
     /* Cuda state. */
     uint8_t  old_tip;
