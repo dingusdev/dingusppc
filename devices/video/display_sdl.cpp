@@ -104,12 +104,23 @@ bool Display::configure(int width, int height) {
         LOG_F(INFO, "Renderer \"%s\" max size: %d x %d", info.name, info.max_texture_width, info.max_texture_height);
 
         int w, h;
-        SDL_GetRendererOutputSize(impl->renderer, &w, &h);
-        impl->drawable_w = w;
-        impl->drawable_h = h;
-        impl->default_scale_x = impl->drawable_w / impl->display_w;
-        impl->default_scale_y = impl->drawable_h / impl->display_h;
-        this->scale_window = impl->default_scale_x;
+        double scale = 1.0;
+        while (1) {
+            SDL_GetRendererOutputSize(impl->renderer, &w, &h);
+            if (w == 0 || h == 0) {
+                scale /= scale_step;
+                LOG_F(INFO, "Invalid renderer size. Reducing scale to %.3f.", scale);
+                SDL_SetWindowSize(impl->display_wnd,
+                    std::round(scale * impl->display_w),
+                    std::round(scale * impl->display_h));
+            } else
+                break;
+        }
+        impl->default_scale_x = std::round(double(w) / std::round(scale * impl->display_w));
+        impl->default_scale_y = std::round(double(h) / std::round(scale * impl->display_h));
+        impl->drawable_w = scale * impl->display_w * impl->default_scale_x;
+        impl->drawable_h = scale * impl->display_h * impl->default_scale_y;
+        this->scale_window = scale * impl->default_scale_x;
         this->configure_dest();
 
         update_window_title();
@@ -127,13 +138,34 @@ bool Display::configure(int width, int height) {
 void Display::update_window_size() {
     if (this->full_screen_mode != not_full_screen)
         return;
-    impl->drawable_w = this->scale_window * impl->display_w;
-    impl->drawable_h = this->scale_window * impl->display_h;
-    SDL_SetWindowSize(impl->display_wnd,
-        impl->drawable_w / impl->default_scale_x,
-        impl->drawable_h / impl->default_scale_y);
-    LOG_F(INFO, "update_window_size drawable: %4.0f x %-4.0f  display: %4d x %-4d  scale: %.3f",
-        impl->drawable_w, impl->drawable_h, impl->display_w, impl->display_h, impl->renderer_scale_x);
+
+    int w, h;
+    double w_err, h_err;
+    while (1) {
+        impl->drawable_w = this->scale_window * impl->display_w;
+        impl->drawable_h = this->scale_window * impl->display_h;
+
+        SDL_SetWindowSize(impl->display_wnd,
+            std::round(impl->drawable_w / impl->default_scale_x),
+            std::round(impl->drawable_h / impl->default_scale_y));
+
+        SDL_GetRendererOutputSize(impl->renderer, &w, &h);
+
+        w_err = std::abs(impl->drawable_w - w);
+        h_err = std::abs(impl->drawable_h - h);
+
+        LOG_F(INFO, "update_window_size try drawable: %4.0f x %-4.0f  display: %4d x %-4d  scale: %.3f  err: %4.0f x %-4.0f",
+            impl->drawable_w, impl->drawable_h, impl->display_w, impl->display_h, this->scale_window, w_err, h_err);
+
+        if (w_err < 4 && h_err < 4)
+            break;
+
+        this->scale_window /= scale_step;
+    }
+
+    LOG_F(INFO, "update_window_size     drawable: %4.0f x %-4.0f  display: %4d x %-4d  scale: %.3f",
+        impl->drawable_w, impl->drawable_h, impl->display_w, impl->display_h, this->scale_window);
+
     this->update_mouse_grab(false); // make sure the mouse is still inside the window
 }
 
@@ -211,7 +243,7 @@ void Display::configure_dest() {
     impl->renderer_scale_x = scale;
     impl->renderer_scale_y = scale;
 
-    LOG_F(INFO, "configure_dest     drawable: %4.0f x %-4.0f  display: %4d x %-4d  scale: %.3f"
+    LOG_F(INFO, "configure_dest         drawable: %4.0f x %-4.0f  display: %4d x %-4d  scale: %.3f"
         " (int: %.3f  full: %.3f  nobars: %.3f)  mode: %s  forward: %s  reverse: %s",
         impl->drawable_w, impl->drawable_h, impl->display_w, impl->display_h, impl->renderer_scale_x,
         scale_full_int, scale_full, scale_full_no_bars,
