@@ -74,6 +74,8 @@ Display::~Display() {
         SDL_DestroyWindow(impl->display_wnd);
 }
 
+const double scale_step = std::pow(2.0, 1.0/8.0);
+
 bool Display::configure(int width, int height) {
     bool is_initialization = false;
 
@@ -304,16 +306,16 @@ void Display::handle_events(const WindowEvent& wnd_event) {
         if (wnd_event.window_id == impl->disp_wnd_id) {
             if (this->full_screen_mode == not_full_screen) {
                 if (wnd_event.sub_type == DPPC_WINDOWEVENT_WINDOW_BIGGER)
-                    this->scale_window = this->scale_window * std::pow(2.0, 1.0/8.0);
+                    this->scale_window *= scale_step;
                 else
-                    this->scale_window = this->scale_window / std::pow(2.0, 1.0/8.0);
+                    this->scale_window /= scale_step;
                 this->update_window_size();
             } else {
                 this->use_scale_full_screen = true;
                 if (wnd_event.sub_type == DPPC_WINDOWEVENT_WINDOW_BIGGER)
-                    this->scale_full_screen = this->scale_full_screen * std::pow(2.0, 1.0/8.0);
+                    this->scale_full_screen *= scale_step;
                 else
-                    this->scale_full_screen = this->scale_full_screen / std::pow(2.0, 1.0/8.0);
+                    this->scale_full_screen /= scale_step;
             }
 
             this->configure_dest();
