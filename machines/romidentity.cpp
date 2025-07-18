@@ -226,7 +226,7 @@ rom_info rom_identity[] = {
     rom( 0x010500, 0xa90624c6, "P79"         , "P79"      , nullptr  , "iMac G4 17 inch (Flat Panel)"                      ) // PowerMac4,5
     rom( 0x010500, 0xf1332daa, "Taliesin"    , "P79"      , nullptr  , "iMac G4 17 inch (Flat Panel)"                      ) // PowerMac4,5
     rom( 0x010500, 0xd6d825c5, "P79|Taliesin", "P79"      , nullptr  , "iMac G4 17 inch (Flat Panel)"                      ) // PowerMac4,5 // 2002-07-23 445f3
-    rom( 0x018101,          0, nullptr       , "Q26"      , nullptr  , "iMac G4/1.0 17 inch (Flat Panel)"                  ) // PowerMac6,1
+    rom( 0x018101, 0xacd324d3, nullptr       , "Q26"      , nullptr  , "iMac G4/1.0 17 inch (Flat Panel)"                  ) // PowerMac6,1 // 2003-01-13 458f1
     rom( 0x018102, 0xcd1f2ca7, "P87"         , "Q26"      , nullptr  , "iMac G4/1.0 17 inch (Flat Panel)"                  ) // PowerMac6,1
     rom( 0x018301,          0, nullptr       , "Q59"      , nullptr  , "iMac G4/1.0 (Flat Panel - USB 2.0)"                ) // PowerMac6,3
     rom( 0x018401,          0, nullptr       , "Q86"      , nullptr  , "eMac G4 (2005)"                                    ) // PowerMac6,4
