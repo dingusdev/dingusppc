@@ -951,6 +951,11 @@ static void mpc601_bat_update(uint32_t bat_reg)
     }
 }
 
+static void mpc601_dbat_update(uint32_t /*bat_reg*/)
+{
+    // ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+}
+
 static void ppc_ibat_update(uint32_t bat_reg)
 {
     int upper_reg_num;
@@ -1638,6 +1643,7 @@ void ppc_mmu_init()
     if (is_601) {
         // use 601-style unified BATs
         ibat_update = &mpc601_bat_update;
+        dbat_update = &mpc601_dbat_update;
     } else {
         // use PPC-style BATs
         ibat_update = &ppc_ibat_update;
