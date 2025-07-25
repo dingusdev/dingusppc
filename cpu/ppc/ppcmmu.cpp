@@ -1004,7 +1004,6 @@ static void ppc_dbat_update(uint32_t bat_reg)
         gTLBFlushDPatEntries = true;
         add_ctx_sync_action(&tlb_flush_all_entries<TLBType::DTLB>);
     }
-
 }
 
 void mmu_pat_ctx_changed()
