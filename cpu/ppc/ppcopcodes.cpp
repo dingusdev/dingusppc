@@ -1065,6 +1065,7 @@ void dppc_interpreter::ppc_mtspr(uint32_t opcode) {
     case 543:
         ppc_state.spr[ref_spr] = val;
         dbat_update(ref_spr);
+        break;
     default:
         // FIXME: Unknown SPR should be noop or illegal instruction.
         ppc_state.spr[ref_spr] = val;
