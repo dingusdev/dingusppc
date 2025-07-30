@@ -253,9 +253,9 @@ const char* trap_cond[32] = {/*Trap conditions*/
                              "twlt", "",      "",      "", "twle", "",      "",      "",
                              "twne", "",      "",      "", "",     "",      "",      ""};
 
-const char* spr_index0[32] = {"mq", "xer",  "",      "",     "rtcu", "rtcl", "",    "",
+const char* spr_index0[32] = {"mq", "xer",  "",      "",     "rtcu", "rtcl", "dec", "",
                               "lr", "ctr",  "",      "",     "",     "",     "",    "",
-                              "",   "",     "dsisr", "dar",  "",     "",     "dec", "",
+                              "",   "",     "dsisr", "dar",  "rtcu", "rtcl", "dec", "",
                               "",   "sdr1", "srr0",  "srr1", "",     "",     "",    ""};
 
 const char* spr_index8[32] = {
