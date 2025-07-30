@@ -492,6 +492,10 @@ enum {
     ATI_SCALE_VACC            = 0x07E, // 0x01F8
     ATI_SCALE_3D_CNTL         = 0x07F, // 0x01FC
     ATI_HOST_CNTL             = 0x090, // 0x0240
+    ATI_BM_HOSTDATA           = 0x091, // 0x0244
+    ATI_BM_ADDR               = 0x092, // 0x0248
+    ATI_BM_DATA               = 0x092, // 0x0248
+    ATI_BM_GUI_TABLE_CMD      = 0x093, // 0x024C
 
     ATI_PAT_REG0              = 0x0A0, // 0x0280
     ATI_PAT_REG1              = 0x0A1, // 0x0284
@@ -593,6 +597,84 @@ enum {
         ATI_DSTY_LT_SCISSOR_TOP    = 10,
         ATI_DSTY_GT_SCISSOR_BOTTOM = 11,
         ATI_FIFO_CNT               = 16, ATI_FIFO_CNT_size = 8,
+
+        
+    // 3D acceleration regs
+
+    ATI_SECONDARY_STW_EXP       = 0x056,    // 0x0158
+    ATI_SECONDARY_S_X_INC       = 0x057,    // 0x015C
+    ATI_SECONDARY_S_Y_INC       = 0x058,    // 0x0160
+    ATI_SECONDARY_S_START       = 0x059,    // 0x0164
+    ATI_SECONDARY_W_X_INC       = 0x05A,    // 0x0168
+    ATI_SECONDARY_W_Y_INC       = 0x05B,    // 0x016C
+    ATI_SECONDARY_W_START       = 0x05C,    // 0x0170
+    ATI_SECONDARY_T_X_INC       = 0x05D,    // 0x0174
+    ATI_SECONDARY_T_Y_INC       = 0x05E,    // 0x0178
+    ATI_SECONDARY_T_START       = 0x05F,    // 0x017C
+    ATI_TEX_0_OFF               = 0x070,    // 0x01C0
+    ATI_TEX_1_OFF               = 0x071,    // 0x01C4
+    ATI_TEX_2_OFF               = 0x072,    // 0x01C8
+    ATI_TEX_3_OFF               = 0x073,    // 0x01CC
+    ATI_TEX_4_OFF               = 0x074,    // 0x01D0
+    ATI_TEX_5_OFF               = 0x075,    // 0x01D4
+    ATI_TEX_6_OFF               = 0x076,    // 0x01D8
+    ATI_TEX_7_OFF               = 0x077,    // 0x01DC
+    ATI_TEX_8_OFF               = 0x078,    // 0x01E0
+    ATI_TEX_9_OFF               = 0x079,    // 0x01E4
+    ATI_TEX_10_OFF              = 0x07A,    // 0x01E8
+    ATI_TEX_PALETTE_INDEX       = 0x0D0,    // 0x0340
+    ATI_STW_EXP                 = 0x0D1,    // 0x0344
+    ATI_LOG_MAX_INC             = 0x0D2,    // 0x0348
+    ATI_S_X_INC                 = 0x0D3,    // 0x034C
+    ATI_S_Y_INC                 = 0x0D4,    // 0x0350
+    ATI_S_START                 = 0x0D5,    // 0x0354
+    ATI_W_X_INC                 = 0x0D6,    // 0x0358
+    ATI_W_Y_INC                 = 0x0D7,    // 0x035C
+    ATI_W_START                 = 0x0D8,    // 0x0360
+    ATI_T_X_INC                 = 0x0D9,    // 0x0364
+    ATI_T_Y_INC                 = 0x0DA,    // 0x0368
+    ATI_T_START                 = 0x0DB,    // 0x036C
+    ATI_TEX_SIZE_PITCH          = 0x0DC,    // 0x0370
+    ATI_TEX_CNTL                = 0x0DD,    // 0x0374
+    ATI_SECONDARY_TEX_OFFSET    = 0x0DE,    // 0x0378
+    ATI_TEX_PALETTE             = 0x0DF,    // 0x037C
+    ATI_SCALE_PITCH_BOTH        = 0x0E0,    // 0x0380
+    ATI_SECONDARY_SCALE_OFF_ACC = 0x0E1,    // 0x0384
+    ATI_SCALE_OFF_ACC           = 0x0E2,    // 0x0388
+    ATI_SCALE_DST_Y_X           = 0x0E3,    // 0x038C
+    ATI_COMPOSITE_SHADOW_ID     = 0x0E6,    // 0x0398
+    ATI_SECONDARY_SCALE_X_INC   = 0x0E7,    // 0x039C
+    ATI_SPECULAR_RED_X_INC      = 0x0E7,    // 0x039C
+    ATI_SPECULAR_RED_Y_INC      = 0x0E8,    // 0x03A0
+    ATI_SPECULAR_RED_START      = 0x0E9,    // 0x03A4
+    ATI_SECONDARY_SCALE_HACC    = 0x0E9,    // 0x03A4
+    ATI_SPECULAR_GREEN_X_INC    = 0x0EA,    // 0x03A8
+    ATI_SPECULAR_GREEN_Y_INC    = 0x0EB,    // 0x03AC
+    ATI_SPECULAR_GREEN_START    = 0x0EC,    // 0x03B0
+    ATI_SPECULAR_BLUE_X_INC     = 0x0ED,    // 0x03B4
+    ATI_SPECULAR_BLUE_Y_INC     = 0x0EE,    // 0x03B8
+    ATI_SPECULAR_BLUE_START     = 0x0EF,    // 0x03BC
+    ATI_RED_X_INC               = 0x0F0,    // 0x03C0
+    ATI_RED_Y_INC               = 0x0F1,    // 0x03C4
+    ATI_RED_START               = 0x0F2,    // 0x03C8
+    ATI_SCALE_HACC              = 0x0F2,    // 0x03C8
+    ATI_GREEN_X_INC             = 0x0F3,    // 0x03CC
+    ATI_GREEN_Y_INC             = 0x0F4,    // 0x03D0
+    ATI_GREEN_START             = 0x0F5,    // 0x03D4
+    ATI_BLUE_X_INC              = 0x0F6,    // 0x03D8
+    ATI_BLUE_Y_INC              = 0x0F7,    // 0x03DC
+    ATI_BLUE_START              = 0x0F8,    // 0x03E0
+    ATI_Z_X_INC                 = 0x0F9,    // 0x03E4
+    ATI_Z_Y_INC                 = 0x0FA,    // 0x03E8
+    ATI_Z_START                 = 0x0FB,    // 0x03EC
+    ATI_ALPHA_X_INC             = 0x0FC,    // 0x03F0
+    ATI_FOG_X_INC               = 0x0FC,    // 0x03F0
+    ATI_ALPHA_Y_INC             = 0x0FD,    // 0x03F4
+    ATI_FOG_Y_INC               = 0x0FD,    // 0x03F4
+    ATI_ALPHA_START             = 0x0FE,    // 0x03F8
+    ATI_FOG_START               = 0x0FE,    // 0x03F8
+
+    // MPP Regs
 
     ATI_MPP_CONFIG            = 0x130, // 0x04C0
     ATI_MPP_STROBE_SEQ        = 0x131, // 0x04C4
