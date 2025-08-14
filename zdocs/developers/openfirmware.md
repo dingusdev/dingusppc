@@ -35,21 +35,21 @@ Use [tbxi](https://github.com/elliotnunn/tbxi) to split the ROM into parts.
 
 The ROM only contains the 1MiB PowerPC section. The ROM is divided into sections:
 
-| Name                     | Firmware Updater Section Name | Start      | Size       | Comments                                                               |
-|:------------------------:|:-----------------------------:|:-----------------------:|:----------------------------------------------------------------------:|
-| Start                    | bb                            | 0xfff00000 | 0x00003f00 | Exception Vectors.                                                     |
-| Recovery                 | rec                           | 0xfff08000 | 0x00078000 | Usually same as ROM Image.                                             |
-| Rom Image                | boot                          | 0xfff80000 | 0x00080000 | Usually same as Recovery.                                              |
+| Name                     | Firmware Updater Section Name | Start      | Size       | Comments |
+|--------------------------|-------------------------------|------------|------------|----------|
+| Start                    | bb                            | 0xfff00000 | 0x00003f00 | Exception Vectors. |
+| Recovery                 | rec                           | 0xfff08000 | 0x00078000 | Usually same as ROM Image. |
+| Rom Image                | boot                          | 0xfff80000 | 0x00080000 | Usually same as Recovery. |
 | System Configuration	   | sys                           | 0xfff03f00 | 0x00000080 | Contains Model specific info. Doesn't exist in early New World Macs. Three bytes in the System Configuration comprise the Mac Product ID. |
-|                          | tst                           | 0xfff03f80 | 0x00000080 | Contains unit specific info: Serial Number, MAC address.               |
-| NVRAM                    | nv                            | 0x00004000 | 0x00004000 | Contains two copies of NVRAM, 8K each.                                 |
+|                          | tst                           | 0xfff03f80 | 0x00000080 | Contains unit specific info: Serial Number, MAC address. |
+| NVRAM                    | nv                            | 0x00004000 | 0x00004000 | Contains two copies of NVRAM, 8K each. |
 
 At the beginning of the Recovery and Rom Image is a header listing subsections. The list differs depending on the firmware version.
 
 The earliest New World ROMs include all of Open Firmware (main fcode image and driver fcode images) in the Open Firmware subsection. RTAS is an fcode image.
 
 | Offset | Index | @startvec address field | @startvec size field |
-|:------:|:-----:|:-----------------------:|:--------------------:|
+|--------|-------|-------------------------|----------------------|
 | 0x00   |       | >dir.inst0              | >dir.inst1           |
 | 0x08   |       | >dir.filler0            | >dir.filler1         |
 | 0x10   | 0     | >dir.HWINIT             | >dir.HWINIT-size     |
@@ -64,7 +64,7 @@ The earliest New World ROMs include all of Open Firmware (main fcode image and d
 Newer ROMs did away with the RTAS stuff:
 
 | Offset | Index | @startvec address field | @startvec size field |
-|:------:|:-----:|:-----------------------:|:--------------------:|
+|--------|-------|-------------------------|----------------------|
 | 0x00   |       | >dir.inst0              | >dir.inst1           |
 | 0x08   |       | >dir.filler0            | >dir.filler1         |
 | 0x10   | 0     | >dir.HWINIT             | >dir.HWINIT-size     |
@@ -79,7 +79,7 @@ Newer ROMs did away with the RTAS stuff:
 Starting approximate 2002-11-11 and later, this is the ROM header or first part of @startvec. Different Macs with the same firmware version may include different driver fcode images if the ROM is not large enough to contain all drivers.
 
 | Offset | Index | @startvec address field | @startvec size field |
-|:------:|:-----:|:-----------------------:|:--------------------:|
+|--------|-------|-------------------------|----------------------|
 | 0x00   |       | >dir.inst0              | >dir.inst1           |
 | 0x08   |       | >dir.filler0            | >dir.filler1         |
 | 0x10   |  0    | >dir.HWINIT             | >dir.HWINIT-size     |
@@ -104,7 +104,7 @@ Starting approximate 2002-11-11 and later, this is the ROM header or first part 
 The latest firmware versions have driver fcode images in one subsection and each driver fcode image has a name and is individually compressed.
 
 | Offset | Index | @startvec address field | @startvec size field  |
-|:------:|:-----:|:-----------------------:|:---------------------:|
+|--------|-------|-------------------------|-----------------------|
 | 0x00   |       | >dir.inst0              | >dir.inst1            |
 | 0x08   |       | >dir.filler0            | >dir.filler1          |
 | 0x10   | 0     | >dir.HWINIT             | >dir.HWINIT-size      |
@@ -122,62 +122,122 @@ The `>dir.*` fields in the ROM are for the offset and size of the compressed par
 
 ## Open Firmware Versions
 
+### NuBus Power Macs
+
+NuBus Power Macs do not have Open Firmware.
+However, Copland has a version of Open Firmware 2.0 for NuBus Power Macs that is loaded from disk at startup.
+The default output device is `ttyb` (the printer port) instead of `ttya` because the serial port is used for debugging.
+
+| ROM dump/Machine                     | BootROM codename | ROM version | OF version    | OF location     | OF image size |
+|--------------------------------------|------------------|-------------|---------------|-----------------|---------------|
+| Power Macintosh 6100/7100/8100       | PDM              | 077d.20f2   | 2.0 Copland   | opfw resource   | < 0x20000     |
+| Power Macintosh 7100 newer           | PDM              | 077d.23f1   | 2.0 Copland   | opfw resource   | < 0x20000     |
+
 ### Old World Macs
 
-| ROM dump/Machine                     | BootROM codename | OF version    | OF image offset |
-|:------------------------------------:|:----------------:|:-------------:|:---------------:|
-| Power Macintosh 7300/7600/8600/9600  | TNT              | 1.0.5         | 0x330000        |
-| Bandai Pippin                        | Pip              | 1.0.5         | 0x330000        |
-| Power Macintosh,Performa 6400        | Alchemy          | 2.0           | 0x330000        |
-| Power Macintosh G3 desktop           | Gossamer         | 2.0f1         | 0x320000        |
-| PowerBook G3 Wallstreet v2           | GRX              | 2.0.1         | 0x330000        |
-| Power Macintosh 4400/7220            | Zanzibar         | 2.0.2         | 0x330000        |
-| Power Macintosh 6500                 | Gazelle          | 2.0.3         | 0x330000        |
-| Power Macintosh G3 v3                | Gossamer         | 2.4           | 0x320000        |
+| ROM dump/Machine                     | BootROM codename | ROM version | OF version    | OF image offset | OF image size |
+|--------------------------------------|------------------|-------------|---------------|-----------------|---------------|
+| Power Macintosh 7200/7500/8500/9500  | TNT              | 077d.28f1   | 1.0.5         | 0x330000        | 0x20000       |
+| Power Macintosh 7200/7500/8500/9500 v2, SuperMac S900 | TNT | 077d.28f2 | 1.0.5       | 0x330000        | 0x20000       |
+| Apple Network Server ANS 500 & 700   | TNT              | 077d.28f2   | 1.1.22        | 0x330000        | 0x20000       |
+| Power Macintosh 5400 & 6400          | Alchemy          | 077d.29f1   | 2.0           | 0x330000        | 0x20000       |
+| Bandai Pippin (Kinka Dev)            | Pip              | 077d.2cc6   | 1.0.5         | 0x330000        | 0x20000       |
+| Bandai Pippin (Kinka 1.0)            | Pip              | 077d.2cf2   | 1.0.5         | 0x330000        | 0x20000       |
+| Bandai Pippin (Kinka 1.2)            | Pip              | 077d.2cf5   | 1.0.5         | 0x330000        | 0x20000       |
+| Bandai Pippin (Kinka 1.3)            | Pip              | 077d.2cf8   | 1.0.5         | 0x330000        | 0x20000       |
+| Power Macintosh 7300/7600/8600/9600  | TNT              | 077d.34f2   | 1.0.5         | 0x330000        | 0x20000       |
+| Power Macintosh 8600 & 9600 (v2)     | TNT              | 077d.34f5   | 1.0.5         | 0x330000        | 0x20000       |
+| Power Macintosh 6500 & TAM           | Gazelle          | 077d.35f2   | 2.0.3         | 0x330000        | 0x20000       |
+| PowerBook 3400c                      | PSX              | 077d.36f1   | 2.0.1         | 0x330000        | 0x20000       |
+| PowerBook G3 Kanga                   | PSX              | 077d.36f5   | 2.0.1         | 0x330000        | 0x20000       |
+| Power Macintosh 4400/7220            | Zanzibar         | 077d.3af2   | 2.0.2         | 0x330000        | 0x20000       |
+| PowerBook G3 Wallstreet              | GRX              | 077d.41f5   | 2.0.1         | 0x330000        | 0x20000       |
+| PowerBook G3 Wallstreet PDQ          | GRX              | 077d.41f6   | 2.0.1         | 0x330000        | 0x20000       |
+| Power Macintosh G3 desktop (rev A)   | Gossamer         | 077d.40f2   | 2.0f1         | 0x320000        | 0x30000       |
+| Power Macintosh G3 (rev B)           | Gossamer         | 077d.45f1   | 2.0f1         | 0x320000        | 0x30000       |
+| Power Macintosh G3 v3 (rev C)        | Gossamer         | 077d.45f2   | 2.4           | 0x320000        | 0x30000       |
+| Power Macintosh G3 (rev D)           | Gossamer         | 077d.45f3   | 2.4           | 0x320000        | 0x30000       |
 
 ### New World Macs
 
-| Date       | OF version | Machine                   |
-|:----------:|:----------:|:-------------------------:|
-| 1999-04-01 | 1.0f1      | PowerBook G3 Lombard      |
-| 1999-04-09 | 1.1f4      | B&W G3                    |
-| 1999-04-23 | 1.3f2      | iMac (233 - 333 MHz)      |
+| Date                | OF version | Machine                                 |
+|---------------------|------------|-----------------------------------------|
+| 1998-08-06 12:04:16 | 3.0.0f8    | iMac                                    |
+| 1998-09-17 15:19:23 | 3.0.0b2    | iMac                                    |
+| 1998-12-02 10:25:41 | 3.0.0f3    | iMac                                    |
+| 1999-02-03 16:45:21 | 3.0.0f9    | iMac                                    |
+| 1999-03-05 21:14:19 | 3.0.0f10   | iMac                                    |
+| 1999-04-01 16:47:10 | 3.0.0f1    | iMac                                    |
+| 1999-04-06 10:21:59 | 3.1.0f1    | PowerBook G3 Bronze Keyboard (Lombard)  |
+| 1999-04-09 13:57:32 | 3.1.1f4    | Power Mac G3 (Blue & White) Yosemite    |
+| 1999-08-19 21:36:38 | 3.1.2f2    | Power Mac G4 (PCI Graphics) Yikes       |
+| 1999-04-23 14:31:03 | 3.1.3f2    | iMac G3 (233 MHz) (Bondi Blue)          |
+| 1999-07-16 12:15:09 | 3.1.3f3    | iMac G3 (266/333 MHz)                   |
 
 Newer firmware versions occasionally received firmware updates which could be applied to multiple models so it doesn't make sense to associate a model to a firmware version.
+The list below includes a source for each firmware version.
 Versions 4.x.x are for 32-bit Power Macs. Version 5.x.x are for 64-bit Power Macs.
 
-| Date       | OF version |
-|:----------:|:----------:|
-| 2000-02-17 | 3.2.4f1    |
-| 2000-07-10 |   3.2f1    |
-| 2000-08-11 | 3.2.7f2    |
-| 2001-03-20 | 4.1.7f4    |
-| 2001-03-21 | 4.1.8f5    |
-| 2001-08-01 | 4.2.3f1    |
-| 2001-08-16 | 4.2.5f1    |
-| 2001-09-14 | 4.1.9f1    |
-| 2001-10-11 | 4.2.8f1    |
-| 2001-11-20 | 4.2.9f1    |
-| 2002-09-30 | 4.4.8f2    |
-| 2002-11-11 | 4.5.4f1    |
-| 2003-02-20 | 4.6.0f1    |
-| 2003-08-22 | 4.6.8f4    |
-| 2003-11-21 | 5.1.4f0    |
-| 2004-04-06 | 4.8.5f0    |
-| 2004-09-21 | 5.1.5f2    |
-| 2004-09-23 | 4.8.7f1    |
-| 2004-10-26 | 5.1.8f7    |
-| 2005-01-21 | 4.9.1f1    |
-| 2005-03-23 | 4.8.9f4    |
-| 2005-07-12 | 4.9.4f1    |
-| 2005-09-22 | 4.9.5f3    |
-| 2005-09-30 | 5.2.7f1    |
-| 2005-10-05 | 4.9.6f0    |
+| Date                | OF version | Machine                                 |
+|---------------------|------------|-----------------------------------------|
+| 2000-02-18 09:44:35 | 3.2.4f1    | Firmware Updater 3.2.4f1                |
+| 2000-02-18 09:44:51 | 3.2.4f1    | Power Mac G4 (AGP Graphics) Sawtooth    |
+| 2000-08-13 10:41:50 | 3.2.7f2    | Firmware Updater 3.2.7f2                |
+| 2000-06-13 ??:??:?? | 3.3.0f3    | Summer 2000 iMac DV+ (450MHz)           |
+| 2000-07-10 17:11:57 | 3.3.2f1    | Power Mac G4 Cube                       |
+| 2000-12-04 19:29:52 | 4.1.0f1    | Power Mac G4 (Digital Audio)            |
+| 2001-03-20 17:20:48 | 4.1.7f4    | Firmware Updater 4.1.7f4                |
+| 2001-03-20 17:20:48 | 4.1.7f4    | iBook G3                                |
+| 2001-03-21 11:49:53 | 4.1.8f5    | Firmware Updater 4.1.8f5                |
+| 2001-03-21 11:49:53 | 4.1.8f5    | PowerBook G3 (FireWire) Pismo           |
+| 2001-09-14 13:18:04 | 4.1.9f1    | Firmware Updater 4.1.9f1                |
+| 2001-09-14 13:18:04 | 4.1.9f1    | iMac G3 (Slot Loading)                  |
+| 2001-09-14 13:18:04 | 4.1.9f1    | Power Mac G4 Cube                       |
+| 2001-08-01 11:14:42 | 4.2.3f1    | Power Mac G4 (Quicksilver)              |
+| 2001-08-16 22:19:35 | 4.2.5f1    | Power Mac G4 (Quicksilver)              |
+| 2001-09-12 17:47:15 | 4.2.7f1    | iBook G3 600 (Late 2001 Snow)           |
+| 2001-10-11 14:12:47 | 4.2.8f1    | Firmware Updater 4.2.8f1                |
+| 2001-10-11 14:12:47 | 4.2.8f1    | Power Mac G4 (AGP Graphics) Sawtooth    |
+| 2001-10-11 14:12:47 | 4.2.8f1    | Power Mac G4 (Gigabit Ethernet)         |
+| 2001-10-11 14:12:47 | 4.2.8f1    | Power Mac G4 (Digital Audio)            |
+| 2001-11-20 14:31:20 | 4.2.9f1    | Firmware Updater 4.2.9f1                |
+| 2001-12-06 17:15:39 | 4.3.2f1    | iBook G3 600 14-Inch (Early 2002 Snow)  |
+| 2002-04-08 22:45:14 | 4.4.0f1    | iMac G4                                 |
+| 2002-05-19 09:26:24 | 4.4.1f1    | iMac G4                                 |
+| 2002-07-23 13:58:33 | 4.4.5f3    | iMac G4 17 inch                         |
+| 2002-09-30 10:24:31 | 4.4.8f2    | Firmware Updater 4.4.8f2                |
+| 2002-09-30 10:24:31 | 4.4.8f2    | Power Mac G4 (Mirrored Drive Doors)     |
+| 2002-11-11 16:06:29 | 4.5.4f1    | iBook G3 (Snow)                         |
+| 2003-01-15 15:14:50 | 4.5.7f1    | Power Mac G4 (FW 800)                   |
+| 2003-01-13 22:37:37 | 4.5.8f1    | iMac G4/1.0 17" (Flat Panel)            |
+| 2003-02-20 13:52:27 | 4.6.0f1    | Power Mac G4 (FW 800)                   |
+| 2003-02-18 14:40:21 | 4.6.2f1    | PowerBook G4 1.0 GHz 17 inch (Aluminum) |
+| 2003-03-15 10:16:09 | 4.6.4f1    | iBook G3 (Snow)                         |
+| 2003-08-22 13:45:20 | 4.6.8f4    | iMac G4/1.0 17" (Flat Panel)            |
+| 2003-09-04 13:39:26 | 4.7.1f1    | PowerBook G4 (15-inch FW800) (Aluminum) |
+| 2003-11-21 17:41:48 | 5.1.4f0    | Firmware Updater 5.1.4f0                |
+| 2004-09-21 11:58:53 | 5.1.5f2    | Firmware Updater 5.1.5f2                |
+| 2004-09-21 11:58:53 | 5.1.5f2    | Power Mac G5 1.6 (PCI)                  |
+| 2004-04-06 16:22:09 | 4.8.5f0    | iBook G4 (Early 2004)                   |
+| 2004-05-07 11:43:54 | 4.8.6f0    | PowerBook G4 1.5 17" (Al)               |
+| 2004-08-25 15:11:09 | 5.1.7f1    | Firmware Updater 5.1.7f1                |
+| 2004-09-08 11:50:58 | 5.2.2f2    | Power Macintosh G5 1.8 (PCI)            |
+| 2004-09-23 16:13:38 | 4.8.7f1    | iBook G4                                |
+| 2004-10-26 16:30:32 | 5.1.8f7    | Firmware Updater 5.1.8f7                |
+| 2004-10-26 16:30:32 | 5.1.8f7    | Power Mac G5                            |
+| 2005-01-21 10:51:16 | 4.9.1f1    | PowerBook G4 15 inch Early 2005 A1106   |
+| 2005-03-23 14:22:23 | 4.8.9f4    | Mac mini G4                             |
+| 2005-07-05 11:14:11 | 4.9.3f0    | iBook G4 14-Inch (Mid-2005 - Opaque)    |
+| 2005-07-12 16:57:27 | 4.9.4f1    | Mac mini G4 1.5GHz Radeon 9200          |
+| 2005-09-22 16:17:32 | 4.9.5f3    | PowerBook G4 DLSD                       |
+| 2005-09-30 15:31:03 | 5.2.7f1    | Power Mac G5 Quad                       |
+| 2005-10-05 16:45:50 | 4.9.6f0    | PowerBook G4 DLSD                       |
+| 2005-10-05 16:45:50 | 4.9.6f0    | PowerBook G4 DLSD (17 inch)             |
 
 ## Packages
 
 | Package Name   | Purpose                                       | Versions |
-|:--------------:|:---------------------------------------------:|:--------:|
+|----------------|-----------------------------------------------|----------|
 | obp-tftp       | OpenBoot PROM with tftp                       | 1.0.5+   |
 | aix-boot       |                                               | 1.0.5+   |
 | xcoff-loader   |                                               | 1.0.5+   |
@@ -201,7 +261,7 @@ The size of the Open Firmware image varies from 98KB (v1.0.5) to 172KB (v2.4).
 Apple's Open Firmware image has the following structure:
 
 | Section type       | Architecture | Relative Size (v1.0.5) | Relative Size (v2.4) |
-|:------------------:|:------------:|:----------------------:|:--------------------:|
+|--------------------|--------------|------------------------|----------------------|
 | OF kernel          | PowerPC      | 26%                    | 18%                  |
 | OF main code       | FCode        | 62%                    | 51%                  |
 | OF device packages | FCode        | 12%                    | 31%                  |
@@ -234,8 +294,9 @@ dc.w         0      ; number of relocation entries
 dc.w         0      ; number of line number entries
 dc.l      0x20      ; section flags (this section contains executable code)
 ```
-Right after the COFF section header, a vital OF kernel data structure called `StartVec`
-is located. It contains among others several important offsets into the OF image
+The section data begins at offset 0x3C right after the COFF section header.
+The first part of the section data is a vital OF kernel data structure called `StartVec`.
+It contains among other things several important offsets into the OF image
 for finding all required OF parts. That's also the location HWInit passes control
 to when invoking OF:
 
@@ -254,11 +315,11 @@ FFF20044  dc.l   0x7918 ; offset to the FCode stream of the OF main package
 FFF2007C  dc.l  0x28C48 ; offset to the last driver in the device packages
 ...
 FFF20084  dc.l   0x7720 ; offset to the last Forth word descriptor of the kernel
-
 ```
 
 This StartVec structure in ROM is not to be confused with the `@startvec` structure in RAM.
-Open Firmware 2.4 lists the fields of `@startvec`:
+Open Firmware 1.0.5 and 2.0f1 do not include names for all the fields of `@startvec` but other versions do.
+The following is the list of fields from Open Firmware 2.4:
 
 ```
 0x48D 0008 FF808008 >imagesize            00000000
@@ -393,13 +454,33 @@ For Classic Mac OS, Open Firmware loads and boots a file of type `tbxi`. This is
 
 ## Open Firmware bugs
 
-Apple OF is known to contain numerous bugs. The following table lists some recently discovered bugs, not mentioned elsewhere.
+Apple OF is known to contain numerous bugs. The following is a list of some recently discovered bugs, not mentioned elsewhere.
 
-| OF version affected | Bug description |
-|:-------------------:|-----------------|
-| 1.0.5               | `fill-rectangle` in /chaos/control is ( ? color y x w h -- ) but it should be ( color x y w h -- ). This is corrected by Control2.c of BootX which is used to boot Mac OS X. |
-|                     | `$find` is ( name-str name-len -- xt true | pstr name-str name-len false ) but it should be ( name-str name-len -- xt true | name-str name-len false ) |
-| 2.0f1, 2.4          | `us` uses `get-usecs` to convert a 64-bit timebase value to a 32-bit microseconds value. That's enough for 71 minutes. After that, anything that uses `us` will cause the OF console to become unresponsive requiring a restart. In Open Firmware 3.x and later, `get-usecs` returns a 64-bit value. |
-| 2.4                 | string literal buffers `"` on the command line will overflow if the string is more than 256 bytes. |
+### 1.0.5
+- `fill-rectangle` in `/chaos/control` is `( ? color y x w h -- )` but it should be `( color x y w h -- )`.
+  This is corrected by Control2.c of BootX which is used to boot Mac OS X.
+- `$find` is `( name-str name-len -- xt true | pstr name-str name-len false )` but it should be `( name-str name-len -- xt true | name-str name-len false )`
 
-`get-inherited-property notes.txt` discusses known bugs regarding get-inherited-property and map-in in Open Firmware 1.0.5.
+### 2.0f1, 2.4
+- `us` uses `get-usecs` to convert a 64-bit timebase value to a 32-bit microseconds value.
+  That's enough for 71 minutes. After that, anything that uses `us` will cause the OF console to become unresponsive requiring a restart.
+  In Open Firmware 3.x and later, `get-usecs` returns a 64-bit value.
+
+### 2.4
+- string literal buffers `"` on the command line will overflow if the string is more than 256 bytes.
+
+### All 32-bit versions
+- `um/mod` produces incorrect results or takes seconds to complete for some dividend/divisor combinations.
+
+  Incorrect results:
+  - `0x7eeeeeeeffffffff, 0x7eeeeeef`
+  - `0x7eeeeeeffffffff, 0x7eeeeef`
+
+  Too much time:
+  - `0x100a000000000, 0x100de`
+  - `0x103b000000000, 0x1f090`
+  - `0x1fffe00000000, 0x1ffff`
+  - `0x20fffe00000000, 0x20ffff`
+
+### Miscellaneous versions
+- `get-inherited-property notes.txt` discusses known bugs regarding get-inherited-property and map-in in Open Firmware 1.0.5.
