@@ -208,7 +208,8 @@ uint32_t MacIoTwo::dma_read(uint32_t offset, int size) {
     case MIO_OHARE_DMA_ETH_RCV:
         return this->enet_rcv_dma->reg_read(offset & 0xFF, size);
     case MIO_OHARE_DMA_ESCC_B_RCV:
-        return this->escc_b_rx_dma->reg_read(offset & 0xFF, size);
+        return 0;
+        //return this->escc_b_rx_dma->reg_read(offset & 0xFF, size);
     case MIO_OHARE_DMA_AUDIO_OUT:
         return this->snd_out_dma->reg_read(offset & 0xFF, size);
     default:
