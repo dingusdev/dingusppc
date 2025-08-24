@@ -105,7 +105,8 @@ enum {
     if the sound codec is available.
  */
 constexpr auto AWAC_AVAILABLE = 0x40;
-
+constexpr auto AWAC_READY_BIT = 0x400000;
+constexpr auto AWAC_BUSY_BIT  = 0x1000000;
 
 /** Audio processor chip (TDA7433) emulation. */
 class AudioProcessor : public I2CDevice {
@@ -170,6 +171,7 @@ constexpr auto AWAC_MAKER_CRYSTAL = 1;
 constexpr auto AWAC_REV_AWACS     = 2;
 constexpr auto AWAC_REV_SCREAMER  = 3;
 
+
 /** Screamer sound codec. */
 class AwacsScreamer : public MacioSndCodec {
 public:
@@ -186,8 +188,10 @@ public:
     }
 
 private:
+    uint16_t shadow_regs[8]  = {};    // control registers, each 12-bits wide
     uint32_t snd_ctrl_reg    = 0;
-    uint16_t control_regs[8] = {}; // control registers, each 12-bits wide
+    uint32_t codec_ctrl_reg  = 0;
+    uint32_t codec_stat_reg  = 0;
     uint8_t  is_busy         = 0;
     uint32_t clip_count      = 0;
     uint32_t byte_swap       = 0;
