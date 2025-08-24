@@ -192,11 +192,10 @@ uint32_t AwacsScreamer::snd_ctrl_read(uint32_t offset, int size) {
         value = this->snd_ctrl_reg;
         break;
     case AWAC_CODEC_CTRL_REG:
-        value = (this->codec_ctrl_reg >> 12) & 0xfff;
-        value &= ~AWAC_BUSY_BIT;
+        value = this->is_busy;
         break;
     case AWAC_CODEC_STATUS_REG:
-        value = this->codec_stat_reg | (AWAC_AVAILABLE << 8) | (AWAC_MAKER_CRYSTAL << 16) |
+        value = (AWAC_AVAILABLE << 8) | (AWAC_MAKER_CRYSTAL << 16) |
             (AWAC_REV_SCREAMER << 20);
         break;
     case AWAC_CLIP_COUNT:
@@ -234,10 +233,6 @@ void AwacsScreamer::snd_ctrl_write(uint32_t offset, uint32_t value, int size) {
               subframe, reg_num, data);
         if (!subframe)
             this->shadow_regs[reg_num] = data;
-        this->codec_ctrl_reg       = BYTESWAP_32(value);
-        break;
-    case AWAC_CODEC_STATUS_REG:
-        this->codec_stat_reg = BYTESWAP_32(value);
         break;
     case AWAC_CLIP_COUNT:
         this->clip_count = BYTESWAP_32(value);
