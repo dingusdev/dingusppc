@@ -119,7 +119,7 @@ rom_info rom_identity[] = {
     rom( 0x077d45f1, 0x78fdb784, "Boot Gossamer 0.", "pmg3dt"  , "Power Mac G3 Beige"         , "PowerMac G3 Minitower (beige 266MHz), Beige G3 233")
     rom( 0x077d45f2, 0x78f57389, "Boot Gossamer 0.", "pmg3dt"  , "Power Mac G3 Beige"         , "Power Mac G3 (v3)"                                 )
     rom( 0x077d45f3, 0x78e842a8, "Boot Gossamer 0.", "pmg3dt"  , "Power Mac G3 Beige"         , "Power Mac G3 (v4)"                                 )
-    rom( 0x077d45f3, 0x78eb4234, "Boot Gossamer 0.", "pmg3dt"  , "Power Mac G3 Beige"         , "Power Mac G3 (v4)"                                 )
+    rom( 0x077d45f3, 0x78eb4234, "Boot Gossamer 0.", "pmg3dt"  , "Power Mac G3 Beige"         , "Power Mac G3 (v4) (no public dump)"                )
 
 #undef rom
 
