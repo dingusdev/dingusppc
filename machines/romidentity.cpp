@@ -150,7 +150,7 @@ rom_info rom_identity[] = {
     rom( 0x077d45f6, 0xb8c832f3, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 3.6"    ) // 2000-02-17 - Mac OS 9.0.3 bundled with iMac (Slot Loading)
     rom( 0x077d45f6, 0xb8b2c971, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 3.7"    ) // 2000-03-15 - 9.0.4 Retail CD
     rom( 0x077d45f6, 0xb8bea8b3, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 3.8"    ) // 2000-05-22 - 9.0.4 Ethernet Update
-    rom( 0x077d45f6, 0xc90b6289, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 4.6.1"  ) // 2000-06-18 - Mac OS 9.04 Mac OS 9.0.4 bundled on iMac (Summer 2000), Power Mac G4 (Summer 2000)
+    rom( 0x077d45f6, 0xc90b6289, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 4.6.1"  ) // 2000-06-18 - Mac OS 9.0.4 Mac OS 9.0.4 bundled on iMac (Summer 2000), Power Mac G4 (Summer 2000)
     rom( 0x077d45f6, 0xc92f71d3, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 4.9.1"  ) // 2000-06-28 - Mac OS 9.0.4 bundled on Power Mac G4 MP (Summer 2000) (CPU software 2.3), Power Mac G4 (Gigabit Ethernet)
     rom( 0x077d45f6, 0xc8e1be97, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 5.2.1"  ) // 2000-07-12 - Mac OS 9.0.4 installed on Power Mac G4 Cube (CPU software 2.4)
     rom( 0x077d45f6, 0xce2a2a5b, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 5.3.1"  ) // 2000-08-14 - Mac OS 9.0.4 bundled on iBook (Summer 2000) (CPU software 2.5)
@@ -160,7 +160,7 @@ rom_info rom_identity[] = {
     rom( 0x077d45f6, 0xea00f1b7, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 7.5.1"  ) // 2001-02-07 - 9.1 iMac 2001
     rom( 0x077d45f6, 0xeece7cd0, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 7.8.1"  ) // 2001-04-10 - bundled on iBook (Dual USB) (CPU Software 3.5)
     rom( 0x077d45f6, 0xeed28047, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 7.9.1"  ) // 2001-04-24 - Mac OS 9.1 bundled on PowerBook G4
-    rom( 0x077d45f6, 0xee6bc7d9, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 8.0"    ) //            - Mac OS 9.2 Power Mac G4 Install CD
+    rom( 0x077d45f6, 0xee6bc7d9, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 8.0"    ) // 2001-06-07 - Mac OS 9.2 Power Mac G4 Install CD
     rom( 0x077d45f6, 0xed7f9fc2, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 8.3.1"  ) // 2001-07-18 - Mac OS 9.2 installed on iMac (Summer 2001), Mac OS 9.2 installed on Power Mac G4 (QuickSilver)
     rom( 0x077d45f6, 0xed26a1ef, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 8.4"    ) // 2001-07-30 - Mac OS 9.2.1 Update CD
     rom( 0x077d45f6, 0xec849611, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 8.6.1"  ) // 2001-09-25 - Mac OS 9.2.1 bundled on iBook G3 (Late 2001)
