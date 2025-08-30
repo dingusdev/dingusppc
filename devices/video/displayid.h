@@ -43,8 +43,8 @@ enum class Disp_Id_Kind {
 
 /** I2C bus states. */
 enum I2CState : uint8_t {
-    STOP     = 0, /* transaction started           */
-    START    = 1, /* transaction ended (idle)      */
+    STOP     = 0, /* transaction ended (idle)      */
+    START    = 1, /* transaction started           */
     DEV_ADDR = 2, /* receiving device address      */
     REG_ADDR = 3, /* receiving register address    */
     DATA     = 4, /* sending/receiving data        */
