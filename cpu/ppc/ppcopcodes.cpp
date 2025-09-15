@@ -931,6 +931,7 @@ void dppc_interpreter::ppc_mfspr(uint32_t opcode) {
 #endif
         if (ppc_state.msr & MSR::PR) {
             ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
+            return;
         }
     }
 
@@ -1002,6 +1003,7 @@ void dppc_interpreter::ppc_mtspr(uint32_t opcode) {
 #endif
         if (ppc_state.msr & MSR::PR) {
             ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
+            return;
         }
     }
 
