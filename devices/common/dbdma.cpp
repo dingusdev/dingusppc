@@ -431,6 +431,9 @@ void DMAChannel::xfer_from_device() {
     if (got_bytes == this->queue_len) {
         this->queue_len = 0;
         this->finish_cmd();
+    } else if (got_bytes) {
+        LOG_F(WARNING, "%s: got unexpected amount of data in xfer_from_device",
+              this->get_name().c_str());
     }
 
     this->interpret_cmd();
