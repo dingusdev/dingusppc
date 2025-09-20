@@ -853,11 +853,13 @@ int Sc53C94::xfer_from(uint8_t *buf, int len) {
 
     len = std::min(len, (int)(this->xfer_count));
 
+    // see if there are data bytes in the FIFO we want to grab first
     if (this->data_fifo_pos) {
         int fifo_bytes = std::min(this->data_fifo_pos, len);
         std::memcpy(buf, this->data_fifo, fifo_bytes);
         this->data_fifo_pos -= fifo_bytes;
         this->xfer_count -= fifo_bytes;
+        len -= fifo_bytes;
         bytes_moved += fifo_bytes;
         buf += fifo_bytes;
         if (!this->xfer_count) {
@@ -868,12 +870,14 @@ int Sc53C94::xfer_from(uint8_t *buf, int len) {
         }
     }
 
-    if (this->bus_obj->pull_data(this->target_id, buf, this->xfer_count)) {
-        bytes_moved += this->xfer_count;
-        this->xfer_count = 0;
-        this->status |= STAT_TC; // signal zero transfer count
-        this->cur_state = SeqState::XFER_END;
-        this->sequencer();
+    if (this->bus_obj->pull_data(this->target_id, buf, len)) {
+        bytes_moved += len;
+        this->xfer_count -= len;
+        if (!this->xfer_count) {
+            this->status |= STAT_TC; // signal zero transfer count
+            this->cur_state = SeqState::XFER_END;
+            this->sequencer();
+        }
     }
 
     return bytes_moved;
