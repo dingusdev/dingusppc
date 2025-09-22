@@ -128,7 +128,6 @@ private:
     uint8_t     motor_stat;     // spindle motor status: 1 - on, 0 - off
     uint8_t     drive_mode;     // drive mode: 0 - GCR, 1 - MFM
     uint8_t     is_ready;
-    uint8_t     track_zero;     // 1 - if head is at track zero
     int         step_dir;       // step direction -1/+1
     int         cur_track;      // track number the head is currently at
     int         cur_head;       // current head number: 1 - upper, 0 - lower

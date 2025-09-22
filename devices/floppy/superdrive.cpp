@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -21,8 +21,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Macintosh Superdrive emulation. */
 
-#include <core/timermanager.h>
-#include <devices/floppy/floppyimg.h>
 #include <devices/floppy/superdrive.h>
 #include <loguru.hpp>
 
@@ -115,7 +113,6 @@ void MacSuperDrive::command(uint8_t addr, uint8_t value)
                     this->get_name().c_str(), this->cur_track, this->num_tracks - 1);
                 this->cur_track = this->num_tracks - 1;
             }
-            this->track_zero = this->cur_track == 0;
         }
         break;
     case CommandAddr::Motor_On_Off:
@@ -196,7 +193,7 @@ uint8_t MacSuperDrive::status(uint8_t addr)
         value = this->wr_protect ^ 1; // reverse logic
         break;
     case StatusAddr::Track_Zero:
-        value = this->track_zero ^ 1; // reverse logic
+        value = this->cur_track != 0; // reverse logic
         break;
     case StatusAddr::Select_Head_1:
         value = this->cur_head = 1;
