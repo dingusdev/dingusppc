@@ -73,7 +73,8 @@ enum {
     INT_STEP_DONE  = 0x02,
     INT_ID_READ    = 0x04,
     INT_SECT_DONE  = 0x08,
-    INT_SENSE      = 0x10, // unused by SWIM3 driver
+    INT_SENSE      = 0x10, // generates interrupts on sense line changes
+    INT_ERROR      = 0x20, // missing in SWIM3 ERS but used in MkLinux/BeOS
 };
 
 // SWIM3 internal states.
