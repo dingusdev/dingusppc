@@ -35,11 +35,11 @@ rom_info rom_identity[] = {
       .dppc_description     = dppc_desc,                                    \
       .rom_description      = rom_desc },
 
-    rom( 0x00696000,   64, 0x28ba61ce, nullptr   , nullptr, "Macintosh 128K"                                                 )
-    rom( 0x00696000,   64, 0x28ba4e50, nullptr   , nullptr, "Macintosh 512K"                                                 )
-    rom( 0x00756000,  128, 0x4d1eeee1, nullptr   , nullptr, "MacPlus v1"                                                     )
-    rom( 0x00756000,  128, 0x4d1eeae1, nullptr   , nullptr, "MacPlus v2"                                                     )
-    rom( 0x00756000,  128, 0x4d1f8172, nullptr   , nullptr, "MacPlus v3"                                                     )
+    rom( 0x00690000,   64, 0x28ba61ce, nullptr   , nullptr, "Macintosh 128K"                                                 )
+    rom( 0x00690000,   64, 0x28ba4e50, nullptr   , nullptr, "Macintosh 512K"                                                 )
+    rom( 0x00750000,  128, 0x4d1eeee1, nullptr   , nullptr, "MacPlus v1"                                                     )
+    rom( 0x00750000,  128, 0x4d1eeae1, nullptr   , nullptr, "MacPlus v2"                                                     )
+    rom( 0x00750000,  128, 0x4d1f8172, nullptr   , nullptr, "MacPlus v3"                                                     )
     rom( 0x01780000,  256, 0x97221136, nullptr   , nullptr, "Mac II FDHD & IIx & IIcx"                                       )
     rom( 0x01780000,  256, 0x9779d2c4, nullptr   , nullptr, "MacII (800k v2)"                                                )
     rom( 0x01780000,  256, 0x97851db6, nullptr   , nullptr, "MacII (800k v1)"                                                )

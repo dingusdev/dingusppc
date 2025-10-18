@@ -400,7 +400,9 @@ string MachineFactory::machine_name_from_rom(char *rom_data, size_t rom_size) {
     else {
         date = 0;
         major_version = READ_WORD_BE_A(&rom_data[8]);
-        minor_version = READ_WORD_BE_A(&rom_data[0x12]);
+        minor_version = 0;
+        if (uint8_t(major_version) >= 0x7A)
+            minor_version = READ_WORD_BE_A(&rom_data[0x12]);
         firmware_version = (major_version << 16) | minor_version;
         ow_checksum_calculated = oldworldchecksum(&rom_data[4], std::min(rom_size - 4, (size_t)0x2ffffc));
         ow_checksum_stored = READ_DWORD_BE_A(&rom_data[0]);
@@ -530,7 +532,10 @@ string MachineFactory::machine_name_from_rom(char *rom_data, size_t rom_size) {
                 );
             }
         } else {
-            LOG_F(INFO, "    ROM Version: %04x.%04x", major_version, minor_version);
+            if (uint8_t(major_version) >= 0x7A)
+                LOG_F(INFO, "    ROM Version: %04x.%04x", major_version, minor_version);
+            else
+                LOG_F(INFO, "    ROM Version: %04x", major_version);
             if (rom_id_str[0])
                 LOG_F(INFO, "    ConfigInfo.BootstrapVersion: \"%s\"", rom_id_str);
         }
