@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -209,7 +209,16 @@ void MeshController::perform_command(const uint8_t cmd) {
         this->sequencer();
         break;
     case SeqCmd::BusFree:
-        this->bus_obj->release_ctrl_line(this->src_id, SCSI_CTRL_ACK);
+        // Don't release ACK if ATN is asserted. This condition indicates
+        // that the initiator wants to reject last message.
+        if (!this->bus_obj->test_ctrl_lines(SCSI_CTRL_ATN))
+            this->bus_obj->release_ctrl_line(this->src_id, SCSI_CTRL_ACK);
+        // Let the target switch to next bus phase if
+        // - both ACK and ATN are asserted so the target will reject last message
+        // - when in MESSAGE_IN phase to tell the target the initiator accepts last message
+        if (this->is_initiator && (this->bus_obj->test_ctrl_lines(SCSI_CTRL_ATN) ||
+            this->bus_obj->current_phase() == ScsiPhase::MESSAGE_IN))
+            this->bus_obj->target_next_step();
         // generate phase mismatch exception
         // if the target is still connected
         if (this->bus_obj->test_ctrl_lines(SCSI_CTRL_BSY)) {
