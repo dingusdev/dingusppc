@@ -86,7 +86,7 @@ void ScsiDevice::next_step()
         !this->allow_phase_change())
         return;
 
-    // check for puggable sequences and follow them if applicable
+    // check for pluggable sequences and follow them if applicable
     if (this->seq_steps && *this->seq_steps >= 0) {
         if (this->cur_phase == *this->seq_steps) {
             this->seq_steps++;
