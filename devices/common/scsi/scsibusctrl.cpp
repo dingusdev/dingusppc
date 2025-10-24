@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -95,8 +95,10 @@ void ScsiBusController::sequencer() {
         if (this->fifo_pos) {
             this->bus_obj->target_xfer_data();
             this->bus_obj->release_ctrl_line(this->src_id, SCSI_CTRL_ATN);
-            if (this->to_xfer <= 0)
+            if (this->to_xfer <= 0) {
+                this->bus_obj->target_next_step();
                 this->step_completed();
+            }
         }
         break;
     case SeqState::SEND_CMD:
@@ -147,9 +149,12 @@ void ScsiBusController::sequencer() {
         this->bus_obj->negotiate_xfer(this->fifo_pos, this->bytes_out);
         this->rcv_data();
         if (this->is_initiator) {
-            if (this->cur_state == SeqState::RCV_MESSAGE)
+            if (this->cur_state == SeqState::RCV_STATUS) {
+                this->bus_obj->target_next_step();
+                if (this->cur_bus_phase == ScsiPhase::MESSAGE_IN)
+                    this->bus_obj->assert_ctrl_line(this->src_id, SCSI_CTRL_REQ);
+            } else if (this->cur_state == SeqState::RCV_MESSAGE)
                 this->bus_obj->assert_ctrl_line(this->src_id, SCSI_CTRL_ACK);
-            this->bus_obj->target_next_step();
             this->step_completed();
             this->cur_state = SeqState::IDLE;
         }
