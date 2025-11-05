@@ -423,7 +423,7 @@ string MachineFactory::machine_name_from_rom(char *rom_data, size_t rom_size) {
         ow_checksum_calculated = oldworldchecksum(&rom_data[4], std::min(rom_size - 4, (size_t)0x2ffffc));
         ow_checksum_stored = READ_DWORD_BE_A(&rom_data[0]);
         if (ow_checksum_calculated != ow_checksum_stored)
-            snprintf(expected_ow, sizeof(expected_ow), " (expected 0x%04x)", ow_checksum_stored);
+            snprintf(expected_ow, sizeof(expected_ow), " (expected 0x%08x)", ow_checksum_stored);
 
         if (firmware_version > 0x077d10f3) {
             /* read ConfigInfo offset from file */
