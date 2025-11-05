@@ -215,6 +215,7 @@ uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
             uint8_t val = mac_address[(offset >> 4) & 0x7];
             if (((offset >> 4) & 0x7) < 6) {
                 if (mac_address[0] == 0x08 && bit_flip_0x08)
+                    // reverse the order of the bits
                     val = (val * 0x0202020202ULL & 0x010884422010ULL) % 1023;
             } else {
                 LOG_F(WARNING, "%s: reading byte %d of ENET_ROM using offset %x",
