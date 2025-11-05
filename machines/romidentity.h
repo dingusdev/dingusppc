@@ -31,6 +31,7 @@ typedef struct {
     uint32_t    firmware_version;
     uint32_t    firmware_size_k;
     uint32_t    ow_expected_checksum;
+    uint64_t    ow_expected_checksum64;
     uint32_t    nw_product_id;
     uint32_t    nw_subconfig_expected_checksum; // checksum of the system config section but without the firmware version and date
     const char *id_str;                         // BootstrapVersion of NKConfigurationInfo

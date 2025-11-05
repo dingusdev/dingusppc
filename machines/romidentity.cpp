@@ -79,110 +79,116 @@ rom_info rom_identity[] = {
 #undef rom
 
 // PPC Old World ROMs
-#define rom(version, checksum, id, dppc_mach, dppc_desc, rom_desc)          \
-    { .firmware_version     = version,                                      \
-      .firmware_size_k      = 4096,                                         \
-      .ow_expected_checksum = checksum,                                     \
-      .id_str               = id,                                           \
-      .dppc_machine         = dppc_mach,                                    \
-      .dppc_description     = dppc_desc,                                    \
-      .rom_description      = rom_desc },
+#define rom(version, checksum, checksum64, id, dppc_mach, dppc_desc, rom_desc) \
+    { .firmware_version       = version,                                       \
+      .firmware_size_k        = 4096,                                          \
+      .ow_expected_checksum   = checksum,                                      \
+      .ow_expected_checksum64 = checksum64,                                    \
+      .id_str                 = id,                                            \
+      .dppc_machine           = dppc_mach,                                     \
+      .dppc_description       = dppc_desc,                                     \
+      .rom_description        = rom_desc },
 
-    rom( 0x077d20f2, 0x9feb69b3, "Boot PDM 601 1.0", "pm6100"  , "NuBus Power Mac"            , "Power Mac 6100 & 7100 & 8100"                      )
-    rom( 0x077d22f1, 0x9c7c98f7, "Boot PDM 601 1.0", "pm9150"  , "NuBus Power Mac"            , "Workgroup Server 9150-80"                          )
-    rom( 0x077d23f1, 0x9b7a3aad, "Boot PDM 601 1.1", "pm7100"  , "NuBus Power Mac"            , "Power Mac 7100 (newer)"                            )
-    rom( 0x077d25f1, 0x9b037f6f, "Boot PDM 601 1.1", "pm9150"  , "NuBus Power Mac"            , "Workgroup Server 9150-120"                         )
-    rom( 0x077d26f1, 0x63abfd3f, "Boot Cordyceps 6", "pm5200"  , "Power Mac 5200/6200 series" , "Power Mac & Performa 5200,5300,6200,6300"          )
-    rom( 0x077d28a5, 0x67a1aa96, "..0.....Boot TNT", nullptr   , nullptr                      , "TNT A5c1"                                          )
-    rom( 0x077d28f1, 0x96cd923d, "Boot TNT 0.1p..]", "pm7200"  , "Power Mac 7xxxx/8xxx series", "Power Mac 7200&7500&8500&9500 v1"                  )
-    rom( 0x077d28f2, 0x9630c68b, "Boot TNT 0.1p..]", "pm7200"  , "Power Mac 7xxxx/8xxx series", "Power Mac 7200&7500&8500&9500 v2, SuperMac S900"   )
-    rom( 0x077d28f2, 0x962f6c13, "Boot TNT 0.1p..]", nullptr   , "Apple Network Server series", "Apple Network Server 500"                          )
-    rom( 0x077d29f1, 0x6f5724c0, "Boot Alchemy 0.1", "pm6400"  , "Performa 6400"              , "PM 5400, Performa 6400"                            )
-    rom( 0x077d2af2, 0x83c54f75, "Boot PBX 603 0.0", "pb-preg3", "PowerBook Pre-G3"           , "Powerbook 2300 & PB5x0 PPC Upgrade"                )
-    rom( 0x077d2cc6, 0x2bf65931, "Boot Pip 0.1p..]", "pippin"  , "Bandai Pippin"              , "Bandai Pippin (Kinka Dev)"                         )
-    rom( 0x077d2cf2, 0x2bef21b7, "Boot Pip 0.1p..]", "pippin"  , "Bandai Pippin"              , "Bandai Pippin (Kinka 1.0)"                         )
-    rom( 0x077d2cf5, 0x3e10e14c, "Boot Pip 0.1p..]", "pippin"  , "Bandai Pippin"              , "Bandai Pippin (Kinka 1.2)"                         )
-    rom( 0x077d2cf8, 0x3e6b3ee4, "Boot Pip 0.1p..]", "pippin"  , "Bandai Pippin"              , "Bandai Pippin (Kinka 1.3)"                         )
-    rom( 0x077d32f3, 0x838c0831, "Boot PBX 603 0.0", "pb-preg3", "PowerBook Pre-G3"           , "PowerBook 1400"                                    )
-    rom( 0x077d32f3, 0x83a21950, "Boot PBX 603 0.0", "pb-preg3", "PowerBook Pre-G3"           , "PowerBook 1400cs"                                  )
-    rom( 0x077d34f2, 0x960e4be9, "Boot TNT 0.1p..]", "pm7300"  , "Power Mac 7xxxx/8xxx series", "Power Mac 7300 & 7600 & 8600 & 9600 (v1)"          )
-    rom( 0x077d34f5, 0x960fc647, "Boot TNT 0.1p..]", "pm8600"  , "Power Mac 7xxxx/8xxx series", "Power Mac 8600 & 9600 (v2)"                        )
-    rom( 0x077d35f2, 0x6e92fe08, "Boot Gazelle 0.1", "pm6500"  , "Power Mac 6500"             , "Power Mac 6500, Twentieth Anniversary Macintosh"   )
-    rom( 0x077d36f1, 0x276ec1f1, "Boot PSX 0.1p..]", nullptr   , nullptr                      , "PowerBook 2400, 2400c, 3400, 3400c"                )
-    rom( 0x077d36f5, 0x2560f229, "Boot PSX 0.1p..]", nullptr   , nullptr                      , "PowerBook G3 Kanga"                                )
-    rom( 0x077d39b7, 0x4604518f, "Boot PEX 0.1p..]", nullptr   , nullptr                      , "PowerExpress TriPEx"                               )
-    rom( 0x077d39f1, 0x46001f1b, "Boot PEX 0.1p..]", nullptr   , nullptr                      , "Power Express (9700 Prototype)"                    )
-    rom( 0x077d3af2, 0x58f03416, "Boot Zanzibar 0.", "pm4400"  , "Power Mac 4400/7220"        , "Motorola 4400, 7220"                               )
-    rom( 0x077d40f2, 0x79d68d63, "Boot Gossamer 0.", "pmg3dt"  , "Power Mac G3 Beige"         , "Power Mac G3 desktop"                              )
-    rom( 0x077d41f5, 0xcbb01212, "Boot GRX 0.1p..]", "pbg3"    , "PowerBook G3 Wallstreet"    , "PowerBook G3 Wallstreet"                           )
-    rom( 0x077d41f6, 0xb46ffb63, "Boot GRX 0.1p..]", "pbg3"    , "PowerBook G3 Wallstreet"    , "PowerBook G3 Wallstreet PDQ"                       )
-    rom( 0x077d45f1, 0x78fdb784, "Boot Gossamer 0.", "pmg3dt"  , "Power Mac G3 Beige"         , "PowerMac G3 Minitower (beige 266MHz), Beige G3 233")
-    rom( 0x077d45f2, 0x78f57389, "Boot Gossamer 0.", "pmg3dt"  , "Power Mac G3 Beige"         , "Power Mac G3 (v3)"                                 )
-    rom( 0x077d45f3, 0x78e842a8, "Boot Gossamer 0.", "pmg3dt"  , "Power Mac G3 Beige"         , "Power Mac G3 (v4)"                                 )
-    rom( 0x077d45f3, 0x78eb4234, "Boot Gossamer 0.", "pmg3dt"  , "Power Mac G3 Beige"         , "Power Mac G3 (v4) (no public dump)"                )
+    rom( 0x077d20f2, 0x9feb69b3, 0xdedc602cfc3b9221, "Boot PDM 601 1.0", "pm6100"  , "NuBus Power Mac"            , "Power Mac 6100 & 7100 & 8100"                      )
+    rom( 0x077d22f1, 0x9c7c98f7, 0xe9220fe5992ffdf2, "Boot PDM 601 1.0", "pm9150"  , "NuBus Power Mac"            , "Workgroup Server 9150-80"                          )
+    rom( 0x077d23f1, 0x9b7a3aad, 0xed510ac937721e25, "Boot PDM 601 1.1", "pm7100"  , "NuBus Power Mac"            , "Power Mac 7100 (newer)"                            )
+    rom( 0x077d25f1, 0x9b037f6f, 0xd20052bd25d88bd6, "Boot PDM 601 1.1", "pm9150"  , "NuBus Power Mac"            , "Workgroup Server 9150-120"                         )
+    rom( 0x077d26f1, 0x63abfd3f, 0xc5421fbaff3c5a9d, "Boot Cordyceps 6", "pm5200"  , "Power Mac 5200/6200 series" , "Power Mac & Performa 5200,5300,6200,6300"          )
+    rom( 0x077d28a5, 0x67a1aa96, 0x48877909cdce7677, "..0.....Boot TNT", nullptr   , nullptr                      , "TNT A5c1"                                          )
+    rom( 0x077d28f1, 0x96cd923d, 0xc241cd82bf90797a, "Boot TNT 0.1p..]", "pm7200"  , "Power Mac 7xxxx/8xxx series", "Power Mac 7200&7500&8500&9500 v1"                  )
+    rom( 0x077d28f2, 0x9630c68b, 0x4db4a42fea3b53b3, "Boot TNT 0.1p..]", "pm7200"  , "Power Mac 7xxxx/8xxx series", "Power Mac 7200&7500&8500&9500 v2, SuperMac S900"   )
+    rom( 0x077d28f2, 0x962f6c13, 0xd540b3dd5bcf9caa, "Boot TNT 0.1p..]", nullptr   , "Apple Network Server series", "Apple Network Server 500"                          )
+    rom( 0x077d29f1, 0x6f5724c0, 0x6703442013f443d8, "Boot Alchemy 0.1", "pm6400"  , "Performa 6400"              , "PM 5400, Performa 6400"                            )
+    rom( 0x077d2af2, 0x83c54f75, 0xc8b9658674ebb5ba, "Boot PBX 603 0.0", "pb-preg3", "PowerBook Pre-G3"           , "Powerbook 2300 & PB5x0 PPC Upgrade"                )
+    rom( 0x077d2cc6, 0x2bf65931, 0x2b807a9748e78318, "Boot Pip 0.1p..]", "pippin"  , "Bandai Pippin"              , "Bandai Pippin (Kinka Dev)"                         )
+    rom( 0x077d2cf2, 0x2bef21b7, 0x0bf68e274dc0720d, "Boot Pip 0.1p..]", "pippin"  , "Bandai Pippin"              , "Bandai Pippin (Kinka 1.0)"                         )
+    rom( 0x077d2cf5, 0x3e10e14c, 0xdced07b8dfabe232, "Boot Pip 0.1p..]", "pippin"  , "Bandai Pippin"              , "Bandai Pippin (Kinka 1.2)"                         )
+    rom( 0x077d2cf8, 0x3e6b3ee4, 0xf1c39bbb1627982b, "Boot Pip 0.1p..]", "pippin"  , "Bandai Pippin"              , "Bandai Pippin (Kinka 1.3)"                         )
+    rom( 0x077d32f3, 0x838c0831, 0xb99cdb0cd1d6e068, "Boot PBX 603 0.0", "pb-preg3", "PowerBook Pre-G3"           , "PowerBook 1400"                                    )
+    rom( 0x077d32f3, 0x83a21950, 0xb470fc5d287e39c1, "Boot PBX 603 0.0", "pb-preg3", "PowerBook Pre-G3"           , "PowerBook 1400cs"                                  )
+    rom( 0x077d34f2, 0x960e4be9, 0x949c2c56d07516b7, "Boot TNT 0.1p..]", "pm7300"  , "Power Mac 7xxxx/8xxx series", "Power Mac 7300 & 7600 & 8600 & 9600 (v1)"          )
+    rom( 0x077d34f5, 0x960fc647, 0x013bb98cd4ad16c4, "Boot TNT 0.1p..]", "pm8600"  , "Power Mac 7xxxx/8xxx series", "Power Mac 8600 & 9600 (v2)"                        )
+    rom( 0x077d35f2, 0x6e92fe08, 0xc784f8035da2d93a, "Boot Gazelle 0.1", "pm6500"  , "Power Mac 6500"             , "Power Mac 6500, Twentieth Anniversary Macintosh"   )
+    rom( 0x077d36f1, 0x276ec1f1, 0x05f6c10c61a3760d, "Boot PSX 0.1p..]", nullptr   , nullptr                      , "PowerBook 2400, 2400c, 3400, 3400c"                )
+    rom( 0x077d36f5, 0x2560f229, 0xafabd023ad5fc165, "Boot PSX 0.1p..]", nullptr   , nullptr                      , "PowerBook G3 Kanga"                                )
+    rom( 0x077d39b7, 0x4604518f, 0xefbc0e0922ebe984, "Boot PEX 0.1p..]", nullptr   , nullptr                      , "PowerExpress TriPEx"                               )
+    rom( 0x077d39f1, 0x46001f1b, 0,                  "Boot PEX 0.1p..]", nullptr   , nullptr                      , "Power Express (9700 Prototype)"                    )
+    rom( 0x077d3af2, 0x58f03416, 0x5208e606711dd704, "Boot Zanzibar 0.", "pm4400"  , "Power Mac 4400/7220"        , "Motorola 4400, 7220"                               )
+    rom( 0x077d40f2, 0x79d68d63, 0x32d284c61fd4f342, "Boot Gossamer 0.", "pmg3dt"  , "Power Mac G3 Beige"         , "Power Mac G3 desktop"                              )
+    rom( 0x077d41f5, 0xcbb01212, 0x833504c219032ad5, "Boot GRX 0.1p..]", "pbg3"    , "PowerBook G3 Wallstreet"    , "PowerBook G3 Wallstreet"                           )
+    rom( 0x077d41f6, 0xb46ffb63, 0x69e8e6201908f35f, "Boot GRX 0.1p..]", "pbg3"    , "PowerBook G3 Wallstreet"    , "PowerBook G3 Wallstreet PDQ"                       )
+    rom( 0x077d45f1, 0x78fdb784, 0xe8cd35c33d1c0b0b, "Boot Gossamer 0.", "pmg3dt"  , "Power Mac G3 Beige"         , "PowerMac G3 Minitower (beige 266MHz), Beige G3 233")
+    rom( 0x077d45f2, 0x78f57389, 0x7b8375af2e19914d, "Boot Gossamer 0.", "pmg3dt"  , "Power Mac G3 Beige"         , "Power Mac G3 (v3)"                                 )
+    rom( 0x077d45f3, 0x78e842a8, 0x7ce12c8aef3312fe, "Boot Gossamer 0.", "pmg3dt"  , "Power Mac G3 Beige"         , "Power Mac G3 (v4)"                                 )
+    rom( 0x077d45f3, 0x78eb4234, 0,                  "Boot Gossamer 0.", "pmg3dt"  , "Power Mac G3 Beige"         , "Power Mac G3 (v4) (no public dump)"                )
 
 #undef rom
 
 // PPC Mac OS ROM files
-#define rom(version, checksum, id, dppc_mach, rom_desc)                     \
-    { .firmware_version     = version,                                      \
-      .firmware_size_k      = 4096,                                         \
-      .ow_expected_checksum = checksum,                                     \
-      .id_str               = id,                                           \
-      .dppc_machine         = dppc_mach,                                    \
-      .dppc_description     = "NewWorld Mac",                               \
-      .rom_description      = rom_desc },
+#define rom(version, checksum, checksum64, id, dppc_mach, rom_desc)         \
+    { .firmware_version       = version,                                    \
+      .firmware_size_k        = 4096,                                       \
+      .ow_expected_checksum   = checksum,                                   \
+      .ow_expected_checksum64 = checksum64,                                 \
+      .id_str                 = id,                                         \
+      .dppc_machine           = dppc_mach,                                  \
+      .dppc_description       = "NewWorld Mac",                             \
+      .rom_description        = rom_desc },
 
-    rom( 0x077d44f1, 0xfd86d120, "NewWorld v1.0.p.", nullptr   , "Mac OS ROM file 1.1"    ) // 1998-07-21 - Mac OS 8.1 (iMac, Rev A Bundle)
-    rom( 0x077d44f3, 0xfd12b69e, "NewWorld v1.0.p.", nullptr   , "Mac OS ROM file 1.1.2"  ) // 1998-08-27 - Mac OS 8.5 (Retail CD), iMac Update 1.0
-    rom( 0x077d44f4, 0xfcaad843, "NewWorld v1.0.p.", nullptr   , "Mac OS ROM file 1.1.5"  ) // 1998-09-19 - Mac OS 8.5 (iMac, Rev B Bundle)
-    rom( 0x077d44f1, 0xd36ba902, "NewWorld v1.0.p.", nullptr   , "Mac OS ROM file 1.2"    ) // 1998-12-03 - Power Macintosh G3 (Blue and White) Mac OS 8.5.1 Bundle, Macintosh Server G3 (Blue and White) Mac OS 8.5.1 Bundle
-    rom( 0x077d44f1, 0xd377adb7, "NewWorld v1.0.p.", nullptr   , "Mac OS ROM file 1.2.1"  ) // 1999-01-22 - Mac OS 8.5.1 (Colors iMac 266 MHz Bundle), iMac Update 1.1
-    rom( 0x077d44b5, 0xc804f7f4, "NewWorld v1.0.p.", nullptr   , "Mac OS ROM file 1.4"    ) // 1999-04-05 - Mac OS 8.6 (Retail CD), Mac OS 8.6 (Colors iMac 333 MHz Bundle), Power Macintosh G3 (Blue and White) Mac OS 8.6 Bundle
-    rom( 0x077d44b5, 0xc7cb0323, "NewWorld v1.0.p.", nullptr   , "Mac OS ROM file 1.6"    ) // 1999-05-14 - Macintosh PowerBook G3 Series 8.6 Bundle, Mac OS ROM Update 1.0
-    rom( 0x077d44f1, 0xc75c6aab, "NewWorld v1.0.p.", nullptr   , "Mac OS ROM file 1.7.1"  ) // 1999-08-23 - Mac OS 8.6 bundled on Power Mac G4 (PCI)
-    rom( 0x077d44f1, 0xc753c667, "NewWorld v1.0.p.", nullptr   , "Mac OS ROM file 1.8.1"  ) // 1999-08-28 - Mac OS 8.6 Power Mac G4 ROM 1.8.1 Update
-    rom( 0x077d45f3, 0xcde9cda4, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 2.3.1"  ) // 1999-09-13 - Mac OS 8.6 bundled on iMac (Slot Loading), iBook
-    rom( 0x077d45f3, 0xce8a3b5c, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 2.5.1"  ) // 1999-09-17 - Mac OS 8.6 bundled on Power Mac G4 (AGP)
-    rom( 0x077d45f4, 0xce1fd217, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 3.0"    ) // 1999-09-27 - Retail Mac OS 9.0 installed on Power Macintosh G3 (Blue and White), Retail Mac OS 9.0 installed on iMac, Mac OS 9.0 bundled on PowerBook G3 Bronze
-    rom( 0x077d45f5, 0xce1cf7f7, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 3.1.1"  ) // 1999-10-28 - Mac OS 9.0 bundled on iBook, Mac OS 9.0 bundled on Power Mac G4 (AGP Graphics):iMac (Slot-Loading)
-    rom( 0x077d45f6, 0xb9eb8c3d, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 3.5"    ) // 2000-01-29 - Mac OS 9.0.2 bundled on Power Mac G4 (AGP) and iBook, Mac OS 9.0.2 installed on PowerBook (FireWire)
-    rom( 0x077d45f6, 0xb8c832f3, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 3.6"    ) // 2000-02-17 - Mac OS 9.0.3 bundled with iMac (Slot Loading)
-    rom( 0x077d45f6, 0xb8b2c971, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 3.7"    ) // 2000-03-15 - 9.0.4 Retail CD
-    rom( 0x077d45f6, 0xb8bea8b3, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 3.8"    ) // 2000-05-22 - 9.0.4 Ethernet Update
-    rom( 0x077d45f6, 0xc90b6289, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 4.6.1"  ) // 2000-06-18 - Mac OS 9.0.4 Mac OS 9.0.4 bundled on iMac (Summer 2000), Power Mac G4 (Summer 2000)
-    rom( 0x077d45f6, 0xc92f71d3, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 4.9.1"  ) // 2000-06-28 - Mac OS 9.0.4 bundled on Power Mac G4 MP (Summer 2000) (CPU software 2.3), Power Mac G4 (Gigabit Ethernet)
-    rom( 0x077d45f6, 0xc8e1be97, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 5.2.1"  ) // 2000-07-12 - Mac OS 9.0.4 installed on Power Mac G4 Cube (CPU software 2.4)
-    rom( 0x077d45f6, 0xce2a2a5b, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 5.3.1"  ) // 2000-08-14 - Mac OS 9.0.4 bundled on iBook (Summer 2000) (CPU software 2.5)
-    rom( 0x077d45f6, 0xce1b9fd2, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 5.5.1"  ) // 2000-08-25 - Mac OS 9.0.4 from International G4 Cube Install CD
-    rom( 0x077d45f6, 0xe20aa0d0, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 6.1"    ) // 2000-11-03 - 9.1 Universal Update
-    rom( 0x077d45f6, 0xeacb3ca4, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 6.7.1"  ) // 2000-12-01 - Mac OS 9.1 installed on Power Mac G4 (Digital Audio)
-    rom( 0x077d45f6, 0xea00f1b7, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 7.5.1"  ) // 2001-02-07 - 9.1 iMac 2001
-    rom( 0x077d45f6, 0xeece7cd0, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 7.8.1"  ) // 2001-04-10 - bundled on iBook (Dual USB) (CPU Software 3.5)
-    rom( 0x077d45f6, 0xeed28047, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 7.9.1"  ) // 2001-04-24 - Mac OS 9.1 bundled on PowerBook G4
-    rom( 0x077d45f6, 0xee6bc7d9, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 8.0"    ) // 2001-06-07 - Mac OS 9.2 Power Mac G4 Install CD
-    rom( 0x077d45f6, 0xed7f9fc2, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 8.3.1"  ) // 2001-07-18 - Mac OS 9.2 installed on iMac (Summer 2001), Mac OS 9.2 installed on Power Mac G4 (QuickSilver)
-    rom( 0x077d45f6, 0xed26a1ef, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 8.4"    ) // 2001-07-30 - Mac OS 9.2.1 Update CD
-    rom( 0x077d45f6, 0xec849611, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 8.6.1"  ) // 2001-09-25 - Mac OS 9.2.1 bundled on iBook G3 (Late 2001)
-    rom( 0x077d45f6, 0xecc44a65, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 8.7"    ) // 2001-11-07 - Mac OS 9.2.2 Update SMI
-    rom( 0x077d45f6, 0xec96aeb6, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 8.8"    ) // 2001-11-26 - Mac OS 9.2.2 Update CD
-    rom( 0x077d45f6, 0xec93ab73, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 8.9.1"  ) // 2001-12-11 - Mac OS 9.2.2 bundled on iBook (CPU Software 4.4)
-    rom( 0x077d45f6, 0xec86128e, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 9.0.1"  ) // 2001-12-19 - Mac OS 9.2.2 bundled on  iMac (2001)
-    rom( 0x077d45f6, 0xecef6af1, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 9.1.1"  ) // 2002-04-08 - Mac OS 9.2.2 bundled on iMac G4
-    rom( 0x077d45f6, 0xecc6f29a, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 9.2.1"  ) // 2002-04-17 - Mac OS 9.2.2 bundled on eMac (CPU Software 4.9)
-    rom( 0x077d45f6, 0xecd3453f, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 9.3.1"  ) // 2002-04-18 - Mac OS 9.2.2 bundled on PowerBook G4 (CPU Software 5.0)
-    rom( 0x077d45f6, 0xecaf0460, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 9.5.1"  ) // 2002-07-18 - Mac OS 9.2.2 bundled on iMac (17" Flat Panel) (CPU Software 5.3)
-    rom( 0x077d45f6, 0xecbd9bd2, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 9.6.1"  ) // 2002-09-03 - Mac OS 9.2.2 (CPU Software 5.4)
-    rom( 0x077d45f6, 0xecb7c4f9, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 9.7.1"  ) // 2002-10-11 - Mac OS 9.2.2 bundled on PowerBook (Titanium, 1GHz)
-    rom( 0x077d45f6, 0xecb96443, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 9.8.1"  ) // 2003-01-10 - Mac OS 9.2.2
-    rom( 0x077d45f6, 0xecb8e951, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 10.1.1" ) // 2003-03-17 - Mac OS 9.2.2 bundled on eMac 800MHz (CPU Software 5.7)
-    rom( 0x077d45f6, 0xecb73ad5, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 10.2.1" ) // 2003-04-03 - Mac OS 9.2.2 Retail International CD
+    rom( 0x077d44f1, 0xfd86d120, 0x465bf79ac11efadb, "NewWorld v1.0.p.", nullptr   , "Mac OS ROM file 1.1"    ) // 1998-07-21 - Mac OS 8.1 (iMac, Rev A Bundle)
+    rom( 0x077d44f3, 0xfd12b69e, 0xd3df605d1d1c72c3, "NewWorld v1.0.p.", nullptr   , "Mac OS ROM file 1.1.2"  ) // 1998-08-27 - Mac OS 8.5 (Retail CD), iMac Update 1.0
+    rom( 0x077d44f4, 0xfcaad843, 0x9525d4d735b28e12, "NewWorld v1.0.p.", nullptr   , "Mac OS ROM file 1.1.5"  ) // 1998-09-19 - Mac OS 8.5 (iMac, Rev B Bundle)
+    rom( 0x077d44f1, 0xd36ba902, 0x5cba340b0eeb2a67, "NewWorld v1.0.p.", nullptr   , "Mac OS ROM file 1.2"    ) // 1998-12-03 - Power Macintosh G3 (Blue and White) Mac OS 8.5.1 Bundle, Macintosh Server G3 (Blue and White) Mac OS 8.5.1 Bundle
+    rom( 0x077d44f1, 0xd377adb7, 0x1051c5a4583a46b2, "NewWorld v1.0.p.", nullptr   , "Mac OS ROM file 1.2.1"  ) // 1999-01-22 - Mac OS 8.5.1 (Colors iMac 266 MHz Bundle), iMac Update 1.1
+    rom( 0x077d44b5, 0xc804f7f4, 0xc456af44bf15c59a, "NewWorld v1.0.p.", nullptr   , "Mac OS ROM file 1.4"    ) // 1999-04-05 - Mac OS 8.6 (Retail CD), Mac OS 8.6 (Colors iMac 333 MHz Bundle), Power Macintosh G3 (Blue and White) Mac OS 8.6 Bundle
+    rom( 0x077d44b5, 0xc7cb0323, 0xfd4d237a53b399ad, "NewWorld v1.0.p.", nullptr   , "Mac OS ROM file 1.6"    ) // 1999-05-14 - Macintosh PowerBook G3 Series 8.6 Bundle, Mac OS ROM Update 1.0
+    rom( 0x077d44f1, 0xc75c6aab, 0xd9d8584aebaed648, "NewWorld v1.0.p.", nullptr   , "Mac OS ROM file 1.7.1"  ) // 1999-08-23 - Mac OS 8.6 bundled on Power Mac G4 (PCI)
+    rom( 0x077d44f1, 0xc753c667, 0x5716eaf58bd3dda1, "NewWorld v1.0.p.", nullptr   , "Mac OS ROM file 1.8.1"  ) // 1999-08-28 - Mac OS 8.6 Power Mac G4 ROM 1.8.1 Update
+    rom( 0x077d45f3, 0xcde9cda4, 0xe672c2885b5af6d0, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 2.3.1"  ) // 1999-09-13 - Mac OS 8.6 bundled on iMac (Slot Loading), iBook
+    rom( 0x077d45f3, 0xce8a3b5c, 0xf0d9214daef11693, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 2.5.1"  ) // 1999-09-17 - Mac OS 8.6 bundled on Power Mac G4 (AGP)
+    rom( 0x077d45f4, 0xce1fd217, 0x6e49bdb3f55e4583, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 3.0"    ) // 1999-09-27 - Retail Mac OS 9.0 installed on Power Macintosh G3 (Blue and White), Retail Mac OS 9.0 installed on iMac, Mac OS 9.0 bundled on PowerBook G3 Bronze
+    rom( 0x077d45f5, 0xce1cf7f7, 0x6a8d3345ced59eef, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 3.1.1"  ) // 1999-10-28 - Mac OS 9.0 bundled on iBook, Mac OS 9.0 bundled on Power Mac G4 (AGP Graphics):iMac (Slot-Loading)
+    rom( 0x077d45f6, 0xb9eb8c3d, 0x37ff1fc591c27899, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 3.5"    ) // 2000-01-29 - Mac OS 9.0.2 bundled on Power Mac G4 (AGP) and iBook, Mac OS 9.0.2 installed on PowerBook (FireWire)
+    rom( 0x077d45f6, 0xb8c832f3, 0x68991dd330bdbf29, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 3.6"    ) // 2000-02-17 - Mac OS 9.0.3 bundled with iMac (Slot Loading)
+    rom( 0x077d45f6, 0xb8b2c971, 0x3c28e7cb0cdf7247, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 3.7"    ) // 2000-03-15 - 9.0.4 Retail CD
+    rom( 0x077d45f6, 0xb8bea8b3, 0x1f3fed032df9277a, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 3.8"    ) // 2000-05-22 - 9.0.4 Ethernet Update
+    rom( 0x077d45f6, 0xc90b6289, 0xa63fc25ec62408b0, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 4.6.1"  ) // 2000-06-18 - Mac OS 9.0.4 Mac OS 9.0.4 bundled on iMac (Summer 2000), Power Mac G4 (Summer 2000)
+    rom( 0x077d45f6, 0xc92f71d3, 0xf71fd99f08063d40, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 4.9.1"  ) // 2000-06-28 - Mac OS 9.0.4 bundled on Power Mac G4 MP (Summer 2000) (CPU software 2.3), Power Mac G4 (Gigabit Ethernet)
+    rom( 0x077d45f6, 0xc8e1be97, 0xd666e7791a0313b8, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 5.2.1"  ) // 2000-07-12 - Mac OS 9.0.4 installed on Power Mac G4 Cube (CPU software 2.4)
+    rom( 0x077d45f6, 0xce2a2a5b, 0x64278ec15492fff5, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 5.3.1"  ) // 2000-08-14 - Mac OS 9.0.4 bundled on iBook (Summer 2000) (CPU software 2.5)
+    rom( 0x077d45f6, 0xce1b9fd2, 0x613a847c5a93f1f7, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 5.5.1"  ) // 2000-08-25 - Mac OS 9.0.4 from International G4 Cube Install CD
+    rom( 0x077d45f6, 0xe20aa0d0, 0x19846d88d890eafe, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 6.1"    ) // 2000-11-03 - 9.1 Universal Update
+    rom( 0x077d45f6, 0xeacb3ca4, 0x8e6380cf499094b3, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 6.7.1"  ) // 2000-12-01 - Mac OS 9.1 installed on Power Mac G4 (Digital Audio)
+    rom( 0x077d45f6, 0xea00f1b7, 0x794eda200c4ee2c9, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 7.5.1"  ) // 2001-02-07 - 9.1 iMac 2001
+    rom( 0x077d45f6, 0xeece7cd0, 0xbf44006b576a9770, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 7.8.1"  ) // 2001-04-10 - bundled on iBook (Dual USB) (CPU Software 3.5)
+    rom( 0x077d45f6, 0xeed28047, 0xac8a8f4cec6d8d3b, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 7.9.1"  ) // 2001-04-24 - Mac OS 9.1 bundled on PowerBook G4
+    rom( 0x077d45f6, 0xee6bc7d9, 0x71ea5cd85625c3a2, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 8.0"    ) // 2001-06-07 - Mac OS 9.2 Power Mac G4 Install CD
+    rom( 0x077d45f6, 0xed7f9fc2, 0x27ab69c9f21df9d1, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 8.3.1"  ) // 2001-07-18 - Mac OS 9.2 installed on iMac (Summer 2001), Mac OS 9.2 installed on Power Mac G4 (QuickSilver)
+    rom( 0x077d45f6, 0xed26a1ef, 0xa2a603b52bf6017b, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 8.4"    ) // 2001-07-30 - Mac OS 9.2.1 Update CD
+    rom( 0x077d45f6, 0xec849611, 0x7840123158b8943c, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 8.6.1"  ) // 2001-09-25 - Mac OS 9.2.1 bundled on iBook G3 (Late 2001)
+    rom( 0x077d45f6, 0xecc44a65, 0xbed3a4b747213d92, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 8.7"    ) // 2001-11-07 - Mac OS 9.2.2 Update SMI
+    rom( 0x077d45f6, 0xec96aeb6, 0x5c3097a900eebbe5, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 8.8"    ) // 2001-11-26 - Mac OS 9.2.2 Update CD
+    rom( 0x077d45f6, 0xec93ab73, 0x995426703e59abff, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 8.9.1"  ) // 2001-12-11 - Mac OS 9.2.2 bundled on iBook (CPU Software 4.4)
+    rom( 0x077d45f6, 0xec86128e, 0x380ad7bdcaa89dc7, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 9.0.1"  ) // 2001-12-19 - Mac OS 9.2.2 bundled on  iMac (2001)
+    rom( 0x077d45f6, 0xecef6af1, 0xcf149c7394b8c437, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 9.1.1"  ) // 2002-04-08 - Mac OS 9.2.2 bundled on iMac G4
+    rom( 0x077d45f6, 0xecc6f29a, 0xabd8266a6d349401, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 9.2.1"  ) // 2002-04-17 - Mac OS 9.2.2 bundled on eMac (CPU Software 4.9)
+    rom( 0x077d45f6, 0xecd3453f, 0xcdf9eb8fe542da0e, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 9.3.1"  ) // 2002-04-18 - Mac OS 9.2.2 bundled on PowerBook G4 (CPU Software 5.0)
+    rom( 0x077d45f6, 0xecaf0460, 0x22cde263f891fa1b, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 9.5.1"  ) // 2002-07-18 - Mac OS 9.2.2 bundled on iMac (17" Flat Panel) (CPU Software 5.3)
+    rom( 0x077d45f6, 0xecbd9bd2, 0xec3ca440cd55c910, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 9.6.1"  ) // 2002-09-03 - Mac OS 9.2.2 (CPU Software 5.4)
+    rom( 0x077d45f6, 0xecb7c4f9, 0x0e6d36f70dba2607, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 9.7.1"  ) // 2002-10-11 - Mac OS 9.2.2 bundled on PowerBook (Titanium, 1GHz)
+    rom( 0x077d45f6, 0xecb96443, 0x1de4e772a4c70d9e, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 9.8.1"  ) // 2003-01-10 - Mac OS 9.2.2
+    rom( 0x077d45f6, 0xecb8e951, 0x618a1da98364bf3f, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 10.1.1" ) // 2003-03-17 - Mac OS 9.2.2 bundled on eMac 800MHz (CPU Software 5.7)
+    rom( 0x077d45f6, 0xecb73ad5, 0xe8bf5f2e952e87c0, "NewWorld v1.0...", nullptr   , "Mac OS ROM file 10.2.1" ) // 2003-04-03 - Mac OS 9.2.2 Retail International CD
 
 #undef rom
 
 // PPC First New World ROMs
 #define rom(version, dppc_mach, dppc_desc, rom_desc) \
-    { version, 1024, 0, 0, 0, 0, 0, 0, dppc_mach, dppc_desc, rom_desc },
+    { .firmware_version       = version,             \
+      .firmware_size_k        = 1024,                \
+      .dppc_machine           = dppc_mach,           \
+      .dppc_description       = dppc_desc,           \
+      .rom_description        = rom_desc },
 
     rom( 0x10f1, "pbg3lb"  , "PowerBook G3 Lombard" , "PowerBook G3 Lombard"              ) // PowerBook1,1 // 1999-04-06 3.1.0f1
     rom( 0x11f4, "pmg3nw"  , "Power Mac Yosemite"   , "Power Mac B&W G3"                  ) // PowerMac1,1  // 1999-04-09 3.1.1f4

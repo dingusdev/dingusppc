@@ -119,14 +119,22 @@ static uint32_t oldworldchecksum(char *buf, size_t len) {
     return ck;
 }
 
-bool MachineFactory::add(const string& machine_id, MachineDescription desc)
-{
+bool MachineFactory::add(const string& machine_id, MachineDescription desc) {
     if (get_registry().find(machine_id) != get_registry().end()) {
         return false;
     }
 
     get_registry()[machine_id] = desc;
     return true;
+}
+
+static uint64_t oldworldchecksum64(char *buf, size_t len, size_t config_info_offset) {
+    uint64_t ck = 0;
+    for (size_t i = 0; i < len; i += 8, buf += 8) {
+        if (i < config_info_offset || i >= config_info_offset + 40)
+            ck += READ_QWORD_BE_A(buf);
+    }
+    return ck;
 }
 
 void MachineFactory::list_machines()
@@ -330,6 +338,7 @@ string MachineFactory::machine_name_from_rom(char *rom_data, size_t rom_size) {
     uint32_t firmware_version = 0;
     uint32_t nw_product_id = 0;
     uint32_t ow_checksum_stored          = 0; uint32_t ow_checksum_calculated          = 0;
+    uint64_t ow_checksum64_stored        = 0; uint64_t ow_checksum64_calculated        = 0;
     uint32_t nw_start_checksum_stored    = 0; uint32_t nw_start_checksum_calculated    = 0;
     uint32_t nw_config_checksum_stored   = 0; uint32_t nw_config_checksum_calculated   = 0;
     uint32_t nw_recovery_checksum_stored = 0; uint32_t nw_recovery_checksum_calculated = 0;
@@ -340,12 +349,15 @@ string MachineFactory::machine_name_from_rom(char *rom_data, size_t rom_size) {
     uint32_t nw_subconfig_checksum_calculated = 0;
 
     char expected_ow[24];
+    char expected_ow64[40];
     char expected_start[24];
     char expected_config[24];
     char expected_recovery[24];
     char expected_romimage[24];
     auto checksum_verbosity = loguru::Verbosity_INFO;
-    expected_ow[0] = expected_start[0] = expected_config[0] = expected_recovery[0] = expected_romimage[0] = 0;
+    auto checksum_verbosity2 = loguru::Verbosity_INFO;
+    expected_ow[0] = expected_ow64[0] = 0;
+    expected_start[0] = expected_config[0] = expected_recovery[0] = expected_romimage[0] = 0;
 
     uint32_t config_info_offset;
     char rom_id_str[17];
@@ -413,13 +425,19 @@ string MachineFactory::machine_name_from_rom(char *rom_data, size_t rom_size) {
         if (rom_size >= 0x400000) {
             /* read ConfigInfo offset from file */
             config_info_offset = READ_DWORD_BE_A(&rom_data[0x300080]);
+            if (0x300000ULL + config_info_offset <= rom_size - 0x64 - 16) {
+                ow_checksum64_calculated = oldworldchecksum64(&rom_data[0], rom_size, 0x300000 + config_info_offset);
+                ow_checksum64_stored = READ_QWORD_BE_A(&rom_data[0x300020 + config_info_offset]);
+                if (ow_checksum64_calculated != ow_checksum64_stored)
+                    snprintf(expected_ow64, sizeof(expected_ow64), " (expected 0x%016llx)", ow_checksum64_stored);
 
-            /* read ConfigInfo.BootstrapVersion field as C string */
-            memcpy(rom_id_str, &rom_data[0x300064 + config_info_offset], 16);
-            rom_id_str[16] = 0;
-            for (int i = 0; i < 16; i++)
-                if (rom_id_str[i] < ' ' || rom_id_str[i] > '~')
-                    rom_id_str[i] = '.';
+                /* read ConfigInfo.BootstrapVersion field as C string */
+                memcpy(rom_id_str, &rom_data[0x300064 + config_info_offset], 16);
+                rom_id_str[16] = 0;
+                for (int i = 0; i < 16; i++)
+                    if (rom_id_str[i] < ' ' || rom_id_str[i] > '~')
+                        rom_id_str[i] = '.';
+            }
         }
     }
 
@@ -436,6 +454,10 @@ string MachineFactory::machine_name_from_rom(char *rom_data, size_t rom_size) {
                         && info->ow_expected_checksum == ow_checksum_stored)
                     + (info->ow_expected_checksum
                         && info->ow_expected_checksum == ow_checksum_calculated)
+                    + (info->ow_expected_checksum64
+                        && info->ow_expected_checksum64 == ow_checksum64_stored)
+                    + (info->ow_expected_checksum64
+                        && info->ow_expected_checksum64 == ow_checksum64_calculated)
                     + (info->nw_subconfig_expected_checksum
                         && info->nw_subconfig_expected_checksum == nw_subconfig_checksum_calculated)
                     + (info->id_str && strcmp(rom_id_str, info->id_str) == 0)
@@ -544,8 +566,12 @@ string MachineFactory::machine_name_from_rom(char *rom_data, size_t rom_size) {
 
     if (expected_ow[0] || expected_start[0] || expected_config[0] || expected_recovery[0] || expected_romimage[0])
         checksum_verbosity = loguru::Verbosity_ERROR;
+    if (expected_ow64[0])
+        checksum_verbosity2 = loguru::Verbosity_ERROR;
 
-    if (1 || print_all_info || checksum_verbosity != loguru::Verbosity_INFO) {
+    if (print_all_info || checksum_verbosity != loguru::Verbosity_INFO ||
+        checksum_verbosity2 != loguru::Verbosity_INFO
+    ) {
         if (is_nw) {
             if (has_nw_config) {
                 VLOG_F(checksum_verbosity, "    ROM Checksums: 0x%08x%s, 0x%08x%s, 0x%08x%s, 0x%08x%s",
@@ -567,6 +593,10 @@ string MachineFactory::machine_name_from_rom(char *rom_data, size_t rom_size) {
             VLOG_F(checksum_verbosity, "    ROM Checksum: 0x%08x%s",
                 ow_checksum_calculated, expected_ow
             );
+            if (ow_checksum64_calculated || expected_ow64[0])
+                VLOG_F(checksum_verbosity2, "    ROM Checksum (64-bit): 0x%016llx%s",
+                    ow_checksum64_calculated, expected_ow64
+                );
         }
     }
 
