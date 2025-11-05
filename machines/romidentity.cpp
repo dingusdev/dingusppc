@@ -74,6 +74,7 @@ rom_info rom_identity[] = {
     rom( 0x067c32f1, 1024, 0x06684214, nullptr   , nullptr, "Quadra 630"                                                     )
     rom( 0x067c32f2, 1024, 0x064dc91d, nullptr   , nullptr, "Performa 580 & 588"                                             )
     rom( 0x077d10f3, 2048, 0x5bf10fd1, nullptr   , nullptr, "Quadra 660av & 840av"                                           )
+    rom( 0x077d2bf1, 2048, 0x4d27039c, nullptr   , nullptr, "Powerbook 190cs"                                                )
 
 #undef rom
 
@@ -98,7 +99,6 @@ rom_info rom_identity[] = {
     rom( 0x077d28f2, 0x962f6c13, "Boot TNT 0.1p..]", nullptr   , "Apple Network Server series", "Apple Network Server 500"                          )
     rom( 0x077d29f1, 0x6f5724c0, "Boot Alchemy 0.1", "pm6400"  , "Performa 6400"              , "PM 5400, Performa 6400"                            )
     rom( 0x077d2af2, 0x83c54f75, "Boot PBX 603 0.0", "pb-preg3", "PowerBook Pre-G3"           , "Powerbook 2300 & PB5x0 PPC Upgrade"                )
-    rom( 0x077d2bf1, 0x4d27039c, nullptr           , nullptr   , nullptr                      , "Powerbook 190cs"                                   )
     rom( 0x077d2cc6, 0x2bf65931, "Boot Pip 0.1p..]", "pippin"  , "Bandai Pippin"              , "Bandai Pippin (Kinka Dev)"                         )
     rom( 0x077d2cf2, 0x2bef21b7, "Boot Pip 0.1p..]", "pippin"  , "Bandai Pippin"              , "Bandai Pippin (Kinka 1.0)"                         )
     rom( 0x077d2cf5, 0x3e10e14c, "Boot Pip 0.1p..]", "pippin"  , "Bandai Pippin"              , "Bandai Pippin (Kinka 1.2)"                         )

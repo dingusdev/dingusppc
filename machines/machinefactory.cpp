@@ -409,7 +409,7 @@ string MachineFactory::machine_name_from_rom(char *rom_data, size_t rom_size) {
         if (ow_checksum_calculated != ow_checksum_stored)
             snprintf(expected_ow, sizeof(expected_ow), " (expected 0x%08x)", ow_checksum_stored);
 
-        if (firmware_version > 0x077d10f3) {
+        if (rom_size >= 0x400000) {
             /* read ConfigInfo offset from file */
             config_info_offset = READ_DWORD_BE_A(&rom_data[0x300080]);
 
