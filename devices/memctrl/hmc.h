@@ -40,6 +40,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /* Control register bit definitions. */
 enum {
     HMC_CTRL_BITS   = 35, // width of the HMC control register
+
+    HMC_CSIZ        =  0, // Cache size inputs
+    HMC_WBRST       =  2, // Write-buffer burst clocks
+    HMC_WINIT       =  3, // Write-buffer initial clocks
+    HMC_RCASD       =  4, // Read CAS duration
+    HMC_RASP        =  6, // RAS pre-charge clocks
+    HMC_RASD        =  8, // RAS duration
+    HMC_RDAC        = 12, // Read data access clocks
+    HMC_WCASD       = 14, // Write CAS duration
+    HMC_WCASP       = 15, // Write CAS pre-charge
+    HMC_RFSH        = 16, // Refresh period
+    HMC_ROMD        = 22, // ROM cycle duration
+    HMC_NBLROM      = 24, // Nibble ROM
+    HMC_L2_ROMW     = 25, // L2 Cache update on ROM write
+    HMC_L2_BRST     = 26, // L2 Cache burst clocks
+    HMC_L2_EN       = 27, // L2 Cache enable
+    HMC_L2_INST     = 28, // L2 Cache instruction only
+    HMC_SIZE        = 29, // RAM size
+    HMC_MB_RAM      = 31, // Motherboard RAM
+    HMC_VTST        = 32, // Video test
+    HMC_VBASE       = 33, // Video Base
+    HMC_L2_INIT     = 34, // L2 initial access
+
     HMC_RAM_CFG_POS = 29, // DRAM configuration bits position
     HMC_VBASE_BIT   = 33, // framebuffer base address: 0 - 0x00100000, 1 - 0x0
 };
