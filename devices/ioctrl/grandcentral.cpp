@@ -46,6 +46,7 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io_grandcentral"), InterruptCtrl()
     // populate my PCI config header
     this->vendor_id   = PCI_VENDOR_APPLE;
     this->device_id   = MIO_DEV_ID_GRANDCENTRAL;
+    this->status      = 0x0200; // 9:DEVSEL
     this->class_rev   = 0xFF000002;
     this->cache_ln_sz = 8;
 
