@@ -35,7 +35,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // convert number of bytes to disk time = nbytes * bits_per_byte * 2 us
 #define     MFM_BYTES_TO_DISK_TIME(bytes) USECS_TO_NSECS((bytes) * 8 * 2)
 
-// timing constans for MFM disks
+// timing constants for MFM disks
 constexpr   uint32_t MFM_INDX_MARK_DELAY = MFM_BYTES_TO_DISK_TIME(146);
 constexpr   uint32_t MFM_ADR_MARK_DELAY  = MFM_BYTES_TO_DISK_TIME(22);
 constexpr   uint32_t MFM_SECT_DATA_DELAY = MFM_BYTES_TO_DISK_TIME(514);

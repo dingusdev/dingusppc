@@ -67,7 +67,7 @@ enum {
     HMC_VBASE_BIT   = 33, // framebuffer base address: 0 - 0x00100000, 1 - 0x0
 };
 
-/* Motherboard RAM size constans. */
+/* Motherboard RAM size constants. */
 enum {
     BANK_CFG_128MB  = 0, // 12 x 12 address maxtrix (reset config)
     BANK_CFG_2MB    = 1, //  9 x  9 address maxtrix
