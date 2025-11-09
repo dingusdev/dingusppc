@@ -48,8 +48,6 @@ MacIoTwo::MacIoTwo(std::string name, uint16_t dev_id) : MacIoBase(name, dev_id) 
         this->enet_rcv_dma  = std::unique_ptr<DMAChannel> (new DMAChannel("BmacRx"));
     }
 
-    LOG_F(ERROR, "MacIO %s constructed!", this->name.c_str());
-
     // set EMMO status (active low)
     this->emmo = GET_BIN_PROP("emmo") ^ 1;
 }
