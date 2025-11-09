@@ -307,11 +307,11 @@ public:
     }
 
     // HWComponent methods
-    int device_postinit();
+    int device_postinit() override;
 
     // MMIODevice methods
-    uint32_t read(uint32_t rgn_start, uint32_t offset, int size);
-    void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size);
+    uint32_t read(uint32_t rgn_start, uint32_t offset, int size) override;
+    void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size) override;
 
     void insert_ram_dimm(int slot_num, uint32_t capacity);
     void map_phys_ram();
