@@ -84,6 +84,12 @@ Shows the configurable properties, such as the selected disc image and the ram b
 Set the RAM sizes to use, with X being an integer of a power of 2 up to 512 (depending on the emulated machine).
 
 ```
+gfxmem_size
+```
+
+Specifies the amount of available graphics memory. 
+
+```
 --fdd_img TEXT:FILE
 ```
 
@@ -108,6 +114,13 @@ Set the hard disk image
 Set the CD ROM image
 
 ```
+hdd_config
+cdr_config
+```
+
+These properties determine where in the bus the hard disk and CD ROM are set up in. For example, these can be `Ide0:0` or `CmdAta0:0`. 
+
+```
 --cpu
 ```
 
@@ -125,6 +138,20 @@ Access the factory tests
 ```
 
 Change where the output of Open Firmware is directed to, either to the command line (with stdio) or a Unix socket (unavailable in Windows builds). Open Firmware 1.x outputs here by default.
+
+```
+mon_id
+```
+
+Allows users to specify what monitor they are using. This affects what resolutions and color modes are available. Current valid options include, but are not limited to, `MacRGB12in`, `MacColor21in`, `Multiscan17in`, and `VGA-SVGA`.
+
+```
+pci_A1
+pci_B1
+pci_C1
+```
+
+Specified what devices are conntected to a particular PCI slot. Not supported on NuBus machines such as the Power Mac 6100.
 
 ```
 --adb_devices TEXT
