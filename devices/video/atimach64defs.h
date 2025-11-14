@@ -439,7 +439,7 @@ enum {
         ATI_DST_PITCH   = 22, ATI_DST_PITCH_size  = 10,
 
     ATI_DST_X                 = 0x041, // 0x0104
-        ATI_DST_X_pos = 0, ATI_DST_X_size = 13,
+        ATI_DST_X_pos = 0, ATI_DST_X_size = 14,
 
     ATI_DST_Y                 = 0x042, // 0x0108
         ATI_DST_Y_pos = 0, ATI_DST_Y_size = 15,
@@ -447,7 +447,7 @@ enum {
     ATI_DST_Y_X               = 0x043, // 0x010C
 
     ATI_DST_WIDTH             = 0x044, // 0x0110
-        ATI_DST_WIDTH_pos               =  0, ATI_DST_WIDTH_size = 13, // VT/GT
+        ATI_DST_WIDTH_pos               =  0, ATI_DST_WIDTH_size = 14, // VT/GT
         ATI_DST_BRES_LENGTH_ALIAS_pos   = 13, ATI_DST_BRES_LENGTH_ALIAS_size = 3, // GT
         DST_WIDTH_FILL_DIS  = 31,
 
@@ -598,7 +598,7 @@ enum {
         ATI_DSTY_GT_SCISSOR_BOTTOM = 11,
         ATI_FIFO_CNT               = 16, ATI_FIFO_CNT_size = 8,
 
-        
+
     // 3D acceleration regs
 
     ATI_SECONDARY_STW_EXP       = 0x056,    // 0x0158
