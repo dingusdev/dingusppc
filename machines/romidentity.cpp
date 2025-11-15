@@ -99,7 +99,7 @@ rom_info rom_identity[] = {
     rom( 0x077d28f1, 0x96cd923d, 0xc241cd82bf90797a, "Boot TNT 0.1p..]", "pm7200"  , "Power Mac 7xxxx/8xxx series", "Power Mac 7200&7500&8500&9500 v1"                  )
     rom( 0x077d28f2, 0x9630c68b, 0x4db4a42fea3b53b3, "Boot TNT 0.1p..]", "pm7200"  , "Power Mac 7xxxx/8xxx series", "Power Mac 7200&7500&8500&9500 v2, SuperMac S900"   )
     rom( 0x077d28f2, 0x962f6c13, 0xd540b3dd5bcf9caa, "Boot TNT 0.1p..]", nullptr   , "Apple Network Server series", "Apple Network Server 500"                          )
-    rom( 0x077d29f1, 0x6f5724c0, 0x6703442013f443d8, "Boot Alchemy 0.1", "pm6400"  , "Performa 6400"              , "PM 5400, Performa 6400"                            )
+    rom( 0x077d29f1, 0x6f5724c0, 0x6703442013f443d8, "Boot Alchemy 0.1", "pm6400"  , "Performa 6400"              , "Power Mac 5400, Performa 6400"                     )
     rom( 0x077d2af2, 0x83c54f75, 0xc8b9658674ebb5ba, "Boot PBX 603 0.0", "pb-preg3", "PowerBook Pre-G3"           , "Powerbook 2300 & PB5x0 PPC Upgrade"                )
     rom( 0x077d2cc6, 0x2bf65931, 0x2b807a9748e78318, "Boot Pip 0.1p..]", "pippin"  , "Bandai Pippin"              , "Bandai Pippin (Kinka Dev)"                         )
     rom( 0x077d2cf2, 0x2bef21b7, 0x0bf68e274dc0720d, "Boot Pip 0.1p..]", "pippin"  , "Bandai Pippin"              , "Bandai Pippin (Kinka 1.0)"                         )
@@ -347,7 +347,7 @@ rom_info rom_identity[] = {
     rom( 0x118709,          0, nullptr          , "Q73B"     , nullptr  , "iBook G4 12-Inch (Mid-2005 - Opaque)"              ) // PowerBook6,7
     rom( 0x11870c, 0x091929b6, nullptr          , "Q73B-Best", nullptr  , "iBook G4 14-Inch (Mid-2005 - Opaque)"              ) // PowerBook6,7 // 2005-07-05 493f0
     rom( 0x118801,          0, nullptr          , "Q54B"     , nullptr  , "PowerBook G4 1.5 12 inch (Aluminum)"               ) // PowerBook6,8
-    
+
     rom( 0x20c100, 0x85e72bd1, "P5"             , "P5"       , nullptr  , "Power Mac G4 (AGP Graphics) Sawtooth"              ) // PowerMac3,1
     rom( 0x20c100, 0xb3b92cd0, "Sawtooth"       , "P5"       , nullptr  , "Power Mac G4 (AGP Graphics) Sawtooth"              ) // PowerMac3,1
     rom( 0x20c100, 0xe28a2dcf, "Sawtooth"       , "P5"       , nullptr  , "Power Mac G4 (AGP Graphics) Sawtooth"              ) // PowerMac3,1
@@ -411,7 +411,7 @@ rom_info rom_identity[] = {
     rom( 0x22c102,          0, nullptr          , "M20wl"    , nullptr  , nullptr                                             ) // PowerMac11,1
     rom( 0x22c201,          0, nullptr          , "Q63Proto" , nullptr  , "Power Mac G5 Quad Core Proto"                      ) // PowerMac11,2
     rom( 0x22c202, 0xb7fe51fc, nullptr          , "Q63"      , nullptr  , "Power Mac G5 Dual or Quad Core"                    ) // PowerMac11,2 // 2005-09-30 527f1
-    
+
     rom( 0x30c100, 0x0c653168, "P8"             , "P8"       , nullptr  , "PowerBook G3 (FireWire) Pismo"                     ) // PowerBook3,1
     rom( 0x30c100, 0x3a373267, "Pismo"          , "P8"       , nullptr  , "PowerBook G3 (FireWire) Pismo"                     ) // PowerBook3,1 // 2001-03-21 418f5
     rom( 0x30c100, 0x69083366, "Pismo"          , "P8"       , nullptr  , "PowerBook G3 (FireWire) Pismo"                     ) // PowerBook3,1
