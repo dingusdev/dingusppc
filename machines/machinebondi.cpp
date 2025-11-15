@@ -36,8 +36,8 @@ static const std::vector<PciIrqMap> grackle_irq_map = {
     {"pci_A1"   , DEV_FUN(0x0D,0), IntSrc::PCI_A    },
     {"pci_B1"   , DEV_FUN(0x0E,0), IntSrc::PCI_B    },
     {"pci_C1"   , DEV_FUN(0x0F,0), IntSrc::PCI_C    },
-    {nullptr    , DEV_FUN(0x10,0),                  },
-    {"pci_GPU"  , DEV_FUN(0x12,0), IntSrc::PCI_GPU  }, // Heathrow
+    {nullptr    , DEV_FUN(0x10,0),                  }, // Paddington I/O controller
+    {"pci_GPU"  , DEV_FUN(0x12,0), IntSrc::PCI_GPU  },
     {"pci_PERCH", DEV_FUN(0x14,0), IntSrc::PCI_PERCH},
 };
 
@@ -78,8 +78,8 @@ int MachineBondi::initialize(const std::string &id) {
     }
 
     // configure RAM slots
-    // First ram slot is enumerated twice for some reason, the second slot is never enumerated, so
-    // make sure both slots have the same RAM.
+    // First ram slot is enumerated twice for some reason, the second slot is never
+    // enumerated, so make sure both slots have the same RAM.
     uint32_t bank_1_size = GET_INT_PROP("rambank1_size");
     uint32_t bank_2_size = GET_INT_PROP("rambank2_size");
     if (bank_1_size != bank_2_size)
