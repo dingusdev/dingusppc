@@ -35,6 +35,7 @@ enum HWCompType : uint64_t {
     MMIO_DEV    = 1ULL << 4,  // memory mapped I/O device
     PCI_HOST    = 1ULL << 5,  // PCI host
     PCI_DEV     = 1ULL << 6,  // PCI device
+    NUBUS_DEV   = 1ULL << 7,  // Nubus device
     I2C_HOST    = 1ULL << 8,  // I2C host
     I2C_DEV     = 1ULL << 9,  // I2C device
     ADB_HOST    = 1ULL << 12, // ADB host
