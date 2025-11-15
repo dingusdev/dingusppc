@@ -38,10 +38,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <vector>
 
-AthensClocks::AthensClocks(uint8_t dev_addr)
-{
+AthensClocks::AthensClocks(uint8_t dev_addr) : I2CDevice() {
     set_name("Athens");
-    supports_types(HWCompType::I2C_DEV);
 
     this->my_addr = dev_addr;
 

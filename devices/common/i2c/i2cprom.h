@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-22 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -24,14 +24,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef I2C_PROM_H
 #define I2C_PROM_H
 
-#include <devices/common/hwcomponent.h>
 #include <devices/common/i2c/i2c.h>
 
 #include <cinttypes>
 #include <memory>
 
-class I2CProm : public I2CDevice, public HWComponent
-{
+class I2CProm : public I2CDevice {
 public:
     I2CProm(uint8_t dev_addr, int size);
     ~I2CProm() = default;

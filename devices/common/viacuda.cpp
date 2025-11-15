@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <core/timermanager.h>
 #include <devices/common/adb/adbbus.h>
 #include <cpu/ppc/ppcemu.h>
+#include <devices/common/hwcomponent.h>
 #include <devices/common/hwinterrupt.h>
 #include <devices/common/viacuda.h>
 #include <devices/deviceregistry.h>
@@ -39,7 +40,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace std;
 
-ViaCuda::ViaCuda() {
+ViaCuda::ViaCuda() : I2CBus() {
     this->name = "ViaCuda";
 
     supports_types(HWCompType::ADB_HOST | HWCompType::I2C_HOST);

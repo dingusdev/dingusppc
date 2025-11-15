@@ -24,7 +24,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef ATHENS_H
 #define ATHENS_H
 
-#include <devices/common/hwcomponent.h>
 #include <devices/common/i2c/i2c.h>
 
 #include <cinttypes>
@@ -49,8 +48,7 @@ enum AthensRegs: uint8_t {
 
 } // namespace AthensRegs
 
-class AthensClocks : public I2CDevice, public HWComponent
-{
+class AthensClocks : public I2CDevice {
 public:
     AthensClocks(uint8_t dev_addr);
     AthensClocks(uint8_t dev_addr, const float crystal_freq);

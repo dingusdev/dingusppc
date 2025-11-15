@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef I2C_H
 #define I2C_H
 
+#include <devices/common/hwcomponent.h>
 #include <loguru.hpp>
 
 #include <cinttypes>
@@ -35,8 +36,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 
 /** Base class for I2C devices */
-class I2CDevice {
+class I2CDevice : virtual public HWComponent {
 public:
+    I2CDevice() {
+        supports_types(HWCompType::I2C_DEV);
+    }
+    virtual ~I2CDevice() = default;
+
     virtual void start_transaction()               = 0;
     virtual bool send_subaddress(uint8_t sub_addr) = 0;
     virtual bool send_byte(uint8_t data)           = 0;
@@ -44,7 +50,7 @@ public:
 };
 
 /** Base class for I2C hosts */
-class I2CBus {
+class I2CBus : virtual public HWComponent {
 public:
     I2CBus() {
         std::memset(this->dev_list, 0, sizeof(this->dev_list));

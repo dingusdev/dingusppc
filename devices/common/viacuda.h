@@ -42,7 +42,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef VIACUDA_H
 #define VIACUDA_H
 
-#include <devices/common/hwcomponent.h>
 #include <devices/common/i2c/i2c.h>
 #include <devices/common/nvram.h>
 
@@ -158,7 +157,7 @@ constexpr auto CUDA_ROM_START     = 0xF00;    // starting address of ROM contain
 constexpr auto CUDA_FW_VERSION_MAJOR = 0x0002;
 constexpr auto CUDA_FW_VERSION_MINOR = 0x0029;
 
-class ViaCuda : public HWComponent, public I2CBus {
+class ViaCuda : public I2CBus {
 public:
     ViaCuda();
     ~ViaCuda();

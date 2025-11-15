@@ -120,11 +120,9 @@ enum {
 };
 
 /** Broktree Bt856 digital video encoder. */
-class Bt856 : public I2CDevice, public HWComponent {
+class Bt856 : public I2CDevice {
 public:
-    Bt856(uint8_t dev_addr) {
-        supports_types(HWCompType::I2C_DEV);
-
+    Bt856(uint8_t dev_addr) : I2CDevice() {
         this->my_addr = dev_addr;
     }
 

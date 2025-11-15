@@ -58,12 +58,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 enum RAMType : int { SDRAM = 4 };
 
 
-class SpdSdram168 : public HWComponent, public I2CDevice {
+class SpdSdram168 : public I2CDevice {
 public:
-    SpdSdram168(uint8_t addr) {
+    SpdSdram168(uint8_t addr) : I2CDevice() {
         this->dev_addr = addr;
         this->pos      = 0;
-        supports_types(HWCompType::RAM);
+        supports_types(HWCompType::I2C_DEV | HWCompType::RAM);
     }
 
     ~SpdSdram168() = default;

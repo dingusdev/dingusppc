@@ -24,7 +24,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SAA7187_H
 #define SAA7187_H
 
-#include <devices/common/hwcomponent.h>
 #include <devices/common/i2c/i2c.h>
 
 namespace Saa7187Regs {
@@ -118,8 +117,7 @@ enum Saa7187Regs : uint8_t { // i2c address is 0x44; fatman is at 0x46?
 
 } // namespace Saa7187Regs
 
-class Saa7187VideoEncoder : public I2CDevice, public HWComponent
-{
+class Saa7187VideoEncoder : public I2CDevice {
 public:
     Saa7187VideoEncoder(uint8_t dev_addr);
     ~Saa7187VideoEncoder() = default;
