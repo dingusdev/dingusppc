@@ -392,6 +392,8 @@ private:
     std::unique_ptr<DMAChannel>     mesh_dma;
     std::unique_ptr<DMAChannel>     enet_xmit_dma;
     std::unique_ptr<DMAChannel>     enet_rcv_dma;
+    std::unique_ptr<DMAChannel>     ide0_dma;
+    std::unique_ptr<DMAChannel>     ide1_dma;
 
     uint16_t unsupported_dma_channel_read = 0;
     uint16_t unsupported_dma_channel_write = 0;

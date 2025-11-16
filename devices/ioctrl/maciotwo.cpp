@@ -40,6 +40,8 @@ MacIoTwo::MacIoTwo(std::string name, uint16_t dev_id) : MacIoBase(name, dev_id) 
     // connect IDE HW
     this->ide_0 = dynamic_cast<IdeChannel*>(gMachineObj->get_comp_by_name("Ide0"));
     this->ide_1 = dynamic_cast<IdeChannel*>(gMachineObj->get_comp_by_name("Ide1"));
+    this->ide0_dma = std::unique_ptr<DMAChannel> (new DMAChannel("Ide0-Dma"));
+    this->ide1_dma = std::unique_ptr<DMAChannel> (new DMAChannel("Ide1-Dma"));
 
     // connect Ethernet HW (Heathrow and Paddington)
     if (this->device_id != MIO_DEV_ID_OHARE) {
@@ -210,6 +212,10 @@ uint32_t MacIoTwo::dma_read(uint32_t offset, int size) {
         //return this->escc_b_rx_dma->reg_read(offset & 0xFF, size);
     case MIO_OHARE_DMA_AUDIO_OUT:
         return this->snd_out_dma->reg_read(offset & 0xFF, size);
+    case MIO_OHARE_DMA_IDE0:
+        return this->ide0_dma->reg_read(offset & 0xFF, size);
+    case MIO_OHARE_DMA_IDE1:
+        return this->ide1_dma->reg_read(offset & 0xFF, size);
     default:
         if (!(unsupported_dma_channel_read & (1 << dma_channel))) {
             unsupported_dma_channel_read |= (1 << dma_channel);
@@ -242,6 +248,12 @@ void MacIoTwo::dma_write(uint32_t offset, uint32_t value, int size) {
         break;
     case MIO_OHARE_DMA_AUDIO_OUT:
         this->snd_out_dma->reg_write(offset & 0xFF, value, size);
+        break;
+    case MIO_OHARE_DMA_IDE0:
+        this->ide0_dma->reg_write(offset & 0xFF, value, size);
+        break;
+    case MIO_OHARE_DMA_IDE1:
+        this->ide1_dma->reg_write(offset & 0xFF, value, size);
         break;
     default:
         if (!(unsupported_dma_channel_write & (1 << dma_channel))) {
