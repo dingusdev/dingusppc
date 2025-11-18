@@ -263,8 +263,8 @@ void AtaHardDisk::prepare_identify_info() {
 
 uint64_t AtaHardDisk::get_lba() {
     if (this->r_dev_head & ATA_Dev_Head::LBA) {
-        return ((this->r_dev_head & 0xF) << 24) | (this->r_cylinder_hi << 16) |
-                (this->r_cylinder_lo << 8) | (this->r_sect_num);
+        return uint64_t(((this->r_dev_head & 0xF) << 24) | (this->r_cylinder_hi << 16) |
+                (this->r_cylinder_lo << 8) | (this->r_sect_num));
     } else { // translate old fashioned CHS addressing to LBA
         uint16_t c = (this->r_cylinder_hi << 8) + this->r_cylinder_lo;
         uint8_t  h = this->r_dev_head & 0xF;
@@ -274,7 +274,7 @@ uint64_t AtaHardDisk::get_lba() {
             LOG_F(ERROR, "%s: zero sector number is not allowed!", this->name.c_str());
             return -1ULL;
         } else
-            return (this->heads * c + h) * this->sectors + s - 1;
+            return uint64_t((this->heads * c + h) * this->sectors + s - 1);
     }
 }
 
