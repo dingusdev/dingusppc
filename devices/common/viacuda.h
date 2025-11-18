@@ -131,6 +131,7 @@ enum {
     CUDA_ONE_SECOND_MODE     = 0x1B, // one second interrupt mode
     CUDA_SET_POWER_MESSAGES  = 0x21, // set power message flag
     CUDA_READ_WRITE_I2C      = 0x22, // read/write I2C device
+    CUDA_TIMER_TICKLE        = 0x24, // set timer tickle
     CUDA_COMB_FMT_I2C        = 0x25, // combined format I2C transaction
     CUDA_OUT_PB0             = 0x26, // output one bit to Cuda's PB0 line
 };
