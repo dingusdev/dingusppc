@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-25 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -217,8 +217,8 @@ int AtaHardDisk::perform_command() {
         this->r_status &= ~BSY;
         this->update_intrq(1);
         break;
-    case STANDBY_IMMEDIATE_E0:
-        LOG_F(INFO, "%s: STANDBY_IMMEDIATE_E0", this->name.c_str());
+    case STANDBY_IMMEDIATE:
+        LOG_F(INFO, "%s: immediate standby requested", this->name.c_str());
         this->r_status &= ~BSY;
         this->update_intrq(1);
         break;

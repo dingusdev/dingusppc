@@ -142,8 +142,10 @@ enum ATA_Cmd : uint8_t {
     WRITE_MULTIPLE                       = 0xC5,
     SET_MULTIPLE_MODE                    = 0xC6,
     READ_DMA                             = 0xC8,
+    READ_DMA_NR                          = 0xC9,
     WRITE_DMA                            = 0xCA,
-    STANDBY_IMMEDIATE_E0                 = 0xE0,
+    WRITE_DMA_NR                         = 0xCB,
+    STANDBY_IMMEDIATE                    = 0xE0,
     FLUSH_CACHE                          = 0xE7, // ATA-5
     WRITE_BUFFER_DMA                     = 0xE9,
     READ_BUFFER_DMA                      = 0xEB,
