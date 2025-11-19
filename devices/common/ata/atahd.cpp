@@ -191,7 +191,11 @@ int AtaHardDisk::perform_command() {
         this->signal_data_ready();
         break;
     case SET_FEATURES:
-        if (this->r_features == 3) {
+        switch (this->r_features) {
+        case 2:
+            LOG_F(INFO, "%s: write cache enabled", this->name.c_str());
+            break;
+        case 3:
             switch(this->r_sect_count >> 3) {
             case 0:
                 LOG_F(INFO, "%s: default transfer mode requested", this->name.c_str());
@@ -201,8 +205,9 @@ int AtaHardDisk::perform_command() {
                       this->r_sect_count & 7);
                 break;
             case 4:
+                this->cur_dma_mode = this->r_sect_count & 7;
                 LOG_F(INFO, "%s: Multiword DMA mode set to 0x%X", this->name.c_str(),
-                      this->r_sect_count & 7);
+                      this->cur_dma_mode);
                 break;
             default:
                 LOG_F(ERROR, "%s: unsupported transfer mode 0x%X", this->name.c_str(),
@@ -210,7 +215,11 @@ int AtaHardDisk::perform_command() {
                 this->r_error  |= ATA_Error::ABRT;
                 this->r_status |= ATA_Status::ERR;
             }
-        } else {
+            break;
+        case 0xAA:
+            LOG_F(INFO, "%s: read look-ahead enabled", this->name.c_str());
+            break;
+        default:
             LOG_F(WARNING, "%s: unsupported SET_FEATURES subcommand code 0x%X",
                   this->name.c_str(), this->r_features);
         }
@@ -259,6 +268,8 @@ void AtaHardDisk::prepare_identify_info() {
     // report LBA capacity
     WRITE_WORD_LE_A(&buf_ptr[60], (this->total_sectors & 0xFFFFU));
     WRITE_WORD_LE_A(&buf_ptr[61], (this->total_sectors >> 16) & 0xFFFFU);
+
+    WRITE_WORD_LE_A(&buf_ptr[63], ((1 << this->cur_dma_mode) << 8) | 7);
 }
 
 uint64_t AtaHardDisk::get_lba() {

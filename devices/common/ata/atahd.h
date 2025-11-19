@@ -71,6 +71,7 @@ private:
     uint8_t     sectors;
 
     uint8_t     sectors_per_int  = 0; // sectors per interrupt for READ_MULTIPLE/WRITE_MULTIPLE
+    uint8_t     cur_dma_mode     = 2; // current multi-word DMA mode
 
     char * buffer = new char[1 <<17];
 };
