@@ -24,8 +24,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /* ATI PCI device IDs. */
 enum {
-    ATI_RAGE_PRO_DEV_ID  = 0x4750, // GP
-    ATI_RAGE_GT_DEV_ID   = 0x4754, // GT
+    ATI_RAGE_PRO_DEV_ID  = 0x4750, // GP (Rage Pro)
+    ATI_RAGE_GT_DEV_ID   = 0x4754, // GT (Rage II)
+    ATI_RAGE_GW_DEV_ID   = 0x4756, // GW (Rage IIc)
     ATI_MACH64_GX_DEV_ID = 0x4758, // GX
 //                       = 0x5654, // VT
 };
