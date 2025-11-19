@@ -51,6 +51,10 @@ public:
         return std::unique_ptr<ATIRage>(new ATIRage(ATI_RAGE_GT_DEV_ID));
     }
 
+    static std::unique_ptr<HWComponent> create_gw() {
+        return std::unique_ptr<ATIRage>(new ATIRage(ATI_RAGE_GW_DEV_ID));
+    }
+
     static std::unique_ptr<HWComponent> create_pro() {
         return std::unique_ptr<ATIRage>(new ATIRage(ATI_RAGE_PRO_DEV_ID));
     }

@@ -1056,9 +1056,14 @@ static const DeviceDescription AtiRageGT_Descriptor = {
     ATIRage::create_gt, {}, AtiRage_Properties, HWCompType::MMIO_DEV | HWCompType::PCI_DEV
 };
 
+static const DeviceDescription AtiRageGW_Descriptor = {
+    ATIRage::create_gw, {}, AtiRage_Properties, HWCompType::MMIO_DEV | HWCompType::PCI_DEV
+};
+
 static const DeviceDescription AtiRagePro_Descriptor = {
     ATIRage::create_pro, {}, AtiRage_Properties, HWCompType::MMIO_DEV | HWCompType::PCI_DEV
 };
 
 REGISTER_DEVICE(AtiRageGT, AtiRageGT_Descriptor);
+REGISTER_DEVICE(AtiRageGW, AtiRageGW_Descriptor);
 REGISTER_DEVICE(AtiRagePro, AtiRagePro_Descriptor);
