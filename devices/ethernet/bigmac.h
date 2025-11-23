@@ -183,7 +183,8 @@ private:
     // BigMac state
     uint16_t        tx_reset        = 0; // self-clearing one-bit register
     uint16_t        tx_if_ctrl      = 0;
-    uint16_t        rng_seed;
+    uint16_t        xcvr_if_ctrl    = 0;
+    uint16_t        rng_seed        = 0;
     uint16_t        norm_coll_cnt   = 0;
     uint16_t        net_coll_cnt    = 0;
     uint16_t        excs_coll_cnt   = 0;
@@ -201,8 +202,29 @@ private:
     uint16_t        rx_fifo_size    = 0;
     uint16_t        hash_table[4]   = {};
     uint16_t        mac_addr_flt[3] = {};
+    uint16_t        addr_filters[3] = {};
+    uint16_t        addr_filt_mask  = 0;
     uint16_t        tx_config       = 0;
+    uint16_t        tx_sfd          = 0;
+    uint16_t        tx_ptr          = 0;
+    uint16_t        tx_min          = 0;
+    uint16_t        tx_max          = 0;
     uint16_t        rx_config       = 0;
+    uint16_t        rx_ptr          = 0;
+    uint16_t        rx_min          = 0;
+    uint16_t        rx_max          = 0;
+    uint16_t        ipg1            = 0;
+    uint16_t        ipg2            = 0;
+    uint16_t        attempt_limit   = 0;
+    uint16_t        mem_add         = 0;
+    uint16_t        mem_data_hi     = 0;
+    uint16_t        mem_data_lo     = 0;
+    uint16_t        slot_time       = 0;
+    uint16_t        preamble_len    = 0;
+    uint16_t        preamble_pat    = 0;
+    uint16_t        jam_size        = 0;
+    uint16_t        defer_timer     = 0;
+    
 
     // Interrupt state
     uint16_t        event_mask = 0xFFFFU; // inverted mask: 0 - enabled, 1 - disabled

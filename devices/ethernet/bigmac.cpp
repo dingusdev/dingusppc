@@ -35,6 +35,7 @@ BigMac::BigMac(uint8_t id) {
 
 void BigMac::chip_reset() {
     this->event_mask = 0xFFFFU; // disable HW events causing on-chip interrupts
+    this->rng_seed   = (uint16_t)rand();
     this->stat = 0;
 
     this->phy_reset();
@@ -46,8 +47,16 @@ uint16_t BigMac::read(uint16_t reg_offset) {
     switch (reg_offset) {
     case BigMacReg::XIFC:
         return this->tx_if_ctrl;
+    case BigMacReg::XCVR_IF:
+        return this->xcvr_if_ctrl;
     case BigMacReg::CHIP_ID:
         return this->chip_id;
+    case BigMacReg::TX_FIFO_TH:
+        return this->tx_fifo_tresh;
+    case BigMacReg::TX_PNTR:
+        return this->tx_ptr;
+    case BigMacReg::RX_PNTR:
+        return this->rx_ptr;
     case BigMacReg::MIF_CSR:
         return (this->mif_csr_old & ~Mif_Data_In) | (this->mii_in_bit << 3);
     case BigMacReg::GLOB_STAT: {
@@ -63,19 +72,61 @@ uint16_t BigMac::read(uint16_t reg_offset) {
         return this->tx_reset;
     case BigMacReg::TX_CONFIG:
         return this->tx_config;
+    case BigMacReg::TX_MAX:
+        return this->tx_max;
+    case BigMacReg::TX_MIN:
+        return this->tx_min;
     case BigMacReg::PEAK_ATT: {
             uint8_t old_val = this->peak_attempts;
             this->peak_attempts = 0; // clear-on-read
             return old_val;
-        }
+    }
     case BigMacReg::NC_CNT:
         return this->norm_coll_cnt;
     case BigMacReg::EX_CNT:
         return this->excs_coll_cnt;
     case BigMacReg::LT_CNT:
         return this->late_coll_cnt;
+    case BigMacReg::RNG_SEED:
+        return this->rng_seed;
+    case BigMacReg::RX_FRM_CNT:
+        return this->rcv_frame_cnt;
+    case BigMacReg::RX_LE_CNT:
+        return this->len_err_cnt;
+    case BigMacReg::RX_AE_CNT:
+        return this->align_err_cnt;
+    case BigMacReg::RX_FE_CNT:
+        return this->fcs_err_cnt;
+    case BigMacReg::RX_CVE_CNT:
+        return this->cv_err_cnt;
     case BigMacReg::RX_CONFIG:
         return this->rx_config;
+    case BigMacReg::RX_MAX:
+        return this->rx_max;
+    case BigMacReg::RX_MIN:
+        return this->rx_min;
+    case BigMacReg::MEM_ADD:
+        return this->mem_add;
+    case BigMacReg::MEM_DATA_HI:
+        return this->mem_data_hi;
+    case BigMacReg::MEM_DATA_LO:
+        return this->mem_data_lo;
+    case BigMacReg::MAC_ADDR_0:
+    case BigMacReg::MAC_ADDR_1:
+    case BigMacReg::MAC_ADDR_2:
+        return this->mac_addr_flt[8 - ((reg_offset >> 4) & 0xF)];
+    case BigMacReg::HASH_TAB_0:
+    case BigMacReg::HASH_TAB_1:
+    case BigMacReg::HASH_TAB_2:
+    case BigMacReg::HASH_TAB_3:
+        return this->hash_table[(reg_offset >> 4) & 3];
+    case BigMacReg::AFR_0:
+    case BigMacReg::AFR_1:
+    case BigMacReg::AFR_2:
+        return this->addr_filters[((reg_offset >> 4) & 0xF) - 4];
+    case BigMacReg::AFC_R:
+        return this->addr_filt_mask;
+
     default:
         LOG_F(WARNING, "%s: unimplemented register at 0x%X", this->name.c_str(),
               reg_offset);
@@ -89,6 +140,9 @@ void BigMac::write(uint16_t reg_offset, uint16_t value) {
     case BigMacReg::XIFC:
         this->tx_if_ctrl = value;
         break;
+    case BigMacReg::XCVR_IF:
+        this->xcvr_if_ctrl = value;
+        break;
     case BigMacReg::TX_FIFO_CSR:
         this->tx_fifo_enable = !!(value & 1);
         this->tx_fifo_size = (((value >> 1) & 0xFF) + 1) << 7;
@@ -100,6 +154,12 @@ void BigMac::write(uint16_t reg_offset, uint16_t value) {
         this->rx_fifo_enable = !!(value & 1);
         this->rx_fifo_size = (((value >> 1) & 0xFF) + 1) << 7;
         break;
+    case BigMacReg::TX_PNTR:
+        this->tx_ptr = value;
+        break;
+    case BigMacReg::RX_PNTR:
+        this->rx_ptr = value;
+        break;
     case BigMacReg::MIF_CSR:
         if (value & Mif_Data_Out_En) {
             // send bits one by one on each low-to-high transition of Mif_Clock
@@ -110,6 +170,9 @@ void BigMac::write(uint16_t reg_offset, uint16_t value) {
                 this->mii_rcv_bit();
         }
         this->mif_csr_old = value;
+        break;
+    case BigMacReg::MEM_ADD:
+        this->mem_add = value;
         break;
     case BigMacReg::EVENT_MASK:
         this->event_mask = value;
@@ -156,10 +219,32 @@ void BigMac::write(uint16_t reg_offset, uint16_t value) {
     case BigMacReg::RX_CONFIG:
         this->rx_config = value;
         break;
-    case BigMacReg::MAC_ADDR_0:
-    case BigMacReg::MAC_ADDR_1:
-    case BigMacReg::MAC_ADDR_2:
-        this->mac_addr_flt[8 - ((reg_offset >> 4) & 0xF)] = value;
+    case BigMacReg::RX_MAX:
+        this->rx_max = value;
+        break;
+    case BigMacReg::RX_MIN:
+        this->rx_min = value;
+        break;
+    case BigMacReg::SLOT:
+        this->slot_time = value;
+        break;
+    case BigMacReg::PA_LEN:
+        this->preamble_len = value;
+        break;
+    case BigMacReg::PA_PAT:
+        this->preamble_pat = value;
+        break;
+    case BigMacReg::TX_SFD:
+        this->tx_sfd = value;
+        break;
+    case BigMacReg::JAM_SIZE:
+        this->jam_size = value;
+        break;
+    case BigMacReg::PEAK_ATT:
+        this->peak_attempts = value;
+        break;
+    case BigMacReg::DEFER_TMR:
+        this->defer_timer = value;
         break;
     case BigMacReg::RX_FRM_CNT:
         this->rcv_frame_cnt = value;
@@ -176,11 +261,43 @@ void BigMac::write(uint16_t reg_offset, uint16_t value) {
     case BigMacReg::RX_CVE_CNT:
         this->cv_err_cnt = value;
         break;
+    case BigMacReg::MAC_ADDR_0:
+    case BigMacReg::MAC_ADDR_1:
+    case BigMacReg::MAC_ADDR_2:
+        this->mac_addr_flt[8 - ((reg_offset >> 4) & 0xF)] = value;
+        break;
     case BigMacReg::HASH_TAB_0:
     case BigMacReg::HASH_TAB_1:
     case BigMacReg::HASH_TAB_2:
     case BigMacReg::HASH_TAB_3:
         this->hash_table[(reg_offset >> 4) & 3] = value;
+        break;
+    case BigMacReg::IPG_1:
+        this->ipg1 = value;
+        break;
+    case BigMacReg::IPG_2:
+        this->ipg2 = value;
+        break;
+    case BigMacReg::A_LIMIT:
+        this->attempt_limit = value;
+        break;
+    case BigMacReg::AFR_0:
+    case BigMacReg::AFR_1:
+    case BigMacReg::AFR_2:
+        this->addr_filters[((reg_offset >> 4) & 0xF) - 4] = value;
+        break;
+    case BigMacReg::AFC_R:
+        this->addr_filt_mask = value;
+        break;
+    case BigMacReg::CHIP_ID:
+    case BigMacReg::TX_SM:
+    case BigMacReg::RX_ST_MCHN:
+        LOG_F(
+            WARNING,
+            "%s: Attempted write to read-only register at 0x%X with 0x%X",
+            this->name.c_str(),
+            reg_offset,
+            value);
         break;
     default:
         LOG_F(WARNING, "%s: unimplemented register at 0x%X is written with 0x%X",
