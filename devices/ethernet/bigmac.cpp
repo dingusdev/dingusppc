@@ -53,6 +53,10 @@ uint16_t BigMac::read(uint16_t reg_offset) {
         return this->chip_id;
     case BigMacReg::TX_FIFO_TH:
         return this->tx_fifo_tresh;
+    case BigMacReg::TX_FIFO_CSR:
+        return (this->tx_fifo_enable & 1) | ((((this->tx_fifo_size >> 7) - 1) & 0xFF) << 1);
+    case BigMacReg::RX_FIFO_CSR:
+        return (this->tx_fifo_enable & 1) | ((((this->tx_fifo_size >> 7) - 1) & 0xFF) << 1);
     case BigMacReg::TX_PNTR:
         return this->tx_ptr;
     case BigMacReg::RX_PNTR:
@@ -61,7 +65,7 @@ uint16_t BigMac::read(uint16_t reg_offset) {
         return (this->mif_csr_old & ~Mif_Data_In) | (this->mii_in_bit << 3);
     case BigMacReg::GLOB_STAT: {
         uint16_t old_stat = this->stat;
-        this->stat = 0; // clear-on-read
+        this->stat        = 0;    // clear-on-read
         return old_stat;
     }
     case BigMacReg::EVENT_MASK:
@@ -77,12 +81,14 @@ uint16_t BigMac::read(uint16_t reg_offset) {
     case BigMacReg::TX_MIN:
         return this->tx_min;
     case BigMacReg::PEAK_ATT: {
-            uint8_t old_val = this->peak_attempts;
-            this->peak_attempts = 0; // clear-on-read
-            return old_val;
+        uint8_t old_val     = this->peak_attempts;
+        this->peak_attempts = 0;    // clear-on-read
+        return old_val;
     }
     case BigMacReg::NC_CNT:
         return this->norm_coll_cnt;
+    case BigMacReg::NT_CNT:
+        return this->net_coll_cnt;
     case BigMacReg::EX_CNT:
         return this->excs_coll_cnt;
     case BigMacReg::LT_CNT:
@@ -111,6 +117,24 @@ uint16_t BigMac::read(uint16_t reg_offset) {
         return this->mem_data_hi;
     case BigMacReg::MEM_DATA_LO:
         return this->mem_data_lo;
+    case BigMacReg::IPG_1:
+        return this->ipg1;
+    case BigMacReg::IPG_2:
+        return this->ipg2;
+    case BigMacReg::A_LIMIT:
+        return this->attempt_limit;
+    case BigMacReg::SLOT:
+        return this->slot_time;
+    case BigMacReg::PA_LEN:
+        return this->preamble_len;
+    case BigMacReg::PA_PAT:
+        return this->preamble_pat;
+    case BigMacReg::TX_SFD:
+        return this->tx_sfd;
+    case BigMacReg::JAM_SIZE:
+        return this->jam_size;
+    case BigMacReg::DEFER_TMR:
+        return this->defer_timer;
     case BigMacReg::MAC_ADDR_0:
     case BigMacReg::MAC_ADDR_1:
     case BigMacReg::MAC_ADDR_2:
@@ -128,8 +152,7 @@ uint16_t BigMac::read(uint16_t reg_offset) {
         return this->addr_filt_mask;
 
     default:
-        LOG_F(WARNING, "%s: unimplemented register at 0x%X", this->name.c_str(),
-              reg_offset);
+        LOG_F(WARNING, "%s: unimplemented register at 0x%X", this->name.c_str(), reg_offset);
     }
 
     return 0;
@@ -145,14 +168,14 @@ void BigMac::write(uint16_t reg_offset, uint16_t value) {
         break;
     case BigMacReg::TX_FIFO_CSR:
         this->tx_fifo_enable = !!(value & 1);
-        this->tx_fifo_size = (((value >> 1) & 0xFF) + 1) << 7;
+        this->tx_fifo_size   = (((value >> 1) & 0xFF) + 1) << 7;
         break;
     case BigMacReg::TX_FIFO_TH:
         this->tx_fifo_tresh = value;
         break;
     case BigMacReg::RX_FIFO_CSR:
         this->rx_fifo_enable = !!(value & 1);
-        this->rx_fifo_size = (((value >> 1) & 0xFF) + 1) << 7;
+        this->rx_fifo_size   = (((value >> 1) & 0xFF) + 1) << 7;
         break;
     case BigMacReg::TX_PNTR:
         this->tx_ptr = value;
@@ -190,7 +213,7 @@ void BigMac::write(uint16_t reg_offset, uint16_t value) {
     case BigMacReg::TX_SW_RST:
         if (value == 1) {
             LOG_F(INFO, "%s: transceiver soft reset asserted", this->name.c_str());
-            this->tx_reset = 0; // acknowledge SW reset
+            this->tx_reset = 0;    // acknowledge SW reset
         }
         break;
     case BigMacReg::TX_CONFIG:
@@ -292,16 +315,13 @@ void BigMac::write(uint16_t reg_offset, uint16_t value) {
     case BigMacReg::CHIP_ID:
     case BigMacReg::TX_SM:
     case BigMacReg::RX_ST_MCHN:
-        LOG_F(
-            WARNING,
-            "%s: Attempted write to read-only register at 0x%X with 0x%X",
-            this->name.c_str(),
-            reg_offset,
-            value);
+        LOG_F(WARNING, "%s: Attempted write to read-only register at 0x%X with 0x%X",
+            this->name.c_str(), reg_offset, value);
         break;
     default:
         LOG_F(WARNING, "%s: unimplemented register at 0x%X is written with 0x%X",
               this->name.c_str(), reg_offset, value);
+
     }
 }
 
