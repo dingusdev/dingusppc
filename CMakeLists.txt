@@ -97,6 +97,21 @@ if (NOT EMSCRIPTEN)
     set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries")
     set(BUILD_TOOLS OFF CACHE BOOL "Build Cubeb tools")
     add_subdirectory(thirdparty/cubeb EXCLUDE_FROM_ALL)
+
+    # Warn if no audio backends were detected on Linux/Unix systems
+    if (UNIX AND NOT APPLE)
+        if (NOT USE_PULSE AND NOT USE_ALSA AND NOT USE_JACK AND
+            NOT USE_SNDIO AND NOT USE_OSS AND NOT USE_SUN)
+            message(WARNING
+                "No Cubeb audio backends detected on Linux/Unix system!\n"
+                "Audio will NOT work at runtime.\n"
+                "Please install development headers for at least one of:\n"
+                "  - PulseAudio (libpulse-dev / pulseaudio-libs-devel)\n"
+                "  - ALSA (libasound2-dev / alsa-lib-devel)\n"
+                "  - JACK (libjack-dev / jack-audio-connection-kit-devel)\n"
+                "  - sndio (libsndio-dev)")
+        endif()
+    endif()
 endif()
 
 set(CLI11_ROOT ${PROJECT_SOURCE_DIR}/thirdparty/CLI11)
