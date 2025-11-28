@@ -222,200 +222,267 @@ rom_info rom_identity[] = {
       .dppc_machine                     = dppc_mach,                                            \
       .dppc_description                 = dppc_desc },
 
-    rom( 0x008100, 0x266f2e55, "Kihei"       , "P7"       , nullptr  , "iMac G3 (Slot Loading)"                            ) // PowerMac2,1 // 2001-09-14 419f1
-    rom( 0x008100, 0x55402f54, "Kihei"       , "P7"       , nullptr  , "iMac G3 (Slot Loading)"                            ) // PowerMac2,1
-    rom( 0x008100, 0xf88e2d56, "P7"          , "P7"       , nullptr  , "iMac G3 (Slot Loading)"                            ) // PowerMac2,1
-    rom( 0x008200, 0x141d2d96, "P51"         , "P51"      , nullptr  , "iMac G3 (Summer 2000)"                             ) // PowerMac2,2
-    rom( 0x008200, 0x41ef2e95, "Perigee"     , "P51"      , nullptr  , "iMac G3 (Summer 2000)"                             ) // PowerMac2,2
-    rom( 0x008201, 0x4a862e17, "P51_15"      , "P51"      , nullptr  , "iMac G3 (Summer 2000)"                             ) // PowerMac2,2
-    rom( 0x008201, 0x78582f16, "Perigee_15"  , "P51"      , nullptr  , "iMac G3 (Summer 2000)"                             ) // PowerMac2,2
-    rom( 0x010100,          0, nullptr       , "P52"      , nullptr  , "iMac G3 (2001)"                                    ) // PowerMac4,1
-    rom( 0x010101, 0x9a7a2c2c, "P52"         , nullptr    , nullptr  , "iMac G3 (2001)"                                    ) // PowerMac4,1
-    rom( 0x010101, 0xc84c2d2b, "Apogee"      , nullptr    , nullptr  , "iMac G3 (2001)"                                    ) // PowerMac4,1
-    rom( 0x010200, 0xe27f2d68, "Tessera"     , "P80"      , nullptr  , "iMac G4 (Flat Panel)"                              ) // PowerMac4,2
-    rom( 0x010202, 0xc32928ab, "P80"         , nullptr    , nullptr  , "iMac G4 (Flat Panel)"                              ) // PowerMac4,2
-    rom( 0x010202, 0xe3512d6a, "Insp"        , nullptr    , nullptr  , "iMac G4 (Flat Panel)"                              ) // PowerMac4,2
-    rom( 0x010202, 0xfaf12da6, "P80|Insp"    , nullptr    , nullptr  , "iMac G4 (Flat Panel)"                              ) // PowerMac4,2 // 2002-04-08 440f1 // 2002-05-17 441f1
-    rom( 0x010203,          0, nullptr       , "P80"      , nullptr  , "iMac G4 (Flat Panel)"                              ) // PowerMac4,2
-    rom( 0x010300, 0xe27f2d68, "Infinity"    , nullptr    , nullptr  , nullptr                                             ) // PowerMac4,3
-    rom( 0x010400, 0xa0972cec, "Beyond"      , "P62"      , nullptr  , "eMac G4"                                           ) // PowerMac4,4
-    rom( 0x010400, 0xa7cd2b85, "P62"         , "P62"      , nullptr  , "eMac G4"                                           ) // PowerMac4,4
-    rom( 0x010400, 0xe72d2d73, "NorthnLites" , "P62"      , nullptr  , "eMac G4"                                           ) // PowerMac4,4
-    rom( 0x010401,          0, nullptr       , "P86"      , nullptr  , "eMac G4"                                           ) // PowerMac4,4
-    rom( 0x010402,          0, nullptr       , "P86"      , nullptr  , "eMac G4"                                           ) // PowerMac4,4
-    rom( 0x010500, 0xa90624c6, "P79"         , "P79"      , nullptr  , "iMac G4 17 inch (Flat Panel)"                      ) // PowerMac4,5
-    rom( 0x010500, 0xf1332daa, "Taliesin"    , "P79"      , nullptr  , "iMac G4 17 inch (Flat Panel)"                      ) // PowerMac4,5
-    rom( 0x010500, 0xd6d825c5, "P79|Taliesin", "P79"      , nullptr  , "iMac G4 17 inch (Flat Panel)"                      ) // PowerMac4,5 // 2002-07-23 445f3
-    rom( 0x018101, 0xacd324d3, nullptr       , "Q26"      , nullptr  , "iMac G4/1.0 17 inch (Flat Panel)"                  ) // PowerMac6,1 // 2003-01-13 458f1
-    rom( 0x018102, 0xcd1f2ca7, "P87"         , "Q26"      , nullptr  , "iMac G4/1.0 17 inch (Flat Panel)"                  ) // PowerMac6,1
-    rom( 0x018301,          0, nullptr       , "Q59"      , nullptr  , "iMac G4/1.0 (Flat Panel - USB 2.0)"                ) // PowerMac6,3
-    rom( 0x018401,          0, nullptr       , "Q86"      , nullptr  , "eMac G4 (2005)"                                    ) // PowerMac6,4
-    rom( 0x018402,          0, nullptr       , "Q86"      , nullptr  , "eMac G4 (2005)"                                    ) // PowerMac6,4
-    rom( 0x018403,          0, nullptr       , "Q86"      , nullptr  , "eMac G4 (2005)"                                    ) // PowerMac6,4
-    rom( 0x020101, 0xfcaf4eb7, "Q45"         , "Q45"      , nullptr  , "iMac G5"                                           ) // PowerMac8,1
-    rom( 0x020101, 0xfd1f4eb8, "Q45"         , "Q45"      , nullptr  , "iMac G5"                                           ) // PowerMac8,1
-    rom( 0x020102,          0, nullptr       , "Q45"      , nullptr  , "iMac G5"                                           ) // PowerMac8,1
-    rom( 0x020109, 0x00064ebf, "Q45p"        , nullptr    , nullptr  , "iMac G5"                                           ) // PowerMac8,1
-    rom( 0x020109, 0x00764ec0, "Q45p"        , nullptr    , nullptr  , "iMac G5"                                           ) // PowerMac8,1
-    rom( 0x020109, 0x24372c87, "Q45p"        , nullptr    , nullptr  , "iMac G5"                                           ) // PowerMac8,1
-    rom( 0x020109, 0x24932c8b, "Q45p"        , nullptr    , nullptr  , "iMac G5"                                           ) // PowerMac8,1
-    rom( 0x020201,          0, nullptr       , "Q45C"     , nullptr  , "iMac G5 (Ambient Light Sensor)"                    ) // PowerMac8,2
-    rom( 0x020f01, 0x20ef2c7f, "Q45xa"       , nullptr    , nullptr  , nullptr                                             ) // PowerMac8,15
-    rom( 0x020f01, 0x214b2c83, "Q45xa"       , nullptr    , nullptr  , nullptr                                             ) // PowerMac8,15
-    rom( 0x020f01, 0xeace56ae, "Neoa"        , nullptr    , nullptr  , nullptr                                             ) // PowerMac8,15
-    rom( 0x020f02, 0x21582c80, "Q45xb"       , nullptr    , nullptr  , nullptr                                             ) // PowerMac8,15
-    rom( 0x020f02, 0x21b42c84, "Q45xb"       , nullptr    , nullptr  , nullptr                                             ) // PowerMac8,15
-    rom( 0x020f02, 0xf92756d2, "Neob"        , nullptr    , nullptr  , nullptr                                             ) // PowerMac8,15
-    rom( 0x020f03, 0x21c12c81, "Q45xc"       , nullptr    , nullptr  , nullptr                                             ) // PowerMac8,15
-    rom( 0x020f03, 0x221d2c85, "Q45xc"       , nullptr    , nullptr  , nullptr                                             ) // PowerMac8,15
-    rom( 0x020f03, 0x9e7f55ef, "Neoc"        , nullptr    , nullptr  , nullptr                                             ) // PowerMac8,15
-    rom( 0x028101, 0xf4dc2533, nullptr       , "Q88"      , nullptr  , "Mac mini G4"                                       ) // PowerMac10,1 // 2005-03-23 489f4
-    rom( 0x028201, 0xf4dc2533, nullptr       , "Q88"      , nullptr  , "Mac mini G4 1.5GHz Radeon 9200"                    ) // PowerMac10,2 // 2005-07-12 494f1
-    rom( 0x030101,          0, nullptr       , "M23"      , nullptr  , "iMac G5 (iSight)"                                  ) // PowerMac12,1
-    rom( 0x108100, 0x71fd2fc9, "P1"          , "P1"       , nullptr  , "iBook G3 (Original/Clamshell)"                     ) // PowerBook2,1
-    rom( 0x108100, 0x9fcf30c8, "P1"          , "P1"       , nullptr  , "iBook G3 (Original/Clamshell)"                     ) // PowerBook2,1
-    rom( 0x108100, 0xcea031c7, "P1"          , "P1"       , nullptr  , "iBook G3 (Original/Clamshell)"                     ) // PowerBook2,1
-    rom( 0x108101, 0x72902fcb, "P1_05"       , "P1"       , nullptr  , "iBook G3 (Original/Clamshell)"                     ) // PowerBook2,1
-    rom( 0x108101, 0xa06230ca, "P1_05"       , "P1"       , nullptr  , "iBook G3 (Original/Clamshell)"                     ) // PowerBook2,1 // 2001-03-20 417f4
-    rom( 0x108101, 0xcf3331c9, "P1_05"       , "P1"       , nullptr  , "iBook G3 (Original/Clamshell)"                     ) // PowerBook2,1
-    rom( 0x108102, 0x7de22ffd, "P1_1"        , "P1"       , nullptr  , "iBook G3 (Original/Clamshell)"                     ) // PowerBook2,1
-    rom( 0x108102, 0xabb430fc, "P1_1"        , "P1"       , nullptr  , "iBook G3 (Original/Clamshell)"                     ) // PowerBook2,1
-    rom( 0x108102, 0xda8531fb, "P1_1"        , "P1"       , nullptr  , "iBook G3 (Original/Clamshell)"                     ) // PowerBook2,1
-    rom( 0x108200, 0x7bdc2fd9, "P1_5"        , "P1_5"     , nullptr  , "iBook G3 366 MHz CD (Firewire/Clamshell)"          ) // PowerBook2,2
-    rom( 0x108200, 0xa9ae30d8, "Midway"      , "P1_5"     , nullptr  , "iBook G3 366 MHz CD (Firewire/Clamshell)"          ) // PowerBook2,2
-    rom( 0x108201, 0x9745301a, "P1_5DVD"     , "P1_5"     , nullptr  , "iBook G3 466 MHz DVD (Firewire/Clamshell)"         ) // PowerBook2,2
-    rom( 0x108201, 0xc5173119, "MidwayDVD"   , "P1_5"     , nullptr  , "iBook G3 466 MHz DVD (Firewire/Clamshell)"         ) // PowerBook2,2
-    rom( 0x110100, 0x5f1c2fe5, "Marble"      , "P29"      , nullptr  , "iBook G3 (Dual USB Snow)"                          ) // PowerBook4,1
-    rom( 0x110100, 0x69e42f6e, "P29"         , "P29"      , nullptr  , "iBook G3 (Dual USB Snow)"                          ) // PowerBook4,1
-    rom( 0x110100, 0x97b6306d, "Marble"      , "P29"      , nullptr  , "iBook G3 (Dual USB Snow)"                          ) // PowerBook4,1
-    rom( 0x110101, 0x44852fa6, "MarbleLite"  , nullptr    , nullptr  , "iBook G3 (Dual USB Snow)"                          ) // PowerBook4,1
-    rom( 0x110102, 0x60192fe8, "MarbleFat"   , "P29"      , nullptr  , "iBook G3 (Dual USB Snow)"                          ) // PowerBook4,1
-    rom( 0x110102, 0x6b1d2f73, "P29Fat"      , "P29"      , nullptr  , "iBook G3 (Dual USB Snow)"                          ) // PowerBook4,1
-    rom( 0x110102, 0x98ef3072, "MarbleFat"   , "P29"      , nullptr  , "iBook G3 (Dual USB Snow)"                          ) // PowerBook4,1
-    rom( 0x110103, 0x58762f44, "P29fat100"   , "P29"      , nullptr  , "iBook G3 (Dual USB Snow)"                          ) // PowerBook4,1
-    rom( 0x110103, 0x86483043, "Mrblfat100"  , "P29"      , nullptr  , "iBook G3/600 (Late 2001 Snow)"                     ) // PowerBook4,1 // 2001-09-12 427f1
-    rom( 0x110200, 0x4c372fb6, "Diesel"      , "P54"      , nullptr  , "iBook G3/600 14-Inch (Early 2002 Snow)"            ) // PowerBook4,2
-    rom( 0x110200, 0x573b2f41, "P54"         , "P54"      , nullptr  , "iBook G3/600 14-Inch (Early 2002 Snow)"            ) // PowerBook4,2
-    rom( 0x110200, 0x850d3040, "P54|Diesel"  , "P54"      , nullptr  , "iBook G3/600 14-Inch (Early 2002 Snow)"            ) // PowerBook4,2 // 2001-12-06 432f1
-    rom( 0x110300, 0x58e12d5c, "P72"         , "P72"      , nullptr  , "iBook G3 (Snow)"                                   ) // PowerBook4,3 // 2002-11-11 454f1
-    rom( 0x110300, 0xb98a30be, "Nectr"       , "P72"      , nullptr  , "iBook G3 (Snow)"                                   ) // PowerBook4,3
-    rom( 0x110301, 0x594a2d5d, "P73"         , "P73"      , nullptr  , "iBook G3 (Snow)"                                   ) // PowerBook4,3
-    rom( 0x110302, 0x59b32d5e, "P72x"        , "P73"      , nullptr  , "iBook G3 (Snow)"                                   ) // PowerBook4,3 // 2003-03-15 464f1
-    rom( 0x110302, 0x3eb82d1d, "P72x"        , "P73"      , nullptr  , "iBook G3 (Snow)"                                   ) // PowerBook4,3
-    rom( 0x110303, 0x3f212d1e, "P73x"        , "P73"      , nullptr  , "iBook G3 (Snow)"                                   ) // PowerBook4,3
-    rom( 0x118101,          0, nullptr       , "P99"      , nullptr  , "PowerBook G4 (Aluminum)"                           ) // PowerBook6,1
-    rom( 0x118202,          0, nullptr       , "Q54"      , nullptr  , "PowerBook G4 1.0 12 inch (DVI - Aluminum)"         ) // PowerBook6,2
-    rom( 0x118302,          0, nullptr       , "P72D"     , nullptr  , "iBook G4 (Original - Opaque)"                      ) // PowerBook6,3
-    rom( 0x11830c,          0, nullptr       , "P73D"     , nullptr  , "iBook G4 (Original - Opaque)"                      ) // PowerBook6,3
-    rom( 0x118402,          0, nullptr       , "Q54A"     , nullptr  , "PowerBook G4 1.33 12 inch (Aluminum)"              ) // PowerBook6,4
-    rom( 0x118502, 0x033929a6, nullptr       , "Q72"      , nullptr  , "iBook G4 (Early 2004)"                             ) // PowerBook6,5 // 2004-04-06 485f0
-    rom( 0x118504,          0, nullptr       , "Q72A"     , nullptr  , "iBook G4"                                          ) // PowerBook6,5
-    rom( 0x118509,          0, nullptr       , "Q73"      , nullptr  , "iBook G4"                                          ) // PowerBook6,5
-    rom( 0x11850b, 0x067f29b0, nullptr       , "Q73A"     , nullptr  , "iBook G4"                                          ) // PowerBook6,5 // 2004-09-23 487f1
-    rom( 0x118603,          0, nullptr       , "U210"     , nullptr  , nullptr                                             ) // PowerBook6,6
-    rom( 0x118701,          0, nullptr       , "Q72B"     , nullptr  , "iBook G4 12-Inch (Mid-2005 - Opaque)"              ) // PowerBook6,7
-    rom( 0x118709,          0, nullptr       , "Q73B"     , nullptr  , "iBook G4 12-Inch (Mid-2005 - Opaque)"              ) // PowerBook6,7
-    rom( 0x11870c, 0x091929b6, nullptr       , "Q73B-Best", nullptr  , "iBook G4 14-Inch (Mid-2005 - Opaque)"              ) // PowerBook6,7 // 2005-07-05 493f0
-    rom( 0x118801,          0, nullptr       , "Q54B"     , nullptr  , "PowerBook G4 1.5 12 inch (Aluminum)"               ) // PowerBook6,8
-    rom( 0x20c100, 0x85e72bd1, "P5"          , "P5"       , nullptr  , "Power Mac G4 (AGP Graphics) Sawtooth"              ) // PowerMac3,1
-    rom( 0x20c100, 0xb3b92cd0, "Sawtooth"    , "P5"       , nullptr  , "Power Mac G4 (AGP Graphics) Sawtooth"              ) // PowerMac3,1
-    rom( 0x20c100, 0xe28a2dcf, "Sawtooth"    , "P5"       , nullptr  , "Power Mac G4 (AGP Graphics) Sawtooth"              ) // PowerMac3,1
-    rom( 0x20c101, 0x8d142cda, "Mystic"      , "P5"       , nullptr  , "Power Mac G4 (AGP Graphics) Sawtooth"              ) // PowerMac3,1 // 2000-02-17 324f1
-    rom( 0x20c101, 0x5e432bdb, "Mystic"      , "P5"       , nullptr  , "Power Mac G4 (AGP Graphics) Sawtooth"              ) // PowerMac3,1 // 2001-10-11 428f1
-    rom( 0x20c101, 0x30712adc, "P10"         , "P5"       , nullptr  , "Power Mac G4 (AGP Graphics) Sawtooth"              ) // PowerMac3,1
-    rom( 0x20c300, 0x66752b5c, "P15"         , "P5"       , nullptr  , "Power Macintosh Mac G4 (Gigabit)"                  ) // PowerMac3,3
-    rom( 0x20c300, 0x94472c5b, "Clockwork"   , "P5"       , nullptr  , "Power Macintosh Mac G4 (Gigabit)"                  ) // PowerMac3,3
-    rom( 0x20c400, 0x47fe2da3, "P21"         , "P21"      , nullptr  , "Power Mac G4 (Digital Audio)"                      ) // PowerMac3,4
-    rom( 0x20c400, 0x75d02ea2, "Tangent"     , "P21"      , nullptr  , "Power Mac G4 (Digital Audio)"                      ) // PowerMac3,4 // 2001-10-11 428f1
-    rom( 0x20c400, 0x6ea22e91, "P21|Tangent" , "P21"      , nullptr  , "Power Mac G4 (Digital Audio)"                      ) // PowerMac3,4 // 2000-12-04 410f1
-    rom( 0x20c500, 0x4b5e2dab, "P57"         , "P57"      , nullptr  , "Power Mac G4 Quicksilver"                          ) // PowerMac3,5
-    rom( 0x20c500, 0x75d02ea2, "NiChrome"    , "P57"      , nullptr  , "Power Mac G4 Quicksilver"                          ) // PowerMac3,5
-    rom( 0x20c500, 0x79302eaa, "NiChrome"    , "P57"      , nullptr  , "Power Mac G4 Quicksilver"                          ) // PowerMac3,5 // 2001-08-16 425f1
-    rom( 0x20c600, 0x6e5a2d67, "P58_133"     , "P58"      , nullptr  , "Power Mac G4 (Mirrored Drive Doors)"               ) // PowerMac3,6 // 2002-09-30 448f2
-    rom( 0x20c600, 0x79302eaa, "Moj"         , "P58"      , nullptr  , "Power Mac G4 (Mirrored Drive Doors)"               ) // PowerMac3,6
-    rom( 0x20c601, 0x20df2ca4, "P58_167"     , "P58"      , nullptr  , "Power Mac G4 (Mirrored Drive Doors)"               ) // PowerMac3,6
-    rom( 0x20c602, 0x6f2c2d69, nullptr       , "P58"      , nullptr  , "Power Mac G4 (FW 800)"                             ) // PowerMac3,6 // 2003-01-15 457f1
-    rom( 0x20c603, 0x21b12ca6, nullptr       , "P58"      , nullptr  , "Power Mac G4 (FW 800)"                             ) // PowerMac3,6 // 2003-02-20 460f1
-    rom( 0x214100, 0x4af52b1c, "P9"          , "P9"       , nullptr  , "Power Mac G4 Cube"                                 ) // PowerMac5,1
-    rom( 0x214100, 0x78c72c1b, "Trinity"     , "P9"       , nullptr  , "Power Mac G4 Cube"                                 ) // PowerMac5,1 // 2000-07-10 332f1 // 2001-09-14 419f1
-    rom( 0x214100, 0x78c72c1b, "Kubrick"     , "P9"       , nullptr  , "Power Mac G4 Cube"                                 ) // PowerMac5,1 // 2000-07-10 332f1 // 2001-09-14 419f1
-    rom( 0x214100, 0x8cab2cd9, "Kubrick"     , "P9"       , nullptr  , "Power Mac G4 Cube"                                 ) // PowerMac5,1
-    rom( 0x21c200, 0x25142c89, "Q37high"     , "Q37"      , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2
-    rom( 0x21c200, 0x25702c8d, "Q37high"     , "Q37"      , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2
-    rom( 0x21c200, 0xa5b7555f, "Q37high"     , "Q37"      , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2
-    rom( 0x21c201, 0x336d2cad, "Q37med"      , "Q37"      , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2
-    rom( 0x21c201, 0x33c92cb1, "Q37med"      , "Q37"      , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2
-    rom( 0x21c201, 0x514d2dbb, "P76"         , "Q37"      , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2
-    rom( 0x21c201, 0xb4105583, "Q37med"      , "Q37"      , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2
-    rom( 0x21c202, 0x596854a0, "Q37low"      , "Q37low"   , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2
-    rom( 0x21c202, 0xd8c62bca, "Q37low"      , "Q37low"   , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2 // 2004-09-21 515f2
-    rom( 0x21c203, 0x343f2caf, "Q37A"        , "Q37low"   , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2
-    rom( 0x21c203, 0x349b2cb3, "Q37A"        , "Q37low"   , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2
-    rom( 0x21c203, 0xb4e25585, "Q37A"        , "Q37low"   , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2
-    rom( 0x21c204, 0xa8955568, "Q37C"        , "Q77hi"    , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2
-    rom( 0x21c204, 0xa930556d, "Q37C"        , "Q77hi"    , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2
-    rom( 0x21c301, 0xb6cf558d, "Q77best"     , "Q77hi"    , nullptr  , "Power Macintosh G5 Dual Processor"                 ) // PowerMac7,3
-    rom( 0x21c301, 0xb76a5592, "Q77best"     , "Q77hi"    , nullptr  , "Power Macintosh G5 Dual Processor"                 ) // PowerMac7,3
-    rom( 0x21c302, 0xa7635563, "Q77mid"      , "Q77"      , nullptr  , "Power Macintosh G5 Dual Processor"                 ) // PowerMac7,3
-    rom( 0x21c303, 0xb5bc5587, "Q77good"     , "Q77good"  , nullptr  , "Power Macintosh G5 Dual Processor"                 ) // PowerMac7,3
-    rom( 0x21c304, 0xb80a5590, "Q77better"   , "Q77better", nullptr  , "Power Macintosh G5 Dual Processor"                 ) // PowerMac7,3
-    rom( 0x21c304, 0xb8a55595, "Q77better"   , "Q77better", nullptr  , "Power Macintosh G5 Dual Processor"                 ) // PowerMac7,3
-    rom( 0x21c305,          0, nullptr       , "M18wl"    , nullptr  , "Power Macintosh G5 Dual Processor"                 ) // PowerMac7,3
-    rom( 0x21c306,          0, nullptr       , "Q87good"  , nullptr  , "Power Macintosh G5 Dual Processor"                 ) // PowerMac7,3
-    rom( 0x21c307,          0, nullptr       , "Q77better", nullptr  , "Power Macintosh G5 Dual Processor"                 ) // PowerMac7,3
-    rom( 0x21c308,          0, nullptr       , "Q77hi"    , nullptr  , "Power Macintosh G5 Dual Processor"                 ) // PowerMac7,3
-    rom( 0x224102,          0, nullptr       , "Q78"      , nullptr  , "Power Macintosh G5 1.8 (PCI)"                      ) // PowerMac9,1
-    rom( 0x224108, 0x84d94d6f, "Q78EVT"      , nullptr    , nullptr  , "Power Macintosh G5 1.8 (PCI)"                      ) // PowerMac9,1
-    rom( 0x224109, 0x82b74d9f, "Q78p"        , nullptr    , nullptr  , "Power Macintosh G5 1.8 (PCI)"                      ) // PowerMac9,1
-    rom( 0x224109, 0x86774da9, "Q78p"        , nullptr    , nullptr  , "Power Macintosh G5 1.8 (PCI)"                      ) // PowerMac9,1
-    rom( 0x22c101,          0, nullptr       , "M18"      , nullptr  , nullptr                                             ) // PowerMac11,1
-    rom( 0x22c102,          0, nullptr       , "M20wl"    , nullptr  , nullptr                                             ) // PowerMac11,1
-    rom( 0x22c201,          0, nullptr       , "Q63Proto" , nullptr  , "Power Mac G5 Quad Core Proto"                      ) // PowerMac11,2
-    rom( 0x22c202, 0xb7fe51fc, nullptr       , "Q63"      , nullptr  , "Power Mac G5 Quad Core"                            ) // PowerMac11,2 // 2005-09-30 527f1
-    rom( 0x30c100, 0x0c653168, "P8"          , "P8"       , nullptr  , "PowerBook G3 (FireWire) Pismo"                     ) // PowerBook3,1
-    rom( 0x30c100, 0x3a373267, "Pismo"       , "P8"       , nullptr  , "PowerBook G3 (FireWire) Pismo"                     ) // PowerBook3,1 // 2001-03-21 418f5
-    rom( 0x30c100, 0x69083366, "Pismo"       , "P8"       , nullptr  , "PowerBook G3 (FireWire) Pismo"                     ) // PowerBook3,1
-    rom( 0x30c1ff, 0xcb8e3457, "Pismo66"     , nullptr    , nullptr  , "PowerBook G3 (FireWire) Pismo"                     ) // PowerBook3,1
-    rom( 0x30c200,          0, nullptr       , "P12"      , nullptr  , "PowerBook G4 (Original - Titanium)"                ) // PowerBook3,2
-    rom( 0x30c201, 0x33b22dc6, "P12"         , "P12"      , nullptr  , "PowerBook G4 (Original - Titanium)"                ) // PowerBook3,2
-    rom( 0x30c201, 0x61842ec5, "Mercury"     , "P12"      , nullptr  , "PowerBook G4 (Original - Titanium)"                ) // PowerBook3,2
-    rom( 0x30c300, 0x3e4f2dd5, "P25_100"     , "P25"      , nullptr  , "PowerBook G4 (Gigabit - Titanium)"                 ) // PowerBook3,3
-    rom( 0x30c300, 0x63762eca, "Onyx"        , "P25"      , nullptr  , "PowerBook G4 (Gigabit - Titanium)"                 ) // PowerBook3,3
-    rom( 0x30c300, 0x6c212ed4, "Onix100"     , "P25"      , nullptr  , "PowerBook G4 (Gigabit - Titanium)"                 ) // PowerBook3,3
-    rom( 0x30c301, 0x4c2b2df8, "P25"         , "P25"      , nullptr  , "PowerBook G4 (Gigabit - Titanium)"                 ) // PowerBook3,3
-    rom( 0x30c301, 0x79fd2ef7, "Onix"        , "P25"      , nullptr  , "PowerBook G4 (Gigabit - Titanium)"                 ) // PowerBook3,3
-    rom( 0x30c302, 0x7e6c2f0a, "OnixStar"    , nullptr    , nullptr  , "PowerBook G4 (Gigabit - Titanium)"                 ) // PowerBook3,3
-    rom( 0x30c400, 0x7a002ef7, "Ivry"        , "P59"      , nullptr  , "PowerBook G4 (DVI - Titanium)"                     ) // PowerBook3,4
-    rom( 0x30c400, 0x91952f11, "P59_667"     , "P59"      , nullptr  , "PowerBook G4 (DVI - Titanium)"                     ) // PowerBook3,4
-    rom( 0x30c402, 0x92672f13, "P59_800"     , nullptr    , nullptr  , "PowerBook G4 (DVI - Titanium)"                     ) // PowerBook3,4
-    rom( 0x30c403, 0x92d02f14, "P59_DVT"     , nullptr    , nullptr  , "PowerBook G4 (DVI - Titanium)"                     ) // PowerBook3,4
-    rom( 0x30c404, 0x93392f15, "P59_DualFan" , "P59DF"    , nullptr  , "PowerBook G4 (DVI - Titanium)"                     ) // PowerBook3,4
-    rom( 0x30c500,          0, nullptr       , "P88"      , nullptr  , "PowerBook G4 (Titanum)"                            ) // PowerBook3,5
-    rom( 0x30c501,          0, nullptr       , "P881G"    , nullptr  , "PowerBook G4 (Titanum)"                            ) // PowerBook3,5
-    rom( 0x314100, 0x6ece5388, "P84i"        , nullptr    , nullptr  , "PowerBook G4 1.0 17 inch (Aluminum)"               ) // PowerBook5,1
-    rom( 0x314103, 0x5c13264b, nullptr       , "P84"      , nullptr  , "PowerBook G4 1.0 17 inch (Aluminum)"               ) // PowerBook5,1 // 2003-02-18 462f1
-    rom( 0x314202, 0xf60a284b, nullptr       , "Q16-EVT"  , nullptr  , "PowerBook G4 15 inch (FW 800 - Aluminum)"          ) // PowerBook5,2 // 2003-09-04 471f1
-    rom( 0x314301,          0, nullptr       , "Q41"      , nullptr  , "PowerBook G4 1.33 17 inch (Aluminum)"              ) // PowerBook5,3
-    rom( 0x314401,          0, nullptr       , "Q16A"     , nullptr  , "PowerBook G4 15 inch (Aluminum)"                   ) // PowerBook5,4
-    rom( 0x314501,          0, nullptr       , "Q41A"     , nullptr  , "PowerBook G4 1.5 17 inch (Aluminum)"               ) // PowerBook5,5
-    rom( 0x314601,          0, nullptr       , "Q16B"     , nullptr  , "PowerBook G4 15 inch (Aluminum)"                   ) // PowerBook5,6
-    rom( 0x314701,          0, nullptr       , "Q41B"     , nullptr  , "PowerBook G4 1.67 17 inch (Aluminum)"              ) // PowerBook5,7
-    rom( 0x314801, 0x35c72568, nullptr       , "Q16C"     , nullptr  , "PowerBook G4 DLSD"                                 ) // PowerBook5,8 // 2005-09-22 495f3
-    rom( 0x314801,          0, nullptr       , "Q41C"     , nullptr  , "PowerBook G4 DLSD"                                 ) // PowerBook5,8
-    rom( 0x314802,          0, nullptr       , "Q16CBest" , nullptr  , "PowerBook G4 DLSD"                                 ) // PowerBook5,8
-    rom( 0x314901, 0x35c72568, nullptr       , "Q41C"     , nullptr  , "PowerBook G4 1.67 17 inch (DLSD/HiRes - Aluminum)" ) // PowerBook5,9 // 2005-10-05 496f0
-    rom( 0x318100, 0x6ca8272f, "P99"         , nullptr    , nullptr  , "PowerBook G4 867 12 inch (Aluminum)"               ) // PowerBook6,1
-    rom( 0x31c101, 0xbb11558a, "Q51p"        , "Q51"      , nullptr  , nullptr                                             ) // PowerBook7,1
-    rom( 0x31c101, 0xbc5d558d, "Q51p"        , "Q51"      , nullptr  , nullptr                                             ) // PowerBook7,1
-    rom( 0x31c201, 0xbb11558a, "Q43p"        , "Q43"      , nullptr  , nullptr                                             ) // PowerBook7,2
-    rom( 0x31c201, 0xbc5d558d, "Q43p"        , "Q43"      , nullptr  , nullptr                                             ) // PowerBook7,2
-    rom( 0x380101,          0, nullptr       , "T3"       , nullptr  , nullptr                                             ) // PowerBook32,1
-    rom( 0x380201,          0, nullptr       , "M22"      , nullptr  , nullptr                                             ) // PowerBook32,2
-    rom( 0x404100, 0x268f2cab, "P69"         , "P69"      , nullptr  , "Xserve G4 1.0 GHz"                                 ) // RackMac1,1
-    rom( 0x404200,          0, nullptr       , "Q28"      , nullptr  , "Xserve G4 1.33 GHz (Slot Load)"                    ) // RackMac1,2 // 465f3
-    rom( 0x40c100, 0xc2f855a9, "Q42"         , "Q42"      , nullptr  , "Xserve G5 (PCI-X)"                                 ) // RackMac3,1
-    rom( 0x40c101, 0xc28755a8, "Q42B"        , "Q42"      , nullptr  , "Xserve G5 (PCI-X)"                                 ) // RackMac3,1
-    rom( 0x414101,          0, nullptr       , "Q42C"     , nullptr  , nullptr                                             ) // RackMac5,1
+    rom( 0x008100, 0x266f2e55, "Kihei"          , "P7"       , nullptr  , "iMac G3 (Slot Loading)"                            ) // PowerMac2,1 // 2001-09-14 419f1
+    rom( 0x008100, 0x55402f54, "Kihei"          , "P7"       , nullptr  , "iMac G3 (Slot Loading)"                            ) // PowerMac2,1
+    rom( 0x008100, 0xf88e2d56, "P7"             , "P7"       , nullptr  , "iMac G3 (Slot Loading)"                            ) // PowerMac2,1
+    rom( 0x008200, 0x141d2d96, "P51"            , "P51"      , nullptr  , "iMac G3 (Summer 2000)"                             ) // PowerMac2,2
+    rom( 0x008200, 0x41ef2e95, "Perigee"        , "P51"      , nullptr  , "iMac G3 (Summer 2000)"                             ) // PowerMac2,2
+    rom( 0x008201, 0x4a862e17, "P51_15"         , "P51"      , nullptr  , "iMac G3 (Summer 2000)"                             ) // PowerMac2,2
+    rom( 0x008201, 0x78582f16, "Perigee_15"     , "P51"      , nullptr  , "iMac G3 (Summer 2000)"                             ) // PowerMac2,2
+    rom( 0x010100,          0, nullptr          , "P52"      , nullptr  , "iMac G3 (2001)"                                    ) // PowerMac4,1
+    rom( 0x010101, 0x9a7a2c2c, "P52"            , nullptr    , nullptr  , "iMac G3 (2001)"                                    ) // PowerMac4,1
+    rom( 0x010101, 0xc84c2d2b, "Apogee"         , nullptr    , nullptr  , "iMac G3 (2001)"                                    ) // PowerMac4,1
+    rom( 0x010200, 0xe27f2d68, "Tessera"        , "P80"      , nullptr  , "iMac G4 (Flat Panel)"                              ) // PowerMac4,2
+    rom( 0x010202, 0xa99c24bc, "P80"            , nullptr    , nullptr  , "iMac G4 (Flat Panel)"                              ) // PowerMac4,2
+    rom( 0x010202, 0xc32928ab, "P80"            , nullptr    , nullptr  , "iMac G4 (Flat Panel)"                              ) // PowerMac4,2
+    rom( 0x010202, 0xe3512d6a, "Insp"           , nullptr    , nullptr  , "iMac G4 (Flat Panel)"                              ) // PowerMac4,2
+    rom( 0x010202, 0xf0fb29aa, "P80"            , nullptr    , nullptr  , "iMac G4 (Flat Panel)"                              ) // PowerMac4,2
+    rom( 0x010202, 0xfaf12da6, "P80|Insp"       , nullptr    , nullptr  , "iMac G4 (Flat Panel)"                              ) // PowerMac4,2 // 2002-04-08 440f1 // 2002-05-17 441f1
+    rom( 0x010203, 0xaa0524bd, "P80E"           , "P80"      , nullptr  , "iMac G4 (Flat Panel)"                              ) // PowerMac4,2
+    rom( 0x010205, 0xf23729ae, "P79Proto"       , nullptr    , nullptr  , "iMac G4 (Flat Panel)"                              ) // PowerMac4,2
+    rom( 0x010206, 0xf2a029af, "P79EVT"         , nullptr    , nullptr  , "iMac G4 (Flat Panel)"                              ) // PowerMac4,2
+    rom( 0x010300, 0xe27f2d68, "Infinity"       , nullptr    , nullptr  , nullptr                                             ) // PowerMac4,3
+    rom( 0x010400, 0x845e239e, "P62"            , "P62"      , nullptr  , "eMac G4"                                           ) // PowerMac4,4
+    rom( 0x010400, 0x920e2484, "P62"            , "P62"      , nullptr  , "eMac G4"                                           ) // PowerMac4,4
+    rom( 0x010400, 0xa0972cec, "Beyond"         , "P62"      , nullptr  , "eMac G4"                                           ) // PowerMac4,4
+    rom( 0x010400, 0xa7cd2b85, "P62"            , "P62"      , nullptr  , "eMac G4"                                           ) // PowerMac4,4
+    rom( 0x010400, 0xd59f2c84, "P62"            , "P62"      , nullptr  , "eMac G4"                                           ) // PowerMac4,4
+    rom( 0x010400, 0xe72d2d73, "NorthnLites"    , "P62"      , nullptr  , "eMac G4"                                           ) // PowerMac4,4
+    rom( 0x010401, 0x9489248a, "P86"            , "P86"      , nullptr  , "eMac G4"                                           ) // PowerMac4,4
+    rom( 0x010402, 0x94f2248b, "P86A"           , "P86"      , nullptr  , "eMac G4"                                           ) // PowerMac4,4
+    rom( 0x010500, 0xa90624c6, "P79"            , "P79"      , nullptr  , "iMac G4 17 inch (Flat Panel)"                      ) // PowerMac4,5
+    rom( 0x010500, 0xd6d825c5, "P79|Taliesin"   , "P79"      , nullptr  , "iMac G4 17 inch (Flat Panel)"                      ) // PowerMac4,5 // 2002-07-23 445f3
+    rom( 0x010500, 0xf02a29a9, "P79"            , "P79"      , nullptr  , "iMac G4 17 inch (Flat Panel)"                      ) // PowerMac4,5
+    rom( 0x010500, 0xf1332daa, "Taliesin"       , "P79"      , nullptr  , "iMac G4 17 inch (Flat Panel)"                      ) // PowerMac4,5
+    rom( 0x018100, 0xac6a24d2, "Q26proto"       , nullptr    , nullptr  , "iMac G4/1.0 17 inch (Flat Panel)"                  ) // PowerMac6,1
+    rom( 0x018101, 0xacd324d3, "Q26"            , "Q26"      , nullptr  , "iMac G4/1.0 17 inch (Flat Panel)"                  ) // PowerMac6,1 // 2003-01-13 458f1
+    rom( 0x018102, 0xad3c24d4, "Q26B"           , "Q26"      , nullptr  , "iMac G4/1.0 17 inch (Flat Panel)"                  ) // PowerMac6,1
+    rom( 0x018102, 0xcd1f2ca7, "P87"            , "Q26"      , nullptr  , "iMac G4/1.0 17 inch (Flat Panel)"                  ) // PowerMac6,1
+    rom( 0x018102, 0xfaf12da6, "P87"            , "Q26"      , nullptr  , "iMac G4/1.0 17 inch (Flat Panel)"                  ) // PowerMac6,1
+    rom( 0x018200, 0xcec92cab, "P87"            , nullptr    , nullptr  , "eMac?"                                             ) // PowerMac6,2
+    rom( 0x018300, 0xacc924e5, "Q59base"        , nullptr    , nullptr  , "iMac G4/1.0 (Flat Panel - USB 2.0)"                ) // PowerMac6,3
+    rom( 0x018301, 0xad3224e6, "Q59"            , "Q59"      , nullptr  , "iMac G4/1.0 (Flat Panel - USB 2.0)"                ) // PowerMac6,3
+    rom( 0x018302, 0xad3c24d4, "Q59Bproto"      , nullptr    , nullptr  , "iMac G4/1.0 (Flat Panel - USB 2.0)"                ) // PowerMac6,3
+    rom( 0x018303, 0xae0924e9, "Q59Cproto"      , nullptr    , nullptr  , "iMac G4/1.0 (Flat Panel - USB 2.0)"                ) // PowerMac6,3
+    rom( 0x018401,          0, nullptr          , "Q86"      , nullptr  , "eMac G4 (2005)"                                    ) // PowerMac6,4
+    rom( 0x018402,          0, nullptr          , "Q86"      , nullptr  , "eMac G4 (2005)"                                    ) // PowerMac6,4
+    rom( 0x018403,          0, nullptr          , "Q86"      , nullptr  , "eMac G4 (2005)"                                    ) // PowerMac6,4
+    rom( 0x020101, 0xfcaf4eb7, "Q45"            , "Q45"      , nullptr  , "iMac G5"                                           ) // PowerMac8,1
+    rom( 0x020101, 0xfd1f4eb8, "Q45"            , "Q45"      , nullptr  , "iMac G5"                                           ) // PowerMac8,1
+    rom( 0x020102,          0, nullptr          , "Q45"      , nullptr  , "iMac G5"                                           ) // PowerMac8,1
+    rom( 0x020109, 0x00064ebf, "Q45p"           , nullptr    , nullptr  , "iMac G5"                                           ) // PowerMac8,1
+    rom( 0x020109, 0x00764ec0, "Q45p"           , nullptr    , nullptr  , "iMac G5"                                           ) // PowerMac8,1
+    rom( 0x020109, 0x24372c87, "Q45p"           , nullptr    , nullptr  , "iMac G5"                                           ) // PowerMac8,1
+    rom( 0x020109, 0x24932c8b, "Q45p"           , nullptr    , nullptr  , "iMac G5"                                           ) // PowerMac8,1
+    rom( 0x020201,          0, nullptr          , "Q45C"     , nullptr  , "iMac G5 (Ambient Light Sensor)"                    ) // PowerMac8,2
+    rom( 0x020f01, 0x20ef2c7f, "Q45xa"          , nullptr    , nullptr  , nullptr                                             ) // PowerMac8,15
+    rom( 0x020f01, 0x214b2c83, "Q45xa"          , nullptr    , nullptr  , nullptr                                             ) // PowerMac8,15
+    rom( 0x020f01, 0xeace56ae, "Neoa"           , nullptr    , nullptr  , nullptr                                             ) // PowerMac8,15
+    rom( 0x020f02, 0x21582c80, "Q45xb"          , nullptr    , nullptr  , nullptr                                             ) // PowerMac8,15
+    rom( 0x020f02, 0x21b42c84, "Q45xb"          , nullptr    , nullptr  , nullptr                                             ) // PowerMac8,15
+    rom( 0x020f02, 0xf92756d2, "Neob"           , nullptr    , nullptr  , nullptr                                             ) // PowerMac8,15
+    rom( 0x020f03, 0x21c12c81, "Q45xc"          , nullptr    , nullptr  , nullptr                                             ) // PowerMac8,15
+    rom( 0x020f03, 0x221d2c85, "Q45xc"          , nullptr    , nullptr  , nullptr                                             ) // PowerMac8,15
+    rom( 0x020f03, 0x9e7f55ef, "Neoc"           , nullptr    , nullptr  , nullptr                                             ) // PowerMac8,15
+    rom( 0x028101, 0xf4dc2533, nullptr          , "Q88"      , nullptr  , "Mac mini G4"                                       ) // PowerMac10,1 // 2005-03-23 489f4
+    rom( 0x028201, 0xf4dc2533, nullptr          , "Q88"      , nullptr  , "Mac mini G4 1.5GHz Radeon 9200"                    ) // PowerMac10,2 // 2005-07-12 494f1
+    rom( 0x030101,          0, nullptr          , "M23"      , nullptr  , "iMac G5 (iSight)"                                  ) // PowerMac12,1
+    rom( 0x108100, 0x71fd2fc9, "P1"             , "P1"       , nullptr  , "iBook G3 (Original/Clamshell)"                     ) // PowerBook2,1
+    rom( 0x108100, 0x9fcf30c8, "P1"             , "P1"       , nullptr  , "iBook G3 (Original/Clamshell)"                     ) // PowerBook2,1
+    rom( 0x108100, 0xcea031c7, "P1"             , "P1"       , nullptr  , "iBook G3 (Original/Clamshell)"                     ) // PowerBook2,1
+    rom( 0x108101, 0x72902fcb, "P1_05"          , "P1"       , nullptr  , "iBook G3 (Original/Clamshell)"                     ) // PowerBook2,1
+    rom( 0x108101, 0xa06230ca, "P1_05"          , "P1"       , nullptr  , "iBook G3 (Original/Clamshell)"                     ) // PowerBook2,1 // 2001-03-20 417f4
+    rom( 0x108101, 0xcf3331c9, "P1_05"          , "P1"       , nullptr  , "iBook G3 (Original/Clamshell)"                     ) // PowerBook2,1
+    rom( 0x108102, 0x7de22ffd, "P1_1"           , "P1"       , nullptr  , "iBook G3 (Original/Clamshell)"                     ) // PowerBook2,1
+    rom( 0x108102, 0xabb430fc, "P1_1"           , "P1"       , nullptr  , "iBook G3 (Original/Clamshell)"                     ) // PowerBook2,1
+    rom( 0x108102, 0xda8531fb, "P1_1"           , "P1"       , nullptr  , "iBook G3 (Original/Clamshell)"                     ) // PowerBook2,1
+    rom( 0x108200, 0x7bdc2fd9, "P1_5"           , "P1_5"     , nullptr  , "iBook G3 366 MHz CD (Firewire/Clamshell)"          ) // PowerBook2,2
+    rom( 0x108200, 0xa9ae30d8, "Midway"         , "P1_5"     , nullptr  , "iBook G3 366 MHz CD (Firewire/Clamshell)"          ) // PowerBook2,2 // 2001-03-20 417f4
+    rom( 0x108201, 0x9745301a, "P1_5DVD"        , "P1_5"     , nullptr  , "iBook G3 466 MHz DVD (Firewire/Clamshell)"         ) // PowerBook2,2
+    rom( 0x108201, 0xc5173119, "MidwayDVD"      , "P1_5"     , nullptr  , "iBook G3 466 MHz DVD (Firewire/Clamshell)"         ) // PowerBook2,2 // 2001-03-20 417f4
+    rom( 0x110100, 0x5f1c2fe5, "Marble"         , "P29"      , nullptr  , "iBook G3 (Dual USB Snow)"                          ) // PowerBook4,1
+    rom( 0x110100, 0x69e42f6e, "P29"            , "P29"      , nullptr  , "iBook G3 (Dual USB Snow)"                          ) // PowerBook4,1
+    rom( 0x110100, 0x97b6306d, "Marble"         , "P29"      , nullptr  , "iBook G3 (Dual USB Snow)"                          ) // PowerBook4,1
+    rom( 0x110101, 0x44852fa6, "MarbleLite"     , nullptr    , nullptr  , "iBook G3 (Dual USB Snow)"                          ) // PowerBook4,1
+    rom( 0x110102, 0x60192fe8, "MarbleFat"      , "P29"      , nullptr  , "iBook G3 (Dual USB Snow)"                          ) // PowerBook4,1
+    rom( 0x110102, 0x6b1d2f73, "P29Fat"         , "P29"      , nullptr  , "iBook G3 (Dual USB Snow)"                          ) // PowerBook4,1
+    rom( 0x110102, 0x98ef3072, "MarbleFat"      , "P29"      , nullptr  , "iBook G3 (Dual USB Snow)"                          ) // PowerBook4,1
+    rom( 0x110103, 0x58762f44, "P29fat100"      , "P29"      , nullptr  , "iBook G3 (Dual USB Snow)"                          ) // PowerBook4,1
+    rom( 0x110103, 0x86483043, "Mrblfat100"     , "P29"      , nullptr  , "iBook G3/600 (Late 2001 Snow)"                     ) // PowerBook4,1 // 2001-09-12 427f1
+    rom( 0x110200, 0x4c372fb6, "Diesel"         , "P54"      , nullptr  , "iBook G3/600 14-Inch (Early 2002 Snow)"            ) // PowerBook4,2
+    rom( 0x110200, 0x573b2f41, "P54"            , "P54"      , nullptr  , "iBook G3/600 14-Inch (Early 2002 Snow)"            ) // PowerBook4,2
+    rom( 0x110200, 0x850d3040, "P54|Diesel"     , "P54"      , nullptr  , "iBook G3/600 14-Inch (Early 2002 Snow)"            ) // PowerBook4,2 // 2001-12-06 432f1
+    rom( 0x110300, 0x58e12d5c, "P72"            , "P72"      , nullptr  , "iBook G3 (Snow)"                                   ) // PowerBook4,3 // 2002-11-11 454f1 // 2004-07-02 454f2
+    rom( 0x110300, 0x86b32e5b, "P72"            , "P72"      , nullptr  , "iBook G3 (Snow)"                                   ) // PowerBook4,3
+    rom( 0x110300, 0xb98a30be, "Nectr"          , "P72"      , nullptr  , "iBook G3 (Snow)"                                   ) // PowerBook4,3
+    rom( 0x110301, 0x594a2d5d, "P73"            , "P73"      , nullptr  , "iBook G3 (Snow)"                                   ) // PowerBook4,3
+    rom( 0x110301, 0x871c2e5c, "P73"            , "P73"      , nullptr  , "iBook G3 (Snow)"                                   ) // PowerBook4,3
+    rom( 0x110302, 0x3eb82d1d, "P72x"           , "P73"      , nullptr  , "iBook G3 (Snow)"                                   ) // PowerBook4,3
+    rom( 0x110302, 0x59b32d5e, "P72x|P72C"      , "P73"      , nullptr  , "iBook G3 (Snow)"                                   ) // PowerBook4,3 // 2003-03-15 464f1
+    rom( 0x110302, 0x6c8a2e1c, "P72x"           , "P73"      , nullptr  , "iBook G3 (Snow)"                                   ) // PowerBook4,3
+    rom( 0x110303, 0x3f212d1e, "P73x"           , "P73"      , nullptr  , "iBook G3 (Snow)"                                   ) // PowerBook4,3
+    rom( 0x110303, 0x5a1c2d5f, "P73C"           , "P73"      , nullptr  , "iBook G3 (Snow)"                                   ) // PowerBook4,3
+    rom( 0x110303, 0x6cf32e1d, "P73x"           , "P73"      , nullptr  , "iBook G3 (Snow)"                                   ) // PowerBook4,3
+    rom( 0x118100, 0x72cc272c, "P99"            , nullptr    , nullptr  , "PowerBook G4 (Aluminum)"                           ) // PowerBook6,1
+    rom( 0x118101, 0x7409272f, "P99_867"        , "P99"      , nullptr  , "PowerBook G4 (Aluminum)"                           ) // PowerBook6,1
+    rom( 0x118101, 0xdfc22968, "P99"            , "P99"      , nullptr  , "PowerBook G4 (Aluminum)"                           ) // PowerBook6,1
+    rom( 0x118102, 0x01aa29b9, "P99A"           , nullptr    , nullptr  , "PowerBook G4 (Aluminum)"                           ) // PowerBook6,1
+    rom( 0x118102, 0x74722730, "P99_733"        , nullptr    , nullptr  , "PowerBook G4 (Aluminum)"                           ) // PowerBook6,1
+    rom( 0x118200, 0x01a829cc, "Q54"            , nullptr    , nullptr  , "PowerBook G4 1.0 12 inch (DVI - Aluminum)"         ) // PowerBook6,2
+    rom( 0x118202, 0x032829d2, "Q54_256"        , "Q54"      , nullptr  , "PowerBook G4 1.0 12 inch (DVI - Aluminum)"         ) // PowerBook6,2
+    rom( 0x118300, 0xeb2428bb, "Dragon"         , nullptr    , nullptr  , "iBook G4 (Original - Opaque)"                      ) // PowerBook6,3
+    rom( 0x118301, 0xebfa28bd, "P72D"           , nullptr    , nullptr  , "iBook G4 (Original - Opaque)"                      ) // PowerBook6,3
+    rom( 0x118302,          0, nullptr          , "P72D"     , nullptr  , "iBook G4 (Original - Opaque)"                      ) // PowerBook6,3
+    rom( 0x11830b, 0xefa728c6, "P73D"           , nullptr    , nullptr  , "iBook G4 (Original - Opaque)"                      ) // PowerBook6,3
+    rom( 0x11830c,          0, nullptr          , "P73D"     , nullptr  , "iBook G4 (Original - Opaque)"                      ) // PowerBook6,3
+    rom( 0x118402,          0, nullptr          , "Q54A"     , nullptr  , "PowerBook G4 1.33 12 inch (Aluminum)"              ) // PowerBook6,4
+    rom( 0x118502, 0x033929a6, nullptr          , "Q72"      , nullptr  , "iBook G4 (Early 2004)"                             ) // PowerBook6,5 // 2004-04-06 485f0
+    rom( 0x118504,          0, nullptr          , "Q72A"     , nullptr  , "iBook G4"                                          ) // PowerBook6,5
+    rom( 0x118509,          0, nullptr          , "Q73"      , nullptr  , "iBook G4"                                          ) // PowerBook6,5
+    rom( 0x11850b, 0x067f29b0, nullptr          , "Q73A"     , nullptr  , "iBook G4"                                          ) // PowerBook6,5 // 2004-09-23 487f1
+    rom( 0x118603,          0, nullptr          , "U210"     , nullptr  , nullptr                                             ) // PowerBook6,6
+    rom( 0x118701,          0, nullptr          , "Q72B"     , nullptr  , "iBook G4 12-Inch (Mid-2005 - Opaque)"              ) // PowerBook6,7
+    rom( 0x118709,          0, nullptr          , "Q73B"     , nullptr  , "iBook G4 12-Inch (Mid-2005 - Opaque)"              ) // PowerBook6,7
+    rom( 0x11870c, 0x091929b6, nullptr          , "Q73B-Best", nullptr  , "iBook G4 14-Inch (Mid-2005 - Opaque)"              ) // PowerBook6,7 // 2005-07-05 493f0
+    rom( 0x118801,          0, nullptr          , "Q54B"     , nullptr  , "PowerBook G4 1.5 12 inch (Aluminum)"               ) // PowerBook6,8
+    rom( 0x20c100, 0x85e72bd1, "P5"             , "P5"       , nullptr  , "Power Mac G4 (AGP Graphics) Sawtooth"              ) // PowerMac3,1
+    rom( 0x20c100, 0xb3b92cd0, "Sawtooth"       , "P5"       , nullptr  , "Power Mac G4 (AGP Graphics) Sawtooth"              ) // PowerMac3,1
+    rom( 0x20c100, 0xe28a2dcf, "Sawtooth"       , "P5"       , nullptr  , "Power Mac G4 (AGP Graphics) Sawtooth"              ) // PowerMac3,1
+    rom( 0x20c101, 0x30712adc, "P10"            , "P5"       , nullptr  , "Power Mac G4 (AGP Graphics) Sawtooth"              ) // PowerMac3,1
+    rom( 0x20c101, 0x5e432bdb, "Mystic"         , "P5"       , nullptr  , "Power Mac G4 (AGP Graphics) Sawtooth"              ) // PowerMac3,1 // 2001-10-11 428f1
+    rom( 0x20c101, 0x8d142cda, "Mystic"         , "P5"       , nullptr  , "Power Mac G4 (AGP Graphics) Sawtooth"              ) // PowerMac3,1 // 2000-02-17 324f1
+    rom( 0x20c300, 0x66752b5c, "P15"            , "P5"       , nullptr  , "Power Macintosh Mac G4 (Gigabit)"                  ) // PowerMac3,3
+    rom( 0x20c300, 0x94472c5b, "Clockwork"      , "P5"       , nullptr  , "Power Macintosh Mac G4 (Gigabit)"                  ) // PowerMac3,3
+    rom( 0x20c400, 0x47fe2da3, "P21"            , "P21"      , nullptr  , "Power Mac G4 (Digital Audio)"                      ) // PowerMac3,4
+    rom( 0x20c400, 0x6ea22e91, "P21|Tangent"    , "P21"      , nullptr  , "Power Mac G4 (Digital Audio)"                      ) // PowerMac3,4 // 2000-12-04 410f1
+    rom( 0x20c400, 0x75d02ea2, "Tangent"        , "P21"      , nullptr  , "Power Mac G4 (Digital Audio)"                      ) // PowerMac3,4 // 2001-10-11 428f1
+    rom( 0x20c500, 0x4b5e2dab, "P57"            , "P57"      , nullptr  , "Power Mac G4 Quicksilver"                          ) // PowerMac3,5
+    rom( 0x20c500, 0x75d02ea2, "NiChrome"       , "P57"      , nullptr  , "Power Mac G4 Quicksilver"                          ) // PowerMac3,5
+    rom( 0x20c500, 0x79302eaa, "NiChrome"       , "P57"      , nullptr  , "Power Mac G4 Quicksilver"                          ) // PowerMac3,5 // 2001-08-16 425f1
+    rom( 0x20c600, 0x6ac22d3f, "P58_133"        , "P58"      , nullptr  , "Power Mac G4 (Mirrored Drive Doors)"               ) // PowerMac3,6
+    rom( 0x20c600, 0x6e5a2d67, "P58_133"        , "P58"      , nullptr  , "Power Mac G4 (Mirrored Drive Doors)"               ) // PowerMac3,6 // 2002-09-30 448f2
+    rom( 0x20c600, 0x79302eaa, "Moj"            , "P58"      , nullptr  , "Power Mac G4 (Mirrored Drive Doors)"               ) // PowerMac3,6
+    rom( 0x20c600, 0x9c2c2e66, "P58_133|P58_DVT", "P58"      , nullptr  , "Power Mac G4 (Mirrored Drive Doors)"               ) // PowerMac3,6
+    rom( 0x20c601, 0x1d472c7c, "P58_167"        , "P58"      , nullptr  , "Power Mac G4 (Mirrored Drive Doors)"               ) // PowerMac3,6
+    rom( 0x20c601, 0x20df2ca4, "P58_167"        , "P58"      , nullptr  , "Power Mac G4 (Mirrored Drive Doors)"               ) // PowerMac3,6
+    rom( 0x20c601, 0x4eb12da3, "P58_167"        , "P58"      , nullptr  , "Power Mac G4 (Mirrored Drive Doors)"               ) // PowerMac3,6
+    rom( 0x20c601, 0x9c952e67, "P58"            , "P58"      , nullptr  , "Power Mac G4 (Mirrored Drive Doors)"               ) // PowerMac3,6
+    rom( 0x20c602, 0x6b942d41, "P58B_133"       , "P58"      , nullptr  , "Power Mac G4 (FW 800)"                             ) // PowerMac3,6
+    rom( 0x20c602, 0x6f2c2d69, "P58B_133"       , "P58"      , nullptr  , "Power Mac G4 (FW 800)"                             ) // PowerMac3,6 // 2003-01-15 457f1
+    rom( 0x20c603, 0x1e192c7e, "P58B_167"       , "P58"      , nullptr  , "Power Mac G4 (FW 800)"                             ) // PowerMac3,6
+    rom( 0x20c603, 0x21b12ca6, "P58B_167"       , "P58"      , nullptr  , "Power Mac G4 (FW 800)"                             ) // PowerMac3,6 // 2003-02-20 460f1
+    rom( 0x214100, 0x4af52b1c, "P9"             , "P9"       , nullptr  , "Power Mac G4 Cube"                                 ) // PowerMac5,1
+    rom( 0x214100, 0x78c72c1b, "Kubrick|Trinity", "P9"       , nullptr  , "Power Mac G4 Cube"                                 ) // PowerMac5,1 // 2000-07-10 332f1 // 2001-09-14 419f1
+    rom( 0x214100, 0x8cab2cd9, "Kubrick"        , "P9"       , nullptr  , "Power Mac G4 Cube"                                 ) // PowerMac5,1
+    rom( 0x21c200, 0x25142c89, "Q37high"        , "Q37"      , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2
+    rom( 0x21c200, 0x25702c8d, "Q37high"        , "Q37"      , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2
+    rom( 0x21c200, 0xa5b7555f, "Q37high"        , "Q37"      , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2
+    rom( 0x21c201, 0x336d2cad, "Q37med"         , "Q37"      , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2
+    rom( 0x21c201, 0x33c92cb1, "Q37med"         , "Q37"      , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2
+    rom( 0x21c201, 0x514d2dbb, "P76"            , "Q37"      , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2
+    rom( 0x21c201, 0x549d2dc3, "P76"            , "Q37"      , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2
+    rom( 0x21c201, 0x7f1f2eba, "P76"            , "Q37"      , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2
+    rom( 0x21c201, 0xb4105583, "Q37med"         , "Q37"      , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2
+    rom( 0x21c202, 0x596854a0, "Q37low"         , "Q37low"   , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2
+    rom( 0x21c202, 0xd8c62bca, "Q37low"         , "Q37low"   , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2 // 2004-09-21 515f2
+    rom( 0x21c203, 0x343f2caf, "Q37A"           , "Q37low"   , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2
+    rom( 0x21c203, 0x349b2cb3, "Q37A"           , "Q37low"   , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2
+    rom( 0x21c203, 0xb4e25585, "Q37A"           , "Q37low"   , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2
+    rom( 0x21c204, 0xa8955568, "Q37C"           , "Q77hi"    , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2
+    rom( 0x21c204, 0xa930556d, "Q37C"           , "Q77hi"    , nullptr  , "Power Mac G5 1.6 (PCI)"                            ) // PowerMac7,2
+    rom( 0x21c301, 0xb6cf558d, "Q77best"        , "Q77hi"    , nullptr  , "Power Macintosh G5 Dual Processor"                 ) // PowerMac7,3
+    rom( 0x21c301, 0xb76a5592, "Q77best"        , "Q77hi"    , nullptr  , "Power Macintosh G5 Dual Processor"                 ) // PowerMac7,3
+    rom( 0x21c302, 0xa7635563, "Q77mid"         , "Q77"      , nullptr  , "Power Macintosh G5 Dual Processor"                 ) // PowerMac7,3
+    rom( 0x21c303, 0xb5bc5587, "Q77good"        , "Q77good"  , nullptr  , "Power Macintosh G5 Dual Processor"                 ) // PowerMac7,3
+    rom( 0x21c304, 0xb80a5590, "Q77better"      , "Q77better", nullptr  , "Power Macintosh G5 Dual Processor"                 ) // PowerMac7,3
+    rom( 0x21c304, 0xb8a55595, "Q77better"      , "Q77better", nullptr  , "Power Macintosh G5 Dual Processor"                 ) // PowerMac7,3
+    rom( 0x21c305,          0, nullptr          , "M18wl"    , nullptr  , "Power Macintosh G5 Dual Processor"                 ) // PowerMac7,3
+    rom( 0x21c306,          0, nullptr          , "Q87good"  , nullptr  , "Power Macintosh G5 Dual Processor"                 ) // PowerMac7,3
+    rom( 0x21c307,          0, nullptr          , "Q77better", nullptr  , "Power Macintosh G5 Dual Processor"                 ) // PowerMac7,3
+    rom( 0x21c308,          0, nullptr          , "Q77hi"    , nullptr  , "Power Macintosh G5 Dual Processor"                 ) // PowerMac7,3
+    rom( 0x224102,          0, nullptr          , "Q78"      , nullptr  , "Power Macintosh G5 1.8 (PCI)"                      ) // PowerMac9,1
+    rom( 0x224108, 0x84d94d6f, "Q78EVT"         , nullptr    , nullptr  , "Power Macintosh G5 1.8 (PCI)"                      ) // PowerMac9,1
+    rom( 0x224109, 0x82b74d9f, "Q78p"           , nullptr    , nullptr  , "Power Macintosh G5 1.8 (PCI)"                      ) // PowerMac9,1
+    rom( 0x224109, 0x86774da9, "Q78p"           , nullptr    , nullptr  , "Power Macintosh G5 1.8 (PCI)"                      ) // PowerMac9,1
+    rom( 0x22c101,          0, nullptr          , "M18"      , nullptr  , nullptr                                             ) // PowerMac11,1
+    rom( 0x22c102,          0, nullptr          , "M20wl"    , nullptr  , nullptr                                             ) // PowerMac11,1
+    rom( 0x22c201,          0, nullptr          , "Q63Proto" , nullptr  , "Power Mac G5 Quad Core Proto"                      ) // PowerMac11,2
+    rom( 0x22c202, 0xb7fe51fc, nullptr          , "Q63"      , nullptr  , "Power Mac G5 Quad Core"                            ) // PowerMac11,2 // 2005-09-30 527f1
+    rom( 0x30c100, 0x0c653168, "P8"             , "P8"       , nullptr  , "PowerBook G3 (FireWire) Pismo"                     ) // PowerBook3,1
+    rom( 0x30c100, 0x3a373267, "Pismo"          , "P8"       , nullptr  , "PowerBook G3 (FireWire) Pismo"                     ) // PowerBook3,1 // 2001-03-21 418f5
+    rom( 0x30c100, 0x69083366, "Pismo"          , "P8"       , nullptr  , "PowerBook G3 (FireWire) Pismo"                     ) // PowerBook3,1
+    rom( 0x30c1ff, 0xcb8e3457, "Pismo66"        , nullptr    , nullptr  , "PowerBook G3 (FireWire) Pismo"                     ) // PowerBook3,1
+    rom( 0x30c200,          0, nullptr          , "P12"      , nullptr  , "PowerBook G4 (Original - Titanium)"                ) // PowerBook3,2
+    rom( 0x30c201, 0x33b22dc6, "P12"            , "P12"      , nullptr  , "PowerBook G4 (Original - Titanium)"                ) // PowerBook3,2
+    rom( 0x30c201, 0x61842ec5, "Mercury"        , "P12"      , nullptr  , "PowerBook G4 (Original - Titanium)"                ) // PowerBook3,2
+    rom( 0x30c300, 0x3e4f2dd5, "P25_100"        , "P25"      , nullptr  , "PowerBook G4 (Gigabit - Titanium)"                 ) // PowerBook3,3
+    rom( 0x30c300, 0x63762eca, "Onyx"           , "P25"      , nullptr  , "PowerBook G4 (Gigabit - Titanium)"                 ) // PowerBook3,3
+    rom( 0x30c300, 0x6c212ed4, "Onix100"        , "P25"      , nullptr  , "PowerBook G4 (Gigabit - Titanium)"                 ) // PowerBook3,3 // 2001-09-11 426f1
+    rom( 0x30c301, 0x4c2b2df8, "P25"            , "P25"      , nullptr  , "PowerBook G4 (Gigabit - Titanium)"                 ) // PowerBook3,3
+    rom( 0x30c301, 0x79fd2ef7, "Onix"           , "P25"      , nullptr  , "PowerBook G4 (Gigabit - Titanium)"                 ) // PowerBook3,3
+    rom( 0x30c302, 0x7e6c2f0a, "OnixStar"       , nullptr    , nullptr  , "PowerBook G4 (Gigabit - Titanium)"                 ) // PowerBook3,3
+    rom( 0x30c400, 0x7a002ef7, "Ivry"           , "P59"      , nullptr  , "PowerBook G4 (DVI - Titanium)"                     ) // PowerBook3,4
+    rom( 0x30c400, 0x91952f11, "P59_667"        , "P59"      , nullptr  , "PowerBook G4 (DVI - Titanium)"                     ) // PowerBook3,4
+    rom( 0x30c400, 0xbf39300f, "P59_667"        , "P59"      , nullptr  , "PowerBook G4 (DVI - Titanium)"                     ) // PowerBook3,4
+    rom( 0x30c402, 0x92672f13, "P59_800"        , nullptr    , nullptr  , "PowerBook G4 (DVI - Titanium)"                     ) // PowerBook3,4
+    rom( 0x30c402, 0xc00b3011, "P59_800"        , nullptr    , nullptr  , "PowerBook G4 (DVI - Titanium)"                     ) // PowerBook3,4
+    rom( 0x30c403, 0x92d02f14, "P59_DVT"        , nullptr    , nullptr  , "PowerBook G4 (DVI - Titanium)"                     ) // PowerBook3,4
+    rom( 0x30c403, 0xc0743012, "P59_DVT"        , nullptr    , nullptr  , "PowerBook G4 (DVI - Titanium)"                     ) // PowerBook3,4
+    rom( 0x30c404, 0x93392f15, "P59_DualFan"    , "P59DF"    , nullptr  , "PowerBook G4 (DVI - Titanium)"                     ) // PowerBook3,4
+    rom( 0x30c404, 0xc0dd3013, "P59_DualFan"    , "P59DF"    , nullptr  , "PowerBook G4 (DVI - Titanium)"                     ) // PowerBook3,4
+    rom( 0x30c405, 0x95a42f21, "P88"            , nullptr    , nullptr  , "PowerBook G4 (DVI - Titanium)"                     ) // PowerBook3,4
+    rom( 0x30c500, 0x96a72f2c, "P88_867"        , "P88"      , nullptr  , "PowerBook G4 (Titanum)"                            ) // PowerBook3,5
+    rom( 0x30c501, 0x97102f2d, "P88_1G"         , "P881G"    , nullptr  , "PowerBook G4 (Titanum)"                            ) // PowerBook3,5
+    rom( 0x30c502, 0x97792f2e, "P88_867_wor"    , nullptr    , nullptr  , "PowerBook G4 (Titanum)"                            ) // PowerBook3,5
+    rom( 0x30c503, 0x97e22f2f, "P88_1G_wor"     , nullptr    , nullptr  , "PowerBook G4 (Titanum)"                            ) // PowerBook3,5
+    rom( 0x314100, 0x3adb5542, "P84i"           , nullptr    , nullptr  , "PowerBook G4 1.0 17 inch (Aluminum)"               ) // PowerBook5,1
+    rom( 0x314100, 0x557c262e, "P84i"           , nullptr    , nullptr  , "PowerBook G4 1.0 17 inch (Aluminum)"               ) // PowerBook5,1
+    rom( 0x314100, 0x57a65581, "P84i"           , nullptr    , nullptr  , "PowerBook G4 1.0 17 inch (Aluminum)"               ) // PowerBook5,1
+    rom( 0x314100, 0x6ece5388, "P84i"           , nullptr    , nullptr  , "PowerBook G4 1.0 17 inch (Aluminum)"               ) // PowerBook5,1
+    rom( 0x314100, 0x9a3c282c, "P84"            , nullptr    , nullptr  , "PowerBook G4 1.0 17 inch (Aluminum)"               ) // PowerBook5,1
+    rom( 0x314100, 0xb3c82c12, "P84"            , nullptr    , nullptr  , "PowerBook G4 1.0 17 inch (Aluminum)"               ) // PowerBook5,1
+    rom( 0x314101, 0x351a256d, "P84"            , nullptr    , nullptr  , "PowerBook G4 1.0 17 inch (Aluminum)"               ) // PowerBook5,1
+    rom( 0x314101, 0x6cce272e, "P84"            , nullptr    , nullptr  , "PowerBook G4 1.0 17 inch (Aluminum)"               ) // PowerBook5,1
+    rom( 0x314101, 0x71562746, "P84EVT"         , nullptr    , nullptr  , "PowerBook G4 1.0 17 inch (Aluminum)"               ) // PowerBook5,1
+    rom( 0x314101, 0x9a72282c, "P84"            , nullptr    , nullptr  , "PowerBook G4 1.0 17 inch (Aluminum)"               ) // PowerBook5,1
+    rom( 0x314102, 0x3583256e, "P84Ghz"         , nullptr    , nullptr  , "PowerBook G4 1.0 17 inch (Aluminum)"               ) // PowerBook5,1
+    rom( 0x314102, 0x45bc265d, "P84Ghz"         , nullptr    , nullptr  , "PowerBook G4 1.0 17 inch (Aluminum)"               ) // PowerBook5,1
+    rom( 0x314103, 0x61ef2659, "P84WL3"         , "P84"      , nullptr  , "PowerBook G4 1.0 17 inch (Aluminum)"               ) // PowerBook5,1
+    rom( 0x314103, 0x5c13264b, nullptr          , "P84"      , nullptr  , "PowerBook G4 1.0 17 inch (Aluminum)"               ) // PowerBook5,1 // 2003-02-18 462f1
+    rom( 0x314103, 0x72fc274a, "P84"            , "P84"      , nullptr  , "PowerBook G4 1.0 17 inch (Aluminum)"               ) // PowerBook5,1
+    rom( 0x314200, 0x35c0256f, "Q16ci"          , nullptr    , nullptr  , "PowerBook G4 15 inch (FW 800 - Aluminum)"          ) // PowerBook5,2
+    rom( 0x314201, 0x2fe1255e, "Q16Proto"       , nullptr    , nullptr  , "PowerBook G4 15 inch (FW 800 - Aluminum)"          ) // PowerBook5,2
+    rom( 0x314202, 0x304a255f, "Q16"            , "Q16-EVT"  , nullptr  , "PowerBook G4 15 inch (FW 800 - Aluminum)"          ) // PowerBook5,2
+    rom( 0x314202, 0xf60a284b, "Q16"            , "Q16-EVT"  , nullptr  , "PowerBook G4 15 inch (FW 800 - Aluminum)"          ) // PowerBook5,2 // 2003-09-04 471f1
+    rom( 0x314300, 0x2f78255d, "Q41Proto"       , nullptr    , nullptr  , "PowerBook G4 1.33 17 inch (Aluminum)"              ) // PowerBook5,3
+    rom( 0x314301, 0x2fe1255e, "Q41"            , "Q41"      , nullptr  , "PowerBook G4 1.33 17 inch (Aluminum)"              ) // PowerBook5,3
+    rom( 0x314301, 0xf5a1284a, "Q41"            , "Q41"      , nullptr  , "PowerBook G4 1.33 17 inch (Aluminum)"              ) // PowerBook5,3
+    rom( 0x314401,          0, nullptr          , "Q16A"     , nullptr  , "PowerBook G4 15 inch (Aluminum)"                   ) // PowerBook5,4
+    rom( 0x314501,          0, nullptr          , "Q41A"     , nullptr  , "PowerBook G4 1.5 17 inch (Aluminum)"               ) // PowerBook5,5
+    rom( 0x314601,          0, nullptr          , "Q16B"     , nullptr  , "PowerBook G4 15 inch (Aluminum)"                   ) // PowerBook5,6
+    rom( 0x314701,          0, nullptr          , "Q41B"     , nullptr  , "PowerBook G4 1.67 17 inch (Aluminum)"              ) // PowerBook5,7
+    rom( 0x314801,          0, nullptr          , "Q41C"     , nullptr  , "PowerBook G4 DLSD"                                 ) // PowerBook5,8
+    rom( 0x314801, 0x35c72568, nullptr          , "Q16C"     , nullptr  , "PowerBook G4 DLSD"                                 ) // PowerBook5,8 // 2005-09-22 495f3
+    rom( 0x314802,          0, nullptr          , "Q16CBest" , nullptr  , "PowerBook G4 DLSD"                                 ) // PowerBook5,8
+    rom( 0x314901, 0x35c72568, nullptr          , "Q41C"     , nullptr  , "PowerBook G4 1.67 17 inch (DLSD/HiRes - Aluminum)" ) // PowerBook5,9 // 2005-10-05 496f0
+    rom( 0x318100, 0x6ca8272f, "P99"            , nullptr    , nullptr  , "PowerBook G4 867 12 inch (Aluminum)"               ) // PowerBook6,1
+    rom( 0x318100, 0x9a7a282e, "P99"            , nullptr    , nullptr  , "PowerBook G4 867 12 inch (Aluminum)"               ) // PowerBook6,1
+    rom( 0x318100, 0xb3c92c13, "P99"            , nullptr    , nullptr  , "PowerBook G4 867 12 inch (Aluminum)"               ) // PowerBook6,1
+    rom( 0x31c101, 0xbb11558a, "Q51p"           , "Q51"      , nullptr  , nullptr                                             ) // PowerBook7,1
+    rom( 0x31c101, 0xbc5d558d, "Q51p"           , "Q51"      , nullptr  , nullptr                                             ) // PowerBook7,1
+    rom( 0x31c201, 0xbb11558a, "Q43p"           , "Q43"      , nullptr  , nullptr                                             ) // PowerBook7,2
+    rom( 0x31c201, 0xbc5d558d, "Q43p"           , "Q43"      , nullptr  , nullptr                                             ) // PowerBook7,2
+    rom( 0x380101,          0, nullptr          , "T3"       , nullptr  , nullptr                                             ) // PowerBook32,1
+    rom( 0x380201,          0, nullptr          , "M22"      , nullptr  , nullptr                                             ) // PowerBook32,2
+    rom( 0x404100, 0x1df22c78, "P69"            , "P69"      , nullptr  , "Xserve G4 1.0 GHz"                                 ) // RackMac1,1
+    rom( 0x404100, 0x21732c9f, "P69"            , "P69"      , nullptr  , "Xserve G4 1.0 GHz"                                 ) // RackMac1,1
+    rom( 0x404100, 0x268f2cab, "P69"            , "P69"      , nullptr  , "Xserve G4 1.0 GHz"                                 ) // RackMac1,1
+    rom( 0x404100, 0x54612daa, "P69"            , "P69"      , nullptr  , "Xserve G4 1.0 GHz"                                 ) // RackMac1,1
+    rom( 0x404200, 0x18d62c6c, "Q28"            , "Q28"      , nullptr  , "Xserve G4 1.33 GHz (Slot Load)"                    ) // RackMac1,2
+    rom( 0x404200, 0x1c572c93, "Q28"            , "Q28"      , nullptr  , "Xserve G4 1.33 GHz (Slot Load)"                    ) // RackMac1,2
+    rom( 0x40c100, 0xc2f855a9, "Q42"            , "Q42"      , nullptr  , "Xserve G5 (PCI-X)"                                 ) // RackMac3,1
+    rom( 0x40c101, 0xc28755a8, "Q42B"           , "Q42"      , nullptr  , "Xserve G5 (PCI-X)"                                 ) // RackMac3,1
+    rom( 0x414101,          0, nullptr          , "Q42C"     , nullptr  , nullptr                                             ) // RackMac5,1
 
 #undef rom
     { 0 }
