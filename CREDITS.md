@@ -27,6 +27,9 @@
 - Randrianasulu
 - lefp
 - mathstuf
+- seanm
+- erichelgeson
+- alicela1n
 
 ## Testing
 
