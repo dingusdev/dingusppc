@@ -120,9 +120,13 @@ enum {
     CUDA_WRITE_MCU_MEM       = 0x08, // write internal Cuda memory
     CUDA_SET_REAL_TIME       = 0x09, // set real time
     CUDA_POWER_DOWN          = 0x0A, // power down system
+    CUDA_SET_POWER_UPTIME    = 0x0B, // set power up time
     CUDA_WRITE_PRAM          = 0x0C, // write parameter RAM
     CUDA_MONO_STABLE_RESET   = 0x0D, // mono stable reset
+    CUDA_SEND_DFAC           = 0x0E, // send dfac
+    CUDA_BATTERY_SWAP_SENSE  = 0x10, // battery swap sense
     CUDA_RESTART_SYSTEM      = 0x11, // restart system
+    CUDA_SET_IPL_LEVEL       = 0x12, // set IPL level
     CUDA_FILE_SERVER_FLAG    = 0x13, // set file server flag
     CUDA_SET_AUTOPOLL_RATE   = 0x14, // set auto-polling rate
     CUDA_GET_AUTOPOLL_RATE   = 0x16, // get auto-polling rate
@@ -130,7 +134,8 @@ enum {
     CUDA_GET_DEVICE_LIST     = 0x1A, // get device list
     CUDA_ONE_SECOND_MODE     = 0x1B, // one second interrupt mode
     CUDA_SET_POWER_MESSAGES  = 0x21, // set power message flag
-    CUDA_READ_WRITE_I2C      = 0x22, // read/write I2C device
+    CUDA_READ_WRITE_I2C      = 0x22, // read/write I2C 
+    CUDE_TOGGLE_WAKEUP       = 0x23, // toggle wake-up
     CUDA_TIMER_TICKLE        = 0x24, // set timer tickle
     CUDA_COMB_FMT_I2C        = 0x25, // combined format I2C transaction
     CUDA_OUT_PB0             = 0x26, // output one bit to Cuda's PB0 line

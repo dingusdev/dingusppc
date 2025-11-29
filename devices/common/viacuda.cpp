@@ -674,7 +674,7 @@ void ViaCuda::pseudo_command() {
     case CUDA_SET_REAL_TIME: {
         response_header(CUDA_PKT_PSEUDO, 0);
         uint32_t real_time = this->calc_real_time();
-        uint32_t new_time = READ_DWORD_BE_U(&in_buf[2]);
+        uint32_t new_time = READ_DWORD_BE_U(&this->in_buf[2]);
         this->time_offset = new_time - real_time;
         break;
     }
@@ -712,13 +712,14 @@ void ViaCuda::pseudo_command() {
         break;
     case CUDA_SET_DEVICE_LIST:
         response_header(CUDA_PKT_PSEUDO, 0);
-        this->device_mask = ((uint16_t)in_buf[2]) >> 8;
-        this->device_mask += ((uint16_t)in_buf[3]);
+        this->device_mask = ((uint16_t)this->in_buf[2]) << 8;
+        this->device_mask |= ((uint16_t)this->in_buf[3]);
         break;
     case CUDA_GET_DEVICE_LIST:
         response_header(CUDA_PKT_PSEUDO, 0);
         this->out_buf[2] = (uint8_t)((this->device_mask >> 8) & 0xFF);
         this->out_buf[3] = (uint8_t)((this->device_mask) & 0xFF);
+        this->out_count += 2;
         break;
     case CUDA_ONE_SECOND_MODE:
         LOG_F(INFO, "Cuda: One Second Interrupt Mode: %d", this->in_buf[2]);
