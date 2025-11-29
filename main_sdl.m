@@ -26,14 +26,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Replace Command shortcuts with Control shortcuts in the menu bar, so that
 // they're not going to conflict with ones in the guest OS (but we still allow
 // some of them to be used in the host OS, e.g. Control+Q to quit).
+
 void remap_appkit_menu_shortcuts(void) {
     for (NSMenuItem *menuItem in [NSApp mainMenu].itemArray) {
         if (menuItem.hasSubmenu) {
             for (NSMenuItem *item in menuItem.submenu.itemArray) {
+#ifdef MAC_OS_X_VERSION_10_13
                 if (item.keyEquivalentModifierMask & NSEventModifierFlagCommand) {
                     item.keyEquivalentModifierMask &= ~NSEventModifierFlagCommand;
                     item.keyEquivalentModifierMask |= NSEventModifierFlagControl;
                 }
+#else
+                // For OSes older than macOS 10.13
+                if ([item keyEquivalentModifierMask] == NSCommandKeyMask) {
+                    [item setKeyEquivalentModifierMask: NSControlKeyMask];
+                }
+#endif
             }
         }
     }
