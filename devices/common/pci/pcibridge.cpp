@@ -39,12 +39,12 @@ PCIBridge::PCIBridge(std::string name) : PCIBridgeBase(name, PCI_HEADER_TYPE_1, 
 
     this->pci_wr_memory_base = [this](uint16_t val) {
         this->memory_base    = (val & this->memory_cfg) | (this->memory_cfg & 15);
-        this->memory_base_32 = ((this->memory_base & 0xfff0) << 16);
+        this->memory_base_32 = (((uint64_t)this->memory_base & 0xfff0) << 16);
     };
 
     this->pci_wr_memory_limit = [this](uint16_t val) {
         this->memory_limit    = (val & this->memory_cfg) | (this->memory_cfg & 15);
-        this->memory_limit_32 = ((this->memory_limit & 0xfff0) << 16) + 0x100000;
+        this->memory_limit_32 = (((uint64_t)this->memory_limit & 0xfff0) << 16) + 0x100000;
     };
 
     this->pci_wr_io_base = [this](uint8_t  val) {
@@ -61,12 +61,13 @@ PCIBridge::PCIBridge(std::string name) : PCIBridgeBase(name, PCI_HEADER_TYPE_1, 
     this->pci_wr_pref_mem_base = [this](uint16_t val) {
         this->pref_mem_base = (val & this->pref_mem_cfg) | (this->pref_mem_cfg & 15);
         this->pref_mem_base_64  = ((uint64_t)this->pref_base_upper32 << 32) |
-                                  ((this->pref_mem_base & 0xfff0) << 16);
+                                  (((uint64_t)this->pref_mem_base & 0xfff0) << 16);
     };
     this->pci_wr_pref_mem_limit = [this](uint16_t val) {
         this->pref_mem_limit = (val & this->pref_mem_cfg) | (this->pref_mem_cfg & 15);
-        this->pref_mem_limit_64 = (((uint64_t)this->pref_limit_upper32 << 32) |
-                                   ((this->pref_mem_limit & 0xfff0) << 16)) + 0x100000;
+        this->pref_mem_limit_64 = (((uint64_t)this->pref_limit_upper32 << 32) | \
+                                  (((uint64_t)this->pref_mem_limit & 0xfff0) << 16)) + \
+                                  0x100000;
     };
     this->pci_wr_io_base_upper16 = [this](uint16_t val) {
         if ((this->io_base & 15) == 1)
@@ -85,14 +86,15 @@ PCIBridge::PCIBridge(std::string name) : PCIBridgeBase(name, PCI_HEADER_TYPE_1, 
         if ((this->pref_mem_cfg & 15) == 1)
             this->pref_base_upper32 = val;
         this->pref_mem_base_64 = ((uint64_t)this->pref_base_upper32 << 32) |
-                                 ((this->pref_mem_base & 0xfff0) << 16);
+                                 (((uint64_t)this->pref_mem_base & 0xfff0) << 16);
     };
 
     this->pci_wr_pref_limit_upper32 = [this](uint32_t val) {
         if ((this->pref_mem_cfg & 15) == 1)
             this->pref_limit_upper32 = val;
-        this->pref_mem_limit_64 = (((uint64_t)this->pref_limit_upper32 << 32) |
-            ((this->pref_mem_limit & 0xfff0) << 16)) + 0x100000;
+        this->pref_mem_limit_64 = (((uint64_t)this->pref_limit_upper32 << 32) | \
+                                  (((uint64_t)this->pref_mem_limit & 0xfff0) << 16)) + \
+                                  0x100000;
     };
 }
 

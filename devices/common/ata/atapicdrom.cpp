@@ -358,11 +358,12 @@ uint16_t AtapiCdrom::get_data() {
             area_end += 4; // Header
             if (this->current_block_byte >= area_start && this->current_block_byte < area_end) {
                 AddrMsf msf = lba_to_msf(this->current_block + 150);
-                uint8_t header[4]{};
-                header[0] = msf.min;
-                header[1] = msf.sec;
-                header[2] = msf.frm;
-                header[3] = 0x01; // Mode 1
+                uint8_t header[4]{
+                    (uint8_t)msf.min, 
+                    (uint8_t)msf.sec, 
+                    (uint8_t)msf.frm, 
+                    0x01 // Mode 1
+                }; 
                 ret_data = BYTESWAP_16(*((uint16_t*)(&header[current_block_byte - area_start])));
             }
         }
