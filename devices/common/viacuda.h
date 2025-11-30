@@ -130,11 +130,11 @@ enum {
     CUDA_FILE_SERVER_FLAG    = 0x13, // set file server flag
     CUDA_SET_AUTOPOLL_RATE   = 0x14, // set auto-polling rate
     CUDA_GET_AUTOPOLL_RATE   = 0x16, // get auto-polling rate
-    CUDA_SET_DEVICE_LIST     = 0x19, // set device list
-    CUDA_GET_DEVICE_LIST     = 0x1A, // get device list
+    CUDA_SET_DEVICE_BITMAP   = 0x19, // set device bitmap
+    CUDA_GET_DEVICE_BITMAP   = 0x1A, // get device bitmap
     CUDA_ONE_SECOND_MODE     = 0x1B, // one second interrupt mode
     CUDA_SET_POWER_MESSAGES  = 0x21, // set power message flag
-    CUDA_READ_WRITE_I2C      = 0x22, // read/write I2C 
+    CUDA_READ_WRITE_I2C      = 0x22, // read/write I2C
     CUDE_TOGGLE_WAKEUP       = 0x23, // toggle wake-up
     CUDA_TIMER_TICKLE        = 0x24, // set timer tickle
     CUDA_COMB_FMT_I2C        = 0x25, // combined format I2C transaction
