@@ -291,7 +291,11 @@ void MeshController::step_completed() {
 }
 
 void MeshController::report_error(const int error) {
-    switch(error) {
+    switch (error) {
+    case ARB_LOST:
+        this->exception |= EXC_ARB_LOST;
+        this->int_stat |= INT_EXCEPTION;
+        break;
     case SEL_TIMEOUT:
         this->exception |= EXC_SEL_TIMEOUT;
         this->int_stat  |= INT_EXCEPTION;
