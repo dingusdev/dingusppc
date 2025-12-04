@@ -313,6 +313,15 @@ uint32_t DMAChannel::reg_read(uint32_t offset, int size) {
     case DMAReg::CMD_PTR_LO:
         result = this->cmd_ptr;
         break;
+    case DMAReg::INT_SELECT:
+        result = this->int_select;
+        break;
+    case DMAReg::BRANCH_SELECT:
+        result = this->branch_select;
+        break;
+    case DMAReg::WAIT_SELECT:
+        result = this->wait_select;
+        break;
     default:
         LOG_F(WARNING, "%s: Unsupported DMA channel register read at 0x%X",
             this->get_name().c_str(), offset);
