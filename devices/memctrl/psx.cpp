@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 #include <string>
+#include <algorithm>
 
 PsxCtrl::PsxCtrl(int bridge_num, std::string name)
 {
