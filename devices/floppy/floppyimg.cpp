@@ -34,8 +34,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 static FlopImgType identify_image(ImgFile& img_file)
 {
     // WOZ images identification strings
-    static uint8_t WOZ1_SIG[] = {0x57, 0x4F, 0x5A, 0x31, 0xFF, 0x0A, 0x0D, 0x0A};
-    static uint8_t WOZ2_SIG[] = {0x57, 0x4F, 0x5A, 0x32, 0xFF, 0x0A, 0x0D, 0x0A};
+    static const uint8_t WOZ1_SIG[] = {0x57, 0x4F, 0x5A, 0x31, 0xFF, 0x0A, 0x0D, 0x0A};
+    static const uint8_t WOZ2_SIG[] = {0x57, 0x4F, 0x5A, 0x32, 0xFF, 0x0A, 0x0D, 0x0A};
 
     uint8_t buf[8] = { 0 };
 
@@ -47,20 +47,23 @@ static FlopImgType identify_image(ImgFile& img_file)
     } else if (!std::memcmp(buf, WOZ2_SIG, sizeof(buf))) {
         return FlopImgType::WOZ2;
     } else {
-        for (int offset = 0; offset <=84; offset += 84) {
+        auto check_hfs_mfs = [](ImgFile& img, std::size_t offset) -> bool {
+            /* 2 bytes needed for MFS/HFS signature */
+            unsigned char buf[2];
+
             // rewind to logical block 2
-            img_file.read((char *)buf, 2*BLOCK_SIZE + offset, sizeof(buf));
+            img.read((char *)buf, 2*BLOCK_SIZE + offset, sizeof(buf));
 
             // check for HFS/MFS signature at the start of the logical block 2
-            if ((buf[0] == 0x42 && buf[1] == 0x44) ||
-                (buf[0] == 0xD2 && buf[1] == 0xD7)) {
-                if (offset) {
-                    return FlopImgType::DC42;
-                } else {
-                    return FlopImgType::RAW;
-                }
-            }
-        }
+            return ((buf[0] == 0x42 && buf[1] == 0x44)
+                 || (buf[0] == 0xD2 && buf[1] == 0xD7));
+        };
+
+        if (check_hfs_mfs(img_file, 84))
+            return FlopImgType::DC42;
+
+        if (check_hfs_mfs(img_file, 0))
+            return FlopImgType::RAW;
     }
 
     return FlopImgType::UNKNOWN;
