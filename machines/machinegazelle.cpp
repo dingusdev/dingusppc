@@ -24,11 +24,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <cpu/ppc/ppcemu.h>
-#include <devices/common/hwcomponent.h>
 #include <devices/memctrl/psx.h>
 #include <devices/common/pci/pcidevice.h>
 #include <devices/common/pci/pcihost.h>
 #include <devices/deviceregistry.h>
+#include <devices/ioctrl/macio.h>
 #include <machines/machine.h>
 #include <machines/machinebase.h>
 #include <machines/machinefactory.h>
@@ -62,6 +62,18 @@ int get_cpu_pll_value(const uint64_t cpu_freq_hz) {
 
 class MachineGazelle : public Machine {
 public:
+    static std::unique_ptr<HWComponent> create5500() {
+        return Machine::create_with_id<MachineGazelle>("pm5500");
+    }
+
+    static std::unique_ptr<HWComponent> create6500() {
+        return Machine::create_with_id<MachineGazelle>("pm6500");
+    }
+
+    static std::unique_ptr<HWComponent> create_tam() {
+        return Machine::create_with_id<MachineGazelle>("tam");
+    }
+
     int initialize(const std::string &id);
 };
 
@@ -71,9 +83,22 @@ int MachineGazelle::initialize(const std::string &id) {
     PCIHost *pci_host = dynamic_cast<PCIHost*>(gMachineObj->get_comp_by_name("PsxPci1"));
     pci_host->set_irq_map(psx_irq_map);
 
+    MacIoTwo* macio_obj = dynamic_cast<MacIoTwo*>(gMachineObj->get_comp_by_name("OHare"));
+
+    // select between the standard Macintosh and the TAM startup bong
+    macio_obj->set_media_bay_id(id == "tam" ? 0x70 : 0x30);
+
+    // activate factory tests if requested
+    if (GET_BIN_PROP("emmo") != 0)
+        macio_obj->set_cpu_id(0xB0); // BOXID2 pulled low
+    else
+        // set Box aka CPU ID:
+        // for 5500 & TAM => CPUID0...CPUID3 pulled high
+        // for 6500 => CPUID3...CPUID1 pulled high, CPUID0 pulled low
+        macio_obj->set_cpu_id((id == "pm5500" || id == "tam") ? 0xF0 : 0xE0);
+
     // register O'Hare I/O controller with the main PCI bus
-    pci_host->pci_register_device(
-        DEV_FUN(0x10,0), dynamic_cast<PCIDevice*>(gMachineObj->get_comp_by_name("OHare")));
+    pci_host->pci_register_device(DEV_FUN(0x10,0), macio_obj);
 
     PsxCtrl* psx_obj = dynamic_cast<PsxCtrl*>(gMachineObj->get_comp_by_name("Psx"));
 
@@ -126,16 +151,40 @@ static std::vector<std::string> pm6500_devices = {
     "Psx", "PsxPci1", "ScreamerSnd", "OHare", "AtaHardDisk"
 };
 
-static const DeviceDescription MachineGazelle_descriptor = {
-    Machine::create<MachineGazelle>, pm6500_devices, pm6500_settings
+static const DeviceDescription Machine5500_descriptor = {
+    MachineGazelle::create5500, pm6500_devices, pm6500_settings
 };
 
-REGISTER_DEVICE(MachineGazelle, MachineGazelle_descriptor);
+static const DeviceDescription Machine6500_descriptor = {
+    MachineGazelle::create6500, pm6500_devices, pm6500_settings
+};
+
+static const DeviceDescription MachineTAM_descriptor = {
+    MachineGazelle::create_tam, pm6500_devices, pm6500_settings
+};
+
+REGISTER_DEVICE(MachineGazelle5500, Machine5500_descriptor);
+REGISTER_DEVICE(MachineGazelle6500, Machine6500_descriptor);
+REGISTER_DEVICE(MachineGazelleTAM,  MachineTAM_descriptor);
+
+static const MachineDescription pm5500_descriptor = {
+    .name = "pm5500",
+    .description  = "Power Macintosh 5500",
+    .machine_root = "MachineGazelle5500",
+};
 
 static const MachineDescription pm6500_descriptor = {
     .name = "pm6500",
-    .description = "Power Macintosh 6500",
-    .machine_root = "MachineGazelle",
+    .description  = "Power Macintosh 6500",
+    .machine_root = "MachineGazelle6500",
 };
 
+static const MachineDescription TAM_descriptor = {
+    .name = "tam",
+    .description  = "Twentieth Anniversary Macintosh",
+    .machine_root = "MachineGazelleTAM",
+};
+
+REGISTER_MACHINE(pm5500, pm5500_descriptor);
 REGISTER_MACHINE(pm6500, pm6500_descriptor);
+REGISTER_MACHINE(tam,    TAM_descriptor);
