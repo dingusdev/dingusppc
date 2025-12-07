@@ -350,8 +350,20 @@ public:
         return std::unique_ptr<MacIoTwo>(new MacIoTwo("paddington", MIO_DEV_ID_PADDINGTON));
     }
 
+    void set_fp_id(uint8_t id) {
+        this->fp_id = id;
+    }
+
+    void set_mon_id(uint8_t id) {
+        this->mon_id = id;
+    }
+
     void set_media_bay_id(uint8_t id) {
         this->mb_id = id;
+    }
+
+    void set_cpu_id(uint8_t id) {
+        this->cpu_id = id;
     }
 
     // MMIO device methods
