@@ -538,17 +538,33 @@ void ViaCuda::process_packet() {
     }
 }
 
+void ViaCuda::append_data(uint8_t* src, int len) {
+    if (len > 0) {
+        std::memcpy(&this->out_buf[this->out_count], src, len);
+        this->out_count += len;
+    }
+}
+
+template <class T>
+void ViaCuda::append_data(T data) {
+    switch(sizeof(T)) {
+    case 1: this->out_buf[this->out_count] = data;
+    case 2: WRITE_WORD_BE_U( &this->out_buf[this->out_count], data);
+    case 4: WRITE_DWORD_BE_U(&this->out_buf[this->out_count], data);
+    }
+    this->out_count += sizeof(T);
+}
+template void ViaCuda::append_data(uint8_t data);
+template void ViaCuda::append_data(uint16_t data);
+template void ViaCuda::append_data(uint32_t data);
+
 void ViaCuda::process_adb_command() {
     uint8_t adb_stat, output_size;
 
     adb_stat = this->adb_bus_obj->process_command(&this->in_buf[1],
                                                   this->in_count - 1);
     response_header(CUDA_PKT_ADB, adb_stat);
-    output_size = this->adb_bus_obj->get_output_count();
-    if (output_size) {
-        std::memcpy(&this->out_buf[3], this->adb_bus_obj->get_output_buf(), output_size);
-        this->out_count += output_size;
-    }
+    this->append_data(this->adb_bus_obj->get_output_buf(), this->adb_bus_obj->get_output_count());
 }
 
 void ViaCuda::autopoll_handler() {
@@ -567,11 +583,7 @@ void ViaCuda::autopoll_handler() {
         // prepare autopoll packet
         response_header(CUDA_PKT_ADB, ADB_STAT_OK | ADB_STAT_AUTOPOLL);
         this->out_buf[2] = poll_command; // put the proper ADB command
-        uint8_t output_size = this->adb_bus_obj->get_output_count();
-        if (output_size) {
-            std::memcpy(&this->out_buf[3], this->adb_bus_obj->get_output_buf(), output_size);
-            this->out_count += output_size;
-        }
+        this->append_data(this->adb_bus_obj->get_output_buf(), this->adb_bus_obj->get_output_count());
 
         // assert TREQ
         this->via_portb &= ~CUDA_TREQ;
@@ -593,8 +605,7 @@ void ViaCuda::autopoll_handler() {
                 this->out_buf[2] = CUDA_GET_REAL_TIME;
                 if (send_time || this->one_sec_mode == 1) {
                     uint32_t real_time = this_time + this->time_offset;
-                    WRITE_DWORD_BE_U(&this->out_buf[3], real_time);
-                    this->out_count = 7;
+                    this->append_data(real_time);
                 }
             } else if (this->one_sec_mode == 3) {
                 one_byte_header(CUDA_PKT_TICK);
@@ -639,11 +650,10 @@ void ViaCuda::pseudo_command() {
             this->next_out_handler = &ViaCuda::pram_out_handler;
         } else if (addr >= CUDA_ROM_START) {
             // HACK: Cuda ROM dump requsted so let's partially fake it
-            this->out_buf[3] = 0; // empty copyright string
-            WRITE_WORD_BE_A(&this->out_buf[4], 0x0019U);
-            WRITE_WORD_BE_A(&this->out_buf[6], CUDA_FW_VERSION_MAJOR);
-            WRITE_WORD_BE_A(&this->out_buf[8], CUDA_FW_VERSION_MINOR);
-            this->out_count += 7;
+            this->append_data(uint8_t(0)); // empty copyright string
+            this->append_data(uint16_t(0x0019U));
+            this->append_data(uint16_t(CUDA_FW_VERSION_MAJOR));
+            this->append_data(uint16_t(CUDA_FW_VERSION_MINOR));
         }
         this->is_open_ended = true;
         break;
@@ -651,8 +661,7 @@ void ViaCuda::pseudo_command() {
         response_header(CUDA_PKT_PSEUDO, 0);
         uint32_t this_time = this->calc_real_time();
         uint32_t real_time = this_time + this->time_offset;
-        WRITE_DWORD_BE_U(&this->out_buf[3], real_time);
-        this->out_count = 7;
+        this->append_data(real_time);
         break;
     }
     case CUDA_WRITE_MCU_MEM:
@@ -715,8 +724,7 @@ void ViaCuda::pseudo_command() {
         break;
     case CUDA_GET_AUTOPOLL_RATE:
         response_header(CUDA_PKT_PSEUDO, 0);
-        this->out_buf[3] = this->poll_rate;
-        this->out_count++;
+        this->append_data(this->poll_rate);
         break;
     case CUDA_SET_DEVICE_BITMAP:
         this->device_mask = READ_WORD_BE_U(&this->in_buf[2]);
@@ -724,8 +732,7 @@ void ViaCuda::pseudo_command() {
         break;
     case CUDA_GET_DEVICE_BITMAP:
         response_header(CUDA_PKT_PSEUDO, 0);
-        WRITE_WORD_BE_U(&this->out_buf[3], this->device_mask);
-        this->out_count += 2;
+        this->append_data(this->device_mask);
         break;
     case CUDA_ONE_SECOND_MODE:
         LOG_F(INFO, "Cuda: One Second Interrupt Mode: %d", this->in_buf[2]);
