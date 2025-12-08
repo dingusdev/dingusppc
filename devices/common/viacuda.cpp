@@ -711,14 +711,12 @@ void ViaCuda::pseudo_command() {
         this->out_count++;
         break;
     case CUDA_SET_DEVICE_BITMAP:
+        this->device_mask = READ_WORD_BE_U(&this->in_buf[2]);
         response_header(CUDA_PKT_PSEUDO, 0);
-        this->device_mask = ((uint16_t)this->in_buf[2]) << 8;
-        this->device_mask |= ((uint16_t)this->in_buf[3]);
         break;
     case CUDA_GET_DEVICE_BITMAP:
         response_header(CUDA_PKT_PSEUDO, 0);
-        this->out_buf[2] = (uint8_t)((this->device_mask >> 8) & 0xFF);
-        this->out_buf[3] = (uint8_t)((this->device_mask) & 0xFF);
+        WRITE_WORD_BE_U(&this->out_buf[3], this->device_mask);
         this->out_count += 2;
         break;
     case CUDA_ONE_SECOND_MODE:
