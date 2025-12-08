@@ -635,7 +635,7 @@ void ViaCuda::pseudo_command() {
             WRITE_WORD_BE_A(&this->out_buf[4], 0x0019U);
             WRITE_WORD_BE_A(&this->out_buf[6], CUDA_FW_VERSION_MAJOR);
             WRITE_WORD_BE_A(&this->out_buf[8], CUDA_FW_VERSION_MINOR);
-            this->out_count = 10;
+            this->out_count += 7;
         }
         this->is_open_ended = true;
         break;
@@ -708,16 +708,18 @@ void ViaCuda::pseudo_command() {
     case CUDA_GET_AUTOPOLL_RATE:
         response_header(CUDA_PKT_PSEUDO, 0);
         this->out_buf[3] = this->poll_rate;
-        this->out_count = 4;
+        this->out_count++;
         break;
     case CUDA_SET_DEVICE_BITMAP:
         response_header(CUDA_PKT_PSEUDO, 0);
-        this->device_mask = READ_WORD_BE_U(&this->in_buf[2]);
+        this->device_mask = ((uint16_t)this->in_buf[2]) << 8;
+        this->device_mask |= ((uint16_t)this->in_buf[3]);
         break;
     case CUDA_GET_DEVICE_BITMAP:
         response_header(CUDA_PKT_PSEUDO, 0);
-        WRITE_WORD_BE_U(&this->out_buf[3], this->device_mask);
-        this->out_count = 5;
+        this->out_buf[2] = (uint8_t)((this->device_mask >> 8) & 0xFF);
+        this->out_buf[3] = (uint8_t)((this->device_mask) & 0xFF);
+        this->out_count += 2;
         break;
     case CUDA_ONE_SECOND_MODE:
         LOG_F(INFO, "Cuda: One Second Interrupt Mode: %d", this->in_buf[2]);
