@@ -266,6 +266,7 @@ private:
     void write(uint8_t new_state);
     void response_header(uint32_t pkt_type, uint32_t pkt_flag);
     void error_response(uint32_t error);
+    void one_byte_header(uint32_t pkt_type);
     void process_packet();
     void process_adb_command();
     void pseudo_command();
