@@ -73,8 +73,11 @@ protected:
 
     bool    out_stream_ready    = false;
     bool    out_stream_running  = false;
+    bool    in_stream_ready     = false;
+    bool    in_stream_running   = false;
     int     cur_sample_rate     = -1;
     int     out_sample_rate     = -1;
+    int     in_sample_rate      = -1;
 };
 
 /** AWACs PDM-style sound codec. */

@@ -488,7 +488,7 @@ DmaPullResult DMAChannel::pull_data(uint32_t req_len, uint32_t *avail_len, uint8
     if (this->ch_stat & CH_STAT_DEAD || !(this->ch_stat & CH_STAT_ACTIVE)) {
         // dead or idle channel? -> no more data
         LOG_F(WARNING, "%s: Dead/idle channel -> no more data", this->get_name().c_str());
-        return DmaPullResult::NoMoreData;
+        return DmaPullResult::NoMorePullData;
     }
 
     // interpret DBDMA program until we get data or become idle
@@ -513,10 +513,10 @@ DmaPullResult DMAChannel::pull_data(uint32_t req_len, uint32_t *avail_len, uint8
             this->res_count += this->queue_len;
             this->queue_len = 0;
         }
-        return DmaPullResult::MoreData; // tell the caller there is more data
+        return DmaPullResult::MorePullData;    // tell the caller there is more data
     }
 
-    return DmaPullResult::NoMoreData; // tell the caller there is no more data
+    return DmaPullResult::NoMorePullData;    // tell the caller there is no more data
 }
 
 int DMAChannel::push_data(const char* src_ptr, int len) {

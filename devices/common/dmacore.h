@@ -29,8 +29,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 
 enum DmaPullResult : int {
-    MoreData,       // data source has more data to be pulled
-    NoMoreData,     // data source has no more data to be pulled
+    MorePullData,    // data source has more data to be pulled
+    NoMorePullData,    // data source has no more data to be pulled
+};
+
+enum DmaPushResult : int {
+    MorePushData,      // data source has more data to be pushed
+    NoMorePushData,    // data source has no more data to be pushed
 };
 
 class DmaOutChannel {

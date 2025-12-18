@@ -87,8 +87,10 @@ enum : uint64_t {
 };
 
 /** AMIC sound buffers are located at fixed offsets from DMA base. */
-#define AMIC_SND_BUF0_OFFS  0x10000
-#define AMIC_SND_BUF1_OFFS  0x12000
+#define AMIC_SND_IN_BUF0_OFFS  0xC000
+#define AMIC_SND_IN_BUF1_OFFS  0xE000
+#define AMIC_SND_OUT_BUF0_OFFS 0x10000
+#define AMIC_SND_OUT_BUF1_OFFS 0x12000
 
 // PDM HWInit source defines two constants: kExpBit = 0x80 and kCmdBit = 0x40
 // I don't know what they mean but it seems that their combination will
@@ -133,6 +135,46 @@ private:
     InterruptCtrl   *int_ctrl = nullptr;
     uint64_t        snd_dma_irq_id = 0;
     uint8_t         irq_level = 0;
+};
+
+class AmicSndInDma : public DmaInChannel {
+public:
+    AmicSndInDma();
+    ~AmicSndInDma() = default;
+
+    void init(uint32_t buf_base, uint32_t buf_samples);
+    void enable() {
+        this->enabled = true;
+    }
+    void disable() {
+        this->enabled = false;
+    }
+    uint8_t read_stat();
+    void update_irq();
+    void write_dma_in_ctrl(uint8_t value);
+    uint32_t get_cur_buf_pos() {
+        return this->cur_buf_pos;
+    }
+    int push_data(const char* src_ptr, int len);
+
+    void init_interrupts(InterruptCtrl* int_ctrl, uint64_t irq_id) {
+        this->int_ctrl       = int_ctrl;
+        this->snd_dma_irq_id = irq_id;
+    }
+
+private:
+    bool enabled = false;
+    uint8_t dma_in_ctrl;
+
+    uint32_t in_buf0;
+    uint32_t in_buf1;
+    uint32_t in_buf_len;
+    uint32_t snd_buf_num;
+    uint32_t cur_buf_pos;
+
+    InterruptCtrl* int_ctrl = nullptr;
+    uint64_t snd_dma_irq_id = 0;
+    uint8_t irq_level       = 0;
 };
 
 /** AMIC-specific floppy DMA implementation. */
@@ -335,6 +377,7 @@ private:
     uint32_t    scsi_dma_base = 0;  // physical base address for SCSI DMA
     uint16_t    snd_buf_size  = 0;  // sound buffer size in bytes
     uint8_t     snd_out_ctrl  = 0;
+    uint8_t     snd_in_ctrl   = 0;
 
     // floppy DMA state
     uint32_t    floppy_addr_ptr;
@@ -373,6 +416,7 @@ private:
 
     std::unique_ptr<AwacDevicePdm>      awacs;
     std::unique_ptr<AmicSndOutDma>      snd_out_dma;
+    std::unique_ptr<AmicSndInDma>       snd_in_dma;
     std::unique_ptr<AmicFloppyDma>      floppy_dma;
     std::unique_ptr<AmicScsiDma>        curio_dma;
     std::unique_ptr<AmicSerialXmitDma>  escc_xmit_b_dma;

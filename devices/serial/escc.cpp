@@ -442,7 +442,7 @@ void EsccChannel::dma_out_tx()
             uint8_t *data;
             uint32_t avail_len;
 
-            if (dma_ch[1]->pull_data(256, &avail_len, &data) == MoreData) {
+            if (dma_ch[1]->pull_data(256, &avail_len, &data) == MorePullData) {
                 while(avail_len) {
                     this->send_byte(*data++);
                     avail_len--;

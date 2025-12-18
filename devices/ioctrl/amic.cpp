@@ -150,6 +150,10 @@ uint32_t AMIC::read(uint32_t rgn_start, uint32_t offset, int size)
         }
     case 0x14: // Sound registers
         switch (offset) {
+        case AMICReg::Snd_Ctrl_0:
+        case AMICReg::Snd_Ctrl_1:
+        case AMICReg::Snd_Ctrl_2:
+            return this->imm_snd_regs[offset & 3];
         case AMICReg::Snd_Stat_0:
         case AMICReg::Snd_Stat_1:
         case AMICReg::Snd_Stat_2:
@@ -167,8 +171,12 @@ uint32_t AMIC::read(uint32_t rgn_start, uint32_t offset, int size)
         }
         case AMICReg::Snd_Out_Ctrl:
             return this->snd_out_ctrl;
+        case AMICReg::Snd_In_Ctrl:
+            return this->snd_in_ctrl;
         case AMICReg::Snd_Out_DMA:
             return this->snd_out_dma->read_stat();
+        case AMICReg::Snd_In_DMA:
+            return this->snd_in_dma->read_stat();
         }
         break;
     case 0x16: // SWIM3 registers
@@ -308,10 +316,24 @@ void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
             this->snd_out_ctrl = value;
             return;
         case AMICReg::Snd_In_Ctrl:
-            LOG_F(INFO, "AMIC Sound In Ctrl updated, val=%x", value);
+            if (this->snd_in_ctrl & 0x40) {
+                if (this->snd_in_ctrl & 0x80) {
+                    this->snd_in_dma->init(this->dma_base & ~0x3FFFF, this->snd_buf_size);
+                    this->snd_in_dma->enable();
+                    this->awacs->set_sample_rate((this->snd_in_ctrl >> 1) & 3);
+                    this->awacs->dma_in_start();
+                } else {
+                    this->snd_in_dma->disable();
+                    this->awacs->dma_in_pause();
+                }
+            }
+            this->snd_in_ctrl = value;
             return;
         case AMICReg::Snd_Out_DMA:
             this->snd_out_dma->write_dma_out_ctrl(value);
+            return;
+        case AMICReg::Snd_In_DMA:
+            this->snd_in_dma->write_dma_in_ctrl(value);
             return;
         }
     case 0x16: // SWIM3 registers
@@ -598,10 +620,9 @@ AmicSndOutDma::AmicSndOutDma() : DmaOutChannel("SndOut")
     this->enabled = false;
 }
 
-void AmicSndOutDma::init(uint32_t buf_base, uint32_t buf_samples)
-{
-    this->out_buf0 = buf_base + AMIC_SND_BUF0_OFFS;
-    this->out_buf1 = buf_base + AMIC_SND_BUF1_OFFS;
+void AmicSndOutDma::init(uint32_t buf_base, uint32_t buf_samples) {
+    this->out_buf0 = buf_base + AMIC_SND_OUT_BUF0_OFFS;
+    this->out_buf1 = buf_base + AMIC_SND_OUT_BUF1_OFFS;
 
     this->out_buf_len = buf_samples * 2 * 2;
 
@@ -659,7 +680,7 @@ DmaPullResult AmicSndOutDma::pull_data(uint32_t req_len, uint32_t *avail_len,
         // if it's false stop delivering sound data
         // this will effectively stop audio playback
         if (this->snd_buf_num && !this->enabled) {
-            return DmaPullResult::NoMoreData;
+            return DmaPullResult::NoMorePullData;
         }
 
         this->cur_buf_pos = 0;  // reset buffer position
@@ -675,7 +696,50 @@ DmaPullResult AmicSndOutDma::pull_data(uint32_t req_len, uint32_t *avail_len,
     *p_data = res.host_va;
     this->cur_buf_pos += len;
     *avail_len = len;
-    return DmaPullResult::MoreData;
+    return DmaPullResult::MorePullData;
+}
+
+
+AmicSndInDma::AmicSndInDma() : DmaInChannel("SndIn") {
+    this->dma_in_ctrl = 0;
+    this->enabled     = false;
+}
+
+void AmicSndInDma::init(uint32_t buf_base, uint32_t buf_samples) {
+    this->in_buf0 = buf_base + AMIC_SND_IN_BUF0_OFFS;
+    this->in_buf1 = buf_base + AMIC_SND_IN_BUF1_OFFS;
+
+    this->in_buf_len = buf_samples * 2 * 2;
+
+    this->snd_buf_num = 0;
+    this->cur_buf_pos = 0;
+    this->irq_level   = 0;
+}
+
+uint8_t AmicSndInDma::read_stat() {
+    return this->dma_in_ctrl;
+}
+
+void AmicSndInDma::write_dma_in_ctrl(uint8_t value) {
+    if (value & PDM_DMA_INTS_MASK) {
+        this->dma_in_ctrl &= ~(value & PDM_DMA_INTS_MASK);
+        this->update_irq();
+    }
+    // update sound input DMA interrupt enable bits
+    this->dma_in_ctrl = value;
+}
+
+int AmicSndInDma::push_data(const char* src_ptr, int len) {
+    return DmaPushResult();
+}
+
+void AmicSndInDma::update_irq() {
+    uint8_t new_level = !!((this->dma_in_ctrl >> 4) & this->dma_in_ctrl);
+    if (new_level != this->irq_level) {
+        this->irq_level = new_level;
+        TimerManager::get_instance()->add_immediate_timer(
+            [this] { this->int_ctrl->ack_dma_int(this->snd_dma_irq_id, this->irq_level); });
+    }
 }
 
 // ============================ Floppy DMA stuff ===============================
@@ -726,7 +790,7 @@ int AmicFloppyDma::push_data(const char* src_ptr, int len)
 DmaPullResult AmicFloppyDma::pull_data(uint32_t req_len, uint32_t *avail_len,
                                        uint8_t **p_data)
 {
-    return DmaPullResult::NoMoreData;
+    return DmaPullResult::NoMorePullData;
 }
 
 // ============================ SCSI DMA stuff ================================
@@ -822,7 +886,7 @@ void AmicSerialXmitDma::write_ctrl(const uint8_t value)
 DmaPullResult AmicSerialXmitDma::pull_data(uint32_t req_len, uint32_t *avail_len,
                                            uint8_t **p_data)
 {
-    return DmaPullResult::NoMoreData;
+    return DmaPullResult::NoMorePullData;
 }
 
 static std::vector<std::string> Amic_Subdevices = {
