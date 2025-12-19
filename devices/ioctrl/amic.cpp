@@ -78,8 +78,11 @@ AMIC::AMIC() : MMIODevice()
     // initialize sound HW
     this->snd_out_dma = std::unique_ptr<AmicSndOutDma>(new AmicSndOutDma());
     this->snd_out_dma->init_interrupts(this, DMA1_INT_SOUND << DMA1_INT_SHIFT);
+    this->snd_in_dma  = std::unique_ptr<AmicSndInDma>(new AmicSndInDma());
+    this->snd_in_dma->init_interrupts(this, DMA0_INT_SOUND << DMA0_INT_SHIFT);
     this->awacs       = std::unique_ptr<AwacDevicePdm> (new AwacDevicePdm());
     this->awacs->set_dma_out(this->snd_out_dma.get());
+    this->awacs->set_dma_in(this->snd_in_dma.get());
 
     // initialize on-board video
     this->disp_id = std::unique_ptr<DisplayID> (new DisplayID());

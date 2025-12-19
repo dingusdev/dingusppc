@@ -82,6 +82,7 @@ enum : uint64_t {
 /** DMA interrupt bits. */
 enum : uint64_t {
     DMA0_INT_SHIFT      = 24,
+        DMA0_INT_SOUND  = 1 << 1,
     DMA1_INT_SHIFT      = 32,
         DMA1_INT_SOUND  = 1 << 1,
 };
