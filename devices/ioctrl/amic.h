@@ -174,6 +174,8 @@ private:
 
     InterruptCtrl* int_ctrl = nullptr;
     uint64_t snd_dma_irq_id = 0;
+    uint32_t addr_ptr;
+    uint16_t byte_count;
     uint8_t irq_level       = 0;
 };
 

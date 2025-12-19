@@ -730,7 +730,22 @@ void AmicSndInDma::write_dma_in_ctrl(uint8_t value) {
 }
 
 int AmicSndInDma::push_data(const char* src_ptr, int len) {
-    return DmaPushResult();
+    len = std::min((int)this->byte_count, len);
+
+    MapDmaResult res = mmu_map_dma_mem(this->addr_ptr, len, false);
+    uint8_t* p_data  = res.host_va;
+    if (!res.is_writable) {
+        ABORT_F("AMIC: attempting DMA write to read-only memory");
+    }
+    std::memcpy(p_data, src_ptr, len);
+
+    this->addr_ptr += len;
+    this->byte_count -= len;
+    if (!this->byte_count) {
+        LOG_F(WARNING, "AMIC: DMA interrupts not implemented yet");
+    }
+
+    return DmaPushResult::NoMorePushData;
 }
 
 void AmicSndInDma::update_irq() {
