@@ -319,16 +319,15 @@ void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
             this->snd_out_ctrl = value;
             return;
         case AMICReg::Snd_In_Ctrl:
-            if (this->snd_in_ctrl & 0x40) {
-                if (this->snd_in_ctrl & 0x80) {
+            if (this->snd_in_ctrl & 0xFC) {
                     this->snd_in_dma->init(this->dma_base & ~0x3FFFF, this->snd_buf_size);
                     this->snd_in_dma->enable();
                     this->awacs->set_sample_rate((this->snd_in_ctrl >> 1) & 3);
                     this->awacs->dma_in_start();
-                } else {
+                } 
+            else {
                     this->snd_in_dma->disable();
                     this->awacs->dma_in_pause();
-                }
             }
             this->snd_in_ctrl = value;
             return;
@@ -735,7 +734,9 @@ void AmicSndInDma::write_dma_in_ctrl(uint8_t value) {
 int AmicSndInDma::push_data(const char* src_ptr, int len) {
     len = std::min((int)this->byte_count, len);
 
-    MapDmaResult res = mmu_map_dma_mem(this->addr_ptr, len, false);
+    MapDmaResult res = mmu_map_dma_mem(
+        (this->snd_buf_num ? this->in_buf1 : this->in_buf0) + this->cur_buf_pos, 
+        len, false);
     uint8_t* p_data  = res.host_va;
     if (!res.is_writable) {
         ABORT_F("AMIC: attempting DMA write to read-only memory");
