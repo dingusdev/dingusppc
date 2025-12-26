@@ -336,7 +336,7 @@ void AtapiCdrom::perform_packet_command() {
 }
 
 int AtapiCdrom::get_config(uint8_t* pkt, uint8_t* buf) {
-    memset(buf, 0, 16);
+    std::memset(buf, 0, 16);
 
     // Data length (4 bytes header + 8 bytes for one feature descriptor - 4 bytes for length field)
     uint32_t data_len = 8;
