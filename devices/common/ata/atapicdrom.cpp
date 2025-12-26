@@ -315,12 +315,47 @@ void AtapiCdrom::perform_packet_command() {
         this->data_out_phase();
         break;
     }
+    case ScsiCommand::GET_CONFIG: {
+        this->xfer_cnt = this->get_config(this->cmd_pkt, this->data_buf);
+        if (this->xfer_cnt == 0) {
+            this->present_status();
+        } else {
+            this->xfer_cnt = std::min((int)this->r_byte_count, this->xfer_cnt);
+            this->data_ptr = (uint16_t*)this->data_buf;
+            this->status_good();
+            this->data_out_phase();
+        }
+        break;
+    }
     default:
         LOG_F(ERROR, "%s: unsupported ATAPI command 0x%X", this->name.c_str(),
               this->cmd_pkt[0]);
         this->status_error(ScsiSense::ILLEGAL_REQ, ScsiError::INVALID_CMD);
         this->present_status();
     }
+}
+
+int AtapiCdrom::get_config(uint8_t* pkt, uint8_t* buf) {
+    memset(buf, 0, 16);
+
+    // Data length (4 bytes header + 8 bytes for one feature descriptor - 4 bytes for length field)
+    uint32_t data_len = 8;
+    buf[0]            = (data_len >> 24) & 0xFF;
+    buf[1]            = (data_len >> 16) & 0xFF;
+    buf[2]            = (data_len >> 8) & 0xFF;
+    buf[3]            = data_len & 0xFF;
+
+    // Feature Descriptor 1 - Set profile to CD-ROM
+    buf[6] = 0;
+    buf[7] = 0x08;
+
+    // Feature Descriptor 2 - Feature Code, Version 0
+    buf[8]  = 0x00;
+    buf[9]  = 0x01;    // Core Feature Code
+    buf[10] = 0x03;    // Persist and Current bits set
+    buf[11] = 0x04;    // Additional Length
+
+    return 12;
 }
 
 int AtapiCdrom::request_data() {

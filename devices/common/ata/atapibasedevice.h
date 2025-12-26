@@ -43,6 +43,7 @@ public:
     // methods to be implemented in the particular device
     int  perform_command() override;
     virtual void perform_packet_command() = 0;
+    virtual int get_config(uint8_t* pkt, uint8_t* buf) = 0;
     virtual int request_data() = 0;
     virtual bool data_available() = 0;
 
