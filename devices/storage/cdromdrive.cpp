@@ -140,6 +140,14 @@ uint32_t CdromDrive::mode_sense_ex(bool is_sense_6, uint8_t* cmd_ptr, uint8_t* d
         std::memset(&resp_ptr[2], 0, 6);
         data_ptr[1] += 8; // adjust overall length
         break;
+    case 0x1A:
+        resp_ptr[1] = 10;  // page length
+        std::memset(&resp_ptr[2], 0, 10);
+        resp_ptr[3] = 0; //idle and standby off
+        WRITE_DWORD_BE_A(&resp_ptr[4], 0); //  Idle Timer (100ms units)
+        WRITE_DWORD_BE_A(&resp_ptr[8], 0); //  Standby Timer (100ms units)
+        data_ptr[1] += 12;  // adjust overall length
+        break;
     case 0x2A:
         resp_ptr[1] = 18; // page data length
         std::memset(&resp_ptr[2], 0, 18);
