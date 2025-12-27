@@ -42,6 +42,8 @@ public:
 
     void perform_packet_command() override;
 
+    int get_config(uint8_t* pkt, uint8_t* buf) override;
+
     int request_data() override;
 
     bool data_available() override {
