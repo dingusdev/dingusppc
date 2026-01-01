@@ -111,7 +111,7 @@ uint16_t AtaBaseDevice::read(const uint8_t reg_addr) {
 void AtaBaseDevice::write(const uint8_t reg_addr, const uint16_t value) {
     switch (reg_addr) {
     case ATA_Reg::DATA:
-        if (is_selected() && this->has_data()) {
+        if (this->is_selected() && this->has_data()) {
             *this->cur_data_ptr++ = BYTESWAP_16(value);
             this->chunk_cnt -= 2;
             if (this->chunk_cnt <= 0) {
@@ -160,7 +160,7 @@ void AtaBaseDevice::write(const uint8_t reg_addr, const uint16_t value) {
             break;
         }
         this->r_command = value;
-        if (is_selected() || this->r_command == DIAGNOSTICS) {
+        if (this->is_selected() || this->r_command == DIAGNOSTICS) {
             perform_command();
         }
         break;
