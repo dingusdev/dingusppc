@@ -61,17 +61,25 @@ Display::Display(): impl(std::make_unique<Impl>()) {
 }
 
 Display::~Display() {
-    if (impl->cursor_texture)
+    if (impl->cursor_texture) {
         SDL_DestroyTexture(impl->cursor_texture);
+        impl->cursor_texture = 0;
+    }
 
-    if (impl->disp_texture)
+    if (impl->disp_texture) {
         SDL_DestroyTexture(impl->disp_texture);
+        impl->disp_texture = 0;
+    }
 
-    if (impl->renderer)
+    if (impl->renderer) {
         SDL_DestroyRenderer(impl->renderer);
+        impl->renderer = 0;
+    }
 
-    if (impl->display_wnd)
+    if (impl->display_wnd) {
         SDL_DestroyWindow(impl->display_wnd);
+        impl->display_wnd = 0;
+    }
 }
 
 const double scale_step = std::pow(2.0, 1.0/8.0);
