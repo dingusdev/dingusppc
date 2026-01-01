@@ -99,14 +99,26 @@ public:
     void    write(uint8_t reg_offset, uint8_t value);
 
 private:
-    uint16_t    chip_id; // per-instance MACE Chip ID
-    uint8_t     addr_cfg  = 0;
-    uint8_t     addr_ptr  = 0;
-    uint8_t     rcv_fc    = 1;
-    uint8_t     biu_ctrl  = 0;
-    uint8_t     mac_cfg   = 0;
-    uint64_t    phys_addr = 0;
-    uint64_t    log_addr  = 0;
+    uint16_t    chip_id;          // per-instance MACE Chip ID
+    uint8_t     addr_cfg      = 0;
+    uint8_t     addr_ptr      = 0;
+    uint8_t     xmt_fs        = 0;
+    uint8_t     xmt_retry     = 0;
+    uint8_t     rcv_fc        = 1;
+    uint8_t     rcv_fs        = 0;
+    uint8_t     biu_ctrl      = 0;
+    uint8_t     fifo_ctrl     = 0;
+
+    uint8_t     poll_reg      = 0;
+
+    uint8_t     mac_cfg       = 0;
+    uint8_t     mac_cc        = 0;
+    uint8_t     pls_cc        = 0;
+    uint8_t     phy_cc        = 0;
+    uint8_t     fifo_fc       = 0;
+    uint8_t     missed_pkts   = 0;
+    uint64_t    phys_addr     = 0;
+    uint64_t    log_addr      = 0;
 
     // interrupt stuff
     uint8_t     int_stat  = 0;
