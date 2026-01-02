@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define IDE_CHANNEL_H
 
 #include <devices/common/ata/atadefs.h>
+#include <devices/common/dmacore.h>
 #include <devices/common/hwcomponent.h>
 #include <devices/common/hwinterrupt.h>
 
@@ -33,7 +34,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memory>
 #include <string>
 
-class IdeChannel : public HWComponent
+class IdeChannel : public HWComponent, public DmaDevice
 {
 public:
     IdeChannel(const std::string name);
@@ -43,6 +44,9 @@ public:
 
     uint32_t read(const uint8_t reg_addr, const int size);
     void write(const uint8_t reg_addr, const uint32_t val, const int size);
+
+    int xfer_from(uint8_t *buf, int len) override;
+    int xfer_to(uint8_t *buf, int len) override;
 
     void assert_pdiag() {
         this->devices[0]->pdiag_callback();
@@ -59,6 +63,8 @@ public:
     void report_intrq(uint8_t intrq_state) {
         this->irq_callback(intrq_state);
     }
+
+    void assert_dmareq(uint64_t delay);
 
 protected:
     std::function<void(const uint8_t intrq_state)> irq_callback = nullptr;
