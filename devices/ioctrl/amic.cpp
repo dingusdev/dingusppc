@@ -319,7 +319,10 @@ void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
             this->snd_out_ctrl = value;
             return;
         case AMICReg::Snd_In_Ctrl:
+            LOG_F(WARNING, "Snd In Ctrl - SndIn Enable: 0x%x", this->snd_in_ctrl & 0x80);
             if (this->snd_in_ctrl & 0xFC) {
+                LOG_F(WARNING, "Snd In Ctrl - Subframe Out: 0x%x", this->snd_in_ctrl & 0x3C);
+                LOG_F(WARNING, "Snd In Ctrl - Subframe In: 0x%x", this->snd_in_ctrl & 0x03);
                     this->snd_in_dma->init(this->dma_base & ~0x3FFFF, this->snd_buf_size);
                     this->snd_in_dma->enable();
                     this->awacs->set_sample_rate((this->snd_in_ctrl >> 1) & 3);
@@ -746,7 +749,7 @@ int AmicSndInDma::push_data(const char* src_ptr, int len) {
     this->addr_ptr += len;
     this->byte_count -= len;
     if (!this->byte_count) {
-        LOG_F(WARNING, "AMIC: DMA interrupts not implemented yet");
+        //LOG_F(WARNING, "AMIC: DMA interrupts not implemented yet");
     }
 
     return DmaPushResult::NoMorePushData;

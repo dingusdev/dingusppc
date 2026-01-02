@@ -327,16 +327,20 @@ enum AMICReg : uint32_t {
     Floppy_DMA_Ctrl     = 0x32068,
 
     SCC_DMA_Xmt_A_Ctrl  = 0x32088,
-    //                  = 0x32092, // byte, read
-    //                  = 0x32093, // byte, read
+    SCC_RXA_Addr_Ptr_0  = 0x32090, // byte, read
+    SCC_RXA_Addr_Ptr_1  = 0x32091, // byte, read
+    SCC_RXA_Addr_Ptr_2  = 0x32092, // byte, read
+    SCC_RXA_Addr_Ptr_3  = 0x32093, // byte, read
     SCC_RXA_Byte_Cnt_Hi = 0x32094, // 5 bits, read; byte, write 0x10
     SCC_RXA_Byte_Cnt_Lo = 0x32095, // 8 bits, read; byte, write 0x00
     SCC_DMA_Rcv_A_Ctrl  = 0x32098,
-    //                  = 0x320A4, // byte, write 0x00
-    //                  = 0x320A5, // byte, write 0x07
+    SCC_TXB_Byte_Cnt_Hi = 0x320A4, // byte, write 0x00
+    SCC_TXB_Byte_Cnt_Lo = 0x320A5, // byte, write 0x07
     SCC_DMA_Xmt_B_Ctrl  = 0x320A8,
-    //                  = 0x320B2, // byte, read
-    //                  = 0x320B3, // byte, read
+    SCC_RXB_Addr_Ptr_0  = 0x320B0, // byte, read
+    SCC_RXB_Addr_Ptr_1  = 0x320B1, // byte, read
+    SCC_RXB_Addr_Ptr_2  = 0x320B2, // byte, read
+    SCC_RXB_Addr_Ptr_3  = 0x320B3, // byte, read
     SCC_RXB_Byte_Cnt_Hi = 0x320B4, // 5 bits, read; byte, write 0x10
     SCC_RXB_Byte_Cnt_Lo = 0x320B5, // 8 bits, read; byte, write 0x00
     SCC_DMA_Rcv_B_Ctrl  = 0x320B8,

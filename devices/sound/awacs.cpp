@@ -107,12 +107,12 @@ void AwacsBase::dma_in_data() {
     this->dma_in_ch->push_data(sound_input_data, sizeof(sound_input_data));
 
     if (dma_in_ch->is_in_active()) {
-        auto dbdma_ch = dynamic_cast<DMAChannel*>(dma_in_ch);
-        sound_in_status <<= 1;
-        if (!sound_in_status)
-            sound_in_status = 1;
-        dbdma_ch->set_stat(sound_in_status);
-        LOG_F(INFO, "%s: status:%x", this->name.c_str(), sound_in_status);
+        //auto dbdma_ch = dynamic_cast<DMAChannel*>(dma_in_ch);
+        //sound_in_status <<= 1;
+        //if (!sound_in_status)
+        //    sound_in_status = 1;
+        //dbdma_ch->set_stat(sound_in_status);
+        //LOG_F(INFO, "%s: status:%x", this->name.c_str(), sound_in_status);
 
         this->dma_in_timer_id = TimerManager::get_instance()->add_oneshot_timer(
             10000,
@@ -192,7 +192,7 @@ uint32_t AwacsScreamer::snd_ctrl_read(uint32_t offset, int size) {
         value = this->snd_ctrl_reg;
         break;
     case AWAC_CODEC_CTRL_REG:
-        value = this->is_busy;
+        value = this->is_busy ? AWAC_BUSY_BIT : 0;
         break;
     case AWAC_CODEC_STATUS_REG:
         value = (AWAC_AVAILABLE << 8) | (AWAC_MAKER_CRYSTAL << 16) |
@@ -232,7 +232,7 @@ void AwacsScreamer::snd_ctrl_write(uint32_t offset, uint32_t value, int size) {
         LOG_F(9, "%s subframe = %d, reg = %d, data = %08X", this->name.c_str(),
               subframe, reg_num, data);
         if (!subframe)
-            this->shadow_regs[reg_num] = data;
+            this->codec_ctrl_reg = data;
         break;
     case AWAC_CLIP_COUNT:
         this->clip_count = BYTESWAP_32(value);
