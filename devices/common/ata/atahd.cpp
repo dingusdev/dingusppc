@@ -262,6 +262,11 @@ void AtaHardDisk::prepare_identify_info() {
     buf_ptr[ 3] = this->heads;
     buf_ptr[ 6] = this->sectors;
 
+    WRITE_WORD_LE_A(&buf_ptr[51], 0x0200); // max. PIO mode for a basic device
+
+    // report validity for the advanced PIO and MWDMA fields
+    //WRITE_WORD_LE_A(&buf_ptr[53], 0x0003);
+
     buf_ptr[57] = this->total_sectors & 0xFFFFU;
     buf_ptr[58] = (this->total_sectors >> 16) & 0xFFFFU;
 
