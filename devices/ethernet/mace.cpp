@@ -31,9 +31,19 @@ using namespace MaceEnet;
 
 uint8_t MaceController::read(uint8_t reg_offset)
 {
-    switch(reg_offset) {
+    switch (reg_offset) {
+    case MaceReg::Rcv_FIFO:
+        return 0; //No FIFO yet
     case MaceReg::Rcv_Frame_Ctrl:
         return this->rcv_fc;
+    case MaceReg::Xmit_Frame_Stat:
+        return this->xmt_fs;
+    case MaceReg::Xmit_Retry_Cnt:
+        return this->xmt_retry;
+    case MaceReg::Rcv_Frame_Stat:
+        return this->rcv_fs;
+    case MaceReg::FIFO_Frame_Cnt:
+        return this->fifo_fc;
     case MaceReg::Interrupt: {
         uint8_t ret_val = this->int_stat;
         this->int_stat = 0;
@@ -42,12 +52,26 @@ uint8_t MaceController::read(uint8_t reg_offset)
     }
     case MaceReg::Interrupt_Mask:
         return this->int_mask;
+    case MaceReg::Poll:
+        return this->poll_reg;
     case MaceReg::BIU_Config_Ctrl:
         return this->biu_ctrl;
+    case MaceReg::FIFO_Config:
+        return this->fifo_ctrl;
+    case MaceReg::MAC_Config_Ctrl:
+        return this->mac_cc;
+    case MaceReg::PLS_Config_Ctrl:
+        return this->pls_cc;
+    case MaceReg::PHY_Config_Ctrl:
+        return this->phy_cc;
     case MaceReg::Chip_ID_Lo:
         return this->chip_id & 0xFFU;
     case MaceReg::Chip_ID_Hi:
         return (this->chip_id >> 8) & 0xFFU;
+    case MaceReg::Int_Addr_Config:
+        return this->addr_cfg;
+    case MaceReg::Missed_Pkt_Cnt:
+        return this->missed_pkts;
     default:
         LOG_F(INFO, "%s: reading from register %d", this->name.c_str(), reg_offset);
     }
@@ -64,15 +88,18 @@ void MaceController::write(uint8_t reg_offset, uint8_t value)
     case MaceReg::Interrupt_Mask:
         this->int_mask = value;
         break;
-    case MaceReg::MAC_Config_Ctrl:
-        this->mac_cfg = value;
-        break;
     case MaceReg::BIU_Config_Ctrl:
         if (value & BIU_SWRST) {
             LOG_F(INFO, "%s: soft reset asserted", this->name.c_str());
             value &= ~BIU_SWRST; // acknowledge soft reset
         }
         this->biu_ctrl = value;
+        break;
+    case MaceReg::FIFO_Config:
+        this->fifo_ctrl = value;
+        break;
+    case MaceReg::MAC_Config_Ctrl:
+        this->mac_cfg = value;
         break;
     case MaceReg::PLS_Config_Ctrl:
         if (value != 7)
