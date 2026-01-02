@@ -39,9 +39,16 @@ MacIoTwo::MacIoTwo(std::string name, uint16_t dev_id) : MacIoBase(name, dev_id) 
 
     // connect IDE HW
     this->ide_0 = dynamic_cast<IdeChannel*>(gMachineObj->get_comp_by_name("Ide0"));
-    this->ide_1 = dynamic_cast<IdeChannel*>(gMachineObj->get_comp_by_name("Ide1"));
     this->ide0_dma = std::unique_ptr<DMAChannel> (new DMAChannel("Ide0-Dma"));
+    this->ide0_dma->register_dma_int(this, this->register_dma_int(IntSrc::DMA_IDE0));
+    this->ide0_dma->connect(this->ide_0);
+    this->ide_0->connect(this->ide0_dma.get());
+
+    this->ide_1 = dynamic_cast<IdeChannel*>(gMachineObj->get_comp_by_name("Ide1"));
     this->ide1_dma = std::unique_ptr<DMAChannel> (new DMAChannel("Ide1-Dma"));
+    this->ide1_dma->register_dma_int(this, this->register_dma_int(IntSrc::DMA_IDE1));
+    this->ide1_dma->connect(this->ide_1);
+    this->ide_1->connect(this->ide1_dma.get());
 
     // connect Ethernet HW (Heathrow and Paddington)
     if (this->device_id != MIO_DEV_ID_OHARE) {
