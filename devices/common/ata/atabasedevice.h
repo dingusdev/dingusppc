@@ -47,6 +47,8 @@ public:
 
     uint16_t read(const uint8_t reg_addr) override;
     void write(const uint8_t reg_addr, const uint16_t value) override;
+    int pull_data(uint8_t *buf, int len) override;
+    int push_data(uint8_t *buf, int len) override;
 
     virtual int perform_command() = 0;
 
@@ -103,6 +105,7 @@ protected:
     int         xfer_cnt        = 0;
     int         chunk_cnt       = 0;
     int         chunk_size      = 0;
+    bool        is_dma_xfer     = false;
 
     std::function<void()> post_xfer_action = nullptr;
 };
