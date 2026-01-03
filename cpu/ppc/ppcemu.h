@@ -114,6 +114,8 @@ enum SPR : int {
     PMC2    = 954,
     SIA     = 955,
     MMCR1   = 956,
+    PMC3    = 957,
+    PMC4    = 958,
     SDA     = 959,
     HID0    = 1008,
     HID1    = 1009,
