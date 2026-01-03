@@ -250,7 +250,6 @@ bool OfConfigAppl::set_var(std::string& var_name, std::string& value) {
         }
         WRITE_DWORD_BE_A(&this->buf[offset], num);
         this->update_partition();
-        cout << " ok" << endl; // mimic Forth
     } else {
         uint16_t str_offset = READ_WORD_BE_A(&this->buf[offset]);
         uint16_t str_len    = READ_WORD_BE_A(&this->buf[offset+2]);
