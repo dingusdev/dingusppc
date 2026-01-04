@@ -135,12 +135,31 @@ uint32_t CdromDrive::mode_sense_ex(bool is_sense_6, uint8_t* cmd_ptr, uint8_t* d
     resp_ptr[0] = page_code;
 
     switch (page_code) {
-    case 0x01:
+    case ModePage::READ_ERROR_RECOVERY:
         resp_ptr[1] = 6; // data size
         std::memset(&resp_ptr[2], 0, 6);
         data_ptr[1] += 8; // adjust overall length
         break;
-    case 0x1A:
+    case ModePage::CDROM_AUDIO:
+        resp_ptr[1] = 16;  // page length
+        std::memset(&resp_ptr[2], 0, 16);
+        resp_ptr[2] = (1 << 2); //immediately return status
+
+        WRITE_WORD_BE_A(&resp_ptr[6], 75);     // logical block per second of audio playback
+
+        resp_ptr[8]  = 0x01;    // Left Channel
+        resp_ptr[9]  = 0xFF;    // Volume (0-255)
+        resp_ptr[10] = 0x02;    // Right Channel
+        resp_ptr[11] = 0xFF;    // Volume (0-255)
+
+        resp_ptr[12] = 0x04;  // Output Port 2
+        resp_ptr[13] = 0x00;  // Volume (0-255)
+        resp_ptr[14] = 0x08;  // Output Port 3
+        resp_ptr[15] = 0x00;  // Volume (0-255)
+
+        data_ptr[1] += 8;  // adjust overall length
+        break;
+    case ModePage::POWER_CONDITION:
         resp_ptr[1] = 10;  // page length
         std::memset(&resp_ptr[2], 0, 10);
         resp_ptr[3] = 0; //idle and standby off
@@ -148,7 +167,7 @@ uint32_t CdromDrive::mode_sense_ex(bool is_sense_6, uint8_t* cmd_ptr, uint8_t* d
         WRITE_DWORD_BE_A(&resp_ptr[8], 0); //  Standby Timer (100ms units)
         data_ptr[1] += 12;  // adjust overall length
         break;
-    case 0x2A:
+    case ModePage::CDROM_CAPABILITIES:
         resp_ptr[1] = 18; // page data length
         std::memset(&resp_ptr[2], 0, 18);
         resp_ptr[2] = 0x03; // supports reading CD-R and CD-E
@@ -160,7 +179,7 @@ uint32_t CdromDrive::mode_sense_ex(bool is_sense_6, uint8_t* cmd_ptr, uint8_t* d
         WRITE_WORD_BE_A(&resp_ptr[14], 706); // report current speed (4x)
         data_ptr[1] += 20; // adjust overall length
         break;
-    case 0x31:
+    case ModePage::VENDOR_PAGE_31:
         resp_ptr[1] = 14;    // page data length
         std::memset(&resp_ptr[2], 0, 14);
         resp_ptr[8] = 0x31;

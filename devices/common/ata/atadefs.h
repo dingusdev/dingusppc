@@ -163,6 +163,8 @@ public:
     virtual ~AtaInterface() = default;
     virtual uint16_t read(const uint8_t reg_addr) = 0;
     virtual void write(const uint8_t reg_addr, const uint16_t val) = 0;
+    virtual int pull_data(uint8_t *buf, int len) { return 0; };
+    virtual int push_data(uint8_t *buf, int len) { return 0; };
 
     virtual int  get_device_id() = 0;
     virtual void pdiag_callback() {}

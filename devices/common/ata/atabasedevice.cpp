@@ -21,13 +21,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Basic ATA device emulation. */
 
+#include <core/timermanager.h>
 #include <devices/common/ata/atabasedevice.h>
 #include <devices/common/ata/atadefs.h>
 #include <devices/common/ata/idechannel.h>
 #include <loguru.hpp>
 
+#include <cstring>
 #include <cinttypes>
-#include <core/timermanager.h>
 
 using namespace ata_interface;
 
@@ -189,6 +190,38 @@ void AtaBaseDevice::device_control(const uint8_t new_ctrl) {
         }
     }
     this->r_dev_ctrl = new_ctrl;
+}
+
+int AtaBaseDevice::pull_data(uint8_t *buf, int len) {
+    if (!this->xfer_cnt || !this->is_dma_xfer)
+        return 0;
+
+    int xfer_size = std::min(this->xfer_cnt, len);
+
+    if (this->xfer_cnt != len)
+        LOG_F(WARNING, "%s: xfer_cnt != len", this->name.c_str());
+
+    //for (int i = 0; i < xfer_size >> 1; i++)
+    //    this->data_ptr[i] = BYTESWAP_16(this->data_ptr[i]);
+
+    std::memcpy(buf, this->data_ptr, xfer_size);
+
+    this->xfer_cnt -= xfer_size;
+    if (!this->xfer_cnt) {
+        TimerManager::get_instance()->add_oneshot_timer(500, [this]() {
+            this->r_status &= ~(BSY | DRQ);
+            this->update_intrq(1);
+        });
+    } else {
+        this->r_status &= ~BSY;
+        this->r_status |= DRQ;
+    }
+
+    return xfer_size;
+}
+
+int AtaBaseDevice::push_data(uint8_t *buf, int len) {
+    return 0;
 }
 
 void AtaBaseDevice::update_intrq(uint8_t new_intrq_state) {

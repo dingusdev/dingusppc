@@ -899,7 +899,8 @@ static map<string, int> SPRName2Num = {
     {"SDR1",   SPR::SDR1},      {"MQ",     SPR::MQ},    {"RTCU",   SPR::RTCU_S},
     {"RTCL",   SPR::RTCL_S},    {"DSISR",  SPR::DSISR}, {"DAR",    SPR::DAR},
     {"MMCR0",  SPR::MMCR0},     {"PMC1",   SPR::PMC1},  {"PMC2",   SPR::PMC2},
-    {"SDA",    SPR::SDA},       {"SIA",    SPR::SIA},   {"MMCR1",  SPR::MMCR1}
+    {"SDA",    SPR::SDA},       {"SIA",    SPR::SIA},   {"MMCR1",  SPR::MMCR1},
+    {"PMC3",   SPR::PMC3},      {"PMC4",   SPR::PMC4},
 };
 
 static uint64_t reg_op(string& reg_name, uint64_t val, bool is_write) {

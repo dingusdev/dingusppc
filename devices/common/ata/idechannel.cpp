@@ -30,6 +30,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     and interrupt handling.
  */
 
+#include <core/timermanager.h>
 #include <devices/common/ata/atabasedevice.h>
 #include <devices/common/ata/atadefs.h>
 #include <devices/common/ata/idechannel.h>
@@ -79,6 +80,21 @@ void IdeChannel::write(const uint8_t reg_addr, const uint32_t val, const int siz
     for (auto& dev : this->devices) {
         dev->write(reg_addr, val);
     }
+}
+
+int IdeChannel::xfer_from(uint8_t *buf, int len) {
+    return this->devices[this->cur_dev]->pull_data(buf, len);
+}
+
+int IdeChannel::xfer_to(uint8_t *buf, int len) {
+    return this->devices[this->cur_dev]->push_data(buf, len);
+}
+
+void IdeChannel::assert_dmareq(uint64_t delay) {
+    TimerManager::get_instance()->add_oneshot_timer(delay, [this]() {
+        //LOG_F(INFO, "%s: DMAREQ asserted", this->name.c_str());
+        this->channel_obj->xfer_retry();
+    });
 }
 
 int MacioIdeChannel::device_postinit() {

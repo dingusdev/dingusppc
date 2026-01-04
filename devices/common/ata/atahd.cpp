@@ -245,29 +245,32 @@ void AtaHardDisk::prepare_identify_info() {
 
     std::memset(this->data_buf, 0, sizeof(this->data_buf));
 
-    buf_ptr[ 0] = 0x0040; // ATA device, non-removable media, non-removable drive
-    buf_ptr[49] = 0x0200; // report LBA support
+    WRITE_WORD_LE_A(&buf_ptr[ 0], 0x0040); // ATA device, non-removable media, non-removable drive
+    WRITE_WORD_LE_A(&buf_ptr[49], 0x0200); // report LBA support
 
     // Maximum number of logical sectors per data block that the device supports
     // for READ_MULTIPLE/WRITE_MULTIPLE commands.
-    buf_ptr[47] = 0x8000 | SECTORS_PER_INT;
+    WRITE_WORD_LE_A(&buf_ptr[47], 0x8000 | SECTORS_PER_INT);
 
     // If bit 8 of word 59 is set to one, then bits 7:0 indicate the number of
     // logical sectors that shall be transferred per data block for
     // READ_MULTIPLE/WRITE_MULTIPLE commands.
     if (this->sectors_per_int)
-        buf_ptr[59] = 0x100 | this->sectors_per_int;
+        WRITE_WORD_LE_A(&buf_ptr[59], 0x100 | this->sectors_per_int);
 
-    buf_ptr[ 1] = this->cylinders;
-    buf_ptr[ 3] = this->heads;
-    buf_ptr[ 6] = this->sectors;
+    WRITE_WORD_LE_A(&buf_ptr[ 1], this->cylinders);
+    WRITE_WORD_LE_A(&buf_ptr[ 3], this->heads);
+    WRITE_WORD_LE_A(&buf_ptr[ 6], this->sectors);
 
-    buf_ptr[57] = this->total_sectors & 0xFFFFU;
-    buf_ptr[58] = (this->total_sectors >> 16) & 0xFFFFU;
+    WRITE_WORD_LE_A(&buf_ptr[51], 0x0200); // max. PIO mode for a basic device
+
+    // report validity for the advanced PIO and MWDMA fields
+    //WRITE_WORD_LE_A(&buf_ptr[53], 0x0003);
+
+    WRITE_DWORD_LE_A(&buf_ptr[57], this->total_sectors);
 
     // report LBA capacity
-    WRITE_WORD_LE_A(&buf_ptr[60], (this->total_sectors & 0xFFFFU));
-    WRITE_WORD_LE_A(&buf_ptr[61], (this->total_sectors >> 16) & 0xFFFFU);
+    WRITE_DWORD_LE_A(&buf_ptr[60], this->total_sectors);
 
     WRITE_WORD_LE_A(&buf_ptr[63], ((1 << this->cur_dma_mode) << 8) | 7);
 }
