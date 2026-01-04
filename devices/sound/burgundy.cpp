@@ -69,6 +69,10 @@ void BurgundyCodec::snd_ctrl_write(uint32_t offset, uint32_t value, int size) {
     value = BYTESWAP_32(value);
 
     switch (offset) {
+    case AWAC_SOUND_CTRL_REG:
+        this->snd_ctrl_reg = BYTESWAP_32(value);
+        this->set_sample_rate((this->snd_ctrl_reg >> 8) & 7);
+        break;
     case AWAC_CODEC_CTRL_REG:
         this->last_ctrl_data = value;
         reg_addr  = (value >> 12) & 0xFF;
