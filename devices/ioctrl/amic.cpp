@@ -261,19 +261,19 @@ void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
     uint32_t mask;
 
     // subdevices registers
-    switch(offset >> 12) {
-    case 0: // VIA1 registers
+    switch (offset >> 12) {
+    case 0:    // VIA1 registers
     case 1:
         this->viacuda->write(offset >> 9, value);
         return;
-    case 4: // SCC registers
+    case 4:    // SCC registers
         if ((offset & 0xF) < 0x0C)
             this->escc->write(compat_to_macrisc[(offset >> 1) & 0xF], value);
         else
             LOG_F(ERROR, "AMIC SCC write @%x.%c = %0*x",
                 offset, SIZE_ARG(size), size * 2, value);
         return;
-    case 0xA: // MACE registers
+    case 0xA:    // MACE registers
         this->mace->write((offset >> 4) & 0x1F, value);
         return;
     case 0x10:
@@ -282,8 +282,8 @@ void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
         else
             this->scsi->write((offset >> 4) & 0xF, value);
         return;
-    case 0x14: // Sound registers
-        switch(offset) {
+    case 0x14:    // Sound registers
+        switch (offset) {
         case AMICReg::Snd_Ctrl_0:
         case AMICReg::Snd_Ctrl_1:
         case AMICReg::Snd_Ctrl_2:
@@ -293,51 +293,48 @@ void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
             if ((this->imm_snd_regs[0] & 0xC0) == PDM_SND_CTRL_VALID) {
                 this->awacs->write_ctrl(
                     (this->imm_snd_regs[1] >> 4) | (this->imm_snd_regs[0] & 0x3F),
-                    ((this->imm_snd_regs[1] & 0xF) << 8) | this->imm_snd_regs[2]
-                );
+                    ((this->imm_snd_regs[1] & 0xF) << 8) | this->imm_snd_regs[2]);
             }
             return;
         case AMICReg::Snd_Buf_Size_Hi:
         case AMICReg::Snd_Buf_Size_Lo:
             SET_SIZE_BYTE(this->snd_buf_size, offset, value);
-            this->snd_buf_size &= ~3; // sound buffer size is always a multiple of 4
+            this->snd_buf_size &= ~3;    // sound buffer size is always a multiple of 4
             LOG_F(9, "AMIC: Sound buffer size set to 0x%X", this->snd_buf_size);
             return;
         case AMICReg::Snd_Out_Ctrl:
             if ((value & 1) != (this->snd_out_ctrl & 1)) {
                 if (value & 1) {
-                    this->snd_out_dma->init(this->dma_base & ~0x3FFFF,
-                                            this->snd_buf_size);
+                    this->snd_out_dma->init(this->dma_base & ~0x3FFFF, this->snd_buf_size);
                     this->snd_out_dma->enable();
                     this->awacs->set_sample_rate((this->snd_out_ctrl >> 1) & 3);
                     this->awacs->dma_out_start();
+                    this->snd_out_ctrl |= 1;
                 } else {
                     this->snd_out_dma->disable();
                     this->awacs->dma_out_pause();
+                    this->snd_out_ctrl &= 0xFE;
                 }
             }
             this->snd_out_ctrl = value;
             return;
         case AMICReg::Snd_In_Ctrl:
-            LOG_F(WARNING, "Snd In Ctrl - SndIn Enable: 0x%x", value & 0x80);
-            LOG_F(WARNING, "Snd In Ctrl - Subframe Out: 0x%x", value & 0x3C);
-            LOG_F(WARNING, "Snd In Ctrl - Subframe In: 0x%x", value & 0x03);
-            if ((value & 0x80) && !(this->snd_in_ctrl & 0x80)){
+            if ((value & 1) != (this->snd_in_ctrl & 1)) {
+                if (value & 1) {
                     this->snd_in_dma->init(this->dma_base & ~0x3FFFF, this->snd_buf_size);
                     this->snd_in_dma->enable();
                     this->awacs->set_sample_rate((this->snd_out_ctrl >> 1) & 3);
                     this->awacs->dma_in_start();
-                } 
-            else if (!(value & 0x80) && (this->snd_in_ctrl & 0x80)) {
-                    this->snd_in_dma->disable();
-                    this->awacs->dma_in_pause();
                 }
+            } else {
+                this->snd_in_dma->disable();
+                this->awacs->dma_in_pause();
+            }
 
             if (value & 0x40) {
-                    this->via2_ifr |= 0x10;
-                    this->ack_via2_int(VIA2_INT_SOUND, 0);
-            } 
-            else {
+                this->via2_ifr |= 0x10;
+                this->ack_via2_int(VIA2_INT_SOUND, 0);
+            } else {
                 this->via2_ifr |= 0x10;
                 this->ack_via2_int(VIA2_INT_SOUND, 1);
             }
@@ -347,13 +344,15 @@ void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
             this->snd_out_dma->write_dma_out_ctrl(value);
             return;
         case AMICReg::Snd_In_DMA:
+            LOG_F(WARNING, "SND IN DMA Value: 0x%x", value);
             this->snd_in_dma->write_dma_in_ctrl(value);
             return;
         }
-    case 0x16: // SWIM3 registers
-    case 0x17:
+    case 0x16:    // SWIM3 registers
+    case 0x17: {
         this->swim3->write((offset >> 9) & 0xF, value);
         return;
+        }
     }
 
     switch(offset) {

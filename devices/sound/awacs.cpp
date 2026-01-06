@@ -115,7 +115,7 @@ void AwacsBase::dma_in_data() {
         //LOG_F(INFO, "%s: status:%x", this->name.c_str(), sound_in_status);
 
         this->dma_in_timer_id = TimerManager::get_instance()->add_oneshot_timer(
-            10000,
+            20000,
             [this]() {
                 // re-enter the sequencer with the state specified in next_state
                 this->dma_in_timer_id = 0;
@@ -135,10 +135,16 @@ void AwacsBase::dma_in_stop() {
         this->dma_in_timer_id = 0;
     }
     LOG_F(ERROR, "%s: dma_in_stop", this->name.c_str());
+    if (this->out_stream_ready) {
+        snd_server->close_out_stream();
+        this->out_stream_ready   = false;
+        this->out_stream_running = false;
+    }
 }
 
 void AwacsBase::dma_in_pause() {
     LOG_F(ERROR, "%s: dma_in_pause", this->name.c_str());
+    this->in_stream_running = false;
 }
 
 //=========================== PDM-style AWACs =================================
