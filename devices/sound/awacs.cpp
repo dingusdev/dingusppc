@@ -99,7 +99,7 @@ void AwacsBase::dma_out_pause() {
     this->out_stream_running = false;
 }
 
-static const char sound_input_data[8096] = {0};
+static const char sound_input_data[8192] = {0};
 static int sound_in_status = 0x10;
 
 void AwacsBase::dma_in_data() {
