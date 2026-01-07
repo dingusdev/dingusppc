@@ -730,21 +730,21 @@ void DppcDebugger::enter_debugger() {
 
     while (1) {
         if (power_off_reason == po_shut_down) {
-            power_off_reason = po_shutting_down;
+            set_power_off_reason(po_shutting_down);
             break;
         }
         if (power_off_reason == po_restart) {
-            power_off_reason = po_restarting;
+            set_power_off_reason(po_restarting);
             break;
         }
         if (power_off_reason == po_quit) {
-            power_off_reason = po_quitting;
+            set_power_off_reason(po_quitting);
             break;
         }
         power_on = true;
 
         if (power_off_reason == po_starting_up) {
-            power_off_reason = po_none;
+            set_power_off_reason(po_none);
             cmd = "go";
         }
         else if (power_off_reason == po_disassemble_on) {
@@ -755,13 +755,13 @@ void DppcDebugger::enter_debugger() {
             ss >> cmd;
         }
         else if (power_off_reason == po_disassemble_off) {
-            power_off_reason = po_none;
+            set_power_off_reason(po_none);
             cmd = "go";
         }
         else
         {
             if (power_off_reason == po_enter_debugger) {
-                power_off_reason = po_entered_debugger;
+                set_power_off_reason(po_entered_debugger);
             }
             if (!did_message) {
                 cout << endl;
@@ -798,7 +798,7 @@ void DppcDebugger::enter_debugger() {
         }
 
         if (power_off_reason == po_signal_interrupt) {
-            power_off_reason = po_enter_debugger;
+            set_power_off_reason(po_enter_debugger);
             // ignore command if interrupt happens because the input line is probably incomplete.
             last_cmd = "";
             continue;
@@ -825,8 +825,7 @@ void DppcDebugger::enter_debugger() {
             break;
         } else if (cmd == "restart") {
             cmd = "";
-            power_on = false;
-            power_off_reason = po_restart;
+            power_off(po_restart);
         } else if (cmd == "profile") {
             cmd = "";
             ss >> sub_cmd;

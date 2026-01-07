@@ -44,8 +44,7 @@ void EventManager::poll_events() {
 
         switch (event.type) {
         case SDL_QUIT:
-            power_on = false;
-            power_off_reason = po_quit;
+            power_off(po_quit);
             break;
 
         case SDL_WINDOWEVENT: {
@@ -138,8 +137,7 @@ void EventManager::poll_events() {
                 // Control-D: debugger
                 if (event.key.keysym.sym == SDLK_d && (event.key.keysym.mod & KMOD_ALL) == KMOD_LCTRL) {
                     if (event.type == SDL_KEYUP) {
-                        power_on = false;
-                        power_off_reason = po_enter_debugger;
+                        power_off(po_enter_debugger);
                     }
                     return;
                 }

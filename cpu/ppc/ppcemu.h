@@ -366,6 +366,11 @@ enum Po_Cause : int {
 
 extern bool power_on;
 extern Po_Cause power_off_reason;
+void p_set_power_off_reason(const char* file, int line, Po_Cause new_reason);
+void p_power_off(const char* file, int line, Po_Cause new_reason);
+#define set_power_off_reason(r) p_set_power_off_reason(__FILE__, __LINE__, r)
+#define power_off(r) p_power_off(__FILE__, __LINE__, r)
+
 extern bool int_pin;
 extern bool dec_exception_pending;
 

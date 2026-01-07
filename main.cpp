@@ -52,8 +52,7 @@ using namespace std;
 extern bool g_auto_grab_mouse;
 
 static void sigint_handler(int signum) {
-    power_on = false;
-    power_off_reason = po_signal_interrupt;
+    power_off(po_signal_interrupt);
 }
 
 static void sigabrt_handler(int signum) {
@@ -297,7 +296,7 @@ int main(int argc, char** argv) {
         // Make sure the reason for the failure is visible (it may have been
         // sent to the logfile only).
         cerr << message.preamble << message.indentation << message.prefix << message.message << endl;
-        power_off_reason = po_enter_debugger;
+        set_power_off_reason(po_enter_debugger);
         DppcDebugger::get_instance()->enter_debugger();
 
         // Ensure that NVRAM and other state is persisted before we terminate.
@@ -416,15 +415,15 @@ void run_machine(std::string machine_str, char* rom_data,
 
     switch (execution_mode) {
     case interpreter:
-        power_off_reason = po_starting_up;
+        set_power_off_reason(po_starting_up);
         DppcDebugger::get_instance()->enter_debugger();
         break;
     case threaded_int:
-        power_off_reason = po_starting_up;
+        set_power_off_reason(po_starting_up);
         DppcDebugger::get_instance()->enter_debugger();
         break;
     case debugger:
-        power_off_reason = po_enter_debugger;
+        set_power_off_reason(po_enter_debugger);
         DppcDebugger::get_instance()->enter_debugger();
         break;
     default:

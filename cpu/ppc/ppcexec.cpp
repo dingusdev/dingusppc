@@ -73,6 +73,43 @@ bool is_deterministic = false;
 bool power_on = false;
 Po_Cause power_off_reason = po_enter_debugger;
 
+const char * get_po_name(Po_Cause reason) {
+#define onename(x) case x: return #x;
+    switch (reason) {
+    onename(po_none)
+    onename(po_starting_up)
+    onename(po_quit)
+    onename(po_quitting)
+    onename(po_shut_down)
+    onename(po_shutting_down)
+    onename(po_restart)
+    onename(po_restarting)
+    onename(po_disassemble_on)
+    onename(po_disassemble_off)
+    onename(po_enter_debugger)
+    onename(po_entered_debugger)
+    onename(po_signal_interrupt)
+    onename(po_benchmark_exception)
+    onename(po_endian_switch)
+    default: return "unknown";
+    }
+#undef onename
+}
+
+void p_set_power_off_reason(const char* file, int line, Po_Cause new_reason) {
+    if (new_reason != power_off_reason) {
+        power_off_reason = new_reason;
+#if 1
+        LOG_F(INFO, "power_off_reason changed to %s at \"%s\":%d", get_po_name(new_reason), file, line);
+#endif
+    }
+}
+
+void p_power_off(const char* file, int line, Po_Cause new_reason) {
+    power_on = false;
+    p_set_power_off_reason(file, line, new_reason);
+}
+
 SetPRS ppc_state;
 #ifdef LOG_INSTRUCTIONS
 uint32_t pcp;
@@ -224,8 +261,7 @@ void ppc_msr_did_change(uint32_t old_msr_val, uint32_t new_msr_val, bool set_nex
             ppc_next_instruction_address = ppc_state.pc + 4;
         }
 #else
-        power_on = false;
-        power_off_reason = po_endian_switch;
+        power_off(po_endian_switch);
 #endif
     }
 }
@@ -235,14 +271,12 @@ void ppc_change_endian(bool newLE) {
     if (ppc_state.is_LE != newLE) {
         LOG_F(INFO, "changed endian to %s", newLE ? "LE" : "BE");
         ppc_state.is_LE = newLE;
-        power_on = false;
-        power_off_reason = po_endian_switch;
+        power_off(po_endian_switch);
     }
 #else
     if (newLE) {
         LOG_F(ERROR, "unsupported endian %s", newLE ? "LE" : "BE");
-        power_on = false;
-        power_off_reason = po_enter_debugger;
+        power_off(po_enter_debugger);
     }
 #endif
 }

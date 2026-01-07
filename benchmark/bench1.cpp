@@ -29,8 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #if defined(PPC_BENCHMARKS)
 void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
-    power_on = false;
-    power_off_reason = po_benchmark_exception;
+    power_off(po_benchmark_exception);
 }
 #endif
 

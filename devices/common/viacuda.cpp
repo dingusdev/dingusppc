@@ -814,13 +814,11 @@ void ViaCuda::pseudo_command() {
         break;
     case CUDA_RESTART_SYSTEM:
         LOG_F(INFO, "Cuda: system restart");
-        power_on = false;
-        power_off_reason = po_restart;
+        power_off(po_restart);
         break;
     case CUDA_POWER_DOWN:
         LOG_F(INFO, "Cuda: system shutdown");
-        power_on = false;
-        power_off_reason = po_shut_down;
+        power_off(po_shut_down);
         break;
     case CUDA_SET_POWER_UPTIME: {
         uint32_t alarm_time = READ_DWORD_BE_U(&this->in_buf[2]);
