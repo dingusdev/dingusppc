@@ -321,7 +321,8 @@ int main() {
     initialize_ppc_opcode_table(); //kludge
     // MPC601 sets MSR[ME] bit during hard reset / Power-On.
     // Also set MSR[FP] bit so we can test FPU instructions.
-    ppc_state.msr = (MSR::ME | MSR::IP | MSR::FP);
+    int new_msr = (MSR::ME | MSR::IP | MSR::FP);
+    ppc_msr_did_change(ppc_state.msr, new_msr, false);
 
     cout << "Running DingusPPC emulator tests..." << endl << endl;
 
