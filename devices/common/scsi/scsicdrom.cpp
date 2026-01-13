@@ -45,6 +45,8 @@ void ScsiCdrom::process_command()
 {
     uint32_t lba;
 
+    uint32_t cdda_start, cdda_end, cdda_len;
+
     this->pre_xfer_action  = nullptr;
     this->post_xfer_action = nullptr;
 
@@ -97,6 +99,19 @@ void ScsiCdrom::process_command()
             this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;
             this->switch_phase(ScsiPhase::DATA_IN);
         }
+        break;
+    case ScsiCommand::READ_CDDA:
+        lba = READ_DWORD_BE_U(&cmd[2]);
+        cdda_len = READ_DWORD_BE_U(&cmd[6]);
+        this->read(lba, cdda_len, 12);
+        break;
+    case ScsiCommand::READ_CDDA_MSF:
+        cdda_start = (cmd[3] * 60 * 75) + (cmd[4] * 75) + cmd[5];
+        cdda_end   = (cmd[7] * 60 * 75) + (cmd[8] * 75) + cmd[9];
+
+        cdda_len = (cdda_end > cdda_start) ? (cdda_end - cdda_start) : 0;
+
+        this->read(cdda_start, cdda_len, 12);
         break;
     default:
         LOG_F(ERROR, "%s: unsupported command 0x%X", this->name.c_str(), cmd[0]);

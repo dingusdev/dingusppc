@@ -143,6 +143,12 @@ enum ScsiCommand : uint8_t {
     READ_TOC                     = 0x43,
     SET_CD_SPEED                 = 0xBB,
     READ_CD                      = 0xBE,
+
+    // vendor specific commands
+    VENDOR_09                    = 0x09,
+    EJECT                        = 0xC0,
+    READ_CDDA                    = 0xD8, //TOSHIBA
+    READ_CDDA_MSF                = 0xD9, //TOSHIBA
 };
 
 enum ScsiSense : int {
