@@ -56,7 +56,8 @@ enum ATA_Reg : int {
     COMMAND     = 0x07, // command (write)
     ALT_STATUS  = 0x16, // alt status (read)
     DEV_CTRL    = 0x16, // device control (write)
-    TIME_CONFIG = 0x20  // Apple ASIC specific timing configuration
+    TIME_CONFIG = 0x20, // Apple ASIC specific timing configuration
+    INT_REG     = 0x30, // Iterrupt Register (read) 0x40 = int request (KeyLargo only)
 };
 
 /** ATAPI specific register offsets. */
