@@ -42,8 +42,8 @@ public:
 
     void register_device(int id, AtaInterface* dev_obj);
 
-    uint32_t read(const uint8_t reg_addr, const int size);
-    void write(const uint8_t reg_addr, const uint32_t val, const int size);
+    virtual uint32_t read(const uint8_t reg_addr, const int size);
+    virtual void write(const uint8_t reg_addr, const uint32_t val, const int size);
 
     int xfer_from(uint8_t *buf, int len) override;
     int xfer_to(uint8_t *buf, int len) override;
@@ -93,8 +93,8 @@ public:
 
     int device_postinit() override;
 
-    uint32_t read(const uint8_t reg_addr, const int size);
-    void write(const uint8_t reg_addr, const uint32_t val, const int size);
+    virtual uint32_t read(const uint8_t reg_addr, const int size) override;
+    virtual void write(const uint8_t reg_addr, const uint32_t val, const int size) override;
 
 private:
     uint32_t    ch_config = 0; // timing configuration for this channel
