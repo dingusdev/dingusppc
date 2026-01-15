@@ -1,6 +1,6 @@
-# ROM
+# ROMs
 
-The Old World ROM is always 4 megabytes (MB). The first three MB are reserved for the 68k code, while the last MB is for the PowerPC boot-up code.
+Old World ROMs are always 4 megabytes (MB). The first three MB are reserved for the 68k code, while the last MB is for the PowerPC boot-up code.
 
 New World ROMs are 1 MB stubs containing Open Firmware and some basic drivers, but has an additional ROM stored on the Mac's hard disk to provide Toolbox functionality. The ROMs stored on the Mac's hard disk also had updates distributed.
 

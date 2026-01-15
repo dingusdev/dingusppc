@@ -8,17 +8,19 @@ Be warned the program is highly unfinished and could use a lot of testing. Any f
 
 While many other PowerPC emus exist (PearPC, Sheepshaver), none of them currently attempt emulation of PowerPC Macs accurately (except for QEMU).
 
-This program aims to not only improve upon what Sheepshaver, PearPC, and other PowerPC Mac emulators have done, but also to provide a better debugging environment. This currently is designed to work best with PowerPC Old World ROMs, including those of the Power Mac 6100, 7200, and G3 Beige.
+This program aims to not only improve upon what Sheepshaver, PearPC, and other PowerPC Mac emulators have done, but also to provide a better debugging environment. This currently is designed to work best with PowerPC NuBus and Old World ROMs, including those of the Power Mac 6100, 7200, and G3 Beige.
 
 ## Implemented Features
 
-This emulator has a debugging environment, complete with a disassembler. We also have implemented enough to allow Open Firmware to boot, going so far as to allow audio playback of the boot-up jingles.
+Several machines have been implemented to varying degrees, like many Old World PowerPC Macs, early New World PowerPC Macs, and the Pippin.
+
+This emulator has a debugging environment, complete with a disassembler. 
 
 ## How to Use
 
 This program currently uses the command prompt to work.
 
-There are a few command line arguments one must enter when starting the program.
+There are a few command line arguments one can enter when starting the program.
 
 ```
 -r, --realtime
@@ -36,21 +38,31 @@ Enter the interactive debugger.
 -b, --bootrom TEXT:FILE
 ```
 
-Specifies the Boot ROM path (optional; looks for bootrom.bin by default)
+Specifies the Boot ROM path. It otherwise looks for bootrom.bin.
 
 ```
 -m, --machine TEXT
 ```
 
-Specify machine ID (optional; will attempt to determine machine ID from the boot rom otherwise)
+Specify machine ID. Otherwise, the emulator will attempt to determine machine ID from the boot rom otherwise.
 
-As of now, the most complete machines are the Power Mac 6100 (SCSI emulation in progress) and the Power Mac G3 Beige (SCSI + ATA emulation in progress, No ATI Rage acceleration).
+As of now, the most complete machines are the Power Mac 6100, the Power Mac 7500, and the Power Mac G3 Beige.
+
+To go into to the debugger regardless of how you started the emulator, press Control and C on the terminal window.
 
 ## How to Compile
 
 You need to install development tools first.
 
-At least, a C++20 compliant compiler and [CMake](https://cmake.org) are required.
+At minimum, a C++20 compliant compiler and [CMake](https://cmake.org) are required.
+
+Clone the repository using the appropriate command:
+
+```
+git clone https://github.com/dingusdev/dingusppc
+```
+
+If this is from a mirror, replace the argument with the source you want to use instead.
 
 You will also have to recursive clone or run
 ```
@@ -100,7 +112,3 @@ make testppc
 - 2 GB of RAM
 - 2 GB of Hard Disk Space
 - Graphics Card with a minimum resolution of 800*600
-
-## Compiler Requirements
-
-- Any C++20 compatible compiler

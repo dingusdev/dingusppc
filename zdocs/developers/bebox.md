@@ -20,7 +20,7 @@ It also has a unique 37-pin connector dubbed the Geekport to allow hobbyists to 
 | CPU 0 Interrupt Mask        | 0x7FFFF0F0     |                |
 | CPU 1 Interrupt Mask        | 0x7FFFF1F0     |                |
 | Interrupt sources           | 0x7FFFF2F0     |                |
-| Cross-proccessor interrupts | 0x7FFFF3F0     |                |
+| Cross-processor interrupts  | 0x7FFFF3F0     |                |
 | Proc. resets, other stuff   | 0x7FFFF4F0     |                |
 
 

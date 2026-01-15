@@ -151,7 +151,7 @@ pci_B1
 pci_C1
 ```
 
-Specified what devices are conntected to a particular PCI slot. Not supported on NuBus machines such as the Power Mac 6100.
+Specified what devices are connected to a particular PCI slot. Not supported on NuBus machines such as the Power Mac 6100.
 
 ```
 --adb_devices TEXT
@@ -214,7 +214,7 @@ Currently, the Power Mac 6100 cannot boot any OS image containing Mac OS 9.0 or 
 
 ### ATI Mach Support
 
-The GUI engine is currently not fully implemented. As such, UI elements might not be rendered when trying to use this video card. To circumenvent this, you may wish to move the ATI Accelerator extension to the Extensions (Disabled) folder.
+The GUI engine is currently not fully implemented. As such, UI elements might not be rendered when trying to use this video card. To circumvent this, you may wish to move the ATI Accelerator extension to the Extensions (Disabled) folder.
 
 ### Currently Unimplemented Features
 

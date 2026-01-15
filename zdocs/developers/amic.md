@@ -1,4 +1,5 @@
-The AMIC is the I/O controller used in the Power Mac 6100. Physically, it's located at 0x50F00000.
+The AMIC is the I/O controller used in the Power Mac 6100. Appropriately, it's the abbreviation for Apple Memory Mapped I/O Controller. 
+Physically, it's located at 0x50F00000.
 
 It also:
 
