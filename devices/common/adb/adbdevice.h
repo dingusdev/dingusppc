@@ -67,7 +67,8 @@ protected:
     virtual void set_register_3() {}
 
     uint8_t exc_event_flag = 0;
-    uint8_t srq_flag = 0;
+    uint8_t srq_flag       = 0;
+    uint8_t led_state      = 0;
     uint8_t my_addr = 0;
     uint8_t dev_handler_id = 0;
     bool    got_collision = false;
