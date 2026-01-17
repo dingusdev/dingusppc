@@ -110,10 +110,10 @@ uint32_t MacIoTwo::read(uint32_t rgn_start, uint32_t offset, int size) {
         value = this->viacuda->read((offset >> 9) & 0xF);
         break;
     case 0x20: // IDE 0
-        value = this->ide_0->read((offset >> 4) & 0x3F, size);
+        value = this->ide_0->read((offset >> 4) & 0xFF, size);
         break;
     case 0x21: // IDE 1
-        value = this->ide_1 ? this->ide_1->read((offset >> 4) & 0x3F, size) : 0;
+        value = this->ide_1 ? this->ide_1->read((offset >> 4) & 0xFF, size) : 0;
         break;
     default:
         if (sub_addr >= 0x60) {
@@ -172,11 +172,11 @@ void MacIoTwo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int si
         this->viacuda->write((offset >> 9) & 0xF, value);
         break;
     case 0x20: // IDE 0
-        this->ide_0->write((offset >> 4) & 0x3F, value, size);
+        this->ide_0->write((offset >> 4) & 0xFF, value, size);
         break;
     case 0x21: // IDE 1
         if (this->ide_1)
-            this->ide_1->write((offset >> 4) & 0x3F, value, size);
+            this->ide_1->write((offset >> 4) & 0xFF, value, size);
         break;
     default:
         if (sub_addr >= 0x60) {
