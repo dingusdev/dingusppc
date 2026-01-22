@@ -644,7 +644,7 @@ void ViaCuda::pseudo_command() {
         addr = READ_WORD_BE_A(&this->in_buf[2]);
         response_header(CUDA_PKT_PSEUDO, 0);
         // if starting address is within PRAM region
-        // prepare to transfer PRAM content, othwesise we will send zeroes
+        // prepare to transfer PRAM content, otherwise we will send zeroes
         if (addr >= CUDA_PRAM_START && addr <= CUDA_PRAM_END) {
             this->cur_pram_addr    = addr - CUDA_PRAM_START;
             this->next_out_handler = &ViaCuda::pram_out_handler;
