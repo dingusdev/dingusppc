@@ -540,12 +540,11 @@ static TLBEntry* tlb2_target_entry(uint32_t gp_va)
     }
 }
 
-static TLBEntry* itlb2_refill(uint32_t guest_va)
-{
+static TLBEntry* itlb2_refill(uint32_t guest_va) {
     BATResult bat_res;
     uint32_t phys_addr;
-    TLBEntry *tlb_entry;
-    uint16_t flags = 0;
+    TLBEntry* tlb_entry = nullptr;
+    uint16_t flags      = 0;
 
     /* instruction address translation if enabled */
     if (ppc_state.msr & MSR::IR) {
@@ -555,11 +554,13 @@ static TLBEntry* itlb2_refill(uint32_t guest_va)
         } else {
             bat_res = ppc_block_address_translation<BATType::IBAT>(guest_va);
         }
+
         if (bat_res.hit) {
             // check block protection
             // only PP = 0 (no access) causes ISI exception
             if (!bat_res.prot) {
                 mmu_exception_handler(Except_Type::EXC_ISI, 0x08000000);
+                return nullptr;    // Stop refill on exception
             }
             phys_addr = bat_res.phys;
             flags |= TLBFlags::TLBE_FROM_BAT; // tell the world we come from
@@ -567,7 +568,7 @@ static TLBEntry* itlb2_refill(uint32_t guest_va)
             // page address translation
             PATResult pat_res = page_address_translation(guest_va, true, !!(ppc_state.msr & MSR::PR), 0);
             phys_addr = pat_res.phys;
-            flags = TLBFlags::TLBE_FROM_PAT; // tell the world we come from
+            flags |= TLBFlags::TLBE_FROM_PAT;  // tell the world we come from
         }
     } else { // instruction translation disabled
         phys_addr = guest_va;
@@ -577,18 +578,23 @@ static TLBEntry* itlb2_refill(uint32_t guest_va)
     AddressMapEntry* rgn_desc = mem_ctrl_instance->find_range(phys_addr);
     if (rgn_desc) {
         if (rgn_desc->type & RT_MMIO) {
-            ABORT_F("Instruction fetch from MMIO region at 0x%08X!\n", phys_addr);
+            // TODO: ISI or Machine Check for this?
+            mmu_exception_handler(Except_Type::EXC_ISI, 0x40000000);
         }
         // refill the secondary TLB
-        const uint32_t tag = guest_va & ~0xFFFUL;
-        tlb_entry = tlb2_target_entry<TLBType::ITLB>(tag);
-        tlb_entry->tag = tag;
-        tlb_entry->flags = flags | TLBFlags::PAGE_MEM;
-        tlb_entry->host_va_offs_r = (int64_t)rgn_desc->mem_ptr - guest_va +
-                                    (phys_addr - rgn_desc->start);
+        const uint32_t page_base = guest_va & ~0xFFFUL;
+        tlb_entry                = tlb2_target_entry<TLBType::ITLB>(page_base);
+        tlb_entry->tag           = page_base;
+        tlb_entry->flags         = flags | TLBFlags::PAGE_MEM;
+
+        // Calculate offset based on page base to ensure alignment
+        tlb_entry->host_va_offs_r = (int64_t)rgn_desc->mem_ptr - (int64_t)page_base +
+            ((phys_addr & ~0xFFFUL) - rgn_desc->start);
+
         tlb_entry->phys_tag = phys_addr & ~0xFFFUL;
     } else {
-        ABORT_F("Instruction fetch from unmapped memory at 0x%08X!\n", phys_addr);
+        // TODO: ISI or Machine Check for this?
+        mmu_exception_handler(Except_Type::EXC_ISI, 0x40000000);
     }
 
     return tlb_entry;
