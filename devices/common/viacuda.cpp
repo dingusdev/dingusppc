@@ -407,6 +407,11 @@ void ViaCuda::write(uint8_t new_state) {
             this->via_portb |= CUDA_TREQ; // negate TREQ
             this->treq = 1;
 
+            if (this->is_sync_state) {
+                this->disable_async_packets();
+                this->is_sync_state = false;
+            }
+
             if (this->in_count) {
                 process_packet();
 
@@ -427,6 +432,7 @@ void ViaCuda::write(uint8_t new_state) {
             this->treq      = 0;
             this->in_count  = 0;
             this->out_count = 0;
+            this->is_sync_state = true;
         }
 
         // send dummy byte as idle acknowledge or attention
@@ -620,6 +626,15 @@ void ViaCuda::autopoll_handler() {
             schedule_sr_int(USECS_TO_NSECS(30));
         }
     }
+}
+
+void ViaCuda::disable_async_packets() {
+    // disable autopolling of ADB devices
+    this->autopoll_enabled = false;
+    this->do_post_keyboard_state_events = false;
+
+    // disable one second packets
+    this->one_sec_mode = 0;
 }
 
 void ViaCuda::pseudo_command() {

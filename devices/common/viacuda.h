@@ -223,6 +223,7 @@ private:
     uint8_t  old_tip;
     uint8_t  old_byteack;
     uint8_t  treq;
+    bool     is_sync_state = false;
     uint32_t treq_timer_id = 0;
     uint8_t  in_buf[CUDA_IN_BUF_SIZE];
     int32_t  in_count;
@@ -271,6 +272,7 @@ private:
     template <class T> inline void append_data(T data);
     void process_packet();
     void process_adb_command();
+    void disable_async_packets();
     void pseudo_command();
     uint32_t calc_real_time();
 
