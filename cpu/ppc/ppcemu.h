@@ -303,6 +303,11 @@ enum XER : uint32_t {
     SO = 1UL << 31
 };
 
+enum DSISR : uint32_t { 
+    PROT  = 1UL << 27, 
+    STORE = 1UL << 25 
+};
+
 //for inf and nan checks
 enum FPOP : int {
     DIV    = 0x12,

@@ -624,7 +624,7 @@ static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write, bool is_dbg = fal
                 LOG_F(9, "BAT DSI exception in TLB2 refill!");
                 if (!is_dbg)
                 LOG_F(9, "Attempt to write to read-only region, LA=0x%08X, PC=0x%08X!", guest_va, ppc_state.pc);
-                ppc_state.spr[SPR::DSISR] = 0x08000000 | (is_write << 25);
+                ppc_state.spr[SPR::DSISR] = DSISR::PROT | (is_write << 25);
                 ppc_state.spr[SPR::DAR]   = guest_va;
                 mmu_exception_handler(Except_Type::EXC_DSI, 0);
             }
