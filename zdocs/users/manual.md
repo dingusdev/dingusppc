@@ -49,16 +49,16 @@ Run the emulator in runtime (using the interpreter).
 Enter the interactive debugger. The user may also enter the debugger at any point by pressing Control and C, when the command line window is selected.
 
 ```
--b, --bootrom TEXT:FILE
+-b, --bootrom filename
 ```
 
-Specifies the Boot ROM path (optional; looks for bootrom.bin by default)
+Specifies the Boot ROM path, where `filename` specifies the location of the ROM (optional; looks for bootrom.bin by default)
 
 ```
--m, --machine TEXT
+-m, --machine machineid
 ```
 
-Specify machine ID (optional; will attempt to determine machine ID from the boot rom otherwise)
+Specify machine ID, where `machineid` is a short string identifier for the machine (i.e. pm6100). (optional; will attempt to determine machine ID from the boot rom otherwise)
 
 ```
 list machines
@@ -87,13 +87,13 @@ Set the RAM sizes to use, with X being an integer of a power of 2 up to 512 (dep
 gfxmem_size
 ```
 
-Specifies the amount of available graphics memory. 
+Specifies the amount of available graphics memory.
 
 ```
---fdd_img TEXT:FILE
+--fdd_img filename
 ```
 
-Set the floppy disk image
+Set the floppy disk image. `filename` is the name of the floppy disk you want to insert into the emulator.
 
 ```
 --fdd_wr_prot=1
@@ -102,23 +102,23 @@ Set the floppy disk image
 Set the floppy to read-only
 
 ```
---hdd_img TEXT:FILE
+--hdd_img filename
 ```
 
-Set the hard disk image
+Set the hard disk image. `filename` is the name of the floppy disk you want to insert into the emulator. On machines that support SCSI hard disk, you can also use the colon (:) to add multiple hard disks.
 
 ```
---cdr_img TEXT:FILE
+--cdr_img filename
 ```
 
-Set the CD ROM image
+Set the CD ROM image. `filename` is the name of the CD ROM image you want to insert into the emulator.
 
 ```
 hdd_config
 cdr_config
 ```
 
-These properties determine where in the bus the hard disk and CD ROM are set up in. For example, these can be `Ide0:0` or `CmdAta0:0`. 
+These properties determine where in the bus the hard disk and CD ROM are set up in. For example, these can be `Ide0:0` or `CmdAta0:0`.
 
 ```
 --cpu
@@ -154,10 +154,10 @@ pci_C1
 Specified what devices are connected to a particular PCI slot. Not supported on NuBus machines such as the Power Mac 6100.
 
 ```
---adb_devices TEXT
+--adb_devices device_name
 ```
 
-Set the ADB devices to attach, comma-separated.
+Set the ADB devices to attach where `device_name` is the name of the device to attach, comma-separated.
 
 ### Command Line Examples
 
@@ -194,6 +194,7 @@ Early implementations of the iMac G3, Power Mac G3 Blue and White, and Apple Pip
 The debugger can be used to show what code is currently being executed, the contents of memory as hex or 68K assembly or PowerPC assembly, NVRAM variables, memory regions, and CPU registers. It can also be used to change memory, registers, and nvram variables. It can step through instructions one at a time or many instructions at once.
 
 ## Quirks
+
 ### Mouse Grabbing
 
 While the emulator display window is in focus, press Control-G to hide the host mouse cursor to control the guest mouse cursor directly. Press Control-G to show the host mouse cursor again and control the guest mouse cursor only when the host mouse cursor is within the emulator display window.
