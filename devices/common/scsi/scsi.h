@@ -241,12 +241,12 @@ protected:
     int         incoming_size;
     uint8_t     status;
 
-    int         sense;
-    int         asc;
-    int         ascq;
-    int         sksv;
-    int         field;
-    bool        valid;
+    int         sense = ScsiSense::NO_SENSE;
+    int         asc   = 0;
+    int         ascq  = 0;
+    int         sksv  = 0;
+    int         field = 0;
+    bool        valid = true;
 
     bool        last_selection_has_atention = false;
     uint8_t     last_selection_message = 0;
