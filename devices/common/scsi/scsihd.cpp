@@ -197,7 +197,7 @@ int ScsiHardDisk::req_sense(uint16_t alloc_len) {
 
     {
         // FIXME: there should be a way to set the VALID and ILI bits.
-        this->data_buf[ 0] = 0x70; // Valid:0x80, Error Code:0x7f
+        this->data_buf[ 0] = 0x80 | 0x70; // Valid:0x80, Error Code:0x7f
         this->data_buf[ 1] =    0; // segment number
         this->data_buf[ 3] =    0; // information
         this->data_buf[ 4] =    0;
@@ -462,7 +462,7 @@ void ScsiHardDisk::format() {
 
 void ScsiHardDisk::reassign() {
     LOG_F(WARNING, "%s: attempt to reassign blocks on the disk!", this->name.c_str());
-    
+
     this->status = ScsiStatus::GOOD;
     this->sense  = ScsiSense::NO_SENSE;
     this->asc    = ScsiError::NO_ERROR;
