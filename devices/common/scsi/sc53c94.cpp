@@ -560,7 +560,6 @@ void Sc53C94::sequencer()
             this->bus_obj->target_xfer_data();
         break;
     case SeqState::CMD_COMPLETE:
-        this->int_status = INTSTAT_SR | INTSTAT_SO;
         this->cur_state = SeqState::IDLE;
         this->update_irq();
         exec_next_command();
@@ -640,6 +639,7 @@ void Sc53C94::sequencer()
             } else if (this->cur_state == SeqState::RCV_MESSAGE) {
                 this->bus_obj->assert_ctrl_line(this->my_bus_id, SCSI_CTRL_ACK);
                 if (this->cur_cmd == CMD_COMPLETE_STEPS) {
+                    this->int_status = INTSTAT_SO;
                     this->cur_state = SeqState::CMD_COMPLETE;
                     this->sequencer();
                 }
