@@ -1394,9 +1394,9 @@ void opc_group31(PPCDisasmContext* ctx) {
         break;
     }
 
-    auto ref_spr  = (((ctx->instr_code >> 11) & 31) << 5) | ((ctx->instr_code >> 16) & 31);
     auto spr_high = (ctx->instr_code >> 11) & 31;
     auto spr_low  = (ctx->instr_code >> 16) & 31;
+    auto ref_spr  = (spr_high << 5) | spr_low;
 
     switch (ext_opc) {
     case 0: /* cmp */
