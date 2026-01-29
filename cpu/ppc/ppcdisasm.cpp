@@ -259,9 +259,9 @@ const char* spr_index0[32] = {"mq", "xer",  "",      "",     "rtcu", "rtcl", "de
                               "",   "sdr1", "srr0",  "srr1", "",     "",     "",    ""};
 
 const char* spr_index8[32] = {
-    "",      "",      "", "", "",    "",      "",      "",      "",      "",      "",
-    "",      "",      "", "", "",    "sprg0", "sprg1", "sprg2", "sprg3", "sprg4", "sprg5",
-    "sprg6", "sprg7", "", "", "ear", "",      "tbl",   "tbu",   "",      "pvr"};
+    "",      "",      "",      "", "",    "",      "",      "",      "",      "",      "",
+    "",      "tbl_u", "tbu_u", "", "",    "sprg0", "sprg1", "sprg2", "sprg3", "sprg4", "sprg5",
+    "sprg6", "sprg7", "",      "", "ear", "",      "tbl",   "tbu",   "",      "pvr"};
 
 const char* spr_index16[32] = {
     "",       "",       "",       "",       "",       "",       "",       "",
