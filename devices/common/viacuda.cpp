@@ -553,11 +553,9 @@ void ViaCuda::append_data(uint8_t* src, int len) {
 
 template <class T>
 void ViaCuda::append_data(T data) {
-    switch(sizeof(T)) {
-    case 1: this->out_buf[this->out_count] = data;
-    case 2: WRITE_WORD_BE_U( &this->out_buf[this->out_count], data);
-    case 4: WRITE_DWORD_BE_U(&this->out_buf[this->out_count], data);
-    }
+    if (sizeof(T) == 1) this->out_buf[this->out_count] = (uint8_t)data;
+    if (sizeof(T) == 2) WRITE_WORD_BE_U( &this->out_buf[this->out_count], (uint16_t)data);
+    if (sizeof(T) == 4) WRITE_DWORD_BE_U(&this->out_buf[this->out_count], (uint32_t)data);
     this->out_count += sizeof(T);
 }
 template void ViaCuda::append_data(uint8_t data);
