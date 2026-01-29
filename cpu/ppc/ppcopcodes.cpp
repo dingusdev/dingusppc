@@ -973,6 +973,7 @@ void dppc_interpreter::ppc_mfspr(uint32_t opcode) {
         ppc_state.gpr[reg_d] = ppc_state.spr[SPR::DEC_S] = val;
         break;
     }
+    case SPR::TBL_U:
     case SPR::TBL_S: {
         uint64_t tbr_value = calc_tbr_value();
         ppc_state.gpr[reg_d] =
@@ -980,6 +981,7 @@ void dppc_interpreter::ppc_mfspr(uint32_t opcode) {
         ppc_state.spr[TBU_S] = uint32_t(tbr_value >> 32);
         break;
     }
+    case SPR::TBU_U:
     case SPR::TBU_S: {
         uint64_t tbr_value = calc_tbr_value();
         ppc_state.gpr[reg_d] =
