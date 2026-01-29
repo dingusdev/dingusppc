@@ -901,6 +901,8 @@ static map<string, int> SPRName2Num = {
     {"MMCR0",  SPR::MMCR0},     {"PMC1",   SPR::PMC1},  {"PMC2",   SPR::PMC2},
     {"SDA",    SPR::SDA},       {"SIA",    SPR::SIA},   {"MMCR1",  SPR::MMCR1},
     {"PMC3",   SPR::PMC3},      {"PMC4",   SPR::PMC4},
+// get value from supervisor index same as we do for SPR268 and SPR269
+    {"TBL_U",  SPR::TBL_S},     {"TBU_U",  SPR::TBU_S},
 };
 
 static uint64_t reg_op(string& reg_name, uint64_t val, bool is_write) {
