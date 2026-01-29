@@ -492,6 +492,8 @@ static int get_sdl_event_key_code(const SDL_KeyboardEvent &event, uint32_t kbd_l
     case SDL_SCANCODE_TO_KEYCODE(SDL_SCANCODE_INTERNATIONAL3):
         if (kbd_locale == Jpn_JPN)
             return AdbKey_JIS_Yen;
+        else
+            return -1;
     case SDL_SCANCODE_TO_KEYCODE(SDL_SCANCODE_INTERNATIONAL1):
         return AdbKey_JIS_Underscore;
     case 0XBC:
