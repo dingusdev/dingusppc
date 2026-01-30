@@ -1,9 +1,9 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-26 divingkatae and maximum
-                      (theweirdo)     spatium
+Copyright (C) 2018-26 The DingusPPC Development Team
+          (See CREDITS.MD for more details)
 
-(Contact divingkatae#1017 or powermax#2286 on Discord for more info)
+(You may also contact divingkxt or powermax2286 on Discord)
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
