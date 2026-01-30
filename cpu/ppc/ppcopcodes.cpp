@@ -879,13 +879,17 @@ static void update_timebase(uint64_t mask, uint64_t new_val)
     tbr_wr_timestamp = get_virt_time_ns();
 }
 
-
 static uint32_t decrementer_timer_id = 0;
+
+static void update_decrementer(uint32_t oldval, uint32_t newval);
 
 static void trigger_decrementer_exception() {
     decrementer_timer_id = 0;
-    dec_wr_value = -1;
-    dec_wr_timestamp = get_virt_time_ns();
+
+    uint32_t new_val = calc_dec_value();
+
+    update_decrementer(new_val, new_val);
+
     if (ppc_state.msr & MSR::EE) {
         dec_exception_pending = false;
         //LOG_F(WARNING, "decrementer exception triggered");
@@ -897,24 +901,31 @@ static void trigger_decrementer_exception() {
     }
 }
 
-static void update_decrementer(uint32_t val) {
-    dec_wr_value = val;
+static void update_decrementer(uint32_t oldval, uint32_t newval) {
+    dec_wr_value = newval;
     dec_wr_timestamp = get_virt_time_ns();
 
     dec_exception_pending = false;
 
-    if (is_601)
-        return;
-
     if (decrementer_timer_id) {
-        //LOG_F(WARNING, "decrementer cancel timer");
         TimerManager::get_instance()->cancel_timer(decrementer_timer_id);
     }
 
+    if (bit_changed(oldval, newval, 31) && bit_set(newval, 31)) {
+        decrementer_timer_id = TimerManager::get_instance()->add_immediate_timer(
+            trigger_decrementer_exception
+        );
+        return;
+    }
+
+    // add one tick if newval is zero
+    if (!newval)
+        newval += (is_601) ? (1 << 7) : 1;
+
     uint64_t time_out;
     uint32_t time_out_lo;
-    _u32xu64(val, tbr_period_ns, time_out, time_out_lo);
-    //LOG_F(WARNING, "decrementer:0x%08X ns:%llu", val, time_out);
+    _u32xu64(newval, tbr_period_ns, time_out, time_out_lo);
+    //LOG_F(WARNING, "new decrementer value: 0x%08X, interrupt after %llu ns", newval, time_out);
     decrementer_timer_id = TimerManager::get_instance()->add_oneshot_timer(
         time_out,
         trigger_decrementer_exception
@@ -1047,8 +1058,8 @@ void dppc_interpreter::ppc_mtspr(uint32_t opcode) {
     case SPR::DEC_S:
         if (is_601)
             val &= ~0x7F;
+        update_decrementer(ppc_state.spr[DEC_S], val);
         ppc_state.spr[DEC_S] = val;
-        update_decrementer(val);
         break;
     case SPR::TBL_S:
         update_timebase(0xFFFFFFFF00000000ULL, val);
