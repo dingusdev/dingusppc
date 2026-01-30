@@ -282,10 +282,10 @@ enum {
     MIO_OH_FC_RESET_SCC                = 1 << 25,
     MIO_OH_FC_MFDC_CELL_EN             = 1 << 26, // Heathrow/Paddington only
     MIO_OH_FC_USE_MFDC                 = 1 << 27, // Heathrow/Paddington only
-    MIO_OH_FC_RESVD28                  = 1 << 28,
-    MIO_OH_FC_RESVD29                  = 1 << 29,
-    MIO_OH_FC_RESVD30                  = 1 << 30,
-    MIO_OH_FC_RESVD31                  = 1 << 31,
+    MIO_OH_FC_ADB_CELL_EN              = 1 << 28, // Heathrow/Paddington only
+    MIO_OH_FC_ETH_EN                   = 1 << 29, // Heathrow/Paddington only
+    MIO_OH_FC_ETH_XCVR_EN              = 1 << 30, // Heathrow/Paddington only
+    MIO_OH_FC_RESET_ETH_CELL           = 1 << 31, // Heathrow/Paddington only
 };
 
 /** O'Hare/Heathrow DBDMA channels. */
