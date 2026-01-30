@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-24 divingkatae and maximum
+Copyright (C) 2018-26 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -72,7 +72,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     int reg_a             = (opcode >> 16) & 31; \
     int reg_b             = (opcode >> 11) & 31; \
     uint32_t ppc_result_a = ppc_state.gpr[reg_a]; \
-    uint32_t ppc_result_b = ppc_state.gpr[reg_b]; 
+    uint32_t ppc_result_b = ppc_state.gpr[reg_b];
 
 #define ppc_grab_regssab(opcode) \
     int reg_s             = (opcode >> 21) & 31; \
@@ -87,13 +87,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     int reg_a             = (opcode >> 16) & 31; \
     int reg_b             = (opcode >> 11) & 31; \
     uint32_t ppc_result_a = ppc_state.gpr[reg_a]; \
-    uint32_t ppc_result_b = ppc_state.gpr[reg_b];  
+    uint32_t ppc_result_b = ppc_state.gpr[reg_b];
 
 #define ppc_grab_regsab(opcode) \
     int reg_a             = (opcode >> 16) & 31;\
     int reg_b             = (opcode >> 11) & 31;\
     uint32_t ppc_result_a = ppc_state.gpr[reg_a];\
-    uint32_t ppc_result_b = ppc_state.gpr[reg_b];  
+    uint32_t ppc_result_b = ppc_state.gpr[reg_b];
 
 #define ppc_grab_regssa(opcode) \
     int reg_s             = (opcode >> 21) & 31; \
@@ -151,7 +151,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         int reg_b = (opcode >> 11) & 31;
 
 #define GET_FPR(reg) \
-    ppc_state.fpr[(reg)].dbl64_r 
+    ppc_state.fpr[(reg)].dbl64_r
 
 #define FPR_INT(reg) \
     ppc_state.fpr[reg].int64_r

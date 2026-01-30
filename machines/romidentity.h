@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-25 divingkatae and maximum
+Copyright (C) 2018-26 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -41,6 +41,6 @@ typedef struct {
     const char *rom_description;
 } rom_info;
 
-extern rom_info rom_identity[]; 
+extern rom_info rom_identity[];
 
 #endif /* ROM_IDENTITY_H */

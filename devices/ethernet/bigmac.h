@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-23 divingkatae and maximum
+Copyright (C) 2018-26 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -54,12 +54,12 @@ enum BigMacReg : uint16_t {
     EVENT_MASK  = 0x210, // ambiguously called INT_DISABLE in the Apple source
     TX_SW_RST   = 0x420,
     TX_CONFIG   = 0x430,
-    IPG_1       = 0x440, // Inter Packet Gap 1 
+    IPG_1       = 0x440, // Inter Packet Gap 1
     IPG_2       = 0x450,
     A_LIMIT     = 0x460, // Attempt Limit
     SLOT        = 0x470,
     PA_LEN      = 0x480, // Apple: PA Len, Sun: PA Size
-    PA_PAT      = 0x490, 
+    PA_PAT      = 0x490,
     TX_SFD      = 0x4A0,
     JAM_SIZE    = 0x4B0,
     TX_MAX      = 0x4C0, // Max frame size
@@ -224,7 +224,7 @@ private:
     uint16_t        preamble_pat    = 0;
     uint16_t        jam_size        = 0;
     uint16_t        defer_timer     = 0;
-    
+
 
     // Interrupt state
     uint16_t        event_mask = 0xFFFFU; // inverted mask: 0 - enabled, 1 - disabled

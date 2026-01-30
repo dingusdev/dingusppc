@@ -1,6 +1,6 @@
 /*
 DingusPPC - The Experimental PowerPC Macintosh emulator
-Copyright (C) 2018-25 divingkatae and maximum
+Copyright (C) 2018-26 divingkatae and maximum
                       (theweirdo)     spatium
 
 (Contact divingkatae#1017 or powermax#2286 on Discord for more info)
@@ -65,7 +65,7 @@ static string appDescription = string(
     "\nDingusPPC - Alpha 1.04 (12/25/2025)          "
     "\nWritten by divingkatae, maximumspatium,      "
     "\njoevt, mihaip, kkaisershot, et. al.          "
-    "\n(c) 2018-2025 The DingusPPC Dev Team.        "
+    "\n(c) 2018-2026 The DingusPPC Dev Team.        "
     "\nThis is a build intended for testing.        "
     "\nUse at your own discretion.                  "
     "\n"
