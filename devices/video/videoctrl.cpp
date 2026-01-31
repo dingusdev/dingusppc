@@ -326,11 +326,11 @@ bool VideoCtrlBase::needs_swap_endian() {
 
 // RGB555
 template <VideoCtrlBase::fb_endian endian>
-void VideoCtrlBase::convert_frame_15bpp(uint8_t *dst_buf, int dst_pitch)
+void VideoCtrlBase::convert_frame_15bpp(uint8_t *dst_buf, int dst_pitch, bool swapper)
 {
 #if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
-    if (needs_swap_endian()) {
-        convert_frame_15bpp<endian == BE ? LE : BE>(dst_buf, dst_pitch);
+    if (needs_swap_endian() && !swapper) {
+        convert_frame_15bpp<endian == BE ? LE : BE>(dst_buf, dst_pitch, true);
         return;
     }
 #endif
@@ -357,16 +357,16 @@ void VideoCtrlBase::convert_frame_15bpp(uint8_t *dst_buf, int dst_pitch)
         dst_row += dst_pitch;
     }
 }
-template void VideoCtrlBase::convert_frame_15bpp<VideoCtrlBase::BE>(uint8_t *dst_buf, int dst_pitch);
-template void VideoCtrlBase::convert_frame_15bpp<VideoCtrlBase::LE>(uint8_t *dst_buf, int dst_pitch);
+template void VideoCtrlBase::convert_frame_15bpp<VideoCtrlBase::BE>(uint8_t *dst_buf, int dst_pitch, bool swapper);
+template void VideoCtrlBase::convert_frame_15bpp<VideoCtrlBase::LE>(uint8_t *dst_buf, int dst_pitch, bool swapper);
 
 // RGB565
 template <VideoCtrlBase::fb_endian endian>
-void VideoCtrlBase::convert_frame_16bpp(uint8_t *dst_buf, int dst_pitch)
+void VideoCtrlBase::convert_frame_16bpp(uint8_t *dst_buf, int dst_pitch, bool swapper)
 {
 #if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
-    if (needs_swap_endian()) {
-        convert_frame_16bpp<endian == BE ? LE : BE>(dst_buf, dst_pitch);
+    if (needs_swap_endian() && !swapper) {
+        convert_frame_16bpp<endian == BE ? LE : BE>(dst_buf, dst_pitch, true);
         return;
     }
 #endif
@@ -393,8 +393,8 @@ void VideoCtrlBase::convert_frame_16bpp(uint8_t *dst_buf, int dst_pitch)
         dst_row += dst_pitch;
     }
 }
-template void VideoCtrlBase::convert_frame_16bpp<VideoCtrlBase::BE>(uint8_t *dst_buf, int dst_pitch);
-template void VideoCtrlBase::convert_frame_16bpp<VideoCtrlBase::LE>(uint8_t *dst_buf, int dst_pitch);
+template void VideoCtrlBase::convert_frame_16bpp<VideoCtrlBase::BE>(uint8_t *dst_buf, int dst_pitch, bool swapper);
+template void VideoCtrlBase::convert_frame_16bpp<VideoCtrlBase::LE>(uint8_t *dst_buf, int dst_pitch, bool swapper);
 
 
 // RGB888
@@ -422,11 +422,11 @@ void VideoCtrlBase::convert_frame_24bpp(uint8_t *dst_buf, int dst_pitch)
 
 // ARGB8888
 template <VideoCtrlBase::fb_endian endian>
-void VideoCtrlBase::convert_frame_32bpp(uint8_t *dst_buf, int dst_pitch)
+void VideoCtrlBase::convert_frame_32bpp(uint8_t *dst_buf, int dst_pitch, bool swapper)
 {
 #if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
-    if (needs_swap_endian()) {
-        convert_frame_32bpp<endian == BE ? LE : BE>(dst_buf, dst_pitch);
+    if (needs_swap_endian() && !swapper) {
+        convert_frame_32bpp<endian == BE ? LE : BE>(dst_buf, dst_pitch, true);
         return;
     }
 #endif
@@ -450,5 +450,5 @@ void VideoCtrlBase::convert_frame_32bpp(uint8_t *dst_buf, int dst_pitch)
         dst_row = (uint32_t*)((uint8_t*)dst_row + dst_pitch);
     }
 }
-template void VideoCtrlBase::convert_frame_32bpp<VideoCtrlBase::BE>(uint8_t *dst_buf, int dst_pitch);
-template void VideoCtrlBase::convert_frame_32bpp<VideoCtrlBase::LE>(uint8_t *dst_buf, int dst_pitch);
+template void VideoCtrlBase::convert_frame_32bpp<VideoCtrlBase::BE>(uint8_t *dst_buf, int dst_pitch, bool swapper);
+template void VideoCtrlBase::convert_frame_32bpp<VideoCtrlBase::LE>(uint8_t *dst_buf, int dst_pitch, bool swapper);
