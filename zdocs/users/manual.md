@@ -61,6 +61,18 @@ Specifies the Boot ROM path, where `filename` specifies the location of the ROM 
 Specify machine ID, where `machineid` is a short string identifier for the machine (i.e. pm6100). (optional; will attempt to determine machine ID from the boot rom otherwise)
 
 ```
+-w,--workingdir path
+```
+
+Specifies working directory, where `path` is a string for the directory the emulator will grab files from.
+
+```
+--setenv args
+```
+
+Set Open Firmware variables at startup, where `args` is a string where you enter the variables to change.
+
+```
 list machines
 ```
 
@@ -81,7 +93,7 @@ Shows the configurable properties, such as the selected disc image and the ram b
 --rambank4_size X
 ```
 
-Set the RAM sizes to use, with X being an integer of a power of 2 up to 512 (depending on the emulated machine).
+Set the RAM sizes to use, where X is an integer of a power of 2 up to 512 (depending on the emulated machine).
 
 ```
 gfxmem_size
@@ -177,7 +189,20 @@ Here, the user has attached a floppy disk image. They've chosen to boot it from 
 dingusppc -b "Power_Mac_G3_Beige.ROM" -d --rambank1_size 64 --rambank2_size 64 --cdr_img "OpenDarwin_662.cdr"
 ```
 
-The debugger will be turned on here, due to the presence of `-d`. The CD ROM image will be loaded in.
+The debugger is enabled here, due to the presence of `-d`. The CD ROM image will be loaded in.
+
+## Keyboard Shortcuts
+
+You can use these keyboard commands while the emulator is running in real-time mode:
+
+* Control-G: mouse grab
+* Control-S: scale quality
+* Control-F: fullscreen
+* Control-Shift-F: fullscreen reverse
+* Control-+: bigger
+* Control--: smaller
+* Control-L: log toggle
+* Control-D: debugger
 
 ## Accessing Open Firmware
 
@@ -191,7 +216,7 @@ Early implementations of the iMac G3, Power Mac G3 Blue and White, and Apple Pip
 
 ## Debugger
 
-The debugger can be used to show what code is currently being executed, the contents of memory as hex or 68K assembly or PowerPC assembly, NVRAM variables, memory regions, and CPU registers. It can also be used to change memory, registers, and nvram variables. It can step through instructions one at a time or many instructions at once.
+The debugger can be used to show what code is currently executing, the contents of memory as hex or 68K assembly or PowerPC assembly, NVRAM variables, memory regions, and CPU registers. It can also be used to change memory, registers, and nvram variables. It can step through instructions one at a time or many instructions at once.
 
 ## Quirks
 
@@ -215,7 +240,7 @@ Currently, the Power Mac 6100 cannot boot any OS image containing Mac OS 9.0 or 
 
 ### ATI Mach Support
 
-The GUI engine is currently not fully implemented. As such, UI elements might not be rendered when trying to use this video card. To circumvent this, you may wish to move the ATI Accelerator extension to the Extensions (Disabled) folder.
+The GUI engine is currently not fully implemented. As such, UI elements might not render when trying to use this video card. To circumvent this, you may wish to move the ATI Accelerator extension to the Extensions (Disabled) folder.
 
 ### Currently Unimplemented Features
 
