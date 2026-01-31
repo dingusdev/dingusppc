@@ -321,7 +321,7 @@ uint32_t ControlVideo::read(uint32_t rgn_start, uint32_t offset, int size)
             break;
         case ControlRegs::MON_SENSE:
             value = (this->cur_mon_id << 6) | this->mon_sense;
-            LOG_F(CONTROL, "%s: read  MON_SENSE %03x.%c = %0*x", this->name.c_str(),
+            LOG_F(9, "%s: read  MON_SENSE %03x.%c = %0*x", this->name.c_str(),
                   offset, SIZE_ARG(size), size * 2, value);
             break;
         case ControlRegs::MISC_ENABLES:
@@ -521,7 +521,7 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
                     LOG_F(ERROR, "%s: write MON_SENSE %03x.%c = %0*x", this->name.c_str(),
                           offset, SIZE_ARG(size), size * 2, value);
                 else
-                    LOG_F(CONTROL, "%s: write MON_SENSE %03x.%c = %0*x", this->name.c_str(),
+                    LOG_F(9, "%s: write MON_SENSE %03x.%c = %0*x", this->name.c_str(),
                           offset, SIZE_ARG(size), size * 2, value);
                 uint8_t dirs   = ((value >> 3) & 7) ^ 7;
                 uint8_t levels = ((value & 7) & dirs) | (dirs ^ 7);
