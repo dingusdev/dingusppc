@@ -48,10 +48,10 @@ void ScsiDevice::notify(ScsiNotification notif_type, int param)
                         this->seq_steps = nullptr;
                         this->initiator_id = this->bus_obj->get_initiator_id();
                         if (this->bus_obj->test_ctrl_lines(SCSI_CTRL_ATN)) {
-                            this->last_selection_has_atention = true;
+                            this->last_selection_has_attention = true;
                             this->switch_phase(ScsiPhase::MESSAGE_OUT);
                         } else {
-                            this->last_selection_has_atention = false;
+                            this->last_selection_has_attention = false;
                             this->switch_phase(ScsiPhase::COMMAND);
                         }
                 });
@@ -187,7 +187,7 @@ int ScsiDevice::xfer_data() {
             } else {
                 this->process_message();
             }
-            if (this->last_selection_has_atention)
+            if (this->last_selection_has_attention)
                 this->last_selection_message = this->msg_buf[0];
         }
         break;

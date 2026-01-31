@@ -248,7 +248,7 @@ protected:
     int         field = 0;
     bool        valid = true;
 
-    bool        last_selection_has_atention = false;
+    bool        last_selection_has_attention = false;
     uint8_t     last_selection_message = 0;
     ScsiBus*    bus_obj;
 

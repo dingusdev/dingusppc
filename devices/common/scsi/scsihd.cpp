@@ -170,7 +170,7 @@ int ScsiHardDisk::req_sense(uint16_t alloc_len) {
     //int next_phase;
 
     int lun;
-    if (this->last_selection_has_atention) {
+    if (this->last_selection_has_attention) {
         lun = this->last_selection_message & 7;
     }
     else {
@@ -232,7 +232,7 @@ uint32_t ScsiHardDisk::inquiry(uint8_t *cmd_ptr, uint8_t *data_ptr) {
     }
 
     int lun;
-    if (this->last_selection_has_atention) {
+    if (this->last_selection_has_attention) {
         LOG_F(INFO, "%s: INQUIRY (%d bytes) with ATN LUN = %02x & 7",
             this->name.c_str(), alloc_len, this->last_selection_message);
         lun = this->last_selection_message & 7;
