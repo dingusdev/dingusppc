@@ -93,6 +93,7 @@ enum IntSrc : uint32_t {
     SLOT_PDS,
     SLOT_VDS,
     VBL,
+    VALKYRIE,
 };
 
 /** Base class for interrupt controllers. */
