@@ -194,7 +194,8 @@ private:
     uint8_t  via_acr    = 0;
     uint8_t  via_pcr    = 0;
 
-    float via_clk_dur; // one VIA clock duration = 1,27655 us
+    uint64_t via_clk_dur; // one VIA clock duration = 1276.55 ns; 16 zero bits, 11 integer bits, 37 fraction bits
+    uint32_t via_clk_freq; // 0.00078336 VIA clock periods per ns; 0 integer bits, 42 fraction bits (first 10 are implicit zeros)
 
     // VIA internal state
     uint32_t sr_timer_id = 0;
@@ -259,7 +260,7 @@ private:
     void assert_t1_int();
     void assert_t2_int();
     void schedule_sr_int(uint64_t timeout_ns);
-    uint16_t calc_counter_val(const uint16_t last_val, const uint64_t& last_time);
+    uint16_t calc_counter_val(const uint16_t last_val, const uint64_t &start_time);
     void activate_t1();
 
     // CUDA methods

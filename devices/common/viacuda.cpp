@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <core/hostevents.h>
+#include <core/mathutils.h>
 #include <core/timermanager.h>
 #include <devices/common/adb/adbbus.h>
 #include <cpu/ppc/ppcemu.h>
@@ -68,7 +69,8 @@ ViaCuda::ViaCuda() : I2CBus() {
     this->t2_counter  = 0xFFFF;
 
     // calculate VIA clock duration in ns
-    this->via_clk_dur = 1.0f / VIA_CLOCK_HZ * NS_PER_SEC;
+    this->via_clk_dur = (long double)(NS_PER_SEC) * (uint64_t(1)<<37) / VIA_CLOCK_HZ;
+    this->via_clk_freq = uint32_t((uint64_t(VIA_CLOCK_HZ) << 42) / NS_PER_SEC);
 
     // PRAM is part of Cuda
     this->pram_obj = std::unique_ptr<NVram> (new NVram("pram.bin", 256));
@@ -249,7 +251,7 @@ void ViaCuda::write(int reg, uint8_t value) {
         this->t2_start_time = TimerManager::get_instance()->current_time_ns();
         // set up timeout timer for T2
         this->t2_timer_id = TimerManager::get_instance()->add_oneshot_timer(
-            static_cast<uint64_t>(this->via_clk_dur * (this->t2_counter + 3) + 0.5f),
+            (this->via_clk_dur * (this->t2_counter + 3) + (uint64_t(1) << 36)) >> 37,
             [this]() {
                 this->t2_timer_id = 0;
                 this->assert_t2_int();
@@ -287,12 +289,14 @@ void ViaCuda::write(int reg, uint8_t value) {
     }
 }
 
-uint16_t ViaCuda::calc_counter_val(const uint16_t last_val, const uint64_t& last_time)
+uint16_t ViaCuda::calc_counter_val(const uint16_t last_val, const uint64_t &start_time)
 {
     // calculate current counter value based on elapsed time and timer frequency
     uint64_t cur_time = TimerManager::get_instance()->current_time_ns();
-    uint32_t diff = uint32_t((cur_time - last_time) / this->via_clk_dur);
-    return last_val - diff;
+    uint64_t diff_hi;
+    uint32_t diff_lo;
+    _u32xu64(this->via_clk_freq, cur_time - start_time, diff_hi, diff_lo);
+    return last_val - (diff_hi >> 10);
 }
 
 void ViaCuda::activate_t1() {
@@ -301,7 +305,7 @@ void ViaCuda::activate_t1() {
     this->t1_start_time = TimerManager::get_instance()->current_time_ns();
     // set up timout timer for T1
     this->t1_timer_id = TimerManager::get_instance()->add_oneshot_timer(
-        static_cast<uint64_t>(this->via_clk_dur * (this->t1_counter + 3) + 0.5f),
+        (this->via_clk_dur * (this->t1_counter + 3) + (uint64_t(1) << 36)) >> 37,
         [this]() {
             // reload the T1 counter from the corresponding latches
             this->t1_counter = (this->via_t1lh << 8) | this->via_t1ll;
