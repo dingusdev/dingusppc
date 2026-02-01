@@ -180,6 +180,23 @@ enum ScsiError : int {
     MEDIUM_NOT_PRESENT      = 0x3A,
 };
 
+/** SCSI device types used in INQUIRY. */
+namespace ScsiDevType {
+    enum : uint8_t {
+        DIRECT_ACCESS   = 0,
+        SEQ_ACCESS      = 1,
+        PRINTER         = 2,
+        PROCESSOR       = 3,
+        WRITE_ONCE      = 4,
+        CD_ROM          = 5,
+        SCANNER         = 6,
+        OPT_MEMORY      = 7,
+        MEDIUM_CHANGER  = 8,
+        COMMUNICATION   = 9,
+        UNKNOWN         = 0x1F
+    };
+};
+
 /** Standard SCSI bus timing values measured in ns. */
 constexpr uint64_t BUS_SETTLE_DELAY = 400;
 constexpr uint64_t BUS_FREE_DELAY   = 800;
