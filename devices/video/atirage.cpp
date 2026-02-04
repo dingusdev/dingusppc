@@ -638,8 +638,6 @@ uint32_t ATIRage::read(uint32_t rgn_start, uint32_t offset, int size)
         if (offset >= MM_STDL_REGS_1_OFF) {
             return BYTESWAP_SIZED(this->read_reg((offset & 0x3FF) + 0x400, size), size);
         }
-        LOG_F(WARNING, "%s: read  unmapped aperture[2] region %08x.%c",
-              this->name.c_str(), offset, SIZE_ARG(size));
         return 0;
     }
 
@@ -693,8 +691,6 @@ void ATIRage::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int siz
         if (offset >= MM_STDL_REGS_1_OFF) {
             return this->write_reg((offset & 0x3FF) + 0x400, BYTESWAP_SIZED(value, size), size);
         }
-        LOG_F(WARNING, "%s: write unmapped aperture[2] region %08x.%c = %0*x",
-              this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
         return;
     }
 
