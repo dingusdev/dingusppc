@@ -31,12 +31,12 @@ void ScsiPhysDevice::notify(ScsiNotification notif_type, int param)
     if (notif_type == ScsiNotification::BUS_PHASE_CHANGE) {
         switch (param) {
         case ScsiPhase::RESET:
-            LOG_F(9, "ScsiDevice %d: bus reset aknowledged", this->scsi_id);
+            LOG_F(9, "device %d: bus reset aknowledged", this->scsi_id);
             break;
         case ScsiPhase::SELECTION:
             // check if something tries to select us
             if (this->bus_obj->get_data_lines() & (1 << scsi_id)) {
-                LOG_F(9, "ScsiDevice %d selected", this->scsi_id);
+                LOG_F(9, "device %d selected", this->scsi_id);
                 TimerManager::get_instance()->add_oneshot_timer(
                     BUS_SETTLE_DELAY,
                     [this]() {
@@ -117,7 +117,7 @@ void ScsiPhysDevice::next_step()
             if (this->prepare_data()) {
                 this->bus_obj->assert_ctrl_line(this->scsi_id, SCSI_CTRL_REQ);
             } else {
-                ABORT_F("ScsiDevice: prepare_data() failed");
+                ABORT_F("%s: prepare_data() failed", this->name.c_str());
             }
         }
         break;
@@ -137,7 +137,7 @@ void ScsiPhysDevice::next_step()
         this->switch_phase(ScsiPhase::BUS_FREE);
         break;
     default:
-        LOG_F(WARNING, "ScsiDevice: nothing to do for phase %d", this->cur_phase);
+        LOG_F(WARNING, "%s: nothing to do for phase %d", this->name.c_str(), this->cur_phase);
     }
 }
 
@@ -169,7 +169,8 @@ void ScsiPhysDevice::prepare_xfer(ScsiBus* bus_obj, int& bytes_in, int& bytes_ou
     case ScsiPhase::MESSAGE_IN:
         break;
     default:
-        ABORT_F("ScsiDevice: unhandled phase %d in prepare_xfer()", this->cur_phase);
+        ABORT_F("%s: unhandled phase %d in prepare_xfer()", this->name.c_str(),
+                this->cur_phase);
     }
 }
 
@@ -203,7 +204,8 @@ int ScsiPhysDevice::xfer_data() {
         }
         break;
     default:
-        ABORT_F("ScsiDevice: unhandled phase %d in xfer_data()", this->cur_phase);
+        ABORT_F("%s: unhandled phase %d in xfer_data()", this->name.c_str(),
+                this->cur_phase);
     }
 
     return 0;
