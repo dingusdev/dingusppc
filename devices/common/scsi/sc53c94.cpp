@@ -33,7 +33,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <cstring>
 
-Sc53C94::Sc53C94(uint8_t chip_id, uint8_t my_id) : ScsiDevice("SC53C94", my_id), DmaDevice()
+Sc53C94::Sc53C94(uint8_t chip_id, uint8_t my_id) : ScsiPhysDevice("SC53C94", my_id), DmaDevice()
 {
     this->chip_id   = chip_id;
     this->my_bus_id = my_id;
@@ -45,7 +45,7 @@ int Sc53C94::device_postinit()
 {
     ScsiBus* bus = dynamic_cast<ScsiBus*>(gMachineObj->get_comp_by_name("ScsiCurio"));
     if (bus) {
-        bus->register_device(7, static_cast<ScsiDevice*>(this));
+        bus->register_device(7, static_cast<ScsiPhysDevice*>(this));
         bus->attach_scsi_devices("");
     }
 

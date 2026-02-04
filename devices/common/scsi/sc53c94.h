@@ -194,7 +194,7 @@ typedef struct {
 
 typedef std::function<void(const uint8_t drq_state)> DrqCb;
 
-class Sc53C94 : public ScsiDevice, public DmaDevice {
+class Sc53C94 : public ScsiPhysDevice, public DmaDevice {
 public:
     Sc53C94(uint8_t chip_id=12, uint8_t my_id=7);
     ~Sc53C94() = default;
@@ -234,7 +234,7 @@ public:
         this->drq_cb = cb;
     }
 
-    // ScsiDevice methods
+    // ScsiPhysDevice methods
     void notify(ScsiNotification notif_type, int param) override;
     bool prepare_data() override { return false; }
     bool get_more_data() override { return false; }

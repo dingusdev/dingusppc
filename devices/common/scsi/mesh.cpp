@@ -37,7 +37,7 @@ using namespace MeshScsi;
 int MeshController::device_postinit() {
     this->bus_obj = dynamic_cast<ScsiBus*>(gMachineObj->get_comp_by_name("ScsiMesh"));
     if (bus_obj) {
-        bus_obj->register_device(7, static_cast<ScsiDevice*>(this));
+        bus_obj->register_device(7, static_cast<ScsiPhysDevice*>(this));
         bus_obj->attach_scsi_devices("2");
     }
 

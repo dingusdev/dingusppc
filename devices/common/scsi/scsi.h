@@ -211,16 +211,16 @@ class ScsiBus;
 
 typedef std::function<void()> action_callback;
 
-class ScsiDevice : public HWComponent {
+class ScsiPhysDevice : public HWComponent {
 public:
-    ScsiDevice(std::string name, int my_id) {
+    ScsiPhysDevice(std::string name, int my_id) {
         this->set_name(name);
         supports_types(HWCompType::SCSI_DEV);
         this->scsi_id = my_id;
         this->lun = 0,
         this->cur_phase = ScsiPhase::BUS_FREE;
     }
-    ~ScsiDevice() = default;
+    ~ScsiPhysDevice() = default;
 
     virtual void notify(ScsiNotification notif_type, int param);
     virtual void next_step();
@@ -292,7 +292,7 @@ public:
     void attach_scsi_devices(const std::string bus_suffix);
 
     // low-level state management
-    void    register_device(int id, ScsiDevice* dev_obj);
+    void    register_device(int id, ScsiPhysDevice* dev_obj);
 
     int current_phase() const {
         return this->cur_phase;
@@ -334,7 +334,7 @@ protected:
 
 private:
     // SCSI devices registered with this bus
-    std::array<ScsiDevice*, SCSI_MAX_DEVS> devices;
+    std::array<ScsiPhysDevice*, SCSI_MAX_DEVS> devices;
 
     // per-device state of the control lines
     uint16_t    dev_ctrl_lines[SCSI_MAX_DEVS] = {};

@@ -31,7 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memory>
 #include <string>
 
-class ScsiHardDisk : public ScsiDevice {
+class ScsiHardDisk : public ScsiPhysDevice {
 public:
     ScsiHardDisk(std::string name, int my_id);
     ~ScsiHardDisk() = default;

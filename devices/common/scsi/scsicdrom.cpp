@@ -32,7 +32,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace std;
 
-ScsiCdrom::ScsiCdrom(std::string name, int my_id) : CdromDrive(), ScsiDevice(name, my_id)
+ScsiCdrom::ScsiCdrom(std::string name, int my_id) : CdromDrive(), ScsiPhysDevice(name, my_id)
 {
     this->set_error_callback(
         [this](uint8_t sense_key, uint8_t asc) {

@@ -26,7 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <cstring>
 
-void ScsiDevice::notify(ScsiNotification notif_type, int param)
+void ScsiPhysDevice::notify(ScsiNotification notif_type, int param)
 {
     if (notif_type == ScsiNotification::BUS_PHASE_CHANGE) {
         switch (param) {
@@ -61,13 +61,13 @@ void ScsiDevice::notify(ScsiNotification notif_type, int param)
     }
 }
 
-void ScsiDevice::switch_phase(const int new_phase)
+void ScsiPhysDevice::switch_phase(const int new_phase)
 {
     this->cur_phase = new_phase;
     this->bus_obj->switch_phase(this->scsi_id, this->cur_phase);
 }
 
-bool ScsiDevice::allow_phase_change() {
+bool ScsiPhysDevice::allow_phase_change() {
     if (this->bus_obj->test_ctrl_lines(SCSI_CTRL_ATN | SCSI_CTRL_ACK) ==
                                       (SCSI_CTRL_ATN | SCSI_CTRL_ACK))
         ABORT_F("%s: reject message requested", this->name.c_str());
@@ -78,7 +78,7 @@ bool ScsiDevice::allow_phase_change() {
         return true;
 }
 
-void ScsiDevice::next_step()
+void ScsiPhysDevice::next_step()
 {
     // special case: data transfers during MESSAGE_IN phase
     // require handshaking. Rejecting needs to be detected too.
@@ -141,7 +141,7 @@ void ScsiDevice::next_step()
     }
 }
 
-void ScsiDevice::prepare_xfer(ScsiBus* bus_obj, int& bytes_in, int& bytes_out)
+void ScsiPhysDevice::prepare_xfer(ScsiBus* bus_obj, int& bytes_in, int& bytes_out)
 {
     this->cur_phase = bus_obj->current_phase();
 
@@ -175,7 +175,7 @@ void ScsiDevice::prepare_xfer(ScsiBus* bus_obj, int& bytes_in, int& bytes_out)
 
 static const int CmdGroupLen[8] = {6, 10, 10, -1, -1, 12, -1, -1};
 
-int ScsiDevice::xfer_data() {
+int ScsiPhysDevice::xfer_data() {
     this->cur_phase = bus_obj->current_phase();
 
     switch (this->cur_phase) {
@@ -209,7 +209,7 @@ int ScsiDevice::xfer_data() {
     return 0;
 }
 
-int ScsiDevice::send_data(uint8_t* dst_ptr, const int count)
+int ScsiPhysDevice::send_data(uint8_t* dst_ptr, const int count)
 {
     if (dst_ptr == nullptr || !count) {
         return 0;
@@ -236,7 +236,7 @@ int ScsiDevice::send_data(uint8_t* dst_ptr, const int count)
     return actual_count;
 }
 
-int ScsiDevice::rcv_data(const uint8_t* src_ptr, const int count)
+int ScsiPhysDevice::rcv_data(const uint8_t* src_ptr, const int count)
 {
     // accumulating incoming data in the pre-configured buffer
     std::memcpy(this->data_ptr, src_ptr, count);
@@ -249,7 +249,7 @@ int ScsiDevice::rcv_data(const uint8_t* src_ptr, const int count)
     return count;
 }
 
-bool ScsiDevice::check_lun() {
+bool ScsiPhysDevice::check_lun() {
     if (this->cmd_buf[1] >> 5 != this->lun) {
         LOG_F(ERROR, "%s: non-matching LUN", this->name.c_str());
         this->status = ScsiStatus::CHECK_CONDITION;
@@ -264,7 +264,7 @@ bool ScsiDevice::check_lun() {
     return true;
 }
 
-void ScsiDevice::illegal_command(const uint8_t *cmd) {
+void ScsiPhysDevice::illegal_command(const uint8_t *cmd) {
     LOG_F(ERROR, "%s: unsupported command: 0x%02x", this->name.c_str(), cmd[0]);
     this->status = ScsiStatus::CHECK_CONDITION;
     this->sense  = ScsiSense::ILLEGAL_REQ;
@@ -275,7 +275,7 @@ void ScsiDevice::illegal_command(const uint8_t *cmd) {
     this->switch_phase(ScsiPhase::STATUS);
 }
 
-void ScsiDevice::report_error(uint8_t sense_key, uint8_t asc) {
+void ScsiPhysDevice::report_error(uint8_t sense_key, uint8_t asc) {
     this->status = ScsiStatus::CHECK_CONDITION;
     this->sense  = sense_key;
     this->asc    = asc;
@@ -284,7 +284,7 @@ void ScsiDevice::report_error(uint8_t sense_key, uint8_t asc) {
     this->switch_phase(ScsiPhase::STATUS);
 }
 
-void ScsiDevice::process_message() {
+void ScsiPhysDevice::process_message() {
     static int sdtr_response_seq[4] = {ScsiPhase::MESSAGE_OUT, ScsiPhase::MESSAGE_IN,
                                        ScsiPhase::COMMAND, -1};
 

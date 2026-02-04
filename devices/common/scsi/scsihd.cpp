@@ -33,7 +33,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace std;
 
-ScsiHardDisk::ScsiHardDisk(std::string name, int my_id) : ScsiDevice(name, my_id) {
+ScsiHardDisk::ScsiHardDisk(std::string name, int my_id) : ScsiPhysDevice(name, my_id) {
     this->data_buf_size = 1 << 22;
     this->data_buf_obj = std::unique_ptr<uint8_t[]>(new uint8_t[this->data_buf_size]);
     this->data_buf = this->data_buf_obj.get();

@@ -60,9 +60,9 @@ enum : int {
 
 constexpr auto DATA_FIFO_DEPTH = 16;
 
-class ScsiBusController : public ScsiDevice, public DmaDevice {
+class ScsiBusController : public ScsiPhysDevice, public DmaDevice {
 public:
-    ScsiBusController(std::string name, uint8_t my_bus_id=7) : ScsiDevice(name, my_bus_id) {
+    ScsiBusController(std::string name, uint8_t my_bus_id=7) : ScsiPhysDevice(name, my_bus_id) {
         supports_types(HWCompType::SCSI_HOST | HWCompType::SCSI_DEV);
     }
     ~ScsiBusController() = default;
@@ -73,7 +73,7 @@ public:
     virtual void step_completed() = 0;
     virtual void report_error(const int error) = 0;
 
-    // ScsiDevice methods
+    // ScsiPhysDevice methods
     void notify(ScsiNotification notif_type, int param) override;
     bool prepare_data() override { return false; }
     bool get_more_data() override { return false; }

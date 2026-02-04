@@ -32,7 +32,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memory>
 #include <string>
 
-class ScsiCdrom : public CdromDrive, public ScsiDevice {
+class ScsiCdrom : public CdromDrive, public ScsiPhysDevice {
 public:
     ScsiCdrom(std::string name, int my_id);
     ~ScsiCdrom() = default;

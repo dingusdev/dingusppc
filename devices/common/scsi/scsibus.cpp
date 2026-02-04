@@ -49,7 +49,7 @@ ScsiBus::ScsiBus(const std::string name)
     this->target_id     = -1;
 }
 
-void ScsiBus::register_device(int id, ScsiDevice* dev_obj)
+void ScsiBus::register_device(int id, ScsiPhysDevice* dev_obj)
 {
     if (this->devices[id] != nullptr) {
         ABORT_F("%s: device with ID %d already registered", this->get_name().c_str(), id);
