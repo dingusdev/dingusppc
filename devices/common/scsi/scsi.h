@@ -151,7 +151,7 @@ enum ScsiCommand : uint8_t {
     READ_CDDA_MSF                = 0xD9, //TOSHIBA
 };
 
-enum ScsiSense : int {
+enum ScsiSense : uint8_t {
     NO_SENSE       = 0x0,
     RECOVERED      = 0x1,
     NOT_READY      = 0x2,
@@ -166,7 +166,7 @@ enum ScsiSense : int {
     COMPLETED      = 0xF
 };
 
-enum ScsiError : int {
+enum ScsiError : uint8_t {
     NO_ERROR                = 0x00,
     NO_SECTOR               = 0x01,
     WRITE_FAULT             = 0x03,
