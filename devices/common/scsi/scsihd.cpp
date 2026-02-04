@@ -268,10 +268,6 @@ uint32_t ScsiHardDisk::inquiry(uint8_t *cmd_ptr, uint8_t *data_ptr) {
     return alloc_len;
 }
 
-int ScsiHardDisk::send_diagnostic() {
-    return 0x0;
-}
-
 void ScsiHardDisk::mode_select_6(uint8_t param_len) {
     if (!param_len) {
         this->switch_phase(ScsiPhase::STATUS);

@@ -44,7 +44,6 @@ public:
 protected:
     int  test_unit_ready();
     int  req_sense(uint16_t alloc_len);
-    int  send_diagnostic();
     void mode_select_6(uint8_t param_len);
 
     void mode_sense_6();
