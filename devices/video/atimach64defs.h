@@ -692,6 +692,10 @@ constexpr auto MM_REGS_0_OFF = 0x007FFC00U; // offset to memory mapped registers
 constexpr auto MM_REGS_1_OFF = 0x007FF800U; // offset to memory mapped registers, block 1
 constexpr auto MM_REGS_2_OFF = 0x003FFC00U; // offset to memory mapped registers, 4MB aperture
 
+// Auxiliary register aperture.
+constexpr auto MM_STDL_REGS_0_OFF = 0x400U; // offset to memory mapped registers, block 0
+constexpr auto MM_STDL_REGS_1_OFF = 0x000U; // offset to memory mapped registers, block 1
+
 constexpr auto ATI_XTAL = 14318180.0f; // external crystal oscillator frequency
 
 #endif // ATI_MACH64_DEFS_H
