@@ -627,9 +627,16 @@ uint32_t ATIRage::read(uint32_t rgn_start, uint32_t offset, int size)
     }
 
     if (rgn_start == this->aperture_base[2] && offset < this->aperture_size[2]) {
-        LOG_F(WARNING, "%s: read  unmapped aperture[2] region %08x.%c",
-              this->name.c_str(), offset, SIZE_ARG(size));
-        return 0;
+        // The documentation for the Rage LT Pro marks the upper 2KB
+        // of the 4KB aux. aperture reserved, but it's used by Mac OS
+        // anyway for Rage II. Make it wrap around the 2KB boundary
+        // instead.
+        offset &= 0x7ff;
+        if (offset >= MM_STDL_REGS_0_OFF) {
+            return BYTESWAP_SIZED(this->read_reg(offset & 0x3FF, size), size);
+        }
+        // Rest of the region is Block 1.
+        return BYTESWAP_SIZED(this->read_reg((offset & 0x3FF) + 0x400, size), size);
     }
 
     // memory mapped expansion ROM region
@@ -674,9 +681,12 @@ void ATIRage::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int siz
     }
 
     if (rgn_start == this->aperture_base[2] && offset < this->aperture_size[2]) {
-        LOG_F(WARNING, "%s: write unmapped aperture[2] region %08x.%c = %0*x",
-              this->name.c_str(), offset, SIZE_ARG(size), size * 2, value);
-        return;
+        // See the note about wrap around above.
+        offset &= 0x7ff;
+        if (offset >= MM_STDL_REGS_0_OFF) {
+            return this->write_reg(offset & 0x3FF, BYTESWAP_SIZED(value, size), size);
+        }
+        return this->write_reg((offset & 0x3FF) + 0x400, BYTESWAP_SIZED(value, size), size);
     }
 
     LOG_F(WARNING, "%s: write unmapped aperture region %08x.%c = %0*x",
