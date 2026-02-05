@@ -70,7 +70,7 @@ enum DeviceClass {
     void set_register_3() override;
 
 protected:
-    bool get_register_0(uint8_t buttons_state, bool force);
+    bool get_register_0(uint8_t buttons, bool force);
     uint8_t get_buttons_state() const;
 
 private:
