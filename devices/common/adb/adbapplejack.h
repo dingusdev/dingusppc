@@ -52,7 +52,7 @@ public:
     void set_register_3() override;
 
 private:
-    uint32_t buttons_state = 0;
+    uint32_t aj_buttons_state = 0;
     bool triggers_changed = false;
     bool buttons_changed = false;
 };

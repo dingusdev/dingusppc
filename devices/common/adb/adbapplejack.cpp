@@ -35,9 +35,9 @@ void AdbAppleJack::event_handler(const GamepadEvent& event) {
     uint32_t button_bit = 1 << event.button;
 
     if (event.flags & GAMEPAD_EVENT_DOWN)
-        this->buttons_state |= button_bit;
+        this->aj_buttons_state |= button_bit;
     else if (event.flags & GAMEPAD_EVENT_UP)
-        this->buttons_state &= ~button_bit;
+        this->aj_buttons_state &= ~button_bit;
 
     if (button_bit & ((1 << GamepadButton::LeftTrigger) | (1 << GamepadButton::RightTrigger)))
         this->triggers_changed = true;
@@ -47,7 +47,7 @@ void AdbAppleJack::event_handler(const GamepadEvent& event) {
 
 void AdbAppleJack::reset() {
     this->AdbMouse::reset();
-    this->buttons_state = 0;
+    this->aj_buttons_state = 0;
     this->triggers_changed = false;
     this->buttons_changed = false;
     LOG_F(INFO, "%s: reset; in mouse emulation mode", this->name.c_str());
@@ -58,16 +58,16 @@ bool AdbAppleJack::get_register_0() {
 
     uint8_t mouse_buttons = this->AdbMouse::get_buttons_state();
     // AppleJack triggers always affect the mouse button bits.
-    mouse_buttons |= (this->buttons_state >> (GamepadButton::LeftTrigger  - 0)) & 1;
-    mouse_buttons |= (this->buttons_state >> (GamepadButton::RightTrigger - 1)) & 2;
+    mouse_buttons |= (this->aj_buttons_state >> (GamepadButton::LeftTrigger  - 0)) & 1;
+    mouse_buttons |= (this->aj_buttons_state >> (GamepadButton::RightTrigger - 1)) & 2;
     changed |= this->AdbMouse::get_register_0(mouse_buttons, changed);
     this->triggers_changed = false;
 
     if (this->dev_handler_id == APPLEJACK_HANDLER_ID && this->buttons_changed) {
         uint8_t* out_buf = this->host_obj->get_output_buf();
 
-        out_buf[2] = ~this->buttons_state >> 8;
-        out_buf[3] = ~this->buttons_state & 0xFF;
+        out_buf[2] = uint8_t(~this->aj_buttons_state >> 8);
+        out_buf[3] = ~this->aj_buttons_state & 0xFF;
 
         this->host_obj->set_output_count(4);
         this->buttons_changed = false;
