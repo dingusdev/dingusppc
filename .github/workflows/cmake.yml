@@ -214,7 +214,7 @@ jobs:
           mkdir -p build
           cd build
           ccache --zero-stats || true
-          cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DPPC_BUILD_PPC_TESTS=True ..
+          cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DDPPC_BUILD_PPC_TESTS=True ..
           ninja
           ccache --show-stats || true
           echo "Finished build at $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
