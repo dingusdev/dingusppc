@@ -101,7 +101,7 @@ uint16_t OfConfigAppl::checksum_partition() {
     return acc + (acc >> 16);
 }
 
-static const string flag_names[8] = {
+static const string flag_names[] = {
     "little-endian?",
     "real-mode?",
     "auto-boot?",
@@ -109,8 +109,10 @@ static const string flag_names[8] = {
     "fcode-debug?",
     "oem-banner?",
     "oem-logo?",
-    "use-nvramrc?"
+    "use-nvramrc?",
+    "f-segment?" // ANS only
 };
+constexpr int num_flags = sizeof(flag_names) / sizeof(flag_names[0]);
 
 static const map<string, std::tuple<int, uint16_t>> of_vars = {
     // name,            type,               offset
@@ -141,12 +143,12 @@ const OfConfigImpl::config_dict& OfConfigAppl::get_config_vars() {
     if (!this->validate())
         return _config_vars;
 
-    uint8_t of_flags = this->buf[12];
+    uint32_t of_flags = READ_DWORD_BE_A(&this->buf[12]);
 
     // populate flags
-    for (int i = 0; i < 8; i++) {
+    for (unsigned i = 0; i < num_flags; i++) {
         _config_vars.push_back(std::make_pair(flag_names[i],
-                             ((of_flags << i) & 0x80) ? "true" : "false"));
+                             (int32_t(of_flags << i) < 0) ? "true" : "false"));
     }
 
     // populate the remaining variables
@@ -205,7 +207,7 @@ bool OfConfigAppl::set_var(std::string& var_name, std::string& value) {
         return false;
 
     // check if the user tries to change a flag
-    for (i = 0; i < 8; i++) {
+    for (i = 0; i < num_flags; i++) {
         if (var_name == flag_names[i]) {
             if (value == "true")
                 flag = 1;
@@ -215,15 +217,15 @@ bool OfConfigAppl::set_var(std::string& var_name, std::string& value) {
                 cout << "Invalid property value: " << value << endl;
                 return false;
             }
-            uint8_t flag_bit = 0x80U >> i;
-            uint8_t of_flags = this->buf[12];
+            uint32_t flag_bit = 0x80000000U >> i;
+            uint32_t of_flags = READ_DWORD_BE_A(&this->buf[12]);
 
             if (flag)
                 of_flags |= flag_bit;
             else
                 of_flags &= ~flag_bit;
 
-            this->buf[12] = of_flags;
+            WRITE_DWORD_BE_A(&this->buf[12], of_flags);
             this->update_partition();
             return true;
         }
