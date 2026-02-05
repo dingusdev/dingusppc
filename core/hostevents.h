@@ -62,8 +62,8 @@ public:
     ~MouseEvent() = default;
 
     uint32_t    flags;
-    uint32_t    xrel;
-    uint32_t    yrel;
+    int32_t     xrel;
+    int32_t     yrel;
     uint32_t    xabs;
     uint32_t    yabs;
     uint8_t     buttons_state;
