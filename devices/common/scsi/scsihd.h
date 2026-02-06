@@ -37,9 +37,9 @@ public:
     ~ScsiHardDisk() = default;
 
     void insert_image(std::string filename);
-    void process_command();
-    bool prepare_data();
-    bool get_more_data() { return false; }
+    void process_command() override;
+    bool prepare_data() override;
+    bool get_more_data() override { return false; }
 
 protected:
     int  test_unit_ready();
