@@ -10,6 +10,14 @@ concurrency:
   cancel-in-progress: true
 permissions:
   contents: read
+x-upload-logs-with: &upload_logs_with
+  name: logs-${{ github.job }}
+  path: |
+    ${{ github.workspace }}/build/Testing/Temporary/LastTest.log
+    ${{ github.workspace }}/build/CMakeFiles/CMakeOutput.log
+    ${{ github.workspace }}/build/CMakeFiles/CMakeError.log
+  if-no-files-found: ignore
+  retention-days: ${{ github.event_name == 'pull_request' && 7 || 30 }}
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
@@ -50,6 +58,7 @@ jobs:
       with:
         name: DingusPPC-LINUX
         path: ${{github.workspace}}/build/bin
+        retention-days: ${{ github.event_name == 'pull_request' && 7 || 90 }}
     - name: Test
       working-directory: ${{github.workspace}}/build
       # Execute tests defined by the CMake configuration.
@@ -59,12 +68,7 @@ jobs:
       if: failure()
       uses: actions/upload-artifact@v4
       with:
-        name: logs-${{ github.job }}
-        path: |
-          ${{ github.workspace }}/build/Testing/Temporary/LastTest.log
-          ${{ github.workspace }}/build/CMakeFiles/CMakeOutput.log
-          ${{ github.workspace }}/build/CMakeFiles/CMakeError.log
-        if-no-files-found: ignore
+        <<: *upload_logs_with
 
   build-macos:
     timeout-minutes: 30
@@ -112,18 +116,15 @@ jobs:
       if: failure()
       uses: actions/upload-artifact@v4
       with:
+        <<: *upload_logs_with
         name: logs-${{ github.job }}-${{ matrix.arch }}
-        path: |
-          ${{ github.workspace }}/build/Testing/Temporary/LastTest.log
-          ${{ github.workspace }}/build/CMakeFiles/CMakeOutput.log
-          ${{ github.workspace }}/build/CMakeFiles/CMakeError.log
-        if-no-files-found: ignore
     - name: Upload artifact
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: DingusPPC-macOS-${{ matrix.arch }}
         path: ${{github.workspace}}/build/bin
+        retention-days: ${{ github.event_name == 'pull_request' && 7 || 30 }}
 
   build-windows:
     runs-on: windows-latest
@@ -228,12 +229,14 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: logs-${{ github.job }}
-          path: |
-            ${{ github.workspace }}/build/Testing/Temporary/LastTest.log
-            ${{ github.workspace }}/build/CMakeFiles/CMakeOutput.log
-            ${{ github.workspace }}/build/CMakeFiles/CMakeError.log
-          if-no-files-found: ignore
+          <<: *upload_logs_with
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: DingusPPC-MSYS
+          path: ${{github.workspace}}/build/bin
+          retention-days: ${{ github.event_name == 'pull_request' && 7 || 30 }}
 
   vsbuild:
     runs-on: windows-latest
@@ -299,15 +302,12 @@ jobs:
       if: failure()
       uses: actions/upload-artifact@v4
       with:
+        <<: *upload_logs_with
         name: logs-${{ github.job }}-${{ matrix.name }}
-        path: |
-          ${{ github.workspace }}/build/Testing/Temporary/LastTest.log
-          ${{ github.workspace }}/build/CMakeFiles/CMakeOutput.log
-          ${{ github.workspace }}/build/CMakeFiles/CMakeError.log
-        if-no-files-found: ignore
     - name: Upload artifact
       if: always()
       uses: actions/upload-artifact@v4
       with:
         name: DingusPPC-${{ matrix.upload_suffix }}
         path: ${{github.workspace}}/build/bin
+        retention-days: ${{ github.event_name == 'pull_request' && 7 || 30 }}
