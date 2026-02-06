@@ -10,14 +10,6 @@ concurrency:
   cancel-in-progress: true
 permissions:
   contents: read
-x-upload-logs-with: &upload_logs_with
-  name: logs-${{ github.job }}
-  path: |
-    ${{ github.workspace }}/build/Testing/Temporary/LastTest.log
-    ${{ github.workspace }}/build/CMakeFiles/CMakeOutput.log
-    ${{ github.workspace }}/build/CMakeFiles/CMakeError.log
-  if-no-files-found: ignore
-  retention-days: ${{ github.event_name == 'pull_request' && 7 || 30 }}
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
@@ -67,8 +59,14 @@ jobs:
     - name: Upload logs on failure
       if: failure()
       uses: actions/upload-artifact@v4
-      with:
-        <<: *upload_logs_with
+      with: &upload_logs_with
+        name: logs-${{ github.job }}
+        path: |
+          ${{ github.workspace }}/build/Testing/Temporary/LastTest.log
+          ${{ github.workspace }}/build/CMakeFiles/CMakeOutput.log
+          ${{ github.workspace }}/build/CMakeFiles/CMakeError.log
+        if-no-files-found: ignore
+        retention-days: ${{ github.event_name == 'pull_request' && 7 || 90 }}
 
   build-macos:
     timeout-minutes: 30
