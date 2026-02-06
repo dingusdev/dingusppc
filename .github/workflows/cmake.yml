@@ -59,7 +59,7 @@ jobs:
     - name: Upload logs on failure
       if: failure()
       uses: actions/upload-artifact@v4
-      with: &upload_logs_with
+      with:
         name: logs-${{ github.job }}
         path: |
           ${{ github.workspace }}/build/Testing/Temporary/LastTest.log
@@ -114,8 +114,13 @@ jobs:
       if: failure()
       uses: actions/upload-artifact@v4
       with:
-        <<: *upload_logs_with
         name: logs-${{ github.job }}-${{ matrix.arch }}
+        path: |
+          ${{ github.workspace }}/build/Testing/Temporary/LastTest.log
+          ${{ github.workspace }}/build/CMakeFiles/CMakeOutput.log
+          ${{ github.workspace }}/build/CMakeFiles/CMakeError.log
+        if-no-files-found: ignore
+        retention-days: ${{ github.event_name == 'pull_request' && 7 || 90 }}
     - name: Upload artifact
       if: always()
       uses: actions/upload-artifact@v4
@@ -227,7 +232,13 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          <<: *upload_logs_with
+          name: logs-${{ github.job }}
+          path: |
+            ${{ github.workspace }}/build/Testing/Temporary/LastTest.log
+            ${{ github.workspace }}/build/CMakeFiles/CMakeOutput.log
+            ${{ github.workspace }}/build/CMakeFiles/CMakeError.log
+          if-no-files-found: ignore
+          retention-days: ${{ github.event_name == 'pull_request' && 7 || 90 }}
       - name: Upload artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -300,8 +311,13 @@ jobs:
       if: failure()
       uses: actions/upload-artifact@v4
       with:
-        <<: *upload_logs_with
         name: logs-${{ github.job }}-${{ matrix.name }}
+        path: |
+          ${{ github.workspace }}/build/Testing/Temporary/LastTest.log
+          ${{ github.workspace }}/build/CMakeFiles/CMakeOutput.log
+          ${{ github.workspace }}/build/CMakeFiles/CMakeError.log
+        if-no-files-found: ignore
+        retention-days: ${{ github.event_name == 'pull_request' && 7 || 90 }}
     - name: Upload artifact
       if: always()
       uses: actions/upload-artifact@v4
