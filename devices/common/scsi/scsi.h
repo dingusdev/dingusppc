@@ -191,6 +191,17 @@ namespace ScsiDevType {
     };
 };
 
+/** SCSI device capacity flags. */
+enum : uint8_t {
+    CAP_REL_ADDR    = 1 << 7, // device supports relative addresing
+    CAP_W32_XFER    = 1 << 6, // device supports 32-bit wide transfers
+    CAP_W16_XFER    = 1 << 5, // device supports 16-bit wide transfers
+    CAP_SYNC_XFER   = 1 << 4, // device supports synchronous transfers
+    CAP_LINKED_CMDS = 1 << 3, // device supports linked commands
+    CAP_CMD_QUEUE   = 1 << 1, // device supports command queuing
+    CAP_CMD_SRST    = 1 << 0, // device supports soft resets
+};
+
 /** Standard SCSI bus timing values measured in ns. */
 constexpr uint64_t BUS_SETTLE_DELAY = 400;
 constexpr uint64_t BUS_FREE_DELAY   = 800;
