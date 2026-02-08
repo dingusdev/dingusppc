@@ -24,7 +24,6 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: recursive
-        fetch-depth: 0
     - name: Cache ccache
       uses: actions/cache@v4
       with:
@@ -41,16 +40,10 @@ jobs:
       env:
         CCACHE_DIR: ${{ github.workspace }}/.ccache/linux
         CCACHE_BASEDIR: ${{ github.workspace }}
-      run: cmake -B ${{github.workspace}}/build -GNinja -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DDPPC_68K_DEBUGGER=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+      run: cmake -B ${{github.workspace}}/build -GNinja -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DDPPC_68K_DEBUGGER=ON -DDPPC_BUILD_PPC_TESTS=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
     - name: Build
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --parallel
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: DingusPPC-LINUX
-        path: ${{github.workspace}}/build/bin
-        retention-days: ${{ github.event_name == 'pull_request' && 7 || 90 }}
     - name: Test
       working-directory: ${{github.workspace}}/build
       # Execute tests defined by the CMake configuration.
@@ -66,7 +59,14 @@ jobs:
           ${{ github.workspace }}/build/CMakeFiles/CMakeOutput.log
           ${{ github.workspace }}/build/CMakeFiles/CMakeError.log
         if-no-files-found: ignore
-        retention-days: ${{ github.event_name == 'pull_request' && 7 || 90 }}
+        retention-days: ${{ github.event_name == 'pull_request' && 7 || 30 }}
+    - name: Upload artifact
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: DingusPPC-LINUX
+        path: ${{github.workspace}}/build/bin
+        retention-days: ${{ github.event_name == 'pull_request' && 7 || 30 }}
 
   build-macos:
     timeout-minutes: 30
@@ -85,7 +85,6 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: recursive
-        fetch-depth: 0
     - name: Cache ccache
       uses: actions/cache@v4
       with:
@@ -105,7 +104,7 @@ jobs:
         CCACHE_BASEDIR: ${{ github.workspace }}
       run: |
         export PATH="${{ matrix.brew_prefix }}/opt/ccache/libexec:$PATH"
-        cmake -B ${{github.workspace}}/build -GNinja -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DDPPC_68K_DEBUGGER=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }}
+        cmake -B ${{github.workspace}}/build -GNinja -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DDPPC_68K_DEBUGGER=ON -DDPPC_BUILD_PPC_TESTS=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }}
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --parallel
     - name: Test
@@ -121,7 +120,7 @@ jobs:
           ${{ github.workspace }}/build/CMakeFiles/CMakeOutput.log
           ${{ github.workspace }}/build/CMakeFiles/CMakeError.log
         if-no-files-found: ignore
-        retention-days: ${{ github.event_name == 'pull_request' && 7 || 90 }}
+        retention-days: ${{ github.event_name == 'pull_request' && 7 || 30 }}
     - name: Upload artifact
       if: always()
       uses: actions/upload-artifact@v4
@@ -133,9 +132,6 @@ jobs:
   build-windows:
     runs-on: windows-latest
     timeout-minutes: 45
-    strategy:
-      matrix:
-        cache-name: [msys64-cache]
     env:
       MSYSTEM: MINGW64
     steps:
@@ -143,7 +139,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
-          fetch-depth: 0
       - name: Cache ccache
         uses: actions/cache@v4
         with:
@@ -156,54 +151,17 @@ jobs:
           msystem: MINGW64
           update: true
           install: >-
-            bison
-            diffutils
-            flex
-            tar
-            doxygen
             cmake
-            wget
-            git
-            grep
             make
-            rsync
             ninja
-            glib2-devel
-            patch
-            sed
+            git
             mingw-w64-x86_64-cmake
-            mingw-w64-x86_64-binutils
-            mingw-w64-x86_64-doxygen
-            mingw-w64-x86_64-capstone
-            mingw-w64-x86_64-ccache
-            mingw-w64-x86_64-curl
-            mingw-w64-x86_64-cyrus-sasl
-            mingw-w64-x86_64-dtc
             mingw-w64-x86_64-gcc
-            mingw-w64-x86_64-glib2
-            mingw-w64-x86_64-gnutls
-            mingw-w64-x86_64-gtk3
-            mingw-w64-x86_64-libgcrypt
-            mingw-w64-x86_64-libjpeg-turbo
-            mingw-w64-x86_64-libnfs
-            mingw-w64-x86_64-libpng
-            mingw-w64-x86_64-libssh
-            mingw-w64-x86_64-libtasn1
-            mingw-w64-x86_64-libusb
-            mingw-w64-x86_64-lzo2
-            mingw-w64-x86_64-libslirp
-            mingw-w64-x86_64-nettle
-            mingw-w64-x86_64-clang
+            mingw-w64-x86_64-binutils
             mingw-w64-x86_64-ninja
-            mingw-w64-x86_64-pixman
             mingw-w64-x86_64-pkgconf
-            mingw-w64-x86_64-python
             mingw-w64-x86_64-SDL2
-            mingw-w64-x86_64-SDL2_image
-            mingw-w64-x86_64-snappy
-            mingw-w64-x86_64-spice
-            mingw-w64-x86_64-usbredir
-            mingw-w64-x86_64-zstd
+            mingw-w64-x86_64-ccache
             mingw-w64-x86_64-make
       - name: Build
         shell: msys2 {0}
@@ -215,11 +173,10 @@ jobs:
           export CCACHE_DIR="${GITHUB_WORKSPACE}/.ccache/msys"
           export CCACHE_MAXSIZE="500M"
           export CCACHE_DEPEND=1
-          export CC="ccache gcc"
           mkdir -p build
           cd build
           ccache --zero-stats || true
-          cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DDPPC_BUILD_PPC_TESTS=True ..
+          cmake -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DDPPC_68K_DEBUGGER=ON -DDPPC_BUILD_PPC_TESTS=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache ..
           ninja
           ccache --show-stats || true
           echo "Finished build at $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
@@ -239,7 +196,7 @@ jobs:
             ${{ github.workspace }}/build/CMakeFiles/CMakeOutput.log
             ${{ github.workspace }}/build/CMakeFiles/CMakeError.log
           if-no-files-found: ignore
-          retention-days: ${{ github.event_name == 'pull_request' && 7 || 90 }}
+          retention-days: ${{ github.event_name == 'pull_request' && 7 || 30 }}
       - name: Upload artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -276,36 +233,34 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: recursive
-        fetch-depth: 0
     - name: Setup msbuild
       uses: microsoft/setup-msbuild@v1
-    - name: Cache vcpkg
-      uses: actions/cache@v4
-      with:
-        path: C:\vcpkg
-        key: vcpkg-${{ hashFiles('vcpkg.json') }}
-        restore-keys: vcpkg-
-    - name: Install vcpkg
-      shell: powershell
-      run: |
-        if (-Not (Test-Path 'C:\vcpkg')) {
-          git clone https://github.com/microsoft/vcpkg C:\vcpkg
-          C:\vcpkg\bootstrap-vcpkg.bat
-        }
-        C:\vcpkg\vcpkg.exe install --triplet x64-windows
+    - name: Install vcpkg packages
+      shell: cmd
+      run: '"%VCPKG_INSTALLATION_ROOT%\vcpkg.exe" install --triplet x64-windows'
     - name: Install Ninja
       if: matrix.generator == 'Ninja'
       run: choco install ninja -y
+    - name: Cache ccache
+      uses: actions/cache@v4
+      with:
+        path: ${{ github.workspace }}/.ccache/vsbuild
+        key: vsbuild-${{ matrix.name }}-ccache-${{ hashFiles('**/CMakeLists.txt') }}
+        restore-keys: vsbuild-${{ matrix.name }}-ccache-
+    - name: Install ccache
+      run: choco install ccache -y
     - name: Configure & Build
       shell: cmd
+      env:
+        CCACHE_DIR: ${{ github.workspace }}/.ccache/vsbuild
+        CCACHE_BASEDIR: ${{ github.workspace }}
       run: |
         mkdir build
         cd build
         call "%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-        cmake -G "${{ matrix.generator }}" -DCMAKE_BUILD_TYPE=Release -DDPPC_BUILD_PPC_TESTS=True -DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows ${{ matrix.cmake_args }} ..
+        cmake -G "${{ matrix.generator }}" -DCMAKE_BUILD_TYPE=Release -DDPPC_68K_DEBUGGER=ON -DDPPC_BUILD_PPC_TESTS=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows ${{ matrix.cmake_args }} ..
         ${{ matrix.build_command }}
     - name: Test
-      if: success()
       working-directory: ${{github.workspace}}/build
       run: ctest -C Release --output-on-failure
     - name: Upload logs on failure
@@ -318,7 +273,7 @@ jobs:
           ${{ github.workspace }}/build/CMakeFiles/CMakeOutput.log
           ${{ github.workspace }}/build/CMakeFiles/CMakeError.log
         if-no-files-found: ignore
-        retention-days: ${{ github.event_name == 'pull_request' && 7 || 90 }}
+        retention-days: ${{ github.event_name == 'pull_request' && 7 || 30 }}
     - name: Upload artifact
       if: always()
       uses: actions/upload-artifact@v4
