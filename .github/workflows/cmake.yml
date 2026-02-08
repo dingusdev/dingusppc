@@ -97,7 +97,7 @@ jobs:
     - name: install_dependencies
       run: |
         brew update
-        brew install sdl2 ninja ccache
+        brew install sdl2 ccache
     - name: Configure CMake
       env:
         CCACHE_DIR: ${{ github.workspace }}/.ccache/${{ matrix.arch }}
