@@ -128,7 +128,7 @@ jobs:
         path: ${{github.workspace}}/build/bin
         retention-days: ${{ github.event_name == 'pull_request' && 7 || 30 }}
 
-  build-windows:
+  build-windows-msys2:
     runs-on: windows-latest
     timeout-minutes: 45
     env:
