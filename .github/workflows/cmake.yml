@@ -28,8 +28,8 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/.ccache/linux
-        key: linux-ccache-${{ hashFiles('**/CMakeLists.txt') }}
-        restore-keys: linux-ccache-
+        key: linux-ccache-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('**/CMakeLists.txt') }}
+        restore-keys: linux-ccache-${{ runner.os }}-${{ env.BUILD_TYPE }}-
     - name: Install dependencies
       run: |
           sudo apt-get update -y -qq
@@ -40,15 +40,17 @@ jobs:
       env:
         CCACHE_DIR: ${{ github.workspace }}/.ccache/linux
         CCACHE_BASEDIR: ${{ github.workspace }}
-      run: cmake -B ${{github.workspace}}/build -GNinja -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DDPPC_68K_DEBUGGER=ON -DDPPC_BUILD_PPC_TESTS=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+      run: cmake -S . -B ${{github.workspace}}/build -GNinja -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DDPPC_68K_DEBUGGER=ON -DDPPC_BUILD_PPC_TESTS=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
     - name: Build
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --parallel
+    - name: ccache stats
+      run: ccache --show-stats || true
     - name: Test
       working-directory: ${{github.workspace}}/build
       # Execute tests defined by the CMake configuration.
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure
+      run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure --no-tests=error --parallel 0
     - name: Upload logs on failure
       if: failure()
       uses: actions/upload-artifact@v4
@@ -89,11 +91,12 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/.ccache/${{ matrix.arch }}
-        key: macos-${{ matrix.runner }}-${{ matrix.arch }}-ccache-${{ hashFiles('**/CMakeLists.txt') }}
-        restore-keys: macos-${{ matrix.runner }}-${{ matrix.arch }}-ccache-
+        key: macos-${{ matrix.runner }}-${{ matrix.arch }}-ccache-${{ env.BUILD_TYPE }}-${{ hashFiles('**/CMakeLists.txt') }}
+        restore-keys: macos-${{ matrix.runner }}-${{ matrix.arch }}-ccache-${{ env.BUILD_TYPE }}-
     - name: Install dependencies
       run: |
         export HOMEBREW_NO_AUTO_UPDATE=1
+        export HOMEBREW_NO_INSTALL_CLEANUP=1
         brew install sdl2 ccache ninja
     - name: Configure CMake
       env:
@@ -101,12 +104,14 @@ jobs:
         CCACHE_BASEDIR: ${{ github.workspace }}
       run: |
         export PATH="${{ matrix.brew_prefix }}/opt/ccache/libexec:$PATH"
-        cmake -B ${{github.workspace}}/build -GNinja -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DDPPC_68K_DEBUGGER=ON -DDPPC_BUILD_PPC_TESTS=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }}
+        cmake -S . -B ${{github.workspace}}/build -GNinja -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DDPPC_68K_DEBUGGER=ON -DDPPC_BUILD_PPC_TESTS=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }}
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --parallel
+    - name: ccache stats
+      run: ccache --show-stats || true
     - name: Test
       working-directory: ${{github.workspace}}/build
-      run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure
+      run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure --no-tests=error --parallel 0
     - name: Upload logs on failure
       if: failure()
       uses: actions/upload-artifact@v4
@@ -140,8 +145,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/.ccache/msys
-          key: windows-msys-ccache-${{ hashFiles('**/CMakeLists.txt') }}
-          restore-keys: windows-msys-ccache-
+          key: windows-msys-ccache-${{ env.BUILD_TYPE }}-${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: windows-msys-ccache-${{ env.BUILD_TYPE }}-
       - name: Setup MSYS2
         uses: msys2/setup-msys2@v2
         with:
@@ -168,8 +173,8 @@ jobs:
           export CCACHE_DIR="${GITHUB_WORKSPACE}/.ccache/msys"
           export CCACHE_DEPEND=1
           ccache --zero-stats || true
-          cmake -B build -GNinja -DCMAKE_BUILD_TYPE=Release -DDPPC_68K_DEBUGGER=ON -DDPPC_BUILD_PPC_TESTS=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
-          cmake --build build --config Release --parallel
+          cmake -S . -B build -GNinja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DDPPC_68K_DEBUGGER=ON -DDPPC_BUILD_PPC_TESTS=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+          cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
           ccache --show-stats || true
           echo "Finished build at $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
 
@@ -177,7 +182,7 @@ jobs:
         shell: msys2 {0}
         run: |
           cd build
-          ctest --output-on-failure
+          ctest --output-on-failure --no-tests=error --parallel 0
       - name: Upload logs on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -227,6 +232,15 @@ jobs:
         submodules: recursive
     - name: Setup msbuild
       uses: microsoft/setup-msbuild@v1
+    - name: Cache vcpkg
+      uses: actions/cache@v4
+      with:
+        path: |
+          ${{ env.VCPKG_INSTALLATION_ROOT }}\downloads
+          ${{ env.VCPKG_INSTALLATION_ROOT }}\buildtrees
+          ${{ env.VCPKG_INSTALLATION_ROOT }}\packages
+        key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json') }}
+        restore-keys: vcpkg-${{ runner.os }}-
     - name: Install vcpkg packages
       shell: cmd
       run: '"%VCPKG_INSTALLATION_ROOT%\vcpkg.exe" install --triplet x64-windows'
@@ -238,8 +252,8 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ${{ github.workspace }}/.ccache/vsbuild-${{ matrix.name }}
-        key: vsbuild-${{ matrix.name }}-ccache-${{ hashFiles('**/CMakeLists.txt') }}
-        restore-keys: vsbuild-${{ matrix.name }}-ccache-
+        key: vsbuild-${{ matrix.name }}-ccache-${{ env.BUILD_TYPE }}-${{ hashFiles('**/CMakeLists.txt') }}
+        restore-keys: vsbuild-${{ matrix.name }}-ccache-${{ env.BUILD_TYPE }}-
     - name: Install ccache
       if: matrix.generator == 'Ninja'
       run: choco install ccache -y
@@ -251,12 +265,27 @@ jobs:
       run: |
         mkdir build
         cd build
-        call "%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+        if not defined VSINSTALLDIR (
+          set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
+          if not exist "%VSWHERE%" set "VSWHERE=%ProgramFiles%\Microsoft Visual Studio\Installer\vswhere.exe"
+          for /f "usebackq tokens=*" %%i in (`"%VSWHERE%" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VSINSTALLDIR=%%i"
+        )
+        if not defined VSINSTALLDIR (
+          echo VSINSTALLDIR not set and vswhere did not find Visual Studio.
+          exit /b 1
+        )
+        call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvars64.bat"
         cmake -G "${{ matrix.generator }}" -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DDPPC_68K_DEBUGGER=ON -DDPPC_BUILD_PPC_TESTS=ON ${{ matrix.ccache_args }} -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows ${{ matrix.cmake_args }} ..
         cmake --build . --config ${{ env.BUILD_TYPE }} --parallel
+    - name: ccache stats
+      if: matrix.generator == 'Ninja'
+      shell: cmd
+      run: |
+        ccache --show-stats
+        if %errorlevel% neq 0 echo ccache stats unavailable
     - name: Test
       working-directory: ${{github.workspace}}/build
-      run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure
+      run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure --no-tests=error --parallel 0
     - name: Upload logs on failure
       if: failure()
       uses: actions/upload-artifact@v4
