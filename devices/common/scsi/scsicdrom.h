@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define SCSI_CDROM_H
 
 #include <devices/common/scsi/scsi.h>
+#include <devices/common/scsi/scsicommoncmds.h>
 #include <devices/storage/cdromdrive.h>
 #include <utils/imgfile.h>
 
@@ -32,7 +33,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memory>
 #include <string>
 
-class ScsiCdrom : public CdromDrive, public ScsiPhysDevice {
+class ScsiCdrom : public ScsiPhysDevice, public CdromDrive, public ScsiCommonCmds {
 public:
     ScsiCdrom(std::string name, int my_id);
     ~ScsiCdrom() = default;
@@ -42,9 +43,14 @@ public:
     virtual bool get_more_data() override;
 
 protected:
-    int     test_unit_ready();
+    bool is_device_ready() override { return true; }
+
+    // HACK: it shouldn't be here!
+    void set_xfer_len(uint64_t len) override {
+        this->bytes_out = len;
+    }
+
     void    read(uint32_t lba, uint16_t nblocks, uint8_t cmd_len);
-    uint32_t inquiry(uint8_t *cmd_ptr, uint8_t *data_ptr) override;
     void    mode_select_6(uint8_t param_len);
 
     void    mode_sense_6();
@@ -54,11 +60,6 @@ private:
     bool    eject_allowed = true;
     int     bytes_out = 0;
     uint8_t data_buf[2048] = {};
-
-    //inquiry info
-    char vendor_info[9] = "SONY    ";
-    char prod_info[17]  = "CD-ROM CDU-8003A";
-    char rev_info[5]    = "1.9a";
 };
 
 #endif // SCSI_CDROM_H

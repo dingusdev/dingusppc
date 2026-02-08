@@ -33,10 +33,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace std;
 
-ScsiHardDisk::ScsiHardDisk(std::string name, int my_id) : ScsiPhysDevice(name, my_id) {
+static char my_vendor_id[]   = "QUANTUM ";
+static char my_product_id[]  = "Emulated Disk   ";
+static char my_revision_id[] = "di01";
+
+ScsiHardDisk::ScsiHardDisk(std::string name, int my_id) : ScsiPhysDevice(name, my_id),
+    ScsiCommonCmds()
+{
     this->data_buf_size = 1 << 22;
     this->data_buf_obj = std::unique_ptr<uint8_t[]>(new uint8_t[this->data_buf_size]);
     this->data_buf = this->data_buf_obj.get();
+    this->set_phys_dev(this);
+    this->set_cdb_ptr(this->cmd_buf);
+    this->set_buf_ptr(this->data_buf);
+
+    // populate device info for INQUIRY
+    this->dev_type      = ScsiDevType::DIRECT_ACCESS; // direct access device (hard drive)
+    this->is_removable  = false; // non-removable medium
+    this->std_versions  = 2;     // ISO vers=0, ECMA vers=0, ANSI vers=2 (SCSI-2)
+    this->resp_fmt      = 2;     // response data format: SCSI-2
+    this->cap_flags     = CAP_SYNC_XFER; // indicate support for synchronous transfers
+    this->set_vendor_id(my_vendor_id);
+    this->set_product_id(my_product_id);
+    this->set_revision_id(my_revision_id);
 }
 
 void ScsiHardDisk::insert_image(std::string filename) {
@@ -56,6 +75,11 @@ void ScsiHardDisk::insert_image(std::string filename) {
 void ScsiHardDisk::process_command() {
     uint32_t lba;
 
+    if (this->verify_cdb() < 0) {
+        this->switch_phase(ScsiPhase::STATUS);
+        return;
+    }
+
     this->pre_xfer_action  = nullptr;
     this->post_xfer_action = nullptr;
 
@@ -66,12 +90,6 @@ void ScsiHardDisk::process_command() {
     uint8_t* cmd = this->cmd_buf;
 
     switch (cmd[0]) {
-    case ScsiCommand::TEST_UNIT_READY:
-        this->test_unit_ready();
-        break;
-    case ScsiCommand::REQ_SENSE:
-        this->req_sense(cmd[4]);
-        break;
     case ScsiCommand::FORMAT_UNIT:
         this->format();
         break;
@@ -85,10 +103,6 @@ void ScsiHardDisk::process_command() {
     case ScsiCommand::WRITE_6:
         lba = ((cmd[1] & 0x1F) << 16) + (cmd[2] << 8) + cmd[3];
         this->write(lba, cmd[4], 6);
-        break;
-    case ScsiCommand::INQUIRY:
-        this->bytes_out = this->inquiry(cmd, this->data_buf);
-        this->switch_phase(ScsiPhase::DATA_IN);
         break;
     case ScsiCommand::MODE_SELECT_6:
         mode_select_6(cmd[4]);
@@ -121,7 +135,7 @@ void ScsiHardDisk::process_command() {
         read_buffer();
         break;
     default:
-        this->illegal_command(cmd);
+        ScsiCommonCmds::process_command();
     }
 }
 
@@ -158,116 +172,6 @@ bool ScsiHardDisk::prepare_data() {
     return true;
 }
 
-int ScsiHardDisk::test_unit_ready() {
-    this->switch_phase(ScsiPhase::STATUS);
-    return ScsiError::NO_ERROR;
-}
-
-int ScsiHardDisk::req_sense(uint16_t alloc_len) {
-    //if (!check_lun())
-    //    return;
-
-    //int next_phase;
-
-    int lun;
-    if (this->last_selection_has_attention) {
-        lun = this->last_selection_message & 7;
-    }
-    else {
-        lun = cmd_buf[1] >> 5;
-    }
-
-    if (lun == this->lun) {
-        this->status = ScsiStatus::GOOD;
-        this->data_buf[ 2] = this->sense;      // Reserved:0xf0, Sense Key:0x0f ; e.g. ScsiSense::ILLEGAL_REQ
-        this->data_buf[12] = this->asc;        // addition sense code
-        this->data_buf[13] = this->ascq;       // additional sense qualifier
-        this->data_buf[15] = this->sksv;       // SKSV:0x80, C/D:0x40, Reserved:0x30, BPV:8, Bit Pointer:7
-        this->data_buf[16] = this->field >> 8; // field pointer
-        this->data_buf[17] = this->field;
-    }
-    else {
-        this->data_buf[ 2] = this->sense;      // Reserved:0xf0, Sense Key:0x0f ; e.g. ScsiSense::ILLEGAL_REQ
-        this->data_buf[12] = ScsiError::INVALID_LUN; // addition sense code = Logical Unit Not Supported
-        this->data_buf[13] = 0;                // additional sense qualifier
-        this->data_buf[15] = 0;                // SKSV:0x80, C/D:0x40, Reserved:0x30, BPV:8, Bit Pointer:7
-        this->data_buf[16] = 0;                // field pointer
-        this->data_buf[17] = 0;
-    }
-
-    {
-        // FIXME: there should be a way to set the VALID and ILI bits.
-        this->data_buf[ 0] = 0x80 | 0x70; // Valid:0x80, Error Code:0x7f
-        this->data_buf[ 1] =    0; // segment number
-        this->data_buf[ 3] =    0; // information
-        this->data_buf[ 4] =    0;
-        this->data_buf[ 5] =    0;
-        this->data_buf[ 6] =    0;
-        this->data_buf[ 7] =   10; // additional sense length
-        this->data_buf[ 8] =    0; // command specific information
-        this->data_buf[ 9] =    0;
-        this->data_buf[10] =    0;
-        this->data_buf[11] =    0;
-        this->data_buf[14] =    0; // field replaceable unit code
-        this->data_buf[18] =    0; // reserved
-        this->data_buf[19] =    0; // reserved
-    }
-
-    this->bytes_out = alloc_len; // Open Firmware 1.0.5 asks for 18 bytes.
-
-    this->switch_phase(ScsiPhase::DATA_IN);
-    return ScsiError::NO_ERROR;
-}
-
-uint32_t ScsiHardDisk::inquiry(uint8_t *cmd_ptr, uint8_t *data_ptr) {
-    int page_num  = cmd_ptr[2];
-    int alloc_len = cmd_ptr[4];
-
-    if (page_num) {
-        ABORT_F("%s: invalid page number in INQUIRY", this->name.c_str());
-    }
-
-    if (alloc_len > 36) {
-        LOG_F(WARNING, "%s: more than 36 bytes requested in INQUIRY", this->name.c_str());
-    }
-
-    int lun;
-    if (this->last_selection_has_attention) {
-        LOG_F(INFO, "%s: INQUIRY (%d bytes) with ATN LUN = %02x & 7",
-            this->name.c_str(), alloc_len, this->last_selection_message);
-        lun = this->last_selection_message & 7;
-    }
-    else {
-        LOG_F(INFO, "%s: INQUIRY (%d bytes) with NO ATN LUN = %02x >> 5", this->name.c_str(),
-            alloc_len, cmd_ptr[1]);
-        lun = cmd_ptr[1] >> 5;
-    }
-
-    data_ptr[0] = (lun == this->lun) ? 0 : 0x7f; // device type: Direct-access block device (hard drive)
-    data_ptr[1] =    0; // non-removable media; 0x80 = removable media
-    data_ptr[2] =    2; // ANSI version: SCSI-2
-    data_ptr[3] =    1; // response data format
-    data_ptr[4] = 0x1F; // additional length
-    data_ptr[5] =    0;
-    data_ptr[6] =    0;
-    data_ptr[7] = 0x18; // supports synchronous xfers and linked commands
-    std::memcpy(&data_ptr[8], vendor_info, 8);
-    std::memcpy(&data_ptr[16], prod_info, 16);
-    std::memcpy(&data_ptr[32], rev_info, 4);
-    //std::memcpy(&data_ptr[36], serial_number, 8);
-    //etc.
-
-    if (alloc_len < 36) {
-        LOG_F(ERROR, "%s: allocation length too small: %d", this->name.c_str(),
-              alloc_len);
-    }
-    else {
-        memset(&data_ptr[36], 0, alloc_len - 36);
-    }
-
-    return alloc_len;
-}
-
 void ScsiHardDisk::mode_select_6(uint8_t param_len) {
     if (!param_len) {
         this->switch_phase(ScsiPhase::STATUS);
@@ -295,24 +199,16 @@ void ScsiHardDisk::mode_sense_6() {
 
     if (page_ctrl == 1) {
         LOG_F(INFO, "%s: page_ctrl 1 CHANGEABLE VALUES is not implemented", this->name.c_str());
-        this->status = ScsiStatus::CHECK_CONDITION;
-        this->sense  = ScsiSense::ILLEGAL_REQ;
-        this->asc    = ScsiError::INVALID_CDB;
-        this->ascq   = 0;
-        this->sksv   = 0xC0; // sksv=1, C/D=Command, BPV=0, BP=0
-        this->field  = 2;
+        this->invalid_cdb();
         this->switch_phase(ScsiPhase::STATUS);
         return;
     }
 
     if (page_ctrl == 3) {
         LOG_F(INFO, "%s: page_ctrl 3 SAVED VALUES is not implemented", this->name.c_str());
-        this->status = ScsiStatus::CHECK_CONDITION;
-        this->sense  = ScsiSense::ILLEGAL_REQ;
-        this->asc    = SAVING_NOT_SUPPORTED;
-        this->ascq   = 0;
-        this->sksv   = 0;
-        this->field  = 0;
+        this->set_field_pointer(2), // error in the 3rd byte
+        this->set_bit_pointer(7),   // starting with bit 7
+        this->illegal_request(ScsiError::SAVING_NOT_SUPPORTED, 0);
         this->switch_phase(ScsiPhase::STATUS);
         return;
     }
@@ -384,22 +280,14 @@ void ScsiHardDisk::mode_sense_6() {
 
     if (!(got_page || page_code == 0x3f)) { // not any of the supported pages or all pages
         LOG_F(WARNING, "%s: unsupported page 0x%02x in MODE_SENSE_6", this->name.c_str(), page_code);
-        this->status = ScsiStatus::CHECK_CONDITION;
-        this->sense  = ScsiSense::ILLEGAL_REQ;
-        this->asc    = ScsiError::INVALID_CDB;
-        this->ascq   = 0;
-        this->sksv   = 0xC0; // sksv=1, C/D=Command, BPV=0, BP=0
-        this->field  = 2;
+        this->invalid_cdb();
         this->switch_phase(ScsiPhase::STATUS);
         return;
     bad_sub_page:
-        LOG_F(WARNING, "%s: unsupported page/subpage %02xh/%02xh in MODE_SENSE_6", this->name.c_str(), page_code, sub_page_code);
-        this->status = ScsiStatus::CHECK_CONDITION;
-        this->sense  = ScsiSense::ILLEGAL_REQ;
-        this->asc    = ScsiError::INVALID_CDB;
-        this->ascq   = 0;
-        this->sksv   = 0xC0; // sksv=1, C/D=Command, BPV=0, BP=0
-        this->field  = 3;
+        LOG_F(WARNING, "%s: unsupported page/subpage %02xh/%02xh in MODE_SENSE_6",
+              this->name.c_str(), page_code, sub_page_code);
+        this->set_field_pointer(2),
+        this->invalid_cdb();
         this->switch_phase(ScsiPhase::STATUS);
         return;
     }
@@ -421,18 +309,11 @@ void ScsiHardDisk::read_capacity_10() {
 
     if (!(this->cmd_buf[8] & 1) && lba) {
         LOG_F(ERROR, "%s: non-zero LBA for PMI=0", this->name.c_str());
-        this->status = ScsiStatus::CHECK_CONDITION;
-        this->sense  = ScsiSense::ILLEGAL_REQ;
-        this->asc    = ScsiError::INVALID_CDB;
-        this->ascq   = 0;
-        this->sksv   = 0xC0; // sksv=1, C/D=Command, BPV=0, BP=0
-        this->field  = 8;
+        this->set_field_pointer(2),
+        this->invalid_cdb();
         this->switch_phase(ScsiPhase::STATUS);
         return;
     }
-
-    if (!check_lun())
-        return;
 
     uint32_t last_lba = this->total_blocks - 1;
     uint32_t blk_len  = this->sector_size;
@@ -459,19 +340,11 @@ void ScsiHardDisk::format() {
 void ScsiHardDisk::reassign() {
     LOG_F(WARNING, "%s: attempt to reassign blocks on the disk!", this->name.c_str());
 
-    this->status = ScsiStatus::GOOD;
-    this->sense  = ScsiSense::NO_SENSE;
-    this->asc    = ScsiError::NO_ERROR;
-    this->valid  = false;
-
     TimerManager::get_instance()->add_oneshot_timer(
         NS_PER_SEC, [this]() { this->switch_phase(ScsiPhase::STATUS); });
 }
 
 void ScsiHardDisk::read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
-    if (!check_lun())
-        return;
-
     uint32_t transfer_size = transfer_len;
     if (cmd_len == 6 && transfer_len == 0) {
         transfer_size = 256;

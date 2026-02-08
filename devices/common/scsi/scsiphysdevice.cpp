@@ -251,41 +251,6 @@ int ScsiPhysDevice::rcv_data(const uint8_t* src_ptr, const int count)
     return count;
 }
 
-bool ScsiPhysDevice::check_lun() {
-    if (this->cmd_buf[1] >> 5 != this->lun) {
-        LOG_F(ERROR, "%s: non-matching LUN", this->name.c_str());
-        this->status = ScsiStatus::CHECK_CONDITION;
-        this->sense  = ScsiSense::ILLEGAL_REQ;
-        this->asc    = ScsiError::INVALID_LUN;
-        this->ascq   = 0;
-        this->sksv   = 0;
-        this->field  = 0;
-        this->switch_phase(ScsiPhase::STATUS);
-        return false;
-    }
-    return true;
-}
-
-void ScsiPhysDevice::illegal_command(const uint8_t *cmd) {
-    LOG_F(ERROR, "%s: unsupported command: 0x%02x", this->name.c_str(), cmd[0]);
-    this->status = ScsiStatus::CHECK_CONDITION;
-    this->sense  = ScsiSense::ILLEGAL_REQ;
-    this->asc    = ScsiError::INVALID_CMD;
-    this->ascq   = 0;
-    this->sksv   = 0xC0; // sksv=1, C/D=Command, BPV=0, BP=0
-    this->field  = 0;
-    this->switch_phase(ScsiPhase::STATUS);
-}
-
-void ScsiPhysDevice::report_error(uint8_t sense_key, uint8_t asc) {
-    this->status = ScsiStatus::CHECK_CONDITION;
-    this->sense  = sense_key;
-    this->asc    = asc;
-    this->ascq   = 0;
-    this->sksv   = 0xC0; // sksv=1, C/D=Command, BPV=0, BP=0
-    this->switch_phase(ScsiPhase::STATUS);
-}
-
 void ScsiPhysDevice::process_message() {
     static int sdtr_response_seq[4] = {ScsiPhase::MESSAGE_OUT, ScsiPhase::MESSAGE_IN,
                                        ScsiPhase::COMMAND, -1};

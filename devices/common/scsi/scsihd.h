@@ -25,13 +25,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define SCSI_HD_H
 
 #include <devices/common/scsi/scsi.h>
+#include <devices/common/scsi/scsicommoncmds.h>
 #include <utils/imgfile.h>
 
 #include <cinttypes>
 #include <memory>
 #include <string>
 
-class ScsiHardDisk : public ScsiPhysDevice {
+class ScsiHardDisk : public ScsiPhysDevice, public ScsiCommonCmds {
 public:
     ScsiHardDisk(std::string name, int my_id);
     ~ScsiHardDisk() = default;
@@ -42,14 +43,18 @@ public:
     bool get_more_data() override { return false; }
 
 protected:
-    int  test_unit_ready();
-    int  req_sense(uint16_t alloc_len);
+    bool is_device_ready() override { return true; }
+
+    // HACK: it shouldn't be here!
+    void set_xfer_len(uint64_t len) override {
+        this->bytes_out = len;
+    }
+
     void mode_select_6(uint8_t param_len);
 
     void mode_sense_6();
     void format();
     void reassign();
-    uint32_t inquiry(uint8_t *cmd_ptr, uint8_t *data_ptr);
     void read_capacity_10();
     void read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len);
     void write(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len);
@@ -72,11 +77,6 @@ private:
 
     uint8_t         error = ScsiError::NO_ERROR;
     uint8_t         msg_code = 0;
-
-    //inquiry info
-    char vendor_info[8] = {'Q', 'U', 'A', 'N', 'T', 'U', 'M', '\0'};
-    char prod_info[16]  = {'E', 'm', 'u', 'l', 'a', 't', 'e', 'd', ' ', 'D', 'i', 's', 'k', '\0'};
-    char rev_info[4]    = {'d', 'i', '0', '1'};
 };
 
 #endif // SCSI_HD_H
