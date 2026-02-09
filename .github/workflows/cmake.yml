@@ -263,11 +263,11 @@ jobs:
         CCACHE_DIR: ${{ github.workspace }}/.ccache/vsbuild-${{ matrix.name }}
         CCACHE_BASEDIR: ${{ github.workspace }}
       run: |
+        set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
+        if not exist "%VSWHERE%" set "VSWHERE=%ProgramFiles%\Microsoft Visual Studio\Installer\vswhere.exe"
         mkdir build
         cd build
         if not defined VSINSTALLDIR (
-          set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
-          if not exist "%VSWHERE%" set "VSWHERE=%ProgramFiles%\Microsoft Visual Studio\Installer\vswhere.exe"
           for /f "usebackq tokens=*" %%i in (`"%VSWHERE%" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VSINSTALLDIR=%%i"
         )
         if not defined VSINSTALLDIR (
