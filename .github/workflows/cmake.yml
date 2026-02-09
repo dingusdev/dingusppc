@@ -231,7 +231,23 @@ jobs:
       with:
         submodules: recursive
     - name: Setup msbuild
-      uses: microsoft/setup-msbuild@v1
+      uses: microsoft/setup-msbuild@v2
+    - name: Setup MSVC environment
+      shell: cmd
+      run: |
+        set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
+        if not exist "%VSWHERE%" set "VSWHERE=%ProgramFiles%\Microsoft Visual Studio\Installer\vswhere.exe"
+        for /f "usebackq tokens=*" %%i in (`"%VSWHERE%" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VSINSTALLDIR=%%i"
+        if not defined VSINSTALLDIR (
+          echo vswhere did not find Visual Studio.
+          exit /b 1
+        )
+        call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvars64.bat"
+        echo PATH=%PATH%>>%GITHUB_ENV%
+        echo INCLUDE=%INCLUDE%>>%GITHUB_ENV%
+        echo LIB=%LIB%>>%GITHUB_ENV%
+        echo LIBPATH=%LIBPATH%>>%GITHUB_ENV%
+        echo VSINSTALLDIR=%VSINSTALLDIR%>>%GITHUB_ENV%
     - name: Cache vcpkg
       uses: actions/cache@v4
       with:
@@ -263,20 +279,8 @@ jobs:
         CCACHE_DIR: ${{ github.workspace }}/.ccache/vsbuild-${{ matrix.name }}
         CCACHE_BASEDIR: ${{ github.workspace }}
       run: |
-        set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
-        if not exist "%VSWHERE%" set "VSWHERE=%ProgramFiles%\Microsoft Visual Studio\Installer\vswhere.exe"
-        mkdir build
-        cd build
-        if not defined VSINSTALLDIR (
-          for /f "usebackq tokens=*" %%i in (`"%VSWHERE%" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VSINSTALLDIR=%%i"
-        )
-        if not defined VSINSTALLDIR (
-          echo VSINSTALLDIR not set and vswhere did not find Visual Studio.
-          exit /b 1
-        )
-        call "%VSINSTALLDIR%\VC\Auxiliary\Build\vcvars64.bat"
-        cmake -G "${{ matrix.generator }}" -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DDPPC_68K_DEBUGGER=ON -DDPPC_BUILD_PPC_TESTS=ON ${{ matrix.ccache_args }} -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows ${{ matrix.cmake_args }} ..
-        cmake --build . --config ${{ env.BUILD_TYPE }} --parallel
+        cmake -B build -G "${{ matrix.generator }}" -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DDPPC_68K_DEBUGGER=ON -DDPPC_BUILD_PPC_TESTS=ON ${{ matrix.ccache_args }} -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALLATION_ROOT%/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows ${{ matrix.cmake_args }}
+        cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
     - name: ccache stats
       if: matrix.generator == 'Ninja'
       shell: cmd
