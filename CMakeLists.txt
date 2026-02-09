@@ -147,7 +147,8 @@ add_executable(dingusppc ${SOURCES} $<TARGET_OBJECTS:core>
                                     $<TARGET_OBJECTS:loguru>)
 
 if (WIN32)
-    target_link_libraries(dingusppc PRIVATE SDL2::SDL2 SDL2::SDL2main cubeb)
+    target_link_libraries(dingusppc PRIVATE SDL2::SDL2 cubeb)
+    target_compile_definitions(dingusppc PRIVATE SDL_MAIN_HANDLED)
 elseif (EMSCRIPTEN)
     target_link_libraries(dingusppc PRIVATE
                                     ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT}
@@ -159,7 +160,7 @@ elseif (EMSCRIPTEN)
                                     "-s EXPORT_NAME=emulator"
                                     "-s 'EXTRA_EXPORTED_RUNTIME_METHODS=[\"FS\"]'")
 else()
-    target_link_libraries(dingusppc PRIVATE SDL2::SDL2 SDL2::SDL2main cubeb
+    target_link_libraries(dingusppc PRIVATE SDL2::SDL2main SDL2::SDL2 cubeb
                                     ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
@@ -183,9 +184,10 @@ if (DPPC_BUILD_PPC_TESTS)
                                            $<TARGET_OBJECTS:loguru>)
 
     if (WIN32)
-        target_link_libraries(testppc PRIVATE SDL2::SDL2 SDL2::SDL2main cubeb)
+        target_link_libraries(testppc PRIVATE SDL2::SDL2 cubeb)
+        target_compile_definitions(testppc PRIVATE SDL_MAIN_HANDLED)
     else()
-        target_link_libraries(testppc PRIVATE SDL2::SDL2 SDL2::SDL2main cubeb
+        target_link_libraries(testppc PRIVATE SDL2::SDL2main SDL2::SDL2 cubeb
                                     ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
     endif()
 
@@ -208,8 +210,11 @@ if (DPPC_BUILD_BENCHMARKS)
                                            $<TARGET_OBJECTS:utils>
                                            $<TARGET_OBJECTS:loguru>)
 
-    target_link_libraries(bench1 PRIVATE cubeb SDL2::SDL2 SDL2::SDL2main ${CMAKE_DL_LIBS}
+    target_link_libraries(bench1 PRIVATE cubeb SDL2::SDL2 ${CMAKE_DL_LIBS}
             ${CMAKE_THREAD_LIBS_INIT})
+    if (WIN32)
+        target_compile_definitions(bench1 PRIVATE SDL_MAIN_HANDLED)
+    endif()
 
     if (DPPC_68K_DEBUGGER)
         target_link_libraries(bench1 PRIVATE capstone)
