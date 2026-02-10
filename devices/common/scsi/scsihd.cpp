@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <core/timermanager.h>
 #include <devices/common/scsi/scsi.h>
 #include <devices/common/scsi/scsihd.h>
+#include <devices/common/scsi/scsiparseutils.h>
 #include <devices/deviceregistry.h>
 #include <loguru.hpp>
 #include <machines/machineproperties.h>
@@ -183,7 +184,9 @@ void ScsiHardDisk::mode_select_6(uint8_t param_len) {
     std::memset(&this->data_buf[0], 0xDD, this->sector_size);
 
     this->post_xfer_action = [this]() {
-        // TODO: parse the received mode parameter list here
+        ModeSelectData parsed;
+        parse_mode_select_6(this->data_buf, this->incoming_size,
+            this->name.c_str(), parsed);
     };
 
     this->switch_phase(ScsiPhase::DATA_OUT);

@@ -50,6 +50,7 @@ if (EMSCRIPTEN)
 endif()
 
 option(DPPC_BUILD_PPC_TESTS  "Build PowerPC tests" OFF)
+option(DPPC_BUILD_SCSI_TESTS "Build SCSI tests" OFF)
 option(DPPC_BUILD_BENCHMARKS "Build benchmarking programs" OFF)
 
 option(DPPC_68K_DEBUGGER   "Enable 68k debugging" OFF)
@@ -229,6 +230,16 @@ if (DPPC_BUILD_PPC_TESTS)
         "${PROJECT_SOURCE_DIR}/cpu/ppc/test/ppcfloattests.csv"
         "${PROJECT_SOURCE_DIR}/cpu/ppc/test/ppcdisasmtest.csv"
         $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+endif()
+
+if (DPPC_BUILD_SCSI_TESTS)
+    file(GLOB SCSI_TEST_SOURCES "${PROJECT_SOURCE_DIR}/devices/common/scsi/test/*.cpp")
+    add_executable(testscsi ${SCSI_TEST_SOURCES}
+                            "${PROJECT_SOURCE_DIR}/devices/common/scsi/scsiparseutils.cpp")
+    target_include_directories(testscsi PRIVATE
+                            "${PROJECT_SOURCE_DIR}"
+                            "${PROJECT_SOURCE_DIR}/thirdparty/loguru/")
+    target_link_libraries(testscsi PRIVATE loguru ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
 install (TARGETS dingusppc DESTINATION ${PROJECT_SOURCE_DIR}/build)

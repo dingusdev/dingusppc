@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <devices/common/scsi/scsi.h>
 #include <devices/common/scsi/scsicdrom.h>
+#include <devices/common/scsi/scsiparseutils.h>
 #include <devices/deviceregistry.h>
 #include <loguru.hpp>
 #include <machines/machineproperties.h>
@@ -233,8 +234,16 @@ void ScsiCdrom::mode_select_6(uint8_t param_len)
     std::memset(&this->data_buf[0], 0, 512);
 
     this->post_xfer_action = [this]() {
-        // TODO: parse the received mode parameter list here
-        LOG_F(INFO, "Mode Select: received mode parameter list");
+        ModeSelectData parsed;
+        parse_mode_select_6(this->data_buf, this->incoming_size,
+            this->name.c_str(), parsed);
+
+        // TODO: if the block descriptor requests 512-byte blocks (parsed.bd_block_len == 512),
+        // we should switch block_size so subsequent READs use 512-byte LBA addressing.
+        // This requires BlockStorageDevice::set_block_size() to also update block_size
+        // (currently it only sets raw_blk_size), and size_blocks must be recalculated.
+        // Classic Mac OS drivers may not need this (they subdivide 2048-byte sectors
+        // internally), but some drivers may depend on it.
     };
 
     this->switch_phase(ScsiPhase::DATA_OUT);
