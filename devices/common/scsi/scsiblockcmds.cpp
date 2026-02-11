@@ -203,7 +203,7 @@ int ScsiBlockCmds::read_capacity() {
 
     if (!(this->cdb_ptr[8] & 1) && lba) {
         LOG_F(ERROR, "READ_CAPACITY: non-zero LBA for PMI=0");
-        this->set_field_pointer(2),
+        this->set_field_pointer(2);
         this->invalid_cdb();
         return ScsiPhase::STATUS;
     }

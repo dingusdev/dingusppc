@@ -231,8 +231,8 @@ int ScsiCommonCmds::mode_sense() {
     if (page_ctrl == PageControl::SAVED_VALUES && !this->supports_params_saving()) {
         LOG_F(ERROR, "MODE_SENSE: Page control mode (%s) not supported",
               Page_Control_Modes[page_ctrl]);
-        this->set_field_pointer(2), // error in the 3rd byte
-        this->set_bit_pointer(7),   // starting with bit 7
+        this->set_field_pointer(2); // error in the 3rd byte
+        this->set_bit_pointer(7);   // starting with bit 7
         this->illegal_request(ScsiError::SAVING_NOT_SUPPORTED, 0);
         return ScsiPhase::STATUS;
     }
@@ -316,8 +316,8 @@ int ScsiCommonCmds::mode_sense() {
             resp_len += page_len;
         } else {
             LOG_F(ERROR, "MODE_SENSE: page 0x%X not supported", page_code);
-            this->set_field_pointer(2), // error in the 3rd byte
-            this->set_bit_pointer(5),   // starting with bit 5
+            this->set_field_pointer(2); // error in the 3rd byte
+            this->set_bit_pointer(5);   // starting with bit 5
             this->invalid_cdb();
             return ScsiPhase::STATUS;
         }
@@ -350,7 +350,7 @@ try_again:
         } else if (err == FORMAT_ERR_BAD_CONTROL) {
             LOG_F(ERROR, "MODE_SENSE: Page control (%s) not supported for page 0x%X",
                   Page_Control_Modes[ctrl], page);
-            this->set_field_pointer(2), // error in the 3rd byte
+            this->set_field_pointer(2); // error in the 3rd byte
             this->set_bit_pointer(7);   // starting with bit 7
         } else if (err == FORMAT_ERR_BAD_SUBPAGE) {
             LOG_F(ERROR, "MODE_SENSE: unsupported subpage 0x%X for page 0x%X",
