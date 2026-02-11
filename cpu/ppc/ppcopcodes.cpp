@@ -936,6 +936,11 @@ void dppc_interpreter::ppc_mfspr(uint32_t opcode) {
     }
 
     switch (ref_spr) {
+    case SPR::XER:
+    case SPR::LR:
+    case SPR::CTR:
+        ppc_state.gpr[reg_d] = ppc_state.spr[ref_spr];
+        break;
     case SPR::MQ:
         if (!(is_601 || include_601)) {
             ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
@@ -987,8 +992,23 @@ void dppc_interpreter::ppc_mfspr(uint32_t opcode) {
         ppc_state.spr[TBL_S] = uint32_t(tbr_value);
         break;
     }
+    case SPR::DSISR:
+    case SPR::DAR:
+    case SPR::SRR0:
+    case SPR::SRR1:
+    case SPR::PVR:
+    case SPR::EAR:
+        ppc_state.gpr[reg_d] = ppc_state.spr[ref_spr];
+        break;
+    case SPR::SPRG0:
+    case SPR::SPRG1:
+    case SPR::SPRG2:
+    case SPR::SPRG3:
+        ppc_state.gpr[reg_d] = ppc_state.spr[ref_spr];
+        break;
     default:
         // FIXME: Unknown SPR should be noop or illegal instruction.
+        LOG_F(ERROR, "Mystery SPR in MFSPR: %d", ref_spr);
         ppc_state.gpr[reg_d] = ppc_state.spr[ref_spr];
     }
 }
@@ -1010,6 +1030,13 @@ void dppc_interpreter::ppc_mtspr(uint32_t opcode) {
     uint32_t val = ppc_state.gpr[reg_d];
 
     switch (ref_spr) {
+    case SPR::XER:
+        ppc_state.spr[ref_spr] = val & 0xe000ff7f;
+        break;
+    case SPR::LR:
+    case SPR::CTR:
+        ppc_state.spr[ref_spr] = val;
+        break;
     case SPR::MQ:
         if (is_601 || include_601)
             ppc_state.spr[ref_spr] = val;
@@ -1019,12 +1046,12 @@ void dppc_interpreter::ppc_mtspr(uint32_t opcode) {
     case SPR::RTCL_U:
     case SPR::RTCU_U:
     case SPR::DEC_U:
-        if (!is_601) {
+        if (is_601) {
+            ppc_state.spr[ref_spr] = val;
+        } 
+        else {
             ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
         }
-        break;
-    case SPR::XER:
-        ppc_state.spr[ref_spr] = val & 0xe000ff7f;
         break;
     case SPR::SDR1:
         if (ppc_state.spr[ref_spr] != val) {
@@ -1058,6 +1085,19 @@ void dppc_interpreter::ppc_mtspr(uint32_t opcode) {
         ppc_state.spr[TBL_S] = (uint32_t)tbr_wr_value;
         ppc_state.spr[TBU_S] = val;
         break;
+    case SPR::DSISR:
+    case SPR::DAR:
+    case SPR::SRR0:
+    case SPR::SRR1:
+    case SPR::EAR:
+        ppc_state.spr[ref_spr] = val;
+        break;
+    case SPR::SPRG0:
+    case SPR::SPRG1:
+    case SPR::SPRG2:
+    case SPR::SPRG3:
+        ppc_state.spr[ref_spr] = val;
+        break;
     case SPR::PVR:
         break;
     case 528:
@@ -1084,6 +1124,7 @@ void dppc_interpreter::ppc_mtspr(uint32_t opcode) {
         break;
     default:
         // FIXME: Unknown SPR should be noop or illegal instruction.
+        LOG_F(ERROR, "Mystery SPR in MTSPR: %d", ref_spr);
         ppc_state.spr[ref_spr] = val;
     }
 }

@@ -106,6 +106,7 @@ enum SPR : int {
     SPRG1   = 273,
     SPRG2   = 274,
     SPRG3   = 275,
+    EAR     = 282, 
     TBL_S   = 284, // supervisor TBL
     TBU_S   = 285, // supervisor TBU
     PVR     = 287,
