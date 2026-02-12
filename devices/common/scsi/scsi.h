@@ -203,8 +203,18 @@ enum : uint8_t {
     CAP_CMD_SRST    = 1 << 0, // device supports soft resets
 };
 
+/** Page control values for MODE SENSE. */
+namespace PageControl {
+    enum : uint8_t {
+        CURRENT_VALUES      = 0,
+        CHANGEABLE_VALUES   = 1,
+        DEFAULT_VALUES      = 2,
+        SAVED_VALUES        = 3
+    };
+};
+
 /** Page numbers for MODE SENSE and MODE SELECT. */
-enum ModePage {
+enum ModePage : uint8_t {
     ERROR_RECOVERY       = 0x1,
     CDROM_PARAMS         = 0xD,
     CDROM_AUDIO          = 0xE,
