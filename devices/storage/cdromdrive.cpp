@@ -135,7 +135,7 @@ uint32_t CdromDrive::mode_sense_ex(bool is_sense_6, uint8_t* cmd_ptr, uint8_t* d
     resp_ptr[0] = page_code;
 
     switch (page_code) {
-    case ModePage::READ_ERROR_RECOVERY:
+    case ModePage::ERROR_RECOVERY:
         resp_ptr[1] = 6; // data size
         std::memset(&resp_ptr[2], 0, 6);
         data_ptr[1] += 8; // adjust overall length

@@ -203,6 +203,17 @@ enum : uint8_t {
     CAP_CMD_SRST    = 1 << 0, // device supports soft resets
 };
 
+/** Page numbers for MODE SENSE and MODE SELECT. */
+enum ModePage {
+    ERROR_RECOVERY       = 0x1,
+    CDROM_PARAMS         = 0xD,
+    CDROM_AUDIO          = 0xE,
+    POWER_CONDITION      = 0x1A,
+    CDROM_CAPABILITIES   = 0x2A,
+    VENDOR_PAGE_31       = 0x31,
+    ALL_PAGES            = 0x3F,
+};
+
 /** Standard SCSI bus timing values measured in ns. */
 constexpr uint64_t BUS_SETTLE_DELAY = 400;
 constexpr uint64_t BUS_FREE_DELAY   = 800;

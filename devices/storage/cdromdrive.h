@@ -44,16 +44,6 @@ typedef struct {
     uint32_t    start_lba;
 } TrackDescriptor;
 
-enum ModePage {
-    READ_ERROR_RECOVERY  = 1,
-    CDROM_PARAMS         = 0xD,
-    CDROM_AUDIO          = 0xE,
-    POWER_CONDITION      = 0x1A,
-    CDROM_CAPABILITIES   = 0x2A,
-    VENDOR_PAGE_31       = 0x31,
-    ALL_PAGES            = 0x3F,
-};
-
 constexpr auto CDROM_MAX_TRACKS = 100;
 constexpr auto LEAD_OUT_TRK_NUM = 0xAA;
 constexpr auto CDR_STD_DATA_SIZE = 2048;
