@@ -37,6 +37,15 @@ public:
     ScsiHardDisk(std::string name, int my_id);
     ~ScsiHardDisk() = default;
 
+    // temporary implementation that should be elsewhere
+    void get_medium_type(uint8_t& medium_type, uint8_t& dev_flags) override {
+        medium_type = 0;
+        dev_flags   = 0;
+    }
+
+    // temporary implementation that should be elsewhere
+    int format_block_descriptors(uint8_t* out_ptr) override;
+
     void insert_image(std::string filename);
     void process_command() override;
 

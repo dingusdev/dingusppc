@@ -43,6 +43,15 @@ public:
 protected:
     bool is_device_ready() override { return true; }
 
+    // temporary implementation that should be elsewhere
+    void get_medium_type(uint8_t& medium_type, uint8_t& dev_flags) override {
+        medium_type = 1; // 120mm CD-ROM data only
+        dev_flags   = 0;
+    }
+
+    // temporary implementation that should be elsewhere
+    int format_block_descriptors(uint8_t* out_ptr) override;
+
     void    read(uint32_t lba, uint16_t nblocks, uint8_t cmd_len);
     void    mode_select_6(uint8_t param_len);
 

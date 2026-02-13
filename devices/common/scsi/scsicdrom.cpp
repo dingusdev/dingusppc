@@ -148,6 +148,15 @@ void ScsiCdrom::read(uint32_t lba, uint16_t nblocks, uint8_t cmd_len)
     this->switch_phase(ScsiPhase::DATA_IN);
 }
 
+int ScsiCdrom::format_block_descriptors(uint8_t* out_ptr) {
+    uint8_t density_code = 1; // user data only, 2048 bytes per physical sector
+
+    WRITE_DWORD_BE_A(&out_ptr[0], (density_code << 24) | (this->size_blocks & 0xFFFFFF));
+    WRITE_DWORD_BE_A(&out_ptr[4], (this->block_size & 0xFFFFFF));
+
+    return 8;
+}
+
 static char Apple_Copyright_Page_Data[] = "APPLE COMPUTER, INC   ";
 
 void ScsiCdrom::mode_sense_6()

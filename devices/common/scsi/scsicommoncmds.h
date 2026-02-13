@@ -29,12 +29,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <array>
 #include <cinttypes>
 #include <cstring>
+#include <functional>
+#include <map>
 
 /** IDs for command groups with non-standard length. */
 enum : int {
     CMD_GRP_RESERVED        = -1,
     CMD_GRP_VENDOR_SPECIFIC = -2,
 };
+
+/** Errors returned by mode sense page formatters. */
+enum {
+    FORMAT_ERR_BAD_SUBPAGE  = -1,
+    FORMAT_ERR_BAD_CONTROL  = -2,
+    FORMAT_ERR_DATA_TOO_BIG = -3,
+};
+
+typedef std::function<int(uint8_t, uint8_t, uint8_t *, int)> page_getter_t;
 
 /** Base class for common SCSI commands. */
 class ScsiCommonCmds {
@@ -53,14 +64,32 @@ public:
     // override this to support several LUNs
     virtual bool lun_supported(uint8_t lun) { return lun == 0; }
 
+    // override it in the sub-classes to support saving of device parameters
+    virtual bool supports_params_saving() { return false; }
+
     // override this to support linked commands
     virtual bool linked_cmds_supported() { return false; }
 
+    // implement it in the sub-classes because those parameters are device specific
+    virtual void get_medium_type(uint8_t& medium_type, uint8_t& dev_flags) = 0;
+
+    // implement it in the sub-classes
+    virtual int format_block_descriptors(uint8_t* out_ptr) = 0;
+
+    template <typename T>
+    void add_page_getter(T *inst, int page, int(T::*func)(uint8_t, uint8_t, uint8_t *, int)) {
+        page_getter_t f = [=] (uint8_t ctrl, uint8_t page, uint8_t *out_ptr, int avail_len) {
+            return (inst->*func)(ctrl, page, out_ptr, avail_len);
+        };
+        this->getters.emplace(std::make_pair(page, f));
+    }
+
 protected:
     virtual void     process_command();
+    virtual int      test_unit_ready();
     virtual int      inquiry_new();
     virtual int      request_sense_new();
-    virtual int      test_unit_ready();
+    virtual int      mode_sense();
     virtual uint8_t  get_lun();
     virtual uint32_t get_xfer_len();
     virtual void     reset_sense();
@@ -68,6 +97,9 @@ protected:
     virtual void     invalid_cdb();
     virtual void     invalid_command();
     virtual void     illegal_request(uint8_t asc, uint8_t ascq, bool is_cdb = true);
+
+    int get_one_page(uint8_t ctrl, uint8_t page, uint8_t subpage, uint8_t* out_ptr,
+                     int avail_len);
 
     virtual void set_field_pointer(const uint16_t fp) {
         this->field_ptr = fp;
@@ -134,6 +166,8 @@ protected:
     char    revision_id[4]  = {};
 
     uint8_t link_ctrl = 0; // control field from CDB
+
+    mutable std::map<int, page_getter_t> getters;
 };
 
 #endif // SCSI_COMMON_COMMANDS_H

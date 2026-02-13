@@ -146,6 +146,15 @@ void ScsiHardDisk::process_command() {
     }
 }
 
+int ScsiHardDisk::format_block_descriptors(uint8_t* out_ptr) {
+    uint8_t density_code = 0;
+
+    WRITE_DWORD_BE_A(&out_ptr[0], (density_code << 24) | (this->total_blocks & 0xFFFFFF));
+    WRITE_DWORD_BE_A(&out_ptr[4], (this->sector_size & 0xFFFFFF));
+
+    return 8;
+}
+
 void ScsiHardDisk::mode_select_6(uint8_t param_len) {
     if (!param_len) {
         this->switch_phase(ScsiPhase::STATUS);
