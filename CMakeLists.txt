@@ -138,6 +138,16 @@ endif()
 
 file(GLOB TEST_SOURCES "${PROJECT_SOURCE_DIR}/cpu/ppc/test/*.cpp")
 
+if (APPLE)
+add_executable(dingusppc MACOSX_BUNDLE ${SOURCES} 
+    $<TARGET_OBJECTS:core>
+    $<TARGET_OBJECTS:cpu_ppc>
+    $<TARGET_OBJECTS:debugger>
+    $<TARGET_OBJECTS:devices>
+    $<TARGET_OBJECTS:machines>
+    $<TARGET_OBJECTS:utils>
+    $<TARGET_OBJECTS:loguru>)
+else()
 add_executable(dingusppc ${SOURCES} $<TARGET_OBJECTS:core>
                                     $<TARGET_OBJECTS:cpu_ppc>
                                     $<TARGET_OBJECTS:debugger>
@@ -145,6 +155,45 @@ add_executable(dingusppc ${SOURCES} $<TARGET_OBJECTS:core>
                                     $<TARGET_OBJECTS:machines>
                                     $<TARGET_OBJECTS:utils>
                                     $<TARGET_OBJECTS:loguru>)
+endif()
+
+# 2. Configure Apple-specific Bundle Properties
+if (APPLE)
+    # Identify if we are targeting iOS or macOS
+    if (IOS)
+        set(BUNDLE_ID "com.dingusdev.dingusppc-ios")
+        message(STATUS "Configuring for iOS Bundle")
+    else()
+        set(BUNDLE_ID "com.dingusdev.dingusppc")
+        message(STATUS "Configuring for macOS Bundle")
+    endif()
+
+    set_target_properties(dingusppc PROPERTIES
+        MACOSX_BUNDLE_GUI_IDENTIFIER "${BUNDLE_ID}"
+        MACOSX_BUNDLE_BUNDLE_NAME "DingusPPC"
+        MACOSX_BUNDLE_BUNDLE_VERSION "alpha 1.0.4"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "a1.0.4"
+        MACOSX_BUNDLE_EXECUTABLE_NAME "DingusPPC"
+        # Placeholder for the icon file:
+        # MACOSX_BUNDLE_ICON_FILE "icon.icns"
+    )
+
+    find_library(COCOA_LIBRARY Cocoa)
+    find_library(IOKIT_LIBRARY IOKit)
+    find_library(COREAUDIO_LIBRARY CoreAudio)
+    find_library(AUDIOTOOLBOX_LIBRARY AudioToolbox)
+    
+    target_link_libraries(dingusppc PRIVATE 
+        ${COCOA_LIBRARY} 
+        ${IOKIT_LIBRARY} 
+        ${COREAUDIO_LIBRARY} 
+        ${AUDIOTOOLBOX_LIBRARY}
+    )
+
+    if (IOS)
+        target_link_libraries(dingusppc PRIVATE "-framework Foundation" "-framework UIKit")
+    endif()
+endif()
 
 if (WIN32)
     target_link_libraries(dingusppc PRIVATE SDL2::SDL2 cubeb)
