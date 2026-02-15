@@ -19,8 +19,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#ifndef SCSI_BASE_DEVICE_H
-#define SCSI_BASE_DEVICE_H
+#ifndef SCSI_COMMON_COMMANDS_H
+#define SCSI_COMMON_COMMANDS_H
 
 #include <core/bitops.h>
 #include <devices/common/scsi/scsi.h>
@@ -36,7 +36,7 @@ enum : int {
     CMD_GRP_VENDOR_SPECIFIC = -2,
 };
 
-/** Base class for logical SCSI devices. */
+/** Base class for common SCSI commands. */
 class ScsiCommonCmds {
 public:
     ScsiCommonCmds();
@@ -110,7 +110,7 @@ protected:
     uint8_t*            cdb_ptr  = nullptr;
     uint8_t*            buf_ptr  = nullptr;
 
-    std::array<uint8_t, 16> cmd_enables{};
+    std::array<uint8_t, 32> cmd_enables{};
 
     // REQUEST SENSE state
     uint8_t     sense_key       = ScsiSense::NO_SENSE;
@@ -136,4 +136,4 @@ protected:
     uint8_t link_ctrl = 0; // control field from CDB
 };
 
-#endif // SCSI_BASE_DEVICE_H
+#endif // SCSI_COMMON_COMMANDS_H

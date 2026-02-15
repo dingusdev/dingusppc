@@ -225,7 +225,9 @@ uint8_t ScsiCommonCmds::get_lun() {
 }
 
 uint32_t ScsiCommonCmds::get_xfer_len() {
-    switch(this->get_cdb_length(this->cdb_ptr[0])) {
+    int cmd_len = this->get_cdb_length(this->cdb_ptr[0]);
+
+    switch(cmd_len) {
     case 6:
         return this->cdb_ptr[4];
     case 10:
@@ -233,7 +235,7 @@ uint32_t ScsiCommonCmds::get_xfer_len() {
     case 12:
         return READ_DWORD_BE_U(&this->cdb_ptr[6]);
     default:
-        return 0;
+        ABORT_F("unsupported command length %d in get_xfer_len", cmd_len);
     }
 }
 
