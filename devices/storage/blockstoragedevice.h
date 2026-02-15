@@ -40,7 +40,7 @@ public:
     int set_block_size(const int blk_size);
 
     int set_fpos(const uint32_t lba);
-    int read_begin(int nblocks, uint32_t max_len);
+    int read_begin(int nblocks, uint32_t max_len = UINT32_MAX);
     int data_left() { return this->remain_size; }
     int read_more();
     int write_begin(char *buf, int nblocks);
