@@ -220,7 +220,7 @@ int ScsiPhysDevice::send_data(uint8_t* dst_ptr, const int count)
 
     while (remainder) {
         if (!this->data_size) {
-            if (!this->get_more_data())
+            if (!this->read_more_data(&this->data_size, &this->data_ptr))
                 break;
         }
         int chunk_size = std::min(this->data_size, remainder);

@@ -40,7 +40,6 @@ public:
 
     virtual void process_command() override;
     virtual bool prepare_data() override;
-    virtual bool get_more_data() override;
 
 protected:
     bool is_device_ready() override { return true; }

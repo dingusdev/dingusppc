@@ -47,6 +47,12 @@ ScsiHardDisk::ScsiHardDisk(std::string name, int my_id) : ScsiPhysDevice(name, m
     this->set_cdb_ptr(this->cmd_buf);
     this->set_buf_ptr(this->data_buf);
 
+    phy_impl->set_more_data_cb(
+        [this](int* dsize, uint8_t** dptr) {
+            return false;
+        }
+    );
+
     // populate device info for INQUIRY
     this->dev_type      = ScsiDevType::DIRECT_ACCESS; // direct access device (hard drive)
     this->is_removable  = false; // non-removable medium

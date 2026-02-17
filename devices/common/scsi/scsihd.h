@@ -40,7 +40,6 @@ public:
     void insert_image(std::string filename);
     void process_command() override;
     bool prepare_data() override;
-    bool get_more_data() override { return false; }
 
 protected:
     bool is_device_ready() override { return true; }

@@ -260,6 +260,10 @@ public:
 
     void set_xfer_len(uint64_t len) override {}
 
+    void set_more_data_cb(more_data_cb_t cb) override {
+        this->read_more_data = cb;
+    }
+
     void set_status(uint8_t status_code) override {
         this->status = status_code;
     }
@@ -276,7 +280,6 @@ public:
     virtual int  rcv_data(const uint8_t* src_ptr, const int count);
 
     virtual bool prepare_data() = 0;
-    virtual bool get_more_data() = 0;
     virtual void process_command() = 0;
     virtual void process_message();
 
@@ -304,6 +307,8 @@ protected:
 
     action_callback pre_xfer_action  = nullptr;
     action_callback post_xfer_action = nullptr;
+
+    more_data_cb_t  read_more_data = nullptr;
 };
 
 /** This class provides a higher level abstraction for the SCSI bus. */

@@ -49,6 +49,17 @@ ScsiCdrom::ScsiCdrom(std::string name, int my_id) :
         }
     );
 
+    this->set_more_data_cb(
+        [this](int* dsize, uint8_t** dptr) {
+            if (this->remain_size) {
+                *dsize = this->read_more();
+                *dptr  = (uint8_t *)this->data_cache.get();
+                return true;
+            } else
+                return false;
+        }
+    );
+
     // populate device info for INQUIRY
     this->dev_type      = ScsiDevType::CD_ROM;
     this->is_removable  = true; // removable medium
@@ -63,8 +74,6 @@ ScsiCdrom::ScsiCdrom(std::string name, int my_id) :
 void ScsiCdrom::process_command()
 {
     uint32_t lba;
-
-    uint32_t cdda_start, cdda_end, cdda_len;
 
     if (this->verify_cdb() < 0) {
         this->switch_phase(ScsiPhase::STATUS);
@@ -141,15 +150,6 @@ bool ScsiCdrom::prepare_data()
         return false;
     }
     return true;
-}
-
-bool ScsiCdrom::get_more_data() {
-    if (this->data_left()) {
-        this->data_size = this->read_more();
-        this->data_ptr  = (uint8_t *)this->data_cache.get();
-    }
-
-    return this->data_size != 0;
 }
 
 void ScsiCdrom::read(uint32_t lba, uint16_t nblocks, uint8_t cmd_len)

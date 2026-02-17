@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define SCSI_PHYS_INTERFACE_H
 
 #include <cinttypes>
+#include <functional>
 
 /** Physical layer IDs. */
 enum : int {
@@ -30,6 +31,9 @@ enum : int {
     PHY_ID_SCSI     = 1, // parallel SCSI
     PHY_ID_ATAPI    = 2, // parallel ATA with packet interface
 };
+
+// Prototype for callbacks that request more data from virtual devices.
+using more_data_cb_t = std::function<bool(int* data_size, uint8_t** data_ptr)>;
 
 /** Interface for the physical layer of a SCSI/ATAPI device. */
 class ScsiPhysInterface {
@@ -46,6 +50,7 @@ public:
     virtual void    set_xfer_len(uint64_t len) = 0;
     virtual void    set_status(uint8_t status_code) = 0;
     virtual void    switch_phase(const int new_phase) = 0;
+    virtual void    set_more_data_cb(more_data_cb_t cb) = 0;
 
 protected:
     int phy_id = PHY_ID_UNKNOWN;
