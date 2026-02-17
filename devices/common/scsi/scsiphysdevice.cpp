@@ -213,29 +213,27 @@ int ScsiPhysDevice::xfer_data() {
 
 int ScsiPhysDevice::send_data(uint8_t* dst_ptr, const int count)
 {
-    if (dst_ptr == nullptr || !count) {
+    if (dst_ptr == nullptr || !count)
         return 0;
-    }
 
-    int actual_count = std::min(this->data_size, count);
+    int remainder = count;
 
-    std::memcpy(dst_ptr, this->data_ptr, actual_count);
-    this->data_ptr  += actual_count;
-    this->data_size -= actual_count;
-
-    // attempt to return the requested amount of data
-    // when data_size drops down to zero
-    if (!this->data_size) {
-        if (this->get_more_data() && count > actual_count) {
-            dst_ptr += actual_count;
-            actual_count = std::min(this->data_size, count - actual_count);
-            std::memcpy(dst_ptr, this->data_ptr, actual_count);
-            this->data_ptr  += actual_count;
-            this->data_size -= actual_count;
+    while (remainder) {
+        if (!this->data_size) {
+            if (!this->get_more_data())
+                break;
+        }
+        int chunk_size = std::min(this->data_size, remainder);
+        if (chunk_size) {
+            std::memcpy(dst_ptr, this->data_ptr, chunk_size);
+            dst_ptr         += chunk_size;
+            this->data_ptr  += chunk_size;
+            this->data_size -= chunk_size;
+            remainder       -= chunk_size;
         }
     }
 
-    return actual_count;
+    return count - remainder;
 }
 
 int ScsiPhysDevice::rcv_data(const uint8_t* src_ptr, const int count)
