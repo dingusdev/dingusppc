@@ -260,6 +260,10 @@ public:
 
     void set_xfer_len(uint64_t len) override {}
 
+    void set_buffer(uint8_t *bptr) override {
+        this->buf_ptr = bptr;
+    }
+
     void set_more_data_cb(more_data_cb_t cb) override {
         this->read_more_data = cb;
     }
@@ -295,6 +299,7 @@ protected:
     int         initiator_id;
     int         cur_phase;
     uint8_t*    data_ptr = nullptr;
+    uint8_t*    buf_ptr  = nullptr;
     int         data_size;
     int         incoming_size;
     uint8_t     status;
