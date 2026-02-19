@@ -204,10 +204,10 @@ enum
 // WR3  - Receive Parameters and Control // Receive/Control parameters, number of bits per character, Rx CRC enable
 
     WR3_RECEIVER_BITS_PER_CHARACTER                         = 3 << 6,
-    WR3_BITS_PER_CHARACTER_5                                = 0 << 6,
-    WR3_BITS_PER_CHARACTER_7                                = 1 << 6,
-    WR3_BITS_PER_CHARACTER_6                                = 2 << 6,
-    WR3_BITS_PER_CHARACTER_8                                = 3 << 6,
+        WR3_BITS_PER_CHARACTER_5                            = 0 << 6,
+        WR3_BITS_PER_CHARACTER_7                            = 1 << 6,
+        WR3_BITS_PER_CHARACTER_6                            = 2 << 6,
+        WR3_BITS_PER_CHARACTER_8                            = 3 << 6,
     WR3_AUTO_ENABLES                                        = 1 << 5,
     WR3_ENTER_HUNT_MODE                                     = 1 << 4,
     WR3_RX_CRC_ENABLE                                       = 1 << 3,
@@ -255,6 +255,17 @@ enum
 // WR6  - Sync Characters or SDLC Address Field // Sync character (1st byte) or SDLC address
 
 // WR7  - Sync Character or SDLCFlag/SDLC Option Register // SYNC character (2nd byte) or SDLC flag
+
+// WR7Prime - Special SDLC Enhancement Register
+
+    WR7_RESERVED                                            = 1 << 7,
+    WR7_EXTENDED_READ_ENABLE                                = 1 << 6,
+    WR7_RECEIVE_CRC                                         = 1 << 5,
+    WR7_DTR_REQ_TIMING_MODE                                 = 1 << 4,
+    WR7_TXD_FORCED_HIGH_IN_SDLC_NRZI_MODE                   = 1 << 3,
+    WR7_AUTO_RTS_DEACTIVATION                               = 1 << 2,
+    WR7_AUTO_EOM_RESET                                      = 1 << 1,
+    WR7_AUTO_TX_FLAG                                        = 1 << 0,
 
 // WR8  - Transmit buffer
 
@@ -337,19 +348,21 @@ enum
     WR14_AUTO_ECHO                                          = 1 << 3,
     WR14_DTR_REQUEST_FUNCTION                               = 1 << 2,
     WR14_BR_GENERATOR_SOURCE                                = 1 << 1,
+        WR14_BRG_SRC_RTXC_OR_XTAL                           = 0 << 1,
+        WR14_BRG_SRC_PCLK                                   = 1 << 1,
     WR14_BR_GENERATOR_ENABLE                                = 1 << 0,
 
 // WR15 - External/Status Interrupt Control
 // External/Status interrupt control information-control external conditions causing interrupts
 
-    WR15_SDLC_HDLC_ENHANCEMENT_ENABLE                       = 1 << 0,
-    WR15_ZERO_COUNT_IE                                      = 1 << 1,
-    WR15_10_X_19_BIT_FRAME_STATUS_FIFO_ENABLE               = 1 << 2,
-    WR15_DCD_IE                                             = 1 << 3,
-    WR15_SYNC_HUNT_IE                                       = 1 << 4,
-    WR15_CTS_IE                                             = 1 << 5,
-    WR15_TX_UNDERRUN_EOM_IE                                 = 1 << 6,
     WR15_BREAK_ABORT_IE                                     = 1 << 7,
+    WR15_TX_UNDERRUN_EOM_IE                                 = 1 << 6,
+    WR15_CTS_IE                                             = 1 << 5,
+    WR15_SYNC_HUNT_IE                                       = 1 << 4,
+    WR15_DCD_IE                                             = 1 << 3,
+    WR15_10_X_19_BIT_FRAME_STATUS_FIFO_ENABLE               = 1 << 2,
+    WR15_ZERO_COUNT_IE                                      = 1 << 1,
+    WR15_SDLC_HDLC_ENHANCEMENT_ENABLE                       = 1 << 0,
 };
 
 #endif // Z85C30_H
