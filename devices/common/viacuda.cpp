@@ -445,10 +445,16 @@ void ViaCuda::write(uint8_t new_state) {
         if (this->via_acr & 0x10) { // data transfer: Host --> Cuda
             if (this->in_count < sizeof(this->in_buf)) {
                 this->in_buf[this->in_count++] = this->via_sr;
+                if (this->in_count > this->max_in_count) {
+                    this->max_in_count = this->in_count;
+                    if (this->max_in_count > 256)
+                        LOG_F(WARNING, "Cuda input data count (%d) exceeds 256!", (int)this->in_count);
+                }
                 // tell the system we've read the byte after 71 usecs
                 schedule_sr_int(USECS_TO_NSECS(71));
             } else {
-                LOG_F(WARNING, "Cuda input buffer too small. Truncating data!");
+                LOG_F(WARNING, "Cuda input buffer too small (%d). Truncating data (%d)!",
+                    (int)sizeof(this->in_buf), (int)this->in_count);
             }
         } else { // data transfer: Cuda --> Host
             (this->*out_handler)();

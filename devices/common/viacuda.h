@@ -150,7 +150,7 @@ enum {
     CUDA_ERR_I2C      = 5  // invalid I2C data or no acknowledge
 };
 
-constexpr auto CUDA_IN_BUF_SIZE = 256;
+constexpr auto CUDA_IN_BUF_SIZE = 259;
 
 /** PRAM addresses within Cuda's internal memory. */
 //                                = 0xA1;     // byte, read/write 0x00 (Power Mac 6100)
@@ -228,6 +228,7 @@ private:
     uint32_t treq_timer_id = 0;
     uint8_t  in_buf[CUDA_IN_BUF_SIZE];
     int32_t  in_count;
+    int      max_in_count = 0;
     uint8_t  out_buf[16];
     int32_t  out_count;
     int32_t  out_pos;
