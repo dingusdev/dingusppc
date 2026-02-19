@@ -46,6 +46,7 @@ ScsiHardDisk::ScsiHardDisk(std::string name, int my_id) : ScsiPhysDevice(name, m
     this->set_phys_dev(this);
     this->set_cdb_ptr(this->cmd_buf);
     this->set_buf_ptr(this->data_buf);
+    this->set_buffer(this->data_buf);
 
     phy_impl->set_more_data_cb(
         [this](int* dsize, uint8_t** dptr) {
@@ -145,46 +146,13 @@ void ScsiHardDisk::process_command() {
     }
 }
 
-bool ScsiHardDisk::prepare_data() {
-    switch (this->cur_phase) {
-    case ScsiPhase::DATA_IN:
-        this->data_ptr  = (uint8_t*)this->data_buf;
-        this->data_size = this->bytes_out;
-        break;
-    case ScsiPhase::DATA_OUT:
-        this->data_ptr  = (uint8_t*)this->data_buf;
-        this->data_size = 0;
-        break;
-    case ScsiPhase::STATUS:
-        if (!error) {
-            this->data_buf[0] = ScsiStatus::GOOD;
-        } else {
-            this->data_buf[0] = ScsiStatus::CHECK_CONDITION;
-        }
-        this->bytes_out = 1;
-        this->data_ptr = (uint8_t*)this->data_buf;
-        this->data_size = this->bytes_out;
-        break;
-    case ScsiPhase::MESSAGE_IN:
-        this->data_buf[0] = this->msg_code;
-        this->bytes_out = 1;
-        this->data_ptr = (uint8_t*)this->data_buf;
-        this->data_size = this->bytes_out;
-        break;
-    default:
-        LOG_F(WARNING, "%s: unexpected phase in prepare_data", this->name.c_str());
-        return false;
-    }
-    return true;
-}
-
 void ScsiHardDisk::mode_select_6(uint8_t param_len) {
     if (!param_len) {
         this->switch_phase(ScsiPhase::STATUS);
         return;
     }
 
-    this->incoming_size = param_len;
+    phy_impl->set_xfer_len(param_len);
 
     std::memset(&this->data_buf[0], 0xDD, this->sector_size);
 
@@ -301,7 +269,7 @@ void ScsiHardDisk::mode_sense_6() {
     // adjust for overall mode sense data length
     this->data_buf[0] = p_buf - this->data_buf - 1;
 
-    this->bytes_out = std::min((int)alloc_len, (int)this->data_buf[0] + 1);
+    phy_impl->set_xfer_len(std::min((int)alloc_len, (int)this->data_buf[0] + 1));
 
     this->switch_phase(ScsiPhase::DATA_IN);
 }
@@ -327,7 +295,7 @@ void ScsiHardDisk::read_capacity_10() {
     WRITE_DWORD_BE_A(&this->data_buf[0], last_lba);
     WRITE_DWORD_BE_A(&this->data_buf[4], blk_len);
 
-    this->bytes_out = 8;
+    phy_impl->set_xfer_len(8);
 
     this->switch_phase(ScsiPhase::DATA_IN);
 }
@@ -369,7 +337,7 @@ void ScsiHardDisk::read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
 
     this->disk_img.read(this->data_buf, device_offset, transfer_size);
 
-    this->bytes_out = transfer_size;
+    phy_impl->set_xfer_len(transfer_size);
 
     this->switch_phase(ScsiPhase::DATA_IN);
 }
@@ -390,7 +358,7 @@ void ScsiHardDisk::write(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len) {
 
     uint64_t device_offset = (uint64_t)lba * this->sector_size;
 
-    this->incoming_size = transfer_size;
+    phy_impl->set_xfer_len(transfer_size);
 
     this->post_xfer_action = [this, device_offset]() {
         this->disk_img.write(this->data_buf, device_offset, this->incoming_size);
@@ -412,7 +380,7 @@ void ScsiHardDisk::read_buffer() {
         ABORT_F("%s: unsupported mode %d in READ_BUFFER", this->name.c_str(), mode);
     }
 
-    this->bytes_out = alloc_len;
+    phy_impl->set_xfer_len(alloc_len);
 
     this->switch_phase(ScsiPhase::DATA_IN);
 }

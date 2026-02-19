@@ -236,7 +236,6 @@ public:
 
     // ScsiPhysDevice methods
     void notify(ScsiNotification notif_type, int param) override;
-    bool prepare_data() override { return false; }
     bool has_data() override { return this->data_fifo_pos != 0; }
     int  send_data(uint8_t* dst_ptr, int count) override;
     void process_command() override {}

@@ -298,18 +298,6 @@ void ScsiBus::target_next_step()
     }
 }
 
-bool ScsiBus::negotiate_xfer(int& bytes_in, int& bytes_out)
-{
-    if (target_id < 0) {
-        LOG_F(ERROR, "%s: target_id is not set yet.", this->get_name().c_str());
-    }
-    else {
-        this->devices[this->target_id]->prepare_xfer(this, bytes_in, bytes_out);
-    }
-
-    return true;
-}
-
 void ScsiBus::disconnect(int dev_id)
 {
     this->release_ctrl_lines(dev_id);

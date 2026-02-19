@@ -39,15 +39,9 @@ public:
 
     void insert_image(std::string filename);
     void process_command() override;
-    bool prepare_data() override;
 
 protected:
     bool is_device_ready() override { return true; }
-
-    // HACK: it shouldn't be here!
-    void set_xfer_len(uint64_t len) override {
-        this->bytes_out = len;
-    }
 
     void mode_select_6(uint8_t param_len);
 

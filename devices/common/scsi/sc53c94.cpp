@@ -582,7 +582,6 @@ void Sc53C94::sequencer()
                 this->channel_obj->xfer_retry();
                 break;
             }
-            this->bus_obj->negotiate_xfer(this->data_fifo_pos, this->bytes_out);
             this->cur_state = SeqState::RCV_DATA;
             this->rcv_data();
             if (!(this->is_dma_cmd)) {
@@ -626,7 +625,6 @@ void Sc53C94::sequencer()
         break;
     case SeqState::RCV_STATUS:
     case SeqState::RCV_MESSAGE:
-        this->bus_obj->negotiate_xfer(this->data_fifo_pos, this->bytes_out);
         this->rcv_data();
         if (this->is_initiator) {
             if (this->cur_state == SeqState::RCV_STATUS) {

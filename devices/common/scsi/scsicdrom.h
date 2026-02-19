@@ -39,15 +39,9 @@ public:
     ~ScsiCdrom() = default;
 
     virtual void process_command() override;
-    virtual bool prepare_data() override;
 
 protected:
     bool is_device_ready() override { return true; }
-
-    // HACK: it shouldn't be here!
-    void set_xfer_len(uint64_t len) override {
-        this->bytes_out = len;
-    }
 
     void    read(uint32_t lba, uint16_t nblocks, uint8_t cmd_len);
     void    mode_select_6(uint8_t param_len);

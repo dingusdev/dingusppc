@@ -88,7 +88,7 @@ void ScsiCdrom::process_command()
     this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;
 
     // use internal data buffer by default
-    this->data_ptr = this->data_buf;
+    phy_impl->set_buffer(this->data_buf);
 
     uint8_t* cmd = this->cmd_buf;
 
@@ -123,7 +123,7 @@ void ScsiCdrom::process_command()
 
     // CD-ROM specific commands
     case ScsiCommand::READ_TOC:
-        this->bytes_out = read_toc(cmd, this->data_buf);
+        phy_impl->set_xfer_len(read_toc(cmd, this->data_buf));
         if (this->status == ScsiStatus::GOOD) {
             this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;
             this->switch_phase(ScsiPhase::DATA_IN);
@@ -134,32 +134,15 @@ void ScsiCdrom::process_command()
     }
 }
 
-bool ScsiCdrom::prepare_data()
-{
-    switch (this->cur_phase) {
-    case ScsiPhase::DATA_IN:
-        this->data_size = this->bytes_out;
-        break;
-    case ScsiPhase::DATA_OUT:
-        this->data_size = 0;
-        break;
-    case ScsiPhase::STATUS:
-        break;
-    default:
-        LOG_F(WARNING, "%s: unexpected phase in prepare_data", this->name.c_str());
-        return false;
-    }
-    return true;
-}
-
 void ScsiCdrom::read(uint32_t lba, uint16_t nblocks, uint8_t cmd_len)
 {
     if (cmd_len == 6 && nblocks == 0)
         nblocks = 256;
 
     this->set_fpos(lba);
-    this->data_ptr   = (uint8_t *)this->data_cache.get();
-    this->bytes_out  = this->read_begin(nblocks, UINT32_MAX);
+
+    phy_impl->set_buffer((uint8_t *)this->data_cache.get());
+    phy_impl->set_xfer_len(this->read_begin(nblocks, UINT32_MAX));
 
     this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;
     this->switch_phase(ScsiPhase::DATA_IN);
@@ -217,7 +200,8 @@ void ScsiCdrom::mode_sense_6()
         return;
     }
 
-    this->bytes_out = this->data_buf[0];
+    phy_impl->set_xfer_len(this->data_buf[0]);
+
     this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;
 
     this->switch_phase(ScsiPhase::DATA_IN);
@@ -228,7 +212,7 @@ void ScsiCdrom::mode_select_6(uint8_t param_len)
     if (!param_len)
         return;
 
-    this->incoming_size = param_len;
+    phy_impl->set_xfer_len(param_len);
 
     std::memset(&this->data_buf[0], 0, 512);
 
@@ -261,7 +245,8 @@ void ScsiCdrom::read_capacity_10()
     WRITE_DWORD_BE_A(&this->data_buf[0], last_lba);
     WRITE_DWORD_BE_A(&this->data_buf[4], this->block_size);
 
-    this->bytes_out  = 8;
+    phy_impl->set_xfer_len(8);
+
     this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;
 
     this->switch_phase(ScsiPhase::DATA_IN);

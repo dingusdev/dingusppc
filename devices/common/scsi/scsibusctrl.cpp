@@ -113,7 +113,6 @@ void ScsiBusController::sequencer() {
             this->cur_state = SeqState::SEND_DATA;
             break;
         case ScsiPhase::DATA_IN:
-            this->bus_obj->negotiate_xfer(this->fifo_pos, this->bytes_out);
             this->cur_state = SeqState::RCV_DATA;
             this->rcv_data();
         }
@@ -146,7 +145,6 @@ void ScsiBusController::sequencer() {
         break;
     case SeqState::RCV_STATUS:
     case SeqState::RCV_MESSAGE:
-        this->bus_obj->negotiate_xfer(this->fifo_pos, this->bytes_out);
         this->rcv_data();
         if (this->is_initiator) {
             if (this->cur_state == SeqState::RCV_STATUS) {

@@ -75,7 +75,6 @@ public:
 
     // ScsiPhysDevice methods
     void notify(ScsiNotification notif_type, int param) override;
-    bool prepare_data() override { return false; }
     bool has_data() override { return false; }
     bool rcv_data();
     int  send_data(uint8_t* dst_ptr, int count) override;

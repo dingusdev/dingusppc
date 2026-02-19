@@ -65,6 +65,7 @@ void ScsiPhysDevice::switch_phase(const int new_phase)
 {
     this->cur_phase = new_phase;
     this->bus_obj->switch_phase(this->scsi_id, this->cur_phase);
+    this->prepare_xfer();
 }
 
 bool ScsiPhysDevice::allow_phase_change() {
@@ -114,16 +115,11 @@ void ScsiPhysDevice::next_step()
     case ScsiPhase::COMMAND:
         this->process_command();
         if (this->cur_phase != ScsiPhase::COMMAND) {
-            if (this->prepare_data()) {
-                this->bus_obj->assert_ctrl_line(this->scsi_id, SCSI_CTRL_REQ);
-            } else {
-                ABORT_F("%s: prepare_data() failed", this->name.c_str());
-            }
+            this->bus_obj->assert_ctrl_line(this->scsi_id, SCSI_CTRL_REQ);
         }
         break;
     case ScsiPhase::STATUS:
         this->bus_obj->release_ctrl_line(this->scsi_id, SCSI_CTRL_REQ);
-        this->data_ptr  = this->msg_buf;
         this->data_size = 1;
         this->switch_phase(ScsiPhase::MESSAGE_IN);
         break;
@@ -141,36 +137,35 @@ void ScsiPhysDevice::next_step()
     }
 }
 
-void ScsiPhysDevice::prepare_xfer(ScsiBus* bus_obj, int& bytes_in, int& bytes_out)
-{
-    this->cur_phase = bus_obj->current_phase();
+void ScsiPhysDevice::prepare_xfer() {
+    this->cur_phase = this->bus_obj->current_phase();
 
     switch (this->cur_phase) {
-    case ScsiPhase::COMMAND:
+    case ScsiPhase::COMMAND: // handled in xfer_data()
         this->data_ptr = this->cmd_buf;
         this->data_size = 0;
-        bytes_out = 0;
         break;
     case ScsiPhase::STATUS:
         this->data_ptr = &this->status;
         this->data_size = 1;
-        bytes_out = 1;
         break;
     case ScsiPhase::DATA_IN:
-        bytes_out = this->data_size;
+        this->data_ptr  = this->buf_ptr;
+        this->data_size = this->xfer_len;
         break;
     case ScsiPhase::DATA_OUT:
+        this->data_ptr      = this->buf_ptr;
+        this->incoming_size = this->xfer_len;
+        this->data_size     = 0;
         break;
-    case ScsiPhase::MESSAGE_OUT:
+    case ScsiPhase::MESSAGE_OUT: // handled in xfer_data()
         this->data_ptr = this->msg_buf;
-        this->data_size = bytes_in;
-        bytes_out = 0;
         break;
-    case ScsiPhase::MESSAGE_IN:
+    case ScsiPhase::MESSAGE_IN: // HACK: this->data_size is initialized elsewhere
+        this->data_ptr = this->msg_buf;
         break;
     default:
-        ABORT_F("%s: unhandled phase %d in prepare_xfer()", this->name.c_str(),
-                this->cur_phase);
+        break;
     }
 }
 
