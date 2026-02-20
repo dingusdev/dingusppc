@@ -581,13 +581,16 @@ void ViaCuda::autopoll_handler() {
         this->do_post_keyboard_state_events = false;
     }
 
+    // Don't start async packets while a transaction is in progress
+    // or Cuda already has unsent data (TREQ asserted).
+    // Events stay queued in ADB devices until the bus is idle.
+    if (!this->old_tip || !this->treq) {
+        return;
+    }
+
     uint8_t poll_command = this->autopoll_enabled ? this->adb_bus_obj->poll() : 0;
 
     if (poll_command) {
-        if (!this->old_tip || !this->treq) {
-            LOG_F(WARNING, "Cuda transaction probably in progress");
-        }
-
         // prepare autopoll packet
         response_header(CUDA_PKT_ADB, ADB_STAT_OK | ADB_STAT_AUTOPOLL);
         this->out_buf[2] = poll_command; // put the proper ADB command
