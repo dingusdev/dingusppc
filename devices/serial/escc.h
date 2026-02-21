@@ -147,8 +147,7 @@ private:
 
     std::string     name;
     uint8_t         read_regs[16] = {};
-    uint8_t         write_regs[16] = {};
-    uint8_t         wr7_enh = 0;
+    uint8_t         write_regs[17] = {};
     uint8_t         dpll_active;
     DpllMode        dpll_mode;
     uint8_t         dpll_clock_src;

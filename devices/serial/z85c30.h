@@ -42,6 +42,7 @@ enum
     WR13,
     WR14,
     WR15,
+    WR7Prime,
 };
 
 enum

@@ -255,6 +255,9 @@ void EsccChannel::reset(bool hw_reset)
 
 void EsccChannel::write_reg(int reg_num, uint8_t value)
 {
+    if ((reg_num == WR7) && (this->write_regs[WR15] & WR15_SDLC_HDLC_ENHANCEMENT_ENABLE))
+        reg_num = WR7Prime;
+
     switch (reg_num) {
     case WR3:
         if ((this->write_regs[WR3] ^ value) & WR3_ENTER_HUNT_MODE) {
@@ -280,10 +283,8 @@ void EsccChannel::write_reg(int reg_num, uint8_t value)
             (value & ~(WR3_RX_ENABLE | WR3_ENTER_HUNT_MODE));
         return;
     case WR7:
-        if (this->write_regs[WR15] & WR15_SDLC_HDLC_ENHANCEMENT_ENABLE) {
-            this->wr7_enh = value;
-            return;
-        }
+        break;
+    case WR7Prime:
         break;
     case WR8:
         this->send_byte(value);
