@@ -116,7 +116,7 @@ void AtapiCdrom::perform_packet_command() {
         this->status_good();
         this->present_status();
         break;
-    case ScsiCommand::READ_CAPACITY_10:
+    case ScsiCommand::READ_CAPACITY:
         this->xfer_cnt = this->report_capacity(this->data_buf);
         this->r_byte_count = this->xfer_cnt;
         this->data_ptr = (uint16_t*)this->data_buf;

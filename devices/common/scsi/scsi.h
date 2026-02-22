@@ -121,7 +121,7 @@ enum ScsiCommand : uint8_t {
     DIAG_RESULTS                 = 0x1C,
     SEND_DIAGS                   = 0x1D,
     PREVENT_ALLOW_MEDIUM_REMOVAL = 0x1E,
-    READ_CAPACITY_10             = 0x25,
+    READ_CAPACITY                = 0x25,
     READ_10                      = 0x28,
     WRITE_10                     = 0x2A,
     SEEK_10                      = 0x2B,
