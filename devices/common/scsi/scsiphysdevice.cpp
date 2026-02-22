@@ -214,17 +214,19 @@ int ScsiPhysDevice::send_data(uint8_t* dst_ptr, const int count)
     int remainder = count;
 
     while (remainder) {
+        if (this->data_size) {
+            int chunk_size = std::min(this->data_size, remainder);
+            if (chunk_size) {
+                std::memcpy(dst_ptr, this->data_ptr, chunk_size);
+                dst_ptr         += chunk_size;
+                this->data_ptr  += chunk_size;
+                this->data_size -= chunk_size;
+                remainder       -= chunk_size;
+            }
+        }
         if (!this->data_size) {
             if (!this->read_more_data(&this->data_size, &this->data_ptr))
                 break;
-        }
-        int chunk_size = std::min(this->data_size, remainder);
-        if (chunk_size) {
-            std::memcpy(dst_ptr, this->data_ptr, chunk_size);
-            dst_ptr         += chunk_size;
-            this->data_ptr  += chunk_size;
-            this->data_size -= chunk_size;
-            remainder       -= chunk_size;
         }
     }
 
