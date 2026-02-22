@@ -236,8 +236,6 @@ constexpr auto SCSI_MAX_DEVS    = 8;
 
 class ScsiBus;
 
-typedef std::function<void()> action_callback;
-
 class ScsiPhysDevice : public ScsiPhysInterface, public HWComponent {
 public:
     ScsiPhysDevice(std::string name, int my_id) : ScsiPhysInterface(PHY_ID_SCSI) {
@@ -266,8 +264,12 @@ public:
         this->buf_ptr = bptr;
     }
 
-    void set_more_data_cb(more_data_cb_t cb) override {
+    void set_read_more_data_cb(more_data_cb_t cb) override {
         this->read_more_data = cb;
+    }
+
+    void set_post_xfer_action(action_callback cb) override {
+        this->post_xfer_action = cb;
     }
 
     void set_status(uint8_t status_code) override {

@@ -49,7 +49,7 @@ ScsiCdrom::ScsiCdrom(std::string name, int my_id) :
         }
     );
 
-    this->set_more_data_cb(
+    this->set_read_more_data_cb(
         [this](int* dsize, uint8_t** dptr) {
             if (this->remain_size) {
                 *dsize = this->read_more();

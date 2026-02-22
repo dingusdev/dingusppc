@@ -35,6 +35,9 @@ enum : int {
 // Prototype for callbacks that request more data from virtual devices.
 using more_data_cb_t = std::function<bool(int* data_size, uint8_t** data_ptr)>;
 
+// Prototype for action callbacks.
+using action_callback = std::function<void()>;
+
 /** Interface for the physical layer of a SCSI/ATAPI device. */
 class ScsiPhysInterface {
 public:
@@ -51,7 +54,8 @@ public:
     virtual void    set_buffer(uint8_t *buf_ptr) = 0;
     virtual void    set_status(uint8_t status_code) = 0;
     virtual void    switch_phase(const int new_phase) = 0;
-    virtual void    set_more_data_cb(more_data_cb_t cb) = 0;
+    virtual void    set_read_more_data_cb(more_data_cb_t cb) = 0;
+    virtual void    set_post_xfer_action(action_callback cb) = 0;
 
 protected:
     int phy_id = PHY_ID_UNKNOWN;

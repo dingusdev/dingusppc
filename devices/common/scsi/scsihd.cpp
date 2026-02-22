@@ -48,7 +48,7 @@ ScsiHardDisk::ScsiHardDisk(std::string name, int my_id) : ScsiPhysDevice(name, m
     this->set_buf_ptr(this->data_buf);
     this->set_buffer(this->data_buf);
 
-    phy_impl->set_more_data_cb(
+    phy_impl->set_read_more_data_cb(
         [this](int* dsize, uint8_t** dptr) {
             return false;
         }
