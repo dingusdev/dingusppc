@@ -50,6 +50,10 @@ ScsiHardDisk::ScsiHardDisk(std::string name, int my_id) : ScsiPhysDevice(name, m
     this->set_vendor_id(my_vendor_id);
     this->set_product_id(my_product_id);
     this->set_revision_id(my_revision_id);
+
+    this->add_page_getter(this, ModePage::DEV_FORMAT_PARAMS, &ScsiHardDisk::get_dev_format_page);
+    this->add_page_getter(this, ModePage::RIGID_DISK_GEOMETRY, &ScsiHardDisk::get_rigid_geometry_page);
+    this->add_page_getter(this, 0x30, &ScsiHardDisk::get_apple_copyright_page);
 }
 
 void ScsiHardDisk::insert_image(std::string filename) {
@@ -89,9 +93,6 @@ void ScsiHardDisk::process_command() {
     case ScsiCommand::MODE_SELECT_6:
         mode_select_6(cmd[4]);
         break;
-    case ScsiCommand::MODE_SENSE_6:
-        this->mode_sense_6();
-        break;
     case ScsiCommand::START_STOP_UNIT:
         this->switch_phase(ScsiPhase::STATUS);
         break;
@@ -124,115 +125,83 @@ void ScsiHardDisk::mode_select_6(uint8_t param_len) {
     this->switch_phase(ScsiPhase::DATA_OUT);
 }
 
+int ScsiHardDisk::get_dev_format_page(uint8_t ctrl, uint8_t subpage, uint8_t *out_ptr,
+                                      int avail_len)
+{
+    if (subpage && subpage != 0xFFU)
+        return FORMAT_ERR_BAD_SUBPAGE;
+
+    if (ctrl == 3)
+        return FORMAT_ERR_BAD_CONTROL;
+
+    int page_size = 22;
+
+    if (page_size > avail_len)
+        return FORMAT_ERR_DATA_TOO_BIG;
+
+    std::memset(out_ptr, 0, page_size);
+
+    // default values taken from Empire 540/1080S manual
+    WRITE_WORD_BE_U(&out_ptr[ 0],   6); // tracks per defect zone
+    WRITE_WORD_BE_U(&out_ptr[ 2],   1); // alternate sectors per zone
+    WRITE_WORD_BE_U(&out_ptr[ 8],  64); // sectors per track in the outermost zone
+    WRITE_WORD_BE_U(&out_ptr[10], this->block_size); // bytes per sector
+    WRITE_WORD_BE_U(&out_ptr[12],   1); // interleave factor
+    WRITE_WORD_BE_U(&out_ptr[14],  19); // track skew factor
+    WRITE_WORD_BE_U(&out_ptr[16],  25); // cylinder skew factor
+
+    out_ptr[18] = 0x80; // SSEC=1, HSEC=0, RMB=0, SURF=0, INS=0
+
+    return page_size;
+}
+
+int ScsiHardDisk::get_rigid_geometry_page(uint8_t ctrl, uint8_t subpage, uint8_t *out_ptr,
+                                          int avail_len)
+{
+    if (subpage && subpage != 0xFFU)
+        return FORMAT_ERR_BAD_SUBPAGE;
+
+    if (ctrl == 3)
+        return FORMAT_ERR_BAD_CONTROL;
+
+    int page_size = 22;
+
+    if (page_size > avail_len)
+        return FORMAT_ERR_DATA_TOO_BIG;
+
+    std::memset(out_ptr, 0, page_size);
+
+    // num_cylinders = total_blocks / sectors_per_track / number_of_heads
+    int num_cylinders = this->size_blocks / 64 / 4;
+
+    // num_cylinders is a 24bit value!
+    out_ptr[0] = (num_cylinders >> 16) & 0xFF;
+    WRITE_WORD_BE_U(&out_ptr[1], num_cylinders & 0xFFFFU);
+
+    out_ptr[3] = 4; // number of heads
+
+    return page_size;
+}
+
 static char Apple_Copyright_Page_Data[] = "APPLE COMPUTER, INC   ";
 
-void ScsiHardDisk::mode_sense_6() {
-    uint8_t page_code = this->cmd_buf[2] & 0x3F;
-    uint8_t page_ctrl = this->cmd_buf[2] >> 6;
-    uint8_t sub_page_code = this->cmd_buf[3];
-    uint8_t alloc_len = this->cmd_buf[4];
+int ScsiHardDisk::get_apple_copyright_page(uint8_t ctrl, uint8_t subpage, uint8_t *out_ptr,
+                                           int avail_len)
+{
+    if (subpage && subpage != 0xFFU)
+        return FORMAT_ERR_BAD_SUBPAGE;
 
-    if (page_ctrl == 1) {
-        LOG_F(INFO, "%s: page_ctrl 1 CHANGEABLE VALUES is not implemented", this->name.c_str());
-        this->invalid_cdb();
-        this->switch_phase(ScsiPhase::STATUS);
-        return;
-    }
+    if (ctrl == 3)
+        return FORMAT_ERR_BAD_CONTROL;
 
-    if (page_ctrl == 3) {
-        LOG_F(INFO, "%s: page_ctrl 3 SAVED VALUES is not implemented", this->name.c_str());
-        this->set_field_pointer(2), // error in the 3rd byte
-        this->set_bit_pointer(7),   // starting with bit 7
-        this->illegal_request(ScsiError::SAVING_NOT_SUPPORTED, 0);
-        this->switch_phase(ScsiPhase::STATUS);
-        return;
-    }
+    int page_size = 22;
 
-    this->data_buf[ 1] =  0; // medium type
-    this->data_buf[ 2] =  0; // 0:medium is not write protected; 0x80 write protected
+    if (page_size > avail_len)
+        return FORMAT_ERR_DATA_TOO_BIG;
 
-    this->data_buf[ 3] =  8; // block description length
-    WRITE_DWORD_BE_A(&this->data_buf[4], this->size_blocks);
-    WRITE_DWORD_BE_A(&this->data_buf[8], this->block_size);
+    std::memcpy(out_ptr, Apple_Copyright_Page_Data, page_size);
 
-    uint8_t *p_buf = &this->data_buf[12];
-    bool got_page = false;
-    int page_size;
-
-    if (page_code == 1 || page_code == 0x3f) { // read-write error recovery page
-        if (sub_page_code != 0x00 && sub_page_code != 0xff)
-            goto bad_sub_page;
-        page_size = 8;
-        p_buf[0] = 1; // page code
-        p_buf[1] = page_size - 2; // data size - 1
-        std::memset(&p_buf[2], 0, 6);
-        p_buf += page_size;
-        got_page = true;
-    }
-
-    if (page_code == 3 || page_code == 0x3f) { // Format device page
-        if (sub_page_code != 0x00 && sub_page_code != 0xff)
-            goto bad_sub_page;
-        page_size = 24;
-        p_buf[ 0] =    3; // page code
-        p_buf[ 1] = page_size - 2; // data size - 1
-        std::memset(&p_buf[2], 0, 22);
-        // default values taken from Empire 540/1080S manual
-        WRITE_WORD_BE_U(&p_buf[ 2],   6); // tracks per defect zone
-        WRITE_WORD_BE_U(&p_buf[ 4],   1); // alternate sectors per zone
-        WRITE_WORD_BE_U(&p_buf[10],  64); // sectors per track in the outermost zone
-        WRITE_WORD_BE_U(&p_buf[12], 512); // bytes per sector
-        WRITE_WORD_BE_U(&p_buf[14],   1); // interleave factor
-        WRITE_WORD_BE_U(&p_buf[16],  19); // track skew factor
-        WRITE_WORD_BE_U(&p_buf[18],  25); // cylinder skew factor
-        p_buf[20] = 0x80; // SSEC=1, HSEC=0, RMB=0, SURF=0, INS=0
-        p_buf += page_size;
-        got_page = true;
-    }
-
-    if (page_code == 4 || page_code == 0x3f) { // Rigid Disk Drive Geometry Page
-        page_size = 24;
-        p_buf[0]  =  4; // page code
-        p_buf[1]  = page_size - 2; // page length
-        std::memset(&p_buf[2], 0, 22);
-        int num_cylinders = this->size_blocks / 64 / 4;
-        p_buf[2] = (num_cylinders >> 16) & 0xFF;
-        WRITE_WORD_BE_U(&p_buf[3], num_cylinders & 0xFFFFU); // number of cylinders
-        p_buf[5] = 4; // number of heads
-        got_page = true;
-    }
-
-    if (page_code == 0x30 || page_code == 0x3f) { // Copyright page for Apple certified drives
-        if (sub_page_code != 0x00 && sub_page_code != 0xff)
-            goto bad_sub_page;
-        page_size = 24;
-        p_buf[0] = 0x30; // page code
-        p_buf[1] = page_size - 2; // data size - 1
-        std::memcpy(&p_buf[2], Apple_Copyright_Page_Data, 22);
-        p_buf += page_size;
-        got_page = true;
-    }
-
-    if (!(got_page || page_code == 0x3f)) { // not any of the supported pages or all pages
-        LOG_F(WARNING, "%s: unsupported page 0x%02x in MODE_SENSE_6", this->name.c_str(), page_code);
-        this->invalid_cdb();
-        this->switch_phase(ScsiPhase::STATUS);
-        return;
-    bad_sub_page:
-        LOG_F(WARNING, "%s: unsupported page/subpage %02xh/%02xh in MODE_SENSE_6",
-              this->name.c_str(), page_code, sub_page_code);
-        this->set_field_pointer(2),
-        this->invalid_cdb();
-        this->switch_phase(ScsiPhase::STATUS);
-        return;
-    }
-
-    // adjust for overall mode sense data length
-    this->data_buf[0] = p_buf - this->data_buf - 1;
-
-    phy_impl->set_xfer_len(std::min((int)alloc_len, (int)this->data_buf[0] + 1));
-
-    this->switch_phase(ScsiPhase::DATA_IN);
+    return page_size;
 }
 
 void ScsiHardDisk::format() {

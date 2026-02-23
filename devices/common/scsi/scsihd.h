@@ -43,10 +43,15 @@ protected:
 
     void mode_select_6(uint8_t param_len);
 
-    int  format_apple_copyright_page(uint8_t subpage, uint8_t ctrl, uint8_t *out_ptr,
-                                     int avail_len);
+    int  get_dev_format_page(uint8_t ctrl, uint8_t subpage, uint8_t *out_ptr,
+                             int avail_len);
 
-    void mode_sense_6();
+    int  get_rigid_geometry_page(uint8_t ctrl, uint8_t subpage, uint8_t *out_ptr,
+                                 int avail_len);
+
+    int  get_apple_copyright_page(uint8_t ctrl, uint8_t subpage, uint8_t *out_ptr,
+                                  int avail_len);
+
     void format();
     void reassign();
     void read_buffer();
