@@ -33,17 +33,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 class BlockStorageDevice {
 public:
     BlockStorageDevice(const uint32_t cache_blocks, const uint32_t block_size=512,
-                       const uint64_t max_blocks=0xffffffffffffffff);
+                       const uint64_t max_blocks=UINT64_MAX);
     ~BlockStorageDevice();
 
     int set_host_file(std::string file_path);
     int set_block_size(const int blk_size);
 
     int set_fpos(const uint64_t lba);
-    int read_begin(int nblocks, uint32_t max_len = UINT32_MAX);
     int data_left() { return this->remain_size; }
+    int read_begin(int nblocks, uint32_t max_len = UINT32_MAX);
     int read_more();
-    int write_begin(char *buf, int nblocks);
+    int write_begin(int nblocks, uint32_t max_len = UINT32_MAX);
+    int write_more();
+    void write_cache();
 
 protected:
     void fill_cache(const int nblocks);
@@ -53,6 +55,7 @@ protected:
     uint64_t        size_blocks  = 0;   // image file size in blocks
     uint64_t        max_blocks   = 0;   // maximum number of blocks supported
     uint64_t        cur_fpos     = 0;   // current image file pointer position
+    uint64_t        write_size   = 0;   // number of bytes to write next
     uint32_t        block_size   = 512; // physical block size
     uint32_t        raw_blk_size = 512; // block size for raw images (CD-ROM)
     uint32_t        data_offset  = 0;   // offset to block data for raw images

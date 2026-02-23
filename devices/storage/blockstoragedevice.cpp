@@ -22,10 +22,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @file Block storage device implementation. */
 
 #include <devices/storage/blockstoragedevice.h>
+#include <loguru.hpp>
 
 #include <cstring>
-
-using namespace std;
 
 BlockStorageDevice::BlockStorageDevice(const uint32_t cache_blocks,
                                        const uint32_t block_size,
@@ -49,7 +48,7 @@ int BlockStorageDevice::set_host_file(std::string file_path) {
     if (!this->img_file.open(file_path))
         return -1;
 
-    this->size_bytes  = this->img_file.size();
+    this->size_bytes = this->img_file.size();
 
     this->set_fpos(0);
 
@@ -105,9 +104,8 @@ int BlockStorageDevice::read_begin(int nblocks, uint32_t max_len) {
     if (read_size > xfer_len) {
         this->remain_size = read_size - xfer_len;
         read_size = xfer_len;
-    } else {
+    } else
         this->remain_size = 0;
-    }
 
     this->fill_cache(read_size / this->block_size);
 
@@ -132,9 +130,41 @@ int BlockStorageDevice::read_more() {
     return read_size;
 }
 
-int BlockStorageDevice::write_begin(char *buf, int nblocks) {
+int BlockStorageDevice::write_begin(int nblocks, uint32_t max_len) {
     if (!this->is_writeable)
-        return -1;
+        ABORT_F("write attempt to read-only block storage device");
 
-    return 0;
+    uint64_t xfer_len = std::min(this->cache_blocks * this->block_size, max_len);
+
+    this->write_size = nblocks * this->block_size;
+    if (this->write_size > xfer_len) {
+        this->remain_size = write_size - xfer_len;
+        this->write_size = xfer_len;
+    } else
+        this->remain_size = 0;
+
+    return this->write_size;
+}
+
+int BlockStorageDevice::write_more() {
+    this->write_cache();
+
+    this->write_size = this->cache_blocks * this->block_size;
+
+    if (this->remain_size > this->write_size) {
+        this->remain_size -= this->write_size;
+    } else {
+        this->write_size = this->remain_size;
+        this->remain_size = 0;
+    }
+
+    return this->write_size;
+}
+
+void BlockStorageDevice::write_cache() {
+    if (this->write_size) {
+        this->img_file.write(this->data_cache.get(), this->cur_fpos, this->write_size);
+        this->cur_fpos += this->write_size;
+        this->write_size = 0;
+    }
 }
