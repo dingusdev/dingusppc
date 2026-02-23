@@ -25,26 +25,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define SCSI_HD_H
 
 #include <devices/common/scsi/scsi.h>
-#include <devices/common/scsi/scsicommoncmds.h>
-#include <utils/imgfile.h>
+#include <devices/common/scsi/scsiblockcmds.h>
 
 #include <cinttypes>
-#include <memory>
 #include <string>
 
-class ScsiHardDisk : public ScsiPhysDevice, public ScsiCommonCmds {
+class ScsiHardDisk : public ScsiPhysDevice, public ScsiBlockCmds {
 public:
     ScsiHardDisk(std::string name, int my_id);
     ~ScsiHardDisk() = default;
-
-    // temporary implementation that should be elsewhere
-    void get_medium_type(uint8_t& medium_type, uint8_t& dev_flags) override {
-        medium_type = 0;
-        dev_flags   = 0;
-    }
-
-    // temporary implementation that should be elsewhere
-    int format_block_descriptors(uint8_t* out_ptr) override;
 
     void insert_image(std::string filename);
     void process_command() override;
@@ -54,31 +43,18 @@ protected:
 
     void mode_select_6(uint8_t param_len);
 
+    int  format_apple_copyright_page(uint8_t subpage, uint8_t ctrl, uint8_t *out_ptr,
+                                     int avail_len);
+
     void mode_sense_6();
     void format();
     void reassign();
-    void read_capacity_10();
-    void read(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len);
-    void write(uint32_t lba, uint16_t transfer_len, uint8_t cmd_len);
-    void seek(uint32_t lba);
-    void rewind();
     void read_buffer();
 
 private:
-    ImgFile         disk_img;
-    uint64_t        img_size;
-    int             total_blocks;
-    uint64_t        file_offset = 0;
-    static const int sector_size = 512;
-    bool            eject_allowed = true;
-    int             bytes_out = 0;
+    bool    eject_allowed = true;
 
-    std::unique_ptr<uint8_t[]> data_buf_obj = nullptr;
-    uint8_t*        data_buf = nullptr;
-    uint32_t        data_buf_size = 0;
-
-    uint8_t         error = ScsiError::NO_ERROR;
-    uint8_t         msg_code = 0;
+    uint8_t data_buf[2048] = {};
 };
 
 #endif // SCSI_HD_H
