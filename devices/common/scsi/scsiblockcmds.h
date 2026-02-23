@@ -47,8 +47,8 @@ public:
 
     int format_block_descriptors(uint8_t* out_ptr) override;
 
-    int  format_error_recovery_page(uint8_t subpage, uint8_t ctrl, uint8_t *out_ptr,
-                                    int avail_len);
+    int get_error_recovery_page(uint8_t ctrl, uint8_t subpage, uint8_t *out_ptr,
+                                int avail_len);
 
 protected:
     virtual void    process_command() override;

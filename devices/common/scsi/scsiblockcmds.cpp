@@ -33,7 +33,7 @@ ScsiBlockCmds::ScsiBlockCmds(int cache_blocks) : BlockStorageDevice(cache_blocks
     this->enable_cmd(ScsiCommand::READ_CAPACITY);
 
     this->add_page_getter(this, ModePage::ERROR_RECOVERY,
-                          &ScsiBlockCmds::format_error_recovery_page);
+                          &ScsiBlockCmds::get_error_recovery_page);
 }
 
 void ScsiBlockCmds::init_block_device(uint8_t medium_type, uint8_t dev_flags) {
@@ -183,8 +183,8 @@ int ScsiBlockCmds::format_block_descriptors(uint8_t* out_ptr) {
     return 8;
 }
 
-int ScsiBlockCmds::format_error_recovery_page(uint8_t subpage, uint8_t ctrl,
-                                              uint8_t *out_ptr, int avail_len)
+int ScsiBlockCmds::get_error_recovery_page(uint8_t ctrl, uint8_t subpage,
+                                           uint8_t *out_ptr, int avail_len)
 {
     if (subpage && subpage != 0xFFU)
         return FORMAT_ERR_BAD_SUBPAGE;
