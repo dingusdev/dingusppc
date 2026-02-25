@@ -319,7 +319,7 @@ protected:
     action_callback pre_xfer_action  = nullptr;
     action_callback post_xfer_action = nullptr;
 
-    more_data_cb_t  read_more_data = nullptr;
+    more_data_cb_t read_more_data = [](int*, uint8_t**) { return false; };
 };
 
 /** This class provides a higher level abstraction for the SCSI bus. */
