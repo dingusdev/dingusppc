@@ -154,6 +154,9 @@ void DMAChannel::finish_cmd() {
     // get command code
     this->cur_cmd = cmd_desc[3] >> 4;
 
+    // save interrupt bits from the completing command before cmd_ptr may change
+    uint8_t saved_cmd_bits = cmd_desc[2];
+
     // all commands except STOP update cmd.xferStatus and
     // perform actions under control of "i" interrupt, "b" branch, and "w" wait bits
     if (this->cur_cmd < DBDMA_Cmd::STOP) {
@@ -206,8 +209,9 @@ void DMAChannel::finish_cmd() {
     if (this->cur_cmd < DBDMA_Cmd::STOP && !branch_taken)
         this->cmd_ptr += 16;
 
+    // use the interrupt bits saved before cmd_ptr was advanced or branched
     if (this->cur_cmd < DBDMA_Cmd::STOP) {
-        this->update_irq();
+        this->update_irq(saved_cmd_bits);
     }
 
     this->cmd_in_progress = false;
@@ -272,19 +276,22 @@ void DMAChannel::xfer_quad(const DMACmd *cmd_desc, DMACmd *cmd_host) {
 }
 
 void DMAChannel::update_irq() {
-    // obtain real pointer to the descriptor of the completed command
+    // For abort path (called from reg_write when RUN is cleared): cmd_ptr still
+    // points to the current command, so reading from it is correct here.
     MapDmaResult res = mmu_map_dma_mem(this->cmd_ptr, 16, false);
-    uint8_t *cmd_desc = res.host_va;
+    this->update_irq(res.host_va[2]);
+}
 
+void DMAChannel::update_irq(uint8_t cmd_bits) {
     // STOP doesn't generate interrupts
     if (this->cur_cmd < DBDMA_Cmd::STOP) {
         // react to cmd.i (interrupt) bits
-        if (cmd_desc[2] & 0x30) {
+        if (cmd_bits & 0x30) {
             bool cond = true;
-            if ((cmd_desc[2] & 0x30) != 0x30) {
+            if ((cmd_bits & 0x30) != 0x30) {
                 uint16_t int_mask = this->int_select >> 16;
                 cond = (this->ch_stat & int_mask) == (this->int_select & int_mask);
-                if ((cmd_desc[2] & 0x30) == 0x20) {
+                if ((cmd_bits & 0x30) == 0x20) {
                     cond = !cond; // generate interrupt if cond = false
                 }
             }
