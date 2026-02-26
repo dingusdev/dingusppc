@@ -41,6 +41,7 @@ ehthumbs.db
 
 # IDE ignores
 build
+build*/
 build-*
 *.dir
 *.user
