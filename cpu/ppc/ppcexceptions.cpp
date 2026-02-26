@@ -161,6 +161,8 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
             exc_descriptor = "DSI/ISI exception: unmapped memory access";
         else if (ppc_state.spr[SPR::DSISR] & 0x08000000)
             exc_descriptor = "DSI/ISI exception: access protection violation";
+        else if (ppc_state.spr[SPR::DSISR] & 0x00100000)
+            exc_descriptor = "DSI exception: External access is disabled";
         else {
             if (exception_type == Except_Type::EXC_DSI)
                 exc_descriptor = "DSI exception";
