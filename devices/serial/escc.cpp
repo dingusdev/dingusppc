@@ -318,6 +318,9 @@ void EsccChannel::write_reg(int reg_num, uint8_t value)
         if (value & (WR14_LOCAL_LOOPBACK | WR14_AUTO_ECHO | WR14_DTR_REQUEST_FUNCTION)) {
             LOG_F(WARNING, "%s: unexpected value in WR14 = 0x%X", this->name.c_str(), value);
         }
+        if (this->brg_clock_src ^ (value & WR14_BR_GENERATOR_SOURCE)) {
+            this->brg_clock_src = value & WR14_BR_GENERATOR_SOURCE;
+        }
         if (this->brg_active ^ (value & WR14_BR_GENERATOR_ENABLE)) {
             this->brg_active = value & WR14_BR_GENERATOR_ENABLE;
             LOG_F(9, "%s: BRG %s", this->name.c_str(), this->brg_active ? "enabled" : "disabled");
