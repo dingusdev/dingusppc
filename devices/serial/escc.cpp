@@ -421,13 +421,13 @@ void EsccChannel::dma_in_tx()
 
 void EsccChannel::dma_in_rx()
 {
-    if (dma_ch[1]->get_push_data_remaining()) {
+    if (dma_ch[DIR_RX]->get_push_data_remaining()) {
         this->timer_id_rx = TimerManager::get_instance()->add_oneshot_timer(
             0,
             [this]() {
                 this->timer_id_rx = 0;
                 char c = receive_byte();
-                dma_ch[1]->push_data(&c, 1);
+                dma_ch[DIR_RX]->push_data(&c, 1);
                 this->dma_in_rx();
         });
     }
@@ -442,7 +442,7 @@ void EsccChannel::dma_out_tx()
             uint8_t *data;
             uint32_t avail_len;
 
-            if (dma_ch[1]->pull_data(256, &avail_len, &data) == MoreData) {
+            if (dma_ch[DIR_TX]->pull_data(256, &avail_len, &data) == MoreData) {
                 while(avail_len) {
                     this->send_byte(*data++);
                     avail_len--;
@@ -464,7 +464,7 @@ void EsccChannel::dma_flush_tx()
         10,
         [this]() {
             this->timer_id_tx = 0;
-            dma_ch[1]->end_pull_data();
+            dma_ch[DIR_TX]->end_pull_data();
     });
 }
 
@@ -475,7 +475,7 @@ void EsccChannel::dma_flush_rx()
         10,
         [this]() {
             this->timer_id_rx = 0;
-            dma_ch[1]->end_push_data();
+            dma_ch[DIR_RX]->end_push_data();
     });
 }
 

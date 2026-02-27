@@ -69,6 +69,18 @@ enum DpllMode : uint8_t {
     FM   = 1
 };
 
+enum DirIndex : uint8_t {
+    DIR_TX,
+    DIR_RX,
+    DIR_MIN = DIR_TX,
+    DIR_MAX = DIR_RX,
+};
+
+enum ChIndex : uint8_t {
+    CH_A,
+    CH_B
+};
+
 /** ESCC Channel class. */
 class EsccChannel {
 public:
@@ -84,12 +96,12 @@ public:
     uint8_t get_enh_reg();
     void set_enh_reg(uint8_t value);
 
-    void set_dma_channel(int dir_index, DmaBidirChannel *dma_ch) {
+    void set_dma_channel(DirIndex dir_index, DmaBidirChannel *dma_ch) {
         this->dma_ch[dir_index] = dma_ch;
         auto dbdma_ch = dynamic_cast<DMAChannel*>(dma_ch);
         if (dbdma_ch) {
             switch (dir_index) {
-            case 0:
+            case DIR_TX:
                 dbdma_ch->set_callbacks(
                     std::bind(&EsccChannel::dma_start_tx, this),
                     std::bind(&EsccChannel::dma_stop_tx, this)
@@ -100,7 +112,7 @@ public:
                     std::bind(&EsccChannel::dma_flush_tx, this)
                 );
                 break;
-            case 1:
+            case DIR_RX:
                 dbdma_ch->set_callbacks(
                     std::bind(&EsccChannel::dma_start_rx, this),
                     std::bind(&EsccChannel::dma_stop_rx, this)
@@ -131,7 +143,7 @@ private:
     void dma_out_rx();
     void dma_flush_rx();
 
-    DmaBidirChannel*    dma_ch[2];
+    DmaBidirChannel*    dma_ch[DIR_MAX+1];
 
     std::string     name;
     uint8_t         read_regs[16] = {};
@@ -161,10 +173,10 @@ public:
     uint8_t read(uint8_t reg_offset);
     void    write(uint8_t reg_offset, uint8_t value);
 
-    void set_dma_channel(int ch_dir_index, DmaBidirChannel *dma_ch) {
-        switch (ch_dir_index >> 1) {
-        case 0: ch_a->set_dma_channel(ch_dir_index & 1, dma_ch); break;
-        case 1: ch_b->set_dma_channel(ch_dir_index & 1, dma_ch); break;
+    void set_dma_channel(ChIndex ch_index, DirIndex dir_index, DmaBidirChannel *dma_ch) {
+        switch (ch_index) {
+        case CH_A: ch_a->set_dma_channel(dir_index, dma_ch); break;
+        case CH_B: ch_b->set_dma_channel(dir_index, dma_ch); break;
         }
     }
 
