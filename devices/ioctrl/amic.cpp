@@ -68,6 +68,8 @@ AMIC::AMIC() : MMIODevice()
     this->escc = dynamic_cast<EsccController*>(gMachineObj->get_comp_by_name("Escc"));
     this->escc_xmit_b_dma = std::unique_ptr<AmicSerialXmitDma>(new AmicSerialXmitDma("EsccBXmit"));
     this->escc_xmit_a_dma = std::unique_ptr<AmicSerialXmitDma>(new AmicSerialXmitDma("EsccAXmit"));
+    this->escc_rcv_b_dma = std::unique_ptr<AmicSerialRcvDma>(new AmicSerialRcvDma("EsccBRcv"));
+    this->escc_rcv_a_dma = std::unique_ptr<AmicSerialRcvDma>(new AmicSerialRcvDma("EsccARcv"));
 
     // connect Ethernet HW
     this->mace = dynamic_cast<MaceController*>(gMachineObj->get_comp_by_name("Mace"));
@@ -218,19 +220,19 @@ uint32_t AMIC::read(uint32_t rgn_start, uint32_t offset, int size)
     case SCC_DMA_Xmt_A_Ctrl:
         return this->escc_xmit_a_dma->read_stat();
     case SCC_RXA_Byte_Cnt_Hi:
-        return this->escc_rcv_a_dma.get_byte_count_hi();
+        return this->escc_rcv_a_dma->get_byte_count_hi();
     case SCC_RXA_Byte_Cnt_Lo:
-        return this->escc_rcv_a_dma.get_byte_count_lo();
+        return this->escc_rcv_a_dma->get_byte_count_lo();
     case SCC_DMA_Rcv_A_Ctrl:
-        return this->escc_rcv_a_dma.read_stat();
+        return this->escc_rcv_a_dma->read_stat();
     case SCC_DMA_Xmt_B_Ctrl:
         return this->escc_xmit_b_dma->read_stat();
     case SCC_RXB_Byte_Cnt_Hi:
-        return this->escc_rcv_b_dma.get_byte_count_hi();
+        return this->escc_rcv_b_dma->get_byte_count_hi();
     case SCC_RXB_Byte_Cnt_Lo:
-        return this->escc_rcv_b_dma.get_byte_count_lo();
+        return this->escc_rcv_b_dma->get_byte_count_lo();
     case SCC_DMA_Rcv_B_Ctrl:
-        return this->escc_rcv_b_dma.read_stat();
+        return this->escc_rcv_b_dma->read_stat();
     default:
         LOG_F(WARNING, "Unknown AMIC register read, offset=%x", offset);
     }
@@ -444,15 +446,15 @@ void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
         break;
     case AMICReg::SCC_DMA_Rcv_A_Ctrl:
         LOG_F(INFO, "AMIC SCC Receive Ch A DMA Ctrl updated, val=%x", value);
-        this->escc_rcv_a_dma.write_ctrl(value);
+        this->escc_rcv_a_dma->write_ctrl(value);
         break;
     case AMICReg::SCC_RXA_Byte_Cnt_Hi:
-        this->escc_rcv_a_dma.set_byte_count(
-            (this->escc_rcv_a_dma.get_byte_count_lo()) | ((value & 0x1F) << 8));
+        this->escc_rcv_a_dma->set_byte_count(
+            (this->escc_rcv_a_dma->get_byte_count_lo()) | ((value & 0x1F) << 8));
         break;
     case AMICReg::SCC_RXA_Byte_Cnt_Lo:
-        this->escc_rcv_a_dma.set_byte_count(
-            (this->escc_rcv_a_dma.get_byte_count_hi() << 8) | (value & 0xFF));
+        this->escc_rcv_a_dma->set_byte_count(
+            (this->escc_rcv_a_dma->get_byte_count_hi() << 8) | (value & 0xFF));
         break;
     case AMICReg::SCC_DMA_Xmt_B_Ctrl:
         LOG_F(INFO, "AMIC SCC Transmit Ch B DMA Ctrl updated, val=%x", value);
@@ -460,15 +462,15 @@ void AMIC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
         break;
     case AMICReg::SCC_DMA_Rcv_B_Ctrl:
         LOG_F(INFO, "AMIC SCC Receive Ch B DMA Ctrl updated, val=%x", value);
-        this->escc_rcv_b_dma.write_ctrl(value);
+        this->escc_rcv_b_dma->write_ctrl(value);
         break;
     case AMICReg::SCC_RXB_Byte_Cnt_Hi:
-        this->escc_rcv_b_dma.set_byte_count(
-            (this->escc_rcv_b_dma.get_byte_count_lo()) | ((value & 0x1F) << 8));
+        this->escc_rcv_b_dma->set_byte_count(
+            (this->escc_rcv_b_dma->get_byte_count_lo()) | ((value & 0x1F) << 8));
         break;
     case AMICReg::SCC_RXB_Byte_Cnt_Lo:
-        this->escc_rcv_b_dma.set_byte_count(
-            (this->escc_rcv_b_dma.get_byte_count_hi() << 8) | (value & 0xFF));
+        this->escc_rcv_b_dma->set_byte_count(
+            (this->escc_rcv_b_dma->get_byte_count_hi() << 8) | (value & 0xFF));
         break;
     default:
         LOG_F(WARNING, "Unknown AMIC register write, offset=%x, val=%x",
