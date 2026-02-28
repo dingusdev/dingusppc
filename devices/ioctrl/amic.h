@@ -174,6 +174,20 @@ private:
     uint8_t         stat;
 };
 
+/** AMIC specific Serial Receive DMA channel (stub — control register only). */
+class AmicSerialRcvDma {
+public:
+    void            write_ctrl(const uint8_t value);
+    uint8_t         read_stat() { return this->stat; }
+    void            set_byte_count(const uint16_t count) { this->byte_count = count; }
+    uint8_t         get_byte_count_hi() { return (this->byte_count >> 8) & 0x1F; }
+    uint8_t         get_byte_count_lo() { return this->byte_count & 0xFF; }
+
+private:
+    uint16_t        byte_count = 0;
+    uint8_t         stat = 0;
+};
+
 /** AMIC-specific SCSI DMA implementation. */
 class AmicScsiDma : public DmaChannel {
 public:
@@ -377,6 +391,8 @@ private:
     std::unique_ptr<AmicScsiDma>        curio_dma;
     std::unique_ptr<AmicSerialXmitDma>  escc_xmit_b_dma;
     std::unique_ptr<AmicSerialXmitDma>  escc_xmit_a_dma;
+    AmicSerialRcvDma                    escc_rcv_b_dma;
+    AmicSerialRcvDma                    escc_rcv_a_dma;
 
     // on-board video
     std::unique_ptr<DisplayID>          disp_id;
