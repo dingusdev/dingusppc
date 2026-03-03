@@ -295,19 +295,40 @@ enum AMICReg : uint32_t {
     Floppy_Byte_Cnt_Lo  = 0x32065,
     Floppy_DMA_Ctrl     = 0x32068,
 
+    // SSC DMA Channel A Transmit registers
+    SCC_DMA_Xmt_A_Adr_3 = 0x32080,
+    SCC_DMA_Xmt_A_Adr_2 = 0x32081,
+    SCC_DMA_Xmt_A_Adr_1 = 0x32082,
+    SCC_RXA_Xmt_A_Adr_0 = 0x32083,
+    SCC_TXA_Byte_Cnt_Hi = 0x32084,
+    SCC_TXA_Byte_Cnt_Lo = 0x32085,
     SCC_DMA_Xmt_A_Ctrl  = 0x32088,
-    //                  = 0x32092, // byte, read
-    //                  = 0x32093, // byte, read
-    SCC_RXA_Byte_Cnt_Hi = 0x32094, // 5 bits, read; byte, write 0x10
-    SCC_RXA_Byte_Cnt_Lo = 0x32095, // 8 bits, read; byte, write 0x00
+
+    // SSC DMA Channel A Receive registers
+    SCC_DMA_Rcv_A_Adr_3 = 0x32090,
+    SCC_DMA_Rcv_A_Adr_2 = 0x32091,
+    SCC_DMA_Rcv_A_Adr_1 = 0x32092,
+    SCC_RXA_Rcv_A_Adr_0 = 0x32093,
+    SCC_RXA_Byte_Cnt_Hi = 0x32094,
+    SCC_RXA_Byte_Cnt_Lo = 0x32095,
     SCC_DMA_Rcv_A_Ctrl  = 0x32098,
-    //                  = 0x320A4, // byte, write 0x00
-    //                  = 0x320A5, // byte, write 0x07
+
+    // SSC DMA Channel B Transmit registers
+    SCC_DMA_Xmt_B_Adr_3 = 0x320A0,
+    SCC_DMA_Xmt_B_Adr_2 = 0x320A1,
+    SCC_DMA_Xmt_B_Adr_1 = 0x320A2,
+    SCC_RXA_Xmt_B_Adr_0 = 0x320A3,
+    SCC_TXB_Byte_Cnt_Hi = 0x320A4,
+    SCC_TXB_Byte_Cnt_Lo = 0x320A5,
     SCC_DMA_Xmt_B_Ctrl  = 0x320A8,
-    //                  = 0x320B2, // byte, read
-    //                  = 0x320B3, // byte, read
-    SCC_RXB_Byte_Cnt_Hi = 0x320B4, // 5 bits, read; byte, write 0x10
-    SCC_RXB_Byte_Cnt_Lo = 0x320B5, // 8 bits, read; byte, write 0x00
+
+    // SSC DMA Channel B Receive registers
+    SCC_DMA_Rcv_B_Adr_3 = 0x320B0,
+    SCC_DMA_Rcv_B_Adr_2 = 0x320B1,
+    SCC_DMA_Rcv_B_Adr_1 = 0x320B2,
+    SCC_RXA_Rcv_B_Adr_0 = 0x320B3,
+    SCC_RXB_Byte_Cnt_Hi = 0x320B4,
+    SCC_RXB_Byte_Cnt_Lo = 0x320B5,
     SCC_DMA_Rcv_B_Ctrl  = 0x320B8,
 };
 
