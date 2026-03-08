@@ -67,7 +67,7 @@ enum {
     VIA_T2CH = 0x09, // high-order timer 2 counter
     VIA_SR   = 0x0A, // shift register
     VIA_ACR  = 0x0B, // auxiliary control register
-    VIA_PCR  = 0x0C, // periheral control register
+    VIA_PCR  = 0x0C, // peripheral control register
     VIA_IFR  = 0x0D, // interrupt flag register
     VIA_IER  = 0x0E, // interrupt enable register
     VIA_ANH  = 0x0F, // input/output register A, no handshake
@@ -135,7 +135,7 @@ enum {
     CUDA_ONE_SECOND_MODE     = 0x1B, // one second interrupt mode
     CUDA_SET_POWER_MESSAGES  = 0x21, // set power message flag
     CUDA_READ_WRITE_I2C      = 0x22, // read/write I2C
-    CUDE_TOGGLE_WAKEUP       = 0x23, // toggle wake-up
+    CUDA_TOGGLE_WAKEUP       = 0x23, // toggle wake-up
     CUDA_TIMER_TICKLE        = 0x24, // set timer tickle
     CUDA_COMB_FMT_I2C        = 0x25, // combined format I2C transaction
     CUDA_OUT_PB0             = 0x26, // output one bit to Cuda's PB0 line
@@ -190,7 +190,7 @@ private:
     uint8_t  via_porta  = 0;
     uint8_t  via_ddrb   = 0;
     uint8_t  via_ddra   = 0;
-    uint8_t  via_sr;
+    uint8_t  via_sr     = 0;
     uint8_t  via_acr    = 0;
     uint8_t  via_pcr    = 0;
 
@@ -231,18 +231,22 @@ private:
     int      max_in_count = 0;
     uint8_t  out_buf[16];
     int32_t  out_count;
-    int32_t  out_pos;
+    int32_t  out_pos = 0;
     uint8_t  poll_rate;
     uint32_t last_time = 0;
     uint32_t time_offset = 0;
     std::chrono::time_point<std::chrono::system_clock> mac_epoch;
     uint8_t  one_sec_mode = 0;
-    bool     file_server;
+    bool     one_sec_first_pkt = true;   // ERS: first one-sec pkt always mode $01
+    bool     one_sec_missed    = false;  // ERS: missed pkt -> fallback to mode $01
+    bool     file_server       = false; 
+    bool     mono_stable       = false; 
+    uint8_t  ipl_level   = 0;
     uint16_t device_mask = 0;
 
-    bool        is_open_ended; // true if current transaction is open-ended
-    uint8_t     curr_i2c_addr; // current I2C address
-    uint8_t     cur_pram_addr; // current PRAM address, range 0...FF
+    bool        is_open_ended = false; // true if current transaction is open-ended
+    uint8_t     curr_i2c_addr = 0; // current I2C address
+    uint8_t     cur_pram_addr = 0; // current PRAM address, range 0...FF
 
     void (ViaCuda::*out_handler)(void);
     void (ViaCuda::*next_out_handler)(void);

@@ -38,6 +38,7 @@ enum {
     ADB_STAT_SRQ_ACTIVE = 1 << 0,
     ADB_STAT_TIMEOUT    = 1 << 1,
     ADB_STAT_AUTOPOLL   = 1 << 6,
+    ADB_STAT_RESPONSE   = 1 << 7,
 };
 
 class AdbDevice; // forward declaration to prevent compiler errors
