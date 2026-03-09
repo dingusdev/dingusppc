@@ -270,6 +270,10 @@ public:
         this->read_more_data = cb;
     }
 
+    void set_write_more_data_cb(more_data_cb_t cb) override {
+        this->write_more_data = cb;
+    }
+
     void set_post_xfer_action(action_callback cb) override {
         this->post_xfer_action = cb;
     }
@@ -319,7 +323,8 @@ protected:
     action_callback pre_xfer_action  = nullptr;
     action_callback post_xfer_action = nullptr;
 
-    more_data_cb_t read_more_data = [](int*, uint8_t**) { return false; };
+    more_data_cb_t  read_more_data  = {};
+    more_data_cb_t  write_more_data = {};
 };
 
 /** This class provides a higher level abstraction for the SCSI bus. */
@@ -339,7 +344,7 @@ public:
     void attach_scsi_devices(const std::string bus_suffix);
 
     // low-level state management
-    void    register_device(int id, ScsiPhysDevice* dev_obj);
+    void register_device(int id, ScsiPhysDevice* dev_obj);
 
     int current_phase() const {
         return this->cur_phase;
