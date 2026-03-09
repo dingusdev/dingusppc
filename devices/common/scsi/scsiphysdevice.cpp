@@ -235,10 +235,38 @@ int ScsiPhysDevice::send_data(uint8_t* dst_ptr, const int count)
 
 int ScsiPhysDevice::rcv_data(const uint8_t* src_ptr, const int count)
 {
-    // accumulating incoming data in the pre-configured buffer
-    std::memcpy(this->data_ptr, src_ptr, count);
-    this->data_ptr  += count;
-    this->data_size += count;
+    if (src_ptr == nullptr || !count)
+        return 0;
+
+    // DATA_OUT can transfer big data in several chunks while crossing buffer boundaries
+    if (this->cur_phase == ScsiPhase::DATA_OUT) {
+        int remainder = count;
+
+        while (remainder) {
+            if (this->data_size < this->incoming_size) {
+                int chunk_size = std::min(this->incoming_size - this->data_size, remainder);
+                if (chunk_size) {
+                    std::memcpy(this->data_ptr, src_ptr, chunk_size);
+                    src_ptr         += chunk_size;
+                    this->data_ptr  += chunk_size;
+                    this->data_size += chunk_size;
+                    remainder       -= chunk_size;
+                }
+            }
+            if (this->data_size >= this->incoming_size) {
+                if (!this->write_more_data(&this->incoming_size, &this->data_ptr))
+                    break;
+                this->data_size = 0;
+            }
+        }
+
+        return count - remainder;
+    } else {
+        // accumulating incoming data in the pre-configured buffer
+        std::memcpy(this->data_ptr, src_ptr, count);
+        this->data_ptr  += count;
+        this->data_size += count;
+    }
 
     if (this->cur_phase == ScsiPhase::COMMAND)
         this->next_step();

@@ -41,7 +41,7 @@ void ScsiBlockCmds::init_block_device(uint8_t medium_type, uint8_t dev_flags) {
     this->device_flags = dev_flags;
 
     phy_impl->set_read_more_data_cb(
-        [this](int* dsize, uint8_t** dptr) {
+        [this](int* dsize, uint8_t** dptr) -> bool {
             if (this->remain_size) {
                 *dsize = this->read_more();
                 *dptr  = (uint8_t *)this->data_cache.get();
@@ -50,6 +50,25 @@ void ScsiBlockCmds::init_block_device(uint8_t medium_type, uint8_t dev_flags) {
                 return false;
         }
     );
+
+    if (this->is_writeable) {
+        phy_impl->set_write_more_data_cb(
+            [this](int* dsize, uint8_t** dptr) -> bool {
+                if (this->remain_size) {
+                    *dsize = this->write_more();
+                    *dptr  = (uint8_t *)this->data_cache.get();
+                    return true;
+                } else
+                    return false;
+            }
+        );
+    } else {
+        phy_impl->set_write_more_data_cb(
+            [this](int* dsize, uint8_t** dptr) {
+                return false;
+            }
+        );
+    }
 }
 
 void ScsiBlockCmds::process_command() {

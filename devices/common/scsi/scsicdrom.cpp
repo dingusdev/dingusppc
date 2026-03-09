@@ -60,6 +60,12 @@ ScsiCdrom::ScsiCdrom(std::string name, int my_id) :
         }
     );
 
+    this->set_write_more_data_cb(
+        [this](int* dsize, uint8_t** dptr) {
+            return false;
+        }
+    );
+
     // populate device info for INQUIRY
     this->dev_type      = ScsiDevType::CD_ROM;
     this->is_removable  = true; // removable medium
@@ -80,11 +86,8 @@ void ScsiCdrom::process_command()
         return;
     }
 
-    this->pre_xfer_action  = nullptr;
-    this->post_xfer_action = nullptr;
-
     // assume successful command execution
-    this->status = ScsiStatus::GOOD;
+    phy_impl->set_status(ScsiStatus::GOOD);
     this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;
 
     // use internal data buffer by default

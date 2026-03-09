@@ -39,8 +39,6 @@ ScsiHardDisk::ScsiHardDisk(std::string name, int my_id) : ScsiPhysDevice(name, m
     this->set_buf_ptr(this->data_buf);
     this->set_buffer(this->data_buf);
 
-    this->init_block_device(0, 0);
-
     // populate device info for INQUIRY
     this->dev_type      = ScsiDevType::DIRECT_ACCESS; // direct access device (hard drive)
     this->is_removable  = false; // non-removable medium
@@ -64,6 +62,8 @@ void ScsiHardDisk::insert_image(std::string filename) {
         ABORT_F("%s: image file too large", this->name.c_str());
 
     this->is_writeable = true;
+
+    this->init_block_device(0, 0);
 }
 
 void ScsiHardDisk::process_command() {
