@@ -30,6 +30,7 @@ ScsiBlockCmds::ScsiBlockCmds(int cache_blocks) : BlockStorageDevice(cache_blocks
     this->enable_cmd(ScsiCommand::WRITE_6);
     this->enable_cmd(ScsiCommand::WRITE_10);
     this->enable_cmd(ScsiCommand::WRITE_12);
+    this->enable_cmd(ScsiCommand::PREVENT_ALLOW_MEDIUM_REMOVAL);
     this->enable_cmd(ScsiCommand::READ_CAPACITY);
 
     this->add_page_getter(this, ModePage::ERROR_RECOVERY,
@@ -87,6 +88,10 @@ void ScsiBlockCmds::process_command() {
     case ScsiCommand::WRITE_10:
     case ScsiCommand::WRITE_12:
         next_phase = this->write_new();
+        break;
+    case ScsiCommand::PREVENT_ALLOW_MEDIUM_REMOVAL:
+        phy_impl->set_eject_state((this->cdb_ptr[4] & 1) == 0);
+        next_phase = ScsiPhase::STATUS;
         break;
     case ScsiCommand::READ_CAPACITY:
         next_phase = this->read_capacity();
