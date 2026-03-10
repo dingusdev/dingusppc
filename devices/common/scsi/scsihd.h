@@ -56,8 +56,6 @@ protected:
     void read_buffer();
 
 private:
-    bool    eject_allowed = true;
-
     uint8_t data_buf[2048] = {};
 };
 
