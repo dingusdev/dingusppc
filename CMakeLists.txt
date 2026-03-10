@@ -277,7 +277,7 @@ if (DPPC_BUILD_PPC_TESTS)
         "${PROJECT_SOURCE_DIR}/cpu/ppc/test/ppcinttests.csv"
         "${PROJECT_SOURCE_DIR}/cpu/ppc/test/ppcfloattests.csv"
         "${PROJECT_SOURCE_DIR}/cpu/ppc/test/ppcdisasmtest.csv"
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+        "$<TARGET_FILE_DIR:$<TARGET_PROPERTY:NAME>>")
 endif()
 
 install (TARGETS dingusppc DESTINATION ${PROJECT_SOURCE_DIR}/build)
