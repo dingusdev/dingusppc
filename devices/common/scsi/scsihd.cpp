@@ -87,9 +87,6 @@ void ScsiHardDisk::process_command() {
     case ScsiCommand::FORMAT_UNIT:
         this->format();
         break;
-    case ScsiCommand::REASSIGN:
-        this->reassign();
-        break;
     case ScsiCommand::MODE_SELECT_6:
         mode_select_6(cmd[4]);
         break;
@@ -213,13 +210,6 @@ void ScsiHardDisk::format() {
     TimerManager::get_instance()->add_oneshot_timer(NS_PER_SEC, [this]() {
         this->switch_phase(ScsiPhase::STATUS);
     });
-}
-
-void ScsiHardDisk::reassign() {
-    LOG_F(WARNING, "%s: attempt to reassign blocks on the disk!", this->name.c_str());
-
-    TimerManager::get_instance()->add_oneshot_timer(
-        NS_PER_SEC, [this]() { this->switch_phase(ScsiPhase::STATUS); });
 }
 
 void ScsiHardDisk::read_buffer() {

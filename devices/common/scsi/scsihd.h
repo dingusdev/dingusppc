@@ -53,7 +53,6 @@ protected:
                                   int avail_len);
 
     void format();
-    void reassign();
     void read_buffer();
 
 private:
