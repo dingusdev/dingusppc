@@ -47,6 +47,7 @@ public:
     virtual int get_phy_id() { return this->phy_id; };
 
     virtual bool    is_device_ready() { return true; }
+    virtual void    set_eject_state(bool eject_allowed) = 0;
     virtual uint8_t not_ready_reason() { return 0; }
     virtual bool    last_sel_has_attention() { return false; }
     virtual uint8_t last_sel_msg() { return 0; }

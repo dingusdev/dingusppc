@@ -282,6 +282,10 @@ public:
         this->status = status_code;
     }
 
+    void set_eject_state(bool eject_allowed) override {
+        this->eject_allowed = eject_allowed;
+    }
+
     virtual void notify(ScsiNotification notif_type, int param);
     virtual void next_step();
     virtual void prepare_xfer();
@@ -314,6 +318,7 @@ protected:
     int         incoming_size;
     uint8_t     status;
 
+    bool        eject_allowed = true;
     bool        last_selection_has_attention = false;
     uint8_t     last_selection_message = 0;
     ScsiBus*    bus_obj;
