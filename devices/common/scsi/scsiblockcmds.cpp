@@ -30,6 +30,7 @@ ScsiBlockCmds::ScsiBlockCmds(int cache_blocks) : BlockStorageDevice(cache_blocks
     this->enable_cmd(ScsiCommand::WRITE_6);
     this->enable_cmd(ScsiCommand::WRITE_10);
     this->enable_cmd(ScsiCommand::WRITE_12);
+    this->enable_cmd(ScsiCommand::START_STOP_UNIT);
     this->enable_cmd(ScsiCommand::PREVENT_ALLOW_MEDIUM_REMOVAL);
     this->enable_cmd(ScsiCommand::READ_CAPACITY);
 
@@ -88,6 +89,9 @@ void ScsiBlockCmds::process_command() {
     case ScsiCommand::WRITE_10:
     case ScsiCommand::WRITE_12:
         next_phase = this->write_new();
+        break;
+    case ScsiCommand::START_STOP_UNIT:
+        next_phase = this->start_stop_unit();
         break;
     case ScsiCommand::PREVENT_ALLOW_MEDIUM_REMOVAL:
         phy_impl->set_eject_state((this->cdb_ptr[4] & 1) == 0);
@@ -167,6 +171,18 @@ int ScsiBlockCmds::write_new() {
     );
 
     return ScsiPhase::DATA_OUT;
+}
+
+int ScsiBlockCmds::start_stop_unit() {
+    if (this->cdb_ptr[4] & 1) {
+        if (this->cdb_ptr[4] & 2)
+            LOG_F(INFO, "START_STOP_UNIT: medium load requested");
+    } else {
+        if (this->cdb_ptr[4] & 2) {
+            LOG_F(INFO, "START_STOP_UNIT: medium eject requested");
+        }
+    }
+    return ScsiPhase::STATUS;
 }
 
 int ScsiBlockCmds::read_capacity() {

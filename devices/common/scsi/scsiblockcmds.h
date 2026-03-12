@@ -38,6 +38,7 @@ public:
 
     virtual int read_new();
     virtual int write_new();
+    virtual int start_stop_unit();
     virtual int read_capacity();
 
     void get_medium_type(uint8_t& medium_type, uint8_t& dev_flags) override {
