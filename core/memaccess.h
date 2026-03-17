@@ -31,23 +31,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 
-/* read an aligned big-endian WORD (16bit) */
-#define READ_WORD_BE_A( addr) (BYTESWAP_16(*((uint16_t*)(addr))))
-
-/* read an aligned big-endian DWORD (32bit) */
-#define READ_DWORD_BE_A(addr) (BYTESWAP_32(*((uint32_t*)(addr))))
-
-/* read an aligned big-endian QWORD (64bit) */
-#define READ_QWORD_BE_A(addr) (BYTESWAP_64(*((uint64_t*)(addr))))
-
-/* read an aligned little-endian WORD (16bit) */
-#define READ_WORD_LE_A( addr) (*(uint16_t*)(addr))
-
-/* read an aligned little-endian DWORD (32bit) */
-#define READ_DWORD_LE_A(addr) (*(uint32_t*)(addr))
-
-/* read an aligned little-endian QWORD (64bit) */
-#define READ_QWORD_LE_A(addr) (*(uint64_t*)(addr))
+#if defined(WORDS_BIGENDIAN) || defined(__BIG_ENDIAN__)
+#undef __BIG_ENDIAN__
+#define __BIG_ENDIAN__ 1
+#else
+#undef __LITTLE_ENDIAN__
+#define __LITTLE_ENDIAN__ 1
+#endif
 
 /* read an unaligned big-endian WORD (16bit) */
 #define READ_WORD_BE_U( addr) ((((uint8_t*)(addr))[0] << 8) | ((uint8_t*)(addr))[1])
@@ -79,18 +69,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
      (uint64_t(((uint8_t*)(addr))[3]) << 24) | (         ((uint8_t*)(addr))[2]  << 16) | \
      (         ((uint8_t*)(addr))[1]  <<  8) |           ((uint8_t*)(addr))[0]          )
 
-/* read an aligned native-endian DWORD */
-#define READ_DWORD_NE_A READ_DWORD_LE_A // native-endian = little-endian for now
-
-/* write an aligned big-endian WORD (16bit) */
-#define WRITE_WORD_BE_A( addr, val) (*((uint16_t*)(addr)) = BYTESWAP_16(val))
-
-/* write an aligned big-endian DWORD (32bit) */
-#define WRITE_DWORD_BE_A(addr, val) (*((uint32_t*)(addr)) = BYTESWAP_32(val))
-
-/* write an aligned big-endian QWORD (64bit) */
-#define WRITE_QWORD_BE_A(addr, val) (*((uint64_t*)(addr)) = BYTESWAP_64(val))
-
 /* write an unaligned big-endian WORD (16bit) */
 #define WRITE_WORD_BE_U(addr, val)                                             \
     do {                                                                       \
@@ -120,15 +98,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         ((uint8_t*)(addr))[7] =   (uint8_t)(val)       ;                       \
     } while (0)
 
-/* write an aligned little-endian WORD (16bit) */
-#define WRITE_WORD_LE_A( addr, val) (*((uint16_t*)(addr)) = (val))
-
-/* write an aligned little-endian DWORD (32bit) */
-#define WRITE_DWORD_LE_A(addr, val) (*((uint32_t*)(addr)) = (val))
-
-/* write an aligned little-endian QWORD (64bit) */
-#define WRITE_QWORD_LE_A(addr, val) (*((uint64_t*)(addr)) = (val))
-
 /* write an unaligned little-endian WORD (16bit) */
 #define WRITE_WORD_LE_U(addr, val)                                             \
     do {                                                                       \
@@ -157,6 +126,41 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         ((uint8_t*)(addr))[6] = ((uint64_t)(val) >> 48);                       \
         ((uint8_t*)(addr))[7] = ((uint64_t)(val) >> 56);                       \
     } while (0)
+
+#ifdef __LITTLE_ENDIAN__
+
+#define READ_WORD_BE_A( addr) (BYTESWAP_16(*((uint16_t*)(addr))))
+#define READ_DWORD_BE_A(addr) (BYTESWAP_32(*((uint32_t*)(addr))))
+#define READ_QWORD_BE_A(addr) (BYTESWAP_64(*((uint64_t*)(addr))))
+#define READ_WORD_LE_A( addr) (*(uint16_t*)(addr))
+#define READ_DWORD_LE_A(addr) (*(uint32_t*)(addr))
+#define READ_QWORD_LE_A(addr) (*(uint64_t*)(addr))
+#define WRITE_WORD_BE_A( addr, val) (*((uint16_t*)(addr)) = BYTESWAP_16(val))
+#define WRITE_DWORD_BE_A(addr, val) (*((uint32_t*)(addr)) = BYTESWAP_32(val))
+#define WRITE_QWORD_BE_A(addr, val) (*((uint64_t*)(addr)) = BYTESWAP_64(val))
+#define WRITE_WORD_LE_A( addr, val) (*((uint16_t*)(addr)) = (val))
+#define WRITE_DWORD_LE_A(addr, val) (*((uint32_t*)(addr)) = (val))
+#define WRITE_QWORD_LE_A(addr, val) (*((uint64_t*)(addr)) = (val))
+
+#else // __BIG_ENDIAN__
+
+#define READ_WORD_LE_A( addr) (BYTESWAP_16(*((uint16_t*)(addr))))
+#define READ_DWORD_LE_A(addr) (BYTESWAP_32(*((uint32_t*)(addr))))
+#define READ_QWORD_LE_A(addr) (BYTESWAP_64(*((uint64_t*)(addr))))
+#define READ_WORD_BE_A( addr) (*(uint16_t*)(addr))
+#define READ_DWORD_BE_A(addr) (*(uint32_t*)(addr))
+#define READ_QWORD_BE_A(addr) (*(uint64_t*)(addr))
+#define WRITE_WORD_LE_A( addr, val) (*((uint16_t*)(addr)) = BYTESWAP_16(val))
+#define WRITE_DWORD_LE_A(addr, val) (*((uint32_t*)(addr)) = BYTESWAP_32(val))
+#define WRITE_QWORD_LE_A(addr, val) (*((uint64_t*)(addr)) = BYTESWAP_64(val))
+#define WRITE_WORD_BE_A( addr, val) (*((uint16_t*)(addr)) = (val))
+#define WRITE_DWORD_BE_A(addr, val) (*((uint32_t*)(addr)) = (val))
+#define WRITE_QWORD_BE_A(addr, val) (*((uint64_t*)(addr)) = (val))
+
+#endif // __BIG_ENDIAN__
+
+/* read an aligned native-endian DWORD */
+#define READ_DWORD_NE_A READ_DWORD_LE_A // native-endian = little-endian for now
 
 /* write an aligned native-endian DWORD */
 #define WRITE_DWORD_NE_A WRITE_DWORD_LE_A // native-endian = little-endian for now
