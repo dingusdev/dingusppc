@@ -6,13 +6,17 @@ Be warned the program is highly unfinished and could use a lot of testing. Any f
 
 ## Philosophy of Use
 
-While many other PowerPC emus exist (PearPC, Sheepshaver), none of them currently attempt emulation of PowerPC Macs accurately (except for QEMU).
+While many other PowerPC emus exist (PearPC, Sheepshaver), none of them currently attempt emulation of PowerPC Macs
+accurately (except for QEMU).
 
-This program aims to not only improve upon what Sheepshaver, PearPC, and other PowerPC Mac emulators have done, but also to provide a better debugging environment. This currently is designed to work best with PowerPC NuBus and Old World ROMs, including those of the Power Mac 6100, 7200, and G3 Beige.
+This program aims to not only improve upon what Sheepshaver, PearPC, and other PowerPC Mac emulators have done, but
+also to provide a better debugging environment. This currently is designed to work best with PowerPC NuBus and Old
+World ROMs, including those of the Power Mac 6100, 7200, and G3 Beige.
 
 ## Implemented Features
 
-Several machines have been implemented to varying degrees, like many Old World PowerPC Macs, early New World PowerPC Macs, and the Pippin.
+Several machines have been implemented to varying degrees, like many Old World PowerPC Macs, early New World
+PowerPC Macs, and the Pippin.
 
 This emulator has a debugging environment, complete with a disassembler. 
 
@@ -65,6 +69,7 @@ git clone https://github.com/dingusdev/dingusppc
 If this is from a mirror, replace the argument with the source you want to use instead.
 
 You will also have to recursive clone or run
+
 ```
 git submodule update --init --recursive
 ```
@@ -77,27 +82,43 @@ For SDL2, Linux users may also have to run:
 sudo apt install libsdl2-dev
 ```
 
- CLI11 and loguru are already included in the thirdparty folder and compiled along with the rest of DingusPPC.
+macOS users can use Homebrew or MacPorts to install SDL2.
 
-For example, to build the project in a Unix-like environment, you will need to run
-the following commands in the OS terminal:
+CLI11 and loguru are already included in the thirdparty folder and compiled along with the rest of DingusPPC.
+
+For Raspbian, you may also need the following command:
+
+```
+sudo apt install doxygen graphviz
+```
+
+To build the project in a Unix-like environment, create a build folder, change the directory to the build folder,
+and use `cmake` to create the `Makefile` files in that build folder.
+Use `make` to do the building. You don't need to execute `cmake` again unless you add/remove/change options or
+source files.
+
 ```
 mkdir build
 cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
-make dingusppc
+make
 ```
-You may specify another build type using the variable CMAKE_BUILD_TYPE.
 
-For Raspbian, you may also need the following command:
+You may specify another build type using the variable `CMAKE_BUILD_TYPE`. 
+Each build type should have its own build folder.
+
 ```
-sudo apt install doxygen graphviz
+mkdir build-debug
+cd build-debug
+cmake -DCMAKE_BUILD_TYPE=Debug ..
+make
 ```
 
 ## Testing
 
 DingusPPC includes a test suite for verifying the correctness of its PowerPC CPU
 emulation. To build the tests, use the following terminal commands:
+
 ```
 mkdir build
 cd build
