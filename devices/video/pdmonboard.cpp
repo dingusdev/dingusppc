@@ -288,7 +288,7 @@ void PdmOnboardVideo::pdm_convert_frame_1bpp_indexed(uint8_t *dst_buf, int dst_p
                 bit = 0x80;
                 c = *src_row;
             }
-            WRITE_DWORD_LE_A(dst_row, (uint32_t)(pixels >> (!(c & bit) << 5)));
+            FB_WRITE(dst_row, (uint32_t)(pixels >> (!(c & bit) << 5)));
             bit >>= 1;
             dst_row += 4;
         }
@@ -311,13 +311,13 @@ void PdmOnboardVideo::pdm_convert_frame_2bpp_indexed(uint8_t *dst_buf, int dst_p
         uint8_t c;
         for (int x = this->active_width >> 2; x > 0; x--) {
             c = *src_row;
-            WRITE_DWORD_LE_A(dst_row, this->palette[c & 0xc0 | 0x3f]);
+            FB_WRITE(dst_row, this->palette[c & 0xc0 | 0x3f]);
             dst_row += 4;
-            WRITE_DWORD_LE_A(dst_row, this->palette[(c << 2) & 0xc0 | 0x3f]);
+            FB_WRITE(dst_row, this->palette[(c << 2) & 0xc0 | 0x3f]);
             dst_row += 4;
-            WRITE_DWORD_LE_A(dst_row, this->palette[(c << 4) & 0xc0 | 0x3f]);
+            FB_WRITE(dst_row, this->palette[(c << 4) & 0xc0 | 0x3f]);
             dst_row += 4;
-            WRITE_DWORD_LE_A(dst_row, this->palette[(uint8_t)(c << 6) | 0x3f]);
+            FB_WRITE(dst_row, this->palette[(uint8_t)(c << 6) | 0x3f]);
             dst_row += 4;
             src_row += 1;
         }
@@ -340,9 +340,9 @@ void PdmOnboardVideo::pdm_convert_frame_4bpp_indexed(uint8_t *dst_buf, int dst_p
         uint8_t c;
         for (int x = this->active_width >> 1; x > 0; x--) {
             c = *src_row;
-            WRITE_DWORD_LE_A(dst_row, this->palette[c & 0xf0 | 0x0f]);
+            FB_WRITE(dst_row, this->palette[c & 0xf0 | 0x0f]);
             dst_row += 4;
-            WRITE_DWORD_LE_A(dst_row, this->palette[(uint8_t)(c << 4) | 0x0f]);
+            FB_WRITE(dst_row, this->palette[(uint8_t)(c << 4) | 0x0f]);
             dst_row += 4;
             src_row += 1;
         }

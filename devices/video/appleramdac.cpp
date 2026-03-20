@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** Apple RAMDAC ASICs (RaDACal & DACula) emulation. */
 
 #include <core/bitops.h>
+#include <devices/video/display.h>
 #include <devices/video/appleramdac.h>
 #include <loguru.hpp>
 #include <memaccess.h>
@@ -254,10 +255,10 @@ void AppleRamdac::draw_hw_cursor(uint8_t *src_buf, uint8_t *dst_buf, int dst_pit
             while (pix_data) {
                 uint8_t pix = pix_data >> 60; // each pixel is 4 bits wide
                 if (pix & 8) { // check control bit: 0 - transparent, 1 - opaque
-                    WRITE_DWORD_LE_A(dst_1, color[pix & 7]);
+                    FB_WRITE(dst_1, color[pix & 7]);
                 } else if (pix & 1) {
-                    uint32_t c = (((READ_DWORD_LE_A(dst_1) >> 7) & 0x010101) * 0xFFU) ^ 0xFFFFFFU;
-                    WRITE_DWORD_LE_A(dst_1, c);
+                    uint32_t c = (((FB_READ(dst_1) >> 7) & 0x010101) * 0xFFU) ^ 0xFFFFFFU;
+                    FB_WRITE(dst_1, c);
                 }
                 pix_data <<= 4;
                 dst_1 += sizeof(uint32_t);

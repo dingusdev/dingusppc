@@ -252,7 +252,7 @@ void TaosVideo::convert_frame_15bpp_indexed(uint8_t *dst_buf, int dst_pitch) {
             pix = (this->palette[(c >> 10) & 0x1F] & 0x00FF0000) |
                   (this->palette[(c >>  5) & 0x1F] & 0x0000FF00) |
                   (this->palette[ c        & 0x1F] & 0xFF0000FF);
-            WRITE_DWORD_LE_A(dst_row, pix);
+            FB_WRITE(dst_row, pix);
             src_row += 2;
             dst_row += 4;
         }

@@ -29,6 +29,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <functional>
 #include <memory>
 
+#define FB_WRITE(addr, val) (*((uint32_t*)(addr)) = (val))
+#define FB_READ(addr) (*(uint32_t*)(addr))
+
 class VideoCtrlBase;
 
 class Display {

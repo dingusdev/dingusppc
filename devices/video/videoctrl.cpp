@@ -181,7 +181,7 @@ void VideoCtrlBase::convert_frame_1bpp_indexed(uint8_t *dst_buf, int dst_pitch)
                 bit = 0x80;
                 c = *src_row;
             }
-            WRITE_DWORD_LE_A(dst_row, this->palette[!!(c & bit)]);
+            FB_WRITE(dst_row, this->palette[!!(c & bit)]);
             bit >>= 1;
             dst_row += 4;
         }
@@ -204,13 +204,13 @@ void VideoCtrlBase::convert_frame_2bpp_indexed(uint8_t *dst_buf, int dst_pitch)
         uint8_t c;
         for (int x = this->active_width >> 2; x > 0; x--) {
             c = *src_row;
-            WRITE_DWORD_LE_A(dst_row, this->palette[c >> 6]);
+            FB_WRITE(dst_row, this->palette[c >> 6]);
             dst_row += 4;
-            WRITE_DWORD_LE_A(dst_row, this->palette[(c >> 4) & 3]);
+            FB_WRITE(dst_row, this->palette[(c >> 4) & 3]);
             dst_row += 4;
-            WRITE_DWORD_LE_A(dst_row, this->palette[(c >> 2) & 3]);
+            FB_WRITE(dst_row, this->palette[(c >> 2) & 3]);
             dst_row += 4;
-            WRITE_DWORD_LE_A(dst_row, this->palette[c & 3]);
+            FB_WRITE(dst_row, this->palette[c & 3]);
             dst_row += 4;
             src_row += 1;
         }
@@ -233,9 +233,9 @@ void VideoCtrlBase::convert_frame_4bpp_indexed(uint8_t *dst_buf, int dst_pitch)
         uint8_t c;
         for (int x = this->active_width >> 1; x > 0; x--) {
             c = *src_row;
-            WRITE_DWORD_LE_A(dst_row, this->palette[c >> 4]);
+            FB_WRITE(dst_row, this->palette[c >> 4]);
             dst_row += 4;
-            WRITE_DWORD_LE_A(dst_row, this->palette[c & 15]);
+            FB_WRITE(dst_row, this->palette[c & 15]);
             dst_row += 4;
             src_row += 1;
         }
@@ -256,7 +256,7 @@ void VideoCtrlBase::convert_frame_8bpp_indexed(uint8_t *dst_buf, int dst_pitch)
     dst_row = dst_buf;
     for (int h = this->active_height; h > 0; h--) {
         for (int x = this->active_width; x > 0; x--) {
-            WRITE_DWORD_LE_A(dst_row, this->palette[*src_row++]);
+            FB_WRITE(dst_row, this->palette[*src_row++]);
             dst_row += 4;
         }
         src_row += src_pitch;
@@ -280,10 +280,10 @@ void VideoCtrlBase::convert_frame_8bpp_32LE_indexed(uint8_t *dst_buf, int dst_pi
     for (int h = this->active_height; h > 0; h--) {
         for (int x = this->active_width >> 2; x > 0; x--) {
             uint32_t pixels = *src_row++;
-            WRITE_DWORD_LE_A(dst_row     , this->palette[(uint8_t)(pixels      )]);
-            WRITE_DWORD_LE_A(dst_row +  4, this->palette[(uint8_t)(pixels >>  8)]);
-            WRITE_DWORD_LE_A(dst_row +  8, this->palette[(uint8_t)(pixels >> 16)]);
-            WRITE_DWORD_LE_A(dst_row + 12, this->palette[(uint8_t)(pixels >> 24)]);
+            FB_WRITE(dst_row     , this->palette[(uint8_t)(pixels      )]);
+            FB_WRITE(dst_row +  4, this->palette[(uint8_t)(pixels >>  8)]);
+            FB_WRITE(dst_row +  8, this->palette[(uint8_t)(pixels >> 16)]);
+            FB_WRITE(dst_row + 12, this->palette[(uint8_t)(pixels >> 24)]);
             dst_row += 16;
         }
         src_row = (uint32_t*)((uint8_t*)src_row + src_pitch);
@@ -309,7 +309,7 @@ void VideoCtrlBase::convert_frame_8bpp(uint8_t *dst_buf, int dst_pitch)
             uint32_t r = ((c << 16) & 0x00E00000) | ((c << 13) & 0x001C0000) | ((c << 10) & 0x00030000);
             uint32_t g = ((c << 11) & 0x0000E000) | ((c <<  8) & 0x00001C00) | ((c <<  5) & 0x00000300);
             uint32_t b = ((c <<  6) & 0x000000C0) | ((c <<  4) & 0x00000030) | ((c <<  2) & 0x0000000C) | (c & 0x00000003);
-            WRITE_DWORD_LE_A(dst_row, r | g | b);
+            FB_WRITE(dst_row, r | g | b);
             dst_row += 4;
         }
         src_row += src_pitch;
@@ -349,7 +349,7 @@ void VideoCtrlBase::convert_frame_15bpp(uint8_t *dst_buf, int dst_pitch, bool sw
             uint32_t r = ((c << 9) & 0x00F80000) | ((c << 4) & 0x00070000);
             uint32_t g = ((c << 6) & 0x0000F800) | ((c << 1) & 0x00000700);
             uint32_t b = ((c << 3) & 0x000000F8) | ((c >> 2) & 0x00000007);
-            WRITE_DWORD_LE_A(dst_row, r | g | b);
+            FB_WRITE(dst_row, r | g | b);
             src_row += 2;
             dst_row += 4;
         }
@@ -385,7 +385,7 @@ void VideoCtrlBase::convert_frame_16bpp(uint8_t *dst_buf, int dst_pitch, bool sw
             uint32_t r = ((c << 8) & 0x00F80000) | ((c << 3) & 0x00070000);
             uint32_t g = ((c << 5) & 0x0000FC00) | ((c >> 1) & 0x00000300);
             uint32_t b = ((c << 3) & 0x000000F8) | ((c >> 2) & 0x00000007);
-            WRITE_DWORD_LE_A(dst_row, r | g | b);
+            FB_WRITE(dst_row, r | g | b);
             src_row += 2;
             dst_row += 4;
         }
@@ -411,7 +411,7 @@ void VideoCtrlBase::convert_frame_24bpp(uint8_t *dst_buf, int dst_pitch)
     for (int h = this->active_height; h > 0; h--) {
         for (int x = this->active_width; x > 0; x--) {
             uint32_t c = (src_row[0] << 16) | (src_row[1] << 8) | src_row[2];
-            WRITE_DWORD_LE_A(dst_row, c);
+            FB_WRITE(dst_row, c);
             src_row += 3;
             dst_row += 4;
         }
@@ -442,7 +442,7 @@ void VideoCtrlBase::convert_frame_32bpp(uint8_t *dst_buf, int dst_pitch, bool sw
     for (int h = this->active_height; h > 0; h--) {
         for (int x = this->active_width; x > 0; x--) {
             uint32_t c = (endian == BE) ? READ_DWORD_BE_A(src_row) : READ_DWORD_LE_A(src_row);
-            WRITE_DWORD_LE_A(dst_row, c);
+            FB_WRITE(dst_row, c);
             src_row++;
             dst_row++;
         }
