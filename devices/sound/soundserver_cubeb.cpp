@@ -136,8 +136,8 @@ static long sound_out_callback(cubeb_stream* stream, void* user_data,
                 frames = got_len >> 2;
 
                 for (int i = (int)frames; i > 0; i--) {
-                    out_buf[0] = BYTESWAP_16(in_buf[0]);
-                    out_buf[1] = BYTESWAP_16(in_buf[1]);
+                    out_buf[0] = READ_WORD_BE_A(&in_buf[0]);
+                    out_buf[1] = READ_WORD_BE_A(&in_buf[1]);
                     in_buf += 2;
                     out_buf += 2;
                 }
