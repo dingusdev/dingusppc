@@ -408,6 +408,7 @@ void run_machine(std::string machine_str, char* rom_data,
     if (is_deterministic) {
         TimerManager::get_instance()->cancel_timer(deterministic_timer);
     }
+    TimerManager::get_instance()->cancel_all_timers();
     EventManager::get_instance()->disconnect_handlers();
     delete gMachineObj.release();
 }

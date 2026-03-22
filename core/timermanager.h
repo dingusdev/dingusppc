@@ -134,6 +134,7 @@ public:
     uint32_t add_cyclic_timer(uint64_t interval, timer_cb cb);
     uint32_t add_cyclic_timer(uint64_t interval, uint64_t delay, timer_cb cb);
     void cancel_timer(uint32_t id);
+    void cancel_all_timers();
 
     uint64_t process_timers();
 

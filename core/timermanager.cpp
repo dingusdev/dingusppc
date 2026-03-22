@@ -156,3 +156,13 @@ uint64_t TimerManager::process_timers()
     // return time slice in nanoseconds until next timer's expiry
     return cur_timer->timeout_ns - time_now;
 }
+
+void TimerManager::cancel_all_timers()
+{
+    std::shared_ptr<TimerInfo> cur_timer;
+    while (!this->timer_queue.empty()) {
+        cur_timer = this->timer_queue.top();
+        LOG_F(WARNING, "Canceling timer id:%u ns:%llu", cur_timer->id, cur_timer->timeout_ns);
+        this->timer_queue.pop();
+    }
+}
