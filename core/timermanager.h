@@ -51,6 +51,8 @@ class my_priority_queue : public std::priority_queue<T, Container, Compare> {
 public:
     bool remove_by_id(const uint32_t id){
         std::lock_guard<std::recursive_mutex> lk(mtx);
+        if (this->empty())
+            return false;
         auto el = this->top();
         if (el->id == id) {
             std::priority_queue<T, Container, Compare>::pop();
