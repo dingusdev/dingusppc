@@ -618,7 +618,7 @@ void ViaCuda::autopoll_handler() {
 
         // Don't send one-second packets if a command response is pending.
         // Unlike autopoll, time packets are not urgent enough to preempt.
-        if (!this->treq || this->treq_timer_id) {
+        if (!this->treq || this->treq_timer_id || this->sr_timer_id) {
             // ERS: track missed ticks for mode $02/$03 fallback
             if (this_time != this->last_time)
                 this->one_sec_missed = true;
