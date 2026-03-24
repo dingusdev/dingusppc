@@ -59,9 +59,6 @@ void ScsiHardDisk::insert_image(std::string filename) {
     if (this->set_host_file(filename) < 0)
         ABORT_F("%s: could not open image file %s", this->name.c_str(), filename.c_str());
 
-    if (this->size_blocks > 0xFFFFFFU)
-        ABORT_F("%s: image file too large", this->name.c_str());
-
     this->is_writeable = true;
 
     this->init_block_device(0, 0, 0, true);
