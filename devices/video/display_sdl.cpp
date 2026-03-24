@@ -308,6 +308,20 @@ void Display::handle_events(const WindowEvent& wnd_event) {
         }
         break;
 
+    case SDL_WINDOWEVENT_FOCUS_GAINED:
+        if (wnd_event.window_id == impl->disp_wnd_id) {
+            SDL_SetHint(SDL_HINT_ALLOW_ALT_TAB_WHILE_GRABBED, "0");
+            SDL_SetWindowKeyboardGrab(impl->display_wnd, SDL_TRUE);
+        }
+        break;
+
+    case SDL_WINDOWEVENT_FOCUS_LOST:
+        if (wnd_event.window_id == impl->disp_wnd_id) {
+            SDL_SetHint(SDL_HINT_ALLOW_ALT_TAB_WHILE_GRABBED, "1");
+            SDL_SetWindowKeyboardGrab(impl->display_wnd, SDL_FALSE);
+        }
+        break;
+
     case DPPC_WINDOWEVENT_WINDOW_SCALE_QUALITY_TOGGLE:
         if (wnd_event.window_id == impl->disp_wnd_id) {
             auto current_quality = SDL_GetHint(SDL_HINT_RENDER_SCALE_QUALITY);
