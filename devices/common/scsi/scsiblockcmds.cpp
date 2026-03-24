@@ -217,8 +217,10 @@ int ScsiBlockCmds::read_capacity() {
 int ScsiBlockCmds::format_block_descriptors(uint8_t* out_ptr) {
     uint8_t density_code = 0;
 
-    WRITE_DWORD_BE_A(&out_ptr[0], (density_code << 24) | (this->size_blocks & 0xFFFFFF));
-    WRITE_DWORD_BE_A(&out_ptr[4], (this->block_size & 0xFFFFFF));
+    uint32_t nblocks = std::min((int64_t)this->size_blocks, (int64_t)0xFFFFFFFFUL);
+
+    WRITE_DWORD_BE_A(&out_ptr[0], nblocks);
+    WRITE_DWORD_BE_A(&out_ptr[4], (density_code << 24) | (this->block_size & 0xFFFFFF));
 
     return 8;
 }
