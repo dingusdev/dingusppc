@@ -20,11 +20,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         submodules: recursive
     - name: Cache ccache
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ${{ github.workspace }}/.ccache/linux
         key: linux-ccache-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('**/CMakeLists.txt') }}
@@ -52,7 +52,7 @@ jobs:
       run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure
     - name: Upload logs on failure
       if: failure()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: logs-${{ github.job }}
         path: |
@@ -63,7 +63,7 @@ jobs:
         retention-days: ${{ github.event_name == 'pull_request' && 7 || 30 }}
     - name: Upload artifact
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: DingusPPC-LINUX
         path: ${{github.workspace}}/build/bin
@@ -83,11 +83,11 @@ jobs:
             brew_prefix: /usr/local
     runs-on: ${{ matrix.runner }}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         submodules: recursive
     - name: Cache ccache
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ${{ github.workspace }}/.ccache/${{ matrix.arch }}
         key: macos-${{ matrix.runner }}-${{ matrix.arch }}-ccache-${{ env.BUILD_TYPE }}-${{ hashFiles('**/CMakeLists.txt') }}
@@ -113,7 +113,7 @@ jobs:
       run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure
     - name: Upload logs on failure
       if: failure()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: logs-${{ github.job }}-${{ matrix.arch }}
         path: |
@@ -124,7 +124,7 @@ jobs:
         retention-days: ${{ github.event_name == 'pull_request' && 7 || 30 }}
     - name: Upload artifact
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: DingusPPC-macOS-${{ matrix.arch }}
         path: ${{github.workspace}}/build/bin
@@ -137,11 +137,11 @@ jobs:
       MSYSTEM: MINGW64
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: recursive
       - name: Cache ccache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/.ccache/msys
           key: windows-msys-ccache-${{ env.BUILD_TYPE }}-${{ hashFiles('**/CMakeLists.txt') }}
@@ -183,7 +183,7 @@ jobs:
           ctest --output-on-failure --parallel
       - name: Upload logs on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: logs-${{ github.job }}
           path: |
@@ -194,7 +194,7 @@ jobs:
           retention-days: ${{ github.event_name == 'pull_request' && 7 || 30 }}
       - name: Upload artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: DingusPPC-MSYS
           path: ${{github.workspace}}/build/bin
@@ -225,11 +225,11 @@ jobs:
             ccache_args: ""
             upload_suffix: MSBUILD
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         submodules: recursive
     - name: Setup msbuild
-      uses: microsoft/setup-msbuild@v1
+      uses: microsoft/setup-msbuild@v3
     - name: Install vcpkg packages
       shell: cmd
       run: '"%VCPKG_INSTALLATION_ROOT%\vcpkg.exe" install --triplet x64-windows'
@@ -238,7 +238,7 @@ jobs:
       run: choco install ninja -y
     - name: Cache ccache
       if: matrix.generator == 'Ninja'
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: ${{ github.workspace }}/.ccache/vsbuild-${{ matrix.name }}
         key: vsbuild-${{ matrix.name }}-ccache-${{ env.BUILD_TYPE }}-${{ hashFiles('**/CMakeLists.txt') }}
@@ -267,7 +267,7 @@ jobs:
       run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure
     - name: Upload logs on failure
       if: failure()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: logs-${{ github.job }}-${{ matrix.name }}
         path: |
@@ -278,7 +278,7 @@ jobs:
         retention-days: ${{ github.event_name == 'pull_request' && 7 || 30 }}
     - name: Upload artifact
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: DingusPPC-${{ matrix.upload_suffix }}
         path: ${{github.workspace}}/build/bin

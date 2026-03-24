@@ -4,10 +4,10 @@
 ## Developers
 
 - divingkatae
-- maximumspatium
 - joevt
-- mihaip
 - kkaisershot
+- maximumspatium
+- mihaip
 
 ## NT4/PPC fork
 
@@ -15,21 +15,23 @@
 
 ## DevOps
 
-- Waqar144
-- webspacecreations
-- leap0x7b
-- sdkmap
+- alicela1n
+- Cacodemon345
 - dressupgeekout
-- kth5
 - dyharlan
-- roytam1
-- mrpapersonic
-- Randrianasulu
+- erichelgeson
+- jarz
+- kth5
+- leap0x7b
 - lefp
 - mathstuf
+- mrpapersonic
+- Randrianasulu
+- roytam1
+- sdkmap
 - seanm
-- erichelgeson
-- alicela1n
+- Waqar144
+- webspacecreations
 
 ## Testing
 
