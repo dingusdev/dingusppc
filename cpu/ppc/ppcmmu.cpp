@@ -1076,7 +1076,7 @@ static void mpc601_bat_update(uint32_t bat_reg)
         // copy IBAT entry to DBAT entry
         *dbat_entry = *ibat_entry;
     } else {
-        // disable the corresponding BAT paars
+        // disable the corresponding BAT pairs
         ibat_entry->valid = false;
         dbat_entry->valid = false;
     }
