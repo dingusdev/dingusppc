@@ -47,6 +47,26 @@ public:
     int write_more();
     void write_cache();
 
+    uint32_t get_remaining_size() {
+        return this->remain_size;
+    }
+
+    uint8_t* get_cache_ptr() {
+        return (uint8_t *)this->data_cache.get();
+    }
+
+    bool medium_writable() {
+        return this->is_writeable;
+    }
+
+    uint64_t get_size_in_blocks() {
+        return this->size_blocks;
+    }
+
+    uint32_t get_block_size() {
+        return this->block_size;
+    }
+
 protected:
     void fill_cache(const int nblocks);
 
