@@ -120,6 +120,9 @@ enum TLBFlags : uint16_t {
 extern std::function<void(uint32_t bat_reg)> ibat_update;
 extern std::function<void(uint32_t bat_reg)> dbat_update;
 
+extern PPC_BAT_entry ibat_array[4];
+extern PPC_BAT_entry dbat_array[4];
+
 extern MapDmaResult mmu_map_dma_mem(uint32_t addr, uint32_t size, bool allow_mmio);
 
 extern void mmu_change_mode(void);

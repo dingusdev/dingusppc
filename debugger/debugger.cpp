@@ -526,18 +526,24 @@ static void print_mmu_regs()
 
     printf("\nBAT registers:\n");
 
-    for (int i = 0; i < 4; i++) {
-        printf(" ibat%du : %08X   ibat%dl : %08X\n",
-              i, ppc_state.spr[528+i*2],
-              i, ppc_state.spr[529+i*2]);
-    }
-
-    if (!is_601) {
-        for (int i = 0; i < 4; i++) {
-            printf(" dbat%du : %08X   dbat%dl : %08X\n",
-                  i, ppc_state.spr[536+i*2],
-                  i, ppc_state.spr[537+i*2]);
+    for (int i = 0; i < 4 + (is_601 ? 0 : 4); i++) {
+        PPC_BAT_entry *bat_entry = i < 4 ? ibat_array : dbat_array;
+        bat_entry = &bat_entry[i & 3];
+        printf(" %sbat%du : %08X   ibat%dl : %08X   ;   range : %08X..%08X -> %08X..%08X   access : %s%s   protection : %s%s",
+            is_601 ? "" : i < 4 ? "i" : "d",
+            i & 3, ppc_state.spr[528+i*2],
+            i & 3, ppc_state.spr[529+i*2],
+            bat_entry->bepi, bat_entry->bepi + ~bat_entry->hi_mask,
+            bat_entry->phys_hi, bat_entry->phys_hi + ~bat_entry->hi_mask,
+            bat_entry->access & 2 ? is_601 ? "Ks" : "Vs" : "__",
+            bat_entry->access & 1 ? is_601 ? "Ku" : "Vp" : "__",
+            bat_entry->prot & 2 ? "P" : "_",
+            bat_entry->prot & 1 ? "P" : "_"
+        );
+        if (is_601) {
+            printf("   (%s)", bat_entry->valid ? "valid" : "invalid");
         }
+        printf("\n");
     }
 
     printf("\n");
