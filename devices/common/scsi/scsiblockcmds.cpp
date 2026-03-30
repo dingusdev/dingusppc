@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <loguru.hpp>
 #include <memaccess.h>
 
-ScsiBlockCmds::ScsiBlockCmds(int cache_blocks) : BlockStorageDevice(cache_blocks) {
+ScsiBlockCmds::ScsiBlockCmds() {
     this->enable_cmd(ScsiCommand::READ_6);
     this->enable_cmd(ScsiCommand::READ_10);
     this->enable_cmd(ScsiCommand::READ_12);
@@ -44,21 +44,21 @@ void ScsiBlockCmds::init_block_device(uint8_t medium_type, uint8_t dev_flags) {
 
     phy_impl->set_read_more_data_cb(
         [this](int* dsize, uint8_t** dptr) -> bool {
-            if (this->remain_size) {
-                *dsize = this->read_more();
-                *dptr  = (uint8_t *)this->data_cache.get();
+            if (this->blk_dev->get_remaining_size()) {
+                *dsize = this->blk_dev->read_more();
+                *dptr  = this->blk_dev->get_cache_ptr();
                 return true;
             } else
                 return false;
         }
     );
 
-    if (this->is_writeable) {
+    if (this->blk_dev->medium_writable()) {
         phy_impl->set_write_more_data_cb(
             [this](int* dsize, uint8_t** dptr) -> bool {
-                if (this->remain_size) {
-                    *dsize = this->write_more();
-                    *dptr  = (uint8_t *)this->data_cache.get();
+                if (this->blk_dev->get_remaining_size()) {
+                    *dsize = this->blk_dev->write_more();
+                    *dptr  = this->blk_dev->get_cache_ptr();
                     return true;
                 } else
                     return false;
@@ -131,9 +131,9 @@ int ScsiBlockCmds::read_new() {
         return ScsiPhase::STATUS;
     }
 
-    this->set_fpos(this->get_lba());
-    phy_impl->set_xfer_len(this->read_begin(nblocks));
-    phy_impl->set_buffer((uint8_t *)this->data_cache.get());
+    this->blk_dev->set_fpos(this->get_lba());
+    phy_impl->set_xfer_len(this->blk_dev->read_begin(nblocks));
+    phy_impl->set_buffer(this->blk_dev->get_cache_ptr());
 
     return ScsiPhase::DATA_IN;
 }
@@ -161,12 +161,12 @@ int ScsiBlockCmds::write_new() {
         return ScsiPhase::STATUS;
     }
 
-    this->set_fpos(this->get_lba());
-    phy_impl->set_xfer_len(this->write_begin(nblocks));
-    phy_impl->set_buffer((uint8_t *)this->data_cache.get());
+    this->blk_dev->set_fpos(this->get_lba());
+    phy_impl->set_xfer_len(this->blk_dev->write_begin(nblocks));
+    phy_impl->set_buffer(this->blk_dev->get_cache_ptr());
 
     phy_impl->set_post_xfer_action([this]() {
-            this->write_cache();
+            this->blk_dev->write_cache();
         }
     );
 
@@ -203,8 +203,8 @@ int ScsiBlockCmds::read_capacity() {
         return ScsiPhase::STATUS;
     }
 
-    uint32_t last_lba = this->size_blocks - 1;
-    uint32_t blk_len  = this->block_size;
+    uint32_t last_lba = this->blk_dev->get_size_in_blocks() - 1;
+    uint32_t blk_len  = this->blk_dev->get_block_size();
 
     WRITE_DWORD_BE_A(&this->buf_ptr[0], last_lba);
     WRITE_DWORD_BE_A(&this->buf_ptr[4], blk_len);
@@ -217,10 +217,12 @@ int ScsiBlockCmds::read_capacity() {
 int ScsiBlockCmds::format_block_descriptors(uint8_t* out_ptr) {
     uint8_t density_code = 0;
 
-    uint32_t nblocks = std::min((int64_t)this->size_blocks, (int64_t)0xFFFFFFFFUL);
+    uint32_t nblocks = std::min((int64_t)this->blk_dev->get_size_in_blocks(),
+                                (int64_t)0xFFFFFFFFUL);
 
     WRITE_DWORD_BE_A(&out_ptr[0], nblocks);
-    WRITE_DWORD_BE_A(&out_ptr[4], (density_code << 24) | (this->block_size & 0xFFFFFF));
+    WRITE_DWORD_BE_A(&out_ptr[4], (density_code << 24) |
+                    (this->blk_dev->get_block_size() & 0xFFFFFF));
 
     return 8;
 }

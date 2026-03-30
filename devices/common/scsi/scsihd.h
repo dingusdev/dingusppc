@@ -26,11 +26,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <devices/common/scsi/scsi.h>
 #include <devices/common/scsi/scsiblockcmds.h>
+#include <devices/storage/blockstoragedevice.h>
 
 #include <cinttypes>
 #include <string>
 
-class ScsiHardDisk : public ScsiPhysDevice, public ScsiBlockCmds {
+class ScsiHardDisk : public ScsiPhysDevice, public BlockStorageDevice, public ScsiBlockCmds {
 public:
     ScsiHardDisk(std::string name, int my_id);
     ~ScsiHardDisk() = default;

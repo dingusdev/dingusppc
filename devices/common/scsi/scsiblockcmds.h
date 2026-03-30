@@ -29,10 +29,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 
 /** Base class for SCSI block device commands. */
-class ScsiBlockCmds : public ScsiCommonCmds, public BlockStorageDevice {
+class ScsiBlockCmds : public ScsiCommonCmds {
 public:
-    ScsiBlockCmds(int cache_blocks = 256);
+    ScsiBlockCmds();
     ~ScsiBlockCmds() = default;
+
+    void set_phys_block_dev(BlockStorageDevice *blk_dev_obj) {
+        this->blk_dev = blk_dev_obj;
+    }
 
     void init_block_device(uint8_t medium_type, uint8_t dev_flags);
 
@@ -55,6 +59,8 @@ protected:
     virtual void    process_command() override;
 
     uint32_t    get_lba();
+
+    BlockStorageDevice* blk_dev = nullptr;
 
     uint8_t medium_type  = 0;
     uint8_t device_flags = 0;
