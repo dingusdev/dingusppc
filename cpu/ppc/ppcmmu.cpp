@@ -171,9 +171,9 @@ static inline uint8_t* calc_pteg_addr(uint32_t hash)
 
     sdr1_val = ppc_state.spr[SPR::SDR1];
 
-    pteg_addr = sdr1_val & 0xFE000000;
-    pteg_addr |= (sdr1_val & 0x01FF0000) | (((sdr1_val & 0x1FF) << 16) & ((hash & 0x7FC00) << 6));
-    pteg_addr |= (hash & 0x3FF) << 6;
+    pteg_addr = (sdr1_val & 0xFFFF0000) |
+        (((sdr1_val & 0x1FF) << 16) & ((hash & 0x7FC00) << 6)) |
+        ((hash & 0x3FF) << 6);
 
     if (pteg_addr >= last_ptab_area.start && pteg_addr <= last_ptab_area.end) {
         return last_ptab_area.mem_ptr + (pteg_addr - last_ptab_area.start);
