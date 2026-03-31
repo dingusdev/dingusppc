@@ -55,7 +55,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <stdexcept>
 #include <string>
 
-enum RAMType : int { SDRAM = 4 };
+enum RAMType : int {
+    EDO   = 2,
+    SDRAM = 4,
+};
 
 
 class SpdSdram168 : public I2CDevice {
