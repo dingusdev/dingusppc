@@ -39,7 +39,7 @@ ScsiBlockCmds::ScsiBlockCmds() {
 }
 
 void ScsiBlockCmds::init_block_device(uint8_t medium_type, uint8_t dev_flags,
-                                      uint8_t density_code)
+                                      uint8_t density_code, bool is_apple_compliant)
 {
     this->medium_type  = medium_type;
     this->device_flags = dev_flags;
@@ -73,6 +73,9 @@ void ScsiBlockCmds::init_block_device(uint8_t medium_type, uint8_t dev_flags,
             }
         );
     }
+
+    if (is_apple_compliant)
+        this->add_page_getter(this, 0x30, &ScsiBlockCmds::get_apple_copyright_page);
 }
 
 void ScsiBlockCmds::process_command() {
@@ -258,4 +261,25 @@ uint32_t ScsiBlockCmds::get_lba() {
     default:
         ABORT_F("unsupported command length %d in get_lba", cmd_len);
     }
+}
+
+static char Apple_Copyright_Page_Data[] = "APPLE COMPUTER, INC   ";
+
+int ScsiBlockCmds::get_apple_copyright_page(uint8_t ctrl, uint8_t subpage, uint8_t *out_ptr,
+                                            int avail_len)
+{
+    if (subpage && subpage != 0xFFU)
+        return FORMAT_ERR_BAD_SUBPAGE;
+
+    if (ctrl == 3)
+        return FORMAT_ERR_BAD_CONTROL;
+
+    int page_size = 22;
+
+    if (page_size > avail_len)
+        return FORMAT_ERR_DATA_TOO_BIG;
+
+    std::memcpy(out_ptr, Apple_Copyright_Page_Data, page_size);
+
+    return page_size;
 }

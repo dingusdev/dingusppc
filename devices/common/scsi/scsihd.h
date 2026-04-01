@@ -40,7 +40,7 @@ public:
     void process_command() override;
 
 protected:
-    bool is_device_ready() override { return true; }
+    bool is_device_ready() override { return this->is_ready; }
 
     void mode_select_6(uint8_t param_len);
 
@@ -49,9 +49,6 @@ protected:
 
     int  get_rigid_geometry_page(uint8_t ctrl, uint8_t subpage, uint8_t *out_ptr,
                                  int avail_len);
-
-    int  get_apple_copyright_page(uint8_t ctrl, uint8_t subpage, uint8_t *out_ptr,
-                                  int avail_len);
 
     void format();
     void read_buffer();

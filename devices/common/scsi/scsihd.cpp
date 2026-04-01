@@ -53,7 +53,6 @@ ScsiHardDisk::ScsiHardDisk(std::string name, int my_id) : ScsiPhysDevice(name, m
 
     this->add_page_getter(this, ModePage::DEV_FORMAT_PARAMS, &ScsiHardDisk::get_dev_format_page);
     this->add_page_getter(this, ModePage::RIGID_DISK_GEOMETRY, &ScsiHardDisk::get_rigid_geometry_page);
-    this->add_page_getter(this, 0x30, &ScsiHardDisk::get_apple_copyright_page);
 }
 
 void ScsiHardDisk::insert_image(std::string filename) {
@@ -65,7 +64,7 @@ void ScsiHardDisk::insert_image(std::string filename) {
 
     this->is_writeable = true;
 
-    this->init_block_device(0, 0, 0);
+    this->init_block_device(0, 0, 0, true);
 }
 
 void ScsiHardDisk::process_command() {
@@ -171,27 +170,6 @@ int ScsiHardDisk::get_rigid_geometry_page(uint8_t ctrl, uint8_t subpage, uint8_t
     WRITE_WORD_BE_U(&out_ptr[1], num_cylinders & 0xFFFFU);
 
     out_ptr[3] = 4; // number of heads
-
-    return page_size;
-}
-
-static char Apple_Copyright_Page_Data[] = "APPLE COMPUTER, INC   ";
-
-int ScsiHardDisk::get_apple_copyright_page(uint8_t ctrl, uint8_t subpage, uint8_t *out_ptr,
-                                           int avail_len)
-{
-    if (subpage && subpage != 0xFFU)
-        return FORMAT_ERR_BAD_SUBPAGE;
-
-    if (ctrl == 3)
-        return FORMAT_ERR_BAD_CONTROL;
-
-    int page_size = 22;
-
-    if (page_size > avail_len)
-        return FORMAT_ERR_DATA_TOO_BIG;
-
-    std::memcpy(out_ptr, Apple_Copyright_Page_Data, page_size);
 
     return page_size;
 }
