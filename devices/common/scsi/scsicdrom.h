@@ -25,15 +25,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define SCSI_CDROM_H
 
 #include <devices/common/scsi/scsi.h>
-#include <devices/common/scsi/scsicommoncmds.h>
-#include <devices/storage/cdromdrive.h>
-#include <utils/imgfile.h>
+#include <devices/common/scsi/scsicdromcmds.h>
 
 #include <cinttypes>
-#include <memory>
 #include <string>
 
-class ScsiCdrom : public ScsiPhysDevice, public CdromDrive, public ScsiCommonCmds {
+class ScsiCdrom : public ScsiPhysDevice, public ScsiCdromCmds {
 public:
     ScsiCdrom(std::string name, int my_id);
     ~ScsiCdrom() = default;
@@ -41,27 +38,15 @@ public:
     virtual void process_command() override;
 
 protected:
-    bool is_device_ready() override { return true; }
+    bool is_device_ready() override { return this->is_ready; }
 
-    // temporary implementation that should be elsewhere
-    void get_medium_type(uint8_t& medium_type, uint8_t& dev_flags) override {
-        medium_type = 1; // 120mm CD-ROM data only
-        dev_flags   = 0;
-    }
+    int  get_apple_page_49(uint8_t subpage, uint8_t ctrl, uint8_t *out_ptr,
+                          int avail_len);
 
-    // temporary implementation that should be elsewhere
-    int format_block_descriptors(uint8_t* out_ptr) override;
-
-    void    read(uint32_t lba, uint16_t nblocks, uint8_t cmd_len);
-    void    mode_select_6(uint8_t param_len);
-
-    void    mode_sense_6();
-    void    read_capacity_10();
+    void mode_select_6(uint8_t param_len);
 
 private:
-    bool    eject_allowed = true;
-    int     bytes_out = 0;
-    uint8_t data_buf[2048] = {};
+    uint8_t data_buf[2048]  = {};
 };
 
 #endif // SCSI_CDROM_H
