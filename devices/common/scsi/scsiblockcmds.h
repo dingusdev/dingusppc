@@ -38,7 +38,7 @@ public:
         this->blk_dev = blk_dev_obj;
     }
 
-    void init_block_device(uint8_t medium_type, uint8_t dev_flags);
+    void init_block_device(uint8_t medium_type, uint8_t dev_flags, uint8_t density_code);
 
     virtual int read_new();
     virtual int write_new();
@@ -64,6 +64,7 @@ protected:
 
     uint8_t medium_type  = 0;
     uint8_t device_flags = 0;
+    uint8_t density_code = 0;
 };
 
 #endif // SCSI_BLOCK_COMMANDS_H

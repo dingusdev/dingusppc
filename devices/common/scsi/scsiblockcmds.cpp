@@ -38,7 +38,9 @@ ScsiBlockCmds::ScsiBlockCmds() {
                           &ScsiBlockCmds::get_error_recovery_page);
 }
 
-void ScsiBlockCmds::init_block_device(uint8_t medium_type, uint8_t dev_flags) {
+void ScsiBlockCmds::init_block_device(uint8_t medium_type, uint8_t dev_flags,
+                                      uint8_t density_code)
+{
     this->medium_type  = medium_type;
     this->device_flags = dev_flags;
 
@@ -215,13 +217,11 @@ int ScsiBlockCmds::read_capacity() {
 }
 
 int ScsiBlockCmds::format_block_descriptors(uint8_t* out_ptr) {
-    uint8_t density_code = 0;
-
     uint32_t nblocks = std::min((int64_t)this->blk_dev->get_size_in_blocks(),
                                 (int64_t)0xFFFFFFFFUL);
 
     WRITE_DWORD_BE_A(&out_ptr[0], nblocks);
-    WRITE_DWORD_BE_A(&out_ptr[4], (density_code << 24) |
+    WRITE_DWORD_BE_A(&out_ptr[4], (this->density_code << 24) |
                     (this->blk_dev->get_block_size() & 0xFFFFFF));
 
     return 8;

@@ -65,7 +65,7 @@ void ScsiHardDisk::insert_image(std::string filename) {
 
     this->is_writeable = true;
 
-    this->init_block_device(0, 0);
+    this->init_block_device(0, 0, 0);
 }
 
 void ScsiHardDisk::process_command() {
