@@ -130,7 +130,7 @@ bool int_pin = false; // interrupt request pin state: true - asserted
 bool dec_exception_pending = false;
 
 /* variables related to virtual time */
-const bool g_realtime = false;
+bool g_realtime = false;
 uint64_t g_nanoseconds_base;
 uint64_t g_icycles;
 int      icnt_factor;
@@ -360,6 +360,21 @@ uint64_t get_virt_time_ns()
     }
 }
 
+void set_virt_time_ns(uint64_t time_now)
+{
+    if (g_realtime) {
+        g_nanoseconds_base = cpu_now_ns() - time_now - 5000;
+    } else {
+        g_icycles = time_now >> icnt_factor;
+    }
+    uint64_t time_new = get_virt_time_ns();
+    if (g_realtime && time_new > time_now) {
+        g_nanoseconds_base += 2 * (time_new - time_now);
+        time_new = get_virt_time_ns();
+    }
+    LOG_F(INFO, "time before: %lld  after: %lld  change: %lld", time_now, time_new, time_new - time_now);
+}
+
 static uint64_t process_events()
 {
     exec_timer = false;
@@ -376,6 +391,40 @@ static void force_cycle_counter_reload()
 {
     // tell the interpreter loop to reload cycle counter
     exec_timer = true;
+}
+
+int increment_icnt_factor()
+{
+    uint64_t time_now = get_virt_time_ns();
+    icnt_factor += 1;
+    set_virt_time_ns(time_now);
+    force_cycle_counter_reload();
+    return icnt_factor;
+}
+
+int decrement_icnt_factor()
+{
+    if (icnt_factor > 0) {
+        uint64_t time_now = get_virt_time_ns();
+        icnt_factor -= 1;
+        set_virt_time_ns(time_now);
+        force_cycle_counter_reload();
+    }
+    return icnt_factor;
+}
+
+int get_icnt_factor()
+{
+    return icnt_factor;
+}
+
+bool toggle_g_realtime()
+{
+    uint64_t time_now = get_virt_time_ns();
+    g_realtime = !g_realtime;
+    set_virt_time_ns(time_now);
+    force_cycle_counter_reload();
+    return g_realtime;
 }
 
 typedef enum {
