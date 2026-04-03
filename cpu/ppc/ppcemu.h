@@ -691,4 +691,15 @@ extern void ppc_msr_did_change(uint32_t old_msr_val, uint32_t new_msr_val, bool 
 uint64_t get_reg(std::string reg_name); /* get content of the register reg_name */
 void set_reg(std::string reg_name, uint64_t val); /* set reg_name to val */
 
+/* icnt_factor control */
+extern int increment_icnt_factor();
+extern int decrement_icnt_factor();
+extern int get_icnt_factor();
+
+/* toggle_g_realtime */
+extern bool toggle_g_realtime();
+
+/* force_cycle_counter_reload */
+static void force_cycle_counter_reload();
+
 #endif /* PPCEMU_H */
