@@ -37,6 +37,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <csignal>
 #include <cstring>
+#include <fstream>
 #include <iostream>
 #include <optional>
 #include <CLI11.hpp>
@@ -106,6 +107,10 @@ int main(int argc, char** argv) {
     CLI::App app(appDescription);
     app.allow_windows_style_options(); /* we want Windows-style options */
     app.allow_extras();
+    app.allow_config_extras(CLI::config_extras_mode::capture);
+    app.config_formatter(std::make_shared<CLI::ConfigINI>());
+    app.set_config("-c,--config", "dingusppc.ini",
+        "Read an INI config file (default: dingusppc.ini in working directory)", false);
 
     bool realtime_enabled = false;
     bool debugger_enabled = false;
@@ -140,7 +145,8 @@ int main(int argc, char** argv) {
         "Send internal logging to stderr (instead of dingusppc.log)");
     app.add_flag("--log-verbosity", log_verbosity,
         "Adjust logging verbosity (default is 0 a.k.a. INFO)")
-        ->check(CLI::Number);
+        ->check(CLI::Number)
+        ->configurable(false);
     app.add_flag("--log-no-uptime", log_no_uptime,
         "Disable the uptime preamble of logged messages");
 
@@ -166,6 +172,13 @@ int main(int argc, char** argv) {
     list_cmd->add_option("machines", sub_arg, "List supported machines");
     list_cmd->add_option("properties", sub_arg, "List available properties");
 
+    string write_config_path;
+    app.add_option("--write-config", write_config_path,
+        "Write current configuration to a file and exit")
+        ->expected(0, 1)
+        ->default_val("dingusppc.ini")
+        ->configurable(false);
+
     CLI11_PARSE(app, argc, argv);
 
     if (*list_cmd) {
@@ -176,6 +189,68 @@ int main(int argc, char** argv) {
         } else {
             cout << "Unknown list subcommand " << sub_arg << endl;
         }
+        return 0;
+    }
+
+    if (app.count("--write-config")) {
+        std::ofstream out(write_config_path);
+        if (!out) {
+            cerr << "Cannot open " << write_config_path << " for writing" << endl;
+            return 1;
+        }
+        out << app.config_to_str(false, true);
+
+        auto escape_ini_string = [](const std::string& input) {
+            std::string escaped;
+            escaped.reserve(input.size());
+            for (char ch : input) {
+                switch (ch) {
+                case '\\': escaped += "\\\\"; break;
+                case '"': escaped += "\\\""; break;
+                case '\n': escaped += "\\n"; break;
+                case '\r': escaped += "\\r"; break;
+                case '\t': escaped += "\\t"; break;
+                default: escaped.push_back(ch); break;
+                }
+            }
+            return escaped;
+        };
+
+        // Append passthrough machine properties from CLI (--name=value)
+        // or config file (bare name, value pairs)
+        auto extras = app.remaining(false);
+        for (size_t i = 0; i < extras.size(); i++) {
+            std::string key, val;
+            auto &arg = extras[i];
+            if (arg.substr(0, 2) == "--") {
+                auto eq = arg.find('=');
+                if (eq != std::string::npos) {
+                    key = arg.substr(2, eq - 2);
+                    val = arg.substr(eq + 1);
+                } else if (i + 1 < extras.size() &&
+                           extras[i + 1].rfind("--", 0) != 0) {
+                    key = arg.substr(2);
+                    val = extras[++i];
+                } else {
+                    key = arg.substr(2);
+                    val = "true";
+                }
+            } else if (i + 1 < extras.size()) {
+                key = arg;
+                val = extras[++i];
+            } else {
+                continue;
+            }
+            // Quote values that contain spaces or special characters
+            bool needs_quote = val.find_first_of(" \t\n\r#;\"\\") != std::string::npos
+                            || val.empty();
+            if (needs_quote)
+                out << key << "=\"" << escape_ini_string(val) << "\"\n";
+            else
+                out << key << "=" << val << "\n";
+        }
+
+        cout << "Configuration written to " << write_config_path << endl;
         return 0;
     }
 
@@ -221,25 +296,29 @@ int main(int argc, char** argv) {
             return 1;
     }
 
-    // Hook to allow properties to be read from the command-line, regardless
-    // of when they are registered.
+    // Hook to allow properties to be read from the command-line or config
+    // file, regardless of when they are registered.
     MachineFactory::get_setting_value = [&](const std::string& name) -> std::optional<std::string> {
-        CLI::App sa;
-        sa.allow_extras();
-
-        std::string value;
-        sa.add_option("--" + name, value)->expected(0,1);
-        try {
-            sa.parse(app.remaining_for_passthrough());
-        } catch (const CLI::Error& e) {
-            ABORT_F("Cannot parse CLI: %s", e.get_name().c_str());
+        auto extras = app.remaining(false);
+        std::string dashed = "--" + name;
+        for (size_t i = 0; i < extras.size(); i++) {
+            auto &arg = extras[i];
+            // --name=value (from CLI)
+            if (arg.rfind(dashed + "=", 0) == 0) {
+                return arg.substr(dashed.size() + 1);
+            }
+            // --name value (from CLI, next element is the value)
+            if (arg == dashed && i + 1 < extras.size() &&
+                extras[i + 1].rfind("--", 0) != 0) {
+                return extras[i + 1];
+            }
+            // bare name from config file (next element is the value)
+            if (arg == name && arg.rfind("--", 0) != 0 &&
+                i + 1 < extras.size()) {
+                return extras[i + 1];
+            }
         }
-
-        if (sa.count("--" + name) > 0) {
-            return value;
-        } else {
-            return std::nullopt;
-        }
+        return std::nullopt;
     };
 
     if (MachineFactory::register_machine_settings(machine_str) < 0) {
