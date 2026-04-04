@@ -161,12 +161,12 @@ void DMAChannel::finish_cmd() {
     // perform actions under control of "i" interrupt, "b" branch, and "w" wait bits
     if (this->cur_cmd < DBDMA_Cmd::STOP) {
         // react to cmd.w (wait) bits
-        if (cmd_desc[2] & 3) {
+        if (saved_cmd_bits & 3) {
             bool cond = true;
-            if ((cmd_desc[2] & 3) != 3) {
+            if ((saved_cmd_bits & 3) != 3) {
                 uint16_t wt_mask = this->wait_select >> 16;
                 cond = (this->ch_stat & wt_mask) == (this->wait_select & wt_mask);
-                if ((cmd_desc[2] & 3) == 2) {
+                if ((saved_cmd_bits & 3) == 2) {
                     cond = !cond; // wait if cond = false
                 }
             }
@@ -178,12 +178,12 @@ void DMAChannel::finish_cmd() {
         this->ch_stat &= ~CH_STAT_BT;
 
         // react to cmd.b (branch) bits
-        if (cmd_desc[2] & 0xC) {
+        if (saved_cmd_bits & 0xC) {
             bool cond = true;
-            if ((cmd_desc[2] & 0xC) != 0xC) {
+            if ((saved_cmd_bits & 0xC) != 0xC) {
                 uint16_t br_mask = this->branch_select >> 16;
                 cond = (this->ch_stat & br_mask) == (this->branch_select & br_mask);
-                if ((cmd_desc[2] & 0xC) == 0x8) {
+                if ((saved_cmd_bits & 0xC) == 0x8) {
                     cond = !cond; // branch if cond = false
                 }
             }
