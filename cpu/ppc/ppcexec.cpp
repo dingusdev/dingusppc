@@ -81,7 +81,7 @@ bool dec_exception_pending = false;
 uint32_t    glob_bb_start_la;
 
 /* variables related to virtual time */
-const bool g_realtime = false;
+bool g_realtime = false;
 uint64_t g_nanoseconds_base;
 uint64_t g_icycles;
 int      icnt_factor;
@@ -288,6 +288,35 @@ static void force_cycle_counter_reload()
 {
     // tell the interpreter loop to reload cycle counter
     exec_timer = true;
+}
+
+int increment_icnt_factor()
+{
+    icnt_factor += 1;
+    force_cycle_counter_reload();
+    return icnt_factor;
+}
+
+int decrement_icnt_factor()
+{
+    icnt_factor -= 1;
+    force_cycle_counter_reload();
+    return icnt_factor;
+}
+
+int get_icnt_factor()
+{
+    return icnt_factor;
+}
+
+bool toggle_g_realtime()
+{
+    if (g_realtime == false)
+        g_realtime = true;
+    else if (g_realtime == true)
+        g_realtime = false;
+    force_cycle_counter_reload();
+    return g_realtime;
 }
 
 typedef enum {
