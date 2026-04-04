@@ -163,7 +163,7 @@ int ScsiHardDisk::get_rigid_geometry_page(uint8_t ctrl, uint8_t subpage, uint8_t
     std::memset(out_ptr, 0, page_size);
 
     // num_cylinders = total_blocks / sectors_per_track / number_of_heads
-    int num_cylinders = this->size_blocks / 64 / 4;
+    uint64_t num_cylinders = this->size_blocks / 64 / 4;
 
     // num_cylinders is a 24bit value!
     out_ptr[0] = (num_cylinders >> 16) & 0xFF;
