@@ -208,8 +208,9 @@ int ScsiBlockCmds::read_capacity() {
         return ScsiPhase::STATUS;
     }
 
-    uint32_t last_lba = this->blk_dev->get_size_in_blocks() - 1;
-    uint32_t blk_len  = this->blk_dev->get_block_size();
+    uint32_t last_lba = (uint32_t)std::min(
+        this->blk_dev->get_size_in_blocks() - 1, 0xFFFFFFFFULL);
+    uint32_t blk_len = this->blk_dev->get_block_size();
 
     WRITE_DWORD_BE_A(&this->buf_ptr[0], last_lba);
     WRITE_DWORD_BE_A(&this->buf_ptr[4], blk_len);
@@ -220,8 +221,8 @@ int ScsiBlockCmds::read_capacity() {
 }
 
 int ScsiBlockCmds::format_block_descriptors(uint8_t* out_ptr) {
-    uint32_t nblocks = std::min((int64_t)this->blk_dev->get_size_in_blocks(),
-                                (int64_t)0xFFFFFFFFUL);
+    uint32_t nblocks = (uint32_t)std::min(
+        this->blk_dev->get_size_in_blocks(), 0xFFFFFFFFULL);
 
     WRITE_DWORD_BE_A(&out_ptr[0], nblocks);
     WRITE_DWORD_BE_A(&out_ptr[4], (this->density_code << 24) |
