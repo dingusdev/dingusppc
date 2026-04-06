@@ -30,55 +30,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 TimerManager* TimerManager::timer_manager;
 
-uint32_t TimerManager::add_oneshot_timer(uint64_t timeout, timer_cb cb)
+uint32_t TimerManager::add_absolute_timer(uint64_t timeout_ns, uint64_t interval, timer_cb cb)
 {
     TimerInfo* ti = new TimerInfo;
 
     ti->id          = ++this->id;
-    ti->timeout_ns  = this->get_time_now() + timeout;
-    ti->interval_ns = 0;
-    ti->cb          = cb;
-
-    std::shared_ptr<TimerInfo> timer_desc(ti);
-
-    // add new timer to the timer queue
-    this->timer_queue.push(timer_desc);
-
-    // notify listeners about changes in the timer queue
-    if (!this->cb_active) {
-        this->notify_timer_changes();
-    }
-
-    return ti->id;
-}
-
-uint32_t TimerManager::add_immediate_timer(timer_cb cb) {
-    TimerInfo* ti = new TimerInfo;
-
-    ti->id          = ++this->id;
-    ti->timeout_ns  = this->get_time_now();
-    ti->interval_ns = 0;
-    ti->cb          = cb;
-
-    std::shared_ptr<TimerInfo> timer_desc(ti);
-
-    // add new timer to the timer queue
-    this->timer_queue.push(timer_desc);
-
-    // notify listeners about changes in the timer queue
-    if (!this->cb_active) {
-        this->notify_timer_changes();
-    }
-
-    return ti->id;
-}
-
-uint32_t TimerManager::add_cyclic_timer(uint64_t interval, uint64_t delay, timer_cb cb)
-{
-    TimerInfo* ti = new TimerInfo;
-
-    ti->id          = ++this->id;
-    ti->timeout_ns  = this->get_time_now() + delay;
+    ti->timeout_ns  = timeout_ns;
     ti->interval_ns = interval;
     ti->cb          = cb;
 
@@ -95,7 +52,23 @@ uint32_t TimerManager::add_cyclic_timer(uint64_t interval, uint64_t delay, timer
     return ti->id;
 }
 
-uint32_t TimerManager::add_cyclic_timer(uint64_t interval, timer_cb cb) {
+uint32_t TimerManager::add_oneshot_timer(uint64_t timeout, timer_cb cb)
+{
+    return TimerManager::add_absolute_timer(this->get_time_now() + timeout, 0, cb);
+}
+
+uint32_t TimerManager::add_immediate_timer(timer_cb cb)
+{
+    return TimerManager::add_absolute_timer(0, 0, cb);
+}
+
+uint32_t TimerManager::add_cyclic_timer(uint64_t interval, uint64_t delay, timer_cb cb)
+{
+    return TimerManager::add_absolute_timer(this->get_time_now() + delay, interval, cb);
+}
+
+uint32_t TimerManager::add_cyclic_timer(uint64_t interval, timer_cb cb)
+{
     return this->add_cyclic_timer(interval, interval, cb);
 }
 
