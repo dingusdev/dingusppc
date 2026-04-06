@@ -102,7 +102,8 @@ typedef struct TimerInfo {
 class MyGtComparator {
 public:
     bool operator()(const std::shared_ptr<TimerInfo>& l, const std::shared_ptr<TimerInfo>& r) {
-        return l.get()->timeout_ns > r.get()->timeout_ns;
+        return l.get()->timeout_ns > r.get()->timeout_ns ||
+            (l.get()->timeout_ns == r.get()->timeout_ns && l.get()->id > r.get()->id);
     }
 };
 
