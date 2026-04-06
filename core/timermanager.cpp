@@ -95,12 +95,16 @@ uint64_t TimerManager::process_timers()
     cur_timer = this->timer_queue.top();
 } // ] mtx scope
     while (cur_timer->timeout_ns <= time_now) {
+        uint64_t timeout_ns = cur_timer->timeout_ns;
         timer_cb cb = cur_timer->cb;
 
         // re-arm cyclic timers
         if (cur_timer->interval_ns) {
             std::lock_guard<std::recursive_mutex> lk(this->timer_queue.get_mtx());
-            cur_timer->timeout_ns = time_now + cur_timer->interval_ns;
+            uint64_t timeout_ns_new = timeout_ns + cur_timer->interval_ns;
+            if (timeout_ns_new <= time_now)
+                timeout_ns_new = time_now + cur_timer->interval_ns;
+            cur_timer->timeout_ns = timeout_ns_new;
             this->timer_queue.remove_by_id(cur_timer->id);
             this->timer_queue.push(cur_timer);
         } else {
