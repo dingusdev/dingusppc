@@ -41,6 +41,7 @@ constexpr auto ONE_BILLION_NS = 1000000000;
 #define MSECS_TO_NSECS(ms) (ms) * NS_PER_MSEC
 
 typedef std::function<void()> timer_cb;
+typedef std::function<void()> notify_changes_cb;
 
 /** Extend std::priority_queue as suggested here:
     https://stackoverflow.com/a/36711682
@@ -122,7 +123,7 @@ public:
     }
 
     // callback for acknowledging time changes
-    void set_notify_changes_cb(const timer_cb &cb) {
+    void set_notify_changes_cb(const notify_changes_cb &cb) {
         this->notify_timer_changes = cb;
     }
 
