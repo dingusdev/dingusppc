@@ -52,7 +52,7 @@ public:
     cubeb_stream *out_stream;
 
     uint32_t deterministic_poll_timer = 0;
-    std::function<void()> deterministic_poll_cb;
+    timer_cb deterministic_poll_cb;
 };
 
 SoundServer::SoundServer(): impl(std::make_unique<Impl>())
