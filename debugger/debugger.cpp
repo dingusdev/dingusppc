@@ -1167,7 +1167,7 @@ void DppcDebugger::enter_debugger() {
                 cout << exc.what() << endl;
                 continue;
             }
-            TimerManager::get_instance()->add_oneshot_timer(0, [irq_bit](){
+            TimerManager::get_instance()->add_oneshot_timer(0, [irq_bit](uint64_t, uint64_t){
                 ViaCuda* via_obj = dynamic_cast<ViaCuda*>(gMachineObj->get_comp_by_name("ViaCuda"));
                 via_obj->assert_int(irq_bit);
             });

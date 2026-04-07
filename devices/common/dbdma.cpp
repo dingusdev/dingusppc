@@ -291,7 +291,7 @@ void DMAChannel::update_irq(uint8_t cmd_bits) {
             }
             if (cond) {
                 if (int_ctrl) {
-                    TimerManager::get_instance()->add_immediate_timer([this] {
+                    TimerManager::get_instance()->add_immediate_timer([this](uint64_t, uint64_t) {
                         this->int_ctrl->ack_dma_int(this->irq_id, 1);
                     });
                 } else

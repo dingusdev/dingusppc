@@ -591,7 +591,7 @@ void PlatinumCtrl::enable_cursor_int() {
 
     this->cursor_task_id = TimerManager::get_instance()->add_cyclic_timer(
         cursor_int_freq,
-        [this]() {
+        [this](uint64_t, uint64_t) {
             this->update_irq(1, SWATCH_INT_CURSOR); // generate cursor interrupt
         }
     );

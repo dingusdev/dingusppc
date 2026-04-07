@@ -116,7 +116,7 @@ void AwacsBase::dma_in_data() {
 
         this->dma_in_timer_id = TimerManager::get_instance()->add_oneshot_timer(
             10000,
-            [this]() {
+            [this](uint64_t, uint64_t) {
                 // re-enter the sequencer with the state specified in next_state
                 this->dma_in_timer_id = 0;
                 this->dma_in_data();

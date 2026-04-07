@@ -107,7 +107,7 @@ void AppleRamdac::iodev_write(uint32_t address, uint16_t value) {
             }
             this->cursor_pos_lo   = value;
             this->cursor_timer_id = TimerManager::get_instance()->add_oneshot_timer(
-                NS_PER_SEC / 60, [this]() {
+                NS_PER_SEC / 60, [this](uint64_t, uint64_t) {
                     this->cursor_xpos = (this->cursor_xpos & 0xff00) | (this->cursor_pos_lo & 0x00ff);
                 });
 #else

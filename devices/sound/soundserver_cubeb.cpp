@@ -170,7 +170,7 @@ int SoundServer::open_out_stream(uint32_t sample_rate, DmaOutChannel *dma_ch)
     // Set up a cyclic-timer DMA drain callback. It keeps the guest sound DMA
     // advancing even if the host audio stream cannot be started, otherwise
     // the guest sound driver would stall forever waiting for DMA interrupts.
-    impl->deterministic_poll_cb = [dma_ch] {
+    impl->deterministic_poll_cb = [dma_ch](uint64_t, uint64_t) {
         if (!dma_ch->is_out_active()) {
            return;
         }

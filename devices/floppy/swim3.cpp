@@ -275,7 +275,7 @@ void Swim3Ctrl::start_stepping()
     if (this->step_count > 1) {
         this->step_timer_id = TimerManager::get_instance()->add_cyclic_timer(
             USECS_TO_NSECS(80),
-            [this]() {
+            [this](uint64_t, uint64_t) {
                 this->do_step();
             }
         );
@@ -319,7 +319,7 @@ void Swim3Ctrl::start_disk_access()
 
     this->access_timer_id = TimerManager::get_instance()->add_oneshot_timer(
         this->int_drive->sync_to_disk(),
-        [this]() {
+        [this](uint64_t, uint64_t) {
             this->cur_state = SWIM3_ADDR_MARK_SEARCH;
             this->disk_access();
         }
@@ -371,7 +371,7 @@ void Swim3Ctrl::disk_access()
 
     this->access_timer_id = TimerManager::get_instance()->add_oneshot_timer(
         delay,
-        [this]() {
+        [this](uint64_t, uint64_t) {
             this->disk_access();
         }
     );
@@ -401,7 +401,7 @@ void Swim3Ctrl::init_timer(const uint8_t start_val)
 
     this->one_us_timer_id = TimerManager::get_instance()->add_oneshot_timer(
         uint32_t(this->timer_val) * NS_PER_USEC,
-        [this]() {
+        [this](uint64_t, uint64_t) {
             this->timer_val = 0;
             this->int_flags |= INT_TIMER_DONE;
             update_irq();

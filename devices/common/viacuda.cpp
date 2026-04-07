@@ -252,7 +252,7 @@ void ViaCuda::write(int reg, uint8_t value) {
         // set up timeout timer for T2
         this->t2_timer_id = TimerManager::get_instance()->add_oneshot_timer(
             (this->via_clk_dur * (this->t2_counter + 3) + (uint64_t(1) << 36)) >> 37,
-            [this]() {
+            [this](uint64_t, uint64_t) {
                 this->t2_timer_id = 0;
                 this->assert_t2_int();
             }
@@ -306,7 +306,7 @@ void ViaCuda::activate_t1() {
     // set up timout timer for T1
     this->t1_timer_id = TimerManager::get_instance()->add_oneshot_timer(
         (this->via_clk_dur * (this->t1_counter + 3) + (uint64_t(1) << 36)) >> 37,
-        [this]() {
+        [this](uint64_t, uint64_t) {
             // reload the T1 counter from the corresponding latches
             this->t1_counter = (this->via_t1lh << 8) | this->via_t1ll;
             this->t1_timer_id = 0;
@@ -388,7 +388,7 @@ void ViaCuda::schedule_sr_int(uint64_t timeout_ns) {
     }
     this->sr_timer_id = TimerManager::get_instance()->add_oneshot_timer(
         timeout_ns,
-        [this]() {
+        [this](uint64_t, uint64_t) {
             this->sr_timer_id = 0;
             this->assert_sr_int();
         }
@@ -422,7 +422,7 @@ void ViaCuda::write(uint8_t new_state) {
                 // start response transaction
                 this->treq_timer_id = TimerManager::get_instance()->add_oneshot_timer(
                     USECS_TO_NSECS(13), // delay TREQ assertion for New World
-                    [this]() {
+                    [this](uint64_t, uint64_t) {
                         this->via_portb &= ~CUDA_TREQ; // assert TREQ
                         this->treq = 0;
                         this->treq_timer_id = 0;

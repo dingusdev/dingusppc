@@ -112,7 +112,7 @@ uint64_t TimerManager::process_timers()
         this->cb_active = true;
 
         // invoke timer callback
-        cb();
+        cb(time_now, timeout_ns);
 
         this->cb_active = false;
 

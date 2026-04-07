@@ -39,7 +39,7 @@ void ScsiPhysDevice::notify(ScsiNotification notif_type, int param)
                 LOG_F(9, "device %d selected", this->scsi_id);
                 TimerManager::get_instance()->add_oneshot_timer(
                     BUS_SETTLE_DELAY,
-                    [this]() {
+                    [this](uint64_t, uint64_t) {
                         // don't confirm selection if BSY or I/O are asserted
                         if (this->bus_obj->test_ctrl_lines(SCSI_CTRL_BSY | SCSI_CTRL_IO))
                             return;

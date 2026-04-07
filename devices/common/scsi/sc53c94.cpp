@@ -327,7 +327,7 @@ void Sc53C94::exec_command()
         }
         my_timer_id = TimerManager::get_instance()->add_oneshot_timer(
             USECS_TO_NSECS(25),
-            [this]() {
+            [this](uint64_t, uint64_t) {
                 my_timer_id = 0;
                 this->bus_obj->release_ctrl_line(this->my_bus_id, SCSI_CTRL_RST);
         });
@@ -485,7 +485,7 @@ void Sc53C94::seq_defer_state(uint64_t delay_ns)
     if (delay_ns) {
         this->seq_timer_id = TimerManager::get_instance()->add_oneshot_timer(
             delay_ns,
-            [this]() {
+            [this](uint64_t, uint64_t) {
                 // re-enter the sequencer with the state specified in next_state
                 this->seq_timer_id = 0;
                 this->cur_state = this->next_state;
@@ -493,7 +493,7 @@ void Sc53C94::seq_defer_state(uint64_t delay_ns)
         });
     } else {
         this->seq_timer_id = TimerManager::get_instance()->add_immediate_timer(
-            [this]() {
+            [this](uint64_t, uint64_t) {
                 // re-enter the sequencer with the state specified in next_state
                 this->seq_timer_id = 0;
                 this->cur_state = this->next_state;

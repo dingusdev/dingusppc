@@ -913,7 +913,7 @@ static uint32_t decrementer_timer_id = 0;
 
 static void update_decrementer(bool update_time_stamp, uint32_t oldval, uint32_t newval);
 
-static void trigger_decrementer_exception() {
+static void trigger_decrementer_exception(uint64_t = 0, uint64_t = 0) {
     if (ppc_state.msr & MSR::EE) {
         dec_exception_pending = false;
         //LOG_F(WARNING, "decrementer exception triggered");
@@ -925,7 +925,7 @@ static void trigger_decrementer_exception() {
     }
 }
 
-static void trigger_timed_decrementer_exception() {
+static void trigger_timed_decrementer_exception(uint64_t, uint64_t) {
     decrementer_timer_id = 0;
     uint32_t new_val = calc_dec_value();
     if (new_val >= 0 && new_val != uint32_t(-1)) {
@@ -935,7 +935,7 @@ static void trigger_timed_decrementer_exception() {
     trigger_decrementer_exception();
 }
 
-static void trigger_immediate_decrementer_exception() {
+static void trigger_immediate_decrementer_exception(uint64_t, uint64_t) {
     decrementer_timer_id = 0;
     update_decrementer(false, ppc_state.spr[SPR::DEC_S], ppc_state.spr[SPR::DEC_S]);
     trigger_decrementer_exception();

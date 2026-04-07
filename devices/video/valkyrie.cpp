@@ -193,7 +193,7 @@ void ValkyrieVideo::schedule_mode_switch() {
         TimerManager::get_instance()->cancel_timer(this->mode_timer_id);
 
     this->mode_timer_id = TimerManager::get_instance()->add_oneshot_timer(
-        MSECS_TO_NSECS(3), [this] {
+        MSECS_TO_NSECS(3), [this](uint64_t, uint64_t) {
         this->enable_video_internal();
     });
 }

@@ -33,7 +33,7 @@ using namespace Scsi_Bus_Controller;
 void ScsiBusController::seq_defer_state(uint64_t delay_ns) {
     seq_timer_id = TimerManager::get_instance()->add_oneshot_timer(
         delay_ns,
-        [this]() {
+        [this](uint64_t, uint64_t) {
             // re-enter the sequencer with the state specified in next_state
             this->cur_state = this->next_state;
             this->sequencer();

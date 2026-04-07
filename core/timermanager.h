@@ -40,7 +40,7 @@ constexpr auto ONE_BILLION_NS = 1000000000;
 #define USECS_TO_NSECS(us) (us) * NS_PER_USEC
 #define MSECS_TO_NSECS(ms) (ms) * NS_PER_MSEC
 
-typedef std::function<void()> timer_cb;
+typedef std::function<void(uint64_t timeout_ns, uint64_t time_now)> timer_cb;
 typedef std::function<void()> notify_changes_cb;
 
 /** Extend std::priority_queue as suggested here:

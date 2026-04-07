@@ -104,7 +104,7 @@ void VideoCtrlBase::start_refresh_task() {
     uint64_t refresh_interval = static_cast<uint64_t>(1.0f / refresh_rate * NS_PER_SEC + 0.5);
     this->refresh_task_id = TimerManager::get_instance()->add_cyclic_timer(
         refresh_interval,
-        [this]() {
+        [this](uint64_t, uint64_t) {
             // assert VBL interrupt
             this->vbl_cb(1);
             this->update_screen();
@@ -120,7 +120,7 @@ void VideoCtrlBase::start_refresh_task() {
     this->vbl_end_task_id = TimerManager::get_instance()->add_cyclic_timer(
         refresh_interval,
         refresh_interval + vbl_duration,
-        [this]() {
+        [this](uint64_t, uint64_t) {
             // deassert VBL interrupt
             this->vbl_cb(0);
         }
