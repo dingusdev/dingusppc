@@ -808,6 +808,7 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool do_include_6
 {
     mem_ctrl_instance = mem_ctrl;
 
+    int_pin = false;
     std::memset(&ppc_state, 0, sizeof(ppc_state));
     set_host_rounding_mode(0);
 
