@@ -100,11 +100,14 @@ void SoundServer::shutdown()
     case SND_SERVER_UP:
         /* fall through */
     case SND_API_READY:
+        if (!impl->cubeb_ctx)
+            break;
         cubeb_destroy(impl->cubeb_ctx);
+        impl->cubeb_ctx = nullptr;
         break;
     case SND_SERVER_DOWN:
         // Nothing to do.
-        break;
+        return;
     }
 
     impl->status = SND_SERVER_DOWN;
@@ -231,6 +234,8 @@ int SoundServer::start_out_stream()
 
 void SoundServer::close_out_stream()
 {
+    if (!impl->out_stream)
+        return;
     if (is_deterministic) {
         LOG_F(9, "Stopping sound output deterministic polling.");
         TimerManager::get_instance()->cancel_timer(impl->deterministic_poll_timer);
@@ -239,6 +244,7 @@ void SoundServer::close_out_stream()
     }
     cubeb_stream_stop(impl->out_stream);
     cubeb_stream_destroy(impl->out_stream);
+    impl->out_stream = nullptr;
     impl->status = SND_STREAM_CLOSED;
     LOG_F(9, "Sound output stream closed.");
 }
