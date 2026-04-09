@@ -1649,6 +1649,12 @@ void ppc_mmu_init()
         dbat_update = &ppc_dbat_update;
     }
 
+    int reg;
+    for (reg = 528; reg <= 535; reg++)
+        ibat_update(reg);
+    for (reg = 536; reg <= 543; reg++)
+        dbat_update(reg);
+
     // invalidate all IDTLB entries
     invalidate_tlb_entries(itlb1_mode1);
     invalidate_tlb_entries(itlb1_mode2);
