@@ -101,13 +101,14 @@ void VideoCtrlBase::set_cursor_dirty() {
 void VideoCtrlBase::start_refresh_task() {
     this->display.configure(this->active_width, this->active_height);
 
-    uint64_t refresh_interval = static_cast<uint64_t>(1.0f / refresh_rate * NS_PER_SEC + 0.5);
-    if (vert_blank == 0) {
+    uint64_t refresh_interval = static_cast<uint64_t>(1.0f / this->refresh_rate * NS_PER_SEC + 0.5);
+    if (this->vert_blank == 0) {
         LOG_F(ERROR, "Vertical blank is 0. Using 25 instead.");
-        vert_blank = 25;
+        this->vert_blank = 25;
     }
 
-    uint64_t vbl_duration = static_cast<uint64_t>((double)hori_total * vert_blank / this->pixel_clock * NS_PER_SEC + 0.5);
+    uint64_t vbl_duration = static_cast<uint64_t>((double)this->hori_total * this->vert_blank /
+        this->pixel_clock * NS_PER_SEC + 0.5);
     TimerManager::get_instance()->add_cyclic_timer(
         this->refresh_timer,
         refresh_interval,
