@@ -379,7 +379,7 @@ static PATResult page_address_translation(uint32_t la, bool is_instr_fetch,
     };
 }
 
-MapDmaResult mmu_map_dma_mem(uint32_t addr, uint32_t size, bool allow_mmio) {
+MapDmaResult mmu_map_dma_mem(uint32_t addr, uint32_t size, bool allow_mmio, bool is_dbg) {
     MMIODevice      *devobj  = nullptr;
     uint8_t         *host_va = nullptr;
     uint32_t        dev_base = 0;
@@ -389,24 +389,27 @@ MapDmaResult mmu_map_dma_mem(uint32_t addr, uint32_t size, bool allow_mmio) {
 
     cur_dma_rgn = mem_ctrl_instance->find_range(addr);
     if (!cur_dma_rgn) {
+        if (is_dbg) goto fail;
         ABORT_F("SOS: DMA access to unmapped physical memory 0x%08X..0x%08X!",
             addr, addr + size - 1
         );
     }
 
     if (addr + size - 1 > cur_dma_rgn->end) {
-        if (cur_dma_rgn->type & (RT_ROM | RT_RAM))
-            LOG_F(WARNING, "this region: 0x%08X..0x%08X (host: 0x%08llX..0x%08llX)",
-                cur_dma_rgn->start, cur_dma_rgn->end,
-                uint64_t(cur_dma_rgn->mem_ptr),
-                uint64_t(cur_dma_rgn->mem_ptr + cur_dma_rgn->end - cur_dma_rgn->start)
-            );
-        else
-            LOG_F(ERROR, "this region: 0x%08X..0x%08X",
-                cur_dma_rgn->start, cur_dma_rgn->end
-            );
+        if (!is_dbg) {
+            if (cur_dma_rgn->type & (RT_ROM | RT_RAM))
+                LOG_F(WARNING, "this region: 0x%08X..0x%08X (host: 0x%08llX..0x%08llX)",
+                    cur_dma_rgn->start, cur_dma_rgn->end,
+                    uint64_t(cur_dma_rgn->mem_ptr),
+                    uint64_t(cur_dma_rgn->mem_ptr + cur_dma_rgn->end - cur_dma_rgn->start)
+                );
+            else
+                LOG_F(ERROR, "this region: 0x%08X..0x%08X",
+                    cur_dma_rgn->start, cur_dma_rgn->end
+                );
+        }
         next_dma_rgn = mem_ctrl_instance->find_range(cur_dma_rgn->end + 1);
-        if (next_dma_rgn) {
+        if (!is_dbg && next_dma_rgn) {
             if (next_dma_rgn->type & (RT_ROM | RT_RAM))
                 LOG_F(WARNING, "next region: 0x%08X..0x%08X (host: 0x%08llX..0x%08llX)",
                     next_dma_rgn->start, next_dma_rgn->end,
@@ -424,11 +427,13 @@ MapDmaResult mmu_map_dma_mem(uint32_t addr, uint32_t size, bool allow_mmio) {
             (next_dma_rgn->mem_ptr == cur_dma_rgn->mem_ptr + cur_dma_rgn->end - cur_dma_rgn->start + 1) &&
             (addr + size - 1 <= next_dma_rgn->end)
         ) {
-            LOG_F(INFO, "DMA to physical memory 0x%08X..0x%08X is OK!"
-                " The regions are the same type and adjacent in host and guest spaces.",
-                addr, addr + size - 1
-            );
+            if (!is_dbg)
+                LOG_F(INFO, "DMA to physical memory 0x%08X..0x%08X is OK!"
+                    " The regions are the same type and adjacent in host and guest spaces.",
+                    addr, addr + size - 1
+                );
         } else {
+            if (is_dbg) goto fail;
             ABORT_F("SOS: DMA access to unmapped physical memory 0x%08X..0x%08X because size extends outside region!",
                 addr, addr + size - 1
             );
@@ -436,6 +441,7 @@ MapDmaResult mmu_map_dma_mem(uint32_t addr, uint32_t size, bool allow_mmio) {
     }
 
     if ((cur_dma_rgn->type & RT_MMIO) && !allow_mmio) {
+        if (is_dbg) goto fail;
         ABORT_F("SOS: DMA access to a MMIO region 0x%08X..0x%08X (%s) for physical memory 0x%08X..0x%08X is not allowed.",
             cur_dma_rgn->start, cur_dma_rgn->end, cur_dma_rgn->devobj->get_name().c_str(), addr, addr + size - 1
         );
@@ -451,6 +457,8 @@ MapDmaResult mmu_map_dma_mem(uint32_t addr, uint32_t size, bool allow_mmio) {
     }
 
     return MapDmaResult{cur_dma_rgn->type, is_writable, host_va, devobj, dev_base};
+fail:
+    return MapDmaResult{RT_NONE, false, nullptr, nullptr, 0};
 }
 
 // primary ITLB for all MMU modes

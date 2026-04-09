@@ -41,10 +41,11 @@ enum {
 };
 
 enum RangeType {
+    RT_NONE   = 0,
     RT_ROM    = 1, // read-only memory
     RT_RAM    = 2, // random access memory
     RT_MMIO   = 4, // memory mapped I/O
-    RT_MIRROR = 8  // region mirror (content of another region acessible at some
+    RT_MIRROR = 8, // region mirror (content of another region acessible at some
                    // other address)
 };
 

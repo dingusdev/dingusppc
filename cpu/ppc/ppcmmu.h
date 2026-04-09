@@ -123,7 +123,7 @@ extern std::function<void(uint32_t bat_reg)> dbat_update;
 extern PPC_BAT_entry ibat_array[4];
 extern PPC_BAT_entry dbat_array[4];
 
-extern MapDmaResult mmu_map_dma_mem(uint32_t addr, uint32_t size, bool allow_mmio);
+extern MapDmaResult mmu_map_dma_mem(uint32_t addr, uint32_t size, bool allow_mmio = false, bool is_dbg = false);
 
 extern void mmu_change_mode(void);
 extern void mmu_pat_ctx_changed();
