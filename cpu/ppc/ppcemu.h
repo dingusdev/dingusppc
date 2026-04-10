@@ -179,7 +179,6 @@ SUPERVISOR MODEL
 536 - 543 are the Data BAT registers
 **/
 
-extern uint64_t timebase_counter;
 extern uint64_t tbr_wr_timestamp;
 extern uint64_t dec_wr_timestamp;
 extern uint64_t rtc_timestamp;

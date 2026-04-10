@@ -103,7 +103,6 @@ uint32_t tbr_freq_ghz;      // TBR/RTC driving frequency in GHz expressed as a
 uint32_t tbr_freq_shift;    // If 32 bits is not sufficient, then include a shift.
 uint64_t tbr_period_ns;     // TBR/RTC period in ns expressed as a 64 bit value
                             // with 32 fractional bits (<1 Hz minimum).
-uint64_t timebase_counter;  // internal timebase counter
 uint64_t dec_wr_timestamp;  // stores vCPU virtual time of the last DEC write
 uint32_t dec_wr_value;      // last value written to the DEC register
 uint32_t rtc_lo;            // MPC601 RTC lower, counts nanoseconds
@@ -948,7 +947,6 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool do_include_6
     exec_flags = 0;
     exec_timer = false;
 
-    timebase_counter = 0;
     dec_wr_value = 0;
 
 #ifdef LOG_INSTRUCTIONS
