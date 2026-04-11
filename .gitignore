@@ -33,6 +33,7 @@ compile_commands.json
 # Ignore generated executables
 dingusppc
 dingusppc.exe
+dingusppc.ini
 
 # Ignore system files
 .DS_Store
