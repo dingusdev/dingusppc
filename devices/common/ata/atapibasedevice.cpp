@@ -62,7 +62,9 @@ uint16_t AtapiBaseDevice::read(const uint8_t reg_addr) {
                     if (this->data_available()) {
                         this->r_status &= ~DRQ;
                         this->r_status |= BSY;
-                        this->update_intrq(1); // Is this going to work here? The interrupt happens before returning ret_data.
+                        // Is this going to work here?
+                        // The interrupt happens before returning ret_data.
+                        this->update_intrq(1);
                     }
                     else if (this->status_expected) {
                         this->present_status();
@@ -102,13 +104,22 @@ uint16_t AtapiBaseDevice::read(const uint8_t reg_addr) {
 void AtapiBaseDevice::write(const uint8_t reg_addr, const uint16_t value) {
     switch (reg_addr) {
     case ATA_Reg::DATA:
-        if (has_data()) {
-            *this->data_ptr++ = BYTESWAP_16(value);
-            this->xfer_cnt -= 2;
-            if (this->xfer_cnt <= 0) {
-                this->r_status &= ~DRQ;
-                if (this->r_int_reason & CoD) {
-                    this->perform_packet_command();
+        if (!(this->r_int_reason & ATAPI_Int_Reason::IO)) { // host --> device?
+            if (this->r_int_reason & ATAPI_Int_Reason::CoD) { // command phase?
+                if (this->xfer_cnt > 0) {
+                    *this->data_ptr++ = BYTESWAP_16(value);
+                    this->xfer_cnt -= 2;
+                    if (this->xfer_cnt <= 0) {
+                        this->r_status &= ~DRQ;
+                        this->perform_packet_command();
+                    }
+                }
+            } else { // data-out phase
+                if (this->xfer_cnt > 0) {
+                    *this->data_ptr++ = BYTESWAP_16(value);
+                    this->xfer_cnt -= 2;
+                    if (this->xfer_cnt <= 0)
+                        this->r_status &= ~DRQ;
                 }
             }
         }
