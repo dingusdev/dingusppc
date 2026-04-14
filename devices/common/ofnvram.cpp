@@ -85,7 +85,7 @@ bool OfConfigAppl::validate() {
     }
 
     // verify partition checksum
-    if (this->checksum_partition() ^ 0xFFFFU)
+    if (this->checksum_partition() != 0xFFFFU)
         return false;
 
     return true;
@@ -189,7 +189,7 @@ void OfConfigAppl::update_partition() {
 
     // calculate new checksum
     uint16_t checksum = this->checksum_partition();
-    checksum = checksum ? ~checksum : 0xFFFFU;
+    checksum = ~checksum;
 
     // stuff checksum into the header
     WRITE_WORD_BE_A(&this->buf[4], checksum);
