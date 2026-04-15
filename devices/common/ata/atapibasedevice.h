@@ -48,7 +48,7 @@ public:
     virtual bool data_available() = 0;
 
     // methods with default implementation
-    virtual void data_out_phase();
+    virtual void data_in_phase();
     virtual void present_status();
 
 protected:

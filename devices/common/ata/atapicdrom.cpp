@@ -93,7 +93,7 @@ void AtapiCdrom::perform_packet_command() {
             this->xfer_cnt = std::min((uint32_t)this->r_byte_count, xfer_len);
             this->data_ptr = (uint16_t*)this->data_buf;
             this->status_good();
-            this->data_out_phase();
+            this->data_in_phase();
         }
         break;
     case ScsiCommand::INQUIRY:
@@ -101,7 +101,7 @@ void AtapiCdrom::perform_packet_command() {
         this->r_byte_count = this->xfer_cnt;
         this->data_ptr = (uint16_t*)this->data_buf;
         this->status_good();
-        this->data_out_phase();
+        this->data_in_phase();
         break;
     case ScsiCommand::START_STOP_UNIT:
         if ((this->cmd_pkt[4] & 3) == 2) {
@@ -121,7 +121,7 @@ void AtapiCdrom::perform_packet_command() {
         this->r_byte_count = this->xfer_cnt;
         this->data_ptr = (uint16_t*)this->data_buf;
         this->status_good();
-        this->data_out_phase();
+        this->data_in_phase();
         break;
     case ScsiCommand::READ_TOC:
         this->status_good();
@@ -131,7 +131,7 @@ void AtapiCdrom::perform_packet_command() {
         } else {
             this->xfer_cnt = std::min((uint32_t)this->r_byte_count, xfer_len);
             this->data_ptr = (uint16_t*)this->data_buf;
-            this->data_out_phase();
+            this->data_in_phase();
         }
         break;
     case ScsiCommand::MODE_SENSE_6:
@@ -142,7 +142,7 @@ void AtapiCdrom::perform_packet_command() {
             this->r_byte_count = this->xfer_cnt;
             this->data_ptr     = (uint16_t*)this->data_buf;
             this->status_good();
-            this->data_out_phase();
+            this->data_in_phase();
         }
         break;
     case ScsiCommand::MODE_SENSE_10:
@@ -153,7 +153,7 @@ void AtapiCdrom::perform_packet_command() {
             this->r_byte_count = this->xfer_cnt;
             this->data_ptr = (uint16_t*)this->data_buf;
             this->status_good();
-            this->data_out_phase();
+            this->data_in_phase();
         }
         break;
     case ScsiCommand::READ_6:
@@ -175,7 +175,7 @@ void AtapiCdrom::perform_packet_command() {
         this->r_byte_count = this->xfer_cnt;
         this->data_ptr = (uint16_t*)this->data_cache.get();
         this->status_good();
-        this->data_out_phase();
+        this->data_in_phase();
         break;
     case ScsiCommand::READ_10:
         if (this->xfer_cnt > 0) {
@@ -205,9 +205,9 @@ void AtapiCdrom::perform_packet_command() {
         this->status_good();
         #if 0
             TimerManager::get_instance()->add_oneshot_timer(
-                USECS_TO_NSECS(100), [this]() { this->data_out_phase(); });
+                USECS_TO_NSECS(100), [this]() { this->data_in_phase(); });
         #else
-            this->data_out_phase();
+            this->data_in_phase();
         #endif
         break;
     case ScsiCommand::READ_12:
@@ -229,7 +229,7 @@ void AtapiCdrom::perform_packet_command() {
         this->r_byte_count = this->xfer_cnt;
         this->data_ptr = (uint16_t*)this->data_cache.get();
         this->status_good();
-        this->data_out_phase();
+        this->data_in_phase();
         break;
     case ScsiCommand::SET_CD_SPEED:
         LOG_F(INFO, "%s: speed set to %d kBps", this->name.c_str(),
@@ -313,7 +313,7 @@ void AtapiCdrom::perform_packet_command() {
 
         this->data_ptr = (uint16_t*)this->data_cache.get();
         this->status_good();
-        this->data_out_phase();
+        this->data_in_phase();
         break;
     }
     case ScsiCommand::GET_CONFIG: {
@@ -324,7 +324,7 @@ void AtapiCdrom::perform_packet_command() {
             this->xfer_cnt = std::min((int)this->r_byte_count, this->xfer_cnt);
             this->data_ptr = (uint16_t*)this->data_buf;
             this->status_good();
-            this->data_out_phase();
+            this->data_in_phase();
         }
         break;
     }

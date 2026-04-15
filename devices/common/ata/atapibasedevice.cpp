@@ -92,7 +92,7 @@ uint16_t AtapiBaseDevice::read(const uint8_t reg_addr) {
     case ATA_Reg::ALT_STATUS:
         if (this->r_status & BSY && this->data_available()) {
             this->r_byte_count = this->request_data();
-            this->data_out_phase();
+            this->data_in_phase();
         }
         return this->r_status;
     default:
@@ -179,7 +179,7 @@ int AtapiBaseDevice::perform_command() {
         this->data_ptr = (uint16_t *)this->data_buf;
         this->xfer_cnt = 512;
         this->status_expected = false;
-        this->data_out_phase();
+        this->data_in_phase();
         break;
     case SET_FEATURES:
         switch (this->r_features) {
@@ -204,7 +204,7 @@ int AtapiBaseDevice::perform_command() {
     return 0;
 }
 
-void AtapiBaseDevice::data_out_phase() {
+void AtapiBaseDevice::data_in_phase() {
     this->r_int_reason |= ATAPI_Int_Reason::IO; // device->host
     this->r_int_reason &= ~ATAPI_Int_Reason::CoD; // data
     this->signal_data_ready();
