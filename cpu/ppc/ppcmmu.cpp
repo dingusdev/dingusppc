@@ -378,7 +378,9 @@ static PATResult page_address_translation(uint32_t la, bool is_instr_fetch,
     };
 }
 
-MapDmaResult mmu_map_dma_mem(uint32_t addr, uint32_t size, bool allow_mmio, bool is_dbg) {
+MapDmaResult mmu_map_dma_mem(uint32_t addr, uint32_t size,
+    bool allow_mmio, bool allow_partial, bool is_dbg)
+{
     MMIODevice      *devobj  = nullptr;
     uint8_t         *host_va = nullptr;
     uint32_t        dev_base = 0;
@@ -432,10 +434,18 @@ MapDmaResult mmu_map_dma_mem(uint32_t addr, uint32_t size, bool allow_mmio, bool
                     addr, addr + size - 1
                 );
         } else {
-            if (is_dbg) goto fail;
-            ABORT_F("SOS: DMA access to unmapped physical memory 0x%08X..0x%08X because size extends outside region!",
-                addr, addr + size - 1
-            );
+            if (allow_partial) {
+                if (!is_dbg)
+                    LOG_F(INFO, "DMA access to physical memory 0x%08X..0x%08X spans regions!",
+                        addr, addr + size - 1
+                    );
+                size = cur_dma_rgn->end - addr + 1;
+            } else {
+                if (is_dbg) goto fail;
+                ABORT_F("DMA access to physical memory 0x%08X..0x%08X spans regions!",
+                    addr, addr + size - 1
+                );
+            }
         }
     }
 
@@ -455,9 +465,18 @@ MapDmaResult mmu_map_dma_mem(uint32_t addr, uint32_t size, bool allow_mmio, bool
         is_writable = true; // all MMIO devices must provide a write method
     }
 
-    return MapDmaResult{cur_dma_rgn->type, is_writable, host_va, devobj, dev_base};
+    return MapDmaResult{
+        .type = cur_dma_rgn->type,
+        .size = size,
+        .is_writable = is_writable,
+        .host_va = host_va,
+        .dev_obj = devobj,
+        .dev_base = dev_base,
+    };
 fail:
-    return MapDmaResult{RT_NONE, false, nullptr, nullptr, 0};
+    return MapDmaResult{
+        .type = RT_NONE
+    };
 }
 
 constexpr uint32_t TLB_SIZE        = 4096;

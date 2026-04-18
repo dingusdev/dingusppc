@@ -688,10 +688,10 @@ DmaPullResult AmicSndOutDma::pull_data(uint32_t req_len, uint32_t *avail_len,
 
     MapDmaResult res = mmu_map_dma_mem(
         (this->snd_buf_num ? this->out_buf1 : this->out_buf0) + this->cur_buf_pos,
-        len, false);
+        len, false, true);
     *p_data = res.host_va;
-    this->cur_buf_pos += len;
-    *avail_len = len;
+    this->cur_buf_pos += res.size;
+    *avail_len = res.size;
     return DmaPullResult::MoreData;
 }
 
@@ -724,15 +724,19 @@ DmaPushResult AmicFloppyDma::push_data(const char* src_ptr, int len)
 {
     len = std::min((int)this->byte_count, len);
 
-    MapDmaResult res = mmu_map_dma_mem(this->addr_ptr, len, false);
-    uint8_t *p_data = res.host_va;
-    if (!res.is_writable) {
-        ABORT_F("AMIC: attempting DMA write to read-only memory");
-    }
-    std::memcpy(p_data, src_ptr, len);
+    do {
+        MapDmaResult res = mmu_map_dma_mem(this->addr_ptr, len, false, true);
+        uint8_t *p_data = res.host_va;
+        if (!res.is_writable) {
+            ABORT_F("AMIC: attempting DMA write to read-only memory");
+        }
+        std::memcpy(p_data, src_ptr, res.size);
 
-    this->addr_ptr += len;
-    this->byte_count -= len;
+        this->addr_ptr += res.size;
+        this->byte_count -= res.size;
+        src_ptr += res.size;
+        len -= res.size;
+    } while (len > 0);
     if (!this->byte_count) {
         LOG_F(WARNING, "AMIC: DMA interrupts not implemented yet");
     }
@@ -783,12 +787,17 @@ void AmicScsiDma::xfer_from_device() {
 
     uint32_t len = this->dev_obj->tell_xfer_size(this);
 
-    MapDmaResult res = mmu_map_dma_mem(this->addr_ptr, len, false);
+    do {
+        MapDmaResult res = mmu_map_dma_mem(this->addr_ptr, len, false, true);
 
-    int got_bytes = this->dev_obj->xfer_from(this, res.host_va, len);
-    if (got_bytes > 0) {
-        this->addr_ptr += got_bytes;
-    }
+        int got_bytes = this->dev_obj->xfer_from(this, res.host_va, res.size);
+        if (got_bytes > 0) {
+            this->addr_ptr += got_bytes;
+        }
+        if (got_bytes < res.size)
+            break;
+        len -= res.size;
+    } while (len > 0);
 }
 
 void AmicScsiDma::xfer_to_device() {
@@ -799,12 +808,17 @@ void AmicScsiDma::xfer_to_device() {
 
     uint32_t len = this->dev_obj->tell_xfer_size(this);
 
-    MapDmaResult res = mmu_map_dma_mem(this->addr_ptr, len, false);
+    do {
+        MapDmaResult res = mmu_map_dma_mem(this->addr_ptr, len, false, true);
 
-    int got_bytes = this->dev_obj->xfer_to(this, res.host_va, len);
-    if (got_bytes > 0) {
-        this->addr_ptr += got_bytes;
-    }
+        int got_bytes = this->dev_obj->xfer_to(this, res.host_va, res.size);
+        if (got_bytes > 0) {
+            this->addr_ptr += got_bytes;
+        }
+        if (got_bytes < res.size)
+            break;
+        len -= res.size;
+    } while (len > 0);
 }
 
 void AmicScsiDma::xfer_retry() {
