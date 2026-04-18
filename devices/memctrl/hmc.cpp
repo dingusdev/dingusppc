@@ -57,12 +57,15 @@ void HMC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
     switch(offset) {
         case 0:
             bit = 1ULL << this->bit_pos++;
-            this->ctrl_reg = (value & 1) ? this->ctrl_reg | bit :
-                               this->ctrl_reg & ~bit;
+            this->ctrl_reg = (value & 1) ?
+                this->ctrl_reg | bit
+            :
+                this->ctrl_reg & ~bit;
             if (this->bit_pos >= HMC_CTRL_BITS) {
                 this->bit_pos = 0;
-                if (((this->ctrl_reg >> HMC_RAM_CFG_POS) & 3) != this->bank_config) {
-                    this->bank_config = (this->ctrl_reg >> HMC_RAM_CFG_POS) & 3;
+                uint8_t new_bank_config = (this->ctrl_reg >> HMC_RAM_CFG_POS) & 3;
+                if (new_bank_config != this->bank_config) {
+                    this->bank_config = new_bank_config;
                     this->remap_ram_regions();
                 }
             }
@@ -76,7 +79,7 @@ void HMC::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
 void HMC::remap_ram_regions() {
     uint32_t bank_b_addr;
 
-    switch (this->bank_config & 3) {
+    switch (this->bank_config) {
     case BANK_CFG_128MB:
         bank_b_addr = BANK_B_START;
         break;
@@ -165,7 +168,8 @@ int HMC::install_ram(uint32_t mb_bank_size, uint32_t bank_a_size, uint32_t bank_
         // for the warm start signature.
         if (bank_a_size < BANK_SIZE_8MB) {
             for (uint32_t alias_start = BANK_B_START + bank_a_size - BANK_SIZE_8MB;
-                 alias_start < BANK_B_START; alias_start += bank_a_size) {
+                alias_start < BANK_B_START; alias_start += bank_a_size
+            ) {
                 if (!this->add_mem_mirror(alias_start, this->bank_a_start)) {
                     LOG_F(ERROR, "%s: could not create alias for RAM bank A!",
                           this->name.c_str());
