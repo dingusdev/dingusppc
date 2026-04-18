@@ -252,6 +252,7 @@ public:
 protected:
     void reset_device();
     void update_command_reg(uint8_t cmd);
+    void update_phase_latch();
     void exec_command();
     void exec_next_command();
     void fifo_push(const uint8_t data);
@@ -288,6 +289,10 @@ private:
     uint8_t     config1 = 0;
     uint8_t     config2 = 0;
     uint8_t     config3 = 0;
+
+    // bus phase latch
+    bool        phase_latch_closed = false;
+    uint8_t     phase_latch = 0;
 
     // sequencer state
     uint32_t    seq_timer_id = 0;

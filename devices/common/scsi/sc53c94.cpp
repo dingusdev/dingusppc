@@ -96,14 +96,9 @@ uint8_t Sc53C94::read(uint8_t reg_offset)
     case Read::Reg53C94::Command:
         return this->cmd_fifo[0];
     case Read::Reg53C94::Status:
-        if (this->config2 & CFG2_ENF) {
-            static bool log_it = true;
-            if (log_it) {
-                LOG_F(WARNING, "%s: phase latch not implemented", this->name.c_str());
-                log_it = false;
-            }
-            bus_phase = SCSI_CTRL_MSG; // use reserved bus phase
-        } else
+        if (this->config2 & CFG2_ENF)
+            bus_phase = this->phase_latch;
+        else
             bus_phase = bus_obj->test_ctrl_lines(SCSI_CTRL_MSG | SCSI_CTRL_CD | SCSI_CTRL_IO);
         return (this->status & 0xF8) | bus_phase;
     case Read::Reg53C94::Int_Status:
@@ -113,6 +108,8 @@ uint8_t Sc53C94::read(uint8_t reg_offset)
             this->int_status = 0;
             this->seq_step = 0;
         }
+        if (this->phase_latch_closed)
+            this->phase_latch_closed = false; // open the bus phase latch
         this->update_irq();
         return int_flags;
     case Read::Reg53C94::Seq_Step:
@@ -346,8 +343,10 @@ void Sc53C94::exec_command()
         if (this->is_initiator) {
             this->bus_obj->target_next_step();
         }
-        this->int_status |= INTSTAT_SR;
-        this->update_irq();
+        // SCSI Manager expects this function to generate an interrupt.
+        // Don't set INTSTAT_SR or INISTAT_SO bits - that will confuse
+        // the SCSI driver in Open Firmware!
+        // Let's hope the target hung up already causing INTSTAT_DIS to be set.
         exec_next_command();
         break;
     case CMD_XFER_PAD_BYTES:
@@ -564,6 +563,7 @@ void Sc53C94::sequencer()
     case SeqState::CMD_COMPLETE:
         this->is_dma_xfer = false;
         this->cur_state = SeqState::IDLE;
+        this->update_phase_latch();
         this->update_irq();
         exec_next_command();
         break;
@@ -612,8 +612,9 @@ void Sc53C94::sequencer()
         if (this->is_initiator) {
             this->bus_obj->target_next_step();
         }
-        this->int_status = INTSTAT_SR;
         this->cur_state = SeqState::IDLE;
+        this->update_phase_latch();
+        this->int_status = INTSTAT_SR;
         this->update_irq();
         exec_next_command();
         break;
@@ -667,6 +668,19 @@ void Sc53C94::update_irq()
     }
 }
 
+void Sc53C94::update_phase_latch() {
+    if (this->config2 & CFG2_ENF) {
+        if (this->phase_latch_closed) {
+            LOG_F(WARNING, "%s: ignored update of the closed bus phase latch",
+                  this->name.c_str());
+        } else {
+            this->phase_latch = bus_obj->test_ctrl_lines(
+                SCSI_CTRL_MSG | SCSI_CTRL_CD | SCSI_CTRL_IO);
+            this->phase_latch_closed = true;
+        }
+    }
+}
+
 void Sc53C94::notify(ScsiNotification notif_type, int param)
 {
     switch (notif_type) {
@@ -699,8 +713,10 @@ void Sc53C94::notify(ScsiNotification notif_type, int param)
                 this->seq_step   = this->cur_step;
                 this->int_status = this->cmd_steps->status;
                 this->update_irq();
-                if (this->cmd_steps->next_state == SeqState::CMD_COMPLETE)
+                if (this->cmd_steps->next_state == SeqState::CMD_COMPLETE) {
+                    this->update_phase_latch();
                     this->exec_next_command();
+                }
             }
         }
         break;
