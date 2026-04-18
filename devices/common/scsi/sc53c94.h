@@ -150,14 +150,16 @@ enum {
     INTSTAT_SEL     = 0x01, // selected as a target without attention
 };
 
-/** Configuration register 1 bits. */
-enum {
+/** Configuration register 1 bit definitions. */
+enum : uint8_t {
     CFG1_DISR       = 0x40, // disable interrupt on SCSI reset
 };
 
-/** Configuration register 2 bits. */
-enum {
-    CFG2_ENF        = 0x40, // Am53CF94: enable features (ENF) bit
+/** Configuration register 2 bit definitions. */
+enum : uint8_t {
+    CFG2_ENF        = 0x40, // Am53CF94: enable extended chip features
+                            // ASC: enable phase latch (EPL)
+    CFG2_S2FE       = 0x08, // enable SCSI-2 features
 };
 
 /** Sequencer states. */
