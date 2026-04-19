@@ -297,6 +297,7 @@ private:
     bool        is_initiator = false;
     uint8_t     cur_cmd = 0;
     bool        is_dma_cmd = false;
+    bool        is_dma_xfer = false;
     int         cur_bus_phase = 0;
     uint8_t     cur_step = 0; // internal step counter for multistep commands
 

@@ -538,6 +538,7 @@ void Sc53C94::sequencer()
         break;
     case SeqState::SEND_MSG:
     case SeqState::SEND_MSG_EX:
+        this->is_dma_xfer = this->is_dma_cmd;
         if (this->data_fifo_pos < 1 && this->is_dma_cmd) {
             if (this->drq_cb)
                 this->drq_cb(1);
@@ -553,6 +554,7 @@ void Sc53C94::sequencer()
         }
         break;
     case SeqState::SEND_CMD:
+        this->is_dma_xfer = this->is_dma_cmd;
         if (this->data_fifo_pos < 1 && this->is_dma_cmd) {
             if (this->drq_cb)
                 this->drq_cb(1);
@@ -560,22 +562,25 @@ void Sc53C94::sequencer()
             this->bus_obj->target_xfer_data();
         break;
     case SeqState::CMD_COMPLETE:
+        this->is_dma_xfer = false;
         this->cur_state = SeqState::IDLE;
         this->update_irq();
         exec_next_command();
         break;
     case SeqState::XFER_BEGIN:
+        this->is_dma_xfer = this->is_dma_cmd;
         this->cur_bus_phase = this->bus_obj->current_phase();
         switch (this->cur_bus_phase) {
         case ScsiPhase::DATA_OUT:
-            if (this->is_dma_cmd && this->channel_obj->is_ready()) {
-                this->channel_obj->xfer_retry();
-                break;
+            if (this->is_dma_cmd) {
+                if (this->channel_obj->is_ready())
+                    this->channel_obj->xfer_retry();
+            } else {
+                this->bus_obj->push_data(this->target_id, this->data_fifo, this->data_fifo_pos);
+                this->data_fifo_pos = 0;
+                this->cur_state = SeqState::XFER_END;
+                this->sequencer();
             }
-            this->bus_obj->push_data(this->target_id, this->data_fifo, this->data_fifo_pos);
-            this->data_fifo_pos = 0;
-            this->cur_state = SeqState::XFER_END;
-            this->sequencer();
             break;
         case ScsiPhase::DATA_IN:
             if (this->is_dma_cmd && this->channel_obj->is_ready()) {
@@ -603,6 +608,7 @@ void Sc53C94::sequencer()
         }
         break;
     case SeqState::XFER_END:
+        this->is_dma_xfer = false;
         if (this->is_initiator) {
             this->bus_obj->target_next_step();
         }
@@ -620,11 +626,13 @@ void Sc53C94::sequencer()
             this->int_status = INTSTAT_SR;
             this->update_irq();
         } else {
+            this->is_dma_xfer = this->is_dma_cmd;
             this->rcv_data();
         }
         break;
     case SeqState::RCV_STATUS:
     case SeqState::RCV_MESSAGE:
+        this->is_dma_xfer = this->is_dma_cmd;
         this->rcv_data();
         if (this->is_initiator) {
             if (this->cur_state == SeqState::RCV_STATUS) {
@@ -846,7 +854,7 @@ int Sc53C94::xfer_from(uint8_t *buf, int len) {
     if (this->cur_cmd != CMD_XFER || !this->is_dma_cmd ||
         this->cur_bus_phase != ScsiPhase::DATA_IN) {
         LOG_F(9, "%s: ignoring DMA data transfer request", this->name.c_str());
-        return bytes_moved;
+        return 0;
     }
 
     len = std::min(len, (int)(this->xfer_count));
@@ -884,9 +892,9 @@ int Sc53C94::xfer_from(uint8_t *buf, int len) {
 int Sc53C94::xfer_to(uint8_t *buf, int len) {
     int bytes_moved = 0;
 
-    if (!this->xfer_count || !this->is_dma_cmd) {
+    if (!this->xfer_count || !this->is_dma_xfer) {
         LOG_F(9, "%s: ignoring DMA data transfer request", this->name.c_str());
-        return bytes_moved;
+        return 0;
     }
 
     len = std::min(len, (int)(this->xfer_count));
