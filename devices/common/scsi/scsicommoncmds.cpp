@@ -49,7 +49,6 @@ void ScsiCommonCmds::process_command() {
         next_phase = this->mode_sense();
         break;
     default:
-        LOG_F(ERROR, "no support for command 0x%X", this->cdb_ptr[0]);
         this->invalid_command();
         next_phase = ScsiPhase::STATUS;
     }
