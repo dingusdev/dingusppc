@@ -54,7 +54,7 @@ namespace Read {
                             //
         Config_2     = 0xB, // Control Register 2
         Config_3     = 0xC, // Control Register 3
-        Config_4     = 0xD, // Control Register 4
+        Config_4     = 0xD, // Control Register 4 ; Am53CF94 extension
         Xfer_Cnt_Hi  = 0xE, // Current Transfer Count Register High ; Am53CF94 extension
                             //
     };
@@ -289,6 +289,7 @@ private:
     uint8_t     config1 = 0;
     uint8_t     config2 = 0;
     uint8_t     config3 = 0;
+    uint8_t     config4 = 0;
 
     // bus phase latch
     bool        phase_latch_closed = false;

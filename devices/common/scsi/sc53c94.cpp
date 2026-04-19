@@ -120,10 +120,11 @@ uint8_t Sc53C94::read(uint8_t reg_offset)
         return this->config1;
     case Read::Reg53C94::Config_3:
         return this->config3;
+    case Read::Reg53C94::Config_4:
+        return this->config4;
     case Read::Reg53C94::Xfer_Cnt_Hi:
-        if (this->config2 & CFG2_ENF) {
+        if (this->config2 & CFG2_ENF)
             return (this->xfer_count >> 16) & 0xFFU;
-        }
         break;
     default:
         LOG_F(INFO, "%s: reading from register %d", this->name.c_str(), reg_offset);
@@ -173,8 +174,13 @@ void Sc53C94::write(uint8_t reg_offset, uint8_t value)
     case Write::Reg53C94::Config_3:
         this->config3 = value;
         break;
+    case Write::Reg53C94::Config_4:
+        this->config4 = value;
+        if (value)
+            LOG_F(WARNING, "%s: config 4 set to 0x%X", this->name.c_str(), value);
+        break;
     default:
-        LOG_F(INFO, "%s: writing 0x%X to %d register", this->name.c_str(), value,
+        LOG_F(INFO, "%s: writing 0x%X to register # %d", this->name.c_str(), value,
               reg_offset);
     }
 }
