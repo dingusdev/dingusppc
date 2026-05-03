@@ -347,6 +347,12 @@ void MacIoTwo::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
         }
         clear_cpu_int();
         break;
+    case MIO_INT_LEVELS1:
+        // The purpose of this stub is to silence warnings in the log when
+        // writing to this read-only register. Especially, SCSI Manager 4.3
+        // writes to it in clearSCSIxIRQ(). Don't ask me why.
+        // Doing that has no effect - IRQ flags are cleared in the Nanokernel.
+        break;
     case MIO_OHARE_ID:
         LOG_F(ERROR, "%s: write OHARE_ID @%x.%c = %0*x",
             this->get_name().c_str(), offset, SIZE_ARG(size), size * 2, value);
