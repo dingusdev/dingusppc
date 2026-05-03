@@ -19,34 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-/** MacIO device family emulation
-
-    Mac I/O (MIO) is a family of ASICs to bring support for Apple legacy
-    I/O hardware to the PCI-based Power Macintosh. That legacy hardware has
-    existed long before Power Macintosh was introduced. It includes:
-    - versatile interface adapter (VIA)
-    - Sander-Woz integrated machine (SWIM) that is a floppy disk controller
-    - CUDA MCU for ADB, parameter RAM, realtime clock and power management support
-    - serial communication controller (SCC)
-    - Macintosh Enhanced SCSI Hardware (MESH)
-
-    In the 68k Macintosh era, all this hardware was implemented using several
-    custom chips. In a PCI-compatible Power Macintosh, the above devices are part
-    of the MIO chip itself. MIO's functional blocks implementing virtual devices
-    are called "cells", i.e. "VIA cell", "SWIM cell" etc.
-
-    MIO itself is PCI compliant while the legacy hardware it emulates isn't.
-    MIO occupies 512Kb of the PCI memory space divided into registers space and
-    DMA space. Access to emulated legacy devices is accomplished by reading from/
-    writing to MIO's PCI address space at predefined offsets.
-
-    MIO includes a DMA controller that offers up to 12 DMA channels implementing
-    Apple's own DMA protocol called descriptor-based DMA (DBDMA).
-
-    Official documentation (that is somewhat incomplete and erroneous) can be
-    found in the second chapter of the book "Macintosh Technology in the Common
-    Hardware Reference Platform" by Apple Computer, Inc.
-*/
+/** @file MacIO device family emulation. */
 
 #ifndef MACIO_H
 #define MACIO_H
