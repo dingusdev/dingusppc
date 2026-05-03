@@ -132,7 +132,7 @@ enum ATA_Cmd : uint8_t {
     READ_VERIFY                          = 0x40,
     ATAPI_COMMAND_GET_CONFIG             = 0x46,
     FORMAT_TRACKS                        = 0x50,
-    IDE_SEEK                             = 0x70,
+    SEEK                                 = 0x70,
     DIAGNOSTICS                          = 0x90,
     INIT_DEV_PARAM                       = 0x91,
     ATAPI_PACKET                         = 0xA0,

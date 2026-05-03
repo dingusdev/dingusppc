@@ -148,6 +148,11 @@ int AtaHardDisk::perform_command() {
             this->r_status &= ~BSY;
         }
         break;
+    case SEEK:
+        this->r_status |= DSC;
+        this->r_status &= ~BSY;
+        this->update_intrq(1);
+        break;
     case DIAGNOSTICS:
         this->r_error = 1; // device 0 passed, device 1 passed or not present
         this->device_set_signature();
