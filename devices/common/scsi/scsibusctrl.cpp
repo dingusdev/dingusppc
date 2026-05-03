@@ -145,14 +145,16 @@ void ScsiBusController::sequencer() {
         break;
     case SeqState::RCV_STATUS:
     case SeqState::RCV_MESSAGE:
+        if (this->cur_bus_phase == ScsiPhase::MESSAGE_IN)
+            this->bus_obj->assert_ctrl_line(this->src_id, SCSI_CTRL_REQ);
         this->rcv_data();
         if (this->is_initiator) {
             if (this->cur_state == SeqState::RCV_STATUS) {
                 this->bus_obj->target_next_step();
-                if (this->cur_bus_phase == ScsiPhase::MESSAGE_IN)
-                    this->bus_obj->assert_ctrl_line(this->src_id, SCSI_CTRL_REQ);
-            } else if (this->cur_state == SeqState::RCV_MESSAGE)
+            } else if (this->cur_state == SeqState::RCV_MESSAGE) {
+                this->bus_obj->release_ctrl_line(this->src_id, SCSI_CTRL_REQ);
                 this->bus_obj->assert_ctrl_line(this->src_id, SCSI_CTRL_ACK);
+            }
             this->step_completed();
             this->cur_state = SeqState::IDLE;
         }
