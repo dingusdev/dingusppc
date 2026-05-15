@@ -148,6 +148,11 @@ int AtaHardDisk::perform_command() {
             this->r_status &= ~BSY;
         }
         break;
+    case CHECK_POWER_MODE:
+        this->r_sect_count = 0xFF; // always active or idle
+        this->r_status |= DRDY;
+        this->r_status &= ~BSY;
+        break;
     case SEEK:
         this->r_status |= DSC;
         this->r_status &= ~BSY;
