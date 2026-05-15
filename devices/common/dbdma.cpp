@@ -243,7 +243,8 @@ void DMAChannel::xfer_quad(const DMACmd *cmd_desc, DMACmd *cmd_host) {
     // prepare data pointers and perform data transfer
     if (!cmd_host) {
         if (res.type & RT_MMIO) {
-            res.dev_obj->write(res.dev_base, addr - res.dev_base, cmd_desc->cmd_arg, xfer_size);
+            res.dev_obj->write(res.dev_base, addr - res.dev_base,
+                               BYTESWAP_SIZED(cmd_desc->cmd_arg, xfer_size), xfer_size);
         } else if (res.is_writable) {
             switch (xfer_size) {
                 case 1: *res.host_va = cmd_desc->cmd_arg; break;
