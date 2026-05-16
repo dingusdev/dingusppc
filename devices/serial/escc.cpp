@@ -34,7 +34,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 #include <vector>
 
-/** Remap the compatible addressing scheme to MacRISC one. */
+/** Remap the compatible addressing scheme to the MacRISC one. */
 const uint8_t compat_to_macrisc[6] = {
     EsccReg::Port_B_Cmd,    EsccReg::Port_A_Cmd,
     EsccReg::Port_B_Data,   EsccReg::Port_A_Data,
@@ -97,6 +97,18 @@ uint8_t EsccController::read(uint8_t reg_offset)
     case EsccReg::Enh_Reg_A:
         value = this->ch_a->get_enh_reg();
         break;
+    case LocalTalkReg::Rec_Count:
+        value = this->recovery_counter;
+        break;
+    case LocalTalkReg::Start_A:
+        value = this->start_a;
+        break;
+    case LocalTalkReg::Start_B:
+        value = this->start_b;
+        break;
+    case LocalTalkReg::Detect_AB:
+        value = this->detect_ab;
+        break;
     default:
         LOG_F(WARNING, "ESCC: reading from unimplemented register 0x%x", reg_offset);
         value = 0;
@@ -125,6 +137,30 @@ void EsccController::write(uint8_t reg_offset, uint8_t value)
         break;
     case EsccReg::Enh_Reg_A:
         this->ch_a->set_enh_reg(value);
+        break;
+    case LocalTalkReg::Rec_Count:
+        this->recovery_counter = value;
+        LOG_F(INFO, "ESCC recovery counter set to 0x%X", this->recovery_counter);
+        break;
+    case LocalTalkReg::Start_A:
+        this->start_a = value & 1;
+        if (this->start_a) {
+            this->detect_ab |= 2; // say we've just detected the Abort sequence
+            this->ch_a->update_ltpc_eop_flag(1);
+        } else {
+            this->detect_ab &= ~2; // reset Abort detected flag
+            this->ch_a->update_ltpc_eop_flag(0);
+        }
+        break;
+    case LocalTalkReg::Start_B:
+        this->start_b = value & 1;
+        if (this->start_b) {
+            this->detect_ab |= 1; // say we've just detected the Abort sequence
+            this->ch_b->update_ltpc_eop_flag(1);
+        } else {
+            this->detect_ab &= ~1; // reset Abort detected flag
+            this->ch_b->update_ltpc_eop_flag(0);
+        }
         break;
     default:
         LOG_F(9, "ESCC: writing 0x%X to unimplemented register 0x%x", value, reg_offset);

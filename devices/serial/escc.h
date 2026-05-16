@@ -50,13 +50,13 @@ enum EsccReg : uint8_t {
     Port_B_Data     = 1, // direct access to WR8/RR8
     Port_A_Cmd      = 2,
     Port_A_Data     = 3, // direct access to WR8/RR8
-    Enh_Reg_B       = 4, // undocumented Apple extension
-    Enh_Reg_A       = 5, // undocumented Apple extension
+    Enh_Reg_B       = 4, // extended Curio/Geoport features
+    Enh_Reg_A       = 5, // extended Curio/Geoport features
 };
 
 extern const uint8_t compat_to_macrisc[6];
 
-/** LocalTalk LTPC registers provided by a MacIO controller. */
+/** LocalTalk LTPC registers implemented in a MacIO controller. */
 enum LocalTalkReg : uint8_t {
     Rec_Count   = 8,
     Start_A     = 9,
@@ -127,6 +127,12 @@ public:
         }
     }
 
+    // End of packet (EOP) flag is reflected by s5 bit of the DMA TX channel status
+    void update_ltpc_eop_flag(uint8_t flag) {
+        auto dbdma_ch = static_cast<DMAChannel*>(this->dma_ch[DIR_TX]);
+        dbdma_ch->update_ch_stat(1 << 5, (flag & 1) << 5);
+    }
+
 private:
     uint32_t timer_id_tx = 0;
     uint32_t timer_id_rx = 0;
@@ -191,6 +197,12 @@ private:
 
     uint8_t master_int_cntrl = 0;
     uint8_t int_vec = 0;
+    uint8_t recovery_counter = 8;
+
+    // LTPC state
+    uint8_t start_a   = 0;
+    uint8_t start_b   = 0;
+    uint8_t detect_ab = 0;
 };
 
 #endif // ESCC_H
