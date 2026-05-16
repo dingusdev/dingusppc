@@ -89,7 +89,8 @@ enum
     RR1_CRC_FRAMING_ERROR                                   = 1 << 6,
     RR1_END_OF_FRAME_SDLC                                   = 1 << 7,
 
-// RR2  - Modified (Channel B only) interrupt vector and Unmodified interrupt vector (Channel A only)
+// RR2  - Modified (Channel B only) interrupt vector and
+//        Unmodified interrupt vector (Channel A only)
 
     RR2_V0                                                  = 1 << 0,
     RR2_V1                                                  = 1 << 1,
@@ -151,7 +152,8 @@ enum
     RR15_TX_UNDERRUN_EOM_IE                                 = 1 << 6,
     RR15_BREAK_ABORT_IE                                     = 1 << 7,
 
-// WR0  - Command Register // Command Register, (Register Pointers), CRC initialization, resets for various modes
+// WR0  - Command Register // Command Register, (Register Pointers),
+//        CRC initialization, resets for various modes
 
     WR0_CRC_RESET_CODES                                     = 3 << 6,
         WR0_RESET_NULL_CODE                                 = 0 << 6,
@@ -177,7 +179,8 @@ enum
         WR0_REGISTER_6                                      = 6 << 0,
         WR0_REGISTER_7                                      = 7 << 0,
 
-// WR1  - Transmit/Receive Interrupt and Data Transfer Mode Definition // Interrupt conditions, Wait/DMA request control
+// WR1  - Transmit/Receive Interrupt and Data Transfer Mode Definition
+//        Interrupt conditions, Wait/DMA request control
 
     WR1_WAIT_DMA_REQUEST_ENABLE                             = 1 << 7,
     WR1_WAIT_DMA_REQUEST_FUNCTION                           = 1 << 6,
@@ -191,7 +194,8 @@ enum
     WR1_TX_INT_ENABLE                                       = 1 << 1,
     WR1_EXT_INT_ENABLE                                      = 1 << 0,
 
-// WR2  - Interrupt Vector // Interrupt vector (access through either channel)
+// WR2  - Interrupt Vector
+//        Interrupt vector (access through either channel)
 
     WR2_V0                                                  = 1 << 0,
     WR2_V1                                                  = 1 << 1,
@@ -202,7 +206,8 @@ enum
     WR2_V6                                                  = 1 << 6,
     WR2_V7                                                  = 1 << 7,
 
-// WR3  - Receive Parameters and Control // Receive/Control parameters, number of bits per character, Rx CRC enable
+// WR3  - Receive Parameters and Control
+//        Receive/Control parameters, number of bits per character, Rx CRC enable
 
     WR3_RECEIVER_BITS_PER_CHARACTER                         = 3 << 6,
         WR3_BITS_PER_CHARACTER_5                            = 0 << 6,
@@ -217,7 +222,8 @@ enum
     WR3_RX_ENABLE                                           = 1 << 0,
 
 // WR4  - Transmit/Receiver Miscellaneous Parameters and Modes
-// Transmit/Receive miscellaneous parameters and codes, clock rate, number of sync characters, stop bits, parity
+//        Transmit/Receive miscellaneous parameters and codes, clock rate,
+//        number of sync characters, stop bits, parity
 
     WR4_CLOCK_RATE                                          = 3 << 6,
         WR4_X1_CLOCK_MODE                                   = 0 << 6,
@@ -239,7 +245,8 @@ enum
         WR4_PARITY_EVEN                                     = 1 << 1,
     WR4_PARITY_ENABLE                                       = 1 << 0,
 
-// WR5  - Transmit Parameter and Controls // Transmit parameters and control, number of Tx bits per character, Tx CRC enable
+// WR5  - Transmit Parameter and Controls
+//        Transmit parameters and control, number of Tx bits per character, Tx CRC enable
 
     WR5_DTR                                                 = 1 << 7,
     WR5_TX_BITS_PER_CHARACTER                               = 3 << 5,
@@ -271,7 +278,8 @@ enum
 // WR8  - Transmit buffer
 
 // WR9  - Master Interrupt Control
-// Master interrupt control and reset (accessed through either channel), reset bits, control interrupt daisy chain
+//        Master interrupt control and reset (accessed through either channel),
+//        reset bits, control interrupt daisy chain
 
     WR9_RESET_COMMAND_BITS                                  = 3 << 6,
         WR9_NO_RESET                                        = 0 << 6,
@@ -287,7 +295,8 @@ enum
     WR9_VECTOR_INCLUDES_STATUS                              = 1 << 0,
 
 // WR10 - Miscellaneous Transmitter/Receiver Control Bits
-// Miscellaneous transmitter/receiver control bits, NRZI, NRZ, FM encoding, CRC reset
+//        Miscellaneous transmitter/receiver control bits, NRZI, NRZ,
+//        FM encoding, CRC reset
 
     WR10_CRC_PRESET                                         = 1 << 7,
     WR10_DATA_ENCODING                                      = 3 << 5,
@@ -334,7 +343,8 @@ enum
 // WR13 - Upper Byte of Baud Rate Generator Time Constant
 
 // WR14 - Miscellaneous Control Bits
-// Miscellaneous control bits: baud rate generator, Phase-Locked Loop control, auto echo, local loopback
+//        Miscellaneous control bits: baud rate generator, Phase-Locked Loop control,
+//        auto echo, local loopback
 
     WR14_DPLL_COMMAND_BITS                                  = 7 << 5,
         WR14_DPLL_NULL_COMMAND                              = 0 << 5,
@@ -354,7 +364,8 @@ enum
     WR14_BR_GENERATOR_ENABLE                                = 1 << 0,
 
 // WR15 - External/Status Interrupt Control
-// External/Status interrupt control information-control external conditions causing interrupts
+//        External/Status interrupt control information-control external
+//        conditions causing interrupts
 
     WR15_BREAK_ABORT_IE                                     = 1 << 7,
     WR15_TX_UNDERRUN_EOM_IE                                 = 1 << 6,
