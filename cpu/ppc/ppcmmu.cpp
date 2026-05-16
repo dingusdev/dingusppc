@@ -313,7 +313,7 @@ static PATResult page_address_translation(uint32_t la, bool is_instr_fetch,
     }
 
 #if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
-    size_t pte_addr2S = (size_t)pte_addr;
+    uintptr_t pte_addr2S = (uintptr_t)pte_addr;
     #if 0 && SUPPORTS_PPC_LITTLE_ENDIAN_MODE
     if (ppc_state.is_LE) {
         pte_addr2S ^= mem_munge_constant<uint32_t>();
