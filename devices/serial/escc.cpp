@@ -282,9 +282,11 @@ void EsccChannel::write_reg(int reg_num, uint8_t value)
             (this->write_regs[WR3] & (WR3_RX_ENABLE | WR3_ENTER_HUNT_MODE)) |
             (value & ~(WR3_RX_ENABLE | WR3_ENTER_HUNT_MODE));
         return;
-    case WR7:
-        break;
-    case WR7Prime:
+    case WR4:
+        if ((value & WR4_STOP_BITS) == WR4_SYNC_MODES_ENABLE &&
+            (value & WR4_SYNC_MODE) == WR4_SDLC_MODE &&
+             !(this->write_regs[WR3] & WR3_RX_ENABLE))
+             this->read_regs[RR0] |= RR0_SYNC_HUNT;
         break;
     case WR8:
         this->send_byte(value);
