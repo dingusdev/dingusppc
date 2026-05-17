@@ -112,7 +112,14 @@ public:
     void set_data_callbacks(DbdmaCallback in_cb, DbdmaCallback out_cb, DbdmaCallback flush_cb);
     uint32_t reg_read(uint32_t offset, int size);
     void reg_write(uint32_t offset, uint32_t value, int size);
-    void set_stat(uint8_t new_stat) { this->ch_stat = (this->ch_stat & 0xff00) | new_stat; }
+
+    void set_stat(uint8_t new_stat) {
+        this->ch_stat = (this->ch_stat & 0xff00) | new_stat;
+    }
+
+    void update_ch_stat(uint8_t mask, uint8_t new_val) {
+        this->ch_stat = (this->ch_stat & ~mask) | new_val;
+    }
 
     bool            is_out_active() override;
     bool            is_in_active() override;
