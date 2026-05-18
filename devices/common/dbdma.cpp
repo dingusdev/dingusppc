@@ -417,11 +417,12 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
         }
         break;
     case DMAReg::CMD_PTR_LO:
-        if (!(this->ch_stat & CH_STAT_RUN) && !(this->ch_stat & CH_STAT_ACTIVE)) {
+        if (!(this->ch_stat & CH_STAT_ACTIVE)) {
             this->cmd_ptr = value;
             LOG_F(9, "%s: CommandPtrLo set to 0x%X", this->get_name().c_str(),
                 this->cmd_ptr);
-        }
+        } else
+            LOG_F(WARNING, "%s: CommandPtrLo update skipped", this->get_name().c_str());
         break;
     case DMAReg::INT_SELECT:
         this->int_select = value & 0xFF00FFUL;
