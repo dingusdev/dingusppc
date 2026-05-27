@@ -78,9 +78,10 @@ private:
 
 // ---------------------- New DMA API -------------------------
 enum DmaMsg : unsigned {
-    CH_START    = 1,
-    CH_STOP,
-    DATA_AVAIL,
+    DMA_MSG_START    = 1,
+    DMA_MSG_STOP,
+    DMA_MSG_FLUSH,
+    DMA_MSG_DATA_AVAIL,
 };
 
 enum XferDir : unsigned {
