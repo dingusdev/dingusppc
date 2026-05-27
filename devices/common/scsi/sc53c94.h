@@ -243,9 +243,9 @@ public:
     void process_command() override {}
 
     // DmaDevice methods
-    int xfer_from(uint8_t *buf, int len) override;
-    int xfer_to(uint8_t *buf, int len) override;
-    int tell_xfer_size() override {
+    int xfer_from(DmaChannel *ch_obj, uint8_t *buf, int len) override;
+    int xfer_to(DmaChannel *ch_obj, uint8_t *buf, int len) override;
+    int tell_xfer_size(DmaChannel *ch_obj) override {
         return this->xfer_count;
     }
 

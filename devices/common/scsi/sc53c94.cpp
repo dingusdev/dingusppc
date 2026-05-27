@@ -885,7 +885,7 @@ void Sc53C94::dma_stop()
     }
 }
 
-int Sc53C94::xfer_from(uint8_t *buf, int len) {
+int Sc53C94::xfer_from(DmaChannel *ch_obj, uint8_t *buf, int len) {
     int bytes_moved = 0;
 
     if (this->cur_cmd != CMD_XFER || !this->is_dma_cmd ||
@@ -926,7 +926,7 @@ int Sc53C94::xfer_from(uint8_t *buf, int len) {
     return bytes_moved;
 }
 
-int Sc53C94::xfer_to(uint8_t *buf, int len) {
+int Sc53C94::xfer_to(DmaChannel *ch_obj, uint8_t *buf, int len) {
     int bytes_moved = 0;
 
     if (!this->xfer_count || !this->is_dma_xfer) {

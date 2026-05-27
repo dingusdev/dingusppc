@@ -77,6 +77,15 @@ private:
 };
 
 // ---------------------- New DMA API -------------------------
+/** DMA channel types. */
+enum DmaChannelType : unsigned {
+    DMA_CH_TYPE_UNDEF = 0,
+    DMA_CH_TYPE_IN,     // unidirectional channel, host <--- device
+    DMA_CH_TYPE_OUT,    // unidirectional channel, host ---> device
+    DMA_CH_TYPE_BIDIR,  // bidirectional channel,  host <--> device
+};
+
+/** DMA messages. */
 enum DmaMsg : unsigned {
     DMA_MSG_START    = 1,
     DMA_MSG_STOP,
@@ -84,6 +93,7 @@ enum DmaMsg : unsigned {
     DMA_MSG_DATA_AVAIL,
 };
 
+/** DMA transfer direction constants. */
 enum XferDir : unsigned {
     DMA_DIR_UNDEF       = 0,
     DMA_DIR_TO_DEV,
@@ -98,10 +108,10 @@ public:
     ~DmaDevice() = default;
 
     virtual void connect(DmaChannel *ch_obj) { this->channel_obj = ch_obj; }
-    virtual void notify(DmaMsg msg) {}
-    virtual int  xfer_from(uint8_t *buf, int len) { return len; }
-    virtual int  xfer_to(uint8_t *buf, int len) { return len; }
-    virtual int  tell_xfer_size() { return 0; }
+    virtual void notify(DmaChannel *ch_obj, DmaMsg msg) {}
+    virtual int  xfer_from(DmaChannel *ch_obj, uint8_t *buf, int len) { return len; }
+    virtual int  xfer_to(DmaChannel *ch_obj, uint8_t *buf, int len) { return len; }
+    virtual int  tell_xfer_size(DmaChannel *ch_obj) { return 0; }
 
 protected:
     DmaChannel* channel_obj = nullptr;
@@ -109,8 +119,17 @@ protected:
 
 class DmaChannel {
 public:
-    DmaChannel()  = default;
+    DmaChannel(const uint32_t id = 1) { this->ch_id = id; }
+    DmaChannel(const DmaChannelType type, const uint32_t id = 1) {
+        this->ch_type = type;
+        this->ch_id   = id;
+    }
     ~DmaChannel() = default;
+
+    // setters/getters
+    void        set_id(const uint32_t id) { this->ch_id = id; }
+    uint32_t    get_id() { return this->ch_id; }
+    void        set_type(const DmaChannelType type) { this->ch_type = type; }
 
     virtual void connect(DmaDevice *dev_obj) { this->dev_obj = dev_obj; }
     virtual void notify(DmaMsg msg) {}
@@ -118,8 +137,10 @@ public:
     virtual void xfer_retry() {}
 
 protected:
-    DmaDevice*  dev_obj  = nullptr;
-    XferDir     xfer_dir = DMA_DIR_UNDEF;
+    DmaDevice*      dev_obj  = nullptr;
+    uint32_t        ch_id    = 0; // support for several channels per device
+    DmaChannelType  ch_type  = DMA_CH_TYPE_BIDIR;
+    XferDir         xfer_dir = DMA_DIR_UNDEF;
 };
 
 /*

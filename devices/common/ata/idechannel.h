@@ -45,8 +45,8 @@ public:
     virtual uint32_t read(const uint8_t reg_addr, const int size);
     virtual void write(const uint8_t reg_addr, const uint32_t val, const int size);
 
-    int xfer_from(uint8_t *buf, int len) override;
-    int xfer_to(uint8_t *buf, int len) override;
+    int xfer_from(DmaChannel *ch_obj, uint8_t *buf, int len) override;
+    int xfer_to(DmaChannel *ch_obj, uint8_t *buf, int len) override;
 
     void assert_pdiag() {
         this->devices[0]->pdiag_callback();

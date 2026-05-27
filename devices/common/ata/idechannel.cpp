@@ -82,11 +82,11 @@ void IdeChannel::write(const uint8_t reg_addr, const uint32_t val, const int siz
     }
 }
 
-int IdeChannel::xfer_from(uint8_t *buf, int len) {
+int IdeChannel::xfer_from(DmaChannel *ch_obj, uint8_t *buf, int len) {
     return this->devices[this->cur_dev]->pull_data(buf, len);
 }
 
-int IdeChannel::xfer_to(uint8_t *buf, int len) {
+int IdeChannel::xfer_to(DmaChannel *ch_obj, uint8_t *buf, int len) {
     return this->devices[this->cur_dev]->push_data(buf, len);
 }
 

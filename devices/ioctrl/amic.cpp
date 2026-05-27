@@ -774,11 +774,11 @@ void AmicScsiDma::xfer_from_device() {
 
     this->xfer_dir = DMA_DIR_FROM_DEV;
 
-    uint32_t len = this->dev_obj->tell_xfer_size();
+    uint32_t len = this->dev_obj->tell_xfer_size(this);
 
     MapDmaResult res = mmu_map_dma_mem(this->addr_ptr, len, false);
 
-    int got_bytes = this->dev_obj->xfer_from(res.host_va, len);
+    int got_bytes = this->dev_obj->xfer_from(this, res.host_va, len);
     if (got_bytes > 0) {
         this->addr_ptr += got_bytes;
     }
@@ -790,11 +790,11 @@ void AmicScsiDma::xfer_to_device() {
 
     this->xfer_dir = DMA_DIR_TO_DEV;
 
-    uint32_t len = this->dev_obj->tell_xfer_size();
+    uint32_t len = this->dev_obj->tell_xfer_size(this);
 
     MapDmaResult res = mmu_map_dma_mem(this->addr_ptr, len, false);
 
-    int got_bytes = this->dev_obj->xfer_to(res.host_va, len);
+    int got_bytes = this->dev_obj->xfer_to(this, res.host_va, len);
     if (got_bytes > 0) {
         this->addr_ptr += got_bytes;
     }

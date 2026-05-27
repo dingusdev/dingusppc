@@ -232,7 +232,7 @@ int ScsiBusController::send_data(uint8_t* dst_ptr, int count) {
     return actual_count;
 }
 
-int ScsiBusController::xfer_from(uint8_t *buf, int len) {
+int ScsiBusController::xfer_from(DmaChannel *ch_obj, uint8_t *buf, int len) {
     if (len > this->to_xfer + this->fifo_pos)
         LOG_F(WARNING, "%s: DMA xfer len > command xfer len", this->name.c_str());
 
