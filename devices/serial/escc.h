@@ -33,8 +33,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memory>
 #include <string>
 
-class DmaBidirChannel;
-
 /** ESCC register positions */
 /* Please note that the registers below are provided
    by the Apple I/O controllers for accessing ESCC
@@ -97,37 +95,6 @@ public:
     uint8_t get_enh_reg();
     void set_enh_reg(uint8_t value);
 
-    void set_dma_channel(DirIndex dir_index, DmaBidirChannel *dma_ch) {
-        this->dma_ch[dir_index] = dma_ch;
-        auto dbdma_ch = dynamic_cast<DMAChannel*>(dma_ch);
-        if (dbdma_ch) {
-            switch (dir_index) {
-            case DIR_TX:
-                dbdma_ch->set_callbacks(
-                    std::bind(&EsccChannel::dma_start_tx, this),
-                    std::bind(&EsccChannel::dma_stop_tx, this)
-                );
-                dbdma_ch->set_data_callbacks(
-                    std::bind(&EsccChannel::dma_in_tx, this),
-                    std::bind(&EsccChannel::dma_out_tx, this),
-                    std::bind(&EsccChannel::dma_flush_tx, this)
-                );
-                break;
-            case DIR_RX:
-                dbdma_ch->set_callbacks(
-                    std::bind(&EsccChannel::dma_start_rx, this),
-                    std::bind(&EsccChannel::dma_stop_rx, this)
-                );
-                dbdma_ch->set_data_callbacks(
-                    std::bind(&EsccChannel::dma_in_rx, this),
-                    std::bind(&EsccChannel::dma_out_rx, this),
-                    std::bind(&EsccChannel::dma_flush_rx, this)
-                );
-                break;
-            }
-        }
-    }
-
     void set_dma_channel(DirIndex dir_index, DmaChannel *ch_obj) {
         this->dma_channels[dir_index] = ch_obj;
 
@@ -147,22 +114,6 @@ public:
     int xfer_to  (DmaChannel *ch_obj, uint8_t *buf, int len) override;
 
 private:
-    uint32_t timer_id_tx = 0;
-    uint32_t timer_id_rx = 0;
-
-    void dma_start_tx();
-    void dma_stop_tx();
-    void dma_in_tx();
-    void dma_out_tx();
-    void dma_flush_tx();
-
-    void dma_start_rx();
-    void dma_stop_rx();
-    void dma_in_rx();
-    void dma_out_rx();
-    void dma_flush_rx();
-
-    DmaBidirChannel*    dma_ch[DIR_MAX+1];
     DmaChannel*     dma_channels[2];
 
     std::string     name;
@@ -191,13 +142,6 @@ public:
     // ESCC registers access
     uint8_t read(uint8_t reg_offset);
     void    write(uint8_t reg_offset, uint8_t value);
-
-    void set_dma_channel(ChIndex ch_index, DirIndex dir_index, DmaBidirChannel *dma_ch) {
-        switch (ch_index) {
-        case CH_A: ch_a->set_dma_channel(dir_index, dma_ch); break;
-        case CH_B: ch_b->set_dma_channel(dir_index, dma_ch); break;
-        }
-    }
 
     void connect_dma_channel(ChIndex ch_idx, DirIndex dir_idx, DmaChannel *ch_obj) {
         switch (ch_idx) {
