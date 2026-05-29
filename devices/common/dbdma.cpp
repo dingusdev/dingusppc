@@ -372,6 +372,8 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
                 this->cur_cmd <= DBDMA_Cmd::INPUT_LAST &&
                 (this->ch_stat & CH_STAT_ACTIVE) &&
                 !(this->ch_stat & CH_STAT_DEAD)) {
+                    if (this->dev_obj != nullptr)
+                        this->dev_obj->notify(this, DMA_MSG_FLUSH);
                     if (this->flush_cb)
                         this->flush_cb();
                 }
@@ -635,6 +637,9 @@ void DMAChannel::start() {
 
     this->cmd_in_progress = false;
 
+    if (this->dev_obj != nullptr)
+        this->dev_obj->notify(this, DMA_MSG_START);
+
     if (this->start_cb)
         this->start_cb();
 
@@ -669,12 +674,16 @@ void DMAChannel::resume() {
 
 void DMAChannel::abort() {
     LOG_F(9, "%s: Aborting DMA channel", this->get_name().c_str());
+    if (this->dev_obj != nullptr)
+        this->dev_obj->notify(this, DMA_MSG_STOP);
     if (this->stop_cb)
         this->stop_cb();
 }
 
 void DMAChannel::pause() {
     LOG_F(INFO, "%s: Pausing DMA channel", this->get_name().c_str());
+    if (this->dev_obj != nullptr)
+        this->dev_obj->notify(this, DMA_MSG_STOP);
     if (this->stop_cb)
         this->stop_cb();
 }
