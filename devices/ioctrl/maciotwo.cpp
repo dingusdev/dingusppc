@@ -217,6 +217,10 @@ uint32_t MacIoTwo::dma_read(uint32_t offset, int size) {
         return this->enet_xmit_dma->reg_read(offset & 0xFF, size);
     case MIO_OHARE_DMA_ETH_RCV:
         return this->enet_rcv_dma->reg_read(offset & 0xFF, size);
+    case MIO_OHARE_DMA_ESCC_A_XMIT:
+        return this->escc_a_tx_dma->reg_read(offset & 0xFF, size);
+    case MIO_OHARE_DMA_ESCC_A_RCV:
+        return this->escc_a_rx_dma->reg_read(offset & 0xFF, size);
     case MIO_OHARE_DMA_ESCC_B_XMIT:
         return this->escc_b_tx_dma->reg_read(offset & 0xFF, size);
     case MIO_OHARE_DMA_ESCC_B_RCV:
@@ -253,6 +257,12 @@ void MacIoTwo::dma_write(uint32_t offset, uint32_t value, int size) {
         break;
     case MIO_OHARE_DMA_ETH_RCV:
         this->enet_rcv_dma->reg_write(offset & 0xFF, value, size);
+        break;
+    case MIO_OHARE_DMA_ESCC_A_XMIT:
+        this->escc_a_tx_dma->reg_write(offset & 0xFF, value, size);
+        break;
+    case MIO_OHARE_DMA_ESCC_A_RCV:
+        this->escc_a_rx_dma->reg_write(offset & 0xFF, value, size);
         break;
     case MIO_OHARE_DMA_ESCC_B_XMIT:
         this->escc_b_tx_dma->reg_write(offset & 0xFF, value, size);
