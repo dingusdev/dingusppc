@@ -76,7 +76,32 @@ namespace ScsiStatus {
 /** Standard message codes. */
 namespace ScsiMessage {
     enum : uint8_t {
-        COMMAND_COMPLETE = 0,
+        COMMAND_COMPLETE            = 0x00,
+        EXTENDED_MESSAGE            = 0x01,
+        SAVE_POINTERS               = 0x02,
+        RESTORE_POINTERS            = 0x03,
+        DISCONNECT                  = 0x04,
+        INITIATOR_ERROR             = 0x05,
+        ABORT_TASK_SET              = 0x06,
+        MESSAGE_REJECT              = 0x07,
+        NOP                         = 0x08,
+        MSG_PARITY_ERROR            = 0x09,
+        LINKED_CMD_COMPLETE         = 0x0A,
+        LINKED_FLG_CMD_COMPLETE     = 0x0B,
+        TARGET_RESET                = 0x0C,
+        ABORT_TASK                  = 0x0D,
+        CLEAR_TASK_SET              = 0x0E,
+        INITIATE_RECOVERY           = 0x0F, // SCSI-II only
+        RELEASE_RECOVERY            = 0x10, // SCSI-II only
+        TERMINATE_IO_PROC           = 0x11, // SCSI-II only
+        CLEAR_ACA                   = 0x16,
+        LOGICAL_UNIT_RESET          = 0x17,
+        SIMPLE_QUEUE_TAG            = 0x20,
+        HEAD_OF_QUEUE_TAG           = 0x21,
+        ORDERED_QUEUE_TAG           = 0x22,
+        IGNORE_WIDE_RESIDUE         = 0x23,
+        ACA                         = 0x24,
+        QAS_REQUEST                 = 0x55,
 
         TARGET_ROUTINE_NUMBER_MASK = 0x07,
         LOGICAL_UNIT_NUMBER_MASK   = 0x07,
@@ -89,9 +114,12 @@ namespace ScsiMessage {
 /** Extended message codes. */
 namespace ScsiExtMessage {
     enum : uint8_t {
-        MODIFY_DATA_PTR = 0,
-        SYNCH_XFER_REQ  = 1,
-        WIDE_XFER_REQ   = 3,
+        MODIFY_DATA_PTR         = 0,
+        SYNCH_XFER_REQ          = 1,
+        EXTENDED_IDENTIFY       = 2, // SCSI-I only
+        WIDE_XFER_REQ           = 3,
+        PPR_REQ                 = 4,
+        MODIFY_BIDI_DATA_PTR    = 5,
     };
 }
 
