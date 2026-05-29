@@ -434,14 +434,18 @@ void GrandCentral::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
         switch (offset) {
         case MIO_INT_MASK1:
             this->int_mask = BYTESWAP_32(value);
-            this->signal_cpu_int(this->int_events & this->int_mask);
+            this->signal_cpu_int();
             break;
         case MIO_INT_CLEAR1:
-            if ((this->int_mask & MACIO_INT_MODE) && (value & MACIO_INT_CLR))
+            if ((this->int_mask & MACIO_INT_MODE) && (value & MACIO_INT_CLR)) {
                 this->int_events = 0;
-            else
-                this->int_events &= ~(BYTESWAP_32(value) & 0x7FFFFFFFUL);
-            clear_cpu_int();
+                this->clear_cpu_int();
+            } else {
+                value = BYTESWAP_32(value);
+                this->int_events &= ~(value & 0x7FFFFFFFUL);
+                this->clear_cpu_int();
+                this->clear_dma_int(value);
+            }
             break;
         case MIO_INT_LEVELS1:
             break; // ignore writes to this read-only register
@@ -537,7 +541,7 @@ void GrandCentral::ack_int_common(uint64_t irq_id, uint8_t irq_line_state) {
         this->int_levels &= ~(uint32_t)irq_id;
     }
 
-    this->signal_cpu_int(irq_id);
+    this->signal_cpu_int();
 }
 
 void GrandCentral::ack_int(uint64_t irq_id, uint8_t irq_line_state) {
@@ -548,12 +552,29 @@ void GrandCentral::ack_dma_int(uint64_t irq_id, uint8_t irq_line_state) {
     this->ack_int_common(irq_id, irq_line_state);
 }
 
-void GrandCentral::signal_cpu_int(uint64_t irq_id) {
+void GrandCentral::clear_dma_int(uint32_t clear_flags) {
+    clear_flags &= 0x7FF; // mask off non-DMA interrupt flags
+
+    if (!clear_flags)
+        return; // return if no DMA IRQ clear bit is set
+
+    // emulated mode: set DMA IRQ bits in int_events on 1-to-0 transitions
+    // while clearing DMA bits in int_levels.
+    // Any pending bits in int_events will generate an interrupt
+    // that will be propagated to the 68k emulator
+    if (this->int_mask & MACIO_INT_MODE) {
+        this->int_events |= this->int_levels & clear_flags;
+        this->int_levels &= ~clear_flags;
+        this->signal_cpu_int();
+    } else // in native mode, 1-to-0 transitions don't generate interrupts
+        this->int_levels &= ~clear_flags;
+}
+
+void GrandCentral::signal_cpu_int() {
     if (this->int_events & this->int_mask) {
         if (!this->cpu_int_latch) {
             this->cpu_int_latch = true;
             ppc_assert_int();
-            LOG_F(5, "%s: CPU INT asserted, source: 0x%08llx", this->name.c_str(), irq_id);
         } else {
             LOG_F(5, "%s: CPU INT already latched", this->name.c_str());
         }
