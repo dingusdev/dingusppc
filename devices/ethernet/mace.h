@@ -35,7 +35,7 @@ constexpr auto MACE_ID_REV_B0 = 0x0940;    // Darwin-0.3 source
 constexpr auto MACE_ID_REV_A2 = 0x0941;    // Darwin-0.3 source & Curio datasheet
 
 /** MACE registers offsets. */
-// Refer to the Am79C940 datasheet for details
+// Refer to the Am79C950 datasheet for details
 namespace MaceEnet {
     enum MaceReg : uint8_t {
         Rcv_FIFO        =  0,
