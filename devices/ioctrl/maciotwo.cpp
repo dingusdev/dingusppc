@@ -346,10 +346,13 @@ void MacIoTwo::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
     case MIO_INT_CLEAR1:
         if ((this->int_mask & MACIO_INT_MODE) && (value & MACIO_INT_CLR)) {
             this->int_events = 0;
+            this->clear_cpu_int();
         } else {
-            this->int_events &= ~uint64_t(BYTESWAP_32(value) & 0x7FFFFFFFUL);
+            value = BYTESWAP_32(value);
+            this->int_events &= ~uint64_t(value & 0x7FFFFFFFUL);
+            this->clear_cpu_int();
+            this->clear_dma_int(value);
         }
-        clear_cpu_int();
         break;
     case MIO_INT_LEVELS1:
         // The purpose of this stub is to silence warnings in the log when
