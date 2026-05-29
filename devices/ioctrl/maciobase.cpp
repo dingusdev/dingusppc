@@ -156,6 +156,24 @@ void MacIoBase::ack_dma_int(uint64_t irq_id, uint8_t irq_line_state) {
     this->ack_int_common(irq_id, irq_line_state);
 }
 
+void MacIoBase::clear_dma_int(uint32_t clear_flags) {
+    clear_flags &= 0x7FF; // mask off non-DMA interrupt flags
+
+    if (!clear_flags)
+        return; // return if no DMA IRQ clear bit is set
+
+    // emulated mode: set DMA IRQ bits in int_events on 1-to-0 transitions
+    // while clearing DMA bits in int_levels.
+    // Any pending bits in int_events will generate an interrupt
+    // that will be propagated to the 68k emulator
+    if (this->int_mask & MACIO_INT_MODE) {
+        this->int_events |= this->int_levels & clear_flags;
+        this->int_levels &= ~clear_flags;
+        this->signal_cpu_int();
+    } else // in native mode, 1-to-0 transitions don't generate interrupts
+        this->int_levels &= ~clear_flags;
+}
+
 void MacIoBase::signal_cpu_int() {
     if (this->int_events & this->int_mask) {
         if (!this->cpu_int_latch) {

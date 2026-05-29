@@ -137,6 +137,7 @@ public:
 protected:
     void notify_bar_change(int bar_num);
     void ack_int_common(uint64_t irq_id, uint8_t irq_line_state);
+    void clear_dma_int(uint32_t clear_flags);
     void signal_cpu_int();
     void clear_cpu_int();
 
