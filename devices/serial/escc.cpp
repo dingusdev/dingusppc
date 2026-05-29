@@ -523,6 +523,40 @@ void EsccChannel::dma_flush_rx()
     });
 }
 
+int EsccChannel::xfer_from(DmaChannel *ch_obj, uint8_t *buf, int len) {
+    if (ch_obj->get_id() == DIR_TX) {
+        LOG_F(WARNING, "%s: attempt to receive data over the DMA TX channel",
+              this->name.c_str());
+        return 0;
+    }
+
+    int bytes_moved = 0;
+
+    while (this->chario->rcv_char_available_now()) {
+        *buf++ = this->receive_byte();
+        len--;
+        bytes_moved++;
+    }
+
+    return bytes_moved;
+}
+
+int EsccChannel::xfer_to(DmaChannel *ch_obj, uint8_t *buf, int len) {
+    if (ch_obj->get_id() == DIR_RX) {
+        LOG_F(WARNING, "%s: attempt to transmit data over the DMA RX channel",
+              this->name.c_str());
+        return 0;
+    }
+
+    int bytes_moved = 0;
+
+    for (; len > 0; len--, bytes_moved++) {
+        this->send_byte(*buf++);
+    }
+
+    return bytes_moved;
+}
+
 static const std::vector<std::string> CharIoBackends = {"null", "stdio", "socket"};
 
 static const PropMap Escc_Properties = {

@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <devices/common/hwcomponent.h>
 #include <devices/common/dbdma.h>
+#include <devices/common/dmacore.h>
 #include <devices/serial/chario.h>
 
 #include <cinttypes>
@@ -82,7 +83,7 @@ enum ChIndex : uint8_t {
 };
 
 /** ESCC Channel class. */
-class EsccChannel {
+class EsccChannel : public DmaDevice {
 public:
     EsccChannel(std::string name) { this->name = name; }
     ~EsccChannel() = default;
@@ -127,11 +128,23 @@ public:
         }
     }
 
+    void set_dma_channel(DirIndex dir_index, DmaChannel *ch_obj) {
+        this->dma_channels[dir_index] = ch_obj;
+
+        ch_obj->set_id(dir_index);
+        ch_obj->set_type(dir_index == DIR_TX ? DMA_CH_TYPE_OUT : DMA_CH_TYPE_IN);
+        ch_obj->connect(this);
+    }
+
     // End of packet (EOP) flag is reflected by s5 bit of the DMA TX channel status
     void update_ltpc_eop_flag(uint8_t flag) {
-        auto dbdma_ch = static_cast<DMAChannel*>(this->dma_ch[DIR_TX]);
+        auto dbdma_ch = static_cast<DMAChannel*>(this->dma_channels[DIR_TX]);
         dbdma_ch->update_ch_stat(1 << 5, (flag & 1) << 5);
     }
+
+    // DmaChannel methods
+    int xfer_from(DmaChannel *ch_obj, uint8_t *buf, int len) override;
+    int xfer_to  (DmaChannel *ch_obj, uint8_t *buf, int len) override;
 
 private:
     uint32_t timer_id_tx = 0;
@@ -150,6 +163,7 @@ private:
     void dma_flush_rx();
 
     DmaBidirChannel*    dma_ch[DIR_MAX+1];
+    DmaChannel*     dma_channels[2];
 
     std::string     name;
     uint8_t         read_regs[16] = {};
@@ -182,6 +196,13 @@ public:
         switch (ch_index) {
         case CH_A: ch_a->set_dma_channel(dir_index, dma_ch); break;
         case CH_B: ch_b->set_dma_channel(dir_index, dma_ch); break;
+        }
+    }
+
+    void connect_dma_channel(ChIndex ch_idx, DirIndex dir_idx, DmaChannel *ch_obj) {
+        switch (ch_idx) {
+        case CH_A: ch_a->set_dma_channel(dir_idx, ch_obj); break;
+        case CH_B: ch_b->set_dma_channel(dir_idx, ch_obj); break;
         }
     }
 
