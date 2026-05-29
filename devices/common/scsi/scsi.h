@@ -80,7 +80,7 @@ namespace ScsiMessage {
 
         TARGET_ROUTINE_NUMBER_MASK = 0x07,
         LOGICAL_UNIT_NUMBER_MASK   = 0x07,
-        IS_TARGET_ROUTINE_NuMBER   = 0x20,
+        IS_TARGET_ROUTINE_NUMBER   = 0x20,
         HAS_DISCONNECT_PRIVILEDGE  = 0x40,
         IDENTIFY                   = 0x80,
     };
