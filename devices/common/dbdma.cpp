@@ -342,7 +342,7 @@ uint32_t DMAChannel::reg_read(uint32_t offset, int size) {
 }
 
 void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
-    uint16_t mask, old_stat, new_stat;
+    uint16_t mask, data;
 
     if (size != 4) {
         ABORT_F("%s: non-DWORD writes to a DMA channel not supported",
@@ -350,61 +350,75 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
     }
 
     value    = BYTESWAP_32(value);
-    old_stat = this->ch_stat;
 
     switch (offset) {
     case DMAReg::CH_CTRL:
-        mask     = value >> 16;
-        new_stat = (value & mask & 0xF0FFU) | (old_stat & ~(mask & 0xC0FF));
-        LOG_F(9, "%s: New ChannelStatus value = 0x%X", this->get_name().c_str(), new_stat);
+        mask = value >> 16;
+        data = value & 0xFFFF;
 
-        // update ch_stat.s0...s7 if requested (needed for interrupt generation)
-        if ((new_stat & 0xFF) != (old_stat & 0xFF)) {
-            this->ch_stat |= new_stat & 0xFF;
-        }
+        // update general purpose channel status & control bits s0...s7
+        // if requested (needed for interrupt generation)
+        if (mask & 0xFF)
+            this->ch_stat = (this->ch_stat & ~(mask & 0xFF)) | (data & mask);
 
         // flush bit can be set at the same time the run bit is cleared.
         // That means we need to update memory before channel operation
         // is aborted to prevent data loss.
-        if (new_stat & CH_STAT_FLUSH) {
-            if (this->cur_cmd <= DBDMA_Cmd::INPUT_LAST &&
-                this->flush_cb && (new_stat & CH_STAT_ACTIVE) &&
+        if (mask & CH_STAT_FLUSH) {
+            // FLUSH=1 should update memory for INPUT_MORE & INPUT_LAST commands
+            // when the channel is active and not dead.
+            // Setting FLUSH to 0 has no effect.
+            if ((data & CH_STAT_FLUSH) &&
+                this->cur_cmd <= DBDMA_Cmd::INPUT_LAST &&
+                (this->ch_stat & CH_STAT_ACTIVE) &&
                 !(this->ch_stat & CH_STAT_DEAD)) {
-                this->flush_cb();
-            } else {
-                // NOTE: because this implementation doesn't currently support
-                // partial memory updates no special action is taken here
-                new_stat &= ~CH_STAT_FLUSH;
-            }
-            this->ch_stat = new_stat;
+                    if (this->flush_cb)
+                        this->flush_cb();
+                }
+            this->ch_stat &= ~CH_STAT_FLUSH;
         }
 
-        if ((new_stat & CH_STAT_RUN) != (old_stat & CH_STAT_RUN)) {
-            if (new_stat & CH_STAT_RUN) {
-                new_stat |= CH_STAT_ACTIVE;
-                this->ch_stat = new_stat;
-                this->start();
+        if (mask & CH_STAT_RUN) {
+            if (data & CH_STAT_RUN) {
+                // some drivers clear the PAUSE bit while setting the RUN bit.
+                // Clear the PAUSE bit without resuming the channel operation
+                // in this case.
+                if (mask & CH_STAT_PAUSE) {
+                    if (data & CH_STAT_PAUSE)
+                        ABORT_F("%s: attempt to set both run and pasue bits at the same time",
+                                this->get_name().c_str());
+                    else
+                        this->ch_stat &= ~CH_STAT_PAUSE;
+                }
+                if (!(this->ch_stat & CH_STAT_ACTIVE)) {
+                    this->ch_stat |= CH_STAT_ACTIVE | CH_STAT_RUN;
+                    this->start();
+                }
             } else {
-                this->abort();
-                this->update_irq();
-                new_stat &= ~CH_STAT_ACTIVE;
-                new_stat &= ~CH_STAT_DEAD;
-                this->cmd_in_progress = false;
-                this->ch_stat = new_stat;
+                if (this->ch_stat & CH_STAT_ACTIVE) {
+                    this->abort();
+                    this->update_irq();
+                    this->cmd_in_progress = false;
+                }
+                this->ch_stat &= ~(CH_STAT_RUN | CH_STAT_ACTIVE | CH_STAT_DEAD);
             }
-        } else if ((new_stat & CH_STAT_WAKE) != (old_stat & CH_STAT_WAKE)) {
-            if (new_stat & CH_STAT_WAKE) {
-                new_stat |= CH_STAT_ACTIVE;
-                this->ch_stat = new_stat;
+        } else if (mask & CH_STAT_PAUSE) {
+            if (data & CH_STAT_PAUSE) {
+                if (this->ch_stat & CH_STAT_ACTIVE)
+                    this->pause();
+                this->ch_stat |=  CH_STAT_PAUSE;
+                this->ch_stat &= ~CH_STAT_ACTIVE;
+            } else {
+                if (!(this->ch_stat & CH_STAT_ACTIVE)) {
+                    this->ch_stat &= ~CH_STAT_PAUSE;
+                    this->ch_stat |=  CH_STAT_ACTIVE;
+                    this->resume();
+                }
+            }
+        } else if (mask & CH_STAT_WAKE) {
+            if (data & CH_STAT_WAKE && !(this->ch_stat & CH_STAT_ACTIVE)) {
+                this->ch_stat |= CH_STAT_ACTIVE;
                 this->resume();
-            } else {
-                LOG_F(ERROR, "%s: Attempt to clear wake status bit 0x%04x", this->get_name().c_str(), CH_STAT_WAKE);
-            }
-        } else if ((new_stat & CH_STAT_PAUSE) != (old_stat & CH_STAT_PAUSE)) {
-            if (new_stat & CH_STAT_PAUSE) {
-                new_stat &= ~CH_STAT_ACTIVE;
-                this->ch_stat = new_stat;
-                this->pause();
             }
         }
         break;
