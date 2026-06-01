@@ -35,6 +35,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace MeshScsi;
 
 int MeshController::device_postinit() {
+    LOG_F(9, "MESH: device_postinit chip_id=0x%X", this->chip_id);
+
     this->bus_obj = dynamic_cast<ScsiBus*>(gMachineObj->get_comp_by_name("ScsiMesh"));
     if (bus_obj) {
         bus_obj->register_device(7, static_cast<ScsiPhysDevice*>(this));
@@ -45,10 +47,13 @@ int MeshController::device_postinit() {
         gMachineObj->get_comp_by_type(HWCompType::INT_CTRL));
     this->irq_id = this->int_ctrl->register_dev_int(IntSrc::SCSI_MESH);
 
+    LOG_F(9, "MESH: device_postinit done, irq_id=%d", this->irq_id);
     return 0;
 }
 
 void MeshController::reset(bool is_hard_reset) {
+    LOG_F(9, "MESH: %s reset", is_hard_reset ? "hard" : "soft");
+
     this->cur_cmd       = SeqCmd::NoOperation;
     this->fifo_pos      = 0;
     this->int_mask      = 0;
@@ -149,24 +154,31 @@ void MeshController::write(uint8_t reg_offset, uint8_t value) {
 void MeshController::perform_command(const uint8_t cmd) {
     this->cur_cmd = cmd;
 
+    LOG_F(9, "MESH: perform_command 0x%02X (seq=%d, dma=%d)",
+          cmd, cmd & 0xF, !!(cmd & 0x80));
+
     this->int_stat &= ~INT_CMD_DONE;
 
     this->is_dma_cmd = !!(this->cur_cmd & 0x80);
 
     switch (this->cur_cmd & 0xF) {
     case SeqCmd::Arbitrate:
+        LOG_F(9, "MESH: SeqCmd::Arbitrate");
         this->exception &= EXC_ARB_LOST;
         this->bus_obj->release_ctrl_lines(this->src_id);
         this->cur_state = Scsi_Bus_Controller::SeqState::BUS_FREE;
         this->sequencer();
         break;
     case SeqCmd::Select:
+        LOG_F(9, "MESH: SeqCmd::Select dst_id=%d, atn=%d",
+              this->dst_id, !!(this->cur_cmd & 0x20));
         this->assert_atn = !!(this->cur_cmd & 0x20);
         this->exception &= EXC_SEL_TIMEOUT;
         this->cur_state = Scsi_Bus_Controller::SeqState::SEL_BEGIN;
         this->sequencer();
         break;
     case SeqCmd::Command:
+        LOG_F(9, "MESH: SeqCmd::Command fifo_pos=%d", this->fifo_pos);
         if (this->bus_obj->current_phase() != ScsiPhase::COMMAND)
             LOG_F(WARNING, "%s: not in COMMAND phase", this->name.c_str());
         this->cur_state = Scsi_Bus_Controller::SeqState::SEND_CMD;
@@ -174,6 +186,7 @@ void MeshController::perform_command(const uint8_t cmd) {
             this->sequencer();
         break;
     case SeqCmd::Status:
+        LOG_F(9, "MESH: SeqCmd::Status xfer_count=%d", this->xfer_count);
         if (this->bus_obj->current_phase() != ScsiPhase::STATUS)
             LOG_F(WARNING, "%s: not in STATUS phase", this->name.c_str());
         this->to_xfer = this->xfer_count;
@@ -181,6 +194,7 @@ void MeshController::perform_command(const uint8_t cmd) {
         this->sequencer();
         break;
     case SeqCmd::DataOut:
+        LOG_F(9, "MESH: SeqCmd::DataOut xfer_count=%d", this->xfer_count);
         if (this->bus_obj->current_phase() != ScsiPhase::DATA_OUT)
             LOG_F(WARNING, "%s: not in DATA OUT phase", this->name.c_str());
         this->to_xfer = this->xfer_count ? this->xfer_count : 65536;
@@ -188,6 +202,7 @@ void MeshController::perform_command(const uint8_t cmd) {
         this->sequencer();
         break;
     case SeqCmd::DataIn:
+        LOG_F(9, "MESH: SeqCmd::DataIn xfer_count=%d", this->xfer_count);
         if (this->bus_obj->current_phase() != ScsiPhase::DATA_IN)
             LOG_F(WARNING, "%s: not in DATA IN phase", this->name.c_str());
         this->to_xfer = this->xfer_count ? this->xfer_count : 65536;
@@ -195,6 +210,7 @@ void MeshController::perform_command(const uint8_t cmd) {
         this->sequencer();
         break;
     case SeqCmd::MessageOut:
+        LOG_F(9, "MESH: SeqCmd::MessageOut xfer_count=%d", this->xfer_count);
         if (this->bus_obj->current_phase() != ScsiPhase::MESSAGE_OUT)
             LOG_F(WARNING, "%s: not in MESSAGE OUT phase", this->name.c_str());
         this->to_xfer = this->xfer_count;
@@ -202,6 +218,7 @@ void MeshController::perform_command(const uint8_t cmd) {
         this->sequencer();
         break;
     case SeqCmd::MessageIn:
+        LOG_F(9, "MESH: SeqCmd::MessageIn xfer_count=%d", this->xfer_count);
         if (this->bus_obj->current_phase() != ScsiPhase::MESSAGE_IN)
             LOG_F(WARNING, "%s: not in MESSAGE IN phase", this->name.c_str());
         this->to_xfer = this->xfer_count;
@@ -209,6 +226,7 @@ void MeshController::perform_command(const uint8_t cmd) {
         this->sequencer();
         break;
     case SeqCmd::BusFree:
+        LOG_F(9, "MESH: SeqCmd::BusFree");
         // Don't release ACK if ATN is asserted. This condition indicates
         // that the initiator wants to reject last message.
         if (!this->bus_obj->test_ctrl_lines(SCSI_CTRL_ATN))
@@ -229,9 +247,11 @@ void MeshController::perform_command(const uint8_t cmd) {
         this->update_irq();
         break;
     case SeqCmd::EnaParityCheck:
+        LOG_F(9, "MESH: SeqCmd::EnaParityCheck");
         this->check_parity = true;
         break;
     case SeqCmd::DisParityCheck:
+        LOG_F(9, "MESH: SeqCmd::DisParityCheck");
         this->check_parity = false;
         break;
     case SeqCmd::EnaReselect:
@@ -243,11 +263,13 @@ void MeshController::perform_command(const uint8_t cmd) {
         this->int_stat |= INT_CMD_DONE;
         break;
     case SeqCmd::ResetMesh:
+        LOG_F(9, "MESH: SeqCmd::ResetMesh");
         this->reset(false);
         this->int_stat |= INT_CMD_DONE;
         update_irq();
         break;
     case SeqCmd::FlushFIFO:
+        LOG_F(9, "MESH: SeqCmd::FlushFIFO (was %d bytes)", this->fifo_pos);
         this->fifo_pos = 0;
         break;
     default:
@@ -257,6 +279,9 @@ void MeshController::perform_command(const uint8_t cmd) {
 
 void MeshController::update_bus_status(const uint16_t new_stat) {
     uint16_t mask;
+
+    LOG_F(9, "MESH: update_bus_status 0x%04X -> 0x%04X",
+          this->bus_stat, new_stat);
 
     // update the lower part (BusStatus0)
     if ((new_stat ^ this->bus_stat) & 0xFF) {
@@ -291,6 +316,10 @@ void MeshController::step_completed() {
 }
 
 void MeshController::report_error(const int error) {
+    LOG_F(9, "MESH: report_error %d (%s)", error,
+          error == ARB_LOST ? "ARB_LOST" :
+          error == SEL_TIMEOUT ? "SEL_TIMEOUT" : "UNKNOWN");
+
     switch (error) {
     case ARB_LOST:
         this->exception |= EXC_ARB_LOST;

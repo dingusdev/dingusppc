@@ -47,10 +47,15 @@ ScsiBus::ScsiBus(const std::string name)
     this->arb_winner_id = -1;
     this->initiator_id  = -1;
     this->target_id     = -1;
+
+    LOG_F(9, "%s: bus created, max devices=%d", this->get_name().c_str(), SCSI_MAX_DEVS);
 }
 
 void ScsiBus::register_device(int id, ScsiPhysDevice* dev_obj)
 {
+    LOG_F(9, "%s: register device id=%d (%s)", this->get_name().c_str(), id,
+          dev_obj ? dev_obj->get_name().c_str() : "<null>");
+
     if (this->devices[id] != nullptr) {
         ABORT_F("%s: device with ID %d already registered", this->get_name().c_str(), id);
     }
@@ -62,6 +67,9 @@ void ScsiBus::register_device(int id, ScsiPhysDevice* dev_obj)
 
 void ScsiBus::change_bus_phase(int initiator_id)
 {
+    LOG_F(9, "%s: change_bus_phase initiator=%d, new_phase=%d",
+          this->get_name().c_str(), initiator_id, this->cur_phase);
+
     for (int i = 0; i < SCSI_MAX_DEVS; i++) {
         if (i == initiator_id)
             continue; // don't notify the initiator
@@ -121,6 +129,7 @@ void ScsiBus::release_ctrl_line(int id, uint16_t mask)
 
 void ScsiBus::release_ctrl_lines(int id)
 {
+    LOG_F(9, "%s: release all ctrl lines for id=%d", this->get_name().c_str(), id);
     this->release_ctrl_line(id, 0xFFFFUL);
 }
 
@@ -139,6 +148,9 @@ uint16_t ScsiBus::test_ctrl_lines(uint16_t mask)
 int ScsiBus::switch_phase(int id, int new_phase)
 {
     int old_phase = this->cur_phase;
+
+    LOG_F(9, "%s: switch_phase id=%d, %d -> %d",
+          this->get_name().c_str(), id, old_phase, new_phase);
 
     // leave the current phase (low-level)
     switch (old_phase) {
@@ -187,12 +199,17 @@ int ScsiBus::switch_phase(int id, int new_phase)
 
 bool ScsiBus::begin_arbitration(int initiator_id)
 {
+    LOG_F(9, "%s: begin_arbitration initiator=%d, cur_phase=%d",
+          this->get_name().c_str(), initiator_id, this->cur_phase);
+
     if (this->cur_phase == ScsiPhase::BUS_FREE) {
         this->data_lines |= 1 << initiator_id;
         this->cur_phase = ScsiPhase::ARBITRATION;
         change_bus_phase(initiator_id);
         return true;
     } else {
+        LOG_F(9, "%s: begin_arbitration denied, bus not free (phase=%d)",
+              this->get_name().c_str(), this->cur_phase);
         return false;
     }
 }
@@ -213,14 +230,23 @@ bool ScsiBus::end_arbitration(int initiator_id)
         this->arb_winner_id = highest_id;
     }
 
+    LOG_F(9, "%s: end_arbitration initiator=%d, winner=%d, data_lines=0x%02x",
+          this->get_name().c_str(), initiator_id, highest_id, this->data_lines);
+
     return highest_id == initiator_id;
 }
 
 bool ScsiBus::begin_selection(int initiator_id, int target_id, bool atn)
 {
+    LOG_F(9, "%s: begin_selection initiator=%d, target=%d, atn=%d",
+          this->get_name().c_str(), initiator_id, target_id, atn);
+
     // perform bus integrity checks
-    if (this->cur_phase != ScsiPhase::ARBITRATION || this->arb_winner_id != initiator_id)
+    if (this->cur_phase != ScsiPhase::ARBITRATION || this->arb_winner_id != initiator_id) {
+        LOG_F(9, "%s: begin_selection denied, phase=%d, arb_winner=%d",
+              this->get_name().c_str(), this->cur_phase, this->arb_winner_id);
         return false;
+    }
 
     this->assert_ctrl_line(initiator_id, SCSI_CTRL_SEL);
 
@@ -238,6 +264,9 @@ bool ScsiBus::begin_selection(int initiator_id, int target_id, bool atn)
 
 void ScsiBus::confirm_selection(int target_id)
 {
+    LOG_F(9, "%s: confirm_selection target=%d, initiator=%d",
+          this->get_name().c_str(), target_id, this->initiator_id);
+
     this->target_id = target_id;
 
     // notify initiator about selection confirmation from target
@@ -248,8 +277,12 @@ void ScsiBus::confirm_selection(int target_id)
 
 bool ScsiBus::end_selection(int initiator_id, int target_id)
 {
+    bool confirmed = (this->target_id == target_id);
+    LOG_F(9, "%s: end_selection initiator=%d, target=%d, confirmed=%d",
+          this->get_name().c_str(), initiator_id, target_id, confirmed);
+
     // check for selection confirmation from target
-    return this->target_id == target_id;
+    return confirmed;
 }
 
 bool ScsiBus::pull_data(const int id, uint8_t* dst_ptr, const int size)
@@ -285,6 +318,8 @@ bool ScsiBus::push_data(const int id, const uint8_t* src_ptr, const int size)
 }
 
 int ScsiBus::target_xfer_data() {
+    LOG_F(9, "%s: target_xfer_data target_id=%d",
+          this->get_name().c_str(), this->target_id);
     return this->devices[this->target_id]->xfer_data();
 }
 

@@ -35,6 +35,9 @@ static char my_revision_id[] = "di01";
 ScsiHardDisk::ScsiHardDisk(std::string name, int my_id) : ScsiPhysDevice(name, my_id),
     BlockStorageDevice(256)
 {
+    LOG_F(9, "%s: ScsiHardDisk ctor, scsi_id=%d, vendor=%s, product=%s, rev=%s",
+          name.c_str(), my_id, my_vendor_id, my_product_id, my_revision_id);
+
     this->set_phys_dev(this);
     this->set_phys_block_dev(this);
     this->set_cdb_ptr(this->cmd_buf);
@@ -56,6 +59,8 @@ ScsiHardDisk::ScsiHardDisk(std::string name, int my_id) : ScsiPhysDevice(name, m
 }
 
 void ScsiHardDisk::insert_image(std::string filename) {
+    LOG_F(9, "%s: insert_image %s", this->name.c_str(), filename.c_str());
+
     if (this->set_host_file(filename) < 0)
         ABORT_F("%s: could not open image file %s", this->name.c_str(), filename.c_str());
 
@@ -66,6 +71,9 @@ void ScsiHardDisk::insert_image(std::string filename) {
 
 void ScsiHardDisk::process_command() {
     uint32_t lba;
+
+    LOG_F(9, "%s: process_command opcode=0x%02X, lun=%d",
+          this->name.c_str(), this->cmd_buf[0], (this->cmd_buf[1] >> 5) & 7);
 
     if (this->verify_cdb() < 0) {
         this->switch_phase(ScsiPhase::STATUS);
@@ -83,12 +91,16 @@ void ScsiHardDisk::process_command() {
 
     switch (cmd[0]) {
     case ScsiCommand::FORMAT_UNIT:
+        LOG_F(9, "%s: dispatch FORMAT_UNIT", this->name.c_str());
         this->format();
         break;
     case ScsiCommand::MODE_SELECT_6:
+        LOG_F(9, "%s: dispatch MODE_SELECT_6, param_len=%d",
+              this->name.c_str(), cmd[4]);
         mode_select_6(cmd[4]);
         break;
     case ScsiCommand::READ_BUFFER:
+        LOG_F(9, "%s: dispatch READ_BUFFER", this->name.c_str());
         read_buffer();
         break;
     default:
@@ -97,6 +109,8 @@ void ScsiHardDisk::process_command() {
 }
 
 void ScsiHardDisk::mode_select_6(uint8_t param_len) {
+    LOG_F(9, "%s: mode_select_6 param_len=%d", this->name.c_str(), param_len);
+
     if (!param_len) {
         this->switch_phase(ScsiPhase::STATUS);
         return;
@@ -107,6 +121,8 @@ void ScsiHardDisk::mode_select_6(uint8_t param_len) {
     std::memset(&this->data_buf[0], 0xDD, this->block_size);
 
     this->post_xfer_action = [this]() {
+        LOG_F(9, "%s: mode_select_6 post_xfer_action invoked",
+              this->name.c_str());
         // TODO: parse the received mode parameter list here
     };
 
@@ -116,6 +132,9 @@ void ScsiHardDisk::mode_select_6(uint8_t param_len) {
 int ScsiHardDisk::get_dev_format_page(uint8_t ctrl, uint8_t subpage, uint8_t *out_ptr,
                                       int avail_len)
 {
+    LOG_F(9, "%s: get_dev_format_page ctrl=%d, subpage=0x%02X, avail_len=%d",
+          this->name.c_str(), ctrl, subpage, avail_len);
+
     if (subpage && subpage != 0xFFU)
         return FORMAT_ERR_BAD_SUBPAGE;
 
@@ -146,6 +165,9 @@ int ScsiHardDisk::get_dev_format_page(uint8_t ctrl, uint8_t subpage, uint8_t *ou
 int ScsiHardDisk::get_rigid_geometry_page(uint8_t ctrl, uint8_t subpage, uint8_t *out_ptr,
                                           int avail_len)
 {
+    LOG_F(9, "%s: get_rigid_geometry_page ctrl=%d, subpage=0x%02X, avail_len=%d",
+          this->name.c_str(), ctrl, subpage, avail_len);
+
     if (subpage && subpage != 0xFFU)
         return FORMAT_ERR_BAD_SUBPAGE;
 
@@ -186,6 +208,9 @@ void ScsiHardDisk::read_buffer() {
     uint8_t  mode = this->cmd_buf[1];
     uint32_t alloc_len = (this->cmd_buf[6] << 24) | (this->cmd_buf[7] << 16) |
                           this->cmd_buf[8];
+
+    LOG_F(9, "%s: read_buffer mode=%d, alloc_len=%u",
+          this->name.c_str(), mode, alloc_len);
 
     switch(mode) {
     case 0: // Combined header and data mode

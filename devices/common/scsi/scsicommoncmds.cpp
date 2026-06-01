@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memaccess.h>
 
 ScsiCommonCmds::ScsiCommonCmds() {
+    LOG_F(9, "ScsiCommonCmds: enabling common SCSI commands");
     this->enable_cmd(ScsiCommand::TEST_UNIT_READY);
     this->enable_cmd(ScsiCommand::REQ_SENSE);
     this->enable_cmd(ScsiCommand::INQUIRY);
@@ -34,18 +35,25 @@ ScsiCommonCmds::ScsiCommonCmds() {
 void ScsiCommonCmds::process_command() {
     int next_phase;
 
+    LOG_F(9, "ScsiCommonCmds: process_command opcode=0x%02X", this->cdb_ptr[0]);
+
     switch(this->cdb_ptr[0]) {
     case ScsiCommand::TEST_UNIT_READY:
+        LOG_F(9, "ScsiCommonCmds: dispatch TEST_UNIT_READY");
         next_phase = this->test_unit_ready();
         break;
     case ScsiCommand::REQ_SENSE:
+        LOG_F(9, "ScsiCommonCmds: dispatch REQ_SENSE");
         next_phase = this->request_sense_new();
         break;
     case ScsiCommand::INQUIRY:
+        LOG_F(9, "ScsiCommonCmds: dispatch INQUIRY");
         next_phase = this->inquiry_new();
         break;
     case ScsiCommand::MODE_SENSE_6:
     case ScsiCommand::MODE_SENSE_10:
+        LOG_F(9, "ScsiCommonCmds: dispatch %s",
+              this->cdb_ptr[0] == ScsiCommand::MODE_SENSE_6 ? "MODE_SENSE_6" : "MODE_SENSE_10");
         next_phase = this->mode_sense();
         break;
     default:
@@ -69,6 +77,9 @@ int ScsiCommonCmds::verify_cdb() {
         return 0; // don't try to verify ATAPI packets
 
     int cdb_len = this->get_cdb_length(this->cdb_ptr[0]);
+
+    LOG_F(9, "ScsiCommonCmds: verify_cdb opcode=0x%02X, cdb_len=%d",
+          this->cdb_ptr[0], cdb_len);
 
     if (cdb_len < 0)
         return 0; // don't know how to verify non-standard CDBs
@@ -111,7 +122,10 @@ int ScsiCommonCmds::verify_cdb() {
 int ScsiCommonCmds::test_unit_ready() {
     // Assume that LUN is okay and the status has been set to GOOD
 
-    if (!phy_impl->is_device_ready()) {
+    bool ready = phy_impl->is_device_ready();
+    LOG_F(9, "ScsiCommonCmds: test_unit_ready, ready=%d", ready);
+
+    if (!ready) {
         this->sense_key = ScsiSense::NOT_READY;
         this->asc       = phy_impl->not_ready_reason();
         this->ascq      = 0;
@@ -338,6 +352,9 @@ int ScsiCommonCmds::get_one_page(uint8_t ctrl, uint8_t page, uint8_t subpage,
                                  uint8_t* out_ptr, int avail_len)
 {
     int len, err;
+
+    LOG_F(9, "ScsiCommonCmds: get_one_page page=0x%02X, subpage=0x%02X, ctrl=%d, avail=%d",
+          page, subpage, ctrl, avail_len);
 
 try_again:
     len = this->getters[page](ctrl, subpage, &out_ptr[2], avail_len - 2);

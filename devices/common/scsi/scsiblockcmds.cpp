@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memaccess.h>
 
 ScsiBlockCmds::ScsiBlockCmds() {
+    LOG_F(9, "ScsiBlockCmds: enabling block-command set");
     this->enable_cmd(ScsiCommand::READ_6);
     this->enable_cmd(ScsiCommand::READ_10);
     this->enable_cmd(ScsiCommand::READ_12);
@@ -41,6 +42,10 @@ ScsiBlockCmds::ScsiBlockCmds() {
 void ScsiBlockCmds::init_block_device(uint8_t medium_type, uint8_t dev_flags,
                                       uint8_t density_code, bool is_apple_compliant)
 {
+    LOG_F(9, "ScsiBlockCmds: init_block_device medium_type=0x%02X, flags=0x%02X, "
+             "density=0x%02X, apple_compliant=%d",
+          medium_type, dev_flags, density_code, is_apple_compliant);
+
     this->medium_type  = medium_type;
     this->device_flags = dev_flags;
 
@@ -81,6 +86,8 @@ void ScsiBlockCmds::init_block_device(uint8_t medium_type, uint8_t dev_flags,
 void ScsiBlockCmds::process_command() {
     int next_phase;
 
+    LOG_F(9, "ScsiBlockCmds: process_command opcode=0x%02X", this->cdb_ptr[0]);
+
     // use non-disk buffer by default
     phy_impl->set_buffer(this->buf_ptr);
 
@@ -88,21 +95,31 @@ void ScsiBlockCmds::process_command() {
     case ScsiCommand::READ_6:
     case ScsiCommand::READ_10:
     case ScsiCommand::READ_12:
+        LOG_F(9, "ScsiBlockCmds: dispatch READ_%d",
+              this->cdb_ptr[0] == ScsiCommand::READ_6 ? 6 :
+              this->cdb_ptr[0] == ScsiCommand::READ_10 ? 10 : 12);
         next_phase = this->read_new();
         break;
     case ScsiCommand::WRITE_6:
     case ScsiCommand::WRITE_10:
     case ScsiCommand::WRITE_12:
+        LOG_F(9, "ScsiBlockCmds: dispatch WRITE_%d",
+              this->cdb_ptr[0] == ScsiCommand::WRITE_6 ? 6 :
+              this->cdb_ptr[0] == ScsiCommand::WRITE_10 ? 10 : 12);
         next_phase = this->write_new();
         break;
     case ScsiCommand::START_STOP_UNIT:
+        LOG_F(9, "ScsiBlockCmds: dispatch START_STOP_UNIT");
         next_phase = this->start_stop_unit();
         break;
     case ScsiCommand::PREVENT_ALLOW_MEDIUM_REMOVAL:
+        LOG_F(9, "ScsiBlockCmds: dispatch PREVENT_ALLOW_MEDIUM_REMOVAL, eject=%d",
+              (this->cdb_ptr[4] & 1) == 0);
         phy_impl->set_eject_state((this->cdb_ptr[4] & 1) == 0);
         next_phase = ScsiPhase::STATUS;
         break;
     case ScsiCommand::READ_CAPACITY:
+        LOG_F(9, "ScsiBlockCmds: dispatch READ_CAPACITY");
         next_phase = this->read_capacity();
         break;
     default:
@@ -224,6 +241,9 @@ int ScsiBlockCmds::format_block_descriptors(uint8_t* out_ptr) {
     uint32_t nblocks = (uint32_t)std::min(
         this->blk_dev->get_size_in_blocks(), (uint64_t)0xFFFFFFFFU);
 
+    LOG_F(9, "ScsiBlockCmds: format_block_descriptors nblocks=%u, density=0x%02X, blk_size=%u",
+          nblocks, this->density_code, this->blk_dev->get_block_size());
+
     WRITE_DWORD_BE_A(&out_ptr[0], nblocks);
     WRITE_DWORD_BE_A(&out_ptr[4], (this->density_code << 24) |
                     (this->blk_dev->get_block_size() & 0xFFFFFF));
@@ -234,6 +254,9 @@ int ScsiBlockCmds::format_block_descriptors(uint8_t* out_ptr) {
 int ScsiBlockCmds::get_error_recovery_page(uint8_t ctrl, uint8_t subpage,
                                            uint8_t *out_ptr, int avail_len)
 {
+    LOG_F(9, "ScsiBlockCmds: get_error_recovery_page ctrl=%d, subpage=0x%02X, avail=%d",
+          ctrl, subpage, avail_len);
+
     if (subpage && subpage != 0xFFU)
         return FORMAT_ERR_BAD_SUBPAGE;
 
@@ -252,16 +275,23 @@ int ScsiBlockCmds::get_error_recovery_page(uint8_t ctrl, uint8_t subpage,
 
 uint32_t ScsiBlockCmds::get_lba() {
     int cmd_len = this->get_cdb_length(this->cdb_ptr[0]);
+    uint32_t lba;
 
     switch(cmd_len) {
     case 6:
-        return ((this->cdb_ptr[1] & 0x1F) << 16) | READ_WORD_BE_A(&this->cdb_ptr[2]);
+        lba = ((this->cdb_ptr[1] & 0x1F) << 16) | READ_WORD_BE_A(&this->cdb_ptr[2]);
+        break;
     case 10:
     case 12:
-        return READ_DWORD_BE_U(&this->cdb_ptr[2]);
+        lba = READ_DWORD_BE_U(&this->cdb_ptr[2]);
+        break;
     default:
         ABORT_F("unsupported command length %d in get_lba", cmd_len);
     }
+
+    LOG_F(9, "ScsiBlockCmds: get_lba opcode=0x%02X, cdb_len=%d, lba=%u",
+          this->cdb_ptr[0], cmd_len, lba);
+    return lba;
 }
 
 static char Apple_Copyright_Page_Data[] = "APPLE COMPUTER, INC   ";
@@ -269,6 +299,9 @@ static char Apple_Copyright_Page_Data[] = "APPLE COMPUTER, INC   ";
 int ScsiBlockCmds::get_apple_copyright_page(uint8_t ctrl, uint8_t subpage, uint8_t *out_ptr,
                                             int avail_len)
 {
+    LOG_F(9, "ScsiBlockCmds: get_apple_copyright_page ctrl=%d, subpage=0x%02X, avail=%d",
+          ctrl, subpage, avail_len);
+
     if (subpage && subpage != 0xFFU)
         return FORMAT_ERR_BAD_SUBPAGE;
 

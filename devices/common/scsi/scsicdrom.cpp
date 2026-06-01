@@ -32,6 +32,9 @@ static char my_revision_id[] = "1.9a";
 
 ScsiCdrom::ScsiCdrom(std::string name, int my_id) : ScsiPhysDevice(name, my_id)
 {
+    LOG_F(9, "%s: ScsiCdrom ctor, scsi_id=%d, vendor=%s, product=%s, rev=%s",
+          name.c_str(), my_id, my_vendor_id, my_product_id, my_revision_id);
+
     this->set_phys_dev(this);
     this->set_cdb_ptr(this->cmd_buf);
     this->set_buf_ptr(this->data_buf);
@@ -54,6 +57,9 @@ ScsiCdrom::ScsiCdrom(std::string name, int my_id) : ScsiPhysDevice(name, my_id)
 void ScsiCdrom::process_command() {
     uint32_t lba;
 
+    LOG_F(9, "%s: process_command opcode=0x%02X, lun=%d",
+          this->name.c_str(), this->cmd_buf[0], (this->cmd_buf[1] >> 5) & 7);
+
     if (this->verify_cdb() < 0) {
         this->switch_phase(ScsiPhase::STATUS);
         return;
@@ -70,6 +76,8 @@ void ScsiCdrom::process_command() {
 
     switch (cmd[0]) {
     case ScsiCommand::MODE_SELECT_6:
+        LOG_F(9, "%s: dispatch MODE_SELECT_6, param_len=%d",
+              this->name.c_str(), cmd[4]);
         this->mode_select_6(cmd[4]);
         break;
     default:

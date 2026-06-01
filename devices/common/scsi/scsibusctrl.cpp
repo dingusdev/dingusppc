@@ -31,6 +31,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace Scsi_Bus_Controller;
 
 void ScsiBusController::seq_defer_state(uint64_t delay_ns) {
+    LOG_F(9, "%s: seq_defer_state next_state=%d, delay=%llu ns",
+          this->name.c_str(), this->next_state, (unsigned long long)delay_ns);
     seq_timer_id = TimerManager::get_instance()->add_oneshot_timer(
         delay_ns,
         [this]() {
@@ -41,6 +43,8 @@ void ScsiBusController::seq_defer_state(uint64_t delay_ns) {
 }
 
 void ScsiBusController::sequencer() {
+    LOG_F(9, "%s: sequencer entry, cur_state=%d, bus_phase=%d",
+          this->name.c_str(), this->cur_state, this->bus_obj->current_phase());
     switch (this->cur_state) {
     case SeqState::IDLE:
         break;
@@ -92,6 +96,8 @@ void ScsiBusController::sequencer() {
         }
         break;
     case SeqState::SEND_MSG:
+        LOG_F(9, "%s: seq SEND_MSG, fifo_pos=%d, to_xfer=%d",
+              this->name.c_str(), this->fifo_pos, this->to_xfer);
         if (this->fifo_pos) {
             this->bus_obj->target_xfer_data();
             this->bus_obj->release_ctrl_line(this->src_id, SCSI_CTRL_ATN);
@@ -102,12 +108,16 @@ void ScsiBusController::sequencer() {
         }
         break;
     case SeqState::SEND_CMD:
+        LOG_F(9, "%s: seq SEND_CMD, fifo_pos=%d",
+              this->name.c_str(), this->fifo_pos);
         this->bus_obj->target_xfer_data();
         if (!this->fifo_pos)
             this->step_completed();
         break;
     case SeqState::XFER_BEGIN:
         this->cur_bus_phase = this->bus_obj->current_phase();
+        LOG_F(9, "%s: seq XFER_BEGIN, bus_phase=%d",
+              this->name.c_str(), this->cur_bus_phase);
         switch (this->cur_bus_phase) {
         case ScsiPhase::DATA_OUT:
             this->cur_state = SeqState::SEND_DATA;
@@ -118,11 +128,15 @@ void ScsiBusController::sequencer() {
         }
         break;
     case SeqState::XFER_END:
+        LOG_F(9, "%s: seq XFER_END, is_initiator=%d",
+              this->name.c_str(), this->is_initiator);
         if (this->is_initiator)
             this->bus_obj->target_next_step();
         this->step_completed();
         break;
     case SeqState::SEND_DATA:
+        LOG_F(9, "%s: seq SEND_DATA, fifo_pos=%d, to_xfer=%d",
+              this->name.c_str(), this->fifo_pos, this->to_xfer);
         if (this->bus_obj->push_data(this->dst_id, this->data_fifo, this->fifo_pos)) {
             this->to_xfer -= this->fifo_pos;
             this->fifo_pos = 0;
@@ -137,6 +151,8 @@ void ScsiBusController::sequencer() {
         if (this->bus_obj->current_phase() != this->cur_bus_phase) {
             LOG_F(WARNING, "%s: phase mismatch!", this->name.c_str());
         } else {
+            LOG_F(9, "%s: seq RCV_DATA, to_xfer=%d",
+                  this->name.c_str(), this->to_xfer);
             if (!this->rcv_data()) {
                 this->cur_state = SeqState::XFER_END;
                 this->sequencer();
@@ -145,6 +161,9 @@ void ScsiBusController::sequencer() {
         break;
     case SeqState::RCV_STATUS:
     case SeqState::RCV_MESSAGE:
+        LOG_F(9, "%s: seq %s, bus_phase=%d", this->name.c_str(),
+              this->cur_state == SeqState::RCV_STATUS ? "RCV_STATUS" : "RCV_MESSAGE",
+              this->cur_bus_phase);
         if (this->cur_bus_phase == ScsiPhase::MESSAGE_IN)
             this->bus_obj->assert_ctrl_line(this->src_id, SCSI_CTRL_REQ);
         this->rcv_data();
@@ -208,6 +227,10 @@ bool ScsiBusController::rcv_data() {
 
     req_count = std::min(this->to_xfer, DATA_FIFO_DEPTH - this->fifo_pos);
 
+    LOG_F(9, "%s: rcv_data %d bytes, phase=%d, fifo_pos=%d, to_xfer=%d",
+          this->name.c_str(), req_count, this->cur_bus_phase,
+          this->fifo_pos, this->to_xfer);
+
     this->bus_obj->pull_data(this->dst_id, &this->data_fifo[this->fifo_pos], req_count);
     this->fifo_pos += req_count;
     this->to_xfer  -= req_count;
@@ -219,6 +242,9 @@ int ScsiBusController::send_data(uint8_t* dst_ptr, int count) {
         return 0;
 
     int actual_count = std::min(this->fifo_pos, count);
+
+    LOG_F(9, "%s: send_data %d bytes (requested %d), fifo_pos=%d, to_xfer=%d",
+          this->name.c_str(), actual_count, count, this->fifo_pos, this->to_xfer);
 
     // move data out of the data FIFO
     std::memcpy(dst_ptr, this->data_fifo, actual_count);
@@ -233,6 +259,9 @@ int ScsiBusController::send_data(uint8_t* dst_ptr, int count) {
 }
 
 int ScsiBusController::xfer_from(DmaChannel *ch_obj, uint8_t *buf, int len) {
+    LOG_F(9, "%s: xfer_from len=%d, to_xfer=%d, fifo_pos=%d",
+          this->name.c_str(), len, this->to_xfer, this->fifo_pos);
+
     if (len > this->to_xfer + this->fifo_pos)
         LOG_F(WARNING, "%s: DMA xfer len > command xfer len", this->name.c_str());
 

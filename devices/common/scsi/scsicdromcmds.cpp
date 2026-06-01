@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cstring>
 
 ScsiCdromCmds::ScsiCdromCmds() {
+    LOG_F(9, "ScsiCdromCmds: enabling CD-ROM command set");
     this->set_phys_block_dev(this);
 
     this->enable_cmd(ScsiCommand::READ_TOC);
@@ -34,11 +35,14 @@ ScsiCdromCmds::ScsiCdromCmds() {
 void ScsiCdromCmds::process_command() {
     int next_phase;
 
+    LOG_F(9, "ScsiCdromCmds: process_command opcode=0x%02X", this->cdb_ptr[0]);
+
     // use non-disk buffer by default
     phy_impl->set_buffer(this->buf_ptr);
 
     switch(this->cdb_ptr[0]) {
     case ScsiCommand::READ_TOC:
+        LOG_F(9, "ScsiCdromCmds: dispatch READ_TOC");
         next_phase = this->read_toc_new();
         break;
     default:

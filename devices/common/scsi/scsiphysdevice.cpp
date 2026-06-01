@@ -63,6 +63,8 @@ void ScsiPhysDevice::notify(ScsiNotification notif_type, int param)
 
 void ScsiPhysDevice::switch_phase(const int new_phase)
 {
+    LOG_F(9, "%s: switch_phase %d -> %d", this->name.c_str(),
+          this->cur_phase, new_phase);
     this->cur_phase = new_phase;
     this->bus_obj->switch_phase(this->scsi_id, this->cur_phase);
     this->prepare_xfer();
@@ -73,14 +75,17 @@ bool ScsiPhysDevice::allow_phase_change() {
                                       (SCSI_CTRL_ATN | SCSI_CTRL_ACK))
         ABORT_F("%s: reject message requested", this->name.c_str());
 
-    if (this->data_size || this->bus_obj->test_ctrl_lines(SCSI_CTRL_ACK))
-        return false;
-    else
-        return true;
+    bool allow = !(this->data_size || this->bus_obj->test_ctrl_lines(SCSI_CTRL_ACK));
+    LOG_F(9, "%s: allow_phase_change=%d (data_size=%d, ack=%d)",
+          this->name.c_str(), allow, this->data_size,
+          !!this->bus_obj->test_ctrl_lines(SCSI_CTRL_ACK));
+    return allow;
 }
 
 void ScsiPhysDevice::next_step()
 {
+    LOG_F(9, "%s: next_step, cur_phase=%d", this->name.c_str(), this->cur_phase);
+
     // special case: data transfers during MESSAGE_IN phase
     // require handshaking. Rejecting needs to be detected too.
     if (bus_obj->current_phase() == ScsiPhase::MESSAGE_IN &&
@@ -139,6 +144,9 @@ void ScsiPhysDevice::next_step()
 
 void ScsiPhysDevice::prepare_xfer() {
     this->cur_phase = this->bus_obj->current_phase();
+
+    LOG_F(9, "%s: prepare_xfer for phase=%d, xfer_len=%d",
+          this->name.c_str(), this->cur_phase, this->xfer_len);
 
     switch (this->cur_phase) {
     case ScsiPhase::COMMAND: // handled in xfer_data()
@@ -211,6 +219,9 @@ int ScsiPhysDevice::send_data(uint8_t* dst_ptr, const int count)
     if (dst_ptr == nullptr || !count)
         return 0;
 
+    LOG_F(9, "%s: send_data count=%d, data_size=%d",
+          this->name.c_str(), count, this->data_size);
+
     int remainder = count;
 
     while (remainder) {
@@ -227,6 +238,8 @@ int ScsiPhysDevice::send_data(uint8_t* dst_ptr, const int count)
         if (!this->data_size) {
             if (!this->read_more_data(&this->data_size, &this->data_ptr))
                 break;
+            LOG_F(9, "%s: send_data read_more refilled data_size=%d",
+                  this->name.c_str(), this->data_size);
         }
     }
 
@@ -237,6 +250,9 @@ int ScsiPhysDevice::rcv_data(const uint8_t* src_ptr, const int count)
 {
     if (src_ptr == nullptr || !count)
         return 0;
+
+    LOG_F(9, "%s: rcv_data count=%d, phase=%d",
+          this->name.c_str(), count, this->cur_phase);
 
     // DATA_OUT can transfer big data in several chunks while crossing buffer boundaries
     if (this->cur_phase == ScsiPhase::DATA_OUT) {
@@ -256,6 +272,8 @@ int ScsiPhysDevice::rcv_data(const uint8_t* src_ptr, const int count)
             if (this->data_size >= this->incoming_size) {
                 if (!this->write_more_data(&this->incoming_size, &this->data_ptr))
                     break;
+                LOG_F(9, "%s: rcv_data write_more incoming_size=%d",
+                      this->name.c_str(), this->incoming_size);
                 this->data_size = 0;
             }
         }
