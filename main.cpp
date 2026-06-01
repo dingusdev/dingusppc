@@ -138,7 +138,7 @@ int main(int argc, char** argv) {
     bool              log_no_uptime = false;
     app.add_flag("--log-to-stderr", log_to_stderr,
         "Send internal logging to stderr (instead of dingusppc.log)");
-    app.add_flag("--log-verbosity", log_verbosity,
+    app.add_option("--log-verbosity", log_verbosity,
         "Adjust logging verbosity (default is 0 a.k.a. INFO)")
         ->check(CLI::Number);
     app.add_flag("--log-no-uptime", log_no_uptime,
