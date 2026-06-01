@@ -407,7 +407,7 @@ rom_info rom_identity[] = {
     rom( 0x22c101,          0, nullptr          , "M18"      , nullptr  , nullptr                                             ) // PowerMac11,1
     rom( 0x22c102,          0, nullptr          , "M20wl"    , nullptr  , nullptr                                             ) // PowerMac11,1
     rom( 0x22c201,          0, nullptr          , "Q63Proto" , nullptr  , "Power Mac G5 Quad Core Proto"                      ) // PowerMac11,2
-    rom( 0x22c202, 0xb7fe51fc, nullptr          , "Q63"      , nullptr  , "Power Mac G5 Quad Core"                            ) // PowerMac11,2 // 2005-09-30 527f1
+    rom( 0x22c202, 0xb7fe51fc, nullptr          , "Q63"      , nullptr  , "Power Mac G5 Dual or Quad Core"                    ) // PowerMac11,2 // 2005-09-30 527f1
     rom( 0x30c100, 0x0c653168, "P8"             , "P8"       , nullptr  , "PowerBook G3 (FireWire) Pismo"                     ) // PowerBook3,1
     rom( 0x30c100, 0x3a373267, "Pismo"          , "P8"       , nullptr  , "PowerBook G3 (FireWire) Pismo"                     ) // PowerBook3,1 // 2001-03-21 418f5
     rom( 0x30c100, 0x69083366, "Pismo"          , "P8"       , nullptr  , "PowerBook G3 (FireWire) Pismo"                     ) // PowerBook3,1
