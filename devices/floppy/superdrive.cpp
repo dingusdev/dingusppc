@@ -150,11 +150,18 @@ void MacSuperDrive::set_motor_stat(uint8_t new_motor_stat)
             this->track_start_time = 0;
             this->sector_start_time = 0;
             this->init_track_search(-1);
-            this->is_ready = 1;
+            // Only assert is_ready (SEEK_COMPLETE) when a disk is present.
+            // A real drive with no media can spin the motor but will never
+            // lock onto a track, so SEEK_COMPLETE stays de-asserted.
+            this->is_ready = this->has_disk;
             LOG_F(INFO, "%s: turn spindle motor on", this->get_name().c_str());
         } else {
             this->motor_on_time = 0;
-            this->is_ready = 0;
+            // NB: do NOT clear is_ready here. Status address 0xE (Drive_Ready /
+            // SEEK_COMPLETE on Apple Drive Interface) reflects "no seek
+            // currently in progress", not motor state. Clearing it on motor-off
+            // makes the BeOS bootloader spin forever polling Drive_Ready after
+            // it asks the empty Superdrive to power down.
             LOG_F(INFO, "%s: turn spindle motor off", this->get_name().c_str());
         }
     }
