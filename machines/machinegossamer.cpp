@@ -55,20 +55,37 @@ static const std::vector<PciIrqMap> grackle_irq_map = {
 
 // Bit definitions for the Gossamer system register at 0xFF000004
 enum : uint16_t {
-    FDC_TYPE_SWIM3  = (1 << 15), // Macintosh style floppy disk controller
-    FDC_TYPE_MFDC   = (0 << 15), // PC style floppy disk controller
-    BURST_ROM_FALSE = (1 << 14), // burst ROM not present
-    BURST_ROM_TRUE  = (0 << 14), // burst ROM present
-    PCI_C_PRSNT_POS = 12,        // PRSNT bits for the PCI Slot C
-    PCI_B_PRSNT_POS = 10,        // PRSNT bits for the PCI Slot B
-    PCI_A_PRSNT_POS = 8,         // PRSNT bits for the PCI Slot A
-    PCM_PID_POS     = 5,         // Processor und Cache module ID
-    PCM_PID_MASK    = 0xE0,
-    AIO_PRSNT_FALSE = (1 << 4),  // Whisper/Wings style card in the PERCH slot
-    AIO_PRSNT_TRUE  = (0 << 4),  // All-in-one style card in the PERCH slot
-    BUS_SPEED_POS   = 1,         // bus speed code, see below
-    BUS_SPEED_MASK  = 0x0E,
-    UNKNOWN_BIT_0   = 1          // Don't know what this bit is for
+    // GRC/MFM_L            = 15,
+        FDC_TYPE_SWIM3      = (1 << 15),    // Macintosh style floppy disk controller
+        FDC_TYPE_MFDC       = (0 << 15),    // PC style floppy disk controller
+    // /BurstCAP            = 14,
+        BURST_ROM_FALSE     = (1 << 14),    // burst ROM not present
+        BURST_ROM_TRUE      = (0 << 14),    // burst ROM present
+    // PCI1PrsntC2_I        = 13,
+    // PCI1PrsntC1_I        = 12,
+        PCI_C_PRSNT_POS     = 12,           // PRSNT bits for the PCI Slot C
+    // PCI1PrsntB2_I        = 11
+    // PCI1PrsntB1_I        = 10
+        PCI_B_PRSNT_POS     = 10,           // PRSNT bits for the PCI Slot B
+    // PCI1PrsntA2_I        = 9,
+    // PCI1PrsntA1_I        = 8,
+        PCI_A_PRSNT_POS     = 8,            // PRSNT bits for the PCI Slot A
+    // PID0                 = 7,
+    // PID1                 = 6,
+    // PID2                 = 5,
+        PCM_PID_POS         = 5,            // Processor und Cache module ID
+        PCM_PID_MASK        = 0xE0,
+    // /AIO_DETECT          = 4,
+        AIO_PRSNT_FALSE     = (1 << 4),     // Whisper/Wings style card in the PERCH slot
+        AIO_PRSNT_TRUE      = (0 << 4),     // All-in-one style card in the PERCH slot
+    // BusSpeed2            = 3,
+    // BusSpeed1            = 2,
+    // BusSpeed0            = 1,
+        BUS_SPEED_POS       = 1,            // bus speed code, see below
+        BUS_SPEED_MASK      = 0x0E,
+    // /BOSE_DETECT         = 0
+        BOSE_PRSNT_FALSE    = (1 << 0),     // Bose Module Detect on the Wings card
+        BOSE_PRSNT_TRUE     = (0 << 0),
 };
 
 // Gossamer bus speed frequency codes
@@ -128,7 +145,7 @@ int MachineGossamer::initialize(const std::string &id) {
                         | (1 << PCM_PID_POS) // CPU/Cache speed ratio = 2:1
                         | AIO_PRSNT_FALSE // this machine is not All-in-one
                         | (BUS_FREQ_66P82 << BUS_SPEED_POS) // set bus frequency
-                        | UNKNOWN_BIT_0; // pull up bit 0
+                        | BOSE_PRSNT_FALSE; // this machine does not have Wings with Bose Module
 
     gMachineObj->add_device("MachineID", std::unique_ptr<GossamerID>(new GossamerID(sys_reg)));
     grackle_obj->add_mmio_region(
