@@ -464,7 +464,7 @@ rom_info rom_identity[] = {
     rom( 0x314801,          0, nullptr          , "Q41C"     , nullptr  , "PowerBook G4 DLSD"                                 ) // PowerBook5,8
     rom( 0x314801, 0x35c72568, nullptr          , "Q16C"     , nullptr  , "PowerBook G4 DLSD"                                 ) // PowerBook5,8 // 2005-09-22 495f3
     rom( 0x314802,          0, nullptr          , "Q16CBest" , nullptr  , "PowerBook G4 DLSD"                                 ) // PowerBook5,8
-    rom( 0x314901, 0x35c72568, nullptr          , "Q41C"     , nullptr  , "PowerBook G4 1.67 17 inch (DLSD/HiRes - Aluminum)" ) // PowerBook5,9 // 2005-10-05 496f0
+    rom( 0x314901, 0x35c72568, nullptr          , "Q41C"     , nullptr  , "PowerBook G4 1.67 17 inch (DLSD/HiRes - Aluminum)" ) // PowerBook5,9 // 2005-09-22 495f3 // 2005-10-05 496f0
     rom( 0x318100, 0x6ca8272f, "P99"            , nullptr    , nullptr  , "PowerBook G4 867 12 inch (Aluminum)"               ) // PowerBook6,1
     rom( 0x318100, 0x9a7a282e, "P99"            , nullptr    , nullptr  , "PowerBook G4 867 12 inch (Aluminum)"               ) // PowerBook6,1
     rom( 0x318100, 0xb3c92c13, "P99"            , nullptr    , nullptr  , "PowerBook G4 867 12 inch (Aluminum)"               ) // PowerBook6,1
