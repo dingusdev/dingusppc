@@ -411,9 +411,10 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
                 this->ch_stat |=  CH_STAT_PAUSE;
                 this->ch_stat &= ~CH_STAT_ACTIVE;
             } else {
-                if (!(this->ch_stat & CH_STAT_ACTIVE)) {
-                    this->ch_stat &= ~CH_STAT_PAUSE;
-                    this->ch_stat |=  CH_STAT_ACTIVE;
+                this->ch_stat &= ~CH_STAT_PAUSE;
+                if (!(this->ch_stat & CH_STAT_ACTIVE) && this->is_paused) {
+                    this->is_paused = false;
+                    this->ch_stat  |= CH_STAT_ACTIVE;
                     this->resume();
                 }
             }
@@ -686,4 +687,5 @@ void DMAChannel::pause() {
         this->dev_obj->notify(this, DMA_MSG_STOP);
     if (this->stop_cb)
         this->stop_cb();
+    this->is_paused = true;
 }

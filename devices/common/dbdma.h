@@ -170,6 +170,7 @@ private:
     uint32_t wait_select    = 0;
 
     bool     cmd_in_progress = false;
+    bool     is_paused       = false;
     uint8_t  cur_cmd;
 
     // Interrupt related stuff
