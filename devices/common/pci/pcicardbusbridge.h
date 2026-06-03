@@ -44,6 +44,28 @@ enum {
     PCI_CFG_CB_IO_LIMIT_1       = 0x38,
     PCI_CFG_CB_SUBSYSTEM_IDS    = 0x40, // CB_SUBSYSTEM_VENDOR_ID.w, CB_SUBSYSTEM_ID.w
     PCI_CFG_CB_LEGACY_MODE_BASE = 0x44,
+    PCI_CFG_CB_SOCKET_DMA_0     = 0x94,
+    PCI_CFG_CB_SOCKET_DMA_1     = 0x98,
+};
+
+/** PC Card bits */
+enum {
+    DREQ_PIN_MASK               = 3,
+    DREQ_NO_DMA                 = 0, // 0 = Socket is not configured for DMA
+    DREQ_USES_SPKR              = 1,
+    DREQ_USES_IOIS16            = 2,
+    DREQ_USES_INPACK            = 3,
+
+    DDMA_BASE_MASK              = (0xFFF0),
+    DDMA_EXTMODE_MASK           = (1 << 3),
+    DDMA_EXTMODE_DISABLE        = (0 << 3),
+    DDMA_EXTMODE_ENABLE         = (1 << 3),
+    DDMA_XFERSIZE_8_BITS        = (0 << 1),
+    DDMA_XFERSIZE_16_BITS       = (1 << 1),
+    DDMA_XFERSIZE_2             = (2 << 1),
+    DDMA_XFERSIZE_3             = (3 << 1),
+    DDMA_ENABLE                 = (1 << 0),
+    DDMA_DISABLE                = (0 << 0),
 };
 
 class PCICardbusBridge : public PCIBridgeBase {
@@ -89,6 +111,8 @@ protected:
     uint16_t    subsys_id = 0;
     uint16_t    subsys_vndr = 0;
     uint32_t    legacy_mode_base = 0;
+    uint32_t    dreq_pin = DREQ_NO_DMA;
+    uint32_t    dma_base = 0 | DDMA_EXTMODE_DISABLE | DDMA_XFERSIZE_8_BITS | DDMA_DISABLE;
 
     // 0 = not writable
     uint32_t    memory_0_cfg = 0xfffff000;

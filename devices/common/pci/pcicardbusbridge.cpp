@@ -155,6 +155,10 @@ uint32_t PCICardbusBridge::pci_cfg_read(uint32_t reg_offs, AccessDetails &detail
         return (this->subsys_id << 16) | (this->subsys_vndr);
     case PCI_CFG_CB_LEGACY_MODE_BASE:
         return this->legacy_mode_base;
+    case PCI_CFG_CB_SOCKET_DMA_0:
+        return this->dreq_pin;
+    case PCI_CFG_CB_SOCKET_DMA_1:
+        return this->dma_base;
     default:
         return PCIBridgeBase::pci_cfg_read(reg_offs, details);
     }
@@ -193,11 +197,19 @@ void PCICardbusBridge::pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDe
     case PCI_CFG_CB_IO_LIMIT_1:
         this->pci_wr_io_limit_0(value);
         break;
-/*
+#if 0
+    // FIXME: handle legacy_mode_base and dma_base changes here
+
     case PCI_CFG_CB_LEGACY_MODE_BASE:
         this->legacy_mode_base = value;
         break;
-*/
+    case PCI_CFG_CB_SOCKET_DMA_0:
+        this->dreq_pin = value & DREQ_PIN_MASK;
+        break;
+    case PCI_CFG_CB_SOCKET_DMA_1:
+        this->dma_base = (value & DDMA_EXTMODE_MASK) | (value & (0xFFFF & ~DDMA_EXTMODE_MASK));
+        break;
+#endif
     default:
         PCIBridgeBase::pci_cfg_write(reg_offs, value, details);
         break;
@@ -210,6 +222,9 @@ bool PCICardbusBridge::pci_io_read(uint32_t offset, uint32_t size, uint32_t* res
     if ((offset < this->io_base_0_32 || offset + size >= this->io_limit_0_32) &&
         (offset < this->io_base_1_32 || offset + size >= this->io_limit_1_32)
     ) return false;
+#if 0
+    // FIXME: check legacy_mode_base and dma_base here
+#endif
     return this->pci_io_read_loop(offset, size, *res);
 }
 
@@ -219,5 +234,8 @@ bool PCICardbusBridge::pci_io_write(uint32_t offset, uint32_t value, uint32_t si
     if ((offset < this->io_base_0_32 || offset + size >= this->io_limit_0_32) &&
         (offset < this->io_base_1_32 || offset + size >= this->io_limit_1_32)
     ) return false;
+#if 0
+    // FIXME: check legacy_mode_base and dma_base here
+#endif
     return this->pci_io_write_loop(offset, size, value);
 }
