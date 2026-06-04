@@ -75,7 +75,7 @@ void DecPciBridge::pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDetail
         this->arb_ctrl  =  value >> 16;
         break;
     case PSERR_EVENT_DIS:
-        this->pserr_event_dis =  value & 0xFFU;
+        this->pserr_event_dis =  value        & 0x7EU;
         this->gpio_out_en     = (value >> 16) & 0xFFU;
         break;
     case SEC_CLK_CTRL:
