@@ -51,7 +51,7 @@ uint32_t DecPciBridge::pci_cfg_read(uint32_t reg_offs, AccessDetails &details)
     case CHIP_CTRL:
         return (this->arb_ctrl << 16) | (this-> diag_ctrl << 8) | this->chip_ctrl;
     case PSERR_EVENT_DIS:
-        return (this->gpio_out_en << 16) | this->pserr_event_dis;
+        return (this->gpio_out_en << 16) | (this->gpio_out_data << 8) | this->pserr_event_dis;
     case SEC_CLK_CTRL:
         return this->sec_clock_ctrl;
     default:
@@ -76,7 +76,20 @@ void DecPciBridge::pci_cfg_write(uint32_t reg_offs, uint32_t value, AccessDetail
         break;
     case PSERR_EVENT_DIS:
         this->pserr_event_dis =  value        & 0x7EU;
+        this->gpio_out_data   = (value >>  8) & 0xFFU;
         this->gpio_out_en     = (value >> 16) & 0xFFU;
+        {
+            uint8_t bits_to_set = gpio_out_data >> 4;
+            uint8_t bits_to_clr = gpio_out_data & 0xFU;
+            this->gpio_out_data_val |= bits_to_set;
+            this->gpio_out_data_val &= ~bits_to_clr;
+        }
+        {
+            uint8_t bits_to_set = gpio_out_en >> 4;
+            uint8_t bits_to_clr = gpio_out_en & 0xFU;
+            this->gpio_out_en_val |= bits_to_set;
+            this->gpio_out_en_val &= ~bits_to_clr;
+        }
         break;
     case SEC_CLK_CTRL:
         this->sec_clock_ctrl = value & 0xFFFFU;

@@ -61,6 +61,8 @@ private:
     uint8_t     gpio_out_en         = 0;
     uint8_t     gpio_in_data        = 0;
     uint16_t    sec_clock_ctrl      = 0;
+    uint8_t     gpio_out_data_val   = 0;
+    uint8_t     gpio_out_en_val     = 0;
 };
 
 #endif // DEC_P2P_H
