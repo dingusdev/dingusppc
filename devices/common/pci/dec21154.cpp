@@ -28,6 +28,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 
+enum YosemiteGpioMask: uint8_t {
+    GPIO_FWDET = 2, // FireWire detect
+};
+
 DecPciBridge::DecPciBridge(std::string name) : PCIBridge(name)
 {
     supports_types(HWCompType::PCI_HOST | HWCompType::PCI_DEV);
