@@ -99,7 +99,7 @@ static const map<string, string> PropHelp = {
     {"pds",             "specify device for the processsor direct slot"},
 };
 
-static uint32_t adler32(char *buf, size_t len) {
+static uint32_t adler32slow(char *buf, size_t len) {
     uint32_t sum1 = 1;
     uint32_t sum2 = 0;
     while (len--) {
@@ -107,6 +107,44 @@ static uint32_t adler32(char *buf, size_t len) {
         sum2 = (sum2 + sum1) % 65521;
     }
     return sum1 + 65536 * sum2;
+}
+
+static uint32_t adler32(char *buf, size_t len) {
+    // inspired by zlib adler32 implementation
+
+    #define DO1(buf,i)  {sum1 += ((uint8_t*)(buf))[i]; sum2 += sum1;}
+    #define DO2(buf,i)  DO1(buf,i); DO1(buf,i+1);
+    #define DO4(buf,i)  DO2(buf,i); DO2(buf,i+2);
+    #define DO8(buf,i)  DO4(buf,i); DO4(buf,i+4);
+    #define DO16(buf)   DO8(buf,0); DO8(buf,8);
+    #define MOD(a) a %= base
+
+    constexpr uint64_t nmax = 0x16ABF600; // use 5552 for 32-bit
+    constexpr uint64_t base = 0xFFF1;
+    uint64_t sum1 = 1;
+    uint64_t sum2 = 0;
+    while (len >= nmax) {
+        len -= nmax;
+        uint64_t n = nmax / 16;
+        do {
+            DO16(buf);
+            buf += 16;
+        } while (--n);
+        MOD(sum1);
+        MOD(sum2);
+    }
+    while (len >= 16) {
+        len -= 16;
+        DO16(buf);
+        buf += 16;
+    }
+    while (len--) {
+        sum1 += *(uint8_t*)buf++;
+        sum2 += sum1;
+    }
+    MOD(sum1);
+    MOD(sum2);
+    return uint32_t(sum1 | (sum2 << 16));
 }
 
 static uint32_t oldworldchecksum(char *buf, size_t len) {
