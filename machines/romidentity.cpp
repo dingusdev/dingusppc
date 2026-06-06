@@ -94,6 +94,7 @@ rom_info rom_identity[] = {
     rom( 0x077d23f1, 0x9b7a3aad, 0xed510ac937721e25, "Boot PDM 601 1.1", "pm7100"  , "NuBus Power Mac"            , "Power Mac 7100 (newer)"                            )
     rom( 0x077d25f1, 0x9b037f6f, 0xd20052bd25d88bd6, "Boot PDM 601 1.1", "pm9150"  , "NuBus Power Mac"            , "Workgroup Server 9150-120"                         )
     rom( 0x077d26f1, 0x63abfd3f, 0xc5421fbaff3c5a9d, "Boot Cordyceps 6", "pm5200"  , "Power Mac 5200/6200 series" , "Power Mac & Performa 5200,5300,6200,6300"          )
+    rom( 0x077d27f3, 0x852cfbdf, 0x811cb90fcd4cac65, "Boot PBX 603 0.0", nullptr   , "PowerBook 5300"             , "PowerBook 5300 and Assistive Technology Freestyle" )
     rom( 0x077d28a5, 0x67a1aa96, 0x48877909cdce7677, "..0.....Boot TNT", nullptr   , nullptr                      , "TNT A5c1"                                          )
     rom( 0x077d28f1, 0x96cd923d, 0xc241cd82bf90797a, "Boot TNT 0.1p..]", "pm7200"  , "Power Mac 7xxxx/8xxx series", "Power Mac 7200&7500&8500&9500 v1"                  )
     rom( 0x077d28f2, 0x9630c68b, 0x4db4a42fea3b53b3, "Boot TNT 0.1p..]", "pm7200"  , "Power Mac 7xxxx/8xxx series", "Power Mac 7200&7500&8500&9500 v2, SuperMac S900"   )
