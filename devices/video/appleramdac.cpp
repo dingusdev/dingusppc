@@ -22,10 +22,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** Apple RAMDAC ASICs (RaDACal & DACula) emulation. */
 
 #include <core/bitops.h>
+#include <core/memaccess.h>
 #include <devices/video/display.h>
 #include <devices/video/appleramdac.h>
 #include <loguru.hpp>
-#include <memaccess.h>
 
 AppleRamdac::AppleRamdac(DacFlavour flavour) {
     this->flavour =  flavour;

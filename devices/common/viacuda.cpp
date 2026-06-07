@@ -24,16 +24,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <core/hostevents.h>
 #include <core/mathutils.h>
+#include <core/memaccess.h>
 #include <core/timermanager.h>
-#include <devices/common/adb/adbbus.h>
 #include <cpu/ppc/ppcemu.h>
+#include <devices/common/adb/adbbus.h>
 #include <devices/common/hwcomponent.h>
 #include <devices/common/hwinterrupt.h>
 #include <devices/common/viacuda.h>
 #include <devices/deviceregistry.h>
 #include <loguru.hpp>
 #include <machines/machinebase.h>
-#include <memaccess.h>
 
 #include <cinttypes>
 #include <string>

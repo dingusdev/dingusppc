@@ -19,6 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <core/memaccess.h>
 #include <core/timermanager.h>
 #include <cpu/ppc/ppcdisasm.h>
 #include <cpu/ppc/ppcemu.h>
@@ -26,7 +27,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <debugger/debugger.h>
 #include <devices/common/hwinterrupt.h>
 #include <devices/common/ofnvram.h>
-#include "memaccess.h"
 #include <utils/profiler.h>
 
 #include <array>

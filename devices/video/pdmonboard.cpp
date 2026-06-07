@@ -21,12 +21,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file PDM on-board video emulation. */
 
+#include <core/memaccess.h>
 #include <cpu/ppc/ppcmmu.h>
 #include <devices/memctrl/hmc.h>
 #include <devices/video/pdmonboard.h>
 #include <devices/video/videoctrl.h>
 #include <machines/machinebase.h>
-#include <memaccess.h>
 #include <loguru.hpp>
 
 #include <cinttypes>

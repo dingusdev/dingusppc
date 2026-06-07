@@ -21,11 +21,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Apple Desktop Bus Mouse emulation. */
 
+#include <core/memaccess.h>
 #include <devices/common/adb/adbmouse.h>
 #include <devices/common/adb/adbbus.h>
 #include <devices/deviceregistry.h>
 #include <core/hostevents.h>
-#include <memaccess.h>
 #include <loguru.hpp>
 
 AdbMouse::AdbMouse(

@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file ATAPI CDROM implementation. */
 
+#include <core/memaccess.h>
 #include <devices/common/ata/atadefs.h>
 #include <devices/common/ata/atapicdrom.h>
 #include <devices/common/ata/idechannel.h>
@@ -28,7 +29,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/deviceregistry.h>
 #include <machines/machinebase.h>
 #include <machines/machineproperties.h>
-#include <memaccess.h>
 
 #include <cstring>
 #include <string>

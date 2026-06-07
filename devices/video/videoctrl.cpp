@@ -21,11 +21,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Video Controller base class implementation. */
 
+#include <core/memaccess.h>
 #include <core/timermanager.h>
 #include <devices/common/hwinterrupt.h>
 #include <devices/video/videoctrl.h>
 #include <devices/memctrl/memctrlbase.h>
-#include <memaccess.h>
 
 #include <cinttypes>
 

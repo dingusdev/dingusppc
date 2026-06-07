@@ -22,9 +22,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef PPCEMU_H
 #define PPCEMU_H
 
+#include <core/memaccess.h>
 #include <devices/memctrl/memctrlbase.h>
 #include <endianswap.h>
-#include <memaccess.h>
 
 #include <atomic>
 #include <cinttypes>

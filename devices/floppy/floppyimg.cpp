@@ -21,10 +21,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Support for reading and writing of various floppy images. */
 
+#include <core/memaccess.h>
 #include <devices/floppy/floppyimg.h>
 #include <machines/machineproperties.h>
 #include <loguru.hpp>
-#include <memaccess.h>
 #include <utils/imgfile.h>
 
 #include <cinttypes>

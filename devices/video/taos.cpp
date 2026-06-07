@@ -22,13 +22,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @file Taos video controller emulation. */
 
 #include <core/bitops.h>
+#include <core/memaccess.h>
 #include <devices/deviceregistry.h>
 #include <devices/memctrl/memctrlbase.h>
 #include <devices/video/taos.h>
 #include <machines/machinebase.h>
 #include <machines/machineproperties.h>
 #include <loguru.hpp>
-#include <memaccess.h>
 
 #include <string>
 

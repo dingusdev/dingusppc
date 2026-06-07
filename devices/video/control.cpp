@@ -36,6 +36,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     Kudos to joevt#3510 for his precious technical help and HW hacking.
  */
 
+#include <core/memaccess.h>
 #include <devices/common/i2c/i2c.h>
 #include <devices/deviceregistry.h>
 #include <devices/ioctrl/macio.h>
@@ -44,7 +45,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <loguru.hpp>
 #include <machines/machinebase.h>
 #include <machines/machineproperties.h>
-#include <memaccess.h>
 
 #include <cinttypes>
 

@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Descriptor-based direct memory access emulation. */
 
+#include <core/memaccess.h>
 #include <core/timermanager.h>
 #include <cpu/ppc/ppcmmu.h>
 #include <devices/common/dbdma.h>
@@ -28,7 +29,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/hwinterrupt.h>
 #include <devices/common/mmiodevice.h>
 #include <endianswap.h>
-#include <memaccess.h>
 
 #include <cinttypes>
 #include <cstring>

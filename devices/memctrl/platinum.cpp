@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** Platinum Memory/Display Controller emulation. */
 
+#include <core/memaccess.h>
 #include <core/timermanager.h>
 #include <devices/deviceregistry.h>
 #include <devices/ioctrl/macio.h>
@@ -28,7 +29,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/video/displayid.h>
 #include <loguru.hpp>
 #include <machines/machinebase.h>
-#include <memaccess.h>
 
 #include <cinttypes>
 

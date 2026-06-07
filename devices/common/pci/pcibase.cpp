@@ -19,10 +19,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <core/memaccess.h>
 #include <devices/common/pci/pcibase.h>
 #include <endianswap.h>
 #include <loguru.hpp>
-#include <memaccess.h>
 
 #include <cinttypes>
 #include <fstream>

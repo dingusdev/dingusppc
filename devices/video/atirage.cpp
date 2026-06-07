@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <core/bitops.h>
+#include <core/memaccess.h>
 #include <devices/common/hwcomponent.h>
 #include <devices/common/pci/pcidevice.h>
 #include <devices/deviceregistry.h>
@@ -27,7 +28,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/video/displayid.h>
 #include <endianswap.h>
 #include <loguru.hpp>
-#include <memaccess.h>
 
 #include <map>
 

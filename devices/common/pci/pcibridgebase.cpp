@@ -19,8 +19,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <core/memaccess.h>
 #include <devices/common/pci/pcibridgebase.h>
-#include <memaccess.h>
 
 PCIBridgeBase::PCIBridgeBase(std::string name, PCIHeaderType hdr_type, int num_bars) : PCIBase(name, hdr_type, num_bars)
 {

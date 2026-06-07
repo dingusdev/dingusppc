@@ -21,12 +21,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file ATA hard disk emulation. */
 
+#include <core/memaccess.h>
 #include <devices/common/ata/atahd.h>
 #include <devices/deviceregistry.h>
 #include <devices/common/ata/idechannel.h>
 #include <loguru.hpp>
 #include <machines/machinebase.h>
-#include <memaccess.h>
 
 #include <bitset>
 #include <cstring>

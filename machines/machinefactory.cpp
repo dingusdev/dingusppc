@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     Author: Max Poliakovski
  */
 
+#include <core/memaccess.h>
 #include <devices/common/hwcomponent.h>
 #include <devices/deviceregistry.h>
 #include <devices/memctrl/memctrlbase.h>
@@ -33,7 +34,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <machines/machinefactory.h>
 #include <machines/machineproperties.h>
 #include <machines/romidentity.h>
-#include <memaccess.h>
 
 #include <cinttypes>
 #include <cstring>

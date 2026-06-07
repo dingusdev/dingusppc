@@ -21,10 +21,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Virtual CD-ROM device implementation. */
 
+#include <core/memaccess.h>
 #include <devices/common/scsi/scsi.h> // reuse SCSI definitions
 #include <devices/storage/cdromdrive.h>
 #include <loguru.hpp>
-#include <memaccess.h>
 
 #include <cinttypes>
 #include <cstring>

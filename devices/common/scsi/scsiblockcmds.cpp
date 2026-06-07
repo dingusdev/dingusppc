@@ -19,9 +19,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <core/memaccess.h>
 #include <devices/common/scsi/scsiblockcmds.h>
 #include <loguru.hpp>
-#include <memaccess.h>
 
 ScsiBlockCmds::ScsiBlockCmds() {
     this->enable_cmd(ScsiCommand::READ_6);

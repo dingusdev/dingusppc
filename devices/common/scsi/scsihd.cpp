@@ -21,10 +21,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Generic SCSI Hard Disk emulation. */
 
+#include <core/memaccess.h>
 #include <core/timermanager.h>
 #include <devices/common/scsi/scsihd.h>
 #include <loguru.hpp>
-#include <memaccess.h>
 
 #include <cstring>
 

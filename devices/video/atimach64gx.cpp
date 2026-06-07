@@ -25,12 +25,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <core/bitops.h>
+#include <core/memaccess.h>
 #include <devices/deviceregistry.h>
 #include <devices/video/atimach64gx.h>
 #include <devices/video/displayid.h>
 #include <devices/video/rgb514defs.h>
 #include <loguru.hpp>
-#include <memaccess.h>
 
 #include <string>
 
