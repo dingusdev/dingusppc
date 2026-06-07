@@ -19,6 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <core/endianswap.h>
 #include <cpu/ppc/ppcemu.h>
 #include <devices/deviceregistry.h>
 #include <devices/common/scsi/sc53c94.h>
@@ -26,7 +27,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/floppy/swim3.h>
 #include <devices/ioctrl/macio.h>
 #include <devices/serial/escc.h>
-#include <endianswap.h>
 #include <loguru.hpp>
 #include <machines/machinebase.h>
 

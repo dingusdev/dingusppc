@@ -21,11 +21,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** Burgundy sound codec emulation. */
 
+#include <core/endianswap.h>
 #include <core/timermanager.h>
 #include <devices/common/hwcomponent.h>
 #include <devices/deviceregistry.h>
 #include <devices/sound/burgundy.h>
-#include <endianswap.h>
 #include <loguru.hpp>
 
 BurgundyCodec::BurgundyCodec(std::string name) : MacioSndCodec(name)

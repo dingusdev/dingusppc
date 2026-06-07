@@ -23,11 +23,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define NOMINMAX
 #endif // NOMINMAX
 
+#include <core/endianswap.h>
 #include <core/timermanager.h>
 #include <cpu/ppc/ppcemu.h>
 #include <devices/common/dmacore.h>
 #include <devices/sound/soundserver.h>
-#include <endianswap.h>
 
 #include <algorithm>
 #include <functional>

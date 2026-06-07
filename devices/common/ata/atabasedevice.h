@@ -24,9 +24,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef ATA_BASE_DEVICE_H
 #define ATA_BASE_DEVICE_H
 
+#include <core/endianswap.h>
 #include <devices/common/ata/atadefs.h>
 #include <devices/common/hwcomponent.h>
-#include "endianswap.h"
 
 #include <cinttypes>
 #include <string>

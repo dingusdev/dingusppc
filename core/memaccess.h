@@ -26,9 +26,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef MEM_ACCESS_H
 #define MEM_ACCESS_H
 
-#include "endianswap.h"
-#include <cinttypes>
+#include <core/endianswap.h>
 #include <loguru.hpp>
+
+#include <cinttypes>
 
 /* read an aligned big-endian WORD (16bit) */
 #define READ_WORD_BE_A( addr) (BYTESWAP_16(*((uint16_t*)(addr))))
@@ -232,4 +233,4 @@ inline void write_mem_rev(uint8_t* buf, uint32_t value, uint32_t size) {
     }
 }
 
-#endif /* MEM_ACCESS_H */
+#endif // MEM_ACCESS_H

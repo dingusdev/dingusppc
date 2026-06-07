@@ -21,10 +21,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Basic ATAPI interface emulation. */
 
+#include <core/endianswap.h>
 #include <devices/common/ata/atabasedevice.h>
 #include <devices/common/ata/atapibasedevice.h>
 #include <devices/common/ata/atadefs.h>
-#include <endianswap.h>
 #include <loguru.hpp>
 
 #include <cinttypes>

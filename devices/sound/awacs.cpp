@@ -26,12 +26,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     - Screamer AWACs in Beige G3
 */
 
+#include <core/endianswap.h>
 #include <core/timermanager.h>
 #include <devices/deviceregistry.h>
 #include <devices/sound/awacs.h>
 #include <devices/sound/soundserver.h>
 #include <devices/common/dbdma.h>
-#include <endianswap.h>
 #include <machines/machinebase.h>
 
 #include <loguru.hpp>

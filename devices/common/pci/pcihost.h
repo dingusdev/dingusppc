@@ -23,9 +23,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define PCI_HOST_H
 
 #include <core/bitops.h>
+#include <core/endianswap.h>
 #include <devices/common/hwinterrupt.h>
 #include <devices/memctrl/memctrlbase.h>
-#include <endianswap.h>
 
 #include <cinttypes>
 #include <string>

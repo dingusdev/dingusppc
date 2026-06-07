@@ -19,13 +19,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <core/endianswap.h>
 #include <devices/common/hwcomponent.h>
 #include <devices/common/pci/pcibridge.h>
 #include <devices/common/pci/pcihost.h>
 #include <devices/deviceregistry.h>
 #include <machines/machinefactory.h>
 #include <machines/machinebase.h>
-#include <endianswap.h>
 #include <loguru.hpp>
 
 #include <cinttypes>

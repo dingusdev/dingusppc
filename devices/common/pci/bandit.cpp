@@ -21,10 +21,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** Bandit/Chaos ARBus-to-PCI Bridge emulation. */
 
+#include <core/endianswap.h>
 #include <devices/common/pci/bandit.h>
 #include <devices/deviceregistry.h>
 #include <devices/memctrl/memctrlbase.h>
-#include <endianswap.h>
 #include <loguru.hpp>
 #include <machines/machinebase.h>
 
