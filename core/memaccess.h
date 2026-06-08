@@ -79,6 +79,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
      (uint64_t(((uint8_t*)(addr))[3]) << 24) | (         ((uint8_t*)(addr))[2]  << 16) | \
      (         ((uint8_t*)(addr))[1]  <<  8) |           ((uint8_t*)(addr))[0]          )
 
+/* read an aligned native-endian DWORD */
+#define READ_DWORD_NE_A READ_DWORD_LE_A // native-endian = little-endian for now
+
 /* write an aligned big-endian WORD (16bit) */
 #define WRITE_WORD_BE_A( addr, val) (*((uint16_t*)(addr)) = BYTESWAP_16(val))
 
@@ -154,6 +157,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         ((uint8_t*)(addr))[6] = ((uint64_t)(val) >> 48);                       \
         ((uint8_t*)(addr))[7] = ((uint64_t)(val) >> 56);                       \
     } while (0)
+
+/* write an aligned native-endian DWORD */
+#define WRITE_DWORD_NE_A WRITE_DWORD_LE_A // native-endian = little-endian for now
 
 /* read value of the specified size from memory starting at addr,
    perform byte swapping when necessary so that the source
