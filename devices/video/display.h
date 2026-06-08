@@ -25,12 +25,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define DISPLAY_H
 
 #include <core/hostevents.h>
+#include <core/memaccess.h>
 
 #include <functional>
 #include <memory>
 
-#define FB_WRITE(addr, val) (*((uint32_t*)(addr)) = (val))
-#define FB_READ(addr) (*(uint32_t*)(addr))
+/* HACK: the stuff below is a VERY BASIC platform abstraction hardcoded for SDL2
+   for now: SDL2 framebuffer's endianness matches the host's CPU endianness. */
+#define FB_WRITE    WRITE_DWORD_NE_A
+#define FB_READ     READ_DWORD_NE_A
 
 class VideoCtrlBase;
 
