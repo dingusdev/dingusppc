@@ -38,6 +38,8 @@ enum {
     DRAM_CAP_32MB   = (1 << 25),
     DRAM_CAP_64MB   = (1 << 26),
     DRAM_CAP_128MB  = (1 << 27),
+    DRAM_CAP_256MB  = (1 << 28),
+    DRAM_CAP_512MB  = (1 << 29),
 };
 
 enum RangeType {
