@@ -225,9 +225,9 @@ uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
         }
         case 0xA: // IOBus device #1 ; Board register 1 and bandit1 PRSNT bits
         case 0xB: // IOBus device #2 ; RaDACal/DACula
-        case 0xC: // IOBus device #3 ; chaos or bandit2 PRSNT bits ; sixty6
+        case 0xC: // IOBus device #3 ; sixty6 // Open Firmware incorrectly reads chaos or bandit2 PRSNT bits from here
         case 0xD: // IOBus device #4 ; NVRAM High Address
-        case 0xE: // IOBus device #5 ; sixty6 composite/s-video (not for fatman)
+        case 0xE: // IOBus device #5 ; Board register 2 and bandit2 PRSNT bits, sixty6 composite/s-video detect (not for fatman)
         case 0xF: // IOBus device #6 ; NVRAM Data
             if (this->iobus_devs[subdev_num - 10] != nullptr) {
                 uint64_t value = this->iobus_devs[subdev_num - 10]->iodev_read((offset >> 4) & 0x1F);
@@ -354,9 +354,9 @@ void GrandCentral::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
             break;
         case 0xA: // IOBus device #1 ; Board register 1 and bandit1 PRSNT bits
         case 0xB: // IOBus device #2 ; RaDACal/DACula
-        case 0xC: // IOBus device #3 ; chaos or bandit2 PRSNT bits
+        case 0xC: // IOBus device #3 ; sixty6 // Open Firmware incorrectly reads chaos or bandit2 PRSNT bits from here
         case 0xD: // IOBus device #4 ; NVRAM High Address
-        case 0xE: // IOBus device #5 ; sixty6 composite/s-video (not for fatman)
+        case 0xE: // IOBus device #5 ; Board register 2 and bandit2 PRSNT bits, sixty6 composite/s-video detect (not for fatman)
         case 0xF: // IOBus device #6 ; NVRAM Data
             uint16_t val;
             switch (size) {
