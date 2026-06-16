@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef PSX_MEMCTRL_H
 #define PSX_MEMCTRL_H
 
+#include <core/bitops.h>
 #include <devices/common/mmiodevice.h>
 #include <devices/memctrl/memctrlbase.h>
 
@@ -50,7 +51,8 @@ namespace PsxReg {
 } // namespace PsxReg
 
 /** Bus (aka CPU) speed constants. */
-enum {
+using PsxBusSpeed = uint32_t;
+enum : PsxBusSpeed {
     PSX_BUS_SPEED_38 = 0, // bus frequency 38 MHz
     PSX_BUS_SPEED_33 = 1, // bus frequency 33 MHz
     PSX_BUS_SPEED_40 = 2, // bus frequency 40 MHz
@@ -64,6 +66,22 @@ public:
 
     static std::unique_ptr<HWComponent> create() {
         return std::unique_ptr<PsxCtrl>(new PsxCtrl(1, "PSX-PCI1"));
+    }
+
+    // the lower bits of Sys_Id register are set after a hard reset
+    // by reading the voltage on the RA[9:8] pins.
+    // Desktop computers use pulldown resistors to set them to %00
+    // while portables have %01 hardcoded there.
+    void set_lower_sysid(uint32_t id) {
+        insert_bits(this->sys_id, id, 16, 2);
+    }
+
+    void set_revision_id(uint8_t rev_id) { this->chip_rev = rev_id << 24; }
+
+    // Bus speed is latched after a hard reset from the RA[1:0] pins.
+    // The method below allows specifying bus speed during machine initialization.
+    void set_bus_speed(PsxBusSpeed bus_speed) {
+        insert_bits(this->sys_config, bus_speed, 0, 2);
     }
 
     // MMIODevice methods

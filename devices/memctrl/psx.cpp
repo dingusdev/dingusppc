@@ -38,9 +38,9 @@ PsxCtrl::PsxCtrl(int bridge_num, std::string name)
     // add MMIO region for the PSX control registers
     this->add_mmio_region(0xF8000000, 0x70, this);
 
-    this->sys_id     = 0x10000000;
-    this->chip_rev   = 0; // old PSX, what's about PSX+?
-    this->sys_config = PSX_BUS_SPEED_50;
+    this->sys_id = 0x10000000;   // PSX register dump from a 6500 at 68kmla
+    this->set_revision_id(0x10); // PSX register dump from a 6500 at 68kmla
+    this->set_bus_speed(PSX_BUS_SPEED_50); // set bus speed to 50 MHz by default
 }
 
 uint32_t PsxCtrl::read(uint32_t rgn_start, uint32_t offset, int size)
