@@ -220,9 +220,9 @@ jobs:
             ccache_args: -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
             upload_suffix: MSVC
           - name: msbuild
-            generator: "Visual Studio 17 2022"
-            cmake_args: ""
-            ccache_args: ""
+            generator: Ninja
+            cmake_args: -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl
+            ccache_args: -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
             upload_suffix: MSBUILD
     steps:
     - uses: actions/checkout@v5
