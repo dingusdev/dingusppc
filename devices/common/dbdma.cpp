@@ -359,7 +359,7 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
         // update general purpose channel status & control bits s0...s7
         // if requested (needed for interrupt generation)
         if (mask & 0xFF)
-            this->ch_stat = (this->ch_stat & ~(mask & 0xFF)) | (data & mask);
+            this->ch_stat = (this->ch_stat & ~(mask & 0xFF)) | (data & mask & 0xFF);
 
         // flush bit can be set at the same time the run bit is cleared.
         // That means we need to update memory before channel operation
