@@ -116,26 +116,50 @@ int main(int argc, char** argv) {
     ppc_exec_until(0xC4);
 
 #if SUPPORTS_PPC_LITTLE_ENDIAN_MODE
-    #warning PPC endian mode enabled
+    #ifdef _MSC_VER
+        #pragma message("PPC endian mode enabled")
+    #else
+        #warning PPC endian mode enabled
+    #endif
     LOG_F(INFO, "PPC endian mode enabled");
 #else
-    #warning PPC endian mode disabled
+    #ifdef _MSC_VER
+        #pragma message("PPC endian mode disabled")
+    #else
+        #warning PPC endian mode disabled
+    #endif
     LOG_F(INFO, "PPC endian mode disabled");
 #endif
 
 #if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
-    #warning Memory endian mode enabled
+    #ifdef _MSC_VER
+        #pragma message("Memory endian mode enabled")
+    #else
+        #warning Memory endian mode enabled
+    #endif
     LOG_F(INFO, "Memory endian mode enabled");
 #else
-    #warning Memory endian mode disabled
+    #ifdef _MSC_VER
+        #pragma message("Memory endian mode disabled")
+    #else
+        #warning Memory endian mode disabled
+    #endif
     LOG_F(INFO, "Memory endian mode disabled");
 #endif
 
 #ifdef LOG_INSTRUCTIONS
-    #warning Log instructions enabled
+    #ifdef _MSC_VER
+        #pragma message("Log instructions enabled")
+    #else
+        #warning Log instructions enabled
+    #endif
     LOG_F(INFO, "Log instructions enabled");
 #else
-    #warning Log instructions disabled
+    #ifdef _MSC_VER
+        #pragma message("Memory endian mode disabled")
+    #else
+        #warning Memory endian mode disabled
+    #endif
     LOG_F(INFO, "Log instructions disabled");
 #endif
 
