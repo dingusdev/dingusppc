@@ -390,8 +390,8 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
                 // in this case.
                 if (mask & CH_STAT_PAUSE) {
                     if (data & CH_STAT_PAUSE)
-                        ABORT_F("%s: attempt to set both run and pasue bits at the same time",
-                                this->get_name().c_str());
+                        ABORT_F("%s: Attempt to set both run and pause bits at the same time",
+                            this->get_name().c_str());
                     else
                         this->ch_stat &= ~CH_STAT_PAUSE;
                 }
