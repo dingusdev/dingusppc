@@ -202,7 +202,7 @@ void DMAChannel::finish_cmd() {
 
     // all INPUT and OUTPUT commands including LOAD_QUAD and STORE_QUAD update cmd.resCount
     if (this->cur_cmd < DBDMA_Cmd::NOP && res.is_writable) {
-        WRITE_WORD_LE_A(&cmd_desc[12], this->queue_len);
+        WRITE_WORD_LE_A(&cmd_desc[12], this->res_count);
         this->res_count = 0;
     }
 
@@ -466,8 +466,9 @@ void DMAChannel::xfer_from_device() {
     this->xfer_dir = DMA_DIR_FROM_DEV;
 
     int got_bytes = this->dev_obj->xfer_from(this, this->queue_data, this->queue_len);
-    if (got_bytes == this->queue_len) {
-        this->queue_len = 0;
+    this->res_count += got_bytes;
+    this->queue_len -= got_bytes;
+    if (!this->queue_len) {
         this->finish_cmd();
     } else if (got_bytes) {
         LOG_F(WARNING, "%s: got unexpected amount of data in xfer_from_device",
@@ -484,8 +485,9 @@ void DMAChannel::xfer_to_device() {
     this->xfer_dir = DMA_DIR_TO_DEV;
 
     int got_bytes = this->dev_obj->xfer_to(this, this->queue_data, this->queue_len);
-    if (got_bytes == this->queue_len) {
-        this->queue_len = 0;
+    this->res_count += got_bytes;
+    this->queue_len -= got_bytes;
+    if (!this->queue_len) {
         this->finish_cmd();
     }
 
