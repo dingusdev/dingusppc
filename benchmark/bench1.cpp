@@ -156,9 +156,9 @@ int main(int argc, char** argv) {
     LOG_F(INFO, "Log instructions enabled");
 #else
     #ifdef _MSC_VER
-        #pragma message("Memory endian mode disabled")
+        #pragma message("Log instructions disabled")
     #else
-        #warning Memory endian mode disabled
+        #warning Log instructions disabled
     #endif
     LOG_F(INFO, "Log instructions disabled");
 #endif
