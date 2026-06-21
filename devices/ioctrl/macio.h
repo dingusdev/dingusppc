@@ -238,9 +238,11 @@ private:
 
 /** O'Hare/Heathrow specific registers. */
 enum {
+    MIO_OHARE_ENTRY_SPT = 0x30, // entry systems support register
     MIO_OHARE_ID        = 0x34, // IDs register
     MIO_OHARE_FEAT_CTRL = 0x38, // feature control register
-    MIO_AUX_CTRL        = 0x3C,
+    MIO_HEATH_AUX_CTRL  = 0x3C, // auxiliary feature control/internal ints register
+                                // (Heathrow/Paddington only)
 };
 
 /** MIO_OHARE_ID bits. */

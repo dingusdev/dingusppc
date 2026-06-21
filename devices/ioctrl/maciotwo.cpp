@@ -393,7 +393,7 @@ void MacIoTwo::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
             this->get_name().c_str(), offset, SIZE_ARG(size), size * 2, value);
         this->feature_control(BYTESWAP_32(value));
         break;
-    case MIO_AUX_CTRL:
+    case MIO_HEATH_AUX_CTRL:
         LOG_F(9, "%s: write AUX_CTRL @%x.%c = %0*x",
             this->get_name().c_str(), offset, SIZE_ARG(size), size * 2, value);
         this->aux_ctrl = value;
