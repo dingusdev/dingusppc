@@ -292,7 +292,7 @@ void MacIoTwo::dma_write(uint32_t offset, uint32_t value, int size) {
 uint32_t MacIoTwo::mio_ctrl_read(uint32_t offset, int size) {
     uint32_t value;
 
-    switch (offset & 0xFC) {
+    switch (offset & ~3) {
     case MIO_INT_EVENTS2:
         value = this->int_events >> 32;
         break;
@@ -334,7 +334,21 @@ uint32_t MacIoTwo::mio_ctrl_read(uint32_t offset, int size) {
             this->get_name().c_str(), offset);
     }
 
-    return BYTESWAP_32(value);
+    if (!((offset | size) & 3)) // aligned DWORD reads --> fast path
+        return BYTESWAP_32(value);
+    else {
+        uint32_t mask = (1ULL << (size * 8)) - 1;
+        if (((offset & 3) + size) <= 4) // partial register reads
+            return BYTESWAP_SIZED(value >> ((offset & 3) * 8), size) & mask;
+        else { // spanning reads; don't make much sense but the HW supports them anyway
+            uint32_t value2 = this->mio_ctrl_read((offset & ~3) + 4, 4);
+            value = REG_READ_HELPER(BYTESWAP_32(value), value2, offset & 3, size);
+
+            LOG_F(WARNING, "%s: spanning register read, offset = 0x%X, size = %d",
+                this->get_name().c_str(), offset, size);
+            return value;
+        }
+    }
 }
 
 void MacIoTwo::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {

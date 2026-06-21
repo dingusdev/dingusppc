@@ -110,7 +110,8 @@ protected:
 // Helpers for data conversion in the PCI Configuration space.
 
 /**
-    Perform size dependent endian swapping for value that is dword from PCI config or any other dword little endian register.
+    Perform size dependent endian swapping for value that is dword from PCI config
+    or any other dword little endian register.
 
     Unaligned data is handled properly by using bytes from the next dword.
  */
@@ -197,5 +198,15 @@ inline uint32_t pci_conv_wr_data(uint32_t v1, uint32_t v2, AccessDetails &detail
         return 0xFFFFFFFFUL;
     }
 }
+
+/** Merge val_hi and val_lo into a QWORD, then extract a portion
+    indicated by pos and size and return the right-justified result.
+    This macro is a variant of pci_conv_rd_data() with less code
+    aiming to simplify spanning reads from PCI registers.
+    No endian swappping is performed.
+ */
+#define REG_READ_HELPER(val_hi, val_lo, pos, size) \
+    ((((uint64_t)(val_hi) << 32) | (val_lo)) >> (8 - (pos) - (size)) * 8) & \
+    ((1ULL << ((size) * 8)) - 1) // apply size-dependent mask
 
 #endif /* PCI_HOST_H */
