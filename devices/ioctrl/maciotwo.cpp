@@ -352,17 +352,32 @@ uint32_t MacIoTwo::mio_ctrl_read(uint32_t offset, int size) {
 }
 
 void MacIoTwo::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
-    switch (offset & 0xFC) {
+    uint32_t mask = (1ULL << (size * 8)) - 1;
+
+    if (!((offset | size) & 3)) // aligned DWORD writes --> fast path
+        value = BYTESWAP_32(value);
+    else {
+        if (((offset & 3) + size) > 4)
+            LOG_F(WARNING, "%s: spanning register write, "
+                  "offset = 0x%X, size = %d, value = 0x%X",
+                  this->get_name().c_str(), offset, size, value);
+        value = BYTESWAP_SIZED(value, size) << ((offset & 3) * 8);
+        mask <<= (offset & 3);
+        if (offset <= MIO_OHARE_ENTRY_SPT || offset >= MIO_OHARE_FEAT_CTRL)
+            value = (this->mio_ctrl_read(offset & ~3, 4) & ~mask) | value;
+    }
+
+    switch (offset & ~3) {
     case MIO_INT_MASK2:
-        this->int_mask |= uint64_t(BYTESWAP_32(value) & ~MACIO_INT_MODE) << 32;
+        this->int_mask |= uint64_t(value & ~MACIO_INT_MODE) << 32;
         this->signal_cpu_int();
         break;
     case MIO_INT_CLEAR2:
-        this->int_events &= ~(uint64_t(BYTESWAP_32(value) & 0x7FFFFFFFUL) << 32);
+        this->int_events &= ~(uint64_t(value & 0x7FFFFFFFUL) << 32);
         clear_cpu_int();
         break;
     case MIO_INT_MASK1:
-        this->int_mask = (this->int_mask & 0x7FFFFFFF00000000ULL) | BYTESWAP_32(value);
+        this->int_mask = (this->int_mask & 0x7FFFFFFF00000000ULL) | value;
         // copy IntMode bit to InterruptMask2 register
         this->int_mask |= uint64_t(this->int_mask & MACIO_INT_MODE) << 32;
         this->signal_cpu_int();
@@ -372,7 +387,6 @@ void MacIoTwo::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
             this->int_events = 0;
             this->clear_cpu_int();
         } else {
-            value = BYTESWAP_32(value);
             this->int_events &= ~uint64_t(value & 0x7FFFFFFFUL);
             this->clear_cpu_int();
             this->clear_dma_int(value);
@@ -385,13 +399,22 @@ void MacIoTwo::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
         // Doing that has no effect - IRQ flags are cleared in the Nanokernel.
         break;
     case MIO_OHARE_ID:
-        LOG_F(ERROR, "%s: write OHARE_ID @%x.%c = %0*x",
-            this->get_name().c_str(), offset, SIZE_ARG(size), size * 2, value);
+        if (mask & 0xFF)
+            LOG_F(INFO, "%s: CPU_ID register written with 0x%X", this->name.c_str(), value & 0xFF);
+        if (mask & 0xFF00)
+            LOG_F(INFO, "%s: MB_ID register written with 0x%X", this->name.c_str(),
+                 (value >> 8) & 0xFF);
+        if (mask & 0xFF0000)
+            LOG_F(INFO, "%s: MON_ID register written with 0x%X", this->name.c_str(),
+                 (value >> 16) & 0xFF);
+        if (mask & 0xFF000000UL)
+            LOG_F(INFO, "%s: FP_ID register written with 0x%X", this->name.c_str(),
+                 (value >> 24) & 0xFF);
         break;
     case MIO_OHARE_FEAT_CTRL:
         LOG_F(WARNING, "%s: write FEAT_CTRL @%x.%c = %0*x",
             this->get_name().c_str(), offset, SIZE_ARG(size), size * 2, value);
-        this->feature_control(BYTESWAP_32(value));
+        this->feature_control(value);
         break;
     case MIO_HEATH_AUX_CTRL:
         LOG_F(9, "%s: write AUX_CTRL @%x.%c = %0*x",
