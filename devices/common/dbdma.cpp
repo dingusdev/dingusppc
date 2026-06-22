@@ -112,6 +112,7 @@ void DMAChannel::interpret_cmd() {
             }
         } else {
             this->queue_len = 0;
+            this->res_count = 0;
             this->finish_cmd();
         }
         break;
@@ -205,7 +206,6 @@ void DMAChannel::finish_cmd() {
     // all INPUT and OUTPUT commands including LOAD_QUAD and STORE_QUAD update cmd.resCount
     if (this->cur_cmd < DBDMA_Cmd::NOP && res.is_writable) {
         WRITE_WORD_LE_A(&cmd_desc[12], this->res_count);
-        this->res_count = 0;
     }
 
     if (this->cur_cmd < DBDMA_Cmd::STOP && !branch_taken)
