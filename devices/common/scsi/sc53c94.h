@@ -295,7 +295,6 @@ private:
     uint8_t        irq      = 0;
 
     // DMA related stuff
-    DmaBidirChannel*    dma_ch = nullptr;
     DrqCb               drq_cb = nullptr;
 };
 
