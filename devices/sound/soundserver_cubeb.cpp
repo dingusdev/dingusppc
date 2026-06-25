@@ -134,7 +134,7 @@ static long sound_out_callback(cubeb_stream* stream, void* user_data,
     out_frames = 0;
 
     while (req_frames > 0) {
-        if (!dma_ch->pull_data((uint32_t)req_frames << 2, &got_len, &p_in)) {
+        if (DmaPullResult::MoreData == dma_ch->pull_data((uint32_t)req_frames << 2, &got_len, &p_in)) {
             if ((in_buf = (int16_t*)p_in)) {
                 frames = got_len >> 2;
 
@@ -177,7 +177,7 @@ int SoundServer::open_out_stream(uint32_t sample_rate, DmaOutChannel *dma_ch)
             while (req_size > 0) {
                 uint8_t *chunk;
                 uint32_t chunk_size;
-                if (!dma_ch->pull_data(req_size, &chunk_size, &chunk)) {
+                if (DmaPullResult::MoreData == dma_ch->pull_data(req_size, &chunk_size, &chunk)) {
                     req_size -= chunk_size;
                 } else {
                     break;
