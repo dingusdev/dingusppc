@@ -713,7 +713,7 @@ void AmicFloppyDma::write_ctrl(uint8_t value)
     }
 }
 
-int AmicFloppyDma::push_data(const char* src_ptr, int len)
+DmaPushResult AmicFloppyDma::push_data(const char* src_ptr, int len)
 {
     len = std::min((int)this->byte_count, len);
 
@@ -730,7 +730,7 @@ int AmicFloppyDma::push_data(const char* src_ptr, int len)
         LOG_F(WARNING, "AMIC: DMA interrupts not implemented yet");
     }
 
-    return 0;
+    return DmaPushResult::PushedData;
 }
 
 DmaPullResult AmicFloppyDma::pull_data(uint32_t req_len, uint32_t *avail_len,

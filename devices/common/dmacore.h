@@ -33,6 +33,11 @@ enum DmaPullResult : int {
     NoMoreData,     // data source has no more data to be pulled
 };
 
+enum DmaPushResult : int {
+    NoData     = -1,  // data source is not running
+    PushedData = 0,   // data was pushed
+};
+
 class DmaOutChannel {
 public:
     DmaOutChannel(std::string name) { this->name = name; }
@@ -54,7 +59,7 @@ public:
     DmaInChannel(std::string name) { this->name = name; }
 
     virtual bool            is_in_active() { return true; }
-    virtual int             push_data(const char* src_ptr, int len) = 0;
+    virtual DmaPushResult   push_data(const char* src_ptr, int len) = 0;
     virtual int             get_push_data_remaining() { return 1; }
     virtual void            end_push_data() {}
 

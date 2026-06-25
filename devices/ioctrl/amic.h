@@ -146,7 +146,7 @@ public:
     void            write_ctrl(const uint8_t value);
     uint8_t         read_stat() { return this->stat; }
 
-    int             push_data(const char* src_ptr, int len);
+    DmaPushResult   push_data(const char* src_ptr, int len);
     DmaPullResult   pull_data(uint32_t req_len, uint32_t *avail_len,
                                       uint8_t **p_data);
 
