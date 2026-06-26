@@ -270,13 +270,6 @@ void DMAChannel::xfer_quad(const DMACmd *cmd_desc, DMACmd *cmd_host) {
     this->finish_cmd();
 }
 
-void DMAChannel::update_irq() {
-    // For abort path (called from reg_write when RUN is cleared): cmd_ptr still
-    // points to the current command, so reading from it is correct here.
-    MapDmaResult res = mmu_map_dma_mem(this->cmd_ptr, 16, false);
-    this->update_irq(res.host_va[2]);
-}
-
 void DMAChannel::update_irq(uint8_t cmd_bits) {
     // STOP doesn't generate interrupts
     if (this->cur_cmd < DBDMA_Cmd::STOP) {
@@ -397,7 +390,7 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
             } else {
                 if (this->ch_stat & CH_STAT_ACTIVE) {
                     this->abort();
-                    this->update_irq();
+                    this->update_irq(this->cur_host->cmd_bits);
                     this->cmd_in_progress = false;
                 }
                 this->ch_stat &= ~(CH_STAT_RUN | CH_STAT_ACTIVE | CH_STAT_DEAD);

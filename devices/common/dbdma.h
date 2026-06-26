@@ -143,7 +143,6 @@ protected:
     void interpret_cmd(void);
     void finish_cmd();
     void xfer_quad(const DMACmd *cmd_desc, DMACmd *cmd_host);
-    void update_irq();
     void update_irq(uint8_t cmd_bits);
     void xfer_from_device();
     void xfer_to_device();
