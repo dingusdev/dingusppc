@@ -112,7 +112,7 @@ inline static bool check_qnan(int check_reg) {
 }
 
 static double set_endresult_nan(double ppc_result_d) {
-    ppc_state.fpscr += (FX + VX);
+    ppc_state.fpscr |= (FX + VX);
     return std::numeric_limits<double>::quiet_NaN();
 }
 
@@ -154,11 +154,11 @@ static void ppc_update_vx() {
 }
 
 static void ppc_update_fex() {
-    uint32_t fpscr_check = (ppc_state.fpscr >> 22) & ppc_state.fpscr & 0x0F8;
+    uint32_t fpscr_check = ((ppc_state.fpscr >> 22) & 0x0F8);
     if (fpscr_check)
-        ppc_state.fpscr |= VX;
+        ppc_state.fpscr |= FEX;
     else
-        ppc_state.fpscr &= ~VX;
+        ppc_state.fpscr &= ~FEX;
 }
 
 // Floating Point Arithmetic
