@@ -172,6 +172,8 @@ private:
     bool     cmd_in_progress = false;
     bool     is_paused       = false;
     uint8_t  cur_cmd;
+    DMACmd * cur_host = nullptr;   // host virtual address of current command
+    bool     cur_is_writable = false;  // current command is writable
 
     // Interrupt related stuff
     InterruptCtrl* int_ctrl = nullptr;

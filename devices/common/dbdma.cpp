@@ -74,8 +74,7 @@ void DMAChannel::interpret_cmd() {
         this->finish_cmd();
     }
 
-    bool cmd_is_writable;
-    DMACmd *cmd_host = fetch_cmd(this->cmd_ptr, &cmd_struct, &cmd_is_writable);
+    this->cur_host = fetch_cmd(this->cmd_ptr, &cmd_struct, &this->cur_is_writable);
 
     this->ch_stat &= ~CH_STAT_WAKE; // clear wake bit (DMA spec, 5.5.3.4)
 
@@ -127,9 +126,9 @@ void DMAChannel::interpret_cmd() {
             LOG_F(ERROR, "%s: Invalid key %d in LOAD_QUAD", this->get_name().c_str(),
                 cmd_struct.cmd_key & 7);
         }
-        if (!cmd_is_writable)
+        if (!this->cur_is_writable)
             LOG_F(ERROR, "%s: DMACmd is not writeable!", this->get_name().c_str());
-        this->xfer_quad(&cmd_struct, cmd_host);
+        this->xfer_quad(&cmd_struct, this->cur_host);
         break;
     case DBDMA_Cmd::NOP:
         this->finish_cmd();
@@ -150,15 +149,8 @@ void DMAChannel::interpret_cmd() {
 void DMAChannel::finish_cmd() {
     bool   branch_taken = false;
 
-    // obtain real pointer to the descriptor of the command to be finished
-    MapDmaResult res  = mmu_map_dma_mem(this->cmd_ptr, 16, false);
-    uint8_t *cmd_desc = res.host_va;
-
-    // get command code
-    this->cur_cmd = cmd_desc[3] >> 4;
-
     // save interrupt bits from the completing command before cmd_ptr may change
-    uint8_t saved_cmd_bits = cmd_desc[2];
+    uint8_t saved_cmd_bits = this->cur_host->cmd_bits;
 
     // all commands except STOP update cmd.xferStatus and
     // perform actions under control of "i" interrupt, "b" branch, and "w" wait bits
@@ -191,21 +183,21 @@ void DMAChannel::finish_cmd() {
                 }
             }
             if (cond) {
-                this->cmd_ptr = READ_DWORD_LE_A(&cmd_desc[8]);
+                this->cmd_ptr = READ_DWORD_LE_A(&this->cur_host->cmd_arg);
                 branch_taken = true;
                 this->ch_stat |= CH_STAT_BT;
             }
         }
 
-        if (res.is_writable)
-            WRITE_WORD_LE_A(&cmd_desc[14], this->ch_stat | CH_STAT_ACTIVE);
+        if (this->cur_is_writable)
+            WRITE_WORD_LE_A(&this->cur_host->xfer_stat, this->ch_stat | CH_STAT_ACTIVE);
     }
 
     this->ch_stat &= ~(CH_STAT_FLUSH | CH_STAT_BT);
 
     // all INPUT and OUTPUT commands including LOAD_QUAD and STORE_QUAD update cmd.resCount
-    if (this->cur_cmd < DBDMA_Cmd::NOP && res.is_writable) {
-        WRITE_WORD_LE_A(&cmd_desc[12], this->res_count);
+    if (this->cur_cmd < DBDMA_Cmd::NOP && this->cur_is_writable) {
+        WRITE_WORD_LE_A(&this->cur_host->res_count, this->res_count);
     }
 
     if (this->cur_cmd < DBDMA_Cmd::STOP && !branch_taken)
