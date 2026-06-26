@@ -142,7 +142,7 @@ protected:
     DMACmd* fetch_cmd(uint32_t cmd_addr, DMACmd* p_cmd, bool *is_writable);
     void interpret_cmd(void);
     void finish_cmd();
-    void xfer_quad(const DMACmd *cmd_desc, DMACmd *cmd_host);
+    void xfer_quad(bool is_store);
     void update_irq(uint8_t cmd_bits);
     void xfer_from_device();
     void xfer_to_device();

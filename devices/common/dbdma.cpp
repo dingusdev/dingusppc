@@ -119,16 +119,14 @@ void DMAChannel::interpret_cmd() {
         if ((cmd_struct.cmd_key & 7) != 6)
             LOG_F(ERROR, "%s: Invalid key %d in STORE_QUAD", this->get_name().c_str(),
                 cmd_struct.cmd_key & 7);
-        this->xfer_quad(&cmd_struct, nullptr);
+        this->xfer_quad(false);
         break;
     case DBDMA_Cmd::LOAD_QUAD:
         if ((cmd_struct.cmd_key & 7) != 6) {
             LOG_F(ERROR, "%s: Invalid key %d in LOAD_QUAD", this->get_name().c_str(),
                 cmd_struct.cmd_key & 7);
         }
-        if (!this->cur_is_writable)
-            LOG_F(ERROR, "%s: DMACmd is not writeable!", this->get_name().c_str());
-        this->xfer_quad(&cmd_struct, this->cur_host);
+        this->xfer_quad(true);
         break;
     case DBDMA_Cmd::NOP:
         this->finish_cmd();
@@ -211,12 +209,14 @@ void DMAChannel::finish_cmd() {
     this->cmd_in_progress = false;
 }
 
-void DMAChannel::xfer_quad(const DMACmd *cmd_desc, DMACmd *cmd_host) {
+void DMAChannel::xfer_quad(bool is_store) {
     MapDmaResult res;
-    uint32_t addr;
+    uint32_t addr      = READ_DWORD_LE_A(&this->cur_host->address);
+    uint16_t req_count = READ_WORD_LE_A (&this->cur_host->req_count);
+    uint32_t cmd_arg   = READ_DWORD_LE_A(&this->cur_host->cmd_arg);
 
     // parse and fix reqCount
-    uint32_t xfer_size = cmd_desc->req_count & 7;
+    uint32_t xfer_size = req_count & 7;
     if (xfer_size & 4) {
         xfer_size = 4;
     } else if (xfer_size & 2) {
@@ -224,9 +224,8 @@ void DMAChannel::xfer_quad(const DMACmd *cmd_desc, DMACmd *cmd_host) {
     } else {
         xfer_size = 1;
     }
-    this->res_count = cmd_desc->req_count; // this is the value that gets written to cmd.resCount
+    this->res_count = req_count; // this is the value that gets written to cmd.resCount
 
-    addr = cmd_desc->address;
     if (addr & (xfer_size - 1)) {
         LOG_F(ERROR, "%s: QUAD address 0x%08x is not aligned!", this->get_name().c_str(), addr);
         addr &= ~(xfer_size - 1);
@@ -235,15 +234,15 @@ void DMAChannel::xfer_quad(const DMACmd *cmd_desc, DMACmd *cmd_host) {
     res = mmu_map_dma_mem(addr, xfer_size, true);
 
     // prepare data pointers and perform data transfer
-    if (!cmd_host) {
+    if (is_store) {
         if (res.type & RT_MMIO) {
             res.dev_obj->write(res.dev_base, addr - res.dev_base,
-                               BYTESWAP_SIZED(cmd_desc->cmd_arg, xfer_size), xfer_size);
+                BYTESWAP_SIZED(cmd_arg, xfer_size), xfer_size);
         } else if (res.is_writable) {
             switch (xfer_size) {
-                case 1: *res.host_va = cmd_desc->cmd_arg; break;
-                case 2: WRITE_WORD_LE_A(res.host_va, cmd_desc->cmd_arg); break;
-                case 4: WRITE_DWORD_LE_A(res.host_va, cmd_desc->cmd_arg); break;
+                case 1: *res.host_va = cmd_arg; break;
+                case 2: WRITE_WORD_LE_A(res.host_va, cmd_arg); break;
+                case 4: WRITE_DWORD_LE_A(res.host_va, cmd_arg); break;
             }
         } else {
             LOG_F(ERROR, "SOS: DMA access is not to RAM %08X!\n", addr);
@@ -260,10 +259,13 @@ void DMAChannel::xfer_quad(const DMACmd *cmd_desc, DMACmd *cmd_host) {
                 default: value = 0; break;
             }
         }
-        WRITE_DWORD_LE_A(&cmd_host->cmd_arg, value);
+        if (!this->cur_is_writable)
+            LOG_F(ERROR, "%s: DMACmd is not writeable!", this->get_name().c_str());
+        else
+            WRITE_DWORD_LE_A(&this->cur_host->cmd_arg, value);
     }
 
-    if (cmd_desc->cmd_bits & 0xC)
+    if (this->cur_host->cmd_bits & 0xC)
         ABORT_F("%s: cmd_bits.b should be zero for LOAD/STORE_QUAD!",
             this->get_name().c_str());
 
