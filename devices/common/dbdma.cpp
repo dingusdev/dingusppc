@@ -541,8 +541,8 @@ DmaPullResult DMAChannel::pull_data(uint32_t req_len, uint32_t *avail_len, uint8
 }
 
 DmaPushResult DMAChannel::push_data(const char* src_ptr, int len) {
-    if (this->ch_stat & CH_STAT_DEAD || !(this->ch_stat & CH_STAT_ACTIVE)) {
-        LOG_F(WARNING, "%s: attempt to push data to dead/idle channel",
+    if (!this->is_active()) {
+        LOG_F(WARNING, "%s: Attempt to push data to dead/idle channel",
             this->get_name().c_str());
         return DmaPushResult::NoData;
     }
@@ -569,7 +569,7 @@ DmaPushResult DMAChannel::push_data(const char* src_ptr, int len) {
 }
 
 void DMAChannel::end_pull_data() {
-    if (this->ch_stat & CH_STAT_DEAD || !(this->ch_stat & CH_STAT_ACTIVE)) {
+    if (!this->is_active()) {
         // dead or idle channel? -> no more data
         LOG_F(WARNING, "%s: Ending Dead/idle channel -> no more data",
               this->get_name().c_str());
@@ -587,7 +587,7 @@ void DMAChannel::end_pull_data() {
 }
 
 void DMAChannel::end_push_data() {
-    if (this->ch_stat & CH_STAT_DEAD || !(this->ch_stat & CH_STAT_ACTIVE)) {
+    if (!this->is_active()) {
         LOG_F(WARNING, "%s: Attempt to end push data to dead/idle channel",
             this->get_name().c_str());
         return;
