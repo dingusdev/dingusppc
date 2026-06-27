@@ -112,7 +112,6 @@ GrandCentral::GrandCentral() : PCIDevice("mac-io_grandcentral"), InterruptCtrl()
     this->curio_dma->register_dma_int(this, this->register_dma_int(IntSrc::DMA_SCSI_CURIO));
     this->curio_dma->connect(this->curio);
     this->curio->connect(this->curio_dma.get());
-    //this->curio->set_dma_channel(this->curio_dma.get());
     this->curio->set_drq_callback([this](const uint8_t drq_state) {
         this->curio_dma->set_stat((drq_state & 1) << 5);
     });

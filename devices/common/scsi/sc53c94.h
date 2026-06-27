@@ -214,24 +214,6 @@ public:
     uint16_t pseudo_dma_read();
     void     pseudo_dma_write(uint16_t data);
 
-    // real DMA control
-    void real_dma_xfer_out();
-    void real_dma_xfer_in();
-
-    void dma_start();
-    void dma_wait();
-    void dma_stop();
-    void set_dma_channel(DmaBidirChannel *dma_ch) {
-        this->dma_ch = dma_ch;
-        auto dbdma_ch = dynamic_cast<DMAChannel*>(dma_ch);
-        if (dbdma_ch) {
-            dbdma_ch->set_callbacks(
-                std::bind(&Sc53C94::dma_start, this),
-                std::bind(&Sc53C94::dma_stop, this)
-            );
-        }
-    }
-
     void set_drq_callback(DrqCb cb) {
         this->drq_cb = cb;
     }
@@ -315,7 +297,6 @@ private:
     // DMA related stuff
     DmaBidirChannel*    dma_ch = nullptr;
     DrqCb               drq_cb = nullptr;
-    uint32_t            dma_timer_id = 0;
 };
 
 #endif // SC_53C94_H
