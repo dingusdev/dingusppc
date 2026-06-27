@@ -152,6 +152,8 @@ protected:
     void abort(void);
     void pause(void);
 
+    bool is_active();
+
 private:
     std::function<void(void)> start_cb = nullptr; // DMA channel start callback
     std::function<void(void)> stop_cb  = nullptr; // DMA channel stop callback

@@ -358,8 +358,7 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
             if (data & CH_STAT_FLUSH) {
                 if (
                     this->cur_cmd <= DBDMA_Cmd::INPUT_LAST &&
-                    (this->ch_stat & CH_STAT_ACTIVE) &&
-                    !(this->ch_stat & CH_STAT_DEAD)
+                    this->is_active()
                 ) {
                     this->ch_stat |= CH_STAT_FLUSH;
                     if (this->dev_obj != nullptr)
@@ -495,8 +494,9 @@ void DMAChannel::xfer_retry() {
 }
 
 bool DMAChannel::dma_is_ready() {
-    if (this->ch_stat   & CH_STAT_DEAD  || !(this->ch_stat  & CH_STAT_ACTIVE) ||
-        this->xfer_dir == DMA_DIR_UNDEF ||   this->cur_cmd >= DBDMA_Cmd::NOP)
+    if (!this->is_active() ||
+        this->xfer_dir == DMA_DIR_UNDEF || this->cur_cmd >= DBDMA_Cmd::NOP
+    )
         return false;
 
     return true;
@@ -506,7 +506,7 @@ DmaPullResult DMAChannel::pull_data(uint32_t req_len, uint32_t *avail_len, uint8
 {
     *avail_len = 0;
 
-    if (this->ch_stat & CH_STAT_DEAD || !(this->ch_stat & CH_STAT_ACTIVE)) {
+    if (!this->is_active()) {
         // dead or idle channel? -> no more data
         LOG_F(WARNING, "%s: Dead/idle channel -> no more data", this->get_name().c_str());
         return DmaPullResult::NoMoreData;
@@ -604,16 +604,15 @@ void DMAChannel::end_push_data() {
 }
 
 bool DMAChannel::is_out_active() {
-    if (this->ch_stat & CH_STAT_DEAD || !(this->ch_stat & CH_STAT_ACTIVE)) {
-        return false;
-    }
-    else {
-        return true;
-    }
+    return this->is_active();
 }
 
 bool DMAChannel::is_in_active() {
-    if (this->ch_stat & CH_STAT_DEAD || !(this->ch_stat & CH_STAT_ACTIVE)) {
+    return this->is_active();
+}
+
+bool DMAChannel::is_active() {
+    if ((this->ch_stat & CH_STAT_DEAD) || !(this->ch_stat & CH_STAT_ACTIVE)) {
         return false;
     }
     else {
@@ -643,9 +642,8 @@ void DMAChannel::start() {
     // between a device and memory (LOAD_QUAD, STORE_QUAD, NOP and STOP).
     // We thus interprete the DBDMA program until a data transfer between
     // a device and memory is queued or the channel becomes idle/dead.
-    while (!this->cmd_in_progress && !(this->ch_stat & CH_STAT_DEAD) &&
-           (this->ch_stat & CH_STAT_ACTIVE)) {
-               this->interpret_cmd();
+    while (!this->cmd_in_progress && this->is_active()) {
+        this->interpret_cmd();
     }
 }
 
@@ -662,9 +660,8 @@ void DMAChannel::resume() {
     // between a device and memory (LOAD_QUAD, STORE_QUAD, NOP and STOP).
     // We thus interprete the DBDMA program until a data transfer between
     // a device and memory is queued or the channel becomes idle/dead.
-    while (!this->cmd_in_progress && !(this->ch_stat & CH_STAT_DEAD) &&
-           (this->ch_stat & CH_STAT_ACTIVE)) {
-               this->interpret_cmd();
+    while (!this->cmd_in_progress && this->is_active()) {
+        this->interpret_cmd();
     }
 }
 
