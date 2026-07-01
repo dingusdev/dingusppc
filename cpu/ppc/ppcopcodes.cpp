@@ -30,6 +30,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <vector>
 
+// MPC750 HID0 power-saving mode bits. They are selected in HID0, then
+// entered by setting MSR[POW] with mtmsr.
+static constexpr uint32_t HID0_DOZE  = 0x00800000;
+static constexpr uint32_t HID0_NAP   = 0x00400000;
+static constexpr uint32_t HID0_SLEEP = 0x00200000;
+static constexpr uint32_t HID0_POWER_SAVE_MASK = HID0_DOZE | HID0_NAP | HID0_SLEEP;
+
 //Extract the registers desired and the values of the registers.
 
 // Affects CR Field 0 - For integer operations
@@ -813,6 +820,10 @@ void dppc_interpreter::ppc_mtmsr(uint32_t opcode) {
         dec_exception_pending = false;
         //LOG_F(WARNING, "MTMSR: decrementer exception triggered");
         ppc_exception_handler(Except_Type::EXC_DECR, 0);
+    } else if ((ppc_state.msr & MSR::POW) &&
+               (ppc_state.spr[SPR::HID0] & HID0_POWER_SAVE_MASK)) {
+        exec_flags |= EXEF_SLEEP;
+        ppc_next_instruction_address = (ppc_state.pc & 0xFFFFFFFCUL) + 4;
     } else {
         mmu_change_mode();
     }

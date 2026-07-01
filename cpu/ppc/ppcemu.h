@@ -195,6 +195,7 @@ enum {
     EXEF_EXCEPTION      = 1 << 1, // Exception handler invoked
     EXEF_RFI            = 1 << 2, // RFI instruction executed
     EXEF_OPC_DECODER    = 1 << 3, // Opcode decoder has changed
+    EXEF_SLEEP          = 1 << 4, // Processor is waiting in power-saving mode
 };
 
 enum CR_select : int32_t {
