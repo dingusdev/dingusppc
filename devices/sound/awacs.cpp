@@ -185,21 +185,21 @@ int AwacsScreamer::device_postinit() {
 }
 
 uint32_t AwacsScreamer::snd_ctrl_read(uint32_t offset, int size) {
-    uint32_t value;
+    uint32_t value = 0;
 
     switch (offset) {
     case AWAC_SOUND_CTRL_REG:
         value = this->snd_ctrl_reg;
         break;
     case AWAC_CODEC_CTRL_REG:
-        value = this->is_busy;
+        value = this->codec_ctrl_reg;
         break;
     case AWAC_CODEC_STATUS_REG:
         value = (AWAC_AVAILABLE << 8) | (AWAC_MAKER_CRYSTAL << 16) |
             (AWAC_REV_SCREAMER << 20);
         break;
     case AWAC_CLIP_COUNT:
-        value = this->clip_count;
+        value            = this->clip_count;
         this->clip_count = 0;
         break;
     case AWAC_BYTE_SWAP:
@@ -210,30 +210,36 @@ uint32_t AwacsScreamer::snd_ctrl_read(uint32_t offset, int size) {
         break;
     default:
         LOG_F(ERROR, "%s: unsupported register at offset 0x%X", this->name.c_str(), offset);
-        value = 0;
     }
 
     return value;
 }
 
 void AwacsScreamer::snd_ctrl_write(uint32_t offset, uint32_t value, int size) {
-    int subframe, reg_num;
-    uint16_t data;
-
     switch (offset) {
     case AWAC_SOUND_CTRL_REG:
         this->snd_ctrl_reg = BYTESWAP_32(value);
         this->set_sample_rate((this->snd_ctrl_reg >> 8) & 7);
         break;
-    case AWAC_CODEC_CTRL_REG:
-        subframe = (value >> 14) & 3;
-        reg_num  = (value >> 20) & 7;
-        data     = ((value >> 8) & 0xF00) | ((value >> 24) & 0xFF);
-        LOG_F(9, "%s subframe = %d, reg = %d, data = %08X", this->name.c_str(),
-              subframe, reg_num, data);
-        if (!subframe)
-            this->shadow_regs[reg_num] = data;
+
+    case AWAC_CODEC_CTRL_REG: {
+        if (this->is_busy)
+            return;
+
+        int subframe = (value >> 14) & 3;
+        int reg_num  = (value >> 20) & 7;
+
+        this->codec_ctrl_reg = value | (subframe << 22);
+        this->is_busy        = this->codec_ctrl_reg & 0x1000000;
+
+        uint16_t data = ((value >> 8) & 0xF00) | ((value >> 24) & 0xFF);
+        LOG_F(
+            9, "%s subframe = %d, reg = %d, data = %04X", this->name.c_str(),
+            subframe, reg_num, data);
+        this->shadow_regs[reg_num] = data;
+        this->is_busy              = 0;
         break;
+    }
     case AWAC_CLIP_COUNT:
         this->clip_count = BYTESWAP_32(value);
         break;
