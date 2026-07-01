@@ -437,11 +437,11 @@ void GrandCentral::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
             this->signal_cpu_int();
             break;
         case MIO_INT_CLEAR1:
+            value = BYTESWAP_32(value);
             if ((this->int_mask & MACIO_INT_MODE) && (value & MACIO_INT_CLR)) {
                 this->int_events = 0;
                 this->clear_cpu_int();
             } else {
-                value = BYTESWAP_32(value);
                 this->int_events &= ~(value & 0x7FFFFFFFUL);
                 this->clear_cpu_int();
                 this->clear_dma_int(value);
