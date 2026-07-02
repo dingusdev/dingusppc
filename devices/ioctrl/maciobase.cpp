@@ -107,6 +107,16 @@ void MacIoBase::notify_bar_change(int bar_num) {
     }
 }
 
+void MacIoBase::attach_iobus_device(int dev_num, IobusDevice* dev_obj) {
+    if (dev_num >= 0 && dev_num < (this->device_id >= MIO_DEV_ID_OHARE ? 4 : 6)) {
+        if (this->iobus_devs[dev_num])
+            LOG_F(WARNING, "%s: replacing existing IOBus device #%d",
+                  this->name.c_str(), dev_num + 1);
+        this->iobus_devs[dev_num] = dev_obj;
+    } else
+        LOG_F(WARNING, "%s: invalid IOBus device #%d", this->name.c_str(), dev_num + 1);
+}
+
 uint64_t MacIoBase::register_dma_int(IntSrc src_id) {
     switch (src_id) {
     case IntSrc::DMA_SWIM3          : return INT_TO_IRQ_ID(0x01);

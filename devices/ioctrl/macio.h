@@ -130,6 +130,9 @@ public:
     MacIoBase(std::string name, uint16_t dev_id, uint8_t rev=1);
     ~MacIoBase() = default;
 
+    // IOBus devices management
+    void attach_iobus_device(int dev_num, IobusDevice* dev_obj);
+
     uint64_t register_dma_int(IntSrc src_id) override;
     void ack_int(uint64_t irq_id, uint8_t irq_line_state) override;
     void ack_dma_int(uint64_t irq_id, uint8_t irq_line_state) override;
@@ -157,6 +160,9 @@ protected:
     MacioSndCodec*      snd_codec; // audio codec instance
     EsccController*     escc;      // ESCC serial controller
 
+    // IOBus devices
+    IobusDevice*        iobus_devs[6] = { nullptr };
+
     // DMA channels
     std::unique_ptr<DMAChannel>     floppy_dma;
     std::unique_ptr<DMAChannel>     snd_out_dma;
@@ -180,9 +186,9 @@ public:
     uint32_t read(uint32_t rgn_start, uint32_t offset, int size) override;
     void write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size) override;
 
-    // InterruptCtrl methods
     void attach_iodevice(int dev_num, IobusDevice* dev_obj);
 
+    // InterruptCtrl methods
     uint64_t register_dev_int(IntSrc src_id) override;
     uint64_t register_dma_int(IntSrc src_id) override;
     void ack_int(uint64_t irq_id, uint8_t irq_line_state) override;
