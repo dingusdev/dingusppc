@@ -173,12 +173,11 @@ int SoundServer::open_out_stream(uint32_t sample_rate, DmaOutChannel *dma_ch)
                return;
             }
             // Drain the DMA buffer, but don't do anything else.
-            int req_size = std::max(dma_ch->get_pull_data_remaining(), 1024);
-            while (req_size > 0) {
+            while(1) {
                 uint8_t *chunk;
                 uint32_t chunk_size;
-                if (DmaPullResult::MoreData == dma_ch->pull_data(req_size, &chunk_size, &chunk)) {
-                    req_size -= chunk_size;
+                if (DmaPullResult::MoreData == dma_ch->pull_data(1024, &chunk_size, &chunk)) {
+                    ;
                 } else {
                     break;
                 }
