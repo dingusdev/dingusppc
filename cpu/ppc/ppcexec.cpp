@@ -377,6 +377,19 @@ static void ppc_exec_inner(uint32_t start_addr, uint32_t size)
             max_cycles = process_events();
 
         if (exec_flags) {
+            if ((exec_flags & EXEF_SLEEP) && !(exec_flags & EXEF_EXCEPTION)) [[unlikely]] {
+                while (power_on && (exec_flags & EXEF_SLEEP)) {
+                    max_cycles = process_events();
+                    if (!(exec_flags & EXEF_SLEEP)) {
+                        break;
+                    }
+                    if (max_cycles > g_icycles) {
+                        g_icycles = max_cycles;
+                    } else {
+                        g_icycles++;
+                    }
+                }
+            }
             if (exec_flags & EXEF_OPC_DECODER) [[unlikely]] {
                 opcode_grabber = ppc_opcode_grabber;
             }
