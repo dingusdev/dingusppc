@@ -375,6 +375,15 @@ extern bool include_601;   // For non-PowerPC 601 emulation with 601 extras
 extern bool is_altivec;    // For Altivec Emulation
 extern bool is_64bit;      // For PowerPC G5 Emulation
 
+enum class PPCPowMode : uint8_t {
+    None,
+    Unconditional,
+    HID0,
+};
+
+extern PPCPowMode ppc_pow_mode;
+extern uint32_t ppc_pow_hid0_mask;
+
 // Make execution deterministic (ignore external input, used a fixed date, etc.)
 extern bool is_deterministic;
 
