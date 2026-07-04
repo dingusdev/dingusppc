@@ -58,6 +58,15 @@ MemCtrlBase* mem_ctrl_instance = 0;
 
 bool is_601 = false;
 bool include_601 = false;
+PPCPowMode ppc_pow_mode = PPCPowMode::None;
+uint32_t ppc_pow_hid0_mask = 0;
+
+// 603/7xx HID0 power-saving mode bits. They are selected in HID0,
+// then entered by setting MSR[POW] with mtmsr.
+static constexpr uint32_t HID0_DOZE  = 0x00800000;
+static constexpr uint32_t HID0_NAP   = 0x00400000;
+static constexpr uint32_t HID0_SLEEP = 0x00200000;
+static constexpr uint32_t HID0_POWER_SAVE_MASK = HID0_DOZE | HID0_NAP | HID0_SLEEP;
 
 bool is_deterministic = false;
 
@@ -917,6 +926,27 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool do_include_6
     ppc_state.spr[SPR::PVR] = cpu_version;
     is_601 = (cpu_version >> 16) == 1;
     include_601 = !is_601 & do_include_601;
+    ppc_pow_mode = PPCPowMode::None;
+    ppc_pow_hid0_mask = 0;
+
+    switch (cpu_version) {
+    case PPC_VER::MPC603:
+    case PPC_VER::MPC603E:
+    case PPC_VER::MPC603EV:
+    case PPC_VER::MPC750:
+        // 603/7xx enter power-saving modes through HID0 doze/nap/sleep
+        // bits selected before MSR[POW] is set.
+        ppc_pow_mode = PPCPowMode::HID0;
+        ppc_pow_hid0_mask = HID0_POWER_SAVE_MASK;
+        break;
+    case PPC_VER::MPC604:
+    case PPC_VER::MPC604E:
+        // 604-family processors use MSR[POW] directly.
+        ppc_pow_mode = PPCPowMode::Unconditional;
+        break;
+    default:
+        break;
+    }
 
     initialize_ppc_opcode_table();
 
