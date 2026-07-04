@@ -137,8 +137,9 @@ public:
     void        set_type(const DmaChannelType type) { this->ch_type = type; }
 
     virtual void connect(DmaDevice *dev_obj) { this->dev_obj = dev_obj; }
+
     virtual void notify(DmaMsg msg) {}
-    virtual bool is_ready() { return false; }
+    virtual bool dma_is_ready() { return false; }
     virtual void xfer_retry() {}
 
 protected:

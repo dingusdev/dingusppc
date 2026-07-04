@@ -202,7 +202,7 @@ public:
     void            xfer_to_device();
     void            xfer_from_device();
 
-    bool            is_ready() override;
+    bool            dma_is_ready() override;
     void            xfer_retry() override;
 
 private:

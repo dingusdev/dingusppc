@@ -764,7 +764,7 @@ void AmicScsiDma::write_ctrl(uint8_t value)
     }
 }
 
-bool AmicScsiDma::is_ready() {
+bool AmicScsiDma::dma_is_ready() {
     return (this->stat & 2) ? true : false;
 }
 

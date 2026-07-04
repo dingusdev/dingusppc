@@ -509,7 +509,7 @@ void DMAChannel::xfer_retry() {
         this->xfer_to_device();
 }
 
-bool DMAChannel::is_ready() {
+bool DMAChannel::dma_is_ready() {
     if (this->ch_stat   & CH_STAT_DEAD  || !(this->ch_stat  & CH_STAT_ACTIVE) ||
         this->xfer_dir == DMA_DIR_UNDEF ||   this->cur_cmd >= DBDMA_Cmd::NOP)
         return false;

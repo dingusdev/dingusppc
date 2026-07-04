@@ -130,7 +130,7 @@ public:
     void            end_pull_data() override;
     void            end_push_data() override;
 
-    bool            is_ready() override;
+    bool            dma_is_ready() override;
     void            xfer_retry() override;
 
     void register_dma_int(InterruptCtrl* int_ctrl_obj, uint64_t irq_id) {

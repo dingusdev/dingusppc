@@ -594,7 +594,7 @@ void Sc53C94::sequencer()
         switch (this->cur_bus_phase) {
         case ScsiPhase::DATA_OUT:
             if (this->is_dma_cmd) {
-                if (this->channel_obj->is_ready())
+                if (this->channel_obj->dma_is_ready())
                     this->channel_obj->xfer_retry();
             } else {
                 this->bus_obj->push_data(this->target_id, this->data_fifo, this->data_fifo_pos);
@@ -604,7 +604,7 @@ void Sc53C94::sequencer()
             }
             break;
         case ScsiPhase::DATA_IN:
-            if (this->is_dma_cmd && this->channel_obj->is_ready()) {
+            if (this->is_dma_cmd && this->channel_obj->dma_is_ready()) {
                 this->channel_obj->xfer_retry();
                 break;
             }
