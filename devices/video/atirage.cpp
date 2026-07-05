@@ -272,20 +272,20 @@ uint32_t ATIRage::read_reg(uint32_t reg_offset, uint32_t size) {
             this->regs[ATI_CRTC_GEN_CNTL], ATI_CRTC_PIX_WIDTH, ATI_CRTC_PIX_WIDTH_size);
 
         switch (pix_fmt) {
-        case 1:
+        case ATI_PIX_FMT_4BPP:
             result = result & 0x1;
             break;
-        case 2:
+        case ATI_PIX_FMT_8BPP:
             result = result & 0xFF;
             break;
-        case 3:
-        case 4:
+        case ATI_PIX_FMT_RGB555:
+        case ATI_PIX_FMT_RGB565:
             result = result & 0xFFFF;
             break;
-        case 5:
+        case ATI_PIX_FMT_RGB888:
             result = result & 0xFFFFFF;
             break;
-        case 6:
+        case ATI_PIX_FMT_ARGB8888:
             break;
         default:
             LOG_F(ERROR, "Incorrect bit depth");
@@ -709,10 +709,10 @@ void ATIRage::verbose_pixel_format(int crtc_index) {
     const char* what = "Pixel format:";
 
     switch (pix_fmt) {
-    case 1:
+    case ATI_PIX_FMT_4BPP:
         LOG_F(INFO, "%s 4 bpp with DAC palette", what);
         break;
-    case 2:
+    case ATI_PIX_FMT_8BPP:
         // check the undocumented DAC_DIRECT bit
         if (bit_set(this->regs[ATI_DAC_CNTL], ATI_DAC_DIRECT)) {
             LOG_F(INFO, "%s 8 bpp direct color (RGB332)", what);
@@ -720,16 +720,16 @@ void ATIRage::verbose_pixel_format(int crtc_index) {
             LOG_F(INFO, "%s 8 bpp with DAC palette", what);
         }
         break;
-    case 3:
+    case ATI_PIX_FMT_RGB555:
         LOG_F(INFO, "%s 15 bpp direct color (RGB555)", what);
         break;
-    case 4:
+    case ATI_PIX_FMT_RGB565:
         LOG_F(INFO, "%s 16 bpp direct color (RGB565)", what);
         break;
-    case 5:
+    case ATI_PIX_FMT_RGB888:
         LOG_F(INFO, "%s 24 bpp direct color (RGB888)", what);
         break;
-    case 6:
+    case ATI_PIX_FMT_ARGB8888:
         LOG_F(INFO, "%s 32 bpp direct color (ARGB8888)", what);
         break;
     default:
@@ -838,13 +838,13 @@ void ATIRage::crtc_update() {
 
     // set up frame buffer converter
     switch (this->pixel_format) {
-    case 1:
+    case ATI_PIX_FMT_4BPP:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
             draw_fb = false;
             this->convert_frame_4bpp_indexed(dst_buf, dst_pitch);
         };
         break;
-    case 2:
+    case ATI_PIX_FMT_8BPP:
         if (bit_set(this->regs[ATI_DAC_CNTL], ATI_DAC_DIRECT)) {
             this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
                 draw_fb = false;
@@ -858,25 +858,25 @@ void ATIRage::crtc_update() {
             };
         }
         break;
-    case 3:
+    case ATI_PIX_FMT_RGB555:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
             draw_fb = false;
             this->convert_frame_15bpp<BE>(dst_buf, dst_pitch);
         };
         break;
-    case 4:
+    case ATI_PIX_FMT_RGB565:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
             draw_fb = false;
             this->convert_frame_16bpp<LE>(dst_buf, dst_pitch);
         };
         break;
-    case 5:
+    case ATI_PIX_FMT_RGB888:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
             draw_fb = false;
             this->convert_frame_24bpp(dst_buf, dst_pitch);
         };
         break;
-    case 6:
+    case ATI_PIX_FMT_ARGB8888:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
             draw_fb = false;
             this->convert_frame_32bpp<BE>(dst_buf, dst_pitch);
@@ -1022,9 +1022,31 @@ void ATIRage::fill_rect(uint32_t dst_width, uint32_t dst_height) {
     uint8_t dst_pix_fmt = extract_bits<uint32_t>(this->regs[ATI_DP_PIX_WIDTH], ATI_DP_DST_PIX_WIDTH,
                                                  ATI_DP_DST_PIX_WIDTH_size);
 
-    if (src_pix_fmt != 6 || dst_pix_fmt != src_pix_fmt) {
+    if (dst_pix_fmt != src_pix_fmt) {
         LOG_F(WARNING, "%s: unsupported pixel format conversion, DP_SRC_PIX_WIDTH=0x%X, DP_DST_PIX_WIDTH=0x%X",
               this->name.c_str(), src_pix_fmt, dst_pix_fmt);
+        return;
+    }
+
+    int bytes_per_pixel;
+    switch (dst_pix_fmt) {
+    case ATI_PIX_FMT_8BPP:
+        bytes_per_pixel = 1;
+        break;
+    case ATI_PIX_FMT_RGB555:
+    case ATI_PIX_FMT_RGB565:
+        bytes_per_pixel = 2;
+        break;
+    case ATI_PIX_FMT_RGB888:
+        bytes_per_pixel = 3;
+        break;
+    case ATI_PIX_FMT_ARGB8888:
+        bytes_per_pixel = 4;
+        break;
+    default:
+        LOG_F(WARNING, "%s: unsupported rectangle fill pixel format, DP_DST_PIX_WIDTH=0x%X",
+              this->name.c_str(), dst_pix_fmt);
+        return;
     }
 
     // grab trajectory params
@@ -1034,24 +1056,60 @@ void ATIRage::fill_rect(uint32_t dst_width, uint32_t dst_height) {
     int dst_y      = extract_bits<uint32_t>(this->regs[ATI_DST_Y], ATI_DST_Y_pos, ATI_DST_Y_size);
 
     dst_offs  *= 8;
-    dst_pitch *= 8;
+    dst_pitch *= 8 * bytes_per_pixel;
 
     int x_inc = (this->regs[ATI_DST_CNTL] & 1) ? 1 : -1;
     int y_inc = (this->regs[ATI_DST_CNTL] & 2) ? 1 : -1;
 
-    uint32_t pix = BYTESWAP_32(this->regs[ATI_DP_FRGD_CLR] & this->regs[ATI_DP_WRITE_MSK]);
+    uint32_t pix = this->regs[ATI_DP_FRGD_CLR] & this->regs[ATI_DP_WRITE_MSK];
 
-    uint32_t* dst_ptr = (uint32_t*)&this->vram_ptr[dst_offs];
-    dst_ptr += dst_y * dst_pitch;
-
-    int x_pos, width;
-
-    dst_pitch *= y_inc;
-
-    for (; dst_height-- > 0; dst_ptr += dst_pitch) {
-        for (x_pos = dst_x, width = dst_width; width-- > 0; x_pos += x_inc) {
-            dst_ptr[x_pos] = pix;
+    switch (dst_pix_fmt) {
+    case ATI_PIX_FMT_8BPP:
+        for (uint32_t y = 0; y < dst_height; y++) {
+            uint8_t* row = &this->vram_ptr[dst_offs + (dst_y + int(y) * y_inc) * dst_pitch];
+            for (int x = dst_x, width = dst_width; width-- > 0; x += x_inc) {
+                row[x] = uint8_t(pix);
+            }
         }
+        break;
+    case ATI_PIX_FMT_RGB555:
+        pix = BYTESWAP_16(pix);
+        for (uint32_t y = 0; y < dst_height; y++) {
+            uint16_t* row = (uint16_t*)&this->vram_ptr[dst_offs + (dst_y + int(y) * y_inc) * dst_pitch];
+            for (int x = dst_x, width = dst_width; width-- > 0; x += x_inc) {
+                row[x] = pix;
+            }
+        }
+        break;
+    case ATI_PIX_FMT_RGB565:
+        pix &= 0xFFFF;
+        for (uint32_t y = 0; y < dst_height; y++) {
+            uint16_t* row = (uint16_t*)&this->vram_ptr[dst_offs + (dst_y + int(y) * y_inc) * dst_pitch];
+            for (int x = dst_x, width = dst_width; width-- > 0; x += x_inc) {
+                row[x] = pix;
+            }
+        }
+        break;
+    case ATI_PIX_FMT_RGB888:
+        for (uint32_t y = 0; y < dst_height; y++) {
+            uint8_t* row = &this->vram_ptr[dst_offs + (dst_y + int(y) * y_inc) * dst_pitch];
+            for (int x = dst_x, width = dst_width; width-- > 0; x += x_inc) {
+                uint8_t* dst_ptr = row + x * 3;
+                dst_ptr[0] = uint8_t(pix >> 16);
+                dst_ptr[1] = uint8_t(pix >> 8);
+                dst_ptr[2] = uint8_t(pix);
+            }
+        }
+        break;
+    case ATI_PIX_FMT_ARGB8888:
+        pix = BYTESWAP_32(pix);
+        for (uint32_t y = 0; y < dst_height; y++) {
+            uint32_t* row = (uint32_t*)&this->vram_ptr[dst_offs + (dst_y + int(y) * y_inc) * dst_pitch];
+            for (int x = dst_x, width = dst_width; width-- > 0; x += x_inc) {
+                row[x] = pix;
+            }
+        }
+        break;
     }
 }
 

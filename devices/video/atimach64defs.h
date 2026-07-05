@@ -31,6 +31,16 @@ enum {
 //                       = 0x5654, // VT
 };
 
+/* Pixel format values used by the CRTC and draw engine pixel-width fields. */
+enum {
+    ATI_PIX_FMT_4BPP      = 1,
+    ATI_PIX_FMT_8BPP      = 2,
+    ATI_PIX_FMT_RGB555    = 3,
+    ATI_PIX_FMT_RGB565    = 4,
+    ATI_PIX_FMT_RGB888    = 5,
+    ATI_PIX_FMT_ARGB8888  = 6,
+};
+
 /** Mach64 register offsets. */
 enum {
     ATI_CRTC_H_TOTAL_DISP     = 0x000, // 0x0000
