@@ -272,20 +272,20 @@ uint32_t ATIRage::read_reg(uint32_t reg_offset, uint32_t size) {
             this->regs[ATI_CRTC_GEN_CNTL], ATI_CRTC_PIX_WIDTH, ATI_CRTC_PIX_WIDTH_size);
 
         switch (pix_fmt) {
-        case 1:
+        case ATI_PIX_FMT_4BPP:
             result = result & 0x1;
             break;
-        case 2:
+        case ATI_PIX_FMT_8BPP:
             result = result & 0xFF;
             break;
-        case 3:
-        case 4:
+        case ATI_PIX_FMT_RGB555:
+        case ATI_PIX_FMT_RGB565:
             result = result & 0xFFFF;
             break;
-        case 5:
+        case ATI_PIX_FMT_RGB888:
             result = result & 0xFFFFFF;
             break;
-        case 6:
+        case ATI_PIX_FMT_ARGB8888:
             break;
         default:
             LOG_F(ERROR, "Incorrect bit depth");
@@ -709,10 +709,10 @@ void ATIRage::verbose_pixel_format(int crtc_index) {
     const char* what = "Pixel format:";
 
     switch (pix_fmt) {
-    case 1:
+    case ATI_PIX_FMT_4BPP:
         LOG_F(INFO, "%s 4 bpp with DAC palette", what);
         break;
-    case 2:
+    case ATI_PIX_FMT_8BPP:
         // check the undocumented DAC_DIRECT bit
         if (bit_set(this->regs[ATI_DAC_CNTL], ATI_DAC_DIRECT)) {
             LOG_F(INFO, "%s 8 bpp direct color (RGB332)", what);
@@ -720,16 +720,16 @@ void ATIRage::verbose_pixel_format(int crtc_index) {
             LOG_F(INFO, "%s 8 bpp with DAC palette", what);
         }
         break;
-    case 3:
+    case ATI_PIX_FMT_RGB555:
         LOG_F(INFO, "%s 15 bpp direct color (RGB555)", what);
         break;
-    case 4:
+    case ATI_PIX_FMT_RGB565:
         LOG_F(INFO, "%s 16 bpp direct color (RGB565)", what);
         break;
-    case 5:
+    case ATI_PIX_FMT_RGB888:
         LOG_F(INFO, "%s 24 bpp direct color (RGB888)", what);
         break;
-    case 6:
+    case ATI_PIX_FMT_ARGB8888:
         LOG_F(INFO, "%s 32 bpp direct color (ARGB8888)", what);
         break;
     default:
@@ -838,13 +838,13 @@ void ATIRage::crtc_update() {
 
     // set up frame buffer converter
     switch (this->pixel_format) {
-    case 1:
+    case ATI_PIX_FMT_4BPP:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
             draw_fb = false;
             this->convert_frame_4bpp_indexed(dst_buf, dst_pitch);
         };
         break;
-    case 2:
+    case ATI_PIX_FMT_8BPP:
         if (bit_set(this->regs[ATI_DAC_CNTL], ATI_DAC_DIRECT)) {
             this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
                 draw_fb = false;
@@ -858,25 +858,25 @@ void ATIRage::crtc_update() {
             };
         }
         break;
-    case 3:
+    case ATI_PIX_FMT_RGB555:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
             draw_fb = false;
             this->convert_frame_15bpp<BE>(dst_buf, dst_pitch);
         };
         break;
-    case 4:
+    case ATI_PIX_FMT_RGB565:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
             draw_fb = false;
             this->convert_frame_16bpp<LE>(dst_buf, dst_pitch);
         };
         break;
-    case 5:
+    case ATI_PIX_FMT_RGB888:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
             draw_fb = false;
             this->convert_frame_24bpp(dst_buf, dst_pitch);
         };
         break;
-    case 6:
+    case ATI_PIX_FMT_ARGB8888:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
             draw_fb = false;
             this->convert_frame_32bpp<BE>(dst_buf, dst_pitch);
