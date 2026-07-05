@@ -205,10 +205,13 @@ int AtaBaseDevice::pull_data(uint8_t *buf, int len) {
     //    this->data_ptr[i] = BYTESWAP_16(this->data_ptr[i]);
 
     std::memcpy(buf, this->data_ptr, xfer_size);
+    this->data_ptr = (uint16_t *)((uint8_t *)this->data_ptr + xfer_size);
 
     this->xfer_cnt -= xfer_size;
     if (!this->xfer_cnt) {
-        TimerManager::get_instance()->add_oneshot_timer(500, [this]() {
+        this->is_dma_xfer = false;
+        this->data_ptr = nullptr;
+        TimerManager::get_instance()->add_immediate_timer([this]() {
             this->r_status &= ~(BSY | DRQ);
             this->update_intrq(1);
         });

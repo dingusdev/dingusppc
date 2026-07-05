@@ -53,6 +53,7 @@ public:
 
     void insert_image(std::string filename);
     int perform_command() override;
+    int push_data(uint8_t *buf, int len) override;
 
 protected:
     void        prepare_identify_info();

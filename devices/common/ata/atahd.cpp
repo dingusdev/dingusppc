@@ -22,12 +22,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @file ATA hard disk emulation. */
 
 #include <core/memaccess.h>
+#include <core/timermanager.h>
 #include <devices/common/ata/atahd.h>
 #include <devices/deviceregistry.h>
 #include <devices/common/ata/idechannel.h>
 #include <loguru.hpp>
 #include <machines/machinebase.h>
 
+#include <algorithm>
 #include <bitset>
 #include <cstring>
 #include <fstream>
@@ -118,6 +120,38 @@ int AtaHardDisk::perform_command() {
             // those commands should generate IRQ for each sector
             this->prepare_xfer(xfer_size, ints_size);
             this->signal_data_ready();
+        }
+        break;
+    case READ_DMA:
+    case READ_DMA_NR: {
+            uint16_t sec_count = this->r_sect_count ? this->r_sect_count : 256;
+            int      xfer_size = sec_count * ATA_HD_SEC_SIZE;
+            uint64_t offset    = this->get_lba() * ATA_HD_SEC_SIZE;
+
+            hdd_img.read(buffer, offset, xfer_size);
+            this->data_ptr    = (uint16_t *)this->buffer;
+            this->is_dma_xfer = true;
+            this->prepare_xfer(xfer_size, xfer_size);
+            this->r_status &= ~(BSY | DRQ | ERR);
+            this->r_status |= DRDY | DSC;
+            // TODO: Model ATA DMAREQ as a latched signal instead of relying
+            // on this delay to avoid racing DBDMA command startup.
+            this->host_obj->assert_dmareq(500);
+        }
+        break;
+    case WRITE_DMA:
+    case WRITE_DMA_NR: {
+            uint16_t sec_count = this->r_sect_count ? this->r_sect_count : 256;
+            int      xfer_size = sec_count * ATA_HD_SEC_SIZE;
+
+            this->cur_fpos    = this->get_lba() * ATA_HD_SEC_SIZE;
+            this->is_dma_xfer = true;
+            this->prepare_xfer(xfer_size, xfer_size);
+            this->r_status &= ~(BSY | DRQ | ERR);
+            this->r_status |= DRDY | DSC;
+            // TODO: Model ATA DMAREQ as a latched signal instead of relying
+            // on this delay to avoid racing DBDMA command startup.
+            this->host_obj->assert_dmareq(500);
         }
         break;
     case WRITE_MULTIPLE:
@@ -254,6 +288,30 @@ int AtaHardDisk::perform_command() {
         return -1;
     }
     return 0;
+}
+
+int AtaHardDisk::push_data(uint8_t *buf, int len) {
+    if (!this->xfer_cnt || !this->is_dma_xfer)
+        return 0;
+
+    int xfer_size = std::min(this->xfer_cnt, len);
+    this->hdd_img.write(buf, this->cur_fpos, xfer_size);
+    this->cur_fpos += xfer_size;
+    this->xfer_cnt -= xfer_size;
+
+    if (!this->xfer_cnt) {
+        this->is_dma_xfer = false;
+        TimerManager::get_instance()->add_immediate_timer([this]() {
+            this->r_status &= ~(BSY | DRQ | ERR);
+            this->r_status |= DRDY | DSC;
+            this->update_intrq(1);
+        });
+    } else {
+        this->r_status &= ~BSY;
+        this->r_status |= DRQ;
+    }
+
+    return xfer_size;
 }
 
 void AtaHardDisk::prepare_identify_info() {
