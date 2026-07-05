@@ -198,8 +198,10 @@ int AtaBaseDevice::pull_data(uint8_t *buf, int len) {
 
     int xfer_size = std::min(this->xfer_cnt, len);
 
-    if (this->xfer_cnt != len)
-        LOG_F(WARNING, "%s: xfer_cnt != len", this->name.c_str());
+    if (this->xfer_cnt != len) {
+        LOG_F(9, "%s: DMA pull size differs from descriptor, remaining=%d requested=%d",
+              this->name.c_str(), this->xfer_cnt, len);
+    }
 
     //for (int i = 0; i < xfer_size >> 1; i++)
     //    this->data_ptr[i] = BYTESWAP_16(this->data_ptr[i]);
