@@ -91,7 +91,7 @@ uint8_t DMAChannel::interpret_cmd() {
         if (cmd_struct.req_count) {
             res = mmu_map_dma_mem(cmd_struct.address, cmd_struct.req_count, false);
             this->queue_data = res.host_va;
-            this->res_count  = 0;
+            this->res_count  = cmd_struct.req_count;
             this->queue_len  = cmd_struct.req_count; // don't set queue_len until all the other fields are set
             this->cmd_in_progress = true;
             switch (this->cur_cmd) {
@@ -468,7 +468,8 @@ void DMAChannel::xfer_from_device() {
     this->xfer_dir = DMA_DIR_FROM_DEV;
 
     int got_bytes = this->dev_obj->xfer_from(this, this->queue_data, this->queue_len);
-    this->res_count += got_bytes;
+    this->queue_data += got_bytes;
+    this->res_count -= got_bytes;
     this->queue_len -= got_bytes;
     if (!this->queue_len) {
         this->finish_cmd();
@@ -487,7 +488,8 @@ void DMAChannel::xfer_to_device() {
     this->xfer_dir = DMA_DIR_TO_DEV;
 
     int got_bytes = this->dev_obj->xfer_to(this, this->queue_data, this->queue_len);
-    this->res_count += got_bytes;
+    this->queue_data += got_bytes;
+    this->res_count -= got_bytes;
     this->queue_len -= got_bytes;
     if (!this->queue_len) {
         this->finish_cmd();
@@ -536,14 +538,14 @@ DmaPullResult DMAChannel::pull_data(uint32_t req_len, uint32_t *avail_len, uint8
             *p_data    = this->queue_data;
             *avail_len = req_len;
             this->queue_len -= req_len;
-            this->res_count += req_len;
+            this->res_count -= req_len;
             this->queue_data += req_len;
         } else { // return less data than req_len
             LOG_F(9, "%s: Return queue_len = %d data", this->get_name().c_str(),
                 this->queue_len);
             *p_data         = this->queue_data;
             *avail_len      = this->queue_len;
-            this->res_count += this->queue_len;
+            this->res_count -= this->queue_len;
             this->queue_len = 0;
         }
         return DmaPullResult::MoreData; // tell the caller there is more data
@@ -568,7 +570,7 @@ DmaPushResult DMAChannel::push_data(const char* src_ptr, int len) {
         len = std::min((int)this->queue_len, len);
         std::memcpy(this->queue_data, src_ptr, len);
         this->queue_data += len;
-        this->res_count  += len;
+        this->res_count  -= len;
         this->queue_len  -= len;
     }
 
