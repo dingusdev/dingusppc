@@ -763,8 +763,6 @@ void dppc_interpreter::ppc_fabs(uint32_t opcode) {
 
     ppc_store_fpresult_int(reg_d, ppc_result64_d);
 
-    snan_single_check(reg_d);
-
     if (rec)
         ppc_update_cr1();
 }
@@ -780,8 +778,6 @@ void dppc_interpreter::ppc_fnabs(uint32_t opcode) {
 
     ppc_store_fpresult_int(reg_d, ppc_result64_d);
 
-    snan_single_check(reg_d);
-
     if (rec)
         ppc_update_cr1();
 }
@@ -796,8 +792,6 @@ void dppc_interpreter::ppc_fneg(uint32_t opcode) {
     uint64_t ppc_result64_d = FPR_INT(reg_b) ^ 0x8000000000000000U;
 
     ppc_store_fpresult_int(reg_d, ppc_result64_d);
-
-    snan_single_check(reg_d);
 
     if (rec)
         ppc_update_cr1();
