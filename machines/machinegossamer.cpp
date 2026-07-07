@@ -151,6 +151,14 @@ int MachineGossamer::initialize(const std::string &id) {
     grackle_obj->add_mmio_region(
         0xFF000000, 4096, dynamic_cast<MMIODevice*>(gMachineObj->get_comp_by_name("MachineID")));
 
+    MacIoTwo* macio_obj = dynamic_cast<MacIoTwo*>(gMachineObj->get_comp_by_name("Heathrow"));
+
+    // enable factory tests if requested
+    if (GET_BIN_PROP("emmo") != 0)
+        macio_obj->set_cpu_id(0xE0); // CPUID0 pulled low
+    else
+        macio_obj->set_cpu_id(0xF0); // CPUID0...CPUID3 pulled high
+
     // allocate ROM region
     if (!grackle_obj->add_rom_region(0xFFC00000, 0x400000)) {
         LOG_F(ERROR, "Could not allocate ROM region!");
