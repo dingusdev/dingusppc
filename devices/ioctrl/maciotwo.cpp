@@ -58,9 +58,6 @@ MacIoTwo::MacIoTwo(std::string name, uint16_t dev_id) : MacIoBase(name, dev_id) 
         this->enet_xmit_dma = std::unique_ptr<DMAChannel> (new DMAChannel("BmacTx"));
         this->enet_rcv_dma  = std::unique_ptr<DMAChannel> (new DMAChannel("BmacRx"));
     }
-
-    // set EMMO status (active low)
-    this->emmo = GET_BIN_PROP("emmo") ^ 1;
 }
 
 uint32_t MacIoTwo::read(uint32_t rgn_start, uint32_t offset, int size) {
@@ -319,7 +316,7 @@ uint32_t MacIoTwo::mio_ctrl_read(uint32_t offset, int size) {
         break;
     case MIO_OHARE_ID:
         value = (this->fp_id << 24) | (this->mon_id << 16) | (this->mb_id << 8) |
-            (this->cpu_id | (this->emmo << 4));
+                (this->cpu_id);
         LOG_F(9, "%s: read OHARE_ID @%02x = %08x",
             this->get_name().c_str(), offset, value);
         break;
