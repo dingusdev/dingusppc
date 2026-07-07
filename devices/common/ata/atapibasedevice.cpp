@@ -96,7 +96,8 @@ uint16_t AtapiBaseDevice::read(const uint8_t reg_addr) {
         }
         return this->r_status;
     default:
-        LOG_F(WARNING, "Attempted to read unknown register: %x", reg_addr);
+        LOG_F(WARNING, "%s: read from unknown register 0x%X", this->name.c_str(),
+              reg_addr);
         return 0;
     }
 }
@@ -149,7 +150,7 @@ void AtapiBaseDevice::write(const uint8_t reg_addr, const uint16_t value) {
         this->device_control(value);
         break;
     default:
-        LOG_F(WARNING, "Attempted to write unknown IDE register: %x", reg_addr);
+        LOG_F(WARNING, "%s: write to unknown register 0x%X", this->name.c_str(), reg_addr);
     }
 }
 
