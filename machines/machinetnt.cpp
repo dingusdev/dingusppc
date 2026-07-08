@@ -101,13 +101,13 @@ int MachineTnt::initialize(const std::string &id) {
     PCIHost *pci2_host = dynamic_cast<PCIHost*>(gMachineObj->get_comp_by_name_optional("Bandit2"));
     if (pci2_host) {
         pci2_host->set_irq_map(bandit2_irq_map);
-        // attach IOBus Device #3 0xF301C000
+        // Board register 2 appears as IOBus device #5 (0xF301E000)
         gMachineObj->add_device("BoardReg2", std::unique_ptr<BoardRegister>(
             new BoardRegister("Board Register 2",
                 0x3F                                        | // pull up all PRSNT bits
                 0x8000U                                       // pull up unused bits
         )));
-        gc_obj->attach_iodevice(2, dynamic_cast<BoardRegister*>(gMachineObj->get_comp_by_name("BoardReg2")));
+        gc_obj->attach_iodevice(4, dynamic_cast<BoardRegister*>(gMachineObj->get_comp_by_name("BoardReg2")));
     }
 
     // get (raw) pointer to the memory controller

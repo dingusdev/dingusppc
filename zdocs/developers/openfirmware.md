@@ -460,6 +460,7 @@ Apple OF is known to contain numerous bugs. The following is a list of some rece
 - `fill-rectangle` in `/chaos/control` is `( ? color y x w h -- )` but it should be `( color x y w h -- )`.
   This is corrected by Control2.c of BootX which is used to boot Mac OS X.
 - `$find` is `( name-str name-len -- xt true | pstr name-str name-len false )` but it should be `( name-str name-len -- xt true | name-str name-len false )`
+- Open Firmware 1.0.5 incorrectly reads PCI2 PRSNT bits from IOBus device #3 at 0xF301C000. The correct location of those bits is Board Register 2 that appears as IOBus device #5 (0xF301E000).
 
 ### 2.0f1, 2.4
 - `us` uses `get-usecs` to convert a 64-bit timebase value to a 32-bit microseconds value.
