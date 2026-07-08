@@ -88,14 +88,20 @@ int MachineGazelle::initialize(const std::string &id) {
     // select between the standard Macintosh and the TAM startup bong
     macio_obj->set_media_bay_id(id == "tam" ? 0x70 : 0x30);
 
-    // activate factory tests if requested
-    if (GET_BIN_PROP("emmo") != 0)
-        macio_obj->set_cpu_id(0xB0); // BOXID2 pulled low
-    else
-        // set Box aka CPU ID:
-        // for 5500 & TAM => CPUID0...CPUID3 pulled high
-        // for 6500 => CPUID3...CPUID1 pulled high, CPUID0 pulled low
-        macio_obj->set_cpu_id((id == "pm5500" || id == "tam") ? 0xF0 : 0xE0);
+    // set Box aka CPU ID and activate factory tests if requested
+    macio_obj->set_cpu_id(
+        (
+            (id == "pm5500" || id == "tam") ?
+                0xF0 // for 5500 & TAM => CPUID0...CPUID3 pulled high
+            :
+                0xE0 // for 6500 => CPUID3...CPUID1 pulled high, CPUID0 pulled low
+        ) & (
+            GET_BIN_PROP("emmo") ?
+                ~0x40 // pull BOXID2 low --> activate factory tests
+            :
+                ~0    // No-op
+        )
+    );
 
     // register O'Hare I/O controller with the main PCI bus
     pci_host->pci_register_device(DEV_FUN(0x10,0), macio_obj);
