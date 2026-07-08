@@ -56,19 +56,25 @@ int MachineAlchemy::initialize(const std::string &id) {
 
     MacIoTwo* macio_obj = dynamic_cast<MacIoTwo*>(gMachineObj->get_comp_by_name("OHare"));
 
+    // set Box aka CPU ID and activate factory tests if requested.
     // Please note that Performa 6400 ROM 6F5724C0 contains a bug
     // that prevents activation of the factory tests.
     // To fix that, the said ROM needs to be patched as follows:
     // - change 0x7C631A79 (xor. r3, r3, r3) at 0xFFF20408 to
     //   0x7C631A78 (xor r3, r3, r3)
-    if (GET_BIN_PROP("emmo") != 0) {
-        macio_obj->set_cpu_id(0xB0); // BOXID2 pulled low
-    } else {
-        if (id == "pm6400")
-            macio_obj->set_cpu_id(0xE0); // CPUID0 (BOXID0) pulled low
-        else
-            macio_obj->set_cpu_id(0xF0); // CPUID0...CPUID3 pulled high
-    }
+    macio_obj->set_cpu_id(
+        (
+            (id == "pm6400") ?
+                0xE0 // for Performa 6400 => CPUID0 (BOXID0) pulled low
+            :
+                0xF0 // for PowerMac 5400 => CPUID0...CPUID3 pulled high
+        ) & (
+            GET_BIN_PROP("emmo") ?
+                ~0x40 // pull BOXID2 low to activate factory tests
+            :
+                ~0    // No-op
+        )
+    );
 
     // register O'Hare I/O controller with the main PCI bus
     pci_host->pci_register_device(
