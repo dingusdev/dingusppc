@@ -174,6 +174,7 @@ int AtapiBaseDevice::perform_command() {
         this->r_status &= ~BSY;
         break;
     case ATAPI_IDFY_DEV:
+    case IDENTIFY_DEVICE:
         std::memset(this->data_buf, 0, 512);
         this->data_buf[0] = 0xC0;
         this->data_buf[1] = 0x85;
