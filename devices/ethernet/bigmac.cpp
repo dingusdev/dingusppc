@@ -52,11 +52,11 @@ uint16_t BigMac::read(uint16_t reg_offset) {
     case BigMacReg::CHIP_ID:
         return this->chip_id;
     case BigMacReg::TX_FIFO_TH:
-        return this->tx_fifo_tresh;
+        return this->tx_fifo_thresh;
     case BigMacReg::TX_FIFO_CSR:
         return (this->tx_fifo_enable & 1) | ((((this->tx_fifo_size >> 7) - 1) & 0xFF) << 1);
     case BigMacReg::RX_FIFO_CSR:
-        return (this->tx_fifo_enable & 1) | ((((this->tx_fifo_size >> 7) - 1) & 0xFF) << 1);
+        return (this->rx_fifo_enable & 1) | ((((this->rx_fifo_size >> 7) - 1) & 0xFF) << 1);
     case BigMacReg::TX_PNTR:
         return this->tx_ptr;
     case BigMacReg::RX_PNTR:
@@ -171,7 +171,7 @@ void BigMac::write(uint16_t reg_offset, uint16_t value) {
         this->tx_fifo_size   = (((value >> 1) & 0xFF) + 1) << 7;
         break;
     case BigMacReg::TX_FIFO_TH:
-        this->tx_fifo_tresh = value;
+        this->tx_fifo_thresh = value;
         break;
     case BigMacReg::RX_FIFO_CSR:
         this->rx_fifo_enable = !!(value & 1);

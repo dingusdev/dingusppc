@@ -195,7 +195,7 @@ private:
     uint8_t         fcs_err_cnt     = 0;
     uint8_t         cv_err_cnt      = 0;
     uint8_t         peak_attempts   = 0;
-    uint8_t         tx_fifo_tresh   = 0;
+    uint8_t         tx_fifo_thresh  = 0;
     bool            tx_fifo_enable  = false;
     bool            rx_fifo_enable  = false;
     uint16_t        tx_fifo_size    = 0;
