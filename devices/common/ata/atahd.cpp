@@ -99,11 +99,15 @@ int AtaHardDisk::perform_command() {
         break;
     case READ_MULTIPLE:
     case READ_SECTOR:
-    case READ_SECTOR_NR: {
+    case READ_SECTOR_NR:
+    case READ_DMA:
+    case READ_DMA_NR: {
             uint16_t sec_count = this->r_sect_count ? this->r_sect_count : 256;
             int      xfer_size = sec_count * ATA_HD_SEC_SIZE;
             uint64_t offset    = this->get_lba() * ATA_HD_SEC_SIZE;
-            uint32_t ints_size = ATA_HD_SEC_SIZE;
+            bool     is_dma_cmd = this->r_command == READ_DMA ||
+                                  this->r_command == READ_DMA_NR;
+            uint32_t ints_size = is_dma_cmd ? xfer_size : ATA_HD_SEC_SIZE;
             if (this->r_command == READ_MULTIPLE) {
                 if (!this->sectors_per_int) {
                     LOG_F(ERROR, "%s: READ_MULTIPLE disabled", this->name.c_str());
@@ -115,20 +119,34 @@ int AtaHardDisk::perform_command() {
             }
             hdd_img.read(buffer, offset, xfer_size);
             this->data_ptr = (uint16_t *)this->buffer;
-            // those commands should generate IRQ for each sector
             this->prepare_xfer(xfer_size, ints_size);
-            this->signal_data_ready();
+            if (is_dma_cmd) {
+                this->is_dma_xfer = true;
+                this->r_status &= ~(BSY | DRQ | ERR);
+                this->r_status |= DRDY | DSC;
+                // TODO: Model ATA DMAREQ as a latched signal instead of relying
+                // on this delay to avoid racing DBDMA command startup.
+                this->host_obj->assert_dmareq(500);
+            } else {
+                // PIO commands generate IRQ for each sector or multiple block.
+                this->signal_data_ready();
+            }
         }
         break;
     case WRITE_MULTIPLE:
     case WRITE_SECTOR:
-    case WRITE_SECTOR_NR: {
+    case WRITE_SECTOR_NR:
+    case WRITE_DMA:
+    case WRITE_DMA_NR: {
             uint16_t sec_count = this->r_sect_count ? this->r_sect_count : 256;
-            this->cur_fpos = this->get_lba() * ATA_HD_SEC_SIZE;
-            this->data_ptr = (uint16_t *)this->buffer;
-            this->cur_data_ptr = this->data_ptr;
             uint32_t xfer_size = sec_count * ATA_HD_SEC_SIZE;
-            uint32_t ints_size = ATA_HD_SEC_SIZE;
+            bool     is_dma_cmd = this->r_command == WRITE_DMA ||
+                                  this->r_command == WRITE_DMA_NR;
+            uint32_t ints_size = is_dma_cmd ? xfer_size : ATA_HD_SEC_SIZE;
+
+            this->cur_fpos     = this->get_lba() * ATA_HD_SEC_SIZE;
+            this->data_ptr     = (uint16_t *)this->buffer;
+            this->cur_data_ptr = this->data_ptr;
             if (this->r_command == WRITE_MULTIPLE) {
                 if (!this->sectors_per_int) {
                     LOG_F(ERROR, "%s: WRITE_MULTIPLE disabled", this->name.c_str());
@@ -144,8 +162,17 @@ int AtaHardDisk::perform_command() {
                 this->hdd_img.write(this->data_ptr, this->cur_fpos, write_len);
                 this->cur_fpos += write_len;
             };
-            this->r_status |= DRQ;
-            this->r_status &= ~BSY;
+            if (is_dma_cmd) {
+                this->is_dma_xfer = true;
+                this->r_status &= ~(BSY | DRQ | ERR);
+                this->r_status |= DRDY | DSC;
+                // TODO: Model ATA DMAREQ as a latched signal instead of relying
+                // on this delay to avoid racing DBDMA command startup.
+                this->host_obj->assert_dmareq(500);
+            } else {
+                this->r_status |= DRQ;
+                this->r_status &= ~BSY;
+            }
         }
         break;
     case CHECK_POWER_MODE:
