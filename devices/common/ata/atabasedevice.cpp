@@ -207,9 +207,12 @@ int AtaBaseDevice::pull_data(uint8_t *buf, int len) {
     //    this->data_ptr[i] = BYTESWAP_16(this->data_ptr[i]);
 
     std::memcpy(buf, this->data_ptr, xfer_size);
+    this->data_ptr = (uint16_t *)((uint8_t *)this->data_ptr + xfer_size);
 
     this->xfer_cnt -= xfer_size;
     if (!this->xfer_cnt) {
+        this->is_dma_xfer = false;
+        this->data_ptr = nullptr;
         TimerManager::get_instance()->add_oneshot_timer(500, [this]() {
             this->r_status &= ~(BSY | DRQ);
             this->update_intrq(1);
@@ -223,7 +226,30 @@ int AtaBaseDevice::pull_data(uint8_t *buf, int len) {
 }
 
 int AtaBaseDevice::push_data(uint8_t *buf, int len) {
-    return 0;
+    if (!this->xfer_cnt || !this->is_dma_xfer)
+        return 0;
+
+    int xfer_size = std::min(this->xfer_cnt, len);
+
+    std::memcpy(this->cur_data_ptr, buf, xfer_size);
+    this->cur_data_ptr = (uint16_t *)((uint8_t *)this->cur_data_ptr + xfer_size);
+
+    this->xfer_cnt -= xfer_size;
+    if (!this->xfer_cnt) {
+        this->post_xfer_action();
+        this->is_dma_xfer = false;
+        this->data_ptr = nullptr;
+        this->cur_data_ptr = nullptr;
+        TimerManager::get_instance()->add_oneshot_timer(500, [this]() {
+            this->r_status &= ~(BSY | DRQ);
+            this->update_intrq(1);
+        });
+    } else {
+        this->r_status &= ~BSY;
+        this->r_status |= DRQ;
+    }
+
+    return xfer_size;
 }
 
 void AtaBaseDevice::update_intrq(uint8_t new_intrq_state) {
