@@ -312,6 +312,7 @@ void EventManager::poll_events() {
 }
 
 void EventManager::post_keyboard_state_events() {
+    int count;
     int numkeys;
     const Uint8 *states = SDL_GetKeyboardState(&numkeys);
     int modstate = SDL_GetModState();
@@ -327,46 +328,54 @@ void EventManager::post_keyboard_state_events() {
     } Modifier_t;
 
     static Modifier_t modifiers[] = {
-        SDL_SCANCODE_LSHIFT       , KMOD_LSHIFT , AdbKey_Shift       ,
-        SDL_SCANCODE_RSHIFT       , KMOD_RSHIFT , AdbKey_RightShift  ,
-        SDL_SCANCODE_LCTRL        , KMOD_LCTRL  , AdbKey_Control     ,
-        SDL_SCANCODE_RCTRL        , KMOD_RCTRL  , AdbKey_RightControl,
-        SDL_SCANCODE_LALT         , KMOD_LALT   , AdbKey_Option      ,
-        SDL_SCANCODE_RALT         , KMOD_RALT   , AdbKey_RightOption ,
-        SDL_SCANCODE_LGUI         , KMOD_LGUI   , AdbKey_Command     ,
-        SDL_SCANCODE_RGUI         , KMOD_RGUI   , AdbKey_Command     ,
-//      SDL_SCANCODE_NUMLOCKCLEAR , KMOD_NUM    , AdbKey_KeypadClear ,
-        SDL_SCANCODE_CAPSLOCK     , KMOD_CAPS   , AdbKey_CapsLock    ,
-//      SDL_SCANCODE_MODE         , KMOD_MODE   , AdbKey_????        ,
-//      SDL_SCANCODE_SCROLLLOCK   , KMOD_SCROLL , AdbKey_F14         ,
-        SDL_SCANCODE_UNKNOWN
+        { SDL_SCANCODE_LSHIFT       , KMOD_LSHIFT , AdbKey_Shift        },
+        { SDL_SCANCODE_RSHIFT       , KMOD_RSHIFT , AdbKey_RightShift   },
+        { SDL_SCANCODE_LCTRL        , KMOD_LCTRL  , AdbKey_Control      },
+        { SDL_SCANCODE_RCTRL        , KMOD_RCTRL  , AdbKey_RightControl },
+        { SDL_SCANCODE_LALT         , KMOD_LALT   , AdbKey_Option       },
+        { SDL_SCANCODE_RALT         , KMOD_RALT   , AdbKey_RightOption  },
+        { SDL_SCANCODE_LGUI         , KMOD_LGUI   , AdbKey_Command      },
+        { SDL_SCANCODE_RGUI         , KMOD_RGUI   , AdbKey_Command      },
+//      { SDL_SCANCODE_NUMLOCKCLEAR , KMOD_NUM    , AdbKey_KeypadClear  },
+        { SDL_SCANCODE_CAPSLOCK     , KMOD_CAPS   , AdbKey_CapsLock     },
+//      { SDL_SCANCODE_MODE         , KMOD_MODE   , AdbKey_????         },
+//      { SDL_SCANCODE_SCROLLLOCK   , KMOD_SCROLL , AdbKey_F14          },
+        { SDL_SCANCODE_UNKNOWN                                          },
     };
 
     LOG_F(INFO, "Current keyboard state:");
 
+    LOG_F(INFO, "    Modifiers:");
+    count = 0;
     for (Modifier_t *mod = modifiers; mod->scancode != SDL_SCANCODE_UNKNOWN; mod++) {
         if (!(modstate & mod->keymod))
             continue;
-        LOG_F(INFO, "    mod:%s", SDL_GetScancodeName(mod->scancode));
+        LOG_F(INFO, "        Modifier: %s", SDL_GetScancodeName(mod->scancode));
+        count++;
         ke.key = mod->adbkey;
         ke.flags = KEYBOARD_EVENT_DOWN;
         this->_keyboard_signal.emit(ke);
     }
+    if (!count)
+        LOG_F(INFO, "        (none)");
 
+    LOG_F(INFO, "    Keys and Modifiers:");
+    count = 0;
     for (int i = 0; i < numkeys; i++) {
         if (!states[i])
             continue;
 
+        count++;
         scancode = (SDL_Scancode)i;
 
         Modifier_t *mod = modifiers;
         for (; mod->scancode != SDL_SCANCODE_UNKNOWN && mod->scancode != scancode; mod++);
         if (mod->scancode == scancode) {
-            LOG_F(INFO, "    ignore:%s", SDL_GetScancodeName(scancode));
+            LOG_F(INFO, "        Modifier: %s", SDL_GetScancodeName(scancode));
             continue;
         }
 
-        LOG_F(INFO, "    key:%s", SDL_GetScancodeName(scancode));
+        LOG_F(INFO, "        Key: %s", SDL_GetScancodeName(scancode));
         keyevent.keysym.scancode = scancode;
         keyevent.keysym.sym = SDL_GetKeyFromScancode(scancode);
         keyevent.keysym.mod = modstate;
@@ -377,9 +386,11 @@ void EventManager::post_keyboard_state_events() {
             ke.flags = KEYBOARD_EVENT_DOWN;
             this->_keyboard_signal.emit(ke);
         } else {
-            LOG_F(WARNING, "Unknown key %x pressed", keyevent.keysym.sym);
+            LOG_F(WARNING, "        Unknown key %x pressed", keyevent.keysym.sym);
         }
     }
+    if (!count)
+        LOG_F(INFO, "        (none)");
 }
 
 static int get_sdl_event_key_code(const SDL_KeyboardEvent &event, uint32_t kbd_locale)
