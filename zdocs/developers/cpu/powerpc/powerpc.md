@@ -19,7 +19,7 @@ Up to 128 instruction entries and 128 data entries can be stored at a time.
 | 601           | 0x00010001  | Supports POWER instructions |
 | 603           | 0x00030001  | Software-controlled TLBs    |
 | 604           | 0x00040103  | Ability for Multiprocessing |
-| 603E          | 0x00060101  |                             |
+| 603E          | 0x00060101  | Bigger caches than the 603  |
 | 750 (G3)      | 0x00080200  | Built-in L2 data cache      |
 | 7400 (G4)     | 0x000C0101  | AltiVec/VMX support added   |
 
@@ -56,8 +56,8 @@ Up to 128 instruction entries and 128 data entries can be stored at a time.
 | Time Base Upper (TBU)             | 269                  | (603+)                                                |
 | External Access (EAR)             | 282                  |                                                       |
 | Processor Version (PVR)           | 287                  |                                                       |
-| Hardware Implementation 0 (HID0)  | 1008                 |                                                       |
-| Hardware Implementation 1 (HID1)  | 1009                 |                                                       |
+| Hardware Implementation 0 (HID0)  | 1008                 | Checkstop (601); Power management (603-G4)            |
+| Hardware Implementation 1 (HID1)  | 1009                 | Phase-locked loop Configuration (603-G4)              |
 
 ## HID 0
 
@@ -70,6 +70,10 @@ Up to 128 instruction entries and 128 data entries can be stored at a time.
 | 603EV         | NHR, DOZE/NAP/SLEEP |
 | 604E          | NHR                 |
 | 750 (G3)      | NHR, DOZE/NAP/SLEEP |
+
+On the 601, HID0 is for checkstops.
+
+By contrast, kernels running on the 603 and G3 processors can use the POW bit in the MSR and enter powersave mode when the scheduler has no runnable work.
 
 # Exceptions
 

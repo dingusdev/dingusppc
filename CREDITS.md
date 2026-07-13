@@ -9,6 +9,10 @@
 - maximumspatium
 - mihaip
 
+## ATI Rage Support (WIP)
+
+- Cacodemon345
+
 ## NT4/PPC fork
 
 - Wack0
@@ -16,7 +20,8 @@
 ## DevOps
 
 - alicela1n
-- Cacodemon345
+- calmsacibis995
+- claunia
 - dressupgeekout
 - dyharlan
 - erichelgeson

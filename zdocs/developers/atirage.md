@@ -1,5 +1,11 @@
 The ATI Rage is a video card that comes bundled with early Power Mac G3s and New World Macs (like the first revisions of the iMac G3). Its predecessor was the ATI Mach 64 GX, used in earlier Old World Macs.
 
+For 2D acceleration, it can support window drawing, scrolling, and blitting. The card itself supports 8-bit color at minimum, with 32-bit color at maximum.
+
+Officially, it only supports up to 6 MB, but hacks can be done such that it uses up to 8 MB.
+
+Later Power Mac G3s would be bundled with the ATI Rage 128, which could support up to 32 MB of video memory.
+
 # Memory Map
 
 The ATI Rage can usually be located at IOBase (ex.: 0xF3000000 for Power Mac G3 Beige) + 0x9000. However, the video memory appears to be at 0x81000000 and is capped at 8 MB.
