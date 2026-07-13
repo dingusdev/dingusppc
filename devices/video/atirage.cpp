@@ -1136,6 +1136,8 @@ void ATIRage::fill_rect(uint32_t dst_width, uint32_t dst_height) {
         }
         break;
     }
+
+    this->draw_fb = true;
 }
 
 void ATIRage::blit_rect(uint32_t dst_width, uint32_t dst_height) {
