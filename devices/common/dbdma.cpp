@@ -383,6 +383,7 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
                         this->flush_cb();
                 }
             }
+            this->ch_stat &= ~CH_STAT_FLUSH;
         }
 
         if (mask & CH_STAT_RUN) {
