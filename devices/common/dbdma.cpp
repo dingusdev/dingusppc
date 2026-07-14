@@ -357,7 +357,7 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
             // Setting FLUSH to 0 has no effect.
             if (data & CH_STAT_FLUSH) {
                 if (
-                    this->cur_cmd <= DBDMA_Cmd::INPUT_LAST &&
+                    (this->cur_cmd == DBDMA_Cmd::INPUT_MORE || this->cur_cmd == DBDMA_Cmd::INPUT_LAST) &&
                     this->is_active()
                 ) {
                     this->ch_stat |= CH_STAT_FLUSH;
