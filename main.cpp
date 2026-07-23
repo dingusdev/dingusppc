@@ -217,7 +217,7 @@ int main(int argc, char** argv) {
         machine_str = machine_str_from_rom;
     }
         if (machine_str.empty()) {
-        LOG_F(ERROR, "Must specificy a machine or provide a supported ROM.");
+        LOG_F(ERROR, "Must specify a machine or provide a supported ROM.");
             return 1;
     }
 

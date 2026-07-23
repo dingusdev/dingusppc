@@ -1,6 +1,8 @@
 # DingusPPC
 
-Written by divingkatae and maximumspatium
+Written by The DingusPPC Development Team
+
+(who are Divingkatae, maximumspatium, joevt, mihaip, kkaisershot, Cacodemon345, Wack0, et. al. Check CREDITS.md for more info)
 
 Be warned the program is highly unfinished and could use a lot of testing. Any feedback is welcome.
 

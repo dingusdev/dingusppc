@@ -170,7 +170,6 @@ add_executable(dingusppc ${SOURCES} $<TARGET_OBJECTS:core>
                                     $<TARGET_OBJECTS:loguru>)
 endif()
 
-# 2. Configure Apple-specific Bundle Properties
 if (APPLE)
     # Identify if we are targeting iOS or macOS
     if (IOS)
@@ -184,8 +183,8 @@ if (APPLE)
     set_target_properties(dingusppc PROPERTIES
         MACOSX_BUNDLE_GUI_IDENTIFIER "${BUNDLE_ID}"
         MACOSX_BUNDLE_BUNDLE_NAME "DingusPPC"
-        MACOSX_BUNDLE_BUNDLE_VERSION "alpha 1.0.4"
-        MACOSX_BUNDLE_SHORT_VERSION_STRING "a1.0.4"
+        MACOSX_BUNDLE_BUNDLE_VERSION "alpha 1.0.4b"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "a1.0.4b"
         MACOSX_BUNDLE_EXECUTABLE_NAME "DingusPPC"
         # Placeholder for the icon file:
         # MACOSX_BUNDLE_ICON_FILE "icon.icns"

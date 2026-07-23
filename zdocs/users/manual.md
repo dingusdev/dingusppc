@@ -14,6 +14,7 @@
 * Disk Tools (7.1.2 - 8.5)
 * Mac OS 7.1.2 - 9.2.2 (from CD or Hard Disk)
 * Mac OS X 10.0 - 10.3
+* BeOS DR9 - 5.0 (Using a Power Mac; BeBox is currently not supported)
 * OpenDarwin 6.6.2
 
 ## Disk Initialization
