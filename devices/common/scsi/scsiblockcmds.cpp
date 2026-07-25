@@ -30,6 +30,8 @@ ScsiBlockCmds::ScsiBlockCmds() {
     this->enable_cmd(ScsiCommand::WRITE_6);
     this->enable_cmd(ScsiCommand::WRITE_10);
     this->enable_cmd(ScsiCommand::WRITE_12);
+    this->enable_cmd(ScsiCommand::VERIFY_6);
+    this->enable_cmd(ScsiCommand::VERIFY_10);
     this->enable_cmd(ScsiCommand::START_STOP_UNIT);
     this->enable_cmd(ScsiCommand::PREVENT_ALLOW_MEDIUM_REMOVAL);
     this->enable_cmd(ScsiCommand::READ_CAPACITY);
@@ -94,6 +96,10 @@ void ScsiBlockCmds::process_command() {
     case ScsiCommand::WRITE_10:
     case ScsiCommand::WRITE_12:
         next_phase = this->write_new();
+        break;
+    case ScsiCommand::VERIFY_6:
+    case ScsiCommand::VERIFY_10:
+        next_phase = this->verify_sector();
         break;
     case ScsiCommand::START_STOP_UNIT:
         next_phase = this->start_stop_unit();
@@ -176,6 +182,43 @@ int ScsiBlockCmds::write_new() {
     );
 
     return ScsiPhase::DATA_OUT;
+}
+
+int ScsiBlockCmds::verify_sector() {
+    //TODO: implement the IMMED, BYTCMP, or FIXED bits
+
+    int nblocks = this->get_xfer_len();
+
+    // special case: zero transfer length means 256 blocks for VERIFY_6
+    if (this->cdb_ptr[0] == ScsiCommand::VERIFY_6) {
+        if (!nblocks)
+            nblocks = 256;
+    } else {
+        if ((this->cdb_ptr[1] & 1) && !this->linked_cmds_supported()) {
+            LOG_F(WARNING, "VERIFY: RelAdr bit set");
+            this->set_field_pointer(1);
+            this->set_bit_pointer(0);
+            this->invalid_cdb();
+            return ScsiPhase::STATUS;
+        }
+    }
+
+    // go directly to the STATUS phase if nblocks = 0
+    if (!nblocks) {
+        LOG_F(WARNING, "VERIFY: skip because nblocks = 0");
+        return ScsiPhase::STATUS;
+    }
+
+    auto lba  = this->get_lba();
+    auto size = this->blk_dev->get_size_in_blocks();
+
+    if (lba >= size || (uint64_t)lba + (uint64_t)nblocks > size) {
+        LOG_F(WARNING, "VERIFY: out of range");
+        this->invalid_cdb();
+        return ScsiPhase::STATUS;
+    }
+
+    return ScsiPhase::STATUS;
 }
 
 int ScsiBlockCmds::start_stop_unit() {

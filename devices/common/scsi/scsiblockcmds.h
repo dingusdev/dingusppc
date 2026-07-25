@@ -43,6 +43,7 @@ public:
 
     virtual int read_new();
     virtual int write_new();
+    virtual int verify_sector();
     virtual int start_stop_unit();
     virtual int read_capacity();
 
