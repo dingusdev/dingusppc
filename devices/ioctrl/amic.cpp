@@ -152,6 +152,10 @@ uint32_t AMIC::read(uint32_t rgn_start, uint32_t offset, int size)
         }
     case 0x14: // Sound registers
         switch (offset) {
+        case AMICReg::Snd_Ctrl_0:
+        case AMICReg::Snd_Ctrl_1:
+        case AMICReg::Snd_Ctrl_2:
+            return this->imm_snd_regs[offset & 3];
         case AMICReg::Snd_Stat_0:
         case AMICReg::Snd_Stat_1:
         case AMICReg::Snd_Stat_2:

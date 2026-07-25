@@ -279,6 +279,13 @@ enum AMICReg : uint32_t {
     DMA_Base_Addr_1     = 0x31001,
     DMA_Base_Addr_2     = 0x31002,
     DMA_Base_Addr_3     = 0x31003,
+
+    DMA_Bus_Error_IE0   = 0x32100,
+    DMA_Bus_Error_IE1   = 0x32101,
+    DMA_Bus_Error_IF0   = 0x32102,
+    DMA_Bus_Error_IF1   = 0x32103,
+
+    //Ethernet DMA
     Enet_DMA_Xmt_Ctrl   = 0x31C20,
     Enet_DMA_Rcv_Ctrl   = 0x32028,
 
@@ -288,6 +295,10 @@ enum AMICReg : uint32_t {
     SCSI_DMA_Base_2     = 0x32002,
     SCSI_DMA_Base_3     = 0x32003,
     SCSI_DMA_Ctrl       = 0x32008,
+    SCSI_DMA_Addr_Ptr_0 = 0x32010,
+    SCSI_DMA_Addr_Ptr_1 = 0x32011,
+    SCSI_DMA_Addr_Ptr_2 = 0x32012,
+    SCSI_DMA_Addr_Ptr_3 = 0x32013,
 
     // Floppy (SWIM3) DMA registers
     Floppy_Addr_Ptr_0   = 0x32060,
