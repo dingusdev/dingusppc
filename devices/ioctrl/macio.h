@@ -359,10 +359,10 @@ private:
     uint32_t feat_ctrl     = 0;    // features control register
     uint32_t aux_ctrl      = 0;    // aux features control register
 
-    uint8_t  cpu_id = 0xF0; // CPUID field (LSB of the MIO_HEAT_ID)
-    uint8_t  mb_id  = 0x70; // Media Bay ID (bits 15:8 of the MIO_HEAT_ID)
-    uint8_t  mon_id = 0x10; // Monitor ID (bits 23:16 of the MIO_HEAT_ID)
-    uint8_t  fp_id  = 0x70; // Flat panel ID (MSB of the MIO_HEAT_ID)
+    uint8_t  cpu_id = 0xF0; // CPUID field (LSB of the MIO_OHARE_ID)
+    uint8_t  mb_id  = 0x70; // Media Bay ID (bits 15:8 of the MIO_OHARE_ID)
+    uint8_t  mon_id = 0x10; // Monitor ID (bits 23:16 of the MIO_OHARE_ID)
+    uint8_t  fp_id  = 0x70; // Flat panel ID (MSB of the MIO_OHARE_ID)
 
     // Subdevice object pointers
     NVram*              nvram;    // NVRAM
