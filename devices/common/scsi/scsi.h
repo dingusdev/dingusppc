@@ -307,7 +307,7 @@ public:
         this->post_xfer_action = cb;
     }
 
-    void set_status(uint8_t status_code) override {
+    void set_status(uint8_t status_code, uint8_t sense_key) override {
         this->status = status_code;
     }
 

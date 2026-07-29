@@ -85,7 +85,7 @@ int ScsiCommonCmds::verify_cdb() {
             if (!this->lun_supported(lun)) {
                 LOG_F(ERROR, "unsupported LUN 0x%X", lun);
                 this->invalid_lun();
-                phy_impl->set_status(ScsiStatus::CHECK_CONDITION);
+                phy_impl->set_status(ScsiStatus::CHECK_CONDITION, this->sense_key);
                 return -1;
             }
         } else if (this->cdb_ptr[1] >> 5)
@@ -115,7 +115,7 @@ int ScsiCommonCmds::test_unit_ready() {
         this->sense_key = ScsiSense::NOT_READY;
         this->asc       = phy_impl->not_ready_reason();
         this->ascq      = 0;
-        phy_impl->set_status(ScsiStatus::CHECK_CONDITION);
+        phy_impl->set_status(ScsiStatus::CHECK_CONDITION, this->sense_key);
     }
 
     return ScsiPhase::STATUS;
@@ -420,7 +420,7 @@ void ScsiCommonCmds::invalid_cdb() {
     this->ascq          = 0;
     this->is_cdb_err    = true;
 
-    phy_impl->set_status(ScsiStatus::CHECK_CONDITION);
+    phy_impl->set_status(ScsiStatus::CHECK_CONDITION, this->sense_key);
 }
 
 void ScsiCommonCmds::invalid_command() {
@@ -433,7 +433,7 @@ void ScsiCommonCmds::invalid_command() {
     this->field_ptr_valid   = true;
     this->field_ptr         = 0; // error in the 1st byte
 
-    phy_impl->set_status(ScsiStatus::CHECK_CONDITION);
+    phy_impl->set_status(ScsiStatus::CHECK_CONDITION, this->sense_key);
 }
 
 void ScsiCommonCmds::illegal_request(uint8_t asc, uint8_t ascq, bool is_cdb) {
@@ -442,5 +442,5 @@ void ScsiCommonCmds::illegal_request(uint8_t asc, uint8_t ascq, bool is_cdb) {
     this->ascq          = ascq;
     this->is_cdb_err    = is_cdb;
 
-    phy_impl->set_status(ScsiStatus::CHECK_CONDITION);
+    phy_impl->set_status(ScsiStatus::CHECK_CONDITION, this->sense_key);
 }
