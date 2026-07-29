@@ -122,7 +122,7 @@ int ScsiBlockCmds::read_new() {
             nblocks = 256;
     } else {
         if ((this->cdb_ptr[1] & 1) && !this->linked_cmds_supported()) {
-            LOG_F(WARNING, "READ: RelAdr bit set");
+            LOG_F(WARNING, "READ: RelAdr bit set but it should not be");
             this->set_field_pointer(1);
             this->set_bit_pointer(0);
             this->invalid_cdb();
@@ -152,7 +152,7 @@ int ScsiBlockCmds::write_new() {
             nblocks = 256;
     } else {
         if ((this->cdb_ptr[1] & 1) && !this->linked_cmds_supported()) {
-            LOG_F(WARNING, "WRITE: RelAdr bit set");
+            LOG_F(WARNING, "WRITE: RelAdr bit set but it should not be");
             this->set_field_pointer(1);
             this->set_bit_pointer(0);
             this->invalid_cdb();
@@ -194,7 +194,7 @@ int ScsiBlockCmds::read_capacity() {
     uint32_t lba = this->get_lba();
 
     if ((this->cdb_ptr[1] & 1) && !this->linked_cmds_supported()) {
-        LOG_F(WARNING, "READ_CAPACITY: RelAdr bit set");
+        LOG_F(WARNING, "READ_CAPACITY: RelAdr bit set but it should not be");
         this->set_field_pointer(1);
         this->set_bit_pointer(0);
         this->invalid_cdb();
