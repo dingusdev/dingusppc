@@ -29,6 +29,9 @@ ScsiCdromCmds::ScsiCdromCmds() {
     this->set_phys_block_dev(this);
 
     this->enable_cmd(ScsiCommand::READ_TOC);
+
+    this->add_page_getter(this, ModePage::CDROM_CAPABILITIES,
+                          &ScsiCdromCmds::get_cd_capabilities_page);
 }
 
 void ScsiCdromCmds::process_command() {
@@ -211,4 +214,38 @@ int ScsiCdromCmds:: read_toc_new() {
     phy_impl->set_xfer_len(std::min(alloc_len, resp_len));
 
     return ScsiPhase::DATA_IN;
+}
+
+int ScsiCdromCmds::get_cd_capabilities_page(uint8_t subpage, uint8_t ctrl,
+                                            uint8_t *out_ptr, int avail_len)
+{
+    if (subpage && subpage != 0xFFU)
+        return FORMAT_ERR_BAD_SUBPAGE;
+
+    if (ctrl == 3)
+        return FORMAT_ERR_BAD_CONTROL;
+
+    int page_size = 28; // min length defined in MMC-3
+
+    if (page_size > avail_len)
+        return FORMAT_ERR_DATA_TOO_BIG;
+
+    std::memset(out_ptr, 0, page_size); // clear everything
+
+    out_ptr[ 0] = this->read_cap;
+    out_ptr[ 1] = this->write_cap;
+    out_ptr[ 2] = this->fmt_support;
+    out_ptr[ 3] = this->ext_support;
+    out_ptr[ 4] = (this->mech_type    << 5) | this->sw_lock_sup         |
+                  (this->drive_locked << 1) | (this->prevent_jump << 2) |
+                  (this->sw_eject_sup << 3);
+    out_ptr[ 5] = this->more_support;
+    out_ptr[15] = this->dgt_out_desc;
+
+    WRITE_WORD_BE_A(&out_ptr[ 6], this->max_rd_speed); // max read speed
+    WRITE_WORD_BE_A(&out_ptr[ 8], this->max_vol_levs); // max of volume levels
+    WRITE_WORD_BE_A(&out_ptr[10], (this->cache_size / 1024)); // buffer size kB
+    WRITE_WORD_BE_A(&out_ptr[12], this->cur_rd_speed); // current read speed
+
+    return page_size;
 }
