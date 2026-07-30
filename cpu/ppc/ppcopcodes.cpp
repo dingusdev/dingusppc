@@ -730,6 +730,7 @@ void dppc_interpreter::ppc_mtsr(uint32_t opcode) {
 #endif
     if (ppc_state.msr & MSR::PR) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
+        return;
     }
     int reg_s             = (opcode >> 21) & 0x1F;
     uint32_t grab_sr      = (opcode >> 16) & 0x0F;
@@ -745,6 +746,7 @@ void dppc_interpreter::ppc_mtsrin(uint32_t opcode) {
 #endif
     if (ppc_state.msr & MSR::PR) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
+        return;
     }
     ppc_grab_regssb(opcode);
     uint32_t grab_sr      = ppc_result_b >> 28;
@@ -760,6 +762,7 @@ void dppc_interpreter::ppc_mfsr(uint32_t opcode) {
 #endif
     if (ppc_state.msr & MSR::PR) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
+        return;
     }
     int reg_d            = (opcode >> 21) & 0x1F;
     uint32_t grab_sr     = (opcode >> 16) & 0x0F;
@@ -772,6 +775,7 @@ void dppc_interpreter::ppc_mfsrin(uint32_t opcode) {
 #endif
     if (ppc_state.msr & MSR::PR) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
+        return;
     }
     ppc_grab_regsdb(opcode);
     uint32_t grab_sr     = ppc_result_b >> 28;
@@ -784,6 +788,7 @@ void dppc_interpreter::ppc_mfmsr(uint32_t opcode) {
 #endif
     if (ppc_state.msr & MSR::PR) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
+        return;
     }
     uint32_t reg_d       = (opcode >> 21) & 0x1F;
     ppc_state.gpr[reg_d] = ppc_state.msr;
@@ -795,6 +800,7 @@ void dppc_interpreter::ppc_mtmsr(uint32_t opcode) {
 #endif
     if (ppc_state.msr & MSR::PR) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
+        return;
     }
     uint32_t reg_s = (opcode >> 21) & 0x1F;
     uint32_t old_msr_val = ppc_state.msr;
@@ -991,12 +997,14 @@ void dppc_interpreter::ppc_mfspr(uint32_t opcode) {
     case SPR::MQ:
         if (!(is_601 || include_601)) {
             ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+            return;
         }
         ppc_state.gpr[reg_d] = ppc_state.spr[ref_spr];
         break;
     case SPR::RTCL_U:
         if (!is_601) {
             ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+            return;
         }
         calc_rtcl_value();
         ppc_state.gpr[reg_d] =
@@ -1006,6 +1014,7 @@ void dppc_interpreter::ppc_mfspr(uint32_t opcode) {
     case SPR::RTCU_U:
         if (!is_601) {
             ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+            return;
         }
         calc_rtcl_value();
         ppc_state.gpr[reg_d] =
@@ -1015,6 +1024,7 @@ void dppc_interpreter::ppc_mfspr(uint32_t opcode) {
     case SPR::DEC_U:
         if (!is_601) {
             ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+            return;
         }
         // fallthrough
     case SPR::DEC_S:
@@ -2074,6 +2084,7 @@ void dppc_interpreter::ppc_eciwx(uint32_t opcode) {
     // error if EAR[E] != 1
     if (!(ppc_state.spr[SPR::EAR] & ear_enable)) {
         ppc_exception_handler(Except_Type::EXC_DSI, 0x0);
+        return;
     }
 
     ppc_grab_regsdab(opcode);
@@ -2095,6 +2106,7 @@ void dppc_interpreter::ppc_ecowx(uint32_t opcode) {
     if (!(ppc_state.spr[SPR::EAR] & ear_enable)) {
         ppc_state.spr[SPR::DSISR] = 0x00100000;
         ppc_exception_handler(Except_Type::EXC_DSI, 0x0);
+        return;
     }
 
     ppc_grab_regssab(opcode);
