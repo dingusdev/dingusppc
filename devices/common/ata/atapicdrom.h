@@ -25,11 +25,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define ATAPI_CDROM_H
 
 #include <devices/common/ata/atapibasedevice.h>
-#include <devices/storage/cdromdrive.h>
+#include <devices/common/scsi/scsicdromcmds.h>
 
 #include <string>
 
-class AtapiCdrom : public CdromDrive, public AtapiBaseDevice {
+class AtapiCdrom : public AtapiBaseDevice, public ScsiCdromCmds {
 public:
     AtapiCdrom(std::string name);
     ~AtapiCdrom() = default;
@@ -54,11 +54,8 @@ public:
     void status_error(uint8_t sense_key, uint8_t asc);
 
     uint16_t get_data();
-private:
-    uint8_t sense_key = 0;
-    uint8_t asc = 0;
-    uint8_t ascq = 0;
 
+private:
     bool        doing_sector_areas = false;
     uint8_t     sector_areas;
     uint32_t    current_block;

@@ -25,7 +25,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/ata/atadefs.h>
 #include <devices/common/ata/atapicdrom.h>
 #include <devices/common/ata/idechannel.h>
-#include <devices/common/scsi/scsi.h> // ATAPI CDROM reuses SCSI commands (sic!)
 #include <devices/deviceregistry.h>
 #include <machines/machinebase.h>
 #include <machines/machineproperties.h>
@@ -36,7 +35,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using namespace ata_interface;
 
-AtapiCdrom::AtapiCdrom(std::string name) : CdromDrive(), AtapiBaseDevice(name) {
+static char cdrom_vendor_id[] = "DINGUS  ";
+static char cdrom_product_id[]  = "DINGUS CD-ROM   ";
+static char cdrom_revision_id[] = "1.0 ";
+
+AtapiCdrom::AtapiCdrom(std::string name) : AtapiBaseDevice(name) {
+    this->set_phys_dev(this);
+    this->set_cdb_ptr(this->cmd_pkt);
+    this->set_buf_ptr(this->data_buf);
+
+    // populate device info for INQUIRY
+    this->dev_type      = ScsiDevType::CD_ROM;
+    this->is_removable  = true; // removable medium
+    this->std_versions  = 2;    // ANSI version: SCSI-2
+    this->resp_fmt      = 0x21; // ATAPI Version + response data format
+    this->set_vendor_id(cdrom_vendor_id);
+    this->set_product_id(cdrom_product_id);
+    this->set_revision_id(cdrom_revision_id);
+
     this->set_error_callback(
         [this](uint8_t sense_key, uint8_t asc) {
             this->status_error(sense_key, asc);
@@ -77,63 +93,10 @@ void AtapiCdrom::perform_packet_command() {
         LOG_F(WARNING, "%s: doing_sector_areas reset", this->name.c_str());
     }
 
+    // assume successful command execution
+    this->status_good();
+
     switch (this->cmd_pkt[0]) {
-    case ScsiCommand::TEST_UNIT_READY:
-        if (this->medium_present())
-            this->status_good();
-        else
-            this->status_error(ScsiSense::NOT_READY, ScsiError::MEDIUM_NOT_PRESENT);
-        this->present_status();
-        break;
-    case ScsiCommand::REQ_SENSE:
-        xfer_len = this->request_sense(this->data_buf, this->sense_key, this->asc, this->ascq);
-        if (!xfer_len) {
-            this->present_status();
-        } else {
-            this->xfer_cnt = std::min((uint32_t)this->r_byte_count, xfer_len);
-            this->data_ptr = (uint16_t*)this->data_buf;
-            this->status_good();
-            this->data_in_phase();
-        }
-        break;
-    case ScsiCommand::INQUIRY:
-        this->xfer_cnt = this->inquiry(this->cmd_pkt, this->data_buf);
-        this->r_byte_count = this->xfer_cnt;
-        this->data_ptr = (uint16_t*)this->data_buf;
-        this->status_good();
-        this->data_in_phase();
-        break;
-    case ScsiCommand::START_STOP_UNIT:
-        if ((this->cmd_pkt[4] & 3) == 2) {
-            LOG_F(WARNING, "CD-ROM eject requested");
-        }
-        this->status_good();
-        this->present_status();
-        break;
-    case ScsiCommand::PREVENT_ALLOW_MEDIUM_REMOVAL:
-        LOG_F(INFO, "%s: medium removal %s", this->name.c_str(),
-            this->cmd_pkt[4] & 1 ? "prevented" : "allowed");
-        this->status_good();
-        this->present_status();
-        break;
-    case ScsiCommand::READ_CAPACITY:
-        this->xfer_cnt = this->report_capacity(this->data_buf);
-        this->r_byte_count = this->xfer_cnt;
-        this->data_ptr = (uint16_t*)this->data_buf;
-        this->status_good();
-        this->data_in_phase();
-        break;
-    case ScsiCommand::READ_TOC:
-        this->status_good();
-        xfer_len = this->read_toc(this->cmd_pkt, this->data_buf);
-        if (!xfer_len) {
-            this->present_status();
-        } else {
-            this->xfer_cnt = std::min((uint32_t)this->r_byte_count, xfer_len);
-            this->data_ptr = (uint16_t*)this->data_buf;
-            this->data_in_phase();
-        }
-        break;
     case ScsiCommand::MODE_SENSE_6:
         this->xfer_cnt = this->mode_sense_ex(true, this->cmd_pkt, this->data_buf);
         if (!this->xfer_cnt) {
@@ -155,81 +118,6 @@ void AtapiCdrom::perform_packet_command() {
             this->status_good();
             this->data_in_phase();
         }
-        break;
-    case ScsiCommand::READ_6:
-        lba      = this->cmd_pkt[1] << 16 | READ_WORD_BE_U(&this->cmd_pkt[2]);
-        xfer_len = this->cmd_pkt[4];
-
-        // if transfer length is zero then just complete command
-        if (xfer_len == 0) {
-            this->status_good();
-            this->present_status();
-            break;
-        }
-
-        if (this->r_features & ATAPI_Features::DMA) {
-            LOG_F(WARNING, "ATAPI DMA transfer requsted");
-        }
-        this->set_fpos(lba);
-        this->xfer_cnt = this->read_begin(xfer_len, this->r_byte_count);
-        this->r_byte_count = this->xfer_cnt;
-        this->data_ptr = (uint16_t*)this->data_cache.get();
-        this->status_good();
-        this->data_in_phase();
-        break;
-    case ScsiCommand::READ_10:
-        if (this->xfer_cnt > 0) {
-            LOG_F(ERROR, "%s: READ(10) when transfer already in progress", name.c_str());
-
-            this->status_error(ScsiSense::NOT_READY, ScsiError::DEV_NOT_READY);
-            this->present_status();
-            break;
-        }
-        lba      = READ_DWORD_BE_U(&this->cmd_pkt[2]);
-        xfer_len = READ_WORD_BE_U(&this->cmd_pkt[7]);
-
-        // if transfer length is zero then just complete command
-        if (xfer_len == 0) {
-            this->status_good();
-            this->present_status();
-            break;
-        }
-
-        if (this->r_features & ATAPI_Features::DMA) {
-            LOG_F(WARNING, "ATAPI DMA transfer requsted");
-        }
-        this->set_fpos(lba);
-        this->xfer_cnt = this->read_begin(xfer_len, this->r_byte_count);
-        this->r_byte_count = this->xfer_cnt;
-        this->data_ptr = (uint16_t*)this->data_cache.get();
-        this->status_good();
-        #if 0
-            TimerManager::get_instance()->add_oneshot_timer(
-                USECS_TO_NSECS(100), [this]() { this->data_in_phase(); });
-        #else
-            this->data_in_phase();
-        #endif
-        break;
-    case ScsiCommand::READ_12:
-        lba      = READ_DWORD_BE_U(&this->cmd_pkt[2]);
-        xfer_len = READ_DWORD_BE_U(&this->cmd_pkt[6]);
-
-        // if transfer length is zero then just complete command
-        if (xfer_len == 0) {
-            this->status_good();
-            this->present_status();
-            break;
-        }
-
-        if (this->r_features & ATAPI_Features::DMA) {
-            LOG_F(WARNING, "ATAPI DMA transfer requsted");
-        }
-        this->set_fpos(lba);
-        this->xfer_cnt = this->read_begin(xfer_len, this->r_byte_count);
-        this->r_byte_count = this->xfer_cnt;
-        this->data_ptr = (uint16_t*)this->data_cache.get();
-        this->status_good();
-        this->data_in_phase();
         break;
     case ScsiCommand::SET_CD_SPEED:
         LOG_F(INFO, "%s: speed set to %d kBps", this->name.c_str(),
@@ -329,10 +217,7 @@ void AtapiCdrom::perform_packet_command() {
         break;
     }
     default:
-        LOG_F(ERROR, "%s: unsupported ATAPI command 0x%X", this->name.c_str(),
-              this->cmd_pkt[0]);
-        this->status_error(ScsiSense::ILLEGAL_REQ, ScsiError::INVALID_CMD);
-        this->present_status();
+        ScsiCdromCmds::process_command();
     }
 }
 
@@ -456,18 +341,14 @@ uint16_t AtapiCdrom::get_data() {
 }
 
 void AtapiCdrom::status_good() {
-    this->status_expected = true;
-    this->r_error = 0;
     this->sense_key = 0;
-    this->r_status &= ~ATA_Status::ERR;
+    this->set_status(ScsiStatus::GOOD, this->sense_key);
 }
 
 void AtapiCdrom::status_error(uint8_t sense_key, uint8_t asc) {
-    this->status_expected = true;
     this->sense_key = sense_key;
     this->asc = asc;
-    this->r_error = (sense_key << 4) | ATA_Error::ABRT;
-    this->r_status |= ATA_Status::ERR;
+    this->set_status(ScsiStatus::CHECK_CONDITION, this->sense_key);
 }
 
 static const PropMap AtapiCdrom_Properties = {
