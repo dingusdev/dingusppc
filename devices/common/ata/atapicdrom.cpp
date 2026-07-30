@@ -97,28 +97,6 @@ void AtapiCdrom::perform_packet_command() {
     this->status_good();
 
     switch (this->cmd_pkt[0]) {
-    case ScsiCommand::MODE_SENSE_6:
-        this->xfer_cnt = this->mode_sense_ex(true, this->cmd_pkt, this->data_buf);
-        if (!this->xfer_cnt) {
-            this->present_status();
-        } else {
-            this->r_byte_count = this->xfer_cnt;
-            this->data_ptr     = (uint16_t*)this->data_buf;
-            this->status_good();
-            this->data_in_phase();
-        }
-        break;
-    case ScsiCommand::MODE_SENSE_10:
-        this->xfer_cnt = this->mode_sense_ex(false, this->cmd_pkt, this->data_buf);
-        if (!this->xfer_cnt) {
-            this->present_status();
-        } else {
-            this->r_byte_count = this->xfer_cnt;
-            this->data_ptr = (uint16_t*)this->data_buf;
-            this->status_good();
-            this->data_in_phase();
-        }
-        break;
     case ScsiCommand::SET_CD_SPEED:
         LOG_F(INFO, "%s: speed set to %d kBps", this->name.c_str(),
               READ_WORD_BE_U(&this->cmd_pkt[2]));
