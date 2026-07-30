@@ -39,10 +39,10 @@ void ScsiCommonCmds::process_command() {
         next_phase = this->test_unit_ready();
         break;
     case ScsiCommand::REQ_SENSE:
-        next_phase = this->request_sense_new();
+        next_phase = this->request_sense();
         break;
     case ScsiCommand::INQUIRY:
-        next_phase = this->inquiry_new();
+        next_phase = this->inquiry();
         break;
     case ScsiCommand::MODE_SENSE_6:
     case ScsiCommand::MODE_SENSE_10:
@@ -121,7 +121,7 @@ int ScsiCommonCmds::test_unit_ready() {
     return ScsiPhase::STATUS;
 }
 
-int ScsiCommonCmds::inquiry_new() {
+int ScsiCommonCmds::inquiry() {
     int alloc_len = this->get_xfer_len();
     int resp_len  = 36; // standard response length
 
@@ -178,7 +178,7 @@ int ScsiCommonCmds::inquiry_new() {
     return ScsiPhase::DATA_IN;
 }
 
-int ScsiCommonCmds::request_sense_new() {
+int ScsiCommonCmds::request_sense() {
     int alloc_len = this->get_xfer_len();
     int resp_len  = 18; // standard response length
 

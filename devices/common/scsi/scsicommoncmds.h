@@ -87,8 +87,8 @@ public:
 protected:
     virtual void     process_command();
     virtual int      test_unit_ready();
-    virtual int      inquiry_new();
-    virtual int      request_sense_new();
+    virtual int      inquiry();
+    virtual int      request_sense();
     virtual int      mode_sense();
     virtual uint8_t  get_lun();
     virtual uint32_t get_xfer_len();

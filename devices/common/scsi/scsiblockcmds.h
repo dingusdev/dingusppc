@@ -41,8 +41,8 @@ public:
     void init_block_device(uint8_t medium_type, uint8_t dev_flags,
                            uint8_t density_code, bool is_apple_compliant);
 
-    virtual int read_new();
-    virtual int write_new();
+    virtual int read();
+    virtual int write();
     virtual int start_stop_unit();
     virtual int read_capacity();
 

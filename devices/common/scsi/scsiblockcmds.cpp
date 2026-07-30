@@ -88,12 +88,12 @@ void ScsiBlockCmds::process_command() {
     case ScsiCommand::READ_6:
     case ScsiCommand::READ_10:
     case ScsiCommand::READ_12:
-        next_phase = this->read_new();
+        next_phase = this->read();
         break;
     case ScsiCommand::WRITE_6:
     case ScsiCommand::WRITE_10:
     case ScsiCommand::WRITE_12:
-        next_phase = this->write_new();
+        next_phase = this->write();
         break;
     case ScsiCommand::START_STOP_UNIT:
         next_phase = this->start_stop_unit();
@@ -113,7 +113,7 @@ void ScsiBlockCmds::process_command() {
     phy_impl->switch_phase(next_phase);
 }
 
-int ScsiBlockCmds::read_new() {
+int ScsiBlockCmds::read() {
     int nblocks = this->get_xfer_len();
 
     // special case: zero transfer length means 256 blocks for READ_6
@@ -143,7 +143,7 @@ int ScsiBlockCmds::read_new() {
     return ScsiPhase::DATA_IN;
 }
 
-int ScsiBlockCmds::write_new() {
+int ScsiBlockCmds::write() {
     int nblocks = this->get_xfer_len();
 
     // special case: zero transfer length means 256 blocks for WRITE_6

@@ -45,7 +45,7 @@ void ScsiCdromCmds::process_command() {
 
     switch(this->cdb_ptr[0]) {
     case ScsiCommand::READ_TOC:
-        next_phase = this->read_toc_new();
+        next_phase = this->read_toc();
         break;
     default:
         ScsiBlockCmds::process_command();
@@ -55,7 +55,7 @@ void ScsiCdromCmds::process_command() {
     phy_impl->switch_phase(next_phase);
 }
 
-int ScsiCdromCmds:: read_toc_new() {
+int ScsiCdromCmds:: read_toc() {
     uint8_t start_track, session_num;
     int     tot_tracks, resp_len = 0;
 
