@@ -36,10 +36,13 @@ public:
 protected:
     virtual void process_command() override;
 
+    int read_toc_new();
+
     int get_cd_capabilities_page(uint8_t subpage, uint8_t ctrl,
                                  uint8_t *out_ptr, int avail_len);
 
-    int     read_toc_new();
+    int get_cdrom_audio_control_page(uint8_t subpage, uint8_t ctrl,
+                                     uint8_t *out_ptr, int avail_len);
 };
 
 #endif // SCSI_CDROM_COMMANDS_H

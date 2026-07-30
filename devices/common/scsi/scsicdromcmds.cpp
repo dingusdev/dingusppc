@@ -30,6 +30,9 @@ ScsiCdromCmds::ScsiCdromCmds() {
 
     this->enable_cmd(ScsiCommand::READ_TOC);
 
+    this->add_page_getter(this, ModePage::CDROM_AUDIO_CONTROL,
+                          &ScsiCdromCmds::get_cdrom_audio_control_page);
+
     this->add_page_getter(this, ModePage::CDROM_CAPABILITIES,
                           &ScsiCdromCmds::get_cd_capabilities_page);
 }
@@ -246,6 +249,40 @@ int ScsiCdromCmds::get_cd_capabilities_page(uint8_t subpage, uint8_t ctrl,
     WRITE_WORD_BE_A(&out_ptr[ 8], this->max_vol_levs); // max of volume levels
     WRITE_WORD_BE_A(&out_ptr[10], (this->cache_size / 1024)); // buffer size kB
     WRITE_WORD_BE_A(&out_ptr[12], this->cur_rd_speed); // current read speed
+
+    return page_size;
+}
+
+int ScsiCdromCmds::get_cdrom_audio_control_page(uint8_t subpage, uint8_t ctrl,
+                                                uint8_t *out_ptr, int avail_len)
+{
+    if (subpage && subpage != 0xFFU)
+        return FORMAT_ERR_BAD_SUBPAGE;
+
+    if (ctrl == 3)
+        return FORMAT_ERR_BAD_CONTROL;
+
+    int page_size = 14;
+
+    if (page_size > avail_len)
+        return FORMAT_ERR_DATA_TOO_BIG;
+
+    std::memset(out_ptr, 0, page_size); // clear everything
+
+    out_ptr[ 0] = (1 << 2); // Immed defaults to 1, SOTC defaults to 0
+
+    // logical block per second of audio playback defaults to 75
+    WRITE_WORD_BE_A(&out_ptr[4], 75);
+
+    out_ptr[ 6] = 0x01; // Left Channel
+    out_ptr[ 7] = 0xFF; // Volume (0-255)
+    out_ptr[ 8] = 0x02; // Right Channel
+    out_ptr[ 9] = 0xFF; // Volume (0-255)
+
+    out_ptr[10] = 0x04; // Output Port 2
+    out_ptr[11] = 0x00; // Volume (0-255)
+    out_ptr[12] = 0x08; // Output Port 3
+    out_ptr[13] = 0x00; // Volume (0-255)
 
     return page_size;
 }

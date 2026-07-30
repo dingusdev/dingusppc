@@ -140,7 +140,7 @@ uint32_t CdromDrive::mode_sense_ex(bool is_sense_6, uint8_t* cmd_ptr, uint8_t* d
         std::memset(&resp_ptr[2], 0, 6);
         data_ptr[1] += 8; // adjust overall length
         break;
-    case ModePage::CDROM_AUDIO:
+    case ModePage::CDROM_AUDIO_CONTROL:
         resp_ptr[1] = 16;  // page length
         std::memset(&resp_ptr[2], 0, 16);
         resp_ptr[2] = (1 << 2); //immediately return status

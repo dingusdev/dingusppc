@@ -248,7 +248,7 @@ enum ModePage : uint8_t {
     DEV_FORMAT_PARAMS    = 0x3,
     RIGID_DISK_GEOMETRY  = 0x4,
     CDROM_PARAMS         = 0xD,
-    CDROM_AUDIO          = 0xE,
+    CDROM_AUDIO_CONTROL  = 0xE,
     POWER_CONDITION      = 0x1A,
     CDROM_CAPABILITIES   = 0x2A,
     VENDOR_PAGE_31       = 0x31,
