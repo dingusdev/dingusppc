@@ -43,7 +43,7 @@ public:
     void write(const uint8_t reg_addr, const uint16_t value) override;
 
     // ScsiPhysInterface methods
-    void set_eject_state(bool eject_allowed) override {};
+    void set_lock_state(bool is_locked) override {};
 
     void set_xfer_len(uint64_t len) override {
         this->xfer_cnt      = len;

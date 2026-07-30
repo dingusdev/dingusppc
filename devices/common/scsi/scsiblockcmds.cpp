@@ -99,7 +99,7 @@ void ScsiBlockCmds::process_command() {
         next_phase = this->start_stop_unit();
         break;
     case ScsiCommand::PREVENT_ALLOW_MEDIUM_REMOVAL:
-        phy_impl->set_eject_state((this->cdb_ptr[4] & 1) == 0);
+        phy_impl->set_lock_state((this->cdb_ptr[4] & 1) != 0);
         next_phase = ScsiPhase::STATUS;
         break;
     case ScsiCommand::READ_CAPACITY:

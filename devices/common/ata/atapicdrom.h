@@ -42,6 +42,10 @@ public:
 
     void perform_packet_command() override;
 
+    void set_lock_state(bool is_locked) override {
+        this->drive_locked = is_locked ? 1 : 0;
+    }
+
     int get_config(uint8_t* pkt, uint8_t* buf) override;
 
     int request_data() override;

@@ -311,8 +311,8 @@ public:
         this->status = status_code;
     }
 
-    void set_eject_state(bool eject_allowed) override {
-        this->eject_allowed = eject_allowed;
+    void set_lock_state(bool is_locked) override {
+        this->eject_allowed = !is_locked;
     }
 
     virtual void notify(ScsiNotification notif_type, int param);

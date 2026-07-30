@@ -37,6 +37,11 @@ public:
 
     virtual void process_command() override;
 
+    void set_lock_state(bool is_locked) override {
+        this->drive_locked = is_locked ? 1 : 0;
+        ScsiPhysDevice::set_lock_state(is_locked);
+    }
+
 protected:
     bool is_device_ready() override { return this->is_ready; }
 
