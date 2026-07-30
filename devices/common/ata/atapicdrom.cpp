@@ -52,12 +52,6 @@ AtapiCdrom::AtapiCdrom(std::string name) : AtapiBaseDevice(name) {
     this->set_vendor_id(cdrom_vendor_id);
     this->set_product_id(cdrom_product_id);
     this->set_revision_id(cdrom_revision_id);
-
-    this->set_error_callback(
-        [this](uint8_t sense_key, uint8_t asc) {
-            this->status_error(sense_key, asc);
-        }
-    );
 }
 
 int AtapiCdrom::device_postinit() {

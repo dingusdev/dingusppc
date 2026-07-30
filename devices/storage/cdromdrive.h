@@ -79,23 +79,11 @@ public:
     CdromDrive();
     virtual ~CdromDrive() = default;
 
-    void set_error_callback(std::function<void(uint8_t, uint8_t)>&& err_cb) {
-        this->set_error = std::move(err_cb);
-    }
-
     bool medium_present() { return this->is_ready; }
 
     void insert_image(std::string filename);
 
-    virtual uint32_t inquiry(uint8_t *cmd_ptr, uint8_t *data_ptr);
-    virtual uint32_t mode_sense_ex(bool is_sense_6, uint8_t *cmd_ptr, uint8_t *data_ptr);
-    virtual uint32_t request_sense(uint8_t *data_ptr, uint8_t sense_key, uint8_t asc,
-                                   uint8_t ascq);
-    virtual uint32_t report_capacity(uint8_t *data_ptr);
-    virtual uint32_t read_toc(uint8_t *cmd_ptr, uint8_t *data_ptr);
-
 protected:
-    std::function<void(uint8_t, uint8_t)>  set_error;
     uint8_t hex_to_bcd(const uint8_t val);
     AddrMsf lba_to_msf(const int lba);
     bool    detect_raw_image();
