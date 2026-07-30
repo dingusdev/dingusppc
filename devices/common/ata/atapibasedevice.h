@@ -25,11 +25,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define ATAPI_BASE_DEVICE_H
 
 #include <devices/common/ata/atabasedevice.h>
+#include <devices/common/scsi/scsi.h>
+#include <devices/common/scsi/scsiphysinterface.h>
 
 #include <cinttypes>
 #include <string>
 
-class AtapiBaseDevice : public AtaBaseDevice
+class AtapiBaseDevice : public AtaBaseDevice, public ScsiPhysInterface
 {
 public:
     AtapiBaseDevice(const std::string name);
@@ -39,6 +41,24 @@ public:
 
     uint16_t read(const uint8_t reg_addr) override;
     void write(const uint8_t reg_addr, const uint16_t value) override;
+
+    // ScsiPhysInterface methods
+    void set_eject_state(bool eject_allowed) override {};
+
+    void set_xfer_len(uint64_t len) override {
+        this->xfer_cnt      = len;
+        this->r_byte_count  = len;
+    }
+
+    void set_buffer(uint8_t *buf_ptr) override {
+        this->data_ptr = (uint16_t*)buf_ptr;
+    }
+
+    void set_status(uint8_t status_code, uint8_t sense_key) override;
+    void switch_phase(const int new_phase) override;
+    void set_read_more_data_cb(more_data_cb_t cb) override {};
+    void set_write_more_data_cb(more_data_cb_t cb) override {};
+    void set_post_xfer_action(action_callback cb) override {};
 
     // methods to be implemented in the particular device
     int  perform_command() override;

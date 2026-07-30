@@ -33,7 +33,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace ata_interface;
 
 AtapiBaseDevice::AtapiBaseDevice(const std::string name)
-    : AtaBaseDevice(name, DEVICE_TYPE_ATAPI) {
+    : AtaBaseDevice(name, DEVICE_TYPE_ATAPI), ScsiPhysInterface(PHY_ID_ATAPI) {
 }
 
 void AtapiBaseDevice::device_set_signature() {
@@ -90,7 +90,7 @@ uint16_t AtapiBaseDevice::read(const uint8_t reg_addr) {
     case ATA_Reg::STATUS:
         this->update_intrq(0);
     case ATA_Reg::ALT_STATUS:
-        if (this->r_status & BSY && this->data_available()) {
+        if ((this->r_status & BSY) && this->data_available()) {
             this->r_byte_count = this->request_data();
             this->data_in_phase();
         }
@@ -206,7 +206,7 @@ int AtapiBaseDevice::perform_command() {
 }
 
 void AtapiBaseDevice::data_in_phase() {
-    this->r_int_reason |= ATAPI_Int_Reason::IO; // device->host
+    this->r_int_reason |= ATAPI_Int_Reason::IO;   // device->host
     this->r_int_reason &= ~ATAPI_Int_Reason::CoD; // data
     this->signal_data_ready();
 }
@@ -217,4 +217,39 @@ void AtapiBaseDevice::present_status() {
     this->r_status &= ~DRQ;
     this->r_status &= ~BSY;
     this->update_intrq(1);
+}
+
+void AtapiBaseDevice::switch_phase(const int new_phase) {
+    switch(new_phase) {
+    case ScsiPhase::DATA_IN:
+        this->data_in_phase();
+        break;
+    case ScsiPhase::DATA_OUT:
+        this->r_int_reason &= ATAPI_Int_Reason::IO;   // host->device
+        this->r_int_reason &= ~ATAPI_Int_Reason::CoD; // data
+        this->signal_data_ready();
+        break;
+    case ScsiPhase::STATUS:
+        this->present_status();
+        break;
+    default:
+        LOG_F(WARNING, "ATAPI PHY: unsupported phase %d switch_phase", new_phase);
+    }
+}
+
+void AtapiBaseDevice::set_status(uint8_t status_code, uint8_t sense_key) {
+    switch(status_code) {
+    case ScsiStatus::GOOD:
+        this->status_expected = true;
+        this->r_error = 0;
+        this->r_status &= ~ATA_Status::ERR;
+        break;
+    case ScsiStatus::CHECK_CONDITION:
+        this->status_expected = true;
+        this->r_error = (sense_key << 4) | ATA_Error::ABRT;
+        this->r_status |= ATA_Status::ERR;
+        break;
+    default:
+        LOG_F(WARNING, "ATAPI PHY: unsupported status %d set_status", status_code);
+    }
 }
