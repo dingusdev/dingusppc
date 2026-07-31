@@ -29,6 +29,7 @@ ScsiCdromCmds::ScsiCdromCmds() {
     this->set_phys_block_dev(this);
 
     this->enable_cmd(ScsiCommand::READ_TOC);
+    this->enable_cmd(ScsiCommand::SET_CD_SPEED);
 
     this->add_page_getter(this, ModePage::CDROM_AUDIO_CONTROL,
                           &ScsiCdromCmds::get_cdrom_audio_control_page);
@@ -46,6 +47,9 @@ void ScsiCdromCmds::process_command() {
     switch(this->cdb_ptr[0]) {
     case ScsiCommand::READ_TOC:
         next_phase = this->read_toc();
+        break;
+    case ScsiCommand::SET_CD_SPEED:
+        next_phase = this->set_cd_speed();
         break;
     default:
         ScsiBlockCmds::process_command();
@@ -217,6 +221,21 @@ int ScsiCdromCmds:: read_toc() {
     phy_impl->set_xfer_len(std::min(alloc_len, resp_len));
 
     return ScsiPhase::DATA_IN;
+}
+
+int ScsiCdromCmds::set_cd_speed() {
+    phy_impl->set_status(ScsiStatus::GOOD);
+
+    uint16_t new_rd_speed = READ_WORD_BE_U(&this->cdb_ptr[2]);
+
+    if (new_rd_speed == 0xFFFFU || new_rd_speed > this->max_rd_speed)
+        this->cur_rd_speed = this->max_rd_speed;
+    else
+        this->cur_rd_speed = new_rd_speed;
+
+    LOG_F(INFO, "SET_CD_SPEED: drive speed set to %d kBps", this->cur_rd_speed);
+
+    return ScsiPhase::STATUS;
 }
 
 int ScsiCdromCmds::get_cd_capabilities_page(uint8_t subpage, uint8_t ctrl,

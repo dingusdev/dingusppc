@@ -91,12 +91,6 @@ void AtapiCdrom::perform_packet_command() {
     this->status_good();
 
     switch (this->cmd_pkt[0]) {
-    case ScsiCommand::SET_CD_SPEED:
-        LOG_F(INFO, "%s: speed set to %d kBps", this->name.c_str(),
-              READ_WORD_BE_U(&this->cmd_pkt[2]));
-        this->status_good();
-        this->present_status();
-        break;
     case ScsiCommand::READ_CD:
     {
         lba = READ_DWORD_BE_U(&this->cmd_pkt[2]);
