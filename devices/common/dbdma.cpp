@@ -144,6 +144,18 @@ void DMAChannel::interpret_cmd() {
     }
 }
 
+void DMAChannel::update_cmd() {
+    if (this->cur_is_writable) {
+        if (this->cur_cmd < DBDMA_Cmd::STOP)
+            WRITE_WORD_LE_A(&this->cur_host->xfer_stat, this->ch_stat | CH_STAT_ACTIVE);
+
+        // all INPUT and OUTPUT commands including LOAD_QUAD and STORE_QUAD update cmd.resCount
+        if (this->cur_cmd < DBDMA_Cmd::NOP)
+            WRITE_WORD_LE_A(&this->cur_host->res_count, this->res_count);
+    }
+    this->ch_stat &= ~(CH_STAT_FLUSH | CH_STAT_BT);
+}
+
 void DMAChannel::finish_cmd() {
     bool   branch_taken = false;
 
@@ -186,17 +198,9 @@ void DMAChannel::finish_cmd() {
                 this->ch_stat |= CH_STAT_BT;
             }
         }
-
-        if (this->cur_is_writable)
-            WRITE_WORD_LE_A(&this->cur_host->xfer_stat, this->ch_stat | CH_STAT_ACTIVE);
     }
 
-    this->ch_stat &= ~(CH_STAT_FLUSH | CH_STAT_BT);
-
-    // all INPUT and OUTPUT commands including LOAD_QUAD and STORE_QUAD update cmd.resCount
-    if (this->cur_cmd < DBDMA_Cmd::NOP && this->cur_is_writable) {
-        WRITE_WORD_LE_A(&this->cur_host->res_count, this->res_count);
-    }
+    this->update_cmd();
 
     if (this->cur_cmd < DBDMA_Cmd::STOP && !branch_taken)
         this->cmd_ptr += 16;
