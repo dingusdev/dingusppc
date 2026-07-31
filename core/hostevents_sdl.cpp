@@ -156,10 +156,16 @@ void EventManager::poll_events() {
                 // Control-L: log toggle
                 if (event.key.keysym.sym == SDLK_l && (event.key.keysym.mod & KMOD_ALL) == KMOD_LCTRL) {
                     if (event.type == SDL_KEYUP) {
-                        loguru::g_stderr_verbosity = loguru::g_stderr_verbosity == loguru::Verbosity_MAX ?
-                            loguru::Verbosity_INFO
-                        :
-                            loguru::Verbosity_MAX;
+                        loguru::Verbosity new_verbosity = loguru::g_stderr_verbosity;
+                        if (new_verbosity < loguru::Verbosity_INFO)
+                            new_verbosity = loguru::Verbosity_INFO;
+                        else if (new_verbosity < loguru::Verbosity_MAX)
+                            new_verbosity = loguru::Verbosity_MAX;
+                        else
+                            new_verbosity = loguru::Verbosity_OFF;
+                        loguru::g_stderr_verbosity = loguru::Verbosity_INFO;
+                        LOG_F(INFO, "g_stderr_verbosity: %d", new_verbosity);
+                        loguru::g_stderr_verbosity = new_verbosity;
                     }
                     return;
                 }
