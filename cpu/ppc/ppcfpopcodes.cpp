@@ -1239,6 +1239,9 @@ void dppc_interpreter::ppc_mtfsf(uint32_t opcode) {
     // copy FPR[reg_b] to FPSCR under control of cr_mask
     ppc_state.fpscr = (ppc_state.fpscr & ~cr_mask) | (FPR_INT(reg_b) & cr_mask);
 
+    ppc_update_vx();
+    ppc_update_fex();
+
     if (rec)
         ppc_update_cr1();
 }
@@ -1275,6 +1278,9 @@ void dppc_interpreter::ppc_mtfsb0(uint32_t opcode) {
         ppc_state.fpscr &= ~(0x80000000UL >> crf_d);
     }
 
+    ppc_update_vx();
+    ppc_update_fex();
+
     if (rec)
         ppc_update_cr1();
 }
@@ -1288,6 +1294,9 @@ void dppc_interpreter::ppc_mtfsb1(uint32_t opcode) {
     if (!crf_d || (crf_d > 2)) { // FEX and VX can't be explicitly set
         ppc_state.fpscr |= (0x80000000UL >> crf_d);
     }
+
+    ppc_update_vx();
+    ppc_update_fex();
 
     if (rec)
         ppc_update_cr1();
@@ -1309,8 +1318,10 @@ void dppc_interpreter::ppc_mcrfs(uint32_t opcode) {
         FPSCR::UX | FPSCR::ZX | FPSCR::XX | FPSCR::VXSNAN |
         FPSCR::VXISI | FPSCR::VXIDI | FPSCR::VXZDZ | FPSCR::VXIMZ |
         FPSCR::VXVC |
-        FPSCR::VXSOFT | FPSCR::VXSQRT | FPSCR::VXCVI
-    ));
+        FPSCR::VXSOFT | FPSCR::VXSQRT | FPSCR::VXCVI));
+
+    ppc_update_vx();
+    ppc_update_fex();
 }
 
 // Floating Point Comparisons
