@@ -87,8 +87,14 @@ void AtapiCdrom::perform_packet_command() {
         LOG_F(WARNING, "%s: doing_sector_areas reset", this->name.c_str());
     }
 
-    // assume successful command execution
-    this->status_good();
+    // Assume successful command execution
+    if (this->cmd_pkt[0] == ScsiCommand::REQ_SENSE) {
+        // For REQ_SENSE we only set the status, status_good() also resets
+        // sense_key, which we'll need to return.
+        this->set_status(ScsiStatus::GOOD, 0);
+    } else {
+        this->status_good();
+    }
 
     switch (this->cmd_pkt[0]) {
     case ScsiCommand::READ_CD:
