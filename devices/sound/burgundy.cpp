@@ -42,23 +42,23 @@ BurgundyCodec::BurgundyCodec(std::string name) : MacioSndCodec(name)
 }
 
 uint32_t BurgundyCodec::snd_ctrl_read(uint32_t offset, int size) {
-    uint32_t result = 0;
+    uint32_t value = 0;
 
     switch (offset) {
     case AWAC_CODEC_CTRL_REG:
-        result = this->last_ctrl_data;
+        value = this->last_ctrl_data;
         break;
     case AWAC_CODEC_STATUS_REG:
-        result = (this->first_valid << 23) | BURGUNDY_READY |
-                 (this->byte_counter << 14) | (this->read_pos << 12) |
-                 (this->data_byte << 4);
+        value = (this->first_valid << 23) | BURGUNDY_READY |
+           (this->byte_counter << 14) | (this->read_pos << 12) |
+           (this->data_byte << 4);
         break;
     default:
         LOG_F(ERROR, "%s: read from unsupported register 0x%X", this->name.c_str(),
               offset);
     }
 
-    return BYTESWAP_32(result);
+    return BYTESWAP_32(value);
 }
 
 void BurgundyCodec::snd_ctrl_write(uint32_t offset, uint32_t value, int size) {
