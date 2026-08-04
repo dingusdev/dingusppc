@@ -58,6 +58,8 @@ private:
     uint8_t     first_valid     = 0;
     uint8_t     read_pos        = 0;
     uint8_t     data_byte       = 0;
+    uint32_t    frame_count     = 0;
+    uint64_t    frame_count_start_time = 0;
 
     uint32_t    reg_array[BURGUNDY_NUM_REGS] = {};
 };

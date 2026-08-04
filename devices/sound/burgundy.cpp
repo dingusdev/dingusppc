@@ -56,6 +56,14 @@ uint32_t BurgundyCodec::snd_ctrl_read(uint32_t offset, int size) {
            (this->byte_counter << 14) | (this->read_pos << 12) |
            (this->data_byte << 4);
         break;
+    case AWAC_FRAME_COUNT:
+        value = (uint32_t)(
+            (
+                (TimerManager::get_instance()->current_time_ns() - frame_count_start_time) * this->sr_table[0]
+                + 500000000
+            )  / 1000000000 + this->frame_count
+        );
+        break;
     default:
         LOG_F(ERROR, "%s: read from unsupported register 0x%X", this->name.c_str(),
               offset);
@@ -98,6 +106,10 @@ void BurgundyCodec::snd_ctrl_write(uint32_t offset, uint32_t value, int size) {
                     this->byte_counter = (this->byte_counter + 1) & 3;
             });
         }
+        break;
+    case AWAC_FRAME_COUNT:
+        this->frame_count = BYTESWAP_32(value);
+        this->frame_count_start_time = TimerManager::get_instance()->current_time_ns();
         break;
     default:
         LOG_F(ERROR, "%s: write to unsupported register 0x%X", this->name.c_str(),
