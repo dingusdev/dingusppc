@@ -51,6 +51,7 @@ public:
     }
 
 private:
+    uint32_t    snd_ctrl_reg    = 0x1011;
     uint32_t    last_ctrl_data  = 0;
     uint8_t     byte_counter    = 0;
     uint8_t     reg_addr        = 0;
