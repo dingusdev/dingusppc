@@ -38,6 +38,8 @@ public:
         return std::unique_ptr<AtapiCdrom>(new AtapiCdrom("ATAPI-CDROM"));
     }
 
+    bool is_device_ready() override { return this->is_ready; }
+
     int device_postinit() override;
 
     void perform_packet_command() override;
