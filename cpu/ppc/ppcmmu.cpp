@@ -458,6 +458,39 @@ fail:
     return MapDmaResult{RT_NONE, false, nullptr, nullptr, 0};
 }
 
+constexpr uint32_t TLB_SIZE        = 4096;
+constexpr uint32_t TLB2_WAYS       = 4;
+constexpr uint32_t TLB_INVALID_TAG = 0xFFFFFFFF;
+constexpr uint32_t TLB_VPS_MASK    = 0x0FFFF000; // mask for TLB invalidation
+
+enum TLBFlags : uint16_t {
+    PAGE_MEM      = 1 << 0, // memory page backed by host memory
+    PAGE_IO       = 1 << 1, // memory mapped I/O page
+    PAGE_NOPHYS   = 1 << 2, // no physical storage for this page (unmapped)
+    TLBE_FROM_BAT = 1 << 3, // TLB entry has been translated with BAT
+    TLBE_FROM_PAT = 1 << 4, // TLB entry has been translated with PAT
+    PAGE_WRITABLE = 1 << 5, // page is writable
+    PTE_SET_C     = 1 << 6, // tells if C bit of the PTE needs to be updated
+};
+
+typedef struct TLBEntry {
+    uint32_t    tag;
+    uint16_t    flags;
+    uint16_t    lru_bits;
+    union {
+        struct { // for memory pages
+            int64_t host_va_offs_r;
+            int64_t host_va_offs_w;
+        };
+        struct { // for MMIO pages
+            AddressMapEntry*    rgn_desc;
+            int64_t             dev_base_va;
+        };
+    };
+    uint32_t phys_tag;
+    uint32_t reserved;
+} TLBEntry;
+
 // primary ITLB for all MMU modes
 static std::array<TLBEntry, TLB_SIZE> itlb1_mode1;
 static std::array<TLBEntry, TLB_SIZE> itlb1_mode2;
@@ -940,10 +973,10 @@ void tlb_flush_entries(TLBFlags type)
     }
 }
 
-bool gTLBFlushIBatEntries = false;
-bool gTLBFlushDBatEntries = false;
-bool gTLBFlushIPatEntries = false;
-bool gTLBFlushDPatEntries = false;
+static bool gTLBFlushIBatEntries = false;
+static bool gTLBFlushDBatEntries = false;
+static bool gTLBFlushIPatEntries = false;
+static bool gTLBFlushDPatEntries = false;
 
 template <const TLBType tlb_type>
 void tlb_flush_bat_entries()
