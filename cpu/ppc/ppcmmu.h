@@ -24,8 +24,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef PPCMMU_H
 #define PPCMMU_H
 
-#include <devices/memctrl/memctrlbase.h>
-
 #include <cinttypes>
 #include <functional>
 
@@ -84,38 +82,6 @@ typedef struct MapDmaResult {
 constexpr uint32_t PPC_PAGE_SIZE_BITS = 12;
 constexpr uint32_t PPC_PAGE_SIZE      = (1 << PPC_PAGE_SIZE_BITS);
 constexpr uint32_t PPC_PAGE_MASK      = ~(PPC_PAGE_SIZE - 1);
-constexpr uint32_t TLB_SIZE           = 4096;
-constexpr uint32_t TLB2_WAYS          = 4;
-constexpr uint32_t TLB_INVALID_TAG    = 0xFFFFFFFF;
-constexpr uint32_t TLB_VPS_MASK       = 0x0FFFF000; // mask for TLB invalidation
-
-typedef struct TLBEntry {
-    uint32_t    tag;
-    uint16_t    flags;
-    uint16_t    lru_bits;
-    union {
-        struct { // for memory pages
-            int64_t host_va_offs_r;
-            int64_t host_va_offs_w;
-        };
-        struct { // for MMIO pages
-            AddressMapEntry*    rgn_desc;
-            int64_t             dev_base_va;
-        };
-    };
-    uint32_t phys_tag;
-    uint32_t reserved;
-} TLBEntry;
-
-enum TLBFlags : uint16_t {
-    PAGE_MEM      = 1 << 0, // memory page backed by host memory
-    PAGE_IO       = 1 << 1, // memory mapped I/O page
-    PAGE_NOPHYS   = 1 << 2, // no physical storage for this page (unmapped)
-    TLBE_FROM_BAT = 1 << 3, // TLB entry has been translated with BAT
-    TLBE_FROM_PAT = 1 << 4, // TLB entry has been translated with PAT
-    PAGE_WRITABLE = 1 << 5, // page is writable
-    PTE_SET_C     = 1 << 6, // tells if C bit of the PTE needs to be updated
-};
 
 extern std::function<void(uint32_t bat_reg)> ibat_update;
 extern std::function<void(uint32_t bat_reg)> dbat_update;

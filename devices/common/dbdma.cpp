@@ -29,6 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/dmacore.h>
 #include <devices/common/hwinterrupt.h>
 #include <devices/common/mmiodevice.h>
+#include <devices/memctrl/memctrlbase.h>
 
 #include <cinttypes>
 #include <cstring>
