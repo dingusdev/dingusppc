@@ -228,6 +228,11 @@ jobs:
     - uses: actions/checkout@v5
       with:
         submodules: recursive
+    # Configures MSVC/Clang environment natively for all subsequent steps
+    - name: Setup MSVC Developer Command Prompt
+      uses: TheMrMilchmann/setup-msvc-dev@v4
+      with:
+        arch: x64
     - name: Setup msbuild
       uses: microsoft/setup-msbuild@v3
     - name: Install vcpkg packages
@@ -266,6 +271,7 @@ jobs:
         if %errorlevel% neq 0 echo ccache stats unavailable
     - name: Test
       working-directory: ${{github.workspace}}/build
+      shell: cmd
       run: ctest -C ${{env.BUILD_TYPE}} --output-on-failure
     - name: Upload logs on failure
       if: failure()
