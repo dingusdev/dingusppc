@@ -367,6 +367,11 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
                         this->dev_obj->notify(this, DMA_MSG_FLUSH);
                     if (this->flush_cb)
                         this->flush_cb();
+                    if (this->cur_is_writable) {
+                        WRITE_WORD_LE_A(&this->cur_host->xfer_stat,
+                                        this->ch_stat | CH_STAT_ACTIVE);
+                        WRITE_WORD_LE_A(&this->cur_host->res_count, this->res_count);
+                    }
                 }
             }
             this->ch_stat &= ~CH_STAT_FLUSH;
