@@ -92,11 +92,6 @@ volatile bool exec_timer;
 bool int_pin = false; // interrupt request pin state: true - asserted
 bool dec_exception_pending = false;
 
-/* copy of local variable bb_start_la. Need for correct
-   calculation of CPU cycles after setjmp that clobbers
-   non-volatile local variables. */
-uint32_t    glob_bb_start_la;
-
 /* variables related to virtual time */
 const bool g_realtime = false;
 uint64_t g_nanoseconds_base;
