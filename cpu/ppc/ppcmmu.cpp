@@ -473,8 +473,13 @@ enum TLBFlags : uint16_t {
     PTE_SET_C     = 1 << 6, // tells if C bit of the PTE needs to be updated
 };
 
+// PAT context changes are frequent, so implicitly invalidate PAT-derived
+// entries via a generation counter (instead of walking the TLB array and
+// clearing every time).
+static uint32_t gTLBPatGeneration = 0;
+
 typedef struct TLBEntry {
-    uint32_t    tag;
+    uint32_t    tag; // use is_invalid() or matches_tag() for validity checks
     uint16_t    flags;
     uint16_t    lru_bits;
     union {
@@ -488,7 +493,21 @@ typedef struct TLBEntry {
         };
     };
     uint32_t phys_tag;
-    uint32_t reserved;
+    uint32_t pat_generation;
+
+    bool is_invalid() const
+    {
+        return tag == TLB_INVALID_TAG ||
+            ((flags & TLBFlags::TLBE_FROM_PAT) &&
+             pat_generation != gTLBPatGeneration);
+    }
+
+    bool matches_tag(uint32_t tag_in) const
+    {
+        return tag == tag_in &&
+            (!(flags & TLBFlags::TLBE_FROM_PAT) ||
+             pat_generation == gTLBPatGeneration);
+    }
 } TLBEntry;
 
 // primary ITLB for all MMU modes
@@ -588,28 +607,28 @@ static TLBEntry* tlb2_target_entry(uint32_t gp_va)
     }
 
     // select the target from invalid blocks first
-    if (tlb_entry[0].tag == TLB_INVALID_TAG) {
+    if (tlb_entry[0].is_invalid()) {
         // update LRU bits
         tlb_entry[0].lru_bits  = 0x3;
         tlb_entry[1].lru_bits  = 0x2;
         tlb_entry[2].lru_bits &= 0x1;
         tlb_entry[3].lru_bits &= 0x1;
         return tlb_entry;
-    } else if (tlb_entry[1].tag == TLB_INVALID_TAG) {
+    } else if (tlb_entry[1].is_invalid()) {
         // update LRU bits
         tlb_entry[0].lru_bits  = 0x2;
         tlb_entry[1].lru_bits  = 0x3;
         tlb_entry[2].lru_bits &= 0x1;
         tlb_entry[3].lru_bits &= 0x1;
         return &tlb_entry[1];
-    } else if (tlb_entry[2].tag == TLB_INVALID_TAG) {
+    } else if (tlb_entry[2].is_invalid()) {
         // update LRU bits
         tlb_entry[0].lru_bits &= 0x1;
         tlb_entry[1].lru_bits &= 0x1;
         tlb_entry[2].lru_bits  = 0x3;
         tlb_entry[3].lru_bits  = 0x2;
         return &tlb_entry[2];
-    } else if (tlb_entry[3].tag == TLB_INVALID_TAG) {
+    } else if (tlb_entry[3].is_invalid()) {
         // update LRU bits
         tlb_entry[0].lru_bits &= 0x1;
         tlb_entry[1].lru_bits &= 0x1;
@@ -699,6 +718,7 @@ static TLBEntry* itlb2_refill(uint32_t guest_va)
         tlb_entry->host_va_offs_r = (int64_t)rgn_desc->mem_ptr - guest_va +
                                     (phys_addr - rgn_desc->start);
         tlb_entry->phys_tag = phys_addr & ~0xFFFUL;
+        tlb_entry->pat_generation = gTLBPatGeneration;
     } else {
         ABORT_F("Instruction fetch from unmapped memory at 0x%08X!\n", phys_addr);
     }
@@ -782,6 +802,7 @@ static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write, bool is_dbg = fal
             }
         }
         tlb_entry->phys_tag = phys_addr & ~0xFFFUL;
+        tlb_entry->pat_generation = gTLBPatGeneration;
         return tlb_entry;
     } else {
         if (!is_dbg) {
@@ -810,27 +831,27 @@ static inline TLBEntry* lookup_secondary_tlb(uint32_t guest_va, uint32_t tag) {
         tlb_entry = &pCurDTLB2[((guest_va >> PPC_PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
     }
 
-    if (tlb_entry->tag == tag) {
+    if (tlb_entry[0].matches_tag(tag)) {
         // update LRU bits
         tlb_entry[0].lru_bits  = 0x3;
         tlb_entry[1].lru_bits  = 0x2;
         tlb_entry[2].lru_bits &= 0x1;
         tlb_entry[3].lru_bits &= 0x1;
-    } else if (tlb_entry[1].tag == tag) {
+    } else if (tlb_entry[1].matches_tag(tag)) {
         // update LRU bits
         tlb_entry[0].lru_bits  = 0x2;
         tlb_entry[1].lru_bits  = 0x3;
         tlb_entry[2].lru_bits &= 0x1;
         tlb_entry[3].lru_bits &= 0x1;
         tlb_entry = &tlb_entry[1];
-    } else if (tlb_entry[2].tag == tag) {
+    } else if (tlb_entry[2].matches_tag(tag)) {
         // update LRU bits
         tlb_entry[0].lru_bits &= 0x1;
         tlb_entry[1].lru_bits &= 0x1;
         tlb_entry[2].lru_bits  = 0x3;
         tlb_entry[3].lru_bits  = 0x2;
         tlb_entry = &tlb_entry[2];
-    } else if (tlb_entry[3].tag == tag) {
+    } else if (tlb_entry[3].matches_tag(tag)) {
         // update LRU bits
         tlb_entry[0].lru_bits &= 0x1;
         tlb_entry[1].lru_bits &= 0x1;
@@ -862,7 +883,7 @@ uint8_t *mmu_translate_imem(uint32_t vaddr, uint32_t *paddr)
 
     // look up guest virtual address in the primary ITLB
     tlb1_entry = &pCurITLB1[(vaddr >> PPC_PAGE_SIZE_BITS) & tlb_size_mask];
-    if (tlb1_entry->tag == tag) { // primary ITLB hit -> fast path
+    if (tlb1_entry->matches_tag(tag)) { // primary ITLB hit -> fast path
 #ifdef TLB_PROFILING
         num_primary_itlb_hits++;
 #endif
@@ -888,6 +909,7 @@ uint8_t *mmu_translate_imem(uint32_t vaddr, uint32_t *paddr)
         tlb1_entry->flags = tlb2_entry->flags;
         tlb1_entry->host_va_offs_r = tlb2_entry->host_va_offs_r;
         tlb1_entry->phys_tag = tlb2_entry->phys_tag;
+        tlb1_entry->pat_generation = tlb2_entry->pat_generation;
         host_va = (uint8_t *)(tlb1_entry->host_va_offs_r + vaddr);
     }
 
@@ -975,8 +997,7 @@ void tlb_flush_entries(TLBFlags type)
 
 static bool gTLBFlushIBatEntries = false;
 static bool gTLBFlushDBatEntries = false;
-static bool gTLBFlushIPatEntries = false;
-static bool gTLBFlushDPatEntries = false;
+static bool gTLBInvalidatePatEntries = false;
 
 template <const TLBType tlb_type>
 void tlb_flush_bat_entries()
@@ -994,38 +1015,18 @@ void tlb_flush_bat_entries()
     }
 }
 
-template <const TLBType tlb_type>
-void tlb_flush_pat_entries()
+static void tlb_invalidate_pat_entries()
 {
-    if (tlb_type == TLBType::ITLB) {
-        if (!gTLBFlushIPatEntries)
-            return;
-        tlb_flush_entries<TLBType::ITLB>(TLBE_FROM_PAT);
-        gTLBFlushIPatEntries = false;
-    } else {
-        if (!gTLBFlushDPatEntries)
-            return;
-        tlb_flush_entries<TLBType::DTLB>(TLBE_FROM_PAT);
-        gTLBFlushDPatEntries = false;
-    }
-}
+    if (!gTLBInvalidatePatEntries)
+        return;
 
-template <const TLBType tlb_type>
-void tlb_flush_all_entries()
-{
-    if (tlb_type == TLBType::ITLB) {
-        if (!gTLBFlushIBatEntries && !gTLBFlushIPatEntries)
-            return;
-        tlb_flush_entries<TLBType::ITLB>((TLBFlags)(TLBE_FROM_BAT | TLBE_FROM_PAT));
-        gTLBFlushIBatEntries = false;
-        gTLBFlushIPatEntries = false;
-    } else {
-        if (!gTLBFlushDBatEntries && !gTLBFlushDPatEntries)
-            return;
-        tlb_flush_entries<TLBType::DTLB>((TLBFlags)(TLBE_FROM_BAT | TLBE_FROM_PAT));
-        gTLBFlushDBatEntries = false;
-        gTLBFlushDPatEntries = false;
+    gTLBPatGeneration++;
+    if (gTLBPatGeneration == 0) { // Do a full flush when the counter wraps around
+        tlb_flush_entries<TLBType::ITLB>(TLBE_FROM_PAT);
+        tlb_flush_entries<TLBType::DTLB>(TLBE_FROM_PAT);
     }
+
+    gTLBInvalidatePatEntries = false;
 }
 
 static void mpc601_bat_update(uint32_t bat_reg)
@@ -1059,14 +1060,15 @@ static void mpc601_bat_update(uint32_t bat_reg)
     }
 
     // MPC601 has unified BATs so we're going to flush both ITLB and DTLB
-    if (!gTLBFlushIBatEntries || !gTLBFlushIPatEntries || !gTLBFlushDBatEntries || !gTLBFlushDPatEntries) {
+    if (!gTLBFlushIBatEntries) {
         gTLBFlushIBatEntries = true;
-        gTLBFlushIPatEntries = true;
-        gTLBFlushDBatEntries = true;
-        gTLBFlushDPatEntries = true;
-        add_ctx_sync_action(&tlb_flush_all_entries<TLBType::ITLB>);
-        add_ctx_sync_action(&tlb_flush_all_entries<TLBType::DTLB>);
+        add_ctx_sync_action(&tlb_flush_bat_entries<TLBType::ITLB>);
     }
+    if (!gTLBFlushDBatEntries) {
+        gTLBFlushDBatEntries = true;
+        add_ctx_sync_action(&tlb_flush_bat_entries<TLBType::DTLB>);
+    }
+    mmu_pat_ctx_changed();
 }
 
 static void mpc601_dbat_update(uint32_t /*bat_reg*/)
@@ -1092,11 +1094,11 @@ static void ppc_ibat_update(uint32_t bat_reg)
     bat_entry->phys_hi = ppc_state.spr[upper_reg_num + 1] & hi_mask;
     bat_entry->bepi    = ppc_state.spr[upper_reg_num] & hi_mask;
 
-    if (!gTLBFlushIBatEntries || !gTLBFlushIPatEntries) {
+    if (!gTLBFlushIBatEntries) {
         gTLBFlushIBatEntries = true;
-        gTLBFlushIPatEntries = true;
-        add_ctx_sync_action(&tlb_flush_all_entries<TLBType::ITLB>);
+        add_ctx_sync_action(&tlb_flush_bat_entries<TLBType::ITLB>);
     }
+    mmu_pat_ctx_changed();
 }
 
 static void ppc_dbat_update(uint32_t bat_reg)
@@ -1117,22 +1119,20 @@ static void ppc_dbat_update(uint32_t bat_reg)
     bat_entry->phys_hi = ppc_state.spr[upper_reg_num + 1] & hi_mask;
     bat_entry->bepi    = ppc_state.spr[upper_reg_num] & hi_mask;
 
-    if (!gTLBFlushDBatEntries || !gTLBFlushDPatEntries) {
+    if (!gTLBFlushDBatEntries) {
         gTLBFlushDBatEntries = true;
-        gTLBFlushDPatEntries = true;
-        add_ctx_sync_action(&tlb_flush_all_entries<TLBType::DTLB>);
+        add_ctx_sync_action(&tlb_flush_bat_entries<TLBType::DTLB>);
     }
+    mmu_pat_ctx_changed();
 }
 
 void mmu_pat_ctx_changed()
 {
-    // Page address translation context changed so we need to flush
-    // all PAT entries from both ITLB and DTLB
-    if (!gTLBFlushIPatEntries || !gTLBFlushDPatEntries) {
-        gTLBFlushIPatEntries = true;
-        gTLBFlushDPatEntries = true;
-        add_ctx_sync_action(&tlb_flush_pat_entries<TLBType::ITLB>);
-        add_ctx_sync_action(&tlb_flush_pat_entries<TLBType::DTLB>);
+    // Page address translation context changed so invalidate all PAT entries
+    // from both ITLB and DTLB.
+    if (!gTLBInvalidatePatEntries) {
+        gTLBInvalidatePatEntries = true;
+        add_ctx_sync_action(&tlb_invalidate_pat_entries);
     }
 }
 
@@ -1183,7 +1183,7 @@ inline T mmu_read_vmem(uint32_t opcode, uint32_t guest_va)
     bool needs_swap = false;
 #endif
     tlb1_entry = &pCurDTLB1[(guest_va >> PPC_PAGE_SIZE_BITS) & tlb_size_mask];
-    if (tlb1_entry->tag == tag) { // primary TLB hit -> fast path
+    if (tlb1_entry->matches_tag(tag)) { // primary TLB hit -> fast path
 #ifdef TLB_PROFILING
         num_primary_dtlb_hits++;
 #endif
@@ -1354,7 +1354,7 @@ inline void mmu_write_vmem(uint32_t opcode, uint32_t guest_va, T value)
     bool needs_swap = false;
 #endif
     tlb1_entry = &pCurDTLB1[(guest_va >> PPC_PAGE_SIZE_BITS) & tlb_size_mask];
-    if (tlb1_entry->tag == tag) { // primary TLB hit -> fast path
+    if (tlb1_entry->matches_tag(tag)) { // primary TLB hit -> fast path
 #ifdef TLB_PROFILING
         num_primary_dtlb_hits++;
 #endif
@@ -1928,7 +1928,7 @@ bool mmu_translate_dbg(uint32_t guest_va, uint32_t &guest_pa) {
         tlb1_entry = &pCurDTLB1[(guest_va >> PPC_PAGE_SIZE_BITS) & tlb_size_mask];
 
         do {
-            if (tlb1_entry->tag != tag) {
+            if (!tlb1_entry->matches_tag(tag)) {
                 // primary TLB miss -> look up address in the secondary TLB
                 tlb2_entry = lookup_secondary_tlb<TLBType::DTLB>(guest_va, tag);
                 if (tlb2_entry == nullptr) {
@@ -1979,12 +1979,15 @@ static void invalidate_tlb_entries(std::array<TLBEntry, N> &tlb) {
         tlb_el.host_va_offs_r = 0;
         tlb_el.host_va_offs_w = 0;
         tlb_el.phys_tag = 0;
-        tlb_el.reserved = 0;
+        tlb_el.pat_generation = 0;
     }
 }
 
 void ppc_mmu_init()
 {
+    gTLBPatGeneration = 0;
+    gTLBInvalidatePatEntries = false;
+
     last_ptab_area  = {0xFFFFFFFF, 0xFFFFFFFF, 0, 0, nullptr, nullptr};
 
     mmu_exception_handler = ppc_exception_handler;
