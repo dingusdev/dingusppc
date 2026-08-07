@@ -92,13 +92,22 @@ private:
 
     void begin_drawing(uint32_t initiator, uint32_t value);
     void draw_rect(uint32_t width, uint32_t height);
-    void fill_rect(uint32_t dst_width, uint32_t dst_height);
+    void finish_rect(uint32_t width, uint32_t height);
+    void fill_rect(uint32_t dst_width, uint32_t dst_height, uint32_t color);
     void blit_rect(uint32_t dst_width, uint32_t dst_height);
+    void start_host_rect(uint32_t dst_width, uint32_t dst_height);
+    void write_host_data(uint32_t value, uint32_t size);
 
     uint32_t    regs[512] = {}; // internal registers
     uint8_t     plls[64]  = {}; // internal PLL registers
 
     uint8_t     cmd_fifo_size = 0;
+
+    bool        host_data_active = false;
+    uint32_t    host_dst_width   = 0;
+    uint32_t    host_dst_height  = 0;
+    uint32_t    host_dst_col     = 0;
+    uint32_t    host_dst_row     = 0;
 
     // Video RAM variables
     std::unique_ptr<uint8_t[]>  vram_ptr;

@@ -41,6 +41,16 @@ enum {
     ATI_PIX_FMT_ARGB8888  = 6,
 };
 
+/* Draw engine data-path values. */
+enum {
+    ATI_DP_COLOR_SRC_BKGD_CLR = 0,
+    ATI_DP_COLOR_SRC_FRGD_CLR = 1,
+    ATI_DP_COLOR_SRC_HOST     = 2,
+    ATI_DP_COLOR_SRC_BLIT     = 3,
+    ATI_DP_MONO_SRC_ALWAYS_1  = 0,
+    ATI_DP_MIX_SRC            = 7,
+};
+
 /** Mach64 register offsets. */
 enum {
     ATI_CRTC_H_TOTAL_DISP     = 0x000, // 0x0000
@@ -509,6 +519,8 @@ enum {
     ATI_SCALE_Y_INC           = 0x07D, // 0x01F4
     ATI_SCALE_VACC            = 0x07E, // 0x01F8
     ATI_SCALE_3D_CNTL         = 0x07F, // 0x01FC
+    ATI_HOST_DATA0            = 0x080, // 0x0200
+    ATI_HOST_DATA15           = 0x08F, // 0x023C
     ATI_HOST_CNTL             = 0x090, // 0x0240
     ATI_BM_HOSTDATA           = 0x091, // 0x0244
     ATI_BM_ADDR               = 0x092, // 0x0248
@@ -520,10 +532,10 @@ enum {
     ATI_PAT_CNTL              = 0x0A2, // 0x0288
 
     ATI_SC_LEFT               = 0x0A8, // 0x02A0
-        ATI_SC_LEFT_pos = 0, ATI_SC_LEFT_size = 13,
+        ATI_SC_LEFT_pos = 0, ATI_SC_LEFT_size = 14,
 
     ATI_SC_RIGHT              = 0x0A9, // 0x02A4
-        ATI_SC_RIGHT_pos = 0, ATI_SC_RIGHT_size = 13,
+        ATI_SC_RIGHT_pos = 0, ATI_SC_RIGHT_size = 14,
 
     ATI_SC_LEFT_RIGHT         = 0x0AA, // 0x02A8
 
@@ -599,14 +611,16 @@ enum {
         ATI_SRC_PATT_EN            = 16,                             // VT/GT
         ATI_SRC_PATT_ROT_EN        = 17,                             // VT/GT
         ATI_SRC_LINEAR_EN          = 18,                             // VT/GT
-        ATI_SRC_LINE_X_DIR         = 19,                             // VT/GT
-        ATI_SRC_TRACK_DST          = 20,                             // VT/GT
-        ATI_PAT_MONO_EN            = 23,                             // GT
-        ATI_PAT_CLR_4x2_EN         = 24,                             // VT/GT
-        ATI_PAT_CLR_8x1_EN         = 25,                             // VT/GT
-        ATI_HOST_BYTE_ALIGN        = 26,                             // VT/GT
-        ATI_HOST_BIG_ENDIAN_EN     = 28,                             // VT/GT
-        ATI_SRC_BYTE_ALIGN         = 29,                             // VT/GT
+        ATI_SRC_BYTE_ALIGN         = 19,                             // VT/GT
+        ATI_SRC_LINE_X_DIR         = 20,                             // VT/GT
+        ATI_SRC_8x8x8_BRUSH        = 21,                             // GT
+        ATI_FAST_FILL_EN           = 22,                             // GT
+        ATI_SRC_TRACK_DST          = 23,                             // VT/GT
+        ATI_PAT_MONO_EN            = 24,                             // GT
+        ATI_PAT_CLR_4x2_EN         = 25,                             // VT/GT
+        ATI_PAT_CLR_8x1_EN         = 26,                             // VT/GT
+        ATI_HOST_BYTE_ALIGN        = 28,                             // VT/GT
+        ATI_HOST_BIG_ENDIAN_EN     = 29,                             // VT/GT
 
     ATI_GUI_STAT              = 0x0CE, // 0x0338
         ATI_GUI_ACTIVE             =  0,
