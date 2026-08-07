@@ -1113,8 +1113,16 @@ void ATIRage::draw_rect(uint32_t width, uint32_t height) {
         this->regs[ATI_DP_SRC], ATI_DP_FRGD_SRC, ATI_DP_FRGD_SRC_size);
     uint8_t mono_src = extract_bits<uint32_t>(
         this->regs[ATI_DP_SRC], ATI_DP_MONO_SRC, ATI_DP_MONO_SRC_size);
+    uint32_t src_cntl = this->regs[ATI_SRC_CNTL];
 
     this->host_data_active = false;
+
+    // Color register blits update SGRAM state rather than VRAM.
+    if (bit_set(src_cntl, ATI_SRC_COLOR_REG_WRITE_EN) &&
+        !bit_set(src_cntl, ATI_SRC_BLOCK_WRITE_EN)) {
+        this->finish_rect(width, height);
+        return;
+    }
 
     if ((frgd_src == ATI_DP_COLOR_SRC_BKGD_CLR || frgd_src == ATI_DP_COLOR_SRC_FRGD_CLR) &&
         mono_src == ATI_DP_MONO_SRC_ALWAYS_1) {

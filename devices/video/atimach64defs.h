@@ -520,6 +520,8 @@ enum {
         ATI_SRC_HEIGHT2_pos = 0, ATI_SRC_HEIGHT2_size = 15,
     ATI_SRC_HEIGHT2_WIDTH2    = 0x06C, // 0x01B0
     ATI_SRC_CNTL              = 0x06D, // 0x01B4
+        ATI_SRC_COLOR_REG_WRITE_EN = 13,
+        ATI_SRC_BLOCK_WRITE_EN     = 14,
     ATI_SCALE_OFF             = 0x070, // 0x01C0
     ATI_SCALE_WIDTH           = 0x077, // 0x01DC
     ATI_SCALE_HEIGHT          = 0x078, // 0x01E0
