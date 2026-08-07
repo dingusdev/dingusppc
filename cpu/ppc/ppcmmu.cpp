@@ -747,9 +747,9 @@ static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write, bool is_dbg = fal
             // check block protection
             if (!bat_res.prot || ((bat_res.prot & 1) && is_write)) {
                 if (!is_dbg)
-                LOG_F(9, "BAT DSI exception in TLB2 refill!");
+                    LOG_F(9, "BAT DSI exception in TLB2 refill!");
                 if (!is_dbg)
-                LOG_F(9, "Attempt to write to read-only region, LA=0x%08X, PC=0x%08X!", guest_va, ppc_state.pc);
+                    LOG_F(9, "Attempt to write to read-only region, LA=0x%08X, PC=0x%08X!", guest_va, ppc_state.pc);
                 ppc_state.spr[SPR::DSISR] = 0x08000000 | (is_write << 25);
                 ppc_state.spr[SPR::DAR]   = guest_va;
                 mmu_exception_handler(Except_Type::EXC_DSI, 0);
@@ -1550,8 +1550,8 @@ static T read_unaligned(uint32_t opcode, uint32_t guest_va, uint8_t *host_va ARG
             } else
 #endif
             {
-            result = (result << 8) | mmu_read_vmem<uint8_t>(opcode, guest_va);
-        }
+                result = (result << 8) | mmu_read_vmem<uint8_t>(opcode, guest_va);
+            }
         }
 #if SUPPORTS_PPC_LITTLE_ENDIAN_MODE || SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
     } else if (sizeof(T) == sizeof(uint64_t) && munged) {
