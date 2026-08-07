@@ -96,6 +96,7 @@ const WorkingDirectoryValidator WorkingDirectory;
 void run_machine(
     std::string machine_str, char *rom_data, size_t rom_size, uint32_t execution_mode
     ,const std::vector<std::string> &env_vars
+    ,bool deterministic_interactive
     ,uint32_t profiling_interval_ms
 );
 
@@ -109,6 +110,8 @@ int main(int argc, char** argv) {
 
     bool realtime_enabled = false;
     bool debugger_enabled = false;
+    bool deterministic_interactive = false;
+    string deterministic_mode = "strict";
     string keyboard_string = "Eng_USA";
 
     const std::map<std::string, int> kbd_map{
@@ -130,8 +133,12 @@ int main(int argc, char** argv) {
         ->check(WorkingDirectory);
     app.add_option("-b,--bootrom", bootrom_path, "Specifies BootROM path")
         ->check(CLI::ExistingFile);
-    app.add_flag("--deterministic", is_deterministic,
-        "Make execution deterministic");
+    auto deterministic_opt = app.add_flag("--deterministic", is_deterministic,
+        "Use deterministic execution");
+    app.add_option("--deterministic-mode", deterministic_mode,
+        "Select deterministic features (strict or interactive)")
+        ->needs(deterministic_opt)
+        ->check(CLI::IsMember({"strict", "interactive"}));
 
     bool              log_to_stderr = false;
     loguru::Verbosity log_verbosity = loguru::Verbosity_INFO;
@@ -167,6 +174,8 @@ int main(int argc, char** argv) {
     list_cmd->add_option("properties", sub_arg, "List available properties");
 
     CLI11_PARSE(app, argc, argv);
+
+    deterministic_interactive = deterministic_mode == "interactive";
 
     if (*list_cmd) {
         if (sub_arg == "machines") {
@@ -249,7 +258,12 @@ int main(int argc, char** argv) {
     cout << "BootROM path: " << bootrom_path << endl;
     cout << "Execution mode: " << execution_mode << endl;
     if (is_deterministic) {
-        cout << "Using deterministic execution mode, input will be ignored." << endl;
+        cout << "Using deterministic execution mode; disk, NVRAM, and PRAM changes will not be saved." << endl;
+        if (deterministic_interactive) {
+            cout << "Mouse and keyboard input enabled; execution will not be fully deterministic." << endl;
+        } else {
+            cout << "Mouse and keyboard input will be ignored." << endl;
+        }
     }
 
     if (!init()) {
@@ -287,6 +301,7 @@ int main(int argc, char** argv) {
             rom_size,
             execution_mode,
             env_vars,
+            deterministic_interactive,
             profiling_interval_ms);
         if (power_off_reason == po_restarting) {
             LOG_F(INFO, "Restarting...");
@@ -317,6 +332,7 @@ void run_machine(std::string machine_str, char* rom_data,
     size_t rom_size,
     uint32_t execution_mode,
     const std::vector<std::string> &env_vars,
+    bool deterministic_interactive,
     uint32_t
 #ifdef CPU_PROFILING
      profiling_interval_ms
@@ -348,8 +364,8 @@ void run_machine(std::string machine_str, char* rom_data,
         }
     }
 
-    uint32_t deterministic_timer;
-    if (is_deterministic) {
+    uint32_t deterministic_timer = 0;
+    if (is_deterministic && !deterministic_interactive) {
         EventManager::get_instance()->disable_input_handlers();
         // Log the PC and instruction every second to make it easier to validate
         // that execution is the same every time.
@@ -405,7 +421,7 @@ void run_machine(std::string machine_str, char* rom_data,
         TimerManager::get_instance()->cancel_timer(profiling_timer);
     }
 #endif
-    if (is_deterministic) {
+    if (is_deterministic && !deterministic_interactive) {
         TimerManager::get_instance()->cancel_timer(deterministic_timer);
     }
     TimerManager::get_instance()->cancel_all_timers();

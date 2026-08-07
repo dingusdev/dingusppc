@@ -384,7 +384,8 @@ enum class PPCPowMode : uint8_t {
 extern PPCPowMode ppc_pow_mode;
 extern uint32_t ppc_pow_hid0_mask;
 
-// Make execution deterministic (ignore external input, used a fixed date, etc.)
+// Enable deterministic timing and non-persistent state. The selected mode may
+// still permit external input.
 extern bool is_deterministic;
 
 // Important Addressing Integers
