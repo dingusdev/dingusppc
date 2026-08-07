@@ -49,6 +49,9 @@ enum {
     ATI_DP_COLOR_SRC_BLIT     = 3,
     ATI_DP_MONO_SRC_ALWAYS_1  = 0,
     ATI_DP_MIX_SRC            = 7,
+    ATI_SRC_TRAJ_UNBOUNDED    = 0,
+    ATI_SRC_TRAJ_PATTERN      = 1,
+    ATI_SRC_TRAJ_ROTATED      = 3,
 };
 
 /** Mach64 register offsets. */
@@ -495,20 +498,26 @@ enum {
         ATI_SRC_PITCH   = 22, ATI_SRC_PITCH_size  = 10,
 
     ATI_SRC_X                 = 0x061, // 0x0184
-        ATI_SRC_X_pos = 0, ATI_SRC_X_size = 13,
+        ATI_SRC_X_pos = 0, ATI_SRC_X_size = 14,
 
     ATI_SRC_Y                 = 0x062, // 0x0188
         ATI_SRC_Y_pos = 0, ATI_SRC_Y_size = 15,
 
     ATI_SRC_Y_X               = 0x063, // 0x018C
     ATI_SRC_WIDTH1            = 0x064, // 0x0190
+        ATI_SRC_WIDTH1_pos = 0, ATI_SRC_WIDTH1_size = 14,
     ATI_SRC_HEIGHT1           = 0x065, // 0x0194
+        ATI_SRC_HEIGHT1_pos = 0, ATI_SRC_HEIGHT1_size = 15,
     ATI_SRC_HEIGHT1_WIDTH1    = 0x066, // 0x0198
     ATI_SRC_X_START           = 0x067, // 0x019C
+        ATI_SRC_X_START_pos = 0, ATI_SRC_X_START_size = 14,
     ATI_SRC_Y_START           = 0x068, // 0x01A0
+        ATI_SRC_Y_START_pos = 0, ATI_SRC_Y_START_size = 15,
     ATI_SRC_Y_X_START         = 0x069, // 0x01A4
     ATI_SRC_WIDTH2            = 0x06A, // 0x01A8
+        ATI_SRC_WIDTH2_pos = 0, ATI_SRC_WIDTH2_size = 14,
     ATI_SRC_HEIGHT2           = 0x06B, // 0x01AC
+        ATI_SRC_HEIGHT2_pos = 0, ATI_SRC_HEIGHT2_size = 15,
     ATI_SRC_HEIGHT2_WIDTH2    = 0x06C, // 0x01B0
     ATI_SRC_CNTL              = 0x06D, // 0x01B4
     ATI_SCALE_OFF             = 0x070, // 0x01C0
