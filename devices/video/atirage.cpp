@@ -612,8 +612,18 @@ void ATIRage::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size) {
         break;
     case ATI_SRC_HEIGHT1_WIDTH1:
         new_value = value;
-        this->regs[ATI_SRC_HEIGHT1] = extract_bits<uint32_t>(value, 0, 16);
-        this->regs[ATI_SRC_WIDTH1]  = extract_bits<uint32_t>(value, 16, 16);
+        this->regs[ATI_SRC_HEIGHT1] = extract_bits<uint32_t>(value, 0, ATI_SRC_HEIGHT1_size);
+        this->regs[ATI_SRC_WIDTH1]  = extract_bits<uint32_t>(value, 16, ATI_SRC_WIDTH1_size);
+        break;
+    case ATI_SRC_Y_X_START:
+        new_value = value;
+        this->regs[ATI_SRC_Y_START] = extract_bits<uint32_t>(value, 0, ATI_SRC_Y_START_size);
+        this->regs[ATI_SRC_X_START] = extract_bits<uint32_t>(value, 16, ATI_SRC_X_START_size);
+        break;
+    case ATI_SRC_HEIGHT2_WIDTH2:
+        new_value = value;
+        this->regs[ATI_SRC_HEIGHT2] = extract_bits<uint32_t>(value, 0, ATI_SRC_HEIGHT2_size);
+        this->regs[ATI_SRC_WIDTH2]  = extract_bits<uint32_t>(value, 16, ATI_SRC_WIDTH2_size);
         break;
     case ATI_SC_LEFT_RIGHT:
         new_value = value;
@@ -1369,7 +1379,11 @@ void ATIRage::blit_rect(uint32_t dst_width, uint32_t dst_height) {
     uint32_t pixel_mask = bytes_per_pixel == 4 ? 0xFFFFFFFFU :
                           ((1U << (bytes_per_pixel * 8)) - 1);
 
-    if (frgd_mix != 7 || this->regs[ATI_SRC_CNTL] || this->regs[ATI_CLR_CMP_CNTL] ||
+    uint32_t src_cntl             = this->regs[ATI_SRC_CNTL];
+    bool supported_src_trajectory = src_cntl == ATI_SRC_TRAJ_UNBOUNDED ||
+        src_cntl == ATI_SRC_TRAJ_PATTERN || src_cntl == ATI_SRC_TRAJ_ROTATED;
+
+    if (frgd_mix != ATI_DP_MIX_SRC || !supported_src_trajectory || this->regs[ATI_CLR_CMP_CNTL] ||
         src_pix_fmt != dst_pix_fmt || !bytes_per_pixel ||
         (this->regs[ATI_DP_WRITE_MSK] & pixel_mask) != pixel_mask) {
         LOG_F(WARNING, "%s: unsupported rectangle blit, DP_SRC=0x%08X, DP_MIX=0x%08X, "
@@ -1380,27 +1394,92 @@ void ATIRage::blit_rect(uint32_t dst_width, uint32_t dst_height) {
         return;
     }
 
-    int src_offs  = extract_bits<uint32_t>(this->regs[ATI_SRC_OFF_PITCH], ATI_SRC_OFFSET,
-                                            ATI_SRC_OFFSET_size) * 8;
-    int src_pitch = extract_bits<uint32_t>(this->regs[ATI_SRC_OFF_PITCH], ATI_SRC_PITCH,
-                                            ATI_SRC_PITCH_size) * 8 * bytes_per_pixel;
-    int src_x     = extract_bits<uint32_t>(this->regs[ATI_SRC_X], ATI_SRC_X_pos, ATI_SRC_X_size);
-    int src_y     = extract_bits<uint32_t>(this->regs[ATI_SRC_Y], ATI_SRC_Y_pos, ATI_SRC_Y_size);
+    int src_offs = extract_bits<uint32_t>(
+                       this->regs[ATI_SRC_OFF_PITCH], ATI_SRC_OFFSET, ATI_SRC_OFFSET_size) *
+        8;
+    int src_pitch = extract_bits<uint32_t>(
+                        this->regs[ATI_SRC_OFF_PITCH], ATI_SRC_PITCH, ATI_SRC_PITCH_size) *
+        8 * bytes_per_pixel;
+    int src_x       = mach64_extract_signed(this->regs[ATI_SRC_X], ATI_SRC_X_pos, ATI_SRC_X_size);
+    int src_y       = mach64_extract_signed(this->regs[ATI_SRC_Y], ATI_SRC_Y_pos, ATI_SRC_Y_size);
+    int src_x_start = mach64_extract_signed(
+        this->regs[ATI_SRC_X_START], ATI_SRC_X_START_pos, ATI_SRC_X_START_size);
+    int src_y_start = mach64_extract_signed(
+        this->regs[ATI_SRC_Y_START], ATI_SRC_Y_START_pos, ATI_SRC_Y_START_size);
+    uint32_t src_width1 = extract_bits<uint32_t>(
+        this->regs[ATI_SRC_WIDTH1], ATI_SRC_WIDTH1_pos, ATI_SRC_WIDTH1_size);
+    uint32_t src_height1 = extract_bits<uint32_t>(
+        this->regs[ATI_SRC_HEIGHT1], ATI_SRC_HEIGHT1_pos, ATI_SRC_HEIGHT1_size);
+    uint32_t src_width2 = extract_bits<uint32_t>(
+        this->regs[ATI_SRC_WIDTH2], ATI_SRC_WIDTH2_pos, ATI_SRC_WIDTH2_size);
+    uint32_t src_height2 = extract_bits<uint32_t>(
+        this->regs[ATI_SRC_HEIGHT2], ATI_SRC_HEIGHT2_pos, ATI_SRC_HEIGHT2_size);
 
-    int dst_offs  = extract_bits<uint32_t>(this->regs[ATI_DST_OFF_PITCH], ATI_DST_OFFSET,
-                                            ATI_DST_OFFSET_size) * 8;
-    int dst_pitch = extract_bits<uint32_t>(this->regs[ATI_DST_OFF_PITCH], ATI_DST_PITCH,
-                                            ATI_DST_PITCH_size) * 8 * bytes_per_pixel;
-    int dst_x     = extract_bits<uint32_t>(this->regs[ATI_DST_X], ATI_DST_X_pos, ATI_DST_X_size);
-    int dst_y     = extract_bits<uint32_t>(this->regs[ATI_DST_Y], ATI_DST_Y_pos, ATI_DST_Y_size);
+    if ((src_cntl == ATI_SRC_TRAJ_PATTERN && (!src_width1 || !src_height1)) ||
+        (src_cntl == ATI_SRC_TRAJ_ROTATED &&
+         (!src_width1 || !src_height1 || !src_width2 || !src_height2))) {
+        LOG_F(WARNING, "%s: invalid rectangle blit source trajectory, SRC_CNTL=0x%08X, "
+              "SRC_HEIGHT1_WIDTH1=0x%08X, SRC_HEIGHT2_WIDTH2=0x%08X", this->name.c_str(),
+              src_cntl, this->regs[ATI_SRC_HEIGHT1_WIDTH1],
+              this->regs[ATI_SRC_HEIGHT2_WIDTH2]);
+        return;
+    }
 
-    int x_inc = (this->regs[ATI_DST_CNTL] & 1) ? 1 : -1;
-    int y_inc = (this->regs[ATI_DST_CNTL] & 2) ? 1 : -1;
+    int dst_offs = extract_bits<uint32_t>(
+                       this->regs[ATI_DST_OFF_PITCH], ATI_DST_OFFSET, ATI_DST_OFFSET_size) *
+        8;
+    int dst_pitch = extract_bits<uint32_t>(
+                        this->regs[ATI_DST_OFF_PITCH], ATI_DST_PITCH, ATI_DST_PITCH_size) *
+        8 * bytes_per_pixel;
+    int dst_x = mach64_extract_signed(this->regs[ATI_DST_X], ATI_DST_X_pos, ATI_DST_X_size);
+    int dst_y = mach64_extract_signed(this->regs[ATI_DST_Y], ATI_DST_Y_pos, ATI_DST_Y_size);
+
+    int x_inc = bit_set(this->regs[ATI_DST_CNTL], ATI_DST_X_DIR) ? 1 : -1;
+    int y_inc = bit_set(this->regs[ATI_DST_CNTL], ATI_DST_Y_DIR) ? 1 : -1;
+
+    int sc_left = mach64_extract_signed(this->regs[ATI_SC_LEFT], ATI_SC_LEFT_pos, ATI_SC_LEFT_size);
+    int sc_right = mach64_extract_signed(
+        this->regs[ATI_SC_RIGHT], ATI_SC_RIGHT_pos, ATI_SC_RIGHT_size);
+    int sc_top    = mach64_extract_signed(this->regs[ATI_SC_TOP], ATI_SC_TOP_pos, ATI_SC_TOP_size);
+    int sc_bottom = mach64_extract_signed(
+        this->regs[ATI_SC_BOTTOM], ATI_SC_BOTTOM_pos, ATI_SC_BOTTOM_size);
+
+    int x_skip, y_skip;
+    if (!mach64_clip_axis(dst_x, x_inc, dst_width, sc_left, sc_right, x_skip, dst_width) ||
+        !mach64_clip_axis(dst_y, y_inc, dst_height, sc_top, sc_bottom, y_skip, dst_height)) {
+        return;
+    }
+    dst_x += x_skip * x_inc;
+    dst_y += y_skip * y_inc;
 
     for (uint32_t y = 0; y < dst_height; y++) {
-        uint8_t* src_row = &this->vram_ptr[src_offs + (src_y + int(y) * y_inc) * src_pitch];
-        uint8_t* dst_row = &this->vram_ptr[dst_offs + (dst_y + int(y) * y_inc) * dst_pitch];
-        for (int sx = src_x, dx = dst_x, width = dst_width; width-- > 0; sx += x_inc, dx += x_inc) {
+        uint32_t src_row_index = y_skip + y;
+        int sy;
+        if (src_cntl == ATI_SRC_TRAJ_PATTERN) {
+            sy = src_y + int(src_row_index % src_height1) * y_inc;
+        } else if (src_cntl == ATI_SRC_TRAJ_ROTATED && src_row_index >= src_height1) {
+            sy = src_y_start + int((src_row_index - src_height1) % src_height2) * y_inc;
+        } else {
+            sy = src_y + int(src_row_index) * y_inc;
+        }
+
+        uint8_t* src_row = &this->vram_ptr[src_offs + sy * src_pitch];
+        int dy           = dst_y + int(y) * y_inc;
+        uint8_t* dst_row = &this->vram_ptr[dst_offs + dy * dst_pitch];
+        for (uint32_t x = 0; x < dst_width; x++) {
+            uint32_t src_col_index = x_skip + x;
+            int sx;
+            if (src_cntl == ATI_SRC_TRAJ_PATTERN) {
+                sx = src_x + int(src_col_index % src_width1) * x_inc;
+            } else if (src_cntl == ATI_SRC_TRAJ_ROTATED && src_row_index > 0) {
+                sx = src_x_start + int(src_col_index % src_width2) * x_inc;
+            } else if (src_cntl == ATI_SRC_TRAJ_ROTATED && src_col_index >= src_width1) {
+                sx = src_x_start + int((src_col_index - src_width1) % src_width2) * x_inc;
+            } else {
+                sx = src_x + int(src_col_index) * x_inc;
+            }
+
+            int dx             = dst_x + int(x) * x_inc;
             uint8_t* src_pixel = &src_row[sx * bytes_per_pixel];
             uint8_t* dst_pixel = &dst_row[dx * bytes_per_pixel];
             for (int byte = 0; byte < bytes_per_pixel; byte++) {
