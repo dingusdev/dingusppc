@@ -50,6 +50,8 @@ public:
     SDL_Texture*    cursor_texture = 0;
     SDL_Rect        cursor_rect; // destination rectangle for cursor drawing
     bool            show_host_cursor = true; // desired SDL host pointer visibility
+    bool            guest_cursor_drawn = false; // guest is drawing its own cursor
+    bool            manual_grab = false; // grab toggled on with Ctrl+G
     int             display_w;
     int             display_h;
     double          drawable_w;
@@ -313,6 +315,13 @@ void Display::handle_events(const WindowEvent& wnd_event) {
         if (wnd_event.window_id == impl->disp_wnd_id) {
             SDL_SetHint(SDL_HINT_ALLOW_ALT_TAB_WHILE_GRABBED, "0");
             SDL_SetWindowKeyboardGrab(impl->display_wnd, SDL_TRUE);
+            // When the window (re)gains focus (e.g. the user clicks it), SDL
+            // may have dropped the relative mouse grab on focus loss. Re-grab
+            // it so the guest cursor keeps working; this is the reliable
+            // re-grab trigger instead of polling every frame.
+            if (impl->guest_cursor_drawn && !impl->manual_grab && !SDL_GetRelativeMouseMode()) {
+                SDL_SetRelativeMouseMode(SDL_TRUE);
+            }
         }
         break;
 
@@ -395,9 +404,11 @@ void Display::toggle_mouse_grab()
 {
     if (SDL_GetRelativeMouseMode()) {
         SDL_SetRelativeMouseMode(SDL_FALSE);
+        impl->manual_grab = false;
     } else {
         this->update_mouse_grab(true);
         SDL_SetRelativeMouseMode(SDL_TRUE);
+        impl->manual_grab = true;
     }
 }
 
@@ -467,15 +478,39 @@ void Display::update(std::function<void(uint8_t *dst_buf, int dst_pitch)> conver
     SDL_RenderClear(impl->renderer);
     SDL_RenderCopy(impl->renderer, impl->disp_texture, NULL, &impl->dest_rect);
 
-    // The guest might draw its own cursor into the framebuffer. In that case
-    // hide the SDL host pointer so the user doesn't see two cursors that don't
-    // track each other. Otherwise show the host pointer so the user can still
-    // aim the mouse at the window before grabbing it.
+    bool is_grabbed = SDL_GetRelativeMouseMode();
+
+    // The guest draws its own cursor into the framebuffer (hardware cursor).
+    // When such a cursor session starts, auto-grab the host mouse so the
+    // pointer cannot leave the window and the guest cursor can reach every
+    // screen area. When the session ends, release an automatic grab again so
+    // the user can move the pointer to other windows. A manual grab (Ctrl+G)
+    // is sticky and is neither grabbed nor released automatically.
+    if (draw_hw_cursor) {
+        if (!impl->guest_cursor_drawn && !impl->manual_grab && !is_grabbed) {
+            this->update_mouse_grab(true);
+            SDL_SetRelativeMouseMode(SDL_TRUE);
+            is_grabbed = true;
+        }
+    } else {
+        if (!impl->manual_grab && is_grabbed) {
+            SDL_SetRelativeMouseMode(SDL_FALSE);
+            is_grabbed = false;
+        }
+    }
+
+    // The guest draws its own cursor into the framebuffer. Even without a
+    // grab, keep the SDL host pointer hidden so the user never sees a second
+    // cursor that does not track the guest one. When the guest cursor is not
+    // drawn (e.g. firmware), show the host pointer so the user can aim and
+    // click.
     bool want_host_cursor = !draw_hw_cursor;
     if (impl->show_host_cursor != want_host_cursor) {
         impl->show_host_cursor = want_host_cursor;
         SDL_ShowCursor(want_host_cursor ? SDL_ENABLE : SDL_DISABLE);
     }
+
+    impl->guest_cursor_drawn = draw_hw_cursor;
 
     // draw HW cursor if enabled
     if (draw_hw_cursor) {
