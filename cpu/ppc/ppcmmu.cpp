@@ -595,6 +595,27 @@ void mmu_change_mode()
     }
 }
 
+template <uint32_t way>
+static inline void tlb2_touch_way(TLBEntry *tlb_entry)
+{
+    static_assert(way < TLB2_WAYS);
+
+    // Each pair is one branch of the four-way tree-based LRU. Mark the
+    // selected way as most recently used, its sibling as the next replacement
+    // candidate, and the other pair as less recently used.
+    if constexpr (way < 2) {
+        tlb_entry[0].lru_bits  = way == 0 ? 0x3 : 0x2;
+        tlb_entry[1].lru_bits  = way == 1 ? 0x3 : 0x2;
+        tlb_entry[2].lru_bits &= 0x1;
+        tlb_entry[3].lru_bits &= 0x1;
+    } else {
+        tlb_entry[0].lru_bits &= 0x1;
+        tlb_entry[1].lru_bits &= 0x1;
+        tlb_entry[2].lru_bits  = way == 2 ? 0x3 : 0x2;
+        tlb_entry[3].lru_bits  = way == 3 ? 0x3 : 0x2;
+    }
+}
+
 template <const TLBType tlb_type>
 static TLBEntry* tlb2_target_entry(uint32_t gp_va)
 {
@@ -608,64 +629,32 @@ static TLBEntry* tlb2_target_entry(uint32_t gp_va)
 
     // select the target from invalid blocks first
     if (tlb_entry[0].is_invalid()) {
-        // update LRU bits
-        tlb_entry[0].lru_bits  = 0x3;
-        tlb_entry[1].lru_bits  = 0x2;
-        tlb_entry[2].lru_bits &= 0x1;
-        tlb_entry[3].lru_bits &= 0x1;
+        tlb2_touch_way<0>(tlb_entry);
         return tlb_entry;
     } else if (tlb_entry[1].is_invalid()) {
-        // update LRU bits
-        tlb_entry[0].lru_bits  = 0x2;
-        tlb_entry[1].lru_bits  = 0x3;
-        tlb_entry[2].lru_bits &= 0x1;
-        tlb_entry[3].lru_bits &= 0x1;
+        tlb2_touch_way<1>(tlb_entry);
         return &tlb_entry[1];
     } else if (tlb_entry[2].is_invalid()) {
-        // update LRU bits
-        tlb_entry[0].lru_bits &= 0x1;
-        tlb_entry[1].lru_bits &= 0x1;
-        tlb_entry[2].lru_bits  = 0x3;
-        tlb_entry[3].lru_bits  = 0x2;
+        tlb2_touch_way<2>(tlb_entry);
         return &tlb_entry[2];
     } else if (tlb_entry[3].is_invalid()) {
-        // update LRU bits
-        tlb_entry[0].lru_bits &= 0x1;
-        tlb_entry[1].lru_bits &= 0x1;
-        tlb_entry[2].lru_bits  = 0x2;
-        tlb_entry[3].lru_bits  = 0x3;
+        tlb2_touch_way<3>(tlb_entry);
         return &tlb_entry[3];
     } else { // no free entries, replace an existing one according with the hLRU policy
 #ifdef TLB_PROFILING
         num_entry_replacements++;
 #endif
         if (tlb_entry[0].lru_bits == 0) {
-            // update LRU bits
-            tlb_entry[0].lru_bits  = 0x3;
-            tlb_entry[1].lru_bits  = 0x2;
-            tlb_entry[2].lru_bits &= 0x1;
-            tlb_entry[3].lru_bits &= 0x1;
+            tlb2_touch_way<0>(tlb_entry);
             return tlb_entry;
         } else if (tlb_entry[1].lru_bits == 0) {
-            // update LRU bits
-            tlb_entry[0].lru_bits  = 0x2;
-            tlb_entry[1].lru_bits  = 0x3;
-            tlb_entry[2].lru_bits &= 0x1;
-            tlb_entry[3].lru_bits &= 0x1;
+            tlb2_touch_way<1>(tlb_entry);
             return &tlb_entry[1];
         } else if (tlb_entry[2].lru_bits == 0) {
-            // update LRU bits
-            tlb_entry[0].lru_bits &= 0x1;
-            tlb_entry[1].lru_bits &= 0x1;
-            tlb_entry[2].lru_bits  = 0x3;
-            tlb_entry[3].lru_bits  = 0x2;
+            tlb2_touch_way<2>(tlb_entry);
             return &tlb_entry[2];
         } else {
-            // update LRU bits
-            tlb_entry[0].lru_bits &= 0x1;
-            tlb_entry[1].lru_bits &= 0x1;
-            tlb_entry[2].lru_bits  = 0x2;
-            tlb_entry[3].lru_bits  = 0x3;
+            tlb2_touch_way<3>(tlb_entry);
             return &tlb_entry[3];
         }
     }
@@ -832,31 +821,15 @@ static inline TLBEntry* lookup_secondary_tlb(uint32_t guest_va, uint32_t tag) {
     }
 
     if (tlb_entry[0].matches_tag(tag)) {
-        // update LRU bits
-        tlb_entry[0].lru_bits  = 0x3;
-        tlb_entry[1].lru_bits  = 0x2;
-        tlb_entry[2].lru_bits &= 0x1;
-        tlb_entry[3].lru_bits &= 0x1;
+        tlb2_touch_way<0>(tlb_entry);
     } else if (tlb_entry[1].matches_tag(tag)) {
-        // update LRU bits
-        tlb_entry[0].lru_bits  = 0x2;
-        tlb_entry[1].lru_bits  = 0x3;
-        tlb_entry[2].lru_bits &= 0x1;
-        tlb_entry[3].lru_bits &= 0x1;
+        tlb2_touch_way<1>(tlb_entry);
         tlb_entry = &tlb_entry[1];
     } else if (tlb_entry[2].matches_tag(tag)) {
-        // update LRU bits
-        tlb_entry[0].lru_bits &= 0x1;
-        tlb_entry[1].lru_bits &= 0x1;
-        tlb_entry[2].lru_bits  = 0x3;
-        tlb_entry[3].lru_bits  = 0x2;
+        tlb2_touch_way<2>(tlb_entry);
         tlb_entry = &tlb_entry[2];
     } else if (tlb_entry[3].matches_tag(tag)) {
-        // update LRU bits
-        tlb_entry[0].lru_bits &= 0x1;
-        tlb_entry[1].lru_bits &= 0x1;
-        tlb_entry[2].lru_bits  = 0x2;
-        tlb_entry[3].lru_bits  = 0x3;
+        tlb2_touch_way<3>(tlb_entry);
         tlb_entry = &tlb_entry[3];
     } else {
         return nullptr;
@@ -864,20 +837,59 @@ static inline TLBEntry* lookup_secondary_tlb(uint32_t guest_va, uint32_t tag) {
     return tlb_entry;
 }
 
+struct TLBLookupResult {
+    TLBEntry *primary_entry;
+    TLBEntry *matched_entry; // nullptr if both TLBs missed
+    bool primary_hit;
+};
+
+template <const TLBType tlb_type>
+static inline TLBLookupResult lookup_tlb(uint32_t guest_va, uint32_t tag)
+{
+    TLBEntry *primary_entry;
+    if constexpr (tlb_type == TLBType::ITLB) {
+        primary_entry = &pCurITLB1[(guest_va >> PPC_PAGE_SIZE_BITS) & tlb_size_mask];
+    } else {
+        primary_entry = &pCurDTLB1[(guest_va >> PPC_PAGE_SIZE_BITS) & tlb_size_mask];
+    }
+
+    if (primary_entry->matches_tag(tag)) {
+        return TLBLookupResult{primary_entry, primary_entry, true};
+    }
+    return TLBLookupResult{
+        primary_entry,
+        lookup_secondary_tlb<tlb_type>(guest_va, tag),
+        false
+    };
+}
+
+// Returns true when the PTE.C bit was updated. Callers writing through a
+// primary entry use this to mirror the update into the secondary TLB.
+static inline bool prepare_dtlb_write(TLBEntry *tlb_entry, uint32_t guest_va)
+{
+    if (!(tlb_entry->flags & TLBFlags::PAGE_WRITABLE)) {
+        ppc_state.spr[SPR::DSISR] = 0x08000000 | (1 << 25);
+        ppc_state.spr[SPR::DAR]   = guest_va;
+        mmu_exception_handler(Except_Type::EXC_DSI, 0);
+    }
+
+    if (tlb_entry->flags & TLBFlags::PTE_SET_C) {
+        return false;
+    }
+
+    // Perform full page address translation to update the PTE.C bit.
+    page_address_translation(guest_va, false, !!(ppc_state.msr & MSR::PR), true);
+    tlb_entry->flags |= TLBFlags::PTE_SET_C;
+    return true;
+}
+
 void mmu_dcbz(uint32_t opcode, uint32_t guest_va)
 {
     const uint32_t tag = guest_va & ~0xFFFUL;
-    // look up guest virtual address in the primary TLB
-    TLBEntry *tlb_entry = &pCurDTLB1[(guest_va >> PPC_PAGE_SIZE_BITS) & tlb_size_mask];
-
-    if (!tlb_entry->matches_tag(tag)) {
-        // primary TLB miss -> look up address in the secondary TLB
-        tlb_entry = lookup_secondary_tlb<TLBType::DTLB>(guest_va, tag);
-        if (tlb_entry == nullptr) {
-            // secondary TLB miss ->
-            // perform full address translation and refill the secondary TLB
-            tlb_entry = dtlb2_refill(guest_va, 1);
-        }
+    TLBEntry *tlb_entry = lookup_tlb<TLBType::DTLB>(guest_va, tag).matched_entry;
+    if (tlb_entry == nullptr) {
+        // perform full address translation and refill the secondary TLB
+        tlb_entry = dtlb2_refill(guest_va, 1);
     }
 
     // Check if this was in a MMIO region, in which case we avoid doing the
@@ -887,15 +899,7 @@ void mmu_dcbz(uint32_t opcode, uint32_t guest_va)
     if (tlb_entry->flags & TLBFlags::PAGE_IO) {
         // Still do the same checks that mmu_write_vmem would have done to
         // disallow writes to read-only regions.
-        if (!(tlb_entry->flags & TLBFlags::PAGE_WRITABLE)) {
-            ppc_state.spr[SPR::DSISR] = 0x08000000 | (1 << 25);
-            ppc_state.spr[SPR::DAR]   = guest_va;
-            mmu_exception_handler(Except_Type::EXC_DSI, 0);
-        }
-        if (!(tlb_entry->flags & TLBFlags::PTE_SET_C)) {
-            page_address_translation(guest_va, false, !!(ppc_state.msr & MSR::PR), true);
-            tlb_entry->flags |= TLBFlags::PTE_SET_C;
-        }
+        prepare_dtlb_write(tlb_entry, guest_va);
         return;
     }
 
@@ -924,16 +928,15 @@ uint8_t *mmu_translate_imem(uint32_t vaddr, uint32_t *paddr)
 
     const uint32_t tag = vaddr & ~0xFFFUL;
 
-    // look up guest virtual address in the primary ITLB
-    tlb1_entry = &pCurITLB1[(vaddr >> PPC_PAGE_SIZE_BITS) & tlb_size_mask];
-    if (tlb1_entry->matches_tag(tag)) { // primary ITLB hit -> fast path
+    TLBLookupResult tlb_lookup = lookup_tlb<TLBType::ITLB>(vaddr, tag);
+    tlb1_entry = tlb_lookup.primary_entry;
+    if (tlb_lookup.primary_hit) { // primary ITLB hit -> fast path
 #ifdef TLB_PROFILING
         num_primary_itlb_hits++;
 #endif
         host_va = (uint8_t *)(tlb1_entry->host_va_offs_r + vaddr);
     } else {
-        // primary ITLB miss -> look up address in the secondary ITLB
-        tlb2_entry = lookup_secondary_tlb<TLBType::ITLB>(vaddr, tag);
+        tlb2_entry = tlb_lookup.matched_entry;
         if (tlb2_entry == nullptr) {
 #ifdef TLB_PROFILING
             num_itlb_refills++;
@@ -1221,12 +1224,13 @@ inline T mmu_read_vmem(uint32_t opcode, uint32_t guest_va)
 
     const uint32_t tag = guest_va & ~0xFFFUL;
 
-    // look up guest virtual address in the primary TLB
+    // look up guest virtual address in the primary and secondary TLBs
 #if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
     bool needs_swap = false;
 #endif
-    tlb1_entry = &pCurDTLB1[(guest_va >> PPC_PAGE_SIZE_BITS) & tlb_size_mask];
-    if (tlb1_entry->matches_tag(tag)) { // primary TLB hit -> fast path
+    TLBLookupResult tlb_lookup = lookup_tlb<TLBType::DTLB>(guest_va, tag);
+    tlb1_entry = tlb_lookup.primary_entry;
+    if (tlb_lookup.primary_hit) { // primary TLB hit -> fast path
 #ifdef TLB_PROFILING
         num_primary_dtlb_hits++;
 #endif
@@ -1241,8 +1245,7 @@ inline T mmu_read_vmem(uint32_t opcode, uint32_t guest_va)
 
         host_va = (uint8_t *)(tlb1_entry->host_va_offs_r + guest_va);
     } else {
-        // primary TLB miss -> look up address in the secondary TLB
-        tlb2_entry = lookup_secondary_tlb<TLBType::DTLB>(guest_va, tag);
+        tlb2_entry = tlb_lookup.matched_entry;
         if (tlb2_entry == nullptr) {
 #ifdef TLB_PROFILING
             num_dtlb_refills++;
@@ -1392,25 +1395,17 @@ inline void mmu_write_vmem(uint32_t opcode, uint32_t guest_va, T value)
 
     const uint32_t tag = guest_va & ~0xFFFUL;
 
-    // look up guest virtual address in the primary TLB
+    // look up guest virtual address in the primary and secondary TLBs
 #if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
     bool needs_swap = false;
 #endif
-    tlb1_entry = &pCurDTLB1[(guest_va >> PPC_PAGE_SIZE_BITS) & tlb_size_mask];
-    if (tlb1_entry->matches_tag(tag)) { // primary TLB hit -> fast path
+    TLBLookupResult tlb_lookup = lookup_tlb<TLBType::DTLB>(guest_va, tag);
+    tlb1_entry = tlb_lookup.primary_entry;
+    if (tlb_lookup.primary_hit) { // primary TLB hit -> fast path
 #ifdef TLB_PROFILING
         num_primary_dtlb_hits++;
 #endif
-        if (!(tlb1_entry->flags & TLBFlags::PAGE_WRITABLE)) {
-            ppc_state.spr[SPR::DSISR] = 0x08000000 | (1 << 25);
-            ppc_state.spr[SPR::DAR]   = guest_va;
-            mmu_exception_handler(Except_Type::EXC_DSI, 0);
-        }
-        if (!(tlb1_entry->flags & TLBFlags::PTE_SET_C)) {
-            // perform full page address translation to update PTE.C bit
-            page_address_translation(guest_va, false, !!(ppc_state.msr & MSR::PR), true);
-            tlb1_entry->flags |= TLBFlags::PTE_SET_C;
-
+        if (prepare_dtlb_write(tlb1_entry, guest_va)) {
             // don't forget to update the secondary TLB as well
             tlb2_entry = lookup_secondary_tlb<TLBType::DTLB>(guest_va, tag);
             if (tlb2_entry != nullptr) {
@@ -1426,8 +1421,7 @@ inline void mmu_write_vmem(uint32_t opcode, uint32_t guest_va, T value)
 #endif
         host_va = (uint8_t *)(tlb1_entry->host_va_offs_w + guest_va);
     } else {
-        // primary TLB miss -> look up address in the secondary TLB
-        tlb2_entry = lookup_secondary_tlb<TLBType::DTLB>(guest_va, tag);
+        tlb2_entry = tlb_lookup.matched_entry;
         if (tlb2_entry == nullptr) {
 #ifdef TLB_PROFILING
             num_dtlb_refills++;
@@ -1444,18 +1438,7 @@ inline void mmu_write_vmem(uint32_t opcode, uint32_t guest_va, T value)
             num_secondary_dtlb_hits++;
         }
 #endif
-
-        if (!(tlb2_entry->flags & TLBFlags::PAGE_WRITABLE)) {
-            ppc_state.spr[SPR::DSISR] = 0x08000000 | (1 << 25);
-            ppc_state.spr[SPR::DAR]   = guest_va;
-            mmu_exception_handler(Except_Type::EXC_DSI, 0);
-        }
-
-        if (!(tlb2_entry->flags & TLBFlags::PTE_SET_C)) {
-            // perform full page address translation to update PTE.C bit
-            page_address_translation(guest_va, false, !!(ppc_state.msr & MSR::PR), true);
-            tlb2_entry->flags |= TLBFlags::PTE_SET_C;
-        }
+        prepare_dtlb_write(tlb2_entry, guest_va);
 
         if (tlb2_entry->flags & TLBFlags::PAGE_MEM) { // is it a real memory region?
             // refill the primary TLB
@@ -1967,13 +1950,12 @@ bool mmu_translate_dbg(uint32_t guest_va, uint32_t &guest_pa) {
 
         const uint32_t tag = guest_va & ~0xFFFUL;
 
-        // look up guest virtual address in the primary TLB
-        tlb1_entry = &pCurDTLB1[(guest_va >> PPC_PAGE_SIZE_BITS) & tlb_size_mask];
+        TLBLookupResult tlb_lookup = lookup_tlb<TLBType::DTLB>(guest_va, tag);
+        tlb1_entry = tlb_lookup.primary_entry;
 
         do {
-            if (!tlb1_entry->matches_tag(tag)) {
-                // primary TLB miss -> look up address in the secondary TLB
-                tlb2_entry = lookup_secondary_tlb<TLBType::DTLB>(guest_va, tag);
+            if (!tlb_lookup.primary_hit) {
+                tlb2_entry = tlb_lookup.matched_entry;
                 if (tlb2_entry == nullptr) {
                     // secondary TLB miss ->
                     // perform full address translation and refill the secondary TLB
