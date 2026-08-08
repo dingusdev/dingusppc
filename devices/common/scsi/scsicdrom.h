@@ -45,9 +45,6 @@ public:
 protected:
     bool is_device_ready() override { return this->is_ready; }
 
-    int  get_apple_page_49(uint8_t subpage, uint8_t ctrl, uint8_t *out_ptr,
-                          int avail_len);
-
     void mode_select_6(uint8_t param_len);
 
 private:

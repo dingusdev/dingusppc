@@ -36,6 +36,9 @@ public:
 protected:
     virtual void process_command() override;
 
+    int get_apple_page_49(uint8_t subpage, uint8_t ctrl,
+                          uint8_t *out_ptr, int avail_len);
+
     int read_toc();
     int set_cd_speed();
 

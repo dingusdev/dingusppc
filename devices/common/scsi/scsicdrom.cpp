@@ -47,8 +47,6 @@ ScsiCdrom::ScsiCdrom(std::string name, int my_id) : ScsiPhysDevice(name, my_id)
     this->set_vendor_id(my_vendor_id);
     this->set_product_id(my_product_id);
     this->set_revision_id(my_revision_id);
-
-    this->add_page_getter(this, 49, &ScsiCdrom::get_apple_page_49);
 }
 
 void ScsiCdrom::process_command() {
@@ -80,32 +78,6 @@ void ScsiCdrom::process_command() {
 // Apple SCSI/ATAPI driver requests this page in the case of a device error.
 // PearPC implements it under the name "Apple Features".
 // I couldn't find any drive whose firmware supports it.
-int ScsiCdrom::get_apple_page_49(uint8_t subpage, uint8_t ctrl, uint8_t *out_ptr,
-                                 int avail_len)
-{
-    LOG_F(WARNING, "Page 0x31 requested");
-
-    if (subpage && subpage != 0xFFU)
-        return FORMAT_ERR_BAD_SUBPAGE;
-
-    if (ctrl == 3)
-        return FORMAT_ERR_BAD_CONTROL;
-
-    int page_size = 6;
-
-    if (page_size > avail_len)
-        return FORMAT_ERR_DATA_TOO_BIG;
-
-    std::memset(out_ptr, 0, page_size);
-
-    out_ptr[0] = '.';
-    out_ptr[1] = 'A';
-    out_ptr[2] = 'p';
-    out_ptr[3] = 'p';
-
-    return page_size;
-}
-
 void ScsiCdrom::mode_select_6(uint8_t param_len)
 {
     if (!param_len)
