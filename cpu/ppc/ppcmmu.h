@@ -94,6 +94,7 @@ extern MapDmaResult mmu_map_dma_mem(uint32_t addr, uint32_t size, bool allow_mmi
 extern void mmu_change_mode(void);
 extern void mmu_pat_ctx_changed();
 extern void tlb_flush_entry(uint32_t ea);
+extern void mmu_dcbz(uint32_t opcode, uint32_t guest_va);
 
 extern uint64_t mem_read_dbg(uint32_t virt_addr, uint32_t size);
 extern void mem_write_dbg(uint32_t virt_addr, uint64_t value, int size);
