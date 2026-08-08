@@ -864,6 +864,49 @@ static inline TLBEntry* lookup_secondary_tlb(uint32_t guest_va, uint32_t tag) {
     return tlb_entry;
 }
 
+void mmu_dcbz(uint32_t opcode, uint32_t guest_va)
+{
+    const uint32_t tag = guest_va & ~0xFFFUL;
+    // look up guest virtual address in the primary TLB
+    TLBEntry *tlb_entry = &pCurDTLB1[(guest_va >> PPC_PAGE_SIZE_BITS) & tlb_size_mask];
+
+    if (!tlb_entry->matches_tag(tag)) {
+        // primary TLB miss -> look up address in the secondary TLB
+        tlb_entry = lookup_secondary_tlb<TLBType::DTLB>(guest_va, tag);
+        if (tlb_entry == nullptr) {
+            // secondary TLB miss ->
+            // perform full address translation and refill the secondary TLB
+            tlb_entry = dtlb2_refill(guest_va, 1);
+        }
+    }
+
+    // Check if this was in a MMIO region, in which case we avoid doing the
+    // write, so that this intermediate state is not visible to the device
+    // (usually a dcbz is done to prepare a cache line as a write buffer, and
+    // the real values are written later).
+    if (tlb_entry->flags & TLBFlags::PAGE_IO) {
+        // Still do the same checks that mmu_write_vmem would have done to
+        // disallow writes to read-only regions.
+        if (!(tlb_entry->flags & TLBFlags::PAGE_WRITABLE)) {
+            ppc_state.spr[SPR::DSISR] = 0x08000000 | (1 << 25);
+            ppc_state.spr[SPR::DAR]   = guest_va;
+            mmu_exception_handler(Except_Type::EXC_DSI, 0);
+        }
+        if (!(tlb_entry->flags & TLBFlags::PTE_SET_C)) {
+            page_address_translation(guest_va, false, !!(ppc_state.msr & MSR::PR), true);
+            tlb_entry->flags |= TLBFlags::PTE_SET_C;
+        }
+        return;
+    }
+
+    // the following is not especially efficient but necessary
+    // to make BlockZero under Mac OS 8.x and later to work
+    mmu_write_vmem<uint64_t>(opcode, guest_va +  0, 0);
+    mmu_write_vmem<uint64_t>(opcode, guest_va +  8, 0);
+    mmu_write_vmem<uint64_t>(opcode, guest_va + 16, 0);
+    mmu_write_vmem<uint64_t>(opcode, guest_va + 24, 0);
+}
+
 uint8_t *mmu_translate_imem(uint32_t vaddr, uint32_t *paddr)
 {
 #if SUPPORTS_PPC_LITTLE_ENDIAN_MODE

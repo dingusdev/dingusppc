@@ -1616,12 +1616,7 @@ void dppc_interpreter::ppc_dcbz(uint32_t opcode) {
 
     ea &= 0xFFFFFFE0UL; // align EA on a 32-byte boundary
 
-    // the following is not especially efficient but necessary
-    // to make BlockZero under Mac OS 8.x and later to work
-    mmu_write_vmem<uint64_t>(opcode, ea +  0, 0);
-    mmu_write_vmem<uint64_t>(opcode, ea +  8, 0);
-    mmu_write_vmem<uint64_t>(opcode, ea + 16, 0);
-    mmu_write_vmem<uint64_t>(opcode, ea + 24, 0);
+    mmu_dcbz(opcode, ea);
 }
 
 
