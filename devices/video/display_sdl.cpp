@@ -51,6 +51,7 @@ public:
     SDL_Rect        cursor_rect; // destination rectangle for cursor drawing
     bool            show_host_cursor = true; // desired SDL host pointer visibility
     bool            guest_cursor_drawn = false; // guest is drawing its own cursor
+    bool            was_grabbed = false; // last reported grab state
     bool            manual_grab = false; // grab toggled on with Ctrl+G
     int             display_w;
     int             display_h;
@@ -321,6 +322,7 @@ void Display::handle_events(const WindowEvent& wnd_event) {
             // re-grab trigger instead of polling every frame.
             if (impl->guest_cursor_drawn && !impl->manual_grab && !SDL_GetRelativeMouseMode()) {
                 SDL_SetRelativeMouseMode(SDL_TRUE);
+                this->update_window_title();
             }
         }
         break;
@@ -446,7 +448,9 @@ void Display::update_window_title()
         std::to_string(impl->display_w) + "x" + std::to_string(impl->display_h)
         + " " + std::to_string(int(std::round(impl->renderer_scale_x * 100))) + "%";
     if (is_grabbed)
-        new_window_title += " (🖱 Grabbed)";
+        new_window_title += " (Grabbed, Ctrl+G to release)";
+    else if (impl->guest_cursor_drawn)
+        new_window_title += " (Press Ctrl+G to grab)";
 
     if (new_window_title != old_window_title)
         SDL_SetWindowTitle(impl->display_wnd, new_window_title.c_str());
@@ -510,7 +514,12 @@ void Display::update(std::function<void(uint8_t *dst_buf, int dst_pitch)> conver
         SDL_ShowCursor(want_host_cursor ? SDL_ENABLE : SDL_DISABLE);
     }
 
-    impl->guest_cursor_drawn = draw_hw_cursor;
+    // Let the window title reflect the current grab/cursor state.
+    if (is_grabbed != impl->was_grabbed || draw_hw_cursor != impl->guest_cursor_drawn) {
+        impl->was_grabbed = is_grabbed;
+        impl->guest_cursor_drawn = draw_hw_cursor;
+        this->update_window_title();
+    }
 
     // draw HW cursor if enabled
     if (draw_hw_cursor) {
