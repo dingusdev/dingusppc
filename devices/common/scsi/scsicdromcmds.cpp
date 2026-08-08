@@ -36,6 +36,9 @@ ScsiCdromCmds::ScsiCdromCmds() {
 
     this->add_page_getter(this, ModePage::CDROM_CAPABILITIES,
                           &ScsiCdromCmds::get_cd_capabilities_page);
+
+    this->add_page_getter(this, ModePage::VENDOR_PAGE_31,
+                          &ScsiCdromCmds::get_apple_page_49);
 }
 
 void ScsiCdromCmds::process_command() {
@@ -221,6 +224,34 @@ int ScsiCdromCmds:: read_toc() {
     phy_impl->set_xfer_len(std::min(alloc_len, resp_len));
 
     return ScsiPhase::DATA_IN;
+}
+
+// Apple SCSI/ATAPI driver requests this page in the case of a device error.
+// PearPC implements it under the name "Apple Features".
+int ScsiCdromCmds::get_apple_page_49(uint8_t subpage, uint8_t ctrl,
+                                     uint8_t *out_ptr, int avail_len)
+{
+    LOG_F(WARNING, "Page 0x31 requested");
+
+    if (subpage && subpage != 0xFFU)
+        return FORMAT_ERR_BAD_SUBPAGE;
+
+    if (ctrl == 3)
+        return FORMAT_ERR_BAD_CONTROL;
+
+    int page_size = 6;
+
+    if (page_size > avail_len)
+        return FORMAT_ERR_DATA_TOO_BIG;
+
+    std::memset(out_ptr, 0, page_size);
+
+    out_ptr[0] = '.';
+    out_ptr[1] = 'A';
+    out_ptr[2] = 'p';
+    out_ptr[3] = 'p';
+
+    return page_size;
 }
 
 int ScsiCdromCmds::set_cd_speed() {
