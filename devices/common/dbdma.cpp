@@ -120,14 +120,14 @@ void DMAChannel::interpret_cmd() {
         if ((cmd_struct.cmd_key & 7) != 6)
             LOG_F(ERROR, "%s: Invalid key %d in STORE_QUAD", this->get_name().c_str(),
                 cmd_struct.cmd_key & 7);
-        this->xfer_quad(false);
+        this->xfer_quad(true);
         break;
     case DBDMA_Cmd::LOAD_QUAD:
         if ((cmd_struct.cmd_key & 7) != 6) {
             LOG_F(ERROR, "%s: Invalid key %d in LOAD_QUAD", this->get_name().c_str(),
                 cmd_struct.cmd_key & 7);
         }
-        this->xfer_quad(true);
+        this->xfer_quad(false);
         break;
     case DBDMA_Cmd::NOP:
         this->finish_cmd();
