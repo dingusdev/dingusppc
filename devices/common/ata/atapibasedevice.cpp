@@ -201,6 +201,8 @@ int AtapiBaseDevice::perform_command() {
         LOG_F(ERROR, "%s: unsupported command 0x%X", this->name.c_str(), this->r_command);
         this->r_error  |= ATA_Error::ABRT;
         this->r_status |= ATA_Status::ERR;
+        this->r_status &= ~BSY;
+        this->update_intrq(1);
     }
     return 0;
 }
