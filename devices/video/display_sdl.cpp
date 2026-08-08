@@ -49,6 +49,7 @@ public:
     SDL_Texture*    disp_texture = 0;
     SDL_Texture*    cursor_texture = 0;
     SDL_Rect        cursor_rect; // destination rectangle for cursor drawing
+    bool            show_host_cursor = true; // desired SDL host pointer visibility
     int             display_w;
     int             display_h;
     double          drawable_w;
@@ -465,6 +466,16 @@ void Display::update(std::function<void(uint8_t *dst_buf, int dst_pitch)> conver
     SDL_UnlockTexture(impl->disp_texture);
     SDL_RenderClear(impl->renderer);
     SDL_RenderCopy(impl->renderer, impl->disp_texture, NULL, &impl->dest_rect);
+
+    // The guest might draw its own cursor into the framebuffer. In that case
+    // hide the SDL host pointer so the user doesn't see two cursors that don't
+    // track each other. Otherwise show the host pointer so the user can still
+    // aim the mouse at the window before grabbing it.
+    bool want_host_cursor = !draw_hw_cursor;
+    if (impl->show_host_cursor != want_host_cursor) {
+        impl->show_host_cursor = want_host_cursor;
+        SDL_ShowCursor(want_host_cursor ? SDL_ENABLE : SDL_DISABLE);
+    }
 
     // draw HW cursor if enabled
     if (draw_hw_cursor) {
