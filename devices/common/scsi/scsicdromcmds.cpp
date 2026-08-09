@@ -226,34 +226,6 @@ int ScsiCdromCmds:: read_toc() {
     return ScsiPhase::DATA_IN;
 }
 
-// Apple SCSI/ATAPI driver requests this page in the case of a device error.
-// PearPC implements it under the name "Apple Features".
-int ScsiCdromCmds::get_apple_page_49(uint8_t subpage, uint8_t ctrl,
-                                     uint8_t *out_ptr, int avail_len)
-{
-    LOG_F(WARNING, "Page 0x31 requested");
-
-    if (subpage && subpage != 0xFFU)
-        return FORMAT_ERR_BAD_SUBPAGE;
-
-    if (ctrl == 3)
-        return FORMAT_ERR_BAD_CONTROL;
-
-    int page_size = 6;
-
-    if (page_size > avail_len)
-        return FORMAT_ERR_DATA_TOO_BIG;
-
-    std::memset(out_ptr, 0, page_size);
-
-    out_ptr[0] = '.';
-    out_ptr[1] = 'A';
-    out_ptr[2] = 'p';
-    out_ptr[3] = 'p';
-
-    return page_size;
-}
-
 int ScsiCdromCmds::set_cd_speed() {
     phy_impl->set_status(ScsiStatus::GOOD);
 
@@ -333,6 +305,34 @@ int ScsiCdromCmds::get_cdrom_audio_control_page(uint8_t subpage, uint8_t ctrl,
     out_ptr[11] = 0x00; // Volume (0-255)
     out_ptr[12] = 0x08; // Output Port 3
     out_ptr[13] = 0x00; // Volume (0-255)
+
+    return page_size;
+}
+
+// Apple SCSI/ATAPI driver requests this page in the case of a device error.
+// PearPC implements it under the name "Apple Features".
+int ScsiCdromCmds::get_apple_page_49(uint8_t subpage, uint8_t ctrl,
+                                     uint8_t *out_ptr, int avail_len)
+{
+    LOG_F(WARNING, "Page 0x31 requested");
+
+    if (subpage && subpage != 0xFFU)
+        return FORMAT_ERR_BAD_SUBPAGE;
+
+    if (ctrl == 3)
+        return FORMAT_ERR_BAD_CONTROL;
+
+    int page_size = 6;
+
+    if (page_size > avail_len)
+        return FORMAT_ERR_DATA_TOO_BIG;
+
+    std::memset(out_ptr, 0, page_size);
+
+    out_ptr[0] = '.';
+    out_ptr[1] = 'A';
+    out_ptr[2] = 'p';
+    out_ptr[3] = 'p';
 
     return page_size;
 }
