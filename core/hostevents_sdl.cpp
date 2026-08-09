@@ -484,9 +484,9 @@ static int get_sdl_event_key_code(const SDL_KeyboardEvent &event, uint32_t kbd_l
     case SDLK_SCROLLLOCK:   return AdbKey_F14;
     case SDLK_PAUSE:        return AdbKey_F15;
 
-    //International keyboard support
+    // International keyboard support
 
-    //Japanese keyboard
+    // Japanese keyboard
     case SDL_SCANCODE_TO_KEYCODE(SDL_SCANCODE_INTERNATIONAL3):
         if (kbd_locale == Jpn_JPN)
             return AdbKey_JIS_Yen;
@@ -501,18 +501,18 @@ static int get_sdl_event_key_code(const SDL_KeyboardEvent &event, uint32_t kbd_l
     case SDL_SCANCODE_TO_KEYCODE(SDL_SCANCODE_INTERNATIONAL2):
         return AdbKey_JIS_Kana;
 
-    //German keyboard
+    // German keyboard
     case 0XB4:        return AdbKey_Slash;
     case 0X5E:        return AdbKey_ISO1;
-    case 0XDF:        return AdbKey_Minus;       //Eszett
-    case 0XE4:        return AdbKey_LeftBracket; //A-umlaut
-    case 0XF6:        return AdbKey_Semicolon;   //O-umlaut
-    case 0XFC:        return AdbKey_LeftBracket; //U-umlaut
+    case 0XDF:        return AdbKey_Minus;       // Eszett
+    case 0XE4:        return AdbKey_LeftBracket; // A-umlaut
+    case 0XF6:        return AdbKey_Semicolon;   // O-umlaut
+    case 0XFC:        return AdbKey_LeftBracket; // U-umlaut
 
     // French keyboard
     case 0X29:        return AdbKey_Minus;             // Right parenthesis
     case 0X43:        return AdbKey_KeypadMultiply;    // Star/Mu
-    //0XB2 is superscript 2. Which Mac key should this one map to?
+    // 0XB2 is superscript 2. Which Mac key should this one map to?
     case 0XF9:        return AdbKey_Quote;             // U-grave
 
     // Italian keyboard
