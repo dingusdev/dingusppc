@@ -110,8 +110,8 @@ int main(int argc, char** argv) {
 
     app.set_help_all_flag("--help-all", "Print this help message, help for subcommands, and exit");
 
-    bool realtime_enabled = false;
-    bool debugger_enabled = false;
+    bool debugger_skip = true;
+    bool debugger_enter = false;
     bool deterministic_interactive = false;
     string deterministic_mode = "strict";
     string keyboard_string = "Eng_USA";
@@ -127,9 +127,9 @@ int main(int argc, char** argv) {
     auto emu = app.add_subcommand("", "Emulation");
     auto execution_mode_group = emu->add_option_group("execution mode")
         ->require_option(-1);
-    execution_mode_group->add_flag("-r,--realtime", realtime_enabled,
-        "Run the emulator in real-time");
-    execution_mode_group->add_flag("-d,--debugger", debugger_enabled,
+    execution_mode_group->add_flag("-r,--run", debugger_skip,
+        "Run the emulator immediately (skip enterring the built-in debugger)");
+    execution_mode_group->add_flag("-d,--debugger", debugger_enter,
         "Enter the built-in debugger");
     emu->add_option("-k,--keyboard", keyboard_string, "Specify keyboard ID");
     emu->add_option("-w,--workingdir", working_directory_path, "Specifies working directory")
@@ -200,7 +200,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    if (debugger_enabled) {
+    if (debugger_enter || !debugger_skip) {
         execution_mode = debugger;
     }
 
