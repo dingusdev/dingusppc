@@ -49,6 +49,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #endif
 using namespace std;
 
+extern bool g_auto_grab_mouse;
+
 static void sigint_handler(int signum) {
     power_on = false;
     power_off_reason = po_signal_interrupt;
@@ -167,6 +169,9 @@ int main(int argc, char** argv) {
     string       machine_str;
     CLI::Option* machine_opt = emu->add_option("-m,--machine",
         machine_str, "Specify machine ID");
+
+    emu->add_flag("--auto-grab-mouse", g_auto_grab_mouse,
+        "The guest cursor causes mouse to be grabbed");
 
     auto list_cmd = app.add_subcommand("list",
         "Display available machine configurations and exit");

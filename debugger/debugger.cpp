@@ -58,6 +58,8 @@ using namespace std;
 #define COUT08X COUT0_X(8)
 #define COUT04X COUT0_X(4)
 
+extern bool g_auto_grab_mouse;
+
 static uint32_t str2addr(string& addr_str) {
     try {
         return static_cast<uint32_t>(stoul(addr_str, NULL, 0));
@@ -115,6 +117,8 @@ static void show_help() {
 #endif
     cout << "  printenv       -- print current NVRAM settings." << endl;
     cout << "  setenv V N     -- set NVRAM variable V to value N." << endl;
+    cout << endl;
+    cout << "  autograbmouse H -- auto grab the mouse if H is not zero." << endl;
     cout << endl;
     cout << "  restart        -- restart the machine" << endl;
     cout << "  quit           -- quit the debugger" << endl;
@@ -1169,6 +1173,18 @@ void DppcDebugger::enter_debugger() {
                 via_obj->assert_int(irq_bit);
             });
 #endif
+        } else if (cmd == "autograbmouse") {
+            cmd = "";
+            string value;
+            int num;
+            ss >> value;
+            try {
+                num = str2num(value);
+            } catch (invalid_argument& exc) {
+                cout << exc.what() << endl;
+                continue;
+            }
+            g_auto_grab_mouse = num;
         } else {
             if (!cmd.empty()) {
                 cout << "Unknown command: " << cmd << endl;
