@@ -29,10 +29,10 @@ This program currently uses the command prompt to work.
 There are a few command line arguments one can enter when starting the program.
 
 ```
--r, --realtime
+-r, --run
 ```
 
-Run the emulator in runtime.
+Run the emulator. Currently only goes to an interpreter.
 
 ```
 -d, --debugger

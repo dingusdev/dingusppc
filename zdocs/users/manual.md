@@ -38,10 +38,10 @@ DingusPPC uses two windows when booted up; a command line window and a monitor w
 DingusPPC is operated using the command line interface. As such, we will list the commands as required. These commands are separated by spaces.
 
 ```
--r, --realtime
+-r, --run
 ```
 
-Run the emulator in runtime (using the interpreter).
+Run the emulator (using the interpreter).
 
 ```
 -d, --debugger
