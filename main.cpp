@@ -155,7 +155,7 @@ int main(int argc, char** argv) {
         "Disable the uptime preamble of logged messages");
 
     std::vector<std::string> env_vars;
-    app.add_option("--setenv", env_vars, "Set Open Firmware variables at startup")
+    emu->add_option("--setenv", env_vars, "Set Open Firmware variables at startup")
         ->take_all();
 
     uint32_t profiling_interval_ms = 0;
