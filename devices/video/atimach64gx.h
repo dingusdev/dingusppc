@@ -76,8 +76,10 @@ protected:
 
 private:
     void change_one_bar(uint32_t &aperture, uint32_t aperture_size, uint32_t aperture_new, int bar_num);
+    void update_interrupt();
 
     uint32_t    regs[256] = {}; // internal registers
+    bool        pci_irq_line_state = false;
 
     int         vram_size;
 
