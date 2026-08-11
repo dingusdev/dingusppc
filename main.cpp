@@ -106,7 +106,6 @@ int main(int argc, char** argv) {
     uint32_t execution_mode = interpreter;
 
     CLI::App app(appDescription);
-    app.allow_windows_style_options(); /* we want Windows-style options */
     app.allow_extras();
 
     app.set_help_all_flag("--help-all", "Print this help message, help for subcommands, and exit");
@@ -250,7 +249,6 @@ int main(int argc, char** argv) {
     // of when they are registered.
     MachineFactory::get_setting_value = [&](const std::string& name) -> std::optional<std::string> {
         CLI::App sa;
-        sa.allow_windows_style_options();
         sa.allow_extras();
 
         std::string value;
