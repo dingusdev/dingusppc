@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ppcdisasm.h"
 
 #include <algorithm>
+#include <cinttypes>
 #include <chrono>
 #include <cstring>
 #include <iostream>
@@ -132,8 +133,26 @@ bool dec_exception_pending = false;
 /* variables related to virtual time */
 bool g_realtime = false;
 uint64_t g_nanoseconds_base;
-uint64_t g_icycles;
-int      icnt_factor;
+// Fixed-point nanoseconds, with four fractional bits. This provides enough
+// precision for the supported CPU clocks and over 36 years before overflow.
+using FixedNanoseconds = uint64_t;
+static constexpr int VIRT_TIME_FRAC_BITS = 4;
+static constexpr FixedNanoseconds FIXED_INSTRUCTION_PERIOD =
+    16ULL << VIRT_TIME_FRAC_BITS; // 16ns/instruction (62.5 MHz)
+static FixedNanoseconds g_virt_time;
+static FixedNanoseconds g_instruction_period;
+static PPC_CPU_TimingMode g_cpu_timing_mode = PPC_CPU_TimingMode::Fixed;
+
+static constexpr FixedNanoseconds instruction_period_for_frequency(uint64_t core_freq_hz)
+{
+    return (((uint64_t)NS_PER_SEC << VIRT_TIME_FRAC_BITS) + core_freq_hz / 2) /
+        core_freq_hz;
+}
+
+void set_cpu_timing_mode(PPC_CPU_TimingMode mode)
+{
+    g_cpu_timing_mode = mode;
+}
 
 /* global variables related to the timebase facility */
 uint64_t tbr_wr_timestamp;  // stores vCPU virtual time of the last TBR write
@@ -356,7 +375,7 @@ uint64_t get_virt_time_ns()
     if (g_realtime) {
         return cpu_now_ns() - g_nanoseconds_base;
     } else {
-        return g_icycles << icnt_factor;
+        return g_virt_time >> VIRT_TIME_FRAC_BITS;
     }
 }
 
@@ -365,7 +384,7 @@ void set_virt_time_ns(uint64_t time_now)
     if (g_realtime) {
         g_nanoseconds_base = cpu_now_ns() - time_now - 5000;
     } else {
-        g_icycles = time_now >> icnt_factor;
+        g_virt_time = time_now << VIRT_TIME_FRAC_BITS;
     }
     uint64_t time_new = get_virt_time_ns();
     if (g_realtime && time_new > time_now) {
@@ -375,16 +394,16 @@ void set_virt_time_ns(uint64_t time_now)
     LOG_F(INFO, "time before: %lld  after: %lld  change: %lld", time_now, time_new, time_new - time_now);
 }
 
-static uint64_t process_events()
+static FixedNanoseconds process_events()
 {
     exec_timer = false;
     uint64_t slice_ns = TimerManager::get_instance()->process_timers();
     if (slice_ns == 0) {
-        // execute 25.000 cycles
+        // execute 25,000 instructions
         // if there are no pending timers
-        return g_icycles + 25000;
+        return g_virt_time + 25'000 * g_instruction_period;
     }
-    return g_icycles + (slice_ns >> icnt_factor) + 1;
+    return g_virt_time + (slice_ns << VIRT_TIME_FRAC_BITS);
 }
 
 static void force_cycle_counter_reload()
@@ -393,29 +412,29 @@ static void force_cycle_counter_reload()
     exec_timer = true;
 }
 
-int increment_icnt_factor()
+uint64_t increment_instruction_period()
 {
     uint64_t time_now = get_virt_time_ns();
-    icnt_factor += 1;
+    g_instruction_period += 1;
     set_virt_time_ns(time_now);
     force_cycle_counter_reload();
-    return icnt_factor;
+    return g_instruction_period;
 }
 
-int decrement_icnt_factor()
+uint64_t decrement_instruction_period()
 {
-    if (icnt_factor > 0) {
+    if (g_instruction_period > 0) {
         uint64_t time_now = get_virt_time_ns();
-        icnt_factor -= 1;
+        g_instruction_period -= 1;
         set_virt_time_ns(time_now);
         force_cycle_counter_reload();
     }
-    return icnt_factor;
+    return g_instruction_period;
 }
 
-int get_icnt_factor()
+uint64_t get_instruction_period()
 {
-    return icnt_factor;
+    return g_instruction_period;
 }
 
 bool toggle_g_realtime()
@@ -437,7 +456,10 @@ typedef enum {
 template <ppc_exec_type_t exec_type, endian_switch endian>
 static void ppc_exec_inner(uint32_t start_addr, uint32_t size)
 {
-    uint64_t max_cycles = 0;
+    FixedNanoseconds event_deadline = 0;
+    // Keep these hot-loop values in registers.
+    FixedNanoseconds virt_time = g_virt_time;
+    FixedNanoseconds instruction_period = g_instruction_period;
     uint32_t eb_start, eb_end = 0;
     uint32_t opcode;
     PPCOpcode* opcode_grabber = ppc_opcode_grabber;
@@ -459,21 +481,29 @@ static void ppc_exec_inner(uint32_t start_addr, uint32_t size)
 
         opcode = ppc_read_instruction(pc_real);
         ppc_main_opcode(opcode_grabber, opcode);
-        if (g_icycles++ >= max_cycles || exec_timer) [[unlikely]]
-            max_cycles = process_events();
+        virt_time += instruction_period;
+        g_virt_time = virt_time;
+        if (virt_time >= event_deadline || exec_timer) [[unlikely]] {
+            event_deadline = process_events();
+            virt_time = g_virt_time;
+            instruction_period = g_instruction_period;
+        }
 
         if (exec_flags) {
             if ((exec_flags & EXEF_SLEEP) && !(exec_flags & EXEF_EXCEPTION)) [[unlikely]] {
                 while (power_on && (exec_flags & EXEF_SLEEP)) {
-                    max_cycles = process_events();
+                    event_deadline = process_events();
+                    virt_time = g_virt_time;
+                    instruction_period = g_instruction_period;
                     if (!(exec_flags & EXEF_SLEEP)) {
                         break;
                     }
-                    if (max_cycles > g_icycles) {
-                        g_icycles = max_cycles;
+                    if (event_deadline > virt_time) {
+                        virt_time = event_deadline;
                     } else {
-                        g_icycles++;
+                        virt_time += instruction_period;
                     }
+                    g_virt_time = virt_time;
                 }
             }
             if (exec_flags & EXEF_OPC_DECODER) [[unlikely]] {
@@ -551,7 +581,7 @@ void ppc_exec_single()
     uint8_t* pc_real = mmu_translate_imem(ppc_state.pc ATPCP); // &pcp
     uint32_t opcode = ppc_read_instruction(pc_real);
     ppc_main_opcode(ppc_opcode_grabber, opcode);
-    g_icycles++;
+    g_virt_time += g_instruction_period;
     process_events();
 
     if (exec_flags) {
@@ -992,21 +1022,59 @@ void initialize_ppc_opcode_table() {
     }
 }
 
-void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool do_include_601, uint64_t tb_freq)
+static uint32_t get_cpu_pll_value(const PPC_CPU_Config& config)
 {
+    switch (config.version) {
+    case PPC_VER::MPC603EV:
+        if (config.core_freq_hz * 2 == config.bus_freq_hz * 9)
+            return 7;  // 4.5:1 ratio
+        if (config.core_freq_hz == config.bus_freq_hz * 5)
+            return 11; // 5:1 ratio
+        if (config.core_freq_hz * 2 == config.bus_freq_hz * 11)
+            return 9;  // 5.5:1 ratio
+        break;
+    case PPC_VER::MPC750:
+        if (config.core_freq_hz * 2 == config.bus_freq_hz * 7)
+            return 14; // 3.5:1 ratio
+        if (config.core_freq_hz == config.bus_freq_hz * 6)
+            return 13; // 6:1 ratio
+        if (config.core_freq_hz == config.bus_freq_hz * 8)
+            return 12; // 8:1 ratio
+        break;
+    default:
+        break;
+    }
+
+    ABORT_F("Unsupported CPU/bus frequency combination: %" PRIu64 "/%" PRIu64 " Hz",
+            config.core_freq_hz, config.bus_freq_hz);
+}
+
+void ppc_cpu_init(MemCtrlBase* mem_ctrl, const PPC_CPU_Config& config)
+{
+    if (!config.timebase_freq_hz || !config.bus_freq_hz || !config.core_freq_hz)
+        ABORT_F("CPU clock frequencies must be non-zero");
+
     mem_ctrl_instance = mem_ctrl;
 
     int_pin = false;
     std::memset(&ppc_state, 0, sizeof(ppc_state));
     set_host_rounding_mode(0);
 
-    ppc_state.spr[SPR::PVR] = cpu_version;
-    is_601 = (cpu_version >> 16) == 1;
-    include_601 = !is_601 & do_include_601;
+    ppc_state.spr[SPR::PVR] = config.version;
+    switch (config.version) {
+    case PPC_VER::MPC603EV:
+    case PPC_VER::MPC750:
+        ppc_state.spr[SPR::HID1] = get_cpu_pll_value(config) << 28;
+        break;
+    default:
+        break;
+    }
+    is_601 = (config.version >> 16) == 1;
+    include_601 = is_601;
     ppc_pow_mode = PPCPowMode::None;
     ppc_pow_hid0_mask = 0;
 
-    switch (cpu_version) {
+    switch (config.version) {
     case PPC_VER::MPC603:
     case PPC_VER::MPC603E:
     case PPC_VER::MPC603EV:
@@ -1036,25 +1104,15 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool do_include_6
     mach_timebase_info(&timebase_info);
 #endif
     g_nanoseconds_base = cpu_now_ns();
-    g_icycles = 0;
-
-//                    //                                        // PDM cpu clock calculated at 0x403036CC in r3
-//  icnt_factor = 11; // 1 instruction = 2048 ns =    0.488 MHz // 00068034 =     0.426036 MHz = 2347.219 ns // floppy doesn't work
-//  icnt_factor = 10; // 1 instruction = 1024 ns =    0.977 MHz // 000D204C =     0.860236 MHz = 1162.471 ns //  [0..10] MHz = invalid clock for PDM gestalt calculation
-//  icnt_factor =  9; // 1 instruction =  512 ns =    1.953 MHz // 001A6081 =     1.728641 MHz =  578.489 ns //  [0..10] MHz = invalid clock for PDM gestalt calculation
-//  icnt_factor =  8; // 1 instruction =  256 ns =    3.906 MHz // 0034E477 =     3.466359 MHz =  288.487 ns //  [0..10] MHz = invalid clock for PDM gestalt calculation
-//  icnt_factor =  7; // 1 instruction =  128 ns =    7.813 MHz // 0069E54C =     6.939980 MHz =  144.092 ns //  [0..10] MHz = invalid clock for PDM gestalt calculation
-//  icnt_factor =  6; // 1 instruction =   64 ns =   15.625 MHz // 00D3E6F5 =    13.887221 MHz =   72.008 ns // (10..60] = 50, (60..73] = 66, (73..100] = 80 MHz
-//  icnt_factor =  5; // 1 instruction =   32 ns =   31.250 MHz // 01A7B672 =    27.768434 MHz =   36.012 ns //
-    icnt_factor =  4; // 1 instruction =   16 ns =   62.500 MHz // 034F0F0F =    55.512847 MHz =   18.013 ns // 6100/60 in Apple System Profiler
-//  icnt_factor =  3; // 1 instruction =    8 ns =  125.000 MHz // 069E1E1E =   111.025694 MHz =    9.006 ns // (100...) MHz = invalid clock for PDM gestalt calculation
-//  icnt_factor =  2; // 1 instruction =    4 ns =  250.000 MHz // 0D3C3C3C =   222.051388 MHz =    4.503 ns // (100...) MHz = invalid clock for PDM gestalt calculation
-//  icnt_factor =  1; // 1 instruction =    2 ns =  500.000 MHz // 1A611A7B =   442.571387 MHz =    2.259 ns // (100...) MHz = invalid clock for PDM gestalt calculation
-//  icnt_factor =  0; // 1 instruction =    1 ns = 1500.000 MHz // 3465B2D9 =   879.080153 MHz =    1.137 ns // (100...) MHz = invalid clock for PDM gestalt calculation
+    g_virt_time = 0;
+    g_instruction_period = g_cpu_timing_mode == PPC_CPU_TimingMode::PerMachine
+        ? instruction_period_for_frequency(config.core_freq_hz)
+        : FIXED_INSTRUCTION_PERIOD;
 
     tbr_wr_timestamp = 0;
     rtc_timestamp = 0;
     tbr_wr_value = 0;
+    uint64_t tb_freq = config.timebase_freq_hz;
     if (is_601)
         tb_freq <<= 7;
     tbr_freq_shift = 0;
