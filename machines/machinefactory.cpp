@@ -95,6 +95,7 @@ static const map<string, string> PropHelp = {
     {"serial_backend",  "specifies the backend for the serial port"},
     {"emmo",            "enables/disables factory HW tests during startup"},
     {"cpu",             "specifies CPU"},
+    {"cpu_freq",        "specifies CPU frequency in MHz"},
     {"adb_devices",     "specifies which ADB device(s) to attach"},
     {"pds",             "specify device for the processsor direct slot"},
 };
