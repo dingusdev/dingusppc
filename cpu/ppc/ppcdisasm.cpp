@@ -392,6 +392,13 @@ void fmt_rotateop(PPCDisasmContext* ctx, const char* opc, int dst, int src, int 
     }
 }
 
+void fmt_rotateinsert(PPCDisasmContext* ctx, const char* opc, int dst, int src, int sh, int mb, int me) {
+    ctx->instr_str = my_sprintf("%-7s r%d, r%d, %d, %d, %d", opc, dst, src, sh, mb, me);
+    add_reg_in(ctx, "r%d", dst);
+    add_reg_in(ctx, "r%d", src);
+    add_reg_out(ctx, "r%d", dst);
+}
+
 /* Opcodes */
 
 void opc_illegal(PPCDisasmContext* ctx) {
@@ -522,7 +529,7 @@ void opc_rlwimi(PPCDisasmContext* ctx) {
         add_reg_out(ctx, "cr");
     }
 
-    fmt_rotateop(ctx, opcode, ra, rs, sh, mb, me, true);
+    fmt_rotateinsert(ctx, opcode, ra, rs, sh, mb, me);
 }
 
 void opc_rlwinm(PPCDisasmContext* ctx) {
