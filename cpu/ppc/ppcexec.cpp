@@ -438,7 +438,7 @@ template <ppc_exec_type_t exec_type, endian_switch endian>
 static void ppc_exec_inner(uint32_t start_addr, uint32_t size)
 {
     uint64_t max_cycles = 0;
-    uint32_t page_start, eb_start, eb_end = 0;
+    uint32_t eb_start, eb_end = 0;
     uint32_t opcode;
     PPCOpcode* opcode_grabber = ppc_opcode_grabber;
     uint8_t* pc_real;
@@ -451,9 +451,8 @@ static void ppc_exec_inner(uint32_t start_addr, uint32_t size)
         if (ppc_state.pc >= eb_end) {
             // define boundaries of the next execution block
             // max execution block length = one memory page
-            eb_start   = ppc_state.pc;
-            page_start = eb_start & PPC_PAGE_MASK;
-            eb_end     = page_start + PPC_PAGE_SIZE - 1;
+            eb_start = ppc_state.pc;
+            eb_end = (eb_start & PPC_PAGE_MASK) + PPC_PAGE_SIZE - 1;
             exec_flags = 0;
             pc_real    = mmu_translate_imem(eb_start ATPCP); // &pcp
         }
@@ -482,14 +481,14 @@ static void ppc_exec_inner(uint32_t start_addr, uint32_t size)
             }
             // define next execution block
             eb_start = ppc_next_instruction_address;
-            if (!(exec_flags & EXEF_RFI) && (eb_start & PPC_PAGE_MASK) == page_start) {
+            if (!(exec_flags & EXEF_RFI) &&
+                (eb_start & PPC_PAGE_MASK) == (eb_end & PPC_PAGE_MASK)) {
                 if (endian == big_end)
                     INCPC((int)eb_start - (int)ppc_state.pc);
                 else
                     pc_real = mmu_translate_imem(eb_start ATPCP); // &pcp
             } else {
-                page_start = eb_start & PPC_PAGE_MASK;
-                eb_end = page_start + PPC_PAGE_SIZE - 1;
+                eb_end = (eb_start & PPC_PAGE_MASK) + PPC_PAGE_SIZE - 1;
                 pc_real = mmu_translate_imem(eb_start ATPCP); // &pcp
             }
             ppc_state.pc = eb_start;
