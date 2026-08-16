@@ -120,7 +120,8 @@ Scanning every primary and secondary TLB array at each synchronization is
 expensive. Instead, DingusPPC records pointers to slots populated by BAT or PAT
 translation in separate instruction and data vectors. Pending invalidations are
 combined by translation source, and synchronization visits only those tracked
-slots.
+slots. Writes that leave a BAT register unchanged are ignored before scheduling
+any invalidation work.
 
 Generation counters offer constant-time invalidation, but require an additional
 generation check on every TLB lookup. Tracking populated slots keeps the common
