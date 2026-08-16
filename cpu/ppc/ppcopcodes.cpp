@@ -1133,8 +1133,10 @@ void dppc_interpreter::ppc_mtspr(uint32_t opcode) {
     case 533:
     case 534:
     case 535:
-        ppc_state.spr[ref_spr] = val;
-        ibat_update(ref_spr);
+        if (ppc_state.spr[ref_spr] != val) {
+            ppc_state.spr[ref_spr] = val;
+            ibat_update(ref_spr);
+        }
         break;
     case 536:
     case 537:
@@ -1144,8 +1146,10 @@ void dppc_interpreter::ppc_mtspr(uint32_t opcode) {
     case 541:
     case 542:
     case 543:
-        ppc_state.spr[ref_spr] = val;
-        dbat_update(ref_spr);
+        if (ppc_state.spr[ref_spr] != val) {
+            ppc_state.spr[ref_spr] = val;
+            dbat_update(ref_spr);
+        }
         break;
     case SPR::HID0:
         ppc_state.spr[ref_spr] = val;
