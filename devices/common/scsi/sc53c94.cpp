@@ -306,6 +306,7 @@ void Sc53C94::exec_command()
         exec_next_command();
         break;
     case CMD_CLEAR_FIFO:
+        this->on_reset = false; // unblock the command register
         this->data_fifo_pos = 0; // set the bottom of the data FIFO to zero
         this->data_fifo[0] = 0;
         exec_next_command();
