@@ -105,3 +105,25 @@ else:
             refill_primary_tlb(VA, PA)
     perform_memory_access(PA, ART)
 ```
+
+## Translation context invalidation
+
+Guest operating systems can change BAT registers and page address translation
+state very frequently. XNU, for example, temporarily installs a DBAT mapping in
+some physical-memory access routines and restores the previous mapping shortly
+afterwards. DingusPPC applies the resulting TLB invalidation at the next context
+synchronization (`isync`, `rfi`, or `sc`), as the processor does. A BAT update
+must invalidate cached PAT translations as well as BAT translations because a
+new BAT can shadow a page mapping.
+
+Scanning every primary and secondary TLB array at each synchronization is
+expensive. Instead, DingusPPC records pointers to slots populated by BAT or PAT
+translation in separate instruction and data vectors. Pending invalidations are
+combined by translation source, and synchronization visits only those tracked
+slots.
+
+Generation counters offer constant-time invalidation, but require an additional
+generation check on every TLB lookup. Tracking populated slots keeps the common
+hit path as a direct tag comparison. Its cost is paid at context synchronization
+and is proportional to the number of translated slots populated since the last
+invalidation.

@@ -31,6 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <loguru.hpp>
 #include <stdexcept>
+#include <vector>
 
 //#define MMU_PROFILING // uncomment this to enable MMU profiling
 //#define TLB_PROFILING // uncomment this to enable SoftTLB profiling
@@ -471,7 +472,11 @@ enum TLBFlags : uint16_t {
     TLBE_FROM_PAT = 1 << 4, // TLB entry has been translated with PAT
     PAGE_WRITABLE = 1 << 5, // page is writable
     PTE_SET_C     = 1 << 6, // tells if C bit of the PTE needs to be updated
+    TLBE_CTX_TRACKED = 1 << 7, // entry pointer is in gTrackedIEntries or gTrackedDEntries
 };
+
+constexpr uint16_t TLBE_FROM_TRANSLATION =
+    TLBFlags::TLBE_FROM_BAT | TLBFlags::TLBE_FROM_PAT;
 
 typedef struct TLBEntry {
     uint32_t    tag;
@@ -490,6 +495,91 @@ typedef struct TLBEntry {
     uint32_t phys_tag;
     uint32_t reserved;
 } TLBEntry;
+
+// Track slots populated by either page or block address translation. Context
+// changes can then invalidate only populated slots without adding a generation
+// check to every TLB lookup.
+static std::vector<TLBEntry *> gTrackedIEntries;
+static std::vector<TLBEntry *> gTrackedDEntries;
+
+// TLBE_FROM_* sources awaiting invalidation at the next context sync.
+static uint16_t gPendingIInvalidationSources = 0;
+static uint16_t gPendingDInvalidationSources = 0;
+
+template <const TLBType tlb_type>
+static void track_translated_entry(TLBEntry *tlb_entry)
+{
+    if (!(tlb_entry->flags & TLBE_FROM_TRANSLATION) ||
+        (tlb_entry->flags & TLBFlags::TLBE_CTX_TRACKED))
+        return;
+
+    tlb_entry->flags |= TLBFlags::TLBE_CTX_TRACKED;
+    if (tlb_type == TLBType::ITLB)
+        gTrackedIEntries.push_back(tlb_entry);
+    else
+        gTrackedDEntries.push_back(tlb_entry);
+}
+
+template <const TLBType tlb_type>
+static void tlb_invalidate_tracked_entries()
+{
+    uint16_t *pending_sources;
+    std::vector<TLBEntry *> *tracked_entries;
+
+    if (tlb_type == TLBType::ITLB) {
+        pending_sources = &gPendingIInvalidationSources;
+        tracked_entries = &gTrackedIEntries;
+    } else {
+        pending_sources = &gPendingDInvalidationSources;
+        tracked_entries = &gTrackedDEntries;
+    }
+
+    if (!*pending_sources)
+        return;
+
+    size_t retained_count = 0;
+    for (TLBEntry *tlb_entry : *tracked_entries) {
+        uint16_t source = tlb_entry->flags & TLBE_FROM_TRANSLATION;
+        if (source & *pending_sources) {
+            tlb_entry->tag = TLB_INVALID_TAG;
+            tlb_entry->flags &= ~TLBFlags::TLBE_CTX_TRACKED;
+        } else if (source) {
+            (*tracked_entries)[retained_count++] = tlb_entry;
+        } else {
+            tlb_entry->flags &= ~TLBFlags::TLBE_CTX_TRACKED;
+        }
+    }
+    tracked_entries->resize(retained_count);
+    *pending_sources = 0;
+}
+
+static void schedule_tlb_invalidation(TLBType tlb_type, uint16_t sources_to_invalidate)
+{
+    uint16_t *pending_sources;
+
+    if (tlb_type == TLBType::ITLB)
+        pending_sources = &gPendingIInvalidationSources;
+    else
+        pending_sources = &gPendingDInvalidationSources;
+
+    if (!*pending_sources) {
+        if (tlb_type == TLBType::ITLB)
+            add_ctx_sync_action(&tlb_invalidate_tracked_entries<TLBType::ITLB>);
+        else
+            add_ctx_sync_action(&tlb_invalidate_tracked_entries<TLBType::DTLB>);
+    }
+    *pending_sources |= sources_to_invalidate;
+}
+
+template <const TLBType tlb_type>
+static void promote_tlb_entry(TLBEntry *tlb1_entry, const TLBEntry *tlb2_entry)
+{
+    uint16_t tracked = tlb1_entry->flags & TLBFlags::TLBE_CTX_TRACKED;
+    *tlb1_entry = *tlb2_entry;
+    tlb1_entry->flags &= ~TLBFlags::TLBE_CTX_TRACKED;
+    tlb1_entry->flags |= tracked;
+    track_translated_entry<tlb_type>(tlb1_entry);
+}
 
 // primary ITLB for all MMU modes
 static std::array<TLBEntry, TLB_SIZE> itlb1_mode1;
@@ -684,10 +774,12 @@ static TLBEntry* itlb2_refill(uint32_t guest_va)
         const uint32_t tag = guest_va & ~0xFFFUL;
         tlb_entry = tlb2_target_entry<TLBType::ITLB>(tag);
         tlb_entry->tag = tag;
-        tlb_entry->flags = flags | TLBFlags::PAGE_MEM;
+        tlb_entry->flags = flags | TLBFlags::PAGE_MEM |
+            (tlb_entry->flags & TLBFlags::TLBE_CTX_TRACKED);
         tlb_entry->host_va_offs_r = (int64_t)rgn_desc->mem_ptr - guest_va +
                                     (phys_addr - rgn_desc->start);
         tlb_entry->phys_tag = phys_addr & ~0xFFFUL;
+        track_translated_entry<TLBType::ITLB>(tlb_entry);
     } else {
         ABORT_F("Instruction fetch from unmapped memory at 0x%08X!\n", phys_addr);
     }
@@ -756,11 +848,13 @@ static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write, bool is_dbg = fal
         tlb_entry = tlb2_target_entry<TLBType::DTLB>(tag);
         tlb_entry->tag = tag;
         if (rgn_desc->type & RT_MMIO) { // MMIO region
-            tlb_entry->flags = flags | TLBFlags::PAGE_IO;
+            tlb_entry->flags = flags | TLBFlags::PAGE_IO |
+                (tlb_entry->flags & TLBFlags::TLBE_CTX_TRACKED);
             tlb_entry->rgn_desc = rgn_desc;
             tlb_entry->dev_base_va = guest_va - (phys_addr - rgn_desc->start);
         } else { // memory region backed by host memory
-            tlb_entry->flags = flags | TLBFlags::PAGE_MEM;
+            tlb_entry->flags = flags | TLBFlags::PAGE_MEM |
+                (tlb_entry->flags & TLBFlags::TLBE_CTX_TRACKED);
             tlb_entry->host_va_offs_r = (int64_t)rgn_desc->mem_ptr - guest_va +
                                         (phys_addr - rgn_desc->start);
             if (rgn_desc->type == RT_ROM) {
@@ -771,6 +865,7 @@ static TLBEntry* dtlb2_refill(uint32_t guest_va, int is_write, bool is_dbg = fal
             }
         }
         tlb_entry->phys_tag = phys_addr & ~0xFFFUL;
+        track_translated_entry<TLBType::DTLB>(tlb_entry);
         return tlb_entry;
     } else {
         if (!is_dbg) {
@@ -930,10 +1025,7 @@ uint8_t *mmu_translate_imem(uint32_t vaddr, uint32_t *paddr)
         }
 #endif
         // refill the primary ITLB
-        tlb1_entry->tag = tag;
-        tlb1_entry->flags = tlb2_entry->flags;
-        tlb1_entry->host_va_offs_r = tlb2_entry->host_va_offs_r;
-        tlb1_entry->phys_tag = tlb2_entry->phys_tag;
+        promote_tlb_entry<TLBType::ITLB>(tlb1_entry, tlb2_entry);
         host_va = (uint8_t *)(tlb1_entry->host_va_offs_r + vaddr);
     }
 
@@ -980,100 +1072,6 @@ void tlb_flush_entry(uint32_t ea)
     tlb_flush_secondary_entry(dtlb2_mode3, tag);
 }
 
-template <std::size_t N>
-static void tlb_flush_entries(std::array<TLBEntry, N> &tlb, TLBFlags type) {
-    for (auto &tlb_el : tlb) {
-        if (tlb_el.tag != TLB_INVALID_TAG && tlb_el.flags & type) {
-            tlb_el.tag = TLB_INVALID_TAG;
-        }
-    }
-}
-
-template <const TLBType tlb_type>
-void tlb_flush_entries(TLBFlags type)
-{
-    // Mode 1 is real addressing and thus can't contain any PAT entries by definition.
-    bool flush_mode1 = type != TLBE_FROM_PAT;
-    if (tlb_type == TLBType::ITLB) {
-        if (flush_mode1) {
-            tlb_flush_entries(itlb1_mode1, type);
-        }
-        tlb_flush_entries(itlb1_mode2, type);
-        tlb_flush_entries(itlb1_mode3, type);
-        if (flush_mode1) {
-            tlb_flush_entries(itlb2_mode1, type);
-        }
-        tlb_flush_entries(itlb2_mode2, type);
-        tlb_flush_entries(itlb2_mode3, type);
-    } else {
-        if (flush_mode1) {
-            tlb_flush_entries(dtlb1_mode1, type);
-        }
-        tlb_flush_entries(dtlb1_mode2, type);
-        tlb_flush_entries(dtlb1_mode3, type);
-        if (flush_mode1) {
-            tlb_flush_entries(dtlb2_mode1, type);
-        }
-        tlb_flush_entries(dtlb2_mode2, type);
-        tlb_flush_entries(dtlb2_mode3, type);
-    }
-}
-
-static bool gTLBFlushIBatEntries = false;
-static bool gTLBFlushDBatEntries = false;
-static bool gTLBFlushIPatEntries = false;
-static bool gTLBFlushDPatEntries = false;
-
-template <const TLBType tlb_type>
-void tlb_flush_bat_entries()
-{
-    if (tlb_type == TLBType::ITLB) {
-        if (!gTLBFlushIBatEntries)
-            return;
-        tlb_flush_entries<TLBType::ITLB>(TLBE_FROM_BAT);
-        gTLBFlushIBatEntries = false;
-    } else {
-        if (!gTLBFlushDBatEntries)
-            return;
-        tlb_flush_entries<TLBType::DTLB>(TLBE_FROM_BAT);
-        gTLBFlushDBatEntries = false;
-    }
-}
-
-template <const TLBType tlb_type>
-void tlb_flush_pat_entries()
-{
-    if (tlb_type == TLBType::ITLB) {
-        if (!gTLBFlushIPatEntries)
-            return;
-        tlb_flush_entries<TLBType::ITLB>(TLBE_FROM_PAT);
-        gTLBFlushIPatEntries = false;
-    } else {
-        if (!gTLBFlushDPatEntries)
-            return;
-        tlb_flush_entries<TLBType::DTLB>(TLBE_FROM_PAT);
-        gTLBFlushDPatEntries = false;
-    }
-}
-
-template <const TLBType tlb_type>
-void tlb_flush_all_entries()
-{
-    if (tlb_type == TLBType::ITLB) {
-        if (!gTLBFlushIBatEntries && !gTLBFlushIPatEntries)
-            return;
-        tlb_flush_entries<TLBType::ITLB>((TLBFlags)(TLBE_FROM_BAT | TLBE_FROM_PAT));
-        gTLBFlushIBatEntries = false;
-        gTLBFlushIPatEntries = false;
-    } else {
-        if (!gTLBFlushDBatEntries && !gTLBFlushDPatEntries)
-            return;
-        tlb_flush_entries<TLBType::DTLB>((TLBFlags)(TLBE_FROM_BAT | TLBE_FROM_PAT));
-        gTLBFlushDBatEntries = false;
-        gTLBFlushDPatEntries = false;
-    }
-}
-
 static void mpc601_bat_update(uint32_t bat_reg)
 {
     PPC_BAT_entry *ibat_entry, *dbat_entry;
@@ -1104,15 +1102,9 @@ static void mpc601_bat_update(uint32_t bat_reg)
         dbat_entry->valid = false;
     }
 
-    // MPC601 has unified BATs so we're going to flush both ITLB and DTLB
-    if (!gTLBFlushIBatEntries || !gTLBFlushIPatEntries || !gTLBFlushDBatEntries || !gTLBFlushDPatEntries) {
-        gTLBFlushIBatEntries = true;
-        gTLBFlushIPatEntries = true;
-        gTLBFlushDBatEntries = true;
-        gTLBFlushDPatEntries = true;
-        add_ctx_sync_action(&tlb_flush_all_entries<TLBType::ITLB>);
-        add_ctx_sync_action(&tlb_flush_all_entries<TLBType::DTLB>);
-    }
+    // MPC601 has unified BATs, so they affect both translation contexts.
+    schedule_tlb_invalidation(TLBType::ITLB, TLBE_FROM_TRANSLATION);
+    schedule_tlb_invalidation(TLBType::DTLB, TLBE_FROM_TRANSLATION);
 }
 
 static void mpc601_dbat_update(uint32_t /*bat_reg*/)
@@ -1138,11 +1130,8 @@ static void ppc_ibat_update(uint32_t bat_reg)
     bat_entry->phys_hi = ppc_state.spr[upper_reg_num + 1] & hi_mask;
     bat_entry->bepi    = ppc_state.spr[upper_reg_num] & hi_mask;
 
-    if (!gTLBFlushIBatEntries || !gTLBFlushIPatEntries) {
-        gTLBFlushIBatEntries = true;
-        gTLBFlushIPatEntries = true;
-        add_ctx_sync_action(&tlb_flush_all_entries<TLBType::ITLB>);
-    }
+    // A new IBAT can shadow an existing page translation.
+    schedule_tlb_invalidation(TLBType::ITLB, TLBE_FROM_TRANSLATION);
 }
 
 static void ppc_dbat_update(uint32_t bat_reg)
@@ -1163,23 +1152,16 @@ static void ppc_dbat_update(uint32_t bat_reg)
     bat_entry->phys_hi = ppc_state.spr[upper_reg_num + 1] & hi_mask;
     bat_entry->bepi    = ppc_state.spr[upper_reg_num] & hi_mask;
 
-    if (!gTLBFlushDBatEntries || !gTLBFlushDPatEntries) {
-        gTLBFlushDBatEntries = true;
-        gTLBFlushDPatEntries = true;
-        add_ctx_sync_action(&tlb_flush_all_entries<TLBType::DTLB>);
-    }
+    // A new DBAT can shadow an existing page translation.
+    schedule_tlb_invalidation(TLBType::DTLB, TLBE_FROM_TRANSLATION);
 }
 
 void mmu_pat_ctx_changed()
 {
-    // Page address translation context changed so we need to flush
-    // all PAT entries from both ITLB and DTLB
-    if (!gTLBFlushIPatEntries || !gTLBFlushDPatEntries) {
-        gTLBFlushIPatEntries = true;
-        gTLBFlushDPatEntries = true;
-        add_ctx_sync_action(&tlb_flush_pat_entries<TLBType::ITLB>);
-        add_ctx_sync_action(&tlb_flush_pat_entries<TLBType::DTLB>);
-    }
+    // Page address translation context changed so invalidate all PAT entries
+    // from both ITLB and DTLB.
+    schedule_tlb_invalidation(TLBType::ITLB, TLBFlags::TLBE_FROM_PAT);
+    schedule_tlb_invalidation(TLBType::DTLB, TLBFlags::TLBE_FROM_PAT);
 }
 
 #if SUPPORTS_PPC_LITTLE_ENDIAN_MODE
@@ -1265,7 +1247,7 @@ inline T mmu_read_vmem(uint32_t opcode, uint32_t guest_va)
 
         if (tlb2_entry->flags & TLBFlags::PAGE_MEM) { // is it a real memory region?
             // refill the primary TLB
-            *tlb1_entry = *tlb2_entry;
+            promote_tlb_entry<TLBType::DTLB>(tlb1_entry, tlb2_entry);
 
 #if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
             needs_swap = mem_ctrl_instance->needs_swap_endian(false);
@@ -1442,7 +1424,7 @@ inline void mmu_write_vmem(uint32_t opcode, uint32_t guest_va, T value)
 
         if (tlb2_entry->flags & TLBFlags::PAGE_MEM) { // is it a real memory region?
             // refill the primary TLB
-            *tlb1_entry = *tlb2_entry;
+            promote_tlb_entry<TLBType::DTLB>(tlb1_entry, tlb2_entry);
 
 #if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
             needs_swap = mem_ctrl_instance->needs_swap_endian(false);
@@ -1968,7 +1950,7 @@ bool mmu_translate_dbg(uint32_t guest_va, uint32_t &guest_pa) {
 
                 if (tlb2_entry->flags & TLBFlags::PAGE_MEM) { // is it a real memory region?
                     // refill the primary TLB
-                    *tlb1_entry = *tlb2_entry;
+                    promote_tlb_entry<TLBType::DTLB>(tlb1_entry, tlb2_entry);
                 }
                 else {
                     tlb1_entry = tlb2_entry;
@@ -2010,6 +1992,11 @@ static void invalidate_tlb_entries(std::array<TLBEntry, N> &tlb) {
 
 void ppc_mmu_init()
 {
+    gPendingIInvalidationSources = 0;
+    gPendingDInvalidationSources = 0;
+    gTrackedIEntries.clear();
+    gTrackedDEntries.clear();
+
     last_ptab_area  = {0xFFFFFFFF, 0xFFFFFFFF, 0, 0, nullptr, nullptr};
 
     mmu_exception_handler = ppc_exception_handler;
