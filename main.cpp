@@ -385,6 +385,15 @@ void run_machine(std::string machine_str, char* rom_data,
         // Log the PC and instruction every second to make it easier to validate
         // that execution is the same every time.
         deterministic_timer = TimerManager::get_instance()->add_cyclic_timer(MSECS_TO_NSECS(1000), [] {
+            // We may be running after an exceptions or RFI changed the address
+            // translation context. In those cases the PC address cannot be
+            // translated (it would either be stale or invalid).
+            if (exec_flags & (EXEF_EXCEPTION | EXEF_RFI)) {
+                LOG_F(INFO, "TS=%016llu PC=0x%08x transition pending to PC=0x%08x",
+                      get_virt_time_ns(), ppc_state.pc, ppc_next_instruction_address);
+                return;
+            }
+
             PPCDisasmContext ctx;
             ctx.instr_code = ppc_read_instruction(mmu_translate_imem(ppc_state.pc));
             ctx.instr_addr = ppc_state.pc;
