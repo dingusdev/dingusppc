@@ -241,6 +241,8 @@ private:
     bool     one_sec_missed    = false;  // ERS: missed pkt -> fallback to mode $01
     bool     file_server       = false; 
     bool     mono_stable       = false; 
+    bool     power_messages_enabled = false;
+    uint8_t  tickle_value = 0;           // last shutdown watchdog count from the guest 
     uint8_t  ipl_level   = 0;
     uint16_t device_mask = 0;
 
