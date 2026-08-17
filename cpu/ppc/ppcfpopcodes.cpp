@@ -21,14 +21,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // The floating point opcodes for the processor - ppcfpopcodes.cpp
 
-#include "ppcemu.h"
-#include "ppcmacros.h"
-#include "ppcmmu.h"
-#include <stdlib.h>
+#include <cpu/ppc/ppcdechelpers.h>
+#include <cpu/ppc/ppcemu.h>
+#include <cpu/ppc/ppcmmu.h>
+
 #include <cfenv>
+#include <cfloat>
 #include <cinttypes>
 #include <cmath>
-#include <cfloat>
+#include <stdlib.h>
 
 inline static void ppc_update_cr1() {
     // copy FPSCR[FX|FEX|VX|OX] to CR1
@@ -420,7 +421,7 @@ void dppc_interpreter::ppc_fnmadd(uint32_t opcode) {
     if (snan_single_check(reg_a) || snan_single_check(reg_b) || snan_single_check(reg_c)) {
         uint64_t qnan = 0x7FFC000000000000;
         ppc_store_fpresult_int(reg_d, qnan);
-    } 
+    }
     else {
         ppc_store_fpresult_flt(reg_d, ppc_dblresult64_d);
     }

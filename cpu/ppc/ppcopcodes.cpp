@@ -24,9 +24,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <core/bitops.h>
 #include <core/timermanager.h>
 #include <core/mathutils.h>
-#include "ppcemu.h"
-#include "ppcmacros.h"
-#include "ppcmmu.h"
+#include <cpu/ppc/ppcdechelpers.h>
+#include <cpu/ppc/ppcemu.h>
+#include <cpu/ppc/ppcmmu.h>
+
 #include <cinttypes>
 #include <vector>
 
