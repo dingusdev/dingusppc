@@ -167,22 +167,26 @@ static void status_callback(cubeb_stream *stream, void *user_data, cubeb_state s
 
 int SoundServer::open_out_stream(uint32_t sample_rate, DmaOutChannel *dma_ch)
 {
+    // Set up a cyclic-timer DMA drain callback. It keeps the guest sound DMA
+    // advancing even if the host audio stream cannot be started, otherwise
+    // the guest sound driver would stall forever waiting for DMA interrupts.
+    impl->deterministic_poll_cb = [dma_ch] {
+        if (!dma_ch->is_out_active()) {
+           return;
+        }
+        // Drain the DMA buffer, but don't do anything else.
+        while(1) {
+            uint8_t *chunk;
+            uint32_t chunk_size;
+            if (DmaPullResult::MoreData == dma_ch->pull_data(1024, &chunk_size, &chunk)) {
+                ;
+            } else {
+                break;
+            }
+        }
+    };
+
     if (is_deterministic) {
-        impl->deterministic_poll_cb = [dma_ch] {
-            if (!dma_ch->is_out_active()) {
-               return;
-            }
-            // Drain the DMA buffer, but don't do anything else.
-            while(1) {
-                uint8_t *chunk;
-                uint32_t chunk_size;
-                if (DmaPullResult::MoreData == dma_ch->pull_data(1024, &chunk_size, &chunk)) {
-                    ;
-                } else {
-                    break;
-                }
-            }
-        };
         impl->status = SND_STREAM_OPENED;
         LOG_F(9, "Deterministic sound output callback set up.");
         return 0;
@@ -228,16 +232,27 @@ int SoundServer::start_out_stream()
             TimerManager::get_instance()->add_cyclic_timer(MSECS_TO_NSECS(10), impl->deterministic_poll_cb);
         return 0;
     }
-    return cubeb_stream_start(impl->out_stream);
+    int res = cubeb_stream_start(impl->out_stream);
+    if (res != CUBEB_OK) {
+        // Fall back to draining the guest sound DMA via a cyclic timer so
+        // that the guest sound driver does not stall waiting for DMA progress
+        // that the failed host stream will never provide.
+        if (!impl->deterministic_poll_timer) {
+            impl->deterministic_poll_timer =
+                TimerManager::get_instance()->add_cyclic_timer(MSECS_TO_NSECS(10), impl->deterministic_poll_cb);
+            LOG_F(9, "Host sound output stream start failed; falling back to cyclic DMA drain.");
+        }
+    }
+    return res;
 }
 
 void SoundServer::close_out_stream()
 {
-    if (!impl->out_stream)
-        return;
-    if (is_deterministic) {
-        LOG_F(9, "Stopping sound output deterministic polling.");
+    if (impl->deterministic_poll_timer) {
         TimerManager::get_instance()->cancel_timer(impl->deterministic_poll_timer);
+        impl->deterministic_poll_timer = 0;
+    }
+    if (!impl->out_stream) {
         impl->status = SND_STREAM_CLOSED;
         return;
     }
