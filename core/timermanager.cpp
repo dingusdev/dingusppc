@@ -127,8 +127,8 @@ uint64_t TimerManager::process_timers()
 } // ] mtx scope
     }
 
-    // return time slice in nanoseconds until next timer's expiry
-    return cur_timer->timeout_ns - time_now;
+    // return next timer's expiry
+    return cur_timer->timeout_ns;
 }
 
 void TimerManager::cancel_all_timers()

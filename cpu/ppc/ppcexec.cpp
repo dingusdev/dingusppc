@@ -378,13 +378,15 @@ void set_virt_time_ns(uint64_t time_now)
 static uint64_t process_events()
 {
     exec_timer = false;
-    uint64_t slice_ns = TimerManager::get_instance()->process_timers();
-    if (slice_ns == 0) {
-        // execute 25.000 cycles
-        // if there are no pending timers
-        return g_icycles + 25000;
-    }
-    return g_icycles + (slice_ns >> icnt_factor) + 1;
+    uint64_t next_ns = TimerManager::get_instance()->process_timers();
+    return (
+        (
+            next_ns ?
+                next_ns
+            :
+                TimerManager::get_instance()->current_time_ns() + 500'000
+        ) >> icnt_factor
+    ) + 1;
 }
 
 static void force_cycle_counter_reload()
