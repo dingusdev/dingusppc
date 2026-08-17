@@ -790,7 +790,8 @@ void ViaCuda::pseudo_command() {
         response_header(CUDA_PKT_PSEUDO, 0);
         break;
     case CUDA_SET_POWER_MESSAGES:
-        LOG_F(WARNING, "Cuda: unsupported pseudo command 0x%X SET_POWER_MESSAGES", cmd);
+        this->power_messages_enabled = !!this->in_buf[2];
+        LOG_F(INFO, "Cuda: power messages %s", this->power_messages_enabled ? "enabled" : "disabled");
         response_header(CUDA_PKT_PSEUDO, 0);
         break;
     case CUDA_READ_WRITE_I2C:
@@ -798,7 +799,18 @@ void ViaCuda::pseudo_command() {
         i2c_simple_transaction(this->in_buf[2], &this->in_buf[3], this->in_count - 3);
         break;
     case CUDA_TIMER_TICKLE:
-        LOG_F(WARNING, "Cuda: unsupported pseudo command 0x%X TIMER_TICKLE - Byte Sent: 0x%02x", cmd, this->in_buf[2]);
+        // The guest re-arms the Cuda shutdown watchdog on every tickle; the
+        // firmware counts it down at 16 counts/sec and powers the machine off
+        // when it reaches zero. We track the count so an arm value change is
+        // visible in the log, but never act on expiry to avoid spurious
+        // power-offs if the guest stops tickling.
+        if (this->tickle_value != this->in_buf[2]) {
+            this->tickle_value = this->in_buf[2];
+            LOG_F(INFO, "Cuda: timer tickle set to %d counts (%.1f s)", this->tickle_value,
+                  (double)this->tickle_value / 16.0);
+        } else {
+            LOG_F(9, "Cuda: timer tickle");
+        }
         response_header(CUDA_PKT_PSEUDO, 0);
         break;
     case CUDA_COMB_FMT_I2C:
