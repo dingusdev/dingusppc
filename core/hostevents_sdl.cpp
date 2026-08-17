@@ -44,8 +44,7 @@ void EventManager::poll_events() {
 
         switch (event.type) {
         case SDL_QUIT:
-            power_on = false;
-            power_off_reason = po_quit;
+            power_off(po_quit);
             break;
 
         case SDL_WINDOWEVENT: {
@@ -125,21 +124,55 @@ void EventManager::poll_events() {
                     }
                     return;
                 }
+                // Control-Alt-Shift-+: speed up icnt_factor
+                if (event.key.keysym.sym == SDLK_EQUALS &&
+                    (event.key.keysym.mod & KMOD_ALL) == (KMOD_LCTRL | KMOD_LALT | KMOD_LSHIFT)
+                ) {
+                    if (event.type == SDL_KEYUP) {
+                        int icnt_counter_val = increment_icnt_factor();
+                        LOG_F(INFO, "Incremented icnt_factor: %d", icnt_counter_val);
+                    }
+                    return;
+                }
+                // Control-Alt-Shift--: slow down icnt_factor
+                if (event.key.keysym.sym == SDLK_MINUS &&
+                    (event.key.keysym.mod & KMOD_ALL) == (KMOD_LCTRL | KMOD_LALT | KMOD_LSHIFT)
+                ) {
+                    if (event.type == SDL_KEYUP) {
+                        int icnt_counter_val = decrement_icnt_factor();
+                        LOG_F(INFO, "Decremented icnt_factor: %d", icnt_counter_val);
+                    }
+                    return;
+                }
+
+                // Control-Alt-R: g_realtime toggle
+                if (event.key.keysym.sym == SDLK_r && (event.key.keysym.mod & KMOD_ALL) == (KMOD_LCTRL | KMOD_LALT)) {
+                    if (event.type == SDL_KEYUP) {
+                        bool g_realtime_status = toggle_g_realtime();
+                        LOG_F(INFO, "g_realtime: %s", g_realtime_status ? "enabled" : "disabled");
+                    }
+                }
+
                 // Control-L: log toggle
                 if (event.key.keysym.sym == SDLK_l && (event.key.keysym.mod & KMOD_ALL) == KMOD_LCTRL) {
                     if (event.type == SDL_KEYUP) {
-                        loguru::g_stderr_verbosity = loguru::g_stderr_verbosity == loguru::Verbosity_MAX ?
-                            loguru::Verbosity_INFO
-                        :
-                            loguru::Verbosity_MAX;
+                        loguru::Verbosity new_verbosity = loguru::g_stderr_verbosity;
+                        if (new_verbosity < loguru::Verbosity_INFO)
+                            new_verbosity = loguru::Verbosity_INFO;
+                        else if (new_verbosity < loguru::Verbosity_MAX)
+                            new_verbosity = loguru::Verbosity_MAX;
+                        else
+                            new_verbosity = loguru::Verbosity_OFF;
+                        loguru::g_stderr_verbosity = loguru::Verbosity_INFO;
+                        LOG_F(INFO, "g_stderr_verbosity: %d", new_verbosity);
+                        loguru::g_stderr_verbosity = new_verbosity;
                     }
                     return;
                 }
                 // Control-D: debugger
                 if (event.key.keysym.sym == SDLK_d && (event.key.keysym.mod & KMOD_ALL) == KMOD_LCTRL) {
                     if (event.type == SDL_KEYUP) {
-                        power_on = false;
-                        power_off_reason = po_enter_debugger;
+                        power_off(po_enter_debugger);
                     }
                     return;
                 }
@@ -285,6 +318,7 @@ void EventManager::poll_events() {
 }
 
 void EventManager::post_keyboard_state_events() {
+    int count;
     int numkeys;
     const Uint8 *states = SDL_GetKeyboardState(&numkeys);
     int modstate = SDL_GetModState();
@@ -300,46 +334,54 @@ void EventManager::post_keyboard_state_events() {
     } Modifier_t;
 
     static Modifier_t modifiers[] = {
-        SDL_SCANCODE_LSHIFT       , KMOD_LSHIFT , AdbKey_Shift       ,
-        SDL_SCANCODE_RSHIFT       , KMOD_RSHIFT , AdbKey_RightShift  ,
-        SDL_SCANCODE_LCTRL        , KMOD_LCTRL  , AdbKey_Control     ,
-        SDL_SCANCODE_RCTRL        , KMOD_RCTRL  , AdbKey_RightControl,
-        SDL_SCANCODE_LALT         , KMOD_LALT   , AdbKey_Option      ,
-        SDL_SCANCODE_RALT         , KMOD_RALT   , AdbKey_RightOption ,
-        SDL_SCANCODE_LGUI         , KMOD_LGUI   , AdbKey_Command     ,
-        SDL_SCANCODE_RGUI         , KMOD_RGUI   , AdbKey_Command     ,
-//      SDL_SCANCODE_NUMLOCKCLEAR , KMOD_NUM    , AdbKey_KeypadClear ,
-        SDL_SCANCODE_CAPSLOCK     , KMOD_CAPS   , AdbKey_CapsLock    ,
-//      SDL_SCANCODE_MODE         , KMOD_MODE   , AdbKey_????        ,
-//      SDL_SCANCODE_SCROLLLOCK   , KMOD_SCROLL , AdbKey_F14         ,
-        SDL_SCANCODE_UNKNOWN
+        { SDL_SCANCODE_LSHIFT       , KMOD_LSHIFT , AdbKey_Shift        },
+        { SDL_SCANCODE_RSHIFT       , KMOD_RSHIFT , AdbKey_RightShift   },
+        { SDL_SCANCODE_LCTRL        , KMOD_LCTRL  , AdbKey_Control      },
+        { SDL_SCANCODE_RCTRL        , KMOD_RCTRL  , AdbKey_RightControl },
+        { SDL_SCANCODE_LALT         , KMOD_LALT   , AdbKey_Option       },
+        { SDL_SCANCODE_RALT         , KMOD_RALT   , AdbKey_RightOption  },
+        { SDL_SCANCODE_LGUI         , KMOD_LGUI   , AdbKey_Command      },
+        { SDL_SCANCODE_RGUI         , KMOD_RGUI   , AdbKey_Command      },
+//      { SDL_SCANCODE_NUMLOCKCLEAR , KMOD_NUM    , AdbKey_KeypadClear  },
+        { SDL_SCANCODE_CAPSLOCK     , KMOD_CAPS   , AdbKey_CapsLock     },
+//      { SDL_SCANCODE_MODE         , KMOD_MODE   , AdbKey_????         },
+//      { SDL_SCANCODE_SCROLLLOCK   , KMOD_SCROLL , AdbKey_F14          },
+        { SDL_SCANCODE_UNKNOWN                                          },
     };
 
     LOG_F(INFO, "Current keyboard state:");
 
+    LOG_F(INFO, "    Modifiers:");
+    count = 0;
     for (Modifier_t *mod = modifiers; mod->scancode != SDL_SCANCODE_UNKNOWN; mod++) {
         if (!(modstate & mod->keymod))
             continue;
-        LOG_F(INFO, "    mod:%s", SDL_GetScancodeName(mod->scancode));
+        LOG_F(INFO, "        Modifier: %s", SDL_GetScancodeName(mod->scancode));
+        count++;
         ke.key = mod->adbkey;
         ke.flags = KEYBOARD_EVENT_DOWN;
         this->_keyboard_signal.emit(ke);
     }
+    if (!count)
+        LOG_F(INFO, "        (none)");
 
+    LOG_F(INFO, "    Keys and Modifiers:");
+    count = 0;
     for (int i = 0; i < numkeys; i++) {
         if (!states[i])
             continue;
 
+        count++;
         scancode = (SDL_Scancode)i;
 
         Modifier_t *mod = modifiers;
         for (; mod->scancode != SDL_SCANCODE_UNKNOWN && mod->scancode != scancode; mod++);
         if (mod->scancode == scancode) {
-            LOG_F(INFO, "    ignore:%s", SDL_GetScancodeName(scancode));
+            LOG_F(INFO, "        Modifier: %s", SDL_GetScancodeName(scancode));
             continue;
         }
 
-        LOG_F(INFO, "    key:%s", SDL_GetScancodeName(scancode));
+        LOG_F(INFO, "        Key: %s", SDL_GetScancodeName(scancode));
         keyevent.keysym.scancode = scancode;
         keyevent.keysym.sym = SDL_GetKeyFromScancode(scancode);
         keyevent.keysym.mod = modstate;
@@ -350,9 +392,11 @@ void EventManager::post_keyboard_state_events() {
             ke.flags = KEYBOARD_EVENT_DOWN;
             this->_keyboard_signal.emit(ke);
         } else {
-            LOG_F(WARNING, "Unknown key %x pressed", keyevent.keysym.sym);
+            LOG_F(WARNING, "        Unknown key %x pressed", keyevent.keysym.sym);
         }
     }
+    if (!count)
+        LOG_F(INFO, "        (none)");
 }
 
 static int get_sdl_event_key_code(const SDL_KeyboardEvent &event, uint32_t kbd_locale)
@@ -486,9 +530,9 @@ static int get_sdl_event_key_code(const SDL_KeyboardEvent &event, uint32_t kbd_l
     case SDLK_SCROLLLOCK:   return AdbKey_F14;
     case SDLK_PAUSE:        return AdbKey_F15;
 
-    //International keyboard support
+    // International keyboard support
 
-    //Japanese keyboard
+    // Japanese keyboard
     case SDL_SCANCODE_TO_KEYCODE(SDL_SCANCODE_INTERNATIONAL3):
         if (kbd_locale == Jpn_JPN)
             return AdbKey_JIS_Yen;
@@ -503,18 +547,18 @@ static int get_sdl_event_key_code(const SDL_KeyboardEvent &event, uint32_t kbd_l
     case SDL_SCANCODE_TO_KEYCODE(SDL_SCANCODE_INTERNATIONAL2):
         return AdbKey_JIS_Kana;
 
-    //German keyboard
+    // German keyboard
     case 0XB4:        return AdbKey_Slash;
     case 0X5E:        return AdbKey_ISO1;
-    case 0XDF:        return AdbKey_Minus;       //Eszett
-    case 0XE4:        return AdbKey_LeftBracket; //A-umlaut
-    case 0XF6:        return AdbKey_Semicolon;   //O-umlaut
-    case 0XFC:        return AdbKey_LeftBracket; //U-umlaut
+    case 0XDF:        return AdbKey_Minus;       // Eszett
+    case 0XE4:        return AdbKey_LeftBracket; // A-umlaut
+    case 0XF6:        return AdbKey_Semicolon;   // O-umlaut
+    case 0XFC:        return AdbKey_LeftBracket; // U-umlaut
 
     // French keyboard
     case 0X29:        return AdbKey_Minus;             // Right parenthesis
     case 0X43:        return AdbKey_KeypadMultiply;    // Star/Mu
-    //0XB2 is superscript 2. Which Mac key should this one map to?
+    // 0XB2 is superscript 2. Which Mac key should this one map to?
     case 0XF9:        return AdbKey_Quote;             // U-grave
 
     // Italian keyboard

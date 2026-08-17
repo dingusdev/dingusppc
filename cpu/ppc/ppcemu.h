@@ -366,6 +366,11 @@ enum Po_Cause : int {
 
 extern bool power_on;
 extern Po_Cause power_off_reason;
+void p_set_power_off_reason(const char* file, int line, Po_Cause new_reason);
+void p_power_off(const char* file, int line, Po_Cause new_reason);
+#define set_power_off_reason(r) p_set_power_off_reason(__FILE__, __LINE__, r)
+#define power_off(r) p_power_off(__FILE__, __LINE__, r)
+
 extern bool int_pin;
 extern bool dec_exception_pending;
 
@@ -714,6 +719,17 @@ extern void ppc_change_endian(bool newLE);
 /* debugging support API */
 uint64_t get_reg(std::string reg_name); /* get content of the register reg_name */
 void set_reg(std::string reg_name, uint64_t val); /* set reg_name to val */
+
+/* icnt_factor control */
+extern int increment_icnt_factor();
+extern int decrement_icnt_factor();
+extern int get_icnt_factor();
+
+/* toggle_g_realtime */
+extern bool toggle_g_realtime();
+
+/* force_cycle_counter_reload */
+static void force_cycle_counter_reload();
 
 #ifdef LOG_INSTRUCTIONS
 typedef struct {

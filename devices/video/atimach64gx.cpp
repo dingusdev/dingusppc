@@ -525,6 +525,7 @@ void AtiMach64Gx::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size)
 
         new_value = (old_value & bits_read_only) | (new_value & ~bits_read_only);
         WRITE_VALUE_AND_LOG(ATIINTERRUPT);
+        this->update_interrupt();
         return;
     }
     case ATI_CRTC_GEN_CNTL:
@@ -904,7 +905,7 @@ void AtiMach64Gx::get_cursor_position(int& x, int& y) {
 int AtiMach64Gx::device_postinit()
 {
     this->vbl_cb = [this](uint8_t irq_line_state) {
-        insert_bits<uint32_t>(this->regs[ATI_CRTC_INT_CNTL], irq_line_state, ATI_CRTC_VBLANK, irq_line_state);
+        insert_bits<uint32_t>(this->regs[ATI_CRTC_INT_CNTL], irq_line_state, ATI_CRTC_VBLANK, 1);
         if (irq_line_state) {
             set_bit(this->regs[ATI_CRTC_INT_CNTL], ATI_CRTC_VBLANK_INT);
             set_bit(this->regs[ATI_CRTC_INT_CNTL], ATI_CRTC_VLINE_INT);
@@ -914,24 +915,26 @@ int AtiMach64Gx::device_postinit()
 #endif
         }
 
-        bool do_interrupt =
-            bit_set(this->regs[ATI_CRTC_INT_CNTL], ATI_CRTC_VBLANK_INT_EN) ||
-            bit_set(this->regs[ATI_CRTC_INT_CNTL], ATI_CRTC_VLINE_INT_EN) ||
-#if 1
-#else
-            bit_set(this->regs[ATI_CRTC_GEN_CNTL], ATI_CRTC_VSYNC_INT_EN) ||
-#endif
-            0;
-
-        LOG_F(ATIINTERRUPT, "%s: irq_line_state:%d do_interrupt:%d CRTC_INT_CNTL:%08x",
-              this->name.c_str(), irq_line_state, do_interrupt,
-              this->regs[ATI_CRTC_INT_CNTL]);
-
-        if (do_interrupt) {
-            this->pci_interrupt(irq_line_state);
-        }
+        this->update_interrupt();
     };
     return 0;
+}
+
+void AtiMach64Gx::update_interrupt()
+{
+    uint32_t int_cntl = this->regs[ATI_CRTC_INT_CNTL];
+    bool new_pci_irq_line_state =
+        (bit_set(int_cntl, ATI_CRTC_VBLANK_INT_EN) &&
+         bit_set(int_cntl, ATI_CRTC_VBLANK_INT)) ||
+        (bit_set(int_cntl, ATI_CRTC_VLINE_INT_EN) &&
+         bit_set(int_cntl, ATI_CRTC_VLINE_INT));
+
+    if (new_pci_irq_line_state != this->pci_irq_line_state) {
+        this->pci_irq_line_state = new_pci_irq_line_state;
+        LOG_F(ATIINTERRUPT, "%s: pci_irq_line_state:%d CRTC_INT_CNTL:%08x",
+              this->name.c_str(), this->pci_irq_line_state, int_cntl);
+        this->pci_interrupt(this->pci_irq_line_state);
+    }
 }
 
 // ========================== IBM RGB514 related code ==========================

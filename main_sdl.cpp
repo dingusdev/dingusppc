@@ -35,6 +35,8 @@ bool init() {
         return false;
     }
 
+    SDL_EnableScreenSaver();
+
     int num_joysticks = SDL_NumJoysticks();
     for (int i = 0; i < num_joysticks; ++i) {
         if (SDL_IsGameController(i)) {

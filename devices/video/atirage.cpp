@@ -658,6 +658,8 @@ void ATIRage::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size) {
     }
 
     WRITE_VALUE_AND_LOG(9);
+    if (reg_num == ATI_CRTC_INT_CNTL)
+        this->update_interrupt();
 }
 
 bool ATIRage::io_access_allowed(uint32_t offset) {
@@ -1033,7 +1035,7 @@ void ATIRage::get_cursor_position(int& x, int& y) {
 int ATIRage::device_postinit()
 {
     this->vbl_cb = [this](uint8_t irq_line_state) {
-        insert_bits<uint32_t>(this->regs[ATI_CRTC_INT_CNTL], irq_line_state, ATI_CRTC_VBLANK, irq_line_state);
+        insert_bits<uint32_t>(this->regs[ATI_CRTC_INT_CNTL], irq_line_state, ATI_CRTC_VBLANK, 1);
         if (irq_line_state) {
             set_bit(this->regs[ATI_CRTC_INT_CNTL], ATI_CRTC_VBLANK_INT);
             set_bit(this->regs[ATI_CRTC_INT_CNTL], ATI_CRTC_VLINE_INT);
@@ -1043,20 +1045,24 @@ int ATIRage::device_postinit()
 #endif
         }
 
-        bool do_interrupt =
-            bit_set(this->regs[ATI_CRTC_INT_CNTL], ATI_CRTC_VBLANK_INT_EN) ||
-            bit_set(this->regs[ATI_CRTC_INT_CNTL], ATI_CRTC_VLINE_INT_EN) ||
-#if 1
-#else
-            bit_set(this->regs[ATI_CRTC_GEN_CNTL], ATI_CRTC_VSYNC_INT_EN) ||
-#endif
-            0;
-
-        if (do_interrupt) {
-            this->pci_interrupt(irq_line_state);
-        }
+        this->update_interrupt();
     };
     return 0;
+}
+
+void ATIRage::update_interrupt()
+{
+    uint32_t int_cntl = this->regs[ATI_CRTC_INT_CNTL];
+    bool new_pci_irq_line_state =
+        (bit_set(int_cntl, ATI_CRTC_VBLANK_INT_EN) &&
+         bit_set(int_cntl, ATI_CRTC_VBLANK_INT)) ||
+        (bit_set(int_cntl, ATI_CRTC_VLINE_INT_EN) &&
+         bit_set(int_cntl, ATI_CRTC_VLINE_INT));
+
+    if (new_pci_irq_line_state != this->pci_irq_line_state) {
+        this->pci_irq_line_state = new_pci_irq_line_state;
+        this->pci_interrupt(this->pci_irq_line_state);
+    }
 }
 
 // =================================== Draw Engine =====================================

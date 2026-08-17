@@ -58,6 +58,8 @@ using namespace std;
 #define COUT08X COUT0_X(8)
 #define COUT04X COUT0_X(4)
 
+extern bool g_auto_grab_mouse;
+
 static uint32_t str2addr(string& addr_str) {
     try {
         return static_cast<uint32_t>(stoul(addr_str, NULL, 0));
@@ -115,6 +117,8 @@ static void show_help() {
 #endif
     cout << "  printenv       -- print current NVRAM settings." << endl;
     cout << "  setenv V N     -- set NVRAM variable V to value N." << endl;
+    cout << endl;
+    cout << "  autograbmouse H -- auto grab the mouse if H is not zero." << endl;
     cout << endl;
     cout << "  restart        -- restart the machine" << endl;
     cout << "  quit           -- quit the debugger" << endl;
@@ -726,21 +730,21 @@ void DppcDebugger::enter_debugger() {
 
     while (1) {
         if (power_off_reason == po_shut_down) {
-            power_off_reason = po_shutting_down;
+            set_power_off_reason(po_shutting_down);
             break;
         }
         if (power_off_reason == po_restart) {
-            power_off_reason = po_restarting;
+            set_power_off_reason(po_restarting);
             break;
         }
         if (power_off_reason == po_quit) {
-            power_off_reason = po_quitting;
+            set_power_off_reason(po_quitting);
             break;
         }
         power_on = true;
 
         if (power_off_reason == po_starting_up) {
-            power_off_reason = po_none;
+            set_power_off_reason(po_none);
             cmd = "go";
         }
         else if (power_off_reason == po_disassemble_on) {
@@ -751,13 +755,13 @@ void DppcDebugger::enter_debugger() {
             ss >> cmd;
         }
         else if (power_off_reason == po_disassemble_off) {
-            power_off_reason = po_none;
+            set_power_off_reason(po_none);
             cmd = "go";
         }
         else
         {
             if (power_off_reason == po_enter_debugger) {
-                power_off_reason = po_entered_debugger;
+                set_power_off_reason(po_entered_debugger);
             }
             if (!did_message) {
                 cout << endl;
@@ -794,7 +798,7 @@ void DppcDebugger::enter_debugger() {
         }
 
         if (power_off_reason == po_signal_interrupt) {
-            power_off_reason = po_enter_debugger;
+            set_power_off_reason(po_enter_debugger);
             // ignore command if interrupt happens because the input line is probably incomplete.
             last_cmd = "";
             continue;
@@ -821,8 +825,7 @@ void DppcDebugger::enter_debugger() {
             break;
         } else if (cmd == "restart") {
             cmd = "";
-            power_on = false;
-            power_off_reason = po_restart;
+            power_off(po_restart);
         } else if (cmd == "profile") {
             cmd = "";
             ss >> sub_cmd;
@@ -1169,6 +1172,18 @@ void DppcDebugger::enter_debugger() {
                 via_obj->assert_int(irq_bit);
             });
 #endif
+        } else if (cmd == "autograbmouse") {
+            cmd = "";
+            string value;
+            int num;
+            ss >> value;
+            try {
+                num = str2num(value);
+            } catch (invalid_argument& exc) {
+                cout << exc.what() << endl;
+                continue;
+            }
+            g_auto_grab_mouse = num;
         } else {
             if (!cmd.empty()) {
                 cout << "Unknown command: " << cmd << endl;

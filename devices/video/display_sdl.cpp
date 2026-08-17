@@ -26,6 +26,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cmath>
 #include <string>
 
+bool g_auto_grab_mouse = false;
+
 static const char * get_full_screen_mode_string(int scale_mode) {
 #define onemode(x) case Display::x: return #x ;
     switch(scale_mode) {
@@ -316,6 +318,7 @@ void Display::handle_events(const WindowEvent& wnd_event) {
         if (wnd_event.window_id == impl->disp_wnd_id) {
             SDL_SetHint(SDL_HINT_ALLOW_ALT_TAB_WHILE_GRABBED, "0");
             SDL_SetWindowKeyboardGrab(impl->display_wnd, SDL_TRUE);
+if (g_auto_grab_mouse) {
             // When the window (re)gains focus (e.g. the user clicks it), SDL
             // may have dropped the relative mouse grab on focus loss. Re-grab
             // it so the guest cursor keeps working; this is the reliable
@@ -324,6 +327,7 @@ void Display::handle_events(const WindowEvent& wnd_event) {
                 SDL_SetRelativeMouseMode(SDL_TRUE);
                 this->update_window_title();
             }
+}
         }
         break;
 
@@ -449,7 +453,7 @@ void Display::update_window_title()
         + " " + std::to_string(int(std::round(impl->renderer_scale_x * 100))) + "%";
     if (is_grabbed)
         new_window_title += " (Grabbed, Ctrl+G to release)";
-    else if (impl->guest_cursor_drawn)
+    else if (!g_auto_grab_mouse || impl->guest_cursor_drawn)
         new_window_title += " (Press Ctrl+G to grab)";
 
     if (new_window_title != old_window_title)
@@ -482,6 +486,7 @@ void Display::update(std::function<void(uint8_t *dst_buf, int dst_pitch)> conver
     SDL_RenderClear(impl->renderer);
     SDL_RenderCopy(impl->renderer, impl->disp_texture, NULL, &impl->dest_rect);
 
+if (g_auto_grab_mouse) {
     bool is_grabbed = SDL_GetRelativeMouseMode();
 
     // The guest draws its own cursor into the framebuffer (hardware cursor).
@@ -520,6 +525,7 @@ void Display::update(std::function<void(uint8_t *dst_buf, int dst_pitch)> conver
         impl->guest_cursor_drawn = draw_hw_cursor;
         this->update_window_title();
     }
+}
 
     // draw HW cursor if enabled
     if (draw_hw_cursor) {

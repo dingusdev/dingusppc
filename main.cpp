@@ -49,9 +49,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #endif
 using namespace std;
 
+extern bool g_auto_grab_mouse;
+
 static void sigint_handler(int signum) {
-    power_on = false;
-    power_off_reason = po_signal_interrupt;
+    power_off(po_signal_interrupt);
 }
 
 static void sigabrt_handler(int signum) {
@@ -105,11 +106,12 @@ int main(int argc, char** argv) {
     uint32_t execution_mode = interpreter;
 
     CLI::App app(appDescription);
-    app.allow_windows_style_options(); /* we want Windows-style options */
     app.allow_extras();
 
-    bool realtime_enabled = false;
-    bool debugger_enabled = false;
+    app.set_help_all_flag("--help-all", "Print this help message, help for subcommands, and exit");
+
+    bool debugger_skip = true;
+    bool debugger_enter = false;
     bool deterministic_interactive = false;
     string deterministic_mode = "strict";
     string keyboard_string = "Eng_USA";
@@ -122,20 +124,21 @@ int main(int argc, char** argv) {
     string bootrom_path("bootrom.bin");
     string working_directory_path(".");
 
-    auto execution_mode_group = app.add_option_group("execution mode")
+    auto emu = app.add_subcommand("", "Emulation");
+    auto execution_mode_group = emu->add_option_group("execution mode")
         ->require_option(-1);
-    execution_mode_group->add_flag("-r,--realtime", realtime_enabled,
-        "Run the emulator in real-time");
-    execution_mode_group->add_flag("-d,--debugger", debugger_enabled,
+    execution_mode_group->add_flag("-r,--run", debugger_skip,
+        "Run the emulator immediately (skip enterring the built-in debugger)");
+    execution_mode_group->add_flag("-d,--debugger", debugger_enter,
         "Enter the built-in debugger");
-    app.add_option("-k,--keyboard", keyboard_string, "Specify keyboard ID");
-    app.add_option("-w,--workingdir", working_directory_path, "Specifies working directory")
-        ->check(WorkingDirectory);
-    app.add_option("-b,--bootrom", bootrom_path, "Specifies BootROM path")
-        ->check(CLI::ExistingFile);
-    auto deterministic_opt = app.add_flag("--deterministic", is_deterministic,
+    emu->add_option("-k,--keyboard", keyboard_string, "Specify keyboard ID");
+    emu->add_option("-w,--workingdir", working_directory_path, "Specifies working directory")
+        ->check(WorkingDirectory)->capture_default_str();
+    auto bootrom_opt = emu->add_option("-b,--bootrom", bootrom_path, "Specifies BootROM path")
+        ->check(CLI::ExistingFile)->capture_default_str();
+    auto deterministic_opt = emu->add_flag("--deterministic", is_deterministic,
         "Use deterministic execution");
-    app.add_option("--deterministic-mode", deterministic_mode,
+    emu->add_option("--deterministic-mode", deterministic_mode,
         "Select deterministic features (strict or interactive)")
         ->needs(deterministic_opt)
         ->check(CLI::IsMember({"strict", "interactive"}));
@@ -143,27 +146,30 @@ int main(int argc, char** argv) {
     bool              log_to_stderr = false;
     loguru::Verbosity log_verbosity = loguru::Verbosity_INFO;
     bool              log_no_uptime = false;
-    app.add_flag("--log-to-stderr", log_to_stderr,
+    emu->add_flag("--log-to-stderr", log_to_stderr,
         "Send internal logging to stderr (instead of dingusppc.log)");
-    app.add_option("--log-verbosity", log_verbosity,
+    emu->add_option("--log-verbosity", log_verbosity,
         "Adjust logging verbosity (default is 0 a.k.a. INFO)")
         ->check(CLI::Number);
-    app.add_flag("--log-no-uptime", log_no_uptime,
+    emu->add_flag("--log-no-uptime", log_no_uptime,
         "Disable the uptime preamble of logged messages");
 
     std::vector<std::string> env_vars;
-    app.add_option("--setenv", env_vars, "Set Open Firmware variables at startup")
+    emu->add_option("--setenv", env_vars, "Set Open Firmware variables at startup")
         ->take_all();
 
     uint32_t profiling_interval_ms = 0;
 #ifdef CPU_PROFILING
-    app.add_option("--profiling-interval-ms", profiling_interval_ms,
+    emu->add_option("--profiling-interval-ms", profiling_interval_ms,
         "Specifies periodic interval (in ms) at which to output CPU profiling information");
 #endif
 
     string       machine_str;
-    CLI::Option* machine_opt = app.add_option("-m,--machine",
+    CLI::Option* machine_opt = emu->add_option("-m,--machine",
         machine_str, "Specify machine ID");
+
+    emu->add_flag("--auto-grab-mouse", g_auto_grab_mouse,
+        "The guest cursor causes mouse to be grabbed");
 
     auto list_cmd = app.add_subcommand("list",
         "Display available machine configurations and exit");
@@ -188,7 +194,16 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    if (debugger_enabled) {
+    if (bootrom_opt->count() == 0) {
+        // it was not specified on the command line, so validate the default file name.
+        std::string msg = bootrom_opt->get_validator()->operator()(bootrom_path);
+        if (!msg.empty()) {
+            CLI::ParseError e(msg, CLI::ExitCodes::ValidationError);
+            return app.exit(e);
+        }
+    }
+
+    if (debugger_enter || !debugger_skip) {
         execution_mode = debugger;
     }
 
@@ -279,7 +294,7 @@ int main(int argc, char** argv) {
         // Make sure the reason for the failure is visible (it may have been
         // sent to the logfile only).
         cerr << message.preamble << message.indentation << message.prefix << message.message << endl;
-        power_off_reason = po_enter_debugger;
+        set_power_off_reason(po_enter_debugger);
         DppcDebugger::get_instance()->enter_debugger();
 
         // Ensure that NVRAM and other state is persisted before we terminate.
@@ -370,6 +385,15 @@ void run_machine(std::string machine_str, char* rom_data,
         // Log the PC and instruction every second to make it easier to validate
         // that execution is the same every time.
         deterministic_timer = TimerManager::get_instance()->add_cyclic_timer(MSECS_TO_NSECS(1000), [] {
+            // We may be running after an exceptions or RFI changed the address
+            // translation context. In those cases the PC address cannot be
+            // translated (it would either be stale or invalid).
+            if (exec_flags & (EXEF_EXCEPTION | EXEF_RFI)) {
+                LOG_F(INFO, "TS=%016llu PC=0x%08x transition pending to PC=0x%08x",
+                      get_virt_time_ns(), ppc_state.pc, ppc_next_instruction_address);
+                return;
+            }
+
             PPCDisasmContext ctx;
             ctx.instr_code = ppc_read_instruction(mmu_translate_imem(ppc_state.pc));
             ctx.instr_addr = ppc_state.pc;
@@ -398,15 +422,15 @@ void run_machine(std::string machine_str, char* rom_data,
 
     switch (execution_mode) {
     case interpreter:
-        power_off_reason = po_starting_up;
+        set_power_off_reason(po_starting_up);
         DppcDebugger::get_instance()->enter_debugger();
         break;
     case threaded_int:
-        power_off_reason = po_starting_up;
+        set_power_off_reason(po_starting_up);
         DppcDebugger::get_instance()->enter_debugger();
         break;
     case debugger:
-        power_off_reason = po_enter_debugger;
+        set_power_off_reason(po_enter_debugger);
         DppcDebugger::get_instance()->enter_debugger();
         break;
     default:

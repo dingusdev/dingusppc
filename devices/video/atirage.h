@@ -89,6 +89,7 @@ protected:
 private:
     void change_one_bar(uint32_t &aperture, uint32_t aperture_size,
                         uint32_t aperture_new, int bar_num);
+    void update_interrupt();
 
     void begin_drawing(uint32_t initiator, uint32_t value);
     void draw_rect(uint32_t width, uint32_t height);
@@ -102,6 +103,7 @@ private:
     uint8_t     plls[64]  = {}; // internal PLL registers
 
     uint8_t     cmd_fifo_size = 0;
+    bool        pci_irq_line_state = false;
 
     bool        host_data_active = false;
     uint32_t    host_dst_width   = 0;
