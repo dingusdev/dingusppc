@@ -32,6 +32,20 @@ static int get_sdl_event_key_code(const SDL_KeyboardEvent& event, uint32_t kbd_l
 
 constexpr int KMOD_ALL = KMOD_LSHIFT | KMOD_RSHIFT | KMOD_LCTRL | KMOD_RCTRL | KMOD_LALT | KMOD_RALT | KMOD_LGUI | KMOD_RGUI;
 
+bool g_swap_command_option = false;
+
+static AdbKey swap_command_option(AdbKey key)
+{
+    if (!g_swap_command_option)
+        return key;
+    switch (key) {
+    case AdbKey_Option:      return AdbKey_Command;
+    case AdbKey_RightOption: return AdbKey_Command;
+    case AdbKey_Command:     return AdbKey_Option;
+    default:                 return key;
+    }
+}
+
 void EventManager::set_keyboard_locale(uint32_t keyboard_id) {
     this->kbd_locale = keyboard_id;
 }
@@ -358,7 +372,7 @@ void EventManager::post_keyboard_state_events() {
             continue;
         LOG_F(INFO, "        Modifier: %s", SDL_GetScancodeName(mod->scancode));
         count++;
-        ke.key = mod->adbkey;
+        ke.key = swap_command_option(mod->adbkey);
         ke.flags = KEYBOARD_EVENT_DOWN;
         this->_keyboard_signal.emit(ke);
     }
@@ -483,10 +497,10 @@ static int get_sdl_event_key_code(const SDL_KeyboardEvent &event, uint32_t kbd_l
     case SDLK_RCTRL:        return AdbKey_RightControl;
     case SDLK_LSHIFT:       return AdbKey_Shift;
     case SDLK_RSHIFT:       return AdbKey_RightShift;
-    case SDLK_LALT:         return AdbKey_Option;
-    case SDLK_RALT:         return AdbKey_RightOption;
-    case SDLK_LGUI:         return AdbKey_Command;
-    case SDLK_RGUI:         return AdbKey_Command;
+    case SDLK_LALT:         return swap_command_option(AdbKey_Option);
+    case SDLK_RALT:         return swap_command_option(AdbKey_RightOption);
+    case SDLK_LGUI:         return swap_command_option(AdbKey_Command);
+    case SDLK_RGUI:         return swap_command_option(AdbKey_Command);
     case SDLK_MENU:         return AdbKey_Grave;
     case SDLK_CAPSLOCK:     return AdbKey_CapsLock;
 
