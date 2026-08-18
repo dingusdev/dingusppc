@@ -24,16 +24,47 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 
+// ============== Helpers for extracting operands from opcodes ================
+
+#define decode_ops_sa(opcode)                           \
+    int reg_s = (opcode >> 21) & 0x1F;                  \
+    int reg_a = (opcode >> 16) & 0x1F;
+
+#define decode_ops_da(opcode)                           \
+    int reg_d = (opcode >> 21) & 0x1F;                  \
+    int reg_a = (opcode >> 16) & 0x1F;
+
+#define decode_ops_sab(opcode)                          \
+    decode_ops_sa(opcode);                              \
+    int reg_b = (opcode >> 11) & 0x1F;
+
+#define decode_ops_dab(opcode)                          \
+    decode_ops_da(opcode);                              \
+    int reg_b = (opcode >> 11) & 0x1F;
+
+#define decode_ops_dasimm(opcode)                       \
+    decode_ops_da(opcode);                              \
+    int32_t  simm = int32_t(int16_t(opcode));
+
+#define decode_ops_sauimm(opcode)                       \
+    decode_ops_sa(opcode);                              \
+    uint32_t uimm = uint16_t(opcode);
+
+#define decode_ops_dauimm(opcode)                       \
+    decode_ops_da(opcode);                              \
+    uint32_t uimm = uint16_t(opcode);
+
+// ================= Helpers for the original interpreter =====================
+// The helpers below do the same work as those above but also pre-load some
+// register values and place them into local variables.
+// That significantly reduces interpreter code.
+
 #define ppc_grab_regsdasimm(opcode)                     \
-    int      reg_d        = (opcode >> 21) & 0x1F;      \
-    int      reg_a        = (opcode >> 16) & 0x1F;      \
-    int32_t  simm         = int32_t(int16_t(opcode));   \
+    decode_ops_dasimm(opcode);                          \
     uint32_t ppc_result_a = ppc_state.gpr[reg_a];
 
 #define ppc_grab_regsdauimm(opcode)                     \
-    int      reg_d        = (opcode >> 21) & 0x1F;      \
-    int      reg_a        = (opcode >> 16) & 0x1F;      \
-    uint32_t uimm         = uint16_t(opcode);           \
+    decode_ops_dauimm(opcode);                          \
     uint32_t ppc_result_a = ppc_state.gpr[reg_a];
 
 #define ppc_grab_regsasimm(opcode)                      \
@@ -42,9 +73,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     uint32_t ppc_result_a = ppc_state.gpr[reg_a];
 
 #define ppc_grab_regssauimm(opcode)                     \
-    int      reg_s        = (opcode >> 21) & 0x1F;      \
-    int      reg_a        = (opcode >> 16) & 0x1F;      \
-    uint32_t uimm         = uint16_t(opcode);           \
+    decode_ops_sauimm(opcode);                          \
     uint32_t ppc_result_d = ppc_state.gpr[reg_s];       \
     uint32_t ppc_result_a = ppc_state.gpr[reg_a];
 
@@ -55,37 +84,28 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     uint32_t ppc_result_a = ppc_state.gpr[reg_a];
 
 #define ppc_grab_da(opcode)                             \
-    int reg_d = (opcode >> 21) & 0x1F;                  \
-    int reg_a = (opcode >> 16) & 0x1F;
+    decode_ops_da(opcode)
 
 #define ppc_grab_dab(opcode)                            \
-    int reg_d = (opcode >> 21) & 0x1F;                  \
-    int reg_a = (opcode >> 16) & 0x1F;                  \
-    int reg_b = (opcode >> 11) & 0x1F;
+    decode_ops_dab(opcode)
 
 #define ppc_grab_s(opcode)                              \
     int      reg_s        = (opcode >> 21) & 0x1F;      \
     uint32_t ppc_result_d = ppc_state.gpr[reg_s];
 
 #define ppc_grab_regsdab(opcode)                        \
-    int      reg_d        = (opcode >> 21) & 0x1F;      \
-    int      reg_a        = (opcode >> 16) & 0x1F;      \
-    int      reg_b        = (opcode >> 11) & 0x1F;      \
+    decode_ops_dab(opcode);                             \
     uint32_t ppc_result_a = ppc_state.gpr[reg_a];       \
     uint32_t ppc_result_b = ppc_state.gpr[reg_b];
 
 #define ppc_grab_regssab(opcode)                        \
-    int      reg_s        = (opcode >> 21) & 0x1F;      \
-    int      reg_a        = (opcode >> 16) & 0x1F;      \
-    int      reg_b        = (opcode >> 11) & 0x1F;      \
+    decode_ops_sab(opcode);                             \
     uint32_t ppc_result_d = ppc_state.gpr[reg_s];       \
     uint32_t ppc_result_a = ppc_state.gpr[reg_a];       \
     uint32_t ppc_result_b = ppc_state.gpr[reg_b];
 
 #define ppc_grab_regssab_stswx(opcode)                  \
-    int      reg_s        = (opcode >> 21) & 0x1F;      \
-    int      reg_a        = (opcode >> 16) & 0x1F;      \
-    int      reg_b        = (opcode >> 11) & 0x1F;      \
+    decode_ops_sab(opcode);                             \
     uint32_t ppc_result_a = ppc_state.gpr[reg_a];       \
     uint32_t ppc_result_b = ppc_state.gpr[reg_b];
 
@@ -96,26 +116,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     uint32_t ppc_result_b = ppc_state.gpr[reg_b];
 
 #define ppc_grab_regssa(opcode)                         \
-    int      reg_s        = (opcode >> 21) & 0x1F;      \
-    int      reg_a        = (opcode >> 16) & 0x1F;      \
+    decode_ops_sa(opcode);                              \
     uint32_t ppc_result_d = ppc_state.gpr[reg_s];       \
     uint32_t ppc_result_a = ppc_state.gpr[reg_a];
 
 #define ppc_grab_regssa_stmw(opcode)                    \
-    int      reg_s        = (opcode >> 21) & 0x1F;      \
-    int      reg_a        = (opcode >> 16) & 0x1F;      \
+    decode_ops_sa(opcode);                              \
     uint32_t ppc_result_a = ppc_state.gpr[reg_a];
 
 #define ppc_grab_regssash(opcode)                       \
-    int      reg_s        = (opcode >> 21) & 0x1F;      \
-    int      reg_a        = (opcode >> 16) & 0x1F;      \
+    decode_ops_sa(opcode);                              \
     unsigned rot_sh       = (opcode >> 11) & 0x1F;      \
     uint32_t ppc_result_d = ppc_state.gpr[reg_s];       \
     uint32_t ppc_result_a = ppc_state.gpr[reg_a];
 
 #define ppc_grab_regssash_stswi(opcode)                 \
-    int      reg_s        = (opcode >> 21) & 0x1F;      \
-    int      reg_a        = (opcode >> 16) & 0x1F;      \
+    decode_ops_sa(opcode);                              \
     unsigned rot_sh       = (opcode >> 11) & 0x1F;      \
     uint32_t ppc_result_a = ppc_state.gpr[reg_a];
 
@@ -126,8 +142,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     uint32_t ppc_result_b = ppc_state.gpr[reg_b];
 
 #define ppc_grab_regsda(opcode)                         \
-    int      reg_d        = (opcode >> 21) & 0x1F;      \
-    uint32_t reg_a        = (opcode >> 16) & 0x1F;      \
+    decode_ops_da(opcode);                              \
     uint32_t ppc_result_a = ppc_state.gpr[reg_a];
 
 #define ppc_grab_regsdb(opcode)                         \
@@ -140,26 +155,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     int reg_b = (opcode >> 11) & 0x1F;
 
 #define ppc_grab_regsfpdiab(opcode)                     \
-    int      reg_d     = (opcode >> 21) & 0x1F;         \
-    int      reg_a     = (opcode >> 16) & 0x1F;         \
-    int      reg_b     = (opcode >> 11) & 0x1F;         \
+    decode_ops_dab(opcode);                             \
     uint32_t val_reg_a = ppc_state.gpr[reg_a];          \
     uint32_t val_reg_b = ppc_state.gpr[reg_b];
 
 #define ppc_grab_regsfpdia(opcode)                      \
-    int      reg_d     = (opcode >> 21) & 0x1F;         \
-    int      reg_a     = (opcode >> 16) & 0x1F;         \
+    decode_ops_da(opcode);                              \
     uint32_t val_reg_a = ppc_state.gpr[reg_a];
 
 #define ppc_grab_regsfpsia(opcode)                      \
-    int      reg_s     = (opcode >> 21) & 0x1F;         \
-    int      reg_a     = (opcode >> 16) & 0x1F;         \
+    decode_ops_sa(opcode);                              \
     uint32_t val_reg_a = ppc_state.gpr[reg_a];
 
 #define ppc_grab_regsfpsiab(opcode)                     \
-    int      reg_s     = (opcode >> 21) & 0x1F;         \
-    int      reg_a     = (opcode >> 16) & 0x1F;         \
-    int      reg_b     = (opcode >> 11) & 0x1F;         \
+    decode_ops_sab(opcode);                             \
     uint32_t val_reg_a = ppc_state.gpr[reg_a];          \
     uint32_t val_reg_b = ppc_state.gpr[reg_b];
 
@@ -171,24 +180,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     double  db_test_b = GET_FPR(reg_b);
 
 #define ppc_grab_regsfpdab(opcode)                      \
-    int     reg_d        = (opcode >> 21) & 0x1F;       \
-    int     reg_a        = (opcode >> 16) & 0x1F;       \
-    int     reg_b        = (opcode >> 11) & 0x1F;       \
+    decode_ops_dab(opcode);                             \
     double  val_reg_a = GET_FPR(reg_a);                 \
     double  val_reg_b = GET_FPR(reg_b);
 
 #define ppc_grab_regsfpdac(opcode)                      \
-    int     reg_d     = (opcode >> 21) & 0x1F;          \
-    int     reg_a     = (opcode >> 16) & 0x1F;          \
+    decode_ops_da(opcode);                              \
     int     reg_c     = (opcode >> 6) & 0x1F;           \
     double  val_reg_a = GET_FPR(reg_a);                 \
     double  val_reg_c = GET_FPR(reg_c);
 
 #define ppc_grab_regsfpdabc(opcode)                     \
-    int     reg_d        = (opcode >> 21) & 0x1F;       \
-    int     reg_a        = (opcode >> 16) & 0x1F;       \
-    int     reg_b        = (opcode >> 11) & 0x1F;       \
-    int     reg_c        = (opcode >> 6) & 0x1F;        \
+    decode_ops_dab(opcode);                             \
+    int     reg_c     = (opcode >> 6) & 0x1F;           \
     double  val_reg_a = GET_FPR(reg_a);                 \
     double  val_reg_b = GET_FPR(reg_b);                 \
     double  val_reg_c = GET_FPR(reg_c);
