@@ -50,6 +50,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 using namespace std;
 
 extern bool g_auto_grab_mouse;
+extern bool g_swap_command_option;
 
 static void sigint_handler(int signum) {
     power_off(po_signal_interrupt);
@@ -176,6 +177,8 @@ int main(int argc, char** argv) {
 
     emu->add_flag("--auto-grab-mouse", g_auto_grab_mouse,
         "The guest cursor causes mouse to be grabbed");
+    emu->add_flag("--swap-command-option", g_swap_command_option,
+        "Swap the Command and Option keys (physical Alt/AltGr becomes Command)");
 
     auto list_cmd = app.add_subcommand("list",
         "Display available machine configurations and exit");

@@ -23,9 +23,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Any shared opcodes are in ppcopcodes.cpp
 
 #include <core/bitops.h>
-#include "ppcemu.h"
-#include "ppcmacros.h"
-#include "ppcmmu.h"
+#include <cpu/ppc/ppcdechelpers.h>
+#include <cpu/ppc/ppcemu.h>
+#include <cpu/ppc/ppcmmu.h>
+
 #include <stdint.h>
 
 /** mask generator for rotate and shift instructions (§ 4.2.1.4 PowerpC PEM) */
