@@ -34,6 +34,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <stdexcept>
 #include <stdio.h>
 #include <string>
+#include <thread>
 
 #ifdef __APPLE__
 #include <mach/mach_time.h>
@@ -134,6 +135,9 @@ bool g_realtime = false;
 uint64_t g_nanoseconds_base;
 uint64_t g_icycles;
 int      icnt_factor;
+
+/* when true, sleep an idle guest in realtime mode to save host CPU */
+bool g_idle_cpu_save = false;
 
 /* global variables related to the timebase facility */
 uint64_t tbr_wr_timestamp;  // stores vCPU virtual time of the last TBR write
@@ -375,10 +379,152 @@ void set_virt_time_ns(uint64_t time_now)
     LOG_F(INFO, "time before: %lld  after: %lld  change: %lld", time_now, time_new, time_new - time_now);
 }
 
+// Idle detection for realtime mode. The guest never halts (no PPC
+// equivalent of x86 HLT), so at the desktop it keeps executing its idle
+// path forever, burning a whole host core. We cannot simply sleep
+// whenever the guest is quiet for a moment: stalling guest execution
+// while wall time (and thus every time-based device, timer and driver
+// timeout) keeps advancing derails the guest if it is still doing
+// critical boot work. The distinguishing signal we use is the guest's
+// memory-mapped I/O rate: boot and real work touch devices constantly
+// (hundreds of thousands of accesses per second), while a settled idle
+// desktop touches them at a steady few thousand per second. The rate is
+// low-pass filtered (a burst of accesses an interrupt handler performs
+// in a few microseconds would otherwise look like activity), and only
+// once the filtered rate has stayed low continuously for
+// IDLE_CONFIRM_NS do we throttle.
+//
+// The first confirmation must be long enough that it cannot be
+// satisfied during boot at all; a boot that takes tens of seconds never
+// yields that much uninterrupted low-rate time. Once the guest has been
+// throttled once it has provably reached its idle state, so afterwards we
+// only ever disengage for sustained work (see guest_is_idle).
+static constexpr uint64_t IDLE_RATE_EMA_TAU_NS      = 2000000000ULL;   // 2 s
+static constexpr uint64_t IDLE_CONFIRM_RATE         = 30000;           // MMIO accesses per second
+static constexpr uint64_t IDLE_CONFIRM_NS           = 15000000000ULL;  // 15 s, first time
+static constexpr uint64_t IDLE_DISENGAGE_NS         = 1000000000ULL;   // 1 s of sustained high rate
+// Minimum uptime before the throttle may engage at all, so a guest that
+// is still in the middle of booting is never throttled; the confirm
+// timer guards against throttling during any later settling work.
+static constexpr uint64_t IDLE_UPTIME_GUARD_NS      = 15000000000ULL;  // 15 s
+static uint64_t g_idle_last_ns = 0;
+static uint64_t g_idle_last_mmio = 0;
+static uint64_t g_mmio_count_ema = 0; // converges to rate * IDLE_RATE_EMA_TAU_NS
+static uint64_t g_idle_low_ns   = 0;  // continuous time with a low filtered rate
+static uint64_t g_idle_high_ns  = 0;  // continuous time with a high filtered rate
+static uint64_t g_idle_boot_start_ns = 0;
+static bool     g_idle_engaged  = false;
+
+static void reset_idle_detector()
+{
+    // Called from ppc_cpu_init, i.e. on every boot (including guest
+    // restarts): start over with the long first confirmation and a
+    // fresh uptime gate so a rebooting guest is never throttled during
+    // its boot phase.
+    g_idle_last_ns = 0;
+    g_idle_last_mmio = 0;
+    g_mmio_count_ema = 0;
+    g_idle_low_ns = 0;
+    g_idle_high_ns = 0;
+    g_idle_boot_start_ns = get_virt_time_ns();
+    g_idle_engaged = false;
+}
+
+static bool guest_is_idle()
+{
+    const uint64_t now_ns = get_virt_time_ns();
+    const uint64_t elapsed_ns = now_ns - g_idle_last_ns;
+    g_idle_last_ns = now_ns;
+
+    const uint64_t mmio_delta = g_mmio_access_count - g_idle_last_mmio;
+    g_idle_last_mmio = g_mmio_access_count;
+
+    if (elapsed_ns > 0) {
+        // Exponential-decay accumulator on the MMIO count. Each window
+        // adds its accesses and the total decays by exp(-elapsed/tau);
+        // it converges to rate * tau regardless of how often this is
+        // called, unlike an additive EMA which tracks the per-window
+        // count when windows are much shorter than tau. Rate is then
+        // count / tau.
+        uint64_t decayed;
+        if (elapsed_ns >= IDLE_RATE_EMA_TAU_NS) {
+            decayed = 0;
+        } else {
+            decayed = g_mmio_count_ema * (IDLE_RATE_EMA_TAU_NS - elapsed_ns) / IDLE_RATE_EMA_TAU_NS;
+        }
+        g_mmio_count_ema = decayed + mmio_delta;
+
+        const uint64_t rate = g_mmio_count_ema * 1000000000ULL / IDLE_RATE_EMA_TAU_NS;
+        if (rate < IDLE_CONFIRM_RATE) {
+            g_idle_high_ns = 0;
+            g_idle_low_ns += elapsed_ns;
+        } else {
+            g_idle_low_ns = 0;
+            g_idle_high_ns += elapsed_ns;
+        }
+    }
+
+    // The guest has real work to do: an exception to take, an interrupt
+    // asserted that it cannot take yet (MSR.EE off), or a device that
+    // requested immediate processing. Do not sleep in these cases.
+    if ((exec_flags & EXEF_EXCEPTION) || int_pin || exec_timer) {
+        return false;
+    }
+
+    // Never throttle before the guest has had a chance to boot.
+    if (now_ns - g_idle_boot_start_ns < IDLE_UPTIME_GUARD_NS) {
+        return false;
+    }
+
+    // The first throttle only happens after IDLE_CONFIRM_NS of
+    // continuous low rate. Afterwards the throttle stays on through
+    // brief activity (input, a momentary burst) - the guest services it
+    // during the bursts - and only yields to sustained work: once the
+    // rate has been high for IDLE_DISENGAGE_NS it runs at full speed
+    // until the rate drops again, then throttling resumes immediately.
+    // This avoids the flapping where any short spike above the
+    // threshold disengages the throttle for seconds at a time, which
+    // showed up as the CPU jumping back to 99% at the settled desktop.
+    if (g_idle_engaged) {
+        return g_idle_high_ns < IDLE_DISENGAGE_NS;
+    }
+
+    if (g_idle_low_ns >= IDLE_CONFIRM_NS) {
+        g_idle_engaged = true;
+        return true;
+    }
+    return false;
+}
+
 static uint64_t process_events()
 {
     exec_timer = false;
     uint64_t slice_ns = TimerManager::get_instance()->process_timers();
+    if (g_realtime && g_idle_cpu_save && guest_is_idle()) {
+        // The guest is idling: sleep until the next scheduled event
+        // instead of executing its idle path. Guest time is wall-clock
+        // based in realtime mode, so the sleep advances guest time and
+        // the guest's timers (VBL, decrementer, ...) keep firing on
+        // schedule. We still run a short burst afterwards so the guest
+        // services those interrupts and keeps its devices polled.
+        // Only sleep if a timer is actually pending; otherwise the
+        // guest has no interrupt to wake it and the host must keep
+        // executing.
+        if (slice_ns != 0) {
+            constexpr uint64_t max_sleep_ns = 16000000ULL; // 16 ms
+            // The burst must be long enough for the guest to fully
+            // service its pending interrupts (VBL, DEC, device polls)
+            // and return to its idle loop. Shorter bursts (1-4 ms)
+            // starve that servicing: guest time keeps advancing while
+            // the guest executes too little, so it ends up stuck in a
+            // machine-check storm at the external-interrupt vector.
+            // 6 ms per 16 ms window keeps DP3 healthy at ~7% host CPU.
+            constexpr uint64_t burst_ns     = 6000000ULL;  // 6 ms
+            const uint64_t sleep_ns = (slice_ns > max_sleep_ns) ? max_sleep_ns : slice_ns;
+            std::this_thread::sleep_for(std::chrono::nanoseconds(sleep_ns));
+            return g_icycles + (burst_ns >> icnt_factor) + 1;
+        }
+    }
     if (slice_ns == 0) {
         // execute 25.000 cycles
         // if there are no pending timers
@@ -425,6 +571,11 @@ bool toggle_g_realtime()
     set_virt_time_ns(time_now);
     force_cycle_counter_reload();
     return g_realtime;
+}
+
+void set_g_idle_cpu_save(bool enabled)
+{
+    g_idle_cpu_save = enabled;
 }
 
 typedef enum {
@@ -1089,6 +1240,8 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool do_include_6
 
     /* redirect code execution to reset vector */
     ppc_state.pc = 0xFFF00100;
+
+    reset_idle_detector();
 
 #ifdef CPU_PROFILING
     gProfilerObj->register_profile("PPC_CPU",
