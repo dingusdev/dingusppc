@@ -113,6 +113,7 @@ int main(int argc, char** argv) {
     bool debugger_skip = true;
     bool debugger_enter = false;
     bool deterministic_interactive = false;
+    bool start_realtime = false;
     string deterministic_mode = "strict";
     string keyboard_string = "Eng_USA";
 
@@ -142,6 +143,8 @@ int main(int argc, char** argv) {
         "Select deterministic features (strict or interactive)")
         ->needs(deterministic_opt)
         ->check(CLI::IsMember({"strict", "interactive"}));
+    emu->add_flag("--realtime", start_realtime,
+        "Start in realtime mode (guest time follows the wall clock)");
 
     bool              log_to_stderr = false;
     loguru::Verbosity log_verbosity = loguru::Verbosity_INFO;
@@ -308,6 +311,10 @@ int main(int argc, char** argv) {
     signal(SIGABRT, sigabrt_handler);
 
     keyboard_id = kbd_map.at(keyboard_string);
+
+    if (start_realtime) {
+        toggle_g_realtime();
+    }
 
     while (true) {
         run_machine(
