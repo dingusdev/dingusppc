@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ppcdisasm.h"
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <cstring>
 #include <iostream>
@@ -123,15 +124,16 @@ uint32_t pcp;
 uint32_t ppc_next_instruction_address;    // Used for branching, setting up the NIA
 
 unsigned exec_flags; // execution control flags
-// FIXME: exec_timer is read by main thread ppc_main_opcode;
-// written by audio dbdma DMAChannel::update_irq .. add_immediate_timer
-volatile bool exec_timer;
+// exec_timer is written by force_cycle_counter_reload (called from the
+// audio thread's DMA channel when it adds an immediate timer) and read by
+// the emulation thread's interpreter loop, so it must be atomic.
+std::atomic<bool> exec_timer;
 bool int_pin = false; // interrupt request pin state: true - asserted
 bool dec_exception_pending = false;
 
 /* variables related to virtual time */
-bool g_realtime = false;
-uint64_t g_nanoseconds_base;
+std::atomic<bool> g_realtime = false;
+std::atomic<uint64_t> g_nanoseconds_base;
 uint64_t g_icycles;
 int      icnt_factor;
 
@@ -330,14 +332,14 @@ void ppc_main_opcode(PPCOpcode *opcodeGrabber, uint32_t opcode)
     irec->paddr = pcp;
     irec->ins = opcode;
     irec->msr = ppc_state.msr;
-    irec->flags_before = exec_flags | (exec_timer << 7);
+    irec->flags_before = exec_flags | ((uint32_t)exec_timer.load(std::memory_order_relaxed) << 7);
     irec->flags_after = 0;
 #endif
 
     opcodeGrabber[(opcode >> 15 & 0x1F800) | (opcode & 0x7FF)](opcode);
 
 #ifdef LOG_INSTRUCTIONS
-    irec->flags_after = exec_flags | (exec_timer << 7) | 0x80000000;
+    irec->flags_after = exec_flags | ((uint32_t)exec_timer.load(std::memory_order_relaxed) << 7) | 0x80000000;
     irec->msr_after = ppc_state.msr;
 #endif
 }
@@ -353,8 +355,8 @@ static long long cpu_now_ns() {
 
 uint64_t get_virt_time_ns()
 {
-    if (g_realtime) {
-        return cpu_now_ns() - g_nanoseconds_base;
+    if (g_realtime.load(std::memory_order_relaxed)) {
+        return cpu_now_ns() - g_nanoseconds_base.load(std::memory_order_relaxed);
     } else {
         return g_icycles << icnt_factor;
     }
@@ -362,14 +364,14 @@ uint64_t get_virt_time_ns()
 
 void set_virt_time_ns(uint64_t time_now)
 {
-    if (g_realtime) {
-        g_nanoseconds_base = cpu_now_ns() - time_now - 5000;
+    if (g_realtime.load(std::memory_order_relaxed)) {
+        g_nanoseconds_base.store(cpu_now_ns() - time_now - 5000, std::memory_order_relaxed);
     } else {
         g_icycles = time_now >> icnt_factor;
     }
     uint64_t time_new = get_virt_time_ns();
-    if (g_realtime && time_new > time_now) {
-        g_nanoseconds_base += 2 * (time_new - time_now);
+    if (g_realtime.load(std::memory_order_relaxed) && time_new > time_now) {
+        g_nanoseconds_base.fetch_add(2 * (time_new - time_now), std::memory_order_relaxed);
         time_new = get_virt_time_ns();
     }
     LOG_F(INFO, "time before: %lld  after: %lld  change: %lld", time_now, time_new, time_new - time_now);
@@ -377,7 +379,7 @@ void set_virt_time_ns(uint64_t time_now)
 
 static uint64_t process_events()
 {
-    exec_timer = false;
+    exec_timer.store(false);
     uint64_t slice_ns = TimerManager::get_instance()->process_timers();
     if (slice_ns == 0) {
         // execute 25.000 cycles
@@ -390,7 +392,7 @@ static uint64_t process_events()
 static void force_cycle_counter_reload()
 {
     // tell the interpreter loop to reload cycle counter
-    exec_timer = true;
+    exec_timer.store(true);
 }
 
 int increment_icnt_factor()
@@ -421,10 +423,10 @@ int get_icnt_factor()
 bool toggle_g_realtime()
 {
     uint64_t time_now = get_virt_time_ns();
-    g_realtime = !g_realtime;
+    g_realtime.store(!g_realtime.load(std::memory_order_relaxed));
     set_virt_time_ns(time_now);
     force_cycle_counter_reload();
-    return g_realtime;
+    return g_realtime.load(std::memory_order_relaxed);
 }
 
 typedef enum {
@@ -460,7 +462,7 @@ static void ppc_exec_inner(uint32_t start_addr, uint32_t size)
 
         opcode = ppc_read_instruction(pc_real);
         ppc_main_opcode(opcode_grabber, opcode);
-        if (g_icycles++ >= max_cycles || exec_timer) [[unlikely]]
+        if (g_icycles++ >= max_cycles || exec_timer.load(std::memory_order_relaxed)) [[unlikely]]
             max_cycles = process_events();
 
         if (exec_flags) {
@@ -1036,7 +1038,7 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool do_include_6
 #ifdef __APPLE__
     mach_timebase_info(&timebase_info);
 #endif
-    g_nanoseconds_base = cpu_now_ns();
+    g_nanoseconds_base.store(cpu_now_ns(), std::memory_order_relaxed);
     g_icycles = 0;
 
 //                    //                                        // PDM cpu clock calculated at 0x403036CC in r3
@@ -1066,7 +1068,7 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool do_include_6
     tbr_period_ns = ((uint64_t)NS_PER_SEC << 32) / tb_freq;
 
     exec_flags = 0;
-    exec_timer = false;
+    exec_timer.store(false);
 
     dec_wr_value = 0;
 
