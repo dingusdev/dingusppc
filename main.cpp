@@ -303,6 +303,10 @@ int main(int argc, char** argv) {
         set_power_off_reason(po_enter_debugger);
         DppcDebugger::get_instance()->enter_debugger();
 
+        // Stop the realtime timer thread before any emulator state is torn
+        // down, so it cannot touch guest state while we are dismantling it.
+        stop_realtime_timer_thread();
+
         // Ensure that NVRAM and other state is persisted before we terminate.
         delete gMachineObj.release();
     });

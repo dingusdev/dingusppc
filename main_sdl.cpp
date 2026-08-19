@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /** @file SDL-specific main functions. */
 
 #include <main.h>
+#include <cpu/ppc/ppcemu.h>
 #include <loguru.hpp>
 #include <SDL.h>
 
@@ -53,5 +54,6 @@ bool init() {
 }
 
 void cleanup() {
+    stop_realtime_timer_thread();
     SDL_Quit();
 }

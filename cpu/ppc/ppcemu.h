@@ -739,6 +739,10 @@ extern void set_g_idle_cpu_save(bool enabled);
 /* mark_host_input: the host event poller calls this for every input event */
 extern void mark_host_input();
 
+/* realtime timer thread */
+extern void start_realtime_timer_thread();
+extern void stop_realtime_timer_thread();
+
 /* force_cycle_counter_reload */
 static void force_cycle_counter_reload();
 
