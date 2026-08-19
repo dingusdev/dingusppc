@@ -344,6 +344,11 @@ enum Exc_Cause : uint32_t {
 
 extern unsigned exec_flags;
 
+// Counter of guest accesses to memory-mapped devices, incremented by
+// mmu_read_vmem/mmu_write_vmem. Used by ppcexec.cpp to detect when the
+// guest is idling (spinning without touching any device).
+extern uint64_t g_mmio_access_count;
+
 extern jmp_buf exc_env;
 
 enum Po_Cause : int {
@@ -727,6 +732,12 @@ extern int get_icnt_factor();
 
 /* toggle_g_realtime */
 extern bool toggle_g_realtime();
+
+/* set_g_idle_cpu_save */
+extern void set_g_idle_cpu_save(bool enabled);
+
+/* mark_host_input: the host event poller calls this for every input event */
+extern void mark_host_input();
 
 /* force_cycle_counter_reload */
 static void force_cycle_counter_reload();

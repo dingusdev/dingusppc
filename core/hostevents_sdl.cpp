@@ -38,6 +38,7 @@ void EventManager::set_keyboard_locale(uint32_t keyboard_id) {
 
 void EventManager::poll_events() {
     SDL_Event event;
+    bool host_input = false; // set when an input event is delivered to the guest
 
     while (SDL_PollEvent(&event)) {
         events_captured++;
@@ -189,6 +190,7 @@ void EventManager::poll_events() {
                         key_ups++;
                     }
 
+                    host_input = true;
                     this->_keyboard_signal.emit(ke);
                     ke.key = AdbKey_Delete;
                     this->_keyboard_signal.emit(ke);
@@ -210,6 +212,7 @@ void EventManager::poll_events() {
                         ke.flags = event.key.keysym.mod & KMOD_CAPS ?
                             KEYBOARD_EVENT_DOWN : KEYBOARD_EVENT_UP;
                     }
+                    host_input = true;
                     this->_keyboard_signal.emit(ke);
                 } else {
                     LOG_F(WARNING, "Unknown key %x pressed", event.key.keysym.sym);
@@ -224,6 +227,7 @@ void EventManager::poll_events() {
                 me.xabs  = event.motion.x;
                 me.yabs  = event.motion.y;
                 me.flags = MOUSE_EVENT_MOTION;
+                host_input = true;
                 this->_mouse_signal.emit(me);
             }
             break;
@@ -241,6 +245,7 @@ void EventManager::poll_events() {
                 me.xabs  = event.button.x;
                 me.yabs  = event.button.y;
                 me.flags = MOUSE_EVENT_BUTTON;
+                host_input = true;
                 this->_mouse_signal.emit(me);
             }
             break;
@@ -258,6 +263,7 @@ void EventManager::poll_events() {
                 me.xabs  = event.button.x;
                 me.yabs  = event.button.y;
                 me.flags = MOUSE_EVENT_BUTTON;
+                host_input = true;
                 this->_mouse_signal.emit(me);
             }
             break;
@@ -281,6 +287,7 @@ void EventManager::poll_events() {
                 }
                 ge.gamepad_id = event.cbutton.which;
                 ge.flags = GAMEPAD_EVENT_DOWN;
+                host_input = true;
                 this->_gamepad_signal.emit(ge);
             }
             break;
@@ -304,6 +311,7 @@ void EventManager::poll_events() {
                 }
                 ge.gamepad_id = event.cbutton.which;
                 ge.flags = GAMEPAD_EVENT_UP;
+                host_input = true;
                 this->_gamepad_signal.emit(ge);
             }
             break;
@@ -315,6 +323,9 @@ void EventManager::poll_events() {
 
     // perform post-processing
     this->_post_signal.emit();
+
+    if (host_input)
+        mark_host_input();
 }
 
 void EventManager::post_keyboard_state_events() {
