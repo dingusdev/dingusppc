@@ -74,7 +74,12 @@ int MachinePippin::initialize(const std::string &id) {
     aspen_obj->insert_ram_dimm(3, GET_INT_PROP("rambank4_size")); // RAM expansion slot
 
     // init virtual CPU
-    ppc_cpu_init(aspen_obj, PPC_VER::MPC603, false, 16500000ULL);
+    ppc_cpu_init(aspen_obj, {
+        .version = PPC_VER::MPC603,
+        .timebase_freq_hz = 16'500'000ULL,
+        .bus_freq_hz = 33'000'000ULL,
+        .core_freq_hz = 66'000'000ULL,
+    });
 
     return 0;
 }
