@@ -131,6 +131,15 @@ uint64_t TimerManager::process_timers()
     return cur_timer->timeout_ns - time_now;
 }
 
+uint64_t TimerManager::get_next_timeout_ns()
+{
+    std::lock_guard<std::recursive_mutex> lk(this->timer_queue.get_mtx());
+    if (this->timer_queue.empty()) {
+        return 0ULL;
+    }
+    return this->timer_queue.top()->timeout_ns;
+}
+
 void TimerManager::cancel_all_timers()
 {
     std::shared_ptr<TimerInfo> cur_timer;
