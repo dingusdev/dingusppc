@@ -141,6 +141,7 @@ public:
 protected:
     DMACmd* fetch_cmd(uint32_t cmd_addr, DMACmd* p_cmd, bool *is_writable);
     void interpret_cmd(void);
+    void interpret_until_blocked();
     void update_cmd();
     void finish_cmd();
     void xfer_quad(bool is_store);
