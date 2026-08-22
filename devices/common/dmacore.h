@@ -45,8 +45,6 @@ public:
     virtual bool            is_out_active() { return true; }
     virtual DmaPullResult   pull_data(uint32_t req_len, uint32_t *avail_len,
                                       uint8_t **p_data) = 0;
-    virtual int             get_pull_data_remaining() { return 1; }
-    virtual void            end_pull_data() {}
 
     std::string get_name(void) { return this->name; }
 
@@ -60,8 +58,6 @@ public:
 
     virtual bool            is_in_active() { return true; }
     virtual DmaPushResult   push_data(const char* src_ptr, int len) = 0;
-    virtual int             get_push_data_remaining() { return 1; }
-    virtual void            end_push_data() {}
 
     std::string get_name(void) { return this->name; }
 

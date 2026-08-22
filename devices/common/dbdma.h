@@ -125,10 +125,6 @@ public:
     bool            is_in_active() override;
     DmaPullResult   pull_data(uint32_t req_len, uint32_t *avail_len, uint8_t **p_data) override;
     DmaPushResult   push_data(const char* src_ptr, int len) override;
-    int             get_pull_data_remaining() override { return this->queue_len; }
-    int             get_push_data_remaining() override { return this->queue_len; }
-    void            end_pull_data() override;
-    void            end_push_data() override;
 
     bool            dma_is_ready() override;
     void            xfer_retry() override;
