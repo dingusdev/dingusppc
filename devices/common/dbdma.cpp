@@ -581,41 +581,6 @@ DmaPushResult DMAChannel::push_data(const char* src_ptr, int len) {
     return DmaPushResult::PushedData;
 }
 
-void DMAChannel::end_pull_data() {
-    if (!this->is_active()) {
-        // dead or idle channel? -> no more data
-        LOG_F(WARNING, "%s: Ending Dead/idle channel -> no more data",
-              this->get_name().c_str());
-        return;
-    }
-
-    if (this->queue_len) {
-        this->queue_len = 0;
-    } else {
-        this->ch_stat &= ~CH_STAT_FLUSH;
-    }
-
-    // proceed with the DBDMA program
-    this->interpret_cmd();
-}
-
-void DMAChannel::end_push_data() {
-    if (!this->is_active()) {
-        LOG_F(WARNING, "%s: Attempt to end push data to dead/idle channel",
-            this->get_name().c_str());
-        return;
-    }
-
-    if (this->queue_len) {
-        this->queue_len = 0;
-    } else {
-        this->ch_stat &= ~CH_STAT_FLUSH;
-    }
-
-    // proceed with the DBDMA program
-    this->interpret_cmd();
-}
-
 bool DMAChannel::is_out_active() {
     return this->is_active();
 }
