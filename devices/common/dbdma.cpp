@@ -40,12 +40,6 @@ void DMAChannel::set_callbacks(DbdmaCallback start_cb, DbdmaCallback stop_cb) {
     this->stop_cb  = stop_cb;
 }
 
-void DMAChannel::set_data_callbacks(DbdmaCallback in_cb, DbdmaCallback out_cb, DbdmaCallback flush_cb) {
-    this->in_cb    = in_cb;
-    this->out_cb   = out_cb;
-    this->flush_cb = flush_cb;
-}
-
 /* Load DMACmd from physical memory. */
 DMACmd* DMAChannel::fetch_cmd(uint32_t cmd_addr, DMACmd* p_cmd, bool *is_writable) {
     MapDmaResult res = mmu_map_dma_mem(cmd_addr, 16, false);
@@ -100,14 +94,10 @@ void DMAChannel::interpret_cmd() {
             case DBDMA_Cmd::OUTPUT_MORE:
             case DBDMA_Cmd::OUTPUT_LAST:
                 this->xfer_to_device();
-                if (this->out_cb)
-                    this->out_cb();
                 break;
             case DBDMA_Cmd::INPUT_MORE:
             case DBDMA_Cmd::INPUT_LAST:
                 this->xfer_from_device();
-                if (this->in_cb)
-                    this->in_cb();
                 break;
             }
         } else {
@@ -379,8 +369,6 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
                     this->ch_stat |= CH_STAT_FLUSH;
                     if (this->dev_obj != nullptr)
                         this->dev_obj->notify(this, DMA_MSG_FLUSH);
-                    if (this->flush_cb)
-                        this->flush_cb();
                     this->update_cmd();
                 }
             }

@@ -109,7 +109,6 @@ public:
     ~DMAChannel() = default;
 
     void set_callbacks(DbdmaCallback start_cb, DbdmaCallback stop_cb);
-    void set_data_callbacks(DbdmaCallback in_cb, DbdmaCallback out_cb, DbdmaCallback flush_cb);
     uint32_t reg_read(uint32_t offset, int size);
     void reg_write(uint32_t offset, uint32_t value, int size);
 
@@ -155,9 +154,6 @@ protected:
 private:
     std::function<void(void)> start_cb = nullptr; // DMA channel start callback
     std::function<void(void)> stop_cb  = nullptr; // DMA channel stop callback
-    std::function<void(void)> in_cb    = nullptr; // DMA channel in callback
-    std::function<void(void)> out_cb   = nullptr; // DMA channel out callback
-    std::function<void(void)> flush_cb = nullptr; // DMA channel flush callback
 
     uint16_t ch_stat        = 0;
     uint32_t cmd_ptr        = 0;
