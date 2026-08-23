@@ -67,8 +67,12 @@ ImgFile::~ImgFile() = default;
 
 bool ImgFile::open(const std::string &img_path)
 {
-    impl->backend = make_imgfile_backend(img_path);
-    return !!impl->backend;
+    auto backend = make_imgfile_backend(img_path);
+    if (!backend)
+        return false;
+
+    impl->backend = std::move(backend);
+    return true;
 }
 
 void ImgFile::close()
