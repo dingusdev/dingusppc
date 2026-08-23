@@ -27,12 +27,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef MACHINE_BASE_H
 #define MACHINE_BASE_H
 
+#include <cinttypes>
 #include <map>
 #include <memory>
 #include <string>
 
 class HWComponent;
 enum HWCompType : uint64_t;
+
+enum class CdromInsertionResult {
+    SUCCESS,
+    NO_DRIVE,
+    MEDIA_PRESENT,
+    IMAGE_OPEN_FAILED,
+};
 
 class MachineBase {
 public:
@@ -45,6 +53,8 @@ public:
     HWComponent* get_comp_by_name(std::string name);
     HWComponent* get_comp_by_name_optional(std::string name);
     HWComponent* get_comp_by_type(HWCompType type);
+    CdromInsertionResult insert_cdrom_image(const std::string& path,
+                                            uint32_t drive = 0);
     int postinit_devices();
 
 private:

@@ -39,16 +39,18 @@ BlockStorageDevice::BlockStorageDevice(const uint32_t cache_blocks,
 }
 
 BlockStorageDevice::~BlockStorageDevice() {
-    this->img_file.close();
+    if (this->is_ready)
+        this->img_file.close();
 }
 
 int BlockStorageDevice::set_host_file(std::string file_path) {
-    this->is_ready = false;
-
     if (!this->img_file.open(file_path))
         return -1;
 
+    this->is_ready = false;
     this->size_bytes = this->img_file.size();
+    this->remain_size = 0;
+    this->write_size = 0;
 
     this->set_fpos(0);
 
@@ -66,10 +68,15 @@ int BlockStorageDevice::set_block_size(const int blk_size) {
             return -1;
     }
 
-    this->cache_size = this->cache_blocks * this->raw_blk_size;
+    uint32_t new_cache_size = this->cache_blocks * this->raw_blk_size;
+    // Preserve pointers held by an in-progress transfer when the cache geometry
+    // does not change during a media replacement.
+    if (new_cache_size != this->cache_size) {
+        this->cache_size = new_cache_size;
 
-    // allocate data cache and fill it with zeroes
-    this->data_cache = std::unique_ptr<char[]>(new char[this->cache_size] ());
+        // allocate data cache and fill it with zeroes
+        this->data_cache = std::unique_ptr<char[]>(new char[this->cache_size] ());
+    }
 
     return 0;
 }

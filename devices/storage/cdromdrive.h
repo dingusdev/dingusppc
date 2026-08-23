@@ -81,7 +81,14 @@ public:
 
     bool medium_present() { return this->is_ready; }
 
-    void insert_image(std::string filename);
+    bool insert_image(const std::string& filename, bool notify_guest = false);
+    bool eject_image();
+
+    bool take_media_change() {
+        bool changed = this->media_changed;
+        this->media_changed = false;
+        return changed;
+    }
 
 protected:
     uint8_t hex_to_bcd(const uint8_t val);
@@ -101,6 +108,7 @@ protected:
     uint8_t  sw_lock_sup  = 1;   // drive supports locking/unlocking via SW
     uint8_t  sw_eject_sup = 1;   // drive supports ejecting via SW
     uint8_t  drive_locked = 0;   // 1 - drive is currently locked
+    bool     media_changed = false;
     uint8_t  prevent_jump = 0;   // prevent jumper not present
     uint8_t  more_support = 0;
     uint16_t max_rd_speed = 706; // defaults to 4x

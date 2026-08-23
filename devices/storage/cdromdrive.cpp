@@ -32,10 +32,18 @@ CdromDrive::CdromDrive() : BlockStorageDevice(31, CDR_STD_DATA_SIZE, 0xfffffffe)
     this->is_writeable = false;
 }
 
-void CdromDrive::insert_image(std::string filename) {
-    if (this->set_host_file(filename) < 0)
-        ABORT_F("Could not open CD-ROM image file, %s", filename.c_str());
+bool CdromDrive::insert_image(const std::string& filename, bool notify_guest) {
+    if (this->medium_present()) {
+        LOG_F(ERROR, "Cannot insert CD-ROM image while media is present");
+        return false;
+    }
 
+    if (this->set_host_file(filename) < 0) {
+        LOG_F(ERROR, "Could not open CD-ROM image file, %s", filename.c_str());
+        return false;
+    }
+
+    this->data_offset = 0;
     this->detect_raw_image();
 
     // create single track descriptor
@@ -45,6 +53,30 @@ void CdromDrive::insert_image(std::string filename) {
     // create Lead-out descriptor containing all data
     this->tracks[1] = {LEAD_OUT_TRK_NUM, /*.trk_num*/ 0x14, /*.adr_ctrl*/
         static_cast<uint32_t>(this->size_blocks + 1) /*.start_lba*/};
+
+    this->media_changed |= notify_guest;
+    return true;
+}
+
+bool CdromDrive::eject_image() {
+    if (!this->is_ready)
+        return false;
+
+    this->is_ready = false;
+    this->img_file.close();
+
+    this->size_bytes   = 0;
+    this->size_blocks  = 0;
+    this->cur_fpos     = 0;
+    this->write_size   = 0;
+    this->remain_size  = 0;
+    this->raw_blk_size = this->block_size;
+    this->data_offset  = 0;
+    this->num_tracks   = 0;
+    this->media_changed = false;
+    std::memset(this->tracks, 0, sizeof(this->tracks));
+
+    return true;
 }
 
 bool CdromDrive::detect_raw_image() {

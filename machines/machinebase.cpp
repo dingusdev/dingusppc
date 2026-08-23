@@ -20,6 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include <devices/common/hwcomponent.h>
+#include <devices/storage/cdromdrive.h>
 #include <loguru.hpp>
 #include <machines/machinebase.h>
 
@@ -96,6 +97,28 @@ HWComponent* MachineBase::get_comp_by_type(HWCompType type) {
         LOG_F(WARNING, "No component of type %llu was found!", type);
         return nullptr;
     }
+}
+
+CdromInsertionResult MachineBase::insert_cdrom_image(const std::string& path,
+                                                     uint32_t drive) {
+    uint32_t drive_index = 0;
+
+    for (auto& device : this->device_map) {
+        auto* cdrom = dynamic_cast<CdromDrive*>(device.second.get());
+        if (!cdrom)
+            continue;
+
+        if (drive_index++ == drive) {
+            if (cdrom->medium_present())
+                return CdromInsertionResult::MEDIA_PRESENT;
+
+            return cdrom->insert_image(path, true)
+                ? CdromInsertionResult::SUCCESS
+                : CdromInsertionResult::IMAGE_OPEN_FAILED;
+        }
+    }
+
+    return CdromInsertionResult::NO_DRIVE;
 }
 
 int MachineBase::postinit_devices()

@@ -62,6 +62,43 @@ void ScsiCdromCmds::process_command() {
     phy_impl->switch_phase(next_phase);
 }
 
+int ScsiCdromCmds::test_unit_ready() {
+    if (this->take_media_change()) {
+        this->sense_key = ScsiSense::UNIT_ATTENTION;
+        this->asc       = ScsiError::MEDIUM_CHANGED;
+        this->ascq      = 0;
+        phy_impl->set_status(ScsiStatus::CHECK_CONDITION, this->sense_key);
+        return ScsiPhase::STATUS;
+    }
+
+    return ScsiCommonCmds::test_unit_ready();
+}
+
+int ScsiCdromCmds::start_stop_unit() {
+    bool load_eject = this->cdb_ptr[4] & ScsiStartStopUnit::LOAD_EJECT;
+    bool start      = this->cdb_ptr[4] & ScsiStartStopUnit::START;
+
+    if (!load_eject)
+        return ScsiPhase::STATUS;
+
+    if (start) {
+        LOG_F(INFO, "START_STOP_UNIT: medium load requested");
+        return ScsiPhase::STATUS;
+    }
+
+    if (this->drive_locked) {
+        LOG_F(INFO, "START_STOP_UNIT: medium eject prevented");
+        this->field_ptr_valid = false;
+        this->bit_ptr_valid   = false;
+        this->illegal_request(ScsiError::REMOVAL_PREVENTED, 2, false);
+    } else {
+        LOG_F(INFO, "START_STOP_UNIT: medium eject requested");
+        this->eject_image();
+    }
+
+    return ScsiPhase::STATUS;
+}
+
 int ScsiCdromCmds:: read_toc() {
     uint8_t start_track, session_num;
     int     tot_tracks, resp_len = 0;

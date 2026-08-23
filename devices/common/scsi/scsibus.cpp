@@ -354,7 +354,8 @@ void ScsiBus::attach_scsi_devices(const std::string bus_suffix)
                 gMachineObj->add_device(scsi_device_name,
                                         std::unique_ptr<ScsiCdrom>(scsi_device));
                 this->register_device(scsi_id, scsi_device);
-                scsi_device->insert_image(path);
+                if (!scsi_device->insert_image(path))
+                    ABORT_F("Could not insert CD-ROM image, %s", path.c_str());
             }
             else {
                 LOG_F(ERROR, "%s: Too many devices. CD-ROM \"%s\" was not added.",

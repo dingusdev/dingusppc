@@ -175,6 +175,14 @@ enum ScsiCommand : uint8_t {
     READ_CD                      = 0xBE,
 };
 
+/** START STOP UNIT command flags in CDB byte 4. */
+namespace ScsiStartStopUnit {
+    enum : uint8_t {
+        START      = 1 << 0,
+        LOAD_EJECT = 1 << 1,
+    };
+}
+
 enum ScsiSense : uint8_t {
     NO_SENSE       = 0x0,
     RECOVERED      = 0x1,
@@ -200,8 +208,10 @@ enum ScsiError : uint8_t {
     INVALID_CDB             = 0x24,
     INVALID_LUN             = 0x25,
     WRITE_PROTECT           = 0x27,
+    MEDIUM_CHANGED          = 0x28,
     SAVING_NOT_SUPPORTED    = 0x39,
     MEDIUM_NOT_PRESENT      = 0x3A,
+    REMOVAL_PREVENTED       = 0x53,
 };
 
 /** SCSI device types used in INQUIRY. */
