@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <core/coresignal.h>
 #include <cpu/ppc/ppcemu.h>
 #include <devices/common/adb/adbkeyboard.h>
+#include <machines/machinebase.h>
 #include <loguru.hpp>
 #include <SDL.h>
 
@@ -319,6 +320,33 @@ void EventManager::poll_events() {
                 ge.gamepad_id = event.cbutton.which;
                 ge.flags = GAMEPAD_EVENT_UP;
                 this->_gamepad_signal.emit(ge);
+            }
+            break;
+
+        case SDL_DROPFILE: {
+                const char* path = event.drop.file;
+                CdromInsertionResult result = gMachineObj
+                    ? gMachineObj->insert_cdrom_image(path)
+                    : CdromInsertionResult::NO_DRIVE;
+
+                switch (result) {
+                case CdromInsertionResult::SUCCESS:
+                    LOG_F(INFO, "Inserted CD-ROM image: %s", path);
+                    break;
+                case CdromInsertionResult::NO_DRIVE:
+                    LOG_F(ERROR, "Cannot insert CD-ROM image; no CD-ROM drive is available: %s",
+                          path);
+                    break;
+                case CdromInsertionResult::MEDIA_PRESENT:
+                    LOG_F(ERROR, "Cannot insert CD-ROM image; eject the current media first: %s",
+                          path);
+                    break;
+                case CdromInsertionResult::IMAGE_OPEN_FAILED:
+                    LOG_F(ERROR, "Cannot insert CD-ROM image: %s", path);
+                    break;
+                }
+
+                SDL_free(event.drop.file);
             }
             break;
 
