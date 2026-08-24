@@ -39,6 +39,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 /* pointer to exception handler to be called when a MMU exception is occurred. */
 void (*mmu_exception_handler)(Except_Type exception_type, uint32_t srr1_bits);
 
+/* counts guest accesses to memory-mapped devices; see ppcemu.h */
+uint64_t g_mmio_access_count = 0;
+
 /* pointers to BAT update functions. */
 std::function<void(uint32_t bat_reg)> ibat_update;
 std::function<void(uint32_t bat_reg)> dbat_update;
@@ -1262,6 +1265,7 @@ inline T mmu_read_vmem(uint32_t opcode, uint32_t guest_va)
 #ifdef MMU_PROFILING
             iomem_reads_total++;
 #endif
+            g_mmio_access_count++;
 
 #if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
             needs_swap = mem_ctrl_instance->needs_swap_endian(tlb2_entry->rgn_desc);
@@ -1439,6 +1443,7 @@ inline void mmu_write_vmem(uint32_t opcode, uint32_t guest_va, T value)
 #ifdef MMU_PROFILING
             iomem_writes_total++;
 #endif
+            g_mmio_access_count++;
 
 #if SUPPORTS_MEMORY_CTRL_ENDIAN_MODE
             needs_swap = mem_ctrl_instance->needs_swap_endian(tlb2_entry->rgn_desc);
