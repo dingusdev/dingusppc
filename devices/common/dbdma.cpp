@@ -345,7 +345,7 @@ void DMAChannel::reg_write(uint32_t offset, uint32_t value, int size) {
             this->get_name().c_str());
     }
 
-    value    = BYTESWAP_32(value);
+    value = BYTESWAP_32(value);
 
     switch (offset) {
     case DMAReg::CH_CTRL:
