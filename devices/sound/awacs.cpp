@@ -199,7 +199,7 @@ uint32_t AwacsScreamer::snd_ctrl_read(uint32_t offset, int size) {
             (AWAC_REV_SCREAMER << 20);
         break;
     case AWAC_CLIP_COUNT:
-        value            = this->clip_count;
+        value = this->clip_count;
         this->clip_count = 0;
         break;
     case AWAC_BYTE_SWAP:
