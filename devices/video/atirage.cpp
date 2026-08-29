@@ -443,7 +443,9 @@ void ATIRage::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size) {
         bits_read_only |= bits_not_AKed; // the not AKed bits will remain unchanged
 
         new_value = (old_value & bits_read_only) | (new_value & ~bits_read_only);
-        break;
+        WRITE_VALUE_AND_LOG(9);
+        this->update_interrupt();
+        return;
     }
     case ATI_CRTC_GEN_CNTL:
         new_value = value;
@@ -658,8 +660,6 @@ void ATIRage::write_reg(uint32_t reg_offset, uint32_t value, uint32_t size) {
     }
 
     WRITE_VALUE_AND_LOG(9);
-    if (reg_num == ATI_CRTC_INT_CNTL)
-        this->update_interrupt();
 }
 
 bool ATIRage::io_access_allowed(uint32_t offset) {
