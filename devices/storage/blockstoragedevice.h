@@ -36,7 +36,10 @@ public:
                        const uint64_t max_blocks=UINT64_MAX);
     ~BlockStorageDevice();
 
-    int set_host_file(std::string file_path);
+    bool attach_image(const std::string& file_path);
+    bool detach_image();
+    bool image_attached() const { return this->is_ready; }
+
     int set_block_size(const int blk_size);
 
     int set_fpos(const uint64_t lba);

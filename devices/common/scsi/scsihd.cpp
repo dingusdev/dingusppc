@@ -56,7 +56,7 @@ ScsiHardDisk::ScsiHardDisk(std::string name, int my_id) : ScsiPhysDevice(name, m
 }
 
 void ScsiHardDisk::insert_image(std::string filename) {
-    if (this->set_host_file(filename) < 0)
+    if (!this->attach_image(filename))
         ABORT_F("%s: could not open image file %s", this->name.c_str(), filename.c_str());
 
     this->is_writeable = true;

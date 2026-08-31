@@ -33,7 +33,7 @@ CdromDrive::CdromDrive() : BlockStorageDevice(31, CDR_STD_DATA_SIZE, 0xfffffffe)
 }
 
 void CdromDrive::insert_image(std::string filename) {
-    if (this->set_host_file(filename) < 0)
+    if (!this->attach_image(filename))
         ABORT_F("Could not open CD-ROM image file, %s", filename.c_str());
 
     this->detect_raw_image();

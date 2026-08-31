@@ -40,7 +40,7 @@ public:
     void process_command() override;
 
 protected:
-    bool is_device_ready() override { return this->is_ready; }
+    bool is_device_ready() override { return this->image_attached(); }
 
     void mode_select_6(uint8_t param_len);
 
