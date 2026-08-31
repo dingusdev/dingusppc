@@ -183,11 +183,14 @@ int ScsiBlockCmds::start_stop_unit() {
         if (this->cdb_ptr[4] & ScsiStartStopUnit::LOAD_EJECT)
             LOG_F(INFO, "START_STOP_UNIT: medium load requested");
     } else {
-        if (this->cdb_ptr[4] & ScsiStartStopUnit::LOAD_EJECT) {
-            LOG_F(INFO, "START_STOP_UNIT: medium eject requested");
-        }
+        if (this->cdb_ptr[4] & ScsiStartStopUnit::LOAD_EJECT)
+            this->eject_medium();
     }
     return ScsiPhase::STATUS;
+}
+
+void ScsiBlockCmds::eject_medium() {
+    LOG_F(INFO, "START_STOP_UNIT: medium eject requested");
 }
 
 int ScsiBlockCmds::read_capacity() {
