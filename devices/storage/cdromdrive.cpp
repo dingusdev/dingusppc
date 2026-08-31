@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Virtual CD-ROM device implementation. */
 
+#include <core/hostevents.h>
 #include <devices/storage/cdromdrive.h>
 #include <loguru.hpp>
 
@@ -29,12 +30,46 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 
 CdromDrive::CdromDrive() : BlockStorageDevice(31, CDR_STD_DATA_SIZE, 0xfffffffe) {
+    EventManager::get_instance()->add_cdrom_handler(
+        this, &CdromDrive::insert_image_event_handler);
+
     this->is_writeable = false;
 }
 
-void CdromDrive::insert_image(std::string filename) {
-    if (!this->attach_image(filename))
-        ABORT_F("Could not open CD-ROM image file, %s", filename.c_str());
+void CdromDrive::insert_image_event_handler(CdromImageEvent& event) {
+    if (event.handled)
+        return;
+
+    if (this->medium_present()) {
+        event.result = CdromInsertionResult::MEDIA_PRESENT;
+        return;
+    }
+
+    event.handled = true;
+    if (this->insert_image(event.image_path)) {
+        this->media_change_pending = true;
+        event.result = CdromInsertionResult::SUCCESS;
+    } else {
+        event.result = CdromInsertionResult::IMAGE_OPEN_FAILED;
+    }
+}
+
+bool CdromDrive::consume_media_change() {
+    bool pending = this->media_change_pending;
+    this->media_change_pending = false;
+    return pending;
+}
+
+bool CdromDrive::insert_image(const std::string& filename) {
+    if (this->medium_present()) {
+        LOG_F(ERROR, "Cannot insert CD-ROM image while media is present");
+        return false;
+    }
+
+    if (!this->attach_image(filename)) {
+        LOG_F(ERROR, "Could not open CD-ROM image file, %s", filename.c_str());
+        return false;
+    }
 
     this->detect_raw_image();
 
@@ -45,6 +80,19 @@ void CdromDrive::insert_image(std::string filename) {
     // create Lead-out descriptor containing all data
     this->tracks[1] = {LEAD_OUT_TRK_NUM, /*.trk_num*/ 0x14, /*.adr_ctrl*/
         static_cast<uint32_t>(this->size_blocks + 1) /*.start_lba*/};
+
+    return true;
+}
+
+bool CdromDrive::eject_image() {
+    if (!this->detach_image())
+        return false;
+
+    this->num_tracks           = 0;
+    this->media_change_pending = false;
+    std::memset(this->tracks, 0, sizeof(this->tracks));
+
+    return true;
 }
 
 bool CdromDrive::detect_raw_image() {

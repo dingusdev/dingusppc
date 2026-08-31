@@ -190,6 +190,13 @@ if (APPLE)
         # MACOSX_BUNDLE_ICON_FILE "icon.icns"
     )
 
+    if (NOT IOS)
+        set_target_properties(dingusppc PROPERTIES
+            MACOSX_BUNDLE_INFO_PLIST "${PROJECT_SOURCE_DIR}/cmake/DingusPPCInfo.plist.in"
+            XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "${BUNDLE_ID}"
+        )
+    endif()
+
     find_library(COCOA_LIBRARY Cocoa)
     find_library(IOKIT_LIBRARY IOKit)
     find_library(COREAUDIO_LIBRARY CoreAudio)

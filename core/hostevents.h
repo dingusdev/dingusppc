@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <core/coresignal.h>
 
 #include <cinttypes>
+#include <string>
 
 class WindowEvent {
 public:
@@ -119,6 +120,20 @@ public:
     uint8_t button;
 };
 
+enum class CdromInsertionResult {
+    SUCCESS,
+    NO_DRIVE,
+    MEDIA_PRESENT,
+    IMAGE_OPEN_FAILED,
+};
+
+class CdromImageEvent {
+public:
+    std::string image_path;
+    CdromInsertionResult result = CdromInsertionResult::NO_DRIVE;
+    bool handled = false;
+};
+
 class EventManager {
 public:
     static EventManager* get_instance() {
@@ -131,6 +146,9 @@ public:
     void poll_events();
     void set_keyboard_locale(uint32_t keyboard_id);
     void post_keyboard_state_events();
+    void post_cdrom_event(CdromImageEvent& event) {
+        _cdrom_signal.emit(event);
+    }
 
     template <typename T>
     void add_window_handler(T *inst, void (T::*func)(const WindowEvent&)) {
@@ -153,6 +171,11 @@ public:
     }
 
     template <typename T>
+    void add_cdrom_handler(T* inst, void (T::*func)(CdromImageEvent&)) {
+        _cdrom_signal.connect_method(inst, func);
+    }
+
+    template <typename T>
     void add_post_handler(T *inst, void (T::*func)()) {
         _post_signal.connect_method(inst, func);
     }
@@ -162,6 +185,7 @@ public:
         _mouse_signal.disconnect_all();
         _keyboard_signal.disconnect_all();
         _gamepad_signal.disconnect_all();
+        _cdrom_signal.disconnect_all();
         _post_signal.disconnect_all();
     }
 
@@ -179,6 +203,7 @@ private:
     CoreSignal<const MouseEvent&>      _mouse_signal;
     CoreSignal<const KeyboardEvent&>   _keyboard_signal;
     CoreSignal<const GamepadEvent&>    _gamepad_signal;
+    CoreSignal<CdromImageEvent&>       _cdrom_signal;
     CoreSignal<>                       _post_signal;
 
     uint64_t    events_captured = 0;

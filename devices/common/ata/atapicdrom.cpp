@@ -71,7 +71,8 @@ int AtapiCdrom::device_postinit() {
 
     std::string cdr_image_path = GET_STR_PROP("cdr_img");
     if (!cdr_image_path.empty()) {
-        this->insert_image(cdr_image_path);
+        if (!this->insert_image(cdr_image_path))
+            return -1;
     }
 
     return 0;
