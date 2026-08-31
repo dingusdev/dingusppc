@@ -39,22 +39,45 @@ BlockStorageDevice::BlockStorageDevice(const uint32_t cache_blocks,
 }
 
 BlockStorageDevice::~BlockStorageDevice() {
-    this->img_file.close();
+    this->detach_image();
 }
 
-int BlockStorageDevice::set_host_file(std::string file_path) {
-    this->is_ready = false;
-
+bool BlockStorageDevice::attach_image(const std::string& file_path) {
     if (!this->img_file.open(file_path))
-        return -1;
+        return false;
 
-    this->size_bytes = this->img_file.size();
+    this->is_ready    = false;
+    this->size_bytes  = this->img_file.size();
+    this->remain_size = 0;
+    this->write_size  = 0;
+    this->data_offset = 0;
 
     this->set_fpos(0);
 
     this->is_ready = true;
 
-    return this->set_block_size(this->block_size);
+    if (this->set_block_size(this->block_size) < 0) {
+        this->detach_image();
+        return false;
+    }
+
+    return true;
+}
+
+bool BlockStorageDevice::detach_image() {
+    if (!this->is_ready)
+        return false;
+
+    this->is_ready = false;
+    this->img_file.close();
+
+    this->size_bytes   = 0;
+    this->size_blocks  = 0;
+    this->cur_fpos     = 0;
+    this->write_size   = 0;
+    this->remain_size  = 0;
+
+    return true;
 }
 
 int BlockStorageDevice::set_block_size(const int blk_size) {
