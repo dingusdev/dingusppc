@@ -63,6 +63,7 @@ public:
 
 protected:
     virtual void    process_command() override;
+    virtual void    eject_medium();
 
     uint32_t    get_lba();
 
