@@ -35,6 +35,8 @@ public:
 
 protected:
     virtual void process_command() override;
+    int test_unit_ready() override;
+    void eject_medium() override;
 
     int get_apple_page_49(uint8_t subpage, uint8_t ctrl,
                           uint8_t *out_ptr, int avail_len);

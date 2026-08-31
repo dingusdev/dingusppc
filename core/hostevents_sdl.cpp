@@ -322,6 +322,35 @@ void EventManager::poll_events() {
             }
             break;
 
+        case SDL_DROPFILE: {
+                const char* path = event.drop.file;
+                // TODO: Distinguish CD-ROM and floppy images once dynamic
+                // floppy insertion is supported.
+                CdromImageEvent cdrom_event{};
+                cdrom_event.image_path = path;
+                this->post_cdrom_event(cdrom_event);
+
+                switch (cdrom_event.result) {
+                case CdromInsertionResult::SUCCESS:
+                    LOG_F(INFO, "Inserted CD-ROM image: %s", path);
+                    break;
+                case CdromInsertionResult::NO_DRIVE:
+                    LOG_F(ERROR, "Cannot insert CD-ROM image; no CD-ROM drive is available: %s",
+                          path);
+                    break;
+                case CdromInsertionResult::MEDIA_PRESENT:
+                    LOG_F(ERROR, "Cannot insert CD-ROM image; eject the current media first: %s",
+                          path);
+                    break;
+                case CdromInsertionResult::IMAGE_OPEN_FAILED:
+                    LOG_F(ERROR, "Cannot insert CD-ROM image: %s", path);
+                    break;
+                }
+
+                SDL_free(event.drop.file);
+            }
+            break;
+
         default:
             unhandled_events++;
         }

@@ -208,8 +208,10 @@ enum ScsiError : uint8_t {
     INVALID_CDB             = 0x24,
     INVALID_LUN             = 0x25,
     WRITE_PROTECT           = 0x27,
+    MEDIUM_CHANGED          = 0x28,
     SAVING_NOT_SUPPORTED    = 0x39,
     MEDIUM_NOT_PRESENT      = 0x3A,
+    REMOVAL_PREVENTED       = 0x53,
 };
 
 /** SCSI device types used in INQUIRY. */

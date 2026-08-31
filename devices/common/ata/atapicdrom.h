@@ -38,7 +38,7 @@ public:
         return std::unique_ptr<AtapiCdrom>(new AtapiCdrom("ATAPI-CDROM"));
     }
 
-    bool is_device_ready() override { return this->is_ready; }
+    bool is_device_ready() override { return this->medium_present(); }
     uint8_t not_ready_reason() override { return ScsiError::MEDIUM_NOT_PRESENT; }
 
     int device_postinit() override;

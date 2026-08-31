@@ -74,16 +74,22 @@ constexpr auto CDROM_MAX_TRACKS = 100;
 constexpr auto LEAD_OUT_TRK_NUM = 0xAA;
 constexpr auto CDR_STD_DATA_SIZE = 2048;
 
+class CdromImageEvent;
+
 class CdromDrive : public BlockStorageDevice {
 public:
     CdromDrive();
     virtual ~CdromDrive() = default;
 
-    bool medium_present() { return this->is_ready; }
+    bool medium_present() const { return this->image_attached(); }
 
-    void insert_image(std::string filename);
+    bool insert_image(const std::string& filename);
+    bool eject_image();
 
 protected:
+    void insert_image_event_handler(CdromImageEvent& event);
+    bool consume_media_change();
+
     uint8_t hex_to_bcd(const uint8_t val);
     AddrMsf lba_to_msf(const int lba);
     bool    detect_raw_image();
@@ -101,6 +107,7 @@ protected:
     uint8_t  sw_lock_sup  = 1;   // drive supports locking/unlocking via SW
     uint8_t  sw_eject_sup = 1;   // drive supports ejecting via SW
     uint8_t  drive_locked = 0;   // 1 - drive is currently locked
+    bool     media_change_pending = false; // pending guest notification
     uint8_t  prevent_jump = 0;   // prevent jumper not present
     uint8_t  more_support = 0;
     uint16_t max_rd_speed = 706; // defaults to 4x
