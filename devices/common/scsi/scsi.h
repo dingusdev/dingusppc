@@ -175,6 +175,14 @@ enum ScsiCommand : uint8_t {
     READ_CD                      = 0xBE,
 };
 
+/** START STOP UNIT command flags in CDB byte 4. */
+namespace ScsiStartStopUnit {
+    enum : uint8_t {
+        START      = 1 << 0,
+        LOAD_EJECT = 1 << 1,
+    };
+}
+
 enum ScsiSense : uint8_t {
     NO_SENSE       = 0x0,
     RECOVERED      = 0x1,

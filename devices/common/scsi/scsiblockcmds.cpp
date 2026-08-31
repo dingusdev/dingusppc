@@ -179,11 +179,11 @@ int ScsiBlockCmds::write() {
 }
 
 int ScsiBlockCmds::start_stop_unit() {
-    if (this->cdb_ptr[4] & 1) {
-        if (this->cdb_ptr[4] & 2)
+    if (this->cdb_ptr[4] & ScsiStartStopUnit::START) {
+        if (this->cdb_ptr[4] & ScsiStartStopUnit::LOAD_EJECT)
             LOG_F(INFO, "START_STOP_UNIT: medium load requested");
     } else {
-        if (this->cdb_ptr[4] & 2) {
+        if (this->cdb_ptr[4] & ScsiStartStopUnit::LOAD_EJECT) {
             LOG_F(INFO, "START_STOP_UNIT: medium eject requested");
         }
     }
