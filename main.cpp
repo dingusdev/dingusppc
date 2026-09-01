@@ -114,6 +114,8 @@ int main(int argc, char** argv) {
     bool debugger_skip = true;
     bool debugger_enter = false;
     bool deterministic_interactive = false;
+    bool start_realtime = false;
+    bool start_idle_cpu_save = false;
     string deterministic_mode = "strict";
     string keyboard_string = "Eng_USA";
 
@@ -143,6 +145,10 @@ int main(int argc, char** argv) {
         "Select deterministic features (strict or interactive)")
         ->needs(deterministic_opt)
         ->check(CLI::IsMember({"strict", "interactive"}));
+    emu->add_flag("--realtime", start_realtime,
+        "Start in realtime mode (guest time follows the wall clock)");
+    emu->add_flag("--idle-cpu-save", start_idle_cpu_save,
+        "Sleep an idle guest in realtime mode to save host CPU");
 
     bool              log_to_stderr = false;
     loguru::Verbosity log_verbosity = loguru::Verbosity_INFO;
@@ -300,6 +306,10 @@ int main(int argc, char** argv) {
         set_power_off_reason(po_enter_debugger);
         DppcDebugger::get_instance()->enter_debugger();
 
+        // Stop the realtime timer thread before any emulator state is torn
+        // down, so it cannot touch guest state while we are dismantling it.
+        stop_realtime_timer_thread();
+
         // Ensure that NVRAM and other state is persisted before we terminate.
         delete gMachineObj.release();
     });
@@ -311,6 +321,13 @@ int main(int argc, char** argv) {
     signal(SIGABRT, sigabrt_handler);
 
     keyboard_id = kbd_map.at(keyboard_string);
+
+    if (start_realtime) {
+        toggle_g_realtime();
+    }
+    if (start_idle_cpu_save) {
+        set_g_idle_cpu_save(true);
+    }
 
     while (true) {
         run_machine(
