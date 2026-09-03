@@ -291,7 +291,7 @@ uint32_t MacIoTwo::mio_ctrl_read(uint32_t offset, int size) {
 
     switch (offset & ~3) {
     case MIO_INT_EVENTS2:
-        value = this->int_events >> 32;
+        value = (this->int_events & this->int_mask) >> 32;
         break;
     case MIO_INT_MASK2:
         value = this->int_mask >> 32;
@@ -300,7 +300,7 @@ uint32_t MacIoTwo::mio_ctrl_read(uint32_t offset, int size) {
         value = this->int_levels >> 32;
         break;
     case MIO_INT_EVENTS1:
-        value = uint32_t(this->int_events);
+        value = uint32_t(this->int_events & this->int_mask);
         break;
     case MIO_INT_MASK1:
         value = uint32_t(this->int_mask);
