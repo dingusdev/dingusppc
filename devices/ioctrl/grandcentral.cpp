@@ -295,7 +295,7 @@ uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
     } else { // Interrupt related registers
         switch (offset) {
         case MIO_INT_EVENTS1:
-            return BYTESWAP_32(this->int_events);
+            return BYTESWAP_32(this->int_events & this->int_mask);
         case MIO_INT_MASK1:
             return BYTESWAP_32(this->int_mask);
         case MIO_INT_CLEAR1:
