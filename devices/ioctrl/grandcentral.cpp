@@ -303,7 +303,7 @@ uint32_t GrandCentral::read(uint32_t rgn_start, uint32_t offset, int size)
             // so we return zero here as real HW does
             return 0;
         case MIO_INT_LEVELS1:
-            return BYTESWAP_32(this->int_levels);
+            return BYTESWAP_32(this->int_levels | (1<<0x0B));
         }
     }
 
