@@ -81,7 +81,7 @@ void BurgundyCodec::snd_ctrl_write(uint32_t offset, uint32_t value, int size) {
 
     switch (offset) {
     case AWAC_SOUND_CTRL_REG:
-        this->snd_ctrl_reg = BYTESWAP_32(value);
+        this->snd_ctrl_reg = value;
         //this->set_sample_rate((this->snd_ctrl_reg >> 8) & 7);
         break;
     case AWAC_CODEC_CTRL_REG:
@@ -108,7 +108,7 @@ void BurgundyCodec::snd_ctrl_write(uint32_t offset, uint32_t value, int size) {
         }
         break;
     case AWAC_FRAME_COUNT:
-        this->frame_count = BYTESWAP_32(value);
+        this->frame_count = value;
         this->frame_count_start_time = TimerManager::get_instance()->current_time_ns();
         break;
     default:
