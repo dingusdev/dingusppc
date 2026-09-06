@@ -30,11 +30,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <string>
 
-enum {
-    BURGUNDY_REG_WR = 1 << 21,
-    BURGUNDY_READY  = 1 << 22,
-};
-
 /** Number of internal registers implemented in Burgundy. */
 constexpr auto BURGUNDY_NUM_REGS = 123;
 

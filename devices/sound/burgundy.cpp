@@ -28,8 +28,69 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/sound/burgundy.h>
 #include <loguru.hpp>
 
-BurgundyCodec::BurgundyCodec(std::string name) : MacioSndCodec(name)
-{
+namespace SOUND_CONTROL { // 0x00
+    enum {
+        INSUBFRAME_MASK     = 0x0000000F, INSUBFRAME_POS        = 0,
+            INSUBFRAME0         = 0x1,
+            INSUBFRAME1         = 0x2,
+            INSUBFRAME2         = 0x4,
+            INSUBFRAME3         = 0x8,
+        OUTSUBFRAME_MASK    = 0x000000F0, OUTSUBFRAME_POS       = 4,
+            OUTSUBFRAME0        = 0x1,
+            OUTSUBFRAME1        = 0x2,
+            OUTSUBFRAME2        = 0x4,
+            OUTSUBFRAME3        = 0x8,
+        RATE_MASK           = 0x00000700, RATE_POS              = 8,
+            RATE_44100          = 0x0,
+        ERROR               = 0x00000800,
+        PORTCHANGE          = 0x00001000,
+        ERRORINT            = 0x00002000,
+        STATUSSUBFRAME_MASK = 0x00018000, STATUSSUBFRAME_POS    = 15,
+            STATUSSUBFRAME0     = 0x0,
+            STATUSSUBFRAME1     = 0x1,
+            STATUSSUBFRAME2     = 0x2,
+            STATUSSUBFRAME3     = 0x3,
+    };
+}
+
+namespace CODEC_CONTROL { // 0x10
+    enum {
+        DATA_MASK           = 0x000000FF, DATA_POS              = 0,
+        CURRENTBYTE_MASK    = 0x00000300, CURRENTBYTE_POS       = 8,
+        LASTBYTE_MASK       = 0x00000C00, LASTBYTE_POS          = 10,
+        ADDR_MASK           = 0x000FF000, ADDR_POS              = 12,
+        RESET               = 0x00100000, // should be set when current byte is 0
+        WRITE               = 0x00200000, // READ = 0
+        BUSY                = 0x01000000, // set when writing to CODEC_CONTROL, clear when done
+    };
+}
+
+namespace CODEC_STATUS { // 0x20
+    enum {
+        SENSE_MASK              = 0x0000000F, SENSE_POS         = 0,
+            SENSE_MIC               = 0x2,
+            SENSE_HEADPHONES        = 0x4,
+            SENSE_HEADPHONES2       = 0x8, // 1 = line level mic (default) 0 = powered mic
+        DATA_MASK               = 0x00000FF0, DATA_POS          = 4,
+        CURRENTBYTE_MASK        = 0x00003000, CURRENTBYTE_POS   = 12,
+        BYTECOUNTER_MASK        = 0x0000C000, BYTECOUNTER_POS   = 14,
+        INDICATOR_MASK          = 0x000F0000, INDICATOR_POS     = 16,
+            INDICATOR_TONECONTROL   = 0x1,
+            INDICATOR_OVERFLOW0     = 0x2,
+            INDICATOR_OVERFLOW1     = 0x3,
+            INDICATOR_OVERFLOW2     = 0x4,
+            INDICATOR_INPUTLINECHG  = 0x6,
+            INDICATOR_THRESHOLD0    = 0xB,
+            INDICATOR_THRESHOLD1    = 0xC,
+            INDICATOR_THRESHOLD2    = 0xD,
+            INDICATOR_THRESHOLD3    = 0xE,
+            INDICATOR_TWILIGHTCMP   = 0xF,
+        READY                   = 0x00400000,
+        FIRST_VALID_BYTE        = 0x00800000, // wait for set, then wait for clear before reading data
+    };
+}
+
+BurgundyCodec::BurgundyCodec(std::string name) : MacioSndCodec(name) {
     supports_types(HWCompType::SND_CODEC);
 
     static int burgundy_sample_rates[1] = { 44100 };
@@ -54,9 +115,13 @@ uint32_t BurgundyCodec::snd_ctrl_read(uint32_t offset, int size) {
         value = this->last_ctrl_data;
         break;
     case AWAC_CODEC_STATUS_REG:
-        value = ((this->first_valid ? 1 : 0) << 23) | BURGUNDY_READY |
-           (this->byte_counter << 14) | (this->read_pos << 12) |
-           (this->data_byte << 4);
+        value =
+            (this->data_byte << CODEC_STATUS::DATA_POS) |
+            (this->read_pos << CODEC_STATUS::CURRENTBYTE_POS) |
+            (this->byte_counter << CODEC_STATUS::BYTECOUNTER_POS) |
+            (0 << CODEC_STATUS::INDICATOR_POS) |
+            CODEC_STATUS::READY |
+            (this->first_valid ? CODEC_STATUS::FIRST_VALID_BYTE : 0);
         break;
     case AWAC_FRAME_COUNT:
         value = (uint32_t)(
@@ -75,27 +140,27 @@ uint32_t BurgundyCodec::snd_ctrl_read(uint32_t offset, int size) {
 }
 
 void BurgundyCodec::snd_ctrl_write(uint32_t offset, uint32_t value, int size) {
-    uint8_t reg_addr;
-    uint8_t cur_byte;
-    //uint8_t last_byte;
-
     value = BYTESWAP_32(value);
 
     switch (offset) {
     case AWAC_SOUND_CTRL_REG:
         this->snd_ctrl_reg = value;
-        //this->set_sample_rate((this->snd_ctrl_reg >> 8) & 7);
+        //this->set_sample_rate((this->snd_ctrl_reg & SOUND_CONTROL::RATE_MASK) >> SOUND_CONTROL::RATE_POS);
         break;
     case AWAC_CODEC_CTRL_REG:
-        this->last_ctrl_data = value;
-        reg_addr = (value >> 12) & 0xFF;
-        cur_byte = (value >>  8) & 3;
-        //last_byte = (value >> 10) & 3;
-        if (value & BURGUNDY_REG_WR) {
+    {
+        this->last_ctrl_data = value & ~CODEC_CONTROL::BUSY;
+        uint8_t write_byte = (value & CODEC_CONTROL::DATA_MASK) >> CODEC_CONTROL::DATA_POS;
+        uint8_t reg_addr = (value & CODEC_CONTROL::ADDR_MASK) >> CODEC_CONTROL::ADDR_POS;
+        uint8_t cur_byte = (value & CODEC_CONTROL::CURRENTBYTE_MASK) >> CODEC_CONTROL::CURRENTBYTE_POS;
+        uint8_t last_byte = (value & CODEC_CONTROL::LASTBYTE_MASK) >> CODEC_CONTROL::LASTBYTE_POS;
+        bool reset = value & CODEC_CONTROL::RESET;
+        bool write = value & CODEC_CONTROL::WRITE;
+        if (write) {
             if (reg_addr < BURGUNDY_NUM_REGS) {
                 uint32_t mask = 0xFFU << (cur_byte * 8);
                 this->reg_array[reg_addr] = (this->reg_array[reg_addr] & ~mask) |
-                                            ((value & 0xFFU) << (cur_byte * 8));
+                                            (write_byte << (cur_byte * 8));
             }
         } else {
             this->reg_addr = reg_addr;
@@ -111,6 +176,7 @@ void BurgundyCodec::snd_ctrl_write(uint32_t offset, uint32_t value, int size) {
             });
         }
         break;
+    }
     case AWAC_FRAME_COUNT:
         this->frame_count = value;
         this->frame_count_start_time = TimerManager::get_instance()->current_time_ns();
