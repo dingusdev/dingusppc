@@ -116,6 +116,13 @@ uint32_t BurgundyCodec::snd_ctrl_read(uint32_t offset, int size) {
         break;
     case AWAC_CODEC_STATUS_REG:
         value =
+            (
+                (
+                    9 |
+                    CODEC_STATUS::SENSE_MIC |
+                    CODEC_STATUS::SENSE_HEADPHONES
+                ) << CODEC_STATUS::SENSE_POS
+            ) |
             (this->data_byte << CODEC_STATUS::DATA_POS) |
             (this->read_pos << CODEC_STATUS::CURRENTBYTE_POS) |
             (this->byte_counter << CODEC_STATUS::BYTECOUNTER_POS) |
