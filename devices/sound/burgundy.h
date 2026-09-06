@@ -55,7 +55,7 @@ private:
     uint32_t    last_ctrl_data  = 0;
     uint8_t     byte_counter    = 0;
     uint8_t     reg_addr        = 0;
-    uint8_t     first_valid     = 0;
+    bool        first_valid     = false;
     uint8_t     read_pos        = 0;
     uint8_t     data_byte       = 0;
     uint32_t    frame_count     = 0;

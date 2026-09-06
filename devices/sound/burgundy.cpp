@@ -52,7 +52,7 @@ uint32_t BurgundyCodec::snd_ctrl_read(uint32_t offset, int size) {
         value = this->last_ctrl_data;
         break;
     case AWAC_CODEC_STATUS_REG:
-        value = (this->first_valid << 23) | BURGUNDY_READY |
+        value = ((this->first_valid ? 1 : 0) << 23) | BURGUNDY_READY |
            (this->byte_counter << 14) | (this->read_pos << 12) |
            (this->data_byte << 4);
         break;
@@ -97,12 +97,12 @@ void BurgundyCodec::snd_ctrl_write(uint32_t offset, uint32_t value, int size) {
             this->reg_addr = reg_addr;
             this->read_pos = cur_byte;
             this->data_byte = (this->reg_array[reg_addr] >> (cur_byte * 8)) & 0xFFU;
-            this->first_valid = 1;
+            this->first_valid = true;
 
             TimerManager::get_instance()->add_oneshot_timer(
                 USECS_TO_NSECS(10), // not sure if this is the correct delay
                 [this]() {
-                    this->first_valid  = 0;
+                    this->first_valid  = false;
                     this->byte_counter = (this->byte_counter + 1) & 3;
             });
         }
