@@ -86,16 +86,16 @@ void BurgundyCodec::snd_ctrl_write(uint32_t offset, uint32_t value, int size) {
         break;
     case AWAC_CODEC_CTRL_REG:
         this->last_ctrl_data = value;
-        reg_addr  = (value >> 12) & 0xFF;
-        cur_byte  = (value >>  8) & 3;
+        reg_addr = (value >> 12) & 0xFF;
+        cur_byte = (value >>  8) & 3;
         //last_byte = (value >> 10) & 3;
         if (value & BURGUNDY_REG_WR) {
             uint32_t mask = 0xFFU << (cur_byte * 8);
             this->reg_array[reg_addr] = (this->reg_array[reg_addr] & ~mask) |
                                         ((value & 0xFFU) << (cur_byte * 8));
         } else {
-            this->reg_addr  = reg_addr;
-            this->read_pos  = cur_byte;
+            this->reg_addr = reg_addr;
+            this->read_pos = cur_byte;
             this->data_byte = (this->reg_array[reg_addr] >> (cur_byte * 8)) & 0xFFU;
             this->first_valid = 1;
 
