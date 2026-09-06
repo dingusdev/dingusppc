@@ -90,13 +90,15 @@ void BurgundyCodec::snd_ctrl_write(uint32_t offset, uint32_t value, int size) {
         cur_byte = (value >>  8) & 3;
         //last_byte = (value >> 10) & 3;
         if (value & BURGUNDY_REG_WR) {
-            uint32_t mask = 0xFFU << (cur_byte * 8);
-            this->reg_array[reg_addr] = (this->reg_array[reg_addr] & ~mask) |
-                                        ((value & 0xFFU) << (cur_byte * 8));
+            if (reg_addr < BURGUNDY_NUM_REGS) {
+                uint32_t mask = 0xFFU << (cur_byte * 8);
+                this->reg_array[reg_addr] = (this->reg_array[reg_addr] & ~mask) |
+                                            ((value & 0xFFU) << (cur_byte * 8));
+            }
         } else {
             this->reg_addr = reg_addr;
             this->read_pos = cur_byte;
-            this->data_byte = (this->reg_array[reg_addr] >> (cur_byte * 8)) & 0xFFU;
+            this->data_byte = ((reg_addr < BURGUNDY_NUM_REGS ? this->reg_array[reg_addr] : 0) >> (cur_byte * 8)) & 0xFFU;
             this->first_valid = true;
 
             TimerManager::get_instance()->add_oneshot_timer(
