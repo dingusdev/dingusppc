@@ -39,6 +39,8 @@ BurgundyCodec::BurgundyCodec(std::string name) : MacioSndCodec(name)
     this->max_sr_id = 1;
 
     this->set_sample_rate(0); // set default sample rate
+
+    this->reg_array[0x01] = 0x01010000; // ID 1 (Burgundy), Vendor 1 (Crystal), Version 0, Revision 0
 }
 
 uint32_t BurgundyCodec::snd_ctrl_read(uint32_t offset, int size) {
