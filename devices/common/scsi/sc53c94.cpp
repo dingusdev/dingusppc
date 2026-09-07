@@ -78,7 +78,7 @@ void Sc53C94::reset_device()
     this->cur_step = 0;
     this->seq_step = 0;
 
-    this->status    &= STAT_PHASE_MASK; // reset doesn't affect bus phase bits
+    this->status &= STAT_PHASE_MASK; // reset doesn't affect bus phase bits
     this->int_status = 0;
 }
 
