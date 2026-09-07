@@ -100,7 +100,7 @@ void BurgundyCodec::snd_ctrl_write(uint32_t offset, uint32_t value, int size) {
             this->first_valid = true;
 
             TimerManager::get_instance()->add_oneshot_timer(
-                USECS_TO_NSECS(10), // not sure if this is the correct delay
+                USECS_TO_NSECS(22), // average is approximately 22.6 µs on a real B&W G3
                 [this]() {
                     this->first_valid  = false;
                     this->byte_counter = (this->byte_counter + 1) & 3;
