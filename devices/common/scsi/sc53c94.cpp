@@ -252,7 +252,15 @@ void Sc53C94::pseudo_dma_write(uint16_t data) {
 
 void Sc53C94::update_command_reg(uint8_t cmd)
 {
-    if (this->on_reset && (cmd & CMD_OPCODE) != CMD_NOP) {
+    if (cmd == (CMD_NOP | CMD_ISDMA)) {
+        LOG_F(9, "%s: CMD_NOP | CMD_ISDMA", this->name.c_str());
+    }
+
+    if (cmd == CMD_RESET_BUS) {
+        LOG_F(9, "%s: CMD_RESET_BUS", this->name.c_str());
+    }
+
+    if (this->on_reset && (cmd & CMD_OPCODE) != CMD_NOP && (cmd & CMD_OPCODE) != CMD_CLEAR_FIFO) {
         LOG_F(WARNING, "%s: command register blocked after RESET!", this->name.c_str());
         return;
     }
