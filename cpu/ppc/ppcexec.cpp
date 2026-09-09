@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "ppcdisasm.h"
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <cstring>
 #include <iostream>
@@ -34,6 +35,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <stdexcept>
 #include <stdio.h>
 #include <string>
+#include <thread>
 
 #ifdef __APPLE__
 #include <mach/mach_time.h>
@@ -123,17 +125,22 @@ uint32_t pcp;
 uint32_t ppc_next_instruction_address;    // Used for branching, setting up the NIA
 
 unsigned exec_flags; // execution control flags
-// FIXME: exec_timer is read by main thread ppc_main_opcode;
-// written by audio dbdma DMAChannel::update_irq .. add_immediate_timer
-volatile bool exec_timer;
+// exec_timer is raised from two threads: by the realtime timer thread
+// when the next timer deadline is reached, and by force_cycle_counter_reload
+// whenever the timer queue changes (e.g. an immediate timer added from the
+// audio thread's DMA channel), so it must be atomic.
+std::atomic<bool> exec_timer;
 bool int_pin = false; // interrupt request pin state: true - asserted
 bool dec_exception_pending = false;
 
 /* variables related to virtual time */
-bool g_realtime = false;
-uint64_t g_nanoseconds_base;
+std::atomic<bool> g_realtime = false;
+std::atomic<uint64_t> g_nanoseconds_base;
 uint64_t g_icycles;
 int      icnt_factor;
+
+/* when true, sleep an idle guest in realtime mode to save host CPU */
+std::atomic<bool> g_idle_cpu_save = false;
 
 /* global variables related to the timebase facility */
 uint64_t tbr_wr_timestamp;  // stores vCPU virtual time of the last TBR write
@@ -330,14 +337,14 @@ void ppc_main_opcode(PPCOpcode *opcodeGrabber, uint32_t opcode)
     irec->paddr = pcp;
     irec->ins = opcode;
     irec->msr = ppc_state.msr;
-    irec->flags_before = exec_flags | (exec_timer << 7);
+    irec->flags_before = exec_flags | ((uint32_t)exec_timer.load(std::memory_order_relaxed) << 7);
     irec->flags_after = 0;
 #endif
 
     opcodeGrabber[(opcode >> 15 & 0x1F800) | (opcode & 0x7FF)](opcode);
 
 #ifdef LOG_INSTRUCTIONS
-    irec->flags_after = exec_flags | (exec_timer << 7) | 0x80000000;
+    irec->flags_after = exec_flags | ((uint32_t)exec_timer.load(std::memory_order_relaxed) << 7) | 0x80000000;
     irec->msr_after = ppc_state.msr;
 #endif
 }
@@ -353,8 +360,8 @@ static long long cpu_now_ns() {
 
 uint64_t get_virt_time_ns()
 {
-    if (g_realtime) {
-        return cpu_now_ns() - g_nanoseconds_base;
+    if (g_realtime.load(std::memory_order_relaxed)) {
+        return cpu_now_ns() - g_nanoseconds_base.load(std::memory_order_relaxed);
     } else {
         return g_icycles << icnt_factor;
     }
@@ -362,23 +369,211 @@ uint64_t get_virt_time_ns()
 
 void set_virt_time_ns(uint64_t time_now)
 {
-    if (g_realtime) {
-        g_nanoseconds_base = cpu_now_ns() - time_now - 5000;
+    if (g_realtime.load(std::memory_order_relaxed)) {
+        g_nanoseconds_base.store(cpu_now_ns() - time_now - 5000, std::memory_order_relaxed);
     } else {
         g_icycles = time_now >> icnt_factor;
     }
     uint64_t time_new = get_virt_time_ns();
-    if (g_realtime && time_new > time_now) {
-        g_nanoseconds_base += 2 * (time_new - time_now);
+    if (g_realtime.load(std::memory_order_relaxed) && time_new > time_now) {
+        g_nanoseconds_base.fetch_add(2 * (time_new - time_now), std::memory_order_relaxed);
         time_new = get_virt_time_ns();
     }
     LOG_F(INFO, "time before: %lld  after: %lld  change: %lld", time_now, time_new, time_new - time_now);
 }
 
+// Idle detection for realtime mode. The guest never halts (no PPC
+// equivalent of x86 HLT), so at the desktop it keeps executing its idle
+// path forever, burning a whole host core. We cannot simply sleep
+// whenever the guest is quiet for a moment: stalling guest execution
+// while wall time (and thus every time-based device, timer and driver
+// timeout) keeps advancing derails the guest if it is still doing
+// critical boot work. The distinguishing signal we use is the guest's
+// memory-mapped I/O rate: boot and real work touch devices constantly
+// (hundreds of thousands of accesses per second), while a settled idle
+// desktop touches them at a steady few thousand per second. The rate is
+// low-pass filtered (a burst of accesses an interrupt handler performs
+// in a few microseconds would otherwise look like activity), and only
+// once the filtered rate has stayed low continuously for
+// IDLE_CONFIRM_NS do we throttle.
+//
+// The first confirmation must be long enough that it cannot be
+// satisfied during boot at all; a boot that takes tens of seconds never
+// yields that much uninterrupted low-rate time. Once the guest has been
+// throttled once it has provably reached its idle state, so afterwards we
+// only ever disengage for sustained work (see guest_is_idle).
+// The confirm and uptime gates were 15 s each, which delayed throttling
+// by ~30 s after the guest actually settled; 6 s / 8 s still skip the
+// brief quiet spells a boot can have while engaging noticeably sooner.
+static constexpr uint64_t IDLE_RATE_EMA_TAU_NS      = 1000000000ULL;   // 1 s
+static constexpr uint64_t IDLE_CONFIRM_RATE         = 30000;           // MMIO accesses per second
+static constexpr uint64_t IDLE_CONFIRM_NS           = 6000000000ULL;   // 6 s, first time
+static constexpr uint64_t IDLE_DISENGAGE_NS         = 1000000000ULL;   // 1 s of sustained high rate
+// Minimum uptime before the throttle may engage at all, so a guest that
+// is still in the middle of booting is never throttled; the confirm
+// timer guards against throttling during any later settling work.
+static constexpr uint64_t IDLE_UPTIME_GUARD_NS      = 8000000000ULL;   // 8 s
+// Upper bound for a single throttle sleep. The sleep normally ends at the
+// next timer deadline, but is capped here so the guest's periodic timers
+// (VBL, decrementer) are never deferred by more than one VBL period; the
+// realtime timer thread polls no faster than this while the throttle is
+// active for the same reason.
+static constexpr uint64_t IDLE_MAX_SLEEP_NS         = 16000000ULL;     // 16 ms
+// While the user is interacting, the throttle must not sleep: the guest
+// services host input (mouse, keyboard, gamepad) and the MMIO that input
+// generates is far below IDLE_CONFIRM_RATE, so without this the throttle
+// would never disengage for interaction and the guest would stay
+// sluggish. mark_host_input() is called by the event poller for every
+// input event; guest_is_idle() refuses to sleep until this long after the
+// last one.
+static constexpr uint64_t IDLE_HOST_INPUT_WAKE_NS   = 300000000ULL;    // 300 ms
+// The detector state is only ever touched by the emulation thread (from
+// guest_is_idle and reset_idle_detector), so it needs no synchronization;
+// the realtime timer thread only reads g_idle_throttle_active below.
+static uint64_t g_idle_last_ns = 0;
+static uint64_t g_idle_last_mmio = 0;
+static uint64_t g_mmio_count_ema = 0; // converges to rate * IDLE_RATE_EMA_TAU_NS
+static uint64_t g_idle_low_ns   = 0;  // continuous time with a low filtered rate
+static uint64_t g_idle_high_ns  = 0;  // continuous time with a high filtered rate
+static uint64_t g_idle_boot_start_ns = 0;
+static bool     g_idle_engaged  = false;
+// Last guest-time an input event was delivered to the guest. Only
+// written by the event poller and read by guest_is_idle, both on the
+// emulation thread; see IDLE_HOST_INPUT_WAKE_NS.
+static uint64_t g_last_host_input_ns = 0;
+// True from just before the idle throttle starts its deadline-bounded sleep
+// until the end of the servicing burst that follows it. The sleep is exactly
+// as long as to the next timer deadline, so the throttle fires the due
+// timers itself on wakeup; the realtime timer thread must not raise
+// exec_timer while the throttle is active or it races the idle decision
+// (guest_is_idle bails on exec_timer) and forces a full-speed slice instead
+// of the sleep, and it must not cut the burst short or the guest is starved
+// of the execution it needs to service its devices (the throttle then flaps
+// between sleep and full-speed catch-up, costing more host CPU than the
+// sleep/burst duty cycle alone).
+static std::atomic<bool>     g_idle_throttle_active = false;
+
+static void reset_idle_detector()
+{
+    // Called from ppc_cpu_init, i.e. on every boot (including guest
+    // restarts): start over with the long first confirmation and a
+    // fresh uptime gate so a rebooting guest is never throttled during
+    // its boot phase.
+    g_idle_last_ns = 0;
+    g_idle_last_mmio = 0;
+    g_mmio_count_ema = 0;
+    g_idle_low_ns = 0;
+    g_idle_high_ns = 0;
+    g_idle_boot_start_ns = get_virt_time_ns();
+    g_idle_engaged = false;
+    g_idle_throttle_active.store(false);
+}
+
+static bool guest_is_idle()
+{
+    const uint64_t now_ns = get_virt_time_ns();
+    const uint64_t elapsed_ns = now_ns - g_idle_last_ns;
+    g_idle_last_ns = now_ns;
+
+    const uint64_t mmio_count = g_mmio_access_count;
+    const uint64_t mmio_delta = mmio_count - g_idle_last_mmio;
+    g_idle_last_mmio = mmio_count;
+
+    if (elapsed_ns > 0) {
+        // Exponential-decay accumulator on the MMIO count. Each window
+        // adds its accesses and the total decays by exp(-elapsed/tau);
+        // it converges to rate * tau regardless of how often this is
+        // called, unlike an additive EMA which tracks the per-window
+        // count when windows are much shorter than tau. Rate is then
+        // count / tau.
+        uint64_t decayed;
+        if (elapsed_ns >= IDLE_RATE_EMA_TAU_NS) {
+            decayed = 0;
+        } else {
+            decayed = g_mmio_count_ema * (IDLE_RATE_EMA_TAU_NS - elapsed_ns) / IDLE_RATE_EMA_TAU_NS;
+        }
+        g_mmio_count_ema = decayed + mmio_delta;
+
+        const uint64_t rate = g_mmio_count_ema * 1000000000ULL / IDLE_RATE_EMA_TAU_NS;
+        if (rate < IDLE_CONFIRM_RATE) {
+            g_idle_high_ns = 0;
+            g_idle_low_ns += elapsed_ns;
+        } else {
+            g_idle_low_ns = 0;
+            g_idle_high_ns += elapsed_ns;
+        }
+    }
+
+    // The user just interacted: wake up and process the input at full
+    // speed instead of in short throttle bursts. The wake window is
+    // refreshed by every input event, so it stays disengaged for the
+    // whole interaction and re-throttles shortly after the user stops.
+    if (now_ns < g_last_host_input_ns + IDLE_HOST_INPUT_WAKE_NS) {
+        return false;
+    }
+
+    // The guest has real work to do: an exception to take, an interrupt
+    // asserted that it cannot take yet (MSR.EE off), or a device that
+    // requested immediate processing. Do not sleep in these cases.
+    if ((exec_flags & EXEF_EXCEPTION) || int_pin || exec_timer.load(std::memory_order_relaxed)) {
+        return false;
+    }
+
+    // Never throttle before the guest has had a chance to boot.
+    if (now_ns - g_idle_boot_start_ns < IDLE_UPTIME_GUARD_NS) {
+        return false;
+    }
+
+    // The first throttle only happens after IDLE_CONFIRM_NS of
+    // continuous low rate. Afterwards the throttle stays on through
+    // brief activity (input, a momentary burst) - the guest services it
+    // during the bursts - and only yields to sustained work: once the
+    // rate has been high for IDLE_DISENGAGE_NS it runs at full speed
+    // until the rate drops again, then throttling resumes immediately.
+    // This avoids the flapping where any short spike above the
+    // threshold disengages the throttle for seconds at a time, which
+    // showed up as the CPU jumping back to 99% at the settled desktop.
+    if (g_idle_engaged) {
+        return g_idle_high_ns < IDLE_DISENGAGE_NS;
+    }
+
+    if (g_idle_low_ns >= IDLE_CONFIRM_NS) {
+        g_idle_engaged = true;
+        return true;
+    }
+    return false;
+}
+
 static uint64_t process_events()
 {
-    exec_timer = false;
+    exec_timer.store(false);
     uint64_t slice_ns = TimerManager::get_instance()->process_timers();
+    if (g_realtime.load(std::memory_order_relaxed) && g_idle_cpu_save.load(std::memory_order_relaxed) && guest_is_idle()) {
+        // The guest is idling: sleep until the next scheduled event
+        // instead of executing its idle path. Guest time is wall-clock
+        // based in realtime mode, so the sleep advances guest time and
+        // the guest's timers (VBL, decrementer, ...) keep firing on
+        // schedule. We still run a short burst afterwards so the guest
+        // services those interrupts and keeps its devices polled.
+        // Only sleep if a timer is actually pending; otherwise the
+        // guest has no interrupt to wake it and the host must keep
+        // executing.
+        if (slice_ns != 0) {
+            // The burst must be long enough for the guest to fully
+            // service its pending interrupts (VBL, DEC, device polls)
+            // and return to its idle loop. Shorter bursts (1-4 ms)
+            // starve that servicing: guest time keeps advancing while
+            // the guest executes too little, so it ends up stuck in a
+            // machine-check storm at the external-interrupt vector.
+            // 6 ms per 16 ms window keeps DP3 healthy at ~7% host CPU.
+            constexpr uint64_t burst_ns     = 6000000ULL;  // 6 ms
+            const uint64_t sleep_ns = (slice_ns > IDLE_MAX_SLEEP_NS) ? IDLE_MAX_SLEEP_NS : slice_ns;
+            g_idle_throttle_active.store(true, std::memory_order_relaxed);
+            std::this_thread::sleep_for(std::chrono::nanoseconds(sleep_ns));
+            return g_icycles + (burst_ns >> icnt_factor) + 1;
+        }
+    }
+    g_idle_throttle_active.store(false, std::memory_order_relaxed);
     if (slice_ns == 0) {
         // execute 25.000 cycles
         // if there are no pending timers
@@ -389,8 +584,13 @@ static uint64_t process_events()
 
 static void force_cycle_counter_reload()
 {
-    // tell the interpreter loop to reload cycle counter
-    exec_timer = true;
+    // Tell the interpreter loop to reload the cycle counter. While the idle
+    // throttle is in its sleep/burst cycle the burst must run to its budget
+    // (that servicing is why the guest is awake at all), so do not cut it
+    // short with an early wakeup: process_events runs at the end of the
+    // burst and picks the new timer up anyway.
+    if (!g_idle_throttle_active.load(std::memory_order_relaxed))
+        exec_timer.store(true);
 }
 
 int increment_icnt_factor()
@@ -418,13 +618,105 @@ int get_icnt_factor()
     return icnt_factor;
 }
 
+// In realtime mode the interpreter loop must not poll the clock: guest
+// time follows the host clock, so a timer's guest-time deadline is a
+// fixed wall-clock instant. A dedicated thread sleeps until that instant
+// and then raises exec_timer, waking the interpreter to process the due
+// timers. The thread only runs while realtime mode is enabled and is
+// stopped (joined) when realtime mode is turned off or the emulator shuts
+// down; it never touches guest state itself.
+static std::thread g_realtime_timer_thread;
+static std::atomic<bool> g_realtime_timer_stop = true;
+
+static void realtime_timer_thread_fn()
+{
+    TimerManager* timer_manager = TimerManager::get_instance();
+    while (!g_realtime_timer_stop.load(std::memory_order_relaxed)) {
+        if (!g_realtime.load(std::memory_order_relaxed)) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            continue;
+        }
+        if (g_idle_throttle_active.load(std::memory_order_relaxed)) {
+            // The idle throttle is in its sleep/burst cycle and fires the
+            // due timers itself (the sleep is bounded by the next timer
+            // deadline, the burst by its 6 ms budget); raising exec_timer
+            // here would race its idle decision and force full-speed
+            // slices. The throttle wakes at least every IDLE_MAX_SLEEP_NS,
+            // so poll no faster than that instead of adding a wakeup storm
+            // on top of the throttled cycle.
+            std::this_thread::sleep_for(std::chrono::nanoseconds(IDLE_MAX_SLEEP_NS));
+            continue;
+        }
+        const uint64_t deadline_ns = timer_manager->get_next_timeout_ns();
+        if (deadline_ns == 0) {
+            // No timer pending: nothing to schedule, the interpreter loop
+            // keeps executing on its own instruction-count budget.
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            continue;
+        }
+        // Timer deadlines are expressed in guest time; in realtime mode
+        // guest time is the host clock minus the base, so the wall-clock
+        // instant to wake up at is the deadline plus the base.
+        const uint64_t target_wall_ns = deadline_ns + g_nanoseconds_base.load(std::memory_order_relaxed);
+        const uint64_t now_ns = cpu_now_ns();
+        if (target_wall_ns > now_ns) {
+            std::this_thread::sleep_for(std::chrono::nanoseconds(target_wall_ns - now_ns));
+        } else if (exec_timer.load(std::memory_order_relaxed)) {
+            // The interpreter is already about to process events; do not
+            // stampede it with an immediate wakeup.
+            std::this_thread::sleep_for(std::chrono::microseconds(100));
+        }
+        exec_timer.store(true, std::memory_order_relaxed);
+    }
+}
+
+void start_realtime_timer_thread()
+{
+    if (!g_realtime_timer_stop.exchange(false)) {
+        return; // already running
+    }
+    g_realtime_timer_thread = std::thread(realtime_timer_thread_fn);
+}
+
+void stop_realtime_timer_thread()
+{
+    if (g_realtime_timer_stop.exchange(true)) {
+        return; // already stopped
+    }
+    if (g_realtime_timer_thread.joinable()) {
+        g_realtime_timer_thread.join();
+    }
+}
+
 bool toggle_g_realtime()
 {
     uint64_t time_now = get_virt_time_ns();
-    g_realtime = !g_realtime;
+    g_realtime.store(!g_realtime.load(std::memory_order_relaxed));
     set_virt_time_ns(time_now);
     force_cycle_counter_reload();
-    return g_realtime;
+    if (g_realtime.load(std::memory_order_relaxed)) {
+        start_realtime_timer_thread();
+    } else {
+        stop_realtime_timer_thread();
+    }
+    return g_realtime.load(std::memory_order_relaxed);
+}
+
+void set_g_idle_cpu_save(bool enabled)
+{
+    g_idle_cpu_save.store(enabled);
+}
+
+void mark_host_input()
+{
+    // Called by the host event poller (emulation thread) for every mouse,
+    // keyboard and gamepad event delivered to the guest; guest_is_idle
+    // uses this to keep the throttle awake while the user interacts.
+    // Recorded in guest time (get_virt_time_ns) so guest_is_idle can
+    // compare it against its already-computed now_ns without a second
+    // clock read; guest time only differs from the wall clock by the
+    // constant g_nanoseconds_base in realtime mode.
+    g_last_host_input_ns = get_virt_time_ns();
 }
 
 typedef enum {
@@ -460,7 +752,17 @@ static void ppc_exec_inner(uint32_t start_addr, uint32_t size)
 
         opcode = ppc_read_instruction(pc_real);
         ppc_main_opcode(opcode_grabber, opcode);
-        if (g_icycles++ >= max_cycles || exec_timer) [[unlikely]]
+        // In realtime mode guest time is the wall clock, so there is no
+        // per-instruction time to advance; the instruction budget only
+        // bounds the idle burst so a fast host cannot over-run it. The
+        // burst is never cut short because neither exec_timer writer (the
+        // realtime timer thread and force_cycle_counter_reload) raises it
+        // while the throttle is active; the throttle fires due timers
+        // itself on wakeup. In non-realtime mode the throttle is never
+        // active, so this single condition reduces to plain exec_timer
+        // handling and avoids an atomic load and branch on every
+        // instruction.
+        if (exec_timer.load(std::memory_order_relaxed) || g_icycles++ >= max_cycles) [[unlikely]]
             max_cycles = process_events();
 
         if (exec_flags) {
@@ -1036,7 +1338,7 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool do_include_6
 #ifdef __APPLE__
     mach_timebase_info(&timebase_info);
 #endif
-    g_nanoseconds_base = cpu_now_ns();
+    g_nanoseconds_base.store(cpu_now_ns(), std::memory_order_relaxed);
     g_icycles = 0;
 
 //                    //                                        // PDM cpu clock calculated at 0x403036CC in r3
@@ -1066,7 +1368,7 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool do_include_6
     tbr_period_ns = ((uint64_t)NS_PER_SEC << 32) / tb_freq;
 
     exec_flags = 0;
-    exec_timer = false;
+    exec_timer.store(false);
 
     dec_wr_value = 0;
 
@@ -1089,6 +1391,8 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool do_include_6
 
     /* redirect code execution to reset vector */
     ppc_state.pc = 0xFFF00100;
+
+    reset_idle_detector();
 
 #ifdef CPU_PROFILING
     gProfilerObj->register_profile("PPC_CPU",
