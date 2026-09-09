@@ -99,16 +99,19 @@ int MachineAlchemy::initialize(const std::string &id) {
     psx_obj->map_phys_ram();
 
     // configure CPU clocks
-    uint64_t bus_freq      = 40000000ULL;
+    uint64_t bus_freq      = 40'000'000ULL;
     uint64_t timebase_freq = bus_freq / 4;
+    uint64_t core_freq     = 180'000'000ULL;
 
     psx_obj->set_bus_speed(PSX_BUS_SPEED_40);
 
-    // init virtual CPU and request MPC603ev
-    ppc_cpu_init(psx_obj, PPC_VER::MPC603E, false, timebase_freq);
-
-    // CPU frequency is hardcoded to 225 MHz for now
-    //ppc_state.spr[SPR::HID1] = get_cpu_pll_value(225000000) << 28;
+    // init virtual CPU and request MPC603e
+    ppc_cpu_init(psx_obj, {
+        .version = PPC_VER::MPC603E,
+        .timebase_freq_hz = timebase_freq,
+        .bus_freq_hz = bus_freq,
+        .core_freq_hz = core_freq,
+    });
 
     return 0;
 }

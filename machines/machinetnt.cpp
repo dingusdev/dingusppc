@@ -136,21 +136,39 @@ int MachineTnt::initialize(const std::string &id) {
     // init virtual CPU
     std::string cpu = GET_STR_PROP("cpu");
     if (cpu == "604e")
-        ppc_cpu_init(memctrl_obj, PPC_VER::MPC604E, false, 12500000ULL);
+        ppc_cpu_init(memctrl_obj, {
+            .version = PPC_VER::MPC604E,
+            .timebase_freq_hz = 12'500'000ULL,
+            .bus_freq_hz = 50'000'000ULL,
+            .core_freq_hz = 200'000'000ULL, // 200 MHz
+        });
     else if (cpu == "604")
-        ppc_cpu_init(memctrl_obj, PPC_VER::MPC604, false, 12500000ULL);
+        ppc_cpu_init(memctrl_obj, {
+            .version = PPC_VER::MPC604,
+            .timebase_freq_hz = 12'500'000ULL,
+            .bus_freq_hz = 50'000'000ULL,
+            .core_freq_hz = 150'000'000ULL, // 150 MHz
+        });
     else if (cpu == "601")
-        ppc_cpu_init(memctrl_obj, PPC_VER::MPC601, true, 7833600ULL);
+        ppc_cpu_init(memctrl_obj, {
+            .version = PPC_VER::MPC601,
+            .timebase_freq_hz = 7'833'600ULL,
+            .bus_freq_hz = 50'000'000ULL,
+            .core_freq_hz = 100'000'000ULL, // 100 MHz
+        });
     else if (cpu == "750") {
         // configure CPU clocks
-        uint64_t bus_freq      = 50000000ULL;
+        uint64_t bus_freq      = 50'000'000ULL;
         uint64_t timebase_freq = bus_freq / 4;
+        uint64_t core_freq     = bus_freq * 6; // 300 MHz (matches G3 upgrade cards; CPU PLL ratio of 6)
 
         // initialize virtual CPU and request MPC750 CPU aka G3
-        ppc_cpu_init(memctrl_obj, PPC_VER::MPC750, false, timebase_freq);
-
-        // set CPU PLL ratio to 3.5
-        ppc_state.spr[SPR::HID1] = 0xE << 28;
+        ppc_cpu_init(memctrl_obj, {
+            .version = PPC_VER::MPC750,
+            .timebase_freq_hz = timebase_freq,
+            .bus_freq_hz = bus_freq,
+            .core_freq_hz = core_freq,
+        });
     }
 
     return 0;

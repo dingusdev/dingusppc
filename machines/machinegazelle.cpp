@@ -46,20 +46,6 @@ static std::vector<PciIrqMap> psx_irq_map = {
     {"pci_F1", DEV_FUN(0x12,0), IntSrc::PCI_F},
 };
 
-// TODO: move it to /cpu/ppc
-int get_cpu_pll_value(const uint64_t cpu_freq_hz) {
-    switch (cpu_freq_hz / 1000000) {
-    case 225:
-        return 7;  // 4.5:1 ratio
-    case 250:
-        return 11; // 5:1 ratio
-    case 275:
-        return 9;  // 5.5:1 ratio
-    default:
-        ABORT_F("Unsupported CPU frequency %llu Hz", cpu_freq_hz);
-    }
-}
-
 class MachineGazelle : public Machine {
 public:
     static std::unique_ptr<HWComponent> create5500() {
@@ -126,14 +112,17 @@ int MachineGazelle::initialize(const std::string &id) {
     psx_obj->set_bus_speed(PSX_BUS_SPEED_50);
 
     // configure CPU clocks
-    uint64_t bus_freq      = 50000000ULL;
+    uint64_t bus_freq      = 50'000'000ULL;
     uint64_t timebase_freq = bus_freq / 4;
+    uint64_t core_freq     = GET_INT_PROP("cpu_freq") * 1'000'000ULL; // 225, 250, or 275 MHz
 
     // init virtual CPU and request MPC603ev
-    ppc_cpu_init(psx_obj, PPC_VER::MPC603EV, false, timebase_freq);
-
-    // CPU frequency is hardcoded to 225 MHz for now
-    ppc_state.spr[SPR::HID1] = get_cpu_pll_value(225000000) << 28;
+    ppc_cpu_init(psx_obj, {
+        .version = PPC_VER::MPC603EV,
+        .timebase_freq_hz = timebase_freq,
+        .bus_freq_hz = bus_freq,
+        .core_freq_hz = core_freq,
+    });
 
     return 0;
 }
@@ -147,6 +136,8 @@ static const PropMap pm6500_settings = {
         new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64}))},
     {"emmo",
         new BinProperty(0)},
+    {"cpu_freq",
+        new IntProperty(225, std::vector<uint32_t>({225, 250, 275}))},
     {"hdd_config",
         new StrProperty("Ide0:0")},
     {"pci_F1",

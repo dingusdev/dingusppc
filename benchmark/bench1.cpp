@@ -69,9 +69,16 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    constexpr uint64_t tbr_freq = 16705000;
+    constexpr uint64_t bus_freq = 66'820'000ULL;
+    constexpr uint64_t tbr_freq = bus_freq / 4;
+    constexpr uint64_t core_freq = bus_freq * 7 / 2; // 233.87 MHz (CPU PLL ratio of 3.5)
 
-    ppc_cpu_init(grackle_obj, PPC_VER::MPC750, false, tbr_freq);
+    ppc_cpu_init(grackle_obj, {
+        .version = PPC_VER::MPC750,
+        .timebase_freq_hz = tbr_freq,
+        .bus_freq_hz = bus_freq,
+        .core_freq_hz = core_freq,
+    });
 
     /* load executable code into RAM at address 0 */
     for (i = 0; i < sizeof(cs_code) / sizeof(cs_code[0]); i++) {

@@ -88,14 +88,17 @@ int MachineBondi::initialize(const std::string &id) {
     setup_ram_slot("RAM_DIMM_2", 0x51, bank_2_size);
 
     // configure CPU clocks
-    uint64_t bus_freq      = 66820000ULL;
+    uint64_t bus_freq      = 66'820'000ULL;
     uint64_t timebase_freq = bus_freq / 4;
+    uint64_t core_freq     = bus_freq * 7 / 2; // 233.87 MHz (CPU PLL ratio of 3.5)
 
     // initialize virtual CPU and request MPC750 CPU aka G3
-    ppc_cpu_init(grackle_obj, PPC_VER::MPC750, false, timebase_freq);
-
-    // set CPU PLL ratio to 3.5
-    ppc_state.spr[SPR::HID1] = 0xE << 28;
+    ppc_cpu_init(grackle_obj, {
+        .version = PPC_VER::MPC750,
+        .timebase_freq_hz = timebase_freq,
+        .bus_freq_hz = bus_freq,
+        .core_freq_hz = core_freq,
+    });
 
     return 0;
 }
