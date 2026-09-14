@@ -129,6 +129,7 @@ void MeshController::write(uint8_t reg_offset, uint8_t value) {
         break;
     case MeshReg::IntMask:
         this->int_mask = value;
+        update_irq();
         break;
     case MeshReg::Interrupt:
         this->int_stat &= ~(value & INT_MASK); // clear requested interrupt bits
