@@ -51,10 +51,16 @@ int MeshController::device_postinit() {
 void MeshController::reset(bool is_hard_reset) {
     this->cur_cmd       = SeqCmd::NoOperation;
     this->fifo_pos      = 0;
+    this->to_xfer       = 0;
+    this->int_stat      = 0;
     this->int_mask      = 0;
     this->exception     = 0;
     this->xfer_count    = 0;
     this->src_id        = 7;
+    this->check_parity  = true;
+
+    this->cur_state = Scsi_Bus_Controller::SeqState::BUS_FREE;
+    update_irq();
 
     if (is_hard_reset) {
         this->bus_stat    = 0;
