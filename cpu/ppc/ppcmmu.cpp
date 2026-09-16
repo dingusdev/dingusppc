@@ -57,6 +57,7 @@ uint64_t    iomem_writes_total = 0; // counts I/O memory writes
 uint64_t    exec_reads_total   = 0; // counts reads from executable memory
 uint64_t    bat_transl_total   = 0; // counts BAT translations
 uint64_t    ptab_transl_total  = 0; // counts page table translations
+uint64_t    pat_flushes_total  = 0; // counts full page-translation TLB flushes
 uint64_t    unaligned_reads    = 0; // counts unaligned reads
 uint64_t    unaligned_writes   = 0; // counts unaligned writes
 uint64_t    unaligned_crossp_r = 0; // counts unaligned crosspage reads
@@ -462,7 +463,6 @@ fail:
 constexpr uint32_t TLB_SIZE        = 4096;
 constexpr uint32_t TLB2_WAYS       = 4;
 constexpr uint32_t TLB_INVALID_TAG = 0xFFFFFFFF;
-constexpr uint32_t TLB_VPS_MASK    = 0x0FFFF000; // mask for TLB invalidation
 
 enum TLBFlags : uint16_t {
     PAGE_MEM      = 1 << 0, // memory page backed by host memory
@@ -520,6 +520,24 @@ static void track_translated_entry(TLBEntry *tlb_entry)
         gTrackedDEntries.push_back(tlb_entry);
 }
 
+static void tlb_invalidate_tracked_entries(std::vector<TLBEntry *> &tracked_entries,
+                                           uint16_t sources)
+{
+    size_t retained_count = 0;
+    for (TLBEntry *tlb_entry : tracked_entries) {
+        uint16_t source = tlb_entry->flags & TLBE_FROM_TRANSLATION;
+        if (source & sources) {
+            tlb_entry->tag = TLB_INVALID_TAG;
+            tlb_entry->flags &= ~TLBFlags::TLBE_CTX_TRACKED;
+        } else if (source) {
+            tracked_entries[retained_count++] = tlb_entry;
+        } else {
+            tlb_entry->flags &= ~TLBFlags::TLBE_CTX_TRACKED;
+        }
+    }
+    tracked_entries.resize(retained_count);
+}
+
 template <const TLBType tlb_type>
 static void tlb_invalidate_tracked_entries()
 {
@@ -537,19 +555,7 @@ static void tlb_invalidate_tracked_entries()
     if (!*pending_sources)
         return;
 
-    size_t retained_count = 0;
-    for (TLBEntry *tlb_entry : *tracked_entries) {
-        uint16_t source = tlb_entry->flags & TLBE_FROM_TRANSLATION;
-        if (source & *pending_sources) {
-            tlb_entry->tag = TLB_INVALID_TAG;
-            tlb_entry->flags &= ~TLBFlags::TLBE_CTX_TRACKED;
-        } else if (source) {
-            (*tracked_entries)[retained_count++] = tlb_entry;
-        } else {
-            tlb_entry->flags &= ~TLBFlags::TLBE_CTX_TRACKED;
-        }
-    }
-    tracked_entries->resize(retained_count);
+    tlb_invalidate_tracked_entries(*tracked_entries, *pending_sources);
     *pending_sources = 0;
 }
 
@@ -1035,41 +1041,14 @@ uint8_t *mmu_translate_imem(uint32_t vaddr, uint32_t *paddr)
     return host_va;
 }
 
-static void tlb_flush_primary_entry(std::array<TLBEntry, TLB_SIZE> &tlb1, uint32_t tag)
+void tlb_flush_all_pat()
 {
-    TLBEntry *tlb_entry = &tlb1[(tag >> PPC_PAGE_SIZE_BITS) & tlb_size_mask];
-    if (tlb_entry->tag != TLB_INVALID_TAG && (tlb_entry->tag & TLB_VPS_MASK) == tag) {
-        tlb_entry->tag = TLB_INVALID_TAG;
-        //LOG_F(INFO, "Invalidated primary TLB entry at 0x%X", tag);
-    }
-}
+#ifdef MMU_PROFILING
+    pat_flushes_total++;
+#endif
 
-static void tlb_flush_secondary_entry(std::array<TLBEntry, TLB_SIZE*TLB2_WAYS> &tlb2, uint32_t tag)
-{
-    TLBEntry *tlb_entry = &tlb2[((tag >> PPC_PAGE_SIZE_BITS) & tlb_size_mask) * TLB2_WAYS];
-    for (int i = 0; i < TLB2_WAYS; i++) {
-        if (tlb_entry[i].tag != TLB_INVALID_TAG && (tlb_entry[i].tag & TLB_VPS_MASK) == tag) {
-            tlb_entry[i].tag = TLB_INVALID_TAG;
-            //LOG_F(INFO, "Invalidated secondary TLB entry at 0x%X", tag);
-        }
-    }
-}
-
-void tlb_flush_entry(uint32_t ea)
-{
-    const uint32_t tag = ea & TLB_VPS_MASK;
-    tlb_flush_primary_entry(itlb1_mode1, tag);
-    tlb_flush_secondary_entry(itlb2_mode1, tag);
-    tlb_flush_primary_entry(itlb1_mode2, tag);
-    tlb_flush_secondary_entry(itlb2_mode2, tag);
-    tlb_flush_primary_entry(itlb1_mode3, tag);
-    tlb_flush_secondary_entry(itlb2_mode3, tag);
-    tlb_flush_primary_entry(dtlb1_mode1, tag);
-    tlb_flush_secondary_entry(dtlb2_mode1, tag);
-    tlb_flush_primary_entry(dtlb1_mode2, tag);
-    tlb_flush_secondary_entry(dtlb2_mode2, tag);
-    tlb_flush_primary_entry(dtlb1_mode3, tag);
-    tlb_flush_secondary_entry(dtlb2_mode3, tag);
+    tlb_invalidate_tracked_entries(gTrackedIEntries, TLBE_FROM_PAT);
+    tlb_invalidate_tracked_entries(gTrackedDEntries, TLBE_FROM_PAT);
 }
 
 static void mpc601_bat_update(uint32_t bat_reg)
@@ -1738,6 +1717,10 @@ public:
                         .format = ProfileVarFmt::DEC,
                         .value = ptab_transl_total});
 
+        vars.push_back({.name = "Full PAT TLB Flushes Total",
+                        .format = ProfileVarFmt::DEC,
+                        .value = pat_flushes_total});
+
         vars.push_back({.name = "Unaligned Reads Total",
                         .format = ProfileVarFmt::DEC,
                         .value = unaligned_reads});
@@ -1763,6 +1746,7 @@ public:
         exec_reads_total   = 0;
         bat_transl_total   = 0;
         ptab_transl_total  = 0;
+        pat_flushes_total  = 0;
         unaligned_reads    = 0;
         unaligned_writes   = 0;
         unaligned_crossp_r = 0;

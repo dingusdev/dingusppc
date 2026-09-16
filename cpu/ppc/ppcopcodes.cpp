@@ -2130,7 +2130,13 @@ void dppc_interpreter::ppc_tlbie(uint32_t opcode) {
         return;
     }
 
-    tlb_flush_entry(ppc_state.gpr[(opcode >> 11) & 0x1F]);
+    // Ideally we would get the effective address via ppc_state.gpr[(opcode >> 11) & 0x1F]
+    // and use that to identify entries to flush. But that is CPU-dependent (e.g.
+    // on the 750 only bits 14-19 are used to find matching entries) and does not
+    // map cleanly to the layout of our virtual TLB. The PowerPC specification
+    // allows an implementation to be more lax and flush the entire TLB, so we
+    // do that instead.
+    tlb_flush_all_pat();
 }
 
 void dppc_interpreter::ppc_tlbia(uint32_t opcode) {
