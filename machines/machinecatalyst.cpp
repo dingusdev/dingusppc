@@ -96,19 +96,30 @@ int MachineCatalyst::initialize(const std::string &id) {
 
     std::string cpu = GET_STR_PROP("cpu");
     if (cpu == "601") {
+        uint64_t bus_freq  = 37'500'000ULL;
+        uint64_t core_freq = 75'000'000ULL;
+
         // init virtual CPU and request MPC601
-        ppc_cpu_init(platinum_obj, PPC_VER::MPC601, true, 7833600ULL);
+        ppc_cpu_init(platinum_obj, {
+            .version = PPC_VER::MPC601,
+            .timebase_freq_hz = 7'833'600ULL,
+            .bus_freq_hz = bus_freq,
+            .core_freq_hz = core_freq,
+        });
     }
     else if (cpu == "750") {
         // configure CPU clocks
-        uint64_t bus_freq      = 50000000ULL;
+        uint64_t bus_freq      = 50'000'000ULL;
         uint64_t timebase_freq = bus_freq / 4;
+        uint64_t core_freq     = bus_freq * 8; // 400 MHz (matches G3 upgrade cards; CPU PLL ratio to 8)
 
         // initialize virtual CPU and request MPC750 CPU aka G3
-        ppc_cpu_init(platinum_obj, PPC_VER::MPC750, false, timebase_freq);
-
-        // set CPU PLL ratio to 3.5
-        ppc_state.spr[SPR::HID1] = 0xE << 28;
+        ppc_cpu_init(platinum_obj, {
+            .version = PPC_VER::MPC750,
+            .timebase_freq_hz = timebase_freq,
+            .bus_freq_hz = bus_freq,
+            .core_freq_hz = core_freq,
+        });
     }
 
     return 0;

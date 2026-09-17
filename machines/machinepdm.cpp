@@ -87,16 +87,24 @@ int MachinePdm::initialize(const std::string &id) {
     LOG_F(INFO, "Building machine PDM...");
 
     uint16_t machine_id;
+    uint64_t bus_freq;
+    uint64_t core_freq;
 
     // get raw pointer to HMC object
     HMC* hmc_obj = dynamic_cast<HMC*>(gMachineObj->get_comp_by_name("HMC"));
 
     if (id == "pm6100") {
         machine_id = 0x3010;
+        bus_freq = 30'000'000ULL;
+        core_freq = 60'000'000ULL;
     } else if (id == "pm7100") {
         machine_id = 0x3012;
+        bus_freq = 33'000'000ULL;
+        core_freq = 66'000'000ULL;
     } else if (id == "pm8100") {
         machine_id = 0x3013;
+        bus_freq = 40'000'000ULL;
+        core_freq = 80'000'000ULL;
     } else {
         LOG_F(ERROR, "Unknown machine ID: %s!", id.c_str());
         return -1;
@@ -136,7 +144,12 @@ int MachinePdm::initialize(const std::string &id) {
     setup_pds();
 
     // Init virtual CPU and request MPC601
-    ppc_cpu_init(hmc_obj, PPC_VER::MPC601, true, 7833600ULL);
+    ppc_cpu_init(hmc_obj, {
+        .version = PPC_VER::MPC601,
+        .timebase_freq_hz = 7'833'600ULL,
+        .bus_freq_hz = bus_freq,
+        .core_freq_hz = core_freq,
+    });
 
     return 0;
 }

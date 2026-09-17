@@ -470,8 +470,21 @@ typedef enum {
 // Placeholder value for cases where we don't have a currently-executing instruction.
 constexpr uint32_t NO_OPCODE = 0;
 
+struct PPC_CPU_Config {
+    uint32_t version;
+    uint64_t timebase_freq_hz;
+    uint64_t bus_freq_hz;
+    uint64_t core_freq_hz;
+};
+
+enum class PPC_CPU_TimingMode {
+    Fixed,
+    PerMachine,
+};
+
 // Function prototypes
-extern void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool include_601, uint64_t tb_freq);
+extern void set_cpu_timing_mode(PPC_CPU_TimingMode mode);
+extern void ppc_cpu_init(MemCtrlBase* mem_ctrl, const PPC_CPU_Config& config);
 extern void ppc_mmu_init();
 
 void ppc_illegalop(uint32_t opcode);
@@ -720,10 +733,10 @@ extern void ppc_change_endian(bool newLE);
 uint64_t get_reg(std::string reg_name); /* get content of the register reg_name */
 void set_reg(std::string reg_name, uint64_t val); /* set reg_name to val */
 
-/* icnt_factor control */
-extern int increment_icnt_factor();
-extern int decrement_icnt_factor();
-extern int get_icnt_factor();
+/* instruction period control */
+extern uint64_t increment_instruction_period();
+extern uint64_t decrement_instruction_period();
+extern uint64_t get_instruction_period();
 
 /* toggle_g_realtime */
 extern bool toggle_g_realtime();
