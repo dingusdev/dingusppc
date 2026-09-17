@@ -141,6 +141,10 @@ public:
 
     uint64_t process_timers();
 
+    // peek at the next timer's expiry (in guest time) without firing it;
+    // returns 0 if there are no pending timers
+    uint64_t get_next_timeout_ns();
+
 private:
     static TimerManager* timer_manager;
     TimerManager(){} // private constructor to implement a singleton
