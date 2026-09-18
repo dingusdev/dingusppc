@@ -66,7 +66,7 @@ protected:
     SoundServer     *snd_server; // SoundServer instance pointer
     DmaOutChannel   *dma_out_ch; // DMA output channel instance pointer
     DmaInChannel    *dma_in_ch; // DMA input channel instance pointer
-    uint32_t        dma_in_timer_id = 0;
+    TimerInfo       dma_in_timer;
 
     int     *sr_table;  // pointer to the table of supported sample rates
     int     max_sr_id;  // maximum value for sample rate ID

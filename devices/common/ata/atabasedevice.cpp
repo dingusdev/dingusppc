@@ -77,8 +77,14 @@ uint16_t AtaBaseDevice::read(const uint8_t reg_addr) {
                     this->r_status &= ~DRQ;
                 } else {
                     this->chunk_cnt = std::min(this->xfer_cnt, this->chunk_size);
-                    TimerManager::get_instance()->add_oneshot_timer(
-                        USECS_TO_NSECS(100), [this](uint64_t, uint64_t) { this->update_intrq(1); });
+                    if (this->read_data_timer.active)
+                        LOG_F(ERROR, "%s: read_data_timer is already active", this->get_name().c_str());
+                    TimerManager::get_instance()->add_oneshot_timer(this->read_data_timer,
+                        USECS_TO_NSECS(100), [this](uint64_t, uint64_t) {
+                            this->read_data_timer.active = 0;
+                            this->update_intrq(1);
+                        }
+                    );
                 }
             }
             return ret_data;
@@ -121,17 +127,27 @@ void AtaBaseDevice::write(const uint8_t reg_addr, const uint16_t value) {
                     this->xfer_cnt = 0;
                     this->r_status &= ~DRQ;
                     //LOG_F(INFO, "%s: write complete", name.c_str());
-                    TimerManager::get_instance()->add_oneshot_timer(USECS_TO_NSECS(100), [this](uint64_t, uint64_t) {
-                        this->r_status &= ~BSY;
-                        this->update_intrq(1);
-                    });
+                    if (this->write_done_timer.active)
+                        LOG_F(ERROR, "%s: write_done_timer is already active", this->get_name().c_str());
+                    TimerManager::get_instance()->add_oneshot_timer(write_done_timer,
+                        USECS_TO_NSECS(100), [this](uint64_t, uint64_t) {
+                            write_done_timer.active = 0;
+                            this->r_status &= ~BSY;
+                            this->update_intrq(1);
+                        }
+                    );
                 } else {
                     this->cur_data_ptr = this->data_ptr;
                     this->chunk_cnt = std::min(this->xfer_cnt, this->chunk_size);
                     //LOG_F(INFO, "%s: write needs more data (left: 0x%x)", name.c_str(), xfer_cnt);
-                    TimerManager::get_instance()->add_oneshot_timer(USECS_TO_NSECS(100), [this](uint64_t, uint64_t) {
-                        this->signal_data_ready();
-                    });
+                    if (this->write_more_timer.active)
+                        LOG_F(ERROR, "%s: write_more_timer is already active", this->get_name().c_str());
+                    TimerManager::get_instance()->add_oneshot_timer(this->write_more_timer,
+                        USECS_TO_NSECS(100), [this](uint64_t, uint64_t) {
+                            this->write_more_timer.active = 0;
+                            this->signal_data_ready();
+                        }
+                    );
                 }
             }
         }
@@ -213,7 +229,10 @@ int AtaBaseDevice::pull_data(uint8_t *buf, int len) {
     if (!this->xfer_cnt) {
         this->is_dma_xfer = false;
         this->data_ptr = nullptr;
-        TimerManager::get_instance()->add_oneshot_timer(500, [this](uint64_t, uint64_t) {
+        if (this->dma_pull_timer.active)
+            LOG_F(ERROR, "%s: dma_pull_timer is already active", this->get_name().c_str());
+        TimerManager::get_instance()->add_oneshot_timer(dma_pull_timer, 500, [this](uint64_t, uint64_t) {
+            dma_pull_timer.active = 0;
             this->r_status &= ~(BSY | DRQ);
             this->update_intrq(1);
         });
@@ -240,7 +259,10 @@ int AtaBaseDevice::push_data(uint8_t *buf, int len) {
         this->is_dma_xfer = false;
         this->data_ptr = nullptr;
         this->cur_data_ptr = nullptr;
-        TimerManager::get_instance()->add_oneshot_timer(500, [this](uint64_t, uint64_t) {
+        if (this->dma_push_timer.active)
+            LOG_F(ERROR, "%s: dma_push_timer is already active", this->get_name().c_str());
+        TimerManager::get_instance()->add_oneshot_timer(dma_push_timer, 500, [this](uint64_t, uint64_t) {
+            dma_push_timer.active = 0;
             this->r_status &= ~(BSY | DRQ);
             this->update_intrq(1);
         });

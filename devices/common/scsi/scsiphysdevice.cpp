@@ -37,9 +37,12 @@ void ScsiPhysDevice::notify(ScsiNotification notif_type, int param)
             // check if something tries to select us
             if (this->bus_obj->get_data_lines() & (1 << scsi_id)) {
                 LOG_F(9, "device %d selected", this->scsi_id);
-                TimerManager::get_instance()->add_oneshot_timer(
+                if (this->bus_settle_timer.active)
+                    LOG_F(ERROR, "%s: bus_settle_timer already active", this->get_name().c_str());
+                TimerManager::get_instance()->add_oneshot_timer(bus_settle_timer,
                     BUS_SETTLE_DELAY,
                     [this](uint64_t, uint64_t) {
+                        this->bus_settle_timer.active = 0;
                         // don't confirm selection if BSY or I/O are asserted
                         if (this->bus_obj->test_ctrl_lines(SCSI_CTRL_BSY | SCSI_CTRL_IO))
                             return;

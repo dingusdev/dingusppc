@@ -51,7 +51,7 @@ public:
     cubeb *cubeb_ctx;
     cubeb_stream *out_stream;
 
-    uint32_t deterministic_poll_timer = 0;
+    TimerInfo deterministic_poll_timer;
     timer_cb deterministic_poll_cb;
 };
 
@@ -228,8 +228,8 @@ int SoundServer::start_out_stream()
 {
     if (is_deterministic) {
         LOG_F(9, "Starting sound output deterministic polling.");
-        impl->deterministic_poll_timer =
-            TimerManager::get_instance()->add_cyclic_timer(MSECS_TO_NSECS(10), impl->deterministic_poll_cb);
+        TimerManager::get_instance()->add_cyclic_timer(
+            impl->deterministic_poll_timer, MSECS_TO_NSECS(10), impl->deterministic_poll_cb);
         return 0;
     }
     int res = cubeb_stream_start(impl->out_stream);
@@ -237,9 +237,9 @@ int SoundServer::start_out_stream()
         // Fall back to draining the guest sound DMA via a cyclic timer so
         // that the guest sound driver does not stall waiting for DMA progress
         // that the failed host stream will never provide.
-        if (!impl->deterministic_poll_timer) {
-            impl->deterministic_poll_timer =
-                TimerManager::get_instance()->add_cyclic_timer(MSECS_TO_NSECS(10), impl->deterministic_poll_cb);
+        if (!impl->deterministic_poll_timer.active) {
+            TimerManager::get_instance()->add_cyclic_timer(
+                impl->deterministic_poll_timer, MSECS_TO_NSECS(10), impl->deterministic_poll_cb);
             LOG_F(9, "Host sound output stream start failed; falling back to cyclic DMA drain.");
         }
     }
@@ -248,9 +248,9 @@ int SoundServer::start_out_stream()
 
 void SoundServer::close_out_stream()
 {
-    if (impl->deterministic_poll_timer) {
+    if (impl->deterministic_poll_timer.active) {
         TimerManager::get_instance()->cancel_timer(impl->deterministic_poll_timer);
-        impl->deterministic_poll_timer = 0;
+        impl->deterministic_poll_timer.active = 0;
     }
     if (!impl->out_stream) {
         impl->status = SND_STREAM_CLOSED;

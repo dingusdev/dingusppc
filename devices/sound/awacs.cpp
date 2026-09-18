@@ -114,11 +114,13 @@ void AwacsBase::dma_in_data() {
         dbdma_ch->set_stat(sound_in_status);
         LOG_F(INFO, "%s: status:%x", this->name.c_str(), sound_in_status);
 
-        this->dma_in_timer_id = TimerManager::get_instance()->add_oneshot_timer(
+        if (this->dma_in_timer.active)
+            LOG_F(ERROR, "%s: dma_in_timer is already active", this->name.c_str());
+        TimerManager::get_instance()->add_oneshot_timer(this->dma_in_timer,
             10000,
             [this](uint64_t, uint64_t) {
                 // re-enter the sequencer with the state specified in next_state
-                this->dma_in_timer_id = 0;
+                this->dma_in_timer.active = 0;
                 this->dma_in_data();
         });
     }
@@ -130,9 +132,9 @@ void AwacsBase::dma_in_start() {
 }
 
 void AwacsBase::dma_in_stop() {
-    if (this->dma_in_timer_id) {
-        TimerManager::get_instance()->cancel_timer(this->dma_in_timer_id);
-        this->dma_in_timer_id = 0;
+    if (this->dma_in_timer.active) {
+        TimerManager::get_instance()->cancel_timer(this->dma_in_timer);
+        this->dma_in_timer.active = 0;
     }
     LOG_F(ERROR, "%s: dma_in_stop", this->name.c_str());
 }

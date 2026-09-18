@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define ATA_BASE_DEVICE_H
 
 #include <core/endianswap.h>
+#include <core/timermanager.h>
 #include <devices/common/ata/atadefs.h>
 #include <devices/common/hwcomponent.h>
 
@@ -108,6 +109,12 @@ protected:
     bool        is_dma_xfer     = false;
 
     std::function<void()> post_xfer_action = nullptr;
+
+    TimerInfo read_data_timer;
+    TimerInfo write_done_timer;
+    TimerInfo write_more_timer;
+    TimerInfo dma_pull_timer;
+    TimerInfo dma_push_timer;
 };
 
 #endif // ATA_BASE_DEVICE_H

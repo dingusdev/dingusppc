@@ -101,7 +101,7 @@ private:
     uint8_t     *vram_ptr   = nullptr;
     int         reg_shift   = 3;
 
-    uint64_t    mode_timer_id = 0;
+    TimerInfo   mode_timer;
 
     void disable_video_internal();
     void enable_video_internal();

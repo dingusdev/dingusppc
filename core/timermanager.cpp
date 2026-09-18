@@ -30,51 +30,47 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 TimerManager* TimerManager::timer_manager;
 
-uint32_t TimerManager::add_absolute_timer(uint64_t timeout_ns, uint64_t interval, timer_cb cb)
+void TimerManager::add_absolute_timer(TimerInfo &ti, uint64_t timeout_ns, uint64_t interval, timer_cb cb)
 {
-    TimerInfo* ti = new TimerInfo;
-
-    ti->id          = ++this->id;
-    ti->timeout_ns  = timeout_ns;
-    ti->interval_ns = interval;
-    ti->cb          = cb;
-
-    std::shared_ptr<TimerInfo> timer_desc(ti);
+    ti.timeout_ns  = timeout_ns;
+    ti.interval_ns = interval;
+    ti.active      = true;
+    ti.cb          = cb;
 
     // add new timer to the timer queue
-    this->timer_queue.push(timer_desc);
+    //if (this->timer_queue.remove_by_id(&ti))
+    //  LOG_F(ERROR, "timer was in queue!");
+    this->timer_queue.push(&ti);
 
     // notify listeners about changes in the timer queue
     if (!this->cb_active) {
         this->notify_timer_changes();
     }
-
-    return ti->id;
 }
 
-uint32_t TimerManager::add_oneshot_timer(uint64_t timeout, timer_cb cb)
+void TimerManager::add_oneshot_timer(TimerInfo &ti, uint64_t timeout, timer_cb cb)
 {
-    return TimerManager::add_absolute_timer(this->get_time_now() + timeout, 0, cb);
+    TimerManager::add_absolute_timer(ti, this->get_time_now() + timeout, 0, cb);
 }
 
-uint32_t TimerManager::add_immediate_timer(timer_cb cb)
+void TimerManager::add_immediate_timer(TimerInfo &ti, timer_cb cb)
 {
-    return TimerManager::add_absolute_timer(0, 0, cb);
+    TimerManager::add_absolute_timer(ti, 0, 0, cb);
 }
 
-uint32_t TimerManager::add_cyclic_timer(uint64_t interval, uint64_t delay, timer_cb cb)
+void TimerManager::add_cyclic_timer(TimerInfo &ti, uint64_t interval, uint64_t delay, timer_cb cb)
 {
-    return TimerManager::add_absolute_timer(this->get_time_now() + delay, interval, cb);
+    TimerManager::add_absolute_timer(ti, this->get_time_now() + delay, interval, cb);
 }
 
-uint32_t TimerManager::add_cyclic_timer(uint64_t interval, timer_cb cb)
+void TimerManager::add_cyclic_timer(TimerInfo &ti, uint64_t interval, timer_cb cb)
 {
-    return this->add_cyclic_timer(interval, interval, cb);
+    this->add_cyclic_timer(ti, interval, interval, cb);
 }
 
-void TimerManager::cancel_timer(uint32_t id)
+void TimerManager::cancel_timer(TimerInfo &ti)
 {
-    this->timer_queue.remove_by_id(id);
+    this->timer_queue.remove_by_id(&ti);
     if (!this->cb_active) {
         this->notify_timer_changes();
     }
@@ -82,7 +78,7 @@ void TimerManager::cancel_timer(uint32_t id)
 
 uint64_t TimerManager::process_timers()
 {
-    std::shared_ptr<TimerInfo> cur_timer;
+    TimerInfo *cur_timer;
     uint64_t time_now = get_time_now();
 
 { // mtx scope
@@ -95,7 +91,7 @@ uint64_t TimerManager::process_timers()
     cur_timer = this->timer_queue.top();
 } // ] mtx scope
     while (cur_timer->timeout_ns <= time_now) {
-        this->timer_queue.remove_by_id(cur_timer->id);
+        this->timer_queue.remove_by_id(cur_timer);
         uint64_t timeout_ns = cur_timer->timeout_ns;
         timer_cb cb = cur_timer->cb;
 
@@ -133,10 +129,10 @@ uint64_t TimerManager::process_timers()
 
 void TimerManager::cancel_all_timers()
 {
-    std::shared_ptr<TimerInfo> cur_timer;
+    TimerInfo *cur_timer;
     while (!this->timer_queue.empty()) {
         cur_timer = this->timer_queue.top();
-        LOG_F(WARNING, "Canceling timer id:%u ns:%llu", cur_timer->id, cur_timer->timeout_ns);
+        LOG_F(WARNING, "Canceling timer id:%llu ns:%llu", uint64_t(cur_timer), cur_timer->timeout_ns);
         this->timer_queue.pop();
     }
 }

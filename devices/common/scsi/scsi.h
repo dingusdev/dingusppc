@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SCSI_H
 #define SCSI_H
 
+#include <core/timermanager.h>
 #include <devices/common/hwcomponent.h>
 #include <devices/common/scsi/scsiphysinterface.h>
 
@@ -369,6 +370,8 @@ protected:
 
     more_data_cb_t  read_more_data  = {};
     more_data_cb_t  write_more_data = {};
+    
+    TimerInfo bus_settle_timer;
 };
 
 /** This class provides a higher level abstraction for the SCSI bus. */

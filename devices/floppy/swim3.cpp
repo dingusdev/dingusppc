@@ -70,17 +70,17 @@ void Swim3Ctrl::reset()
     this->timer_val     = 0;
     this->phase_lines   = 0;
 
-    if (this->one_us_timer_id) {
-        TimerManager::get_instance()->cancel_timer(this->one_us_timer_id);
-        this->one_us_timer_id = 0;
+    if (this->one_us_timer.active) {
+        TimerManager::get_instance()->cancel_timer(this->one_us_timer);
+        this->one_us_timer.active = 0;
     }
-    if (this->step_timer_id) {
-        TimerManager::get_instance()->cancel_timer(this->step_timer_id);
-        this->step_timer_id = 0;
+    if (this->step_timer.active) {
+        TimerManager::get_instance()->cancel_timer(this->step_timer);
+        this->step_timer.active = 0;
     }
-    if (this->access_timer_id) {
-        TimerManager::get_instance()->cancel_timer(this->access_timer_id);
-        this->access_timer_id = 0;
+    if (this->access_timer.active) {
+        TimerManager::get_instance()->cancel_timer(this->access_timer);
+        this->access_timer.active = 0;
     }
 }
 
@@ -237,7 +237,7 @@ void Swim3Ctrl::do_step()
         // instruct the drive to perform single step in current direction
         this->int_drive->command(MacSuperdrive::CommandAddr::Do_Step, 0);
         if (--this->step_count == 0) {
-            if (this->step_timer_id) {
+            if (this->step_timer.active) {
                 this->stop_stepping();
             }
             this->int_flags |= INT_STEP_DONE;
@@ -253,12 +253,12 @@ void Swim3Ctrl::start_stepping()
         return;
     }
 
-    if (this->mode_reg & SWIM3_GO_STEP || this->step_timer_id) {
+    if (this->mode_reg & SWIM3_GO_STEP || this->step_timer.active) {
         LOG_F(ERROR, "SWIM3: another stepping action is running!");
         return;
     }
 
-    if (this->mode_reg & SWIM3_GO || this->access_timer_id) {
+    if (this->mode_reg & SWIM3_GO || this->access_timer.active) {
         LOG_F(ERROR, "SWIM3: stepping attempt while disk access is in progress!");
         return;
     }
@@ -273,7 +273,7 @@ void Swim3Ctrl::start_stepping()
 
     // step count > 1 requires periodic task
     if (this->step_count > 1) {
-        this->step_timer_id = TimerManager::get_instance()->add_cyclic_timer(
+        TimerManager::get_instance()->add_cyclic_timer(this->step_timer,
             USECS_TO_NSECS(80),
             [this](uint64_t, uint64_t) {
                 this->do_step();
@@ -288,21 +288,21 @@ void Swim3Ctrl::start_stepping()
 void Swim3Ctrl::stop_stepping()
 {
     // cancel stepping task
-    if (this->step_timer_id) {
-        TimerManager::get_instance()->cancel_timer(this->step_timer_id);
-        this->step_timer_id = 0;
+    if (this->step_timer.active) {
+        TimerManager::get_instance()->cancel_timer(this->step_timer);
+        this->step_timer.active = 0;
     }
     this->step_count = 0; // not sure this one is required
 }
 
 void Swim3Ctrl::start_disk_access()
 {
-    if (this->mode_reg & SWIM3_GO || this->access_timer_id) {
+    if (this->mode_reg & SWIM3_GO || this->access_timer.active) {
         LOG_F(ERROR, "SWIM3: another disk access is running!");
         return;
     }
 
-    if (this->mode_reg & SWIM3_GO_STEP || this->step_timer_id) {
+    if (this->mode_reg & SWIM3_GO_STEP || this->step_timer.active) {
         LOG_F(ERROR, "SWIM3: disk access attempt while stepping is in progress!");
         return;
     }
@@ -317,9 +317,10 @@ void Swim3Ctrl::start_disk_access()
 
     this->target_sect = this->first_sec;
 
-    this->access_timer_id = TimerManager::get_instance()->add_oneshot_timer(
+    TimerManager::get_instance()->add_oneshot_timer(this->access_timer,
         this->int_drive->sync_to_disk(),
         [this](uint64_t, uint64_t) {
+            this->access_timer.active = 0;
             this->cur_state = SWIM3_ADDR_MARK_SEARCH;
             this->disk_access();
         }
@@ -369,9 +370,10 @@ void Swim3Ctrl::disk_access()
         return;
     }
 
-    this->access_timer_id = TimerManager::get_instance()->add_oneshot_timer(
+    TimerManager::get_instance()->add_oneshot_timer(this->access_timer,
         delay,
         [this](uint64_t, uint64_t) {
+            this->access_timer.active = 0;
             this->disk_access();
         }
     );
@@ -380,9 +382,9 @@ void Swim3Ctrl::disk_access()
 void Swim3Ctrl::stop_disk_access()
 {
     // cancel disk access timer
-    if (this->access_timer_id) {
-        TimerManager::get_instance()->cancel_timer(this->access_timer_id);
-        this->access_timer_id = 0;
+    if (this->access_timer.active) {
+        TimerManager::get_instance()->cancel_timer(this->access_timer);
+        this->access_timer.active = 0;
     }
 }
 
@@ -399,9 +401,12 @@ void Swim3Ctrl::init_timer(const uint8_t start_val)
 
     this->one_us_timer_start = TimerManager::get_instance()->current_time_ns();
 
-    this->one_us_timer_id = TimerManager::get_instance()->add_oneshot_timer(
+    if( this->one_us_timer.active)
+        LOG_F(ERROR, "SWIM3: one_us_timer is already active");
+    TimerManager::get_instance()->add_oneshot_timer(this->one_us_timer,
         uint32_t(this->timer_val) * NS_PER_USEC,
         [this](uint64_t, uint64_t) {
+            this->one_us_timer.active = 0;
             this->timer_val = 0;
             this->int_flags |= INT_TIMER_DONE;
             update_irq();

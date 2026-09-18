@@ -89,9 +89,9 @@ void AppleRamdac::iodev_write(uint32_t address, uint16_t value) {
         switch (this->dac_addr) {
         case RamdacRegs::CURSOR_POS_HI:
 #ifdef CURSOR_LO_DELAY // HACK: prevents artifacts in some cases, disabled by default
-            if (this->cursor_timer_id) {
-                TimerManager::get_instance()->cancel_timer(this->cursor_timer_id);
-                cursor_timer_id = 0;
+            if (this->cursor_timer.active) {
+                TimerManager::get_instance()->cancel_timer(this->cursor_timer);
+                cursor_timer.active = 0;
             }
             this->cursor_xpos = (value << 8) | this->cursor_pos_lo;
 #else
@@ -100,16 +100,18 @@ void AppleRamdac::iodev_write(uint32_t address, uint16_t value) {
             break;
         case RamdacRegs::CURSOR_POS_LO:
 #ifdef CURSOR_LO_DELAY // HACK: prevents artifacts in some cases, disabled by default
-            if (this->cursor_timer_id) {
-                TimerManager::get_instance()->cancel_timer(this->cursor_timer_id);
+            if (this->cursor_timer.active) {
+                TimerManager::get_instance()->cancel_timer(this->cursor_timer);
                 this->cursor_xpos = (this->cursor_xpos & 0xff00) | (this->cursor_pos_lo & 0x00ff);
-                cursor_timer_id   = 0;
+                cursor_timer.active = 0;
             }
-            this->cursor_pos_lo   = value;
-            this->cursor_timer_id = TimerManager::get_instance()->add_oneshot_timer(
+            this->cursor_pos_lo = value;
+            TimerManager::get_instance()->add_oneshot_timer(this->cursor_timer,
                 NS_PER_SEC / 60, [this](uint64_t, uint64_t) {
                     this->cursor_xpos = (this->cursor_xpos & 0xff00) | (this->cursor_pos_lo & 0x00ff);
-                });
+                    cursor_timer.active = 0;
+                }
+            );
 #else
             this->cursor_xpos = (this->cursor_xpos & 0xff00) | (value & 0x00ff);
 #endif

@@ -291,9 +291,12 @@ void DMAChannel::update_irq(uint8_t cmd_bits) {
             }
             if (cond) {
                 if (int_ctrl) {
-                    TimerManager::get_instance()->add_immediate_timer([this](uint64_t, uint64_t) {
-                        this->int_ctrl->ack_dma_int(this->irq_id, 1);
-                    });
+                    if (!this->interrupt_timer.active) {
+                        TimerManager::get_instance()->add_immediate_timer(this->interrupt_timer, [this](uint64_t, uint64_t) {
+                            this->interrupt_timer.active = 0;
+                            this->int_ctrl->ack_dma_int(this->irq_id, 1);
+                        });
+                    }
                 } else
                     LOG_F(ERROR, "%s Interrupt ignored", this->get_name().c_str());
             }

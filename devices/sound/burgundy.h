@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef BURGUNDY_H
 #define BURGUNDY_H
 
+#include <core/timermanager.h>
 #include <devices/common/hwcomponent.h>
 #include <devices/sound/awacs.h>
 
@@ -126,6 +127,7 @@ private:
     uint8_t     byte_counter    = 0;
     uint8_t     reg_addr        = 0;
     bool        first_valid     = false;
+    TimerInfo   first_valid_timer;
     uint8_t     read_pos        = 0;
     uint8_t     data_byte       = 0;
     uint32_t    frame_count     = 0;

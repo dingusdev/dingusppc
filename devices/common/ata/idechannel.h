@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef IDE_CHANNEL_H
 #define IDE_CHANNEL_H
 
+#include <core/timermanager.h>
 #include <devices/common/ata/atadefs.h>
 #include <devices/common/dmacore.h>
 #include <devices/common/hwcomponent.h>
@@ -74,6 +75,8 @@ private:
     AtaInterface*   devices[2];
 
     std::unique_ptr<AtaInterface>   device_stub;
+    
+    TimerInfo dmareq_timer;
 };
 
 /** This class models an IDE channel specific to MacIO ASICs. */

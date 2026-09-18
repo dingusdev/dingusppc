@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SCSI_HD_H
 #define SCSI_HD_H
 
+#include <core/timermanager.h>
 #include <devices/common/scsi/scsi.h>
 #include <devices/common/scsi/scsiblockcmds.h>
 #include <devices/storage/blockstoragedevice.h>
@@ -55,6 +56,7 @@ protected:
 
 private:
     uint8_t data_buf[2048] = {};
+    TimerInfo phase_switch_timer;
 };
 
 #endif // SCSI_HD_H

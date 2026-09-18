@@ -189,11 +189,12 @@ void ValkyrieVideo::disable_video_internal() {
 }
 
 void ValkyrieVideo::schedule_mode_switch() {
-    if (this->mode_timer_id)
-        TimerManager::get_instance()->cancel_timer(this->mode_timer_id);
+    if (this->mode_timer.active)
+        TimerManager::get_instance()->cancel_timer(this->mode_timer);
 
-    this->mode_timer_id = TimerManager::get_instance()->add_oneshot_timer(
+    TimerManager::get_instance()->add_oneshot_timer(this->mode_timer,
         MSECS_TO_NSECS(3), [this](uint64_t, uint64_t) {
+        this->mode_timer.active = 0;
         this->enable_video_internal();
     });
 }

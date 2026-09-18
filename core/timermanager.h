@@ -50,17 +50,17 @@ typedef std::function<void()> notify_changes_cb;
 template <typename T, class Container = std::vector<T>, class Compare = std::less<typename Container::value_type>>
 class my_priority_queue : public std::priority_queue<T, Container, Compare> {
 public:
-    bool remove_by_id(const uint32_t id){
+    bool remove_by_id(T id){
         std::lock_guard<std::recursive_mutex> lk(mtx);
         if (this->empty())
             return false;
         auto el = this->top();
-        if (el->id == id) {
+        if (el == id) {
             std::priority_queue<T, Container, Compare>::pop();
             return true;
         }
         auto it = std::find_if(
-            this->c.begin(), this->c.end(), [id](const T& el) { return el->id == id; });
+            this->c.begin(), this->c.end(), [id](const T& el) { return el == id; });
         if (it != this->c.end()) {
             this->c.erase(it);
             std::make_heap(this->c.begin(), this->c.end(), this->comp);
@@ -93,18 +93,18 @@ private:
 };
 
 typedef struct TimerInfo {
-    uint32_t id;
     uint64_t timeout_ns;  // timer expiry
     uint64_t interval_ns; // 0 for one-shot timers
+    bool     active = false; // set to true when added to the queue
     timer_cb cb;          // timer callback
 } TimerInfo;
 
 // Custom comparator for sorting our timer queue in ascending order
 class MyGtComparator {
 public:
-    bool operator()(const std::shared_ptr<TimerInfo>& l, const std::shared_ptr<TimerInfo>& r) const {
-        return l.get()->timeout_ns > r.get()->timeout_ns ||
-            (l.get()->timeout_ns == r.get()->timeout_ns && l.get()->id > r.get()->id);
+    bool operator()(const TimerInfo *l, const TimerInfo *r) const {
+        return l->timeout_ns > r->timeout_ns ||
+            (l->timeout_ns == r->timeout_ns && l > r);
     }
 };
 
@@ -131,12 +131,12 @@ public:
     uint64_t current_time_ns() const { return get_time_now(); }
 
     // creating and cancelling timers
-    uint32_t add_absolute_timer(uint64_t timeout_ns, uint64_t interval, timer_cb cb);
-    uint32_t add_oneshot_timer(uint64_t timeout, timer_cb cb);
-    uint32_t add_immediate_timer(timer_cb cb);
-    uint32_t add_cyclic_timer(uint64_t interval, timer_cb cb);
-    uint32_t add_cyclic_timer(uint64_t interval, uint64_t delay, timer_cb cb);
-    void cancel_timer(uint32_t id);
+    void add_absolute_timer(TimerInfo &ti, uint64_t timeout_ns, uint64_t interval, timer_cb cb);
+    void add_oneshot_timer(TimerInfo &ti, uint64_t timeout, timer_cb cb);
+    void add_immediate_timer(TimerInfo &ti, timer_cb cb);
+    void add_cyclic_timer(TimerInfo &ti, uint64_t interval, timer_cb cb);
+    void add_cyclic_timer(TimerInfo &ti, uint64_t interval, uint64_t delay, timer_cb cb);
+    void cancel_timer(TimerInfo &ti);
     void cancel_all_timers();
 
     uint64_t process_timers();
@@ -146,12 +146,10 @@ private:
     TimerManager(){} // private constructor to implement a singleton
 
     // timer queue
-    my_priority_queue<std::shared_ptr<TimerInfo>, std::vector<std::shared_ptr<TimerInfo>>, MyGtComparator> timer_queue;
+    my_priority_queue<TimerInfo*, std::vector<TimerInfo*>, MyGtComparator> timer_queue;
 
     std::function<uint64_t()>   get_time_now;
     std::function<void()>       notify_timer_changes;
-
-    std::atomic<uint32_t> id{0};
 
     // FIXME: Do we need this? It gets written in main thread and read in audio thread.
     bool cb_active = false; // true if a timer callback is executing

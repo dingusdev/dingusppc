@@ -139,7 +139,7 @@ protected:
     uint32_t    fb_pitch        = 0;
 #ifdef CURSOR_LO_DELAY
     uint8_t     cursor_pos_lo   = 0;
-    uint32_t    cursor_timer_id = 0;
+    TimerInfo   cursor_timer;
 #endif
 };
 

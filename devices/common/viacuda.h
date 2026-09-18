@@ -42,6 +42,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef VIACUDA_H
 #define VIACUDA_H
 
+#include <core/timermanager.h>
 #include <devices/common/i2c/i2c.h>
 #include <devices/common/nvram.h>
 
@@ -198,20 +199,20 @@ private:
     uint32_t via_clk_freq; // 0.00078336 VIA clock periods per ns; 0 integer bits, 42 fraction bits (first 10 are implicit zeros)
 
     // VIA internal state
-    uint32_t sr_timer_id = 0;
+    TimerInfo sr_timer;
     uint8_t  last_orb = 0; // last value written to the ORB register.
 
     // timer 1 state
     uint8_t  via_t1ll;          // low-order latch
     uint8_t  via_t1lh;          // high-order latch
     uint16_t t1_counter;        // internal counter
-    uint32_t t1_timer_id   = 0;
+    TimerInfo t1_timer;
     uint64_t t1_start_time = 0;
 
     // timer 2 state
     uint8_t  via_t2ll;          // low-order latch (write-only)
     uint16_t t2_counter;        // internal counter
-    uint32_t t2_timer_id = 0;
+    TimerInfo t2_timer;
     uint64_t t2_start_time = 0;
 
     // VIA interrupt related stuff
@@ -225,7 +226,7 @@ private:
     uint8_t  old_byteack;
     uint8_t  treq;
     bool     is_sync_state = false;
-    uint32_t treq_timer_id = 0;
+    TimerInfo treq_timer;
     uint8_t  in_buf[CUDA_IN_BUF_SIZE];
     int32_t  in_count;
     int      max_in_count = 0;

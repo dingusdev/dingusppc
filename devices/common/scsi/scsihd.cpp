@@ -177,7 +177,10 @@ void ScsiHardDisk::format() {
     if (this->cmd_buf[1] & 0x10)
         ABORT_F("%s: defect list isn't supported yet", this->name.c_str());
 
-    TimerManager::get_instance()->add_oneshot_timer(NS_PER_SEC, [this](uint64_t, uint64_t) {
+    if (this->phase_switch_timer.active)
+        LOG_F(WARNING, "%s: phase_switch_timer is already active", this->get_name().c_str());
+    TimerManager::get_instance()->add_oneshot_timer(this->phase_switch_timer, NS_PER_SEC, [this](uint64_t, uint64_t) {
+        this->phase_switch_timer.active = 0;
         this->switch_phase(ScsiPhase::STATUS);
     });
 }

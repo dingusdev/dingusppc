@@ -29,6 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef DB_DMA_H
 #define DB_DMA_H
 
+#include <core/timermanager.h>
 #include <devices/common/dmacore.h>
 
 #include <cinttypes>
@@ -173,6 +174,7 @@ private:
     // Interrupt related stuff
     InterruptCtrl* int_ctrl = nullptr;
     uint64_t       irq_id   = 0;
+    TimerInfo      interrupt_timer;
 };
 
 #endif // DB_DMA_H

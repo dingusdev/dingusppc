@@ -113,9 +113,12 @@ void BurgundyCodec::snd_ctrl_write(uint32_t offset, uint32_t value, int size) {
             this->data_byte = ((reg_addr < BURGUNDY_NUM_REGS ? this->reg_array[reg_addr] : 0) >> (cur_byte * 8)) & 0xFFU;
             this->first_valid = true;
 
-            TimerManager::get_instance()->add_oneshot_timer(
+            if (this->first_valid_timer.active)
+                LOG_F(ERROR, "%s: first_valid_timer is already active", this->name.c_str());
+            TimerManager::get_instance()->add_oneshot_timer(this->first_valid_timer,
                 USECS_TO_NSECS(22), // average is approximately 22.6 µs on a real B&W G3
                 [this](uint64_t, uint64_t) {
+                    this->first_valid_timer.active = 0;
                     this->first_valid  = false;
                     this->byte_counter = (this->byte_counter + 1) & 3;
             });

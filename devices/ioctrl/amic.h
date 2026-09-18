@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef AMIC_H
 #define AMIC_H
 
+#include <core/timermanager.h>
 #include <devices/common/dmacore.h>
 #include <devices/common/hwinterrupt.h>
 #include <devices/common/mmiodevice.h>
@@ -133,6 +134,7 @@ private:
     InterruptCtrl   *int_ctrl = nullptr;
     uint64_t        snd_dma_irq_id = 0;
     uint8_t         irq_level = 0;
+    TimerInfo       interrupt_timer;
 };
 
 /** AMIC-specific floppy DMA implementation. */
@@ -411,7 +413,7 @@ private:
     uint8_t     via2_slot_ifr   = 0x7F; // reverse logic
     uint8_t     via2_slot_irq   =    0; // normal logic
 
-    uint32_t    pseudo_vbl_tid  =    0; // ID for the pseudo-VBL timer
+    TimerInfo   pseudo_vbl_timer; // the pseudo-VBL timer
 
     // AMIC subdevice instances
     Sc53C94*            scsi;

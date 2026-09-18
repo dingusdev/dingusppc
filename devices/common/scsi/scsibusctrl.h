@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef SCSI_BUS_CTRL_H
 #define SCSI_BUS_CTRL_H
 
+#include <core/timermanager.h>
 #include <devices/common/dmacore.h>
 #include <devices/common/hwinterrupt.h>
 #include <devices/common/scsi/scsi.h>
@@ -104,7 +105,7 @@ protected:
     uint8_t     data_fifo[DATA_FIFO_DEPTH] = {};
 
     // Sequencer state
-    uint32_t    seq_timer_id = 0;
+    TimerInfo   seq_timer;
     uint32_t    cur_state  = Scsi_Bus_Controller::SeqState::IDLE;
     uint32_t    next_state = Scsi_Bus_Controller::SeqState::IDLE;
     int         cur_bus_phase = 0;

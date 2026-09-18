@@ -586,10 +586,10 @@ void PlatinumCtrl::enable_cursor_int() {
     LOG_F(INFO, "%s: cursor interrupt frequency %lld ns", this->name.c_str(),
         cursor_int_freq);
 
-    if (this->cursor_task_id)
-        TimerManager::get_instance()->cancel_timer(this->cursor_task_id);
+    if (this->cursor_timer.active)
+        TimerManager::get_instance()->cancel_timer(this->cursor_timer);
 
-    this->cursor_task_id = TimerManager::get_instance()->add_cyclic_timer(
+    TimerManager::get_instance()->add_cyclic_timer(this->cursor_timer,
         cursor_int_freq,
         [this](uint64_t, uint64_t) {
             this->update_irq(1, SWATCH_INT_CURSOR); // generate cursor interrupt

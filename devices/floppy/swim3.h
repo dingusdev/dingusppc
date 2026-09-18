@@ -140,9 +140,9 @@ private:
     uint8_t rd_line;
     int     cur_state;
 
-    int     one_us_timer_id = 0;
-    int     step_timer_id   = 0;
-    int     access_timer_id = 0;
+    TimerInfo one_us_timer;
+    TimerInfo step_timer;
+    TimerInfo access_timer;
 
     uint64_t    one_us_timer_start = 0;
 
