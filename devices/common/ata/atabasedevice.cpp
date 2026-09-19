@@ -77,14 +77,14 @@ uint16_t AtaBaseDevice::read(const uint8_t reg_addr) {
                     this->r_status &= ~DRQ;
                 } else {
                     this->chunk_cnt = std::min(this->xfer_cnt, this->chunk_size);
-                    if (this->read_data_timer.active)
-                        LOG_F(ERROR, "%s: read_data_timer is already active", this->get_name().c_str());
-                    TimerManager::get_instance()->add_oneshot_timer(this->read_data_timer,
-                        USECS_TO_NSECS(100), [this](uint64_t, uint64_t) {
-                            this->read_data_timer.active = 0;
-                            this->update_intrq(1);
-                        }
-                    );
+                    if (!this->read_data_timer.active) {
+                        TimerManager::get_instance()->add_oneshot_timer(this->read_data_timer,
+                            USECS_TO_NSECS(100), [this](uint64_t, uint64_t) {
+                                this->read_data_timer.active = 0;
+                                this->update_intrq(1);
+                            }
+                        );
+                    }
                 }
             }
             return ret_data;
