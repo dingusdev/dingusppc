@@ -63,6 +63,7 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
 
     case Except_Type::EXC_EXT_INT:
     case Except_Type::EXC_DECR:
+    case Except_Type::EXC_THRM_MGMT_INT:
         if (exec_flags & ~EXEF_OPC_DECODER) {
             ppc_state.spr[SPR::SRR0] = ppc_next_instruction_address;
         } else {
@@ -169,6 +170,10 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
 
     case Except_Type::EXC_TRACE:
         exc_descriptor = "Trace exception occurred";
+        break;
+
+    case Except_Type::EXC_THRM_MGMT_INT:
+        exc_descriptor = "Thermal management interrupt exception occurred";
         break;
 
     default:

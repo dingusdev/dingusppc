@@ -128,6 +128,7 @@ unsigned exec_flags; // execution control flags
 volatile bool exec_timer;
 bool int_pin = false; // interrupt request pin state: true - asserted
 bool dec_exception_pending = false;
+bool thrm_exception_pending = false;
 
 /* variables related to virtual time */
 bool g_realtime = false;
@@ -1110,7 +1111,7 @@ static map<string, int> SPRName2Num = {
     {"DBAT2L", 541},            {"DBAT3U", 542},        {"DBAT3L", 543},
     {"HID0",   SPR::HID0},      {"HID1",   SPR::HID1},  {"IABR",   1010},
     {"DABR",   1013},           {"L2CR",   1017},       {"ICTC",   1019},
-    {"THRM1",  1020},           {"THRM2",  1021},       {"THRM3",  1022},
+    {"THRM1",  SPR::THRM1},     {"THRM2",  SPR::THRM2}, {"THRM3",  SPR::THRM3},
     {"PIR",    1023},           {"TBL",    SPR::TBL_S}, {"TBU",    SPR::TBU_S},
     {"SDR1",   SPR::SDR1},      {"MQ",     SPR::MQ},    {"RTCU",   SPR::RTCU_S},
     {"RTCL",   SPR::RTCL_S},    {"DSISR",  SPR::DSISR}, {"DAR",    SPR::DAR},

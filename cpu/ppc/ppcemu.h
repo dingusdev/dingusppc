@@ -126,6 +126,9 @@ enum SPR : int {
     SDA     = 959,
     HID0    = 1008,
     HID1    = 1009,
+    THRM1   = 1020,
+    THRM2   = 1021,
+    THRM3   = 1022,
 };
 
 /** symbolic names for common PPC processors */
@@ -378,6 +381,7 @@ void p_power_off(const char* file, int line, Po_Cause new_reason);
 
 extern bool int_pin;
 extern bool dec_exception_pending;
+extern bool thrm_exception_pending;
 
 extern bool is_601;        // For PowerPC 601 Emulation
 extern bool include_601;   // For non-PowerPC 601 emulation with 601 extras

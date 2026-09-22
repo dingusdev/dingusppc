@@ -31,6 +31,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <vector>
 
+static int junction_temperature = 24;
+static TimerInfo thermal_timer;
+
 //Extract the registers desired and the values of the registers.
 
 // Affects CR Field 0 - For integer operations
@@ -820,6 +823,9 @@ void dppc_interpreter::ppc_mtmsr(uint32_t opcode) {
         dec_exception_pending = false;
         //LOG_F(WARNING, "MTMSR: decrementer exception triggered");
         ppc_exception_handler(Except_Type::EXC_DECR, 0);
+    } else if ((ppc_state.msr & MSR::EE) && thrm_exception_pending) {
+        thrm_exception_pending = false;
+        ppc_exception_handler(Except_Type::EXC_THRM_MGMT_INT, 0);
     } else if (ppc_state.msr & MSR::POW) [[unlikely]] {
         bool enter_sleep = false;
 
@@ -980,6 +986,48 @@ static void update_decrementer(bool update_time_stamp, uint32_t oldval, uint32_t
     );
 }
 
+static void update_thermal(uint64_t, uint64_t) {
+    thermal_timer.active = 0;
+
+    uint32_t val = ppc_state.spr[SPR::THRM3];
+    auto sampled_interval_timer_value = (val >> 1) & 0x1FFF;
+    auto enabled = val & 1;
+
+    bool interrupt = false;
+    for (int the_reg = 0; the_reg < 2; the_reg++) {
+        val = ppc_state.spr[SPR::THRM1 + the_reg];
+        uint32_t t_interrupt; // = (val >> 31) &    1;
+        uint32_t t_int_valid; // = (val >> 30) &    1;
+        uint32_t threshold       = (val >> 23) & 0x7F;
+        uint32_t t_int_direction = (val >>  2) &    1;
+        uint32_t t_int_enable    = (val >>  1) &    1;
+        uint32_t valid           = (val >>  0) &    1;
+        
+        if (!valid) {
+            t_interrupt = 0;
+            t_int_valid = 0;
+        } else {
+            t_interrupt = t_int_direction ?
+                junction_temperature < threshold
+            :
+                junction_temperature > threshold;
+            t_int_valid = 1;
+            interrupt |= t_int_enable && t_interrupt;
+        }
+        ppc_state.spr[SPR::THRM1 + the_reg] = (t_interrupt << 31) | (t_int_valid << 30) | (val & 0x3FFFFFFF);
+    }
+
+    if (interrupt && enabled) {
+        if (ppc_state.msr & MSR::EE) {
+            thrm_exception_pending = false;
+            ppc_exception_handler(Except_Type::EXC_THRM_MGMT_INT, 0);
+        }
+        else {
+            thrm_exception_pending = true;
+        }
+    }
+}
+
 void dppc_interpreter::ppc_mfspr(uint32_t opcode) {
     ppc_grab_dab(opcode);
     uint32_t ref_spr = (reg_b << 5) | reg_a;
@@ -1052,6 +1100,15 @@ void dppc_interpreter::ppc_mfspr(uint32_t opcode) {
         ppc_state.spr[TBL_S] = uint32_t(tbr_value);
         break;
     }
+    case SPR::THRM1:
+    case SPR::THRM2: {
+        uint32_t val = ppc_state.spr[ref_spr];
+        ppc_state.gpr[reg_d] = val;
+        break;
+    }
+    case SPR::THRM3:
+        ppc_state.gpr[reg_d] = ppc_state.spr[ref_spr];
+        break;
     default:
         // FIXME: Unknown SPR should be noop or illegal instruction.
         ppc_state.gpr[reg_d] = ppc_state.spr[ref_spr];
@@ -1157,6 +1214,25 @@ void dppc_interpreter::ppc_mtspr(uint32_t opcode) {
             ppc_change_endian((val & 0x10000000) != 0);
         }
         break;
+    case SPR::THRM1:
+    case SPR::THRM2: {
+        ppc_state.spr[ref_spr] = val & 0x3F800007;
+
+        if (thermal_timer.active)
+            TimerManager::get_instance()->cancel_timer(thermal_timer);
+        TimerManager::get_instance()->add_oneshot_timer(thermal_timer, USECS_TO_NSECS(20), update_thermal);
+        break;
+    }
+    case SPR::THRM3: {
+        ppc_state.spr[ref_spr] = val & 0x00003FFF;
+        ppc_state.spr[SPR::THRM1] &= ~(3<<30);
+        ppc_state.spr[SPR::THRM2] &= ~(3<<30);
+
+        if (thermal_timer.active)
+            TimerManager::get_instance()->cancel_timer(thermal_timer);
+        TimerManager::get_instance()->add_oneshot_timer(thermal_timer, USECS_TO_NSECS(20), update_thermal);
+        break;
+    }
     default:
         // FIXME: Unknown SPR should be noop or illegal instruction.
         ppc_state.spr[ref_spr] = val;
@@ -1518,13 +1594,17 @@ void dppc_interpreter::ppc_rfi(uint32_t opcode) {
     ppc_msr_did_change(ppc_state.msr, new_msr_val);
 
     // setting MSR[EE] may enable pending exceptions
-    if ((ppc_state.msr & MSR::EE) && (int_pin || dec_exception_pending)) {
+    if ((ppc_state.msr & MSR::EE) && (int_pin || dec_exception_pending || thrm_exception_pending)) {
         uint32_t save_srr0 = ppc_state.spr[SPR::SRR0] & ~3UL;
         if (int_pin) // check for pending external exceptions (higher priority)
             ppc_exception_handler(Except_Type::EXC_EXT_INT, 0);
-        else {
+        else if (dec_exception_pending) {
             dec_exception_pending = false;
             ppc_exception_handler(Except_Type::EXC_DECR, 0);
+        }
+        else if (thrm_exception_pending) {
+            thrm_exception_pending = false;
+            ppc_exception_handler(Except_Type::EXC_THRM_MGMT_INT, 0);
         }
         ppc_state.spr[SPR::SRR0] = save_srr0;
         return;
