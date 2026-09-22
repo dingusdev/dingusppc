@@ -39,6 +39,10 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
 
     switch (exception_type) {
     case Except_Type::EXC_SYSTEM_RESET:
+    case Except_Type::EXC_DSI:
+    case Except_Type::EXC_ALIGNMENT:
+    case Except_Type::EXC_PROGRAM:
+    case Except_Type::EXC_NO_FPU:
         ppc_state.spr[SPR::SRR0]     = ppc_state.pc & 0xFFFFFFFC;
         break;
 
@@ -46,10 +50,6 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
         if (!(ppc_state.msr & MSR::ME)) {
             /* TODO: handle internal checkstop */
         }
-        ppc_state.spr[SPR::SRR0]     = ppc_state.pc & 0xFFFFFFFC;
-        break;
-
-    case Except_Type::EXC_DSI:
         ppc_state.spr[SPR::SRR0]     = ppc_state.pc & 0xFFFFFFFC;
         break;
 
@@ -62,25 +62,6 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
         break;
 
     case Except_Type::EXC_EXT_INT:
-        if (exec_flags & ~EXEF_OPC_DECODER) {
-            ppc_state.spr[SPR::SRR0] = ppc_next_instruction_address;
-        } else {
-            ppc_state.spr[SPR::SRR0] = (ppc_state.pc & 0xFFFFFFFCUL) + 4;
-        }
-        break;
-
-    case Except_Type::EXC_ALIGNMENT:
-        ppc_state.spr[SPR::SRR0]     = ppc_state.pc & 0xFFFFFFFC;
-        break;
-
-    case Except_Type::EXC_PROGRAM:
-        ppc_state.spr[SPR::SRR0]     = ppc_state.pc & 0xFFFFFFFC;
-        break;
-
-    case Except_Type::EXC_NO_FPU:
-        ppc_state.spr[SPR::SRR0]     = ppc_state.pc & 0xFFFFFFFC;
-        break;
-
     case Except_Type::EXC_DECR:
         if (exec_flags & ~EXEF_OPC_DECODER) {
             ppc_state.spr[SPR::SRR0] = ppc_next_instruction_address;
@@ -90,9 +71,6 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
         break;
 
     case Except_Type::EXC_SYSCALL:
-        ppc_state.spr[SPR::SRR0]     = (ppc_state.pc & 0xFFFFFFFC) + 4;
-        break;
-
     case Except_Type::EXC_TRACE:
         ppc_state.spr[SPR::SRR0]     = (ppc_state.pc & 0xFFFFFFFC) + 4;
         break;
