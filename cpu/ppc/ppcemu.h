@@ -321,17 +321,17 @@ enum FPOP : int {
 
 /** PowerPC exception types. */
 enum class Except_Type {
-    EXC_SYSTEM_RESET = 1,
-    EXC_MACHINE_CHECK,
-    EXC_DSI,
-    EXC_ISI,
-    EXC_EXT_INT,
-    EXC_ALIGNMENT,
-    EXC_PROGRAM,
-    EXC_NO_FPU,
-    EXC_DECR,
-    EXC_SYSCALL = 12,
-    EXC_TRACE   = 13
+    EXC_SYSTEM_RESET    = 0x01,
+    EXC_MACHINE_CHECK   = 0x02,
+    EXC_DSI             = 0x03,
+    EXC_ISI             = 0x04,
+    EXC_EXT_INT         = 0x05,
+    EXC_ALIGNMENT       = 0x06,
+    EXC_PROGRAM         = 0x07,
+    EXC_NO_FPU          = 0x08,
+    EXC_DECR            = 0x09,
+    EXC_SYSCALL         = 0x0C,
+    EXC_TRACE           = 0x0D,
 };
 
 /** Program Exception subclasses. */

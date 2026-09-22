@@ -40,7 +40,6 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
     switch (exception_type) {
     case Except_Type::EXC_SYSTEM_RESET:
         ppc_state.spr[SPR::SRR0]     = ppc_state.pc & 0xFFFFFFFC;
-        ppc_next_instruction_address = 0x0100;
         break;
 
     case Except_Type::EXC_MACHINE_CHECK:
@@ -48,12 +47,10 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
             /* TODO: handle internal checkstop */
         }
         ppc_state.spr[SPR::SRR0]     = ppc_state.pc & 0xFFFFFFFC;
-        ppc_next_instruction_address = 0x0200;
         break;
 
     case Except_Type::EXC_DSI:
         ppc_state.spr[SPR::SRR0]     = ppc_state.pc & 0xFFFFFFFC;
-        ppc_next_instruction_address = 0x0300;
         break;
 
     case Except_Type::EXC_ISI:
@@ -62,7 +59,6 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
         } else {
             ppc_state.spr[SPR::SRR0] = ppc_state.pc & 0xFFFFFFFCUL;
         }
-        ppc_next_instruction_address = 0x0400;
         break;
 
     case Except_Type::EXC_EXT_INT:
@@ -71,22 +67,18 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
         } else {
             ppc_state.spr[SPR::SRR0] = (ppc_state.pc & 0xFFFFFFFCUL) + 4;
         }
-        ppc_next_instruction_address = 0x0500;
         break;
 
     case Except_Type::EXC_ALIGNMENT:
         ppc_state.spr[SPR::SRR0]     = ppc_state.pc & 0xFFFFFFFC;
-        ppc_next_instruction_address = 0x0600;
         break;
 
     case Except_Type::EXC_PROGRAM:
         ppc_state.spr[SPR::SRR0]     = ppc_state.pc & 0xFFFFFFFC;
-        ppc_next_instruction_address = 0x0700;
         break;
 
     case Except_Type::EXC_NO_FPU:
         ppc_state.spr[SPR::SRR0]     = ppc_state.pc & 0xFFFFFFFC;
-        ppc_next_instruction_address = 0x0800;
         break;
 
     case Except_Type::EXC_DECR:
@@ -95,23 +87,21 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
         } else {
             ppc_state.spr[SPR::SRR0] = (ppc_state.pc & 0xFFFFFFFCUL) + 4;
         }
-        ppc_next_instruction_address = 0x0900;
         break;
 
     case Except_Type::EXC_SYSCALL:
         ppc_state.spr[SPR::SRR0]     = (ppc_state.pc & 0xFFFFFFFC) + 4;
-        ppc_next_instruction_address = 0x0C00;
         break;
 
     case Except_Type::EXC_TRACE:
         ppc_state.spr[SPR::SRR0]     = (ppc_state.pc & 0xFFFFFFFC) + 4;
-        ppc_next_instruction_address = 0x0D00;
         break;
 
     default:
         ABORT_F("Unknown exception occurred: %X\n", (unsigned)exception_type);
         break;
     }
+    ppc_next_instruction_address = uint32_t(exception_type) << 8;
 
     ppc_state.spr[SPR::SRR1] = (ppc_state.msr & 0x0000FF73) | srr1_bits;
     uint32_t old_msr_val = ppc_state.msr;
