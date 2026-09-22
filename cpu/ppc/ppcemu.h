@@ -332,6 +332,11 @@ enum class Except_Type {
     EXC_DECR            = 0x09,
     EXC_SYSCALL         = 0x0C,
     EXC_TRACE           = 0x0D,
+    EXC_FP_ASSIST       = 0x0E,
+    EXC_PERF_MON_INT    = 0x0F,
+    EXC_INST_ADDR_BP    = 0x13,
+    EXC_SYS_MGMT_INT    = 0x14,
+    EXC_THRM_MGMT_INT   = 0x17,
 };
 
 /** Program Exception subclasses. */

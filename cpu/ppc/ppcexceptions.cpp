@@ -192,6 +192,11 @@ void ppc_exception_handler(Except_Type exception_type, uint32_t srr1_bits) {
     case Except_Type::EXC_TRACE:
         exc_descriptor = "Trace exception occurred";
         break;
+
+    default:
+        char buffer[100];
+        snprintf(buffer, sizeof(buffer), "Exception 0x%X occurred", int(exception_type));
+        exc_descriptor = buffer;
     }
 
     throw std::invalid_argument(exc_descriptor);
