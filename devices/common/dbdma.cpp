@@ -290,7 +290,7 @@ void DMAChannel::update_irq(uint8_t cmd_bits) {
                 }
             }
             if (cond) {
-                if (int_ctrl) {
+                if (this->int_ctrl) {
                     if (!this->interrupt_timer.active) {
                         TimerManager::get_instance()->add_immediate_timer(this->interrupt_timer, [this](uint64_t, uint64_t) {
                             this->interrupt_timer.active = 0;
