@@ -34,6 +34,7 @@ AdbKeyboard::AdbKeyboard(std::string name) : AdbDevice(name) {
 }
 
 void AdbKeyboard::event_handler(const KeyboardEvent& event) {
+    this->keys_down.set(event.key, !(event.flags & KEYBOARD_EVENT_UP));
     this->pending_events.push_back(std::make_unique<KeyboardEvent>(event));
 
     if (this->pending_events.size() == 1) {
@@ -46,8 +47,9 @@ void AdbKeyboard::reset() {
     this->dev_handler_id = 2;    // Extended ADB keyboard
     this->exc_event_flag = 1;
     this->srq_flag       = 0;    // don't process keyboard service requests yet
-    this->led_state      = 0;    // LEDs off
+    this->led_state      = 7;    // LEDs off (active low)
     this->pending_events.clear();
+    this->keys_down.reset();
 }
 
 bool AdbKeyboard::get_register_0() {
@@ -92,9 +94,35 @@ uint8_t AdbKeyboard::consume_pending_event() {
 }
 
 bool AdbKeyboard::get_register_2() {
+    // Register 2 reflects the current modifier keys, and a zero value means
+    // that the key is held down.
+    static const struct {
+        uint8_t key;
+        uint8_t bit;
+    } reg2_keys[] = {
+        { AdbKey_Delete,       14 },
+        { AdbKey_CapsLock,     13 },
+        { AdbKey_Power,        12 },
+        { AdbKey_Control,      11 },
+        { AdbKey_RightControl, 11 },
+        { AdbKey_Shift,        10 },
+        { AdbKey_RightShift,   10 },
+        { AdbKey_Option,        9 },
+        { AdbKey_RightOption,   9 },
+        { AdbKey_Command,       8 },
+        { AdbKey_KeypadClear,   7 },
+        { AdbKey_F14,           6 }, // Scroll Lock
+    };
+
+    uint16_t reg2 = 0xFFF8 | this->led_state;
+    for (const auto& key : reg2_keys) {
+        if (this->keys_down[key.key])
+            reg2 &= ~(1 << key.bit);
+    }
+
     uint8_t* out_buf = this->host_obj->get_output_buf();
-    out_buf[0]       = 0;
-    out_buf[1]       = this->led_state & 0x07;
+    out_buf[0]       = reg2 >> 8;
+    out_buf[1]       = reg2 & 0xFF;
     this->host_obj->set_output_count(2);
     return true;
 }
