@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <devices/common/adb/adbdevice.h>
 #include <devices/common/hwcomponent.h>
 
+#include <bitset>
 #include <deque>
 #include <memory>
 #include <string>
@@ -54,6 +55,7 @@ public:
 
 private:
     std::deque<std::unique_ptr<KeyboardEvent>> pending_events;
+    std::bitset<128> keys_down;
 
     uint8_t consume_pending_event();
 };
@@ -129,6 +131,7 @@ enum AdbKey {
     AdbKey_Option =         0x3a,
     AdbKey_Command =        0x37,
     AdbKey_CapsLock =       0x39,
+    AdbKey_Power =          0x7f,
 
     AdbKey_RightControl   = 0x7d,
     AdbKey_RightShift     = 0x7b,
