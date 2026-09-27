@@ -64,7 +64,7 @@ protected:
     virtual void set_register_0() {}
     virtual void set_register_1() {}
     virtual void set_register_2() {}
-    virtual void set_register_3() {}
+    virtual void set_register_3();
 
     uint8_t exc_event_flag = 0;
     uint8_t srq_flag       = 0;

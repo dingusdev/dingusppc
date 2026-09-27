@@ -77,9 +77,6 @@ bool AdbAppleJack::get_register_0() {
 }
 
 void AdbAppleJack::set_register_3() {
-    if (this->host_obj->get_input_count() < 2) // ensure we got enough data
-        return;
-
     const uint8_t* in_data = this->host_obj->get_input_buf();
 
     switch (in_data[1]) {

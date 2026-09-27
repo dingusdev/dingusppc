@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 /** @file Base class for Apple Desktop Bus devices. */
 
+#include <loguru.hpp>
 #include <core/timermanager.h>
 #include <devices/common/adb/adbdevice.h>
 #include <devices/common/adb/adbbus.h>
@@ -92,7 +93,8 @@ void AdbDevice::listen(const uint8_t dev_addr, const uint8_t reg_num) {
             this->set_register_2();
             break;
         case 3:
-            this->set_register_3();
+            if (this->host_obj->get_input_count() >= 2) // ensure we got enough data
+                this->set_register_3();
             break;
         }
     }
@@ -105,6 +107,25 @@ bool AdbDevice::get_register_3() {
     out_buf[1] = this->dev_handler_id;
     this->host_obj->set_output_count(2);
     return true;
+}
+
+void AdbDevice::set_register_3() {
+    const uint8_t* in_data = this->host_obj->get_input_buf();
+    uint8_t new_addr = in_data[0] & 0xF;
+
+    switch (in_data[1]) {
+    case 0:
+        this->my_addr = new_addr;
+        this->srq_flag = !!(in_data[0] & 0x20);
+        break;
+    case 0xFE: // move to a new address if there was no collision
+        if (!this->got_collision) {
+            this->my_addr = new_addr;
+        }
+        break;
+    default:
+        LOG_F(WARNING, "ADB Device: unknown handler ID = 0x%X", in_data[1]);
+    }
 }
 
 uint8_t AdbDevice::gen_random_address() {

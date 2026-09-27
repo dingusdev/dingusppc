@@ -142,28 +142,16 @@ bool AdbMouse::get_register_1() {
 }
 
 void AdbMouse::set_register_3() {
-    if (this->host_obj->get_input_count() < 2) // ensure we got enough data
-        return;
-
     const uint8_t*  in_data = this->host_obj->get_input_buf();
 
     switch (in_data[1]) {
-    case 0:
-        this->my_addr  = in_data[0] & 0xF;
-        this->srq_flag = !!(in_data[0] & 0x20);
-        break;
     case 1:
     case 2:
     case 4: // switch over to extended mouse protocol
         this->dev_handler_id = in_data[1];
         break;
-    case 0xFE: // move to a new address if there was no collision
-        if (!this->got_collision) {
-            this->my_addr = in_data[0] & 0xF;
-        }
-        break;
     default:
-        LOG_F(WARNING, "%s: unknown handler ID = 0x%X", this->name.c_str(), in_data[1]);
+        this->AdbDevice::set_register_3();
     }
 }
 
