@@ -48,7 +48,6 @@ public:
 
     bool get_register_0() override;
     bool get_register_2() override;
-    bool get_register_3() override;
     void set_register_2() override;
     void set_register_3() override;
 

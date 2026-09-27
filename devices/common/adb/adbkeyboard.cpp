@@ -136,16 +136,6 @@ void AdbKeyboard::set_register_2() {
     this->led_state        = in_data[1] & 0x07;
 }
 
-bool AdbKeyboard::get_register_3() {
-    uint8_t* out_buf = this->host_obj->get_output_buf();
-
-    out_buf[0] = (this->my_addr << 4) | (1 << 1) | 1;    // Address + SRQ Enable + Exc Event
-    out_buf[1] = this->dev_handler_id;
-
-    this->host_obj->set_output_count(2);
-    return true;
-}
-
 void AdbKeyboard::set_register_3() {
     const uint8_t* in_data = this->host_obj->get_input_buf();
 
