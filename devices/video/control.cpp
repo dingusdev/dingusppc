@@ -130,6 +130,11 @@ ControlVideo::ControlVideo()
             this->cursor_ovl_cb = nullptr;
         }
     };
+    this->radacal->pix_width_ctrl_cb = [this](int new_pix_width) {
+        if (this->display_enabled) {
+            this->enable_display();
+        }
+    };
 
     // attach IOBus Device #2 0xF301B000 ; register RaDACal with the I/O controller
     GrandCentral* gc_obj = dynamic_cast<GrandCentral*>(gMachineObj->get_comp_by_name("GrandCentralTnt"));

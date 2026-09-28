@@ -82,6 +82,9 @@ PlatinumCtrl::PlatinumCtrl() : MemCtrlBase(), VideoCtrlBase() {
             this->cursor_ovl_cb = nullptr;
         }
     };
+    this->dacula->pix_width_ctrl_cb = [this](int pix_width) {
+        this->change_display();
+    };
 }
 
 int PlatinumCtrl::device_postinit() {

@@ -116,15 +116,21 @@ void AppleRamdac::iodev_write(uint32_t address, uint16_t value) {
             this->cursor_xpos = (this->cursor_xpos & 0xff00) | (value & 0x00ff);
 #endif
             break;
-        case RamdacRegs::MISC_CTRL:
+        case RamdacRegs::MISC_CTRL: {
             if (bit_changed(this->dac_cr, value, 1)) {
                 if (value & 2)
                     this->cursor_ctrl_cb(true);
                 else
                     this->cursor_ctrl_cb(false);
             }
+            int old_pix_width = this->get_pix_width();
             this->dac_cr = value;
+            int new_pix_width = this->get_pix_width();
+            if (old_pix_width != new_pix_width && this->pix_width_ctrl_cb) {
+                this->pix_width_ctrl_cb(new_pix_width);
+            }
             break;
+        }
         case RamdacRegs::DBL_BUF_CTRL:
             this->dbl_buf_cr = value;
             break;
