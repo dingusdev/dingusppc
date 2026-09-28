@@ -88,6 +88,8 @@ static const PropMap Pippin_settings = {
         new IntProperty(0, std::vector<uint32_t>({0, 1, 4, 8, 16}))},
     {"rambank4_size",
         new IntProperty(0, std::vector<uint32_t>({0, 1, 4, 8, 16}))},
+    {"cdr_config",
+        new StrProperty("ScsiCurio:3")},
     {"emmo",
         new BinProperty(0)},
     {"adb_devices",

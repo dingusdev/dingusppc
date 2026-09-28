@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <loguru.hpp>
 
 #include <algorithm>
+#include <cerrno>
 #include <cinttypes>
 #include <string>
 #include <sstream>
@@ -151,15 +152,16 @@ void parse_device_path(std::string dev_path, std::string& bus_id, uint32_t& dev_
     dev_num = -1;
 
     size_t delimiter_pos = dev_path.find(":");
-    if (delimiter_pos == std::string::npos)
+    if (delimiter_pos == std::string::npos || delimiter_pos == 0)
         ABORT_F("Invalid device path %s", dev_path.c_str());
 
     bus_id = dev_path.substr(0, delimiter_pos);
 
-    try {
-        dev_num = (uint32_t)strtoul(dev_path.substr(delimiter_pos+1).c_str(), 0, 0);
-    } catch (std::string bad_string) {
-        ABORT_F("Invalid device number %s in device path %s", bad_string.c_str(),
-            dev_path.c_str());
-    }
+    std::string number = dev_path.substr(delimiter_pos + 1);
+    char* end;
+    errno = 0;
+    unsigned long value = strtoul(number.c_str(), &end, 0);
+    if (end == number.c_str() || *end || errno == ERANGE || value > UINT32_MAX)
+        ABORT_F("Invalid device number %s in device path %s", number.c_str(), dev_path.c_str());
+    dev_num = (uint32_t)value;
 }
