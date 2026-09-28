@@ -115,6 +115,8 @@ uint8_t Swim3Ctrl::read(uint8_t reg_offset)
         return this->phase_lines;
     case Swim3Reg::Setup:
         return this->setup_reg;
+    case Swim3Reg::Status_Mode0:
+        return this->mode_reg;
     case Swim3Reg::Handshake_Mode1:
         if (this->mode_reg & SWIM3_DRIVE_1) { // internal drive?
             status_addr = ((this->mode_reg & SWIM3_HEAD_SELECT) >> 2) | (this->phase_lines & 7);
