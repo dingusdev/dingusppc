@@ -79,6 +79,11 @@ void ScsiBlockCmds::init_block_device(uint8_t medium_type, uint8_t dev_flags,
 }
 
 void ScsiBlockCmds::process_command() {
+    if (!this->ready_for_command()) {
+        phy_impl->switch_phase(ScsiPhase::STATUS);
+        return;
+    }
+
     int next_phase;
 
     // use non-disk buffer by default
