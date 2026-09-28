@@ -97,6 +97,11 @@ void AtapiCdrom::perform_packet_command() {
         this->status_good();
     }
 
+    if (!this->ready_for_command()) {
+        this->present_status();
+        return;
+    }
+
     switch (this->cmd_pkt[0]) {
     case ScsiCommand::READ_CD:
     {

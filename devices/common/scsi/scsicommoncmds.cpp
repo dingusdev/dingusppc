@@ -109,16 +109,25 @@ int ScsiCommonCmds::verify_cdb() {
 }
 
 int ScsiCommonCmds::test_unit_ready() {
-    // Assume that LUN is okay and the status has been set to GOOD
+    this->ready_for_command();
+    return ScsiPhase::STATUS;
+}
+
+bool ScsiCommonCmds::ready_for_command() {
+    // Identification and sense data remain available without media.
+    if (this->cdb_ptr[0] == ScsiCommand::INQUIRY ||
+        this->cdb_ptr[0] == ScsiCommand::REQ_SENSE)
+        return true;
 
     if (!phy_impl->is_device_ready()) {
         this->sense_key = ScsiSense::NOT_READY;
         this->asc       = phy_impl->not_ready_reason();
         this->ascq      = 0;
         phy_impl->set_status(ScsiStatus::CHECK_CONDITION, this->sense_key);
+        return false;
     }
 
-    return ScsiPhase::STATUS;
+    return true;
 }
 
 int ScsiCommonCmds::inquiry() {

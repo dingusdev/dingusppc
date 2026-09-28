@@ -61,6 +61,11 @@ void ScsiCdrom::process_command() {
     phy_impl->set_status(ScsiStatus::GOOD);
     this->msg_buf[0] = ScsiMessage::COMMAND_COMPLETE;
 
+    if (!this->ready_for_command()) {
+        this->switch_phase(ScsiPhase::STATUS);
+        return;
+    }
+
     // use internal data buffer by default
     phy_impl->set_buffer(this->data_buf);
 
