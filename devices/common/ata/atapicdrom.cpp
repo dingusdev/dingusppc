@@ -100,6 +100,12 @@ void AtapiCdrom::perform_packet_command() {
     switch (this->cmd_pkt[0]) {
     case ScsiCommand::READ_CD:
     {
+        // READ_CD currently bypasses the shared CD-ROM command dispatcher.
+        if (!this->ready_for_command()) {
+            this->present_status();
+            break;
+        }
+
         lba = READ_DWORD_BE_U(&this->cmd_pkt[2]);
         xfer_len = (this->cmd_pkt[6] << 16) | READ_WORD_BE_U(&this->cmd_pkt[7]);
         if (this->cmd_pkt[9] == 0 && (this->cmd_pkt[10] & 7) == 0) {

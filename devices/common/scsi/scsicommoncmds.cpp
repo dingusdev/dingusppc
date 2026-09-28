@@ -109,16 +109,33 @@ int ScsiCommonCmds::verify_cdb() {
 }
 
 int ScsiCommonCmds::test_unit_ready() {
-    // Assume that LUN is okay and the status has been set to GOOD
+    this->ready_for_command(true);
+    return ScsiPhase::STATUS;
+}
+
+bool ScsiCommonCmds::ready_for_command(bool force_check) {
+    // TUR forces a check from its handler; dispatch lets it and media-independent
+    // commands through to ScsiCommonCmds.
+    if (!force_check) {
+        switch (this->cdb_ptr[0]) {
+        case ScsiCommand::INQUIRY:
+        case ScsiCommand::REQ_SENSE:
+        case ScsiCommand::TEST_UNIT_READY:
+        case ScsiCommand::MODE_SENSE_6:
+        case ScsiCommand::MODE_SENSE_10:
+            return true;
+        }
+    }
 
     if (!phy_impl->is_device_ready()) {
         this->sense_key = ScsiSense::NOT_READY;
         this->asc       = phy_impl->not_ready_reason();
         this->ascq      = 0;
         phy_impl->set_status(ScsiStatus::CHECK_CONDITION, this->sense_key);
+        return false;
     }
 
-    return ScsiPhase::STATUS;
+    return true;
 }
 
 int ScsiCommonCmds::inquiry() {
