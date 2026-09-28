@@ -158,6 +158,8 @@ static const PropMap pm6100_settings = {
         new StrProperty("HiRes12-14in", PDMBuiltinMonitorIDs)},
     {"pds",
         new StrProperty("")},
+    {"cdr_config",
+        new StrProperty("ScsiCurio:3")},
     {"emmo",
         new BinProperty(0)},
 };

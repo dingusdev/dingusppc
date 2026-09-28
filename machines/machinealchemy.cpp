@@ -126,6 +126,8 @@ static const PropMap pm6400_settings = {
         new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32}))},
     {"hdd_config",
         new StrProperty("Ide0:0")},
+    {"cdr_config",
+        new StrProperty("ScsiMesh:3")},
     {"emmo",
         new BinProperty(0)},
 };

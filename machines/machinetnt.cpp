@@ -172,6 +172,7 @@ static const PropMap pm7500_settings_ ## cpu = { \
     {"rambank10_size", new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))}, \
     {"rambank11_size", new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))}, \
     {"rambank12_size", new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64, 128}))}, \
+    {"cdr_config", new StrProperty("ScsiCurio:3")}, \
     {"emmo", new BinProperty(0)}, \
     {"cpu", new StrProperty(# cpu, std::vector<std::string>({"601", "604", "604e", "750"}))}, \
 };

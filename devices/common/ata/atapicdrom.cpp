@@ -67,6 +67,11 @@ int AtapiCdrom::device_postinit() {
     parse_device_path(cdr_config, bus_id, dev_num);
 
     auto bus_obj = dynamic_cast<IdeChannel*>(gMachineObj->get_comp_by_name(bus_id));
+    if (!bus_obj) {
+        LOG_F(ERROR, "%s: cdr_config device path %s does not specify a known IDE bus",
+              this->name.c_str(), cdr_config.c_str());
+        return -1;
+    }
     bus_obj->register_device(dev_num, this);
 
     std::string cdr_image_path = GET_STR_PROP("cdr_img");
