@@ -48,6 +48,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 
+// Big-endian VRAM aperture select bit; clear for the little-endian aperture.
+// See Apple patent US5793996A, cols. 17-18.
+constexpr uint32_t VRAM_BE_APERTURE = 0x800000;
+
 namespace loguru {
     enum : Verbosity {
         Verbosity_RADACAL = loguru::Verbosity_INFO,
@@ -221,7 +225,7 @@ static const char * get_name_controlreg(int offset) {
 uint32_t ControlVideo::read(uint32_t rgn_start, uint32_t offset, int size)
 {
     if (rgn_start == this->vram_base) {
-        if (offset & 0x800000) { // repeats every 16MB
+        if (offset & VRAM_BE_APERTURE) { // repeats every 16MB
             // HACK: writing to VRAM in 128bit mode with only the standard
             // bank populated seems to replicate the first 64bit portion of data
             // in the second 64bit portion. This "feature" is used by
@@ -281,9 +285,38 @@ uint32_t ControlVideo::read(uint32_t rgn_start, uint32_t offset, int size)
             } // if not VRAM_WIDE_MODE
         }
 
-        LOG_F(ERROR, "%s: read from little-endian aperture address 0x%X", this->name.c_str(),
-              this->vram_base + offset);
-        return 0;
+        // Little-endian aperture, reverse bytes within each 16/32-bit pixel.
+        uint32_t value;
+        int pixel_width = this->radacal->get_pix_width();
+        switch (pixel_width) {
+        case 8:
+            return this->read(rgn_start, offset | VRAM_BE_APERTURE, size);
+        case 16:
+            if (offset & (size - 1)) // unaligned access, handled below
+                break;
+            value = this->read(rgn_start,
+                (offset ^ (size == 1 ? 1 : 0)) | VRAM_BE_APERTURE, size);
+            if (size == 2)
+                return BYTESWAP_16(value);
+            if (size == 4)
+                return (uint32_t(BYTESWAP_16(value >> 16)) << 16) | BYTESWAP_16(value);
+            return value;
+        case 32:
+            if (offset & (size - 1)) // unaligned access, handled below
+                break;
+            value = this->read(rgn_start, (offset ^ (4 - size)) | VRAM_BE_APERTURE, size);
+            return size == 4 ? BYTESWAP_32(value) : size == 2 ? BYTESWAP_16(value) : value;
+        default:
+            LOG_F(ERROR, "%s: unsupported pixel width %d for little-endian VRAM read",
+                  this->name.c_str(), pixel_width);
+            return 0;
+        }
+
+        // Unaligned accesses can straddle pixels or VRAM banks. Split them
+        // into smaller accesses so each uses the correct byte lanes.
+        int half_size = size >> 1;
+        return (this->read(rgn_start, offset, half_size) << (half_size * 8)) |
+                this->read(rgn_start, offset + half_size, half_size);
     }
 
     if (rgn_start == this->regs_base) {
@@ -367,7 +400,7 @@ uint32_t ControlVideo::read(uint32_t rgn_start, uint32_t offset, int size)
 void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
 {
     if (rgn_start == this->vram_base) {
-        if (offset & 0x800000) {
+        if (offset & VRAM_BE_APERTURE) {
             if (this->enables & VRAM_WIDE_MODE) {
                 // Note: we ignore access to 4MB range at 0xC00000 because it is undefined for VRAM_WIDE_MODE.
                 // There is data there but it is not in the same order as the first 4MB.
@@ -422,9 +455,36 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
                         }
                 } // switch
             } // if not VRAM_WIDE_MODE
-        } else {
-            LOG_F(ERROR, "%s: write to little-endian aperture address 0x%X", this->name.c_str(),
-                  this->vram_base + offset);
+        } else { // little-endian aperture
+            int pixel_width = this->radacal->get_pix_width();
+            switch (pixel_width) {
+            case 8:
+                return this->write(rgn_start, offset | VRAM_BE_APERTURE, value, size);
+            case 16:
+                if (offset & (size - 1)) // unaligned access, handled below
+                    break;
+                offset ^= size == 1 ? 1 : 0;
+                if (size == 2)
+                    value = BYTESWAP_16(value);
+                else if (size == 4)
+                    value = (uint32_t(BYTESWAP_16(value >> 16)) << 16) | BYTESWAP_16(value);
+                return this->write(rgn_start, offset | VRAM_BE_APERTURE, value, size);
+            case 32:
+                if (offset & (size - 1)) // unaligned access, handled below
+                    break;
+                offset ^= 4 - size;
+                value = size == 4 ? BYTESWAP_32(value) : size == 2 ? BYTESWAP_16(value) : value;
+                return this->write(rgn_start, offset | VRAM_BE_APERTURE, value, size);
+            default:
+                LOG_F(ERROR, "%s: unsupported pixel width %d for little-endian VRAM write",
+                      this->name.c_str(), pixel_width);
+                return;
+            }
+
+            // Split unaligned accesses as in the read path.
+            int half_size = size >> 1;
+            this->write(rgn_start, offset, value >> (half_size * 8), half_size);
+            this->write(rgn_start, offset + half_size, value, half_size);
         }
         return;
     }
