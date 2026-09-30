@@ -29,14 +29,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cpu/ppc/ppcmmu.h>
 #include <debugger/debugger.h>
 #include <devices/common/ofnvram.h>
+#include <devices/common/viacuda.h>
 #include <machines/machinebase.h>
 #include <machines/machinefactory.h>
 #include <utils/profiler.h>
 #include <main.h>
 
+#include <chrono>
 #include <cinttypes>
 #include <csignal>
 #include <cstring>
+#include <ctime>
 #include <iostream>
 #include <optional>
 #include <CLI11.hpp>
@@ -74,6 +77,44 @@ static string appDescription = string(
 );
 
 static uint32_t keyboard_id = 0;
+
+static std::optional<std::chrono::year_month_day> parse_calendar_date(const std::string& value)
+{
+    if (value.size() != 10 || value[4] != '-' || value[7] != '-')
+        return std::nullopt;
+    for (size_t i = 0; i < value.size(); i++) {
+        if (i != 4 && i != 7 && (value[i] < '0' || value[i] > '9'))
+            return std::nullopt;
+    }
+
+    std::chrono::year_month_day date{
+        std::chrono::year{std::stoi(value.substr(0, 4))},
+        std::chrono::month{unsigned(std::stoi(value.substr(5, 2)))},
+        std::chrono::day{unsigned(std::stoi(value.substr(8, 2)))}
+    };
+    if (!date.ok() || int(date.year()) == 0)
+        return std::nullopt;
+    return date;
+}
+
+static std::optional<std::chrono::local_seconds> parse_start_date(std::string value, bool is_deterministic)
+{
+    if (value.empty()) {
+        if (!is_deterministic)
+            return std::nullopt;
+        // March 24, 2001 was the public release date of Mac OS X.
+        value = "2001-03-24";
+    }
+
+    auto date = *parse_calendar_date(value);
+    int seconds_of_day = 12 * 60 * 60; // Noon
+    if (!is_deterministic) {
+        auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        auto local_time = *std::localtime(&now);
+        seconds_of_day = local_time.tm_hour * 60 * 60 + local_time.tm_min * 60 + local_time.tm_sec;
+    }
+    return std::chrono::local_days{date} + std::chrono::seconds{seconds_of_day};
+}
 
 /// Check for an existing directory (returns error message if check fails)
 class WorkingDirectoryValidator : public CLI::detail::ExistingDirectoryValidator {
@@ -115,6 +156,7 @@ int main(int argc, char** argv) {
     bool debugger_enter = false;
     bool deterministic_interactive = false;
     string deterministic_mode = "strict";
+    string start_date;
     string keyboard_string = "Eng_USA";
 
     const std::map<std::string, int> kbd_map{
@@ -139,6 +181,13 @@ int main(int argc, char** argv) {
         ->check(CLI::ExistingFile)->capture_default_str();
     auto deterministic_opt = emu->add_flag("--deterministic", is_deterministic,
         "Use deterministic execution");
+    emu->add_option("--start-date", start_date,
+        "Set the guest RTC start date (YYYY-MM-DD), keeping the current local time; "
+        "deterministic mode defaults to 2001-03-24 at noon")
+        ->check(CLI::Validator([](std::string& value) {
+            return parse_calendar_date(value) ? std::string() :
+                std::string("Expected a valid date in YYYY-MM-DD format");
+        }, "YYYY-MM-DD"));
     emu->add_option("--deterministic-mode", deterministic_mode,
         "Select deterministic features (strict or interactive)")
         ->needs(deterministic_opt)
@@ -209,6 +258,9 @@ int main(int argc, char** argv) {
     if (debugger_enter || !debugger_skip) {
         execution_mode = debugger;
     }
+
+    if (auto start_time = parse_start_date(start_date, is_deterministic))
+        ViaCuda::set_start_time(*start_time);
 
     /* initialize logging */
     loguru::g_preamble_date    = false;

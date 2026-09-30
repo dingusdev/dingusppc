@@ -173,6 +173,10 @@ public:
         return std::unique_ptr<ViaCuda>(new ViaCuda());
     }
 
+    // Configure the initial RTC from a fixed time. If not set the current
+    // wall time is used.
+    static void set_start_time(std::chrono::local_seconds start_time);
+
     // HWComponent methods
     int device_postinit();
 
@@ -240,10 +244,10 @@ private:
     uint8_t  one_sec_mode = 0;
     bool     one_sec_first_pkt = true;   // ERS: first one-sec pkt always mode $01
     bool     one_sec_missed    = false;  // ERS: missed pkt -> fallback to mode $01
-    bool     file_server       = false; 
-    bool     mono_stable       = false; 
+    bool     file_server       = false;
+    bool     mono_stable       = false;
     bool     power_messages_enabled = false;
-    uint8_t  tickle_value = 0;           // last shutdown watchdog count from the guest 
+    uint8_t  tickle_value = 0;           // last shutdown watchdog count from the guest
     uint8_t  ipl_level   = 0;
     uint16_t device_mask = 0;
 
