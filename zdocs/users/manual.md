@@ -68,6 +68,21 @@ Specify machine ID, where `machineid` is a short string identifier for the machi
 Specifies working directory, where `path` is a string for the directory the emulator will grab files from.
 
 ```
+--start-date YYYY-MM-DD
+```
+
+Start the guest RTC on the given date, using the current local time of day. The clock continues ticking, including across midnight. This is useful for running software with an expiration date, such as `--start-date=1997-03-01` for BeOS DR 8.2. Without a date override or deterministic mode, the RTC follows the host clock.
+
+```
+--deterministic
+--deterministic-mode strict|interactive
+```
+
+Enables deterministic mode, where the emulator behaves the same way every run. Meant to be a development or debugging aid, to remove variability between runs. Disk, NVRAM, and PRAM changes are not saved. The default `strict` mode ignores mouse and keyboard input; `interactive` mode allows input for interactive debugging.
+
+The RTC defaults to `--start-date=2001-03-24`, unless a date is explicitly supplied. It starts at noon and advances the RTC with emulated time. Restarting the emulated machine starts the deterministic RTC from that date and noon again.
+
+```
 --setenv args
 ```
 

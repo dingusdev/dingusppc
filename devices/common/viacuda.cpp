@@ -36,10 +36,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <machines/machinebase.h>
 
 #include <cinttypes>
+#include <optional>
 #include <string>
 #include <vector>
 
 using namespace std;
+
+static std::optional<uint32_t> rtc_start_time;
+static std::chrono::steady_clock::time_point rtc_start_host_time;
 
 ViaCuda::ViaCuda() : I2CBus() {
     this->name = "ViaCuda";
@@ -860,24 +864,24 @@ void ViaCuda::pseudo_command() {
     }
 }
 
+void ViaCuda::set_start_time(std::chrono::local_seconds start_time)
+{
+    // The Macintosh RTC counts local calendar seconds since January 1, 1904.
+    auto mac_epoch = std::chrono::local_days{std::chrono::year{1904}/1/1};
+    rtc_start_time = uint32_t((start_time - mac_epoch).count());
+    rtc_start_host_time = std::chrono::steady_clock::now();
+}
+
 uint32_t ViaCuda::calc_real_time() {
-    std::chrono::time_point<std::chrono::system_clock> end;
-    if (is_deterministic) {
-        // March 24, 2001 was the public release date of Mac OS X.
-        std::tm tm = {
-            .tm_sec  = 0,
-            .tm_min  = 0,
-            .tm_hour = 12,
-            .tm_mday = 24,
-            .tm_mon  = 3 - 1,
-            .tm_year = 2001 - 1900,
-            .tm_isdst = 0
-        };
-        end = std::chrono::system_clock::from_time_t(std::mktime(&tm));
-    } else {
-        end = std::chrono::system_clock::now();
+    if (rtc_start_time) {
+        // We still want to advance time in deterministic mode, but tie it to
+        // virtual time so that it's reproducible.
+        uint64_t elapsed_seconds = is_deterministic ? get_virt_time_ns() / NS_PER_SEC :
+            std::chrono::duration_cast<std::chrono::seconds>(
+                std::chrono::steady_clock::now() - rtc_start_host_time).count();
+        return uint32_t(*rtc_start_time + elapsed_seconds);
     }
-    auto elapsed_systemclock = end - this->mac_epoch;
+    auto elapsed_systemclock = std::chrono::system_clock::now() - this->mac_epoch;
     auto elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(elapsed_systemclock);
     return uint32_t(elapsed_seconds.count());
 }
