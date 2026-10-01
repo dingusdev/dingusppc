@@ -31,6 +31,7 @@
 - lefp
 - mathstuf
 - mrpapersonic
+- probonopd
 - Randrianasulu
 - roytam1
 - sdkmap
@@ -58,6 +59,7 @@
 - Blitter.net
 - Emaculation
 - GitHub
+- pagetable.com
 - PenguinPPC
 - VirtuallyFun
 - The makers of Loguru, SDL2, Capstone, and CLI11
