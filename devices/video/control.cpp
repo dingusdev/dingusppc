@@ -122,8 +122,10 @@ ControlVideo::ControlVideo()
     };
     this->radacal->set_clut_entry_cb = [this](uint8_t index, uint8_t *colors) {
         this->set_palette_color(index, colors[0], colors[1], colors[2], 0xFF);
+        this->draw_fb = true;
     };
     this->radacal->cursor_ctrl_cb = [this](bool cursor_on) {
+        this->draw_fb = true;
         if (cursor_on) {
             this->radacal->measure_hw_cursor(this->fb_ptr - 16);
             this->cursor_ovl_cb = [this](uint8_t *dst_buf, int dst_pitch) {
@@ -134,7 +136,16 @@ ControlVideo::ControlVideo()
             this->cursor_ovl_cb = nullptr;
         }
     };
-    this->radacal->pix_width_ctrl_cb = [this](int new_pix_width) {
+    this->radacal->cursor_update_cb = [this]() {
+        this->draw_fb = true;
+    };
+    this->radacal->buffer_update_cb = [this]() {
+        this->draw_fb = true;
+        if (this->display_enabled) {
+            this->update_fb_ptr();
+        }
+    };
+    this->radacal->video_mode_ctrl_cb = [this]() {
         if (this->display_enabled) {
             this->enable_display();
         }
@@ -146,6 +157,8 @@ ControlVideo::ControlVideo()
 
     // initialize display identification
     this->display_id = std::unique_ptr<DisplayID> (new DisplayID());
+
+    this->draw_fb_is_dynamic = true;
 }
 
 void ControlVideo::change_one_bar(uint32_t &aperture, uint32_t aperture_size, uint32_t aperture_new, int bar_num) {
@@ -400,6 +413,7 @@ uint32_t ControlVideo::read(uint32_t rgn_start, uint32_t offset, int size)
 void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, int size)
 {
     if (rgn_start == this->vram_base) {
+        this->draw_fb = true;
         if (offset & VRAM_BE_APERTURE) {
             if (this->enables & VRAM_WIDE_MODE) {
                 // Note: we ignore access to 4MB range at 0xC00000 because it is undefined for VRAM_WIDE_MODE.
@@ -596,6 +610,7 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
             break;
         case ControlRegs::MISC_ENABLES:
             if ((this->enables ^ value) & BLANK_DISABLE) {
+                this->draw_fb = true;
                 if (value & BLANK_DISABLE)
                     this->blank_on = false;
                 else {
@@ -635,6 +650,31 @@ uint8_t* ControlVideo::GetVram()
     return &this->vram_ptr[0];
 }
 
+void ControlVideo::update_fb_ptr()
+{
+    this->fb_ptr   = &this->vram_ptr[this->fb_base];
+    if (swatch_params[ControlRegs::HAL-1] != swatch_params[ControlRegs::PIPE_DELAY-1] + 1 ||
+        this->pixel_depth == 32 ||
+        (this->pixel_depth == 16 && this->active_width == 1280)
+    ) {
+        // don't know how to calculate offset from GBASE (fb_base); it is always hard coded as + 16 in the ndrv.
+        this->fb_ptr += 16; // first 16 bytes are for 4 bpp HW cursor
+    }
+    else {
+        /*
+         Open Firmware frame buffer has these properties:
+         - GBASE == 0 // no offset from vram_ptr
+         - fb_ptr == vram_ptr // no offset from GBASE
+         - active_width == ROW_WORDS (row_words) // no offset between rows
+         - HAL == PIPE_DELAY + 1
+         - depth_mode = 0 // 8 bit indexed
+         */
+    }
+    if (this->radacal->get_dbl_buf_cr() == 0 && this->vram_banks == 3) {
+        this->fb_ptr += 0x200000;
+    }
+}
+
 void ControlVideo::enable_display()
 {
     int new_width, new_height, clk_divisor;
@@ -657,49 +697,30 @@ void ControlVideo::enable_display()
     this->active_width  = new_width;
     this->active_height = new_height;
 
-    // set framebuffer parameters
-    this->fb_ptr   = &this->vram_ptr[this->fb_base];
     this->fb_pitch = this->row_words;
     if (~this->enables & SCAN_CONTROL) {
         this->fb_pitch >>= 1;
     }
-
-    this->pixel_depth = this->radacal->get_pix_width();
-    if (swatch_params[ControlRegs::HAL-1] != swatch_params[ControlRegs::PIPE_DELAY-1] + 1 ||
-        this->pixel_depth == 32 ||
-        (this->pixel_depth == 16 && this->active_width == 1280)
-    ) {
-        // don't know how to calculate offset from GBASE (fb_base); it is always hard coded as + 16 in the ndrv.
-        this->fb_ptr += 16; // first 16 bytes are for 4 bpp HW cursor
-    }
-    else {
-        /*
-         Open Firmware frame buffer has these properties:
-         - GBASE == 0 // no offset from vram_ptr
-         - fb_ptr == vram_ptr // no offset from GBASE
-         - active_width == ROW_WORDS (row_words) // no offset between rows
-         - HAL == PIPE_DELAY + 1
-         - depth_mode = 0 // 8 bit indexed
-         */
-    }
-    if (this->radacal->get_dbl_buf_cr() == 0 && this->vram_banks == 3) {
-        this->fb_ptr += 0x200000;
-    }
-
     // get pixel depth from RaDACal
+    this->pixel_depth = this->radacal->get_pix_width();
+    this->update_fb_ptr();
+
     switch (this->pixel_depth) {
     case 8:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
+            this->draw_fb = false;
             this->convert_frame_8bpp_indexed(dst_buf, dst_pitch);
         };
         break;
     case 16:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
+            this->draw_fb = false;
             this->convert_frame_15bpp<BE>(dst_buf, dst_pitch);
         };
         break;
     case 32:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
+            this->draw_fb = false;
             this->convert_frame_32bpp<BE>(dst_buf, dst_pitch);
         };
         break;
@@ -747,6 +768,8 @@ void ControlVideo::enable_display()
         this->blank_on = true;
         this->crtc_on = false;
     }
+
+    this->draw_fb = true;
 }
 
 void ControlVideo::disable_display()

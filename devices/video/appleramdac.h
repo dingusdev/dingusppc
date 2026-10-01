@@ -91,7 +91,7 @@ enum RamdacRegs : uint8_t {
 typedef std::function<void(uint8_t index, uint8_t *colors)> GetClutEntryCallback;
 typedef std::function<void(uint8_t index, uint8_t *colors)> SetClutEntryCallback;
 typedef std::function<void(bool cursor_on)> CursorCtrlCallback;
-typedef std::function<void(int pix_width)> PixWidthCtrlCallback;
+typedef std::function<void()> VideoModeCtrlCallback;
 
 class AppleRamdac : public HWComponent, public IobusDevice {
 public:
@@ -118,7 +118,9 @@ public:
     GetClutEntryCallback get_clut_entry_cb = nullptr;
     SetClutEntryCallback set_clut_entry_cb = nullptr;
     CursorCtrlCallback   cursor_ctrl_cb    = nullptr;
-    PixWidthCtrlCallback pix_width_ctrl_cb = nullptr;
+    std::function<void()> cursor_update_cb  = nullptr;
+    std::function<void()> buffer_update_cb  = nullptr;
+    VideoModeCtrlCallback video_mode_ctrl_cb = nullptr;
 
 protected:
     DacFlavour  flavour;

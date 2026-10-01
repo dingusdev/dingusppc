@@ -83,6 +83,7 @@ void AppleRamdac::iodev_write(uint32_t address, uint16_t value) {
             (this->clut_color[1] << 8) | this->clut_color[2];
             this->dac_addr++; // auto-increment CLUT address
             this->comp_index = 0;
+            this->cursor_update_cb();
         }
         break;
     case RamdacRegs::MULTI:
@@ -97,6 +98,7 @@ void AppleRamdac::iodev_write(uint32_t address, uint16_t value) {
 #else
             this->cursor_xpos = (value << 8) | (this->cursor_xpos & 0xff);
 #endif
+            this->cursor_update_cb();
             break;
         case RamdacRegs::CURSOR_POS_LO:
 #ifdef CURSOR_LO_DELAY // HACK: prevents artifacts in some cases, disabled by default
@@ -110,11 +112,13 @@ void AppleRamdac::iodev_write(uint32_t address, uint16_t value) {
                 NS_PER_SEC / 60, [this](uint64_t, uint64_t) {
                     this->cursor_xpos = (this->cursor_xpos & 0xff00) | (this->cursor_pos_lo & 0x00ff);
                     cursor_timer.active = 0;
+                    this->cursor_update_cb();
                 }
             );
 #else
             this->cursor_xpos = (this->cursor_xpos & 0xff00) | (value & 0x00ff);
 #endif
+            this->cursor_update_cb();
             break;
         case RamdacRegs::MISC_CTRL: {
             if (bit_changed(this->dac_cr, value, 1)) {
@@ -124,15 +128,20 @@ void AppleRamdac::iodev_write(uint32_t address, uint16_t value) {
                     this->cursor_ctrl_cb(false);
             }
             int old_pix_width = this->get_pix_width();
+            int old_clock_div = this->get_clock_div();
             this->dac_cr = value;
             int new_pix_width = this->get_pix_width();
-            if (old_pix_width != new_pix_width && this->pix_width_ctrl_cb) {
-                this->pix_width_ctrl_cb(new_pix_width);
+            if (old_pix_width != new_pix_width || old_clock_div != this->get_clock_div()) {
+                this->video_mode_ctrl_cb();
             }
             break;
         }
         case RamdacRegs::DBL_BUF_CTRL:
-            this->dbl_buf_cr = value;
+            if (this->dbl_buf_cr != value) {
+                this->dbl_buf_cr = value;
+                if (this->buffer_update_cb)
+                    this->buffer_update_cb();
+            }
             break;
         case RamdacRegs::TEST_CTRL:
             this->tst_cr = value;
