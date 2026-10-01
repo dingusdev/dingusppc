@@ -131,6 +131,7 @@ protected:
 
     void enable_display();
     void disable_display();
+    void update_fb_ptr();
 
     // HWComponent methods
     int device_postinit();

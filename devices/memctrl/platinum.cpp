@@ -70,8 +70,10 @@ PlatinumCtrl::PlatinumCtrl() : MemCtrlBase(), VideoCtrlBase() {
     };
     this->dacula->set_clut_entry_cb = [this](uint8_t index, uint8_t *colors) {
         this->set_palette_color(index, colors[0], colors[1], colors[2], 0xFF);
+        this->draw_fb = true;
     };
     this->dacula->cursor_ctrl_cb = [this](bool cursor_on) {
+        this->draw_fb = true;
         if (cursor_on) {
             this->dacula->measure_hw_cursor(this->fb_ptr - 16);
             this->cursor_ovl_cb = [this](uint8_t *dst_buf, int dst_pitch) {
@@ -82,9 +84,14 @@ PlatinumCtrl::PlatinumCtrl() : MemCtrlBase(), VideoCtrlBase() {
             this->cursor_ovl_cb = nullptr;
         }
     };
-    this->dacula->pix_width_ctrl_cb = [this](int pix_width) {
+    this->dacula->cursor_update_cb = [this]() {
+        this->draw_fb = true;
+    };
+    this->dacula->video_mode_ctrl_cb = [this]() {
         this->change_display();
     };
+
+    this->draw_fb_is_dynamic = true;
 }
 
 int PlatinumCtrl::device_postinit() {
@@ -218,9 +225,10 @@ void PlatinumCtrl::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
     uint8_t mon_levels = 0;
 
     if (rgn_start == VRAM_REGION_BASE) {
-        if (offset < this->vram_size)
+        if (offset < this->vram_size) {
+            this->draw_fb = true;
             write_mem(&this->vram_ptr[offset], value, size);
-        else
+        } else
             LOG_F(WARNING, "%s: write to unmapped aperture address 0x%X",
                   this->name.c_str(), this->fb_addr + offset);
         return;
@@ -517,16 +525,19 @@ void PlatinumCtrl::enable_display() {
     switch (this->pixel_depth) {
     case 8:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
+            this->draw_fb = false;
             this->convert_frame_8bpp_indexed(dst_buf, dst_pitch);
         };
         break;
     case 16:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
+            this->draw_fb = false;
             this->convert_frame_15bpp<BE>(dst_buf, dst_pitch);
         };
         break;
     case 32:
         this->convert_fb_cb = [this](uint8_t *dst_buf, int dst_pitch) {
+            this->draw_fb = false;
             this->convert_frame_32bpp<BE>(dst_buf, dst_pitch);
         };
         break;
@@ -567,6 +578,7 @@ void PlatinumCtrl::enable_display() {
 
     this->blank_on = false;
     this->crtc_on = true;
+    this->draw_fb = true;
 }
 
 void PlatinumCtrl::disable_display() {

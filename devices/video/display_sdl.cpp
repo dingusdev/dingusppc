@@ -310,7 +310,7 @@ void Display::handle_events(const WindowEvent& wnd_event) {
 
     case SDL_WINDOWEVENT_EXPOSED:
         if (wnd_event.window_id == impl->disp_wnd_id) {
-            SDL_RenderPresent(impl->renderer);
+            video_ctrl->set_draw_fb();
         }
         break;
 
