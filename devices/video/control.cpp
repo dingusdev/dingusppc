@@ -596,12 +596,11 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
             }
             break;
         case ControlRegs::MON_SENSE: {
-                if (value & ~0x3F)
-                    LOG_F(ERROR, "%s: write MON_SENSE %03x.%c = %0*x", this->name.c_str(),
-                          offset, SIZE_ARG(size), size * 2, value);
-                else
-                    LOG_F(9, "%s: write MON_SENSE %03x.%c = %0*x", this->name.c_str(),
-                          offset, SIZE_ARG(size), size * 2, value);
+                // This is a nine-bit register (bits 6-8 are read-only sense
+                // inputs that can be written back). Log unexpected values.
+                VLOG_F((value & ~0x1FF) ? loguru::Verbosity_ERROR : 9,
+                       "%s: write MON_SENSE %03x.%c = %0*x", this->name.c_str(),
+                       offset, SIZE_ARG(size), size * 2, value);
                 uint8_t dirs   = ((value >> 3) & 7) ^ 7;
                 uint8_t levels = ((value & 7) & dirs) | (dirs ^ 7);
                 this->mon_sense = value & 0x3F;
