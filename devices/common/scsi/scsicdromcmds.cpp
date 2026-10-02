@@ -71,7 +71,8 @@ int ScsiCdromCmds::test_unit_ready() {
         return ScsiPhase::STATUS;
     }
 
-    return ScsiCommonCmds::test_unit_ready();
+    // Readiness has already been checked at the CD-ROM command entry point.
+    return ScsiPhase::STATUS;
 }
 
 void ScsiCdromCmds::eject_medium() {
