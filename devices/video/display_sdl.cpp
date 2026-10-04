@@ -252,8 +252,8 @@ void Display::configure_dest() {
 
     impl->dest_rect.w = std::round(scale * impl->display_w);
     impl->dest_rect.h = std::round(scale * impl->display_h);
-    impl->dest_rect.x = std::round((impl->drawable_w - impl->dest_rect.w) / 2.0),
-    impl->dest_rect.y = std::round((impl->drawable_h - impl->dest_rect.h) / 2.0),
+    impl->dest_rect.x = std::round((impl->drawable_w - impl->dest_rect.w) / 2.0);
+    impl->dest_rect.y = std::round((impl->drawable_h - impl->dest_rect.h) / 2.0);
     impl->renderer_scale_x = scale;
     impl->renderer_scale_y = scale;
 
