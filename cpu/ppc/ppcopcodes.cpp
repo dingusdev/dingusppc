@@ -1814,7 +1814,7 @@ void dppc_interpreter::ppc_lzu(uint32_t opcode) {
 #endif
     ppc_grab_regsda(opcode);
     uint32_t ea = int32_t(int16_t(opcode));
-    if ((reg_a != reg_d) && reg_a != 0) {
+    if ((reg_a != reg_d) && (reg_a != 0)) {
         ea += ppc_result_a;
         uint32_t ppc_result_d = mmu_read_vmem<T>(opcode, ea);
         ppc_store_iresult_reg(reg_d, ppc_result_d);
