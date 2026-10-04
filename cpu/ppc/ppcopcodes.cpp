@@ -1818,7 +1818,7 @@ void dppc_interpreter::ppc_lzu(uint32_t opcode) {
         ea += ppc_result_a;
         uint32_t ppc_result_d = mmu_read_vmem<T>(opcode, ea);
         ppc_store_iresult_reg(reg_d, ppc_result_d);
-        uint32_t ppc_result_a = ea;
+        ppc_result_a = ea;
         ppc_store_iresult_reg(reg_a, ppc_result_a);
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
@@ -1886,7 +1886,7 @@ void dppc_interpreter::ppc_lhau(uint32_t opcode) {
         ea += ppc_result_a;
         int16_t val = mmu_read_vmem<uint16_t>(opcode, ea);
         ppc_store_iresult_reg(reg_d, int32_t(val));
-        uint32_t ppc_result_a = ea;
+        ppc_result_a = ea;
         ppc_store_iresult_reg(reg_a, ppc_result_a);
     } else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
@@ -1902,7 +1902,7 @@ void dppc_interpreter::ppc_lhaux(uint32_t opcode) {
         uint32_t ea = ppc_result_a + ppc_result_b;
         int16_t val = mmu_read_vmem<uint16_t>(opcode, ea);
         ppc_store_iresult_reg(reg_d, int32_t(val));
-        uint32_t ppc_result_a = ea;
+        ppc_result_a = ea;
         ppc_store_iresult_reg(reg_a, ppc_result_a);
     }
     else {
