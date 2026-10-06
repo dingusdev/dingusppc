@@ -323,12 +323,10 @@ void Sc53C94::exec_command()
         // release RST line after 25 us
         if (my_timer.active) {
             TimerManager::get_instance()->cancel_timer(this->my_timer);
-            my_timer.active = 0;
         }
         TimerManager::get_instance()->add_oneshot_timer(my_timer,
             USECS_TO_NSECS(25),
             [this](uint64_t, uint64_t) {
-                my_timer.active = 0;
                 this->bus_obj->release_ctrl_line(this->my_bus_id, SCSI_CTRL_RST);
         });
         if (!(config1 & CFG1_DISR)) {
@@ -479,7 +477,6 @@ void Sc53C94::seq_defer_state(uint64_t delay_ns)
 {
     if (this->seq_timer.active) {
         TimerManager::get_instance()->cancel_timer(this->seq_timer);
-        this->seq_timer.active = 0;
     }
 
     if (delay_ns) {
@@ -487,7 +484,6 @@ void Sc53C94::seq_defer_state(uint64_t delay_ns)
             delay_ns,
             [this](uint64_t, uint64_t) {
                 // re-enter the sequencer with the state specified in next_state
-                this->seq_timer.active = 0;
                 this->cur_state = this->next_state;
                 this->sequencer();
         });
@@ -495,7 +491,6 @@ void Sc53C94::seq_defer_state(uint64_t delay_ns)
         TimerManager::get_instance()->add_immediate_timer(this->seq_timer,
             [this](uint64_t, uint64_t) {
                 // re-enter the sequencer with the state specified in next_state
-                this->seq_timer.active = 0;
                 this->cur_state = this->next_state;
                 this->sequencer();
         });
@@ -711,7 +706,6 @@ void Sc53C94::notify(ScsiNotification notif_type, int param)
         if (this->target_id == param) {
             // cancel selection timeout timer
             TimerManager::get_instance()->cancel_timer(this->seq_timer);
-            this->seq_timer.active = 0;
             this->cur_state = SeqState::SEL_END;
             this->sequencer();
         } else {

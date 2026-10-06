@@ -32,14 +32,15 @@ TimerManager* TimerManager::timer_manager;
 
 void TimerManager::add_absolute_timer(TimerInfo &ti, uint64_t timeout_ns, uint64_t interval, timer_cb cb)
 {
+    if (ti.active)
+        LOG_F(ERROR, "Timer %p is already active; cancel it before rescheduling", (void*)&ti);
+
     ti.timeout_ns  = timeout_ns;
     ti.interval_ns = interval;
     ti.active      = true;
     ti.cb          = cb;
 
     // add new timer to the timer queue
-    //if (this->timer_queue.remove_by_id(&ti))
-    //  LOG_F(ERROR, "timer was in queue!");
     this->timer_queue.push(&ti);
 
     // notify listeners about changes in the timer queue
@@ -71,6 +72,7 @@ void TimerManager::add_cyclic_timer(TimerInfo &ti, uint64_t interval, timer_cb c
 void TimerManager::cancel_timer(TimerInfo &ti)
 {
     this->timer_queue.remove_by_id(&ti);
+    ti.active = false;
     if (!this->cb_active) {
         this->notify_timer_changes();
     }
@@ -103,6 +105,9 @@ uint64_t TimerManager::process_timers()
                 timeout_ns_new = time_now + cur_timer->interval_ns;
             cur_timer->timeout_ns = timeout_ns_new;
             this->timer_queue.push(cur_timer);
+        } else {
+            // One-shot callbacks may immediately reuse their TimerInfo.
+            cur_timer->active = false;
         }
 
         this->cb_active = true;
@@ -134,5 +139,6 @@ void TimerManager::cancel_all_timers()
         cur_timer = this->timer_queue.top();
         LOG_F(WARNING, "Canceling timer id:%llu ns:%llu", uint64_t(cur_timer), cur_timer->timeout_ns);
         this->timer_queue.pop();
+        cur_timer->active = false;
     }
 }

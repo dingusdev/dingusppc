@@ -254,7 +254,6 @@ void SoundServer::close_out_stream()
 {
     if (impl->deterministic_poll_timer.active) {
         TimerManager::get_instance()->cancel_timer(impl->deterministic_poll_timer);
-        impl->deterministic_poll_timer.active = 0;
     }
     if (!impl->out_stream) {
         impl->status = SND_STREAM_CLOSED;

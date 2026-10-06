@@ -120,7 +120,6 @@ void AwacsBase::dma_in_data() {
             10000,
             [this](uint64_t, uint64_t) {
                 // re-enter the sequencer with the state specified in next_state
-                this->dma_in_timer.active = 0;
                 this->dma_in_data();
         });
     }
@@ -134,7 +133,6 @@ void AwacsBase::dma_in_start() {
 void AwacsBase::dma_in_stop() {
     if (this->dma_in_timer.active) {
         TimerManager::get_instance()->cancel_timer(this->dma_in_timer);
-        this->dma_in_timer.active = 0;
     }
     LOG_F(ERROR, "%s: dma_in_stop", this->name.c_str());
 }

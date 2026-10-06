@@ -130,11 +130,9 @@ void VideoCtrlBase::start_refresh_task() {
 void VideoCtrlBase::stop_refresh_task() {
     if (this->refresh_timer.active) {
         TimerManager::get_instance()->cancel_timer(this->refresh_timer);
-        this->refresh_timer.active = 0;
     }
     if (this->vbl_end_timer.active) {
         TimerManager::get_instance()->cancel_timer(this->vbl_end_timer);
-        this->vbl_end_timer.active = 0;
     }
 }
 
