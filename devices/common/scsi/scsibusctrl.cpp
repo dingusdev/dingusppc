@@ -33,13 +33,11 @@ using namespace Scsi_Bus_Controller;
 void ScsiBusController::seq_defer_state(uint64_t delay_ns) {
     if (this->seq_timer.active) {
         TimerManager::get_instance()->cancel_timer(this->seq_timer);
-        this->seq_timer.active = 0;
     }
     TimerManager::get_instance()->add_oneshot_timer(this->seq_timer,
         delay_ns,
         [this](uint64_t, uint64_t) {
             // re-enter the sequencer with the state specified in next_state
-            this->seq_timer.active = 0;
             this->cur_state = this->next_state;
             this->sequencer();
     });
@@ -176,7 +174,6 @@ void ScsiBusController::notify(ScsiNotification notif_type, int param) {
         if (this->dst_id == param) {
             // cancel selection timeout timer
             TimerManager::get_instance()->cancel_timer(this->seq_timer);
-            this->seq_timer.active = false;
             this->cur_state = SeqState::SEL_END;
             this->sequencer();
         } else {

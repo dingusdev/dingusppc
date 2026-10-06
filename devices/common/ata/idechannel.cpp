@@ -95,7 +95,6 @@ void IdeChannel::assert_dmareq(uint64_t delay) {
         LOG_F(WARNING, "%s: dmareq_timer is already active", this->get_name().c_str());
     TimerManager::get_instance()->add_oneshot_timer(this->dmareq_timer, delay, [this](uint64_t, uint64_t) {
         //LOG_F(INFO, "%s: DMAREQ asserted", this->name.c_str());
-        this->dmareq_timer.active = false;
         this->channel_obj->xfer_retry();
     });
 }

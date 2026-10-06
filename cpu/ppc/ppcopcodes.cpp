@@ -932,7 +932,6 @@ static void trigger_decrementer_exception(uint64_t = 0, uint64_t = 0) {
 }
 
 static void trigger_timed_decrementer_exception(uint64_t, uint64_t) {
-    decrementer_timer.active = 0;
     uint32_t new_val = calc_dec_value();
     if (new_val >= 0 && new_val != uint32_t(-1)) {
         new_val = -1;
@@ -942,7 +941,6 @@ static void trigger_timed_decrementer_exception(uint64_t, uint64_t) {
 }
 
 static void trigger_immediate_decrementer_exception(uint64_t, uint64_t) {
-    decrementer_timer.active = 0;
     update_decrementer(false, ppc_state.spr[SPR::DEC_S], ppc_state.spr[SPR::DEC_S]);
     trigger_decrementer_exception();
 }
@@ -987,7 +985,6 @@ static void update_decrementer(bool update_time_stamp, uint32_t oldval, uint32_t
 }
 
 static void update_thermal(uint64_t, uint64_t) {
-    thermal_timer.active = 0;
 
     uint32_t val = ppc_state.spr[SPR::THRM3];
     auto sampled_interval_timer_value = (val >> 1) & 0x1FFF;

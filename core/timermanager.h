@@ -95,7 +95,7 @@ private:
 typedef struct TimerInfo {
     uint64_t timeout_ns;  // timer expiry
     uint64_t interval_ns; // 0 for one-shot timers
-    bool     active = false; // set to true when added to the queue
+    bool     active = false; // maintained by TimerManager while queued
     timer_cb cb;          // timer callback
 } TimerInfo;
 
@@ -130,7 +130,9 @@ public:
     // return current virtual time in nanoseconds
     uint64_t current_time_ns() const { return get_time_now(); }
 
-    // creating and cancelling timers
+    // Adding requires an inactive timer; cancel before rescheduling.
+    // One-shot timers become inactive before their callback runs.
+    // Cyclic timers remain active until canceled, including during callbacks.
     void add_absolute_timer(TimerInfo &ti, uint64_t timeout_ns, uint64_t interval, timer_cb cb);
     void add_oneshot_timer(TimerInfo &ti, uint64_t timeout, timer_cb cb);
     void add_immediate_timer(TimerInfo &ti, timer_cb cb);

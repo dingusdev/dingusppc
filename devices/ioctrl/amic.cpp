@@ -98,7 +98,6 @@ AMIC::~AMIC()
 {
     if (this->pseudo_vbl_timer.active) {
         TimerManager::get_instance()->cancel_timer(this->pseudo_vbl_timer);
-        this->pseudo_vbl_timer.active = 0;
     }
 }
 
@@ -638,7 +637,6 @@ void AmicSndOutDma::update_irq() {
         if (this->interrupt_timer.active)
             LOG_F(ERROR, "AMIC: interrupt_timer is already active");
         TimerManager::get_instance()->add_immediate_timer(interrupt_timer, [this](uint64_t, uint64_t) {
-            interrupt_timer.active = 0;
             this->int_ctrl->ack_dma_int(this->snd_dma_irq_id, this->irq_level);
         });
     }

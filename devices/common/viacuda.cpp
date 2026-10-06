@@ -105,19 +105,15 @@ ViaCuda::~ViaCuda()
 {
     if (this->sr_timer.active) {
         TimerManager::get_instance()->cancel_timer(this->sr_timer);
-        this->sr_timer.active = 0;
     }
     if (this->t1_timer.active) {
         TimerManager::get_instance()->cancel_timer(this->t1_timer);
-        this->t1_timer.active = 0;
     }
     if (this->t2_timer.active) {
         TimerManager::get_instance()->cancel_timer(this->t2_timer);
-        this->t2_timer.active = 0;
     }
     if (this->treq_timer.active) {
         TimerManager::get_instance()->cancel_timer(this->treq_timer);
-        this->treq_timer.active = 0;
     }
 }
 
@@ -216,7 +212,6 @@ void ViaCuda::write(int reg, uint8_t value) {
         // cancel active T1 timer task
         if (this->t1_timer.active) {
             TimerManager::get_instance()->cancel_timer(this->t1_timer);
-            this->t1_timer.active = 0;
         }
         // clear T1 flag in IFR
         this->_via_ifr &= ~VIA_IF_T1;
@@ -243,7 +238,6 @@ void ViaCuda::write(int reg, uint8_t value) {
         // cancel active T2 timer task
         if (this->t2_timer.active) {
             TimerManager::get_instance()->cancel_timer(this->t2_timer);
-            this->t2_timer.active = 0;
         }
         // clear T2 flag in IFR
         this->_via_ifr &= ~VIA_IF_T2;
@@ -257,7 +251,6 @@ void ViaCuda::write(int reg, uint8_t value) {
         TimerManager::get_instance()->add_oneshot_timer(this->t2_timer,
             (this->via_clk_dur * (this->t2_counter + 3) + (uint64_t(1) << 36)) >> 37,
             [this](uint64_t, uint64_t) {
-                this->t2_timer.active = 0;
                 this->assert_t2_int();
             }
         );
@@ -313,7 +306,6 @@ void ViaCuda::activate_t1() {
         [this](uint64_t, uint64_t) {
             // reload the T1 counter from the corresponding latches
             this->t1_counter = (this->via_t1lh << 8) | this->via_t1ll;
-            this->t1_timer.active = 0;
             this->assert_t1_int();
             if (this->via_acr & 0x40)
                 this->activate_t1();
@@ -388,12 +380,10 @@ void ViaCuda::assert_ctrl_line(ViaLine line)
 void ViaCuda::schedule_sr_int(uint64_t timeout_ns) {
     if (this->sr_timer.active) {
         TimerManager::get_instance()->cancel_timer(this->sr_timer);
-        this->sr_timer.active = 0;
     }
     TimerManager::get_instance()->add_oneshot_timer(this->sr_timer,
         timeout_ns,
         [this](uint64_t, uint64_t) {
-            this->sr_timer.active = 0;
             this->assert_sr_int();
         }
     );
@@ -431,7 +421,6 @@ void ViaCuda::write(uint8_t new_state) {
                     [this](uint64_t, uint64_t) {
                         this->via_portb &= ~CUDA_TREQ; // assert TREQ
                         this->treq = 0;
-                        this->treq_timer.active = 0;
                 });
             }
 
