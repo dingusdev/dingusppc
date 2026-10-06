@@ -227,9 +227,13 @@ int SoundServer::open_out_stream(uint32_t sample_rate, DmaOutChannel *dma_ch)
 int SoundServer::start_out_stream()
 {
     if (is_deterministic) {
-        LOG_F(9, "Starting sound output deterministic polling.");
-        TimerManager::get_instance()->add_cyclic_timer(
-            impl->deterministic_poll_timer, MSECS_TO_NSECS(10), impl->deterministic_poll_cb);
+        // DMA can restart after a STOP command without closing the output
+        // stream; the timer may already be running.
+        if (!impl->deterministic_poll_timer.active) {
+            LOG_F(9, "Starting sound output deterministic polling.");
+            TimerManager::get_instance()->add_cyclic_timer(
+                impl->deterministic_poll_timer, MSECS_TO_NSECS(10), impl->deterministic_poll_cb);
+        }
         return 0;
     }
     int res = cubeb_stream_start(impl->out_stream);
