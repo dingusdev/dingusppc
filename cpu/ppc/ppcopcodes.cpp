@@ -52,20 +52,8 @@ void ppc_changecrf0(uint32_t set_result) {
 }
 
 // Affects the XER register's Carry Bit
-inline static void ppc_carry(uint32_t a, uint32_t b) {
-    if (b < a) {
-        ppc_state.spr[SPR::XER] |= XER::CA;
-    } else {
-        ppc_state.spr[SPR::XER] &= ~XER::CA;
-    }
-}
-
-inline static void ppc_carry_sub(uint32_t a, uint32_t b) {
-    if (b >= a) {
-        ppc_state.spr[SPR::XER] |= XER::CA;
-    } else {
-        ppc_state.spr[SPR::XER] &= ~XER::CA;
-    }
+inline static void ppc_carry(uint64_t ppc_result_l) {
+    ppc_state.spr[SPR::XER] = (ppc_state.spr[SPR::XER] & ~XER::CA) | ((ppc_result_l >> (32 - 29)) & XER::CA);
 }
 
 // Affects the XER register's SO and OV Bits
@@ -114,8 +102,9 @@ template void dppc_interpreter::ppc_addi<SHFT1>(uint32_t opcode);
 template <field_rc rec>
 void dppc_interpreter::ppc_addic(uint32_t opcode) {
     ppc_grab_regsdasimm(opcode);
-    uint32_t ppc_result_d = (ppc_result_a + simm);
-    ppc_carry(ppc_result_a, ppc_result_d);
+    uint64_t ppc_result_l = uint64_t(ppc_result_a) + uint32_t(simm);
+    uint32_t ppc_result_d = uint32_t(ppc_result_l);
+    ppc_carry(ppc_result_l);
     if (rec)
         ppc_changecrf0(ppc_result_d);
     ppc_store_iresult_reg(reg_d, ppc_result_d);
@@ -127,10 +116,10 @@ template void dppc_interpreter::ppc_addic<RC1>(uint32_t opcode);
 template <field_carry carry, field_rc rec, field_ov ov>
 void dppc_interpreter::ppc_add(uint32_t opcode) {
     ppc_grab_regsdab(opcode);
-    uint32_t ppc_result_d = ppc_result_a + ppc_result_b;
-
+    uint64_t ppc_result_l = uint64_t(ppc_result_a) + ppc_result_b;
+    uint32_t ppc_result_d = uint32_t(ppc_result_l);
     if (carry)
-        ppc_carry(ppc_result_a, ppc_result_d);
+        ppc_carry(ppc_result_l);
     if (ov)
         ppc_setsoov(ppc_result_a, ~ppc_result_b, ppc_result_d);
     if (rec)
@@ -151,14 +140,9 @@ template <field_rc rec, field_ov ov>
 void dppc_interpreter::ppc_adde(uint32_t opcode) {
     ppc_grab_regsdab(opcode);
     uint32_t xer_ca       = !!(ppc_state.spr[SPR::XER] & XER::CA);
-    uint32_t ppc_result_d = ppc_result_a + ppc_result_b + xer_ca;
-
-    if ((ppc_result_d < ppc_result_a) || (xer_ca && (ppc_result_d == ppc_result_a))) {
-        ppc_state.spr[SPR::XER] |= XER::CA;
-    } else {
-        ppc_state.spr[SPR::XER] &= ~XER::CA;
-    }
-
+    uint64_t ppc_result_l = uint64_t(ppc_result_a) + ppc_result_b + xer_ca;
+    uint32_t ppc_result_d = uint32_t(ppc_result_l);
+    ppc_carry(ppc_result_l);
     if (ov)
         ppc_setsoov(ppc_result_a, ~ppc_result_b, ppc_result_d);
     if (rec)
@@ -176,14 +160,9 @@ template <field_rc rec, field_ov ov>
 void dppc_interpreter::ppc_addme(uint32_t opcode) {
     ppc_grab_regsda(opcode);
     uint32_t xer_ca       = !!(ppc_state.spr[SPR::XER] & XER::CA);
-    uint32_t ppc_result_d = ppc_result_a + xer_ca - 1;
-
-    if (((xer_ca - 1) < 0xFFFFFFFFUL) || (ppc_result_d < ppc_result_a)) {
-        ppc_state.spr[SPR::XER] |= XER::CA;
-    } else {
-        ppc_state.spr[SPR::XER] &= ~XER::CA;
-    }
-
+    uint64_t ppc_result_l = uint64_t(ppc_result_a) + xer_ca + uint32_t(-1);
+    uint32_t ppc_result_d = uint32_t(ppc_result_l);
+    ppc_carry(ppc_result_l);
     if (ov)
         ppc_setsoov(ppc_result_a, 0, ppc_result_d);
     if (rec)
@@ -201,14 +180,9 @@ template <field_rc rec, field_ov ov>
 void dppc_interpreter::ppc_addze(uint32_t opcode) {
     ppc_grab_regsda(opcode);
     uint32_t xer_ca       = !!(ppc_state.spr[SPR::XER] & XER::CA);
-    uint32_t ppc_result_d = ppc_result_a + xer_ca;
-
-    if (ppc_result_d < ppc_result_a) {
-        ppc_state.spr[SPR::XER] |= XER::CA;
-    } else {
-        ppc_state.spr[SPR::XER] &= ~XER::CA;
-    }
-
+    uint64_t ppc_result_l = uint64_t(ppc_result_a) + xer_ca;
+    uint32_t ppc_result_d = uint32_t(ppc_result_l);
+    ppc_carry(ppc_result_l);
     if (ov)
         ppc_setsoov(ppc_result_a, 0xFFFFFFFFUL, ppc_result_d);
     if (rec)
@@ -224,21 +198,19 @@ template void dppc_interpreter::ppc_addze<RC1, OV1>(uint32_t opcode);
 
 void dppc_interpreter::ppc_subfic(uint32_t opcode) {
     ppc_grab_regsdasimm(opcode);
-    uint32_t ppc_result_d = simm - ppc_result_a;
-    if (simm == -1)
-        ppc_state.spr[SPR::XER] |= XER::CA;
-    else
-        ppc_carry(~ppc_result_a, ppc_result_d);
+    uint64_t ppc_result_l = uint64_t(uint32_t(~ppc_result_a)) + uint32_t(simm) + 1;
+    uint32_t ppc_result_d = uint32_t(ppc_result_l);
+    ppc_carry(ppc_result_l);
     ppc_store_iresult_reg(reg_d, ppc_result_d);
 }
 
 template <field_carry carry, field_rc rec, field_ov ov>
 void dppc_interpreter::ppc_subf(uint32_t opcode) {
     ppc_grab_regsdab(opcode);
-    uint32_t ppc_result_d = ppc_result_b - ppc_result_a;
-
+    uint64_t ppc_result_l = uint64_t(uint32_t(~ppc_result_a)) + ppc_result_b + 1;
+    uint32_t ppc_result_d = uint32_t(ppc_result_l);
     if (carry)
-        ppc_carry_sub(ppc_result_a, ppc_result_b);
+        ppc_carry(ppc_result_l);
     if (ov)
         ppc_setsoov(ppc_result_b, ppc_result_a, ppc_result_d);
     if (rec)
@@ -260,12 +232,9 @@ template <field_rc rec, field_ov ov>
 void dppc_interpreter::ppc_subfe(uint32_t opcode) {
     ppc_grab_regsdab(opcode);
     uint32_t xer_ca       = !!(ppc_state.spr[SPR::XER] & XER::CA);
-    uint32_t ppc_result_d = ~ppc_result_a + ppc_result_b + xer_ca;
-    if (xer_ca && ppc_result_b == 0xFFFFFFFFUL)
-        ppc_state.spr[SPR::XER] |= XER::CA;
-    else
-        ppc_carry(~ppc_result_a, ppc_result_d);
-
+    uint64_t ppc_result_l = uint64_t(uint32_t(~ppc_result_a)) + ppc_result_b + xer_ca;
+    uint32_t ppc_result_d = uint32_t(ppc_result_l);
+    ppc_carry(ppc_result_l);
     if (ov)
         ppc_setsoov(ppc_result_b, ppc_result_a, ppc_result_d);
     if (rec)
@@ -283,13 +252,9 @@ template <field_rc rec, field_ov ov>
 void dppc_interpreter::ppc_subfme(uint32_t opcode) {
     ppc_grab_regsda(opcode);
     uint32_t xer_ca       = !!(ppc_state.spr[SPR::XER] & XER::CA);
-    uint32_t ppc_result_d = ~ppc_result_a + xer_ca - 1;
-
-    if (ppc_result_a == 0xFFFFFFFFUL && !xer_ca)
-        ppc_state.spr[SPR::XER] &= ~XER::CA;
-    else
-        ppc_state.spr[SPR::XER] |= XER::CA;
-
+    uint64_t ppc_result_l = uint64_t(uint32_t(~ppc_result_a)) + xer_ca + uint32_t(-1);
+    uint32_t ppc_result_d = uint32_t(ppc_result_l);
+    ppc_carry(ppc_result_l);
     if (ov) {
         if (ppc_result_d == ppc_result_a && int32_t(ppc_result_d) > 0)
             ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
@@ -312,13 +277,9 @@ template <field_rc rec, field_ov ov>
 void dppc_interpreter::ppc_subfze(uint32_t opcode) {
     ppc_grab_regsda(opcode);
     uint32_t xer_ca       = !!(ppc_state.spr[SPR::XER] & XER::CA);
-    uint32_t ppc_result_d = ~ppc_result_a + xer_ca;
-
-    if (!ppc_result_d && xer_ca) // special case: ppc_result_d = 0 and CA=1
-        ppc_state.spr[SPR::XER] |= XER::CA;
-    else
-        ppc_state.spr[SPR::XER] &= ~XER::CA;
-
+    uint64_t ppc_result_l = uint64_t(uint32_t(~ppc_result_a)) + xer_ca;
+    uint32_t ppc_result_d = uint32_t(ppc_result_l);
+    ppc_carry(ppc_result_l);
     if (ov) {
         if (ppc_result_d && ppc_result_d == ppc_result_a)
             ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
