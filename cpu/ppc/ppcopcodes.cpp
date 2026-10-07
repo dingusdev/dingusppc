@@ -69,7 +69,6 @@ inline static void ppc_carry_sub(uint32_t a, uint32_t b) {
 }
 
 // Affects the XER register's SO and OV Bits
-
 inline static void ppc_setsoov(uint32_t a, uint32_t b, uint32_t d) {
     if (int32_t((a ^ b) & (a ^ d)) < 0) {
         ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
