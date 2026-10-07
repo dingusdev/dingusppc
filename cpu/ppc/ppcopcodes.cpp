@@ -201,8 +201,8 @@ template void dppc_interpreter::ppc_addme<RC1, OV1>(uint32_t opcode);
 template <field_rc rec, field_ov ov>
 void dppc_interpreter::ppc_addze(uint32_t opcode) {
     ppc_grab_regsda(opcode);
-    uint32_t grab_xer     = !!(ppc_state.spr[SPR::XER] & XER::CA);
-    uint32_t ppc_result_d = ppc_result_a + grab_xer;
+    uint32_t xer_ca       = !!(ppc_state.spr[SPR::XER] & XER::CA);
+    uint32_t ppc_result_d = ppc_result_a + xer_ca;
 
     if (ppc_result_d < ppc_result_a) {
         ppc_state.spr[SPR::XER] |= XER::CA;
@@ -260,9 +260,9 @@ template void dppc_interpreter::ppc_subf<CARRY1, RC1, OV1>(uint32_t opcode);
 template <field_rc rec, field_ov ov>
 void dppc_interpreter::ppc_subfe(uint32_t opcode) {
     ppc_grab_regsdab(opcode);
-    uint32_t grab_ca      = !!(ppc_state.spr[SPR::XER] & XER::CA);
-    uint32_t ppc_result_d = ~ppc_result_a + ppc_result_b + grab_ca;
-    if (grab_ca && ppc_result_b == 0xFFFFFFFFUL)
+    uint32_t xer_ca       = !!(ppc_state.spr[SPR::XER] & XER::CA);
+    uint32_t ppc_result_d = ~ppc_result_a + ppc_result_b + xer_ca;
+    if (xer_ca && ppc_result_b == 0xFFFFFFFFUL)
         ppc_state.spr[SPR::XER] |= XER::CA;
     else
         ppc_carry(~ppc_result_a, ppc_result_d);
@@ -283,10 +283,10 @@ template void dppc_interpreter::ppc_subfe<RC1, OV1>(uint32_t opcode);
 template <field_rc rec, field_ov ov>
 void dppc_interpreter::ppc_subfme(uint32_t opcode) {
     ppc_grab_regsda(opcode);
-    uint32_t grab_ca      = !!(ppc_state.spr[SPR::XER] & XER::CA);
-    uint32_t ppc_result_d = ~ppc_result_a + grab_ca - 1;
+    uint32_t xer_ca       = !!(ppc_state.spr[SPR::XER] & XER::CA);
+    uint32_t ppc_result_d = ~ppc_result_a + xer_ca - 1;
 
-    if (ppc_result_a == 0xFFFFFFFFUL && !grab_ca)
+    if (ppc_result_a == 0xFFFFFFFFUL && !xer_ca)
         ppc_state.spr[SPR::XER] &= ~XER::CA;
     else
         ppc_state.spr[SPR::XER] |= XER::CA;
@@ -312,10 +312,10 @@ template void dppc_interpreter::ppc_subfme<RC1, OV1>(uint32_t opcode);
 template <field_rc rec, field_ov ov>
 void dppc_interpreter::ppc_subfze(uint32_t opcode) {
     ppc_grab_regsda(opcode);
-    uint32_t grab_ca      = !!(ppc_state.spr[SPR::XER] & XER::CA);
-    uint32_t ppc_result_d = ~ppc_result_a + grab_ca;
+    uint32_t xer_ca       = !!(ppc_state.spr[SPR::XER] & XER::CA);
+    uint32_t ppc_result_d = ~ppc_result_a + xer_ca;
 
-    if (!ppc_result_d && grab_ca) // special case: ppc_result_d = 0 and CA=1
+    if (!ppc_result_d && xer_ca) // special case: ppc_result_d = 0 and CA=1
         ppc_state.spr[SPR::XER] |= XER::CA;
     else
         ppc_state.spr[SPR::XER] &= ~XER::CA;
