@@ -58,11 +58,8 @@ inline static void ppc_carry(uint64_t ppc_result_l) {
 
 // Affects the XER register's SO and OV Bits
 inline static void ppc_setsoov(uint32_t a, uint32_t b, uint32_t d) {
-    if (int32_t((a ^ b) & (a ^ d)) < 0) {
-        ppc_state.spr[SPR::XER] |= XER::SO | XER::OV;
-    } else {
-        ppc_state.spr[SPR::XER] &= ~XER::OV;
-    }
+    ppc_state.spr[SPR::XER] = (ppc_state.spr[SPR::XER] & ~XER::OV) |
+        ((int32_t((a ^ b) & (a ^ d)) < 0) ? (XER::SO | XER::OV) : 0);
 }
 
 typedef std::function<void()> CtxSyncCallback;
