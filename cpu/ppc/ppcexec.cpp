@@ -36,19 +36,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 
 #ifdef __APPLE__
-#include <mach/mach_time.h>
-#undef EXC_SYSCALL
-static struct mach_timebase_info timebase_info;
-static uint64_t
-ConvertHostTimeToNanos2(uint64_t host_time)
-{
-    if (timebase_info.numer == timebase_info.denom)
-        return host_time;
-    long double answer = host_time;
-    answer *= timebase_info.numer;
-    answer /= timebase_info.denom;
-    return (uint64_t)answer;
-}
+#include <ctime>
 #endif
 
 using namespace std;
@@ -345,7 +333,7 @@ void ppc_main_opcode(PPCOpcode *opcodeGrabber, uint32_t opcode)
 
 static long long cpu_now_ns() {
 #ifdef __APPLE__
-    return ConvertHostTimeToNanos2(mach_absolute_time());
+    return clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
 #else
     return std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::high_resolution_clock::now().time_since_epoch()).count();
@@ -1036,9 +1024,6 @@ void ppc_cpu_init(MemCtrlBase* mem_ctrl, uint32_t cpu_version, bool do_include_6
     TimerManager::get_instance()->set_notify_changes_cb(&force_cycle_counter_reload);
 
     // initialize time base facility
-#ifdef __APPLE__
-    mach_timebase_info(&timebase_info);
-#endif
     g_nanoseconds_base = cpu_now_ns();
     g_icycles = 0;
 
