@@ -1700,11 +1700,13 @@ void dppc_interpreter::ppc_stu(uint32_t opcode) {
 #endif
     ppc_grab_regssa(opcode);
 
-    if (reg_a != 0) {
+    // MPC601 permits RA=0 for POWER compatibility and suppresses the update.
+    if (reg_a != 0 || is_601) {
         uint32_t ea = int32_t(int16_t(opcode));
-        ea += ppc_result_a;
+        ea += reg_a ? ppc_result_a : 0;
         mmu_write_vmem<T>(opcode, ea, ppc_result_d);
-        ppc_state.gpr[reg_a] = ea;
+        if (reg_a != 0)
+            ppc_state.gpr[reg_a] = ea;
     }
     else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
@@ -1723,10 +1725,12 @@ void dppc_interpreter::ppc_stux(uint32_t opcode) {
 #endif
     ppc_grab_regssab(opcode);
 
-    if (reg_a != 0) {
-        uint32_t ea = ppc_result_a + ppc_result_b;
+    // MPC601 permits RA=0 for POWER compatibility and suppresses the update.
+    if (reg_a != 0 || is_601) {
+        uint32_t ea = (reg_a ? ppc_result_a : 0) + ppc_result_b;
         mmu_write_vmem<T>(opcode, ea, ppc_result_d);
-        ppc_state.gpr[reg_a] = ea;
+        if (reg_a != 0)
+            ppc_state.gpr[reg_a] = ea;
     }
     else {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
