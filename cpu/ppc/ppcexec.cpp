@@ -364,16 +364,32 @@ void set_virt_time_ns(uint64_t time_now)
     LOG_F(INFO, "time before: %lld  after: %lld  change: %lld", time_now, time_new, time_new - time_now);
 }
 
+static constexpr uint64_t TIMER_POLL_INTERVAL_NS = 500'000;
+
 static uint64_t process_events()
 {
     exec_timer = false;
     uint64_t next_ns = TimerManager::get_instance()->process_timers();
+    if (g_realtime) {
+        uint64_t time_now = get_virt_time_ns();
+        uint64_t delay_ns;
+        if (next_ns) {
+            delay_ns = next_ns > time_now ? next_ns - time_now : 0;
+        } else {
+            delay_ns = TIMER_POLL_INTERVAL_NS;
+        }
+        // Host time and the instruction counter advance independently. Schedule
+        // a relative instruction batch, capped so long deadlines still poll.
+        // Comparing an absolute wall-time deadline with g_icycles can otherwise
+        // make a fast interpreter process timers after every instruction.
+        return g_icycles + (std::min(delay_ns, TIMER_POLL_INTERVAL_NS) >> icnt_factor) + 1;
+    }
     return (
         (
             next_ns ?
                 next_ns
             :
-                TimerManager::get_instance()->current_time_ns() + 500'000
+                TimerManager::get_instance()->current_time_ns() + TIMER_POLL_INTERVAL_NS
         ) >> icnt_factor
     ) + 1;
 }
