@@ -165,6 +165,7 @@ void EventManager::poll_events() {
                         bool g_realtime_status = toggle_g_realtime();
                         LOG_F(INFO, "g_realtime: %s", g_realtime_status ? "enabled" : "disabled");
                     }
+                    return;
                 }
 
                 // Control-L: log toggle
