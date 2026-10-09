@@ -1088,7 +1088,7 @@ static void mpc601_bat_update(uint32_t bat_reg)
 
 static void mpc601_dbat_update(uint32_t /*bat_reg*/)
 {
-    // ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+    // ppc_illegalop(opcode);
 }
 
 static void ppc_ibat_update(uint32_t bat_reg)

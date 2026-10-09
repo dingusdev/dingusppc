@@ -1002,14 +1002,14 @@ void dppc_interpreter::ppc_mfspr(uint32_t opcode) {
     switch (ref_spr) {
     case SPR::MQ:
         if (!(is_601 || include_601)) {
-            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+            ppc_illegalop(opcode);
             return;
         }
         ppc_state.gpr[reg_d] = ppc_state.spr[ref_spr];
         break;
     case SPR::RTCL_U:
         if (!is_601) {
-            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+            ppc_illegalop(opcode);
             return;
         }
         calc_rtcl_value();
@@ -1019,7 +1019,7 @@ void dppc_interpreter::ppc_mfspr(uint32_t opcode) {
         break;
     case SPR::RTCU_U:
         if (!is_601) {
-            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+            ppc_illegalop(opcode);
             return;
         }
         calc_rtcl_value();
@@ -1029,7 +1029,7 @@ void dppc_interpreter::ppc_mfspr(uint32_t opcode) {
         break;
     case SPR::DEC_U:
         if (!is_601) {
-            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+            ppc_illegalop(opcode);
             return;
         }
         // fallthrough
@@ -1093,13 +1093,13 @@ void dppc_interpreter::ppc_mtspr(uint32_t opcode) {
         if (is_601 || include_601)
             ppc_state.spr[ref_spr] = val;
         else
-            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+            ppc_illegalop(opcode);
         break;
     case SPR::RTCL_U:
     case SPR::RTCU_U:
     case SPR::DEC_U:
         if (!is_601) {
-            ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+            ppc_illegalop(opcode);
         }
         break;
     case SPR::XER:
@@ -1214,7 +1214,7 @@ void dppc_interpreter::ppc_mftb(uint32_t opcode) {
         ppc_state.spr[TBL_S] = uint32_t(tbr_value);
         break;
     default:
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        ppc_illegalop(opcode);
      }
 }
 
@@ -1709,7 +1709,7 @@ void dppc_interpreter::ppc_stu(uint32_t opcode) {
             ppc_state.gpr[reg_a] = ea;
     }
     else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        ppc_illegalop(opcode);
     }
 
 }
@@ -1733,7 +1733,7 @@ void dppc_interpreter::ppc_stux(uint32_t opcode) {
             ppc_state.gpr[reg_a] = ea;
     }
     else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        ppc_illegalop(opcode);
     }
 }
 
@@ -1825,7 +1825,7 @@ void dppc_interpreter::ppc_lzu(uint32_t opcode) {
         ppc_result_a = ea;
         ppc_store_iresult_reg(reg_a, ppc_result_a);
     } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        ppc_illegalop(opcode);
     }
 }
 
@@ -1861,7 +1861,7 @@ void dppc_interpreter::ppc_lzux(uint32_t opcode) {
         ppc_result_a = ea;
         ppc_store_iresult_reg(reg_a, ppc_result_a);
     } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        ppc_illegalop(opcode);
     }
 }
 
@@ -1893,7 +1893,7 @@ void dppc_interpreter::ppc_lhau(uint32_t opcode) {
         ppc_result_a = ea;
         ppc_store_iresult_reg(reg_a, ppc_result_a);
     } else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        ppc_illegalop(opcode);
     }
 }
 
@@ -1910,7 +1910,7 @@ void dppc_interpreter::ppc_lhaux(uint32_t opcode) {
         ppc_store_iresult_reg(reg_a, ppc_result_a);
     }
     else {
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        ppc_illegalop(opcode);
     }
 }
 
@@ -2018,7 +2018,7 @@ void dppc_interpreter::ppc_lswx(uint32_t opcode) {
     if ((reg_d == 0 && reg_a == 0) || (reg_d == reg_a) || (reg_d == reg_b)) {
         // UNTESTED! Does invalid form really cause exception?
         // G4 doesn't do exception
-        ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::ILLEGAL_OP);
+        ppc_illegalop(opcode);
     }
 */
 
