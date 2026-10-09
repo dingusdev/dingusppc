@@ -74,13 +74,19 @@ Specifies working directory, where `path` is a string for the directory the emul
 Start the guest RTC on the given date, using the current local time of day. The clock continues ticking, including across midnight. This is useful for running software with an expiration date, such as `--start-date=1997-03-01` for BeOS DR 8.2. Without a date override or deterministic mode, the RTC follows the host clock.
 
 ```
+--realtime
+```
+
+Advance the CPU timebase, decrementer, and device timers using elapsed host time, instead of instruction counts. This keeps double click delays, keyboard repeat, sleeps, and timeouts tied to wall time, improving usability of user interfaces. Control-Alt-R toggles this mode while running.
+
+```
 --deterministic
 --deterministic-mode strict|interactive
 ```
 
-Enables deterministic mode, where the emulator behaves the same way every run. Meant to be a development or debugging aid, to remove variability between runs. Disk, NVRAM, and PRAM changes are not saved. The default `strict` mode ignores mouse and keyboard input; `interactive` mode allows input for interactive debugging.
+Enables deterministic mode, where the emulator behaves the same way every run. Meant to be a development or debugging aid, to remove variability between runs. Disk, NVRAM, and PRAM changes are not saved. Audio output is also disabled, since we cannot control when the host would try to access it. The default `strict` mode ignores mouse and keyboard input; `interactive` mode allows input for interactive debugging.
 
-The RTC defaults to `--start-date=2001-03-24`, unless a date is explicitly supplied. It starts at noon and advances the RTC with emulated time. Restarting the emulated machine starts the deterministic RTC from that date and noon again.
+The RTC defaults to `--start-date=2001-03-24`, unless a date is explicitly supplied. It starts at noon and advances the RTC with emulated time. Restarting the emulated machine starts the deterministic RTC from that date and noon again. With `--realtime`, it advances at wall-clock rate from that fixed date and noon.
 
 ```
 --setenv args
@@ -209,7 +215,7 @@ The debugger is enabled here, due to the presence of `-d`. The CD ROM image will
 
 ## Keyboard Shortcuts
 
-You can use these keyboard commands while the emulator is running in real-time mode:
+You can use these keyboard commands while the emulator is running:
 
 * Control-G: mouse grab
 * Control-S: scale quality
@@ -219,6 +225,7 @@ You can use these keyboard commands while the emulator is running in real-time m
 * Control--: smaller
 * Control-L: log toggle
 * Control-D: debugger
+* Control-Alt-R: toggle realtime guest timing
 
 ## Accessing Open Firmware
 
