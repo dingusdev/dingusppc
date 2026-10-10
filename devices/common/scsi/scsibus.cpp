@@ -31,6 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <cinttypes>
 #include <sstream>
+#include <vector>
 
 ScsiBus::ScsiBus(const std::string name)
 {
@@ -338,29 +339,65 @@ void ScsiBus::attach_scsi_devices(const std::string bus_suffix)
         }
     }
 
+    int default_cdrom_id = -1;
+    std::string cdr_config = GET_STR_PROP("cdr_config");
+    if (!cdr_config.empty()) {
+        std::string bus_id;
+        uint32_t dev_num;
+        parse_device_path(cdr_config, bus_id, dev_num);
+        // Only consume SCSI paths; other buses handle their own CD-ROM configuration.
+        if (bus_id.starts_with("Scsi")) {
+            auto bus_obj = dynamic_cast<ScsiBus*>(gMachineObj->get_comp_by_name_optional(bus_id));
+            if (!bus_obj)
+                ABORT_F("cdr_config device path %s does not specify a known SCSI bus", cdr_config.c_str());
+            if (dev_num >= SCSI_MAX_DEVS)
+                ABORT_F("Invalid SCSI ID in cdr_config device path %s", cdr_config.c_str());
+            if (bus_obj == this) {
+                if (this->devices[dev_num])
+                    ABORT_F("%s: cdr_config SCSI ID %u is already occupied", bus_id.c_str(), dev_num);
+                default_cdrom_id = dev_num;
+            }
+        }
+    }
+
     image_path = GET_STR_PROP("cdr_img" + bus_suffix);
+    std::vector<std::string> cdrom_paths;
     if (!image_path.empty()) {
-        std::istringstream image_stream(image_path);
-        while (std::getline(image_stream, path, ':')) {
-             // do two passes because we start at ID 3.
+        // Keep empty entries, including the last one, as empty CD-ROM drives.
+        size_t start = 0;
+        size_t end;
+        do {
+            end = image_path.find(':', start);
+            cdrom_paths.push_back(image_path.substr(start, end - start));
+            start = end + 1;
+        } while (end != std::string::npos);
+    } else if (default_cdrom_id >= 0) {
+        cdrom_paths.push_back("");
+    }
+    for (const auto& path : cdrom_paths) {
+        if (default_cdrom_id >= 0) {
+            scsi_id = default_cdrom_id;
+            default_cdrom_id = -1;
+        } else {
+            // do two passes because we start at ID 3.
             for (scsi_id = 3; scsi_id < SCSI_MAX_DEVS * 2 &&
                  this->devices[scsi_id % SCSI_MAX_DEVS]; scsi_id++) {}
+        }
 
-            if (scsi_id < SCSI_MAX_DEVS * 2) {
-                scsi_id = scsi_id % SCSI_MAX_DEVS;
-                std::string scsi_device_name = "ScsiCdrom" + bus_suffix + "," +
-                                               std::to_string(scsi_id);
-                ScsiCdrom *scsi_device = new ScsiCdrom(scsi_device_name, scsi_id);
-                gMachineObj->add_device(scsi_device_name,
-                                        std::unique_ptr<ScsiCdrom>(scsi_device));
-                this->register_device(scsi_id, scsi_device);
-                if (!scsi_device->insert_image(path))
-                    ABORT_F("Could not insert CD-ROM image, %s", path.c_str());
-            }
-            else {
-                LOG_F(ERROR, "%s: Too many devices. CD-ROM \"%s\" was not added.",
-                      this->get_name().c_str(), path.c_str());
-            }
+        if (scsi_id < SCSI_MAX_DEVS * 2) {
+            scsi_id = scsi_id % SCSI_MAX_DEVS;
+            std::string scsi_device_name = "ScsiCdrom" + bus_suffix + "," +
+                                           std::to_string(scsi_id);
+            ScsiCdrom *scsi_device = new ScsiCdrom(scsi_device_name, scsi_id);
+            gMachineObj->add_device(scsi_device_name,
+                                    std::unique_ptr<ScsiCdrom>(scsi_device));
+            this->register_device(scsi_id, scsi_device);
+            if (!path.empty() && !scsi_device->insert_image(path))
+                ABORT_F("Could not insert CD-ROM image, %s", path.c_str());
+        }
+        else {
+            LOG_F(ERROR, "%s: Too many devices. CD-ROM \"%s\" was not added.",
+                  this->get_name().c_str(), path.c_str());
         }
     }
 }

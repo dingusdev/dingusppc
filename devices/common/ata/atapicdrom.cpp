@@ -67,6 +67,11 @@ int AtapiCdrom::device_postinit() {
     parse_device_path(cdr_config, bus_id, dev_num);
 
     auto bus_obj = dynamic_cast<IdeChannel*>(gMachineObj->get_comp_by_name(bus_id));
+    if (!bus_obj) {
+        LOG_F(ERROR, "%s: cdr_config device path %s does not specify a known IDE bus",
+              this->name.c_str(), cdr_config.c_str());
+        return -1;
+    }
     bus_obj->register_device(dev_num, this);
 
     std::string cdr_image_path = GET_STR_PROP("cdr_img");
@@ -100,6 +105,12 @@ void AtapiCdrom::perform_packet_command() {
     switch (this->cmd_pkt[0]) {
     case ScsiCommand::READ_CD:
     {
+        // READ_CD currently bypasses the shared CD-ROM command dispatcher.
+        if (!this->ready_for_command()) {
+            this->present_status();
+            break;
+        }
+
         lba = READ_DWORD_BE_U(&this->cmd_pkt[2]);
         xfer_len = (this->cmd_pkt[6] << 16) | READ_WORD_BE_U(&this->cmd_pkt[7]);
         if (this->cmd_pkt[9] == 0 && (this->cmd_pkt[10] & 7) == 0) {

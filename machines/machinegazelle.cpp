@@ -145,6 +145,8 @@ static const PropMap pm6500_settings = {
         new IntProperty(32, std::vector<uint32_t>({   4, 8, 16, 32, 64}))},
     {"rambank2_size",
         new IntProperty( 0, std::vector<uint32_t>({0, 4, 8, 16, 32, 64}))},
+    {"cdr_config",
+        new StrProperty("ScsiMesh:3")},
     {"emmo",
         new BinProperty(0)},
     {"hdd_config",
