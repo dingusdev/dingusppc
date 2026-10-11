@@ -696,10 +696,10 @@ void dppc_interpreter::ppc_mtsr(uint32_t opcode) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
         return;
     }
-    int reg_s             = (opcode >> 21) & 0x1F;
+    ppc_grab_s(opcode);
     uint32_t grab_sr      = (opcode >> 16) & 0x0F;
-    if (ppc_state.sr[grab_sr] != ppc_state.gpr[reg_s]) {
-        ppc_state.sr[grab_sr] = ppc_state.gpr[reg_s];
+    if (ppc_state.sr[grab_sr] != ppc_result_d) {
+        ppc_state.sr[grab_sr] = ppc_result_d;
         mmu_pat_ctx_changed();
     }
 }
@@ -766,9 +766,9 @@ void dppc_interpreter::ppc_mtmsr(uint32_t opcode) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::NOT_ALLOWED);
         return;
     }
-    uint32_t reg_s = (opcode >> 21) & 0x1F;
+    ppc_grab_s(opcode);
     uint32_t old_msr_val = ppc_state.msr;
-    uint32_t new_msr_val = ppc_state.gpr[reg_s];
+    uint32_t new_msr_val = ppc_result_d;
     if (!is_601) {
         ppc_change_endian((new_msr_val & MSR::LE) != 0);
     }
@@ -1594,14 +1594,13 @@ void dppc_interpreter::ppc_tw(uint32_t opcode) {
 }
 
 void dppc_interpreter::ppc_twi(uint32_t opcode) {
-    int32_t simm    = int32_t(int16_t(opcode));
-    uint32_t reg_a  = (opcode >> 16) & 0x1F;
+    ppc_grab_regsasimm(opcode);
     uint32_t ppc_to = (opcode >> 21) & 0x1F;
-    if (((int32_t(ppc_state.gpr[reg_a]) < simm) && (ppc_to & 0x10)) ||
-        ((int32_t(ppc_state.gpr[reg_a]) > simm) && (ppc_to & 0x08)) ||
-        ((int32_t(ppc_state.gpr[reg_a]) == simm) && (ppc_to & 0x04)) ||
-        (ppc_state.gpr[reg_a] < uint32_t(simm) && (ppc_to & 0x02)) ||
-        (ppc_state.gpr[reg_a] > uint32_t(simm) && (ppc_to & 0x01))) {
+    if (((int32_t(ppc_result_a) < simm) && (ppc_to & 0x10)) ||
+        ((int32_t(ppc_result_a) > simm) && (ppc_to & 0x08)) ||
+        ((int32_t(ppc_result_a) == simm) && (ppc_to & 0x04)) ||
+        (ppc_result_a < uint32_t(simm) && (ppc_to & 0x02)) ||
+        (ppc_result_a > uint32_t(simm) && (ppc_to & 0x01))) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::TRAP);
     }
 }
@@ -1799,8 +1798,8 @@ void dppc_interpreter::ppc_lz(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
-    ppc_grab_regsda(opcode);
-    uint32_t ea = int32_t(int16_t(opcode));
+    ppc_grab_regsdasimm(opcode);
+    uint32_t ea = simm;
     ea += reg_a ? ppc_result_a : 0;
     uint32_t ppc_result_d = mmu_read_vmem<T>(opcode, ea);
     ppc_store_iresult_reg(reg_d, ppc_result_d);
@@ -1815,8 +1814,8 @@ void dppc_interpreter::ppc_lzu(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
-    ppc_grab_regsda(opcode);
-    uint32_t ea = int32_t(int16_t(opcode));
+    ppc_grab_regsdasimm(opcode);
+    uint32_t ea = simm;
     if ((reg_a != reg_d) && (reg_a != 0)) {
         ea += ppc_result_a;
         uint32_t ppc_result_d = mmu_read_vmem<T>(opcode, ea);
@@ -1872,8 +1871,8 @@ void dppc_interpreter::ppc_lha(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
-    ppc_grab_regsda(opcode);
-    uint32_t ea = int32_t(int16_t(opcode));
+    ppc_grab_regsdasimm(opcode);
+    uint32_t ea = simm;
     ea += (reg_a ? ppc_result_a : 0);
     int16_t val = mmu_read_vmem<uint16_t>(opcode, ea);
     ppc_store_iresult_reg(reg_d, int32_t(val));
@@ -1883,9 +1882,9 @@ void dppc_interpreter::ppc_lhau(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
-    ppc_grab_regsda(opcode);
+    ppc_grab_regsdasimm(opcode);
     if ((reg_a != reg_d) && reg_a != 0) {
-        uint32_t ea = int32_t(int16_t(opcode));
+        uint32_t ea = simm;
         ea += ppc_result_a;
         int16_t val = mmu_read_vmem<uint16_t>(opcode, ea);
         ppc_store_iresult_reg(reg_d, int32_t(val));
@@ -1959,8 +1958,8 @@ void dppc_interpreter::ppc_lmw(uint32_t opcode) {
 #ifdef CPU_PROFILING
     num_int_loads++;
 #endif
-    ppc_grab_regsda(opcode);
-    uint32_t ea = int32_t(int16_t(opcode));
+    ppc_grab_regsdasimm(opcode);
+    uint32_t ea = simm;
     ea += (reg_a ? ppc_result_a : 0);
     // How many words to load in memory - using a do-while for this
     do {
