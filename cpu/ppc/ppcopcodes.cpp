@@ -1698,13 +1698,15 @@ void dppc_interpreter::ppc_stu(uint32_t opcode) {
 #endif
     ppc_grab_regssa(opcode);
 
-    // MPC601 permits RA=0 for POWER compatibility and suppresses the update.
-    if (reg_a != 0 || is_601) {
-        uint32_t ea = int32_t(int16_t(opcode));
-        ea += reg_a ? ppc_result_a : 0;
+    if (reg_a != 0) {
+        uint32_t ea = ppc_result_a + int32_t(int16_t(opcode));
         mmu_write_vmem<T>(opcode, ea, ppc_result_d);
-        if (reg_a != 0)
-            ppc_state.gpr[reg_a] = ea;
+        ppc_state.gpr[reg_a] = ea;
+    }
+    else if (is_601) {
+        // MPC601 permits RA=0 for POWER compatibility and suppresses the update.
+        uint32_t ea = int32_t(int16_t(opcode));
+        mmu_write_vmem<T>(opcode, ea, ppc_result_d);
     }
     else {
         ppc_illegalop(opcode);
@@ -1723,12 +1725,15 @@ void dppc_interpreter::ppc_stux(uint32_t opcode) {
 #endif
     ppc_grab_regssab(opcode);
 
-    // MPC601 permits RA=0 for POWER compatibility and suppresses the update.
-    if (reg_a != 0 || is_601) {
-        uint32_t ea = (reg_a ? ppc_result_a : 0) + ppc_result_b;
+    if (reg_a != 0) {
+        uint32_t ea = ppc_result_a + ppc_result_b;
         mmu_write_vmem<T>(opcode, ea, ppc_result_d);
-        if (reg_a != 0)
-            ppc_state.gpr[reg_a] = ea;
+        ppc_state.gpr[reg_a] = ea;
+    }
+    else if (is_601) {
+        // MPC601 permits RA=0 for POWER compatibility and suppresses the update.
+        uint32_t ea = ppc_result_b;
+        mmu_write_vmem<T>(opcode, ea, ppc_result_d);
     }
     else {
         ppc_illegalop(opcode);
