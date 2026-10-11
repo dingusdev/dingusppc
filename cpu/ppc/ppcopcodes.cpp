@@ -1582,14 +1582,13 @@ void dppc_interpreter::ppc_sc(uint32_t opcode) {
 }
 
 void dppc_interpreter::ppc_tw(uint32_t opcode) {
-    uint32_t reg_a  = (opcode >> 11) & 0x1F;
-    uint32_t reg_b  = (opcode >> 16) & 0x1F;
+    ppc_grab_regsab(opcode);
     uint32_t ppc_to = (opcode >> 21) & 0x1F;
-    if (((int32_t(ppc_state.gpr[reg_a]) < int32_t(ppc_state.gpr[reg_b])) && (ppc_to & 0x10)) ||
-        ((int32_t(ppc_state.gpr[reg_a]) > int32_t(ppc_state.gpr[reg_b])) && (ppc_to & 0x08)) ||
-        ((int32_t(ppc_state.gpr[reg_a]) == int32_t(ppc_state.gpr[reg_b])) && (ppc_to & 0x04)) ||
-        ((ppc_state.gpr[reg_a] < ppc_state.gpr[reg_b]) && (ppc_to & 0x02)) ||
-        ((ppc_state.gpr[reg_a] > ppc_state.gpr[reg_b]) && (ppc_to & 0x01))) {
+    if (((int32_t(ppc_result_a) < int32_t(ppc_result_b)) && (ppc_to & 0x10)) ||
+        ((int32_t(ppc_result_a) > int32_t(ppc_result_b)) && (ppc_to & 0x08)) ||
+        ((int32_t(ppc_result_a) == int32_t(ppc_result_b)) && (ppc_to & 0x04)) ||
+        ((ppc_result_a < ppc_result_b) && (ppc_to & 0x02)) ||
+        ((ppc_result_a > ppc_result_b) && (ppc_to & 0x01))) {
         ppc_exception_handler(Except_Type::EXC_PROGRAM, Exc_Cause::TRAP);
     }
 }
