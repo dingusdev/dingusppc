@@ -220,7 +220,7 @@ void ViaCuda::write(int reg, uint8_t value) {
         this->via_t1lh = value;
         // load the T1 counter from the corresponding latches
         this->t1_counter = (this->via_t1lh << 8) | this->via_t1ll;
-        this->activate_t1();
+        this->activate_t1(TimerManager::get_instance()->current_time_ns());
         break;
     case VIA_T1LL:
         this->via_t1ll = value;
@@ -296,19 +296,20 @@ uint16_t ViaCuda::calc_counter_val(const uint16_t last_val, const uint64_t &star
     return last_val - (diff_hi >> 10);
 }
 
-void ViaCuda::activate_t1() {
+void ViaCuda::activate_t1(uint64_t start_time) {
     // TODO: delay for one phase 2 clock
-    // sample current vCPU time and remember it
-    this->t1_start_time = TimerManager::get_instance()->current_time_ns();
+    this->t1_start_time = start_time;
+    uint64_t timeout = start_time +
+        ((this->via_clk_dur * (this->t1_counter + 3) + (uint64_t(1) << 36)) >> 37);
     // set up timout timer for T1
-    TimerManager::get_instance()->add_oneshot_timer(this->t1_timer,
-        (this->via_clk_dur * (this->t1_counter + 3) + (uint64_t(1) << 36)) >> 37,
-        [this](uint64_t, uint64_t) {
+    TimerManager::get_instance()->add_absolute_timer(this->t1_timer,
+        timeout, 0,
+        [this](uint64_t timeout_ns, uint64_t /*time_now*/) {
             // reload the T1 counter from the corresponding latches
             this->t1_counter = (this->via_t1lh << 8) | this->via_t1ll;
             this->assert_t1_int();
             if (this->via_acr & 0x40)
-                this->activate_t1();
+                this->activate_t1(timeout_ns);
         }
     );
 }

@@ -273,7 +273,7 @@ private:
     void assert_t2_int();
     void schedule_sr_int(uint64_t timeout_ns);
     uint16_t calc_counter_val(const uint16_t last_val, const uint64_t &start_time);
-    void activate_t1();
+    void activate_t1(uint64_t start_time);
 
     // CUDA methods
     void cuda_init();
