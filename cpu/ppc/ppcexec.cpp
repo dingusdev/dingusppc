@@ -401,7 +401,7 @@ static uint64_t process_events()
             next_ns ?
                 next_ns
             :
-                TimerManager::get_instance()->current_time_ns() + TIMER_POLL_INTERVAL_NS
+                get_virt_time_ns() + TIMER_POLL_INTERVAL_NS
         ) >> icnt_factor
     ) + 1;
 }
