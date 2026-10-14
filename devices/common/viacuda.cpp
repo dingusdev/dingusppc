@@ -160,10 +160,12 @@ uint8_t ViaCuda::read(int reg) {
     case VIA_T1LH:
         return this->via_t1lh;
     case VIA_T2CL:
+        this->check_t2();
         this->_via_ifr &= ~VIA_IF_T2;
         update_irq();
         return this->calc_counter_val(this->t2_counter, this->t2_start_time) & 0xFFU;
     case VIA_T2CH:
+        this->check_t2();
         return this->calc_counter_val(this->t2_counter, this->t2_start_time) >> 8;
     case VIA_SR:
         value = this->via_sr;
@@ -175,6 +177,7 @@ uint8_t ViaCuda::read(int reg) {
     case VIA_PCR:
         return this->via_pcr;
     case VIA_IFR:
+        this->check_t2();
         return this->_via_ifr;
     case VIA_IER:
         return (this->_via_ier | 0x80); // bit 7 always reads as "1"
@@ -244,16 +247,7 @@ void ViaCuda::write(int reg, uint8_t value) {
         update_irq();
         // load initial value into counter 2
         this->t2_counter = (value << 8) | this->via_t2ll;
-        // TODO: delay for one phase 2 clock
-        // sample current vCPU time and remember it
-        this->t2_start_time = TimerManager::get_instance()->current_time_ns();
-        // set up timeout timer for T2
-        TimerManager::get_instance()->add_oneshot_timer(this->t2_timer,
-            (this->via_clk_dur * (this->t2_counter + 3) + (uint64_t(1) << 36)) >> 37,
-            [this](uint64_t, uint64_t) {
-                this->assert_t2_int();
-            }
-        );
+        this->activate_t2(TimerManager::get_instance()->current_time_ns());
         break;
     case VIA_SR:
         this->via_sr = value;
@@ -290,6 +284,9 @@ uint16_t ViaCuda::calc_counter_val(const uint16_t last_val, const uint64_t &star
 {
     // calculate current counter value based on elapsed time and timer frequency
     uint64_t cur_time = TimerManager::get_instance()->current_time_ns();
+    // The loaded value remains visible during the initial half-clock delay.
+    if (cur_time <= start_time)
+        return last_val;
     uint64_t diff_hi;
     uint32_t diff_lo;
     _u32xu64(this->via_clk_freq, cur_time - start_time, diff_hi, diff_lo);
@@ -312,6 +309,31 @@ void ViaCuda::activate_t1(uint64_t start_time) {
                 this->activate_t1(timeout_ns);
         }
     );
+}
+
+void ViaCuda::activate_t2(uint64_t start_time) {
+    // T2's one-shot interrupt occurs N + 1.5 VIA clocks after loading N.
+    // Timer begins counting after 0.5 VIA clocks
+    start_time += (this->via_clk_dur + (uint64_t(1) << 37)) >> 38;
+    this->t2_start_time = start_time;
+    // Timer ends N + 1 VIA clocks after start time.
+    uint64_t timeout = start_time +
+        ((this->via_clk_dur * (this->t2_counter + 1) + (uint64_t(1) << 36)) >> 37);
+    TimerManager::get_instance()->add_absolute_timer(
+        this->t2_timer, timeout, 0, [this](uint64_t, uint64_t) { this->assert_t2_int(); });
+}
+
+void ViaCuda::check_t2() {
+    // The process_events is where assert_t2_int is supposed to happen,
+    // but if a register read doesn't see that an interrupt happened
+    // when the counter wraps, then Microseconds in classic Mac OS will
+    // fail, so we call assert_t2_int here which sets the IFR register
+    // makes the interrupt happen as soon as possible.
+    auto tm = TimerManager::get_instance();
+    if (this->t2_timer.active && tm->current_time_ns() >= this->t2_timer.timeout_ns) {
+        tm->cancel_timer(this->t2_timer);
+        this->assert_t2_int();
+    }
 }
 
 void ViaCuda::print_enabled_ints() {
