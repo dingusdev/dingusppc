@@ -433,6 +433,7 @@ void GrandCentral::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
         switch (offset) {
         case MIO_INT_MASK1:
             this->int_mask = BYTESWAP_32(value);
+            this->clear_cpu_int();
             this->signal_cpu_int();
             break;
         case MIO_INT_CLEAR1:
@@ -529,9 +530,8 @@ void GrandCentral::ack_int_common(uint64_t irq_id, uint8_t irq_line_state) {
     if ((this->int_mask & MACIO_INT_MODE) ||
         (irq_line_state && !(this->int_levels & irq_id))) {
         this->int_events |= (uint32_t)irq_id;
-    } else {
-        this->int_events &= ~(uint32_t)irq_id;
     }
+    // Events remain latched until software writes InterruptClear.
 
     // update IRQ line state
     if (irq_line_state) {
