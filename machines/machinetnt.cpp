@@ -123,6 +123,15 @@ int MachineTnt::initialize(const std::string &id) {
         return -1;
     }
 
+    // Hammerhead uses the top 16 MB of the address space for ROM.
+    // The installed 4 MB ROM appears four times within that range.
+    for (uint32_t addr : {0xFF000000U, 0xFF400000U, 0xFF800000U}) {
+        if (!memctrl_obj->add_mem_mirror(addr, 0xFFC00000)) {
+            LOG_F(ERROR, "Could not create ROM mirror!");
+            return -1;
+        }
+    }
+
     // populate RAM banks from configuration properties
     for (int bank_num = 0; bank_num <= 12; bank_num++) {
         std::string bn = std::to_string(bank_num);
