@@ -25,8 +25,11 @@
 | 0x50000000     | 0x5FFFFFFF   | IO Devices                   |
 | 0x5FFFFFFC     |              | "cpuid", really a Machine ID |
 | 0x60000000     | 0xEFFFFFFF   | NuBus "super slot" space     |
-| 0xF1000000     | 0xFFBFFFFF   | NuBus "standard slot" space  |
-| 0xFFC00000     | 0xFFFFFFFF   | ROM                          |
+| 0xF1000000     | 0xFEFFFFFF   | NuBus "standard slot" space  |
+| 0xFF000000     | 0xFFFFFFFF   | ROM alias                    |
+
+The high ROM alias range is documented in Apple's
+[6100/7100/8100 Developer Note, Table 2-5](https://www.macdat.net/files/pdf/apple/developer_notes/power_macintosh_6100_7100_8100.pdf#page=36).
 
 ### IO Bus
 
@@ -90,9 +93,18 @@
 * 0xFEE00000 - Grackle CONFIG_DATA (0x4 bytes, all redirected to 0xXXXXXCFF)
 
 ### ROM / Misc Area (0xFF000000 - 0xFFFFFFFF)
-* 0xFF000000 - ?
 
-  *  0xFF000004 - "cpuid", really a machine ID
+On TNT/Tsunami (Hammerhead) and Catalyst (Platinum), the 4 MB ROM repeats at
+`0xFF000000`, `0xFF400000`, `0xFF800000`, and `0xFFC00000`. Both controllers
+use the full 16 MB range for ROM; the ROM chips receive only PowerPC address bits
+10–28 ([9600 schematic, sheet 6](https://www.macdat.net/files/pdf/apple/schematics/apple/powermac_9600.pdf#page=6),
+[7200 schematic, sheet 9](https://www.macdat.net/files/pdf/apple/schematics/apple/powermac_7200.pdf#page=9)).
+
+Gossamer differs: Grackle selects ROM with RCS0 (`0xFF800000–0xFFFFFFFF`),
+while RCS1 (`0xFF000000–0xFF7FFFFF`) enables board-status buffers, including
+the machine ID at `0xFF000004`. Do not apply the TNT aliases to this range
+([Gossamer schematic, sheet 7](https://www.macdat.net/files/pdf/apple/schematics/apple/powermac_g3_gossamer.pdf#page=7),
+[MPC106 manual, §1.2.3](https://www.nxp.com/docs/en/reference-manual/MPC106UM.pdf)).
 
 * 0xFFC00000 - 0xFFFFFFFF
     Mac OS ROM Area
