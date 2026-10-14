@@ -101,8 +101,14 @@ uint64_t TimerManager::process_timers()
         if (cur_timer->interval_ns) {
             std::lock_guard<std::recursive_mutex> lk(this->timer_queue.get_mtx());
             uint64_t timeout_ns_new = timeout_ns + cur_timer->interval_ns;
-            if (timeout_ns_new <= time_now)
-                timeout_ns_new = time_now + cur_timer->interval_ns;
+            if (timeout_ns_new <= time_now) {
+                // Skip missed periods without changing the timer's phase.
+                // Rebasing deadlines on time_now would align timers that
+                // have the same period.
+                const uint64_t periods_to_skip =
+                    ((time_now - timeout_ns_new) / cur_timer->interval_ns) + 1;
+                timeout_ns_new += periods_to_skip * cur_timer->interval_ns;
+            }
             cur_timer->timeout_ns = timeout_ns_new;
             this->timer_queue.push(cur_timer);
         } else {
