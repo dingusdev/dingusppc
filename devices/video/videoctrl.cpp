@@ -112,15 +112,15 @@ void VideoCtrlBase::start_refresh_task() {
     TimerManager::get_instance()->add_cyclic_timer(
         this->refresh_timer,
         refresh_interval,
-        [this, vbl_duration](uint64_t, uint64_t) {
+        [this, vbl_duration](uint64_t timeout_ns, uint64_t) {
             this->vbl_cb(1); // assert VBL interrupt
 
             if (this->vbl_end_timer.active) {
                 TimerManager::get_instance()->cancel_timer(this->vbl_end_timer);
             }
-            TimerManager::get_instance()->add_oneshot_timer(
+            TimerManager::get_instance()->add_absolute_timer(
                 this->vbl_end_timer,
-                vbl_duration,
+                timeout_ns + vbl_duration, 0,
                 [this](uint64_t, uint64_t) {
                     this->vbl_cb(0); // deassert VBL interrupt
                 }
