@@ -524,8 +524,8 @@ uint64_t GrandCentral::register_dma_int(IntSrc src_id) {
 }
 
 void GrandCentral::ack_int_common(uint64_t irq_id, uint8_t irq_line_state) {
-    // native mode:   set IRQ bits in int_events on a 0-to-1 transition
-    // emulated mode: set IRQ bits in int_events on all transitions
+    // MACIO_INT_MODE is 0: native mode:   set IRQ bits in int_events on a 0-to-1 transition
+    // MACIO_INT_MODE is 1: emulated mode: set IRQ bits in int_events on all transitions
 
     if ((this->int_mask & MACIO_INT_MODE) ||
         (irq_line_state && !(this->int_levels & irq_id))) {
