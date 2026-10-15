@@ -366,7 +366,10 @@ void MacIoTwo::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
 
     switch (offset & ~3) {
     case MIO_INT_MASK2:
-        this->int_mask |= uint64_t(value & ~MACIO_INT_MODE) << 32;
+        // Preserve the first bank and the read-only IntMode bit.
+        this->int_mask = (this->int_mask & 0x80000000FFFFFFFFULL) |
+            (uint64_t(value & ~MACIO_INT_MODE) << 32);
+        this->clear_cpu_int();
         this->signal_cpu_int();
         break;
     case MIO_INT_CLEAR2:
@@ -377,6 +380,7 @@ void MacIoTwo::mio_ctrl_write(uint32_t offset, uint32_t value, int size) {
         this->int_mask = (this->int_mask & 0x7FFFFFFF00000000ULL) | value;
         // copy IntMode bit to InterruptMask2 register
         this->int_mask |= uint64_t(this->int_mask & MACIO_INT_MODE) << 32;
+        this->clear_cpu_int();
         this->signal_cpu_int();
         break;
     case MIO_INT_CLEAR1:

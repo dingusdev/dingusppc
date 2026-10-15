@@ -145,9 +145,9 @@ void MacIoBase::ack_int_common(uint64_t irq_id, uint8_t irq_line_state) {
     if ((this->int_mask & MACIO_INT_MODE) ||
         (irq_line_state && !(this->int_levels & irq_id))) {
         this->int_events |= irq_id;
-    } else {
-        this->int_events &= ~irq_id;
     }
+    // Events remain latched until software writes InterruptClear.
+
     // update IRQ line state
     if (irq_line_state) {
         this->int_levels |= irq_id;
