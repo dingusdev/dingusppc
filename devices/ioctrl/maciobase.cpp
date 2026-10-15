@@ -142,11 +142,8 @@ void MacIoBase::ack_int_common(uint64_t irq_id, uint8_t irq_line_state) {
         uint32_t(irq_id >> 32), uint32_t(irq_id), irq_line_state
     );
 #endif
-    if ((this->int_mask & MACIO_INT_MODE) ||
-        (irq_line_state && !(this->int_levels & irq_id))) {
-        this->int_events |= irq_id;
-    }
-    // Events remain latched until software writes InterruptClear.
+    uint64_t old_levels = this->int_levels;
+    uint64_t old_events = this->int_events;
 
     // update IRQ line state
     if (irq_line_state) {
@@ -155,7 +152,16 @@ void MacIoBase::ack_int_common(uint64_t irq_id, uint8_t irq_line_state) {
         this->int_levels &= ~irq_id;
     }
 
-    this->signal_cpu_int();
+    if (
+        irq_line_state != !!(old_levels & irq_id)
+        && (irq_line_state || (this->int_mask & MACIO_INT_MODE))
+    ) {
+        this->int_events |= irq_id;
+        // Events remain latched until software writes InterruptClear.
+        if (old_events != this->int_events) {
+            this->signal_cpu_int();
+        }
+    }
 }
 
 void MacIoBase::ack_int(uint64_t irq_id, uint8_t irq_line_state) {

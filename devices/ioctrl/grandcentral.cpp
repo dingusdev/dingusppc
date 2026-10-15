@@ -527,11 +527,8 @@ void GrandCentral::ack_int_common(uint64_t irq_id, uint8_t irq_line_state) {
     // MACIO_INT_MODE is 0: native mode:   set IRQ bits in int_events on a 0-to-1 transition
     // MACIO_INT_MODE is 1: emulated mode: set IRQ bits in int_events on all transitions
 
-    if ((this->int_mask & MACIO_INT_MODE) ||
-        (irq_line_state && !(this->int_levels & irq_id))) {
-        this->int_events |= (uint32_t)irq_id;
-    }
-    // Events remain latched until software writes InterruptClear.
+    uint32_t old_levels = this->int_levels;
+    uint32_t old_events = this->int_events;
 
     // update IRQ line state
     if (irq_line_state) {
@@ -540,7 +537,16 @@ void GrandCentral::ack_int_common(uint64_t irq_id, uint8_t irq_line_state) {
         this->int_levels &= ~(uint32_t)irq_id;
     }
 
-    this->signal_cpu_int();
+    if (
+        irq_line_state != !!(old_levels & irq_id)
+        && (irq_line_state || (this->int_mask & MACIO_INT_MODE))
+    ) {
+        this->int_events |= (uint32_t)irq_id;
+        // Events remain latched until software writes InterruptClear.
+        if (old_events != this->int_events) {
+            this->signal_cpu_int();
+        }
+    }
 }
 
 void GrandCentral::ack_int(uint64_t irq_id, uint8_t irq_line_state) {
