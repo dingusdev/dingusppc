@@ -31,6 +31,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cmath>
 #include <stdlib.h>
 
+#if defined(__APPLE__) && defined(__aarch64__)
+#include <arm_acle.h>
+#endif
+
 inline static void ppc_update_cr1() {
     // copy FPSCR[FX|FEX|VX|OX] to CR1
     ppc_state.cr = (ppc_state.cr & ~CR_select::CR1_field) |
@@ -117,6 +121,26 @@ static double set_endresult_nan() {
     return std::numeric_limits<double>::quiet_NaN();
 }
 
+#if FE_ALL_EXCEPT
+static int test_and_clear_fp_exceptions() {
+#if defined(__APPLE__) && defined(__aarch64__)
+    // Darwin's FE_* masks match the ARM64 FPSR exception bits. Preserve
+    // other status bits and avoid a second register read when clearing.
+    uint64_t fpsr = __arm_rsr64("fpsr");
+    int exceptions = fpsr & FE_ALL_EXCEPT;
+    if (exceptions) {
+        fpsr &= ~uint64_t(FE_ALL_EXCEPT);
+        __arm_wsr64("fpsr", fpsr);
+    }
+#else
+    int exceptions = std::fetestexcept(FE_ALL_EXCEPT);
+    if (exceptions)
+        std::feclearexcept(FE_ALL_EXCEPT);
+#endif
+    return exceptions;
+}
+#endif
+
 static void fpresult_update(double set_result) {
     if (std::isnan(set_result)) {
         ppc_state.fpscr |= FPCC_FUNAN | FPRCD;
@@ -128,18 +152,18 @@ static void fpresult_update(double set_result) {
         } else {
             ppc_state.fpscr |= FPCC_ZERO;
         }
-
-        if (std::fetestexcept(FE_OVERFLOW)) {
+#if FE_ALL_EXCEPT
+        int exceptions = test_and_clear_fp_exceptions();
+        if (exceptions & FE_OVERFLOW) {
             ppc_state.fpscr |= (OX + FX);
         }
-        if (std::fetestexcept(FE_UNDERFLOW)) {
+        if (exceptions & FE_UNDERFLOW) {
             ppc_state.fpscr |= (UX + FX);
         }
-        if (std::fetestexcept(FE_DIVBYZERO)) {
+        if (exceptions & FE_DIVBYZERO) {
             ppc_state.fpscr |= (ZX + FX);
         }
-
-        std::feclearexcept(FE_ALL_EXCEPT);
+#endif
 
         if (std::isinf(set_result))
             ppc_state.fpscr |= FPCC_FUNAN;
