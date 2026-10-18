@@ -256,9 +256,11 @@ void PlatinumCtrl::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
         this->map_phys_ram();
         break;
     case PlatinumReg::FB_BASE_ADDR:
-        this->fb_addr   = value;
-        this->fb_offset = value & 0x3FFFFF;
-        this->change_display();
+        if (this->fb_addr != value) {
+            this->fb_addr = value;
+            this->fb_offset = value & 0x3FFFFF;
+            this->change_display();
+        }
         break;
     case PlatinumReg::ROW_WORDS:
         this->row_words = value & ~7;
