@@ -126,18 +126,21 @@ void ValkyrieVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, i
 
     switch((offset >> this->reg_shift) & 0xFF) {
     case Valkyrie::csr_mode:
-        if (value != this->mode) {
-            auto old_mode = this->mode;
+    {
+        uint8_t old_mode = this->mode;
+        if (value != old_mode) {
             this->mode = value;
-            if ((value ^ old_mode) & 0x80) {
-                if (value & 0x80)
+            if (value & 0x80) { // is disabled
+                if (!(old_mode & 0x80)) // was enabled
                     this->disable_video_internal();
-                else
-                    this->schedule_mode_switch();
+            }
+            else { // is enabled and was disabled or is enabled and mode changed
+                this->schedule_mode_switch();
             }
         }
         LOG_F(INFO, "%s: mode reg set to 0x%X", this->name.c_str(), this->mode);
         break;
+    }
     case Valkyrie::csr_depth:
         if (value != this->depth)
             this->schedule_mode_switch();
