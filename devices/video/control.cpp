@@ -583,12 +583,17 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
             } else
                 this->swatch_ctrl = value;
             break;
-        case ControlRegs::GBASE:
-            this->fb_base = value & 0x3FFFE0;
-            if (this->display_enabled) {
-                this->enable_display();
+        case ControlRegs::GBASE:{
+            uint32_t old_value = this->fb_base;
+            uint32_t new_value = value & 0x3FFFE0;
+            if (new_value != old_value) {
+                this->fb_base = new_value;
+                if (this->display_enabled) {
+                    this->enable_display();
+                }
             }
             break;
+        }
         case ControlRegs::ROW_WORDS:
             this->row_words = value & 0x7FE0;
             if (this->display_enabled) {
