@@ -651,7 +651,7 @@ uint8_t* ControlVideo::GetVram()
 
 void ControlVideo::update_fb_ptr()
 {
-    this->fb_ptr   = &this->vram_ptr[this->fb_base];
+    this->fb_ptr = &this->vram_ptr[this->fb_base];
     if (swatch_params[ControlRegs::HAL-1] != swatch_params[ControlRegs::PIPE_DELAY-1] + 1 ||
         this->pixel_depth == 32 ||
         (this->pixel_depth == 16 && this->active_width == 1280)
