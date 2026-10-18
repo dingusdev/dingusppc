@@ -208,24 +208,55 @@ void ValkyrieVideo::enable_video_internal() {
     this->pixel_clock = this->clk_gen->get_dot_freq();
 
     // set video mode parameters
+    // MHz shown is calculated by get_dot_freq, not the ideal pixel clock.
     switch(this->mode & 0x7F) {
-    case PdmVideoMode::Rgb13in:
+    case PdmVideoMode::Rgb12in: // 0x2: // 512x384 60 Hz 15.667200 MHz
+        new_width  = 512;
+        new_height = 384;
+        hori_blank = 128;
+        vert_blank =  23;
+        break;
+    case PdmVideoMode::Rgb13in: // 0x6: // 640x480 67 Hz 30.215314 MHz
         new_width  = 640;
         new_height = 480;
         hori_blank = 224;
         vert_blank =  45;
         break;
-    case PdmVideoMode::Rgb16in:
+    case PdmVideoMode::Rgb16in: // 0x9: // 832x624 75 Hz 57.219340 MHz
         new_width  = 832;
         new_height = 624;
         hori_blank = 320;
         vert_blank =  43;
         break;
-    case PdmVideoMode::VGA:
+    case PdmVideoMode::VGA: // 0xB: // 640x480 60 Hz 25.203756 MHz
         new_width  = 640;
         new_height = 480;
         hori_blank = 160;
         vert_blank =  45;
+        break;
+    case 0xC: // 800x600 60 Hz 39.880144 MHz
+        new_width  = 800;
+        new_height = 600;
+        hori_blank = 256;
+        vert_blank =  28;
+        break;
+    case 0xD: // 800x600 72 Hz 49.850184 MHz
+        new_width  = 800;
+        new_height = 600;
+        hori_blank = 240;
+        vert_blank =  66;
+        break;
+    case 0xE: // 1024x768 60 Hz 64.757760 MHz
+        new_width  = 1024;
+        new_height =  768;
+        hori_blank =  320;
+        vert_blank =   38;
+        break;
+    case 0xF: // 1024x768 72 Hz 74.930088 MHz
+        new_width  = 1024;
+        new_height =  768;
+        hori_blank =  304; // These blanking numbers are for 70 Hz, not 72 Hz.
+        vert_blank =   38; // There is no documentation for a 72 Hz mode?
         break;
     default:
         LOG_F(ERROR, "%s: invalid video mode 0x%X", this->name.c_str(), this->mode & 0x7F);
