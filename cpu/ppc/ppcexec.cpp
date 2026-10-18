@@ -1130,7 +1130,8 @@ static map<string, int> SPRName2Num = {
     {"RTCL",   SPR::RTCL_S},    {"DSISR",  SPR::DSISR}, {"DAR",    SPR::DAR},
     {"MMCR0",  SPR::MMCR0},     {"PMC1",   SPR::PMC1},  {"PMC2",   SPR::PMC2},
     {"SDA",    SPR::SDA},       {"SIA",    SPR::SIA},   {"MMCR1",  SPR::MMCR1},
-    {"PMC3",   SPR::PMC3},      {"PMC4",   SPR::PMC4},
+    {"PMC3",   SPR::PMC3},      {"PMC4",   SPR::PMC4},  {"EAR",    SPR::EAR},
+
 // get value from supervisor index same as we do for SPR268 and SPR269
     {"TBL_U",  SPR::TBL_S},     {"TBU_U",  SPR::TBU_S},
 };
