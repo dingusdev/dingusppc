@@ -321,7 +321,7 @@ uint32_t ControlVideo::read(uint32_t rgn_start, uint32_t offset, int size)
             return size == 4 ? BYTESWAP_32(value) : size == 2 ? BYTESWAP_16(value) : value;
         default:
             LOG_F(ERROR, "%s: unsupported pixel width %d for little-endian VRAM read",
-                  this->name.c_str(), pixel_width);
+                this->name.c_str(), pixel_width);
             return 0;
         }
 
@@ -373,7 +373,7 @@ uint32_t ControlVideo::read(uint32_t rgn_start, uint32_t offset, int size)
         case ControlRegs::MON_SENSE:
             value = (this->cur_mon_id << 6) | this->mon_sense;
             LOG_F(9, "%s: read  MON_SENSE %03x.%c = %0*x", this->name.c_str(),
-                  offset, SIZE_ARG(size), size * 2, value);
+                offset, SIZE_ARG(size), size * 2, value);
             break;
         case ControlRegs::MISC_ENABLES:
             value = this->enables;
@@ -401,7 +401,7 @@ uint32_t ControlVideo::read(uint32_t rgn_start, uint32_t offset, int size)
         uint32_t result = pci_conv_rd_data(value, value, details);
         if ((offset & 3) || (size != 4)) {
             LOG_F(WARNING, "%s: read  %s %03x.%c = %08x -> %0*x", this->name.c_str(),
-                  get_name_controlreg(offset), offset, SIZE_ARG(size), value, size * 2, result);
+                get_name_controlreg(offset), offset, SIZE_ARG(size), value, size * 2, result);
         }
 
         return result;
@@ -491,7 +491,7 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
                 return this->write(rgn_start, offset | VRAM_BE_APERTURE, value, size);
             default:
                 LOG_F(ERROR, "%s: unsupported pixel width %d for little-endian VRAM write",
-                      this->name.c_str(), pixel_width);
+                    this->name.c_str(), pixel_width);
                 return;
             }
 
@@ -511,10 +511,10 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
             this->swatch_params[(offset >> 4) - ControlRegs::VFPEQ] = value & 0x3FF;
             if (value & ~0x3FF)
                 LOG_F(ERROR, "%s: write PIPE_DELAY %03x.%c = %0*x", this->name.c_str(),
-                      offset, SIZE_ARG(size), size * 2, value);
+                    offset, SIZE_ARG(size), size * 2, value);
             else
                 LOG_F(CONTROL, "%s: write PIPE_DELAY %03x.%c = %0*x", this->name.c_str(),
-                      offset, SIZE_ARG(size), size * 2, value);
+                    offset, SIZE_ARG(size), size * 2, value);
             if (this->display_enabled) {
                 this->enable_display();
             }
@@ -523,10 +523,10 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
             this->swatch_params[(offset >> 4) - ControlRegs::VFPEQ] = value & 0xFFU;
             if (value & ~0xFFU)
                 LOG_F(ERROR, "%s: write HEQ %03x.%c = %0*x", this->name.c_str(),
-                      offset, SIZE_ARG(size), size * 2, value);
+                    offset, SIZE_ARG(size), size * 2, value);
             else
                 LOG_F(CONTROL, "%s: write HEQ %03x.%c = %0*x", this->name.c_str(),
-                      offset, SIZE_ARG(size), size * 2, value);
+                    offset, SIZE_ARG(size), size * 2, value);
             if (this->display_enabled) {
                 this->enable_display();
             }
@@ -548,10 +548,10 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
             this->swatch_params[(offset >> 4) - ControlRegs::VFPEQ] = value & 0xFFF;
             if (value & ~0xFFF)
                 LOG_F(ERROR, "%s: write %s %03x.%c = %0*x", this->name.c_str(),
-                      get_name_controlreg(offset), offset, SIZE_ARG(size), size * 2, value);
+                    get_name_controlreg(offset), offset, SIZE_ARG(size), size * 2, value);
             else
                 LOG_F(CONTROL, "%s: write %s %03x.%c = %0*x", this->name.c_str(),
-                      get_name_controlreg(offset), offset, SIZE_ARG(size), size * 2, value);
+                    get_name_controlreg(offset), offset, SIZE_ARG(size), size * 2, value);
             if (this->display_enabled) {
                 this->enable_display();
             }
@@ -599,8 +599,8 @@ void ControlVideo::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
                 // This is a nine-bit register (bits 6-8 are read-only sense
                 // inputs that can be written back). Log unexpected values.
                 VLOG_F((value & ~0x1FF) ? loguru::Verbosity_ERROR : 9,
-                       "%s: write MON_SENSE %03x.%c = %0*x", this->name.c_str(),
-                       offset, SIZE_ARG(size), size * 2, value);
+                    "%s: write MON_SENSE %03x.%c = %0*x", this->name.c_str(),
+                    offset, SIZE_ARG(size), size * 2, value);
                 uint8_t dirs   = ((value >> 3) & 7) ^ 7;
                 uint8_t levels = ((value & 7) & dirs) | (dirs ^ 7);
                 this->mon_sense = value & 0x3F;
