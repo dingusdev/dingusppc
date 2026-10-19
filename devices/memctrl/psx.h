@@ -92,13 +92,13 @@ public:
     void map_phys_ram();
 
 private:
-    uint32_t    sys_id;
-    uint32_t    chip_rev;
-    uint32_t    sys_config;
-    uint32_t    rom_cfg;
-    uint32_t    dram_cfg;
-    uint32_t    dram_refresh;
-    uint32_t    flash_cfg;
+    uint32_t    sys_id = 0x10000000; // PSX register dump from a 6500 at 68kmla
+    uint32_t    chip_rev = 0;
+    uint32_t    sys_config = 0;
+    uint32_t    rom_cfg = 0x000009D8;
+    uint32_t    dram_cfg = 0x00E18534;
+    uint32_t    dram_refresh = 0x001F0180;
+    uint32_t    flash_cfg = 0x00000038;
     uint32_t    pages_cfg[5] = {0x88888888,0x88888888,0x88888888,0x88888888,0x88888888};
     uint32_t    bank_size[5] = {};
     std::unique_ptr<uint8_t[]>      dram_ptr = nullptr;
