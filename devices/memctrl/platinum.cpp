@@ -124,7 +124,7 @@ uint32_t PlatinumCtrl::read(uint32_t rgn_start, uint32_t offset, int size) {
             return read_mem(&this->vram_ptr[offset], size);
         } else {
             LOG_F(WARNING, "%s: read from unmapped aperture address 0x%X",
-                  this->name.c_str(), this->fb_addr + offset);
+                  this->name.c_str(), VRAM_REGION_BASE + offset);
             return (uint32_t)-1;
         }
     }
@@ -230,7 +230,7 @@ void PlatinumCtrl::write(uint32_t rgn_start, uint32_t offset, uint32_t value, in
             write_mem(&this->vram_ptr[offset], value, size);
         } else
             LOG_F(WARNING, "%s: write to unmapped aperture address 0x%X",
-                  this->name.c_str(), this->fb_addr + offset);
+                  this->name.c_str(), VRAM_REGION_BASE + offset);
         return;
     }
 
