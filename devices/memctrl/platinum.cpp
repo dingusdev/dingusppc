@@ -58,7 +58,15 @@ PlatinumCtrl::PlatinumCtrl() : MemCtrlBase(), VideoCtrlBase() {
 
     // initialize the CPUID register with the following CPU:
     // PowerPC 601 @ 90 MHz, bus frequency: 45 MHz
-    this->cpu_id = (0x3001 << 16) | ClkSrc2 | (CpuSpeed2::CPU_90_BUS_45 << 8);
+    this->cpu_id =
+        ( 0x3 << 28) | // Design Center: 3 = High-End RISC Design Center
+        (   0 << 24) | // Upper ID: 0 = machine with registers wider than 8-bit
+        (0x01 << 16) | // Lower ID: 1 = Platinum-based machine
+        ClkSrc2      | // Clock Source: bits 15 and 6
+        (   0 << 12) | // Motherboard ID: Catalyst motherboard with 1 MB of VRAM
+        (CpuSpeed2::CPU_90_BUS_45 << 8)
+                     | // System/CPU Speed
+        (   0 <<  7) ; // CPU Type: 0 = 601, 1 = 603/604
 
     this->display_id = std::unique_ptr<DisplayID> (new DisplayID());
 
