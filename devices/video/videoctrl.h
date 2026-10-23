@@ -100,7 +100,7 @@ protected:
     int         vert_blank = 0;
     int         pixel_depth;
     int         pixel_format;
-    float       pixel_clock;
+    double      pixel_clock;    // float can represent all integers only up to 16 MHz
     float       refresh_rate;
 
     // Implementations may choose to track framebuffer writes and set draw_fb
