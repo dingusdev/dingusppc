@@ -491,9 +491,16 @@ int CharIoSocket::rcv_char(uint8_t *c)
         this->rcv_char_available_now();
 
     if (this->acceptfd != -1) {
-        int received = (int)recv(this->acceptfd, c, 1, 0);
+        // MSG_DONTWAIT: the emulator's CPU thread must NEVER block on the debug channel.
+        // A blocking recv here froze the whole machine whenever guest code read the ESCC
+        // data register while the peer-side debugger had sent nothing (the silent-peer
+        // boots froze at the splash logo). EAGAIN = no byte pending; the ESCC's
+        // rx-available bit (rcv_char_available) remains the sole truth the guest polls.
+        int received = (int)recv(this->acceptfd, c, 1, MSG_DONTWAIT);
         if (received == -1) {
-            LOG_F(INFO, "socket accept read err: %s", strerror(errno));
+            if (errno != EAGAIN && errno != EWOULDBLOCK) {
+                LOG_F(INFO, "socket accept read err: %s", strerror(errno));
+            }
         }
         else if (received == 1) {
             /*
