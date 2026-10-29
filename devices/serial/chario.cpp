@@ -348,12 +348,15 @@ void CharIoSocket::rcv_disable()
 
 bool CharIoSocket::rcv_char_available()
 {
-    if (consecutivechars >= 15) {
-        consecutivechars++;
-        if (consecutivechars >= 800)
-            consecutivechars = 0;
-        return 0;
-    }
+    // The A04-22 wedge, root-caused 2026-10-29: this throttle returned "no character
+    // available" for ~785 of every 800 polls whenever the peer's reply traffic was dense
+    // (consecutivechars >= 15), while the guest's NubDriver_WaitForByte spins with MSR[EE]=0
+    // waiting for RR0_RX_CHARACTER_AVAILABLE. The nub's debug transaction then never sees its
+    // reply, the machine parks in the wait, and the uncollected ADB packets are the visible
+    // wedge (the Cuda starvation flood). The socket buffer already prevents overrun -- the
+    // kernel holds unread bytes and select() reports them when the guest is ready -- so this
+    // duty cycle protected nothing and wedged the guest. Be honest: availability is the
+    // select() truth.
     return this->rcv_char_available_now();
 }
 
