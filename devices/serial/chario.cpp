@@ -348,12 +348,15 @@ void CharIoSocket::rcv_disable()
 
 bool CharIoSocket::rcv_char_available()
 {
-    if (consecutivechars >= 15) {
-        consecutivechars++;
-        if (consecutivechars >= 800)
-            consecutivechars = 0;
-        return 0;
-    }
+    // The A04-22 wedge, root-caused 2026-10-29: this throttle returned "no character
+    // available" for ~785 of every 800 polls whenever the peer's reply traffic was dense
+    // (consecutivechars >= 15), while the guest's NubDriver_WaitForByte spins with MSR[EE]=0
+    // waiting for RR0_RX_CHARACTER_AVAILABLE. The nub's debug transaction then never sees its
+    // reply, the machine parks in the wait, and the uncollected ADB packets are the visible
+    // wedge (the Cuda starvation flood). The socket buffer already prevents overrun -- the
+    // kernel holds unread bytes and select() reports them when the guest is ready -- so this
+    // duty cycle protected nothing and wedged the guest. Be honest: availability is the
+    // select() truth.
     return this->rcv_char_available_now();
 }
 
@@ -488,9 +491,16 @@ int CharIoSocket::rcv_char(uint8_t *c)
         this->rcv_char_available_now();
 
     if (this->acceptfd != -1) {
-        int received = (int)recv(this->acceptfd, c, 1, 0);
+        // MSG_DONTWAIT: the emulator's CPU thread must NEVER block on the debug channel.
+        // A blocking recv here froze the whole machine whenever guest code read the ESCC
+        // data register while the peer-side debugger had sent nothing (the silent-peer
+        // boots froze at the splash logo). EAGAIN = no byte pending; the ESCC's
+        // rx-available bit (rcv_char_available) remains the sole truth the guest polls.
+        int received = (int)recv(this->acceptfd, c, 1, MSG_DONTWAIT);
         if (received == -1) {
-            LOG_F(INFO, "socket accept read err: %s", strerror(errno));
+            if (errno != EAGAIN && errno != EWOULDBLOCK) {
+                LOG_F(INFO, "socket accept read err: %s", strerror(errno));
+            }
         }
         else if (received == 1) {
             /*
