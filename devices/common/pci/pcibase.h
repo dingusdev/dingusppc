@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define PCI_BASE_H
 
 #include <devices/common/mmiodevice.h>
+#include <devices/common/pci/pcidefs.h>
 #include <devices/common/pci/pcihost.h>
 
 #include <cinttypes>
@@ -50,16 +51,6 @@ enum {
     PCI_CFG_DWORD_15            = 0x3C, // Max_Lat, Min_Gnt (Type 0)
                                         // Bridge Control (Type 1 and 2)
                                         // Int_Pin and Int_Line registers (type 0, 1, and 2)
-};
-
-/** PCI Vendor IDs for devices used in Power Macintosh computers. */
-enum {
-    PCI_VENDOR_ATI              = 0x1002,
-    PCI_VENDOR_DEC              = 0x1011,
-    PCI_VENDOR_MOTOROLA         = 0x1057,
-    PCI_VENDOR_APPLE            = 0x106B,
-    PCI_VENDOR_SILICON_IMAGE    = 0x1095,
-    PCI_VENDOR_NVIDIA           = 0x10DE,
 };
 
 /** PCI BAR types */
