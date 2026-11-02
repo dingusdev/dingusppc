@@ -323,10 +323,6 @@ static const PropMap Grackle_Properties = {
         new StrProperty("")},
     {"pci_C1",
         new StrProperty("")},
-    //{"pci_GPU",
-    //    new StrProperty("")},
-    {"pci_J12",
-        new StrProperty("")},
 };
 
 static const DeviceDescription Grackle_Descriptor = {
