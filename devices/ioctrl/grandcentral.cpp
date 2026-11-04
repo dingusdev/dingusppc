@@ -41,13 +41,14 @@ NvramDev::NvramDev(NvramAddrHiDev *addr_hi) {
 
 GrandCentral::GrandCentral() : PCIDevice("mac-io_grandcentral"), InterruptCtrl()
 {
-    supports_types(HWCompType::IOBUS_HOST | HWCompType::MMIO_DEV | HWCompType::PCI_DEV | HWCompType::INT_CTRL);
+    supports_types(HWCompType::IOBUS_HOST | HWCompType::MMIO_DEV |
+                   HWCompType::PCI_DEV    | HWCompType::INT_CTRL);
 
     // populate my PCI config header
     this->vendor_id   = PCI_VENDOR_APPLE;
     this->device_id   = MIO_DEV_ID_GRANDCENTRAL;
     this->status      = 0x0200; // 9:DEVSEL
-    this->class_rev   = 0xFF000002;
+    this->class_rev   = MACIO_DEVCLASS_ID | 2; // hardcoded revision = 2
     this->cache_ln_sz = 8;
 
     this->setup_bars({{0, 0xFFFE0000UL}}); // declare 128Kb of memory-mapped I/O space

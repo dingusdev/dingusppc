@@ -38,7 +38,7 @@ MacIoBase::MacIoBase(std::string name, uint16_t dev_id, uint8_t rev) :
     // populate my PCI config header
     this->vendor_id   = PCI_VENDOR_APPLE;
     this->device_id   = dev_id;
-    this->class_rev   = 0xFF000000 + rev;
+    this->class_rev   = MACIO_DEVCLASS_ID + rev;
     this->cache_ln_sz = 8;
 
     // select memory mapped I/O size: 128Kb for Grand Central, 512Kb for others

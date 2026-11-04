@@ -44,6 +44,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memory>
 #include <string>
 
+/** MacIO ASICs report themselves as devices with unassigned PCI class code. */
+constexpr uint32_t MACIO_DEVCLASS_ID = DEVCLASS_UNASSIGNED << 24;
+
 /** PCI device IDs for various MacIO ASICs. */
 enum {
     MIO_DEV_ID_GRANDCENTRAL = 0x0002,
