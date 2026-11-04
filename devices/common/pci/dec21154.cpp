@@ -32,6 +32,8 @@ enum YosemiteGpioMask: uint8_t {
     GPIO_FWDET = 2, // FireWire detect
 };
 
+constexpr uint32_t my_rev_id = 2;
+
 DecPciBridge::DecPciBridge(std::string name) : PCIBridge(name)
 {
     supports_types(HWCompType::PCI_HOST | HWCompType::PCI_DEV);
@@ -39,7 +41,7 @@ DecPciBridge::DecPciBridge(std::string name) : PCIBridge(name)
     // initialize PCI config header
     this->vendor_id   = PCI_VENDOR_DEC;
     this->device_id   = 0x0026;
-    this->class_rev   = 0x06040002;
+    this->class_rev   = DEVTYPE_PCI2PCI_BRIDGE | my_rev_id;
     this->cache_ln_sz = 0;
     this->command     = 0;
     this->status      = 0x2B0;
