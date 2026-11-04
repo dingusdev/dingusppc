@@ -101,7 +101,7 @@ protected:
     int         pixel_depth;
     int         pixel_format;
     double      pixel_clock;    // float can represent all integers only up to 16 MHz
-    float       refresh_rate;
+    float       refresh_rate = 0;
 
     // Implementations may choose to track framebuffer writes and set draw_fb
     // to false if updates can be skipped. If they do this, they should set
