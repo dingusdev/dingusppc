@@ -40,7 +40,7 @@ MPC106::MPC106() : MemCtrlBase(), PCIDevice("Grackle"), PCIHost()
     // populate PCI config header
     this->vendor_id   = PCI_VENDOR_MOTOROLA;
     this->device_id   = 0x0002;
-    this->class_rev   = 0x06000040;
+    this->class_rev   = DEVTYPE_HOST2PCI_BRIDGE | GRACKLE_REV_4_0;
     this->cache_ln_sz = 8;
     this->command     = 6;
     this->status      = 0x80;

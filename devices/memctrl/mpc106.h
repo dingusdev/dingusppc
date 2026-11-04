@@ -42,7 +42,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <cinttypes>
 #include <memory>
 
-class InterruptCtrl;
+/** Grackle ASIC revisions. */
+constexpr uint8_t GRACKLE_REV_4_0 = 0x40;
 
 /** Grackle configuration space registers. */
 enum GrackleReg : uint32_t {
