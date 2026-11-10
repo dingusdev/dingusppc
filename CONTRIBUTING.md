@@ -4,7 +4,12 @@ General
 * Test your contributions to assure they do not break existing functionality.
 * Commits to the repo should be done by portions; that is, by individual functionalities of the program.
 * Don't use any disrespectful language.
+
+AI Usage
+=======
+
 * Do not use artificial intelligence to make contributions. This is due to authorship issues and licensing issues regarding AI usage.
+* Do not use artificial intelligence to write up issues or pull requests.
 
 Code
 =======
